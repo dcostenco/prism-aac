@@ -127,7 +127,7 @@ export interface AIProviderConfig {
 export const AI_PROVIDERS: Record<AIProvider, AIProviderConfig> = {
   'gemini': {
     provider: 'gemini',
-    model: 'gemini-3.1-pro',
+    model: 'gemini-2.5-flash',
     endpoint: 'https://generativelanguage.googleapis.com/v1beta',
     local: false,
   },
@@ -212,6 +212,11 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     hasAI: true,
     aiProvider: 'gemini',
   },
+
+  // Note: Paid tiers default to Claude Sonnet 4.6 on the web app
+  // (synalux.ai/prism-aac/app). The aiProvider field here is for
+  // the native app's local AI suggestions. Cloud routing is handled
+  // server-side in /api/v1/prism-aac/chat.
 };
 
 export type SupportedLanguage =

@@ -284,8 +284,9 @@ Full UI translation for 12 languages:
 
 | Feature | Free | Standard | Advanced | Enterprise |
 |---------|------|----------|----------|------------|
-| **AI provider** | prism-coder:7b (local) | **Gemini 3.1 Pro** | **Gemini 3.1 Pro** | **Gemini 3.1 Pro** |
+| **AI provider** | prism-coder:7b (local) | Claude Haiku 4.5 | **Claude Sonnet 4.6** | **Claude Sonnet 4.6** |
 | **AI suggestions** | — | Context-aware phrases | Context-aware + cross-device | Context-aware + team |
+| **Simple queries** | prism-coder:7b | prism-coder:7b | prism-coder:7b | prism-coder:7b |
 | Voice quality | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
 | Emotional tones | — | 5 tones | All 9 tones | All + custom |
 | Custom categories | — | 20 | Unlimited | Unlimited |
@@ -310,8 +311,9 @@ API endpoint: `https://synalux.ai/prism-aac`
 | Navigation | expo-router (file-based) |
 | State | Zustand |
 | Database | expo-sqlite (offline-first) |
-| AI (cloud) | Gemini 3.1 Pro (paid tiers) |
-| AI (local) | prism-coder:7b via Ollama (offline/free) |
+| AI (cloud, paid) | Claude Sonnet 4.6 / Haiku 4.5 (via Anthropic API) |
+| AI (cloud, free) | Gemini 2.5 Flash (via Google API) |
+| AI (local) | prism-coder:7b via Ollama (simple queries, all tiers) |
 | TTS (offline) | expo-speech |
 | TTS (premium) | Azure Cognitive Services Neural TTS |
 | i18n | i18next + react-i18next |
@@ -412,17 +414,19 @@ npx expo export --platform web
 
 Paid tiers use **Gemini 3.1 Pro** for context-aware phrase suggestions. Free tier and offline mode use **prism-coder:7b** via Ollama (100% local).
 
-| Tier | Provider | Offline Fallback |
-|------|----------|-----------------|
-| Free | prism-coder:7b (local) | Always local |
-| Standard+ | Gemini 3.1 Pro | prism-coder:7b |
+| Query Type | Free | Standard | Advanced / Enterprise |
+|------------|------|----------|---------------------|
+| **Simple** (greetings, short phrases, <4 words) | prism-coder:7b | prism-coder:7b | prism-coder:7b |
+| **Complex** (conversations, knowledge, multi-part) | Gemini 2.5 Flash | Claude Haiku 4.5 | **Claude Sonnet 4.6** |
+| **Offline fallback** | prism-coder:7b | prism-coder:7b | prism-coder:7b |
 
 ```
-# Set Gemini API key (Standard+ tiers)
-gemini_api_key = <your-google-api-key>
-
-# Local mode uses Ollama automatically
+# Local mode uses Ollama automatically (all tiers, simple queries)
 # Install: ollama pull prism-coder:7b
+
+# Cloud keys (set on server — synalux.ai handles this automatically)
+# GEMINI_API_KEY — free tier
+# ANTHROPIC_API_KEY — paid tiers (Claude Haiku/Sonnet)
 ```
 
 ### Azure TTS (Standard+ tier)
