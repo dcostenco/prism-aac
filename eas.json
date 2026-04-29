@@ -18,7 +18,7 @@
     "production": {
       "ios": {
         "autoIncrement": true,
-        "image": "latest"
+        "image": "macos-sequoia-15.4-xcode-26.0"
       },
       "android": {
         "autoIncrement": true,
