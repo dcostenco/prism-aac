@@ -11,7 +11,7 @@ Prism AAC is a cross-platform communication app that combines keyboard-first typ
 [![Platform: Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)](docs/platforms/DESKTOP_en.md)
 [![Platform: macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)](docs/platforms/DESKTOP_en.md)
 [![Platform: Web](https://img.shields.io/badge/Web-FF6D00?logo=googlechrome&logoColor=white)](docs/platforms/WEB_en.md)
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red)](#license)
+[![License: BSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-blue.svg)](LICENSE)
 
 ### Platform Guides
 
@@ -421,7 +421,7 @@ Auth: Bearer token (from subscription)
 
 ## License
 
-Proprietary. Copyright 2026 Synalux AI. All rights reserved.
+BUSL-1.1 — See [LICENSE](LICENSE) for details.
 
 ---
 
