@@ -51,67 +51,41 @@ Most AAC apps force a choice: picture boards **or** typing. Prism AAC keeps both
 
 ## Screenshots
 
+> Visual screenshots will be added after the first UI polish pass. The wireframes below show the layout structure.
+
 ### Home Screen — Keyboard with Predictions
 
-```
-┌─────────────────────────────────────────────┐
-│  [😊 Tone] [📂 Categories] [🔢 Math]  [⚙️] │
-├─────────────────────────────────────────────┤
-│  Hello, I would like to order      [▶] [⌫] │
-├─────────────────────────────────────────────┤
-│  [ a ]  [ the ]  [ please ]  [ to ]  [ my ]│
-├─────────────────────────────────────────────┤
-│                                             │
-│              System Keyboard                │
-│                                             │
-└─────────────────────────────────────────────┘
-```
+| Layer | Content |
+|:------|:--------|
+| **Toolbar** | Tone · Categories · Math · Settings |
+| **Message Bar** | "Hello, I would like to order" — Speak / Delete |
+| **Predictions** | `a` · `the` · `please` · `to` · `my` |
+| **Input** | System Keyboard |
 
 ### Categories
 
-```
-┌──────────────┐  ┌──────────────┐
-│     🆘       │  │     💬       │
-│ Help / Needs │  │  Quick Talk  │
-├──────────────┤  ├──────────────┤
-│     📍       │  │     🍽️       │
-│Places / Plans│  │Food / Ordering│
-├──────────────┤  ├──────────────┤
-│     👥       │  │     📚       │
-│People / Social│  │School / Work │
-└──────────────┘  └──────────────┘
-```
+| | |
+|:---:|:---:|
+| **Help / Needs** | **Quick Talk** |
+| **Places / Plans** | **Food / Ordering** |
+| **People / Social** | **School / Work** |
 
 ### Ordering Flow (Chipotle Example)
 
-```
-Step: Choose your base        ● ○ ○ ○ ○
+> **Step 1 of 5:** Choose your base
 
-┌──────────┐  ┌──────────┐  ┌──────────┐
-│  Burrito │  │   Bowl   │  │  Tacos   │
-└──────────┘  └──────────┘  └──────────┘
-┌──────────┐  ┌──────────┐
-│Quesadilla│  │  Salad   │
-└──────────┘  └──────────┘
-
-                        [ ← Back ]  [ Next → ]
-```
+| | | |
+|:---:|:---:|:---:|
+| Burrito | Bowl | Tacos |
+| Quesadilla | Salad | |
 
 ### Tone Selector
 
-```
-┌─────────────────────────┐
-│     Select Tone         │
-│                         │
-│  😊 Friendly  😄 Cheerful│
-│  😌 Calm      😐 Serious │
-│  🤩 Excited   🙏 Hopeful │
-│  🤗 Empathetic 😢 Sad    │
-│  😤 Urgent              │
-└─────────────────────────┘
-```
-
-> **Note:** Screenshots show wireframe layouts. Visual screenshots will be added after the first UI polish pass.
+| | | |
+|:---:|:---:|:---:|
+| Friendly | Cheerful | Calm |
+| Serious | Excited | Hopeful |
+| Empathetic | Sad | Urgent |
 
 ---
 
