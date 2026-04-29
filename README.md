@@ -153,6 +153,28 @@ npx expo start --web
 
 > Desktop packages will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases) once the Electron wrapper is finalized.
 
+### Apple Watch / Wear OS (Samsung)
+
+Watch companion apps with quick phrase buttons — tap to speak from your wrist.
+
+| Platform | Minimum | Features |
+|----------|---------|----------|
+| **Apple Watch** | watchOS 10+ | Category grid, phrase buttons, TTS, haptic feedback, emergency quick buttons |
+| **Wear OS** (Samsung/Pixel) | API 30+ | ScalingLazyColumn, Material chips, TTS, emergency row |
+
+> Watch apps are limited to **quick phrase buttons** — no full keyboard. For the full experience, use the phone/tablet app or [synalux.ai/prism-aac/app](https://synalux.ai/prism-aac/app).
+
+See [watch/README.md](watch/README.md) for build instructions.
+
+### App Store / Play Store
+
+| Store | Category | Status |
+|-------|----------|--------|
+| **Apple App Store** | Medical (primary), Education (secondary) | Submitting |
+| **Google Play Store** | Medical (primary), Education (secondary) | Submitting |
+
+See [store-metadata/listing.json](store-metadata/listing.json) for full store listing.
+
 ---
 
 ## Features

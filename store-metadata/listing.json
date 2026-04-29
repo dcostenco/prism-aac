@@ -1,0 +1,42 @@
+{
+  "app_name": "Prism AAC",
+  "subtitle": "Communication for Real Life",
+  "category": {
+    "apple": "Medical",
+    "apple_secondary": "Education",
+    "google_play": "Medical",
+    "google_play_secondary": "Education"
+  },
+  "content_rating": "Everyone",
+  "age_rating": "4+",
+  "pricing": "Free with in-app purchases",
+  "description": {
+    "short": "Keyboard-first AAC with adaptive prediction, emotional TTS, and AI assistant. 12 languages. Works offline.",
+    "full": "Prism AAC is a cross-platform Augmentative and Alternative Communication app that combines keyboard-first typing with category-based phrase navigation, adaptive word prediction, and high-quality text-to-speech with emotional tones.\n\nDesigned for individuals who benefit from AAC, their families, and clinical teams.\n\nKEY FEATURES:\n\n• Full keyboard with adaptive 3-tier word prediction\n• 6 phrase categories organized around real routines (help, quick talk, food ordering, places, people, school)\n• 9 emotional tones for text-to-speech (friendly, cheerful, calm, serious, excited, hopeful, empathetic, sad, urgent)\n• AI Assistant powered by Gemini 3.1 — helps compose messages, suggests phrases, practices conversations\n• Multi-step ordering flows (Chipotle, restaurant sequences)\n• Math keyboard for academic work\n• Contact integration — find and message people on Synalux\n• 12 languages including Arabic RTL\n• Works 100% offline — core communication never depends on internet\n• Apple Watch / Wear OS companion — quick phrase buttons on your wrist\n\nACCESSIBILITY:\n\n• 64dp minimum touch targets (exceeds WCAG 48dp standard)\n• 24pt minimum font for message bar\n• High-contrast mode\n• Single-tap interactions only — no drag-and-drop\n• Speech rate default 0.5 (slow), adjustable 0.1–1.0\n• RTL layout for Arabic\n\nSUBSCRIPTION TIERS:\n\n• Free: System TTS, 1 language, basic predictions\n• Standard ($19/mo): Azure Neural TTS, 5 tones, 3 languages, AI suggestions\n• Advanced ($49/mo): All 9 tones, 12 languages, unlimited custom phrases\n• Enterprise ($99/mo): Custom voice cloning, HIPAA cloud backup, team features\n\nAll paid plans include a 14-day free trial.\n\nPrism AAC is part of the Synalux Health platform — secure clinical intelligence for pediatric and ABA practices.\n\nPrivacy: Core communication works 100% offline. Cloud features (AI, backup, contacts) require sign-in. No data is sold or shared. HIPAA-compliant on Enterprise tier."
+  },
+  "keywords": [
+    "AAC",
+    "augmentative communication",
+    "alternative communication",
+    "text to speech",
+    "TTS",
+    "speech assistant",
+    "communication aid",
+    "disability",
+    "accessibility",
+    "autism",
+    "ABA",
+    "nonverbal",
+    "word prediction",
+    "phrase board",
+    "communication device",
+    "assistive technology",
+    "special needs",
+    "speech therapy",
+    "SLP"
+  ],
+  "privacy_url": "https://synalux.ai/docs/disclaimer",
+  "support_url": "https://synalux.ai/prism-aac/docs",
+  "marketing_url": "https://synalux.ai/prism-aac",
+  "what_is_new": "Initial release: keyboard-first AAC with adaptive prediction, 9 emotional TTS tones, AI assistant (Gemini 3.1), 12 languages, contact messaging, and Apple Watch / Wear OS companion app."
+}

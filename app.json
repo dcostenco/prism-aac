@@ -3,11 +3,13 @@
     "name": "Prism AAC",
     "slug": "prism-aac",
     "version": "1.0.0",
+    "runtimeVersion": "1.0.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "scheme": "prism-aac",
+    "owner": "synalux",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -16,16 +18,43 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ai.synalux.prism-aac",
-      "requireFullScreen": false
+      "requireFullScreen": false,
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Prism AAC uses the microphone for voice input so you can speak instead of typing.",
+        "NSSpeechRecognitionUsageDescription": "Prism AAC uses speech recognition to convert your voice into text.",
+        "NSContactsUsageDescription": "Prism AAC accesses contacts to find people registered on Synalux for direct messaging.",
+        "UIBackgroundModes": ["audio"],
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "associatedDomains": ["applinks:synalux.ai"]
     },
     "android": {
       "package": "ai.synalux.prismaac",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "RECORD_AUDIO",
+        "READ_CONTACTS",
+        "INTERNET",
+        "VIBRATE"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "synalux.ai", "pathPrefix": "/prism-aac" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -34,6 +63,11 @@
     "plugins": [
       "expo-router",
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "prism-aac"
+      }
+    }
   }
 }
