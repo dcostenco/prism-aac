@@ -1,0 +1,48 @@
+// Math symbols and vocabulary for the math keyboard
+
+export interface MathItem {
+  id: string;
+  symbol: string;
+  label: string;
+  ttsText: string;
+  category: 'basic' | 'advanced';
+  sortOrder: number;
+}
+
+export const MATH_ITEMS: MathItem[] = [
+  // Basic operations
+  { id: 'math-plus', symbol: '+', label: 'Plus', ttsText: 'plus', category: 'basic', sortOrder: 0 },
+  { id: 'math-minus', symbol: '−', label: 'Minus', ttsText: 'minus', category: 'basic', sortOrder: 1 },
+  { id: 'math-times', symbol: '×', label: 'Times', ttsText: 'times', category: 'basic', sortOrder: 2 },
+  { id: 'math-divide', symbol: '÷', label: 'Divide', ttsText: 'divided by', category: 'basic', sortOrder: 3 },
+  { id: 'math-equals', symbol: '=', label: 'Equals', ttsText: 'equals', category: 'basic', sortOrder: 4 },
+  { id: 'math-not-equal', symbol: '≠', label: 'Not equal', ttsText: 'not equal to', category: 'basic', sortOrder: 5 },
+  { id: 'math-less', symbol: '<', label: 'Less than', ttsText: 'less than', category: 'basic', sortOrder: 6 },
+  { id: 'math-greater', symbol: '>', label: 'Greater than', ttsText: 'greater than', category: 'basic', sortOrder: 7 },
+  { id: 'math-dot', symbol: '·', label: 'Dot', ttsText: 'point', category: 'basic', sortOrder: 8 },
+  { id: 'math-percent', symbol: '%', label: 'Percent', ttsText: 'percent', category: 'basic', sortOrder: 9 },
+
+  // Numbers 0-9
+  { id: 'math-0', symbol: '0', label: '0', ttsText: 'zero', category: 'basic', sortOrder: 10 },
+  { id: 'math-1', symbol: '1', label: '1', ttsText: 'one', category: 'basic', sortOrder: 11 },
+  { id: 'math-2', symbol: '2', label: '2', ttsText: 'two', category: 'basic', sortOrder: 12 },
+  { id: 'math-3', symbol: '3', label: '3', ttsText: 'three', category: 'basic', sortOrder: 13 },
+  { id: 'math-4', symbol: '4', label: '4', ttsText: 'four', category: 'basic', sortOrder: 14 },
+  { id: 'math-5', symbol: '5', label: '5', ttsText: 'five', category: 'basic', sortOrder: 15 },
+  { id: 'math-6', symbol: '6', label: '6', ttsText: 'six', category: 'basic', sortOrder: 16 },
+  { id: 'math-7', symbol: '7', label: '7', ttsText: 'seven', category: 'basic', sortOrder: 17 },
+  { id: 'math-8', symbol: '8', label: '8', ttsText: 'eight', category: 'basic', sortOrder: 18 },
+  { id: 'math-9', symbol: '9', label: '9', ttsText: 'nine', category: 'basic', sortOrder: 19 },
+
+  // Advanced vocabulary
+  { id: 'math-fraction', symbol: '⁄', label: 'Fraction', ttsText: 'fraction', category: 'advanced', sortOrder: 20 },
+  { id: 'math-variable', symbol: 'x', label: 'Variable', ttsText: 'variable', category: 'advanced', sortOrder: 21 },
+  { id: 'math-equation', symbol: '≡', label: 'Equation', ttsText: 'equation', category: 'advanced', sortOrder: 22 },
+  { id: 'math-graph', symbol: '📈', label: 'Graph', ttsText: 'graph', category: 'advanced', sortOrder: 23 },
+  { id: 'math-pi', symbol: 'π', label: 'Pi', ttsText: 'pi', category: 'advanced', sortOrder: 24 },
+  { id: 'math-sqrt', symbol: '√', label: 'Square root', ttsText: 'square root', category: 'advanced', sortOrder: 25 },
+  { id: 'math-power', symbol: '^', label: 'Power', ttsText: 'to the power of', category: 'advanced', sortOrder: 26 },
+  { id: 'math-paren-open', symbol: '(', label: 'Open paren', ttsText: 'open parenthesis', category: 'advanced', sortOrder: 27 },
+  { id: 'math-paren-close', symbol: ')', label: 'Close paren', ttsText: 'close parenthesis', category: 'advanced', sortOrder: 28 },
+  { id: 'math-infinity', symbol: '∞', label: 'Infinity', ttsText: 'infinity', category: 'advanced', sortOrder: 29 },
+];
