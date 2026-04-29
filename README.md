@@ -1,0 +1,441 @@
+# Prism AAC
+
+**Augmentative and Alternative Communication — built for real life.**
+
+Prism AAC is a cross-platform communication app that combines keyboard-first typing with category-based phrase navigation, adaptive word prediction, and high-quality text-to-speech with emotional tones. Designed for individuals who benefit from AAC, their families, and support teams.
+
+[![Platform: iPad](https://img.shields.io/badge/iPad-black?logo=apple&logoColor=white)](#ipad)
+[![Platform: Android](https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=white)](#android)
+[![Platform: Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)](#windows--macos--linux)
+[![Platform: macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)](#windows--macos--linux)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red)](#license)
+
+---
+
+## What Makes Prism AAC Different
+
+Most AAC apps force a choice: picture boards **or** typing. Prism AAC keeps both available without switching screens. The keyboard is always one tap away, predictions learn what you actually say, and category pages are built around real situations — not generic vocabulary lists.
+
+### For the person communicating
+
+- **Type freely** with a full keyboard that's always accessible
+- **Tap phrases** from categories organized around real routines (ordering food, asking for help, going places)
+- **Speak with feeling** — choose how your words sound with emotional tones (friendly, serious, excited, calm)
+- **Math support** — dedicated math symbols keyboard for academic work
+- Words you use often **rise to the top** of predictions automatically
+
+### For families and support teams
+
+- **Clean, uncluttered layout** — no visual overload
+- **Customizable categories** — add phrases and categories that match real life
+- **Multi-step ordering flows** — guide through restaurant ordering sequences step by step
+- **12 languages** — full interface translation including Arabic RTL
+- **Works offline** — core communication never depends on internet
+
+---
+
+## Screenshots
+
+### Home Screen — Keyboard with Predictions
+
+```
+┌─────────────────────────────────────────────┐
+│  [😊 Tone] [📂 Categories] [🔢 Math]  [⚙️] │
+├─────────────────────────────────────────────┤
+│  Hello, I would like to order      [▶] [⌫] │
+├─────────────────────────────────────────────┤
+│  [ a ]  [ the ]  [ please ]  [ to ]  [ my ]│
+├─────────────────────────────────────────────┤
+│                                             │
+│              System Keyboard                │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+### Categories
+
+```
+┌──────────────┐  ┌──────────────┐
+│     🆘       │  │     💬       │
+│ Help / Needs │  │  Quick Talk  │
+├──────────────┤  ├──────────────┤
+│     📍       │  │     🍽️       │
+│Places / Plans│  │Food / Ordering│
+├──────────────┤  ├──────────────┤
+│     👥       │  │     📚       │
+│People / Social│  │School / Work │
+└──────────────┘  └──────────────┘
+```
+
+### Ordering Flow (Chipotle Example)
+
+```
+Step: Choose your base        ● ○ ○ ○ ○
+
+┌──────────┐  ┌──────────┐  ┌──────────┐
+│  Burrito │  │   Bowl   │  │  Tacos   │
+└──────────┘  └──────────┘  └──────────┘
+┌──────────┐  ┌──────────┐
+│Quesadilla│  │  Salad   │
+└──────────┘  └──────────┘
+
+                        [ ← Back ]  [ Next → ]
+```
+
+### Tone Selector
+
+```
+┌─────────────────────────┐
+│     Select Tone         │
+│                         │
+│  😊 Friendly  😄 Cheerful│
+│  😌 Calm      😐 Serious │
+│  🤩 Excited   🙏 Hopeful │
+│  🤗 Empathetic 😢 Sad    │
+│  😤 Urgent              │
+└─────────────────────────┘
+```
+
+> **Note:** Screenshots show wireframe layouts. Visual screenshots will be added after the first UI polish pass.
+
+---
+
+## Download & Install
+
+### iPad
+
+Prism AAC runs natively on iPad (iPadOS 16+). Optimized for all iPad sizes including iPad mini, iPad Air, and iPad Pro.
+
+**Install via TestFlight (Beta):**
+```
+Coming soon — TestFlight link will be published here
+```
+
+**Build from source:**
+```bash
+# Prerequisites: Xcode 15+, CocoaPods
+sudo gem install cocoapods
+
+git clone https://github.com/dcostenco/prism-aac.git
+cd prism-aac
+npm install
+npx expo run:ios
+```
+
+### Android
+
+Runs on Android 8+ tablets and phones. Optimized for tablet-sized screens.
+
+**Install APK:**
+```
+Coming soon — APK will be available on GitHub Releases
+```
+
+**Build from source (cloud):**
+```bash
+git clone https://github.com/dcostenco/prism-aac.git
+cd prism-aac
+npm install
+npx expo install eas-cli
+npx eas build --platform android --profile preview
+```
+
+### Windows / macOS / Linux
+
+Desktop builds run as a Progressive Web App (PWA) or standalone Electron wrapper.
+
+**Run as PWA:**
+```bash
+git clone https://github.com/dcostenco/prism-aac.git
+cd prism-aac
+npm install
+npx expo start --web
+# Open http://localhost:8081 in browser
+# Chrome: Menu → "Install Prism AAC" to install as desktop app
+```
+
+**Desktop packages:**
+
+| Platform | Format | Status |
+|----------|--------|--------|
+| Windows  | `.exe` (Electron) | Planned |
+| macOS    | `.dmg` (Electron) | Planned |
+| Linux    | `.AppImage` | Planned |
+
+> Desktop packages will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases) once the Electron wrapper is finalized.
+
+---
+
+## Features
+
+### Keyboard & Prediction
+
+| Feature | Description |
+|---------|-------------|
+| **System keyboard** | Full native keyboard always accessible from home screen |
+| **Adaptive prediction** | 5 word predictions above the keyboard, learns from usage |
+| **3-tier scoring** | Bigram context (50%) + global frequency (30%) + recency (20%) |
+| **Smart delete** | Tap = remove last word, hold = clear all |
+| **Default predictions** | "I", "We", "Can", "Help", "All done" until model learns |
+| **Automatic decay** | Old patterns fade over 7 days so predictions stay current |
+
+### Categories & Phrases
+
+| Category | Default Phrases |
+|----------|----------------|
+| **Help / Needs** | All done, Take a break, I need help, I am hungry, I am thirsty, Bathroom, Yes, No |
+| **Quick Talk** | Hello, Goodbye, Thank you, Please, Excuse me, I don't understand, Wait, Come here, How are you?, Sorry |
+| **Places / Plans** | Mall, Walking, Lake, Grocery store, Pool, Library, Park, Car, Home, School, Restaurant |
+| **Food / Ordering** | Water, Juice, Pizza, Sandwich, Chicken, Fries + multi-step ordering flows |
+| **People / Social** | Mom, Dad, Teacher, Friend, Family, Doctor, Brother, Sister |
+| **School / Work** | Class, Homework, Computer, Book, Pencil, I have a question, I'm finished |
+
+### Ordering Flows
+
+Pre-built multi-step sequences that guide through real ordering situations:
+
+- **Chipotle** — Opener → Base → Protein → Toppings → Finish (5 steps, 27 options)
+- **General Restaurant** — Start → Order → Modify → Finish (4 steps, 12 options)
+- Custom sequences can be added (Standard tier+)
+
+### Math Keyboard
+
+| Basic | Advanced (Standard+) |
+|-------|---------------------|
+| + − × ÷ = ≠ < > · % | Fraction, Variable, Equation, Graph |
+| 0 1 2 3 4 5 6 7 8 9 | π √ ^ ( ) ∞ |
+
+### Voice & Speech
+
+| Feature | Free | Standard+ |
+|---------|------|-----------|
+| **Engine** | System TTS (offline) | Azure Neural TTS |
+| **Quality** | Device voices | Neural HD voices |
+| **Tones** | — | Friendly, Cheerful, Calm, Serious, Excited, Hopeful, Empathetic, Sad, Urgent |
+| **Controls** | Rate, Volume | Rate, Pitch, Volume, SSML prosody |
+| **Offline** | Yes | Falls back to system TTS |
+
+#### Supported Azure Neural Voices
+
+| Language | Voice |
+|----------|-------|
+| English | en-US-JennyMultilingualNeural |
+| Spanish | es-ES-ElviraNeural |
+| French | fr-FR-DeniseNeural |
+| Portuguese | pt-BR-FranciscaNeural |
+| Romanian | ro-RO-AlinaNeural |
+| Ukrainian | uk-UA-PolinaNeural |
+| Russian | ru-RU-SvetlanaNeural |
+| German | de-DE-KatjaNeural |
+| Japanese | ja-JP-NanamiNeural |
+| Korean | ko-KR-SunHiNeural |
+| Chinese | zh-CN-XiaoxiaoNeural |
+| Arabic | ar-SA-ZariyahNeural |
+
+### Accessibility
+
+Prism AAC is an accessibility tool — accessibility is the product, not an afterthought.
+
+- **64dp minimum touch targets** (exceeds 48dp WCAG standard)
+- **24pt minimum font** for message bar
+- **Haptic feedback** on every tap (independently toggleable)
+- **Audio feedback** on interactions (independently toggleable)
+- **High-contrast mode** — gold on black, enlarged text
+- **No drag-and-drop** — all interactions are single-tap
+- **200ms debounce** prevents double-activation
+- **RTL layout** for Arabic
+- **Speech rate default 0.5** (slow) — adjustable from 0.1 to 1.0
+
+---
+
+## Languages
+
+Full UI translation for 12 languages:
+
+| Language | Code | RTL |
+|----------|------|-----|
+| English | `en` | No |
+| Español (Spanish) | `es` | No |
+| Français (French) | `fr` | No |
+| Português (Portuguese) | `pt` | No |
+| Română (Romanian) | `ro` | No |
+| Українська (Ukrainian) | `uk` | No |
+| Русский (Russian) | `ru` | No |
+| Deutsch (German) | `de` | No |
+| 日本語 (Japanese) | `ja` | No |
+| 한국어 (Korean) | `ko` | No |
+| 中文 (Chinese) | `zh` | No |
+| العربية (Arabic) | `ar` | Yes |
+
+---
+
+## Subscription Tiers
+
+| Feature | Free | Standard | Advanced | Enterprise |
+|---------|------|----------|----------|------------|
+| Voice quality | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
+| Emotional tones | — | 5 tones | All 9 tones | All + custom |
+| Custom categories | — | 20 | Unlimited | Unlimited |
+| Custom phrases | 50 | 500 | Unlimited | Unlimited |
+| Languages | 1 | 3 | All 12 | All 12 + custom |
+| Ordering sequences | 2 | 10 | Unlimited | Unlimited |
+| Math keyboard | Basic | Full | Full + custom | Full + custom |
+| Cloud backup | — | Yes | Yes | Yes + HIPAA |
+| Prediction learning | Frequency only | Full 3-tier | Full + cross-device | Full + team |
+| Offline mode | Yes | Yes | Yes | Yes |
+
+API endpoint: `https://synalux.ai/prism-aac`
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | React Native + Expo SDK 54 |
+| Language | TypeScript (strict) |
+| Navigation | expo-router (file-based) |
+| State | Zustand |
+| Database | expo-sqlite (offline-first) |
+| TTS (offline) | expo-speech |
+| TTS (premium) | Azure Cognitive Services Neural TTS |
+| i18n | i18next + react-i18next |
+| Haptics | expo-haptics |
+| Audio | expo-av |
+
+### Project Structure
+
+```
+prism-aac/
+├── app/                    # Screens (expo-router)
+│   ├── _layout.tsx         # Root: persistent MessageBar + PredictionBar + Toolbar
+│   ├── index.tsx           # Home: keyboard input
+│   ├── categories/         # Category grid + detail
+│   ├── ordering/           # Multi-step ordering flows
+│   ├── math.tsx            # Math symbols keyboard
+│   └── settings.tsx        # Voice, language, accessibility, tier
+├── components/
+│   ├── core/               # MessageBar, PredictionBar, Toolbar, PhraseCard, CategoryCard
+│   ├── math/               # MathKeyboard
+│   └── ordering/           # OrderingStep
+├── constants/              # Default categories, phrases, ordering sequences, math, tones
+├── db/                     # SQLite schema, seed data, repository (CRUD)
+├── engine/                 # Adaptive prediction engine (3-tier scoring)
+├── i18n/                   # i18next config + 12 locale files
+├── services/
+│   ├── speech/             # System TTS, Azure Neural TTS, unified service
+│   ├── subscription.ts     # Tier management
+│   └── cloudSync.ts        # Cloud backup via synalux.ai/prism-aac
+├── store/                  # Zustand stores (message, settings, subscription)
+└── types/                  # TypeScript definitions
+```
+
+### Database Schema
+
+7 tables: `categories`, `phrases`, `ordering_sequences`, `ordering_steps`, `ordering_options`, `word_frequency`, `bigrams`, `app_settings`
+
+All data stored locally in SQLite. Cloud backup available on Standard+ tiers.
+
+---
+
+## Development
+
+### Prerequisites
+
+- Node.js 18+
+- Xcode 15+ (iPad builds)
+- CocoaPods (`sudo gem install cocoapods`)
+
+### Setup
+
+```bash
+git clone https://github.com/dcostenco/prism-aac.git
+cd prism-aac
+npm install
+```
+
+### Run
+
+```bash
+# iOS Simulator (iPad)
+npx expo start --ios
+
+# Android (requires EAS or local SDK)
+npx expo start --android
+
+# Web (desktop)
+npx expo start --web
+
+# Direct device build (iPad)
+npx expo run:ios --device
+```
+
+### Type Check
+
+```bash
+npx tsc --noEmit   # Should return 0 errors
+```
+
+### Build for Distribution
+
+```bash
+# iOS (App Store / TestFlight)
+npx eas build --platform ios --profile production
+
+# Android (APK / Play Store)
+npx eas build --platform android --profile production
+
+# Web (PWA)
+npx expo export --platform web
+```
+
+---
+
+## Configuration
+
+### Azure TTS (Standard+ tier)
+
+To enable premium neural voices with emotional tones, set your Azure Speech API credentials in the app settings or via the database:
+
+```
+azure_tts_key = <your-azure-speech-api-key>
+azure_tts_region = eastus
+```
+
+These are stored locally in the SQLite `app_settings` table and never transmitted except to Azure's TTS endpoint.
+
+### Cloud Sync
+
+Cloud backup and sync uses the Synalux API:
+
+```
+Endpoint: https://synalux.ai/prism-aac/api/v1
+Auth: Bearer token (from subscription)
+```
+
+---
+
+## Roadmap
+
+- [ ] TestFlight beta for iPad
+- [ ] Android APK on GitHub Releases
+- [ ] Electron wrapper for Windows/macOS/Linux desktop packages
+- [ ] Custom phrase editor with image picker
+- [ ] Voice cloning support (Enterprise tier)
+- [ ] Cross-device prediction sync (Advanced+ tier)
+- [ ] Caregiver/SLP dashboard for remote configuration
+- [ ] Data export (CSV/PDF) for clinical reporting
+- [ ] Additional ordering sequences (McDonald's, Starbucks, Subway)
+- [ ] Symbol library integration (OpenSymbols / ARASAAC)
+
+---
+
+## License
+
+Proprietary. Copyright 2026 Synalux AI. All rights reserved.
+
+---
+
+<p align="center">
+  Built with care for people who communicate differently.
+</p>
