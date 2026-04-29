@@ -115,6 +115,36 @@ export const DEFAULT_SETTINGS: AppSettings = {
   tier: 'free',
 };
 
+export type AIProvider = 'gemini' | 'prism-coder' | 'none';
+
+export interface AIProviderConfig {
+  provider: AIProvider;
+  model: string;
+  endpoint: string;
+  local: boolean;
+}
+
+export const AI_PROVIDERS: Record<AIProvider, AIProviderConfig> = {
+  'gemini': {
+    provider: 'gemini',
+    model: 'gemini-3.1-pro',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta',
+    local: false,
+  },
+  'prism-coder': {
+    provider: 'prism-coder',
+    model: 'prism-coder:7b',
+    endpoint: 'http://localhost:11434/api',
+    local: true,
+  },
+  'none': {
+    provider: 'none',
+    model: '',
+    endpoint: '',
+    local: true,
+  },
+};
+
 export interface TierLimits {
   maxCustomCategories: number;
   maxCustomPhrases: number;
@@ -125,6 +155,8 @@ export interface TierLimits {
   hasCloudBackup: boolean;
   hasAzureVoice: boolean;
   hasMathFull: boolean;
+  hasAI: boolean;
+  aiProvider: AIProvider;
 }
 
 export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
@@ -138,6 +170,8 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     hasCloudBackup: false,
     hasAzureVoice: false,
     hasMathFull: false,
+    hasAI: false,
+    aiProvider: 'prism-coder',
   },
   standard: {
     maxCustomCategories: 20,
@@ -149,6 +183,8 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     hasCloudBackup: true,
     hasAzureVoice: true,
     hasMathFull: true,
+    hasAI: true,
+    aiProvider: 'gemini',
   },
   advanced: {
     maxCustomCategories: Infinity,
@@ -160,6 +196,8 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     hasCloudBackup: true,
     hasAzureVoice: true,
     hasMathFull: true,
+    hasAI: true,
+    aiProvider: 'gemini',
   },
   enterprise: {
     maxCustomCategories: Infinity,
@@ -171,6 +209,8 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
     hasCloudBackup: true,
     hasAzureVoice: true,
     hasMathFull: true,
+    hasAI: true,
+    aiProvider: 'gemini',
   },
 };
 

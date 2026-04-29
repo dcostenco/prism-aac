@@ -262,6 +262,8 @@ Full UI translation for 12 languages:
 
 | Feature | Free | Standard | Advanced | Enterprise |
 |---------|------|----------|----------|------------|
+| **AI provider** | prism-coder:7b (local) | **Gemini 3.1 Pro** | **Gemini 3.1 Pro** | **Gemini 3.1 Pro** |
+| **AI suggestions** | — | Context-aware phrases | Context-aware + cross-device | Context-aware + team |
 | Voice quality | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
 | Emotional tones | — | 5 tones | All 9 tones | All + custom |
 | Custom categories | — | 20 | Unlimited | Unlimited |
@@ -271,7 +273,7 @@ Full UI translation for 12 languages:
 | Math keyboard | Basic | Full | Full + custom | Full + custom |
 | Cloud backup | — | Yes | Yes | Yes + HIPAA |
 | Prediction learning | Frequency only | Full 3-tier | Full + cross-device | Full + team |
-| Offline mode | Yes | Yes | Yes | Yes |
+| Offline mode | Yes (prism-coder) | Yes (falls back to local) | Yes (falls back to local) | Yes (falls back to local) |
 
 API endpoint: `https://synalux.ai/prism-aac`
 
@@ -286,6 +288,8 @@ API endpoint: `https://synalux.ai/prism-aac`
 | Navigation | expo-router (file-based) |
 | State | Zustand |
 | Database | expo-sqlite (offline-first) |
+| AI (cloud) | Gemini 3.1 Pro (paid tiers) |
+| AI (local) | prism-coder:7b via Ollama (offline/free) |
 | TTS (offline) | expo-speech |
 | TTS (premium) | Azure Cognitive Services Neural TTS |
 | i18n | i18next + react-i18next |
@@ -381,6 +385,23 @@ npx expo export --platform web
 ---
 
 ## Configuration
+
+### AI Provider
+
+Paid tiers use **Gemini 3.1 Pro** for context-aware phrase suggestions. Free tier and offline mode use **prism-coder:7b** via Ollama (100% local).
+
+| Tier | Provider | Offline Fallback |
+|------|----------|-----------------|
+| Free | prism-coder:7b (local) | Always local |
+| Standard+ | Gemini 3.1 Pro | prism-coder:7b |
+
+```
+# Set Gemini API key (Standard+ tiers)
+gemini_api_key = <your-google-api-key>
+
+# Local mode uses Ollama automatically
+# Install: ollama pull prism-coder:7b
+```
 
 ### Azure TTS (Standard+ tier)
 
