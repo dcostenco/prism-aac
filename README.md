@@ -4,7 +4,7 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 
 **Part of the Synalux platform** — [synalux.ai](https://synalux.ai)
 
-**Supported languages:** English (active) | Spanish, French, Portuguese, Romanian, Ukrainian, Russian, German, Japanese, Korean, Chinese, Arabic (planned — language switcher in progress)
+**Supported languages (12):** English, Spanish, Français, Português, Română, Українська, Русский, Deutsch, 日本語, 한국어, 中文, العربية. Switch from Settings → Language. Arabic switches the layout to RTL.
 
 ---
 
@@ -13,8 +13,9 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 ### Home — Keyboard with predictions
 ![Home screen](docs/screenshots/home.png)
 
-### Categories + keyboard simultaneously
+### Categories — modal overlay above the keyboard
 ![Categories open](docs/screenshots/categories-open.png)
+> Categories, Notes, and AI Chat now open as **modal overlays** above the keyboard rather than side panels. The shared message bar persists; close the modal to keep typing. *(Screenshot pending — captures the prior side-panel layout.)*
 
 ### Food ordering with restaurant flows
 ![Food ordering](docs/screenshots/food-ordering.png)
@@ -64,12 +65,12 @@ The app supports multiple verbal operant types per BACB Task List 5th Edition (B
 |---------|-----------------|
 | **Mand** (request) | Help/Needs phrases, Food ordering flows |
 | **Tact** (label) | Category phrase cards, Math symbols |
-| **Intraverbal** (conversation) | Quick Talk phrases, AI Chat (Phase 2) |
+| **Intraverbal** (conversation) | Quick Talk phrases, AI Chat |
 | **Echoic** (imitation) | Auto-speak mode — child hears each word spoken |
 
 ### Default Vocabulary
 
-Based on Banajee, DiCarlo, & Stricklin (2003) core vocabulary research:
+Based on Banajee, DiCarlo, & Stricklin (2003) core vocabulary research — **58 default phrases** across 6 categories:
 
 - **Help / Needs** (8 phrases): All done, Take a break, I need help, I am hungry, I am thirsty, Bathroom, Yes, No
 - **Quick Talk** (12 phrases): Hello, Goodbye, Thank you, Please, Excuse me, and more
@@ -100,7 +101,7 @@ All AI features require a **Synalux subscription**. Core AAC (keyboard, categori
 | Feature | Free | Standard | Advanced | Enterprise |
 |---------|------|----------|----------|------------|
 | Core AAC keyboard + categories | Yes | Yes | Yes | Yes |
-| 52 default phrases | Yes | Yes | Yes | Yes |
+| 58 default phrases | Yes | Yes | Yes | Yes |
 | Word prediction (5 slots) | Yes | Yes | Yes | Yes |
 | Custom phrases | 50 max | 500 | Unlimited | Unlimited |
 | Custom categories | — | 20 | Unlimited | Unlimited |
@@ -120,6 +121,23 @@ All AI features require a **Synalux subscription**. Core AAC (keyboard, categori
 
 ---
 
+## Layout & Theme
+
+### Modal-only navigation
+The keyboard is the only persistent surface. **Categories**, **Math**, **Notes**, **AI Chat**, **Settings**, and **History** all open as full-viewport modal overlays (`role="dialog"` + `aria-modal="true"`) anchored above the keyboard with a translucent backdrop. This guarantees the keyboard layout never shifts under the user — motor plans stay LAMP-stable (Light & Drager 2007). On mobile, modals slide up from the bottom (`items-end`); on tablet/desktop they center.
+
+To return to the keyboard: tap the ✕ close button or tap the backdrop. The shared message bar carries any in-progress text into and out of every modal.
+
+### Theme
+Three themes selectable from **Settings → Theme**:
+- **Light** (default): off-white surfaces (#f6f7fb), dark text — meets WCAG AA contrast
+- **Dark**: deep indigo (#12121e), light text
+- **High Contrast**: pure black + gold (#FFD700) accents; focus rings expand to 3 px
+
+Themes apply via CSS custom properties on the root container — no per-component logic needed.
+
+---
+
 ## Technical Architecture
 
 ### Stack
@@ -128,7 +146,9 @@ All AI features require a **Synalux subscription**. Core AAC (keyboard, categori
 - **State:** zustand 5 with localStorage persistence
 - **Speech:** Web Speech API (TTS)
 - **Sync:** Supabase (same project as Synalux portal) with realtime subscriptions
-- **Tests:** Vitest — 147 tests across 9 files
+- **Layout:** Modal-overlay UX — Categories, Notes, and AI Chat render as full-screen modals above the keyboard so the keyboard layout never shifts
+- **Theme:** Light (default) / Dark, plus High Contrast — driven by CSS variables; persisted in `settingsStore`
+- **Tests:** Vitest — 162 tests across 10 files
 
 ### Key Design Decisions (with evidence)
 
@@ -148,16 +168,17 @@ All AI features require a **Synalux subscription**. Core AAC (keyboard, categori
 
 ```
 prism-aac/
-  app/               Next.js App Router (single page)
-  components/        React components (15 files)
-  constants/         Default data — categories, phrases, math, keyboard layouts
-  engine/            Prediction engine, caregiver actions, color coding
-  services/          AI routing, speech, haptic feedback, Supabase sync
-  store/             zustand stores (7 files) with persistence
-  tests/             Vitest test suite (9 files, 147 tests)
+  app/               Next.js App Router (single page) + globals.css theme tokens
+  components/        React components (13 files)
+  constants/         Default data — categories, phrases, math, keyboard layouts, ordering sequences
+  engine/            Prediction engine, caregiver actions, color coding, i18n loader
+  i18n/              12 locale JSONs (en, es, fr, pt, ro, uk, ru, de, ja, ko, zh, ar)
+  services/          AI routing, speech (Web Speech + Azure Neural TTS), haptic feedback, Supabase sync
+  store/             zustand stores (6 files) with persistence
+  tests/             Vitest test suite (10 files, 162 tests)
   supabase/          Database migrations
   types/             TypeScript interfaces
-  RESEARCH.md        Full evidence base with 19 citations
+  RESEARCH.md        Full evidence base with 20 citations
   README.md          This file — clinical + technical documentation
 ```
 
@@ -165,8 +186,8 @@ prism-aac/
 
 ```bash
 npm install
-npm run dev       # http://localhost:3333
-npm run test      # 102+ tests
+npm run dev       # http://localhost:3000
+npm run test      # 162 tests across 10 files
 npm run build     # production build
 ```
 
@@ -184,7 +205,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<from Vercel environment>
 ## Evidence Base
 
 See [RESEARCH.md](RESEARCH.md) for the complete scientific foundation including:
-- 19 peer-reviewed citations (2003–2025)
+- 20 peer-reviewed citations (2003–2025)
 - BACB Ethics Code alignment
 - ASHA Practice Portal references
 - WCAG 2.2 accessibility standards

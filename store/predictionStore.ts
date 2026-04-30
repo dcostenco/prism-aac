@@ -37,7 +37,7 @@ export const usePredictionStore = create<PredictionState>()(
 
       learnWord: (word, previousWord) => {
         const state = get();
-        let wf = recordWord(state.wordFreq, word);
+        const wf = recordWord(state.wordFreq, word);
         let bg = state.bigrams;
         if (previousWord) {
           bg = recordBigram(bg, previousWord, word);

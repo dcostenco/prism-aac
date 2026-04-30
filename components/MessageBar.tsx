@@ -6,7 +6,7 @@ import { speak } from '@/services/speechService';
 import { tapFeedback, deleteFeedback } from '@/services/feedback';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
-import { TONE_OPTIONS, ToneStyle } from '@/services/azureTTS';
+import { TONE_OPTIONS } from '@/services/azureTTS';
 
 export default function MessageBar() {
   const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak } = useMessageStore();
@@ -14,7 +14,7 @@ export default function MessageBar() {
   const { t, ttsCode } = useT();
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showTones, setShowTones] = useState(false);
-  const isPaid = !!( typeof window !== 'undefined' && localStorage.getItem('prism-aac-auth-token'));
+  const isPaid = !!(typeof window !== 'undefined' && localStorage.getItem('prism-aac-auth-token'));
 
   const handleSpeak = useCallback(() => {
     tapFeedback();
@@ -44,16 +44,16 @@ export default function MessageBar() {
     }
   }, [deleteLastWord]);
 
-  const currentTone = TONE_OPTIONS.find(t => t.id === activeTone);
+  const currentTone = TONE_OPTIONS.find(opt => opt.id === activeTone);
 
   return (
-    <div className="flex items-center gap-2 mx-3 my-1.5 bg-[#1e1e2e] rounded-2xl px-4 py-3 min-h-[68px] shrink-0 relative">
+    <div className="flex items-center gap-2 mx-3 my-1.5 surface-bar rounded-2xl px-4 py-3 min-h-[68px] shrink-0 relative border border-theme">
       <button
         onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
         aria-label={autoSpeak ? t('auto_speak_on') : t('auto_speak_off')}
         aria-pressed={autoSpeak}
-        className={`aac-btn w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${
-          autoSpeak ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#888]'
+        className={`aac-btn w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 border border-theme ${
+          autoSpeak ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-muted'
         }`}
       >
         <span className="text-lg">{autoSpeak ? '🔊' : '🔈'}</span>
@@ -65,18 +65,18 @@ export default function MessageBar() {
         <button
           onClick={() => { tapFeedback(); setShowTones(!showTones); }}
           aria-label={`Tone: ${currentTone?.label}`}
-          className="aac-btn w-14 h-14 rounded-xl bg-[#2a2a3e] flex flex-col items-center justify-center shrink-0"
+          className="aac-btn w-14 h-14 rounded-xl surface-key text-primary flex flex-col items-center justify-center shrink-0 border border-theme"
         >
           <span className="text-lg">{currentTone?.icon ?? '😊'}</span>
-          <span className="text-[9px] mt-0.5 text-[#888]">{t('tone')}</span>
+          <span className="text-[9px] mt-0.5 text-muted">{t('tone')}</span>
         </button>
       )}
 
-      <div className="flex-1 text-2xl min-h-[48px] flex items-center overflow-x-auto break-words" role="status" aria-live="polite" aria-label="Message text">
-        {text ? <ColoredText text={text} /> : <span className="text-[#555]">{t('type_here')}</span>}
+      <div className="flex-1 text-2xl min-h-[48px] flex items-center overflow-x-auto break-words text-primary" role="status" aria-live="polite" aria-label="Message text">
+        {text ? <ColoredText text={text} /> : <span className="text-dim">{t('type_here')}</span>}
       </div>
 
-      <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-14 h-14 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center shrink-0">↩</button>
+      <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-14 h-14 rounded-xl surface-key text-muted text-lg flex items-center justify-center shrink-0 border border-theme">↩</button>
 
       <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-16 h-16 rounded-xl bg-[#4CAF50] text-white text-2xl flex items-center justify-center shrink-0">▶</button>
 
@@ -87,12 +87,14 @@ export default function MessageBar() {
 
       {/* Tone picker popup */}
       {showTones && (
-        <div className="absolute left-16 bottom-full mb-2 bg-[#1e1e2e] border border-[#2a2a3e] rounded-2xl p-2 grid grid-cols-3 gap-1.5 z-50 shadow-xl">
+        <div className="absolute left-16 bottom-full mb-2 surface-bar border border-theme rounded-2xl p-2 grid grid-cols-3 gap-1.5 z-50 shadow-xl">
           {TONE_OPTIONS.map(tone => (
             <button
               key={tone.id}
               onClick={() => { tapFeedback(); setTone(tone.id); setShowTones(false); }}
-              className={`aac-btn rounded-xl px-3 py-2 flex flex-col items-center ${activeTone === tone.id ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#e0e0e0]'}`}
+              className={`aac-btn rounded-xl px-3 py-2 flex flex-col items-center border border-theme ${
+                activeTone === tone.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+              }`}
             >
               <span className="text-xl">{tone.icon}</span>
               <span className="text-[10px] mt-0.5">{tone.label}</span>

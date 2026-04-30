@@ -56,18 +56,21 @@ export default function PredictionBar() {
   };
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2 shrink-0" style={{ height: 'calc(100svh / 6 - 8px)', minHeight: '60px', maxHeight: '96px' }}>
-      {displayed.map((word, i) => (
-        <button
-          key={`slot-${i}`}
-          onClick={() => handleTap(word)}
-          aria-label={`Predict: ${word}`}
-          className="aac-btn flex-1 h-full max-w-[200px] bg-[#2a2a3e] rounded-2xl flex items-center justify-center text-lg font-semibold select-none truncate px-3"
-          style={{ borderLeft: `4px solid ${CATEGORY_COLORS[classifyWord(word)]}`, color: CATEGORY_COLORS[classifyWord(word)] }}
-        >
-          {word}
-        </button>
-      ))}
+    <div className="flex items-stretch gap-3 px-3 py-2 shrink-0 min-h-[88px] md:min-h-[112px]">
+      {displayed.map((word, i) => {
+        const color = CATEGORY_COLORS[classifyWord(word)];
+        return (
+          <button
+            key={`slot-${i}`}
+            onClick={() => handleTap(word)}
+            aria-label={`Predict: ${word}`}
+            className="aac-btn flex-1 surface-key rounded-2xl flex items-center justify-center text-xl md:text-2xl font-semibold select-none truncate px-3 border-l-[6px] border border-theme"
+            style={{ borderLeftColor: color, color }}
+          >
+            {word}
+          </button>
+        );
+      })}
     </div>
   );
 }

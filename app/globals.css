@@ -1,28 +1,68 @@
 @import "tailwindcss";
 
 :root {
-  --aac-key-active: #5a5a8e;
-  --aac-key-glow: rgba(255,255,255,0.15);
+  /* Surface palette — light theme (default) */
+  --bg-app: #f6f7fb;
+  --bg-surface: #ffffff;
+  --bg-key: #eceef5;
+  --bg-key-hover: #e1e4ee;
+  --text-primary: #14161d;
+  --text-muted: #5b6275;
+  --text-dim: #8a90a3;
+  --border-subtle: rgba(20, 22, 29, 0.10);
+  --border-strong: rgba(20, 22, 29, 0.18);
+
+  /* Interactive accents — constant across themes */
+  --accent-speak: #4CAF50;
+  --accent-speak-hover: #388E3C;
+  --accent-delete: #F44336;
+  --accent-focus: #2563eb;
+
+  /* Press feedback */
+  --aac-key-active: #d6d9e6;
+  --aac-key-glow: rgba(20, 22, 29, 0.10);
   --aac-speak-active: #66BB6A;
-  --aac-speak-glow: rgba(76,175,80,0.4);
+  --aac-speak-glow: rgba(76, 175, 80, 0.40);
   --aac-delete-active: #EF5350;
-  --aac-delete-glow: rgba(244,67,54,0.4);
+  --aac-delete-glow: rgba(244, 67, 54, 0.40);
+}
+
+.dark {
+  --bg-app: #12121e;
+  --bg-surface: #16162a;
+  --bg-key: #2a2a3e;
+  --bg-key-hover: #353554;
+  --text-primary: #e0e0e0;
+  --text-muted: #aaaaaa;
+  --text-dim: #777;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --accent-focus: #FFD700;
+
+  --aac-key-active: #5a5a8e;
+  --aac-key-glow: rgba(255, 255, 255, 0.15);
+  --aac-speak-active: #66BB6A;
+  --aac-speak-glow: rgba(76, 175, 80, 0.4);
+  --aac-delete-active: #EF5350;
+  --aac-delete-glow: rgba(244, 67, 54, 0.4);
 }
 
 .high-contrast {
   --aac-key-active: #FFD700;
-  --aac-key-glow: rgba(255,215,0,0.3);
+  --aac-key-glow: rgba(255, 215, 0, 0.3);
   --aac-speak-active: #FFD700;
-  --aac-speak-glow: rgba(255,215,0,0.3);
+  --aac-speak-glow: rgba(255, 215, 0, 0.3);
   --aac-delete-active: #FF6B6B;
-  --aac-delete-glow: rgba(255,107,107,0.3);
+  --aac-delete-glow: rgba(255, 107, 107, 0.3);
+  --accent-focus: #FFD700;
 }
 
 html, body {
   height: 100%;
   overflow: hidden;
-  background: #12121e;
-  color: #e0e0e0;
+  background: var(--bg-app);
+  color: var(--text-primary);
   font-family: var(--font-geist), system-ui, -apple-system, sans-serif;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -38,23 +78,23 @@ html, body {
   transform: scale(0.94);
 }
 .aac-btn:focus-visible {
-  outline: 3px solid #FFD700;
+  outline: 3px solid var(--accent-focus);
   outline-offset: 2px;
 }
 
 /* Keyboard key — instant press, fade release (theme-aware) */
 .aac-key {
   transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--border-subtle);
 }
 .aac-key:active {
   transition: transform 0s, background-color 0s, box-shadow 0s;
-  transform: scale(0.92);
+  transform: scale(0.94);
   background-color: var(--aac-key-active) !important;
   box-shadow: 0 0 12px var(--aac-key-glow);
 }
 .aac-key:focus-visible {
-  outline: 3px solid #FFD700;
+  outline: 3px solid var(--accent-focus);
   outline-offset: 1px;
 }
 
@@ -77,6 +117,15 @@ html, body {
   border: 2px solid #FFD700;
 }
 
+/* Themed surface utility classes — used in components */
+.surface-app { background: var(--bg-app); }
+.surface-bar { background: var(--bg-surface); }
+.surface-key { background: var(--bg-key); }
+.text-primary { color: var(--text-primary); }
+.text-muted { color: var(--text-muted); }
+.text-dim { color: var(--text-dim); }
+.border-theme { border-color: var(--border-subtle); }
+
 @keyframes alert-flash {
   0%, 100% { opacity: 0; }
   25%, 75% { opacity: 0.4; }
@@ -89,9 +138,10 @@ html, body {
   }
 }
 
-input, select {
+input, select, textarea {
   user-select: text;
   -webkit-user-select: text;
+  color: var(--text-primary);
 }
 
 input[type="range"] {

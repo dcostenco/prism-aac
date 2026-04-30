@@ -24,9 +24,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   render() {
     if (this.state.error) {
       return (
-        <div className="h-svh flex flex-col items-center justify-center bg-[#12121e] p-8 text-center">
+        <div className="h-svh flex flex-col items-center justify-center surface-app p-8 text-center">
           <p className="text-[#F44336] text-2xl font-bold mb-4">Something went wrong</p>
-          <p className="text-[#888] mb-6">{this.state.error.message}</p>
+          <p className="text-muted mb-6">{this.state.error.message}</p>
           <button onClick={() => window.location.reload()} className="bg-[#4CAF50] text-white px-8 py-3 rounded-xl text-lg font-semibold">
             Tap to reload
           </button>
@@ -43,16 +43,21 @@ export default function PrismApp() {
 
   const seedTemplates = useCategoryStore((s) => s.seedTemplates);
   const highContrast = useSettingsStore((s) => s.highContrast);
+  const theme = useSettingsStore((s) => s.theme);
   const { rtl } = useT();
 
   useEffect(() => {
+    // SSR hydration guard: zustand persist rehydrates client-side, so we must
+    // wait until after mount before rendering store-dependent content.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHydrated(true);
     runDecay();
     seedTemplates();
   }, [runDecay, seedTemplates]);
 
-  // Physical keyboard support — captures keystrokes globally
-  // Skips interactive form elements (input, textarea, select, buttons with focus)
+  // Physical keyboard support — captures keystrokes globally.
+  // Skips interactive form elements and any open modal/dialog so that typing
+  // inside Settings/AI inputs works normally.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
@@ -70,23 +75,26 @@ export default function PrismApp() {
   }, []);
 
   if (!hydrated) {
-    return <div className="h-svh bg-[#12121e]" />;
+    return <div className="h-svh surface-app" />;
   }
+
+  const themeClass = `${theme === 'dark' ? 'dark' : ''} ${highContrast ? 'high-contrast' : ''}`.trim();
 
   return (
     <ErrorBoundary>
       <SyncProvider>
-        <div dir={rtl ? 'rtl' : 'ltr'} className={`h-svh flex flex-col overflow-hidden ${highContrast ? 'high-contrast bg-black' : 'bg-[#12121e]'}`}>
+        <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`}>
           <Toolbar />
           <MessageBar />
           <PredictionBar />
-          <div className="flex-1 flex flex-row min-h-0">
-            <CategoryPanel />
-            <CaregiverPanel />
-            <AIChatPanel />
+          <div className="flex-1 flex flex-col min-h-0">
             <Keyboard />
           </div>
           <AlertOverlay />
+          {/* Modal overlays — render above the keyboard, never steal horizontal space */}
+          <CategoryPanel />
+          <CaregiverPanel />
+          <AIChatPanel />
           <HistoryModal />
           <SettingsModal />
         </div>

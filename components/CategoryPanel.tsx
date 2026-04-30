@@ -1,4 +1,5 @@
 'use client';
+import { ReactNode } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useCategoryStore } from '@/store/categoryStore';
@@ -10,16 +11,42 @@ import { MATH_ITEMS } from '@/constants/mathSymbols';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
 
+function ModalShell({ children, onClose }: { children: ReactNode; onClose: () => void }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-40 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-6"
+      onClick={onClose}
+    >
+      <div
+        className="surface-bar w-full md:max-w-2xl rounded-t-2xl md:rounded-2xl flex flex-col max-h-[90svh] md:max-h-[80svh] border border-theme overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function CategoryPanel() {
   const { t } = useT();
-  const { sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
-    closeSidePanel, selectCategory, backToCategories, startOrdering, nextStep, prevStep, finishOrdering } = useUIStore();
+  const {
+    sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
+    closeSidePanel, selectCategory, backToCategories, startOrdering, nextStep, prevStep, finishOrdering,
+  } = useUIStore();
   const { appendText, appendWord, text, autoSpeak, soundEnabled } = useMessageStore();
   const { allCategories, getPhrasesForCategory, getSequencesForCategory } = useCategoryStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume } = useSettingsStore();
 
-  if (sidePanel === 'none') return null;
+  const isOpen =
+    sidePanel === 'categories' ||
+    sidePanel === 'category-detail' ||
+    sidePanel === 'ordering' ||
+    sidePanel === 'math';
+
+  if (!isOpen) return null;
 
   const handlePhrase = (phraseText: string) => {
     tapFeedback();
@@ -40,122 +67,136 @@ export default function CategoryPanel() {
     appendWord(symbol);
   };
 
-  const btn = 'aac-btn bg-[#2a2a3e] rounded-xl p-3 text-[#e0e0e0] font-medium select-none text-center';
+  const btn = 'aac-btn surface-key text-primary rounded-xl p-3 font-medium select-none text-center border border-theme';
 
   // MATH PANEL
   if (sidePanel === 'math') {
-    const basic = MATH_ITEMS.filter(m => m.category === 'basic');
-    const advanced = MATH_ITEMS.filter(m => m.category === 'advanced');
+    const basic = MATH_ITEMS.filter((m) => m.category === 'basic');
+    const advanced = MATH_ITEMS.filter((m) => m.category === 'advanced');
     return (
-      <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <span className="text-[#888] font-semibold text-sm">{t('math')}</span>
-          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
+      <ModalShell onClose={closeSidePanel}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-theme">
+          <span className="text-primary font-semibold text-base">{t('math')}</span>
+          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">✕</button>
         </div>
-        <div className="p-2">
-          <p className="text-[#666] text-xs font-semibold mb-1 px-1">{t('basic')}</p>
-          <div className="grid grid-cols-5 gap-1.5 mb-3">
-            {basic.map(m => (
-              <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-2`} title={m.ttsText}>
+        <div className="p-3 overflow-y-auto">
+          <p className="text-muted text-xs font-semibold mb-2 px-1 uppercase tracking-wider">{t('basic')}</p>
+          <div className="grid grid-cols-5 md:grid-cols-6 gap-2 mb-4">
+            {basic.map((m) => (
+              <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-3`} title={m.ttsText}>
                 {m.symbol}
               </button>
             ))}
           </div>
-          <p className="text-[#666] text-xs font-semibold mb-1 px-1">{t('advanced_math')}</p>
-          <div className="grid grid-cols-5 gap-1.5">
-            {advanced.map(m => (
-              <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-2`} title={m.ttsText}>
+          <p className="text-muted text-xs font-semibold mb-2 px-1 uppercase tracking-wider">{t('advanced_math')}</p>
+          <div className="grid grid-cols-5 md:grid-cols-6 gap-2">
+            {advanced.map((m) => (
+              <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-3`} title={m.ttsText}>
                 {m.symbol}
               </button>
             ))}
           </div>
         </div>
-      </div>
+      </ModalShell>
     );
   }
 
   // ORDERING FLOW
   if (sidePanel === 'ordering' && activeSequenceId) {
     const allSeqs = getSequencesForCategory(activeCategoryId ?? '');
-    const seq = allSeqs.find(s => s.id === activeSequenceId);
+    const seq = allSeqs.find((s) => s.id === activeSequenceId);
     if (!seq) return null;
     const step = seq.steps[activeSequenceStep];
     if (!step) return null;
     return (
-      <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Back to categories" className="aac-btn h-11 px-4 rounded-xl bg-[#2a2a3e] text-[#aaa] text-sm flex items-center justify-center">← {t('previous_step')}</button>
-          <span className="text-[#e0e0e0] font-semibold text-sm">{seq.name}</span>
-          <span className="text-[#666] text-xs">{activeSequenceStep + 1}/{seq.steps.length}</span>
+      <ModalShell onClose={closeSidePanel}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-theme">
+          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Back to categories" className="aac-btn h-11 px-4 rounded-xl surface-key text-muted text-sm flex items-center justify-center border border-theme">← {t('previous_step')}</button>
+          <span className="text-primary font-semibold text-base">{seq.name}</span>
+          <span className="text-muted text-xs">{activeSequenceStep + 1}/{seq.steps.length}</span>
         </div>
-        <div className="p-3 flex-1">
-          <p className="text-[#b0b0c0] font-semibold text-center mb-3">{step.label}</p>
+        <div className="p-4 flex-1 overflow-y-auto">
+          <p className="text-primary font-semibold text-center mb-3 text-lg">{step.label}</p>
           <div className="flex flex-col gap-2">
-            {step.options.map(opt => (
-              <button key={opt.id} onClick={() => handlePhrase(opt.text)} aria-label={opt.text} className={`${btn} text-left`}>{opt.text}</button>
+            {step.options.map((opt) => (
+              <button key={opt.id} onClick={() => handlePhrase(opt.text)} aria-label={opt.text} className={`${btn} text-left text-base`}>
+                {opt.text}
+              </button>
             ))}
           </div>
         </div>
-        <div className="flex gap-2 p-3 border-t border-[#2a2a3e]">
+        <div className="flex gap-2 p-3 border-t border-theme">
           <button onClick={prevStep} disabled={activeSequenceStep === 0} aria-label="Previous step" className={`${btn} flex-1 ${activeSequenceStep === 0 ? 'opacity-30' : ''}`}>← Prev</button>
-          {activeSequenceStep < seq.steps.length - 1
-            ? <button onClick={() => nextStep(seq.steps.length)} aria-label="Next step" className={`${btn} flex-1`}>Next →</button>
-            : <button onClick={finishOrdering} aria-label="Finish ordering" className={`${btn} flex-1 bg-[#4CAF50] text-white`}>Done ✓</button>
-          }
+          {activeSequenceStep < seq.steps.length - 1 ? (
+            <button onClick={() => nextStep(seq.steps.length)} aria-label="Next step" className={`${btn} flex-1`}>Next →</button>
+          ) : (
+            <button onClick={finishOrdering} aria-label="Finish ordering" className={`${btn} flex-1 bg-[#4CAF50] text-white border-transparent`}>Done ✓</button>
+          )}
         </div>
-      </div>
+      </ModalShell>
     );
   }
 
   // CATEGORY DETAIL
   if (sidePanel === 'category-detail' && activeCategoryId) {
     const categories = allCategories();
-    const cat = categories.find(c => c.id === activeCategoryId);
+    const cat = categories.find((c) => c.id === activeCategoryId);
     const phrases = getPhrasesForCategory(activeCategoryId);
     const sequences = getSequencesForCategory(activeCategoryId);
     return (
-      <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <button onClick={backToCategories} className="text-[#888] hover:text-white text-sm">← {t('previous_step')}</button>
-          <span className="text-[#e0e0e0] font-semibold text-sm">{cat?.icon} {cat?.name}</span>
-          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
+      <ModalShell onClose={closeSidePanel}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-theme">
+          <button onClick={backToCategories} className="text-muted hover:text-primary text-sm">← {t('previous_step')}</button>
+          <span className="text-primary font-semibold text-base">{cat?.icon} {cat?.name}</span>
+          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">✕</button>
         </div>
         {sequences.length > 0 && (
-          <div className="flex gap-2 p-2 border-b border-[#2a2a3e]">
-            {sequences.map(seq => (
+          <div className="flex gap-2 p-3 border-b border-theme">
+            {sequences.map((seq) => (
               <button key={seq.id} onClick={() => startOrdering(seq.id)} className={`${btn} flex-1 text-sm`}>🛒 {seq.name}</button>
             ))}
           </div>
         )}
-        <div className="grid grid-cols-2 gap-1.5 p-2 overflow-y-auto flex-1">
-          {phrases.map(p => {
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 overflow-y-auto flex-1">
+          {phrases.map((p) => {
             const firstWord = p.text.split(/\s+/)[0];
             const color = CATEGORY_COLORS[classifyWord(firstWord)];
             return (
-              <button key={p.id} onClick={() => handlePhrase(p.text)} className={`${btn} min-h-[56px]`} style={{ borderLeft: `4px solid ${color}` }}>{p.text}</button>
+              <button
+                key={p.id}
+                onClick={() => handlePhrase(p.text)}
+                className={`${btn} min-h-[64px] text-base`}
+                style={{ borderLeftColor: color, borderLeftWidth: '5px' }}
+              >
+                {p.text}
+              </button>
             );
           })}
         </div>
-      </div>
+      </ModalShell>
     );
   }
 
   // CATEGORY LIST
   const categories = allCategories();
   return (
-    <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-        <span className="text-[#888] font-semibold text-sm">{t('categories')}</span>
-        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
+    <ModalShell onClose={closeSidePanel}>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-theme">
+        <span className="text-primary font-semibold text-base">{t('categories')}</span>
+        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">✕</button>
       </div>
-      <div className="flex flex-col gap-2 p-2 flex-1">
-        {categories.map(cat => (
-          <button key={cat.id} onClick={() => selectCategory(cat.id)} className={`${btn} flex items-center gap-3 text-left min-h-[56px]`}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3 overflow-y-auto flex-1">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => selectCategory(cat.id)}
+            className={`${btn} flex items-center gap-3 text-left min-h-[64px]`}
+          >
             <span className="text-2xl">{cat.icon}</span>
             <span className="text-base">{cat.name}</span>
           </button>
         ))}
       </div>
-    </div>
+    </ModalShell>
   );
 }

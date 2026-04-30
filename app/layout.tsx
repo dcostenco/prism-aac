@@ -16,13 +16,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#12121e",
+  themeColor: "#f6f7fb",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geist.variable} h-full`}>
-      <body className="h-full bg-[#12121e] text-[#e0e0e0] overflow-hidden">{children}</body>
+      <body className="h-full overflow-hidden">{children}</body>
     </html>
   );
 }

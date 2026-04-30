@@ -44,44 +44,51 @@ export default function Keyboard() {
     if (!currentText || !soundEnabled) return;
     addToHistory(currentText);
     speak(currentText, speechRate, speechVolume, ttsCode, activeTone);
-  }, [soundEnabled, speechRate, speechVolume, addToHistory]);
+  }, [soundEnabled, speechRate, speechVolume, addToHistory, ttsCode, activeTone]);
 
   const handleBackspace = useCallback(() => {
     deleteFeedback();
     useMessageStore.getState().deleteLastChar();
   }, []);
 
-  const kc = 'aac-key bg-[#2a2a3e] text-[#e0e0e0] rounded-xl font-semibold select-none flex items-center justify-center';
+  // Big keys — full width, fill remaining viewport. Tailwind responsive scales
+  // min height so iPad gets noticeably taller keys than phone landscape.
+  const kc =
+    'aac-key surface-key text-primary rounded-xl font-semibold select-none flex items-center justify-center text-xl md:text-2xl';
 
   return (
-    <div className="flex-1 flex flex-col gap-2.5 p-2.5">
+    <div className="flex-1 flex flex-col gap-2 md:gap-2.5 p-2 md:p-3">
       {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-2.5 justify-center flex-1">
+        <div key={ri} className="flex gap-2 md:gap-2.5 justify-center flex-1">
           {ri === 2 && keyboardMode === 'letters' && (
-            <button onClick={() => { tapFeedback(); toggleCase(); }} aria-label={isUpperCase ? 'Shift on' : 'Shift off'} className={`${kc} px-4 min-w-[56px] ${isUpperCase ? 'bg-[#4CAF50] text-white' : ''}`}>
+            <button onClick={() => { tapFeedback(); toggleCase(); }} aria-label={isUpperCase ? 'Shift on' : 'Shift off'} className={`${kc} px-3 md:px-4 min-w-[56px] md:min-w-[72px] ${isUpperCase ? 'bg-[#4CAF50] text-white' : ''}`}>
               {isUpperCase ? '⇧' : '⇪'}
             </button>
           )}
           {row.map((key) => (
-            <button key={key} onClick={() => handleKey(key)} aria-label={key} className={`${kc} flex-1 text-lg min-h-[48px]`}>
+            <button key={key} onClick={() => handleKey(key)} aria-label={key} className={`${kc} flex-1`}>
               {keyboardMode === 'letters' ? (isUpperCase ? key : key.toLowerCase()) : key}
             </button>
           ))}
           {ri === 2 && keyboardMode === 'letters' && (
-            <button onClick={handleBackspace} aria-label="Backspace" className={`${kc} px-4 min-w-[56px]`}>⌫</button>
+            <button onClick={handleBackspace} aria-label="Backspace" className={`${kc} px-3 md:px-4 min-w-[56px] md:min-w-[72px]`}>⌫</button>
           )}
         </div>
       ))}
 
-      <div className="flex gap-2.5 flex-1">
-        <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} min-w-[64px] px-3 text-sm`}>
-          {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=':'ABC'}
+      <div className="flex gap-2 md:gap-2.5 flex-1">
+        <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} min-w-[64px] md:min-w-[80px] px-3 text-base md:text-lg`}>
+          {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>
-        <button onClick={handleSpace} aria-label={t('space')} className={`${kc} flex-1 text-sm`}>{t('space')}</button>
-        <button onClick={() => handleKey('.')} aria-label="." className={`${kc} min-w-[56px] text-lg`}>.</button>
-        <button onClick={() => handleKey(',')} aria-label="," className={`${kc} min-w-[56px] text-lg`}>,</button>
-        <button onClick={() => handleKey('?')} aria-label="?" className={`${kc} min-w-[56px] text-lg`}>?</button>
-        <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-5 min-w-[88px] text-sm select-none flex items-center justify-center">
+        <button onClick={handleSpace} aria-label={t('space')} className={`${kc} flex-[6] text-base md:text-lg`}>{t('space')}</button>
+        <button onClick={() => handleKey('.')} aria-label="." className={`${kc} min-w-[56px] md:min-w-[72px]`}>.</button>
+        <button onClick={() => handleKey(',')} aria-label="," className={`${kc} min-w-[56px] md:min-w-[72px]`}>,</button>
+        <button onClick={() => handleKey('?')} aria-label="?" className={`${kc} min-w-[56px] md:min-w-[72px]`}>?</button>
+        <button
+          onClick={handleSpeak}
+          aria-label={t('speak')}
+          className="aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-5 md:px-7 min-w-[112px] md:min-w-[140px] text-base md:text-lg select-none flex items-center justify-center"
+        >
           {t('speak')}
         </button>
       </div>

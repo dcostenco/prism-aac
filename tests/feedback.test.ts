@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { hapticTap, hapticHeavy, tapFeedback, keyFeedback, deleteFeedback } from '@/services/feedback';
 
 describe('Feedback — Haptic', () => {

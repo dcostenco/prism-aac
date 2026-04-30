@@ -12,6 +12,14 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated service worker (Serwist build output)
+    "public/sw.js",
+    "public/sw.js.map",
+    "public/workbox-*.js",
+    // Repomix bundle + tsbuildinfo
+    "repomix-*.txt",
+    "tsconfig.tsbuildinfo",
+    "dist/**",
   ]),
 ]);
 

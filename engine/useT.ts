@@ -8,9 +8,14 @@ export function useT() {
   const [ready, setReady] = useState(isLanguageLoaded(language));
 
   useEffect(() => {
+    // Async locale loader: must flip `ready` based on the network result; the
+    // synchronous-set fast path avoids a re-render flash when the locale is
+    // already in memory.
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (isLanguageLoaded(language)) { setReady(true); return; }
     setReady(false);
     loadLanguage(language).then(() => setReady(true));
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [language]);
 
   const tFn = useCallback((key: string) => translate(key, language), [language]);
