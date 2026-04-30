@@ -5,6 +5,7 @@ import { useUIStore } from '@/store/uiStore';
 import { tapFeedback } from '@/services/feedback';
 import { executeAllActions, ActionResult } from '@/engine/caregiverActions';
 import { NoteAction, CaregiverNote } from '@/types';
+import { parseCaregiverNote, hasApiKey } from '@/services/aiService';
 
 /**
  * Caregiver Notes Panel
@@ -35,17 +36,26 @@ export default function CaregiverPanel() {
 
   if (sidePanel !== 'caregiver') return null;
 
-  const handleSubmitNote = useCallback(() => {
+  const [parsing, setParsing] = useState(false);
+
+  const handleSubmitNote = useCallback(async () => {
     if (!input.trim()) return;
     tapFeedback();
-    // For now, save as note_only. AI parsing will be added in Phase 2.
-    const note = addNote(input.trim());
+
+    if (hasApiKey()) {
+      setParsing(true);
+      try {
+        const parsed = await parseCaregiverNote(input.trim());
+        addNote(input.trim(), parsed.actions);
+      } catch {
+        addNote(input.trim());
+      }
+      setParsing(false);
+    } else {
+      addNote(input.trim());
+    }
     setInput('');
     setResults(null);
-    // If note has actionable items (from AI in the future), they'll appear here
-    if (note.actions.some(a => a.type !== 'note_only')) {
-      // Auto-preview — don't auto-apply
-    }
   }, [input, addNote]);
 
   const handleApplyActions = useCallback((note: CaregiverNote) => {
@@ -99,8 +109,8 @@ export default function CaregiverPanel() {
             />
           </div>
 
-          <button onClick={handleSubmitNote} disabled={!input.trim()} className={`${btn} ${input.trim() ? 'bg-[#4CAF50] text-white' : 'opacity-40'}`}>
-            Save Note
+          <button onClick={handleSubmitNote} disabled={!input.trim() || parsing} className={`${btn} ${input.trim() && !parsing ? 'bg-[#4CAF50] text-white' : 'opacity-40'}`}>
+            {parsing ? 'Parsing...' : hasApiKey() ? 'Save & Parse' : 'Save Note'}
           </button>
 
           {/* Action results feedback */}
@@ -116,7 +126,9 @@ export default function CaregiverPanel() {
 
           {/* Quick instruction hint */}
           <div className="text-[#444] text-xs leading-relaxed">
-            Notes are saved as clinical documentation. In a future update, AI will parse instructions and offer to apply changes automatically.
+            {hasApiKey()
+              ? 'AI will parse your instructions and suggest actions. You confirm before anything changes.'
+              : 'Add a Gemini API key in Settings to enable AI-powered note parsing.'}
           </div>
         </div>
       ) : (

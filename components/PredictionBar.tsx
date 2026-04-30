@@ -6,6 +6,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { speakWord } from '@/services/speechService';
 import { tapFeedback } from '@/services/feedback';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
+import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 
 export default function PredictionBar() {
   const { text, appendWord, autoSpeak, soundEnabled } = useMessageStore();
@@ -58,7 +59,8 @@ export default function PredictionBar() {
           key={`slot-${i}`}
           onClick={() => handleTap(word)}
           aria-label={`Predict: ${word}`}
-          className="aac-btn flex-1 h-full max-w-[200px] bg-[#2a2a3e] rounded-2xl flex items-center justify-center text-[#e0e0e0] text-lg font-semibold select-none truncate px-3 border border-[rgba(255,255,255,0.06)]"
+          className="aac-btn flex-1 h-full max-w-[200px] bg-[#2a2a3e] rounded-2xl flex items-center justify-center text-lg font-semibold select-none truncate px-3"
+          style={{ borderLeft: `4px solid ${CATEGORY_COLORS[classifyWord(word)]}`, color: CATEGORY_COLORS[classifyWord(word)] }}
         >
           {word}
         </button>

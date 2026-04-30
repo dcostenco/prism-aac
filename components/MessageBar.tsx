@@ -4,6 +4,7 @@ import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speak } from '@/services/speechService';
 import { tapFeedback, deleteFeedback } from '@/services/feedback';
+import ColoredText from './ColoredText';
 
 export default function MessageBar() {
   const { text, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak } = useMessageStore();
@@ -57,8 +58,8 @@ export default function MessageBar() {
         <span className="text-[9px] mt-0.5">Auto</span>
       </button>
 
-      <div className="flex-1 text-2xl text-[#f0f0f0] min-h-[48px] flex items-center overflow-x-auto break-words" role="status" aria-live="polite" aria-label="Message text">
-        {text || <span className="text-[#555]">Type here...</span>}
+      <div className="flex-1 text-2xl min-h-[48px] flex items-center overflow-x-auto break-words" role="status" aria-live="polite" aria-label="Message text">
+        {text ? <ColoredText text={text} /> : <span className="text-[#555]">Type here...</span>}
       </div>
 
       <button

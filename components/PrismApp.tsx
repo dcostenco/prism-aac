@@ -6,6 +6,7 @@ import PredictionBar from './PredictionBar';
 import Keyboard from './Keyboard';
 import CategoryPanel from './CategoryPanel';
 import CaregiverPanel from './CaregiverPanel';
+import AIChatPanel from './AIChatPanel';
 import HistoryModal from './HistoryModal';
 import SettingsModal from './SettingsModal';
 import AlertOverlay from './AlertOverlay';
@@ -58,6 +59,7 @@ export default function PrismApp() {
           <div className="flex-1 flex flex-row min-h-0">
             <CategoryPanel />
             <CaregiverPanel />
+            <AIChatPanel />
             <Keyboard />
           </div>
           <AlertOverlay />

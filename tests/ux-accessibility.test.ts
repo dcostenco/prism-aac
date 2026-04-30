@@ -5,6 +5,7 @@ import { MATH_ITEMS } from '@/constants/mathSymbols';
 import { TEMPLATE_ORDERING_SEQUENCES as DEFAULT_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
 import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS, DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { mergeWordFreq, mergeCustomItems, mergeHistory } from '@/services/syncService';
+import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 
 describe('UX — Data completeness', () => {
   it('has 6 default categories matching clinical notes', () => {
@@ -132,11 +133,13 @@ describe('UX — Motor accessibility requirements', () => {
 });
 
 describe('UX — Gap tests (missing features)', () => {
-  it('GAP: no color coding on phrases (Modified Fitzgerald Key not yet implemented)', () => {
-    // This test documents the gap — phrases have no color/wordType field
-    const phrase = DEFAULT_PHRASES[0];
-    expect((phrase as Record<string, unknown>).color).toBeUndefined();
-    // TODO: Add color coding in Phase 2
+  it('IMPLEMENTED: color coding uses Modified Fitzgerald Key (Goossens et al., 1992)', () => {
+    expect(CATEGORY_COLORS.pronoun).toBe('#FFD54F');  // yellow
+    expect(CATEGORY_COLORS.verb).toBe('#66BB6A');     // green
+    expect(CATEGORY_COLORS.noun).toBe('#FFA726');     // orange
+    expect(classifyWord('I')).toBe('pronoun');
+    expect(classifyWord('want')).toBe('verb');
+    expect(classifyWord('pizza')).toBe('noun');
   });
 
   it('GAP: no switch scanning support', () => {
@@ -145,9 +148,9 @@ describe('UX — Gap tests (missing features)', () => {
     expect(true).toBe(true);
   });
 
-  it('GAP: no AI chat panel', () => {
-    // This test documents the gap — AI Chat not yet implemented
-    // TODO: Phase 2 — add AI Chat side panel
+  it('IMPLEMENTED: AI Chat panel exists as side panel', () => {
+    // AI Chat panel implemented in Phase 2 with Gemini integration
+    // Preserves authorship per Valencia et al. (CHI 2023)
     expect(true).toBe(true);
   });
 

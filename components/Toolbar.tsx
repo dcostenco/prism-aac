@@ -9,7 +9,7 @@ const SYNC_ICONS: Record<string, string> = {
 };
 
 export default function Toolbar() {
-  const { sidePanel, openCategories, openMath, openCaregiver, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
+  const { sidePanel, openCategories, openMath, openCaregiver, openAIChat, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
   const { soundEnabled, toggleSound } = useMessageStore();
   const syncStatus = useSyncStatus();
 
@@ -23,6 +23,7 @@ export default function Toolbar() {
       <div className="flex gap-2">
         <button className={`${btn} ${sidePanel === 'categories' || sidePanel === 'category-detail' || sidePanel === 'ordering' ? active : ''}`} onClick={tap(openCategories)} aria-label="Toggle categories panel">📂 Categories</button>
         <button className={`${btn} ${sidePanel === 'math' ? active : ''}`} onClick={tap(openMath)} aria-label="Toggle math panel">🔢 Math</button>
+        <button className={`${btn} ${sidePanel === 'ai-chat' ? active : ''}`} onClick={tap(openAIChat)} aria-label="Toggle AI chat">✨ AI</button>
         <button className={`${btn} ${sidePanel === 'caregiver' ? active : ''}`} onClick={tap(openCaregiver)} aria-label="Toggle caregiver notes">📋 Notes</button>
       </div>
       <div className="flex gap-2 items-center">

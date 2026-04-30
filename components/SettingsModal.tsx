@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCategoryStore } from '@/store/categoryStore';
+import { setAuthToken, hasApiKey, clearAuth } from '@/services/aiService';
 
 export default function SettingsModal() {
   const { showSettings, toggleSettings } = useUIStore();
@@ -12,6 +13,8 @@ export default function SettingsModal() {
   const [newCatIcon, setNewCatIcon] = useState('📌');
   const [newPhraseText, setNewPhraseText] = useState('');
   const [newPhraseCat, setNewPhraseCat] = useState('');
+  const [authToken, setAuthTokenInput] = useState('');
+  const [isSignedIn, setIsSignedIn] = useState(hasApiKey());
 
   if (!showSettings) return null;
 
@@ -82,6 +85,26 @@ export default function SettingsModal() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Synalux Account */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Synalux Account</h3>
+            {isSignedIn ? (
+              <div className="flex items-center justify-between">
+                <p className="text-[#4CAF50] text-sm">Signed in — AI Chat, web search, and modules active</p>
+                <button onClick={() => { clearAuth(); setIsSignedIn(false); }} className="text-[#F44336] text-xs hover:underline">Sign out</button>
+              </div>
+            ) : (
+              <div>
+                <p className="text-[#888] text-sm mb-2">Sign in with your Synalux account to enable AI Chat, web search, and all platform modules.</p>
+                <div className="flex gap-2">
+                  <input value={authToken} onChange={e => setAuthTokenInput(e.target.value)} placeholder="Synalux auth token" type="password" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555] text-sm" />
+                  <button onClick={() => { if (authToken.trim()) { setAuthToken(authToken.trim()); setIsSignedIn(true); setAuthTokenInput(''); } }} className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C] text-sm">Sign in</button>
+                </div>
+                <p className="text-[#444] text-xs mt-2">Your subscription tier determines which AI models and modules are available. Core AAC features work without an account.</p>
+              </div>
+            )}
           </div>
 
           {/* Resources */}

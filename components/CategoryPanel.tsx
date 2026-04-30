@@ -7,6 +7,7 @@ import { tapFeedback } from '@/services/feedback';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speakWord } from '@/services/speechService';
 import { MATH_ITEMS } from '@/constants/mathSymbols';
+import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 
 export default function CategoryPanel() {
   const { sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
@@ -125,9 +126,13 @@ export default function CategoryPanel() {
           </div>
         )}
         <div className="grid grid-cols-2 gap-1.5 p-2 overflow-y-auto flex-1">
-          {phrases.map(p => (
-            <button key={p.id} onClick={() => handlePhrase(p.text)} className={`${btn} min-h-[56px]`}>{p.text}</button>
-          ))}
+          {phrases.map(p => {
+            const firstWord = p.text.split(/\s+/)[0];
+            const color = CATEGORY_COLORS[classifyWord(firstWord)];
+            return (
+              <button key={p.id} onClick={() => handlePhrase(p.text)} className={`${btn} min-h-[56px]`} style={{ borderLeft: `4px solid ${color}` }}>{p.text}</button>
+            );
+          })}
         </div>
       </div>
     );
