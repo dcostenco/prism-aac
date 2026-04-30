@@ -2494,144 +2494,6 @@ export async function parseCaregiverNote(noteText: string): Promise<ParsedNoteRe
 }
 </file>
 
-<file path="services/azureTTS.ts">
-'use client';
-/**
- * Azure Neural TTS — Paid tiers only
- *
- * Routes through Synalux /api/v1/tts endpoint (same auth as chat).
- * Server holds the Azure Speech key — no client-side secrets.
- *
- * Supports 9 emotional speaking styles via SSML express-as:
- *   friendly, cheerful, calm, serious, excited, hopeful, empathetic, sad, angry
- *
- * Voice selection per language:
- *   en → en-US-JennyMultilingualNeural (supports styles)
- *   es → es-ES-ElviraNeural
- *   ja → ja-JP-NanamiNeural (supports styles)
- *   zh → zh-CN-XiaoxiaoNeural (supports styles)
- *   ...etc
- *
- * Falls back to Web Speech API if Azure is unavailable.
- */
-
-export type ToneStyle =
-  | 'friendly' | 'cheerful' | 'calm' | 'serious' | 'excited'
-  | 'hopeful' | 'empathetic' | 'sad' | 'angry';
-
-export const TONE_OPTIONS: Array<{ id: ToneStyle; label: string; icon: string }> = [
-  { id: 'friendly', label: 'Friendly', icon: '😊' },
-  { id: 'cheerful', label: 'Cheerful', icon: '😄' },
-  { id: 'calm', label: 'Calm', icon: '😌' },
-  { id: 'serious', label: 'Serious', icon: '😐' },
-  { id: 'excited', label: 'Excited', icon: '🤩' },
-  { id: 'hopeful', label: 'Hopeful', icon: '🙏' },
-  { id: 'empathetic', label: 'Empathetic', icon: '🤗' },
-  { id: 'sad', label: 'Sad', icon: '😢' },
-  { id: 'angry', label: 'Urgent', icon: '😤' },
-];
-
-const AZURE_VOICES: Record<string, string> = {
-  'en-US': 'en-US-JennyMultilingualNeural',
-  'es-ES': 'es-ES-ElviraNeural',
-  'fr-FR': 'fr-FR-DeniseNeural',
-  'pt-BR': 'pt-BR-FranciscaNeural',
-  'ro-RO': 'ro-RO-AlinaNeural',
-  'uk-UA': 'uk-UA-PolinaNeural',
-  'ru-RU': 'ru-RU-SvetlanaNeural',
-  'de-DE': 'de-DE-KatjaNeural',
-  'ja-JP': 'ja-JP-NanamiNeural',
-  'ko-KR': 'ko-KR-SunHiNeural',
-  'zh-CN': 'zh-CN-XiaoxiaoNeural',
-  'ar-SA': 'ar-SA-ZariyahNeural',
-};
-
-const STYLE_SUPPORTED = new Set([
-  'en-US-JennyMultilingualNeural',
-  'zh-CN-XiaoxiaoNeural',
-  'ja-JP-NanamiNeural',
-]);
-
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
-  const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
-  const supportsStyles = STYLE_SUPPORTED.has(voice);
-  const ratePercent = `${Math.round(rate * 100)}%`;
-  const pitchPercent = '+0%';
-  const volumeValue = Math.round(volume * 100);
-
-  let inner = escapeXml(text);
-  if (supportsStyles && tone !== 'friendly') {
-    inner = `<mstts:express-as style="${tone}">${inner}</mstts:express-as>`;
-  }
-
-  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${lang}">
-  <voice name="${voice}">
-    <prosody rate="${ratePercent}" pitch="${pitchPercent}" volume="${volumeValue}">
-      ${inner}
-    </prosody>
-  </voice>
-</speak>`;
-}
-
-const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
-
-let currentAudio: HTMLAudioElement | null = null;
-
-export function stopAzureAudio(): void {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.src = '';
-    currentAudio = null;
-  }
-}
-
-export async function speakAzure(
-  text: string,
-  lang: string,
-  tone: ToneStyle,
-  rate: number,
-  volume: number,
-  authToken: string,
-): Promise<boolean> {
-  const ssml = buildSSML(text, lang, tone, rate, volume);
-
-  try {
-    const res = await fetch(`${SYNALUX_API}/tts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({ ssml, format: 'audio-24khz-96kbitrate-mono-mp3' }),
-    });
-
-    if (!res.ok) return false;
-
-    stopAzureAudio();
-    const audioBuffer = await res.arrayBuffer();
-    const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    currentAudio = audio;
-    audio.volume = volume;
-    await audio.play();
-    audio.onended = () => { URL.revokeObjectURL(url); if (currentAudio === audio) currentAudio = null; };
-    return true;
-  } catch {
-    return false;
-  }
-}
-</file>
-
 <file path="services/supabase.ts">
 'use client';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -4533,12 +4395,14 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { speak, speakWord } from '@/services/speechService';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
+import { useT } from '@/engine/useT';
 
 export default function Keyboard() {
-  const { appendChar, addToHistory, autoSpeak, soundEnabled } = useMessageStore();
+  const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
   const { keyboardMode, isUpperCase, toggleKeyboardMode, toggleCase } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume } = useSettingsStore();
+  const { t, ttsCode } = useT();
 
   const rows = keyboardMode === 'letters' ? LETTERS_ROWS : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
 
@@ -4567,7 +4431,7 @@ export default function Keyboard() {
     const currentText = useMessageStore.getState().text.trim();
     if (!currentText || !soundEnabled) return;
     addToHistory(currentText);
-    speak(currentText, speechRate, speechVolume);
+    speak(currentText, speechRate, speechVolume, ttsCode, activeTone);
   }, [soundEnabled, speechRate, speechVolume, addToHistory]);
 
   const handleBackspace = useCallback(() => {
@@ -4601,12 +4465,12 @@ export default function Keyboard() {
         <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} min-w-[64px] px-3 text-sm`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=':'ABC'}
         </button>
-        <button onClick={handleSpace} aria-label="Space" className={`${kc} flex-1 text-sm`}>space</button>
-        <button onClick={() => handleKey('.')} aria-label="Period" className={`${kc} min-w-[56px] text-lg`}>.</button>
-        <button onClick={() => handleKey(',')} aria-label="Comma" className={`${kc} min-w-[56px] text-lg`}>,</button>
-        <button onClick={() => handleKey('?')} aria-label="Question mark" className={`${kc} min-w-[56px] text-lg`}>?</button>
-        <button onClick={handleSpeak} aria-label="Speak full message" className="aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-5 min-w-[88px] text-sm select-none flex items-center justify-center">
-          Speak
+        <button onClick={handleSpace} aria-label={t('space')} className={`${kc} flex-1 text-sm`}>{t('space')}</button>
+        <button onClick={() => handleKey('.')} aria-label="." className={`${kc} min-w-[56px] text-lg`}>.</button>
+        <button onClick={() => handleKey(',')} aria-label="," className={`${kc} min-w-[56px] text-lg`}>,</button>
+        <button onClick={() => handleKey('?')} aria-label="?" className={`${kc} min-w-[56px] text-lg`}>?</button>
+        <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-5 min-w-[88px] text-sm select-none flex items-center justify-center">
+          {t('speak')}
         </button>
       </div>
     </div>
@@ -4859,6 +4723,144 @@ export function executeAction(action: NoteAction): ActionResult {
 
 export function executeAllActions(actions: NoteAction[]): ActionResult[] {
   return actions.map(executeAction);
+}
+</file>
+
+<file path="services/azureTTS.ts">
+'use client';
+/**
+ * Azure Neural TTS — Paid tiers only
+ *
+ * Routes through Synalux /api/v1/tts endpoint (same auth as chat).
+ * Server holds the Azure Speech key — no client-side secrets.
+ *
+ * Supports 9 emotional speaking styles via SSML express-as:
+ *   friendly, cheerful, calm, serious, excited, hopeful, empathetic, sad, angry
+ *
+ * Voice selection per language:
+ *   en → en-US-JennyMultilingualNeural (supports styles)
+ *   es → es-ES-ElviraNeural
+ *   ja → ja-JP-NanamiNeural (supports styles)
+ *   zh → zh-CN-XiaoxiaoNeural (supports styles)
+ *   ...etc
+ *
+ * Falls back to Web Speech API if Azure is unavailable.
+ */
+
+export type ToneStyle =
+  | 'friendly' | 'cheerful' | 'calm' | 'serious' | 'excited'
+  | 'hopeful' | 'empathetic' | 'sad' | 'angry';
+
+export const TONE_OPTIONS: Array<{ id: ToneStyle; label: string; icon: string }> = [
+  { id: 'friendly', label: 'Friendly', icon: '😊' },
+  { id: 'cheerful', label: 'Cheerful', icon: '😄' },
+  { id: 'calm', label: 'Calm', icon: '😌' },
+  { id: 'serious', label: 'Serious', icon: '😐' },
+  { id: 'excited', label: 'Excited', icon: '🤩' },
+  { id: 'hopeful', label: 'Hopeful', icon: '🙏' },
+  { id: 'empathetic', label: 'Empathetic', icon: '🤗' },
+  { id: 'sad', label: 'Sad', icon: '😢' },
+  { id: 'angry', label: 'Urgent', icon: '😤' },
+];
+
+const AZURE_VOICES: Record<string, string> = {
+  'en-US': 'en-US-JennyMultilingualNeural',
+  'es-ES': 'es-ES-ElviraNeural',
+  'fr-FR': 'fr-FR-DeniseNeural',
+  'pt-BR': 'pt-BR-FranciscaNeural',
+  'ro-RO': 'ro-RO-AlinaNeural',
+  'uk-UA': 'uk-UA-PolinaNeural',
+  'ru-RU': 'ru-RU-SvetlanaNeural',
+  'de-DE': 'de-DE-KatjaNeural',
+  'ja-JP': 'ja-JP-NanamiNeural',
+  'ko-KR': 'ko-KR-SunHiNeural',
+  'zh-CN': 'zh-CN-XiaoxiaoNeural',
+  'ar-SA': 'ar-SA-ZariyahNeural',
+};
+
+const STYLE_SUPPORTED = new Set([
+  'en-US-JennyMultilingualNeural',
+  'zh-CN-XiaoxiaoNeural',
+  'ja-JP-NanamiNeural',
+]);
+
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
+  const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
+  const supportsStyles = STYLE_SUPPORTED.has(voice);
+  const ratePercent = `${Math.round(rate * 100)}%`;
+  const pitchPercent = '+0%';
+  const volumeValue = Math.round(volume * 100);
+
+  let inner = escapeXml(text);
+  if (supportsStyles && tone !== 'friendly') {
+    inner = `<mstts:express-as style="${tone}">${inner}</mstts:express-as>`;
+  }
+
+  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${lang}">
+  <voice name="${voice}">
+    <prosody rate="${ratePercent}" pitch="${pitchPercent}" volume="${volumeValue}">
+      ${inner}
+    </prosody>
+  </voice>
+</speak>`;
+}
+
+const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
+
+let currentAudio: HTMLAudioElement | null = null;
+
+export function stopAzureAudio(): void {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.src = '';
+    currentAudio = null;
+  }
+}
+
+export async function speakAzure(
+  text: string,
+  lang: string,
+  tone: ToneStyle,
+  rate: number,
+  volume: number,
+  authToken: string,
+): Promise<boolean> {
+  const ssml = buildSSML(text, lang, tone, rate, volume);
+
+  try {
+    const res = await fetch(`${SYNALUX_API}/tts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ ssml, format: 'audio-24khz-96kbitrate-mono-mp3' }),
+    });
+
+    if (!res.ok) return false;
+
+    stopAzureAudio();
+    const audioBuffer = await res.arrayBuffer();
+    const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    currentAudio = audio;
+    audio.volume = volume;
+    await audio.play();
+    audio.onended = () => { URL.revokeObjectURL(url); if (currentAudio === audio) currentAudio = null; };
+    return true;
+  } catch {
+    return false;
+  }
 }
 </file>
 
@@ -5548,108 +5550,6 @@ const nextConfig: NextConfig = {
 export default withSerwist(nextConfig);
 </file>
 
-<file path="app/globals.css">
-@import "tailwindcss";
-
-:root {
-  --aac-key-active: #5a5a8e;
-  --aac-key-glow: rgba(255,255,255,0.15);
-  --aac-speak-active: #66BB6A;
-  --aac-speak-glow: rgba(76,175,80,0.4);
-  --aac-delete-active: #EF5350;
-  --aac-delete-glow: rgba(244,67,54,0.4);
-}
-
-.high-contrast {
-  --aac-key-active: #FFD700;
-  --aac-key-glow: rgba(255,215,0,0.3);
-  --aac-speak-active: #FFD700;
-  --aac-speak-glow: rgba(255,215,0,0.3);
-  --aac-delete-active: #FF6B6B;
-  --aac-delete-glow: rgba(255,107,107,0.3);
-}
-
-html, body {
-  height: 100%;
-  overflow: hidden;
-  background: #12121e;
-  color: #e0e0e0;
-  font-family: var(--font-geist), system-ui, -apple-system, sans-serif;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-/* AAC button — universal interactive element */
-.aac-btn {
-  transition: transform 0.1s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-  will-change: transform;
-}
-.aac-btn:active {
-  transform: scale(0.94);
-}
-.aac-btn:focus-visible {
-  outline: 3px solid #FFD700;
-  outline-offset: 2px;
-}
-
-/* Keyboard key — instant press, fade release (theme-aware) */
-.aac-key {
-  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-  border: 1px solid rgba(255,255,255,0.06);
-}
-.aac-key:active {
-  transition: transform 0s, background-color 0s, box-shadow 0s;
-  transform: scale(0.92);
-  background-color: var(--aac-key-active) !important;
-  box-shadow: 0 0 12px var(--aac-key-glow);
-}
-.aac-key:focus-visible {
-  outline: 3px solid #FFD700;
-  outline-offset: 1px;
-}
-
-/* Speak button — brighten on press (theme-aware) */
-.aac-speak:active {
-  background-color: var(--aac-speak-active) !important;
-  transform: scale(0.94);
-  box-shadow: 0 0 16px var(--aac-speak-glow);
-}
-
-/* Delete button — brighten on press (theme-aware) */
-.aac-delete:active {
-  background-color: var(--aac-delete-active) !important;
-  transform: scale(0.94);
-  box-shadow: 0 0 16px var(--aac-delete-glow);
-}
-
-/* High contrast key borders */
-.high-contrast .aac-key {
-  border: 2px solid #FFD700;
-}
-
-@keyframes alert-flash {
-  0%, 100% { opacity: 0; }
-  25%, 75% { opacity: 0.4; }
-  50% { opacity: 0.6; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .aac-btn:active, .aac-key:active, .aac-speak:active, .aac-delete:active {
-    transform: none;
-  }
-}
-
-input, select {
-  user-select: text;
-  -webkit-user-select: text;
-}
-
-input[type="range"] {
-  cursor: pointer;
-}
-</file>
-
 <file path="app/layout.tsx">
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
@@ -5692,8 +5592,10 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { speakWord } from '@/services/speechService';
 import { MATH_ITEMS } from '@/constants/mathSymbols';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
+import { useT } from '@/engine/useT';
 
 export default function CategoryPanel() {
+  const { t } = useT();
   const { sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
     closeSidePanel, selectCategory, backToCategories, startOrdering, nextStep, prevStep, finishOrdering } = useUIStore();
   const { appendText, appendWord, text, autoSpeak, soundEnabled } = useMessageStore();
@@ -5731,11 +5633,11 @@ export default function CategoryPanel() {
     return (
       <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
         <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <span className="text-[#888] font-semibold text-sm">Math</span>
+          <span className="text-[#888] font-semibold text-sm">{t('math')}</span>
           <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
         </div>
         <div className="p-2">
-          <p className="text-[#666] text-xs font-semibold mb-1 px-1">BASIC</p>
+          <p className="text-[#666] text-xs font-semibold mb-1 px-1">{t('basic')}</p>
           <div className="grid grid-cols-5 gap-1.5 mb-3">
             {basic.map(m => (
               <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-2`} title={m.ttsText}>
@@ -5743,7 +5645,7 @@ export default function CategoryPanel() {
               </button>
             ))}
           </div>
-          <p className="text-[#666] text-xs font-semibold mb-1 px-1">ADVANCED</p>
+          <p className="text-[#666] text-xs font-semibold mb-1 px-1">{t('advanced_math')}</p>
           <div className="grid grid-cols-5 gap-1.5">
             {advanced.map(m => (
               <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-2`} title={m.ttsText}>
@@ -5766,7 +5668,7 @@ export default function CategoryPanel() {
     return (
       <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
         <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Back to categories" className="aac-btn h-11 px-4 rounded-xl bg-[#2a2a3e] text-[#aaa] text-sm flex items-center justify-center">← Back</button>
+          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Back to categories" className="aac-btn h-11 px-4 rounded-xl bg-[#2a2a3e] text-[#aaa] text-sm flex items-center justify-center">← {t('previous_step')}</button>
           <span className="text-[#e0e0e0] font-semibold text-sm">{seq.name}</span>
           <span className="text-[#666] text-xs">{activeSequenceStep + 1}/{seq.steps.length}</span>
         </div>
@@ -5798,7 +5700,7 @@ export default function CategoryPanel() {
     return (
       <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
         <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <button onClick={backToCategories} className="text-[#888] hover:text-white text-sm">← Back</button>
+          <button onClick={backToCategories} className="text-[#888] hover:text-white text-sm">← {t('previous_step')}</button>
           <span className="text-[#e0e0e0] font-semibold text-sm">{cat?.icon} {cat?.name}</span>
           <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
         </div>
@@ -5827,7 +5729,7 @@ export default function CategoryPanel() {
   return (
     <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-        <span className="text-[#888] font-semibold text-sm">Categories</span>
+        <span className="text-[#888] font-semibold text-sm">{t('categories')}</span>
         <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
       </div>
       <div className="flex flex-col gap-2 p-2 flex-1">
@@ -6126,7 +6028,7 @@ export function decayPredictions(
  * The Azure Speech key is stored server-side (Synalux env), not in the client.
  */
 
-import { speakAzure, ToneStyle } from './azureTTS';
+import { speakAzure, stopAzureAudio, ToneStyle } from './azureTTS';
 
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -6196,6 +6098,7 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
 }
 
 export function stopSpeech(): void {
+  stopAzureAudio();
   if (isSpeechSupported()) window.speechSynthesis.cancel();
   clearResumeWorkaround();
 }
@@ -6750,6 +6653,108 @@ dist/
 }
 </file>
 
+<file path="app/globals.css">
+@import "tailwindcss";
+
+:root {
+  --aac-key-active: #5a5a8e;
+  --aac-key-glow: rgba(255,255,255,0.15);
+  --aac-speak-active: #66BB6A;
+  --aac-speak-glow: rgba(76,175,80,0.4);
+  --aac-delete-active: #EF5350;
+  --aac-delete-glow: rgba(244,67,54,0.4);
+}
+
+.high-contrast {
+  --aac-key-active: #FFD700;
+  --aac-key-glow: rgba(255,215,0,0.3);
+  --aac-speak-active: #FFD700;
+  --aac-speak-glow: rgba(255,215,0,0.3);
+  --aac-delete-active: #FF6B6B;
+  --aac-delete-glow: rgba(255,107,107,0.3);
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: #12121e;
+  color: #e0e0e0;
+  font-family: var(--font-geist), system-ui, -apple-system, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* AAC button — universal interactive element */
+.aac-btn {
+  transition: transform 0.1s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  will-change: transform;
+}
+.aac-btn:active {
+  transform: scale(0.94);
+}
+.aac-btn:focus-visible {
+  outline: 3px solid #FFD700;
+  outline-offset: 2px;
+}
+
+/* Keyboard key — instant press, fade release (theme-aware) */
+.aac-key {
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.aac-key:active {
+  transition: transform 0s, background-color 0s, box-shadow 0s;
+  transform: scale(0.92);
+  background-color: var(--aac-key-active) !important;
+  box-shadow: 0 0 12px var(--aac-key-glow);
+}
+.aac-key:focus-visible {
+  outline: 3px solid #FFD700;
+  outline-offset: 1px;
+}
+
+/* Speak button — brighten on press (theme-aware) */
+.aac-speak:active {
+  background-color: var(--aac-speak-active) !important;
+  transform: scale(0.94);
+  box-shadow: 0 0 16px var(--aac-speak-glow);
+}
+
+/* Delete button — brighten on press (theme-aware) */
+.aac-delete:active {
+  background-color: var(--aac-delete-active) !important;
+  transform: scale(0.94);
+  box-shadow: 0 0 16px var(--aac-delete-glow);
+}
+
+/* High contrast key borders */
+.high-contrast .aac-key {
+  border: 2px solid #FFD700;
+}
+
+@keyframes alert-flash {
+  0%, 100% { opacity: 0; }
+  25%, 75% { opacity: 0.4; }
+  50% { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aac-btn:active, .aac-key:active, .aac-speak:active, .aac-delete:active {
+    transform: none;
+  }
+}
+
+input, select {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+input[type="range"] {
+  cursor: pointer;
+}
+</file>
+
 <file path="components/MessageBar.tsx">
 'use client';
 import { useRef, useCallback, useState } from 'react';
@@ -6856,6 +6861,76 @@ export default function MessageBar() {
     </div>
   );
 }
+</file>
+
+<file path="components/Toolbar.tsx">
+'use client';
+import { useUIStore } from '@/store/uiStore';
+import { useMessageStore } from '@/store/messageStore';
+import { useSyncStatus } from './SyncProvider';
+import { tapFeedback } from '@/services/feedback';
+import { useT } from '@/engine/useT';
+
+const SYNC_ICONS: Record<string, string> = {
+  idle: '⬡', syncing: '🔄', synced: '🟢', offline: '🔸', error: '🔴',
+};
+
+export default function Toolbar() {
+  const { sidePanel, openCategories, openMath, openCaregiver, openAIChat, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
+  const { soundEnabled, toggleSound } = useMessageStore();
+  const syncStatus = useSyncStatus();
+  const { t } = useT();
+
+  const btn = 'aac-btn h-14 px-5 rounded-xl bg-[#2a2a3e] text-[#e0e0e0] font-semibold text-sm select-none';
+  const active = 'bg-[#4CAF50] text-white';
+
+  const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
+
+  return (
+    <div className="flex items-center justify-between px-3 py-2 bg-[#16162a] shrink-0">
+      <div className="flex gap-2">
+        <button className={`${btn} ${sidePanel === 'categories' || sidePanel === 'category-detail' || sidePanel === 'ordering' ? active : ''}`} onClick={tap(openCategories)} aria-label={t('categories')}>📂 {t('categories')}</button>
+        <button className={`${btn} ${sidePanel === 'math' ? active : ''}`} onClick={tap(openMath)} aria-label={t('math')}>🔢 {t('math')}</button>
+        <button className={`${btn} ${sidePanel === 'ai-chat' ? active : ''}`} onClick={tap(openAIChat)} aria-label={t('ai_chat')}>✨ {t('ai_chat')}</button>
+        <button className={`${btn} ${sidePanel === 'caregiver' ? active : ''}`} onClick={tap(openCaregiver)} aria-label={t('notes')}>📋 {t('notes')}</button>
+      </div>
+      <div className="flex gap-2 items-center">
+        <span className="text-xs opacity-60 mr-1" title={`Sync: ${syncStatus}`}>{SYNC_ICONS[syncStatus] ?? '⬡'}</span>
+        <button className={btn} onClick={tap(triggerAlert)} aria-label={t('alert')}>🚨 {t('alert')}</button>
+        <button className={btn} onClick={tap(toggleHistory)} aria-label={t('history')}>📜 {t('history')}</button>
+        <button className={btn} onClick={tap(toggleSettings)} aria-label={t('settings')}>⚙️</button>
+        <button className={`${btn} ${soundEnabled ? active : ''}`} onClick={tap(toggleSound)} aria-label={soundEnabled ? t('sound_on') : t('sound_off')}>{soundEnabled ? '🔊' : '🔇'}</button>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="store/settingsStore.ts">
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { SupportedLanguage } from '@/engine/i18n';
+
+interface SettingsState {
+  speechRate: number;
+  speechVolume: number;
+  language: SupportedLanguage;
+  highContrast: boolean;
+  update: (partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast'>>) => void;
+}
+
+export const useSettingsStore = create<SettingsState>()(
+  persist(
+    (set) => ({
+      speechRate: 0.5,
+      speechVolume: 1.0,
+      language: 'en',
+      highContrast: false,
+      update: (partial) => set((s) => ({ ...s, ...partial })),
+    }),
+    { name: 'prism-aac-settings' },
+  ),
+);
 </file>
 
 <file path="components/PrismApp.tsx">
@@ -7110,76 +7185,6 @@ export default function SettingsModal() {
     </div>
   );
 }
-</file>
-
-<file path="components/Toolbar.tsx">
-'use client';
-import { useUIStore } from '@/store/uiStore';
-import { useMessageStore } from '@/store/messageStore';
-import { useSyncStatus } from './SyncProvider';
-import { tapFeedback } from '@/services/feedback';
-import { useT } from '@/engine/useT';
-
-const SYNC_ICONS: Record<string, string> = {
-  idle: '⬡', syncing: '🔄', synced: '🟢', offline: '🔸', error: '🔴',
-};
-
-export default function Toolbar() {
-  const { sidePanel, openCategories, openMath, openCaregiver, openAIChat, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
-  const { soundEnabled, toggleSound } = useMessageStore();
-  const syncStatus = useSyncStatus();
-  const { t } = useT();
-
-  const btn = 'aac-btn h-14 px-5 rounded-xl bg-[#2a2a3e] text-[#e0e0e0] font-semibold text-sm select-none';
-  const active = 'bg-[#4CAF50] text-white';
-
-  const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
-
-  return (
-    <div className="flex items-center justify-between px-3 py-2 bg-[#16162a] shrink-0">
-      <div className="flex gap-2">
-        <button className={`${btn} ${sidePanel === 'categories' || sidePanel === 'category-detail' || sidePanel === 'ordering' ? active : ''}`} onClick={tap(openCategories)} aria-label={t('categories')}>📂 {t('categories')}</button>
-        <button className={`${btn} ${sidePanel === 'math' ? active : ''}`} onClick={tap(openMath)} aria-label={t('math')}>🔢 {t('math')}</button>
-        <button className={`${btn} ${sidePanel === 'ai-chat' ? active : ''}`} onClick={tap(openAIChat)} aria-label={t('ai_chat')}>✨ {t('ai_chat')}</button>
-        <button className={`${btn} ${sidePanel === 'caregiver' ? active : ''}`} onClick={tap(openCaregiver)} aria-label={t('notes')}>📋 {t('notes')}</button>
-      </div>
-      <div className="flex gap-2 items-center">
-        <span className="text-xs opacity-60 mr-1" title={`Sync: ${syncStatus}`}>{SYNC_ICONS[syncStatus] ?? '⬡'}</span>
-        <button className={btn} onClick={tap(triggerAlert)} aria-label={t('alert')}>🚨 {t('alert')}</button>
-        <button className={btn} onClick={tap(toggleHistory)} aria-label={t('history')}>📜 {t('history')}</button>
-        <button className={btn} onClick={tap(toggleSettings)} aria-label={t('settings')}>⚙️</button>
-        <button className={`${btn} ${soundEnabled ? active : ''}`} onClick={tap(toggleSound)} aria-label={soundEnabled ? t('sound_on') : t('sound_off')}>{soundEnabled ? '🔊' : '🔇'}</button>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="store/settingsStore.ts">
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { SupportedLanguage } from '@/engine/i18n';
-
-interface SettingsState {
-  speechRate: number;
-  speechVolume: number;
-  language: SupportedLanguage;
-  highContrast: boolean;
-  update: (partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast'>>) => void;
-}
-
-export const useSettingsStore = create<SettingsState>()(
-  persist(
-    (set) => ({
-      speechRate: 0.5,
-      speechVolume: 1.0,
-      language: 'en',
-      highContrast: false,
-      update: (partial) => set((s) => ({ ...s, ...partial })),
-    }),
-    { name: 'prism-aac-settings' },
-  ),
-);
 </file>
 
 <file path="types/index.ts">

@@ -7,12 +7,14 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { speak, speakWord } from '@/services/speechService';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
+import { useT } from '@/engine/useT';
 
 export default function Keyboard() {
-  const { appendChar, addToHistory, autoSpeak, soundEnabled } = useMessageStore();
+  const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
   const { keyboardMode, isUpperCase, toggleKeyboardMode, toggleCase } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume } = useSettingsStore();
+  const { t, ttsCode } = useT();
 
   const rows = keyboardMode === 'letters' ? LETTERS_ROWS : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
 
@@ -41,7 +43,7 @@ export default function Keyboard() {
     const currentText = useMessageStore.getState().text.trim();
     if (!currentText || !soundEnabled) return;
     addToHistory(currentText);
-    speak(currentText, speechRate, speechVolume);
+    speak(currentText, speechRate, speechVolume, ttsCode, activeTone);
   }, [soundEnabled, speechRate, speechVolume, addToHistory]);
 
   const handleBackspace = useCallback(() => {
@@ -75,12 +77,12 @@ export default function Keyboard() {
         <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} min-w-[64px] px-3 text-sm`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=':'ABC'}
         </button>
-        <button onClick={handleSpace} aria-label="Space" className={`${kc} flex-1 text-sm`}>space</button>
-        <button onClick={() => handleKey('.')} aria-label="Period" className={`${kc} min-w-[56px] text-lg`}>.</button>
-        <button onClick={() => handleKey(',')} aria-label="Comma" className={`${kc} min-w-[56px] text-lg`}>,</button>
-        <button onClick={() => handleKey('?')} aria-label="Question mark" className={`${kc} min-w-[56px] text-lg`}>?</button>
-        <button onClick={handleSpeak} aria-label="Speak full message" className="aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-5 min-w-[88px] text-sm select-none flex items-center justify-center">
-          Speak
+        <button onClick={handleSpace} aria-label={t('space')} className={`${kc} flex-1 text-sm`}>{t('space')}</button>
+        <button onClick={() => handleKey('.')} aria-label="." className={`${kc} min-w-[56px] text-lg`}>.</button>
+        <button onClick={() => handleKey(',')} aria-label="," className={`${kc} min-w-[56px] text-lg`}>,</button>
+        <button onClick={() => handleKey('?')} aria-label="?" className={`${kc} min-w-[56px] text-lg`}>?</button>
+        <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-5 min-w-[88px] text-sm select-none flex items-center justify-center">
+          {t('speak')}
         </button>
       </div>
     </div>

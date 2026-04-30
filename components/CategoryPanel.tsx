@@ -8,8 +8,10 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { speakWord } from '@/services/speechService';
 import { MATH_ITEMS } from '@/constants/mathSymbols';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
+import { useT } from '@/engine/useT';
 
 export default function CategoryPanel() {
+  const { t } = useT();
   const { sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
     closeSidePanel, selectCategory, backToCategories, startOrdering, nextStep, prevStep, finishOrdering } = useUIStore();
   const { appendText, appendWord, text, autoSpeak, soundEnabled } = useMessageStore();
@@ -47,11 +49,11 @@ export default function CategoryPanel() {
     return (
       <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
         <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <span className="text-[#888] font-semibold text-sm">Math</span>
+          <span className="text-[#888] font-semibold text-sm">{t('math')}</span>
           <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
         </div>
         <div className="p-2">
-          <p className="text-[#666] text-xs font-semibold mb-1 px-1">BASIC</p>
+          <p className="text-[#666] text-xs font-semibold mb-1 px-1">{t('basic')}</p>
           <div className="grid grid-cols-5 gap-1.5 mb-3">
             {basic.map(m => (
               <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-2`} title={m.ttsText}>
@@ -59,7 +61,7 @@ export default function CategoryPanel() {
               </button>
             ))}
           </div>
-          <p className="text-[#666] text-xs font-semibold mb-1 px-1">ADVANCED</p>
+          <p className="text-[#666] text-xs font-semibold mb-1 px-1">{t('advanced_math')}</p>
           <div className="grid grid-cols-5 gap-1.5">
             {advanced.map(m => (
               <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-2`} title={m.ttsText}>
@@ -82,7 +84,7 @@ export default function CategoryPanel() {
     return (
       <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
         <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Back to categories" className="aac-btn h-11 px-4 rounded-xl bg-[#2a2a3e] text-[#aaa] text-sm flex items-center justify-center">← Back</button>
+          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Back to categories" className="aac-btn h-11 px-4 rounded-xl bg-[#2a2a3e] text-[#aaa] text-sm flex items-center justify-center">← {t('previous_step')}</button>
           <span className="text-[#e0e0e0] font-semibold text-sm">{seq.name}</span>
           <span className="text-[#666] text-xs">{activeSequenceStep + 1}/{seq.steps.length}</span>
         </div>
@@ -114,7 +116,7 @@ export default function CategoryPanel() {
     return (
       <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
         <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <button onClick={backToCategories} className="text-[#888] hover:text-white text-sm">← Back</button>
+          <button onClick={backToCategories} className="text-[#888] hover:text-white text-sm">← {t('previous_step')}</button>
           <span className="text-[#e0e0e0] font-semibold text-sm">{cat?.icon} {cat?.name}</span>
           <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
         </div>
@@ -143,7 +145,7 @@ export default function CategoryPanel() {
   return (
     <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-        <span className="text-[#888] font-semibold text-sm">Categories</span>
+        <span className="text-[#888] font-semibold text-sm">{t('categories')}</span>
         <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
       </div>
       <div className="flex flex-col gap-2 p-2 flex-1">

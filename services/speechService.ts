@@ -8,7 +8,7 @@
  * The Azure Speech key is stored server-side (Synalux env), not in the client.
  */
 
-import { speakAzure, ToneStyle } from './azureTTS';
+import { speakAzure, stopAzureAudio, ToneStyle } from './azureTTS';
 
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -78,6 +78,7 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
 }
 
 export function stopSpeech(): void {
+  stopAzureAudio();
   if (isSpeechSupported()) window.speechSynthesis.cancel();
   clearResumeWorkaround();
 }
