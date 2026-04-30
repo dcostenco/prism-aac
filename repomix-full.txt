@@ -102,6 +102,7 @@ scripts/
   generate_i18n.py
 services/
   aiService.ts
+  azureTTS.ts
   feedback.ts
   speechService.ts
   supabase.ts
@@ -147,6 +148,132 @@ vitest.config.ts
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="services/azureTTS.ts">
+'use client';
+/**
+ * Azure Neural TTS — Paid tiers only
+ *
+ * Routes through Synalux /api/v1/tts endpoint (same auth as chat).
+ * Server holds the Azure Speech key — no client-side secrets.
+ *
+ * Supports 9 emotional speaking styles via SSML express-as:
+ *   friendly, cheerful, calm, serious, excited, hopeful, empathetic, sad, angry
+ *
+ * Voice selection per language:
+ *   en → en-US-JennyMultilingualNeural (supports styles)
+ *   es → es-ES-ElviraNeural
+ *   ja → ja-JP-NanamiNeural (supports styles)
+ *   zh → zh-CN-XiaoxiaoNeural (supports styles)
+ *   ...etc
+ *
+ * Falls back to Web Speech API if Azure is unavailable.
+ */
+
+export type ToneStyle =
+  | 'friendly' | 'cheerful' | 'calm' | 'serious' | 'excited'
+  | 'hopeful' | 'empathetic' | 'sad' | 'angry';
+
+export const TONE_OPTIONS: Array<{ id: ToneStyle; label: string; icon: string }> = [
+  { id: 'friendly', label: 'Friendly', icon: '😊' },
+  { id: 'cheerful', label: 'Cheerful', icon: '😄' },
+  { id: 'calm', label: 'Calm', icon: '😌' },
+  { id: 'serious', label: 'Serious', icon: '😐' },
+  { id: 'excited', label: 'Excited', icon: '🤩' },
+  { id: 'hopeful', label: 'Hopeful', icon: '🙏' },
+  { id: 'empathetic', label: 'Empathetic', icon: '🤗' },
+  { id: 'sad', label: 'Sad', icon: '😢' },
+  { id: 'angry', label: 'Urgent', icon: '😤' },
+];
+
+const AZURE_VOICES: Record<string, string> = {
+  'en-US': 'en-US-JennyMultilingualNeural',
+  'es-ES': 'es-ES-ElviraNeural',
+  'fr-FR': 'fr-FR-DeniseNeural',
+  'pt-BR': 'pt-BR-FranciscaNeural',
+  'ro-RO': 'ro-RO-AlinaNeural',
+  'uk-UA': 'uk-UA-PolinaNeural',
+  'ru-RU': 'ru-RU-SvetlanaNeural',
+  'de-DE': 'de-DE-KatjaNeural',
+  'ja-JP': 'ja-JP-NanamiNeural',
+  'ko-KR': 'ko-KR-SunHiNeural',
+  'zh-CN': 'zh-CN-XiaoxiaoNeural',
+  'ar-SA': 'ar-SA-ZariyahNeural',
+};
+
+const STYLE_SUPPORTED = new Set([
+  'en-US-JennyMultilingualNeural',
+  'zh-CN-XiaoxiaoNeural',
+  'ja-JP-NanamiNeural',
+]);
+
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
+  const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
+  const supportsStyles = STYLE_SUPPORTED.has(voice);
+  const ratePercent = `${Math.round(rate * 100)}%`;
+  const pitchPercent = '+0%';
+  const volumeValue = Math.round(volume * 100);
+
+  let inner = escapeXml(text);
+  if (supportsStyles && tone !== 'friendly') {
+    inner = `<mstts:express-as style="${tone}">${inner}</mstts:express-as>`;
+  }
+
+  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${lang}">
+  <voice name="${voice}">
+    <prosody rate="${ratePercent}" pitch="${pitchPercent}" volume="${volumeValue}">
+      ${inner}
+    </prosody>
+  </voice>
+</speak>`;
+}
+
+const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
+
+export async function speakAzure(
+  text: string,
+  lang: string,
+  tone: ToneStyle,
+  rate: number,
+  volume: number,
+  authToken: string,
+): Promise<boolean> {
+  const ssml = buildSSML(text, lang, tone, rate, volume);
+
+  try {
+    const res = await fetch(`${SYNALUX_API}/tts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ ssml, format: 'audio-24khz-96kbitrate-mono-mp3' }),
+    });
+
+    if (!res.ok) return false;
+
+    const audioBuffer = await res.arrayBuffer();
+    const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.volume = volume;
+    await audio.play();
+    audio.onended = () => URL.revokeObjectURL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+</file>
 
 <file path=".github/workflows/update-i18n.yml">
 name: Update i18n translations
@@ -4042,107 +4169,6 @@ export default defineConfig({
 });
 </file>
 
-<file path="app/globals.css">
-@import "tailwindcss";
-
-:root {
-  --aac-key-active: #5a5a8e;
-  --aac-key-glow: rgba(255,255,255,0.15);
-  --aac-speak-active: #66BB6A;
-  --aac-speak-glow: rgba(76,175,80,0.4);
-  --aac-delete-active: #EF5350;
-  --aac-delete-glow: rgba(244,67,54,0.4);
-}
-
-.high-contrast {
-  --aac-key-active: #FFD700;
-  --aac-key-glow: rgba(255,215,0,0.3);
-  --aac-speak-active: #FFD700;
-  --aac-speak-glow: rgba(255,215,0,0.3);
-  --aac-delete-active: #FF6B6B;
-  --aac-delete-glow: rgba(255,107,107,0.3);
-}
-
-html, body {
-  height: 100%;
-  overflow: hidden;
-  background: #12121e;
-  color: #e0e0e0;
-  font-family: var(--font-geist), system-ui, -apple-system, sans-serif;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-/* AAC button — universal interactive element */
-.aac-btn {
-  transition: transform 0.1s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-  will-change: transform;
-}
-.aac-btn:active {
-  transform: scale(0.94);
-}
-.aac-btn:focus-visible {
-  outline: 3px solid #FFD700;
-  outline-offset: 2px;
-}
-
-/* Keyboard key — scale + brighten (theme-aware) */
-.aac-key {
-  transition: transform 0.08s ease, background-color 0.1s ease, box-shadow 0.1s ease;
-  border: 1px solid rgba(255,255,255,0.06);
-}
-.aac-key:active {
-  transform: scale(0.92);
-  background-color: var(--aac-key-active) !important;
-  box-shadow: 0 0 12px var(--aac-key-glow);
-}
-.aac-key:focus-visible {
-  outline: 3px solid #FFD700;
-  outline-offset: 1px;
-}
-
-/* Speak button — brighten on press (theme-aware) */
-.aac-speak:active {
-  background-color: var(--aac-speak-active) !important;
-  transform: scale(0.94);
-  box-shadow: 0 0 16px var(--aac-speak-glow);
-}
-
-/* Delete button — brighten on press (theme-aware) */
-.aac-delete:active {
-  background-color: var(--aac-delete-active) !important;
-  transform: scale(0.94);
-  box-shadow: 0 0 16px var(--aac-delete-glow);
-}
-
-/* High contrast key borders */
-.high-contrast .aac-key {
-  border: 2px solid #FFD700;
-}
-
-@keyframes alert-flash {
-  0%, 100% { opacity: 0; }
-  25%, 75% { opacity: 0.4; }
-  50% { opacity: 0.6; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .aac-btn:active, .aac-key:active, .aac-speak:active, .aac-delete:active {
-    transform: none;
-  }
-}
-
-input, select {
-  user-select: text;
-  -webkit-user-select: text;
-}
-
-input[type="range"] {
-  cursor: pointer;
-}
-</file>
-
 <file path="app/page.tsx">
 import PrismApp from '@/components/PrismApp';
 
@@ -4914,6 +4940,18 @@ export function deleteFeedback(): void {
 </file>
 
 <file path="services/speechService.ts">
+/**
+ * Speech Service — Unified TTS routing
+ *
+ * Free tier:  Web Speech API (browser built-in, offline-capable)
+ * Paid tiers: Azure Neural TTS with emotional tone styles → fallback to Web Speech API
+ *
+ * Azure routes through Synalux /api/v1/tts — same auth pattern as chat.
+ * The Azure Speech key is stored server-side (Synalux env), not in the client.
+ */
+
+import { speakAzure, ToneStyle } from './azureTTS';
+
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
 }
@@ -4924,7 +4962,50 @@ function clearResumeWorkaround() {
   if (resumeInterval) { clearInterval(resumeInterval); resumeInterval = null; }
 }
 
-export function speak(text: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void {
+function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('prism-aac-auth-token') || null;
+}
+
+function isPaidTier(): boolean {
+  return !!getAuthToken();
+}
+
+/**
+ * Speak text — routes to Azure (paid) or Web Speech API (free).
+ */
+export async function speak(
+  text: string,
+  rate = 0.5,
+  volume = 1.0,
+  lang = 'en-US',
+  tone: ToneStyle = 'friendly',
+): Promise<void> {
+  if (!text.trim()) return;
+
+  // Paid tier: try Azure Neural TTS with tone
+  if (isPaidTier()) {
+    const token = getAuthToken()!;
+    const success = await speakAzure(text, lang, tone, rate, volume, token);
+    if (success) return;
+    // Azure failed — fall through to Web Speech API
+  }
+
+  // Free tier / fallback: Web Speech API
+  speakLocal(text, rate, volume, lang);
+}
+
+/**
+ * Speak a single word (auto-speak mode) — always uses Web Speech API for speed.
+ */
+export function speakWord(word: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void {
+  speakLocal(word, rate, volume, lang);
+}
+
+/**
+ * Local Web Speech API — works offline, no auth needed.
+ */
+function speakLocal(text: string, rate: number, volume: number, lang: string): void {
   if (!isSpeechSupported() || !text.trim()) return;
   window.speechSynthesis.cancel();
   clearResumeWorkaround();
@@ -4938,16 +5019,6 @@ export function speak(text: string, rate = 0.5, volume = 1.0, lang = 'en-US'): v
   window.speechSynthesis.speak(u);
 }
 
-export function speakWord(word: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void {
-  if (!isSpeechSupported() || !word.trim()) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(word);
-  u.rate = 0.1 + rate * 1.8;
-  u.volume = volume;
-  u.lang = lang;
-  window.speechSynthesis.speak(u);
-}
-
 export function stopSpeech(): void {
   if (isSpeechSupported()) window.speechSynthesis.cancel();
   clearResumeWorkaround();
@@ -4958,13 +5029,16 @@ export function stopSpeech(): void {
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { HistoryEntry } from '@/types';
+import { ToneStyle } from '@/services/azureTTS';
 
 interface MessageState {
   text: string;
   prevText: string;
+  activeTone: ToneStyle;
   autoSpeak: boolean;
   soundEnabled: boolean;
   history: HistoryEntry[];
+  setTone: (tone: ToneStyle) => void;
   appendWord: (word: string) => void;
   appendText: (text: string) => void;
   appendChar: (char: string) => void;
@@ -4984,9 +5058,12 @@ export const useMessageStore = create<MessageState>()(
     (set) => ({
       text: '',
       prevText: '',
+      activeTone: 'friendly' as ToneStyle,
       autoSpeak: false,
       soundEnabled: true,
       history: [],
+
+      setTone: (tone) => set({ activeTone: tone }),
 
       appendWord: (word) =>
         set((s) => ({ prevText: s.text, text: s.text.trim() ? `${s.text.trim()} ${word}` : word })),
@@ -5626,6 +5703,107 @@ const nextConfig: NextConfig = {
 export default withSerwist(nextConfig);
 </file>
 
+<file path="app/globals.css">
+@import "tailwindcss";
+
+:root {
+  --aac-key-active: #5a5a8e;
+  --aac-key-glow: rgba(255,255,255,0.15);
+  --aac-speak-active: #66BB6A;
+  --aac-speak-glow: rgba(76,175,80,0.4);
+  --aac-delete-active: #EF5350;
+  --aac-delete-glow: rgba(244,67,54,0.4);
+}
+
+.high-contrast {
+  --aac-key-active: #FFD700;
+  --aac-key-glow: rgba(255,215,0,0.3);
+  --aac-speak-active: #FFD700;
+  --aac-speak-glow: rgba(255,215,0,0.3);
+  --aac-delete-active: #FF6B6B;
+  --aac-delete-glow: rgba(255,107,107,0.3);
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: #12121e;
+  color: #e0e0e0;
+  font-family: var(--font-geist), system-ui, -apple-system, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* AAC button — universal interactive element */
+.aac-btn {
+  transition: transform 0.1s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  will-change: transform;
+}
+.aac-btn:active {
+  transform: scale(0.94);
+}
+.aac-btn:focus-visible {
+  outline: 3px solid #FFD700;
+  outline-offset: 2px;
+}
+
+/* Keyboard key — scale + brighten (theme-aware) */
+.aac-key {
+  transition: transform 0.08s ease, background-color 0.1s ease, box-shadow 0.1s ease;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.aac-key:active {
+  transform: scale(0.92);
+  background-color: var(--aac-key-active) !important;
+  box-shadow: 0 0 12px var(--aac-key-glow);
+}
+.aac-key:focus-visible {
+  outline: 3px solid #FFD700;
+  outline-offset: 1px;
+}
+
+/* Speak button — brighten on press (theme-aware) */
+.aac-speak:active {
+  background-color: var(--aac-speak-active) !important;
+  transform: scale(0.94);
+  box-shadow: 0 0 16px var(--aac-speak-glow);
+}
+
+/* Delete button — brighten on press (theme-aware) */
+.aac-delete:active {
+  background-color: var(--aac-delete-active) !important;
+  transform: scale(0.94);
+  box-shadow: 0 0 16px var(--aac-delete-glow);
+}
+
+/* High contrast key borders */
+.high-contrast .aac-key {
+  border: 2px solid #FFD700;
+}
+
+@keyframes alert-flash {
+  0%, 100% { opacity: 0; }
+  25%, 75% { opacity: 0.4; }
+  50% { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aac-btn:active, .aac-key:active, .aac-speak:active, .aac-delete:active {
+    transform: none;
+  }
+}
+
+input, select {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+input[type="range"] {
+  cursor: pointer;
+}
+</file>
+
 <file path="app/layout.tsx">
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
@@ -5821,26 +5999,29 @@ export default function CategoryPanel() {
 
 <file path="components/MessageBar.tsx">
 'use client';
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speak } from '@/services/speechService';
 import { tapFeedback, deleteFeedback } from '@/services/feedback';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
+import { TONE_OPTIONS, ToneStyle } from '@/services/azureTTS';
 
 export default function MessageBar() {
-  const { text, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak } = useMessageStore();
+  const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak } = useMessageStore();
   const { speechRate, speechVolume } = useSettingsStore();
   const { t, ttsCode } = useT();
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showTones, setShowTones] = useState(false);
+  const isPaid = !!( typeof window !== 'undefined' && localStorage.getItem('prism-aac-auth-token'));
 
   const handleSpeak = useCallback(() => {
     tapFeedback();
     if (!text.trim() || !soundEnabled) return;
     addToHistory(text.trim());
-    speak(text.trim(), speechRate, speechVolume, ttsCode);
-  }, [text, soundEnabled, speechRate, speechVolume, ttsCode, addToHistory]);
+    speak(text.trim(), speechRate, speechVolume, ttsCode, activeTone);
+  }, [text, soundEnabled, speechRate, speechVolume, ttsCode, activeTone, addToHistory]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
@@ -5863,16 +6044,13 @@ export default function MessageBar() {
     }
   }, [deleteLastWord]);
 
-  const handleUndo = useCallback(() => {
-    tapFeedback();
-    undo();
-  }, [undo]);
+  const currentTone = TONE_OPTIONS.find(t => t.id === activeTone);
 
   return (
-    <div className="flex items-center gap-2 mx-3 my-1.5 bg-[#1e1e2e] rounded-2xl px-4 py-3 min-h-[68px] shrink-0">
+    <div className="flex items-center gap-2 mx-3 my-1.5 bg-[#1e1e2e] rounded-2xl px-4 py-3 min-h-[68px] shrink-0 relative">
       <button
         onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
-        aria-label={autoSpeak ? 'Auto-speak on, tap to turn off' : 'Auto-speak off, tap to turn on'}
+        aria-label={autoSpeak ? t('auto_speak_on') : t('auto_speak_off')}
         aria-pressed={autoSpeak}
         className={`aac-btn w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${
           autoSpeak ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#888]'
@@ -5882,36 +6060,46 @@ export default function MessageBar() {
         <span className="text-[9px] mt-0.5">Auto</span>
       </button>
 
+      {/* Tone selector — paid tiers only */}
+      {isPaid && (
+        <button
+          onClick={() => { tapFeedback(); setShowTones(!showTones); }}
+          aria-label={`Tone: ${currentTone?.label}`}
+          className="aac-btn w-14 h-14 rounded-xl bg-[#2a2a3e] flex flex-col items-center justify-center shrink-0"
+        >
+          <span className="text-lg">{currentTone?.icon ?? '😊'}</span>
+          <span className="text-[9px] mt-0.5 text-[#888]">{t('tone')}</span>
+        </button>
+      )}
+
       <div className="flex-1 text-2xl min-h-[48px] flex items-center overflow-x-auto break-words" role="status" aria-live="polite" aria-label="Message text">
         {text ? <ColoredText text={text} /> : <span className="text-[#555]">{t('type_here')}</span>}
       </div>
 
-      <button
-        onClick={handleUndo}
-        aria-label="Undo last action"
-        className="aac-btn w-14 h-14 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center shrink-0"
-      >
-        ↩
-      </button>
+      <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-14 h-14 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center shrink-0">↩</button>
+
+      <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-16 h-16 rounded-xl bg-[#4CAF50] text-white text-2xl flex items-center justify-center shrink-0">▶</button>
 
       <button
-        onClick={handleSpeak}
-        aria-label="Speak full sentence"
-        className="aac-btn aac-speak w-16 h-16 rounded-xl bg-[#4CAF50] text-white text-2xl flex items-center justify-center shrink-0"
-      >
-        ▶
-      </button>
+        onPointerDown={handleDeleteDown} onPointerUp={handleDeleteUp} onPointerLeave={cancelDelete} onPointerCancel={cancelDelete}
+        aria-label={t('delete')} className="aac-btn aac-delete w-16 h-16 rounded-xl bg-[#F44336] text-white text-2xl flex items-center justify-center shrink-0 select-none"
+      >⌫</button>
 
-      <button
-        onPointerDown={handleDeleteDown}
-        onPointerUp={handleDeleteUp}
-        onPointerLeave={cancelDelete}
-        onPointerCancel={cancelDelete}
-        aria-label="Delete last word, hold to clear all"
-        className="aac-btn aac-delete w-16 h-16 rounded-xl bg-[#F44336] text-white text-2xl flex items-center justify-center shrink-0 select-none"
-      >
-        ⌫
-      </button>
+      {/* Tone picker popup */}
+      {showTones && (
+        <div className="absolute left-16 bottom-full mb-2 bg-[#1e1e2e] border border-[#2a2a3e] rounded-2xl p-2 grid grid-cols-3 gap-1.5 z-50 shadow-xl">
+          {TONE_OPTIONS.map(tone => (
+            <button
+              key={tone.id}
+              onClick={() => { tapFeedback(); setTone(tone.id); setShowTones(false); }}
+              className={`aac-btn rounded-xl px-3 py-2 flex flex-col items-center ${activeTone === tone.id ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#e0e0e0]'}`}
+            >
+              <span className="text-xl">{tone.icon}</span>
+              <span className="text-[10px] mt-0.5">{tone.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -5988,243 +6176,6 @@ export default function PredictionBar() {
           {word}
         </button>
       ))}
-    </div>
-  );
-}
-</file>
-
-<file path="components/PrismApp.tsx">
-'use client';
-import { useEffect, useState, Component, ReactNode } from 'react';
-import Toolbar from './Toolbar';
-import MessageBar from './MessageBar';
-import PredictionBar from './PredictionBar';
-import Keyboard from './Keyboard';
-import CategoryPanel from './CategoryPanel';
-import CaregiverPanel from './CaregiverPanel';
-import AIChatPanel from './AIChatPanel';
-import HistoryModal from './HistoryModal';
-import SettingsModal from './SettingsModal';
-import AlertOverlay from './AlertOverlay';
-import SyncProvider from './SyncProvider';
-import { usePredictionStore } from '@/store/predictionStore';
-import { useCategoryStore } from '@/store/categoryStore';
-import { useSettingsStore } from '@/store/settingsStore';
-
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
-  state: { error: Error | null } = { error: null };
-  static getDerivedStateFromError(error: Error) { return { error }; }
-  render() {
-    if (this.state.error) {
-      return (
-        <div className="h-svh flex flex-col items-center justify-center bg-[#12121e] p-8 text-center">
-          <p className="text-[#F44336] text-2xl font-bold mb-4">Something went wrong</p>
-          <p className="text-[#888] mb-6">{this.state.error.message}</p>
-          <button onClick={() => window.location.reload()} className="bg-[#4CAF50] text-white px-8 py-3 rounded-xl text-lg font-semibold">
-            Tap to reload
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-export default function PrismApp() {
-  const runDecay = usePredictionStore((s) => s.runDecay);
-  const [hydrated, setHydrated] = useState(false);
-
-  const seedTemplates = useCategoryStore((s) => s.seedTemplates);
-  const highContrast = useSettingsStore((s) => s.highContrast);
-
-  useEffect(() => {
-    setHydrated(true);
-    runDecay();
-    seedTemplates();
-  }, [runDecay, seedTemplates]);
-
-  if (!hydrated) {
-    return <div className="h-svh bg-[#12121e]" />;
-  }
-
-  return (
-    <ErrorBoundary>
-      <SyncProvider>
-        <div className={`h-svh flex flex-col overflow-hidden ${highContrast ? 'high-contrast bg-black' : 'bg-[#12121e]'}`}>
-          <Toolbar />
-          <MessageBar />
-          <PredictionBar />
-          <div className="flex-1 flex flex-row min-h-0">
-            <CategoryPanel />
-            <CaregiverPanel />
-            <AIChatPanel />
-            <Keyboard />
-          </div>
-          <AlertOverlay />
-          <HistoryModal />
-          <SettingsModal />
-        </div>
-      </SyncProvider>
-    </ErrorBoundary>
-  );
-}
-</file>
-
-<file path="components/SettingsModal.tsx">
-'use client';
-import { useState } from 'react';
-import { useUIStore } from '@/store/uiStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useCategoryStore } from '@/store/categoryStore';
-import { setAuthToken, hasApiKey, clearAuth } from '@/services/aiService';
-import { LANG_META, SupportedLanguage } from '@/engine/i18n';
-import { useT } from '@/engine/useT';
-
-export default function SettingsModal() {
-  const { showSettings, toggleSettings } = useUIStore();
-  const settings = useSettingsStore();
-  const { t } = useT();
-  const { customCategories, customPhrases, addCustomCategory, removeCustomCategory, addCustomPhrase, removeCustomPhrase, allCategories } = useCategoryStore();
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatIcon, setNewCatIcon] = useState('📌');
-  const [newPhraseText, setNewPhraseText] = useState('');
-  const [newPhraseCat, setNewPhraseCat] = useState('');
-  const [authToken, setAuthTokenInput] = useState('');
-  const [isSignedIn, setIsSignedIn] = useState(hasApiKey());
-
-  if (!showSettings) return null;
-
-  const cats = allCategories();
-
-  return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={toggleSettings}>
-      <div className="bg-[#1e1e2e] rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#2a2a3e]">
-          <h2 className="text-[#e0e0e0] font-bold text-lg">{t('settings')}</h2>
-          <button onClick={toggleSettings} className="text-[#888] hover:text-white text-xl">✕</button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-5 space-y-6">
-          {/* Language */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('language')}</h3>
-            <div className="grid grid-cols-3 gap-2">
-              {LANG_META.map(lang => (
-                <button
-                  key={lang.code}
-                  onClick={() => settings.update({ language: lang.code as SupportedLanguage })}
-                  className={`aac-btn rounded-xl px-3 py-2.5 text-sm text-left ${
-                    settings.language === lang.code ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#e0e0e0]'
-                  }`}
-                >
-                  <div className="font-semibold">{lang.nativeName}</div>
-                  <div className="text-xs opacity-70">{lang.name}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Accessibility */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('accessibility')}</h3>
-            <label className="flex items-center justify-between">
-              <span className="text-[#d0d0e0]">{t('high_contrast')}</span>
-              <button
-                onClick={() => settings.update({ highContrast: !settings.highContrast })}
-                className={`w-12 h-7 rounded-full transition-colors ${settings.highContrast ? 'bg-[#FFD700]' : 'bg-[#444]'}`}
-              >
-                <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${settings.highContrast ? 'translate-x-5' : ''}`} />
-              </button>
-            </label>
-          </div>
-
-          {/* Speech */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('voice')}</h3>
-            <label className="flex items-center justify-between mb-2">
-              <span className="text-[#d0d0e0]">Speed</span>
-              <span className="text-[#888]">{settings.speechRate.toFixed(1)}</span>
-            </label>
-            <input type="range" min="0.1" max="1" step="0.1" value={settings.speechRate}
-              onChange={e => settings.update({ speechRate: parseFloat(e.target.value) })}
-              className="w-full accent-[#4CAF50]" />
-            <label className="flex items-center justify-between mb-2 mt-4">
-              <span className="text-[#d0d0e0]">Volume</span>
-              <span className="text-[#888]">{Math.round(settings.speechVolume * 100)}%</span>
-            </label>
-            <input type="range" min="0" max="1" step="0.1" value={settings.speechVolume}
-              onChange={e => settings.update({ speechVolume: parseFloat(e.target.value) })}
-              className="w-full accent-[#2196F3]" />
-          </div>
-
-          {/* Custom Categories */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Custom Categories</h3>
-            <div className="flex gap-2 mb-2">
-              <input value={newCatIcon} onChange={e => setNewCatIcon(e.target.value)} className="w-12 bg-[#2a2a3e] rounded-lg text-center text-xl p-2 text-white" maxLength={2} />
-              <input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Category name" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555]" />
-              <button onClick={() => { if (newCatName.trim()) { addCustomCategory(newCatName.trim(), newCatIcon || '📌'); setNewCatName(''); } }}
-                className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]">Add</button>
-            </div>
-            {customCategories.map(c => (
-              <div key={c.id} className="flex items-center justify-between bg-[#2a2a3e] rounded-lg px-3 py-2 mb-1">
-                <span className="text-[#e0e0e0]">{c.icon} {c.name}</span>
-                <button onClick={() => removeCustomCategory(c.id)} className="text-[#F44336] text-sm hover:underline">Remove</button>
-              </div>
-            ))}
-          </div>
-
-          {/* Custom Phrases */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Custom Phrases</h3>
-            <div className="flex gap-2 mb-2">
-              <select value={newPhraseCat} onChange={e => setNewPhraseCat(e.target.value)} className="bg-[#2a2a3e] rounded-lg px-2 py-2 text-white text-sm">
-                <option value="">Category...</option>
-                {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-              </select>
-              <input value={newPhraseText} onChange={e => setNewPhraseText(e.target.value)} placeholder="Phrase text" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555]" />
-              <button onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim()); setNewPhraseText(''); } }}
-                className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]">Add</button>
-            </div>
-            {customPhrases.map(p => {
-              const cat = cats.find(c => c.id === p.categoryId);
-              return (
-                <div key={p.id} className="flex items-center justify-between bg-[#2a2a3e] rounded-lg px-3 py-2 mb-1">
-                  <span className="text-[#e0e0e0]"><span className="text-[#888] text-xs">{cat?.icon}</span> {p.text}</span>
-                  <button onClick={() => removeCustomPhrase(p.id)} className="text-[#F44336] text-sm hover:underline">Remove</button>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Synalux Account */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Synalux Account</h3>
-            {isSignedIn ? (
-              <div className="flex items-center justify-between">
-                <p className="text-[#4CAF50] text-sm">Signed in — AI Chat, web search, and modules active</p>
-                <button onClick={() => { clearAuth(); setIsSignedIn(false); }} className="text-[#F44336] text-xs hover:underline">Sign out</button>
-              </div>
-            ) : (
-              <div>
-                <p className="text-[#888] text-sm mb-2">Sign in with your Synalux account to enable AI Chat, web search, and all platform modules.</p>
-                <div className="flex gap-2">
-                  <input value={authToken} onChange={e => setAuthTokenInput(e.target.value)} placeholder="Synalux auth token" type="password" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555] text-sm" />
-                  <button onClick={() => { if (authToken.trim()) { setAuthToken(authToken.trim()); setIsSignedIn(true); setAuthTokenInput(''); } }} className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C] text-sm">Sign in</button>
-                </div>
-                <p className="text-[#444] text-xs mt-2">Your subscription tier determines which AI models and modules are available. Core AAC features work without an account.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Resources */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">AAC Resources</h3>
-            <a href="https://www.asha.org/practice-portal/professional-issues/augmentative-and-alternative-communication/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">ASHA — AAC Practice Portal</a>
-            <a href="https://aac-rerc.psu.edu/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">AAC-RERC — Research Center</a>
-            <a href="https://praacticalaac.org/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">PrAACtical AAC — Implementation Resources</a>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -6534,33 +6485,6 @@ export const useCategoryStore = create<CategoryState>()(
         seeded: s.seeded,
       }),
     },
-  ),
-);
-</file>
-
-<file path="store/settingsStore.ts">
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { SupportedLanguage } from '@/engine/i18n';
-
-interface SettingsState {
-  speechRate: number;
-  speechVolume: number;
-  language: SupportedLanguage;
-  highContrast: boolean;
-  update: (partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast'>>) => void;
-}
-
-export const useSettingsStore = create<SettingsState>()(
-  persist(
-    (set) => ({
-      speechRate: 0.5,
-      speechVolume: 1.0,
-      language: 'en',
-      highContrast: false,
-      update: (partial) => set((s) => ({ ...s, ...partial })),
-    }),
-    { name: 'prism-aac-settings' },
   ),
 );
 </file>
@@ -6921,6 +6845,243 @@ dist/
 }
 </file>
 
+<file path="components/PrismApp.tsx">
+'use client';
+import { useEffect, useState, Component, ReactNode } from 'react';
+import Toolbar from './Toolbar';
+import MessageBar from './MessageBar';
+import PredictionBar from './PredictionBar';
+import Keyboard from './Keyboard';
+import CategoryPanel from './CategoryPanel';
+import CaregiverPanel from './CaregiverPanel';
+import AIChatPanel from './AIChatPanel';
+import HistoryModal from './HistoryModal';
+import SettingsModal from './SettingsModal';
+import AlertOverlay from './AlertOverlay';
+import SyncProvider from './SyncProvider';
+import { usePredictionStore } from '@/store/predictionStore';
+import { useCategoryStore } from '@/store/categoryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="h-svh flex flex-col items-center justify-center bg-[#12121e] p-8 text-center">
+          <p className="text-[#F44336] text-2xl font-bold mb-4">Something went wrong</p>
+          <p className="text-[#888] mb-6">{this.state.error.message}</p>
+          <button onClick={() => window.location.reload()} className="bg-[#4CAF50] text-white px-8 py-3 rounded-xl text-lg font-semibold">
+            Tap to reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function PrismApp() {
+  const runDecay = usePredictionStore((s) => s.runDecay);
+  const [hydrated, setHydrated] = useState(false);
+
+  const seedTemplates = useCategoryStore((s) => s.seedTemplates);
+  const highContrast = useSettingsStore((s) => s.highContrast);
+
+  useEffect(() => {
+    setHydrated(true);
+    runDecay();
+    seedTemplates();
+  }, [runDecay, seedTemplates]);
+
+  if (!hydrated) {
+    return <div className="h-svh bg-[#12121e]" />;
+  }
+
+  return (
+    <ErrorBoundary>
+      <SyncProvider>
+        <div className={`h-svh flex flex-col overflow-hidden ${highContrast ? 'high-contrast bg-black' : 'bg-[#12121e]'}`}>
+          <Toolbar />
+          <MessageBar />
+          <PredictionBar />
+          <div className="flex-1 flex flex-row min-h-0">
+            <CategoryPanel />
+            <CaregiverPanel />
+            <AIChatPanel />
+            <Keyboard />
+          </div>
+          <AlertOverlay />
+          <HistoryModal />
+          <SettingsModal />
+        </div>
+      </SyncProvider>
+    </ErrorBoundary>
+  );
+}
+</file>
+
+<file path="components/SettingsModal.tsx">
+'use client';
+import { useState } from 'react';
+import { useUIStore } from '@/store/uiStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useCategoryStore } from '@/store/categoryStore';
+import { setAuthToken, hasApiKey, clearAuth } from '@/services/aiService';
+import { LANG_META, SupportedLanguage } from '@/engine/i18n';
+import { useT } from '@/engine/useT';
+
+export default function SettingsModal() {
+  const { showSettings, toggleSettings } = useUIStore();
+  const settings = useSettingsStore();
+  const { t } = useT();
+  const { customCategories, customPhrases, addCustomCategory, removeCustomCategory, addCustomPhrase, removeCustomPhrase, allCategories } = useCategoryStore();
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('📌');
+  const [newPhraseText, setNewPhraseText] = useState('');
+  const [newPhraseCat, setNewPhraseCat] = useState('');
+  const [authToken, setAuthTokenInput] = useState('');
+  const [isSignedIn, setIsSignedIn] = useState(hasApiKey());
+
+  if (!showSettings) return null;
+
+  const cats = allCategories();
+
+  return (
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={toggleSettings}>
+      <div className="bg-[#1e1e2e] rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#2a2a3e]">
+          <h2 className="text-[#e0e0e0] font-bold text-lg">{t('settings')}</h2>
+          <button onClick={toggleSettings} className="text-[#888] hover:text-white text-xl">✕</button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+          {/* Language */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('language')}</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {LANG_META.map(lang => (
+                <button
+                  key={lang.code}
+                  onClick={() => settings.update({ language: lang.code as SupportedLanguage })}
+                  className={`aac-btn rounded-xl px-3 py-2.5 text-sm text-left ${
+                    settings.language === lang.code ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#e0e0e0]'
+                  }`}
+                >
+                  <div className="font-semibold">{lang.nativeName}</div>
+                  <div className="text-xs opacity-70">{lang.name}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Accessibility */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('accessibility')}</h3>
+            <label className="flex items-center justify-between">
+              <span className="text-[#d0d0e0]">{t('high_contrast')}</span>
+              <button
+                onClick={() => settings.update({ highContrast: !settings.highContrast })}
+                className={`w-12 h-7 rounded-full transition-colors ${settings.highContrast ? 'bg-[#FFD700]' : 'bg-[#444]'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${settings.highContrast ? 'translate-x-5' : ''}`} />
+              </button>
+            </label>
+          </div>
+
+          {/* Speech */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('voice')}</h3>
+            <label className="flex items-center justify-between mb-2">
+              <span className="text-[#d0d0e0]">Speed</span>
+              <span className="text-[#888]">{settings.speechRate.toFixed(1)}</span>
+            </label>
+            <input type="range" min="0.1" max="1" step="0.1" value={settings.speechRate}
+              onChange={e => settings.update({ speechRate: parseFloat(e.target.value) })}
+              className="w-full accent-[#4CAF50]" />
+            <label className="flex items-center justify-between mb-2 mt-4">
+              <span className="text-[#d0d0e0]">Volume</span>
+              <span className="text-[#888]">{Math.round(settings.speechVolume * 100)}%</span>
+            </label>
+            <input type="range" min="0" max="1" step="0.1" value={settings.speechVolume}
+              onChange={e => settings.update({ speechVolume: parseFloat(e.target.value) })}
+              className="w-full accent-[#2196F3]" />
+          </div>
+
+          {/* Custom Categories */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Custom Categories</h3>
+            <div className="flex gap-2 mb-2">
+              <input value={newCatIcon} onChange={e => setNewCatIcon(e.target.value)} className="w-12 bg-[#2a2a3e] rounded-lg text-center text-xl p-2 text-white" maxLength={2} />
+              <input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Category name" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555]" />
+              <button onClick={() => { if (newCatName.trim()) { addCustomCategory(newCatName.trim(), newCatIcon || '📌'); setNewCatName(''); } }}
+                className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]">Add</button>
+            </div>
+            {customCategories.map(c => (
+              <div key={c.id} className="flex items-center justify-between bg-[#2a2a3e] rounded-lg px-3 py-2 mb-1">
+                <span className="text-[#e0e0e0]">{c.icon} {c.name}</span>
+                <button onClick={() => removeCustomCategory(c.id)} className="text-[#F44336] text-sm hover:underline">Remove</button>
+              </div>
+            ))}
+          </div>
+
+          {/* Custom Phrases */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Custom Phrases</h3>
+            <div className="flex gap-2 mb-2">
+              <select value={newPhraseCat} onChange={e => setNewPhraseCat(e.target.value)} className="bg-[#2a2a3e] rounded-lg px-2 py-2 text-white text-sm">
+                <option value="">Category...</option>
+                {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+              </select>
+              <input value={newPhraseText} onChange={e => setNewPhraseText(e.target.value)} placeholder="Phrase text" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555]" />
+              <button onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim()); setNewPhraseText(''); } }}
+                className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]">Add</button>
+            </div>
+            {customPhrases.map(p => {
+              const cat = cats.find(c => c.id === p.categoryId);
+              return (
+                <div key={p.id} className="flex items-center justify-between bg-[#2a2a3e] rounded-lg px-3 py-2 mb-1">
+                  <span className="text-[#e0e0e0]"><span className="text-[#888] text-xs">{cat?.icon}</span> {p.text}</span>
+                  <button onClick={() => removeCustomPhrase(p.id)} className="text-[#F44336] text-sm hover:underline">Remove</button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Synalux Account */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Synalux Account</h3>
+            {isSignedIn ? (
+              <div className="flex items-center justify-between">
+                <p className="text-[#4CAF50] text-sm">Signed in — AI Chat, web search, and modules active</p>
+                <button onClick={() => { clearAuth(); setIsSignedIn(false); }} className="text-[#F44336] text-xs hover:underline">Sign out</button>
+              </div>
+            ) : (
+              <div>
+                <p className="text-[#888] text-sm mb-2">Sign in with your Synalux account to enable AI Chat, web search, and all platform modules.</p>
+                <div className="flex gap-2">
+                  <input value={authToken} onChange={e => setAuthTokenInput(e.target.value)} placeholder="Synalux auth token" type="password" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555] text-sm" />
+                  <button onClick={() => { if (authToken.trim()) { setAuthToken(authToken.trim()); setIsSignedIn(true); setAuthTokenInput(''); } }} className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C] text-sm">Sign in</button>
+                </div>
+                <p className="text-[#444] text-xs mt-2">Your subscription tier determines which AI models and modules are available. Core AAC features work without an account.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Resources */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">AAC Resources</h3>
+            <a href="https://www.asha.org/practice-portal/professional-issues/augmentative-and-alternative-communication/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">ASHA — AAC Practice Portal</a>
+            <a href="https://aac-rerc.psu.edu/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">AAC-RERC — Research Center</a>
+            <a href="https://praacticalaac.org/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">PrAACtical AAC — Implementation Resources</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="components/Toolbar.tsx">
 'use client';
 import { useUIStore } from '@/store/uiStore';
@@ -6962,6 +7123,33 @@ export default function Toolbar() {
     </div>
   );
 }
+</file>
+
+<file path="store/settingsStore.ts">
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { SupportedLanguage } from '@/engine/i18n';
+
+interface SettingsState {
+  speechRate: number;
+  speechVolume: number;
+  language: SupportedLanguage;
+  highContrast: boolean;
+  update: (partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast'>>) => void;
+}
+
+export const useSettingsStore = create<SettingsState>()(
+  persist(
+    (set) => ({
+      speechRate: 0.5,
+      speechVolume: 1.0,
+      language: 'en',
+      highContrast: false,
+      update: (partial) => set((s) => ({ ...s, ...partial })),
+    }),
+    { name: 'prism-aac-settings' },
+  ),
+);
 </file>
 
 <file path="types/index.ts">

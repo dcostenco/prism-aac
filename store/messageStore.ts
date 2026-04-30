@@ -1,13 +1,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { HistoryEntry } from '@/types';
+import { ToneStyle } from '@/services/azureTTS';
 
 interface MessageState {
   text: string;
   prevText: string;
+  activeTone: ToneStyle;
   autoSpeak: boolean;
   soundEnabled: boolean;
   history: HistoryEntry[];
+  setTone: (tone: ToneStyle) => void;
   appendWord: (word: string) => void;
   appendText: (text: string) => void;
   appendChar: (char: string) => void;
@@ -27,9 +30,12 @@ export const useMessageStore = create<MessageState>()(
     (set) => ({
       text: '',
       prevText: '',
+      activeTone: 'friendly' as ToneStyle,
       autoSpeak: false,
       soundEnabled: true,
       history: [],
+
+      setTone: (tone) => set({ activeTone: tone }),
 
       appendWord: (word) =>
         set((s) => ({ prevText: s.text, text: s.text.trim() ? `${s.text.trim()} ${word}` : word })),
