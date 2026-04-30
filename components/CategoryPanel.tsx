@@ -11,6 +11,7 @@ import { MATH_ITEMS } from '@/constants/mathSymbols';
 import { MathCategory } from '@/types';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
+import PhraseTile from './PhraseTile';
 
 /**
  * Category / Math / Ordering panel — renders inline, docked above the
@@ -175,14 +176,13 @@ export default function CategoryPanel() {
             const firstWord = p.text.split(/\s+/)[0];
             const color = CATEGORY_COLORS[classifyWord(firstWord)];
             return (
-              <button
+              <PhraseTile
                 key={p.id}
+                phrase={p.text}
                 onClick={() => handlePhrase(p.text)}
-                className={`${btn} min-h-[72px]`}
+                className={`${btn} min-h-[96px]`}
                 style={{ borderLeftColor: color, borderLeftWidth: '5px' }}
-              >
-                {p.text}
-              </button>
+              />
             );
           })}
         </div>
