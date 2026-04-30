@@ -30,6 +30,7 @@ export default function AIChatPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { text, appendText, clearAll, autoSpeak, soundEnabled } = useMessageStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
+  const profile = useAuthStore((s) => s.profile);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
@@ -37,6 +38,7 @@ export default function AIChatPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const voiceRef = useRef<VoiceSession | null>(null);
   const voiceSupported = isVoiceInputSupported();
+  const configured = !!profile;
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -139,8 +141,6 @@ export default function AIChatPanel() {
     }
     setLoading(false);
   };
-
-  const configured = !!useAuthStore((s) => s.profile);
 
   return (
     <div
