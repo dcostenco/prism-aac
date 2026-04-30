@@ -4385,99 +4385,6 @@ export default function CaregiverPanel() {
 }
 </file>
 
-<file path="components/Keyboard.tsx">
-'use client';
-import { useCallback } from 'react';
-import { useMessageStore } from '@/store/messageStore';
-import { useUIStore } from '@/store/uiStore';
-import { usePredictionStore } from '@/store/predictionStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { speak, speakWord } from '@/services/speechService';
-import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
-import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
-import { useT } from '@/engine/useT';
-
-export default function Keyboard() {
-  const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
-  const { keyboardMode, isUpperCase, toggleKeyboardMode, toggleCase } = useUIStore();
-  const { learnWord } = usePredictionStore();
-  const { speechRate, speechVolume } = useSettingsStore();
-  const { t, ttsCode } = useT();
-
-  const rows = keyboardMode === 'letters' ? LETTERS_ROWS : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
-
-  const handleKey = useCallback((key: string) => {
-    keyFeedback();
-    const char = keyboardMode === 'letters' ? (isUpperCase ? key : key.toLowerCase()) : key;
-    appendChar(char);
-    if (isUpperCase && keyboardMode === 'letters') toggleCase();
-  }, [appendChar, isUpperCase, keyboardMode, toggleCase]);
-
-  const handleSpace = useCallback(() => {
-    keyFeedback();
-    const currentText = useMessageStore.getState().text;
-    const words = currentText.trim().split(/\s+/).filter(Boolean);
-    const lastWord = words.length > 0 ? words[words.length - 1] : '';
-    if (lastWord) {
-      const prevWord = words.length > 1 ? words[words.length - 2] : undefined;
-      learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase());
-      if (autoSpeak && soundEnabled) speakWord(lastWord, speechRate, speechVolume);
-    }
-    appendChar(' ');
-  }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar]);
-
-  const handleSpeak = useCallback(() => {
-    tapFeedback();
-    const currentText = useMessageStore.getState().text.trim();
-    if (!currentText || !soundEnabled) return;
-    addToHistory(currentText);
-    speak(currentText, speechRate, speechVolume, ttsCode, activeTone);
-  }, [soundEnabled, speechRate, speechVolume, addToHistory]);
-
-  const handleBackspace = useCallback(() => {
-    deleteFeedback();
-    useMessageStore.getState().deleteLastChar();
-  }, []);
-
-  const kc = 'aac-key bg-[#2a2a3e] text-[#e0e0e0] rounded-xl font-semibold select-none flex items-center justify-center';
-
-  return (
-    <div className="flex-1 flex flex-col gap-2.5 p-2.5">
-      {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-2.5 justify-center flex-1">
-          {ri === 2 && keyboardMode === 'letters' && (
-            <button onClick={() => { tapFeedback(); toggleCase(); }} aria-label={isUpperCase ? 'Shift on' : 'Shift off'} className={`${kc} px-4 min-w-[56px] ${isUpperCase ? 'bg-[#4CAF50] text-white' : ''}`}>
-              {isUpperCase ? '⇧' : '⇪'}
-            </button>
-          )}
-          {row.map((key) => (
-            <button key={key} onClick={() => handleKey(key)} aria-label={key} className={`${kc} flex-1 text-lg min-h-[48px]`}>
-              {keyboardMode === 'letters' ? (isUpperCase ? key : key.toLowerCase()) : key}
-            </button>
-          ))}
-          {ri === 2 && keyboardMode === 'letters' && (
-            <button onClick={handleBackspace} aria-label="Backspace" className={`${kc} px-4 min-w-[56px]`}>⌫</button>
-          )}
-        </div>
-      ))}
-
-      <div className="flex gap-2.5 flex-1">
-        <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} min-w-[64px] px-3 text-sm`}>
-          {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=':'ABC'}
-        </button>
-        <button onClick={handleSpace} aria-label={t('space')} className={`${kc} flex-1 text-sm`}>{t('space')}</button>
-        <button onClick={() => handleKey('.')} aria-label="." className={`${kc} min-w-[56px] text-lg`}>.</button>
-        <button onClick={() => handleKey(',')} aria-label="," className={`${kc} min-w-[56px] text-lg`}>,</button>
-        <button onClick={() => handleKey('?')} aria-label="?" className={`${kc} min-w-[56px] text-lg`}>?</button>
-        <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-5 min-w-[88px] text-sm select-none flex items-center justify-center">
-          {t('speak')}
-        </button>
-      </div>
-    </div>
-  );
-}
-</file>
-
 <file path="constants/mathSymbols.ts">
 import { MathItem } from '@/types';
 
@@ -5581,164 +5488,93 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 </file>
 
-<file path="components/CategoryPanel.tsx">
+<file path="components/Keyboard.tsx">
 'use client';
-import { useUIStore } from '@/store/uiStore';
+import { useCallback } from 'react';
 import { useMessageStore } from '@/store/messageStore';
-import { useCategoryStore } from '@/store/categoryStore';
+import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
-import { tapFeedback } from '@/services/feedback';
 import { useSettingsStore } from '@/store/settingsStore';
-import { speakWord } from '@/services/speechService';
-import { MATH_ITEMS } from '@/constants/mathSymbols';
-import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
+import { speak, speakWord } from '@/services/speechService';
+import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
+import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
 
-export default function CategoryPanel() {
-  const { t } = useT();
-  const { sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
-    closeSidePanel, selectCategory, backToCategories, startOrdering, nextStep, prevStep, finishOrdering } = useUIStore();
-  const { appendText, appendWord, text, autoSpeak, soundEnabled } = useMessageStore();
-  const { allCategories, getPhrasesForCategory, getSequencesForCategory } = useCategoryStore();
+export default function Keyboard() {
+  const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
+  const { keyboardMode, isUpperCase, toggleKeyboardMode, toggleCase } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume } = useSettingsStore();
+  const { t, ttsCode } = useT();
 
-  if (sidePanel === 'none') return null;
+  const rows = keyboardMode === 'letters' ? LETTERS_ROWS : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
 
-  const handlePhrase = (phraseText: string) => {
-    tapFeedback();
-    const existingWords = text.trim().split(/\s+/).filter(Boolean);
-    const prevWord = existingWords.length > 0 ? existingWords[existingWords.length - 1] : undefined;
-    appendText(phraseText);
-    const phraseWords = phraseText.trim().split(/\s+/);
-    let prev = prevWord;
-    for (const w of phraseWords) {
-      learnWord(w.toLowerCase(), prev?.toLowerCase());
-      prev = w;
+  const handleKey = useCallback((key: string) => {
+    keyFeedback();
+    const char = keyboardMode === 'letters' ? (isUpperCase ? key : key.toLowerCase()) : key;
+    appendChar(char);
+    if (isUpperCase && keyboardMode === 'letters') toggleCase();
+  }, [appendChar, isUpperCase, keyboardMode, toggleCase]);
+
+  const handleSpace = useCallback(() => {
+    keyFeedback();
+    const currentText = useMessageStore.getState().text;
+    const words = currentText.trim().split(/\s+/).filter(Boolean);
+    const lastWord = words.length > 0 ? words[words.length - 1] : '';
+    if (lastWord) {
+      const prevWord = words.length > 1 ? words[words.length - 2] : undefined;
+      learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase());
+      if (autoSpeak && soundEnabled) speakWord(lastWord, speechRate, speechVolume);
     }
-    if (autoSpeak && soundEnabled) speakWord(phraseText, speechRate, speechVolume);
-  };
+    appendChar(' ');
+  }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar]);
 
-  const handleMathItem = (symbol: string) => {
+  const handleSpeak = useCallback(() => {
     tapFeedback();
-    appendWord(symbol);
-  };
+    const currentText = useMessageStore.getState().text.trim();
+    if (!currentText || !soundEnabled) return;
+    addToHistory(currentText);
+    speak(currentText, speechRate, speechVolume, ttsCode, activeTone);
+  }, [soundEnabled, speechRate, speechVolume, addToHistory]);
 
-  const btn = 'aac-btn bg-[#2a2a3e] rounded-xl p-3 text-[#e0e0e0] font-medium select-none text-center';
+  const handleBackspace = useCallback(() => {
+    deleteFeedback();
+    useMessageStore.getState().deleteLastChar();
+  }, []);
 
-  // MATH PANEL
-  if (sidePanel === 'math') {
-    const basic = MATH_ITEMS.filter(m => m.category === 'basic');
-    const advanced = MATH_ITEMS.filter(m => m.category === 'advanced');
-    return (
-      <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <span className="text-[#888] font-semibold text-sm">{t('math')}</span>
-          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
-        </div>
-        <div className="p-2">
-          <p className="text-[#666] text-xs font-semibold mb-1 px-1">{t('basic')}</p>
-          <div className="grid grid-cols-5 gap-1.5 mb-3">
-            {basic.map(m => (
-              <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-2`} title={m.ttsText}>
-                {m.symbol}
-              </button>
-            ))}
-          </div>
-          <p className="text-[#666] text-xs font-semibold mb-1 px-1">{t('advanced_math')}</p>
-          <div className="grid grid-cols-5 gap-1.5">
-            {advanced.map(m => (
-              <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-2`} title={m.ttsText}>
-                {m.symbol}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const kc = 'aac-key bg-[#2a2a3e] text-[#e0e0e0] rounded-xl font-semibold select-none flex items-center justify-center';
 
-  // ORDERING FLOW
-  if (sidePanel === 'ordering' && activeSequenceId) {
-    const allSeqs = getSequencesForCategory(activeCategoryId ?? '');
-    const seq = allSeqs.find(s => s.id === activeSequenceId);
-    if (!seq) return null;
-    const step = seq.steps[activeSequenceStep];
-    if (!step) return null;
-    return (
-      <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Back to categories" className="aac-btn h-11 px-4 rounded-xl bg-[#2a2a3e] text-[#aaa] text-sm flex items-center justify-center">← {t('previous_step')}</button>
-          <span className="text-[#e0e0e0] font-semibold text-sm">{seq.name}</span>
-          <span className="text-[#666] text-xs">{activeSequenceStep + 1}/{seq.steps.length}</span>
-        </div>
-        <div className="p-3 flex-1">
-          <p className="text-[#b0b0c0] font-semibold text-center mb-3">{step.label}</p>
-          <div className="flex flex-col gap-2">
-            {step.options.map(opt => (
-              <button key={opt.id} onClick={() => handlePhrase(opt.text)} aria-label={opt.text} className={`${btn} text-left`}>{opt.text}</button>
-            ))}
-          </div>
-        </div>
-        <div className="flex gap-2 p-3 border-t border-[#2a2a3e]">
-          <button onClick={prevStep} disabled={activeSequenceStep === 0} aria-label="Previous step" className={`${btn} flex-1 ${activeSequenceStep === 0 ? 'opacity-30' : ''}`}>← Prev</button>
-          {activeSequenceStep < seq.steps.length - 1
-            ? <button onClick={() => nextStep(seq.steps.length)} aria-label="Next step" className={`${btn} flex-1`}>Next →</button>
-            : <button onClick={finishOrdering} aria-label="Finish ordering" className={`${btn} flex-1 bg-[#4CAF50] text-white`}>Done ✓</button>
-          }
-        </div>
-      </div>
-    );
-  }
-
-  // CATEGORY DETAIL
-  if (sidePanel === 'category-detail' && activeCategoryId) {
-    const categories = allCategories();
-    const cat = categories.find(c => c.id === activeCategoryId);
-    const phrases = getPhrasesForCategory(activeCategoryId);
-    const sequences = getSequencesForCategory(activeCategoryId);
-    return (
-      <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-          <button onClick={backToCategories} className="text-[#888] hover:text-white text-sm">← {t('previous_step')}</button>
-          <span className="text-[#e0e0e0] font-semibold text-sm">{cat?.icon} {cat?.name}</span>
-          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
-        </div>
-        {sequences.length > 0 && (
-          <div className="flex gap-2 p-2 border-b border-[#2a2a3e]">
-            {sequences.map(seq => (
-              <button key={seq.id} onClick={() => startOrdering(seq.id)} className={`${btn} flex-1 text-sm`}>🛒 {seq.name}</button>
-            ))}
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-1.5 p-2 overflow-y-auto flex-1">
-          {phrases.map(p => {
-            const firstWord = p.text.split(/\s+/)[0];
-            const color = CATEGORY_COLORS[classifyWord(firstWord)];
-            return (
-              <button key={p.id} onClick={() => handlePhrase(p.text)} className={`${btn} min-h-[56px]`} style={{ borderLeft: `4px solid ${color}` }}>{p.text}</button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // CATEGORY LIST
-  const categories = allCategories();
   return (
-    <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-        <span className="text-[#888] font-semibold text-sm">{t('categories')}</span>
-        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
-      </div>
-      <div className="flex flex-col gap-2 p-2 flex-1">
-        {categories.map(cat => (
-          <button key={cat.id} onClick={() => selectCategory(cat.id)} className={`${btn} flex items-center gap-3 text-left min-h-[56px]`}>
-            <span className="text-2xl">{cat.icon}</span>
-            <span className="text-base">{cat.name}</span>
-          </button>
-        ))}
+    <div className="flex-1 flex flex-col gap-2.5 p-2.5">
+      {rows.map((row, ri) => (
+        <div key={ri} className="flex gap-2.5 justify-center flex-1">
+          {ri === 2 && keyboardMode === 'letters' && (
+            <button onClick={() => { tapFeedback(); toggleCase(); }} aria-label={isUpperCase ? 'Shift on' : 'Shift off'} className={`${kc} px-4 min-w-[56px] ${isUpperCase ? 'bg-[#4CAF50] text-white' : ''}`}>
+              {isUpperCase ? '⇧' : '⇪'}
+            </button>
+          )}
+          {row.map((key) => (
+            <button key={key} onClick={() => handleKey(key)} aria-label={key} className={`${kc} flex-1 text-lg min-h-[48px]`}>
+              {keyboardMode === 'letters' ? (isUpperCase ? key : key.toLowerCase()) : key}
+            </button>
+          ))}
+          {ri === 2 && keyboardMode === 'letters' && (
+            <button onClick={handleBackspace} aria-label="Backspace" className={`${kc} px-4 min-w-[56px]`}>⌫</button>
+          )}
+        </div>
+      ))}
+
+      <div className="flex gap-2.5 flex-1">
+        <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} min-w-[64px] px-3 text-sm`}>
+          {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=':'ABC'}
+        </button>
+        <button onClick={handleSpace} aria-label={t('space')} className={`${kc} flex-1 text-sm`}>{t('space')}</button>
+        <button onClick={() => handleKey('.')} aria-label="." className={`${kc} min-w-[56px] text-lg`}>.</button>
+        <button onClick={() => handleKey(',')} aria-label="," className={`${kc} min-w-[56px] text-lg`}>,</button>
+        <button onClick={() => handleKey('?')} aria-label="?" className={`${kc} min-w-[56px] text-lg`}>?</button>
+        <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-5 min-w-[88px] text-sm select-none flex items-center justify-center">
+          {t('speak')}
+        </button>
       </div>
     </div>
   );
@@ -6014,93 +5850,6 @@ export function decayPredictions(
     }
   }
   return result;
-}
-</file>
-
-<file path="services/speechService.ts">
-/**
- * Speech Service — Unified TTS routing
- *
- * Free tier:  Web Speech API (browser built-in, offline-capable)
- * Paid tiers: Azure Neural TTS with emotional tone styles → fallback to Web Speech API
- *
- * Azure routes through Synalux /api/v1/tts — same auth pattern as chat.
- * The Azure Speech key is stored server-side (Synalux env), not in the client.
- */
-
-import { speakAzure, stopAzureAudio, ToneStyle } from './azureTTS';
-
-export function isSpeechSupported(): boolean {
-  return typeof window !== 'undefined' && 'speechSynthesis' in window;
-}
-
-let resumeInterval: ReturnType<typeof setInterval> | null = null;
-
-function clearResumeWorkaround() {
-  if (resumeInterval) { clearInterval(resumeInterval); resumeInterval = null; }
-}
-
-function getAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('prism-aac-auth-token') || null;
-}
-
-function isPaidTier(): boolean {
-  return !!getAuthToken();
-}
-
-/**
- * Speak text — routes to Azure (paid) or Web Speech API (free).
- */
-export async function speak(
-  text: string,
-  rate = 0.5,
-  volume = 1.0,
-  lang = 'en-US',
-  tone: ToneStyle = 'friendly',
-): Promise<void> {
-  if (!text.trim()) return;
-
-  // Paid tier: try Azure Neural TTS with tone
-  if (isPaidTier()) {
-    const token = getAuthToken()!;
-    const success = await speakAzure(text, lang, tone, rate, volume, token);
-    if (success) return;
-    // Azure failed — fall through to Web Speech API
-  }
-
-  // Free tier / fallback: Web Speech API
-  speakLocal(text, rate, volume, lang);
-}
-
-/**
- * Speak a single word (auto-speak mode) — always uses Web Speech API for speed.
- */
-export function speakWord(word: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void {
-  speakLocal(word, rate, volume, lang);
-}
-
-/**
- * Local Web Speech API — works offline, no auth needed.
- */
-function speakLocal(text: string, rate: number, volume: number, lang: string): void {
-  if (!isSpeechSupported() || !text.trim()) return;
-  window.speechSynthesis.cancel();
-  clearResumeWorkaround();
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.1 + rate * 1.8;
-  u.volume = volume;
-  u.lang = lang;
-  u.onend = clearResumeWorkaround;
-  u.onerror = clearResumeWorkaround;
-  resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);
-  window.speechSynthesis.speak(u);
-}
-
-export function stopSpeech(): void {
-  stopAzureAudio();
-  if (isSpeechSupported()) window.speechSynthesis.cancel();
-  clearResumeWorkaround();
 }
 </file>
 
@@ -6755,6 +6504,170 @@ input[type="range"] {
 }
 </file>
 
+<file path="components/CategoryPanel.tsx">
+'use client';
+import { useUIStore } from '@/store/uiStore';
+import { useMessageStore } from '@/store/messageStore';
+import { useCategoryStore } from '@/store/categoryStore';
+import { usePredictionStore } from '@/store/predictionStore';
+import { tapFeedback } from '@/services/feedback';
+import { useSettingsStore } from '@/store/settingsStore';
+import { speakWord } from '@/services/speechService';
+import { MATH_ITEMS } from '@/constants/mathSymbols';
+import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
+import { useT } from '@/engine/useT';
+
+export default function CategoryPanel() {
+  const { t } = useT();
+  const { sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
+    closeSidePanel, selectCategory, backToCategories, startOrdering, nextStep, prevStep, finishOrdering } = useUIStore();
+  const { appendText, appendWord, text, autoSpeak, soundEnabled } = useMessageStore();
+  const { allCategories, getPhrasesForCategory, getSequencesForCategory } = useCategoryStore();
+  const { learnWord } = usePredictionStore();
+  const { speechRate, speechVolume } = useSettingsStore();
+
+  if (sidePanel === 'none') return null;
+
+  const handlePhrase = (phraseText: string) => {
+    tapFeedback();
+    const existingWords = text.trim().split(/\s+/).filter(Boolean);
+    const prevWord = existingWords.length > 0 ? existingWords[existingWords.length - 1] : undefined;
+    appendText(phraseText);
+    const phraseWords = phraseText.trim().split(/\s+/);
+    let prev = prevWord;
+    for (const w of phraseWords) {
+      learnWord(w.toLowerCase(), prev?.toLowerCase());
+      prev = w;
+    }
+    if (autoSpeak && soundEnabled) speakWord(phraseText, speechRate, speechVolume);
+  };
+
+  const handleMathItem = (symbol: string) => {
+    tapFeedback();
+    appendWord(symbol);
+  };
+
+  const btn = 'aac-btn bg-[#2a2a3e] rounded-xl p-3 text-[#e0e0e0] font-medium select-none text-center';
+
+  // MATH PANEL
+  if (sidePanel === 'math') {
+    const basic = MATH_ITEMS.filter(m => m.category === 'basic');
+    const advanced = MATH_ITEMS.filter(m => m.category === 'advanced');
+    return (
+      <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
+          <span className="text-[#888] font-semibold text-sm">{t('math')}</span>
+          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
+        </div>
+        <div className="p-2">
+          <p className="text-[#666] text-xs font-semibold mb-1 px-1">{t('basic')}</p>
+          <div className="grid grid-cols-5 gap-1.5 mb-3">
+            {basic.map(m => (
+              <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-2`} title={m.ttsText}>
+                {m.symbol}
+              </button>
+            ))}
+          </div>
+          <p className="text-[#666] text-xs font-semibold mb-1 px-1">{t('advanced_math')}</p>
+          <div className="grid grid-cols-5 gap-1.5">
+            {advanced.map(m => (
+              <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} text-xl py-2`} title={m.ttsText}>
+                {m.symbol}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ORDERING FLOW
+  if (sidePanel === 'ordering' && activeSequenceId) {
+    const allSeqs = getSequencesForCategory(activeCategoryId ?? '');
+    const seq = allSeqs.find(s => s.id === activeSequenceId);
+    if (!seq) return null;
+    const step = seq.steps[activeSequenceStep];
+    if (!step) return null;
+    return (
+      <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
+          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Back to categories" className="aac-btn h-11 px-4 rounded-xl bg-[#2a2a3e] text-[#aaa] text-sm flex items-center justify-center">← {t('previous_step')}</button>
+          <span className="text-[#e0e0e0] font-semibold text-sm">{seq.name}</span>
+          <span className="text-[#666] text-xs">{activeSequenceStep + 1}/{seq.steps.length}</span>
+        </div>
+        <div className="p-3 flex-1">
+          <p className="text-[#b0b0c0] font-semibold text-center mb-3">{step.label}</p>
+          <div className="flex flex-col gap-2">
+            {step.options.map(opt => (
+              <button key={opt.id} onClick={() => handlePhrase(opt.text)} aria-label={opt.text} className={`${btn} text-left`}>{opt.text}</button>
+            ))}
+          </div>
+        </div>
+        <div className="flex gap-2 p-3 border-t border-[#2a2a3e]">
+          <button onClick={prevStep} disabled={activeSequenceStep === 0} aria-label="Previous step" className={`${btn} flex-1 ${activeSequenceStep === 0 ? 'opacity-30' : ''}`}>← Prev</button>
+          {activeSequenceStep < seq.steps.length - 1
+            ? <button onClick={() => nextStep(seq.steps.length)} aria-label="Next step" className={`${btn} flex-1`}>Next →</button>
+            : <button onClick={finishOrdering} aria-label="Finish ordering" className={`${btn} flex-1 bg-[#4CAF50] text-white`}>Done ✓</button>
+          }
+        </div>
+      </div>
+    );
+  }
+
+  // CATEGORY DETAIL
+  if (sidePanel === 'category-detail' && activeCategoryId) {
+    const categories = allCategories();
+    const cat = categories.find(c => c.id === activeCategoryId);
+    const phrases = getPhrasesForCategory(activeCategoryId);
+    const sequences = getSequencesForCategory(activeCategoryId);
+    return (
+      <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
+          <button onClick={backToCategories} className="text-[#888] hover:text-white text-sm">← {t('previous_step')}</button>
+          <span className="text-[#e0e0e0] font-semibold text-sm">{cat?.icon} {cat?.name}</span>
+          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
+        </div>
+        {sequences.length > 0 && (
+          <div className="flex gap-2 p-2 border-b border-[#2a2a3e]">
+            {sequences.map(seq => (
+              <button key={seq.id} onClick={() => startOrdering(seq.id)} className={`${btn} flex-1 text-sm`}>🛒 {seq.name}</button>
+            ))}
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-1.5 p-2 overflow-y-auto flex-1">
+          {phrases.map(p => {
+            const firstWord = p.text.split(/\s+/)[0];
+            const color = CATEGORY_COLORS[classifyWord(firstWord)];
+            return (
+              <button key={p.id} onClick={() => handlePhrase(p.text)} className={`${btn} min-h-[56px]`} style={{ borderLeft: `4px solid ${color}` }}>{p.text}</button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // CATEGORY LIST
+  const categories = allCategories();
+  return (
+    <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
+        <span className="text-[#888] font-semibold text-sm">{t('categories')}</span>
+        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
+      </div>
+      <div className="flex flex-col gap-2 p-2 flex-1">
+        {categories.map(cat => (
+          <button key={cat.id} onClick={() => selectCategory(cat.id)} className={`${btn} flex items-center gap-3 text-left min-h-[56px]`}>
+            <span className="text-2xl">{cat.icon}</span>
+            <span className="text-base">{cat.name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="components/MessageBar.tsx">
 'use client';
 import { useRef, useCallback, useState } from 'react';
@@ -6903,6 +6816,93 @@ export default function Toolbar() {
       </div>
     </div>
   );
+}
+</file>
+
+<file path="services/speechService.ts">
+/**
+ * Speech Service — Unified TTS routing
+ *
+ * Free tier:  Web Speech API (browser built-in, offline-capable)
+ * Paid tiers: Azure Neural TTS with emotional tone styles → fallback to Web Speech API
+ *
+ * Azure routes through Synalux /api/v1/tts — same auth pattern as chat.
+ * The Azure Speech key is stored server-side (Synalux env), not in the client.
+ */
+
+import { speakAzure, stopAzureAudio, ToneStyle } from './azureTTS';
+
+export function isSpeechSupported(): boolean {
+  return typeof window !== 'undefined' && 'speechSynthesis' in window;
+}
+
+let resumeInterval: ReturnType<typeof setInterval> | null = null;
+
+function clearResumeWorkaround() {
+  if (resumeInterval) { clearInterval(resumeInterval); resumeInterval = null; }
+}
+
+function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('prism-aac-auth-token') || null;
+}
+
+function isPaidTier(): boolean {
+  return !!getAuthToken();
+}
+
+/**
+ * Speak text — routes to Azure (paid) or Web Speech API (free).
+ */
+export async function speak(
+  text: string,
+  rate = 0.5,
+  volume = 1.0,
+  lang = 'en-US',
+  tone: ToneStyle = 'friendly',
+): Promise<void> {
+  if (!text.trim()) return;
+
+  // Paid tier: try Azure Neural TTS with tone
+  if (isPaidTier()) {
+    const token = getAuthToken()!;
+    const success = await speakAzure(text, lang, tone, rate, volume, token);
+    if (success) return;
+    // Azure failed — fall through to Web Speech API
+  }
+
+  // Free tier / fallback: Web Speech API
+  speakLocal(text, rate, volume, lang);
+}
+
+/**
+ * Speak a single word (auto-speak mode) — always uses Web Speech API for speed.
+ */
+export function speakWord(word: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void {
+  speakLocal(word, rate, volume, lang);
+}
+
+/**
+ * Local Web Speech API — works offline, no auth needed.
+ */
+function speakLocal(text: string, rate: number, volume: number, lang: string): void {
+  if (!isSpeechSupported() || !text.trim()) return;
+  window.speechSynthesis.cancel();
+  clearResumeWorkaround();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.1 + rate * 1.8;
+  u.volume = volume;
+  u.lang = lang;
+  u.onend = clearResumeWorkaround;
+  u.onerror = clearResumeWorkaround;
+  resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);
+  window.speechSynthesis.speak(u);
+}
+
+export function stopSpeech(): void {
+  stopAzureAudio();
+  if (isSpeechSupported()) window.speechSynthesis.cancel();
+  clearResumeWorkaround();
 }
 </file>
 
