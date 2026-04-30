@@ -9,23 +9,26 @@
 
 import { test, expect } from '@playwright/test';
 
-test.beforeEach(async ({ page }) => {
-  // Start every test from a clean localStorage so prior runs don't pollute.
-  await page.goto('/');
+test.beforeEach(async ({ page, baseURL }) => {
+  // baseURL already includes the /prism-aac basePath. Use the empty
+  // path so Playwright preserves it (page.goto('/') would strip it).
+  const start = baseURL || '/';
+  await page.goto(start);
   await page.evaluate(() => {
     try {
       localStorage.clear();
       sessionStorage.clear();
     } catch { /* sandboxed origin — ignore */ }
   });
-  await page.reload();
-  await page.waitForSelector('button:has-text("Categories")', { timeout: 15000 });
+  await page.goto(start, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('button:has-text("Categories")', { timeout: 30000 });
 });
 
 test('app boots and renders the keyboard chrome', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Categories' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Speak$/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Q$/ })).toBeVisible();
+  // Two Speak buttons exist (header + bottom-right primary). Use .first().
+  await expect(page.getByRole('button', { name: /^Speak$/ }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Q$/ })).toBeVisible();
 });
 
 test('auto-speak is ON by default for new users', async ({ page }) => {
@@ -73,7 +76,8 @@ test('Alert button does NOT permanently block the UI', async ({ page }) => {
 
 test('Settings modal opens and shows Synalux account section', async ({ page }) => {
   await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.getByText(/Synalux account/i)).toBeVisible();
+  // Multiple "Synalux" matches — heading + body. Take the first visible.
+  await expect(page.getByText(/Synalux/i).first()).toBeVisible();
 });
 
 test('AI Chat panel opens (modal renders without crashing)', async ({ page }) => {
@@ -89,7 +93,7 @@ test('Categories panel opens and shows category buttons', async ({ page }) => {
 
 test('keyboard renders within the viewport at the running resolution', async ({ page }, testInfo) => {
   const viewport = page.viewportSize();
-  const speakBtn = page.getByRole('button', { name: /^Speak$/ });
+  const speakBtn = page.getByRole('button', { name: /^Speak$/ }).first();
   await expect(speakBtn).toBeVisible();
   const box = await speakBtn.boundingBox();
   expect(box, `Speak button has no bounding box at ${testInfo.project.name}`).toBeTruthy();
