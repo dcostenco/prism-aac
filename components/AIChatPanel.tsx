@@ -59,14 +59,31 @@ export default function AIChatPanel() {
     ]);
     setLoading(true);
 
-    try {
-      await askAI(question, undefined, (streamedText, streamedLines) => {
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: 'ai', text: streamedText, lines: streamedLines };
-          return updated;
-        });
+    // Accumulate streamed text outside React state and flush at most once per
+    // animation frame. Avoids 1 setState per chunk (the prior pattern caused
+    // hundreds of full-tree re-renders on long responses).
+    let buffer = '';
+    let scheduled = false;
+    const flush = () => {
+      scheduled = false;
+      const text = buffer;
+      const lines = text.split(/\n+/).filter((l) => l.trim());
+      setMessages((prev) => {
+        const updated = prev.slice();
+        updated[updated.length - 1] = { role: 'ai', text, lines };
+        return updated;
       });
+    };
+
+    try {
+      await askAI(question, undefined, (delta) => {
+        buffer += delta;
+        if (!scheduled) {
+          scheduled = true;
+          requestAnimationFrame(flush);
+        }
+      });
+      flush();
       clearAll();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Could not reach AI';

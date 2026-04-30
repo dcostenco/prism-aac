@@ -48,7 +48,7 @@ export function hasApiKey(): boolean {
 
 async function callSynalux(
   messages: Array<{ role: string; content: string }>,
-  options?: { webSearch?: boolean; onChunk?: (text: string) => void },
+  options?: { webSearch?: boolean; onChunk?: (delta: string) => void },
 ): Promise<string> {
   const token = getAuthToken();
   if (!token) throw new Error('offline');
@@ -85,7 +85,7 @@ async function callSynalux(
         try {
           const parsed = JSON.parse(line.slice(6));
           const delta = parsed?.choices?.[0]?.delta?.content || '';
-          if (delta) { fullText += delta; options?.onChunk?.(fullText); }
+          if (delta) { fullText += delta; options?.onChunk?.(delta); }
         } catch { /* incomplete chunk */ }
       }
     }
@@ -126,7 +126,7 @@ async function callLocal(prompt: string): Promise<string> {
 
 async function route(
   prompt: string,
-  options?: { webSearch?: boolean; system?: string; onChunk?: (text: string) => void },
+  options?: { webSearch?: boolean; system?: string; onChunk?: (delta: string) => void },
 ): Promise<string> {
   const messages: Array<{ role: string; content: string }> = [];
   if (options?.system) messages.push({ role: 'system', content: options.system });
@@ -165,7 +165,7 @@ export interface ParsedNoteResult {
 export async function askAI(
   question: string,
   context?: string,
-  onChunk?: (text: string, lines: string[]) => void,
+  onChunk?: (delta: string) => void,
 ): Promise<AIResponse> {
   const system = [
     'You are a friendly helper for a child who uses an AAC (communication) device.',
@@ -178,11 +178,7 @@ export async function askAI(
 
   const needsSearch = /what|who|where|when|why|how|explain|tell me about/i.test(question);
 
-  const text = await route(question, {
-    system,
-    webSearch: needsSearch,
-    onChunk: onChunk ? (t) => onChunk(t, t.split(/\n+/).filter((l) => l.trim())) : undefined,
-  });
+  const text = await route(question, { system, webSearch: needsSearch, onChunk });
   const lines = text.split(/\n+/).filter((l) => l.trim());
   return { text, lines };
 }

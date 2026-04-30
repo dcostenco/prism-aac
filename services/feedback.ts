@@ -25,50 +25,28 @@ export function hapticHeavy(): void {
   }
 }
 
-export function playClick(): void {
+function playTone(freq: number, type: OscillatorType, peak: number, durationSec: number): void {
   const ctx = getAudioCtx();
   if (!ctx) return;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.connect(gain);
   gain.connect(ctx.destination);
-  osc.frequency.value = 1200;
-  osc.type = 'sine';
-  gain.gain.setValueAtTime(0.08, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+  osc.frequency.value = freq;
+  osc.type = type;
+  gain.gain.setValueAtTime(peak, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationSec);
   osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.06);
+  osc.stop(ctx.currentTime + durationSec);
+  // Without explicit disconnect, finished nodes accumulate refs in the
+  // AudioContext graph until GC. On a heavy keystroke session this builds
+  // measurable pressure — release them as soon as playback ends.
+  osc.onended = () => { osc.disconnect(); gain.disconnect(); };
 }
 
-export function playKeyClick(): void {
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.frequency.value = 800;
-  osc.type = 'sine';
-  gain.gain.setValueAtTime(0.05, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.04);
-}
-
-export function playDelete(): void {
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.frequency.value = 400;
-  osc.type = 'triangle';
-  gain.gain.setValueAtTime(0.06, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.08);
-}
+export function playClick(): void { playTone(1200, 'sine', 0.08, 0.06); }
+export function playKeyClick(): void { playTone(800, 'sine', 0.05, 0.04); }
+export function playDelete(): void { playTone(400, 'triangle', 0.06, 0.08); }
 
 export function tapFeedback(): void {
   hapticTap();

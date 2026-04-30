@@ -88,18 +88,23 @@ export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: num
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 
 let currentAudio: HTMLAudioElement | null = null;
-let currentBlobUrl: string | null = null;
+// Track every live blob URL we issue so a missed onended/onerror can't leak
+// audio bytes (Chrome retains blob bytes in renderer memory until revoke).
+const liveBlobUrls = new Set<string>();
+
+function releaseBlob(url: string): void {
+  if (liveBlobUrls.delete(url)) URL.revokeObjectURL(url);
+}
 
 export function stopAzureAudio(): void {
   if (currentAudio) {
     currentAudio.pause();
-    currentAudio.src = '';
+    currentAudio.removeAttribute('src');
+    currentAudio.load();
     currentAudio = null;
   }
-  if (currentBlobUrl) {
-    URL.revokeObjectURL(currentBlobUrl);
-    currentBlobUrl = null;
-  }
+  for (const url of liveBlobUrls) URL.revokeObjectURL(url);
+  liveBlobUrls.clear();
 }
 
 export async function speakAzure(
@@ -112,6 +117,7 @@ export async function speakAzure(
 ): Promise<boolean> {
   const ssml = buildSSML(text, lang, tone, rate, volume);
 
+  let url: string | null = null;
   try {
     const res = await fetch(`${SYNALUX_API}/tts`, {
       method: 'POST',
@@ -127,18 +133,31 @@ export async function speakAzure(
     stopAzureAudio();
     const audioBuffer = await res.arrayBuffer();
     const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
-    const url = URL.createObjectURL(blob);
-    currentBlobUrl = url;
-    const audio = new Audio(url);
-    currentAudio = audio;
+    url = URL.createObjectURL(blob);
+    liveBlobUrls.add(url);
+
+    const audio = new Audio();
     audio.volume = volume;
-    await audio.play();
-    audio.onended = () => {
-      URL.revokeObjectURL(url);
-      if (currentAudio === audio) { currentAudio = null; currentBlobUrl = null; }
+
+    // Attach handlers BEFORE play() so short clips can't end before we listen.
+    const cleanup = () => {
+      if (url) releaseBlob(url);
+      if (currentAudio === audio) currentAudio = null;
     };
+    audio.onended = cleanup;
+    audio.onerror = cleanup;
+    audio.src = url;
+    currentAudio = audio;
+
+    try {
+      await audio.play();
+    } catch {
+      cleanup();
+      return false;
+    }
     return true;
   } catch {
+    if (url) releaseBlob(url);
     return false;
   }
 }
