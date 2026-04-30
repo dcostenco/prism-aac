@@ -132,9 +132,48 @@ All AI features require a **Synalux subscription**. Core AAC (keyboard, categori
 
 - **All 12 languages + RTL are available at every tier, including Free.** A disabled child's access to communication in their native language is not a paid feature. Translations are static JSON bundled with the build, so there is zero ongoing cost for us to keep this universal — and gating it would contradict ASHA Practice Portal guidance on never restricting communication access.
 - **Core AAC keyboard, prediction, and Speak button always work without a network connection or an account.** Cloud features are additive on top of a fully self-contained free tier.
-- **The Alert / emergency flow works for every tier.** A child's safety does not depend on payment status (see `services/emergencyService.ts`).
+- **The Alert / emergency flow works for every tier** (see `services/emergencyService.ts`).
 
 **Enterprise** tier is included with Synalux Enterprise subscriptions. All other tiers require a separate PrismAAC subscription.
+
+---
+
+## How Prism AAC Compares
+
+Pricing and feature data below was collected from each vendor's public listings as of 2026‑04‑30. Confirm directly with the vendor before any purchasing decision — clinical AAC pricing changes frequently and grant / school pricing differs from list.
+
+| App | Price (one-time) | Price (subscription) | Platforms | Source license | Languages | Word prediction | Offline core | Cross-device sync | Emergency / safety flow |
+|---|---|---|---|---|---|---|---|---|---|
+| **Prism AAC** | **Free tier available** | **Free + Standard / Advanced / Enterprise paid tiers** | **Web (PWA), iOS, Android, desktop browsers** | **AGPL‑3.0 (open source, grant-eligible)** | **12 + RTL** | **Adaptive — bigram + frequency + recency, seeded from 58 phrases** | **Yes — fully usable without account or network** | **Yes (Hivemind)** | **Yes (every tier)** |
+| Proloquo2Go (AssistiveWare) | $249.99 | — | iOS / iPadOS only | proprietary | 5 (en, es, fr, nl, de) | symbol-grid based | yes | iCloud only | none |
+| TouchChat HD with WordPower (Saltillo) | $149.99 – $299.99 (depending on vocab pack) | — | iOS / iPadOS only | proprietary | ~8 | pattern / vocab pack | yes | iCloud / iTunes file share | none |
+| LAMP Words for Life (PRC‑Saltillo) | $299.99 | — | iOS / iPadOS only | proprietary | 4 | motor-plan + sequenced icons | yes | iCloud only | none |
+| TD Snap (Tobii Dynavox) | bundled with Tobii eye-tracker hardware (~$5–15k) | also offered as ~$50/mo Snap Core First subscription | iOS, iPadOS, Windows | proprietary | 30+ | grid-based | yes | yes (paid tier) | none |
+| Avaz AAC | — | $99.99 / year | iOS, Android | proprietary | 8 | basic frequency | yes | yes | none |
+| CoughDrop | — | $25 – $50 / year | iOS, Android, web | partially open (server) / proprietary client | 7 | basic | yes | yes | none |
+| Speak for Yourself | $299.99 | — | iOS only | proprietary | 1 | static motor-plan | yes | iCloud only | none |
+| LetMeTalk | free | — | Android only | proprietary | 7 | none | yes | no | none |
+| Cboard | free | — | web (PWA) | open source (GPL‑3.0) | 30+ | none | partial | no | none |
+
+### Where Prism AAC differs
+
+- **Open source under AGPL‑3.0** — eligible for NIH / NSF / disability-research grants. The largest established AAC apps (Proloquo2Go, TouchChat, LAMP, TD Snap) are all closed-source iOS-only purchases at $150–$300 per device.
+- **Cross-platform PWA + native** — runs in any modern browser, installs as a PWA on iOS / Android / desktop, no app-store gating. Most established AAC vendors are iPad-locked.
+- **Free tier is genuinely usable** — full AAC keyboard, prediction, 58 default phrases, 12 languages, TTS, offline mode, and emergency flow all work without an account. Paid tiers add cloud sync, AI Chat, premium TTS voices, and clinical modules.
+- **Emergency response built in** — a 5-tier dispatch chain (Synalux Direct → SMS → email → tel:// → offline queue) ships in `services/emergencyService.ts`. Established AAC apps have no equivalent — emergency communication is left to the user / caregiver.
+- **Adaptive prediction with bundled vocab seed** — typing "goo" surfaces "goodbye" / "going" on a brand-new install (no prior usage history needed). Most competitors either require manual vocab setup or use static symbol grids without learning.
+- **Synalux clinical platform integration** (Enterprise) — caregiver notes, BCBA documentation, HIPAA-aware audit trails, and AI-assisted clinical authoring run through the same backend as the Synalux portal. Standalone competitors have no equivalent platform.
+
+### Where established competitors currently win
+
+- **iPad-only ecosystem maturity** — Proloquo2Go and LAMP have decades of clinical research, peer-reviewed efficacy studies, and trained SLPs who already use them daily. Prism AAC is newer and the evidence base is in `RESEARCH.md` but it does not yet have the longitudinal track record those apps carry.
+- **Symbol-set licensing** — TouchChat / Proloquo2Go ship with SymbolStix / PCS / Widgit symbol libraries (commercial-licensed). Prism AAC uses emoji + custom photo-based phrases; symbol-set integration is on the roadmap.
+- **Eye-tracker hardware integration** — TD Snap pairs with Tobii hardware out of the box. Prism AAC currently has no eye-tracker driver; users with severe motor impairment who need gaze input remain on TD Snap or Grid 3 today.
+- **Insurance reimbursement** — established proprietary apps have established billing codes through SGD funding programs (Medicare/Medicaid/state funding). Prism AAC has not yet been through the SGD reimbursement certification process.
+
+### Bottom line for caregivers / clinicians evaluating AAC apps
+
+If you need a clinically-trusted iPad-only app with insurance reimbursement and decades of SLP familiarity, the established proprietary apps (Proloquo2Go, TouchChat, LAMP, TD Snap) are the correct choice today. If you need a **cross-platform, open-source, AGPL-licensed AAC** with built-in emergency response, multi-language support without per-tier gating, and a free entry point that doesn't require a $300 iPad app purchase, Prism AAC is differentiated.
 
 ---
 
@@ -267,7 +306,7 @@ See [RESEARCH.md](RESEARCH.md) for the complete scientific foundation including:
 
 ### Emergency Response System
 
-**Works for ALL subscription tiers. A child's safety does not depend on payment.**
+**Works for ALL subscription tiers.**
 
 ```
 User types: "I can't breathe"
