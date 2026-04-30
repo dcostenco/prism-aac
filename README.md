@@ -213,14 +213,11 @@ npm run e2e       # full Playwright matrix against the deployed app
 npm run build     # production build
 ```
 
-### Environment Variables
+### Configuration
 
-Set via Vercel (same project as Synalux portal) or `.env.local`:
+No per-user environment variables. Auth, AI routing, and cross-device sync all flow through the synalux portal, which holds credentials server-side. The hosted deployment at https://synalux.ai/prism-aac and the standalone deployment at https://prism-aac.vercel.app run with the same zero-config posture.
 
-```
-NEXT_PUBLIC_SUPABASE_URL=https://pjddaprqhwqxtcpdmprk.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<from Vercel environment>
-```
+The core AAC keyboard, prediction, TTS, categories, and offline mode all work without an account or any cloud configuration.
 
 ---
 
