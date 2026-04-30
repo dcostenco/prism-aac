@@ -4,6 +4,8 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 
 **Part of the Synalux platform** — [synalux.ai](https://synalux.ai)
 
+**License:** [AGPL-3.0](LICENSE) — open source, OSI-approved, grant-eligible. Synalux operates the canonical hosted version (free + paid tiers); self-hosters and forks must release their modifications under the same license.
+
 **Supported languages (12):** English, Spanish, Français, Português, Română, Українська, Русский, Deutsch, 日本語, 한국어, 中文, العربية. Switch from Settings → Language. Arabic switches the layout to RTL.
 
 ---
@@ -542,4 +544,11 @@ The live emergency call test was conducted under controlled conditions with a kn
 
 ## License
 
-Business Source License 1.1 (BUSL-1.1). Copyright 2026 Synalux AI.
+GNU Affero General Public License v3.0 (AGPL-3.0). Copyright 2026 Synalux AI.
+
+Why AGPL-3.0:
+- **Grant-eligible** — OSI-approved open source, accepted by NIH, NSF, and disability-research foundations.
+- **Free + paid via Synalux** — Synalux holds the copyright and operates the canonical hosted service at synalux.ai/prism-aac with both free and paid subscription tiers.
+- **Closes the SaaS loophole** — anyone hosting a fork must publish their modifications under AGPL-3.0, so the community benefits from competitor improvements.
+
+Self-hosting and forks are welcome under the terms of the license. Commercial use that requires a license other than AGPL-3.0 is available from Synalux on request (dual-licensing).

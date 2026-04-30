@@ -55,4 +55,11 @@ All participation in project spaces is governed by [CODE_OF_CONDUCT.md](CODE_OF_
 
 ## License
 
-This project is licensed under the [Business Source License 1.1](LICENSE).
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
+
+The license was chosen so the project remains:
+- Eligible for research and disability grants (OSI-approved open source)
+- Sustainable as a hosted service via Synalux (Synalux retains copyright; offers free + paid subscription tiers)
+- Resistant to closed-source SaaS forks (AGPL §13 requires modifications running on a server to be made available to remote users)
+
+Synalux can dual-license the codebase to commercial users who cannot accept AGPL terms.

@@ -63,4 +63,4 @@ Participation in this project is governed by [CODE_OF_CONDUCT.md](CODE_OF_CONDUC
 
 ## License
 
-By submitting a contribution, you agree that your contribution is licensed under the project's [LICENSE](LICENSE) (Business Source License 1.1).
+By submitting a contribution, you agree that your contribution is licensed under the project's [LICENSE](LICENSE) (GNU Affero General Public License v3.0). You also grant Synalux AI the right to dual-license your contribution under alternative terms when offering the project to commercial customers who cannot accept AGPL-3.0.
