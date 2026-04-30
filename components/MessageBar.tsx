@@ -5,18 +5,20 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { speak } from '@/services/speechService';
 import { tapFeedback, deleteFeedback } from '@/services/feedback';
 import ColoredText from './ColoredText';
+import { useT } from '@/engine/useT';
 
 export default function MessageBar() {
   const { text, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak } = useMessageStore();
   const { speechRate, speechVolume } = useSettingsStore();
+  const { t, ttsCode } = useT();
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSpeak = useCallback(() => {
     tapFeedback();
     if (!text.trim() || !soundEnabled) return;
     addToHistory(text.trim());
-    speak(text.trim(), speechRate, speechVolume);
-  }, [text, soundEnabled, speechRate, speechVolume, addToHistory]);
+    speak(text.trim(), speechRate, speechVolume, ttsCode);
+  }, [text, soundEnabled, speechRate, speechVolume, ttsCode, addToHistory]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
@@ -59,7 +61,7 @@ export default function MessageBar() {
       </button>
 
       <div className="flex-1 text-2xl min-h-[48px] flex items-center overflow-x-auto break-words" role="status" aria-live="polite" aria-label="Message text">
-        {text ? <ColoredText text={text} /> : <span className="text-[#555]">Type here...</span>}
+        {text ? <ColoredText text={text} /> : <span className="text-[#555]">{t('type_here')}</span>}
       </div>
 
       <button

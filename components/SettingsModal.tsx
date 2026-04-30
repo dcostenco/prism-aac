@@ -4,10 +4,13 @@ import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { setAuthToken, hasApiKey, clearAuth } from '@/services/aiService';
+import { LANG_META, SupportedLanguage } from '@/engine/i18n';
+import { useT } from '@/engine/useT';
 
 export default function SettingsModal() {
   const { showSettings, toggleSettings } = useUIStore();
   const settings = useSettingsStore();
+  const { t } = useT();
   const { customCategories, customPhrases, addCustomCategory, removeCustomCategory, addCustomPhrase, removeCustomPhrase, allCategories } = useCategoryStore();
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('📌');
@@ -24,13 +27,32 @@ export default function SettingsModal() {
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={toggleSettings}>
       <div className="bg-[#1e1e2e] rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#2a2a3e]">
-          <h2 className="text-[#e0e0e0] font-bold text-lg">Settings</h2>
+          <h2 className="text-[#e0e0e0] font-bold text-lg">{t('settings')}</h2>
           <button onClick={toggleSettings} className="text-[#888] hover:text-white text-xl">✕</button>
         </div>
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
+          {/* Language */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('language')}</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {LANG_META.map(lang => (
+                <button
+                  key={lang.code}
+                  onClick={() => settings.update({ language: lang.code as SupportedLanguage })}
+                  className={`aac-btn rounded-xl px-3 py-2.5 text-sm text-left ${
+                    settings.language === lang.code ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#e0e0e0]'
+                  }`}
+                >
+                  <div className="font-semibold">{lang.nativeName}</div>
+                  <div className="text-xs opacity-70">{lang.name}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Speech */}
           <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Voice</h3>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('voice')}</h3>
             <label className="flex items-center justify-between mb-2">
               <span className="text-[#d0d0e0]">Speed</span>
               <span className="text-[#888]">{settings.speechRate.toFixed(1)}</span>
