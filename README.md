@@ -280,13 +280,25 @@ Full UI translation for 12 languages:
 
 ---
 
-## Subscription Tiers
+## Subscription & AI Routing
+
+All AI features require a **Synalux subscription**. Routes through `synalux.ai/api/v1/chat` — same backend as the Synalux portal. Offline fallback to prism-coder:7b via local Ollama.
+
+### AI Model Routing (server-side, same as Synalux portal)
+
+| Tier | Default Model | Fallback | Offline |
+|------|--------------|----------|---------|
+| Free | Gemini 2.5 Flash | — | prism-coder:7b |
+| Standard | Claude Sonnet 4 | Gemini 2.5 Flash | prism-coder:7b |
+| Advanced | Claude Sonnet 4 | Gemini 2.5 Flash | prism-coder:7b |
+| Enterprise | Claude Opus 4 | Gemini 2.5 Flash | prism-coder:7b |
+
+### Feature Tiers
 
 | Feature | Free | Standard | Advanced | Enterprise |
 |---------|------|----------|----------|------------|
-| **AI provider** | prism-coder:7b (local) | Claude Haiku 4.5 | **Claude Sonnet 4.6** | **Claude Sonnet 4.6** |
-| **AI suggestions** | — | Context-aware phrases | Context-aware + cross-device | Context-aware + team |
-| **Simple queries** | prism-coder:7b | prism-coder:7b | prism-coder:7b | prism-coder:7b |
+| **AI Chat + web search** | Gemini Flash | Claude Sonnet 4 | Claude Sonnet 4 | Claude Opus 4 |
+| **Synalux modules** | — | Yes | Yes | All |
 | Voice quality | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
 | Emotional tones | — | 5 tones | All 9 tones | All + custom |
 | Custom categories | — | 20 | Unlimited | Unlimited |
@@ -296,9 +308,13 @@ Full UI translation for 12 languages:
 | Math keyboard | Basic | Full | Full + custom | Full + custom |
 | Cloud backup | — | Yes | Yes | Yes + HIPAA |
 | Prediction learning | Frequency only | Full 3-tier | Full + cross-device | Full + team |
-| Offline mode | Yes (prism-coder) | Yes (falls back to local) | Yes (falls back to local) | Yes (falls back to local) |
+| Offline mode | Yes (prism-coder) | Yes (falls back) | Yes (falls back) | Yes (falls back) |
 
-API endpoint: `https://synalux.ai/prism-aac`
+API endpoint: `https://synalux.ai/api/v1/chat` (source: `prism-aac`)
+
+### Web App
+
+The PrismAAC web app is on the `web` branch of this repo. See [web branch README](https://github.com/dcostenco/prism-aac/tree/web) for the full evidence-based documentation including RESEARCH.md with 19 peer-reviewed citations.
 
 ---
 
@@ -412,21 +428,20 @@ npx expo export --platform web
 
 ### AI Provider
 
-Paid tiers use **Gemini 3.1 Pro** for context-aware phrase suggestions. Free tier and offline mode use **prism-coder:7b** via Ollama (100% local).
+All AI routes through `synalux.ai/api/v1/chat` (source: `prism-aac`). Model selection is server-side based on the user's Synalux subscription. Offline mode falls back to prism-coder:7b via local Ollama.
 
-| Query Type | Free | Standard | Advanced / Enterprise |
-|------------|------|----------|---------------------|
-| **Simple** (greetings, short phrases, <4 words) | prism-coder:7b | prism-coder:7b | prism-coder:7b |
-| **Complex** (conversations, knowledge, multi-part) | Gemini 2.5 Flash | Claude Haiku 4.5 | **Claude Sonnet 4.6** |
-| **Offline fallback** | prism-coder:7b | prism-coder:7b | prism-coder:7b |
+| Tier | Online Model | Offline Fallback |
+|------|-------------|-----------------|
+| Free | Gemini 2.5 Flash | prism-coder:7b |
+| Standard | Claude Sonnet 4 → Gemini fallback | prism-coder:7b |
+| Advanced | Claude Sonnet 4 → Gemini fallback | prism-coder:7b |
+| Enterprise | Claude Opus 4 → Gemini fallback | prism-coder:7b |
 
-```
-# Local mode uses Ollama automatically (all tiers, simple queries)
-# Install: ollama pull prism-coder:7b
+```bash
+# Offline mode: install local model
+ollama pull prism-coder:7b
 
-# Cloud keys (set on server — synalux.ai handles this automatically)
-# GEMINI_API_KEY — free tier
-# ANTHROPIC_API_KEY — paid tiers (Claude Haiku/Sonnet)
+# Cloud keys handled server-side by Synalux — no client-side keys needed
 ```
 
 ### Azure TTS (Standard+ tier)
