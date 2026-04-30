@@ -1,11 +1,19 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCategoryStore } from '@/store/categoryStore';
-import { setAuthToken, hasApiKey, clearAuth } from '@/services/aiService';
+import { useAuthStore } from '@/store/authStore';
+import { synaluxSignInUrl, synaluxSignOutUrl, SynaluxProfile } from '@/services/aiService';
 import { LANG_META, SupportedLanguage } from '@/engine/i18n';
 import { useT } from '@/engine/useT';
+
+const PLAN_LABEL: Record<SynaluxProfile['plan'], string> = {
+  free: 'Free',
+  standard: 'Standard ($19/mo)',
+  advanced: 'Advanced ($49/mo)',
+  enterprise: 'Enterprise ($99/mo)',
+};
 
 export default function SettingsModal() {
   const { showSettings, toggleSettings } = useUIStore();
@@ -16,8 +24,14 @@ export default function SettingsModal() {
   const [newCatIcon, setNewCatIcon] = useState('📌');
   const [newPhraseText, setNewPhraseText] = useState('');
   const [newPhraseCat, setNewPhraseCat] = useState('');
-  const [authToken, setAuthTokenInput] = useState('');
-  const [isSignedIn, setIsSignedIn] = useState(hasApiKey());
+  const profile = useAuthStore((s) => s.profile);
+  const profileLoaded = useAuthStore((s) => s.loaded);
+  const profileLoading = useAuthStore((s) => s.loading);
+  const refreshProfile = useAuthStore((s) => s.refresh);
+
+  useEffect(() => {
+    if (showSettings) refreshProfile();
+  }, [showSettings, refreshProfile]);
 
   if (!showSettings) return null;
 
@@ -167,19 +181,39 @@ export default function SettingsModal() {
           {/* Synalux Account */}
           <div>
             <h3 className={sectionTitle}>Synalux Account</h3>
-            {isSignedIn ? (
-              <div className="flex items-center justify-between">
-                <p className="text-[#4CAF50] text-sm">Signed in — AI Chat, web search, and modules active</p>
-                <button onClick={() => { clearAuth(); setIsSignedIn(false); }} className="text-[#F44336] text-xs hover:underline">Sign out</button>
+            {!profileLoaded || profileLoading ? (
+              <p className="text-muted text-sm">Checking sign-in status…</p>
+            ) : profile ? (
+              <div className="space-y-2">
+                <div className="surface-key rounded-lg px-3 py-3 border border-theme">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-muted text-xs uppercase tracking-wider">Signed in as</span>
+                    <span className="text-[#4CAF50] text-xs">● Active</span>
+                  </div>
+                  <p className="text-primary font-semibold text-sm break-all">{profile.email || profile.name}</p>
+                </div>
+                <div className="surface-key rounded-lg px-3 py-3 border border-theme">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-muted text-xs uppercase tracking-wider">Subscription</span>
+                    {profile.isPlatformAdmin && <span className="text-[#FFD700] text-xs">★ Admin</span>}
+                  </div>
+                  <p className="text-primary font-semibold text-sm">{PLAN_LABEL[profile.plan] || profile.plan}</p>
+                </div>
+                <a href={synaluxSignOutUrl()} className="block text-center text-[#F44336] text-sm hover:underline pt-1">
+                  Sign out
+                </a>
               </div>
             ) : (
               <div>
-                <p className="text-muted text-sm mb-2">Sign in with your Synalux account to enable AI Chat, web search, and all platform modules.</p>
-                <div className="flex gap-2">
-                  <input value={authToken} onChange={(e) => setAuthTokenInput(e.target.value)} placeholder="Synalux auth token" type="password" className="flex-1 surface-key rounded-lg px-3 py-2 text-sm border border-theme" />
-                  <button onClick={() => { if (authToken.trim()) { setAuthToken(authToken.trim()); setIsSignedIn(true); setAuthTokenInput(''); } }} className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C] text-sm">Sign in</button>
-                </div>
-                <p className="text-dim text-xs mt-2">Your subscription tier determines which AI models and modules are available. Core AAC features work without an account.</p>
+                <p className="text-muted text-sm mb-3">Sign in with your Synalux account to enable AI Chat, web search, and all platform modules.</p>
+                <a
+                  href={synaluxSignInUrl()}
+                  data-testid="synalux-signin"
+                  className="block w-full text-center bg-[#4CAF50] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#388E3C] text-sm"
+                >
+                  Sign in with Synalux
+                </a>
+                <p className="text-dim text-xs mt-2">Core AAC features (keyboard, categories, prediction, emergency) work without an account.</p>
               </div>
             )}
           </div>

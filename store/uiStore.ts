@@ -8,6 +8,7 @@ interface UIState {
   activeSequenceStep: number;
   keyboardMode: KeyboardMode;
   isUpperCase: boolean;
+  capsLock: boolean;
   showHistory: boolean;
   showSettings: boolean;
   isAlertFlashing: boolean;
@@ -24,6 +25,7 @@ interface UIState {
   finishOrdering: () => void;
   toggleKeyboardMode: () => void;
   toggleCase: () => void;
+  toggleCapsLock: () => void;
   toggleHistory: () => void;
   toggleSettings: () => void;
   triggerAlert: () => void;
@@ -38,6 +40,7 @@ export const useUIStore = create<UIState>()((set) => ({
   activeSequenceStep: 0,
   keyboardMode: 'letters',
   isUpperCase: false,
+  capsLock: false,
   showHistory: false,
   showSettings: false,
   isAlertFlashing: false,
@@ -55,7 +58,11 @@ export const useUIStore = create<UIState>()((set) => ({
   finishOrdering: () => set({ sidePanel: 'category-detail', activeSequenceId: null, activeSequenceStep: 0 }),
   toggleKeyboardMode: () =>
     set((s) => ({ keyboardMode: s.keyboardMode === 'letters' ? 'numbers' : s.keyboardMode === 'numbers' ? 'symbols' : 'letters' })),
-  toggleCase: () => set((s) => ({ isUpperCase: !s.isUpperCase })),
+  toggleCase: () => set((s) => ({ isUpperCase: !s.isUpperCase, capsLock: false })),
+  toggleCapsLock: () => set((s) => {
+    const next = !s.capsLock;
+    return { capsLock: next, isUpperCase: next };
+  }),
   toggleHistory: () => set((s) => ({ showHistory: !s.showHistory })),
   toggleSettings: () => set((s) => ({ showSettings: !s.showSettings })),
   triggerAlert: () => {

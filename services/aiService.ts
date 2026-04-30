@@ -44,6 +44,54 @@ export function hasApiKey(): boolean {
   return !!getAuthToken();
 }
 
+// ── Synalux session (cookie-based, set by NextAuth on synalux.ai) ──
+
+export interface SynaluxProfile {
+  email: string;
+  name: string;
+  plan: 'free' | 'standard' | 'advanced' | 'enterprise';
+  isPlatformAdmin: boolean;
+}
+
+export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
+  // Same-origin when served from synalux.ai/prism-aac (cookie auto-attached).
+  // Cross-origin (prism-aac.vercel.app) requires include + portal CORS.
+  try {
+    const res = await fetch(`${SYNALUX_API}/roles/me`, {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json' },
+    });
+    if (res.status === 401 || res.status === 403) return null;
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data?.user_name && !data?.role_key) return null;
+    return {
+      email: data.user_name || '',
+      name: data.user_name || '',
+      plan: (data.plan || 'free') as SynaluxProfile['plan'],
+      isPlatformAdmin: !!data.is_platform_admin,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function synaluxSignInUrl(): string {
+  const base = SYNALUX_API.replace(/\/api\/v1$/, '');
+  const callback = typeof window !== 'undefined'
+    ? window.location.href
+    : `${base}/prism-aac`;
+  return `${base}/api/auth/signin/google?callbackUrl=${encodeURIComponent(callback)}`;
+}
+
+export function synaluxSignOutUrl(): string {
+  const base = SYNALUX_API.replace(/\/api\/v1$/, '');
+  const callback = typeof window !== 'undefined'
+    ? window.location.href
+    : `${base}/prism-aac`;
+  return `${base}/api/auth/signout?callbackUrl=${encodeURIComponent(callback)}`;
+}
+
 // ── Synalux API (online) ──
 
 async function callSynalux(
@@ -51,14 +99,13 @@ async function callSynalux(
   options?: { webSearch?: boolean; onChunk?: (delta: string) => void },
 ): Promise<string> {
   const token = getAuthToken();
-  if (!token) throw new Error('offline');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${SYNALUX_API}/chat`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
+    credentials: 'include',
+    headers,
     body: JSON.stringify({
       messages,
       stream: false,

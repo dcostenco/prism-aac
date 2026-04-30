@@ -22,7 +22,6 @@ beforeEach(() => {
 async function freshStore() {
   // Re-import after clear so persist's hydration uses an empty store.
   const mod = await import('../store/predictionStore');
-  // @ts-expect-error vitest module reset hook
   if (mod.usePredictionStore.persist?.rehydrate) {
     await mod.usePredictionStore.persist.rehydrate();
   }

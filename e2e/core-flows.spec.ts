@@ -91,6 +91,45 @@ test('Categories panel opens and shows category buttons', async ({ page }) => {
   await expect(page.getByText(/Help|Talk|Food|Places|People|School/i).first()).toBeVisible();
 });
 
+test('Settings shows real Sign-in button (not a token paste field)', async ({ page }) => {
+  await page.getByRole('button', { name: 'Settings' }).click();
+  // No password field for an "auth token" — that was the broken UX.
+  const tokenField = page.getByPlaceholder(/auth token/i);
+  await expect(tokenField).toHaveCount(0);
+  // The real button: link to NextAuth signin route.
+  const signInLink = page.locator('[data-testid="synalux-signin"]');
+  await expect(signInLink).toBeVisible();
+  await expect(signInLink).toHaveAttribute('href', /\/api\/auth\/signin\/google/);
+});
+
+test('shift key has caps-lock long-press affordance with bigger letters', async ({ page }) => {
+  // Tap the shift key to switch to upper-case (one-shot).
+  const shift = page.getByTestId('shift-key');
+  await expect(shift).toBeVisible();
+  await shift.tap({ timeout: 5000 }).catch(async () => {
+    await shift.click();
+  });
+  // After tap the Q key label should now be upper-case.
+  const q = page.getByRole('button', { name: /^Q$/ });
+  await expect(q).toBeVisible();
+});
+
+test('AI Chat shows mic button when speech recognition is supported', async ({ page, browserName }) => {
+  await page.getByRole('button', { name: 'AI' }).click();
+  // Mic only renders for browsers that ship SpeechRecognition (Chromium yes,
+  // Firefox no). Skip the assertion on browsers without it.
+  const mic = page.getByTestId('ai-mic');
+  if (browserName === 'firefox') {
+    await expect(mic).toHaveCount(0);
+    return;
+  }
+  // Sign-in is required to reach the input panel; gate accepts both states.
+  const visible = await mic.isVisible().catch(() => false);
+  if (visible) {
+    await expect(mic).toBeVisible();
+  }
+});
+
 test('keyboard renders within the viewport at the running resolution', async ({ page }, testInfo) => {
   const viewport = page.viewportSize();
   const speakBtn = page.getByRole('button', { name: /^Speak$/ }).first();

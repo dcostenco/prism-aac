@@ -5,8 +5,9 @@ import { useUIStore } from '@/store/uiStore';
 import { tapFeedback } from '@/services/feedback';
 import { executeAllActions, ActionResult } from '@/engine/caregiverActions';
 import { CaregiverNote } from '@/types';
-import { parseCaregiverNote, hasApiKey } from '@/services/aiService';
+import { parseCaregiverNote } from '@/services/aiService';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 
 function formatTime(ts: number, lang?: string): string {
   const d = new Date(ts);
@@ -17,6 +18,7 @@ export default function CaregiverPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { notes, addNote, markApplied, removeNote, authorName, setAuthorName } = useNoteStore();
   const lang = useSettingsStore((s) => s.language);
+  const aiEnabled = !!useAuthStore((s) => s.profile);
   const [input, setInput] = useState('');
   const [results, setResults] = useState<ActionResult[] | null>(null);
   const [tab, setTab] = useState<'add' | 'log'>('add');
@@ -38,7 +40,7 @@ export default function CaregiverPanel() {
     if (!input.trim()) return;
     tapFeedback();
 
-    if (hasApiKey()) {
+    if (aiEnabled) {
       setParsing(true);
       try {
         const parsed = await parseCaregiverNote(input.trim());
@@ -104,7 +106,7 @@ export default function CaregiverPanel() {
             </div>
 
             <button onClick={handleSubmitNote} disabled={!input.trim() || parsing} className={`${btn} ${input.trim() && !parsing ? 'bg-[#4CAF50] text-white border-transparent' : 'opacity-40'}`}>
-              {parsing ? 'Parsing...' : hasApiKey() ? 'Save & Parse' : 'Save Note'}
+              {parsing ? 'Parsing...' : aiEnabled ? 'Save & Parse' : 'Save Note'}
             </button>
 
             {results && (
@@ -118,7 +120,7 @@ export default function CaregiverPanel() {
             )}
 
             <div className="text-dim text-xs leading-relaxed">
-              {hasApiKey()
+              {aiEnabled
                 ? 'AI will parse your instructions and suggest actions. You confirm before anything changes.'
                 : 'Sign in via Settings to enable AI-powered note parsing.'}
             </div>

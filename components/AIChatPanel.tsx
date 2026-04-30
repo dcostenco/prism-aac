@@ -3,9 +3,11 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { tapFeedback } from '@/services/feedback';
-import { askAI, hasApiKey } from '@/services/aiService';
+import { askAI } from '@/services/aiService';
 import { speakWord } from '@/services/speechService';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
+import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import ColoredText from './ColoredText';
 
 /**
@@ -27,10 +29,14 @@ interface ChatMessage {
 export default function AIChatPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { text, appendText, clearAll, autoSpeak, soundEnabled } = useMessageStore();
-  const { speechRate, speechVolume } = useSettingsStore();
+  const { speechRate, speechVolume, language } = useSettingsStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [interim, setInterim] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const voiceRef = useRef<VoiceSession | null>(null);
+  const voiceSupported = isVoiceInputSupported();
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -45,7 +51,45 @@ export default function AIChatPanel() {
     [appendText, autoSpeak, soundEnabled, speechRate, speechVolume],
   );
 
+  // Stop listening when modal closes.
+  useEffect(() => {
+    if (sidePanel !== 'ai-chat' && voiceRef.current) {
+      voiceRef.current.stop();
+      voiceRef.current = null;
+      setListening(false);
+      setInterim('');
+    }
+  }, [sidePanel]);
+
   if (sidePanel !== 'ai-chat') return null;
+
+  const toggleVoice = () => {
+    tapFeedback();
+    if (voiceRef.current) {
+      voiceRef.current.stop();
+      voiceRef.current = null;
+      setListening(false);
+      setInterim('');
+      return;
+    }
+    const session = startVoiceInput({
+      lang: language,
+      onInterim: (t) => setInterim(t),
+      onFinal: (t) => {
+        appendText(t.trim() + ' ');
+        setInterim('');
+      },
+      onError: () => {
+        setListening(false);
+        setInterim('');
+        voiceRef.current = null;
+      },
+    });
+    if (session) {
+      voiceRef.current = session;
+      setListening(true);
+    }
+  };
 
   const handleAsk = async () => {
     const question = text.trim();
@@ -96,7 +140,7 @@ export default function AIChatPanel() {
     setLoading(false);
   };
 
-  const configured = hasApiKey();
+  const configured = !!useAuthStore((s) => s.profile);
 
   return (
     <div
@@ -168,17 +212,42 @@ export default function AIChatPanel() {
 
             <div className="p-3 border-t border-theme">
               <div className="text-dim text-xs mb-2 text-center truncate">
-                {text.trim() ? <>Question: <span className="text-muted">&ldquo;{text.trim()}&rdquo;</span></> : 'Type your question on the keyboard.'}
+                {listening && interim ? (
+                  <span className="text-[#4CAF50]">🎙 &ldquo;{interim}&rdquo;</span>
+                ) : text.trim() ? (
+                  <>Question: <span className="text-muted">&ldquo;{text.trim()}&rdquo;</span></>
+                ) : (
+                  voiceSupported
+                    ? 'Type on the keyboard or tap 🎙 to speak.'
+                    : 'Type your question on the keyboard.'
+                )}
               </div>
-              <button
-                onClick={handleAsk}
-                disabled={!text.trim() || loading}
-                className={`aac-btn aac-speak w-full py-3 rounded-xl font-bold text-base ${
-                  text.trim() && !loading ? 'bg-[#4CAF50] text-white' : 'surface-key text-dim border border-theme'
-                }`}
-              >
-                {loading ? 'Thinking…' : 'Ask AI ✨'}
-              </button>
+              <div className="flex gap-2">
+                {voiceSupported && (
+                  <button
+                    onClick={toggleVoice}
+                    aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+                    aria-pressed={listening}
+                    data-testid="ai-mic"
+                    className={`aac-btn rounded-xl font-bold text-base px-4 min-w-[64px] flex items-center justify-center ${
+                      listening
+                        ? 'bg-[#F44336] text-white animate-pulse'
+                        : 'surface-key text-primary border border-theme'
+                    }`}
+                  >
+                    {listening ? '⏺' : '🎙'}
+                  </button>
+                )}
+                <button
+                  onClick={handleAsk}
+                  disabled={!text.trim() || loading}
+                  className={`aac-btn aac-speak flex-1 py-3 rounded-xl font-bold text-base ${
+                    text.trim() && !loading ? 'bg-[#4CAF50] text-white' : 'surface-key text-dim border border-theme'
+                  }`}
+                >
+                  {loading ? 'Thinking…' : 'Ask AI ✨'}
+                </button>
+              </div>
             </div>
           </>
         )}
