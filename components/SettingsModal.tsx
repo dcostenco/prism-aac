@@ -109,7 +109,7 @@ export default function SettingsModal() {
                 {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
               </select>
               <input value={newPhraseText} onChange={e => setNewPhraseText(e.target.value)} placeholder="Phrase text" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555]" />
-              <button onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim()); setNewPhraseText(''); } }}
+              <button onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim()); setNewPhraseText(''); setNewPhraseCat(''); } }}
                 className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]">Add</button>
             </div>
             {customPhrases.map(p => {

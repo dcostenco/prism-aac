@@ -14,6 +14,9 @@ import SyncProvider from './SyncProvider';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useMessageStore } from '@/store/messageStore';
+import { keyFeedback, deleteFeedback } from '@/services/feedback';
+import { useT } from '@/engine/useT';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
@@ -40,12 +43,26 @@ export default function PrismApp() {
 
   const seedTemplates = useCategoryStore((s) => s.seedTemplates);
   const highContrast = useSettingsStore((s) => s.highContrast);
+  const { rtl } = useT();
 
   useEffect(() => {
     setHydrated(true);
     runDecay();
     seedTemplates();
   }, [runDecay, seedTemplates]);
+
+  // Physical keyboard support — captures keystrokes globally
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const store = useMessageStore.getState();
+      if (e.key === 'Backspace') { e.preventDefault(); deleteFeedback(); store.deleteLastChar(); }
+      else if (e.key === 'Enter') { e.preventDefault(); }
+      else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { e.preventDefault(); keyFeedback(); store.appendChar(e.key); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   if (!hydrated) {
     return <div className="h-svh bg-[#12121e]" />;
@@ -54,7 +71,7 @@ export default function PrismApp() {
   return (
     <ErrorBoundary>
       <SyncProvider>
-        <div className={`h-svh flex flex-col overflow-hidden ${highContrast ? 'high-contrast bg-black' : 'bg-[#12121e]'}`}>
+        <div dir={rtl ? 'rtl' : 'ltr'} className={`h-svh flex flex-col overflow-hidden ${highContrast ? 'high-contrast bg-black' : 'bg-[#12121e]'}`}>
           <Toolbar />
           <MessageBar />
           <PredictionBar />

@@ -149,132 +149,6 @@ vitest.config.ts
 <files>
 This section contains the contents of the repository's files.
 
-<file path="services/azureTTS.ts">
-'use client';
-/**
- * Azure Neural TTS — Paid tiers only
- *
- * Routes through Synalux /api/v1/tts endpoint (same auth as chat).
- * Server holds the Azure Speech key — no client-side secrets.
- *
- * Supports 9 emotional speaking styles via SSML express-as:
- *   friendly, cheerful, calm, serious, excited, hopeful, empathetic, sad, angry
- *
- * Voice selection per language:
- *   en → en-US-JennyMultilingualNeural (supports styles)
- *   es → es-ES-ElviraNeural
- *   ja → ja-JP-NanamiNeural (supports styles)
- *   zh → zh-CN-XiaoxiaoNeural (supports styles)
- *   ...etc
- *
- * Falls back to Web Speech API if Azure is unavailable.
- */
-
-export type ToneStyle =
-  | 'friendly' | 'cheerful' | 'calm' | 'serious' | 'excited'
-  | 'hopeful' | 'empathetic' | 'sad' | 'angry';
-
-export const TONE_OPTIONS: Array<{ id: ToneStyle; label: string; icon: string }> = [
-  { id: 'friendly', label: 'Friendly', icon: '😊' },
-  { id: 'cheerful', label: 'Cheerful', icon: '😄' },
-  { id: 'calm', label: 'Calm', icon: '😌' },
-  { id: 'serious', label: 'Serious', icon: '😐' },
-  { id: 'excited', label: 'Excited', icon: '🤩' },
-  { id: 'hopeful', label: 'Hopeful', icon: '🙏' },
-  { id: 'empathetic', label: 'Empathetic', icon: '🤗' },
-  { id: 'sad', label: 'Sad', icon: '😢' },
-  { id: 'angry', label: 'Urgent', icon: '😤' },
-];
-
-const AZURE_VOICES: Record<string, string> = {
-  'en-US': 'en-US-JennyMultilingualNeural',
-  'es-ES': 'es-ES-ElviraNeural',
-  'fr-FR': 'fr-FR-DeniseNeural',
-  'pt-BR': 'pt-BR-FranciscaNeural',
-  'ro-RO': 'ro-RO-AlinaNeural',
-  'uk-UA': 'uk-UA-PolinaNeural',
-  'ru-RU': 'ru-RU-SvetlanaNeural',
-  'de-DE': 'de-DE-KatjaNeural',
-  'ja-JP': 'ja-JP-NanamiNeural',
-  'ko-KR': 'ko-KR-SunHiNeural',
-  'zh-CN': 'zh-CN-XiaoxiaoNeural',
-  'ar-SA': 'ar-SA-ZariyahNeural',
-};
-
-const STYLE_SUPPORTED = new Set([
-  'en-US-JennyMultilingualNeural',
-  'zh-CN-XiaoxiaoNeural',
-  'ja-JP-NanamiNeural',
-]);
-
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
-  const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
-  const supportsStyles = STYLE_SUPPORTED.has(voice);
-  const ratePercent = `${Math.round(rate * 100)}%`;
-  const pitchPercent = '+0%';
-  const volumeValue = Math.round(volume * 100);
-
-  let inner = escapeXml(text);
-  if (supportsStyles && tone !== 'friendly') {
-    inner = `<mstts:express-as style="${tone}">${inner}</mstts:express-as>`;
-  }
-
-  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${lang}">
-  <voice name="${voice}">
-    <prosody rate="${ratePercent}" pitch="${pitchPercent}" volume="${volumeValue}">
-      ${inner}
-    </prosody>
-  </voice>
-</speak>`;
-}
-
-const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
-
-export async function speakAzure(
-  text: string,
-  lang: string,
-  tone: ToneStyle,
-  rate: number,
-  volume: number,
-  authToken: string,
-): Promise<boolean> {
-  const ssml = buildSSML(text, lang, tone, rate, volume);
-
-  try {
-    const res = await fetch(`${SYNALUX_API}/tts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({ ssml, format: 'audio-24khz-96kbitrate-mono-mp3' }),
-    });
-
-    if (!res.ok) return false;
-
-    const audioBuffer = await res.arrayBuffer();
-    const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.volume = volume;
-    await audio.play();
-    audio.onended = () => URL.revokeObjectURL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
-</file>
-
 <file path=".github/workflows/update-i18n.yml">
 name: Update i18n translations
 
@@ -2620,6 +2494,144 @@ export async function parseCaregiverNote(noteText: string): Promise<ParsedNoteRe
 }
 </file>
 
+<file path="services/azureTTS.ts">
+'use client';
+/**
+ * Azure Neural TTS — Paid tiers only
+ *
+ * Routes through Synalux /api/v1/tts endpoint (same auth as chat).
+ * Server holds the Azure Speech key — no client-side secrets.
+ *
+ * Supports 9 emotional speaking styles via SSML express-as:
+ *   friendly, cheerful, calm, serious, excited, hopeful, empathetic, sad, angry
+ *
+ * Voice selection per language:
+ *   en → en-US-JennyMultilingualNeural (supports styles)
+ *   es → es-ES-ElviraNeural
+ *   ja → ja-JP-NanamiNeural (supports styles)
+ *   zh → zh-CN-XiaoxiaoNeural (supports styles)
+ *   ...etc
+ *
+ * Falls back to Web Speech API if Azure is unavailable.
+ */
+
+export type ToneStyle =
+  | 'friendly' | 'cheerful' | 'calm' | 'serious' | 'excited'
+  | 'hopeful' | 'empathetic' | 'sad' | 'angry';
+
+export const TONE_OPTIONS: Array<{ id: ToneStyle; label: string; icon: string }> = [
+  { id: 'friendly', label: 'Friendly', icon: '😊' },
+  { id: 'cheerful', label: 'Cheerful', icon: '😄' },
+  { id: 'calm', label: 'Calm', icon: '😌' },
+  { id: 'serious', label: 'Serious', icon: '😐' },
+  { id: 'excited', label: 'Excited', icon: '🤩' },
+  { id: 'hopeful', label: 'Hopeful', icon: '🙏' },
+  { id: 'empathetic', label: 'Empathetic', icon: '🤗' },
+  { id: 'sad', label: 'Sad', icon: '😢' },
+  { id: 'angry', label: 'Urgent', icon: '😤' },
+];
+
+const AZURE_VOICES: Record<string, string> = {
+  'en-US': 'en-US-JennyMultilingualNeural',
+  'es-ES': 'es-ES-ElviraNeural',
+  'fr-FR': 'fr-FR-DeniseNeural',
+  'pt-BR': 'pt-BR-FranciscaNeural',
+  'ro-RO': 'ro-RO-AlinaNeural',
+  'uk-UA': 'uk-UA-PolinaNeural',
+  'ru-RU': 'ru-RU-SvetlanaNeural',
+  'de-DE': 'de-DE-KatjaNeural',
+  'ja-JP': 'ja-JP-NanamiNeural',
+  'ko-KR': 'ko-KR-SunHiNeural',
+  'zh-CN': 'zh-CN-XiaoxiaoNeural',
+  'ar-SA': 'ar-SA-ZariyahNeural',
+};
+
+const STYLE_SUPPORTED = new Set([
+  'en-US-JennyMultilingualNeural',
+  'zh-CN-XiaoxiaoNeural',
+  'ja-JP-NanamiNeural',
+]);
+
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
+  const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
+  const supportsStyles = STYLE_SUPPORTED.has(voice);
+  const ratePercent = `${Math.round(rate * 100)}%`;
+  const pitchPercent = '+0%';
+  const volumeValue = Math.round(volume * 100);
+
+  let inner = escapeXml(text);
+  if (supportsStyles && tone !== 'friendly') {
+    inner = `<mstts:express-as style="${tone}">${inner}</mstts:express-as>`;
+  }
+
+  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${lang}">
+  <voice name="${voice}">
+    <prosody rate="${ratePercent}" pitch="${pitchPercent}" volume="${volumeValue}">
+      ${inner}
+    </prosody>
+  </voice>
+</speak>`;
+}
+
+const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
+
+let currentAudio: HTMLAudioElement | null = null;
+
+export function stopAzureAudio(): void {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.src = '';
+    currentAudio = null;
+  }
+}
+
+export async function speakAzure(
+  text: string,
+  lang: string,
+  tone: ToneStyle,
+  rate: number,
+  volume: number,
+  authToken: string,
+): Promise<boolean> {
+  const ssml = buildSSML(text, lang, tone, rate, volume);
+
+  try {
+    const res = await fetch(`${SYNALUX_API}/tts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ ssml, format: 'audio-24khz-96kbitrate-mono-mp3' }),
+    });
+
+    if (!res.ok) return false;
+
+    stopAzureAudio();
+    const audioBuffer = await res.arrayBuffer();
+    const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    currentAudio = audio;
+    audio.volume = volume;
+    await audio.play();
+    audio.onended = () => { URL.revokeObjectURL(url); if (currentAudio === audio) currentAudio = null; };
+    return true;
+  } catch {
+    return false;
+  }
+}
+</file>
+
 <file path="services/supabase.ts">
 'use client';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -4939,173 +4951,6 @@ export function deleteFeedback(): void {
 }
 </file>
 
-<file path="services/speechService.ts">
-/**
- * Speech Service — Unified TTS routing
- *
- * Free tier:  Web Speech API (browser built-in, offline-capable)
- * Paid tiers: Azure Neural TTS with emotional tone styles → fallback to Web Speech API
- *
- * Azure routes through Synalux /api/v1/tts — same auth pattern as chat.
- * The Azure Speech key is stored server-side (Synalux env), not in the client.
- */
-
-import { speakAzure, ToneStyle } from './azureTTS';
-
-export function isSpeechSupported(): boolean {
-  return typeof window !== 'undefined' && 'speechSynthesis' in window;
-}
-
-let resumeInterval: ReturnType<typeof setInterval> | null = null;
-
-function clearResumeWorkaround() {
-  if (resumeInterval) { clearInterval(resumeInterval); resumeInterval = null; }
-}
-
-function getAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('prism-aac-auth-token') || null;
-}
-
-function isPaidTier(): boolean {
-  return !!getAuthToken();
-}
-
-/**
- * Speak text — routes to Azure (paid) or Web Speech API (free).
- */
-export async function speak(
-  text: string,
-  rate = 0.5,
-  volume = 1.0,
-  lang = 'en-US',
-  tone: ToneStyle = 'friendly',
-): Promise<void> {
-  if (!text.trim()) return;
-
-  // Paid tier: try Azure Neural TTS with tone
-  if (isPaidTier()) {
-    const token = getAuthToken()!;
-    const success = await speakAzure(text, lang, tone, rate, volume, token);
-    if (success) return;
-    // Azure failed — fall through to Web Speech API
-  }
-
-  // Free tier / fallback: Web Speech API
-  speakLocal(text, rate, volume, lang);
-}
-
-/**
- * Speak a single word (auto-speak mode) — always uses Web Speech API for speed.
- */
-export function speakWord(word: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void {
-  speakLocal(word, rate, volume, lang);
-}
-
-/**
- * Local Web Speech API — works offline, no auth needed.
- */
-function speakLocal(text: string, rate: number, volume: number, lang: string): void {
-  if (!isSpeechSupported() || !text.trim()) return;
-  window.speechSynthesis.cancel();
-  clearResumeWorkaround();
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.1 + rate * 1.8;
-  u.volume = volume;
-  u.lang = lang;
-  u.onend = clearResumeWorkaround;
-  u.onerror = clearResumeWorkaround;
-  resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);
-  window.speechSynthesis.speak(u);
-}
-
-export function stopSpeech(): void {
-  if (isSpeechSupported()) window.speechSynthesis.cancel();
-  clearResumeWorkaround();
-}
-</file>
-
-<file path="store/messageStore.ts">
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { HistoryEntry } from '@/types';
-import { ToneStyle } from '@/services/azureTTS';
-
-interface MessageState {
-  text: string;
-  prevText: string;
-  activeTone: ToneStyle;
-  autoSpeak: boolean;
-  soundEnabled: boolean;
-  history: HistoryEntry[];
-  setTone: (tone: ToneStyle) => void;
-  appendWord: (word: string) => void;
-  appendText: (text: string) => void;
-  appendChar: (char: string) => void;
-  deleteLastWord: () => void;
-  deleteLastChar: () => void;
-  clearAll: () => void;
-  undo: () => void;
-  setText: (text: string) => void;
-  toggleAutoSpeak: () => void;
-  toggleSound: () => void;
-  addToHistory: (text: string) => void;
-  clearHistory: () => void;
-}
-
-export const useMessageStore = create<MessageState>()(
-  persist(
-    (set) => ({
-      text: '',
-      prevText: '',
-      activeTone: 'friendly' as ToneStyle,
-      autoSpeak: false,
-      soundEnabled: true,
-      history: [],
-
-      setTone: (tone) => set({ activeTone: tone }),
-
-      appendWord: (word) =>
-        set((s) => ({ prevText: s.text, text: s.text.trim() ? `${s.text.trim()} ${word}` : word })),
-
-      appendText: (text) =>
-        set((s) => ({ prevText: s.text, text: s.text.trim() ? `${s.text.trim()} ${text}` : text })),
-
-      appendChar: (char) =>
-        set((s) => ({ prevText: s.text, text: s.text + char })),
-
-      deleteLastWord: () =>
-        set((s) => {
-          const words = s.text.trim().split(/\s+/).filter(Boolean);
-          words.pop();
-          return { prevText: s.text, text: words.join(' ') };
-        }),
-
-      deleteLastChar: () =>
-        set((s) => ({ prevText: s.text, text: s.text.slice(0, -1) })),
-
-      clearAll: () => set((s) => ({ prevText: s.text, text: '' })),
-
-      undo: () => set((s) => ({ text: s.prevText, prevText: s.text })),
-
-      setText: (text) => set((s) => ({ prevText: s.text, text })),
-
-      toggleAutoSpeak: () => set((s) => ({ autoSpeak: !s.autoSpeak })),
-
-      toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
-
-      addToHistory: (text) =>
-        set((s) => ({
-          history: [{ text, timestamp: Date.now() }, ...s.history].slice(0, 100),
-        })),
-
-      clearHistory: () => set({ history: [] }),
-    }),
-    { name: 'prism-aac-message', partialize: (s) => ({ autoSpeak: s.autoSpeak, soundEnabled: s.soundEnabled, history: s.history }) },
-  ),
-);
-</file>
-
 <file path="tests/caregiver-system.test.ts">
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useNoteStore } from '@/store/noteStore';
@@ -5748,12 +5593,13 @@ html, body {
   outline-offset: 2px;
 }
 
-/* Keyboard key — scale + brighten (theme-aware) */
+/* Keyboard key — instant press, fade release (theme-aware) */
 .aac-key {
-  transition: transform 0.08s ease, background-color 0.1s ease, box-shadow 0.1s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   border: 1px solid rgba(255,255,255,0.06);
 }
 .aac-key:active {
+  transition: transform 0s, background-color 0s, box-shadow 0s;
   transform: scale(0.92);
   background-color: var(--aac-key-active) !important;
   box-shadow: 0 0 12px var(--aac-key-glow);
@@ -5992,114 +5838,6 @@ export default function CategoryPanel() {
           </button>
         ))}
       </div>
-    </div>
-  );
-}
-</file>
-
-<file path="components/MessageBar.tsx">
-'use client';
-import { useRef, useCallback, useState } from 'react';
-import { useMessageStore } from '@/store/messageStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { speak } from '@/services/speechService';
-import { tapFeedback, deleteFeedback } from '@/services/feedback';
-import ColoredText from './ColoredText';
-import { useT } from '@/engine/useT';
-import { TONE_OPTIONS, ToneStyle } from '@/services/azureTTS';
-
-export default function MessageBar() {
-  const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak } = useMessageStore();
-  const { speechRate, speechVolume } = useSettingsStore();
-  const { t, ttsCode } = useT();
-  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showTones, setShowTones] = useState(false);
-  const isPaid = !!( typeof window !== 'undefined' && localStorage.getItem('prism-aac-auth-token'));
-
-  const handleSpeak = useCallback(() => {
-    tapFeedback();
-    if (!text.trim() || !soundEnabled) return;
-    addToHistory(text.trim());
-    speak(text.trim(), speechRate, speechVolume, ttsCode, activeTone);
-  }, [text, soundEnabled, speechRate, speechVolume, ttsCode, activeTone, addToHistory]);
-
-  const cancelDelete = useCallback(() => {
-    if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
-  }, []);
-
-  const handleDeleteDown = useCallback(() => {
-    deleteTimer.current = setTimeout(() => {
-      deleteFeedback();
-      clearAll();
-      deleteTimer.current = null;
-    }, 600);
-  }, [clearAll]);
-
-  const handleDeleteUp = useCallback(() => {
-    if (deleteTimer.current !== null) {
-      clearTimeout(deleteTimer.current);
-      deleteTimer.current = null;
-      deleteFeedback();
-      deleteLastWord();
-    }
-  }, [deleteLastWord]);
-
-  const currentTone = TONE_OPTIONS.find(t => t.id === activeTone);
-
-  return (
-    <div className="flex items-center gap-2 mx-3 my-1.5 bg-[#1e1e2e] rounded-2xl px-4 py-3 min-h-[68px] shrink-0 relative">
-      <button
-        onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
-        aria-label={autoSpeak ? t('auto_speak_on') : t('auto_speak_off')}
-        aria-pressed={autoSpeak}
-        className={`aac-btn w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${
-          autoSpeak ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#888]'
-        }`}
-      >
-        <span className="text-lg">{autoSpeak ? '🔊' : '🔈'}</span>
-        <span className="text-[9px] mt-0.5">Auto</span>
-      </button>
-
-      {/* Tone selector — paid tiers only */}
-      {isPaid && (
-        <button
-          onClick={() => { tapFeedback(); setShowTones(!showTones); }}
-          aria-label={`Tone: ${currentTone?.label}`}
-          className="aac-btn w-14 h-14 rounded-xl bg-[#2a2a3e] flex flex-col items-center justify-center shrink-0"
-        >
-          <span className="text-lg">{currentTone?.icon ?? '😊'}</span>
-          <span className="text-[9px] mt-0.5 text-[#888]">{t('tone')}</span>
-        </button>
-      )}
-
-      <div className="flex-1 text-2xl min-h-[48px] flex items-center overflow-x-auto break-words" role="status" aria-live="polite" aria-label="Message text">
-        {text ? <ColoredText text={text} /> : <span className="text-[#555]">{t('type_here')}</span>}
-      </div>
-
-      <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-14 h-14 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center shrink-0">↩</button>
-
-      <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-16 h-16 rounded-xl bg-[#4CAF50] text-white text-2xl flex items-center justify-center shrink-0">▶</button>
-
-      <button
-        onPointerDown={handleDeleteDown} onPointerUp={handleDeleteUp} onPointerLeave={cancelDelete} onPointerCancel={cancelDelete}
-        aria-label={t('delete')} className="aac-btn aac-delete w-16 h-16 rounded-xl bg-[#F44336] text-white text-2xl flex items-center justify-center shrink-0 select-none"
-      >⌫</button>
-
-      {/* Tone picker popup */}
-      {showTones && (
-        <div className="absolute left-16 bottom-full mb-2 bg-[#1e1e2e] border border-[#2a2a3e] rounded-2xl p-2 grid grid-cols-3 gap-1.5 z-50 shadow-xl">
-          {TONE_OPTIONS.map(tone => (
-            <button
-              key={tone.id}
-              onClick={() => { tapFeedback(); setTone(tone.id); setShowTones(false); }}
-              className={`aac-btn rounded-xl px-3 py-2 flex flex-col items-center ${activeTone === tone.id ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#e0e0e0]'}`}
-            >
-              <span className="text-xl">{tone.icon}</span>
-              <span className="text-[10px] mt-0.5">{tone.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -6377,6 +6115,92 @@ export function decayPredictions(
 }
 </file>
 
+<file path="services/speechService.ts">
+/**
+ * Speech Service — Unified TTS routing
+ *
+ * Free tier:  Web Speech API (browser built-in, offline-capable)
+ * Paid tiers: Azure Neural TTS with emotional tone styles → fallback to Web Speech API
+ *
+ * Azure routes through Synalux /api/v1/tts — same auth pattern as chat.
+ * The Azure Speech key is stored server-side (Synalux env), not in the client.
+ */
+
+import { speakAzure, ToneStyle } from './azureTTS';
+
+export function isSpeechSupported(): boolean {
+  return typeof window !== 'undefined' && 'speechSynthesis' in window;
+}
+
+let resumeInterval: ReturnType<typeof setInterval> | null = null;
+
+function clearResumeWorkaround() {
+  if (resumeInterval) { clearInterval(resumeInterval); resumeInterval = null; }
+}
+
+function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('prism-aac-auth-token') || null;
+}
+
+function isPaidTier(): boolean {
+  return !!getAuthToken();
+}
+
+/**
+ * Speak text — routes to Azure (paid) or Web Speech API (free).
+ */
+export async function speak(
+  text: string,
+  rate = 0.5,
+  volume = 1.0,
+  lang = 'en-US',
+  tone: ToneStyle = 'friendly',
+): Promise<void> {
+  if (!text.trim()) return;
+
+  // Paid tier: try Azure Neural TTS with tone
+  if (isPaidTier()) {
+    const token = getAuthToken()!;
+    const success = await speakAzure(text, lang, tone, rate, volume, token);
+    if (success) return;
+    // Azure failed — fall through to Web Speech API
+  }
+
+  // Free tier / fallback: Web Speech API
+  speakLocal(text, rate, volume, lang);
+}
+
+/**
+ * Speak a single word (auto-speak mode) — always uses Web Speech API for speed.
+ */
+export function speakWord(word: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void {
+  speakLocal(word, rate, volume, lang);
+}
+
+/**
+ * Local Web Speech API — works offline, no auth needed.
+ */
+function speakLocal(text: string, rate: number, volume: number, lang: string): void {
+  if (!isSpeechSupported() || !text.trim()) return;
+  window.speechSynthesis.cancel();
+  clearResumeWorkaround();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.1 + rate * 1.8;
+  u.volume = volume;
+  u.lang = lang;
+  u.onend = clearResumeWorkaround;
+  u.onerror = clearResumeWorkaround;
+  resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);
+  window.speechSynthesis.speak(u);
+}
+
+export function stopSpeech(): void {
+  if (isSpeechSupported()) window.speechSynthesis.cancel();
+  clearResumeWorkaround();
+}
+</file>
+
 <file path="store/categoryStore.ts">
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -6485,6 +6309,87 @@ export const useCategoryStore = create<CategoryState>()(
         seeded: s.seeded,
       }),
     },
+  ),
+);
+</file>
+
+<file path="store/messageStore.ts">
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { HistoryEntry } from '@/types';
+import { ToneStyle } from '@/services/azureTTS';
+
+interface MessageState {
+  text: string;
+  prevText: string;
+  activeTone: ToneStyle;
+  autoSpeak: boolean;
+  soundEnabled: boolean;
+  history: HistoryEntry[];
+  setTone: (tone: ToneStyle) => void;
+  appendWord: (word: string) => void;
+  appendText: (text: string) => void;
+  appendChar: (char: string) => void;
+  deleteLastWord: () => void;
+  deleteLastChar: () => void;
+  clearAll: () => void;
+  undo: () => void;
+  setText: (text: string) => void;
+  toggleAutoSpeak: () => void;
+  toggleSound: () => void;
+  addToHistory: (text: string) => void;
+  clearHistory: () => void;
+}
+
+export const useMessageStore = create<MessageState>()(
+  persist(
+    (set) => ({
+      text: '',
+      prevText: '',
+      activeTone: 'friendly' as ToneStyle,
+      autoSpeak: false,
+      soundEnabled: true,
+      history: [],
+
+      setTone: (tone) => set({ activeTone: tone }),
+
+      appendWord: (word) =>
+        set((s) => ({ prevText: s.text, text: s.text.trim() ? `${s.text.trim()} ${word}` : word })),
+
+      appendText: (text) =>
+        set((s) => ({ prevText: s.text, text: s.text.trim() ? `${s.text.trim()} ${text}` : text })),
+
+      appendChar: (char) =>
+        set((s) => ({ prevText: s.text, text: s.text + char })),
+
+      deleteLastWord: () =>
+        set((s) => {
+          const words = s.text.trim().split(/\s+/).filter(Boolean);
+          words.pop();
+          return { prevText: s.text, text: words.join(' ') };
+        }),
+
+      deleteLastChar: () =>
+        set((s) => ({ prevText: s.text, text: s.text.slice(0, -1) })),
+
+      clearAll: () => set((s) => ({ prevText: s.text, text: '' })),
+
+      undo: () => set((s) => ({ text: s.prevText, prevText: s.text })),
+
+      setText: (text) => set((s) => ({ prevText: s.text, text })),
+
+      toggleAutoSpeak: () => set((s) => ({ autoSpeak: !s.autoSpeak })),
+
+      toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
+
+      addToHistory: (text) =>
+        set((s) => ({
+          history: [{ text, timestamp: Date.now() }, ...s.history].slice(0, 100),
+        })),
+
+      clearHistory: () => set({ history: [] }),
+    }),
+    { name: 'prism-aac-message', partialize: (s) => ({ autoSpeak: s.autoSpeak, soundEnabled: s.soundEnabled, history: s.history }) },
   ),
 );
 </file>
@@ -6845,6 +6750,114 @@ dist/
 }
 </file>
 
+<file path="components/MessageBar.tsx">
+'use client';
+import { useRef, useCallback, useState } from 'react';
+import { useMessageStore } from '@/store/messageStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { speak } from '@/services/speechService';
+import { tapFeedback, deleteFeedback } from '@/services/feedback';
+import ColoredText from './ColoredText';
+import { useT } from '@/engine/useT';
+import { TONE_OPTIONS, ToneStyle } from '@/services/azureTTS';
+
+export default function MessageBar() {
+  const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak } = useMessageStore();
+  const { speechRate, speechVolume } = useSettingsStore();
+  const { t, ttsCode } = useT();
+  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showTones, setShowTones] = useState(false);
+  const isPaid = !!( typeof window !== 'undefined' && localStorage.getItem('prism-aac-auth-token'));
+
+  const handleSpeak = useCallback(() => {
+    tapFeedback();
+    if (!text.trim() || !soundEnabled) return;
+    addToHistory(text.trim());
+    speak(text.trim(), speechRate, speechVolume, ttsCode, activeTone);
+  }, [text, soundEnabled, speechRate, speechVolume, ttsCode, activeTone, addToHistory]);
+
+  const cancelDelete = useCallback(() => {
+    if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
+  }, []);
+
+  const handleDeleteDown = useCallback(() => {
+    deleteTimer.current = setTimeout(() => {
+      deleteFeedback();
+      clearAll();
+      deleteTimer.current = null;
+    }, 600);
+  }, [clearAll]);
+
+  const handleDeleteUp = useCallback(() => {
+    if (deleteTimer.current !== null) {
+      clearTimeout(deleteTimer.current);
+      deleteTimer.current = null;
+      deleteFeedback();
+      deleteLastWord();
+    }
+  }, [deleteLastWord]);
+
+  const currentTone = TONE_OPTIONS.find(t => t.id === activeTone);
+
+  return (
+    <div className="flex items-center gap-2 mx-3 my-1.5 bg-[#1e1e2e] rounded-2xl px-4 py-3 min-h-[68px] shrink-0 relative">
+      <button
+        onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
+        aria-label={autoSpeak ? t('auto_speak_on') : t('auto_speak_off')}
+        aria-pressed={autoSpeak}
+        className={`aac-btn w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${
+          autoSpeak ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#888]'
+        }`}
+      >
+        <span className="text-lg">{autoSpeak ? '🔊' : '🔈'}</span>
+        <span className="text-[9px] mt-0.5">Auto</span>
+      </button>
+
+      {/* Tone selector — paid tiers only */}
+      {isPaid && (
+        <button
+          onClick={() => { tapFeedback(); setShowTones(!showTones); }}
+          aria-label={`Tone: ${currentTone?.label}`}
+          className="aac-btn w-14 h-14 rounded-xl bg-[#2a2a3e] flex flex-col items-center justify-center shrink-0"
+        >
+          <span className="text-lg">{currentTone?.icon ?? '😊'}</span>
+          <span className="text-[9px] mt-0.5 text-[#888]">{t('tone')}</span>
+        </button>
+      )}
+
+      <div className="flex-1 text-2xl min-h-[48px] flex items-center overflow-x-auto break-words" role="status" aria-live="polite" aria-label="Message text">
+        {text ? <ColoredText text={text} /> : <span className="text-[#555]">{t('type_here')}</span>}
+      </div>
+
+      <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-14 h-14 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center shrink-0">↩</button>
+
+      <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-16 h-16 rounded-xl bg-[#4CAF50] text-white text-2xl flex items-center justify-center shrink-0">▶</button>
+
+      <button
+        onPointerDown={handleDeleteDown} onPointerUp={handleDeleteUp} onPointerLeave={cancelDelete} onPointerCancel={cancelDelete}
+        aria-label={t('delete')} className="aac-btn aac-delete w-16 h-16 rounded-xl bg-[#F44336] text-white text-2xl flex items-center justify-center shrink-0 select-none"
+      >⌫</button>
+
+      {/* Tone picker popup */}
+      {showTones && (
+        <div className="absolute left-16 bottom-full mb-2 bg-[#1e1e2e] border border-[#2a2a3e] rounded-2xl p-2 grid grid-cols-3 gap-1.5 z-50 shadow-xl">
+          {TONE_OPTIONS.map(tone => (
+            <button
+              key={tone.id}
+              onClick={() => { tapFeedback(); setTone(tone.id); setShowTones(false); }}
+              className={`aac-btn rounded-xl px-3 py-2 flex flex-col items-center ${activeTone === tone.id ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#e0e0e0]'}`}
+            >
+              <span className="text-xl">{tone.icon}</span>
+              <span className="text-[10px] mt-0.5">{tone.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+</file>
+
 <file path="components/PrismApp.tsx">
 'use client';
 import { useEffect, useState, Component, ReactNode } from 'react';
@@ -6862,6 +6875,9 @@ import SyncProvider from './SyncProvider';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useMessageStore } from '@/store/messageStore';
+import { keyFeedback, deleteFeedback } from '@/services/feedback';
+import { useT } from '@/engine/useT';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
@@ -6888,12 +6904,26 @@ export default function PrismApp() {
 
   const seedTemplates = useCategoryStore((s) => s.seedTemplates);
   const highContrast = useSettingsStore((s) => s.highContrast);
+  const { rtl } = useT();
 
   useEffect(() => {
     setHydrated(true);
     runDecay();
     seedTemplates();
   }, [runDecay, seedTemplates]);
+
+  // Physical keyboard support — captures keystrokes globally
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const store = useMessageStore.getState();
+      if (e.key === 'Backspace') { e.preventDefault(); deleteFeedback(); store.deleteLastChar(); }
+      else if (e.key === 'Enter') { e.preventDefault(); }
+      else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { e.preventDefault(); keyFeedback(); store.appendChar(e.key); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   if (!hydrated) {
     return <div className="h-svh bg-[#12121e]" />;
@@ -6902,7 +6932,7 @@ export default function PrismApp() {
   return (
     <ErrorBoundary>
       <SyncProvider>
-        <div className={`h-svh flex flex-col overflow-hidden ${highContrast ? 'high-contrast bg-black' : 'bg-[#12121e]'}`}>
+        <div dir={rtl ? 'rtl' : 'ltr'} className={`h-svh flex flex-col overflow-hidden ${highContrast ? 'high-contrast bg-black' : 'bg-[#12121e]'}`}>
           <Toolbar />
           <MessageBar />
           <PredictionBar />
@@ -7034,7 +7064,7 @@ export default function SettingsModal() {
                 {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
               </select>
               <input value={newPhraseText} onChange={e => setNewPhraseText(e.target.value)} placeholder="Phrase text" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555]" />
-              <button onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim()); setNewPhraseText(''); } }}
+              <button onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim()); setNewPhraseText(''); setNewPhraseCat(''); } }}
                 className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]">Add</button>
             </div>
             {customPhrases.map(p => {

@@ -87,6 +87,16 @@ export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: num
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 
+let currentAudio: HTMLAudioElement | null = null;
+
+export function stopAzureAudio(): void {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.src = '';
+    currentAudio = null;
+  }
+}
+
 export async function speakAzure(
   text: string,
   lang: string,
@@ -109,13 +119,15 @@ export async function speakAzure(
 
     if (!res.ok) return false;
 
+    stopAzureAudio();
     const audioBuffer = await res.arrayBuffer();
     const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
+    currentAudio = audio;
     audio.volume = volume;
     await audio.play();
-    audio.onended = () => URL.revokeObjectURL(url);
+    audio.onended = () => { URL.revokeObjectURL(url); if (currentAudio === audio) currentAudio = null; };
     return true;
   } catch {
     return false;

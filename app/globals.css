@@ -42,12 +42,13 @@ html, body {
   outline-offset: 2px;
 }
 
-/* Keyboard key — scale + brighten (theme-aware) */
+/* Keyboard key — instant press, fade release (theme-aware) */
 .aac-key {
-  transition: transform 0.08s ease, background-color 0.1s ease, box-shadow 0.1s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   border: 1px solid rgba(255,255,255,0.06);
 }
 .aac-key:active {
+  transition: transform 0s, background-color 0s, box-shadow 0s;
   transform: scale(0.92);
   background-color: var(--aac-key-active) !important;
   box-shadow: 0 0 12px var(--aac-key-glow);
