@@ -94,12 +94,27 @@ All AI features require a **Synalux subscription**. Core AAC (keyboard, categori
 
 ### AI Model Routing (server-side)
 
-| Tier | Default Model | Fallback | Offline |
-|------|--------------|----------|---------|
-| Free | Gemini 2.5 Flash | — | prism-coder:7b |
-| Standard | Claude Sonnet 4 | Gemini 2.5 Flash | prism-coder:7b |
-| Advanced | Claude Sonnet 4 | Gemini 2.5 Flash | prism-coder:7b |
-| Enterprise | Claude Opus 4 | Gemini 2.5 Flash | prism-coder:7b |
+Identical to the rest of the Synalux platform — all products (Portal, PrismAAC, Prism Coder, VS Code Extension) route through the same `/api/v1/chat` endpoint, and tier policy is enforced server-side. A free-tier client requesting `claude-sonnet-4` is silently downgraded to its tier default; clients can't bypass the gate.
+
+| Tier | Default Model | Fallback | Offline | Daily AI Calls | Max Tokens |
+|------|--------------|----------|---------|----------------|------------|
+| Free | Gemini 2.5 Flash | — | prism-coder:7b | 100 | 4,096 |
+| Standard | Claude Sonnet 4 | Gemini 2.5 Flash | prism-coder:7b | 2,000 | 8,192 |
+| Advanced | Claude Sonnet 4 | Gemini 2.5 Flash | prism-coder:7b | 5,000 | 16,384 |
+| Enterprise | Claude Opus 4 | Gemini 2.5 Flash | prism-coder:7b | 100,000 | 32,768 |
+
+When the API is unreachable (offline, network drop, regional outage), every tier falls back to `prism-coder:7b` running locally via Ollama — no degradation in core AAC functionality.
+
+### Subscription Pricing
+
+| Tier | Price | Trial |
+|------|-------|-------|
+| Free | $0 / month | — |
+| Standard | $19 / month | 14-day free trial, no credit card required |
+| Advanced | $49 / month | 14-day free trial, no credit card required |
+| Enterprise | $99 / month | 14-day free trial, no credit card required |
+
+Pricing matches the Synalux Portal and Prism Coder products — one bill, one tier across all platform apps. **Synalux Enterprise subscribers get PrismAAC Enterprise included** at no additional cost.
 
 ### Feature Tiers
 
@@ -107,9 +122,10 @@ All AI features require a **Synalux subscription**. Core AAC (keyboard, categori
 |---------|------|----------|----------|------------|
 | Core AAC keyboard + categories | Yes | Yes | Yes | Yes |
 | 58 default phrases | Yes | Yes | Yes | Yes |
-| Word prediction (5 slots, seeded vocab) | Yes | Yes | Yes | Yes |
+| Word prediction (5 slots; trigram + bigram + prefix + frequency + recency, seeded from 58 phrases) | Yes | Yes | Yes | Yes |
+| Modified Fitzgerald Key color coding (Goossens' 1992) — pronouns yellow, verbs green, nouns orange | Yes | Yes | Yes | Yes |
 | Cumulative auto-speak | Yes | Yes | Yes | Yes |
-| Math keyboard | Yes | Yes | Yes | Yes |
+| Math keyboard (30 symbols, basic + advanced) | Yes | Yes | Yes | Yes |
 | Caregiver notes (local) | Yes | Yes | Yes | Yes |
 | Bundled restaurant ordering flows (Chipotle, General) | Yes | Yes | Yes | Yes |
 | Multi-language UI (12 languages, RTL) — *never tier-gated* | Yes | Yes | Yes | Yes |
@@ -118,8 +134,9 @@ All AI features require a **Synalux subscription**. Core AAC (keyboard, categori
 | AI Chat | — | Yes | Yes | Yes |
 | Azure Neural TTS — basic neural voices | — | Yes | Yes | Yes |
 | Azure Neural TTS — premium / emotional tones | — | — | Yes | Yes |
-| Synalux platform modules | — | — | — | Yes |
+| Synalux platform modules (Portal, Prism Coder, etc.) | — | 8 modules | 16 modules | All 21 modules |
 | Cloud backup | — | Yes | Yes | Yes |
+| HIPAA Business Associate Agreement (BAA) | — | — | — | Yes |
 
 > **Tier gating note (current state):** the client today distinguishes only "signed in vs not signed in" (`isPaid` is a boolean derived from the auth token). Standard / Advanced / Enterprise differentiation runs **server-side** in the synalux portal — model routing, quota, and module access are decided there. Per-tier client-side limits on the number of custom phrases, categories, ordering sequences, etc. are not enforced today; we removed the previously-listed quotas so the table doesn't promise behaviour the client doesn't implement.
 
@@ -142,18 +159,20 @@ All AI features require a **Synalux subscription**. Core AAC (keyboard, categori
 
 Pricing and feature data below was collected from each vendor's public listings as of 2026‑04‑30. Confirm directly with the vendor before any purchasing decision — clinical AAC pricing changes frequently and grant / school pricing differs from list.
 
-| App | Price (one-time) | Price (subscription) | Platforms | Source license | Languages | Word prediction | Offline core | Cross-device sync | Emergency / safety flow |
-|---|---|---|---|---|---|---|---|---|---|
-| **Prism AAC** | **Free tier available** | **Free + Standard / Advanced / Enterprise paid tiers** | **Web (PWA), iOS, Android, desktop browsers** | **AGPL‑3.0 (open source, grant-eligible)** | **12 + RTL** | **Adaptive — bigram + frequency + recency, seeded from 58 phrases** | **Yes — fully usable without account or network** | **Yes (Hivemind)** | **Yes (every tier)** |
-| Proloquo2Go (AssistiveWare) | $249.99 | — | iOS / iPadOS only | proprietary | 5 (en, es, fr, nl, de) | symbol-grid based | yes | iCloud only | none |
-| TouchChat HD with WordPower (Saltillo) | $149.99 – $299.99 (depending on vocab pack) | — | iOS / iPadOS only | proprietary | ~8 | pattern / vocab pack | yes | iCloud / iTunes file share | none |
-| LAMP Words for Life (PRC‑Saltillo) | $299.99 | — | iOS / iPadOS only | proprietary | 4 | motor-plan + sequenced icons | yes | iCloud only | none |
-| TD Snap (Tobii Dynavox) | bundled with Tobii eye-tracker hardware (~$5–15k) | also offered as ~$50/mo Snap Core First subscription | iOS, iPadOS, Windows | proprietary | 30+ | grid-based | yes | yes (paid tier) | none |
-| Avaz AAC | — | $99.99 / year | iOS, Android | proprietary | 8 | basic frequency | yes | yes | none |
-| CoughDrop | — | $25 – $50 / year | iOS, Android, web | partially open (server) / proprietary client | 7 | basic | yes | yes | none |
-| Speak for Yourself | $299.99 | — | iOS only | proprietary | 1 | static motor-plan | yes | iCloud only | none |
-| LetMeTalk | free | — | Android only | proprietary | 7 | none | yes | no | none |
-| Cboard | free | — | web (PWA) | open source (GPL‑3.0) | 30+ | none | partial | no | none |
+| App | Price | Platforms | Languages | Prediction | Offline | Sync | Emergency |
+|---|---|---|---|---|---|---|---|
+| **Prism AAC** | **Free + $19 / $49 / $99 per month** | **Web (PWA), iOS, Android, desktop** | **12 + RTL** | **5-signal adaptive, seeded** | **✅ full** | **✅ Hivemind** | **✅ every tier** |
+| Proloquo2Go (AssistiveWare) | $249.99 one-time | iOS / iPadOS | 5 | symbol-grid | ✅ | iCloud only | — |
+| TouchChat HD (Saltillo) | $149.99 – $299.99 one-time | iOS / iPadOS | ~8 | vocab pack | ✅ | iCloud | — |
+| LAMP Words for Life (PRC-Saltillo) | $299.99 one-time | iOS / iPadOS | 4 | motor-plan | ✅ | iCloud | — |
+| TD Snap (Tobii Dynavox) | $5–15k hardware bundle, or ~$50 / month | iOS / iPadOS / Windows | 30+ | grid-based | ✅ | paid tier | — |
+| Avaz AAC | $99.99 / year | iOS / Android | 8 | basic | ✅ | ✅ | — |
+| CoughDrop | $25 – $50 / year | iOS / Android / web | 7 | basic | ✅ | ✅ | — |
+| Speak for Yourself | $299.99 one-time | iOS | 1 | static motor-plan | ✅ | iCloud | — |
+| LetMeTalk | free | Android | 7 | none | ✅ | — | — |
+| Cboard | free | web (PWA) | 30+ | none | partial | — | — |
+
+**License posture:** Prism AAC is **AGPL-3.0** (open source, grant-eligible). Cboard is GPL-3.0. Every other row in the table is proprietary. See the "Where Prism AAC differs" section below for why this matters.
 
 ### Where Prism AAC differs
 
