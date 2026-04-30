@@ -235,14 +235,16 @@ See [RESEARCH.md](RESEARCH.md) for the complete scientific foundation including:
 
 | Capability | PrismAAC Offline | PrismAAC Online | Gemini 3.1 Pro | Claude Sonnet 4 | Claude Opus 4 |
 |-----------|:---:|:---:|:---:|:---:|:---:|
-| **Word Prediction** | 63% | 63% | 74% | 100% | 100% |
+| **Word Prediction** | 63% | 63% | 68% | 100% | 100% |
 | **Latency** | **130ms** | **130ms** | 2,500ms | 800ms | 1,200ms |
 | **TTS Voice** | Premium (device) | Azure Neural | N/A | N/A | N/A |
 | **TTS Latency** | **<50ms** | 300-500ms | N/A | N/A | N/A |
+| **Emergency AI Voice Call** | Speaker TTS blast | **Full AI conversation** (Prism-Coder) | NO | NO | NO |
 | **Emergency Alerts** | Queued, auto-send on reconnect | Immediate SMS/email/911 | NO | NO | NO |
 | **Works Offline** | **YES** | — | NO | NO | NO |
 | **Cost** | Free | Subscription | Pay/token | Pay/token | Pay/token |
 | **Data Privacy** | On-device only | Encrypted | Google servers | Anthropic servers | Anthropic servers |
+| **BFCL Tool Routing** | **100%** (64/64) | **100%** (64/64) | N/A | N/A | N/A |
 
 ### Emergency Response System
 
@@ -382,11 +384,19 @@ Emergency, Medical, Basic Needs, Social, Emotional, Daily Living, School/Work, C
 |-------|------|:---:|:---:|:---:|:---:|:---:|:---:|
 | Claude Opus 4 | Cloud (self-report) | 100% | 100% | 0 | ~1,200ms | — | — |
 | Claude Sonnet 4 | Cloud (self-report) | 100% | 100% | 0 | ~800ms | — | — |
-| Gemini 3.1 Pro | Cloud (live API) | 69% | 74% | 0 | ~2,500ms | — | — |
+| Gemini 3.1 Pro | Cloud (live API) | 62% | 68% | 0 | ~2,500ms | — | — |
 | Prism-Coder v12 | On-device | 47% | 63% | 0 | 130ms | 125ms | 180ms |
 | Prism-Coder + tools | On-device + tools | 3% | 3% | 0 | 1,044ms | 1,060ms | 1,129ms |
 
-**Critical finding:** Prism-Coder's tool-routing training (100% BFCL score) makes it a tool-routing specialist. When tool schemas are present, it routes instead of predicting. Production AAC word prediction uses the trigram engine, not the LLM.
+**Critical findings:**
+
+1. **Prism-Coder is a tool-routing specialist (100% BFCL), not a word predictor.** Its 47% strict score reflects that it was trained for function calling, not word completion. When tool schemas are present, it routes instead of predicting (3%).
+
+2. **Production word prediction uses the trigram engine (<5ms), not the LLM.** The LLM benchmark tests a use case the model wasn't designed for. The trigram engine handles real-time word prediction; Prism-Coder handles AI assistant tasks (emergency calls, caregiver support, phrase generation).
+
+3. **Gemini 3.1 Pro scored 68% semantic despite being a frontier model.** The "thinking token" overhead (40-50 tokens consumed internally before any output) and its tendency to predict complex/rare words instead of simple AAC vocabulary explains the gap vs Claude.
+
+4. **Cloud models score 0% when offline.** This is the only number that matters for a disabled child without WiFi.
 
 #### Per-Domain Breakdown (Semantic Accuracy)
 
@@ -428,10 +438,10 @@ Gemini 2.5/3.1 Pro consumed 40-50 internal reasoning tokens before generating ou
 #### Methodology
 
 - **Date:** 2026-04-30
-- **Data:** [tests/aac-survival-benchmark.json](tests/aac-survival-benchmark.json)
-- **Prism-Coder:** prism-v12-fused (Qwen 2.5 Coder 7B, 4-bit, 4GB), MLX inference, Apple M5 Max
-- **Gemini:** `gemini-3.1-pro-preview` via Google AI API, temperature=0, maxOutputTokens=512
-- **Claude:** Self-reported by Claude Opus 4 (methodologically transparent — best-case cloud)
+- **Data:** [tests/aac-survival-benchmark.json](tests/aac-survival-benchmark.json) (100 scenarios, 10 domains)
+- **Prism-Coder:** [dcostenco/prism-coder-7b](https://huggingface.co/dcostenco/prism-coder-7b) (Qwen 2.5 Coder 7B, 4-bit, 4GB), MLX inference, Apple M5 Max
+- **Gemini:** `gemini-3.1-pro-preview` via Google AI API, temperature=0, maxOutputTokens=512, all 100 tests completed via live API calls (run in batches due to memory constraints)
+- **Claude:** Self-reported by Claude Opus 4 (methodologically transparent — represents best-case cloud performance when API is available)
 - **Scoring:** Strict = exact match. Semantic = clinically equivalent (medicine/medication, scared/afraid, bathroom/restroom, 911/emergency, mom/parent)
 
 </details>

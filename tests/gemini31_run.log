@@ -1,0 +1,21 @@
+  ❌ [  1] I need               → exp 'help', got 'my'
+  ❌ [ 11] It hurts             → exp 'here', got 'when'
+  ❌ [ 12] I take               → exp 'medicine', got 'my'
+  ❌ [ 15] Can I have           → exp 'water', got 'some'
+  ❌ [ 20] I am                 → exp 'tired', got 'recovering'
+  ❌ [ 23] I need               → exp 'bathroom', got 'to'
+  ... 25/100 (strict=15 sem=19 err=0)
+  ❌ [ 26] I am                 → exp 'sleepy', got 'tired'
+  ❌ [ 29] More                 → exp 'please', got 'food'
+  ❌ [ 36] Come                 → exp 'here', got 'over'
+  ❌ [ 43] I am                 → exp 'angry', got 'furious'
+  ❌ [ 45] I don't              → exp 'like', got 'care'
+  ❌ [ 47] I am                 → exp 'excited', got 'so'
+  ... 50/100 (strict=34 sem=38 err=0)
+  ❌ [ 56] I want               → exp 'my', got 'a'
+  ❌ [ 63] Can I                → exp 'go', got 'use'
+  ❌ [ 68] Can I                → exp 'help', got 'join'
+  ❌ [ 71] I want               → exp 'the', got 'to'
+  ❌ [ 74] Can I                → exp 'have', got 'borrow'
+  ... 75/100 (strict=54 sem=58 err=0)
+  ❌ [ 77] I want to            → exp 'swing', got 'play'

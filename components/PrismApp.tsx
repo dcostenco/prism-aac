@@ -39,6 +39,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 
 export default function PrismApp() {
   const runDecay = usePredictionStore((s) => s.runDecay);
+  const ensureSeed = usePredictionStore((s) => s.ensureSeed);
   const [hydrated, setHydrated] = useState(false);
 
   const seedTemplates = useCategoryStore((s) => s.seedTemplates);
@@ -53,7 +54,13 @@ export default function PrismApp() {
     setHydrated(true);
     runDecay();
     seedTemplates();
-  }, [runDecay, seedTemplates]);
+    // Seed prediction vocabulary AFTER hydration so the persisted (possibly
+    // empty) wordFreq always has the bundled phrase corpus filled in. We
+    // tried doing this via persist `merge`/`migrate`; in production the
+    // rehydrated state was still arriving empty, so seeding is now an
+    // explicit React-driven step.
+    ensureSeed();
+  }, [runDecay, seedTemplates, ensureSeed]);
 
   // Physical keyboard support — captures keystrokes globally.
   // Skips interactive form elements and any open modal/dialog so that typing

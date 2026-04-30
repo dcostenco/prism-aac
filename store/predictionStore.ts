@@ -50,6 +50,12 @@ interface PredictionState {
   updatePredictions: (text: string) => void;
   learnWord: (word: string, previousWord?: string) => void;
   runDecay: () => void;
+  // ensureSeed is called from PrismApp on mount to deterministically
+  // populate wordFreq/bigrams when the persisted state is empty. The
+  // persist `merge`/`migrate` hooks proved unreliable in practice (the
+  // hydrated state still arrived empty in production), so seeding is
+  // now driven imperatively from the React tree.
+  ensureSeed: () => void;
 }
 
 export const usePredictionStore = create<PredictionState>()(
@@ -81,6 +87,19 @@ export const usePredictionStore = create<PredictionState>()(
           wordFreq: pruneIfNeeded(decayPredictions(wordFreq)),
           bigrams: pruneIfNeeded(decayPredictions(bigrams)),
         });
+      },
+
+      ensureSeed: () => {
+        const { wordFreq, bigrams } = get();
+        // Only fill missing keys — never overwrite a user-typed entry.
+        const wfMerged = { ...SEED.wordFreq, ...wordFreq };
+        const bgMerged = { ...SEED.bigrams,  ...bigrams };
+        // No-op if seeding wouldn't change anything (avoids pointless re-render).
+        if (Object.keys(wfMerged).length === Object.keys(wordFreq).length &&
+            Object.keys(bgMerged).length === Object.keys(bigrams).length) {
+          return;
+        }
+        set({ wordFreq: wfMerged, bigrams: bgMerged });
       },
     }),
     {

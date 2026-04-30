@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:desktop": "playwright test --project=desktop",
+    "e2e:mobile": "playwright test --project=iphone-6.1 --project=iphone-6.5 --project=iphone-6.9",
+    "e2e:tablet": "playwright test --project=ipad-7 --project=ipad-13"
   },
   "dependencies": {
     "@serwist/next": "^9.5.8",
@@ -20,6 +24,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
