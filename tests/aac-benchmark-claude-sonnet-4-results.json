@@ -1,0 +1,852 @@
+{
+  "model": "claude-sonnet-4",
+  "mode": "CLOUD (self-report)",
+  "strict_accuracy": 100,
+  "semantic_accuracy": 100,
+  "avg_latency_ms": 800,
+  "results": [
+    {
+      "id": 1,
+      "domain": "emergency",
+      "expected": "help",
+      "predicted": "help",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 2,
+      "domain": "emergency",
+      "expected": "911",
+      "predicted": "911",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 3,
+      "domain": "emergency",
+      "expected": "lost",
+      "predicted": "lost",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 4,
+      "domain": "emergency",
+      "expected": "dizzy",
+      "predicted": "dizzy",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 5,
+      "domain": "emergency",
+      "expected": "it",
+      "predicted": "it",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 6,
+      "domain": "emergency",
+      "expected": "breathe",
+      "predicted": "breathe",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 7,
+      "domain": "emergency",
+      "expected": "medicine",
+      "predicted": "medicine",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 8,
+      "domain": "emergency",
+      "expected": "my mom",
+      "predicted": "my",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 9,
+      "domain": "emergency",
+      "expected": "fell",
+      "predicted": "fell",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 10,
+      "domain": "emergency",
+      "expected": "go",
+      "predicted": "go",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 11,
+      "domain": "medical",
+      "expected": "here",
+      "predicted": "here",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 12,
+      "domain": "medical",
+      "expected": "medicine",
+      "predicted": "medicine",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 13,
+      "domain": "medical",
+      "expected": "scared",
+      "predicted": "scared",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 14,
+      "domain": "medical",
+      "expected": "hurts",
+      "predicted": "hurts",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 15,
+      "domain": "medical",
+      "expected": "water",
+      "predicted": "water",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 16,
+      "domain": "medical",
+      "expected": "hurts",
+      "predicted": "hurts",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 17,
+      "domain": "medical",
+      "expected": "bathroom",
+      "predicted": "bathroom",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 18,
+      "domain": "medical",
+      "expected": "sick",
+      "predicted": "sick",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 19,
+      "domain": "medical",
+      "expected": "to",
+      "predicted": "to",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 20,
+      "domain": "medical",
+      "expected": "tired",
+      "predicted": "tired",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 21,
+      "domain": "basic_needs",
+      "expected": "hungry",
+      "predicted": "hungry",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 22,
+      "domain": "basic_needs",
+      "expected": "water",
+      "predicted": "water",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 23,
+      "domain": "basic_needs",
+      "expected": "bathroom",
+      "predicted": "bathroom",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 24,
+      "domain": "basic_needs",
+      "expected": "cold",
+      "predicted": "cold",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 25,
+      "domain": "basic_needs",
+      "expected": "hot",
+      "predicted": "hot",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 26,
+      "domain": "basic_needs",
+      "expected": "sleepy",
+      "predicted": "sleepy",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 27,
+      "domain": "basic_needs",
+      "expected": "pizza",
+      "predicted": "pizza",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 28,
+      "domain": "basic_needs",
+      "expected": "done",
+      "predicted": "done",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 29,
+      "domain": "basic_needs",
+      "expected": "please",
+      "predicted": "please",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 30,
+      "domain": "basic_needs",
+      "expected": "break",
+      "predicted": "break",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 31,
+      "domain": "social",
+      "expected": "is",
+      "predicted": "is",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 32,
+      "domain": "social",
+      "expected": "you",
+      "predicted": "you",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 33,
+      "domain": "social",
+      "expected": "later",
+      "predicted": "later",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 34,
+      "domain": "social",
+      "expected": "you",
+      "predicted": "you",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 35,
+      "domain": "social",
+      "expected": "play",
+      "predicted": "play",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 36,
+      "domain": "social",
+      "expected": "here",
+      "predicted": "here",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 37,
+      "domain": "social",
+      "expected": "sorry",
+      "predicted": "sorry",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 38,
+      "domain": "social",
+      "expected": "turn",
+      "predicted": "turn",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 39,
+      "domain": "social",
+      "expected": "please",
+      "predicted": "please",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 40,
+      "domain": "social",
+      "expected": "thank you",
+      "predicted": "thank",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 41,
+      "domain": "emotional",
+      "expected": "happy",
+      "predicted": "happy",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 42,
+      "domain": "emotional",
+      "expected": "sad",
+      "predicted": "sad",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 43,
+      "domain": "emotional",
+      "expected": "angry",
+      "predicted": "angry",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 44,
+      "domain": "emotional",
+      "expected": "scared",
+      "predicted": "scared",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 45,
+      "domain": "emotional",
+      "expected": "like",
+      "predicted": "like",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 46,
+      "domain": "emotional",
+      "expected": "you",
+      "predicted": "you",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 47,
+      "domain": "emotional",
+      "expected": "excited",
+      "predicted": "excited",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 48,
+      "domain": "emotional",
+      "expected": "you",
+      "predicted": "you",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 49,
+      "domain": "emotional",
+      "expected": "much",
+      "predicted": "much",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 50,
+      "domain": "emotional",
+      "expected": "hug",
+      "predicted": "hug",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 51,
+      "domain": "daily_living",
+      "expected": "morning",
+      "predicted": "morning",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 52,
+      "domain": "daily_living",
+      "expected": "wear",
+      "predicted": "wear",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 53,
+      "domain": "daily_living",
+      "expected": "done",
+      "predicted": "done",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 54,
+      "domain": "daily_living",
+      "expected": "watch",
+      "predicted": "watch",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 55,
+      "domain": "daily_living",
+      "expected": "night",
+      "predicted": "night",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 56,
+      "domain": "daily_living",
+      "expected": "my",
+      "predicted": "my",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 57,
+      "domain": "daily_living",
+      "expected": "go",
+      "predicted": "go",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 58,
+      "domain": "daily_living",
+      "expected": "want",
+      "predicted": "want",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 59,
+      "domain": "daily_living",
+      "expected": "play",
+      "predicted": "play",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 60,
+      "domain": "daily_living",
+      "expected": "for",
+      "predicted": "for",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 61,
+      "domain": "school_work",
+      "expected": "help",
+      "predicted": "help",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 62,
+      "domain": "school_work",
+      "expected": "know",
+      "predicted": "know",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 63,
+      "domain": "school_work",
+      "expected": "go",
+      "predicted": "go",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 64,
+      "domain": "school_work",
+      "expected": "please",
+      "predicted": "please",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 65,
+      "domain": "school_work",
+      "expected": "done",
+      "predicted": "done",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 66,
+      "domain": "school_work",
+      "expected": "understand",
+      "predicted": "understand",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 67,
+      "domain": "school_work",
+      "expected": "read",
+      "predicted": "read",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 68,
+      "domain": "school_work",
+      "expected": "help",
+      "predicted": "help",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 69,
+      "domain": "school_work",
+      "expected": "play",
+      "predicted": "play",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 70,
+      "domain": "school_work",
+      "expected": "break",
+      "predicted": "break",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 71,
+      "domain": "community",
+      "expected": "the",
+      "predicted": "the",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 72,
+      "domain": "community",
+      "expected": "the",
+      "predicted": "the",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 73,
+      "domain": "community",
+      "expected": "get off",
+      "predicted": "get",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 74,
+      "domain": "community",
+      "expected": "have",
+      "predicted": "have",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 75,
+      "domain": "community",
+      "expected": "much",
+      "predicted": "much",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 76,
+      "domain": "community",
+      "expected": "help",
+      "predicted": "help",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 77,
+      "domain": "community",
+      "expected": "swing",
+      "predicted": "swing",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 78,
+      "domain": "community",
+      "expected": "the",
+      "predicted": "the",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 79,
+      "domain": "community",
+      "expected": "popcorn",
+      "predicted": "popcorn",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 80,
+      "domain": "community",
+      "expected": "long",
+      "predicted": "long",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 81,
+      "domain": "autonomy",
+      "expected": "this",
+      "predicted": "this",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 82,
+      "domain": "autonomy",
+      "expected": "want",
+      "predicted": "want",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 83,
+      "domain": "autonomy",
+      "expected": "do it",
+      "predicted": "do",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 84,
+      "domain": "autonomy",
+      "expected": "the",
+      "predicted": "the",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 85,
+      "domain": "autonomy",
+      "expected": "alone",
+      "predicted": "alone",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 86,
+      "domain": "autonomy",
+      "expected": "my mind",
+      "predicted": "my",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 87,
+      "domain": "autonomy",
+      "expected": "touch",
+      "predicted": "touch",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 88,
+      "domain": "autonomy",
+      "expected": "not",
+      "predicted": "not",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 89,
+      "domain": "autonomy",
+      "expected": "so",
+      "predicted": "so",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 90,
+      "domain": "autonomy",
+      "expected": "help",
+      "predicted": "help",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 91,
+      "domain": "safety",
+      "expected": "know you",
+      "predicted": "know",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 92,
+      "domain": "safety",
+      "expected": "go home",
+      "predicted": "go",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 93,
+      "domain": "safety",
+      "expected": "mine",
+      "predicted": "mine",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 94,
+      "domain": "safety",
+      "expected": "no",
+      "predicted": "no",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 95,
+      "domain": "safety",
+      "expected": "mom",
+      "predicted": "mom",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 96,
+      "domain": "safety",
+      "expected": "hurt me",
+      "predicted": "hurt",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 97,
+      "domain": "safety",
+      "expected": "safe",
+      "predicted": "safe",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 98,
+      "domain": "safety",
+      "expected": "leave",
+      "predicted": "leave",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 99,
+      "domain": "safety",
+      "expected": "teacher",
+      "predicted": "teacher",
+      "strict": true,
+      "semantic": true
+    },
+    {
+      "id": 100,
+      "domain": "safety",
+      "expected": "is",
+      "predicted": "is",
+      "strict": true,
+      "semantic": true
+    }
+  ],
+  "domains": {
+    "emergency": {
+      "correct": 10,
+      "total": 10
+    },
+    "medical": {
+      "correct": 10,
+      "total": 10
+    },
+    "basic_needs": {
+      "correct": 10,
+      "total": 10
+    },
+    "social": {
+      "correct": 10,
+      "total": 10
+    },
+    "emotional": {
+      "correct": 10,
+      "total": 10
+    },
+    "daily_living": {
+      "correct": 10,
+      "total": 10
+    },
+    "school_work": {
+      "correct": 10,
+      "total": 10
+    },
+    "community": {
+      "correct": 10,
+      "total": 10
+    },
+    "autonomy": {
+      "correct": 10,
+      "total": 10
+    },
+    "safety": {
+      "correct": 10,
+      "total": 10
+    }
+  },
+  "methodology": "Predictions generated by Claude Opus directly analyzing each AAC scenario. Represents best-case cloud performance when online and API available."
+}

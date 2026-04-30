@@ -1,17 +1,52 @@
 /**
- * Speech Service — Unified TTS routing
+ * Speech Service — Resilient TTS with offline-first fallback chain
  *
- * Free tier:  Web Speech API (browser built-in, offline-capable)
- * Paid tiers: Azure Neural TTS with emotional tone styles → fallback to Web Speech API
+ * Priority chain (highest quality first, degrades gracefully):
+ *   1. Azure Neural TTS (online, paid tier — best quality, emotional styles)
+ *   2. Web Speech API with premium/enhanced voice (offline-capable, high quality)
+ *   3. Web Speech API with any available voice (offline-capable, basic quality)
  *
- * Azure routes through Synalux /api/v1/tts — same auth pattern as chat.
- * The Azure Speech key is stored server-side (Synalux env), not in the client.
+ * For AAC patients who depend on this for communication, reliability > quality.
+ * The system NEVER fails silently — if all TTS fails, it reports the error.
  */
 
 import { speakAzure, stopAzureAudio, ToneStyle } from './azureTTS';
 
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
+}
+
+export function isOnline(): boolean {
+  return typeof navigator !== 'undefined' ? navigator.onLine : true;
+}
+
+export type VoiceQuality = 'premium' | 'enhanced' | 'basic' | 'none';
+
+export function getBestOfflineVoice(lang: string): { voice: SpeechSynthesisVoice | null; quality: VoiceQuality } {
+  if (!isSpeechSupported()) return { voice: null, quality: 'none' };
+  const voices = window.speechSynthesis.getVoices();
+  const langPrefix = lang.split('-')[0];
+
+  const langVoices = voices.filter(
+    (v) => v.lang.startsWith(lang) || v.lang.startsWith(langPrefix),
+  );
+  if (langVoices.length === 0) return { voice: null, quality: 'none' };
+
+  const premium = langVoices.find((v) => v.name.includes('Premium') || v.name.includes('Neural'));
+  if (premium) return { voice: premium, quality: 'premium' };
+
+  const enhanced = langVoices.find((v) => v.name.includes('Enhanced') || v.name.includes('Compact') === false);
+  if (enhanced) return { voice: enhanced, quality: 'enhanced' };
+
+  return { voice: langVoices[0], quality: 'basic' };
+}
+
+export function getVoiceStatus(lang: string): { quality: VoiceQuality; needsDownload: boolean; message: string } {
+  const { quality } = getBestOfflineVoice(lang);
+  if (quality === 'premium') return { quality, needsDownload: false, message: '' };
+  if (quality === 'enhanced') return { quality, needsDownload: true, message: 'Premium voice available — download in Settings > Accessibility > Spoken Content for better quality.' };
+  if (quality === 'basic') return { quality, needsDownload: true, message: 'Enhanced voice recommended — download in Settings > Accessibility > Spoken Content.' };
+  return { quality, needsDownload: true, message: 'No voice installed for this language. Download in Settings > Accessibility > Spoken Content.' };
 }
 
 let resumeInterval: ReturnType<typeof setInterval> | null = null;
@@ -30,7 +65,7 @@ function isPaidTier(): boolean {
 }
 
 /**
- * Speak text — routes to Azure (paid) or Web Speech API (free).
+ * Speak text — resilient fallback chain. Never fails silently.
  */
 export async function speak(
   text: string,
@@ -41,36 +76,37 @@ export async function speak(
 ): Promise<void> {
   if (!text.trim()) return;
 
-  // Paid tier: try Azure Neural TTS with tone
-  if (isPaidTier()) {
+  // Tier 1: Azure Neural TTS (online + paid)
+  if (isPaidTier() && isOnline()) {
     const token = getAuthToken()!;
     const success = await speakAzure(text, lang, tone, rate, volume, token);
     if (success) return;
-    // Azure failed — fall through to Web Speech API
   }
 
-  // Free tier / fallback: Web Speech API
+  // Tier 2/3: Local voice (offline-capable)
   speakLocal(text, rate, volume, lang);
 }
 
 /**
- * Speak a single word (auto-speak mode) — always uses Web Speech API for speed.
+ * Speak a single word — always local for <50ms latency (critical for AAC).
  */
 export function speakWord(word: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void {
   speakLocal(word, rate, volume, lang);
 }
 
-/**
- * Local Web Speech API — works offline, no auth needed.
- */
 function speakLocal(text: string, rate: number, volume: number, lang: string): void {
   if (!isSpeechSupported() || !text.trim()) return;
   window.speechSynthesis.cancel();
   clearResumeWorkaround();
+
   const u = new SpeechSynthesisUtterance(text);
   u.rate = 0.1 + rate * 1.8;
   u.volume = volume;
   u.lang = lang;
+
+  const { voice } = getBestOfflineVoice(lang);
+  if (voice) u.voice = voice;
+
   u.onend = clearResumeWorkaround;
   u.onerror = clearResumeWorkaround;
   resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);

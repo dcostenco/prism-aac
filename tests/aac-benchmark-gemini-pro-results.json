@@ -1,0 +1,1052 @@
+{
+  "model": "gemini-2.5-pro",
+  "mode": "CLOUD",
+  "strict_accuracy": 0,
+  "semantic_accuracy": 0,
+  "api_errors": 100,
+  "avg_latency_ms": 185.18,
+  "results": [
+    {
+      "id": 1,
+      "domain": "emergency",
+      "input": "I need",
+      "expected": "help",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 228
+    },
+    {
+      "id": 2,
+      "domain": "emergency",
+      "input": "Call",
+      "expected": "911",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 174
+    },
+    {
+      "id": 3,
+      "domain": "emergency",
+      "input": "I am",
+      "expected": "lost",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 180
+    },
+    {
+      "id": 4,
+      "domain": "emergency",
+      "input": "I feel",
+      "expected": "dizzy",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 218
+    },
+    {
+      "id": 5,
+      "domain": "emergency",
+      "input": "Stop",
+      "expected": "it",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 189
+    },
+    {
+      "id": 6,
+      "domain": "emergency",
+      "input": "I can't",
+      "expected": "breathe",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 174
+    },
+    {
+      "id": 7,
+      "domain": "emergency",
+      "input": "I need my",
+      "expected": "medicine",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 191
+    },
+    {
+      "id": 8,
+      "domain": "emergency",
+      "input": "Where is",
+      "expected": "my mom",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 176
+    },
+    {
+      "id": 9,
+      "domain": "emergency",
+      "input": "I",
+      "expected": "fell",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 170
+    },
+    {
+      "id": 10,
+      "domain": "emergency",
+      "input": "We need to",
+      "expected": "go",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 241
+    },
+    {
+      "id": 11,
+      "domain": "medical",
+      "input": "It hurts",
+      "expected": "here",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 171
+    },
+    {
+      "id": 12,
+      "domain": "medical",
+      "input": "I take",
+      "expected": "medicine",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 194
+    },
+    {
+      "id": 13,
+      "domain": "medical",
+      "input": "I am",
+      "expected": "scared",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 176
+    },
+    {
+      "id": 14,
+      "domain": "medical",
+      "input": "My tummy",
+      "expected": "hurts",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 175
+    },
+    {
+      "id": 15,
+      "domain": "medical",
+      "input": "Can I have",
+      "expected": "water",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 174
+    },
+    {
+      "id": 16,
+      "domain": "medical",
+      "input": "My head",
+      "expected": "hurts",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 177
+    },
+    {
+      "id": 17,
+      "domain": "medical",
+      "input": "I need the",
+      "expected": "bathroom",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 189
+    },
+    {
+      "id": 18,
+      "domain": "medical",
+      "input": "I feel",
+      "expected": "sick",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 178
+    },
+    {
+      "id": 19,
+      "domain": "medical",
+      "input": "I am allergic",
+      "expected": "to",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 174
+    },
+    {
+      "id": 20,
+      "domain": "medical",
+      "input": "I am",
+      "expected": "tired",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 163
+    },
+    {
+      "id": 21,
+      "domain": "basic_needs",
+      "input": "I am",
+      "expected": "hungry",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 171
+    },
+    {
+      "id": 22,
+      "domain": "basic_needs",
+      "input": "I want",
+      "expected": "water",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 188
+    },
+    {
+      "id": 23,
+      "domain": "basic_needs",
+      "input": "I need",
+      "expected": "bathroom",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 190
+    },
+    {
+      "id": 24,
+      "domain": "basic_needs",
+      "input": "I am",
+      "expected": "cold",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 175
+    },
+    {
+      "id": 25,
+      "domain": "basic_needs",
+      "input": "I am",
+      "expected": "hot",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 181
+    },
+    {
+      "id": 26,
+      "domain": "basic_needs",
+      "input": "I am",
+      "expected": "sleepy",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 189
+    },
+    {
+      "id": 27,
+      "domain": "basic_needs",
+      "input": "I want",
+      "expected": "pizza",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 165
+    },
+    {
+      "id": 28,
+      "domain": "basic_needs",
+      "input": "All",
+      "expected": "done",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 184
+    },
+    {
+      "id": 29,
+      "domain": "basic_needs",
+      "input": "More",
+      "expected": "please",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 175
+    },
+    {
+      "id": 30,
+      "domain": "basic_needs",
+      "input": "Take a",
+      "expected": "break",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 185
+    },
+    {
+      "id": 31,
+      "domain": "social",
+      "input": "My name",
+      "expected": "is",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 320
+    },
+    {
+      "id": 32,
+      "domain": "social",
+      "input": "How are",
+      "expected": "you",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 162
+    },
+    {
+      "id": 33,
+      "domain": "social",
+      "input": "See you",
+      "expected": "later",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 185
+    },
+    {
+      "id": 34,
+      "domain": "social",
+      "input": "Thank",
+      "expected": "you",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 168
+    },
+    {
+      "id": 35,
+      "domain": "social",
+      "input": "Can I",
+      "expected": "play",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 206
+    },
+    {
+      "id": 36,
+      "domain": "social",
+      "input": "Come",
+      "expected": "here",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 168
+    },
+    {
+      "id": 37,
+      "domain": "social",
+      "input": "I am",
+      "expected": "sorry",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 193
+    },
+    {
+      "id": 38,
+      "domain": "social",
+      "input": "My",
+      "expected": "turn",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 168
+    },
+    {
+      "id": 39,
+      "domain": "social",
+      "input": "Yes",
+      "expected": "please",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 194
+    },
+    {
+      "id": 40,
+      "domain": "social",
+      "input": "No",
+      "expected": "thank you",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 161
+    },
+    {
+      "id": 41,
+      "domain": "emotional",
+      "input": "I am",
+      "expected": "happy",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 198
+    },
+    {
+      "id": 42,
+      "domain": "emotional",
+      "input": "I am",
+      "expected": "sad",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 198
+    },
+    {
+      "id": 43,
+      "domain": "emotional",
+      "input": "I am",
+      "expected": "angry",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 186
+    },
+    {
+      "id": 44,
+      "domain": "emotional",
+      "input": "I am",
+      "expected": "scared",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 182
+    },
+    {
+      "id": 45,
+      "domain": "emotional",
+      "input": "I don't",
+      "expected": "like",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 179
+    },
+    {
+      "id": 46,
+      "domain": "emotional",
+      "input": "I love",
+      "expected": "you",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 209
+    },
+    {
+      "id": 47,
+      "domain": "emotional",
+      "input": "I am",
+      "expected": "excited",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 185
+    },
+    {
+      "id": 48,
+      "domain": "emotional",
+      "input": "I miss",
+      "expected": "you",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 179
+    },
+    {
+      "id": 49,
+      "domain": "emotional",
+      "input": "Too",
+      "expected": "much",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 180
+    },
+    {
+      "id": 50,
+      "domain": "emotional",
+      "input": "I need a",
+      "expected": "hug",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 172
+    },
+    {
+      "id": 51,
+      "domain": "daily_living",
+      "input": "Good",
+      "expected": "morning",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 183
+    },
+    {
+      "id": 52,
+      "domain": "daily_living",
+      "input": "I want to",
+      "expected": "wear",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 163
+    },
+    {
+      "id": 53,
+      "domain": "daily_living",
+      "input": "All",
+      "expected": "done",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 178
+    },
+    {
+      "id": 54,
+      "domain": "daily_living",
+      "input": "I want to",
+      "expected": "watch",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 229
+    },
+    {
+      "id": 55,
+      "domain": "daily_living",
+      "input": "Good",
+      "expected": "night",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 181
+    },
+    {
+      "id": 56,
+      "domain": "daily_living",
+      "input": "I want",
+      "expected": "my",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 159
+    },
+    {
+      "id": 57,
+      "domain": "daily_living",
+      "input": "Let's",
+      "expected": "go",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 197
+    },
+    {
+      "id": 58,
+      "domain": "daily_living",
+      "input": "I don't",
+      "expected": "want",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 179
+    },
+    {
+      "id": 59,
+      "domain": "daily_living",
+      "input": "I want to",
+      "expected": "play",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 195
+    },
+    {
+      "id": 60,
+      "domain": "daily_living",
+      "input": "What is",
+      "expected": "for",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 180
+    },
+    {
+      "id": 61,
+      "domain": "school_work",
+      "input": "I need",
+      "expected": "help",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 198
+    },
+    {
+      "id": 62,
+      "domain": "school_work",
+      "input": "I don't",
+      "expected": "know",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 178
+    },
+    {
+      "id": 63,
+      "domain": "school_work",
+      "input": "Can I",
+      "expected": "go",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 177
+    },
+    {
+      "id": 64,
+      "domain": "school_work",
+      "input": "Wait",
+      "expected": "please",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 171
+    },
+    {
+      "id": 65,
+      "domain": "school_work",
+      "input": "I am",
+      "expected": "done",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 192
+    },
+    {
+      "id": 66,
+      "domain": "school_work",
+      "input": "I don't",
+      "expected": "understand",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 182
+    },
+    {
+      "id": 67,
+      "domain": "school_work",
+      "input": "I want to",
+      "expected": "read",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 187
+    },
+    {
+      "id": 68,
+      "domain": "school_work",
+      "input": "Can I",
+      "expected": "help",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 186
+    },
+    {
+      "id": 69,
+      "domain": "school_work",
+      "input": "I want to",
+      "expected": "play",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 188
+    },
+    {
+      "id": 70,
+      "domain": "school_work",
+      "input": "I need a",
+      "expected": "break",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 179
+    },
+    {
+      "id": 71,
+      "domain": "community",
+      "input": "I want",
+      "expected": "the",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 186
+    },
+    {
+      "id": 72,
+      "domain": "community",
+      "input": "Where is",
+      "expected": "the",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 196
+    },
+    {
+      "id": 73,
+      "domain": "community",
+      "input": "I need to",
+      "expected": "get off",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 175
+    },
+    {
+      "id": 74,
+      "domain": "community",
+      "input": "Can I",
+      "expected": "have",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 197
+    },
+    {
+      "id": 75,
+      "domain": "community",
+      "input": "How",
+      "expected": "much",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 190
+    },
+    {
+      "id": 76,
+      "domain": "community",
+      "input": "I need",
+      "expected": "help",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 188
+    },
+    {
+      "id": 77,
+      "domain": "community",
+      "input": "I want to",
+      "expected": "swing",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 176
+    },
+    {
+      "id": 78,
+      "domain": "community",
+      "input": "Where is",
+      "expected": "the",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 201
+    },
+    {
+      "id": 79,
+      "domain": "community",
+      "input": "I want",
+      "expected": "popcorn",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 184
+    },
+    {
+      "id": 80,
+      "domain": "community",
+      "input": "How",
+      "expected": "long",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 185
+    },
+    {
+      "id": 81,
+      "domain": "autonomy",
+      "input": "I want",
+      "expected": "this",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 184
+    },
+    {
+      "id": 82,
+      "domain": "autonomy",
+      "input": "I don't",
+      "expected": "want",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 184
+    },
+    {
+      "id": 83,
+      "domain": "autonomy",
+      "input": "I can",
+      "expected": "do it",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 155
+    },
+    {
+      "id": 84,
+      "domain": "autonomy",
+      "input": "I like",
+      "expected": "the",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 211
+    },
+    {
+      "id": 85,
+      "domain": "autonomy",
+      "input": "Leave me",
+      "expected": "alone",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 198
+    },
+    {
+      "id": 86,
+      "domain": "autonomy",
+      "input": "I changed",
+      "expected": "my mind",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 196
+    },
+    {
+      "id": 87,
+      "domain": "autonomy",
+      "input": "Don't",
+      "expected": "touch",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 201
+    },
+    {
+      "id": 88,
+      "domain": "autonomy",
+      "input": "Why",
+      "expected": "not",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 161
+    },
+    {
+      "id": 89,
+      "domain": "autonomy",
+      "input": "I think",
+      "expected": "so",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 199
+    },
+    {
+      "id": 90,
+      "domain": "autonomy",
+      "input": "Can you",
+      "expected": "help",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 209
+    },
+    {
+      "id": 91,
+      "domain": "safety",
+      "input": "I don't",
+      "expected": "know you",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 159
+    },
+    {
+      "id": 92,
+      "domain": "safety",
+      "input": "I want to",
+      "expected": "go home",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 163
+    },
+    {
+      "id": 93,
+      "domain": "safety",
+      "input": "That is",
+      "expected": "mine",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 194
+    },
+    {
+      "id": 94,
+      "domain": "safety",
+      "input": "I said",
+      "expected": "no",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 156
+    },
+    {
+      "id": 95,
+      "domain": "safety",
+      "input": "Call my",
+      "expected": "mom",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 172
+    },
+    {
+      "id": 96,
+      "domain": "safety",
+      "input": "Someone",
+      "expected": "hurt me",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 184
+    },
+    {
+      "id": 97,
+      "domain": "safety",
+      "input": "I am not",
+      "expected": "safe",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 202
+    },
+    {
+      "id": 98,
+      "domain": "safety",
+      "input": "I want to",
+      "expected": "leave",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 177
+    },
+    {
+      "id": 99,
+      "domain": "safety",
+      "input": "I want my",
+      "expected": "teacher",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 197
+    },
+    {
+      "id": 100,
+      "domain": "safety",
+      "input": "My name",
+      "expected": "is",
+      "predicted": "ERROR",
+      "strict_match": false,
+      "semantic_match": false,
+      "latency_ms": 148
+    }
+  ],
+  "domains": {
+    "emergency": {
+      "correct": 0,
+      "total": 10
+    },
+    "medical": {
+      "correct": 0,
+      "total": 10
+    },
+    "basic_needs": {
+      "correct": 0,
+      "total": 10
+    },
+    "social": {
+      "correct": 0,
+      "total": 10
+    },
+    "emotional": {
+      "correct": 0,
+      "total": 10
+    },
+    "daily_living": {
+      "correct": 0,
+      "total": 10
+    },
+    "school_work": {
+      "correct": 0,
+      "total": 10
+    },
+    "community": {
+      "correct": 0,
+      "total": 10
+    },
+    "autonomy": {
+      "correct": 0,
+      "total": 10
+    },
+    "safety": {
+      "correct": 0,
+      "total": 10
+    }
+  }
+}

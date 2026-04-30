@@ -9,17 +9,38 @@ const DEFAULT_CONFIG: PredictionConfig = {
   recencyWindowMs: 600_000,
 };
 
+type Scores = { bigram: number; trigram: number; freq: number; recency: number; prefix: number };
+
 export function getPredictions(
   currentText: string,
   wordFreq: Record<string, WordFreqEntry>,
   bigrams: Record<string, WordFreqEntry>,
   config = DEFAULT_CONFIG,
+  trigrams?: Record<string, WordFreqEntry>,
 ): string[] {
   const words = currentText.trim().split(/\s+/).filter(Boolean);
   const lastWord = words.length > 0 ? words[words.length - 1].toLowerCase() : '';
+  const prevWord = words.length > 1 ? words[words.length - 2].toLowerCase() : '';
 
-  const candidateMap = new Map<string, { bigram: number; freq: number; recency: number }>();
+  const candidateMap = new Map<string, Scores>();
+  const getOrCreate = (w: string) =>
+    candidateMap.get(w) ?? (() => { const s: Scores = { bigram: 0, trigram: 0, freq: 0, recency: 0, prefix: 0 }; candidateMap.set(w, s); return s; })();
 
+  // Trigram context (strongest signal — two-word history predicts next word)
+  if (trigrams && prevWord && lastWord) {
+    const triKey = prevWord + '|' + lastWord + '|';
+    const triEntries = Object.entries(trigrams)
+      .filter(([k]) => k.startsWith(triKey))
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 15);
+    const maxTri = triEntries.length > 0 ? triEntries[0][1].count : 1;
+    for (const [key, val] of triEntries) {
+      const word3 = key.split('|')[2];
+      getOrCreate(word3).trigram = val.count / maxTri;
+    }
+  }
+
+  // Bigram context
   if (lastWord) {
     const bigramEntries = Object.entries(bigrams)
       .filter(([k]) => k.startsWith(lastWord + '|'))
@@ -27,23 +48,30 @@ export function getPredictions(
       .slice(0, 20);
     const maxBigram = bigramEntries.length > 0 ? bigramEntries[0][1].count : 1;
     for (const [key, val] of bigramEntries) {
-      const word2 = key.split('|')[1];
-      const c = candidateMap.get(word2) ?? { bigram: 0, freq: 0, recency: 0 };
-      c.bigram = val.count / maxBigram;
-      candidateMap.set(word2, c);
+      getOrCreate(key.split('|')[1]).bigram = val.count / maxBigram;
     }
   }
 
+  // Prefix matching — if user is mid-word, boost completions
+  const partialWord = currentText.endsWith(' ') ? '' : lastWord;
+  if (partialWord && partialWord.length >= 1) {
+    for (const word of Object.keys(wordFreq)) {
+      if (word.startsWith(partialWord) && word !== partialWord) {
+        getOrCreate(word).prefix = 1.0;
+      }
+    }
+  }
+
+  // Frequency
   const freqEntries = Object.entries(wordFreq)
     .sort((a, b) => b[1].count - a[1].count)
     .slice(0, 30);
   const maxFreq = freqEntries.length > 0 ? freqEntries[0][1].count : 1;
   for (const [word, val] of freqEntries) {
-    const c = candidateMap.get(word) ?? { bigram: 0, freq: 0, recency: 0 };
-    c.freq = val.count / maxFreq;
-    candidateMap.set(word, c);
+    getOrCreate(word).freq = val.count / maxFreq;
   }
 
+  // Recency
   const now = Date.now();
   const recentEntries = Object.entries(wordFreq)
     .filter(([, v]) => now - v.lastUsed < config.recencyWindowMs)
@@ -51,17 +79,22 @@ export function getPredictions(
     .slice(0, 20);
   const maxRecent = recentEntries.length > 0 ? recentEntries[0][1].count : 1;
   for (const [word, val] of recentEntries) {
-    const c = candidateMap.get(word) ?? { bigram: 0, freq: 0, recency: 0 };
-    c.recency = val.count / maxRecent;
-    candidateMap.set(word, c);
+    getOrCreate(word).recency = val.count / maxRecent;
   }
+
+  // Weighted scoring — trigram > prefix > bigram > freq > recency
+  const trigramWeight = trigrams ? 0.35 : 0;
+  const prefixWeight = partialWord ? 0.3 : 0;
+  const bigramW = config.bigramWeight * (1 - trigramWeight - prefixWeight / 2);
+  const freqW = config.frequencyWeight * (1 - trigramWeight / 2);
+  const recencyW = config.recencyWeight;
 
   const scored = [...candidateMap.entries()]
     .map(([word, s]) => ({
       word,
-      total: s.bigram * config.bigramWeight + s.freq * config.frequencyWeight + s.recency * config.recencyWeight,
+      total: s.trigram * trigramWeight + s.prefix * prefixWeight + s.bigram * bigramW + s.freq * freqW + s.recency * recencyW,
     }))
-    .filter((c) => c.word.toLowerCase() !== lastWord)
+    .filter((c) => c.word.toLowerCase() !== lastWord && c.word.toLowerCase() !== partialWord)
     .sort((a, b) => b.total - a.total)
     .slice(0, config.maxResults)
     .map((c) => c.word.charAt(0).toUpperCase() + c.word.slice(1));
@@ -96,6 +129,37 @@ export function recordBigram(
   const key = `${word1.toLowerCase()}|${word2.toLowerCase()}`;
   const existing = bigrams[key];
   return { ...bigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
+}
+
+export function recordTrigram(
+  trigrams: Record<string, WordFreqEntry>,
+  word1: string,
+  word2: string,
+  word3: string,
+): Record<string, WordFreqEntry> {
+  const key = `${word1.toLowerCase()}|${word2.toLowerCase()}|${word3.toLowerCase()}`;
+  const existing = trigrams[key];
+  return { ...trigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
+}
+
+export function buildNgramsFromPhrases(
+  phrases: string[],
+): { bigrams: Record<string, WordFreqEntry>; trigrams: Record<string, WordFreqEntry> } {
+  const bigrams: Record<string, WordFreqEntry> = {};
+  const trigrams: Record<string, WordFreqEntry> = {};
+  const now = Date.now();
+  for (const phrase of phrases) {
+    const words = phrase.toLowerCase().split(/\s+/).filter(Boolean);
+    for (let i = 0; i < words.length - 1; i++) {
+      const biKey = `${words[i]}|${words[i + 1]}`;
+      bigrams[biKey] = { count: (bigrams[biKey]?.count ?? 0) + 1, lastUsed: now };
+      if (i < words.length - 2) {
+        const triKey = `${words[i]}|${words[i + 1]}|${words[i + 2]}`;
+        trigrams[triKey] = { count: (trigrams[triKey]?.count ?? 0) + 1, lastUsed: now };
+      }
+    }
+  }
+  return { bigrams, trigrams };
 }
 
 export function decayPredictions(

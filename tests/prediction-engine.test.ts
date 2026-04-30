@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPredictions, recordWord, recordBigram, decayPredictions } from '@/engine/predictionEngine';
+import { getPredictions, recordWord, recordBigram, recordTrigram, buildNgramsFromPhrases, decayPredictions } from '@/engine/predictionEngine';
 import { WordFreqEntry } from '@/types';
 
 describe('PredictionEngine — Core algorithm', () => {
@@ -122,6 +122,86 @@ describe('PredictionEngine — Decay', () => {
     };
     const result = decayPredictions(wf);
     expect(result.fresh.count).toBe(5);
+  });
+});
+
+describe('PredictionEngine — Trigram', () => {
+  it('trigram context provides strongest prediction signal', () => {
+    const wf: Record<string, WordFreqEntry> = {
+      help: { count: 10, lastUsed: Date.now() },
+      hungry: { count: 5, lastUsed: Date.now() },
+      bathroom: { count: 3, lastUsed: Date.now() },
+    };
+    const bg: Record<string, WordFreqEntry> = {
+      'am|hungry': { count: 5, lastUsed: Date.now() },
+    };
+    const tg: Record<string, WordFreqEntry> = {
+      'i|am|hungry': { count: 8, lastUsed: Date.now() },
+      'i|am|thirsty': { count: 2, lastUsed: Date.now() },
+    };
+    const preds = getPredictions('I am', wf, bg, undefined, tg);
+    expect(preds[0].toLowerCase()).toBe('hungry');
+  });
+
+  it('recordTrigram creates word triple entry', () => {
+    const tg = recordTrigram({}, 'i', 'want', 'pizza');
+    expect(tg['i|want|pizza']).toBeDefined();
+    expect(tg['i|want|pizza'].count).toBe(1);
+  });
+
+  it('recordTrigram increments existing entry', () => {
+    let tg: Record<string, WordFreqEntry> = { 'i|want|pizza': { count: 3, lastUsed: 1000 } };
+    tg = recordTrigram(tg, 'i', 'want', 'pizza');
+    expect(tg['i|want|pizza'].count).toBe(4);
+  });
+
+  it('buildNgramsFromPhrases extracts bigrams and trigrams', () => {
+    const { bigrams, trigrams } = buildNgramsFromPhrases([
+      'I need help',
+      'I am hungry',
+      'I am thirsty',
+    ]);
+    expect(bigrams['i|need']).toBeDefined();
+    expect(bigrams['i|am'].count).toBe(2);
+    expect(trigrams['i|need|help']).toBeDefined();
+    expect(trigrams['i|am|hungry']).toBeDefined();
+    expect(trigrams['i|am|thirsty']).toBeDefined();
+  });
+
+  it('falls back to bigram when no trigram match', () => {
+    const wf: Record<string, WordFreqEntry> = {
+      pizza: { count: 5, lastUsed: Date.now() },
+    };
+    const bg: Record<string, WordFreqEntry> = {
+      'want|pizza': { count: 8, lastUsed: Date.now() },
+    };
+    const tg: Record<string, WordFreqEntry> = {};
+    const preds = getPredictions('I want', wf, bg, undefined, tg);
+    expect(preds[0]).toBe('Pizza');
+  });
+});
+
+describe('PredictionEngine — Prefix completion', () => {
+  it('completes partial word input', () => {
+    const wf: Record<string, WordFreqEntry> = {
+      bathroom: { count: 10, lastUsed: Date.now() },
+      banana: { count: 5, lastUsed: Date.now() },
+      car: { count: 20, lastUsed: Date.now() },
+    };
+    const preds = getPredictions('ba', wf, {});
+    const lower = preds.map(p => p.toLowerCase());
+    expect(lower).toContain('bathroom');
+    expect(lower).toContain('banana');
+  });
+
+  it('does not suggest the partial word itself', () => {
+    const wf: Record<string, WordFreqEntry> = {
+      bath: { count: 10, lastUsed: Date.now() },
+      bathroom: { count: 5, lastUsed: Date.now() },
+    };
+    const preds = getPredictions('bath', wf, {});
+    expect(preds.map(p => p.toLowerCase())).not.toContain('bath');
+    expect(preds.map(p => p.toLowerCase())).toContain('bathroom');
   });
 });
 

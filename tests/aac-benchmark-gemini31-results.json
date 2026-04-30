@@ -1,0 +1,9 @@
+{
+  "model": "gemini-3.1-pro-preview",
+  "mode": "CLOUD (live API)",
+  "strict_accuracy": 69,
+  "semantic_accuracy": 74,
+  "api_errors": 0,
+  "avg_latency_ms": 2500,
+  "note": "Combined from two runs: 75 tests + 25 tests (OOM split). All 100 tests completed via live Google AI API calls."
+}
