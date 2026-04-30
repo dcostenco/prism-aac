@@ -56,24 +56,46 @@ export interface SynaluxProfile {
 export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
   // Same-origin when served from synalux.ai/prism-aac (cookie auto-attached).
   // Cross-origin (prism-aac.vercel.app) requires include + portal CORS.
+  //
+  // Two-step lookup so we can handle accounts that are signed in but don't
+  // have a workspace role assigned yet:
+  //   1. /api/auth/session — definitive "is the user signed in?" + email/name.
+  //   2. /api/v1/roles/me — tier + admin flag (best-effort).
+  // If step 1 says signed-in but step 2 fails or returns no role, we still
+  // surface the user as signed-in on the Free tier rather than pretending
+  // they aren't logged in at all.
+  const base = SYNALUX_API.replace(/\/api\/v1$/, '');
+  let email = '';
+  let name = '';
   try {
-    const res = await fetch(`${SYNALUX_API}/roles/me`, {
+    const sessRes = await fetch(`${base}/api/auth/session`, {
       credentials: 'include',
       headers: { 'Accept': 'application/json' },
     });
-    if (res.status === 401 || res.status === 403) return null;
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!data?.user_name && !data?.role_key) return null;
-    return {
-      email: data.user_name || '',
-      name: data.user_name || '',
-      plan: (data.plan || 'free') as SynaluxProfile['plan'],
-      isPlatformAdmin: !!data.is_platform_admin,
-    };
+    if (!sessRes.ok) return null;
+    const sess = await sessRes.json();
+    if (!sess?.user?.email) return null;
+    email = sess.user.email;
+    name = sess.user.name || sess.user.email;
   } catch {
     return null;
   }
+
+  let plan: SynaluxProfile['plan'] = 'free';
+  let isPlatformAdmin = false;
+  try {
+    const meRes = await fetch(`${SYNALUX_API}/roles/me`, {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json' },
+    });
+    if (meRes.ok) {
+      const data = await meRes.json();
+      if (data?.plan) plan = data.plan as SynaluxProfile['plan'];
+      isPlatformAdmin = !!data?.is_platform_admin;
+    }
+  } catch { /* tier lookup is best-effort */ }
+
+  return { email, name, plan, isPlatformAdmin };
 }
 
 export function synaluxSignInUrl(): string {
