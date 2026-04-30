@@ -92,10 +92,10 @@ export default function Keyboard() {
   const kc =
     'aac-key surface-key text-primary rounded-xl font-bold select-none flex items-center justify-center';
   const letterSize = capsLock
-    ? 'text-3xl md:text-5xl'
-    : 'text-2xl md:text-4xl';
-  const utilSize = 'text-xl md:text-2xl';
-  const wordSize = 'text-base md:text-xl';
+    ? 'text-xl landscape:text-lg sm:text-3xl md:text-5xl'
+    : 'text-lg landscape:text-base sm:text-2xl md:text-4xl';
+  const utilSize = 'text-base landscape:text-sm sm:text-xl md:text-2xl';
+  const wordSize = 'text-sm landscape:text-xs sm:text-base md:text-xl';
 
   // Caps-lock visual state on the shift key: green = caps-lock, yellow =
   // one-shot shift, neutral = lowercase. Distinct colors so the user can
@@ -109,9 +109,9 @@ export default function Keyboard() {
   const shiftGlyph = capsLock ? 'A' : isUpperCase ? '⇧' : '⇪';
 
   return (
-    <div className="flex-1 flex flex-col gap-2 md:gap-2.5 p-2 md:p-3">
+    <div className="flex-1 flex flex-col gap-1 landscape:gap-0.5 sm:gap-2 md:gap-2.5 p-1 landscape:p-0.5 sm:p-2 md:p-3">
       {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-2 md:gap-2.5 justify-center flex-1">
+        <div key={ri} className="flex gap-1 landscape:gap-0.5 sm:gap-2 md:gap-2.5 justify-center flex-1">
           {ri === 2 && keyboardMode === 'letters' && (
             <button
               onPointerDown={handleShiftDown}

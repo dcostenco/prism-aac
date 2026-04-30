@@ -86,12 +86,12 @@ export default function MessageBar() {
   const currentTone = TONE_OPTIONS.find(opt => opt.id === activeTone);
 
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2 mx-2 sm:mx-3 my-1 sm:my-1.5 surface-bar rounded-2xl px-2 sm:px-4 py-1.5 sm:py-3 min-h-[52px] landscape:min-h-[48px] sm:min-h-[68px] shrink-0 relative border border-theme">
+    <div className="flex items-center gap-1 landscape:gap-0.5 sm:gap-2 mx-1 landscape:mx-0.5 sm:mx-3 my-0.5 landscape:my-0 sm:my-1.5 surface-bar rounded-xl landscape:rounded-lg sm:rounded-2xl px-1.5 landscape:px-1 sm:px-4 py-1 landscape:py-0.5 sm:py-3 min-h-[40px] landscape:min-h-[32px] sm:min-h-[68px] shrink-0 relative border border-theme">
       <button
         onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
         aria-label={autoSpeak ? t('auto_speak_on') : t('auto_speak_off')}
         aria-pressed={autoSpeak}
-        className={`aac-btn w-10 h-10 sm:w-14 sm:h-14 rounded-xl flex flex-col items-center justify-center shrink-0 border border-theme ${
+        className={`aac-btn w-8 h-8 landscape:w-7 landscape:h-7 sm:w-14 sm:h-14 rounded-lg landscape:rounded sm:rounded-xl flex flex-col items-center justify-center shrink-0 border border-theme ${
           autoSpeak ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-muted'
         }`}
       >
@@ -111,8 +111,8 @@ export default function MessageBar() {
         </button>
       )}
 
-      <div className="flex-1 min-w-0 min-h-[40px] sm:min-h-[48px] flex flex-col justify-center overflow-hidden">
-        <div className="text-base sm:text-2xl flex items-center break-words text-primary truncate" role="status" aria-live="polite" aria-label="Message text">
+      <div className="flex-1 min-w-0 min-h-[28px] landscape:min-h-[24px] sm:min-h-[48px] flex flex-col justify-center overflow-hidden">
+        <div className="text-sm landscape:text-xs sm:text-2xl flex items-center break-words text-primary truncate" role="status" aria-live="polite" aria-label="Message text">
           {text ? <ColoredText text={text} /> : <span className="text-dim">{t('type_here')}</span>}
         </div>
         {suggestion && (
@@ -127,13 +127,13 @@ export default function MessageBar() {
         )}
       </div>
 
-      <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-10 h-10 sm:w-14 sm:h-14 rounded-xl surface-key text-muted text-base sm:text-lg flex items-center justify-center shrink-0 border border-theme">↩</button>
+      <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-8 h-8 landscape:w-7 landscape:h-7 sm:w-14 sm:h-14 rounded-lg landscape:rounded sm:rounded-xl surface-key text-muted text-sm landscape:text-xs sm:text-lg flex items-center justify-center shrink-0 border border-theme">↩</button>
 
-      <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-[#4CAF50] text-white text-lg sm:text-2xl flex items-center justify-center shrink-0">▶</button>
+      <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-10 h-10 landscape:w-8 landscape:h-8 sm:w-16 sm:h-16 rounded-lg landscape:rounded sm:rounded-xl bg-[#4CAF50] text-white text-base landscape:text-sm sm:text-2xl flex items-center justify-center shrink-0">▶</button>
 
       <button
         onPointerDown={handleDeleteDown} onPointerUp={handleDeleteUp} onPointerLeave={cancelDelete} onPointerCancel={cancelDelete}
-        aria-label={t('delete')} className="aac-btn aac-delete w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-[#F44336] text-white text-lg sm:text-2xl flex items-center justify-center shrink-0 select-none"
+        aria-label={t('delete')} className="aac-btn aac-delete w-10 h-10 landscape:w-8 landscape:h-8 sm:w-16 sm:h-16 rounded-lg landscape:rounded sm:rounded-xl bg-[#F44336] text-white text-base landscape:text-sm sm:text-2xl flex items-center justify-center shrink-0 select-none"
       >⌫</button>
 
       {/* Tone picker popup */}
