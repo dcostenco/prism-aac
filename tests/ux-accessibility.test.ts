@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DEFAULT_CATEGORIES } from '@/constants/categories';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { MATH_ITEMS } from '@/constants/mathSymbols';
-import { DEFAULT_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
+import { TEMPLATE_ORDERING_SEQUENCES as DEFAULT_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
 import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS, DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { mergeWordFreq, mergeCustomItems, mergeHistory } from '@/services/syncService';
 

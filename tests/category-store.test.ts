@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCategoryStore } from '@/store/categoryStore';
-import { DEFAULT_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
+import { TEMPLATE_ORDERING_SEQUENCES as DEFAULT_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
 
 beforeEach(() => useCategoryStore.setState({ customCategories: [], customPhrases: [] }));
 

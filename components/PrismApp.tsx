@@ -5,11 +5,13 @@ import MessageBar from './MessageBar';
 import PredictionBar from './PredictionBar';
 import Keyboard from './Keyboard';
 import CategoryPanel from './CategoryPanel';
+import CaregiverPanel from './CaregiverPanel';
 import HistoryModal from './HistoryModal';
 import SettingsModal from './SettingsModal';
 import AlertOverlay from './AlertOverlay';
 import SyncProvider from './SyncProvider';
 import { usePredictionStore } from '@/store/predictionStore';
+import { useCategoryStore } from '@/store/categoryStore';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
@@ -34,10 +36,13 @@ export default function PrismApp() {
   const runDecay = usePredictionStore((s) => s.runDecay);
   const [hydrated, setHydrated] = useState(false);
 
+  const seedTemplates = useCategoryStore((s) => s.seedTemplates);
+
   useEffect(() => {
     setHydrated(true);
     runDecay();
-  }, [runDecay]);
+    seedTemplates();
+  }, [runDecay, seedTemplates]);
 
   if (!hydrated) {
     return <div className="h-svh bg-[#12121e]" />;
@@ -52,6 +57,7 @@ export default function PrismApp() {
           <PredictionBar />
           <div className="flex-1 flex flex-row min-h-0">
             <CategoryPanel />
+            <CaregiverPanel />
             <Keyboard />
           </div>
           <AlertOverlay />

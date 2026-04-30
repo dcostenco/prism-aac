@@ -6,14 +6,13 @@ import { usePredictionStore } from '@/store/predictionStore';
 import { tapFeedback } from '@/services/feedback';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speakWord } from '@/services/speechService';
-import { DEFAULT_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
 import { MATH_ITEMS } from '@/constants/mathSymbols';
 
 export default function CategoryPanel() {
   const { sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
     closeSidePanel, selectCategory, backToCategories, startOrdering, nextStep, prevStep, finishOrdering } = useUIStore();
   const { appendText, appendWord, text, autoSpeak, soundEnabled } = useMessageStore();
-  const { allCategories, getPhrasesForCategory } = useCategoryStore();
+  const { allCategories, getPhrasesForCategory, getSequencesForCategory } = useCategoryStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume } = useSettingsStore();
 
@@ -74,7 +73,8 @@ export default function CategoryPanel() {
 
   // ORDERING FLOW
   if (sidePanel === 'ordering' && activeSequenceId) {
-    const seq = DEFAULT_ORDERING_SEQUENCES.find(s => s.id === activeSequenceId);
+    const allSeqs = getSequencesForCategory(activeCategoryId ?? '');
+    const seq = allSeqs.find(s => s.id === activeSequenceId);
     if (!seq) return null;
     const step = seq.steps[activeSequenceStep];
     if (!step) return null;
@@ -109,7 +109,7 @@ export default function CategoryPanel() {
     const categories = allCategories();
     const cat = categories.find(c => c.id === activeCategoryId);
     const phrases = getPhrasesForCategory(activeCategoryId);
-    const sequences = DEFAULT_ORDERING_SEQUENCES.filter(s => s.categoryId === activeCategoryId);
+    const sequences = getSequencesForCategory(activeCategoryId);
     return (
       <div className="w-[300px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0 overflow-y-auto">
         <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">

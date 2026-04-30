@@ -64,4 +64,33 @@ export interface HistoryEntry {
 }
 
 export type KeyboardMode = 'letters' | 'numbers' | 'symbols';
-export type SidePanelView = 'none' | 'categories' | 'category-detail' | 'ordering' | 'math';
+export type SidePanelView = 'none' | 'categories' | 'category-detail' | 'ordering' | 'math' | 'caregiver';
+
+// ── Caregiver Notes ──
+
+export type NoteActionType =
+  | 'add_phrase'        // "Add 'I feel sick' to Help"
+  | 'remove_phrase'     // "Remove Lake from Places"
+  | 'reorder_phrase'    // "Move Bathroom to top of Help"
+  | 'add_category'      // "Create a Feelings category"
+  | 'remove_category'   // "Remove the test category"
+  | 'add_sequence'      // "Add McDonald's ordering flow"
+  | 'edit_sequence'     // "Add milkshake to McDonald's drinks step"
+  | 'remove_sequence'   // "Remove Chipotle ordering"
+  | 'boost_word'        // "He uses 'because' a lot now"
+  | 'note_only';        // "Good session today" — no action, just documentation
+
+export interface NoteAction {
+  type: NoteActionType;
+  description: string;
+  payload: Record<string, unknown>;
+}
+
+export interface CaregiverNote {
+  id: string;
+  text: string;
+  timestamp: number;
+  actions: NoteAction[];
+  applied: boolean;
+  authorName?: string;
+}

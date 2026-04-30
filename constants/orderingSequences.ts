@@ -1,6 +1,6 @@
 import { OrderingSequenceData } from '@/types';
 
-export const DEFAULT_ORDERING_SEQUENCES: OrderingSequenceData[] = [
+export const TEMPLATE_ORDERING_SEQUENCES: OrderingSequenceData[] = [
   {
     id: 'seq-chipotle', name: 'Chipotle', categoryId: 'food-ordering', sortOrder: 0,
     steps: [

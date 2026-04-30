@@ -1,36 +1,168 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Prism AAC — Web Application
 
-## Getting Started
+An evidence-based Augmentative and Alternative Communication (AAC) web app designed for children with motor impairments and complex communication needs.
 
-First, run the development server:
+**Part of the Synalux platform** — [synalux.ai](https://synalux.ai)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## For BCBA / RBT / SLP Staff
+
+This app was built following ABA principles and AAC research. Before configuring it for a client, please review [RESEARCH.md](RESEARCH.md) for the evidence base behind each feature.
+
+### Clinical Safety Commitments
+
+1. **Communication access is never restricted.** The keyboard is always visible. No feature gates communication.
+2. **All configuration changes are documented** in the Caregiver Notes log with timestamps and author names.
+3. **Changes require explicit confirmation.** The action engine previews proposed modifications before applying them.
+4. **Default vocabulary cannot be deleted.** Only custom additions can be removed.
+5. **Undo is always available.** Accidentally cleared text can be recovered with one tap.
+6. **Offline-first.** The app works fully without internet. No child is left without communication due to network issues.
+7. **This tool supplements, never replaces, clinical assessment.** All configurations should be reviewed by a credentialed BCBA or SLP.
+
+### How to Use Caregiver Notes
+
+Open the **Notes** panel from the toolbar. You can type instructions in natural language:
+
+| What you type | What happens |
+|---------------|-------------|
+| "Add 'I feel sick' to Help" | Creates a new phrase in Help / Needs |
+| "Move Bathroom to top of Help" | Reorders phrases on the Help page |
+| "Add McDonald's ordering flow" | Creates a new restaurant ordering sequence |
+| "Remove Chipotle" | Removes the ordering sequence |
+| "He's using 'because' a lot now" | Boosts word prediction frequency |
+| "Good session, 15 phrases independently" | Saved as clinical documentation only |
+
+Every note is timestamped and attributed. Notes with actionable instructions show an **[Apply]** button — changes are previewed before execution.
+
+### Verbal Operant Support
+
+The app supports multiple verbal operant types per BACB Task List 5th Edition (B-14):
+
+| Operant | Where in the app |
+|---------|-----------------|
+| **Mand** (request) | Help/Needs phrases, Food ordering flows |
+| **Tact** (label) | Category phrase cards, Math symbols |
+| **Intraverbal** (conversation) | Quick Talk phrases, AI Chat (Phase 2) |
+| **Echoic** (imitation) | Auto-speak mode — child hears each word spoken |
+
+### Default Vocabulary
+
+Based on Banajee, DiCarlo, & Stricklin (2003) core vocabulary research:
+
+- **Help / Needs** (8 phrases): All done, Take a break, I need help, I am hungry, I am thirsty, Bathroom, Yes, No
+- **Quick Talk** (12 phrases): Hello, Goodbye, Thank you, Please, Excuse me, and more
+- **Places / Plans** (11 phrases): Mall, Park, Home, School, Restaurant, and more
+- **Food / Ordering** (11 phrases): Water, Juice, Pizza, Sandwich, and more
+- **People / Social** (8 phrases): Mom, Dad, Teacher, Friend, Family, and more
+- **School / Work** (8 phrases): Class, Homework, Computer, Book, and more
+
+Restaurant ordering flows (Chipotle, General Restaurant) are provided as starter templates and can be edited, deleted, or supplemented with new restaurants via Caregiver Notes.
+
+---
+
+## Subscription Tiers
+
+PrismAAC is available through the Synalux platform with tiered access:
+
+| Feature | Free | Standard | Advanced | Enterprise |
+|---------|------|----------|----------|------------|
+| Core AAC keyboard + categories | Yes | Yes | Yes | Yes |
+| 52 default phrases | Yes | Yes | Yes | Yes |
+| Word prediction (5 slots) | Yes | Yes | Yes | Yes |
+| Custom phrases | 50 max | 500 | Unlimited | Unlimited |
+| Custom categories | — | 20 | Unlimited | Unlimited |
+| Ordering sequences (restaurants) | 2 | 10 | Unlimited | Unlimited |
+| Math keyboard | Basic | Full | Full | Full |
+| Caregiver notes | 20 notes | Unlimited | Unlimited | Unlimited |
+| Cross-device sync (Hivemind) | — | Yes | Yes | Yes |
+| Message history | 10 entries | 100 | Unlimited | Unlimited |
+| AI Chat (Phase 2) | — | — | Yes | Yes |
+| Voice input (Phase 3) | — | — | Yes | Yes |
+| Azure Neural TTS (tone styles) | — | Standard | Advanced | All voices |
+| Multi-language (12 languages) | 1 | 3 | 12 | 12 |
+| Cloud backup | — | Yes | Yes | Yes |
+| Priority support | — | — | Email | Dedicated |
+| SLA | — | — | — | 99.9% uptime |
+| Custom branding | — | — | — | Yes |
+| On-premise deployment | — | — | — | Available |
+
+**Enterprise** tier is included with Synalux Enterprise subscriptions. All other tiers (Free, Standard, Advanced) require a separate PrismAAC subscription, consistent with v1.0 pricing.
+
+---
+
+## Technical Architecture
+
+### Stack
+- **Framework:** Next.js 16 + React 19 + TypeScript
+- **Styling:** Tailwind CSS 4
+- **State:** zustand 5 with localStorage persistence
+- **Speech:** Web Speech API (TTS)
+- **Sync:** Supabase (same project as Synalux portal) with realtime subscriptions
+- **Tests:** Vitest — 102+ tests across 7 files
+
+### Key Design Decisions (with evidence)
+
+| Decision | Evidence |
+|----------|---------|
+| 5 prediction slots | Trnka & McCoy (2008): 3–5 is optimal for motor-impaired |
+| LAMP-stable prediction positions | Light & Drager (2007): consistent motor plans |
+| 25mm+ button sizes | Koester & Simpson (2012): motor-impaired need ≥25mm |
+| 10px key gaps | Koester & Simpson (2012): gap size secondary to button size |
+| Triple feedback (haptic + audio + visual) | Hoggan et al. (2008): multi-modal improves accuracy |
+| Scale-down on press (not darken) | Visible under finger; standard in Proloquo2Go, TouchChat |
+| Caregiver note documentation | BACB Ethics Code 2.01, 2.09 |
+| AI suggestions require confirmation | Valencia et al. (CHI 2023): preserve authorship |
+| Keyboard always visible | ASHA: never restrict communication access |
+
+### Project Structure
+
+```
+prism-aac-web/
+  app/               Next.js App Router (single page)
+  components/        React components (14 files)
+  constants/         Default data — categories, phrases, math, keyboard layouts
+  engine/            Prediction engine + caregiver action execution
+  services/          Speech API, haptic feedback, Supabase sync
+  store/             zustand stores (6 files) with persistence
+  tests/             Vitest test suite (7+ files, 102+ tests)
+  supabase/          Database migrations
+  types/             TypeScript interfaces
+  RESEARCH.md        Full evidence base with 19 citations
+  README.md          This file — clinical + technical documentation
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Running Locally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev       # http://localhost:3333
+npm run test      # 102+ tests
+npm run build     # production build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Environment Variables
 
-## Learn More
+Set via Vercel (same project as Synalux portal) or `.env.local`:
 
-To learn more about Next.js, take a look at the following resources:
+```
+NEXT_PUBLIC_SUPABASE_URL=https://pjddaprqhwqxtcpdmprk.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<from Vercel environment>
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Evidence Base
 
-## Deploy on Vercel
+See [RESEARCH.md](RESEARCH.md) for the complete scientific foundation including:
+- 19 peer-reviewed citations (2003–2025)
+- BACB Ethics Code alignment
+- ASHA Practice Portal references
+- WCAG 2.2 accessibility standards
+- Clinical safety guardrails with rationale
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+Business Source License 1.1 (BUSL-1.1). Copyright 2026 Synalux AI.
