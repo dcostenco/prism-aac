@@ -7,6 +7,8 @@ const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Prism AAC",
   description: "Augmentative and Alternative Communication app",
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Prism AAC" },
 };
 
 export const viewport: Viewport = {

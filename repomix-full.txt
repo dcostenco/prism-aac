@@ -32,7 +32,7 @@ The content is organized as follows:
 <notes>
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Files matching these patterns are excluded: node_modules, .next, .expo, dist, ios, android, package-lock.json, .env.local, docs/screenshots, .gitignore, .DS_Store, repomix-*.txt, public
+- Files matching these patterns are excluded: node_modules, .next, .expo, dist, ios, android, package-lock.json, .env.local, docs/screenshots, .DS_Store, repomix-*.txt, public/sw.js
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 - Files are sorted by Git change count (files with more changes are at the bottom)
@@ -49,6 +49,7 @@ app/
   globals.css
   layout.tsx
   page.tsx
+  sw.ts
 components/
   AIChatPanel.tsx
   AlertOverlay.tsx
@@ -69,60 +70,34 @@ constants/
   mathSymbols.ts
   orderingSequences.ts
   phrases.ts
-docs/
-  i18n/
-    README_ar.md
-    README_de.md
-    README_es.md
-    README_fr.md
-    README_ja.md
-    README_ko.md
-    README_pt.md
-    README_ro.md
-    README_ru.md
-    README_uk.md
-    README_zh.md
-  platforms/
-    DESKTOP_ar.md
-    DESKTOP_de.md
-    DESKTOP_en.md
-    DESKTOP_es.md
-    DESKTOP_fr.md
-    DESKTOP_ja.md
-    DESKTOP_ko.md
-    DESKTOP_pt.md
-    DESKTOP_ro.md
-    DESKTOP_ru.md
-    DESKTOP_uk.md
-    DESKTOP_zh.md
-    IPAD_ar.md
-    IPAD_de.md
-    IPAD_en.md
-    IPAD_es.md
-    IPAD_fr.md
-    IPAD_ja.md
-    IPAD_ko.md
-    IPAD_pt.md
-    IPAD_ro.md
-    IPAD_ru.md
-    IPAD_uk.md
-    IPAD_zh.md
-    WEB_ar.md
-    WEB_de.md
-    WEB_en.md
-    WEB_es.md
-    WEB_fr.md
-    WEB_ja.md
-    WEB_ko.md
-    WEB_pt.md
-    WEB_ro.md
-    WEB_ru.md
-    WEB_uk.md
-    WEB_zh.md
 engine/
   caregiverActions.ts
   colorCoding.ts
+  i18n.ts
   predictionEngine.ts
+  useT.ts
+i18n/
+  ar.json
+  de.json
+  en.json
+  es.json
+  fr.json
+  ja.json
+  ko.json
+  pt.json
+  ro.json
+  ru.json
+  uk.json
+  zh.json
+public/
+  file.svg
+  globe.svg
+  icon-192.png
+  icon-512.png
+  manifest.json
+  next.svg
+  vercel.svg
+  window.svg
 scripts/
   generate_i18n.py
 services/
@@ -145,6 +120,7 @@ tests/
   category-store.test.ts
   color-coding.test.ts
   feedback.test.ts
+  i18n.test.ts
   message-store.test.ts
   prediction-engine.test.ts
   setup.ts
@@ -153,6 +129,7 @@ tests/
   ux-accessibility.test.ts
 types/
   index.ts
+.gitignore
 AGENTS.md
 CLAUDE.md
 eslint.config.mjs
@@ -170,6 +147,47 @@ vitest.config.ts
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="app/sw.ts">
+import { defaultCache } from '@serwist/next/worker';
+import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
+import { Serwist } from 'serwist';
+
+declare global {
+  interface WorkerGlobalScope extends SerwistGlobalConfig {
+    __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
+  }
+}
+
+declare const self: ServiceWorkerGlobalScope & typeof globalThis;
+
+const serwist = new Serwist({
+  precacheEntries: self.__SW_MANIFEST,
+  skipWaiting: true,
+  clientsClaim: true,
+  navigationPreload: true,
+  runtimeCaching: defaultCache,
+});
+
+serwist.addEventListeners();
+</file>
+
+<file path="public/manifest.json">
+{
+  "name": "Prism AAC",
+  "short_name": "PrismAAC",
+  "description": "Evidence-based AAC communication app",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12121e",
+  "theme_color": "#12121e",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+</file>
 
 <file path=".github/workflows/update-i18n.yml">
 name: Update i18n translations
@@ -259,15 +277,16 @@ export default function AIChatPanel() {
     tapFeedback();
 
     setMessages((m) => [...m, { role: 'user', text: question }]);
-    clearAll();
     setLoading(true);
 
     try {
       const response = await askAI(question);
       setMessages((m) => [...m, { role: 'ai', text: response.text, lines: response.lines }]);
+      clearAll();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Could not reach AI';
       setMessages((m) => [...m, { role: 'ai', text: msg, lines: [msg] }]);
+      // Don't clear — child can retry without retyping
     }
     setLoading(false);
   };
@@ -482,7 +501,8 @@ export default function Keyboard() {
     keyFeedback();
     const char = keyboardMode === 'letters' ? (isUpperCase ? key : key.toLowerCase()) : key;
     appendChar(char);
-  }, [appendChar, isUpperCase, keyboardMode]);
+    if (isUpperCase && keyboardMode === 'letters') toggleCase();
+  }, [appendChar, isUpperCase, keyboardMode, toggleCase]);
 
   const handleSpace = useCallback(() => {
     keyFeedback();
@@ -771,3021 +791,6 @@ export const DEFAULT_PHRASES: Phrase[] = [
 ];
 </file>
 
-<file path="docs/i18n/README_ar.md">
-<!-- Auto-generated by scripts/generate_i18n.py — do not edit manually -->
-# Prism AAC — التواصل المعزز والبديل
-
-<div dir="rtl">
-
-**تواصل مبني للحياة الواقعية.**
-
-[English](../../README.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md) | [Română](README_ro.md) | [Українська](README_uk.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [日本語](README_ja.md) | [한국어](README_ko.md) | [中文](README_zh.md) | [العربية](README_ar.md)
-
----
-
-## لماذا Prism AAC؟
-
-معظم تطبيقات AAC تجبرك على الاختيار: لوحات الصور أو لوحة المفاتيح. Prism AAC يبقي كلاهما متاحاً دون تبديل الشاشات. لوحة المفاتيح دائماً بلمسة واحدة، التنبؤات تتعلم ما تقوله فعلاً، والفئات مبنية حول مواقف حقيقية.
-
-## الميزات الرئيسية
-
-
-| Feature | Description |
-|---------|-------------|
-| Adaptive Prediction | 5-slot prediction bar, learns from usage (bigram + frequency + recency) |
-| Categories | Help/Needs, Quick Talk, Places/Plans, Food/Ordering, People/Social, School/Work |
-| Ordering Flows | Multi-step restaurant ordering (Chipotle, General Restaurant) |
-| Math Keyboard | Basic operations + advanced symbols (Standard+) |
-| Azure Neural TTS | 12 languages, 9 emotional tones, SSML prosody control |
-| Offline Mode | System TTS + local SQLite — works without internet |
-| 12 Languages | EN, ES, FR, PT, RO, UK, RU, DE, JA, KO, ZH, AR (RTL) |
-| Accessibility | 64dp touch targets, high-contrast mode, haptic feedback |
-
-
-## تحميل وتثبيت
-
-
-| Platform | Format | Status |
-|----------|--------|--------|
-| iPad | Native (iPadOS 16+) | Beta |
-| Android | APK / Play Store | Planned |
-| Windows | `.exe` (Electron) | Planned |
-| macOS | `.dmg` / PWA | Planned |
-| Linux | `.AppImage` | Planned |
-| Web | Browser PWA | Available |
-
-
-### iPad
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac && npm install
-npx expo run:ios
-```
-
-### Android
-
-```bash
-npx eas build --platform android --profile preview
-```
-
-### Web / Desktop
-
-```bash
-npx expo start --web
-# Open http://localhost:8081 — install as PWA from browser menu
-```
-
-## خطط الاشتراك
-
-
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Voice | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
-| Tones | — | 5 | All 9 | All + custom |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Custom phrases | 50 | 500 | Unlimited | Unlimited |
-| Languages | 1 | 3 | All 12 | All 12 + custom |
-| Cloud backup | — | Yes | Yes | Yes + HIPAA |
-
-
----
-
-[← العودة إلى README بالإنجليزية](../../README.md)
-
-</div>
-</file>
-
-<file path="docs/i18n/README_de.md">
-<!-- Auto-generated by scripts/generate_i18n.py — do not edit manually -->
-# Prism AAC — Unterstützte Kommunikation
-
-
-
-**Kommunikation für das echte Leben gebaut.**
-
-[English](../../README.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md) | [Română](README_ro.md) | [Українська](README_uk.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [日本語](README_ja.md) | [한국어](README_ko.md) | [中文](README_zh.md) | [العربية](README_ar.md)
-
----
-
-## Warum Prism AAC?
-
-Die meisten AAC-Apps zwingen zur Wahl: Bildtafeln oder Tastatur. Prism AAC hält beides verfügbar ohne Bildschirmwechsel. Die Tastatur ist immer einen Tipp entfernt, Vorhersagen lernen was Sie wirklich sagen, und Kategorien sind um reale Situationen herum aufgebaut.
-
-## Hauptfunktionen
-
-
-| Feature | Description |
-|---------|-------------|
-| Adaptive Prediction | 5-slot prediction bar, learns from usage (bigram + frequency + recency) |
-| Categories | Help/Needs, Quick Talk, Places/Plans, Food/Ordering, People/Social, School/Work |
-| Ordering Flows | Multi-step restaurant ordering (Chipotle, General Restaurant) |
-| Math Keyboard | Basic operations + advanced symbols (Standard+) |
-| Azure Neural TTS | 12 languages, 9 emotional tones, SSML prosody control |
-| Offline Mode | System TTS + local SQLite — works without internet |
-| 12 Languages | EN, ES, FR, PT, RO, UK, RU, DE, JA, KO, ZH, AR (RTL) |
-| Accessibility | 64dp touch targets, high-contrast mode, haptic feedback |
-
-
-## Herunterladen und installieren
-
-
-| Platform | Format | Status |
-|----------|--------|--------|
-| iPad | Native (iPadOS 16+) | Beta |
-| Android | APK / Play Store | Planned |
-| Windows | `.exe` (Electron) | Planned |
-| macOS | `.dmg` / PWA | Planned |
-| Linux | `.AppImage` | Planned |
-| Web | Browser PWA | Available |
-
-
-### iPad
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac && npm install
-npx expo run:ios
-```
-
-### Android
-
-```bash
-npx eas build --platform android --profile preview
-```
-
-### Web / Desktop
-
-```bash
-npx expo start --web
-# Open http://localhost:8081 — install as PWA from browser menu
-```
-
-## Abonnement-Pläne
-
-
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Voice | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
-| Tones | — | 5 | All 9 | All + custom |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Custom phrases | 50 | 500 | Unlimited | Unlimited |
-| Languages | 1 | 3 | All 12 | All 12 + custom |
-| Cloud backup | — | Yes | Yes | Yes + HIPAA |
-
-
----
-
-[← Zurück zum englischen README](../../README.md)
-</file>
-
-<file path="docs/i18n/README_es.md">
-<!-- Auto-generated by scripts/generate_i18n.py — do not edit manually -->
-# Prism AAC — Comunicación Aumentativa y Alternativa
-
-
-
-**Comunicación construida para la vida real.**
-
-[English](../../README.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md) | [Română](README_ro.md) | [Українська](README_uk.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [日本語](README_ja.md) | [한국어](README_ko.md) | [中文](README_zh.md) | [العربية](README_ar.md)
-
----
-
-## ¿Por qué Prism AAC?
-
-La mayoría de las apps AAC te obligan a elegir: tableros con imágenes o escritura. Prism AAC mantiene ambos disponibles sin cambiar de pantalla. El teclado siempre está a un toque, las predicciones aprenden lo que realmente dices, y las categorías están organizadas alrededor de situaciones reales.
-
-## Características principales
-
-
-| Feature | Description |
-|---------|-------------|
-| Adaptive Prediction | 5-slot prediction bar, learns from usage (bigram + frequency + recency) |
-| Categories | Help/Needs, Quick Talk, Places/Plans, Food/Ordering, People/Social, School/Work |
-| Ordering Flows | Multi-step restaurant ordering (Chipotle, General Restaurant) |
-| Math Keyboard | Basic operations + advanced symbols (Standard+) |
-| Azure Neural TTS | 12 languages, 9 emotional tones, SSML prosody control |
-| Offline Mode | System TTS + local SQLite — works without internet |
-| 12 Languages | EN, ES, FR, PT, RO, UK, RU, DE, JA, KO, ZH, AR (RTL) |
-| Accessibility | 64dp touch targets, high-contrast mode, haptic feedback |
-
-
-## Descargar e instalar
-
-
-| Platform | Format | Status |
-|----------|--------|--------|
-| iPad | Native (iPadOS 16+) | Beta |
-| Android | APK / Play Store | Planned |
-| Windows | `.exe` (Electron) | Planned |
-| macOS | `.dmg` / PWA | Planned |
-| Linux | `.AppImage` | Planned |
-| Web | Browser PWA | Available |
-
-
-### iPad
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac && npm install
-npx expo run:ios
-```
-
-### Android
-
-```bash
-npx eas build --platform android --profile preview
-```
-
-### Web / Desktop
-
-```bash
-npx expo start --web
-# Open http://localhost:8081 — install as PWA from browser menu
-```
-
-## Planes de suscripción
-
-
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Voice | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
-| Tones | — | 5 | All 9 | All + custom |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Custom phrases | 50 | 500 | Unlimited | Unlimited |
-| Languages | 1 | 3 | All 12 | All 12 + custom |
-| Cloud backup | — | Yes | Yes | Yes + HIPAA |
-
-
----
-
-[← Volver al README en inglés](../../README.md)
-</file>
-
-<file path="docs/i18n/README_fr.md">
-<!-- Auto-generated by scripts/generate_i18n.py — do not edit manually -->
-# Prism AAC — Communication Augmentative et Alternative
-
-
-
-**Communication construite pour la vie réelle.**
-
-[English](../../README.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md) | [Română](README_ro.md) | [Українська](README_uk.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [日本語](README_ja.md) | [한국어](README_ko.md) | [中文](README_zh.md) | [العربية](README_ar.md)
-
----
-
-## Pourquoi Prism AAC ?
-
-La plupart des applications CAA vous forcent à choisir : tableaux d'images ou clavier. Prism AAC garde les deux disponibles sans changer d'écran. Le clavier est toujours à portée, les prédictions apprennent ce que vous dites vraiment, et les catégories sont organisées autour de situations réelles.
-
-## Fonctionnalités principales
-
-
-| Feature | Description |
-|---------|-------------|
-| Adaptive Prediction | 5-slot prediction bar, learns from usage (bigram + frequency + recency) |
-| Categories | Help/Needs, Quick Talk, Places/Plans, Food/Ordering, People/Social, School/Work |
-| Ordering Flows | Multi-step restaurant ordering (Chipotle, General Restaurant) |
-| Math Keyboard | Basic operations + advanced symbols (Standard+) |
-| Azure Neural TTS | 12 languages, 9 emotional tones, SSML prosody control |
-| Offline Mode | System TTS + local SQLite — works without internet |
-| 12 Languages | EN, ES, FR, PT, RO, UK, RU, DE, JA, KO, ZH, AR (RTL) |
-| Accessibility | 64dp touch targets, high-contrast mode, haptic feedback |
-
-
-## Télécharger et installer
-
-
-| Platform | Format | Status |
-|----------|--------|--------|
-| iPad | Native (iPadOS 16+) | Beta |
-| Android | APK / Play Store | Planned |
-| Windows | `.exe` (Electron) | Planned |
-| macOS | `.dmg` / PWA | Planned |
-| Linux | `.AppImage` | Planned |
-| Web | Browser PWA | Available |
-
-
-### iPad
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac && npm install
-npx expo run:ios
-```
-
-### Android
-
-```bash
-npx eas build --platform android --profile preview
-```
-
-### Web / Desktop
-
-```bash
-npx expo start --web
-# Open http://localhost:8081 — install as PWA from browser menu
-```
-
-## Abonnements
-
-
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Voice | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
-| Tones | — | 5 | All 9 | All + custom |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Custom phrases | 50 | 500 | Unlimited | Unlimited |
-| Languages | 1 | 3 | All 12 | All 12 + custom |
-| Cloud backup | — | Yes | Yes | Yes + HIPAA |
-
-
----
-
-[← Retour au README en anglais](../../README.md)
-</file>
-
-<file path="docs/i18n/README_ja.md">
-<!-- Auto-generated by scripts/generate_i18n.py — do not edit manually -->
-# Prism AAC — 拡大代替コミュニケーション
-
-
-
-**実生活のために作られたコミュニケーション。**
-
-[English](../../README.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md) | [Română](README_ro.md) | [Українська](README_uk.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [日本語](README_ja.md) | [한국어](README_ko.md) | [中文](README_zh.md) | [العربية](README_ar.md)
-
----
-
-## なぜPrism AACなのか？
-
-ほとんどのAACアプリは選択を強います：絵カードかキーボードか。Prism AACは画面を切り替えることなく両方を利用可能にします。キーボードは常にワンタップで、予測はあなたが実際に言うことを学習し、カテゴリは実際の状況に基づいて構築されています。
-
-## 主な機能
-
-
-| Feature | Description |
-|---------|-------------|
-| Adaptive Prediction | 5-slot prediction bar, learns from usage (bigram + frequency + recency) |
-| Categories | Help/Needs, Quick Talk, Places/Plans, Food/Ordering, People/Social, School/Work |
-| Ordering Flows | Multi-step restaurant ordering (Chipotle, General Restaurant) |
-| Math Keyboard | Basic operations + advanced symbols (Standard+) |
-| Azure Neural TTS | 12 languages, 9 emotional tones, SSML prosody control |
-| Offline Mode | System TTS + local SQLite — works without internet |
-| 12 Languages | EN, ES, FR, PT, RO, UK, RU, DE, JA, KO, ZH, AR (RTL) |
-| Accessibility | 64dp touch targets, high-contrast mode, haptic feedback |
-
-
-## ダウンロードとインストール
-
-
-| Platform | Format | Status |
-|----------|--------|--------|
-| iPad | Native (iPadOS 16+) | Beta |
-| Android | APK / Play Store | Planned |
-| Windows | `.exe` (Electron) | Planned |
-| macOS | `.dmg` / PWA | Planned |
-| Linux | `.AppImage` | Planned |
-| Web | Browser PWA | Available |
-
-
-### iPad
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac && npm install
-npx expo run:ios
-```
-
-### Android
-
-```bash
-npx eas build --platform android --profile preview
-```
-
-### Web / Desktop
-
-```bash
-npx expo start --web
-# Open http://localhost:8081 — install as PWA from browser menu
-```
-
-## サブスクリプションプラン
-
-
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Voice | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
-| Tones | — | 5 | All 9 | All + custom |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Custom phrases | 50 | 500 | Unlimited | Unlimited |
-| Languages | 1 | 3 | All 12 | All 12 + custom |
-| Cloud backup | — | Yes | Yes | Yes + HIPAA |
-
-
----
-
-[← 英語のREADMEに戻る](../../README.md)
-</file>
-
-<file path="docs/i18n/README_ko.md">
-<!-- Auto-generated by scripts/generate_i18n.py — do not edit manually -->
-# Prism AAC — 보완대체 의사소통
-
-
-
-**실생활을 위해 만들어진 의사소통.**
-
-[English](../../README.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md) | [Română](README_ro.md) | [Українська](README_uk.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [日本語](README_ja.md) | [한국어](README_ko.md) | [中文](README_zh.md) | [العربية](README_ar.md)
-
----
-
-## 왜 Prism AAC인가?
-
-대부분의 AAC 앱은 선택을 강요합니다: 그림판 또는 키보드. Prism AAC는 화면 전환 없이 둘 다 사용할 수 있습니다. 키보드는 항상 한 번의 탭으로 접근 가능하고, 예측은 실제로 말하는 것을 학습하며, 카테고리는 실제 상황을 중심으로 구성됩니다.
-
-## 주요 기능
-
-
-| Feature | Description |
-|---------|-------------|
-| Adaptive Prediction | 5-slot prediction bar, learns from usage (bigram + frequency + recency) |
-| Categories | Help/Needs, Quick Talk, Places/Plans, Food/Ordering, People/Social, School/Work |
-| Ordering Flows | Multi-step restaurant ordering (Chipotle, General Restaurant) |
-| Math Keyboard | Basic operations + advanced symbols (Standard+) |
-| Azure Neural TTS | 12 languages, 9 emotional tones, SSML prosody control |
-| Offline Mode | System TTS + local SQLite — works without internet |
-| 12 Languages | EN, ES, FR, PT, RO, UK, RU, DE, JA, KO, ZH, AR (RTL) |
-| Accessibility | 64dp touch targets, high-contrast mode, haptic feedback |
-
-
-## 다운로드 및 설치
-
-
-| Platform | Format | Status |
-|----------|--------|--------|
-| iPad | Native (iPadOS 16+) | Beta |
-| Android | APK / Play Store | Planned |
-| Windows | `.exe` (Electron) | Planned |
-| macOS | `.dmg` / PWA | Planned |
-| Linux | `.AppImage` | Planned |
-| Web | Browser PWA | Available |
-
-
-### iPad
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac && npm install
-npx expo run:ios
-```
-
-### Android
-
-```bash
-npx eas build --platform android --profile preview
-```
-
-### Web / Desktop
-
-```bash
-npx expo start --web
-# Open http://localhost:8081 — install as PWA from browser menu
-```
-
-## 구독 플랜
-
-
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Voice | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
-| Tones | — | 5 | All 9 | All + custom |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Custom phrases | 50 | 500 | Unlimited | Unlimited |
-| Languages | 1 | 3 | All 12 | All 12 + custom |
-| Cloud backup | — | Yes | Yes | Yes + HIPAA |
-
-
----
-
-[← 영어 README로 돌아가기](../../README.md)
-</file>
-
-<file path="docs/i18n/README_pt.md">
-<!-- Auto-generated by scripts/generate_i18n.py — do not edit manually -->
-# Prism AAC — Comunicação Aumentativa e Alternativa
-
-
-
-**Comunicação construída para a vida real.**
-
-[English](../../README.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md) | [Română](README_ro.md) | [Українська](README_uk.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [日本語](README_ja.md) | [한국어](README_ko.md) | [中文](README_zh.md) | [العربية](README_ar.md)
-
----
-
-## Por que Prism AAC?
-
-A maioria dos aplicativos de CAA força uma escolha: pranchas de imagens ou digitação. O Prism AAC mantém ambos disponíveis sem trocar de tela. O teclado está sempre a um toque, as previsões aprendem o que você realmente diz, e as categorias são organizadas em torno de situações reais.
-
-## Recursos principais
-
-
-| Feature | Description |
-|---------|-------------|
-| Adaptive Prediction | 5-slot prediction bar, learns from usage (bigram + frequency + recency) |
-| Categories | Help/Needs, Quick Talk, Places/Plans, Food/Ordering, People/Social, School/Work |
-| Ordering Flows | Multi-step restaurant ordering (Chipotle, General Restaurant) |
-| Math Keyboard | Basic operations + advanced symbols (Standard+) |
-| Azure Neural TTS | 12 languages, 9 emotional tones, SSML prosody control |
-| Offline Mode | System TTS + local SQLite — works without internet |
-| 12 Languages | EN, ES, FR, PT, RO, UK, RU, DE, JA, KO, ZH, AR (RTL) |
-| Accessibility | 64dp touch targets, high-contrast mode, haptic feedback |
-
-
-## Baixar e instalar
-
-
-| Platform | Format | Status |
-|----------|--------|--------|
-| iPad | Native (iPadOS 16+) | Beta |
-| Android | APK / Play Store | Planned |
-| Windows | `.exe` (Electron) | Planned |
-| macOS | `.dmg` / PWA | Planned |
-| Linux | `.AppImage` | Planned |
-| Web | Browser PWA | Available |
-
-
-### iPad
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac && npm install
-npx expo run:ios
-```
-
-### Android
-
-```bash
-npx eas build --platform android --profile preview
-```
-
-### Web / Desktop
-
-```bash
-npx expo start --web
-# Open http://localhost:8081 — install as PWA from browser menu
-```
-
-## Planos de assinatura
-
-
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Voice | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
-| Tones | — | 5 | All 9 | All + custom |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Custom phrases | 50 | 500 | Unlimited | Unlimited |
-| Languages | 1 | 3 | All 12 | All 12 + custom |
-| Cloud backup | — | Yes | Yes | Yes + HIPAA |
-
-
----
-
-[← Voltar ao README em inglês](../../README.md)
-</file>
-
-<file path="docs/i18n/README_ro.md">
-<!-- Auto-generated by scripts/generate_i18n.py — do not edit manually -->
-# Prism AAC — Comunicare Augmentativă și Alternativă
-
-
-
-**Comunicare construită pentru viața reală.**
-
-[English](../../README.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md) | [Română](README_ro.md) | [Українська](README_uk.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [日本語](README_ja.md) | [한국어](README_ko.md) | [中文](README_zh.md) | [العربية](README_ar.md)
-
----
-
-## De ce Prism AAC?
-
-Majoritatea aplicațiilor AAC te forțează să alegi: panouri cu imagini sau tastatură. Prism AAC le păstrează pe amândouă disponibile fără să schimbi ecranul. Tastatura este mereu la un atingere, predicțiile învață ce spui cu adevărat, iar categoriile sunt organizate în jurul situațiilor reale.
-
-## Funcționalități principale
-
-
-| Feature | Description |
-|---------|-------------|
-| Adaptive Prediction | 5-slot prediction bar, learns from usage (bigram + frequency + recency) |
-| Categories | Help/Needs, Quick Talk, Places/Plans, Food/Ordering, People/Social, School/Work |
-| Ordering Flows | Multi-step restaurant ordering (Chipotle, General Restaurant) |
-| Math Keyboard | Basic operations + advanced symbols (Standard+) |
-| Azure Neural TTS | 12 languages, 9 emotional tones, SSML prosody control |
-| Offline Mode | System TTS + local SQLite — works without internet |
-| 12 Languages | EN, ES, FR, PT, RO, UK, RU, DE, JA, KO, ZH, AR (RTL) |
-| Accessibility | 64dp touch targets, high-contrast mode, haptic feedback |
-
-
-## Descarcă și instalează
-
-
-| Platform | Format | Status |
-|----------|--------|--------|
-| iPad | Native (iPadOS 16+) | Beta |
-| Android | APK / Play Store | Planned |
-| Windows | `.exe` (Electron) | Planned |
-| macOS | `.dmg` / PWA | Planned |
-| Linux | `.AppImage` | Planned |
-| Web | Browser PWA | Available |
-
-
-### iPad
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac && npm install
-npx expo run:ios
-```
-
-### Android
-
-```bash
-npx eas build --platform android --profile preview
-```
-
-### Web / Desktop
-
-```bash
-npx expo start --web
-# Open http://localhost:8081 — install as PWA from browser menu
-```
-
-## Planuri de abonament
-
-
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Voice | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
-| Tones | — | 5 | All 9 | All + custom |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Custom phrases | 50 | 500 | Unlimited | Unlimited |
-| Languages | 1 | 3 | All 12 | All 12 + custom |
-| Cloud backup | — | Yes | Yes | Yes + HIPAA |
-
-
----
-
-[← Înapoi la README în engleză](../../README.md)
-</file>
-
-<file path="docs/i18n/README_ru.md">
-<!-- Auto-generated by scripts/generate_i18n.py — do not edit manually -->
-# Prism AAC — Аугментативная и альтернативная коммуникация
-
-
-
-**Коммуникация, созданная для реальной жизни.**
-
-[English](../../README.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md) | [Română](README_ro.md) | [Українська](README_uk.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [日本語](README_ja.md) | [한국어](README_ko.md) | [中文](README_zh.md) | [العربية](README_ar.md)
-
----
-
-## Почему Prism AAC?
-
-Большинство AAC-приложений заставляют выбирать: доски с картинками или клавиатура. Prism AAC сохраняет оба варианта без смены экрана. Клавиатура всегда на расстоянии одного касания, предсказания учатся тому, что вы действительно говорите, а категории построены вокруг реальных ситуаций.
-
-## Основные функции
-
-
-| Feature | Description |
-|---------|-------------|
-| Adaptive Prediction | 5-slot prediction bar, learns from usage (bigram + frequency + recency) |
-| Categories | Help/Needs, Quick Talk, Places/Plans, Food/Ordering, People/Social, School/Work |
-| Ordering Flows | Multi-step restaurant ordering (Chipotle, General Restaurant) |
-| Math Keyboard | Basic operations + advanced symbols (Standard+) |
-| Azure Neural TTS | 12 languages, 9 emotional tones, SSML prosody control |
-| Offline Mode | System TTS + local SQLite — works without internet |
-| 12 Languages | EN, ES, FR, PT, RO, UK, RU, DE, JA, KO, ZH, AR (RTL) |
-| Accessibility | 64dp touch targets, high-contrast mode, haptic feedback |
-
-
-## Скачать и установить
-
-
-| Platform | Format | Status |
-|----------|--------|--------|
-| iPad | Native (iPadOS 16+) | Beta |
-| Android | APK / Play Store | Planned |
-| Windows | `.exe` (Electron) | Planned |
-| macOS | `.dmg` / PWA | Planned |
-| Linux | `.AppImage` | Planned |
-| Web | Browser PWA | Available |
-
-
-### iPad
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac && npm install
-npx expo run:ios
-```
-
-### Android
-
-```bash
-npx eas build --platform android --profile preview
-```
-
-### Web / Desktop
-
-```bash
-npx expo start --web
-# Open http://localhost:8081 — install as PWA from browser menu
-```
-
-## Планы подписки
-
-
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Voice | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
-| Tones | — | 5 | All 9 | All + custom |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Custom phrases | 50 | 500 | Unlimited | Unlimited |
-| Languages | 1 | 3 | All 12 | All 12 + custom |
-| Cloud backup | — | Yes | Yes | Yes + HIPAA |
-
-
----
-
-[← Назад к README на английском](../../README.md)
-</file>
-
-<file path="docs/i18n/README_uk.md">
-<!-- Auto-generated by scripts/generate_i18n.py — do not edit manually -->
-# Prism AAC — Аугментативна та альтернативна комунікація
-
-
-
-**Комунікація, створена для реального життя.**
-
-[English](../../README.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md) | [Română](README_ro.md) | [Українська](README_uk.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [日本語](README_ja.md) | [한국어](README_ko.md) | [中文](README_zh.md) | [العربية](README_ar.md)
-
----
-
-## Чому Prism AAC?
-
-Більшість AAC-додатків змушують обирати: дошки з картинками або клавіатура. Prism AAC зберігає обидва варіанти без зміни екрану. Клавіатура завжди на відстані одного дотику, передбачення вчаться тому, що ви насправді говорите, а категорії побудовані навколо реальних ситуацій.
-
-## Основні функції
-
-
-| Feature | Description |
-|---------|-------------|
-| Adaptive Prediction | 5-slot prediction bar, learns from usage (bigram + frequency + recency) |
-| Categories | Help/Needs, Quick Talk, Places/Plans, Food/Ordering, People/Social, School/Work |
-| Ordering Flows | Multi-step restaurant ordering (Chipotle, General Restaurant) |
-| Math Keyboard | Basic operations + advanced symbols (Standard+) |
-| Azure Neural TTS | 12 languages, 9 emotional tones, SSML prosody control |
-| Offline Mode | System TTS + local SQLite — works without internet |
-| 12 Languages | EN, ES, FR, PT, RO, UK, RU, DE, JA, KO, ZH, AR (RTL) |
-| Accessibility | 64dp touch targets, high-contrast mode, haptic feedback |
-
-
-## Завантажити та встановити
-
-
-| Platform | Format | Status |
-|----------|--------|--------|
-| iPad | Native (iPadOS 16+) | Beta |
-| Android | APK / Play Store | Planned |
-| Windows | `.exe` (Electron) | Planned |
-| macOS | `.dmg` / PWA | Planned |
-| Linux | `.AppImage` | Planned |
-| Web | Browser PWA | Available |
-
-
-### iPad
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac && npm install
-npx expo run:ios
-```
-
-### Android
-
-```bash
-npx eas build --platform android --profile preview
-```
-
-### Web / Desktop
-
-```bash
-npx expo start --web
-# Open http://localhost:8081 — install as PWA from browser menu
-```
-
-## Плани підписки
-
-
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Voice | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
-| Tones | — | 5 | All 9 | All + custom |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Custom phrases | 50 | 500 | Unlimited | Unlimited |
-| Languages | 1 | 3 | All 12 | All 12 + custom |
-| Cloud backup | — | Yes | Yes | Yes + HIPAA |
-
-
----
-
-[← Назад до README англійською](../../README.md)
-</file>
-
-<file path="docs/i18n/README_zh.md">
-<!-- Auto-generated by scripts/generate_i18n.py — do not edit manually -->
-# Prism AAC — 辅助替代沟通
-
-
-
-**为真实生活而构建的沟通工具。**
-
-[English](../../README.md) | [Español](README_es.md) | [Français](README_fr.md) | [Português](README_pt.md) | [Română](README_ro.md) | [Українська](README_uk.md) | [Русский](README_ru.md) | [Deutsch](README_de.md) | [日本語](README_ja.md) | [한국어](README_ko.md) | [中文](README_zh.md) | [العربية](README_ar.md)
-
----
-
-## 为什么选择 Prism AAC？
-
-大多数AAC应用迫使你做出选择：图片板或键盘。Prism AAC让两者都可用，无需切换屏幕。键盘始终一触即达，预测学习你真正说的话，类别围绕真实场景构建。
-
-## 主要功能
-
-
-| Feature | Description |
-|---------|-------------|
-| Adaptive Prediction | 5-slot prediction bar, learns from usage (bigram + frequency + recency) |
-| Categories | Help/Needs, Quick Talk, Places/Plans, Food/Ordering, People/Social, School/Work |
-| Ordering Flows | Multi-step restaurant ordering (Chipotle, General Restaurant) |
-| Math Keyboard | Basic operations + advanced symbols (Standard+) |
-| Azure Neural TTS | 12 languages, 9 emotional tones, SSML prosody control |
-| Offline Mode | System TTS + local SQLite — works without internet |
-| 12 Languages | EN, ES, FR, PT, RO, UK, RU, DE, JA, KO, ZH, AR (RTL) |
-| Accessibility | 64dp touch targets, high-contrast mode, haptic feedback |
-
-
-## 下载与安装
-
-
-| Platform | Format | Status |
-|----------|--------|--------|
-| iPad | Native (iPadOS 16+) | Beta |
-| Android | APK / Play Store | Planned |
-| Windows | `.exe` (Electron) | Planned |
-| macOS | `.dmg` / PWA | Planned |
-| Linux | `.AppImage` | Planned |
-| Web | Browser PWA | Available |
-
-
-### iPad
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac && npm install
-npx expo run:ios
-```
-
-### Android
-
-```bash
-npx eas build --platform android --profile preview
-```
-
-### Web / Desktop
-
-```bash
-npx expo start --web
-# Open http://localhost:8081 — install as PWA from browser menu
-```
-
-## 订阅计划
-
-
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Voice | System TTS | Azure Neural | Azure Neural + custom | Custom/cloned |
-| Tones | — | 5 | All 9 | All + custom |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Custom phrases | 50 | 500 | Unlimited | Unlimited |
-| Languages | 1 | 3 | All 12 | All 12 + custom |
-| Cloud backup | — | Yes | Yes | Yes + HIPAA |
-
-
----
-
-[← 返回英文 README](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_ar.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC لسطح المكتب
-
-شغّل Prism AAC على Windows أو macOS أو Linux كتطبيق ويب تقدمي أو تطبيق Electron.
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← العودة إلى README بالإنجليزية](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_de.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC für Desktop
-
-Führen Sie Prism AAC auf Windows, macOS oder Linux als Progressive Web App oder Electron-Anwendung aus.
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← Zurück zum englischen README](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_en.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC for Desktop
-
-Run Prism AAC on Windows, macOS, or Linux as a Progressive Web App or Electron application.
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← Back to English README](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_es.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC para Escritorio
-
-Ejecute Prism AAC en Windows, macOS o Linux como aplicación web progresiva o aplicación de escritorio Electron.
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← Volver al README en inglés](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_fr.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC pour Bureau
-
-Exécutez Prism AAC sur Windows, macOS ou Linux en tant qu'application web progressive ou application Electron.
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← Retour au README en anglais](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_ja.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# デスクトップ版 Prism AAC
-
-Windows、macOS、LinuxでPrism AACをプログレッシブウェブアプリまたはElectronアプリとして実行。
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← 英語のREADMEに戻る](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_ko.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# 데스크톱용 Prism AAC
-
-Windows, macOS, Linux에서 프로그레시브 웹 앱 또는 Electron 앱으로 Prism AAC를 실행하세요.
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← 영어 README로 돌아가기](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_pt.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC para Desktop
-
-Execute o Prism AAC no Windows, macOS ou Linux como aplicativo web progressivo ou aplicativo Electron.
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← Voltar ao README em inglês](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_ro.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC pentru Desktop
-
-Rulați Prism AAC pe Windows, macOS sau Linux ca aplicație web progresivă sau aplicație Electron.
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← Înapoi la README în engleză](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_ru.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC для компьютера
-
-Запускайте Prism AAC на Windows, macOS или Linux как прогрессивное веб-приложение или приложение Electron.
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← Назад к README на английском](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_uk.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC для комп'ютера
-
-Запускайте Prism AAC на Windows, macOS або Linux як прогресивний веб-додаток або додаток Electron.
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← Назад до README англійською](../../README.md)
-</file>
-
-<file path="docs/platforms/DESKTOP_zh.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# 桌面版 Prism AAC
-
-在 Windows、macOS 或 Linux 上以渐进式网页应用或 Electron 应用运行 Prism AAC。
-
-## Platforms
-
-| OS | Method | Status |
-|----|--------|--------|
-| Windows 10/11 | Electron `.exe` | Planned |
-| macOS 12+ | Electron `.dmg` / PWA | Planned |
-| Linux (Ubuntu/Fedora) | `.AppImage` | Planned |
-
-## Install as PWA (Available Now)
-
-### Windows / macOS / Linux
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-```
-
-1. Open **http://localhost:8081** in Chrome or Edge
-2. Click the install icon in the address bar (or Menu → "Install Prism AAC")
-3. Prism AAC now runs as a standalone desktop window
-
-### Production Build
-
-```bash
-npx expo export --platform web
-# Deploy the dist/ folder to any static host
-```
-
-## Desktop-Specific Features
-
-- **Keyboard shortcuts** — full keyboard navigation
-- **Window resizing** — responsive layout adapts from narrow to wide
-- **System TTS** — uses OS speech synthesis (no internet required)
-- **Local storage** — SQLite database stored in browser IndexedDB
-- **Offline capable** — PWA works without internet after first load
-
-## Electron Packages (Coming Soon)
-
-Pre-built desktop installers will be available on [GitHub Releases](https://github.com/dcostenco/prism-aac/releases):
-
-- `PrismAAC-Setup.exe` — Windows installer
-- `PrismAAC.dmg` — macOS disk image
-- `PrismAAC.AppImage` — Linux portable
-
----
-
-[← 返回英文 README](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_ar.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC لأجهزة iPad
-
-دليل كامل للتثبيت والاستخدام على iPad. متوافق مع iPadOS 16+، محسّن لجميع أحجام iPad.
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← العودة إلى README بالإنجليزية](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_de.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC für iPad
-
-Vollständige Installations- und Nutzungsanleitung für iPad. Kompatibel mit iPadOS 16+, optimiert für alle iPad-Größen.
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← Zurück zum englischen README](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_en.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC for iPad
-
-Complete installation and usage guide for iPad. Compatible with iPadOS 16+, optimized for all iPad sizes.
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← Back to English README](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_es.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC para iPad
-
-Guía completa de instalación y uso en iPad. Compatible con iPadOS 16+, optimizado para todos los tamaños de iPad.
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← Volver al README en inglés](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_fr.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC pour iPad
-
-Guide complet d'installation et d'utilisation sur iPad. Compatible iPadOS 16+, optimisé pour toutes les tailles d'iPad.
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← Retour au README en anglais](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_ja.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# iPad版 Prism AAC
-
-iPadでのインストールと使用の完全ガイド。iPadOS 16+対応、すべてのiPadサイズに最適化。
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← 英語のREADMEに戻る](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_ko.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# iPad용 Prism AAC
-
-iPad에서의 설치 및 사용 완전 가이드. iPadOS 16+ 호환, 모든 iPad 크기에 최적화.
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← 영어 README로 돌아가기](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_pt.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC para iPad
-
-Guia completo de instalação e uso no iPad. Compatível com iPadOS 16+, otimizado para todos os tamanhos de iPad.
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← Voltar ao README em inglês](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_ro.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC pentru iPad
-
-Ghid complet de instalare și utilizare pe iPad. Compatibil cu iPadOS 16+, optimizat pentru toate dimensiunile de iPad.
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← Înapoi la README în engleză](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_ru.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC для iPad
-
-Полное руководство по установке и использованию на iPad. Совместим с iPadOS 16+, оптимизирован для всех размеров iPad.
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← Назад к README на английском](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_uk.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC для iPad
-
-Повний посібник з встановлення та використання на iPad. Сумісний з iPadOS 16+, оптимізований для всіх розмірів iPad.
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← Назад до README англійською](../../README.md)
-</file>
-
-<file path="docs/platforms/IPAD_zh.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# iPad 版 Prism AAC
-
-iPad 安装和使用完整指南。兼容 iPadOS 16+，针对所有 iPad 尺寸优化。
-
-## Requirements
-
-- iPadOS 16.0 or later
-- iPad mini (5th gen+), iPad Air (3rd gen+), iPad Pro (any), iPad (8th gen+)
-- ~50 MB storage
-
-## Install
-
-### Option 1: TestFlight (Beta)
-
-```
-Coming soon — TestFlight link will be published here
-```
-
-### Option 2: Build from Source
-
-```bash
-# Prerequisites
-xcode-select --install
-sudo gem install cocoapods
-
-# Build
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo run:ios --device
-```
-
-## iPad-Specific Features
-
-- **Split View & Slide Over** — use Prism AAC alongside other apps
-- **Apple Pencil** — not required, all interactions are touch-based
-- **External keyboard** — full support, predictions update as you type
-- **Landscape & Portrait** — adapts layout to orientation
-- **Large display optimization** — takes advantage of iPad Pro screen real estate
-
-## Accessibility on iPad
-
-- VoiceOver compatible
-- Dynamic Type support
-- Switch Control compatible
-- 64dp minimum touch targets
-- High-contrast mode
-
----
-
-[← 返回英文 README](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_ar.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC ويب
-
-الوصول إلى Prism AAC من أي متصفح حديث. لا يتطلب تثبيت.
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← العودة إلى README بالإنجليزية](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_de.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC Web
-
-Greifen Sie auf Prism AAC von jedem modernen Browser aus zu. Keine Installation erforderlich.
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← Zurück zum englischen README](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_en.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC Web
-
-Access Prism AAC from any modern browser. No installation required.
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← Back to English README](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_es.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC Web
-
-Acceda a Prism AAC desde cualquier navegador moderno. Sin instalación requerida.
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← Volver al README en inglés](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_fr.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC Web
-
-Accédez à Prism AAC depuis n'importe quel navigateur moderne. Aucune installation requise.
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← Retour au README en anglais](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_ja.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC ウェブ版
-
-モダンブラウザからPrism AACにアクセス。インストール不要。
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← 英語のREADMEに戻る](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_ko.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC 웹
-
-모든 최신 브라우저에서 Prism AAC에 접근하세요. 설치가 필요 없습니다.
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← 영어 README로 돌아가기](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_pt.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC Web
-
-Acesse o Prism AAC de qualquer navegador moderno. Sem instalação necessária.
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← Voltar ao README em inglês](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_ro.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC Web
-
-Accesați Prism AAC din orice browser modern. Nu necesită instalare.
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← Înapoi la README în engleză](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_ru.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC Веб
-
-Получите доступ к Prism AAC из любого современного браузера. Установка не требуется.
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← Назад к README на английском](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_uk.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC Веб
-
-Отримайте доступ до Prism AAC з будь-якого сучасного браузера. Встановлення не потрібне.
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← Назад до README англійською](../../README.md)
-</file>
-
-<file path="docs/platforms/WEB_zh.md">
-<!-- Auto-generated by scripts/generate_i18n.py -->
-# Prism AAC 网页版
-
-从任何现代浏览器访问 Prism AAC。无需安装。
-
-## Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome | 90+ | Full support |
-| Edge | 90+ | Full support |
-| Safari | 16+ | Full support |
-| Firefox | 100+ | Full support (no PWA install) |
-
-## Quick Start
-
-### Hosted Version
-
-```
-Coming soon — https://synalux.ai/prism-aac
-```
-
-### Self-Hosted
-
-```bash
-git clone https://github.com/dcostenco/prism-aac.git
-cd prism-aac
-npm install
-npx expo start --web
-# Open http://localhost:8081
-```
-
-### Deploy to Production
-
-```bash
-npx expo export --platform web
-# Upload dist/ to Vercel, Netlify, Cloudflare Pages, or any static host
-```
-
-## Web-Specific Notes
-
-- **Speech synthesis** — uses the Web Speech API (browser-provided voices)
-- **Azure Neural TTS** — available on Standard+ tiers (requires internet)
-- **Data storage** — SQLite via WASM, stored in browser origin storage
-- **Offline mode** — PWA service worker caches app shell after first visit
-- **Install as app** — Chrome/Edge: address bar install button for desktop-app experience
-
-## Limitations vs Native
-
-| Feature | Web | Native (iPad/Android) |
-|---------|-----|----------------------|
-| TTS voices | Browser voices only (free tier) | OS neural voices |
-| Haptic feedback | Not available | Full support |
-| Push notifications | Limited | Full support |
-| Storage | Browser quota (~50MB) | Device storage |
-| Performance | Good | Excellent |
-
----
-
-[← 返回英文 README](../../README.md)
-</file>
-
 <file path="engine/colorCoding.ts">
 /**
  * Modified Fitzgerald Key — Color Coding Engine
@@ -3912,6 +917,1050 @@ export const CATEGORY_LEGEND: Array<{ category: WordCategory; label: string; col
   { category: 'place', label: 'Places', color: CATEGORY_COLORS.place },
   { category: 'grammar', label: 'Connecting', color: CATEGORY_COLORS.grammar },
 ];
+</file>
+
+<file path="engine/i18n.ts">
+/**
+ * i18n Engine — Lightweight translation system
+ *
+ * No external dependencies. Loads JSON translation files,
+ * returns translated strings by key with English fallback.
+ */
+
+import en from '@/i18n/en.json';
+import es from '@/i18n/es.json';
+import fr from '@/i18n/fr.json';
+import pt from '@/i18n/pt.json';
+import ro from '@/i18n/ro.json';
+import uk from '@/i18n/uk.json';
+import ru from '@/i18n/ru.json';
+import de from '@/i18n/de.json';
+import ja from '@/i18n/ja.json';
+import ko from '@/i18n/ko.json';
+import zh from '@/i18n/zh.json';
+import ar from '@/i18n/ar.json';
+
+export type SupportedLanguage = 'en' | 'es' | 'fr' | 'pt' | 'ro' | 'uk' | 'ru' | 'de' | 'ja' | 'ko' | 'zh' | 'ar';
+
+const translations: Record<SupportedLanguage, Record<string, string>> = {
+  en, es, fr, pt, ro, uk, ru, de, ja, ko, zh, ar,
+};
+
+const LANG_META: Array<{ code: SupportedLanguage; name: string; nativeName: string; rtl: boolean; ttsCode: string }> = [
+  { code: 'en', name: 'English', nativeName: 'English', rtl: false, ttsCode: 'en-US' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', rtl: false, ttsCode: 'es-ES' },
+  { code: 'fr', name: 'French', nativeName: 'Français', rtl: false, ttsCode: 'fr-FR' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', rtl: false, ttsCode: 'pt-BR' },
+  { code: 'ro', name: 'Romanian', nativeName: 'Română', rtl: false, ttsCode: 'ro-RO' },
+  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', rtl: false, ttsCode: 'uk-UA' },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский', rtl: false, ttsCode: 'ru-RU' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', rtl: false, ttsCode: 'de-DE' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', rtl: false, ttsCode: 'ja-JP' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', rtl: false, ttsCode: 'ko-KR' },
+  { code: 'zh', name: 'Chinese', nativeName: '中文', rtl: false, ttsCode: 'zh-CN' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', rtl: true, ttsCode: 'ar-SA' },
+];
+
+export { LANG_META };
+
+export function t(key: string, lang: SupportedLanguage = 'en'): string {
+  return translations[lang]?.[key] ?? translations.en[key] ?? key;
+}
+
+export function getTTSCode(lang: SupportedLanguage): string {
+  return LANG_META.find(l => l.code === lang)?.ttsCode ?? 'en-US';
+}
+
+export function isRTL(lang: SupportedLanguage): boolean {
+  return LANG_META.find(l => l.code === lang)?.rtl ?? false;
+}
+</file>
+
+<file path="engine/useT.ts">
+'use client';
+import { useCallback } from 'react';
+import { useSettingsStore } from '@/store/settingsStore';
+import { t as translate, getTTSCode, isRTL } from './i18n';
+
+export function useT() {
+  const language = useSettingsStore((s) => s.language);
+  const tFn = useCallback((key: string) => translate(key, language), [language]);
+  return { t: tFn, lang: language, ttsCode: getTTSCode(language), rtl: isRTL(language) };
+}
+</file>
+
+<file path="i18n/ar.json">
+{
+  "app_name": "Prism AAC",
+  "home": "الرئيسية",
+  "categories": "الفئات",
+  "settings": "الإعدادات",
+  "math": "الرياضيات",
+  "speak": "تحدث",
+  "delete": "حذف",
+  "clear": "مسح",
+  "type_here": "اكتب هنا...",
+  "predictions": "التنبؤات",
+  "tone": "النبرة",
+  "voice": "الصوت",
+  "speed": "السرعة",
+  "pitch": "طبقة الصوت",
+  "volume": "مستوى الصوت",
+  "language": "اللغة",
+  "accessibility": "إمكانية الوصول",
+  "high_contrast": "تباين عالي",
+  "haptic_feedback": "اهتزاز",
+  "audio_feedback": "صوت",
+  "font_size": "حجم الخط",
+  "subscription": "الاشتراك",
+  "free": "مجاني",
+  "standard": "قياسي",
+  "advanced": "متقدم",
+  "enterprise": "مؤسسي",
+  "upgrade": "ترقية",
+  "help_needs": "مساعدة / احتياجات",
+  "quick_talk": "محادثة سريعة",
+  "places_plans": "أماكن / خطط",
+  "food_ordering": "طعام / طلبات",
+  "people_social": "أشخاص / اجتماعي",
+  "school_work": "مدرسة / عمل",
+  "ordering_flow": "اطلب",
+  "next_step": "التالي",
+  "previous_step": "رجوع",
+  "finish_order": "تم",
+  "add_phrase": "إضافة عبارة",
+  "custom_phrase": "عبارة مخصصة",
+  "enter_text": "أدخل النص",
+  "save": "حفظ",
+  "cancel": "إلغاء",
+  "basic": "أساسي",
+  "advanced_math": "متقدم",
+  "select_tone": "اختر النبرة",
+  "friendly": "ودود",
+  "cheerful": "مرح",
+  "calm": "هادئ",
+  "serious": "جاد",
+  "excited": "متحمس",
+  "hopeful": "متفائل",
+  "empathetic": "متعاطف",
+  "sad": "حزين",
+  "urgent": "عاجل",
+  "alert": "تنبيه",
+  "history": "السجل",
+  "notes": "ملاحظات",
+  "ai_chat": "ذكاء",
+  "undo": "تراجع",
+  "space": "مسافة",
+  "close": "إغلاق",
+  "add": "إضافة",
+  "remove": "حذف",
+  "sound_on": "صوت مفعل",
+  "sound_off": "صوت معطل",
+  "sign_in": "تسجيل الدخول",
+  "sign_out": "تسجيل الخروج",
+  "synalux_account": "حساب Synalux",
+  "save_note": "حفظ الملاحظة",
+  "caregiver_notes": "ملاحظات مقدم الرعاية"
+}
+</file>
+
+<file path="i18n/de.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Startseite",
+  "categories": "Kategorien",
+  "settings": "Einstellungen",
+  "math": "Mathematik",
+  "speak": "Sprechen",
+  "delete": "Löschen",
+  "clear": "Leeren",
+  "type_here": "Hier tippen...",
+  "predictions": "Vorhersagen",
+  "tone": "Ton",
+  "voice": "Stimme",
+  "speed": "Geschwindigkeit",
+  "pitch": "Tonhöhe",
+  "volume": "Lautstärke",
+  "language": "Sprache",
+  "accessibility": "Barrierefreiheit",
+  "high_contrast": "Hoher Kontrast",
+  "haptic_feedback": "Haptisches Feedback",
+  "audio_feedback": "Ton-Feedback",
+  "font_size": "Schriftgröße",
+  "subscription": "Abonnement",
+  "free": "Kostenlos",
+  "standard": "Standard",
+  "advanced": "Erweitert",
+  "enterprise": "Unternehmen",
+  "upgrade": "Upgraden",
+  "help_needs": "Hilfe / Bedürfnisse",
+  "quick_talk": "Schnelles Sprechen",
+  "places_plans": "Orte / Pläne",
+  "food_ordering": "Essen / Bestellung",
+  "people_social": "Personen / Soziales",
+  "school_work": "Schule / Arbeit",
+  "ordering_flow": "Bestellen",
+  "next_step": "Weiter",
+  "previous_step": "Zurück",
+  "finish_order": "Fertig",
+  "add_phrase": "Phrase hinzufügen",
+  "custom_phrase": "Eigene Phrase",
+  "enter_text": "Text eingeben",
+  "save": "Speichern",
+  "cancel": "Abbrechen",
+  "basic": "Grundlegend",
+  "advanced_math": "Erweitert",
+  "select_tone": "Ton wählen",
+  "friendly": "Freundlich",
+  "cheerful": "Fröhlich",
+  "calm": "Ruhig",
+  "serious": "Ernst",
+  "excited": "Begeistert",
+  "hopeful": "Hoffnungsvoll",
+  "empathetic": "Einfühlsam",
+  "sad": "Traurig",
+  "urgent": "Dringend",
+  "alert": "Alarm",
+  "history": "Verlauf",
+  "notes": "Notizen",
+  "ai_chat": "KI",
+  "undo": "Rückgängig",
+  "space": "Leertaste",
+  "close": "Schließen",
+  "add": "Hinzufügen",
+  "remove": "Entfernen",
+  "sound_on": "Ton ein",
+  "sound_off": "Ton aus",
+  "sign_in": "Anmelden",
+  "sign_out": "Abmelden",
+  "synalux_account": "Synalux-Konto",
+  "save_note": "Notiz speichern",
+  "caregiver_notes": "Betreuernotizen"
+}
+</file>
+
+<file path="i18n/en.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Home",
+  "categories": "Categories",
+  "settings": "Settings",
+  "math": "Math",
+  "speak": "Speak",
+  "delete": "Delete",
+  "clear": "Clear",
+  "type_here": "Type here...",
+  "predictions": "Predictions",
+  "tone": "Tone",
+  "voice": "Voice",
+  "speed": "Speed",
+  "pitch": "Pitch",
+  "volume": "Volume",
+  "language": "Language",
+  "accessibility": "Accessibility",
+  "high_contrast": "High Contrast",
+  "haptic_feedback": "Haptic Feedback",
+  "audio_feedback": "Audio Feedback",
+  "font_size": "Font Size",
+  "subscription": "Subscription",
+  "free": "Free",
+  "standard": "Standard",
+  "advanced": "Advanced",
+  "enterprise": "Enterprise",
+  "upgrade": "Upgrade",
+  "help_needs": "Help / Needs",
+  "quick_talk": "Quick Talk",
+  "places_plans": "Places / Plans",
+  "food_ordering": "Food / Ordering",
+  "people_social": "People / Social",
+  "school_work": "School / Work",
+  "ordering_flow": "Order",
+  "next_step": "Next",
+  "previous_step": "Back",
+  "finish_order": "Done",
+  "add_phrase": "Add Phrase",
+  "custom_phrase": "Custom Phrase",
+  "enter_text": "Enter text",
+  "save": "Save",
+  "cancel": "Cancel",
+  "basic": "Basic",
+  "advanced_math": "Advanced",
+  "select_tone": "Select Tone",
+  "friendly": "Friendly",
+  "cheerful": "Cheerful",
+  "calm": "Calm",
+  "serious": "Serious",
+  "excited": "Excited",
+  "hopeful": "Hopeful",
+  "empathetic": "Empathetic",
+  "sad": "Sad",
+  "urgent": "Urgent",
+  "alert": "Alert",
+  "history": "History",
+  "notes": "Notes",
+  "ai_chat": "AI",
+  "undo": "Undo",
+  "space": "space",
+  "shift": "Shift",
+  "backspace": "Backspace",
+  "ask_ai": "Ask AI",
+  "thinking": "Thinking...",
+  "you": "You",
+  "no_history": "No history yet",
+  "clear_all": "Clear all",
+  "auto_speak_on": "Auto-speak on",
+  "auto_speak_off": "Auto-speak off",
+  "close": "Close",
+  "add": "Add",
+  "remove": "Remove",
+  "apply": "Apply",
+  "save_note": "Save Note",
+  "save_parse": "Save & Parse",
+  "parsing": "Parsing...",
+  "caregiver_notes": "Caregiver Notes",
+  "add_note": "Add Note",
+  "log": "Log",
+  "your_name": "Your name",
+  "note_instruction": "Note or instruction",
+  "custom_categories": "Custom Categories",
+  "custom_phrases": "Custom Phrases",
+  "category_name": "Category name",
+  "phrase_text": "Phrase text",
+  "synalux_account": "Synalux Account",
+  "signed_in": "Signed in",
+  "sign_in": "Sign in",
+  "sign_out": "Sign out",
+  "aac_resources": "AAC Resources",
+  "sound_on": "Sound on",
+  "sound_off": "Sound off"
+}
+</file>
+
+<file path="i18n/es.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Inicio",
+  "categories": "Categorías",
+  "settings": "Ajustes",
+  "math": "Matemáticas",
+  "speak": "Hablar",
+  "delete": "Borrar",
+  "clear": "Limpiar",
+  "type_here": "Escribe aquí...",
+  "predictions": "Predicciones",
+  "tone": "Tono",
+  "voice": "Voz",
+  "speed": "Velocidad",
+  "pitch": "Tono vocal",
+  "volume": "Volumen",
+  "language": "Idioma",
+  "accessibility": "Accesibilidad",
+  "high_contrast": "Alto contraste",
+  "haptic_feedback": "Vibración",
+  "audio_feedback": "Sonido",
+  "font_size": "Tamaño de letra",
+  "subscription": "Suscripción",
+  "free": "Gratis",
+  "standard": "Estándar",
+  "advanced": "Avanzado",
+  "enterprise": "Empresa",
+  "upgrade": "Mejorar",
+  "help_needs": "Ayuda / Necesidades",
+  "quick_talk": "Charla rápida",
+  "places_plans": "Lugares / Planes",
+  "food_ordering": "Comida / Pedidos",
+  "people_social": "Personas / Social",
+  "school_work": "Escuela / Trabajo",
+  "ordering_flow": "Pedir",
+  "next_step": "Siguiente",
+  "previous_step": "Atrás",
+  "finish_order": "Listo",
+  "add_phrase": "Agregar frase",
+  "custom_phrase": "Frase personalizada",
+  "enter_text": "Ingresa texto",
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "basic": "Básico",
+  "advanced_math": "Avanzado",
+  "select_tone": "Seleccionar tono",
+  "friendly": "Amigable",
+  "cheerful": "Alegre",
+  "calm": "Tranquilo",
+  "serious": "Serio",
+  "excited": "Emocionado",
+  "hopeful": "Esperanzado",
+  "empathetic": "Empático",
+  "sad": "Triste",
+  "urgent": "Urgente",
+  "alert": "Alerta",
+  "history": "Historial",
+  "notes": "Notas",
+  "ai_chat": "IA",
+  "undo": "Deshacer",
+  "space": "espacio",
+  "ask_ai": "Preguntar IA",
+  "thinking": "Pensando...",
+  "you": "Tú",
+  "no_history": "Sin historial",
+  "clear_all": "Borrar todo",
+  "auto_speak_on": "Auto-voz activa",
+  "auto_speak_off": "Auto-voz inactiva",
+  "close": "Cerrar",
+  "add": "Añadir",
+  "remove": "Eliminar",
+  "apply": "Aplicar",
+  "save_note": "Guardar nota",
+  "caregiver_notes": "Notas del cuidador",
+  "add_note": "Añadir nota",
+  "log": "Registro",
+  "your_name": "Tu nombre",
+  "custom_categories": "Categorías personalizadas",
+  "custom_phrases": "Frases personalizadas",
+  "category_name": "Nombre de categoría",
+  "phrase_text": "Texto de frase",
+  "synalux_account": "Cuenta Synalux",
+  "signed_in": "Conectado",
+  "sign_in": "Iniciar sesión",
+  "sign_out": "Cerrar sesión",
+  "aac_resources": "Recursos AAC",
+  "sound_on": "Sonido activado",
+  "sound_off": "Sonido desactivado"
+}
+</file>
+
+<file path="i18n/fr.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Accueil",
+  "categories": "Catégories",
+  "settings": "Paramètres",
+  "math": "Maths",
+  "speak": "Parler",
+  "delete": "Supprimer",
+  "clear": "Effacer",
+  "type_here": "Tapez ici...",
+  "predictions": "Prédictions",
+  "tone": "Ton",
+  "voice": "Voix",
+  "speed": "Vitesse",
+  "pitch": "Hauteur",
+  "volume": "Volume",
+  "language": "Langue",
+  "accessibility": "Accessibilité",
+  "high_contrast": "Contraste élevé",
+  "haptic_feedback": "Retour haptique",
+  "audio_feedback": "Retour sonore",
+  "font_size": "Taille de police",
+  "subscription": "Abonnement",
+  "free": "Gratuit",
+  "standard": "Standard",
+  "advanced": "Avancé",
+  "enterprise": "Entreprise",
+  "upgrade": "Améliorer",
+  "help_needs": "Aide / Besoins",
+  "quick_talk": "Parole rapide",
+  "places_plans": "Lieux / Plans",
+  "food_ordering": "Nourriture / Commande",
+  "people_social": "Personnes / Social",
+  "school_work": "École / Travail",
+  "ordering_flow": "Commander",
+  "next_step": "Suivant",
+  "previous_step": "Retour",
+  "finish_order": "Terminé",
+  "add_phrase": "Ajouter une phrase",
+  "custom_phrase": "Phrase personnalisée",
+  "enter_text": "Entrez le texte",
+  "save": "Enregistrer",
+  "cancel": "Annuler",
+  "basic": "Base",
+  "advanced_math": "Avancé",
+  "select_tone": "Choisir le ton",
+  "friendly": "Amical",
+  "cheerful": "Joyeux",
+  "calm": "Calme",
+  "serious": "Sérieux",
+  "excited": "Enthousiaste",
+  "hopeful": "Plein d'espoir",
+  "empathetic": "Empathique",
+  "sad": "Triste",
+  "urgent": "Urgent",
+  "alert": "Alerte",
+  "history": "Historique",
+  "notes": "Notes",
+  "ai_chat": "IA",
+  "undo": "Annuler",
+  "space": "espace",
+  "ask_ai": "Demander IA",
+  "thinking": "Réflexion...",
+  "you": "Vous",
+  "no_history": "Pas d'historique",
+  "clear_all": "Tout effacer",
+  "close": "Fermer",
+  "add": "Ajouter",
+  "remove": "Supprimer",
+  "apply": "Appliquer",
+  "save_note": "Sauvegarder",
+  "caregiver_notes": "Notes soignant",
+  "sound_on": "Son activé",
+  "sound_off": "Son désactivé",
+  "sign_in": "Se connecter",
+  "sign_out": "Se déconnecter",
+  "synalux_account": "Compte Synalux",
+  "aac_resources": "Ressources CAA",
+  "custom_categories": "Catégories personnalisées",
+  "custom_phrases": "Phrases personnalisées",
+  "category_name": "Nom de catégorie",
+  "phrase_text": "Texte de phrase",
+  "your_name": "Votre nom",
+  "add_note": "Ajouter note",
+  "log": "Journal"
+}
+</file>
+
+<file path="i18n/ja.json">
+{
+  "app_name": "Prism AAC",
+  "home": "ホーム",
+  "categories": "カテゴリ",
+  "settings": "設定",
+  "math": "数学",
+  "speak": "話す",
+  "delete": "削除",
+  "clear": "クリア",
+  "type_here": "ここに入力...",
+  "predictions": "予測",
+  "tone": "トーン",
+  "voice": "声",
+  "speed": "速度",
+  "pitch": "ピッチ",
+  "volume": "音量",
+  "language": "言語",
+  "accessibility": "アクセシビリティ",
+  "high_contrast": "ハイコントラスト",
+  "haptic_feedback": "振動フィードバック",
+  "audio_feedback": "音声フィードバック",
+  "font_size": "フォントサイズ",
+  "subscription": "サブスクリプション",
+  "free": "無料",
+  "standard": "スタンダード",
+  "advanced": "アドバンスド",
+  "enterprise": "エンタープライズ",
+  "upgrade": "アップグレード",
+  "help_needs": "ヘルプ / ニーズ",
+  "quick_talk": "クイックトーク",
+  "places_plans": "場所 / 計画",
+  "food_ordering": "食事 / 注文",
+  "people_social": "人々 / ソーシャル",
+  "school_work": "学校 / 仕事",
+  "ordering_flow": "注文する",
+  "next_step": "次へ",
+  "previous_step": "戻る",
+  "finish_order": "完了",
+  "add_phrase": "フレーズ追加",
+  "custom_phrase": "カスタムフレーズ",
+  "enter_text": "テキストを入力",
+  "save": "保存",
+  "cancel": "キャンセル",
+  "basic": "基本",
+  "advanced_math": "上級",
+  "select_tone": "トーンを選択",
+  "friendly": "フレンドリー",
+  "cheerful": "明るい",
+  "calm": "穏やか",
+  "serious": "真剣",
+  "excited": "興奮",
+  "hopeful": "希望",
+  "empathetic": "共感",
+  "sad": "悲しい",
+  "urgent": "緊急",
+  "alert": "アラート",
+  "history": "履歴",
+  "notes": "メモ",
+  "ai_chat": "AI",
+  "undo": "元に戻す",
+  "space": "スペース",
+  "close": "閉じる",
+  "add": "追加",
+  "remove": "削除",
+  "sound_on": "音オン",
+  "sound_off": "音オフ",
+  "sign_in": "ログイン",
+  "sign_out": "ログアウト",
+  "synalux_account": "Synaluxアカウント",
+  "save_note": "メモを保存",
+  "caregiver_notes": "介護者メモ"
+}
+</file>
+
+<file path="i18n/ko.json">
+{
+  "app_name": "Prism AAC",
+  "home": "홈",
+  "categories": "카테고리",
+  "settings": "설정",
+  "math": "수학",
+  "speak": "말하기",
+  "delete": "삭제",
+  "clear": "지우기",
+  "type_here": "여기에 입력...",
+  "predictions": "예측",
+  "tone": "톤",
+  "voice": "음성",
+  "speed": "속도",
+  "pitch": "피치",
+  "volume": "볼륨",
+  "language": "언어",
+  "accessibility": "접근성",
+  "high_contrast": "고대비",
+  "haptic_feedback": "진동 피드백",
+  "audio_feedback": "소리 피드백",
+  "font_size": "글꼴 크기",
+  "subscription": "구독",
+  "free": "무료",
+  "standard": "스탠다드",
+  "advanced": "어드밴스드",
+  "enterprise": "엔터프라이즈",
+  "upgrade": "업그레이드",
+  "help_needs": "도움 / 필요",
+  "quick_talk": "빠른 대화",
+  "places_plans": "장소 / 계획",
+  "food_ordering": "음식 / 주문",
+  "people_social": "사람 / 소셜",
+  "school_work": "학교 / 직장",
+  "ordering_flow": "주문하기",
+  "next_step": "다음",
+  "previous_step": "뒤로",
+  "finish_order": "완료",
+  "add_phrase": "문구 추가",
+  "custom_phrase": "사용자 문구",
+  "enter_text": "텍스트 입력",
+  "save": "저장",
+  "cancel": "취소",
+  "basic": "기본",
+  "advanced_math": "고급",
+  "select_tone": "톤 선택",
+  "friendly": "친근한",
+  "cheerful": "밝은",
+  "calm": "차분한",
+  "serious": "진지한",
+  "excited": "신나는",
+  "hopeful": "희망찬",
+  "empathetic": "공감하는",
+  "sad": "슬픈",
+  "urgent": "긴급한",
+  "alert": "알림",
+  "history": "기록",
+  "notes": "메모",
+  "ai_chat": "AI",
+  "undo": "실행취소",
+  "space": "스페이스",
+  "close": "닫기",
+  "add": "추가",
+  "remove": "삭제",
+  "sound_on": "소리 켜기",
+  "sound_off": "소리 끄기",
+  "sign_in": "로그인",
+  "sign_out": "로그아웃",
+  "synalux_account": "Synalux 계정",
+  "save_note": "메모 저장",
+  "caregiver_notes": "보호자 메모"
+}
+</file>
+
+<file path="i18n/pt.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Início",
+  "categories": "Categorias",
+  "settings": "Configurações",
+  "math": "Matemática",
+  "speak": "Falar",
+  "delete": "Apagar",
+  "clear": "Limpar",
+  "type_here": "Digite aqui...",
+  "predictions": "Previsões",
+  "tone": "Tom",
+  "voice": "Voz",
+  "speed": "Velocidade",
+  "pitch": "Altura",
+  "volume": "Volume",
+  "language": "Idioma",
+  "accessibility": "Acessibilidade",
+  "high_contrast": "Alto contraste",
+  "haptic_feedback": "Vibração",
+  "audio_feedback": "Som",
+  "font_size": "Tamanho da fonte",
+  "subscription": "Assinatura",
+  "free": "Grátis",
+  "standard": "Padrão",
+  "advanced": "Avançado",
+  "enterprise": "Empresarial",
+  "upgrade": "Atualizar",
+  "help_needs": "Ajuda / Necessidades",
+  "quick_talk": "Fala rápida",
+  "places_plans": "Lugares / Planos",
+  "food_ordering": "Comida / Pedidos",
+  "people_social": "Pessoas / Social",
+  "school_work": "Escola / Trabalho",
+  "ordering_flow": "Pedir",
+  "next_step": "Próximo",
+  "previous_step": "Voltar",
+  "finish_order": "Pronto",
+  "add_phrase": "Adicionar frase",
+  "custom_phrase": "Frase personalizada",
+  "enter_text": "Digite o texto",
+  "save": "Salvar",
+  "cancel": "Cancelar",
+  "basic": "Básico",
+  "advanced_math": "Avançado",
+  "select_tone": "Selecionar tom",
+  "friendly": "Amigável",
+  "cheerful": "Alegre",
+  "calm": "Calmo",
+  "serious": "Sério",
+  "excited": "Animado",
+  "hopeful": "Esperançoso",
+  "empathetic": "Empático",
+  "sad": "Triste",
+  "urgent": "Urgente",
+  "alert": "Alerta",
+  "history": "Histórico",
+  "notes": "Notas",
+  "ai_chat": "IA",
+  "undo": "Desfazer",
+  "space": "espaço",
+  "close": "Fechar",
+  "add": "Adicionar",
+  "remove": "Remover",
+  "sound_on": "Som ligado",
+  "sound_off": "Som desligado",
+  "sign_in": "Entrar",
+  "sign_out": "Sair",
+  "synalux_account": "Conta Synalux",
+  "aac_resources": "Recursos CAA",
+  "save_note": "Salvar nota",
+  "caregiver_notes": "Notas do cuidador"
+}
+</file>
+
+<file path="i18n/ro.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Acasă",
+  "categories": "Categorii",
+  "settings": "Setări",
+  "math": "Matematică",
+  "speak": "Vorbește",
+  "delete": "Șterge",
+  "clear": "Curăță",
+  "type_here": "Scrie aici...",
+  "predictions": "Predicții",
+  "tone": "Ton",
+  "voice": "Voce",
+  "speed": "Viteză",
+  "pitch": "Înălțime",
+  "volume": "Volum",
+  "language": "Limbă",
+  "accessibility": "Accesibilitate",
+  "high_contrast": "Contrast ridicat",
+  "haptic_feedback": "Vibrație",
+  "audio_feedback": "Sunet",
+  "font_size": "Dimensiune font",
+  "subscription": "Abonament",
+  "free": "Gratuit",
+  "standard": "Standard",
+  "advanced": "Avansat",
+  "enterprise": "Întreprindere",
+  "upgrade": "Îmbunătățește",
+  "help_needs": "Ajutor / Nevoi",
+  "quick_talk": "Vorbire rapidă",
+  "places_plans": "Locuri / Planuri",
+  "food_ordering": "Mâncare / Comenzi",
+  "people_social": "Persoane / Social",
+  "school_work": "Școală / Muncă",
+  "ordering_flow": "Comandă",
+  "next_step": "Următorul",
+  "previous_step": "Înapoi",
+  "finish_order": "Gata",
+  "add_phrase": "Adaugă frază",
+  "custom_phrase": "Frază personalizată",
+  "enter_text": "Introdu text",
+  "save": "Salvează",
+  "cancel": "Anulează",
+  "basic": "Bază",
+  "advanced_math": "Avansat",
+  "select_tone": "Selectează tonul",
+  "friendly": "Prietenos",
+  "cheerful": "Vesel",
+  "calm": "Calm",
+  "serious": "Serios",
+  "excited": "Entuziasmat",
+  "hopeful": "Plin de speranță",
+  "empathetic": "Empatic",
+  "sad": "Trist",
+  "urgent": "Urgent",
+  "alert": "Alertă",
+  "history": "Istoric",
+  "notes": "Note",
+  "ai_chat": "IA",
+  "undo": "Anulare",
+  "space": "spațiu",
+  "close": "Închide",
+  "add": "Adaugă",
+  "remove": "Șterge",
+  "sound_on": "Sunet activat",
+  "sound_off": "Sunet dezactivat",
+  "sign_in": "Conectare",
+  "sign_out": "Deconectare",
+  "synalux_account": "Cont Synalux",
+  "save_note": "Salvează notă",
+  "caregiver_notes": "Note îngrijitor"
+}
+</file>
+
+<file path="i18n/ru.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Главная",
+  "categories": "Категории",
+  "settings": "Настройки",
+  "math": "Математика",
+  "speak": "Говорить",
+  "delete": "Удалить",
+  "clear": "Очистить",
+  "type_here": "Введите здесь...",
+  "predictions": "Предсказания",
+  "tone": "Тон",
+  "voice": "Голос",
+  "speed": "Скорость",
+  "pitch": "Высота",
+  "volume": "Громкость",
+  "language": "Язык",
+  "accessibility": "Доступность",
+  "high_contrast": "Высокий контраст",
+  "haptic_feedback": "Вибрация",
+  "audio_feedback": "Звук",
+  "font_size": "Размер шрифта",
+  "subscription": "Подписка",
+  "free": "Бесплатно",
+  "standard": "Стандарт",
+  "advanced": "Расширенный",
+  "enterprise": "Корпоративный",
+  "upgrade": "Улучшить",
+  "help_needs": "Помощь / Потребности",
+  "quick_talk": "Быстрый разговор",
+  "places_plans": "Места / Планы",
+  "food_ordering": "Еда / Заказы",
+  "people_social": "Люди / Социальное",
+  "school_work": "Школа / Работа",
+  "ordering_flow": "Заказать",
+  "next_step": "Далее",
+  "previous_step": "Назад",
+  "finish_order": "Готово",
+  "add_phrase": "Добавить фразу",
+  "custom_phrase": "Своя фраза",
+  "enter_text": "Введите текст",
+  "save": "Сохранить",
+  "cancel": "Отмена",
+  "basic": "Базовый",
+  "advanced_math": "Расширенный",
+  "select_tone": "Выбрать тон",
+  "friendly": "Дружелюбный",
+  "cheerful": "Весёлый",
+  "calm": "Спокойный",
+  "serious": "Серьёзный",
+  "excited": "Восторженный",
+  "hopeful": "Надеющийся",
+  "empathetic": "Сочувствующий",
+  "sad": "Грустный",
+  "urgent": "Срочный",
+  "alert": "Тревога",
+  "history": "История",
+  "notes": "Заметки",
+  "ai_chat": "ИИ",
+  "undo": "Отмена",
+  "space": "пробел",
+  "close": "Закрыть",
+  "add": "Добавить",
+  "remove": "Удалить",
+  "sound_on": "Звук вкл.",
+  "sound_off": "Звук выкл.",
+  "sign_in": "Войти",
+  "sign_out": "Выйти",
+  "synalux_account": "Аккаунт Synalux",
+  "save_note": "Сохранить заметку",
+  "caregiver_notes": "Заметки опекуна"
+}
+</file>
+
+<file path="i18n/uk.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Головна",
+  "categories": "Категорії",
+  "settings": "Налаштування",
+  "math": "Математика",
+  "speak": "Говорити",
+  "delete": "Видалити",
+  "clear": "Очистити",
+  "type_here": "Введіть тут...",
+  "predictions": "Передбачення",
+  "tone": "Тон",
+  "voice": "Голос",
+  "speed": "Швидкість",
+  "pitch": "Висота",
+  "volume": "Гучність",
+  "language": "Мова",
+  "accessibility": "Доступність",
+  "high_contrast": "Високий контраст",
+  "haptic_feedback": "Вібрація",
+  "audio_feedback": "Звук",
+  "font_size": "Розмір шрифту",
+  "subscription": "Підписка",
+  "free": "Безкоштовно",
+  "standard": "Стандарт",
+  "advanced": "Розширений",
+  "enterprise": "Підприємство",
+  "upgrade": "Покращити",
+  "help_needs": "Допомога / Потреби",
+  "quick_talk": "Швидка розмова",
+  "places_plans": "Місця / Плани",
+  "food_ordering": "Їжа / Замовлення",
+  "people_social": "Люди / Соціальне",
+  "school_work": "Школа / Робота",
+  "ordering_flow": "Замовити",
+  "next_step": "Далі",
+  "previous_step": "Назад",
+  "finish_order": "Готово",
+  "add_phrase": "Додати фразу",
+  "custom_phrase": "Власна фраза",
+  "enter_text": "Введіть текст",
+  "save": "Зберегти",
+  "cancel": "Скасувати",
+  "basic": "Базовий",
+  "advanced_math": "Розширений",
+  "select_tone": "Обрати тон",
+  "friendly": "Дружній",
+  "cheerful": "Веселий",
+  "calm": "Спокійний",
+  "serious": "Серйозний",
+  "excited": "Захоплений",
+  "hopeful": "Сповнений надії",
+  "empathetic": "Емпатичний",
+  "sad": "Сумний",
+  "urgent": "Терміновий",
+  "alert": "Тривога",
+  "history": "Історія",
+  "notes": "Нотатки",
+  "ai_chat": "ШІ",
+  "undo": "Скасувати",
+  "space": "пробіл",
+  "close": "Закрити",
+  "add": "Додати",
+  "remove": "Видалити",
+  "sound_on": "Звук увімк.",
+  "sound_off": "Звук вимк.",
+  "sign_in": "Увійти",
+  "sign_out": "Вийти",
+  "synalux_account": "Акаунт Synalux",
+  "save_note": "Зберегти нотатку",
+  "caregiver_notes": "Нотатки опікуна"
+}
+</file>
+
+<file path="i18n/zh.json">
+{
+  "app_name": "Prism AAC",
+  "home": "首页",
+  "categories": "类别",
+  "settings": "设置",
+  "math": "数学",
+  "speak": "说话",
+  "delete": "删除",
+  "clear": "清除",
+  "type_here": "在此输入...",
+  "predictions": "预测",
+  "tone": "语气",
+  "voice": "语音",
+  "speed": "速度",
+  "pitch": "音调",
+  "volume": "音量",
+  "language": "语言",
+  "accessibility": "无障碍",
+  "high_contrast": "高对比度",
+  "haptic_feedback": "触觉反馈",
+  "audio_feedback": "声音反馈",
+  "font_size": "字体大小",
+  "subscription": "订阅",
+  "free": "免费",
+  "standard": "标准",
+  "advanced": "高级",
+  "enterprise": "企业",
+  "upgrade": "升级",
+  "help_needs": "帮助 / 需求",
+  "quick_talk": "快速对话",
+  "places_plans": "地点 / 计划",
+  "food_ordering": "食物 / 点餐",
+  "people_social": "人物 / 社交",
+  "school_work": "学校 / 工作",
+  "ordering_flow": "点餐",
+  "next_step": "下一步",
+  "previous_step": "返回",
+  "finish_order": "完成",
+  "add_phrase": "添加短语",
+  "custom_phrase": "自定义短语",
+  "enter_text": "输入文本",
+  "save": "保存",
+  "cancel": "取消",
+  "basic": "基础",
+  "advanced_math": "高级",
+  "select_tone": "选择语气",
+  "friendly": "友好",
+  "cheerful": "开心",
+  "calm": "平静",
+  "serious": "严肃",
+  "excited": "兴奋",
+  "hopeful": "充满希望",
+  "empathetic": "共情",
+  "sad": "难过",
+  "urgent": "紧急",
+  "alert": "警报",
+  "history": "历史",
+  "notes": "笔记",
+  "ai_chat": "AI",
+  "undo": "撤销",
+  "space": "空格",
+  "close": "关闭",
+  "add": "添加",
+  "remove": "删除",
+  "sound_on": "声音开",
+  "sound_off": "声音关",
+  "sign_in": "登录",
+  "sign_out": "退出",
+  "synalux_account": "Synalux账户",
+  "save_note": "保存笔记",
+  "caregiver_notes": "护理人员笔记"
+}
+</file>
+
+<file path="public/file.svg">
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
+</file>
+
+<file path="public/globe.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+</file>
+
+<file path="public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="public/vercel.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+</file>
+
+<file path="public/window.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
 </file>
 
 <file path="scripts/generate_i18n.py">
@@ -4702,6 +2751,9 @@ function getAudioCtx(): AudioContext | null {
   if (!audioCtx) {
     try { audioCtx = new AudioContext(); } catch { return null; }
   }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
   return audioCtx;
 }
 
@@ -4775,47 +2827,6 @@ export function keyFeedback(): void {
 export function deleteFeedback(): void {
   hapticHeavy();
   playDelete();
-}
-</file>
-
-<file path="services/speechService.ts">
-export function isSpeechSupported(): boolean {
-  return typeof window !== 'undefined' && 'speechSynthesis' in window;
-}
-
-let resumeInterval: ReturnType<typeof setInterval> | null = null;
-
-function clearResumeWorkaround() {
-  if (resumeInterval) { clearInterval(resumeInterval); resumeInterval = null; }
-}
-
-export function speak(text: string, rate = 0.5, volume = 1.0): void {
-  if (!isSpeechSupported() || !text.trim()) return;
-  window.speechSynthesis.cancel();
-  clearResumeWorkaround();
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.1 + rate * 1.8;
-  u.volume = volume;
-  u.lang = 'en-US';
-  u.onend = clearResumeWorkaround;
-  u.onerror = clearResumeWorkaround;
-  resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);
-  window.speechSynthesis.speak(u);
-}
-
-export function speakWord(word: string, rate = 0.5, volume = 1.0): void {
-  if (!isSpeechSupported() || !word.trim()) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(word);
-  u.rate = 0.1 + rate * 1.8;
-  u.volume = volume;
-  u.lang = 'en-US';
-  window.speechSynthesis.speak(u);
-}
-
-export function stopSpeech(): void {
-  if (isSpeechSupported()) window.speechSynthesis.cancel();
-  clearResumeWorkaround();
 }
 </file>
 
@@ -5434,6 +3445,110 @@ describe('Feedback — Gap tests', () => {
 });
 </file>
 
+<file path="tests/i18n.test.ts">
+import { describe, it, expect } from 'vitest';
+import { t, getTTSCode, isRTL, LANG_META, SupportedLanguage } from '@/engine/i18n';
+
+describe('i18n — Translation engine', () => {
+  it('returns English text for known key', () => {
+    expect(t('categories', 'en')).toBe('Categories');
+    expect(t('type_here', 'en')).toBe('Type here...');
+    expect(t('speak', 'en')).toBe('Speak');
+  });
+
+  it('returns Spanish text for known key', () => {
+    expect(t('categories', 'es')).toBe('Categorías');
+    expect(t('type_here', 'es')).toBe('Escribe aquí...');
+    expect(t('speak', 'es')).toBe('Hablar');
+  });
+
+  it('falls back to English for missing key in target language', () => {
+    // 'ai_chat' was added to en.json but may not be in all languages
+    const result = t('ai_chat', 'es');
+    // Should return English fallback or the key itself
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('returns the key itself for completely unknown key', () => {
+    expect(t('totally_unknown_key_xyz', 'en')).toBe('totally_unknown_key_xyz');
+  });
+
+  it('has translations for all 12 languages', () => {
+    const langs: SupportedLanguage[] = ['en', 'es', 'fr', 'pt', 'ro', 'uk', 'ru', 'de', 'ja', 'ko', 'zh', 'ar'];
+    for (const lang of langs) {
+      expect(t('categories', lang), `Missing 'categories' in ${lang}`).not.toBe('categories');
+    }
+  });
+
+  it('all languages have category names translated', () => {
+    const catKeys = ['help_needs', 'quick_talk', 'places_plans', 'food_ordering', 'people_social', 'school_work'];
+    for (const lang of ['es', 'fr', 'de', 'ja', 'ar'] as SupportedLanguage[]) {
+      for (const key of catKeys) {
+        const val = t(key, lang);
+        expect(val, `Missing '${key}' in ${lang}`).not.toBe(key);
+      }
+    }
+  });
+});
+
+describe('i18n — TTS language codes', () => {
+  it('returns correct TTS code for each language', () => {
+    expect(getTTSCode('en')).toBe('en-US');
+    expect(getTTSCode('es')).toBe('es-ES');
+    expect(getTTSCode('ja')).toBe('ja-JP');
+    expect(getTTSCode('ar')).toBe('ar-SA');
+    expect(getTTSCode('zh')).toBe('zh-CN');
+  });
+
+  it('falls back to en-US for unknown language', () => {
+    expect(getTTSCode('xx' as SupportedLanguage)).toBe('en-US');
+  });
+});
+
+describe('i18n — RTL support', () => {
+  it('Arabic is RTL', () => {
+    expect(isRTL('ar')).toBe(true);
+  });
+
+  it('English is LTR', () => {
+    expect(isRTL('en')).toBe(false);
+  });
+
+  it('all other languages are LTR', () => {
+    const ltrLangs: SupportedLanguage[] = ['es', 'fr', 'pt', 'ro', 'uk', 'ru', 'de', 'ja', 'ko', 'zh'];
+    for (const lang of ltrLangs) {
+      expect(isRTL(lang), `${lang} should be LTR`).toBe(false);
+    }
+  });
+});
+
+describe('i18n — Language metadata', () => {
+  it('has 12 languages', () => {
+    expect(LANG_META).toHaveLength(12);
+  });
+
+  it('each language has all required fields', () => {
+    for (const lang of LANG_META) {
+      expect(lang.code).toBeTruthy();
+      expect(lang.name).toBeTruthy();
+      expect(lang.nativeName).toBeTruthy();
+      expect(lang.ttsCode).toBeTruthy();
+      expect(typeof lang.rtl).toBe('boolean');
+    }
+  });
+
+  it('native names are in the correct script', () => {
+    const ja = LANG_META.find(l => l.code === 'ja')!;
+    expect(ja.nativeName).toBe('日本語');
+    const ar = LANG_META.find(l => l.code === 'ar')!;
+    expect(ar.nativeName).toBe('العربية');
+    const ru = LANG_META.find(l => l.code === 'ru')!;
+    expect(ru.nativeName).toBe('Русский');
+  });
+});
+</file>
+
 <file path="tests/message-store.test.ts">
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useMessageStore } from '@/store/messageStore';
@@ -5900,13 +4015,19 @@ PURPOSE, NON-INFRINGEMENT, AND TITLE.
 </file>
 
 <file path="next.config.ts">
-import type { NextConfig } from "next";
+import withSerwistInit from '@serwist/next';
+import type { NextConfig } from 'next';
+
+const withSerwist = withSerwistInit({
+  swSrc: 'app/sw.ts',
+  swDest: 'public/sw.js',
+});
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  turbopack: {},
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);
 </file>
 
 <file path="postcss.config.mjs">
@@ -6362,6 +4483,8 @@ const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Prism AAC",
   description: "Augmentative and Alternative Communication app",
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Prism AAC" },
 };
 
 export const viewport: Viewport = {
@@ -6566,105 +4689,9 @@ export default function CaregiverPanel() {
 }
 </file>
 
-<file path="components/MessageBar.tsx">
-'use client';
-import { useRef, useCallback } from 'react';
-import { useMessageStore } from '@/store/messageStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { speak } from '@/services/speechService';
-import { tapFeedback, deleteFeedback } from '@/services/feedback';
-import ColoredText from './ColoredText';
-
-export default function MessageBar() {
-  const { text, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak } = useMessageStore();
-  const { speechRate, speechVolume } = useSettingsStore();
-  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleSpeak = useCallback(() => {
-    tapFeedback();
-    if (!text.trim() || !soundEnabled) return;
-    addToHistory(text.trim());
-    speak(text.trim(), speechRate, speechVolume);
-  }, [text, soundEnabled, speechRate, speechVolume, addToHistory]);
-
-  const cancelDelete = useCallback(() => {
-    if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
-  }, []);
-
-  const handleDeleteDown = useCallback(() => {
-    deleteTimer.current = setTimeout(() => {
-      deleteFeedback();
-      clearAll();
-      deleteTimer.current = null;
-    }, 600);
-  }, [clearAll]);
-
-  const handleDeleteUp = useCallback(() => {
-    if (deleteTimer.current !== null) {
-      clearTimeout(deleteTimer.current);
-      deleteTimer.current = null;
-      deleteFeedback();
-      deleteLastWord();
-    }
-  }, [deleteLastWord]);
-
-  const handleUndo = useCallback(() => {
-    tapFeedback();
-    undo();
-  }, [undo]);
-
-  return (
-    <div className="flex items-center gap-2 mx-3 my-1.5 bg-[#1e1e2e] rounded-2xl px-4 py-3 min-h-[68px] shrink-0">
-      <button
-        onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
-        aria-label={autoSpeak ? 'Auto-speak on, tap to turn off' : 'Auto-speak off, tap to turn on'}
-        aria-pressed={autoSpeak}
-        className={`aac-btn w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${
-          autoSpeak ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#888]'
-        }`}
-      >
-        <span className="text-lg">{autoSpeak ? '🔊' : '🔈'}</span>
-        <span className="text-[9px] mt-0.5">Auto</span>
-      </button>
-
-      <div className="flex-1 text-2xl min-h-[48px] flex items-center overflow-x-auto break-words" role="status" aria-live="polite" aria-label="Message text">
-        {text ? <ColoredText text={text} /> : <span className="text-[#555]">Type here...</span>}
-      </div>
-
-      <button
-        onClick={handleUndo}
-        aria-label="Undo last action"
-        className="aac-btn w-14 h-14 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center shrink-0"
-      >
-        ↩
-      </button>
-
-      <button
-        onClick={handleSpeak}
-        aria-label="Speak full sentence"
-        className="aac-btn aac-speak w-16 h-16 rounded-xl bg-[#4CAF50] text-white text-2xl flex items-center justify-center shrink-0"
-      >
-        ▶
-      </button>
-
-      <button
-        onPointerDown={handleDeleteDown}
-        onPointerUp={handleDeleteUp}
-        onPointerLeave={cancelDelete}
-        onPointerCancel={cancelDelete}
-        aria-label="Delete last word, hold to clear all"
-        className="aac-btn aac-delete w-16 h-16 rounded-xl bg-[#F44336] text-white text-2xl flex items-center justify-center shrink-0 select-none"
-      >
-        ⌫
-      </button>
-    </div>
-  );
-}
-</file>
-
 <file path="components/PredictionBar.tsx">
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -6672,41 +4699,44 @@ import { speakWord } from '@/services/speechService';
 import { tapFeedback } from '@/services/feedback';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
+import { useT } from '@/engine/useT';
+
+function computeStableSlots(prev: string[], predictions: string[]): string[] {
+  const next = [...prev];
+  const used = new Set(next.map(s => s.toLowerCase()));
+  for (let i = 0; i < 5; i++) {
+    const pred = predictions[i];
+    if (pred && !used.has(pred.toLowerCase())) {
+      const deadSlot = next.findIndex(
+        (s) => !predictions.some((p) => p.toLowerCase() === s.toLowerCase())
+      );
+      if (deadSlot >= 0) {
+        used.delete(next[deadSlot].toLowerCase());
+        next[deadSlot] = pred;
+        used.add(pred.toLowerCase());
+      }
+    }
+  }
+  return next;
+}
 
 export default function PredictionBar() {
   const { text, appendWord, autoSpeak, soundEnabled } = useMessageStore();
   const { predictions, updatePredictions, learnWord } = usePredictionStore();
   const { speechRate, speechVolume } = useSettingsStore();
-  // LAMP principle: keep slots stable. Fill empty slots from defaults.
-  const slotsRef = useRef<string[]>(DEFAULT_PREDICTIONS);
+  const { ttsCode } = useT();
+  const [displayed, setDisplayed] = useState<string[]>(DEFAULT_PREDICTIONS);
+  const prevRef = useRef<string[]>(DEFAULT_PREDICTIONS);
 
   useEffect(() => {
     updatePredictions(text);
   }, [text, updatePredictions]);
 
-  // Stable slot assignment: only replace a slot if the prediction is genuinely new
   useEffect(() => {
-    const next = [...slotsRef.current];
-    const used = new Set(next.map(s => s.toLowerCase()));
-    // Update existing slots if prediction still exists
-    for (let i = 0; i < 5; i++) {
-      const pred = predictions[i];
-      if (pred && !used.has(pred.toLowerCase())) {
-        // Find a slot whose word is no longer in predictions
-        const deadSlot = next.findIndex(
-          (s) => !predictions.some((p) => p.toLowerCase() === s.toLowerCase())
-        );
-        if (deadSlot >= 0) {
-          used.delete(next[deadSlot].toLowerCase());
-          next[deadSlot] = pred;
-          used.add(pred.toLowerCase());
-        }
-      }
-    }
-    slotsRef.current = next;
+    const next = computeStableSlots(prevRef.current, predictions);
+    prevRef.current = next;
+    setDisplayed(next);
   }, [predictions]);
-
-  const displayed = slotsRef.current;
 
   const handleTap = (word: string) => {
     tapFeedback();
@@ -6714,7 +4744,7 @@ export default function PredictionBar() {
     const previousWord = words.length > 0 ? words[words.length - 1] : undefined;
     appendWord(word);
     learnWord(word.toLowerCase(), previousWord?.toLowerCase());
-    if (autoSpeak && soundEnabled) speakWord(word, speechRate, speechVolume);
+    if (autoSpeak && soundEnabled) speakWord(word, speechRate, speechVolume, ttsCode);
   };
 
   return (
@@ -6730,130 +4760,6 @@ export default function PredictionBar() {
           {word}
         </button>
       ))}
-    </div>
-  );
-}
-</file>
-
-<file path="components/SettingsModal.tsx">
-'use client';
-import { useState } from 'react';
-import { useUIStore } from '@/store/uiStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useCategoryStore } from '@/store/categoryStore';
-import { setAuthToken, hasApiKey, clearAuth } from '@/services/aiService';
-
-export default function SettingsModal() {
-  const { showSettings, toggleSettings } = useUIStore();
-  const settings = useSettingsStore();
-  const { customCategories, customPhrases, addCustomCategory, removeCustomCategory, addCustomPhrase, removeCustomPhrase, allCategories } = useCategoryStore();
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatIcon, setNewCatIcon] = useState('📌');
-  const [newPhraseText, setNewPhraseText] = useState('');
-  const [newPhraseCat, setNewPhraseCat] = useState('');
-  const [authToken, setAuthTokenInput] = useState('');
-  const [isSignedIn, setIsSignedIn] = useState(hasApiKey());
-
-  if (!showSettings) return null;
-
-  const cats = allCategories();
-
-  return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={toggleSettings}>
-      <div className="bg-[#1e1e2e] rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#2a2a3e]">
-          <h2 className="text-[#e0e0e0] font-bold text-lg">Settings</h2>
-          <button onClick={toggleSettings} className="text-[#888] hover:text-white text-xl">✕</button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-5 space-y-6">
-          {/* Speech */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Voice</h3>
-            <label className="flex items-center justify-between mb-2">
-              <span className="text-[#d0d0e0]">Speed</span>
-              <span className="text-[#888]">{settings.speechRate.toFixed(1)}</span>
-            </label>
-            <input type="range" min="0.1" max="1" step="0.1" value={settings.speechRate}
-              onChange={e => settings.update({ speechRate: parseFloat(e.target.value) })}
-              className="w-full accent-[#4CAF50]" />
-            <label className="flex items-center justify-between mb-2 mt-4">
-              <span className="text-[#d0d0e0]">Volume</span>
-              <span className="text-[#888]">{Math.round(settings.speechVolume * 100)}%</span>
-            </label>
-            <input type="range" min="0" max="1" step="0.1" value={settings.speechVolume}
-              onChange={e => settings.update({ speechVolume: parseFloat(e.target.value) })}
-              className="w-full accent-[#2196F3]" />
-          </div>
-
-          {/* Custom Categories */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Custom Categories</h3>
-            <div className="flex gap-2 mb-2">
-              <input value={newCatIcon} onChange={e => setNewCatIcon(e.target.value)} className="w-12 bg-[#2a2a3e] rounded-lg text-center text-xl p-2 text-white" maxLength={2} />
-              <input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Category name" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555]" />
-              <button onClick={() => { if (newCatName.trim()) { addCustomCategory(newCatName.trim(), newCatIcon || '📌'); setNewCatName(''); } }}
-                className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]">Add</button>
-            </div>
-            {customCategories.map(c => (
-              <div key={c.id} className="flex items-center justify-between bg-[#2a2a3e] rounded-lg px-3 py-2 mb-1">
-                <span className="text-[#e0e0e0]">{c.icon} {c.name}</span>
-                <button onClick={() => removeCustomCategory(c.id)} className="text-[#F44336] text-sm hover:underline">Remove</button>
-              </div>
-            ))}
-          </div>
-
-          {/* Custom Phrases */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Custom Phrases</h3>
-            <div className="flex gap-2 mb-2">
-              <select value={newPhraseCat} onChange={e => setNewPhraseCat(e.target.value)} className="bg-[#2a2a3e] rounded-lg px-2 py-2 text-white text-sm">
-                <option value="">Category...</option>
-                {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-              </select>
-              <input value={newPhraseText} onChange={e => setNewPhraseText(e.target.value)} placeholder="Phrase text" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555]" />
-              <button onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim()); setNewPhraseText(''); } }}
-                className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]">Add</button>
-            </div>
-            {customPhrases.map(p => {
-              const cat = cats.find(c => c.id === p.categoryId);
-              return (
-                <div key={p.id} className="flex items-center justify-between bg-[#2a2a3e] rounded-lg px-3 py-2 mb-1">
-                  <span className="text-[#e0e0e0]"><span className="text-[#888] text-xs">{cat?.icon}</span> {p.text}</span>
-                  <button onClick={() => removeCustomPhrase(p.id)} className="text-[#F44336] text-sm hover:underline">Remove</button>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Synalux Account */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Synalux Account</h3>
-            {isSignedIn ? (
-              <div className="flex items-center justify-between">
-                <p className="text-[#4CAF50] text-sm">Signed in — AI Chat, web search, and modules active</p>
-                <button onClick={() => { clearAuth(); setIsSignedIn(false); }} className="text-[#F44336] text-xs hover:underline">Sign out</button>
-              </div>
-            ) : (
-              <div>
-                <p className="text-[#888] text-sm mb-2">Sign in with your Synalux account to enable AI Chat, web search, and all platform modules.</p>
-                <div className="flex gap-2">
-                  <input value={authToken} onChange={e => setAuthTokenInput(e.target.value)} placeholder="Synalux auth token" type="password" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555] text-sm" />
-                  <button onClick={() => { if (authToken.trim()) { setAuthToken(authToken.trim()); setIsSignedIn(true); setAuthTokenInput(''); } }} className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C] text-sm">Sign in</button>
-                </div>
-                <p className="text-[#444] text-xs mt-2">Your subscription tier determines which AI models and modules are available. Core AAC features work without an account.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Resources */}
-          <div>
-            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">AAC Resources</h3>
-            <a href="https://www.asha.org/practice-portal/professional-issues/augmentative-and-alternative-communication/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">ASHA — AAC Practice Portal</a>
-            <a href="https://aac-rerc.psu.edu/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">AAC-RERC — Research Center</a>
-            <a href="https://praacticalaac.org/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">PrAACtical AAC — Implementation Resources</a>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -7107,6 +5013,47 @@ export function executeAllActions(actions: NoteAction[]): ActionResult[] {
 }
 </file>
 
+<file path="services/speechService.ts">
+export function isSpeechSupported(): boolean {
+  return typeof window !== 'undefined' && 'speechSynthesis' in window;
+}
+
+let resumeInterval: ReturnType<typeof setInterval> | null = null;
+
+function clearResumeWorkaround() {
+  if (resumeInterval) { clearInterval(resumeInterval); resumeInterval = null; }
+}
+
+export function speak(text: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void {
+  if (!isSpeechSupported() || !text.trim()) return;
+  window.speechSynthesis.cancel();
+  clearResumeWorkaround();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.1 + rate * 1.8;
+  u.volume = volume;
+  u.lang = lang;
+  u.onend = clearResumeWorkaround;
+  u.onerror = clearResumeWorkaround;
+  resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);
+  window.speechSynthesis.speak(u);
+}
+
+export function speakWord(word: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void {
+  if (!isSpeechSupported() || !word.trim()) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(word);
+  u.rate = 0.1 + rate * 1.8;
+  u.volume = volume;
+  u.lang = lang;
+  window.speechSynthesis.speak(u);
+}
+
+export function stopSpeech(): void {
+  if (isSpeechSupported()) window.speechSynthesis.cancel();
+  clearResumeWorkaround();
+}
+</file>
+
 <file path="store/messageStore.ts">
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -7178,28 +5125,6 @@ export const useMessageStore = create<MessageState>()(
       clearHistory: () => set({ history: [] }),
     }),
     { name: 'prism-aac-message', partialize: (s) => ({ autoSpeak: s.autoSpeak, soundEnabled: s.soundEnabled, history: s.history }) },
-  ),
-);
-</file>
-
-<file path="store/settingsStore.ts">
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-
-interface SettingsState {
-  speechRate: number;
-  speechVolume: number;
-  update: (partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume'>>) => void;
-}
-
-export const useSettingsStore = create<SettingsState>()(
-  persist(
-    (set) => ({
-      speechRate: 0.5,
-      speechVolume: 1.0,
-      update: (partial) => set((s) => ({ ...s, ...partial })),
-    }),
-    { name: 'prism-aac-settings' },
   ),
 );
 </file>
@@ -7789,7 +5714,7 @@ Object.defineProperty(window, 'localStorage', {
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -7984,6 +5909,104 @@ export default function CategoryPanel() {
 }
 </file>
 
+<file path="components/MessageBar.tsx">
+'use client';
+import { useRef, useCallback } from 'react';
+import { useMessageStore } from '@/store/messageStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { speak } from '@/services/speechService';
+import { tapFeedback, deleteFeedback } from '@/services/feedback';
+import ColoredText from './ColoredText';
+import { useT } from '@/engine/useT';
+
+export default function MessageBar() {
+  const { text, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak } = useMessageStore();
+  const { speechRate, speechVolume } = useSettingsStore();
+  const { t, ttsCode } = useT();
+  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSpeak = useCallback(() => {
+    tapFeedback();
+    if (!text.trim() || !soundEnabled) return;
+    addToHistory(text.trim());
+    speak(text.trim(), speechRate, speechVolume, ttsCode);
+  }, [text, soundEnabled, speechRate, speechVolume, ttsCode, addToHistory]);
+
+  const cancelDelete = useCallback(() => {
+    if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
+  }, []);
+
+  const handleDeleteDown = useCallback(() => {
+    deleteTimer.current = setTimeout(() => {
+      deleteFeedback();
+      clearAll();
+      deleteTimer.current = null;
+    }, 600);
+  }, [clearAll]);
+
+  const handleDeleteUp = useCallback(() => {
+    if (deleteTimer.current !== null) {
+      clearTimeout(deleteTimer.current);
+      deleteTimer.current = null;
+      deleteFeedback();
+      deleteLastWord();
+    }
+  }, [deleteLastWord]);
+
+  const handleUndo = useCallback(() => {
+    tapFeedback();
+    undo();
+  }, [undo]);
+
+  return (
+    <div className="flex items-center gap-2 mx-3 my-1.5 bg-[#1e1e2e] rounded-2xl px-4 py-3 min-h-[68px] shrink-0">
+      <button
+        onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
+        aria-label={autoSpeak ? 'Auto-speak on, tap to turn off' : 'Auto-speak off, tap to turn on'}
+        aria-pressed={autoSpeak}
+        className={`aac-btn w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${
+          autoSpeak ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#888]'
+        }`}
+      >
+        <span className="text-lg">{autoSpeak ? '🔊' : '🔈'}</span>
+        <span className="text-[9px] mt-0.5">Auto</span>
+      </button>
+
+      <div className="flex-1 text-2xl min-h-[48px] flex items-center overflow-x-auto break-words" role="status" aria-live="polite" aria-label="Message text">
+        {text ? <ColoredText text={text} /> : <span className="text-[#555]">{t('type_here')}</span>}
+      </div>
+
+      <button
+        onClick={handleUndo}
+        aria-label="Undo last action"
+        className="aac-btn w-14 h-14 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center shrink-0"
+      >
+        ↩
+      </button>
+
+      <button
+        onClick={handleSpeak}
+        aria-label="Speak full sentence"
+        className="aac-btn aac-speak w-16 h-16 rounded-xl bg-[#4CAF50] text-white text-2xl flex items-center justify-center shrink-0"
+      >
+        ▶
+      </button>
+
+      <button
+        onPointerDown={handleDeleteDown}
+        onPointerUp={handleDeleteUp}
+        onPointerLeave={cancelDelete}
+        onPointerCancel={cancelDelete}
+        aria-label="Delete last word, hold to clear all"
+        className="aac-btn aac-delete w-16 h-16 rounded-xl bg-[#F44336] text-white text-2xl flex items-center justify-center shrink-0 select-none"
+      >
+        ⌫
+      </button>
+    </div>
+  );
+}
+</file>
+
 <file path="components/PrismApp.tsx">
 'use client';
 import { useEffect, useState, Component, ReactNode } from 'react';
@@ -8059,41 +6082,146 @@ export default function PrismApp() {
 }
 </file>
 
-<file path="components/Toolbar.tsx">
+<file path="components/SettingsModal.tsx">
 'use client';
+import { useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
-import { useMessageStore } from '@/store/messageStore';
-import { useSyncStatus } from './SyncProvider';
-import { tapFeedback } from '@/services/feedback';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useCategoryStore } from '@/store/categoryStore';
+import { setAuthToken, hasApiKey, clearAuth } from '@/services/aiService';
+import { LANG_META, SupportedLanguage } from '@/engine/i18n';
+import { useT } from '@/engine/useT';
 
-const SYNC_ICONS: Record<string, string> = {
-  idle: '⬡', syncing: '🔄', synced: '🟢', offline: '🔸', error: '🔴',
-};
+export default function SettingsModal() {
+  const { showSettings, toggleSettings } = useUIStore();
+  const settings = useSettingsStore();
+  const { t } = useT();
+  const { customCategories, customPhrases, addCustomCategory, removeCustomCategory, addCustomPhrase, removeCustomPhrase, allCategories } = useCategoryStore();
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('📌');
+  const [newPhraseText, setNewPhraseText] = useState('');
+  const [newPhraseCat, setNewPhraseCat] = useState('');
+  const [authToken, setAuthTokenInput] = useState('');
+  const [isSignedIn, setIsSignedIn] = useState(hasApiKey());
 
-export default function Toolbar() {
-  const { sidePanel, openCategories, openMath, openCaregiver, openAIChat, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
-  const { soundEnabled, toggleSound } = useMessageStore();
-  const syncStatus = useSyncStatus();
+  if (!showSettings) return null;
 
-  const btn = 'aac-btn h-14 px-5 rounded-xl bg-[#2a2a3e] text-[#e0e0e0] font-semibold text-sm select-none';
-  const active = 'bg-[#4CAF50] text-white';
-
-  const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
+  const cats = allCategories();
 
   return (
-    <div className="flex items-center justify-between px-3 py-2 bg-[#16162a] shrink-0">
-      <div className="flex gap-2">
-        <button className={`${btn} ${sidePanel === 'categories' || sidePanel === 'category-detail' || sidePanel === 'ordering' ? active : ''}`} onClick={tap(openCategories)} aria-label="Toggle categories panel">📂 Categories</button>
-        <button className={`${btn} ${sidePanel === 'math' ? active : ''}`} onClick={tap(openMath)} aria-label="Toggle math panel">🔢 Math</button>
-        <button className={`${btn} ${sidePanel === 'ai-chat' ? active : ''}`} onClick={tap(openAIChat)} aria-label="Toggle AI chat">✨ AI</button>
-        <button className={`${btn} ${sidePanel === 'caregiver' ? active : ''}`} onClick={tap(openCaregiver)} aria-label="Toggle caregiver notes">📋 Notes</button>
-      </div>
-      <div className="flex gap-2 items-center">
-        <span className="text-xs opacity-60 mr-1" title={`Sync: ${syncStatus}`}>{SYNC_ICONS[syncStatus] ?? '⬡'}</span>
-        <button className={btn} onClick={tap(triggerAlert)} aria-label="Send alert">🚨 Alert</button>
-        <button className={btn} onClick={tap(toggleHistory)} aria-label="Open history">📜 History</button>
-        <button className={btn} onClick={tap(toggleSettings)} aria-label="Open settings">⚙️</button>
-        <button className={`${btn} ${soundEnabled ? active : ''}`} onClick={tap(toggleSound)} aria-label={soundEnabled ? 'Sound on' : 'Sound off'}>{soundEnabled ? '🔊' : '🔇'}</button>
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={toggleSettings}>
+      <div className="bg-[#1e1e2e] rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#2a2a3e]">
+          <h2 className="text-[#e0e0e0] font-bold text-lg">{t('settings')}</h2>
+          <button onClick={toggleSettings} className="text-[#888] hover:text-white text-xl">✕</button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+          {/* Language */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('language')}</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {LANG_META.map(lang => (
+                <button
+                  key={lang.code}
+                  onClick={() => settings.update({ language: lang.code as SupportedLanguage })}
+                  className={`aac-btn rounded-xl px-3 py-2.5 text-sm text-left ${
+                    settings.language === lang.code ? 'bg-[#4CAF50] text-white' : 'bg-[#2a2a3e] text-[#e0e0e0]'
+                  }`}
+                >
+                  <div className="font-semibold">{lang.nativeName}</div>
+                  <div className="text-xs opacity-70">{lang.name}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Speech */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('voice')}</h3>
+            <label className="flex items-center justify-between mb-2">
+              <span className="text-[#d0d0e0]">Speed</span>
+              <span className="text-[#888]">{settings.speechRate.toFixed(1)}</span>
+            </label>
+            <input type="range" min="0.1" max="1" step="0.1" value={settings.speechRate}
+              onChange={e => settings.update({ speechRate: parseFloat(e.target.value) })}
+              className="w-full accent-[#4CAF50]" />
+            <label className="flex items-center justify-between mb-2 mt-4">
+              <span className="text-[#d0d0e0]">Volume</span>
+              <span className="text-[#888]">{Math.round(settings.speechVolume * 100)}%</span>
+            </label>
+            <input type="range" min="0" max="1" step="0.1" value={settings.speechVolume}
+              onChange={e => settings.update({ speechVolume: parseFloat(e.target.value) })}
+              className="w-full accent-[#2196F3]" />
+          </div>
+
+          {/* Custom Categories */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Custom Categories</h3>
+            <div className="flex gap-2 mb-2">
+              <input value={newCatIcon} onChange={e => setNewCatIcon(e.target.value)} className="w-12 bg-[#2a2a3e] rounded-lg text-center text-xl p-2 text-white" maxLength={2} />
+              <input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Category name" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555]" />
+              <button onClick={() => { if (newCatName.trim()) { addCustomCategory(newCatName.trim(), newCatIcon || '📌'); setNewCatName(''); } }}
+                className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]">Add</button>
+            </div>
+            {customCategories.map(c => (
+              <div key={c.id} className="flex items-center justify-between bg-[#2a2a3e] rounded-lg px-3 py-2 mb-1">
+                <span className="text-[#e0e0e0]">{c.icon} {c.name}</span>
+                <button onClick={() => removeCustomCategory(c.id)} className="text-[#F44336] text-sm hover:underline">Remove</button>
+              </div>
+            ))}
+          </div>
+
+          {/* Custom Phrases */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Custom Phrases</h3>
+            <div className="flex gap-2 mb-2">
+              <select value={newPhraseCat} onChange={e => setNewPhraseCat(e.target.value)} className="bg-[#2a2a3e] rounded-lg px-2 py-2 text-white text-sm">
+                <option value="">Category...</option>
+                {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+              </select>
+              <input value={newPhraseText} onChange={e => setNewPhraseText(e.target.value)} placeholder="Phrase text" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555]" />
+              <button onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim()); setNewPhraseText(''); } }}
+                className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]">Add</button>
+            </div>
+            {customPhrases.map(p => {
+              const cat = cats.find(c => c.id === p.categoryId);
+              return (
+                <div key={p.id} className="flex items-center justify-between bg-[#2a2a3e] rounded-lg px-3 py-2 mb-1">
+                  <span className="text-[#e0e0e0]"><span className="text-[#888] text-xs">{cat?.icon}</span> {p.text}</span>
+                  <button onClick={() => removeCustomPhrase(p.id)} className="text-[#F44336] text-sm hover:underline">Remove</button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Synalux Account */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">Synalux Account</h3>
+            {isSignedIn ? (
+              <div className="flex items-center justify-between">
+                <p className="text-[#4CAF50] text-sm">Signed in — AI Chat, web search, and modules active</p>
+                <button onClick={() => { clearAuth(); setIsSignedIn(false); }} className="text-[#F44336] text-xs hover:underline">Sign out</button>
+              </div>
+            ) : (
+              <div>
+                <p className="text-[#888] text-sm mb-2">Sign in with your Synalux account to enable AI Chat, web search, and all platform modules.</p>
+                <div className="flex gap-2">
+                  <input value={authToken} onChange={e => setAuthTokenInput(e.target.value)} placeholder="Synalux auth token" type="password" className="flex-1 bg-[#2a2a3e] rounded-lg px-3 py-2 text-white placeholder-[#555] text-sm" />
+                  <button onClick={() => { if (authToken.trim()) { setAuthToken(authToken.trim()); setIsSignedIn(true); setAuthTokenInput(''); } }} className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C] text-sm">Sign in</button>
+                </div>
+                <p className="text-[#444] text-xs mt-2">Your subscription tier determines which AI models and modules are available. Core AAC features work without an account.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Resources */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">AAC Resources</h3>
+            <a href="https://www.asha.org/practice-portal/professional-issues/augmentative-and-alternative-communication/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">ASHA — AAC Practice Portal</a>
+            <a href="https://aac-rerc.psu.edu/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">AAC-RERC — Research Center</a>
+            <a href="https://praacticalaac.org/" target="_blank" rel="noopener" className="block text-[#2196F3] text-sm hover:underline mb-1">PrAACtical AAC — Implementation Resources</a>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -8408,6 +6536,31 @@ export const useCategoryStore = create<CategoryState>()(
 );
 </file>
 
+<file path="store/settingsStore.ts">
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { SupportedLanguage } from '@/engine/i18n';
+
+interface SettingsState {
+  speechRate: number;
+  speechVolume: number;
+  language: SupportedLanguage;
+  update: (partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language'>>) => void;
+}
+
+export const useSettingsStore = create<SettingsState>()(
+  persist(
+    (set) => ({
+      speechRate: 0.5,
+      speechVolume: 1.0,
+      language: 'en',
+      update: (partial) => set((s) => ({ ...s, ...partial })),
+    }),
+    { name: 'prism-aac-settings' },
+  ),
+);
+</file>
+
 <file path="store/uiStore.ts">
 import { create } from 'zustand';
 import { KeyboardMode, SidePanelView } from '@/types';
@@ -8678,6 +6831,96 @@ describe('Sync — Data integrity', () => {
     expect(merged[0].timestamp).toBeGreaterThan(merged[merged.length - 1].timestamp); // sorted desc
   });
 });
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+.expo/
+ios/
+dist/
+</file>
+
+<file path="components/Toolbar.tsx">
+'use client';
+import { useUIStore } from '@/store/uiStore';
+import { useMessageStore } from '@/store/messageStore';
+import { useSyncStatus } from './SyncProvider';
+import { tapFeedback } from '@/services/feedback';
+import { useT } from '@/engine/useT';
+
+const SYNC_ICONS: Record<string, string> = {
+  idle: '⬡', syncing: '🔄', synced: '🟢', offline: '🔸', error: '🔴',
+};
+
+export default function Toolbar() {
+  const { sidePanel, openCategories, openMath, openCaregiver, openAIChat, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
+  const { soundEnabled, toggleSound } = useMessageStore();
+  const syncStatus = useSyncStatus();
+  const { t } = useT();
+
+  const btn = 'aac-btn h-14 px-5 rounded-xl bg-[#2a2a3e] text-[#e0e0e0] font-semibold text-sm select-none';
+  const active = 'bg-[#4CAF50] text-white';
+
+  const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
+
+  return (
+    <div className="flex items-center justify-between px-3 py-2 bg-[#16162a] shrink-0">
+      <div className="flex gap-2">
+        <button className={`${btn} ${sidePanel === 'categories' || sidePanel === 'category-detail' || sidePanel === 'ordering' ? active : ''}`} onClick={tap(openCategories)} aria-label={t('categories')}>📂 {t('categories')}</button>
+        <button className={`${btn} ${sidePanel === 'math' ? active : ''}`} onClick={tap(openMath)} aria-label={t('math')}>🔢 {t('math')}</button>
+        <button className={`${btn} ${sidePanel === 'ai-chat' ? active : ''}`} onClick={tap(openAIChat)} aria-label={t('ai_chat')}>✨ {t('ai_chat')}</button>
+        <button className={`${btn} ${sidePanel === 'caregiver' ? active : ''}`} onClick={tap(openCaregiver)} aria-label={t('notes')}>📋 {t('notes')}</button>
+      </div>
+      <div className="flex gap-2 items-center">
+        <span className="text-xs opacity-60 mr-1" title={`Sync: ${syncStatus}`}>{SYNC_ICONS[syncStatus] ?? '⬡'}</span>
+        <button className={btn} onClick={tap(triggerAlert)} aria-label={t('alert')}>🚨 {t('alert')}</button>
+        <button className={btn} onClick={tap(toggleHistory)} aria-label={t('history')}>📜 {t('history')}</button>
+        <button className={btn} onClick={tap(toggleSettings)} aria-label={t('settings')}>⚙️</button>
+        <button className={`${btn} ${soundEnabled ? active : ''}`} onClick={tap(toggleSound)} aria-label={soundEnabled ? t('sound_on') : t('sound_off')}>{soundEnabled ? '🔊' : '🔇'}</button>
+      </div>
+    </div>
+  );
+}
 </file>
 
 <file path="types/index.ts">

@@ -43,15 +43,16 @@ export default function AIChatPanel() {
     tapFeedback();
 
     setMessages((m) => [...m, { role: 'user', text: question }]);
-    clearAll();
     setLoading(true);
 
     try {
       const response = await askAI(question);
       setMessages((m) => [...m, { role: 'ai', text: response.text, lines: response.lines }]);
+      clearAll();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Could not reach AI';
       setMessages((m) => [...m, { role: 'ai', text: msg, lines: [msg] }]);
+      // Don't clear — child can retry without retyping
     }
     setLoading(false);
   };

@@ -33,7 +33,7 @@ The content is organized as follows:
 <notes>
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Files matching these patterns are excluded: node_modules, .next, .expo, dist, ios, android, package-lock.json, .env.local, *.test.ts, docs, public, .gitignore, .DS_Store, repomix-*.txt, REVIEW-PROMPT.md
+- Files matching these patterns are excluded: node_modules, .next, .expo, dist, ios, android, package-lock.json, .env.local, *.test.ts, docs/screenshots, .DS_Store, repomix-*.txt, public/sw.js
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 - Content has been compressed - code blocks are separated by ⋮---- delimiter
@@ -51,6 +51,7 @@ app/
   globals.css
   layout.tsx
   page.tsx
+  sw.ts
 components/
   AIChatPanel.tsx
   AlertOverlay.tsx
@@ -74,7 +75,31 @@ constants/
 engine/
   caregiverActions.ts
   colorCoding.ts
+  i18n.ts
   predictionEngine.ts
+  useT.ts
+i18n/
+  ar.json
+  de.json
+  en.json
+  es.json
+  fr.json
+  ja.json
+  ko.json
+  pt.json
+  ro.json
+  ru.json
+  uk.json
+  zh.json
+public/
+  file.svg
+  globe.svg
+  icon-192.png
+  icon-512.png
+  manifest.json
+  next.svg
+  vercel.svg
+  window.svg
 scripts/
   generate_i18n.py
 services/
@@ -97,6 +122,7 @@ tests/
   category-store.test.ts
   color-coding.test.ts
   feedback.test.ts
+  i18n.test.ts
   message-store.test.ts
   prediction-engine.test.ts
   setup.ts
@@ -105,6 +131,7 @@ tests/
   ux-accessibility.test.ts
 types/
   index.ts
+.gitignore
 AGENTS.md
 CLAUDE.md
 eslint.config.mjs
@@ -115,12 +142,40 @@ package.json
 postcss.config.mjs
 README.md
 RESEARCH.md
+REVIEW-PROMPT.md
 tsconfig.json
 vitest.config.ts
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="app/sw.ts">
+import { defaultCache } from '@serwist/next/worker';
+import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
+import { Serwist } from 'serwist';
+⋮----
+interface WorkerGlobalScope extends SerwistGlobalConfig {
+    __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
+  }
+</file>
+
+<file path="public/manifest.json">
+{
+  "name": "Prism AAC",
+  "short_name": "PrismAAC",
+  "description": "Evidence-based AAC communication app",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12121e",
+  "theme_color": "#12121e",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+</file>
 
 <file path=".github/workflows/update-i18n.yml">
 name: Update i18n translations
@@ -194,6 +249,8 @@ interface ChatMessage {
 }
 ⋮----
 const handleAsk = async () =>
+⋮----
+// Don't clear — child can retry without retyping
 ⋮----
 // Auto-scroll to bottom
 </file>
@@ -328,6 +385,1018 @@ export function classifyWord(word: string): WordCategory
 // Default: treat as noun (most AAC vocabulary is nouns)
 ⋮----
 export function classifyPhrase(text: string): Array<
+</file>
+
+<file path="engine/i18n.ts">
+/**
+ * i18n Engine — Lightweight translation system
+ *
+ * No external dependencies. Loads JSON translation files,
+ * returns translated strings by key with English fallback.
+ */
+⋮----
+import en from '@/i18n/en.json';
+import es from '@/i18n/es.json';
+import fr from '@/i18n/fr.json';
+import pt from '@/i18n/pt.json';
+import ro from '@/i18n/ro.json';
+import uk from '@/i18n/uk.json';
+import ru from '@/i18n/ru.json';
+import de from '@/i18n/de.json';
+import ja from '@/i18n/ja.json';
+import ko from '@/i18n/ko.json';
+import zh from '@/i18n/zh.json';
+import ar from '@/i18n/ar.json';
+⋮----
+export type SupportedLanguage = 'en' | 'es' | 'fr' | 'pt' | 'ro' | 'uk' | 'ru' | 'de' | 'ja' | 'ko' | 'zh' | 'ar';
+⋮----
+export function t(key: string, lang: SupportedLanguage = 'en'): string
+⋮----
+export function getTTSCode(lang: SupportedLanguage): string
+⋮----
+export function isRTL(lang: SupportedLanguage): boolean
+</file>
+
+<file path="engine/useT.ts">
+import { useCallback } from 'react';
+import { useSettingsStore } from '@/store/settingsStore';
+import { t as translate, getTTSCode, isRTL } from './i18n';
+⋮----
+export function useT()
+</file>
+
+<file path="i18n/ar.json">
+{
+  "app_name": "Prism AAC",
+  "home": "الرئيسية",
+  "categories": "الفئات",
+  "settings": "الإعدادات",
+  "math": "الرياضيات",
+  "speak": "تحدث",
+  "delete": "حذف",
+  "clear": "مسح",
+  "type_here": "اكتب هنا...",
+  "predictions": "التنبؤات",
+  "tone": "النبرة",
+  "voice": "الصوت",
+  "speed": "السرعة",
+  "pitch": "طبقة الصوت",
+  "volume": "مستوى الصوت",
+  "language": "اللغة",
+  "accessibility": "إمكانية الوصول",
+  "high_contrast": "تباين عالي",
+  "haptic_feedback": "اهتزاز",
+  "audio_feedback": "صوت",
+  "font_size": "حجم الخط",
+  "subscription": "الاشتراك",
+  "free": "مجاني",
+  "standard": "قياسي",
+  "advanced": "متقدم",
+  "enterprise": "مؤسسي",
+  "upgrade": "ترقية",
+  "help_needs": "مساعدة / احتياجات",
+  "quick_talk": "محادثة سريعة",
+  "places_plans": "أماكن / خطط",
+  "food_ordering": "طعام / طلبات",
+  "people_social": "أشخاص / اجتماعي",
+  "school_work": "مدرسة / عمل",
+  "ordering_flow": "اطلب",
+  "next_step": "التالي",
+  "previous_step": "رجوع",
+  "finish_order": "تم",
+  "add_phrase": "إضافة عبارة",
+  "custom_phrase": "عبارة مخصصة",
+  "enter_text": "أدخل النص",
+  "save": "حفظ",
+  "cancel": "إلغاء",
+  "basic": "أساسي",
+  "advanced_math": "متقدم",
+  "select_tone": "اختر النبرة",
+  "friendly": "ودود",
+  "cheerful": "مرح",
+  "calm": "هادئ",
+  "serious": "جاد",
+  "excited": "متحمس",
+  "hopeful": "متفائل",
+  "empathetic": "متعاطف",
+  "sad": "حزين",
+  "urgent": "عاجل",
+  "alert": "تنبيه",
+  "history": "السجل",
+  "notes": "ملاحظات",
+  "ai_chat": "ذكاء",
+  "undo": "تراجع",
+  "space": "مسافة",
+  "close": "إغلاق",
+  "add": "إضافة",
+  "remove": "حذف",
+  "sound_on": "صوت مفعل",
+  "sound_off": "صوت معطل",
+  "sign_in": "تسجيل الدخول",
+  "sign_out": "تسجيل الخروج",
+  "synalux_account": "حساب Synalux",
+  "save_note": "حفظ الملاحظة",
+  "caregiver_notes": "ملاحظات مقدم الرعاية"
+}
+</file>
+
+<file path="i18n/de.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Startseite",
+  "categories": "Kategorien",
+  "settings": "Einstellungen",
+  "math": "Mathematik",
+  "speak": "Sprechen",
+  "delete": "Löschen",
+  "clear": "Leeren",
+  "type_here": "Hier tippen...",
+  "predictions": "Vorhersagen",
+  "tone": "Ton",
+  "voice": "Stimme",
+  "speed": "Geschwindigkeit",
+  "pitch": "Tonhöhe",
+  "volume": "Lautstärke",
+  "language": "Sprache",
+  "accessibility": "Barrierefreiheit",
+  "high_contrast": "Hoher Kontrast",
+  "haptic_feedback": "Haptisches Feedback",
+  "audio_feedback": "Ton-Feedback",
+  "font_size": "Schriftgröße",
+  "subscription": "Abonnement",
+  "free": "Kostenlos",
+  "standard": "Standard",
+  "advanced": "Erweitert",
+  "enterprise": "Unternehmen",
+  "upgrade": "Upgraden",
+  "help_needs": "Hilfe / Bedürfnisse",
+  "quick_talk": "Schnelles Sprechen",
+  "places_plans": "Orte / Pläne",
+  "food_ordering": "Essen / Bestellung",
+  "people_social": "Personen / Soziales",
+  "school_work": "Schule / Arbeit",
+  "ordering_flow": "Bestellen",
+  "next_step": "Weiter",
+  "previous_step": "Zurück",
+  "finish_order": "Fertig",
+  "add_phrase": "Phrase hinzufügen",
+  "custom_phrase": "Eigene Phrase",
+  "enter_text": "Text eingeben",
+  "save": "Speichern",
+  "cancel": "Abbrechen",
+  "basic": "Grundlegend",
+  "advanced_math": "Erweitert",
+  "select_tone": "Ton wählen",
+  "friendly": "Freundlich",
+  "cheerful": "Fröhlich",
+  "calm": "Ruhig",
+  "serious": "Ernst",
+  "excited": "Begeistert",
+  "hopeful": "Hoffnungsvoll",
+  "empathetic": "Einfühlsam",
+  "sad": "Traurig",
+  "urgent": "Dringend",
+  "alert": "Alarm",
+  "history": "Verlauf",
+  "notes": "Notizen",
+  "ai_chat": "KI",
+  "undo": "Rückgängig",
+  "space": "Leertaste",
+  "close": "Schließen",
+  "add": "Hinzufügen",
+  "remove": "Entfernen",
+  "sound_on": "Ton ein",
+  "sound_off": "Ton aus",
+  "sign_in": "Anmelden",
+  "sign_out": "Abmelden",
+  "synalux_account": "Synalux-Konto",
+  "save_note": "Notiz speichern",
+  "caregiver_notes": "Betreuernotizen"
+}
+</file>
+
+<file path="i18n/en.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Home",
+  "categories": "Categories",
+  "settings": "Settings",
+  "math": "Math",
+  "speak": "Speak",
+  "delete": "Delete",
+  "clear": "Clear",
+  "type_here": "Type here...",
+  "predictions": "Predictions",
+  "tone": "Tone",
+  "voice": "Voice",
+  "speed": "Speed",
+  "pitch": "Pitch",
+  "volume": "Volume",
+  "language": "Language",
+  "accessibility": "Accessibility",
+  "high_contrast": "High Contrast",
+  "haptic_feedback": "Haptic Feedback",
+  "audio_feedback": "Audio Feedback",
+  "font_size": "Font Size",
+  "subscription": "Subscription",
+  "free": "Free",
+  "standard": "Standard",
+  "advanced": "Advanced",
+  "enterprise": "Enterprise",
+  "upgrade": "Upgrade",
+  "help_needs": "Help / Needs",
+  "quick_talk": "Quick Talk",
+  "places_plans": "Places / Plans",
+  "food_ordering": "Food / Ordering",
+  "people_social": "People / Social",
+  "school_work": "School / Work",
+  "ordering_flow": "Order",
+  "next_step": "Next",
+  "previous_step": "Back",
+  "finish_order": "Done",
+  "add_phrase": "Add Phrase",
+  "custom_phrase": "Custom Phrase",
+  "enter_text": "Enter text",
+  "save": "Save",
+  "cancel": "Cancel",
+  "basic": "Basic",
+  "advanced_math": "Advanced",
+  "select_tone": "Select Tone",
+  "friendly": "Friendly",
+  "cheerful": "Cheerful",
+  "calm": "Calm",
+  "serious": "Serious",
+  "excited": "Excited",
+  "hopeful": "Hopeful",
+  "empathetic": "Empathetic",
+  "sad": "Sad",
+  "urgent": "Urgent",
+  "alert": "Alert",
+  "history": "History",
+  "notes": "Notes",
+  "ai_chat": "AI",
+  "undo": "Undo",
+  "space": "space",
+  "shift": "Shift",
+  "backspace": "Backspace",
+  "ask_ai": "Ask AI",
+  "thinking": "Thinking...",
+  "you": "You",
+  "no_history": "No history yet",
+  "clear_all": "Clear all",
+  "auto_speak_on": "Auto-speak on",
+  "auto_speak_off": "Auto-speak off",
+  "close": "Close",
+  "add": "Add",
+  "remove": "Remove",
+  "apply": "Apply",
+  "save_note": "Save Note",
+  "save_parse": "Save & Parse",
+  "parsing": "Parsing...",
+  "caregiver_notes": "Caregiver Notes",
+  "add_note": "Add Note",
+  "log": "Log",
+  "your_name": "Your name",
+  "note_instruction": "Note or instruction",
+  "custom_categories": "Custom Categories",
+  "custom_phrases": "Custom Phrases",
+  "category_name": "Category name",
+  "phrase_text": "Phrase text",
+  "synalux_account": "Synalux Account",
+  "signed_in": "Signed in",
+  "sign_in": "Sign in",
+  "sign_out": "Sign out",
+  "aac_resources": "AAC Resources",
+  "sound_on": "Sound on",
+  "sound_off": "Sound off"
+}
+</file>
+
+<file path="i18n/es.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Inicio",
+  "categories": "Categorías",
+  "settings": "Ajustes",
+  "math": "Matemáticas",
+  "speak": "Hablar",
+  "delete": "Borrar",
+  "clear": "Limpiar",
+  "type_here": "Escribe aquí...",
+  "predictions": "Predicciones",
+  "tone": "Tono",
+  "voice": "Voz",
+  "speed": "Velocidad",
+  "pitch": "Tono vocal",
+  "volume": "Volumen",
+  "language": "Idioma",
+  "accessibility": "Accesibilidad",
+  "high_contrast": "Alto contraste",
+  "haptic_feedback": "Vibración",
+  "audio_feedback": "Sonido",
+  "font_size": "Tamaño de letra",
+  "subscription": "Suscripción",
+  "free": "Gratis",
+  "standard": "Estándar",
+  "advanced": "Avanzado",
+  "enterprise": "Empresa",
+  "upgrade": "Mejorar",
+  "help_needs": "Ayuda / Necesidades",
+  "quick_talk": "Charla rápida",
+  "places_plans": "Lugares / Planes",
+  "food_ordering": "Comida / Pedidos",
+  "people_social": "Personas / Social",
+  "school_work": "Escuela / Trabajo",
+  "ordering_flow": "Pedir",
+  "next_step": "Siguiente",
+  "previous_step": "Atrás",
+  "finish_order": "Listo",
+  "add_phrase": "Agregar frase",
+  "custom_phrase": "Frase personalizada",
+  "enter_text": "Ingresa texto",
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "basic": "Básico",
+  "advanced_math": "Avanzado",
+  "select_tone": "Seleccionar tono",
+  "friendly": "Amigable",
+  "cheerful": "Alegre",
+  "calm": "Tranquilo",
+  "serious": "Serio",
+  "excited": "Emocionado",
+  "hopeful": "Esperanzado",
+  "empathetic": "Empático",
+  "sad": "Triste",
+  "urgent": "Urgente",
+  "alert": "Alerta",
+  "history": "Historial",
+  "notes": "Notas",
+  "ai_chat": "IA",
+  "undo": "Deshacer",
+  "space": "espacio",
+  "ask_ai": "Preguntar IA",
+  "thinking": "Pensando...",
+  "you": "Tú",
+  "no_history": "Sin historial",
+  "clear_all": "Borrar todo",
+  "auto_speak_on": "Auto-voz activa",
+  "auto_speak_off": "Auto-voz inactiva",
+  "close": "Cerrar",
+  "add": "Añadir",
+  "remove": "Eliminar",
+  "apply": "Aplicar",
+  "save_note": "Guardar nota",
+  "caregiver_notes": "Notas del cuidador",
+  "add_note": "Añadir nota",
+  "log": "Registro",
+  "your_name": "Tu nombre",
+  "custom_categories": "Categorías personalizadas",
+  "custom_phrases": "Frases personalizadas",
+  "category_name": "Nombre de categoría",
+  "phrase_text": "Texto de frase",
+  "synalux_account": "Cuenta Synalux",
+  "signed_in": "Conectado",
+  "sign_in": "Iniciar sesión",
+  "sign_out": "Cerrar sesión",
+  "aac_resources": "Recursos AAC",
+  "sound_on": "Sonido activado",
+  "sound_off": "Sonido desactivado"
+}
+</file>
+
+<file path="i18n/fr.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Accueil",
+  "categories": "Catégories",
+  "settings": "Paramètres",
+  "math": "Maths",
+  "speak": "Parler",
+  "delete": "Supprimer",
+  "clear": "Effacer",
+  "type_here": "Tapez ici...",
+  "predictions": "Prédictions",
+  "tone": "Ton",
+  "voice": "Voix",
+  "speed": "Vitesse",
+  "pitch": "Hauteur",
+  "volume": "Volume",
+  "language": "Langue",
+  "accessibility": "Accessibilité",
+  "high_contrast": "Contraste élevé",
+  "haptic_feedback": "Retour haptique",
+  "audio_feedback": "Retour sonore",
+  "font_size": "Taille de police",
+  "subscription": "Abonnement",
+  "free": "Gratuit",
+  "standard": "Standard",
+  "advanced": "Avancé",
+  "enterprise": "Entreprise",
+  "upgrade": "Améliorer",
+  "help_needs": "Aide / Besoins",
+  "quick_talk": "Parole rapide",
+  "places_plans": "Lieux / Plans",
+  "food_ordering": "Nourriture / Commande",
+  "people_social": "Personnes / Social",
+  "school_work": "École / Travail",
+  "ordering_flow": "Commander",
+  "next_step": "Suivant",
+  "previous_step": "Retour",
+  "finish_order": "Terminé",
+  "add_phrase": "Ajouter une phrase",
+  "custom_phrase": "Phrase personnalisée",
+  "enter_text": "Entrez le texte",
+  "save": "Enregistrer",
+  "cancel": "Annuler",
+  "basic": "Base",
+  "advanced_math": "Avancé",
+  "select_tone": "Choisir le ton",
+  "friendly": "Amical",
+  "cheerful": "Joyeux",
+  "calm": "Calme",
+  "serious": "Sérieux",
+  "excited": "Enthousiaste",
+  "hopeful": "Plein d'espoir",
+  "empathetic": "Empathique",
+  "sad": "Triste",
+  "urgent": "Urgent",
+  "alert": "Alerte",
+  "history": "Historique",
+  "notes": "Notes",
+  "ai_chat": "IA",
+  "undo": "Annuler",
+  "space": "espace",
+  "ask_ai": "Demander IA",
+  "thinking": "Réflexion...",
+  "you": "Vous",
+  "no_history": "Pas d'historique",
+  "clear_all": "Tout effacer",
+  "close": "Fermer",
+  "add": "Ajouter",
+  "remove": "Supprimer",
+  "apply": "Appliquer",
+  "save_note": "Sauvegarder",
+  "caregiver_notes": "Notes soignant",
+  "sound_on": "Son activé",
+  "sound_off": "Son désactivé",
+  "sign_in": "Se connecter",
+  "sign_out": "Se déconnecter",
+  "synalux_account": "Compte Synalux",
+  "aac_resources": "Ressources CAA",
+  "custom_categories": "Catégories personnalisées",
+  "custom_phrases": "Phrases personnalisées",
+  "category_name": "Nom de catégorie",
+  "phrase_text": "Texte de phrase",
+  "your_name": "Votre nom",
+  "add_note": "Ajouter note",
+  "log": "Journal"
+}
+</file>
+
+<file path="i18n/ja.json">
+{
+  "app_name": "Prism AAC",
+  "home": "ホーム",
+  "categories": "カテゴリ",
+  "settings": "設定",
+  "math": "数学",
+  "speak": "話す",
+  "delete": "削除",
+  "clear": "クリア",
+  "type_here": "ここに入力...",
+  "predictions": "予測",
+  "tone": "トーン",
+  "voice": "声",
+  "speed": "速度",
+  "pitch": "ピッチ",
+  "volume": "音量",
+  "language": "言語",
+  "accessibility": "アクセシビリティ",
+  "high_contrast": "ハイコントラスト",
+  "haptic_feedback": "振動フィードバック",
+  "audio_feedback": "音声フィードバック",
+  "font_size": "フォントサイズ",
+  "subscription": "サブスクリプション",
+  "free": "無料",
+  "standard": "スタンダード",
+  "advanced": "アドバンスド",
+  "enterprise": "エンタープライズ",
+  "upgrade": "アップグレード",
+  "help_needs": "ヘルプ / ニーズ",
+  "quick_talk": "クイックトーク",
+  "places_plans": "場所 / 計画",
+  "food_ordering": "食事 / 注文",
+  "people_social": "人々 / ソーシャル",
+  "school_work": "学校 / 仕事",
+  "ordering_flow": "注文する",
+  "next_step": "次へ",
+  "previous_step": "戻る",
+  "finish_order": "完了",
+  "add_phrase": "フレーズ追加",
+  "custom_phrase": "カスタムフレーズ",
+  "enter_text": "テキストを入力",
+  "save": "保存",
+  "cancel": "キャンセル",
+  "basic": "基本",
+  "advanced_math": "上級",
+  "select_tone": "トーンを選択",
+  "friendly": "フレンドリー",
+  "cheerful": "明るい",
+  "calm": "穏やか",
+  "serious": "真剣",
+  "excited": "興奮",
+  "hopeful": "希望",
+  "empathetic": "共感",
+  "sad": "悲しい",
+  "urgent": "緊急",
+  "alert": "アラート",
+  "history": "履歴",
+  "notes": "メモ",
+  "ai_chat": "AI",
+  "undo": "元に戻す",
+  "space": "スペース",
+  "close": "閉じる",
+  "add": "追加",
+  "remove": "削除",
+  "sound_on": "音オン",
+  "sound_off": "音オフ",
+  "sign_in": "ログイン",
+  "sign_out": "ログアウト",
+  "synalux_account": "Synaluxアカウント",
+  "save_note": "メモを保存",
+  "caregiver_notes": "介護者メモ"
+}
+</file>
+
+<file path="i18n/ko.json">
+{
+  "app_name": "Prism AAC",
+  "home": "홈",
+  "categories": "카테고리",
+  "settings": "설정",
+  "math": "수학",
+  "speak": "말하기",
+  "delete": "삭제",
+  "clear": "지우기",
+  "type_here": "여기에 입력...",
+  "predictions": "예측",
+  "tone": "톤",
+  "voice": "음성",
+  "speed": "속도",
+  "pitch": "피치",
+  "volume": "볼륨",
+  "language": "언어",
+  "accessibility": "접근성",
+  "high_contrast": "고대비",
+  "haptic_feedback": "진동 피드백",
+  "audio_feedback": "소리 피드백",
+  "font_size": "글꼴 크기",
+  "subscription": "구독",
+  "free": "무료",
+  "standard": "스탠다드",
+  "advanced": "어드밴스드",
+  "enterprise": "엔터프라이즈",
+  "upgrade": "업그레이드",
+  "help_needs": "도움 / 필요",
+  "quick_talk": "빠른 대화",
+  "places_plans": "장소 / 계획",
+  "food_ordering": "음식 / 주문",
+  "people_social": "사람 / 소셜",
+  "school_work": "학교 / 직장",
+  "ordering_flow": "주문하기",
+  "next_step": "다음",
+  "previous_step": "뒤로",
+  "finish_order": "완료",
+  "add_phrase": "문구 추가",
+  "custom_phrase": "사용자 문구",
+  "enter_text": "텍스트 입력",
+  "save": "저장",
+  "cancel": "취소",
+  "basic": "기본",
+  "advanced_math": "고급",
+  "select_tone": "톤 선택",
+  "friendly": "친근한",
+  "cheerful": "밝은",
+  "calm": "차분한",
+  "serious": "진지한",
+  "excited": "신나는",
+  "hopeful": "희망찬",
+  "empathetic": "공감하는",
+  "sad": "슬픈",
+  "urgent": "긴급한",
+  "alert": "알림",
+  "history": "기록",
+  "notes": "메모",
+  "ai_chat": "AI",
+  "undo": "실행취소",
+  "space": "스페이스",
+  "close": "닫기",
+  "add": "추가",
+  "remove": "삭제",
+  "sound_on": "소리 켜기",
+  "sound_off": "소리 끄기",
+  "sign_in": "로그인",
+  "sign_out": "로그아웃",
+  "synalux_account": "Synalux 계정",
+  "save_note": "메모 저장",
+  "caregiver_notes": "보호자 메모"
+}
+</file>
+
+<file path="i18n/pt.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Início",
+  "categories": "Categorias",
+  "settings": "Configurações",
+  "math": "Matemática",
+  "speak": "Falar",
+  "delete": "Apagar",
+  "clear": "Limpar",
+  "type_here": "Digite aqui...",
+  "predictions": "Previsões",
+  "tone": "Tom",
+  "voice": "Voz",
+  "speed": "Velocidade",
+  "pitch": "Altura",
+  "volume": "Volume",
+  "language": "Idioma",
+  "accessibility": "Acessibilidade",
+  "high_contrast": "Alto contraste",
+  "haptic_feedback": "Vibração",
+  "audio_feedback": "Som",
+  "font_size": "Tamanho da fonte",
+  "subscription": "Assinatura",
+  "free": "Grátis",
+  "standard": "Padrão",
+  "advanced": "Avançado",
+  "enterprise": "Empresarial",
+  "upgrade": "Atualizar",
+  "help_needs": "Ajuda / Necessidades",
+  "quick_talk": "Fala rápida",
+  "places_plans": "Lugares / Planos",
+  "food_ordering": "Comida / Pedidos",
+  "people_social": "Pessoas / Social",
+  "school_work": "Escola / Trabalho",
+  "ordering_flow": "Pedir",
+  "next_step": "Próximo",
+  "previous_step": "Voltar",
+  "finish_order": "Pronto",
+  "add_phrase": "Adicionar frase",
+  "custom_phrase": "Frase personalizada",
+  "enter_text": "Digite o texto",
+  "save": "Salvar",
+  "cancel": "Cancelar",
+  "basic": "Básico",
+  "advanced_math": "Avançado",
+  "select_tone": "Selecionar tom",
+  "friendly": "Amigável",
+  "cheerful": "Alegre",
+  "calm": "Calmo",
+  "serious": "Sério",
+  "excited": "Animado",
+  "hopeful": "Esperançoso",
+  "empathetic": "Empático",
+  "sad": "Triste",
+  "urgent": "Urgente",
+  "alert": "Alerta",
+  "history": "Histórico",
+  "notes": "Notas",
+  "ai_chat": "IA",
+  "undo": "Desfazer",
+  "space": "espaço",
+  "close": "Fechar",
+  "add": "Adicionar",
+  "remove": "Remover",
+  "sound_on": "Som ligado",
+  "sound_off": "Som desligado",
+  "sign_in": "Entrar",
+  "sign_out": "Sair",
+  "synalux_account": "Conta Synalux",
+  "aac_resources": "Recursos CAA",
+  "save_note": "Salvar nota",
+  "caregiver_notes": "Notas do cuidador"
+}
+</file>
+
+<file path="i18n/ro.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Acasă",
+  "categories": "Categorii",
+  "settings": "Setări",
+  "math": "Matematică",
+  "speak": "Vorbește",
+  "delete": "Șterge",
+  "clear": "Curăță",
+  "type_here": "Scrie aici...",
+  "predictions": "Predicții",
+  "tone": "Ton",
+  "voice": "Voce",
+  "speed": "Viteză",
+  "pitch": "Înălțime",
+  "volume": "Volum",
+  "language": "Limbă",
+  "accessibility": "Accesibilitate",
+  "high_contrast": "Contrast ridicat",
+  "haptic_feedback": "Vibrație",
+  "audio_feedback": "Sunet",
+  "font_size": "Dimensiune font",
+  "subscription": "Abonament",
+  "free": "Gratuit",
+  "standard": "Standard",
+  "advanced": "Avansat",
+  "enterprise": "Întreprindere",
+  "upgrade": "Îmbunătățește",
+  "help_needs": "Ajutor / Nevoi",
+  "quick_talk": "Vorbire rapidă",
+  "places_plans": "Locuri / Planuri",
+  "food_ordering": "Mâncare / Comenzi",
+  "people_social": "Persoane / Social",
+  "school_work": "Școală / Muncă",
+  "ordering_flow": "Comandă",
+  "next_step": "Următorul",
+  "previous_step": "Înapoi",
+  "finish_order": "Gata",
+  "add_phrase": "Adaugă frază",
+  "custom_phrase": "Frază personalizată",
+  "enter_text": "Introdu text",
+  "save": "Salvează",
+  "cancel": "Anulează",
+  "basic": "Bază",
+  "advanced_math": "Avansat",
+  "select_tone": "Selectează tonul",
+  "friendly": "Prietenos",
+  "cheerful": "Vesel",
+  "calm": "Calm",
+  "serious": "Serios",
+  "excited": "Entuziasmat",
+  "hopeful": "Plin de speranță",
+  "empathetic": "Empatic",
+  "sad": "Trist",
+  "urgent": "Urgent",
+  "alert": "Alertă",
+  "history": "Istoric",
+  "notes": "Note",
+  "ai_chat": "IA",
+  "undo": "Anulare",
+  "space": "spațiu",
+  "close": "Închide",
+  "add": "Adaugă",
+  "remove": "Șterge",
+  "sound_on": "Sunet activat",
+  "sound_off": "Sunet dezactivat",
+  "sign_in": "Conectare",
+  "sign_out": "Deconectare",
+  "synalux_account": "Cont Synalux",
+  "save_note": "Salvează notă",
+  "caregiver_notes": "Note îngrijitor"
+}
+</file>
+
+<file path="i18n/ru.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Главная",
+  "categories": "Категории",
+  "settings": "Настройки",
+  "math": "Математика",
+  "speak": "Говорить",
+  "delete": "Удалить",
+  "clear": "Очистить",
+  "type_here": "Введите здесь...",
+  "predictions": "Предсказания",
+  "tone": "Тон",
+  "voice": "Голос",
+  "speed": "Скорость",
+  "pitch": "Высота",
+  "volume": "Громкость",
+  "language": "Язык",
+  "accessibility": "Доступность",
+  "high_contrast": "Высокий контраст",
+  "haptic_feedback": "Вибрация",
+  "audio_feedback": "Звук",
+  "font_size": "Размер шрифта",
+  "subscription": "Подписка",
+  "free": "Бесплатно",
+  "standard": "Стандарт",
+  "advanced": "Расширенный",
+  "enterprise": "Корпоративный",
+  "upgrade": "Улучшить",
+  "help_needs": "Помощь / Потребности",
+  "quick_talk": "Быстрый разговор",
+  "places_plans": "Места / Планы",
+  "food_ordering": "Еда / Заказы",
+  "people_social": "Люди / Социальное",
+  "school_work": "Школа / Работа",
+  "ordering_flow": "Заказать",
+  "next_step": "Далее",
+  "previous_step": "Назад",
+  "finish_order": "Готово",
+  "add_phrase": "Добавить фразу",
+  "custom_phrase": "Своя фраза",
+  "enter_text": "Введите текст",
+  "save": "Сохранить",
+  "cancel": "Отмена",
+  "basic": "Базовый",
+  "advanced_math": "Расширенный",
+  "select_tone": "Выбрать тон",
+  "friendly": "Дружелюбный",
+  "cheerful": "Весёлый",
+  "calm": "Спокойный",
+  "serious": "Серьёзный",
+  "excited": "Восторженный",
+  "hopeful": "Надеющийся",
+  "empathetic": "Сочувствующий",
+  "sad": "Грустный",
+  "urgent": "Срочный",
+  "alert": "Тревога",
+  "history": "История",
+  "notes": "Заметки",
+  "ai_chat": "ИИ",
+  "undo": "Отмена",
+  "space": "пробел",
+  "close": "Закрыть",
+  "add": "Добавить",
+  "remove": "Удалить",
+  "sound_on": "Звук вкл.",
+  "sound_off": "Звук выкл.",
+  "sign_in": "Войти",
+  "sign_out": "Выйти",
+  "synalux_account": "Аккаунт Synalux",
+  "save_note": "Сохранить заметку",
+  "caregiver_notes": "Заметки опекуна"
+}
+</file>
+
+<file path="i18n/uk.json">
+{
+  "app_name": "Prism AAC",
+  "home": "Головна",
+  "categories": "Категорії",
+  "settings": "Налаштування",
+  "math": "Математика",
+  "speak": "Говорити",
+  "delete": "Видалити",
+  "clear": "Очистити",
+  "type_here": "Введіть тут...",
+  "predictions": "Передбачення",
+  "tone": "Тон",
+  "voice": "Голос",
+  "speed": "Швидкість",
+  "pitch": "Висота",
+  "volume": "Гучність",
+  "language": "Мова",
+  "accessibility": "Доступність",
+  "high_contrast": "Високий контраст",
+  "haptic_feedback": "Вібрація",
+  "audio_feedback": "Звук",
+  "font_size": "Розмір шрифту",
+  "subscription": "Підписка",
+  "free": "Безкоштовно",
+  "standard": "Стандарт",
+  "advanced": "Розширений",
+  "enterprise": "Підприємство",
+  "upgrade": "Покращити",
+  "help_needs": "Допомога / Потреби",
+  "quick_talk": "Швидка розмова",
+  "places_plans": "Місця / Плани",
+  "food_ordering": "Їжа / Замовлення",
+  "people_social": "Люди / Соціальне",
+  "school_work": "Школа / Робота",
+  "ordering_flow": "Замовити",
+  "next_step": "Далі",
+  "previous_step": "Назад",
+  "finish_order": "Готово",
+  "add_phrase": "Додати фразу",
+  "custom_phrase": "Власна фраза",
+  "enter_text": "Введіть текст",
+  "save": "Зберегти",
+  "cancel": "Скасувати",
+  "basic": "Базовий",
+  "advanced_math": "Розширений",
+  "select_tone": "Обрати тон",
+  "friendly": "Дружній",
+  "cheerful": "Веселий",
+  "calm": "Спокійний",
+  "serious": "Серйозний",
+  "excited": "Захоплений",
+  "hopeful": "Сповнений надії",
+  "empathetic": "Емпатичний",
+  "sad": "Сумний",
+  "urgent": "Терміновий",
+  "alert": "Тривога",
+  "history": "Історія",
+  "notes": "Нотатки",
+  "ai_chat": "ШІ",
+  "undo": "Скасувати",
+  "space": "пробіл",
+  "close": "Закрити",
+  "add": "Додати",
+  "remove": "Видалити",
+  "sound_on": "Звук увімк.",
+  "sound_off": "Звук вимк.",
+  "sign_in": "Увійти",
+  "sign_out": "Вийти",
+  "synalux_account": "Акаунт Synalux",
+  "save_note": "Зберегти нотатку",
+  "caregiver_notes": "Нотатки опікуна"
+}
+</file>
+
+<file path="i18n/zh.json">
+{
+  "app_name": "Prism AAC",
+  "home": "首页",
+  "categories": "类别",
+  "settings": "设置",
+  "math": "数学",
+  "speak": "说话",
+  "delete": "删除",
+  "clear": "清除",
+  "type_here": "在此输入...",
+  "predictions": "预测",
+  "tone": "语气",
+  "voice": "语音",
+  "speed": "速度",
+  "pitch": "音调",
+  "volume": "音量",
+  "language": "语言",
+  "accessibility": "无障碍",
+  "high_contrast": "高对比度",
+  "haptic_feedback": "触觉反馈",
+  "audio_feedback": "声音反馈",
+  "font_size": "字体大小",
+  "subscription": "订阅",
+  "free": "免费",
+  "standard": "标准",
+  "advanced": "高级",
+  "enterprise": "企业",
+  "upgrade": "升级",
+  "help_needs": "帮助 / 需求",
+  "quick_talk": "快速对话",
+  "places_plans": "地点 / 计划",
+  "food_ordering": "食物 / 点餐",
+  "people_social": "人物 / 社交",
+  "school_work": "学校 / 工作",
+  "ordering_flow": "点餐",
+  "next_step": "下一步",
+  "previous_step": "返回",
+  "finish_order": "完成",
+  "add_phrase": "添加短语",
+  "custom_phrase": "自定义短语",
+  "enter_text": "输入文本",
+  "save": "保存",
+  "cancel": "取消",
+  "basic": "基础",
+  "advanced_math": "高级",
+  "select_tone": "选择语气",
+  "friendly": "友好",
+  "cheerful": "开心",
+  "calm": "平静",
+  "serious": "严肃",
+  "excited": "兴奋",
+  "hopeful": "充满希望",
+  "empathetic": "共情",
+  "sad": "难过",
+  "urgent": "紧急",
+  "alert": "警报",
+  "history": "历史",
+  "notes": "笔记",
+  "ai_chat": "AI",
+  "undo": "撤销",
+  "space": "空格",
+  "close": "关闭",
+  "add": "添加",
+  "remove": "删除",
+  "sound_on": "声音开",
+  "sound_off": "声音关",
+  "sign_in": "登录",
+  "sign_out": "退出",
+  "synalux_account": "Synalux账户",
+  "save_note": "保存笔记",
+  "caregiver_notes": "护理人员笔记"
+}
+</file>
+
+<file path="public/file.svg">
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
+</file>
+
+<file path="public/globe.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+</file>
+
+<file path="public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="public/vercel.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+</file>
+
+<file path="public/window.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
 </file>
 
 <file path="scripts/generate_i18n.py">
@@ -473,18 +1542,6 @@ export function tapFeedback(): void
 export function keyFeedback(): void
 ⋮----
 export function deleteFeedback(): void
-</file>
-
-<file path="services/speechService.ts">
-export function isSpeechSupported(): boolean
-⋮----
-function clearResumeWorkaround()
-⋮----
-export function speak(text: string, rate = 0.5, volume = 1.0): void
-⋮----
-export function speakWord(word: string, rate = 0.5, volume = 1.0): void
-⋮----
-export function stopSpeech(): void
 </file>
 
 <file path="services/supabase.ts">
@@ -715,6 +1772,15 @@ import { describe, it, expect, vi } from 'vitest';
 import { hapticTap, hapticHeavy, tapFeedback, keyFeedback, deleteFeedback } from '@/services/feedback';
 </file>
 
+<file path="tests/i18n.test.ts">
+import { describe, it, expect } from 'vitest';
+import { t, getTTSCode, isRTL, LANG_META, SupportedLanguage } from '@/engine/i18n';
+⋮----
+// 'ai_chat' was added to en.json but may not be in all languages
+⋮----
+// Should return English fallback or the key itself
+</file>
+
 <file path="tests/message-store.test.ts">
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useMessageStore } from '@/store/messageStore';
@@ -841,9 +1907,8 @@ PURPOSE, NON-INFRINGEMENT, AND TITLE.
 </file>
 
 <file path="next.config.ts">
-import type { NextConfig } from "next";
-⋮----
-/* config options here */
+import withSerwistInit from '@serwist/next';
+import type { NextConfig } from 'next';
 </file>
 
 <file path="postcss.config.mjs">
@@ -1065,6 +2130,130 @@ PrismAAC's default phrase set prioritizes core vocabulary — the small set of w
 19. ASHA Practice Portal — AAC. American Speech-Language-Hearing Association.
 </file>
 
+<file path="REVIEW-PROMPT.md">
+# External Review Prompt — PrismAAC
+
+Use this prompt when submitting the repomix files for external code review. Attach the relevant repomix file(s) along with the prompt.
+
+---
+
+## Repomix Files
+
+| File | Repo | Contents |
+|------|------|----------|
+| `repomix-compact.txt` (prism-aac-web) | Web app | Next.js 16, React 19, Tailwind, zustand, Supabase sync |
+| `repomix-full.txt` (prism-aac-web) | Web app | Same but includes tests (145 tests, 9 files) |
+| `repomix-compact.txt` (prism-aac) | Native app | Expo/React Native iOS/Android AAC app |
+| `repomix-full.txt` (prism-aac) | Native app | Same but includes tests |
+| `repomix-compact.txt` (prism) | Prism MCP | Memory/session management server (Supabase backend) |
+| `repomix-full.txt` (prism) | Prism MCP | Same but includes all source |
+
+---
+
+## Review Prompt
+
+```
+You are reviewing PrismAAC — an evidence-based AAC (Augmentative and Alternative Communication) web application designed for a disabled child with motor impairments. This is a clinical communication tool, not a consumer app. The primary user depends on this app for daily communication.
+
+The codebase consists of three interconnected repositories:
+
+1. **prism-aac-web** (attached) — The web application (Next.js 16 + React 19)
+2. **prism-aac** — The native iOS/Android app (Expo + React Native)
+3. **prism** — The Prism MCP server (session memory, Supabase backend)
+
+Please conduct a thorough review covering:
+
+### 1. Clinical Safety (HIGHEST PRIORITY)
+- Can the app ever restrict, reduce, or block the child's ability to communicate?
+- Can a caregiver accidentally delete critical vocabulary?
+- Are all configuration changes documented with audit trail?
+- Does the app work fully offline (no network = no communication loss)?
+- Are AI responses properly gated (never auto-inserted, always require confirmation)?
+- Review against BACB Ethics Code 2.01 (effective treatment) and 2.09 (least restrictive)
+- Review against ASHA position on AAC: communication is a fundamental right
+
+### 2. Motor Accessibility
+- Are all touch targets ≥44×44px (WCAG 2.5.5)? Ideally ≥25mm per Koester & Simpson (2012)?
+- Is haptic feedback present on every interaction?
+- Is there audio feedback confirming button presses?
+- Does the visual feedback (scale/brighten) work even when the user's finger covers the button?
+- Is there undo functionality for accidental actions?
+- Does the long-press delete have adequate timeout and pointer-cancel handling?
+- Does the app respect prefers-reduced-motion?
+
+### 3. Evidence Base
+- Review RESEARCH.md — are the 19 citations properly applied to the code?
+- Is the Modified Fitzgerald Key color coding correctly implemented per Goossens' et al. (1992)?
+- Does the prediction engine match Trnka & McCoy (2008) recommendations (3-5 slots)?
+- Are prediction positions LAMP-stable per Light & Drager (2007)?
+- Does the AI preserve authorship per Valencia et al. (CHI 2023)?
+
+### 4. Architecture
+- Is the Synalux API routing correct (tier-based model selection, offline fallback)?
+- Is the Supabase sync architecture sound (local-first, merge conflict resolution)?
+- Are there race conditions in the zustand stores?
+- Is the localStorage usage bounded (prediction data pruning)?
+- Is the hydration handled correctly (SSR → client rehydration)?
+
+### 5. Code Quality
+- TypeScript type safety — any `any` types or missing types?
+- Error handling — are all async operations wrapped?
+- Component structure — unnecessary re-renders, missing memoization?
+- Test coverage — are the 145 tests covering the right things?
+- Are there any security issues (XSS, injection, credential exposure)?
+
+### 6. AAC-Specific UX
+- Can the child use the keyboard and category panel simultaneously?
+- Is the auto-space bug fixed (words no longer concatenate without spaces)?
+- Do ordering sequences (restaurants) work as user-editable data, not hardcoded?
+- Can caregivers add/remove phrases and categories?
+- Are caregiver notes properly timestamped and attributed?
+- Does the AI Chat respect the child's communication context?
+
+### 7. Do No Harm Checklist
+- [ ] Default vocabulary cannot be deleted
+- [ ] Keyboard is always visible regardless of panel state
+- [ ] All changes require explicit confirmation
+- [ ] Undo is available for text operations
+- [ ] App works fully offline
+- [ ] No feature gates communication behind subscription
+- [ ] Clinical documentation (caregiver notes) is persisted
+- [ ] AI never auto-speaks or auto-inserts on behalf of the child
+
+Report findings as:
+- CRITICAL: Would harm the child or break communication
+- HIGH: Significant usability or safety issue
+- MEDIUM: Should fix before production
+- LOW: Nice to have
+
+Include specific file paths and line numbers for each finding.
+```
+
+---
+
+## How to Use
+
+### For a quick review (web app only):
+```
+Attach: prism-aac-web/repomix-compact.txt
+Use the prompt above
+```
+
+### For a thorough review (web app + tests):
+```
+Attach: prism-aac-web/repomix-full.txt
+Use the prompt above
+```
+
+### For a full platform review (all three repos):
+```
+Attach all three repomix-compact.txt files
+Add to prompt: "Review the integration between all three repositories,
+focusing on how AI routing, data sync, and authentication flow across
+the platform."
+```
+</file>
+
 <file path="vitest.config.ts">
 import { defineConfig } from 'vitest/config';
 import path from 'path';
@@ -1154,21 +2343,8 @@ function formatTime(ts: number): string
 {/* Show actions if any */}
 </file>
 
-<file path="components/MessageBar.tsx">
-import { useRef, useCallback } from 'react';
-import { useMessageStore } from '@/store/messageStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { speak } from '@/services/speechService';
-import { tapFeedback, deleteFeedback } from '@/services/feedback';
-import ColoredText from './ColoredText';
-⋮----
-export default function MessageBar()
-⋮----
-onClick=
-</file>
-
 <file path="components/PredictionBar.tsx">
-import { useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -1176,36 +2352,15 @@ import { speakWord } from '@/services/speechService';
 import { tapFeedback } from '@/services/feedback';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
+import { useT } from '@/engine/useT';
+⋮----
+function computeStableSlots(prev: string[], predictions: string[]): string[]
 ⋮----
 export default function PredictionBar()
-⋮----
-// LAMP principle: keep slots stable. Fill empty slots from defaults.
-⋮----
-// Stable slot assignment: only replace a slot if the prediction is genuinely new
-⋮----
-// Update existing slots if prediction still exists
-⋮----
-// Find a slot whose word is no longer in predictions
 ⋮----
 const handleTap = (word: string) =>
 ⋮----
 onClick=
-</file>
-
-<file path="components/SettingsModal.tsx">
-import { useState } from 'react';
-import { useUIStore } from '@/store/uiStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useCategoryStore } from '@/store/categoryStore';
-import { setAuthToken, hasApiKey, clearAuth } from '@/services/aiService';
-⋮----
-{/* Speech */}
-⋮----
-{/* Custom Categories */}
-⋮----
-<button onClick=
-⋮----
-{/* Resources */}
 </file>
 
 <file path="constants/mathSymbols.ts">
@@ -1288,6 +2443,18 @@ export function executeAction(action: NoteAction): ActionResult
 export function executeAllActions(actions: NoteAction[]): ActionResult[]
 </file>
 
+<file path="services/speechService.ts">
+export function isSpeechSupported(): boolean
+⋮----
+function clearResumeWorkaround()
+⋮----
+export function speak(text: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void
+⋮----
+export function speakWord(word: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void
+⋮----
+export function stopSpeech(): void
+</file>
+
 <file path="store/messageStore.ts">
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -1311,17 +2478,6 @@ interface MessageState {
   toggleSound: () => void;
   addToHistory: (text: string) => void;
   clearHistory: () => void;
-}
-</file>
-
-<file path="store/settingsStore.ts">
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-⋮----
-interface SettingsState {
-  speechRate: number;
-  speechVolume: number;
-  update: (partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume'>>) => void;
 }
 </file>
 
@@ -1406,7 +2562,7 @@ constructor(public text?: string)
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -1467,6 +2623,20 @@ const handleMathItem = (symbol: string) =>
 // CATEGORY LIST
 </file>
 
+<file path="components/MessageBar.tsx">
+import { useRef, useCallback } from 'react';
+import { useMessageStore } from '@/store/messageStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { speak } from '@/services/speechService';
+import { tapFeedback, deleteFeedback } from '@/services/feedback';
+import ColoredText from './ColoredText';
+import { useT } from '@/engine/useT';
+⋮----
+export default function MessageBar()
+⋮----
+onClick=
+</file>
+
 <file path="components/PrismApp.tsx">
 import { useEffect, useState, Component, ReactNode } from 'react';
 import Toolbar from './Toolbar';
@@ -1491,17 +2661,24 @@ render()
 export default function PrismApp()
 </file>
 
-<file path="components/Toolbar.tsx">
+<file path="components/SettingsModal.tsx">
+import { useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
-import { useMessageStore } from '@/store/messageStore';
-import { useSyncStatus } from './SyncProvider';
-import { tapFeedback } from '@/services/feedback';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useCategoryStore } from '@/store/categoryStore';
+import { setAuthToken, hasApiKey, clearAuth } from '@/services/aiService';
+import { LANG_META, SupportedLanguage } from '@/engine/i18n';
+import { useT } from '@/engine/useT';
 ⋮----
-export default function Toolbar()
+{/* Language */}
 ⋮----
-const tap = (fn: () => void) => () =>
+{/* Speech */}
 ⋮----
-<button className=
+{/* Custom Categories */}
+⋮----
+<button onClick=
+⋮----
+{/* Resources */}
 </file>
 
 <file path="constants/orderingSequences.ts">
@@ -1564,6 +2741,19 @@ interface CategoryState {
   removeOrderingSequence: (id: string) => void;
   updateOrderingSequence: (seq: OrderingSequenceData) => void;
   seedTemplates: () => void;
+}
+</file>
+
+<file path="store/settingsStore.ts">
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { SupportedLanguage } from '@/engine/i18n';
+⋮----
+interface SettingsState {
+  speechRate: number;
+  speechVolume: number;
+  language: SupportedLanguage;
+  update: (partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language'>>) => void;
 }
 </file>
 
@@ -1635,6 +2825,67 @@ expect(merged.hello.lastUsed).toBe(2000); // max(1000, 2000)
 expect(merged[0].name).toBe('A'); // local wins
 ⋮----
 expect(merged[0].timestamp).toBeGreaterThan(merged[merged.length - 1].timestamp); // sorted desc
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+.expo/
+ios/
+dist/
+</file>
+
+<file path="components/Toolbar.tsx">
+import { useUIStore } from '@/store/uiStore';
+import { useMessageStore } from '@/store/messageStore';
+import { useSyncStatus } from './SyncProvider';
+import { tapFeedback } from '@/services/feedback';
+import { useT } from '@/engine/useT';
+⋮----
+export default function Toolbar()
+⋮----
+const tap = (fn: () => void) => () =>
+⋮----
+<button className=
 </file>
 
 <file path="types/index.ts">

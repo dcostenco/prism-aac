@@ -20,7 +20,8 @@ export default function Keyboard() {
     keyFeedback();
     const char = keyboardMode === 'letters' ? (isUpperCase ? key : key.toLowerCase()) : key;
     appendChar(char);
-  }, [appendChar, isUpperCase, keyboardMode]);
+    if (isUpperCase && keyboardMode === 'letters') toggleCase();
+  }, [appendChar, isUpperCase, keyboardMode, toggleCase]);
 
   const handleSpace = useCallback(() => {
     keyFeedback();

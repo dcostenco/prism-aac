@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -7,41 +7,44 @@ import { speakWord } from '@/services/speechService';
 import { tapFeedback } from '@/services/feedback';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
+import { useT } from '@/engine/useT';
+
+function computeStableSlots(prev: string[], predictions: string[]): string[] {
+  const next = [...prev];
+  const used = new Set(next.map(s => s.toLowerCase()));
+  for (let i = 0; i < 5; i++) {
+    const pred = predictions[i];
+    if (pred && !used.has(pred.toLowerCase())) {
+      const deadSlot = next.findIndex(
+        (s) => !predictions.some((p) => p.toLowerCase() === s.toLowerCase())
+      );
+      if (deadSlot >= 0) {
+        used.delete(next[deadSlot].toLowerCase());
+        next[deadSlot] = pred;
+        used.add(pred.toLowerCase());
+      }
+    }
+  }
+  return next;
+}
 
 export default function PredictionBar() {
   const { text, appendWord, autoSpeak, soundEnabled } = useMessageStore();
   const { predictions, updatePredictions, learnWord } = usePredictionStore();
   const { speechRate, speechVolume } = useSettingsStore();
-  // LAMP principle: keep slots stable. Fill empty slots from defaults.
-  const slotsRef = useRef<string[]>(DEFAULT_PREDICTIONS);
+  const { ttsCode } = useT();
+  const [displayed, setDisplayed] = useState<string[]>(DEFAULT_PREDICTIONS);
+  const prevRef = useRef<string[]>(DEFAULT_PREDICTIONS);
 
   useEffect(() => {
     updatePredictions(text);
   }, [text, updatePredictions]);
 
-  // Stable slot assignment: only replace a slot if the prediction is genuinely new
   useEffect(() => {
-    const next = [...slotsRef.current];
-    const used = new Set(next.map(s => s.toLowerCase()));
-    // Update existing slots if prediction still exists
-    for (let i = 0; i < 5; i++) {
-      const pred = predictions[i];
-      if (pred && !used.has(pred.toLowerCase())) {
-        // Find a slot whose word is no longer in predictions
-        const deadSlot = next.findIndex(
-          (s) => !predictions.some((p) => p.toLowerCase() === s.toLowerCase())
-        );
-        if (deadSlot >= 0) {
-          used.delete(next[deadSlot].toLowerCase());
-          next[deadSlot] = pred;
-          used.add(pred.toLowerCase());
-        }
-      }
-    }
-    slotsRef.current = next;
+    const next = computeStableSlots(prevRef.current, predictions);
+    prevRef.current = next;
+    setDisplayed(next);
   }, [predictions]);
-
-  const displayed = slotsRef.current;
 
   const handleTap = (word: string) => {
     tapFeedback();
@@ -49,7 +52,7 @@ export default function PredictionBar() {
     const previousWord = words.length > 0 ? words[words.length - 1] : undefined;
     appendWord(word);
     learnWord(word.toLowerCase(), previousWord?.toLowerCase());
-    if (autoSpeak && soundEnabled) speakWord(word, speechRate, speechVolume);
+    if (autoSpeak && soundEnabled) speakWord(word, speechRate, speechVolume, ttsCode);
   };
 
   return (
