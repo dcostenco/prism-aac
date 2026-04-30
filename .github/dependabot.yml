@@ -1,0 +1,32 @@
+version: 2
+
+# Dependabot watches our dependency manifests and opens PRs when a newer
+# version is published. The PR still has to pass branch-protection
+# (review + status checks) before it can be merged, so this is safe.
+
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 10
+    labels: ["dependencies", "automated"]
+    groups:
+      next:
+        patterns: ["next", "@next/*", "react", "react-dom"]
+      testing:
+        patterns: ["vitest", "@vitest/*", "@playwright/*", "@testing-library/*"]
+      types:
+        patterns: ["@types/*"]
+      security:
+        update-types: ["security"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "github-actions", "automated"]

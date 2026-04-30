@@ -1,0 +1,8 @@
+# Adds the "Sponsor" button on the public repo page. The Synalux paid
+# subscription IS the primary sustainability mechanism, but exposing
+# additional sponsorship channels lets foundations and individuals
+# contribute directly to the AAC project's open-source layer.
+
+custom:
+  - https://synalux.ai/pricing
+  - https://synalux.ai/donate

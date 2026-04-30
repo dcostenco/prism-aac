@@ -1,0 +1,76 @@
+name: 🐛 Bug report
+description: Something is broken or behaves unexpectedly
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. **If this involves
+        the Alert button, emergencyService, or anything safety-critical,
+        also email security@synalux.ai** so we can route it directly to
+        the on-call clinician — public issues are not appropriate for
+        active-emergency reports.
+
+  - type: input
+    id: url
+    attributes:
+      label: Where did you see it?
+      placeholder: e.g. https://synalux.ai/prism-aac on iPhone 14 Safari
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered list, one step per line.
+      placeholder: |
+        1. Open the app
+        2. Tap "G" then "O" then "O"
+        3. Look at the prediction tiles
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened
+    validations:
+      required: true
+
+  - type: dropdown
+    id: viewport
+    attributes:
+      label: Device / viewport class
+      options:
+        - Desktop (Chrome / Firefox / Safari)
+        - iPhone 6.1" (e.g. iPhone 14, 15, 16)
+        - iPhone 6.5" (Plus models)
+        - iPhone 6.9" (Pro Max models)
+        - iPad 7"-class (Mini / 8.3")
+        - iPad 12.9"–13"-class (Pro)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: orientation
+    attributes:
+      label: Orientation
+      options:
+        - Portrait
+        - Landscape
+        - Both / either
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Console errors, screenshots, accessibility tools active, etc.

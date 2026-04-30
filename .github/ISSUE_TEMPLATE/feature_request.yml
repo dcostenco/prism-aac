@@ -1,0 +1,51 @@
+name: ✨ Feature request
+description: Propose a new capability or UX improvement
+labels: [enhancement, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Prism AAC is built for users with motor impairments and complex
+        communication needs. Feature requests are evaluated against the
+        clinical evidence base in `RESEARCH.md` and the safety
+        commitments in `README.md`. Requests that would reduce
+        accessibility, restrict communication, or create a single point
+        of failure for emergency communication are out of scope.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What user problem does this solve?
+      placeholder: Describe the user (population, motor profile, context)
+        and the friction they hit today.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Which subscription tier should this ship in?
+      options:
+        - Free (core AAC must keep working without an account)
+        - Standard
+        - Advanced
+        - Enterprise
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Clinical / research grounding (if any)
+      description: Citations, links, or relevant guidelines (ASHA, BACB,
+        AAC research, WCAG).

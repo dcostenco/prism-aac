@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🚑 Safety / emergency-related issue
+    url: mailto:security@synalux.ai
+    about: |
+      If a bug puts a user at risk (Alert button, emergencyService,
+      crisis communication, accessibility regression on a primary motor
+      pathway), email us directly so we can triage privately.
+  - name: 💬 Community discussion
+    url: https://github.com/dcostenco/prism-aac/discussions
+    about: Questions, ideas, deployment help, AAC clinical practice
+  - name: 🌐 Synalux platform
+    url: https://synalux.ai/prism-aac
+    about: Product page, free + paid subscription tiers, contact sales

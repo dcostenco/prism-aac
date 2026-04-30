@@ -1,0 +1,13 @@
+# Default reviewer for everything in the repo. When combined with the
+# `Require review from Code Owners` branch-protection rule (set in the
+# GitHub UI / via admin API), every PR will need an explicit approval
+# from the listed owner before it can be merged.
+
+* @dcostenco
+
+# Sensitive areas — same owner today; expand the list as the team grows.
+/services/emergencyService.ts @dcostenco
+/services/azureTTS.ts          @dcostenco
+/services/syncService.ts       @dcostenco
+/.github/                      @dcostenco
+/LICENSE                       @dcostenco
