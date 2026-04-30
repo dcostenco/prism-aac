@@ -52,7 +52,14 @@ export default function PredictionBar() {
     const previousWord = words.length > 0 ? words[words.length - 1] : undefined;
     appendWord(word);
     learnWord(word.toLowerCase(), previousWord?.toLowerCase());
-    if (autoSpeak && soundEnabled) speakWord(word, speechRate, speechVolume, ttsCode);
+    // Auto-speak the cumulative phrase, not just the tapped tile. User-
+    // reported bug: tapping "Can" after "we" pronounced only "can". Now
+    // the latest utterance interrupts the previous (speakLocal cancels
+    // first) and reads the whole message in context.
+    if (autoSpeak && soundEnabled) {
+      const fullText = (text.trim() ? text.trim() + ' ' : '') + word;
+      speakWord(fullText, speechRate, speechVolume, ttsCode);
+    }
   };
 
   return (

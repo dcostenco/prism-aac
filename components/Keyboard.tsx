@@ -33,7 +33,11 @@ export default function Keyboard() {
     if (lastWord) {
       const prevWord = words.length > 1 ? words[words.length - 2] : undefined;
       learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase());
-      if (autoSpeak && soundEnabled) speakWord(lastWord, speechRate, speechVolume);
+      // Auto-speak the cumulative phrase (not just the last word) so the
+      // user hears "we can help" instead of fragmented "we" → "can" → "help".
+      // speakLocal() cancels any in-flight utterance, so each space
+      // restarts speech with the latest accumulated text.
+      if (autoSpeak && soundEnabled) speakWord(currentText.trim(), speechRate, speechVolume);
     }
     appendChar(' ');
   }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar]);
