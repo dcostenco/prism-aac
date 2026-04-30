@@ -481,7 +481,7 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   const script = buildEmergencyScript(alert.phrase, config, alert.location);
 
   // Speak the emergency message on device speaker IMMEDIATELY regardless of call status
-  speakEmergencyOnSpeaker(script);
+  speakEmergencyOnSpeaker(script, config.language || 'en');
 
   const recentHistory = getRecentHistory(20);
   const historyText = formatHistoryForAI(recentHistory);
@@ -574,7 +574,10 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   // ── LEVEL 5: Native phone call + speaker TTS ──
   // Works on any device with cellular. Speaker TTS means 911 hears the message.
   if (config.autoCall911) {
-    const emergencyNum = alert.geo?.emergencyNumber
+    // Resolve emergency number from device geolocation when available; fall
+    // back to the configured profile country, then to the international 112.
+    const geo = await getLocationAndCountry();
+    const emergencyNum = geo.emergencyNumber
       || EMERGENCY_NUMBERS[config.profile.country?.toUpperCase() || 'US']
       || '112';
     window.open(`tel:${emergencyNum}`, '_self');
@@ -603,7 +606,7 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
  */
 let speakerRepeatInterval: ReturnType<typeof setInterval> | null = null;
 
-function speakEmergencyOnSpeaker(script: string): void {
+function speakEmergencyOnSpeaker(script: string, language: string = 'en'): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
   const speak = () => {
@@ -617,7 +620,7 @@ function speakEmergencyOnSpeaker(script: string): void {
       uk: 'uk-UA', ru: 'ru-RU', de: 'de-DE', ja: 'ja-JP', ko: 'ko-KR',
       zh: 'zh-CN', ar: 'ar-SA',
     };
-    u.lang = LANG_MAP[config.language || 'en'] || 'en-US';
+    u.lang = LANG_MAP[language] || 'en-US';
     window.speechSynthesis.speak(u);
   };
 
