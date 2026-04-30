@@ -4,6 +4,27 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 
 **Part of the Synalux platform** — [synalux.ai](https://synalux.ai)
 
+**Supported languages:** English (active) | Spanish, French, Portuguese, Romanian, Ukrainian, Russian, German, Japanese, Korean, Chinese, Arabic (planned — language switcher in progress)
+
+---
+
+## Screenshots
+
+### Home — Keyboard with predictions
+![Home screen](docs/screenshots/home.png)
+
+### Categories + keyboard simultaneously
+![Categories open](docs/screenshots/categories-open.png)
+
+### Food ordering with restaurant flows
+![Food ordering](docs/screenshots/food-ordering.png)
+
+### Math keyboard
+![Math panel](docs/screenshots/math-panel.png)
+
+### Settings — voice, custom categories, Synalux account
+![Settings](docs/screenshots/settings.png)
+
 ---
 
 ## For BCBA / RBT / SLP Staff
@@ -61,9 +82,20 @@ Restaurant ordering flows (Chipotle, General Restaurant) are provided as starter
 
 ---
 
-## Subscription Tiers
+## Subscription & AI Routing
 
-PrismAAC is available through the Synalux platform with tiered access:
+All AI features require a **Synalux subscription**. Core AAC (keyboard, categories, predictions) works without any account. AI routes through `synalux.ai/api/v1/chat` — same backend as the Synalux portal.
+
+### AI Model Routing (server-side)
+
+| Tier | Default Model | Fallback | Offline |
+|------|--------------|----------|---------|
+| Free | Gemini 2.5 Flash | — | prism-coder:7b |
+| Standard | Claude Sonnet 4 | Gemini 2.5 Flash | prism-coder:7b |
+| Advanced | Claude Sonnet 4 | Gemini 2.5 Flash | prism-coder:7b |
+| Enterprise | Claude Opus 4 | Gemini 2.5 Flash | prism-coder:7b |
+
+### Feature Tiers
 
 | Feature | Free | Standard | Advanced | Enterprise |
 |---------|------|----------|----------|------------|
@@ -77,17 +109,14 @@ PrismAAC is available through the Synalux platform with tiered access:
 | Caregiver notes | 20 notes | Unlimited | Unlimited | Unlimited |
 | Cross-device sync (Hivemind) | — | Yes | Yes | Yes |
 | Message history | 10 entries | 100 | Unlimited | Unlimited |
-| AI Chat (Phase 2) | — | — | Yes | Yes |
+| AI Chat + web search | — | Yes | Yes | Yes |
+| Synalux modules | — | Yes | Yes | All |
 | Voice input (Phase 3) | — | — | Yes | Yes |
-| Azure Neural TTS (tone styles) | — | Standard | Advanced | All voices |
+| Azure Neural TTS | — | Standard | Advanced | All voices |
 | Multi-language (12 languages) | 1 | 3 | 12 | 12 |
 | Cloud backup | — | Yes | Yes | Yes |
-| Priority support | — | — | Email | Dedicated |
-| SLA | — | — | — | 99.9% uptime |
-| Custom branding | — | — | — | Yes |
-| On-premise deployment | — | — | — | Available |
 
-**Enterprise** tier is included with Synalux Enterprise subscriptions. All other tiers (Free, Standard, Advanced) require a separate PrismAAC subscription, consistent with v1.0 pricing.
+**Enterprise** tier is included with Synalux Enterprise subscriptions. All other tiers require a separate PrismAAC subscription.
 
 ---
 
@@ -99,7 +128,7 @@ PrismAAC is available through the Synalux platform with tiered access:
 - **State:** zustand 5 with localStorage persistence
 - **Speech:** Web Speech API (TTS)
 - **Sync:** Supabase (same project as Synalux portal) with realtime subscriptions
-- **Tests:** Vitest — 102+ tests across 7 files
+- **Tests:** Vitest — 147 tests across 9 files
 
 ### Key Design Decisions (with evidence)
 
@@ -118,14 +147,14 @@ PrismAAC is available through the Synalux platform with tiered access:
 ### Project Structure
 
 ```
-prism-aac-web/
+prism-aac/
   app/               Next.js App Router (single page)
-  components/        React components (14 files)
+  components/        React components (15 files)
   constants/         Default data — categories, phrases, math, keyboard layouts
-  engine/            Prediction engine + caregiver action execution
-  services/          Speech API, haptic feedback, Supabase sync
-  store/             zustand stores (6 files) with persistence
-  tests/             Vitest test suite (7+ files, 102+ tests)
+  engine/            Prediction engine, caregiver actions, color coding
+  services/          AI routing, speech, haptic feedback, Supabase sync
+  store/             zustand stores (7 files) with persistence
+  tests/             Vitest test suite (9 files, 147 tests)
   supabase/          Database migrations
   types/             TypeScript interfaces
   RESEARCH.md        Full evidence base with 19 citations
