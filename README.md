@@ -107,20 +107,32 @@ All AI features require a **Synalux subscription**. Core AAC (keyboard, categori
 |---------|------|----------|----------|------------|
 | Core AAC keyboard + categories | Yes | Yes | Yes | Yes |
 | 58 default phrases | Yes | Yes | Yes | Yes |
-| Word prediction (5 slots) | Yes | Yes | Yes | Yes |
-| Custom phrases | 50 max | 500 | Unlimited | Unlimited |
-| Custom categories | — | 20 | Unlimited | Unlimited |
-| Ordering sequences (restaurants) | 2 | 10 | Unlimited | Unlimited |
-| Math keyboard | Basic | Full | Full | Full |
-| Caregiver notes | 20 notes | Unlimited | Unlimited | Unlimited |
+| Word prediction (5 slots, seeded vocab) | Yes | Yes | Yes | Yes |
+| Cumulative auto-speak | Yes | Yes | Yes | Yes |
+| Math keyboard | Yes | Yes | Yes | Yes |
+| Caregiver notes (local) | Yes | Yes | Yes | Yes |
+| Bundled restaurant ordering flows (Chipotle, General) | Yes | Yes | Yes | Yes |
+| Multi-language UI (12 languages, RTL) — *never tier-gated* | Yes | Yes | Yes | Yes |
+| Custom phrases / categories (local) | Yes | Yes | Yes | Yes |
 | Cross-device sync (Hivemind) | — | Yes | Yes | Yes |
-| Message history | 10 entries | 100 | Unlimited | Unlimited |
-| AI Chat + web search | — | Yes | Yes | Yes |
-| Synalux modules | — | Yes | Yes | All |
-| Voice input (Phase 3) | — | — | Yes | Yes |
-| Azure Neural TTS | — | Standard | Advanced | All voices |
-| Multi-language (12 languages) | 1 | 3 | 12 | 12 |
+| AI Chat | — | Yes | Yes | Yes |
+| Azure Neural TTS — basic neural voices | — | Yes | Yes | Yes |
+| Azure Neural TTS — premium / emotional tones | — | — | Yes | Yes |
+| Synalux platform modules | — | — | — | Yes |
 | Cloud backup | — | Yes | Yes | Yes |
+
+> **Tier gating note (current state):** the client today distinguishes only "signed in vs not signed in" (`isPaid` is a boolean derived from the auth token). Standard / Advanced / Enterprise differentiation runs **server-side** in the synalux portal — model routing, quota, and module access are decided there. Per-tier client-side limits on the number of custom phrases, categories, ordering sequences, etc. are not enforced today; we removed the previously-listed quotas so the table doesn't promise behaviour the client doesn't implement.
+
+> **Roadmap (not in the table above):**
+> - **Voice input (Phase 3)** — continuous microphone-to-text. Will ship at Standard+ when it lands, paired with the existing TTS so audio in/out are bundled at the same price point. No `MediaRecorder` / `SpeechRecognition` exists in the codebase yet.
+> - **Web search inside AI Chat** — planned for Standard+. Not implemented today.
+> - **Add-your-own ordering sequence UI** — planned for Standard+. Today only the two bundled sequences (Chipotle, General Restaurant) are usable.
+
+### Accessibility commitments that ride above the tier table
+
+- **All 12 languages + RTL are available at every tier, including Free.** A disabled child's access to communication in their native language is not a paid feature. Translations are static JSON bundled with the build, so there is zero ongoing cost for us to keep this universal — and gating it would contradict ASHA Practice Portal guidance on never restricting communication access.
+- **Core AAC keyboard, prediction, and Speak button always work without a network connection or an account.** Cloud features are additive on top of a fully self-contained free tier.
+- **The Alert / emergency flow works for every tier.** A child's safety does not depend on payment status (see `services/emergencyService.ts`).
 
 **Enterprise** tier is included with Synalux Enterprise subscriptions. All other tiers require a separate PrismAAC subscription.
 
@@ -153,7 +165,7 @@ Themes apply via CSS custom properties on the root container — no per-componen
 - **Sync:** Supabase (same project as Synalux portal) with realtime subscriptions
 - **Layout:** Modal-overlay UX — Categories, Notes, and AI Chat render as full-screen modals above the keyboard so the keyboard layout never shifts
 - **Theme:** Light (default) / Dark, plus High Contrast — driven by CSS variables; persisted in `settingsStore`
-- **Tests:** Vitest — 162 tests across 10 files
+- **Tests:** Vitest unit/integration — **187 tests across 13 files**. Plus Playwright e2e (`e2e/core-flows.spec.ts`) running against the live deploy across 11 viewport projects (desktop, iPhone 6.1/6.5/6.9 ± landscape, iPad 7"/13" ± landscape).
 
 ### Key Design Decisions (with evidence)
 
@@ -180,7 +192,10 @@ prism-aac/
   i18n/              12 locale JSONs (en, es, fr, pt, ro, uk, ru, de, ja, ko, zh, ar)
   services/          AI routing, speech (Web Speech + Azure Neural TTS), haptic feedback, Supabase sync
   store/             zustand stores (6 files) with persistence
-  tests/             Vitest test suite (10 files, 162 tests)
+  tests/             Vitest test suite (13 files, 187 tests)
+  e2e/               Playwright end-to-end tests against the deployed app
+                     (11 viewport projects — desktop + iPhone + iPad,
+                     portrait + landscape)
   supabase/          Database migrations
   types/             TypeScript interfaces
   RESEARCH.md        Full evidence base with 20 citations
@@ -192,7 +207,9 @@ prism-aac/
 ```bash
 npm install
 npm run dev       # http://localhost:3000
-npm run test      # 162 tests across 10 files
+npm run test      # 187 unit/integration tests across 13 files
+npm run e2e       # full Playwright matrix against the deployed app
+                  # (override BASE_URL=http://localhost:3000 to point at dev)
 npm run build     # production build
 ```
 
