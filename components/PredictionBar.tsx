@@ -3,8 +3,10 @@ import { useEffect, useState, useRef } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 import { speakWord } from '@/services/speechService';
 import { tapFeedback } from '@/services/feedback';
+import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
@@ -26,6 +28,41 @@ function computeStableSlots(prev: string[], predictions: string[]): string[] {
     }
   }
   return next;
+}
+
+function PredictionTile({ word, color, onTap }: { word: string; color: string; onTap: (w: string) => void }) {
+  const language = useSettingsStore((s) => s.language);
+  const profile = useAuthStore((s) => s.profile);
+  const pictureMode = pictureModeForProfile(profile);
+  const [iconUrl, setIconUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPictogramUrl(word, language, pictureMode).then((url) => {
+      if (!cancelled) setIconUrl(url);
+    });
+    return () => { cancelled = true; };
+  }, [word, language, pictureMode]);
+
+  return (
+    <button
+      onClick={() => onTap(word)}
+      aria-label={`Predict: ${word}`}
+      className="aac-btn flex-1 surface-key rounded-2xl flex flex-col items-center justify-center gap-1 text-xl md:text-2xl font-semibold select-none truncate px-3 py-2 border-l-[6px] border border-theme"
+      style={{ borderLeftColor: color, color }}
+    >
+      {iconUrl && (
+        <img
+          src={iconUrl}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          className="w-10 h-10 md:w-14 md:h-14 object-contain"
+        />
+      )}
+      <span className="truncate w-full text-center">{word}</span>
+    </button>
+  );
 }
 
 export default function PredictionBar() {
@@ -63,20 +100,10 @@ export default function PredictionBar() {
   };
 
   return (
-    <div className="flex items-stretch gap-3 px-3 py-2 shrink-0 min-h-[88px] md:min-h-[112px]">
+    <div className="flex items-stretch gap-3 px-3 py-2 shrink-0 min-h-[88px] md:min-h-[140px]">
       {displayed.map((word, i) => {
         const color = CATEGORY_COLORS[classifyWord(word)];
-        return (
-          <button
-            key={`slot-${i}`}
-            onClick={() => handleTap(word)}
-            aria-label={`Predict: ${word}`}
-            className="aac-btn flex-1 surface-key rounded-2xl flex items-center justify-center text-xl md:text-2xl font-semibold select-none truncate px-3 border-l-[6px] border border-theme"
-            style={{ borderLeftColor: color, color }}
-          >
-            {word}
-          </button>
-        );
+        return <PredictionTile key={`slot-${i}`} word={word} color={color} onTap={handleTap} />;
       })}
     </div>
   );
