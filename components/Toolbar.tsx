@@ -60,19 +60,19 @@ export default function Toolbar() {
   // typographic system. Larger labels also help motor-impaired users —
   // bigger hit targets, easier glance-readability.
   const btn =
-    'aac-btn h-16 px-5 rounded-xl surface-key text-primary font-bold text-xl md:text-2xl select-none border border-theme';
+    'aac-btn h-11 landscape:h-10 sm:h-14 md:h-16 px-3 sm:px-5 rounded-xl surface-key text-primary font-bold text-sm sm:text-xl md:text-2xl select-none border border-theme shrink-0';
 
   const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
 
   return (
-    <div className="flex items-center justify-between px-3 py-2 surface-bar shrink-0 border-b border-theme">
+    <div className="flex items-center justify-between gap-2 px-2 sm:px-3 py-1 sm:py-2 surface-bar shrink-0 border-b border-theme overflow-x-auto">
       <div className="flex gap-2">
         <button className={btn} onClick={tap(openCategories)} aria-label={t('categories')}>📂 {t('categories')}</button>
         <button className={btn} onClick={tap(openMath)} aria-label={t('math')}>🔢 {t('math')}</button>
         <button className={btn} onClick={tap(openAIChat)} aria-label={t('ai_chat')}>✨ {t('ai_chat')}</button>
         {voiceSupported && (
           <button
-            className={`aac-btn h-16 px-5 rounded-xl font-bold text-xl md:text-2xl select-none border border-theme ${
+            className={`aac-btn h-11 landscape:h-10 sm:h-14 md:h-16 px-3 sm:px-5 rounded-xl font-bold text-sm sm:text-xl md:text-2xl select-none border border-theme shrink-0 ${
               listening ? 'bg-[#F44336] text-white border-transparent animate-pulse' : 'surface-key text-primary'
             }`}
             onClick={toggleMic}
@@ -91,7 +91,7 @@ export default function Toolbar() {
         <button className={btn} onClick={tap(toggleHistory)} aria-label={t('history')}>📜 {t('history')}</button>
         <button className={btn} onClick={tap(toggleSettings)} aria-label={t('settings')}>⚙️</button>
         <button
-          className={`aac-btn h-16 px-5 rounded-xl font-bold text-xl md:text-2xl select-none border border-theme ${
+          className={`aac-btn h-11 landscape:h-10 sm:h-14 md:h-16 px-3 sm:px-5 rounded-xl font-bold text-sm sm:text-xl md:text-2xl select-none border border-theme shrink-0 ${
             soundEnabled ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
           }`}
           onClick={tap(toggleSound)}

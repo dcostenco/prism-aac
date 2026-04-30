@@ -86,17 +86,17 @@ export default function MessageBar() {
   const currentTone = TONE_OPTIONS.find(opt => opt.id === activeTone);
 
   return (
-    <div className="flex items-center gap-2 mx-3 my-1.5 surface-bar rounded-2xl px-4 py-3 min-h-[68px] shrink-0 relative border border-theme">
+    <div className="flex items-center gap-1.5 sm:gap-2 mx-2 sm:mx-3 my-1 sm:my-1.5 surface-bar rounded-2xl px-2 sm:px-4 py-1.5 sm:py-3 min-h-[52px] landscape:min-h-[48px] sm:min-h-[68px] shrink-0 relative border border-theme">
       <button
         onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
         aria-label={autoSpeak ? t('auto_speak_on') : t('auto_speak_off')}
         aria-pressed={autoSpeak}
-        className={`aac-btn w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 border border-theme ${
+        className={`aac-btn w-10 h-10 sm:w-14 sm:h-14 rounded-xl flex flex-col items-center justify-center shrink-0 border border-theme ${
           autoSpeak ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-muted'
         }`}
       >
-        <span className="text-lg">{autoSpeak ? '🔊' : '🔈'}</span>
-        <span className="text-[9px] mt-0.5">Auto</span>
+        <span className="text-sm sm:text-lg leading-none">{autoSpeak ? '🔊' : '🔈'}</span>
+        <span className="hidden sm:block text-[9px] mt-0.5">Auto</span>
       </button>
 
       {/* Tone selector — paid tiers only */}
@@ -104,15 +104,15 @@ export default function MessageBar() {
         <button
           onClick={() => { tapFeedback(); setShowTones(!showTones); }}
           aria-label={`Tone: ${currentTone?.label}`}
-          className="aac-btn w-14 h-14 rounded-xl surface-key text-primary flex flex-col items-center justify-center shrink-0 border border-theme"
+          className="aac-btn w-10 h-10 sm:w-14 sm:h-14 rounded-xl surface-key text-primary flex flex-col items-center justify-center shrink-0 border border-theme"
         >
-          <span className="text-lg">{currentTone?.icon ?? '😊'}</span>
-          <span className="text-[9px] mt-0.5 text-muted">{t('tone')}</span>
+          <span className="text-sm sm:text-lg leading-none">{currentTone?.icon ?? '😊'}</span>
+          <span className="hidden sm:block text-[9px] mt-0.5 text-muted">{t('tone')}</span>
         </button>
       )}
 
-      <div className="flex-1 min-h-[48px] flex flex-col justify-center overflow-hidden">
-        <div className="text-2xl flex items-center break-words text-primary truncate" role="status" aria-live="polite" aria-label="Message text">
+      <div className="flex-1 min-w-0 min-h-[40px] sm:min-h-[48px] flex flex-col justify-center overflow-hidden">
+        <div className="text-base sm:text-2xl flex items-center break-words text-primary truncate" role="status" aria-live="polite" aria-label="Message text">
           {text ? <ColoredText text={text} /> : <span className="text-dim">{t('type_here')}</span>}
         </div>
         {suggestion && (
@@ -120,20 +120,20 @@ export default function MessageBar() {
             onClick={acceptSuggestion}
             aria-label={`Auto-correct to ${suggestion}`}
             data-testid="autocorrect-suggestion"
-            className="text-left text-base md:text-lg text-[#4CAF50] truncate hover:underline mt-1"
+            className="text-left text-xs sm:text-base md:text-lg text-[#4CAF50] truncate hover:underline mt-0.5 sm:mt-1"
           >
-            ✨ Did you mean: <span className="font-semibold">{suggestion}</span> <span className="text-dim text-sm">— tap or press ▶</span>
+            ✨ <span className="font-semibold">{suggestion}</span> <span className="hidden sm:inline text-dim text-sm">— tap or press ▶</span>
           </button>
         )}
       </div>
 
-      <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-14 h-14 rounded-xl surface-key text-muted text-lg flex items-center justify-center shrink-0 border border-theme">↩</button>
+      <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-10 h-10 sm:w-14 sm:h-14 rounded-xl surface-key text-muted text-base sm:text-lg flex items-center justify-center shrink-0 border border-theme">↩</button>
 
-      <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-16 h-16 rounded-xl bg-[#4CAF50] text-white text-2xl flex items-center justify-center shrink-0">▶</button>
+      <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-[#4CAF50] text-white text-lg sm:text-2xl flex items-center justify-center shrink-0">▶</button>
 
       <button
         onPointerDown={handleDeleteDown} onPointerUp={handleDeleteUp} onPointerLeave={cancelDelete} onPointerCancel={cancelDelete}
-        aria-label={t('delete')} className="aac-btn aac-delete w-16 h-16 rounded-xl bg-[#F44336] text-white text-2xl flex items-center justify-center shrink-0 select-none"
+        aria-label={t('delete')} className="aac-btn aac-delete w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-[#F44336] text-white text-lg sm:text-2xl flex items-center justify-center shrink-0 select-none"
       >⌫</button>
 
       {/* Tone picker popup */}

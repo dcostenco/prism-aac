@@ -48,7 +48,7 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
     <button
       onClick={() => onTap(word)}
       aria-label={`Predict: ${word}`}
-      className="aac-btn flex-1 surface-key rounded-2xl flex flex-col items-center justify-center gap-1 text-xl md:text-2xl font-semibold select-none truncate px-3 py-2 border-l-[6px] border border-theme"
+      className="aac-btn flex-1 min-w-0 surface-key rounded-2xl flex flex-col items-center justify-center gap-1 text-sm sm:text-xl md:text-2xl font-semibold select-none px-1 sm:px-3 py-1.5 sm:py-2 border-l-[6px] border border-theme"
       style={{ borderLeftColor: color, color }}
     >
       {iconUrl && (
@@ -57,10 +57,10 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
           alt=""
           aria-hidden
           loading="lazy"
-          className="w-10 h-10 md:w-14 md:h-14 object-contain"
+          className="w-7 h-7 sm:w-10 sm:h-10 md:w-14 md:h-14 object-contain"
         />
       )}
-      <span className="truncate w-full text-center">{word}</span>
+      <span className="block w-full text-center break-words leading-tight">{word}</span>
     </button>
   );
 }
@@ -100,7 +100,7 @@ export default function PredictionBar() {
   };
 
   return (
-    <div className="flex items-stretch gap-3 px-3 py-2 shrink-0 min-h-[88px] md:min-h-[140px]">
+    <div className="flex items-stretch gap-1.5 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 shrink-0 min-h-[72px] landscape:min-h-[56px] md:min-h-[140px]">
       {displayed.map((word, i) => {
         const color = CATEGORY_COLORS[classifyWord(word)];
         return <PredictionTile key={`slot-${i}`} word={word} color={color} onTap={handleTap} />;
