@@ -56,115 +56,108 @@ export default function CaregiverPanel() {
     setResults(null);
   };
 
-  const btn = 'aac-btn surface-key text-primary rounded-xl p-3 font-medium select-none text-center border border-theme';
+  const btn = 'aac-btn surface-key text-primary rounded-xl p-3 font-bold text-xl md:text-2xl select-none text-center border border-theme';
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="modal-backdrop fixed inset-0 z-40 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-6"
-      onClick={() => { tapFeedback(); closeSidePanel(); }}
+    <section
+      aria-label="Caregiver Notes"
+      className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme"
     >
-      <div
-        className="surface-bar w-full md:max-w-2xl rounded-t-2xl md:rounded-2xl flex flex-col max-h-[90svh] md:max-h-[80svh] border border-theme overflow-hidden shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-theme">
-          <span className="text-primary font-semibold text-base">Caregiver Notes</span>
-          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">✕</button>
-        </div>
-
-        <div className="flex border-b border-theme">
-          <button onClick={() => setTab('add')} className={`flex-1 py-3 text-sm font-semibold ${tab === 'add' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-muted'}`}>
-            + Add Note
-          </button>
-          <button onClick={() => setTab('log')} className={`flex-1 py-3 text-sm font-semibold ${tab === 'log' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-muted'}`}>
-            Log ({notes.length})
-          </button>
-        </div>
-
-        {tab === 'add' ? (
-          <div className="flex-1 flex flex-col p-4 gap-3 overflow-y-auto">
-            <div>
-              <label className="text-muted text-xs font-semibold block mb-1">Your name</label>
-              <input
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-                placeholder="BCBA / Therapist / Parent"
-                className="w-full surface-key rounded-lg px-3 py-2 text-primary text-sm border border-theme"
-              />
-            </div>
-
-            <div className="flex-1">
-              <label className="text-muted text-xs font-semibold block mb-1">Note or instruction</label>
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={"Examples:\n• Move bathroom to top of Help\n• Add McDonald's ordering flow\n• He used 'because' 5 times today\n• Good session, 15 phrases independently"}
-                className="w-full h-32 surface-key rounded-lg px-3 py-2 text-primary text-sm resize-none border border-theme"
-              />
-            </div>
-
-            <button onClick={handleSubmitNote} disabled={!input.trim() || parsing} className={`${btn} ${input.trim() && !parsing ? 'bg-[#4CAF50] text-white border-transparent' : 'opacity-40'}`}>
-              {parsing ? 'Parsing...' : aiEnabled ? 'Save & Parse' : 'Save Note'}
-            </button>
-
-            {results && (
-              <div className="space-y-1">
-                {results.map((r, i) => (
-                  <div key={i} className={`text-xs px-2 py-1 rounded ${r.success ? 'text-[#2e7d32] bg-[#d4edda]' : 'text-[#c62828] bg-[#fdecea]'}`}>
-                    {r.success ? '✓' : '✕'} {r.message}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="text-dim text-xs leading-relaxed">
-              {aiEnabled
-                ? 'AI will parse your instructions and suggest actions. You confirm before anything changes.'
-                : 'Sign in via Settings to enable AI-powered note parsing.'}
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1 overflow-y-auto p-3">
-            {notes.length === 0 ? (
-              <p className="text-muted text-center py-8 text-sm">No notes yet</p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {notes.map((note) => (
-                  <div key={note.id} className="surface-key rounded-xl p-3 border border-theme">
-                    <p className="text-primary text-sm">{note.text}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="text-dim text-xs">
-                        {note.authorName && <span className="text-muted">{note.authorName} · </span>}
-                        {formatTime(note.timestamp, lang)}
-                      </div>
-                      <div className="flex gap-1">
-                        {note.actions.some((a) => a.type !== 'note_only') && !note.applied && (
-                          <button onClick={() => handleApplyActions(note)} className="text-[#4CAF50] text-xs font-semibold hover:underline">Apply</button>
-                        )}
-                        {note.applied && <span className="text-[#4CAF50] text-xs">✓ Applied</span>}
-                        <button onClick={() => { tapFeedback(); removeNote(note.id); }} className="text-[#F44336] text-xs hover:underline ml-2">Delete</button>
-                      </div>
-                    </div>
-                    {note.actions.filter((a) => a.type !== 'note_only').length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {note.actions
-                          .filter((a) => a.type !== 'note_only')
-                          .map((a, i) => (
-                            <div key={i} className="text-xs text-muted surface-bar rounded px-2 py-1 border border-theme">
-                              {a.description}
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-theme shrink-0">
+        <span className="text-primary font-bold text-2xl md:text-3xl">📋 Caregiver Notes</span>
+        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-12 h-12 rounded-xl surface-key text-muted text-2xl flex items-center justify-center border border-theme">✕</button>
       </div>
-    </div>
+
+      <div className="flex border-b border-theme shrink-0">
+        <button onClick={() => setTab('add')} className={`flex-1 py-3 text-lg md:text-xl font-bold ${tab === 'add' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-muted'}`}>
+          + Add Note
+        </button>
+        <button onClick={() => setTab('log')} className={`flex-1 py-3 text-lg md:text-xl font-bold ${tab === 'log' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-muted'}`}>
+          Log ({notes.length})
+        </button>
+      </div>
+
+      {tab === 'add' ? (
+        <div className="flex-1 min-h-0 flex flex-col p-4 gap-3 overflow-y-auto">
+          <div>
+            <label className="text-muted text-base font-bold block mb-1">Your name</label>
+            <input
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+              placeholder="BCBA / Therapist / Parent"
+              className="w-full surface-key rounded-lg px-3 py-3 text-primary text-lg border border-theme"
+            />
+          </div>
+
+          <div className="flex-1 flex flex-col">
+            <label className="text-muted text-base font-bold block mb-1">Note or instruction</label>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={"Examples:\n• Move bathroom to top of Help\n• Add McDonald's ordering flow\n• He used 'because' 5 times today"}
+              className="flex-1 min-h-[120px] surface-key rounded-lg px-3 py-2 text-primary text-lg resize-none border border-theme"
+            />
+          </div>
+
+          <button onClick={handleSubmitNote} disabled={!input.trim() || parsing} className={`${btn} py-4 ${input.trim() && !parsing ? 'bg-[#4CAF50] text-white border-transparent' : 'opacity-40'}`}>
+            {parsing ? 'Parsing...' : aiEnabled ? 'Save & Parse' : 'Save Note'}
+          </button>
+
+          {results && (
+            <div className="space-y-1">
+              {results.map((r, i) => (
+                <div key={i} className={`text-base px-2 py-1 rounded ${r.success ? 'text-[#2e7d32] bg-[#d4edda]' : 'text-[#c62828] bg-[#fdecea]'}`}>
+                  {r.success ? '✓' : '✕'} {r.message}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-dim text-base leading-relaxed">
+            {aiEnabled
+              ? 'AI will parse your instructions and suggest actions. You confirm before anything changes.'
+              : 'Sign in via Settings to enable AI-powered note parsing.'}
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0 overflow-y-auto p-3">
+          {notes.length === 0 ? (
+            <p className="text-muted text-center py-8 text-xl">No notes yet</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {notes.map((note) => (
+                <div key={note.id} className="surface-key rounded-xl p-3 border border-theme">
+                  <p className="text-primary text-lg">{note.text}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="text-dim text-base">
+                      {note.authorName && <span className="text-muted">{note.authorName} · </span>}
+                      {formatTime(note.timestamp, lang)}
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      {note.actions.some((a) => a.type !== 'note_only') && !note.applied && (
+                        <button onClick={() => handleApplyActions(note)} className="text-[#4CAF50] text-base font-bold hover:underline">Apply</button>
+                      )}
+                      {note.applied && <span className="text-[#4CAF50] text-base">✓ Applied</span>}
+                      <button onClick={() => { tapFeedback(); removeNote(note.id); }} className="text-[#F44336] text-base hover:underline ml-2">Delete</button>
+                    </div>
+                  </div>
+                  {note.actions.filter((a) => a.type !== 'note_only').length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {note.actions
+                        .filter((a) => a.type !== 'note_only')
+                        .map((a, i) => (
+                          <div key={i} className="text-base text-muted surface-bar rounded px-2 py-1 border border-theme">
+                            {a.description}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }

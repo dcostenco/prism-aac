@@ -49,7 +49,7 @@ export default function PrismApp() {
   const highContrast = useSettingsStore((s) => s.highContrast);
   const theme = useSettingsStore((s) => s.theme);
   const sidePanel = useUIStore((s) => s.sidePanel);
-  const aiChatOpen = sidePanel === 'ai-chat';
+  const inlinePanelOpen = sidePanel !== 'none';
   const { rtl } = useT();
 
   useEffect(() => {
@@ -94,18 +94,20 @@ export default function PrismApp() {
         <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`}>
           <Toolbar />
           <MessageBar />
-          {!aiChatOpen && <PredictionBar />}
-          {/* AI Chat is INLINE: claims the vertical space above the keyboard
-              so the user can keep typing on the same soft keyboard. AI chat
-              and the keyboard split the remaining viewport ~equally. */}
-          {aiChatOpen && <AIChatPanel />}
+          {!inlinePanelOpen && <PredictionBar />}
+          {/* Inline panels: every secondary view (Categories, Math,
+              Caregiver, AI Chat) docks above the keyboard and shares the
+              viewport with it. The user keeps typing on the same soft
+              keyboard — no modals covering keys. */}
+          <CategoryPanel />
+          <CaregiverPanel />
+          <AIChatPanel />
           <div className="flex-1 flex flex-col min-h-0">
             <Keyboard />
           </div>
           <AlertOverlay />
-          {/* Modal overlays — render above the keyboard, never steal horizontal space */}
-          <CategoryPanel />
-          <CaregiverPanel />
+          {/* True modals — settings/history are configuration UIs, not
+              communication panels, so they stay as full-screen overlays. */}
           <HistoryModal />
           <SettingsModal />
         </div>

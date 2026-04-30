@@ -46,24 +46,29 @@ describe('UX — Data completeness', () => {
     expect(DEFAULT_PREDICTIONS).toHaveLength(5);
   });
 
-  it('math keyboard has basic and advanced sections', () => {
+  it('math keyboard has basic, digits, and algebra/advanced sections', () => {
     const basic = MATH_ITEMS.filter(m => m.category === 'basic');
-    const advanced = MATH_ITEMS.filter(m => m.category === 'advanced');
+    const digits = MATH_ITEMS.filter(m => m.category === 'digits');
+    const algebra = MATH_ITEMS.filter(m => m.category === 'algebra');
     expect(basic.length).toBeGreaterThanOrEqual(10);
-    expect(advanced.length).toBeGreaterThanOrEqual(5);
+    expect(digits.length).toBe(10);
+    expect(algebra.length).toBeGreaterThanOrEqual(5);
   });
 
-  it('math keyboard has clinical note symbols: +, −, ×, ÷, =, fraction, variable, equation, graph', () => {
-    const symbols = MATH_ITEMS.map(m => m.label.toLowerCase());
-    expect(symbols).toContain('plus');
-    expect(symbols).toContain('minus');
-    expect(symbols).toContain('times');
-    expect(symbols).toContain('divide');
-    expect(symbols).toContain('equals');
-    expect(symbols).toContain('fraction');
-    expect(symbols).toContain('variable');
-    expect(symbols).toContain('equation');
-    expect(symbols).toContain('graph');
+  it('math keyboard has clinical note symbols: +, −, ×, ÷, =, fraction, variable, sqrt, pi', () => {
+    const labels = MATH_ITEMS.map(m => m.label.toLowerCase());
+    const symbols = MATH_ITEMS.map(m => m.symbol);
+    expect(labels).toContain('plus');
+    expect(labels).toContain('minus');
+    expect(labels).toContain('times');
+    expect(labels).toContain('divide');
+    expect(labels).toContain('equals');
+    expect(labels).toContain('fraction');
+    expect(symbols).toContain('x');         // variable x
+    expect(symbols).toContain('√');         // sqrt
+    expect(symbols).toContain('π');         // pi
+    expect(symbols).toContain('∫');         // integral (calculus)
+    expect(symbols).toContain('∞');         // infinity
   });
 
   it('Chipotle ordering follows real sequence: opener → base → protein → toppings → finish', () => {

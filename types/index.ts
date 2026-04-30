@@ -16,12 +16,22 @@ export interface Phrase {
   deletedAt?: number;
 }
 
+export type MathCategory =
+  | 'basic'
+  | 'digits'
+  | 'algebra'
+  | 'constants'
+  | 'trig'
+  | 'calculus'
+  | 'greek'
+  | 'logic-sets';
+
 export interface MathItem {
   id: string;
   symbol: string;
   label: string;
   ttsText: string;
-  category: 'basic' | 'advanced';
+  category: MathCategory;
   sortOrder: number;
 }
 
