@@ -1,9 +1,12 @@
 'use client';
+import { useEffect, useRef, useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useSyncStatus } from './SyncProvider';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
+import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 
 const SYNC_ICONS: Record<string, string> = {
   idle: '⬡', syncing: '🔄', synced: '🟢', offline: '🔸', error: '🔴',
@@ -11,12 +14,45 @@ const SYNC_ICONS: Record<string, string> = {
 
 export default function Toolbar() {
   const { openCategories, openMath, openCaregiver, openAIChat, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
-  const { soundEnabled, toggleSound } = useMessageStore();
+  const { soundEnabled, toggleSound, appendText } = useMessageStore();
+  const language = useSettingsStore((s) => s.language);
   const syncStatus = useSyncStatus();
   const { t } = useT();
+  const [listening, setListening] = useState(false);
+  const voiceRef = useRef<VoiceSession | null>(null);
+  const voiceSupported = isVoiceInputSupported();
 
+  useEffect(() => () => { voiceRef.current?.stop(); }, []);
+
+  const toggleMic = () => {
+    tapFeedback();
+    if (voiceRef.current) {
+      voiceRef.current.stop();
+      voiceRef.current = null;
+      setListening(false);
+      return;
+    }
+    const session = startVoiceInput({
+      lang: language,
+      onInterim: () => { /* preview is shown in MessageBar */ },
+      onFinal: (txt) => { appendText(txt.trim() + ' '); },
+      onError: () => {
+        voiceRef.current = null;
+        setListening(false);
+      },
+    });
+    if (session) {
+      voiceRef.current = session;
+      setListening(true);
+    }
+  };
+
+  // Toolbar labels share the same scale as the keyboard's word-row keys
+  // (Speak, Space, Caregiver Notes, etc.) so the chrome reads as one
+  // typographic system. Larger labels also help motor-impaired users —
+  // bigger hit targets, easier glance-readability.
   const btn =
-    'aac-btn h-14 px-5 rounded-xl surface-key text-primary font-semibold text-sm select-none border border-theme';
+    'aac-btn h-16 px-5 rounded-xl surface-key text-primary font-bold text-xl md:text-2xl select-none border border-theme';
 
   const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
 
@@ -26,6 +62,19 @@ export default function Toolbar() {
         <button className={btn} onClick={tap(openCategories)} aria-label={t('categories')}>📂 {t('categories')}</button>
         <button className={btn} onClick={tap(openMath)} aria-label={t('math')}>🔢 {t('math')}</button>
         <button className={btn} onClick={tap(openAIChat)} aria-label={t('ai_chat')}>✨ {t('ai_chat')}</button>
+        {voiceSupported && (
+          <button
+            className={`aac-btn h-16 px-5 rounded-xl font-bold text-xl md:text-2xl select-none border border-theme ${
+              listening ? 'bg-[#F44336] text-white border-transparent animate-pulse' : 'surface-key text-primary'
+            }`}
+            onClick={toggleMic}
+            aria-pressed={listening}
+            data-testid="toolbar-mic"
+            aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+          >
+            {listening ? '⏺ Stop' : '🎙 Mic'}
+          </button>
+        )}
         <button className={btn} onClick={tap(openCaregiver)} aria-label={t('notes')}>📋 {t('notes')}</button>
       </div>
       <div className="flex gap-2 items-center">
@@ -34,7 +83,7 @@ export default function Toolbar() {
         <button className={btn} onClick={tap(toggleHistory)} aria-label={t('history')}>📜 {t('history')}</button>
         <button className={btn} onClick={tap(toggleSettings)} aria-label={t('settings')}>⚙️</button>
         <button
-          className={`aac-btn h-14 px-5 rounded-xl font-semibold text-sm select-none border border-theme ${
+          className={`aac-btn h-16 px-5 rounded-xl font-bold text-xl md:text-2xl select-none border border-theme ${
             soundEnabled ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
           }`}
           onClick={tap(toggleSound)}
