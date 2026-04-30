@@ -1,16 +1,6 @@
-// Math symbols and vocabulary for the math keyboard
-
-export interface MathItem {
-  id: string;
-  symbol: string;
-  label: string;
-  ttsText: string;
-  category: 'basic' | 'advanced';
-  sortOrder: number;
-}
+import { MathItem } from '@/types';
 
 export const MATH_ITEMS: MathItem[] = [
-  // Basic operations
   { id: 'math-plus', symbol: '+', label: 'Plus', ttsText: 'plus', category: 'basic', sortOrder: 0 },
   { id: 'math-minus', symbol: '−', label: 'Minus', ttsText: 'minus', category: 'basic', sortOrder: 1 },
   { id: 'math-times', symbol: '×', label: 'Times', ttsText: 'times', category: 'basic', sortOrder: 2 },
@@ -21,8 +11,6 @@ export const MATH_ITEMS: MathItem[] = [
   { id: 'math-greater', symbol: '>', label: 'Greater than', ttsText: 'greater than', category: 'basic', sortOrder: 7 },
   { id: 'math-dot', symbol: '·', label: 'Dot', ttsText: 'point', category: 'basic', sortOrder: 8 },
   { id: 'math-percent', symbol: '%', label: 'Percent', ttsText: 'percent', category: 'basic', sortOrder: 9 },
-
-  // Numbers 0-9
   { id: 'math-0', symbol: '0', label: '0', ttsText: 'zero', category: 'basic', sortOrder: 10 },
   { id: 'math-1', symbol: '1', label: '1', ttsText: 'one', category: 'basic', sortOrder: 11 },
   { id: 'math-2', symbol: '2', label: '2', ttsText: 'two', category: 'basic', sortOrder: 12 },
@@ -33,8 +21,6 @@ export const MATH_ITEMS: MathItem[] = [
   { id: 'math-7', symbol: '7', label: '7', ttsText: 'seven', category: 'basic', sortOrder: 17 },
   { id: 'math-8', symbol: '8', label: '8', ttsText: 'eight', category: 'basic', sortOrder: 18 },
   { id: 'math-9', symbol: '9', label: '9', ttsText: 'nine', category: 'basic', sortOrder: 19 },
-
-  // Advanced vocabulary
   { id: 'math-fraction', symbol: '⁄', label: 'Fraction', ttsText: 'fraction', category: 'advanced', sortOrder: 20 },
   { id: 'math-variable', symbol: 'x', label: 'Variable', ttsText: 'variable', category: 'advanced', sortOrder: 21 },
   { id: 'math-equation', symbol: '≡', label: 'Equation', ttsText: 'equation', category: 'advanced', sortOrder: 22 },

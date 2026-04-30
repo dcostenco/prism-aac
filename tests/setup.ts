@@ -1,45 +1,49 @@
-// Global test setup
+import '@testing-library/jest-dom/vitest';
+import { vi } from 'vitest';
 
-// Mock expo modules
-jest.mock('expo-speech', () => ({
-  speak: jest.fn(),
-  stop: jest.fn(),
-  isSpeakingAsync: jest.fn().mockResolvedValue(false),
-  getAvailableVoicesAsync: jest.fn().mockResolvedValue([]),
-  Voice: {},
-}));
-
-jest.mock('expo-haptics', () => ({
-  impactAsync: jest.fn(),
-  notificationAsync: jest.fn(),
-  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy' },
-  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
-}));
-
-jest.mock('expo-av', () => ({
-  Audio: {
-    Sound: {
-      createAsync: jest.fn().mockResolvedValue({
-        sound: {
-          playAsync: jest.fn(),
-          stopAsync: jest.fn(),
-          unloadAsync: jest.fn(),
-          setOnPlaybackStatusUpdate: jest.fn(),
-        },
-      }),
-    },
+// Mock Web Speech API
+Object.defineProperty(window, 'speechSynthesis', {
+  value: {
+    speak: vi.fn(),
+    cancel: vi.fn(),
+    resume: vi.fn(),
+    getVoices: vi.fn(() => []),
   },
-}));
+});
 
-jest.mock('expo-sqlite', () => {
-  const mockDb = {
-    execAsync: jest.fn(),
-    runAsync: jest.fn(),
-    getFirstAsync: jest.fn(),
-    getAllAsync: jest.fn().mockResolvedValue([]),
-  };
-  return {
-    openDatabaseAsync: jest.fn().mockResolvedValue(mockDb),
-    __mockDb: mockDb,
-  };
+class MockUtterance {
+  rate = 1; volume = 1; lang = ''; onend: (() => void) | null = null; onerror: (() => void) | null = null;
+  constructor(public text?: string) {}
+}
+(window as unknown as Record<string, unknown>).SpeechSynthesisUtterance = MockUtterance;
+
+// Mock navigator.vibrate
+Object.defineProperty(navigator, 'vibrate', { value: vi.fn(() => true), writable: true });
+
+// Mock AudioContext
+window.AudioContext = vi.fn().mockImplementation(() => ({
+  createOscillator: vi.fn(() => ({
+    connect: vi.fn(), start: vi.fn(), stop: vi.fn(),
+    frequency: { value: 0 }, type: 'sine',
+  })),
+  createGain: vi.fn(() => ({
+    connect: vi.fn(),
+    gain: { value: 0, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+  })),
+  destination: {},
+  currentTime: 0,
+})) as unknown as typeof AudioContext;
+
+// Mock crypto.randomUUID
+Object.defineProperty(crypto, 'randomUUID', { value: vi.fn(() => 'test-uuid-' + Math.random().toString(36).slice(2, 8)) });
+
+// Mock localStorage
+const store: Record<string, string> = {};
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    getItem: vi.fn((key: string) => store[key] ?? null),
+    setItem: vi.fn((key: string, val: string) => { store[key] = val; }),
+    removeItem: vi.fn((key: string) => { delete store[key]; }),
+    clear: vi.fn(() => { for (const k in store) delete store[k]; }),
+  },
 });
