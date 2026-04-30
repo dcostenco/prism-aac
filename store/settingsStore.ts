@@ -4,12 +4,9 @@ import { SupportedLanguage } from '@/engine/i18n';
 
 export type Theme = 'light' | 'dark';
 
-// Picture mode: how phrase tiles render their icon.
-//  - 'off'      — text only (default, fastest, no network)
-//  - 'symbols'  — try ARASAAC pictogram for the head noun/verb, fall back to text
-//  - 'symbols-ai' — symbols first, then AI-generated pictogram for any phrase
-//                  with no symbol match (paid tiers only — gen routes through
-//                  the Synalux portal). TouchChat-HD-style picture mode.
+// Picture mode is derived from the user's Synalux subscription tier — see
+// `pictureModeForPlan()` in `services/pictogramService.ts`. There is no
+// setting; signed-out / Free → ARASAAC symbols only; paid → symbols + AI.
 export type PictureMode = 'off' | 'symbols' | 'symbols-ai';
 
 interface SettingsState {
@@ -18,9 +15,8 @@ interface SettingsState {
   language: SupportedLanguage;
   highContrast: boolean;
   theme: Theme;
-  pictureMode: PictureMode;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast' | 'theme' | 'pictureMode'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast' | 'theme'>>,
   ) => void;
   setTheme: (theme: Theme) => void;
 }
@@ -33,7 +29,6 @@ export const useSettingsStore = create<SettingsState>()(
       language: 'en',
       highContrast: false,
       theme: 'light',
-      pictureMode: 'off',
       update: (partial) => set((s) => ({ ...s, ...partial })),
       setTheme: (theme) => set({ theme }),
     }),

@@ -94,7 +94,7 @@ export default function SettingsModal() {
           {/* Accessibility */}
           <div>
             <h3 className={sectionTitle}>{t('accessibility')}</h3>
-            <label className="flex items-center justify-between mb-4">
+            <label className="flex items-center justify-between">
               <span className="text-primary">{t('high_contrast')}</span>
               <button
                 onClick={() => settings.update({ highContrast: !settings.highContrast })}
@@ -105,44 +105,6 @@ export default function SettingsModal() {
                 <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${settings.highContrast ? 'translate-x-5' : ''}`} />
               </button>
             </label>
-
-            {/* Picture mode — TouchChat HD-style symbol/AI pictograms on
-                phrase tiles. Symbols are ARASAAC's CC BY-NC-SA library
-                (free, ~12.9k pictograms); AI fallback is paid-tier-only
-                and routes through the Synalux portal. */}
-            <div className="mb-2">
-              <p className="text-primary mb-2">Picture mode</p>
-              <div className="grid grid-cols-3 gap-2">
-                {(['off', 'symbols', 'symbols-ai'] as const).map((mode) => {
-                  const label = mode === 'off' ? 'Text only'
-                    : mode === 'symbols' ? 'Symbols'
-                    : 'Symbols + AI';
-                  const isSelected = settings.pictureMode === mode;
-                  const isAi = mode === 'symbols-ai';
-                  const aiLocked = isAi && (!profile || profile.plan !== 'enterprise');
-                  return (
-                    <button
-                      key={mode}
-                      onClick={() => {
-                        if (aiLocked) return;
-                        settings.update({ pictureMode: mode });
-                      }}
-                      aria-pressed={isSelected}
-                      disabled={aiLocked}
-                      title={aiLocked ? 'AI-generated pictures require the Enterprise tier' : undefined}
-                      className={`aac-btn rounded-xl px-3 py-3 text-sm font-bold border border-theme ${
-                        isSelected ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
-                      } ${aiLocked ? 'opacity-40 cursor-not-allowed' : ''}`}
-                    >
-                      {label}{isAi && !aiLocked && ' ✨'}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-dim text-xs mt-2 leading-relaxed">
-                Phrase tiles show a small picture next to the words. Symbols come from the open-source ARASAAC library (free, every tier); the &ldquo;Symbols + AI&rdquo; option generates a custom pictogram for any phrase that doesn&apos;t have a matching symbol — Enterprise tier only.
-              </p>
-            </div>
           </div>
 
           {/* Speech */}

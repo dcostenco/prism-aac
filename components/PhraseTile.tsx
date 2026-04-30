@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getPictogramUrl } from '@/services/pictogramService';
+import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 
 interface Props {
   phrase: string;
@@ -12,21 +13,19 @@ interface Props {
 }
 
 /**
- * Phrase tile that renders a pictogram above the phrase text when picture
- * mode is on. The pictogram is loaded lazily and cached client-side; on
- * first paint the tile shows text only, then upgrades when the image
- * arrives. Falls back to text-only silently if no picture is available.
+ * Phrase tile that renders a pictogram above the phrase text. The picture
+ * source is derived from the user's Synalux plan — Free gets ARASAAC
+ * symbols, paid tiers get symbols + AI fallback. Image loads lazily and
+ * caches client-side + platform-wide; falls back to text silently if no
+ * picture is available.
  */
 export default function PhraseTile({ phrase, className, style, onClick, ariaLabel }: Props) {
-  const pictureMode = useSettingsStore((s) => s.pictureMode);
   const language = useSettingsStore((s) => s.language);
+  const profile = useAuthStore((s) => s.profile);
+  const pictureMode = pictureModeForProfile(profile);
   const [iconUrl, setIconUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (pictureMode === 'off') {
-      setIconUrl(null);
-      return;
-    }
     let cancelled = false;
     getPictogramUrl(phrase, language, pictureMode).then((url) => {
       if (!cancelled) setIconUrl(url);

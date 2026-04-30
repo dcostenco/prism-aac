@@ -16,6 +16,19 @@
  */
 
 import { PictureMode } from '@/store/settingsStore';
+import { SynaluxProfile } from '@/services/aiService';
+
+/**
+ * Picture mode is derived from the user's Synalux plan, not from a user
+ * preference. Free / signed-out users get the free ARASAAC symbol library;
+ * paid subscribers (Standard / Advanced / Enterprise) additionally get
+ * AI-generated pictograms for phrases ARASAAC doesn't cover.
+ */
+export function pictureModeForProfile(profile: SynaluxProfile | null): PictureMode {
+  if (!profile) return 'symbols';
+  if (profile.plan === 'free') return 'symbols';
+  return 'symbols-ai';
+}
 
 const STYLE_VERSION = 1;
 const ARASAAC_API = 'https://api.arasaac.org/v1';
