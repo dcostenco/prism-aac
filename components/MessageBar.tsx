@@ -1,27 +1,68 @@
 'use client';
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speak } from '@/services/speechService';
 import { tapFeedback, deleteFeedback } from '@/services/feedback';
+import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { TONE_OPTIONS } from '@/services/azureTTS';
 
 export default function MessageBar() {
-  const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak } = useMessageStore();
-  const { speechRate, speechVolume } = useSettingsStore();
+  const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
+  const { speechRate, speechVolume, language } = useSettingsStore();
   const { t, ttsCode } = useT();
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showTones, setShowTones] = useState(false);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
   const isPaid = !!(typeof window !== 'undefined' && localStorage.getItem('prism-aac-auth-token'));
 
-  const handleSpeak = useCallback(() => {
+  // Debounced background correction. As the user types, we ask the
+  // /api/v1/text/correct endpoint for the most likely intended utterance.
+  // The suggestion is shown inline (greyed) and auto-applied on Speak —
+  // critical for users with motor impairments who can't type precisely
+  // ("bowlof,ri" → "bowl of rice").
+  useEffect(() => {
+    setSuggestion(null);
+    const trimmed = text.trim();
+    if (trimmed.length < 4) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const fixed = await correctText(trimmed, language);
+      if (!cancelled && fixed && fixed !== trimmed) setSuggestion(fixed);
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [text, language]);
+
+  const acceptSuggestion = useCallback(() => {
+    if (!suggestion) return;
     tapFeedback();
-    if (!text.trim() || !soundEnabled) return;
-    addToHistory(text.trim());
-    speak(text.trim(), speechRate, speechVolume, ttsCode, activeTone);
-  }, [text, soundEnabled, speechRate, speechVolume, ttsCode, activeTone, addToHistory]);
+    setText(suggestion);
+    setSuggestion(null);
+  }, [suggestion, setText]);
+
+  const handleSpeak = useCallback(async () => {
+    tapFeedback();
+    const original = text.trim();
+    if (!original || !soundEnabled) return;
+    // Auto-apply the latest suggestion (or fetch one synchronously) so the
+    // user hears their intended phrase, not their typo.
+    let toSpeak = original;
+    if (suggestion && suggestion !== original) {
+      toSpeak = suggestion;
+      setText(suggestion);
+      setSuggestion(null);
+    } else {
+      const fixed = await correctText(original, language);
+      if (fixed && fixed !== original) {
+        toSpeak = fixed;
+        setText(fixed);
+      }
+    }
+    addToHistory(toSpeak);
+    speak(toSpeak, speechRate, speechVolume, ttsCode, activeTone);
+  }, [text, soundEnabled, suggestion, language, speechRate, speechVolume, ttsCode, activeTone, addToHistory, setText]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
@@ -72,8 +113,20 @@ export default function MessageBar() {
         </button>
       )}
 
-      <div className="flex-1 text-2xl min-h-[48px] flex items-center overflow-x-auto break-words text-primary" role="status" aria-live="polite" aria-label="Message text">
-        {text ? <ColoredText text={text} /> : <span className="text-dim">{t('type_here')}</span>}
+      <div className="flex-1 min-h-[48px] flex flex-col justify-center overflow-hidden">
+        <div className="text-2xl flex items-center break-words text-primary truncate" role="status" aria-live="polite" aria-label="Message text">
+          {text ? <ColoredText text={text} /> : <span className="text-dim">{t('type_here')}</span>}
+        </div>
+        {suggestion && (
+          <button
+            onClick={acceptSuggestion}
+            aria-label={`Auto-correct to ${suggestion}`}
+            data-testid="autocorrect-suggestion"
+            className="text-left text-base md:text-lg text-[#4CAF50] truncate hover:underline mt-1"
+          >
+            ✨ Did you mean: <span className="font-semibold">{suggestion}</span> <span className="text-dim text-sm">— tap or press ▶</span>
+          </button>
+        )}
       </div>
 
       <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-14 h-14 rounded-xl surface-key text-muted text-lg flex items-center justify-center shrink-0 border border-theme">↩</button>

@@ -8,6 +8,7 @@ import { speakWord } from '@/services/speechService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
+import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
 
 /**
@@ -77,8 +78,9 @@ export default function AIChatPanel() {
     const session = startVoiceInput({
       lang: language,
       onInterim: (t) => setInterim(t),
-      onFinal: (t) => {
-        appendText(t.trim() + ' ');
+      onFinal: async (t) => {
+        const fixed = await correctText(t.trim(), language);
+        appendText((fixed || t).trim() + ' ');
         setInterim('');
       },
       onError: () => {

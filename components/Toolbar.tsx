@@ -7,6 +7,7 @@ import { useSyncStatus } from './SyncProvider';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
+import { correctText } from '@/services/textCorrectService';
 
 const SYNC_ICONS: Record<string, string> = {
   idle: '⬡', syncing: '🔄', synced: '🟢', offline: '🔸', error: '🔴',
@@ -35,7 +36,14 @@ export default function Toolbar() {
     const session = startVoiceInput({
       lang: language,
       onInterim: () => { /* preview is shown in MessageBar */ },
-      onFinal: (txt) => { appendText(txt.trim() + ' '); },
+      onFinal: async (txt) => {
+        // Run every final transcript through auto-correction before
+        // committing — Web Speech API often mis-segments fast speech
+        // ("bowlofrice" → "bowl of rice"). The user with motor or
+        // cognitive challenges shouldn't have to clean this up by hand.
+        const fixed = await correctText(txt.trim(), language);
+        appendText((fixed || txt).trim() + ' ');
+      },
       onError: () => {
         voiceRef.current = null;
         setListening(false);
