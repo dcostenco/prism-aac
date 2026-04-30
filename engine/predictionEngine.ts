@@ -109,7 +109,7 @@ export function decayPredictions(
     if (val.count <= 1 && val.lastUsed < thirtyDaysAgo) continue;
     if (val.lastUsed < sevenDaysAgo) {
       const newCount = Math.max(1, Math.floor(val.count * 0.95));
-      if (newCount > 1) result[key] = { count: newCount, lastUsed: val.lastUsed };
+      if (newCount > 1) result[key] = { count: newCount, lastUsed: Date.now() };
     } else {
       result[key] = val;
     }

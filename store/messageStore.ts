@@ -3,9 +3,11 @@ import { persist } from 'zustand/middleware';
 import { HistoryEntry } from '@/types';
 import { ToneStyle } from '@/services/azureTTS';
 
+const MAX_UNDO = 20;
+
 interface MessageState {
   text: string;
-  prevText: string;
+  undoStack: string[];
   activeTone: ToneStyle;
   autoSpeak: boolean;
   soundEnabled: boolean;
@@ -25,11 +27,15 @@ interface MessageState {
   clearHistory: () => void;
 }
 
+function pushUndo(s: { text: string; undoStack: string[] }): { undoStack: string[] } {
+  return { undoStack: [s.text, ...s.undoStack].slice(0, MAX_UNDO) };
+}
+
 export const useMessageStore = create<MessageState>()(
   persist(
     (set) => ({
       text: '',
-      prevText: '',
+      undoStack: [],
       activeTone: 'friendly' as ToneStyle,
       autoSpeak: false,
       soundEnabled: true,
@@ -38,29 +44,34 @@ export const useMessageStore = create<MessageState>()(
       setTone: (tone) => set({ activeTone: tone }),
 
       appendWord: (word) =>
-        set((s) => ({ prevText: s.text, text: s.text.trim() ? `${s.text.trim()} ${word}` : word })),
+        set((s) => ({ ...pushUndo(s), text: s.text.trim() ? `${s.text.trim()} ${word}` : word })),
 
       appendText: (text) =>
-        set((s) => ({ prevText: s.text, text: s.text.trim() ? `${s.text.trim()} ${text}` : text })),
+        set((s) => ({ ...pushUndo(s), text: s.text.trim() ? `${s.text.trim()} ${text}` : text })),
 
       appendChar: (char) =>
-        set((s) => ({ prevText: s.text, text: s.text + char })),
+        set((s) => ({ ...pushUndo(s), text: s.text + char })),
 
       deleteLastWord: () =>
         set((s) => {
           const words = s.text.trim().split(/\s+/).filter(Boolean);
           words.pop();
-          return { prevText: s.text, text: words.join(' ') };
+          return { ...pushUndo(s), text: words.join(' ') };
         }),
 
       deleteLastChar: () =>
-        set((s) => ({ prevText: s.text, text: s.text.slice(0, -1) })),
+        set((s) => ({ ...pushUndo(s), text: s.text.slice(0, -1) })),
 
-      clearAll: () => set((s) => ({ prevText: s.text, text: '' })),
+      clearAll: () => set((s) => ({ ...pushUndo(s), text: '' })),
 
-      undo: () => set((s) => ({ text: s.prevText, prevText: s.text })),
+      undo: () =>
+        set((s) => {
+          if (s.undoStack.length === 0) return {};
+          const [prev, ...rest] = s.undoStack;
+          return { text: prev, undoStack: rest };
+        }),
 
-      setText: (text) => set((s) => ({ prevText: s.text, text })),
+      setText: (text) => set((s) => ({ ...pushUndo(s), text })),
 
       toggleAutoSpeak: () => set((s) => ({ autoSpeak: !s.autoSpeak })),
 

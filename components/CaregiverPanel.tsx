@@ -24,7 +24,7 @@ import { parseCaregiverNote, hasApiKey } from '@/services/aiService';
 
 function formatTime(ts: number): string {
   const d = new Date(ts);
-  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 export default function CaregiverPanel() {

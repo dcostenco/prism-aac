@@ -125,12 +125,24 @@ export function mergeWordFreq(
   return merged;
 }
 
-/** Merge custom categories/phrases (union by id, keep both) */
-export function mergeCustomItems<T extends { id: string }>(local: T[], remote: T[]): T[] {
+/** Merge custom categories/phrases with tombstone support.
+ *  Items with deletedAt are tombstones — they suppress the item on all devices. */
+export function mergeCustomItems<T extends { id: string; deletedAt?: number }>(local: T[], remote: T[]): T[] {
   const map = new Map<string, T>();
-  for (const item of local) map.set(item.id, item);
-  for (const item of remote) { if (!map.has(item.id)) map.set(item.id, item); }
-  return [...map.values()];
+  // Remote first, then local overwrites (local is authoritative for non-deleted items)
+  for (const item of remote) map.set(item.id, item);
+  for (const item of local) {
+    const existing = map.get(item.id);
+    if (!existing) { map.set(item.id, item); continue; }
+    // Tombstone wins: if either side deleted it, keep the deletion
+    if (item.deletedAt || existing.deletedAt) {
+      const winner = (item.deletedAt ?? 0) > (existing.deletedAt ?? 0) ? item : existing;
+      map.set(item.id, winner);
+    } else {
+      map.set(item.id, item); // local wins for live items
+    }
+  }
+  return [...map.values()].filter(item => !item.deletedAt);
 }
 
 /** Merge history entries (union, dedup by timestamp, cap at 100) */

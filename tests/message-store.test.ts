@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useMessageStore } from '@/store/messageStore';
 
-beforeEach(() => useMessageStore.setState({ text: '', prevText: '' }));
+beforeEach(() => useMessageStore.setState({ text: '', undoStack: [] }));
 
 describe('MessageStore — Core text operations', () => {
   it('appendWord adds word with auto-space (bug fix: no concatenation)', () => {
@@ -67,20 +67,28 @@ describe('MessageStore — Undo (motor accessibility)', () => {
   });
 
   it('undo restores text after clearAll', () => {
-    useMessageStore.setState({ text: 'important message', prevText: '' });
+    useMessageStore.setState({ text: 'important message', undoStack: [] });
     useMessageStore.getState().clearAll();
     useMessageStore.getState().undo();
     expect(useMessageStore.getState().text).toBe('important message');
   });
 
-  it('double undo swaps back and forth', () => {
-    useMessageStore.setState({ text: 'A', prevText: '' });
+  it('multiple undos walk back through history stack', () => {
+    useMessageStore.getState().appendWord('A');
     useMessageStore.getState().appendWord('B');
+    useMessageStore.getState().appendWord('C');
+    expect(useMessageStore.getState().text).toBe('A B C');
+    useMessageStore.getState().undo();
     expect(useMessageStore.getState().text).toBe('A B');
     useMessageStore.getState().undo();
     expect(useMessageStore.getState().text).toBe('A');
     useMessageStore.getState().undo();
-    expect(useMessageStore.getState().text).toBe('A B');
+    expect(useMessageStore.getState().text).toBe('');
+  });
+
+  it('undo does nothing when stack is empty', () => {
+    useMessageStore.getState().undo();
+    expect(useMessageStore.getState().text).toBe('');
   });
 });
 

@@ -187,7 +187,7 @@ describe('Sync — Data integrity', () => {
     const remote = [{ id: 'a', name: 'A-modified' }];
     const merged = mergeCustomItems(local, remote);
     expect(merged).toHaveLength(1);
-    expect(merged[0].name).toBe('A'); // local wins
+    expect(merged[0].name).toBe('A'); // local wins (iterated last, overwrites remote)
   });
 
   it('mergeHistory caps at 100 and deduplicates', () => {

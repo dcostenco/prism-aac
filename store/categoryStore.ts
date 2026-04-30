@@ -40,7 +40,7 @@ export const useCategoryStore = create<CategoryState>()(
       getPhrasesForCategory: (categoryId) => {
         const hidden = new Set(get().hiddenPhraseIds);
         const defaults = DEFAULT_PHRASES.filter((p) => p.categoryId === categoryId && !hidden.has(p.id));
-        const custom = get().customPhrases.filter((p) => p.categoryId === categoryId);
+        const custom = get().customPhrases.filter((p) => p.categoryId === categoryId && !p.deletedAt);
         return [...defaults, ...custom].sort((a, b) => a.sortOrder - b.sortOrder);
       },
 
@@ -77,7 +77,9 @@ export const useCategoryStore = create<CategoryState>()(
         })),
 
       removeCustomPhrase: (id) =>
-        set((s) => ({ customPhrases: s.customPhrases.filter((p) => p.id !== id) })),
+        set((s) => ({
+          customPhrases: s.customPhrases.map((p) => p.id === id ? { ...p, deletedAt: Date.now() } : p),
+        })),
 
       addOrderingSequence: (seq) =>
         set((s) => ({ orderingSequences: [...s.orderingSequences, seq] })),

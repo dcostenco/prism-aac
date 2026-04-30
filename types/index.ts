@@ -13,6 +13,7 @@ export interface Phrase {
   sortOrder: number;
   isCustom: boolean;
   usageCount: number;
+  deletedAt?: number;
 }
 
 export interface MathItem {

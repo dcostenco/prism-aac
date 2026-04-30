@@ -90,13 +90,16 @@ export function executeAction(action: NoteAction): ActionResult {
 
     case 'reorder_phrase': {
       const { phraseId, newSortOrder, categoryId } = action.payload as { phraseId: string; newSortOrder: number; categoryId: string };
-      // Reordering default phrases requires adding them as custom overrides
-      // For now, add a custom phrase at the target position
       const phrases = catStore.getPhrasesForCategory(categoryId);
       const target = phrases.find((p) => p.id === phraseId);
       if (!target) return { success: false, message: 'Phrase not found' };
-      // Add as custom with new sort order (will appear before defaults at same sortOrder)
-      catStore.addCustomPhrase(categoryId, target.text);
+      if (!target.isCustom) catStore.hideDefaultPhrase(target.id);
+      useCategoryStore.setState((s) => ({
+        customPhrases: [
+          ...s.customPhrases,
+          { id: crypto.randomUUID(), categoryId, text: target.text, sortOrder: newSortOrder, isCustom: true, usageCount: 0 },
+        ],
+      }));
       return { success: true, message: `Moved "${target.text}" to position ${newSortOrder + 1}` };
     }
 

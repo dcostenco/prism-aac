@@ -52,9 +52,14 @@ export default function PrismApp() {
   }, [runDecay, seedTemplates]);
 
   // Physical keyboard support — captures keystrokes globally
+  // Skips interactive form elements (input, textarea, select, buttons with focus)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.key === 'Tab' || e.key === 'Escape') return;
+      if ((e.target as HTMLElement)?.closest('[role="dialog"]')) return;
+      if (e.key === ' ' && document.activeElement?.tagName === 'BUTTON') return;
       const store = useMessageStore.getState();
       if (e.key === 'Backspace') { e.preventDefault(); deleteFeedback(); store.deleteLastChar(); }
       else if (e.key === 'Enter') { e.preventDefault(); }

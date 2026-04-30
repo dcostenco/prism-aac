@@ -263,7 +263,7 @@ export default function HistoryModal() {
 
   const fmt = (ts: number) => {
     const d = new Date(ts);
-    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   };
 
   return (
@@ -2639,12 +2639,24 @@ export function mergeWordFreq(
   return merged;
 }
 
-/** Merge custom categories/phrases (union by id, keep both) */
-export function mergeCustomItems<T extends { id: string }>(local: T[], remote: T[]): T[] {
+/** Merge custom categories/phrases with tombstone support.
+ *  Items with deletedAt are tombstones — they suppress the item on all devices. */
+export function mergeCustomItems<T extends { id: string; deletedAt?: number }>(local: T[], remote: T[]): T[] {
   const map = new Map<string, T>();
-  for (const item of local) map.set(item.id, item);
-  for (const item of remote) { if (!map.has(item.id)) map.set(item.id, item); }
-  return [...map.values()];
+  // Remote first, then local overwrites (local is authoritative for non-deleted items)
+  for (const item of remote) map.set(item.id, item);
+  for (const item of local) {
+    const existing = map.get(item.id);
+    if (!existing) { map.set(item.id, item); continue; }
+    // Tombstone wins: if either side deleted it, keep the deletion
+    if (item.deletedAt || existing.deletedAt) {
+      const winner = (item.deletedAt ?? 0) > (existing.deletedAt ?? 0) ? item : existing;
+      map.set(item.id, winner);
+    } else {
+      map.set(item.id, item); // local wins for live items
+    }
+  }
+  return [...map.values()].filter(item => !item.deletedAt);
 }
 
 /** Merge history entries (union, dedup by timestamp, cap at 100) */
@@ -3214,7 +3226,7 @@ describe('i18n — Language metadata', () => {
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useMessageStore } from '@/store/messageStore';
 
-beforeEach(() => useMessageStore.setState({ text: '', prevText: '' }));
+beforeEach(() => useMessageStore.setState({ text: '', undoStack: [] }));
 
 describe('MessageStore — Core text operations', () => {
   it('appendWord adds word with auto-space (bug fix: no concatenation)', () => {
@@ -3280,20 +3292,28 @@ describe('MessageStore — Undo (motor accessibility)', () => {
   });
 
   it('undo restores text after clearAll', () => {
-    useMessageStore.setState({ text: 'important message', prevText: '' });
+    useMessageStore.setState({ text: 'important message', undoStack: [] });
     useMessageStore.getState().clearAll();
     useMessageStore.getState().undo();
     expect(useMessageStore.getState().text).toBe('important message');
   });
 
-  it('double undo swaps back and forth', () => {
-    useMessageStore.setState({ text: 'A', prevText: '' });
+  it('multiple undos walk back through history stack', () => {
+    useMessageStore.getState().appendWord('A');
     useMessageStore.getState().appendWord('B');
+    useMessageStore.getState().appendWord('C');
+    expect(useMessageStore.getState().text).toBe('A B C');
+    useMessageStore.getState().undo();
     expect(useMessageStore.getState().text).toBe('A B');
     useMessageStore.getState().undo();
     expect(useMessageStore.getState().text).toBe('A');
     useMessageStore.getState().undo();
-    expect(useMessageStore.getState().text).toBe('A B');
+    expect(useMessageStore.getState().text).toBe('');
+  });
+
+  it('undo does nothing when stack is empty', () => {
+    useMessageStore.getState().undo();
+    expect(useMessageStore.getState().text).toBe('');
   });
 });
 
@@ -4096,7 +4116,7 @@ import { parseCaregiverNote, hasApiKey } from '@/services/aiService';
 
 function formatTime(ts: number): string {
   const d = new Date(ts);
-  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 export default function CaregiverPanel() {
@@ -4376,13 +4396,16 @@ export function executeAction(action: NoteAction): ActionResult {
 
     case 'reorder_phrase': {
       const { phraseId, newSortOrder, categoryId } = action.payload as { phraseId: string; newSortOrder: number; categoryId: string };
-      // Reordering default phrases requires adding them as custom overrides
-      // For now, add a custom phrase at the target position
       const phrases = catStore.getPhrasesForCategory(categoryId);
       const target = phrases.find((p) => p.id === phraseId);
       if (!target) return { success: false, message: 'Phrase not found' };
-      // Add as custom with new sort order (will appear before defaults at same sortOrder)
-      catStore.addCustomPhrase(categoryId, target.text);
+      if (!target.isCustom) catStore.hideDefaultPhrase(target.id);
+      useCategoryStore.setState((s) => ({
+        customPhrases: [
+          ...s.customPhrases,
+          { id: crypto.randomUUID(), categoryId, text: target.text, sortOrder: newSortOrder, isCustom: true, usageCount: 0 },
+        ],
+      }));
       return { success: true, message: `Moved "${target.text}" to position ${newSortOrder + 1}` };
     }
 
@@ -4585,12 +4608,17 @@ export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: num
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 
 let currentAudio: HTMLAudioElement | null = null;
+let currentBlobUrl: string | null = null;
 
 export function stopAzureAudio(): void {
   if (currentAudio) {
     currentAudio.pause();
     currentAudio.src = '';
     currentAudio = null;
+  }
+  if (currentBlobUrl) {
+    URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = null;
   }
 }
 
@@ -4620,11 +4648,15 @@ export async function speakAzure(
     const audioBuffer = await res.arrayBuffer();
     const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
     const url = URL.createObjectURL(blob);
+    currentBlobUrl = url;
     const audio = new Audio(url);
     currentAudio = audio;
     audio.volume = volume;
     await audio.play();
-    audio.onended = () => { URL.revokeObjectURL(url); if (currentAudio === audio) currentAudio = null; };
+    audio.onended = () => {
+      URL.revokeObjectURL(url);
+      if (currentAudio === audio) { currentAudio = null; currentBlobUrl = null; }
+    };
     return true;
   } catch {
     return false;
@@ -5705,7 +5737,7 @@ export function decayPredictions(
     if (val.count <= 1 && val.lastUsed < thirtyDaysAgo) continue;
     if (val.lastUsed < sevenDaysAgo) {
       const newCount = Math.max(1, Math.floor(val.count * 0.95));
-      if (newCount > 1) result[key] = { count: newCount, lastUsed: val.lastUsed };
+      if (newCount > 1) result[key] = { count: newCount, lastUsed: Date.now() };
     } else {
       result[key] = val;
     }
@@ -5757,7 +5789,7 @@ export const useCategoryStore = create<CategoryState>()(
       getPhrasesForCategory: (categoryId) => {
         const hidden = new Set(get().hiddenPhraseIds);
         const defaults = DEFAULT_PHRASES.filter((p) => p.categoryId === categoryId && !hidden.has(p.id));
-        const custom = get().customPhrases.filter((p) => p.categoryId === categoryId);
+        const custom = get().customPhrases.filter((p) => p.categoryId === categoryId && !p.deletedAt);
         return [...defaults, ...custom].sort((a, b) => a.sortOrder - b.sortOrder);
       },
 
@@ -5794,7 +5826,9 @@ export const useCategoryStore = create<CategoryState>()(
         })),
 
       removeCustomPhrase: (id) =>
-        set((s) => ({ customPhrases: s.customPhrases.filter((p) => p.id !== id) })),
+        set((s) => ({
+          customPhrases: s.customPhrases.map((p) => p.id === id ? { ...p, deletedAt: Date.now() } : p),
+        })),
 
       addOrderingSequence: (seq) =>
         set((s) => ({ orderingSequences: [...s.orderingSequences, seq] })),
@@ -5832,9 +5866,11 @@ import { persist } from 'zustand/middleware';
 import { HistoryEntry } from '@/types';
 import { ToneStyle } from '@/services/azureTTS';
 
+const MAX_UNDO = 20;
+
 interface MessageState {
   text: string;
-  prevText: string;
+  undoStack: string[];
   activeTone: ToneStyle;
   autoSpeak: boolean;
   soundEnabled: boolean;
@@ -5854,11 +5890,15 @@ interface MessageState {
   clearHistory: () => void;
 }
 
+function pushUndo(s: { text: string; undoStack: string[] }): { undoStack: string[] } {
+  return { undoStack: [s.text, ...s.undoStack].slice(0, MAX_UNDO) };
+}
+
 export const useMessageStore = create<MessageState>()(
   persist(
     (set) => ({
       text: '',
-      prevText: '',
+      undoStack: [],
       activeTone: 'friendly' as ToneStyle,
       autoSpeak: false,
       soundEnabled: true,
@@ -5867,29 +5907,34 @@ export const useMessageStore = create<MessageState>()(
       setTone: (tone) => set({ activeTone: tone }),
 
       appendWord: (word) =>
-        set((s) => ({ prevText: s.text, text: s.text.trim() ? `${s.text.trim()} ${word}` : word })),
+        set((s) => ({ ...pushUndo(s), text: s.text.trim() ? `${s.text.trim()} ${word}` : word })),
 
       appendText: (text) =>
-        set((s) => ({ prevText: s.text, text: s.text.trim() ? `${s.text.trim()} ${text}` : text })),
+        set((s) => ({ ...pushUndo(s), text: s.text.trim() ? `${s.text.trim()} ${text}` : text })),
 
       appendChar: (char) =>
-        set((s) => ({ prevText: s.text, text: s.text + char })),
+        set((s) => ({ ...pushUndo(s), text: s.text + char })),
 
       deleteLastWord: () =>
         set((s) => {
           const words = s.text.trim().split(/\s+/).filter(Boolean);
           words.pop();
-          return { prevText: s.text, text: words.join(' ') };
+          return { ...pushUndo(s), text: words.join(' ') };
         }),
 
       deleteLastChar: () =>
-        set((s) => ({ prevText: s.text, text: s.text.slice(0, -1) })),
+        set((s) => ({ ...pushUndo(s), text: s.text.slice(0, -1) })),
 
-      clearAll: () => set((s) => ({ prevText: s.text, text: '' })),
+      clearAll: () => set((s) => ({ ...pushUndo(s), text: '' })),
 
-      undo: () => set((s) => ({ text: s.prevText, prevText: s.text })),
+      undo: () =>
+        set((s) => {
+          if (s.undoStack.length === 0) return {};
+          const [prev, ...rest] = s.undoStack;
+          return { text: prev, undoStack: rest };
+        }),
 
-      setText: (text) => set((s) => ({ prevText: s.text, text })),
+      setText: (text) => set((s) => ({ ...pushUndo(s), text })),
 
       toggleAutoSpeak: () => set((s) => ({ autoSpeak: !s.autoSpeak })),
 
@@ -6166,7 +6211,7 @@ describe('Sync — Data integrity', () => {
     const remote = [{ id: 'a', name: 'A-modified' }];
     const merged = mergeCustomItems(local, remote);
     expect(merged).toHaveLength(1);
-    expect(merged[0].name).toBe('A'); // local wins
+    expect(merged[0].name).toBe('A'); // local wins (iterated last, overwrites remote)
   });
 
   it('mergeHistory caps at 100 and deduplicates', () => {
@@ -6849,9 +6894,14 @@ export default function PrismApp() {
   }, [runDecay, seedTemplates]);
 
   // Physical keyboard support — captures keystrokes globally
+  // Skips interactive form elements (input, textarea, select, buttons with focus)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.key === 'Tab' || e.key === 'Escape') return;
+      if ((e.target as HTMLElement)?.closest('[role="dialog"]')) return;
+      if (e.key === ' ' && document.activeElement?.tagName === 'BUTTON') return;
       const store = useMessageStore.getState();
       if (e.key === 'Backspace') { e.preventDefault(); deleteFeedback(); store.deleteLastChar(); }
       else if (e.key === 'Enter') { e.preventDefault(); }
@@ -7064,6 +7114,7 @@ export interface Phrase {
   sortOrder: number;
   isCustom: boolean;
   usageCount: number;
+  deletedAt?: number;
 }
 
 export interface MathItem {
