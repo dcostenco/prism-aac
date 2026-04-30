@@ -239,11 +239,28 @@ Themes apply via CSS custom properties on the root container — no per-componen
 - **Framework:** Next.js 16 + React 19 + TypeScript
 - **Styling:** Tailwind CSS 4
 - **State:** zustand 5 with localStorage persistence
-- **Speech:** Web Speech API (TTS)
+- **Speech:** Web Speech API (TTS + STT — both run on-device in the browser)
 - **Sync:** Supabase (same project as Synalux portal) with realtime subscriptions
-- **Layout:** Modal-overlay UX — Categories, Notes, and AI Chat render as full-screen modals above the keyboard so the keyboard layout never shifts
+- **Layout:** Inline-docked panels — Categories, Math, AI Chat, Caregiver Notes render above the keyboard so the soft keyboard stays usable while a panel is open
 - **Theme:** Light (default) / Dark, plus High Contrast — driven by CSS variables; persisted in `settingsStore`
-- **Tests:** Vitest unit/integration — **187 tests across 13 files**. Plus Playwright e2e (`e2e/core-flows.spec.ts`) running against the live deploy across 11 viewport projects (desktop, iPhone 6.1/6.5/6.9 ± landscape, iPad 7"/13" ± landscape).
+- **Tests:** Vitest unit/integration — **195 tests across 14 files**. Plus Playwright e2e (`e2e/core-flows.spec.ts`) running against the live deploy across 11 viewport projects (desktop, iPhone 6.1/6.5/6.9 ± landscape, iPad 7"/13" ± landscape).
+
+### Speed-critical path routing
+
+A non-verbal child must never wait on a network for their own voice. Anything on the typing → speak loop runs **on-device first**, with the synalux portal as a fallback when local isn't available. Anything conversational (AI Chat) is allowed to round-trip because the user explicitly opens it.
+
+| Path | Where | Backend today | Local-first? |
+|---|---|---|---|
+| **Word prediction** | `store/predictionStore.ts` | client-side trigram + bigram + prefix + frequency + recency, seeded from 58 default phrases | yes — sub-millisecond, never touches the network |
+| **Voice → text (STT)** | `services/voiceInputService.ts` | browser Web Speech API, on-device | yes — audio never leaves the browser |
+| **Text → voice (TTS)** | `services/speechService.ts` | browser SpeechSynthesis by default; Azure Neural TTS only when a paid tier explicitly selects a premium voice | yes by default; portal only on opt-in |
+| **Text auto-correction** | `services/textCorrectService.ts` + `services/localModel.ts` | probes local Ollama prism-coder:7b at boot. If reachable → all corrections route to local (~200-400ms). If not → portal Gemini 2.5 Flash with a hard 1.5s timeout. | yes — local Ollama wins whenever it's there |
+| **Pictograms (symbols)** | `services/pictogramService.ts` | ARASAAC public CDN — symbol search + image fetch, IndexedDB-cached | yes — free CDN, no portal cost |
+| **Pictograms (AI gen)** | portal `/api/v1/prism-aac/pictogram` | Together AI FLUX.1 Schnell, platform-cached in Supabase Storage | no — non-critical, paid tiers, lazy load |
+| **AI Chat** | `services/aiService.ts` | portal `/api/v1/chat` (tier-routed), with local Ollama as offline backup | no — conversational, user accepts the round-trip |
+| **Emergency** | `services/emergencyService.ts` | works fully offline — falls back through Synalux VoIP → API SMS → email → native SMS → native phone + speaker TTS → offline queue | yes — never depends on network for safety |
+
+The **Speak button never blocks** on correction. If a background suggestion has landed, it's auto-applied; otherwise the original text is spoken immediately and the suggestion catches up for next time. Slow WiFi can't stall communication.
 
 ### Key Design Decisions (with evidence)
 
