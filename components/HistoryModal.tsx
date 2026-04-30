@@ -16,7 +16,7 @@ export default function HistoryModal() {
   };
 
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={toggleHistory}>
+    <div role="dialog" aria-modal="true" className="modal-backdrop fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={toggleHistory}>
       <div className="surface-bar rounded-2xl w-full max-w-lg max-h-[80svh] flex flex-col border border-theme shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-3 border-b border-theme">
           <h2 className="text-primary font-bold text-lg">History</h2>

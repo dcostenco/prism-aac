@@ -16,6 +16,7 @@ import { useCategoryStore } from '@/store/categoryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useAuthStore } from '@/store/authStore';
+import { useUIStore } from '@/store/uiStore';
 import { keyFeedback, deleteFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 
@@ -47,6 +48,8 @@ export default function PrismApp() {
   const seedTemplates = useCategoryStore((s) => s.seedTemplates);
   const highContrast = useSettingsStore((s) => s.highContrast);
   const theme = useSettingsStore((s) => s.theme);
+  const sidePanel = useUIStore((s) => s.sidePanel);
+  const aiChatOpen = sidePanel === 'ai-chat';
   const { rtl } = useT();
 
   useEffect(() => {
@@ -91,7 +94,11 @@ export default function PrismApp() {
         <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`}>
           <Toolbar />
           <MessageBar />
-          <PredictionBar />
+          {!aiChatOpen && <PredictionBar />}
+          {/* AI Chat is INLINE: claims the vertical space above the keyboard
+              so the user can keep typing on the same soft keyboard. AI chat
+              and the keyboard split the remaining viewport ~equally. */}
+          {aiChatOpen && <AIChatPanel />}
           <div className="flex-1 flex flex-col min-h-0">
             <Keyboard />
           </div>
@@ -99,7 +106,6 @@ export default function PrismApp() {
           {/* Modal overlays — render above the keyboard, never steal horizontal space */}
           <CategoryPanel />
           <CaregiverPanel />
-          <AIChatPanel />
           <HistoryModal />
           <SettingsModal />
         </div>

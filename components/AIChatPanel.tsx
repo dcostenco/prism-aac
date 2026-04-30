@@ -11,13 +11,13 @@ import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services
 import ColoredText from './ColoredText';
 
 /**
- * AI Chat — integrated modal anchored above the keyboard.
+ * AI Chat — inline panel docked above the keyboard.
  *
- * The child types a question on the unified keyboard → text appears in the
- * shared message bar → opens this modal and taps [Ask AI ✨]. Tapping any AI
- * line copies it to the message bar (preserves authorship — Valencia et al.,
- * CHI 2023). No second input field. The modal does not cover the keyboard or
- * message bar so the user can keep typing.
+ * Renders as a flex child between PredictionBar and Keyboard, taking all the
+ * remaining vertical space. The user keeps typing on the same soft keyboard
+ * (no separate input field), text appears in the shared MessageBar, and the
+ * AI conversation occupies the panel above. Tapping any AI line copies it to
+ * the message bar (preserves authorship — Valencia et al., CHI 2023).
  */
 
 interface ChatMessage {
@@ -143,115 +143,115 @@ export default function AIChatPanel() {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-40 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-6"
-      onClick={() => { tapFeedback(); closeSidePanel(); }}
+    <section
+      aria-label="AI Chat"
+      className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme"
+      data-testid="ai-chat-panel"
     >
-      <div
-        className="surface-bar w-full md:max-w-2xl rounded-t-2xl md:rounded-2xl flex flex-col max-h-[80svh] md:max-h-[70svh] border border-theme overflow-hidden shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-theme">
-          <span className="text-primary font-semibold text-base">✨ AI Chat</span>
-          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close AI chat" className="aac-btn w-11 h-11 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">✕</button>
+      <header className="flex items-center justify-between px-4 py-3 border-b border-theme shrink-0">
+        <span className="text-primary font-bold text-2xl md:text-3xl">✨ AI Chat</span>
+        <button
+          onClick={() => { tapFeedback(); closeSidePanel(); }}
+          aria-label="Close AI chat"
+          className="aac-btn w-12 h-12 rounded-xl surface-key text-muted text-2xl flex items-center justify-center border border-theme"
+        >
+          ✕
+        </button>
+      </header>
+
+      {!configured ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <p className="text-primary font-bold text-2xl md:text-3xl mb-4">AI Chat requires a Synalux account.</p>
+          <p className="text-muted text-lg md:text-xl mb-3">Sign in via Settings to enable AI Chat, web search, and all platform modules.</p>
+          <p className="text-dim text-base md:text-lg">Core AAC features (keyboard, categories, predictions) work without an account.</p>
         </div>
-
-        {!configured ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-            <p className="text-muted text-sm mb-3">AI Chat requires a Synalux account.</p>
-            <p className="text-dim text-xs mb-3">Sign in via Settings to enable AI Chat, web search, and all platform modules.</p>
-            <p className="text-dim text-xs">Core AAC features (keyboard, categories, predictions) work without an account.</p>
-          </div>
-        ) : (
-          <>
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[160px]">
-              {messages.length === 0 && (
-                <div className="text-muted text-sm text-center py-8">
-                  <p className="mb-2">Type a question on the keyboard, then tap</p>
-                  <p className="text-[#4CAF50] font-semibold">Ask AI ✨</p>
-                  <p className="mt-3 text-xs text-dim">Tap any AI response to add it to your message.</p>
-                </div>
-              )}
-
-              {messages.map((msg, i) => (
-                <div key={i} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
-                  <div
-                    className={`rounded-xl p-3 border border-theme ${
-                      msg.role === 'user' ? 'bg-[#dbeafe] text-[#14161d] dark:bg-[#2a3a5e] dark:text-[#e0e0e0]' : 'surface-key'
-                    }`}
-                  >
-                    {msg.role === 'user' ? (
-                      <p className="text-sm">{msg.text}</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {(msg.lines ?? [msg.text]).map((line, li) => (
-                          <button
-                            key={li}
-                            onClick={() => handleTapLine(line)}
-                            aria-label={`Use: ${line}`}
-                            className="aac-btn block w-full text-left rounded-lg p-2 hover:bg-black/5 transition-colors"
-                          >
-                            <ColoredText text={line} className="text-sm leading-relaxed" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-dim text-xs mt-1 px-1">{msg.role === 'user' ? 'You' : 'AI'}</p>
-                </div>
-              ))}
-
-              {loading && (
-                <div className="flex items-center gap-2 text-muted text-sm px-2">
-                  <span className="animate-pulse">Thinking…</span>
-                </div>
-              )}
-            </div>
-
-            <div className="p-3 border-t border-theme">
-              <div className="text-dim text-xs mb-2 text-center truncate">
-                {listening && interim ? (
-                  <span className="text-[#4CAF50]">🎙 &ldquo;{interim}&rdquo;</span>
-                ) : text.trim() ? (
-                  <>Question: <span className="text-muted">&ldquo;{text.trim()}&rdquo;</span></>
-                ) : (
-                  voiceSupported
-                    ? 'Type on the keyboard or tap 🎙 to speak.'
-                    : 'Type your question on the keyboard.'
-                )}
+      ) : (
+        <>
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+            {messages.length === 0 && (
+              <div className="text-muted text-center py-6">
+                <p className="text-xl md:text-2xl mb-2">Type a question on the keyboard, then tap</p>
+                <p className="text-[#4CAF50] font-bold text-2xl md:text-3xl">Ask AI ✨</p>
+                <p className="mt-3 text-base md:text-lg text-dim">Tap any AI response to add it to your message.</p>
               </div>
-              <div className="flex gap-2">
-                {voiceSupported && (
-                  <button
-                    onClick={toggleVoice}
-                    aria-label={listening ? 'Stop voice input' : 'Start voice input'}
-                    aria-pressed={listening}
-                    data-testid="ai-mic"
-                    className={`aac-btn rounded-xl font-bold text-base px-4 min-w-[64px] flex items-center justify-center ${
-                      listening
-                        ? 'bg-[#F44336] text-white animate-pulse'
-                        : 'surface-key text-primary border border-theme'
-                    }`}
-                  >
-                    {listening ? '⏺' : '🎙'}
-                  </button>
-                )}
-                <button
-                  onClick={handleAsk}
-                  disabled={!text.trim() || loading}
-                  className={`aac-btn aac-speak flex-1 py-3 rounded-xl font-bold text-base ${
-                    text.trim() && !loading ? 'bg-[#4CAF50] text-white' : 'surface-key text-dim border border-theme'
+            )}
+
+            {messages.map((msg, i) => (
+              <div key={i} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
+                <div
+                  className={`rounded-xl p-3 border border-theme ${
+                    msg.role === 'user' ? 'bg-[#dbeafe] text-[#14161d] dark:bg-[#2a3a5e] dark:text-[#e0e0e0]' : 'surface-key'
                   }`}
                 >
-                  {loading ? 'Thinking…' : 'Ask AI ✨'}
-                </button>
+                  {msg.role === 'user' ? (
+                    <p className="text-xl md:text-2xl">{msg.text}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {(msg.lines ?? [msg.text]).map((line, li) => (
+                        <button
+                          key={li}
+                          onClick={() => handleTapLine(line)}
+                          aria-label={`Use: ${line}`}
+                          className="aac-btn block w-full text-left rounded-lg p-2 hover:bg-black/5 transition-colors"
+                        >
+                          <ColoredText text={line} className="text-xl md:text-2xl leading-relaxed" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="text-dim text-base mt-1 px-1">{msg.role === 'user' ? 'You' : 'AI'}</p>
               </div>
+            ))}
+
+            {loading && (
+              <div className="flex items-center gap-2 text-muted text-xl px-2">
+                <span className="animate-pulse">Thinking…</span>
+              </div>
+            )}
+          </div>
+
+          <div className="p-3 border-t border-theme shrink-0">
+            <div className="text-muted text-base md:text-lg mb-2 text-center truncate">
+              {listening && interim ? (
+                <span className="text-[#4CAF50]">🎙 &ldquo;{interim}&rdquo;</span>
+              ) : text.trim() ? (
+                <>Question: <span className="text-primary font-semibold">&ldquo;{text.trim()}&rdquo;</span></>
+              ) : (
+                voiceSupported
+                  ? 'Type on the keyboard or tap 🎙 to speak.'
+                  : 'Type your question on the keyboard.'
+              )}
             </div>
-          </>
-        )}
-      </div>
-    </div>
+            <div className="flex gap-2">
+              {voiceSupported && (
+                <button
+                  onClick={toggleVoice}
+                  aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+                  aria-pressed={listening}
+                  data-testid="ai-mic"
+                  className={`aac-btn rounded-xl font-bold text-2xl px-5 min-w-[72px] flex items-center justify-center ${
+                    listening
+                      ? 'bg-[#F44336] text-white animate-pulse'
+                      : 'surface-key text-primary border border-theme'
+                  }`}
+                >
+                  {listening ? '⏺' : '🎙'}
+                </button>
+              )}
+              <button
+                onClick={handleAsk}
+                disabled={!text.trim() || loading}
+                className={`aac-btn aac-speak flex-1 py-4 rounded-xl font-bold text-xl md:text-2xl ${
+                  text.trim() && !loading ? 'bg-[#4CAF50] text-white' : 'surface-key text-dim border border-theme'
+                }`}
+              >
+                {loading ? 'Thinking…' : 'Ask AI ✨'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </section>
   );
 }

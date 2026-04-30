@@ -16,7 +16,10 @@ function ModalShell({ children, onClose }: { children: ReactNode; onClose: () =>
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-40 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-6"
+      // Backdrop is semi-transparent by default; high-contrast mode swaps in
+      // a fully opaque background (CSS in globals.css) so users with low
+      // vision aren't asked to read the modal through bleed-through chrome.
+      className="modal-backdrop fixed inset-0 z-40 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-6"
       onClick={onClose}
     >
       <div
@@ -67,7 +70,10 @@ export default function CategoryPanel() {
     appendWord(symbol);
   };
 
-  const btn = 'aac-btn surface-key text-primary rounded-xl p-3 font-medium select-none text-center border border-theme';
+  // Tile/list buttons share the same scale as the toolbar + keyboard word
+  // row — text-xl/md:text-2xl, bold — so the whole app reads as one
+  // typographic system. Larger glyphs also help users with reduced acuity.
+  const btn = 'aac-btn surface-key text-primary rounded-xl p-3 font-bold text-xl md:text-2xl select-none text-center border border-theme';
 
   // MATH PANEL
   if (sidePanel === 'math') {
@@ -76,7 +82,7 @@ export default function CategoryPanel() {
     return (
       <ModalShell onClose={closeSidePanel}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-theme">
-          <span className="text-primary font-semibold text-base">{t('math')}</span>
+          <span className="text-primary font-bold text-2xl md:text-3xl">{t('math')}</span>
           <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">✕</button>
         </div>
         <div className="p-3 overflow-y-auto">
@@ -111,15 +117,15 @@ export default function CategoryPanel() {
     return (
       <ModalShell onClose={closeSidePanel}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-theme">
-          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Back to categories" className="aac-btn h-11 px-4 rounded-xl surface-key text-muted text-sm flex items-center justify-center border border-theme">← {t('previous_step')}</button>
-          <span className="text-primary font-semibold text-base">{seq.name}</span>
-          <span className="text-muted text-xs">{activeSequenceStep + 1}/{seq.steps.length}</span>
+          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Back to categories" className="aac-btn h-11 px-4 rounded-xl surface-key text-muted text-base flex items-center justify-center border border-theme">← {t('previous_step')}</button>
+          <span className="text-primary font-bold text-2xl md:text-3xl">{seq.name}</span>
+          <span className="text-muted text-base">{activeSequenceStep + 1}/{seq.steps.length}</span>
         </div>
         <div className="p-4 flex-1 overflow-y-auto">
-          <p className="text-primary font-semibold text-center mb-3 text-lg">{step.label}</p>
+          <p className="text-primary font-bold text-center mb-3 text-2xl md:text-3xl">{step.label}</p>
           <div className="flex flex-col gap-2">
             {step.options.map((opt) => (
-              <button key={opt.id} onClick={() => handlePhrase(opt.text)} aria-label={opt.text} className={`${btn} text-left text-base`}>
+              <button key={opt.id} onClick={() => handlePhrase(opt.text)} aria-label={opt.text} className={`${btn} text-left`}>
                 {opt.text}
               </button>
             ))}
@@ -146,14 +152,14 @@ export default function CategoryPanel() {
     return (
       <ModalShell onClose={closeSidePanel}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-theme">
-          <button onClick={backToCategories} className="text-muted hover:text-primary text-sm">← {t('previous_step')}</button>
-          <span className="text-primary font-semibold text-base">{cat?.icon} {cat?.name}</span>
-          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">✕</button>
+          <button onClick={backToCategories} className="text-muted hover:text-primary text-base">← {t('previous_step')}</button>
+          <span className="text-primary font-bold text-2xl md:text-3xl">{cat?.icon} {cat?.name}</span>
+          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-12 h-12 rounded-xl surface-key text-muted text-2xl flex items-center justify-center border border-theme">✕</button>
         </div>
         {sequences.length > 0 && (
           <div className="flex gap-2 p-3 border-b border-theme">
             {sequences.map((seq) => (
-              <button key={seq.id} onClick={() => startOrdering(seq.id)} className={`${btn} flex-1 text-sm`}>🛒 {seq.name}</button>
+              <button key={seq.id} onClick={() => startOrdering(seq.id)} className={`${btn} flex-1`}>🛒 {seq.name}</button>
             ))}
           </div>
         )}
@@ -165,7 +171,7 @@ export default function CategoryPanel() {
               <button
                 key={p.id}
                 onClick={() => handlePhrase(p.text)}
-                className={`${btn} min-h-[64px] text-base`}
+                className={`${btn} min-h-[72px]`}
                 style={{ borderLeftColor: color, borderLeftWidth: '5px' }}
               >
                 {p.text}
@@ -182,18 +188,18 @@ export default function CategoryPanel() {
   return (
     <ModalShell onClose={closeSidePanel}>
       <div className="flex items-center justify-between px-4 py-3 border-b border-theme">
-        <span className="text-primary font-semibold text-base">{t('categories')}</span>
-        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">✕</button>
+        <span className="text-primary font-bold text-2xl md:text-3xl">{t('categories')}</span>
+        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-12 h-12 rounded-xl surface-key text-muted text-2xl flex items-center justify-center border border-theme">✕</button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3 overflow-y-auto flex-1">
         {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => selectCategory(cat.id)}
-            className={`${btn} flex items-center gap-3 text-left min-h-[64px]`}
+            className={`${btn} flex items-center gap-3 text-left min-h-[72px]`}
           >
-            <span className="text-2xl">{cat.icon}</span>
-            <span className="text-base">{cat.name}</span>
+            <span className="text-3xl md:text-4xl">{cat.icon}</span>
+            <span>{cat.name}</span>
           </button>
         ))}
       </div>

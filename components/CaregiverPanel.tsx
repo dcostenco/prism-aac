@@ -62,7 +62,7 @@ export default function CaregiverPanel() {
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-40 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-6"
+      className="modal-backdrop fixed inset-0 z-40 flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-6"
       onClick={() => { tapFeedback(); closeSidePanel(); }}
     >
       <div
