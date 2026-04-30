@@ -119,7 +119,7 @@ export default function SettingsModal() {
                     : 'Symbols + AI';
                   const isSelected = settings.pictureMode === mode;
                   const isAi = mode === 'symbols-ai';
-                  const aiLocked = isAi && (!profile || profile.plan === 'free');
+                  const aiLocked = isAi && (!profile || profile.plan !== 'enterprise');
                   return (
                     <button
                       key={mode}
@@ -129,7 +129,7 @@ export default function SettingsModal() {
                       }}
                       aria-pressed={isSelected}
                       disabled={aiLocked}
-                      title={aiLocked ? 'Sign in with a paid Synalux tier to enable AI-generated pictures' : undefined}
+                      title={aiLocked ? 'AI-generated pictures require the Enterprise tier' : undefined}
                       className={`aac-btn rounded-xl px-3 py-3 text-sm font-bold border border-theme ${
                         isSelected ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                       } ${aiLocked ? 'opacity-40 cursor-not-allowed' : ''}`}
@@ -140,7 +140,7 @@ export default function SettingsModal() {
                 })}
               </div>
               <p className="text-dim text-xs mt-2 leading-relaxed">
-                Phrase tiles show a small picture next to the words. Symbols come from the open-source ARASAAC library; the &ldquo;Symbols + AI&rdquo; option generates a custom pictogram for any phrase that doesn&apos;t have a matching symbol (paid Synalux tiers only).
+                Phrase tiles show a small picture next to the words. Symbols come from the open-source ARASAAC library (free, every tier); the &ldquo;Symbols + AI&rdquo; option generates a custom pictogram for any phrase that doesn&apos;t have a matching symbol — Enterprise tier only.
               </p>
             </div>
           </div>
