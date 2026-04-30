@@ -33,6 +33,9 @@ export default function PhraseTile({ phrase, className, style, onClick, ariaLabe
     return () => { cancelled = true; };
   }, [phrase, language, pictureMode]);
 
+  // Reserve fixed icon space on every tile so rows stay aligned whether or
+  // not the pictogram has loaded / exists. Empty slot when there's no
+  // icon — keeps the grid honest.
   return (
     <button
       onClick={onClick}
@@ -40,20 +43,20 @@ export default function PhraseTile({ phrase, className, style, onClick, ariaLabe
       className={className}
       style={style}
     >
-      {iconUrl ? (
-        <span className="flex flex-col items-center justify-center gap-1 w-full">
-          <img
-            src={iconUrl}
-            alt=""
-            aria-hidden
-            loading="lazy"
-            className="w-12 h-12 md:w-16 md:h-16 object-contain"
-          />
-          <span className="block text-center">{phrase}</span>
+      <span className="flex flex-col items-center justify-center gap-2 w-full">
+        <span className="w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shrink-0">
+          {iconUrl && (
+            <img
+              src={iconUrl}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              className="max-w-full max-h-full object-contain"
+            />
+          )}
         </span>
-      ) : (
-        <span>{phrase}</span>
-      )}
+        <span className="block text-center leading-tight">{phrase}</span>
+      </span>
     </button>
   );
 }

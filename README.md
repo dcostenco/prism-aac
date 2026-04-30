@@ -15,21 +15,25 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 
 ## Screenshots
 
-### Home — Keyboard with predictions
-![Home screen](docs/screenshots/home.png)
+### Home — keyboard, message bar, prediction tiles with pictograms
+![Home screen](docs/screenshots/home-v2.png)
+> Soft keyboard always visible at the bottom. Five color-coded prediction tiles (Modified Fitzgerald Key) sit above the keys; on paid tiers each tile pulls a pictogram from the open ARASAAC library so non-readers can recognise the word. Top toolbar carries every secondary view at one tap each.
 
-### Categories — modal overlay above the keyboard
-![Categories open](docs/screenshots/categories-open.png)
-> Categories, Notes, and AI Chat now open as **modal overlays** above the keyboard rather than side panels. The shared message bar persists; close the modal to keep typing. *(Screenshot pending — captures the prior side-panel layout.)*
+### Categories — inline panel docked above the keyboard
+![Categories list](docs/screenshots/categories-list-v2.png)
+> Every secondary panel (Categories, Math, AI Chat, Caregiver Notes) renders **inline above the keyboard** — never as a fullscreen modal that covers the keys. The user keeps typing on the same soft keyboard with the same predictions while the panel is open.
 
-### Food ordering with restaurant flows
-![Food ordering](docs/screenshots/food-ordering.png)
+### Category detail — bundled phrases with TouchChat-style pictograms
+![Category with pictograms](docs/screenshots/categories-pictograms-v2.png)
+> Phrase tiles inside each category show an AAC pictogram next to the words. Symbols come from the open-source [ARASAAC](https://arasaac.org/) library (12.9k symbols, free, every tier); paid Synalux subscriptions additionally generate a custom pictogram via FLUX.1 Schnell for any phrase ARASAAC doesn't cover. Generated images are cached platform-wide in Supabase Storage — every unique phrase generates exactly **once** across the whole user base.
 
-### Math keyboard
-![Math panel](docs/screenshots/math-panel.png)
+### Math — every symbol you'd find in a K-12 + intro-college curriculum
+![Math panel](docs/screenshots/math-panel-v2.png)
+> ~80 math symbols across 8 grouped categories (Basic, Numbers, Algebra, Constants, Trigonometry, Calculus, Greek letters, Logic & sets). Tap any symbol to insert it into the message bar; long-press the AAC button to hear it spoken.
 
-### Settings — voice, custom categories, Synalux account
+### Settings — Synalux account, voice, custom phrases
 ![Settings](docs/screenshots/settings.png)
+> Sign in with your Synalux account to unlock AI Chat, premium TTS voices, cloud sync, and AI-generated pictograms. Picture mode is auto-selected from your tier — no setting to forget about. Core AAC (keyboard, categories, prediction, emergency, 12 languages) works without an account.
 
 ---
 
@@ -116,6 +120,19 @@ When the API is unreachable (offline, network drop, regional outage), every tier
 
 Pricing matches the Synalux Portal and Prism Coder products — one bill, one tier across all platform apps. **Synalux Enterprise subscribers get PrismAAC Enterprise included** at no additional cost.
 
+### Picture mode (TouchChat-style pictograms)
+
+Phrase tiles, category cards, and prediction tiles can render an AAC pictogram next to the words — the visual style that TouchChat HD, Proloquo2Go, and LAMP have used for decades, but with no $250 one-time fee and no per-phrase manual symbol authoring.
+
+Two sources, picked automatically based on your subscription tier (no setting to flip):
+
+- **ARASAAC** ([arasaac.org](https://arasaac.org/)) — open library of ~12,900 AAC pictograms, free for every tier including the Free plan. Lazy-fetched directly from `static.arasaac.org`, browser-cached in IndexedDB after first load.
+- **AI fallback (FLUX.1 Schnell via Together AI)** — for any phrase ARASAAC doesn't cover, paid Synalux subscribers get a freshly-generated flat-vector pictogram (~2s, ~$0.003 per image). Generated images are cached **platform-wide in Supabase Storage** keyed by `sha256(version|lang|phrase)` — so every unique phrase generates exactly **once** across the entire user base, ever. The next user to type the same phrase pulls the cached PNG from the CDN at zero cost. Privacy posture: the cache key is content-hashed, the raw phrase is never persisted, and the bucket is anonymous content-addressed.
+
+### Voice input (browser-side speech-to-text)
+
+Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships the Web Speech API (Chrome / Edge / Safari). Tap to start continuous recognition; spoken words appear in the message bar exactly as if they were typed on the keyboard. Audio never leaves the device — recognition runs entirely in the browser engine. Available to every tier including Free; the AI response that follows still routes through your tier's model.
+
 ### Feature Tiers
 
 | Feature | Free | Standard | Advanced | Enterprise |
@@ -125,7 +142,10 @@ Pricing matches the Synalux Portal and Prism Coder products — one bill, one ti
 | Word prediction (5 slots; trigram + bigram + prefix + frequency + recency, seeded from 58 phrases) | Yes | Yes | Yes | Yes |
 | Modified Fitzgerald Key color coding (Goossens' 1992) — pronouns yellow, verbs green, nouns orange | Yes | Yes | Yes | Yes |
 | Cumulative auto-speak | Yes | Yes | Yes | Yes |
-| Math keyboard (30 symbols, basic + advanced) | Yes | Yes | Yes | Yes |
+| Math keyboard (~80 symbols across 8 categories) | Yes | Yes | Yes | Yes |
+| Picture mode — ARASAAC pictograms on phrase + prediction tiles | Yes | Yes | Yes | Yes |
+| Picture mode — AI-generated pictograms (FLUX.1 Schnell, platform-cached) | — | Yes | Yes | Yes |
+| Voice input — continuous browser-side speech-to-text (Web Speech API) | Yes | Yes | Yes | Yes |
 | Caregiver notes (local) | Yes | Yes | Yes | Yes |
 | Bundled restaurant ordering flows (Chipotle, General) | Yes | Yes | Yes | Yes |
 | Multi-language UI (12 languages, RTL) — *never tier-gated* | Yes | Yes | Yes | Yes |
