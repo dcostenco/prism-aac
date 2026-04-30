@@ -48,7 +48,7 @@ export function hasApiKey(): boolean {
 
 async function callSynalux(
   messages: Array<{ role: string; content: string }>,
-  options?: { webSearch?: boolean },
+  options?: { webSearch?: boolean; onChunk?: (text: string) => void },
 ): Promise<string> {
   const token = getAuthToken();
   if (!token) throw new Error('offline');
@@ -84,7 +84,8 @@ async function callSynalux(
         if (!line.startsWith('data: ')) continue;
         try {
           const parsed = JSON.parse(line.slice(6));
-          fullText += parsed?.choices?.[0]?.delta?.content || '';
+          const delta = parsed?.choices?.[0]?.delta?.content || '';
+          if (delta) { fullText += delta; options?.onChunk?.(fullText); }
         } catch { /* incomplete chunk */ }
       }
     }
@@ -125,7 +126,7 @@ async function callLocal(prompt: string): Promise<string> {
 
 async function route(
   prompt: string,
-  options?: { webSearch?: boolean; system?: string },
+  options?: { webSearch?: boolean; system?: string; onChunk?: (text: string) => void },
 ): Promise<string> {
   const messages: Array<{ role: string; content: string }> = [];
   if (options?.system) messages.push({ role: 'system', content: options.system });
@@ -133,7 +134,7 @@ async function route(
 
   // Try Synalux first (online, full features)
   try {
-    return await callSynalux(messages, { webSearch: options?.webSearch });
+    return await callSynalux(messages, { webSearch: options?.webSearch, onChunk: options?.onChunk });
   } catch (err) {
     const msg = err instanceof Error ? err.message : '';
     // Auth/rate errors should not fall back — surface to user
@@ -161,7 +162,11 @@ export interface ParsedNoteResult {
   summary: string;
 }
 
-export async function askAI(question: string, context?: string): Promise<AIResponse> {
+export async function askAI(
+  question: string,
+  context?: string,
+  onChunk?: (text: string, lines: string[]) => void,
+): Promise<AIResponse> {
   const system = [
     'You are a friendly helper for a child who uses an AAC (communication) device.',
     'The child may have limited vocabulary. Keep responses to 2-3 short sentences.',
@@ -173,7 +178,11 @@ export async function askAI(question: string, context?: string): Promise<AIRespo
 
   const needsSearch = /what|who|where|when|why|how|explain|tell me about/i.test(question);
 
-  const text = await route(question, { system, webSearch: needsSearch });
+  const text = await route(question, {
+    system,
+    webSearch: needsSearch,
+    onChunk: onChunk ? (t) => onChunk(t, t.split(/\n+/).filter((l) => l.trim())) : undefined,
+  });
   const lines = text.split(/\n+/).filter((l) => l.trim());
   return { text, lines };
 }

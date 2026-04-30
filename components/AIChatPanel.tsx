@@ -42,17 +42,31 @@ export default function AIChatPanel() {
     if (!question) return;
     tapFeedback();
 
-    setMessages((m) => [...m, { role: 'user', text: question }]);
+    // Push user message + empty AI placeholder for streaming
+    setMessages((m) => [
+      ...m,
+      { role: 'user', text: question },
+      { role: 'ai', text: '', lines: [] },
+    ]);
     setLoading(true);
 
     try {
-      const response = await askAI(question);
-      setMessages((m) => [...m, { role: 'ai', text: response.text, lines: response.lines }]);
+      await askAI(question, undefined, (streamedText, streamedLines) => {
+        // Update the last message (AI placeholder) as chunks arrive
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'ai', text: streamedText, lines: streamedLines };
+          return updated;
+        });
+      });
       clearAll();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Could not reach AI';
-      setMessages((m) => [...m, { role: 'ai', text: msg, lines: [msg] }]);
-      // Don't clear — child can retry without retyping
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: 'ai', text: msg, lines: [msg] };
+        return updated;
+      });
     }
     setLoading(false);
   };
