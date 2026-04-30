@@ -37,7 +37,10 @@ export const useMessageStore = create<MessageState>()(
       text: '',
       undoStack: [],
       activeTone: 'friendly' as ToneStyle,
-      autoSpeak: false,
+      // Auto-speak ON by default — speech is the primary purpose of an
+      // AAC app, and asking new users to discover a hidden toggle before
+      // anything reads aloud is bad UX (and was reported in the wild).
+      autoSpeak: true,
       soundEnabled: true,
       history: [],
 
@@ -84,6 +87,21 @@ export const useMessageStore = create<MessageState>()(
 
       clearHistory: () => set({ history: [] }),
     }),
-    { name: 'prism-aac-message', partialize: (s) => ({ autoSpeak: s.autoSpeak, soundEnabled: s.soundEnabled, history: s.history }) },
+    {
+      name: 'prism-aac-message',
+      version: 2,
+      // Existing users had `autoSpeak: false` persisted from the prior
+      // default. Bumping version + flipping it to true on migrate so every
+      // existing client gets the corrected default once. Subsequent loads
+      // preserve whatever the user manually toggles.
+      migrate: (persistedState: unknown, version: number) => {
+        const s = (persistedState ?? {}) as { autoSpeak?: boolean; soundEnabled?: boolean; history?: Array<{ text: string; timestamp: number }> };
+        if (version < 2) {
+          return { ...s, autoSpeak: true };
+        }
+        return s;
+      },
+      partialize: (s) => ({ autoSpeak: s.autoSpeak, soundEnabled: s.soundEnabled, history: s.history }),
+    },
   ),
 );
