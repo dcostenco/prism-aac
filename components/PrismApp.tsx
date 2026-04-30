@@ -13,6 +13,7 @@ import AlertOverlay from './AlertOverlay';
 import SyncProvider from './SyncProvider';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useCategoryStore } from '@/store/categoryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
@@ -38,6 +39,7 @@ export default function PrismApp() {
   const [hydrated, setHydrated] = useState(false);
 
   const seedTemplates = useCategoryStore((s) => s.seedTemplates);
+  const highContrast = useSettingsStore((s) => s.highContrast);
 
   useEffect(() => {
     setHydrated(true);
@@ -52,7 +54,7 @@ export default function PrismApp() {
   return (
     <ErrorBoundary>
       <SyncProvider>
-        <div className="h-svh flex flex-col bg-[#12121e] overflow-hidden">
+        <div className={`h-svh flex flex-col overflow-hidden ${highContrast ? 'high-contrast bg-black' : 'bg-[#12121e]'}`}>
           <Toolbar />
           <MessageBar />
           <PredictionBar />

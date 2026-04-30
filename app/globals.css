@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+:root {
+  --aac-key-active: #5a5a8e;
+  --aac-key-glow: rgba(255,255,255,0.15);
+  --aac-speak-active: #66BB6A;
+  --aac-speak-glow: rgba(76,175,80,0.4);
+  --aac-delete-active: #EF5350;
+  --aac-delete-glow: rgba(244,67,54,0.4);
+}
+
+.high-contrast {
+  --aac-key-active: #FFD700;
+  --aac-key-glow: rgba(255,215,0,0.3);
+  --aac-speak-active: #FFD700;
+  --aac-speak-glow: rgba(255,215,0,0.3);
+  --aac-delete-active: #FF6B6B;
+  --aac-delete-glow: rgba(255,107,107,0.3);
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
@@ -24,33 +42,38 @@ html, body {
   outline-offset: 2px;
 }
 
-/* Keyboard key — scale + brighten */
+/* Keyboard key — scale + brighten (theme-aware) */
 .aac-key {
   transition: transform 0.08s ease, background-color 0.1s ease, box-shadow 0.1s ease;
   border: 1px solid rgba(255,255,255,0.06);
 }
 .aac-key:active {
   transform: scale(0.92);
-  background-color: #5a5a8e !important;
-  box-shadow: 0 0 12px rgba(255,255,255,0.15);
+  background-color: var(--aac-key-active) !important;
+  box-shadow: 0 0 12px var(--aac-key-glow);
 }
 .aac-key:focus-visible {
   outline: 3px solid #FFD700;
   outline-offset: 1px;
 }
 
-/* Speak button — brighten on press */
+/* Speak button — brighten on press (theme-aware) */
 .aac-speak:active {
-  background-color: #66BB6A !important;
+  background-color: var(--aac-speak-active) !important;
   transform: scale(0.94);
-  box-shadow: 0 0 16px rgba(76,175,80,0.4);
+  box-shadow: 0 0 16px var(--aac-speak-glow);
 }
 
-/* Delete button — brighten on press */
+/* Delete button — brighten on press (theme-aware) */
 .aac-delete:active {
-  background-color: #EF5350 !important;
+  background-color: var(--aac-delete-active) !important;
   transform: scale(0.94);
-  box-shadow: 0 0 16px rgba(244,67,54,0.4);
+  box-shadow: 0 0 16px var(--aac-delete-glow);
+}
+
+/* High contrast key borders */
+.high-contrast .aac-key {
+  border: 2px solid #FFD700;
 }
 
 @keyframes alert-flash {

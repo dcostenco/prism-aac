@@ -50,6 +50,20 @@ export default function SettingsModal() {
             </div>
           </div>
 
+          {/* Accessibility */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('accessibility')}</h3>
+            <label className="flex items-center justify-between">
+              <span className="text-[#d0d0e0]">{t('high_contrast')}</span>
+              <button
+                onClick={() => settings.update({ highContrast: !settings.highContrast })}
+                className={`w-12 h-7 rounded-full transition-colors ${settings.highContrast ? 'bg-[#FFD700]' : 'bg-[#444]'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${settings.highContrast ? 'translate-x-5' : ''}`} />
+              </button>
+            </label>
+          </div>
+
           {/* Speech */}
           <div>
             <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('voice')}</h3>

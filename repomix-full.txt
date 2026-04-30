@@ -148,47 +148,6 @@ vitest.config.ts
 <files>
 This section contains the contents of the repository's files.
 
-<file path="app/sw.ts">
-import { defaultCache } from '@serwist/next/worker';
-import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { Serwist } from 'serwist';
-
-declare global {
-  interface WorkerGlobalScope extends SerwistGlobalConfig {
-    __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
-  }
-}
-
-declare const self: ServiceWorkerGlobalScope & typeof globalThis;
-
-const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,
-  clientsClaim: true,
-  navigationPreload: true,
-  runtimeCaching: defaultCache,
-});
-
-serwist.addEventListeners();
-</file>
-
-<file path="public/manifest.json">
-{
-  "name": "Prism AAC",
-  "short_name": "PrismAAC",
-  "description": "Evidence-based AAC communication app",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#12121e",
-  "theme_color": "#12121e",
-  "orientation": "any",
-  "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
-}
-</file>
-
 <file path=".github/workflows/update-i18n.yml">
 name: Update i18n translations
 
@@ -231,161 +190,28 @@ jobs:
           git push
 </file>
 
-<file path="components/AIChatPanel.tsx">
-'use client';
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useUIStore } from '@/store/uiStore';
-import { useMessageStore } from '@/store/messageStore';
-import { tapFeedback } from '@/services/feedback';
-import { askAI, hasApiKey } from '@/services/aiService';
-import { speakWord } from '@/services/speechService';
-import { useSettingsStore } from '@/store/settingsStore';
-import ColoredText from './ColoredText';
+<file path="app/sw.ts">
+import { defaultCache } from '@serwist/next/worker';
+import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
+import { Serwist } from 'serwist';
 
-/**
- * AI Chat Panel — side panel for child interaction with AI.
- *
- * The child types a question using the keyboard → message bar → taps [Ask AI].
- * AI responds with short, colored, tappable lines.
- * Tapping a line copies it to the message bar for speaking.
- *
- * CLINICAL SAFETY (Valencia et al., CHI 2023):
- *   - AI responses are suggestions, never auto-inserted
- *   - Child must explicitly tap to use a response
- *   - Preserves authorship and agency
- */
-
-interface ChatMessage {
-  role: 'user' | 'ai';
-  text: string;
-  lines?: string[];
+declare global {
+  interface WorkerGlobalScope extends SerwistGlobalConfig {
+    __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
+  }
 }
 
-export default function AIChatPanel() {
-  const { sidePanel, closeSidePanel } = useUIStore();
-  const { text, appendText, clearAll, autoSpeak, soundEnabled } = useMessageStore();
-  const { speechRate, speechVolume } = useSettingsStore();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 
-  if (sidePanel !== 'ai-chat') return null;
+const serwist = new Serwist({
+  precacheEntries: self.__SW_MANIFEST,
+  skipWaiting: true,
+  clientsClaim: true,
+  navigationPreload: true,
+  runtimeCaching: defaultCache,
+});
 
-  const handleAsk = async () => {
-    const question = text.trim();
-    if (!question) return;
-    tapFeedback();
-
-    setMessages((m) => [...m, { role: 'user', text: question }]);
-    setLoading(true);
-
-    try {
-      const response = await askAI(question);
-      setMessages((m) => [...m, { role: 'ai', text: response.text, lines: response.lines }]);
-      clearAll();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Could not reach AI';
-      setMessages((m) => [...m, { role: 'ai', text: msg, lines: [msg] }]);
-      // Don't clear — child can retry without retyping
-    }
-    setLoading(false);
-  };
-
-  const handleTapLine = useCallback((line: string) => {
-    tapFeedback();
-    appendText(line);
-    if (autoSpeak && soundEnabled) speakWord(line, speechRate, speechVolume);
-  }, [appendText, autoSpeak, soundEnabled, speechRate, speechVolume]);
-
-  // Auto-scroll to bottom
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, loading]);
-
-  const configured = hasApiKey();
-
-  return (
-    <div className="w-[340px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-        <span className="text-[#888] font-semibold text-sm">AI Chat</span>
-        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
-      </div>
-
-      {!configured ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <p className="text-[#888] text-sm mb-4">AI Chat requires a Synalux account.</p>
-          <p className="text-[#555] text-xs mb-4">Sign in via Settings to enable AI Chat, web search, and all platform modules.</p>
-          <p className="text-[#444] text-xs">Core AAC features (keyboard, categories, predictions) work without an account.</p>
-        </div>
-      ) : (
-        <>
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
-            {messages.length === 0 && (
-              <div className="text-[#555] text-sm text-center py-8">
-                <p className="mb-2">Type a question, then tap</p>
-                <p className="text-[#4CAF50] font-semibold">Ask AI</p>
-                <p className="mt-4 text-xs text-[#444]">Tap any AI response to add it to your message.</p>
-              </div>
-            )}
-
-            {messages.map((msg, i) => (
-              <div key={i} className={`${msg.role === 'user' ? 'ml-8' : 'mr-4'}`}>
-                <div className={`rounded-xl p-3 ${
-                  msg.role === 'user'
-                    ? 'bg-[#2a3a5e] text-[#e0e0e0]'
-                    : 'bg-[#1e1e2e]'
-                }`}>
-                  {msg.role === 'user' ? (
-                    <p className="text-sm">{msg.text}</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {(msg.lines ?? [msg.text]).map((line, li) => (
-                        <button
-                          key={li}
-                          onClick={() => handleTapLine(line)}
-                          aria-label={`Use: ${line}`}
-                          className="aac-btn block w-full text-left rounded-lg p-2 hover:bg-[#2a2a3e] transition-colors"
-                        >
-                          <ColoredText text={line} className="text-sm leading-relaxed" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <p className="text-[#444] text-xs mt-1 px-1">
-                  {msg.role === 'user' ? 'You' : 'AI'}
-                </p>
-              </div>
-            ))}
-
-            {loading && (
-              <div className="flex items-center gap-2 text-[#888] text-sm px-2">
-                <span className="animate-pulse">Thinking...</span>
-              </div>
-            )}
-          </div>
-
-          <div className="p-3 border-t border-[#2a2a3e]">
-            <button
-              onClick={handleAsk}
-              disabled={!text.trim() || loading}
-              className={`aac-btn aac-speak w-full py-3 rounded-xl font-bold text-sm ${
-                text.trim() && !loading
-                  ? 'bg-[#4CAF50] text-white'
-                  : 'bg-[#2a2a3e] text-[#555]'
-              }`}
-            >
-              {loading ? 'Thinking...' : 'Ask AI ✨'}
-            </button>
-            <p className="text-[#444] text-xs text-center mt-2">
-              Type your question above, then tap Ask AI
-            </p>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+serwist.addEventListeners();
 </file>
 
 <file path="components/AlertOverlay.tsx">
@@ -472,97 +298,6 @@ export default function HistoryModal() {
             </div>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="components/Keyboard.tsx">
-'use client';
-import { useCallback } from 'react';
-import { useMessageStore } from '@/store/messageStore';
-import { useUIStore } from '@/store/uiStore';
-import { usePredictionStore } from '@/store/predictionStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { speak, speakWord } from '@/services/speechService';
-import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
-import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
-
-export default function Keyboard() {
-  const { appendChar, addToHistory, autoSpeak, soundEnabled } = useMessageStore();
-  const { keyboardMode, isUpperCase, toggleKeyboardMode, toggleCase } = useUIStore();
-  const { learnWord } = usePredictionStore();
-  const { speechRate, speechVolume } = useSettingsStore();
-
-  const rows = keyboardMode === 'letters' ? LETTERS_ROWS : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
-
-  const handleKey = useCallback((key: string) => {
-    keyFeedback();
-    const char = keyboardMode === 'letters' ? (isUpperCase ? key : key.toLowerCase()) : key;
-    appendChar(char);
-    if (isUpperCase && keyboardMode === 'letters') toggleCase();
-  }, [appendChar, isUpperCase, keyboardMode, toggleCase]);
-
-  const handleSpace = useCallback(() => {
-    keyFeedback();
-    const currentText = useMessageStore.getState().text;
-    const words = currentText.trim().split(/\s+/).filter(Boolean);
-    const lastWord = words.length > 0 ? words[words.length - 1] : '';
-    if (lastWord) {
-      const prevWord = words.length > 1 ? words[words.length - 2] : undefined;
-      learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase());
-      if (autoSpeak && soundEnabled) speakWord(lastWord, speechRate, speechVolume);
-    }
-    appendChar(' ');
-  }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar]);
-
-  const handleSpeak = useCallback(() => {
-    tapFeedback();
-    const currentText = useMessageStore.getState().text.trim();
-    if (!currentText || !soundEnabled) return;
-    addToHistory(currentText);
-    speak(currentText, speechRate, speechVolume);
-  }, [soundEnabled, speechRate, speechVolume, addToHistory]);
-
-  const handleBackspace = useCallback(() => {
-    deleteFeedback();
-    useMessageStore.getState().deleteLastChar();
-  }, []);
-
-  const kc = 'aac-key bg-[#2a2a3e] text-[#e0e0e0] rounded-xl font-semibold select-none flex items-center justify-center';
-
-  return (
-    <div className="flex-1 flex flex-col gap-2.5 p-2.5">
-      {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-2.5 justify-center flex-1">
-          {ri === 2 && keyboardMode === 'letters' && (
-            <button onClick={() => { tapFeedback(); toggleCase(); }} aria-label={isUpperCase ? 'Shift on' : 'Shift off'} className={`${kc} px-4 min-w-[56px] ${isUpperCase ? 'bg-[#4CAF50] text-white' : ''}`}>
-              {isUpperCase ? '⇧' : '⇪'}
-            </button>
-          )}
-          {row.map((key) => (
-            <button key={key} onClick={() => handleKey(key)} aria-label={key} className={`${kc} flex-1 text-lg min-h-[48px]`}>
-              {keyboardMode === 'letters' ? (isUpperCase ? key : key.toLowerCase()) : key}
-            </button>
-          ))}
-          {ri === 2 && keyboardMode === 'letters' && (
-            <button onClick={handleBackspace} aria-label="Backspace" className={`${kc} px-4 min-w-[56px]`}>⌫</button>
-          )}
-        </div>
-      ))}
-
-      <div className="flex gap-2.5 flex-1">
-        <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} min-w-[64px] px-3 text-sm`}>
-          {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=':'ABC'}
-        </button>
-        <button onClick={handleSpace} aria-label="Space" className={`${kc} flex-1 text-sm`}>space</button>
-        <button onClick={() => handleKey('.')} aria-label="Period" className={`${kc} min-w-[56px] text-lg`}>.</button>
-        <button onClick={() => handleKey(',')} aria-label="Comma" className={`${kc} min-w-[56px] text-lg`}>,</button>
-        <button onClick={() => handleKey('?')} aria-label="Question mark" className={`${kc} min-w-[56px] text-lg`}>?</button>
-        <button onClick={handleSpeak} aria-label="Speak full message" className="aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-5 min-w-[88px] text-sm select-none flex items-center justify-center">
-          Speak
-        </button>
       </div>
     </div>
   );
@@ -1951,6 +1686,23 @@ export function useT() {
 <svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
 </file>
 
+<file path="public/manifest.json">
+{
+  "name": "Prism AAC",
+  "short_name": "PrismAAC",
+  "description": "Evidence-based AAC communication app",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12121e",
+  "theme_color": "#12121e",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+</file>
+
 <file path="public/next.svg">
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
 </file>
@@ -2738,95 +2490,6 @@ export async function parseCaregiverNote(noteText: string): Promise<ParsedNoteRe
       summary: 'Saved as note',
     };
   }
-}
-</file>
-
-<file path="services/feedback.ts">
-'use client';
-
-let audioCtx: AudioContext | null = null;
-
-function getAudioCtx(): AudioContext | null {
-  if (typeof window === 'undefined') return null;
-  if (!audioCtx) {
-    try { audioCtx = new AudioContext(); } catch { return null; }
-  }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-  return audioCtx;
-}
-
-export function hapticTap(): void {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(10);
-  }
-}
-
-export function hapticHeavy(): void {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(25);
-  }
-}
-
-export function playClick(): void {
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.frequency.value = 1200;
-  osc.type = 'sine';
-  gain.gain.setValueAtTime(0.08, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.06);
-}
-
-export function playKeyClick(): void {
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.frequency.value = 800;
-  osc.type = 'sine';
-  gain.gain.setValueAtTime(0.05, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.04);
-}
-
-export function playDelete(): void {
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.frequency.value = 400;
-  osc.type = 'triangle';
-  gain.gain.setValueAtTime(0.06, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.08);
-}
-
-export function tapFeedback(): void {
-  hapticTap();
-  playClick();
-}
-
-export function keyFeedback(): void {
-  hapticTap();
-  playKeyClick();
-}
-
-export function deleteFeedback(): void {
-  hapticHeavy();
-  playDelete();
 }
 </file>
 
@@ -4014,22 +3677,6 @@ LIMITATION) WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
 PURPOSE, NON-INFRINGEMENT, AND TITLE.
 </file>
 
-<file path="next.config.ts">
-import withSerwistInit from '@serwist/next';
-import type { NextConfig } from 'next';
-
-const withSerwist = withSerwistInit({
-  swSrc: 'app/sw.ts',
-  swDest: 'public/sw.js',
-});
-
-const nextConfig: NextConfig = {
-  turbopack: {},
-};
-
-export default withSerwist(nextConfig);
-</file>
-
 <file path="postcss.config.mjs">
 const config = {
   plugins: {
@@ -4398,6 +4045,24 @@ export default defineConfig({
 <file path="app/globals.css">
 @import "tailwindcss";
 
+:root {
+  --aac-key-active: #5a5a8e;
+  --aac-key-glow: rgba(255,255,255,0.15);
+  --aac-speak-active: #66BB6A;
+  --aac-speak-glow: rgba(76,175,80,0.4);
+  --aac-delete-active: #EF5350;
+  --aac-delete-glow: rgba(244,67,54,0.4);
+}
+
+.high-contrast {
+  --aac-key-active: #FFD700;
+  --aac-key-glow: rgba(255,215,0,0.3);
+  --aac-speak-active: #FFD700;
+  --aac-speak-glow: rgba(255,215,0,0.3);
+  --aac-delete-active: #FF6B6B;
+  --aac-delete-glow: rgba(255,107,107,0.3);
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
@@ -4422,33 +4087,38 @@ html, body {
   outline-offset: 2px;
 }
 
-/* Keyboard key — scale + brighten */
+/* Keyboard key — scale + brighten (theme-aware) */
 .aac-key {
   transition: transform 0.08s ease, background-color 0.1s ease, box-shadow 0.1s ease;
   border: 1px solid rgba(255,255,255,0.06);
 }
 .aac-key:active {
   transform: scale(0.92);
-  background-color: #5a5a8e !important;
-  box-shadow: 0 0 12px rgba(255,255,255,0.15);
+  background-color: var(--aac-key-active) !important;
+  box-shadow: 0 0 12px var(--aac-key-glow);
 }
 .aac-key:focus-visible {
   outline: 3px solid #FFD700;
   outline-offset: 1px;
 }
 
-/* Speak button — brighten on press */
+/* Speak button — brighten on press (theme-aware) */
 .aac-speak:active {
-  background-color: #66BB6A !important;
+  background-color: var(--aac-speak-active) !important;
   transform: scale(0.94);
-  box-shadow: 0 0 16px rgba(76,175,80,0.4);
+  box-shadow: 0 0 16px var(--aac-speak-glow);
 }
 
-/* Delete button — brighten on press */
+/* Delete button — brighten on press (theme-aware) */
 .aac-delete:active {
-  background-color: #EF5350 !important;
+  background-color: var(--aac-delete-active) !important;
   transform: scale(0.94);
-  box-shadow: 0 0 16px rgba(244,67,54,0.4);
+  box-shadow: 0 0 16px var(--aac-delete-glow);
+}
+
+/* High contrast key borders */
+.high-contrast .aac-key {
+  border: 2px solid #FFD700;
 }
 
 @keyframes alert-flash {
@@ -4473,42 +4143,168 @@ input[type="range"] {
 }
 </file>
 
-<file path="app/layout.tsx">
-import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
-import "./globals.css";
-
-const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Prism AAC",
-  description: "Augmentative and Alternative Communication app",
-  manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Prism AAC" },
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: "#12121e",
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en" className={`${geist.variable} h-full`}>
-      <body className="h-full bg-[#12121e] text-[#e0e0e0] overflow-hidden">{children}</body>
-    </html>
-  );
-}
-</file>
-
 <file path="app/page.tsx">
 import PrismApp from '@/components/PrismApp';
 
 export default function Home() {
   return <PrismApp />;
+}
+</file>
+
+<file path="components/AIChatPanel.tsx">
+'use client';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useUIStore } from '@/store/uiStore';
+import { useMessageStore } from '@/store/messageStore';
+import { tapFeedback } from '@/services/feedback';
+import { askAI, hasApiKey } from '@/services/aiService';
+import { speakWord } from '@/services/speechService';
+import { useSettingsStore } from '@/store/settingsStore';
+import ColoredText from './ColoredText';
+
+/**
+ * AI Chat Panel — side panel for child interaction with AI.
+ *
+ * The child types a question using the keyboard → message bar → taps [Ask AI].
+ * AI responds with short, colored, tappable lines.
+ * Tapping a line copies it to the message bar for speaking.
+ *
+ * CLINICAL SAFETY (Valencia et al., CHI 2023):
+ *   - AI responses are suggestions, never auto-inserted
+ *   - Child must explicitly tap to use a response
+ *   - Preserves authorship and agency
+ */
+
+interface ChatMessage {
+  role: 'user' | 'ai';
+  text: string;
+  lines?: string[];
+}
+
+export default function AIChatPanel() {
+  const { sidePanel, closeSidePanel } = useUIStore();
+  const { text, appendText, clearAll, autoSpeak, soundEnabled } = useMessageStore();
+  const { speechRate, speechVolume } = useSettingsStore();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  if (sidePanel !== 'ai-chat') return null;
+
+  const handleAsk = async () => {
+    const question = text.trim();
+    if (!question) return;
+    tapFeedback();
+
+    setMessages((m) => [...m, { role: 'user', text: question }]);
+    setLoading(true);
+
+    try {
+      const response = await askAI(question);
+      setMessages((m) => [...m, { role: 'ai', text: response.text, lines: response.lines }]);
+      clearAll();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Could not reach AI';
+      setMessages((m) => [...m, { role: 'ai', text: msg, lines: [msg] }]);
+      // Don't clear — child can retry without retyping
+    }
+    setLoading(false);
+  };
+
+  const handleTapLine = useCallback((line: string) => {
+    tapFeedback();
+    appendText(line);
+    if (autoSpeak && soundEnabled) speakWord(line, speechRate, speechVolume);
+  }, [appendText, autoSpeak, soundEnabled, speechRate, speechVolume]);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages, loading]);
+
+  const configured = hasApiKey();
+
+  return (
+    <div className="w-[340px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
+        <span className="text-[#888] font-semibold text-sm">AI Chat</span>
+        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
+      </div>
+
+      {!configured ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <p className="text-[#888] text-sm mb-4">AI Chat requires a Synalux account.</p>
+          <p className="text-[#555] text-xs mb-4">Sign in via Settings to enable AI Chat, web search, and all platform modules.</p>
+          <p className="text-[#444] text-xs">Core AAC features (keyboard, categories, predictions) work without an account.</p>
+        </div>
+      ) : (
+        <>
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
+            {messages.length === 0 && (
+              <div className="text-[#555] text-sm text-center py-8">
+                <p className="mb-2">Type a question, then tap</p>
+                <p className="text-[#4CAF50] font-semibold">Ask AI</p>
+                <p className="mt-4 text-xs text-[#444]">Tap any AI response to add it to your message.</p>
+              </div>
+            )}
+
+            {messages.map((msg, i) => (
+              <div key={i} className={`${msg.role === 'user' ? 'ml-8' : 'mr-4'}`}>
+                <div className={`rounded-xl p-3 ${
+                  msg.role === 'user'
+                    ? 'bg-[#2a3a5e] text-[#e0e0e0]'
+                    : 'bg-[#1e1e2e]'
+                }`}>
+                  {msg.role === 'user' ? (
+                    <p className="text-sm">{msg.text}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {(msg.lines ?? [msg.text]).map((line, li) => (
+                        <button
+                          key={li}
+                          onClick={() => handleTapLine(line)}
+                          aria-label={`Use: ${line}`}
+                          className="aac-btn block w-full text-left rounded-lg p-2 hover:bg-[#2a2a3e] transition-colors"
+                        >
+                          <ColoredText text={line} className="text-sm leading-relaxed" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="text-[#444] text-xs mt-1 px-1">
+                  {msg.role === 'user' ? 'You' : 'AI'}
+                </p>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="flex items-center gap-2 text-[#888] text-sm px-2">
+                <span className="animate-pulse">Thinking...</span>
+              </div>
+            )}
+          </div>
+
+          <div className="p-3 border-t border-[#2a2a3e]">
+            <button
+              onClick={handleAsk}
+              disabled={!text.trim() || loading}
+              className={`aac-btn aac-speak w-full py-3 rounded-xl font-bold text-sm ${
+                text.trim() && !loading
+                  ? 'bg-[#4CAF50] text-white'
+                  : 'bg-[#2a2a3e] text-[#555]'
+              }`}
+            >
+              {loading ? 'Thinking...' : 'Ask AI ✨'}
+            </button>
+            <p className="text-[#444] text-xs text-center mt-2">
+              Type your question above, then tap Ask AI
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 </file>
 
@@ -4689,77 +4485,92 @@ export default function CaregiverPanel() {
 }
 </file>
 
-<file path="components/PredictionBar.tsx">
+<file path="components/Keyboard.tsx">
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useCallback } from 'react';
 import { useMessageStore } from '@/store/messageStore';
+import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { speakWord } from '@/services/speechService';
-import { tapFeedback } from '@/services/feedback';
-import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
-import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
-import { useT } from '@/engine/useT';
+import { speak, speakWord } from '@/services/speechService';
+import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
+import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
 
-function computeStableSlots(prev: string[], predictions: string[]): string[] {
-  const next = [...prev];
-  const used = new Set(next.map(s => s.toLowerCase()));
-  for (let i = 0; i < 5; i++) {
-    const pred = predictions[i];
-    if (pred && !used.has(pred.toLowerCase())) {
-      const deadSlot = next.findIndex(
-        (s) => !predictions.some((p) => p.toLowerCase() === s.toLowerCase())
-      );
-      if (deadSlot >= 0) {
-        used.delete(next[deadSlot].toLowerCase());
-        next[deadSlot] = pred;
-        used.add(pred.toLowerCase());
-      }
-    }
-  }
-  return next;
-}
-
-export default function PredictionBar() {
-  const { text, appendWord, autoSpeak, soundEnabled } = useMessageStore();
-  const { predictions, updatePredictions, learnWord } = usePredictionStore();
+export default function Keyboard() {
+  const { appendChar, addToHistory, autoSpeak, soundEnabled } = useMessageStore();
+  const { keyboardMode, isUpperCase, toggleKeyboardMode, toggleCase } = useUIStore();
+  const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume } = useSettingsStore();
-  const { ttsCode } = useT();
-  const [displayed, setDisplayed] = useState<string[]>(DEFAULT_PREDICTIONS);
-  const prevRef = useRef<string[]>(DEFAULT_PREDICTIONS);
 
-  useEffect(() => {
-    updatePredictions(text);
-  }, [text, updatePredictions]);
+  const rows = keyboardMode === 'letters' ? LETTERS_ROWS : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
 
-  useEffect(() => {
-    const next = computeStableSlots(prevRef.current, predictions);
-    prevRef.current = next;
-    setDisplayed(next);
-  }, [predictions]);
+  const handleKey = useCallback((key: string) => {
+    keyFeedback();
+    const char = keyboardMode === 'letters' ? (isUpperCase ? key : key.toLowerCase()) : key;
+    appendChar(char);
+    if (isUpperCase && keyboardMode === 'letters') toggleCase();
+  }, [appendChar, isUpperCase, keyboardMode, toggleCase]);
 
-  const handleTap = (word: string) => {
+  const handleSpace = useCallback(() => {
+    keyFeedback();
+    const currentText = useMessageStore.getState().text;
+    const words = currentText.trim().split(/\s+/).filter(Boolean);
+    const lastWord = words.length > 0 ? words[words.length - 1] : '';
+    if (lastWord) {
+      const prevWord = words.length > 1 ? words[words.length - 2] : undefined;
+      learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase());
+      if (autoSpeak && soundEnabled) speakWord(lastWord, speechRate, speechVolume);
+    }
+    appendChar(' ');
+  }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar]);
+
+  const handleSpeak = useCallback(() => {
     tapFeedback();
-    const words = text.trim().split(/\s+/).filter(Boolean);
-    const previousWord = words.length > 0 ? words[words.length - 1] : undefined;
-    appendWord(word);
-    learnWord(word.toLowerCase(), previousWord?.toLowerCase());
-    if (autoSpeak && soundEnabled) speakWord(word, speechRate, speechVolume, ttsCode);
-  };
+    const currentText = useMessageStore.getState().text.trim();
+    if (!currentText || !soundEnabled) return;
+    addToHistory(currentText);
+    speak(currentText, speechRate, speechVolume);
+  }, [soundEnabled, speechRate, speechVolume, addToHistory]);
+
+  const handleBackspace = useCallback(() => {
+    deleteFeedback();
+    useMessageStore.getState().deleteLastChar();
+  }, []);
+
+  const kc = 'aac-key bg-[#2a2a3e] text-[#e0e0e0] rounded-xl font-semibold select-none flex items-center justify-center';
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2 shrink-0" style={{ height: 'calc(100svh / 6 - 8px)', minHeight: '60px', maxHeight: '96px' }}>
-      {displayed.map((word, i) => (
-        <button
-          key={`slot-${i}`}
-          onClick={() => handleTap(word)}
-          aria-label={`Predict: ${word}`}
-          className="aac-btn flex-1 h-full max-w-[200px] bg-[#2a2a3e] rounded-2xl flex items-center justify-center text-lg font-semibold select-none truncate px-3"
-          style={{ borderLeft: `4px solid ${CATEGORY_COLORS[classifyWord(word)]}`, color: CATEGORY_COLORS[classifyWord(word)] }}
-        >
-          {word}
-        </button>
+    <div className="flex-1 flex flex-col gap-2.5 p-2.5">
+      {rows.map((row, ri) => (
+        <div key={ri} className="flex gap-2.5 justify-center flex-1">
+          {ri === 2 && keyboardMode === 'letters' && (
+            <button onClick={() => { tapFeedback(); toggleCase(); }} aria-label={isUpperCase ? 'Shift on' : 'Shift off'} className={`${kc} px-4 min-w-[56px] ${isUpperCase ? 'bg-[#4CAF50] text-white' : ''}`}>
+              {isUpperCase ? '⇧' : '⇪'}
+            </button>
+          )}
+          {row.map((key) => (
+            <button key={key} onClick={() => handleKey(key)} aria-label={key} className={`${kc} flex-1 text-lg min-h-[48px]`}>
+              {keyboardMode === 'letters' ? (isUpperCase ? key : key.toLowerCase()) : key}
+            </button>
+          ))}
+          {ri === 2 && keyboardMode === 'letters' && (
+            <button onClick={handleBackspace} aria-label="Backspace" className={`${kc} px-4 min-w-[56px]`}>⌫</button>
+          )}
+        </div>
       ))}
+
+      <div className="flex gap-2.5 flex-1">
+        <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} min-w-[64px] px-3 text-sm`}>
+          {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=':'ABC'}
+        </button>
+        <button onClick={handleSpace} aria-label="Space" className={`${kc} flex-1 text-sm`}>space</button>
+        <button onClick={() => handleKey('.')} aria-label="Period" className={`${kc} min-w-[56px] text-lg`}>.</button>
+        <button onClick={() => handleKey(',')} aria-label="Comma" className={`${kc} min-w-[56px] text-lg`}>,</button>
+        <button onClick={() => handleKey('?')} aria-label="Question mark" className={`${kc} min-w-[56px] text-lg`}>?</button>
+        <button onClick={handleSpeak} aria-label="Speak full message" className="aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-5 min-w-[88px] text-sm select-none flex items-center justify-center">
+          Speak
+        </button>
+      </div>
     </div>
   );
 }
@@ -5010,6 +4821,95 @@ export function executeAction(action: NoteAction): ActionResult {
 
 export function executeAllActions(actions: NoteAction[]): ActionResult[] {
   return actions.map(executeAction);
+}
+</file>
+
+<file path="services/feedback.ts">
+'use client';
+
+let audioCtx: AudioContext | null = null;
+
+function getAudioCtx(): AudioContext | null {
+  if (typeof window === 'undefined') return null;
+  if (!audioCtx) {
+    try { audioCtx = new AudioContext(); } catch { return null; }
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+export function hapticTap(): void {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate(10);
+  }
+}
+
+export function hapticHeavy(): void {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate(25);
+  }
+}
+
+export function playClick(): void {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.frequency.value = 1200;
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(0.08, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.06);
+}
+
+export function playKeyClick(): void {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.frequency.value = 800;
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(0.05, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.04);
+}
+
+export function playDelete(): void {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.frequency.value = 400;
+  osc.type = 'triangle';
+  gain.gain.setValueAtTime(0.06, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.08);
+}
+
+export function tapFeedback(): void {
+  hapticTap();
+  playClick();
+}
+
+export function keyFeedback(): void {
+  hapticTap();
+  playKeyClick();
+}
+
+export function deleteFeedback(): void {
+  hapticHeavy();
+  playDelete();
 }
 </file>
 
@@ -5710,40 +5610,50 @@ Object.defineProperty(window, 'localStorage', {
 });
 </file>
 
-<file path="tsconfig.json">
-{
-  "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": ["./*"]
-    }
-  },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
-  ],
-  "exclude": ["node_modules"]
+<file path="next.config.ts">
+import withSerwistInit from '@serwist/next';
+import type { NextConfig } from 'next';
+
+const withSerwist = withSerwistInit({
+  swSrc: 'app/sw.ts',
+  swDest: 'public/sw.js',
+});
+
+const nextConfig: NextConfig = {
+  turbopack: {},
+};
+
+export default withSerwist(nextConfig);
+</file>
+
+<file path="app/layout.tsx">
+import type { Metadata, Viewport } from "next";
+import { Geist } from "next/font/google";
+import "./globals.css";
+
+const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Prism AAC",
+  description: "Augmentative and Alternative Communication app",
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Prism AAC" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#12121e",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={`${geist.variable} h-full`}>
+      <body className="h-full bg-[#12121e] text-[#e0e0e0] overflow-hidden">{children}</body>
+    </html>
+  );
 }
 </file>
 
@@ -6007,6 +5917,82 @@ export default function MessageBar() {
 }
 </file>
 
+<file path="components/PredictionBar.tsx">
+'use client';
+import { useEffect, useState, useRef } from 'react';
+import { useMessageStore } from '@/store/messageStore';
+import { usePredictionStore } from '@/store/predictionStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { speakWord } from '@/services/speechService';
+import { tapFeedback } from '@/services/feedback';
+import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
+import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
+import { useT } from '@/engine/useT';
+
+function computeStableSlots(prev: string[], predictions: string[]): string[] {
+  const next = [...prev];
+  const used = new Set(next.map(s => s.toLowerCase()));
+  for (let i = 0; i < 5; i++) {
+    const pred = predictions[i];
+    if (pred && !used.has(pred.toLowerCase())) {
+      const deadSlot = next.findIndex(
+        (s) => !predictions.some((p) => p.toLowerCase() === s.toLowerCase())
+      );
+      if (deadSlot >= 0) {
+        used.delete(next[deadSlot].toLowerCase());
+        next[deadSlot] = pred;
+        used.add(pred.toLowerCase());
+      }
+    }
+  }
+  return next;
+}
+
+export default function PredictionBar() {
+  const { text, appendWord, autoSpeak, soundEnabled } = useMessageStore();
+  const { predictions, updatePredictions, learnWord } = usePredictionStore();
+  const { speechRate, speechVolume } = useSettingsStore();
+  const { ttsCode } = useT();
+  const [displayed, setDisplayed] = useState<string[]>(DEFAULT_PREDICTIONS);
+  const prevRef = useRef<string[]>(DEFAULT_PREDICTIONS);
+
+  useEffect(() => {
+    updatePredictions(text);
+  }, [text, updatePredictions]);
+
+  useEffect(() => {
+    const next = computeStableSlots(prevRef.current, predictions);
+    prevRef.current = next;
+    setDisplayed(next);
+  }, [predictions]);
+
+  const handleTap = (word: string) => {
+    tapFeedback();
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    const previousWord = words.length > 0 ? words[words.length - 1] : undefined;
+    appendWord(word);
+    learnWord(word.toLowerCase(), previousWord?.toLowerCase());
+    if (autoSpeak && soundEnabled) speakWord(word, speechRate, speechVolume, ttsCode);
+  };
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2 shrink-0" style={{ height: 'calc(100svh / 6 - 8px)', minHeight: '60px', maxHeight: '96px' }}>
+      {displayed.map((word, i) => (
+        <button
+          key={`slot-${i}`}
+          onClick={() => handleTap(word)}
+          aria-label={`Predict: ${word}`}
+          className="aac-btn flex-1 h-full max-w-[200px] bg-[#2a2a3e] rounded-2xl flex items-center justify-center text-lg font-semibold select-none truncate px-3"
+          style={{ borderLeft: `4px solid ${CATEGORY_COLORS[classifyWord(word)]}`, color: CATEGORY_COLORS[classifyWord(word)] }}
+        >
+          {word}
+        </button>
+      ))}
+    </div>
+  );
+}
+</file>
+
 <file path="components/PrismApp.tsx">
 'use client';
 import { useEffect, useState, Component, ReactNode } from 'react';
@@ -6023,6 +6009,7 @@ import AlertOverlay from './AlertOverlay';
 import SyncProvider from './SyncProvider';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useCategoryStore } from '@/store/categoryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
@@ -6048,6 +6035,7 @@ export default function PrismApp() {
   const [hydrated, setHydrated] = useState(false);
 
   const seedTemplates = useCategoryStore((s) => s.seedTemplates);
+  const highContrast = useSettingsStore((s) => s.highContrast);
 
   useEffect(() => {
     setHydrated(true);
@@ -6062,7 +6050,7 @@ export default function PrismApp() {
   return (
     <ErrorBoundary>
       <SyncProvider>
-        <div className="h-svh flex flex-col bg-[#12121e] overflow-hidden">
+        <div className={`h-svh flex flex-col overflow-hidden ${highContrast ? 'high-contrast bg-black' : 'bg-[#12121e]'}`}>
           <Toolbar />
           <MessageBar />
           <PredictionBar />
@@ -6133,6 +6121,20 @@ export default function SettingsModal() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Accessibility */}
+          <div>
+            <h3 className="text-[#888] font-semibold text-sm uppercase tracking-wider mb-3">{t('accessibility')}</h3>
+            <label className="flex items-center justify-between">
+              <span className="text-[#d0d0e0]">{t('high_contrast')}</span>
+              <button
+                onClick={() => settings.update({ highContrast: !settings.highContrast })}
+                className={`w-12 h-7 rounded-full transition-colors ${settings.highContrast ? 'bg-[#FFD700]' : 'bg-[#444]'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${settings.highContrast ? 'translate-x-5' : ''}`} />
+              </button>
+            </label>
           </div>
 
           {/* Speech */}
@@ -6545,7 +6547,8 @@ interface SettingsState {
   speechRate: number;
   speechVolume: number;
   language: SupportedLanguage;
-  update: (partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language'>>) => void;
+  highContrast: boolean;
+  update: (partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast'>>) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -6554,6 +6557,7 @@ export const useSettingsStore = create<SettingsState>()(
       speechRate: 0.5,
       speechVolume: 1.0,
       language: 'en',
+      highContrast: false,
       update: (partial) => set((s) => ({ ...s, ...partial })),
     }),
     { name: 'prism-aac-settings' },
@@ -6878,6 +6882,43 @@ next-env.d.ts
 .expo/
 ios/
 dist/
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}
 </file>
 
 <file path="components/Toolbar.tsx">
