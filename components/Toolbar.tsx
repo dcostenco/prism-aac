@@ -60,19 +60,19 @@ export default function Toolbar() {
   // typographic system. Larger labels also help motor-impaired users —
   // bigger hit targets, easier glance-readability.
   const btn =
-    'aac-btn h-9 landscape:h-7 sm:h-14 md:h-16 px-2 landscape:px-1.5 sm:px-5 rounded-lg landscape:rounded sm:rounded-xl surface-key text-primary font-bold text-xs landscape:text-[10px] sm:text-xl md:text-2xl select-none border border-theme shrink-0';
+    'aac-btn h-16 max-sm:h-10 landscape:h-7 px-5 max-sm:px-2 landscape:px-1.5 rounded-xl max-sm:rounded-lg landscape:rounded surface-key text-primary font-bold text-xl md:text-2xl max-sm:text-sm landscape:text-[10px] select-none border border-theme shrink-0';
 
   const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
 
   return (
-    <div className="flex items-center justify-between gap-1 landscape:gap-0.5 px-1 landscape:px-0.5 sm:px-3 py-0.5 landscape:py-0 sm:py-2 surface-bar shrink-0 border-b border-theme overflow-x-auto">
+    <div className="flex items-center justify-between gap-2 max-sm:gap-1 landscape:gap-0.5 px-3 max-sm:px-1 landscape:px-0.5 py-2 max-sm:py-0.5 landscape:py-0 surface-bar shrink-0 border-b border-theme overflow-x-auto">
       <div className="flex gap-2">
         <button className={btn} onClick={tap(openCategories)} aria-label={t('categories')}>📂 {t('categories')}</button>
         <button className={btn} onClick={tap(openMath)} aria-label={t('math')}>🔢 {t('math')}</button>
         <button className={btn} onClick={tap(openAIChat)} aria-label={t('ai_chat')}>✨ {t('ai_chat')}</button>
         {voiceSupported && (
           <button
-            className={`aac-btn h-9 landscape:h-7 sm:h-14 md:h-16 px-2 landscape:px-1.5 sm:px-5 rounded-lg landscape:rounded sm:rounded-xl font-bold text-xs landscape:text-[10px] sm:text-xl md:text-2xl select-none border border-theme shrink-0 ${
+            className={`aac-btn h-16 max-sm:h-10 landscape:h-7 px-5 max-sm:px-2 landscape:px-1.5 rounded-xl max-sm:rounded-lg landscape:rounded font-bold text-xl md:text-2xl max-sm:text-sm landscape:text-[10px] select-none border border-theme shrink-0 ${
               listening ? 'bg-[#F44336] text-white border-transparent animate-pulse' : 'surface-key text-primary'
             }`}
             onClick={toggleMic}
@@ -91,7 +91,7 @@ export default function Toolbar() {
         <button className={btn} onClick={tap(toggleHistory)} aria-label={t('history')}>📜 {t('history')}</button>
         <button className={btn} onClick={tap(toggleSettings)} aria-label={t('settings')}>⚙️</button>
         <button
-          className={`aac-btn h-9 landscape:h-7 sm:h-14 md:h-16 px-2 landscape:px-1.5 sm:px-5 rounded-lg landscape:rounded sm:rounded-xl font-bold text-xs landscape:text-[10px] sm:text-xl md:text-2xl select-none border border-theme shrink-0 ${
+          className={`aac-btn h-16 max-sm:h-10 landscape:h-7 px-5 max-sm:px-2 landscape:px-1.5 rounded-xl max-sm:rounded-lg landscape:rounded font-bold text-xl md:text-2xl max-sm:text-sm landscape:text-[10px] select-none border border-theme shrink-0 ${
             soundEnabled ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
           }`}
           onClick={tap(toggleSound)}
