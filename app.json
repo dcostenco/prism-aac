@@ -2,14 +2,14 @@
   "expo": {
     "name": "Prism AAC",
     "slug": "prism-aac",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "runtimeVersion": "1.0.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "scheme": "prism-aac",
-    "owner": "synalux",
+    "owner": "costenco",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -24,13 +24,17 @@
         "NSMicrophoneUsageDescription": "Prism AAC uses the microphone for voice input so you can speak instead of typing.",
         "NSSpeechRecognitionUsageDescription": "Prism AAC uses speech recognition to convert your voice into text.",
         "NSContactsUsageDescription": "Prism AAC accesses contacts to find people registered on Synalux for direct messaging.",
-        "UIBackgroundModes": ["audio"],
+        "UIBackgroundModes": [
+          "audio"
+        ],
         "ITSAppUsesNonExemptEncryption": false
       },
       "config": {
         "usesNonExemptEncryption": false
       },
-      "associatedDomains": ["applinks:synalux.ai"]
+      "associatedDomains": [
+        "applinks:synalux.ai"
+      ]
     },
     "android": {
       "package": "ai.synalux.prismaac",
@@ -51,8 +55,17 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "https", "host": "synalux.ai", "pathPrefix": "/prism-aac" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "https",
+              "host": "synalux.ai",
+              "pathPrefix": "/prism-aac"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -62,12 +75,19 @@
     },
     "plugins": [
       "expo-router",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Prism AAC uses the microphone for voice input so you can speak instead of typing."
+        }
+      ]
     ],
     "extra": {
       "eas": {
-        "projectId": "prism-aac"
-      }
+        "projectId": "94a71505-1c2e-469c-9cc9-ef039ac9a693"
+      },
+      "router": {}
     }
   }
 }

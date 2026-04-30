@@ -14,8 +14,12 @@ export default function PredictionBar() {
   useEffect(() => {
     let cancelled = false;
     const update = async () => {
-      const results = await getPredictions(text);
-      if (!cancelled) setPredictions(results);
+      try {
+        const results = await getPredictions(text);
+        if (!cancelled) setPredictions(results);
+      } catch {
+        if (!cancelled) setPredictions(DEFAULT_PREDICTIONS);
+      }
     };
     update();
     return () => { cancelled = true; };

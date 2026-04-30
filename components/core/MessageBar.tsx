@@ -14,17 +14,21 @@ export default function MessageBar() {
 
   const handleSpeak = useCallback(async () => {
     if (!text.trim()) return;
-    if (settings.hapticEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      if (settings.hapticEnabled) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+      await speak(text, {
+        rate: settings.speechRate,
+        pitch: settings.speechPitch,
+        volume: settings.speechVolume,
+        tone: settings.defaultTone,
+        language: settings.language,
+        voiceId: settings.voiceId,
+      });
+    } catch {
+      // Gracefully handle TTS/haptic failures
     }
-    await speak(text, {
-      rate: settings.speechRate,
-      pitch: settings.speechPitch,
-      volume: settings.speechVolume,
-      tone: settings.defaultTone,
-      language: settings.language,
-      voiceId: settings.voiceId,
-    });
   }, [text, settings]);
 
   const handleDeletePressIn = useCallback(() => {

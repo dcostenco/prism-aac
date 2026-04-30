@@ -4,8 +4,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest --forceExit",
     "test:watch": "jest --watch",
@@ -45,6 +45,7 @@
     "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
     "@types/uuid": "^10.0.0",
+    "babel-preset-expo": "^55.0.18",
     "jest": "^30.3.0",
     "jest-expo": "^55.0.16",
     "ts-jest": "^29.4.9",
