@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: #12121e;
+  color: #e0e0e0;
+  font-family: var(--font-geist), system-ui, -apple-system, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* AAC button — universal interactive element */
+.aac-btn {
+  transition: transform 0.1s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  will-change: transform;
+}
+.aac-btn:active {
+  transform: scale(0.94);
+}
+.aac-btn:focus-visible {
+  outline: 3px solid #FFD700;
+  outline-offset: 2px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Keyboard key — scale + brighten */
+.aac-key {
+  transition: transform 0.08s ease, background-color 0.1s ease, box-shadow 0.1s ease;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.aac-key:active {
+  transform: scale(0.92);
+  background-color: #5a5a8e !important;
+  box-shadow: 0 0 12px rgba(255,255,255,0.15);
+}
+.aac-key:focus-visible {
+  outline: 3px solid #FFD700;
+  outline-offset: 1px;
+}
+
+/* Speak button — brighten on press */
+.aac-speak:active {
+  background-color: #66BB6A !important;
+  transform: scale(0.94);
+  box-shadow: 0 0 16px rgba(76,175,80,0.4);
+}
+
+/* Delete button — brighten on press */
+.aac-delete:active {
+  background-color: #EF5350 !important;
+  transform: scale(0.94);
+  box-shadow: 0 0 16px rgba(244,67,54,0.4);
+}
+
+@keyframes alert-flash {
+  0%, 100% { opacity: 0; }
+  25%, 75% { opacity: 0.4; }
+  50% { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aac-btn:active, .aac-key:active, .aac-speak:active, .aac-delete:active {
+    transform: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+input, select {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+input[type="range"] {
+  cursor: pointer;
 }
