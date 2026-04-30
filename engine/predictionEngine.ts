@@ -107,9 +107,9 @@ export function decayPredictions(
   for (const [key, val] of Object.entries(data)) {
     // Hard cutoff: drop single-use entries older than 30 days (typo cleanup)
     if (val.count <= 1 && val.lastUsed < thirtyDaysAgo) continue;
-    if (val.lastUsed < sevenDaysAgo) {
+    if (val.lastUsed < sevenDaysAgo && (!val.lastDecayedAt || val.lastDecayedAt < sevenDaysAgo)) {
       const newCount = Math.max(1, Math.floor(val.count * 0.95));
-      if (newCount > 1) result[key] = { count: newCount, lastUsed: Date.now() };
+      if (newCount > 1) result[key] = { count: newCount, lastUsed: val.lastUsed, lastDecayedAt: Date.now() };
     } else {
       result[key] = val;
     }

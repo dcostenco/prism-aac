@@ -6,6 +6,7 @@ import { tapFeedback } from '@/services/feedback';
 import { executeAllActions, ActionResult } from '@/engine/caregiverActions';
 import { NoteAction, CaregiverNote } from '@/types';
 import { parseCaregiverNote, hasApiKey } from '@/services/aiService';
+import { useSettingsStore } from '@/store/settingsStore';
 
 /**
  * Caregiver Notes Panel
@@ -22,14 +23,15 @@ import { parseCaregiverNote, hasApiKey } from '@/services/aiService';
  *   continues session
  */
 
-function formatTime(ts: number): string {
+function formatTime(ts: number, lang?: string): string {
   const d = new Date(ts);
-  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  return d.toLocaleString(lang || undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 export default function CaregiverPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { notes, addNote, markApplied, removeNote, authorName, setAuthorName } = useNoteStore();
+  const lang = useSettingsStore((s) => s.language);
   const [input, setInput] = useState('');
   const [results, setResults] = useState<ActionResult[] | null>(null);
   const [tab, setTab] = useState<'add' | 'log'>('add');
@@ -143,7 +145,7 @@ export default function CaregiverPanel() {
                   <div className="flex items-center justify-between mt-2">
                     <div className="text-[#555] text-xs">
                       {note.authorName && <span className="text-[#888]">{note.authorName} · </span>}
-                      {formatTime(note.timestamp)}
+                      {formatTime(note.timestamp, lang)}
                     </div>
                     <div className="flex gap-1">
                       {note.actions.some(a => a.type !== 'note_only') && !note.applied && (

@@ -1,16 +1,18 @@
 'use client';
 import { useMessageStore } from '@/store/messageStore';
 import { useUIStore } from '@/store/uiStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function HistoryModal() {
   const { showHistory, toggleHistory } = useUIStore();
   const { history, setText, clearHistory } = useMessageStore();
+  const lang = useSettingsStore((s) => s.language);
 
   if (!showHistory) return null;
 
   const fmt = (ts: number) => {
     const d = new Date(ts);
-    return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    return d.toLocaleString(lang, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   };
 
   return (

@@ -250,58 +250,6 @@ export default function ColoredText({ text, className = '' }: Props) {
 }
 </file>
 
-<file path="components/HistoryModal.tsx">
-'use client';
-import { useMessageStore } from '@/store/messageStore';
-import { useUIStore } from '@/store/uiStore';
-
-export default function HistoryModal() {
-  const { showHistory, toggleHistory } = useUIStore();
-  const { history, setText, clearHistory } = useMessageStore();
-
-  if (!showHistory) return null;
-
-  const fmt = (ts: number) => {
-    const d = new Date(ts);
-    return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={toggleHistory}>
-      <div className="bg-[#1e1e2e] rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#2a2a3e]">
-          <h2 className="text-[#e0e0e0] font-bold text-lg">History</h2>
-          <div className="flex gap-2">
-            {history.length > 0 && (
-              <button onClick={clearHistory} className="text-[#F44336] text-sm hover:underline">Clear all</button>
-            )}
-            <button onClick={toggleHistory} className="text-[#888] hover:text-white text-xl">✕</button>
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-3">
-          {history.length === 0 ? (
-            <p className="text-[#555] text-center py-8">No history yet</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {history.map((entry, i) => (
-                <button
-                  key={i}
-                  onClick={() => { setText(entry.text); toggleHistory(); }}
-                  className="bg-[#2a2a3e] rounded-xl p-3 text-left hover:bg-[#3a3a5e] transition-colors"
-                >
-                  <p className="text-[#e0e0e0] text-base">{entry.text}</p>
-                  <p className="text-[#666] text-xs mt-1">{fmt(entry.timestamp)}</p>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-</file>
-
 <file path="components/SyncProvider.tsx">
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -2511,201 +2459,6 @@ export function isSupabaseConfigured(): boolean {
 }
 </file>
 
-<file path="services/syncService.ts">
-'use client';
-/**
- * Sync Service — Supabase Hivemind with localStorage fallback.
- *
- * Architecture:
- *   - localStorage is always the primary store (instant, works offline)
- *   - Supabase is the sync layer (cross-device, hivemind mode)
- *   - On load: pull from Supabase, merge with local, write back
- *   - On save: write local immediately, push to Supabase in background
- *   - Conflict resolution: last-write-wins for settings, union-merge for custom data
- */
-
-import { getSupabase, isSupabaseConfigured as _isConfigured } from './supabase';
-import { WordFreqEntry, HistoryEntry, Category, Phrase } from '@/types';
-
-export function isSupabaseConfigured(): boolean { return _isConfigured(); }
-
-const AAC_TABLE = 'aac_profiles';
-
-export interface AACProfile {
-  device_id: string;
-  user_id: string;
-  custom_categories: Category[];
-  custom_phrases: Phrase[];
-  word_freq: Record<string, WordFreqEntry>;
-  bigrams: Record<string, WordFreqEntry>;
-  history: HistoryEntry[];
-  settings: Record<string, unknown>;
-  updated_at: string;
-}
-
-function getDeviceId(): string {
-  let id = localStorage.getItem('prism-aac-device-id');
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem('prism-aac-device-id', id);
-  }
-  return id;
-}
-
-function getUserId(): string {
-  return localStorage.getItem('prism-aac-user-id') || 'default';
-}
-
-export function setUserId(id: string): void {
-  localStorage.setItem('prism-aac-user-id', id);
-}
-
-export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
-
-let currentStatus: SyncStatus = 'idle';
-const listeners = new Set<(s: SyncStatus) => void>();
-
-export function onSyncStatus(fn: (s: SyncStatus) => void): () => void {
-  listeners.add(fn);
-  fn(currentStatus);
-  return () => listeners.delete(fn);
-}
-
-function setStatus(s: SyncStatus) {
-  currentStatus = s;
-  listeners.forEach(fn => fn(s));
-}
-
-export async function pushToCloud(data: Partial<AACProfile>): Promise<void> {
-  if (!_isConfigured()) { setStatus('offline'); return; }
-  const sb = getSupabase();
-  if (!sb) { setStatus('offline'); return; }
-
-  setStatus('syncing');
-  try {
-    const record = {
-      device_id: getDeviceId(),
-      user_id: getUserId(),
-      ...data,
-      updated_at: new Date().toISOString(),
-    };
-    await sb.from(AAC_TABLE).upsert(record, { onConflict: 'user_id,device_id' });
-    setStatus('synced');
-  } catch {
-    setStatus('error');
-  }
-}
-
-export async function pullFromCloud(): Promise<Partial<AACProfile> | null> {
-  if (!_isConfigured()) { setStatus('offline'); return null; }
-  const sb = getSupabase();
-  if (!sb) { setStatus('offline'); return null; }
-
-  setStatus('syncing');
-  try {
-    const userId = getUserId();
-    const { data, error } = await sb
-      .from(AAC_TABLE)
-      .select('*')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false })
-      .limit(1);
-
-    if (error) { setStatus('error'); return null; }
-    if (!data || data.length === 0) { setStatus('synced'); return null; }
-    setStatus('synced');
-    return data[0] as AACProfile;
-  } catch {
-    setStatus('offline');
-    return null;
-  }
-}
-
-/** Merge remote word frequencies with local (take higher counts) */
-export function mergeWordFreq(
-  local: Record<string, WordFreqEntry>,
-  remote: Record<string, WordFreqEntry>,
-): Record<string, WordFreqEntry> {
-  const merged = { ...local };
-  for (const [key, val] of Object.entries(remote)) {
-    const existing = merged[key];
-    if (!existing || val.count > existing.count || val.lastUsed > existing.lastUsed) {
-      merged[key] = {
-        count: Math.max(val.count, existing?.count ?? 0),
-        lastUsed: Math.max(val.lastUsed, existing?.lastUsed ?? 0),
-      };
-    }
-  }
-  return merged;
-}
-
-/** Merge custom categories/phrases with tombstone support.
- *  Items with deletedAt are tombstones — they suppress the item on all devices. */
-export function mergeCustomItems<T extends { id: string; deletedAt?: number }>(local: T[], remote: T[]): T[] {
-  const map = new Map<string, T>();
-  // Remote first, then local overwrites (local is authoritative for non-deleted items)
-  for (const item of remote) map.set(item.id, item);
-  for (const item of local) {
-    const existing = map.get(item.id);
-    if (!existing) { map.set(item.id, item); continue; }
-    // Tombstone wins: if either side deleted it, keep the deletion
-    if (item.deletedAt || existing.deletedAt) {
-      const winner = (item.deletedAt ?? 0) > (existing.deletedAt ?? 0) ? item : existing;
-      map.set(item.id, winner);
-    } else {
-      map.set(item.id, item); // local wins for live items
-    }
-  }
-  return [...map.values()].filter(item => !item.deletedAt);
-}
-
-/** Merge history entries (union, dedup by timestamp, cap at 100) */
-export function mergeHistory(local: HistoryEntry[], remote: HistoryEntry[]): HistoryEntry[] {
-  const seen = new Set<number>();
-  const merged: HistoryEntry[] = [];
-  for (const entry of [...local, ...remote]) {
-    if (!seen.has(entry.timestamp)) {
-      seen.add(entry.timestamp);
-      merged.push(entry);
-    }
-  }
-  return merged.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
-}
-
-/** Subscribe to realtime changes for hivemind sync */
-export function subscribeToChanges(
-  onUpdate: (profile: Partial<AACProfile>) => void,
-): (() => void) | null {
-  if (!_isConfigured()) return null;
-  const sb = getSupabase();
-  if (!sb) return null;
-
-  const userId = getUserId();
-  const deviceId = getDeviceId();
-
-  const channel = sb
-    .channel('aac-hivemind')
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: AAC_TABLE,
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload) => {
-        const remote = payload.new as AACProfile;
-        if (remote.device_id !== deviceId) {
-          onUpdate(remote);
-        }
-      },
-    )
-    .subscribe();
-
-  return () => { sb.removeChannel(channel); };
-}
-</file>
-
 <file path="store/noteStore.ts">
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -3218,149 +2971,6 @@ describe('i18n — Language metadata', () => {
     expect(ar.nativeName).toBe('العربية');
     const ru = LANG_META.find(l => l.code === 'ru')!;
     expect(ru.nativeName).toBe('Русский');
-  });
-});
-</file>
-
-<file path="tests/message-store.test.ts">
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useMessageStore } from '@/store/messageStore';
-
-beforeEach(() => useMessageStore.setState({ text: '', undoStack: [] }));
-
-describe('MessageStore — Core text operations', () => {
-  it('appendWord adds word with auto-space (bug fix: no concatenation)', () => {
-    useMessageStore.getState().appendWord('I');
-    useMessageStore.getState().appendWord('want');
-    useMessageStore.getState().appendWord('pizza');
-    expect(useMessageStore.getState().text).toBe('I want pizza');
-  });
-
-  it('appendWord on empty text does not add leading space', () => {
-    useMessageStore.getState().appendWord('Hello');
-    expect(useMessageStore.getState().text).toBe('Hello');
-  });
-
-  it('appendText adds phrase with auto-space', () => {
-    useMessageStore.getState().appendWord('I');
-    useMessageStore.getState().appendText('need help');
-    expect(useMessageStore.getState().text).toBe('I need help');
-  });
-
-  it('appendChar adds character without space (keyboard typing)', () => {
-    useMessageStore.getState().appendChar('h');
-    useMessageStore.getState().appendChar('i');
-    expect(useMessageStore.getState().text).toBe('hi');
-  });
-
-  it('deleteLastWord removes last word cleanly (no trailing space)', () => {
-    useMessageStore.setState({ text: 'I want pizza' });
-    useMessageStore.getState().deleteLastWord();
-    expect(useMessageStore.getState().text).toBe('I want');
-  });
-
-  it('deleteLastWord on single word produces empty string', () => {
-    useMessageStore.setState({ text: 'Hello' });
-    useMessageStore.getState().deleteLastWord();
-    expect(useMessageStore.getState().text).toBe('');
-  });
-
-  it('deleteLastWord on empty string stays empty', () => {
-    useMessageStore.getState().deleteLastWord();
-    expect(useMessageStore.getState().text).toBe('');
-  });
-
-  it('clearAll empties text', () => {
-    useMessageStore.setState({ text: 'some text' });
-    useMessageStore.getState().clearAll();
-    expect(useMessageStore.getState().text).toBe('');
-  });
-
-  it('deleteLastChar removes one character', () => {
-    useMessageStore.setState({ text: 'hello' });
-    useMessageStore.getState().deleteLastChar();
-    expect(useMessageStore.getState().text).toBe('hell');
-  });
-});
-
-describe('MessageStore — Undo (motor accessibility)', () => {
-  it('undo restores previous text after appendWord', () => {
-    useMessageStore.getState().appendWord('Hello');
-    useMessageStore.getState().appendWord('world');
-    useMessageStore.getState().undo();
-    expect(useMessageStore.getState().text).toBe('Hello');
-  });
-
-  it('undo restores text after clearAll', () => {
-    useMessageStore.setState({ text: 'important message', undoStack: [] });
-    useMessageStore.getState().clearAll();
-    useMessageStore.getState().undo();
-    expect(useMessageStore.getState().text).toBe('important message');
-  });
-
-  it('multiple undos walk back through history stack', () => {
-    useMessageStore.getState().appendWord('A');
-    useMessageStore.getState().appendWord('B');
-    useMessageStore.getState().appendWord('C');
-    expect(useMessageStore.getState().text).toBe('A B C');
-    useMessageStore.getState().undo();
-    expect(useMessageStore.getState().text).toBe('A B');
-    useMessageStore.getState().undo();
-    expect(useMessageStore.getState().text).toBe('A');
-    useMessageStore.getState().undo();
-    expect(useMessageStore.getState().text).toBe('');
-  });
-
-  it('undo does nothing when stack is empty', () => {
-    useMessageStore.getState().undo();
-    expect(useMessageStore.getState().text).toBe('');
-  });
-});
-
-describe('MessageStore — History', () => {
-  it('addToHistory prepends entry', () => {
-    useMessageStore.getState().addToHistory('first');
-    useMessageStore.getState().addToHistory('second');
-    const h = useMessageStore.getState().history;
-    expect(h).toHaveLength(2);
-    expect(h[0].text).toBe('second');
-    expect(h[1].text).toBe('first');
-  });
-
-  it('history caps at 100 entries', () => {
-    for (let i = 0; i < 110; i++) useMessageStore.getState().addToHistory(`msg ${i}`);
-    expect(useMessageStore.getState().history).toHaveLength(100);
-  });
-});
-
-describe('MessageStore — Auto-space gap tests', () => {
-  it('prediction then keyboard typing does not concatenate (the original bug)', () => {
-    useMessageStore.getState().appendWord('I');
-    useMessageStore.getState().appendWord('Want');
-    // User switches to keyboard
-    useMessageStore.getState().appendChar('s');
-    useMessageStore.getState().appendChar('o');
-    useMessageStore.getState().appendChar('m');
-    // The text should be "I Want" + "som" (chars append directly, space already there from appendWord)
-    expect(useMessageStore.getState().text).toBe('I Wantsom');
-    // NOTE: This reveals a gap — keyboard chars after appendWord need a space.
-    // The space is added when the user presses space bar, which is correct keyboard behavior.
-    // The "bug" in the original app was appendWord not adding space — which IS fixed.
-  });
-
-  it('phrase selection always adds space before', () => {
-    useMessageStore.getState().appendWord('Hello');
-    useMessageStore.getState().appendText('I need help');
-    expect(useMessageStore.getState().text).toBe('Hello I need help');
-  });
-
-  it('multiple predictions in sequence are properly spaced', () => {
-    useMessageStore.getState().appendWord('I');
-    useMessageStore.getState().appendWord('Am');
-    useMessageStore.getState().appendWord('Hungry');
-    useMessageStore.getState().appendWord('And');
-    useMessageStore.getState().appendWord('I');
-    expect(useMessageStore.getState().text).toBe('I Am Hungry And I');
   });
 });
 </file>
@@ -4089,178 +3699,55 @@ export default function AIChatPanel() {
 }
 </file>
 
-<file path="components/CaregiverPanel.tsx">
+<file path="components/HistoryModal.tsx">
 'use client';
-import { useState, useCallback } from 'react';
-import { useNoteStore } from '@/store/noteStore';
+import { useMessageStore } from '@/store/messageStore';
 import { useUIStore } from '@/store/uiStore';
-import { tapFeedback } from '@/services/feedback';
-import { executeAllActions, ActionResult } from '@/engine/caregiverActions';
-import { NoteAction, CaregiverNote } from '@/types';
-import { parseCaregiverNote, hasApiKey } from '@/services/aiService';
+import { useSettingsStore } from '@/store/settingsStore';
 
-/**
- * Caregiver Notes Panel
- *
- * Slides in from the left (same as categories/math).
- * Two modes:
- *   1. ADD NOTE — type a note, optionally with parsed actions
- *   2. VIEW LOG — scrollable list of all past notes with timestamps
- *
- * REAL-WORLD USAGE:
- *   BCBA opens panel → types "Move bathroom to top of help" →
- *   sees preview: [Reorder: Move "Bathroom" to position 1] →
- *   taps [Apply] → note saved with action, phrase reordered →
- *   continues session
- */
+export default function HistoryModal() {
+  const { showHistory, toggleHistory } = useUIStore();
+  const { history, setText, clearHistory } = useMessageStore();
+  const lang = useSettingsStore((s) => s.language);
 
-function formatTime(ts: number): string {
-  const d = new Date(ts);
-  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-}
+  if (!showHistory) return null;
 
-export default function CaregiverPanel() {
-  const { sidePanel, closeSidePanel } = useUIStore();
-  const { notes, addNote, markApplied, removeNote, authorName, setAuthorName } = useNoteStore();
-  const [input, setInput] = useState('');
-  const [results, setResults] = useState<ActionResult[] | null>(null);
-  const [tab, setTab] = useState<'add' | 'log'>('add');
-
-  if (sidePanel !== 'caregiver') return null;
-
-  const [parsing, setParsing] = useState(false);
-
-  const handleSubmitNote = useCallback(async () => {
-    if (!input.trim()) return;
-    tapFeedback();
-
-    if (hasApiKey()) {
-      setParsing(true);
-      try {
-        const parsed = await parseCaregiverNote(input.trim());
-        addNote(input.trim(), parsed.actions);
-      } catch {
-        addNote(input.trim());
-      }
-      setParsing(false);
-    } else {
-      addNote(input.trim());
-    }
-    setInput('');
-    setResults(null);
-  }, [input, addNote]);
-
-  const handleApplyActions = useCallback((note: CaregiverNote) => {
-    tapFeedback();
-    const actionResults = executeAllActions(note.actions.filter(a => a.type !== 'note_only'));
-    setResults(actionResults);
-    markApplied(note.id);
-  }, [markApplied]);
-
-  const btn = 'aac-btn bg-[#2a2a3e] rounded-xl p-3 text-[#e0e0e0] font-medium select-none text-center';
+  const fmt = (ts: number) => {
+    const d = new Date(ts);
+    return d.toLocaleString(lang, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  };
 
   return (
-    <div className="w-[320px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0">
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
-        <span className="text-[#888] font-semibold text-sm">Caregiver Notes</span>
-        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-[#2a2a3e]">
-        <button onClick={() => setTab('add')} className={`flex-1 py-2.5 text-sm font-semibold ${tab === 'add' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-[#666]'}`}>
-          + Add Note
-        </button>
-        <button onClick={() => setTab('log')} className={`flex-1 py-2.5 text-sm font-semibold ${tab === 'log' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-[#666]'}`}>
-          Log ({notes.length})
-        </button>
-      </div>
-
-      {tab === 'add' ? (
-        <div className="flex-1 flex flex-col p-3 gap-3 overflow-y-auto">
-          {/* Author name */}
-          <div>
-            <label className="text-[#666] text-xs font-semibold block mb-1">Your name</label>
-            <input
-              value={authorName}
-              onChange={(e) => setAuthorName(e.target.value)}
-              placeholder="BCBA / Therapist / Parent"
-              className="w-full bg-[#2a2a3e] rounded-lg px-3 py-2 text-[#e0e0e0] text-sm placeholder-[#555]"
-            />
-          </div>
-
-          {/* Note input */}
-          <div className="flex-1">
-            <label className="text-[#666] text-xs font-semibold block mb-1">Note or instruction</label>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={"Examples:\n• Move bathroom to top of Help\n• Add McDonald's ordering flow\n• He used 'because' 5 times today\n• Good session, 15 phrases independently"}
-              className="w-full h-32 bg-[#2a2a3e] rounded-lg px-3 py-2 text-[#e0e0e0] text-sm placeholder-[#555] resize-none"
-            />
-          </div>
-
-          <button onClick={handleSubmitNote} disabled={!input.trim() || parsing} className={`${btn} ${input.trim() && !parsing ? 'bg-[#4CAF50] text-white' : 'opacity-40'}`}>
-            {parsing ? 'Parsing...' : hasApiKey() ? 'Save & Parse' : 'Save Note'}
-          </button>
-
-          {/* Action results feedback */}
-          {results && (
-            <div className="space-y-1">
-              {results.map((r, i) => (
-                <div key={i} className={`text-xs px-2 py-1 rounded ${r.success ? 'text-[#4CAF50] bg-[#1b3a1b]' : 'text-[#F44336] bg-[#3a1b1b]'}`}>
-                  {r.success ? '✓' : '✕'} {r.message}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Quick instruction hint */}
-          <div className="text-[#444] text-xs leading-relaxed">
-            {hasApiKey()
-              ? 'AI will parse your instructions and suggest actions. You confirm before anything changes.'
-              : 'Add a Gemini API key in Settings to enable AI-powered note parsing.'}
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={toggleHistory}>
+      <div className="bg-[#1e1e2e] rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#2a2a3e]">
+          <h2 className="text-[#e0e0e0] font-bold text-lg">History</h2>
+          <div className="flex gap-2">
+            {history.length > 0 && (
+              <button onClick={clearHistory} className="text-[#F44336] text-sm hover:underline">Clear all</button>
+            )}
+            <button onClick={toggleHistory} className="text-[#888] hover:text-white text-xl">✕</button>
           </div>
         </div>
-      ) : (
-        <div className="flex-1 overflow-y-auto p-2">
-          {notes.length === 0 ? (
-            <p className="text-[#555] text-center py-8 text-sm">No notes yet</p>
+        <div className="flex-1 overflow-y-auto p-3">
+          {history.length === 0 ? (
+            <p className="text-[#555] text-center py-8">No history yet</p>
           ) : (
             <div className="flex flex-col gap-2">
-              {notes.map((note) => (
-                <div key={note.id} className="bg-[#1e1e2e] rounded-xl p-3">
-                  <p className="text-[#e0e0e0] text-sm">{note.text}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="text-[#555] text-xs">
-                      {note.authorName && <span className="text-[#888]">{note.authorName} · </span>}
-                      {formatTime(note.timestamp)}
-                    </div>
-                    <div className="flex gap-1">
-                      {note.actions.some(a => a.type !== 'note_only') && !note.applied && (
-                        <button onClick={() => handleApplyActions(note)} className="text-[#4CAF50] text-xs font-semibold hover:underline">Apply</button>
-                      )}
-                      {note.applied && <span className="text-[#4CAF50] text-xs">✓ Applied</span>}
-                      <button onClick={() => { tapFeedback(); removeNote(note.id); }} className="text-[#F44336] text-xs hover:underline ml-2">Delete</button>
-                    </div>
-                  </div>
-                  {/* Show actions if any */}
-                  {note.actions.filter(a => a.type !== 'note_only').length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      {note.actions.filter(a => a.type !== 'note_only').map((a, i) => (
-                        <div key={i} className="text-xs text-[#888] bg-[#2a2a3e] rounded px-2 py-1">
-                          {a.description}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              {history.map((entry, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setText(entry.text); toggleHistory(); }}
+                  className="bg-[#2a2a3e] rounded-xl p-3 text-left hover:bg-[#3a3a5e] transition-colors"
+                >
+                  <p className="text-[#e0e0e0] text-base">{entry.text}</p>
+                  <p className="text-[#666] text-xs mt-1">{fmt(entry.timestamp)}</p>
+                </button>
               ))}
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -4301,367 +3788,6 @@ export const MATH_ITEMS: MathItem[] = [
   { id: 'math-paren-close', symbol: ')', label: 'Close paren', ttsText: 'close parenthesis', category: 'advanced', sortOrder: 28 },
   { id: 'math-infinity', symbol: '∞', label: 'Infinity', ttsText: 'infinity', category: 'advanced', sortOrder: 29 },
 ];
-</file>
-
-<file path="engine/caregiverActions.ts">
-/**
- * Caregiver Action Execution Engine
- *
- * Translates NoteAction objects into actual store mutations.
- * Each action type maps to specific store operations.
- *
- * DESIGN PRINCIPLE: Actions are always previewed before execution.
- * The caregiver sees exactly what will change and taps [Apply].
- * This prevents accidental modifications to the child's AAC system.
- *
- * ═══════════════════════════════════════════════════════════════
- * REAL-WORLD ACTION SAMPLES WITH STORE MUTATIONS:
- *
- * ── add_phrase ──────────────────────────────────────────────
- * Caregiver: "Add 'I feel sick' to Help"
- * Action: { type: 'add_phrase', payload: { categoryId: 'help-needs', text: 'I feel sick' } }
- * Mutation: categoryStore.addCustomPhrase('help-needs', 'I feel sick')
- *
- * ── remove_phrase ───────────────────────────────────────────
- * Caregiver: "Remove Lake from Places"
- * Action: { type: 'remove_phrase', payload: { phraseText: 'Lake', categoryId: 'places-plans' } }
- * Mutation: categoryStore.removeCustomPhrase(matchedId) — only custom phrases can be removed
- *           For default phrases, they get hidden via a "hidden" list instead
- *
- * ── reorder_phrase ──────────────────────────────────────────
- * Caregiver: "Move Bathroom to top of Help page"
- * Action: { type: 'reorder_phrase', payload: { phraseId: 'help-bathroom', newSortOrder: 0, categoryId: 'help-needs' } }
- * Mutation: Shifts all phrases down by 1, sets target to sortOrder 0
- *
- * ── add_category ────────────────────────────────────────────
- * Caregiver: "Create a Feelings category"
- * Action: { type: 'add_category', payload: { name: 'Feelings', icon: '😊' } }
- * Mutation: categoryStore.addCustomCategory('Feelings', '😊')
- *
- * ── add_sequence ────────────────────────────────────────────
- * Caregiver: "Add McDonald's ordering flow"
- * Action: { type: 'add_sequence', payload: { name: "McDonald's", categoryId: 'food-ordering', steps: [...] } }
- * Mutation: categoryStore.addOrderingSequence({...})
- *
- * ── remove_sequence ─────────────────────────────────────────
- * Caregiver: "Remove Chipotle, he doesn't go there anymore"
- * Action: { type: 'remove_sequence', payload: { sequenceName: 'Chipotle' } }
- * Mutation: categoryStore.removeOrderingSequence(matchedId)
- *
- * ── boost_word ──────────────────────────────────────────────
- * Caregiver: "He's starting to use 'because' a lot"
- * Action: { type: 'boost_word', payload: { word: 'because', boostCount: 10 } }
- * Mutation: predictionStore.wordFreq['because'].count += 10
- *
- * ── note_only ───────────────────────────────────────────────
- * Caregiver: "Good session, eye contact improving"
- * Action: { type: 'note_only', payload: {} }
- * Mutation: None — stored as documentation only
- * ═══════════════════════════════════════════════════════════════
- */
-
-import { NoteAction, OrderingSequenceData } from '@/types';
-import { useCategoryStore } from '@/store/categoryStore';
-import { usePredictionStore } from '@/store/predictionStore';
-
-export interface ActionResult {
-  success: boolean;
-  message: string;
-}
-
-export function executeAction(action: NoteAction): ActionResult {
-  const catStore = useCategoryStore.getState();
-  const predStore = usePredictionStore.getState();
-
-  switch (action.type) {
-    case 'add_phrase': {
-      const { categoryId, text } = action.payload as { categoryId: string; text: string };
-      if (!categoryId || !text) return { success: false, message: 'Missing category or text' };
-      catStore.addCustomPhrase(categoryId, text);
-      return { success: true, message: `Added "${text}" to category` };
-    }
-
-    case 'remove_phrase': {
-      const { phraseText, categoryId } = action.payload as { phraseText: string; categoryId: string };
-      const phrases = catStore.getPhrasesForCategory(categoryId);
-      const match = phrases.find((p) => p.text.toLowerCase() === phraseText.toLowerCase());
-      if (!match) return { success: false, message: `Phrase "${phraseText}" not found` };
-      if (match.isCustom) {
-        catStore.removeCustomPhrase(match.id);
-        return { success: true, message: `Removed "${phraseText}"` };
-      }
-      catStore.hideDefaultPhrase(match.id);
-      return { success: true, message: `Hidden "${phraseText}" (can be restored in Settings)` };
-    }
-
-    case 'reorder_phrase': {
-      const { phraseId, newSortOrder, categoryId } = action.payload as { phraseId: string; newSortOrder: number; categoryId: string };
-      const phrases = catStore.getPhrasesForCategory(categoryId);
-      const target = phrases.find((p) => p.id === phraseId);
-      if (!target) return { success: false, message: 'Phrase not found' };
-      if (!target.isCustom) catStore.hideDefaultPhrase(target.id);
-      useCategoryStore.setState((s) => ({
-        customPhrases: [
-          ...s.customPhrases,
-          { id: crypto.randomUUID(), categoryId, text: target.text, sortOrder: newSortOrder, isCustom: true, usageCount: 0 },
-        ],
-      }));
-      return { success: true, message: `Moved "${target.text}" to position ${newSortOrder + 1}` };
-    }
-
-    case 'add_category': {
-      const { name, icon } = action.payload as { name: string; icon: string };
-      if (!name) return { success: false, message: 'Missing category name' };
-      catStore.addCustomCategory(name, icon || '📌');
-      return { success: true, message: `Created category "${name}"` };
-    }
-
-    case 'remove_category': {
-      const { categoryName } = action.payload as { categoryName: string };
-      const cats = catStore.allCategories();
-      const match = cats.find((c) => c.name.toLowerCase() === categoryName.toLowerCase() && c.isCustom);
-      if (!match) return { success: false, message: `"${categoryName}" is a default category and cannot be removed` };
-      catStore.removeCustomCategory(match.id);
-      return { success: true, message: `Removed category "${categoryName}"` };
-    }
-
-    case 'add_sequence': {
-      const { name, categoryId, steps } = action.payload as {
-        name: string; categoryId: string;
-        steps?: Array<{ label: string; options: string[] }>;
-      };
-      if (!name) return { success: false, message: 'Missing sequence name' };
-
-      const seq: OrderingSequenceData = {
-        id: crypto.randomUUID(),
-        name,
-        categoryId: categoryId || 'food-ordering',
-        sortOrder: catStore.getSequencesForCategory(categoryId || 'food-ordering').length,
-        steps: (steps ?? [{ label: 'Order', options: ['Option 1', 'Option 2'] }]).map((s, si) => ({
-          id: crypto.randomUUID(),
-          label: s.label,
-          stepOrder: si,
-          options: s.options.map((o, oi) => ({
-            id: crypto.randomUUID(),
-            text: o,
-            sortOrder: oi,
-          })),
-        })),
-      };
-      catStore.addOrderingSequence(seq);
-      return { success: true, message: `Created "${name}" ordering flow with ${seq.steps.length} steps` };
-    }
-
-    case 'remove_sequence': {
-      const { sequenceName } = action.payload as { sequenceName: string };
-      const allSeqs = useCategoryStore.getState().orderingSequences;
-      const match = allSeqs.find((s) => s.name.toLowerCase() === sequenceName.toLowerCase());
-      if (!match) return { success: false, message: `Ordering flow "${sequenceName}" not found` };
-      catStore.removeOrderingSequence(match.id);
-      return { success: true, message: `Removed "${sequenceName}" ordering flow` };
-    }
-
-    case 'edit_sequence': {
-      const { sequenceName, stepLabel, newOptions } = action.payload as {
-        sequenceName: string; stepLabel: string; newOptions: string[];
-      };
-      const allSeqs = useCategoryStore.getState().orderingSequences;
-      const seq = allSeqs.find((s) => s.name.toLowerCase() === sequenceName.toLowerCase());
-      if (!seq) return { success: false, message: `Ordering flow "${sequenceName}" not found` };
-
-      const updatedSeq = { ...seq, steps: seq.steps.map((step) => {
-        if (step.label.toLowerCase() === stepLabel.toLowerCase()) {
-          const existingTexts = new Set(step.options.map((o) => o.text.toLowerCase()));
-          const additions = newOptions.filter((o) => !existingTexts.has(o.toLowerCase()));
-          return {
-            ...step,
-            options: [
-              ...step.options,
-              ...additions.map((text, i) => ({
-                id: crypto.randomUUID(),
-                text,
-                sortOrder: step.options.length + i,
-              })),
-            ],
-          };
-        }
-        return step;
-      })};
-      catStore.updateOrderingSequence(updatedSeq);
-      return { success: true, message: `Updated "${sequenceName}" → ${stepLabel}` };
-    }
-
-    case 'boost_word': {
-      const { word, boostCount } = action.payload as { word: string; boostCount: number };
-      if (!word) return { success: false, message: 'Missing word' };
-      const key = word.toLowerCase();
-      const existing = predStore.wordFreq[key];
-      const newFreq = {
-        ...predStore.wordFreq,
-        [key]: { count: (existing?.count ?? 0) + (boostCount || 10), lastUsed: Date.now() },
-      };
-      usePredictionStore.setState({ wordFreq: newFreq });
-      return { success: true, message: `Boosted "${word}" prediction frequency by ${boostCount || 10}` };
-    }
-
-    case 'note_only':
-      return { success: true, message: 'Note saved' };
-
-    default:
-      return { success: false, message: `Unknown action type: ${action.type}` };
-  }
-}
-
-export function executeAllActions(actions: NoteAction[]): ActionResult[] {
-  return actions.map(executeAction);
-}
-</file>
-
-<file path="services/azureTTS.ts">
-'use client';
-/**
- * Azure Neural TTS — Paid tiers only
- *
- * Routes through Synalux /api/v1/tts endpoint (same auth as chat).
- * Server holds the Azure Speech key — no client-side secrets.
- *
- * Supports 9 emotional speaking styles via SSML express-as:
- *   friendly, cheerful, calm, serious, excited, hopeful, empathetic, sad, angry
- *
- * Voice selection per language:
- *   en → en-US-JennyMultilingualNeural (supports styles)
- *   es → es-ES-ElviraNeural
- *   ja → ja-JP-NanamiNeural (supports styles)
- *   zh → zh-CN-XiaoxiaoNeural (supports styles)
- *   ...etc
- *
- * Falls back to Web Speech API if Azure is unavailable.
- */
-
-export type ToneStyle =
-  | 'friendly' | 'cheerful' | 'calm' | 'serious' | 'excited'
-  | 'hopeful' | 'empathetic' | 'sad' | 'angry';
-
-export const TONE_OPTIONS: Array<{ id: ToneStyle; label: string; icon: string }> = [
-  { id: 'friendly', label: 'Friendly', icon: '😊' },
-  { id: 'cheerful', label: 'Cheerful', icon: '😄' },
-  { id: 'calm', label: 'Calm', icon: '😌' },
-  { id: 'serious', label: 'Serious', icon: '😐' },
-  { id: 'excited', label: 'Excited', icon: '🤩' },
-  { id: 'hopeful', label: 'Hopeful', icon: '🙏' },
-  { id: 'empathetic', label: 'Empathetic', icon: '🤗' },
-  { id: 'sad', label: 'Sad', icon: '😢' },
-  { id: 'angry', label: 'Urgent', icon: '😤' },
-];
-
-const AZURE_VOICES: Record<string, string> = {
-  'en-US': 'en-US-JennyMultilingualNeural',
-  'es-ES': 'es-ES-ElviraNeural',
-  'fr-FR': 'fr-FR-DeniseNeural',
-  'pt-BR': 'pt-BR-FranciscaNeural',
-  'ro-RO': 'ro-RO-AlinaNeural',
-  'uk-UA': 'uk-UA-PolinaNeural',
-  'ru-RU': 'ru-RU-SvetlanaNeural',
-  'de-DE': 'de-DE-KatjaNeural',
-  'ja-JP': 'ja-JP-NanamiNeural',
-  'ko-KR': 'ko-KR-SunHiNeural',
-  'zh-CN': 'zh-CN-XiaoxiaoNeural',
-  'ar-SA': 'ar-SA-ZariyahNeural',
-};
-
-const STYLE_SUPPORTED = new Set([
-  'en-US-JennyMultilingualNeural',
-  'zh-CN-XiaoxiaoNeural',
-  'ja-JP-NanamiNeural',
-]);
-
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
-  const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
-  const supportsStyles = STYLE_SUPPORTED.has(voice);
-  const ratePercent = `${Math.round(rate * 100)}%`;
-  const pitchPercent = '+0%';
-  const volumeValue = Math.round(volume * 100);
-
-  let inner = escapeXml(text);
-  if (supportsStyles && tone !== 'friendly') {
-    inner = `<mstts:express-as style="${tone}">${inner}</mstts:express-as>`;
-  }
-
-  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${lang}">
-  <voice name="${voice}">
-    <prosody rate="${ratePercent}" pitch="${pitchPercent}" volume="${volumeValue}">
-      ${inner}
-    </prosody>
-  </voice>
-</speak>`;
-}
-
-const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
-
-let currentAudio: HTMLAudioElement | null = null;
-let currentBlobUrl: string | null = null;
-
-export function stopAzureAudio(): void {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.src = '';
-    currentAudio = null;
-  }
-  if (currentBlobUrl) {
-    URL.revokeObjectURL(currentBlobUrl);
-    currentBlobUrl = null;
-  }
-}
-
-export async function speakAzure(
-  text: string,
-  lang: string,
-  tone: ToneStyle,
-  rate: number,
-  volume: number,
-  authToken: string,
-): Promise<boolean> {
-  const ssml = buildSSML(text, lang, tone, rate, volume);
-
-  try {
-    const res = await fetch(`${SYNALUX_API}/tts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({ ssml, format: 'audio-24khz-96kbitrate-mono-mp3' }),
-    });
-
-    if (!res.ok) return false;
-
-    stopAzureAudio();
-    const audioBuffer = await res.arrayBuffer();
-    const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
-    const url = URL.createObjectURL(blob);
-    currentBlobUrl = url;
-    const audio = new Audio(url);
-    currentAudio = audio;
-    audio.volume = volume;
-    await audio.play();
-    audio.onended = () => {
-      URL.revokeObjectURL(url);
-      if (currentAudio === audio) { currentAudio = null; currentBlobUrl = null; }
-    };
-    return true;
-  } catch {
-    return false;
-  }
-}
 </file>
 
 <file path="services/feedback.ts">
@@ -4750,6 +3876,201 @@ export function keyFeedback(): void {
 export function deleteFeedback(): void {
   hapticHeavy();
   playDelete();
+}
+</file>
+
+<file path="services/syncService.ts">
+'use client';
+/**
+ * Sync Service — Supabase Hivemind with localStorage fallback.
+ *
+ * Architecture:
+ *   - localStorage is always the primary store (instant, works offline)
+ *   - Supabase is the sync layer (cross-device, hivemind mode)
+ *   - On load: pull from Supabase, merge with local, write back
+ *   - On save: write local immediately, push to Supabase in background
+ *   - Conflict resolution: last-write-wins for settings, union-merge for custom data
+ */
+
+import { getSupabase, isSupabaseConfigured as _isConfigured } from './supabase';
+import { WordFreqEntry, HistoryEntry, Category, Phrase } from '@/types';
+
+export function isSupabaseConfigured(): boolean { return _isConfigured(); }
+
+const AAC_TABLE = 'aac_profiles';
+
+export interface AACProfile {
+  device_id: string;
+  user_id: string;
+  custom_categories: Category[];
+  custom_phrases: Phrase[];
+  word_freq: Record<string, WordFreqEntry>;
+  bigrams: Record<string, WordFreqEntry>;
+  history: HistoryEntry[];
+  settings: Record<string, unknown>;
+  updated_at: string;
+}
+
+function getDeviceId(): string {
+  let id = localStorage.getItem('prism-aac-device-id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('prism-aac-device-id', id);
+  }
+  return id;
+}
+
+function getUserId(): string {
+  return localStorage.getItem('prism-aac-user-id') || 'default';
+}
+
+export function setUserId(id: string): void {
+  localStorage.setItem('prism-aac-user-id', id);
+}
+
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
+
+let currentStatus: SyncStatus = 'idle';
+const listeners = new Set<(s: SyncStatus) => void>();
+
+export function onSyncStatus(fn: (s: SyncStatus) => void): () => void {
+  listeners.add(fn);
+  fn(currentStatus);
+  return () => listeners.delete(fn);
+}
+
+function setStatus(s: SyncStatus) {
+  currentStatus = s;
+  listeners.forEach(fn => fn(s));
+}
+
+export async function pushToCloud(data: Partial<AACProfile>): Promise<void> {
+  if (!_isConfigured()) { setStatus('offline'); return; }
+  const sb = getSupabase();
+  if (!sb) { setStatus('offline'); return; }
+
+  setStatus('syncing');
+  try {
+    const record = {
+      device_id: getDeviceId(),
+      user_id: getUserId(),
+      ...data,
+
+    };
+    await sb.from(AAC_TABLE).upsert(record, { onConflict: 'user_id,device_id' });
+    setStatus('synced');
+  } catch {
+    setStatus('error');
+  }
+}
+
+export async function pullFromCloud(): Promise<Partial<AACProfile> | null> {
+  if (!_isConfigured()) { setStatus('offline'); return null; }
+  const sb = getSupabase();
+  if (!sb) { setStatus('offline'); return null; }
+
+  setStatus('syncing');
+  try {
+    const userId = getUserId();
+    const { data, error } = await sb
+      .from(AAC_TABLE)
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(1);
+
+    if (error) { setStatus('error'); return null; }
+    if (!data || data.length === 0) { setStatus('synced'); return null; }
+    setStatus('synced');
+    return data[0] as AACProfile;
+  } catch {
+    setStatus('offline');
+    return null;
+  }
+}
+
+/** Merge remote word frequencies with local (take higher counts) */
+export function mergeWordFreq(
+  local: Record<string, WordFreqEntry>,
+  remote: Record<string, WordFreqEntry>,
+): Record<string, WordFreqEntry> {
+  const merged = { ...local };
+  for (const [key, val] of Object.entries(remote)) {
+    const existing = merged[key];
+    if (!existing || val.count > existing.count || val.lastUsed > existing.lastUsed) {
+      merged[key] = {
+        count: Math.max(val.count, existing?.count ?? 0),
+        lastUsed: Math.max(val.lastUsed, existing?.lastUsed ?? 0),
+      };
+    }
+  }
+  return merged;
+}
+
+/** Merge custom categories/phrases with tombstone support.
+ *  Items with deletedAt are tombstones — they suppress the item on all devices. */
+export function mergeCustomItems<T extends { id: string; deletedAt?: number }>(local: T[], remote: T[]): T[] {
+  const map = new Map<string, T>();
+  // Remote first, then local overwrites (local is authoritative for non-deleted items)
+  for (const item of remote) map.set(item.id, item);
+  for (const item of local) {
+    const existing = map.get(item.id);
+    if (!existing) { map.set(item.id, item); continue; }
+    // Tombstone wins: if either side deleted it, keep the deletion
+    if (item.deletedAt || existing.deletedAt) {
+      const winner = (item.deletedAt ?? 0) > (existing.deletedAt ?? 0) ? item : existing;
+      map.set(item.id, winner);
+    } else {
+      map.set(item.id, item); // local wins for live items
+    }
+  }
+  return [...map.values()].filter(item => !item.deletedAt);
+}
+
+/** Merge history entries (union, dedup by timestamp, cap at 100) */
+export function mergeHistory(local: HistoryEntry[], remote: HistoryEntry[]): HistoryEntry[] {
+  const seen = new Set<number>();
+  const merged: HistoryEntry[] = [];
+  for (const entry of [...local, ...remote]) {
+    if (!seen.has(entry.timestamp)) {
+      seen.add(entry.timestamp);
+      merged.push(entry);
+    }
+  }
+  return merged.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+}
+
+/** Subscribe to realtime changes for hivemind sync */
+export function subscribeToChanges(
+  onUpdate: (profile: Partial<AACProfile>) => void,
+): (() => void) | null {
+  if (!_isConfigured()) return null;
+  const sb = getSupabase();
+  if (!sb) return null;
+
+  const userId = getUserId();
+  const deviceId = getDeviceId();
+
+  const channel = sb
+    .channel('aac-hivemind')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: AAC_TABLE,
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload) => {
+        const remote = payload.new as AACProfile;
+        if (remote.device_id !== deviceId) {
+          onUpdate(remote);
+        }
+      },
+    )
+    .subscribe();
+
+  return () => { sb.removeChannel(channel); };
 }
 </file>
 
@@ -5122,6 +4443,149 @@ describe('CategoryStore — Gap tests', () => {
 });
 </file>
 
+<file path="tests/message-store.test.ts">
+import { describe, it, expect, beforeEach } from 'vitest';
+import { useMessageStore } from '@/store/messageStore';
+
+beforeEach(() => useMessageStore.setState({ text: '', undoStack: [] }));
+
+describe('MessageStore — Core text operations', () => {
+  it('appendWord adds word with auto-space (bug fix: no concatenation)', () => {
+    useMessageStore.getState().appendWord('I');
+    useMessageStore.getState().appendWord('want');
+    useMessageStore.getState().appendWord('pizza');
+    expect(useMessageStore.getState().text).toBe('I want pizza');
+  });
+
+  it('appendWord on empty text does not add leading space', () => {
+    useMessageStore.getState().appendWord('Hello');
+    expect(useMessageStore.getState().text).toBe('Hello');
+  });
+
+  it('appendText adds phrase with auto-space', () => {
+    useMessageStore.getState().appendWord('I');
+    useMessageStore.getState().appendText('need help');
+    expect(useMessageStore.getState().text).toBe('I need help');
+  });
+
+  it('appendChar adds character without space (keyboard typing)', () => {
+    useMessageStore.getState().appendChar('h');
+    useMessageStore.getState().appendChar('i');
+    expect(useMessageStore.getState().text).toBe('hi');
+  });
+
+  it('deleteLastWord removes last word cleanly (no trailing space)', () => {
+    useMessageStore.setState({ text: 'I want pizza' });
+    useMessageStore.getState().deleteLastWord();
+    expect(useMessageStore.getState().text).toBe('I want');
+  });
+
+  it('deleteLastWord on single word produces empty string', () => {
+    useMessageStore.setState({ text: 'Hello' });
+    useMessageStore.getState().deleteLastWord();
+    expect(useMessageStore.getState().text).toBe('');
+  });
+
+  it('deleteLastWord on empty string stays empty', () => {
+    useMessageStore.getState().deleteLastWord();
+    expect(useMessageStore.getState().text).toBe('');
+  });
+
+  it('clearAll empties text', () => {
+    useMessageStore.setState({ text: 'some text' });
+    useMessageStore.getState().clearAll();
+    expect(useMessageStore.getState().text).toBe('');
+  });
+
+  it('deleteLastChar removes one character', () => {
+    useMessageStore.setState({ text: 'hello' });
+    useMessageStore.getState().deleteLastChar();
+    expect(useMessageStore.getState().text).toBe('hell');
+  });
+});
+
+describe('MessageStore — Undo (motor accessibility)', () => {
+  it('undo restores previous text after appendWord', () => {
+    useMessageStore.getState().appendWord('Hello');
+    useMessageStore.getState().appendWord('world');
+    useMessageStore.getState().undo();
+    expect(useMessageStore.getState().text).toBe('Hello');
+  });
+
+  it('undo restores text after clearAll', () => {
+    useMessageStore.setState({ text: 'important message', undoStack: [] });
+    useMessageStore.getState().clearAll();
+    useMessageStore.getState().undo();
+    expect(useMessageStore.getState().text).toBe('important message');
+  });
+
+  it('multiple undos walk back through history stack', () => {
+    useMessageStore.getState().appendWord('A');
+    useMessageStore.getState().appendWord('B');
+    useMessageStore.getState().appendWord('C');
+    expect(useMessageStore.getState().text).toBe('A B C');
+    useMessageStore.getState().undo();
+    expect(useMessageStore.getState().text).toBe('A B');
+    useMessageStore.getState().undo();
+    expect(useMessageStore.getState().text).toBe('A');
+    useMessageStore.getState().undo();
+    expect(useMessageStore.getState().text).toBe('');
+  });
+
+  it('undo does nothing when stack is empty', () => {
+    useMessageStore.getState().undo();
+    expect(useMessageStore.getState().text).toBe('');
+  });
+});
+
+describe('MessageStore — History', () => {
+  it('addToHistory prepends entry', () => {
+    useMessageStore.getState().addToHistory('first');
+    useMessageStore.getState().addToHistory('second');
+    const h = useMessageStore.getState().history;
+    expect(h).toHaveLength(2);
+    expect(h[0].text).toBe('second');
+    expect(h[1].text).toBe('first');
+  });
+
+  it('history caps at 100 entries', () => {
+    for (let i = 0; i < 110; i++) useMessageStore.getState().addToHistory(`msg ${i}`);
+    expect(useMessageStore.getState().history).toHaveLength(100);
+  });
+});
+
+describe('MessageStore — Auto-space gap tests', () => {
+  it('prediction then keyboard typing does not concatenate (the original bug)', () => {
+    useMessageStore.getState().appendWord('I');
+    useMessageStore.getState().appendWord('Want');
+    // User switches to keyboard
+    useMessageStore.getState().appendChar('s');
+    useMessageStore.getState().appendChar('o');
+    useMessageStore.getState().appendChar('m');
+    // The text should be "I Want" + "som" (chars append directly, space already there from appendWord)
+    expect(useMessageStore.getState().text).toBe('I Wantsom');
+    // NOTE: This reveals a gap — keyboard chars after appendWord need a space.
+    // The space is added when the user presses space bar, which is correct keyboard behavior.
+    // The "bug" in the original app was appendWord not adding space — which IS fixed.
+  });
+
+  it('phrase selection always adds space before', () => {
+    useMessageStore.getState().appendWord('Hello');
+    useMessageStore.getState().appendText('I need help');
+    expect(useMessageStore.getState().text).toBe('Hello I need help');
+  });
+
+  it('multiple predictions in sequence are properly spaced', () => {
+    useMessageStore.getState().appendWord('I');
+    useMessageStore.getState().appendWord('Am');
+    useMessageStore.getState().appendWord('Hungry');
+    useMessageStore.getState().appendWord('And');
+    useMessageStore.getState().appendWord('I');
+    expect(useMessageStore.getState().text).toBe('I Am Hungry And I');
+  });
+});
+</file>
+
 <file path="tests/prediction-engine.test.ts">
 import { describe, it, expect } from 'vitest';
 import { getPredictions, recordWord, recordBigram, decayPredictions } from '@/engine/predictionEngine';
@@ -5381,6 +4845,185 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 </file>
 
+<file path="components/CaregiverPanel.tsx">
+'use client';
+import { useState, useCallback } from 'react';
+import { useNoteStore } from '@/store/noteStore';
+import { useUIStore } from '@/store/uiStore';
+import { tapFeedback } from '@/services/feedback';
+import { executeAllActions, ActionResult } from '@/engine/caregiverActions';
+import { NoteAction, CaregiverNote } from '@/types';
+import { parseCaregiverNote, hasApiKey } from '@/services/aiService';
+import { useSettingsStore } from '@/store/settingsStore';
+
+/**
+ * Caregiver Notes Panel
+ *
+ * Slides in from the left (same as categories/math).
+ * Two modes:
+ *   1. ADD NOTE — type a note, optionally with parsed actions
+ *   2. VIEW LOG — scrollable list of all past notes with timestamps
+ *
+ * REAL-WORLD USAGE:
+ *   BCBA opens panel → types "Move bathroom to top of help" →
+ *   sees preview: [Reorder: Move "Bathroom" to position 1] →
+ *   taps [Apply] → note saved with action, phrase reordered →
+ *   continues session
+ */
+
+function formatTime(ts: number, lang?: string): string {
+  const d = new Date(ts);
+  return d.toLocaleString(lang || undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+export default function CaregiverPanel() {
+  const { sidePanel, closeSidePanel } = useUIStore();
+  const { notes, addNote, markApplied, removeNote, authorName, setAuthorName } = useNoteStore();
+  const lang = useSettingsStore((s) => s.language);
+  const [input, setInput] = useState('');
+  const [results, setResults] = useState<ActionResult[] | null>(null);
+  const [tab, setTab] = useState<'add' | 'log'>('add');
+
+  if (sidePanel !== 'caregiver') return null;
+
+  const [parsing, setParsing] = useState(false);
+
+  const handleSubmitNote = useCallback(async () => {
+    if (!input.trim()) return;
+    tapFeedback();
+
+    if (hasApiKey()) {
+      setParsing(true);
+      try {
+        const parsed = await parseCaregiverNote(input.trim());
+        addNote(input.trim(), parsed.actions);
+      } catch {
+        addNote(input.trim());
+      }
+      setParsing(false);
+    } else {
+      addNote(input.trim());
+    }
+    setInput('');
+    setResults(null);
+  }, [input, addNote]);
+
+  const handleApplyActions = useCallback((note: CaregiverNote) => {
+    tapFeedback();
+    const actionResults = executeAllActions(note.actions.filter(a => a.type !== 'note_only'));
+    setResults(actionResults);
+    markApplied(note.id);
+  }, [markApplied]);
+
+  const btn = 'aac-btn bg-[#2a2a3e] rounded-xl p-3 text-[#e0e0e0] font-medium select-none text-center';
+
+  return (
+    <div className="w-[320px] bg-[#16162a] border-r border-[#2a2a3e] flex flex-col shrink-0">
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a2a3e]">
+        <span className="text-[#888] font-semibold text-sm">Caregiver Notes</span>
+        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-11 h-11 rounded-xl bg-[#2a2a3e] text-[#aaa] text-lg flex items-center justify-center">✕</button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-[#2a2a3e]">
+        <button onClick={() => setTab('add')} className={`flex-1 py-2.5 text-sm font-semibold ${tab === 'add' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-[#666]'}`}>
+          + Add Note
+        </button>
+        <button onClick={() => setTab('log')} className={`flex-1 py-2.5 text-sm font-semibold ${tab === 'log' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-[#666]'}`}>
+          Log ({notes.length})
+        </button>
+      </div>
+
+      {tab === 'add' ? (
+        <div className="flex-1 flex flex-col p-3 gap-3 overflow-y-auto">
+          {/* Author name */}
+          <div>
+            <label className="text-[#666] text-xs font-semibold block mb-1">Your name</label>
+            <input
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+              placeholder="BCBA / Therapist / Parent"
+              className="w-full bg-[#2a2a3e] rounded-lg px-3 py-2 text-[#e0e0e0] text-sm placeholder-[#555]"
+            />
+          </div>
+
+          {/* Note input */}
+          <div className="flex-1">
+            <label className="text-[#666] text-xs font-semibold block mb-1">Note or instruction</label>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={"Examples:\n• Move bathroom to top of Help\n• Add McDonald's ordering flow\n• He used 'because' 5 times today\n• Good session, 15 phrases independently"}
+              className="w-full h-32 bg-[#2a2a3e] rounded-lg px-3 py-2 text-[#e0e0e0] text-sm placeholder-[#555] resize-none"
+            />
+          </div>
+
+          <button onClick={handleSubmitNote} disabled={!input.trim() || parsing} className={`${btn} ${input.trim() && !parsing ? 'bg-[#4CAF50] text-white' : 'opacity-40'}`}>
+            {parsing ? 'Parsing...' : hasApiKey() ? 'Save & Parse' : 'Save Note'}
+          </button>
+
+          {/* Action results feedback */}
+          {results && (
+            <div className="space-y-1">
+              {results.map((r, i) => (
+                <div key={i} className={`text-xs px-2 py-1 rounded ${r.success ? 'text-[#4CAF50] bg-[#1b3a1b]' : 'text-[#F44336] bg-[#3a1b1b]'}`}>
+                  {r.success ? '✓' : '✕'} {r.message}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Quick instruction hint */}
+          <div className="text-[#444] text-xs leading-relaxed">
+            {hasApiKey()
+              ? 'AI will parse your instructions and suggest actions. You confirm before anything changes.'
+              : 'Add a Gemini API key in Settings to enable AI-powered note parsing.'}
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto p-2">
+          {notes.length === 0 ? (
+            <p className="text-[#555] text-center py-8 text-sm">No notes yet</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {notes.map((note) => (
+                <div key={note.id} className="bg-[#1e1e2e] rounded-xl p-3">
+                  <p className="text-[#e0e0e0] text-sm">{note.text}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="text-[#555] text-xs">
+                      {note.authorName && <span className="text-[#888]">{note.authorName} · </span>}
+                      {formatTime(note.timestamp, lang)}
+                    </div>
+                    <div className="flex gap-1">
+                      {note.actions.some(a => a.type !== 'note_only') && !note.applied && (
+                        <button onClick={() => handleApplyActions(note)} className="text-[#4CAF50] text-xs font-semibold hover:underline">Apply</button>
+                      )}
+                      {note.applied && <span className="text-[#4CAF50] text-xs">✓ Applied</span>}
+                      <button onClick={() => { tapFeedback(); removeNote(note.id); }} className="text-[#F44336] text-xs hover:underline ml-2">Delete</button>
+                    </div>
+                  </div>
+                  {/* Show actions if any */}
+                  {note.actions.filter(a => a.type !== 'note_only').length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {note.actions.filter(a => a.type !== 'note_only').map((a, i) => (
+                        <div key={i} className="text-xs text-[#888] bg-[#2a2a3e] rounded px-2 py-1">
+                          {a.description}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+</file>
+
 <file path="components/Keyboard.tsx">
 'use client';
 import { useCallback } from 'react';
@@ -5625,331 +5268,365 @@ export const TEMPLATE_ORDERING_SEQUENCES: OrderingSequenceData[] = [
 ];
 </file>
 
-<file path="engine/predictionEngine.ts">
-import { WordFreqEntry, PredictionConfig } from '@/types';
-import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
+<file path="engine/caregiverActions.ts">
+/**
+ * Caregiver Action Execution Engine
+ *
+ * Translates NoteAction objects into actual store mutations.
+ * Each action type maps to specific store operations.
+ *
+ * DESIGN PRINCIPLE: Actions are always previewed before execution.
+ * The caregiver sees exactly what will change and taps [Apply].
+ * This prevents accidental modifications to the child's AAC system.
+ *
+ * ═══════════════════════════════════════════════════════════════
+ * REAL-WORLD ACTION SAMPLES WITH STORE MUTATIONS:
+ *
+ * ── add_phrase ──────────────────────────────────────────────
+ * Caregiver: "Add 'I feel sick' to Help"
+ * Action: { type: 'add_phrase', payload: { categoryId: 'help-needs', text: 'I feel sick' } }
+ * Mutation: categoryStore.addCustomPhrase('help-needs', 'I feel sick')
+ *
+ * ── remove_phrase ───────────────────────────────────────────
+ * Caregiver: "Remove Lake from Places"
+ * Action: { type: 'remove_phrase', payload: { phraseText: 'Lake', categoryId: 'places-plans' } }
+ * Mutation: categoryStore.removeCustomPhrase(matchedId) — only custom phrases can be removed
+ *           For default phrases, they get hidden via a "hidden" list instead
+ *
+ * ── reorder_phrase ──────────────────────────────────────────
+ * Caregiver: "Move Bathroom to top of Help page"
+ * Action: { type: 'reorder_phrase', payload: { phraseId: 'help-bathroom', newSortOrder: 0, categoryId: 'help-needs' } }
+ * Mutation: Shifts all phrases down by 1, sets target to sortOrder 0
+ *
+ * ── add_category ────────────────────────────────────────────
+ * Caregiver: "Create a Feelings category"
+ * Action: { type: 'add_category', payload: { name: 'Feelings', icon: '😊' } }
+ * Mutation: categoryStore.addCustomCategory('Feelings', '😊')
+ *
+ * ── add_sequence ────────────────────────────────────────────
+ * Caregiver: "Add McDonald's ordering flow"
+ * Action: { type: 'add_sequence', payload: { name: "McDonald's", categoryId: 'food-ordering', steps: [...] } }
+ * Mutation: categoryStore.addOrderingSequence({...})
+ *
+ * ── remove_sequence ─────────────────────────────────────────
+ * Caregiver: "Remove Chipotle, he doesn't go there anymore"
+ * Action: { type: 'remove_sequence', payload: { sequenceName: 'Chipotle' } }
+ * Mutation: categoryStore.removeOrderingSequence(matchedId)
+ *
+ * ── boost_word ──────────────────────────────────────────────
+ * Caregiver: "He's starting to use 'because' a lot"
+ * Action: { type: 'boost_word', payload: { word: 'because', boostCount: 10 } }
+ * Mutation: predictionStore.wordFreq['because'].count += 10
+ *
+ * ── note_only ───────────────────────────────────────────────
+ * Caregiver: "Good session, eye contact improving"
+ * Action: { type: 'note_only', payload: {} }
+ * Mutation: None — stored as documentation only
+ * ═══════════════════════════════════════════════════════════════
+ */
 
-const DEFAULT_CONFIG: PredictionConfig = {
-  bigramWeight: 0.5,
-  frequencyWeight: 0.3,
-  recencyWeight: 0.2,
-  maxResults: 5,
-  recencyWindowMs: 600_000,
+import { NoteAction, OrderingSequenceData } from '@/types';
+import { useCategoryStore } from '@/store/categoryStore';
+import { usePredictionStore } from '@/store/predictionStore';
+
+export interface ActionResult {
+  success: boolean;
+  message: string;
+}
+
+export function executeAction(action: NoteAction): ActionResult {
+  const catStore = useCategoryStore.getState();
+  const predStore = usePredictionStore.getState();
+
+  switch (action.type) {
+    case 'add_phrase': {
+      const { categoryId, text } = action.payload as { categoryId: string; text: string };
+      if (!categoryId || !text) return { success: false, message: 'Missing category or text' };
+      catStore.addCustomPhrase(categoryId, text);
+      return { success: true, message: `Added "${text}" to category` };
+    }
+
+    case 'remove_phrase': {
+      const { phraseText, categoryId } = action.payload as { phraseText: string; categoryId: string };
+      const phrases = catStore.getPhrasesForCategory(categoryId);
+      const match = phrases.find((p) => p.text.toLowerCase() === phraseText.toLowerCase());
+      if (!match) return { success: false, message: `Phrase "${phraseText}" not found` };
+      if (match.isCustom) {
+        catStore.removeCustomPhrase(match.id);
+        return { success: true, message: `Removed "${phraseText}"` };
+      }
+      catStore.hideDefaultPhrase(match.id);
+      return { success: true, message: `Hidden "${phraseText}" (can be restored in Settings)` };
+    }
+
+    case 'reorder_phrase': {
+      const { phraseId, newSortOrder, categoryId } = action.payload as { phraseId: string; newSortOrder: number; categoryId: string };
+      const phrases = catStore.getPhrasesForCategory(categoryId);
+      const target = phrases.find((p) => p.id === phraseId);
+      if (!target) return { success: false, message: 'Phrase not found' };
+      if (!target.isCustom) catStore.hideDefaultPhrase(target.id);
+      useCategoryStore.setState((s) => ({
+        customPhrases: [
+          ...s.customPhrases,
+          { id: crypto.randomUUID(), categoryId, text: target.text, sortOrder: newSortOrder, isCustom: true, usageCount: 0 },
+        ],
+      }));
+      return { success: true, message: `Moved "${target.text}" to position ${newSortOrder + 1}` };
+    }
+
+    case 'add_category': {
+      const { name, icon } = action.payload as { name: string; icon: string };
+      if (!name) return { success: false, message: 'Missing category name' };
+      catStore.addCustomCategory(name, icon || '📌');
+      return { success: true, message: `Created category "${name}"` };
+    }
+
+    case 'remove_category': {
+      const { categoryName } = action.payload as { categoryName: string };
+      const cats = catStore.allCategories();
+      const match = cats.find((c) => c.name.toLowerCase() === categoryName.toLowerCase() && c.isCustom);
+      if (!match) return { success: false, message: `"${categoryName}" is a default category and cannot be removed` };
+      catStore.removeCustomCategory(match.id);
+      return { success: true, message: `Removed category "${categoryName}"` };
+    }
+
+    case 'add_sequence': {
+      const { name, categoryId, steps } = action.payload as {
+        name: string; categoryId: string;
+        steps?: Array<{ label: string; options: string[] }>;
+      };
+      if (!name) return { success: false, message: 'Missing sequence name' };
+
+      const seq: OrderingSequenceData = {
+        id: crypto.randomUUID(),
+        name,
+        categoryId: categoryId || 'food-ordering',
+        sortOrder: catStore.getSequencesForCategory(categoryId || 'food-ordering').length,
+        steps: (steps ?? [{ label: 'Order', options: ['Option 1', 'Option 2'] }]).map((s, si) => ({
+          id: crypto.randomUUID(),
+          label: s.label,
+          stepOrder: si,
+          options: s.options.map((o, oi) => ({
+            id: crypto.randomUUID(),
+            text: o,
+            sortOrder: oi,
+          })),
+        })),
+      };
+      catStore.addOrderingSequence(seq);
+      return { success: true, message: `Created "${name}" ordering flow with ${seq.steps.length} steps` };
+    }
+
+    case 'remove_sequence': {
+      const { sequenceName } = action.payload as { sequenceName: string };
+      const allSeqs = useCategoryStore.getState().orderingSequences;
+      const match = allSeqs.find((s) => s.name.toLowerCase() === sequenceName.toLowerCase());
+      if (!match) return { success: false, message: `Ordering flow "${sequenceName}" not found` };
+      catStore.removeOrderingSequence(match.id);
+      return { success: true, message: `Removed "${sequenceName}" ordering flow` };
+    }
+
+    case 'edit_sequence': {
+      const { sequenceName, stepLabel, newOptions } = action.payload as {
+        sequenceName: string; stepLabel: string; newOptions: string[];
+      };
+      const allSeqs = useCategoryStore.getState().orderingSequences;
+      const seq = allSeqs.find((s) => s.name.toLowerCase() === sequenceName.toLowerCase());
+      if (!seq) return { success: false, message: `Ordering flow "${sequenceName}" not found` };
+
+      const updatedSeq = { ...seq, steps: seq.steps.map((step) => {
+        if (step.label.toLowerCase() === stepLabel.toLowerCase()) {
+          const existingTexts = new Set(step.options.map((o) => o.text.toLowerCase()));
+          const additions = newOptions.filter((o) => !existingTexts.has(o.toLowerCase()));
+          return {
+            ...step,
+            options: [
+              ...step.options,
+              ...additions.map((text, i) => ({
+                id: crypto.randomUUID(),
+                text,
+                sortOrder: step.options.length + i,
+              })),
+            ],
+          };
+        }
+        return step;
+      })};
+      catStore.updateOrderingSequence(updatedSeq);
+      return { success: true, message: `Updated "${sequenceName}" → ${stepLabel}` };
+    }
+
+    case 'boost_word': {
+      const { word, boostCount } = action.payload as { word: string; boostCount: number };
+      if (!word) return { success: false, message: 'Missing word' };
+      const key = word.toLowerCase();
+      const existing = predStore.wordFreq[key];
+      const newFreq = {
+        ...predStore.wordFreq,
+        [key]: { count: (existing?.count ?? 0) + (boostCount || 10), lastUsed: Date.now() },
+      };
+      usePredictionStore.setState({ wordFreq: newFreq });
+      return { success: true, message: `Boosted "${word}" prediction frequency by ${boostCount || 10}` };
+    }
+
+    case 'note_only':
+      return { success: true, message: 'Note saved' };
+
+    default:
+      return { success: false, message: `Unknown action type: ${action.type}` };
+  }
+}
+
+export function executeAllActions(actions: NoteAction[]): ActionResult[] {
+  return actions.map(executeAction);
+}
+</file>
+
+<file path="services/azureTTS.ts">
+'use client';
+/**
+ * Azure Neural TTS — Paid tiers only
+ *
+ * Routes through Synalux /api/v1/tts endpoint (same auth as chat).
+ * Server holds the Azure Speech key — no client-side secrets.
+ *
+ * Supports 9 emotional speaking styles via SSML express-as:
+ *   friendly, cheerful, calm, serious, excited, hopeful, empathetic, sad, angry
+ *
+ * Voice selection per language:
+ *   en → en-US-JennyMultilingualNeural (supports styles)
+ *   es → es-ES-ElviraNeural
+ *   ja → ja-JP-NanamiNeural (supports styles)
+ *   zh → zh-CN-XiaoxiaoNeural (supports styles)
+ *   ...etc
+ *
+ * Falls back to Web Speech API if Azure is unavailable.
+ */
+
+export type ToneStyle =
+  | 'friendly' | 'cheerful' | 'calm' | 'serious' | 'excited'
+  | 'hopeful' | 'empathetic' | 'sad' | 'angry';
+
+export const TONE_OPTIONS: Array<{ id: ToneStyle; label: string; icon: string }> = [
+  { id: 'friendly', label: 'Friendly', icon: '😊' },
+  { id: 'cheerful', label: 'Cheerful', icon: '😄' },
+  { id: 'calm', label: 'Calm', icon: '😌' },
+  { id: 'serious', label: 'Serious', icon: '😐' },
+  { id: 'excited', label: 'Excited', icon: '🤩' },
+  { id: 'hopeful', label: 'Hopeful', icon: '🙏' },
+  { id: 'empathetic', label: 'Empathetic', icon: '🤗' },
+  { id: 'sad', label: 'Sad', icon: '😢' },
+  { id: 'angry', label: 'Urgent', icon: '😤' },
+];
+
+const AZURE_VOICES: Record<string, string> = {
+  'en-US': 'en-US-JennyMultilingualNeural',
+  'es-ES': 'es-ES-ElviraNeural',
+  'fr-FR': 'fr-FR-DeniseNeural',
+  'pt-BR': 'pt-BR-FranciscaNeural',
+  'ro-RO': 'ro-RO-AlinaNeural',
+  'uk-UA': 'uk-UA-PolinaNeural',
+  'ru-RU': 'ru-RU-SvetlanaNeural',
+  'de-DE': 'de-DE-KatjaNeural',
+  'ja-JP': 'ja-JP-NanamiNeural',
+  'ko-KR': 'ko-KR-SunHiNeural',
+  'zh-CN': 'zh-CN-XiaoxiaoNeural',
+  'ar-SA': 'ar-SA-ZariyahNeural',
 };
 
-export function getPredictions(
-  currentText: string,
-  wordFreq: Record<string, WordFreqEntry>,
-  bigrams: Record<string, WordFreqEntry>,
-  config = DEFAULT_CONFIG,
-): string[] {
-  const words = currentText.trim().split(/\s+/).filter(Boolean);
-  const lastWord = words.length > 0 ? words[words.length - 1].toLowerCase() : '';
+const STYLE_SUPPORTED = new Set([
+  'en-US-JennyMultilingualNeural',
+  'zh-CN-XiaoxiaoNeural',
+  'ja-JP-NanamiNeural',
+]);
 
-  const candidateMap = new Map<string, { bigram: number; freq: number; recency: number }>();
-
-  if (lastWord) {
-    const bigramEntries = Object.entries(bigrams)
-      .filter(([k]) => k.startsWith(lastWord + '|'))
-      .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 20);
-    const maxBigram = bigramEntries.length > 0 ? bigramEntries[0][1].count : 1;
-    for (const [key, val] of bigramEntries) {
-      const word2 = key.split('|')[1];
-      const c = candidateMap.get(word2) ?? { bigram: 0, freq: 0, recency: 0 };
-      c.bigram = val.count / maxBigram;
-      candidateMap.set(word2, c);
-    }
-  }
-
-  const freqEntries = Object.entries(wordFreq)
-    .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 30);
-  const maxFreq = freqEntries.length > 0 ? freqEntries[0][1].count : 1;
-  for (const [word, val] of freqEntries) {
-    const c = candidateMap.get(word) ?? { bigram: 0, freq: 0, recency: 0 };
-    c.freq = val.count / maxFreq;
-    candidateMap.set(word, c);
-  }
-
-  const now = Date.now();
-  const recentEntries = Object.entries(wordFreq)
-    .filter(([, v]) => now - v.lastUsed < config.recencyWindowMs)
-    .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 20);
-  const maxRecent = recentEntries.length > 0 ? recentEntries[0][1].count : 1;
-  for (const [word, val] of recentEntries) {
-    const c = candidateMap.get(word) ?? { bigram: 0, freq: 0, recency: 0 };
-    c.recency = val.count / maxRecent;
-    candidateMap.set(word, c);
-  }
-
-  const scored = [...candidateMap.entries()]
-    .map(([word, s]) => ({
-      word,
-      total: s.bigram * config.bigramWeight + s.freq * config.frequencyWeight + s.recency * config.recencyWeight,
-    }))
-    .filter((c) => c.word.toLowerCase() !== lastWord)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, config.maxResults)
-    .map((c) => c.word.charAt(0).toUpperCase() + c.word.slice(1));
-
-  if (scored.length < config.maxResults) {
-    const existing = new Set(scored.map((s) => s.toLowerCase()));
-    for (const d of DEFAULT_PREDICTIONS) {
-      if (!existing.has(d.toLowerCase()) && scored.length < config.maxResults) {
-        scored.push(d);
-        existing.add(d.toLowerCase());
-      }
-    }
-  }
-
-  return scored;
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
-export function recordWord(
-  wordFreq: Record<string, WordFreqEntry>,
-  word: string,
-): Record<string, WordFreqEntry> {
-  const key = word.toLowerCase();
-  const existing = wordFreq[key];
-  return { ...wordFreq, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
-}
+export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
+  const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
+  const supportsStyles = STYLE_SUPPORTED.has(voice);
+  const ratePercent = `${Math.round(rate * 100)}%`;
+  const pitchPercent = '+0%';
+  const volumeValue = Math.round(volume * 100);
 
-export function recordBigram(
-  bigrams: Record<string, WordFreqEntry>,
-  word1: string,
-  word2: string,
-): Record<string, WordFreqEntry> {
-  const key = `${word1.toLowerCase()}|${word2.toLowerCase()}`;
-  const existing = bigrams[key];
-  return { ...bigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
-}
-
-export function decayPredictions(
-  data: Record<string, WordFreqEntry>,
-): Record<string, WordFreqEntry> {
-  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  const result: Record<string, WordFreqEntry> = {};
-  for (const [key, val] of Object.entries(data)) {
-    // Hard cutoff: drop single-use entries older than 30 days (typo cleanup)
-    if (val.count <= 1 && val.lastUsed < thirtyDaysAgo) continue;
-    if (val.lastUsed < sevenDaysAgo) {
-      const newCount = Math.max(1, Math.floor(val.count * 0.95));
-      if (newCount > 1) result[key] = { count: newCount, lastUsed: Date.now() };
-    } else {
-      result[key] = val;
-    }
+  let inner = escapeXml(text);
+  if (supportsStyles && tone !== 'friendly') {
+    inner = `<mstts:express-as style="${tone}">${inner}</mstts:express-as>`;
   }
-  return result;
-}
-</file>
 
-<file path="store/categoryStore.ts">
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { Category, Phrase, OrderingSequenceData } from '@/types';
-import { DEFAULT_CATEGORIES } from '@/constants/categories';
-import { DEFAULT_PHRASES } from '@/constants/phrases';
-import { TEMPLATE_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
-
-interface CategoryState {
-  customCategories: Category[];
-  customPhrases: Phrase[];
-  hiddenPhraseIds: string[];
-  orderingSequences: OrderingSequenceData[];
-  seeded: boolean;
-  allCategories: () => Category[];
-  getPhrasesForCategory: (categoryId: string) => Phrase[];
-  hideDefaultPhrase: (id: string) => void;
-  unhideDefaultPhrase: (id: string) => void;
-  getSequencesForCategory: (categoryId: string) => OrderingSequenceData[];
-  addCustomCategory: (name: string, icon: string) => void;
-  removeCustomCategory: (id: string) => void;
-  addCustomPhrase: (categoryId: string, text: string) => void;
-  removeCustomPhrase: (id: string) => void;
-  addOrderingSequence: (seq: OrderingSequenceData) => void;
-  removeOrderingSequence: (id: string) => void;
-  updateOrderingSequence: (seq: OrderingSequenceData) => void;
-  seedTemplates: () => void;
+  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${lang}">
+  <voice name="${voice}">
+    <prosody rate="${ratePercent}" pitch="${pitchPercent}" volume="${volumeValue}">
+      ${inner}
+    </prosody>
+  </voice>
+</speak>`;
 }
 
-export const useCategoryStore = create<CategoryState>()(
-  persist(
-    (set, get) => ({
-      customCategories: [],
-      customPhrases: [],
-      hiddenPhraseIds: [],
-      orderingSequences: [],
-      seeded: false,
+const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 
-      allCategories: () => [...DEFAULT_CATEGORIES, ...get().customCategories].sort((a, b) => a.sortOrder - b.sortOrder),
+let currentAudio: HTMLAudioElement | null = null;
+let currentBlobUrl: string | null = null;
 
-      getPhrasesForCategory: (categoryId) => {
-        const hidden = new Set(get().hiddenPhraseIds);
-        const defaults = DEFAULT_PHRASES.filter((p) => p.categoryId === categoryId && !hidden.has(p.id));
-        const custom = get().customPhrases.filter((p) => p.categoryId === categoryId && !p.deletedAt);
-        return [...defaults, ...custom].sort((a, b) => a.sortOrder - b.sortOrder);
+export function stopAzureAudio(): void {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.src = '';
+    currentAudio = null;
+  }
+  if (currentBlobUrl) {
+    URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = null;
+  }
+}
+
+export async function speakAzure(
+  text: string,
+  lang: string,
+  tone: ToneStyle,
+  rate: number,
+  volume: number,
+  authToken: string,
+): Promise<boolean> {
+  const ssml = buildSSML(text, lang, tone, rate, volume);
+
+  try {
+    const res = await fetch(`${SYNALUX_API}/tts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
       },
+      body: JSON.stringify({ ssml, format: 'audio-24khz-96kbitrate-mono-mp3' }),
+    });
 
-      hideDefaultPhrase: (id) =>
-        set((s) => ({ hiddenPhraseIds: [...new Set([...s.hiddenPhraseIds, id])] })),
+    if (!res.ok) return false;
 
-      unhideDefaultPhrase: (id) =>
-        set((s) => ({ hiddenPhraseIds: s.hiddenPhraseIds.filter((h) => h !== id) })),
-
-      getSequencesForCategory: (categoryId) =>
-        get().orderingSequences.filter((s) => s.categoryId === categoryId).sort((a, b) => a.sortOrder - b.sortOrder),
-
-      addCustomCategory: (name, icon) =>
-        set((s) => ({
-          customCategories: [
-            ...s.customCategories,
-            { id: crypto.randomUUID(), name, icon, sortOrder: DEFAULT_CATEGORIES.length + s.customCategories.length, isCustom: true },
-          ],
-        })),
-
-      removeCustomCategory: (id) =>
-        set((s) => ({
-          customCategories: s.customCategories.filter((c) => c.id !== id),
-          customPhrases: s.customPhrases.filter((p) => p.categoryId !== id),
-          orderingSequences: s.orderingSequences.filter((seq) => seq.categoryId !== id),
-        })),
-
-      addCustomPhrase: (categoryId, text) =>
-        set((s) => ({
-          customPhrases: [
-            ...s.customPhrases,
-            { id: crypto.randomUUID(), categoryId, text, sortOrder: 999, isCustom: true, usageCount: 0 },
-          ],
-        })),
-
-      removeCustomPhrase: (id) =>
-        set((s) => ({
-          customPhrases: s.customPhrases.map((p) => p.id === id ? { ...p, deletedAt: Date.now() } : p),
-        })),
-
-      addOrderingSequence: (seq) =>
-        set((s) => ({ orderingSequences: [...s.orderingSequences, seq] })),
-
-      removeOrderingSequence: (id) =>
-        set((s) => ({ orderingSequences: s.orderingSequences.filter((seq) => seq.id !== id) })),
-
-      updateOrderingSequence: (updated) =>
-        set((s) => ({
-          orderingSequences: s.orderingSequences.map((seq) => seq.id === updated.id ? updated : seq),
-        })),
-
-      seedTemplates: () => {
-        if (get().seeded) return;
-        set({ orderingSequences: [...TEMPLATE_ORDERING_SEQUENCES], seeded: true });
-      },
-    }),
-    {
-      name: 'prism-aac-categories',
-      partialize: (s) => ({
-        customCategories: s.customCategories,
-        customPhrases: s.customPhrases,
-        hiddenPhraseIds: s.hiddenPhraseIds,
-        orderingSequences: s.orderingSequences,
-        seeded: s.seeded,
-      }),
-    },
-  ),
-);
-</file>
-
-<file path="store/messageStore.ts">
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { HistoryEntry } from '@/types';
-import { ToneStyle } from '@/services/azureTTS';
-
-const MAX_UNDO = 20;
-
-interface MessageState {
-  text: string;
-  undoStack: string[];
-  activeTone: ToneStyle;
-  autoSpeak: boolean;
-  soundEnabled: boolean;
-  history: HistoryEntry[];
-  setTone: (tone: ToneStyle) => void;
-  appendWord: (word: string) => void;
-  appendText: (text: string) => void;
-  appendChar: (char: string) => void;
-  deleteLastWord: () => void;
-  deleteLastChar: () => void;
-  clearAll: () => void;
-  undo: () => void;
-  setText: (text: string) => void;
-  toggleAutoSpeak: () => void;
-  toggleSound: () => void;
-  addToHistory: (text: string) => void;
-  clearHistory: () => void;
+    stopAzureAudio();
+    const audioBuffer = await res.arrayBuffer();
+    const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
+    const url = URL.createObjectURL(blob);
+    currentBlobUrl = url;
+    const audio = new Audio(url);
+    currentAudio = audio;
+    audio.volume = volume;
+    await audio.play();
+    audio.onended = () => {
+      URL.revokeObjectURL(url);
+      if (currentAudio === audio) { currentAudio = null; currentBlobUrl = null; }
+    };
+    return true;
+  } catch {
+    return false;
+  }
 }
-
-function pushUndo(s: { text: string; undoStack: string[] }): { undoStack: string[] } {
-  return { undoStack: [s.text, ...s.undoStack].slice(0, MAX_UNDO) };
-}
-
-export const useMessageStore = create<MessageState>()(
-  persist(
-    (set) => ({
-      text: '',
-      undoStack: [],
-      activeTone: 'friendly' as ToneStyle,
-      autoSpeak: false,
-      soundEnabled: true,
-      history: [],
-
-      setTone: (tone) => set({ activeTone: tone }),
-
-      appendWord: (word) =>
-        set((s) => ({ ...pushUndo(s), text: s.text.trim() ? `${s.text.trim()} ${word}` : word })),
-
-      appendText: (text) =>
-        set((s) => ({ ...pushUndo(s), text: s.text.trim() ? `${s.text.trim()} ${text}` : text })),
-
-      appendChar: (char) =>
-        set((s) => ({ ...pushUndo(s), text: s.text + char })),
-
-      deleteLastWord: () =>
-        set((s) => {
-          const words = s.text.trim().split(/\s+/).filter(Boolean);
-          words.pop();
-          return { ...pushUndo(s), text: words.join(' ') };
-        }),
-
-      deleteLastChar: () =>
-        set((s) => ({ ...pushUndo(s), text: s.text.slice(0, -1) })),
-
-      clearAll: () => set((s) => ({ ...pushUndo(s), text: '' })),
-
-      undo: () =>
-        set((s) => {
-          if (s.undoStack.length === 0) return {};
-          const [prev, ...rest] = s.undoStack;
-          return { text: prev, undoStack: rest };
-        }),
-
-      setText: (text) => set((s) => ({ ...pushUndo(s), text })),
-
-      toggleAutoSpeak: () => set((s) => ({ autoSpeak: !s.autoSpeak })),
-
-      toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
-
-      addToHistory: (text) =>
-        set((s) => ({
-          history: [{ text, timestamp: Date.now() }, ...s.history].slice(0, 100),
-        })),
-
-      clearHistory: () => set({ history: [] }),
-    }),
-    { name: 'prism-aac-message', partialize: (s) => ({ autoSpeak: s.autoSpeak, soundEnabled: s.soundEnabled, history: s.history }) },
-  ),
-);
 </file>
 
 <file path="store/uiStore.ts">
@@ -6019,209 +5696,6 @@ export const useUIStore = create<UIState>()((set) => ({
     alertTimer = setTimeout(() => { set({ isAlertFlashing: false }); alertTimer = null; }, 2000);
   },
 }));
-</file>
-
-<file path="tests/ux-accessibility.test.ts">
-import { describe, it, expect } from 'vitest';
-import { DEFAULT_CATEGORIES } from '@/constants/categories';
-import { DEFAULT_PHRASES } from '@/constants/phrases';
-import { MATH_ITEMS } from '@/constants/mathSymbols';
-import { TEMPLATE_ORDERING_SEQUENCES as DEFAULT_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
-import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS, DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
-import { mergeWordFreq, mergeCustomItems, mergeHistory } from '@/services/syncService';
-import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
-
-describe('UX — Data completeness', () => {
-  it('has 6 default categories matching clinical notes', () => {
-    expect(DEFAULT_CATEGORIES).toHaveLength(6);
-    const names = DEFAULT_CATEGORIES.map(c => c.name);
-    expect(names).toContain('Help / Needs');
-    expect(names).toContain('Quick Talk');
-    expect(names).toContain('Places / Plans');
-    expect(names).toContain('Food / Ordering');
-    expect(names).toContain('People / Social');
-    expect(names).toContain('School / Work');
-  });
-
-  it('every category has at least 6 phrases', () => {
-    for (const cat of DEFAULT_CATEGORIES) {
-      const phrases = DEFAULT_PHRASES.filter(p => p.categoryId === cat.id);
-      expect(phrases.length, `${cat.name} should have ≥6 phrases`).toBeGreaterThanOrEqual(6);
-    }
-  });
-
-  it('Help/Needs contains critical AAC phrases from clinical notes', () => {
-    const helpPhrases = DEFAULT_PHRASES.filter(p => p.categoryId === 'help-needs').map(p => p.text);
-    expect(helpPhrases).toContain('All done');
-    expect(helpPhrases).toContain('Take a break');
-    expect(helpPhrases).toContain('I need help');
-    expect(helpPhrases).toContain('I am hungry');
-    expect(helpPhrases).toContain('I am thirsty');
-    expect(helpPhrases).toContain('Bathroom');
-    expect(helpPhrases).toContain('Yes');
-    expect(helpPhrases).toContain('No');
-  });
-
-  it('default predictions match clinical notes', () => {
-    expect(DEFAULT_PREDICTIONS).toEqual(['I', 'We', 'Can', 'Help', 'All done']);
-  });
-
-  it('has 5 predictions (not more, per clinical recommendation)', () => {
-    expect(DEFAULT_PREDICTIONS).toHaveLength(5);
-  });
-
-  it('math keyboard has basic and advanced sections', () => {
-    const basic = MATH_ITEMS.filter(m => m.category === 'basic');
-    const advanced = MATH_ITEMS.filter(m => m.category === 'advanced');
-    expect(basic.length).toBeGreaterThanOrEqual(10);
-    expect(advanced.length).toBeGreaterThanOrEqual(5);
-  });
-
-  it('math keyboard has clinical note symbols: +, −, ×, ÷, =, fraction, variable, equation, graph', () => {
-    const symbols = MATH_ITEMS.map(m => m.label.toLowerCase());
-    expect(symbols).toContain('plus');
-    expect(symbols).toContain('minus');
-    expect(symbols).toContain('times');
-    expect(symbols).toContain('divide');
-    expect(symbols).toContain('equals');
-    expect(symbols).toContain('fraction');
-    expect(symbols).toContain('variable');
-    expect(symbols).toContain('equation');
-    expect(symbols).toContain('graph');
-  });
-
-  it('Chipotle ordering follows real sequence: opener → base → protein → toppings → finish', () => {
-    const chipotle = DEFAULT_ORDERING_SEQUENCES.find(s => s.name === 'Chipotle')!;
-    expect(chipotle.steps.map(s => s.label)).toEqual([
-      'Start your order', 'Choose your base', 'Choose your protein', 'Toppings', 'Finish',
-    ]);
-  });
-
-  it('all phrase IDs are unique', () => {
-    const ids = DEFAULT_PHRASES.map(p => p.id);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-
-  it('all category IDs are unique', () => {
-    const ids = DEFAULT_CATEGORIES.map(c => c.id);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-});
-
-describe('UX — Keyboard layout', () => {
-  it('letters layout has 3 rows (QWERTY)', () => {
-    expect(LETTERS_ROWS).toHaveLength(3);
-    expect(LETTERS_ROWS[0]).toHaveLength(10); // QWERTYUIOP
-    expect(LETTERS_ROWS[1]).toHaveLength(9);  // ASDFGHJKL
-    expect(LETTERS_ROWS[2]).toHaveLength(7);  // ZXCVBNM
-  });
-
-  it('numbers layout provides digits 0-9', () => {
-    const allChars = NUMBERS_ROWS.flat();
-    for (let i = 0; i <= 9; i++) expect(allChars).toContain(String(i));
-  });
-
-  it('keyboard has separate number and symbol pages (not combined)', () => {
-    expect(NUMBERS_ROWS).not.toEqual(SYMBOLS_ROWS);
-  });
-});
-
-describe('UX — Motor accessibility requirements', () => {
-  it('no phrase text is excessively long (cognitive load)', () => {
-    for (const p of DEFAULT_PHRASES) {
-      expect(p.text.length, `Phrase "${p.text}" too long`).toBeLessThanOrEqual(30);
-    }
-  });
-
-  it('category names are short enough for button labels', () => {
-    for (const c of DEFAULT_CATEGORIES) {
-      expect(c.name.length, `Category "${c.name}" too long`).toBeLessThanOrEqual(20);
-    }
-  });
-
-  it('each category has an icon (visual search aid)', () => {
-    for (const c of DEFAULT_CATEGORIES) {
-      expect(c.icon.length, `Category "${c.name}" missing icon`).toBeGreaterThan(0);
-    }
-  });
-
-  it('ordering options are single sentences (not paragraphs)', () => {
-    for (const seq of DEFAULT_ORDERING_SEQUENCES) {
-      for (const step of seq.steps) {
-        for (const opt of step.options) {
-          expect(opt.text.length, `Option "${opt.text}" too long`).toBeLessThanOrEqual(30);
-        }
-      }
-    }
-  });
-});
-
-describe('UX — Gap tests (missing features)', () => {
-  it('IMPLEMENTED: color coding uses Modified Fitzgerald Key (Goossens et al., 1992)', () => {
-    expect(CATEGORY_COLORS.pronoun).toBe('#FFD54F');  // yellow
-    expect(CATEGORY_COLORS.verb).toBe('#66BB6A');     // green
-    expect(CATEGORY_COLORS.noun).toBe('#FFA726');     // orange
-    expect(classifyWord('I')).toBe('pronoun');
-    expect(classifyWord('want')).toBe('verb');
-    expect(classifyWord('pizza')).toBe('noun');
-  });
-
-  it('GAP: no switch scanning support', () => {
-    // This test documents the gap — no tabIndex or scanning order
-    // TODO: Phase 3 — add switch scanning
-    expect(true).toBe(true);
-  });
-
-  it('IMPLEMENTED: AI Chat panel exists as side panel', () => {
-    // AI Chat panel implemented in Phase 2 with Gemini integration
-    // Preserves authorship per Valencia et al. (CHI 2023)
-    expect(true).toBe(true);
-  });
-
-  it('GAP: no speech-to-text / mic input', () => {
-    // This test documents the gap — no microphone button
-    // TODO: Phase 3 — add vocabulary-constrained speech recognition
-    expect(true).toBe(true);
-  });
-
-  it('GAP: no PWA manifest for offline/home-screen install', () => {
-    // TODO: Add manifest.json and service worker
-    expect(true).toBe(true);
-  });
-});
-
-describe('Sync — Data integrity', () => {
-  it('mergeWordFreq takes higher counts', () => {
-    const local = { hello: { count: 5, lastUsed: 1000 } };
-    const remote = { hello: { count: 3, lastUsed: 2000 } };
-    const merged = mergeWordFreq(local, remote);
-    expect(merged.hello.count).toBe(5); // max(5, 3)
-    expect(merged.hello.lastUsed).toBe(2000); // max(1000, 2000)
-  });
-
-  it('mergeCustomItems unions by id', () => {
-    const local = [{ id: 'a', name: 'A' }];
-    const remote = [{ id: 'b', name: 'B' }];
-    const merged = mergeCustomItems(local, remote);
-    expect(merged).toHaveLength(2);
-  });
-
-  it('mergeCustomItems does not duplicate same id', () => {
-    const local = [{ id: 'a', name: 'A' }];
-    const remote = [{ id: 'a', name: 'A-modified' }];
-    const merged = mergeCustomItems(local, remote);
-    expect(merged).toHaveLength(1);
-    expect(merged[0].name).toBe('A'); // local wins (iterated last, overwrites remote)
-  });
-
-  it('mergeHistory caps at 100 and deduplicates', () => {
-    const local = Array.from({ length: 60 }, (_, i) => ({ text: `l${i}`, timestamp: i }));
-    const remote = Array.from({ length: 60 }, (_, i) => ({ text: `r${i}`, timestamp: i + 60 }));
-    const merged = mergeHistory(local, remote);
-    expect(merged.length).toBeLessThanOrEqual(100);
-    expect(merged[0].timestamp).toBeGreaterThan(merged[merged.length - 1].timestamp); // sorted desc
-  });
-});
 </file>
 
 <file path=".gitignore">
@@ -6725,6 +6199,127 @@ export default function Toolbar() {
 }
 </file>
 
+<file path="engine/predictionEngine.ts">
+import { WordFreqEntry, PredictionConfig } from '@/types';
+import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
+
+const DEFAULT_CONFIG: PredictionConfig = {
+  bigramWeight: 0.5,
+  frequencyWeight: 0.3,
+  recencyWeight: 0.2,
+  maxResults: 5,
+  recencyWindowMs: 600_000,
+};
+
+export function getPredictions(
+  currentText: string,
+  wordFreq: Record<string, WordFreqEntry>,
+  bigrams: Record<string, WordFreqEntry>,
+  config = DEFAULT_CONFIG,
+): string[] {
+  const words = currentText.trim().split(/\s+/).filter(Boolean);
+  const lastWord = words.length > 0 ? words[words.length - 1].toLowerCase() : '';
+
+  const candidateMap = new Map<string, { bigram: number; freq: number; recency: number }>();
+
+  if (lastWord) {
+    const bigramEntries = Object.entries(bigrams)
+      .filter(([k]) => k.startsWith(lastWord + '|'))
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 20);
+    const maxBigram = bigramEntries.length > 0 ? bigramEntries[0][1].count : 1;
+    for (const [key, val] of bigramEntries) {
+      const word2 = key.split('|')[1];
+      const c = candidateMap.get(word2) ?? { bigram: 0, freq: 0, recency: 0 };
+      c.bigram = val.count / maxBigram;
+      candidateMap.set(word2, c);
+    }
+  }
+
+  const freqEntries = Object.entries(wordFreq)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 30);
+  const maxFreq = freqEntries.length > 0 ? freqEntries[0][1].count : 1;
+  for (const [word, val] of freqEntries) {
+    const c = candidateMap.get(word) ?? { bigram: 0, freq: 0, recency: 0 };
+    c.freq = val.count / maxFreq;
+    candidateMap.set(word, c);
+  }
+
+  const now = Date.now();
+  const recentEntries = Object.entries(wordFreq)
+    .filter(([, v]) => now - v.lastUsed < config.recencyWindowMs)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 20);
+  const maxRecent = recentEntries.length > 0 ? recentEntries[0][1].count : 1;
+  for (const [word, val] of recentEntries) {
+    const c = candidateMap.get(word) ?? { bigram: 0, freq: 0, recency: 0 };
+    c.recency = val.count / maxRecent;
+    candidateMap.set(word, c);
+  }
+
+  const scored = [...candidateMap.entries()]
+    .map(([word, s]) => ({
+      word,
+      total: s.bigram * config.bigramWeight + s.freq * config.frequencyWeight + s.recency * config.recencyWeight,
+    }))
+    .filter((c) => c.word.toLowerCase() !== lastWord)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, config.maxResults)
+    .map((c) => c.word.charAt(0).toUpperCase() + c.word.slice(1));
+
+  if (scored.length < config.maxResults) {
+    const existing = new Set(scored.map((s) => s.toLowerCase()));
+    for (const d of DEFAULT_PREDICTIONS) {
+      if (!existing.has(d.toLowerCase()) && scored.length < config.maxResults) {
+        scored.push(d);
+        existing.add(d.toLowerCase());
+      }
+    }
+  }
+
+  return scored;
+}
+
+export function recordWord(
+  wordFreq: Record<string, WordFreqEntry>,
+  word: string,
+): Record<string, WordFreqEntry> {
+  const key = word.toLowerCase();
+  const existing = wordFreq[key];
+  return { ...wordFreq, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
+}
+
+export function recordBigram(
+  bigrams: Record<string, WordFreqEntry>,
+  word1: string,
+  word2: string,
+): Record<string, WordFreqEntry> {
+  const key = `${word1.toLowerCase()}|${word2.toLowerCase()}`;
+  const existing = bigrams[key];
+  return { ...bigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
+}
+
+export function decayPredictions(
+  data: Record<string, WordFreqEntry>,
+): Record<string, WordFreqEntry> {
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const result: Record<string, WordFreqEntry> = {};
+  for (const [key, val] of Object.entries(data)) {
+    // Hard cutoff: drop single-use entries older than 30 days (typo cleanup)
+    if (val.count <= 1 && val.lastUsed < thirtyDaysAgo) continue;
+    if (val.lastUsed < sevenDaysAgo && (!val.lastDecayedAt || val.lastDecayedAt < sevenDaysAgo)) {
+      const newCount = Math.max(1, Math.floor(val.count * 0.95));
+      if (newCount > 1) result[key] = { count: newCount, lastUsed: val.lastUsed, lastDecayedAt: Date.now() };
+    } else {
+      result[key] = val;
+    }
+  }
+  return result;
+}
+</file>
+
 <file path="services/speechService.ts">
 /**
  * Speech Service — Unified TTS routing
@@ -6812,6 +6407,212 @@ export function stopSpeech(): void {
 }
 </file>
 
+<file path="store/categoryStore.ts">
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { Category, Phrase, OrderingSequenceData } from '@/types';
+import { DEFAULT_CATEGORIES } from '@/constants/categories';
+import { DEFAULT_PHRASES } from '@/constants/phrases';
+import { TEMPLATE_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
+
+interface CategoryState {
+  customCategories: Category[];
+  customPhrases: Phrase[];
+  hiddenPhraseIds: string[];
+  orderingSequences: OrderingSequenceData[];
+  seeded: boolean;
+  allCategories: () => Category[];
+  getPhrasesForCategory: (categoryId: string) => Phrase[];
+  hideDefaultPhrase: (id: string) => void;
+  unhideDefaultPhrase: (id: string) => void;
+  getSequencesForCategory: (categoryId: string) => OrderingSequenceData[];
+  addCustomCategory: (name: string, icon: string) => void;
+  removeCustomCategory: (id: string) => void;
+  addCustomPhrase: (categoryId: string, text: string) => void;
+  removeCustomPhrase: (id: string) => void;
+  addOrderingSequence: (seq: OrderingSequenceData) => void;
+  removeOrderingSequence: (id: string) => void;
+  updateOrderingSequence: (seq: OrderingSequenceData) => void;
+  seedTemplates: () => void;
+}
+
+export const useCategoryStore = create<CategoryState>()(
+  persist(
+    (set, get) => ({
+      customCategories: [],
+      customPhrases: [],
+      hiddenPhraseIds: [],
+      orderingSequences: [],
+      seeded: false,
+
+      allCategories: () => [...DEFAULT_CATEGORIES, ...get().customCategories].sort((a, b) => a.sortOrder - b.sortOrder),
+
+      getPhrasesForCategory: (categoryId) => {
+        const hidden = new Set(get().hiddenPhraseIds);
+        const defaults = DEFAULT_PHRASES.filter((p) => p.categoryId === categoryId && !hidden.has(p.id));
+        const custom = get().customPhrases.filter((p) => p.categoryId === categoryId && !p.deletedAt);
+        return [...defaults, ...custom].sort((a, b) => a.sortOrder - b.sortOrder);
+      },
+
+      hideDefaultPhrase: (id) =>
+        set((s) => ({ hiddenPhraseIds: [...new Set([...s.hiddenPhraseIds, id])] })),
+
+      unhideDefaultPhrase: (id) =>
+        set((s) => ({ hiddenPhraseIds: s.hiddenPhraseIds.filter((h) => h !== id) })),
+
+      getSequencesForCategory: (categoryId) =>
+        get().orderingSequences.filter((s) => s.categoryId === categoryId).sort((a, b) => a.sortOrder - b.sortOrder),
+
+      addCustomCategory: (name, icon) =>
+        set((s) => ({
+          customCategories: [
+            ...s.customCategories,
+            { id: crypto.randomUUID(), name, icon, sortOrder: DEFAULT_CATEGORIES.length + s.customCategories.length, isCustom: true },
+          ],
+        })),
+
+      removeCustomCategory: (id) =>
+        set((s) => ({
+          customCategories: s.customCategories.filter((c) => c.id !== id),
+          customPhrases: s.customPhrases.filter((p) => p.categoryId !== id),
+          orderingSequences: s.orderingSequences.filter((seq) => seq.categoryId !== id),
+        })),
+
+      addCustomPhrase: (categoryId, text) =>
+        set((s) => ({
+          customPhrases: [
+            ...s.customPhrases,
+            { id: crypto.randomUUID(), categoryId, text, sortOrder: 999, isCustom: true, usageCount: 0 },
+          ],
+        })),
+
+      removeCustomPhrase: (id) =>
+        set((s) => ({
+          customPhrases: s.customPhrases.map((p) => p.id === id ? { ...p, deletedAt: Date.now() } : p),
+        })),
+
+      addOrderingSequence: (seq) =>
+        set((s) => ({ orderingSequences: [...s.orderingSequences, seq] })),
+
+      removeOrderingSequence: (id) =>
+        set((s) => ({ orderingSequences: s.orderingSequences.filter((seq) => seq.id !== id) })),
+
+      updateOrderingSequence: (updated) =>
+        set((s) => ({
+          orderingSequences: s.orderingSequences.map((seq) => seq.id === updated.id ? updated : seq),
+        })),
+
+      seedTemplates: () => {
+        if (get().seeded) return;
+        set({ orderingSequences: [...TEMPLATE_ORDERING_SEQUENCES], seeded: true });
+      },
+    }),
+    {
+      name: 'prism-aac-categories',
+      partialize: (s) => ({
+        customCategories: s.customCategories,
+        customPhrases: s.customPhrases,
+        hiddenPhraseIds: s.hiddenPhraseIds,
+        orderingSequences: s.orderingSequences,
+        seeded: s.seeded,
+      }),
+    },
+  ),
+);
+</file>
+
+<file path="store/messageStore.ts">
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { HistoryEntry } from '@/types';
+import { ToneStyle } from '@/services/azureTTS';
+
+const MAX_UNDO = 20;
+
+interface MessageState {
+  text: string;
+  undoStack: string[];
+  activeTone: ToneStyle;
+  autoSpeak: boolean;
+  soundEnabled: boolean;
+  history: HistoryEntry[];
+  setTone: (tone: ToneStyle) => void;
+  appendWord: (word: string) => void;
+  appendText: (text: string) => void;
+  appendChar: (char: string) => void;
+  deleteLastWord: () => void;
+  deleteLastChar: () => void;
+  clearAll: () => void;
+  undo: () => void;
+  setText: (text: string) => void;
+  toggleAutoSpeak: () => void;
+  toggleSound: () => void;
+  addToHistory: (text: string) => void;
+  clearHistory: () => void;
+}
+
+function pushUndo(s: { text: string; undoStack: string[] }): { undoStack: string[] } {
+  return { undoStack: [s.text, ...s.undoStack].slice(0, MAX_UNDO) };
+}
+
+export const useMessageStore = create<MessageState>()(
+  persist(
+    (set) => ({
+      text: '',
+      undoStack: [],
+      activeTone: 'friendly' as ToneStyle,
+      autoSpeak: false,
+      soundEnabled: true,
+      history: [],
+
+      setTone: (tone) => set({ activeTone: tone }),
+
+      appendWord: (word) =>
+        set((s) => ({ ...pushUndo(s), text: s.text.trim() ? `${s.text.trim()} ${word}` : word })),
+
+      appendText: (text) =>
+        set((s) => ({ ...pushUndo(s), text: s.text.trim() ? `${s.text.trim()} ${text}` : text })),
+
+      appendChar: (char) =>
+        set((s) => ({ ...pushUndo(s), text: s.text + char })),
+
+      deleteLastWord: () =>
+        set((s) => {
+          const words = s.text.trim().split(/\s+/).filter(Boolean);
+          words.pop();
+          return { ...pushUndo(s), text: words.join(' ') };
+        }),
+
+      deleteLastChar: () =>
+        set((s) => ({ ...pushUndo(s), text: s.text.slice(0, -1) })),
+
+      clearAll: () => set((s) => ({ ...pushUndo(s), text: '' })),
+
+      undo: () =>
+        set((s) => {
+          if (s.undoStack.length === 0) return {};
+          const [prev, ...rest] = s.undoStack;
+          return { text: prev, undoStack: rest };
+        }),
+
+      setText: (text) => set((s) => ({ ...pushUndo(s), text })),
+
+      toggleAutoSpeak: () => set((s) => ({ autoSpeak: !s.autoSpeak })),
+
+      toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
+
+      addToHistory: (text) =>
+        set((s) => ({
+          history: [{ text, timestamp: Date.now() }, ...s.history].slice(0, 100),
+        })),
+
+      clearHistory: () => set({ history: [] }),
+    }),
+    { name: 'prism-aac-message', partialize: (s) => ({ autoSpeak: s.autoSpeak, soundEnabled: s.soundEnabled, history: s.history }) },
+  ),
+);
+</file>
+
 <file path="store/settingsStore.ts">
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -6839,103 +6640,207 @@ export const useSettingsStore = create<SettingsState>()(
 );
 </file>
 
-<file path="components/PrismApp.tsx">
-'use client';
-import { useEffect, useState, Component, ReactNode } from 'react';
-import Toolbar from './Toolbar';
-import MessageBar from './MessageBar';
-import PredictionBar from './PredictionBar';
-import Keyboard from './Keyboard';
-import CategoryPanel from './CategoryPanel';
-import CaregiverPanel from './CaregiverPanel';
-import AIChatPanel from './AIChatPanel';
-import HistoryModal from './HistoryModal';
-import SettingsModal from './SettingsModal';
-import AlertOverlay from './AlertOverlay';
-import SyncProvider from './SyncProvider';
-import { usePredictionStore } from '@/store/predictionStore';
-import { useCategoryStore } from '@/store/categoryStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useMessageStore } from '@/store/messageStore';
-import { keyFeedback, deleteFeedback } from '@/services/feedback';
-import { useT } from '@/engine/useT';
+<file path="tests/ux-accessibility.test.ts">
+import { describe, it, expect } from 'vitest';
+import { DEFAULT_CATEGORIES } from '@/constants/categories';
+import { DEFAULT_PHRASES } from '@/constants/phrases';
+import { MATH_ITEMS } from '@/constants/mathSymbols';
+import { TEMPLATE_ORDERING_SEQUENCES as DEFAULT_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
+import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS, DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
+import { mergeWordFreq, mergeCustomItems, mergeHistory } from '@/services/syncService';
+import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
-  state: { error: Error | null } = { error: null };
-  static getDerivedStateFromError(error: Error) { return { error }; }
-  render() {
-    if (this.state.error) {
-      return (
-        <div className="h-svh flex flex-col items-center justify-center bg-[#12121e] p-8 text-center">
-          <p className="text-[#F44336] text-2xl font-bold mb-4">Something went wrong</p>
-          <p className="text-[#888] mb-6">{this.state.error.message}</p>
-          <button onClick={() => window.location.reload()} className="bg-[#4CAF50] text-white px-8 py-3 rounded-xl text-lg font-semibold">
-            Tap to reload
-          </button>
-        </div>
-      );
+describe('UX — Data completeness', () => {
+  it('has 6 default categories matching clinical notes', () => {
+    expect(DEFAULT_CATEGORIES).toHaveLength(6);
+    const names = DEFAULT_CATEGORIES.map(c => c.name);
+    expect(names).toContain('Help / Needs');
+    expect(names).toContain('Quick Talk');
+    expect(names).toContain('Places / Plans');
+    expect(names).toContain('Food / Ordering');
+    expect(names).toContain('People / Social');
+    expect(names).toContain('School / Work');
+  });
+
+  it('every category has at least 6 phrases', () => {
+    for (const cat of DEFAULT_CATEGORIES) {
+      const phrases = DEFAULT_PHRASES.filter(p => p.categoryId === cat.id);
+      expect(phrases.length, `${cat.name} should have ≥6 phrases`).toBeGreaterThanOrEqual(6);
     }
-    return this.props.children;
-  }
-}
+  });
 
-export default function PrismApp() {
-  const runDecay = usePredictionStore((s) => s.runDecay);
-  const [hydrated, setHydrated] = useState(false);
+  it('Help/Needs contains critical AAC phrases from clinical notes', () => {
+    const helpPhrases = DEFAULT_PHRASES.filter(p => p.categoryId === 'help-needs').map(p => p.text);
+    expect(helpPhrases).toContain('All done');
+    expect(helpPhrases).toContain('Take a break');
+    expect(helpPhrases).toContain('I need help');
+    expect(helpPhrases).toContain('I am hungry');
+    expect(helpPhrases).toContain('I am thirsty');
+    expect(helpPhrases).toContain('Bathroom');
+    expect(helpPhrases).toContain('Yes');
+    expect(helpPhrases).toContain('No');
+  });
 
-  const seedTemplates = useCategoryStore((s) => s.seedTemplates);
-  const highContrast = useSettingsStore((s) => s.highContrast);
-  const { rtl } = useT();
+  it('default predictions match clinical notes', () => {
+    expect(DEFAULT_PREDICTIONS).toEqual(['I', 'We', 'Can', 'Help', 'All done']);
+  });
 
-  useEffect(() => {
-    setHydrated(true);
-    runDecay();
-    seedTemplates();
-  }, [runDecay, seedTemplates]);
+  it('has 5 predictions (not more, per clinical recommendation)', () => {
+    expect(DEFAULT_PREDICTIONS).toHaveLength(5);
+  });
 
-  // Physical keyboard support — captures keystrokes globally
-  // Skips interactive form elements (input, textarea, select, buttons with focus)
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (e.key === 'Tab' || e.key === 'Escape') return;
-      if ((e.target as HTMLElement)?.closest('[role="dialog"]')) return;
-      if (e.key === ' ' && document.activeElement?.tagName === 'BUTTON') return;
-      const store = useMessageStore.getState();
-      if (e.key === 'Backspace') { e.preventDefault(); deleteFeedback(); store.deleteLastChar(); }
-      else if (e.key === 'Enter') { e.preventDefault(); }
-      else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { e.preventDefault(); keyFeedback(); store.appendChar(e.key); }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
+  it('math keyboard has basic and advanced sections', () => {
+    const basic = MATH_ITEMS.filter(m => m.category === 'basic');
+    const advanced = MATH_ITEMS.filter(m => m.category === 'advanced');
+    expect(basic.length).toBeGreaterThanOrEqual(10);
+    expect(advanced.length).toBeGreaterThanOrEqual(5);
+  });
 
-  if (!hydrated) {
-    return <div className="h-svh bg-[#12121e]" />;
-  }
+  it('math keyboard has clinical note symbols: +, −, ×, ÷, =, fraction, variable, equation, graph', () => {
+    const symbols = MATH_ITEMS.map(m => m.label.toLowerCase());
+    expect(symbols).toContain('plus');
+    expect(symbols).toContain('minus');
+    expect(symbols).toContain('times');
+    expect(symbols).toContain('divide');
+    expect(symbols).toContain('equals');
+    expect(symbols).toContain('fraction');
+    expect(symbols).toContain('variable');
+    expect(symbols).toContain('equation');
+    expect(symbols).toContain('graph');
+  });
 
-  return (
-    <ErrorBoundary>
-      <SyncProvider>
-        <div dir={rtl ? 'rtl' : 'ltr'} className={`h-svh flex flex-col overflow-hidden ${highContrast ? 'high-contrast bg-black' : 'bg-[#12121e]'}`}>
-          <Toolbar />
-          <MessageBar />
-          <PredictionBar />
-          <div className="flex-1 flex flex-row min-h-0">
-            <CategoryPanel />
-            <CaregiverPanel />
-            <AIChatPanel />
-            <Keyboard />
-          </div>
-          <AlertOverlay />
-          <HistoryModal />
-          <SettingsModal />
-        </div>
-      </SyncProvider>
-    </ErrorBoundary>
-  );
-}
+  it('Chipotle ordering follows real sequence: opener → base → protein → toppings → finish', () => {
+    const chipotle = DEFAULT_ORDERING_SEQUENCES.find(s => s.name === 'Chipotle')!;
+    expect(chipotle.steps.map(s => s.label)).toEqual([
+      'Start your order', 'Choose your base', 'Choose your protein', 'Toppings', 'Finish',
+    ]);
+  });
+
+  it('all phrase IDs are unique', () => {
+    const ids = DEFAULT_PHRASES.map(p => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('all category IDs are unique', () => {
+    const ids = DEFAULT_CATEGORIES.map(c => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe('UX — Keyboard layout', () => {
+  it('letters layout has 3 rows (QWERTY)', () => {
+    expect(LETTERS_ROWS).toHaveLength(3);
+    expect(LETTERS_ROWS[0]).toHaveLength(10); // QWERTYUIOP
+    expect(LETTERS_ROWS[1]).toHaveLength(9);  // ASDFGHJKL
+    expect(LETTERS_ROWS[2]).toHaveLength(7);  // ZXCVBNM
+  });
+
+  it('numbers layout provides digits 0-9', () => {
+    const allChars = NUMBERS_ROWS.flat();
+    for (let i = 0; i <= 9; i++) expect(allChars).toContain(String(i));
+  });
+
+  it('keyboard has separate number and symbol pages (not combined)', () => {
+    expect(NUMBERS_ROWS).not.toEqual(SYMBOLS_ROWS);
+  });
+});
+
+describe('UX — Motor accessibility requirements', () => {
+  it('no phrase text is excessively long (cognitive load)', () => {
+    for (const p of DEFAULT_PHRASES) {
+      expect(p.text.length, `Phrase "${p.text}" too long`).toBeLessThanOrEqual(30);
+    }
+  });
+
+  it('category names are short enough for button labels', () => {
+    for (const c of DEFAULT_CATEGORIES) {
+      expect(c.name.length, `Category "${c.name}" too long`).toBeLessThanOrEqual(20);
+    }
+  });
+
+  it('each category has an icon (visual search aid)', () => {
+    for (const c of DEFAULT_CATEGORIES) {
+      expect(c.icon.length, `Category "${c.name}" missing icon`).toBeGreaterThan(0);
+    }
+  });
+
+  it('ordering options are single sentences (not paragraphs)', () => {
+    for (const seq of DEFAULT_ORDERING_SEQUENCES) {
+      for (const step of seq.steps) {
+        for (const opt of step.options) {
+          expect(opt.text.length, `Option "${opt.text}" too long`).toBeLessThanOrEqual(30);
+        }
+      }
+    }
+  });
+});
+
+describe('UX — Gap tests (missing features)', () => {
+  it('IMPLEMENTED: color coding uses Modified Fitzgerald Key (Goossens et al., 1992)', () => {
+    expect(CATEGORY_COLORS.pronoun).toBe('#FFD54F');  // yellow
+    expect(CATEGORY_COLORS.verb).toBe('#66BB6A');     // green
+    expect(CATEGORY_COLORS.noun).toBe('#FFA726');     // orange
+    expect(classifyWord('I')).toBe('pronoun');
+    expect(classifyWord('want')).toBe('verb');
+    expect(classifyWord('pizza')).toBe('noun');
+  });
+
+  it('GAP: no switch scanning support', () => {
+    // This test documents the gap — no tabIndex or scanning order
+    // TODO: Phase 3 — add switch scanning
+    expect(true).toBe(true);
+  });
+
+  it('IMPLEMENTED: AI Chat panel exists as side panel', () => {
+    // AI Chat panel implemented in Phase 2 with Gemini integration
+    // Preserves authorship per Valencia et al. (CHI 2023)
+    expect(true).toBe(true);
+  });
+
+  it('GAP: no speech-to-text / mic input', () => {
+    // This test documents the gap — no microphone button
+    // TODO: Phase 3 — add vocabulary-constrained speech recognition
+    expect(true).toBe(true);
+  });
+
+  it('GAP: no PWA manifest for offline/home-screen install', () => {
+    // TODO: Add manifest.json and service worker
+    expect(true).toBe(true);
+  });
+});
+
+describe('Sync — Data integrity', () => {
+  it('mergeWordFreq takes higher counts', () => {
+    const local = { hello: { count: 5, lastUsed: 1000 } };
+    const remote = { hello: { count: 3, lastUsed: 2000 } };
+    const merged = mergeWordFreq(local, remote);
+    expect(merged.hello.count).toBe(5); // max(5, 3)
+    expect(merged.hello.lastUsed).toBe(2000); // max(1000, 2000)
+  });
+
+  it('mergeCustomItems unions by id', () => {
+    const local = [{ id: 'a', name: 'A' }];
+    const remote = [{ id: 'b', name: 'B' }];
+    const merged = mergeCustomItems(local, remote);
+    expect(merged).toHaveLength(2);
+  });
+
+  it('mergeCustomItems does not duplicate same id', () => {
+    const local = [{ id: 'a', name: 'A' }];
+    const remote = [{ id: 'a', name: 'A-modified' }];
+    const merged = mergeCustomItems(local, remote);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].name).toBe('A'); // local wins (iterated last, overwrites remote)
+  });
+
+  it('mergeHistory caps at 100 and deduplicates', () => {
+    const local = Array.from({ length: 60 }, (_, i) => ({ text: `l${i}`, timestamp: i }));
+    const remote = Array.from({ length: 60 }, (_, i) => ({ text: `r${i}`, timestamp: i + 60 }));
+    const merged = mergeHistory(local, remote);
+    expect(merged.length).toBeLessThanOrEqual(100);
+    expect(merged[0].timestamp).toBeGreaterThan(merged[merged.length - 1].timestamp); // sorted desc
+  });
+});
 </file>
 
 <file path="components/SettingsModal.tsx">
@@ -7098,6 +7003,105 @@ export default function SettingsModal() {
 }
 </file>
 
+<file path="components/PrismApp.tsx">
+'use client';
+import { useEffect, useState, Component, ReactNode } from 'react';
+import Toolbar from './Toolbar';
+import MessageBar from './MessageBar';
+import PredictionBar from './PredictionBar';
+import Keyboard from './Keyboard';
+import CategoryPanel from './CategoryPanel';
+import CaregiverPanel from './CaregiverPanel';
+import AIChatPanel from './AIChatPanel';
+import HistoryModal from './HistoryModal';
+import SettingsModal from './SettingsModal';
+import AlertOverlay from './AlertOverlay';
+import SyncProvider from './SyncProvider';
+import { usePredictionStore } from '@/store/predictionStore';
+import { useCategoryStore } from '@/store/categoryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { useMessageStore } from '@/store/messageStore';
+import { keyFeedback, deleteFeedback } from '@/services/feedback';
+import { useT } from '@/engine/useT';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="h-svh flex flex-col items-center justify-center bg-[#12121e] p-8 text-center">
+          <p className="text-[#F44336] text-2xl font-bold mb-4">Something went wrong</p>
+          <p className="text-[#888] mb-6">{this.state.error.message}</p>
+          <button onClick={() => window.location.reload()} className="bg-[#4CAF50] text-white px-8 py-3 rounded-xl text-lg font-semibold">
+            Tap to reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function PrismApp() {
+  const runDecay = usePredictionStore((s) => s.runDecay);
+  const [hydrated, setHydrated] = useState(false);
+
+  const seedTemplates = useCategoryStore((s) => s.seedTemplates);
+  const highContrast = useSettingsStore((s) => s.highContrast);
+  const { rtl } = useT();
+
+  useEffect(() => {
+    setHydrated(true);
+    runDecay();
+    seedTemplates();
+  }, [runDecay, seedTemplates]);
+
+  // Physical keyboard support — captures keystrokes globally
+  // Skips interactive form elements (input, textarea, select, buttons with focus)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.key === 'Tab' || e.key === 'Escape') return;
+      if ((e.target as HTMLElement)?.closest('[role="dialog"]')) return;
+      if (e.key === ' ' && document.activeElement?.tagName === 'BUTTON') return;
+      const store = useMessageStore.getState();
+      if (e.key === 'Backspace') { e.preventDefault(); deleteFeedback(); store.deleteLastChar(); }
+      else if (e.key === 'Enter') { e.preventDefault(); }
+      else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { e.preventDefault(); keyFeedback(); store.appendChar(e.key); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  if (!hydrated) {
+    return <div className="h-svh bg-[#12121e]" />;
+  }
+
+  return (
+    <ErrorBoundary>
+      <SyncProvider>
+        <div dir={rtl ? 'rtl' : 'ltr'} className={`h-svh flex flex-col overflow-hidden ${highContrast ? 'high-contrast bg-black' : 'bg-[#12121e]'}`}>
+          <Toolbar />
+          <MessageBar />
+          <PredictionBar />
+          <div className="flex-1 flex flex-row min-h-0">
+            <CategoryPanel />
+            <CaregiverPanel />
+            <AIChatPanel />
+            <Keyboard />
+          </div>
+          <AlertOverlay />
+          <HistoryModal />
+          <SettingsModal />
+        </div>
+      </SyncProvider>
+    </ErrorBoundary>
+  );
+}
+</file>
+
 <file path="types/index.ts">
 export interface Category {
   id: string;
@@ -7150,6 +7154,7 @@ export interface OrderingOption {
 export interface WordFreqEntry {
   count: number;
   lastUsed: number;
+  lastDecayedAt?: number;
 }
 
 export interface PredictionConfig {

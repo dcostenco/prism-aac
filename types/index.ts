@@ -49,6 +49,7 @@ export interface OrderingOption {
 export interface WordFreqEntry {
   count: number;
   lastUsed: number;
+  lastDecayedAt?: number;
 }
 
 export interface PredictionConfig {

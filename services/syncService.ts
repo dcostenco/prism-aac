@@ -73,7 +73,7 @@ export async function pushToCloud(data: Partial<AACProfile>): Promise<void> {
       device_id: getDeviceId(),
       user_id: getUserId(),
       ...data,
-      updated_at: new Date().toISOString(),
+
     };
     await sb.from(AAC_TABLE).upsert(record, { onConflict: 'user_id,device_id' });
     setStatus('synced');
