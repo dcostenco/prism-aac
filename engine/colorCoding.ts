@@ -89,27 +89,29 @@ const PLACES = new Set([
   'car', 'bus', 'hospital', 'office', 'church',
 ]);
 
-export function classifyWord(word: string): WordCategory {
-  const w = word.toLowerCase().replace(/[^a-z']/g, '');
+export function classifyWord(word: string, lang: string = 'en'): WordCategory {
+  const w = word.toLowerCase().replace(/[^a-z'À-ɏЀ-ӿ؀-ۿ　-鿿가-힯]/g, '');
   if (!w) return 'unknown';
+  // Dictionary lookups work for any language (English word lists)
   if (PRONOUNS.has(w)) return 'pronoun';
   if (SOCIAL.has(w)) return 'social';
   if (GRAMMAR.has(w)) return 'grammar';
   if (VERBS.has(w)) return 'verb';
   if (ADJECTIVES.has(w)) return 'adjective';
   if (PLACES.has(w)) return 'place';
-  // Heuristic fallbacks for unknown words
-  if (w.endsWith('ing') || w.endsWith('ed') || w.endsWith('tion')) return 'verb';
-  if (w.endsWith('ly')) return 'adjective';
-  if ((w.endsWith('er') && w.length > 5) || w.endsWith('est')) return 'adjective';
-  // Default: treat as noun (most AAC vocabulary is nouns)
+  // Heuristic fallbacks — English only (other languages default to noun)
+  if (lang === 'en') {
+    if (w.endsWith('ing') || w.endsWith('ed') || w.endsWith('tion')) return 'verb';
+    if (w.endsWith('ly')) return 'adjective';
+    if ((w.endsWith('er') && w.length > 5) || w.endsWith('est')) return 'adjective';
+  }
   return 'noun';
 }
 
-export function classifyPhrase(text: string): Array<{ word: string; category: WordCategory; color: string }> {
+export function classifyPhrase(text: string, lang: string = 'en'): Array<{ word: string; category: WordCategory; color: string }> {
   return text.split(/(\s+)/).map((token) => {
     if (/^\s+$/.test(token)) return { word: token, category: 'unknown' as WordCategory, color: 'transparent' };
-    const category = classifyWord(token);
+    const category = classifyWord(token, lang);
     return { word: token, category, color: CATEGORY_COLORS[category] };
   });
 }

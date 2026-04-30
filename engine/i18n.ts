@@ -1,28 +1,40 @@
 /**
- * i18n Engine — Lightweight translation system
+ * i18n Engine — Lazy-loaded translation system
  *
- * No external dependencies. Loads JSON translation files,
- * returns translated strings by key with English fallback.
+ * Only English is bundled statically (always needed as fallback).
+ * Other languages load dynamically when the user switches settings.
  */
 
 import en from '@/i18n/en.json';
-import es from '@/i18n/es.json';
-import fr from '@/i18n/fr.json';
-import pt from '@/i18n/pt.json';
-import ro from '@/i18n/ro.json';
-import uk from '@/i18n/uk.json';
-import ru from '@/i18n/ru.json';
-import de from '@/i18n/de.json';
-import ja from '@/i18n/ja.json';
-import ko from '@/i18n/ko.json';
-import zh from '@/i18n/zh.json';
-import ar from '@/i18n/ar.json';
 
 export type SupportedLanguage = 'en' | 'es' | 'fr' | 'pt' | 'ro' | 'uk' | 'ru' | 'de' | 'ja' | 'ko' | 'zh' | 'ar';
 
-const translations: Record<SupportedLanguage, Record<string, string>> = {
-  en, es, fr, pt, ro, uk, ru, de, ja, ko, zh, ar,
+const loaded: Partial<Record<SupportedLanguage, Record<string, string>>> = { en };
+
+const loaders: Record<SupportedLanguage, () => Promise<{ default: Record<string, string> }>> = {
+  en: () => Promise.resolve({ default: en }),
+  es: () => import('@/i18n/es.json'),
+  fr: () => import('@/i18n/fr.json'),
+  pt: () => import('@/i18n/pt.json'),
+  ro: () => import('@/i18n/ro.json'),
+  uk: () => import('@/i18n/uk.json'),
+  ru: () => import('@/i18n/ru.json'),
+  de: () => import('@/i18n/de.json'),
+  ja: () => import('@/i18n/ja.json'),
+  ko: () => import('@/i18n/ko.json'),
+  zh: () => import('@/i18n/zh.json'),
+  ar: () => import('@/i18n/ar.json'),
 };
+
+export async function loadLanguage(lang: SupportedLanguage): Promise<void> {
+  if (loaded[lang]) return;
+  try {
+    const mod = await loaders[lang]();
+    loaded[lang] = mod.default;
+  } catch {
+    // Failed to load — will fall back to English
+  }
+}
 
 const LANG_META: Array<{ code: SupportedLanguage; name: string; nativeName: string; rtl: boolean; ttsCode: string }> = [
   { code: 'en', name: 'English', nativeName: 'English', rtl: false, ttsCode: 'en-US' },
@@ -42,7 +54,7 @@ const LANG_META: Array<{ code: SupportedLanguage; name: string; nativeName: stri
 export { LANG_META };
 
 export function t(key: string, lang: SupportedLanguage = 'en'): string {
-  return translations[lang]?.[key] ?? translations.en[key] ?? key;
+  return loaded[lang]?.[key] ?? loaded.en?.[key] ?? key;
 }
 
 export function getTTSCode(lang: SupportedLanguage): string {
@@ -51,4 +63,8 @@ export function getTTSCode(lang: SupportedLanguage): string {
 
 export function isRTL(lang: SupportedLanguage): boolean {
   return LANG_META.find(l => l.code === lang)?.rtl ?? false;
+}
+
+export function isLanguageLoaded(lang: SupportedLanguage): boolean {
+  return !!loaded[lang];
 }

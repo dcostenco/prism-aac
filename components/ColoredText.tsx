@@ -1,5 +1,6 @@
 'use client';
 import { classifyPhrase } from '@/engine/colorCoding';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface Props {
   text: string;
@@ -7,8 +8,9 @@ interface Props {
 }
 
 export default function ColoredText({ text, className = '' }: Props) {
+  const lang = useSettingsStore((s) => s.language);
   if (!text) return null;
-  const tokens = classifyPhrase(text);
+  const tokens = classifyPhrase(text, lang);
 
   return (
     <span className={className}>

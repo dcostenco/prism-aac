@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { t, getTTSCode, isRTL, LANG_META, SupportedLanguage } from '@/engine/i18n';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { t, getTTSCode, isRTL, LANG_META, SupportedLanguage, loadLanguage } from '@/engine/i18n';
+
+beforeAll(async () => {
+  const langs: SupportedLanguage[] = ['es', 'fr', 'de', 'ja', 'ar', 'pt', 'ro', 'uk', 'ru', 'ko', 'zh'];
+  await Promise.all(langs.map(loadLanguage));
+});
 
 describe('i18n — Translation engine', () => {
   it('returns English text for known key', () => {

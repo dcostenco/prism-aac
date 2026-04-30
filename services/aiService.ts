@@ -72,12 +72,23 @@ async function callSynalux(
   if (!res.ok) throw new Error(`Synalux API ${res.status}`);
 
   const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('text/event-stream')) {
-    const text = await res.text();
-    return text.split('\n')
-      .filter(l => l.startsWith('data: '))
-      .map(l => { try { return JSON.parse(l.slice(6))?.choices?.[0]?.delta?.content || ''; } catch { return ''; } })
-      .join('');
+  if (contentType.includes('text/event-stream') && res.body) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let fullText = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      for (const line of chunk.split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const parsed = JSON.parse(line.slice(6));
+          fullText += parsed?.choices?.[0]?.delta?.content || '';
+        } catch { /* incomplete chunk */ }
+      }
+    }
+    return fullText;
   }
 
   const data = await res.json();
@@ -87,19 +98,27 @@ async function callSynalux(
 // ── Local Ollama (offline fallback) ──
 
 async function callLocal(prompt: string): Promise<string> {
-  const res = await fetch(`${LOCAL_OLLAMA_URL}/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: LOCAL_MODEL,
-      prompt,
-      stream: false,
-      options: { num_predict: 300, temperature: 0.3 },
-    }),
-  });
-  if (!res.ok) throw new Error('Local model unavailable');
-  const data = await res.json();
-  return data?.response ?? '';
+  try {
+    const res = await fetch(`${LOCAL_OLLAMA_URL}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: LOCAL_MODEL,
+        prompt,
+        stream: false,
+        options: { num_predict: 300, temperature: 0.3 },
+      }),
+    });
+    if (!res.ok) throw new Error('Local model unavailable');
+    const data = await res.json();
+    return data?.response ?? '';
+  } catch (e) {
+    // Mixed content (HTTPS→HTTP) or CORS will throw TypeError: Failed to fetch
+    const msg = e instanceof TypeError
+      ? 'Local AI unavailable — requires running the app locally (not HTTPS) or configuring Ollama CORS'
+      : 'Local AI unavailable';
+    throw new Error(msg);
+  }
 }
 
 // ── Routing: Synalux → local fallback ──

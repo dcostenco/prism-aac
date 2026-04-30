@@ -228,6 +228,7 @@ export default function AlertOverlay() {
 <file path="components/ColoredText.tsx">
 'use client';
 import { classifyPhrase } from '@/engine/colorCoding';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface Props {
   text: string;
@@ -235,8 +236,9 @@ interface Props {
 }
 
 export default function ColoredText({ text, className = '' }: Props) {
+  const lang = useSettingsStore((s) => s.language);
   if (!text) return null;
-  const tokens = classifyPhrase(text);
+  const tokens = classifyPhrase(text, lang);
 
   return (
     <span className={className}>
@@ -564,27 +566,29 @@ const PLACES = new Set([
   'car', 'bus', 'hospital', 'office', 'church',
 ]);
 
-export function classifyWord(word: string): WordCategory {
-  const w = word.toLowerCase().replace(/[^a-z']/g, '');
+export function classifyWord(word: string, lang: string = 'en'): WordCategory {
+  const w = word.toLowerCase().replace(/[^a-z'À-ɏЀ-ӿ؀-ۿ　-鿿가-힯]/g, '');
   if (!w) return 'unknown';
+  // Dictionary lookups work for any language (English word lists)
   if (PRONOUNS.has(w)) return 'pronoun';
   if (SOCIAL.has(w)) return 'social';
   if (GRAMMAR.has(w)) return 'grammar';
   if (VERBS.has(w)) return 'verb';
   if (ADJECTIVES.has(w)) return 'adjective';
   if (PLACES.has(w)) return 'place';
-  // Heuristic fallbacks for unknown words
-  if (w.endsWith('ing') || w.endsWith('ed') || w.endsWith('tion')) return 'verb';
-  if (w.endsWith('ly')) return 'adjective';
-  if ((w.endsWith('er') && w.length > 5) || w.endsWith('est')) return 'adjective';
-  // Default: treat as noun (most AAC vocabulary is nouns)
+  // Heuristic fallbacks — English only (other languages default to noun)
+  if (lang === 'en') {
+    if (w.endsWith('ing') || w.endsWith('ed') || w.endsWith('tion')) return 'verb';
+    if (w.endsWith('ly')) return 'adjective';
+    if ((w.endsWith('er') && w.length > 5) || w.endsWith('est')) return 'adjective';
+  }
   return 'noun';
 }
 
-export function classifyPhrase(text: string): Array<{ word: string; category: WordCategory; color: string }> {
+export function classifyPhrase(text: string, lang: string = 'en'): Array<{ word: string; category: WordCategory; color: string }> {
   return text.split(/(\s+)/).map((token) => {
     if (/^\s+$/.test(token)) return { word: token, category: 'unknown' as WordCategory, color: 'transparent' };
-    const category = classifyWord(token);
+    const category = classifyWord(token, lang);
     return { word: token, category, color: CATEGORY_COLORS[category] };
   });
 }
@@ -602,30 +606,42 @@ export const CATEGORY_LEGEND: Array<{ category: WordCategory; label: string; col
 
 <file path="engine/i18n.ts">
 /**
- * i18n Engine — Lightweight translation system
+ * i18n Engine — Lazy-loaded translation system
  *
- * No external dependencies. Loads JSON translation files,
- * returns translated strings by key with English fallback.
+ * Only English is bundled statically (always needed as fallback).
+ * Other languages load dynamically when the user switches settings.
  */
 
 import en from '@/i18n/en.json';
-import es from '@/i18n/es.json';
-import fr from '@/i18n/fr.json';
-import pt from '@/i18n/pt.json';
-import ro from '@/i18n/ro.json';
-import uk from '@/i18n/uk.json';
-import ru from '@/i18n/ru.json';
-import de from '@/i18n/de.json';
-import ja from '@/i18n/ja.json';
-import ko from '@/i18n/ko.json';
-import zh from '@/i18n/zh.json';
-import ar from '@/i18n/ar.json';
 
 export type SupportedLanguage = 'en' | 'es' | 'fr' | 'pt' | 'ro' | 'uk' | 'ru' | 'de' | 'ja' | 'ko' | 'zh' | 'ar';
 
-const translations: Record<SupportedLanguage, Record<string, string>> = {
-  en, es, fr, pt, ro, uk, ru, de, ja, ko, zh, ar,
+const loaded: Partial<Record<SupportedLanguage, Record<string, string>>> = { en };
+
+const loaders: Record<SupportedLanguage, () => Promise<{ default: Record<string, string> }>> = {
+  en: () => Promise.resolve({ default: en }),
+  es: () => import('@/i18n/es.json'),
+  fr: () => import('@/i18n/fr.json'),
+  pt: () => import('@/i18n/pt.json'),
+  ro: () => import('@/i18n/ro.json'),
+  uk: () => import('@/i18n/uk.json'),
+  ru: () => import('@/i18n/ru.json'),
+  de: () => import('@/i18n/de.json'),
+  ja: () => import('@/i18n/ja.json'),
+  ko: () => import('@/i18n/ko.json'),
+  zh: () => import('@/i18n/zh.json'),
+  ar: () => import('@/i18n/ar.json'),
 };
+
+export async function loadLanguage(lang: SupportedLanguage): Promise<void> {
+  if (loaded[lang]) return;
+  try {
+    const mod = await loaders[lang]();
+    loaded[lang] = mod.default;
+  } catch {
+    // Failed to load — will fall back to English
+  }
+}
 
 const LANG_META: Array<{ code: SupportedLanguage; name: string; nativeName: string; rtl: boolean; ttsCode: string }> = [
   { code: 'en', name: 'English', nativeName: 'English', rtl: false, ttsCode: 'en-US' },
@@ -645,7 +661,7 @@ const LANG_META: Array<{ code: SupportedLanguage; name: string; nativeName: stri
 export { LANG_META };
 
 export function t(key: string, lang: SupportedLanguage = 'en'): string {
-  return translations[lang]?.[key] ?? translations.en[key] ?? key;
+  return loaded[lang]?.[key] ?? loaded.en?.[key] ?? key;
 }
 
 export function getTTSCode(lang: SupportedLanguage): string {
@@ -655,18 +671,30 @@ export function getTTSCode(lang: SupportedLanguage): string {
 export function isRTL(lang: SupportedLanguage): boolean {
   return LANG_META.find(l => l.code === lang)?.rtl ?? false;
 }
+
+export function isLanguageLoaded(lang: SupportedLanguage): boolean {
+  return !!loaded[lang];
+}
 </file>
 
 <file path="engine/useT.ts">
 'use client';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
-import { t as translate, getTTSCode, isRTL } from './i18n';
+import { t as translate, getTTSCode, isRTL, loadLanguage, isLanguageLoaded } from './i18n';
 
 export function useT() {
   const language = useSettingsStore((s) => s.language);
+  const [ready, setReady] = useState(isLanguageLoaded(language));
+
+  useEffect(() => {
+    if (isLanguageLoaded(language)) { setReady(true); return; }
+    setReady(false);
+    loadLanguage(language).then(() => setReady(true));
+  }, [language]);
+
   const tFn = useCallback((key: string) => translate(key, language), [language]);
-  return { t: tFn, lang: language, ttsCode: getTTSCode(language), rtl: isRTL(language) };
+  return { t: tFn, lang: language, ttsCode: getTTSCode(language), rtl: isRTL(language), ready };
 }
 </file>
 
@@ -2310,12 +2338,23 @@ async function callSynalux(
   if (!res.ok) throw new Error(`Synalux API ${res.status}`);
 
   const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('text/event-stream')) {
-    const text = await res.text();
-    return text.split('\n')
-      .filter(l => l.startsWith('data: '))
-      .map(l => { try { return JSON.parse(l.slice(6))?.choices?.[0]?.delta?.content || ''; } catch { return ''; } })
-      .join('');
+  if (contentType.includes('text/event-stream') && res.body) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let fullText = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      for (const line of chunk.split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const parsed = JSON.parse(line.slice(6));
+          fullText += parsed?.choices?.[0]?.delta?.content || '';
+        } catch { /* incomplete chunk */ }
+      }
+    }
+    return fullText;
   }
 
   const data = await res.json();
@@ -2325,19 +2364,27 @@ async function callSynalux(
 // ── Local Ollama (offline fallback) ──
 
 async function callLocal(prompt: string): Promise<string> {
-  const res = await fetch(`${LOCAL_OLLAMA_URL}/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: LOCAL_MODEL,
-      prompt,
-      stream: false,
-      options: { num_predict: 300, temperature: 0.3 },
-    }),
-  });
-  if (!res.ok) throw new Error('Local model unavailable');
-  const data = await res.json();
-  return data?.response ?? '';
+  try {
+    const res = await fetch(`${LOCAL_OLLAMA_URL}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: LOCAL_MODEL,
+        prompt,
+        stream: false,
+        options: { num_predict: 300, temperature: 0.3 },
+      }),
+    });
+    if (!res.ok) throw new Error('Local model unavailable');
+    const data = await res.json();
+    return data?.response ?? '';
+  } catch (e) {
+    // Mixed content (HTTPS→HTTP) or CORS will throw TypeError: Failed to fetch
+    const msg = e instanceof TypeError
+      ? 'Local AI unavailable — requires running the app locally (not HTTPS) or configuring Ollama CORS'
+      : 'Local AI unavailable';
+    throw new Error(msg);
+  }
 }
 
 // ── Routing: Synalux → local fallback ──
@@ -2872,8 +2919,13 @@ describe('Feedback — Gap tests', () => {
 </file>
 
 <file path="tests/i18n.test.ts">
-import { describe, it, expect } from 'vitest';
-import { t, getTTSCode, isRTL, LANG_META, SupportedLanguage } from '@/engine/i18n';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { t, getTTSCode, isRTL, LANG_META, SupportedLanguage, loadLanguage } from '@/engine/i18n';
+
+beforeAll(async () => {
+  const langs: SupportedLanguage[] = ['es', 'fr', 'de', 'ja', 'ar', 'pt', 'ro', 'uk', 'ru', 'ko', 'zh'];
+  await Promise.all(langs.map(loadLanguage));
+});
 
 describe('i18n — Translation engine', () => {
   it('returns English text for known key', () => {
