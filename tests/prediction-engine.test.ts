@@ -96,6 +96,26 @@ describe('PredictionEngine — Decay', () => {
     expect(result.rare).toBeUndefined();
   });
 
+  it('hard-deletes single-use entries older than 30 days (typo cleanup)', () => {
+    const thirtyOneDaysAgo = Date.now() - 31 * 24 * 60 * 60 * 1000;
+    const wf: Record<string, WordFreqEntry> = {
+      typo: { count: 1, lastUsed: thirtyOneDaysAgo },
+      realword: { count: 5, lastUsed: thirtyOneDaysAgo },
+    };
+    const result = decayPredictions(wf);
+    expect(result.typo).toBeUndefined(); // count=1, >30 days → deleted
+    expect(result.realword).toBeDefined(); // count=5, survives decay
+  });
+
+  it('keeps single-use entries younger than 30 days', () => {
+    const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
+    const wf: Record<string, WordFreqEntry> = {
+      newword: { count: 1, lastUsed: twoDaysAgo },
+    };
+    const result = decayPredictions(wf);
+    expect(result.newword).toBeDefined();
+  });
+
   it('does not decay entries newer than 7 days', () => {
     const wf: Record<string, WordFreqEntry> = {
       fresh: { count: 5, lastUsed: Date.now() - 3 * 24 * 60 * 60 * 1000 },

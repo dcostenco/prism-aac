@@ -8,10 +8,13 @@ import { TEMPLATE_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
 interface CategoryState {
   customCategories: Category[];
   customPhrases: Phrase[];
+  hiddenPhraseIds: string[];
   orderingSequences: OrderingSequenceData[];
   seeded: boolean;
   allCategories: () => Category[];
   getPhrasesForCategory: (categoryId: string) => Phrase[];
+  hideDefaultPhrase: (id: string) => void;
+  unhideDefaultPhrase: (id: string) => void;
   getSequencesForCategory: (categoryId: string) => OrderingSequenceData[];
   addCustomCategory: (name: string, icon: string) => void;
   removeCustomCategory: (id: string) => void;
@@ -28,16 +31,24 @@ export const useCategoryStore = create<CategoryState>()(
     (set, get) => ({
       customCategories: [],
       customPhrases: [],
+      hiddenPhraseIds: [],
       orderingSequences: [],
       seeded: false,
 
       allCategories: () => [...DEFAULT_CATEGORIES, ...get().customCategories].sort((a, b) => a.sortOrder - b.sortOrder),
 
       getPhrasesForCategory: (categoryId) => {
-        const defaults = DEFAULT_PHRASES.filter((p) => p.categoryId === categoryId);
+        const hidden = new Set(get().hiddenPhraseIds);
+        const defaults = DEFAULT_PHRASES.filter((p) => p.categoryId === categoryId && !hidden.has(p.id));
         const custom = get().customPhrases.filter((p) => p.categoryId === categoryId);
         return [...defaults, ...custom].sort((a, b) => a.sortOrder - b.sortOrder);
       },
+
+      hideDefaultPhrase: (id) =>
+        set((s) => ({ hiddenPhraseIds: [...new Set([...s.hiddenPhraseIds, id])] })),
+
+      unhideDefaultPhrase: (id) =>
+        set((s) => ({ hiddenPhraseIds: s.hiddenPhraseIds.filter((h) => h !== id) })),
 
       getSequencesForCategory: (categoryId) =>
         get().orderingSequences.filter((s) => s.categoryId === categoryId).sort((a, b) => a.sortOrder - b.sortOrder),
@@ -89,6 +100,7 @@ export const useCategoryStore = create<CategoryState>()(
       partialize: (s) => ({
         customCategories: s.customCategories,
         customPhrases: s.customPhrases,
+        hiddenPhraseIds: s.hiddenPhraseIds,
         orderingSequences: s.orderingSequences,
         seeded: s.seeded,
       }),

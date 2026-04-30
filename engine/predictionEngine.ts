@@ -102,8 +102,11 @@ export function decayPredictions(
   data: Record<string, WordFreqEntry>,
 ): Record<string, WordFreqEntry> {
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const result: Record<string, WordFreqEntry> = {};
   for (const [key, val] of Object.entries(data)) {
+    // Hard cutoff: drop single-use entries older than 30 days (typo cleanup)
+    if (val.count <= 1 && val.lastUsed < thirtyDaysAgo) continue;
     if (val.lastUsed < sevenDaysAgo) {
       const newCount = Math.max(1, Math.floor(val.count * 0.95));
       if (newCount > 1) result[key] = { count: newCount, lastUsed: val.lastUsed };

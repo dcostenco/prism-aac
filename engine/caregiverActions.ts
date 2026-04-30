@@ -78,10 +78,14 @@ export function executeAction(action: NoteAction): ActionResult {
     case 'remove_phrase': {
       const { phraseText, categoryId } = action.payload as { phraseText: string; categoryId: string };
       const phrases = catStore.getPhrasesForCategory(categoryId);
-      const match = phrases.find((p) => p.text.toLowerCase() === phraseText.toLowerCase() && p.isCustom);
-      if (!match) return { success: false, message: `"${phraseText}" is a default phrase and cannot be removed (only custom phrases can be removed)` };
-      catStore.removeCustomPhrase(match.id);
-      return { success: true, message: `Removed "${phraseText}"` };
+      const match = phrases.find((p) => p.text.toLowerCase() === phraseText.toLowerCase());
+      if (!match) return { success: false, message: `Phrase "${phraseText}" not found` };
+      if (match.isCustom) {
+        catStore.removeCustomPhrase(match.id);
+        return { success: true, message: `Removed "${phraseText}"` };
+      }
+      catStore.hideDefaultPhrase(match.id);
+      return { success: true, message: `Hidden "${phraseText}" (can be restored in Settings)` };
     }
 
     case 'reorder_phrase': {

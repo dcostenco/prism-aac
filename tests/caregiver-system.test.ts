@@ -198,14 +198,21 @@ describe('CaregiverActions — executeAllActions', () => {
 });
 
 describe('CaregiverActions — Clinical safety', () => {
-  it('cannot remove default phrases (only custom)', () => {
+  it('hides default phrases instead of deleting them', () => {
     const result = executeAction({
       type: 'remove_phrase',
       description: 'Remove "All done" from Help',
       payload: { phraseText: 'All done', categoryId: 'help-needs' },
     });
-    expect(result.success).toBe(false);
-    expect(result.message).toContain('default phrase');
+    expect(result.success).toBe(true);
+    expect(result.message).toContain('Hidden');
+    // Phrase is hidden, not deleted — can be restored
+    const phrases = useCategoryStore.getState().getPhrasesForCategory('help-needs');
+    expect(phrases.some(p => p.text === 'All done')).toBe(false);
+    // Unhide restores it
+    useCategoryStore.getState().unhideDefaultPhrase('help-all-done');
+    const restored = useCategoryStore.getState().getPhrasesForCategory('help-needs');
+    expect(restored.some(p => p.text === 'All done')).toBe(true);
   });
 
   it('cannot remove default categories', () => {
