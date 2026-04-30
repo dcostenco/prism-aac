@@ -3,7 +3,8 @@
  *
  * Live integration tests (real Synalux portal + local prism-coder:7b)
  * live in `tests/text-correct.integration.test.ts` under the node test
- * environment. This file stays in jsdom env and mocks fetch.
+ * environment. This file stays in jsdom env and mocks fetch + the
+ * local-model probe.
  *
  * Run unit suite:           npm test
  * Run live + offline:       RUN_LIVE_CORRECT=1 RUN_LOCAL_CORRECT=1 npm test text-correct
@@ -11,32 +12,72 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// Force the local-model probe to a known answer per test. Each test
+// re-imports the service so the cached promise resets.
+vi.mock('@/services/localModel', () => ({
+  isLocalModelAvailable: vi.fn(),
+  LOCAL_OLLAMA_URL: 'http://localhost:11434/api/generate',
+  LOCAL_MODEL: 'prism-coder:7b',
+  getLocalModelStatus: () => null,
+}));
+
+async function loadService(localAvailable: boolean) {
+  vi.resetModules();
+  const { isLocalModelAvailable } = await import('@/services/localModel');
+  (isLocalModelAvailable as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(localAvailable);
+  return await import('../services/textCorrectService');
+}
+
 describe('correctText (unit)', () => {
   beforeEach(() => {
-    vi.resetModules();
     vi.unstubAllGlobals();
   });
 
-  it('returns input unchanged when text is too short to bother', async () => {
+  it('returns input unchanged when text is too short to bother — never calls a backend', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    const { correctText } = await import('../services/textCorrectService');
+    const { correctText } = await loadService(false);
     expect(await correctText('hi', 'en')).toBe('hi');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('returns the corrected text from the endpoint and caches it', async () => {
+  it('local-first: when prism-coder is reachable, only calls Ollama (not the portal)', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ corrected: 'bowl of rice', original: 'bowlofrice', changed: true }),
+      json: async () => ({ response: 'bowl of rice' }),
     });
     vi.stubGlobal('fetch', fetchMock);
-    const { correctText } = await import('../services/textCorrectService');
-    const out1 = await correctText('bowlofrice', 'en');
-    const out2 = await correctText('bowlofrice', 'en');
-    expect(out1).toBe('bowl of rice');
-    expect(out2).toBe('bowl of rice');
-    // Second call hits cache, not the network.
+    const { correctText } = await loadService(true);
+    const out = await correctText('bowirice', 'en');
+    expect(out).toBe('bowl of rice');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain('11434');
+  });
+
+  it('portal-only: when prism-coder is unavailable, calls the synalux portal', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ corrected: 'bowl of rice', original: 'bowirice', changed: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { correctText } = await loadService(false);
+    const out = await correctText('bowirice', 'en');
+    expect(out).toBe('bowl of rice');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain('synalux');
+  });
+
+  it('caches results so identical inputs only round-trip once', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ corrected: 'bowl of rice', original: 'bowirice', changed: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { correctText } = await loadService(false);
+    expect(await correctText('bowirice', 'en')).toBe('bowl of rice');
+    expect(await correctText('bowirice', 'en')).toBe('bowl of rice');
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -46,7 +87,7 @@ describe('correctText (unit)', () => {
       resolveFn = (v) => resolve({ ok: true, json: async () => v });
     }));
     vi.stubGlobal('fetch', fetchMock);
-    const { correctText } = await import('../services/textCorrectService');
+    const { correctText } = await loadService(false);
     const a = correctText('bowlof,ri', 'en');
     const b = correctText('bowlof,ri', 'en');
     resolveFn?.({ corrected: 'bowl of rice', original: 'bowlof,ri', changed: true });
@@ -56,34 +97,28 @@ describe('correctText (unit)', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to the original text when both portal and local fail', async () => {
-    // Simulates fully offline — portal unreachable AND local Ollama not running.
-    const fetchMock = vi.fn().mockRejectedValue(new Error('offline'));
-    vi.stubGlobal('fetch', fetchMock);
-    const { correctText } = await import('../services/textCorrectService');
-    const out = await correctText('helloworld', 'en');
-    expect(out).toBe('helloworld');
-  });
-
-  it('falls back to original on non-200 response from both stages', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500 });
-    vi.stubGlobal('fetch', fetchMock);
-    const { correctText } = await import('../services/textCorrectService');
-    const out = await correctText('helloworld', 'en');
-    expect(out).toBe('helloworld');
-  });
-
-  it('falls back to local Ollama when the portal returns a non-corrected result', async () => {
+  it('falls back to portal when local probe returned true but the local call fails', async () => {
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ corrected: '', changed: false }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ response: 'bowl of rice' }) });
+      .mockRejectedValueOnce(new Error('connect refused'))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ corrected: 'bowl of rice', changed: true }) });
     vi.stubGlobal('fetch', fetchMock);
-    const { correctText } = await import('../services/textCorrectService');
+    const { correctText } = await loadService(true);
     const out = await correctText('bowirice', 'en');
     expect(out).toBe('bowl of rice');
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    // Second call must be the local Ollama URL.
-    const secondUrl = fetchMock.mock.calls[1][0] as string;
-    expect(secondUrl).toContain('11434');
+  });
+
+  it('returns original text when both backends fail (offline + portal down)', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('offline'));
+    vi.stubGlobal('fetch', fetchMock);
+    const { correctText } = await loadService(false);
+    expect(await correctText('helloworld', 'en')).toBe('helloworld');
+  });
+
+  it('returns original text when portal returns non-200', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+    vi.stubGlobal('fetch', fetchMock);
+    const { correctText } = await loadService(false);
+    expect(await correctText('helloworld', 'en')).toBe('helloworld');
   });
 });

@@ -1,35 +1,36 @@
 'use client';
 
+import { isLocalModelAvailable, LOCAL_OLLAMA_URL, LOCAL_MODEL } from '@/services/localModel';
+
 /**
  * Text auto-correction — fixes hurried / motor-impaired input.
  *
- * Three-stage routing:
- *   1. Synalux portal /api/v1/text/correct — Gemini 2.5 Flash, ~600ms,
- *      platform-cached so common inputs only hit the LLM once globally.
- *   2. Local Ollama prism-coder:7b — runs on-device when the portal
- *      can't be reached (offline, network drop, regional outage).
- *      Critical for AAC users who travel between networks or use the
- *      app on locked-down school WiFi.
- *   3. Original text — last-resort passthrough so we never block the
- *      user's communication on a correction failure.
+ * Local-first routing. AAC users on slow / flaky / school-locked
+ * connections can't afford a portal round-trip on every keystroke.
+ * Strategy:
  *
- * Used in two places in the client:
- *   • MessageBar — auto-applied on Speak so what the user hears matches
- *     what they meant, not what they typed.
- *   • Voice input — every final transcript passes through correction
- *     before being committed to the message bar (Web Speech API
- *     mis-segments fast speech, e.g. "bowlofrice").
+ *   1. Probe local prism-coder:7b once at boot.
+ *   2. If local is reachable → use ONLY local for the rest of the
+ *      session. ~200-400ms on consumer hardware, free, private,
+ *      offline-capable. No portal cost, no network dependency.
+ *   3. If local is unreachable → use portal (Gemini 2.5 Flash) with a
+ *      hard 1.5s timeout. After that, return the original text rather
+ *      than block the user's communication.
+ *   4. Never throw, never block, never reject. The contract is
+ *      "best-effort correction, original text on any failure".
  *
- * In-memory cache + in-flight dedup on top of the routing so identical
- * inputs only round-trip once per session.
+ * In-memory cache + in-flight dedup so identical inputs only round-trip
+ * once per session.
  */
 
 const SYNALUX_API = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SYNALUX_API)
   ? process.env.NEXT_PUBLIC_SYNALUX_API
   : 'https://synalux.ai/api/v1';
 
-const LOCAL_OLLAMA_URL = 'http://localhost:11434/api/generate';
-const LOCAL_MODEL = 'prism-coder:7b';
+// Hard ceiling per backend. AAC users with motor / cognitive disabilities
+// can't be left waiting; the slow path keeps running in the background
+// for the cache, but the foreground call resolves with the original text.
+const BACKEND_TIMEOUT_MS = 1500;
 
 const LOCAL_SYSTEM = `You are a fast text-cleanup engine for an AAC (augmentative and alternative communication) app used by users with motor impairments. Your only job: take possibly-malformed input and return the most likely intended utterance.
 
@@ -48,13 +49,21 @@ Rules:
 const memoryCache = new Map<string, string>();
 const inFlight = new Map<string, Promise<string>>();
 
+function withTimeout(ms: number): { signal: AbortSignal; cancel: () => void } {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return { signal: ctrl.signal, cancel: () => clearTimeout(timer) };
+}
+
 async function correctViaPortal(text: string, lang: string): Promise<string | null> {
+  const t = withTimeout(BACKEND_TIMEOUT_MS);
   try {
     const res = await fetch(`${SYNALUX_API}/text/correct`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, lang }),
+      signal: t.signal,
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -62,10 +71,13 @@ async function correctViaPortal(text: string, lang: string): Promise<string | nu
     return corrected || null;
   } catch {
     return null;
+  } finally {
+    t.cancel();
   }
 }
 
 async function correctViaLocal(text: string, lang: string): Promise<string | null> {
+  const t = withTimeout(BACKEND_TIMEOUT_MS);
   try {
     const res = await fetch(LOCAL_OLLAMA_URL, {
       method: 'POST',
@@ -77,6 +89,7 @@ async function correctViaLocal(text: string, lang: string): Promise<string | nul
         stream: false,
         options: { temperature: 0.0, num_predict: 80 },
       }),
+      signal: t.signal,
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -85,6 +98,8 @@ async function correctViaLocal(text: string, lang: string): Promise<string | nul
     return cleaned || null;
   } catch {
     return null;
+  } finally {
+    t.cancel();
   }
 }
 
@@ -101,21 +116,27 @@ export async function correctText(text: string, lang = 'en'): Promise<string> {
 
   const promise = (async () => {
     try {
-      // Online — portal first.
+      // Local-first. If the user has prism-coder:7b running on their
+      // device, we ALWAYS prefer it for correction — it's free, fast,
+      // private, and works on slow connections. The portal is a
+      // network-dependent fallback only.
+      const hasLocal = await isLocalModelAvailable();
+      if (hasLocal) {
+        const fromLocal = await correctViaLocal(trimmed, lang);
+        if (fromLocal) {
+          memoryCache.set(cacheKey, fromLocal);
+          return fromLocal;
+        }
+        // Local probe said yes but the call failed — fall through to
+        // portal as a backup rather than fail.
+      }
       const fromPortal = await correctViaPortal(trimmed, lang);
       if (fromPortal) {
         memoryCache.set(cacheKey, fromPortal);
         return fromPortal;
       }
-      // Offline — local Ollama if available. Fails silently when the
-      // user isn't running prism-coder.
-      const fromLocal = await correctViaLocal(trimmed, lang);
-      if (fromLocal) {
-        memoryCache.set(cacheKey, fromLocal);
-        return fromLocal;
-      }
       // Last resort — original text. Never block speech on a correction
-      // failure.
+      // failure or a slow connection.
       return text;
     } finally {
       inFlight.delete(cacheKey);

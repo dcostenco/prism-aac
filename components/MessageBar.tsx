@@ -42,27 +42,25 @@ export default function MessageBar() {
     setSuggestion(null);
   }, [suggestion, setText]);
 
-  const handleSpeak = useCallback(async () => {
+  const handleSpeak = useCallback(() => {
     tapFeedback();
     const original = text.trim();
     if (!original || !soundEnabled) return;
-    // Auto-apply the latest suggestion (or fetch one synchronously) so the
-    // user hears their intended phrase, not their typo.
-    let toSpeak = original;
+    // Speak NEVER blocks on correction. If the background correction has
+    // already produced a suggestion, prefer that — otherwise speak the
+    // user's original text immediately. The user can't be left waiting
+    // on a slow network for their voice. The background correctText() is
+    // still running, and the suggestion will appear inline next to the
+    // message bar; if the user taps Speak again after it lands, they get
+    // the corrected version.
+    const toSpeak = (suggestion && suggestion !== original) ? suggestion : original;
     if (suggestion && suggestion !== original) {
-      toSpeak = suggestion;
       setText(suggestion);
       setSuggestion(null);
-    } else {
-      const fixed = await correctText(original, language);
-      if (fixed && fixed !== original) {
-        toSpeak = fixed;
-        setText(fixed);
-      }
     }
     addToHistory(toSpeak);
     speak(toSpeak, speechRate, speechVolume, ttsCode, activeTone);
-  }, [text, soundEnabled, suggestion, language, speechRate, speechVolume, ttsCode, activeTone, addToHistory, setText]);
+  }, [text, soundEnabled, suggestion, speechRate, speechVolume, ttsCode, activeTone, addToHistory, setText]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
