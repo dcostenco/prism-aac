@@ -17,23 +17,37 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 
 ### Home — keyboard, message bar, prediction tiles with pictograms
 ![Home screen](docs/screenshots/home-v2.png)
-> Soft keyboard always visible at the bottom. Five color-coded prediction tiles (Modified Fitzgerald Key) sit above the keys; on paid tiers each tile pulls a pictogram from the open ARASAAC library so non-readers can recognise the word. Top toolbar carries every secondary view at one tap each.
+> Soft keyboard with language-specific layouts (QWERTY, Cyrillic, Arabic, Hiragana, etc.). Five color-coded prediction tiles (Modified Fitzgerald Key) above the keys with ARASAAC pictograms. Proportional clamp()-based sizing scales from iPhone to desktop. Top toolbar carries 10 modules at one tap each.
 
-### Categories — inline panel docked above the keyboard
+### Categories — 22 categories with PECS-style phrase tiles
 ![Categories list](docs/screenshots/categories-list-v2.png)
-> Every secondary panel (Categories, Math, AI Chat, Caregiver Notes) renders **inline above the keyboard** — never as a fullscreen modal that covers the keys. The user keeps typing on the same soft keyboard with the same predictions while the panel is open.
+> **4 core word categories** (Pronouns, Verbs, Descriptors, Little Words — 80% of communication) + **18 TouchChat-standard categories** (Feelings, Actions, Questions, Health, Animals, Colors, etc.). 300+ phrases with translations in 12 languages. SLP-recommended progressive vocabulary exposure with category visibility toggles and configurable grid size (4–20 tiles per screen).
 
-### Category detail — bundled phrases with TouchChat-style pictograms
+### Category detail — PECS format with pictograms
 ![Category with pictograms](docs/screenshots/categories-pictograms-v2.png)
-> Phrase tiles inside each category show an AAC pictogram next to the words. Symbols come from the open-source [ARASAAC](https://arasaac.org/) library (12.9k symbols, free, every tier); paid Synalux subscriptions additionally generate a custom pictogram via FLUX.1 Schnell for any phrase ARASAAC doesn't cover. Generated images are cached platform-wide in Supabase Storage — every unique phrase generates exactly **once** across the whole user base.
+> Phrase tiles use PECS format: pictogram on top, text label on bottom with border separator. Symbols from [ARASAAC](https://arasaac.org/) (12.9k symbols, free); paid tiers get AI-generated pictograms via FLUX.1 Schnell. Full-phrase search with English fallback ensures pictograms appear for all languages.
 
-### Math — every symbol you'd find in a K-12 + intro-college curriculum
+### Math — Math Paper-style expression builder with AI tutor
 ![Math panel](docs/screenshots/math-panel-v2.png)
-> ~80 math symbols across 8 grouped categories (Basic, Numbers, Algebra, Constants, Trigonometry, Calculus, Greek letters, Logic & sets). Tap any symbol to insert it into the message bar; long-press the AAC button to hear it spoken.
+> Canvas-based expression builder like the Math Paper app. Type expressions visually (5 × 6 =, 3x² + ½y), with operator row, number pad, variable keys, and special symbols. **AI Math Tutor** with three modes: 💡 Hint (guides without solving), ✓ Check (validates and explains errors gently), 🎓 Solve (step-by-step solution in simple language). TTS reads expressions aloud.
 
-### Settings — Synalux account, voice, custom phrases
+### Schedule & Tasks — visual routines with rewards
+> **First-Then board** for autistic children — shows current task and next/reward activity. Daily task list with checkmark completion, SVG circular visual timer (1–15 min), and token reward system (earn ⭐ stars). Based on ChoiceWorks and First Then Visual Schedule research.
+
+### Games — accessible AAC games for engagement
+> Three built-in games designed for disabled kids:
+> - **Match Game** — flip cards, find pairs (cause-and-effect learning)
+> - **Emotion Faces** — identify emotions from expressions (Tanaka et al., 2010)
+> - **Word Builder** — spell words by tapping scrambled letters
+>
+> All games: 64px+ touch targets, single-tap only (switch-accessible), score tracking, respects `prefers-reduced-motion`.
+
+### Marketplace — Synalux component platform
+> Browse and install Synalux modules: Symbol Libraries, Board Templates (Free+), Game Packs, Voice Packs, Picture Editor, Music Composer (Standard+), AAC Designer, Video Composer (Advanced+). Tier-gated with green/lock badges.
+
+### Settings — Synalux account, voice, accessibility, SLP tools
 ![Settings](docs/screenshots/settings.png)
-> Sign in with your Synalux account to unlock AI Chat, premium TTS voices, cloud sync, and AI-generated pictograms. Picture mode is auto-selected from your tier — no setting to forget about. Core AAC (keyboard, categories, prediction, emergency, 12 languages) works without an account.
+> Category visibility toggles (progressive vocabulary exposure), grid size selector (4–20 tiles), high contrast mode (WCAG AAA — black/yellow), 12 languages, speech rate/volume, custom categories/phrases, Synalux sign-in. All settings translated.
 
 ---
 
@@ -79,16 +93,21 @@ The app supports multiple verbal operant types per BACB Task List 5th Edition (B
 
 ### Default Vocabulary
 
-Based on Banajee, DiCarlo, & Stricklin (2003) core vocabulary research — **58 default phrases** across 6 categories:
+Based on Banajee, DiCarlo, & Stricklin (2003) core vocabulary research — **300+ default phrases** across 22 categories, all translated in 12 languages:
 
-- **Help / Needs** (8 phrases): All done, Take a break, I need help, I am hungry, I am thirsty, Bathroom, Yes, No
-- **Quick Talk** (12 phrases): Hello, Goodbye, Thank you, Please, Excuse me, and more
-- **Places / Plans** (11 phrases): Mall, Park, Home, School, Restaurant, and more
-- **Food / Ordering** (11 phrases): Water, Juice, Pizza, Sandwich, and more
-- **People / Social** (8 phrases): Mom, Dad, Teacher, Friend, Family, and more
-- **School / Work** (8 phrases): Class, Homework, Computer, Book, and more
+**Core Words (SLP-recommended — 80% of daily communication):**
+- **I / You / We** (14 phrases): I, You, He, She, It, We, They, Me, My, Your, His, Her, This, That
+- **Core Verbs** (20 phrases): Want, Like, Have, Do, Can, Need, Know, See, Think, Feel, Say, Tell, and more
+- **More / Not / All** (20 phrases): More, Not, No, Yes, All, Some, Up, Down, In, Out, On, Off, Done, Again, and more
+- **Little Words** (16 phrases): Is, The, A, And, But, Or, To, For, With, Because, If, When, Where, and more
 
-Restaurant ordering flows (Chipotle, General Restaurant) are provided as starter templates and can be edited, deleted, or supplemented with new restaurants via Caregiver Notes.
+**Communicative Functions:**
+- **Help / Needs** (14 phrases), **Quick Talk** (16 phrases), **Feelings** (14 phrases), **Questions** (12 phrases)
+
+**Fringe Vocabulary (18 TouchChat-standard categories):**
+- Actions (24), Describing Words (16), People (14), Food & Drink (18), Places (14), School/Work (14), Health/Body (14), Time (12), Animals (12), Colors (10), Clothes (10), Transportation (10), Weather (8), Toys & Fun (12)
+
+Restaurant ordering flows (Chipotle, General Restaurant) are provided as starter templates.
 
 ---
 
@@ -137,12 +156,18 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 
 | Feature | Free | Standard | Advanced | Enterprise |
 |---------|------|----------|----------|------------|
-| Core AAC keyboard + categories | Yes | Yes | Yes | Yes |
-| 58 default phrases | Yes | Yes | Yes | Yes |
-| Word prediction (5 slots; trigram + bigram + prefix + frequency + recency, seeded from 58 phrases) | Yes | Yes | Yes | Yes |
+| Core AAC keyboard + 22 categories | Yes | Yes | Yes | Yes |
+| 300+ default phrases (translated in 12 languages) | Yes | Yes | Yes | Yes |
+| 4 Core word categories (Pronouns, Verbs, Descriptors, Little Words) | Yes | Yes | Yes | Yes |
+| Word prediction (5 slots; trigram + bigram + prefix + frequency + recency) | Yes | Yes | Yes | Yes |
+| Language-specific keyboard layouts (Cyrillic, Arabic, AZERTY, diacritics) | Yes | Yes | Yes | Yes |
 | Modified Fitzgerald Key color coding (Goossens' 1992) — pronouns yellow, verbs green, nouns orange | Yes | Yes | Yes | Yes |
 | Cumulative auto-speak | Yes | Yes | Yes | Yes |
-| Math keyboard (~80 symbols across 8 categories) | Yes | Yes | Yes | Yes |
+| Math Paper-style expression builder + AI Math Tutor | Yes | Yes | Yes | Yes |
+| Schedule & Tasks (First-Then board, visual timer, rewards) | Yes (5 tasks) | Yes | Yes | Yes |
+| AAC Games (Match, Emotions, Word Builder) | Yes | Yes | Yes | Yes |
+| Category visibility toggles + grid size (4–20) | Yes | Yes | Yes | Yes |
+| High Contrast mode (WCAG AAA) | Yes | Yes | Yes | Yes |
 | Picture mode — ARASAAC pictograms on phrase + prediction tiles | Yes | Yes | Yes | Yes |
 | Picture mode — AI-generated pictograms (FLUX.1 Schnell, platform-cached) | — | Yes | Yes | Yes |
 | Voice input — continuous browser-side speech-to-text (Web Speech API) | Yes | Yes | Yes | Yes |
@@ -154,6 +179,8 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 | AI Chat | — | Yes | Yes | Yes |
 | Azure Neural TTS — basic neural voices | — | Yes | Yes | Yes |
 | Azure Neural TTS — premium / emotional tones | — | — | Yes | Yes |
+| Marketplace — Game Packs, Voice Packs, Picture Editor, Music Composer | — | Yes | Yes | Yes |
+| Marketplace — AAC Designer, Video Composer | — | — | Yes | Yes |
 | Synalux platform modules (Portal, Prism Coder, etc.) | — | 8 modules | 16 modules | All 21 modules |
 | Cloud backup | — | Yes | Yes | Yes |
 | HIPAA Business Associate Agreement (BAA) | — | — | — | Yes |
@@ -181,7 +208,7 @@ Pricing and feature data below was collected from each vendor's public listings 
 
 | App | Price | Platforms | Languages | Prediction | Offline | Sync | Emergency |
 |---|---|---|---|---|---|---|---|
-| **Prism AAC** | **Free + $19 / $49 / $99 per month** | **Web (PWA), iOS, Android, desktop** | **12 + RTL** | **5-signal adaptive, seeded** | **✅ full** | **✅ Hivemind** | **✅ every tier** |
+| **Prism AAC** | **Free + $19 / $49 / $99 per month** | **Web (PWA), iOS, Android, desktop** | **12 + RTL** | **5-signal adaptive, 300+ seeded** | **✅ full** | **✅ Hivemind** | **✅ every tier** |
 | Proloquo2Go (AssistiveWare) | $249.99 one-time | iOS / iPadOS | 5 | symbol-grid | ✅ | iCloud only | — |
 | TouchChat HD (Saltillo) | $149.99 – $299.99 one-time | iOS / iPadOS | ~8 | vocab pack | ✅ | iCloud | — |
 | LAMP Words for Life (PRC-Saltillo) | $299.99 one-time | iOS / iPadOS | 4 | motor-plan | ✅ | iCloud | — |
@@ -198,7 +225,7 @@ Pricing and feature data below was collected from each vendor's public listings 
 
 - **Open source under AGPL‑3.0** — eligible for NIH / NSF / disability-research grants. The largest established AAC apps (Proloquo2Go, TouchChat, LAMP, TD Snap) are all closed-source iOS-only purchases at $150–$300 per device.
 - **Cross-platform PWA + native** — runs in any modern browser, installs as a PWA on iOS / Android / desktop, no app-store gating. Most established AAC vendors are iPad-locked.
-- **Free tier is genuinely usable** — full AAC keyboard, prediction, 58 default phrases, 12 languages, TTS, offline mode, and emergency flow all work without an account. Paid tiers add cloud sync, AI Chat, premium TTS voices, and clinical modules.
+- **Free tier is genuinely usable** — full AAC keyboard, 300+ phrases in 22 categories, prediction, 12 languages, Schedule & Tasks, 3 AAC games, math expression builder, TTS, offline mode, and emergency flow all work without an account. Paid tiers add cloud sync, AI Chat/Math Tutor, premium TTS voices, Marketplace modules, and clinical tools.
 - **Emergency response built in** — a 5-tier dispatch chain (Synalux Direct → SMS → email → tel:// → offline queue) ships in `services/emergencyService.ts`. Established AAC apps have no equivalent — emergency communication is left to the user / caregiver.
 - **Adaptive prediction with bundled vocab seed** — typing "goo" surfaces "goodbye" / "going" on a brand-new install (no prior usage history needed). Most competitors either require manual vocab setup or use static symbol grids without learning.
 - **Synalux clinical platform integration** (Enterprise) — caregiver notes, BCBA documentation, HIPAA-aware audit trails, and AI-assisted clinical authoring run through the same backend as the Synalux portal. Standalone competitors have no equivalent platform.
@@ -241,9 +268,9 @@ Themes apply via CSS custom properties on the root container — no per-componen
 - **State:** zustand 5 with localStorage persistence
 - **Speech:** Web Speech API (TTS + STT — both run on-device in the browser)
 - **Sync:** Supabase (same project as Synalux portal) with realtime subscriptions
-- **Layout:** Inline-docked panels — Categories, Math, AI Chat, Caregiver Notes render above the keyboard so the soft keyboard stays usable while a panel is open
-- **Theme:** Light (default) / Dark, plus High Contrast — driven by CSS variables; persisted in `settingsStore`
-- **Tests:** Vitest unit/integration — **195 tests across 14 files**. Plus Playwright e2e (`e2e/core-flows.spec.ts`) running against the live deploy across 11 viewport projects (desktop, iPhone 6.1/6.5/6.9 ± landscape, iPad 7"/13" ± landscape).
+- **Layout:** Inline-docked panels — Categories, Math, AI Chat, Caregiver Notes, Schedule, Games, Marketplace render as full panels (keyboard hides when panels are open)
+- **Theme:** Light (default) / Dark, plus High Contrast (WCAG AAA — black/yellow) — driven by CSS variables; persisted in `settingsStore`
+- **Tests:** Vitest unit/integration — **345 tests across 21 files**. Plus Playwright e2e (`e2e/core-flows.spec.ts`) running against the live deploy across 11 viewport projects (desktop, iPhone 6.1/6.5/6.9 ± landscape, iPad 7"/13" ± landscape).
 
 ### Speed-critical path routing
 
@@ -281,13 +308,13 @@ The **Speak button never blocks** on correction. If a background suggestion has 
 ```
 prism-aac/
   app/               Next.js App Router (single page) + globals.css theme tokens
-  components/        React components (13 files)
-  constants/         Default data — categories, phrases, math, keyboard layouts, ordering sequences
+  components/        React components (18 files — Keyboard, Categories, Math, Schedule, Games, Marketplace, AI Chat, Caregiver, Settings, History, etc.)
+  constants/         Default data — 22 categories, 300+ phrases, phrase translations (12 langs), math symbols, keyboard layouts (12 scripts), ordering sequences
   engine/            Prediction engine, caregiver actions, color coding, i18n loader
-  i18n/              12 locale JSONs (en, es, fr, pt, ro, uk, ru, de, ja, ko, zh, ar)
-  services/          AI routing, speech (Web Speech + Azure Neural TTS), haptic feedback, Supabase sync
-  store/             zustand stores (6 files) with persistence
-  tests/             Vitest test suite (13 files, 187 tests)
+  i18n/              12 locale JSONs (en, es, fr, pt, ro, uk, ru, de, ja, ko, zh, ar) — 173+ keys each
+  services/          AI routing, speech (Web Speech + Azure Neural TTS), haptic feedback, pictograms (ARASAAC + AI), Supabase sync, emergency
+  store/             zustand stores (7 files) with persistence — messages, predictions, categories, settings, UI, auth, schedule
+  tests/             Vitest test suite (21 files, 345 tests)
   e2e/               Playwright end-to-end tests against the deployed app
                      (11 viewport projects — desktop + iPhone + iPad,
                      portrait + landscape)
@@ -302,7 +329,7 @@ prism-aac/
 ```bash
 npm install
 npm run dev       # http://localhost:3000
-npm run test      # 187 unit/integration tests across 13 files
+npm run test      # 345 unit/integration tests across 21 files
 npm run e2e       # full Playwright matrix against the deployed app
                   # (override BASE_URL=http://localhost:3000 to point at dev)
 npm run build     # production build
