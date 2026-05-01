@@ -20,8 +20,10 @@ interface SettingsState {
   headTrackingDwellMs: number;
   headTrackingSensitivity: number;
   precisionTouchEnabled: boolean;
+  cameraInputEnabled: boolean;
+  cameraTrackingTarget: string;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'precisionTouchEnabled'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'precisionTouchEnabled' | 'cameraInputEnabled' | 'cameraTrackingTarget'>>,
   ) => void;
   setTheme: (theme: Theme) => void;
 }
@@ -41,6 +43,8 @@ export const useSettingsStore = create<SettingsState>()(
       headTrackingDwellMs: 1200,
       headTrackingSensitivity: 5,
       precisionTouchEnabled: true,
+      cameraInputEnabled: true,
+      cameraTrackingTarget: 'right_index',
       update: (partial) => set((s) => ({ ...s, ...partial })),
       setTheme: (theme) => set({ theme }),
     }),
@@ -54,7 +58,7 @@ export const useSettingsStore = create<SettingsState>()(
         if (version < 4) return { ...s, outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5, precisionTouchEnabled: true };
         if (version < 5) return { ...s, headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5, precisionTouchEnabled: true };
         if (version < 6) return { ...s, precisionTouchEnabled: true };
-        if (version < 7) return { ...s };
+        if (version < 7) return { ...s, cameraInputEnabled: true, cameraTrackingTarget: 'right_index' };
         return s;
       },
     },

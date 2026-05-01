@@ -15,6 +15,7 @@ import HistoryModal from './HistoryModal';
 import SettingsModal from './SettingsModal';
 import AlertOverlay from './AlertOverlay';
 import HeadTrackingOverlay from './HeadTrackingOverlay';
+import CameraInputOverlay from './CameraInputOverlay';
 import SyncProvider from './SyncProvider';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useCategoryStore } from '@/store/categoryStore';
@@ -173,6 +174,7 @@ export default function PrismApp() {
           <HistoryModal />
           <SettingsModal />
           <HeadTrackingOverlay />
+          <CameraInputOverlay />
         </div>
       </SyncProvider>
     </ErrorBoundary>

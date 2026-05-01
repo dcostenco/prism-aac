@@ -1,0 +1,169 @@
+'use client';
+
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useSettingsStore } from '@/store/settingsStore';
+import {
+  startPoseTracker,
+  isPoseTrackingSupported,
+  type PoseTrackerHandle,
+  type TrackingTarget,
+} from '@/services/bodyPoseService';
+import { tapFeedback } from '@/services/feedback';
+
+/**
+ * Camera Input Overlay — auto-starts camera-based finger/arm tracking.
+ *
+ * Uses MediaPipe Pose to detect the user's finger/arm position via
+ * the webcam and maps it to cursor position on screen. Enabled by
+ * default — the camera permission prompt fires on first load.
+ *
+ * Tracking targets: right_index (default), left_index, right_wrist,
+ * left_wrist, right_elbow, left_elbow, nose, etc.
+ */
+
+type Status = 'starting' | 'tracking' | 'lost' | 'stopped';
+
+export default function CameraInputOverlay() {
+  const enabled = useSettingsStore(s => s.cameraInputEnabled);
+  const target = useSettingsStore(s => s.cameraTrackingTarget) as TrackingTarget;
+  const dwellMs = useSettingsStore(s => s.headTrackingDwellMs);
+  const sensitivity = useSettingsStore(s => s.headTrackingSensitivity);
+
+  const [status, setStatus] = useState<Status>('stopped');
+  const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
+  const [dwellProgress, setDwellProgress] = useState(0);
+
+  const handleRef = useRef<PoseTrackerHandle | null>(null);
+  const dwellStartRef = useRef(0);
+  const dwellElementRef = useRef<Element | null>(null);
+  const rafRef = useRef(0);
+
+  const animateDwell = useCallback(() => {
+    if (!dwellElementRef.current || dwellStartRef.current === 0) {
+      setDwellProgress(0);
+      return;
+    }
+    const progress = Math.min(1, (Date.now() - dwellStartRef.current) / dwellMs);
+    setDwellProgress(progress);
+    if (progress < 1) rafRef.current = requestAnimationFrame(animateDwell);
+  }, [dwellMs]);
+
+  useEffect(() => {
+    if (!enabled || !isPoseTrackingSupported()) {
+      if (handleRef.current) { handleRef.current.stop(); handleRef.current = null; }
+      setStatus('stopped');
+      return;
+    }
+
+    const handle = startPoseTracker({
+      dwellMs,
+      sensitivity,
+      smoothing: 0.15,
+      trackingTarget: target,
+      cursorSmoothing: 0.12,
+      onMove(x, y) {
+        setCursorPos({ x, y });
+
+        const el = document.elementFromPoint(x, y);
+        const interactive = el?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? null;
+        if (interactive) {
+          if (interactive !== dwellElementRef.current) {
+            dwellElementRef.current = interactive;
+            dwellStartRef.current = Date.now();
+            cancelAnimationFrame(rafRef.current);
+            rafRef.current = requestAnimationFrame(animateDwell);
+          }
+        } else {
+          dwellElementRef.current = null;
+          dwellStartRef.current = 0;
+          setDwellProgress(0);
+          cancelAnimationFrame(rafRef.current);
+        }
+      },
+      onDwell() {
+        tapFeedback();
+        setDwellProgress(0);
+        dwellElementRef.current = null;
+        dwellStartRef.current = 0;
+      },
+      onStatusChange(s) { setStatus(s); },
+    });
+
+    handleRef.current = handle;
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      handle.stop();
+      handleRef.current = null;
+    };
+  }, [enabled, target, dwellMs, sensitivity, animateDwell]);
+
+  if (!enabled || status === 'stopped') return null;
+
+  const statusColor = status === 'tracking' ? '#4CAF50' : status === 'lost' ? '#FF9800' : '#2196F3';
+
+  return (
+    <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9998 }} aria-hidden="true">
+      {/* Cursor */}
+      <div
+        style={{
+          position: 'absolute',
+          left: cursorPos.x - 18,
+          top: cursorPos.y - 18,
+          width: 36,
+          height: 36,
+          borderRadius: '50%',
+          backgroundColor: statusColor,
+          opacity: 0.85,
+          border: '3px solid white',
+          boxShadow: `0 0 16px ${statusColor}80`,
+          transition: 'left 0.06s linear, top 0.06s linear',
+        }}
+      />
+
+      {/* Dwell ring */}
+      {dwellProgress > 0 && (
+        <svg
+          width="50" height="50"
+          style={{
+            position: 'absolute',
+            left: cursorPos.x - 25,
+            top: cursorPos.y - 25,
+            transition: 'left 0.06s linear, top 0.06s linear',
+          }}
+        >
+          <circle cx="25" cy="25" r="22" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
+          <circle
+            cx="25" cy="25" r="22"
+            fill="none" stroke="#4CAF50" strokeWidth="4"
+            strokeDasharray={Math.PI * 44}
+            strokeDashoffset={Math.PI * 44 * (1 - dwellProgress)}
+            strokeLinecap="round"
+            transform="rotate(-90 25 25)"
+          />
+        </svg>
+      )}
+
+      {/* Status badge */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 8,
+          left: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
+          background: 'rgba(0,0,0,0.5)',
+          color: 'white',
+          padding: '3px 10px',
+          borderRadius: 16,
+          fontSize: 11,
+          fontWeight: 600,
+        }}
+      >
+        <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: statusColor, display: 'inline-block' }} />
+        {status === 'tracking' ? `Tracking ${target.replace('_', ' ')}` : status}
+      </div>
+    </div>
+  );
+}
