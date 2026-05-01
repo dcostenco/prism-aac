@@ -78,7 +78,7 @@ export interface HistoryEntry {
 }
 
 export type KeyboardMode = 'letters' | 'numbers' | 'symbols';
-export type SidePanelView = 'none' | 'categories' | 'category-detail' | 'ordering' | 'math' | 'caregiver' | 'ai-chat';
+export type SidePanelView = 'none' | 'categories' | 'category-detail' | 'ordering' | 'math' | 'caregiver' | 'ai-chat' | 'schedule' | 'games' | 'marketplace';
 
 // ── Caregiver Notes ──
 

@@ -7,6 +7,9 @@ import Keyboard from './Keyboard';
 import CategoryPanel from './CategoryPanel';
 import CaregiverPanel from './CaregiverPanel';
 import AIChatPanel from './AIChatPanel';
+import SchedulePanel from './SchedulePanel';
+import GamesPanel from './GamesPanel';
+import MarketplacePanel from './MarketplacePanel';
 import MathPanel from './MathPanel';
 import HistoryModal from './HistoryModal';
 import SettingsModal from './SettingsModal';
@@ -100,6 +103,9 @@ export default function PrismApp() {
           <MathPanel />
           <CaregiverPanel />
           <AIChatPanel />
+          <SchedulePanel />
+          <GamesPanel />
+          <MarketplacePanel />
           {!inlinePanelOpen && (
             <div className="flex-1 flex flex-col min-h-0">
               <Keyboard />

@@ -16,6 +16,9 @@ interface UIState {
   openMath: () => void;
   openCaregiver: () => void;
   openAIChat: () => void;
+  openSchedule: () => void;
+  openGames: () => void;
+  openMarketplace: () => void;
   closeSidePanel: () => void;
   selectCategory: (id: string) => void;
   backToCategories: () => void;
@@ -49,6 +52,9 @@ export const useUIStore = create<UIState>()((set) => ({
   openMath: () => set((s) => ({ sidePanel: s.sidePanel === 'math' ? 'none' : 'math' })),
   openCaregiver: () => set((s) => ({ sidePanel: s.sidePanel === 'caregiver' ? 'none' : 'caregiver' })),
   openAIChat: () => set((s) => ({ sidePanel: s.sidePanel === 'ai-chat' ? 'none' : 'ai-chat' as SidePanelView })),
+  openSchedule: () => set((s) => ({ sidePanel: s.sidePanel === 'schedule' ? 'none' : 'schedule' as SidePanelView })),
+  openGames: () => set((s) => ({ sidePanel: s.sidePanel === 'games' ? 'none' : 'games' as SidePanelView })),
+  openMarketplace: () => set((s) => ({ sidePanel: s.sidePanel === 'marketplace' ? 'none' : 'marketplace' as SidePanelView })),
   closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, activeSequenceId: null }),
   selectCategory: (id) => set({ sidePanel: 'category-detail', activeCategoryId: id }),
   backToCategories: () => set({ sidePanel: 'categories', activeCategoryId: null, activeSequenceId: null }),

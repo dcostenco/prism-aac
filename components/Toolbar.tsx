@@ -14,7 +14,7 @@ const SYNC_ICONS: Record<string, string> = {
 };
 
 export default function Toolbar() {
-  const { openCategories, openMath, openCaregiver, openAIChat, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
+  const { openCategories, openMath, openCaregiver, openAIChat, openSchedule, openGames, openMarketplace, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
   const { soundEnabled, toggleSound, appendText } = useMessageStore();
   const language = useSettingsStore((s) => s.language);
   const syncStatus = useSyncStatus();
@@ -84,6 +84,9 @@ export default function Toolbar() {
           </button>
         )}
         <button className={btn} onClick={tap(openCaregiver)} aria-label={t('notes')}>📋 {t('notes')}</button>
+        <button className={btn} onClick={tap(openSchedule)} aria-label={t('schedule')}>📅 {t('schedule')}</button>
+        <button className={btn} onClick={tap(openGames)} aria-label={t('games')}>🎮 {t('games')}</button>
+        <button className={btn} onClick={tap(openMarketplace)} aria-label={t('marketplace')}>🏪 {t('marketplace')}</button>
       </div>
       <div className="flex gap-2 items-center">
         <span className="text-xs text-dim mr-1" title={`Sync: ${syncStatus}`}>{SYNC_ICONS[syncStatus] ?? '⬡'}</span>
