@@ -259,5 +259,8 @@
   "export_import": "Export / Import",
   "export_import_desc": "Copiază categoriile, frazele și setările personalizate pentru a le lipi pe alt dispozitiv sau aplicație.",
   "export_clipboard": "Copiază în clipboard",
-  "import_clipboard": "Lipește din clipboard"
+  "import_clipboard": "Lipește din clipboard",
+  "mp_browse_desc": "Atinge orice element pentru a-l instala. Seturile de vocabular se activează imediat. Elementele blocate necesită un abonament superior.",
+  "mp_tap_install": "Atinge pentru a instala",
+  "mp_active": "Activ"
 }

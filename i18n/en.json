@@ -259,5 +259,8 @@
   "export_import": "Export / Import",
   "export_import_desc": "Copy your custom categories, phrases, and settings to paste into another device or app.",
   "export_clipboard": "Copy to clipboard",
-  "import_clipboard": "Paste from clipboard"
+  "import_clipboard": "Paste from clipboard",
+  "mp_browse_desc": "Tap any item to install it. Vocabulary sets activate immediately. Locked items require a higher subscription tier.",
+  "mp_tap_install": "Tap to install",
+  "mp_active": "Active"
 }
