@@ -2,11 +2,12 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { speak } from '@/services/speechService';
+import { speak, speakWord } from '@/services/speechService';
 import { tapFeedback, deleteFeedback } from '@/services/feedback';
 import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
+import { getTTSCode } from '@/engine/i18n';
 import { TONE_OPTIONS } from '@/services/azureTTS';
 import { translateText, translateTextSync } from '@/services/translateService';
 
@@ -21,12 +22,24 @@ export default function MessageBar() {
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
   const [translated, setTranslated] = useState<string | null>(null);
 
+  const prevTextRef = useRef(text);
   useEffect(() => {
+    const prev = prevTextRef.current;
+    prevTextRef.current = text;
+
     setTranslated(null);
     if (language === outputLanguage || !text.trim()) return;
+
     const result = translateTextSync(text.trim(), language, outputLanguage);
-    if (result !== text.trim()) setTranslated(result);
-  }, [text, language, outputLanguage]);
+    if (result !== text.trim()) {
+      setTranslated(result);
+      const justCompletedWord = text.endsWith(' ') && !prev.endsWith(' ') && prev.trim().length > 0;
+      if (justCompletedWord && autoSpeak && soundEnabled) {
+        const outCode = getTTSCode(outputLanguage);
+        speakWord(result, speechRate, speechVolume, outCode);
+      }
+    }
+  }, [text, language, outputLanguage, autoSpeak, soundEnabled, speechRate, speechVolume]);
 
   // Debounced background correction. As the user types, we ask the
   // /api/v1/text/correct endpoint for the most likely intended utterance.
