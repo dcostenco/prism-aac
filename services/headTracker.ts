@@ -172,7 +172,9 @@ export function startHeadTracker(
   document.body.appendChild(video);
 
   const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+  const ctxOrNull = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctxOrNull) { opts.onStatusChange('stopped'); return { stop: () => {}, videoElement: null }; }
+  const ctx = ctxOrNull;
 
   // Smoothed cursor position
   let sx = window.innerWidth / 2;

@@ -109,7 +109,11 @@ export function speakWord(word: string, rate = 0.5, volume = 1.0, lang = 'en-US'
 }
 
 function speakLocal(text: string, rate: number, volume: number, lang: string): void {
-  if (!isSpeechSupported() || !text.trim()) return;
+  if (!text.trim()) return;
+  if (!isSpeechSupported()) {
+    console.warn('[PrismAAC] Speech synthesis not available on this browser');
+    return;
+  }
   window.speechSynthesis.cancel();
   clearResumeWorkaround();
 

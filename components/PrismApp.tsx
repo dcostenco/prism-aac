@@ -31,12 +31,46 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   render() {
     if (this.state.error) {
       return (
-        <div className="h-svh flex flex-col items-center justify-center surface-app p-8 text-center">
-          <p className="text-[#F44336] text-2xl font-bold mb-4">Something went wrong</p>
-          <p className="text-muted mb-6">{this.state.error.message}</p>
-          <button onClick={() => window.location.reload()} className="bg-[#4CAF50] text-white px-8 py-3 rounded-xl text-lg font-semibold">
-            Tap to reload
-          </button>
+        <div className="h-svh flex flex-col bg-white p-4">
+          <p className="text-[#F44336] text-lg font-bold mb-2">Error — Emergency AAC Mode</p>
+          <input
+            id="emergency-input"
+            type="text"
+            placeholder="Type here..."
+            className="border-2 border-black rounded-xl px-4 py-3 text-2xl mb-2"
+            autoFocus
+          />
+          <div className="flex gap-2 mb-2">
+            <button
+              onClick={() => {
+                const el = document.getElementById('emergency-input') as HTMLInputElement;
+                if (el?.value && 'speechSynthesis' in window) {
+                  const u = new SpeechSynthesisUtterance(el.value);
+                  window.speechSynthesis.speak(u);
+                }
+              }}
+              className="flex-1 bg-[#4CAF50] text-white px-4 py-4 rounded-xl text-xl font-bold"
+            >
+              ▶ Speak
+            </button>
+            <button onClick={() => window.location.reload()} className="bg-[#2196F3] text-white px-4 py-4 rounded-xl text-xl font-bold">
+              Reload
+            </button>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {['Help', 'Yes', 'No', 'Stop', 'Bathroom', 'Water', 'Hungry', 'Pain'].map((w) => (
+              <button key={w} onClick={() => {
+                const el = document.getElementById('emergency-input') as HTMLInputElement;
+                if (el) el.value = w;
+                if ('speechSynthesis' in window) {
+                  const u = new SpeechSynthesisUtterance(w);
+                  window.speechSynthesis.speak(u);
+                }
+              }} className="bg-gray-100 border-2 border-gray-300 rounded-xl py-3 text-lg font-bold">
+                {w}
+              </button>
+            ))}
+          </div>
         </div>
       );
     }

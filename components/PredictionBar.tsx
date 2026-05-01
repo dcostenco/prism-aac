@@ -38,9 +38,9 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
 
   useEffect(() => {
     let cancelled = false;
-    getPictogramUrl(word, language, pictureMode).then((url) => {
-      if (!cancelled) setIconUrl(url);
-    });
+    getPictogramUrl(word, language, pictureMode)
+      .then((url) => { if (!cancelled) setIconUrl(url); })
+      .catch(() => { if (!cancelled) setIconUrl(null); });
     return () => { cancelled = true; };
   }, [word, language, pictureMode]);
 

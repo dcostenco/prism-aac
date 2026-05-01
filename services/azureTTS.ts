@@ -119,6 +119,10 @@ export async function speakAzure(
 
   let url: string | null = null;
   try {
+    // 3-second timeout: if Azure hangs, fall back to local TTS immediately.
+    // For AAC, latency > 2s is unacceptable — the child needs their voice NOW.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
     const res = await fetch(`${SYNALUX_API}/tts`, {
       method: 'POST',
       headers: {
@@ -126,7 +130,9 @@ export async function speakAzure(
         'Authorization': `Bearer ${authToken}`,
       },
       body: JSON.stringify({ ssml, format: 'audio-24khz-96kbitrate-mono-mp3' }),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!res.ok) return false;
 
