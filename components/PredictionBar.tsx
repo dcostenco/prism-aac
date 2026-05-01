@@ -76,21 +76,20 @@ export default function PredictionBar() {
 
   useEffect(() => {
     const defaults = getPredictionsForLanguage(language);
-    if (!text.trim() || language !== 'en') {
+    if (!text.trim()) {
       prevRef.current = defaults;
       setDisplayed(defaults);
-      if (language === 'en' && text.trim()) updatePredictions(text);
       return;
     }
-    updatePredictions(text);
+    updatePredictions(text, language);
   }, [text, updatePredictions, language]);
 
   useEffect(() => {
-    if (!text.trim() || language !== 'en') return;
+    if (!text.trim()) return;
     const next = computeStableSlots(prevRef.current, predictions);
     prevRef.current = next;
     setDisplayed(next);
-  }, [predictions, text, language]);
+  }, [predictions, text]);
 
   const handleTap = (word: string) => {
     tapFeedback();
