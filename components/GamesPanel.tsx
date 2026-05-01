@@ -203,7 +203,7 @@ function buildEmotionRounds(): EmotionRound[] {
 }
 
 function EmotionGame({ onBack }: { onBack: () => void }) {
-  const { t, ttsCode } = useT();
+  const { t, ttsCode, outputTtsCode } = useT();
   const { speechRate, speechVolume } = useSettingsStore();
   const [rounds] = useState<EmotionRound[]>(buildEmotionRounds);
   const [roundIdx, setRoundIdx] = useState(0);
@@ -218,7 +218,7 @@ function EmotionGame({ onBack }: { onBack: () => void }) {
     if (answer === round.correct) {
       setFeedback('correct');
       setScore((s) => s + 1);
-      speakWord(round.correct, speechRate, speechVolume, ttsCode);
+      speakWord(round.correct, speechRate, speechVolume, outputTtsCode);
       setTimeout(() => {
         setFeedback(null);
         setRoundIdx((r) => r + 1);
@@ -319,7 +319,7 @@ function scrambleLetters(word: string): string[] {
 }
 
 function WordBuilderGame({ onBack }: { onBack: () => void }) {
-  const { t, ttsCode } = useT();
+  const { t, ttsCode, outputTtsCode } = useT();
   const { speechRate, speechVolume } = useSettingsStore();
   const [wordIdx, setWordIdx] = useState(0);
   const [score, setScore] = useState(0);
@@ -347,13 +347,13 @@ function WordBuilderGame({ onBack }: { onBack: () => void }) {
     if (isComplete && currentWord === challenge?.word) {
       setFeedback('correct');
       setScore((s) => s + 1);
-      speakWord(challenge.word.toLowerCase(), speechRate, speechVolume, ttsCode);
+      speakWord(challenge.word.toLowerCase(), speechRate, speechVolume, outputTtsCode);
       const timeout = setTimeout(() => {
         setWordIdx((w) => w + 1);
       }, 1500);
       return () => clearTimeout(timeout);
     }
-  }, [isComplete, currentWord, challenge, speechRate, speechVolume, ttsCode]);
+  }, [isComplete, currentWord, challenge, speechRate, speechVolume, outputTtsCode]);
 
   const handleTapLetter = (idx: number) => {
     tapFeedback();

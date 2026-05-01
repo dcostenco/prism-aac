@@ -12,7 +12,7 @@ import { TONE_OPTIONS } from '@/services/azureTTS';
 export default function MessageBar() {
   const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
-  const { t, ttsCode } = useT();
+  const { t, ttsCode, outputTtsCode } = useT();
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showTones, setShowTones] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
@@ -59,8 +59,8 @@ export default function MessageBar() {
       setSuggestion(null);
     }
     addToHistory(toSpeak);
-    speak(toSpeak, speechRate, speechVolume, ttsCode, activeTone);
-  }, [text, soundEnabled, suggestion, speechRate, speechVolume, ttsCode, activeTone, addToHistory, setText]);
+    speak(toSpeak, speechRate, speechVolume, outputTtsCode, activeTone);
+  }, [text, soundEnabled, suggestion, speechRate, speechVolume, outputTtsCode, activeTone, addToHistory, setText]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }

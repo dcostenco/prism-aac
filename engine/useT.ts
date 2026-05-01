@@ -5,12 +5,10 @@ import { t as translate, getTTSCode, isRTL, loadLanguage, isLanguageLoaded } fro
 
 export function useT() {
   const language = useSettingsStore((s) => s.language);
+  const outputLanguage = useSettingsStore((s) => s.outputLanguage);
   const [ready, setReady] = useState(isLanguageLoaded(language));
 
   useEffect(() => {
-    // Async locale loader: must flip `ready` based on the network result; the
-    // synchronous-set fast path avoids a re-render flash when the locale is
-    // already in memory.
     /* eslint-disable react-hooks/set-state-in-effect */
     if (isLanguageLoaded(language)) { setReady(true); return; }
     setReady(false);
@@ -19,5 +17,12 @@ export function useT() {
   }, [language]);
 
   const tFn = useCallback((key: string) => translate(key, language), [language]);
-  return { t: tFn, lang: language, ttsCode: getTTSCode(language), rtl: isRTL(language), ready };
+  return {
+    t: tFn,
+    lang: language,
+    ttsCode: getTTSCode(language),
+    outputTtsCode: getTTSCode(outputLanguage),
+    rtl: isRTL(language),
+    ready,
+  };
 }

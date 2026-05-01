@@ -16,7 +16,7 @@ export default function Keyboard() {
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
-  const { t, ttsCode } = useT();
+  const { t, ttsCode, outputTtsCode } = useT();
   const letterRows = getLetterRows(language);
 
   const rows = keyboardMode === 'letters' ? letterRows : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
@@ -66,7 +66,7 @@ export default function Keyboard() {
       // user hears "we can help" instead of fragmented "we" → "can" → "help".
       // speakLocal() cancels any in-flight utterance, so each space
       // restarts speech with the latest accumulated text.
-      if (autoSpeak && soundEnabled) speakWord(currentText.trim(), speechRate, speechVolume, ttsCode);
+      if (autoSpeak && soundEnabled) speakWord(currentText.trim(), speechRate, speechVolume, outputTtsCode);
     }
     appendChar(' ');
   }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar]);
@@ -76,8 +76,8 @@ export default function Keyboard() {
     const currentText = useMessageStore.getState().text.trim();
     if (!currentText || !soundEnabled) return;
     addToHistory(currentText);
-    speak(currentText, speechRate, speechVolume, ttsCode, activeTone);
-  }, [soundEnabled, speechRate, speechVolume, addToHistory, ttsCode, activeTone]);
+    speak(currentText, speechRate, speechVolume, outputTtsCode, activeTone);
+  }, [soundEnabled, speechRate, speechVolume, addToHistory, outputTtsCode, activeTone]);
 
   const handleBackspace = useCallback(() => {
     deleteFeedback();

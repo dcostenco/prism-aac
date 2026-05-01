@@ -64,7 +64,7 @@ export default function MathPanel() {
   const { appendText } = useMessageStore();
   const { speechRate, speechVolume } = useSettingsStore();
   const profile = useAuthStore((s) => s.profile);
-  const { t, ttsCode } = useT();
+  const { t, ttsCode, outputTtsCode } = useT();
   const [expression, setExpression] = useState('');
   const [showMore, setShowMore] = useState(false);
   const [aiHint, setAiHint] = useState('');
@@ -99,8 +99,8 @@ export default function MathPanel() {
   const speakExpression = useCallback(() => {
     tapFeedback();
     if (!expression.trim()) return;
-    speakWord(expressionToSpeech(expression), speechRate, speechVolume, ttsCode);
-  }, [expression, speechRate, speechVolume, ttsCode]);
+    speakWord(expressionToSpeech(expression), speechRate, speechVolume, outputTtsCode);
+  }, [expression, speechRate, speechVolume, outputTtsCode]);
 
   const sendToMessage = () => {
     tapFeedback();
@@ -129,7 +129,7 @@ export default function MathPanel() {
         setAiHint(buffer);
       });
       setAiHint(buffer);
-      if (buffer) speakWord(buffer, speechRate, speechVolume, ttsCode);
+      if (buffer) speakWord(buffer, speechRate, speechVolume, outputTtsCode);
     } catch {
       setAiHint('Could not reach the math helper right now.');
     }
@@ -212,7 +212,7 @@ export default function MathPanel() {
             </div>
             {aiHint && (
               <button
-                onClick={() => { tapFeedback(); speakWord(aiHint, speechRate, speechVolume, ttsCode); }}
+                onClick={() => { tapFeedback(); speakWord(aiHint, speechRate, speechVolume, outputTtsCode); }}
                 className="aac-btn mt-2 text-[#2196F3] text-sm font-bold"
               >
                 🔊 Read aloud

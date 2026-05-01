@@ -33,7 +33,7 @@ export default function AIChatPanel() {
   const { text, appendText, clearAll, autoSpeak, soundEnabled } = useMessageStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
   const profile = useAuthStore((s) => s.profile);
-  const { t, ttsCode } = useT();
+  const { t, ttsCode, outputTtsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
@@ -51,9 +51,9 @@ export default function AIChatPanel() {
     (line: string) => {
       tapFeedback();
       appendText(line);
-      if (autoSpeak && soundEnabled) speakWord(line, speechRate, speechVolume, ttsCode);
+      if (autoSpeak && soundEnabled) speakWord(line, speechRate, speechVolume, outputTtsCode);
     },
-    [appendText, autoSpeak, soundEnabled, speechRate, speechVolume, ttsCode],
+    [appendText, autoSpeak, soundEnabled, speechRate, speechVolume, outputTtsCode],
   );
 
   // Stop listening when modal closes.

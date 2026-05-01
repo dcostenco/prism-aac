@@ -65,7 +65,7 @@ export default function PredictionBar() {
   const { text, appendWord, autoSpeak, soundEnabled } = useMessageStore();
   const { predictions, updatePredictions, learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
-  const { ttsCode } = useT();
+  const { outputTtsCode } = useT();
   const langDefaults = getPredictionsForLanguage(language);
   const [displayed, setDisplayed] = useState<string[]>(langDefaults);
   const prevRef = useRef<string[]>(langDefaults);
@@ -104,7 +104,7 @@ export default function PredictionBar() {
     learnWord(word.toLowerCase(), previousWord?.toLowerCase());
     if (autoSpeak && soundEnabled) {
       const allWords = midWord ? [...words.slice(0, -1), word] : [...words, word];
-      speakWord(allWords.join(' '), speechRate, speechVolume, ttsCode);
+      speakWord(allWords.join(' '), speechRate, speechVolume, outputTtsCode);
     }
   };
 
