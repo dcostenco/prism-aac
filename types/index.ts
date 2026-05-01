@@ -11,6 +11,7 @@ export interface Phrase {
   id: string;
   categoryId: string;
   text: string;
+  translations?: Partial<Record<string, string>>;
   sortOrder: number;
   isCustom: boolean;
   usageCount: number;

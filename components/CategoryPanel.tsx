@@ -12,6 +12,7 @@ import { MathCategory } from '@/types';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
 import PhraseTile from './PhraseTile';
+import { getPhraseText } from '@/constants/phraseTranslations';
 
 /**
  * Category / Math / Ordering panel — renders inline, docked above the
@@ -71,6 +72,7 @@ export default function CategoryPanel() {
   const { allCategories, getPhrasesForCategory, getSequencesForCategory } = useCategoryStore();
   const { learnWord } = usePredictionStore();
   const gridSize = useSettingsStore((s) => s.gridSize);
+  const language = useSettingsStore((s) => s.language);
   const { speechRate, speechVolume } = useSettingsStore();
 
   const isOpen =
@@ -193,13 +195,14 @@ export default function CategoryPanel() {
         )}
         <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
           {phrases.map((p) => {
-            const firstWord = p.text.split(/\s+/)[0];
+            const localText = getPhraseText(p.id, language, p.text);
+            const firstWord = localText.split(/\s+/)[0];
             const color = CATEGORY_COLORS[classifyWord(firstWord)];
             return (
               <PhraseTile
                 key={p.id}
-                phrase={p.text}
-                onClick={() => handlePhrase(p.text)}
+                phrase={localText}
+                onClick={() => handlePhrase(localText)}
                 className={`${btn} ${TILE_MIN_H[gridSize]}`}
                 style={{ borderLeftColor: color, borderLeftWidth: '5px' }}
               />
