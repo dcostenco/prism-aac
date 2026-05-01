@@ -1,28 +1,25 @@
 'use client';
 
 /**
- * Voice input — continuous speech-to-text via the Web Speech API.
+ * Voice input — speech-to-text via the Web Speech API.
  *
- * Chrome/Edge/Safari ship `webkitSpeechRecognition`; Firefox does not. The
- * recognizer runs entirely client-side (no audio leaves the device) and
- * streams interim + final transcripts. We use it to power the AI Chat mic
- * button: tap once to start a hands-free conversation, tap again to stop.
- *
- * Why not server-side STT? Latency, cost, and privacy. The browser engine
- * is already there for free, runs offline on most devices, and never has
- * to send a child's voice to a third party.
+ * Uses proper BCP-47 language codes (en-US, es-ES, ru-RU) for accurate
+ * recognition across all 12 supported languages. Auto-restarts on browser
+ * silence stops. Configurable silence detection for auto-stop mode.
  */
 
 type SpeechRecognitionLike = {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
+  maxAlternatives: number;
   start: () => void;
   stop: () => void;
   abort: () => void;
-  onresult: ((event: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
+  onresult: ((event: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string; confidence: number } }> }) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
+  onspeechend: (() => void) | null;
 };
 
 type VoiceWindow = Window & {
@@ -47,6 +44,7 @@ export function startVoiceInput(opts: {
   onSilence?: () => void;
   onError?: (err: string) => void;
   silenceMs?: number;
+  autoStop?: boolean;
 }): VoiceSession | null {
   if (!isVoiceInputSupported()) return null;
   const w = window as VoiceWindow;
@@ -54,16 +52,27 @@ export function startVoiceInput(opts: {
   if (!Ctor) return null;
 
   const rec = new Ctor();
-  rec.continuous = true;
+  rec.continuous = !opts.autoStop;
   rec.interimResults = true;
-  rec.lang = opts.lang || (typeof navigator !== 'undefined' ? navigator.language : 'en-US');
+  rec.maxAlternatives = 1;
+
+  const lang = opts.lang || 'en-US';
+  rec.lang = lang.includes('-') ? lang : `${lang}-${lang.toUpperCase()}`;
 
   let stopped = false;
+  let lastSpeechTime = Date.now();
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
-  const armSilence = () => {
+  const silenceThreshold = opts.silenceMs ?? 2000;
+
+  const checkSilence = () => {
     if (silenceTimer) clearTimeout(silenceTimer);
-    if (!opts.onSilence || !opts.silenceMs) return;
-    silenceTimer = setTimeout(() => { opts.onSilence?.(); }, opts.silenceMs);
+    if (stopped) return;
+    lastSpeechTime = Date.now();
+    silenceTimer = setTimeout(() => {
+      if (Date.now() - lastSpeechTime >= silenceThreshold && !stopped) {
+        opts.onSilence?.();
+      }
+    }, silenceThreshold);
   };
 
   rec.onresult = (event) => {
@@ -75,23 +84,35 @@ export function startVoiceInput(opts: {
       if (res.isFinal) final += transcript;
       else interim += transcript;
     }
-    if (interim) opts.onInterim(interim);
+    if (interim) {
+      opts.onInterim(interim);
+      checkSilence();
+    }
     if (final) {
       opts.onFinal(final);
-      armSilence();
+      checkSilence();
     }
   };
 
   rec.onerror = (event) => {
-    if (event.error === 'no-speech' || event.error === 'aborted') return;
+    if (event.error === 'no-speech') {
+      opts.onSilence?.();
+      return;
+    }
+    if (event.error === 'aborted') return;
     opts.onError?.(event.error);
   };
 
   rec.onend = () => {
-    // Browsers stop after silence even with continuous=true. Auto-restart
-    // unless the caller explicitly stopped us.
-    if (!stopped) {
+    if (!stopped && !opts.autoStop) {
       try { rec.start(); } catch { /* already running or blocked */ }
+    }
+  };
+
+  rec.onspeechend = () => {
+    if (opts.autoStop && !stopped) {
+      stopped = true;
+      try { rec.stop(); } catch {}
     }
   };
 
@@ -100,11 +121,13 @@ export function startVoiceInput(opts: {
     return null;
   }
 
+  checkSilence();
+
   return {
     stop: () => {
       stopped = true;
       if (silenceTimer) clearTimeout(silenceTimer);
-      try { rec.stop(); } catch { /* already stopped */ }
+      try { rec.stop(); } catch {}
     },
   };
 }

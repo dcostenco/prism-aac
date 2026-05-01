@@ -18,7 +18,7 @@ export default function Toolbar() {
   const { soundEnabled, toggleSound, appendText } = useMessageStore();
   const language = useSettingsStore((s) => s.language);
   const syncStatus = useSyncStatus();
-  const { t } = useT();
+  const { t, ttsCode } = useT();
   const [listening, setListening] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const voiceRef = useRef<VoiceSession | null>(null);
@@ -37,7 +37,7 @@ export default function Toolbar() {
     tapFeedback();
     if (voiceRef.current) { voiceRef.current.stop(); voiceRef.current = null; setListening(false); return; }
     const session = startVoiceInput({
-      lang: language,
+      lang: ttsCode,
       onInterim: () => {},
       onFinal: async (txt) => { const fixed = await correctText(txt.trim(), language); appendText((fixed || txt).trim() + ' '); },
       onError: () => { voiceRef.current = null; setListening(false); },

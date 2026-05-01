@@ -78,7 +78,7 @@ export default function AIChatPanel() {
       return;
     }
     const session = startVoiceInput({
-      lang: language,
+      lang: ttsCode,
       onInterim: (t) => setInterim(t),
       onFinal: async (t) => {
         const fixed = await correctText(t.trim(), language);
