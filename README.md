@@ -162,6 +162,12 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 | Word prediction (5 slots; trigram + bigram + prefix + frequency + recency) | Yes | Yes | Yes | Yes |
 | Language-specific keyboard layouts (Cyrillic, Arabic, AZERTY, diacritics) | Yes | Yes | Yes | Yes |
 | Modified Fitzgerald Key color coding (Goossens' 1992) — pronouns yellow, verbs green, nouns orange | Yes | Yes | Yes | Yes |
+| Live translation [RU]→[EN] with auto-speak | Yes | Yes | Yes | Yes |
+| Offline translation dictionary (1,450+ words per language pair) | Yes | Yes | Yes | Yes |
+| 10 vocabulary sets (My Core, WordPower, Gateway, Aphasia, etc.) | Yes | Yes | Yes | Yes |
+| Per-word visibility toggles | Yes | Yes | Yes | Yes |
+| PECS-style symbol cards (black borders, label at bottom) | Yes | Yes | Yes | Yes |
+| Export/Import configuration (clipboard JSON) | Yes | Yes | Yes | Yes |
 | Cumulative auto-speak | Yes | Yes | Yes | Yes |
 | Math Paper-style expression builder + AI Math Tutor | Yes | Yes | Yes | Yes |
 | Schedule & Tasks (First-Then board, visual timer, rewards) | Yes (5 tasks) | Yes | Yes | Yes |
@@ -179,6 +185,8 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 | AI Chat | — | Yes | Yes | Yes |
 | Azure Neural TTS — basic neural voices | — | Yes | Yes | Yes |
 | Azure Neural TTS — premium / emotional tones | — | — | Yes | Yes |
+| Clinical vocabulary (600 words × 12 langs — medical, BCBA, daily living) | — | Yes | Yes | Yes |
+| AI-powered translation (beyond offline dictionary) | — | Yes | Yes | Yes |
 | Marketplace — Game Packs, Voice Packs, Picture Editor, Music Composer | — | Yes | Yes | Yes |
 | Marketplace — AAC Designer, Video Composer | — | — | Yes | Yes |
 | Synalux platform modules (Portal, Prism Coder, etc.) | — | 8 modules | 16 modules | All 21 modules |
@@ -188,9 +196,11 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 > **Tier gating note (current state):** the client today distinguishes only "signed in vs not signed in" (`isPaid` is a boolean derived from the auth token). Standard / Advanced / Enterprise differentiation runs **server-side** in the synalux portal — model routing, quota, and module access are decided there. Per-tier client-side limits on the number of custom phrases, categories, ordering sequences, etc. are not enforced today; we removed the previously-listed quotas so the table doesn't promise behaviour the client doesn't implement.
 
 > **Roadmap (not in the table above):**
-> - **Voice input (Phase 3)** — continuous microphone-to-text. Will ship at Standard+ when it lands, paired with the existing TTS so audio in/out are bundled at the same price point. No `MediaRecorder` / `SpeechRecognition` exists in the codebase yet.
-> - **Web search inside AI Chat** — planned for Standard+. Not implemented today.
-> - **Add-your-own ordering sequence UI** — planned for Standard+. Today only the two bundled sequences (Chipotle, General Restaurant) are usable.
+> - **Expand offline dictionary to 5,000+ words** — currently 1,450 words per language pair. Target: standard conversational coverage for all 12 languages.
+> - **Voice personas** — named voices (male/female/child) with pitch settings.
+> - **Emergency contact UI** — wire existing `emergencyService.ts` to a settings form for configuring contacts and medical profile.
+> - **Web search inside AI Chat** — planned for Standard+.
+> - **Eye-tracker integration** — gaze input for severe motor impairment.
 
 ### Accessibility commitments that ride above the tier table
 
@@ -270,7 +280,8 @@ Themes apply via CSS custom properties on the root container — no per-componen
 - **Sync:** Supabase (same project as Synalux portal) with realtime subscriptions
 - **Layout:** Inline-docked panels — Categories, Math, AI Chat, Caregiver Notes, Schedule, Games, Marketplace render as full panels (keyboard hides when panels are open)
 - **Theme:** Light (default) / Dark, plus High Contrast (WCAG AAA — black/yellow) — driven by CSS variables; persisted in `settingsStore`
-- **Tests:** Vitest unit/integration — **345 tests across 21 files**. Plus Playwright e2e (`e2e/core-flows.spec.ts`) running against the live deploy across 11 viewport projects (desktop, iPhone 6.1/6.5/6.9 ± landscape, iPad 7"/13" ± landscape).
+- **Translation:** Offline dictionary (1,450+ words × 12 languages) + AI fallback. Language pair selector [RU]→[EN] in toolbar. Single `aacSpeak()` function handles all speech across the entire app.
+- **Tests:** Vitest unit/integration — **390+ tests across 24 files**. Plus Playwright e2e (`e2e/core-flows.spec.ts`) running against the live deploy across 11 viewport projects (desktop, iPhone 6.1/6.5/6.9 ± landscape, iPad 7"/13" ± landscape).
 
 ### Speed-critical path routing
 
@@ -308,13 +319,13 @@ The **Speak button never blocks** on correction. If a background suggestion has 
 ```
 prism-aac/
   app/               Next.js App Router (single page) + globals.css theme tokens
-  components/        React components (18 files — Keyboard, Categories, Math, Schedule, Games, Marketplace, AI Chat, Caregiver, Settings, History, etc.)
-  constants/         Default data — 22 categories, 300+ phrases, phrase translations (12 langs), math symbols, keyboard layouts (12 scripts), ordering sequences
-  engine/            Prediction engine, caregiver actions, color coding, i18n loader
-  i18n/              12 locale JSONs (en, es, fr, pt, ro, uk, ru, de, ja, ko, zh, ar) — 173+ keys each
-  services/          AI routing, speech (Web Speech + Azure Neural TTS), haptic feedback, pictograms (ARASAAC + AI), Supabase sync, emergency
-  store/             zustand stores (7 files) with persistence — messages, predictions, categories, settings, UI, auth, schedule
-  tests/             Vitest test suite (21 files, 345 tests)
+  components/        React components (20 files — Keyboard, Categories, Math, Schedule, Games, Marketplace, AI Chat, Caregiver, Settings, History, Prediction, Message, Toolbar, etc.)
+  constants/         Default data — 22 categories, 300+ phrases, phrase translations (12 langs), math symbols, keyboard layouts (12 scripts), ordering sequences, vocabulary sets (10), offline dictionary (500+ words × 6 langs), clinical vocabulary (600 words × 12 langs)
+  engine/            Prediction engine (per-language seeded), caregiver actions, color coding, i18n loader
+  i18n/              12 locale JSONs (en, es, fr, pt, ro, uk, ru, de, ja, ko, zh, ar) — 270+ keys each
+  services/          aacSpeak (unified speech), AI routing, translation (offline + AI), speech (Web Speech + Azure Neural TTS), haptic feedback, pictograms (ARASAAC + AI), Supabase sync, emergency, voice input
+  store/             zustand stores (7 files) with persistence — messages, predictions, categories, settings (incl. outputLanguage), UI, auth, schedule
+  tests/             Vitest test suite (24 files, 390+ tests)
   e2e/               Playwright end-to-end tests against the deployed app
                      (11 viewport projects — desktop + iPhone + iPad,
                      portrait + landscape)
@@ -329,7 +340,7 @@ prism-aac/
 ```bash
 npm install
 npm run dev       # http://localhost:3000
-npm run test      # 345 unit/integration tests across 21 files
+npm run test      # 390+ unit/integration tests across 24 files
 npm run e2e       # full Playwright matrix against the deployed app
                   # (override BASE_URL=http://localhost:3000 to point at dev)
 npm run build     # production build
