@@ -60,7 +60,7 @@ export default function Toolbar() {
   // typographic system. Larger labels also help motor-impaired users —
   // bigger hit targets, easier glance-readability.
   const btn =
-    'aac-btn h-[clamp(2.5rem,6svh,3.5rem)] px-[clamp(0.5rem,1vw,1rem)] rounded-xl surface-key text-primary font-bold text-[clamp(0.75rem,1.5vw,1.25rem)] select-none border border-theme shrink-0';
+    'aac-btn w-[clamp(2.75rem,8vw,3.75rem)] h-[clamp(2.75rem,8svh,3.75rem)] rounded-xl surface-key text-primary font-bold text-[clamp(1.25rem,3.5vw,1.75rem)] select-none border border-theme shrink-0 flex items-center justify-center';
 
   const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
 
@@ -72,7 +72,7 @@ export default function Toolbar() {
         <button className={btn} onClick={tap(openAIChat)} aria-label={t('ai_chat')} title={t('ai_chat')}>✨</button>
         {voiceSupported && (
           <button
-            className={`aac-btn h-[clamp(2.5rem,6svh,3.5rem)] px-[clamp(0.5rem,1vw,1rem)] rounded-xl font-bold text-[clamp(0.75rem,1.5vw,1.25rem)] select-none border border-theme shrink-0 ${
+            className={`aac-btn w-[clamp(2.75rem,8vw,3.75rem)] h-[clamp(2.75rem,8svh,3.75rem)] rounded-xl font-bold text-[clamp(1.25rem,3.5vw,1.75rem)] select-none border border-theme shrink-0 flex items-center justify-center ${
               listening ? 'bg-[#F44336] text-white border-transparent animate-pulse' : 'surface-key text-primary'
             }`}
             onClick={toggleMic}
@@ -95,7 +95,7 @@ export default function Toolbar() {
         <button className={btn} onClick={tap(toggleHistory)} aria-label={t('history')} title={t('history')}>📜</button>
         <button className={btn} onClick={tap(toggleSettings)} aria-label={t('settings')} title={t('settings')}>⚙️</button>
         <button
-          className={`aac-btn h-[clamp(2.5rem,6svh,3.5rem)] px-[clamp(0.5rem,1vw,1rem)] rounded-xl font-bold text-[clamp(0.75rem,1.5vw,1.25rem)] select-none border border-theme shrink-0 ${
+          className={`aac-btn w-[clamp(2.75rem,8vw,3.75rem)] h-[clamp(2.75rem,8svh,3.75rem)] rounded-xl font-bold text-[clamp(1.25rem,3.5vw,1.75rem)] select-none border border-theme shrink-0 flex items-center justify-center ${
             soundEnabled ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
           }`}
           onClick={tap(toggleSound)}
