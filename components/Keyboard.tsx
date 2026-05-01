@@ -91,7 +91,7 @@ export default function Keyboard() {
   // that the lock is engaged — important for users with reduced visual
   // acuity or attention.
   const kc =
-    'aac-key surface-key text-primary rounded-xl font-bold select-none flex items-center justify-center';
+    'aac-key surface-key text-primary rounded-lg font-bold select-none flex items-center justify-center';
   const letterSize = capsLock
     ? 'text-[clamp(1.5rem,4vw,3.5rem)]'
     : 'text-[clamp(1.25rem,3.5vw,2.75rem)]';
@@ -110,9 +110,9 @@ export default function Keyboard() {
   const shiftGlyph = capsLock ? 'A' : isUpperCase ? '⇧' : '⇪';
 
   return (
-    <div className="flex-1 flex flex-col gap-[clamp(0.15rem,0.4svh,0.375rem)] p-[clamp(0.15rem,0.3vw,0.5rem)]">
+    <div className="flex-1 flex flex-col gap-[1px] p-[2px]">
       {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-[clamp(0.15rem,0.4vw,0.5rem)] justify-center flex-1">
+        <div key={ri} className="flex gap-[1px] justify-center flex-1">
           {ri === 2 && keyboardMode === 'letters' && (
             <button
               onPointerDown={handleShiftDown}
@@ -137,7 +137,7 @@ export default function Keyboard() {
         </div>
       ))}
 
-      <div className="flex gap-[clamp(0.15rem,0.4vw,0.5rem)] flex-1">
+      <div className="flex gap-[1px] flex-1">
         <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>
