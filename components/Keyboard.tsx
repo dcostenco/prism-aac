@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { speak, speakWord } from '@/services/speechService';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
+import { SupportedLanguage, getTTSCode } from '@/engine/i18n';
 import { useT } from '@/engine/useT';
 import { translateTextSync } from '@/services/translateService';
 
@@ -68,11 +69,13 @@ export default function Keyboard() {
       // speakLocal() cancels any in-flight utterance, so each space
       // restarts speech with the latest accumulated text.
       if (autoSpeak && soundEnabled) {
-        const outputLang = useSettingsStore.getState().outputLanguage;
-        const textToSpeak = language !== outputLang
-          ? translateTextSync(currentText.trim(), language, outputLang)
+        const { outputLanguage: outLang } = useSettingsStore.getState();
+        const inputLang = useSettingsStore.getState().language;
+        const textToSpeak = inputLang !== outLang
+          ? translateTextSync(currentText.trim(), inputLang as SupportedLanguage, outLang as SupportedLanguage)
           : currentText.trim();
-        speakWord(textToSpeak, speechRate, speechVolume, outputTtsCode);
+        const outCode = getTTSCode(outLang);
+        speakWord(textToSpeak, speechRate, speechVolume, outCode);
       }
     }
     appendChar(' ');
@@ -83,8 +86,12 @@ export default function Keyboard() {
     const currentText = useMessageStore.getState().text.trim();
     if (!currentText || !soundEnabled) return;
     addToHistory(currentText);
-    speak(currentText, speechRate, speechVolume, outputTtsCode, activeTone);
-  }, [soundEnabled, speechRate, speechVolume, addToHistory, outputTtsCode, activeTone]);
+    const { outputLanguage: outLang2, language: inLang2 } = useSettingsStore.getState();
+    const speakText = inLang2 !== outLang2
+      ? translateTextSync(currentText, inLang2 as SupportedLanguage, outLang2 as SupportedLanguage)
+      : currentText;
+    speak(speakText, speechRate, speechVolume, getTTSCode(outLang2), activeTone);
+  }, [soundEnabled, speechRate, speechVolume, addToHistory, activeTone]);
 
   const handleBackspace = useCallback(() => {
     deleteFeedback();
