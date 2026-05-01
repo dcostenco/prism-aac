@@ -1,9 +1,11 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
+import { useAuthStore } from '@/store/authStore';
 import { tapFeedback } from '@/services/feedback';
 import { speakWord } from '@/services/speechService';
+import { askAI } from '@/services/aiService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useT } from '@/engine/useT';
 
@@ -47,6 +49,8 @@ const TTS_MAP: Record<string, string> = {
   '%': 'percent',
 };
 
+const MATH_TUTOR_CONTEXT = 'math-tutor';
+
 function expressionToSpeech(expr: string): string {
   let speech = expr;
   for (const [sym, word] of Object.entries(TTS_MAP)) {
@@ -59,19 +63,27 @@ export default function MathPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { appendText } = useMessageStore();
   const { speechRate, speechVolume } = useSettingsStore();
+  const profile = useAuthStore((s) => s.profile);
   const { t, ttsCode } = useT();
   const [expression, setExpression] = useState('');
   const [showMore, setShowMore] = useState(false);
+  const [aiHint, setAiHint] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   if (sidePanel !== 'math') return null;
+
+  const aiEnabled = !!profile;
 
   const addToExpression = (val: string) => {
     tapFeedback();
     setExpression((prev) => prev + val);
+    setAiHint('');
   };
 
   const backspace = () => {
     tapFeedback();
+    setAiHint('');
     setExpression((prev) => {
       if (prev.endsWith(' ')) {
         const trimmed = prev.trimEnd();
@@ -82,7 +94,7 @@ export default function MathPanel() {
     });
   };
 
-  const clearAll = () => { tapFeedback(); setExpression(''); };
+  const clearAll = () => { tapFeedback(); setExpression(''); setAiHint(''); };
 
   const speakExpression = useCallback(() => {
     tapFeedback();
@@ -95,6 +107,34 @@ export default function MathPanel() {
     if (!expression.trim()) return;
     appendText(expression.trim());
     setExpression('');
+    setAiHint('');
+  };
+
+  const askMathTutor = async (mode: 'help' | 'solve' | 'check') => {
+    if (!expression.trim() || !aiEnabled) return;
+    tapFeedback();
+    setAiLoading(true);
+    setAiHint('');
+
+    const prompts: Record<string, string> = {
+      help: `The child wrote this math expression: "${expression}". They need help understanding what to do next. Give a gentle hint — don't solve it, just guide them to the next step. Use simple words. Be encouraging. Max 2 sentences.`,
+      solve: `The child wrote: "${expression}". Show the solution step by step. Use simple language a child can understand. Use math symbols. Be encouraging — say "Great job trying!" or similar. Max 4 short steps.`,
+      check: `The child wrote: "${expression}". Check if this is correct. If there's an error, explain what went wrong gently and show how to fix it. If it's correct, celebrate! Use simple words. Max 2 sentences.`,
+    };
+
+    let buffer = '';
+    try {
+      await askAI(prompts[mode], MATH_TUTOR_CONTEXT, (delta) => {
+        buffer += delta;
+        setAiHint(buffer);
+      });
+      setAiHint(buffer);
+      if (buffer) speakWord(buffer, speechRate, speechVolume, ttsCode);
+    } catch {
+      setAiHint('Could not reach the math helper right now.');
+    }
+    setAiLoading(false);
+    setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }), 100);
   };
 
   const mathKey = 'aac-btn surface-key text-primary rounded-lg font-bold select-none border border-theme flex items-center justify-center';
@@ -115,22 +155,75 @@ export default function MathPanel() {
         </div>
       </div>
 
-      {/* Canvas — expression display */}
-      <div className="flex-1 min-h-0 flex flex-col items-center justify-center px-6 py-4 relative">
-        <div className="w-full h-full flex items-center justify-center bg-white dark:bg-[#1a1a2e] rounded-xl border-2 border-theme overflow-auto px-4">
-          <span className="text-[clamp(2rem,6vw,4rem)] font-mono text-primary tracking-wide text-center break-all">
-            {expression || <span className="text-dim text-[clamp(1rem,3vw,1.5rem)]">5 × 6 =</span>}
+      {/* Canvas — expression display + AI tutor */}
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
+        {/* Expression canvas */}
+        <div className="flex items-center justify-center bg-white dark:bg-[#1a1a2e] rounded-xl border-2 border-theme min-h-[clamp(80px,15svh,140px)] px-4 relative">
+          <span className="text-[clamp(1.75rem,5vw,3.5rem)] font-mono text-primary tracking-wide text-center break-all py-3">
+            {expression || <span className="text-dim text-[clamp(0.9rem,2.5vw,1.25rem)]">5 × 6 =</span>}
           </span>
+          <div className="absolute bottom-1.5 right-3 flex gap-1.5">
+            <button onClick={speakExpression} className="aac-btn w-8 h-8 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-sm" aria-label={t('speak')}>🔊</button>
+            <button onClick={clearAll} className="aac-btn w-8 h-8 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-xs" aria-label={t('clear')}>C</button>
+          </div>
         </div>
-        <div className="absolute bottom-2 right-8 flex gap-2">
-          <button onClick={speakExpression} className="aac-btn w-10 h-10 rounded-full surface-key text-muted flex items-center justify-center border border-theme" aria-label={t('speak')}>🔊</button>
-          <button onClick={clearAll} className="aac-btn w-10 h-10 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-sm" aria-label={t('clear')}>C</button>
-        </div>
+
+        {/* AI Tutor buttons */}
+        {aiEnabled && expression.trim() && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => askMathTutor('help')}
+              disabled={aiLoading}
+              className="aac-btn flex-1 bg-[#2196F3] text-white rounded-lg py-2.5 font-bold text-base flex items-center justify-center gap-1.5"
+            >
+              💡 Hint
+            </button>
+            <button
+              onClick={() => askMathTutor('check')}
+              disabled={aiLoading}
+              className="aac-btn flex-1 bg-[#FF9800] text-white rounded-lg py-2.5 font-bold text-base flex items-center justify-center gap-1.5"
+            >
+              ✓ Check
+            </button>
+            <button
+              onClick={() => askMathTutor('solve')}
+              disabled={aiLoading}
+              className="aac-btn flex-1 bg-[#9C27B0] text-white rounded-lg py-2.5 font-bold text-base flex items-center justify-center gap-1.5"
+            >
+              🎓 Solve
+            </button>
+          </div>
+        )}
+
+        {/* AI response */}
+        {(aiHint || aiLoading) && (
+          <div className="bg-[#E3F2FD] dark:bg-[#1a2a4a] rounded-xl p-4 border border-[#90CAF9] dark:border-[#2a4a7a]">
+            <div className="flex items-start gap-2">
+              <span className="text-2xl shrink-0">🤖</span>
+              <div className="text-primary text-base leading-relaxed">
+                {aiLoading && !aiHint ? (
+                  <span className="text-muted animate-pulse">{t('thinking')}</span>
+                ) : (
+                  aiHint.split('\n').map((line, i) => (
+                    <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
+                  ))
+                )}
+              </div>
+            </div>
+            {aiHint && (
+              <button
+                onClick={() => { tapFeedback(); speakWord(aiHint, speechRate, speechVolume, ttsCode); }}
+                className="aac-btn mt-2 text-[#2196F3] text-sm font-bold"
+              >
+                🔊 Read aloud
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Math keyboard */}
       <div className="shrink-0 border-t border-theme p-2 space-y-1.5">
-        {/* Row 1: operators + special toggle */}
         <div className="flex gap-1.5">
           <button onClick={() => { tapFeedback(); setShowMore(!showMore); }} className={`${mathKey} px-3 py-2.5 text-sm ${showMore ? 'bg-[#4CAF50] text-white border-transparent' : ''}`}>
             {showMore ? 'ABC' : 'More'}
@@ -148,7 +241,6 @@ export default function MathPanel() {
           <button onClick={backspace} className={`${mathKey} px-3 py-2.5 text-lg`} aria-label={t('backspace')}>⌫</button>
         </div>
 
-        {/* Row 2: digits + variables */}
         <div className="flex gap-1.5">
           {DIGITS.map((d) => (
             <button key={d} onClick={() => addToExpression(d)} className={`${mathKey} flex-1 py-2.5 text-xl`}>
@@ -157,7 +249,6 @@ export default function MathPanel() {
           ))}
         </div>
 
-        {/* Row 3: variables */}
         <div className="flex gap-1.5">
           {VARIABLES.map((v) => (
             <button key={v} onClick={() => addToExpression(v)} className={`${mathKey} flex-1 py-2 text-lg italic`}>
