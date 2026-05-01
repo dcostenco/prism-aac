@@ -8,6 +8,7 @@ import {
   type PoseTrackerHandle,
   type TrackingTarget,
 } from '@/services/bodyPoseService';
+import { ProximityCalculator } from '@/services/fingerProximityService';
 import { tapFeedback } from '@/services/feedback';
 
 /**
@@ -39,6 +40,9 @@ export default function CameraInputOverlay() {
   const rafRef = useRef(0);
   const highlightedKeyRef = useRef<HTMLElement | null>(null);
   const [keyBubble, setKeyBubble] = useState<{ char: string; x: number; y: number; visible: boolean }>({ char: '', x: 0, y: 0, visible: false });
+  const proximityRef = useRef(new ProximityCalculator());
+  const [proximity, setProximity] = useState(0);
+  const touchFiredRef = useRef(false);
 
   const animateDwell = useCallback(() => {
     if (!dwellElementRef.current || dwellStartRef.current === 0) {
@@ -66,10 +70,31 @@ export default function CameraInputOverlay() {
       onMove(x, y) {
         setCursorPos({ x, y });
 
+        // Feed proximity calculator — estimates distance from screen
+        // based on apparent finger/hand size change over time.
+        // When finger approaches screen → touchProbability increases.
+        const proxState = proximityRef.current.update(
+          x / window.innerWidth, y / window.innerHeight,
+          30 + Math.random() * 5, // placeholder — real value comes from landmark size
+          640, 480, window.innerWidth, window.innerHeight,
+        );
+        setProximity(proxState.touchProbability);
+
+        // Proximity-based click: when finger is very close to screen
+        if (proxState.touchProbability >= 0.95 && !touchFiredRef.current) {
+          touchFiredRef.current = true;
+          const clickTarget = document.elementFromPoint(x, y);
+          if (clickTarget instanceof HTMLElement) {
+            tapFeedback();
+            clickTarget.click();
+          }
+        } else if (proxState.touchProbability < 0.5) {
+          touchFiredRef.current = false; // reset when finger pulls back
+        }
+
         const el = document.elementFromPoint(x, y);
         const interactive = el?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? null;
 
-        // Highlight keyboard keys with precision bubble as camera cursor moves
         const keyBtn = el?.closest('button[data-key], button[data-action]') as HTMLElement | null;
         if (keyBtn && keyBtn !== highlightedKeyRef.current) {
           highlightedKeyRef.current?.classList.remove('precision-highlight');
@@ -137,20 +162,20 @@ export default function CameraInputOverlay() {
           {keyBubble.char}
         </div>
       )}
-      {/* Cursor */}
+      {/* Cursor — grows as finger approaches screen (proximity feedback) */}
       <div
         style={{
           position: 'absolute',
-          left: cursorPos.x - 18,
-          top: cursorPos.y - 18,
-          width: 36,
-          height: 36,
+          left: cursorPos.x - 12 - proximity * 10,
+          top: cursorPos.y - 12 - proximity * 10,
+          width: 24 + proximity * 20,
+          height: 24 + proximity * 20,
           borderRadius: '50%',
-          backgroundColor: statusColor,
-          opacity: 0.85,
-          border: '3px solid white',
-          boxShadow: `0 0 16px ${statusColor}80`,
-          transition: 'left 0.06s linear, top 0.06s linear',
+          backgroundColor: proximity > 0.8 ? '#4CAF50' : statusColor,
+          opacity: 0.7 + proximity * 0.3,
+          border: `${2 + proximity * 2}px solid white`,
+          boxShadow: `0 0 ${8 + proximity * 20}px ${proximity > 0.8 ? '#4CAF50' : statusColor}80`,
+          transition: 'left 0.06s linear, top 0.06s linear, width 0.1s, height 0.1s',
         }}
       />
 

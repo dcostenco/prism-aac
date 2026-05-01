@@ -13,6 +13,7 @@ import { getPhraseText } from '@/constants/phraseTranslations';
 import { tapFeedback } from '@/services/feedback';
 import HeadTrackingSettings from './HeadTrackingSettings';
 import HandCalibration from './HandCalibration';
+import InputModesSettings from './InputModesSettings';
 import { getActiveProfile, loadProfiles, deleteProfile, setActiveProfile, enableContinuousLearning, disableContinuousLearning, isContinuousLearningActive } from '@/services/handProfileService';
 
 function HandProfileSection() {
@@ -175,26 +176,23 @@ export default function SettingsModal() {
             </div>
           </div>
 
+          {/* Input Modes — all accessibility input methods */}
+          <div>
+            <h3 className={sectionTitle}>Input Modes</h3>
+            <InputModesSettings />
+          </div>
+
+          {/* Hand Calibration */}
+          {settings.precisionTouchEnabled && (
+            <div>
+              <h3 className={sectionTitle}>Hand Calibration</h3>
+              <HandProfileSection />
+            </div>
+          )}
+
           {/* Accessibility */}
           <div>
             <h3 className={sectionTitle}>{t('accessibility')}</h3>
-            <label className="flex items-center justify-between py-2">
-              <div>
-                <span className="text-primary text-lg">{t('enable_precision_touch')}</span>
-                <p className="text-muted text-xs mt-0.5">{t('precision_touch_desc')}</p>
-              </div>
-              <button
-                onClick={() => settings.update({ precisionTouchEnabled: !settings.precisionTouchEnabled })}
-                aria-pressed={settings.precisionTouchEnabled}
-                aria-label={t('enable_precision_touch')}
-                className={`w-14 h-8 rounded-full transition-colors shrink-0 ml-3 ${settings.precisionTouchEnabled ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}
-              >
-                <div className={`w-6 h-6 rounded-full bg-white transition-transform mx-1 ${settings.precisionTouchEnabled ? 'translate-x-6' : ''}`} />
-              </button>
-            </label>
-            {settings.precisionTouchEnabled && (
-              <HandProfileSection />
-            )}
             <label className="flex items-center justify-between py-2">
               <span className="text-primary text-lg">{t('high_contrast')}</span>
               <button
