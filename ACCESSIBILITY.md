@@ -391,6 +391,177 @@ Caregivers can review these metrics in Settings to:
 
 ---
 
+## Voice-as-Cursor — Sound-Driven Input (No Text Generation)
+
+### The Innovation
+
+Some children cannot move ANY body part reliably — but they CAN make sounds. A hum, a vowel, a pitch change. This mode uses the microphone NOT to generate text, but to **analyze sound properties and map them to cursor movement**.
+
+```
+Microphone (continuous)
+  → Audio Analysis (Web Audio API — no text generation)
+    → Extract: pitch, volume, duration, direction (stereo)
+      → Map to cursor movement:
+          - Pitch UP = cursor moves UP
+          - Pitch DOWN = cursor moves DOWN
+          - Volume LEFT ear > RIGHT ear = cursor LEFT (stereo)
+          - Volume increase = cursor moves faster
+          - Sustained sound = dwell (select)
+          - Silence = cursor stops
+```
+
+### Sound → Direction Mapping
+
+| Sound Property | Cursor Action | Detection Method |
+|---|---|---|
+| **Pitch rising** | Cursor moves UP | `AnalyserNode` frequency tracking |
+| **Pitch falling** | Cursor moves DOWN | `AnalyserNode` frequency tracking |
+| **Volume increase** | Cursor moves RIGHT | `AnalyserNode` amplitude |
+| **Volume decrease** | Cursor moves LEFT | `AnalyserNode` amplitude |
+| **Sustained "aaa"** | Dwell / Select | Duration > dwellMs |
+| **Short burst "eh"** | Click | Amplitude spike detection |
+| **Silence** | Cursor stops | Below noise threshold |
+| **Pitch + Volume** | Diagonal movement | Combined vector |
+
+### Background Noise Adaptation
+
+The system continuously analyzes ambient sound to:
+
+1. **Establish noise floor** — first 3 seconds of silence = baseline
+2. **Filter background** — subtract noise floor from all measurements
+3. **Adapt to environment** — hospital room noise differs from home
+4. **Ignore non-intentional sounds** — coughs, other people talking, TV
+5. **Learn the child's vocal signature** — over sessions, distinguish the child's voice from others using pitch/timbre fingerprint
+
+### Why This Mode Exists
+
+```
+Child with:
+  ✗ Cannot move eyes (cortical visual impairment)
+  ✗ Cannot move head (cervical fusion)
+  ✗ Cannot move hands (quadriplegia)
+  ✗ Cannot move any limb
+  ✓ CAN make sounds ("aaa", "eee", pitch changes)
+
+→ Voice-as-cursor gives this child full AAC access
+```
+
+### Technical Implementation
+
+```typescript
+// Web Audio API — runs entirely in browser, no cloud
+const audioCtx = new AudioContext();
+const analyser = audioCtx.createAnalyser();
+const microphone = await navigator.mediaDevices.getUserMedia({ audio: true });
+const source = audioCtx.createMediaStreamSource(microphone);
+source.connect(analyser);
+
+// Extract pitch using autocorrelation
+function detectPitch(buffer: Float32Array): number { /* ... */ }
+
+// Extract volume (RMS amplitude)
+function detectVolume(buffer: Float32Array): number { /* ... */ }
+
+// Map to cursor: pitch = Y axis, volume = X axis
+const cursorY = mapPitchToScreen(currentPitch, baselinePitch, screenHeight);
+const cursorX = mapVolumeToScreen(currentVolume, baselineVolume, screenWidth);
+```
+
+### Safety Considerations
+
+- **Vocal strain**: Children should not be required to produce sounds for extended periods. Auto-rest after 5 minutes of continuous vocal input. Alert caregiver.
+- **Privacy**: Audio is analyzed locally using Web Audio API. No audio is recorded, stored, or transmitted. Only numeric values (pitch, volume) are processed.
+- **Noise sensitivity**: Children with auditory processing disorders may be distressed by hearing their own voice amplified. PIP audio feedback should be optional.
+- **Combined input**: Voice cursor can work alongside head tracking — head for coarse movement, voice for fine control or click trigger.
+
+---
+
+## Clinical Evidence (from Peer-Reviewed Research)
+
+### Safety — Do No Harm
+
+| Risk | Evidence | Mitigation in PrismAAC |
+|---|---|---|
+| **Seizure from screen** | WCAG: max 3 flashes/sec. Photosensitive epilepsy affects 1 in 4,000 (Epilepsy Action UK) | Static dwell indicator, no rapid color cycling, `prefers-reduced-motion` support |
+| **Eye strain** | Digital eye strain after 20+ min sustained focus (American Optometric Association) | 20-20-20 rule reminder, session time tracking, fatigue detection |
+| **Neck strain** | Trapezius fatigue from repetitive head movements (PMC/2874766). NeckCheck study (arXiv:2503.12762) measured predictable fatigue onset | Velocity-adaptive smoothing, auto-rest breaks, fatigue detection with caregiver alert |
+| **Vocal strain** | Sustained phonation causes vocal fatigue | 5-min auto-rest for voice cursor mode |
+| **AT abandonment** | 29.3% of AT devices completely abandoned (Phillips & Zhao 1993, PubMed/10171664). Top reasons: device mismatch, user not involved in selection | Auto-Train adapts to child, no manual calibration, progressive learning |
+
+### Optimal Parameters (Evidence-Based)
+
+| Parameter | Evidence | PrismAAC Default |
+|---|---|---|
+| **Dwell time (beginner)** | 800-1000ms starting point (Borgestig et al. 2016, PMC/4867850) | 1200ms |
+| **Dwell time (experienced)** | 300ms achievable (Walker & Wegner 2021, ATIA CVI study) | Auto-reduces with accuracy |
+| **Session length (age <5)** | 5-15 min tolerance (clinical consensus) | Auto-detected via fatigue |
+| **Session length (school-age)** | 20-30 min with breaks (Borgestig longitudinal study) | Fatigue-triggered breaks |
+| **Accuracy threshold** | MediaPipe pose: 94.33% gesture accuracy (LuxAI/IIUM ASD study) | Target: >85% dwell success |
+| **Abandonment reduction** | User involvement in selection reduces abandonment (NIHR Evidence UK) | Auto-detect body part (child-driven, not therapist-chosen) |
+
+### Body Part Selection by Diagnosis
+
+| Diagnosis | Recommended Input | Evidence |
+|---|---|---|
+| **ALS / MND** | Eye gaze | Standard of care (ASHA Practice Portal) |
+| **Rett syndrome** | Eye gaze | Only reliable voluntary movement in late stages |
+| **Cerebral palsy (spastic quad)** | Head tracking or eye gaze | Depends on head control (Vanderbilt AAC Protocol) |
+| **Cerebral palsy (athetoid)** | Eye gaze or voice cursor | Involuntary movements make head/hand unreliable |
+| **Spinal muscular atrophy** | Eye gaze, voice cursor | Progressive weakness, adapt as condition changes |
+| **Traumatic brain injury** | Head tracking → eye gaze | Start with head if control exists, fall back to eyes |
+| **Locked-in syndrome** | Eye gaze or voice cursor | Only eyes/voice remain |
+| **Autism (motor planning)** | Head tracking or hand | Motor capabilities often intact, difficulty with planning |
+
+### Existing Products Comparison
+
+| Device | Price | Input Type | Accuracy | Setup | Limitations |
+|---|---|---|---|---|---|
+| **Tobii I-Series** | $15,000+ | Eye gaze | Sub-degree | 30+ min | Insurance-funded, Windows, needs calibration |
+| **Tobii PCEye** | $2,500-3,000 | Eye gaze | Sub-degree | 15 min | Windows only, monitor-mounted |
+| **HeadMouse Nano** | $995 | IR head | High | 10 min | Requires reflective dot on forehead |
+| **TrackerPro 2** | $1,550 | IR head | High | 10 min | Wireless, slight latency |
+| **Camera Mouse** | Free | Webcam head | Medium | 5 min | Lower precision, lighting dependent |
+| **eViacam** | Free | Webcam head | Medium | 5 min | Open source, basic |
+| **PrismAAC** | **Free** | **Camera (any body part) + voice** | **Adaptive** | **10 sec auto-detect** | **No hardware, learns over time** |
+
+### Regulatory & Privacy
+
+| Requirement | Standard | PrismAAC Compliance |
+|---|---|---|
+| **HIPAA (camera in healthcare)** | Encryption, RBAC, audit trails for PHI | Camera processed locally, no frames stored/transmitted |
+| **FDA classification** | AAC = Class I/II communication device | No diagnostic claims, communication aid only |
+| **Consent (minors)** | Parental/guardian consent required | Camera permission prompt + Settings toggle |
+| **FERPA (schools)** | Student data privacy | No student data leaves the device |
+| **State wiretap laws** | Consent for recording | No audio/video recording — only numeric analysis |
+
+### Clinical Introduction Protocol (Best Practice)
+
+Based on ASHA Practice Portal and Vanderbilt AAC Diagnostics:
+
+```
+Week 1: Assessment
+  1. SLP evaluates gross/fine motor across all body sites
+  2. Trial PrismAAC with auto-detect (10s calibration)
+  3. Document which body part auto-detect selects
+  4. Compare with SLP's clinical judgment
+  5. Start with 5-min motivating activities (games, preferred content)
+
+Week 2-3: Tolerance Building
+  1. Increase session length by 5 min per day
+  2. Monitor fatigue cues (accuracy drop, gaze aversion, head droop)
+  3. Let Auto-Train learn the child's movement profile
+  4. Review session metrics with caregiver
+
+Week 4+: Functional Communication
+  1. Transition from games to communication activities
+  2. Auto-Train has calibrated parameters by now
+  3. SLP reviews movement profile and adjusts if needed
+  4. Begin IEP documentation using session metrics
+  5. Train classroom staff on the system
+```
+
+---
+
 ## Implementation Status
 
 | Feature | Status | Tier |
@@ -404,9 +575,15 @@ Caregivers can review these metrics in Settings to:
 | Settings (dwell, sensitivity) | ✅ Shipped | Free |
 | 📷 Toolbar button | ✅ Shipped | Free |
 | 20 unit tests | ✅ Shipped | — |
+| Voice-as-cursor (pitch/volume) | 🔜 Planned | Free |
+| Background noise adaptation | 🔜 Planned | Free |
 | Body pose (33 landmarks) | 🔜 Planned | Free |
-| Hand/finger tracking | 🔜 Planned | Free |
+| Hand/finger/arm/elbow tracking | 🔜 Planned | Free |
 | Auto-detect best body part | 🔜 Planned | Free |
+| Auto-Train adaptive learning | 🔜 Planned | Free |
+| Fatigue detection + auto-adjust | 🔜 Planned | Free |
+| Intent prediction (AI cursor) | 🔜 Planned | Standard+ |
 | Custom gestures (teach/assign) | 🔜 Planned | Standard+ |
 | Blink-to-click | 🔜 Planned | Free |
-| Per-child profiles | 🔜 Planned | Standard+ |
+| Per-child movement profiles | 🔜 Planned | Free |
+| Session metrics for BCBA/IEP | 🔜 Planned | Free |
