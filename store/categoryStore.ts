@@ -4,6 +4,8 @@ import { Category, Phrase, OrderingSequenceData } from '@/types';
 import { DEFAULT_CATEGORIES } from '@/constants/categories';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { TEMPLATE_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
+import { VOCAB_SETS } from '@/constants/vocabularySets';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface CategoryState {
   customCategories: Category[];
@@ -40,7 +42,14 @@ export const useCategoryStore = create<CategoryState>()(
       seeded: false,
 
       allCategories: (includeHidden = false) => {
-        const all = [...DEFAULT_CATEGORIES, ...get().customCategories].sort((a, b) => a.sortOrder - b.sortOrder);
+        const activeVocabSetId = useSettingsStore.getState().activeVocabSet;
+        const vocabSet = VOCAB_SETS.find((vs) => vs.id === activeVocabSetId);
+        let all = [...DEFAULT_CATEGORIES, ...get().customCategories].sort((a, b) => a.sortOrder - b.sortOrder);
+        // Filter by vocab set (unless 'all' — which has empty categoryIds meaning show everything)
+        if (vocabSet && vocabSet.id !== 'all' && vocabSet.categoryIds.length > 0) {
+          const allowed = new Set(vocabSet.categoryIds);
+          all = all.filter((c) => allowed.has(c.id) || c.isCustom);
+        }
         if (includeHidden) return all;
         const hidden = new Set(get().hiddenCategoryIds);
         return all.filter((c) => !hidden.has(c.id));

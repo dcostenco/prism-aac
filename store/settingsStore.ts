@@ -14,8 +14,9 @@ interface SettingsState {
   highContrast: boolean;
   theme: Theme;
   gridSize: GridSize;
+  activeVocabSet: string;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast' | 'theme' | 'gridSize'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet'>>,
   ) => void;
   setTheme: (theme: Theme) => void;
 }
@@ -29,15 +30,17 @@ export const useSettingsStore = create<SettingsState>()(
       highContrast: false,
       theme: 'light',
       gridSize: 6,
+      activeVocabSet: 'all',
       update: (partial) => set((s) => ({ ...s, ...partial })),
       setTheme: (theme) => set({ theme }),
     }),
     {
       name: 'prism-aac-settings',
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, version: number) => {
         const s = persisted as Record<string, unknown>;
-        if (version < 2) return { ...s, gridSize: 6 };
+        if (version < 2) return { ...s, gridSize: 6, activeVocabSet: 'all' };
+        if (version < 3) return { ...s, activeVocabSet: 'all' };
         return s;
       },
     },

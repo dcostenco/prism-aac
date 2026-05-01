@@ -7,6 +7,10 @@ import { useAuthStore } from '@/store/authStore';
 import { synaluxSignInUrl, synaluxSignOutUrl, SynaluxProfile } from '@/services/aiService';
 import { LANG_META, SupportedLanguage } from '@/engine/i18n';
 import { useT } from '@/engine/useT';
+import { VOCAB_SETS } from '@/constants/vocabularySets';
+import { DEFAULT_PHRASES } from '@/constants/phrases';
+import { getPhraseText } from '@/constants/phraseTranslations';
+import { tapFeedback } from '@/services/feedback';
 
 const PLAN_LABEL_KEYS: Record<SynaluxProfile['plan'], string> = {
   free: 'plan_free',
@@ -19,11 +23,12 @@ export default function SettingsModal() {
   const { showSettings, toggleSettings } = useUIStore();
   const settings = useSettingsStore();
   const { t } = useT();
-  const { customCategories, customPhrases, addCustomCategory, removeCustomCategory, addCustomPhrase, removeCustomPhrase, allCategories, hiddenCategoryIds, hideCategoryId, unhideCategoryId } = useCategoryStore();
+  const { customCategories, customPhrases, addCustomCategory, removeCustomCategory, addCustomPhrase, removeCustomPhrase, allCategories, hiddenCategoryIds, hideCategoryId, unhideCategoryId, hiddenPhraseIds, hideDefaultPhrase, unhideDefaultPhrase } = useCategoryStore();
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('📌');
   const [newPhraseText, setNewPhraseText] = useState('');
   const [newPhraseCat, setNewPhraseCat] = useState('');
+  const [wordVisCat, setWordVisCat] = useState('');
   const profile = useAuthStore((s) => s.profile);
   const profileLoaded = useAuthStore((s) => s.loaded);
   const profileLoading = useAuthStore((s) => s.loading);
@@ -109,6 +114,32 @@ export default function SettingsModal() {
             </label>
           </div>
 
+          {/* Vocabulary Set */}
+          <div>
+            <h3 className={sectionTitle}>{t('vocab_set')}</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {VOCAB_SETS.map((vs) => (
+                <button
+                  key={vs.id}
+                  onClick={() => { tapFeedback(); settings.update({ activeVocabSet: vs.id }); }}
+                  aria-pressed={settings.activeVocabSet === vs.id}
+                  className={`aac-btn rounded-xl px-3 py-3 text-left border border-theme ${
+                    settings.activeVocabSet === vs.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{vs.icon}</span>
+                    <span className="font-semibold text-sm">{t(vs.nameKey)}</span>
+                    {vs.tier !== 'free' && (
+                      <span className="ml-auto text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-black/15 font-bold">{vs.tier}</span>
+                    )}
+                  </div>
+                  <p className={`text-xs mt-1 ${settings.activeVocabSet === vs.id ? 'opacity-80' : 'text-muted'}`}>{t(vs.descKey)}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Category Visibility */}
           <div>
             <h3 className={sectionTitle}>{t('category_visibility')}</h3>
@@ -120,7 +151,7 @@ export default function SettingsModal() {
                   <label key={cat.id} className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-black/5">
                     <span className="text-primary text-base">{cat.icon} {cat.name}</span>
                     <button
-                      onClick={() => visible ? hideCategoryId(cat.id) : unhideCategoryId(cat.id)}
+                      onClick={() => { tapFeedback(); visible ? hideCategoryId(cat.id) : unhideCategoryId(cat.id); }}
                       aria-pressed={visible}
                       aria-label={`${cat.name} visibility`}
                       className={`w-14 h-8 rounded-full transition-colors ${visible ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}
@@ -131,6 +162,40 @@ export default function SettingsModal() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Word Visibility */}
+          <div>
+            <h3 className={sectionTitle}>{t('word_visibility')}</h3>
+            <select
+              value={wordVisCat}
+              onChange={(e) => { tapFeedback(); setWordVisCat(e.target.value); }}
+              className="w-full surface-key rounded-lg px-3 py-2 text-sm border border-theme mb-3"
+            >
+              <option value="">{t('select_category')}</option>
+              {cats.map((c) => <option key={c.id} value={c.id}>{c.icon} {c.nameKey ? t(c.nameKey) : c.name}</option>)}
+            </select>
+            {wordVisCat && (
+              <div className="max-h-[240px] overflow-y-auto space-y-1 border border-theme rounded-xl p-2">
+                {DEFAULT_PHRASES.filter((p) => p.categoryId === wordVisCat).map((p) => {
+                  const phraseVisible = !hiddenPhraseIds.includes(p.id);
+                  const localText = getPhraseText(p.id, settings.language, p.text);
+                  return (
+                    <label key={p.id} className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-black/5">
+                      <span className="text-primary text-base">{localText}</span>
+                      <button
+                        onClick={() => { tapFeedback(); phraseVisible ? hideDefaultPhrase(p.id) : unhideDefaultPhrase(p.id); }}
+                        aria-pressed={phraseVisible}
+                        aria-label={phraseVisible ? t('hide_word') : t('show_word')}
+                        className={`w-14 h-8 rounded-full transition-colors ${phraseVisible ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}
+                      >
+                        <div className={`w-6 h-6 rounded-full bg-white transition-transform mx-1 ${phraseVisible ? 'translate-x-6' : ''}`} />
+                      </button>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Grid Size */}
@@ -221,6 +286,48 @@ export default function SettingsModal() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Export / Import — Copy/Paste to/from other apps */}
+          <div>
+            <h3 className={sectionTitle}>{t('export_import')}</h3>
+            <p className="text-muted text-sm mb-3">{t('export_import_desc')}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  tapFeedback();
+                  const data = {
+                    version: 1,
+                    categories: useCategoryStore.getState().customCategories,
+                    phrases: useCategoryStore.getState().customPhrases.filter(p => !p.deletedAt),
+                    hiddenCategories: useCategoryStore.getState().hiddenCategoryIds,
+                    hiddenPhrases: useCategoryStore.getState().hiddenPhraseIds,
+                    settings: { gridSize: settings.gridSize, activeVocabSet: settings.activeVocabSet },
+                  };
+                  navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+                }}
+                className="aac-btn rounded-xl px-4 py-4 text-lg font-semibold border border-theme surface-key text-primary"
+              >
+                📋 {t('export_clipboard')}
+              </button>
+              <button
+                onClick={async () => {
+                  tapFeedback();
+                  try {
+                    const text = await navigator.clipboard.readText();
+                    const data = JSON.parse(text);
+                    if (data.version && data.categories) {
+                      const store = useCategoryStore.getState();
+                      for (const cat of data.categories || []) store.addCustomCategory(cat.name, cat.icon);
+                      for (const phrase of data.phrases || []) store.addCustomPhrase(phrase.categoryId, phrase.text);
+                    }
+                  } catch { /* invalid clipboard data */ }
+                }}
+                className="aac-btn rounded-xl px-4 py-4 text-lg font-semibold border border-theme surface-key text-primary"
+              >
+                📥 {t('import_clipboard')}
+              </button>
+            </div>
           </div>
 
           {/* Synalux Account */}

@@ -43,10 +43,10 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
       onClick={onClick}
       aria-label={ariaLabel ?? phrase}
       className={className}
-      style={style}
+      style={{ border: '2px solid #000', ...style }}
     >
       <span className="flex flex-col items-center w-full h-full">
-        <span className="flex-1 flex items-center justify-center w-full">
+        <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg">
           {iconUrl && (
             <img
               src={iconUrl}
@@ -57,7 +57,7 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
             />
           )}
         </span>
-        <span className="shrink-0 w-full text-center leading-snug text-[clamp(0.65rem,1.3vw,1rem)] font-semibold py-1 border-t border-theme">{phrase}</span>
+        <span className="shrink-0 w-full text-center leading-snug text-[clamp(0.65rem,1.3vw,1rem)] font-bold py-1 border-t-2 border-black">{phrase}</span>
       </span>
     </button>
   );
