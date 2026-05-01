@@ -60,45 +60,47 @@ export default function Toolbar() {
   // typographic system. Larger labels also help motor-impaired users —
   // bigger hit targets, easier glance-readability.
   const btn =
-    'aac-btn h-[clamp(2.75rem,6.5svh,4.5rem)] px-[clamp(0.75rem,1.2vw,1.5rem)] rounded-xl surface-key text-primary font-bold text-[clamp(0.875rem,1.8vw,1.5rem)] select-none border border-theme shrink-0';
+    'aac-btn h-[clamp(2.5rem,6svh,3.5rem)] px-[clamp(0.5rem,1vw,1rem)] rounded-xl surface-key text-primary font-bold text-[clamp(0.75rem,1.5vw,1.25rem)] select-none border border-theme shrink-0';
 
   const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
 
   return (
-    <div className="flex items-center justify-between px-3 py-[clamp(0.25rem,1svh,0.5rem)] surface-bar shrink-0 border-b border-theme overflow-x-auto">
-      <div className="flex gap-2">
-        <button className={btn} onClick={tap(openCategories)} aria-label={t('categories')}>📂 {t('categories')}</button>
-        <button className={btn} onClick={tap(openMath)} aria-label={t('math')}>🔢 {t('math')}</button>
-        <button className={btn} onClick={tap(openAIChat)} aria-label={t('ai_chat')}>✨ {t('ai_chat')}</button>
+    <div className="flex items-center justify-between px-2 py-[clamp(0.2rem,0.8svh,0.4rem)] surface-bar shrink-0 border-b border-theme">
+      <div className="flex gap-1.5 flex-wrap">
+        <button className={btn} onClick={tap(openCategories)} aria-label={t('categories')} title={t('categories')}>📂</button>
+        <button className={btn} onClick={tap(openMath)} aria-label={t('math')} title={t('math')}>🔢</button>
+        <button className={btn} onClick={tap(openAIChat)} aria-label={t('ai_chat')} title={t('ai_chat')}>✨</button>
         {voiceSupported && (
           <button
-            className={`aac-btn h-[clamp(2.75rem,6.5svh,4.5rem)] px-[clamp(0.75rem,1.2vw,1.5rem)] rounded-xl font-bold text-[clamp(0.875rem,1.8vw,1.5rem)] select-none border border-theme shrink-0 ${
+            className={`aac-btn h-[clamp(2.5rem,6svh,3.5rem)] px-[clamp(0.5rem,1vw,1rem)] rounded-xl font-bold text-[clamp(0.75rem,1.5vw,1.25rem)] select-none border border-theme shrink-0 ${
               listening ? 'bg-[#F44336] text-white border-transparent animate-pulse' : 'surface-key text-primary'
             }`}
             onClick={toggleMic}
             aria-pressed={listening}
             data-testid="toolbar-mic"
             aria-label={listening ? t('stop_voice') : t('start_voice')}
+            title={listening ? t('stop_voice') : t('start_voice')}
           >
-            {listening ? `⏺ ${t('stop')}` : `🎙 ${t('mic')}`}
+            {listening ? '⏺' : '🎙'}
           </button>
         )}
-        <button className={btn} onClick={tap(openCaregiver)} aria-label={t('notes')}>📋 {t('notes')}</button>
-        <button className={btn} onClick={tap(openSchedule)} aria-label={t('schedule')}>📅 {t('schedule')}</button>
-        <button className={btn} onClick={tap(openGames)} aria-label={t('games')}>🎮 {t('games')}</button>
-        <button className={btn} onClick={tap(openMarketplace)} aria-label={t('marketplace')}>🏪 {t('marketplace')}</button>
+        <button className={btn} onClick={tap(openCaregiver)} aria-label={t('notes')} title={t('notes')}>📋</button>
+        <button className={btn} onClick={tap(openSchedule)} aria-label={t('schedule')} title={t('schedule')}>📅</button>
+        <button className={btn} onClick={tap(openGames)} aria-label={t('games')} title={t('games')}>🎮</button>
+        <button className={btn} onClick={tap(openMarketplace)} aria-label={t('marketplace')} title={t('marketplace')}>🏪</button>
       </div>
-      <div className="flex gap-2 items-center">
-        <span className="text-xs text-dim mr-1" title={`Sync: ${syncStatus}`}>{SYNC_ICONS[syncStatus] ?? '⬡'}</span>
-        <button className={btn} onClick={tap(triggerAlert)} aria-label={t('alert')}>🚨 {t('alert')}</button>
-        <button className={btn} onClick={tap(toggleHistory)} aria-label={t('history')}>📜 {t('history')}</button>
-        <button className={btn} onClick={tap(toggleSettings)} aria-label={t('settings')}>⚙️</button>
+      <div className="flex gap-1.5 items-center">
+        <span className="text-xs text-dim" title={`Sync: ${syncStatus}`}>{SYNC_ICONS[syncStatus] ?? '⬡'}</span>
+        <button className={btn} onClick={tap(triggerAlert)} aria-label={t('alert')} title={t('alert')}>🚨</button>
+        <button className={btn} onClick={tap(toggleHistory)} aria-label={t('history')} title={t('history')}>📜</button>
+        <button className={btn} onClick={tap(toggleSettings)} aria-label={t('settings')} title={t('settings')}>⚙️</button>
         <button
-          className={`aac-btn h-[clamp(2.5rem,7svh,4rem)] px-[clamp(0.5rem,1.5vw,1.25rem)] rounded-xl font-bold text-[clamp(0.85rem,2vw,1.5rem)] select-none border border-theme shrink-0 ${
+          className={`aac-btn h-[clamp(2.5rem,6svh,3.5rem)] px-[clamp(0.5rem,1vw,1rem)] rounded-xl font-bold text-[clamp(0.75rem,1.5vw,1.25rem)] select-none border border-theme shrink-0 ${
             soundEnabled ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
           }`}
           onClick={tap(toggleSound)}
           aria-label={soundEnabled ? t('sound_on') : t('sound_off')}
+          title={soundEnabled ? t('sound_on') : t('sound_off')}
         >
           {soundEnabled ? '🔊' : '🔇'}
         </button>

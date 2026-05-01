@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 
 interface Props {
   phrase: string;
+  englishPhrase?: string;
   className?: string;
   style?: React.CSSProperties;
   onClick: () => void;
@@ -19,7 +20,7 @@ interface Props {
  * caches client-side + platform-wide; falls back to text silently if no
  * picture is available.
  */
-export default function PhraseTile({ phrase, className, style, onClick, ariaLabel }: Props) {
+export default function PhraseTile({ phrase, englishPhrase, className, style, onClick, ariaLabel }: Props) {
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
@@ -27,11 +28,12 @@ export default function PhraseTile({ phrase, className, style, onClick, ariaLabe
 
   useEffect(() => {
     let cancelled = false;
-    getPictogramUrl(phrase, language, pictureMode).then((url) => {
+    const searchPhrase = englishPhrase || phrase;
+    getPictogramUrl(searchPhrase, 'en', pictureMode).then((url) => {
       if (!cancelled) setIconUrl(url);
     });
     return () => { cancelled = true; };
-  }, [phrase, language, pictureMode]);
+  }, [phrase, englishPhrase, pictureMode]);
 
   // Reserve fixed icon space on every tile so rows stay aligned whether or
   // not the pictogram has loaded / exists. Empty slot when there's no

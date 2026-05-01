@@ -105,11 +105,14 @@ export default function CategoryPanel() {
         <div className="p-4 flex-1 overflow-y-auto min-h-0">
           <p className="text-primary font-bold text-center mb-3 text-2xl md:text-3xl">{step.label}</p>
           <div className="flex flex-col gap-2">
-            {step.options.map((opt) => (
-              <button key={opt.id} onClick={() => handlePhrase(opt.text)} aria-label={opt.text} className={`${btn} text-left`}>
-                {opt.text}
-              </button>
-            ))}
+            {step.options.map((opt) => {
+              const localOpt = getPhraseText(opt.id, language, opt.text);
+              return (
+                <button key={opt.id} onClick={() => handlePhrase(localOpt)} aria-label={localOpt} className={`${btn} text-left`}>
+                  {localOpt}
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className="flex gap-2 p-3 border-t border-theme shrink-0">
@@ -147,12 +150,13 @@ export default function CategoryPanel() {
         <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
           {phrases.map((p) => {
             const localText = getPhraseText(p.id, language, p.text);
-            const firstWord = localText.split(/\s+/)[0];
+            const firstWord = p.text.split(/\s+/)[0];
             const color = CATEGORY_COLORS[classifyWord(firstWord)];
             return (
               <PhraseTile
                 key={p.id}
                 phrase={localText}
+                englishPhrase={p.text}
                 onClick={() => handlePhrase(localText)}
                 className={`${btn} ${TILE_MIN_H[gridSize]}`}
                 style={{ borderLeftColor: color, borderLeftWidth: '5px' }}
