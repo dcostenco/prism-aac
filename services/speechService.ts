@@ -119,7 +119,14 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
   u.lang = lang;
 
   const { voice } = getBestOfflineVoice(lang);
-  if (voice) u.voice = voice;
+  if (voice) {
+    u.voice = voice;
+  } else {
+    const all = loadVoices();
+    const prefix = lang.split('-')[0];
+    const any = all.find((v) => v.lang.startsWith(prefix));
+    if (any) u.voice = any;
+  }
 
   u.onend = clearResumeWorkaround;
   u.onerror = clearResumeWorkaround;
