@@ -363,9 +363,9 @@ export default function Keyboard() {
             <button
               data-action="shift"
               data-display={shiftGlyph}
-              onPointerDown={!precisionTouchEnabled ? handleShiftDown : undefined}
-              onPointerUp={!precisionTouchEnabled ? handleShiftUp : undefined}
-              onPointerLeave={!precisionTouchEnabled ? () => { if (shiftHoldTimer.current) { clearTimeout(shiftHoldTimer.current); shiftHoldTimer.current = null; } } : undefined}
+              onPointerDown={handleShiftDown}
+              onPointerUp={handleShiftUp}
+              onPointerLeave={() => { if (shiftHoldTimer.current) { clearTimeout(shiftHoldTimer.current); shiftHoldTimer.current = null; } }}
               aria-label={shiftLabel}
               aria-pressed={capsLock}
               data-testid="shift-key"
@@ -381,7 +381,7 @@ export default function Keyboard() {
                 key={key}
                 data-key={displayChar}
                 data-display={displayChar}
-                onClick={!precisionTouchEnabled ? () => handleKey(key) : undefined}
+                onClick={() => handleKey(key)}
                 aria-label={key}
                 className={`${kc} ${letterSize} flex-1`}
               >
@@ -390,23 +390,23 @@ export default function Keyboard() {
             );
           })}
           {ri === 2 && keyboardMode === 'letters' && (
-            <button data-action="backspace" data-display="⌫" onClick={!precisionTouchEnabled ? handleBackspace : undefined} aria-label="Backspace" className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)]`}>⌫</button>
+            <button data-action="backspace" data-display="⌫" onClick={handleBackspace} aria-label="Backspace" className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)]`}>⌫</button>
           )}
         </div>
       ))}
 
       <div className="flex gap-[1px] flex-1">
-        <button data-action="mode" data-display={keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'} onClick={!precisionTouchEnabled ? () => { tapFeedback(); toggleKeyboardMode(); } : undefined} aria-label="Switch keyboard mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
+        <button data-action="mode" data-display={keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'} onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>
-        <button data-action="space" data-display={t('space')} onClick={!precisionTouchEnabled ? handleSpace : undefined} aria-label={t('space')} className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
-        <button data-key="." data-display="." onClick={!precisionTouchEnabled ? () => handleKey('.') : undefined} aria-label="." className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>.</button>
-        <button data-key="," data-display="," onClick={!precisionTouchEnabled ? () => handleKey(',') : undefined} aria-label="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>,</button>
-        <button data-key="?" data-display="?" onClick={!precisionTouchEnabled ? () => handleKey('?') : undefined} aria-label="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>?</button>
+        <button data-action="space" data-display={t('space')} onClick={handleSpace} aria-label={t('space')} className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
+        <button data-key="." data-display="." onClick={() => handleKey('.')} aria-label="." className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>.</button>
+        <button data-key="," data-display="," onClick={() => handleKey('.')} aria-label="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>,</button>
+        <button data-key="?" data-display="?" onClick={() => handleKey('.')} aria-label="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>?</button>
         <button
           data-action="speak"
           data-display={t('speak')}
-          onClick={!precisionTouchEnabled ? handleSpeak : undefined}
+          onClick={handleSpeak}
           aria-label={t('speak')}
           className={`aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-[clamp(0.75rem,2vw,1.75rem)] min-w-[clamp(5rem,12vw,8.75rem)] ${wordSize} select-none flex items-center justify-center`}
         >
