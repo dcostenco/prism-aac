@@ -3,6 +3,7 @@ import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { getClinicalVocabulary } from '@/constants/clinicalVocabulary';
 import { AAC_VOCABULARY } from '@/constants/languageVocabulary';
+import { OFFLINE_DICT_1 } from '@/constants/offlineDictionary';
 
 const MAX_CACHE = 500;
 const cache = new Map<string, string>();
@@ -40,6 +41,14 @@ function getWordDict(fromLang: SupportedLanguage, toLang: SupportedLanguage): Wo
   for (let i = 0; i < minLen; i++) {
     const fw = fromVocab[i].toLowerCase();
     if (!dict.has(fw)) dict.set(fw, toVocab[i]);
+  }
+
+  const fromDict1 = OFFLINE_DICT_1[fromLang] ?? [];
+  const toDict1 = OFFLINE_DICT_1[toLang] ?? [];
+  const dict1Len = Math.min(fromDict1.length, toDict1.length);
+  for (let i = 0; i < dict1Len; i++) {
+    const fw = fromDict1[i].toLowerCase();
+    if (!dict.has(fw)) dict.set(fw, toDict1[i]);
   }
 
   const fromClinical = getClinicalVocabulary(fromLang);
