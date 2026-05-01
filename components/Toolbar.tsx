@@ -60,7 +60,7 @@ export default function Toolbar() {
   // typographic system. Larger labels also help motor-impaired users —
   // bigger hit targets, easier glance-readability.
   const btn =
-    'aac-btn h-[clamp(2.5rem,7svh,4rem)] px-[clamp(0.5rem,1.5vw,1.25rem)] rounded-xl surface-key text-primary font-bold text-[clamp(0.85rem,2vw,1.5rem)] select-none border border-theme shrink-0';
+    'aac-btn h-[clamp(2.75rem,6.5svh,4.5rem)] px-[clamp(0.75rem,1.2vw,1.5rem)] rounded-xl surface-key text-primary font-bold text-[clamp(0.875rem,1.8vw,1.5rem)] select-none border border-theme shrink-0';
 
   const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
 
@@ -72,7 +72,7 @@ export default function Toolbar() {
         <button className={btn} onClick={tap(openAIChat)} aria-label={t('ai_chat')}>✨ {t('ai_chat')}</button>
         {voiceSupported && (
           <button
-            className={`aac-btn h-[clamp(2.5rem,7svh,4rem)] px-[clamp(0.5rem,1.5vw,1.25rem)] rounded-xl font-bold text-[clamp(0.85rem,2vw,1.5rem)] select-none border border-theme shrink-0 ${
+            className={`aac-btn h-[clamp(2.75rem,6.5svh,4.5rem)] px-[clamp(0.75rem,1.2vw,1.5rem)] rounded-xl font-bold text-[clamp(0.875rem,1.8vw,1.5rem)] select-none border border-theme shrink-0 ${
               listening ? 'bg-[#F44336] text-white border-transparent animate-pulse' : 'surface-key text-primary'
             }`}
             onClick={toggleMic}

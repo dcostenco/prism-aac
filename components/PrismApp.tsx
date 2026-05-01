@@ -95,16 +95,14 @@ export default function PrismApp() {
           <Toolbar />
           <MessageBar />
           {!inlinePanelOpen && <PredictionBar />}
-          {/* Inline panels: every secondary view (Categories, Math,
-              Caregiver, AI Chat) docks above the keyboard and shares the
-              viewport with it. The user keeps typing on the same soft
-              keyboard — no modals covering keys. */}
           <CategoryPanel />
           <CaregiverPanel />
           <AIChatPanel />
-          <div className="flex-1 flex flex-col min-h-0">
-            <Keyboard />
-          </div>
+          {!inlinePanelOpen && (
+            <div className="flex-1 flex flex-col min-h-0">
+              <Keyboard />
+            </div>
+          )}
           <AlertOverlay />
           {/* True modals — settings/history are configuration UIs, not
               communication panels, so they stay as full-screen overlays. */}

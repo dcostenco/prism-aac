@@ -86,17 +86,17 @@ export default function MessageBar() {
   const currentTone = TONE_OPTIONS.find(opt => opt.id === activeTone);
 
   return (
-    <div className="flex items-center gap-[clamp(0.25rem,0.5vw,0.5rem)] mx-[clamp(0.375rem,1vw,0.75rem)] my-[clamp(0.125rem,0.3svh,0.375rem)] surface-bar rounded-2xl px-[clamp(0.5rem,1vw,1rem)] py-[clamp(0.375rem,0.8svh,0.75rem)] min-h-[clamp(48px,8svh,68px)] shrink-0 relative border border-theme">
+    <div className="flex items-center gap-[clamp(0.375rem,0.6vw,0.625rem)] mx-[clamp(0.5rem,1vw,0.75rem)] my-[clamp(0.25rem,0.5svh,0.375rem)] surface-bar rounded-2xl px-[clamp(0.75rem,1vw,1.25rem)] py-[clamp(0.5rem,1svh,0.75rem)] min-h-[clamp(56px,9svh,80px)] shrink-0 relative border border-theme">
       <button
         onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
         aria-label={autoSpeak ? t('auto_speak_on') : t('auto_speak_off')}
         aria-pressed={autoSpeak}
-        className={`aac-btn w-[clamp(2.25rem,5vw,3.5rem)] h-[clamp(2.25rem,5vw,3.5rem)] rounded-xl flex flex-col items-center justify-center shrink-0 border border-theme ${
+        className={`aac-btn w-[clamp(2.75rem,5vw,4rem)] h-[clamp(2.75rem,5vw,4rem)] rounded-xl flex flex-col items-center justify-center shrink-0 border border-theme ${
           autoSpeak ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-muted'
         }`}
       >
-        <span className="text-[clamp(0.8rem,1.5vw,1.125rem)]">{autoSpeak ? '🔊' : '🔈'}</span>
-        <span className="text-[clamp(7px,0.7vw,9px)] mt-0.5">Auto</span>
+        <span className="text-[clamp(1rem,1.8vw,1.375rem)]">{autoSpeak ? '🔊' : '🔈'}</span>
+        <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5">Auto</span>
       </button>
 
       {/* Tone selector — paid tiers only */}
@@ -104,10 +104,10 @@ export default function MessageBar() {
         <button
           onClick={() => { tapFeedback(); setShowTones(!showTones); }}
           aria-label={`Tone: ${currentTone?.label}`}
-          className="aac-btn w-[clamp(2.25rem,5vw,3.5rem)] h-[clamp(2.25rem,5vw,3.5rem)] rounded-xl surface-key text-primary flex flex-col items-center justify-center shrink-0 border border-theme"
+          className="aac-btn w-[clamp(2.75rem,5vw,4rem)] h-[clamp(2.75rem,5vw,4rem)] rounded-xl surface-key text-primary flex flex-col items-center justify-center shrink-0 border border-theme"
         >
-          <span className="text-[clamp(0.8rem,1.5vw,1.125rem)]">{currentTone?.icon ?? '😊'}</span>
-          <span className="text-[clamp(7px,0.7vw,9px)] mt-0.5 text-muted">{t('tone')}</span>
+          <span className="text-[clamp(1rem,1.8vw,1.375rem)]">{currentTone?.icon ?? '😊'}</span>
+          <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5 text-muted">{t('tone')}</span>
         </button>
       )}
 
@@ -127,13 +127,13 @@ export default function MessageBar() {
         )}
       </div>
 
-      <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-[clamp(2.25rem,5vw,3.5rem)] h-[clamp(2.25rem,5vw,3.5rem)] rounded-xl surface-key text-muted text-[clamp(0.9rem,1.5vw,1.125rem)] flex items-center justify-center shrink-0 border border-theme">↩</button>
+      <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-[clamp(2.75rem,5vw,4rem)] h-[clamp(2.75rem,5vw,4rem)] rounded-xl surface-key text-muted text-[clamp(1rem,1.8vw,1.375rem)] flex items-center justify-center shrink-0 border border-theme">↩</button>
 
-      <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-[clamp(2.5rem,5.5vw,4rem)] h-[clamp(2.5rem,5.5vw,4rem)] rounded-xl bg-[#4CAF50] text-white text-[clamp(1rem,2vw,1.5rem)] flex items-center justify-center shrink-0">▶</button>
+      <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-[clamp(3rem,5.5vw,4.5rem)] h-[clamp(3rem,5.5vw,4.5rem)] rounded-xl bg-[#4CAF50] text-white text-[clamp(1.125rem,2vw,1.75rem)] flex items-center justify-center shrink-0">▶</button>
 
       <button
         onPointerDown={handleDeleteDown} onPointerUp={handleDeleteUp} onPointerLeave={cancelDelete} onPointerCancel={cancelDelete}
-        aria-label={t('delete')} className="aac-btn aac-delete w-[clamp(2.5rem,5.5vw,4rem)] h-[clamp(2.5rem,5.5vw,4rem)] rounded-xl bg-[#F44336] text-white text-[clamp(1rem,2vw,1.5rem)] flex items-center justify-center shrink-0 select-none"
+        aria-label={t('delete')} className="aac-btn aac-delete w-[clamp(3rem,5.5vw,4.5rem)] h-[clamp(3rem,5.5vw,4.5rem)] rounded-xl bg-[#F44336] text-white text-[clamp(1.125rem,2vw,1.75rem)] flex items-center justify-center shrink-0 select-none"
       >⌫</button>
 
       {/* Tone picker popup */}

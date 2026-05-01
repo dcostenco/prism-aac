@@ -92,10 +92,10 @@ export default function Keyboard() {
   const kc =
     'aac-key surface-key text-primary rounded-xl font-bold select-none flex items-center justify-center';
   const letterSize = capsLock
-    ? 'text-[clamp(1.25rem,3.5vw,3rem)]'
-    : 'text-[clamp(1.1rem,3vw,2.25rem)]';
-  const utilSize = 'text-[clamp(0.9rem,2vw,1.5rem)]';
-  const wordSize = 'text-[clamp(0.8rem,1.8vw,1.25rem)]';
+    ? 'text-[clamp(1.5rem,4vw,3.5rem)]'
+    : 'text-[clamp(1.25rem,3.5vw,2.75rem)]';
+  const utilSize = 'text-[clamp(1rem,2.2vw,1.75rem)]';
+  const wordSize = 'text-[clamp(0.875rem,1.8vw,1.5rem)]';
 
   // Caps-lock visual state on the shift key: green = caps-lock, yellow =
   // one-shot shift, neutral = lowercase. Distinct colors so the user can
