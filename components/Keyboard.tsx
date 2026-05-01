@@ -354,20 +354,15 @@ export default function Keyboard() {
 
   // Pointer-based precision: show bubble on hover for ALL input types
   // (mouse, trackpad, stylus, touch). Works on desktop AND tablet.
+  // On desktop (mouse/trackpad), only highlight the key outline — no bubble.
+  // The bubble is only useful on touchscreens where the finger covers the key.
   const handlePointerEnter = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
     if (!precisionTouchEnabled) return;
+    if (e.pointerType === 'touch') return; // handled by touch events
     const btn = e.currentTarget;
-    // Only show bubble for short labels (letters, digits, punctuation).
-    // Skip utility keys (space, Speak, backspace, mode) — they're already
-    // clearly labeled and the bubble just duplicates the text.
-    const char = btn.getAttribute('data-display') || '';
     const isUtilityKey = !!btn.getAttribute('data-action');
-    if (char && !isUtilityKey && char.length <= 2) {
-      const rect = btn.getBoundingClientRect();
-      setBubble({ char, x: rect.left + rect.width / 2, y: rect.top, visible: true });
+    if (!isUtilityKey) {
       setActiveKey(btn);
-    } else {
-      setBubble(prev => ({ ...prev, visible: false }));
     }
   }, [precisionTouchEnabled, setActiveKey]);
 
