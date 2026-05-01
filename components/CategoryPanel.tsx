@@ -31,15 +31,15 @@ function PanelShell({ children }: { children: ReactNode }) {
   );
 }
 
-const MATH_GROUPS: { key: MathCategory; labelKey: string; cols: string }[] = [
-  { key: 'basic',       labelKey: 'Basic',           cols: 'grid-cols-6 md:grid-cols-9' },
-  { key: 'digits',      labelKey: 'Numbers',         cols: 'grid-cols-5 md:grid-cols-10' },
-  { key: 'algebra',     labelKey: 'Algebra',         cols: 'grid-cols-6 md:grid-cols-9' },
-  { key: 'constants',   labelKey: 'Constants',       cols: 'grid-cols-5 md:grid-cols-8' },
-  { key: 'trig',        labelKey: 'Trigonometry',    cols: 'grid-cols-3 md:grid-cols-5' },
-  { key: 'calculus',    labelKey: 'Calculus',        cols: 'grid-cols-4 md:grid-cols-7' },
-  { key: 'greek',       labelKey: 'Greek letters',   cols: 'grid-cols-6 md:grid-cols-12' },
-  { key: 'logic-sets',  labelKey: 'Logic & sets',    cols: 'grid-cols-5 md:grid-cols-8' },
+const MATH_GROUPS: { key: MathCategory; labelKey: string }[] = [
+  { key: 'basic',       labelKey: 'Basic' },
+  { key: 'digits',      labelKey: 'Numbers' },
+  { key: 'algebra',     labelKey: 'Algebra' },
+  { key: 'constants',   labelKey: 'Constants' },
+  { key: 'trig',        labelKey: 'Trigonometry' },
+  { key: 'calculus',    labelKey: 'Calculus' },
+  { key: 'greek',       labelKey: 'Greek letters' },
+  { key: 'logic-sets',  labelKey: 'Logic & sets' },
 ];
 
 const GRID_COLS: Record<GridSize, string> = {
@@ -119,9 +119,9 @@ export default function CategoryPanel() {
             return (
               <div key={group.key}>
                 <p className="text-muted text-sm md:text-base font-bold mb-2 px-1 uppercase tracking-wider">{group.labelKey}</p>
-                <div className={`grid ${group.cols} gap-2`}>
+                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(48px, 8vw, 72px), 1fr))' }}>
                   {items.map((m) => (
-                    <button key={m.id} onClick={() => handleMathItem(m.symbol)} className={`${btn} py-3`} aria-label={m.label} title={m.label}>
+                    <button key={m.id} onClick={() => handleMathItem(m.symbol)} className="aac-btn surface-key text-primary rounded-xl font-bold text-[clamp(1rem,2.5vw,1.5rem)] select-none text-center border border-theme p-2 aspect-square flex items-center justify-center" aria-label={m.label} title={m.label}>
                       {m.symbol}
                     </button>
                   ))}
