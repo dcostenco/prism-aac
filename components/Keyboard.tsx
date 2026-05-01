@@ -112,7 +112,7 @@ export default function Keyboard() {
   return (
     <div className="flex-1 flex flex-col gap-[clamp(0.15rem,0.4svh,0.375rem)] p-[clamp(0.15rem,0.3vw,0.5rem)]">
       {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-[clamp(0.15rem,0.4vw,0.5rem)] justify-center flex-1 max-h-[clamp(2.5rem,9vw,4rem)]">
+        <div key={ri} className="flex gap-[clamp(0.15rem,0.4vw,0.5rem)] justify-center flex-1">
           {ri === 2 && keyboardMode === 'letters' && (
             <button
               onPointerDown={handleShiftDown}
@@ -137,7 +137,7 @@ export default function Keyboard() {
         </div>
       ))}
 
-      <div className="flex gap-[clamp(0.15rem,0.4vw,0.5rem)] flex-1 max-h-[clamp(2.5rem,9vw,4rem)]">
+      <div className="flex gap-[clamp(0.15rem,0.4vw,0.5rem)] flex-1">
         <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>
