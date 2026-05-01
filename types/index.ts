@@ -4,6 +4,7 @@ export interface Category {
   icon: string;
   sortOrder: number;
   isCustom: boolean;
+  nameKey?: string;
 }
 
 export interface Phrase {

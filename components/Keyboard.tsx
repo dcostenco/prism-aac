@@ -65,7 +65,7 @@ export default function Keyboard() {
       // user hears "we can help" instead of fragmented "we" → "can" → "help".
       // speakLocal() cancels any in-flight utterance, so each space
       // restarts speech with the latest accumulated text.
-      if (autoSpeak && soundEnabled) speakWord(currentText.trim(), speechRate, speechVolume);
+      if (autoSpeak && soundEnabled) speakWord(currentText.trim(), speechRate, speechVolume, ttsCode);
     }
     appendChar(' ');
   }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar]);

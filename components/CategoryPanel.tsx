@@ -180,7 +180,7 @@ export default function CategoryPanel() {
       <PanelShell>
         <div className={headerRow}>
           <button onClick={backToCategories} className="aac-btn h-12 px-4 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">← {t('previous_step')}</button>
-          <span className={headerTitle}>{cat?.icon} {cat?.name}</span>
+          <span className={headerTitle}>{cat?.icon} {cat?.nameKey ? t(cat.nameKey) : cat?.name}</span>
           <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className={closeBtn}>✕</button>
         </div>
         {sequences.length > 0 && (
@@ -225,7 +225,7 @@ export default function CategoryPanel() {
             className={`${btn} flex items-center gap-3 text-left ${TILE_MIN_H[gridSize]}`}
           >
             <span className="text-3xl md:text-4xl">{cat.icon}</span>
-            <span>{cat.name}</span>
+            <span>{cat.nameKey ? t(cat.nameKey) : cat.name}</span>
           </button>
         ))}
       </div>

@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { speakWord } from '@/services/speechService';
 import { tapFeedback } from '@/services/feedback';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
-import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
+import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
 
@@ -68,14 +68,18 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
 export default function PredictionBar() {
   const { text, appendWord, autoSpeak, soundEnabled } = useMessageStore();
   const { predictions, updatePredictions, learnWord } = usePredictionStore();
-  const { speechRate, speechVolume } = useSettingsStore();
+  const { speechRate, speechVolume, language } = useSettingsStore();
   const { ttsCode } = useT();
-  const [displayed, setDisplayed] = useState<string[]>(DEFAULT_PREDICTIONS);
-  const prevRef = useRef<string[]>(DEFAULT_PREDICTIONS);
+  const langDefaults = getPredictionsForLanguage(language);
+  const [displayed, setDisplayed] = useState<string[]>(langDefaults);
+  const prevRef = useRef<string[]>(langDefaults);
 
   useEffect(() => {
+    const defaults = getPredictionsForLanguage(language);
+    prevRef.current = defaults;
+    setDisplayed(defaults);
     updatePredictions(text);
-  }, [text, updatePredictions]);
+  }, [text, updatePredictions, language]);
 
   useEffect(() => {
     const next = computeStableSlots(prevRef.current, predictions);
