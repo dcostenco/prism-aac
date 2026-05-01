@@ -5,7 +5,7 @@ import { useMessageStore } from '@/store/messageStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { tapFeedback } from '@/services/feedback';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useSettingsStore, GridSize } from '@/store/settingsStore';
 import { speakWord } from '@/services/speechService';
 import { MATH_ITEMS } from '@/constants/mathSymbols';
 import { MathCategory } from '@/types';
@@ -42,6 +42,24 @@ const MATH_GROUPS: { key: MathCategory; labelKey: string; cols: string }[] = [
   { key: 'logic-sets',  labelKey: 'Logic & sets',    cols: 'grid-cols-5 md:grid-cols-8' },
 ];
 
+const GRID_COLS: Record<GridSize, string> = {
+  4:  'grid-cols-2',
+  6:  'grid-cols-2 md:grid-cols-3',
+  9:  'grid-cols-3',
+  12: 'grid-cols-3 md:grid-cols-4',
+  16: 'grid-cols-4',
+  20: 'grid-cols-4 md:grid-cols-5',
+};
+
+const TILE_MIN_H: Record<GridSize, string> = {
+  4:  'min-h-[clamp(120px,22vw,180px)]',
+  6:  'min-h-[clamp(100px,18vw,150px)]',
+  9:  'min-h-[clamp(80px,15vw,120px)]',
+  12: 'min-h-[clamp(70px,12vw,100px)]',
+  16: 'min-h-[clamp(60px,10vw,90px)]',
+  20: 'min-h-[clamp(50px,8vw,80px)]',
+};
+
 export default function CategoryPanel() {
   const { t } = useT();
   const {
@@ -51,6 +69,7 @@ export default function CategoryPanel() {
   const { appendText, appendWord, text, autoSpeak, soundEnabled } = useMessageStore();
   const { allCategories, getPhrasesForCategory, getSequencesForCategory } = useCategoryStore();
   const { learnWord } = usePredictionStore();
+  const gridSize = useSettingsStore((s) => s.gridSize);
   const { speechRate, speechVolume } = useSettingsStore();
 
   const isOpen =
@@ -171,7 +190,7 @@ export default function CategoryPanel() {
             ))}
           </div>
         )}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 overflow-y-auto flex-1 min-h-0">
+        <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
           {phrases.map((p) => {
             const firstWord = p.text.split(/\s+/)[0];
             const color = CATEGORY_COLORS[classifyWord(firstWord)];
@@ -180,7 +199,7 @@ export default function CategoryPanel() {
                 key={p.id}
                 phrase={p.text}
                 onClick={() => handlePhrase(p.text)}
-                className={`${btn} min-h-[clamp(80px,15vw,120px)]`}
+                className={`${btn} ${TILE_MIN_H[gridSize]}`}
                 style={{ borderLeftColor: color, borderLeftWidth: '5px' }}
               />
             );
@@ -198,12 +217,12 @@ export default function CategoryPanel() {
         <span className={headerTitle}>{t('categories')}</span>
         <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className={closeBtn}>✕</button>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 overflow-y-auto flex-1 min-h-0">
+      <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
         {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => selectCategory(cat.id)}
-            className={`${btn} flex items-center gap-3 text-left min-h-[72px]`}
+            className={`${btn} flex items-center gap-3 text-left ${TILE_MIN_H[gridSize]}`}
           >
             <span className="text-3xl md:text-4xl">{cat.icon}</span>
             <span>{cat.name}</span>

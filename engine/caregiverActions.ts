@@ -112,7 +112,7 @@ export function executeAction(action: NoteAction): ActionResult {
 
     case 'remove_category': {
       const { categoryName } = action.payload as { categoryName: string };
-      const cats = catStore.allCategories();
+      const cats = catStore.allCategories(true);
       const match = cats.find((c) => c.name.toLowerCase() === categoryName.toLowerCase() && c.isCustom);
       if (!match) return { success: false, message: `"${categoryName}" is a default category and cannot be removed` };
       catStore.removeCustomCategory(match.id);

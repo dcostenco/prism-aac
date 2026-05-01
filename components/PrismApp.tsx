@@ -98,9 +98,11 @@ export default function PrismApp() {
           <CategoryPanel />
           <CaregiverPanel />
           <AIChatPanel />
-          <div className={`${inlinePanelOpen ? 'flex-1' : 'flex-[3]'} flex flex-col min-h-0`}>
-            <Keyboard />
-          </div>
+          {!inlinePanelOpen && (
+            <div className="flex-1 flex flex-col min-h-0">
+              <Keyboard />
+            </div>
+          )}
           <AlertOverlay />
           {/* True modals — settings/history are configuration UIs, not
               communication panels, so they stay as full-screen overlays. */}

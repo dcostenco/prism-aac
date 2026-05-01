@@ -9,12 +9,15 @@ interface CategoryState {
   customCategories: Category[];
   customPhrases: Phrase[];
   hiddenPhraseIds: string[];
+  hiddenCategoryIds: string[];
   orderingSequences: OrderingSequenceData[];
   seeded: boolean;
-  allCategories: () => Category[];
+  allCategories: (includeHidden?: boolean) => Category[];
   getPhrasesForCategory: (categoryId: string) => Phrase[];
   hideDefaultPhrase: (id: string) => void;
   unhideDefaultPhrase: (id: string) => void;
+  hideCategoryId: (id: string) => void;
+  unhideCategoryId: (id: string) => void;
   getSequencesForCategory: (categoryId: string) => OrderingSequenceData[];
   addCustomCategory: (name: string, icon: string) => void;
   removeCustomCategory: (id: string) => void;
@@ -32,10 +35,16 @@ export const useCategoryStore = create<CategoryState>()(
       customCategories: [],
       customPhrases: [],
       hiddenPhraseIds: [],
+      hiddenCategoryIds: [],
       orderingSequences: [],
       seeded: false,
 
-      allCategories: () => [...DEFAULT_CATEGORIES, ...get().customCategories].sort((a, b) => a.sortOrder - b.sortOrder),
+      allCategories: (includeHidden = false) => {
+        const all = [...DEFAULT_CATEGORIES, ...get().customCategories].sort((a, b) => a.sortOrder - b.sortOrder);
+        if (includeHidden) return all;
+        const hidden = new Set(get().hiddenCategoryIds);
+        return all.filter((c) => !hidden.has(c.id));
+      },
 
       getPhrasesForCategory: (categoryId) => {
         const hidden = new Set(get().hiddenPhraseIds);
@@ -49,6 +58,12 @@ export const useCategoryStore = create<CategoryState>()(
 
       unhideDefaultPhrase: (id) =>
         set((s) => ({ hiddenPhraseIds: s.hiddenPhraseIds.filter((h) => h !== id) })),
+
+      hideCategoryId: (id) =>
+        set((s) => ({ hiddenCategoryIds: [...new Set([...s.hiddenCategoryIds, id])] })),
+
+      unhideCategoryId: (id) =>
+        set((s) => ({ hiddenCategoryIds: s.hiddenCategoryIds.filter((h) => h !== id) })),
 
       getSequencesForCategory: (categoryId) =>
         get().orderingSequences.filter((s) => s.categoryId === categoryId).sort((a, b) => a.sortOrder - b.sortOrder),
@@ -103,6 +118,7 @@ export const useCategoryStore = create<CategoryState>()(
         customCategories: s.customCategories,
         customPhrases: s.customPhrases,
         hiddenPhraseIds: s.hiddenPhraseIds,
+        hiddenCategoryIds: s.hiddenCategoryIds,
         orderingSequences: s.orderingSequences,
         seeded: s.seeded,
       }),

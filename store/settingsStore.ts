@@ -3,10 +3,8 @@ import { persist } from 'zustand/middleware';
 import { SupportedLanguage } from '@/engine/i18n';
 
 export type Theme = 'light' | 'dark';
+export type GridSize = 4 | 6 | 9 | 12 | 16 | 20;
 
-// Picture mode is derived from the user's Synalux subscription tier — see
-// `pictureModeForPlan()` in `services/pictogramService.ts`. There is no
-// setting; signed-out / Free → ARASAAC symbols only; paid → symbols + AI.
 export type PictureMode = 'off' | 'symbols' | 'symbols-ai';
 
 interface SettingsState {
@@ -15,8 +13,9 @@ interface SettingsState {
   language: SupportedLanguage;
   highContrast: boolean;
   theme: Theme;
+  gridSize: GridSize;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast' | 'theme'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast' | 'theme' | 'gridSize'>>,
   ) => void;
   setTheme: (theme: Theme) => void;
 }
@@ -29,9 +28,18 @@ export const useSettingsStore = create<SettingsState>()(
       language: 'en',
       highContrast: false,
       theme: 'light',
+      gridSize: 6,
       update: (partial) => set((s) => ({ ...s, ...partial })),
       setTheme: (theme) => set({ theme }),
     }),
-    { name: 'prism-aac-settings', version: 1 },
+    {
+      name: 'prism-aac-settings',
+      version: 2,
+      migrate: (persisted: unknown, version: number) => {
+        const s = persisted as Record<string, unknown>;
+        if (version < 2) return { ...s, gridSize: 6 };
+        return s;
+      },
+    },
   ),
 );

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useSettingsStore, GridSize } from '@/store/settingsStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { useAuthStore } from '@/store/authStore';
 import { synaluxSignInUrl, synaluxSignOutUrl, SynaluxProfile } from '@/services/aiService';
@@ -19,7 +19,7 @@ export default function SettingsModal() {
   const { showSettings, toggleSettings } = useUIStore();
   const settings = useSettingsStore();
   const { t } = useT();
-  const { customCategories, customPhrases, addCustomCategory, removeCustomCategory, addCustomPhrase, removeCustomPhrase, allCategories } = useCategoryStore();
+  const { customCategories, customPhrases, addCustomCategory, removeCustomCategory, addCustomPhrase, removeCustomPhrase, allCategories, hiddenCategoryIds, hideCategoryId, unhideCategoryId } = useCategoryStore();
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('📌');
   const [newPhraseText, setNewPhraseText] = useState('');
@@ -35,7 +35,9 @@ export default function SettingsModal() {
 
   if (!showSettings) return null;
 
-  const cats = allCategories();
+  const cats = allCategories(true);
+  const hiddenSet = new Set(hiddenCategoryIds);
+  const GRID_OPTIONS: GridSize[] = [4, 6, 9, 12, 16, 20];
 
   const sectionTitle = 'text-muted font-semibold text-base uppercase tracking-wider mb-3';
 
@@ -105,6 +107,49 @@ export default function SettingsModal() {
                 <div className={`w-6 h-6 rounded-full bg-white transition-transform mx-1 ${settings.highContrast ? 'translate-x-6' : ''}`} />
               </button>
             </label>
+          </div>
+
+          {/* Category Visibility */}
+          <div>
+            <h3 className={sectionTitle}>Category Visibility</h3>
+            <p className="text-muted text-sm mb-3">SLP tip: Start with fewer categories and gradually add more as the user develops communication skills.</p>
+            <div className="max-h-[240px] overflow-y-auto space-y-1 border border-theme rounded-xl p-2">
+              {cats.map((cat) => {
+                const visible = !hiddenSet.has(cat.id);
+                return (
+                  <label key={cat.id} className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-black/5">
+                    <span className="text-primary text-base">{cat.icon} {cat.name}</span>
+                    <button
+                      onClick={() => visible ? hideCategoryId(cat.id) : unhideCategoryId(cat.id)}
+                      aria-pressed={visible}
+                      aria-label={`${cat.name} visibility`}
+                      className={`w-14 h-8 rounded-full transition-colors ${visible ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}
+                    >
+                      <div className={`w-6 h-6 rounded-full bg-white transition-transform mx-1 ${visible ? 'translate-x-6' : ''}`} />
+                    </button>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Grid Size */}
+          <div>
+            <h3 className={sectionTitle}>Grid Size</h3>
+            <p className="text-muted text-sm mb-3">SLP tip: Fewer tiles for beginning communicators, more for advanced users.</p>
+            <div className="grid grid-cols-6 gap-2">
+              {GRID_OPTIONS.map((size) => (
+                <button
+                  key={size}
+                  onClick={() => settings.update({ gridSize: size })}
+                  className={`aac-btn rounded-xl px-2 py-3 text-lg font-bold border border-theme text-center ${
+                    settings.gridSize === size ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Speech */}
