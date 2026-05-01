@@ -89,17 +89,22 @@ export default function PredictionBar() {
 
   const handleTap = (word: string) => {
     tapFeedback();
+    const midWord = text.length > 0 && !text.endsWith(' ');
     const words = text.trim().split(/\s+/).filter(Boolean);
-    const previousWord = words.length > 0 ? words[words.length - 1] : undefined;
-    appendWord(word);
+    const previousWord = midWord && words.length > 1 ? words[words.length - 2] : (words.length > 0 ? words[words.length - 1] : undefined);
+
+    if (midWord && words.length > 0) {
+      const prefix = words.slice(0, -1).join(' ');
+      const newText = prefix ? `${prefix} ${word} ` : `${word} `;
+      useMessageStore.getState().setText(newText);
+    } else {
+      appendWord(word);
+    }
+
     learnWord(word.toLowerCase(), previousWord?.toLowerCase());
-    // Auto-speak the cumulative phrase, not just the tapped tile. User-
-    // reported bug: tapping "Can" after "we" pronounced only "can". Now
-    // the latest utterance interrupts the previous (speakLocal cancels
-    // first) and reads the whole message in context.
     if (autoSpeak && soundEnabled) {
-      const fullText = (text.trim() ? text.trim() + ' ' : '') + word;
-      speakWord(fullText, speechRate, speechVolume, ttsCode);
+      const allWords = midWord ? [...words.slice(0, -1), word] : [...words, word];
+      speakWord(allWords.join(' '), speechRate, speechVolume, ttsCode);
     }
   };
 
