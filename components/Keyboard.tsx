@@ -110,9 +110,9 @@ export default function Keyboard() {
   const shiftGlyph = capsLock ? 'A' : isUpperCase ? '⇧' : '⇪';
 
   return (
-    <div className="flex-1 flex flex-col gap-[clamp(0.25rem,0.8svh,0.625rem)] p-[clamp(0.25rem,0.5vw,0.75rem)]">
+    <div className="flex flex-col gap-[clamp(0.2rem,0.6svh,0.5rem)] p-[clamp(0.25rem,0.5vw,0.75rem)] mt-auto">
       {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-[clamp(0.25rem,0.5vw,0.625rem)] justify-center flex-1">
+        <div key={ri} className="flex gap-[clamp(0.25rem,0.5vw,0.625rem)] justify-center h-[clamp(2.5rem,8vw,3.75rem)]">
           {ri === 2 && keyboardMode === 'letters' && (
             <button
               onPointerDown={handleShiftDown}
@@ -137,7 +137,7 @@ export default function Keyboard() {
         </div>
       ))}
 
-      <div className="flex gap-[clamp(0.25rem,0.5vw,0.625rem)] flex-1">
+      <div className="flex gap-[clamp(0.25rem,0.5vw,0.625rem)] h-[clamp(2.5rem,8vw,3.75rem)]">
         <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>

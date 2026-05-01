@@ -86,7 +86,7 @@ export default function MessageBar() {
   const currentTone = TONE_OPTIONS.find(opt => opt.id === activeTone);
 
   return (
-    <div className="flex items-center gap-[clamp(0.375rem,0.6vw,0.625rem)] mx-[clamp(0.5rem,1vw,0.75rem)] my-[clamp(0.25rem,0.5svh,0.375rem)] surface-bar rounded-2xl px-[clamp(0.75rem,1vw,1.25rem)] py-[clamp(0.5rem,1svh,0.75rem)] min-h-[clamp(56px,9svh,80px)] shrink-0 relative border border-theme">
+    <div className="flex items-center gap-[clamp(0.375rem,0.6vw,0.625rem)] mx-[clamp(0.5rem,1vw,0.75rem)] my-[clamp(0.15rem,0.3svh,0.25rem)] surface-bar rounded-2xl px-[clamp(0.75rem,1vw,1.25rem)] py-[clamp(0.5rem,1.2svh,1rem)] min-h-[clamp(60px,12svh,100px)] flex-1 relative border border-theme">
       <button
         onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
         aria-label={autoSpeak ? t('auto_speak_on') : t('auto_speak_off')}

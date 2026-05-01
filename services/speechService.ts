@@ -22,9 +22,23 @@ export function isOnline(): boolean {
 
 export type VoiceQuality = 'premium' | 'enhanced' | 'basic' | 'none';
 
+let cachedVoices: SpeechSynthesisVoice[] = [];
+
+function loadVoices(): SpeechSynthesisVoice[] {
+  if (!isSpeechSupported()) return [];
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) cachedVoices = voices;
+  return cachedVoices;
+}
+
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  loadVoices();
+  window.speechSynthesis.addEventListener?.('voiceschanged', loadVoices);
+}
+
 export function getBestOfflineVoice(lang: string): { voice: SpeechSynthesisVoice | null; quality: VoiceQuality } {
   if (!isSpeechSupported()) return { voice: null, quality: 'none' };
-  const voices = window.speechSynthesis.getVoices();
+  const voices = loadVoices();
   const langPrefix = lang.split('-')[0];
 
   const langVoices = voices.filter(
