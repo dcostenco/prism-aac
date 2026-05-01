@@ -21,9 +21,10 @@ import PhraseTile from './PhraseTile';
  * panel cover the keys. This mirrors the AI Chat layout.
  */
 function PanelShell({ children }: { children: ReactNode }) {
+  const { t: pt } = useT();
   return (
     <section
-      aria-label="AAC panel"
+      aria-label={pt('aac_panel')}
       className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
     >
       {children}
@@ -32,14 +33,14 @@ function PanelShell({ children }: { children: ReactNode }) {
 }
 
 const MATH_GROUPS: { key: MathCategory; labelKey: string }[] = [
-  { key: 'basic',       labelKey: 'Basic' },
-  { key: 'digits',      labelKey: 'Numbers' },
-  { key: 'algebra',     labelKey: 'Algebra' },
-  { key: 'constants',   labelKey: 'Constants' },
-  { key: 'trig',        labelKey: 'Trigonometry' },
-  { key: 'calculus',    labelKey: 'Calculus' },
-  { key: 'greek',       labelKey: 'Greek letters' },
-  { key: 'logic-sets',  labelKey: 'Logic & sets' },
+  { key: 'basic',       labelKey: 'math_basic' },
+  { key: 'digits',      labelKey: 'math_numbers' },
+  { key: 'algebra',     labelKey: 'math_algebra' },
+  { key: 'constants',   labelKey: 'math_constants' },
+  { key: 'trig',        labelKey: 'math_trigonometry' },
+  { key: 'calculus',    labelKey: 'math_calculus' },
+  { key: 'greek',       labelKey: 'math_greek_letters' },
+  { key: 'logic-sets',  labelKey: 'math_logic_sets' },
 ];
 
 const GRID_COLS: Record<GridSize, string> = {
@@ -110,7 +111,7 @@ export default function CategoryPanel() {
       <PanelShell>
         <div className={headerRow}>
           <span className={headerTitle}>{t('math')}</span>
-          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className={closeBtn}>✕</button>
+          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label={t('close_panel')} className={closeBtn}>✕</button>
         </div>
         <div className="p-3 overflow-y-auto flex-1 min-h-0 space-y-4">
           {MATH_GROUPS.map((group) => {
@@ -118,7 +119,7 @@ export default function CategoryPanel() {
             if (items.length === 0) return null;
             return (
               <div key={group.key}>
-                <p className="text-muted text-sm md:text-base font-bold mb-2 px-1 uppercase tracking-wider">{group.labelKey}</p>
+                <p className="text-muted text-sm md:text-base font-bold mb-2 px-1 uppercase tracking-wider">{t(group.labelKey)}</p>
                 <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(48px, 8vw, 72px), 1fr))' }}>
                   {items.map((m) => (
                     <button key={m.id} onClick={() => handleMathItem(m.symbol)} className="aac-btn surface-key text-primary rounded-xl font-bold text-[clamp(1rem,2.5vw,1.5rem)] select-none text-center border border-theme p-2 aspect-square flex items-center justify-center" aria-label={m.label} title={m.label}>
@@ -144,7 +145,7 @@ export default function CategoryPanel() {
     return (
       <PanelShell>
         <div className={headerRow}>
-          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Back to categories" className="aac-btn h-12 px-4 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">← {t('previous_step')}</button>
+          <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label={t('back_to_categories')} className="aac-btn h-12 px-4 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">← {t('previous_step')}</button>
           <span className={headerTitle}>{seq.name}</span>
           <span className="text-muted text-lg">{activeSequenceStep + 1}/{seq.steps.length}</span>
         </div>
@@ -159,11 +160,11 @@ export default function CategoryPanel() {
           </div>
         </div>
         <div className="flex gap-2 p-3 border-t border-theme shrink-0">
-          <button onClick={prevStep} disabled={activeSequenceStep === 0} aria-label="Previous step" className={`${btn} flex-1 ${activeSequenceStep === 0 ? 'opacity-30' : ''}`}>← Prev</button>
+          <button onClick={prevStep} disabled={activeSequenceStep === 0} aria-label={t('previous_step')} className={`${btn} flex-1 ${activeSequenceStep === 0 ? 'opacity-30' : ''}`}>← {t('prev')}</button>
           {activeSequenceStep < seq.steps.length - 1 ? (
-            <button onClick={() => nextStep(seq.steps.length)} aria-label="Next step" className={`${btn} flex-1`}>Next →</button>
+            <button onClick={() => nextStep(seq.steps.length)} aria-label={t('next_step')} className={`${btn} flex-1`}>{t('next_step')} →</button>
           ) : (
-            <button onClick={finishOrdering} aria-label="Finish ordering" className={`${btn} flex-1 bg-[#4CAF50] text-white border-transparent`}>Done ✓</button>
+            <button onClick={finishOrdering} aria-label={t('done')} className={`${btn} flex-1 bg-[#4CAF50] text-white border-transparent`}>{t('done')} ✓</button>
           )}
         </div>
       </PanelShell>
@@ -181,7 +182,7 @@ export default function CategoryPanel() {
         <div className={headerRow}>
           <button onClick={backToCategories} className="aac-btn h-12 px-4 rounded-xl surface-key text-muted text-lg flex items-center justify-center border border-theme">← {t('previous_step')}</button>
           <span className={headerTitle}>{cat?.icon} {cat?.nameKey ? t(cat.nameKey) : cat?.name}</span>
-          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className={closeBtn}>✕</button>
+          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label={t('close_panel')} className={closeBtn}>✕</button>
         </div>
         {sequences.length > 0 && (
           <div className="flex gap-2 p-3 border-b border-theme shrink-0">
@@ -215,7 +216,7 @@ export default function CategoryPanel() {
     <PanelShell>
       <div className={headerRow}>
         <span className={headerTitle}>{t('categories')}</span>
-        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className={closeBtn}>✕</button>
+        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label={t('close_panel')} className={closeBtn}>✕</button>
       </div>
       <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
         {categories.map((cat) => (

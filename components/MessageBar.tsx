@@ -96,7 +96,7 @@ export default function MessageBar() {
         }`}
       >
         <span className="text-[clamp(1rem,1.8vw,1.375rem)]">{autoSpeak ? '🔊' : '🔈'}</span>
-        <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5">Auto</span>
+        <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5">{t('auto')}</span>
       </button>
 
       {/* Tone selector — paid tiers only */}
@@ -112,7 +112,7 @@ export default function MessageBar() {
       )}
 
       <div className="flex-1 min-h-[clamp(32px,5svh,48px)] flex flex-col justify-center overflow-hidden">
-        <div className="text-[clamp(1rem,2.5vw,1.5rem)] flex items-center break-words text-primary truncate" role="status" aria-live="polite" aria-label="Message text">
+        <div className="text-[clamp(1rem,2.5vw,1.5rem)] flex items-center break-words text-primary truncate" role="status" aria-live="polite" aria-label={t('message_text')}>
           {text ? <ColoredText text={text} /> : <span className="text-dim">{t('type_here')}</span>}
         </div>
         {suggestion && (
@@ -122,7 +122,7 @@ export default function MessageBar() {
             data-testid="autocorrect-suggestion"
             className="text-left text-base md:text-lg text-[#4CAF50] truncate hover:underline mt-1"
           >
-            ✨ Did you mean: <span className="font-semibold">{suggestion}</span> <span className="text-dim text-sm">— tap or press ▶</span>
+            ✨ {t('did_you_mean')} <span className="font-semibold">{suggestion}</span> <span className="text-dim text-sm">{t('tap_or_press')}</span>
           </button>
         )}
       </div>

@@ -8,6 +8,7 @@ import { CaregiverNote } from '@/types';
 import { parseCaregiverNote } from '@/services/aiService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
+import { useT } from '@/engine/useT';
 
 function formatTime(ts: number, lang?: string): string {
   const d = new Date(ts);
@@ -19,6 +20,7 @@ export default function CaregiverPanel() {
   const { notes, addNote, markApplied, removeNote, authorName, setAuthorName } = useNoteStore();
   const lang = useSettingsStore((s) => s.language);
   const aiEnabled = !!useAuthStore((s) => s.profile);
+  const { t } = useT();
   const [input, setInput] = useState('');
   const [results, setResults] = useState<ActionResult[] | null>(null);
   const [tab, setTab] = useState<'add' | 'log'>('add');
@@ -60,47 +62,47 @@ export default function CaregiverPanel() {
 
   return (
     <section
-      aria-label="Caregiver Notes"
+      aria-label={t('caregiver_notes')}
       className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-theme shrink-0">
-        <span className="text-primary font-bold text-2xl md:text-3xl">📋 Caregiver Notes</span>
-        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close panel" className="aac-btn w-12 h-12 rounded-xl surface-key text-muted text-2xl flex items-center justify-center border border-theme">✕</button>
+        <span className="text-primary font-bold text-2xl md:text-3xl">📋 {t('caregiver_notes')}</span>
+        <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label={t('close_panel')} className="aac-btn w-12 h-12 rounded-xl surface-key text-muted text-2xl flex items-center justify-center border border-theme">✕</button>
       </div>
 
       <div className="flex border-b border-theme shrink-0">
         <button onClick={() => setTab('add')} className={`flex-1 py-3 text-lg md:text-xl font-bold ${tab === 'add' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-muted'}`}>
-          + Add Note
+          + {t('add_note')}
         </button>
         <button onClick={() => setTab('log')} className={`flex-1 py-3 text-lg md:text-xl font-bold ${tab === 'log' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-muted'}`}>
-          Log ({notes.length})
+          {t('log')} ({notes.length})
         </button>
       </div>
 
       {tab === 'add' ? (
         <div className="flex-1 min-h-0 flex flex-col p-4 gap-3 overflow-y-auto">
           <div>
-            <label className="text-muted text-base font-bold block mb-1">Your name</label>
+            <label className="text-muted text-base font-bold block mb-1">{t('your_name')}</label>
             <input
               value={authorName}
               onChange={(e) => setAuthorName(e.target.value)}
-              placeholder="BCBA / Therapist / Parent"
+              placeholder={t('role_placeholder')}
               className="w-full surface-key rounded-lg px-3 py-3 text-primary text-lg border border-theme"
             />
           </div>
 
           <div className="flex-1 flex flex-col">
-            <label className="text-muted text-base font-bold block mb-1">Note or instruction</label>
+            <label className="text-muted text-base font-bold block mb-1">{t('note_instruction')}</label>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={"Examples:\n• Move bathroom to top of Help\n• Add McDonald's ordering flow\n• He used 'because' 5 times today"}
+              placeholder={t('note_examples')}
               className="flex-1 min-h-[120px] surface-key rounded-lg px-3 py-2 text-primary text-lg resize-none border border-theme"
             />
           </div>
 
           <button onClick={handleSubmitNote} disabled={!input.trim() || parsing} className={`${btn} py-4 ${input.trim() && !parsing ? 'bg-[#4CAF50] text-white border-transparent' : 'opacity-40'}`}>
-            {parsing ? 'Parsing...' : aiEnabled ? 'Save & Parse' : 'Save Note'}
+            {parsing ? t('parsing') : aiEnabled ? t('save_parse') : t('save_note')}
           </button>
 
           {results && (
@@ -115,14 +117,14 @@ export default function CaregiverPanel() {
 
           <div className="text-dim text-base leading-relaxed">
             {aiEnabled
-              ? 'AI will parse your instructions and suggest actions. You confirm before anything changes.'
-              : 'Sign in via Settings to enable AI-powered note parsing.'}
+              ? t('ai_parse_help')
+              : t('sign_in_parse_help')}
           </div>
         </div>
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto p-3">
           {notes.length === 0 ? (
-            <p className="text-muted text-center py-8 text-xl">No notes yet</p>
+            <p className="text-muted text-center py-8 text-xl">{t('no_notes_yet')}</p>
           ) : (
             <div className="flex flex-col gap-2">
               {notes.map((note) => (
@@ -135,10 +137,10 @@ export default function CaregiverPanel() {
                     </div>
                     <div className="flex gap-2 items-center">
                       {note.actions.some((a) => a.type !== 'note_only') && !note.applied && (
-                        <button onClick={() => handleApplyActions(note)} className="text-[#4CAF50] text-base font-bold hover:underline">Apply</button>
+                        <button onClick={() => handleApplyActions(note)} className="text-[#4CAF50] text-base font-bold hover:underline">{t('apply')}</button>
                       )}
-                      {note.applied && <span className="text-[#4CAF50] text-base">✓ Applied</span>}
-                      <button onClick={() => { tapFeedback(); removeNote(note.id); }} className="text-[#F44336] text-base hover:underline ml-2">Delete</button>
+                      {note.applied && <span className="text-[#4CAF50] text-base">✓ {t('applied')}</span>}
+                      <button onClick={() => { tapFeedback(); removeNote(note.id); }} className="text-[#F44336] text-base hover:underline ml-2">{t('delete')}</button>
                     </div>
                   </div>
                   {note.actions.filter((a) => a.type !== 'note_only').length > 0 && (

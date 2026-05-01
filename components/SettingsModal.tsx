@@ -8,11 +8,11 @@ import { synaluxSignInUrl, synaluxSignOutUrl, SynaluxProfile } from '@/services/
 import { LANG_META, SupportedLanguage } from '@/engine/i18n';
 import { useT } from '@/engine/useT';
 
-const PLAN_LABEL: Record<SynaluxProfile['plan'], string> = {
-  free: 'Free',
-  standard: 'Standard ($19/mo)',
-  advanced: 'Advanced ($49/mo)',
-  enterprise: 'Enterprise ($99/mo)',
+const PLAN_LABEL_KEYS: Record<SynaluxProfile['plan'], string> = {
+  free: 'plan_free',
+  standard: 'plan_standard',
+  advanced: 'plan_advanced',
+  enterprise: 'plan_enterprise',
 };
 
 export default function SettingsModal() {
@@ -46,12 +46,12 @@ export default function SettingsModal() {
       <div className="surface-bar rounded-2xl w-full max-w-lg max-h-[85svh] flex flex-col border border-theme shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-3 border-b border-theme">
           <h2 className="text-primary font-bold text-lg">{t('settings')}</h2>
-          <button onClick={toggleSettings} aria-label="Close settings" className="text-muted hover:text-primary text-xl">✕</button>
+          <button onClick={toggleSettings} aria-label={t('close_settings')} className="text-muted hover:text-primary text-xl">✕</button>
         </div>
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {/* Theme */}
           <div>
-            <h3 className={sectionTitle}>Theme</h3>
+            <h3 className={sectionTitle}>{t('theme')}</h3>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => settings.setTheme('light')}
@@ -60,7 +60,7 @@ export default function SettingsModal() {
                   settings.theme === 'light' ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                 }`}
               >
-                ☀ Light
+                ☀ {t('light')}
               </button>
               <button
                 onClick={() => settings.setTheme('dark')}
@@ -69,7 +69,7 @@ export default function SettingsModal() {
                   settings.theme === 'dark' ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                 }`}
               >
-                🌙 Dark
+                🌙 {t('dark')}
               </button>
             </div>
           </div>
@@ -111,8 +111,8 @@ export default function SettingsModal() {
 
           {/* Category Visibility */}
           <div>
-            <h3 className={sectionTitle}>Category Visibility</h3>
-            <p className="text-muted text-sm mb-3">SLP tip: Start with fewer categories and gradually add more as the user develops communication skills.</p>
+            <h3 className={sectionTitle}>{t('category_visibility')}</h3>
+            <p className="text-muted text-sm mb-3">{t('slp_tip_categories')}</p>
             <div className="max-h-[240px] overflow-y-auto space-y-1 border border-theme rounded-xl p-2">
               {cats.map((cat) => {
                 const visible = !hiddenSet.has(cat.id);
@@ -135,8 +135,8 @@ export default function SettingsModal() {
 
           {/* Grid Size */}
           <div>
-            <h3 className={sectionTitle}>Grid Size</h3>
-            <p className="text-muted text-sm mb-3">SLP tip: Fewer tiles for beginning communicators, more for advanced users.</p>
+            <h3 className={sectionTitle}>{t('grid_size')}</h3>
+            <p className="text-muted text-sm mb-3">{t('slp_tip_grid')}</p>
             <div className="grid grid-cols-6 gap-2">
               {GRID_OPTIONS.map((size) => (
                 <button
@@ -156,7 +156,7 @@ export default function SettingsModal() {
           <div>
             <h3 className={sectionTitle}>{t('voice')}</h3>
             <label className="flex items-center justify-between mb-2">
-              <span className="text-primary text-lg">Speed</span>
+              <span className="text-primary text-lg">{t('speed')}</span>
               <span className="text-muted text-lg">{settings.speechRate.toFixed(1)}</span>
             </label>
             <input
@@ -165,7 +165,7 @@ export default function SettingsModal() {
               className="w-full accent-[#4CAF50]"
             />
             <label className="flex items-center justify-between mb-2 mt-4">
-              <span className="text-primary text-lg">Volume</span>
+              <span className="text-primary text-lg">{t('volume')}</span>
               <span className="text-muted text-lg">{Math.round(settings.speechVolume * 100)}%</span>
             </label>
             <input
@@ -177,39 +177,39 @@ export default function SettingsModal() {
 
           {/* Custom Categories */}
           <div>
-            <h3 className={sectionTitle}>Custom Categories</h3>
+            <h3 className={sectionTitle}>{t('custom_categories')}</h3>
             <div className="flex gap-2 mb-2">
               <input value={newCatIcon} onChange={(e) => setNewCatIcon(e.target.value)} className="w-12 surface-key rounded-lg text-center text-xl p-2 border border-theme" maxLength={2} />
-              <input value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category name" className="flex-1 surface-key rounded-lg px-3 py-2 border border-theme" />
+              <input value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder={t('category_name')} className="flex-1 surface-key rounded-lg px-3 py-2 border border-theme" />
               <button
                 onClick={() => { if (newCatName.trim()) { addCustomCategory(newCatName.trim(), newCatIcon || '📌'); setNewCatName(''); } }}
                 className="aac-btn bg-[#4CAF50] text-white px-5 py-3 rounded-lg font-semibold text-base hover:bg-[#388E3C]"
               >
-                Add
+                {t('add')}
               </button>
             </div>
             {customCategories.map((c) => (
               <div key={c.id} className="flex items-center justify-between surface-key rounded-lg px-3 py-2 mb-1 border border-theme">
                 <span className="text-primary">{c.icon} {c.name}</span>
-                <button onClick={() => removeCustomCategory(c.id)} className="text-[#F44336] text-sm hover:underline">Remove</button>
+                <button onClick={() => removeCustomCategory(c.id)} className="text-[#F44336] text-sm hover:underline">{t('remove')}</button>
               </div>
             ))}
           </div>
 
           {/* Custom Phrases */}
           <div>
-            <h3 className={sectionTitle}>Custom Phrases</h3>
+            <h3 className={sectionTitle}>{t('custom_phrases')}</h3>
             <div className="flex gap-2 mb-2">
               <select value={newPhraseCat} onChange={(e) => setNewPhraseCat(e.target.value)} className="surface-key rounded-lg px-2 py-2 text-sm border border-theme">
-                <option value="">Category…</option>
+                <option value="">{t('category_select')}</option>
                 {cats.map((c) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
               </select>
-              <input value={newPhraseText} onChange={(e) => setNewPhraseText(e.target.value)} placeholder="Phrase text" className="flex-1 surface-key rounded-lg px-3 py-2 border border-theme" />
+              <input value={newPhraseText} onChange={(e) => setNewPhraseText(e.target.value)} placeholder={t('phrase_text')} className="flex-1 surface-key rounded-lg px-3 py-2 border border-theme" />
               <button
                 onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim()); setNewPhraseText(''); setNewPhraseCat(''); } }}
                 className="aac-btn bg-[#4CAF50] text-white px-5 py-3 rounded-lg font-semibold text-base hover:bg-[#388E3C]"
               >
-                Add
+                {t('add')}
               </button>
             </div>
             {customPhrases.map((p) => {
@@ -217,7 +217,7 @@ export default function SettingsModal() {
               return (
                 <div key={p.id} className="flex items-center justify-between surface-key rounded-lg px-3 py-2 mb-1 border border-theme">
                   <span className="text-primary"><span className="text-muted text-xs">{cat?.icon}</span> {p.text}</span>
-                  <button onClick={() => removeCustomPhrase(p.id)} className="text-[#F44336] text-sm hover:underline">Remove</button>
+                  <button onClick={() => removeCustomPhrase(p.id)} className="text-[#F44336] text-sm hover:underline">{t('remove')}</button>
                 </div>
               );
             })}
@@ -225,47 +225,47 @@ export default function SettingsModal() {
 
           {/* Synalux Account */}
           <div>
-            <h3 className={sectionTitle}>Synalux Account</h3>
+            <h3 className={sectionTitle}>{t('synalux_account')}</h3>
             {!profileLoaded || profileLoading ? (
-              <p className="text-muted text-sm">Checking sign-in status…</p>
+              <p className="text-muted text-sm">{t('checking_sign_in')}</p>
             ) : profile ? (
               <div className="space-y-2">
                 <div className="surface-key rounded-lg px-3 py-3 border border-theme">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-muted text-xs uppercase tracking-wider">Signed in as</span>
-                    <span className="text-[#4CAF50] text-xs">● Active</span>
+                    <span className="text-muted text-xs uppercase tracking-wider">{t('signed_in_as')}</span>
+                    <span className="text-[#4CAF50] text-xs">● {t('active')}</span>
                   </div>
                   <p className="text-primary font-semibold text-sm break-all">{profile.email || profile.name}</p>
                 </div>
                 <div className="surface-key rounded-lg px-3 py-3 border border-theme">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-muted text-xs uppercase tracking-wider">Subscription</span>
-                    {profile.isPlatformAdmin && <span className="text-[#FFD700] text-xs">★ Admin</span>}
+                    <span className="text-muted text-xs uppercase tracking-wider">{t('subscription')}</span>
+                    {profile.isPlatformAdmin && <span className="text-[#FFD700] text-xs">★ {t('admin')}</span>}
                   </div>
-                  <p className="text-primary font-semibold text-sm">{PLAN_LABEL[profile.plan] || profile.plan}</p>
+                  <p className="text-primary font-semibold text-sm">{t(PLAN_LABEL_KEYS[profile.plan]) || profile.plan}</p>
                 </div>
                 <a href={synaluxSignOutUrl()} className="block text-center text-[#F44336] text-sm hover:underline pt-1">
-                  Sign out
+                  {t('sign_out')}
                 </a>
               </div>
             ) : (
               <div>
-                <p className="text-muted text-sm mb-3">Sign in with your Synalux account to enable AI Chat, web search, and all platform modules.</p>
+                <p className="text-muted text-sm mb-3">{t('sign_in_synalux_desc')}</p>
                 <a
                   href={synaluxSignInUrl()}
                   data-testid="synalux-signin"
                   className="aac-btn block w-full text-center bg-[#4CAF50] text-white px-4 py-4 rounded-lg font-semibold hover:bg-[#388E3C] text-lg"
                 >
-                  Sign in with Synalux
+                  {t('sign_in_with_synalux')}
                 </a>
-                <p className="text-dim text-xs mt-2">Core AAC features (keyboard, categories, prediction, emergency) work without an account.</p>
+                <p className="text-dim text-xs mt-2">{t('core_aac_no_account')}</p>
               </div>
             )}
           </div>
 
           {/* Resources */}
           <div>
-            <h3 className={sectionTitle}>AAC Resources</h3>
+            <h3 className={sectionTitle}>{t('aac_resources')}</h3>
             <a href="https://www.asha.org/practice-portal/professional-issues/augmentative-and-alternative-communication/" target="_blank" rel="noopener" className="block text-[#2563eb] text-sm hover:underline mb-1">ASHA — AAC Practice Portal</a>
             <a href="https://aac-rerc.psu.edu/" target="_blank" rel="noopener" className="block text-[#2563eb] text-sm hover:underline mb-1">AAC-RERC — Research Center</a>
             <a href="https://praacticalaac.org/" target="_blank" rel="noopener" className="block text-[#2563eb] text-sm hover:underline mb-1">PrAACtical AAC — Implementation Resources</a>

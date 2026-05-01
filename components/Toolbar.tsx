@@ -78,9 +78,9 @@ export default function Toolbar() {
             onClick={toggleMic}
             aria-pressed={listening}
             data-testid="toolbar-mic"
-            aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+            aria-label={listening ? t('stop_voice') : t('start_voice')}
           >
-            {listening ? '⏺ Stop' : '🎙 Mic'}
+            {listening ? `⏺ ${t('stop')}` : `🎙 ${t('mic')}`}
           </button>
         )}
         <button className={btn} onClick={tap(openCaregiver)} aria-label={t('notes')}>📋 {t('notes')}</button>

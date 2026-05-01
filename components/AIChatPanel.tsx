@@ -33,7 +33,7 @@ export default function AIChatPanel() {
   const { text, appendText, clearAll, autoSpeak, soundEnabled } = useMessageStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
   const profile = useAuthStore((s) => s.profile);
-  const { ttsCode } = useT();
+  const { t, ttsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
@@ -136,7 +136,7 @@ export default function AIChatPanel() {
       flush();
       clearAll();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Could not reach AI';
+      const msg = e instanceof Error ? e.message : t('could_not_reach_ai');
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = { role: 'ai', text: msg, lines: [msg] };
@@ -148,15 +148,15 @@ export default function AIChatPanel() {
 
   return (
     <section
-      aria-label="AI Chat"
+      aria-label={t('ai_chat_title')}
       className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
       data-testid="ai-chat-panel"
     >
       <header className="flex items-center justify-between px-4 py-3 border-b border-theme shrink-0">
-        <span className="text-primary font-bold text-2xl md:text-3xl">✨ AI Chat</span>
+        <span className="text-primary font-bold text-2xl md:text-3xl">✨ {t('ai_chat_title')}</span>
         <button
           onClick={() => { tapFeedback(); closeSidePanel(); }}
-          aria-label="Close AI chat"
+          aria-label={t('close_ai_chat')}
           className="aac-btn w-12 h-12 rounded-xl surface-key text-muted text-2xl flex items-center justify-center border border-theme"
         >
           ✕
@@ -165,18 +165,18 @@ export default function AIChatPanel() {
 
       {!configured ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <p className="text-primary font-bold text-2xl md:text-3xl mb-4">AI Chat requires a Synalux account.</p>
-          <p className="text-muted text-lg md:text-xl mb-3">Sign in via Settings to enable AI Chat, web search, and all platform modules.</p>
-          <p className="text-dim text-base md:text-lg">Core AAC features (keyboard, categories, predictions) work without an account.</p>
+          <p className="text-primary font-bold text-2xl md:text-3xl mb-4">{t('ai_chat_requires_account')}</p>
+          <p className="text-muted text-lg md:text-xl mb-3">{t('sign_in_ai_desc')}</p>
+          <p className="text-dim text-base md:text-lg">{t('core_aac_no_account_short')}</p>
         </div>
       ) : (
         <>
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
             {messages.length === 0 && (
               <div className="text-muted text-center py-6">
-                <p className="text-xl md:text-2xl mb-2">Type a question on the keyboard, then tap</p>
-                <p className="text-[#4CAF50] font-bold text-2xl md:text-3xl">Ask AI ✨</p>
-                <p className="mt-3 text-base md:text-lg text-dim">Tap any AI response to add it to your message.</p>
+                <p className="text-xl md:text-2xl mb-2">{t('ai_chat_prompt')}</p>
+                <p className="text-[#4CAF50] font-bold text-2xl md:text-3xl">{t('ask_ai')} ✨</p>
+                <p className="mt-3 text-base md:text-lg text-dim">{t('ai_chat_tap_hint')}</p>
               </div>
             )}
 
@@ -204,13 +204,13 @@ export default function AIChatPanel() {
                     </div>
                   )}
                 </div>
-                <p className="text-dim text-base mt-1 px-1">{msg.role === 'user' ? 'You' : 'AI'}</p>
+                <p className="text-dim text-base mt-1 px-1">{msg.role === 'user' ? t('you') : t('ai_chat')}</p>
               </div>
             ))}
 
             {loading && (
               <div className="flex items-center gap-2 text-muted text-xl px-2">
-                <span className="animate-pulse">Thinking…</span>
+                <span className="animate-pulse">{t('thinking')}</span>
               </div>
             )}
           </div>
@@ -220,18 +220,18 @@ export default function AIChatPanel() {
               {listening && interim ? (
                 <span className="text-[#4CAF50]">🎙 &ldquo;{interim}&rdquo;</span>
               ) : text.trim() ? (
-                <>Question: <span className="text-primary font-semibold">&ldquo;{text.trim()}&rdquo;</span></>
+                <>{t('question_label')} <span className="text-primary font-semibold">&ldquo;{text.trim()}&rdquo;</span></>
               ) : (
                 voiceSupported
-                  ? 'Type on the keyboard or tap 🎙 to speak.'
-                  : 'Type your question on the keyboard.'
+                  ? t('type_or_speak')
+                  : t('type_question')
               )}
             </div>
             <div className="flex gap-2">
               {voiceSupported && (
                 <button
                   onClick={toggleVoice}
-                  aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+                  aria-label={listening ? t('stop_voice') : t('start_voice')}
                   aria-pressed={listening}
                   data-testid="ai-mic"
                   className={`aac-btn rounded-xl font-bold text-2xl px-5 min-w-[72px] flex items-center justify-center ${
@@ -250,7 +250,7 @@ export default function AIChatPanel() {
                   text.trim() && !loading ? 'bg-[#4CAF50] text-white' : 'surface-key text-dim border border-theme'
                 }`}
               >
-                {loading ? 'Thinking…' : 'Ask AI ✨'}
+                {loading ? t('thinking') : `${t('ask_ai')} ✨`}
               </button>
             </div>
           </div>
