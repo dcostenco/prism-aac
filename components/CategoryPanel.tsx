@@ -6,7 +6,7 @@ import { useCategoryStore } from '@/store/categoryStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { tapFeedback } from '@/services/feedback';
 import { useSettingsStore, GridSize } from '@/store/settingsStore';
-import { speakWord } from '@/services/speechService';
+import { aacSpeak } from '@/services/aacSpeak';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
 import PhraseTile from './PhraseTile';
@@ -80,7 +80,7 @@ export default function CategoryPanel() {
       learnWord(w.toLowerCase(), prev?.toLowerCase());
       prev = w;
     }
-    if (autoSpeak && soundEnabled) speakWord(phraseText, speechRate, speechVolume, outputTtsCode);
+    if (autoSpeak && soundEnabled) aacSpeak(phraseText, speechRate, speechVolume);
   };
 
   const btn = 'aac-btn surface-key text-primary rounded-xl p-3 font-bold text-xl md:text-2xl select-none text-center border border-theme';

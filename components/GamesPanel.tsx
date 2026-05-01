@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect, ReactNode } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
-import { speakWord } from '@/services/speechService';
+import { aacSpeak } from '@/services/aacSpeak';
 import { useSettingsStore } from '@/store/settingsStore';
 
 /* ── Shell (same pattern as CategoryPanel) ── */
@@ -218,7 +218,7 @@ function EmotionGame({ onBack }: { onBack: () => void }) {
     if (answer === round.correct) {
       setFeedback('correct');
       setScore((s) => s + 1);
-      speakWord(round.correct, speechRate, speechVolume, outputTtsCode);
+      aacSpeak(round.correct, speechRate, speechVolume);
       setTimeout(() => {
         setFeedback(null);
         setRoundIdx((r) => r + 1);
@@ -347,7 +347,7 @@ function WordBuilderGame({ onBack }: { onBack: () => void }) {
     if (isComplete && currentWord === challenge?.word) {
       setFeedback('correct');
       setScore((s) => s + 1);
-      speakWord(challenge.word.toLowerCase(), speechRate, speechVolume, outputTtsCode);
+      aacSpeak(challenge.word.toLowerCase(), speechRate, speechVolume);
       const timeout = setTimeout(() => {
         setWordIdx((w) => w + 1);
       }, 1500);

@@ -4,7 +4,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { tapFeedback } from '@/services/feedback';
 import { askAI } from '@/services/aiService';
-import { speakWord } from '@/services/speechService';
+import { aacSpeak } from '@/services/aacSpeak';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
@@ -51,7 +51,7 @@ export default function AIChatPanel() {
     (line: string) => {
       tapFeedback();
       appendText(line);
-      if (autoSpeak && soundEnabled) speakWord(line, speechRate, speechVolume, outputTtsCode);
+      if (autoSpeak && soundEnabled) aacSpeak(line, speechRate, speechVolume);
     },
     [appendText, autoSpeak, soundEnabled, speechRate, speechVolume, outputTtsCode],
   );

@@ -4,7 +4,7 @@ import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
-import { speakWord } from '@/services/speechService';
+import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
@@ -104,7 +104,7 @@ export default function PredictionBar() {
     learnWord(word.toLowerCase(), previousWord?.toLowerCase());
     if (autoSpeak && soundEnabled) {
       const allWords = midWord ? [...words.slice(0, -1), word] : [...words, word];
-      speakWord(allWords.join(' '), speechRate, speechVolume, outputTtsCode);
+      aacSpeak(allWords.join(" "), speechRate, speechVolume);
     }
   };
 

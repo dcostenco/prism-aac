@@ -2,7 +2,7 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { speak, speakWord } from '@/services/speechService';
+import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback, deleteFeedback } from '@/services/feedback';
 import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
@@ -63,9 +63,9 @@ export default function MessageBar() {
     addToHistory(toSpeak);
 
     if (translated) {
-      speak(translated, speechRate, speechVolume, outputTtsCode, activeTone);
+      aacSpeak(translated, speechRate, speechVolume, activeTone);
     } else {
-      speak(toSpeak, speechRate, speechVolume, outputTtsCode, activeTone);
+      aacSpeak(toSpeak, speechRate, speechVolume, activeTone);
     }
   }, [text, soundEnabled, suggestion, speechRate, speechVolume, outputTtsCode, activeTone, addToHistory, setText, translated]);
 

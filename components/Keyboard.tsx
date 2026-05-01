@@ -4,12 +4,12 @@ import { useMessageStore } from '@/store/messageStore';
 import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { speak, speakWord } from '@/services/speechService';
+import { aacSpeak } from '@/services/aacSpeak';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
-import { SupportedLanguage, getTTSCode } from '@/engine/i18n';
+
 import { useT } from '@/engine/useT';
-import { translateTextSync } from '@/services/translateService';
+
 
 const CAPS_LOCK_HOLD_MS = 500;
 
@@ -68,30 +68,20 @@ export default function Keyboard() {
       // user hears "we can help" instead of fragmented "we" → "can" → "help".
       // speakLocal() cancels any in-flight utterance, so each space
       // restarts speech with the latest accumulated text.
-      const outLang = useSettingsStore.getState().outputLanguage as SupportedLanguage;
-      const inLang = useSettingsStore.getState().language as SupportedLanguage;
-      const translationActive = inLang !== outLang;
-
-      if (translationActive) {
-        const translated = translateTextSync(currentText.trim(), inLang, outLang);
-        speak(translated, speechRate, speechVolume, getTTSCode(outLang), activeTone);
-      } else if (autoSpeak && soundEnabled) {
-        speak(currentText.trim(), speechRate, speechVolume, getTTSCode(inLang), activeTone);
+      const translationActive = useSettingsStore.getState().language !== useSettingsStore.getState().outputLanguage;
+      if (translationActive || (autoSpeak && soundEnabled)) {
+        aacSpeak(currentText.trim(), speechRate, speechVolume, activeTone);
       }
     }
     appendChar(' ');
-  }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar, language, outputTtsCode]);
+  }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar, activeTone]);
 
   const handleSpeak = useCallback(() => {
     tapFeedback();
     const currentText = useMessageStore.getState().text.trim();
     if (!currentText || !soundEnabled) return;
     addToHistory(currentText);
-    const { outputLanguage: outLang2, language: inLang2 } = useSettingsStore.getState();
-    const speakText = inLang2 !== outLang2
-      ? translateTextSync(currentText, inLang2 as SupportedLanguage, outLang2 as SupportedLanguage)
-      : currentText;
-    speak(speakText, speechRate, speechVolume, getTTSCode(outLang2), activeTone);
+    aacSpeak(currentText, speechRate, speechVolume, activeTone);
   }, [soundEnabled, speechRate, speechVolume, addToHistory, activeTone]);
 
   const handleBackspace = useCallback(() => {
