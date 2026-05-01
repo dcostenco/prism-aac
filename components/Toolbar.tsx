@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { SupportedLanguage } from '@/engine/i18n';
+import { SupportedLanguage, LANG_META } from '@/engine/i18n';
 import { useSyncStatus } from './SyncProvider';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
@@ -30,12 +30,6 @@ export default function Toolbar() {
   const langRef = useRef<HTMLDivElement>(null);
   const voiceSupported = isVoiceInputSupported();
 
-  const LANGS: Array<{ code: string; flag: string }> = [
-    { code: 'en', flag: '🇺🇸' }, { code: 'es', flag: '🇪🇸' }, { code: 'fr', flag: '🇫🇷' },
-    { code: 'pt', flag: '🇧🇷' }, { code: 'ro', flag: '🇷🇴' }, { code: 'uk', flag: '🇺🇦' },
-    { code: 'ru', flag: '🇷🇺' }, { code: 'de', flag: '🇩🇪' }, { code: 'ja', flag: '🇯🇵' },
-    { code: 'ko', flag: '🇰🇷' }, { code: 'zh', flag: '🇨🇳' }, { code: 'ar', flag: '🇸🇦' },
-  ];
 
   useEffect(() => () => { voiceRef.current?.stop(); }, []);
   useEffect(() => {
@@ -100,7 +94,7 @@ export default function Toolbar() {
 
         {showLangPicker && (
           <div className="absolute top-full mt-1 left-0 surface-bar rounded-xl border border-theme shadow-2xl z-50 p-1.5 grid grid-cols-4 gap-1 w-48">
-            {LANGS.map((l) => (
+            {LANG_META.map((l) => (
               <button
                 key={l.code}
                 className={`aac-btn rounded-lg px-1 py-2 text-center font-bold text-sm border border-theme ${
@@ -118,8 +112,8 @@ export default function Toolbar() {
                   setShowLangPicker(null);
                 }}
               >
-                <div className="text-lg leading-none">{l.flag}</div>
-                <div className="text-[10px] uppercase mt-0.5">{l.code}</div>
+                <div className="text-[10px] font-bold">{l.nativeName.slice(0, 3)}</div>
+                <div className="text-[9px] uppercase mt-0.5 text-muted">{l.code}</div>
               </button>
             ))}
           </div>

@@ -43,32 +43,26 @@ export default function MessageBar() {
     setSuggestion(null);
   }, [suggestion, setText]);
 
-  const outputLanguage = useSettingsStore((s) => s.outputLanguage);
-  const needsTranslation = language !== outputLanguage;
-
   const handleSpeak = useCallback(async () => {
     tapFeedback();
     const original = text.trim();
     if (!original || !soundEnabled) return;
-    const toSpeak = (suggestion && suggestion !== original) ? suggestion : original;
-    if (suggestion && suggestion !== original) {
-      setText(suggestion);
-      setSuggestion(null);
-    }
+
+    const toSpeak = suggestion && suggestion !== original ? suggestion : original;
+    if (suggestion && suggestion !== original) { setText(suggestion); setSuggestion(null); }
     addToHistory(toSpeak);
 
-    if (needsTranslation) {
-      try {
-        const translated = await translateText(toSpeak, language, outputLanguage);
-        if (translated && translated !== toSpeak) {
-          setText(translated);
-          speak(translated, speechRate, speechVolume, outputTtsCode, activeTone);
-          return;
-        }
-      } catch {}
+    const { outputLanguage } = useSettingsStore.getState();
+    if (language !== outputLanguage) {
+      const translated = await translateText(toSpeak, language, outputLanguage);
+      if (translated !== toSpeak) {
+        setText(translated);
+        speak(translated, speechRate, speechVolume, outputTtsCode, activeTone);
+        return;
+      }
     }
     speak(toSpeak, speechRate, speechVolume, outputTtsCode, activeTone);
-  }, [text, soundEnabled, suggestion, speechRate, speechVolume, outputTtsCode, activeTone, addToHistory, setText, language, outputLanguage, needsTranslation]);
+  }, [text, soundEnabled, suggestion, speechRate, speechVolume, outputTtsCode, activeTone, addToHistory, setText, language]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }

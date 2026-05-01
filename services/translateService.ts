@@ -1,7 +1,14 @@
 import { SupportedLanguage } from '@/engine/i18n';
 import { askAI } from './aiService';
 
+const MAX_CACHE = 500;
 const cache = new Map<string, string>();
+
+function trimCache() {
+  if (cache.size <= MAX_CACHE) return;
+  const first = cache.keys().next().value;
+  if (first !== undefined) cache.delete(first);
+}
 
 export async function translateText(
   text: string,
@@ -23,9 +30,12 @@ export async function translateText(
     const translated = result.trim().replace(/^["']|["']$/g, '');
     if (translated) {
       cache.set(key, translated);
+      trimCache();
       return translated;
     }
-  } catch {}
+  } catch {
+    // Translation failed — return original text, spoken in output voice
+  }
 
   return text;
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { t as translate, getTTSCode, isRTL, loadLanguage, isLanguageLoaded } from './i18n';
 
@@ -9,20 +9,19 @@ export function useT() {
   const [ready, setReady] = useState(isLanguageLoaded(language));
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     if (isLanguageLoaded(language)) { setReady(true); return; }
     setReady(false);
     loadLanguage(language).then(() => setReady(true));
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [language]);
 
-  const tFn = useCallback((key: string) => translate(key, language), [language]);
-  return {
-    t: tFn,
+  const t = useCallback((key: string) => translate(key, language), [language]);
+
+  return useMemo(() => ({
+    t,
     lang: language,
     ttsCode: getTTSCode(language),
     outputTtsCode: getTTSCode(outputLanguage),
     rtl: isRTL(language),
     ready,
-  };
+  }), [t, language, outputLanguage, ready]);
 }
