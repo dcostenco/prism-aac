@@ -147,7 +147,7 @@ export default function AIChatPanel() {
   return (
     <section
       aria-label="AI Chat"
-      className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme"
+      className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
       data-testid="ai-chat-panel"
     >
       <header className="flex items-center justify-between px-4 py-3 border-b border-theme shrink-0">

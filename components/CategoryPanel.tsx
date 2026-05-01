@@ -24,7 +24,7 @@ function PanelShell({ children }: { children: ReactNode }) {
   return (
     <section
       aria-label="AAC panel"
-      className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme"
+      className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
     >
       {children}
     </section>
