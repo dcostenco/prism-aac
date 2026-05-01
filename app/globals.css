@@ -214,11 +214,10 @@ input[type="range"] {
 }
 
 .precision-highlight {
-  background-color: var(--accent-focus) !important;
-  color: #fff !important;
-  transform: scale(1.08);
-  box-shadow: 0 0 16px rgba(37, 99, 235, 0.5);
-  transition: transform 0.05s ease, background-color 0.05s ease;
+  outline: 3px solid var(--accent-focus) !important;
+  outline-offset: -3px;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.3);
+  transition: outline 0.05s ease;
   z-index: 10;
   position: relative;
 }
