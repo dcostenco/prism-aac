@@ -68,8 +68,15 @@ export default function Keyboard() {
       // user hears "we can help" instead of fragmented "we" → "can" → "help".
       // speakLocal() cancels any in-flight utterance, so each space
       // restarts speech with the latest accumulated text.
-      if (autoSpeak && soundEnabled && language === useSettingsStore.getState().outputLanguage) {
-        speakWord(currentText.trim(), speechRate, speechVolume, outputTtsCode);
+      if (autoSpeak && soundEnabled) {
+        const outLang = useSettingsStore.getState().outputLanguage as SupportedLanguage;
+        const inLang = useSettingsStore.getState().language as SupportedLanguage;
+        if (inLang !== outLang) {
+          const translated = translateTextSync(currentText.trim(), inLang, outLang);
+          speakWord(translated, speechRate, speechVolume, getTTSCode(outLang));
+        } else {
+          speakWord(currentText.trim(), speechRate, speechVolume, getTTSCode(inLang));
+        }
       }
     }
     appendChar(' ');

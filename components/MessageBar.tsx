@@ -22,24 +22,12 @@ export default function MessageBar() {
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
   const [translated, setTranslated] = useState<string | null>(null);
 
-  const prevTextRef = useRef(text);
   useEffect(() => {
-    const prev = prevTextRef.current;
-    prevTextRef.current = text;
-
     setTranslated(null);
     if (language === outputLanguage || !text.trim()) return;
-
     const result = translateTextSync(text.trim(), language, outputLanguage);
-    if (result !== text.trim()) {
-      setTranslated(result);
-      const justCompletedWord = text.endsWith(' ') && !prev.endsWith(' ') && prev.trim().length > 0;
-      if (justCompletedWord && autoSpeak && soundEnabled) {
-        const outCode = getTTSCode(outputLanguage);
-        speakWord(result, speechRate, speechVolume, outCode);
-      }
-    }
-  }, [text, language, outputLanguage, autoSpeak, soundEnabled, speechRate, speechVolume]);
+    if (result !== text.trim()) setTranslated(result);
+  }, [text, language, outputLanguage]);
 
   // Debounced background correction. As the user types, we ask the
   // /api/v1/text/correct endpoint for the most likely intended utterance.
