@@ -11,12 +11,13 @@ interface SettingsState {
   speechRate: number;
   speechVolume: number;
   language: SupportedLanguage;
+  outputLanguage: SupportedLanguage;
   highContrast: boolean;
   theme: Theme;
   gridSize: GridSize;
   activeVocabSet: string;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet'>>,
   ) => void;
   setTheme: (theme: Theme) => void;
 }
@@ -27,6 +28,7 @@ export const useSettingsStore = create<SettingsState>()(
       speechRate: 0.5,
       speechVolume: 1.0,
       language: 'en',
+      outputLanguage: 'en',
       highContrast: false,
       theme: 'light',
       gridSize: 6,
@@ -36,11 +38,12 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prism-aac-settings',
-      version: 3,
+      version: 4,
       migrate: (persisted: unknown, version: number) => {
         const s = persisted as Record<string, unknown>;
-        if (version < 2) return { ...s, gridSize: 6, activeVocabSet: 'all' };
-        if (version < 3) return { ...s, activeVocabSet: 'all' };
+        if (version < 2) return { ...s, gridSize: 6, activeVocabSet: 'all', outputLanguage: s.language ?? 'en' };
+        if (version < 3) return { ...s, activeVocabSet: 'all', outputLanguage: s.language ?? 'en' };
+        if (version < 4) return { ...s, outputLanguage: s.language ?? 'en' };
         return s;
       },
     },
