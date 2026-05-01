@@ -37,6 +37,8 @@ export default function CameraInputOverlay() {
   const dwellStartRef = useRef(0);
   const dwellElementRef = useRef<Element | null>(null);
   const rafRef = useRef(0);
+  const highlightedKeyRef = useRef<HTMLElement | null>(null);
+  const [keyBubble, setKeyBubble] = useState<{ char: string; x: number; y: number; visible: boolean }>({ char: '', x: 0, y: 0, visible: false });
 
   const animateDwell = useCallback(() => {
     if (!dwellElementRef.current || dwellStartRef.current === 0) {
@@ -66,6 +68,27 @@ export default function CameraInputOverlay() {
 
         const el = document.elementFromPoint(x, y);
         const interactive = el?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? null;
+
+        // Highlight keyboard keys with precision bubble as camera cursor moves
+        const keyBtn = el?.closest('button[data-key], button[data-action]') as HTMLElement | null;
+        if (keyBtn && keyBtn !== highlightedKeyRef.current) {
+          highlightedKeyRef.current?.classList.remove('precision-highlight');
+          highlightedKeyRef.current = keyBtn;
+          keyBtn.classList.add('precision-highlight');
+          const char = keyBtn.getAttribute('data-display') || '';
+          const isUtility = !!keyBtn.getAttribute('data-action');
+          if (char && !isUtility && char.length <= 2) {
+            const rect = keyBtn.getBoundingClientRect();
+            setKeyBubble({ char, x: rect.left + rect.width / 2, y: rect.top, visible: true });
+          } else {
+            setKeyBubble(prev => ({ ...prev, visible: false }));
+          }
+        } else if (!keyBtn && highlightedKeyRef.current) {
+          highlightedKeyRef.current.classList.remove('precision-highlight');
+          highlightedKeyRef.current = null;
+          setKeyBubble(prev => ({ ...prev, visible: false }));
+        }
+
         if (interactive) {
           if (interactive !== dwellElementRef.current) {
             dwellElementRef.current = interactive;
@@ -93,6 +116,8 @@ export default function CameraInputOverlay() {
 
     return () => {
       cancelAnimationFrame(rafRef.current);
+      highlightedKeyRef.current?.classList.remove('precision-highlight');
+      highlightedKeyRef.current = null;
       handle.stop();
       handleRef.current = null;
     };
@@ -101,9 +126,17 @@ export default function CameraInputOverlay() {
   if (!enabled || status === 'stopped') return null;
 
   const statusColor = status === 'tracking' ? '#4CAF50' : status === 'lost' ? '#FF9800' : '#2196F3';
+  const bubbleY = keyBubble.visible ? Math.max(5, keyBubble.y - 55) : 0;
+  const bubbleX = keyBubble.visible ? Math.max(25, Math.min(typeof window !== 'undefined' ? window.innerWidth - 25 : 9999, keyBubble.x)) : 0;
 
   return (
     <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9998 }} aria-hidden="true">
+      {/* Precision bubble on keyboard key */}
+      {keyBubble.visible && (
+        <div className="precision-bubble" style={{ left: bubbleX, top: bubbleY }}>
+          {keyBubble.char}
+        </div>
+      )}
       {/* Cursor */}
       <div
         style={{
