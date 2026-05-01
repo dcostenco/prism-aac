@@ -61,7 +61,7 @@ const TILE_MIN_H: Record<GridSize, string> = {
 };
 
 export default function CategoryPanel() {
-  const { t } = useT();
+  const { t, ttsCode } = useT();
   const {
     sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
     closeSidePanel, selectCategory, backToCategories, startOrdering, nextStep, prevStep, finishOrdering,
@@ -91,7 +91,7 @@ export default function CategoryPanel() {
       learnWord(w.toLowerCase(), prev?.toLowerCase());
       prev = w;
     }
-    if (autoSpeak && soundEnabled) speakWord(phraseText, speechRate, speechVolume);
+    if (autoSpeak && soundEnabled) speakWord(phraseText, speechRate, speechVolume, ttsCode);
   };
 
   const handleMathItem = (symbol: string) => {

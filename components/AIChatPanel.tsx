@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
+import { useT } from '@/engine/useT';
 
 /**
  * AI Chat — inline panel docked above the keyboard.
@@ -32,6 +33,7 @@ export default function AIChatPanel() {
   const { text, appendText, clearAll, autoSpeak, soundEnabled } = useMessageStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
   const profile = useAuthStore((s) => s.profile);
+  const { ttsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
@@ -49,9 +51,9 @@ export default function AIChatPanel() {
     (line: string) => {
       tapFeedback();
       appendText(line);
-      if (autoSpeak && soundEnabled) speakWord(line, speechRate, speechVolume);
+      if (autoSpeak && soundEnabled) speakWord(line, speechRate, speechVolume, ttsCode);
     },
-    [appendText, autoSpeak, soundEnabled, speechRate, speechVolume],
+    [appendText, autoSpeak, soundEnabled, speechRate, speechVolume, ttsCode],
   );
 
   // Stop listening when modal closes.

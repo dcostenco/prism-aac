@@ -6,7 +6,7 @@ import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { speak, speakWord } from '@/services/speechService';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
-import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
+import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
 
 const CAPS_LOCK_HOLD_MS = 500;
@@ -15,10 +15,11 @@ export default function Keyboard() {
   const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock } = useUIStore();
   const { learnWord } = usePredictionStore();
-  const { speechRate, speechVolume } = useSettingsStore();
+  const { speechRate, speechVolume, language } = useSettingsStore();
   const { t, ttsCode } = useT();
+  const letterRows = getLetterRows(language);
 
-  const rows = keyboardMode === 'letters' ? LETTERS_ROWS : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
+  const rows = keyboardMode === 'letters' ? letterRows : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
   const showUpper = isUpperCase || capsLock;
 
   const handleKey = useCallback((key: string) => {

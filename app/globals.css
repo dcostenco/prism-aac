@@ -49,6 +49,15 @@
 }
 
 .high-contrast {
+  --bg-app: #000000;
+  --bg-surface: #0a0a0a;
+  --bg-key: #1a1a1a;
+  --bg-key-hover: #2a2a2a;
+  --text-primary: #FFFFFF;
+  --text-muted: #FFD700;
+  --text-dim: #CCCCCC;
+  --border-subtle: rgba(255, 215, 0, 0.4);
+  --border-strong: rgba(255, 215, 0, 0.7);
   --aac-key-active: #FFD700;
   --aac-key-glow: rgba(255, 215, 0, 0.3);
   --aac-speak-active: #FFD700;
