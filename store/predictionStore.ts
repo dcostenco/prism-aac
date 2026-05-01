@@ -6,6 +6,8 @@ import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { SupportedLanguage } from '@/engine/i18n';
+import { getClinicalVocabulary } from '@/constants/clinicalVocabulary';
+import { useAuthStore } from '@/store/authStore';
 
 const MAX_ENTRIES = 2000;
 const SEED_LAST_USED = 0;
@@ -36,6 +38,20 @@ function getSeed(lang: SupportedLanguage) {
 
 const SEED_EN = getSeed('en');
 
+const PAID_PLANS = new Set(['standard', 'advanced', 'enterprise']);
+const clinicalCache = new Map<string, Record<string, WordFreqEntry>>();
+
+function getClinicalWordFreq(lang: SupportedLanguage): Record<string, WordFreqEntry> {
+  if (clinicalCache.has(lang)) return clinicalCache.get(lang)!;
+  const wf: Record<string, WordFreqEntry> = {};
+  for (const word of getClinicalVocabulary(lang)) {
+    const key = word.toLowerCase();
+    wf[key] = { count: 1, lastUsed: 0 };
+  }
+  clinicalCache.set(lang, wf);
+  return wf;
+}
+
 function pruneIfNeeded(data: Record<string, WordFreqEntry>): Record<string, WordFreqEntry> {
   const entries = Object.entries(data);
   if (entries.length <= MAX_ENTRIES) return data;
@@ -64,7 +80,9 @@ export const usePredictionStore = create<PredictionState>()(
         const seed = getSeed(lang);
         const userWf = get().wordFreq;
         const userBg = get().bigrams;
-        const mergedWf = { ...seed.wordFreq, ...userWf };
+        const plan = useAuthStore.getState().profile?.plan;
+        const clinical = plan && PAID_PLANS.has(plan) ? getClinicalWordFreq(lang) : {};
+        const mergedWf = { ...seed.wordFreq, ...clinical, ...userWf };
         const mergedBg = { ...seed.bigrams, ...userBg };
         const predictions = getPredictions(text, mergedWf, mergedBg);
         set({ predictions });
