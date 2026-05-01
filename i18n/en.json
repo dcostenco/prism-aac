@@ -167,5 +167,9 @@
   "close_ai_chat": "Close AI chat",
   "back_to_categories": "Back to categories",
   "aac_panel": "AAC panel",
-  "message_text": "Message text"
+  "message_text": "Message text",
+  "cat_core_pronouns": "I / You / We",
+  "cat_core_verbs": "Core Verbs",
+  "cat_core_descriptors": "More / Not / All",
+  "cat_core_little": "Little Words"
 }

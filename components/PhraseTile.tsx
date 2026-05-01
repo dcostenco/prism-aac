@@ -55,7 +55,7 @@ export default function PhraseTile({ phrase, className, style, onClick, ariaLabe
             />
           )}
         </span>
-        <span className="shrink-0 w-full text-center leading-snug text-[clamp(0.65rem,1.3vw,1rem)] font-semibold py-1 border-t border-theme bg-white/50">{phrase}</span>
+        <span className="shrink-0 w-full text-center leading-snug text-[clamp(0.65rem,1.3vw,1rem)] font-semibold py-1 border-t border-theme">{phrase}</span>
       </span>
     </button>
   );

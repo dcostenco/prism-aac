@@ -167,5 +167,9 @@
   "close_ai_chat": "Închide chat IA",
   "back_to_categories": "Înapoi la categorii",
   "aac_panel": "Panou AAC",
-  "message_text": "Text mesaj"
+  "message_text": "Text mesaj",
+  "cat_core_pronouns": "Eu / Tu / Noi",
+  "cat_core_verbs": "Verbe de bază",
+  "cat_core_descriptors": "Mai mult / Nu / Tot",
+  "cat_core_little": "Cuvinte mici"
 }

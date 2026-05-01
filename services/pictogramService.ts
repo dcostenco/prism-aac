@@ -193,7 +193,13 @@ export async function getPictogramUrl(
     return url;
   }
 
-  let blob = await fetchArasaac(token, lang);
+  const fullPhrase = normalize(phrase);
+  let blob = fullPhrase !== token ? await fetchArasaac(fullPhrase, lang) : null;
+  if (!blob) blob = await fetchArasaac(token, lang);
+  if (!blob && lang !== 'en' && lang !== 'en-US') {
+    if (fullPhrase !== token) blob = await fetchArasaac(fullPhrase, 'en');
+    if (!blob) blob = await fetchArasaac(token, 'en');
+  }
   if (!blob && mode === 'symbols-ai') {
     blob = await fetchSynaluxAI(phrase, lang);
   }
