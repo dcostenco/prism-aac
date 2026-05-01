@@ -70,36 +70,19 @@ export default function CameraInputOverlay() {
       onMove(x, y) {
         setCursorPos({ x, y });
 
-        // Feed proximity calculator — estimates distance from screen
-        // based on apparent finger/hand size change over time.
-        // When finger approaches screen → touchProbability increases.
-        const proxState = proximityRef.current.update(
-          x / window.innerWidth, y / window.innerHeight,
-          30 + Math.random() * 5, // placeholder — real value comes from landmark size
-          640, 480, window.innerWidth, window.innerHeight,
-        );
-        setProximity(proxState.touchProbability);
-
-        // Proximity-based click: when finger is very close to screen
-        if (proxState.touchProbability >= 0.95 && !touchFiredRef.current) {
-          touchFiredRef.current = true;
-          const clickTarget = document.elementFromPoint(x, y);
-          if (clickTarget instanceof HTMLElement) {
-            tapFeedback();
-            clickTarget.click();
-          }
-        } else if (proxState.touchProbability < 0.5) {
-          touchFiredRef.current = false; // reset when finger pulls back
-        }
+        // Proximity detection is fed by real landmark data from the pose
+        // tracker (not here — CameraInputOverlay only receives cursor x,y).
+        // Proximity click will be wired when bodyPoseService provides
+        // finger width data alongside cursor position.
 
         const el = document.elementFromPoint(x, y);
         const interactive = el?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? null;
 
         const keyBtn = el?.closest('button[data-key], button[data-action]') as HTMLElement | null;
         if (keyBtn && keyBtn !== highlightedKeyRef.current) {
-          highlightedKeyRef.current?.classList.remove('precision-highlight');
+          highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
           highlightedKeyRef.current = keyBtn;
-          keyBtn.classList.add('precision-highlight');
+          keyBtn.classList.add('camera-cursor-highlight');
           const char = keyBtn.getAttribute('data-display') || '';
           const isUtility = !!keyBtn.getAttribute('data-action');
           if (char && !isUtility && char.length <= 2) {
@@ -109,7 +92,7 @@ export default function CameraInputOverlay() {
             setKeyBubble(prev => ({ ...prev, visible: false }));
           }
         } else if (!keyBtn && highlightedKeyRef.current) {
-          highlightedKeyRef.current.classList.remove('precision-highlight');
+          highlightedKeyRef.current.classList.remove('camera-cursor-highlight');
           highlightedKeyRef.current = null;
           setKeyBubble(prev => ({ ...prev, visible: false }));
         }
@@ -141,7 +124,7 @@ export default function CameraInputOverlay() {
 
     return () => {
       cancelAnimationFrame(rafRef.current);
-      highlightedKeyRef.current?.classList.remove('precision-highlight');
+      highlightedKeyRef.current?.classList.remove('camera-cursor-highlight');
       highlightedKeyRef.current = null;
       handle.stop();
       handleRef.current = null;

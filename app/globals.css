@@ -211,10 +211,10 @@ input[type="range"] {
 }
 
 .precision-highlight {
-  outline: 3px solid var(--accent-focus) !important;
-  outline-offset: -3px;
-  box-shadow: 0 0 12px rgba(37, 99, 235, 0.3);
-  transition: outline 0.05s ease;
+  background-color: rgba(37, 99, 235, 0.15) !important;
+  outline: 3px solid #2563eb !important;
+  outline-offset: -2px;
+  box-shadow: 0 0 16px rgba(37, 99, 235, 0.4);
   z-index: 10;
   position: relative;
 }
@@ -236,6 +236,17 @@ input[type="range"] {
 
 .dark .precision-highlight {
   box-shadow: 0 0 20px rgba(37, 99, 235, 0.6);
+}
+
+/* ── Camera Cursor Highlight (separate from mouse precision) ──── */
+
+.camera-cursor-highlight {
+  background-color: rgba(76, 175, 80, 0.15) !important;
+  outline: 3px solid #4CAF50 !important;
+  outline-offset: -2px;
+  box-shadow: 0 0 16px rgba(76, 175, 80, 0.4);
+  z-index: 10;
+  position: relative;
 }
 
 /* ── Switch Scanning ────────────────────────────────────────────── */
