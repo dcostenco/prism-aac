@@ -180,7 +180,7 @@ export default function CategoryPanel() {
                 key={p.id}
                 phrase={p.text}
                 onClick={() => handlePhrase(p.text)}
-                className={`${btn} min-h-[96px]`}
+                className={`${btn} min-h-[clamp(80px,15vw,120px)]`}
                 style={{ borderLeftColor: color, borderLeftWidth: '5px' }}
               />
             );
