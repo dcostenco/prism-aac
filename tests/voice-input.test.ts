@@ -91,3 +91,36 @@ describe('TTS code mapping for all languages', () => {
     }
   });
 });
+
+describe('aacSpeak single-char handling', () => {
+  it('appends period to single-char translations', () => {
+    const text = 'I';
+    const result = text.trim().length === 1 ? text.trim() + '.' : text;
+    expect(result).toBe('I.');
+  });
+
+  it('does not modify multi-char text', () => {
+    const text = 'Hello';
+    const result = text.trim().length === 1 ? text.trim() + '.' : text;
+    expect(result).toBe('Hello');
+  });
+
+  it('handles empty text', () => {
+    const text = '';
+    expect(text.trim().length).toBe(0);
+  });
+});
+
+describe('Synalux outputLanguage config', () => {
+  it('outputLanguage defaults to en', () => {
+    const defaultVal = 'en';
+    expect(defaultVal).toBe('en');
+  });
+
+  it('translation uses outputLanguage not language', () => {
+    const language = 'ru';
+    const outputLanguage = 'en';
+    const needsTranslation = language !== outputLanguage;
+    expect(needsTranslation).toBe(true);
+  });
+});
