@@ -7,8 +7,6 @@ import { usePredictionStore } from '@/store/predictionStore';
 import { tapFeedback } from '@/services/feedback';
 import { useSettingsStore, GridSize } from '@/store/settingsStore';
 import { speakWord } from '@/services/speechService';
-import { MATH_ITEMS } from '@/constants/mathSymbols';
-import { MathCategory } from '@/types';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
 import PhraseTile from './PhraseTile';
@@ -32,17 +30,6 @@ function PanelShell({ children }: { children: ReactNode }) {
     </section>
   );
 }
-
-const MATH_GROUPS: { key: MathCategory; labelKey: string }[] = [
-  { key: 'basic',       labelKey: 'math_basic' },
-  { key: 'digits',      labelKey: 'math_numbers' },
-  { key: 'algebra',     labelKey: 'math_algebra' },
-  { key: 'constants',   labelKey: 'math_constants' },
-  { key: 'trig',        labelKey: 'math_trigonometry' },
-  { key: 'calculus',    labelKey: 'math_calculus' },
-  { key: 'greek',       labelKey: 'math_greek_letters' },
-  { key: 'logic-sets',  labelKey: 'math_logic_sets' },
-];
 
 const GRID_COLS: Record<GridSize, string> = {
   4:  'grid-cols-2',
@@ -68,7 +55,7 @@ export default function CategoryPanel() {
     sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
     closeSidePanel, selectCategory, backToCategories, startOrdering, nextStep, prevStep, finishOrdering,
   } = useUIStore();
-  const { appendText, appendWord, text, autoSpeak, soundEnabled } = useMessageStore();
+  const { appendText, text, autoSpeak, soundEnabled } = useMessageStore();
   const { allCategories, getPhrasesForCategory, getSequencesForCategory } = useCategoryStore();
   const { learnWord } = usePredictionStore();
   const gridSize = useSettingsStore((s) => s.gridSize);
@@ -78,8 +65,7 @@ export default function CategoryPanel() {
   const isOpen =
     sidePanel === 'categories' ||
     sidePanel === 'category-detail' ||
-    sidePanel === 'ordering' ||
-    sidePanel === 'math';
+    sidePanel === 'ordering';
 
   if (!isOpen) return null;
 
@@ -97,45 +83,10 @@ export default function CategoryPanel() {
     if (autoSpeak && soundEnabled) speakWord(phraseText, speechRate, speechVolume, ttsCode);
   };
 
-  const handleMathItem = (symbol: string) => {
-    tapFeedback();
-    appendWord(symbol);
-  };
-
   const btn = 'aac-btn surface-key text-primary rounded-xl p-3 font-bold text-xl md:text-2xl select-none text-center border border-theme';
   const closeBtn = 'aac-btn w-12 h-12 rounded-xl surface-key text-muted text-2xl flex items-center justify-center border border-theme';
   const headerRow = 'flex items-center justify-between px-4 py-3 border-b border-theme shrink-0';
   const headerTitle = 'text-primary font-bold text-2xl md:text-3xl';
-
-  // ── MATH PANEL — every available symbol, grouped ────────────────────────
-  if (sidePanel === 'math') {
-    return (
-      <PanelShell>
-        <div className={headerRow}>
-          <span className={headerTitle}>{t('math')}</span>
-          <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label={t('close_panel')} className={closeBtn}>✕</button>
-        </div>
-        <div className="p-3 overflow-y-auto flex-1 min-h-0 space-y-4">
-          {MATH_GROUPS.map((group) => {
-            const items = MATH_ITEMS.filter((m) => m.category === group.key);
-            if (items.length === 0) return null;
-            return (
-              <div key={group.key}>
-                <p className="text-muted text-sm md:text-base font-bold mb-2 px-1 uppercase tracking-wider">{t(group.labelKey)}</p>
-                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(48px, 8vw, 72px), 1fr))' }}>
-                  {items.map((m) => (
-                    <button key={m.id} onClick={() => handleMathItem(m.symbol)} className="aac-btn surface-key text-primary rounded-xl font-bold text-[clamp(1rem,2.5vw,1.5rem)] select-none text-center border border-theme p-2 aspect-square flex items-center justify-center" aria-label={m.label} title={m.label}>
-                      {m.symbol}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </PanelShell>
-    );
-  }
 
   // ── ORDERING FLOW ───────────────────────────────────────────────────────
   if (sidePanel === 'ordering' && activeSequenceId) {

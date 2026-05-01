@@ -7,6 +7,7 @@ import Keyboard from './Keyboard';
 import CategoryPanel from './CategoryPanel';
 import CaregiverPanel from './CaregiverPanel';
 import AIChatPanel from './AIChatPanel';
+import MathPanel from './MathPanel';
 import HistoryModal from './HistoryModal';
 import SettingsModal from './SettingsModal';
 import AlertOverlay from './AlertOverlay';
@@ -96,6 +97,7 @@ export default function PrismApp() {
           <MessageBar />
           {!inlinePanelOpen && <PredictionBar />}
           <CategoryPanel />
+          <MathPanel />
           <CaregiverPanel />
           <AIChatPanel />
           {!inlinePanelOpen && (
