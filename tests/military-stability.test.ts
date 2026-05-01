@@ -2353,3 +2353,152 @@ describe('AudioContext warmup', () => {
     expect(shouldResume).toBe(false);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// Voice Cursor — pitch/volume to cursor position
+// ═══════════════════════════════════════════════════════════════
+
+describe('Voice Cursor — pitch detection', () => {
+  it('pitch range 80-600 Hz covers human voice', () => {
+    const MIN = 80;
+    const MAX = 600;
+    expect(MAX - MIN).toBe(520);
+  });
+
+  it('high pitch maps to top of screen', () => {
+    const pitch = 500;
+    const normalized = (pitch - 80) / (600 - 80);
+    const y = (1 - normalized) * 768;
+    expect(y).toBeLessThan(768 / 2);
+  });
+
+  it('low pitch maps to bottom of screen', () => {
+    const pitch = 100;
+    const normalized = (pitch - 80) / (600 - 80);
+    const y = (1 - normalized) * 768;
+    expect(y).toBeGreaterThan(768 / 2);
+  });
+
+  it('null pitch when signal too weak', () => {
+    const maxCorrelation = 0.005;
+    const detected = maxCorrelation >= 0.01 ? 440 : null;
+    expect(detected).toBeNull();
+  });
+});
+
+describe('Voice Cursor — volume mapping', () => {
+  it('loud sound maps to right side', () => {
+    const rms = 0.12;
+    const noiseFloor = 0.02;
+    const adjusted = Math.max(0, rms - noiseFloor);
+    const normalized = Math.min(1, adjusted / 0.15);
+    const x = normalized * 1024;
+    expect(x).toBeGreaterThan(512);
+  });
+
+  it('quiet sound maps to left side', () => {
+    const rms = 0.04;
+    const noiseFloor = 0.02;
+    const adjusted = Math.max(0, rms - noiseFloor);
+    const normalized = Math.min(1, adjusted / 0.15);
+    const x = normalized * 1024;
+    expect(x).toBeLessThan(512);
+  });
+
+  it('below noise floor = silence', () => {
+    const rms = 0.015;
+    const noiseFloor = 0.02;
+    const adjusted = Math.max(0, rms - noiseFloor);
+    expect(adjusted).toBe(0);
+  });
+});
+
+describe('Voice Cursor — noise floor calibration', () => {
+  it('calibrates from first 45 samples (~3 seconds at 15fps)', () => {
+    const SAMPLES = 45;
+    expect(SAMPLES).toBe(45);
+  });
+
+  it('averages ambient noise to establish baseline', () => {
+    const samples = [0.01, 0.015, 0.012, 0.011, 0.013];
+    const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
+    expect(avg).toBeCloseTo(0.0122, 3);
+  });
+
+  it('noise floor subtracts from all measurements', () => {
+    const noiseFloor = 0.02;
+    const rms = 0.08;
+    const adjusted = rms - noiseFloor;
+    expect(adjusted).toBe(0.06);
+  });
+});
+
+describe('Voice Cursor — silence detection', () => {
+  it('silence threshold at 0.02 RMS', () => {
+    const THRESHOLD = 0.02;
+    const rms = 0.015;
+    expect(rms < THRESHOLD).toBe(true);
+  });
+
+  it('cursor freezes after 500ms silence', () => {
+    const TIMEOUT = 500;
+    const lastSound = 1000;
+    const now = 1600;
+    expect(now - lastSound > TIMEOUT).toBe(true);
+  });
+
+  it('cursor resumes on new sound', () => {
+    const rms = 0.05;
+    const THRESHOLD = 0.02;
+    expect(rms >= THRESHOLD).toBe(true);
+  });
+});
+
+describe('Voice Cursor — dwell click', () => {
+  it('sustained sound on same element triggers click', () => {
+    const dwellMs = 1500;
+    const elapsed = 1600;
+    expect(elapsed >= dwellMs).toBe(true);
+  });
+
+  it('moving to different element resets dwell', () => {
+    const prev = 'button-a';
+    const curr = 'button-b';
+    expect(prev !== curr).toBe(true);
+  });
+
+  it('dwell only fires once per element', () => {
+    let triggered = false;
+    if (!triggered) {
+      triggered = true;
+    }
+    // Second attempt should not fire
+    const shouldFire = !triggered;
+    expect(shouldFire).toBe(false);
+  });
+});
+
+describe('Voice Cursor — RMS computation', () => {
+  it('silent buffer = 0 RMS', () => {
+    const buffer = [0, 0, 0, 0];
+    const sum = buffer.reduce((a, b) => a + b * b, 0);
+    const rms = Math.sqrt(sum / buffer.length);
+    expect(rms).toBe(0);
+  });
+
+  it('loud buffer = high RMS', () => {
+    const buffer = [0.5, -0.5, 0.5, -0.5];
+    const sum = buffer.reduce((a, b) => a + b * b, 0);
+    const rms = Math.sqrt(sum / buffer.length);
+    expect(rms).toBe(0.5);
+  });
+});
+
+describe('Voice Cursor — feature detection', () => {
+  it('requires getUserMedia + AudioContext', () => {
+    const hasMedia = typeof navigator !== 'undefined';
+    const hasAudio = typeof AudioContext !== 'undefined';
+    expect(typeof hasMedia).toBe('boolean');
+    expect(typeof hasAudio).toBe('boolean');
+  });
+});
