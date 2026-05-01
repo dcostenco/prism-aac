@@ -45,7 +45,7 @@ export default function Toolbar() {
     if (session) { voiceRef.current = session; setListening(true); }
   };
 
-  const btn = 'aac-btn w-[clamp(2rem,7vw,3rem)] h-[clamp(2rem,5svh,3rem)] rounded-full surface-key text-primary text-[clamp(1rem,3.5vw,1.5rem)] select-none border border-theme shrink-0 flex items-center justify-center';
+  const btn = 'aac-btn w-[clamp(2.25rem,7vw,3.25rem)] h-[clamp(2.25rem,7svh,3.25rem)] rounded-full surface-key text-primary text-[clamp(1.1rem,3.5vw,1.6rem)] select-none border border-theme shrink-0 flex items-center justify-center';
   const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
   const tapClose = (fn: () => void) => () => { tapFeedback(); setShowMore(false); fn(); };
   const moreBtn = 'aac-btn w-full h-12 rounded-xl surface-key text-primary font-bold text-base select-none border border-theme flex items-center gap-3 px-4';
@@ -55,7 +55,7 @@ export default function Toolbar() {
       <div className="flex gap-1">
         <button className={btn} onClick={tap(openCategories)} aria-label={t('categories')} title={t('categories')}>📂</button>
         {voiceSupported && (
-          <button className={`aac-btn w-[clamp(2rem,7vw,3rem)] h-[clamp(2rem,5svh,3rem)] rounded-full text-[clamp(1rem,3.5vw,1.5rem)] select-none border border-theme shrink-0 flex items-center justify-center ${listening ? 'bg-[#F44336] text-white border-transparent animate-pulse' : 'surface-key text-primary'}`}
+          <button className={`aac-btn w-[clamp(2.25rem,7vw,3.25rem)] h-[clamp(2.25rem,7svh,3.25rem)] rounded-full text-[clamp(1rem,3.5vw,1.5rem)] select-none border border-theme shrink-0 flex items-center justify-center ${listening ? 'bg-[#F44336] text-white border-transparent animate-pulse' : 'surface-key text-primary'}`}
             onClick={toggleMic} aria-pressed={listening} data-testid="toolbar-mic" aria-label={listening ? t('stop_voice') : t('start_voice')}>
             {listening ? '⏺' : '🎙'}
           </button>
@@ -66,7 +66,7 @@ export default function Toolbar() {
       </div>
       <div className="flex gap-1 items-center">
         <span className="text-[8px] text-dim" title={`Sync: ${syncStatus}`}>{SYNC_ICONS[syncStatus] ?? '⬡'}</span>
-        <button className={`aac-btn w-[clamp(2rem,7vw,3rem)] h-[clamp(2rem,5svh,3rem)] rounded-full text-[clamp(1rem,3.5vw,1.5rem)] select-none border border-theme shrink-0 flex items-center justify-center ${soundEnabled ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'}`}
+        <button className={`aac-btn w-[clamp(2.25rem,7vw,3.25rem)] h-[clamp(2.25rem,7svh,3.25rem)] rounded-full text-[clamp(1rem,3.5vw,1.5rem)] select-none border border-theme shrink-0 flex items-center justify-center ${soundEnabled ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'}`}
           onClick={tap(toggleSound)} aria-label={soundEnabled ? t('sound_on') : t('sound_off')}>
           {soundEnabled ? '🔊' : '🔇'}
         </button>
