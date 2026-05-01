@@ -271,6 +271,9 @@
   "sched_dinner": "Dinner",
   "sched_bedtime": "Bedtime",
 
+  "precision_touch": "Precision Touch",
+  "enable_precision_touch": "Precision Finger Tracking",
+  "precision_touch_desc": "Shows exactly which key your finger is on. Slide to the right key, lift to type.",
   "head_tracking": "Head Tracking",
   "enable_head_tracking": "Enable Head Tracking",
   "dwell_time": "Dwell Time",
@@ -279,5 +282,28 @@
   "tracking": "Tracking",
   "face_lost": "Face lost",
   "camera_required": "Camera",
-  "starting": "Starting"
+  "starting": "Starting",
+
+  "switch_scanning": "Switch Scanning",
+  "enable_switch_scan": "Enable Switch Scanning",
+  "switch_scan_desc": "For physical accessibility switches (AbleNet, Bluetooth). Cycles through buttons automatically.",
+  "scan_speed": "Scan Speed",
+  "scan_mode": "Scan Mode",
+  "scan_auto": "Auto",
+  "scan_manual": "Manual",
+  "group_scan": "Group Scanning",
+  "group_scan_desc": "Scan rows first, then items within the row",
+
+  "remote_modeling": "Remote Modeling",
+  "enable_remote": "Enable Remote Modeling",
+  "remote_desc": "Let a caregiver/therapist remotely highlight keys on this device for aided language stimulation.",
+  "room_code": "Room Code",
+  "waiting_for_caregiver": "Waiting for caregiver to connect...",
+  "caregiver_connected": "Caregiver connected",
+  "start_session": "Start Session",
+  "join_session": "Join Session",
+  "end_session": "End Session",
+
+  "wasm_tts": "Backup Speech Engine",
+  "wasm_tts_desc": "Emergency TTS that works even if the browser's speech engine crashes. Uses WebAssembly."
 }

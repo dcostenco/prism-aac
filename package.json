@@ -15,6 +15,7 @@
     "e2e:tablet": "playwright test --project=ipad-7 --project=ipad-13"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.35",
     "@serwist/next": "^9.5.8",
     "@supabase/supabase-js": "^2.105.1",
     "next": "16.2.4",
@@ -43,5 +44,8 @@
     "ts-jest": "^29.4.9",
     "typescript": "^5",
     "vitest": "^4.1.5"
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
   }
 }

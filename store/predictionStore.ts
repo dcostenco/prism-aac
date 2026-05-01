@@ -135,11 +135,22 @@ export const usePredictionStore = create<PredictionState>()(
           bigrams: { ...SEED_EN.bigrams, ...(p.bigrams ?? {}) },
         };
       },
-      storage: {
-        getItem: (name) => { try { const v = localStorage.getItem(name); return v ? JSON.parse(v) : null; } catch { return null; } },
-        setItem: (name, value) => { try { localStorage.setItem(name, JSON.stringify(value)); } catch {} },
-        removeItem: (name) => { try { localStorage.removeItem(name); } catch {} },
-      },
+      // Debounced localStorage: writes at most once per 3 seconds.
+      // Prevents synchronous 500KB+ JSON.stringify on every keystroke
+      // from causing typing lag and battery drain on mobile devices.
+      storage: (() => {
+        let writeTimer: ReturnType<typeof setTimeout> | null = null;
+        return {
+          getItem: (name: string) => { try { const v = localStorage.getItem(name); return v ? JSON.parse(v) : null; } catch { return null; } },
+          setItem: (name: string, value: unknown) => {
+            if (writeTimer) clearTimeout(writeTimer);
+            writeTimer = setTimeout(() => {
+              try { localStorage.setItem(name, JSON.stringify(value)); } catch { /* quota */ }
+            }, 3000);
+          },
+          removeItem: (name: string) => { try { localStorage.removeItem(name); } catch {} },
+        };
+      })(),
     },
   ),
 );

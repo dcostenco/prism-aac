@@ -23,6 +23,7 @@ import { useMessageStore } from '@/store/messageStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { keyFeedback, deleteFeedback } from '@/services/feedback';
+import { registerPanicListeners } from '@/services/panicService';
 import { useT } from '@/engine/useT';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -100,11 +101,31 @@ export default function PrismApp() {
     seedTemplates();
     ensureSeed();
     refreshAuth();
+    const unregisterPanic = registerPanicListeners();
+    return unregisterPanic;
   }, [runDecay, seedTemplates, ensureSeed, refreshAuth]);
 
-  // Physical keyboard support — captures keystrokes globally.
-  // Skips interactive form elements and any open modal/dialog so that typing
-  // inside Settings/AI inputs works normally.
+  // Warm up AudioContext on first user interaction so WASM TTS / beep
+  // fallback works even when triggered by non-gesture events (AI chat,
+  // remote modeling). Browsers suspend AudioContexts until user gesture.
+  useEffect(() => {
+    const warmup = () => {
+      try {
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') ctx.resume();
+        ctx.close();
+      } catch { /* */ }
+      window.removeEventListener('touchstart', warmup);
+      window.removeEventListener('keydown', warmup);
+    };
+    window.addEventListener('touchstart', warmup, { once: true, passive: true });
+    window.addEventListener('keydown', warmup, { once: true });
+    return () => {
+      window.removeEventListener('touchstart', warmup);
+      window.removeEventListener('keydown', warmup);
+    };
+  }, []);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;

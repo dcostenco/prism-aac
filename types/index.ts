@@ -5,6 +5,7 @@ export interface Category {
   sortOrder: number;
   isCustom: boolean;
   nameKey?: string;
+  updatedAt?: number;
 }
 
 export interface Phrase {
@@ -16,6 +17,7 @@ export interface Phrase {
   isCustom: boolean;
   usageCount: number;
   deletedAt?: number;
+  updatedAt?: number;
 }
 
 export type MathCategory =

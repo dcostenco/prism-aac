@@ -19,8 +19,9 @@ interface SettingsState {
   headTrackingEnabled: boolean;
   headTrackingDwellMs: number;
   headTrackingSensitivity: number;
+  precisionTouchEnabled: boolean;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'precisionTouchEnabled'>>,
   ) => void;
   setTheme: (theme: Theme) => void;
 }
@@ -39,18 +40,20 @@ export const useSettingsStore = create<SettingsState>()(
       headTrackingEnabled: false,
       headTrackingDwellMs: 1200,
       headTrackingSensitivity: 5,
+      precisionTouchEnabled: true,
       update: (partial) => set((s) => ({ ...s, ...partial })),
       setTheme: (theme) => set({ theme }),
     }),
     {
       name: 'prism-aac-settings',
-      version: 5,
+      version: 6,
       migrate: (persisted: unknown, version: number) => {
         const s = persisted as Record<string, unknown>;
-        if (version < 2) return { ...s, gridSize: 6, activeVocabSet: 'all', outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
-        if (version < 3) return { ...s, activeVocabSet: 'all', outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
-        if (version < 4) return { ...s, outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
-        if (version < 5) return { ...s, headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
+        if (version < 2) return { ...s, gridSize: 6, activeVocabSet: 'all', outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5, precisionTouchEnabled: true };
+        if (version < 3) return { ...s, activeVocabSet: 'all', outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5, precisionTouchEnabled: true };
+        if (version < 4) return { ...s, outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5, precisionTouchEnabled: true };
+        if (version < 5) return { ...s, headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5, precisionTouchEnabled: true };
+        if (version < 6) return { ...s, precisionTouchEnabled: true };
         return s;
       },
     },

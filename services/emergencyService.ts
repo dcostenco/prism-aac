@@ -78,7 +78,8 @@ function isTwoCornerHold(touches: TouchList | null): boolean {
   if (!touches || touches.length < 2) return false;
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const CORNER = 80; // px from edge
+  // Use 12% of screen dimensions — motor-accessible on 7" iPad through 13" iPad Pro
+  const CORNER = Math.max(60, Math.min(w, h) * 0.12);
   let hasTopLeft = false;
   let hasBottomRight = false;
   for (let i = 0; i < touches.length; i++) {
@@ -123,6 +124,7 @@ interface QueuedAlert {
   timestamp: number;
   location?: { lat: number; lng: number };
   sent: boolean;
+  severity?: 'critical' | 'urgent' | 'medical';
 }
 
 // Severity levels:
@@ -177,6 +179,12 @@ export function startAlarm(): void {
 
   try {
     alarmCtx = new AudioContext();
+    // Non-blocking resume — Safari suspends AudioContext when created
+    // outside a user gesture (e.g., from 'online' event). Fire-and-forget
+    // so the visual strobe and network dispatch proceed regardless.
+    if (alarmCtx.state === 'suspended') {
+      alarmCtx.resume().catch(() => {});
+    }
     alarmGain = alarmCtx.createGain();
     alarmGain.gain.value = 1.0;
     alarmGain.connect(alarmCtx.destination);
@@ -382,7 +390,21 @@ async function getLocationAndCountry(): Promise<QueuedAlertGeo> {
   };
 }
 
-async function queueAlert(phrase: string): Promise<QueuedAlert & { geo: QueuedAlertGeo }> {
+// Dedup window: if the same phrase/severity was queued or dispatched within
+// 5 minutes, silently ignore the duplicate. Prevents a child mashing "call 911"
+// 15 times from generating 15 concurrent Twilio VoIP calls to the PSAP.
+const DEDUP_WINDOW_MS = 5 * 60 * 1000;
+
+async function queueAlert(phrase: string, severity?: 'critical' | 'urgent' | 'medical'): Promise<(QueuedAlert & { geo: QueuedAlertGeo }) | null> {
+  const queue = getQueuedAlerts();
+  const now = Date.now();
+  const isDuplicate = queue.some(a =>
+    a.phrase === phrase &&
+    a.severity === severity &&
+    (now - a.timestamp) < DEDUP_WINDOW_MS
+  );
+  if (isDuplicate) return null;
+
   const geo = await getLocationAndCountry();
   const alert: QueuedAlert & { geo: QueuedAlertGeo } = {
     id: `em-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -390,9 +412,9 @@ async function queueAlert(phrase: string): Promise<QueuedAlert & { geo: QueuedAl
     timestamp: Date.now(),
     location: geo.location || undefined,
     sent: false,
+    severity,
     geo,
   };
-  const queue = getQueuedAlerts();
   queue.push(alert);
   saveQueuedAlerts(queue);
   return alert;
@@ -672,7 +694,13 @@ export async function triggerEmergency(
     return () => {};
   }
 
-  const alert = await queueAlert(phrase);
+  const alert = await queueAlert(phrase, severity);
+
+  // Dedup: same phrase already queued within 5 minutes — silently ignore
+  if (!alert) {
+    onComplete(false, false);
+    return () => {};
+  }
 
   // Override language + emergency number from live GPS country detection
   if (alert.geo.detectedLanguage) config.language = alert.geo.detectedLanguage;
@@ -682,17 +710,19 @@ export async function triggerEmergency(
   }
 
   const countdownTotal = severity === 'critical' ? 5 : config.countdownSeconds;
-  let remaining = countdownTotal;
   const isCancellable = severity !== 'critical';
+  // Absolute dispatch time — immune to device sleep / background throttling.
+  // If device wakes up past the dispatch time, check if stale (>5 min drift).
+  const dispatchAtMs = Date.now() + countdownTotal * 1000;
+  const STALE_THRESHOLD_MS = 5 * 60 * 1000;
 
   startAlarm();
   startFlash();
 
   countdownCallback = onCountdown;
   cancelCallback = onCancel || null;
-  onCountdown(remaining);
+  onCountdown(countdownTotal);
 
-  // Register two-corner cancel gesture ONLY for non-critical alerts
   let unregisterGesture: (() => void) | null = null;
   if (isCancellable) {
     unregisterGesture = registerCancelGesture(() => {
@@ -702,10 +732,22 @@ export async function triggerEmergency(
   }
 
   countdownTimer = setInterval(async () => {
-    remaining--;
+    const now = Date.now();
+    const remaining = Math.max(0, Math.ceil((dispatchAtMs - now) / 1000));
     onCountdown(remaining);
 
     if (remaining <= 0) {
+      // If device slept through the countdown and woke up way past dispatch
+      // time, treat as stale — don't blindly dispatch hours-old alerts.
+      const driftMs = now - dispatchAtMs;
+      if (driftMs > STALE_THRESHOLD_MS) {
+        clearCountdown();
+        if (unregisterGesture) unregisterGesture();
+        stopAlarm();
+        stopFlash();
+        onComplete(false, true); // queued, not dispatched
+        return;
+      }
       clearCountdown();
       if (unregisterGesture) unregisterGesture();
       const sent = await sendAlert(alert, config);
@@ -756,19 +798,101 @@ function clearCountdown(): void {
  * Flush queued alerts when connectivity restores.
  * Call this from a 'online' event listener.
  */
+// Non-critical alerts expire after 10 minutes.
+const QUEUE_TTL_MS = 10 * 60 * 1000;
+// Critical alerts (abuse, abduction) are NEVER silently dropped, but
+// after 30 minutes they are downgraded to SMS/email only (no live 911
+// call) to prevent stale SWATing (e.g., iPad reconnects 3 days later).
+const CRITICAL_DISPATCH_WINDOW_MS = 30 * 60 * 1000;
+
+// Mutex: prevents concurrent flush from network flapping (car/wheelchair
+// moving through dead zones — online event fires 5x in 1 second).
+let isFlushing = false;
+
+// Alerts older than 60s require re-verification before dispatch.
+// The UI must present a 10-second "Dispatching Delayed Alert..." overlay
+// with the standard cancel gesture. Only if no cancellation occurs does
+// the alert actually send. This prevents resolved crises from auto-dispatching
+// when the iPad walks into a WiFi zone 15 minutes later.
+const REVERIFY_THRESHOLD_MS = 60 * 1000;
+let onDelayedAlertCallback: ((alert: QueuedAlert, proceed: () => void, cancel: () => void) => void) | null = null;
+
+export function setDelayedAlertHandler(handler: (alert: QueuedAlert, proceed: () => void, cancel: () => void) => void): void {
+  onDelayedAlertCallback = handler;
+}
+
 export async function flushQueuedAlerts(): Promise<number> {
+  if (isFlushing) return 0;
+  isFlushing = true;
+  try {
+    let total = 0;
+    // Re-drain: if new alerts arrive while processing (child presses panic
+    // during the 10-second verification window), process them too before
+    // releasing the mutex. Prevents silently stranded alerts.
+    // Re-drain loop: process new alerts that arrive during verification.
+    // BREAK if no progress (network down) — retry on next 'online' event.
+    for (let pass = 0; pass < 10; pass++) {
+      const sent = await _flushQueuedAlerts();
+      total += sent;
+      const remaining = getQueuedAlerts().filter(a => !a.sent);
+      if (remaining.length === 0) break;
+      if (sent === 0) break; // no progress — network failing, stop retrying
+    }
+    return total;
+  } finally { isFlushing = false; }
+}
+
+async function _flushQueuedAlerts(): Promise<number> {
   const config = getConfig();
   const queue = getQueuedAlerts();
-  const unsent = queue.filter((a) => !a.sent);
-  if (unsent.length === 0) return 0;
+  const now = Date.now();
+
+  const isCritical = (a: QueuedAlert) => a.severity === 'critical';
+  const isExpired = (a: QueuedAlert) => (now - a.timestamp) >= QUEUE_TTL_MS;
+  const isStaleCritical = (a: QueuedAlert) => isCritical(a) && (now - a.timestamp) >= CRITICAL_DISPATCH_WINDOW_MS;
+
+  // Non-critical: drop after 10 min. Critical: keep forever but downgrade after 30 min.
+  const unsent = queue.filter((a) => !a.sent && (!isExpired(a) || isCritical(a)));
+
+  if (unsent.length === 0) {
+    saveQueuedAlerts(queue.filter((a) => a.sent));
+    return 0;
+  }
 
   let sent = 0;
   for (const alert of unsent) {
-    const ok = await sendAlert(alert, config);
-    if (ok) sent++;
+    const isDelayed = (now - alert.timestamp) > REVERIFY_THRESHOLD_MS;
+
+    if (isStaleCritical(alert)) {
+      const savedAutoCall = config.autoCall911;
+      config.autoCall911 = false;
+      alert.phrase = `[DELAYED OFFLINE ALERT - ${new Date(alert.timestamp).toISOString()}] ${alert.phrase}`;
+      const ok = await sendAlert(alert, config);
+      config.autoCall911 = savedAutoCall;
+      if (ok) sent++;
+    } else if (isDelayed && onDelayedAlertCallback) {
+      // Alert >60s old: require caregiver re-verification before dispatch.
+      // 10-second timeout: if UI fails to render (app backgrounded, crash),
+      // auto-proceed with SMS-only to prevent queue deadlock.
+      const dispatched = await Promise.race([
+        new Promise<boolean>((resolve) => {
+          onDelayedAlertCallback!(alert, () => resolve(true), () => resolve(false));
+        }),
+        new Promise<boolean>((resolve) => setTimeout(() => resolve(true), 10000)),
+      ]);
+      if (dispatched) {
+        const ok = await sendAlert(alert, config);
+        if (ok) sent++;
+      } else {
+        alert.sent = true; // cancelled by caregiver
+      }
+    } else {
+      const ok = await sendAlert(alert, config);
+      if (ok) sent++;
+    }
   }
 
-  saveQueuedAlerts(queue.filter((a) => !a.sent));
+  saveQueuedAlerts(queue.filter((a) => !a.sent && (!isExpired(a) || isCritical(a))));
   return sent;
 }
 

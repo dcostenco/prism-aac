@@ -39,23 +39,31 @@ async function probeOllama(): Promise<boolean> {
   }
 }
 
-/**
- * Returns true once we've confirmed prism-coder:7b is reachable on this
- * device. Resolves once per page load — subsequent calls share the same
- * promise so the probe only fires once.
- */
+// Only cache positive results permanently. If probe returns false,
+// allow re-probe after 30s cooldown — the local model may start later.
+let lastProbeTime = 0;
+const REPROBE_COOLDOWN_MS = 30_000;
+
 export function isLocalModelAvailable(): Promise<boolean> {
-  if (!probePromise) probePromise = probeOllama();
+  if (probePromise) return probePromise;
+
+  const now = Date.now();
+  if (cachedResult === true) return Promise.resolve(true);
+  if (cachedResult === false && (now - lastProbeTime) < REPROBE_COOLDOWN_MS) {
+    return Promise.resolve(false);
+  }
+
+  lastProbeTime = now;
+  probePromise = probeOllama().then(v => {
+    cachedResult = v;
+    if (!v) probePromise = null; // allow re-probe on next call after cooldown
+    return v;
+  });
   return probePromise;
 }
 
-/**
- * Synchronous getter for components that have already awaited the probe.
- * Returns null until the probe resolves. Useful for UI states that want
- * to render a "Local fast model: connected" badge without re-probing.
- */
 let cachedResult: boolean | null = null;
-isLocalModelAvailable().then((v) => { cachedResult = v; }).catch(() => { cachedResult = false; });
+
 export function getLocalModelStatus(): boolean | null {
   return cachedResult;
 }

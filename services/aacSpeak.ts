@@ -25,16 +25,20 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     const outLang = (outputLanguage || language || 'en') as SupportedLanguage;
     const translating = inLang !== outLang;
 
+    // Single-character words (I, Я, я) get spoken as letter names by TTS
+    // ("capital I" instead of the pronoun "I"). Appending a period forces
+    // the TTS engine to read it as a word, not spell it.
+    let toSpeak = text;
     if (translating) {
-      let translated = translateTextSync(text, inLang, outLang);
-      if (translated.trim().length === 1) translated = translated.trim() + '.';
-      speak(translated, rate, volume, getTTSCode(outLang), tone);
-    } else {
-      speak(text, rate, volume, getTTSCode(inLang), tone);
+      toSpeak = translateTextSync(text, inLang, outLang);
     }
+    if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
+    const ttsCode = translating ? getTTSCode(outLang) : getTTSCode(inLang);
+    speak(toSpeak, rate, volume, ttsCode, tone);
   } catch {
-    // Last resort: speak original text with default English voice.
-    // A child must NEVER be left without speech output.
-    try { speak(text, rate, volume, 'en-US'); } catch { /* truly fatal */ }
+    // Last resort: speak original text using the user's configured language,
+    // NOT hardcoded en-US (which would mangle non-Latin text).
+    const fallbackLang = useSettingsStore.getState().language || 'en';
+    try { speak(text, rate, volume, getTTSCode(fallbackLang as SupportedLanguage)); } catch { /* truly fatal */ }
   }
 }

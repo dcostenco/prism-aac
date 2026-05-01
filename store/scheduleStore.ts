@@ -14,12 +14,17 @@ interface ScheduleState {
   tasks: ScheduleTask[];
   rewards: number;
   timerSeconds: number;
+  // Absolute end timestamp — immune to background throttling, device sleep.
+  // UI computes remaining = max(0, timerEndMs - Date.now()) on every frame.
+  timerEndMs: number;
   addTask: (text: string, icon: string) => void;
   removeTask: (id: string) => void;
   toggleDone: (id: string) => void;
   resetDay: () => void;
   addReward: (count?: number) => void;
   setTimerSeconds: (s: number) => void;
+  startTimer: (durationSeconds: number) => void;
+  resetTimer: () => void;
   reorderTask: (id: string, newOrder: number) => void;
 }
 
@@ -41,6 +46,7 @@ export const useScheduleStore = create<ScheduleState>()(
       tasks: DEFAULT_TASKS,
       rewards: 0,
       timerSeconds: 300,
+      timerEndMs: 0,
 
       addTask: (text, icon) =>
         set((s) => ({
@@ -76,6 +82,11 @@ export const useScheduleStore = create<ScheduleState>()(
         set((s) => ({ rewards: s.rewards + count })),
 
       setTimerSeconds: (seconds) => set({ timerSeconds: seconds }),
+
+      startTimer: (durationSeconds) =>
+        set({ timerEndMs: Date.now() + durationSeconds * 1000 }),
+
+      resetTimer: () => set({ timerEndMs: 0 }),
 
       reorderTask: (id, newOrder) =>
         set((s) => ({

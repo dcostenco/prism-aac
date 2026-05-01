@@ -32,11 +32,8 @@ export default function MessageBar() {
     if (instant.toLowerCase() !== text.trim().toLowerCase()) setTranslated(instant);
   }, [text, language, outputLanguage]);
 
-  // Debounced background correction. As the user types, we ask the
-  // /api/v1/text/correct endpoint for the most likely intended utterance.
-  // The suggestion is shown inline (greyed) and auto-applied on Speak —
-  // critical for users with motor impairments who can't type precisely
-  // ("bowlof,ri" → "bowl of rice").
+  // Debounced background correction — suggestion shown inline, child
+  // must explicitly tap to accept. Never auto-applied.
   useEffect(() => {
     setSuggestion(null);
     const trimmed = text.trim();
@@ -61,16 +58,17 @@ export default function MessageBar() {
     const original = text.trim();
     if (!original || !soundEnabled) return;
 
-    const toSpeak = suggestion && suggestion !== original ? suggestion : original;
-    if (suggestion && suggestion !== original) { setText(suggestion); setSuggestion(null); }
-    addToHistory(toSpeak);
+    // CRITICAL: Always speak the child's exact text. Never auto-apply AI
+    // suggestions — the child's authorship must be preserved. Suggestions
+    // are only applied when the child explicitly taps them.
+    addToHistory(original);
 
     if (translated) {
       aacSpeak(translated, speechRate, speechVolume, activeTone);
     } else {
-      aacSpeak(toSpeak, speechRate, speechVolume, activeTone);
+      aacSpeak(original, speechRate, speechVolume, activeTone);
     }
-  }, [text, soundEnabled, suggestion, speechRate, speechVolume, outputTtsCode, activeTone, addToHistory, setText, translated]);
+  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }

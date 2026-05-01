@@ -112,13 +112,35 @@ export function getPredictions(
   return scored;
 }
 
+// LRU ceiling: evict oldest entries when dictionary exceeds max size.
+// Prevents localStorage exhaustion from unbounded n-gram growth.
+const MAX_WORDS = 5000;
+const MAX_BIGRAMS = 3000;
+const MAX_TRIGRAMS = 2000;
+
+function evictLRU(dict: Record<string, WordFreqEntry>, maxSize: number): Record<string, WordFreqEntry> {
+  const keys = Object.keys(dict);
+  if (keys.length <= maxSize) return dict;
+  // Evict to 90% of maxSize in one batch so the O(N log N) sort only
+  // runs once every ~500 keystrokes instead of on every single keystroke.
+  const targetSize = Math.floor(maxSize * 0.9);
+  const sorted = keys
+    .map(k => ({ k, lastUsed: dict[k].lastUsed }))
+    .sort((a, b) => a.lastUsed - b.lastUsed);
+  const toRemove = sorted.slice(0, keys.length - targetSize);
+  const result = { ...dict };
+  for (const { k } of toRemove) delete result[k];
+  return result;
+}
+
 export function recordWord(
   wordFreq: Record<string, WordFreqEntry>,
   word: string,
 ): Record<string, WordFreqEntry> {
   const key = word.toLowerCase();
   const existing = wordFreq[key];
-  return { ...wordFreq, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
+  const updated = { ...wordFreq, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
+  return evictLRU(updated, MAX_WORDS);
 }
 
 export function recordBigram(
@@ -128,7 +150,8 @@ export function recordBigram(
 ): Record<string, WordFreqEntry> {
   const key = `${word1.toLowerCase()}|${word2.toLowerCase()}`;
   const existing = bigrams[key];
-  return { ...bigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
+  const updated = { ...bigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
+  return evictLRU(updated, MAX_BIGRAMS);
 }
 
 export function recordTrigram(
@@ -139,7 +162,8 @@ export function recordTrigram(
 ): Record<string, WordFreqEntry> {
   const key = `${word1.toLowerCase()}|${word2.toLowerCase()}|${word3.toLowerCase()}`;
   const existing = trigrams[key];
-  return { ...trigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
+  const updated = { ...trigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
+  return evictLRU(updated, MAX_TRIGRAMS);
 }
 
 export function buildNgramsFromPhrases(

@@ -12,6 +12,82 @@ import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { tapFeedback } from '@/services/feedback';
 import HeadTrackingSettings from './HeadTrackingSettings';
+import HandCalibration from './HandCalibration';
+import { getActiveProfile, loadProfiles, deleteProfile, setActiveProfile, enableContinuousLearning, disableContinuousLearning, isContinuousLearningActive } from '@/services/handProfileService';
+
+function HandProfileSection() {
+  const [showCalibration, setShowCalibration] = useState(false);
+  const [autoLearn, setAutoLearn] = useState(isContinuousLearningActive());
+  const profiles = loadProfiles();
+  const active = getActiveProfile();
+
+  if (showCalibration) {
+    return <HandCalibration onClose={() => setShowCalibration(false)} />;
+  }
+
+  return (
+    <div className="py-2 space-y-2">
+      <div className="surface-key rounded-xl p-3 border border-theme">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-muted text-xs uppercase tracking-wider">Hand Profile</span>
+          <span className="text-[#4CAF50] text-xs font-bold">{active.name || 'Default'}</span>
+        </div>
+        {active.id !== 'default' && (
+          <div className="grid grid-cols-2 gap-1 text-xs mb-2">
+            <div className="flex justify-between"><span className="text-muted">Hand</span><span className="text-primary capitalize">{active.handedness}</span></div>
+            <div className="flex justify-between"><span className="text-muted">Y-Offset</span><span className="text-primary">{active.yOffset}px</span></div>
+            <div className="flex justify-between"><span className="text-muted">Tremor</span><span className="text-primary">{active.tremorAmplPx}px @ {active.tremorFreqHz}Hz</span></div>
+            <div className="flex justify-between"><span className="text-muted">Smoothing</span><span className="text-primary">{active.emaAlpha}</span></div>
+            <div className="flex justify-between"><span className="text-muted">Dead Zone</span><span className="text-primary">{active.deadZonePx}px</span></div>
+            <div className="flex justify-between"><span className="text-muted">Touches</span><span className="text-primary">{active.touchSamples}</span></div>
+          </div>
+        )}
+        <button
+          onClick={() => { tapFeedback(); setShowCalibration(true); }}
+          className="aac-btn w-full bg-[#2196F3] text-white rounded-lg py-2.5 text-sm font-bold"
+        >
+          {active.id === 'default' ? 'Scan Hand & Calibrate' : 'Re-Calibrate'}
+        </button>
+      </div>
+
+      {/* Auto-learn toggle */}
+      <label className="flex items-center justify-between py-1">
+        <div>
+          <span className="text-primary text-sm">Auto-Learn</span>
+          <p className="text-muted text-[10px]">Continuously improves precision from usage</p>
+        </div>
+        <button
+          onClick={() => {
+            tapFeedback();
+            if (autoLearn) { disableContinuousLearning(); setAutoLearn(false); }
+            else { enableContinuousLearning(); setAutoLearn(true); }
+          }}
+          aria-pressed={autoLearn}
+          className={`w-12 h-7 rounded-full transition-colors shrink-0 ml-3 ${autoLearn ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}
+        >
+          <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${autoLearn ? 'translate-x-5' : ''}`} />
+        </button>
+      </label>
+
+      {/* Profile list */}
+      {profiles.length > 1 && (
+        <div className="space-y-1">
+          {profiles.filter(p => p.id !== 'default').map(p => (
+            <div key={p.id} className="flex items-center justify-between surface-key rounded-lg px-3 py-2 border border-theme text-sm">
+              <button
+                onClick={() => { tapFeedback(); setActiveProfile(p.id); }}
+                className={`text-primary font-semibold ${active.id === p.id ? 'text-[#4CAF50]' : ''}`}
+              >
+                {active.id === p.id ? '● ' : ''}{p.name || p.id}
+              </button>
+              <button onClick={() => { tapFeedback(); deleteProfile(p.id); }} className="text-[#F44336] text-xs">Delete</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const PLAN_LABEL_KEYS: Record<SynaluxProfile['plan'], string> = {
   free: 'plan_free',
@@ -102,6 +178,23 @@ export default function SettingsModal() {
           {/* Accessibility */}
           <div>
             <h3 className={sectionTitle}>{t('accessibility')}</h3>
+            <label className="flex items-center justify-between py-2">
+              <div>
+                <span className="text-primary text-lg">{t('enable_precision_touch')}</span>
+                <p className="text-muted text-xs mt-0.5">{t('precision_touch_desc')}</p>
+              </div>
+              <button
+                onClick={() => settings.update({ precisionTouchEnabled: !settings.precisionTouchEnabled })}
+                aria-pressed={settings.precisionTouchEnabled}
+                aria-label={t('enable_precision_touch')}
+                className={`w-14 h-8 rounded-full transition-colors shrink-0 ml-3 ${settings.precisionTouchEnabled ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}
+              >
+                <div className={`w-6 h-6 rounded-full bg-white transition-transform mx-1 ${settings.precisionTouchEnabled ? 'translate-x-6' : ''}`} />
+              </button>
+            </label>
+            {settings.precisionTouchEnabled && (
+              <HandProfileSection />
+            )}
             <label className="flex items-center justify-between py-2">
               <span className="text-primary text-lg">{t('high_contrast')}</span>
               <button

@@ -90,14 +90,13 @@ export const useMessageStore = create<MessageState>()(
     {
       name: 'prism-aac-message',
       version: 2,
-      // Existing users had `autoSpeak: false` persisted from the prior
-      // default. Bumping version + flipping it to true on migrate so every
-      // existing client gets the corrected default once. Subsequent loads
-      // preserve whatever the user manually toggles.
+      // v2: respect the user's existing autoSpeak preference. If they
+      // deliberately turned it off (e.g., quiet classroom), don't override.
+      // Only set true when the field was never persisted (undefined).
       migrate: (persistedState: unknown, version: number) => {
         const s = (persistedState ?? {}) as { autoSpeak?: boolean; soundEnabled?: boolean; history?: Array<{ text: string; timestamp: number }> };
         if (version < 2) {
-          return { ...s, autoSpeak: true };
+          return { ...s, autoSpeak: s.autoSpeak ?? true };
         }
         return s;
       },

@@ -11,6 +11,8 @@
  */
 
 import { speakAzure, stopAzureAudio, ToneStyle } from './azureTTS';
+import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -79,7 +81,12 @@ function isPaidTier(): boolean {
 }
 
 /**
- * Speak text — resilient fallback chain. Never fails silently.
+ * Speak text — 4-tier resilient fallback chain. Never fails silently.
+ *
+ *   Tier 1: Azure Neural TTS (online + paid — best quality)
+ *   Tier 2: Web Speech Premium/Enhanced voice (offline-capable)
+ *   Tier 3: Web Speech any voice (offline-capable)
+ *   Tier 4: WASM espeak-ng / audio beep pattern (always works)
  */
 export async function speak(
   text: string,
@@ -98,14 +105,28 @@ export async function speak(
   }
 
   // Tier 2/3: Local voice (offline-capable)
-  speakLocal(text, rate, volume, lang);
+  if (isSpeechSupported()) {
+    speakLocal(text, rate, volume, lang);
+    return;
+  }
+
+  // Tier 4: WASM TTS fallback (if Web Speech API unavailable)
+  try {
+    const { speakWasm, isWasmTTSReady, initWasmTTS } = await import('./wasmTTS');
+    if (!isWasmTTSReady()) await initWasmTTS();
+    await speakWasm(text, lang, rate, volume);
+  } catch {
+    console.warn('[PrismAAC] All TTS tiers failed — child cannot hear output');
+  }
 }
 
 /**
  * Speak a single word — always local for <50ms latency (critical for AAC).
+ * Dynamically pulls user's language if no lang provided — never hardcodes en-US.
  */
-export function speakWord(word: string, rate = 0.5, volume = 1.0, lang = 'en-US'): void {
-  speakLocal(word, rate, volume, lang);
+export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string): void {
+  const actualLang = lang || getTTSCode((useSettingsStore.getState().language || 'en') as SupportedLanguage);
+  speakLocal(word, rate, volume, actualLang);
 }
 
 function speakLocal(text: string, rate: number, volume: number, lang: string): void {
