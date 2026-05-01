@@ -348,6 +348,26 @@ export default function Keyboard() {
   const shiftLabel = capsLock ? 'Caps lock on' : isUpperCase ? 'Shift on' : 'Shift off';
   const shiftGlyph = capsLock ? 'A' : isUpperCase ? '⇧' : '⇪';
 
+  // Pointer-based precision: show bubble on hover for ALL input types
+  // (mouse, trackpad, stylus, touch). Works on desktop AND tablet.
+  const handlePointerEnter = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!precisionTouchEnabled) return;
+    const btn = e.currentTarget;
+    const char = btn.getAttribute('data-display') || '';
+    if (char) {
+      const rect = btn.getBoundingClientRect();
+      setBubble({ char, x: rect.left + rect.width / 2, y: rect.top, visible: true });
+      setActiveKey(btn);
+    }
+  }, [precisionTouchEnabled, setActiveKey]);
+
+  const handlePointerLeave = useCallback(() => {
+    if (!precisionTouchEnabled || touchActiveRef.current) return;
+    setBubble(prev => ({ ...prev, visible: false }));
+    activeKeyRef.current?.classList.remove('precision-highlight');
+    activeKeyRef.current = null;
+  }, [precisionTouchEnabled]);
+
   return (
     <div
       className={`flex-1 flex flex-col gap-[1px] p-[2px] ${precisionTouchEnabled ? 'precision-touch-active' : ''}`}
@@ -365,7 +385,8 @@ export default function Keyboard() {
               data-display={shiftGlyph}
               onPointerDown={handleShiftDown}
               onPointerUp={handleShiftUp}
-              onPointerLeave={() => { if (shiftHoldTimer.current) { clearTimeout(shiftHoldTimer.current); shiftHoldTimer.current = null; } }}
+              onPointerEnter={handlePointerEnter}
+              onPointerLeave={(e) => { handlePointerLeave(); if (shiftHoldTimer.current) { clearTimeout(shiftHoldTimer.current); shiftHoldTimer.current = null; } }}
               aria-label={shiftLabel}
               aria-pressed={capsLock}
               data-testid="shift-key"
@@ -382,6 +403,8 @@ export default function Keyboard() {
                 data-key={displayChar}
                 data-display={displayChar}
                 onClick={() => handleKey(key)}
+                onPointerEnter={handlePointerEnter}
+                onPointerLeave={handlePointerLeave}
                 aria-label={key}
                 className={`${kc} ${letterSize} flex-1`}
               >
@@ -390,7 +413,7 @@ export default function Keyboard() {
             );
           })}
           {ri === 2 && keyboardMode === 'letters' && (
-            <button data-action="backspace" data-display="⌫" onClick={handleBackspace} aria-label="Backspace" className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)]`}>⌫</button>
+            <button data-action="backspace" data-display="⌫" onClick={handleBackspace} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} aria-label="Backspace" className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)]`}>⌫</button>
           )}
         </div>
       ))}
@@ -399,10 +422,10 @@ export default function Keyboard() {
         <button data-action="mode" data-display={keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'} onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>
-        <button data-action="space" data-display={t('space')} onClick={handleSpace} aria-label={t('space')} className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
-        <button data-key="." data-display="." onClick={() => handleKey('.')} aria-label="." className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>.</button>
-        <button data-key="," data-display="," onClick={() => handleKey(',')} aria-label="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>,</button>
-        <button data-key="?" data-display="?" onClick={() => handleKey('?')} aria-label="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>?</button>
+        <button data-action="space" data-display={t('space')} onClick={handleSpace} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} aria-label={t('space')} className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
+        <button data-key="." data-display="." onClick={() => handleKey('.')} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} aria-label="." className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>.</button>
+        <button data-key="," data-display="," onClick={() => handleKey(',')} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} aria-label="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>,</button>
+        <button data-key="?" data-display="?" onClick={() => handleKey('?')} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} aria-label="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>?</button>
         <button
           data-action="speak"
           data-display={t('speak')}

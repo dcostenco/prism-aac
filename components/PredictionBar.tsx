@@ -69,12 +69,16 @@ export default function PredictionBar() {
   const [displayed, setDisplayed] = useState<string[]>(langDefaults);
   const prevRef = useRef<string[]>(langDefaults);
 
+  // Immediately show language-specific defaults on language switch,
+  // then refine with predictions if there's typed text.
+  const prevLangRef = useRef(language);
   useEffect(() => {
     const defaults = getPredictionsForLanguage(language);
-    if (!text.trim()) {
+    if (!text.trim() || language !== prevLangRef.current) {
       prevRef.current = defaults;
       setDisplayed(defaults);
-      return;
+      prevLangRef.current = language;
+      if (!text.trim()) return;
     }
     updatePredictions(text, language);
   }, [text, updatePredictions, language]);
