@@ -66,7 +66,7 @@ export default function HeadTrackingOverlay() {
     const handle = startHeadTracker({
       dwellMs,
       sensitivity,
-      smoothing: 0.3,
+      smoothing: 0.15,
       onMove(x, y) {
         setCursorPos({ x, y });
 

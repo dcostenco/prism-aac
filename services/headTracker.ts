@@ -20,7 +20,7 @@
 export interface HeadTrackerOptions {
   dwellMs: number;        // default 1200ms
   sensitivity: number;    // 1-10, default 5
-  smoothing: number;      // 0-1, default 0.3
+  smoothing: number;      // 0-1, default 0.15 (adaptive: less on small screens)
   onMove: (x: number, y: number) => void;
   onDwell: (element: Element) => void;
   onStatusChange: (status: 'starting' | 'tracking' | 'lost' | 'stopped') => void;
@@ -299,9 +299,24 @@ export function startHeadTracker(
     rawX = Math.max(0, Math.min(window.innerWidth, rawX));
     rawY = Math.max(0, Math.min(window.innerHeight, rawY));
 
-    // Smooth
-    sx = ema(sx, rawX, opts.smoothing);
-    sy = ema(sy, rawY, opts.smoothing);
+    // Velocity-adaptive smoothing: fast head movement = responsive,
+    // slow/still = stable (eliminates wiggle at rest, fast for intentional moves)
+    const dx = rawX - sx;
+    const dy = rawY - sy;
+    const velocity = Math.sqrt(dx * dx + dy * dy);
+    const screenSize = Math.min(window.innerWidth, window.innerHeight);
+    const screenFactor = screenSize < 768 ? 0.5 : screenSize < 1200 ? 0.7 : 1.0;
+    // Low velocity (<5px): heavy smoothing 0.03 (rock stable)
+    // Medium (5-50px): interpolate smoothing
+    // High velocity (>50px): light smoothing 0.2 (responsive to intentional moves)
+    const velocitySmooth = velocity < 5
+      ? 0.03
+      : velocity > 50
+        ? 0.2 * screenFactor
+        : 0.03 + (velocity - 5) / 45 * (0.2 * screenFactor - 0.03);
+    const finalSmooth = Math.min(opts.smoothing, velocitySmooth);
+    sx = ema(sx, rawX, finalSmooth);
+    sy = ema(sy, rawY, finalSmooth);
 
     opts.onMove(sx, sy);
 

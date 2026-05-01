@@ -185,7 +185,7 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 | AI Chat | — | Yes | Yes | Yes |
 | Azure Neural TTS — basic neural voices | — | Yes | Yes | Yes |
 | Azure Neural TTS — premium / emotional tones | — | — | Yes | Yes |
-| Head/eye tracking — camera-based cursor + dwell click (no touch needed) | — | Yes | Yes | Yes |
+| Head/eye tracking — camera-based cursor + dwell click (no touch needed) | Yes | Yes | Yes | Yes |
 | Clinical vocabulary (600 words × 12 langs — medical, BCBA, daily living) | — | Yes | Yes | Yes |
 | AI-powered translation (beyond offline dictionary) | — | Yes | Yes | Yes |
 | Marketplace — Game Packs, Voice Packs, Picture Editor, Music Composer | — | Yes | Yes | Yes |
@@ -207,6 +207,7 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 
 - **All 12 languages + RTL are available at every tier, including Free.** A disabled child's access to communication in their native language is not a paid feature. Translations are static JSON bundled with the build, so there is zero ongoing cost for us to keep this universal — and gating it would contradict ASHA Practice Portal guidance on never restricting communication access.
 - **Core AAC keyboard, prediction, and Speak button always work without a network connection or an account.** Cloud features are additive on top of a fully self-contained free tier.
+- **Head/eye tracking is free for every tier.** Camera-based cursor + dwell click runs entirely client-side — zero server cost. A child with severe motor impairment should not need $3,000+ hardware to communicate.
 - **The Alert / emergency flow works for every tier** (see `services/emergencyService.ts`).
 
 **Enterprise** tier is included with Synalux Enterprise subscriptions. All other tiers require a separate PrismAAC subscription.
@@ -219,7 +220,7 @@ Pricing and feature data below was collected from each vendor's public listings 
 
 | App | Price | Platforms | Languages | Prediction | Offline | Head/Eye Tracking | Emergency |
 |---|---|---|---|---|---|---|---|
-| **Prism AAC** | **Free + $19 / $49 / $99 per month** | **Web (PWA), iOS, Android, desktop** | **12 + RTL** | **5-signal adaptive, 300+ seeded** | **✅ full** | **✅ Camera-based (Standard+)** | **✅ every tier** |
+| **Prism AAC** | **Free + $19 / $49 / $99 per month** | **Web (PWA), iOS, Android, desktop** | **12 + RTL** | **5-signal adaptive, 300+ seeded** | **✅ full** | **✅ Camera-based (FREE)** | **✅ every tier** |
 | Proloquo2Go (AssistiveWare) | $249.99 one-time | iOS / iPadOS | 5 | symbol-grid | ✅ | ✅ Head Tracking (iOS 17+) | — |
 | TouchChat HD (Saltillo) | $149.99 – $299.99 one-time | iOS / iPadOS | ~8 | vocab pack | ✅ | — | — |
 | LAMP Words for Life (PRC-Saltillo) | $299.99 one-time | iOS / iPadOS | 4 | motor-plan | ✅ | — | — |
@@ -230,7 +231,7 @@ Pricing and feature data below was collected from each vendor's public listings 
 | LetMeTalk | free | Android | 7 | none | ✅ | — | — |
 | Cboard | free | web (PWA) | 30+ | none | partial | — | — |
 
-> **Head/eye tracking comparison:** TD Snap requires $3,000–$15,000 Tobii hardware. Proloquo2Go uses iOS 17 head tracking (iPad/iPhone only). **Prism AAC uses any device camera** — no special hardware, works on iPad, iPhone, laptop, Android. Included with Standard+ subscription ($19/mo).
+> **Head/eye tracking comparison:** TD Snap requires $3,000–$15,000 Tobii hardware. Proloquo2Go uses iOS 17 head tracking (iPad/iPhone only). **Prism AAC uses any device camera — FREE, no special hardware**, works on iPad, iPhone, laptop, Android. The only AAC app offering free camera-based head tracking. A disabled child's access to communication does not depend on ability to pay for specialized hardware.
 
 **License posture:** Prism AAC is **AGPL-3.0** (open source, grant-eligible). Cboard is GPL-3.0. Every other row in the table is proprietary. See the "Where Prism AAC differs" section below for why this matters.
 
@@ -238,7 +239,7 @@ Pricing and feature data below was collected from each vendor's public listings 
 
 - **Open source under AGPL‑3.0** — eligible for NIH / NSF / disability-research grants. The largest established AAC apps (Proloquo2Go, TouchChat, LAMP, TD Snap) are all closed-source iOS-only purchases at $150–$300 per device.
 - **Cross-platform PWA + native** — runs in any modern browser, installs as a PWA on iOS / Android / desktop, no app-store gating. Most established AAC vendors are iPad-locked.
-- **Free tier is genuinely usable** — full AAC keyboard, 300+ phrases in 22 categories, prediction, 12 languages, Schedule & Tasks, 3 AAC games, math expression builder, TTS, offline mode, and emergency flow all work without an account. Paid tiers add cloud sync, AI Chat/Math Tutor, premium TTS voices, Marketplace modules, and clinical tools.
+- **Free tier is genuinely usable** — full AAC keyboard, 300+ phrases in 22 categories, prediction, 12 languages, Schedule & Tasks, 3 AAC games, math expression builder, TTS, offline mode, **camera-based head/eye tracking**, and emergency flow all work without an account. Paid tiers add cloud sync, AI Chat/Math Tutor, premium TTS voices, Marketplace modules, gesture recognition, and clinical tools.
 - **Emergency response built in** — a 5-tier dispatch chain (Synalux Direct → SMS → email → tel:// → offline queue) ships in `services/emergencyService.ts`. Established AAC apps have no equivalent — emergency communication is left to the user / caregiver.
 - **Adaptive prediction with bundled vocab seed** — typing "goo" surfaces "goodbye" / "going" on a brand-new install (no prior usage history needed). Most competitors either require manual vocab setup or use static symbol grids without learning.
 - **Synalux clinical platform integration** (Enterprise) — caregiver notes, BCBA documentation, HIPAA-aware audit trails, and AI-assisted clinical authoring run through the same backend as the Synalux portal. Standalone competitors have no equivalent platform.
