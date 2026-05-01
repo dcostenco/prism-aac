@@ -48,19 +48,15 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
     <button
       onClick={() => onTap(word)}
       aria-label={`Predict: ${word}`}
-      className="aac-btn flex-1 min-w-0 surface-key rounded-2xl flex flex-col items-center justify-center gap-1 text-[clamp(1.1rem,2.5vw,1.5rem)] font-semibold select-none px-3 py-2 border-l-[6px] border border-theme"
+      className="aac-btn flex-1 min-w-0 surface-key rounded-xl flex flex-col items-center justify-between py-1 px-1 border-l-[5px] border border-theme overflow-hidden"
       style={{ borderLeftColor: color, color }}
     >
-      {iconUrl && (
-        <img
-          src={iconUrl}
-          alt=""
-          aria-hidden
-          loading="lazy"
-          className="w-[clamp(2rem,5vw,3.5rem)] h-[clamp(2rem,5vw,3.5rem)] object-contain"
-        />
-      )}
-      <span className="truncate w-full text-center">{word}</span>
+      <span className="flex-1 flex items-center justify-center">
+        {iconUrl && (
+          <img src={iconUrl} alt="" aria-hidden loading="lazy" className="max-w-[clamp(1.5rem,4vw,2.5rem)] max-h-[clamp(1.5rem,5svh,2.5rem)] object-contain" />
+        )}
+      </span>
+      <span className="truncate w-full text-center text-[clamp(0.6rem,1.8vw,1rem)] font-bold shrink-0 leading-tight">{word}</span>
     </button>
   );
 }
