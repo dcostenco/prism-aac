@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useMessageStore } from '@/store/messageStore';
 import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
@@ -29,10 +30,13 @@ const LIFT_DELAY_MS = 80;
 
 function PrecisionBubble({ char, x, y, visible }: { char: string; x: number; y: number; visible: boolean }) {
   if (!visible || !char) return null;
+  // Clamp so bubble doesn't go off-screen at top or sides
+  const bubbleY = Math.max(10, y - 80);
+  const bubbleX = Math.max(30, Math.min(typeof window !== 'undefined' ? window.innerWidth - 30 : 9999, x));
   return (
     <div
       className="precision-bubble"
-      style={{ left: x, top: y - 80 }}
+      style={{ left: bubbleX, top: bubbleY }}
     >
       {char}
     </div>
@@ -376,7 +380,7 @@ export default function Keyboard() {
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
     >
-      {precisionTouchEnabled && <PrecisionBubble {...bubble} />}
+      {precisionTouchEnabled && typeof document !== 'undefined' && createPortal(<PrecisionBubble {...bubble} />, document.body)}
       {rows.map((row, ri) => (
         <div key={ri} className="flex gap-[1px] justify-center flex-1">
           {ri === 2 && keyboardMode === 'letters' && (
