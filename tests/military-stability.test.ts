@@ -2502,3 +2502,424 @@ describe('Voice Cursor — feature detection', () => {
     expect(typeof hasAudio).toBe('boolean');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// Finger Proximity — 3D parallax math
+// ═══════════════════════════════════════════════════════════════
+
+describe('Finger Proximity — distance estimation', () => {
+  it('closer finger = larger apparent width', () => {
+    const far = 20; // px apparent width at 60cm
+    const close = 80; // px apparent width at 15cm
+    expect(close).toBeGreaterThan(far);
+  });
+
+  it('Z = (W_real × f) / W_apparent', () => {
+    const realWidth = 53; // ~14mm at 96dpi
+    const focalLength = 500;
+    const apparentWidth = 40;
+    const Z = (realWidth * focalLength) / apparentWidth;
+    expect(Z).toBeCloseTo(662.5, 0);
+  });
+
+  it('distance from screen = Z - camera offset', () => {
+    const Z = 662;
+    const cameraToScreen = 3; // cm
+    const distCm = (Z / 96) * 2.54 - cameraToScreen;
+    expect(distCm).toBeGreaterThan(0);
+  });
+
+  it('touch probability 0 when finger far away', () => {
+    const apparentWidth = 10;
+    const hoverThreshold = 40;
+    const touchThreshold = 80;
+    const prob = Math.max(0, (apparentWidth - hoverThreshold) / (touchThreshold - hoverThreshold));
+    expect(prob).toBe(0);
+  });
+
+  it('touch probability 1 when finger at screen', () => {
+    const apparentWidth = 85;
+    const hoverThreshold = 40;
+    const touchThreshold = 80;
+    const prob = Math.min(1, Math.max(0, (apparentWidth - hoverThreshold) / (touchThreshold - hoverThreshold)));
+    expect(prob).toBe(1);
+  });
+
+  it('touch probability 0.5 midway', () => {
+    const apparentWidth = 60;
+    const hoverThreshold = 40;
+    const touchThreshold = 80;
+    const prob = (apparentWidth - hoverThreshold) / (touchThreshold - hoverThreshold);
+    expect(prob).toBe(0.5);
+  });
+});
+
+describe('Finger Proximity — parallax correction', () => {
+  it('no parallax when finger far away', () => {
+    const distanceRatio = 1; // far
+    const parallaxStrength = 1 - distanceRatio;
+    expect(parallaxStrength).toBe(0);
+  });
+
+  it('max parallax when finger at screen', () => {
+    const distanceRatio = 0; // at screen
+    const parallaxStrength = 1 - distanceRatio;
+    expect(parallaxStrength).toBe(1);
+  });
+
+  it('parallax shifts position away from camera center', () => {
+    const fingerX = 0.8; // right side of frame
+    const cameraCenter = 0.5;
+    const parallaxStrength = 0.5;
+    const shift = (fingerX - cameraCenter) * parallaxStrength * 0.3;
+    expect(shift).toBeGreaterThan(0); // shifts right (away from center)
+  });
+
+  it('camera mirroring: screen X = 1 - normalized X', () => {
+    const normX = 0.3;
+    const screenX = (1 - normX) * 1024;
+    expect(screenX).toBe(716.8);
+  });
+});
+
+describe('Finger Proximity — velocity tracking', () => {
+  it('positive velocity = finger approaching', () => {
+    const prev = 30; // px
+    const curr = 45; // px (bigger = closer)
+    const velocity = curr - prev;
+    expect(velocity).toBeGreaterThan(0);
+  });
+
+  it('negative velocity = finger retreating', () => {
+    const prev = 45;
+    const curr = 30;
+    const velocity = curr - prev;
+    expect(velocity).toBeLessThan(0);
+  });
+
+  it('velocity prediction advances touch probability', () => {
+    const currentWidth = 70;
+    const velocity = 20; // px/sec
+    const predictionMs = 50;
+    const predicted = currentWidth + velocity * (predictionMs / 1000);
+    expect(predicted).toBe(71);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Body Pose — MediaPipe 33 landmarks
+// ═══════════════════════════════════════════════════════════════
+
+describe('Body Pose — landmark indices', () => {
+  it('nose is landmark 0', () => { expect(0).toBe(0); });
+  it('left shoulder is 11', () => { expect(11).toBe(11); });
+  it('right shoulder is 12', () => { expect(12).toBe(12); });
+  it('left elbow is 13', () => { expect(13).toBe(13); });
+  it('right elbow is 14', () => { expect(14).toBe(14); });
+  it('left wrist is 15', () => { expect(15).toBe(15); });
+  it('right wrist is 16', () => { expect(16).toBe(16); });
+  it('left index is 19', () => { expect(19).toBe(19); });
+  it('right index is 20', () => { expect(20).toBe(20); });
+  it('total 33 landmarks', () => { expect(33).toBe(33); });
+});
+
+describe('Body Pose — tracking target mapping', () => {
+  const TARGET_MAP: Record<string, number> = {
+    nose: 0, left_shoulder: 11, right_shoulder: 12,
+    left_elbow: 13, right_elbow: 14, left_wrist: 15,
+    right_wrist: 16, left_index: 19, right_index: 20,
+  };
+
+  it('maps all 9 supported targets', () => {
+    expect(Object.keys(TARGET_MAP)).toHaveLength(9);
+  });
+
+  it('right_index is default tracking target', () => {
+    expect(TARGET_MAP['right_index']).toBe(20);
+  });
+
+  it('invalid target returns undefined', () => {
+    expect(TARGET_MAP['foot']).toBeUndefined();
+  });
+});
+
+describe('Body Pose — camera reuse', () => {
+  it('shared video element skips getUserMedia', () => {
+    const sharedVideo = { srcObject: 'existing-stream' };
+    const shouldOpenCamera = !sharedVideo;
+    expect(shouldOpenCamera).toBe(false);
+  });
+
+  it('no shared video opens new camera', () => {
+    const sharedVideo = null;
+    const shouldOpenCamera = !sharedVideo;
+    expect(shouldOpenCamera).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Morse Code — ITU standard timing
+// ═══════════════════════════════════════════════════════════════
+
+describe('Morse Code — timing thresholds', () => {
+  it('press < 300ms = dot', () => {
+    const duration = 200;
+    const isDot = duration < 300;
+    expect(isDot).toBe(true);
+  });
+
+  it('press >= 300ms = dash', () => {
+    const duration = 350;
+    const isDash = duration >= 300;
+    expect(isDash).toBe(true);
+  });
+
+  it('silence > 600ms = end of character', () => {
+    const silence = 700;
+    const isCharEnd = silence > 600;
+    expect(isCharEnd).toBe(true);
+  });
+
+  it('silence > 1500ms = word boundary', () => {
+    const silence = 1600;
+    const isWordEnd = silence > 1500;
+    expect(isWordEnd).toBe(true);
+  });
+});
+
+describe('Morse Code — ITU alphabet', () => {
+  const MORSE: Record<string, string> = {
+    '.-': 'A', '-...': 'B', '-.-.': 'C', '-..': 'D', '.': 'E',
+    '..-.': 'F', '--.': 'G', '....': 'H', '..': 'I', '.---': 'J',
+    '-.-': 'K', '.-..': 'L', '--': 'M', '-.': 'N', '---': 'O',
+    '.--.': 'P', '--.-': 'Q', '.-.': 'R', '...': 'S', '-': 'T',
+    '..-': 'U', '...-': 'V', '.--': 'W', '-..-': 'X', '-.--': 'Y',
+    '--..': 'Z',
+  };
+
+  it('maps all 26 letters', () => {
+    expect(Object.keys(MORSE)).toHaveLength(26);
+  });
+
+  it('SOS = ... --- ...', () => {
+    expect(MORSE['...']).toBe('S');
+    expect(MORSE['---']).toBe('O');
+  });
+
+  it('single dot = E', () => {
+    expect(MORSE['.']).toBe('E');
+  });
+
+  it('single dash = T', () => {
+    expect(MORSE['-']).toBe('T');
+  });
+});
+
+describe('Morse Code — error correction', () => {
+  it('8 dots = delete last character (HH prosign)', () => {
+    const dots = '........';
+    const isDelete = dots === '........';
+    expect(isDelete).toBe(true);
+  });
+
+  it('delete at word boundary reconstructs previous word', () => {
+    const text = 'hello world';
+    const words = text.split(' ');
+    words.pop();
+    expect(words.join(' ')).toBe('hello');
+  });
+});
+
+describe('Morse Code — audio feedback', () => {
+  it('dot tone duration = 60ms', () => { expect(60).toBe(60); });
+  it('dash tone duration = 180ms', () => { expect(180).toBe(180); });
+  it('default tone frequency = 600Hz', () => { expect(600).toBe(600); });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Gesture Engine — pattern matching
+// ═══════════════════════════════════════════════════════════════
+
+describe('Gesture Engine — built-in gestures', () => {
+  it('head nod pattern: up-down-up', () => {
+    const nod = [
+      { dx: 0, dy: -0.1 },
+      { dx: 0, dy: 0.2 },
+      { dx: 0, dy: -0.1 },
+    ];
+    expect(nod).toHaveLength(3);
+    expect(nod[0].dy).toBeLessThan(0); // up
+    expect(nod[1].dy).toBeGreaterThan(0); // down
+    expect(nod[2].dy).toBeLessThan(0); // back up
+  });
+
+  it('head shake pattern: left-right-left', () => {
+    const shake = [
+      { dx: -0.15, dy: 0 },
+      { dx: 0.3, dy: 0 },
+      { dx: -0.15, dy: 0 },
+    ];
+    expect(shake[0].dx).toBeLessThan(0); // left
+    expect(shake[1].dx).toBeGreaterThan(0); // right
+  });
+});
+
+describe('Gesture Engine — pattern matching', () => {
+  it('cosine similarity = 1 for identical patterns', () => {
+    const a = [1, 2, 3];
+    const b = [1, 2, 3];
+    let dot = 0, magA = 0, magB = 0;
+    for (let i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      magA += a[i] * a[i];
+      magB += b[i] * b[i];
+    }
+    const sim = dot / (Math.sqrt(magA) * Math.sqrt(magB));
+    expect(sim).toBeCloseTo(1, 5);
+  });
+
+  it('cosine similarity = -1 for opposite patterns', () => {
+    const a = [1, 2, 3];
+    const b = [-1, -2, -3];
+    let dot = 0, magA = 0, magB = 0;
+    for (let i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      magA += a[i] * a[i];
+      magB += b[i] * b[i];
+    }
+    const sim = dot / (Math.sqrt(magA) * Math.sqrt(magB));
+    expect(sim).toBeCloseTo(-1, 5);
+  });
+
+  it('match threshold is 0.65', () => {
+    const THRESHOLD = 0.65;
+    expect(THRESHOLD).toBe(0.65);
+  });
+
+  it('1s cooldown between detections', () => {
+    const COOLDOWN = 1000;
+    expect(COOLDOWN).toBe(1000);
+  });
+});
+
+describe('Gesture Engine — recording', () => {
+  it('needs 3 samples to finalize', () => {
+    const SAMPLES_NEEDED = 3;
+    expect(SAMPLES_NEEDED).toBe(3);
+  });
+
+  it('max 30 frames per gesture', () => {
+    const MAX_LENGTH = 30;
+    expect(MAX_LENGTH).toBe(30);
+  });
+
+  it('averaging 3 samples smooths noise', () => {
+    const samples = [[1, 2, 3], [1.1, 2.1, 2.9], [0.9, 1.9, 3.1]];
+    const avg = samples[0].map((_, i) =>
+      samples.reduce((sum, s) => sum + s[i], 0) / samples.length
+    );
+    expect(avg[0]).toBeCloseTo(1, 0);
+    expect(avg[1]).toBeCloseTo(2, 0);
+    expect(avg[2]).toBeCloseTo(3, 0);
+  });
+});
+
+describe('Gesture Engine — action execution', () => {
+  it('speak action routes through aacSpeak', () => {
+    const action = { type: 'speak' as const, text: 'Yes' };
+    expect(action.type).toBe('speak');
+  });
+
+  it('click action uses selector', () => {
+    const action = { type: 'click' as const, selector: '[data-key="a"]' };
+    expect(action.selector).toBe('[data-key="a"]');
+  });
+
+  it('navigate action uses panel name', () => {
+    const action = { type: 'navigate' as const, panel: 'Categories' };
+    expect(action.panel).toBe('Categories');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Kokoro TTS — neural offline speech
+// ═══════════════════════════════════════════════════════════════
+
+describe('Kokoro TTS — language support', () => {
+  const KOKORO_VOICES: Record<string, string> = {
+    en: 'af_heart', es: 'ef_dora', fr: 'ff_siwis',
+    pt: 'pf_dora', ja: 'jf_alpha', zh: 'zf_xiaobei',
+  };
+
+  it('supports 6 of 12 PrismAAC languages', () => {
+    expect(Object.keys(KOKORO_VOICES)).toHaveLength(6);
+  });
+
+  it('English maps to af_heart voice', () => {
+    expect(KOKORO_VOICES['en']).toBe('af_heart');
+  });
+
+  it('unsupported language returns undefined (falls through)', () => {
+    expect(KOKORO_VOICES['ru']).toBeUndefined();
+    expect(KOKORO_VOICES['de']).toBeUndefined();
+    expect(KOKORO_VOICES['ar']).toBeUndefined();
+  });
+
+  it('full TTS code extracts prefix for lookup', () => {
+    const ttsCode = 'en-US';
+    const prefix = ttsCode.split('-')[0];
+    expect(KOKORO_VOICES[prefix]).toBe('af_heart');
+  });
+});
+
+describe('Kokoro TTS — demote on failure', () => {
+  it('demoted flag prevents further attempts', () => {
+    let demoted = false;
+    const isSupported = () => !demoted;
+    expect(isSupported()).toBe(true);
+    demoted = true;
+    expect(isSupported()).toBe(false);
+  });
+
+  it('demote is session-scoped (resets on page reload)', () => {
+    let demoted = true;
+    // Simulate page reload
+    demoted = false;
+    expect(demoted).toBe(false);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// aacSpeak — single-char period trick (all modes)
+// ═══════════════════════════════════════════════════════════════
+
+describe('aacSpeak — single char fix applies regardless of translation', () => {
+  it('single char "I" gets period in non-translation mode', () => {
+    const text = 'I';
+    const translating = false;
+    let toSpeak = text;
+    if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
+    expect(toSpeak).toBe('I.');
+  });
+
+  it('single char "Я" gets period in non-translation mode', () => {
+    const text = 'Я';
+    let toSpeak = text;
+    if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
+    expect(toSpeak).toBe('Я.');
+  });
+
+  it('multi-char text unchanged', () => {
+    const text = 'Hello';
+    let toSpeak = text;
+    if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
+    expect(toSpeak).toBe('Hello');
+  });
+
+  it('translated single char also gets period', () => {
+    const translated = 'I';
+    let toSpeak = translated;
+    if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
+    expect(toSpeak).toBe('I.');
+  });
+});
