@@ -8,14 +8,23 @@ import { mergeWordFreq, mergeCustomItems, mergeHistory } from '@/services/syncSe
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 
 describe('UX — Data completeness', () => {
-  it('has 6 default categories matching clinical notes', () => {
-    expect(DEFAULT_CATEGORIES).toHaveLength(6);
+  it('has 22 default categories (4 core + 18 standard)', () => {
+    expect(DEFAULT_CATEGORIES).toHaveLength(22);
     const names = DEFAULT_CATEGORIES.map(c => c.name);
+    // Core words
+    expect(names).toContain('I / You / We');
+    expect(names).toContain('Core Verbs');
+    expect(names).toContain('More / Not / All');
+    expect(names).toContain('Little Words');
+    // Communicative functions
     expect(names).toContain('Help / Needs');
     expect(names).toContain('Quick Talk');
-    expect(names).toContain('Places / Plans');
-    expect(names).toContain('Food / Ordering');
-    expect(names).toContain('People / Social');
+    expect(names).toContain('Feelings');
+    expect(names).toContain('Questions');
+    // Fringe vocabulary
+    expect(names).toContain('People');
+    expect(names).toContain('Food & Drink');
+    expect(names).toContain('Places');
     expect(names).toContain('School / Work');
   });
 

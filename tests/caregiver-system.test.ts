@@ -193,7 +193,7 @@ describe('CaregiverActions — executeAllActions', () => {
     const results = executeAllActions(actions);
     expect(results).toHaveLength(2);
     expect(results.every(r => r.success)).toBe(true);
-    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(10); // 8 defaults + 2 custom
+    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(16); // 14 defaults + 2 custom
   });
 });
 

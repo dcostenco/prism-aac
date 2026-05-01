@@ -5,19 +5,24 @@ import { TEMPLATE_ORDERING_SEQUENCES as DEFAULT_ORDERING_SEQUENCES } from '@/con
 beforeEach(() => useCategoryStore.setState({ customCategories: [], customPhrases: [] }));
 
 describe('CategoryStore — Default data', () => {
-  it('returns 6 default categories', () => {
+  it('returns 22 default categories', () => {
     const cats = useCategoryStore.getState().allCategories();
-    expect(cats).toHaveLength(6);
+    expect(cats).toHaveLength(22);
     expect(cats.map(c => c.id)).toEqual([
-      'help-needs', 'quick-talk', 'places-plans', 'food-ordering', 'people-social', 'school-work',
+      'core-pronouns', 'core-verbs', 'core-descriptors', 'core-little-words',
+      'help-needs', 'quick-talk', 'feelings', 'questions',
+      'actions', 'describing', 'people-social', 'food-ordering',
+      'places-plans', 'school-work', 'health-body', 'time',
+      'animals', 'colors', 'clothes', 'transport', 'weather', 'toys-fun',
     ]);
   });
 
   it('returns correct phrases for help-needs', () => {
     const phrases = useCategoryStore.getState().getPhrasesForCategory('help-needs');
-    expect(phrases.length).toBe(8);
+    expect(phrases.length).toBe(14);
     expect(phrases[0].text).toBe('All done');
     expect(phrases[7].text).toBe('No');
+    expect(phrases[13].text).toBe('I am tired');
   });
 
   it('returns empty array for unknown category', () => {
@@ -30,7 +35,7 @@ describe('CategoryStore — Custom categories', () => {
   it('addCustomCategory creates a new category', () => {
     useCategoryStore.getState().addCustomCategory('Favorites', '⭐');
     const cats = useCategoryStore.getState().allCategories();
-    expect(cats).toHaveLength(7);
+    expect(cats).toHaveLength(23);
     const custom = cats.find(c => c.name === 'Favorites');
     expect(custom).toBeDefined();
     expect(custom!.icon).toBe('⭐');
@@ -44,7 +49,7 @@ describe('CategoryStore — Custom categories', () => {
     useCategoryStore.getState().addCustomPhrase(testCat.id, 'test phrase');
     expect(useCategoryStore.getState().getPhrasesForCategory(testCat.id)).toHaveLength(1);
     useCategoryStore.getState().removeCustomCategory(testCat.id);
-    expect(useCategoryStore.getState().allCategories()).toHaveLength(6);
+    expect(useCategoryStore.getState().allCategories()).toHaveLength(22);
     expect(useCategoryStore.getState().getPhrasesForCategory(testCat.id)).toHaveLength(0);
   });
 });
@@ -53,7 +58,7 @@ describe('CategoryStore — Custom phrases', () => {
   it('addCustomPhrase adds to existing category', () => {
     useCategoryStore.getState().addCustomPhrase('help-needs', 'I feel sick');
     const phrases = useCategoryStore.getState().getPhrasesForCategory('help-needs');
-    expect(phrases).toHaveLength(9);
+    expect(phrases).toHaveLength(15);
     expect(phrases.some(p => p.text === 'I feel sick')).toBe(true);
   });
 
@@ -62,24 +67,24 @@ describe('CategoryStore — Custom phrases', () => {
     const phrases = useCategoryStore.getState().getPhrasesForCategory('help-needs');
     const temp = phrases.find(p => p.text === 'Temp phrase')!;
     useCategoryStore.getState().removeCustomPhrase(temp.id);
-    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(8);
+    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(14);
   });
 
   it('cannot remove default phrases', () => {
     useCategoryStore.getState().removeCustomPhrase('help-all-done');
-    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(8);
+    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(14);
   });
 });
 
 describe('CategoryStore — Gap tests', () => {
   it('custom category with empty name still works', () => {
     useCategoryStore.getState().addCustomCategory('', '📌');
-    expect(useCategoryStore.getState().allCategories()).toHaveLength(7);
+    expect(useCategoryStore.getState().allCategories()).toHaveLength(23);
   });
 
   it('custom phrase with empty text still works', () => {
     useCategoryStore.getState().addCustomPhrase('help-needs', '');
-    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(9);
+    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(15);
   });
 
   it('ordering sequences exist for food-ordering category', () => {
