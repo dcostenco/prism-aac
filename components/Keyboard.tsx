@@ -357,11 +357,17 @@ export default function Keyboard() {
   const handlePointerEnter = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
     if (!precisionTouchEnabled) return;
     const btn = e.currentTarget;
+    // Only show bubble for short labels (letters, digits, punctuation).
+    // Skip utility keys (space, Speak, backspace, mode) — they're already
+    // clearly labeled and the bubble just duplicates the text.
     const char = btn.getAttribute('data-display') || '';
-    if (char) {
+    const isUtilityKey = !!btn.getAttribute('data-action');
+    if (char && !isUtilityKey && char.length <= 2) {
       const rect = btn.getBoundingClientRect();
       setBubble({ char, x: rect.left + rect.width / 2, y: rect.top, visible: true });
       setActiveKey(btn);
+    } else {
+      setBubble(prev => ({ ...prev, visible: false }));
     }
   }, [precisionTouchEnabled, setActiveKey]);
 
@@ -417,7 +423,7 @@ export default function Keyboard() {
             );
           })}
           {ri === 2 && keyboardMode === 'letters' && (
-            <button data-action="backspace" data-display="⌫" onClick={handleBackspace} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} aria-label="Backspace" className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)]`}>⌫</button>
+            <button data-action="backspace" data-display="⌫" onClick={handleBackspace} aria-label="Backspace" className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)]`}>⌫</button>
           )}
         </div>
       ))}
@@ -426,7 +432,7 @@ export default function Keyboard() {
         <button data-action="mode" data-display={keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'} onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>
-        <button data-action="space" data-display={t('space')} onClick={handleSpace} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} aria-label={t('space')} className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
+        <button data-action="space" data-display={t('space')} onClick={handleSpace} aria-label={t('space')} className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
         <button data-key="." data-display="." onClick={() => handleKey('.')} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} aria-label="." className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>.</button>
         <button data-key="," data-display="," onClick={() => handleKey(',')} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} aria-label="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>,</button>
         <button data-key="?" data-display="?" onClick={() => handleKey('?')} onPointerEnter={handlePointerEnter} onPointerLeave={handlePointerLeave} aria-label="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>?</button>
