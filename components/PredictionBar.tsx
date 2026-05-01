@@ -108,7 +108,7 @@ export default function PredictionBar() {
   };
 
   return (
-    <div className="flex items-stretch gap-[clamp(0.5rem,1vw,0.75rem)] px-3 py-2 shrink-0 min-h-[clamp(64px,12svh,140px)]">
+    <div className="flex items-stretch gap-[clamp(0.25rem,0.5vw,0.5rem)] px-1.5 py-1 shrink-0 min-h-[clamp(52px,9svh,100px)]">
       {displayed.map((word, i) => {
         const color = CATEGORY_COLORS[classifyWord(word)];
         return <PredictionTile key={`slot-${i}`} word={word} color={color} onTap={handleTap} />;
