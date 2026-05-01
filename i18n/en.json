@@ -269,5 +269,15 @@
   "sched_lunch": "Lunch",
   "sched_play": "Play time",
   "sched_dinner": "Dinner",
-  "sched_bedtime": "Bedtime"
+  "sched_bedtime": "Bedtime",
+
+  "head_tracking": "Head Tracking",
+  "enable_head_tracking": "Enable Head Tracking",
+  "dwell_time": "Dwell Time",
+  "sensitivity": "Sensitivity",
+  "calibrate": "Calibrate",
+  "tracking": "Tracking",
+  "face_lost": "Face lost",
+  "camera_required": "Camera",
+  "starting": "Starting"
 }

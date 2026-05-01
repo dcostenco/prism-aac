@@ -11,6 +11,7 @@ import { VOCAB_SETS } from '@/constants/vocabularySets';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { tapFeedback } from '@/services/feedback';
+import HeadTrackingSettings from './HeadTrackingSettings';
 
 const PLAN_LABEL_KEYS: Record<SynaluxProfile['plan'], string> = {
   free: 'plan_free',
@@ -113,6 +114,9 @@ export default function SettingsModal() {
               </button>
             </label>
           </div>
+
+          {/* Head Tracking */}
+          <HeadTrackingSettings />
 
           {/* Vocabulary Set */}
           <div>

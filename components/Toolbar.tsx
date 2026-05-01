@@ -63,6 +63,13 @@ export default function Toolbar() {
     <div className="flex items-center justify-between px-1 py-[clamp(0.1rem,0.3svh,0.25rem)] surface-bar shrink-0 border-b border-theme relative">
       <div className="flex gap-1">
         <button className={btn} onClick={tap(openCategories)} aria-label={t('categories')} title={t('categories')}>📂</button>
+        <button
+          className={`aac-btn w-[clamp(2.25rem,7vw,3.25rem)] h-[clamp(2.25rem,7svh,3.25rem)] rounded-full text-[clamp(1.1rem,3.5vw,1.6rem)] select-none border border-theme shrink-0 flex items-center justify-center ${
+            useSettingsStore.getState().headTrackingEnabled ? 'bg-[#2196F3] text-white border-transparent' : 'surface-key text-primary'
+          }`}
+          onClick={() => { tapFeedback(); const s = useSettingsStore.getState(); s.update({ headTrackingEnabled: !s.headTrackingEnabled }); }}
+          aria-label={t('head_tracking')} title={t('head_tracking')}
+        >📷</button>
         {voiceSupported && (
           <button className={`aac-btn w-[clamp(2.25rem,7vw,3.25rem)] h-[clamp(2.25rem,7svh,3.25rem)] rounded-full text-[clamp(1rem,3.5vw,1.5rem)] select-none border border-theme shrink-0 flex items-center justify-center ${listening ? 'bg-[#F44336] text-white border-transparent animate-pulse' : 'surface-key text-primary'}`}
             onClick={toggleMic} aria-pressed={listening} data-testid="toolbar-mic" aria-label={listening ? t('stop_voice') : t('start_voice')}>

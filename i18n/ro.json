@@ -269,5 +269,15 @@
   "sched_lunch": "Prânz",
   "sched_play": "Timp de joacă",
   "sched_dinner": "Cină",
-  "sched_bedtime": "Culcare"
+  "sched_bedtime": "Culcare",
+
+  "head_tracking": "Urmărire cap",
+  "enable_head_tracking": "Activează urmărirea capului",
+  "dwell_time": "Timp de oprire",
+  "sensitivity": "Sensibilitate",
+  "calibrate": "Calibrează",
+  "tracking": "Urmărire",
+  "face_lost": "Față pierdută",
+  "camera_required": "Cameră",
+  "starting": "Pornire"
 }

@@ -16,8 +16,11 @@ interface SettingsState {
   theme: Theme;
   gridSize: GridSize;
   activeVocabSet: string;
+  headTrackingEnabled: boolean;
+  headTrackingDwellMs: number;
+  headTrackingSensitivity: number;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity'>>,
   ) => void;
   setTheme: (theme: Theme) => void;
 }
@@ -33,17 +36,21 @@ export const useSettingsStore = create<SettingsState>()(
       theme: 'light',
       gridSize: 6,
       activeVocabSet: 'all',
+      headTrackingEnabled: false,
+      headTrackingDwellMs: 1200,
+      headTrackingSensitivity: 5,
       update: (partial) => set((s) => ({ ...s, ...partial })),
       setTheme: (theme) => set({ theme }),
     }),
     {
       name: 'prism-aac-settings',
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown, version: number) => {
         const s = persisted as Record<string, unknown>;
-        if (version < 2) return { ...s, gridSize: 6, activeVocabSet: 'all', outputLanguage: s.language ?? 'en' };
-        if (version < 3) return { ...s, activeVocabSet: 'all', outputLanguage: s.language ?? 'en' };
-        if (version < 4) return { ...s, outputLanguage: s.language ?? 'en' };
+        if (version < 2) return { ...s, gridSize: 6, activeVocabSet: 'all', outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
+        if (version < 3) return { ...s, activeVocabSet: 'all', outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
+        if (version < 4) return { ...s, outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
+        if (version < 5) return { ...s, headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
         return s;
       },
     },

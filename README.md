@@ -185,6 +185,7 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 | AI Chat | — | Yes | Yes | Yes |
 | Azure Neural TTS — basic neural voices | — | Yes | Yes | Yes |
 | Azure Neural TTS — premium / emotional tones | — | — | Yes | Yes |
+| Head/eye tracking — camera-based cursor + dwell click (no touch needed) | — | Yes | Yes | Yes |
 | Clinical vocabulary (600 words × 12 langs — medical, BCBA, daily living) | — | Yes | Yes | Yes |
 | AI-powered translation (beyond offline dictionary) | — | Yes | Yes | Yes |
 | Marketplace — Game Packs, Voice Packs, Picture Editor, Music Composer | — | Yes | Yes | Yes |
@@ -200,7 +201,7 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 > - **Voice personas** — named voices (male/female/child) with pitch settings.
 > - **Emergency contact UI** — wire existing `emergencyService.ts` to a settings form for configuring contacts and medical profile.
 > - **Web search inside AI Chat** — planned for Standard+.
-> - **Eye-tracker integration** — gaze input for severe motor impairment.
+> - **Gesture recognition** — customizable gestures (head nod, shake, blink) assignable to any button/action.
 
 ### Accessibility commitments that ride above the tier table
 
@@ -216,18 +217,20 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 
 Pricing and feature data below was collected from each vendor's public listings as of 2026‑04‑30. Confirm directly with the vendor before any purchasing decision — clinical AAC pricing changes frequently and grant / school pricing differs from list.
 
-| App | Price | Platforms | Languages | Prediction | Offline | Sync | Emergency |
+| App | Price | Platforms | Languages | Prediction | Offline | Head/Eye Tracking | Emergency |
 |---|---|---|---|---|---|---|---|
-| **Prism AAC** | **Free + $19 / $49 / $99 per month** | **Web (PWA), iOS, Android, desktop** | **12 + RTL** | **5-signal adaptive, 300+ seeded** | **✅ full** | **✅ Hivemind** | **✅ every tier** |
-| Proloquo2Go (AssistiveWare) | $249.99 one-time | iOS / iPadOS | 5 | symbol-grid | ✅ | iCloud only | — |
-| TouchChat HD (Saltillo) | $149.99 – $299.99 one-time | iOS / iPadOS | ~8 | vocab pack | ✅ | iCloud | — |
-| LAMP Words for Life (PRC-Saltillo) | $299.99 one-time | iOS / iPadOS | 4 | motor-plan | ✅ | iCloud | — |
-| TD Snap (Tobii Dynavox) | $5–15k hardware bundle, or ~$50 / month | iOS / iPadOS / Windows | 30+ | grid-based | ✅ | paid tier | — |
-| Avaz AAC | $99.99 / year | iOS / Android | 8 | basic | ✅ | ✅ | — |
-| CoughDrop | $25 – $50 / year | iOS / Android / web | 7 | basic | ✅ | ✅ | — |
-| Speak for Yourself | $299.99 one-time | iOS | 1 | static motor-plan | ✅ | iCloud | — |
+| **Prism AAC** | **Free + $19 / $49 / $99 per month** | **Web (PWA), iOS, Android, desktop** | **12 + RTL** | **5-signal adaptive, 300+ seeded** | **✅ full** | **✅ Camera-based (Standard+)** | **✅ every tier** |
+| Proloquo2Go (AssistiveWare) | $249.99 one-time | iOS / iPadOS | 5 | symbol-grid | ✅ | ✅ Head Tracking (iOS 17+) | — |
+| TouchChat HD (Saltillo) | $149.99 – $299.99 one-time | iOS / iPadOS | ~8 | vocab pack | ✅ | — | — |
+| LAMP Words for Life (PRC-Saltillo) | $299.99 one-time | iOS / iPadOS | 4 | motor-plan | ✅ | — | — |
+| TD Snap (Tobii Dynavox) | $5–15k hardware bundle, or ~$50 / month | iOS / iPadOS / Windows | 30+ | grid-based | ✅ | ✅ Tobii hardware ($3-15k) | — |
+| Avaz AAC | $99.99 / year | iOS / Android | 8 | basic | ✅ | — | — |
+| CoughDrop | $25 – $50 / year | iOS / Android / web | 7 | basic | ✅ | — | — |
+| Speak for Yourself | $299.99 one-time | iOS | 1 | static motor-plan | ✅ | — | — |
 | LetMeTalk | free | Android | 7 | none | ✅ | — | — |
 | Cboard | free | web (PWA) | 30+ | none | partial | — | — |
+
+> **Head/eye tracking comparison:** TD Snap requires $3,000–$15,000 Tobii hardware. Proloquo2Go uses iOS 17 head tracking (iPad/iPhone only). **Prism AAC uses any device camera** — no special hardware, works on iPad, iPhone, laptop, Android. Included with Standard+ subscription ($19/mo).
 
 **License posture:** Prism AAC is **AGPL-3.0** (open source, grant-eligible). Cboard is GPL-3.0. Every other row in the table is proprietary. See the "Where Prism AAC differs" section below for why this matters.
 

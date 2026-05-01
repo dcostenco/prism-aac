@@ -144,6 +144,11 @@ html, body {
 .text-dim { color: var(--text-dim); }
 .border-theme { border-color: var(--border-subtle); }
 
+@keyframes pulse-cursor {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
 @keyframes alert-flash {
   0%, 100% { opacity: 0; }
   25%, 75% { opacity: 0.4; }
