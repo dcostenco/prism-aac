@@ -284,13 +284,10 @@ export function clearMovementBuffer(): void {
 
 export function executeGestureAction(action: GestureAction): void {
   switch (action.type) {
-    case 'speak':
-      if ('speechSynthesis' in window) {
-        const u = new SpeechSynthesisUtterance(action.text);
-        u.rate = 0.8;
-        window.speechSynthesis.speak(u);
-      }
+    case 'speak': {
+      import('./aacSpeak').then(({ aacSpeak }) => aacSpeak(action.text, 0.5, 1.0)).catch(() => {});
       break;
+    }
     case 'click': {
       const el = document.querySelector(action.selector) as HTMLElement | null;
       el?.click();

@@ -102,10 +102,10 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     const unsubs = [
-      usePredictionStore.subscribe(() => pushDebounced()),
-      useCategoryStore.subscribe(() => pushDebounced()),
+      usePredictionStore.subscribe((s, prev) => { if (s.wordFreq !== prev.wordFreq || s.bigrams !== prev.bigrams) pushDebounced(); }),
+      useCategoryStore.subscribe((s, prev) => { if (s.customCategories !== prev.customCategories || s.customPhrases !== prev.customPhrases) pushDebounced(); }),
       useMessageStore.subscribe((s, prev) => { if (s.history !== prev.history) pushDebounced(); }),
-      useSettingsStore.subscribe(() => pushDebounced()),
+      useSettingsStore.subscribe((s, prev) => { if (s.speechRate !== prev.speechRate || s.speechVolume !== prev.speechVolume) pushDebounced(); }),
     ];
 
     // Flush pending sync on page hide (child presses sleep button, closes tab).
@@ -128,14 +128,14 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
         });
       }
     };
+    const onVisChange = () => { if (document.visibilityState === 'hidden') onPageHide(); };
     window.addEventListener('pagehide', onPageHide);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') onPageHide();
-    });
+    document.addEventListener('visibilitychange', onVisChange);
 
     return () => {
       unsubs.forEach(u => u());
       window.removeEventListener('pagehide', onPageHide);
+      document.removeEventListener('visibilitychange', onVisChange);
     };
   }, [pushDebounced]);
 

@@ -403,11 +403,7 @@ export function executeRemoteCommand(cmd: RemoteCommand): void {
       break;
     }
     case 'speak': {
-      if ('speechSynthesis' in window) {
-        const u = new SpeechSynthesisUtterance(cmd.text);
-        u.rate = 0.8;
-        window.speechSynthesis.speak(u);
-      }
+      import('./aacSpeak').then(({ aacSpeak }) => aacSpeak(cmd.text, 0.5, 1.0)).catch(() => {});
       break;
     }
     case 'navigate': {

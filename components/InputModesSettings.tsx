@@ -26,7 +26,13 @@ function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; la
 }
 
 export default function InputModesSettings() {
-  const settings = useSettingsStore();
+  const cameraInputEnabled = useSettingsStore(s => s.cameraInputEnabled);
+  const cameraTrackingTarget = useSettingsStore(s => s.cameraTrackingTarget);
+  const precisionTouchEnabled = useSettingsStore(s => s.precisionTouchEnabled);
+  const headTrackingEnabled = useSettingsStore(s => s.headTrackingEnabled);
+  const headTrackingDwellMs = useSettingsStore(s => s.headTrackingDwellMs);
+  const headTrackingSensitivity = useSettingsStore(s => s.headTrackingSensitivity);
+  const update = useSettingsStore(s => s.update);
   const { t } = useT();
 
   return (
@@ -39,16 +45,16 @@ export default function InputModesSettings() {
             <span className="text-primary text-sm font-semibold">Camera Finger Tracking</span>
             <p className="text-muted text-[10px]">Camera tracks your finger/arm and moves cursor on screen</p>
           </div>
-          <Toggle on={settings.cameraInputEnabled} onToggle={() => settings.update({ cameraInputEnabled: !settings.cameraInputEnabled })} label="Camera input" />
+          <Toggle on={cameraInputEnabled} onToggle={() => update({ cameraInputEnabled: !cameraInputEnabled })} label="Camera input" />
         </label>
-        {settings.cameraInputEnabled && (
+        {cameraInputEnabled && (
           <div className="ml-2 mt-1 space-y-1">
             <label className="text-muted text-xs">Track:</label>
             <div className="grid grid-cols-3 gap-1">
               {TRACKING_TARGETS.map(tt => (
-                <button key={tt.id} onClick={() => { tapFeedback(); settings.update({ cameraTrackingTarget: tt.id }); }}
+                <button key={tt.id} onClick={() => { tapFeedback(); update({ cameraTrackingTarget: tt.id }); }}
                   className={`aac-btn rounded-lg px-2 py-1.5 text-[10px] font-semibold border border-theme ${
-                    settings.cameraTrackingTarget === tt.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+                    cameraTrackingTarget === tt.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                   }`}>
                   {tt.label}
                 </button>
@@ -64,7 +70,7 @@ export default function InputModesSettings() {
           <span className="text-primary text-sm font-semibold">{t('enable_precision_touch')}</span>
           <p className="text-muted text-[10px]">{t('precision_touch_desc')}</p>
         </div>
-        <Toggle on={settings.precisionTouchEnabled} onToggle={() => settings.update({ precisionTouchEnabled: !settings.precisionTouchEnabled })} label="Precision touch" />
+        <Toggle on={precisionTouchEnabled} onToggle={() => update({ precisionTouchEnabled: !precisionTouchEnabled })} label="Precision touch" />
       </label>
 
       {/* Head Tracking (opt-in) */}
@@ -73,7 +79,7 @@ export default function InputModesSettings() {
           <span className="text-primary text-sm font-semibold">{t('enable_head_tracking')}</span>
           <p className="text-muted text-[10px]">Move cursor by moving your head (uses camera)</p>
         </div>
-        <Toggle on={settings.headTrackingEnabled} onToggle={() => settings.update({ headTrackingEnabled: !settings.headTrackingEnabled })} label="Head tracking" />
+        <Toggle on={headTrackingEnabled} onToggle={() => update({ headTrackingEnabled: !headTrackingEnabled })} label="Head tracking" />
       </label>
 
       {/* Voice Cursor (opt-in) */}
@@ -116,10 +122,10 @@ export default function InputModesSettings() {
       <div>
         <label className="flex items-center justify-between mb-1">
           <span className="text-primary text-sm">{t('dwell_time')}</span>
-          <span className="text-muted text-sm">{settings.headTrackingDwellMs}ms</span>
+          <span className="text-muted text-sm">{headTrackingDwellMs}ms</span>
         </label>
-        <input type="range" min="500" max="3000" step="100" value={settings.headTrackingDwellMs}
-          onChange={(e) => settings.update({ headTrackingDwellMs: parseInt(e.target.value) })}
+        <input type="range" min="500" max="3000" step="100" value={headTrackingDwellMs}
+          onChange={(e) => update({ headTrackingDwellMs: parseInt(e.target.value) })}
           className="w-full accent-[#4CAF50]" />
       </div>
 
@@ -127,10 +133,10 @@ export default function InputModesSettings() {
       <div>
         <label className="flex items-center justify-between mb-1">
           <span className="text-primary text-sm">{t('sensitivity')}</span>
-          <span className="text-muted text-sm">{settings.headTrackingSensitivity}</span>
+          <span className="text-muted text-sm">{headTrackingSensitivity}</span>
         </label>
-        <input type="range" min="1" max="10" step="1" value={settings.headTrackingSensitivity}
-          onChange={(e) => settings.update({ headTrackingSensitivity: parseInt(e.target.value) })}
+        <input type="range" min="1" max="10" step="1" value={headTrackingSensitivity}
+          onChange={(e) => update({ headTrackingSensitivity: parseInt(e.target.value) })}
           className="w-full accent-[#2196F3]" />
       </div>
     </div>

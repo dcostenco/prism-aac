@@ -8,7 +8,6 @@ import {
   type PoseTrackerHandle,
   type TrackingTarget,
 } from '@/services/bodyPoseService';
-import { ProximityCalculator } from '@/services/fingerProximityService';
 import { tapFeedback } from '@/services/feedback';
 
 /**
@@ -40,9 +39,6 @@ export default function CameraInputOverlay() {
   const rafRef = useRef(0);
   const highlightedKeyRef = useRef<HTMLElement | null>(null);
   const [keyBubble, setKeyBubble] = useState<{ char: string; x: number; y: number; visible: boolean }>({ char: '', x: 0, y: 0, visible: false });
-  const proximityRef = useRef(new ProximityCalculator());
-  const [proximity, setProximity] = useState(0);
-  const touchFiredRef = useRef(false);
 
   const animateDwell = useCallback(() => {
     if (!dwellElementRef.current || dwellStartRef.current === 0) {
@@ -145,20 +141,20 @@ export default function CameraInputOverlay() {
           {keyBubble.char}
         </div>
       )}
-      {/* Cursor — grows as finger approaches screen (proximity feedback) */}
+      {/* Cursor */}
       <div
         style={{
           position: 'absolute',
-          left: cursorPos.x - 12 - proximity * 10,
-          top: cursorPos.y - 12 - proximity * 10,
-          width: 24 + proximity * 20,
-          height: 24 + proximity * 20,
+          left: cursorPos.x - 14,
+          top: cursorPos.y - 14,
+          width: 28,
+          height: 28,
           borderRadius: '50%',
-          backgroundColor: proximity > 0.8 ? '#4CAF50' : statusColor,
-          opacity: 0.7 + proximity * 0.3,
-          border: `${2 + proximity * 2}px solid white`,
-          boxShadow: `0 0 ${8 + proximity * 20}px ${proximity > 0.8 ? '#4CAF50' : statusColor}80`,
-          transition: 'left 0.06s linear, top 0.06s linear, width 0.1s, height 0.1s',
+          backgroundColor: statusColor,
+          opacity: 0.85,
+          border: '2px solid white',
+          boxShadow: `0 0 12px ${statusColor}80`,
+          transition: 'left 0.06s linear, top 0.06s linear',
         }}
       />
 
