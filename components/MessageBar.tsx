@@ -43,6 +43,9 @@ export default function MessageBar() {
     setSuggestion(null);
   }, [suggestion, setText]);
 
+  const outputLanguage = useSettingsStore((s) => s.outputLanguage);
+  const needsTranslation = language !== outputLanguage;
+
   const handleSpeak = useCallback(async () => {
     tapFeedback();
     const original = text.trim();
@@ -54,19 +57,18 @@ export default function MessageBar() {
     }
     addToHistory(toSpeak);
 
-    if (language !== useSettingsStore.getState().outputLanguage) {
-      const outputLang = useSettingsStore.getState().outputLanguage;
-      speak(toSpeak, speechRate, speechVolume, outputTtsCode, activeTone);
-      translateText(toSpeak, language, outputLang).then((translated) => {
-        if (translated !== toSpeak) {
+    if (needsTranslation) {
+      try {
+        const translated = await translateText(toSpeak, language, outputLanguage);
+        if (translated && translated !== toSpeak) {
           setText(translated);
           speak(translated, speechRate, speechVolume, outputTtsCode, activeTone);
+          return;
         }
-      });
-    } else {
-      speak(toSpeak, speechRate, speechVolume, outputTtsCode, activeTone);
+      } catch {}
     }
-  }, [text, soundEnabled, suggestion, speechRate, speechVolume, outputTtsCode, activeTone, addToHistory, setText, language]);
+    speak(toSpeak, speechRate, speechVolume, outputTtsCode, activeTone);
+  }, [text, soundEnabled, suggestion, speechRate, speechVolume, outputTtsCode, activeTone, addToHistory, setText, language, outputLanguage, needsTranslation]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
