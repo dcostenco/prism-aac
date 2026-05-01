@@ -46,7 +46,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prism-aac-settings',
-      version: 6,
+      version: 7,
       migrate: (persisted: unknown, version: number) => {
         const s = persisted as Record<string, unknown>;
         if (version < 2) return { ...s, gridSize: 6, activeVocabSet: 'all', outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5, precisionTouchEnabled: true };
@@ -54,6 +54,7 @@ export const useSettingsStore = create<SettingsState>()(
         if (version < 4) return { ...s, outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5, precisionTouchEnabled: true };
         if (version < 5) return { ...s, headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5, precisionTouchEnabled: true };
         if (version < 6) return { ...s, precisionTouchEnabled: true };
+        if (version < 7) return { ...s };
         return s;
       },
     },
