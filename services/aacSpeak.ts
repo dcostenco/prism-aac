@@ -9,7 +9,7 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
   const { language, outputLanguage } = useSettingsStore.getState();
   const inLang = language as SupportedLanguage;
   const outLang = outputLanguage as SupportedLanguage;
-  const translated = inLang !== outLang ? translateTextSync(text, inLang, outLang) : text;
-  if (translated.trim().length <= 1) return;
+  let translated = inLang !== outLang ? translateTextSync(text, inLang, outLang) : text;
+  if (translated.trim().length === 1) translated = translated.trim() + '.';
   speak(translated, rate, volume, getTTSCode(outLang), tone);
 }
