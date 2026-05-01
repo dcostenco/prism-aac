@@ -25,6 +25,8 @@ function VisualTimer({ seconds, onComplete }: { seconds: number; onComplete: () 
   const [remaining, setRemaining] = useState(seconds);
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     setRemaining(seconds);
@@ -39,14 +41,14 @@ function VisualTimer({ seconds, onComplete }: { seconds: number; onComplete: () 
         if (r <= 1) {
           if (intervalRef.current) clearInterval(intervalRef.current);
           setRunning(false);
-          onComplete();
+          onCompleteRef.current();
           return 0;
         }
         return r - 1;
       });
     }, 1000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [running, onComplete]);
+  }, [running]);
 
   const pct = seconds > 0 ? remaining / seconds : 0;
   const radius = 36;

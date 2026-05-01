@@ -33,7 +33,20 @@ export function pictureModeForProfile(profile: SynaluxProfile | null): PictureMo
 const STYLE_VERSION = 1;
 const ARASAAC_API = 'https://api.arasaac.org/v1';
 const ARASAAC_CDN = 'https://static.arasaac.org/pictograms';
+const MAX_MEM_CACHE = 100;
 const MEM_CACHE = new Map<string, string | null>();
+
+function memCacheSet(key: string, value: string | null) {
+  if (MEM_CACHE.size >= MAX_MEM_CACHE) {
+    const oldest = MEM_CACHE.keys().next().value;
+    if (oldest !== undefined) {
+      const oldUrl = MEM_CACHE.get(oldest);
+      if (oldUrl) URL.revokeObjectURL(oldUrl);
+      MEM_CACHE.delete(oldest);
+    }
+  }
+  MEM_CACHE.set(key, value);
+}
 
 interface ArasaacHit {
   _id: number;
@@ -189,7 +202,7 @@ export async function getPictogramUrl(
   const cached = await cacheGet(key);
   if (cached) {
     const url = URL.createObjectURL(cached);
-    MEM_CACHE.set(key, url);
+    memCacheSet(key, url);
     return url;
   }
 
@@ -204,11 +217,11 @@ export async function getPictogramUrl(
     blob = await fetchSynaluxAI(phrase, lang);
   }
   if (!blob) {
-    MEM_CACHE.set(key, null);
+    memCacheSet(key, null);
     return null;
   }
   await cachePut(key, blob);
   const url = URL.createObjectURL(blob);
-  MEM_CACHE.set(key, url);
+  memCacheSet(key, url);
   return url;
 }

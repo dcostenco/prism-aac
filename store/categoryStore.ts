@@ -101,9 +101,14 @@ export const useCategoryStore = create<CategoryState>()(
         })),
 
       removeCustomPhrase: (id) =>
-        set((s) => ({
-          customPhrases: s.customPhrases.map((p) => p.id === id ? { ...p, deletedAt: Date.now() } : p),
-        })),
+        set((s) => {
+          const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+          return {
+            customPhrases: s.customPhrases
+              .map((p) => p.id === id ? { ...p, deletedAt: Date.now() } : p)
+              .filter((p) => !p.deletedAt || p.deletedAt > thirtyDaysAgo),
+          };
+        }),
 
       addOrderingSequence: (seq) =>
         set((s) => ({ orderingSequences: [...s.orderingSequences, seq] })),

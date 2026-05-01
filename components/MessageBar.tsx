@@ -10,6 +10,7 @@ import { useT } from '@/engine/useT';
 import { getTTSCode } from '@/engine/i18n';
 import { TONE_OPTIONS } from '@/services/azureTTS';
 import { translateWithAIRefine, translateTextSync } from '@/services/translateService';
+import { useAuthStore } from '@/store/authStore';
 
 export default function MessageBar() {
   const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
@@ -18,18 +19,21 @@ export default function MessageBar() {
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showTones, setShowTones] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
-  const isPaid = !!(typeof window !== 'undefined' && localStorage.getItem('prism-aac-auth-token'));
+  const profile = useAuthStore((s) => s.profile);
+  const isPaid = !!profile?.plan && profile.plan !== 'free';
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
   const [translated, setTranslated] = useState<string | null>(null);
 
   useEffect(() => {
     setTranslated(null);
     if (language === outputLanguage || !text.trim()) return;
+    let cancelled = false;
     const instant = translateWithAIRefine(
       text.trim(), language, outputLanguage,
-      (refined) => setTranslated(refined),
+      (refined) => { if (!cancelled) setTranslated(refined); },
     );
     if (instant.toLowerCase() !== text.trim().toLowerCase()) setTranslated(instant);
+    return () => { cancelled = true; };
   }, [text, language, outputLanguage]);
 
   // Debounced background correction — suggestion shown inline, child

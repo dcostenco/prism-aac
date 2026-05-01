@@ -94,6 +94,7 @@ export function startVoiceCursor(opts: VoiceCursorOptions): VoiceCursorHandle {
   let stream: MediaStream | null = null;
   let audioCtx: AudioContext | null = null;
   let analyser: AnalyserNode | null = null;
+  let mediaSource: MediaStreamAudioSourceNode | null = null;
   let rafId = 0;
 
   // Noise floor (established from first 3 seconds of ambient sound)
@@ -125,8 +126,8 @@ export function startVoiceCursor(opts: VoiceCursorOptions): VoiceCursorHandle {
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = FFT_SIZE;
 
-    const source = audioCtx.createMediaStreamSource(s);
-    source.connect(analyser);
+    mediaSource = audioCtx.createMediaStreamSource(s);
+    mediaSource.connect(analyser);
 
     opts.onStatusChange('listening');
     rafId = requestAnimationFrame(tick);
@@ -212,6 +213,7 @@ export function startVoiceCursor(opts: VoiceCursorOptions): VoiceCursorHandle {
     stop() {
       stopped = true;
       cancelAnimationFrame(rafId);
+      if (mediaSource) { mediaSource.disconnect(); mediaSource = null; }
       if (stream) stream.getTracks().forEach(t => t.stop());
       if (audioCtx) audioCtx.close().catch(() => {});
       opts.onStatusChange('stopped');

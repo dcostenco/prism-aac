@@ -34,9 +34,9 @@ export default function HistoryModal() {
             <p className="text-dim text-center py-8">{t('no_history')}</p>
           ) : (
             <div className="flex flex-col gap-2">
-              {history.map((entry, i) => (
+              {history.map((entry) => (
                 <button
-                  key={i}
+                  key={`${entry.timestamp}-${entry.text.slice(0, 20)}`}
                   onClick={() => { setText(entry.text); toggleHistory(); }}
                   className="surface-key rounded-xl p-3 text-left transition-colors border border-theme"
                 >

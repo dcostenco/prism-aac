@@ -38,7 +38,7 @@ const DEFAULT_TASKS: ScheduleTask[] = [
   { id: 'sched-7', text: 'Bedtime', textKey: 'sched_bedtime', icon: '🌙', done: false, order: 6 },
 ];
 
-let idCounter = 100;
+// Removed module-level mutable counter — use crypto.randomUUID for safe IDs
 
 export const useScheduleStore = create<ScheduleState>()(
   persist(
@@ -53,7 +53,7 @@ export const useScheduleStore = create<ScheduleState>()(
           tasks: [
             ...s.tasks,
             {
-              id: `sched-${Date.now()}-${++idCounter}`,
+              id: `sched-${crypto.randomUUID()}`,
               text,
               icon,
               done: false,
@@ -89,11 +89,19 @@ export const useScheduleStore = create<ScheduleState>()(
       resetTimer: () => set({ timerEndMs: 0 }),
 
       reorderTask: (id, newOrder) =>
-        set((s) => ({
-          tasks: s.tasks.map((t) =>
-            t.id === id ? { ...t, order: newOrder } : t
-          ),
-        })),
+        set((s) => {
+          const task = s.tasks.find((t) => t.id === id);
+          if (!task) return s;
+          const oldOrder = task.order;
+          return {
+            tasks: s.tasks.map((t) => {
+              if (t.id === id) return { ...t, order: newOrder };
+              if (oldOrder < newOrder && t.order > oldOrder && t.order <= newOrder) return { ...t, order: t.order - 1 };
+              if (oldOrder > newOrder && t.order >= newOrder && t.order < oldOrder) return { ...t, order: t.order + 1 };
+              return t;
+            }),
+          };
+        }),
     }),
     {
       name: 'prism-schedule',

@@ -24,6 +24,7 @@ import { useMessageStore } from '@/store/messageStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { keyFeedback, deleteFeedback } from '@/services/feedback';
+import { aacSpeak } from '@/services/aacSpeak';
 import { registerPanicListeners } from '@/services/panicService';
 import { useT } from '@/engine/useT';
 
@@ -136,7 +137,15 @@ export default function PrismApp() {
       if (e.key === ' ' && document.activeElement?.tagName === 'BUTTON') return;
       const store = useMessageStore.getState();
       if (e.key === 'Backspace') { e.preventDefault(); deleteFeedback(); store.deleteLastChar(); }
-      else if (e.key === 'Enter') { e.preventDefault(); }
+      else if (e.key === 'Enter') {
+        e.preventDefault();
+        const current = store.text.trim();
+        if (current) {
+          store.addToHistory(current);
+          const ss = useSettingsStore.getState();
+          aacSpeak(current, ss.speechRate, ss.speechVolume);
+        }
+      }
       else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { e.preventDefault(); keyFeedback(); store.appendChar(e.key); }
     };
     window.addEventListener('keydown', handler);

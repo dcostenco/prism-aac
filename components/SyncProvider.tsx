@@ -54,7 +54,8 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
     syncedRef.current = true;
 
     (async () => {
-      const remote = await pullFromCloud();
+      let remote: Awaited<ReturnType<typeof pullFromCloud>>;
+      try { remote = await pullFromCloud(); } catch { return; }
       if (!remote) return;
 
       const pred = usePredictionStore.getState();

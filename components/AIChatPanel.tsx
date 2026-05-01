@@ -126,6 +126,7 @@ export default function AIChatPanel() {
     };
 
     try {
+      const originalText = question;
       await askAI(question, undefined, (delta) => {
         buffer += delta;
         if (!scheduled) {
@@ -134,7 +135,7 @@ export default function AIChatPanel() {
         }
       });
       flush();
-      clearAll();
+      if (useMessageStore.getState().text.trim() === originalText) clearAll();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('could_not_reach_ai');
       setMessages((prev) => {
