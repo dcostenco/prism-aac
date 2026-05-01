@@ -43,19 +43,19 @@ export default function PhraseTile({ phrase, className, style, onClick, ariaLabe
       className={className}
       style={style}
     >
-      <span className="flex flex-col items-center justify-center gap-1 w-full overflow-hidden">
-        <span className="w-[clamp(2.5rem,8vw,5rem)] h-[clamp(2.5rem,8vw,5rem)] flex items-center justify-center shrink-0">
+      <span className="flex flex-col items-center w-full h-full">
+        <span className="flex-1 flex items-center justify-center w-full">
           {iconUrl && (
             <img
               src={iconUrl}
               alt=""
               aria-hidden
               loading="lazy"
-              className="max-w-full max-h-full object-contain"
+              className="max-w-[clamp(2.5rem,8vw,5rem)] max-h-[clamp(2.5rem,8vw,5rem)] object-contain"
             />
           )}
         </span>
-        <span className="block text-center leading-tight text-[clamp(0.7rem,1.5vw,1.125rem)] w-full truncate">{phrase}</span>
+        <span className="shrink-0 w-full text-center leading-snug text-[clamp(0.65rem,1.3vw,1rem)] font-semibold py-1 border-t border-theme bg-white/50">{phrase}</span>
       </span>
     </button>
   );
