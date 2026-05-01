@@ -74,9 +74,9 @@ export default function Keyboard() {
 
       if (translationActive) {
         const translated = translateTextSync(currentText.trim(), inLang, outLang);
-        speakWord(translated, speechRate, speechVolume, getTTSCode(outLang));
+        speak(translated, speechRate, speechVolume, getTTSCode(outLang), activeTone);
       } else if (autoSpeak && soundEnabled) {
-        speakWord(currentText.trim(), speechRate, speechVolume, getTTSCode(inLang));
+        speak(currentText.trim(), speechRate, speechVolume, getTTSCode(inLang), activeTone);
       }
     }
     appendChar(' ');
