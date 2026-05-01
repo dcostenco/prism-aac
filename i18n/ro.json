@@ -262,5 +262,12 @@
   "import_clipboard": "Lipește din clipboard",
   "mp_browse_desc": "Atinge orice element pentru a-l instala. Seturile de vocabular se activează imediat. Elementele blocate necesită un abonament superior.",
   "mp_tap_install": "Atinge pentru a instala",
-  "mp_active": "Activ"
+  "mp_active": "Activ",
+  "sched_morning": "Rutina de dimineață",
+  "sched_breakfast": "Mic dejun",
+  "sched_school": "Școală",
+  "sched_lunch": "Prânz",
+  "sched_play": "Timp de joacă",
+  "sched_dinner": "Cină",
+  "sched_bedtime": "Culcare"
 }

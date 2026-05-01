@@ -126,12 +126,12 @@ function FirstThenBoard({ tasks }: { tasks: ScheduleTask[] }) {
       <div className={`${tileClass} bg-[#E3F2FD] dark:bg-[#1A237E]`}>
         <span className="text-xs font-bold text-primary uppercase">{t('first')}</span>
         <span className="text-3xl">{currentTask?.icon ?? '✅'}</span>
-        <span className="text-primary font-bold text-center text-sm">{currentTask?.text ?? t('all_done')}</span>
+        <span className="text-primary font-bold text-center text-sm">{currentTask ? (currentTask.textKey ? t(currentTask.textKey) : currentTask.text) : t('all_done')}</span>
       </div>
       <div className={`${tileClass} bg-[#FFF3E0] dark:bg-[#E65100]`}>
         <span className="text-xs font-bold text-primary uppercase">{t('then')}</span>
         <span className="text-3xl">{nextTask?.icon ?? '🎉'}</span>
-        <span className="text-primary font-bold text-center text-sm">{nextTask?.text ?? t('reward')}</span>
+        <span className="text-primary font-bold text-center text-sm">{nextTask ? (nextTask.textKey ? t(nextTask.textKey) : nextTask.text) : t('reward')}</span>
       </div>
     </div>
   );
@@ -263,11 +263,11 @@ export default function SchedulePanel() {
                   if (!task.done) addReward(1);
                   toggleDone(task.id);
                 }}
-                aria-label={`${task.done ? t('task_done') : ''} ${task.text}`}
+                aria-label={`${task.done ? t('task_done') : ''} ${task.textKey ? t(task.textKey) : task.text}`}
               >
                 <span className="text-2xl shrink-0">{task.icon}</span>
                 <span className={`flex-1 text-left text-primary font-bold text-lg ${task.done ? 'line-through' : ''}`}>
-                  {task.text}
+                  {task.textKey ? t(task.textKey) : task.text}
                 </span>
                 <span className="text-2xl shrink-0 motion-safe:transition-transform motion-safe:duration-300">
                   {task.done ? '✅' : '⬜'}

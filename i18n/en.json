@@ -262,5 +262,12 @@
   "import_clipboard": "Paste from clipboard",
   "mp_browse_desc": "Tap any item to install it. Vocabulary sets activate immediately. Locked items require a higher subscription tier.",
   "mp_tap_install": "Tap to install",
-  "mp_active": "Active"
+  "mp_active": "Active",
+  "sched_morning": "Morning routine",
+  "sched_breakfast": "Breakfast",
+  "sched_school": "School",
+  "sched_lunch": "Lunch",
+  "sched_play": "Play time",
+  "sched_dinner": "Dinner",
+  "sched_bedtime": "Bedtime"
 }
