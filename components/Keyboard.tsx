@@ -373,13 +373,33 @@ export default function Keyboard() {
     activeKeyRef.current = null;
   }, [precisionTouchEnabled]);
 
+  // Register touch handlers as NON-PASSIVE so e.preventDefault() works.
+  // React 19 registers touch events as passive by default, which silently
+  // ignores preventDefault — breaking the touch-and-slide system on iPad.
+  const kbContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = kbContainerRef.current;
+    if (!el || !precisionTouchEnabled) return;
+    const tsHandler = (e: TouchEvent) => handleTouchStart(e as unknown as React.TouchEvent);
+    const tmHandler = (e: TouchEvent) => handleTouchMove(e as unknown as React.TouchEvent);
+    const teHandler = (e: TouchEvent) => handleTouchEnd(e as unknown as React.TouchEvent);
+    const tcHandler = (e: TouchEvent) => handleTouchCancel(e as unknown as React.TouchEvent);
+    el.addEventListener('touchstart', tsHandler, { passive: false });
+    el.addEventListener('touchmove', tmHandler, { passive: false });
+    el.addEventListener('touchend', teHandler, { passive: false });
+    el.addEventListener('touchcancel', tcHandler, { passive: false });
+    return () => {
+      el.removeEventListener('touchstart', tsHandler);
+      el.removeEventListener('touchmove', tmHandler);
+      el.removeEventListener('touchend', teHandler);
+      el.removeEventListener('touchcancel', tcHandler);
+    };
+  }, [precisionTouchEnabled, handleTouchStart, handleTouchMove, handleTouchEnd, handleTouchCancel]);
+
   return (
     <div
+      ref={kbContainerRef}
       className={`flex-1 flex flex-col gap-[1px] p-[2px] ${precisionTouchEnabled ? 'precision-touch-active' : ''}`}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchCancel}
     >
       {precisionTouchEnabled && typeof document !== 'undefined' && createPortal(<PrecisionBubble {...bubble} />, document.body)}
       {rows.map((row, ri) => (
