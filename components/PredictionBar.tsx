@@ -62,10 +62,9 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
 }
 
 export default function PredictionBar() {
-  const { text, appendWord, autoSpeak, soundEnabled } = useMessageStore();
+  const { text } = useMessageStore();
   const { predictions, updatePredictions, learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
-  const { outputTtsCode } = useT();
   const langDefaults = getPredictionsForLanguage(language);
   const [displayed, setDisplayed] = useState<string[]>(langDefaults);
   const prevRef = useRef<string[]>(langDefaults);
@@ -98,13 +97,14 @@ export default function PredictionBar() {
       const newText = prefix ? `${prefix} ${word} ` : `${word} `;
       useMessageStore.getState().setText(newText);
     } else {
-      appendWord(word);
+      const current = useMessageStore.getState().text;
+      const newText = current.trim() ? `${current.trim()} ${word} ` : `${word} `;
+      useMessageStore.getState().setText(newText);
     }
 
     learnWord(word.toLowerCase(), previousWord?.toLowerCase());
-    if (word.length > 1) {
-      aacSpeak(word, speechRate, speechVolume);
-    }
+    const fullPhrase = midWord ? [...words.slice(0, -1), word].join(' ') : [...words, word].join(' ');
+    aacSpeak(fullPhrase, speechRate, speechVolume);
   };
 
   return (
