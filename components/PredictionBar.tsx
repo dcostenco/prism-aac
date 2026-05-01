@@ -102,9 +102,8 @@ export default function PredictionBar() {
     }
 
     learnWord(word.toLowerCase(), previousWord?.toLowerCase());
-    if (autoSpeak && soundEnabled) {
-      const allWords = midWord ? [...words.slice(0, -1), word] : [...words, word];
-      aacSpeak(allWords.join(" "), speechRate, speechVolume);
+    if (word.length > 1) {
+      aacSpeak(word, speechRate, speechVolume);
     }
   };
 
