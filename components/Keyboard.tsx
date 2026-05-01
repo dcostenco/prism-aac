@@ -8,6 +8,7 @@ import { speak, speakWord } from '@/services/speechService';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
+import { translateTextSync } from '@/services/translateService';
 
 const CAPS_LOCK_HOLD_MS = 500;
 
@@ -66,10 +67,16 @@ export default function Keyboard() {
       // user hears "we can help" instead of fragmented "we" → "can" → "help".
       // speakLocal() cancels any in-flight utterance, so each space
       // restarts speech with the latest accumulated text.
-      if (autoSpeak && soundEnabled) speakWord(currentText.trim(), speechRate, speechVolume, outputTtsCode);
+      if (autoSpeak && soundEnabled) {
+        const outputLang = useSettingsStore.getState().outputLanguage;
+        const textToSpeak = language !== outputLang
+          ? translateTextSync(currentText.trim(), language, outputLang)
+          : currentText.trim();
+        speakWord(textToSpeak, speechRate, speechVolume, outputTtsCode);
+      }
     }
     appendChar(' ');
-  }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar]);
+  }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar, language, outputTtsCode]);
 
   const handleSpeak = useCallback(() => {
     tapFeedback();

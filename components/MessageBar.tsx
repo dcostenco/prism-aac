@@ -8,7 +8,7 @@ import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { TONE_OPTIONS } from '@/services/azureTTS';
-import { translateText } from '@/services/translateService';
+import { translateText, translateTextSync } from '@/services/translateService';
 
 export default function MessageBar() {
   const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
@@ -18,6 +18,15 @@ export default function MessageBar() {
   const [showTones, setShowTones] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const isPaid = !!(typeof window !== 'undefined' && localStorage.getItem('prism-aac-auth-token'));
+  const outputLanguage = useSettingsStore((s) => s.outputLanguage);
+  const [translated, setTranslated] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTranslated(null);
+    if (language === outputLanguage || !text.trim()) return;
+    const result = translateTextSync(text.trim(), language, outputLanguage);
+    if (result !== text.trim()) setTranslated(result);
+  }, [text, language, outputLanguage]);
 
   // Debounced background correction. As the user types, we ask the
   // /api/v1/text/correct endpoint for the most likely intended utterance.
@@ -43,7 +52,7 @@ export default function MessageBar() {
     setSuggestion(null);
   }, [suggestion, setText]);
 
-  const handleSpeak = useCallback(async () => {
+  const handleSpeak = useCallback(() => {
     tapFeedback();
     const original = text.trim();
     if (!original || !soundEnabled) return;
@@ -52,17 +61,12 @@ export default function MessageBar() {
     if (suggestion && suggestion !== original) { setText(suggestion); setSuggestion(null); }
     addToHistory(toSpeak);
 
-    const { outputLanguage } = useSettingsStore.getState();
-    if (language !== outputLanguage) {
-      const translated = await translateText(toSpeak, language, outputLanguage);
-      if (translated !== toSpeak) {
-        setText(translated);
-        speak(translated, speechRate, speechVolume, outputTtsCode, activeTone);
-        return;
-      }
+    if (translated) {
+      speak(translated, speechRate, speechVolume, outputTtsCode, activeTone);
+    } else {
+      speak(toSpeak, speechRate, speechVolume, outputTtsCode, activeTone);
     }
-    speak(toSpeak, speechRate, speechVolume, outputTtsCode, activeTone);
-  }, [text, soundEnabled, suggestion, speechRate, speechVolume, outputTtsCode, activeTone, addToHistory, setText, language]);
+  }, [text, soundEnabled, suggestion, speechRate, speechVolume, outputTtsCode, activeTone, addToHistory, setText, translated]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
@@ -117,7 +121,12 @@ export default function MessageBar() {
         <div className="text-[clamp(1rem,2.5vw,1.5rem)] flex items-center break-words text-primary truncate" role="status" aria-live="polite" aria-label={t('message_text')}>
           {text ? <ColoredText text={text} /> : <span className="text-dim">{t('type_here')}</span>}
         </div>
-        {suggestion && (
+        {translated && (
+          <div className="text-[clamp(0.75rem,2vw,1.1rem)] text-[#2196F3] font-semibold truncate">
+            🌐 {translated}
+          </div>
+        )}
+        {suggestion && !translated && (
           <button
             onClick={acceptSuggestion}
             aria-label={`Auto-correct to ${suggestion}`}
