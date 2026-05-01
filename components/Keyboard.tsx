@@ -30,9 +30,9 @@ const LIFT_DELAY_MS = 80;
 
 function PrecisionBubble({ char, x, y, visible }: { char: string; x: number; y: number; visible: boolean }) {
   if (!visible || !char) return null;
-  // Clamp so bubble doesn't go off-screen at top or sides
-  const bubbleY = Math.max(10, y - 80);
-  const bubbleX = Math.max(30, Math.min(typeof window !== 'undefined' ? window.innerWidth - 30 : 9999, x));
+  // Position bubble well above the key so it doesn't overlap/duplicate
+  const bubbleY = Math.max(5, y - 55);
+  const bubbleX = Math.max(25, Math.min(typeof window !== 'undefined' ? window.innerWidth - 25 : 9999, x));
   return (
     <div
       className="precision-bubble"
