@@ -9,7 +9,7 @@ import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { getTTSCode } from '@/engine/i18n';
 import { TONE_OPTIONS } from '@/services/azureTTS';
-import { translateText, translateTextSync } from '@/services/translateService';
+import { translateWithAIRefine, translateTextSync } from '@/services/translateService';
 
 export default function MessageBar() {
   const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
@@ -25,8 +25,11 @@ export default function MessageBar() {
   useEffect(() => {
     setTranslated(null);
     if (language === outputLanguage || !text.trim()) return;
-    const result = translateTextSync(text.trim(), language, outputLanguage);
-    if (result !== text.trim()) setTranslated(result);
+    const instant = translateWithAIRefine(
+      text.trim(), language, outputLanguage,
+      (refined) => setTranslated(refined),
+    );
+    if (instant.toLowerCase() !== text.trim().toLowerCase()) setTranslated(instant);
   }, [text, language, outputLanguage]);
 
   // Debounced background correction. As the user types, we ask the

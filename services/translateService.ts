@@ -70,13 +70,30 @@ function offlineTranslate(text: string, fromLang: SupportedLanguage, toLang: Sup
   const exact = dict.get(lower);
   if (exact) return exact;
 
-  const words = text.trim().split(/\s+/);
-  const translated = words.map((w) => {
-    const lookup = dict.get(w.toLowerCase());
-    return lookup ?? w;
-  });
+  const words = lower.split(/\s+/);
+  const result: string[] = [];
+  let i = 0;
 
-  return translated.join(' ');
+  while (i < words.length) {
+    let matched = false;
+    for (let len = Math.min(words.length - i, 5); len > 1; len--) {
+      const phrase = words.slice(i, i + len).join(' ');
+      const lookup = dict.get(phrase);
+      if (lookup) {
+        result.push(lookup);
+        i += len;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      const lookup = dict.get(words[i]);
+      result.push(lookup ?? text.trim().split(/\s+/)[i] ?? words[i]);
+      i++;
+    }
+  }
+
+  return result.join(' ');
 }
 
 export function translateTextSync(
@@ -90,11 +107,48 @@ export function translateTextSync(
   if (cache.has(cacheKey)) return cache.get(cacheKey)!;
 
   const result = offlineTranslate(text, fromLang, toLang);
-  if (result !== text) {
+  if (result.toLowerCase() !== text.trim().toLowerCase()) {
     cache.set(cacheKey, result);
     trimCache();
   }
   return result;
+}
+
+let aiTimer: ReturnType<typeof setTimeout> | null = null;
+let lastAiText = '';
+
+export function translateWithAIRefine(
+  text: string,
+  fromLang: SupportedLanguage,
+  toLang: SupportedLanguage,
+  onRefined: (translated: string) => void,
+): string {
+  const instant = translateTextSync(text, fromLang, toLang);
+
+  if (aiTimer) clearTimeout(aiTimer);
+  const trimmed = text.trim();
+  if (trimmed === lastAiText || trimmed.split(/\s+/).length < 2) return instant;
+
+  aiTimer = setTimeout(async () => {
+    lastAiText = trimmed;
+    try {
+      const { translateAI } = await import('./aiService');
+      const LANG_NAMES: Record<string, string> = {
+        en: 'English', es: 'Spanish', fr: 'French', pt: 'Portuguese',
+        ro: 'Romanian', uk: 'Ukrainian', ru: 'Russian', de: 'German',
+        ja: 'Japanese', ko: 'Korean', zh: 'Chinese', ar: 'Arabic',
+      };
+      const result = await translateAI(trimmed, LANG_NAMES[fromLang] ?? fromLang, LANG_NAMES[toLang] ?? toLang);
+      const refined = result.trim().replace(/^["']|["']$/g, '');
+      if (refined && refined.toLowerCase() !== trimmed.toLowerCase()) {
+        cache.set(`${fromLang}:${toLang}:${trimmed.toLowerCase()}`, refined);
+        trimCache();
+        onRefined(refined);
+      }
+    } catch {}
+  }, 600);
+
+  return instant;
 }
 
 export async function translateText(
@@ -104,8 +158,10 @@ export async function translateText(
 ): Promise<string> {
   if (fromLang === toLang || !text.trim()) return text;
 
-  const offline = translateTextSync(text, fromLang, toLang);
-  if (offline !== text) return offline;
+  const cacheKey = `${fromLang}:${toLang}:${text.trim().toLowerCase()}`;
+  if (cache.has(cacheKey)) return cache.get(cacheKey)!;
+
+  const offline = offlineTranslate(text, fromLang, toLang);
 
   try {
     const { translateAI } = await import('./aiService');
@@ -117,11 +173,15 @@ export async function translateText(
     const result = await translateAI(text, LANG_NAMES[fromLang] ?? fromLang, LANG_NAMES[toLang] ?? toLang);
     const translated = result.trim().replace(/^["']|["']$/g, '');
     if (translated && translated.toLowerCase() !== text.trim().toLowerCase()) {
-      cache.set(`${fromLang}:${toLang}:${text.trim().toLowerCase()}`, translated);
+      cache.set(cacheKey, translated);
       trimCache();
       return translated;
     }
   } catch {}
 
-  return offline !== text ? offline : text;
+  if (offline.toLowerCase() !== text.trim().toLowerCase()) {
+    cache.set(cacheKey, offline);
+    trimCache();
+  }
+  return offline;
 }
