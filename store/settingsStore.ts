@@ -28,7 +28,7 @@ export const useSettingsStore = create<SettingsState>()(
       speechRate: 0.5,
       speechVolume: 1.0,
       language: 'en',
-      outputLanguage: 'en',
+      outputLanguage: 'en', // syncs with language on first use; only diverges when user explicitly sets translation pair
       highContrast: false,
       theme: 'light',
       gridSize: 6,

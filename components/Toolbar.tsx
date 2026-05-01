@@ -105,7 +105,9 @@ export default function Toolbar() {
                 onClick={() => {
                   tapFeedback();
                   if (showLangPicker === 'input') {
-                    updateSettings({ language: l.code as SupportedLanguage });
+                    const prev = useSettingsStore.getState();
+                    const sync = prev.language === prev.outputLanguage;
+                    updateSettings({ language: l.code as SupportedLanguage, ...(sync ? { outputLanguage: l.code as SupportedLanguage } : {}) });
                   } else {
                     updateSettings({ outputLanguage: l.code as SupportedLanguage });
                   }
