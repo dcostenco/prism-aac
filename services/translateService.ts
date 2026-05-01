@@ -1,5 +1,5 @@
 import { SupportedLanguage } from '@/engine/i18n';
-import { askAI } from './aiService';
+import { translateAI } from './aiService';
 
 const MAX_CACHE = 500;
 const cache = new Map<string, string>();
@@ -9,6 +9,12 @@ function trimCache() {
   const first = cache.keys().next().value;
   if (first !== undefined) cache.delete(first);
 }
+
+const LANG_NAMES: Record<string, string> = {
+  en: 'English', es: 'Spanish', fr: 'French', pt: 'Portuguese',
+  ro: 'Romanian', uk: 'Ukrainian', ru: 'Russian', de: 'German',
+  ja: 'Japanese', ko: 'Korean', zh: 'Chinese', ar: 'Arabic',
+};
 
 export async function translateText(
   text: string,
@@ -21,20 +27,17 @@ export async function translateText(
   if (cache.has(key)) return cache.get(key)!;
 
   try {
-    let result = '';
-    await askAI(
-      `Translate this from ${fromLang} to ${toLang}. Return ONLY the translation, no explanations: "${text}"`,
-      'translator',
-      (delta) => { result += delta; },
-    );
+    const from = LANG_NAMES[fromLang] ?? fromLang;
+    const to = LANG_NAMES[toLang] ?? toLang;
+    const result = await translateAI(text, from, to);
     const translated = result.trim().replace(/^["']|["']$/g, '');
-    if (translated) {
+    if (translated && translated.toLowerCase() !== text.trim().toLowerCase()) {
       cache.set(key, translated);
       trimCache();
       return translated;
     }
   } catch {
-    // Translation failed — return original text, spoken in output voice
+    // Translation unavailable — return original
   }
 
   return text;

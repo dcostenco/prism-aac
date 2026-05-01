@@ -231,6 +231,16 @@ export interface ParsedNoteResult {
   summary: string;
 }
 
+export async function translateAI(
+  text: string,
+  fromLang: string,
+  toLang: string,
+  onChunk?: (delta: string) => void,
+): Promise<string> {
+  const system = `You are a translator. Translate the input from ${fromLang} to ${toLang}. Return ONLY the translation — no explanations, no quotes, no extra text.`;
+  return route(text, { system, onChunk });
+}
+
 export async function askAI(
   question: string,
   context?: string,
