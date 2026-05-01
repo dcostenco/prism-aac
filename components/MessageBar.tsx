@@ -8,6 +8,7 @@ import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { TONE_OPTIONS } from '@/services/azureTTS';
+import { translateText } from '@/services/translateService';
 
 export default function MessageBar() {
   const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
@@ -42,25 +43,30 @@ export default function MessageBar() {
     setSuggestion(null);
   }, [suggestion, setText]);
 
-  const handleSpeak = useCallback(() => {
+  const handleSpeak = useCallback(async () => {
     tapFeedback();
     const original = text.trim();
     if (!original || !soundEnabled) return;
-    // Speak NEVER blocks on correction. If the background correction has
-    // already produced a suggestion, prefer that — otherwise speak the
-    // user's original text immediately. The user can't be left waiting
-    // on a slow network for their voice. The background correctText() is
-    // still running, and the suggestion will appear inline next to the
-    // message bar; if the user taps Speak again after it lands, they get
-    // the corrected version.
     const toSpeak = (suggestion && suggestion !== original) ? suggestion : original;
     if (suggestion && suggestion !== original) {
       setText(suggestion);
       setSuggestion(null);
     }
     addToHistory(toSpeak);
-    speak(toSpeak, speechRate, speechVolume, outputTtsCode, activeTone);
-  }, [text, soundEnabled, suggestion, speechRate, speechVolume, outputTtsCode, activeTone, addToHistory, setText]);
+
+    if (language !== useSettingsStore.getState().outputLanguage) {
+      const outputLang = useSettingsStore.getState().outputLanguage;
+      speak(toSpeak, speechRate, speechVolume, outputTtsCode, activeTone);
+      translateText(toSpeak, language, outputLang).then((translated) => {
+        if (translated !== toSpeak) {
+          setText(translated);
+          speak(translated, speechRate, speechVolume, outputTtsCode, activeTone);
+        }
+      });
+    } else {
+      speak(toSpeak, speechRate, speechVolume, outputTtsCode, activeTone);
+    }
+  }, [text, soundEnabled, suggestion, speechRate, speechVolume, outputTtsCode, activeTone, addToHistory, setText, language]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
