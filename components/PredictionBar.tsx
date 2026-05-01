@@ -48,7 +48,7 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
     <button
       onClick={() => onTap(word)}
       aria-label={`Predict: ${word}`}
-      className="aac-btn flex-1 min-w-0 surface-key rounded-2xl max-sm:rounded-xl max-sm:text-sm max-sm:px-1 max-sm:py-1.5 max-sm:gap-0.5 max-sm:border-l-4 landscape:rounded-lg landscape:text-[10px] landscape:px-0 landscape:py-0.5 landscape:gap-0 landscape:border-l-[3px] flex flex-col items-center justify-center gap-1 text-xl md:text-2xl font-semibold select-none px-3 py-2 border-l-[6px] border border-theme"
+      className="aac-btn flex-1 min-w-0 surface-key rounded-2xl flex flex-col items-center justify-center gap-1 text-[clamp(1.1rem,2.5vw,1.5rem)] font-semibold select-none px-3 py-2 border-l-[6px] border border-theme"
       style={{ borderLeftColor: color, color }}
     >
       {iconUrl && (
@@ -57,10 +57,10 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
           alt=""
           aria-hidden
           loading="lazy"
-          className="w-10 h-10 md:w-14 md:h-14 max-sm:w-6 max-sm:h-6 landscape:hidden object-contain"
+          className="w-[clamp(2rem,5vw,3.5rem)] h-[clamp(2rem,5vw,3.5rem)] object-contain"
         />
       )}
-      <span className="block w-full text-center break-words leading-tight">{word}</span>
+      <span className="truncate w-full text-center">{word}</span>
     </button>
   );
 }
@@ -100,7 +100,7 @@ export default function PredictionBar() {
   };
 
   return (
-    <div className="flex items-stretch gap-3 max-sm:gap-1.5 landscape:gap-0.5 px-3 max-sm:px-2 landscape:px-0.5 py-2 max-sm:py-1.5 landscape:py-0.5 shrink-0 min-h-[88px] max-sm:min-h-[64px] landscape:min-h-[36px] md:min-h-[140px]">
+    <div className="flex items-stretch gap-[clamp(0.5rem,1vw,0.75rem)] px-3 py-2 shrink-0 min-h-[clamp(64px,12svh,140px)]">
       {displayed.map((word, i) => {
         const color = CATEGORY_COLORS[classifyWord(word)];
         return <PredictionTile key={`slot-${i}`} word={word} color={color} onTap={handleTap} />;

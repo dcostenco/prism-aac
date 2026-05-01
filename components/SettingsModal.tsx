@@ -37,7 +37,7 @@ export default function SettingsModal() {
 
   const cats = allCategories();
 
-  const sectionTitle = 'text-muted font-semibold text-sm uppercase tracking-wider mb-3';
+  const sectionTitle = 'text-muted font-semibold text-base uppercase tracking-wider mb-3';
 
   return (
     <div role="dialog" aria-modal="true" className="modal-backdrop fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={toggleSettings}>
@@ -54,7 +54,7 @@ export default function SettingsModal() {
               <button
                 onClick={() => settings.setTheme('light')}
                 aria-pressed={settings.theme === 'light'}
-                className={`aac-btn rounded-xl px-4 py-3 text-sm font-semibold border border-theme ${
+                className={`aac-btn rounded-xl px-4 py-4 text-lg font-semibold border border-theme ${
                   settings.theme === 'light' ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                 }`}
               >
@@ -63,7 +63,7 @@ export default function SettingsModal() {
               <button
                 onClick={() => settings.setTheme('dark')}
                 aria-pressed={settings.theme === 'dark'}
-                className={`aac-btn rounded-xl px-4 py-3 text-sm font-semibold border border-theme ${
+                className={`aac-btn rounded-xl px-4 py-4 text-lg font-semibold border border-theme ${
                   settings.theme === 'dark' ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                 }`}
               >
@@ -80,12 +80,12 @@ export default function SettingsModal() {
                 <button
                   key={lang.code}
                   onClick={() => settings.update({ language: lang.code as SupportedLanguage })}
-                  className={`aac-btn rounded-xl px-3 py-2.5 text-sm text-left border border-theme ${
+                  className={`aac-btn rounded-xl px-3 py-3 text-base text-left border border-theme ${
                     settings.language === lang.code ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                   }`}
                 >
                   <div className="font-semibold">{lang.nativeName}</div>
-                  <div className="text-xs opacity-70">{lang.name}</div>
+                  <div className="text-sm opacity-70">{lang.name}</div>
                 </button>
               ))}
             </div>
@@ -94,15 +94,15 @@ export default function SettingsModal() {
           {/* Accessibility */}
           <div>
             <h3 className={sectionTitle}>{t('accessibility')}</h3>
-            <label className="flex items-center justify-between">
-              <span className="text-primary">{t('high_contrast')}</span>
+            <label className="flex items-center justify-between py-2">
+              <span className="text-primary text-lg">{t('high_contrast')}</span>
               <button
                 onClick={() => settings.update({ highContrast: !settings.highContrast })}
                 aria-pressed={settings.highContrast}
                 aria-label={t('high_contrast')}
-                className={`w-12 h-7 rounded-full transition-colors ${settings.highContrast ? 'bg-[#FFD700]' : 'bg-[#999]'}`}
+                className={`w-14 h-8 rounded-full transition-colors ${settings.highContrast ? 'bg-[#FFD700]' : 'bg-[#999]'}`}
               >
-                <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${settings.highContrast ? 'translate-x-5' : ''}`} />
+                <div className={`w-6 h-6 rounded-full bg-white transition-transform mx-1 ${settings.highContrast ? 'translate-x-6' : ''}`} />
               </button>
             </label>
           </div>
@@ -111,8 +111,8 @@ export default function SettingsModal() {
           <div>
             <h3 className={sectionTitle}>{t('voice')}</h3>
             <label className="flex items-center justify-between mb-2">
-              <span className="text-primary">Speed</span>
-              <span className="text-muted">{settings.speechRate.toFixed(1)}</span>
+              <span className="text-primary text-lg">Speed</span>
+              <span className="text-muted text-lg">{settings.speechRate.toFixed(1)}</span>
             </label>
             <input
               type="range" min="0.1" max="1" step="0.1" value={settings.speechRate}
@@ -120,8 +120,8 @@ export default function SettingsModal() {
               className="w-full accent-[#4CAF50]"
             />
             <label className="flex items-center justify-between mb-2 mt-4">
-              <span className="text-primary">Volume</span>
-              <span className="text-muted">{Math.round(settings.speechVolume * 100)}%</span>
+              <span className="text-primary text-lg">Volume</span>
+              <span className="text-muted text-lg">{Math.round(settings.speechVolume * 100)}%</span>
             </label>
             <input
               type="range" min="0" max="1" step="0.1" value={settings.speechVolume}
@@ -138,7 +138,7 @@ export default function SettingsModal() {
               <input value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Category name" className="flex-1 surface-key rounded-lg px-3 py-2 border border-theme" />
               <button
                 onClick={() => { if (newCatName.trim()) { addCustomCategory(newCatName.trim(), newCatIcon || '📌'); setNewCatName(''); } }}
-                className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]"
+                className="aac-btn bg-[#4CAF50] text-white px-5 py-3 rounded-lg font-semibold text-base hover:bg-[#388E3C]"
               >
                 Add
               </button>
@@ -162,7 +162,7 @@ export default function SettingsModal() {
               <input value={newPhraseText} onChange={(e) => setNewPhraseText(e.target.value)} placeholder="Phrase text" className="flex-1 surface-key rounded-lg px-3 py-2 border border-theme" />
               <button
                 onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim()); setNewPhraseText(''); setNewPhraseCat(''); } }}
-                className="bg-[#4CAF50] text-white px-4 rounded-lg font-semibold hover:bg-[#388E3C]"
+                className="aac-btn bg-[#4CAF50] text-white px-5 py-3 rounded-lg font-semibold text-base hover:bg-[#388E3C]"
               >
                 Add
               </button>
@@ -209,7 +209,7 @@ export default function SettingsModal() {
                 <a
                   href={synaluxSignInUrl()}
                   data-testid="synalux-signin"
-                  className="block w-full text-center bg-[#4CAF50] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#388E3C] text-sm"
+                  className="aac-btn block w-full text-center bg-[#4CAF50] text-white px-4 py-4 rounded-lg font-semibold hover:bg-[#388E3C] text-lg"
                 >
                   Sign in with Synalux
                 </a>

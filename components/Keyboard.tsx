@@ -92,10 +92,10 @@ export default function Keyboard() {
   const kc =
     'aac-key surface-key text-primary rounded-xl font-bold select-none flex items-center justify-center';
   const letterSize = capsLock
-    ? 'text-3xl md:text-5xl max-sm:text-xl landscape:text-lg'
-    : 'text-2xl md:text-4xl max-sm:text-lg landscape:text-base';
-  const utilSize = 'text-xl md:text-2xl max-sm:text-base landscape:text-sm';
-  const wordSize = 'text-base md:text-xl max-sm:text-sm landscape:text-xs';
+    ? 'text-[clamp(1.25rem,3.5vw,3rem)]'
+    : 'text-[clamp(1.1rem,3vw,2.25rem)]';
+  const utilSize = 'text-[clamp(0.9rem,2vw,1.5rem)]';
+  const wordSize = 'text-[clamp(0.8rem,1.8vw,1.25rem)]';
 
   // Caps-lock visual state on the shift key: green = caps-lock, yellow =
   // one-shot shift, neutral = lowercase. Distinct colors so the user can
@@ -109,9 +109,9 @@ export default function Keyboard() {
   const shiftGlyph = capsLock ? 'A' : isUpperCase ? '⇧' : '⇪';
 
   return (
-    <div className="flex-1 flex flex-col gap-2 md:gap-2.5 max-sm:gap-1 landscape:gap-0.5 p-2 md:p-3 max-sm:p-1 landscape:p-0.5">
+    <div className="flex-1 flex flex-col gap-[clamp(0.25rem,0.8svh,0.625rem)] p-[clamp(0.25rem,0.5vw,0.75rem)]">
       {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-2 md:gap-2.5 max-sm:gap-1 landscape:gap-0.5 justify-center flex-1">
+        <div key={ri} className="flex gap-[clamp(0.25rem,0.5vw,0.625rem)] justify-center flex-1">
           {ri === 2 && keyboardMode === 'letters' && (
             <button
               onPointerDown={handleShiftDown}
@@ -120,7 +120,7 @@ export default function Keyboard() {
               aria-label={shiftLabel}
               aria-pressed={capsLock}
               data-testid="shift-key"
-              className={`${kc} ${utilSize} px-3 md:px-4 max-sm:px-2 min-w-[56px] md:min-w-[72px] max-sm:min-w-[44px] ${shiftStyle}`}
+              className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)] ${shiftStyle}`}
             >
               {shiftGlyph}
             </button>
@@ -131,23 +131,23 @@ export default function Keyboard() {
             </button>
           ))}
           {ri === 2 && keyboardMode === 'letters' && (
-            <button onClick={handleBackspace} aria-label="Backspace" className={`${kc} ${utilSize} px-3 md:px-4 max-sm:px-2 min-w-[56px] md:min-w-[72px] max-sm:min-w-[44px]`}>⌫</button>
+            <button onClick={handleBackspace} aria-label="Backspace" className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)]`}>⌫</button>
           )}
         </div>
       ))}
 
-      <div className="flex gap-2 max-sm:gap-1.5 md:gap-2.5 flex-1">
-        <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} ${wordSize} min-w-[64px] md:min-w-[80px] max-sm:min-w-[48px] px-3 max-sm:px-2`}>
+      <div className="flex gap-[clamp(0.25rem,0.5vw,0.625rem)] flex-1">
+        <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>
         <button onClick={handleSpace} aria-label={t('space')} className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
-        <button onClick={() => handleKey('.')} aria-label="." className={`${kc} ${utilSize} min-w-[56px] max-sm:min-w-[40px] md:min-w-[72px]`}>.</button>
-        <button onClick={() => handleKey(',')} aria-label="," className={`${kc} ${utilSize} min-w-[56px] max-sm:min-w-[40px] md:min-w-[72px]`}>,</button>
-        <button onClick={() => handleKey('?')} aria-label="?" className={`${kc} ${utilSize} min-w-[56px] max-sm:min-w-[40px] md:min-w-[72px]`}>?</button>
+        <button onClick={() => handleKey('.')} aria-label="." className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>.</button>
+        <button onClick={() => handleKey(',')} aria-label="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>,</button>
+        <button onClick={() => handleKey('?')} aria-label="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>?</button>
         <button
           onClick={handleSpeak}
           aria-label={t('speak')}
-          className={`aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-5 md:px-7 max-sm:px-3 min-w-[112px] max-sm:min-w-[80px] md:min-w-[140px] ${wordSize} select-none flex items-center justify-center`}
+          className={`aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-[clamp(0.75rem,2vw,1.75rem)] min-w-[clamp(5rem,12vw,8.75rem)] ${wordSize} select-none flex items-center justify-center`}
         >
           {t('speak')}
         </button>
