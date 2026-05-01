@@ -170,6 +170,227 @@ Gestures are:
 
 ---
 
+## Auto-Train — Adaptive Learning Engine
+
+### The Problem
+
+Every child with motor impairment is different. A BCBA or SLP spends hours calibrating traditional eye trackers (Tobii, Grid 3) — adjusting sensitivity, dead zones, dwell timing, filtering. If the child has a bad day (fatigue, seizure, medication change), the calibration is wrong and must be redone.
+
+### The Solution: Continuous Adaptive Learning
+
+PrismAAC's camera input system **learns from every interaction** and continuously adapts to the child — no manual recalibration needed.
+
+```
+Session Start
+  → Load child's movement profile from localStorage
+    → Begin tracking with saved parameters
+      → Every successful dwell click:
+          - Record: which body part, movement amplitude, time to target,
+            overshoot distance, dwell stability (jitter during dwell)
+          - Update movement model:
+              • Shrink dead zone if child is precise
+              • Expand dead zone if child overshoots
+              • Adjust smoothing per body part
+              • Adjust sensitivity per direction (some children
+                move better left-right than up-down)
+      → Every 5 minutes:
+          - Recalculate fatigue score (are movements getting smaller?)
+          - If fatigue detected: increase sensitivity, reduce dwell time
+          - If precision improving: decrease sensitivity, increase dwell time
+      → Session End:
+          - Save updated movement profile
+          - Log session metrics for caregiver review
+```
+
+### Movement Profile (per child)
+
+Stored in localStorage, keyed by child name/ID:
+
+```typescript
+interface MovementProfile {
+  id: string;                    // child identifier
+  name: string;                  // display name
+  createdAt: number;             // first session timestamp
+  totalSessions: number;         // lifetime session count
+  totalDwellClicks: number;      // lifetime successful clicks
+
+  // Per-body-part parameters (learned)
+  bodyParts: Record<string, BodyPartProfile>;
+
+  // Global parameters (auto-adjusted)
+  baseSensitivity: number;       // learned optimal sensitivity
+  baseDwellMs: number;           // learned optimal dwell time
+  baseSmoothing: number;         // learned optimal smoothing
+  fatigueThreshold: number;      // when to boost sensitivity
+
+  // Directional bias (some children move better in certain directions)
+  directionBias: {
+    leftRight: number;           // 0-2, multiplier for X movement
+    upDown: number;              // 0-2, multiplier for Y movement
+  };
+
+  // Time-of-day patterns (optional)
+  morningProfile?: Partial<MovementProfile>;  // different settings AM vs PM
+  afternoonProfile?: Partial<MovementProfile>;
+}
+
+interface BodyPartProfile {
+  landmark: number;              // MediaPipe landmark ID
+  name: string;                  // "right_elbow", "head", etc.
+  enabled: boolean;              // is this body part used for input?
+  movementVariance: number;      // how much this part moves (learned)
+  accuracy: number;              // 0-1, how precise this part is (learned)
+  optimalSensitivity: number;    // learned sensitivity for this part
+  optimalSmoothing: number;      // learned smoothing for this part
+  deadZone: number;              // minimum movement to register (learned)
+  maxSpeed: number;              // fastest movement observed (learned)
+  averageSpeed: number;          // typical movement speed (learned)
+  fatigueRate: number;           // how fast this part tires (learned)
+}
+```
+
+### Learning Algorithm
+
+#### Phase 1: Discovery (first 3 sessions)
+
+During the first 3 sessions, the system is in **discovery mode**:
+
+1. Track all visible body landmarks
+2. Calculate movement variance per landmark over 30-second windows
+3. Rank landmarks by: `variance × consistency × range_of_motion`
+4. Select top 1-2 landmarks as primary input
+5. Present to caregiver: "We detected that [name] moves their [right elbow] most reliably. Using that as their primary input. Is this correct?"
+6. Caregiver confirms or selects different body part
+
+#### Phase 2: Calibration (sessions 4-10)
+
+System actively tunes parameters:
+
+```
+For each successful dwell click:
+  1. Measure time_to_target (how long from start to reaching the button)
+  2. Measure overshoot (did cursor go past the target and come back?)
+  3. Measure dwell_stability (how much cursor jiggles during dwell wait)
+
+  Adjustments:
+  - If overshoot > 20%: increase smoothing by 0.01
+  - If overshoot < 5%: decrease smoothing by 0.005 (more responsive)
+  - If time_to_target > 5s: increase sensitivity by 0.5
+  - If time_to_target < 1s: decrease sensitivity by 0.3 (avoid accidents)
+  - If dwell_stability < 3px: decrease dwell time by 50ms (child is precise)
+  - If dwell_stability > 15px: increase dwell time by 100ms (need more time)
+```
+
+#### Phase 3: Continuous (sessions 11+)
+
+System maintains learned parameters and adapts to real-time conditions:
+
+```
+Every 5 minutes during active use:
+  1. Calculate rolling_accuracy = successful_clicks / (successful + abandoned)
+  2. Calculate rolling_speed = average(time_to_target) over last 10 clicks
+  3. Calculate fatigue_score = speed_increase_rate + accuracy_decrease_rate
+
+  If fatigue_score > threshold:
+    → Increase sensitivity by 10%
+    → Decrease dwell time by 15%
+    → Log: "Fatigue detected at [time]. Auto-adjusted parameters."
+    → Optionally notify caregiver: "Child may be getting tired"
+
+  If rolling_accuracy > 0.9 for 10+ minutes:
+    → Gradually reduce sensitivity (challenge the child to improve)
+    → This follows ABA shaping principles (Skinner 1953)
+
+  If rolling_accuracy < 0.5 for 5+ minutes:
+    → Increase sensitivity significantly
+    → Increase target sizes if possible (enlarge buttons)
+    → Log: "Accuracy dropped. Check child's positioning/comfort."
+```
+
+### Fatigue Detection
+
+Motor-impaired children fatigue quickly. The system detects fatigue through:
+
+| Signal | Detection Method | Response |
+|---|---|---|
+| **Decreasing movement amplitude** | Rolling average of landmark displacement shrinks | Increase sensitivity |
+| **Increasing time to target** | Last 10 clicks take longer than session average | Reduce dwell time |
+| **Increasing overshoot** | Cursor passes targets more often | Increase smoothing |
+| **Decreasing accuracy** | More abandoned dwell attempts | Enlarge targets |
+| **Increasing jitter** | Dwell stability worsens | Increase dead zone |
+| **Head droop** | Head landmark Y increases over time | Alert caregiver |
+
+### Intent Prediction (AI-Powered — Planned)
+
+After learning the child's patterns over 50+ sessions:
+
+```
+Current cursor trajectory + velocity + recent click history
+  → Predict which button the child is targeting
+    → Pre-highlight the predicted target (visual cue)
+    → Reduce dwell time for predicted target (faster selection)
+    → If confidence > 90%: "snap" cursor to target (magnetic effect)
+```
+
+This is like predictive text but for cursor movement. The AI learns that:
+- After clicking "I", the child usually clicks "want" next
+- After clicking "bathroom", the child usually clicks "please"
+- At 3pm, the child usually opens "Snack" category
+
+### Session Metrics (for Caregiver/BCBA)
+
+Each session logs (stored locally, never transmitted):
+
+```typescript
+interface SessionMetrics {
+  date: string;
+  duration: number;              // seconds
+  totalClicks: number;
+  successfulClicks: number;
+  abandonedDwells: number;       // started dwell but moved away
+  averageTimeToTarget: number;   // ms
+  averageOvershoot: number;      // pixels
+  averageDwellStability: number; // pixels of jitter
+  fatigueEvents: number;         // times fatigue was detected
+  bodyPartsUsed: string[];       // which landmarks were active
+  parameterChanges: Array<{      // auto-adjustment log
+    time: number;
+    parameter: string;
+    oldValue: number;
+    newValue: number;
+    reason: string;
+  }>;
+}
+```
+
+Caregivers can review these metrics in Settings to:
+- Track the child's progress over weeks/months
+- Identify optimal session length before fatigue
+- Document motor skill development (required for IEP/BCBA reports)
+- Compare morning vs afternoon performance
+
+### Why This Matters
+
+**Traditional approach (Tobii):**
+- Buy $15,000 eye tracker
+- SLP spends 2 hours calibrating
+- Child has bad day → recalibrate
+- Child improves → recalibrate
+- Different seating position → recalibrate
+- Hardware breaks → buy another $15,000
+
+**PrismAAC approach:**
+- Open app on any device with camera
+- System auto-detects child's best body movement
+- System auto-calibrates in 3 sessions
+- System continuously adapts to fatigue, improvement, positioning
+- System learns optimal parameters over time
+- Free. No hardware. No recalibration. No SLP time wasted.
+
+**The insight:** An AI that watches a child move for a week knows more about that child's motor capabilities than a therapist who calibrates a device for 2 hours. Not because the AI is smarter — but because it observes continuously, learns incrementally, and adapts in real-time.
+
+---
+
 ## Implementation Status
 
 | Feature | Status | Tier |
