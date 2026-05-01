@@ -17,8 +17,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   refresh: async () => {
     if (get().loading) return;
     set({ loading: true });
-    const profile = await fetchSynaluxProfile();
-    set({ profile, loaded: true, loading: false });
+    try {
+      const profile = await fetchSynaluxProfile();
+      set({ profile, loaded: true, loading: false });
+    } catch {
+      set({ profile: null, loaded: true, loading: false });
+    }
   },
 
   clear: () => set({ profile: null, loaded: true, loading: false }),

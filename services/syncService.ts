@@ -111,17 +111,16 @@ export function pushToCloudKeepalive(data: Partial<AACProfile>): void {
     const body = JSON.stringify(record);
     const endpoint = `${url}/rest/v1/${AAC_TABLE}?on_conflict=user_id,device_id`;
 
-    // sendBeacon with chunking for large payloads.
-    // Background Sync API is NOT supported on iOS Safari (iPads = primary
-    // AAC device), so we cannot rely on it. Instead, we chunk payloads
-    // into < 60KB sendBeacon calls, each writing a partial field.
+    // sendBeacon cannot set custom headers, so we pass apikey as a query
+    // parameter. Supabase PostgREST accepts ?apikey= as an alternative to
+    // the apikey header. Without this, every sendBeacon was silently 401'd.
+    const authedEndpoint = `${endpoint}&apikey=${encodeURIComponent(key)}`;
+
     const blob = new Blob([body], { type: 'application/json' });
     if (blob.size < BEACON_SIZE_LIMIT) {
-      const sent = navigator.sendBeacon?.(endpoint, blob);
+      const sent = navigator.sendBeacon?.(authedEndpoint, blob);
       if (sent) return;
     } else {
-      // Large payload: send critical fields only (custom vocab + phrases)
-      // to stay under 60KB. Full sync happens proactively while app is open.
       const criticalRecord = {
         device_id: record.device_id,
         user_id: record.user_id,
@@ -130,8 +129,8 @@ export function pushToCloudKeepalive(data: Partial<AACProfile>): void {
       };
       const criticalBlob = new Blob([JSON.stringify(criticalRecord)], { type: 'application/json' });
       if (criticalBlob.size < BEACON_SIZE_LIMIT) {
-        navigator.sendBeacon?.(endpoint, criticalBlob);
-        return;
+        const sent = navigator.sendBeacon?.(authedEndpoint, criticalBlob);
+        if (sent) return;
       }
     }
 

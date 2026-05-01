@@ -140,12 +140,27 @@ export const usePredictionStore = create<PredictionState>()(
       // from causing typing lag and battery drain on mobile devices.
       storage: (() => {
         let writeTimer: ReturnType<typeof setTimeout> | null = null;
+        let pendingName: string | null = null;
+        let pendingValue: unknown = null;
+        const flushNow = () => {
+          if (writeTimer) { clearTimeout(writeTimer); writeTimer = null; }
+          if (pendingName != null) {
+            try { localStorage.setItem(pendingName, JSON.stringify(pendingValue)); } catch {}
+            pendingName = null; pendingValue = null;
+          }
+        };
+        if (typeof window !== 'undefined') {
+          window.addEventListener('pagehide', flushNow);
+          document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNow(); });
+        }
         return {
           getItem: (name: string) => { try { const v = localStorage.getItem(name); return v ? JSON.parse(v) : null; } catch { return null; } },
           setItem: (name: string, value: unknown) => {
+            pendingName = name; pendingValue = value;
             if (writeTimer) clearTimeout(writeTimer);
             writeTimer = setTimeout(() => {
               try { localStorage.setItem(name, JSON.stringify(value)); } catch { /* quota */ }
+              pendingName = null; pendingValue = null; writeTimer = null;
             }, 3000);
           },
           removeItem: (name: string) => { try { localStorage.removeItem(name); } catch {} },

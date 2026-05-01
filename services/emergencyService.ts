@@ -352,10 +352,17 @@ async function detectCountryFromGPS(lat: number, lng: number): Promise<{ country
       RO: 'ro', MD: 'ro',
       JP: 'ja',
       KR: 'ko',
-      CN: 'zh', TW: 'zh', HK: 'zh',
+      CN: 'zh-Hans',  // Mainland — Simplified, Mandarin
+      TW: 'zh-Hant',  // Taiwan — Traditional, Taiwanese Mandarin
+      HK: 'zh-HK',    // Hong Kong — Traditional, Cantonese
+      MO: 'zh-HK',    // Macao — Traditional + Cantonese
+      SG: 'zh-Hans',  // Singapore Chinese-speakers — Simplified, Mandarin
       SA: 'ar', AE: 'ar', EG: 'ar', MA: 'ar',
       IT: 'it', NL: 'nl', PL: 'pl', TR: 'tr', TH: 'th', VN: 'vi',
-      IN: 'en', PH: 'en', SG: 'en', ZA: 'en', NG: 'en', KE: 'en',
+      // Note: SG resolved above to zh-Hans for Chinese-speakers; English-speaking
+      // Singapore residents whose UI is in English are handled by the language
+      // setting, not the country lookup.
+      IN: 'en', PH: 'en', ZA: 'en', NG: 'en', KE: 'en',
     };
 
     return {
@@ -640,7 +647,11 @@ function speakEmergencyOnSpeaker(script: string, language: string = 'en'): void 
     const LANG_MAP: Record<string, string> = {
       en: 'en-US', es: 'es-ES', fr: 'fr-FR', pt: 'pt-BR', ro: 'ro-RO',
       uk: 'uk-UA', ru: 'ru-RU', de: 'de-DE', ja: 'ja-JP', ko: 'ko-KR',
-      zh: 'zh-CN', ar: 'ar-SA',
+      zh: 'zh-CN',           // back-compat: bare zh -> Mainland Mandarin
+      'zh-Hans': 'zh-CN',    // Simplified / Mainland Mandarin
+      'zh-Hant': 'zh-TW',    // Traditional / Taiwanese Mandarin
+      'zh-HK': 'zh-HK',      // Hong Kong Cantonese
+      ar: 'ar-SA',
     };
     u.lang = LANG_MAP[language] || 'en-US';
     window.speechSynthesis.speak(u);
@@ -750,15 +761,21 @@ export async function triggerEmergency(
       }
       clearCountdown();
       if (unregisterGesture) unregisterGesture();
-      const sent = await sendAlert(alert, config);
-      stopAlarm();
-      stopFlash();
-      if (!sent) {
+      try {
+        const sent = await sendAlert(alert, config);
+        stopAlarm();
+        stopFlash();
+        if (!sent) {
+          onComplete(false, true);
+        } else {
+          const queue = getQueuedAlerts();
+          saveQueuedAlerts(queue.filter((a) => a.id !== alert.id));
+          onComplete(true, false);
+        }
+      } catch {
+        stopAlarm();
+        stopFlash();
         onComplete(false, true);
-      } else {
-        const queue = getQueuedAlerts();
-        saveQueuedAlerts(queue.filter((a) => a.id !== alert.id));
-        onComplete(true, false);
       }
     }
   }, 1000);

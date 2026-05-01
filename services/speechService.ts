@@ -2,15 +2,23 @@
  * Speech Service — Resilient TTS with offline-first fallback chain
  *
  * Priority chain (highest quality first, degrades gracefully):
- *   1. Azure Neural TTS (online, paid tier — best quality, emotional styles)
- *   2. Web Speech API with premium/enhanced voice (offline-capable, high quality)
- *   3. Web Speech API with any available voice (offline-capable, basic quality)
+ *   1.   Azure Neural TTS (online, paid — best quality, emotional styles)
+ *   1.5. Kokoro-82M neural TTS (offline, in-browser ONNX — MOS ~4.5)
+ *   2.   Web Speech API with premium/enhanced voice (offline, OS-native)
+ *   3.   Web Speech API with any available voice (offline, basic)
+ *   4.   WASM espeak-ng (last resort — always works)
  *
  * For AAC patients who depend on this for communication, reliability > quality.
  * The system NEVER fails silently — if all TTS fails, it reports the error.
+ *
+ * Tier 1.5 (Kokoro) is opt-in via Settings → Voice Quality → "High Quality
+ * (Kokoro, neural offline)" — the 350MB model downloads on first use, so we
+ * don't impose it on every user. Once enabled, it slots above the OS Web
+ * Speech path so even free-tier offline users get neural-grade speech.
  */
 
 import { speakAzure, stopAzureAudio, ToneStyle } from './azureTTS';
+import { speakWithKokoro, isKokoroSupported, demoteKokoroForSession, getKokoroVoice } from './kokoroTTS';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -51,7 +59,7 @@ export function getBestOfflineVoice(lang: string): { voice: SpeechSynthesisVoice
   const premium = langVoices.find((v) => v.name.includes('Premium') || v.name.includes('Neural'));
   if (premium) return { voice: premium, quality: 'premium' };
 
-  const enhanced = langVoices.find((v) => v.name.includes('Enhanced') || v.name.includes('Compact') === false);
+  const enhanced = langVoices.find((v) => v.name.includes('Enhanced') && !v.name.includes('Compact'));
   if (enhanced) return { voice: enhanced, quality: 'enhanced' };
 
   return { voice: langVoices[0], quality: 'basic' };
@@ -81,12 +89,25 @@ function isPaidTier(): boolean {
 }
 
 /**
- * Speak text — 4-tier resilient fallback chain. Never fails silently.
+ * Speak text — quality-first fallback chain. Never fails silently.
  *
- *   Tier 1: Azure Neural TTS (online + paid — best quality)
- *   Tier 2: Web Speech Premium/Enhanced voice (offline-capable)
- *   Tier 3: Web Speech any voice (offline-capable)
- *   Tier 4: WASM espeak-ng / audio beep pattern (always works)
+ *   Tier 1: Azure Neural TTS (online, best quality, emotional styles)
+ *           - Paid tiers: all 12 langs
+ *           - Free tier:  ro/uk/ru/de/ko/ar (the 6 Kokoro-unsupported langs).
+ *             Synalux absorbs the cost — low volume, ensures every user in
+ *             those countries gets neural-grade TTS.
+ *   Tier 2: Kokoro-82M neural (offline, MOS ~4.5)
+ *           - Only the 6 langs it speaks: en/es/fr/pt/ja/zh
+ *           - Used when offline OR when Azure fails
+ *   Tier 3: Web Speech API premium/enhanced voice (offline, OS-native)
+ *   Tier 4: WASM espeak-ng (last resort)
+ *
+ * Quality > offline preference: when online, paid users always get Azure
+ * Neural's emotional styles (friendly/calm/empathetic/etc.) — Kokoro lacks
+ * those. Offline, Kokoro is the best free option for its 6 langs.
+ *
+ * Settings flag `useHighQualityOfflineVoice` (default ON) gates Kokoro —
+ * users on a low-spec device can disable it to skip the 350MB download.
  */
 export async function speak(
   text: string,
@@ -97,14 +118,35 @@ export async function speak(
 ): Promise<void> {
   if (!text.trim()) return;
 
-  // Tier 1: Azure Neural TTS (online + paid)
-  if (isPaidTier() && isOnline()) {
-    const token = getAuthToken()!;
-    const success = await speakAzure(text, lang, tone, rate, volume, token);
+  const settings = useSettingsStore.getState() as { useHighQualityOfflineVoice?: boolean };
+  const kokoroVoice = getKokoroVoice(lang);
+  const kokoroEnabled = settings.useHighQualityOfflineVoice !== false; // default ON
+  const azureFreeForThisLang = !kokoroVoice; // free Azure for the 6 non-Kokoro langs
+
+  // Tier 1: Azure Neural TTS (online — highest quality, has emotional styles)
+  if (isOnline() && (isPaidTier() || azureFreeForThisLang)) {
+    const token = getAuthToken();
+    const success = await speakAzure(text, lang, tone, rate, volume, token || '');
     if (success) return;
   }
 
-  // Tier 2/3: Local voice (offline-capable)
+  // Tier 2: Kokoro neural — offline-capable fallback for the 6 langs it speaks.
+  // Fires when: offline, OR Azure failed, OR free-tier user on a Kokoro lang.
+  if (kokoroEnabled && kokoroVoice && isKokoroSupported()) {
+    try {
+      await speakWithKokoro({
+        text,
+        lang: lang.split('-')[0],
+        rate: 0.1 + rate * 1.8,
+      });
+      return;
+    } catch (e) {
+      demoteKokoroForSession(e instanceof Error ? e.message : 'unknown');
+      // fall through
+    }
+  }
+
+  // Tier 3: Web Speech API (offline, all 12 langs on most devices)
   if (isSpeechSupported()) {
     speakLocal(text, rate, volume, lang);
     return;

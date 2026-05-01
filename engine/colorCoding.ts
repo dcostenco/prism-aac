@@ -90,7 +90,7 @@ const PLACES = new Set([
 ]);
 
 export function classifyWord(word: string, lang: string = 'en'): WordCategory {
-  const w = word.toLowerCase().replace(/[^a-z'À-ɏЀ-ӿ؀-ۿ　-鿿가-힯]/g, '');
+  const w = word.toLowerCase().replace(/’/g, "'").replace(/[^a-z'À-ɏЀ-ӿ؀-ۿ　-鿿가-힯]/g, '');
   if (!w) return 'unknown';
   // Dictionary lookups work for any language (English word lists)
   if (PRONOUNS.has(w)) return 'pronoun';
@@ -101,8 +101,8 @@ export function classifyWord(word: string, lang: string = 'en'): WordCategory {
   if (PLACES.has(w)) return 'place';
   // Heuristic fallbacks — English only (other languages default to noun)
   if (lang === 'en') {
-    if (w.endsWith('ing') || w.endsWith('ed') || w.endsWith('tion')) return 'verb';
-    if (w.endsWith('ly')) return 'adjective';
+    if (w.endsWith('ing') || w.endsWith('ed')) return 'verb';
+    if (w.endsWith('ly') && !w.endsWith('ally')) return 'grammar';
     if ((w.endsWith('er') && w.length > 5) || w.endsWith('est')) return 'adjective';
   }
   return 'noun';

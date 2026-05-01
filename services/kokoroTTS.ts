@@ -50,8 +50,13 @@ const VOICE_BY_LANG: Record<string, string> = {
   pt: 'pf_dora',        // Brazilian Portuguese
   'pt-BR': 'pf_dora',
   ja: 'jf_alpha',       // Japanese
-  zh: 'zf_xiaobei',     // Mandarin Chinese
-  'zh-CN': 'zf_xiaobei',
+  zh: 'zf_xiaobei',           // Chinese (legacy alias for Mandarin)
+  'zh-CN': 'zf_xiaobei',      // Simplified / Mainland Mandarin
+  'zh-Hans': 'zf_xiaobei',    // Simplified / Mainland Mandarin
+  'zh-TW': 'zf_xiaobei',      // Taiwanese Mandarin (uses Mandarin pronunciation)
+  'zh-Hant': 'zf_xiaobei',    // Traditional script, Mandarin pronunciation
+  // 'zh-HK' (Cantonese) is NOT supported by Kokoro — caller falls through
+  // to Azure (zh-HK-HiuMaanNeural) or Web Speech.
 };
 
 /** Returns the Kokoro voice id for a lang code, or null if unsupported. */
@@ -63,7 +68,7 @@ export function getKokoroVoice(lang?: string): string | null {
 }
 
 /** Languages this service can speak natively. Other prism-aac langs fall through. */
-export const KOKORO_LANGS = ['en', 'es', 'fr', 'pt', 'ja', 'zh'] as const;
+export const KOKORO_LANGS = ['en', 'es', 'fr', 'pt', 'ja', 'zh', 'zh-Hans', 'zh-Hant'] as const;
 
 export function isKokoroSupported(): boolean {
   if (typeof window === 'undefined') return false;
@@ -130,6 +135,8 @@ export async function speakWithKokoro(opts: KokoroSpeakOptions): Promise<void> {
   const audioBuf = out.audio;
   const sr = out.sampling_rate || 24000;
 
+  if (activeCtx) { try { activeCtx.close(); } catch {} }
+
   const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
   const buffer = ctx.createBuffer(1, audioBuf.length, sr);
   // @ts-expect-error — TS5 strict ArrayBuffer vs ArrayBufferLike mismatch
@@ -137,12 +144,15 @@ export async function speakWithKokoro(opts: KokoroSpeakOptions): Promise<void> {
   const source = ctx.createBufferSource();
   source.buffer = buffer;
   source.connect(ctx.destination);
-  // Apply rate via playbackRate (chipmunks if too high, but Kokoro speech
-  // sounds natural in 0.85-1.15 range)
   if (opts.rate && opts.rate > 0) source.playbackRate.value = opts.rate;
+
+  activeCtx = ctx;
+  activeSource = source;
 
   return new Promise<void>((resolve) => {
     source.onended = () => {
+      activeCtx = null;
+      activeSource = null;
       try { ctx.close(); } catch { /* noop */ }
       resolve();
     };
@@ -150,11 +160,12 @@ export async function speakWithKokoro(opts: KokoroSpeakOptions): Promise<void> {
   });
 }
 
-/** Stop any in-flight Kokoro playback. */
+let activeCtx: AudioContext | null = null;
+let activeSource: AudioBufferSourceNode | null = null;
+
 export function stopKokoro(): void {
-  // BufferSourceNodes are one-shot; stopping a fresh AudioContext at .close()
-  // is the simplest cancellation. Future calls will create a new context.
-  // No-op here — `speakWithKokoro` resolves on its own ended event.
+  if (activeSource) { try { activeSource.stop(); } catch {} activeSource = null; }
+  if (activeCtx) { try { activeCtx.close(); } catch {} activeCtx = null; }
 }
 
 /** Force-demote the Kokoro tier for the rest of the session. */
