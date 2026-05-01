@@ -401,8 +401,8 @@ export default function Keyboard() {
         </button>
         <button data-action="space" data-display={t('space')} onClick={handleSpace} aria-label={t('space')} className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
         <button data-key="." data-display="." onClick={() => handleKey('.')} aria-label="." className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>.</button>
-        <button data-key="," data-display="," onClick={() => handleKey('.')} aria-label="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>,</button>
-        <button data-key="?" data-display="?" onClick={() => handleKey('.')} aria-label="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>?</button>
+        <button data-key="," data-display="," onClick={() => handleKey(',')} aria-label="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>,</button>
+        <button data-key="?" data-display="?" onClick={() => handleKey('?')} aria-label="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>?</button>
         <button
           data-action="speak"
           data-display={t('speak')}
