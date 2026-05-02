@@ -312,13 +312,9 @@ export function startPoseTracker(
   let ownStream: MediaStream | null = null; // Only set if we opened the camera ourselves
   const abortController = new AbortController();
 
-  // Aggregate targets ('any_*') resolve dynamically each frame, so they
-  // have no static index. Concrete targets fall back to nose (0) on miss.
-  const isAggregate = opts.trackingTarget === 'any_wrist' ||
-    opts.trackingTarget === 'any_index' ||
-    opts.trackingTarget === 'any_hand';
-  const targetIndex = isAggregate ? 0 : (LANDMARK_INDEX[opts.trackingTarget as Exclude<TrackingTarget, 'any_wrist' | 'any_index' | 'any_hand'>] ?? 0);
-  void targetIndex; // kept for backward compat with older callers; selection lives in detection loop
+  // Aggregate ('any_*') and concrete targets are both resolved per-frame in
+  // the detection loop — see resolveAggregateTarget + the FALLBACK_CHAIN
+  // walks. No static index is computed here.
 
   // Smoothed cursor
   let sx = typeof window !== 'undefined' ? window.innerWidth / 2 : 0;
@@ -702,7 +698,7 @@ export function startPoseTracker(
           // Emit raw normalized coords for calibration UI
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('prism-pose-sample', {
-              detail: { normX: useFaceDetectorFallback ? normX : normX, normY },
+              detail: { normX, normY },
             }));
           }
 

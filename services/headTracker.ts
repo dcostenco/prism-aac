@@ -102,45 +102,6 @@ function ema(prev: number, next: number, alpha: number): number {
   return prev + alpha * (next - prev);
 }
 
-// ── Skin-color blob fallback intentionally REMOVED ──────────────────────────
-// The prior implementation false-positived catastrophically on skin-toned
-// walls, wood furniture, sunlit backgrounds, and any other person in frame —
-// turning the cursor into a random walk. With MediaPipe + native FaceDetector
-// covering all modern browsers, the blob fallback was net-negative for users
-// in real environments. The function below is kept only because legacy code
-// still references its name; it now always returns null so callers safely
-// fall through to "face lost" status when both detectors are unavailable.
-
-function detectSkinBlob(_ctx: CanvasRenderingContext2D, _w: number, _h: number): FaceRect | null {
-  return null;
-}
-
-// Kept temporarily as a no-op to preserve signature for any external callers.
-// The original implementation is below as a comment for reference only.
-function _detectSkinBlobLegacyDISABLED(ctx: CanvasRenderingContext2D, w: number, h: number): FaceRect | null {
-  const imageData = ctx.getImageData(0, 0, w, h);
-  const data = imageData.data;
-  let sumX = 0, sumY = 0, count = 0;
-  let minX = w, minY = h, maxX = 0, maxY = 0;
-
-  for (let y = 0; y < h; y += 2) {
-    for (let x = 0; x < w; x += 2) {
-      const i = (y * w + x) * 4;
-      const r = data[i], g = data[i + 1], b = data[i + 2];
-      if (r > 60 && g > 40 && b > 20 && r > g && r > b &&
-          (r - g) > 15 && Math.abs(r - g) < 130 && (r - b) > 15) {
-        sumX += x; sumY += y; count++;
-        if (x < minX) minX = x; if (y < minY) minY = y;
-        if (x > maxX) maxX = x; if (y > maxY) maxY = y;
-      }
-    }
-  }
-
-  const sampledPixels = (w / 2) * (h / 2);
-  if (count < sampledPixels * 0.01) return null;
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
-
 // ── Calibration ─────────────────────────────────────────────────────────────
 
 export interface CalibrationData {
