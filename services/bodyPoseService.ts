@@ -283,6 +283,13 @@ export function startPoseTracker(
   // jump to a sibling who walks behind the user.
   let lockedAnchor: { x: number; y: number } | null = null;
   let lockedAnchorTimestamp = 0;
+  // Diagnostic throttle — see the tick loop. Last timestamp we logged a
+  // "no detection" message; prevents 15fps console flooding.
+  let detectionLogThrottle = 0;
+  // Tracks consecutive frames where landmarks came back but every entry
+  // was below the visibility floor — useful to surface "the model sees
+  // you but everything is occluded" in dev tools.
+  let lowVisStreak = 0;
 
   // Dwell tracking
   let dwellElement: Element | null = null;
@@ -418,6 +425,19 @@ export function startPoseTracker(
         let normY: number | null = null;
         let activeTarget = opts.trackingTarget;
 
+        // Diagnostic: every ~1s log what MediaPipe returned. Helps the user
+        // tell from devtools whether the model is detecting at all vs
+        // detecting but visibility-rejected vs everything fine. Throttled
+        // so we don't flood the console at 15fps.
+        if (!detectionLogThrottle || ts - detectionLogThrottle > 1000) {
+          detectionLogThrottle = ts;
+          const nLandmarks = results?.landmarks?.length ?? 0;
+          const nDetections = results?.detections?.length ?? 0;
+          if (nLandmarks === 0 && nDetections === 0) {
+            console.debug('[PoseTracker] no detection — check lighting / camera framing');
+          }
+        }
+
         if (useFaceDetectorFallback) {
           const det = results?.detections?.[0];
           if (det?.boundingBox) {
@@ -467,20 +487,43 @@ export function startPoseTracker(
             'nose', 'right_wrist', 'left_wrist', 'right_index', 'left_index',
             'right_elbow', 'left_elbow',
           ];
+          let bestVis = 0;
+          let bestTarget: TrackingTarget | null = null;
+          let bestMark: { x: number; y: number } | null = null;
           for (const target of FALLBACK_CHAIN) {
             const idx = LANDMARK_INDEX[target];
             if (idx !== undefined && lm.length > idx) {
               const mark = lm[idx];
               const vis = mark.visibility ?? 0;
-              // Visibility 0.3 — finger/index landmarks rarely report > 0.5
-              // even in good lighting on the lite pose model, and a stricter
-              // threshold caused "no cursor activity at all" reports.
-              if (vis >= 0.3) {
-                normX = mark.x;
-                normY = mark.y;
-                activeTarget = target;
-                break;
+              if (vis > bestVis) {
+                bestVis = vis;
+                bestTarget = target;
+                bestMark = mark;
               }
+            }
+          }
+          // Use the best landmark we saw if it crosses the floor; otherwise
+          // use the best regardless once vis > 0.1 — better to track imperfectly
+          // than to produce zero cursor activity. "0 activity" reports were
+          // usually the chain rejecting every landmark while the model was
+          // actually detecting fine.
+          if (bestMark && bestTarget && bestVis >= 0.3) {
+            normX = bestMark.x;
+            normY = bestMark.y;
+            activeTarget = bestTarget;
+            lowVisStreak = 0;
+          } else if (bestMark && bestTarget && bestVis >= 0.1) {
+            normX = bestMark.x;
+            normY = bestMark.y;
+            activeTarget = bestTarget;
+            lowVisStreak += 1;
+            if (lowVisStreak === 30 || lowVisStreak === 300) {
+              console.debug('[PoseTracker] tracking with low confidence (vis=' + bestVis.toFixed(2) + ', target=' + bestTarget + ') — try better lighting or move closer');
+            }
+          } else {
+            lowVisStreak += 1;
+            if (lowVisStreak === 30) {
+              console.debug('[PoseTracker] landmarks present but all below visibility floor — check framing');
             }
           }
         }
@@ -516,15 +559,27 @@ export function startPoseTracker(
           calibration.topY = Math.max(0, Math.min(1, calibration.topY));
           calibration.bottomY = Math.max(0, Math.min(1, calibration.bottomY));
 
-          const rangeX = calibration.leftX - calibration.rightX;
-          const rangeY = calibration.bottomY - calibration.topY;
+          // Calibration sanity: if the range collapsed (decay outran expand
+          // because the user was idle, or a stale localStorage payload from
+          // a buggy build), ((mirroredX - rightX) / rangeX) division either
+          // explodes or pins to center forever. Reset to defaults so the
+          // cursor moves; the adapt step rebuilds the user's range from there.
+          const MIN_RANGE = 0.15;
+          let rangeX = calibration.leftX - calibration.rightX;
+          let rangeY = calibration.bottomY - calibration.topY;
+          if (rangeX < MIN_RANGE || rangeY < MIN_RANGE) {
+            console.warn('[PoseTracker] Calibration collapsed (rangeX=' + rangeX.toFixed(3) + ', rangeY=' + rangeY.toFixed(3) + ') — resetting to defaults');
+            calibration.leftX = DEFAULT_CALIBRATION.leftX;
+            calibration.rightX = DEFAULT_CALIBRATION.rightX;
+            calibration.topY = DEFAULT_CALIBRATION.topY;
+            calibration.bottomY = DEFAULT_CALIBRATION.bottomY;
+            try { savePoseCalibration(calibration); } catch {}
+            rangeX = calibration.leftX - calibration.rightX;
+            rangeY = calibration.bottomY - calibration.topY;
+          }
 
-          let rawX = rangeX !== 0
-            ? ((mirroredX - calibration.rightX) / rangeX) * window.innerWidth
-            : window.innerWidth / 2;
-          let rawY = rangeY !== 0
-            ? ((normY - calibration.topY) / rangeY) * window.innerHeight
-            : window.innerHeight / 2;
+          let rawX = ((mirroredX - calibration.rightX) / rangeX) * window.innerWidth;
+          let rawY = ((normY - calibration.topY) / rangeY) * window.innerHeight;
 
           // Sensitivity
           const centerX = window.innerWidth / 2;
