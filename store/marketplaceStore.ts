@@ -14,7 +14,13 @@ import { persist } from 'zustand/middleware';
 import { fetchCatalog } from '@/lib/marketplace/api';
 import { bootHandlers } from '@/lib/marketplace/handlers';
 import { getHandler } from '@/lib/marketplace/registry';
-import type { HandlerContext, ModuleManifest, ModuleTier } from '@/lib/marketplace/types';
+import type {
+  HandlerContext,
+  ModuleCategory,
+  ModuleInstallRecord,
+  ModuleManifest,
+  ModuleTier,
+} from '@/lib/marketplace/types';
 import { tierAllows } from '@/lib/marketplace/types';
 
 export interface MarketplaceState {
@@ -25,6 +31,13 @@ export interface MarketplaceState {
   error: string | null;
   /** Last user-selected detail view — Phase 2 wires the UI. */
   selectedSlug: string | null;
+  /**
+   * Per-slug install records — captures the version that was installed so we
+   * can flag updates when a newer manifest version appears in the catalog.
+   * The user-facing source of truth for "is X installed?" remains
+   * settings.installedApps[]; this map is supplementary version metadata.
+   */
+  installs: Record<string, ModuleInstallRecord>;
 
   loadCatalog: () => Promise<void>;
   setSelected: (slug: string | null) => void;
@@ -38,6 +51,25 @@ export interface MarketplaceState {
   isActive: (slug: string, ctx: HandlerContext) => boolean;
 
   findBySlug: (slug: string) => ModuleManifest | undefined;
+
+  /**
+   * Filter the catalog to a category + free-text query. Pass category='all'
+   * for no category filter; query is matched (case-insensitive) against
+   * slug + nameKey + descKey. Filtering by 'installed' returns only installed
+   * slugs (intersect with the supplied installedSlugs param).
+   */
+  filterCatalog: (
+    category: ModuleCategory | 'all' | 'installed',
+    query: string,
+    installedSlugs: string[],
+  ) => ModuleManifest[];
+
+  /**
+   * True if the slug is installed AND the current catalog version is greater
+   * than the recorded install version. Phase 2 surfaces this via the update
+   * badge.
+   */
+  hasUpdate: (slug: string, installedSlugs: string[]) => boolean;
 }
 
 const TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -51,6 +83,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       loading: false,
       error: null,
       selectedSlug: null,
+      installs: {},
 
       loadCatalog: async () => {
         bootHandlers();
@@ -88,6 +121,13 @@ export const useMarketplaceStore = create<MarketplaceState>()(
         if (!handler.validate(manifest)) return false;
         try {
           await handler.install(manifest, ctx);
+          // Record the version we installed — used by hasUpdate() later.
+          set((s) => ({
+            installs: {
+              ...s.installs,
+              [slug]: { slug, version: manifest.version, installedAt: Date.now() },
+            },
+          }));
           return true;
         } catch (e) {
           set({ error: e instanceof Error ? e.message : 'install failed' });
@@ -97,19 +137,28 @@ export const useMarketplaceStore = create<MarketplaceState>()(
 
       uninstall: async (slug, ctx) => {
         const manifest = get().findBySlug(slug);
+        const dropInstallRecord = () =>
+          set((s) => {
+            const next = { ...s.installs };
+            delete next[slug];
+            return { installs: next };
+          });
         if (!manifest) {
           // If the catalog no longer carries this slug (e.g. server pulled
           // it), still let the user remove it from their installed list.
           ctx.settings.uninstallApp(slug);
+          dropInstallRecord();
           return;
         }
         const handler = getHandler(manifest.kind);
         if (!handler) {
           ctx.settings.uninstallApp(slug);
+          dropInstallRecord();
           return;
         }
         try {
           await handler.uninstall(manifest, ctx);
+          dropInstallRecord();
         } catch (e) {
           set({ error: e instanceof Error ? e.message : 'uninstall failed' });
         }
@@ -124,17 +173,75 @@ export const useMarketplaceStore = create<MarketplaceState>()(
       },
 
       findBySlug: (slug) => get().catalog.find((m) => m.slug === slug),
+
+      filterCatalog: (category, query, installedSlugs) => {
+        const q = query.trim().toLowerCase();
+        const installed = new Set(installedSlugs);
+        const all = get().catalog;
+        return all.filter((m) => {
+          if (category === 'installed') {
+            if (!installed.has(m.slug)) return false;
+          } else if (category !== 'all') {
+            if (m.category !== category) return false;
+          }
+          if (q) {
+            const hay = `${m.slug} ${m.nameKey} ${m.descKey}`.toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          return true;
+        });
+      },
+
+      hasUpdate: (slug, installedSlugs) => {
+        if (!installedSlugs.includes(slug)) return false;
+        const manifest = get().findBySlug(slug);
+        if (!manifest) return false;
+        const record = get().installs[slug];
+        if (!record) return false;
+        return compareVersions(manifest.version, record.version) > 0;
+      },
     }),
     {
       name: 'prism-aac-marketplace',
-      version: 1,
-      // Persist only the catalog cache. Selection state and loading flags
-      // start fresh on every page load.
+      version: 2,
+      // Persist catalog cache + per-slug install records. Selection state
+      // and loading flags start fresh on every page load. Phase 3 will
+      // mirror installs to the server; Phase 1-2 keep them local.
       partialize: (s) => ({
         catalog: s.catalog,
         fetchedAt: s.fetchedAt,
         source: s.source,
+        installs: s.installs,
       }),
+      migrate: (persisted: unknown, version: number) => {
+        const s = (persisted ?? {}) as Record<string, unknown>;
+        if (version < 2) {
+          s.installs = (s.installs as Record<string, ModuleInstallRecord> | undefined) ?? {};
+        }
+        return s;
+      },
     },
   ),
 );
+
+/**
+ * Lexical-by-numeric-segments version compare. Returns >0 if `a` is newer,
+ * <0 if `b` is newer, 0 if equal. Tolerates pre-release suffixes by stripping
+ * anything after the first non-numeric character on a segment.
+ */
+function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map(parseSegment);
+  const pb = b.split('.').map(parseSegment);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const da = pa[i] ?? 0;
+    const db = pb[i] ?? 0;
+    if (da !== db) return da - db;
+  }
+  return 0;
+}
+
+function parseSegment(seg: string): number {
+  const m = /^(\d+)/.exec(seg);
+  return m ? parseInt(m[1], 10) : 0;
+}

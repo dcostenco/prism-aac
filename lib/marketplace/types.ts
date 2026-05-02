@@ -70,6 +70,12 @@ export interface ModuleManifest {
   handlerPayload?: Record<string, unknown>;
   /** When the manifest was last updated server-side; ISO-8601. */
   updatedAt?: string;
+  /** Per-version notes shown in the detail view's "What's new" section. */
+  changelog?: { version: string; notes: string }[];
+  /** Aggregate rating (0-5). Phase 3 starts populating from module_reviews. */
+  rating?: number;
+  /** Number of reviews backing the rating. */
+  reviewCount?: number;
 }
 
 export interface ModuleInstallRecord {
