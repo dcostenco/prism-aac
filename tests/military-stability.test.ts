@@ -660,8 +660,8 @@ describe('Settings — defaults and conditions', () => {
     expect(sens).toBeLessThanOrEqual(10);
   });
 
-  it('precision touch defaults to enabled', () => {
-    expect(useSettingsStore.getState().precisionTouchEnabled).toBe(true);
+  it('hand calibration settings default to visible', () => {
+    expect(useSettingsStore.getState().showHandCalibration).toBe(true);
   });
 });
 

@@ -183,7 +183,7 @@ export default function SettingsModal() {
           </div>
 
           {/* Hand Calibration */}
-          {settings.precisionTouchEnabled && (
+          {settings.showHandCalibration && (
             <div>
               <h3 className={sectionTitle}>Hand Calibration</h3>
               <HandProfileSection />

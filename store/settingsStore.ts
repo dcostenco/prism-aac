@@ -19,11 +19,11 @@ interface SettingsState {
   headTrackingEnabled: boolean;
   headTrackingDwellMs: number;
   headTrackingSensitivity: number;
-  precisionTouchEnabled: boolean;
+  showHandCalibration: boolean;
   cameraInputEnabled: boolean;
   cameraTrackingTarget: string;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'precisionTouchEnabled' | 'cameraInputEnabled' | 'cameraTrackingTarget'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget'>>,
   ) => void;
   setTheme: (theme: Theme) => void;
 }
@@ -42,7 +42,7 @@ export const useSettingsStore = create<SettingsState>()(
       headTrackingEnabled: false,
       headTrackingDwellMs: 1200,
       headTrackingSensitivity: 5,
-      precisionTouchEnabled: true,
+      showHandCalibration: true,
       // Disabled by default — camera tracking accuracy is regressed and the
       // overlay was interfering with mouse use. Users can opt in via
       // Settings → Input modes once the regression is resolved. Existing
@@ -65,7 +65,7 @@ export const useSettingsStore = create<SettingsState>()(
         if (version < 3) s = { ...s, activeVocabSet: s.activeVocabSet ?? 'all', outputLanguage: s.outputLanguage ?? s.language ?? 'en' };
         if (version < 4) s = { ...s, outputLanguage: s.outputLanguage ?? s.language ?? 'en' };
         if (version < 5) s = { ...s, headTrackingEnabled: s.headTrackingEnabled ?? false, headTrackingDwellMs: s.headTrackingDwellMs ?? 1200, headTrackingSensitivity: s.headTrackingSensitivity ?? 5 };
-        if (version < 6) s = { ...s, precisionTouchEnabled: s.precisionTouchEnabled ?? true };
+        if (version < 6) s = { ...s, showHandCalibration: s.showHandCalibration ?? true };
         if (version < 7) s = { ...s, cameraInputEnabled: s.cameraInputEnabled ?? true, cameraTrackingTarget: s.cameraTrackingTarget ?? 'right_wrist' };
         if (version < 8) s = { ...s, cameraTrackingTarget: s.cameraTrackingTarget === 'right_index' ? 'right_wrist' : (s.cameraTrackingTarget ?? 'right_wrist') };
         // v9: force-disable camera input on upgrade — the overlay was
