@@ -120,14 +120,14 @@ export const LOCAL_CATALOG: ModuleManifest[] = [
   },
   {
     slug: 'picture-editor',
-    version: '0.0.0',
+    version: '1.0.0',
     kind: 'panel',
     tier: 'standard',
     category: 'tools',
     nameKey: 'mp_picture_editor',
     descKey: 'mp_picture_editor_desc',
     icon: '🖼',
-    status: 'coming_soon',
+    status: 'available',
     handlerPayload: { panelId: 'picture-editor' },
   },
   {

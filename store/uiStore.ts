@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { KeyboardMode, SidePanelView } from '@/types';
+import { KeyboardMode, MODULE_PANEL_VIEWS, ModulePanelView, SidePanelView } from '@/types';
 
 interface UIState {
   sidePanel: SidePanelView;
@@ -19,6 +19,12 @@ interface UIState {
   openSchedule: () => void;
   openGames: () => void;
   openMarketplace: () => void;
+  /**
+   * Open a marketplace-installed module panel by its panelId. Used by
+   * panelHandler.launch() so installed modules can mount their own UI.
+   * Unknown panelIds silently no-op.
+   */
+  openModulePanel: (panelId: string) => void;
   closeSidePanel: () => void;
   selectCategory: (id: string) => void;
   backToCategories: () => void;
@@ -55,6 +61,10 @@ export const useUIStore = create<UIState>()((set) => ({
   openSchedule: () => set((s) => ({ sidePanel: s.sidePanel === 'schedule' ? 'none' : 'schedule' as SidePanelView })),
   openGames: () => set((s) => ({ sidePanel: s.sidePanel === 'games' ? 'none' : 'games' as SidePanelView })),
   openMarketplace: () => set((s) => ({ sidePanel: s.sidePanel === 'marketplace' ? 'none' : 'marketplace' as SidePanelView })),
+  openModulePanel: (panelId: string) => set(() => {
+    if (!(MODULE_PANEL_VIEWS as readonly string[]).includes(panelId)) return {};
+    return { sidePanel: panelId as ModulePanelView };
+  }),
   closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, activeSequenceId: null }),
   selectCategory: (id) => set({ sidePanel: 'category-detail', activeCategoryId: id }),
   backToCategories: () => set({ sidePanel: 'categories', activeCategoryId: null, activeSequenceId: null }),

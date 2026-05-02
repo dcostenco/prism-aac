@@ -15,6 +15,7 @@ interface StubState {
   openGames: number;
   openMarketplace: number;
   openSettings: number;
+  openModulePanel: string[];
 }
 
 function makeCtx(initial: Partial<StubState> = {}): { ctx: HandlerContext; state: StubState } {
@@ -26,6 +27,7 @@ function makeCtx(initial: Partial<StubState> = {}): { ctx: HandlerContext; state
     openGames: 0,
     openMarketplace: 0,
     openSettings: 0,
+    openModulePanel: [],
     ...initial,
   };
   const ctx: HandlerContext = {
@@ -48,6 +50,7 @@ function makeCtx(initial: Partial<StubState> = {}): { ctx: HandlerContext; state
       openGames: () => { state.openGames++; },
       openMarketplace: () => { state.openMarketplace++; },
       openSettings: () => { state.openSettings++; },
+      openModulePanel: (id: string) => { state.openModulePanel.push(id); },
     },
   };
   return { ctx, state };
@@ -281,7 +284,20 @@ describe('panelHandler', () => {
     expect(state.installedApps).toEqual(['picture-editor']);
   });
 
-  it('renderPanel returns null in Phase 1', () => {
+  it('renderPanel returns null (panels mount via PrismApp sidePanel state)', () => {
     expect(panelHandler.renderPanel?.(m, makeCtx().ctx)).toBeNull();
+  });
+
+  it('launch dispatches openModulePanel with the manifest panelId', () => {
+    const { ctx, state } = makeCtx();
+    panelHandler.launch?.(m, ctx);
+    expect(state.openModulePanel).toEqual(['picture-editor']);
+  });
+
+  it('launch falls back to openMarketplace when manifest is missing payload', () => {
+    const { ctx, state } = makeCtx();
+    panelHandler.launch?.({ ...m, handlerPayload: undefined }, ctx);
+    expect(state.openMarketplace).toBe(1);
+    expect(state.openModulePanel).toEqual([]);
   });
 });

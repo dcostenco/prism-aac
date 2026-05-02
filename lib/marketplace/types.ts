@@ -103,6 +103,12 @@ export interface HandlerContext {
     openMarketplace: () => void;
     /** Open a settings tab/section by id. Phase 1 just opens settings root. */
     openSettings: (section?: string) => void;
+    /**
+     * Open a marketplace-installed module panel by its panelId. The uiStore
+     * decides whether the id maps to a known panel; unknown ids no-op.
+     * Used by panelHandler.launch().
+     */
+    openModulePanel: (panelId: string) => void;
   };
 }
 

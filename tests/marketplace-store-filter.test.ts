@@ -23,6 +23,7 @@ function makeCtx() {
       openGames: () => {},
       openMarketplace: () => {},
       openSettings: () => {},
+      openModulePanel: () => {},
     },
   };
   return { ctx, state };

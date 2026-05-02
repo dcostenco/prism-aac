@@ -80,7 +80,30 @@ export interface HistoryEntry {
 }
 
 export type KeyboardMode = 'letters' | 'numbers' | 'symbols';
-export type SidePanelView = 'none' | 'categories' | 'category-detail' | 'ordering' | 'math' | 'caregiver' | 'ai-chat' | 'schedule' | 'games' | 'marketplace';
+export type SidePanelView =
+  | 'none'
+  | 'categories'
+  | 'category-detail'
+  | 'ordering'
+  | 'math'
+  | 'caregiver'
+  | 'ai-chat'
+  | 'schedule'
+  | 'games'
+  | 'marketplace'
+  // Marketplace-installable module panels (Phases 4-7).
+  | 'picture-editor'
+  | 'music-composer'
+  | 'video-composer'
+  | 'aac-designer';
+
+export const MODULE_PANEL_VIEWS = [
+  'picture-editor',
+  'music-composer',
+  'video-composer',
+  'aac-designer',
+] as const;
+export type ModulePanelView = (typeof MODULE_PANEL_VIEWS)[number];
 
 // ── Caregiver Notes ──
 

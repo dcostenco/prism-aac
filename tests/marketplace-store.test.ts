@@ -12,6 +12,7 @@ interface StubState {
   openGames: number;
   openMarketplace: number;
   openSettings: number;
+  openModulePanel: string[];
 }
 
 function makeCtx(initial: Partial<StubState> = {}): { ctx: HandlerContext; state: StubState } {
@@ -23,6 +24,7 @@ function makeCtx(initial: Partial<StubState> = {}): { ctx: HandlerContext; state
     openGames: 0,
     openMarketplace: 0,
     openSettings: 0,
+    openModulePanel: [],
     ...initial,
   };
   const ctx: HandlerContext = {
@@ -45,6 +47,7 @@ function makeCtx(initial: Partial<StubState> = {}): { ctx: HandlerContext; state
       openGames: () => { state.openGames++; },
       openMarketplace: () => { state.openMarketplace++; },
       openSettings: () => { state.openSettings++; },
+      openModulePanel: (id: string) => { state.openModulePanel.push(id); },
     },
   };
   return { ctx, state };

@@ -27,7 +27,7 @@ function PanelShell({ children }: { children: ReactNode }) {
 
 export default function MarketplacePanel() {
   const { t } = useT();
-  const { sidePanel, closeSidePanel, openCategories, openGames, openMarketplace, toggleSettings } = useUIStore();
+  const { sidePanel, closeSidePanel, openCategories, openGames, openMarketplace, openModulePanel, toggleSettings } = useUIStore();
   const profile = useAuthStore((s) => s.profile);
   const settings = useSettingsStore();
   const installedApps = useSettingsStore((s) => s.installedApps);
@@ -61,8 +61,9 @@ export default function MarketplacePanel() {
       openGames,
       openMarketplace,
       openSettings: () => { if (!useUIStore.getState().showSettings) toggleSettings(); },
+      openModulePanel,
     },
-  }), [settings, closeSidePanel, openCategories, openGames, openMarketplace, toggleSettings]);
+  }), [settings, closeSidePanel, openCategories, openGames, openMarketplace, openModulePanel, toggleSettings]);
 
   if (sidePanel !== 'marketplace') return null;
 

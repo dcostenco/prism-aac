@@ -44,17 +44,23 @@ export const panelHandler: ModuleHandler = {
   },
 
   launch(manifest, ctx) {
-    // Until a panel component exists, returning to the marketplace is the
-    // safest UX — the user still sees their installed apps and can switch.
-    // Phase 4-7 replace this with sidePanel state that mounts the real
-    // panel component.
-    void manifest;
-    ctx.ui.openMarketplace();
+    const p = payload(manifest);
+    if (!p) {
+      // Bad manifest — fall back to the marketplace panel so the user has
+      // somewhere to go.
+      ctx.ui.openMarketplace();
+      return;
+    }
+    // The uiStore knows which panelIds map to mounted panel components.
+    // Unknown ids no-op; Phase 4 wires picture-editor, later phases wire
+    // music-composer / video-composer / aac-designer.
+    ctx.ui.openModulePanel(p.panelId);
   },
 
   renderPanel() {
-    // No real panels exist yet. Phase 4 (Picture Editor / Painter) lands
-    // first; subsequent phases add the others.
+    // Module panels mount via PrismApp.tsx + sidePanel state — no inline
+    // render needed. This hook is reserved for future inline render cases
+    // (e.g. a tool-strip module that lives inside MarketplaceDetail).
     return null;
   },
 };
