@@ -20,13 +20,20 @@ import { SynaluxProfile } from '@/services/aiService';
 
 /**
  * Picture mode is derived from the user's Synalux plan, not from a user
- * preference. Free / signed-out users get the free ARASAAC symbol library;
+ * preference. Free signed-in users get the free ARASAAC symbol library;
  * paid subscribers (Standard / Advanced / Enterprise) additionally get
  * AI-generated pictograms for phrases ARASAAC doesn't cover.
+ *
+ * Profile-load race: profile is null for ~1-2s after page load while
+ * `fetchSynaluxProfile()` runs. If we default to 'symbols' during that
+ * window, paid users miss the AI fallback — and the result gets cached
+ * `null` in MEM_CACHE, so even when profile loads they never see icons
+ * for ARASAAC-miss tokens. Default to 'symbols-ai' optimistically; the
+ * portal route returns 403 for actual free-tier users (and we cache the
+ * null gracefully).
  */
 export function pictureModeForProfile(profile: SynaluxProfile | null): PictureMode {
-  if (!profile) return 'symbols';
-  if (profile.plan === 'free') return 'symbols';
+  if (profile && profile.plan === 'free') return 'symbols';
   return 'symbols-ai';
 }
 
@@ -175,11 +182,18 @@ async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null
         styleVersion: STYLE_VERSION,
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[pictogram] Synalux AI returned ${res.status} for "${phrase}" (${lang})`);
+      return null;
+    }
     const ct = res.headers.get('content-type') || '';
-    if (!ct.startsWith('image/')) return null;
+    if (!ct.startsWith('image/')) {
+      console.warn(`[pictogram] Synalux AI returned non-image content-type "${ct}" for "${phrase}"`);
+      return null;
+    }
     return await res.blob();
-  } catch {
+  } catch (e) {
+    console.warn(`[pictogram] Synalux AI fetch failed for "${phrase}":`, e instanceof Error ? e.message : e);
     return null;
   }
 }

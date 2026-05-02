@@ -125,7 +125,7 @@ export default function MessageBar() {
 
       <div className="flex-1 min-h-[clamp(48px,9svh,72px)] flex flex-col justify-center overflow-hidden">
         <div
-          className="text-[clamp(1rem,2.5vw,1.5rem)] leading-snug break-words text-primary line-clamp-2 whitespace-normal"
+          className="text-[clamp(1rem,2.5vw,1.5rem)] leading-snug break-words text-primary line-clamp-2 whitespace-normal min-h-[2.5em]"
           role="status"
           aria-live="polite"
           aria-label={t('message_text')}
@@ -133,7 +133,7 @@ export default function MessageBar() {
           {text ? <ColoredText text={text} /> : <span className="text-dim">{t('type_here')}</span>}
         </div>
         {translated && (
-          <div className="text-[clamp(0.75rem,2vw,1.1rem)] text-[#2196F3] font-semibold leading-snug line-clamp-2 whitespace-normal">
+          <div className="text-[clamp(0.75rem,2vw,1.1rem)] text-[#2196F3] font-semibold leading-snug line-clamp-2 whitespace-normal min-h-[2.5em]">
             🌐 {translated}
           </div>
         )}

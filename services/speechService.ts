@@ -139,16 +139,21 @@ export async function speak(
   const settings = useSettingsStore.getState() as { useHighQualityOfflineVoice?: boolean };
   const kokoroVoice = getKokoroVoice(lang);
   const kokoroEnabled = settings.useHighQualityOfflineVoice !== false; // default ON
-  const azureFreeForThisLang = !kokoroVoice; // free Azure for the 6 non-Kokoro langs
 
-  // Tier 1: Azure Neural TTS (online — highest quality, has emotional styles)
-  const paidCheck = isPaidTier();
-  if (isOnline() && (paidCheck || azureFreeForThisLang)) {
+  // Tier 1: Azure Neural TTS — try unconditionally when online. The portal
+  // route is the source of truth for tier policy: paid tiers always allowed,
+  // free tier allowed for the 6 non-Kokoro langs (synalux absorbs that cost
+  // per design). This avoids a client-side profile-load race that previously
+  // caused enterprise users to skip Azure during the first ~1-2s after page
+  // load (profile=null → isPaidTier=false → for en-US, kokoroVoice exists →
+  // Azure was skipped → fell through to Web Speech robotic).
+  if (isOnline()) {
     const token = getAuthToken();
-    console.log(`[TTS] Attempting Azure: lang=${lang} tone=${effectiveTone} online=${isOnline()} paid=${paidCheck} freeForLang=${azureFreeForThisLang}`);
+    const profile = useAuthStore.getState().profile;
+    console.log(`[TTS] Attempting Azure: lang=${lang} tone=${effectiveTone} plan=${profile?.plan ?? 'unknown'} loaded=${useAuthStore.getState().loaded}`);
     const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '');
     if (success) { console.log('[TTS] Azure succeeded'); return; }
-    console.warn('[TTS] Azure failed, falling through');
+    console.warn('[TTS] Azure failed (server tier-rejected, network, or timeout), falling through');
   }
 
   // Tier 2: Kokoro neural — offline-capable fallback for the 6 langs it speaks.

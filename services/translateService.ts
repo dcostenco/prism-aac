@@ -155,7 +155,12 @@ export function translateWithAIRefine(
         trimCache();
         onRefined(refined);
       }
-    } catch {}
+    } catch (e) {
+      // Was silently swallowing — leaving users stuck on the partial offline
+      // translate result (e.g. "Привет, How are you?" instead of "Hi, how
+      // are you?"). Log so failures are visible in DevTools.
+      console.warn('[translate] AI refine failed; staying on offline result:', e instanceof Error ? e.message : e);
+    }
   }, 600);
 
   return instant;
