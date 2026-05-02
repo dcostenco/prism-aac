@@ -70,7 +70,7 @@ export default function Toolbar() {
           </button>
         )}
         <button className={btn} onClick={tap(openSchedule)} aria-label={t('schedule')} title={t('schedule')}>📅</button>
-        <button className={btn} onClick={tap(openGames)} aria-label={t('games')} title={t('games')}>🎮</button>
+        <button className={btn} onClick={tap(openMarketplace)} aria-label={t('marketplace')} title={t('marketplace')}>🏪</button>
         <button className={btn} onClick={tap(triggerAlert)} aria-label={t('alert')} title={t('alert')}>🚨</button>
       </div>
 
@@ -137,7 +137,7 @@ export default function Toolbar() {
               <button className={moreBtn} onClick={tapClose(openMath)}>🔢 {t('math')}</button>
               <button className={moreBtn} onClick={tapClose(openAIChat)}>✨ {t('ai_chat')}</button>
               <button className={moreBtn} onClick={tapClose(openCaregiver)}>📋 {t('notes')}</button>
-              <button className={moreBtn} onClick={tapClose(openMarketplace)}>🏪 {t('marketplace')}</button>
+              <button className={moreBtn} onClick={tapClose(openGames)}>🎮 {t('games')}</button>
               <button className={moreBtn} onClick={tapClose(toggleHistory)}>📜 {t('history')}</button>
             </div>
           )}

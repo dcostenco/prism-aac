@@ -39,7 +39,7 @@ const CATALOG: CatalogItem[] = [
   { id: 'vocab-gateway', icon: '🚪', nameKey: 'vs_gateway', descKey: 'vs_gateway_desc', minTier: 'free', status: 'available', action: 'vocab-set', actionPayload: 'gateway' },
   { id: 'vocab-aphasia', icon: '🧠', nameKey: 'vs_aphasia', descKey: 'vs_aphasia_desc', minTier: 'free', status: 'available', action: 'vocab-set', actionPayload: 'aphasia' },
   { id: 'vocab-social-chat', icon: '💬', nameKey: 'vs_social_chat', descKey: 'vs_social_chat_desc', minTier: 'free', status: 'available', action: 'vocab-set', actionPayload: 'social-chat' },
-  { id: 'game-packs', icon: '🎮', nameKey: 'mp_game_packs', descKey: 'mp_game_packs_desc', minTier: 'standard', status: 'available', action: 'open-panel', actionPayload: 'games' },
+  { id: 'game-packs', icon: '🎮', nameKey: 'mp_game_packs', descKey: 'mp_game_packs_desc', minTier: 'free', status: 'available', action: 'open-panel', actionPayload: 'games' },
   { id: 'voice-packs', icon: '🎙', nameKey: 'mp_voice_packs', descKey: 'mp_voice_packs_desc', minTier: 'standard', status: 'coming_soon' },
   { id: 'picture-editor', icon: '🖼', nameKey: 'mp_picture_editor', descKey: 'mp_picture_editor_desc', minTier: 'standard', status: 'coming_soon' },
   { id: 'music-composer', icon: '🎵', nameKey: 'mp_music_composer', descKey: 'mp_music_composer_desc', minTier: 'standard', status: 'coming_soon' },
