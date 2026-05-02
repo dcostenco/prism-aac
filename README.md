@@ -34,13 +34,29 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 ### Schedule & Tasks — visual routines with rewards
 > **First-Then board** for autistic children — shows current task and next/reward activity. Daily task list with checkmark completion, SVG circular visual timer (1–15 min), and token reward system (earn ⭐ stars). Based on ChoiceWorks and First Then Visual Schedule research.
 
-### Games — accessible AAC games for engagement
-> Three built-in games designed for disabled kids:
-> - **Match Game** — flip cards, find pairs (cause-and-effect learning)
-> - **Emotion Faces** — identify emotions from expressions (Tanaka et al., 2010)
-> - **Word Builder** — spell words by tapping scrambled letters
+### Games — therapeutic AAC games with clinical purpose
+
+> **Why games in an AAC app?** For children with complex communication needs, play IS communication practice. Every tap, every word spoken, every sentence built is a manding trial. These aren't reward screens — they're therapy tools disguised as fun.
+
+#### Bubble Pop
+> ![Bubble Pop](docs/screenshots/games-bubble-pop.png)
+> Colorful word bubbles float up against a night-sky gradient. The child taps to pop them — each pop speaks the word aloud via TTS. **Uses the child's OWN vocabulary** from their prediction history, so frequently-used words get more practice. Difficulty scales: more bubbles, faster float speed each level. Sparkle animations on pop.
 >
-> All games: 64px+ touch targets, single-tap only (switch-accessible), score tracking, respects `prefers-reduced-motion`.
+> **Clinical purpose:** Cause-and-effect learning + manding practice with personal vocabulary. The child hears their own most-used words reinforced through play.
+
+#### Color Hunt
+> ![Color Hunt](docs/screenshots/games-color-hunt.png)
+> Big, bright color tiles fill the screen. The app speaks "Find Red!" and the child taps the matching tile. Grid grows from 4 to 8 tiles as the child succeeds. Immediate visual feedback (star animation) + spoken confirmation ("Yes! Red!").
+>
+> **Clinical purpose:** Receptive language (understanding spoken words), color vocabulary, listener responding skills. Follows discrete trial teaching structure: SD (spoken instruction) → R (tap response) → SR+ (praise + animation).
+
+#### My Story
+> ![My Story](docs/screenshots/games-my-story.png)
+> Picture cards organized in 4 color-coded categories: **Who** (I, Mom, Dad) → **Does what** (want, go, eat, play) → **What** (water, food, ball, book) → **Where** (home, park, school). The child taps cards left-to-right to build sentences like "I want water" or "Mom go park", then taps Speak to hear the full sentence.
+>
+> **Clinical purpose:** Sentence construction, carrier phrases, manding with multi-word utterances. Mirrors the PECS Phase IV progression (sentence strip). Category colors follow Modified Fitzgerald Key conventions.
+
+**All games:** gradient backgrounds, 60px+ touch targets, scale animations on tap, TTS on every interaction, level progression, free tier (no payment gate on communication practice).
 
 ### Marketplace — Synalux component platform
 > Browse and install Synalux modules: Symbol Libraries, Board Templates (Free+), Game Packs, Voice Packs, Picture Editor, Music Composer (Standard+), AAC Designer, Video Composer (Advanced+). Tier-gated with green/lock badges.
@@ -171,7 +187,7 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 | Cumulative auto-speak | Yes | Yes | Yes | Yes |
 | Math Paper-style expression builder + AI Math Tutor | Yes | Yes | Yes | Yes |
 | Schedule & Tasks (First-Then board, visual timer, rewards) | Yes (5 tasks) | Yes | Yes | Yes |
-| AAC Games (Match, Emotions, Word Builder) | Yes | Yes | Yes | Yes |
+| AAC Games (Bubble Pop, Color Hunt, My Story) | Yes | Yes | Yes | Yes |
 | Category visibility toggles + grid size (4–20) | Yes | Yes | Yes | Yes |
 | High Contrast mode (WCAG AAA) | Yes | Yes | Yes | Yes |
 | Picture mode — ARASAAC pictograms on phrase + prediction tiles | Yes | Yes | Yes | Yes |

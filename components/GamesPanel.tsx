@@ -210,20 +210,35 @@ function BubblePopGame({ onBack }: { onBack: () => void }) {
    Big colorful tiles, spoken target, immediate feedback.
    ═════════════════════════════════════════════════════════════ */
 
+const COLOR_I18N: Record<string, Record<string, string>> = {
+  Red:    { en: 'Red', es: 'Rojo', fr: 'Rouge', de: 'Rot', pt: 'Vermelho', ro: 'Roșu', uk: 'Червоний', ru: 'Красный', ja: '赤', ko: '빨강', zh: '红色', ar: 'أحمر' },
+  Blue:   { en: 'Blue', es: 'Azul', fr: 'Bleu', de: 'Blau', pt: 'Azul', ro: 'Albastru', uk: 'Синій', ru: 'Синий', ja: '青', ko: '파랑', zh: '蓝色', ar: 'أزرق' },
+  Green:  { en: 'Green', es: 'Verde', fr: 'Vert', de: 'Grün', pt: 'Verde', ro: 'Verde', uk: 'Зелений', ru: 'Зелёный', ja: '緑', ko: '초록', zh: '绿色', ar: 'أخضر' },
+  Yellow: { en: 'Yellow', es: 'Amarillo', fr: 'Jaune', de: 'Gelb', pt: 'Amarelo', ro: 'Galben', uk: 'Жовтий', ru: 'Жёлтый', ja: '黄', ko: '노랑', zh: '黄色', ar: 'أصفر' },
+  Purple: { en: 'Purple', es: 'Morado', fr: 'Violet', de: 'Lila', pt: 'Roxo', ro: 'Violet', uk: 'Фіолетовий', ru: 'Фиолетовый', ja: '紫', ko: '보라', zh: '紫色', ar: 'بنفسجي' },
+  Orange: { en: 'Orange', es: 'Naranja', fr: 'Orange', de: 'Orange', pt: 'Laranja', ro: 'Portocaliu', uk: 'Помаранчевий', ru: 'Оранжевый', ja: 'オレンジ', ko: '주황', zh: '橙色', ar: 'برتقالي' },
+  Pink:   { en: 'Pink', es: 'Rosa', fr: 'Rose', de: 'Rosa', pt: 'Rosa', ro: 'Roz', uk: 'Рожевий', ru: 'Розовый', ja: 'ピンク', ko: '분홍', zh: '粉色', ar: 'وردي' },
+  Brown:  { en: 'Brown', es: 'Marrón', fr: 'Marron', de: 'Braun', pt: 'Marrom', ro: 'Maro', uk: 'Коричневий', ru: 'Коричневый', ja: '茶色', ko: '갈색', zh: '棕色', ar: 'بني' },
+};
+
+function localColor(key: string, lang: string): string {
+  return COLOR_I18N[key]?.[lang.split('-')[0]] || COLOR_I18N[key]?.en || key;
+}
+
 const COLOR_VOCAB = [
-  { name: 'Red', bg: '#FF6B6B', emoji: '🔴' },
-  { name: 'Blue', bg: '#45B7D1', emoji: '🔵' },
-  { name: 'Green', bg: '#96CEB4', emoji: '🟢' },
-  { name: 'Yellow', bg: '#FFEAA7', emoji: '🟡' },
-  { name: 'Purple', bg: '#DDA0DD', emoji: '🟣' },
-  { name: 'Orange', bg: '#FF9F43', emoji: '🟠' },
-  { name: 'Pink', bg: '#FD79A8', emoji: '🩷' },
-  { name: 'Brown', bg: '#B8860B', emoji: '🟤' },
+  { key: 'Red', bg: '#FF6B6B', emoji: '🔴' },
+  { key: 'Blue', bg: '#45B7D1', emoji: '🔵' },
+  { key: 'Green', bg: '#96CEB4', emoji: '🟢' },
+  { key: 'Yellow', bg: '#FFEAA7', emoji: '🟡' },
+  { key: 'Purple', bg: '#DDA0DD', emoji: '🟣' },
+  { key: 'Orange', bg: '#FF9F43', emoji: '🟠' },
+  { key: 'Pink', bg: '#FD79A8', emoji: '🩷' },
+  { key: 'Brown', bg: '#B8860B', emoji: '🟤' },
 ];
 
 function ColorHuntGame({ onBack }: { onBack: () => void }) {
   const { t } = useT();
-  const { speechRate, speechVolume } = useSettingsStore();
+  const { speechRate, speechVolume, language } = useSettingsStore();
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [gridSize, setGridSize] = useState(4);
@@ -241,7 +256,8 @@ function ColorHuntGame({ onBack }: { onBack: () => void }) {
     setTarget(tgt);
     setFeedback(null);
     setTappedIdx(-1);
-    setTimeout(() => aacSpeak(`Find ${tgt.name}`, speechRate, speechVolume), 300);
+    const localName = localColor(tgt.key, language);
+    setTimeout(() => aacSpeak(localName, speechRate, speechVolume), 300);
   }, [round, speechRate, speechVolume]);
 
   useEffect(() => { newRound(); }, [newRound]);
@@ -249,10 +265,10 @@ function ColorHuntGame({ onBack }: { onBack: () => void }) {
   const handleTap = (color: typeof COLOR_VOCAB[0], idx: number) => {
     tapFeedback();
     setTappedIdx(idx);
-    if (color.name === target?.name) {
+    if (color.key === target?.key) {
       setFeedback('correct');
       setScore(s => s + 1);
-      aacSpeak(`Yes! ${color.name}!`, speechRate, speechVolume);
+      aacSpeak(localColor(color.key, language), speechRate, speechVolume);
       setTimeout(() => { setRound(r => r + 1); }, 1500);
     } else {
       setFeedback('wrong');
@@ -274,7 +290,7 @@ function ColorHuntGame({ onBack }: { onBack: () => void }) {
 
       <div className="shrink-0 py-3 text-center">
         <span className="text-3xl font-black" style={{ color: target?.bg }}>
-          Find {target?.emoji} {target?.name}!
+          {target?.emoji} {target ? localColor(target.key, language) : ''}?
         </span>
       </div>
 
@@ -294,7 +310,7 @@ function ColorHuntGame({ onBack }: { onBack: () => void }) {
               minHeight: 'clamp(80px, 15vh, 140px)',
             }}
           >
-            <span className="text-white font-black text-2xl md:text-3xl drop-shadow-lg">{color.name}</span>
+            <span className="text-white font-black text-2xl md:text-3xl drop-shadow-lg">{localColor(color.key, language)}</span>
           </button>
         ))}
       </div>
@@ -317,29 +333,33 @@ function ColorHuntGame({ onBack }: { onBack: () => void }) {
 
 interface StoryCard {
   id: string;
-  word: string;
+  words: Record<string, string>;
   emoji: string;
   color: string;
   category: 'who' | 'action' | 'what' | 'where';
 }
 
+function storyWord(card: StoryCard, lang: string): string {
+  return card.words[lang.split('-')[0]] || card.words.en;
+}
+
 const STORY_CARDS: StoryCard[] = [
-  { id: 'i', word: 'I', emoji: '🧒', color: '#FF6B6B', category: 'who' },
-  { id: 'mom', word: 'Mom', emoji: '👩', color: '#FF6B6B', category: 'who' },
-  { id: 'dad', word: 'Dad', emoji: '👨', color: '#FF6B6B', category: 'who' },
-  { id: 'want', word: 'want', emoji: '🙏', color: '#4ECDC4', category: 'action' },
-  { id: 'go', word: 'go', emoji: '🚶', color: '#4ECDC4', category: 'action' },
-  { id: 'eat', word: 'eat', emoji: '🍽️', color: '#4ECDC4', category: 'action' },
-  { id: 'play', word: 'play', emoji: '🎈', color: '#4ECDC4', category: 'action' },
-  { id: 'drink', word: 'drink', emoji: '🥤', color: '#4ECDC4', category: 'action' },
-  { id: 'water', word: 'water', emoji: '💧', color: '#45B7D1', category: 'what' },
-  { id: 'food', word: 'food', emoji: '🍕', color: '#45B7D1', category: 'what' },
-  { id: 'ball', word: 'ball', emoji: '⚽', color: '#45B7D1', category: 'what' },
-  { id: 'book', word: 'book', emoji: '📖', color: '#45B7D1', category: 'what' },
-  { id: 'music', word: 'music', emoji: '🎵', color: '#45B7D1', category: 'what' },
-  { id: 'home', word: 'home', emoji: '🏠', color: '#96CEB4', category: 'where' },
-  { id: 'park', word: 'park', emoji: '🌳', color: '#96CEB4', category: 'where' },
-  { id: 'school', word: 'school', emoji: '🏫', color: '#96CEB4', category: 'where' },
+  { id: 'i', words: { en: 'I', es: 'Yo', fr: 'Je', de: 'Ich', pt: 'Eu', ro: 'Eu', uk: 'Я', ru: 'Я', ja: '私', ko: '나', zh: '我', ar: 'أنا' }, emoji: '🧒', color: '#FF6B6B', category: 'who' },
+  { id: 'mom', words: { en: 'Mom', es: 'Mamá', fr: 'Maman', de: 'Mama', pt: 'Mamãe', ro: 'Mama', uk: 'Мама', ru: 'Мама', ja: 'ママ', ko: '엄마', zh: '妈妈', ar: 'ماما' }, emoji: '👩', color: '#FF6B6B', category: 'who' },
+  { id: 'dad', words: { en: 'Dad', es: 'Papá', fr: 'Papa', de: 'Papa', pt: 'Papai', ro: 'Tata', uk: 'Тато', ru: 'Папа', ja: 'パパ', ko: '아빠', zh: '爸爸', ar: 'بابا' }, emoji: '👨', color: '#FF6B6B', category: 'who' },
+  { id: 'want', words: { en: 'want', es: 'quiero', fr: 'veux', de: 'will', pt: 'quero', ro: 'vreau', uk: 'хочу', ru: 'хочу', ja: 'ほしい', ko: '원해', zh: '要', ar: 'أريد' }, emoji: '🙏', color: '#4ECDC4', category: 'action' },
+  { id: 'go', words: { en: 'go', es: 'ir', fr: 'aller', de: 'gehen', pt: 'ir', ro: 'merge', uk: 'іти', ru: 'идти', ja: '行く', ko: '가다', zh: '去', ar: 'أذهب' }, emoji: '🚶', color: '#4ECDC4', category: 'action' },
+  { id: 'eat', words: { en: 'eat', es: 'comer', fr: 'manger', de: 'essen', pt: 'comer', ro: 'mânca', uk: 'їсти', ru: 'есть', ja: '食べる', ko: '먹다', zh: '吃', ar: 'آكل' }, emoji: '🍽️', color: '#4ECDC4', category: 'action' },
+  { id: 'play', words: { en: 'play', es: 'jugar', fr: 'jouer', de: 'spielen', pt: 'brincar', ro: 'juca', uk: 'грати', ru: 'играть', ja: '遊ぶ', ko: '놀다', zh: '玩', ar: 'ألعب' }, emoji: '🎈', color: '#4ECDC4', category: 'action' },
+  { id: 'drink', words: { en: 'drink', es: 'beber', fr: 'boire', de: 'trinken', pt: 'beber', ro: 'bea', uk: 'пити', ru: 'пить', ja: '飲む', ko: '마시다', zh: '喝', ar: 'أشرب' }, emoji: '🥤', color: '#4ECDC4', category: 'action' },
+  { id: 'water', words: { en: 'water', es: 'agua', fr: 'eau', de: 'Wasser', pt: 'água', ro: 'apă', uk: 'воду', ru: 'воду', ja: '水', ko: '물', zh: '水', ar: 'ماء' }, emoji: '💧', color: '#45B7D1', category: 'what' },
+  { id: 'food', words: { en: 'food', es: 'comida', fr: 'nourriture', de: 'Essen', pt: 'comida', ro: 'mâncare', uk: 'їжу', ru: 'еду', ja: '食べ物', ko: '음식', zh: '食物', ar: 'طعام' }, emoji: '🍕', color: '#45B7D1', category: 'what' },
+  { id: 'ball', words: { en: 'ball', es: 'pelota', fr: 'ballon', de: 'Ball', pt: 'bola', ro: 'minge', uk: 'м\'яч', ru: 'мяч', ja: 'ボール', ko: '공', zh: '球', ar: 'كرة' }, emoji: '⚽', color: '#45B7D1', category: 'what' },
+  { id: 'book', words: { en: 'book', es: 'libro', fr: 'livre', de: 'Buch', pt: 'livro', ro: 'carte', uk: 'книгу', ru: 'книгу', ja: '本', ko: '책', zh: '书', ar: 'كتاب' }, emoji: '📖', color: '#45B7D1', category: 'what' },
+  { id: 'music', words: { en: 'music', es: 'música', fr: 'musique', de: 'Musik', pt: 'música', ro: 'muzică', uk: 'музику', ru: 'музыку', ja: '音楽', ko: '음악', zh: '音乐', ar: 'موسيقى' }, emoji: '🎵', color: '#45B7D1', category: 'what' },
+  { id: 'home', words: { en: 'home', es: 'casa', fr: 'maison', de: 'Hause', pt: 'casa', ro: 'acasă', uk: 'додому', ru: 'домой', ja: '家', ko: '집', zh: '家', ar: 'البيت' }, emoji: '🏠', color: '#96CEB4', category: 'where' },
+  { id: 'park', words: { en: 'park', es: 'parque', fr: 'parc', de: 'Park', pt: 'parque', ro: 'parc', uk: 'парк', ru: 'парк', ja: '公園', ko: '공원', zh: '公园', ar: 'الحديقة' }, emoji: '🌳', color: '#96CEB4', category: 'where' },
+  { id: 'school', words: { en: 'school', es: 'escuela', fr: 'école', de: 'Schule', pt: 'escola', ro: 'școală', uk: 'школу', ru: 'школу', ja: '学校', ko: '학교', zh: '学校', ar: 'المدرسة' }, emoji: '🏫', color: '#96CEB4', category: 'where' },
 ];
 
 const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
@@ -351,13 +371,13 @@ const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
 
 function MyStoryGame({ onBack }: { onBack: () => void }) {
   const { t } = useT();
-  const { speechRate, speechVolume } = useSettingsStore();
+  const { speechRate, speechVolume, language } = useSettingsStore();
   const [sentence, setSentence] = useState<StoryCard[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('who');
 
   const addCard = (card: StoryCard) => {
     tapFeedback();
-    aacSpeak(card.word, speechRate, speechVolume);
+    aacSpeak(storyWord(card, language), speechRate, speechVolume);
     setSentence(prev => [...prev, card]);
 
     const categories = ['who', 'action', 'what', 'where'];
@@ -367,7 +387,7 @@ function MyStoryGame({ onBack }: { onBack: () => void }) {
 
   const speakSentence = () => {
     tapFeedback();
-    const text = sentence.map(c => c.word).join(' ');
+    const text = sentence.map(c => storyWord(c, language)).join(' ');
     aacSpeak(text, speechRate, speechVolume);
   };
 
@@ -421,7 +441,7 @@ function MyStoryGame({ onBack }: { onBack: () => void }) {
                 style={{ backgroundColor: card.color }}
               >
                 <span className="text-xl">{card.emoji}</span>
-                <span className="text-white font-bold text-lg">{card.word}</span>
+                <span className="text-white font-bold text-lg">{storyWord(card, language)}</span>
               </div>
             ))}
             <button
@@ -465,7 +485,7 @@ function MyStoryGame({ onBack }: { onBack: () => void }) {
               }}
             >
               <span className="text-3xl md:text-4xl">{card.emoji}</span>
-              <span className="text-white font-bold text-sm md:text-base">{card.word}</span>
+              <span className="text-white font-bold text-sm md:text-base">{storyWord(card, language)}</span>
             </button>
           ))}
         </div>
