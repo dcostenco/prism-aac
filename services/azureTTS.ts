@@ -135,14 +135,14 @@ export async function speakAzure(
   activeControllers.add(controller);
   const timeout = setTimeout(() => controller.abort(), 3000);
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
     const res = await fetch(`${SYNALUX_API}/tts`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
+      headers,
       body: JSON.stringify({ ssml, format: 'audio-24khz-96kbitrate-mono-mp3' }),
       signal: controller.signal,
+      credentials: 'include',
     });
     clearTimeout(timeout);
     activeControllers.delete(controller);

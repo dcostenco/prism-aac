@@ -86,6 +86,13 @@ function getAuthToken(): string | null {
 }
 
 function isPaidTier(): boolean {
+  // Check auth store first (portal session via NextAuth cookie),
+  // then fall back to localStorage token (standalone mode).
+  try {
+    const { useAuthStore } = require('@/store/authStore');
+    const profile = useAuthStore.getState().profile;
+    if (profile?.plan && profile.plan !== 'free') return true;
+  } catch { /* store not available yet */ }
   return !!getAuthToken();
 }
 
