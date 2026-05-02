@@ -88,8 +88,10 @@ function getAuthToken(): string | null {
 
 function isPaidTier(): boolean {
   const profile = useAuthStore.getState().profile;
-  if (profile?.plan && profile.plan !== 'free') return true;
-  return !!getAuthToken();
+  const paid = !!(profile?.plan && profile.plan !== 'free');
+  const hasToken = !!getAuthToken();
+  console.log(`[TTS] isPaidTier: plan=${profile?.plan ?? 'null'} paid=${paid} hasToken=${hasToken} loaded=${useAuthStore.getState().loaded}`);
+  return paid || hasToken;
 }
 
 /**
@@ -140,10 +142,13 @@ export async function speak(
   const azureFreeForThisLang = !kokoroVoice; // free Azure for the 6 non-Kokoro langs
 
   // Tier 1: Azure Neural TTS (online — highest quality, has emotional styles)
-  if (isOnline() && (isPaidTier() || azureFreeForThisLang)) {
+  const paidCheck = isPaidTier();
+  if (isOnline() && (paidCheck || azureFreeForThisLang)) {
     const token = getAuthToken();
+    console.log(`[TTS] Attempting Azure: lang=${lang} tone=${effectiveTone} online=${isOnline()} paid=${paidCheck} freeForLang=${azureFreeForThisLang}`);
     const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '');
-    if (success) return;
+    if (success) { console.log('[TTS] Azure succeeded'); return; }
+    console.warn('[TTS] Azure failed, falling through');
   }
 
   // Tier 2: Kokoro neural — offline-capable fallback for the 6 langs it speaks.

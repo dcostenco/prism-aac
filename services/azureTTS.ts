@@ -133,7 +133,7 @@ export async function speakAzure(
   let url: string | null = null;
   const controller = new AbortController();
   activeControllers.add(controller);
-  const timeout = setTimeout(() => controller.abort(), 3000);
+  const timeout = setTimeout(() => controller.abort(), 8000);
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
@@ -147,7 +147,10 @@ export async function speakAzure(
     clearTimeout(timeout);
     activeControllers.delete(controller);
 
-    if (!res.ok) return false;
+    if (!res.ok) {
+      console.warn(`[AzureTTS] Server returned ${res.status}`);
+      return false;
+    }
 
     stopAzureAudio();
     const audioBuffer = await res.arrayBuffer();
@@ -176,7 +179,8 @@ export async function speakAzure(
       return false;
     }
     return true;
-  } catch {
+  } catch (e) {
+    console.warn('[AzureTTS] Fetch failed:', e instanceof Error ? e.message : e);
     if (url) releaseBlob(url);
     return false;
   }
