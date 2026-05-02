@@ -57,7 +57,13 @@ export function startVoiceInput(opts: {
   rec.maxAlternatives = 1;
 
   const lang = opts.lang || 'en-US';
-  rec.lang = lang.includes('-') ? lang : `${lang}-${lang.toUpperCase()}`;
+  const LANG_MAP: Record<string, string> = {
+    en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', ru: 'ru-RU',
+    ro: 'ro-RO', uk: 'uk-UA', pt: 'pt-BR', zh: 'zh-CN', ja: 'ja-JP',
+    ko: 'ko-KR', ar: 'ar-SA', it: 'it-IT', nl: 'nl-NL', pl: 'pl-PL',
+    tr: 'tr-TR', vi: 'vi-VN', th: 'th-TH', hi: 'hi-IN',
+  };
+  rec.lang = lang.includes('-') ? lang : (LANG_MAP[lang] || `${lang}-${lang.toUpperCase()}`);
 
   let stopped = false;
   let lastSpeechTime = Date.now();

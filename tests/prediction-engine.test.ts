@@ -87,13 +87,14 @@ describe('PredictionEngine — Decay', () => {
     expect(result.recent.count).toBe(50); // not decayed
   });
 
-  it('removes entries that decay to count 1', () => {
+  it('preserves entries that decay to count 1 (protected by 30-day hard cutoff)', () => {
     const eightDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
     const wf: Record<string, WordFreqEntry> = {
-      rare: { count: 1, lastUsed: eightDaysAgo },
+      rare: { count: 2, lastUsed: eightDaysAgo },
     };
     const result = decayPredictions(wf);
-    expect(result.rare).toBeUndefined();
+    expect(result.rare).toBeDefined();
+    expect(result.rare.count).toBe(1);
   });
 
   it('hard-deletes single-use entries older than 30 days (typo cleanup)', () => {

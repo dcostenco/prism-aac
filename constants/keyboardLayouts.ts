@@ -62,6 +62,21 @@ const LAYOUTS_BY_LANG: Partial<Record<SupportedLanguage, string[][]>> = {
     ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
     ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
   ],
+  'zh-Hans': [
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+  ],
+  'zh-Hant': [
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+  ],
+  'zh-HK': [
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+  ],
 };
 
 export function getLetterRows(lang: SupportedLanguage): string[][] {
@@ -94,6 +109,9 @@ const PREDICTIONS_BY_LANG: Record<SupportedLanguage, string[]> = {
   ja: ['はい', 'いいえ', 'ありがとう', '助けて', 'おわり'],
   ko: ['네', '아니요', '도와주세요', '감사합니다', '끝'],
   zh: ['我', '要', '帮助', '是', '不'],
+  'zh-Hans': ['我', '要', '帮助', '是', '不'],
+  'zh-Hant': ['我', '要', '幫助', '是', '不'],
+  'zh-HK': ['我', '要', '幫助', '是', '不'],
   ar: ['أنا', 'أريد', 'مساعدة', 'نعم', 'لا'],
 };
 

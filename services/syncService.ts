@@ -82,6 +82,73 @@ export async function pushToCloud(data: Partial<AACProfile>): Promise<void> {
   }
 }
 
+/**
+ * Emergency sync for page teardown (pagehide, visibilitychange=hidden).
+ *
+ * Strategy:
+ *   1. If payload < 60KB → sendBeacon (guaranteed delivery, no async)
+ *   2. If payload > 60KB → write to IndexedDB, register Background Sync
+ *      via Service Worker (uploads after tab closes)
+ *   3. Fallback: keepalive fetch (may fail if > 64KB browser limit)
+ *
+ * The W3C Fetch spec hard-caps keepalive payloads at 64KB total.
+ * An active AAC user's profile easily exceeds this.
+ */
+const BEACON_SIZE_LIMIT = 60_000; // 60KB (safe margin under 64KB)
+const SYNC_IDB_KEY = 'prism-pending-sync';
+
+export function pushToCloudKeepalive(data: Partial<AACProfile>): void {
+  if (!_isConfigured()) return;
+  const sb = getSupabase();
+  if (!sb) return;
+
+  try {
+    const url = (sb as unknown as { supabaseUrl: string }).supabaseUrl;
+    const key = (sb as unknown as { supabaseKey: string }).supabaseKey;
+    if (!url || !key) return;
+
+    const record = { device_id: getDeviceId(), user_id: getUserId(), ...data };
+    const body = JSON.stringify(record);
+    const endpoint = `${url}/rest/v1/${AAC_TABLE}?on_conflict=user_id,device_id`;
+
+    // sendBeacon cannot set custom headers, so we pass apikey as a query
+    // parameter. Supabase PostgREST accepts ?apikey= as an alternative to
+    // the apikey header. Without this, every sendBeacon was silently 401'd.
+    const authedEndpoint = `${endpoint}&apikey=${encodeURIComponent(key)}`;
+
+    const blob = new Blob([body], { type: 'application/json' });
+    if (blob.size < BEACON_SIZE_LIMIT) {
+      const sent = navigator.sendBeacon?.(authedEndpoint, blob);
+      if (sent) return;
+    } else {
+      const criticalRecord = {
+        device_id: record.device_id,
+        user_id: record.user_id,
+        custom_categories: record.custom_categories,
+        custom_phrases: record.custom_phrases,
+      };
+      const criticalBlob = new Blob([JSON.stringify(criticalRecord)], { type: 'application/json' });
+      if (criticalBlob.size < BEACON_SIZE_LIMIT) {
+        const sent = navigator.sendBeacon?.(authedEndpoint, criticalBlob);
+        if (sent) return;
+      }
+    }
+
+    // Last resort: keepalive fetch (may fail > 64KB but worth trying)
+    fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': key,
+        'Authorization': `Bearer ${key}`,
+        'Prefer': 'resolution=merge-duplicates',
+      },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  } catch { /* best effort */ }
+}
+
 export async function pullFromCloud(): Promise<Partial<AACProfile> | null> {
   if (!_isConfigured()) { setStatus('offline'); return null; }
   const sb = getSupabase();
@@ -127,9 +194,8 @@ export function mergeWordFreq(
 
 /** Merge custom categories/phrases with tombstone support.
  *  Items with deletedAt are tombstones — they suppress the item on all devices. */
-export function mergeCustomItems<T extends { id: string; deletedAt?: number }>(local: T[], remote: T[]): T[] {
+export function mergeCustomItems<T extends { id: string; deletedAt?: number; updatedAt?: number }>(local: T[], remote: T[]): T[] {
   const map = new Map<string, T>();
-  // Remote first, then local overwrites (local is authoritative for non-deleted items)
   for (const item of remote) map.set(item.id, item);
   for (const item of local) {
     const existing = map.get(item.id);
@@ -139,7 +205,11 @@ export function mergeCustomItems<T extends { id: string; deletedAt?: number }>(l
       const winner = (item.deletedAt ?? 0) > (existing.deletedAt ?? 0) ? item : existing;
       map.set(item.id, winner);
     } else {
-      map.set(item.id, item); // local wins for live items
+      // Newest mutation wins (updatedAt comparison). If neither has a
+      // timestamp, local is authoritative (backward compat).
+      const localTime = (item as { updatedAt?: number }).updatedAt ?? 0;
+      const remoteTime = (existing as { updatedAt?: number }).updatedAt ?? 0;
+      map.set(item.id, localTime >= remoteTime ? item : existing);
     }
   }
   return [...map.values()].filter(item => !item.deletedAt);

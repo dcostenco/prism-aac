@@ -170,3 +170,133 @@ input, select, textarea {
 input[type="range"] {
   cursor: pointer;
 }
+
+/* ── Precision Touch Mode ─────────────────────────────────────── */
+
+.precision-touch-active {
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+
+.precision-bubble {
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 9999;
+  pointer-events: none;
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-weight: 800;
+  padding: 4px 10px;
+  background: var(--accent-focus);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.precision-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--accent-focus);
+}
+
+.precision-highlight {
+  background-color: rgba(37, 99, 235, 0.15) !important;
+  outline: 3px solid #2563eb !important;
+  outline-offset: -2px;
+  box-shadow: 0 0 16px rgba(37, 99, 235, 0.4);
+  z-index: 10;
+  position: relative;
+}
+
+.high-contrast .precision-bubble {
+  border-color: #FFD700;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+}
+
+.high-contrast .precision-bubble::after {
+  border-top-color: #FFD700;
+}
+
+.high-contrast .precision-highlight {
+  background-color: #FFD700 !important;
+  color: #000 !important;
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.6);
+}
+
+.dark .precision-highlight {
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.6);
+}
+
+/* ── Camera Cursor Highlight (separate from mouse precision) ──── */
+
+.camera-cursor-highlight {
+  background-color: rgba(76, 175, 80, 0.15) !important;
+  outline: 3px solid #4CAF50 !important;
+  outline-offset: -2px;
+  box-shadow: 0 0 16px rgba(76, 175, 80, 0.4);
+  z-index: 10;
+  position: relative;
+}
+
+/* ── Switch Scanning ────────────────────────────────────────────── */
+
+.switch-scan-active {
+  outline: 4px solid #FF9800 !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 20px rgba(255, 152, 0, 0.5) !important;
+  z-index: 50;
+  position: relative;
+}
+
+.switch-scan-group-active {
+  outline: 3px dashed #FF9800 !important;
+  outline-offset: 4px;
+}
+
+@keyframes scan-pulse {
+  0%, 100% { outline-color: #FF9800; }
+  50% { outline-color: #FFC107; }
+}
+
+.switch-scan-active {
+  animation: scan-pulse 1s ease-in-out infinite;
+}
+
+.high-contrast .switch-scan-active {
+  outline-color: #FFD700 !important;
+  box-shadow: 0 0 24px rgba(255, 215, 0, 0.7) !important;
+}
+
+/* ── Remote Modeling (WebRTC) ───────────────────────────────────── */
+
+.remote-model-highlight {
+  outline: 4px solid #4CAF50 !important;
+  outline-offset: 3px;
+  box-shadow: 0 0 24px rgba(76, 175, 80, 0.5) !important;
+  z-index: 50;
+  position: relative;
+}
+
+@keyframes model-glow {
+  0%, 100% { box-shadow: 0 0 16px rgba(76, 175, 80, 0.4); }
+  50% { box-shadow: 0 0 32px rgba(76, 175, 80, 0.7); }
+}
+
+.remote-model-highlight {
+  animation: model-glow 1.5s ease-in-out infinite;
+}
+
+.high-contrast .remote-model-highlight {
+  outline-color: #00FF00 !important;
+}

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  pushToCloud, pullFromCloud, subscribeToChanges,
+  pushToCloud, pushToCloudKeepalive, pullFromCloud, subscribeToChanges,
   mergeWordFreq, mergeCustomItems, mergeHistory,
   SyncStatus, onSyncStatus, isSupabaseConfigured,
 } from '@/services/syncService';
@@ -9,6 +9,7 @@ import { usePredictionStore } from '@/store/predictionStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 
 export function useSyncStatus(): SyncStatus {
   const [status, setStatus] = useState<SyncStatus>('idle');
@@ -20,31 +21,45 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
   const syncedRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const gatherSyncPayload = useCallback(() => {
+    const pred = usePredictionStore.getState();
+    const cat = useCategoryStore.getState();
+    const msg = useMessageStore.getState();
+    const settings = useSettingsStore.getState();
+    return {
+      custom_categories: cat.customCategories,
+      custom_phrases: cat.customPhrases,
+      word_freq: pred.wordFreq,
+      bigrams: pred.bigrams,
+      history: msg.history,
+      settings: { speechRate: settings.speechRate, speechVolume: settings.speechVolume },
+    };
+  }, []);
+
   const pushDebounced = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      const pred = usePredictionStore.getState();
-      const cat = useCategoryStore.getState();
-      const msg = useMessageStore.getState();
-      const settings = useSettingsStore.getState();
+    debounceRef.current = setTimeout(() => pushToCloud(gatherSyncPayload()), 3000);
+  }, [gatherSyncPayload]);
 
-      pushToCloud({
-        custom_categories: cat.customCategories,
-        custom_phrases: cat.customPhrases,
-        word_freq: pred.wordFreq,
-        bigrams: pred.bigrams,
-        history: msg.history,
-        settings: { speechRate: settings.speechRate, speechVolume: settings.speechVolume },
-      });
-    }, 3000);
-  }, []);
+  // Proactive periodic sync every 30s while app is open.
+  // Keeps cloud delta small so pagehide only needs a tiny sendBeacon.
+  // iOS Safari has no Background Sync API — this is the only reliable path.
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+    const periodicSync = setInterval(() => {
+      if (!isSupabaseConfigured() || !useAuthStore.getState().profile) return;
+      pushToCloud(gatherSyncPayload());
+    }, 30_000);
+    return () => clearInterval(periodicSync);
+  }, [gatherSyncPayload]);
 
   useEffect(() => {
     if (syncedRef.current || !isSupabaseConfigured()) return;
     syncedRef.current = true;
 
     (async () => {
-      const remote = await pullFromCloud();
+      let remote: Awaited<ReturnType<typeof pullFromCloud>>;
+      try { remote = await pullFromCloud(); } catch { return; }
       if (!remote) return;
 
       const pred = usePredictionStore.getState();
@@ -92,12 +107,41 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     const unsubs = [
-      usePredictionStore.subscribe(() => pushDebounced()),
-      useCategoryStore.subscribe(() => pushDebounced()),
+      usePredictionStore.subscribe((s, prev) => { if (s.wordFreq !== prev.wordFreq || s.bigrams !== prev.bigrams) pushDebounced(); }),
+      useCategoryStore.subscribe((s, prev) => { if (s.customCategories !== prev.customCategories || s.customPhrases !== prev.customPhrases) pushDebounced(); }),
       useMessageStore.subscribe((s, prev) => { if (s.history !== prev.history) pushDebounced(); }),
-      useSettingsStore.subscribe(() => pushDebounced()),
+      useSettingsStore.subscribe((s, prev) => { if (s.speechRate !== prev.speechRate || s.speechVolume !== prev.speechVolume) pushDebounced(); }),
     ];
-    return () => unsubs.forEach(u => u());
+
+    // Flush pending sync on page hide (child presses sleep button, closes tab).
+    // Uses keepalive fetch so the request survives page teardown.
+    const onPageHide = () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+        const pred = usePredictionStore.getState();
+        const cat = useCategoryStore.getState();
+        const msg = useMessageStore.getState();
+        const settings = useSettingsStore.getState();
+        pushToCloudKeepalive({
+          custom_categories: cat.customCategories,
+          custom_phrases: cat.customPhrases,
+          word_freq: pred.wordFreq,
+          bigrams: pred.bigrams,
+          history: msg.history,
+          settings: { speechRate: settings.speechRate, speechVolume: settings.speechVolume },
+        });
+      }
+    };
+    const onVisChange = () => { if (document.visibilityState === 'hidden') onPageHide(); };
+    window.addEventListener('pagehide', onPageHide);
+    document.addEventListener('visibilitychange', onVisChange);
+
+    return () => {
+      unsubs.forEach(u => u());
+      window.removeEventListener('pagehide', onPageHide);
+      document.removeEventListener('visibilitychange', onVisChange);
+    };
   }, [pushDebounced]);
 
   return <>{children}</>;

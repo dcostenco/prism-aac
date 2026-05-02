@@ -38,9 +38,9 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
 
   useEffect(() => {
     let cancelled = false;
-    getPictogramUrl(word, language, pictureMode).then((url) => {
-      if (!cancelled) setIconUrl(url);
-    });
+    getPictogramUrl(word, language, pictureMode)
+      .then((url) => { if (!cancelled) setIconUrl(url); })
+      .catch(() => { if (!cancelled) setIconUrl(null); });
     return () => { cancelled = true; };
   }, [word, language, pictureMode]);
 
@@ -69,8 +69,16 @@ export default function PredictionBar() {
   const [displayed, setDisplayed] = useState<string[]>(langDefaults);
   const prevRef = useRef<string[]>(langDefaults);
 
+  // Immediately show language-specific defaults on language switch,
+  // then refine with predictions if there's typed text.
+  const prevLangRef = useRef(language);
   useEffect(() => {
     const defaults = getPredictionsForLanguage(language);
+    if (language !== prevLangRef.current) {
+      prevRef.current = defaults;
+      setDisplayed(defaults);
+      prevLangRef.current = language;
+    }
     if (!text.trim()) {
       prevRef.current = defaults;
       setDisplayed(defaults);
@@ -81,6 +89,7 @@ export default function PredictionBar() {
 
   useEffect(() => {
     if (!text.trim()) return;
+    // Only use stable slots within same language; full reset on language change
     const next = computeStableSlots(prevRef.current, predictions);
     prevRef.current = next;
     setDisplayed(next);

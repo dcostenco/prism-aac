@@ -19,8 +19,11 @@ interface SettingsState {
   headTrackingEnabled: boolean;
   headTrackingDwellMs: number;
   headTrackingSensitivity: number;
+  precisionTouchEnabled: boolean;
+  cameraInputEnabled: boolean;
+  cameraTrackingTarget: string;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'precisionTouchEnabled' | 'cameraInputEnabled' | 'cameraTrackingTarget'>>,
   ) => void;
   setTheme: (theme: Theme) => void;
 }
@@ -39,18 +42,24 @@ export const useSettingsStore = create<SettingsState>()(
       headTrackingEnabled: false,
       headTrackingDwellMs: 1200,
       headTrackingSensitivity: 5,
+      precisionTouchEnabled: true,
+      cameraInputEnabled: true,
+      cameraTrackingTarget: 'right_wrist',
       update: (partial) => set((s) => ({ ...s, ...partial })),
       setTheme: (theme) => set({ theme }),
     }),
     {
       name: 'prism-aac-settings',
-      version: 5,
+      version: 8,
       migrate: (persisted: unknown, version: number) => {
-        const s = persisted as Record<string, unknown>;
-        if (version < 2) return { ...s, gridSize: 6, activeVocabSet: 'all', outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
-        if (version < 3) return { ...s, activeVocabSet: 'all', outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
-        if (version < 4) return { ...s, outputLanguage: s.language ?? 'en', headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
-        if (version < 5) return { ...s, headTrackingEnabled: false, headTrackingDwellMs: 1200, headTrackingSensitivity: 5 };
+        let s = persisted as Record<string, unknown>;
+        if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
+        if (version < 3) s = { ...s, activeVocabSet: s.activeVocabSet ?? 'all', outputLanguage: s.outputLanguage ?? s.language ?? 'en' };
+        if (version < 4) s = { ...s, outputLanguage: s.outputLanguage ?? s.language ?? 'en' };
+        if (version < 5) s = { ...s, headTrackingEnabled: s.headTrackingEnabled ?? false, headTrackingDwellMs: s.headTrackingDwellMs ?? 1200, headTrackingSensitivity: s.headTrackingSensitivity ?? 5 };
+        if (version < 6) s = { ...s, precisionTouchEnabled: s.precisionTouchEnabled ?? true };
+        if (version < 7) s = { ...s, cameraInputEnabled: s.cameraInputEnabled ?? true, cameraTrackingTarget: s.cameraTrackingTarget ?? 'right_wrist' };
+        if (version < 8) s = { ...s, cameraTrackingTarget: s.cameraTrackingTarget === 'right_index' ? 'right_wrist' : (s.cameraTrackingTarget ?? 'right_wrist') };
         return s;
       },
     },

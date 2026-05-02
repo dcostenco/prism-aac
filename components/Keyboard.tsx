@@ -7,9 +7,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { aacSpeak } from '@/services/aacSpeak';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
-
 import { useT } from '@/engine/useT';
-
 
 const CAPS_LOCK_HOLD_MS = 500;
 
@@ -18,7 +16,7 @@ export default function Keyboard() {
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
-  const { t, ttsCode, outputTtsCode } = useT();
+  const { t } = useT();
   const letterRows = getLetterRows(language);
 
   const rows = keyboardMode === 'letters' ? letterRows : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
@@ -31,7 +29,6 @@ export default function Keyboard() {
     if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
   }, [appendChar, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper]);
 
-  // Shift: tap = one-shot upper, long-press (≥500ms) = caps-lock toggle.
   const shiftHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shiftLongPressed = useRef(false);
 
@@ -64,10 +61,6 @@ export default function Keyboard() {
     if (lastWord) {
       const prevWord = words.length > 1 ? words[words.length - 2] : undefined;
       learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase());
-      // Auto-speak the cumulative phrase (not just the last word) so the
-      // user hears "we can help" instead of fragmented "we" → "can" → "help".
-      // speakLocal() cancels any in-flight utterance, so each space
-      // restarts speech with the latest accumulated text.
       const translationActive = useSettingsStore.getState().language !== useSettingsStore.getState().outputLanguage;
       if (translationActive || (autoSpeak && soundEnabled)) {
         aacSpeak(lastWord, speechRate, speechVolume, activeTone);
@@ -89,23 +82,13 @@ export default function Keyboard() {
     useMessageStore.getState().deleteLastChar();
   }, []);
 
-  // Big keys — full width, fill remaining viewport. Letter glyphs are
-  // intentionally large (the smallest viewport this app targets is iPhone
-  // 6.1" portrait, where each row only fits 10 keys, so we have headroom).
-  // Caps-lock pushes letter size up another tier as a visual confirmation
-  // that the lock is engaged — important for users with reduced visual
-  // acuity or attention.
-  const kc =
-    'aac-key surface-key text-primary rounded-lg font-bold select-none flex items-center justify-center';
+  const kc = 'aac-key surface-key text-primary rounded-lg font-bold select-none flex items-center justify-center';
   const letterSize = capsLock
     ? 'text-[clamp(1.5rem,4vw,3.5rem)]'
     : 'text-[clamp(1.25rem,3.5vw,2.75rem)]';
   const utilSize = 'text-[clamp(1rem,2.2vw,1.75rem)]';
   const wordSize = 'text-[clamp(0.875rem,1.8vw,1.5rem)]';
 
-  // Caps-lock visual state on the shift key: green = caps-lock, yellow =
-  // one-shot shift, neutral = lowercase. Distinct colors so the user can
-  // distinguish "next letter only" from "every letter from now on".
   const shiftStyle = capsLock
     ? 'bg-[#4CAF50] text-white'
     : isUpperCase
@@ -131,25 +114,35 @@ export default function Keyboard() {
               {shiftGlyph}
             </button>
           )}
-          {row.map((key) => (
-            <button key={key} onClick={() => handleKey(key)} aria-label={key} className={`${kc} ${letterSize} flex-1`}>
-              {keyboardMode === 'letters' ? (showUpper ? key : key.toLowerCase()) : key}
-            </button>
-          ))}
+          {row.map((key) => {
+            const displayChar = keyboardMode === 'letters' ? (showUpper ? key : key.toLowerCase()) : key;
+            return (
+              <button
+                key={key}
+                onClick={() => handleKey(key)}
+                aria-label={key}
+                data-key={key}
+                data-display={displayChar}
+                className={`${kc} ${letterSize} flex-1 hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}
+              >
+                {displayChar}
+              </button>
+            );
+          })}
           {ri === 2 && keyboardMode === 'letters' && (
-            <button onClick={handleBackspace} aria-label="Backspace" className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)]`}>⌫</button>
+            <button onClick={handleBackspace} aria-label="Backspace" data-action="backspace" className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)]`}>⌫</button>
           )}
         </div>
       ))}
 
       <div className="flex gap-[1px] flex-1">
-        <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
+        <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" data-action="mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>
-        <button onClick={handleSpace} aria-label={t('space')} className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
-        <button onClick={() => handleKey('.')} aria-label="." className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>.</button>
-        <button onClick={() => handleKey(',')} aria-label="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>,</button>
-        <button onClick={() => handleKey('?')} aria-label="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)]`}>?</button>
+        <button onClick={handleSpace} aria-label={t('space')} data-action="space" className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
+        <button onClick={() => handleKey('.')} aria-label="." data-key="." data-display="." className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>.</button>
+        <button onClick={() => handleKey(',')} aria-label="," data-key="," data-display="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>,</button>
+        <button onClick={() => handleKey('?')} aria-label="?" data-key="?" data-display="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>?</button>
         <button
           onClick={handleSpeak}
           aria-label={t('speak')}

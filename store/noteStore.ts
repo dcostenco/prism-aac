@@ -77,7 +77,7 @@ export const useNoteStore = create<NoteState>()(
           applied: false,
           authorName: get().authorName || undefined,
         };
-        set((s) => ({ notes: [note, ...s.notes] }));
+        set((s) => ({ notes: [note, ...s.notes].slice(0, 500) }));
         return note;
       },
 

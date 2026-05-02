@@ -43,9 +43,10 @@ export default function HeadTrackingSettings() {
   useEffect(() => {
     listCameras().then((cams) => {
       setCameras(cams);
-      if (cams.length > 0 && !selectedCamera) setSelectedCamera(cams[0].deviceId);
+      if (cams.length > 0) setSelectedCamera((prev) => prev || cams[0].deviceId);
     });
-  }, [selectedCamera]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCalibrationClick = useCallback(() => {
     tapFeedback();

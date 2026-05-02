@@ -45,13 +45,16 @@ const AZURE_VOICES: Record<string, string> = {
   'de-DE': 'de-DE-KatjaNeural',
   'ja-JP': 'ja-JP-NanamiNeural',
   'ko-KR': 'ko-KR-SunHiNeural',
-  'zh-CN': 'zh-CN-XiaoxiaoNeural',
+  'zh-CN': 'zh-CN-XiaoxiaoNeural',       // Mainland Mandarin
+  'zh-TW': 'zh-TW-HsiaoChenNeural',      // Taiwanese Mandarin
+  'zh-HK': 'zh-HK-HiuMaanNeural',        // Hong Kong Cantonese (Yue)
   'ar-SA': 'ar-SA-ZariyahNeural',
 };
 
 const STYLE_SUPPORTED = new Set([
   'en-US-JennyMultilingualNeural',
   'zh-CN-XiaoxiaoNeural',
+  'zh-TW-HsiaoChenNeural',
   'ja-JP-NanamiNeural',
 ]);
 
@@ -88,21 +91,31 @@ export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: num
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 
 let currentAudio: HTMLAudioElement | null = null;
-// Track every live blob URL we issue so a missed onended/onerror can't leak
-// audio bytes (Chrome retains blob bytes in renderer memory until revoke).
+// Track ALL active audio elements — rapid button mashing can create multiple
+// concurrent Audio objects. Panic stop must kill all of them.
+const activeAudioElements = new Set<HTMLAudioElement>();
 const liveBlobUrls = new Set<string>();
 
 function releaseBlob(url: string): void {
   if (liveBlobUrls.delete(url)) URL.revokeObjectURL(url);
 }
 
+// Track ALL in-flight fetch controllers — not just the latest one.
+// A child with spasticity may mash Speak 5 times, launching 5 concurrent
+// fetches. Panic stop must kill ALL of them, not just the last.
+const activeControllers = new Set<AbortController>();
+
 export function stopAzureAudio(): void {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.removeAttribute('src');
-    currentAudio.load();
-    currentAudio = null;
+  for (const ctrl of activeControllers) ctrl.abort();
+  activeControllers.clear();
+  // Kill ALL active audio elements (rapid mashing creates multiple)
+  for (const audio of activeAudioElements) {
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
   }
+  activeAudioElements.clear();
+  currentAudio = null;
   for (const url of liveBlobUrls) URL.revokeObjectURL(url);
   liveBlobUrls.clear();
 }
@@ -118,6 +131,9 @@ export async function speakAzure(
   const ssml = buildSSML(text, lang, tone, rate, volume);
 
   let url: string | null = null;
+  const controller = new AbortController();
+  activeControllers.add(controller);
+  const timeout = setTimeout(() => controller.abort(), 3000);
   try {
     const res = await fetch(`${SYNALUX_API}/tts`, {
       method: 'POST',
@@ -126,7 +142,10 @@ export async function speakAzure(
         'Authorization': `Bearer ${authToken}`,
       },
       body: JSON.stringify({ ssml, format: 'audio-24khz-96kbitrate-mono-mp3' }),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
+    activeControllers.delete(controller);
 
     if (!res.ok) return false;
 
@@ -138,10 +157,11 @@ export async function speakAzure(
 
     const audio = new Audio();
     audio.volume = volume;
+    activeAudioElements.add(audio);
 
-    // Attach handlers BEFORE play() so short clips can't end before we listen.
     const cleanup = () => {
       if (url) releaseBlob(url);
+      activeAudioElements.delete(audio);
       if (currentAudio === audio) currentAudio = null;
     };
     audio.onended = cleanup;

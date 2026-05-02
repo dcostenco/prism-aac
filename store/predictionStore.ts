@@ -8,6 +8,12 @@ import { getPhraseText } from '@/constants/phraseTranslations';
 import { SupportedLanguage } from '@/engine/i18n';
 import { getClinicalVocabulary } from '@/constants/clinicalVocabulary';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import {
+  loadPredictionSeed,
+  getCachedPredictionSeed,
+  PredictionSeed,
+} from '@/constants/predictionSeeds';
 
 const MAX_ENTRIES = 2000;
 const SEED_LAST_USED = 0;
@@ -59,6 +65,31 @@ function pruneIfNeeded(data: Record<string, WordFreqEntry>): Record<string, Word
   return Object.fromEntries(entries.slice(0, MAX_ENTRIES));
 }
 
+// Lazy-loaded per-locale seed pulled from constants/predictionSeeds/<lang>.ts.
+// Not persisted: re-imported on each session so we don't bloat localStorage
+// with the ~7000 n-gram entries per locale (these come from the read-only
+// corpus, not user typing).
+const corpusSeedCache = new Map<string, PredictionSeed>();
+function syncCorpusSeed(lang: string): PredictionSeed | null {
+  const cached = corpusSeedCache.get(lang) ?? getCachedPredictionSeed(lang);
+  if (cached) {
+    if (!corpusSeedCache.has(lang)) corpusSeedCache.set(lang, cached);
+    return cached;
+  }
+  // Trigger lazy import; the next updatePredictions call after load will see it.
+  loadPredictionSeed(lang).then((seed) => {
+    corpusSeedCache.set(lang, seed);
+    // Re-run predictions for the current text once the corpus seed is ready
+    // so the user gets richer suggestions without waiting for a keystroke.
+    try {
+      const store = usePredictionStore.getState();
+      // Touch a no-op set so subscribers re-render with the warmed cache.
+      store.updatePredictions('', lang as SupportedLanguage);
+    } catch {}
+  }).catch(() => {});
+  return null;
+}
+
 interface PredictionState {
   predictions: string[];
   wordFreq: Record<string, WordFreqEntry>;
@@ -78,13 +109,17 @@ export const usePredictionStore = create<PredictionState>()(
 
       updatePredictions: (text, lang = 'en') => {
         const seed = getSeed(lang);
+        const corpus = syncCorpusSeed(lang);
         const userWf = get().wordFreq;
         const userBg = get().bigrams;
         const plan = useAuthStore.getState().profile?.plan;
         const clinical = plan && PAID_PLANS.has(plan) ? getClinicalWordFreq(lang) : {};
-        const mergedWf = { ...seed.wordFreq, ...clinical, ...userWf };
-        const mergedBg = { ...seed.bigrams, ...userBg };
-        const predictions = getPredictions(text, mergedWf, mergedBg);
+        // Layered merge — user counts always win (latest entry overrides):
+        //   corpus n-grams (broad coverage) → phrase seed (UI defaults) →
+        //   clinical vocab (paid tiers) → personal counts (live).
+        const mergedWf = { ...(corpus?.wordFreq ?? {}), ...seed.wordFreq, ...clinical, ...userWf };
+        const mergedBg = { ...(corpus?.bigrams ?? {}), ...seed.bigrams, ...userBg };
+        const predictions = getPredictions(text, mergedWf, mergedBg, undefined, corpus?.trigrams);
         set({ predictions });
       },
 
@@ -106,8 +141,10 @@ export const usePredictionStore = create<PredictionState>()(
 
       ensureSeed: () => {
         const { wordFreq, bigrams } = get();
-        const wfMerged = { ...SEED_EN.wordFreq, ...wordFreq };
-        const bgMerged = { ...SEED_EN.bigrams, ...bigrams };
+        const lang = useSettingsStore.getState().language || 'en';
+        const seed = getSeed(lang);
+        const wfMerged = { ...seed.wordFreq, ...wordFreq };
+        const bgMerged = { ...seed.bigrams, ...bigrams };
         if (Object.keys(wfMerged).length === Object.keys(wordFreq).length &&
             Object.keys(bgMerged).length === Object.keys(bigrams).length) return;
         set({ wordFreq: wfMerged, bigrams: bgMerged });
@@ -135,11 +172,37 @@ export const usePredictionStore = create<PredictionState>()(
           bigrams: { ...SEED_EN.bigrams, ...(p.bigrams ?? {}) },
         };
       },
-      storage: {
-        getItem: (name) => { try { const v = localStorage.getItem(name); return v ? JSON.parse(v) : null; } catch { return null; } },
-        setItem: (name, value) => { try { localStorage.setItem(name, JSON.stringify(value)); } catch {} },
-        removeItem: (name) => { try { localStorage.removeItem(name); } catch {} },
-      },
+      // Debounced localStorage: writes at most once per 3 seconds.
+      // Prevents synchronous 500KB+ JSON.stringify on every keystroke
+      // from causing typing lag and battery drain on mobile devices.
+      storage: (() => {
+        let writeTimer: ReturnType<typeof setTimeout> | null = null;
+        let pendingName: string | null = null;
+        let pendingValue: unknown = null;
+        const flushNow = () => {
+          if (writeTimer) { clearTimeout(writeTimer); writeTimer = null; }
+          if (pendingName != null) {
+            try { localStorage.setItem(pendingName, JSON.stringify(pendingValue)); } catch {}
+            pendingName = null; pendingValue = null;
+          }
+        };
+        if (typeof window !== 'undefined') {
+          window.addEventListener('pagehide', flushNow);
+          document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNow(); });
+        }
+        return {
+          getItem: (name: string) => { try { const v = localStorage.getItem(name); return v ? JSON.parse(v) : null; } catch { return null; } },
+          setItem: (name: string, value: unknown) => {
+            pendingName = name; pendingValue = value;
+            if (writeTimer) clearTimeout(writeTimer);
+            writeTimer = setTimeout(() => {
+              try { localStorage.setItem(name, JSON.stringify(value)); } catch { /* quota */ }
+              pendingName = null; pendingValue = null; writeTimer = null;
+            }, 3000);
+          },
+          removeItem: (name: string) => { try { localStorage.removeItem(name); } catch {} },
+        };
+      })(),
     },
   ),
 );

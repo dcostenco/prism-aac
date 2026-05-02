@@ -1,6 +1,7 @@
 'use client';
 
 import { isLocalModelAvailable, LOCAL_OLLAMA_URL, LOCAL_MODEL } from '@/services/localModel';
+import { canonicalizeLang } from '@/engine/i18n';
 
 /**
  * Text auto-correction — fixes hurried / motor-impaired input.
@@ -46,8 +47,17 @@ Rules:
 - If the input is already well-formed, return it unchanged.
 - Return ONLY the corrected text, no quotes, no explanation, no preamble.`;
 
+const MAX_CACHE = 500;
 const memoryCache = new Map<string, string>();
 const inFlight = new Map<string, Promise<string>>();
+
+function trimCorrectCache() {
+  while (memoryCache.size > MAX_CACHE) {
+    const oldest = memoryCache.keys().next().value;
+    if (oldest !== undefined) memoryCache.delete(oldest);
+    else break;
+  }
+}
 
 function withTimeout(ms: number): { signal: AbortSignal; cancel: () => void } {
   const ctrl = new AbortController();
@@ -107,6 +117,9 @@ export async function correctText(text: string, lang = 'en'): Promise<string> {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length < 3) return text;
 
+  // Canonicalize so synalux portal + local model both receive BCP-47 codes.
+  // Critical for Chinese routing: zh-CN vs zh-TW vs zh-HK take different paths.
+  lang = canonicalizeLang(lang);
   const cacheKey = `${lang}|${trimmed}`;
   const cached = memoryCache.get(cacheKey);
   if (cached !== undefined) return cached;
@@ -125,6 +138,7 @@ export async function correctText(text: string, lang = 'en'): Promise<string> {
         const fromLocal = await correctViaLocal(trimmed, lang);
         if (fromLocal) {
           memoryCache.set(cacheKey, fromLocal);
+          trimCorrectCache();
           return fromLocal;
         }
         // Local probe said yes but the call failed — fall through to
@@ -133,6 +147,7 @@ export async function correctText(text: string, lang = 'en'): Promise<string> {
       const fromPortal = await correctViaPortal(trimmed, lang);
       if (fromPortal) {
         memoryCache.set(cacheKey, fromPortal);
+        trimCorrectCache();
         return fromPortal;
       }
       // Last resort — original text. Never block speech on a correction

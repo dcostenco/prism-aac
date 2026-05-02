@@ -14,12 +14,17 @@ interface ScheduleState {
   tasks: ScheduleTask[];
   rewards: number;
   timerSeconds: number;
+  // Absolute end timestamp — immune to background throttling, device sleep.
+  // UI computes remaining = max(0, timerEndMs - Date.now()) on every frame.
+  timerEndMs: number;
   addTask: (text: string, icon: string) => void;
   removeTask: (id: string) => void;
   toggleDone: (id: string) => void;
   resetDay: () => void;
   addReward: (count?: number) => void;
   setTimerSeconds: (s: number) => void;
+  startTimer: (durationSeconds: number) => void;
+  resetTimer: () => void;
   reorderTask: (id: string, newOrder: number) => void;
 }
 
@@ -33,7 +38,7 @@ const DEFAULT_TASKS: ScheduleTask[] = [
   { id: 'sched-7', text: 'Bedtime', textKey: 'sched_bedtime', icon: '🌙', done: false, order: 6 },
 ];
 
-let idCounter = 100;
+// Removed module-level mutable counter — use crypto.randomUUID for safe IDs
 
 export const useScheduleStore = create<ScheduleState>()(
   persist(
@@ -41,13 +46,14 @@ export const useScheduleStore = create<ScheduleState>()(
       tasks: DEFAULT_TASKS,
       rewards: 0,
       timerSeconds: 300,
+      timerEndMs: 0,
 
       addTask: (text, icon) =>
         set((s) => ({
           tasks: [
             ...s.tasks,
             {
-              id: `sched-${Date.now()}-${++idCounter}`,
+              id: `sched-${crypto.randomUUID()}`,
               text,
               icon,
               done: false,
@@ -77,12 +83,25 @@ export const useScheduleStore = create<ScheduleState>()(
 
       setTimerSeconds: (seconds) => set({ timerSeconds: seconds }),
 
+      startTimer: (durationSeconds) =>
+        set({ timerEndMs: Date.now() + durationSeconds * 1000 }),
+
+      resetTimer: () => set({ timerEndMs: 0 }),
+
       reorderTask: (id, newOrder) =>
-        set((s) => ({
-          tasks: s.tasks.map((t) =>
-            t.id === id ? { ...t, order: newOrder } : t
-          ),
-        })),
+        set((s) => {
+          const task = s.tasks.find((t) => t.id === id);
+          if (!task) return s;
+          const oldOrder = task.order;
+          return {
+            tasks: s.tasks.map((t) => {
+              if (t.id === id) return { ...t, order: newOrder };
+              if (oldOrder < newOrder && t.order > oldOrder && t.order <= newOrder) return { ...t, order: t.order - 1 };
+              if (oldOrder > newOrder && t.order >= newOrder && t.order < oldOrder) return { ...t, order: t.order + 1 };
+              return t;
+            }),
+          };
+        }),
     }),
     {
       name: 'prism-schedule',
