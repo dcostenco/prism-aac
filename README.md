@@ -56,7 +56,56 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 >
 > **Clinical purpose:** Sentence construction, carrier phrases, manding with multi-word utterances. Mirrors the PECS Phase IV progression (sentence strip). Category colors follow Modified Fitzgerald Key conventions.
 
-**All games:** gradient backgrounds, 60px+ touch targets, scale animations on tap, TTS on every interaction, level progression, free tier (no payment gate on communication practice).
+#### Match It (Paid)
+> TTS says "Find the dog!" — child picks from 4 emoji pictures. Grid grows with level. Items: dog, cat, car, house, tree, fish, bird, flower, sun, moon, star, apple.
+>
+> **Clinical purpose:** Receptive identification / listener responding. Discrete trial structure (SD → R → SR+). Maps to VB-MAPP Listener Responding milestones.
+
+#### Yes or No (Paid)
+> Shows an emoji + asks "Is this a cat?" (50% correct, 50% mismatch). Child taps big Yes or No buttons. TTS speaks the question and feedback.
+>
+> **Clinical purpose:** Conditional discrimination — child must evaluate the match, not just recognize. Builds yes/no responding (a critical AAC skill many children lack).
+
+#### Finish It (Paid)
+> Carrier phrase "I want ___" with 4 picture choices. Rotates through "I want", "I see", "I like", "Give me" frames. Child taps to complete the sentence, then hears it spoken.
+>
+> **Clinical purpose:** Manding with sentence frames. Mirrors PECS Phase IV sentence strip. Functional Communication Training (FCT) — building multi-word requests.
+
+#### Category Sort (Paid)
+> Item appears at top — child taps which category it belongs to: Food, Animals, Clothing, or Places. Immediate TTS feedback.
+>
+> **Clinical purpose:** Feature-Function-Class (FFC) categorization. Core ABLLS-R and VB-MAPP milestone. Prerequisite for advanced tacting and intraverbal skills.
+
+#### Emotion Match (Paid)
+> Scenario text appears ("Birthday party!", "Lost my toy"). Child picks the matching emotion: Happy, Sad, Scared, Angry, or Surprised.
+>
+> **Clinical purpose:** Tacting emotions / private events (Skinner's verbal behavior). Social-emotional vocabulary. Critical for children with autism who struggle with emotion identification.
+
+#### What Comes Next (Paid)
+> Shows 2 pictures in sequence (wake up → brush teeth → ?). Child picks the 3rd step from choices. Daily routine sequences.
+>
+> **Clinical purpose:** Temporal sequencing and transitional knowledge. Maps to ABLLS-R Visual Performance and daily living skills domains.
+
+#### Same & Different (Paid)
+> Shows 3+ emoji items — 2 are the same, 1 is different. Child taps the odd one out. Grid grows with level (4, then 5 items).
+>
+> **Clinical purpose:** Visual discrimination — prerequisite for matching, sorting, and reading readiness. ABLLS-R Visual Performance B1-B12.
+
+#### I Hear It (Paid)
+> TTS describes an animal or object ("This animal says meow"). Child taps the matching picture from 4 choices.
+>
+> **Clinical purpose:** Auditory comprehension — listener responding by feature. Child must process verbal information and map it to visual representation.
+
+#### Turn Taker (Paid)
+> Simple dice-rolling game with "My turn!" / "Your turn!" prompts. Child taps to roll, then waits while the other "player" rolls automatically. Running score for both.
+>
+> **Clinical purpose:** Turn-taking and social communication. Natural Environment Teaching (NET). Teaches waiting, shared attention, and reciprocal interaction vocabulary.
+
+**Free games (1-3):** Bubble Pop, Color Hunt, My Story — full AAC keyboard vocabulary practice, no payment gate on communication.
+
+**Paid games (4-12):** Match It, Yes/No, Finish It, Category Sort, Emotion Match, What Comes Next, Same & Different, I Hear It, Turn Taker — structured BCBA-approved skill-building programs targeting specific VB-MAPP/ABLLS-R milestones.
+
+**All 12 games:** gradient backgrounds, 60px+ touch targets, scale animations on tap, TTS on every interaction, level progression, 12-language support.
 
 ### Marketplace — Synalux component platform
 > Browse and install Synalux modules: Symbol Libraries, Board Templates (Free+), Game Packs, Voice Packs, Picture Editor, Music Composer (Standard+), AAC Designer, Video Composer (Advanced+). Tier-gated with green/lock badges.
@@ -187,7 +236,8 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 | Cumulative auto-speak | Yes | Yes | Yes | Yes |
 | Math Paper-style expression builder + AI Math Tutor | Yes | Yes | Yes | Yes |
 | Schedule & Tasks (First-Then board, visual timer, rewards) | Yes (5 tasks) | Yes | Yes | Yes |
-| AAC Games (Bubble Pop, Color Hunt, My Story) | Yes | Yes | Yes | Yes |
+| AAC Games — Free (Bubble Pop, Color Hunt, My Story) | Yes | Yes | Yes | Yes |
+| AAC Games — BCBA Training (Match It, Yes/No, Finish It, Category Sort, Emotion Match, Sequence, Same/Different, I Hear It, Turn Taker) | — | Yes | Yes | Yes |
 | Category visibility toggles + grid size (4–20) | Yes | Yes | Yes | Yes |
 | High Contrast mode (WCAG AAA) | Yes | Yes | Yes | Yes |
 | Picture mode — ARASAAC pictograms on phrase + prediction tiles | Yes | Yes | Yes | Yes |
