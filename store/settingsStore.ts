@@ -43,14 +43,19 @@ export const useSettingsStore = create<SettingsState>()(
       headTrackingDwellMs: 1200,
       headTrackingSensitivity: 5,
       precisionTouchEnabled: true,
-      cameraInputEnabled: true,
+      // Disabled by default — camera tracking accuracy is regressed and the
+      // overlay was interfering with mouse use. Users can opt in via
+      // Settings → Input modes once the regression is resolved. Existing
+      // users who opted in keep their setting via persist; v9 migration
+      // forces it OFF for everyone to recover from the broken-cursor state.
+      cameraInputEnabled: false,
       cameraTrackingTarget: 'right_wrist',
       update: (partial) => set((s) => ({ ...s, ...partial })),
       setTheme: (theme) => set({ theme }),
     }),
     {
       name: 'prism-aac-settings',
-      version: 8,
+      version: 9,
       migrate: (persisted: unknown, version: number) => {
         let s = persisted as Record<string, unknown>;
         if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
@@ -60,6 +65,11 @@ export const useSettingsStore = create<SettingsState>()(
         if (version < 6) s = { ...s, precisionTouchEnabled: s.precisionTouchEnabled ?? true };
         if (version < 7) s = { ...s, cameraInputEnabled: s.cameraInputEnabled ?? true, cameraTrackingTarget: s.cameraTrackingTarget ?? 'right_wrist' };
         if (version < 8) s = { ...s, cameraTrackingTarget: s.cameraTrackingTarget === 'right_index' ? 'right_wrist' : (s.cameraTrackingTarget ?? 'right_wrist') };
+        // v9: force-disable camera input on upgrade — the overlay was
+        // interfering with mouse use in v0.2.x. Users re-enable in Settings
+        // when ready. This is a one-shot disable (not "ignore user choice
+        // forever") because we override only on the migration boundary.
+        if (version < 9) s = { ...s, cameraInputEnabled: false };
         return s;
       },
     },

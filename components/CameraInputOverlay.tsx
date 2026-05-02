@@ -11,13 +11,17 @@ import {
 import { tapFeedback } from '@/services/feedback';
 
 /**
- * Camera Input Overlay — auto-starts camera-based finger/arm tracking.
+ * Camera Input Overlay — opt-in camera-based finger/arm tracking.
  *
  * Uses MediaPipe Pose to detect the user's finger/arm position via
- * the webcam and maps it to cursor position on screen. Enabled by
- * default — the camera permission prompt fires on first load.
+ * the webcam and maps it to cursor position on screen.
  *
- * Tracking targets: right_index (default), left_index, right_wrist,
+ * DISABLED BY DEFAULT (settingsStore.cameraInputEnabled = false).
+ * Users opt in via Settings → Input modes. The accuracy regression in
+ * v0.2.x made the overlay interfere with mouse use; we force-disable
+ * on migration to v9 and let users re-enable explicitly.
+ *
+ * Tracking targets: right_wrist (default), right_index, left_index,
  * left_wrist, right_elbow, left_elbow, nose, etc.
  */
 
