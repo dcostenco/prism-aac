@@ -74,13 +74,19 @@ export default function InputModesSettings() {
         )}
       </div>
 
-      {/* Precision Touch (DEFAULT ON) */}
+      {/* Hand Calibration visibility toggle (DEFAULT ON) */}
+      {/* The flag persists and gates ONLY the visibility of the Hand */}
+      {/* Calibration section in Settings (custom button mapping per */}
+      {/* finger reach for users with motor differences). It does NOT */}
+      {/* enable any runtime detection mode — name is intentionally */}
+      {/* descriptive to avoid the prior misleading "Precision Touch" */}
+      {/* label which suggested camera-based touch-without-touching. */}
       <label className="flex items-center justify-between py-1.5">
         <div>
-          <span className="text-primary text-sm font-semibold">{t('enable_precision_touch')}</span>
-          <p className="text-muted text-[10px]">{t('precision_touch_desc')}</p>
+          <span className="text-primary text-sm font-semibold">Hand Calibration Settings</span>
+          <p className="text-muted text-[10px]">Show hand profile + per-finger button mapping in Settings</p>
         </div>
-        <Toggle on={precisionTouchEnabled} onToggle={() => update({ precisionTouchEnabled: !precisionTouchEnabled })} label="Precision touch" />
+        <Toggle on={precisionTouchEnabled} onToggle={() => update({ precisionTouchEnabled: !precisionTouchEnabled })} label="Hand calibration settings" />
       </label>
 
       {/* Head Tracking (opt-in) */}
