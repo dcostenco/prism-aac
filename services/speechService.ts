@@ -22,6 +22,7 @@ import { speakWithKokoro, isKokoroSupported, demoteKokoroForSession, getKokoroVo
 import { autoSwitchTone, toneToAzureStyle, toneToRate } from './adaptiveEngine';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -86,13 +87,8 @@ function getAuthToken(): string | null {
 }
 
 function isPaidTier(): boolean {
-  // Check auth store first (portal session via NextAuth cookie),
-  // then fall back to localStorage token (standalone mode).
-  try {
-    const { useAuthStore } = require('@/store/authStore');
-    const profile = useAuthStore.getState().profile;
-    if (profile?.plan && profile.plan !== 'free') return true;
-  } catch { /* store not available yet */ }
+  const profile = useAuthStore.getState().profile;
+  if (profile?.plan && profile.plan !== 'free') return true;
   return !!getAuthToken();
 }
 
