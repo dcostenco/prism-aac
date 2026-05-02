@@ -13,7 +13,7 @@ import { translateWithAIRefine, translateTextSync } from '@/services/translateSe
 import { useAuthStore } from '@/store/authStore';
 
 export default function MessageBar() {
-  const { text, activeTone, setTone, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
+  const { text, activeTone, toneMode, setTone, setToneMode, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
   const { t, ttsCode, outputTtsCode } = useT();
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -111,15 +111,20 @@ export default function MessageBar() {
         <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5">{t('auto')}</span>
       </button>
 
-      {/* Tone selector — paid tiers only */}
+      {/* Tone selector — paid tiers only. Mirrors the Auto/Sound button:
+          green-active when in 'auto' mode (adaptiveEngine picks tone), neutral
+          when in 'manual' mode (user-picked tone forced). Click opens picker. */}
       {isPaid && (
         <button
           onClick={() => { tapFeedback(); setShowTones(!showTones); }}
-          aria-label={`Tone: ${currentTone?.label}`}
-          className="aac-btn w-[clamp(2.75rem,5vw,4rem)] h-[clamp(2.75rem,5vw,4rem)] rounded-xl surface-key text-primary flex flex-col items-center justify-center shrink-0 border border-theme"
+          aria-label={toneMode === 'auto' ? 'Tone: auto' : `Tone: ${currentTone?.label}`}
+          aria-pressed={toneMode === 'auto'}
+          className={`aac-btn w-[clamp(2.75rem,5vw,4rem)] h-[clamp(2.75rem,5vw,4rem)] rounded-xl flex flex-col items-center justify-center shrink-0 border border-theme ${
+            toneMode === 'auto' ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+          }`}
         >
-          <span className="text-[clamp(1rem,1.8vw,1.375rem)]">{currentTone?.icon ?? '😊'}</span>
-          <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5 text-muted">{t('tone')}</span>
+          <span className="text-[clamp(1rem,1.8vw,1.375rem)]">{toneMode === 'auto' ? '🎚' : (currentTone?.icon ?? '😊')}</span>
+          <span className={`text-[clamp(8px,0.8vw,11px)] mt-0.5 ${toneMode === 'auto' ? '' : 'text-muted'}`}>{t('tone')}</span>
         </button>
       )}
 
@@ -158,15 +163,29 @@ export default function MessageBar() {
         aria-label={t('delete')} className="aac-btn aac-delete w-[clamp(3rem,5.5vw,4.5rem)] h-[clamp(3rem,5.5vw,4.5rem)] rounded-xl bg-[#F44336] text-white text-[clamp(1.125rem,2vw,1.75rem)] flex items-center justify-center shrink-0 select-none"
       >⌫</button>
 
-      {/* Tone picker popup */}
+      {/* Tone picker popup — "Auto" sentinel comes first as the default
+          mode (matches README's auto tone-switch behavior). Selecting any
+          specific tone flips toneMode to 'manual' (via setTone). */}
       {showTones && (
         <div className="absolute left-16 bottom-full mb-2 surface-bar border border-theme rounded-2xl p-2 grid grid-cols-3 gap-1.5 z-50 shadow-xl">
+          <button
+            key="auto"
+            onClick={() => { tapFeedback(); setToneMode('auto'); setShowTones(false); }}
+            aria-pressed={toneMode === 'auto'}
+            className={`aac-btn rounded-xl px-3 py-2 flex flex-col items-center border border-theme col-span-3 ${
+              toneMode === 'auto' ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+            }`}
+          >
+            <span className="text-xl">🎚</span>
+            <span className="text-[10px] mt-0.5 font-bold">Auto (recommended)</span>
+          </button>
           {TONE_OPTIONS.map(tone => (
             <button
               key={tone.id}
               onClick={() => { tapFeedback(); setTone(tone.id); setShowTones(false); }}
+              aria-pressed={toneMode === 'manual' && activeTone === tone.id}
               className={`aac-btn rounded-xl px-3 py-2 flex flex-col items-center border border-theme ${
-                activeTone === tone.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+                toneMode === 'manual' && activeTone === tone.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
               }`}
             >
               <span className="text-xl">{tone.icon}</span>

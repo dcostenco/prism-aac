@@ -5,14 +5,21 @@ import { ToneStyle } from '@/services/azureTTS';
 
 const MAX_UNDO = 20;
 
+// 'auto' = adaptiveEngine.autoSwitchTone picks tone from text content (default,
+// matches the README's behavior promise). Any specific ToneStyle = manual
+// override; user-picked tone is forced for every utterance until reset.
+export type ToneMode = 'auto' | 'manual';
+
 interface MessageState {
   text: string;
   undoStack: string[];
   activeTone: ToneStyle;
+  toneMode: ToneMode;
   autoSpeak: boolean;
   soundEnabled: boolean;
   history: HistoryEntry[];
   setTone: (tone: ToneStyle) => void;
+  setToneMode: (mode: ToneMode) => void;
   appendWord: (word: string) => void;
   appendText: (text: string) => void;
   appendChar: (char: string) => void;
@@ -37,6 +44,11 @@ export const useMessageStore = create<MessageState>()(
       text: '',
       undoStack: [],
       activeTone: 'friendly' as ToneStyle,
+      // Tone mode defaults to 'auto' so adaptiveEngine.autoSwitchTone picks
+      // the right register from the text — matches README's "auto tone
+      // switch" promise. setTone() flips this to 'manual' so a deliberate
+      // user pick takes effect for subsequent utterances.
+      toneMode: 'auto' as ToneMode,
       // Auto-speak ON by default — speech is the primary purpose of an
       // AAC app, and asking new users to discover a hidden toggle before
       // anything reads aloud is bad UX (and was reported in the wild).
@@ -44,7 +56,10 @@ export const useMessageStore = create<MessageState>()(
       soundEnabled: true,
       history: [],
 
-      setTone: (tone) => set({ activeTone: tone }),
+      // Picking a specific tone implies manual mode. To go back to auto,
+      // call setToneMode('auto') explicitly.
+      setTone: (tone) => set({ activeTone: tone, toneMode: 'manual' }),
+      setToneMode: (mode) => set({ toneMode: mode }),
 
       appendWord: (word) =>
         set((s) => ({ ...pushUndo(s), text: s.text.trim() ? `${s.text.trim()} ${word}` : word })),
@@ -97,18 +112,29 @@ export const useMessageStore = create<MessageState>()(
     }),
     {
       name: 'prism-aac-message',
-      version: 2,
+      version: 3,
       // v2: respect the user's existing autoSpeak preference. If they
       // deliberately turned it off (e.g., quiet classroom), don't override.
       // Only set true when the field was never persisted (undefined).
+      // v3: default toneMode='auto' for users upgrading from v2. Existing
+      // activeTone (e.g. 'friendly') is preserved but doesn't take effect
+      // until they switch back to manual mode.
       migrate: (persistedState: unknown, version: number) => {
-        const s = (persistedState ?? {}) as { autoSpeak?: boolean; soundEnabled?: boolean; history?: Array<{ text: string; timestamp: number }> };
+        const s = (persistedState ?? {}) as {
+          autoSpeak?: boolean;
+          soundEnabled?: boolean;
+          history?: Array<{ text: string; timestamp: number }>;
+          toneMode?: ToneMode;
+        };
         if (version < 2) {
-          return { ...s, autoSpeak: s.autoSpeak ?? true };
+          return { ...s, autoSpeak: s.autoSpeak ?? true, toneMode: 'auto' as ToneMode };
+        }
+        if (version < 3) {
+          return { ...s, toneMode: s.toneMode ?? ('auto' as ToneMode) };
         }
         return s;
       },
-      partialize: (s) => ({ autoSpeak: s.autoSpeak, soundEnabled: s.soundEnabled, history: s.history }),
+      partialize: (s) => ({ autoSpeak: s.autoSpeak, soundEnabled: s.soundEnabled, history: s.history, activeTone: s.activeTone, toneMode: s.toneMode }),
     },
   ),
 );

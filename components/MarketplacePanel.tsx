@@ -67,16 +67,22 @@ export default function MarketplacePanel() {
     if (item.action === 'vocab-set' && item.actionPayload) {
       settings.update({ activeVocabSet: item.actionPayload });
       setInstalled((prev) => new Set(prev).add(item.id));
+      // Persist install across sessions + add as a toolbar button so the
+      // user can re-launch without re-opening the marketplace.
+      settings.installApp(item.id);
       closeSidePanel();
       setTimeout(() => openCategories(), 100);
     } else if (item.action === 'vocab-set') {
       closeSidePanel();
       // Open settings to vocab set selector
     } else if (item.action === 'open-panel') {
+      // Persist + add to toolbar so subsequent launches are one tap.
+      settings.installApp(item.id);
       closeSidePanel();
       if (item.actionPayload === 'games') setTimeout(() => openGames(), 100);
     } else if (item.action === 'settings') {
       setInstalled((prev) => new Set(prev).add(item.id));
+      settings.installApp(item.id);
     }
     setSelectedItem(null);
   };

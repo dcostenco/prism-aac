@@ -14,8 +14,13 @@ import { SupportedLanguage, getTTSCode } from '@/engine/i18n';
 import { speak } from './speechService';
 import { translateTextSync } from './translateService';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useMessageStore } from '@/store/messageStore';
 import { ToneStyle } from './azureTTS';
 
+// Speak a phrase with optional explicit tone override. When `tone` is omitted,
+// reads `toneMode` + `activeTone` from messageStore: in 'auto' mode the
+// adaptive engine picks the tone from the text; in 'manual' mode the user's
+// last picked tone is forced for every utterance.
 export function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle): void {
   if (!text?.trim()) return;
 
@@ -34,7 +39,14 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     }
     if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
     const ttsCode = translating ? getTTSCode(outLang) : getTTSCode(inLang);
-    speak(toSpeak, rate, volume, ttsCode, tone);
+    // Tone resolution:
+    //   - explicit tone arg wins (e.g. emergency UI passes 'serious')
+    //   - else read messageStore: 'auto' → speak() runs autoSwitchTone
+    //     'manual' → forward the user-picked activeTone
+    const ms = useMessageStore.getState();
+    const effectiveTone: ToneStyle | 'auto' = tone
+      ?? (ms.toneMode === 'auto' ? 'auto' : ms.activeTone);
+    speak(toSpeak, rate, volume, ttsCode, effectiveTone);
   } catch {
     // Last resort: speak original text using the user's configured language,
     // NOT hardcoded en-US (which would mangle non-Latin text).

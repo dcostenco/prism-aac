@@ -14,6 +14,7 @@ import { tapFeedback } from '@/services/feedback';
 import HeadTrackingSettings from './HeadTrackingSettings';
 import HandCalibration from './HandCalibration';
 import InputModesSettings from './InputModesSettings';
+import ToolbarCustomization from './ToolbarCustomization';
 import { getActiveProfile, loadProfiles, deleteProfile, setActiveProfile, enableContinuousLearning, disableContinuousLearning, isContinuousLearningActive } from '@/services/handProfileService';
 
 function HandProfileSection() {
@@ -180,6 +181,12 @@ export default function SettingsModal() {
           <div>
             <h3 className={sectionTitle}>Input Modes</h3>
             <InputModesSettings />
+          </div>
+
+          {/* Toolbar Customization — reorder/hide buttons + manage apps */}
+          <div>
+            <h3 className={sectionTitle}>Toolbar Buttons</h3>
+            <ToolbarCustomization />
           </div>
 
           {/* Hand Calibration */}
