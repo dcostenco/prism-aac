@@ -481,44 +481,49 @@ export function startPoseTracker(
             lockedAnchor = null;
           }
 
-          // Auto-detect best available body part: requested target → nose → wrist → index
+          // Walk the chain in order: prefer the user's requested target if
+          // it has ANY signal (>= 0.1), only fall back if it's truly absent.
+          // Best-vis-wins (the previous attempt) made nose ALWAYS win since
+          // it scores higher than finger landmarks even when the user wants
+          // finger tracking — so the cursor followed the head, not the hand.
+          //
+          // Two-pass:
+          //   pass A — accept first landmark with vis >= 0.3 (good signal)
+          //   pass B — if nothing in pass A, accept first landmark with vis
+          //     >= 0.1 (weak signal, better than no cursor at all)
           const FALLBACK_CHAIN: TrackingTarget[] = [
             opts.trackingTarget,
             'nose', 'right_wrist', 'left_wrist', 'right_index', 'left_index',
             'right_elbow', 'left_elbow',
           ];
-          let bestVis = 0;
-          let bestTarget: TrackingTarget | null = null;
-          let bestMark: { x: number; y: number } | null = null;
+          let chosen: { mark: { x: number; y: number }; target: TrackingTarget; vis: number } | null = null;
           for (const target of FALLBACK_CHAIN) {
             const idx = LANDMARK_INDEX[target];
-            if (idx !== undefined && lm.length > idx) {
+            if (idx === undefined || lm.length <= idx) continue;
+            const mark = lm[idx];
+            const vis = mark.visibility ?? 0;
+            if (vis >= 0.3) { chosen = { mark, target, vis }; break; }
+          }
+          if (!chosen) {
+            for (const target of FALLBACK_CHAIN) {
+              const idx = LANDMARK_INDEX[target];
+              if (idx === undefined || lm.length <= idx) continue;
               const mark = lm[idx];
               const vis = mark.visibility ?? 0;
-              if (vis > bestVis) {
-                bestVis = vis;
-                bestTarget = target;
-                bestMark = mark;
-              }
+              if (vis >= 0.1) { chosen = { mark, target, vis }; break; }
             }
           }
-          // Use the best landmark we saw if it crosses the floor; otherwise
-          // use the best regardless once vis > 0.1 — better to track imperfectly
-          // than to produce zero cursor activity. "0 activity" reports were
-          // usually the chain rejecting every landmark while the model was
-          // actually detecting fine.
-          if (bestMark && bestTarget && bestVis >= 0.3) {
-            normX = bestMark.x;
-            normY = bestMark.y;
-            activeTarget = bestTarget;
-            lowVisStreak = 0;
-          } else if (bestMark && bestTarget && bestVis >= 0.1) {
-            normX = bestMark.x;
-            normY = bestMark.y;
-            activeTarget = bestTarget;
-            lowVisStreak += 1;
-            if (lowVisStreak === 30 || lowVisStreak === 300) {
-              console.debug('[PoseTracker] tracking with low confidence (vis=' + bestVis.toFixed(2) + ', target=' + bestTarget + ') — try better lighting or move closer');
+          if (chosen) {
+            normX = chosen.mark.x;
+            normY = chosen.mark.y;
+            activeTarget = chosen.target;
+            if (chosen.vis < 0.3) {
+              lowVisStreak += 1;
+              if (lowVisStreak === 30 || lowVisStreak === 300) {
+                console.debug('[PoseTracker] low confidence (vis=' + chosen.vis.toFixed(2) + ', target=' + chosen.target + ') — try better lighting / move closer');
+              }
+            } else {
+              lowVisStreak = 0;
             }
           } else {
             lowVisStreak += 1;
