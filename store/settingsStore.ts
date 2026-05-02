@@ -49,13 +49,16 @@ export const useSettingsStore = create<SettingsState>()(
       // users who opted in keep their setting via persist; v9 migration
       // forces it OFF for everyone to recover from the broken-cursor state.
       cameraInputEnabled: false,
-      cameraTrackingTarget: 'right_wrist',
+      // 'any_wrist' picks whichever wrist (left or right) has higher
+      // visibility each frame. Lets left-handed users, hand-switchers,
+      // and motor-asymmetric users use the same default config.
+      cameraTrackingTarget: 'any_wrist',
       update: (partial) => set((s) => ({ ...s, ...partial })),
       setTheme: (theme) => set({ theme }),
     }),
     {
       name: 'prism-aac-settings',
-      version: 9,
+      version: 10,
       migrate: (persisted: unknown, version: number) => {
         let s = persisted as Record<string, unknown>;
         if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
@@ -70,6 +73,14 @@ export const useSettingsStore = create<SettingsState>()(
         // when ready. This is a one-shot disable (not "ignore user choice
         // forever") because we override only on the migration boundary.
         if (version < 9) s = { ...s, cameraInputEnabled: false };
+        // v10: upgrade hardcoded right_wrist / left_wrist to 'any_wrist' so
+        // returning users get the auto-pick behavior. Anyone who chose a
+        // specific side intentionally (e.g. left_index) keeps it.
+        if (version < 10) {
+          if (s.cameraTrackingTarget === 'right_wrist' || s.cameraTrackingTarget === 'left_wrist') {
+            s = { ...s, cameraTrackingTarget: 'any_wrist' };
+          }
+        }
         return s;
       },
     },

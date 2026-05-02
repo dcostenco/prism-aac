@@ -28,14 +28,28 @@ export type TrackingTarget =
   | 'nose'
   | 'left_wrist'
   | 'right_wrist'
+  // 'any_wrist' picks whichever wrist (left or right) has higher visibility
+  // each frame — useful for users who switch hands, are left-handed, or have
+  // limited motor control on one side. Resolves dynamically in the
+  // detection loop, never used as a literal landmark index.
+  | 'any_wrist'
   | 'left_elbow'
   | 'right_elbow'
   | 'left_shoulder'
   | 'right_shoulder'
   | 'left_index'
-  | 'right_index';
+  | 'right_index'
+  // Same idea — picks the most-visible index finger each frame.
+  | 'any_index'
+  // Most permissive: best of all four hand landmarks (both wrists + both
+  // index fingers). Recommended default when the user's hand position
+  // varies across sessions.
+  | 'any_hand';
 
-const LANDMARK_INDEX: Record<TrackingTarget, number> = {
+// Concrete landmark indices. The 'any_*' aggregate targets are NOT included
+// here — they're resolved at detection time by comparing visibilities across
+// the underlying landmarks.
+const LANDMARK_INDEX: Record<Exclude<TrackingTarget, 'any_wrist' | 'any_index' | 'any_hand'>, number> = {
   nose: 0,
   left_shoulder: 11,
   right_shoulder: 12,
@@ -46,6 +60,33 @@ const LANDMARK_INDEX: Record<TrackingTarget, number> = {
   left_index: 19,
   right_index: 20,
 };
+
+/**
+ * Resolve an aggregate target to the underlying landmark with the highest
+ * visibility on the current frame. Returns null if none of the candidates
+ * exist on the pose. Used for 'any_wrist' / 'any_index' / 'any_hand'.
+ */
+function resolveAggregateTarget(
+  agg: 'any_wrist' | 'any_index' | 'any_hand',
+  lm: Array<{ x: number; y: number; visibility?: number }>,
+): { target: TrackingTarget; mark: { x: number; y: number; visibility?: number }; vis: number } | null {
+  let candidates: Array<Exclude<TrackingTarget, 'any_wrist' | 'any_index' | 'any_hand'>>;
+  if (agg === 'any_wrist') candidates = ['right_wrist', 'left_wrist'];
+  else if (agg === 'any_index') candidates = ['right_index', 'left_index'];
+  else candidates = ['right_wrist', 'left_wrist', 'right_index', 'left_index'];
+
+  let best: { target: TrackingTarget; mark: { x: number; y: number; visibility?: number }; vis: number } | null = null;
+  for (const c of candidates) {
+    const idx = LANDMARK_INDEX[c];
+    if (idx === undefined || lm.length <= idx) continue;
+    const mark = lm[idx];
+    const vis = mark.visibility ?? 0;
+    if (!best || vis > best.vis) {
+      best = { target: c, mark, vis };
+    }
+  }
+  return best;
+}
 
 // ── Public Types ────────────────────────────────────────────────────────────
 
@@ -271,7 +312,13 @@ export function startPoseTracker(
   let ownStream: MediaStream | null = null; // Only set if we opened the camera ourselves
   const abortController = new AbortController();
 
-  const targetIndex = LANDMARK_INDEX[opts.trackingTarget] ?? 0;
+  // Aggregate targets ('any_*') resolve dynamically each frame, so they
+  // have no static index. Concrete targets fall back to nose (0) on miss.
+  const isAggregate = opts.trackingTarget === 'any_wrist' ||
+    opts.trackingTarget === 'any_index' ||
+    opts.trackingTarget === 'any_hand';
+  const targetIndex = isAggregate ? 0 : (LANDMARK_INDEX[opts.trackingTarget as Exclude<TrackingTarget, 'any_wrist' | 'any_index' | 'any_hand'>] ?? 0);
+  void targetIndex; // kept for backward compat with older callers; selection lives in detection loop
 
   // Smoothed cursor
   let sx = typeof window !== 'undefined' ? window.innerWidth / 2 : 0;
@@ -481,31 +528,51 @@ export function startPoseTracker(
             lockedAnchor = null;
           }
 
-          // Walk the chain in order: prefer the user's requested target if
-          // it has ANY signal (>= 0.1), only fall back if it's truly absent.
-          // Best-vis-wins (the previous attempt) made nose ALWAYS win since
-          // it scores higher than finger landmarks even when the user wants
-          // finger tracking — so the cursor followed the head, not the hand.
-          //
-          // Two-pass:
-          //   pass A — accept first landmark with vis >= 0.3 (good signal)
-          //   pass B — if nothing in pass A, accept first landmark with vis
-          //     >= 0.1 (weak signal, better than no cursor at all)
+          // Resolve aggregate ('any_*') targets dynamically each frame —
+          // pick whichever underlying landmark has higher visibility. Lets
+          // the user switch hands or be left-handed without changing config.
+          const requested = opts.trackingTarget;
+          let chosen: { mark: { x: number; y: number }; target: TrackingTarget; vis: number } | null = null;
+          if (requested === 'any_wrist' || requested === 'any_index' || requested === 'any_hand') {
+            const agg = resolveAggregateTarget(requested, lm);
+            if (agg && agg.vis >= 0.3) {
+              chosen = { mark: agg.mark, target: agg.target, vis: agg.vis };
+            }
+          }
+
+          // Concrete-landmark fallback chain, used both for non-aggregate
+          // requests and as a last resort when the aggregate failed (e.g.
+          // both wrists below threshold). Two-pass:
+          //   A — accept first landmark with vis >= 0.3 (good signal)
+          //   B — if A failed, accept first with vis >= 0.1 (weak fallback)
           const FALLBACK_CHAIN: TrackingTarget[] = [
-            opts.trackingTarget,
+            requested,
             'nose', 'right_wrist', 'left_wrist', 'right_index', 'left_index',
             'right_elbow', 'left_elbow',
           ];
-          let chosen: { mark: { x: number; y: number }; target: TrackingTarget; vis: number } | null = null;
-          for (const target of FALLBACK_CHAIN) {
-            const idx = LANDMARK_INDEX[target];
-            if (idx === undefined || lm.length <= idx) continue;
-            const mark = lm[idx];
-            const vis = mark.visibility ?? 0;
-            if (vis >= 0.3) { chosen = { mark, target, vis }; break; }
+          if (!chosen) {
+            for (const target of FALLBACK_CHAIN) {
+              if (target === 'any_wrist' || target === 'any_index' || target === 'any_hand') continue;
+              const idx = LANDMARK_INDEX[target];
+              if (idx === undefined || lm.length <= idx) continue;
+              const mark = lm[idx];
+              const vis = mark.visibility ?? 0;
+              if (vis >= 0.3) { chosen = { mark, target, vis }; break; }
+            }
+          }
+          if (!chosen) {
+            // Aggregate weak-signal fallback before going to chain pass B,
+            // so a low-vis matching wrist still beats a low-vis nose.
+            if (requested === 'any_wrist' || requested === 'any_index' || requested === 'any_hand') {
+              const agg = resolveAggregateTarget(requested, lm);
+              if (agg && agg.vis >= 0.1) {
+                chosen = { mark: agg.mark, target: agg.target, vis: agg.vis };
+              }
+            }
           }
           if (!chosen) {
             for (const target of FALLBACK_CHAIN) {
+              if (target === 'any_wrist' || target === 'any_index' || target === 'any_hand') continue;
               const idx = LANDMARK_INDEX[target];
               if (idx === undefined || lm.length <= idx) continue;
               const mark = lm[idx];
