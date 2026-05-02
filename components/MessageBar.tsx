@@ -98,7 +98,7 @@ export default function MessageBar() {
   const currentTone = TONE_OPTIONS.find(opt => opt.id === activeTone);
 
   return (
-    <div className="flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] py-[clamp(0.2rem,0.5svh,0.5rem)] h-[clamp(40px,8svh,64px)] shrink-0 relative border border-theme">
+    <div className="flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] py-[clamp(0.3rem,0.6svh,0.6rem)] min-h-[clamp(64px,12svh,96px)] shrink-0 relative border border-theme">
       <button
         onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
         aria-label={autoSpeak ? t('auto_speak_on') : t('auto_speak_off')}
@@ -123,12 +123,17 @@ export default function MessageBar() {
         </button>
       )}
 
-      <div className="flex-1 min-h-[clamp(32px,5svh,48px)] flex flex-col justify-center overflow-hidden">
-        <div className="text-[clamp(1rem,2.5vw,1.5rem)] flex items-center break-words text-primary truncate" role="status" aria-live="polite" aria-label={t('message_text')}>
+      <div className="flex-1 min-h-[clamp(48px,9svh,72px)] flex flex-col justify-center overflow-hidden">
+        <div
+          className="text-[clamp(1rem,2.5vw,1.5rem)] leading-snug break-words text-primary line-clamp-2 whitespace-normal"
+          role="status"
+          aria-live="polite"
+          aria-label={t('message_text')}
+        >
           {text ? <ColoredText text={text} /> : <span className="text-dim">{t('type_here')}</span>}
         </div>
         {translated && (
-          <div className="text-[clamp(0.75rem,2vw,1.1rem)] text-[#2196F3] font-semibold truncate">
+          <div className="text-[clamp(0.75rem,2vw,1.1rem)] text-[#2196F3] font-semibold leading-snug line-clamp-2 whitespace-normal">
             🌐 {translated}
           </div>
         )}
