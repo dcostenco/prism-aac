@@ -1,7 +1,9 @@
 'use client';
+import { useState } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
+import TrackingSetupWizard from './TrackingSetupWizard';
 
 const TRACKING_TARGETS = [
   { id: 'right_index', label: 'Right Index Finger' },
@@ -25,6 +27,7 @@ function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; la
 }
 
 export default function InputModesSettings() {
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
   const cameraInputEnabled = useSettingsStore(s => s.cameraInputEnabled);
   const cameraTrackingTarget = useSettingsStore(s => s.cameraTrackingTarget);
   const precisionTouchEnabled = useSettingsStore(s => s.precisionTouchEnabled);
@@ -59,7 +62,14 @@ export default function InputModesSettings() {
                 </button>
               ))}
             </div>
-            <p className="text-muted text-[10px] mt-1">Cursor auto-calibrates as you move — no manual setup needed</p>
+            <button
+              onClick={() => { tapFeedback(); setShowSetupWizard(true); }}
+              className="aac-btn w-full mt-2 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg active:scale-95 transition-transform"
+              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+            >
+              🎯 Set Up Tracking
+            </button>
+            <p className="text-muted text-[10px] mt-1">Guided setup: detects your body, calibrates cursor, tests accuracy</p>
           </div>
         )}
       </div>
@@ -139,6 +149,12 @@ export default function InputModesSettings() {
           onChange={(e) => update({ headTrackingSensitivity: parseInt(e.target.value) })}
           className="w-full accent-[#2196F3]" />
       </div>
+      {showSetupWizard && (
+        <TrackingSetupWizard
+          onComplete={() => setShowSetupWizard(false)}
+          onCancel={() => setShowSetupWizard(false)}
+        />
+      )}
     </div>
   );
 }

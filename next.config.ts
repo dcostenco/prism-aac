@@ -19,6 +19,7 @@ const withSerwist = withSerwistInit({
 // prism-aac.vercel.app/prism-aac (the basePath also applies there).
 const nextConfig: NextConfig = {
   basePath: '/prism-aac',
+  serverExternalPackages: ['@huggingface/transformers'],
   turbopack: {},
 };
 

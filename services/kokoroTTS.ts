@@ -83,14 +83,12 @@ async function loadKokoro(): Promise<unknown> {
 
   kokoroLoadPromise = (async () => {
     try {
-      // Bundled import — transformers.js is loaded as part of the prism-aac
-      // chunk graph. Code-split by Next.js automatically because this module
-      // is dynamically `import()`-ed at the speech-tier boundary, so users
-      // who never trigger Tier 2 don't pay the cost. Model weights still
-      // download on first use from huggingface.co (cached via IndexedDB by
-      // transformers.js after the first successful pull).
-      const tx = await import('@huggingface/transformers');
-      const pipeline = await tx.pipeline(
+      // Runtime CDN import — avoids bundling the 50MB @huggingface/transformers
+      // package which breaks Turbopack. The CDN URL is allowed by the portal's
+      // CSP (cdn.jsdelivr.net in script-src).
+      // @ts-expect-error — runtime URL import, no static type
+      const tx = await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.1.0/dist/transformers.min.js');
+      const pipeline = await (tx as { pipeline: (...args: unknown[]) => Promise<unknown> }).pipeline(
         'text-to-speech',
         'onnx-community/Kokoro-82M-v1.0-ONNX',
         { dtype: 'q8' }, // 8-bit quant for browser footprint
