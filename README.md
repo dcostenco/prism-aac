@@ -38,66 +38,63 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 
 > **Why games in an AAC app?** For children with complex communication needs, play IS communication practice. Every tap, every word spoken, every sentence built is a manding trial. These aren't reward screens — they're therapy tools disguised as fun.
 
-#### Bubble Pop
-> ![Bubble Pop](docs/screenshots/games-bubble-pop.png)
+#### 🫧 Bubble Pop (Free)
 > Colorful word bubbles float up against a night-sky gradient. The child taps to pop them — each pop speaks the word aloud via TTS. **Uses the child's OWN vocabulary** from their prediction history, so frequently-used words get more practice. Difficulty scales: more bubbles, faster float speed each level. Sparkle animations on pop.
 >
 > **Clinical purpose:** Cause-and-effect learning + manding practice with personal vocabulary. The child hears their own most-used words reinforced through play.
 
-#### Color Hunt
-> ![Color Hunt](docs/screenshots/games-color-hunt.png)
+#### 🎨 Color Hunt (Free)
 > Big, bright color tiles fill the screen. The app speaks "Find Red!" and the child taps the matching tile. Grid grows from 4 to 8 tiles as the child succeeds. Immediate visual feedback (star animation) + spoken confirmation ("Yes! Red!").
 >
 > **Clinical purpose:** Receptive language (understanding spoken words), color vocabulary, listener responding skills. Follows discrete trial teaching structure: SD (spoken instruction) → R (tap response) → SR+ (praise + animation).
 
-#### My Story
-> ![My Story](docs/screenshots/games-my-story.png)
+#### 📖 My Story (Free)
 > Picture cards organized in 4 color-coded categories: **Who** (I, Mom, Dad) → **Does what** (want, go, eat, play) → **What** (water, food, ball, book) → **Where** (home, park, school). The child taps cards left-to-right to build sentences like "I want water" or "Mom go park", then taps Speak to hear the full sentence.
 >
 > **Clinical purpose:** Sentence construction, carrier phrases, manding with multi-word utterances. Mirrors the PECS Phase IV progression (sentence strip). Category colors follow Modified Fitzgerald Key conventions.
 
-#### Match It (Paid)
-> TTS says "Find the dog!" — child picks from 4 emoji pictures. Grid grows with level. Items: dog, cat, car, house, tree, fish, bird, flower, sun, moon, star, apple.
+#### 🔍 Match It (Paid)
+> TTS says "Find the dog!" — child picks the correct emoji from 4 choices. Grid grows with level. 12 items: 🐕🐱🚗🏠🌳🐟🐦🌸☀️🌙⭐🍎
 >
 > **Clinical purpose:** Receptive identification / listener responding. Discrete trial structure (SD → R → SR+). Maps to VB-MAPP Listener Responding milestones.
 
-#### Yes or No (Paid)
-> Shows an emoji + asks "Is this a cat?" (50% correct, 50% mismatch). Child taps big Yes or No buttons. TTS speaks the question and feedback.
+#### ❓ Yes or No (Paid)
+> Shows an emoji + asks "Is this a cat?" (50% correct, 50% mismatch). Child taps big ✅ Yes or ❌ No buttons. TTS speaks the question and feedback.
 >
 > **Clinical purpose:** Conditional discrimination — child must evaluate the match, not just recognize. Builds yes/no responding (a critical AAC skill many children lack).
 
-#### Finish It (Paid)
+#### 💬 Finish It (Paid)
 > Carrier phrase "I want ___" with 4 picture choices. Rotates through "I want", "I see", "I like", "Give me" frames. Child taps to complete the sentence, then hears it spoken.
 >
 > **Clinical purpose:** Manding with sentence frames. Mirrors PECS Phase IV sentence strip. Functional Communication Training (FCT) — building multi-word requests.
 
-#### Category Sort (Paid)
-> Item appears at top — child taps which category it belongs to: Food, Animals, Clothing, or Places. Immediate TTS feedback.
+#### 🗂 Category Sort (Paid)
+> Item appears at top — child taps which category it belongs to: 🍎 Food, 🐾 Animals, 👕 Clothing, or 🏠 Places. 16 items, 4 per category. Immediate TTS feedback.
 >
 > **Clinical purpose:** Feature-Function-Class (FFC) categorization. Core ABLLS-R and VB-MAPP milestone. Prerequisite for advanced tacting and intraverbal skills.
 
-#### Emotion Match (Paid)
-> Scenario text appears ("Birthday party!", "Lost my toy"). Child picks the matching emotion: Happy, Sad, Scared, Angry, or Surprised.
+#### 🎭 Emotion Match (Paid)
+> Scenario text appears ("Birthday party!", "Lost my toy"). Child picks the matching emotion: 😊 Happy, 😢 Sad, 😨 Scared, 😡 Angry, or 😲 Surprised. 10 scenarios, 2 per emotion.
 >
 > **Clinical purpose:** Tacting emotions / private events (Skinner's verbal behavior). Social-emotional vocabulary. Critical for children with autism who struggle with emotion identification.
 
-#### What Comes Next (Paid)
-> Shows 2 pictures in sequence (wake up → brush teeth → ?). Child picks the 3rd step from choices. Daily routine sequences.
+#### 📋 What Comes Next (Paid)
+> Shows 2 pictures in sequence (😴 wake up → 🪥 brush teeth → ?). Child picks the 3rd step from choices. 6 daily routine sequences.
 >
 > **Clinical purpose:** Temporal sequencing and transitional knowledge. Maps to ABLLS-R Visual Performance and daily living skills domains.
 
-#### Same & Different (Paid)
-> Shows 3+ emoji items — 2 are the same, 1 is different. Child taps the odd one out. Grid grows with level (4, then 5 items).
+#### 👀 Same & Different (Paid)
+> Shows 3+ emoji items — 2 are the same, 1 is different. Child taps the odd one out. Grows from 3 to 7 items. 5 thematic pools (animals, food, sports, vehicles, flowers).
 >
 > **Clinical purpose:** Visual discrimination — prerequisite for matching, sorting, and reading readiness. ABLLS-R Visual Performance B1-B12.
 
-#### I Hear It (Paid)
-> TTS describes an animal or object ("This animal says meow"). Child taps the matching picture from 4 choices.
+#### 🔊 I Hear It (Paid)
+> TTS describes an animal or object ("This animal says meow"). Child taps the matching picture from 4 choices. 12 clue items with descriptive sentences.
 >
 > **Clinical purpose:** Auditory comprehension — listener responding by feature. Child must process verbal information and map it to visual representation.
 
-#### Turn Taker (Paid)
-> Simple dice-rolling game with "My turn!" / "Your turn!" prompts. Child taps to roll, then waits while the other "player" rolls automatically. Running score for both.
+#### 🎲 Turn Taker (Paid)
+> Dice-rolling game with "My turn!" / "Your turn!" prompts. Child taps to roll ⚀⚁⚂⚃⚄⚅, then waits while the other "player" rolls automatically. Running score for both.
 >
 > **Clinical purpose:** Turn-taking and social communication. Natural Environment Teaching (NET). Teaches waiting, shared attention, and reciprocal interaction vocabulary.
 
