@@ -83,10 +83,15 @@ async function loadKokoro(): Promise<unknown> {
 
   kokoroLoadPromise = (async () => {
     try {
-      // Dynamic import — keeps the 1MB+ transformers bundle out of the main
-      // chunk for users who never pick high-quality TTS.
-      // @ts-expect-error — optional dependency, not always installed
-      const tx = await import('@huggingface/transformers');
+      // Load @huggingface/transformers from a CDN at runtime instead of
+      // bundling. The package is ~50MB and only a fraction of users opt
+      // into high-quality TTS — bundling it makes every page load slower
+      // for everyone. webpackIgnore keeps the bundler from trying to
+      // resolve this URL at build time.
+      // CSP: synalux.ai/prism-aac/* allows cdn.jsdelivr.net in script-src
+      // + connect-src + worker-src (synalux next.config.ts).
+      // @ts-expect-error — runtime URL import, no static type
+      const tx = await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.1.0/dist/transformers.min.js');
       // KokoroTTS pipeline is registered as text-to-speech with the
       // 'onnx-community/Kokoro-82M-v1.0-ONNX' model id.
       const pipeline = await (tx as { pipeline: (...args: unknown[]) => Promise<unknown> }).pipeline(
