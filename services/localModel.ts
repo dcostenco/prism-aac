@@ -56,7 +56,11 @@ export function isLocalModelAvailable(): Promise<boolean> {
   lastProbeTime = now;
   probePromise = probeOllama().then(v => {
     cachedResult = v;
-    if (!v) probePromise = null; // allow re-probe on next call after cooldown
+    if (v) {
+      // Re-probe after 5 minutes — the local model may have been stopped
+      setTimeout(() => { cachedResult = null; probePromise = null; }, 5 * 60 * 1000);
+    }
+    probePromise = null;
     return v;
   });
   return probePromise;

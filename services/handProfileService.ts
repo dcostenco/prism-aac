@@ -407,6 +407,10 @@ export function createCalibrationState(): CalibrationState {
 // Accumulate hand scan data from multiple frames
 const scanAccumulator: Partial<HandProfile>[] = [];
 
+export function resetScanAccumulator(): void {
+  scanAccumulator.length = 0;
+}
+
 export function accumulateHandScan(landmarks: HandLandmarks[], w: number, h: number): void {
   const geo = computeHandGeometry(landmarks, w, h);
   if (geo.fingerLengthsPx) scanAccumulator.push(geo);

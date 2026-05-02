@@ -5,13 +5,28 @@ import { getClinicalVocabulary } from '@/constants/clinicalVocabulary';
 import { AAC_VOCABULARY } from '@/constants/languageVocabulary';
 import { OFFLINE_DICT_1 } from '@/constants/offlineDictionary';
 
+// Display names sent to translateAI as system-prompt context. Includes
+// regional Chinese variants so the AI translator picks the correct form.
+const LANG_NAMES: Record<string, string> = {
+  en: 'English', es: 'Spanish', fr: 'French', pt: 'Portuguese',
+  ro: 'Romanian', uk: 'Ukrainian', ru: 'Russian', de: 'German',
+  ja: 'Japanese', ko: 'Korean',
+  zh: 'Chinese (Simplified, Mandarin)',
+  'zh-Hans': 'Chinese (Simplified, Mandarin)',
+  'zh-Hant': 'Chinese (Traditional, Taiwanese Mandarin)',
+  'zh-HK': 'Cantonese (Traditional script, Hong Kong)',
+  ar: 'Arabic',
+};
+
 const MAX_CACHE = 500;
 const cache = new Map<string, string>();
 
 function trimCache() {
-  if (cache.size <= MAX_CACHE) return;
-  const first = cache.keys().next().value;
-  if (first !== undefined) cache.delete(first);
+  while (cache.size > MAX_CACHE) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+    else break;
+  }
 }
 
 type WordDict = Map<string, string>;
@@ -133,11 +148,6 @@ export function translateWithAIRefine(
     lastAiText = trimmed;
     try {
       const { translateAI } = await import('./aiService');
-      const LANG_NAMES: Record<string, string> = {
-        en: 'English', es: 'Spanish', fr: 'French', pt: 'Portuguese',
-        ro: 'Romanian', uk: 'Ukrainian', ru: 'Russian', de: 'German',
-        ja: 'Japanese', ko: 'Korean', zh: 'Chinese', ar: 'Arabic',
-      };
       const result = await translateAI(trimmed, LANG_NAMES[fromLang] ?? fromLang, LANG_NAMES[toLang] ?? toLang);
       const refined = result.trim().replace(/^["']|["']$/g, '');
       if (refined && refined.toLowerCase() !== trimmed.toLowerCase()) {
@@ -165,11 +175,6 @@ export async function translateText(
 
   try {
     const { translateAI } = await import('./aiService');
-    const LANG_NAMES: Record<string, string> = {
-      en: 'English', es: 'Spanish', fr: 'French', pt: 'Portuguese',
-      ro: 'Romanian', uk: 'Ukrainian', ru: 'Russian', de: 'German',
-      ja: 'Japanese', ko: 'Korean', zh: 'Chinese', ar: 'Arabic',
-    };
     const result = await translateAI(text, LANG_NAMES[fromLang] ?? fromLang, LANG_NAMES[toLang] ?? toLang);
     const translated = result.trim().replace(/^["']|["']$/g, '');
     if (translated && translated.toLowerCase() !== text.trim().toLowerCase()) {

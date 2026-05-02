@@ -6,7 +6,8 @@
  * Entries 300-399: Common phrases | 400-499: Time, numbers, connectors
  */
 
-export const OFFLINE_DICT_1: Record<string, string[]> = {
+// eslint-disable-next-line prefer-const
+let _OFFLINE_DICT_1: Record<string, string[]> = {
   en: [
     'house','car','dog','cat','water','food','school','book','phone','door','window','table','chair','bed','sun','moon','tree','flower','fish','bird','mother','father','child','baby','boy','girl','man','woman','doctor','teacher','friend','family','brother','sister','head','hand','foot','eye','ear','mouth','nose','heart','tooth','hair','face','body','arm','leg','back','stomach','milk','bread','rice','meat','egg','cheese','butter','sugar','salt','apple','banana','orange','cake','soup','tea','coffee','ball','toy','game','doll','picture','song','story','letter','word','name','number','color','red','blue','green','yellow','white','black','money','store','street','bus','train','airplane','boat','bicycle','shoe','shirt','pants','hat','coat','dress','sock','bag',
     'be','have','do','go','come','see','know','want','think','say','tell','give','take','make','get','put','find','help','try','ask','eat','drink','sleep','wake','walk','run','sit','stand','play','read','write','draw','sing','dance','cook','wash','clean','open','close','turn','stop','start','wait','listen','look','watch','speak','call','buy','pay','work','learn','teach','show','bring','carry','hold','touch','feel','hear','love','like','need','use','move','live','die','grow','fall','fly','swim','drive','ride','climb','jump','push','pull','throw','catch','cut','break','fix','build','cry','laugh','smile','kiss','hug','remember','forget','understand','believe','hope','wish','dream','choose','change','follow','meet','leave',
@@ -50,3 +51,12 @@ export const OFFLINE_DICT_1: Record<string, string[]> = {
     'astăzi','mâine','ieri','dimineață','după-amiază','seară','noapte','acum','mai târziu','curând','întotdeauna','niciodată','uneori','deja','din nou','aici','acolo','sus','jos','în','afară','pe','oprit','da','nu','și','dar','sau','pentru că','dacă','când','unde','ce','cine','cum','de ce','acesta','acela','foarte','prea','de asemenea','doar','chiar','înainte','după','în timpul','cu','fără','pentru','de la','la','la','între','sub','peste','în spate','în față','stânga','dreapta','înăuntru','afară','aproape','departe','împreună','singur','mai mult','mai puțin','destul','aproape','chiar','poate','salut','la revedere','bine','o dată','de două ori','zero','unu','doi','trei','patru','cinci','șase','șapte','opt','nouă','zece','douăzeci','o sută','o mie','primul','al doilea','al treilea','luni','marți','miercuri','joi','vineri','sâmbătă','duminică'
   ],
 };
+
+export const OFFLINE_DICT_1 = _OFFLINE_DICT_1;
+
+// Runtime validation: all language arrays must have the same length
+const _dictValues = Object.values(OFFLINE_DICT_1);
+const _expectedLength = _dictValues[0]?.length;
+if (_expectedLength && _dictValues.some(arr => arr.length !== _expectedLength)) {
+  console.error('[offlineDictionary] Language array length mismatch — translations may be misaligned');
+}

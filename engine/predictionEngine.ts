@@ -55,9 +55,11 @@ export function getPredictions(
   // Prefix matching — if user is mid-word, boost completions
   const partialWord = currentText.endsWith(' ') ? '' : lastWord;
   if (partialWord && partialWord.length >= 1) {
+    let prefixCount = 0;
     for (const word of Object.keys(wordFreq)) {
       if (word.startsWith(partialWord) && word !== partialWord) {
         getOrCreate(word).prefix = 1.0;
+        if (++prefixCount >= 20) break;
       }
     }
   }

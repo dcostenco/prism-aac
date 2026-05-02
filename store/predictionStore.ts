@@ -8,6 +8,7 @@ import { getPhraseText } from '@/constants/phraseTranslations';
 import { SupportedLanguage } from '@/engine/i18n';
 import { getClinicalVocabulary } from '@/constants/clinicalVocabulary';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const MAX_ENTRIES = 2000;
 const SEED_LAST_USED = 0;
@@ -106,8 +107,10 @@ export const usePredictionStore = create<PredictionState>()(
 
       ensureSeed: () => {
         const { wordFreq, bigrams } = get();
-        const wfMerged = { ...SEED_EN.wordFreq, ...wordFreq };
-        const bgMerged = { ...SEED_EN.bigrams, ...bigrams };
+        const lang = useSettingsStore.getState().language || 'en';
+        const seed = getSeed(lang);
+        const wfMerged = { ...seed.wordFreq, ...wordFreq };
+        const bgMerged = { ...seed.bigrams, ...bigrams };
         if (Object.keys(wfMerged).length === Object.keys(wordFreq).length &&
             Object.keys(bgMerged).length === Object.keys(bigrams).length) return;
         set({ wordFreq: wfMerged, bigrams: bgMerged });

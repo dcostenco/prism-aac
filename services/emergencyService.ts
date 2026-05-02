@@ -917,12 +917,14 @@ async function _flushQueuedAlerts(): Promise<number> {
  * Register connectivity listener to auto-flush queued emergency alerts.
  * Call once at app startup.
  */
-export function registerConnectivityListener(): void {
-  if (typeof window === 'undefined') return;
-  window.addEventListener('online', async () => {
+export function registerConnectivityListener(): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const handler = async () => {
     const flushed = await flushQueuedAlerts();
     if (flushed > 0) {
       console.log(`[EmergencyService] Connectivity restored — sent ${flushed} queued alert(s)`);
     }
-  });
+  };
+  window.addEventListener('online', handler);
+  return () => window.removeEventListener('online', handler);
 }
