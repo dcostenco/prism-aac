@@ -96,7 +96,7 @@ export const useCategoryStore = create<CategoryState>()(
         set((s) => ({
           customPhrases: [
             ...s.customPhrases,
-            { id: crypto.randomUUID(), categoryId, text, sortOrder: 999, isCustom: true, usageCount: 0 },
+            { id: crypto.randomUUID(), categoryId, text, sortOrder: s.customPhrases.filter(p => p.categoryId === categoryId && !p.deletedAt).length + 100, isCustom: true, usageCount: 0 },
           ],
         })),
 

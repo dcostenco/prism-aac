@@ -9,6 +9,7 @@ import { usePredictionStore } from '@/store/predictionStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 
 export function useSyncStatus(): SyncStatus {
   const [status, setStatus] = useState<SyncStatus>('idle');
@@ -45,7 +46,10 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
   // iOS Safari has no Background Sync API — this is the only reliable path.
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
-    const periodicSync = setInterval(() => pushToCloud(gatherSyncPayload()), 30_000);
+    const periodicSync = setInterval(() => {
+      if (!isSupabaseConfigured() || !useAuthStore.getState().profile) return;
+      pushToCloud(gatherSyncPayload());
+    }, 30_000);
     return () => clearInterval(periodicSync);
   }, [gatherSyncPayload]);
 

@@ -68,39 +68,47 @@ function MatchGame({ onBack }: { onBack: () => void }) {
   const handleFlip = useCallback((id: number) => {
     if (busy) return;
     tapFeedback();
-    const card = cards.find((c) => c.id === id);
-    if (!card || card.flipped || card.matched) return;
 
-    const newCards = cards.map((c) => c.id === id ? { ...c, flipped: true } : c);
-    const newFlipped = [...flippedIds, id];
-    setCards(newCards);
-    setFlippedIds(newFlipped);
+    setCards((prevCards) => {
+      const card = prevCards.find((c) => c.id === id);
+      if (!card || card.flipped || card.matched) return prevCards;
 
-    if (newFlipped.length === 2) {
-      setBusy(true);
-      const [a, b] = newFlipped.map((fId) => newCards.find((c) => c.id === fId)!);
-      if (a.matchId === b.matchId) {
-        // Match found
-        setTimeout(() => {
-          setCards((prev) =>
-            prev.map((c) => c.matchId === a.matchId ? { ...c, matched: true } : c)
-          );
-          setScore((s) => s + 1);
-          setFlippedIds([]);
-          setBusy(false);
-        }, 600);
-      } else {
-        // No match — flip back
-        setTimeout(() => {
-          setCards((prev) =>
-            prev.map((c) => newFlipped.includes(c.id) ? { ...c, flipped: false } : c)
-          );
-          setFlippedIds([]);
-          setBusy(false);
-        }, 1000);
-      }
-    }
-  }, [cards, flippedIds, busy]);
+      const newCards = prevCards.map((c) => c.id === id ? { ...c, flipped: true } : c);
+
+      setFlippedIds((prevFlipped) => {
+        const newFlipped = [...prevFlipped, id];
+
+        if (newFlipped.length === 2) {
+          setBusy(true);
+          const [a, b] = newFlipped.map((fId) => newCards.find((c) => c.id === fId)!);
+          if (a.matchId === b.matchId) {
+            // Match found
+            setTimeout(() => {
+              setCards((prev) =>
+                prev.map((c) => c.matchId === a.matchId ? { ...c, matched: true } : c)
+              );
+              setScore((s) => s + 1);
+              setFlippedIds([]);
+              setBusy(false);
+            }, 600);
+          } else {
+            // No match — flip back
+            setTimeout(() => {
+              setCards((prev) =>
+                prev.map((c) => newFlipped.includes(c.id) ? { ...c, flipped: false } : c)
+              );
+              setFlippedIds([]);
+              setBusy(false);
+            }, 1000);
+          }
+        }
+
+        return newFlipped;
+      });
+
+      return newCards;
+    });
+  }, [busy]);
 
   const resetGame = () => {
     tapFeedback();
@@ -205,7 +213,7 @@ function buildEmotionRounds(): EmotionRound[] {
 function EmotionGame({ onBack }: { onBack: () => void }) {
   const { t, ttsCode, outputTtsCode } = useT();
   const { speechRate, speechVolume } = useSettingsStore();
-  const [rounds] = useState<EmotionRound[]>(buildEmotionRounds);
+  const [rounds, setRounds] = useState<EmotionRound[]>(buildEmotionRounds);
   const [roundIdx, setRoundIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
@@ -231,6 +239,7 @@ function EmotionGame({ onBack }: { onBack: () => void }) {
 
   const resetGame = () => {
     tapFeedback();
+    setRounds(buildEmotionRounds());
     setRoundIdx(0);
     setScore(0);
     setFeedback(null);

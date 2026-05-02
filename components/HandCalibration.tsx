@@ -119,6 +119,7 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
 
       rafRef.current = requestAnimationFrame(tick);
     } catch {
+      destroyHandDetector();
       setStatus('Camera not available — using default profile');
       const p = getActiveProfile();
       setProfile(p);

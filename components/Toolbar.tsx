@@ -31,7 +31,7 @@ export default function Toolbar() {
   const voiceSupported = isVoiceInputSupported();
 
 
-  useEffect(() => () => { voiceRef.current?.stop(); }, []);
+  useEffect(() => () => { voiceRef.current?.stop(); voiceRef.current = null; setListening(false); }, [language]);
   useEffect(() => {
     if (!showMore && !showLangPicker) return;
     const handler = (e: MouseEvent) => {
