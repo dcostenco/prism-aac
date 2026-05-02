@@ -101,14 +101,12 @@ async function initPoseLandmarker(): Promise<boolean> {
               delegate,
             },
             runningMode: 'VIDEO',
-            // Allow up to 2 poses so identity locking has candidates to pick
-            // between when a second person enters the frame. We still track
-            // exactly ONE person at a time — the lock keeps cursor on the
-            // user even when MediaPipe surfaces both.
+            // Allow up to 2 poses so identity locking has candidates when a
+            // second person enters the frame. Confidence thresholds stay at
+            // MediaPipe defaults (0.5) — bumping them to 0.7 made finger
+            // landmarks almost never qualify, breaking pointer activity.
+            // Identity locking does the multi-person filtering instead.
             numPoses: 2,
-            minPoseDetectionConfidence: 0.7,
-            minPosePresenceConfidence: 0.7,
-            minTrackingConfidence: 0.7,
           });
           console.log(`[PoseTracker] PoseLandmarker initialized with ${delegate} delegate`);
           break;
@@ -452,10 +450,11 @@ export function startPoseTracker(
           const lm = results.landmarks[bestPoseIdx];
 
           // Update the anchor (nose position) for next-frame identity lock.
-          // Decays toward the new anchor when lost, so re-acquisition is
-          // possible after the user steps out and back into frame.
+          // Threshold kept low (0.3) so the anchor is set under normal
+          // lighting; the multi-pose disambiguation only matters when 2+
+          // poses are returned anyway.
           const noseLm = lm[LANDMARK_INDEX.nose];
-          if (noseLm && (noseLm.visibility ?? 0) >= 0.5) {
+          if (noseLm && (noseLm.visibility ?? 0) >= 0.3) {
             lockedAnchor = { x: noseLm.x, y: noseLm.y };
             lockedAnchorTimestamp = Date.now();
           } else if (lockedAnchor && Date.now() - lockedAnchorTimestamp > 2000) {
@@ -473,10 +472,10 @@ export function startPoseTracker(
             if (idx !== undefined && lm.length > idx) {
               const mark = lm[idx];
               const vis = mark.visibility ?? 0;
-              // Bumped 0.3 → 0.5: rejects partly-occluded landmarks that
-              // produce biased coordinates. The fallback chain ensures we
-              // still find SOME landmark for tracking.
-              if (vis >= 0.5) {
+              // Visibility 0.3 — finger/index landmarks rarely report > 0.5
+              // even in good lighting on the lite pose model, and a stricter
+              // threshold caused "no cursor activity at all" reports.
+              if (vis >= 0.3) {
                 normX = mark.x;
                 normY = mark.y;
                 activeTarget = target;
@@ -492,33 +491,30 @@ export function startPoseTracker(
           opts.onStatusChange('tracking', activeTarget);
 
           // Adaptive calibration: expand observed range, slowly decay toward
-          // current center. Gated on identity lock so we only learn from the
-          // tracked person's coords, never from a sibling's brief intrusion.
-          // Tightened from 0.02 / 0.0005 (40× imbalance) to 0.01 / 0.001 so
-          // accidental overshoots fade out faster. All inputs clamped to [0,1]
-          // to defend against any garbage MediaPipe returns on first frames.
+          // current center. NOT gated on lockedAnchor — gating broke single-
+          // user setups where the anchor briefly drops, leaving calibration
+          // frozen at defaults and producing no cursor movement. Identity
+          // locking does its job in the pose-picking step above; from there
+          // the coords belong to the tracked person, so it's safe to adapt.
+          // Inputs + outputs clamped to [0,1] for defense against bad data.
           const mirroredX = Math.max(0, Math.min(1, 1.0 - normX));
           const clampedY = Math.max(0, Math.min(1, normY));
-          if (lockedAnchor) {
-            const ADAPT_RATE = 0.01;
-            const DECAY_RATE = 0.001;
-            if (mirroredX < calibration.rightX) calibration.rightX += (mirroredX - calibration.rightX) * ADAPT_RATE;
-            if (mirroredX > calibration.leftX) calibration.leftX += (mirroredX - calibration.leftX) * ADAPT_RATE;
-            if (clampedY < calibration.topY) calibration.topY += (clampedY - calibration.topY) * ADAPT_RATE;
-            if (clampedY > calibration.bottomY) calibration.bottomY += (clampedY - calibration.bottomY) * ADAPT_RATE;
-            // Decay toward current center (handles posture / angle drift).
-            const midX = (calibration.leftX + calibration.rightX) / 2;
-            const midY = (calibration.topY + calibration.bottomY) / 2;
-            calibration.rightX += (midX - calibration.rightX) * DECAY_RATE;
-            calibration.leftX += (midX - calibration.leftX) * DECAY_RATE;
-            calibration.topY += (midY - calibration.topY) * DECAY_RATE;
-            calibration.bottomY += (midY - calibration.bottomY) * DECAY_RATE;
-            // Final safety clamp — never let calibration coords escape [0,1].
-            calibration.rightX = Math.max(0, Math.min(1, calibration.rightX));
-            calibration.leftX = Math.max(0, Math.min(1, calibration.leftX));
-            calibration.topY = Math.max(0, Math.min(1, calibration.topY));
-            calibration.bottomY = Math.max(0, Math.min(1, calibration.bottomY));
-          }
+          const ADAPT_RATE = 0.02;
+          const DECAY_RATE = 0.0005;
+          if (mirroredX < calibration.rightX) calibration.rightX += (mirroredX - calibration.rightX) * ADAPT_RATE;
+          if (mirroredX > calibration.leftX) calibration.leftX += (mirroredX - calibration.leftX) * ADAPT_RATE;
+          if (clampedY < calibration.topY) calibration.topY += (clampedY - calibration.topY) * ADAPT_RATE;
+          if (clampedY > calibration.bottomY) calibration.bottomY += (clampedY - calibration.bottomY) * ADAPT_RATE;
+          const midX = (calibration.leftX + calibration.rightX) / 2;
+          const midY = (calibration.topY + calibration.bottomY) / 2;
+          calibration.rightX += (midX - calibration.rightX) * DECAY_RATE;
+          calibration.leftX += (midX - calibration.leftX) * DECAY_RATE;
+          calibration.topY += (midY - calibration.topY) * DECAY_RATE;
+          calibration.bottomY += (midY - calibration.bottomY) * DECAY_RATE;
+          calibration.rightX = Math.max(0, Math.min(1, calibration.rightX));
+          calibration.leftX = Math.max(0, Math.min(1, calibration.leftX));
+          calibration.topY = Math.max(0, Math.min(1, calibration.topY));
+          calibration.bottomY = Math.max(0, Math.min(1, calibration.bottomY));
 
           const rangeX = calibration.leftX - calibration.rightX;
           const rangeY = calibration.bottomY - calibration.topY;

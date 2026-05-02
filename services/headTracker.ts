@@ -63,9 +63,10 @@ async function initMediaPipeFace(): Promise<boolean> {
           delegate: 'GPU',
         },
         runningMode: 'VIDEO',
-        // Bumped 0.5 → 0.7: rejects soft/partial face matches that previously
-        // let background people, posters, and TV faces leak in.
-        minDetectionConfidence: 0.7,
+        // MediaPipe default 0.5. Identity locking via IoU continuity does
+        // the multi-face filtering — bumping the floor to 0.7 caused the
+        // tracker to lose lock under normal lighting.
+        minDetectionConfidence: 0.5,
       });
     } catch {
       mpFaceDetector = null;
