@@ -543,32 +543,51 @@ export function startPoseTracker(
           const mirroredX = Math.max(0, Math.min(1, 1.0 - normX));
           const clampedY = Math.max(0, Math.min(1, normY));
           const ADAPT_RATE = 0.02;
-          const DECAY_RATE = 0.0005;
+          // Decay only fires when the current range is wider than the
+          // default (i.e., the user explored beyond it once and we want to
+          // slowly retract toward typical bounds). Without this guard, idle
+          // frames would shrink the range below useful, freezing cursor
+          // near center until the user moved aggressively.
+          const DECAY_RATE = 0.0002;
+          const MIN_KEEP_RANGE_X = DEFAULT_CALIBRATION.leftX - DEFAULT_CALIBRATION.rightX;
+          const MIN_KEEP_RANGE_Y = DEFAULT_CALIBRATION.bottomY - DEFAULT_CALIBRATION.topY;
           if (mirroredX < calibration.rightX) calibration.rightX += (mirroredX - calibration.rightX) * ADAPT_RATE;
           if (mirroredX > calibration.leftX) calibration.leftX += (mirroredX - calibration.leftX) * ADAPT_RATE;
           if (clampedY < calibration.topY) calibration.topY += (clampedY - calibration.topY) * ADAPT_RATE;
           if (clampedY > calibration.bottomY) calibration.bottomY += (clampedY - calibration.bottomY) * ADAPT_RATE;
-          const midX = (calibration.leftX + calibration.rightX) / 2;
-          const midY = (calibration.topY + calibration.bottomY) / 2;
-          calibration.rightX += (midX - calibration.rightX) * DECAY_RATE;
-          calibration.leftX += (midX - calibration.leftX) * DECAY_RATE;
-          calibration.topY += (midY - calibration.topY) * DECAY_RATE;
-          calibration.bottomY += (midY - calibration.bottomY) * DECAY_RATE;
+          const curRangeX = calibration.leftX - calibration.rightX;
+          const curRangeY = calibration.bottomY - calibration.topY;
+          if (curRangeX > MIN_KEEP_RANGE_X) {
+            const midX = (calibration.leftX + calibration.rightX) / 2;
+            calibration.rightX += (midX - calibration.rightX) * DECAY_RATE;
+            calibration.leftX += (midX - calibration.leftX) * DECAY_RATE;
+          }
+          if (curRangeY > MIN_KEEP_RANGE_Y) {
+            const midY = (calibration.topY + calibration.bottomY) / 2;
+            calibration.topY += (midY - calibration.topY) * DECAY_RATE;
+            calibration.bottomY += (midY - calibration.bottomY) * DECAY_RATE;
+          }
           calibration.rightX = Math.max(0, Math.min(1, calibration.rightX));
           calibration.leftX = Math.max(0, Math.min(1, calibration.leftX));
           calibration.topY = Math.max(0, Math.min(1, calibration.topY));
           calibration.bottomY = Math.max(0, Math.min(1, calibration.bottomY));
 
           // Calibration sanity: if the range collapsed (decay outran expand
-          // because the user was idle, or a stale localStorage payload from
-          // a buggy build), ((mirroredX - rightX) / rangeX) division either
-          // explodes or pins to center forever. Reset to defaults so the
-          // cursor moves; the adapt step rebuilds the user's range from there.
-          const MIN_RANGE = 0.15;
+          // while user was idle, or stale localStorage from a buggy build),
+          // the cursor pins near center. 0.30 is a forgiving threshold —
+          // narrower than that and the cursor barely responds across the
+          // screen anyway, even if technically not "collapsed". Reset to
+          // wide defaults; the adapt step rebuilds the user's actual range.
+          // Also: if rightX > leftX (i.e. inverted/swapped — corrupt data),
+          // reset unconditionally.
+          const MIN_RANGE = 0.30;
           let rangeX = calibration.leftX - calibration.rightX;
           let rangeY = calibration.bottomY - calibration.topY;
-          if (rangeX < MIN_RANGE || rangeY < MIN_RANGE) {
-            console.warn('[PoseTracker] Calibration collapsed (rangeX=' + rangeX.toFixed(3) + ', rangeY=' + rangeY.toFixed(3) + ') — resetting to defaults');
+          if (rangeX < MIN_RANGE || rangeY < MIN_RANGE || rangeX < 0 || rangeY < 0) {
+            console.warn(
+              '[PoseTracker] Calibration collapsed (rangeX=' + rangeX.toFixed(3) +
+              ', rangeY=' + rangeY.toFixed(3) + ') — resetting to defaults'
+            );
             calibration.leftX = DEFAULT_CALIBRATION.leftX;
             calibration.rightX = DEFAULT_CALIBRATION.rightX;
             calibration.topY = DEFAULT_CALIBRATION.topY;
