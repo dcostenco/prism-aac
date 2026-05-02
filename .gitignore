@@ -43,3 +43,6 @@ next-env.d.ts
 ios/
 dist/
 test-results/
+prism-deep-review.txt
+*.txt
+!LICENSE.txt
