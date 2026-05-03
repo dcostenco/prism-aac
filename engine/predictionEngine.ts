@@ -44,6 +44,18 @@ export function getPredictions(
 ): string[] {
   const words = currentText.trim().split(/\s+/).filter(Boolean);
   const lastWord = words.length > 0 ? words[words.length - 1].toLowerCase() : '';
+
+  // Mid-word vs end-of-word matters for which words count as "context".
+  // If the user is mid-typing ("my ma"), lastWord is the partial fragment
+  // and the COMPLETE history is words[..-2]. If they just hit space ("my "),
+  // lastWord is the most recent complete word and history is words[..-1].
+  const partialWord = currentText.endsWith(' ') ? '' : lastWord;
+  const isMidWord = !!partialWord;
+  const ctxLastIdx = isMidWord ? words.length - 2 : words.length - 1;
+  const ctxLast = ctxLastIdx >= 0 ? words[ctxLastIdx].toLowerCase() : '';
+  const ctxPrev = ctxLastIdx - 1 >= 0 ? words[ctxLastIdx - 1].toLowerCase() : '';
+  // Legacy alias kept for the (now narrower) "next-word after lastWord" lookups
+  // used when NOT mid-typing.
   const prevWord = words.length > 1 ? words[words.length - 2].toLowerCase() : '';
 
   // Sentence-start detection: capitalize the next prediction if we're at the
@@ -55,7 +67,10 @@ export function getPredictions(
   const getOrCreate = (w: string) =>
     candidateMap.get(w) ?? (() => { const s: Scores = { bigram: 0, trigram: 0, freq: 0, recency: 0, prefix: 0 }; candidateMap.set(w, s); return s; })();
 
-  // Trigram context (strongest signal — two-word history predicts next word)
+  // (1) Predict NEXT WORD — works whether the user is mid-word or just hit
+  // space. When mid-word the partial is treated optimistically as "almost a
+  // complete word" (predictable.app style: "I wan" still surfaces what comes
+  // after "want").
   if (trigrams && prevWord && lastWord) {
     const triKey = prevWord + '|' + lastWord + '|';
     const triEntries = Object.entries(trigrams)
@@ -68,8 +83,6 @@ export function getPredictions(
       getOrCreate(word3).trigram = val.count / maxTri;
     }
   }
-
-  // Bigram context
   if (lastWord) {
     const bigramEntries = Object.entries(bigrams)
       .filter(([k]) => k.startsWith(lastWord + '|'))
@@ -81,15 +94,55 @@ export function getPredictions(
     }
   }
 
-  // Prefix matching — if user is mid-word, boost completions
-  const partialWord = currentText.endsWith(' ') ? '' : lastWord;
+  // (2) MID-WORD CONTEXT — when the user is mid-typing AND there's a
+  // previous complete word, look up bigrams/trigrams that would COMPLETE
+  // the partial in the context of that prev word. This is what makes
+  // "my ma" → "main" work: bigram "my|main" boosts "main" over generic
+  // ma- corpus neighbors. Trigrams handle "my main re" → "reason" once
+  // "my|main|reason" has been seen.
+  if (isMidWord && ctxLast) {
+    const partialPrefix = ctxLast + '|' + partialWord;
+    const bigramEntries = Object.entries(bigrams)
+      .filter(([k]) => k.startsWith(partialPrefix))
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 20);
+    const maxBigram = bigramEntries.length > 0 ? bigramEntries[0][1].count : 1;
+    for (const [key, val] of bigramEntries) {
+      const completion = key.split('|')[1];
+      // Stack on top of any existing bigram score from the next-word lookup.
+      const existing = getOrCreate(completion);
+      existing.bigram = Math.max(existing.bigram, val.count / maxBigram);
+    }
+  }
+  if (isMidWord && trigrams && ctxPrev && ctxLast) {
+    const partialPrefix = ctxPrev + '|' + ctxLast + '|' + partialWord;
+    const triEntries = Object.entries(trigrams)
+      .filter(([k]) => k.startsWith(partialPrefix))
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 15);
+    const maxTri = triEntries.length > 0 ? triEntries[0][1].count : 1;
+    for (const [key, val] of triEntries) {
+      const completion = key.split('|')[2];
+      const existing = getOrCreate(completion);
+      existing.trigram = Math.max(existing.trigram, val.count / maxTri);
+    }
+  }
+
+  // Prefix matching — if user is mid-word, surface completions, weighted by
+  // each candidate's overall frequency so common words like "main"/"make"
+  // outrank obscure prefix neighbors.
   if (partialWord && partialWord.length >= 1) {
-    let prefixCount = 0;
+    const prefixCands: Array<{ word: string; count: number }> = [];
     for (const word of Object.keys(wordFreq)) {
       if (word.startsWith(partialWord) && word !== partialWord) {
-        getOrCreate(word).prefix = 1.0;
-        if (++prefixCount >= 20) break;
+        prefixCands.push({ word, count: wordFreq[word].count });
       }
+    }
+    prefixCands.sort((a, b) => b.count - a.count);
+    const topPrefix = prefixCands.slice(0, 30);
+    const maxPrefix = topPrefix.length > 0 ? topPrefix[0].count : 1;
+    for (const { word, count } of topPrefix) {
+      getOrCreate(word).prefix = count / maxPrefix;
     }
   }
 
