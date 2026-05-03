@@ -12,8 +12,11 @@ const DEFAULT_CONFIG: PredictionConfig = {
 type Scores = { bigram: number; trigram: number; freq: number; recency: number; prefix: number };
 
 // Words that should ALWAYS be capitalized when emitted as a prediction.
-// English-only — other languages don't have a capitalized first-person pronoun.
-const ALWAYS_CAPITALIZED = new Set(['i']);
+// Only English needs this rule (the first-person pronoun "I"). Other
+// languages must NOT receive this set, otherwise loanword pollution
+// (e.g. wordfreq RU corpus contains English "i" at low count) would leak
+// "I" into non-English suggestions.
+const ALWAYS_CAPITALIZED_EN = new Set(['i']);
 
 // User-typed n-grams get a multiplier when merged with corpus, so a count=2
 // personal bigram outranks a count=10 generic corpus bigram. Without this,
@@ -41,6 +44,9 @@ export function getPredictions(
   bigrams: Record<string, WordFreqEntry>,
   config = DEFAULT_CONFIG,
   trigrams?: Record<string, WordFreqEntry>,
+  fallback: readonly string[] = DEFAULT_PREDICTIONS,
+  alwaysCapitalized: Set<string> = ALWAYS_CAPITALIZED_EN,
+  scriptFilter?: RegExp,
 ): string[] {
   const words = currentText.trim().split(/\s+/).filter(Boolean);
   const lastWord = words.length > 0 ? words[words.length - 1].toLowerCase() : '';
@@ -185,6 +191,10 @@ export function getPredictions(
       // partial word. Otherwise high-frequency unrelated words (e.g. "so",
       // "m", "s") leak into the suggestions and crowd out true completions.
       if (partialWord && !lc.startsWith(partialWord)) return false;
+      // Drop wrong-script words. Necessary because the store's initial
+      // wordFreq state seeds with English DEFAULT_PHRASES, which leak into
+      // non-English sessions (e.g. "I" appearing for a Russian user).
+      if (scriptFilter && !scriptFilter.test(lc)) return false;
       return true;
     })
     .sort((a, b) => b.total - a.total)
@@ -192,7 +202,7 @@ export function getPredictions(
     .map((c) => {
       const lower = c.word.toLowerCase();
       // Always-capitalized words (e.g. English "I") win regardless of position.
-      if (ALWAYS_CAPITALIZED.has(lower)) return lower.charAt(0).toUpperCase() + lower.slice(1);
+      if (alwaysCapitalized.has(lower)) return lower.charAt(0).toUpperCase() + lower.slice(1);
       // Capitalize first word of sentence; otherwise keep the user-typed lowercase.
       if (isSentenceStart) return c.word.charAt(0).toUpperCase() + c.word.slice(1);
       return c.word;
@@ -200,7 +210,7 @@ export function getPredictions(
 
   if (scored.length < config.maxResults) {
     const existing = new Set(scored.map((s) => s.toLowerCase()));
-    for (const d of DEFAULT_PREDICTIONS) {
+    for (const d of fallback) {
       if (!existing.has(d.toLowerCase()) && scored.length < config.maxResults) {
         scored.push(d);
         existing.add(d.toLowerCase());

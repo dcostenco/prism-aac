@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WordFreqEntry } from '@/types';
 import { getPredictions, recordWord, recordBigram, recordTrigram, decayPredictions, buildNgramsFromPhrases, mergeUserNgramsWithBoost } from '@/engine/predictionEngine';
-import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
+import { DEFAULT_PREDICTIONS, getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { SupportedLanguage } from '@/engine/i18n';
@@ -18,21 +18,58 @@ import {
 const MAX_ENTRIES = 2000;
 const SEED_LAST_USED = 0;
 
+// When DEFAULT_PHRASES has no translation for a non-English locale,
+// getPhraseText falls back to the English text. Without filtering, this
+// pollutes the Russian/Arabic/etc. seed with English words like "I", "we",
+// "help" — which then leak as "I" / capitalized predictions in non-English
+// sessions. The per-script regex matches words made entirely of letters
+// valid for that language. English is a no-op (matches everything Latin).
+const SCRIPT_FILTER: Partial<Record<SupportedLanguage, RegExp>> = {
+  ru: /^[а-яё'\-]+$/,
+  uk: /^[а-яєіїґ'\-]+$/,
+  ar: /^[؀-ۿݐ-ݿ'\-]+$/,
+  ja: /^[぀-ゟ゠-ヿ一-鿿]+$/,
+  ko: /^[가-힯ᄀ-ᇿ㄰-㆏]+$/,
+  'zh-Hans': /^[一-鿿]+$/,
+  'zh-Hant': /^[一-鿿]+$/,
+  'zh-HK': /^[一-鿿]+$/,
+  // Latin-script European langs share the loose matcher — they may include
+  // accented variants of any letter in their alphabet.
+  es: /^[a-zñáéíóúü'\-]+$/,
+  fr: /^[a-zàâäçéèêëîïôœùûüÿ'\-]+$/,
+  de: /^[a-zäöüß'\-]+$/,
+  pt: /^[a-záàâãçéêíóôõú'\-]+$/,
+  ro: /^[a-zăâîșțşţ'\-]+$/,
+};
+
 function buildSeedForLanguage(lang: SupportedLanguage): {
   wordFreq: Record<string, WordFreqEntry>;
   bigrams: Record<string, WordFreqEntry>;
   trigrams: Record<string, WordFreqEntry>;
 } {
   const wordFreq: Record<string, WordFreqEntry> = {};
+  const script = SCRIPT_FILTER[lang];
   const phrases: string[] = DEFAULT_PHRASES.map(p => getPhraseText(p.id, lang, p.text));
   for (const phrase of phrases) {
     for (const raw of phrase.split(/\s+/)) {
       const word = raw.toLowerCase().replace(/[^\p{L}'-]/gu, '');
       if (word.length < 1) continue;
+      // Drop words that don't fit the language's script (English fallback
+      // pollution when no translation exists for a phrase).
+      if (script && !script.test(word)) continue;
       wordFreq[word] = { count: (wordFreq[word]?.count ?? 0) + 1, lastUsed: SEED_LAST_USED };
     }
   }
   const { bigrams, trigrams } = buildNgramsFromPhrases(phrases);
+  // Same script filter for n-grams — drop if any constituent word is wrong-script.
+  if (script) {
+    for (const k of Object.keys(bigrams)) {
+      if (k.split('|').some(w => !script.test(w))) delete bigrams[k];
+    }
+    for (const k of Object.keys(trigrams)) {
+      if (k.split('|').some(w => !script.test(w))) delete trigrams[k];
+    }
+  }
   for (const k of Object.keys(bigrams)) bigrams[k] = { ...bigrams[k], lastUsed: SEED_LAST_USED };
   for (const k of Object.keys(trigrams)) trigrams[k] = { ...trigrams[k], lastUsed: SEED_LAST_USED };
   return { wordFreq, bigrams, trigrams };
@@ -128,7 +165,13 @@ export const usePredictionStore = create<PredictionState>()(
         const mergedWf = mergeUserNgramsWithBoost(baselineWf, userWf);
         const mergedBg = mergeUserNgramsWithBoost(baselineBg, userBg);
         const mergedTg = mergeUserNgramsWithBoost(baselineTg, userTg);
-        const predictions = getPredictions(text, mergedWf, mergedBg, undefined, mergedTg);
+        // Pass language-specific fallback, no always-capitalized for non-EN,
+        // and a script filter that drops any wrong-script candidates that
+        // leak in from the English-seeded initial state.
+        const fallback = getPredictionsForLanguage(lang);
+        const alwaysCapitalized = lang === 'en' ? undefined : new Set<string>();
+        const scriptFilter = SCRIPT_FILTER[lang];
+        const predictions = getPredictions(text, mergedWf, mergedBg, undefined, mergedTg, fallback, alwaysCapitalized, scriptFilter);
         set({ predictions });
       },
 

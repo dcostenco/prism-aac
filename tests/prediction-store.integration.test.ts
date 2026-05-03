@@ -194,4 +194,35 @@ describe('predictionStore — fresh user prefix completion', () => {
     const lower = store.getState().predictions.map(p => p.toLowerCase());
     expect(lower.some(w => w.startsWith('при'))).toBe(true);
   });
+
+  // Regression — Russian user types a full Russian phrase and the corpus
+  // has no specific bigram/trigram match. Fallback MUST be the Russian
+  // PREDICTIONS_BY_LANG entries, not the English DEFAULT_PREDICTIONS.
+  // Reported as "у лукоморья дуб" returning I/We/Can/Help/All done.
+  it('Russian session falls back to Russian predictions when no match', async () => {
+    const store = await withCorpus('ru');
+    store.getState().updatePredictions('у лукоморья дуб ', 'ru');
+    const preds = store.getState().predictions;
+    // No suggestion should be one of the English fallback strings.
+    const englishFallbacks = new Set(['I', 'We', 'Can', 'Help', 'All done']);
+    for (const p of preds) {
+      expect(englishFallbacks.has(p)).toBe(false);
+    }
+    // At least one suggestion should be Cyrillic (a Russian word).
+    const hasCyrillic = preds.some(p => /[а-яё]/i.test(p));
+    expect(hasCyrillic).toBe(true);
+  });
+
+  it('empty Russian input never produces English-looking predictions', async () => {
+    const store = await withCorpus('ru');
+    store.getState().updatePredictions('', 'ru');
+    const preds = store.getState().predictions;
+    const englishFallbacks = new Set(['I', 'We', 'Can', 'Help', 'All done']);
+    for (const p of preds) {
+      expect(englishFallbacks.has(p)).toBe(false);
+    }
+    const ruFallbacks = new Set(['Я', 'Хочу', 'Помощь', 'Да', 'Нет']);
+    const allRussian = preds.every(p => /[а-яё]/i.test(p) || ruFallbacks.has(p));
+    expect(allRussian).toBe(true);
+  });
 });
