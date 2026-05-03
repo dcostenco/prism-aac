@@ -224,10 +224,24 @@ export async function getPictogramUrl(
     return url;
   }
 
+  // Single-character tokens are prepositions / articles / pronouns ("у",
+  // "и", "a", "I"). ARASAAC returns "letter X" alphabet pictograms for
+  // these, which is misleading in an AAC context. Skip pictogram fetch
+  // entirely for these short tokens.
+  if (token.length <= 1) {
+    memCacheSet(key, null);
+    return null;
+  }
+
   const fullPhrase = normalize(phrase);
   let blob = fullPhrase !== token ? await fetchArasaac(fullPhrase, lang) : null;
   if (!blob) blob = await fetchArasaac(token, lang);
-  if (!blob && lang !== 'en' && lang !== 'en-US') {
+  // English fallback — but ONLY when the token is itself ASCII-Latin. For
+  // Cyrillic / Arabic / CJK tokens, the English ARASAAC endpoint can't
+  // make sense of them and often returns a generic "letter X" pictogram
+  // (e.g. Cyrillic "у" → English "letter U" image).
+  const isLatinToken = /^[\x20-\x7e]+$/.test(token);
+  if (!blob && lang !== 'en' && lang !== 'en-US' && isLatinToken) {
     if (fullPhrase !== token) blob = await fetchArasaac(fullPhrase, 'en');
     if (!blob) blob = await fetchArasaac(token, 'en');
   }
