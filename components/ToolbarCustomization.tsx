@@ -112,6 +112,8 @@ export default function ToolbarCustomization() {
                   aria-label={`Uninstall ${meta.label}`}
                   title="Uninstall"
                 >×</button>
+              ) : id === 'settings' ? (
+                <span className="w-12 h-7 flex items-center justify-center text-[10px] text-muted" title="Settings cannot be hidden">🔒</span>
               ) : (
                 <button
                   className={`aac-btn w-12 h-7 rounded-full transition-colors ${

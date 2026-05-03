@@ -176,11 +176,11 @@ export default function Toolbar() {
   const visibleIds: string[] = [];
   const seen = new Set<ToolbarButtonId>();
   for (const id of toolbarConfig.order) {
-    if (toolbarConfig.enabled[id] !== false) visibleIds.push(id);
+    if (id === 'settings' || toolbarConfig.enabled[id] !== false) visibleIds.push(id);
     seen.add(id);
   }
   for (const id of DEFAULT_TOOLBAR_ORDER) {
-    if (!seen.has(id) && toolbarConfig.enabled[id] !== false) visibleIds.push(id);
+    if (!seen.has(id) && (id === 'settings' || toolbarConfig.enabled[id] !== false)) visibleIds.push(id);
   }
   const appIds = installedApps.map((a) => `app:${a}`);
   const allButtons = [...visibleIds, ...appIds];

@@ -15,6 +15,12 @@
 
 // ── Public Types ────────────────────────────────────────────────────────────
 
+export interface FaceLandmarkData {
+  blendshapes: Record<string, number>;
+  headPose: { pitch: number; yaw: number; roll: number };
+  timestamp: number;
+}
+
 export interface HeadTrackerOptions {
   dwellMs: number;
   sensitivity: number;
@@ -22,6 +28,7 @@ export interface HeadTrackerOptions {
   onMove: (x: number, y: number) => void;
   onDwell: (element: Element) => void;
   onStatusChange: (status: 'starting' | 'tracking' | 'lost' | 'stopped') => void;
+  onLandmarks?: (data: FaceLandmarkData) => void;
 }
 
 export interface HeadTrackerHandle {
@@ -75,6 +82,73 @@ async function initMediaPipeFace(): Promise<boolean> {
   await mpLoadPromise;
   mpLoadPromise = null;
   return !!mpFaceDetector;
+}
+
+// ── FaceLandmarker (478 landmarks + 52 blendshapes + head pose matrix) ─────
+// Runs alongside FaceDetector. FaceDetector provides the bounding box for
+// cursor tracking; FaceLandmarker provides blendshapes + transformation matrix
+// for gesture recognition (lip shapes, blink, head nod/shake).
+// Only initialized when onLandmarks callback is provided (gesture mode).
+
+let mpFaceLandmarker: unknown = null;
+let mpLandmarkerLoadPromise: Promise<void> | null = null;
+
+async function initMediaPipeFaceLandmarker(): Promise<boolean> {
+  if (mpFaceLandmarker) return true;
+  if (mpLandmarkerLoadPromise) { await mpLandmarkerLoadPromise; return !!mpFaceLandmarker; }
+  mpLandmarkerLoadPromise = (async () => {
+    try {
+      const vision = await import('@mediapipe/tasks-vision');
+      const { FaceLandmarker, FilesetResolver } = vision;
+      const fileset = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+      );
+      mpFaceLandmarker = await FaceLandmarker.createFromOptions(fileset, {
+        baseOptions: {
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          delegate: 'GPU',
+        },
+        runningMode: 'VIDEO',
+        numFaces: 1,
+        outputFaceBlendshapes: true,
+        outputFacialTransformationMatrixes: true,
+      });
+    } catch {
+      mpFaceLandmarker = null;
+    }
+  })();
+  await mpLandmarkerLoadPromise;
+  mpLandmarkerLoadPromise = null;
+  return !!mpFaceLandmarker;
+}
+
+function extractBlendshapes(result: any): Record<string, number> {
+  const map: Record<string, number> = {};
+  const categories = result?.faceBlendshapes?.[0]?.categories;
+  if (!categories) return map;
+  for (const c of categories) {
+    map[c.categoryName] = c.score;
+  }
+  return map;
+}
+
+function matrixToEuler(matrix: number[]): { pitch: number; yaw: number; roll: number } {
+  const r00 = matrix[0], r01 = matrix[4], r02 = matrix[8];
+  const r10 = matrix[1], r11 = matrix[5], r12 = matrix[9];
+  const r20 = matrix[2], r21 = matrix[6], r22 = matrix[10];
+  const sy = Math.sqrt(r00 * r00 + r10 * r10);
+  const singular = sy < 1e-6;
+  let pitch: number, yaw: number, roll: number;
+  if (!singular) {
+    pitch = Math.atan2(r21, r22);
+    yaw = Math.atan2(-r20, sy);
+    roll = Math.atan2(r10, r00);
+  } else {
+    pitch = Math.atan2(-r12, r11);
+    yaw = Math.atan2(-r20, sy);
+    roll = 0;
+  }
+  return { pitch, yaw, roll };
 }
 
 // ── Internals ───────────────────────────────────────────────────────────────
@@ -138,6 +212,7 @@ interface CameraSource {
   stream: MediaStream | null;
   nativeDetector: { detect: (source: HTMLVideoElement) => Promise<{ boundingBox: DOMRect }[]> } | null;
   lastDetection: CameraDetection;
+  lastLandmarks: FaceLandmarkData | null;
   active: boolean;
 }
 
@@ -161,6 +236,7 @@ function createCameraSource(index: number): CameraSource | null {
     stream: null,
     nativeDetector: null,
     lastDetection: { face: null, cameraIndex: index, confidence: 0, canvasWidth: 320, canvasHeight: 240, timestamp: 0 },
+    lastLandmarks: null,
     active: false,
   };
 }
@@ -323,6 +399,20 @@ async function detectFromSource(source: CameraSource): Promise<CameraDetection> 
   // and native FaceDetector both fail, we report face=null and let the caller
   // mark the camera 'lost' rather than emit garbage coordinates.
 
+  // FaceLandmarker: extract blendshapes + head pose for gesture recognition
+  if (mpFaceLandmarker) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lmResult = (mpFaceLandmarker as any).detectForVideo(source.video, Date.now());
+      if (lmResult?.faceBlendshapes?.length > 0) {
+        const bs = extractBlendshapes(lmResult);
+        const matrixData = lmResult.facialTransformationMatrixes?.[0]?.data;
+        const headPose = matrixData ? matrixToEuler(Array.from(matrixData)) : { pitch: 0, yaw: 0, roll: 0 };
+        source.lastLandmarks = { blendshapes: bs, headPose, timestamp: Date.now() };
+      }
+    } catch { /* FaceLandmarker failed — gesture detection degrades gracefully */ }
+  }
+
   const confidence = face ? (face.width * face.height) / (source.canvas.width * source.canvas.height) : 0;
 
   const detection: CameraDetection = {
@@ -439,6 +529,11 @@ export function startHeadTracker(
 
   opts.onStatusChange('starting');
 
+  // Initialize FaceLandmarker if gesture recognition callback is provided
+  if (opts.onLandmarks) {
+    initMediaPipeFaceLandmarker().catch(() => {});
+  }
+
   // ── Initialize all cameras ──────────────────────────────────────────
 
   const initPromises = ids.map(async (deviceId, i) => {
@@ -534,6 +629,16 @@ export function startHeadTracker(
     }
 
     opts.onStatusChange('tracking');
+
+    // Emit face landmarks from the primary (best) camera for gesture detection
+    if (opts.onLandmarks) {
+      const primarySource = activeSources.reduce((best, s) =>
+        s.lastDetection.confidence > best.lastDetection.confidence ? s : best
+      );
+      if (primarySource.lastLandmarks && (now - primarySource.lastLandmarks.timestamp) < STALE_THRESHOLD_MS) {
+        opts.onLandmarks(primarySource.lastLandmarks);
+      }
+    }
 
     const { normX, normY } = fused;
 

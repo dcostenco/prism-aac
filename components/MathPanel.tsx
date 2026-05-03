@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useAuthStore } from '@/store/authStore';
@@ -8,52 +8,30 @@ import { aacSpeak } from '@/services/aacSpeak';
 import { askAI } from '@/services/aiService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useT } from '@/engine/useT';
+import { MATH_ITEMS } from '@/constants/mathSymbols';
+import type { MathCategory } from '@/types';
 
-const OPERATORS = [
-  { label: '+', value: ' + ' },
-  { label: '−', value: ' − ' },
-  { label: '×', value: ' × ' },
-  { label: '÷', value: ' ÷ ' },
-  { label: '=', value: ' = ' },
-  { label: '≠', value: ' ≠ ' },
-  { label: '<', value: ' < ' },
-  { label: '>', value: ' > ' },
-  { label: '≤', value: ' ≤ ' },
-  { label: '≥', value: ' ≥ ' },
+const CATEGORIES: { key: MathCategory; i18n: string; icon: string }[] = [
+  { key: 'basic',      i18n: 'math_basic',          icon: '+-' },
+  { key: 'digits',     i18n: 'math_numbers',        icon: '#' },
+  { key: 'algebra',    i18n: 'math_algebra',        icon: 'x²' },
+  { key: 'constants',  i18n: 'math_constants',      icon: 'π' },
+  { key: 'trig',       i18n: 'math_trigonometry',   icon: 'sin' },
+  { key: 'calculus',   i18n: 'math_calculus',       icon: '∫' },
+  { key: 'greek',      i18n: 'math_greek_letters',  icon: 'α' },
+  { key: 'logic-sets', i18n: 'math_logic_sets',     icon: '∈' },
 ];
 
-const SPECIAL = [
-  { label: 'x²', value: '²', title: 'Superscript 2' },
-  { label: 'xⁿ', value: 'ⁿ', title: 'Superscript n' },
-  { label: '½', value: '½', title: 'Fraction 1/2' },
-  { label: '⅓', value: '⅓', title: 'Fraction 1/3' },
-  { label: '¼', value: '¼', title: 'Fraction 1/4' },
-  { label: '√', value: '√', title: 'Square root' },
-  { label: 'π', value: 'π', title: 'Pi' },
-  { label: '∞', value: '∞', title: 'Infinity' },
-  { label: '(', value: '(', title: 'Open paren' },
-  { label: ')', value: ')', title: 'Close paren' },
-  { label: '%', value: '%', title: 'Percent' },
-  { label: '.', value: '.', title: 'Decimal point' },
-];
-
-const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
-const VARIABLES = ['x', 'y', 'z', 'a', 'b', 'n'];
-
-const TTS_MAP: Record<string, string> = {
-  '+': 'plus', '−': 'minus', '×': 'times', '÷': 'divided by',
-  '=': 'equals', '≠': 'not equal to', '<': 'less than', '>': 'greater than',
-  '≤': 'less than or equal to', '≥': 'greater than or equal to',
-  '²': 'squared', 'ⁿ': 'to the power of n', '√': 'square root of',
-  'π': 'pi', '∞': 'infinity', '½': 'one half', '⅓': 'one third', '¼': 'one quarter',
-  '%': 'percent',
-};
+const TTS_MAP: Record<string, string> = Object.fromEntries(
+  MATH_ITEMS.map((m) => [m.symbol, m.ttsText])
+);
 
 const MATH_TUTOR_CONTEXT = 'math-tutor';
 
 function expressionToSpeech(expr: string): string {
   let speech = expr;
-  for (const [sym, word] of Object.entries(TTS_MAP)) {
+  const sorted = Object.entries(TTS_MAP).sort((a, b) => b[0].length - a[0].length);
+  for (const [sym, word] of sorted) {
     speech = speech.replaceAll(sym, ` ${word} `);
   }
   return speech.replace(/\s+/g, ' ').trim();
@@ -64,12 +42,17 @@ export default function MathPanel() {
   const { appendText } = useMessageStore();
   const { speechRate, speechVolume } = useSettingsStore();
   const profile = useAuthStore((s) => s.profile);
-  const { t, ttsCode, outputTtsCode } = useT();
+  const { t, outputTtsCode } = useT();
   const [expression, setExpression] = useState('');
-  const [showMore, setShowMore] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<MathCategory>('basic');
   const [aiHint, setAiHint] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const categoryItems = useMemo(
+    () => MATH_ITEMS.filter((m) => m.category === activeCategory).sort((a, b) => a.sortOrder - b.sortOrder),
+    [activeCategory]
+  );
 
   if (sidePanel !== 'math') return null;
 
@@ -77,7 +60,11 @@ export default function MathPanel() {
 
   const addToExpression = (val: string) => {
     tapFeedback();
-    setExpression((prev) => prev + val);
+    const needsSpace = val.length > 1 || '+-×÷=≠≈<>≤≥±·'.includes(val);
+    setExpression((prev) => {
+      if (needsSpace) return prev + (prev && !prev.endsWith(' ') ? ' ' : '') + val + ' ';
+      return prev + val;
+    });
     setAiHint('');
   };
 
@@ -224,40 +211,57 @@ export default function MathPanel() {
 
       {/* Math keyboard */}
       <div className="shrink-0 border-t border-theme p-2 space-y-1.5">
-        <div className="flex gap-1.5">
-          <button onClick={() => { tapFeedback(); setShowMore(!showMore); }} className={`${mathKey} px-3 py-2.5 text-sm ${showMore ? 'bg-[#4CAF50] text-white border-transparent' : ''}`}>
-            {showMore ? 'ABC' : 'More'}
-          </button>
-          {(showMore ? SPECIAL : OPERATORS).map((item) => (
+        {/* Category tabs */}
+        <div className="flex gap-1 overflow-x-auto no-scrollbar">
+          {CATEGORIES.map((cat) => (
             <button
-              key={item.label}
-              onClick={() => addToExpression(item.value)}
-              className={`${mathKey} flex-1 py-2.5 text-lg`}
-              title={'title' in item ? (item as { title: string }).title : item.label}
+              key={cat.key}
+              onClick={() => { tapFeedback(); setActiveCategory(cat.key); }}
+              className={`${mathKey} px-2.5 py-1.5 text-xs whitespace-nowrap shrink-0 ${
+                activeCategory === cat.key ? 'bg-[#4CAF50] text-white border-transparent' : ''
+              }`}
             >
-              {item.label}
+              <span className="font-mono mr-1">{cat.icon}</span>
+              <span className="hidden sm:inline">{t(cat.i18n)}</span>
             </button>
           ))}
-          <button onClick={backspace} className={`${mathKey} px-3 py-2.5 text-lg`} aria-label={t('backspace')}>⌫</button>
         </div>
 
+        {/* Symbol grid for active category */}
+        <div className="flex gap-1.5 flex-wrap max-h-[clamp(44px,10svh,88px)] overflow-y-auto">
+          {categoryItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => addToExpression(item.symbol)}
+              className={`${mathKey} min-w-[clamp(36px,8vw,48px)] py-2 text-lg`}
+              title={item.label}
+              aria-label={item.ttsText}
+            >
+              {item.symbol}
+            </button>
+          ))}
+        </div>
+
+        {/* Number pad — always visible */}
         <div className="flex gap-1.5">
-          {DIGITS.map((d) => (
+          {['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((d) => (
             <button key={d} onClick={() => addToExpression(d)} className={`${mathKey} flex-1 py-2.5 text-xl`}>
               {d}
             </button>
           ))}
         </div>
 
+        {/* Variables + space + speak/send + backspace */}
         <div className="flex gap-1.5">
-          {VARIABLES.map((v) => (
+          {['x', 'y', 'z', 'a', 'b', 'n'].map((v) => (
             <button key={v} onClick={() => addToExpression(v)} className={`${mathKey} flex-1 py-2 text-lg italic`}>
               {v}
             </button>
           ))}
-          <button onClick={() => addToExpression(' ')} className={`${mathKey} flex-[3] py-2 text-sm`}>
+          <button onClick={() => addToExpression(' ')} className={`${mathKey} flex-[2] py-2 text-sm`}>
             ␣
           </button>
+          <button onClick={backspace} className={`${mathKey} px-3 py-2 text-lg`} aria-label={t('backspace')}>⌫</button>
           <button onClick={sendToMessage} className="aac-btn bg-[#4CAF50] text-white rounded-lg flex-[2] py-2 font-bold text-base flex items-center justify-center">
             {t('speak')} ▶
           </button>

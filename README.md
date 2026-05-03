@@ -248,7 +248,7 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 | AI Chat | — | Yes | Yes | Yes |
 | Azure Neural TTS — basic neural voices | — | Yes | Yes | Yes |
 | Azure Neural TTS — premium / emotional tones | — | — | Yes | Yes |
-| Head/eye tracking — camera-based cursor + dwell click (no touch needed) | Yes | Yes | Yes | Yes |
+| Gesture recognition — head nod, shake, blink assignable to any button/action | — | Yes | Yes | Yes |
 | Clinical vocabulary (600 words × 12 langs — medical, BCBA, daily living) | — | Yes | Yes | Yes |
 | AI-powered translation (beyond offline dictionary) | — | Yes | Yes | Yes |
 | Marketplace — Game Packs, Voice Packs, Picture Editor, Music Composer | — | Yes | Yes | Yes |
@@ -264,7 +264,7 @@ Both AI Chat and the toolbar carry a 🎙 Mic button on every browser that ships
 > - **Voice personas** — named voices (male/female/child) with pitch settings.
 > - **Emergency contact UI** — wire existing `emergencyService.ts` to a settings form for configuring contacts and medical profile.
 > - **Web search inside AI Chat** — planned for Standard+.
-> - **Gesture recognition** — customizable gestures (head nod, shake, blink) assignable to any button/action.
+> - **Gesture recorder** — let caregiver record a custom gesture from camera and assign it to any action.
 
 ### Accessibility commitments that ride above the tier table
 

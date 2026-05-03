@@ -90,7 +90,8 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
     });
     if (meRes.ok) {
       const data = await meRes.json();
-      if (data?.plan) plan = data.plan as SynaluxProfile['plan'];
+      if (data?.aac_plan) plan = data.aac_plan as SynaluxProfile['plan'];
+      else if (data?.plan) plan = data.plan as SynaluxProfile['plan'];
       isPlatformAdmin = !!data?.is_platform_admin;
     }
   } catch { /* tier lookup is best-effort */ }
