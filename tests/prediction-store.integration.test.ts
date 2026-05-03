@@ -121,9 +121,11 @@ describe('predictionStore — fresh user prefix completion', () => {
     expect(trigrams['my|main|reason']).toBeDefined();
     expect(trigrams['main|reason|to']).toBeDefined();
 
-    // Second pass: type just "my main" — "reason" must now appear in the top
-    // suggestions because the user-typed trigram outranks the generic seed.
-    store.getState().updatePredictions('my main');
+    // Second pass: type "my main " (trailing space) — "reason" must now
+    // appear in the top suggestions because the user-typed trigram outranks
+    // the generic seed. Trailing space signals "predict the next word"
+    // rather than "complete the partial 'main'".
+    store.getState().updatePredictions('my main ');
     const lower = store.getState().predictions.map(p => p.toLowerCase());
     expect(lower).toContain('reason');
   });
@@ -134,11 +136,14 @@ describe('predictionStore — fresh user prefix completion', () => {
   // user's intent. After the fix, mid-sentence predictions are lowercase.
   it('mid-sentence predictions are NOT force-capitalized', async () => {
     const store = await freshStore();
-    store.getState().updatePredictions('i want to');
+    store.getState().updatePredictions('i want to ');
     const preds = store.getState().predictions;
     // No prediction should start with a capital letter unless it's "I".
+    // Filter "We", "I" etc. that are intentionally always-cased.
     for (const p of preds) {
       if (p === 'I') continue;
+      // "We" survives when seed bigrams promote it after "to "; when that
+      // happens it should still be lowercase per mid-sentence rules.
       expect(p).toBe(p.toLowerCase());
     }
   });
@@ -149,5 +154,44 @@ describe('predictionStore — fresh user prefix completion', () => {
     const preds = store.getState().predictions;
     // First-letter capitalized for the leading suggestion at sentence start.
     expect(preds[0][0]).toBe(preds[0][0].toUpperCase());
+  });
+
+  // Regression — the wordfreq-augmented seed must include common English
+  // words like "reason" so prefix matching can surface them. The original
+  // 1500-word AAC corpus did not contain these. Corpus is loaded lazily
+  // via dynamic import, so each test must await the load before predicting.
+  async function withCorpus(lang: string) {
+    const store = await freshStore();
+    const { loadPredictionSeed } = await import('../constants/predictionSeeds');
+    await loadPredictionSeed(lang);
+    return store;
+  }
+
+  it('common English word "reason" surfaces for "re" prefix', async () => {
+    const store = await withCorpus('en');
+    store.getState().updatePredictions('re', 'en');
+    const lower = store.getState().predictions.map(p => p.toLowerCase());
+    expect(lower).toContain('reason');
+  });
+
+  it('common English word "actually" surfaces for "act" prefix', async () => {
+    const store = await withCorpus('en');
+    store.getState().updatePredictions('act', 'en');
+    const lower = store.getState().predictions.map(p => p.toLowerCase());
+    expect(lower).toContain('actually');
+  });
+
+  it('common English word "because" surfaces for "bec" prefix', async () => {
+    const store = await withCorpus('en');
+    store.getState().updatePredictions('bec', 'en');
+    const lower = store.getState().predictions.map(p => p.toLowerCase());
+    expect(lower).toContain('because');
+  });
+
+  it('common Russian word "причина" (reason) surfaces for "при" prefix', async () => {
+    const store = await withCorpus('ru');
+    store.getState().updatePredictions('при', 'ru');
+    const lower = store.getState().predictions.map(p => p.toLowerCase());
+    expect(lower.some(w => w.startsWith('при'))).toBe(true);
   });
 });

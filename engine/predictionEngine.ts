@@ -178,7 +178,15 @@ export function getPredictions(
       word,
       total: s.trigram * trigramWeight + s.prefix * prefixWeight + s.bigram * bigramW + s.freq * freqW + s.recency * recencyW,
     }))
-    .filter((c) => c.word.toLowerCase() !== lastWord && c.word.toLowerCase() !== partialWord)
+    .filter((c) => {
+      const lc = c.word.toLowerCase();
+      if (lc === lastWord || lc === partialWord) return false;
+      // When mid-typing, only surface candidates that actually complete the
+      // partial word. Otherwise high-frequency unrelated words (e.g. "so",
+      // "m", "s") leak into the suggestions and crowd out true completions.
+      if (partialWord && !lc.startsWith(partialWord)) return false;
+      return true;
+    })
     .sort((a, b) => b.total - a.total)
     .slice(0, config.maxResults)
     .map((c) => {

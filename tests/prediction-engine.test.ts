@@ -23,7 +23,10 @@ describe('PredictionEngine — Core algorithm', () => {
     const bg: Record<string, WordFreqEntry> = {
       'want|pizza': { count: 8, lastUsed: Date.now() },
     };
-    const preds = getPredictions('I want', wf, bg);
+    // Trailing space signals "user finished a word, predict the next one".
+    // Without trailing space the engine treats input as mid-typing and only
+    // surfaces prefix completions (predictable.app behavior).
+    const preds = getPredictions('I want ', wf, bg);
     // Mid-sentence predictions stay lowercase (matches user typing register).
     // Capitalization is reserved for sentence-start (empty input or after .!?)
     // and special always-caps words like "I".
@@ -143,7 +146,7 @@ describe('PredictionEngine — Trigram', () => {
       'i|am|hungry': { count: 8, lastUsed: Date.now() },
       'i|am|thirsty': { count: 2, lastUsed: Date.now() },
     };
-    const preds = getPredictions('I am', wf, bg, undefined, tg);
+    const preds = getPredictions('I am ', wf, bg, undefined, tg);
     expect(preds[0].toLowerCase()).toBe('hungry');
   });
 
@@ -180,7 +183,7 @@ describe('PredictionEngine — Trigram', () => {
       'want|pizza': { count: 8, lastUsed: Date.now() },
     };
     const tg: Record<string, WordFreqEntry> = {};
-    const preds = getPredictions('I want', wf, bg, undefined, tg);
+    const preds = getPredictions('I want ', wf, bg, undefined, tg);
     expect(preds[0]).toBe('pizza');
   });
 
@@ -194,14 +197,17 @@ describe('PredictionEngine — Trigram', () => {
   it('capitalizes prediction after sentence-ending punctuation', () => {
     const wf: Record<string, WordFreqEntry> = { hello: { count: 100, lastUsed: Date.now() } };
     const bg: Record<string, WordFreqEntry> = {};
-    const preds = getPredictions('Done.', wf, bg);
+    // Trailing space after the period signals "predict the next sentence's
+    // first word". Without trailing space, the engine treats "Done." as a
+    // partial token and won't suggest unrelated next-sentence words.
+    const preds = getPredictions('Done. ', wf, bg);
     expect(preds[0]).toBe('Hello');
   });
 
   it('always capitalizes "i" pronoun regardless of position', () => {
     const wf: Record<string, WordFreqEntry> = { i: { count: 100, lastUsed: Date.now() } };
     const bg: Record<string, WordFreqEntry> = { 'and|i': { count: 50, lastUsed: Date.now() } };
-    const preds = getPredictions('you and', wf, bg);
+    const preds = getPredictions('you and ', wf, bg);
     expect(preds[0]).toBe('I');
   });
 });
@@ -256,7 +262,7 @@ describe('PredictionEngine — Gap tests', () => {
     const bg: Record<string, WordFreqEntry> = {
       'want|pizza': { count: 5, lastUsed: Date.now() },
     };
-    const preds = getPredictions('I Want', {}, bg);
+    const preds = getPredictions('I Want ', {}, bg);
     expect(preds.map(p => p.toLowerCase())).toContain('pizza');
   });
 });

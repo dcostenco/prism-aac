@@ -46,3 +46,4 @@ test-results/
 prism-deep-review.txt
 *.txt
 !LICENSE.txt
+.venv-tools/
