@@ -10,7 +10,8 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 
 ## 🆕 What's New (May 2026)
 
-### Production model upgraded → `prism-coder:7b` v18aac
+### Production model upgraded → `prism-coder:7b` v18aac-MAX
+- **MAX-precision retrain** — DoRA **r=512 / α=1024** (2× rank vs. prior v18aac), **5 epochs** on 4× H100, batch 64 effective. Final loss ~0.056, mean token accuracy **98.2%**.
 - **AAC realigned eval: 47/48 (98%)** — beats prior v17.4 (85%) by **+13pp**
   - emergency_qa **13/13 perfect** (life-safety priority held)
   - text_correct **15/15 perfect**, translate **8/8 perfect**, ask_ai **5/5**, caregiver 6/7
@@ -20,7 +21,8 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
   - Fatigue-aware threshold tuning (10–20% relaxation after 15–30 min)
   - Per-gesture threshold/dwell/cooldown tuning advice
 - **Built on** Qwen2.5-Coder-7B-Instruct base with full SFT on caregiver + emergency + text_correct + translate + gesture corpus (~4500 rows). Apache 2.0 / CC-BY-4.0 commercial-safe data.
-- **Rollback ready** — prior v17.4 (`prism-coder:7b-prev-20260503-0936`) is one `ollama cp` away if needed.
+- **Cloud companion** for paid users on iPad Pro M4 (16 GB) and Synalux online: **`prism-aac:14b`** (DoRA r=384) plus emergency-grade routing to **`prism-coder:72b-v18bfcl`** when online.
+- **Rollback ready** — prior v18aac (`prism-coder:7b-prev-*`) and v17.4 are one `ollama cp` away.
 
 ### Gesture Recognition System (NEW feature)
 - **7 facial gestures** detected via MediaPipe blendshapes: `smile`, `brow_raise`, `brow_lower`, `jaw_open`, `eye_blink_left`, `eye_blink_right`, `head_tilt`
@@ -381,9 +383,9 @@ A non-verbal child must never wait on a network for their own voice. Anything on
 | Path | Where | Backend today | Local-first? |
 |---|---|---|---|
 | **Word prediction** | `store/predictionStore.ts` | client-side trigram + bigram + prefix + frequency + recency, seeded from 58 default phrases | yes — sub-millisecond, never touches the network |
-| **Voice → text (STT)** | `services/voiceInputService.ts` (default) + `services/whisperService.ts` (HQ opt-in) | Web Speech API on-device for fast typing-as-you-speak; mlx-whisper localhost:8002 for high-accuracy push-to-talk | yes — audio never leaves the browser; Whisper-HQ runs in a local server when available |
-| **Text → voice (TTS)** | `services/speechService.ts` + `services/kokoroTTS.ts` + `services/piperTTS.ts` + `services/azureTTS.ts` | 4-tier all-neural chain: Azure (online HQ + emotional) → Kokoro / Piper (offline neural) → Web Speech → WASM espeak | yes — neural offline for all 14 locales |
-| **Vision / scene** | `services/visionService.ts` | Qwen2.5-VL-7B at localhost:8001 when running Mac dev server; portal endpoint otherwise | yes if local |
+| **Voice → text (STT)** | `services/voiceInputService.ts` | Web Speech API on-device for fast typing-as-you-speak | yes — audio never leaves the browser |
+| **Text → voice (TTS)** | `services/speechService.ts` + `services/kokoroTTS.ts` + `services/azureTTS.ts` | 3-tier chain: Azure (online HQ + emotional) → Kokoro (offline neural, 6 langs) → Web Speech API | yes — neural offline for Kokoro-supported languages |
+| **Vision / scene** | *Roadmap* | Planned: Qwen2.5-VL-7B local server for caregiver photo context | — |
 | **Text auto-correction** | `services/textCorrectService.ts` + `services/localModel.ts` | probes local Ollama prism-coder:7b at boot. If reachable → all corrections route to local (~200-400ms). If not → portal Gemini 2.5 Flash with a hard 1.5s timeout. | yes — local Ollama wins whenever it's there |
 | **Pictograms (symbols)** | `services/pictogramService.ts` | ARASAAC public CDN — symbol search + image fetch, IndexedDB-cached | yes — free CDN, no portal cost |
 | **Pictograms (AI gen)** | portal `/api/v1/prism-aac/pictogram` | Together AI FLUX.1 Schnell, platform-cached in Supabase Storage | no — non-critical, paid tiers, lazy load |
@@ -605,7 +607,7 @@ Every prism-aac user gets **neural-quality TTS in their native locale, fully off
 | 3 | Device Premium / Enhanced voice (Web Speech API) | High (neural on iOS/macOS Premium) | <50ms | All 14 locales | Voice downloaded in OS Settings |
 | 4 | Device Basic voice / WASM espeak-ng | Functional | <50ms | All locales | Always available, last resort |
 
-The Kokoro tier is **on by default** for the 6 languages it covers — every user, paid or free, gets neural offline TTS in those languages without configuring anything. For Romanian, Ukrainian, Russian, German, and Arabic, Piper provides the same offline-neural experience. For Hong Kong Cantonese (zh-HK), the chain prefers Azure (zh-HK-HiuMaanNeural) and falls back to Web Speech.
+The Kokoro tier is **on by default** for the 6 languages it covers — every user, paid or free, gets neural offline TTS in those languages without configuring anything. For Romanian, Ukrainian, Russian, German, Arabic, and Hong Kong Cantonese (zh-HK), the chain uses Azure when available and falls back to Web Speech API.
 
 The system **never fails to speak.** If a neural offline engine fails on a particular device, it demotes for the session and the next tier picks up — communication is too important to silently drop.
 
@@ -614,9 +616,9 @@ The system **never fails to speak.** If a neural offline engine fails on a parti
 | Function | Engine | Speed | Memory | Offline |
 |----------|--------|:---:|:---:|:---:|
 | Word prediction | Trigram + bigram + personalization (per-locale, incl. all 3 Chinese variants) | <5ms | <2MB | YES |
-| Text-to-speech | Kokoro-82M / Piper / Azure Neural (4-tier chain, all 14 locales) | 50-100ms (neural offline) | 350-700MB cached | YES |
-| Speech-to-text | Web Speech API (default) → mlx-whisper local server (HQ, opt-in) | 130ms (Whisper) | 1.6GB | YES if local |
-| Vision / scene understanding | Qwen2.5-VL-7B local server (caregiver photo, emergency scene context) | 200-400ms | 4GB | YES if local |
+| Text-to-speech | Kokoro-82M / Azure Neural (3-tier chain) | 50-100ms (neural offline) | 350MB cached | YES |
+| Speech-to-text | Web Speech API (on-device) | <50ms | 0 (browser built-in) | YES |
+| Vision / scene understanding | *Roadmap* | — | — | — |
 | Emergency alerts | Local queue + auto-flush | Instant | <1KB | YES |
 | AI assistant | Prism-Coder v12 (llama.cpp / Ollama) | 130ms | 4GB | YES |
 
