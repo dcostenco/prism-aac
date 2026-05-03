@@ -328,7 +328,10 @@ function GestureRecognitionSettings() {
               </p>
               <button
                 className="aac-btn w-full mt-2 py-2 rounded-lg text-[#9C27B0] font-bold text-xs border border-[#9C27B0]/30"
-                onClick={() => { tapFeedback(); }}
+                onClick={() => {
+                  tapFeedback();
+                  alert('Custom gesture recording requires camera access. This feature will be available in the next update.');
+                }}
               >
                 + Record Custom Gesture
               </button>

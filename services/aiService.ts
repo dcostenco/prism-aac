@@ -71,6 +71,7 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
     const sessRes = await fetch(`${base}/api/auth/session`, {
       credentials: 'include',
       headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(5000),
     });
     if (!sessRes.ok) return null;
     const sess = await sessRes.json();
@@ -87,6 +88,7 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
     const meRes = await fetch(`${SYNALUX_API}/roles/me`, {
       credentials: 'include',
       headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(5000),
     });
     if (meRes.ok) {
       const data = await meRes.json();
@@ -135,6 +137,7 @@ async function callSynalux(
       source: 'prism-aac',
       ...(options?.webSearch ? { web_search: true } : {}),
     }),
+    signal: AbortSignal.timeout(30000),
   });
 
   if (res.status === 401) { clearAuth(); throw new Error('Session expired — sign in again'); }
@@ -179,6 +182,7 @@ async function callLocal(prompt: string): Promise<string> {
         stream: false,
         options: { num_predict: 300, temperature: 0.3 },
       }),
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) throw new Error('Local model unavailable');
     const data = await res.json();

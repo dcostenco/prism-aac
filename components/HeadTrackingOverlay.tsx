@@ -7,6 +7,11 @@ import {
   isHeadTrackingSupported,
   type HeadTrackerHandle,
 } from '@/services/headTracker';
+import {
+  createGestureDetector,
+  destroyGestureDetector,
+  type GestureDetector,
+} from '@/services/gestureService';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 
@@ -27,6 +32,7 @@ export default function HeadTrackingOverlay() {
   const enabled = useSettingsStore((s) => s.headTrackingEnabled);
   const dwellMs = useSettingsStore((s) => s.headTrackingDwellMs);
   const sensitivity = useSettingsStore((s) => s.headTrackingSensitivity);
+  const gestureConfig = useSettingsStore((s) => s.gestureConfig);
 
   const { t } = useT();
 
@@ -36,6 +42,7 @@ export default function HeadTrackingOverlay() {
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
 
   const handleRef = useRef<HeadTrackerHandle | null>(null);
+  const gestureDetectorRef = useRef<GestureDetector | null>(null);
   const pipVideoRef = useRef<HTMLVideoElement | null>(null);
   const dwellStartRef = useRef(0);
   const dwellElementRef = useRef<Element | null>(null);
@@ -63,10 +70,28 @@ export default function HeadTrackingOverlay() {
       return;
     }
 
+    // Create gesture detector if gesture recognition is enabled
+    if (gestureConfig.enabled) {
+      gestureDetectorRef.current = createGestureDetector(gestureConfig, (event) => {
+        const mapping = gestureConfig.mappings.find(m => m.gesture === event.gesture);
+        if (mapping) {
+          // Execute the mapped action — trigger a click on the matching button
+          const target = document.querySelector(`[data-action="${mapping.action}"], [data-key="${mapping.action}"], #${mapping.action}`);
+          if (target instanceof HTMLElement) {
+            tapFeedback();
+            target.click();
+          }
+        }
+      });
+    }
+
     const handle = startHeadTracker({
       dwellMs,
       sensitivity,
       smoothing: 0.15,
+      onLandmarks: gestureConfig.enabled ? (data) => {
+        gestureDetectorRef.current?.processFrame(data);
+      } : undefined,
       onMove(x, y) {
         setCursorPos({ x, y });
 
@@ -117,9 +142,11 @@ export default function HeadTrackingOverlay() {
       cancelAnimationFrame(rafDwellRef.current);
       handle.stop();
       handleRef.current = null;
+      destroyGestureDetector();
+      gestureDetectorRef.current = null;
     };
     // Re-create tracker when key settings change
-  }, [enabled, dwellMs, sensitivity, animateDwellProgress]);
+  }, [enabled, dwellMs, sensitivity, gestureConfig, animateDwellProgress]);
 
   if (!enabled) return null;
 

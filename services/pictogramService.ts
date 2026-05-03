@@ -151,12 +151,15 @@ async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
   try {
     const res = await fetch(`${ARASAAC_API}/pictograms/${langCode}/search/${encodeURIComponent(token)}`, {
       headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
     const data: ArasaacHit[] = await res.json();
     if (!Array.isArray(data) || data.length === 0) return null;
     const id = data[0]._id;
-    const imgRes = await fetch(`${ARASAAC_CDN}/${id}/${id}_500.png`);
+    const imgRes = await fetch(`${ARASAAC_CDN}/${id}/${id}_500.png`, {
+      signal: AbortSignal.timeout(5000),
+    });
     if (!imgRes.ok) return null;
     return await imgRes.blob();
   } catch {
@@ -181,6 +184,7 @@ async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null
         style: 'aac-pictogram',
         styleVersion: STYLE_VERSION,
       }),
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) {
       console.warn(`[pictogram] Synalux AI returned ${res.status} for "${phrase}" (${lang})`);

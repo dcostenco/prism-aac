@@ -11,6 +11,7 @@ import SchedulePanel from './SchedulePanel';
 import GamesPanel from './GamesPanel';
 import MarketplacePanel from './MarketplacePanel';
 import PictureEditorPanel from './marketplace/panels/PictureEditorPanel';
+import MusicComposerPanel from './marketplace/panels/MusicComposerPanel';
 import MathPanel from './MathPanel';
 import HistoryModal from './HistoryModal';
 import SettingsModal from './SettingsModal';
@@ -176,6 +177,7 @@ export default function PrismApp() {
           <GamesPanel />
           <MarketplacePanel />
           <PictureEditorPanel />
+          <MusicComposerPanel />
           {!inlinePanelOpen && (
             <div className="flex-1 flex flex-col min-h-0">
               <Keyboard />

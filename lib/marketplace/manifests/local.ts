@@ -132,14 +132,14 @@ export const LOCAL_CATALOG: ModuleManifest[] = [
   },
   {
     slug: 'music-composer',
-    version: '0.0.0',
+    version: '1.0.0',
     kind: 'panel',
     tier: 'standard',
     category: 'tools',
     nameKey: 'mp_music_composer',
     descKey: 'mp_music_composer_desc',
     icon: '🎵',
-    status: 'coming_soon',
+    status: 'available',
     handlerPayload: { panelId: 'music-composer' },
   },
   {

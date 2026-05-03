@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { HistoryEntry } from '@/types';
 import { ToneStyle } from '@/services/azureTTS';
+import { detectEmergency } from '@/services/emergencyService';
 
 const MAX_UNDO = 20;
 
@@ -103,6 +104,21 @@ export const useMessageStore = create<MessageState>()(
         try {
           import('@/services/adaptiveEngine').then((m) => m.recordMessage(text));
         } catch {}
+
+        // Emergency detection: check every spoken message for crisis phrases.
+        // If detected, trigger the emergency response system.
+        const emergency = detectEmergency(text);
+        if (emergency.detected && emergency.severity) {
+          import('@/services/emergencyService').then((mod) => {
+            mod.triggerEmergency(
+              emergency.phrase || text,
+              emergency.severity!,
+              (_seconds) => { /* countdown handled by EmergencyOverlay if mounted */ },
+              (_sent, _queued) => { /* completion logged by service */ },
+            );
+          }).catch(() => { /* emergency service import failed — non-blocking */ });
+        }
+
         set((s) => ({
           history: [{ text, timestamp: Date.now() }, ...s.history].slice(0, 100),
         }));

@@ -98,6 +98,7 @@ function BubblePopGame({ onBack }: { onBack: () => void }) {
   const [level, setLevel] = useState(1);
   const [celebration, setCelebration] = useState(false);
   const rafRef = useRef(0);
+  const celebrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const spawnBubbles = useCallback(() => {
@@ -143,12 +144,18 @@ function BubblePopGame({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     if (allGone && !celebration) {
       setCelebration(true);
-      setTimeout(() => {
+      celebrationTimerRef.current = setTimeout(() => {
         setCelebration(false);
         setLevel(l => l + 1);
         spawnBubbles();
       }, 2000);
     }
+    return () => {
+      if (celebrationTimerRef.current) {
+        clearTimeout(celebrationTimerRef.current);
+        celebrationTimerRef.current = null;
+      }
+    };
   }, [allGone, celebration, spawnBubbles]);
 
   const popBubble = (id: number) => {
@@ -1629,6 +1636,7 @@ function TurnTakerGame({ onBack }: { onBack: () => void }) {
   const [diceValue, setDiceValue] = useState(0);
   const [rolling, setRolling] = useState(false);
   const [celebration, setCelebration] = useState(false);
+  const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const langKey = language.split('-')[0];
   const myTurnText = TURN_MY_I18N[langKey] || TURN_MY_I18N.en;
@@ -1648,11 +1656,11 @@ function TurnTakerGame({ onBack }: { onBack: () => void }) {
     aacSpeak(rollText, speechRate, speechVolume);
 
     let ticks = 0;
-    const interval = setInterval(() => {
+    rollIntervalRef.current = setInterval(() => {
       setDiceValue(Math.floor(Math.random() * 6));
       ticks++;
       if (ticks >= 10) {
-        clearInterval(interval);
+        if (rollIntervalRef.current) { clearInterval(rollIntervalRef.current); rollIntervalRef.current = null; }
         const finalValue = Math.floor(Math.random() * 6);
         setDiceValue(finalValue);
         const points = finalValue + 1;
@@ -1676,6 +1684,13 @@ function TurnTakerGame({ onBack }: { onBack: () => void }) {
       }
     }, 100);
   };
+
+  // Cleanup roll interval on unmount
+  useEffect(() => {
+    return () => {
+      if (rollIntervalRef.current) { clearInterval(rollIntervalRef.current); rollIntervalRef.current = null; }
+    };
+  }, []);
 
   // Auto-roll for "My turn" (the app/parent's turn)
   useEffect(() => {

@@ -34,7 +34,7 @@ describe('marketplace/local — preserves pre-refactor catalog', () => {
     ['game-packs', 'game-pack', 'free', 'available'],
     ['voice-packs', 'voice-pack', 'standard', 'coming_soon'],
     ['picture-editor', 'panel', 'standard', 'available'],
-    ['music-composer', 'panel', 'standard', 'coming_soon'],
+    ['music-composer', 'panel', 'standard', 'available'],
     ['aac-designer', 'panel', 'advanced', 'coming_soon'],
     ['video-composer', 'panel', 'advanced', 'coming_soon'],
   ];
