@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WordFreqEntry } from '@/types';
-import { getPredictions, recordWord, recordBigram, decayPredictions, buildNgramsFromPhrases } from '@/engine/predictionEngine';
+import { getPredictions, recordWord, recordBigram, recordTrigram, decayPredictions, buildNgramsFromPhrases, mergeUserNgramsWithBoost } from '@/engine/predictionEngine';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
@@ -21,6 +21,7 @@ const SEED_LAST_USED = 0;
 function buildSeedForLanguage(lang: SupportedLanguage): {
   wordFreq: Record<string, WordFreqEntry>;
   bigrams: Record<string, WordFreqEntry>;
+  trigrams: Record<string, WordFreqEntry>;
 } {
   const wordFreq: Record<string, WordFreqEntry> = {};
   const phrases: string[] = DEFAULT_PHRASES.map(p => getPhraseText(p.id, lang, p.text));
@@ -31,12 +32,13 @@ function buildSeedForLanguage(lang: SupportedLanguage): {
       wordFreq[word] = { count: (wordFreq[word]?.count ?? 0) + 1, lastUsed: SEED_LAST_USED };
     }
   }
-  const { bigrams } = buildNgramsFromPhrases(phrases);
+  const { bigrams, trigrams } = buildNgramsFromPhrases(phrases);
   for (const k of Object.keys(bigrams)) bigrams[k] = { ...bigrams[k], lastUsed: SEED_LAST_USED };
-  return { wordFreq, bigrams };
+  for (const k of Object.keys(trigrams)) trigrams[k] = { ...trigrams[k], lastUsed: SEED_LAST_USED };
+  return { wordFreq, bigrams, trigrams };
 }
 
-const seedCache = new Map<string, { wordFreq: Record<string, WordFreqEntry>; bigrams: Record<string, WordFreqEntry> }>();
+const seedCache = new Map<string, { wordFreq: Record<string, WordFreqEntry>; bigrams: Record<string, WordFreqEntry>; trigrams: Record<string, WordFreqEntry> }>();
 function getSeed(lang: SupportedLanguage) {
   if (!seedCache.has(lang)) seedCache.set(lang, buildSeedForLanguage(lang));
   return seedCache.get(lang)!;
@@ -94,8 +96,9 @@ interface PredictionState {
   predictions: string[];
   wordFreq: Record<string, WordFreqEntry>;
   bigrams: Record<string, WordFreqEntry>;
+  trigrams: Record<string, WordFreqEntry>;
   updatePredictions: (text: string, lang?: SupportedLanguage) => void;
-  learnWord: (word: string, previousWord?: string) => void;
+  learnWord: (word: string, previousWord?: string, prevPrevWord?: string) => void;
   runDecay: () => void;
   ensureSeed: () => void;
 }
@@ -106,63 +109,79 @@ export const usePredictionStore = create<PredictionState>()(
       predictions: DEFAULT_PREDICTIONS,
       wordFreq: { ...SEED_EN.wordFreq },
       bigrams: { ...SEED_EN.bigrams },
+      trigrams: { ...SEED_EN.trigrams },
 
       updatePredictions: (text, lang = 'en') => {
         const seed = getSeed(lang);
         const corpus = syncCorpusSeed(lang);
         const userWf = get().wordFreq;
         const userBg = get().bigrams;
+        const userTg = get().trigrams;
         const plan = useAuthStore.getState().profile?.plan;
         const clinical = plan && PAID_PLANS.has(plan) ? getClinicalWordFreq(lang) : {};
-        // Layered merge — user counts always win (latest entry overrides):
-        //   corpus n-grams (broad coverage) → phrase seed (UI defaults) →
-        //   clinical vocab (paid tiers) → personal counts (live).
-        const mergedWf = { ...(corpus?.wordFreq ?? {}), ...seed.wordFreq, ...clinical, ...userWf };
-        const mergedBg = { ...(corpus?.bigrams ?? {}), ...seed.bigrams, ...userBg };
-        const predictions = getPredictions(text, mergedWf, mergedBg, undefined, corpus?.trigrams);
+        // Corpus + phrase seed + clinical = baseline. User counts get a boost
+        // multiplier on TOP of the baseline so personal typing patterns can
+        // outrank generic suggestions instead of being normalized to ~0.2.
+        const baselineWf = { ...(corpus?.wordFreq ?? {}), ...seed.wordFreq, ...clinical };
+        const baselineBg = { ...(corpus?.bigrams ?? {}), ...seed.bigrams };
+        const baselineTg = { ...(corpus?.trigrams ?? {}), ...seed.trigrams };
+        const mergedWf = mergeUserNgramsWithBoost(baselineWf, userWf);
+        const mergedBg = mergeUserNgramsWithBoost(baselineBg, userBg);
+        const mergedTg = mergeUserNgramsWithBoost(baselineTg, userTg);
+        const predictions = getPredictions(text, mergedWf, mergedBg, undefined, mergedTg);
         set({ predictions });
       },
 
-      learnWord: (word, previousWord) => {
+      learnWord: (word, previousWord, prevPrevWord) => {
         const state = get();
         const wf = recordWord(state.wordFreq, word);
         let bg = state.bigrams;
+        let tg = state.trigrams;
         if (previousWord) bg = recordBigram(bg, previousWord, word);
-        set({ wordFreq: wf, bigrams: bg });
+        if (previousWord && prevPrevWord) tg = recordTrigram(tg, prevPrevWord, previousWord, word);
+        set({ wordFreq: wf, bigrams: bg, trigrams: tg });
       },
 
       runDecay: () => {
-        const { wordFreq, bigrams } = get();
+        const { wordFreq, bigrams, trigrams } = get();
         set({
           wordFreq: pruneIfNeeded(decayPredictions(wordFreq)),
           bigrams: pruneIfNeeded(decayPredictions(bigrams)),
+          trigrams: pruneIfNeeded(decayPredictions(trigrams)),
         });
       },
 
       ensureSeed: () => {
-        const { wordFreq, bigrams } = get();
+        const { wordFreq, bigrams, trigrams } = get();
         const lang = useSettingsStore.getState().language || 'en';
         const seed = getSeed(lang);
         const wfMerged = { ...seed.wordFreq, ...wordFreq };
         const bgMerged = { ...seed.bigrams, ...bigrams };
+        const tgMerged = { ...seed.trigrams, ...(trigrams ?? {}) };
         if (Object.keys(wfMerged).length === Object.keys(wordFreq).length &&
-            Object.keys(bgMerged).length === Object.keys(bigrams).length) return;
-        set({ wordFreq: wfMerged, bigrams: bgMerged });
+            Object.keys(bgMerged).length === Object.keys(bigrams).length &&
+            Object.keys(tgMerged).length === Object.keys(trigrams ?? {}).length) return;
+        set({ wordFreq: wfMerged, bigrams: bgMerged, trigrams: tgMerged });
       },
     }),
     {
       name: 'prism-aac-predictions',
-      version: 3,
+      version: 4,
       migrate: (persistedState: unknown, version: number) => {
         const s = (persistedState ?? {}) as Partial<PredictionState>;
         if (version < 3) {
           const wf = { ...SEED_EN.wordFreq, ...(s.wordFreq ?? {}) };
           const bg = { ...SEED_EN.bigrams, ...(s.bigrams ?? {}) };
-          return { ...s, wordFreq: wf, bigrams: bg };
+          return { ...s, wordFreq: wf, bigrams: bg, trigrams: { ...SEED_EN.trigrams } };
+        }
+        if (version < 4) {
+          // v4 adds user trigram tracking. Earlier versions never recorded
+          // user trigrams; seed-only trigrams are added here.
+          return { ...s, trigrams: { ...SEED_EN.trigrams, ...((s as Partial<PredictionState>).trigrams ?? {}) } };
         }
         return s as PredictionState;
       },
-      partialize: (s) => ({ wordFreq: s.wordFreq, bigrams: s.bigrams }),
+      partialize: (s) => ({ wordFreq: s.wordFreq, bigrams: s.bigrams, trigrams: s.trigrams }),
       merge: (persistedState, currentState) => {
         const p = (persistedState ?? {}) as Partial<PredictionState>;
         return {
@@ -170,6 +189,7 @@ export const usePredictionStore = create<PredictionState>()(
           ...p,
           wordFreq: { ...SEED_EN.wordFreq, ...(p.wordFreq ?? {}) },
           bigrams: { ...SEED_EN.bigrams, ...(p.bigrams ?? {}) },
+          trigrams: { ...SEED_EN.trigrams, ...(p.trigrams ?? {}) },
         };
       },
       // Debounced localStorage: writes at most once per 3 seconds.

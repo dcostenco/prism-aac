@@ -24,7 +24,10 @@ describe('PredictionEngine — Core algorithm', () => {
       'want|pizza': { count: 8, lastUsed: Date.now() },
     };
     const preds = getPredictions('I want', wf, bg);
-    expect(preds[0]).toBe('Pizza'); // bigram "want→pizza" should boost it to #1
+    // Mid-sentence predictions stay lowercase (matches user typing register).
+    // Capitalization is reserved for sentence-start (empty input or after .!?)
+    // and special always-caps words like "I".
+    expect(preds[0]).toBe('pizza');
   });
 
   it('excludes the last word from predictions', () => {
@@ -178,7 +181,28 @@ describe('PredictionEngine — Trigram', () => {
     };
     const tg: Record<string, WordFreqEntry> = {};
     const preds = getPredictions('I want', wf, bg, undefined, tg);
-    expect(preds[0]).toBe('Pizza');
+    expect(preds[0]).toBe('pizza');
+  });
+
+  it('capitalizes prediction at sentence start (empty input)', () => {
+    const wf: Record<string, WordFreqEntry> = { hello: { count: 100, lastUsed: Date.now() } };
+    const bg: Record<string, WordFreqEntry> = {};
+    const preds = getPredictions('', wf, bg);
+    expect(preds[0]).toBe('Hello');
+  });
+
+  it('capitalizes prediction after sentence-ending punctuation', () => {
+    const wf: Record<string, WordFreqEntry> = { hello: { count: 100, lastUsed: Date.now() } };
+    const bg: Record<string, WordFreqEntry> = {};
+    const preds = getPredictions('Done.', wf, bg);
+    expect(preds[0]).toBe('Hello');
+  });
+
+  it('always capitalizes "i" pronoun regardless of position', () => {
+    const wf: Record<string, WordFreqEntry> = { i: { count: 100, lastUsed: Date.now() } };
+    const bg: Record<string, WordFreqEntry> = { 'and|i': { count: 50, lastUsed: Date.now() } };
+    const preds = getPredictions('you and', wf, bg);
+    expect(preds[0]).toBe('I');
   });
 });
 

@@ -9,7 +9,11 @@ import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
 
-const CAPS_LOCK_HOLD_MS = 500;
+// Long-press threshold for caps lock — raised from 500 ms to 1200 ms after
+// non-technical users (motor-impaired AAC consumers, caregivers) reported
+// accidental caps-lock latching from normal shift taps. 1200 ms is well
+// outside the range of an unintentional press and still snappy on purpose.
+const CAPS_LOCK_HOLD_MS = 1200;
 
 export default function Keyboard() {
   const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
@@ -60,7 +64,8 @@ export default function Keyboard() {
     const lastWord = words.length > 0 ? words[words.length - 1] : '';
     if (lastWord) {
       const prevWord = words.length > 1 ? words[words.length - 2] : undefined;
-      learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase());
+      const prevPrevWord = words.length > 2 ? words[words.length - 3] : undefined;
+      learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase(), prevPrevWord?.toLowerCase());
       const translationActive = useSettingsStore.getState().language !== useSettingsStore.getState().outputLanguage;
       if (translationActive || (autoSpeak && soundEnabled)) {
         aacSpeak(lastWord, speechRate, speechVolume, activeTone);

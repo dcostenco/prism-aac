@@ -96,4 +96,58 @@ describe('predictionStore — fresh user prefix completion', () => {
     store.getState().updatePredictions('');
     expect(store.getState().predictions.length).toBeGreaterThanOrEqual(5);
   });
+
+  // Regression — reported by a tester who typed her sentence twice and got
+  // identical (un-improved) suggestions on the second pass. Root cause was
+  // (a) trigrams never recorded for user typing, (b) user n-gram counts were
+  // normalized to ~0.2 against the corpus seed and could not outrank generic
+  // suggestions. After the fix, the second pass should surface the user's
+  // own words at rank #1.
+  it('learns trigrams from user typing — second pass predicts forward', async () => {
+    const store = await freshStore();
+    const phrase = ['my', 'main', 'reason', 'to', 'use', 'this', 'program', 'to', 'type', 'faster'];
+
+    // First pass: simulate typing the phrase word-by-word.
+    let prevPrev: string | undefined;
+    let prev: string | undefined;
+    for (const w of phrase) {
+      store.getState().learnWord(w, prev, prevPrev);
+      prevPrev = prev;
+      prev = w;
+    }
+
+    // Verify the trigram store actually got populated this pass.
+    const { trigrams } = store.getState();
+    expect(trigrams['my|main|reason']).toBeDefined();
+    expect(trigrams['main|reason|to']).toBeDefined();
+
+    // Second pass: type just "my main" — "reason" must now appear in the top
+    // suggestions because the user-typed trigram outranks the generic seed.
+    store.getState().updatePredictions('my main');
+    const lower = store.getState().predictions.map(p => p.toLowerCase());
+    expect(lower).toContain('reason');
+  });
+
+  // Regression — reported as "typed words are always in capitals." Root cause
+  // was that getPredictions was unconditionally Title-Casing every result, so
+  // tapping prediction tiles produced "My Main Reason..." regardless of the
+  // user's intent. After the fix, mid-sentence predictions are lowercase.
+  it('mid-sentence predictions are NOT force-capitalized', async () => {
+    const store = await freshStore();
+    store.getState().updatePredictions('i want to');
+    const preds = store.getState().predictions;
+    // No prediction should start with a capital letter unless it's "I".
+    for (const p of preds) {
+      if (p === 'I') continue;
+      expect(p).toBe(p.toLowerCase());
+    }
+  });
+
+  it('sentence-start predictions ARE capitalized', async () => {
+    const store = await freshStore();
+    store.getState().updatePredictions('');
+    const preds = store.getState().predictions;
+    // First-letter capitalized for the leading suggestion at sentence start.
+    expect(preds[0][0]).toBe(preds[0][0].toUpperCase());
+  });
 });

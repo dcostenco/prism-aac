@@ -73,11 +73,14 @@ export default function CategoryPanel() {
     tapFeedback();
     const existingWords = text.trim().split(/\s+/).filter(Boolean);
     const prevWord = existingWords.length > 0 ? existingWords[existingWords.length - 1] : undefined;
+    const prevPrevWord = existingWords.length > 1 ? existingWords[existingWords.length - 2] : undefined;
     appendText(phraseText);
     const phraseWords = phraseText.trim().split(/\s+/);
     let prev = prevWord;
+    let prevPrev = prevPrevWord;
     for (const w of phraseWords) {
-      learnWord(w.toLowerCase(), prev?.toLowerCase());
+      learnWord(w.toLowerCase(), prev?.toLowerCase(), prevPrev?.toLowerCase());
+      prevPrev = prev;
       prev = w;
     }
     if (autoSpeak && soundEnabled) aacSpeak(phraseText, speechRate, speechVolume);

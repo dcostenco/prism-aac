@@ -11,6 +11,30 @@ const DEFAULT_CONFIG: PredictionConfig = {
 
 type Scores = { bigram: number; trigram: number; freq: number; recency: number; prefix: number };
 
+// Words that should ALWAYS be capitalized when emitted as a prediction.
+// English-only — other languages don't have a capitalized first-person pronoun.
+const ALWAYS_CAPITALIZED = new Set(['i']);
+
+// User-typed n-grams get a multiplier when merged with corpus, so a count=2
+// personal bigram outranks a count=10 generic corpus bigram. Without this,
+// the user's own typing patterns can never overtake the seed.
+const USER_NGRAM_BOOST = 10;
+
+export function mergeUserNgramsWithBoost(
+  corpus: Record<string, WordFreqEntry>,
+  user: Record<string, WordFreqEntry>,
+): Record<string, WordFreqEntry> {
+  const out = { ...corpus };
+  for (const [k, v] of Object.entries(user)) {
+    const existing = out[k];
+    out[k] = {
+      count: (existing?.count ?? 0) + v.count * USER_NGRAM_BOOST,
+      lastUsed: v.lastUsed ?? existing?.lastUsed ?? 0,
+    };
+  }
+  return out;
+}
+
 export function getPredictions(
   currentText: string,
   wordFreq: Record<string, WordFreqEntry>,
@@ -21,6 +45,11 @@ export function getPredictions(
   const words = currentText.trim().split(/\s+/).filter(Boolean);
   const lastWord = words.length > 0 ? words[words.length - 1].toLowerCase() : '';
   const prevWord = words.length > 1 ? words[words.length - 2].toLowerCase() : '';
+
+  // Sentence-start detection: capitalize the next prediction if we're at the
+  // start of the message OR right after sentence-ending punctuation.
+  const trimmed = currentText.trimEnd();
+  const isSentenceStart = trimmed === '' || /[.!?]$/.test(trimmed);
 
   const candidateMap = new Map<string, Scores>();
   const getOrCreate = (w: string) =>
@@ -99,7 +128,14 @@ export function getPredictions(
     .filter((c) => c.word.toLowerCase() !== lastWord && c.word.toLowerCase() !== partialWord)
     .sort((a, b) => b.total - a.total)
     .slice(0, config.maxResults)
-    .map((c) => c.word.charAt(0).toUpperCase() + c.word.slice(1));
+    .map((c) => {
+      const lower = c.word.toLowerCase();
+      // Always-capitalized words (e.g. English "I") win regardless of position.
+      if (ALWAYS_CAPITALIZED.has(lower)) return lower.charAt(0).toUpperCase() + lower.slice(1);
+      // Capitalize first word of sentence; otherwise keep the user-typed lowercase.
+      if (isSentenceStart) return c.word.charAt(0).toUpperCase() + c.word.slice(1);
+      return c.word;
+    });
 
   if (scored.length < config.maxResults) {
     const existing = new Set(scored.map((s) => s.toLowerCase()));
