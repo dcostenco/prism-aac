@@ -249,11 +249,14 @@ export default function Toolbar() {
         </button>
 
         {showLangPicker && (
-          <div className="absolute top-full mt-1 left-0 surface-bar rounded-xl border border-theme shadow-2xl z-50 p-1.5 grid grid-cols-4 gap-1 w-48">
+          <div
+            className="absolute top-full mt-1 right-0 surface-bar rounded-xl border border-theme shadow-2xl z-50 p-2 grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-[80svh] overflow-y-auto"
+            style={{ width: 'min(94vw, 380px)' }}
+          >
             {LANG_META.map((l) => (
               <button
                 key={l.code}
-                className={`aac-btn rounded-lg px-1 py-2 text-center font-bold text-sm border border-theme ${
+                className={`aac-btn rounded-lg px-1 py-2 text-center font-bold border border-theme min-h-[clamp(2.75rem,7svh,3.5rem)] flex flex-col items-center justify-center gap-0.5 ${
                   (showLangPicker === 'input' ? language : outputLanguage) === l.code
                     ? 'bg-[#4CAF50] text-white border-transparent'
                     : 'surface-key text-primary'
@@ -270,8 +273,8 @@ export default function Toolbar() {
                   setShowLangPicker(null);
                 }}
               >
-                <div className="text-[10px] font-bold">{l.nativeName.slice(0, 3)}</div>
-                <div className="text-[9px] uppercase mt-0.5 text-muted">{l.code}</div>
+                <div className="text-[clamp(0.75rem,3vw,0.95rem)] font-bold leading-tight whitespace-nowrap">{l.nativeName}</div>
+                <div className="text-[clamp(0.55rem,1.8vw,0.7rem)] uppercase opacity-75">{l.code}</div>
               </button>
             ))}
           </div>
