@@ -237,18 +237,43 @@ export function getPredictions(
   const freqW = config.frequencyWeight * (1 - trigramWeight / 2);
   const recencyW = config.recencyWeight;
 
+  // The "partial-is-complete-word" check decides whether to allow non-prefix
+  // candidates through the filter. A confidently common standalone word
+  // (English "to" count 963, "I" 1732, "you" 867) means the user might be
+  // done typing it and ready for next-word predictions like "to|be".
+  // A low-count fragment ("re" 49, "act" 49) is almost certainly the start
+  // of a longer word (really, action) and we should only surface
+  // prefix-completing candidates. Threshold of 100 was chosen by inspecting
+  // the en seed: it cleanly separates common AAC standalone words from
+  // mid-word fragments, given seed counts run 1-2000.
+  const partialIsCompleteWord = !!partialWord && (wordFreq[partialWord]?.count ?? 0) >= 100;
+  // Halve prefix weight when the partial is a complete word, so bigram
+  // continuations ("to|listen", "to|be", "I|want") outweigh prefix
+  // self-extensions ("to" → "today"). For fragments, prefix still
+  // dominates so "re" → "really" works as expected.
+  const effectivePrefixWeight = partialIsCompleteWord ? prefixWeight * 0.5 : prefixWeight;
+
+  // Build the score-ranked candidate list. Each candidate carries its raw
+  // score components so the filter can distinguish "this matches because
+  // we predicted the next word" (bigram/trigram score) from "this matches
+  // because letters happen to overlap" (freq/recency only).
   const filtered = [...candidateMap.entries()]
     .map(([word, s]) => ({
       word,
-      total: s.trigram * trigramWeight + s.prefix * prefixWeight + s.bigram * bigramW + s.freq * freqW + s.recency * recencyW,
+      total: s.trigram * trigramWeight + s.prefix * effectivePrefixWeight + s.bigram * bigramW + s.freq * freqW + s.recency * recencyW,
+      hasContext: s.bigram > 0 || s.trigram > 0,
     }))
     .filter((c) => {
       const lc = c.word.toLowerCase();
       if (lc === lastWord || lc === partialWord) return false;
-      // When mid-typing, only surface candidates that actually complete the
-      // partial word. Otherwise high-frequency unrelated words (e.g. "so",
-      // "m", "s") leak into the suggestions and crowd out true completions.
-      if (partialWord && !lc.startsWith(partialWord)) return false;
+      // Mid-typing rule: surface candidates that complete the partial word.
+      // EXCEPTION — if (a) the partial is itself a confidently complete
+      // word AND (b) the candidate carries bigram/trigram score, it's a
+      // contextually relevant next-word. E.g. user types "to" → "be"
+      // surfaces via "to|be" bigram alongside "together"/"top". Without
+      // this exception, AAC users typing common short words only see
+      // prefix completions, never useful next-word continuations.
+      if (partialWord && !lc.startsWith(partialWord) && !(c.hasContext && partialIsCompleteWord)) return false;
       // Drop wrong-script words. Necessary because the store's initial
       // wordFreq state seeds with English DEFAULT_PHRASES, which leak into
       // non-English sessions (e.g. "I" appearing for a Russian user).
@@ -284,15 +309,24 @@ export function getPredictions(
     }
     return w.toLowerCase().slice(0, partialWord.length + 1);
   };
+  // Cap forms per stem at MAX_PER_STEM. Strict 1-per-stem was too
+  // aggressive for noun declensions where different forms ARE different
+  // communicative content: ro "timp" (time, indef.) and "timpul" (the
+  // time, def.) both belong on the bar. 2 strikes a balance — Russian
+  // conjugation families (думать/думал/думают/думаю/думающий) still
+  // collapse to 2 representatives instead of 5; Romanian/English noun
+  // declensions surface bare + definite forms together.
+  const MAX_PER_STEM = 2;
   const taken: typeof filtered = [];
   if (partialWord) {
-    const seenStems = new Set<string>();
+    const stemCounts = new Map<string, number>();
     for (const c of filtered) {
       if (taken.length >= config.maxResults) break;
       const key = groupKey(c.word);
       if (key === null) { taken.push(c); continue; }
-      if (seenStems.has(key)) continue;
-      seenStems.add(key);
+      const count = stemCounts.get(key) ?? 0;
+      if (count >= MAX_PER_STEM) continue;
+      stemCounts.set(key, count + 1);
       taken.push(c);
     }
   }
