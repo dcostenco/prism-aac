@@ -107,8 +107,9 @@ export default function MessageBar() {
       if (norm(fixed) === norm(trimmed)) return;
       const inputTokens = trimmed.split(/\s+/);
       const fixedTokens = fixed.trim().split(/\s+/);
-      // In completion mode, reject suggestions that left the trailing
-      // fragment exactly as typed (i.e. didn't actually complete it).
+      // In completion mode, attempt to extract a completion token for the PredictionBar.
+      // Even if we fail (e.g. the AI autocorrected "togoso" -> "to go so" instead of completing),
+      // we still want to show the full autocorrect suggestion below the bar.
       if (isMidWord) {
         const inputLast = inputTokens[inputTokens.length - 1] ?? '';
         // Find the AI's completion token. It must strictly extend the partial word.
@@ -121,13 +122,13 @@ export default function MessageBar() {
           }
         }
         
-        if (candidates.length === 0) return; // AI failed to provide a valid completion
-
-        const expectedIndex = inputTokens.length - 1;
-        candidates.sort((a, b) => Math.abs(a.index - expectedIndex) - Math.abs(b.index - expectedIndex));
-        
-        const aiCompletion = candidates[0].token;
-        setAiCompletion(aiCompletion);
+        if (candidates.length > 0) {
+          const expectedIndex = inputTokens.length - 1;
+          candidates.sort((a, b) => Math.abs(a.index - expectedIndex) - Math.abs(b.index - expectedIndex));
+          
+          const aiCompletion = candidates[0].token;
+          setAiCompletion(aiCompletion);
+        }
       }
       setSuggestion(fixed);
     }, 400);
