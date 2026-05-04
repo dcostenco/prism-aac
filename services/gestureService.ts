@@ -149,6 +149,8 @@ export interface GestureConfig {
   fusionWeights: { head: number; blink: number; mouth: number; brow: number };
 }
 
+import { LOCAL_OLLAMA_URL, LOCAL_MODEL } from '@/services/localModel';
+
 export const DEFAULT_GESTURE_CONFIG: GestureConfig = {
   enabled: false,
   mode: 'basic',
@@ -501,7 +503,46 @@ export class GestureDetector {
     if (this.recordBuffer.length < 5) return null;
     const captured = [...this.recordBuffer];
     this.recordBuffer = [];
+    // Trigger offline viseme classification immediately after recording
+    this.classifyViseme8B(captured).catch(console.error);
     return captured;
+  }
+
+  async classifyViseme8B(buffer: number[][]): Promise<void> {
+    try {
+      // Downsample buffer to save context window (take every 3rd frame)
+      const downsampled = buffer.filter((_, i) => i % 3 === 0);
+      const payload = JSON.stringify(downsampled.map(f => ({
+        jaw: f[0].toFixed(2),
+        smileL: f[1].toFixed(2),
+        smileR: f[2].toFixed(2),
+        pucker: f[3].toFixed(2),
+        blinkL: f[4].toFixed(2),
+        blinkR: f[5].toFixed(2),
+        brow: f[6].toFixed(2)
+      })));
+
+      const prompt = `You are a viseme classification AI (Prism 8B). Given the following sequence of facial blendshapes over time, classify the semantic meaning of the gesture (e.g. "YES", "NO", "SMILE", "SURPRISED").\n\nData: ${payload}\n\nOutput only the single word classification.`;
+
+      const res = await fetch(LOCAL_OLLAMA_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: LOCAL_MODEL,
+          prompt,
+          stream: false,
+          options: { temperature: 0.1, num_predict: 10 }
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        console.log('[GestureDetector] 8B Viseme Classification Result:', data.response);
+        // We could map this classification to AAC intent automatically here
+      }
+    } catch (e) {
+      console.error('[GestureDetector] 8B Viseme Classification failed', e);
+    }
   }
 
   // ── Auto-learning feedback ─────────────────────────────────────────────

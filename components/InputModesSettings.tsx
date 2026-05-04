@@ -29,6 +29,9 @@ function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; la
 
 export default function InputModesSettings() {
   const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [isRecordingGesture, setIsRecordingGesture] = useState(false);
+  const [recordingStep, setRecordingStep] = useState(0); // 0=idle, 1=prep, 2=record, 3=done
+  const [gestureName, setGestureName] = useState('');
   const cameraInputEnabled = useSettingsStore(s => s.cameraInputEnabled);
   const cameraTrackingTarget = useSettingsStore(s => s.cameraTrackingTarget);
   const showHandCalibration = useSettingsStore(s => s.showHandCalibration);
@@ -334,6 +337,28 @@ function GestureRecognitionSettings() {
               >
                 + Record Custom Gesture
               </button>
+            </div>
+          )}
+
+          {/* Reset */}
+          <button
+            onClick={() => { tapFeedback(); update({ gestureConfig: { ...DEFAULT_GESTURE_CONFIG } }); }}
+            className="aac-btn w-full py-2 rounded-lg text-xs text-muted border border-theme surface-key"
+          >
+            Reset gestures to defaults
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+    ) : '+ Record Custom Gesture'}
+              </button>
+              {isRecordingGesture && recordingStep === 2 && (
+                <div className="mt-2 p-2 bg-red-100 rounded text-red-600 text-xs text-center font-bold animate-pulse">
+                  🔴 Recording 8B Local Viseme Data...
+                </div>
+              )}
             </div>
           )}
 
