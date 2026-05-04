@@ -1,6 +1,6 @@
 # PrismAAC Changelog
 
-## [0.2.1] - 2026-05-04 — Prism Coder 7B promotion + 14B sibling (via Synalux portal)
+## [0.2.2] - 2026-05-04 — Prism Coder 7B promotion + 14B sibling (via Synalux portal)
 
 > Coordinated with **synalux-private v0.14.4** — the Synalux portal now serves PrismAAC traffic from a fresh 7B (massive BFCL gain) and a new 14B sibling for paid-tier medium queries. **No PrismAAC code changes required.** All routing happens server-side.
 
