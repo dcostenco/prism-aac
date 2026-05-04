@@ -70,7 +70,7 @@ const SYNALUX_EMERGENCY_API =
 //
 // Critical alerts (abuse, assault) have NO cancel mechanism at all.
 const CANCEL_HOLD_MS = 3000;
-let cancelTouches: { topLeft: number; bottomRight: number } = { topLeft: 0, bottomRight: 0 };
+const cancelTouches: { topLeft: number; bottomRight: number } = { topLeft: 0, bottomRight: 0 };
 let cancelHoldTimer: ReturnType<typeof setTimeout> | null = null;
 let activeCancelFn: (() => void) | null = null;
 

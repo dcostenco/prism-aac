@@ -122,6 +122,7 @@ async function initMediaPipeFaceLandmarker(): Promise<boolean> {
   return !!mpFaceLandmarker;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractBlendshapes(result: any): Record<string, number> {
   const map: Record<string, number> = {};
   const categories = result?.faceBlendshapes?.[0]?.categories;

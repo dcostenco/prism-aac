@@ -49,7 +49,7 @@ export default function HeadTrackingOverlay() {
   const rafDwellRef = useRef(0);
 
   // Dwell progress animation
-  const animateDwellProgress = useCallback(() => {
+  const animateDwellProgress = useCallback(function animate() {
     if (!dwellElementRef.current || dwellStartRef.current === 0) {
       setDwellProgress(0);
       return;
@@ -58,15 +58,18 @@ export default function HeadTrackingOverlay() {
     const progress = Math.min(1, elapsed / dwellMs);
     setDwellProgress(progress);
     if (progress < 1) {
-      rafDwellRef.current = requestAnimationFrame(animateDwellProgress);
+      rafDwellRef.current = requestAnimationFrame(animate);
     }
   }, [dwellMs]);
 
   // Start / stop tracker based on enabled flag
   useEffect(() => {
+    let mounted = true;
     if (!enabled || !isHeadTrackingSupported()) {
       if (handleRef.current) { handleRef.current.stop(); handleRef.current = null; }
-      setStatus('stopped');
+      queueMicrotask(() => {
+        if (mounted) setStatus('stopped');
+      });
       return;
     }
 
@@ -115,7 +118,7 @@ export default function HeadTrackingOverlay() {
           cancelAnimationFrame(rafDwellRef.current);
         }
       },
-      onDwell(_element) {
+      onDwell() {
         tapFeedback();
         setDwellProgress(0);
         dwellElementRef.current = null;
@@ -138,6 +141,7 @@ export default function HeadTrackingOverlay() {
     }, 200);
 
     return () => {
+      mounted = false;
       clearInterval(checkVideo);
       cancelAnimationFrame(rafDwellRef.current);
       handle.stop();
@@ -163,9 +167,7 @@ export default function HeadTrackingOverlay() {
     '#999';
 
   // SVG dwell ring
-  const ringRadius = 16;
-  const ringCircumference = 2 * Math.PI * ringRadius;
-  const ringOffset = ringCircumference * (1 - dwellProgress);
+  // SVG renders circle directly
 
   return (
     <div

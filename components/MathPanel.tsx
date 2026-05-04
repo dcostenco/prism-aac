@@ -54,8 +54,6 @@ export default function MathPanel() {
     [activeCategory]
   );
 
-  if (sidePanel !== 'math') return null;
-
   const aiEnabled = !!profile;
 
   const addToExpression = (val: string) => {
@@ -87,7 +85,7 @@ export default function MathPanel() {
     tapFeedback();
     if (!expression.trim()) return;
     aacSpeak(expressionToSpeech(expression), speechRate, speechVolume);
-  }, [expression, speechRate, speechVolume, outputTtsCode]);
+  }, [expression, speechRate, speechVolume]);
 
   const sendToMessage = () => {
     tapFeedback();
@@ -123,6 +121,8 @@ export default function MathPanel() {
     setAiLoading(false);
     setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }), 100);
   };
+
+  if (sidePanel !== 'math') return null;
 
   const mathKey = 'aac-btn surface-key text-primary rounded-lg font-bold select-none border border-theme flex items-center justify-center';
 

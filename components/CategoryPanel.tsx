@@ -20,7 +20,7 @@ import { getPhraseText } from '@/constants/phraseTranslations';
  * panel cover the keys. This mirrors the AI Chat layout.
  */
 function PanelShell({ children }: { children: ReactNode }) {
-  const { t: pt, outputTtsCode: ptOut } = useT();
+  const { t: pt } = useT();
   return (
     <section
       aria-label={pt('aac_panel')}
@@ -50,7 +50,7 @@ const TILE_MIN_H: Record<GridSize, string> = {
 };
 
 export default function CategoryPanel() {
-  const { t, ttsCode, outputTtsCode } = useT();
+  const { t } = useT();
   const {
     sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
     closeSidePanel, selectCategory, backToCategories, startOrdering, nextStep, prevStep, finishOrdering,

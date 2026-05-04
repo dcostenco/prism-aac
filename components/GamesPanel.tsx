@@ -2,7 +2,6 @@
 import { useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
-import { useScheduleStore } from '@/store/scheduleStore';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import { aacSpeak } from '@/services/aacSpeak';
@@ -122,7 +121,7 @@ function BubblePopGame({ onBack }: { onBack: () => void }) {
     setBubbles(newBubbles);
   }, [level, language]);
 
-  useEffect(() => { spawnBubbles(); }, [spawnBubbles]);
+  useEffect(() => { queueMicrotask(spawnBubbles); }, [spawnBubbles]);
 
   useEffect(() => {
     const animate = () => {
@@ -143,7 +142,7 @@ function BubblePopGame({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     if (allGone && !celebration) {
-      setCelebration(true);
+      queueMicrotask(() => setCelebration(true));
       celebrationTimerRef.current = setTimeout(() => {
         setCelebration(false);
         setLevel(l => l + 1);
@@ -281,7 +280,7 @@ function ColorHuntGame({ onBack }: { onBack: () => void }) {
     setTimeout(() => aacSpeak(localName, speechRate, speechVolume), 300);
   }, [round, speechRate, speechVolume]);
 
-  useEffect(() => { newRound(); }, [newRound]);
+  useEffect(() => { queueMicrotask(newRound); }, [newRound]);
 
   const handleTap = (color: typeof COLOR_VOCAB[0], idx: number) => {
     tapFeedback();
@@ -586,7 +585,7 @@ function MatchItGame({ onBack }: { onBack: () => void }) {
     setTimeout(() => aacSpeak(`${findPrompt} ${localName}`, speechRate, speechVolume), 300);
   }, [round, speechRate, speechVolume, language, findPrompt]);
 
-  useEffect(() => { newRound(); }, [newRound]);
+  useEffect(() => { queueMicrotask(newRound); }, [newRound]);
 
   const handleTap = (item: typeof MATCH_ITEMS[0]) => {
     tapFeedback();
@@ -707,7 +706,7 @@ function YesNoGame({ onBack }: { onBack: () => void }) {
     setTimeout(() => aacSpeak(`${isThisA} ${label}?`, speechRate, speechVolume), 300);
   }, [round, speechRate, speechVolume, language, isThisA]);
 
-  useEffect(() => { newRound(); }, [newRound]);
+  useEffect(() => { queueMicrotask(newRound); }, [newRound]);
 
   const handleAnswer = (answeredYes: boolean) => {
     tapFeedback();
@@ -866,7 +865,7 @@ function FinishItGame({ onBack }: { onBack: () => void }) {
     setTimeout(() => aacSpeak(phrase, speechRate, speechVolume), 300);
   }, [round, speechRate, speechVolume, language]);
 
-  useEffect(() => { newRound(); }, [newRound]);
+  useEffect(() => { queueMicrotask(newRound); }, [newRound]);
 
   const handleTap = (item: typeof FINISH_ITEMS[0]) => {
     tapFeedback();
@@ -1010,7 +1009,7 @@ function CategorySortGame({ onBack }: { onBack: () => void }) {
     setTimeout(() => aacSpeak(localItem(item.key), speechRate, speechVolume), 300);
   }, [round, speechRate, speechVolume, language]);
 
-  useEffect(() => { newRound(); }, [newRound]);
+  useEffect(() => { queueMicrotask(newRound); }, [newRound]);
 
   const handleCategoryTap = (catKey: string) => {
     tapFeedback();
@@ -1133,7 +1132,7 @@ function EmotionMatchGame({ onBack }: { onBack: () => void }) {
     setTimeout(() => aacSpeak(text, speechRate, speechVolume), 300);
   }, [round, speechRate, speechVolume, language, langKey]);
 
-  useEffect(() => { newRound(); }, [newRound]);
+  useEffect(() => { queueMicrotask(newRound); }, [newRound]);
 
   const handleTap = (emotionKey: string) => {
     tapFeedback();
@@ -1276,7 +1275,7 @@ function SequenceGame({ onBack }: { onBack: () => void }) {
     setTimeout(() => aacSpeak(`${step1}, ${step2}, ${whatNext}`, speechRate, speechVolume), 300);
   }, [round, speechRate, speechVolume, language, whatNext]);
 
-  useEffect(() => { newRound(); }, [newRound]);
+  useEffect(() => { queueMicrotask(newRound); }, [newRound]);
 
   const handleTap = (stepKey: string) => {
     tapFeedback();
@@ -1406,7 +1405,7 @@ function SameDifferentGame({ onBack }: { onBack: () => void }) {
     setTimeout(() => aacSpeak(prompt, speechRate, speechVolume), 300);
   }, [round, level, speechRate, speechVolume, language, prompt]);
 
-  useEffect(() => { newRound(); }, [newRound]);
+  useEffect(() => { queueMicrotask(newRound); }, [newRound]);
 
   const handleTap = (idx: number) => {
     tapFeedback();
@@ -1526,7 +1525,7 @@ function SoundMatchGame({ onBack }: { onBack: () => void }) {
     setTimeout(() => aacSpeak(clue, speechRate, speechVolume), 300);
   }, [round, speechRate, speechVolume, language, langKey]);
 
-  useEffect(() => { newRound(); }, [newRound]);
+  useEffect(() => { queueMicrotask(newRound); }, [newRound]);
 
   const handleTap = (item: typeof SOUND_ITEMS[0]) => {
     tapFeedback();

@@ -3,7 +3,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import {
   startPoseTracker,
-  isPoseTrackingSupported,
   savePoseCalibration,
   type PoseTrackerHandle,
   type TrackingTarget,
@@ -65,7 +64,6 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const handleRef = useRef<PoseTrackerHandle | null>(null);
   const sampleBufferRef = useRef<Array<{ normX: number; normY: number }>>([]);
   const detectionCountRef = useRef<Record<string, number>>({});
-  const holdTimerRef = useRef(0);
 
   const speak = useCallback((text: string) => {
     aacSpeak(text, speechRate, speechVolume);
@@ -297,9 +295,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         {phase === 'intro' && (
           <div className="text-center px-8 max-w-md">
             <div className="text-8xl mb-6">🎯</div>
-            <h2 className="text-white text-3xl font-black mb-4">Let's Set Up Tracking</h2>
+            <h2 className="text-white text-3xl font-black mb-4">Let&apos;s Set Up Tracking</h2>
             <p className="text-white/70 text-lg mb-3">
-              We'll find which body parts you can move, then calibrate the cursor to follow you.
+              We&apos;ll find which body parts you can move, then calibrate the cursor to follow you.
             </p>
             <p className="text-white/50 text-sm mb-8">
               Make sure your camera can see you. This takes about 30 seconds.

@@ -9,9 +9,14 @@ export function useT() {
   const [ready, setReady] = useState(isLanguageLoaded(language));
 
   useEffect(() => {
-    if (isLanguageLoaded(language)) { setReady(true); return; }
-    setReady(false);
-    loadLanguage(language).then(() => setReady(true));
+    let mounted = true;
+    if (isLanguageLoaded(language)) {
+      queueMicrotask(() => { if (mounted) setReady(true); });
+      return;
+    }
+    queueMicrotask(() => { if (mounted) setReady(false); });
+    loadLanguage(language).then(() => { if (mounted) setReady(true); });
+    return () => { mounted = false; };
   }, [language]);
 
   const t = useCallback((key: string) => translate(key, language), [language]);

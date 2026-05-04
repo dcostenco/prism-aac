@@ -7,16 +7,47 @@ import { tapFeedback, deleteFeedback } from '@/services/feedback';
 import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
-import { getTTSCode } from '@/engine/i18n';
 import { TONE_OPTIONS } from '@/services/azureTTS';
-import { translateWithAIRefine, translateTextSync } from '@/services/translateService';
+import { translateWithAIRefine } from '@/services/translateService';
 import { useAuthStore } from '@/store/authStore';
 import { usePredictionStore } from '@/store/predictionStore';
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = new Array(n + 1).fill(0).map((_, i) => i);
+  let curr = new Array(n + 1).fill(0);
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      curr[j] = Math.min(
+        curr[j - 1] + 1,
+        prev[j] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[n];
+}
+
+function isSafeAutoCorrection(original: string, fixed: string): boolean {
+  const o = original.trim();
+  const f = fixed.trim();
+  if (!o || !f || o === f) return false;
+  const oTokens = o.split(/\s+/).length;
+  const fTokens = f.split(/\s+/).length;
+  if (Math.abs(oTokens - fTokens) > 1) return false;
+  const dist = levenshtein(o.toLowerCase(), f.toLowerCase());
+  return dist <= Math.max(2, Math.floor(o.length * 0.30));
+}
 
 export default function MessageBar() {
   const { text, activeTone, toneMode, setTone, setToneMode, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
-  const { t, ttsCode, outputTtsCode } = useT();
+  const { t } = useT();
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showTones, setShowTones] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
@@ -26,15 +57,18 @@ export default function MessageBar() {
   const [translated, setTranslated] = useState<string | null>(null);
 
   useEffect(() => {
-    setTranslated(null);
+    let mounted = true;
+    queueMicrotask(() => { if (mounted) setTranslated(null); });
     if (language === outputLanguage || !text.trim()) return;
     let cancelled = false;
     const instant = translateWithAIRefine(
       text.trim(), language, outputLanguage,
       (refined) => { if (!cancelled) setTranslated(refined); },
     );
-    if (instant.toLowerCase() !== text.trim().toLowerCase()) setTranslated(instant);
-    return () => { cancelled = true; };
+    if (instant.toLowerCase() !== text.trim().toLowerCase()) {
+      queueMicrotask(() => { if (mounted) setTranslated(instant); });
+    }
+    return () => { cancelled = true; mounted = false; };
   }, [text, language, outputLanguage]);
 
   // Debounced background suggestion — child must explicitly tap to accept,
@@ -53,8 +87,13 @@ export default function MessageBar() {
   // the trailing partial unchanged in completion mode).
   const setAiCompletion = usePredictionStore((s) => s.setAiCompletion);
   useEffect(() => {
-    setSuggestion(null);
-    setAiCompletion(null);
+    let mounted = true;
+    queueMicrotask(() => {
+      if (mounted) {
+        setSuggestion(null);
+        setAiCompletion(null);
+      }
+    });
     const trimmed = text.trim();
     if (trimmed.length < 4) return;
     const isMidWord = !/\s$/.test(text);
@@ -92,8 +131,8 @@ export default function MessageBar() {
       }
       setSuggestion(fixed);
     }, 400);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [text, language]);
+    return () => { cancelled = true; mounted = false; clearTimeout(timer); };
+  }, [text, language, setAiCompletion]);
 
   const learnWord = usePredictionStore((s) => s.learnWord);
 
@@ -122,37 +161,6 @@ export default function MessageBar() {
   //   - Edit distance ≤ 30% of input length (otherwise it's a paraphrase)
   // Big rewrites and word-completions still need an explicit tap, so the
   // child's authorship is preserved when the AI gets creative.
-  function levenshtein(a: string, b: string): number {
-    if (a === b) return 0;
-    const m = a.length, n = b.length;
-    if (m === 0) return n;
-    if (n === 0) return m;
-    let prev = new Array(n + 1).fill(0).map((_, i) => i);
-    let curr = new Array(n + 1).fill(0);
-    for (let i = 1; i <= m; i++) {
-      curr[0] = i;
-      for (let j = 1; j <= n; j++) {
-        curr[j] = Math.min(
-          curr[j - 1] + 1,
-          prev[j] + 1,
-          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
-        );
-      }
-      [prev, curr] = [curr, prev];
-    }
-    return prev[n];
-  }
-  function isSafeAutoCorrection(original: string, fixed: string): boolean {
-    const o = original.trim();
-    const f = fixed.trim();
-    if (!o || !f || o === f) return false;
-    const oTokens = o.split(/\s+/).length;
-    const fTokens = f.split(/\s+/).length;
-    if (Math.abs(oTokens - fTokens) > 1) return false;
-    const dist = levenshtein(o.toLowerCase(), f.toLowerCase());
-    return dist <= Math.max(2, Math.floor(o.length * 0.30));
-  }
-
   const acceptSuggestion = useCallback(() => {
     if (!suggestion) return;
     tapFeedback();

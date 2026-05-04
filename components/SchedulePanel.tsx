@@ -26,12 +26,20 @@ function VisualTimer({ seconds, onComplete }: { seconds: number; onComplete: () 
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
-    setRemaining(seconds);
-    setRunning(false);
+    let mounted = true;
+    queueMicrotask(() => {
+      if (mounted) {
+        setRemaining(seconds);
+        setRunning(false);
+      }
+    });
     if (intervalRef.current) clearInterval(intervalRef.current);
+    return () => { mounted = false; };
   }, [seconds]);
 
   useEffect(() => {

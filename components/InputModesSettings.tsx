@@ -1,10 +1,10 @@
 'use client';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import TrackingSetupWizard from './TrackingSetupWizard';
-import { DEFAULT_GESTURE_CONFIG, type GestureId, type GestureMapping, type GestureConfig } from '@/services/gestureService';
+import { DEFAULT_GESTURE_CONFIG, type GestureId, type GestureConfig } from '@/services/gestureService';
 
 const TRACKING_TARGETS = [
   { id: 'right_index', label: 'Right Index Finger' },
@@ -156,7 +156,6 @@ const ASSIGNABLE_ACTIONS = [
 function GestureRecognitionSettings() {
   const gestureConfig = useSettingsStore(s => s.gestureConfig);
   const update = useSettingsStore(s => s.update);
-  const { t } = useT();
 
   const [calibrating, setCalibrating] = useState(false);
   const [calibrationProgress, setCalibrationProgress] = useState(0);

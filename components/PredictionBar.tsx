@@ -9,7 +9,6 @@ import { tapFeedback } from '@/services/feedback';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
-import { useT } from '@/engine/useT';
 
 function computeStableSlots(prev: string[], predictions: string[]): string[] {
   const next = [...prev];
@@ -73,18 +72,20 @@ export default function PredictionBar() {
   // then refine with predictions if there's typed text.
   const prevLangRef = useRef(language);
   useEffect(() => {
+    let mounted = true;
     const defaults = getPredictionsForLanguage(language);
     if (language !== prevLangRef.current) {
       prevRef.current = defaults;
-      setDisplayed(defaults);
+      queueMicrotask(() => { if (mounted) setDisplayed(defaults); });
       prevLangRef.current = language;
     }
     if (!text.trim()) {
       prevRef.current = defaults;
-      setDisplayed(defaults);
-      return;
+      queueMicrotask(() => { if (mounted) setDisplayed(defaults); });
+      return () => { mounted = false; };
     }
     updatePredictions(text, language);
+    return () => { mounted = false; };
   }, [text, updatePredictions, language]);
 
   // Merge AI completion into the prediction list as the leftmost tile.

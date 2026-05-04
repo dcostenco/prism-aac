@@ -163,6 +163,7 @@ export default function Toolbar() {
     soundEnabled, listening, voiceSupported,
   };
 
+  // eslint-disable-next-line react-hooks/refs
   const builtIns = buildBuiltInButtons(t, handlers);
 
   // Resolve the visible button list from config:

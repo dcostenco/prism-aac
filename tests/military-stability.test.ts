@@ -324,7 +324,7 @@ describe('Multi-Camera — fusion algorithm', () => {
   });
 
   it('primary camera stays active when both see face', () => {
-    let primaryIndex = 0;
+    const primaryIndex = 0;
     const cam0 = { confidence: 0.10, cameraIndex: 0, face: true };
     const cam1 = { confidence: 0.15, cameraIndex: 1, face: true };
     // Primary stays even if secondary has higher confidence
@@ -347,7 +347,7 @@ describe('Multi-Camera — fusion algorithm', () => {
 
   it('no failover during grace period (< 3 frames)', () => {
     const FAILOVER_THRESHOLD = 3;
-    let lostFrames = 2;
+    const lostFrames = 2;
     let primaryIndex = 0;
     if (lostFrames >= FAILOVER_THRESHOLD) primaryIndex = 1;
     expect(primaryIndex).toBe(0); // still on primary
@@ -939,7 +939,7 @@ describe('Precision Touch — EMA touch smoothing', () => {
 
   it('first touch initializes to raw position (no lag)', () => {
     const rawX = 500;
-    let smoothX = rawX;
+    const smoothX = rawX;
     expect(smoothX).toBe(500);
   });
 
@@ -1614,7 +1614,7 @@ describe('Switch Scanning — loop control', () => {
 
   it('stops after N loops', () => {
     const maxLoops = 3;
-    let currentLoop = 3;
+    const currentLoop = 3;
     const shouldStop = maxLoops > 0 && currentLoop >= maxLoops;
     expect(shouldStop).toBe(true);
   });
@@ -1626,7 +1626,7 @@ describe('Switch Scanning — loop control', () => {
   });
 
   it('resume continues from paused position', () => {
-    let idx = 5;
+    const idx = 5;
     let paused = true;
     paused = false;
     expect(idx).toBe(5);
@@ -1716,7 +1716,7 @@ describe('WASM TTS — beep pattern fallback', () => {
 
 describe('WASM TTS — lifecycle', () => {
   it('not ready before init', () => {
-    let ready = false;
+    const ready = false;
     expect(ready).toBe(false);
   });
 
@@ -2022,14 +2022,14 @@ describe('Speech — speakWord uses user language', () => {
 
 describe('Switch Scanning — HID edge detection', () => {
   it('fires on 0→1 transition', () => {
-    let lastState = 0;
+    const lastState = 0;
     const currentState = 1;
     const shouldFire = currentState !== 0 && lastState === 0;
     expect(shouldFire).toBe(true);
   });
 
   it('does NOT fire on 1→1 (held switch)', () => {
-    let lastState = 1;
+    const lastState = 1;
     const currentState = 1;
     const shouldFire = currentState !== 0 && lastState === 0;
     expect(shouldFire).toBe(false);
@@ -2043,7 +2043,7 @@ describe('Switch Scanning — HID edge detection', () => {
 
   it('200ms debounce prevents hardware bounce', () => {
     const DEBOUNCE = 200;
-    let lastTime = 0;
+    const lastTime = 0;
     const now = 150;
     const withinDebounce = (now - lastTime) <= DEBOUNCE;
     expect(withinDebounce).toBe(true);
@@ -2051,7 +2051,7 @@ describe('Switch Scanning — HID edge detection', () => {
 
   it('fires after debounce window', () => {
     const DEBOUNCE = 200;
-    let lastTime = 0;
+    const lastTime = 0;
     const now = 250;
     const pastDebounce = (now - lastTime) > DEBOUNCE;
     expect(pastDebounce).toBe(true);

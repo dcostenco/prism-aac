@@ -45,20 +45,23 @@ export default function CameraInputOverlay() {
   const highlightedKeyRef = useRef<HTMLElement | null>(null);
   const [keyBubble, setKeyBubble] = useState<{ char: string; x: number; y: number; visible: boolean }>({ char: '', x: 0, y: 0, visible: false });
 
-  const animateDwell = useCallback(() => {
+  const animateDwell = useCallback(function animate() {
     if (!dwellElementRef.current || dwellStartRef.current === 0) {
       setDwellProgress(0);
       return;
     }
     const progress = Math.min(1, (Date.now() - dwellStartRef.current) / dwellMs);
     setDwellProgress(progress);
-    if (progress < 1) rafRef.current = requestAnimationFrame(animateDwell);
+    if (progress < 1) rafRef.current = requestAnimationFrame(animate);
   }, [dwellMs]);
 
   useEffect(() => {
+    let mounted = true;
     if (!enabled || !isPoseTrackingSupported()) {
       if (handleRef.current) { handleRef.current.stop(); handleRef.current = null; }
-      setStatus('stopped');
+      queueMicrotask(() => {
+        if (mounted) setStatus('stopped');
+      });
       return;
     }
 
@@ -132,6 +135,7 @@ export default function CameraInputOverlay() {
       highlightedKeyRef.current = null;
       handle.stop();
       handleRef.current = null;
+      mounted = false;
     };
   }, [enabled, target, dwellMs, sensitivity, animateDwell]);
 
@@ -139,7 +143,9 @@ export default function CameraInputOverlay() {
   // (MacBook — hands below FOV), use mouse movement for cursor + highlights.
   // Uses a ref to avoid stale closure over status.
   const statusRef = useRef(status);
-  statusRef.current = status;
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   useEffect(() => {
     if (!enabled) return;

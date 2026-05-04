@@ -57,7 +57,7 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef(0);
   const scanCountRef = useRef(0);
-  const touchTargets = useRef(generateTargets(TOUCH_TARGETS));
+  const touchTargets = useMemo(() => generateTargets(TOUCH_TARGETS), []);
   const touchOffsetsRef = useRef<Array<{ dx: number; dy: number }>>([]);
 
   // ── Phase 1: Initialize camera + MediaPipe ──
@@ -144,7 +144,7 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
     keyFeedback();
     recordTouchSample(rawX, rawY);
 
-    const target = touchTargets.current[touchIndex];
+    const target = touchTargets[touchIndex];
     const targetX = (target.x / 100) * window.innerWidth;
     const targetY = (target.y / 100) * window.innerHeight;
 
@@ -230,7 +230,7 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
   }, []);
 
   const currentTarget = phase === 'touch' && touchIndex < TOUCH_TARGETS
-    ? touchTargets.current[touchIndex]
+    ? touchTargets[touchIndex]
     : null;
 
   return (
