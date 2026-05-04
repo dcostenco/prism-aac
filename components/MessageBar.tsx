@@ -108,6 +108,46 @@ export default function MessageBar() {
     }
   }, [learnWord]);
 
+  // Decide whether the AI suggestion is a "safe" auto-correction — a
+  // typo fix or small cleanup, not a big rewrite. Auto-applying on Speak
+  // saves the user an extra tap (motor friction is real for AAC users)
+  // BUT only for low-risk changes:
+  //   - Same number of tokens, OR differs by exactly 1 (fixed missing
+  //     space → "программычто" splits into "программа что")
+  //   - Edit distance ≤ 30% of input length (otherwise it's a paraphrase)
+  // Big rewrites and word-completions still need an explicit tap, so the
+  // child's authorship is preserved when the AI gets creative.
+  function levenshtein(a: string, b: string): number {
+    if (a === b) return 0;
+    const m = a.length, n = b.length;
+    if (m === 0) return n;
+    if (n === 0) return m;
+    let prev = new Array(n + 1).fill(0).map((_, i) => i);
+    let curr = new Array(n + 1).fill(0);
+    for (let i = 1; i <= m; i++) {
+      curr[0] = i;
+      for (let j = 1; j <= n; j++) {
+        curr[j] = Math.min(
+          curr[j - 1] + 1,
+          prev[j] + 1,
+          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+        );
+      }
+      [prev, curr] = [curr, prev];
+    }
+    return prev[n];
+  }
+  function isSafeAutoCorrection(original: string, fixed: string): boolean {
+    const o = original.trim();
+    const f = fixed.trim();
+    if (!o || !f || o === f) return false;
+    const oTokens = o.split(/\s+/).length;
+    const fTokens = f.split(/\s+/).length;
+    if (Math.abs(oTokens - fTokens) > 1) return false;
+    const dist = levenshtein(o.toLowerCase(), f.toLowerCase());
+    return dist <= Math.max(2, Math.floor(o.length * 0.30));
+  }
+
   const acceptSuggestion = useCallback(() => {
     if (!suggestion) return;
     tapFeedback();
@@ -123,23 +163,35 @@ export default function MessageBar() {
     const original = text.trim();
     if (!original || !soundEnabled) return;
 
-    // CRITICAL: Always speak the child's exact text. Never auto-apply AI
-    // suggestions — the child's authorship must be preserved. Suggestions
-    // are only applied when the child explicitly taps them.
-    addToHistory(original);
+    // Auto-apply *safe* AI corrections on Speak. The Speak button is the
+    // user's "I'm done" signal — clear typos like "программычто" should
+    // not require an extra tap to fix. Big rewrites and word-completions
+    // still need explicit acceptance (isSafeAutoCorrection rejects them).
+    // Authorship: the child can still see/edit the corrected text in the
+    // bar; undo brings back the original; speech history holds the spoken
+    // version. The original raw text is also still passed to learnUtterance
+    // when we decide NOT to auto-apply.
+    let toSpeak = original;
+    if (suggestion && isSafeAutoCorrection(original, suggestion)) {
+      toSpeak = suggestion.trim();
+      setText(toSpeak);
+      setSuggestion(null);
+    }
+
+    addToHistory(toSpeak);
 
     // Speak is the strongest learning signal: the user just authoritatively
     // communicated this exact utterance. Reinforce every word and adjacent
     // pair/triple. We learn from the SOURCE-language text (what the user
     // typed), not the translation, since that's what they'll type next.
-    learnUtterance(original);
+    learnUtterance(toSpeak);
 
     if (translated) {
       aacSpeak(translated, speechRate, speechVolume, activeTone);
     } else {
-      aacSpeak(original, speechRate, speechVolume, activeTone);
+      aacSpeak(toSpeak, speechRate, speechVolume, activeTone);
     }
-  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance]);
+  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance, suggestion, setText]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
