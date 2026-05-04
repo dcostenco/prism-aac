@@ -81,8 +81,8 @@ describe('i18n — RTL support', () => {
 });
 
 describe('i18n — Language metadata', () => {
-  it('has 12 languages', () => {
-    expect(LANG_META).toHaveLength(12);
+  it('has 15 languages', () => {
+    expect(LANG_META).toHaveLength(15);
   });
 
   it('each language has all required fields', () => {

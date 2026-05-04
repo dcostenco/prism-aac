@@ -68,6 +68,17 @@ type Scores = { bigram: number; trigram: number; freq: number; recency: number; 
 // "I" into non-English suggestions.
 const ALWAYS_CAPITALIZED_EN = new Set(['i']);
 
+// Tokenizer artifacts that leak into corpora from contractions (e.g. I'm, it's, don't, l'arbre).
+// We filter these out so they never surface as standalone word predictions.
+const ARTIFACTS_BY_LANG: Record<string, Set<string>> = {
+  en: new Set(['m', 's', 't', 'll', 'd', 're', 've']),
+  fr: new Set(['l', 'n', 'j', 'qu', 'c', 'm', 's', 't', 'd', 'y']),
+  de: new Set(['s', 'm']),
+  ro: new Set(['m', 's', 't', 'ț', 'v', 'n', 'c', 'd', 'l']),
+  es: new Set(['d']),
+  pt: new Set(['d']),
+};
+
 export function mergeUserNgramsWithBoost(
   corpus: Record<string, WordFreqEntry>,
   user: Record<string, WordFreqEntry>,
@@ -253,6 +264,8 @@ export function getPredictions(
   // dominates so "re" → "really" works as expected.
   const effectivePrefixWeight = partialIsCompleteWord ? prefixWeight * 0.5 : prefixWeight;
 
+  const artifacts = ARTIFACTS_BY_LANG[lang ?? 'en'] ?? new Set<string>();
+
   // Build the score-ranked candidate list. Each candidate carries its raw
   // score components so the filter can distinguish "this matches because
   // we predicted the next word" (bigram/trigram score) from "this matches
@@ -265,6 +278,7 @@ export function getPredictions(
     }))
     .filter((c) => {
       const lc = c.word.toLowerCase();
+      if (artifacts.has(lc)) return false;
       if (lc === lastWord || lc === partialWord) return false;
       // Mid-typing rule: surface candidates that complete the partial word.
       // EXCEPTION — if (a) the partial is itself a confidently complete

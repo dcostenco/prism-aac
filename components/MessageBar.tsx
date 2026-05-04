@@ -72,18 +72,23 @@ export default function MessageBar() {
       // fragment exactly as typed (i.e. didn't actually complete it).
       if (isMidWord) {
         const inputLast = inputTokens[inputTokens.length - 1] ?? '';
-        // The AI's completion of the user's partial is the token at the
-        // SAME position in the fixed output (not necessarily the last —
-        // the AI may have extended by 1-3 words after the completion).
-        const aiCompletion = fixedTokens[inputTokens.length - 1] ?? '';
-        if (inputLast && aiCompletion.toLowerCase() === inputLast.toLowerCase()) return;
-        // Push the AI's word completion into the prediction store so it
-        // surfaces as a tile (slot 0) in the prediction bar — letting the
-        // user accept just the single word without committing to the full
-        // sentence rewrite.
-        if (aiCompletion && aiCompletion.toLowerCase().startsWith(inputLast.toLowerCase())) {
-          setAiCompletion(aiCompletion);
+        // Find the AI's completion token. It must strictly extend the partial word.
+        // Because the AI might have fixed spacing in earlier words, the index
+        // could have shifted. We search all tokens and pick the closest one.
+        const candidates = [];
+        for (let i = 0; i < fixedTokens.length; i++) {
+          if (fixedTokens[i].toLowerCase().startsWith(inputLast.toLowerCase()) && fixedTokens[i].length > inputLast.length) {
+            candidates.push({ token: fixedTokens[i], index: i });
+          }
         }
+        
+        if (candidates.length === 0) return; // AI failed to provide a valid completion
+
+        const expectedIndex = inputTokens.length - 1;
+        candidates.sort((a, b) => Math.abs(a.index - expectedIndex) - Math.abs(b.index - expectedIndex));
+        
+        const aiCompletion = candidates[0].token;
+        setAiCompletion(aiCompletion);
       }
       setSuggestion(fixed);
     }, 400);

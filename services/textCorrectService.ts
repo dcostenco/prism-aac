@@ -1,7 +1,7 @@
 'use client';
 
 import { isLocalModelAvailable, LOCAL_OLLAMA_URL, LOCAL_MODEL } from '@/services/localModel';
-import { canonicalizeLang } from '@/engine/i18n';
+import { canonicalizeLang, getLanguageName } from '@/engine/i18n';
 
 /**
  * Text auto-correction — fixes hurried / motor-impaired input.
@@ -33,17 +33,17 @@ const SYNALUX_API = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_
 // for the cache, but the foreground call resolves with the original text.
 const BACKEND_TIMEOUT_MS = 1500;
 
-const LOCAL_SYSTEM_CORRECT = `You are a fast text-cleanup engine for an AAC (augmentative and alternative communication) app used by users with motor impairments. Your only job: take possibly-malformed input and return the most likely intended utterance.
+const LOCAL_SYSTEM_CORRECT = `You are a fast text-cleanup engine for an AAC (augmentative and alternative communication) app used by users with motor impairments. Your only job: take possibly-malformed input and return the most likely intended utterance in the specified language.
 
 Rules:
 - Fix obvious typos, missing spaces, dropped letters, transposed letters.
-- Fix voice-transcript word-boundary errors (e.g. "bowlof rice" -> "bowl of rice", "i wantto eat" -> "i want to eat").
+- Fix voice-transcript word-boundary errors.
 - Fix spurious commas/punctuation that came from hurried typing.
-- Capitalize "I" and the first word.
+- Capitalize the first word (and language-specific pronouns if applicable).
 - DO NOT rewrite the user's voice — keep their words and tone.
 - DO NOT add new content the user did not say.
 - DO NOT remove content the user did say.
-- DO NOT translate.
+- DO NOT translate. Keep the output in the same language as the input.
 - If the input is already well-formed, return it unchanged.
 - Return ONLY the corrected text, no quotes, no explanation, no preamble.`;
 
@@ -52,12 +52,12 @@ const LOCAL_SYSTEM_COMPLETE = `You are a fast text-completion engine for an AAC 
 Rules:
 - The LAST word of the input is incomplete — predict the most likely full word that starts with those letters in context.
 - Replace ONLY the last word with its completion; keep all earlier words exactly as written.
-- You MAY also extend the utterance by 1-3 short words after the completion if the context strongly suggests them (e.g. "у лукоморья дуб" -> "у лукоморья дуб зелёный"). Otherwise stop after completing the last word.
+- You MAY also extend the utterance by 1-3 short words after the completion if the context strongly suggests them. Otherwise stop after completing the last word.
 - Fix obvious typos in earlier words while you're at it.
-- Capitalize "I" and the first word; preserve user's case otherwise.
-- DO NOT translate.
+- Capitalize the first word (and language-specific pronouns if applicable); preserve user's case otherwise.
+- DO NOT translate. Keep the output in the same language as the input.
 - DO NOT explain — return ONLY the predicted text, no quotes, no preamble.
-- If you cannot meaningfully complete the last word (e.g. it could be 50 different words), return the input unchanged.`;
+- If you cannot meaningfully complete the last word (e.g. it could be many different words), return the input unchanged.`;
 
 const MAX_CACHE = 500;
 const memoryCache = new Map<string, string>();
@@ -103,13 +103,14 @@ async function correctViaPortal(text: string, lang: string, mode: CorrectMode): 
 async function correctViaLocal(text: string, lang: string, mode: CorrectMode): Promise<string | null> {
   const t = withTimeout(BACKEND_TIMEOUT_MS);
   try {
+    const langName = getLanguageName(lang);
     const res = await fetch(LOCAL_OLLAMA_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: LOCAL_MODEL,
         system: mode === 'complete' ? LOCAL_SYSTEM_COMPLETE : LOCAL_SYSTEM_CORRECT,
-        prompt: `Language: ${lang}. Input: "${text}"`,
+        prompt: `Language: ${langName} (${lang}). Input: "${text}"`,
         stream: false,
         options: { temperature: 0.0, num_predict: 80 },
       }),

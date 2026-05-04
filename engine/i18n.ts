@@ -109,6 +109,11 @@ export function getTTSCode(lang: SupportedLanguage): string {
   return LANG_META.find(l => l.code === lang)?.ttsCode ?? 'en-US';
 }
 
+export function getLanguageName(lang: string): string {
+  const canonical = canonicalizeLang(lang);
+  return LANG_META.find(l => l.code === canonical)?.name ?? 'English';
+}
+
 export function isRTL(lang: SupportedLanguage): boolean {
   return LANG_META.find(l => l.code === lang)?.rtl ?? false;
 }

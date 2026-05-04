@@ -10,8 +10,8 @@ describe('SpeechService — Core', () => {
     expect(isSpeechSupported()).toBe(true);
   });
 
-  it('speak calls speechSynthesis.cancel then speak', () => {
-    speak('hello', 0.5, 1.0);
+  it('speak calls speechSynthesis.cancel then speak', async () => {
+    await speak('hello', 0.5, 1.0);
     expect(window.speechSynthesis.cancel).toHaveBeenCalled();
     expect(window.speechSynthesis.speak).toHaveBeenCalled();
   });
@@ -53,8 +53,8 @@ describe('SpeechService — Gap tests', () => {
     expect(() => speak('test', 0, 1.0)).not.toThrow();
   });
 
-  it('speak with volume 0 still calls speak', () => {
-    speak('test', 0.5, 0);
+  it('speak with volume 0 still calls speak', async () => {
+    await speak('test', 0.5, 0);
     expect(window.speechSynthesis.speak).toHaveBeenCalled();
   });
 });
