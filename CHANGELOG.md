@@ -1,5 +1,22 @@
 # PrismAAC Changelog
 
+## [0.2.1] - 2026-05-04 — Prism Coder 7B promotion + 14B sibling (via Synalux portal)
+
+> Coordinated with **synalux-private v0.14.4** — the Synalux portal now serves PrismAAC traffic from a fresh 7B (massive BFCL gain) and a new 14B sibling for paid-tier medium queries. **No PrismAAC code changes required.** All routing happens server-side.
+
+### What changed for PrismAAC users
+- **Faster, smarter caregiver parsing.** Model behind `/api/v1/prism-aac/chat` jumped from BFCL 47.2% to **88.1%** (3-run StdDev 0). Caregiver targeted re-test went from 19/20 to **20/20**. Translate went from 7/8 to **8/8**.
+- **Paid tiers (Standard / Advanced / Enterprise) now hit a local 14B model** for medium-length AAC queries (5–40 words). This is purely a quality / latency win — no API cost, faster than Claude round-trip.
+- **Free tier behaviour unchanged.** Still uses 7B local for simple queries → Gemini for complex.
+- **Rollback plan:** if regressions surface, Synalux ops can `ollama cp prism-coder:7b-prev-20260504-1325 prism-coder:7b` to restore prior production model in < 1 minute.
+
+### Eval evidence
+- 7B: BFCL 88.1%, AAC realigned 47/48 (97.9%), targeted caregiver 20/20
+- 14B: BFCL 85.9%, AAC realigned 46/48 (95.8%), targeted caregiver 18/20
+
+### Why no PrismAAC code change
+PrismAAC consumes `/api/v1/prism-aac/chat`. Routing logic lives entirely in the Synalux portal, so model fleet upgrades land via portal redeploy without bumping the AAC client.
+
 ## [0.2.0] - 2026-05-02 — 🧬 Adaptive AAC
 
 > Coordinated with **prism-mcp v13.0.0** + **synalux v12.0.0**. The release that makes PrismAAC *feel* the user.
