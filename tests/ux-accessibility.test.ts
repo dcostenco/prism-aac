@@ -47,8 +47,18 @@ describe('UX — Data completeness', () => {
     expect(helpPhrases).toContain('No');
   });
 
-  it('default predictions match clinical notes', () => {
-    expect(DEFAULT_PREDICTIONS).toEqual(['I', 'We', 'Can', 'Help', 'All done']);
+  it('default predictions are research-grounded AAC core vocabulary', () => {
+    // Defaults now derive from Universal Core 36 (Geist, Erickson et al.,
+    // ATIA 2021) — communicative starters ranked by AAC priority
+    // (pronouns, requesters, verbs). Earlier hard-coded list ('We', 'Can',
+    // 'All done') was replaced because it lacked research provenance and
+    // mixed phrases with single words. Assert structural properties:
+    // - The first-person pronoun "I" is present (highest priority)
+    // - No multi-word phrases (defeats single-tap prediction-bar UX)
+    expect(DEFAULT_PREDICTIONS).toContain('I');
+    for (const p of DEFAULT_PREDICTIONS) {
+      expect(p, `prediction "${p}" should be a single word`).not.toMatch(/\s/);
+    }
   });
 
   it('has 5 predictions (not more, per clinical recommendation)', () => {

@@ -97,26 +97,22 @@ export const SYMBOLS_ROWS = [
   ['.', ',', '?', '!', "'"],
 ];
 
-const PREDICTIONS_BY_LANG: Record<SupportedLanguage, string[]> = {
-  en: ['I', 'We', 'Can', 'Help', 'All done'],
-  es: ['Yo', 'Quiero', 'Ayuda', 'Sí', 'No'],
-  fr: ['Je', 'Veux', 'Aide', 'Oui', 'Non'],
-  pt: ['Eu', 'Quero', 'Ajuda', 'Sim', 'Não'],
-  ro: ['Eu', 'Vreau', 'Ajutor', 'Da', 'Nu'],
-  uk: ['Я', 'Хочу', 'Допомога', 'Так', 'Ні'],
-  ru: ['Я', 'Хочу', 'Помощь', 'Да', 'Нет'],
-  de: ['Ich', 'Hilfe', 'Ja', 'Nein', 'Bitte'],
-  ja: ['はい', 'いいえ', 'ありがとう', '助けて', 'おわり'],
-  ko: ['네', '아니요', '도와주세요', '감사합니다', '끝'],
-  zh: ['我', '要', '帮助', '是', '不'],
-  'zh-Hans': ['我', '要', '帮助', '是', '不'],
-  'zh-Hant': ['我', '要', '幫助', '是', '不'],
-  'zh-HK': ['我', '要', '幫助', '是', '不'],
-  ar: ['أنا', 'أريد', 'مساعدة', 'نعم', 'لا'],
-};
+// AAC core vocabulary lookup — see constants/aacCore/index.ts.
+// Replaces the old hand-curated 5-word PREDICTIONS_BY_LANG list with a
+// research-grounded set: Universal Core 36 (Geist, Erickson et al., ATIA
+// 2021) localized via Cboard's GPLv3 translation tables, with a small
+// corrections overlay for known Cboard data-quality bugs (cited in
+// scripts/aac_core_corrections.json).
+import { getAacCoreFor } from '@/constants/aacCore';
 
-export const DEFAULT_PREDICTIONS = PREDICTIONS_BY_LANG.en;
+// Number of fallback predictions surfaced when the engine can't fill all
+// slots from the corpus + user history. Matches the prediction-bar slot
+// count; the AAC core list per language has 24-28 entries so we always
+// have headroom past the first 5.
+const FALLBACK_SLOTS = 5;
+
+export const DEFAULT_PREDICTIONS = getAacCoreFor('en').slice(0, FALLBACK_SLOTS);
 
 export function getPredictionsForLanguage(lang: SupportedLanguage): string[] {
-  return PREDICTIONS_BY_LANG[lang] ?? PREDICTIONS_BY_LANG.en;
+  return getAacCoreFor(lang).slice(0, FALLBACK_SLOTS);
 }

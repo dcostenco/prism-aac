@@ -19,10 +19,12 @@
     "@mediapipe/tasks-vision": "^0.10.35",
     "@serwist/next": "^9.5.8",
     "@supabase/supabase-js": "^2.105.1",
+    "es-hangul": "^2.3.8",
     "next": "16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "serwist": "^9.5.8",
+    "snowball-stemmers": "^0.6.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

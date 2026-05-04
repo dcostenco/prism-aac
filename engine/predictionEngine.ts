@@ -1,5 +1,6 @@
 import { WordFreqEntry, PredictionConfig } from '@/types';
 import { DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
+import { getStemmer, type Stemmer } from '@/engine/stemmers';
 
 const DEFAULT_CONFIG: PredictionConfig = {
   bigramWeight: 0.5,
@@ -8,6 +9,55 @@ const DEFAULT_CONFIG: PredictionConfig = {
   maxResults: 5,
   recencyWindowMs: 600_000,
 };
+
+// All algorithm-internal tuning lives here so it can be audited in one place.
+// Every value carries a justification — no arbitrary magic numbers scattered
+// through the code. Anything derived from CONTEXT (e.g. stem-grouping length)
+// is computed inline at call site, not stored here.
+const TUNING = {
+  // Candidate pool caps — how many top-N entries we consider from each
+  // dictionary before merging into the candidate map. Sized to maxResults*N
+  // so we have ~3-6× headroom for filters (script, prefix, dedup) without
+  // pulling the whole dictionary on every keystroke.
+  trigramPoolSize: 15,
+  bigramPoolSize: 20,
+  prefixPoolSize: 30,
+  freqPoolSize: 30,
+  recencyPoolSize: 20,
+
+  // Internal score weights — applied AFTER the user-facing weights in
+  // PredictionConfig. Trigrams override bigram/freq when present (they
+  // encode 3-word context). Prefix matches dominate when the user is
+  // mid-typing because completing-the-word is more useful than predicting
+  // the next word from a half-typed fragment.
+  trigramOverrideWeight: 0.35,
+  prefixOverrideWeight: 0.3,
+
+  // User-typed n-grams get a multiplier when merged with corpus so a
+  // count=2 personal bigram outranks a count=10 generic corpus bigram.
+  // Without this, the user's own typing patterns can never overtake the
+  // seed because the corpus baseline is ~5-50× larger.
+  userNgramBoost: 10,
+
+  // LRU caps for persisted dicts — chosen to keep localStorage well under
+  // the 5MB browser quota. Bigger words dict than n-grams because users
+  // type many more unique words than unique 2/3-word collocations.
+  maxWords: 5000,
+  maxBigrams: 3000,
+  maxTrigrams: 2000,
+  // Eviction watermark: when over cap, evict down to 90% so the O(N log N)
+  // sort runs once per ~500 keystrokes instead of every keystroke.
+  evictionWatermark: 0.9,
+
+  // Decay parameters — entries untouched for 7 days get their count
+  // multiplied by 0.95; single-use entries older than 30 days are dropped
+  // entirely (typo cleanup). 7/30 day windows match the natural cadence
+  // of vocabulary rotation in AAC users (weekly = active vocab, monthly
+  // = forgotten typos).
+  decayAfterMs: 7 * 24 * 60 * 60 * 1000,
+  pruneAfterMs: 30 * 24 * 60 * 60 * 1000,
+  decayFactor: 0.95,
+} as const;
 
 type Scores = { bigram: number; trigram: number; freq: number; recency: number; prefix: number };
 
@@ -18,11 +68,6 @@ type Scores = { bigram: number; trigram: number; freq: number; recency: number; 
 // "I" into non-English suggestions.
 const ALWAYS_CAPITALIZED_EN = new Set(['i']);
 
-// User-typed n-grams get a multiplier when merged with corpus, so a count=2
-// personal bigram outranks a count=10 generic corpus bigram. Without this,
-// the user's own typing patterns can never overtake the seed.
-const USER_NGRAM_BOOST = 10;
-
 export function mergeUserNgramsWithBoost(
   corpus: Record<string, WordFreqEntry>,
   user: Record<string, WordFreqEntry>,
@@ -31,7 +76,7 @@ export function mergeUserNgramsWithBoost(
   for (const [k, v] of Object.entries(user)) {
     const existing = out[k];
     out[k] = {
-      count: (existing?.count ?? 0) + v.count * USER_NGRAM_BOOST,
+      count: (existing?.count ?? 0) + v.count * TUNING.userNgramBoost,
       lastUsed: v.lastUsed ?? existing?.lastUsed ?? 0,
     };
   }
@@ -47,6 +92,7 @@ export function getPredictions(
   fallback: readonly string[] = DEFAULT_PREDICTIONS,
   alwaysCapitalized: Set<string> = ALWAYS_CAPITALIZED_EN,
   scriptFilter?: RegExp,
+  lang?: string,
 ): string[] {
   const words = currentText.trim().split(/\s+/).filter(Boolean);
   const lastWord = words.length > 0 ? words[words.length - 1].toLowerCase() : '';
@@ -82,7 +128,7 @@ export function getPredictions(
     const triEntries = Object.entries(trigrams)
       .filter(([k]) => k.startsWith(triKey))
       .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 15);
+      .slice(0, TUNING.trigramPoolSize);
     const maxTri = triEntries.length > 0 ? triEntries[0][1].count : 1;
     for (const [key, val] of triEntries) {
       const word3 = key.split('|')[2];
@@ -93,7 +139,7 @@ export function getPredictions(
     const bigramEntries = Object.entries(bigrams)
       .filter(([k]) => k.startsWith(lastWord + '|'))
       .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 20);
+      .slice(0, TUNING.bigramPoolSize);
     const maxBigram = bigramEntries.length > 0 ? bigramEntries[0][1].count : 1;
     for (const [key, val] of bigramEntries) {
       getOrCreate(key.split('|')[1]).bigram = val.count / maxBigram;
@@ -111,7 +157,7 @@ export function getPredictions(
     const bigramEntries = Object.entries(bigrams)
       .filter(([k]) => k.startsWith(partialPrefix))
       .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 20);
+      .slice(0, TUNING.bigramPoolSize);
     const maxBigram = bigramEntries.length > 0 ? bigramEntries[0][1].count : 1;
     for (const [key, val] of bigramEntries) {
       const completion = key.split('|')[1];
@@ -125,7 +171,7 @@ export function getPredictions(
     const triEntries = Object.entries(trigrams)
       .filter(([k]) => k.startsWith(partialPrefix))
       .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 15);
+      .slice(0, TUNING.trigramPoolSize);
     const maxTri = triEntries.length > 0 ? triEntries[0][1].count : 1;
     for (const [key, val] of triEntries) {
       const completion = key.split('|')[2];
@@ -145,7 +191,7 @@ export function getPredictions(
       }
     }
     prefixCands.sort((a, b) => b.count - a.count);
-    const topPrefix = prefixCands.slice(0, 30);
+    const topPrefix = prefixCands.slice(0, TUNING.prefixPoolSize);
     const maxPrefix = topPrefix.length > 0 ? topPrefix[0].count : 1;
     for (const { word, count } of topPrefix) {
       getOrCreate(word).prefix = count / maxPrefix;
@@ -155,7 +201,7 @@ export function getPredictions(
   // Frequency
   const freqEntries = Object.entries(wordFreq)
     .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 30);
+    .slice(0, TUNING.freqPoolSize);
   const maxFreq = freqEntries.length > 0 ? freqEntries[0][1].count : 1;
   for (const [word, val] of freqEntries) {
     getOrCreate(word).freq = val.count / maxFreq;
@@ -166,20 +212,20 @@ export function getPredictions(
   const recentEntries = Object.entries(wordFreq)
     .filter(([, v]) => now - v.lastUsed < config.recencyWindowMs)
     .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 20);
+    .slice(0, TUNING.recencyPoolSize);
   const maxRecent = recentEntries.length > 0 ? recentEntries[0][1].count : 1;
   for (const [word, val] of recentEntries) {
     getOrCreate(word).recency = val.count / maxRecent;
   }
 
   // Weighted scoring — trigram > prefix > bigram > freq > recency
-  const trigramWeight = trigrams ? 0.35 : 0;
-  const prefixWeight = partialWord ? 0.3 : 0;
+  const trigramWeight = trigrams ? TUNING.trigramOverrideWeight : 0;
+  const prefixWeight = partialWord ? TUNING.prefixOverrideWeight : 0;
   const bigramW = config.bigramWeight * (1 - trigramWeight - prefixWeight / 2);
   const freqW = config.frequencyWeight * (1 - trigramWeight / 2);
   const recencyW = config.recencyWeight;
 
-  const scored = [...candidateMap.entries()]
+  const filtered = [...candidateMap.entries()]
     .map(([word, s]) => ({
       word,
       total: s.trigram * trigramWeight + s.prefix * prefixWeight + s.bigram * bigramW + s.freq * freqW + s.recency * recencyW,
@@ -197,8 +243,60 @@ export function getPredictions(
       if (scriptFilter && !scriptFilter.test(lc)) return false;
       return true;
     })
-    .sort((a, b) => b.total - a.total)
-    .slice(0, config.maxResults)
+    .sort((a, b) => b.total - a.total);
+
+  // Stem-diversity filter — when many prefix matches are inflected forms of
+  // the same lemma (e.g. ru "думать/думал/думала/думают" stem to "дума";
+  // en "running/runs" stem to "run"), they crowd out alternative lemmas
+  // sharing the user-typed prefix (e.g. ru "дуб", en "real" vs "really").
+  //
+  // We use a real per-language morphological stemmer when available
+  // (Snowball for en/es/fr/pt/de/ro/ru/ar; custom heuristics for uk/ja/ko;
+  // see engine/stemmers/). When no stemmer is registered for the language
+  // (zh-*, or unknown lang), fall back to char-prefix grouping with the
+  // partial-word-length-plus-one strategy — this still groups words that
+  // share their next character into one bucket.
+  //
+  // Either way, the greedy pass is followed by a backfill so the prediction
+  // bar is never under-filled. When there's no partial word (text ends
+  // with space), we predict the next word — no shared root to cluster.
+  const stemmer: Stemmer | null = lang ? getStemmer(lang) : null;
+  const groupKey = (w: string): string | null => {
+    if (!partialWord) return null;
+    if (stemmer) {
+      const stem = stemmer(w.toLowerCase());
+      // Never produce a key shorter than the user-typed prefix — otherwise
+      // a stem like "ду" would collapse all ду* words into one bucket and
+      // the user couldn't see alternative continuations they're aiming at.
+      return stem.length >= partialWord.length ? stem : w.toLowerCase().slice(0, partialWord.length + 1);
+    }
+    return w.toLowerCase().slice(0, partialWord.length + 1);
+  };
+  const taken: typeof filtered = [];
+  if (partialWord) {
+    const seenStems = new Set<string>();
+    for (const c of filtered) {
+      if (taken.length >= config.maxResults) break;
+      const key = groupKey(c.word);
+      if (key === null) { taken.push(c); continue; }
+      if (seenStems.has(key)) continue;
+      seenStems.add(key);
+      taken.push(c);
+    }
+  }
+  // Backfill — second pass without diversity constraint when we couldn't
+  // reach maxResults using unique stems (or when stemLen is 0). Never
+  // under-fill the prediction bar.
+  if (taken.length < config.maxResults) {
+    const takenWords = new Set(taken.map(c => c.word));
+    for (const c of filtered) {
+      if (taken.length >= config.maxResults) break;
+      if (takenWords.has(c.word)) continue;
+      taken.push(c);
+    }
+  }
+
+  const scored = taken
     .map((c) => {
       const lower = c.word.toLowerCase();
       // Always-capitalized words (e.g. English "I") win regardless of position.
@@ -221,18 +319,10 @@ export function getPredictions(
   return scored;
 }
 
-// LRU ceiling: evict oldest entries when dictionary exceeds max size.
-// Prevents localStorage exhaustion from unbounded n-gram growth.
-const MAX_WORDS = 5000;
-const MAX_BIGRAMS = 3000;
-const MAX_TRIGRAMS = 2000;
-
 function evictLRU(dict: Record<string, WordFreqEntry>, maxSize: number): Record<string, WordFreqEntry> {
   const keys = Object.keys(dict);
   if (keys.length <= maxSize) return dict;
-  // Evict to 90% of maxSize in one batch so the O(N log N) sort only
-  // runs once every ~500 keystrokes instead of on every single keystroke.
-  const targetSize = Math.floor(maxSize * 0.9);
+  const targetSize = Math.floor(maxSize * TUNING.evictionWatermark);
   const sorted = keys
     .map(k => ({ k, lastUsed: dict[k].lastUsed }))
     .sort((a, b) => a.lastUsed - b.lastUsed);
@@ -249,7 +339,7 @@ export function recordWord(
   const key = word.toLowerCase();
   const existing = wordFreq[key];
   const updated = { ...wordFreq, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
-  return evictLRU(updated, MAX_WORDS);
+  return evictLRU(updated, TUNING.maxWords);
 }
 
 export function recordBigram(
@@ -260,7 +350,7 @@ export function recordBigram(
   const key = `${word1.toLowerCase()}|${word2.toLowerCase()}`;
   const existing = bigrams[key];
   const updated = { ...bigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
-  return evictLRU(updated, MAX_BIGRAMS);
+  return evictLRU(updated, TUNING.maxBigrams);
 }
 
 export function recordTrigram(
@@ -272,7 +362,7 @@ export function recordTrigram(
   const key = `${word1.toLowerCase()}|${word2.toLowerCase()}|${word3.toLowerCase()}`;
   const existing = trigrams[key];
   const updated = { ...trigrams, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };
-  return evictLRU(updated, MAX_TRIGRAMS);
+  return evictLRU(updated, TUNING.maxTrigrams);
 }
 
 export function buildNgramsFromPhrases(
@@ -298,15 +388,15 @@ export function buildNgramsFromPhrases(
 export function decayPredictions(
   data: Record<string, WordFreqEntry>,
 ): Record<string, WordFreqEntry> {
-  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const decayCutoff = now - TUNING.decayAfterMs;
+  const pruneCutoff = now - TUNING.pruneAfterMs;
   const result: Record<string, WordFreqEntry> = {};
   for (const [key, val] of Object.entries(data)) {
-    // Hard cutoff: drop single-use entries older than 30 days (typo cleanup)
-    if (val.count <= 1 && val.lastUsed < thirtyDaysAgo) continue;
-    if (val.lastUsed < sevenDaysAgo && (!val.lastDecayedAt || val.lastDecayedAt < sevenDaysAgo)) {
-      const newCount = Math.max(1, Math.floor(val.count * 0.95));
-      result[key] = { count: newCount, lastUsed: val.lastUsed, lastDecayedAt: Date.now() };
+    if (val.count <= 1 && val.lastUsed < pruneCutoff) continue;
+    if (val.lastUsed < decayCutoff && (!val.lastDecayedAt || val.lastDecayedAt < decayCutoff)) {
+      const newCount = Math.max(1, Math.floor(val.count * TUNING.decayFactor));
+      result[key] = { count: newCount, lastUsed: val.lastUsed, lastDecayedAt: now };
     } else {
       result[key] = val;
     }

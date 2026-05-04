@@ -1,0 +1,37 @@
+{
+  "_meta": {
+    "purpose": "Override known-bad entries in Cboard's translations.",
+    "rationale": "Cboard is community-translated and certain Universal Core 36 keys (notably symbol.pronouns.I) are left untranslated, off-by-one (single Cyrillic letter В instead of Я), or mistranslated (Chinese 一 'one' instead of 我 'I') in many locales. These overrides apply ONLY to entries where the Cboard value is empirically wrong; everything else passes through Cboard untouched.",
+    "format": "Each entry: { '<lang>': { '<symbol_key>': { value: '<correct>', source: '<citation>' } } }"
+  },
+  "ru": {
+    "symbol.pronouns.I": { "value": "я", "source": "en.wiktionary.org/wiki/я (Russian first-person pronoun)" }
+  },
+  "uk": {
+    "symbol.pronouns.I": { "value": "я", "source": "en.wiktionary.org/wiki/я (Ukrainian first-person pronoun)" }
+  },
+  "ar": {
+    "symbol.pronouns.I": { "value": "أنا", "source": "en.wiktionary.org/wiki/أنا (Modern Standard Arabic first-person pronoun)" }
+  },
+  "de": {
+    "symbol.pronouns.I": { "value": "ich", "source": "en.wiktionary.org/wiki/ich (German first-person pronoun)" }
+  },
+  "fr": {
+    "symbol.pronouns.I": { "value": "je", "source": "en.wiktionary.org/wiki/je (French first-person pronoun)" }
+  },
+  "ja": {
+    "symbol.pronouns.I": { "value": "私", "source": "en.wiktionary.org/wiki/私 (Japanese first-person pronoun, polite)" }
+  },
+  "ro": {
+    "symbol.pronouns.I": { "value": "eu", "source": "en.wiktionary.org/wiki/eu#Romanian (Romanian first-person pronoun)" }
+  },
+  "zh-Hans": {
+    "symbol.pronouns.I": { "value": "我", "source": "en.wiktionary.org/wiki/我 (Mandarin first-person pronoun)" }
+  },
+  "zh-Hant": {
+    "symbol.pronouns.I": { "value": "我", "source": "en.wiktionary.org/wiki/我 (Traditional Chinese first-person pronoun)" }
+  },
+  "zh-HK": {
+    "symbol.pronouns.I": { "value": "我", "source": "en.wiktionary.org/wiki/我 (Cantonese first-person pronoun)" }
+  }
+}

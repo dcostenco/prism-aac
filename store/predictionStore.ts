@@ -171,7 +171,7 @@ export const usePredictionStore = create<PredictionState>()(
         const fallback = getPredictionsForLanguage(lang);
         const alwaysCapitalized = lang === 'en' ? undefined : new Set<string>();
         const scriptFilter = SCRIPT_FILTER[lang];
-        const predictions = getPredictions(text, mergedWf, mergedBg, undefined, mergedTg, fallback, alwaysCapitalized, scriptFilter);
+        const predictions = getPredictions(text, mergedWf, mergedBg, undefined, mergedTg, fallback, alwaysCapitalized, scriptFilter, lang);
         set({ predictions });
       },
 

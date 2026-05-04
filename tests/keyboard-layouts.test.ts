@@ -80,39 +80,59 @@ describe('Keyboard layouts — getLetterRows', () => {
 });
 
 describe('Keyboard layouts — getPredictionsForLanguage', () => {
-  it('returns English predictions for "en"', () => {
+  // Predictions are now derived from Universal Core 36 (Geist et al. ATIA
+  // 2021) localized via Cboard's GPLv3 translations + a corrections overlay
+  // (see scripts/aac_core_corrections.json). Tests assert the canonical
+  // first-person pronoun is present for each language since that's the
+  // highest-priority communicative starter and our corrections guarantee it.
+
+  it('returns English predictions starting with "I"', () => {
     const preds = getPredictionsForLanguage('en');
-    expect(preds).toEqual(['I', 'We', 'Can', 'Help', 'All done']);
+    expect(preds[0]).toBe('I');
   });
 
-  it('returns Romanian predictions for "ro"', () => {
+  it('returns Romanian predictions starting with "Eu"', () => {
     const preds = getPredictionsForLanguage('ro');
-    expect(preds).toEqual(['Eu', 'Vreau', 'Ajutor', 'Da', 'Nu']);
+    expect(preds[0]).toBe('Eu');
   });
 
-  it('returns Russian predictions for "ru"', () => {
+  it('returns Russian predictions containing "Я"', () => {
     const preds = getPredictionsForLanguage('ru');
     expect(preds).toContain('Я');
-    expect(preds).toContain('Хочу');
   });
 
-  it('returns Spanish predictions for "es"', () => {
+  it('returns Spanish predictions containing "Yo"', () => {
     const preds = getPredictionsForLanguage('es');
     expect(preds).toContain('Yo');
-    expect(preds).toContain('Quiero');
   });
 
-  it('returns Arabic predictions for "ar"', () => {
+  it('returns Arabic predictions containing "أنا"', () => {
     const preds = getPredictionsForLanguage('ar');
     expect(preds).toContain('أنا');
-    expect(preds).toContain('أريد');
+  });
+
+  it('returns French predictions containing "Je"', () => {
+    const preds = getPredictionsForLanguage('fr');
+    expect(preds).toContain('Je');
+  });
+
+  it('returns German predictions containing "Ich"', () => {
+    const preds = getPredictionsForLanguage('de');
+    expect(preds).toContain('Ich');
+  });
+
+  it('returns Chinese predictions containing "我" (all variants)', () => {
+    for (const lang of ['zh-Hans', 'zh-Hant', 'zh-HK', 'zh'] as const) {
+      const preds = getPredictionsForLanguage(lang);
+      expect(preds, `lang=${lang}`).toContain('我');
+    }
   });
 
   it('all prediction arrays have exactly 5 items', () => {
-    const languages = ['en', 'es', 'fr', 'pt', 'ro', 'uk', 'ru', 'de', 'ja', 'ko', 'zh', 'ar'] as const;
+    const languages = ['en', 'es', 'fr', 'pt', 'ro', 'uk', 'ru', 'de', 'ja', 'ko', 'zh', 'zh-Hans', 'zh-Hant', 'zh-HK', 'ar'] as const;
     for (const lang of languages) {
       const preds = getPredictionsForLanguage(lang);
-      expect(preds).toHaveLength(5);
+      expect(preds, `lang=${lang}`).toHaveLength(5);
     }
   });
 });

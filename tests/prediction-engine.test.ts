@@ -4,8 +4,13 @@ import { WordFreqEntry } from '@/types';
 
 describe('PredictionEngine — Core algorithm', () => {
   it('returns default predictions when no data', () => {
+    // Defaults come from the Universal Core 36 AAC list (ranked by
+    // communicative priority: pronouns/requesters first). Exact words
+    // depend on what Cboard ships; assert structure + that a known
+    // top-priority pronoun ("I") is present.
     const preds = getPredictions('', {}, {});
-    expect(preds).toEqual(['I', 'We', 'Can', 'Help', 'All done']);
+    expect(preds).toHaveLength(5);
+    expect(preds).toContain('I');
   });
 
   it('returns 5 predictions max', () => {
@@ -49,8 +54,10 @@ describe('PredictionEngine — Core algorithm', () => {
     const preds = getPredictions('', wf, {});
     expect(preds).toHaveLength(5);
     expect(preds).toContain('Pizza');
-    // Defaults fill remaining slots
-    expect(preds.filter(p => ['I', 'We', 'Can', 'Help', 'All done'].includes(p)).length).toBeGreaterThanOrEqual(4);
+    // Remaining 4 slots should come from the Universal Core 36 fallback
+    // (any of: I, You, More, Want, Help, Go, Look, etc.).
+    const knownCore = new Set(['I', 'You', 'More', 'Want', 'Help', 'Go', 'Look', 'Make', 'Get', 'Put']);
+    expect(preds.filter(p => knownCore.has(p)).length).toBeGreaterThanOrEqual(4);
   });
 });
 
