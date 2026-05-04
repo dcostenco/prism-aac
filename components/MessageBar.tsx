@@ -36,16 +36,41 @@ export default function MessageBar() {
     return () => { cancelled = true; };
   }, [text, language, outputLanguage]);
 
-  // Debounced background correction — suggestion shown inline, child
-  // must explicitly tap to accept. Never auto-applied.
+  // Debounced background suggestion — child must explicitly tap to accept,
+  // never auto-applied.
+  //
+  // Two modes:
+  //   - When the input ends with whitespace ("good evening "), run pure
+  //     CORRECTION: fix typos in already-typed words.
+  //   - When the input is mid-word ("у лукоморья д"), run COMPLETION:
+  //     predict the most likely full word for the trailing fragment and
+  //     optionally extend by 1-3 words. This is what makes mid-typing
+  //     suggestions useful instead of echoing the partial back.
+  //
+  // After the call returns we still reject useless results (suggestion
+  // identical to input modulo case/whitespace, or suggestion that left
+  // the trailing partial unchanged in completion mode).
   useEffect(() => {
     setSuggestion(null);
     const trimmed = text.trim();
     if (trimmed.length < 4) return;
+    const isMidWord = !/\s$/.test(text);
+    const mode = isMidWord ? 'complete' : 'correct';
     let cancelled = false;
     const timer = setTimeout(async () => {
-      const fixed = await correctText(trimmed, language);
-      if (!cancelled && fixed && fixed !== trimmed) setSuggestion(fixed);
+      const fixed = await correctText(trimmed, language, mode);
+      if (cancelled || !fixed || fixed === trimmed) return;
+      // Reject "echo" suggestions — same content modulo case/whitespace.
+      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+      if (norm(fixed) === norm(trimmed)) return;
+      // In completion mode, reject suggestions that left the trailing
+      // fragment exactly as typed (i.e. didn't actually complete it).
+      if (isMidWord) {
+        const inputLast = trimmed.split(/\s+/).pop() ?? '';
+        const fixedLast = fixed.trim().split(/\s+/).pop() ?? '';
+        if (inputLast && fixedLast.toLowerCase() === inputLast.toLowerCase()) return;
+      }
+      setSuggestion(fixed);
     }, 400);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [text, language]);

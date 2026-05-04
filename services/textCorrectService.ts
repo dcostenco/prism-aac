@@ -33,7 +33,7 @@ const SYNALUX_API = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_
 // for the cache, but the foreground call resolves with the original text.
 const BACKEND_TIMEOUT_MS = 1500;
 
-const LOCAL_SYSTEM = `You are a fast text-cleanup engine for an AAC (augmentative and alternative communication) app used by users with motor impairments. Your only job: take possibly-malformed input and return the most likely intended utterance.
+const LOCAL_SYSTEM_CORRECT = `You are a fast text-cleanup engine for an AAC (augmentative and alternative communication) app used by users with motor impairments. Your only job: take possibly-malformed input and return the most likely intended utterance.
 
 Rules:
 - Fix obvious typos, missing spaces, dropped letters, transposed letters.
@@ -46,6 +46,18 @@ Rules:
 - DO NOT translate.
 - If the input is already well-formed, return it unchanged.
 - Return ONLY the corrected text, no quotes, no explanation, no preamble.`;
+
+const LOCAL_SYSTEM_COMPLETE = `You are a fast text-completion engine for an AAC (augmentative and alternative communication) app used by users with motor impairments. The input ends with an UNFINISHED WORD — the user is mid-typing and a likely completion will save them many keystrokes.
+
+Rules:
+- The LAST word of the input is incomplete — predict the most likely full word that starts with those letters in context.
+- Replace ONLY the last word with its completion; keep all earlier words exactly as written.
+- You MAY also extend the utterance by 1-3 short words after the completion if the context strongly suggests them (e.g. "у лукоморья дуб" -> "у лукоморья дуб зелёный"). Otherwise stop after completing the last word.
+- Fix obvious typos in earlier words while you're at it.
+- Capitalize "I" and the first word; preserve user's case otherwise.
+- DO NOT translate.
+- DO NOT explain — return ONLY the predicted text, no quotes, no preamble.
+- If you cannot meaningfully complete the last word (e.g. it could be 50 different words), return the input unchanged.`;
 
 const MAX_CACHE = 500;
 const memoryCache = new Map<string, string>();
@@ -65,14 +77,16 @@ function withTimeout(ms: number): { signal: AbortSignal; cancel: () => void } {
   return { signal: ctrl.signal, cancel: () => clearTimeout(timer) };
 }
 
-async function correctViaPortal(text: string, lang: string): Promise<string | null> {
+type CorrectMode = 'correct' | 'complete';
+
+async function correctViaPortal(text: string, lang: string, mode: CorrectMode): Promise<string | null> {
   const t = withTimeout(BACKEND_TIMEOUT_MS);
   try {
     const res = await fetch(`${SYNALUX_API}/text/correct`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, lang }),
+      body: JSON.stringify({ text, lang, mode }),
       signal: t.signal,
     });
     if (!res.ok) return null;
@@ -86,7 +100,7 @@ async function correctViaPortal(text: string, lang: string): Promise<string | nu
   }
 }
 
-async function correctViaLocal(text: string, lang: string): Promise<string | null> {
+async function correctViaLocal(text: string, lang: string, mode: CorrectMode): Promise<string | null> {
   const t = withTimeout(BACKEND_TIMEOUT_MS);
   try {
     const res = await fetch(LOCAL_OLLAMA_URL, {
@@ -94,7 +108,7 @@ async function correctViaLocal(text: string, lang: string): Promise<string | nul
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: LOCAL_MODEL,
-        system: LOCAL_SYSTEM,
+        system: mode === 'complete' ? LOCAL_SYSTEM_COMPLETE : LOCAL_SYSTEM_CORRECT,
         prompt: `Language: ${lang}. Input: "${text}"`,
         stream: false,
         options: { temperature: 0.0, num_predict: 80 },
@@ -113,14 +127,18 @@ async function correctViaLocal(text: string, lang: string): Promise<string | nul
   }
 }
 
-export async function correctText(text: string, lang = 'en'): Promise<string> {
+export async function correctText(
+  text: string,
+  lang = 'en',
+  mode: CorrectMode = 'correct',
+): Promise<string> {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length < 3) return text;
 
   // Canonicalize so synalux portal + local model both receive BCP-47 codes.
   // Critical for Chinese routing: zh-CN vs zh-TW vs zh-HK take different paths.
   lang = canonicalizeLang(lang);
-  const cacheKey = `${lang}|${trimmed}`;
+  const cacheKey = `${mode}|${lang}|${trimmed}`;
   const cached = memoryCache.get(cacheKey);
   if (cached !== undefined) return cached;
 
@@ -135,7 +153,7 @@ export async function correctText(text: string, lang = 'en'): Promise<string> {
       // network-dependent fallback only.
       const hasLocal = await isLocalModelAvailable();
       if (hasLocal) {
-        const fromLocal = await correctViaLocal(trimmed, lang);
+        const fromLocal = await correctViaLocal(trimmed, lang, mode);
         if (fromLocal) {
           memoryCache.set(cacheKey, fromLocal);
           trimCorrectCache();
@@ -144,7 +162,7 @@ export async function correctText(text: string, lang = 'en'): Promise<string> {
         // Local probe said yes but the call failed — fall through to
         // portal as a backup rather than fail.
       }
-      const fromPortal = await correctViaPortal(trimmed, lang);
+      const fromPortal = await correctViaPortal(trimmed, lang, mode);
       if (fromPortal) {
         memoryCache.set(cacheKey, fromPortal);
         trimCorrectCache();
