@@ -46,7 +46,7 @@ function isSafeAutoCorrection(original: string, fixed: string): boolean {
 
 export default function MessageBar() {
   const { text, activeTone, toneMode, setTone, setToneMode, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
-  const { speechRate, speechVolume, language } = useSettingsStore();
+  const { speechRate, speechVolume, language, aiAutocorrectEnabled } = useSettingsStore();
   const { t } = useT();
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showTones, setShowTones] = useState(false);
@@ -94,6 +94,7 @@ export default function MessageBar() {
         setAiCompletion(null);
       }
     });
+    if (!aiAutocorrectEnabled) return;
     const trimmed = text.trim();
     if (trimmed.length < 4) return;
     const isMidWord = !/\s$/.test(text);

@@ -154,7 +154,10 @@ export async function correctText(
       // network-dependent fallback only.
       const hasLocal = await isLocalModelAvailable();
       if (hasLocal) {
-        const fromLocal = await correctViaLocal(trimmed, lang, mode);
+        let fromLocal = await correctViaLocal(trimmed, lang, mode);
+        if (mode === 'complete' && fromLocal === trimmed) {
+          fromLocal = await correctViaLocal(trimmed, lang, 'correct');
+        }
         if (fromLocal) {
           memoryCache.set(cacheKey, fromLocal);
           trimCorrectCache();
@@ -163,7 +166,10 @@ export async function correctText(
         // Local probe said yes but the call failed — fall through to
         // portal as a backup rather than fail.
       }
-      const fromPortal = await correctViaPortal(trimmed, lang, mode);
+      let fromPortal = await correctViaPortal(trimmed, lang, mode);
+      if (mode === 'complete' && fromPortal === trimmed) {
+        fromPortal = await correctViaPortal(trimmed, lang, 'correct');
+      }
       if (fromPortal) {
         memoryCache.set(cacheKey, fromPortal);
         trimCorrectCache();

@@ -52,11 +52,13 @@ interface SettingsState {
   cameraTrackingTarget: string;
   gestureConfig: GestureConfig;
   toolbarConfig: ToolbarConfig;
+  // AI Autocorrect in MessageBar
+  aiAutocorrectEnabled: boolean;
   // Marketplace-installed app ids (e.g. ['game-packs', 'voice-packs']).
   // Toolbar.tsx renders these as buttons after the built-ins.
   installedApps: string[];
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled'>>,
   ) => void;
   setTheme: (theme: Theme) => void;
   // Toolbar mutators — keep them on the store so reorder/enable/install
@@ -94,6 +96,7 @@ export const useSettingsStore = create<SettingsState>()(
       // and motor-asymmetric users use the same default config.
       cameraTrackingTarget: 'any_wrist',
       gestureConfig: { ...DEFAULT_GESTURE_CONFIG },
+      aiAutocorrectEnabled: true,
       toolbarConfig: {
         order: [...DEFAULT_TOOLBAR_ORDER],
         // Empty enabled map = all built-ins ON (Partial+default-true). User

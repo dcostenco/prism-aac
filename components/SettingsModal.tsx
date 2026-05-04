@@ -177,6 +177,21 @@ export default function SettingsModal() {
             </div>
           </div>
 
+          {/* Text Input Settings */}
+          <div>
+            <h3 className={sectionTitle}>Text Input</h3>
+            <label className="flex items-center justify-between py-1.5">
+              <div>
+                <span className="text-primary text-sm font-semibold">AI Autocorrect & Completion</span>
+                <p className="text-muted text-[10px]">Suggests corrections and word completions while typing</p>
+              </div>
+              <button onClick={() => { tapFeedback(); settings.update({ aiAutocorrectEnabled: !settings.aiAutocorrectEnabled }); }} aria-pressed={settings.aiAutocorrectEnabled} aria-label="AI Autocorrect"
+                className={`w-12 h-7 rounded-full transition-colors shrink-0 ${settings.aiAutocorrectEnabled ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}>
+                <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${settings.aiAutocorrectEnabled ? 'translate-x-5' : ''}`} />
+              </button>
+            </label>
+          </div>
+
           {/* Input Modes — all accessibility input methods */}
           <div>
             <h3 className={sectionTitle}>Input Modes</h3>
@@ -209,6 +224,17 @@ export default function SettingsModal() {
                 className={`w-14 h-8 rounded-full transition-colors ${settings.highContrast ? 'bg-[#FFD700]' : 'bg-[#999]'}`}
               >
                 <div className={`w-6 h-6 rounded-full bg-white transition-transform mx-1 ${settings.highContrast ? 'translate-x-6' : ''}`} />
+              </button>
+            </label>
+            <label className="flex items-center justify-between py-2">
+              <span className="text-primary text-lg">AI Autocorrect</span>
+              <button
+                onClick={() => settings.update({ aiAutocorrectEnabled: !settings.aiAutocorrectEnabled })}
+                aria-pressed={settings.aiAutocorrectEnabled}
+                aria-label="AI Autocorrect"
+                className={`w-14 h-8 rounded-full transition-colors ${settings.aiAutocorrectEnabled ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}
+              >
+                <div className={`w-6 h-6 rounded-full bg-white transition-transform mx-1 ${settings.aiAutocorrectEnabled ? 'translate-x-6' : ''}`} />
               </button>
             </label>
           </div>
