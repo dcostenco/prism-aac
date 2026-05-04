@@ -90,12 +90,33 @@ export default function MessageBar() {
     return () => { cancelled = true; clearTimeout(timer); };
   }, [text, language]);
 
+  const learnWord = usePredictionStore((s) => s.learnWord);
+
+  // Record every word + adjacent bigrams/trigrams in a finalized utterance
+  // so the prediction engine learns from it. Used both when the user
+  // accepts an AI suggestion (committing to those words) and when they
+  // press Speak (the strongest possible signal — "this is what I actually
+  // communicated"). User n-grams get a 10× boost over corpus on the next
+  // prediction pass, so a few utterances quickly personalize the bar.
+  const learnUtterance = useCallback((utterance: string) => {
+    const words = utterance.trim().split(/\s+/).filter(Boolean);
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i].toLowerCase();
+      const prev = i > 0 ? words[i - 1].toLowerCase() : undefined;
+      const prevPrev = i > 1 ? words[i - 2].toLowerCase() : undefined;
+      learnWord(w, prev, prevPrev);
+    }
+  }, [learnWord]);
+
   const acceptSuggestion = useCallback(() => {
     if (!suggestion) return;
     tapFeedback();
     setText(suggestion);
     setSuggestion(null);
-  }, [suggestion, setText]);
+    // Reinforce the accepted utterance so the engine learns the user's
+    // patterns (e.g. "лукоморья|дуб" trigram after accepting Pushkin).
+    learnUtterance(suggestion);
+  }, [suggestion, setText, learnUtterance]);
 
   const handleSpeak = useCallback(() => {
     tapFeedback();
@@ -107,12 +128,18 @@ export default function MessageBar() {
     // are only applied when the child explicitly taps them.
     addToHistory(original);
 
+    // Speak is the strongest learning signal: the user just authoritatively
+    // communicated this exact utterance. Reinforce every word and adjacent
+    // pair/triple. We learn from the SOURCE-language text (what the user
+    // typed), not the translation, since that's what they'll type next.
+    learnUtterance(original);
+
     if (translated) {
       aacSpeak(translated, speechRate, speechVolume, activeTone);
     } else {
       aacSpeak(original, speechRate, speechVolume, activeTone);
     }
-  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated]);
+  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
