@@ -141,6 +141,10 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 ![Settings](docs/screenshots/settings.png)
 > Category visibility toggles (progressive vocabulary exposure), grid size selector (4–20 tiles), high contrast mode (WCAG AAA — black/yellow), 12 languages, speech rate/volume, custom categories/phrases, Synalux sign-in. All settings translated.
 
+### Synalux Portal Integration: Mail & Drive
+![Mail and Drive Vibe Interface](docs/screenshots/mail-drive-vibe.png)
+> AAC prediction and auto-correction are now integrated directly into the Synalux Portal's "Vibe Interface". This touch-friendly design allows users with motor impairments to compose emails, attach Drive documents, and communicate seamlessly without leaving the platform.
+
 ---
 
 ## For BCBA / RBT / SLP Staff
