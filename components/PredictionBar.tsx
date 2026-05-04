@@ -113,14 +113,16 @@ export default function PredictionBar() {
     tapFeedback();
     const midWord = text.length > 0 && !text.endsWith(' ');
     const words = text.trim().split(/\s+/).filter(Boolean);
+    const isCompletion = midWord && words.length > 0 && word.toLowerCase().startsWith(words[words.length - 1].toLowerCase());
+
     // For trigram learning we need the two committed words BEFORE the new tap.
-    // If the user is mid-word, the in-progress word doesn't count as committed,
+    // If the user is completing a partial word, the in-progress word doesn't count as committed,
     // so previous = words[-2], prevPrev = words[-3]. Otherwise previous = words[-1],
     // prevPrev = words[-2].
-    const previousWord = midWord && words.length > 1 ? words[words.length - 2] : (words.length > 0 ? words[words.length - 1] : undefined);
-    const prevPrevWord = midWord && words.length > 2 ? words[words.length - 3] : (words.length > 1 ? words[words.length - 2] : undefined);
+    const previousWord = isCompletion && words.length > 1 ? words[words.length - 2] : (!isCompletion && words.length > 0 ? words[words.length - 1] : undefined);
+    const prevPrevWord = isCompletion && words.length > 2 ? words[words.length - 3] : (!isCompletion && words.length > 1 ? words[words.length - 2] : undefined);
 
-    if (midWord && words.length > 0) {
+    if (isCompletion && words.length > 0) {
       const prefix = words.slice(0, -1).join(' ');
       const newText = prefix ? `${prefix} ${word} ` : `${word} `;
       useMessageStore.getState().setText(newText);
@@ -131,7 +133,7 @@ export default function PredictionBar() {
     }
 
     learnWord(word.toLowerCase(), previousWord?.toLowerCase(), prevPrevWord?.toLowerCase());
-    const fullPhrase = midWord ? [...words.slice(0, -1), word].join(' ') : [...words, word].join(' ');
+    const fullPhrase = isCompletion ? [...words.slice(0, -1), word].join(' ') : [...words, word].join(' ');
     aacSpeak(fullPhrase, speechRate, speechVolume);
   };
 

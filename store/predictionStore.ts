@@ -35,6 +35,7 @@ const SCRIPT_FILTER: Partial<Record<SupportedLanguage, RegExp>> = {
   'zh-HK': /^[一-鿿]+$/,
   // Latin-script European langs share the loose matcher — they may include
   // accented variants of any letter in their alphabet.
+  en: /^[a-z'\-]+$/,
   es: /^[a-zñáéíóúü'\-]+$/,
   fr: /^[a-zàâäçéèêëîïôœùûüÿ'\-]+$/,
   de: /^[a-zäöüß'\-]+$/,
