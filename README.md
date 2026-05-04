@@ -10,11 +10,15 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 
 ## 🆕 What's New (May 2026)
 
-### Production model upgraded → `prism-coder:7b` v18aac-MAX
-- **MAX-precision retrain** — DoRA **r=512 / α=1024** (2× rank vs. prior v18aac), **5 epochs** on 4× H100, batch 64 effective. Final loss ~0.056, mean token accuracy **98.2%**.
-- **AAC realigned eval: 47/48 (98%)** — beats prior v17.4 (85%) by **+13pp**
-  - emergency_qa **13/13 perfect** (life-safety priority held)
-  - text_correct **15/15 perfect**, translate **8/8 perfect**, ask_ai **5/5**, caregiver 6/7
+### Production model upgraded → `prism-coder:7b` v18clean-epoch0 + new `prism-coder:14b` sibling
+- **Pareto upgrade over the prior v18aac-MAX prod.** Re-trained from clean Qwen2.5-Coder-7B-Instruct base on the curated v18-clean mix (BFCL backbone + caregiver + text_correct + emergency + translate + ask_ai + format anchor).
+- **AAC realigned: 47/48 (97.9%)** held, **caregiver targeted: 20/20** (was 19/20), **translate: 8/8** (was 7/8), all other categories perfect.
+- **BFCL median (3-run, StdDev 0%): 88.1%** — +40.9 percentage points over prior prod, restoring tool-calling fluency that v18aac-MAX had partially traded away.
+- **NEW `prism-coder:14b` sibling** — Qwen2.5-Coder-14B base + AAC SYSTEM directive, BFCL 85.9%, AAC 46/48 (95.8%), **32K context**. Auto-routed for paid-tier medium-length AAC queries (5–40 words) via Synalux portal — keeps inference local on the cloud GPU pool, $0 marginal cost vs Claude/Gemini.
+- **Free tier behaviour unchanged** — still 7B local for simple queries → Gemini for complex ones.
+- **Rollback path:** `ollama cp prism-coder:7b-prev-20260504-1325 prism-coder:7b` (< 1 minute, snapshot of prior v18aac-MAX prod).
+
+### Gesture recognition (carries over from previous release)
 - **🆕 Gesture recognition support (5/5 spot-check)** — model configures the new 7-gesture facial-blendshape input system, including:
   - Calibration walkthroughs (3-second neutral baseline capture)
   - Asymmetry-safe handling for hemiplegia / Bell's palsy / CP (uses `max(left, right)` for paired blendshapes)
