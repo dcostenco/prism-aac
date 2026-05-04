@@ -131,10 +131,18 @@ function syncCorpusSeed(lang: string): PredictionSeed | null {
 
 interface PredictionState {
   predictions: string[];
+  // AI-driven word completion for the user's current partial. When set,
+  // PredictionBar prepends this as the leftmost tile so a contextually
+  // strong but corpus-rare word (e.g. "дуб" in "у лукоморья д…", which
+  // ranks ~17K in Russian wordfreq and would never crack top-5 by raw
+  // frequency) can still surface. Computed externally by MessageBar from
+  // the autocorrect/completion suggestion and pushed in via setAiCompletion.
+  aiCompletion: string | null;
   wordFreq: Record<string, WordFreqEntry>;
   bigrams: Record<string, WordFreqEntry>;
   trigrams: Record<string, WordFreqEntry>;
   updatePredictions: (text: string, lang?: SupportedLanguage) => void;
+  setAiCompletion: (word: string | null) => void;
   learnWord: (word: string, previousWord?: string, prevPrevWord?: string) => void;
   runDecay: () => void;
   ensureSeed: () => void;
@@ -144,6 +152,7 @@ export const usePredictionStore = create<PredictionState>()(
   persist(
     (set, get) => ({
       predictions: DEFAULT_PREDICTIONS,
+      aiCompletion: null,
       wordFreq: { ...SEED_EN.wordFreq },
       bigrams: { ...SEED_EN.bigrams },
       trigrams: { ...SEED_EN.trigrams },
@@ -173,6 +182,12 @@ export const usePredictionStore = create<PredictionState>()(
         const scriptFilter = SCRIPT_FILTER[lang];
         const predictions = getPredictions(text, mergedWf, mergedBg, undefined, mergedTg, fallback, alwaysCapitalized, scriptFilter, lang);
         set({ predictions });
+      },
+
+      setAiCompletion: (word) => {
+        // Trim and reject empty / whitespace-only inputs.
+        const v = word ? word.trim() : null;
+        set({ aiCompletion: v && v.length > 0 ? v : null });
       },
 
       learnWord: (word, previousWord, prevPrevWord) => {

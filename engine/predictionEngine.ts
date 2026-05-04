@@ -183,6 +183,14 @@ export function getPredictions(
   // Prefix matching — if user is mid-word, surface completions, weighted by
   // each candidate's overall frequency so common words like "main"/"make"
   // outrank obscure prefix neighbors.
+  //
+  // Pool size scales with partial length: short partials (1-2 chars) need
+  // a much larger pool because thousands of words match and the top-30 by
+  // raw web-text frequency is dominated by function words ("для", "до",
+  // "the", "of"). Concrete AAC-essential nouns ("дуб" at wordfreq rank
+  // ~17K) only enter the pool when we look further down the frequency
+  // curve. Longer partials (3+ chars) naturally narrow the candidate
+  // count, so a smaller pool is fine.
   if (partialWord && partialWord.length >= 1) {
     const prefixCands: Array<{ word: string; count: number }> = [];
     for (const word of Object.keys(wordFreq)) {
@@ -191,7 +199,11 @@ export function getPredictions(
       }
     }
     prefixCands.sort((a, b) => b.count - a.count);
-    const topPrefix = prefixCands.slice(0, TUNING.prefixPoolSize);
+    const poolSize =
+      partialWord.length === 1 ? 300 :
+      partialWord.length === 2 ? 150 :
+      TUNING.prefixPoolSize;
+    const topPrefix = prefixCands.slice(0, poolSize);
     const maxPrefix = topPrefix.length > 0 ? topPrefix[0].count : 1;
     for (const { word, count } of topPrefix) {
       getOrCreate(word).prefix = count / maxPrefix;

@@ -11,6 +11,7 @@ import { getTTSCode } from '@/engine/i18n';
 import { TONE_OPTIONS } from '@/services/azureTTS';
 import { translateWithAIRefine, translateTextSync } from '@/services/translateService';
 import { useAuthStore } from '@/store/authStore';
+import { usePredictionStore } from '@/store/predictionStore';
 
 export default function MessageBar() {
   const { text, activeTone, toneMode, setTone, setToneMode, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
@@ -50,8 +51,10 @@ export default function MessageBar() {
   // After the call returns we still reject useless results (suggestion
   // identical to input modulo case/whitespace, or suggestion that left
   // the trailing partial unchanged in completion mode).
+  const setAiCompletion = usePredictionStore((s) => s.setAiCompletion);
   useEffect(() => {
     setSuggestion(null);
+    setAiCompletion(null);
     const trimmed = text.trim();
     if (trimmed.length < 4) return;
     const isMidWord = !/\s$/.test(text);
@@ -63,12 +66,24 @@ export default function MessageBar() {
       // Reject "echo" suggestions — same content modulo case/whitespace.
       const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
       if (norm(fixed) === norm(trimmed)) return;
+      const inputTokens = trimmed.split(/\s+/);
+      const fixedTokens = fixed.trim().split(/\s+/);
       // In completion mode, reject suggestions that left the trailing
       // fragment exactly as typed (i.e. didn't actually complete it).
       if (isMidWord) {
-        const inputLast = trimmed.split(/\s+/).pop() ?? '';
-        const fixedLast = fixed.trim().split(/\s+/).pop() ?? '';
-        if (inputLast && fixedLast.toLowerCase() === inputLast.toLowerCase()) return;
+        const inputLast = inputTokens[inputTokens.length - 1] ?? '';
+        // The AI's completion of the user's partial is the token at the
+        // SAME position in the fixed output (not necessarily the last —
+        // the AI may have extended by 1-3 words after the completion).
+        const aiCompletion = fixedTokens[inputTokens.length - 1] ?? '';
+        if (inputLast && aiCompletion.toLowerCase() === inputLast.toLowerCase()) return;
+        // Push the AI's word completion into the prediction store so it
+        // surfaces as a tile (slot 0) in the prediction bar — letting the
+        // user accept just the single word without committing to the full
+        // sentence rewrite.
+        if (aiCompletion && aiCompletion.toLowerCase().startsWith(inputLast.toLowerCase())) {
+          setAiCompletion(aiCompletion);
+        }
       }
       setSuggestion(fixed);
     }, 400);

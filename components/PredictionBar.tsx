@@ -63,7 +63,7 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
 
 export default function PredictionBar() {
   const { text } = useMessageStore();
-  const { predictions, updatePredictions, learnWord } = usePredictionStore();
+  const { predictions, aiCompletion, updatePredictions, learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
   const langDefaults = getPredictionsForLanguage(language);
   const [displayed, setDisplayed] = useState<string[]>(langDefaults);
@@ -87,13 +87,26 @@ export default function PredictionBar() {
     updatePredictions(text, language);
   }, [text, updatePredictions, language]);
 
+  // Merge AI completion into the prediction list as the leftmost tile.
+  // When set, the AI's word completion ("дуб" for "у лукоморья д") wins
+  // slot 0 — corpus-rare but contextually-correct words can surface even
+  // when raw wordfreq ranks them too low for the top-5. We prepend rather
+  // than override so the corpus-based predictions still occupy slots 1-4.
+  function mergeAiCompletion(corpusPreds: string[], ai: string | null): string[] {
+    if (!ai) return corpusPreds;
+    const lc = ai.toLowerCase();
+    const dedup = corpusPreds.filter((p) => p.toLowerCase() !== lc);
+    return [ai, ...dedup].slice(0, 5);
+  }
+
   useEffect(() => {
     if (!text.trim()) return;
     // Only use stable slots within same language; full reset on language change
-    const next = computeStableSlots(prevRef.current, predictions);
+    const merged = mergeAiCompletion(predictions, aiCompletion);
+    const next = computeStableSlots(prevRef.current, merged);
     prevRef.current = next;
     setDisplayed(next);
-  }, [predictions, text]);
+  }, [predictions, aiCompletion, text]);
 
   const handleTap = (word: string) => {
     tapFeedback();
