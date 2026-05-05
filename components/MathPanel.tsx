@@ -144,14 +144,26 @@ export default function MathPanel() {
 
       {/* Canvas — expression display + AI tutor */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
-        {/* Expression canvas */}
-        <div className="flex items-center justify-center bg-white dark:bg-[#1a1a2e] rounded-xl border-2 border-theme min-h-[clamp(80px,15svh,140px)] px-4 relative">
-          <span className="text-[clamp(1.75rem,5vw,3.5rem)] font-mono text-primary tracking-wide text-center break-all py-3">
+        {/* Expression canvas — fills the available height with a graph-paper
+            grid background so geometric figures and aligned arithmetic have
+            a visible coordinate system (Panther Math Paper convention). The
+            grid uses CSS linear-gradients so it scales with viewport without
+            shipping an SVG / image asset. */}
+        <div
+          className="math-grid-canvas relative flex items-center justify-center rounded-xl border-2 border-theme min-h-[60svh] px-4 bg-white dark:bg-[#1a1a2e]"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, rgba(120,120,140,0.18) 1px, transparent 1px),' +
+              'linear-gradient(to bottom, rgba(120,120,140,0.18) 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+        >
+          <span className="text-[clamp(2rem,6vw,4.5rem)] font-mono text-primary tracking-wide text-center break-all py-3">
             {expression || <span className="text-dim text-[clamp(0.9rem,2.5vw,1.25rem)]">5 × 6 =</span>}
           </span>
-          <div className="absolute bottom-1.5 right-3 flex gap-1.5">
-            <button onClick={speakExpression} className="aac-btn w-8 h-8 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-sm" aria-label={t('speak')}>🔊</button>
-            <button onClick={clearAll} className="aac-btn w-8 h-8 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-xs" aria-label={t('clear')}>C</button>
+          <div className="absolute bottom-2 right-3 flex gap-1.5">
+            <button onClick={speakExpression} className="aac-btn w-9 h-9 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-base shadow-sm" aria-label={t('speak')}>🔊</button>
+            <button onClick={clearAll} className="aac-btn w-9 h-9 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-sm shadow-sm" aria-label={t('clear')}>C</button>
           </div>
         </div>
 
