@@ -18,6 +18,7 @@ import SettingsModal from './SettingsModal';
 import AlertOverlay from './AlertOverlay';
 import HeadTrackingOverlay from './HeadTrackingOverlay';
 import TrackingDebugOverlay from './TrackingDebugOverlay';
+import TtsDebugOverlay from './TtsDebugOverlay';
 import CameraInputOverlay from './CameraInputOverlay';
 import GreetingBanner from './GreetingBanner';
 import SyncProvider from './SyncProvider';
@@ -220,6 +221,11 @@ export default function PrismApp() {
               localStorage["prism-tracking-debug"]="1". Returns null
               for end users so there is no bundle / DOM cost. */}
           <TrackingDebugOverlay />
+          {/* Hidden by default; activates via ?debug=tts or
+              localStorage["prism-tts-debug"]="1". Surfaces the
+              Inworld → Azure → Kokoro → Web Speech → Native iOS
+              fallback chain decisions for support. */}
+          <TtsDebugOverlay />
         </div>
       </SyncProvider>
     </ErrorBoundary>
