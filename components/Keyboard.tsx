@@ -5,6 +5,8 @@ import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { aacSpeak } from '@/services/aacSpeak';
+import { speakWord } from '@/services/speechService';
+import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
@@ -31,7 +33,16 @@ export default function Keyboard() {
     const char = keyboardMode === 'letters' ? (showUpper ? key : key.toLowerCase()) : key;
     appendChar(char);
     if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
-  }, [appendChar, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper]);
+    // Letter echo in auto mode — voices each typed character via local
+    // Web Speech (sub-50ms latency) so single-letter words like "I" or
+    // "a" get audible feedback without waiting for a space, and
+    // motor-impaired users hear immediate phonics confirmation per
+    // keystroke. speakLocal calls speechSynthesis.cancel() first, so
+    // fast typists hear only the most recent letter (no queue flooding).
+    if (autoSpeak && soundEnabled) {
+      speakWord(char, speechRate, speechVolume, getTTSCode(language as SupportedLanguage));
+    }
+  }, [appendChar, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper, autoSpeak, soundEnabled, speechRate, speechVolume, language]);
 
   const shiftHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shiftLongPressed = useRef(false);
