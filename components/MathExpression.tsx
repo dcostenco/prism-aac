@@ -1,47 +1,24 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import 'katex/dist/katex.min.css';
 import { expressionToLatex } from '@/services/mathLatex';
 
 /**
  * MathExpression — renders a user-built math expression as KaTeX-formatted
  * typography (italic variables, true superscripts, real fraction stacks).
  *
- * Loads KaTeX from CDN on first mount instead of bundling. The math panel
- * is opened from a side panel that's not on the critical path; deferring
- * the ~270KB CSS + JS keeps the initial AAC bundle lean. CDN URL is
- * already allowed by the portal CSP (cdn.jsdelivr.net in script-src and
- * style-src), and serwist caches it after first fetch.
+ * KaTeX CSS is imported as a regular CSS module so it ships in the page
+ * stylesheet bundle. The previous CDN-link approach loaded CSS from
+ * cdn.jsdelivr.net at runtime, but synalux.ai/prism-aac's CSP only
+ * whitelists 'self' and prism-aac.vercel.app under style-src — the link
+ * was silently blocked, KaTeX fell back to rendering both katex-mathml
+ * (which the CSS would normally hide) AND katex-html, which is why the
+ * canvas showed every expression twice.
  *
- * Falls back to the plain-text expression if KaTeX fails (CDN blocked,
- * offline first-load, malformed LaTeX). Better to read raw "5 \\times 6"
- * than a blank canvas.
+ * Falls back to the plain-text expression if KaTeX engine fails to
+ * decode the LaTeX. Better to read raw "5 \\times 6" than a blank canvas.
  */
-
-const KATEX_VERSION = '0.16.21';
-let cssLoaded = false;
-let cssPromise: Promise<void> | null = null;
-
-function loadKatexCss(): Promise<void> {
-    if (cssLoaded) return Promise.resolve();
-    if (cssPromise) return cssPromise;
-    if (typeof document === 'undefined') return Promise.resolve();
-    if (document.querySelector('link[data-katex]')) {
-        cssLoaded = true;
-        return Promise.resolve();
-    }
-    cssPromise = new Promise<void>((resolve) => {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = `https://cdn.jsdelivr.net/npm/katex@${KATEX_VERSION}/dist/katex.min.css`;
-        link.crossOrigin = 'anonymous';
-        link.dataset.katex = '1';
-        link.onload = () => { cssLoaded = true; resolve(); };
-        link.onerror = () => { resolve(); /* render plaintext fallback */ };
-        document.head.appendChild(link);
-    });
-    return cssPromise;
-}
 
 export interface MathExpressionProps {
     expression: string;
@@ -63,7 +40,6 @@ export default function MathExpression({ expression, placeholder, className }: M
         }
 
         (async () => {
-            await loadKatexCss();
             // Dynamic import keeps the 280KB KaTeX engine out of the main
             // bundle. Lazy-loaded only when the math panel actually renders.
             const katex = (await import('katex')).default;
@@ -73,7 +49,11 @@ export default function MathExpression({ expression, placeholder, className }: M
                 katex.render(latex, node, {
                     displayMode: true,
                     throwOnError: false,
-                    output: 'htmlAndMathml',
+                    // 'html' only — skip MathML to eliminate the duplicate-render
+                    // failure mode where MathML shows alongside HTML when CSS
+                    // is missing or partially loaded. Screen readers can read
+                    // the aria-live container's plain text fallback.
+                    output: 'html',
                     strict: 'ignore',
                 });
             } catch {
