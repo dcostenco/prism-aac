@@ -9,6 +9,7 @@ import { askAI } from '@/services/aiService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useT } from '@/engine/useT';
 import { MATH_ITEMS } from '@/constants/mathSymbols';
+import MathExpression from './MathExpression';
 import type { MathCategory } from '@/types';
 
 const CATEGORIES: { key: MathCategory; i18n: string; icon: string }[] = [
@@ -158,9 +159,14 @@ export default function MathPanel() {
             backgroundSize: '24px 24px',
           }}
         >
-          <span className="text-[clamp(2rem,6vw,4.5rem)] font-mono text-primary tracking-wide text-center break-all py-3">
-            {expression || <span className="text-dim text-[clamp(0.9rem,2.5vw,1.25rem)]">5 × 6 =</span>}
-          </span>
+          {expression ? (
+            <MathExpression
+              expression={expression}
+              className="text-[clamp(2rem,6vw,4.5rem)] text-primary text-center break-all py-3 katex-host"
+            />
+          ) : (
+            <span className="text-dim text-[clamp(0.9rem,2.5vw,1.25rem)]">5 × 6 =</span>
+          )}
           <div className="absolute bottom-2 right-3 flex gap-1.5">
             <button onClick={speakExpression} className="aac-btn w-9 h-9 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-base shadow-sm" aria-label={t('speak')}>🔊</button>
             <button onClick={clearAll} className="aac-btn w-9 h-9 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-sm shadow-sm" aria-label={t('clear')}>C</button>
