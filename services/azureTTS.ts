@@ -147,7 +147,14 @@ export async function speakAzure(
     };
     if (voiceId) reqBody.voiceId = voiceId;
 
-    const res = await fetch(`${SYNALUX_API}/tts`, {
+    // Cross-origin AAC users (prism-aac.vercel.app) can't carry the
+    // synalux.ai NextAuth cookie — it's SameSite=Lax. Without auth the
+    // private /api/v1/tts returns 401 and we fall to Web Speech robotic.
+    // The public /api/v1/tts/public endpoint is anonymous + rate-limited
+    // and routes through Inworld/Azure neural just like the auth one.
+    // Use it whenever no token is set.
+    const endpoint = authToken ? `${SYNALUX_API}/tts` : `${SYNALUX_API}/tts/public`;
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify(reqBody),
