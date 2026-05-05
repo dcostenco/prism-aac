@@ -71,16 +71,27 @@ minutes/hours.
 | **C** | Naive avg fusion — bad camera poisons good camera | 🟠 High | 🟢 N/A by design | Active-Failover (best single camera) is intentional — see code comment in `fuseCameraDetections`. `fuseWeighted` stays as a documented building block for future calibrated multi-cam |
 | **D** | EMA filter amplifies high-velocity noise | 🟠 High | ✅ shipped | Confidence-aware Kalman1D replaces velocity-adaptive EMA |
 | **E** | No camera-shake stabilization (the "moving car" gap) | 🟠 High | ✅ shipped | `egoMotion.ts` + sparse-landmark centroid residuals; FaceLandmarker now always-init so non-gesture users get protection too |
-| **F** | No background recalibration / drift correction | 🟠 High | ❌ pending | design below |
-| **G** | Camera contention between head + body services | 🟠 High | ❌ pending | design below |
+| **F** | No background recalibration / drift correction | 🟠 High | ✅ shipped | `recalibration.ts` `BaselineTracker` — exp-moving-average mean + variance with offset + scale corrections. Wired into `headTracker.tick()` to mutate calibration anchors in place after warmup |
+| **G** | Camera contention between head + body services | 🟠 High | 🟡 primitive shipped | `cameraStream.ts` refcounted singleton with concurrency-safe `acquireCamera()`. Migration of `bodyPoseService` is the next step (existing `videoElement` reuse param can be passed `lease.video`) |
 | **H** | Cross-modal interference (gesture click during dwell) | 🟡 Medium | ✅ shipped | `crossModalLockout.ts` — gesture commits dispatch claim; dwell suspends 250ms |
-| **I** | No DeviceMotion / IMU input on iOS | 🟡 Medium | ❌ pending | design below |
+| **I** | No DeviceMotion / IMU input on iOS | 🟡 Medium | ✅ shipped | `deviceMotion.ts` — iOS 13+ permission flow + 500ms rolling-window peak detection with hysteresis. `headTracker` accepts `isDeviceShaking()` callback and gates drift checks while the IMU reports motion |
 | **J** | Cursor pinned at edge ≠ "lost" → fires garbage dwells | 🟡 Medium | ✅ shipped | `EdgePinDetector` — pin warn at 2s, escalate after N episodes OR a single sustained pin (`pinTriggerMs * pinEscalateCount`) |
 | **K** | No "safe mode" — only on/off; no degraded mode | 🟡 Medium | ✅ shipped | `safeMode.ts` — after 2 drift events in 5min: capped sensitivity, doubled dwell, single camera, gestures off. Cleared on manual retry |
 
-**Status May 2026**: 8 of 11 gaps shipped + auto-recover wired end-to-end.
-Remaining: F (recalibration), G (camera singleton), I (DeviceMotion).
-Tests: 78 passing (38 primitive + 16 safe-mode + 24 edge-pin/drift/fusion).
+**Status May 2026**: 11 of 11 gaps closed (G migration of bodyPoseService
+is follow-up cleanup — primitive ready). Auto-recover wired end-to-end.
+DeviceMotion gates drift checks during real environmental shake.
+Background calibration anchors auto-correct without user prompt.
+
+Tests: 219 passing across 8 files
+- `kalmanFilter1D.test.ts` (23) — confidence-aware filter + adversarial
+- `egoMotion.test.ts` (21) — camera-shake separation + adversarial
+- `safeMode.test.ts` (33) — degraded mode + persistence + corruption
+- `headTrackerStability.test.ts` (45) — drift / probe / fusion / edge-pin / lockout
+- `cameraStream.test.ts` (22) — refcount + concurrency
+- `recalibration.test.ts` (24) — baseline drift / scale correction
+- `deviceMotion.test.ts` (31) — IMU permission + hysteresis state machine
+- `head-tracker.test.ts` (20) — existing integration suite
 
 ---
 

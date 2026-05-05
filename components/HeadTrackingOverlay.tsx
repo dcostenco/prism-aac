@@ -22,6 +22,10 @@ import {
   clearDriftHistory,
   SAFE_MODE_EFFECTS,
 } from '@/services/safeMode';
+import {
+  startMotionMonitor,
+  type MotionMonitorHandle,
+} from '@/services/deviceMotion';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 
@@ -82,6 +86,8 @@ export default function HeadTrackingOverlay() {
   const handleRef = useRef<HeadTrackerHandle | null>(null);
   const gestureDetectorRef = useRef<GestureDetector | null>(null);
   const probeRef = useRef<ReliabilityProbeHandle | null>(null);
+  const motionMonitorRef = useRef<MotionMonitorHandle | null>(null);
+  const isShakingRef = useRef(false);
   const pipVideoRef = useRef<HTMLVideoElement | null>(null);
   const dwellStartRef = useRef(0);
   const dwellElementRef = useRef<Element | null>(null);
@@ -128,10 +134,19 @@ export default function HeadTrackingOverlay() {
       });
     }
 
+    // DeviceMotion shake detector — only useful on iOS / Android with
+    // an IMU. On desktop the API is unsupported (DeviceMotionEvent
+    // is undefined), so startMotionMonitor is a no-op listener.
+    isShakingRef.current = false;
+    motionMonitorRef.current = startMotionMonitor({
+      onChange: (state) => { isShakingRef.current = state === 'shaking'; },
+    });
+
     const handle = startHeadTracker({
       dwellMs: effectiveDwellMs,
       sensitivity: effectiveSensitivity,
       smoothing: 0.15,
+      isDeviceShaking: () => isShakingRef.current,
       // Drift safety net — see services/headTrackerStability.ts. The
       // detector lives inside the tracker; here we just react to its
       // verdict by stopping the tracker and showing a recovery toast.
@@ -208,6 +223,9 @@ export default function HeadTrackingOverlay() {
       handleRef.current = null;
       destroyGestureDetector();
       gestureDetectorRef.current = null;
+      motionMonitorRef.current?.stop();
+      motionMonitorRef.current = null;
+      isShakingRef.current = false;
     };
     // Re-create tracker when key settings change
   }, [enabled, effectiveDwellMs, effectiveSensitivity, effectiveGestureConfig, driftAutoDisable, driftThresholdPx, driftWindowMs, setSettings, animateDwellProgress]);

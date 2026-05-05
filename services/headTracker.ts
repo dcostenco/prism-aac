@@ -41,6 +41,14 @@ export interface HeadTrackerOptions {
   driftWindowMs?: number;
   /** Fire when the post-disable reliability probe says it's safe to re-enable. */
   onAutoRecover?: () => void;
+  /**
+   * Optional DeviceMotion-aware drift suppression. When the host is shaking
+   * (laptop on lap in moving car), the IMU reports it directly — we use
+   * that to NOT trigger drift on what's actually environmental motion.
+   * Caller wires `services/deviceMotion.ts.startMotionMonitor` and passes
+   * a getter that returns the current motion state per frame.
+   */
+  isDeviceShaking?: () => boolean;
 }
 
 export interface HeadTrackerHandle {
@@ -561,11 +569,18 @@ export function startHeadTracker(
   const egoMod = require('./egoMotion') as typeof import('./egoMotion');
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const lockoutMod = require('./crossModalLockout') as typeof import('./crossModalLockout');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const recalMod = require('./recalibration') as typeof import('./recalibration');
 
   const driftDetector = new stability.DriftDetector({
     travelThresholdPx: opts.driftThresholdPx ?? 800,
     windowMs: opts.driftWindowMs ?? 5000,
   });
+  // Background calibration drift correction (gap F). Tracks the running
+  // mean of (normX, normY) over a 60s window. When it diverges from the
+  // captured baseline, we mutate the calibration anchors in place and
+  // persist them — no user-visible "please recalibrate" prompt.
+  const baselineTracker = new recalMod.BaselineTracker();
   // Edge-pin detector — fires when the cursor lives on a screen edge for
   // multiple seconds (calibration-broken / tracking-lost-to-corner).
   const edgePin = new stability.EdgePinDetector({
@@ -769,6 +784,38 @@ export function startHeadTracker(
 
     const { normX, normY } = fused;
 
+    // ── Background recalibration (gap F) ─────────────────────────
+    // Feed the running baseline tracker. After warmup, if the
+    // user's mean position drifts > offsetThreshold from the
+    // captured baseline, shift all 4 calibration anchors by that
+    // delta and persist. Scale corrections are also applied (when
+    // the user moves closer/farther). This runs once on a
+    // suggestion + cooldown so we don't apply it every frame.
+    const recalTs = Date.now();
+    baselineTracker.push({ normX, normY, timestamp: recalTs });
+    const correction = baselineTracker.suggestCorrection(recalTs);
+    if (correction?.kind === 'offset') {
+      calibration.leftX += correction.deltaNormX;
+      calibration.rightX += correction.deltaNormX;
+      calibration.topY += correction.deltaNormY;
+      calibration.bottomY += correction.deltaNormY;
+      saveCalibration(calibration);
+      baselineTracker.acceptCorrection(recalTs);
+    } else if (correction?.kind === 'scale') {
+      // Stretch from the calibration midpoint by the sqrt of the ratio
+      // so the user's now-tighter motion still spans the full screen.
+      const midX = (calibration.leftX + calibration.rightX) / 2;
+      const midY = (calibration.topY + calibration.bottomY) / 2;
+      const sX = correction.scaleX > 0 ? Math.sqrt(correction.scaleX) : 1;
+      const sY = correction.scaleY > 0 ? Math.sqrt(correction.scaleY) : 1;
+      calibration.leftX  = midX + (calibration.leftX  - midX) * sX;
+      calibration.rightX = midX + (calibration.rightX - midX) * sX;
+      calibration.topY   = midY + (calibration.topY   - midY) * sY;
+      calibration.bottomY = midY + (calibration.bottomY - midY) * sY;
+      saveCalibration(calibration);
+      baselineTracker.acceptCorrection(recalTs);
+    }
+
     // Map to screen coordinates
     const rangeX = calibration.leftX - calibration.rightX;
     const rangeY = calibration.bottomY - calibration.topY;
@@ -846,6 +893,13 @@ export function startHeadTracker(
     // stop(). EdgePin escalation is treated as cursor-drift; a single
     // pin episode is a softer warning that we don't auto-disable on
     // (the user may be reaching a corner button intentionally).
+    //
+    // IMU gating: if the device is currently bouncing (DeviceMotion >
+    // threshold), suppress drift checks for this frame. The cursor IS
+    // jumping but it's environmental — auto-disabling would be wrong.
+    // We still PUSH the sample so the rolling window stays continuous;
+    // we just skip the `check()` while motion is active.
+    const deviceShaking = opts.isDeviceShaking?.() ?? false;
     if (!driftFired) {
       driftDetector.push({
         x: sx,
@@ -854,17 +908,19 @@ export function startHeadTracker(
         timestamp: nowTs,
         dwellFired: dwellFiredThisFrame,
       });
-      const reason = driftDetector.check();
-      if (reason && opts.onDrift) {
-        driftFired = true;
-        opts.onDrift(reason);
-        return;
-      }
+      if (!deviceShaking) {
+        const reason = driftDetector.check();
+        if (reason && opts.onDrift) {
+          driftFired = true;
+          opts.onDrift(reason);
+          return;
+        }
 
-      const pinResult = edgePin.push(sx, sy, nowTs);
-      if (pinResult === 'escalate' && opts.onDrift) {
-        driftFired = true;
-        opts.onDrift('cursor-drift');
+        const pinResult = edgePin.push(sx, sy, nowTs);
+        if (pinResult === 'escalate' && opts.onDrift) {
+          driftFired = true;
+          opts.onDrift('cursor-drift');
+        }
       }
     }
   }
