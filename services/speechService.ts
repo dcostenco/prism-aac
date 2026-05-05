@@ -126,13 +126,15 @@ function isPaidTier(): boolean {
 }
 
 // Catalog defaults — when the user has not picked a voice in Settings, ship
-// the warmest "default"-tagged voice from portal/src/shared/voice-catalog.ts.
-// Without this, paid-tier users hit the portal's Azure fallback (Jenny et al.),
-// which is fine but flatter than Inworld. English in particular sounded
-// noticeably robotic before this map existed because the portal's
-// no-voiceId path is Azure-Neural, not Inworld.
+// the most natural-sounding voice from portal/src/shared/voice-catalog.ts.
+//
+// English uses 'Alex' (Inworld description: "Friendly, natural") rather
+// than 'Ashley' ("Warm, conversational"). User feedback was that Ashley
+// sounded robotic compared to Russian Anya; Alex tests less compressed
+// and breath-sample-driven. Other paid-tier languages stay on the
+// "default"-tagged voice from the catalog.
 const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
-  en: 'Ashley',  es: 'Carmen', fr: 'Camille', de: 'Hans',
+  en: 'Alex',    es: 'Carmen', fr: 'Camille', de: 'Hans',
   pt: 'Luana',   it: 'Giulia', nl: 'Lotte',   pl: 'Zofia',
   ja: 'Sakura',  zh: 'Mei',    ko: 'Jisoo',   ru: 'Anya',
   he: 'Noa',     ar: 'Layla',  hi: 'Aanya',
