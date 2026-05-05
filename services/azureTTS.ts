@@ -22,6 +22,29 @@ export type ToneStyle =
   | 'friendly' | 'cheerful' | 'calm' | 'serious' | 'excited'
   | 'hopeful' | 'empathetic' | 'sad' | 'angry';
 
+/**
+ * Map AAC tone → Inworld TTS-2 voice style. Returns null for the
+ * 'friendly' default so the caller can opt into server-side auto-styling
+ * via prism-coder instead of pinning an explicit style.
+ *
+ * Style enum on the portal side (synalux/lib/tts-inworld.ts):
+ *   neutral | warm | cheerful | urgent | whisper | calm | clear
+ */
+export function toneToInworldStyle(tone: ToneStyle): string | null {
+  switch (tone) {
+    case 'friendly':   return null;        // → autoStyle path
+    case 'cheerful':   return 'cheerful';
+    case 'calm':       return 'calm';
+    case 'serious':    return 'clear';
+    case 'excited':    return 'cheerful';
+    case 'hopeful':    return 'warm';
+    case 'empathetic': return 'calm';
+    case 'sad':        return 'whisper';
+    case 'angry':      return 'urgent';    // labeled 'Urgent' in TONE_OPTIONS
+    default:           return null;
+  }
+}
+
 export const TONE_OPTIONS: Array<{ id: ToneStyle; label: string; icon: string }> = [
   { id: 'friendly', label: 'Friendly', icon: '😊' },
   { id: 'cheerful', label: 'Cheerful', icon: '😄' },
@@ -189,8 +212,26 @@ export async function speakAzure(
     const reqBody: Record<string, unknown> = {
       ssml,
       format: 'audio-24khz-96kbitrate-mono-mp3',
+      // Surface tag — biases the server-side picker toward AAC-appropriate
+      // safe defaults if prism-coder is unavailable.
+      surface: 'aac',
     };
     if (voiceId) reqBody.voiceId = voiceId;
+
+    // Map the user's chosen AAC tone to an Inworld TTS-2 voice style.
+    // 'friendly' (the default) → no explicit style, let the server-side
+    // prism-coder picker choose from the message content. Any other
+    // tone → explicit style, which always wins over autoStyle.
+    const tts2Style = toneToInworldStyle(tone);
+    if (tts2Style) {
+      reqBody.style = tts2Style;
+    } else {
+      // Default tone — opt into auto-styling so the picker can choose
+      // urgent / cheerful / calm / etc. from the actual text.
+      // (Authenticated /tts honors this unconditionally; /tts/public
+      // requires PRISM_PUBLIC_AUTOSTYLE_ENABLED=1 on the portal env.)
+      reqBody.autoStyle = true;
+    }
 
     // Two-tier endpoint strategy (matches portal's tier policy):
     //   1. /api/v1/tts/public — Inworld for everyone, no auth, rate-

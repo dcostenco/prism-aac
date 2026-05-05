@@ -172,6 +172,66 @@ describe('speakAzure — two-tier endpoint strategy', () => {
     expect(captured.voiceId).toBeUndefined();
   });
 
+  it('opts into autoStyle + surface=aac when tone is the default friendly', async () => {
+    let captured: { surface?: string; autoStyle?: boolean; style?: string } = {};
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.body) captured = JSON.parse(String(init.body));
+      return audioOk();
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
+    expect(captured.surface).toBe('aac');
+    expect(captured.autoStyle).toBe(true);
+    // explicit style is left unset so the server-side picker chooses.
+    expect(captured.style).toBeUndefined();
+  });
+
+  it('sends explicit Inworld style (not autoStyle) when user picked a non-default tone', async () => {
+    let captured: { surface?: string; autoStyle?: boolean; style?: string } = {};
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+      if (init?.body) captured = JSON.parse(String(init.body));
+      return audioOk();
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    await speakAzure('Take meds NOW', 'en-US', 'angry', 0.5, 1.0, '');
+    expect(captured.style).toBe('urgent');
+    expect(captured.autoStyle).toBeUndefined();
+  });
+});
+
+// ── tone → Inworld style mapper ──────────────────────────────────
+
+describe('toneToInworldStyle — AAC tone → Inworld TTS-2 style', () => {
+  it('returns null for the friendly default (caller falls through to autoStyle)', async () => {
+    const { toneToInworldStyle } = await import('@/services/azureTTS');
+    expect(toneToInworldStyle('friendly')).toBeNull();
+  });
+
+  it.each([
+    ['cheerful', 'cheerful'],
+    ['calm', 'calm'],
+    ['serious', 'clear'],
+    ['excited', 'cheerful'],
+    ['hopeful', 'warm'],
+    ['empathetic', 'calm'],
+    ['sad', 'whisper'],
+    ['angry', 'urgent'],
+  ] as const)('maps %s → %s', async (tone, expected) => {
+    const { toneToInworldStyle } = await import('@/services/azureTTS');
+    expect(toneToInworldStyle(tone)).toBe(expected);
+  });
+
+  it('every mapped style is a value the server-side route accepts', async () => {
+    // Must stay in sync with VALID_STYLES in synalux/src/lib/prism-steering.ts
+    const VALID = new Set(['neutral', 'warm', 'cheerful', 'urgent', 'whisper', 'calm', 'clear']);
+    const { toneToInworldStyle } = await import('@/services/azureTTS');
+    const tones = ['friendly', 'cheerful', 'calm', 'serious', 'excited', 'hopeful', 'empathetic', 'sad', 'angry'] as const;
+    for (const t of tones) {
+      const style = toneToInworldStyle(t);
+      if (style !== null) expect(VALID.has(style), `${t} → ${style} not in VALID set`).toBe(true);
+    }
+  });
+
   it('returns false on a network error (fetch throws)', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('offline'); }));
     const { speakAzure } = await import('@/services/azureTTS');
