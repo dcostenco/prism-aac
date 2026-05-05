@@ -77,6 +77,25 @@ export function isKokoroSupported(): boolean {
   return typeof WebAssembly !== 'undefined';
 }
 
+/**
+ * Kick off the Kokoro pipeline download in the background. Safe to call
+ * multiple times — internal promise dedup prevents redundant fetches.
+ *
+ * Used by PrismAAC at app mount so the 350MB ONNX model is downloading
+ * during idle time. Without this, the first English speech attempt that
+ * falls past Tier 1 (cross-origin auth blocked) hits Tier 3 (Web Speech
+ * robotic) instead of Tier 2 (Kokoro neural). With this, Tier 2 is
+ * usually ready by the time the user triggers their first utterance.
+ */
+export function preloadKokoro(): void {
+  if (typeof window === 'undefined') return;
+  if (!isKokoroSupported()) return;
+  // Fire-and-forget — caller doesn't await. Errors are caught + logged
+  // inside loadKokoro; a failed preload demotes Kokoro for the session
+  // and the regular fallback chain takes over.
+  loadKokoro().catch(() => { /* already logged + demoted in loadKokoro */ });
+}
+
 async function loadKokoro(): Promise<unknown> {
   if (kokoroPipeline) return kokoroPipeline;
   if (kokoroLoadPromise) return kokoroLoadPromise;
