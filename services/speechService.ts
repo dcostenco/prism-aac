@@ -150,10 +150,16 @@ export async function speak(
   if (isOnline()) {
     const token = getAuthToken();
     const profile = useAuthStore.getState().profile;
-    console.log(`[TTS] Attempting Azure: lang=${lang} tone=${effectiveTone} plan=${profile?.plan ?? 'unknown'} loaded=${useAuthStore.getState().loaded}`);
-    const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '');
-    if (success) { console.log('[TTS] Azure succeeded'); return; }
-    console.warn('[TTS] Azure failed (server tier-rejected, network, or timeout), falling through');
+    // Look up the user's preferred voice for the requested language. The
+    // portal route validates the id against the catalog and routes to the
+    // matching backend (Inworld for paid+supported, Azure otherwise).
+    const baseLang = lang.toLowerCase().split(/[-_]/)[0];
+    const voicePref = (settings as { voicePreferences?: Record<string, string> }).voicePreferences;
+    const voiceId = voicePref?.[baseLang];
+    console.log(`[TTS] Attempting portal TTS: lang=${lang} tone=${effectiveTone} plan=${profile?.plan ?? 'unknown'} voiceId=${voiceId ?? 'auto'} loaded=${useAuthStore.getState().loaded}`);
+    const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId);
+    if (success) { console.log('[TTS] Portal TTS succeeded'); return; }
+    console.warn('[TTS] Portal TTS failed (server tier-rejected, network, or timeout), falling through');
   }
 
   // Tier 2: Kokoro neural — offline-capable fallback for the 6 langs it speaks.

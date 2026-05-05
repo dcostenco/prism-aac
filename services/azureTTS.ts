@@ -127,6 +127,7 @@ export async function speakAzure(
   rate: number,
   volume: number,
   authToken: string,
+  voiceId?: string,
 ): Promise<boolean> {
   const ssml = buildSSML(text, lang, tone, rate, volume);
 
@@ -137,10 +138,19 @@ export async function speakAzure(
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    // The portal route accepts voiceId from the catalog and routes to the
+    // matching backend (Inworld for paid+supported, Azure otherwise). We
+    // forward it here so the user's voice choice is honored end-to-end.
+    const reqBody: Record<string, unknown> = {
+      ssml,
+      format: 'audio-24khz-96kbitrate-mono-mp3',
+    };
+    if (voiceId) reqBody.voiceId = voiceId;
+
     const res = await fetch(`${SYNALUX_API}/tts`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ ssml, format: 'audio-24khz-96kbitrate-mono-mp3' }),
+      body: JSON.stringify(reqBody),
       signal: controller.signal,
       credentials: 'include',
     });

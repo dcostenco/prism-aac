@@ -15,6 +15,7 @@ import HeadTrackingSettings from './HeadTrackingSettings';
 import HandCalibration from './HandCalibration';
 import InputModesSettings from './InputModesSettings';
 import ToolbarCustomization from './ToolbarCustomization';
+import VoicePicker from './VoicePicker';
 import { getActiveProfile, loadProfiles, deleteProfile, setActiveProfile, enableContinuousLearning, disableContinuousLearning, isContinuousLearningActive } from '@/services/handProfileService';
 
 function HandProfileSection() {
@@ -366,6 +367,19 @@ export default function SettingsModal() {
               onChange={(e) => settings.update({ speechVolume: parseFloat(e.target.value) })}
               className="w-full accent-[#2196F3]"
             />
+
+            {/* Voice picker — paid plans only. Free-tier users keep the
+                speed/volume controls but don't see the voice list (server
+                also enforces this with a 403 on /api/v1/tts/voices). */}
+            {profile && profile.plan && profile.plan !== 'free' && (
+              <div className="mt-5">
+                <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">
+                  {t('voice_picker_title')}
+                </h4>
+                <p className="text-muted text-xs mb-3">{t('voice_picker_desc')}</p>
+                <VoicePicker />
+              </div>
+            )}
           </div>
 
           {/* Custom Categories */}

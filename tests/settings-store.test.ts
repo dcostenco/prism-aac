@@ -94,3 +94,51 @@ describe('SettingsStore — gridSize', () => {
     expect(useSettingsStore.getState().gridSize).toBe(size);
   });
 });
+
+describe('SettingsStore — voicePreferences (per-language voice picker)', () => {
+  beforeEach(() => {
+    useSettingsStore.setState({ voicePreferences: {} });
+  });
+
+  it('starts with no voice preferences (platform defaults apply)', () => {
+    expect(useSettingsStore.getState().voicePreferences).toEqual({});
+  });
+
+  it('setVoiceForLang persists a voice for one language', () => {
+    useSettingsStore.getState().setVoiceForLang('en', 'Ashley');
+    expect(useSettingsStore.getState().voicePreferences).toEqual({ en: 'Ashley' });
+  });
+
+  it('canonicalizes regional codes to base lang (en-US → en)', () => {
+    useSettingsStore.getState().setVoiceForLang('en-US', 'Sarah');
+    expect(useSettingsStore.getState().voicePreferences).toEqual({ en: 'Sarah' });
+  });
+
+  it('canonicalizes underscore variants (es_MX → es)', () => {
+    useSettingsStore.getState().setVoiceForLang('es_MX', 'Carmen');
+    expect(useSettingsStore.getState().voicePreferences).toEqual({ es: 'Carmen' });
+  });
+
+  it('preserves choices for other languages when setting one', () => {
+    useSettingsStore.getState().setVoiceForLang('en', 'Ashley');
+    useSettingsStore.getState().setVoiceForLang('es', 'Diego');
+    expect(useSettingsStore.getState().voicePreferences).toEqual({ en: 'Ashley', es: 'Diego' });
+  });
+
+  it('clears a language when called with undefined / empty', () => {
+    useSettingsStore.getState().setVoiceForLang('en', 'Ashley');
+    useSettingsStore.getState().setVoiceForLang('en', undefined);
+    expect(useSettingsStore.getState().voicePreferences.en).toBeUndefined();
+  });
+
+  it('overwrites the existing voice for a language on a new pick', () => {
+    useSettingsStore.getState().setVoiceForLang('en', 'Ashley');
+    useSettingsStore.getState().setVoiceForLang('en', 'Dennis');
+    expect(useSettingsStore.getState().voicePreferences.en).toBe('Dennis');
+  });
+
+  it('update() can also set voicePreferences directly', () => {
+    useSettingsStore.getState().update({ voicePreferences: { en: 'Helia' } });
+    expect(useSettingsStore.getState().voicePreferences).toEqual({ en: 'Helia' });
+  });
+});

@@ -57,9 +57,17 @@ interface SettingsState {
   // Marketplace-installed app ids (e.g. ['game-packs', 'voice-packs']).
   // Toolbar.tsx renders these as buttons after the built-ins.
   installedApps: string[];
+  // Per-language voice choice. Keyed by base lang code (e.g. 'en', 'es').
+  // The portal resolves the active voiceId from this map for each utterance;
+  // unset languages use the platform default for that language. Backend
+  // (Inworld vs Azure) is chosen server-side based on language support and
+  // is not user-selectable.
+  voicePreferences: Record<string, string>;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'voicePreferences'>>,
   ) => void;
+  /** Set the voice choice for one language. Pass '' or undefined to clear. */
+  setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
   setTheme: (theme: Theme) => void;
   // Toolbar mutators — keep them on the store so reorder/enable/install
   // operations have a single audit point.
@@ -104,8 +112,16 @@ export const useSettingsStore = create<SettingsState>()(
         enabled: {},
       },
       installedApps: [],
+      voicePreferences: {},
       update: (partial) => set((s) => ({ ...s, ...partial })),
       setTheme: (theme) => set({ theme }),
+      setVoiceForLang: (lang, voiceId) => set((s) => {
+        const baseLang = lang.toLowerCase().split(/[-_]/)[0];
+        const next = { ...s.voicePreferences };
+        if (voiceId) next[baseLang] = voiceId;
+        else delete next[baseLang];
+        return { voicePreferences: next };
+      }),
       toolbarToggle: (id) => set((s) => {
         if (id === 'settings') return {};
         const cur = s.toolbarConfig.enabled[id as ToolbarButtonId] ?? true;
@@ -157,7 +173,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prism-aac-settings',
-      version: 13,
+      version: 14,
       migrate: (persisted: unknown, version: number) => {
         let s = persisted as Record<string, unknown>;
         if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
@@ -202,6 +218,11 @@ export const useSettingsStore = create<SettingsState>()(
           if (tc?.enabled && (tc.enabled as Record<string, boolean>)['settings'] === false) {
             s = { ...s, toolbarConfig: { ...tc, enabled: { ...tc.enabled, settings: true } } };
           }
+        }
+        // v14: per-language voice preferences (Inworld voice picker, paid-only).
+        // Default empty — falls back to platform default per language.
+        if (version < 14) {
+          s = { ...s, voicePreferences: (s.voicePreferences as Record<string, string>) ?? {} };
         }
         return s;
       },
