@@ -312,18 +312,42 @@ export default function SchedulePanel() {
     addReward(1);
     // Cadence: timer expiring is what arms the next tile in the first-then
     // sequence. Idle → first-armed; first-checked → then-armed.
+    // Repeating alarm (started by the useEffect below) kicks in via the
+    // phase change, not the single-fire ring here, so missed taps don't
+    // strand the user wondering whether the timer actually expired.
     setPhase((p) => {
-      if (p === 'idle') {
-        playTimerRing();
-        return 'first-armed';
-      }
-      if (p === 'first-checked') {
-        playTimerRing();
-        return 'then-armed';
-      }
+      if (p === 'idle') return 'first-armed';
+      if (p === 'first-checked') return 'then-armed';
       return p;
     });
   }, [addReward]);
+
+  // Alarm loop — when the phase enters first-armed or then-armed, ring the
+  // chime + flash the corresponding tile every 2 seconds. The single ring
+  // we used to fire on timer-complete was a documented complaint: a child
+  // distracted for 5 seconds missed the cue entirely. This loops up to
+  // ALARM_MAX_TICKS times (60s) before giving up so we never strand a
+  // running tab beeping forever.
+  const ALARM_INTERVAL_MS = 2000;
+  const ALARM_MAX_TICKS = 30; // ~60s ceiling
+  useEffect(() => {
+    const isAlarmPhase = phase === 'first-armed' || phase === 'then-armed';
+    if (!isAlarmPhase) return;
+    let ticks = 0;
+    // Fire immediately, then every ALARM_INTERVAL_MS until the phase
+    // changes (user clicked the tile) or we hit the ceiling.
+    playTimerRing();
+    ticks++;
+    const id = setInterval(() => {
+      if (ticks >= ALARM_MAX_TICKS) {
+        clearInterval(id);
+        return;
+      }
+      playTimerRing();
+      ticks++;
+    }, ALARM_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [phase]);
 
   const handleFirstClick = useCallback(() => {
     if (phase !== 'first-armed') return;
