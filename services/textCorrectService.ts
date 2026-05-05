@@ -63,6 +63,63 @@ const MAX_CACHE = 500;
 const memoryCache = new Map<string, string>();
 const inFlight = new Map<string, Promise<string>>();
 
+/**
+ * Script-aware language disambiguation.
+ *
+ * AAC users frequently leave their portal language set to "en" but type
+ * in their native script (Russian/Ukrainian Cyrillic, Hebrew, Arabic,
+ * Greek, etc.). When that happens the model receives "Language: English"
+ * + Cyrillic text → confusion → returns the input unchanged → user sees
+ * NO suggestion at all and concludes "autocorrect doesn't work".
+ *
+ * This helper picks a better language hint for the correction prompt
+ * when the dominant script of the input clearly disagrees with the
+ * caller-supplied lang. Returns the caller's lang unchanged when:
+ *   - script and lang agree (no override needed)
+ *   - input is mixed / no clear dominant script (don't guess)
+ */
+const SCRIPT_RANGES: Array<{ regex: RegExp; lang: string }> = [
+    // Ordered so the first match wins. Cyrillic is the most common AAC
+    // mismatch (per our user reports), so it leads. Each regex matches
+    // a SINGLE codepoint in the Unicode range.
+    { regex: /[Ѐ-ӿ]/, lang: 'ru' },   // Cyrillic
+    { regex: /[֐-׿]/, lang: 'he' },   // Hebrew
+    { regex: /[؀-ۿ]/, lang: 'ar' },   // Arabic
+    { regex: /[Ͱ-Ͽ]/, lang: 'el' },   // Greek
+    { regex: /[฀-๿]/, lang: 'th' },   // Thai
+    { regex: /[぀-ゟ]/, lang: 'ja' },   // Hiragana
+    { regex: /[゠-ヿ]/, lang: 'ja' },   // Katakana
+    { regex: /[가-힯]/, lang: 'ko' },   // Hangul
+    // CJK is intentionally omitted — Chinese/Japanese share too many
+    // codepoints; let the caller's lang win there.
+];
+
+export function disambiguateLangByScript(text: string, callerLang: string): string {
+    const callerBase = (callerLang || '').split(/[-_]/)[0].toLowerCase();
+    const counts: Record<string, number> = {};
+    let scripted = 0;
+    let total = 0;
+    for (const ch of text) {
+        // Skip whitespace, digits, common ASCII punctuation
+        if (/[\s0-9!-/:-@\[-`{-~]/.test(ch)) continue;
+        total++;
+        for (const { regex, lang } of SCRIPT_RANGES) {
+            if (regex.test(ch)) {
+                counts[lang] = (counts[lang] || 0) + 1;
+                scripted++;
+                break;
+            }
+        }
+    }
+    if (scripted === 0 || total === 0) return callerLang;
+    // Need at least 70% of letters in a single non-Latin script before
+    // overriding — avoids flipping on a single emoji or stray character.
+    const [bestLang, bestCount] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    if (bestCount / total < 0.7) return callerLang;
+    if (bestLang === callerBase) return callerLang;
+    return bestLang;
+}
+
 function trimCorrectCache() {
   while (memoryCache.size > MAX_CACHE) {
     const oldest = memoryCache.keys().next().value;
@@ -139,7 +196,16 @@ export async function correctText(
   // Canonicalize so synalux portal + local model both receive BCP-47 codes.
   // Critical for Chinese routing: zh-CN vs zh-TW vs zh-HK take different paths.
   lang = canonicalizeLang(lang);
-  const cacheKey = `${mode}|${lang}|${trimmed}`;
+
+  // Script-aware override — if the user's settings say lang=en but they
+  // typed all-Cyrillic / Hebrew / Arabic / Greek / Thai / Japanese / Korean,
+  // override the prompt's language hint to the script's natural language.
+  // Without this, the model gets "Language: English" + Cyrillic text,
+  // returns the input unchanged, and the user sees NO autocorrect suggestion.
+  // See disambiguateLangByScript() for the heuristic (≥70% non-Latin script
+  // before override).
+  const effectiveLang = disambiguateLangByScript(trimmed, lang);
+  const cacheKey = `${mode}|${effectiveLang}|${trimmed}`;
   const cached = memoryCache.get(cacheKey);
   if (cached !== undefined) return cached;
 
@@ -154,9 +220,9 @@ export async function correctText(
       // network-dependent fallback only.
       const hasLocal = await isLocalModelAvailable();
       if (hasLocal) {
-        let fromLocal = await correctViaLocal(trimmed, lang, mode);
+        let fromLocal = await correctViaLocal(trimmed, effectiveLang, mode);
         if (mode === 'complete' && fromLocal === trimmed) {
-          fromLocal = await correctViaLocal(trimmed, lang, 'correct');
+          fromLocal = await correctViaLocal(trimmed, effectiveLang, 'correct');
         }
         if (fromLocal) {
           memoryCache.set(cacheKey, fromLocal);
@@ -166,9 +232,9 @@ export async function correctText(
         // Local probe said yes but the call failed — fall through to
         // portal as a backup rather than fail.
       }
-      let fromPortal = await correctViaPortal(trimmed, lang, mode);
+      let fromPortal = await correctViaPortal(trimmed, effectiveLang, mode);
       if (mode === 'complete' && fromPortal === trimmed) {
-        fromPortal = await correctViaPortal(trimmed, lang, 'correct');
+        fromPortal = await correctViaPortal(trimmed, effectiveLang, 'correct');
       }
       if (fromPortal) {
         memoryCache.set(cacheKey, fromPortal);

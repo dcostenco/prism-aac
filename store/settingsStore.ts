@@ -47,6 +47,20 @@ interface SettingsState {
   headTrackingEnabled: boolean;
   headTrackingDwellMs: number;
   headTrackingSensitivity: number;
+  /**
+   * Critical safety: auto-disable tracking when drift is detected. When
+   * the user's cursor travels excessively within a short window WITHOUT
+   * landing a dwell-click, the calibration is almost certainly broken
+   * (head moved out of frame, lighting changed, person swapped seats).
+   * Auto-disable lets the user recover the mouse without fighting a
+   * runaway tracker that would otherwise lock them out of the UI.
+   *
+   * Defaults: enabled, 800px travel within 5s window. Tunable in
+   * Settings → Input modes → Head tracking → Safety.
+   */
+  headTrackingDriftAutoDisable: boolean;
+  headTrackingDriftThresholdPx: number;
+  headTrackingDriftWindowMs: number;
   showHandCalibration: boolean;
   cameraInputEnabled: boolean;
   cameraTrackingTarget: string;
@@ -64,7 +78,7 @@ interface SettingsState {
   // is not user-selectable.
   voicePreferences: Record<string, string>;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'voicePreferences'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'voicePreferences'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -92,6 +106,12 @@ export const useSettingsStore = create<SettingsState>()(
       headTrackingEnabled: false,
       headTrackingDwellMs: 1200,
       headTrackingSensitivity: 5,
+      // Drift-detection safety net (see interface comment). Critical for
+      // AAC users — if calibration breaks the cursor will runaway and
+      // they may be unable to find the disable button. Default ON.
+      headTrackingDriftAutoDisable: true,
+      headTrackingDriftThresholdPx: 800,
+      headTrackingDriftWindowMs: 5000,
       showHandCalibration: true,
       // Disabled by default — camera tracking accuracy is regressed and the
       // overlay was interfering with mouse use. Users can opt in via
@@ -173,7 +193,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prism-aac-settings',
-      version: 14,
+      version: 15,
       migrate: (persisted: unknown, version: number) => {
         let s = persisted as Record<string, unknown>;
         if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
@@ -223,6 +243,17 @@ export const useSettingsStore = create<SettingsState>()(
         // Default empty — falls back to platform default per language.
         if (version < 14) {
           s = { ...s, voicePreferences: (s.voicePreferences as Record<string, string>) ?? {} };
+        }
+        // v15: head-tracking drift auto-disable safety net. Default ON
+        // for everyone — if calibration breaks they can recover the
+        // mouse without having to chase the runaway cursor to a button.
+        if (version < 15) {
+          s = {
+            ...s,
+            headTrackingDriftAutoDisable: s.headTrackingDriftAutoDisable ?? true,
+            headTrackingDriftThresholdPx: s.headTrackingDriftThresholdPx ?? 800,
+            headTrackingDriftWindowMs: s.headTrackingDriftWindowMs ?? 5000,
+          };
         }
         return s;
       },
