@@ -33,6 +33,10 @@ export default function HeadTrackingOverlay() {
   const dwellMs = useSettingsStore((s) => s.headTrackingDwellMs);
   const sensitivity = useSettingsStore((s) => s.headTrackingSensitivity);
   const gestureConfig = useSettingsStore((s) => s.gestureConfig);
+  const driftAutoDisable = useSettingsStore((s) => s.headTrackingDriftAutoDisable);
+  const driftThresholdPx = useSettingsStore((s) => s.headTrackingDriftThresholdPx);
+  const driftWindowMs = useSettingsStore((s) => s.headTrackingDriftWindowMs);
+  const setSettings = useSettingsStore((s) => s.update);
 
   const { t } = useT();
 
@@ -40,6 +44,10 @@ export default function HeadTrackingOverlay() {
   const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
   const [dwellProgress, setDwellProgress] = useState(0);
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
+  // When drift auto-disables tracking, surface a non-blocking toast so the
+  // user knows what happened. Cleared when they re-enable manually OR when
+  // the reliability probe auto-recovers.
+  const [driftToast, setDriftToast] = useState<{ reason: string; ts: number } | null>(null);
 
   const handleRef = useRef<HeadTrackerHandle | null>(null);
   const gestureDetectorRef = useRef<GestureDetector | null>(null);
@@ -92,6 +100,21 @@ export default function HeadTrackingOverlay() {
       dwellMs,
       sensitivity,
       smoothing: 0.15,
+      // Drift safety net — see services/headTrackerStability.ts. The
+      // detector lives inside the tracker; here we just react to its
+      // verdict by stopping the tracker and showing a recovery toast.
+      // When auto-disable is OFF the user keeps their broken cursor
+      // (legacy behavior). Default ON.
+      driftThresholdPx,
+      driftWindowMs,
+      onDrift: (reason) => {
+        if (!driftAutoDisable) return;
+        setDriftToast({ reason, ts: Date.now() });
+        // Flip the user-facing toggle off so the next render unmounts
+        // the tracker cleanly. The `enabled` watcher above will run
+        // handle.stop() for us.
+        setSettings({ headTrackingEnabled: false });
+      },
       onLandmarks: gestureConfig.enabled ? (data) => {
         gestureDetectorRef.current?.processFrame(data);
       } : undefined,
@@ -150,9 +173,57 @@ export default function HeadTrackingOverlay() {
       gestureDetectorRef.current = null;
     };
     // Re-create tracker when key settings change
-  }, [enabled, dwellMs, sensitivity, gestureConfig, animateDwellProgress]);
+  }, [enabled, dwellMs, sensitivity, gestureConfig, driftAutoDisable, driftThresholdPx, driftWindowMs, setSettings, animateDwellProgress]);
 
-  if (!enabled) return null;
+  // Render the drift recovery toast even when tracking is disabled, so the
+  // user has a visible "Try again" path that doesn't depend on the cursor.
+  if (!enabled) {
+    if (!driftToast) return null;
+    const reasonLabel = driftToast.reason === 'confidence-collapse'
+      ? (t('drift_confidence') ?? 'Face was hard to read — tracking paused.')
+      : (t('drift_cursor') ?? 'Cursor drifted — tracking paused.');
+    return (
+      <div
+        className="fixed inset-x-0 bottom-8 flex justify-center pointer-events-none"
+        style={{ zIndex: 9999 }}
+        role="status"
+        aria-live="polite"
+      >
+        <div
+          className="pointer-events-auto surface-bar border border-theme rounded-2xl px-5 py-4 shadow-xl flex items-center gap-3 max-w-md"
+          style={{ borderColor: '#FF9800' }}
+        >
+          <span className="text-2xl">🛡️</span>
+          <div className="flex-1">
+            <div className="text-primary font-bold text-base">{reasonLabel}</div>
+            <div className="text-muted text-sm mt-0.5">
+              {t('drift_safety_explanation') ?? 'Auto-disabled to keep your screen usable. Press Esc anytime to disable tracking.'}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="aac-btn min-h-[48px] px-4 rounded-xl bg-[#4CAF50] text-white font-bold border-0"
+            onClick={() => {
+              tapFeedback();
+              setDriftToast(null);
+              setSettings({ headTrackingEnabled: true });
+            }}
+            aria-label={t('try_again') ?? 'Try again'}
+          >
+            {t('try_again') ?? 'Try again'}
+          </button>
+          <button
+            type="button"
+            className="aac-btn min-h-[48px] min-w-[48px] rounded-xl surface-key text-muted border border-theme"
+            onClick={() => { tapFeedback(); setDriftToast(null); }}
+            aria-label={t('dismiss') ?? 'Dismiss'}
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const statusLabel =
     status === 'starting' ? t('starting') :

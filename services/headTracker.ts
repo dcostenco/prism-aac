@@ -29,6 +29,18 @@ export interface HeadTrackerOptions {
   onDwell: (element: Element) => void;
   onStatusChange: (status: 'starting' | 'tracking' | 'lost' | 'stopped') => void;
   onLandmarks?: (data: FaceLandmarkData) => void;
+  /**
+   * Drift safety net — fires when the cursor exceeds the travel threshold
+   * within the rolling window WITHOUT landing a dwell-click, OR when face
+   * confidence collapses below the floor. Consumer should call .stop() and
+   * surface a toast. See services/headTrackerStability.ts.
+   */
+  onDrift?: (reason: 'cursor-drift' | 'confidence-collapse') => void;
+  /** Drift detector tuning (defaults from settingsStore). */
+  driftThresholdPx?: number;
+  driftWindowMs?: number;
+  /** Fire when the post-disable reliability probe says it's safe to re-enable. */
+  onAutoRecover?: () => void;
 }
 
 export interface HeadTrackerHandle {
@@ -510,6 +522,17 @@ export function startHeadTracker(
   const sources: CameraSource[] = [];
   const abortController = new AbortController();
 
+  // Lazy import to avoid circular dependency. Stability primitives are
+  // pure / DOM-free, so they can be unit-tested without the full tracker.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { DriftDetector, fuseWeighted } = require('./headTrackerStability') as typeof import('./headTrackerStability');
+  const driftDetector = new DriftDetector({
+    travelThresholdPx: opts.driftThresholdPx ?? 800,
+    windowMs: opts.driftWindowMs ?? 5000,
+  });
+  let driftFired = false;  // one-shot — don't spam onDrift on every frame
+  let lastDwellFiredAt = 0;
+
   // Normalize input: single string → array
   const ids: (string | undefined)[] = cameraDeviceIds
     ? (Array.isArray(cameraDeviceIds) ? cameraDeviceIds : [cameraDeviceIds])
@@ -686,9 +709,12 @@ export function startHeadTracker(
     const elementUnder = document.elementFromPoint(sx, sy);
     const interactiveEl = elementUnder?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? elementUnder;
 
+    let dwellFiredThisFrame = false;
     if (interactiveEl && interactiveEl === dwellElement) {
       if (!dwellTriggered && Date.now() - dwellStart >= opts.dwellMs) {
         dwellTriggered = true;
+        dwellFiredThisFrame = true;
+        lastDwellFiredAt = Date.now();
         opts.onDwell(interactiveEl);
         if (interactiveEl instanceof HTMLElement) interactiveEl.click();
       }
@@ -697,6 +723,51 @@ export function startHeadTracker(
       dwellStart = Date.now();
       dwellTriggered = false;
     }
+
+    // ── Drift safety net ──────────────────────────────────────────
+    // Per-frame sample → DriftDetector. On first trip, fire onDrift
+    // exactly once and let the consumer decide to stop().
+    if (!driftFired) {
+      const avgConf = activeSources.length > 0
+        ? activeSources.reduce((s, src) => s + (src.lastDetection.confidence || 0), 0) / activeSources.length
+        : 0;
+      driftDetector.push({
+        x: sx,
+        y: sy,
+        confidence: avgConf,
+        timestamp: Date.now(),
+        dwellFired: dwellFiredThisFrame,
+      });
+      const reason = driftDetector.check();
+      if (reason && opts.onDrift) {
+        driftFired = true;
+        opts.onDrift(reason);
+      }
+    }
+  }
+
+  // ── Hardware escape hatch — Esc disables tracking immediately ────
+  // Critical for AAC users when calibration goes wrong: the cursor may
+  // be unreliable, so the user can't necessarily click a "disable"
+  // button. Esc on any keyboard always works regardless of cursor state.
+  const escHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && !stopped) {
+      stopped = true;
+      abortController.abort();
+      cancelAnimationFrame(rafId);
+      sources.forEach(stopCameraSource);
+      window.removeEventListener('keydown', escHandler);
+      opts.onStatusChange('stopped');
+      // Surface as a drift event so the consumer's UX (toast, recovery
+      // probe) reacts the same way as an auto-trigger.
+      if (opts.onDrift && !driftFired) {
+        driftFired = true;
+        opts.onDrift('cursor-drift');
+      }
+    }
+  };
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', escHandler);
   }
 
   // ── Handle ────────────────────────────────────────────────────────
@@ -707,6 +778,9 @@ export function startHeadTracker(
       abortController.abort(); // Kill pending getUserMedia promises
       cancelAnimationFrame(rafId);
       sources.forEach(stopCameraSource);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('keydown', escHandler);
+      }
       opts.onStatusChange('stopped');
     },
     get videoElement() {
