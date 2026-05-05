@@ -253,3 +253,28 @@ describe('startHeadTracker — IMU shake gating', () => {
         handle.stop();
     });
 });
+
+describe('startHeadTracker — telemetry surface', () => {
+    it('Esc-fired drift produces exactly one drift telemetry event', () => {
+        const events: TrackingEvent[] = [];
+        subscribeTrackingEvents((e) => events.push(e));
+        const handle = startHeadTracker(defaultOpts({ onDrift: vi.fn() }));
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        const drifts = events.filter(e => e.type === 'drift');
+        expect(drifts.length).toBe(1);
+        expect(drifts[0].type === 'drift' && drifts[0].reason).toBe('cursor-drift');
+        handle.stop();
+    });
+
+    it('telemetry subscriber that throws does not break the tracker', () => {
+        // A bad listener should not prevent onDrift from firing.
+        subscribeTrackingEvents(() => { throw new Error('bad-listener'); });
+        const onDrift = vi.fn();
+        const handle = startHeadTracker(defaultOpts({ onDrift }));
+        expect(() => window.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'Escape' }),
+        )).not.toThrow();
+        expect(onDrift).toHaveBeenCalledWith('cursor-drift');
+        handle.stop();
+    });
+});

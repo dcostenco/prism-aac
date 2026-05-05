@@ -212,6 +212,22 @@ const KALMAN_PROCESS_NOISE = 4;
  * A 5% face-area share means "rock-solid"; below 0.5% we don't trust it.
  */
 const FACE_AREA_TO_KALMAN_SCALE = 20;
+/**
+ * Anchor-based calibration learning rate. Each successful dwell-click
+ * applies this fraction of the cursor-to-target offset to the calibration
+ * anchors. Higher = converges faster but more sensitive to a single
+ * off-center click. 0.3 = roughly half the error after 2 clicks, 90%
+ * after 7 clicks.
+ */
+const ANCHOR_LEARNING_RATE = 0.3;
+/** Below this pixel offset, the cursor was effectively on target — nothing to learn. */
+const ANCHOR_MIN_PIXEL_OFFSET = 8;
+/**
+ * Above this pixel offset, the dwell almost certainly bubbled to a
+ * non-intended ancestor (or the user's gaze missed completely). Don't
+ * incorporate as ground truth — it would corrupt calibration.
+ */
+const ANCHOR_MAX_PIXEL_OFFSET = 200;
 
 interface FaceRect {
   x: number;
@@ -824,6 +840,59 @@ export function startHeadTracker(
   }
 
   /**
+   * Anchor-based calibration correction (gap F follow-up).
+   *
+   * When the user dwell-clicks a known-position button, the offset
+   * between the cursor's smoothed screen position (sx, sy) and the
+   * button's center IS the calibration error at this moment — the
+   * cleanest possible ground truth. We shift the calibration anchors
+   * by a fraction of that offset (learning rate) so a single off-
+   * center click can't overcorrect, but a series of clicks converges
+   * the calibration to the user's true mapping.
+   *
+   * Math: shifting both leftX and rightX uniformly by +δ shifts the
+   * pre-sensitivity rawX output by -δ/rangeX * window.innerWidth.
+   * With sensitivity applied: shift_pre = (cursor_post - target_post) /
+   * sensitivityScale, and δ = shift_pre * rangeX / W.
+   */
+  function applyAnchorCorrection(targetEl: Element): void {
+    if (!(targetEl instanceof Element)) return;
+    const rect = targetEl.getBoundingClientRect();
+    const tx = rect.left + rect.width / 2;
+    const ty = rect.top + rect.height / 2;
+    const dx = sx - tx;
+    const dy = sy - ty;
+    const offsetMag = Math.hypot(dx, dy);
+    // Below noise floor: cursor was effectively on target — nothing to learn.
+    // Above outlier ceiling: probably a missed click that bubbled to a parent.
+    if (offsetMag < ANCHOR_MIN_PIXEL_OFFSET || offsetMag > ANCHOR_MAX_PIXEL_OFFSET) return;
+    if (sensitivityScale <= 0) return;
+
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const rangeX = calibration.leftX - calibration.rightX;
+    const rangeY = calibration.bottomY - calibration.topY;
+    if (rangeX === 0 || rangeY === 0) return;
+
+    const deltaX = (dx / sensitivityScale) * rangeX / W * ANCHOR_LEARNING_RATE;
+    const deltaY = (dy / sensitivityScale) * rangeY / H * ANCHOR_LEARNING_RATE;
+    calibration.leftX  += deltaX;
+    calibration.rightX += deltaX;
+    calibration.topY   += deltaY;
+    calibration.bottomY += deltaY;
+    saveCalibration(calibration);
+    // Reset the slow-drift baseline so it doesn't ALSO fire an offset
+    // correction on top of this one.
+    baselineTracker.acceptCorrection(Date.now());
+    emitTrackingEvent({
+      type: 'recalibration-applied',
+      kind: 'anchor',
+      magnitude: offsetMag,
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
    * Confidence-weighted Kalman smoothing. Lazy-initializes both filters
    * from the first measurement so the cursor doesn't snap toward (0, 0).
    * `kalmanInitialized` is closure state.
@@ -958,6 +1027,10 @@ export function startHeadTracker(
       if (!dwellTriggered && nowTs - dwellStart >= opts.dwellMs) {
         dwellTriggered = true;
         dwellFiredThisFrame = true;
+        // Use this successful dwell as ground-truth for calibration —
+        // the cursor was AT (sx,sy), the user wanted (tx,ty). Shift
+        // anchors by a fraction of that offset.
+        applyAnchorCorrection(interactiveEl);
         opts.onDwell(interactiveEl);
         if (interactiveEl instanceof HTMLElement) interactiveEl.click();
       }

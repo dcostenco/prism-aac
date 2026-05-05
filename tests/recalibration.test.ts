@@ -185,6 +185,32 @@ describe('recordAnchor — stateless ground-truth helper', () => {
         expect(c.targetNormX).toBe(0.5);
         expect(c.targetNormY).toBe(0.55);
     });
+
+    it('preserves a zero-offset anchor (cursor was on target)', () => {
+        const c = recordAnchor({
+            cursorNormX: 0.5,
+            cursorNormY: 0.5,
+            targetNormX: 0.5,
+            targetNormY: 0.5,
+        });
+        expect(c.kind).toBe('anchor');
+        expect(c.cursorNormX).toBe(c.targetNormX);
+        expect(c.cursorNormY).toBe(c.targetNormY);
+    });
+
+    it('captures large offsets without clipping (caller decides whether to apply)', () => {
+        // Pure helper does not enforce magnitude limits — those live in the
+        // consumer's apply path so anchor data can be logged for telemetry
+        // even when not applied.
+        const c = recordAnchor({
+            cursorNormX: 0.9,
+            cursorNormY: 0.1,
+            targetNormX: 0.1,
+            targetNormY: 0.9,
+        });
+        expect(c.cursorNormX - c.targetNormX).toBeCloseTo(0.8);
+        expect(c.cursorNormY - c.targetNormY).toBeCloseTo(-0.8);
+    });
 });
 
 describe('BaselineTracker — military hardening: adversarial inputs', () => {
