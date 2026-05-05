@@ -287,7 +287,25 @@ export class GestureDetector {
 
   constructor(config: GestureConfig, onGesture: (event: GestureEvent) => void) {
     this.config = config;
-    this.onGesture = onGesture;
+    // Wrap the consumer's callback so every gesture commit ALSO dispatches
+    // a cross-modal claim. The headTracker's dwell-click suppresses for
+    // `lockoutMs` after a claim, preventing double-fire when an intentional
+    // blink lands on a button (gap H — see services/crossModalLockout.ts).
+    this.onGesture = (event: GestureEvent) => {
+      try {
+        // Lazy require to avoid coupling the gesture service to the lockout
+        // module's window-event side effects in non-DOM test contexts.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { dispatchGestureClaim } = require('./crossModalLockout') as
+          typeof import('./crossModalLockout');
+        dispatchGestureClaim({
+          gesture: event.gesture,
+          confidence: event.confidence,
+          timestamp: event.timestamp,
+        });
+      } catch { /* lockout is best-effort; never block a gesture */ }
+      onGesture(event);
+    };
     for (const id of ['blink', 'mouth_open', 'smile', 'pucker', 'brow_raise']) {
       this.signals[id] = { active: false, startTime: 0, lastFired: 0, smoothed: 0 };
     }

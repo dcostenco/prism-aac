@@ -195,6 +195,101 @@ export interface FusionInput {
     confidence: number;
 }
 
+/* ── EdgePin detector — gap J ───────────────────────────────────────────
+ *
+ * When calibration fails, the cursor pins to a screen edge. Without
+ * detection, dwell still fires on whatever button is closest to the pin
+ * point — accidental clicks. This counter rolls a window of "is cursor
+ * within `edgeBandPx` of any edge?" samples. After `pinTriggerMs` of
+ * sustained pin, fire `onPin()`. After `pinEscalateCount` consecutive
+ * pin episodes within `escalateWindowMs`, escalate to drift.
+ */
+
+export interface EdgePinOptions {
+    /** Pixels from any edge that count as "pinned". Default 24. */
+    edgeBandPx?: number;
+    /** Time pinned before firing first warn. Default 2000ms. */
+    pinTriggerMs?: number;
+    /** Pin episodes within escalateWindowMs that escalate. Default 3. */
+    pinEscalateCount?: number;
+    /** Window for pin-episode counting. Default 30000ms. */
+    escalateWindowMs?: number;
+    /** Screen width for edge calc (caller-supplied so we work in tests). */
+    screenWidth: number;
+    /** Screen height for edge calc. */
+    screenHeight: number;
+}
+
+export class EdgePinDetector {
+    private readonly bandPx: number;
+    private readonly pinTriggerMs: number;
+    private readonly pinEscalateCount: number;
+    private readonly escalateWindowMs: number;
+    private screenWidth: number;
+    private screenHeight: number;
+    private pinStart = 0;        // when current pin episode began (0 = not pinned)
+    private pinFired = false;    // already warned on this episode?
+    private episodes: number[] = []; // timestamps of past escalation triggers
+
+    constructor(opts: EdgePinOptions) {
+        this.bandPx = opts.edgeBandPx ?? 24;
+        this.pinTriggerMs = opts.pinTriggerMs ?? 2000;
+        this.pinEscalateCount = opts.pinEscalateCount ?? 3;
+        this.escalateWindowMs = opts.escalateWindowMs ?? 30000;
+        this.screenWidth = opts.screenWidth;
+        this.screenHeight = opts.screenHeight;
+    }
+
+    /** Update screen dims when window resizes. */
+    setScreen(w: number, h: number): void {
+        this.screenWidth = w;
+        this.screenHeight = h;
+    }
+
+    /** Returns 'pin' if currently pinned this frame fires the warn,
+     *  'escalate' if pin-episode count exceeds the threshold,
+     *  null if the cursor is operating normally. */
+    push(x: number, y: number, timestamp: number): 'pin' | 'escalate' | null {
+        const isPinned =
+            x < this.bandPx ||
+            x > this.screenWidth - this.bandPx ||
+            y < this.bandPx ||
+            y > this.screenHeight - this.bandPx;
+
+        if (!isPinned) {
+            // Cursor moved off the edge — close out any open episode
+            this.pinStart = 0;
+            this.pinFired = false;
+            return null;
+        }
+
+        if (this.pinStart === 0) {
+            // Just entered an edge band
+            this.pinStart = timestamp;
+            return null;
+        }
+
+        const pinDuration = timestamp - this.pinStart;
+        if (!this.pinFired && pinDuration >= this.pinTriggerMs) {
+            this.pinFired = true;
+            // Record this episode + evict old ones outside the window
+            this.episodes.push(timestamp);
+            const cutoff = timestamp - this.escalateWindowMs;
+            while (this.episodes.length && this.episodes[0] < cutoff) {
+                this.episodes.shift();
+            }
+            return this.episodes.length >= this.pinEscalateCount ? 'escalate' : 'pin';
+        }
+        return null;
+    }
+
+    reset(): void {
+        this.pinStart = 0;
+        this.pinFired = false;
+        this.episodes.length = 0;
+    }
+}
+
 export function fuseWeighted(
     inputs: FusionInput[],
     minTotalWeight = 0.3,

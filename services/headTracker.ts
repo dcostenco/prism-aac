@@ -185,10 +185,6 @@ interface CameraDetection {
   timestamp: number;
 }
 
-function ema(prev: number, next: number, alpha: number): number {
-  return prev + alpha * (next - prev);
-}
-
 // ── Calibration ─────────────────────────────────────────────────────────────
 
 export interface CalibrationData {
@@ -226,8 +222,26 @@ interface CameraSource {
   nativeDetector: { detect: (source: HTMLVideoElement) => Promise<{ boundingBox: DOMRect }[]> } | null;
   lastDetection: CameraDetection;
   lastLandmarks: FaceLandmarkData | null;
+  /**
+   * Sparse set of normalized landmark coords (nose, eyes, mouth corners, chin)
+   * captured per frame. Used by the ego-motion classifier in tick() to detect
+   * whole-frame camera shake. Distinct from `lastLandmarks` which holds
+   * blendshapes + head-pose for gesture recognition.
+   */
+  lastLandmarkPoints: { x: number; y: number }[] | null;
   active: boolean;
 }
+
+// MediaPipe FaceLandmarker indices for ego-motion centroid tracking.
+// Picked to span the full face so the centroid is robust to local motion
+// (e.g. blink alone won't shift the centroid much).
+//   1   = nose tip
+//   33  = right eye outer corner
+//   263 = left eye outer corner
+//   61  = mouth right corner
+//   291 = mouth left corner
+//   199 = chin tip
+const EGO_MOTION_LANDMARK_INDICES = [1, 33, 263, 61, 291, 199] as const;
 
 function createCameraSource(index: number): CameraSource | null {
   const video = document.createElement('video');
@@ -250,6 +264,7 @@ function createCameraSource(index: number): CameraSource | null {
     nativeDetector: null,
     lastDetection: { face: null, cameraIndex: index, confidence: 0, canvasWidth: 320, canvasHeight: 240, timestamp: 0 },
     lastLandmarks: null,
+    lastLandmarkPoints: null,
     active: false,
   };
 }
@@ -423,6 +438,20 @@ async function detectFromSource(source: CameraSource): Promise<CameraDetection> 
         const headPose = matrixData ? matrixToEuler(Array.from(matrixData)) : { pitch: 0, yaw: 0, roll: 0 };
         source.lastLandmarks = { blendshapes: bs, headPose, timestamp: Date.now() };
       }
+      // Sparse landmark snapshot for ego-motion classification (gap E).
+      // We only keep ~6 well-spread points so the classifier's centroid is
+      // dominated by overall face position, not local features (blink/smile).
+      const allLandmarks = lmResult?.faceLandmarks?.[0];
+      if (allLandmarks?.length) {
+        const sparse: { x: number; y: number }[] = [];
+        for (const idx of EGO_MOTION_LANDMARK_INDICES) {
+          const p = allLandmarks[idx];
+          if (p) sparse.push({ x: p.x, y: p.y });
+        }
+        if (sparse.length === EGO_MOTION_LANDMARK_INDICES.length) {
+          source.lastLandmarkPoints = sparse;
+        }
+      }
     } catch { /* FaceLandmarker failed — gesture detection degrades gracefully */ }
   }
 
@@ -522,16 +551,46 @@ export function startHeadTracker(
   const sources: CameraSource[] = [];
   const abortController = new AbortController();
 
-  // Lazy import to avoid circular dependency. Stability primitives are
+  // Lazy imports to avoid circular dependency. Stability primitives are
   // pure / DOM-free, so they can be unit-tested without the full tracker.
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { DriftDetector, fuseWeighted } = require('./headTrackerStability') as typeof import('./headTrackerStability');
-  const driftDetector = new DriftDetector({
+  const stability = require('./headTrackerStability') as typeof import('./headTrackerStability');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const kalmanMod = require('./kalmanFilter1D') as typeof import('./kalmanFilter1D');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const egoMod = require('./egoMotion') as typeof import('./egoMotion');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const lockoutMod = require('./crossModalLockout') as typeof import('./crossModalLockout');
+
+  const driftDetector = new stability.DriftDetector({
     travelThresholdPx: opts.driftThresholdPx ?? 800,
     windowMs: opts.driftWindowMs ?? 5000,
   });
+  // Edge-pin detector — fires when the cursor lives on a screen edge for
+  // multiple seconds (calibration-broken / tracking-lost-to-corner).
+  const edgePin = new stability.EdgePinDetector({
+    screenWidth: window.innerWidth,
+    screenHeight: window.innerHeight,
+  });
+  // Confidence-aware Kalman filters replace the EMA. Low-confidence frames
+  // (face partially out, glasses glare, lighting drop) hold the prediction
+  // instead of dragging the cursor toward a noisy measurement.
+  // q≈4 → expects up to ±2px/frame of true cursor motion at 15fps;
+  // r is dynamically derived from per-frame confidence.
+  const kalmanX = new kalmanMod.Kalman1D(4);
+  const kalmanY = new kalmanMod.Kalman1D(4);
+  let kalmanInitialized = false;
+
+  // Cross-modal lockout state — populated when gestureService dispatches
+  // a `gesture-claim` event. Subscription happens AFTER dwell vars are
+  // declared (further down) so the handler can clear dwell state safely.
+  let lastGestureClaimTs = 0;
+
+  // Window resize handler — keep edge-pin band aligned with viewport.
+  const onResize = () => edgePin.setScreen(window.innerWidth, window.innerHeight);
+  window.addEventListener('resize', onResize);
+
   let driftFired = false;  // one-shot — don't spam onDrift on every frame
-  let lastDwellFiredAt = 0;
 
   // Normalize input: single string → array
   const ids: (string | undefined)[] = cameraDeviceIds
@@ -547,6 +606,17 @@ export function startHeadTracker(
   let dwellStart = 0;
   let dwellTriggered = false;
   let lastFrameTime = 0;
+
+  // Subscribe to gesture-claim AFTER dwell vars exist. When a gesture
+  // commits, suppress dwell-click for `lockoutMs` so an intentional blink
+  // doesn't fire BOTH the gesture AND the dwell click. Reset in-progress
+  // dwell so the user must re-acquire the target.
+  const offGestureClaim = lockoutMod.onGestureClaim((d) => {
+    lastGestureClaimTs = d.timestamp;
+    dwellElement = null;
+    dwellStart = 0;
+    dwellTriggered = false;
+  });
 
   const calibration = loadCalibration();
   const sensitivityScale = opts.sensitivity / 5;
@@ -654,14 +724,43 @@ export function startHeadTracker(
 
     opts.onStatusChange('tracking');
 
-    // Emit face landmarks from the primary (best) camera for gesture detection
+    // Identify the primary (best confidence) camera once — we use it both
+    // for gesture-landmark emission and for ego-motion classification.
+    const primarySource = activeSources.reduce((best, s) =>
+      s.lastDetection.confidence > best.lastDetection.confidence ? s : best
+    );
+
+    // Emit face landmarks from the primary camera for gesture detection
     if (opts.onLandmarks) {
-      const primarySource = activeSources.reduce((best, s) =>
-        s.lastDetection.confidence > best.lastDetection.confidence ? s : best
-      );
       if (primarySource.lastLandmarks && (now - primarySource.lastLandmarks.timestamp) < STALE_THRESHOLD_MS) {
         opts.onLandmarks(primarySource.lastLandmarks);
       }
+    }
+
+    // ── Ego-motion suppression (gap E) ────────────────────────────
+    // If ALL face landmarks shifted by the same delta this frame, the
+    // camera moved (laptop bumped, road shake) — NOT the user. Suppress
+    // cursor update so the cursor stays put while the world wobbles.
+    // Uses head rotation (pitch/yaw/roll) to avoid suppressing intentional
+    // head turns: even a small yaw means user moved their head, not camera.
+    let egoMotionDetected = false;
+    if (primarySource.lastLandmarkPoints) {
+      const prev = (primarySource as { _prevEgoLandmarks?: { x: number; y: number }[] })._prevEgoLandmarks;
+      if (prev) {
+        const headPose = primarySource.lastLandmarks?.headPose;
+        const rotation = headPose
+          ? Math.max(Math.abs(headPose.pitch), Math.abs(headPose.yaw), Math.abs(headPose.roll))
+          : 0;
+        const r = egoMod.classifyMotion(prev, primarySource.lastLandmarkPoints, rotation);
+        egoMotionDetected = r.isEgoMotion;
+      }
+      (primarySource as { _prevEgoLandmarks?: { x: number; y: number }[] })._prevEgoLandmarks =
+        primarySource.lastLandmarkPoints;
+    }
+    if (egoMotionDetected) {
+      // Camera shake — keep last cursor position, skip dwell increment.
+      opts.onMove(sx, sy);
+      return;
     }
 
     const { normX, normY } = fused;
@@ -687,61 +786,81 @@ export function startHeadTracker(
     rawX = Math.max(0, Math.min(window.innerWidth, rawX));
     rawY = Math.max(0, Math.min(window.innerHeight, rawY));
 
-    // Velocity-adaptive smoothing
-    const dx = rawX - sx;
-    const dy = rawY - sy;
-    const velocity = Math.sqrt(dx * dx + dy * dy);
-    const screenSize = Math.min(window.innerWidth, window.innerHeight);
-    const screenFactor = screenSize < 768 ? 0.5 : screenSize < 1200 ? 0.7 : 1.0;
-    const velocitySmooth = velocity < 5
-      ? 0.03
-      : velocity > 50
-        ? 0.2 * screenFactor
-        : 0.03 + (velocity - 5) / 45 * (0.2 * screenFactor - 0.03);
-    const finalSmooth = Math.min(opts.smoothing, velocitySmooth);
-    sx = ema(sx, rawX, finalSmooth);
-    sy = ema(sy, rawY, finalSmooth);
+    // ── Confidence-weighted Kalman smoothing (gap D) ──────────────
+    // Replaces velocity-adaptive EMA. The Kalman naturally adapts:
+    //   - high-confidence frame → high gain → snaps toward measurement
+    //   - low-confidence frame → low gain → holds prediction (rejects noise)
+    //   - long stalls grow variance → first good frame snaps fast
+    // We still respect opts.smoothing as an upper bound on the gain by
+    // scaling confidence: smoothing=0.05 → tight max gain; 0.3 → looser.
+    const avgConfidence = activeSources.length > 0
+      ? activeSources.reduce((s, src) => s + (src.lastDetection.confidence || 0), 0) / activeSources.length
+      : 0;
+    // Map face-area confidence (typically 0.005..0.05) into Kalman scale (0..1).
+    // A 5% face-area share is "rock-solid"; below 0.5% we don't trust it.
+    const kalmanConf = Math.max(0, Math.min(1, avgConfidence * 20));
+    if (!kalmanInitialized) {
+      kalmanX.reset(rawX);
+      kalmanY.reset(rawY);
+      kalmanInitialized = true;
+      sx = rawX;
+      sy = rawY;
+    } else {
+      sx = kalmanX.update(rawX, kalmanConf);
+      sy = kalmanY.update(rawY, kalmanConf);
+    }
 
     opts.onMove(sx, sy);
 
     // ── Dwell Detection ───────────────────────────────────────────
+    // Suppressed during cross-modal lockout window (gap H): when a
+    // gesture has just committed, the user's blink/smile is an
+    // intentional gesture, not a dwell action.
+    const nowTs = Date.now();
+    const dwellLocked = lockoutMod.isLocked(lastGestureClaimTs, nowTs);
 
     const elementUnder = document.elementFromPoint(sx, sy);
     const interactiveEl = elementUnder?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? elementUnder;
 
     let dwellFiredThisFrame = false;
-    if (interactiveEl && interactiveEl === dwellElement) {
-      if (!dwellTriggered && Date.now() - dwellStart >= opts.dwellMs) {
+    if (!dwellLocked && interactiveEl && interactiveEl === dwellElement) {
+      if (!dwellTriggered && nowTs - dwellStart >= opts.dwellMs) {
         dwellTriggered = true;
         dwellFiredThisFrame = true;
-        lastDwellFiredAt = Date.now();
         opts.onDwell(interactiveEl);
         if (interactiveEl instanceof HTMLElement) interactiveEl.click();
       }
     } else {
       dwellElement = interactiveEl ?? null;
-      dwellStart = Date.now();
+      dwellStart = nowTs;
       dwellTriggered = false;
     }
 
     // ── Drift safety net ──────────────────────────────────────────
-    // Per-frame sample → DriftDetector. On first trip, fire onDrift
-    // exactly once and let the consumer decide to stop().
+    // Per-frame sample → DriftDetector + EdgePinDetector. On first
+    // trip, fire onDrift exactly once and let the consumer decide to
+    // stop(). EdgePin escalation is treated as cursor-drift; a single
+    // pin episode is a softer warning that we don't auto-disable on
+    // (the user may be reaching a corner button intentionally).
     if (!driftFired) {
-      const avgConf = activeSources.length > 0
-        ? activeSources.reduce((s, src) => s + (src.lastDetection.confidence || 0), 0) / activeSources.length
-        : 0;
       driftDetector.push({
         x: sx,
         y: sy,
-        confidence: avgConf,
-        timestamp: Date.now(),
+        confidence: avgConfidence,
+        timestamp: nowTs,
         dwellFired: dwellFiredThisFrame,
       });
       const reason = driftDetector.check();
       if (reason && opts.onDrift) {
         driftFired = true;
         opts.onDrift(reason);
+        return;
+      }
+
+      const pinResult = edgePin.push(sx, sy, nowTs);
+      if (pinResult === 'escalate' && opts.onDrift) {
+        driftFired = true;
+        opts.onDrift('cursor-drift');
       }
     }
   }
@@ -780,7 +899,9 @@ export function startHeadTracker(
       sources.forEach(stopCameraSource);
       if (typeof window !== 'undefined') {
         window.removeEventListener('keydown', escHandler);
+        window.removeEventListener('resize', onResize);
       }
+      offGestureClaim();
       opts.onStatusChange('stopped');
     },
     get videoElement() {

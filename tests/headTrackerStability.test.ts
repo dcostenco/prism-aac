@@ -12,6 +12,7 @@ import {
     DriftDetector,
     ReliabilityProbe,
     fuseWeighted,
+    EdgePinDetector,
 } from '@/services/headTrackerStability';
 
 describe('DriftDetector — cursor-drift trigger', () => {
@@ -149,5 +150,94 @@ describe('fuseWeighted — confidence-weighted multi-camera fusion', () => {
         ]);
         expect(r!.normX).toBeCloseTo(0.5);
         expect(r!.normY).toBeCloseTo(0.5);
+    });
+});
+
+describe('EdgePinDetector — calibration-failure pin detection', () => {
+    const opts = { screenWidth: 1000, screenHeight: 800, edgeBandPx: 24, pinTriggerMs: 2000 };
+    const t0 = 1_000_000;  // realistic Date.now() — avoid the pinStart===0 sentinel
+
+    it('returns null when cursor is in the middle of the screen', () => {
+        const e = new EdgePinDetector(opts);
+        expect(e.push(500, 400, t0)).toBeNull();
+        expect(e.push(500, 400, t0 + 5000)).toBeNull();
+    });
+
+    it('does not fire pin until pinTriggerMs has elapsed', () => {
+        const e = new EdgePinDetector(opts);
+        expect(e.push(5, 400, t0)).toBeNull();             // entering edge
+        expect(e.push(5, 400, t0 + 1000)).toBeNull();      // 1s pinned — not yet
+        expect(e.push(5, 400, t0 + 2100)).toBe('pin');     // crosses 2s → fire
+    });
+
+    it('fires pin on each edge (top, bottom, left, right)', () => {
+        for (const [x, y] of [[5, 400], [995, 400], [500, 5], [500, 795]]) {
+            const e = new EdgePinDetector(opts);
+            e.push(x, y, t0);
+            expect(e.push(x, y, t0 + 2100)).toBe('pin');
+        }
+    });
+
+    it('escalates after pinEscalateCount episodes within escalateWindowMs', () => {
+        const e = new EdgePinDetector({ ...opts, pinEscalateCount: 2, escalateWindowMs: 30000 });
+        // Episode 1
+        e.push(5, 400, t0);
+        expect(e.push(5, 400, t0 + 2100)).toBe('pin');
+        // Move off + return → episode 2 → escalate
+        e.push(500, 400, t0 + 3000);  // off-edge resets
+        e.push(5, 400, t0 + 4000);
+        expect(e.push(5, 400, t0 + 6100)).toBe('escalate');
+    });
+
+    it('does not escalate when episodes are spread beyond escalateWindowMs', () => {
+        const e = new EdgePinDetector({ ...opts, pinEscalateCount: 2, escalateWindowMs: 5000 });
+        e.push(5, 400, t0);
+        expect(e.push(5, 400, t0 + 2100)).toBe('pin');
+        e.push(500, 400, t0 + 3000);
+        // Wait beyond escalateWindowMs before next episode
+        e.push(5, 400, t0 + 100_000);
+        expect(e.push(5, 400, t0 + 102_100)).toBe('pin');  // not escalate — old episode evicted
+    });
+
+    it('off-edge frame resets the in-progress episode (no spurious fire)', () => {
+        const e = new EdgePinDetector(opts);
+        e.push(5, 400, t0);                  // start pin
+        e.push(500, 400, t0 + 1000);         // moved off — reset
+        e.push(5, 400, t0 + 1100);           // re-enter
+        // Only 1.8s elapsed since re-entry → no fire yet
+        expect(e.push(5, 400, t0 + 2900)).toBeNull();
+        expect(e.push(5, 400, t0 + 3200)).toBe('pin');
+    });
+
+    it('reset() clears all internal state', () => {
+        const e = new EdgePinDetector(opts);
+        e.push(5, 400, t0);
+        e.push(5, 400, t0 + 2100);  // fired
+        e.reset();
+        // Fresh start — should require full pinTriggerMs again
+        e.push(5, 400, t0 + 3000);
+        expect(e.push(5, 400, t0 + 4500)).toBeNull();   // < 2s
+        expect(e.push(5, 400, t0 + 5100)).toBe('pin');  // > 2s
+    });
+});
+
+describe('crossModalLockout — gesture/dwell contention', () => {
+    it('isLocked returns false when no claim has happened', async () => {
+        const { isLocked } = await import('@/services/crossModalLockout');
+        expect(isLocked(0, 1_000_000)).toBe(false);
+    });
+
+    it('isLocked returns true within the lockout window after a claim', async () => {
+        const { isLocked } = await import('@/services/crossModalLockout');
+        const claimTs = 1_000_000;
+        expect(isLocked(claimTs, claimTs + 100, 250)).toBe(true);
+        expect(isLocked(claimTs, claimTs + 249, 250)).toBe(true);
+    });
+
+    it('isLocked returns false after the window has passed', async () => {
+        const { isLocked } = await import('@/services/crossModalLockout');
+        const claimTs = 1_000_000;
+        expect(isLocked(claimTs, claimTs + 250, 250)).toBe(false);
+        expect(isLocked(claimTs, claimTs + 1000, 250)).toBe(false);
     });
 });
