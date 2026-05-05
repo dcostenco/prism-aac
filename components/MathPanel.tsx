@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useAuthStore } from '@/store/authStore';
@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useT } from '@/engine/useT';
 import { MATH_ITEMS } from '@/constants/mathSymbols';
 import MathExpression from './MathExpression';
+import MathDrawCanvas, { type DrawStroke } from './MathDrawCanvas';
 import type { MathCategory } from '@/types';
 
 const CATEGORIES: { key: MathCategory; i18n: string; icon: string }[] = [
@@ -53,10 +54,37 @@ export default function MathPanel() {
   // Panther-style operator row + number pad + tiny variables row show,
   // keeping the keyboard footprint small so the math canvas dominates.
   const [showMore, setShowMore] = useState(false);
-  // Step 4 wires the actual drawing canvas; for now this just toggles a
-  // visible-pressed state on the pencil button so users see the affordance.
+  // Step 4: drawing canvas. drawMode toggles the SVG overlay; strokes
+  // accumulate in state so they survive panel re-renders. Undo pops the
+  // last stroke; clear wipes all of them.
   const [drawMode, setDrawMode] = useState(false);
+  const [strokes, setStrokes] = useState<DrawStroke[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 480 });
+
+  // Track the canvas dimensions so the SVG overlay scales 1:1 with the
+  // grid background. ResizeObserver fires on container resize without us
+  // having to listen for window resize ourselves.
+  useEffect(() => {
+    const node = canvasRef.current;
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => {
+      const r = node.getBoundingClientRect();
+      setCanvasSize({ width: Math.max(100, r.width), height: Math.max(100, r.height) });
+    });
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, []);
+
+  const undoStroke = useCallback(() => {
+    tapFeedback();
+    setStrokes((prev) => prev.slice(0, -1));
+  }, []);
+  const clearStrokes = useCallback(() => {
+    tapFeedback();
+    setStrokes([]);
+  }, []);
 
   const categoryItems = useMemo(
     () => MATH_ITEMS.filter((m) => m.category === activeCategory).sort((a, b) => a.sortOrder - b.sortOrder),
@@ -159,7 +187,8 @@ export default function MathPanel() {
             grid uses CSS linear-gradients so it scales with viewport without
             shipping an SVG / image asset. */}
         <div
-          className="math-grid-canvas relative flex items-center justify-center rounded-xl border-2 border-theme min-h-[60svh] px-4 bg-white dark:bg-[#1a1a2e]"
+          ref={canvasRef}
+          className="math-grid-canvas relative flex items-center justify-center rounded-xl border-2 border-theme min-h-[60svh] px-4 bg-white dark:bg-[#1a1a2e] overflow-hidden"
           style={{
             backgroundImage:
               'linear-gradient(to right, rgba(120,120,140,0.18) 1px, transparent 1px),' +
@@ -170,12 +199,28 @@ export default function MathPanel() {
           {expression ? (
             <MathExpression
               expression={expression}
-              className="text-[clamp(2rem,6vw,4.5rem)] text-primary text-center break-all py-3 katex-host"
+              className="text-[clamp(2rem,6vw,4.5rem)] text-primary text-center break-all py-3 katex-host relative z-10"
             />
           ) : (
-            <span className="text-dim text-[clamp(0.9rem,2.5vw,1.25rem)]">5 × 6 =</span>
+            <span className="text-dim text-[clamp(0.9rem,2.5vw,1.25rem)] relative z-10">5 × 6 =</span>
           )}
-          <div className="absolute bottom-2 right-3 flex gap-1.5">
+          {/* SVG drawing overlay — receives pointer events only when
+              drawMode is on, so reading the expression isn't blocked
+              by an invisible click-eater layer. */}
+          <MathDrawCanvas
+            width={canvasSize.width}
+            height={canvasSize.height}
+            enabled={drawMode}
+            strokes={strokes}
+            onStrokesChange={setStrokes}
+          />
+          <div className="absolute bottom-2 right-3 flex gap-1.5 z-20">
+            {drawMode && strokes.length > 0 && (
+              <>
+                <button onClick={undoStroke} className="aac-btn w-9 h-9 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-base shadow-sm" aria-label="Undo stroke">↶</button>
+                <button onClick={clearStrokes} className="aac-btn px-2 h-9 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-xs font-bold shadow-sm" aria-label="Clear drawing">Clear ✏️</button>
+              </>
+            )}
             <button onClick={speakExpression} className="aac-btn w-9 h-9 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-base shadow-sm" aria-label={t('speak')}>🔊</button>
             <button onClick={clearAll} className="aac-btn w-9 h-9 rounded-full surface-key text-muted flex items-center justify-center border border-theme text-sm shadow-sm" aria-label={t('clear')}>C</button>
           </div>
