@@ -1,5 +1,7 @@
 'use client';
 
+import { emitTrackingEvent } from './trackingTelemetry';
+
 /**
  * deviceMotion — iOS / Android IMU shake detection.
  *
@@ -182,6 +184,9 @@ export function startMotionMonitor(opts: MotionMonitorOptions): MotionMonitorHan
         const nextState = nextMotionState({ prev: state, peak, shakeThreshold, idleHysteresis });
         if (nextState !== state) {
             state = nextState;
+            emitTrackingEvent(state === 'shaking'
+                ? { type: 'imu-shaking', peakMagnitude: peak, timestamp: Date.now() }
+                : { type: 'imu-idle', peakMagnitude: peak, timestamp: Date.now() });
             try { opts.onChange(state); } catch { /* swallow listener errors */ }
         }
         if (opts.onSample) {

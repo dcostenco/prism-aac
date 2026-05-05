@@ -5,6 +5,7 @@ import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import TrackingSetupWizard from './TrackingSetupWizard';
 import { DEFAULT_GESTURE_CONFIG, type GestureId, type GestureConfig } from '@/services/gestureService';
+import { requestMotionPermission } from '@/services/deviceMotion';
 
 const TRACKING_TARGETS = [
   { id: 'right_index', label: 'Right Index Finger' },
@@ -93,7 +94,20 @@ export default function InputModesSettings() {
           <span className="text-primary text-sm font-semibold">{t('enable_head_tracking')}</span>
           <p className="text-muted text-[10px]">Move cursor by moving your head (uses camera)</p>
         </div>
-        <Toggle on={headTrackingEnabled} onToggle={() => update({ headTrackingEnabled: !headTrackingEnabled })} label="Head tracking" />
+        <Toggle
+          on={headTrackingEnabled}
+          onToggle={async () => {
+            const willEnable = !headTrackingEnabled;
+            // Request iOS DeviceMotion permission BEFORE flipping the
+            // setting (must run inside the user-gesture handler).
+            // No-op on non-iOS / older iOS / desktop.
+            if (willEnable) {
+              try { await requestMotionPermission(); } catch { /* */ }
+            }
+            update({ headTrackingEnabled: willEnable });
+          }}
+          label="Head tracking"
+        />
       </label>
 
       {/* Dwell Time */}

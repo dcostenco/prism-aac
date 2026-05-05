@@ -29,6 +29,7 @@ import { classifyMotion } from './egoMotion';
 import { isLocked, onGestureClaim } from './crossModalLockout';
 import { BaselineTracker } from './recalibration';
 import { acquireCamera, type CameraLease } from './cameraStream';
+import { emitTrackingEvent } from './trackingTelemetry';
 
 // ── Public Types ────────────────────────────────────────────────────────────
 
@@ -727,14 +728,24 @@ export function startHeadTracker(
     if (!primary.lastLandmarkPoints) return false;
     const prev = primary.prevLandmarkPoints;
     let isEgoMotion = false;
+    let deltaMagnitude = 0;
     if (prev) {
       const headPose = primary.lastLandmarks?.headPose;
       const rotation = headPose
         ? Math.max(Math.abs(headPose.pitch), Math.abs(headPose.yaw), Math.abs(headPose.roll))
         : 0;
-      isEgoMotion = classifyMotion(prev, primary.lastLandmarkPoints, rotation).isEgoMotion;
+      const r = classifyMotion(prev, primary.lastLandmarkPoints, rotation);
+      isEgoMotion = r.isEgoMotion;
+      deltaMagnitude = Math.abs(r.egoDelta.x) + Math.abs(r.egoDelta.y);
     }
     primary.prevLandmarkPoints = primary.lastLandmarkPoints;
+    if (isEgoMotion) {
+      emitTrackingEvent({
+        type: 'ego-motion-suppress',
+        deltaMagnitude,
+        timestamp: Date.now(),
+      });
+    }
     return isEgoMotion;
   }
 
@@ -747,11 +758,13 @@ export function startHeadTracker(
     baselineTracker.push({ normX, normY, timestamp: ts });
     const c = baselineTracker.suggestCorrection(ts);
     if (!c) return;
+    let magnitude = 0;
     if (c.kind === 'offset') {
       calibration.leftX  += c.deltaNormX;
       calibration.rightX += c.deltaNormX;
       calibration.topY   += c.deltaNormY;
       calibration.bottomY += c.deltaNormY;
+      magnitude = Math.hypot(c.deltaNormX, c.deltaNormY);
     } else if (c.kind === 'scale') {
       // Stretch from the calibration midpoint by sqrt(ratio) so the user's
       // now-tighter motion still spans the full screen.
@@ -763,9 +776,18 @@ export function startHeadTracker(
       calibration.rightX = midX + (calibration.rightX - midX) * sX;
       calibration.topY   = midY + (calibration.topY   - midY) * sY;
       calibration.bottomY = midY + (calibration.bottomY - midY) * sY;
+      magnitude = (sX + sY) / 2;
+    } else if (c.kind === 'anchor') {
+      magnitude = Math.hypot(c.cursorNormX - c.targetNormX, c.cursorNormY - c.targetNormY);
     }
     saveCalibration(calibration);
     baselineTracker.acceptCorrection(ts);
+    emitTrackingEvent({
+      type: 'recalibration-applied',
+      kind: c.kind,
+      magnitude,
+      timestamp: ts,
+    });
   }
 
   /**
@@ -970,13 +992,18 @@ export function startHeadTracker(
         const reason = driftDetector.check();
         if (reason && opts.onDrift) {
           driftFired = true;
+          emitTrackingEvent({ type: 'drift', reason, timestamp: nowTs });
           opts.onDrift(reason);
           return;
         }
 
         const pinResult = edgePin.push(sx, sy, nowTs);
-        if (pinResult === 'escalate' && opts.onDrift) {
+        if (pinResult === 'pin') {
+          emitTrackingEvent({ type: 'edge-pin-warn', timestamp: nowTs });
+        } else if (pinResult === 'escalate' && opts.onDrift) {
           driftFired = true;
+          emitTrackingEvent({ type: 'edge-pin-escalate', timestamp: nowTs });
+          emitTrackingEvent({ type: 'drift', reason: 'edge-pin-escalate', timestamp: nowTs });
           opts.onDrift('cursor-drift');
         }
       }
@@ -999,6 +1026,7 @@ export function startHeadTracker(
       // probe) reacts the same way as an auto-trigger.
       if (opts.onDrift && !driftFired) {
         driftFired = true;
+        emitTrackingEvent({ type: 'drift', reason: 'cursor-drift', timestamp: Date.now() });
         opts.onDrift('cursor-drift');
       }
     }

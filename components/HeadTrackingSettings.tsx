@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isHeadTrackingSupported, listCameras, saveCalibration, type CalibrationData } from '@/services/headTracker';
+import { requestMotionPermission } from '@/services/deviceMotion';
 import { useT } from '@/engine/useT';
 import { tapFeedback } from '@/services/feedback';
 
@@ -104,9 +105,19 @@ export default function HeadTrackingSettings() {
       <label className="flex items-center justify-between py-2">
         <span className="text-primary text-lg">{t('enable_head_tracking')}</span>
         <button
-          onClick={() => {
+          onClick={async () => {
             tapFeedback();
-            settings.update({ headTrackingEnabled: !settings.headTrackingEnabled });
+            const willEnable = !settings.headTrackingEnabled;
+            // Request iOS DeviceMotion permission BEFORE flipping the
+            // toggle. iOS 13+ requires this from a user-gesture context;
+            // doing it here (inside the click handler) is the only place
+            // it'll succeed. On Android / desktop / older iOS this is a
+            // no-op (`not-required` / `unsupported`). We don't block the
+            // toggle on the result — IMU is a bonus signal, not required.
+            if (willEnable) {
+              try { await requestMotionPermission(); } catch { /* */ }
+            }
+            settings.update({ headTrackingEnabled: willEnable });
           }}
           aria-pressed={settings.headTrackingEnabled}
           aria-label={t('enable_head_tracking')}

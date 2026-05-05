@@ -22,6 +22,7 @@
  */
 
 import { ReliabilityProbe } from './headTrackerStability';
+import { emitTrackingEvent } from './trackingTelemetry';
 
 export interface ReliabilityProbeHandle {
     stop: () => void;
@@ -89,6 +90,11 @@ export function startReliabilityProbe(opts: ReliabilityProbeOpts): ReliabilityPr
         }
         if (video?.parentNode) video.remove();
         video = null;
+        // Emit probe-stop only when the consumer tore down WITHOUT
+        // recovering — recovered teardowns emit probe-recover instead.
+        if (!recovered) {
+            emitTrackingEvent({ type: 'probe-stop', progress: 0, timestamp: Date.now() });
+        }
     };
 
     const init = async () => {
@@ -142,6 +148,9 @@ export function startReliabilityProbe(opts: ReliabilityProbeOpts): ReliabilityPr
             }) as typeof detector;
             if (stopped) { teardown(); return; }
 
+            // Telemetry: probe-start fires once at first interval tick.
+            emitTrackingEvent({ type: 'probe-start', progress: 0, timestamp: Date.now() });
+
             // Run the slow loop. We don't care about per-frame jitter —
             // 1 Hz is the whole point.
             intervalId = window.setInterval(() => {
@@ -157,6 +166,7 @@ export function startReliabilityProbe(opts: ReliabilityProbeOpts): ReliabilityPr
                 if (hit && !recovered) {
                     recovered = true;
                     teardown();
+                    emitTrackingEvent({ type: 'probe-recover', progress: 1, timestamp: Date.now() });
                     onRecover();
                 }
             }, intervalMs);

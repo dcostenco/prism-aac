@@ -1,3 +1,5 @@
+import { emitTrackingEvent } from './trackingTelemetry';
+
 /**
  * safeMode — degraded-operation mode after repeated drift events.
  *
@@ -69,11 +71,24 @@ export function freshEvents(history: number[], now: number, windowMs: number): n
 
 /** Record a drift auto-disable event. Call from the onDrift handler. */
 export function recordDriftEvent(now: number = Date.now(), opts: SafeModeOptions = {}): void {
-    const { windowMs } = { ...DEFAULTS, ...opts };
+    const { triggerCount, windowMs } = { ...DEFAULTS, ...opts };
     // Read, append, evict-old, write. Eviction keeps the storage tiny.
-    const history = freshEvents(readHistory(), now, windowMs);
-    history.push(now);
+    const before = freshEvents(readHistory(), now, windowMs);
+    const history = [...before, now];
     writeHistory(history);
+    // Telemetry: detect the moment we cross into safe mode and emit
+    // exactly once per transition. Importing inside the function avoids
+    // a circular dep at module load and keeps safeMode usable in tests
+    // that don't want telemetry side-effects.
+    const wasActive = before.length >= triggerCount;
+    const isActive = history.length >= triggerCount;
+    if (!wasActive && isActive) {
+        emitTrackingEvent({
+            type: 'safe-mode-enter',
+            driftCount: history.length,
+            timestamp: now,
+        });
+    }
 }
 
 /** True iff the user has tripped enough drift events to enter safe mode. */
@@ -84,7 +99,15 @@ export function isSafeMode(now: number = Date.now(), opts: SafeModeOptions = {})
 
 /** Clear all drift events. Call when the user manually re-enables tracking. */
 export function clearDriftHistory(): void {
+    const wasActive = freshEvents(readHistory(), Date.now(), DEFAULTS.windowMs).length >= DEFAULTS.triggerCount;
     writeHistory([]);
+    if (wasActive) {
+        emitTrackingEvent({
+            type: 'safe-mode-exit',
+            driftCount: 0,
+            timestamp: Date.now(),
+        });
+    }
 }
 
 /**

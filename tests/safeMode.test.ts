@@ -8,6 +8,11 @@ import {
     applySafeModeCaps,
     SAFE_MODE_EFFECTS,
 } from '@/services/safeMode';
+import {
+    subscribeTrackingEvents,
+    _resetForTests as _resetTelemetry,
+    type TrackingEvent,
+} from '@/services/trackingTelemetry';
 
 beforeEach(() => {
     if (typeof localStorage !== 'undefined') localStorage.clear();
@@ -268,5 +273,48 @@ describe('safeMode — military hardening: persistence + corruption', () => {
             cameraIds: ['cam'] as const,
         }, true);
         expect(typeof out.dwellMs).toBe('number');  // Infinity * 2 === Infinity
+    });
+});
+
+describe('safeMode — telemetry integration', () => {
+    beforeEach(() => {
+        if (typeof localStorage !== 'undefined') localStorage.clear();
+        _resetTelemetry();
+    });
+
+    it('emits safe-mode-enter exactly once on threshold crossing', () => {
+        const events: TrackingEvent[] = [];
+        subscribeTrackingEvents((e) => events.push(e));
+        recordDriftEvent(1_000_000);  // 1 event — not yet in safe mode
+        expect(events.filter(e => e.type === 'safe-mode-enter')).toHaveLength(0);
+        recordDriftEvent(1_000_500);  // 2nd event crosses default threshold
+        expect(events.filter(e => e.type === 'safe-mode-enter')).toHaveLength(1);
+    });
+
+    it('does NOT re-emit safe-mode-enter on subsequent drift events', () => {
+        const events: TrackingEvent[] = [];
+        subscribeTrackingEvents((e) => events.push(e));
+        recordDriftEvent(1_000_000);
+        recordDriftEvent(1_000_500);  // crosses → emit
+        recordDriftEvent(1_001_000);  // already in safe mode → no emit
+        recordDriftEvent(1_001_500);
+        expect(events.filter(e => e.type === 'safe-mode-enter')).toHaveLength(1);
+    });
+
+    it('emits safe-mode-exit when clearDriftHistory clears an active state', () => {
+        const events: TrackingEvent[] = [];
+        recordDriftEvent(Date.now() - 1000);
+        recordDriftEvent(Date.now());
+        // Now in safe mode
+        subscribeTrackingEvents((e) => events.push(e));
+        clearDriftHistory();
+        expect(events.filter(e => e.type === 'safe-mode-exit')).toHaveLength(1);
+    });
+
+    it('does NOT emit safe-mode-exit when clearing an already-empty history', () => {
+        const events: TrackingEvent[] = [];
+        subscribeTrackingEvents((e) => events.push(e));
+        clearDriftHistory();
+        expect(events.filter(e => e.type === 'safe-mode-exit')).toHaveLength(0);
     });
 });
