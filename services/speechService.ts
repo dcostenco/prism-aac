@@ -23,6 +23,7 @@ import { autoSwitchTone, toneToAzureStyle, toneToRate } from './adaptiveEngine';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
+import { emitTtsHealthEvent, TtsTier } from './ttsHealthBus';
 
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -196,6 +197,12 @@ export async function speak(
   const kokoroVoice = getKokoroVoice(lang);
   const kokoroEnabled = settings.useHighQualityOfflineVoice !== false; // default ON
 
+  // Bus debug header — only the first 80 chars of utterance, never logged
+  // by the bus itself. Used by the debug overlay to correlate events with
+  // what the user attempted to say.
+  const debugText = text.slice(0, 80);
+  const triedTiers: TtsTier[] = [];
+
   // Tier 1: Azure Neural TTS — try unconditionally when online. The portal
   // route is the source of truth for tier policy: paid tiers always allowed,
   // free tier allowed for the 6 non-Kokoro langs (synalux absorbs that cost
@@ -213,40 +220,101 @@ export async function speak(
     const voicePref = (settings as { voicePreferences?: Record<string, string> }).voicePreferences;
     const voiceId = voicePref?.[baseLang] || INWORLD_VOICE_DEFAULTS[baseLang];
     console.log(`[TTS] Attempting portal TTS: lang=${lang} tone=${effectiveTone} plan=${profile?.plan ?? 'unknown'} voiceId=${voiceId ?? 'auto'} loaded=${useAuthStore.getState().loaded}`);
+
+    // Tier name reflects the public route's primary backend (Inworld first
+    // per speakAzure: it tries /tts/public, then falls back to /tts on 502).
+    // The internal Inworld→Azure switch isn't exposed here — at the bus
+    // level we treat the whole portal call as one tier.
+    triedTiers.push('inworld');
+    const tier1Start = Date.now();
+    emitTtsHealthEvent({
+      type: 'tts-attempt', tier: 'inworld', text: debugText, lang, timestamp: tier1Start,
+    });
     const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId);
-    if (success) { console.log('[TTS] Portal TTS succeeded'); return; }
+    if (success) {
+      console.log('[TTS] Portal TTS succeeded');
+      const now = Date.now();
+      emitTtsHealthEvent({
+        type: 'tts-success', tier: 'inworld', latencyMs: now - tier1Start,
+        durationMs: 0, timestamp: now,
+      });
+      return;
+    }
     console.warn('[TTS] Portal TTS failed (server tier-rejected, network, or timeout), falling through');
+    // Decide next tier for the fallback event. Mirrors the actual control
+    // flow below so the bus reflects what really happens next.
+    const nextTier: TtsTier = (kokoroEnabled && kokoroVoice && isKokoroSupported())
+      ? 'kokoro'
+      : (isSpeechSupported() ? 'web-speech' : 'native-ios');
+    emitTtsHealthEvent({
+      type: 'tts-fallback', fromTier: 'inworld', toTier: nextTier,
+      reason: 'portal failed (tier reject / network / timeout)', timestamp: Date.now(),
+    });
   }
 
   // Tier 2: Kokoro neural — offline-capable fallback for the 6 langs it speaks.
   // Fires when: offline, OR Azure failed, OR free-tier user on a Kokoro lang.
   if (kokoroEnabled && kokoroVoice && isKokoroSupported()) {
+    triedTiers.push('kokoro');
+    const tier2Start = Date.now();
+    emitTtsHealthEvent({
+      type: 'tts-attempt', tier: 'kokoro', text: debugText, lang, timestamp: tier2Start,
+    });
     try {
       await speakWithKokoro({
         text,
         lang: lang.split('-')[0],
         rate: 0.1 + effectiveRate * 1.8,
       });
+      const now = Date.now();
+      emitTtsHealthEvent({
+        type: 'tts-success', tier: 'kokoro', latencyMs: now - tier2Start,
+        durationMs: 0, timestamp: now,
+      });
       return;
     } catch (e) {
-      demoteKokoroForSession(e instanceof Error ? e.message : 'unknown');
+      const reason = e instanceof Error ? e.message : 'unknown';
+      demoteKokoroForSession(reason);
+      const next: TtsTier = isSpeechSupported() ? 'web-speech' : 'native-ios';
+      emitTtsHealthEvent({
+        type: 'tts-fallback', fromTier: 'kokoro', toTier: next,
+        reason, timestamp: Date.now(),
+      });
       // fall through
     }
   }
 
   // Tier 3: Web Speech API (offline, all 12 langs on most devices)
   if (isSpeechSupported()) {
+    triedTiers.push('web-speech');
+    // speakLocal emits its own attempt + success/fallback via the
+    // SpeechSynthesisUtterance lifecycle (onend / onerror).
     speakLocal(text, effectiveRate, volume, lang);
     return;
   }
 
   // Tier 4: WASM TTS fallback (if Web Speech API unavailable)
+  triedTiers.push('native-ios');
+  const tier4Start = Date.now();
+  emitTtsHealthEvent({
+    type: 'tts-attempt', tier: 'native-ios', text: debugText, lang, timestamp: tier4Start,
+  });
   try {
     const { speakWasm, isWasmTTSReady, initWasmTTS } = await import('./wasmTTS');
     if (!isWasmTTSReady()) await initWasmTTS();
     await speakWasm(text, lang, rate, volume);
-  } catch {
+    const now = Date.now();
+    emitTtsHealthEvent({
+      type: 'tts-success', tier: 'native-ios', latencyMs: now - tier4Start,
+      durationMs: 0, timestamp: now,
+    });
+  } catch (e) {
     console.warn('[PrismAAC] All TTS tiers failed — child cannot hear output');
+    emitTtsHealthEvent({
+      type: 'tts-give-up', lastTier: 'native-ios', triedTiers: [...triedTiers],
+      reason: e instanceof Error ? `wasm-tts failed: ${e.message}` : 'all tiers exhausted',
+      timestamp: Date.now(),
+    });
   }
 }
 
@@ -289,8 +357,40 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
     if (any) u.voice = any;
   }
 
-  u.onend = clearResumeWorkaround;
-  u.onerror = clearResumeWorkaround;
+  // Emit attempt + capture timing so onend / onerror can publish accurate
+  // latency. SpeechSynthesisUtterance has no "audible audio start" event
+  // in WebSpeech — the closest proxy is `onstart` (utterance dequeued,
+  // about to speak). We use onstart for latency and onend for duration.
+  const attemptStart = Date.now();
+  let audibleStart: number | null = null;
+  emitTtsHealthEvent({
+    type: 'tts-attempt', tier: 'web-speech', text: text.slice(0, 80),
+    lang, timestamp: attemptStart,
+  });
+
+  u.onstart = () => { audibleStart = Date.now(); };
+  u.onend = () => {
+    clearResumeWorkaround();
+    const now = Date.now();
+    emitTtsHealthEvent({
+      type: 'tts-success', tier: 'web-speech',
+      latencyMs: (audibleStart ?? now) - attemptStart,
+      durationMs: audibleStart != null ? now - audibleStart : 0,
+      timestamp: now,
+    });
+  };
+  u.onerror = (ev) => {
+    clearResumeWorkaround();
+    // SpeechSynthesisErrorEvent.error is a string code (e.g. 'not-allowed',
+    // 'language-unavailable', 'synthesis-failed'). Surface it so the
+    // overlay can show the actual reason — every recent regression had
+    // a different code.
+    const code = (ev as SpeechSynthesisErrorEvent | undefined)?.error || 'unknown';
+    emitTtsHealthEvent({
+      type: 'tts-give-up', lastTier: 'web-speech', triedTiers: ['web-speech'],
+      reason: `speech-synthesis error: ${code}`, timestamp: Date.now(),
+    });
+  };
   resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);
   window.speechSynthesis.speak(u);
 }
