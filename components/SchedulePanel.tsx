@@ -3,8 +3,32 @@ import { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useScheduleStore, ScheduleTask } from '@/store/scheduleStore';
 import { useAuthStore } from '@/store/authStore';
-import { tapFeedback } from '@/services/feedback';
+import { tapFeedback, playTimerRing } from '@/services/feedback';
 import { useT } from '@/engine/useT';
+
+/* ── First-Then state machine ──────────────────────────────────────────────
+ *
+ *   idle ─┐                                    ▲
+ *         │ timer-complete + ring              │
+ *         ▼                                    │
+ *   first-armed ── FIRST click ──► first-checked
+ *                                          │
+ *                                  timer auto-restarts;
+ *                                  on next complete + ring
+ *                                          │
+ *                                          ▼
+ *                                     then-armed ── THEN click ──► then-checked
+ *                                                                       │
+ *                                                                ▼ flip current
+ *                                                                  task .done = true,
+ *                                                                  back to `idle`.
+ *
+ * The FIRST tile is always the current "current task" (first incomplete row
+ * in the schedule). The THEN tile is the next-after-current. Clicking the
+ * THEN tile is what marks the current task done in the schedule list and
+ * advances the pair.
+ */
+type FirstThenPhase = 'idle' | 'first-armed' | 'first-checked' | 'then-armed' | 'then-checked';
 
 /* ── Shared panel shell (same pattern as CategoryPanel) ── */
 function PanelShell({ children }: { children: ReactNode }) {
@@ -19,8 +43,17 @@ function PanelShell({ children }: { children: ReactNode }) {
   );
 }
 
-/* ── Visual Timer (circular countdown) ── */
-function VisualTimer({ seconds, onComplete }: { seconds: number; onComplete: () => void }) {
+/* ── Visual Timer (circular countdown) ──
+ *
+ * `autoStartKey` is a counter the parent bumps when it wants the timer to
+ * auto-restart (e.g. after the user clicks the FIRST tile, the parent bumps
+ * the key and the timer kicks off again with the same duration). Using a
+ * counter rather than a boolean avoids missed restarts when the parent
+ * bumps twice in quick succession.
+ */
+function VisualTimer({
+  seconds, onComplete, autoStartKey = 0,
+}: { seconds: number; onComplete: () => void; autoStartKey?: number }) {
   const { t } = useT();
   const [remaining, setRemaining] = useState(seconds);
   const [running, setRunning] = useState(false);
@@ -41,6 +74,14 @@ function VisualTimer({ seconds, onComplete }: { seconds: number; onComplete: () 
     if (intervalRef.current) clearInterval(intervalRef.current);
     return () => { mounted = false; };
   }, [seconds]);
+
+  // Parent-driven auto-restart. Only fire on key changes > 0 so the initial
+  // mount (key=0) doesn't auto-start a timer the user hasn't asked for.
+  useEffect(() => {
+    if (autoStartKey <= 0) return;
+    setRemaining(seconds);
+    setRunning(true);
+  }, [autoStartKey, seconds]);
 
   useEffect(() => {
     if (!running) return;
@@ -124,25 +165,65 @@ function TokenBar({ rewards, target }: { rewards: number; target: number }) {
 }
 
 /* ── First-Then Board ── */
-function FirstThenBoard({ tasks }: { tasks: ScheduleTask[] }) {
+function FirstThenBoard({
+  tasks, phase, onFirstClick, onThenClick,
+}: {
+  tasks: ScheduleTask[];
+  phase: FirstThenPhase;
+  onFirstClick: () => void;
+  onThenClick: () => void;
+}) {
   const { t } = useT();
   const sorted = [...tasks].sort((a, b) => a.order - b.order);
   const currentTask = sorted.find((tsk) => !tsk.done);
   const nextTask = currentTask ? sorted.find((tsk) => !tsk.done && tsk.id !== currentTask.id) : undefined;
 
-  const tileClass = 'flex-1 min-h-[80px] rounded-xl border-2 border-theme flex flex-col items-center justify-center p-3 gap-1';
+  const firstChecked = phase === 'first-checked' || phase === 'then-armed' || phase === 'then-checked';
+  const thenChecked = phase === 'then-checked';
+  const firstArmed = phase === 'first-armed';
+  const thenArmed = phase === 'then-armed';
+
+  // Visual: armed → ring + scale; checked → green; idle → flat.
+  // motion-safe gates the pulse so users with reduced-motion don't get the
+  // throbbing animation (which can be triggering for some AAC users).
+  const tileBase = 'aac-btn flex-1 min-h-[80px] rounded-xl border-2 flex flex-col items-center justify-center p-3 gap-1 motion-safe:transition-all';
+  const tileFirst = firstChecked
+    ? 'bg-[#E8F5E9] dark:bg-[#1B5E20] border-[#4CAF50]'
+    : firstArmed
+      ? 'bg-[#E3F2FD] dark:bg-[#1A237E] border-[#1976D2] ring-4 ring-[#1976D2]/40 motion-safe:animate-pulse scale-[1.03]'
+      : 'bg-[#E3F2FD] dark:bg-[#1A237E] border-theme';
+  const tileThen = thenChecked
+    ? 'bg-[#E8F5E9] dark:bg-[#1B5E20] border-[#4CAF50]'
+    : thenArmed
+      ? 'bg-[#FFF3E0] dark:bg-[#E65100] border-[#F57C00] ring-4 ring-[#F57C00]/40 motion-safe:animate-pulse scale-[1.03]'
+      : 'bg-[#FFF3E0] dark:bg-[#E65100] border-theme';
+
   return (
     <div className="flex gap-3 px-4 py-3">
-      <div className={`${tileClass} bg-[#E3F2FD] dark:bg-[#1A237E]`}>
+      <button
+        type="button"
+        className={`${tileBase} ${tileFirst}`}
+        onClick={() => { tapFeedback(); onFirstClick(); }}
+        disabled={!firstArmed && !firstChecked}
+        aria-label={`${t('first')}: ${currentTask ? (currentTask.textKey ? t(currentTask.textKey) : currentTask.text) : t('all_done')}${firstArmed ? ` — ${t('tap_to_confirm') ?? 'tap to confirm'}` : ''}`}
+        aria-pressed={firstChecked}
+      >
         <span className="text-xs font-bold text-primary uppercase">{t('first')}</span>
-        <span className="text-3xl">{currentTask?.icon ?? '✅'}</span>
+        <span className="text-3xl">{firstChecked ? '✅' : (currentTask?.icon ?? '✅')}</span>
         <span className="text-primary font-bold text-center text-sm">{currentTask ? (currentTask.textKey ? t(currentTask.textKey) : currentTask.text) : t('all_done')}</span>
-      </div>
-      <div className={`${tileClass} bg-[#FFF3E0] dark:bg-[#E65100]`}>
+      </button>
+      <button
+        type="button"
+        className={`${tileBase} ${tileThen}`}
+        onClick={() => { tapFeedback(); onThenClick(); }}
+        disabled={!thenArmed && !thenChecked}
+        aria-label={`${t('then')}: ${nextTask ? (nextTask.textKey ? t(nextTask.textKey) : nextTask.text) : t('reward')}${thenArmed ? ` — ${t('tap_to_confirm') ?? 'tap to confirm'}` : ''}`}
+        aria-pressed={thenChecked}
+      >
         <span className="text-xs font-bold text-primary uppercase">{t('then')}</span>
-        <span className="text-3xl">{nextTask?.icon ?? '🎉'}</span>
+        <span className="text-3xl">{thenChecked ? '✅' : (nextTask?.icon ?? '🎉')}</span>
         <span className="text-primary font-bold text-center text-sm">{nextTask ? (nextTask.textKey ? t(nextTask.textKey) : nextTask.text) : t('reward')}</span>
-      </div>
+      </button>
     </div>
   );
 }
@@ -160,12 +241,61 @@ export default function SchedulePanel() {
   const [addingTask, setAddingTask] = useState(false);
   const [newTaskText, setNewTaskText] = useState('');
 
+  // First-Then state machine — see comment near the FirstThenPhase type.
+  const [phase, setPhase] = useState<FirstThenPhase>('idle');
+  const [autoStartKey, setAutoStartKey] = useState(0);
+
   const isPaid = profile?.plan && profile.plan !== 'free';
   const maxTasks = isPaid ? Infinity : 5;
 
+  const sortedTasks = [...tasks].sort((a, b) => a.order - b.order);
+  const currentTaskId = sortedTasks.find((tsk) => !tsk.done)?.id;
+
+  // Whenever the active task advances (id changes) we drop back to idle so a
+  // stale "first-checked" doesn't carry over into the next pair.
+  useEffect(() => {
+    setPhase('idle');
+  }, [currentTaskId]);
+
   const handleTimerComplete = useCallback(() => {
     addReward(1);
+    // Cadence: timer expiring is what arms the next tile in the first-then
+    // sequence. Idle → first-armed; first-checked → then-armed.
+    setPhase((p) => {
+      if (p === 'idle') {
+        playTimerRing();
+        return 'first-armed';
+      }
+      if (p === 'first-checked') {
+        playTimerRing();
+        return 'then-armed';
+      }
+      return p;
+    });
   }, [addReward]);
+
+  const handleFirstClick = useCallback(() => {
+    if (phase !== 'first-armed') return;
+    setPhase('first-checked');
+    // Auto-restart timer for the THEN phase. Same duration the user picked.
+    setAutoStartKey((k) => k + 1);
+  }, [phase]);
+
+  const handleThenClick = useCallback(() => {
+    if (phase !== 'then-armed') return;
+    setPhase('then-checked');
+    // Briefly show the green check on THEN, then mark the current task done
+    // and let the existing currentTaskId useEffect reset us back to idle so
+    // the next first-then pair (B, C) renders.
+    if (currentTaskId) {
+      // Slight delay so the user sees the THEN ✅ animation before the pair
+      // re-renders with the next task. 600ms matches the schedule-row check
+      // animation and feels intentional rather than abrupt.
+      setTimeout(() => {
+        toggleDone(currentTaskId);
+      }, 600);
+    }
+  }, [phase, currentTaskId, toggleDone]);
 
   if (sidePanel !== 'schedule') return null;
 
@@ -196,7 +326,12 @@ export default function SchedulePanel() {
 
       <div className="flex-1 overflow-y-auto min-h-0">
         {/* First-Then Board */}
-        <FirstThenBoard tasks={tasks} />
+        <FirstThenBoard
+          tasks={tasks}
+          phase={phase}
+          onFirstClick={handleFirstClick}
+          onThenClick={handleThenClick}
+        />
 
         {/* Token Reward */}
         <TokenBar rewards={rewards} target={tasks.length || 1} />
@@ -313,7 +448,11 @@ export default function SchedulePanel() {
               <option value={900}>15 min</option>
             </select>
           </div>
-          <VisualTimer seconds={timerSeconds} onComplete={handleTimerComplete} />
+          <VisualTimer
+            seconds={timerSeconds}
+            onComplete={handleTimerComplete}
+            autoStartKey={autoStartKey}
+          />
         </div>
       </div>
     </PanelShell>

@@ -48,6 +48,34 @@ export function playClick(): void { playTone(1200, 'sine', 0.08, 0.06); }
 export function playKeyClick(): void { playTone(800, 'sine', 0.05, 0.04); }
 export function playDelete(): void { playTone(400, 'triangle', 0.06, 0.08); }
 
+/**
+ * Three-note rising chime — used by the schedule timer to signal that the
+ * timer has expired and the user should look at the screen. Louder + longer
+ * than playClick so it registers across the room. Three tones avoid sounding
+ * like an alarm (single sustained tone) which is dysregulating for many AAC
+ * users.
+ */
+export function playTimerRing(): void {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const notes: Array<[number, number]> = [[660, 0], [880, 0.16], [1320, 0.32]];
+  for (const [freq, delay] of notes) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    const start = ctx.currentTime + delay;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.18, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.18);
+    osc.start(start);
+    osc.stop(start + 0.2);
+    osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+  }
+}
+
 export function tapFeedback(): void {
   hapticTap();
   playClick();
