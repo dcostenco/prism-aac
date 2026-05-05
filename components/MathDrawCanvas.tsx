@@ -40,11 +40,13 @@ export interface MathDrawCanvasProps {
     color?: string;
 }
 
-function snapToGrid(value: number): number {
-    return Math.round(value / GRID_SIZE) * GRID_SIZE;
+/** @internal — exported for tests only. */
+export function snapToGrid(value: number, gridSize: number = GRID_SIZE): number {
+    return Math.round(value / gridSize) * gridSize;
 }
 
-function isStraightLine(points: { x: number; y: number }[]): boolean {
+/** @internal — exported for tests only. */
+export function isStraightLine(points: { x: number; y: number }[]): boolean {
     if (points.length < 4) return true;
     const a = points[0];
     const b = points[points.length - 1];
