@@ -133,3 +133,134 @@ describe('schedule alarm — interval tuning', () => {
         expect(ALARM_MAX_TICKS * (ALARM_INTERVAL_MS / 1000)).toBe(60);
     });
 });
+
+/**
+ * Multimodal alarm escalation (CUSTOMER_FEEDBACK_ENHANCEMENTS.md #3).
+ *
+ * Replicates the *new* effect's body 1:1: every cycle fires three side
+ * effects in sequence — chime, haptic vibration, visual flash. We test
+ * that all three fire on every cycle and that flash auto-clears after
+ * its 600ms display window.
+ */
+const HAPTIC_PATTERN = [200, 100, 200, 100, 200];
+
+function startMultimodalAlarmLoop(
+    phase: string,
+    deps: {
+        ring: () => void;
+        vibrate: (p: number[]) => void;
+        setFlash: (on: boolean) => void;
+        clearFlashAfterMs?: number;
+    },
+): () => void {
+    const isAlarmPhase = phase === 'first-armed' || phase === 'then-armed';
+    if (!isAlarmPhase) {
+        deps.setFlash(false);
+        return () => { /* noop */ };
+    }
+    const FLASH_MS = deps.clearFlashAfterMs ?? 600;
+    const fireCycle = () => {
+        deps.ring();
+        try { deps.vibrate(HAPTIC_PATTERN); } catch { /* */ }
+        deps.setFlash(true);
+        setTimeout(() => deps.setFlash(false), FLASH_MS);
+    };
+    let ticks = 0;
+    fireCycle();
+    ticks++;
+    const id = setInterval(() => {
+        if (ticks >= ALARM_MAX_TICKS) {
+            clearInterval(id);
+            deps.setFlash(false);
+            return;
+        }
+        fireCycle();
+        ticks++;
+    }, ALARM_INTERVAL_MS);
+    return () => {
+        clearInterval(id);
+        deps.setFlash(false);
+    };
+}
+
+describe('schedule alarm — multimodal escalation (haptic + flash)', () => {
+    it('fires haptic vibration on every cycle (matches chime cadence)', () => {
+        const ring = vi.fn();
+        const vibrate = vi.fn();
+        const setFlash = vi.fn();
+        const cleanup = startMultimodalAlarmLoop('first-armed', { ring, vibrate, setFlash });
+        // Immediate cycle + 2 more in 4s = 3 total
+        vi.advanceTimersByTime(4_000);
+        expect(vibrate).toHaveBeenCalledTimes(3);
+        expect(vibrate).toHaveBeenCalledWith(HAPTIC_PATTERN);
+        expect(ring).toHaveBeenCalledTimes(3);
+        cleanup();
+    });
+
+    it('toggles flash on every cycle (true) and off after FLASH_MS', () => {
+        const setFlash = vi.fn();
+        const cleanup = startMultimodalAlarmLoop('first-armed', {
+            ring: vi.fn(), vibrate: vi.fn(), setFlash,
+        });
+        // Immediate fire sets flash=true
+        expect(setFlash).toHaveBeenCalledWith(true);
+        // After 700ms, the auto-clear setTimeout fires
+        vi.advanceTimersByTime(700);
+        expect(setFlash).toHaveBeenCalledWith(false);
+        cleanup();
+    });
+
+    it('cleanup forces flash off (user tapped a tile mid-flash)', () => {
+        const setFlash = vi.fn();
+        const cleanup = startMultimodalAlarmLoop('first-armed', {
+            ring: vi.fn(), vibrate: vi.fn(), setFlash,
+        });
+        vi.advanceTimersByTime(100);  // mid-flash
+        setFlash.mockClear();
+        cleanup();
+        // Cleanup should have explicitly set flash false
+        expect(setFlash).toHaveBeenCalledWith(false);
+    });
+
+    it('idle phase clears any in-progress flash and never fires', () => {
+        const ring = vi.fn();
+        const vibrate = vi.fn();
+        const setFlash = vi.fn();
+        startMultimodalAlarmLoop('idle', { ring, vibrate, setFlash });
+        vi.advanceTimersByTime(10_000);
+        expect(ring).not.toHaveBeenCalled();
+        expect(vibrate).not.toHaveBeenCalled();
+        // setFlash(false) is fired once on entry to ensure no stale flash
+        expect(setFlash).toHaveBeenCalledWith(false);
+    });
+
+    it('caps at 30 cycles — haptic and flash stop alongside chime', () => {
+        const ring = vi.fn();
+        const vibrate = vi.fn();
+        const setFlash = vi.fn();
+        const cleanup = startMultimodalAlarmLoop('first-armed', { ring, vibrate, setFlash });
+        vi.advanceTimersByTime(90_000);  // way past the 60s cap
+        expect(ring).toHaveBeenCalledTimes(ALARM_MAX_TICKS);
+        expect(vibrate).toHaveBeenCalledTimes(ALARM_MAX_TICKS);
+        cleanup();
+    });
+
+    it('vibrate failure (unsupported browser) does not abort the cycle', () => {
+        const ring = vi.fn();
+        const vibrate = vi.fn().mockImplementation(() => { throw new Error('NotSupportedError'); });
+        const setFlash = vi.fn();
+        const cleanup = startMultimodalAlarmLoop('first-armed', { ring, vibrate, setFlash });
+        // Chime + flash should still fire even though vibrate threw
+        expect(ring).toHaveBeenCalledTimes(1);
+        expect(setFlash).toHaveBeenCalledWith(true);
+        cleanup();
+    });
+
+    it('haptic pattern is the documented 3-pulse pattern (200ms on, 100ms gap)', () => {
+        // Pattern is [on, off, on, off, on] — three short pulses
+        expect(HAPTIC_PATTERN).toEqual([200, 100, 200, 100, 200]);
+        // Total duration ≤ 800ms so it fits inside the 2s alarm cycle
+        const total = HAPTIC_PATTERN.reduce((a, b) => a + b, 0);
+        expect(total).toBeLessThan(ALARM_INTERVAL_MS);
+    });
+});

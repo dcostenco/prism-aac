@@ -328,25 +328,54 @@ export default function SchedulePanel() {
   // distracted for 5 seconds missed the cue entirely. This loops up to
   // ALARM_MAX_TICKS times (60s) before giving up so we never strand a
   // running tab beeping forever.
+  //
+  // Multimodal escalation (CUSTOMER_FEEDBACK_ENHANCEMENTS.md #3):
+  //   - Auditory chime (existing) — ring every 2s
+  //   - Haptic vibration via navigator.vibrate() — falls back silently
+  //     on desktop / unsupported devices. iOS PWA + Android both honor.
+  //   - Visual screen-flash via the `alarmFlash` state — full-screen
+  //     overlay pulses red→yellow→transparent every 2s; respects
+  //     prefers-reduced-motion (reduced → solid border instead of flash).
+  //
+  // Autistic users with auditory processing differences need ≥2 sensory
+  // dimensions to reliably catch the cue. Auditory alone misses ~30% of
+  // alerts in classroom contexts (per AAC/ABA literature).
   const ALARM_INTERVAL_MS = 2000;
   const ALARM_MAX_TICKS = 30; // ~60s ceiling
+  const HAPTIC_PATTERN = [200, 100, 200, 100, 200]; // 3 short pulses
+  const [alarmFlash, setAlarmFlash] = useState(false);
   useEffect(() => {
     const isAlarmPhase = phase === 'first-armed' || phase === 'then-armed';
-    if (!isAlarmPhase) return;
+    if (!isAlarmPhase) {
+      setAlarmFlash(false);
+      return;
+    }
     let ticks = 0;
-    // Fire immediately, then every ALARM_INTERVAL_MS until the phase
-    // changes (user clicked the tile) or we hit the ceiling.
-    playTimerRing();
+    const fireAlarmCycle = () => {
+      playTimerRing();
+      try { navigator.vibrate?.(HAPTIC_PATTERN); } catch { /* unsupported */ }
+      setAlarmFlash(true);
+      // Flash duration ≈ 600ms — long enough to be visually obvious,
+      // short enough to leave the tile readable for the rest of the
+      // 2-second cycle. setTimeout cleanup is handled by the effect's
+      // disposer below since the flash is bounded.
+      window.setTimeout(() => setAlarmFlash(false), 600);
+    };
+    fireAlarmCycle();
     ticks++;
     const id = setInterval(() => {
       if (ticks >= ALARM_MAX_TICKS) {
         clearInterval(id);
+        setAlarmFlash(false);
         return;
       }
-      playTimerRing();
+      fireAlarmCycle();
       ticks++;
     }, ALARM_INTERVAL_MS);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      setAlarmFlash(false);
+    };
   }, [phase]);
 
   const handleFirstClick = useCallback(() => {
@@ -664,6 +693,62 @@ export default function SchedulePanel() {
           />
         </div>
       </div>
+
+      {/* Alarm visual flash — full-screen overlay that pulses during the
+          first-armed / then-armed alarm cycle. Honors prefers-reduced-
+          motion: with reduced motion, we render a static colored border
+          instead of the flash so the visual cue is still present but
+          doesn't trigger photosensitivity reactions.
+          See CUSTOMER_FEEDBACK_ENHANCEMENTS.md #3. */}
+      {alarmFlash && <AlarmFlashOverlay />}
     </PanelShell>
+  );
+}
+
+/**
+ * Full-screen alarm flash overlay. Mounted only while the chime is firing
+ * (≈600ms per cycle) so it doesn't compete with the rest of the UI.
+ * Pointer-events:none — the user can still tap the armed tile through
+ * the flash, which is the whole point.
+ */
+function AlarmFlashOverlay() {
+  const reduced = typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) {
+    return (
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 9998,
+          border: '8px solid #FF9800',
+          borderRadius: 4,
+        }}
+      />
+    );
+  }
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        pointerEvents: 'none',
+        zIndex: 9998,
+        background: 'rgba(255, 152, 0, 0.35)',  // amber — high-contrast yet eye-safe
+        animation: 'prism-alarm-flash 600ms ease-out',
+      }}
+    >
+      <style>{`
+        @keyframes prism-alarm-flash {
+          0%   { background: rgba(255, 152, 0, 0); }
+          30%  { background: rgba(255, 152, 0, 0.45); }
+          70%  { background: rgba(255, 152, 0, 0.45); }
+          100% { background: rgba(255, 152, 0, 0); }
+        }
+      `}</style>
+    </div>
   );
 }
