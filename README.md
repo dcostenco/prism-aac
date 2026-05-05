@@ -10,6 +10,14 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 
 ## 🆕 What's New (May 2026)
 
+### Math panel redesigned — Panther Math Paper-style canvas with KaTeX + drawing
+- **Graph-paper canvas (24px grid)** dominates the panel — matches the Panther Math Paper convention proven in classroom AAC use
+- **KaTeX rendering** so `5 × 6 =` displays as real math typography (italic variables, true exponents, fraction bars)
+- **✏️ Drawing layer** sketches geometric figures directly on the grid (triangles, circles, chord diagrams). Roughly straight strokes auto-snap to grid-aligned segments — no separate ruler tool needed
+- **LaTeX template inserters**: `½`, `a/b`, `x²`, `xⁿ`, `xₙ`, `√`, `∛`, `∑`, `∫`, `12+34` (column addition)
+- **Compact Panther-style operator row**: `⊕ More` `(2xy)²` `+ − × ÷ =` `✏️` `½` `⌫`. The 8 symbol categories live behind the More button so the canvas stays maximized
+- See the [Math section below](#math--panther-math-paper-inspired-graph-paper-canvas-with-ai-tutor) for full details
+
 ### Production model upgraded → `prism-coder:7b` v18clean-epoch0 + new `prism-coder:14b` sibling
 - **Pareto upgrade over the prior v18aac-MAX prod.** Re-trained from clean Qwen2.5-Coder-7B-Instruct base on the curated v18-clean mix (BFCL backbone + caregiver + text_correct + emergency + translate + ask_ai + format anchor).
 - **AAC realigned: 47/48 (97.9%)** held, **caregiver targeted: 20/20** (was 19/20), **translate: 8/8** (was 7/8), all other categories perfect.
@@ -57,9 +65,17 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 ![Category with pictograms](docs/screenshots/categories-pictograms-v2.png)
 > Phrase tiles use PECS format: pictogram on top, text label on bottom with border separator. Symbols from [ARASAAC](https://arasaac.org/) (12.9k symbols, free); paid tiers get AI-generated pictograms via FLUX.1 Schnell. Full-phrase search with English fallback ensures pictograms appear for all languages.
 
-### Math — Math Paper-style expression builder with AI tutor
+### Math — Panther Math Paper-inspired graph-paper canvas with AI tutor
 ![Math panel](docs/screenshots/math-panel-v2.png)
-> Canvas-based expression builder like the Math Paper app. Type expressions visually (5 × 6 =, 3x² + ½y), with operator row, number pad, variable keys, and special symbols. **AI Math Tutor** with three modes: 💡 Hint (guides without solving), ✓ Check (validates and explains errors gently), 🎓 Solve (step-by-step solution in simple language). TTS reads expressions aloud.
+> Full-screen graph-paper canvas (24px grid, the Panther Math Paper convention) with KaTeX-rendered typography — variables italicize automatically, superscripts stack as true exponents, fractions display as proper bars (½ not "1/2"). Compact bottom keyboard mirrors Panther exactly: `⊕ More` `(2xy)²` `+` `−` `×` `÷` `=` `✏️` `½` `⌫` over a single 1–0 number row over a small variables strip + Speak.
+>
+> **Drawing layer** (✏️ pencil): sketch geometric figures directly on the grid — triangles, circles, chords, axes. Roughly straight strokes auto-snap to grid-aligned line segments so a freehand triangle side becomes a clean ruler-quality edge without switching tools. Each stroke is a separate SVG path so undo pops one stroke at a time.
+>
+> **Templates** (in More): tap `½` for ½, `a/b` for blank fraction, `x²` / `xⁿ` / `xₙ` for exponent and subscript, `√` / `∛` for roots, `∑` for summation, `∫` for integral, `12+34` for column-stacked addition. All KaTeX-rendered live as you type.
+>
+> **AI Math Tutor** (paid): 💡 Hint (guides without solving), ✓ Check (validates and explains errors gently), 🎓 Solve (step-by-step solution in simple language). TTS reads expressions aloud.
+>
+> _Screenshot above is from the pre-redesign release; capture a fresh one with `npm run dev` → open Math panel → ⌘⇧4_. Replace `docs/screenshots/math-panel-v2.png`._
 
 ### Schedule & Tasks — visual routines with rewards
 > **First-Then board** for autistic children — shows current task and next/reward activity. Daily task list with checkmark completion, SVG circular visual timer (1–15 min), and token reward system (earn ⭐ stars). Based on ChoiceWorks and First Then Visual Schedule research.
