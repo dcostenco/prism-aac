@@ -48,6 +48,14 @@ export default function MathPanel() {
   const [activeCategory, setActiveCategory] = useState<MathCategory>('basic');
   const [aiHint, setAiHint] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  // Step 3: "More" gates the symbol library (categories + per-category
+  // grid) the way Panther Math Paper does. When closed, only the
+  // Panther-style operator row + number pad + tiny variables row show,
+  // keeping the keyboard footprint small so the math canvas dominates.
+  const [showMore, setShowMore] = useState(false);
+  // Step 4 wires the actual drawing canvas; for now this just toggles a
+  // visible-pressed state on the pencil button so users see the affordance.
+  const [drawMode, setDrawMode] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const categoryItems = useMemo(
@@ -227,40 +235,72 @@ export default function MathPanel() {
         )}
       </div>
 
-      {/* Math keyboard */}
+      {/* Math keyboard — Panther Math Paper layout: compact operator row
+          + numeric pad + variables. Symbol library (8 categories × ~30
+          symbols each) is gated behind the More button to keep the
+          canvas dominating the screen. */}
       <div className="shrink-0 border-t border-theme p-2 space-y-1.5">
-        {/* Category tabs */}
-        <div className="flex gap-1 overflow-x-auto no-scrollbar">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.key}
-              onClick={() => { tapFeedback(); setActiveCategory(cat.key); }}
-              className={`${mathKey} px-2.5 py-1.5 text-xs whitespace-nowrap shrink-0 ${
-                activeCategory === cat.key ? 'bg-[#4CAF50] text-white border-transparent' : ''
-              }`}
-            >
-              <span className="font-mono mr-1">{cat.icon}</span>
-              <span className="hidden sm:inline">{t(cat.i18n)}</span>
-            </button>
-          ))}
+        {/* Symbol library (only when More is open) */}
+        {showMore && (
+          <>
+            <div className="flex gap-1 overflow-x-auto no-scrollbar">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.key}
+                  onClick={() => { tapFeedback(); setActiveCategory(cat.key); }}
+                  className={`${mathKey} px-2.5 py-1.5 text-xs whitespace-nowrap shrink-0 ${
+                    activeCategory === cat.key ? 'bg-[#4CAF50] text-white border-transparent' : ''
+                  }`}
+                >
+                  <span className="font-mono mr-1">{cat.icon}</span>
+                  <span className="hidden sm:inline">{t(cat.i18n)}</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1.5 flex-wrap max-h-[clamp(64px,14svh,120px)] overflow-y-auto">
+              {categoryItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => addToExpression(item.symbol)}
+                  className={`${mathKey} min-w-[clamp(36px,8vw,48px)] py-2 text-lg`}
+                  title={item.label}
+                  aria-label={item.ttsText}
+                >
+                  {item.symbol}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Operator row — Panther layout: More, template, ops, =, draw, frac, backspace */}
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => { tapFeedback(); setShowMore((v) => !v); }}
+            className={`${mathKey} px-3 py-2.5 text-sm font-semibold ${showMore ? 'bg-[#4CAF50] text-white border-transparent' : ''}`}
+            aria-label="More symbols"
+            aria-expanded={showMore}
+          >
+            {showMore ? '×' : '⊕'} {t('more') || 'More'}
+          </button>
+          <button onClick={() => addToExpression('(2xy)^{2}')} className={`${mathKey} px-3 py-2.5 text-sm font-mono`} title="Squared template">(2xy)²</button>
+          <button onClick={() => addToExpression('+')} className={`${mathKey} flex-1 py-2.5 text-xl`}>+</button>
+          <button onClick={() => addToExpression('−')} className={`${mathKey} flex-1 py-2.5 text-xl`}>−</button>
+          <button onClick={() => addToExpression('×')} className={`${mathKey} flex-1 py-2.5 text-xl`}>×</button>
+          <button onClick={() => addToExpression('÷')} className={`${mathKey} flex-1 py-2.5 text-xl`}>÷</button>
+          <button onClick={() => addToExpression('=')} className={`${mathKey} flex-1 py-2.5 text-xl`}>=</button>
+          <button
+            onClick={() => { tapFeedback(); setDrawMode((v) => !v); }}
+            className={`${mathKey} px-3 py-2.5 text-base ${drawMode ? 'bg-[#FF9800] text-white border-transparent' : ''}`}
+            aria-label="Draw geometric figures"
+            aria-pressed={drawMode}
+            title="Draw on the grid"
+          >✏️</button>
+          <button onClick={() => addToExpression('\\frac{1}{2}')} className={`${mathKey} px-3 py-2.5 text-sm font-mono`} title="Fraction template">½</button>
+          <button onClick={backspace} className={`${mathKey} px-3 py-2.5 text-lg`} aria-label={t('backspace')}>⌫</button>
         </div>
 
-        {/* Symbol grid for active category */}
-        <div className="flex gap-1.5 flex-wrap max-h-[clamp(44px,10svh,88px)] overflow-y-auto">
-          {categoryItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => addToExpression(item.symbol)}
-              className={`${mathKey} min-w-[clamp(36px,8vw,48px)] py-2 text-lg`}
-              title={item.label}
-              aria-label={item.ttsText}
-            >
-              {item.symbol}
-            </button>
-          ))}
-        </div>
-
-        {/* Number pad — always visible */}
+        {/* Number pad */}
         <div className="flex gap-1.5">
           {['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((d) => (
             <button key={d} onClick={() => addToExpression(d)} className={`${mathKey} flex-1 py-2.5 text-xl`}>
@@ -269,18 +309,15 @@ export default function MathPanel() {
           ))}
         </div>
 
-        {/* Variables + space + speak/send + backspace */}
+        {/* Variables + speak — single compact row */}
         <div className="flex gap-1.5">
           {['x', 'y', 'z', 'a', 'b', 'n'].map((v) => (
             <button key={v} onClick={() => addToExpression(v)} className={`${mathKey} flex-1 py-2 text-lg italic`}>
               {v}
             </button>
           ))}
-          <button onClick={() => addToExpression(' ')} className={`${mathKey} flex-[2] py-2 text-sm`}>
-            ␣
-          </button>
-          <button onClick={backspace} className={`${mathKey} px-3 py-2 text-lg`} aria-label={t('backspace')}>⌫</button>
-          <button onClick={sendToMessage} className="aac-btn bg-[#4CAF50] text-white rounded-lg flex-[2] py-2 font-bold text-base flex items-center justify-center">
+          <button onClick={() => addToExpression(' ')} className={`${mathKey} flex-1 py-2 text-sm`} aria-label="Space">␣</button>
+          <button onClick={sendToMessage} className="aac-btn bg-[#4CAF50] text-white rounded-lg flex-[3] py-2 font-bold text-base flex items-center justify-center">
             {t('speak')} ▶
           </button>
         </div>
