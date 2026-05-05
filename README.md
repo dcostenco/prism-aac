@@ -26,24 +26,31 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 - **Free tier behaviour unchanged** — still 7B local for simple queries → Gemini for complex ones.
 - **Rollback path:** `ollama cp prism-coder:7b-prev-20260504-1325 prism-coder:7b` (< 1 minute, snapshot of prior v18aac-MAX prod).
 
-### Gesture recognition (carries over from previous release)
-- **🆕 Gesture recognition support (5/5 spot-check)** — model configures the new 7-gesture facial-blendshape input system, including:
-  - Calibration walkthroughs (3-second neutral baseline capture)
-  - Asymmetry-safe handling for hemiplegia / Bell's palsy / CP (uses `max(left, right)` for paired blendshapes)
-  - Fatigue-aware threshold tuning (10–20% relaxation after 15–30 min)
-  - Per-gesture threshold/dwell/cooldown tuning advice
-- **Built on** Qwen2.5-Coder-7B-Instruct base with full SFT on caregiver + emergency + text_correct + translate + gesture corpus (~4500 rows). Apache 2.0 / CC-BY-4.0 commercial-safe data.
-- **Cloud companion** for paid users on iPad Pro M4 (16 GB) and Synalux online: **`prism-aac:14b`** (DoRA r=384) plus emergency-grade routing to **`prism-coder:72b-v18bfcl`** when online.
-- **Rollback ready** — prior v18aac (`prism-coder:7b-prev-*`) and v17.4 are one `ollama cp` away.
+### Gesture Recognition
 
-### Gesture Recognition System (NEW feature)
-- **7 facial gestures** detected via MediaPipe blendshapes: `smile`, `brow_raise`, `brow_lower`, `jaw_open`, `eye_blink_left`, `eye_blink_right`, `head_tilt`
-- **11 assignable actions**: confirm, cancel, next, previous, speak, scroll up/down, select, clear, emergency_alert, repeat_last
-- **Basic mode**: zero training, works immediately via blendshape thresholds
-- **Advanced mode**: DTW template matching + integration with local 8B model for novel gestures
-- **Accessibility-first**: per-user calibration, asymmetry-aware detection, jitter filtering, fatigue adaptation
-- See `docs/GESTURE_RECOGNITION.md` for full design doc
-- See `docs/TRACKING_RELIABILITY.md` for the deep technical investigation: 11 known stability gaps, "military stable in a moving car" requirement, modern best-practice references (Kalman filter, ego-motion correction, confidence-weighted multi-camera fusion, cross-modal lockout), and the prioritized implementation roadmap
+**What it is.** Hands-free input via facial micro-expressions. The camera reads MediaPipe blendshapes in-browser; gestures map to AAC actions (Confirm, Cancel, Speak, Emergency, etc.) with the same dwell-and-cooldown semantics as head tracking.
+
+**Recognized gestures (7)** — `smile` · `brow_raise` · `brow_lower` · `jaw_open` · `eye_blink_left` · `eye_blink_right` · `head_tilt`
+
+**Assignable actions (11)** — `confirm` · `cancel` · `next` · `previous` · `speak` · `scroll_up` · `scroll_down` · `select` · `clear` · `emergency_alert` · `repeat_last`
+
+**Two detection modes**
+- **Basic** — zero-training threshold detection on raw blendshape scores. Works the moment the camera grants permission.
+- **Advanced** — DTW template matching against user-recorded sequences, with on-device LLM assistance for novel gestures (paid tiers).
+
+**Calibration & accessibility (built for atypical face anatomy)**
+- **3-second neutral-baseline capture** subtracts the user's resting face from every threshold so the system isn't tuned for a generic face.
+- **Asymmetry-safe paired blendshapes** — for hemiplegia, Bell's palsy, and cerebral palsy, paired shapes (`eyeBlink_*`, `mouthSmile_*`, `browInnerUp_*`) use `max(left, right)` so a single working side still triggers.
+- **Fatigue adaptation** — thresholds relax 10–20% after 15–30 minutes of continuous use; muscle endurance drops over a session, so we drop the bar to match.
+- **Per-gesture tuning** — independent threshold, dwell, and cooldown for each of the seven gestures (some users blink fast but smile slow, etc.).
+
+**Coexistence with head tracking** — gesture commits dispatch a cross-modal lockout that suspends head-dwell click for 250 ms, so an intentional blink over a button doesn't fire BOTH the gesture AND the dwell-click. Head-dwell never blocks gestures (gestures are always available as an interrupt). See `services/crossModalLockout.ts`.
+
+**In-app help** — `prism-coder:7b` is fine-tuned on the gesture-configuration corpus (5/5 caregiver-Q&A spot-check passed). Users can ask "Why isn't my smile triggering?" or "How do I make blinks less sensitive?" and get tier-appropriate, persona-aware guidance offline.
+
+**Further reading**
+- `docs/GESTURE_RECOGNITION.md` — full design doc (gesture taxonomy, blendshape mapping, advanced-mode DTW)
+- `docs/TRACKING_RELIABILITY.md` — the wider tracking-reliability stack: drift safety net, Kalman smoothing, ego-motion suppression for cameras in moving environments, confidence-weighted multi-camera fusion, safe-mode degradation, IMU-gated drift detection, and 273 unit + integration tests covering all 11 documented gaps
 
 <!-- 🌐 Translations auto-generated by scripts/generate_i18n.py — triggered by GitHub Actions on README.md changes -->
 🌐 **Translate:** [English](README.md) · [Español](docs/i18n/README_es.md) · [Français](docs/i18n/README_fr.md) · [Português](docs/i18n/README_pt.md) · [Română](docs/i18n/README_ro.md) · [Українська](docs/i18n/README_uk.md) · [Русский](docs/i18n/README_ru.md) · [Deutsch](docs/i18n/README_de.md) · [日本語](docs/i18n/README_ja.md) · [한국어](docs/i18n/README_ko.md) · [简体中文](docs/i18n/README_zh-Hans.md) · [繁體中文](docs/i18n/README_zh-Hant.md) · [廣東話](docs/i18n/README_zh-HK.md) · [العربية](docs/i18n/README_ar.md)
@@ -67,7 +74,9 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 > Phrase tiles use PECS format: pictogram on top, text label on bottom with border separator. Symbols from [ARASAAC](https://arasaac.org/) (12.9k symbols, free); paid tiers get AI-generated pictograms via FLUX.1 Schnell. Full-phrase search with English fallback ensures pictograms appear for all languages.
 
 ### Math — Panther Math Paper-inspired graph-paper canvas with AI tutor
-![Math panel](docs/screenshots/math-panel-v2.png)
+
+> 📸 **Screenshot pending.** The `docs/screenshots/math-panel-v2.png` file in the repo is from a pre-redesign build and does NOT match the shipped UI. To capture a fresh one: `npm run dev` → open the Math panel → ⌘⇧4 → save as `docs/screenshots/math-panel-v2.png`.
+
 > Full-screen graph-paper canvas (24px grid, the Panther Math Paper convention) with KaTeX-rendered typography — variables italicize automatically, superscripts stack as true exponents, fractions display as proper bars (½ not "1/2"). Compact bottom keyboard mirrors Panther exactly: `⊕ More` `(2xy)²` `+` `−` `×` `÷` `=` `✏️` `½` `⌫` over a single 1–0 number row over a small variables strip + Speak.
 >
 > **Drawing layer** (✏️ pencil): sketch geometric figures directly on the grid — triangles, circles, chords, axes. Roughly straight strokes auto-snap to grid-aligned line segments so a freehand triangle side becomes a clean ruler-quality edge without switching tools. Each stroke is a separate SVG path so undo pops one stroke at a time.
@@ -75,8 +84,6 @@ An evidence-based Augmentative and Alternative Communication (AAC) web app desig
 > **Templates** (in More): tap `½` for ½, `a/b` for blank fraction, `x²` / `xⁿ` / `xₙ` for exponent and subscript, `√` / `∛` for roots, `∑` for summation, `∫` for integral, `12+34` for column-stacked addition. All KaTeX-rendered live as you type.
 >
 > **AI Math Tutor** (paid): 💡 Hint (guides without solving), ✓ Check (validates and explains errors gently), 🎓 Solve (step-by-step solution in simple language). TTS reads expressions aloud.
->
-> _Screenshot above is from the pre-redesign release; capture a fresh one with `npm run dev` → open Math panel → ⌘⇧4_. Replace `docs/screenshots/math-panel-v2.png`._
 
 ### Schedule & Tasks — visual routines with rewards
 > **First-Then board** for autistic children — shows current task and next/reward activity. Daily task list with checkmark completion, SVG circular visual timer (1–15 min), and token reward system (earn ⭐ stars). Based on ChoiceWorks and First Then Visual Schedule research.
