@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isHeadTrackingSupported, listCameras, saveCalibration, type CalibrationData } from '@/services/headTracker';
 import { requestMotionPermission } from '@/services/deviceMotion';
+import { isSafeMode, clearDriftHistory } from '@/services/safeMode';
 import { useT } from '@/engine/useT';
 import { tapFeedback } from '@/services/feedback';
 
@@ -210,6 +211,9 @@ export default function HeadTrackingSettings() {
             {t('calibrate')}
           </button>
 
+          {/* ── Reliability section ──────────────────────────────────── */}
+          <ReliabilitySection />
+
           {/* Calibration Overlay */}
           {calibration.active && (
             <div
@@ -267,6 +271,156 @@ export default function HeadTrackingSettings() {
               </div>
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ *  ReliabilitySection — drift / safe-mode / IMU controls
+ *
+ *  Surfaces the gap-A through gap-K knobs so users can:
+ *    - turn auto-disable off if they prefer to keep tracking through drift
+ *    - widen / tighten the drift threshold for their environment
+ *    - see when safe-mode is active and clear it manually
+ *  Co-located here because these knobs are only meaningful when head
+ *  tracking is enabled.
+ * ────────────────────────────────────────────────────────────────────────── */
+function ReliabilitySection() {
+  const { t } = useT();
+  const settings = useSettingsStore();
+  const safeMode = isSafeMode();
+  // Re-render when localStorage changes from another tab. `isSafeMode`
+  // is read on every render so this is enough.
+  const [, force] = useState(0);
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'prism-drift-history') force((n) => n + 1);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  return (
+    <div className="space-y-4 pt-2 border-t border-theme">
+      <h4 className="text-primary text-base font-semibold">
+        {t('reliability') ?? 'Reliability'}
+      </h4>
+
+      {/* Auto-disable on drift */}
+      <label className="flex items-center justify-between py-1">
+        <div className="flex-1 pr-3">
+          <span className="text-primary text-sm">
+            {t('drift_auto_disable') ?? 'Auto-disable on drift'}
+          </span>
+          <p className="text-muted text-xs mt-0.5">
+            {t('drift_auto_disable_desc') ??
+              'If the cursor drifts wildly without landing a click, tracking pauses automatically.'}
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            tapFeedback();
+            settings.update({
+              headTrackingDriftAutoDisable: !settings.headTrackingDriftAutoDisable,
+            });
+          }}
+          aria-pressed={settings.headTrackingDriftAutoDisable}
+          aria-label="Auto-disable on drift"
+          className={`w-12 h-7 rounded-full transition-colors shrink-0 ${
+            settings.headTrackingDriftAutoDisable ? 'bg-[#4CAF50]' : 'bg-[#999]'
+          }`}
+        >
+          <div
+            className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${
+              settings.headTrackingDriftAutoDisable ? 'translate-x-5' : ''
+            }`}
+          />
+        </button>
+      </label>
+
+      {settings.headTrackingDriftAutoDisable && (
+        <>
+          {/* Drift travel threshold */}
+          <div>
+            <label className="flex items-center justify-between mb-1">
+              <span className="text-primary text-sm">
+                {t('drift_travel_threshold') ?? 'Drift sensitivity'}
+              </span>
+              <span className="text-muted text-xs">
+                {settings.headTrackingDriftThresholdPx}px
+              </span>
+            </label>
+            <input
+              type="range"
+              min="400"
+              max="1500"
+              step="100"
+              value={settings.headTrackingDriftThresholdPx}
+              onChange={(e) =>
+                settings.update({ headTrackingDriftThresholdPx: parseInt(e.target.value, 10) })
+              }
+              className="w-full accent-[#FF9800]"
+            />
+            <div className="flex justify-between text-[10px] text-muted">
+              <span>400 (twitchy)</span>
+              <span>1500 (lenient)</span>
+            </div>
+          </div>
+
+          {/* Drift rolling window */}
+          <div>
+            <label className="flex items-center justify-between mb-1">
+              <span className="text-primary text-sm">
+                {t('drift_window') ?? 'Drift window'}
+              </span>
+              <span className="text-muted text-xs">
+                {(settings.headTrackingDriftWindowMs / 1000).toFixed(0)}s
+              </span>
+            </label>
+            <input
+              type="range"
+              min="2000"
+              max="15000"
+              step="1000"
+              value={settings.headTrackingDriftWindowMs}
+              onChange={(e) =>
+                settings.update({ headTrackingDriftWindowMs: parseInt(e.target.value, 10) })
+              }
+              className="w-full accent-[#FF9800]"
+            />
+            <div className="flex justify-between text-[10px] text-muted">
+              <span>2s</span>
+              <span>15s</span>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Safe-mode indicator */}
+      {safeMode && (
+        <div className="rounded-lg border border-[#FF9800] p-3 flex items-start gap-3">
+          <span className="text-xl shrink-0">🛡️</span>
+          <div className="flex-1">
+            <div className="text-primary text-sm font-semibold">
+              {t('safe_mode_active') ?? 'Safe mode is active'}
+            </div>
+            <p className="text-muted text-xs mt-1">
+              {t('safe_mode_desc') ??
+                'Tracking is running with reduced sensitivity, longer dwell time, and gestures off because drift fired twice in the last 5 minutes.'}
+            </p>
+            <button
+              onClick={() => {
+                tapFeedback();
+                clearDriftHistory();
+                force((n) => n + 1);
+              }}
+              className="mt-2 aac-btn px-3 py-1.5 rounded-lg surface-key text-primary border border-theme text-xs"
+            >
+              {t('safe_mode_clear') ?? 'Exit safe mode'}
+            </button>
+          </div>
         </div>
       )}
     </div>
