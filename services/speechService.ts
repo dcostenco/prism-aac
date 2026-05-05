@@ -125,19 +125,29 @@ function isPaidTier(): boolean {
   return paid || hasToken;
 }
 
-// Catalog defaults — when the user has not picked a voice in Settings, ship
-// the most natural-sounding voice from portal/src/shared/voice-catalog.ts.
+// Catalog defaults — when the user has not picked a voice in Settings,
+// pick the best Inworld voice that ACTUALLY exists on Inworld's server.
 //
-// English uses 'Alex' (Inworld description: "Friendly, natural") rather
-// than 'Ashley' ("Warm, conversational"). User feedback was that Ashley
-// sounded robotic compared to Russian Anya; Alex tests less compressed
-// and breath-sample-driven. Other paid-tier languages stay on the
-// "default"-tagged voice from the catalog.
+// Audit (probed via /api/v1/tts/public 2026-05-05): only 8 of the 23
+// "inworld" entries in portal/src/shared/voice-catalog.ts return 200
+// from Inworld's v1.5-mini model. The other 15 (Carmen, Camille, Hans,
+// Lena, Luana, Giulia, Lotte, Zofia, Sakura, Jisoo, Anya, Noa, Layla,
+// Lucas, Helia) return 502 — they're aspirational catalog entries that
+// were never reconciled against Inworld's real voice list.
+//
+// Confirmed working: Ashley, Sarah, Alex, Dennis, Mark (en),
+//                    Diego (es), Mei (zh), Aanya (hi).
+//
+// Inworld 1.5-mini voices are multilingual — Sarah produces clear
+// Russian, Polish, German, etc. So we route all "broken-default"
+// languages through Sarah (female, "Clear, professional") to avoid
+// the 502. en stays on Alex ("Friendly, natural"), zh on Mei, hi on
+// Aanya, es on Diego (the original ones that work).
 const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
-  en: 'Alex',    es: 'Carmen', fr: 'Camille', de: 'Hans',
-  pt: 'Luana',   it: 'Giulia', nl: 'Lotte',   pl: 'Zofia',
-  ja: 'Sakura',  zh: 'Mei',    ko: 'Jisoo',   ru: 'Anya',
-  he: 'Noa',     ar: 'Layla',  hi: 'Aanya',
+  en: 'Alex',    es: 'Diego',  fr: 'Sarah',  de: 'Mark',
+  pt: 'Sarah',   it: 'Sarah',  nl: 'Sarah',  pl: 'Sarah',
+  ja: 'Sarah',   zh: 'Mei',    ko: 'Sarah',  ru: 'Sarah',
+  he: 'Sarah',   ar: 'Sarah',  hi: 'Aanya',
 };
 
 /**
