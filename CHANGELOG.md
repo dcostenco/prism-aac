@@ -1,5 +1,25 @@
 # PrismAAC Changelog
 
+## [0.5.0] - 2026-05-05 — Schedule First-Then state machine + audio ring
+
+### What's new
+- **Schedule First-Then flow now actually works.** The board on `/schedule` was previously decorative; both tiles were static `<div>`s. Now:
+  1. User picks duration + clicks Start (unchanged)
+  2. Timer expires → 3-note rising chime + FIRST tile pulses with a ring border
+  3. User clicks FIRST → ✅ rendered on tile (no schedule change yet — interim confirmation)
+  4. Timer auto-restarts; on second expiry, second chime + THEN tile pulses
+  5. User clicks THEN → ✅ on THEN tile, then 600ms later the current schedule task flips to done
+  6. Next first-then pair (B, C) renders automatically
+- **`playTimerRing()`** — new audio helper in `services/feedback.ts`. 3-note rising chime (660 → 880 → 1320 Hz) instead of an alarm-style sustained tone (which can dysregulate AAC users).
+- **Motion-safe pulse** — armed-tile animation respects `prefers-reduced-motion`; users who set that get a static ring border instead of throbbing pulse.
+- **Aria-pressed semantics** — both tiles are now real `<button>` elements with `aria-pressed`, `aria-label` including the task name, and `disabled` when not armed.
+
+### Tests
+- 8 new tests in `tests/schedule-panel-first-then.test.tsx` — one per documented spec step + 2 regression guards (clicks while not-armed are no-ops). All passing in 727ms.
+- Combined regression: schedule-store (21) + feedback (6) + new (8) — 35/35 green.
+
+---
+
 ## [0.2.2] - 2026-05-04 — Prism Coder 7B promotion + 14B sibling (via Synalux portal)
 
 > Coordinated with **synalux-private v0.14.4** — the Synalux portal now serves PrismAAC traffic from a fresh 7B (massive BFCL gain) and a new 14B sibling for paid-tier medium queries. **No PrismAAC code changes required.** All routing happens server-side.
