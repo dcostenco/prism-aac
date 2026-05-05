@@ -90,9 +90,46 @@ export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: num
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 
-let currentAudio: HTMLAudioElement | null = null;
-// Track ALL active audio elements — rapid button mashing can create multiple
-// concurrent Audio objects. Panic stop must kill all of them.
+// Singleton AudioContext for all Azure / Inworld TTS playback. Web Audio API
+// avoids the iOS Safari intermittent-failure trap where `audio.play()` after
+// `await fetch()` is silently rejected because the user-gesture token was
+// consumed by the await. AudioBufferSourceNode.start() only needs the
+// AudioContext to be in 'running' state, which the warmup in PrismApp.tsx
+// already arranges on first user interaction.
+let sharedAudioCtx: AudioContext | null = null;
+function getAudioContext(): AudioContext {
+  if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') return sharedAudioCtx;
+  const Ctor = (typeof window !== 'undefined' ? window.AudioContext : null)
+    || (typeof window !== 'undefined' ? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext : null);
+  if (!Ctor) throw new Error('AudioContext not available');
+  sharedAudioCtx = new Ctor();
+  // Some browsers create the context in 'suspended' state — best-effort
+  // resume; if it fails the next user gesture will retry via the warmup
+  // listener in PrismApp.tsx.
+  if (sharedAudioCtx.state === 'suspended') {
+    sharedAudioCtx.resume().catch(() => { /* awaiting next gesture */ });
+  }
+  return sharedAudioCtx;
+}
+
+/**
+ * Create / resume the shared AudioContext. Call inside a user-gesture
+ * handler (touchstart, pointerdown, keydown) so iOS Safari unlocks audio
+ * for the lifetime of the context. Subsequent BufferSourceNode.start()
+ * calls then play even when triggered after async work.
+ */
+export async function warmupAzureAudio(): Promise<void> {
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') await ctx.resume();
+  } catch { /* AudioContext unavailable — silent fail */ }
+}
+
+// Track every BufferSourceNode that's currently scheduled or playing so a
+// subsequent speak (or panic stop) can silence them — rapid Speak presses on
+// AAC are common and we never want overlapping voices.
+const activeSources = new Set<AudioBufferSourceNode>();
+let currentAudio: HTMLAudioElement | null = null; // legacy back-compat reference
 const activeAudioElements = new Set<HTMLAudioElement>();
 const liveBlobUrls = new Set<string>();
 
@@ -108,7 +145,15 @@ const activeControllers = new Set<AbortController>();
 export function stopAzureAudio(): void {
   for (const ctrl of activeControllers) ctrl.abort();
   activeControllers.clear();
-  // Kill ALL active audio elements (rapid mashing creates multiple)
+  // Stop every queued / playing BufferSourceNode (Web Audio API path).
+  for (const src of activeSources) {
+    try { src.stop(); } catch { /* already finished */ }
+    try { src.disconnect(); } catch { /* */ }
+  }
+  activeSources.clear();
+  // Legacy: also clean up any HTMLAudioElement instances still tracked from
+  // older code paths. Once the new Web Audio path is the only producer this
+  // block will be a no-op but it keeps panic stop safe during the rollover.
   for (const audio of activeAudioElements) {
     audio.pause();
     audio.removeAttribute('src');
@@ -172,29 +217,54 @@ export async function speakAzure(
     }
 
     stopAzureAudio();
-    const audioBuffer = await res.arrayBuffer();
-    const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
-    url = URL.createObjectURL(blob);
-    liveBlobUrls.add(url);
+    const audioBytes = await res.arrayBuffer();
 
-    const audio = new Audio();
-    audio.volume = volume;
-    activeAudioElements.add(audio);
+    // Web Audio API path: decode the MP3/WAV bytes and play via a
+    // BufferSourceNode. Unlike `new Audio().play()` after `await fetch()`,
+    // BufferSourceNode.start() does NOT need a fresh user-gesture token —
+    // only that the AudioContext is in 'running' state. PrismApp.tsx warms
+    // up the context on first interaction so this reliably plays even when
+    // Speak is tapped seconds after the message was last typed.
+    let ctx: AudioContext;
+    try {
+      ctx = getAudioContext();
+    } catch (e) {
+      console.warn('[AzureTTS] AudioContext unavailable, audio cannot play:', e);
+      return false;
+    }
+    if (ctx.state === 'suspended') {
+      try { await ctx.resume(); } catch { /* will fail decode below */ }
+    }
 
-    const cleanup = () => {
-      if (url) releaseBlob(url);
-      activeAudioElements.delete(audio);
-      if (currentAudio === audio) currentAudio = null;
+    let decoded: AudioBuffer;
+    try {
+      // decodeAudioData returns a Promise in modern browsers. Older Safari
+      // expected a callback-style API; the Promise form has been stable
+      // since iOS 14 / Chrome 91 so we don't bother with the legacy form.
+      decoded = await ctx.decodeAudioData(audioBytes.slice(0));
+    } catch (e) {
+      console.warn('[AzureTTS] decodeAudioData failed:', e instanceof Error ? e.message : e);
+      return false;
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = decoded;
+    const gain = ctx.createGain();
+    gain.gain.value = Math.max(0, Math.min(1, volume));
+    source.connect(gain).connect(ctx.destination);
+
+    activeSources.add(source);
+    source.onended = () => {
+      activeSources.delete(source);
+      try { source.disconnect(); } catch { /* */ }
+      try { gain.disconnect(); } catch { /* */ }
     };
-    audio.onended = cleanup;
-    audio.onerror = cleanup;
-    audio.src = url;
-    currentAudio = audio;
 
     try {
-      await audio.play();
-    } catch {
-      cleanup();
+      source.start(0);
+    } catch (e) {
+      console.warn('[AzureTTS] source.start failed:', e instanceof Error ? e.message : e);
+      activeSources.delete(source);
       return false;
     }
     return true;

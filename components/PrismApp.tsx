@@ -119,24 +119,40 @@ export default function PrismApp() {
     return unregisterPanic;
   }, [runDecay, seedTemplates, ensureSeed, refreshAuth]);
 
-  // Warm up AudioContext on first user interaction so WASM TTS / beep
-  // fallback works even when triggered by non-gesture events (AI chat,
-  // remote modeling). Browsers suspend AudioContexts until user gesture.
+  // Warm up the SHARED AudioContext on first user interaction.
+  //
+  // The Inworld/Azure TTS path in services/azureTTS.ts plays audio via
+  // AudioBufferSourceNode on a singleton AudioContext (ditched the legacy
+  // `new Audio().play()` after `await fetch()` pattern because iOS Safari
+  // silently rejects play() once the user-gesture token is consumed by the
+  // await — that was the "Speak button doesn't work sometimes" bug). The
+  // BufferSourceNode does NOT need a fresh gesture, but the AudioContext
+  // does need to be in 'running' state before any audio plays. This warmup
+  // creates+resumes the context inside the first touchstart/keydown so
+  // every subsequent Speak tap plays reliably.
   useEffect(() => {
-    const warmup = () => {
+    let warmed = false;
+    const warmup = async () => {
+      if (warmed) return;
+      warmed = true;
       try {
-        const ctx = new AudioContext();
-        if (ctx.state === 'suspended') ctx.resume();
-        ctx.close();
+        // Lazy-load azureTTS so the AudioContext side-effect only fires
+        // after the user gesture, not at module load time. Then call the
+        // explicit warmup which creates+resumes the singleton context.
+        const mod = await import('@/services/azureTTS');
+        await mod.warmupAzureAudio();
       } catch { /* */ }
       window.removeEventListener('touchstart', warmup);
       window.removeEventListener('keydown', warmup);
+      window.removeEventListener('pointerdown', warmup);
     };
     window.addEventListener('touchstart', warmup, { once: true, passive: true });
     window.addEventListener('keydown', warmup, { once: true });
+    window.addEventListener('pointerdown', warmup, { once: true });
     return () => {
       window.removeEventListener('touchstart', warmup);
       window.removeEventListener('keydown', warmup);
+      window.removeEventListener('pointerdown', warmup);
     };
   }, []);
 
