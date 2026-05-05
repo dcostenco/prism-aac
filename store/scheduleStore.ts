@@ -17,9 +17,11 @@ interface ScheduleState {
   // Absolute end timestamp — immune to background throttling, device sleep.
   // UI computes remaining = max(0, timerEndMs - Date.now()) on every frame.
   timerEndMs: number;
-  addTask: (text: string, icon: string) => void;
+  addTask: (text: string, icon: string, textKey?: string) => void;
   removeTask: (id: string) => void;
   toggleDone: (id: string) => void;
+  /** Update a task's text/icon/textKey in place. Pass undefined to leave a field unchanged. */
+  editTask: (id: string, patch: { text?: string; icon?: string; textKey?: string | null }) => void;
   resetDay: () => void;
   addReward: (count?: number) => void;
   setTimerSeconds: (s: number) => void;
@@ -48,7 +50,7 @@ export const useScheduleStore = create<ScheduleState>()(
       timerSeconds: 300,
       timerEndMs: 0,
 
-      addTask: (text, icon) =>
+      addTask: (text, icon, textKey) =>
         set((s) => ({
           tasks: [
             ...s.tasks,
@@ -56,6 +58,7 @@ export const useScheduleStore = create<ScheduleState>()(
               id: `sched-${crypto.randomUUID()}`,
               text,
               icon,
+              ...(textKey ? { textKey } : {}),
               done: false,
               order: s.tasks.length,
             },
@@ -70,6 +73,24 @@ export const useScheduleStore = create<ScheduleState>()(
           tasks: s.tasks.map((t) =>
             t.id === id ? { ...t, done: !t.done } : t
           ),
+        })),
+
+      // Edit text/icon/textKey in place. Passing textKey: null clears it
+      // (drops the i18n binding when the user types a custom label).
+      editTask: (id, patch) =>
+        set((s) => ({
+          tasks: s.tasks.map((t) => {
+            if (t.id !== id) return t;
+            const next = { ...t };
+            if (patch.text !== undefined) next.text = patch.text;
+            if (patch.icon !== undefined) next.icon = patch.icon;
+            if (patch.textKey === null) {
+              delete next.textKey;
+            } else if (patch.textKey !== undefined) {
+              next.textKey = patch.textKey;
+            }
+            return next;
+          }),
         })),
 
       resetDay: () =>

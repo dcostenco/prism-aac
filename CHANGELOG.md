@@ -1,5 +1,37 @@
 # PrismAAC Changelog
 
+## [0.6.0] - 2026-05-05 — Schedule audio fix, preset activities, drag-drop reorder, inline edit
+
+### Critical fix: timer chime now actually plays
+The v0.5.0 chime fired in unit tests but was silent on real devices: iOS Safari and Chrome auto-suspend `AudioContext` after ~30s of silence, so by the time the timer expired (1+ min after Start), `osc.start()` ran against a suspended context and produced no sound. Two-layer fix:
+- **`startAudioWarmup()` / `stopAudioWarmup()`** in `services/feedback.ts`. A near-silent (`gain ≈ 0.0001`) sub-audible (1 Hz) oscillator is attached to the destination on the user's Start gesture, keeping the context in `running` state through the timer wait. Stopped on Reset, on user Stop, or after the THEN-cycle settles.
+- **`playTimerRing` is now async + awaits `ctx.resume()`** before scheduling notes. Bails cleanly (rather than scheduling into the void) if the context can't be resumed without a fresh gesture.
+
+### Preset activity grid — Learner self-setup
+`+Add Task` now opens a 24-tile preset grid (wake up, brush teeth, breakfast, school, snack, lunch, play, read, art, walk, dinner, bath, bedtime story, bedtime, medication, floss, tidy up, laundry, pet care, sports, …). One tap adds a fully-iconed task with the right `textKey` for i18n. The "type your own" input is preserved below the grid for custom items.
+
+### Drag-and-drop reorder
+Each task row is now a draggable HTML5 drop target. Drag handle (⋮⋮) sits at the left edge; drop targets show a blue ring on `dragOver`. Wires through to the existing `reorderTask(id, newOrder)` store method. Done-state tasks are not draggable (avoids the user accidentally moving completed history).
+
+### Inline edit
+Pencil icon (✏️) on every row → opens text input → blur or Enter saves, Escape cancels. Editing custom text drops the `textKey` (i18n binding) so the user's literal label sticks.
+
+### scheduleStore: new `editTask(id, patch)`
+Patches text / icon / textKey in place. `patch.textKey === null` clears the i18n binding. 3 new tests cover each branch.
+
+### Tests
+- **8 new tests** in `tests/schedule-panel-audio-warmup.test.tsx`:
+  - `startAudioWarmup` fires on Start
+  - `stopAudioWarmup` fires on Stop / Reset / THEN-cycle settle
+  - Preset grid renders + clicking a preset adds task with `textKey`
+  - Custom text input drops `textKey`
+  - Inline edit saves on blur
+  - Escape during edit cancels without modifying
+  - 3 `editTask` store-level tests
+- Combined regression: schedule-store (21) + feedback (6) + first-then (8) + audio-warmup (11) = **46/46 green**.
+
+---
+
 ## [0.5.0] - 2026-05-05 — Schedule First-Then state machine + audio ring
 
 ### What's new

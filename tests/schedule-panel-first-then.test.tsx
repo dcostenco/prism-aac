@@ -27,9 +27,13 @@ vi.mock('@/engine/useT', () => ({
 
 const tapFeedback = vi.fn();
 const playTimerRing = vi.fn();
+const startAudioWarmup = vi.fn();
+const stopAudioWarmup = vi.fn();
 vi.mock('@/services/feedback', () => ({
     tapFeedback: (...args: unknown[]) => tapFeedback(...args),
     playTimerRing: (...args: unknown[]) => playTimerRing(...args),
+    startAudioWarmup: (...args: unknown[]) => startAudioWarmup(...args),
+    stopAudioWarmup: (...args: unknown[]) => stopAudioWarmup(...args),
 }));
 
 function seedStores() {
@@ -49,6 +53,8 @@ function seedStores() {
 beforeEach(() => {
     tapFeedback.mockClear();
     playTimerRing.mockClear();
+    startAudioWarmup.mockClear();
+    stopAudioWarmup.mockClear();
     seedStores();
     vi.useFakeTimers({ shouldAdvanceTime: true });
 });

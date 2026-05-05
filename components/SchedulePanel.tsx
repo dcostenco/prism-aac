@@ -3,8 +3,42 @@ import { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useScheduleStore, ScheduleTask } from '@/store/scheduleStore';
 import { useAuthStore } from '@/store/authStore';
-import { tapFeedback, playTimerRing } from '@/services/feedback';
+import { tapFeedback, playTimerRing, startAudioWarmup, stopAudioWarmup } from '@/services/feedback';
 import { useT } from '@/engine/useT';
+
+/* ── Standard activity preset library ──
+ * Curated icons + names for the +Add Task dropdown. Catches the most common
+ * morning/evening routine items so a Learner can compose their schedule by
+ * picking from a grid instead of typing — accessibility win for non-typers.
+ * Custom textKey lets i18n localize the labels if a translation exists; the
+ * literal text is the en-US fallback.
+ */
+const ACTIVITY_PRESETS: Array<{ icon: string; text: string; textKey?: string }> = [
+  { icon: '🌅', text: 'Wake up', textKey: 'sched_preset_wake' },
+  { icon: '🚿', text: 'Shower', textKey: 'sched_preset_shower' },
+  { icon: '🪥', text: 'Brush teeth', textKey: 'sched_preset_brush' },
+  { icon: '👕', text: 'Get dressed', textKey: 'sched_preset_dress' },
+  { icon: '🥣', text: 'Breakfast', textKey: 'sched_breakfast' },
+  { icon: '🎒', text: 'Pack bag', textKey: 'sched_preset_pack' },
+  { icon: '🏫', text: 'School', textKey: 'sched_school' },
+  { icon: '🍎', text: 'Snack', textKey: 'sched_preset_snack' },
+  { icon: '🍽️', text: 'Lunch', textKey: 'sched_lunch' },
+  { icon: '🎈', text: 'Play time', textKey: 'sched_play' },
+  { icon: '📚', text: 'Read', textKey: 'sched_preset_read' },
+  { icon: '🎨', text: 'Art', textKey: 'sched_preset_art' },
+  { icon: '🧩', text: 'Puzzle', textKey: 'sched_preset_puzzle' },
+  { icon: '🚶', text: 'Walk', textKey: 'sched_preset_walk' },
+  { icon: '🍕', text: 'Dinner', textKey: 'sched_dinner' },
+  { icon: '🛁', text: 'Bath', textKey: 'sched_preset_bath' },
+  { icon: '📖', text: 'Bedtime story', textKey: 'sched_preset_story' },
+  { icon: '🌙', text: 'Bedtime', textKey: 'sched_bedtime' },
+  { icon: '💊', text: 'Medication', textKey: 'sched_preset_meds' },
+  { icon: '🦷', text: 'Floss', textKey: 'sched_preset_floss' },
+  { icon: '🧹', text: 'Tidy up', textKey: 'sched_preset_tidy' },
+  { icon: '🧺', text: 'Laundry', textKey: 'sched_preset_laundry' },
+  { icon: '🐶', text: 'Pet care', textKey: 'sched_preset_pet' },
+  { icon: '⚽', text: 'Sports', textKey: 'sched_preset_sports' },
+];
 
 /* ── First-Then state machine ──────────────────────────────────────────────
  *
@@ -129,13 +163,24 @@ function VisualTimer({
       <div className="flex gap-2">
         <button
           className="aac-btn min-w-[64px] min-h-[48px] px-4 py-2 rounded-xl surface-key text-primary font-bold border border-theme"
-          onClick={() => { tapFeedback(); setRunning(!running); }}
+          onClick={() => {
+            tapFeedback();
+            // Warm the AudioContext on a real user gesture so it stays
+            // running through the timer's wait period — required because
+            // iOS Safari/Chrome auto-suspend AudioContext after ~30s of
+            // silence, which silently swallows the timer chime. We stop
+            // the warmup when the timer finishes (in onComplete) or when
+            // the user pauses.
+            if (!running) startAudioWarmup();
+            else stopAudioWarmup();
+            setRunning(!running);
+          }}
         >
           {running ? t('stop') : t('start_timer')}
         </button>
         <button
           className="aac-btn min-w-[64px] min-h-[48px] px-4 py-2 rounded-xl surface-key text-primary font-bold border border-theme"
-          onClick={() => { tapFeedback(); setRemaining(seconds); setRunning(false); }}
+          onClick={() => { tapFeedback(); setRemaining(seconds); setRunning(false); stopAudioWarmup(); }}
         >
           {t('reset')}
         </button>
@@ -235,11 +280,17 @@ export default function SchedulePanel() {
   const profile = useAuthStore((s) => s.profile);
   const {
     tasks, rewards, timerSeconds,
-    addTask, removeTask, toggleDone, resetDay, addReward, setTimerSeconds,
+    addTask, removeTask, toggleDone, editTask, resetDay, addReward, setTimerSeconds, reorderTask,
   } = useScheduleStore();
 
   const [addingTask, setAddingTask] = useState(false);
   const [newTaskText, setNewTaskText] = useState('');
+  // Editing a single task's label inline (click pencil → text input)
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
+  // Drag state — null when idle, holds the dragged task id
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
 
   // First-Then state machine — see comment near the FirstThenPhase type.
   const [phase, setPhase] = useState<FirstThenPhase>('idle');
@@ -293,9 +344,18 @@ export default function SchedulePanel() {
       // animation and feels intentional rather than abrupt.
       setTimeout(() => {
         toggleDone(currentTaskId);
+        // Cycle complete — release the warm oscillator so we don't leak the
+        // tiny background CPU hit. The next Start click will warm it again.
+        stopAudioWarmup();
       }, 600);
     }
   }, [phase, currentTaskId, toggleDone]);
+
+  // Belt + suspenders: kill the warmup on unmount so navigating away from
+  // the panel doesn't leave the AudioContext warm forever.
+  useEffect(() => {
+    return () => { stopAudioWarmup(); };
+  }, []);
 
   if (sidePanel !== 'schedule') return null;
 
@@ -353,81 +413,206 @@ export default function SchedulePanel() {
             )}
           </div>
 
-          {/* Add task input */}
+          {/* Add task — preset grid + custom input */}
           {addingTask && (
-            <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                value={newTaskText}
-                onChange={(e) => setNewTaskText(e.target.value)}
-                placeholder={t('add_task')}
-                className="flex-1 px-3 py-2 rounded-xl border border-theme surface-key text-primary text-lg"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newTaskText.trim()) {
-                    addTask(newTaskText.trim(), '📌');
-                    setNewTaskText('');
-                    setAddingTask(false);
-                  }
-                }}
-              />
-              <button
-                className="aac-btn min-w-[64px] min-h-[48px] px-4 rounded-xl bg-[#4CAF50] text-white font-bold border-transparent"
-                onClick={() => {
-                  tapFeedback();
-                  if (newTaskText.trim()) {
-                    addTask(newTaskText.trim(), '📌');
-                    setNewTaskText('');
-                    setAddingTask(false);
-                  }
-                }}
-              >
-                {t('add')}
-              </button>
-              <button
-                className="aac-btn min-w-[48px] min-h-[48px] px-3 rounded-xl surface-key text-muted font-bold border border-theme"
-                onClick={() => { tapFeedback(); setAddingTask(false); setNewTaskText(''); }}
-              >
-                ✕
-              </button>
+            <div className="mb-3 p-3 rounded-xl border border-theme surface-key">
+              <div className="text-primary font-bold text-sm mb-2">{t('pick_activity') ?? 'Pick an activity'}</div>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-3">
+                {ACTIVITY_PRESETS.map((preset) => (
+                  <button
+                    key={preset.text}
+                    type="button"
+                    className="aac-btn min-h-[64px] flex flex-col items-center justify-center p-2 rounded-xl border border-theme surface-bar text-primary"
+                    onClick={() => {
+                      tapFeedback();
+                      addTask(
+                        preset.textKey ? t(preset.textKey) : preset.text,
+                        preset.icon,
+                        preset.textKey,
+                      );
+                      setAddingTask(false);
+                      setNewTaskText('');
+                    }}
+                    aria-label={preset.textKey ? t(preset.textKey) : preset.text}
+                  >
+                    <span className="text-2xl">{preset.icon}</span>
+                    <span className="text-xs font-bold mt-1 text-center leading-tight">
+                      {preset.textKey ? t(preset.textKey) : preset.text}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="text-primary font-bold text-sm mb-2">{t('or_custom') ?? 'Or type your own:'}</div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTaskText}
+                  onChange={(e) => setNewTaskText(e.target.value)}
+                  placeholder={t('add_task')}
+                  className="flex-1 px-3 py-2 rounded-xl border border-theme surface-bar text-primary text-lg"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newTaskText.trim()) {
+                      addTask(newTaskText.trim(), '📌');
+                      setNewTaskText('');
+                      setAddingTask(false);
+                    }
+                  }}
+                />
+                <button
+                  className="aac-btn min-w-[64px] min-h-[48px] px-4 rounded-xl bg-[#4CAF50] text-white font-bold border-transparent"
+                  onClick={() => {
+                    tapFeedback();
+                    if (newTaskText.trim()) {
+                      addTask(newTaskText.trim(), '📌');
+                      setNewTaskText('');
+                      setAddingTask(false);
+                    }
+                  }}
+                >
+                  {t('add')}
+                </button>
+                <button
+                  className="aac-btn min-w-[48px] min-h-[48px] px-3 rounded-xl surface-bar text-muted font-bold border border-theme"
+                  onClick={() => { tapFeedback(); setAddingTask(false); setNewTaskText(''); }}
+                  aria-label={t('cancel') ?? 'Cancel'}
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Task rows */}
+          {/* Task rows — draggable, editable, with done toggle */}
           <div className="flex flex-col gap-2">
-            {sorted.map((task) => (
-              <button
-                key={task.id}
-                className={`aac-btn min-h-[64px] w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-theme select-none ${
-                  task.done
-                    ? 'bg-[#E8F5E9] dark:bg-[#1B5E20] opacity-70'
-                    : 'surface-key'
-                }`}
-                onClick={() => {
-                  tapFeedback();
-                  if (!task.done) addReward(1);
-                  toggleDone(task.id);
-                }}
-                aria-label={`${task.done ? t('task_done') : ''} ${task.textKey ? t(task.textKey) : task.text}`}
-              >
-                <span className="text-2xl shrink-0">{task.icon}</span>
-                <span className={`flex-1 text-left text-primary font-bold text-lg ${task.done ? 'line-through' : ''}`}>
-                  {task.textKey ? t(task.textKey) : task.text}
-                </span>
-                <span className="text-2xl shrink-0 motion-safe:transition-transform motion-safe:duration-300">
-                  {task.done ? '✅' : '⬜'}
-                </span>
-                {isPaid && (
-                  <button
-                    className="aac-btn min-w-[40px] min-h-[40px] rounded-lg surface-key text-muted text-lg border border-theme ml-1"
-                    onClick={(e) => { e.stopPropagation(); tapFeedback(); removeTask(task.id); }}
-                    aria-label={t('remove')}
-                  >
-                    🗑
-                  </button>
-                )}
-              </button>
-            ))}
+            {sorted.map((task) => {
+              const isEditing = editingTaskId === task.id;
+              const isDragOver = dragOverTaskId === task.id && draggedTaskId !== task.id;
+              const label = task.textKey ? t(task.textKey) : task.text;
+              const rowClass = `aac-btn min-h-[64px] w-full flex items-center gap-3 px-4 py-3 rounded-xl border select-none motion-safe:transition-all ${
+                task.done
+                  ? 'bg-[#E8F5E9] dark:bg-[#1B5E20] opacity-70 border-theme'
+                  : 'surface-key border-theme'
+              } ${isDragOver ? 'border-[#1976D2] border-2 bg-[#E3F2FD] dark:bg-[#1A237E]' : ''} ${
+                draggedTaskId === task.id ? 'opacity-40' : ''
+              }`;
+
+              return (
+                <div
+                  key={task.id}
+                  draggable={!isEditing && !task.done}
+                  onDragStart={(e) => {
+                    setDraggedTaskId(task.id);
+                    // Some browsers need data set or the drag is rejected
+                    e.dataTransfer.effectAllowed = 'move';
+                    try { e.dataTransfer.setData('text/plain', task.id); } catch { /* */ }
+                  }}
+                  onDragOver={(e) => {
+                    if (!draggedTaskId || draggedTaskId === task.id) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    setDragOverTaskId(task.id);
+                  }}
+                  onDragLeave={() => {
+                    setDragOverTaskId((id) => (id === task.id ? null : id));
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggedTaskId && draggedTaskId !== task.id) {
+                      reorderTask(draggedTaskId, task.order);
+                      tapFeedback();
+                    }
+                    setDraggedTaskId(null);
+                    setDragOverTaskId(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedTaskId(null);
+                    setDragOverTaskId(null);
+                  }}
+                  className={rowClass}
+                >
+                  {/* Drag handle — visible affordance for the drag target */}
+                  {!task.done && (
+                    <span
+                      className="text-muted text-lg shrink-0 cursor-grab select-none"
+                      aria-hidden="true"
+                      title={t('drag_to_reorder') ?? 'Drag to reorder'}
+                    >
+                      ⋮⋮
+                    </span>
+                  )}
+                  <span className="text-2xl shrink-0">{task.icon}</span>
+
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onBlur={() => {
+                        const trimmed = editingText.trim();
+                        if (trimmed && trimmed !== label) {
+                          // Custom edit drops the i18n binding (textKey: null)
+                          editTask(task.id, { text: trimmed, textKey: null });
+                        }
+                        setEditingTaskId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
+                        if (e.key === 'Escape') { setEditingTaskId(null); }
+                      }}
+                      className="flex-1 px-2 py-1 rounded-lg border border-theme surface-bar text-primary text-lg"
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={t('edit_task') ?? 'Edit task'}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        tapFeedback();
+                        if (!task.done) addReward(1);
+                        toggleDone(task.id);
+                      }}
+                      className={`flex-1 text-left text-primary font-bold text-lg bg-transparent border-0 p-0 ${task.done ? 'line-through' : ''}`}
+                      aria-label={`${task.done ? t('task_done') : ''} ${label}`}
+                    >
+                      {label}
+                    </button>
+                  )}
+
+                  {!isEditing && (
+                    <button
+                      type="button"
+                      className="aac-btn min-w-[40px] min-h-[40px] rounded-lg surface-bar text-muted text-base border border-theme ml-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        tapFeedback();
+                        setEditingText(label);
+                        setEditingTaskId(task.id);
+                      }}
+                      aria-label={t('edit') ?? 'Edit'}
+                      title={t('edit') ?? 'Edit'}
+                    >
+                      ✏️
+                    </button>
+                  )}
+
+                  <span className="text-2xl shrink-0 motion-safe:transition-transform motion-safe:duration-300">
+                    {task.done ? '✅' : '⬜'}
+                  </span>
+                  {isPaid && (
+                    <button
+                      type="button"
+                      className="aac-btn min-w-[40px] min-h-[40px] rounded-lg surface-bar text-muted text-lg border border-theme ml-1"
+                      onClick={(e) => { e.stopPropagation(); tapFeedback(); removeTask(task.id); }}
+                      aria-label={t('remove')}
+                    >
+                      🗑
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
