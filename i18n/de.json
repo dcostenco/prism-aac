@@ -203,5 +203,17 @@
   "join_session": "Beitreten",
   "end_session": "Beenden",
   "wasm_tts": "Ersatz-Sprachmotor",
-  "wasm_tts_desc": "Notfall-TTS der funktioniert wenn der Browser-Sprachmotor ausfällt."
+  "wasm_tts_desc": "Notfall-TTS der funktioniert wenn der Browser-Sprachmotor ausfällt.",
+  "good_morning": "Guten Morgen",
+  "good_afternoon": "Guten Tag",
+  "good_evening": "Guten Abend",
+  "good_night": "Gute Nacht",
+  "sched_morning": "Morgenroutine",
+  "sched_breakfast": "Frühstück",
+  "sched_school": "Schule",
+  "sched_lunch": "Mittagessen",
+  "sched_play": "Spielzeit",
+  "sched_dinner": "Abendessen",
+  "sched_bedtime": "Schlafenszeit",
+  "next_is": "Als Nächstes: "
 }

@@ -203,5 +203,17 @@
   "join_session": "参加",
   "end_session": "終了",
   "wasm_tts": "バックアップ音声エンジン",
-  "wasm_tts_desc": "ブラウザの音声エンジンがクラッシュした時の緊急TTS。"
+  "wasm_tts_desc": "ブラウザの音声エンジンがクラッシュした時の緊急TTS。",
+  "good_morning": "おはよう",
+  "good_afternoon": "こんにちは",
+  "good_evening": "こんばんは",
+  "good_night": "おやすみ",
+  "sched_morning": "朝の習慣",
+  "sched_breakfast": "朝食",
+  "sched_school": "学校",
+  "sched_lunch": "昼食",
+  "sched_play": "遊びの時間",
+  "sched_dinner": "夕食",
+  "sched_bedtime": "寝る時間",
+  "next_is": "次: "
 }

@@ -203,5 +203,17 @@
   "join_session": "Participar",
   "end_session": "Encerrar",
   "wasm_tts": "Motor de fala reserva",
-  "wasm_tts_desc": "TTS de emergência que funciona se o motor de fala do navegador falhar."
+  "wasm_tts_desc": "TTS de emergência que funciona se o motor de fala do navegador falhar.",
+  "good_morning": "Bom dia",
+  "good_afternoon": "Boa tarde",
+  "good_evening": "Boa noite",
+  "good_night": "Boa noite",
+  "sched_morning": "Rotina matinal",
+  "sched_breakfast": "Café da manhã",
+  "sched_school": "Escola",
+  "sched_lunch": "Almoço",
+  "sched_play": "Hora de brincar",
+  "sched_dinner": "Jantar",
+  "sched_bedtime": "Hora de dormir",
+  "next_is": "Próximo: "
 }

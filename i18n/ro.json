@@ -360,9 +360,9 @@
   "gesture_confidence": "Confidence [EN]",
   "gesture_cooldown": "Cooldown [EN]",
   "gesture_dwell": "Dwell Time [EN]",
-  "good_morning": "Good morning [EN]",
-  "good_afternoon": "Good afternoon [EN]",
-  "good_evening": "Good evening [EN]",
-  "good_night": "Good night [EN]",
-  "next_is": "Next: [EN]"
+  "good_morning": "Bună dimineața",
+  "good_afternoon": "Bună ziua",
+  "good_evening": "Bună seara",
+  "good_night": "Noapte bună",
+  "next_is": "Următorul: "
 }

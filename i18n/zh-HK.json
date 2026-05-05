@@ -203,5 +203,17 @@
   "join_session": "加入",
   "end_session": "結束",
   "wasm_tts": "備用語音引擎",
-  "wasm_tts_desc": "瀏覽器語音引擎崩潰時工作的緊急TTS。"
+  "wasm_tts_desc": "瀏覽器語音引擎崩潰時工作的緊急TTS。",
+  "good_morning": "早晨",
+  "good_afternoon": "午安",
+  "good_evening": "晚安",
+  "good_night": "晚安",
+  "sched_morning": "晨間例行",
+  "sched_breakfast": "早餐",
+  "sched_school": "學校",
+  "sched_lunch": "午餐",
+  "sched_play": "遊戲時間",
+  "sched_dinner": "晚餐",
+  "sched_bedtime": "就寢時間",
+  "next_is": "下一個："
 }

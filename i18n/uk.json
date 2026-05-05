@@ -203,5 +203,17 @@
   "join_session": "Приєднатися",
   "end_session": "Завершити",
   "wasm_tts": "Резервний синтез мовлення",
-  "wasm_tts_desc": "Екстрений TTS що працює при збої мовного рушія браузера."
+  "wasm_tts_desc": "Екстрений TTS що працює при збої мовного рушія браузера.",
+  "good_morning": "Доброго ранку",
+  "good_afternoon": "Добрий день",
+  "good_evening": "Добрий вечір",
+  "good_night": "На добраніч",
+  "sched_morning": "Ранкові справи",
+  "sched_breakfast": "Сніданок",
+  "sched_school": "Школа",
+  "sched_lunch": "Обід",
+  "sched_play": "Час гри",
+  "sched_dinner": "Вечеря",
+  "sched_bedtime": "Час спати",
+  "next_is": "Далі: "
 }

@@ -203,5 +203,17 @@
   "join_session": "Rejoindre",
   "end_session": "Terminer",
   "wasm_tts": "Moteur vocal de secours",
-  "wasm_tts_desc": "TTS d'urgence fonctionnant si le moteur vocal du navigateur plante."
+  "wasm_tts_desc": "TTS d'urgence fonctionnant si le moteur vocal du navigateur plante.",
+  "good_morning": "Bonjour",
+  "good_afternoon": "Bon après-midi",
+  "good_evening": "Bonsoir",
+  "good_night": "Bonne nuit",
+  "sched_morning": "Routine du matin",
+  "sched_breakfast": "Petit-déjeuner",
+  "sched_school": "École",
+  "sched_lunch": "Déjeuner",
+  "sched_play": "Temps de jeu",
+  "sched_dinner": "Dîner",
+  "sched_bedtime": "Heure du coucher",
+  "next_is": "Suivant : "
 }

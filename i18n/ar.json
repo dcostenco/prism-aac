@@ -203,5 +203,17 @@
   "join_session": "انضمام",
   "end_session": "إنهاء",
   "wasm_tts": "محرك صوت احتياطي",
-  "wasm_tts_desc": "TTS طوارئ يعمل عند تعطل محرك الصوت في المتصفح."
+  "wasm_tts_desc": "TTS طوارئ يعمل عند تعطل محرك الصوت في المتصفح.",
+  "good_morning": "صباح الخير",
+  "good_afternoon": "مساء الخير",
+  "good_evening": "مساء الخير",
+  "good_night": "تصبح على خير",
+  "sched_morning": "روتين الصباح",
+  "sched_breakfast": "الفطور",
+  "sched_school": "المدرسة",
+  "sched_lunch": "الغداء",
+  "sched_play": "وقت اللعب",
+  "sched_dinner": "العشاء",
+  "sched_bedtime": "وقت النوم",
+  "next_is": "التالي: "
 }

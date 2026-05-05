@@ -203,5 +203,17 @@
   "join_session": "Unirse",
   "end_session": "Finalizar",
   "wasm_tts": "Motor de voz de respaldo",
-  "wasm_tts_desc": "TTS de emergencia que funciona si el motor de voz del navegador falla."
+  "wasm_tts_desc": "TTS de emergencia que funciona si el motor de voz del navegador falla.",
+  "good_morning": "Buenos días",
+  "good_afternoon": "Buenas tardes",
+  "good_evening": "Buenas tardes",
+  "good_night": "Buenas noches",
+  "sched_morning": "Rutina matinal",
+  "sched_breakfast": "Desayuno",
+  "sched_school": "Escuela",
+  "sched_lunch": "Almuerzo",
+  "sched_play": "Hora de jugar",
+  "sched_dinner": "Cena",
+  "sched_bedtime": "Hora de dormir",
+  "next_is": "Siguiente: "
 }

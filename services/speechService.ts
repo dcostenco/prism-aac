@@ -94,6 +94,19 @@ function isPaidTier(): boolean {
   return paid || hasToken;
 }
 
+// Catalog defaults — when the user has not picked a voice in Settings, ship
+// the warmest "default"-tagged voice from portal/src/shared/voice-catalog.ts.
+// Without this, paid-tier users hit the portal's Azure fallback (Jenny et al.),
+// which is fine but flatter than Inworld. English in particular sounded
+// noticeably robotic before this map existed because the portal's
+// no-voiceId path is Azure-Neural, not Inworld.
+const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
+  en: 'Ashley',  es: 'Carmen', fr: 'Camille', de: 'Hans',
+  pt: 'Luana',   it: 'Giulia', nl: 'Lotte',   pl: 'Zofia',
+  ja: 'Sakura',  zh: 'Mei',    ko: 'Jisoo',   ru: 'Anya',
+  he: 'Noa',     ar: 'Layla',  hi: 'Aanya',
+};
+
 /**
  * Speak text — quality-first fallback chain. Never fails silently.
  *
@@ -155,7 +168,7 @@ export async function speak(
     // matching backend (Inworld for paid+supported, Azure otherwise).
     const baseLang = lang.toLowerCase().split(/[-_]/)[0];
     const voicePref = (settings as { voicePreferences?: Record<string, string> }).voicePreferences;
-    const voiceId = voicePref?.[baseLang];
+    const voiceId = voicePref?.[baseLang] || INWORLD_VOICE_DEFAULTS[baseLang];
     console.log(`[TTS] Attempting portal TTS: lang=${lang} tone=${effectiveTone} plan=${profile?.plan ?? 'unknown'} voiceId=${voiceId ?? 'auto'} loaded=${useAuthStore.getState().loaded}`);
     const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId);
     if (success) { console.log('[TTS] Portal TTS succeeded'); return; }

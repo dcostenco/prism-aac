@@ -203,5 +203,17 @@
   "join_session": "참여",
   "end_session": "종료",
   "wasm_tts": "백업 음성 엔진",
-  "wasm_tts_desc": "브라우저 음성 엔진 충돌 시 작동하는 비상 TTS."
+  "wasm_tts_desc": "브라우저 음성 엔진 충돌 시 작동하는 비상 TTS.",
+  "good_morning": "좋은 아침",
+  "good_afternoon": "좋은 오후",
+  "good_evening": "좋은 저녁",
+  "good_night": "잘 자요",
+  "sched_morning": "아침 일과",
+  "sched_breakfast": "아침 식사",
+  "sched_school": "학교",
+  "sched_lunch": "점심 식사",
+  "sched_play": "놀이 시간",
+  "sched_dinner": "저녁 식사",
+  "sched_bedtime": "잠자리 시간",
+  "next_is": "다음: "
 }
