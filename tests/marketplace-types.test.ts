@@ -23,12 +23,13 @@ const VALID: ModuleManifest = {
 };
 
 describe('marketplace/types — constants', () => {
-  it('lists exactly the 6 supported kinds', () => {
+  it('lists exactly the 7 supported kinds', () => {
     expect([...MODULE_KINDS].sort()).toEqual([
       'board-template',
       'game-pack',
       'panel',
       'symbol-library',
+      'synalux-app',
       'vocab-set',
       'voice-pack',
     ]);
@@ -49,8 +50,8 @@ describe('marketplace/types — constants', () => {
     expect([...MODULE_STATUSES].sort()).toEqual(['available', 'coming_soon', 'deprecated']);
   });
 
-  it('lists exactly 5 categories', () => {
-    expect([...MODULE_CATEGORIES].sort()).toEqual(['games', 'symbols', 'tools', 'vocab', 'voices']);
+  it('lists exactly 6 categories', () => {
+    expect([...MODULE_CATEGORIES].sort()).toEqual(['apps', 'games', 'symbols', 'tools', 'vocab', 'voices']);
   });
 });
 

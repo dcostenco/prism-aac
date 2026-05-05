@@ -229,6 +229,11 @@
   "mp_aac_designer_desc": "Full visual editor for designing custom AAC boards.",
   "mp_video_composer": "Video Composer",
   "mp_video_composer_desc": "Create video-based social stories and visual supports.",
+  "mp_synalux_mail": "Synalux Mail",
+  "mp_synalux_mail_desc": "Email with AAC-friendly composer and prediction.",
+  "mp_synalux_drive": "Synalux Drive",
+  "mp_synalux_drive_desc": "Your secure files, photos, and documents in one place.",
+  "mp_filter_apps": "Apps",
 
   "vocab_set": "Vocabulary Set",
   "vs_all_categories": "All Categories",

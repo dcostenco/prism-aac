@@ -132,6 +132,50 @@ export function translateTextSync(
 let aiTimer: ReturnType<typeof setTimeout> | null = null;
 let lastAiText = '';
 
+/**
+ * Script families per language. Used to sanity-check AI translation output:
+ * if the model returns text whose dominant script doesn't match the target
+ * language's expected script, we reject the "translation". This catches the
+ * frequent local-LLM regression where prism-coder ignores the translate
+ * system prompt and replies as the AAC chat assistant in the source
+ * language (e.g. translating "Я иду" to English came back as the Russian
+ * greeting "Я здесь, чтобы помочь…", which is clearly not English).
+ */
+const SCRIPT_FOR_LANG: Record<string, RegExp> = {
+  // Latin-script targets — reject Cyrillic/CJK/Hebrew/Arabic responses.
+  en: /\p{Script=Latin}/u, es: /\p{Script=Latin}/u, fr: /\p{Script=Latin}/u,
+  pt: /\p{Script=Latin}/u, ro: /\p{Script=Latin}/u, de: /\p{Script=Latin}/u,
+  // Cyrillic
+  ru: /\p{Script=Cyrillic}/u, uk: /\p{Script=Cyrillic}/u,
+  // CJK
+  ja: /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u,
+  ko: /\p{Script=Hangul}/u,
+  zh: /\p{Script=Han}/u, 'zh-Hans': /\p{Script=Han}/u,
+  'zh-Hant': /\p{Script=Han}/u, 'zh-HK': /\p{Script=Han}/u,
+  // Right-to-left
+  ar: /\p{Script=Arabic}/u, he: /\p{Script=Hebrew}/u,
+  // Hindi (Devanagari)
+  hi: /\p{Script=Devanagari}/u,
+};
+
+/**
+ * Returns true if the response looks like a plausible translation in
+ * targetLang (i.e. its dominant script matches the target). Returns true
+ * for short responses where script detection is unreliable.
+ */
+function looksLikeTargetLang(response: string, targetLang: string): boolean {
+  const trimmed = response.trim();
+  if (trimmed.length < 3) return true;
+  const expected = SCRIPT_FOR_LANG[targetLang];
+  if (!expected) return true; // unknown target, can't verify, accept
+  // Count letters by script. If at least 60% of letter chars match the
+  // expected script, accept; otherwise reject.
+  const letters = trimmed.match(/\p{L}/gu) || [];
+  if (letters.length === 0) return true;
+  const matching = letters.filter((c) => expected.test(c)).length;
+  return matching / letters.length >= 0.6;
+}
+
 export function translateWithAIRefine(
   text: string,
   fromLang: SupportedLanguage,
@@ -150,10 +194,22 @@ export function translateWithAIRefine(
       const { translateAI } = await import('./aiService');
       const result = await translateAI(trimmed, LANG_NAMES[fromLang] ?? fromLang, LANG_NAMES[toLang] ?? toLang);
       const refined = result.trim().replace(/^["']|["']$/g, '');
-      if (refined && refined.toLowerCase() !== trimmed.toLowerCase()) {
+      if (
+        refined &&
+        refined.toLowerCase() !== trimmed.toLowerCase() &&
+        looksLikeTargetLang(refined, toLang)
+      ) {
         cache.set(`${fromLang}:${toLang}:${trimmed.toLowerCase()}`, refined);
         trimCache();
         onRefined(refined);
+      } else if (refined && !looksLikeTargetLang(refined, toLang)) {
+        // The model returned text in the wrong script (e.g. AAC chat
+        // assistant reply in source language). Stay on the offline
+        // result rather than confuse the user with garbage.
+        console.warn(
+          `[translate] AI returned ${toLang} translation in wrong script; rejecting:`,
+          refined.slice(0, 60),
+        );
       }
     } catch (e) {
       // Was silently swallowing — leaving users stuck on the partial offline
@@ -182,7 +238,11 @@ export async function translateText(
     const { translateAI } = await import('./aiService');
     const result = await translateAI(text, LANG_NAMES[fromLang] ?? fromLang, LANG_NAMES[toLang] ?? toLang);
     const translated = result.trim().replace(/^["']|["']$/g, '');
-    if (translated && translated.toLowerCase() !== text.trim().toLowerCase()) {
+    if (
+      translated &&
+      translated.toLowerCase() !== text.trim().toLowerCase() &&
+      looksLikeTargetLang(translated, toLang)
+    ) {
       cache.set(cacheKey, translated);
       trimCache();
       return translated;

@@ -27,6 +27,7 @@ const CATEGORY_LABELS: Record<MarketplaceTab, string> = {
   voices: 'mp_filter_voices',
   symbols: 'mp_filter_symbols',
   tools: 'mp_filter_tools',
+  apps: 'mp_filter_apps',
 };
 
 const ORDER: MarketplaceTab[] = ['all', 'installed', ...MODULE_CATEGORIES];

@@ -166,4 +166,33 @@ export const LOCAL_CATALOG: ModuleManifest[] = [
     status: 'coming_soon',
     handlerPayload: { panelId: 'video-composer' },
   },
+
+  // ─── Synalux first-party apps ─────────────────────────────────────────
+  // Free tier so AAC users always have access — these are productivity tools,
+  // not premium content. Launches into the live portal with the existing
+  // session cookie carrying auth.
+  {
+    slug: 'synalux-mail',
+    version: '1.0.0',
+    kind: 'synalux-app',
+    tier: 'free',
+    category: 'apps',
+    nameKey: 'mp_synalux_mail',
+    descKey: 'mp_synalux_mail_desc',
+    icon: '✉️',
+    status: 'available',
+    handlerPayload: { path: '/mail' },
+  },
+  {
+    slug: 'synalux-drive',
+    version: '1.0.0',
+    kind: 'synalux-app',
+    tier: 'free',
+    category: 'apps',
+    nameKey: 'mp_synalux_drive',
+    descKey: 'mp_synalux_drive_desc',
+    icon: '📂',
+    status: 'available',
+    handlerPayload: { path: '/drive' },
+  },
 ];

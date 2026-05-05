@@ -59,13 +59,14 @@ describe('marketplace/registry', () => {
 });
 
 describe('marketplace/registry — bootHandlers', () => {
-  it('registers all 6 handlers exactly once', () => {
+  it('registers all 7 handlers exactly once', () => {
     bootHandlers();
     expect(listRegisteredKinds().sort()).toEqual([
       'board-template',
       'game-pack',
       'panel',
       'symbol-library',
+      'synalux-app',
       'vocab-set',
       'voice-pack',
     ]);
@@ -75,6 +76,6 @@ describe('marketplace/registry — bootHandlers', () => {
   it('is idempotent — second call is a no-op', () => {
     bootHandlers();
     expect(() => bootHandlers()).not.toThrow();
-    expect(listRegisteredKinds()).toHaveLength(6);
+    expect(listRegisteredKinds()).toHaveLength(7);
   });
 });

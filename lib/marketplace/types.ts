@@ -21,6 +21,10 @@ export const MODULE_KINDS = [
   'game-pack',
   'voice-pack',
   'panel',
+  // First-party Synalux apps (Mail, Drive, ...) installed alongside vocab/games
+  // so users get a single "App Store" surface. Launches navigate to the live
+  // Synalux URL, preserving the cookie session for sign-on.
+  'synalux-app',
 ] as const;
 export type ModuleKind = (typeof MODULE_KINDS)[number];
 
@@ -37,7 +41,7 @@ export const TIER_RANK: Record<ModuleTier, number> = {
 export const MODULE_STATUSES = ['available', 'coming_soon', 'deprecated'] as const;
 export type ModuleStatus = (typeof MODULE_STATUSES)[number];
 
-export const MODULE_CATEGORIES = ['vocab', 'games', 'voices', 'symbols', 'tools'] as const;
+export const MODULE_CATEGORIES = ['vocab', 'games', 'voices', 'symbols', 'tools', 'apps'] as const;
 export type ModuleCategory = (typeof MODULE_CATEGORIES)[number];
 
 export interface ModuleManifest {

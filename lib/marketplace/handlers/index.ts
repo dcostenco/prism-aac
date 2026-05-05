@@ -11,6 +11,7 @@ import { boardTemplateHandler } from './boardTemplate';
 import { gamePackHandler } from './gamePack';
 import { panelHandler } from './panel';
 import { symbolLibraryHandler } from './symbolLibrary';
+import { synaluxAppHandler } from './synaluxApp';
 import { vocabSetHandler } from './vocabSet';
 import { voicePackHandler } from './voicePack';
 
@@ -25,6 +26,7 @@ export function bootHandlers(): void {
     gamePackHandler,
     voicePackHandler,
     panelHandler,
+    synaluxAppHandler,
   ]) {
     if (!hasHandler(h.kind)) {
       registerHandler(h);

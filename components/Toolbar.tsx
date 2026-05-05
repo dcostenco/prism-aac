@@ -9,6 +9,8 @@ import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
+import { useMarketplaceStore } from '@/store/marketplaceStore';
+import { getHandler } from '@/lib/marketplace/registry';
 
 const SYNC_ICONS: Record<string, string> = {
   idle: '⬡', syncing: '🔄', synced: '🟢', offline: '🔸', error: '🔴',
@@ -98,22 +100,33 @@ const APP_ICON_MAP: Record<string, { icon: string; labelKey?: string; label?: st
   'music-composer': { icon: '🎵', labelKey: 'mp_music_composer' },
   'aac-designer': { icon: '🎨', labelKey: 'mp_aac_designer' },
   'video-composer': { icon: '🎬', labelKey: 'mp_video_composer' },
+  // Synalux first-party apps (kind: 'synalux-app' in the marketplace catalog).
+  // Tap launches via synaluxAppHandler.launch() → opens portal URL in a new tab.
+  'synalux-mail': { icon: '✉️', labelKey: 'mp_synalux_mail' },
+  'synalux-drive': { icon: '📂', labelKey: 'mp_synalux_drive' },
 };
 
-function appButton(appId: string, t: (k: string) => string, openMarketplace: () => void): RenderedButton {
+function appButton(
+  appId: string,
+  t: (k: string) => string,
+  openMarketplace: () => void,
+  launchInstalled: (appId: string) => boolean,
+): RenderedButton {
   const meta = APP_ICON_MAP[appId];
-  // Installed apps that aren't in the map fall back gracefully so the
-  // toolbar still renders something clickable; tapping any app button
-  // opens the marketplace panel where the user can configure / launch.
-  // (A future iteration should route to the app-specific panel; for now
-  // the marketplace panel is the universal landing place.)
   const labelText = meta?.labelKey ? t(meta.labelKey) : (meta?.label ?? appId);
   return {
     id: `app:${appId}`,
     icon: meta?.icon ?? '🧩',
     ariaLabel: labelText,
     title: labelText,
-    onClick: openMarketplace,
+    // First try the marketplace handler's launch() — this is what makes
+    // synalux-mail / synalux-drive actually open their portal URL. If no
+    // handler is registered (e.g. catalog hasn't loaded yet) or the
+    // handler doesn't define launch (e.g. vocab-set), fall back to opening
+    // the marketplace panel so the user always sees something happen.
+    onClick: () => {
+      if (!launchInstalled(appId)) openMarketplace();
+    },
   };
 }
 
@@ -163,6 +176,34 @@ export default function Toolbar() {
     soundEnabled, listening, voiceSupported,
   };
 
+  // Try the marketplace handler's launch() for an installed app. Returns
+  // true if the handler launched it; false if no handler / no launch fn so
+  // the caller can fall back to opening the marketplace panel.
+  const launchInstalled = (appId: string): boolean => {
+    const manifest = useMarketplaceStore.getState().findBySlug(appId);
+    if (!manifest) return false;
+    const handler = getHandler(manifest.kind);
+    if (!handler?.launch) return false;
+    handler.launch(manifest, {
+      settings: {
+        installApp: useSettingsStore.getState().installApp,
+        uninstallApp: useSettingsStore.getState().uninstallApp,
+        update: useSettingsStore.getState().update,
+        getActiveVocabSet: () => useSettingsStore.getState().activeVocabSet,
+        getInstalledApps: () => useSettingsStore.getState().installedApps,
+      },
+      ui: {
+        closeSidePanel: () => {},
+        openCategories,
+        openGames,
+        openMarketplace,
+        openSettings: () => toggleSettings(),
+        openModulePanel: () => {},
+      },
+    });
+    return true;
+  };
+
   // eslint-disable-next-line react-hooks/refs
   const builtIns = buildBuiltInButtons(t, handlers);
 
@@ -191,7 +232,7 @@ export default function Toolbar() {
 
   function renderButton(id: string): React.ReactNode {
     if (id.startsWith('app:')) {
-      const b = appButton(id.slice(4), t, openMarketplace);
+      const b = appButton(id.slice(4), t, openMarketplace, launchInstalled);
       return (
         <button
           key={id}

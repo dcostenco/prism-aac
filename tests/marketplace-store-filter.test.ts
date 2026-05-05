@@ -48,7 +48,7 @@ beforeEach(async () => {
 describe('marketplaceStore — filterCatalog', () => {
   it('all + empty query returns full catalog', () => {
     const out = useMarketplaceStore.getState().filterCatalog('all', '', []);
-    expect(out).toHaveLength(13);
+    expect(out).toHaveLength(15);
   });
 
   it('vocab category returns vocab-set + board-template + the explicit vocab entries', () => {
