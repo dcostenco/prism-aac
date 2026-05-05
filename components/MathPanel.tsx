@@ -103,6 +103,25 @@ export default function MathPanel() {
     setAiHint('');
   };
 
+  // Step 5: structured templates that emit raw LaTeX so KaTeX renders
+  // them as proper mathematical typography (real fraction bars, true
+  // superscripts, square roots that resize over their argument). Each
+  // template inserts a placeholder the user can replace by tapping
+  // backspace then typing the actual values — no editable cells layer
+  // needed; the canvas re-renders as soon as the LaTeX string changes.
+  const TEMPLATES: { label: string; latex: string; aria: string }[] = [
+    { label: '½',    latex: '\\frac{1}{2}',   aria: 'Insert fraction one-half' },
+    { label: 'a/b',  latex: '\\frac{a}{b}',   aria: 'Insert blank fraction' },
+    { label: 'x²',   latex: 'x^{2}',          aria: 'Insert squared variable' },
+    { label: 'xⁿ',   latex: 'x^{n}',          aria: 'Insert exponent' },
+    { label: 'xₙ',   latex: 'x_{n}',          aria: 'Insert subscript' },
+    { label: '√',    latex: '\\sqrt{x}',      aria: 'Insert square root' },
+    { label: '∛',    latex: '\\sqrt[3]{x}',   aria: 'Insert cube root' },
+    { label: '∑',    latex: '\\sum_{i=1}^{n} ', aria: 'Insert summation' },
+    { label: '∫',    latex: '\\int_{a}^{b} ',  aria: 'Insert integral' },
+    { label: '12+34', latex: '\\begin{matrix} \\phantom{+}12 \\\\ +34 \\\\ \\hline ?? \\end{matrix} ', aria: 'Insert column addition' },
+  ];
+
   const backspace = () => {
     tapFeedback();
     setAiHint('');
@@ -288,6 +307,21 @@ export default function MathPanel() {
         {/* Symbol library (only when More is open) */}
         {showMore && (
           <>
+            {/* Templates row — KaTeX-rendered structures (fractions,
+                exponents, roots, summation/integral, column addition). */}
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+              {TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.label}
+                  onClick={() => addToExpression(tpl.latex)}
+                  className={`${mathKey} px-2.5 py-1.5 text-sm whitespace-nowrap shrink-0`}
+                  title={tpl.aria}
+                  aria-label={tpl.aria}
+                >
+                  {tpl.label}
+                </button>
+              ))}
+            </div>
             <div className="flex gap-1 overflow-x-auto no-scrollbar">
               {CATEGORIES.map((cat) => (
                 <button
