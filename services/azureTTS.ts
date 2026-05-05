@@ -192,22 +192,38 @@ export async function speakAzure(
     };
     if (voiceId) reqBody.voiceId = voiceId;
 
-    // Always use the public endpoint, even for cookie-authenticated
-    // users on synalux.ai/prism-aac (same-origin). The private /api/v1/
-    // tts gates Inworld behind tier !== 'free' — most AAC users are
-    // free tier, so the private route would silently downgrade them to
-    // Azure Jenny (neural but flatter than Inworld). The public route
-    // allows Inworld for everyone within rate limits, so English voices
-    // come through with the same quality as Russian Anya.
-    void authToken; // intentionally unused — kept for back-compat callers
-    const endpoint = `${SYNALUX_API}/tts/public`;
-    const res = await fetch(endpoint, {
+    // Two-tier endpoint strategy (matches portal's tier policy):
+    //   1. /api/v1/tts/public — Inworld for everyone, no auth, rate-
+    //      limited. Natural neural voices for free + paid tiers.
+    //   2. /api/v1/tts (cookie auth) — Inworld for paid + Azure Neural
+    //      fallback for paid only when Inworld fails. Falls through
+    //      silently for free tier requests so they don't get billable
+    //      Azure quota.
+    // We always try public first. If Inworld returns 502 (it errored on
+    // this voice/lang) we retry on the auth route — a cookie-bearing
+    // paid user gets Azure Neural; a free user gets a 403 and we
+    // surface that to the speech-service tier-2/3 fallback chain.
+    const publicRes = await fetch(`${SYNALUX_API}/tts/public`, {
       method: 'POST',
-      headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reqBody),
       signal: controller.signal,
       credentials: 'include',
     });
+    let res = publicRes;
+    if (!publicRes.ok && publicRes.status === 502) {
+      // Inworld choked. Try the auth route — paid users get Azure here.
+      const authRes = await fetch(`${SYNALUX_API}/tts`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(reqBody),
+        signal: controller.signal,
+        credentials: 'include',
+      });
+      if (authRes.ok) res = authRes;
+      // else: keep the original public 502; speech service will fall
+      // through to Tier 2/3.
+    }
     clearTimeout(timeout);
     activeControllers.delete(controller);
 

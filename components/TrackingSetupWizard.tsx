@@ -127,9 +127,23 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       setDetected(results);
 
       if (results.length > 0) {
-        setSelectedPart(results[0].target);
+        const top = results[0];
+        setSelectedPart(top.target);
         setStatusText(`Found: ${results.map(r => r.emoji).join(' ')}`);
-        speak(`I can see your ${results[0].label}. Let's calibrate.`);
+        speak(`I can see your ${top.label}. Let's calibrate.`);
+        // Auto-advance after 1.5s — users were reading the static
+        // confidence percentage as a stalled progress bar. The
+        // "Calibrate Head" button is still rendered for the grace
+        // window if the user wants to switch body parts.
+        useSettingsStore.getState().update({ cameraTrackingTarget: top.target });
+        setTimeout(() => {
+          // Defer to startCenterCalibration via the same handler the
+          // button uses. Calling it directly here would create a
+          // circular useCallback dep; the button handler reads phase
+          // and won't double-fire because phase will already be
+          // 'calibrate-center' by the time the user taps.
+          setPhase('calibrate-center');
+        }, 1500);
       } else {
         setStatusText('No body parts detected. Try moving closer.');
         speak('I cannot see you. Please move closer to the camera.');
