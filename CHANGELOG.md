@@ -1,6 +1,9 @@
 # PrismAAC Changelog
 
-## [0.6.0] - 2026-05-05 — Schedule audio fix, preset activities, drag-drop reorder, inline edit
+## [0.7.0] - 2026-05-05 — Schedule audio fix, preset activities, drag-drop reorder, inline edit
+
+> Note: `0.6.0` was claimed in parallel by the Panther Math redesign release;
+> this Schedule pass bumps to `0.7.0`.
 
 ### Critical fix: timer chime now actually plays
 The v0.5.0 chime fired in unit tests but was silent on real devices: iOS Safari and Chrome auto-suspend `AudioContext` after ~30s of silence, so by the time the timer expired (1+ min after Start), `osc.start()` ran against a suspended context and produced no sound. Two-layer fix:
