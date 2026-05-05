@@ -23,7 +23,7 @@ import {
  * source of truth, not duplicated here.
  */
 export default function VoicePicker() {
-  const t = useT();
+  const { t } = useT();
   const language = useSettingsStore((s) => s.language);
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
   const voicePreferences = useSettingsStore((s) => s.voicePreferences);

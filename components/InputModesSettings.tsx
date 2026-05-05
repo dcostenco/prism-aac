@@ -352,25 +352,3 @@ function GestureRecognitionSettings() {
     </div>
   );
 }
-    ) : '+ Record Custom Gesture'}
-              </button>
-              {isRecordingGesture && recordingStep === 2 && (
-                <div className="mt-2 p-2 bg-red-100 rounded text-red-600 text-xs text-center font-bold animate-pulse">
-                  🔴 Recording 8B Local Viseme Data...
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Reset */}
-          <button
-            onClick={() => { tapFeedback(); update({ gestureConfig: { ...DEFAULT_GESTURE_CONFIG } }); }}
-            className="aac-btn w-full py-2 rounded-lg text-xs text-muted border border-theme surface-key"
-          >
-            Reset gestures to defaults
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
