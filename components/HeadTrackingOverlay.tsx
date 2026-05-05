@@ -11,6 +11,7 @@ import {
   createGestureDetector,
   destroyGestureDetector,
   type GestureDetector,
+  type GestureConfig,
 } from '@/services/gestureService';
 import {
   startReliabilityProbe,
@@ -42,6 +43,102 @@ import { useT } from '@/engine/useT';
 
 type TrackingStatus = 'starting' | 'tracking' | 'lost' | 'stopped';
 
+/* ── Hooks (co-located — only used by this component) ────────────────────── */
+
+/**
+ * Apply safe-mode caps to user settings without mutating the store.
+ * Returns the *effective* values that should be sent to the tracker.
+ * `safeMode` is read fresh on every render so a localStorage update from
+ * another tab is reflected without a manual subscribe.
+ */
+function useSafeModeCaps(input: { sensitivity: number; dwellMs: number; gestureConfig: GestureConfig }) {
+  const safeMode = isSafeMode();
+  return {
+    safeMode,
+    effectiveSensitivity: safeMode
+      ? Math.min(input.sensitivity, SAFE_MODE_EFFECTS.sensitivityCap)
+      : input.sensitivity,
+    effectiveDwellMs: safeMode ? input.dwellMs * SAFE_MODE_EFFECTS.dwellMultiplier : input.dwellMs,
+    effectiveGestureConfig: safeMode ? { ...input.gestureConfig, enabled: false } : input.gestureConfig,
+  };
+}
+
+/**
+ * Background reliability probe lifecycle. While `driftToast` is set and
+ * `driftAutoDisable` is on, runs a 1Hz camera probe that fires
+ * `onRecover` once the user's face has been visible + stable for 10s.
+ * Returns the streak progress (0..1) for UI display.
+ */
+function useReliabilityProbe(
+  active: boolean,
+  onRecover: () => void,
+): number {
+  const [progress, setProgress] = useState(0);
+  const probeRef = useRef<ReliabilityProbeHandle | null>(null);
+  // Stable ref so the effect doesn't re-create the probe when the
+  // consumer's onRecover identity changes.
+  const onRecoverRef = useRef(onRecover);
+  onRecoverRef.current = onRecover;
+
+  useEffect(() => {
+    if (!active) {
+      probeRef.current?.stop();
+      probeRef.current = null;
+      setProgress(0);
+      return;
+    }
+    const probe = startReliabilityProbe({
+      recoverFrames: 10,
+      stableConfidenceFloor: 0.7,
+      onTick: ({ streak }) => setProgress(streak / 10),
+      onRecover: () => {
+        probeRef.current = null;
+        setProgress(0);
+        onRecoverRef.current();
+      },
+    });
+    probeRef.current = probe;
+    return () => {
+      probe.stop();
+      probeRef.current = null;
+      setProgress(0);
+    };
+  }, [active]);
+
+  return progress;
+}
+
+/**
+ * DeviceMotion shake monitor. Returns a ref whose `.current` is true
+ * while the device is being bounced (laptop on lap in moving car).
+ * The ref form lets the caller pass `() => ref.current` into the head
+ * tracker without re-creating the tracker on state changes.
+ */
+function useMotionMonitor(active: boolean): React.MutableRefObject<boolean> {
+  const isShakingRef = useRef(false);
+  const monitorRef = useRef<MotionMonitorHandle | null>(null);
+
+  useEffect(() => {
+    if (!active) {
+      monitorRef.current?.stop();
+      monitorRef.current = null;
+      isShakingRef.current = false;
+      return;
+    }
+    isShakingRef.current = false;
+    monitorRef.current = startMotionMonitor({
+      onChange: (state) => { isShakingRef.current = state === 'shaking'; },
+    });
+    return () => {
+      monitorRef.current?.stop();
+      monitorRef.current = null;
+      isShakingRef.current = false;
+    };
+  }, [active]);
+
+  return isShakingRef;
+}
+
 export default function HeadTrackingOverlay() {
   const enabled = useSettingsStore((s) => s.headTrackingEnabled);
   const dwellMs = useSettingsStore((s) => s.headTrackingDwellMs);
@@ -62,32 +159,23 @@ export default function HeadTrackingOverlay() {
   // user knows what happened. Cleared when they re-enable manually OR when
   // the reliability probe auto-recovers.
   const [driftToast, setDriftToast] = useState<{ reason: string; ts: number } | null>(null);
-  // Reliability-probe progress (0..1) shown in the toast as a hopeful
-  // "we're checking" indicator. NOT a percentage of certainty — it's
-  // streak-completion ratio.
-  const [probeProgress, setProbeProgress] = useState(0);
-  // Safe mode is active when the user has hit drift auto-disable enough
-  // times in the last 5 minutes. Read on every render so a re-mount picks
-  // it up from localStorage.
-  const safeMode = isSafeMode();
-  // Apply safe-mode caps to the user's settings BEFORE handing them to
-  // the tracker. We don't mutate the store — the user's chosen values
-  // come back when safe mode lapses or they manually clear it.
-  const effectiveSensitivity = safeMode
-    ? Math.min(sensitivity, SAFE_MODE_EFFECTS.sensitivityCap)
-    : sensitivity;
-  const effectiveDwellMs = safeMode
-    ? dwellMs * SAFE_MODE_EFFECTS.dwellMultiplier
-    : dwellMs;
-  const effectiveGestureConfig = safeMode
-    ? { ...gestureConfig, enabled: false }
-    : gestureConfig;
+
+  // Hooks — see top of file. Each encapsulates one side concern so this
+  // component reads top-to-bottom as a tracker lifecycle, not a pile of
+  // intertwined effects.
+  const { safeMode, effectiveSensitivity, effectiveDwellMs, effectiveGestureConfig } =
+    useSafeModeCaps({ sensitivity, dwellMs, gestureConfig });
+  const probeProgress = useReliabilityProbe(
+    Boolean(driftToast) && driftAutoDisable,
+    useCallback(() => {
+      setDriftToast(null);
+      setSettings({ headTrackingEnabled: true });
+    }, [setSettings]),
+  );
+  const isShakingRef = useMotionMonitor(enabled);
 
   const handleRef = useRef<HeadTrackerHandle | null>(null);
   const gestureDetectorRef = useRef<GestureDetector | null>(null);
-  const probeRef = useRef<ReliabilityProbeHandle | null>(null);
-  const motionMonitorRef = useRef<MotionMonitorHandle | null>(null);
-  const isShakingRef = useRef(false);
   const pipVideoRef = useRef<HTMLVideoElement | null>(null);
   const dwellStartRef = useRef(0);
   const dwellElementRef = useRef<Element | null>(null);
@@ -133,14 +221,6 @@ export default function HeadTrackingOverlay() {
         }
       });
     }
-
-    // DeviceMotion shake detector — only useful on iOS / Android with
-    // an IMU. On desktop the API is unsupported (DeviceMotionEvent
-    // is undefined), so startMotionMonitor is a no-op listener.
-    isShakingRef.current = false;
-    motionMonitorRef.current = startMotionMonitor({
-      onChange: (state) => { isShakingRef.current = state === 'shaking'; },
-    });
 
     const handle = startHeadTracker({
       dwellMs: effectiveDwellMs,
@@ -223,43 +303,9 @@ export default function HeadTrackingOverlay() {
       handleRef.current = null;
       destroyGestureDetector();
       gestureDetectorRef.current = null;
-      motionMonitorRef.current?.stop();
-      motionMonitorRef.current = null;
-      isShakingRef.current = false;
     };
     // Re-create tracker when key settings change
   }, [enabled, effectiveDwellMs, effectiveSensitivity, effectiveGestureConfig, driftAutoDisable, driftThresholdPx, driftWindowMs, setSettings, animateDwellProgress]);
-
-  // ── Reliability probe lifecycle ──────────────────────────────────────
-  // When the drift toast appears (= tracking just auto-disabled), spin up
-  // a 1Hz background probe that watches face confidence. After 10
-  // consecutive stable seconds, auto-re-enable tracking and clear the
-  // toast. Probe stops on user dismiss / manual retry / unmount.
-  useEffect(() => {
-    if (!driftToast || !driftAutoDisable) {
-      probeRef.current?.stop();
-      probeRef.current = null;
-      setProbeProgress(0);
-      return;
-    }
-    const probe = startReliabilityProbe({
-      recoverFrames: 10,
-      stableConfidenceFloor: 0.7,
-      onTick: ({ streak }) => setProbeProgress(streak / 10),
-      onRecover: () => {
-        probeRef.current = null;
-        setProbeProgress(0);
-        setDriftToast(null);
-        setSettings({ headTrackingEnabled: true });
-      },
-    });
-    probeRef.current = probe;
-    return () => {
-      probe.stop();
-      probeRef.current = null;
-      setProbeProgress(0);
-    };
-  }, [driftToast, driftAutoDisable, setSettings]);
 
   // Render the drift recovery toast even when tracking is disabled, so the
   // user has a visible "Try again" path that doesn't depend on the cursor.
