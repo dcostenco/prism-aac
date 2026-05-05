@@ -47,3 +47,9 @@ prism-deep-review.txt
 *.txt
 !LICENSE.txt
 .venv-tools/
+
+# Local scratch files — debugging snippets that don't belong in source.
+# Pattern matches root-level test-correct-* drafts left over from
+# autocorrect / TTS investigation sessions.
+/test-correct*.js
+/test-correct*.ts

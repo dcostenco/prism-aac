@@ -82,17 +82,22 @@ minutes/hours.
 trackers share a single getUserMedia stream via the cameraStream
 singleton. Auto-recover wired. DeviceMotion gates drift checks during
 real environmental shake. Background calibration anchors auto-correct
-without user prompt.
+without user prompt. Successful dwell-clicks feed back as ground-truth
+calibration anchors (see § L). Telemetry bus + debug overlay shipped
+for field troubleshooting (see § M).
 
-Tests: 219 passing across 8 files
+Tests: 273 passing across 11 files
 - `kalmanFilter1D.test.ts` (23) — confidence-aware filter + adversarial
 - `egoMotion.test.ts` (21) — camera-shake separation + adversarial
-- `safeMode.test.ts` (33) — degraded mode + persistence + corruption
+- `safeMode.test.ts` (37) — degraded mode + persistence + corruption + telemetry
 - `headTrackerStability.test.ts` (45) — drift / probe / fusion / edge-pin / lockout
 - `cameraStream.test.ts` (22) — refcount + concurrency
-- `recalibration.test.ts` (24) — baseline drift / scale correction
+- `recalibration.test.ts` (27) — baseline drift / scale / anchor
 - `deviceMotion.test.ts` (31) — IMU permission + hysteresis state machine
-- `head-tracker.test.ts` (20) — existing integration suite
+- `trackingTelemetry.test.ts` (14) — pub/sub bus + boundary cases
+- `trackingDebugOverlay.test.ts` (17) — flag detection + event formatting
+- `head-tracker.test.ts` (20) — settings store + cursor math
+- `head-tracker-integration.test.ts` (17) — public surface + wiring
 
 ---
 
@@ -404,6 +409,74 @@ A second-pass audit on 2026-05-05 surfaced issues NOT in the original 11:
    stays available for same-frame multi-detector fusion (FaceDetector +
    FaceLandmarker centroid) or pre-calibrated multi-cam rigs. NOT a bug —
    architectural choice.
+
+## L. Anchor-based calibration (gap F follow-up) ✅ shipped
+
+Every successful dwell-click is now ground-truth data. When the user
+holds gaze on a button at known screen position long enough to fire a
+dwell, the cursor was at `(sx, sy)` but the user's intent was the
+button's center `(tx, ty)` — therefore `(sx - tx, sy - ty)` IS the
+calibration error at this moment.
+
+`services/headTracker.ts:applyAnchorCorrection` shifts the four
+calibration anchors by `ANCHOR_LEARNING_RATE × δ` where δ is the
+normalized-coord equivalent of the pixel offset:
+
+```
+δ_x = (sx - tx) / sensitivityScale × rangeX / window.innerWidth
+```
+
+Defaults:
+- `ANCHOR_LEARNING_RATE = 0.3` — converges ~half error after 2 clicks,
+  ~90% after 7 clicks. Low enough that a single off-center click can't
+  corrupt calibration.
+- `ANCHOR_MIN_PIXEL_OFFSET = 8` — below this the cursor was effectively
+  on target; nothing to learn (and we'd just inject noise).
+- `ANCHOR_MAX_PIXEL_OFFSET = 200` — above this the dwell almost
+  certainly bubbled to an unintended ancestor element; ignore.
+
+After applying, `BaselineTracker.acceptCorrection()` is called so the
+slow-drift gap-F path doesn't ALSO fire an offset on top. Combined
+effect: calibration self-corrects from BOTH slow drift (60s window)
+and individual successful interactions (instant).
+
+Telemetry: emits `recalibration-applied` with `kind: 'anchor'` and
+`magnitude` = pixel offset.
+
+## M. Telemetry bus + debug overlay ✅ shipped
+
+The reliability stack emits 12 distinct lifecycle events. Without a
+unified bus, each consumer (analytics, support, debug UI) had to wire
+up callbacks individually. `services/trackingTelemetry.ts` is the
+single point where all events land:
+
+```
+drift              ← driftDetector.check()
+edge-pin-warn      ← EdgePinDetector returns 'pin'
+edge-pin-escalate  ← EdgePinDetector returns 'escalate'
+safe-mode-enter    ← recordDriftEvent crosses triggerCount
+safe-mode-exit     ← clearDriftHistory cleared an active state
+probe-start        ← reliabilityProbe interval begins
+probe-recover      ← 10 stable frames hit
+probe-stop         ← teardown without recovery
+ego-motion-suppress ← classifyMotion returned isEgoMotion=true
+recalibration-applied ← offset / scale / anchor correction applied
+imu-shaking        ← DeviceMotion peak crossed shakeThreshold
+imu-idle           ← peak fell below idleFloor
+```
+
+API:
+- `emitTrackingEvent(event)` — fire to all subscribers.
+- `subscribeTrackingEvents(listener)` — receive everything.
+- `subscribeTrackingEventType('drift', l)` — narrowed by discriminator.
+
+Listener errors are caught so one bad consumer can't break the bus.
+
+`components/TrackingDebugOverlay.tsx` consumes the bus and renders the
+last 20 events as a fixed-corner panel. Hidden by default; activates
+via `?debug=tracking` URL query OR `localStorage["prism-tracking-debug"]
+= "1"`. Mounted unconditionally in `PrismApp` but returns null for
+end users (no DOM, no listeners until activated).
 
 ## Modern best-practice references
 
