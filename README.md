@@ -237,7 +237,7 @@ Identical to the rest of the Synalux platform — all products (Portal, PrismAAC
 | Free | Gemini 2.5 Flash | — | prism-coder:7b | 100 | 4,096 |
 | Standard | Claude Sonnet 4 | Gemini 2.5 Flash | prism-coder:7b | 2,000 | 8,192 |
 | Advanced | Claude Sonnet 4 | Gemini 2.5 Flash | prism-coder:7b | 5,000 | 16,384 |
-| Enterprise | Claude Opus 4 | Gemini 2.5 Flash | prism-coder:7b | 100,000 | 32,768 |
+| Enterprise | Claude Opus 4 | Gemini 2.5 Flash | prism-coder:7b | Unlimited | 32,768 |
 
 When the API is unreachable (offline, network drop, regional outage), every tier falls back to `prism-coder:7b` running locally via Ollama — no degradation in core AAC functionality.
 
