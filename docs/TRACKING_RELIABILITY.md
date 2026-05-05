@@ -64,22 +64,23 @@ minutes/hours.
 
 ## 11 gaps + plan
 
-| # | Gap | Impact | Status | Effort |
+| # | Gap | Impact | Status | Notes |
 |---|---|---|---|---|
-| **A** | No drift safety net — runaway cursor was unrecoverable | 🔴 Critical | ✅ shipped this session (`headTrackerStability.ts`) | done |
-| **B** | Esc keyboard escape hatch absent | 🔴 Critical | ✅ shipped this session (Esc disables tracker) | done |
-| **C** | Naive avg fusion — bad camera poisons good camera | 🟠 High | ✅ primitive shipped (`fuseWeighted`); needs wiring into `tick()` | 30m |
-| **D** | EMA filter amplifies high-velocity noise | 🟠 High | ❌ design below | 4h |
-| **E** | No camera-shake stabilization (the "moving car" gap) | 🟠 High | ❌ design below | 6h |
-| **F** | No background recalibration / drift correction | 🟠 High | ❌ design below | 4h |
-| **G** | Camera contention between head + body services | 🟠 High | ❌ design below | 3h |
-| **H** | Cross-modal interference (gesture click during dwell) | 🟡 Medium | ❌ design below | 2h |
-| **I** | No DeviceMotion / IMU input on iOS | 🟡 Medium | ❌ design below | 3h |
-| **J** | Cursor pinned at edge ≠ "lost" → fires garbage dwells | 🟡 Medium | ❌ design below | 1h |
-| **K** | No "safe mode" — only on/off; no degraded mode | 🟡 Medium | ❌ design below | 4h |
+| **A** | No drift safety net — runaway cursor was unrecoverable | 🔴 Critical | ✅ shipped + auto-recover wired | DriftDetector + ReliabilityProbe (background `services/reliabilityProbe.ts`) — fires `onRecover` after 10s of stable face |
+| **B** | Esc keyboard escape hatch absent | 🔴 Critical | ✅ shipped | Esc unconditionally tears down tracker |
+| **C** | Naive avg fusion — bad camera poisons good camera | 🟠 High | 🟢 N/A by design | Active-Failover (best single camera) is intentional — see code comment in `fuseCameraDetections`. `fuseWeighted` stays as a documented building block for future calibrated multi-cam |
+| **D** | EMA filter amplifies high-velocity noise | 🟠 High | ✅ shipped | Confidence-aware Kalman1D replaces velocity-adaptive EMA |
+| **E** | No camera-shake stabilization (the "moving car" gap) | 🟠 High | ✅ shipped | `egoMotion.ts` + sparse-landmark centroid residuals; FaceLandmarker now always-init so non-gesture users get protection too |
+| **F** | No background recalibration / drift correction | 🟠 High | ❌ pending | design below |
+| **G** | Camera contention between head + body services | 🟠 High | ❌ pending | design below |
+| **H** | Cross-modal interference (gesture click during dwell) | 🟡 Medium | ✅ shipped | `crossModalLockout.ts` — gesture commits dispatch claim; dwell suspends 250ms |
+| **I** | No DeviceMotion / IMU input on iOS | 🟡 Medium | ❌ pending | design below |
+| **J** | Cursor pinned at edge ≠ "lost" → fires garbage dwells | 🟡 Medium | ✅ shipped | `EdgePinDetector` — pin warn at 2s, escalate after N episodes OR a single sustained pin (`pinTriggerMs * pinEscalateCount`) |
+| **K** | No "safe mode" — only on/off; no degraded mode | 🟡 Medium | ✅ shipped | `safeMode.ts` — after 2 drift events in 5min: capped sensitivity, doubled dwell, single camera, gestures off. Cleared on manual retry |
 
-Total remaining work: ~27h (single-engineer days). Items D–G are the
-biggest reliability levers; H–K are quality-of-life.
+**Status May 2026**: 8 of 11 gaps shipped + auto-recover wired end-to-end.
+Remaining: F (recalibration), G (camera singleton), I (DeviceMotion).
+Tests: 78 passing (38 primitive + 16 safe-mode + 24 edge-pin/drift/fusion).
 
 ---
 
@@ -358,6 +359,39 @@ auto-disables. But what if the user genuinely needs an input modality?
 
 Triggered after 2 drift auto-disables in 5 minutes. Safe mode unlocks
 back to full mode on user's manual setting toggle.
+
+## Audit follow-up — gaps surfaced AFTER initial doc
+
+A second-pass audit on 2026-05-05 surfaced issues NOT in the original 11:
+
+1. **Auto-recover wiring was missing** — `ReliabilityProbe` primitive existed
+   but was never instantiated, and `onAutoRecover` callback was never called.
+   *Fixed*: new `services/reliabilityProbe.ts` runs a 1Hz background probe
+   after drift, opens a tiny 320×240 stream, runs FaceDetector, and calls
+   `onRecover` on a 10-frame stable streak. Toast shows live progress bar.
+
+2. **Edge-pin escalation was unreachable in the most common failure mode** —
+   the original logic required N *separate* pin episodes (cursor leaves
+   the edge between each). A calibration-broken cursor that stayed pinned
+   to a corner for minutes never escalated. *Fixed*: sustained pin of
+   `pinTriggerMs × pinEscalateCount` now also escalates.
+
+3. **Ego-motion was conditionally wired** — `lastLandmarkPoints` only
+   populated when `onLandmarks` callback was provided (gesture mode), so
+   users with head-tracking-only (no gestures) got zero "moving car"
+   protection. *Fixed*: FaceLandmarker is now always initialized.
+
+4. **Safe mode was missing** — the doc designed it but the code only had
+   binary on/off behavior. *Fixed*: `services/safeMode.ts` persists drift
+   events to `localStorage`, applies caps to sensitivity / dwell / cameras
+   / gestures when 2+ drifts hit within 5 minutes.
+
+5. **`fuseWeighted` is documented as future-use** — current Active-Failover
+   approach is intentionally NOT averaging across physical cameras (different
+   physical positions = incompatible coordinate planes). The primitive
+   stays available for same-frame multi-detector fusion (FaceDetector +
+   FaceLandmarker centroid) or pre-calibrated multi-cam rigs. NOT a bug —
+   architectural choice.
 
 ## Modern best-practice references
 

@@ -219,6 +219,25 @@ describe('EdgePinDetector — calibration-failure pin detection', () => {
         expect(e.push(5, 400, t0 + 4500)).toBeNull();   // < 2s
         expect(e.push(5, 400, t0 + 5100)).toBe('pin');  // > 2s
     });
+
+    it('escalates a single sustained pin without needing N separate episodes', () => {
+        // Real-world failure: calibration breaks and the cursor stays
+        // pinned to a corner for minutes. Without sustained-pin escalation,
+        // this never trips drift (only one episode, never closed out).
+        const e = new EdgePinDetector({
+            ...opts,
+            pinEscalateCount: 3,       // 3 × 2000ms = 6000ms sustained threshold
+            escalateWindowMs: 30000,
+        });
+        e.push(5, 400, t0);
+        expect(e.push(5, 400, t0 + 2100)).toBe('pin');     // first pin fires
+        // Same episode, never moved off the edge — sustained for >6s total
+        expect(e.push(5, 400, t0 + 4000)).toBeNull();      // still in episode
+        expect(e.push(5, 400, t0 + 6500)).toBe('escalate'); // sustained fires
+        // Should not re-fire on every subsequent frame
+        expect(e.push(5, 400, t0 + 7000)).toBeNull();
+        expect(e.push(5, 400, t0 + 10000)).toBeNull();
+    });
 });
 
 describe('crossModalLockout — gesture/dwell contention', () => {

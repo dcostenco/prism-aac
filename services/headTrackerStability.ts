@@ -229,6 +229,7 @@ export class EdgePinDetector {
     private screenHeight: number;
     private pinStart = 0;        // when current pin episode began (0 = not pinned)
     private pinFired = false;    // already warned on this episode?
+    private sustainedFired = false; // already escalated on a single long episode?
     private episodes: number[] = []; // timestamps of past escalation triggers
 
     constructor(opts: EdgePinOptions) {
@@ -260,6 +261,7 @@ export class EdgePinDetector {
             // Cursor moved off the edge — close out any open episode
             this.pinStart = 0;
             this.pinFired = false;
+            this.sustainedFired = false;
             return null;
         }
 
@@ -280,12 +282,27 @@ export class EdgePinDetector {
             }
             return this.episodes.length >= this.pinEscalateCount ? 'escalate' : 'pin';
         }
+
+        // Sustained-pin escalation (NEW): if the cursor is stuck on an edge
+        // for the full episode-budget worth of time without ever leaving,
+        // that's just as bad as N separate episodes — escalate even though
+        // no off-edge frame ever closed an episode out. Without this, a
+        // calibration-broken cursor pinned to a corner for 10 minutes would
+        // never trigger drift because pinFired stays true.
+        if (this.pinFired && !this.sustainedFired) {
+            const sustainedThresholdMs = this.pinTriggerMs * this.pinEscalateCount;
+            if (pinDuration >= sustainedThresholdMs) {
+                this.sustainedFired = true;
+                return 'escalate';
+            }
+        }
         return null;
     }
 
     reset(): void {
         this.pinStart = 0;
         this.pinFired = false;
+        this.sustainedFired = false;
         this.episodes.length = 0;
     }
 }

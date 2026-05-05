@@ -12,6 +12,16 @@ import {
   destroyGestureDetector,
   type GestureDetector,
 } from '@/services/gestureService';
+import {
+  startReliabilityProbe,
+  type ReliabilityProbeHandle,
+} from '@/services/reliabilityProbe';
+import {
+  recordDriftEvent,
+  isSafeMode,
+  clearDriftHistory,
+  SAFE_MODE_EFFECTS,
+} from '@/services/safeMode';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 
@@ -48,9 +58,30 @@ export default function HeadTrackingOverlay() {
   // user knows what happened. Cleared when they re-enable manually OR when
   // the reliability probe auto-recovers.
   const [driftToast, setDriftToast] = useState<{ reason: string; ts: number } | null>(null);
+  // Reliability-probe progress (0..1) shown in the toast as a hopeful
+  // "we're checking" indicator. NOT a percentage of certainty — it's
+  // streak-completion ratio.
+  const [probeProgress, setProbeProgress] = useState(0);
+  // Safe mode is active when the user has hit drift auto-disable enough
+  // times in the last 5 minutes. Read on every render so a re-mount picks
+  // it up from localStorage.
+  const safeMode = isSafeMode();
+  // Apply safe-mode caps to the user's settings BEFORE handing them to
+  // the tracker. We don't mutate the store — the user's chosen values
+  // come back when safe mode lapses or they manually clear it.
+  const effectiveSensitivity = safeMode
+    ? Math.min(sensitivity, SAFE_MODE_EFFECTS.sensitivityCap)
+    : sensitivity;
+  const effectiveDwellMs = safeMode
+    ? dwellMs * SAFE_MODE_EFFECTS.dwellMultiplier
+    : dwellMs;
+  const effectiveGestureConfig = safeMode
+    ? { ...gestureConfig, enabled: false }
+    : gestureConfig;
 
   const handleRef = useRef<HeadTrackerHandle | null>(null);
   const gestureDetectorRef = useRef<GestureDetector | null>(null);
+  const probeRef = useRef<ReliabilityProbeHandle | null>(null);
   const pipVideoRef = useRef<HTMLVideoElement | null>(null);
   const dwellStartRef = useRef(0);
   const dwellElementRef = useRef<Element | null>(null);
@@ -81,10 +112,11 @@ export default function HeadTrackingOverlay() {
       return;
     }
 
-    // Create gesture detector if gesture recognition is enabled
-    if (gestureConfig.enabled) {
-      gestureDetectorRef.current = createGestureDetector(gestureConfig, (event) => {
-        const mapping = gestureConfig.mappings.find(m => m.gesture === event.gesture);
+    // Create gesture detector if gesture recognition is enabled. Safe mode
+    // disables gestures so we use the effective config here too.
+    if (effectiveGestureConfig.enabled) {
+      gestureDetectorRef.current = createGestureDetector(effectiveGestureConfig, (event) => {
+        const mapping = effectiveGestureConfig.mappings.find(m => m.gesture === event.gesture);
         if (mapping) {
           // Execute the mapped action — trigger a click on the matching button
           const target = document.querySelector(`[data-action="${mapping.action}"], [data-key="${mapping.action}"], #${mapping.action}`);
@@ -97,8 +129,8 @@ export default function HeadTrackingOverlay() {
     }
 
     const handle = startHeadTracker({
-      dwellMs,
-      sensitivity,
+      dwellMs: effectiveDwellMs,
+      sensitivity: effectiveSensitivity,
       smoothing: 0.15,
       // Drift safety net — see services/headTrackerStability.ts. The
       // detector lives inside the tracker; here we just react to its
@@ -110,12 +142,17 @@ export default function HeadTrackingOverlay() {
       onDrift: (reason) => {
         if (!driftAutoDisable) return;
         setDriftToast({ reason, ts: Date.now() });
+        // Record the drift event BEFORE flipping the toggle so a
+        // re-mount caused by the setting change reads the updated
+        // history from localStorage. After the second event in 5min,
+        // the next tracker spin-up will be in safe mode automatically.
+        recordDriftEvent(Date.now());
         // Flip the user-facing toggle off so the next render unmounts
         // the tracker cleanly. The `enabled` watcher above will run
         // handle.stop() for us.
         setSettings({ headTrackingEnabled: false });
       },
-      onLandmarks: gestureConfig.enabled ? (data) => {
+      onLandmarks: effectiveGestureConfig.enabled ? (data) => {
         gestureDetectorRef.current?.processFrame(data);
       } : undefined,
       onMove(x, y) {
@@ -173,7 +210,38 @@ export default function HeadTrackingOverlay() {
       gestureDetectorRef.current = null;
     };
     // Re-create tracker when key settings change
-  }, [enabled, dwellMs, sensitivity, gestureConfig, driftAutoDisable, driftThresholdPx, driftWindowMs, setSettings, animateDwellProgress]);
+  }, [enabled, effectiveDwellMs, effectiveSensitivity, effectiveGestureConfig, driftAutoDisable, driftThresholdPx, driftWindowMs, setSettings, animateDwellProgress]);
+
+  // ── Reliability probe lifecycle ──────────────────────────────────────
+  // When the drift toast appears (= tracking just auto-disabled), spin up
+  // a 1Hz background probe that watches face confidence. After 10
+  // consecutive stable seconds, auto-re-enable tracking and clear the
+  // toast. Probe stops on user dismiss / manual retry / unmount.
+  useEffect(() => {
+    if (!driftToast || !driftAutoDisable) {
+      probeRef.current?.stop();
+      probeRef.current = null;
+      setProbeProgress(0);
+      return;
+    }
+    const probe = startReliabilityProbe({
+      recoverFrames: 10,
+      stableConfidenceFloor: 0.7,
+      onTick: ({ streak }) => setProbeProgress(streak / 10),
+      onRecover: () => {
+        probeRef.current = null;
+        setProbeProgress(0);
+        setDriftToast(null);
+        setSettings({ headTrackingEnabled: true });
+      },
+    });
+    probeRef.current = probe;
+    return () => {
+      probe.stop();
+      probeRef.current = null;
+      setProbeProgress(0);
+    };
+  }, [driftToast, driftAutoDisable, setSettings]);
 
   // Render the drift recovery toast even when tracking is disabled, so the
   // user has a visible "Try again" path that doesn't depend on the cursor.
@@ -199,12 +267,30 @@ export default function HeadTrackingOverlay() {
             <div className="text-muted text-sm mt-0.5">
               {t('drift_safety_explanation') ?? 'Auto-disabled to keep your screen usable. Press Esc anytime to disable tracking.'}
             </div>
+            {driftAutoDisable && probeProgress > 0 && (
+              <div className="mt-2" aria-live="polite">
+                <div className="text-xs text-muted mb-1">
+                  {t('drift_probe_checking') ?? 'Watching for stable conditions…'}
+                </div>
+                <div className="h-1.5 rounded-full bg-[rgba(0,0,0,0.15)] overflow-hidden">
+                  <div
+                    className="h-full bg-[#4CAF50] transition-all"
+                    style={{ width: `${Math.round(probeProgress * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <button
             type="button"
             className="aac-btn min-h-[48px] px-4 rounded-xl bg-[#4CAF50] text-white font-bold border-0"
             onClick={() => {
               tapFeedback();
+              // Manual retry is a vote of confidence — clear the drift
+              // history so we exit safe mode if the user just tripped
+              // their second event. If they trip a third within the
+              // window, safe mode kicks back in automatically.
+              clearDriftHistory();
               setDriftToast(null);
               setSettings({ headTrackingEnabled: true });
             }}
@@ -333,6 +419,23 @@ export default function HeadTrackingOverlay() {
           }}
         />
         {statusLabel}
+        {safeMode && (
+          <span
+            title={t('safe_mode_explainer') ?? 'Reduced sensitivity, longer dwell, gestures off'}
+            style={{
+              marginLeft: 8,
+              padding: '1px 8px',
+              borderRadius: 10,
+              fontSize: 10,
+              fontWeight: 700,
+              backgroundColor: '#FF9800',
+              color: '#000',
+              letterSpacing: 0.4,
+            }}
+          >
+            {t('safe_mode') ?? 'SAFE MODE'}
+          </span>
+        )}
       </div>
 
       {/* ── Camera PIP preview (bottom-right corner) ── */}

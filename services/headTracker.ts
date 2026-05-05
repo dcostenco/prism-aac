@@ -623,10 +623,14 @@ export function startHeadTracker(
 
   opts.onStatusChange('starting');
 
-  // Initialize FaceLandmarker if gesture recognition callback is provided
-  if (opts.onLandmarks) {
-    initMediaPipeFaceLandmarker().catch(() => {});
-  }
+  // Always initialize FaceLandmarker. Two reasons:
+  //   1. Gesture detection (only used when onLandmarks is provided) — opt-in.
+  //   2. Ego-motion suppression (gap E) — needs landmark coordinates EVEN
+  //      when the user hasn't enabled gestures. Without this, a user who
+  //      only enables head tracking gets no protection from camera shake
+  //      ("moving car" requirement). The extra ~5MB WASM model is amortized
+  //      over the session and only loaded once.
+  initMediaPipeFaceLandmarker().catch(() => {});
 
   // ── Initialize all cameras ──────────────────────────────────────────
 
