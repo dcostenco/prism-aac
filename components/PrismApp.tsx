@@ -17,6 +17,7 @@ import HistoryModal from './HistoryModal';
 import SettingsModal from './SettingsModal';
 import AlertOverlay from './AlertOverlay';
 import HeadTrackingOverlay from './HeadTrackingOverlay';
+import TrackingDebugOverlay from './TrackingDebugOverlay';
 import CameraInputOverlay from './CameraInputOverlay';
 import GreetingBanner from './GreetingBanner';
 import SyncProvider from './SyncProvider';
@@ -215,6 +216,10 @@ export default function PrismApp() {
           <SettingsModal />
           <HeadTrackingOverlay />
           <CameraInputOverlay />
+          {/* Hidden by default; activates via ?debug=tracking or
+              localStorage["prism-tracking-debug"]="1". Returns null
+              for end users so there is no bundle / DOM cost. */}
+          <TrackingDebugOverlay />
         </div>
       </SyncProvider>
     </ErrorBoundary>
