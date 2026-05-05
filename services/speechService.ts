@@ -48,6 +48,23 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
   window.speechSynthesis.addEventListener?.('voiceschanged', loadVoices);
 }
 
+// Known high-quality voice names per OS, used as a tie-breaker when the
+// generic Premium/Neural/Enhanced filter doesn't find anything. macOS ships
+// these as quality variants of base voices (e.g. "Ava (Premium)") but on
+// some systems the suffix is missing — match the bare name as a fallback.
+const KNOWN_QUALITY_VOICES: Record<string, string[]> = {
+  en: ['Ava', 'Allison', 'Samantha', 'Tom', 'Karen', 'Daniel', 'Moira', 'Aria', 'Guy', 'Jenny'],
+  es: ['Mónica', 'Paulina', 'Jorge', 'Diego'],
+  fr: ['Amélie', 'Thomas', 'Aurélie'],
+  de: ['Anna', 'Markus', 'Petra'],
+  pt: ['Luciana', 'Joana', 'Felipe'],
+  it: ['Alice', 'Federica', 'Luca'],
+  ja: ['Kyoko', 'Otoya', 'Nanami'],
+  ko: ['Yuna', 'SunHi'],
+  zh: ['Ting-Ting', 'Sin-Ji', 'Mei-Jia', 'Xiaoxiao'],
+  ru: ['Yuri', 'Milena'],
+};
+
 export function getBestOfflineVoice(lang: string): { voice: SpeechSynthesisVoice | null; quality: VoiceQuality } {
   if (!isSpeechSupported()) return { voice: null, quality: 'none' };
   const voices = loadVoices();
@@ -63,6 +80,20 @@ export function getBestOfflineVoice(lang: string): { voice: SpeechSynthesisVoice
 
   const enhanced = langVoices.find((v) => v.name.includes('Enhanced') && !v.name.includes('Compact'));
   if (enhanced) return { voice: enhanced, quality: 'enhanced' };
+
+  // Fallback: search by known quality voice names. macOS basic English voices
+  // (Samantha, Ava) sound robotic at AAC speech rates; the Compact/quality
+  // variants sound much better. By matching the known-good voice list before
+  // accepting `langVoices[0]`, we skip rare junk voices like "Albert" that
+  // sometimes top the list alphabetically.
+  const knownQualityNames = KNOWN_QUALITY_VOICES[langPrefix] || [];
+  for (const name of knownQualityNames) {
+    const match = langVoices.find((v) => v.name.includes(name) && !v.name.includes('Compact'));
+    if (match) return { voice: match, quality: 'enhanced' };
+  }
+  // Last resort: prefer non-Compact over Compact (compact = lower quality)
+  const nonCompact = langVoices.find((v) => !v.name.includes('Compact'));
+  if (nonCompact) return { voice: nonCompact, quality: 'basic' };
 
   return { voice: langVoices[0], quality: 'basic' };
 }
@@ -230,7 +261,13 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
   u.volume = volume;
   u.lang = lang;
 
-  const { voice } = getBestOfflineVoice(lang);
+  const { voice, quality } = getBestOfflineVoice(lang);
+  // Surface which OS voice the system landed on so users reporting a
+  // "robotic" complaint can grep their console and tell us what installed
+  // voice was picked. If quality is 'basic' on en, the system's English
+  // premium voice is missing — Tier 1 must have failed AND Kokoro isn't
+  // loaded for us to be here.
+  console.log(`[TTS] Tier 3 Web Speech: lang=${lang} voice=${voice?.name ?? 'none'} quality=${quality}`);
   if (voice) {
     u.voice = voice;
   } else {
