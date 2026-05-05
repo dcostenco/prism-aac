@@ -28,6 +28,7 @@ import { Kalman1D } from './kalmanFilter1D';
 import { classifyMotion } from './egoMotion';
 import { isLocked, onGestureClaim } from './crossModalLockout';
 import { BaselineTracker } from './recalibration';
+import { acquireCamera, type CameraLease } from './cameraStream';
 
 // ── Public Types ────────────────────────────────────────────────────────────
 
@@ -260,7 +261,11 @@ interface CameraSource {
   video: HTMLVideoElement;
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  stream: MediaStream | null;
+  /**
+   * Refcounted lease from `cameraStream`. When held, the camera stream is
+   * shared with other consumers (e.g. bodyPoseService); release on stop.
+   */
+  lease: CameraLease | null;
   nativeDetector: { detect: (source: HTMLVideoElement) => Promise<{ boundingBox: DOMRect }[]> } | null;
   lastDetection: CameraDetection;
   lastLandmarks: FaceLandmarkData | null;
@@ -288,23 +293,25 @@ interface CameraSource {
 const EGO_MOTION_LANDMARK_INDICES = [1, 33, 263, 61, 291, 199] as const;
 
 function createCameraSource(index: number): CameraSource | null {
+  // Placeholder video element — replaced with the lease's shared video
+  // in initCameraSource. Kept to avoid a nullable `video` field that
+  // would force every call site to null-check.
   const video = document.createElement('video');
-  video.setAttribute('playsinline', '');
-  video.setAttribute('autoplay', '');
   video.muted = true;
-  video.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;';
-  document.body.appendChild(video);
+  // NOT appended to DOM yet — we'll let cameraStream's lease element
+  // be the visible/playing one. This placeholder is just a typing
+  // convenience until init runs.
 
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) { video.remove(); return null; }
+  if (!ctx) return null;
 
   return {
     index,
     video,
     canvas,
     ctx,
-    stream: null,
+    lease: null,
     nativeDetector: null,
     lastDetection: { face: null, cameraIndex: index, confidence: 0, canvasWidth: 320, canvasHeight: 240, timestamp: 0 },
     lastLandmarks: null,
@@ -323,34 +330,32 @@ async function initCameraSource(source: CameraSource, deviceId?: string, abortSi
     if (isBackCamera) return false;
   }
 
-  const constraints: MediaStreamConstraints = {
-    video: deviceId
-      ? { deviceId: { exact: deviceId }, width: { ideal: 320 }, height: { ideal: 240 }, facingMode: 'user' }
-      : { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: 'user' },
-    audio: false,
-  };
-
   try {
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    // Refcounted acquire from the cameraStream singleton (gap G). If
+    // bodyPoseService already owns this device, we get the SAME video
+    // element and getUserMedia is NOT called twice.
+    const lease = await acquireCamera({ deviceId, width: 320, height: 240 });
+    if (!lease) return false;
 
     // If component unmounted during getUserMedia (React StrictMode double-mount,
-    // user toggled setting off), kill the stream immediately to prevent the
-    // green camera indicator from staying on permanently.
+    // user toggled setting off), release the lease immediately.
     if (abortSignal?.aborted) {
-      stream.getTracks().forEach(t => t.stop());
+      lease.release();
       return false;
     }
 
-    const track = stream.getVideoTracks()[0];
+    // Defense in depth — the singleton passes facingMode:'user' but
+    // some hardware reports environment via track settings.
+    const stream = lease.video.srcObject as MediaStream | null;
+    const track = stream?.getVideoTracks()[0];
     const settings = track?.getSettings?.();
     if (settings?.facingMode === 'environment') {
-      stream.getTracks().forEach(t => t.stop());
+      lease.release();
       return false;
     }
 
-    source.stream = stream;
-    source.video.srcObject = stream;
-    await source.video.play().catch(() => {});
+    source.lease = lease;
+    source.video = lease.video;
 
     await new Promise<void>((resolve) => {
       if (source.video.readyState >= 2) { resolve(); return; }
@@ -516,8 +521,13 @@ async function detectFromSource(source: CameraSource): Promise<CameraDetection> 
 
 function stopCameraSource(source: CameraSource): void {
   source.active = false;
-  if (source.stream) source.stream.getTracks().forEach(t => t.stop());
-  if (source.video.parentNode) source.video.remove();
+  // Refcounted release — only stops the underlying stream when the
+  // last consumer releases. The singleton owns the video element's
+  // DOM lifecycle, so we don't manually .remove() it.
+  if (source.lease) {
+    source.lease.release();
+    source.lease = null;
+  }
 }
 
 // ── Multi-Camera Fusion ─────────────────────────────────────────────────────

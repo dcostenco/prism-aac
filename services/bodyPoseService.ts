@@ -13,7 +13,14 @@
  *  body part they can move most reliably.
  *
  *  Works entirely on-device. No external API calls. Offline-capable.
+ *
+ *  Camera management: uses the refcounted `cameraStream` singleton so
+ *  body-pose + head-tracker can share a single getUserMedia stream
+ *  (gap G in TRACKING_RELIABILITY.md). Falls back to a caller-provided
+ *  video element for legacy callers.
  * ────────────────────────────────────────────────────────────────────────── */
+
+import { acquireCamera, type CameraLease } from './cameraStream';
 
 // ── MediaPipe Pose Landmark Indices ────────────────────────────────────────
 //  0: nose        1-4: eyes       5-6: ears      7-10: mouth
@@ -309,7 +316,7 @@ export function startPoseTracker(
   let stopped = false;
   let rafId = 0;
   let video: HTMLVideoElement | null = null;
-  let ownStream: MediaStream | null = null; // Only set if we opened the camera ourselves
+  let cameraLease: CameraLease | null = null; // Set if we acquired via cameraStream
   const abortController = new AbortController();
 
   // Aggregate ('any_*') and concrete targets are both resolved per-frame in
@@ -353,10 +360,12 @@ export function startPoseTracker(
   (async () => {
     // Step 1: Set up video source
     if (videoElement && videoElement.srcObject) {
-      // Reuse existing video element from head tracking or other source
+      // Legacy path — caller passed an explicit video element.
+      // Used by tests and pre-singleton callers; bypasses cameraStream.
       video = videoElement;
     } else {
-      // Open our own camera
+      // Reject environment-facing cameras BEFORE acquiring (the singleton
+      // doesn't apply this policy — that's a body/head-tracker concern).
       if (cameraDeviceId) {
         const isBack = await isEnvironmentCamera(cameraDeviceId);
         if (isBack) {
@@ -365,50 +374,42 @@ export function startPoseTracker(
         }
       }
 
-      const constraints: MediaStreamConstraints = {
-        video: cameraDeviceId
-          ? { deviceId: { exact: cameraDeviceId }, width: { ideal: 320 }, height: { ideal: 240 }, facingMode: 'user' }
-          : { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: 'user' },
-        audio: false,
-      };
-
       try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        // Refcounted acquire — if head-tracker is already using the same
+        // camera at the same resolution, we get the SAME video element
+        // and getUserMedia is NOT called twice (gap G).
+        const lease = await acquireCamera({
+          deviceId: cameraDeviceId,
+          width: 320,
+          height: 240,
+        });
 
-        // Abort check: if stopped during async getUserMedia
+        // Abort check: if stopped during async acquire.
         if (stopped || abortController.signal.aborted) {
-          stream.getTracks().forEach(t => t.stop());
+          lease?.release();
           return;
         }
 
-        // Reject environment cameras by track settings
-        const track = stream.getVideoTracks()[0];
-        const settings = track?.getSettings?.();
-        if (settings?.facingMode === 'environment') {
-          stream.getTracks().forEach(t => t.stop());
+        if (!lease) {
+          console.error('[PoseTracker] Camera acquire failed (permission denied or no device).');
           opts.onStatusChange('stopped');
           return;
         }
 
-        ownStream = stream;
+        // Defense in depth — even if we passed facingMode:'user' to
+        // acquireCamera, some devices may report environment via
+        // settings. Drop the lease if so.
+        const stream = lease.video.srcObject as MediaStream | null;
+        const track = stream?.getVideoTracks()[0];
+        const settings = track?.getSettings?.();
+        if (settings?.facingMode === 'environment') {
+          lease.release();
+          opts.onStatusChange('stopped');
+          return;
+        }
 
-        const vid = document.createElement('video');
-        vid.setAttribute('playsinline', '');
-        vid.setAttribute('autoplay', '');
-        vid.muted = true;
-        vid.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;';
-        document.body.appendChild(vid);
-
-        vid.srcObject = stream;
-        await vid.play().catch(() => {});
-
-        await new Promise<void>((resolve) => {
-          if (vid.readyState >= 2) { resolve(); return; }
-          vid.addEventListener('loadedmetadata', () => resolve(), { once: true });
-          setTimeout(resolve, 3000);
-        });
-
-        video = vid;
+        cameraLease = lease;
+        video = lease.video;
       } catch (camErr) {
         console.error('[PoseTracker] Camera access failed:', camErr instanceof Error ? camErr.message : camErr);
         opts.onStatusChange('stopped');
@@ -753,17 +754,18 @@ export function startPoseTracker(
       abortController.abort();
       cancelAnimationFrame(rafId);
 
-      // Only stop the stream if we opened it ourselves
-      if (ownStream) {
-        ownStream.getTracks().forEach(t => t.stop());
-        ownStream = null;
+      // Refcounted release — only stops the stream if we were the last
+      // consumer. If head-tracker is still using the same camera, the
+      // singleton keeps the stream alive for it.
+      if (cameraLease) {
+        cameraLease.release();
+        cameraLease = null;
       }
 
-      // Only remove video element if we created it
-      if (video && !videoElement && video.parentNode) {
-        video.remove();
-      }
-
+      // Don't manually remove the video element when leased — the
+      // singleton owns its lifecycle. Only nullify our reference.
+      // For the legacy `videoElement` reuse path, we never owned the
+      // element either, so no removal is needed there either.
       video = null;
       opts.onStatusChange('stopped');
 

@@ -72,16 +72,17 @@ minutes/hours.
 | **D** | EMA filter amplifies high-velocity noise | 🟠 High | ✅ shipped | Confidence-aware Kalman1D replaces velocity-adaptive EMA |
 | **E** | No camera-shake stabilization (the "moving car" gap) | 🟠 High | ✅ shipped | `egoMotion.ts` + sparse-landmark centroid residuals; FaceLandmarker now always-init so non-gesture users get protection too |
 | **F** | No background recalibration / drift correction | 🟠 High | ✅ shipped | `recalibration.ts` `BaselineTracker` — exp-moving-average mean + variance with offset + scale corrections. Wired into `headTracker.tick()` to mutate calibration anchors in place after warmup |
-| **G** | Camera contention between head + body services | 🟠 High | 🟡 primitive shipped | `cameraStream.ts` refcounted singleton with concurrency-safe `acquireCamera()`. Migration of `bodyPoseService` is the next step (existing `videoElement` reuse param can be passed `lease.video`) |
+| **G** | Camera contention between head + body services | 🟠 High | ✅ shipped | `cameraStream.ts` refcounted singleton + both `headTracker` and `bodyPoseService` migrated. Concurrent acquires for the same `(deviceId, w, h)` coalesce; getUserMedia is called exactly once. Stream stays alive while ANY consumer holds a lease |
 | **H** | Cross-modal interference (gesture click during dwell) | 🟡 Medium | ✅ shipped | `crossModalLockout.ts` — gesture commits dispatch claim; dwell suspends 250ms |
 | **I** | No DeviceMotion / IMU input on iOS | 🟡 Medium | ✅ shipped | `deviceMotion.ts` — iOS 13+ permission flow + 500ms rolling-window peak detection with hysteresis. `headTracker` accepts `isDeviceShaking()` callback and gates drift checks while the IMU reports motion |
 | **J** | Cursor pinned at edge ≠ "lost" → fires garbage dwells | 🟡 Medium | ✅ shipped | `EdgePinDetector` — pin warn at 2s, escalate after N episodes OR a single sustained pin (`pinTriggerMs * pinEscalateCount`) |
 | **K** | No "safe mode" — only on/off; no degraded mode | 🟡 Medium | ✅ shipped | `safeMode.ts` — after 2 drift events in 5min: capped sensitivity, doubled dwell, single camera, gestures off. Cleared on manual retry |
 
-**Status May 2026**: 11 of 11 gaps closed (G migration of bodyPoseService
-is follow-up cleanup — primitive ready). Auto-recover wired end-to-end.
-DeviceMotion gates drift checks during real environmental shake.
-Background calibration anchors auto-correct without user prompt.
+**Status May 2026**: 11 of 11 gaps closed end-to-end. Both head + body
+trackers share a single getUserMedia stream via the cameraStream
+singleton. Auto-recover wired. DeviceMotion gates drift checks during
+real environmental shake. Background calibration anchors auto-correct
+without user prompt.
 
 Tests: 219 passing across 8 files
 - `kalmanFilter1D.test.ts` (23) — confidence-aware filter + adversarial
