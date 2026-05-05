@@ -11,7 +11,23 @@
  *      averaged for higher accuracy (triangulation effect)
  *
  *  Works entirely on-device. No external API calls. Offline-capable.
+ *
+ *  Reliability primitives (each in its own module — see TRACKING_RELIABILITY.md):
+ *    headTrackerStability — drift / probe / edge-pin / fusion
+ *    kalmanFilter1D       — confidence-aware smoothing  (gap D)
+ *    egoMotion            — camera-shake suppression    (gap E)
+ *    crossModalLockout    — gesture/dwell coordination  (gap H)
+ *    recalibration        — background drift correction (gap F)
  * ────────────────────────────────────────────────────────────────────────── */
+
+import {
+  DriftDetector,
+  EdgePinDetector,
+} from './headTrackerStability';
+import { Kalman1D } from './kalmanFilter1D';
+import { classifyMotion } from './egoMotion';
+import { isLocked, onGestureClaim } from './crossModalLockout';
+import { BaselineTracker } from './recalibration';
 
 // ── Public Types ────────────────────────────────────────────────────────────
 
@@ -176,6 +192,24 @@ function matrixToEuler(matrix: number[]): { pitch: number; yaw: number; roll: nu
 
 const TARGET_FPS = 15;
 const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
+/**
+ * Detections older than this are treated as stale — the corresponding
+ * camera's loop has hung or its WebGL context crashed. Used to prevent
+ * a frozen-cursor failure mode where the last good detection sticks.
+ */
+const STALE_DETECTION_MS = 500;
+/**
+ * Kalman process noise (px²/frame). Tuned for 15 fps with an expected
+ * intentional cursor velocity of ±2 px/frame. Higher → snappier but
+ * noisier; lower → smoother but laggier.
+ */
+const KALMAN_PROCESS_NOISE = 4;
+/**
+ * MediaPipe's face-area "confidence" is typically 0.005..0.05. We
+ * scale by 20 to map that into the 0..1 range Kalman1D expects.
+ * A 5% face-area share means "rock-solid"; below 0.5% we don't trust it.
+ */
+const FACE_AREA_TO_KALMAN_SCALE = 20;
 
 interface FaceRect {
   x: number;
@@ -237,6 +271,8 @@ interface CameraSource {
    * blendshapes + head-pose for gesture recognition.
    */
   lastLandmarkPoints: { x: number; y: number }[] | null;
+  /** Previous frame's `lastLandmarkPoints` — needed for ego-motion delta. */
+  prevLandmarkPoints: { x: number; y: number }[] | null;
   active: boolean;
 }
 
@@ -273,6 +309,7 @@ function createCameraSource(index: number): CameraSource | null {
     lastDetection: { face: null, cameraIndex: index, confidence: 0, canvasWidth: 320, canvasHeight: 240, timestamp: 0 },
     lastLandmarks: null,
     lastLandmarkPoints: null,
+    prevLandmarkPoints: null,
     active: false,
   };
 }
@@ -559,20 +596,10 @@ export function startHeadTracker(
   const sources: CameraSource[] = [];
   const abortController = new AbortController();
 
-  // Lazy imports to avoid circular dependency. Stability primitives are
-  // pure / DOM-free, so they can be unit-tested without the full tracker.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const stability = require('./headTrackerStability') as typeof import('./headTrackerStability');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const kalmanMod = require('./kalmanFilter1D') as typeof import('./kalmanFilter1D');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const egoMod = require('./egoMotion') as typeof import('./egoMotion');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const lockoutMod = require('./crossModalLockout') as typeof import('./crossModalLockout');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const recalMod = require('./recalibration') as typeof import('./recalibration');
-
-  const driftDetector = new stability.DriftDetector({
+  // Reliability primitives (statically imported at top — no circular dep).
+  // Each is pure / DOM-free, so they can be unit-tested without the
+  // full tracker. See TRACKING_RELIABILITY.md for which gap each closes.
+  const driftDetector = new DriftDetector({
     travelThresholdPx: opts.driftThresholdPx ?? 800,
     windowMs: opts.driftWindowMs ?? 5000,
   });
@@ -580,10 +607,10 @@ export function startHeadTracker(
   // mean of (normX, normY) over a 60s window. When it diverges from the
   // captured baseline, we mutate the calibration anchors in place and
   // persist them — no user-visible "please recalibrate" prompt.
-  const baselineTracker = new recalMod.BaselineTracker();
+  const baselineTracker = new BaselineTracker();
   // Edge-pin detector — fires when the cursor lives on a screen edge for
   // multiple seconds (calibration-broken / tracking-lost-to-corner).
-  const edgePin = new stability.EdgePinDetector({
+  const edgePin = new EdgePinDetector({
     screenWidth: window.innerWidth,
     screenHeight: window.innerHeight,
   });
@@ -592,8 +619,8 @@ export function startHeadTracker(
   // instead of dragging the cursor toward a noisy measurement.
   // q≈4 → expects up to ±2px/frame of true cursor motion at 15fps;
   // r is dynamically derived from per-frame confidence.
-  const kalmanX = new kalmanMod.Kalman1D(4);
-  const kalmanY = new kalmanMod.Kalman1D(4);
+  const kalmanX = new Kalman1D(KALMAN_PROCESS_NOISE);
+  const kalmanY = new Kalman1D(KALMAN_PROCESS_NOISE);
   let kalmanInitialized = false;
 
   // Cross-modal lockout state — populated when gestureService dispatches
@@ -626,7 +653,7 @@ export function startHeadTracker(
   // commits, suppress dwell-click for `lockoutMs` so an intentional blink
   // doesn't fire BOTH the gesture AND the dwell click. Reset in-progress
   // dwell so the user must re-acquire the target.
-  const offGestureClaim = lockoutMod.onGestureClaim((d) => {
+  const offGestureClaim = onGestureClaim((d) => {
     lastGestureClaimTs = d.timestamp;
     dwellElement = null;
     dwellStart = 0;
@@ -675,6 +702,114 @@ export function startHeadTracker(
     rafId = requestAnimationFrame(tick);
   });
 
+  // ── tick() helpers ──────────────────────────────────────────────
+  // Each closes over the local state (sources, calibration, kalmans,
+  // baseline tracker). Extracted from tick() for readability — the
+  // top-level loop is now a sequence of named operations.
+
+  /**
+   * Ego-motion check. Returns true iff the entire face shifted by the
+   * same delta this frame (camera shake, not user motion). Caller
+   * should NOT update the cursor when this is true. Updates the
+   * source's `prevLandmarkPoints` after the comparison.
+   */
+  function suppressOnEgoMotion(primary: CameraSource): boolean {
+    if (!primary.lastLandmarkPoints) return false;
+    const prev = primary.prevLandmarkPoints;
+    let isEgoMotion = false;
+    if (prev) {
+      const headPose = primary.lastLandmarks?.headPose;
+      const rotation = headPose
+        ? Math.max(Math.abs(headPose.pitch), Math.abs(headPose.yaw), Math.abs(headPose.roll))
+        : 0;
+      isEgoMotion = classifyMotion(prev, primary.lastLandmarkPoints, rotation).isEgoMotion;
+    }
+    primary.prevLandmarkPoints = primary.lastLandmarkPoints;
+    return isEgoMotion;
+  }
+
+  /**
+   * Push a sample to the baseline tracker; if it suggests a correction,
+   * apply it to the calibration anchors in place and persist. Runs once
+   * per frame; cooldown is enforced inside the tracker via acceptCorrection.
+   */
+  function applyRecalibration(normX: number, normY: number, ts: number): void {
+    baselineTracker.push({ normX, normY, timestamp: ts });
+    const c = baselineTracker.suggestCorrection(ts);
+    if (!c) return;
+    if (c.kind === 'offset') {
+      calibration.leftX  += c.deltaNormX;
+      calibration.rightX += c.deltaNormX;
+      calibration.topY   += c.deltaNormY;
+      calibration.bottomY += c.deltaNormY;
+    } else if (c.kind === 'scale') {
+      // Stretch from the calibration midpoint by sqrt(ratio) so the user's
+      // now-tighter motion still spans the full screen.
+      const midX = (calibration.leftX + calibration.rightX) / 2;
+      const midY = (calibration.topY + calibration.bottomY) / 2;
+      const sX = c.scaleX > 0 ? Math.sqrt(c.scaleX) : 1;
+      const sY = c.scaleY > 0 ? Math.sqrt(c.scaleY) : 1;
+      calibration.leftX  = midX + (calibration.leftX  - midX) * sX;
+      calibration.rightX = midX + (calibration.rightX - midX) * sX;
+      calibration.topY   = midY + (calibration.topY   - midY) * sY;
+      calibration.bottomY = midY + (calibration.bottomY - midY) * sY;
+    }
+    saveCalibration(calibration);
+    baselineTracker.acceptCorrection(ts);
+  }
+
+  /**
+   * Map a normalized (camera-frame) coord into a screen-pixel coord using
+   * the current 4-corner calibration, sensitivity, and viewport bounds.
+   * Pure function over the captured calibration + sensitivityScale.
+   */
+  function mapToScreen(normX: number, normY: number): { rawX: number; rawY: number } {
+    const rangeX = calibration.leftX - calibration.rightX;
+    const rangeY = calibration.bottomY - calibration.topY;
+    let rawX = rangeX !== 0
+      ? ((normX - calibration.rightX) / rangeX) * window.innerWidth
+      : window.innerWidth / 2;
+    let rawY = rangeY !== 0
+      ? ((normY - calibration.topY) / rangeY) * window.innerHeight
+      : window.innerHeight / 2;
+    // Sensitivity (radial gain from screen center)
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    rawX = centerX + (rawX - centerX) * sensitivityScale;
+    rawY = centerY + (rawY - centerY) * sensitivityScale;
+    // Clamp to viewport
+    rawX = Math.max(0, Math.min(window.innerWidth, rawX));
+    rawY = Math.max(0, Math.min(window.innerHeight, rawY));
+    return { rawX, rawY };
+  }
+
+  /** Average the per-camera face-area confidence into a single 0..1 number. */
+  function computeAvgConfidence(active: CameraSource[]): number {
+    if (active.length === 0) return 0;
+    let sum = 0;
+    for (const src of active) sum += src.lastDetection.confidence || 0;
+    return sum / active.length;
+  }
+
+  /**
+   * Confidence-weighted Kalman smoothing. Lazy-initializes both filters
+   * from the first measurement so the cursor doesn't snap toward (0, 0).
+   * `kalmanInitialized` is closure state.
+   */
+  function kalmanSmooth(rawX: number, rawY: number, avgConfidence: number): { sx: number; sy: number } {
+    if (!kalmanInitialized) {
+      kalmanX.reset(rawX);
+      kalmanY.reset(rawY);
+      kalmanInitialized = true;
+      return { sx: rawX, sy: rawY };
+    }
+    const kalmanConf = Math.max(0, Math.min(1, avgConfidence * FACE_AREA_TO_KALMAN_SCALE));
+    return {
+      sx: kalmanX.update(rawX, kalmanConf),
+      sy: kalmanY.update(rawY, kalmanConf),
+    };
+  }
+
   function startCameraDetectionLoop(source: CameraSource): void {
     let camLastFrame = 0;
     let consecutiveErrors = 0;
@@ -717,16 +852,15 @@ export function startHeadTracker(
     lastFrameTime = ts;
 
     // Read latest cached detections from all cameras (synchronous read).
-    // Stale detections (>150ms old) are zeroed out to prevent frozen cursor
-    // when a camera's detection loop hangs or its WebGL context crashes.
+    // Stale detections are zeroed out to prevent frozen cursor when a
+    // camera's detection loop hangs or its WebGL context crashes.
     const now = Date.now();
-    const STALE_THRESHOLD_MS = 500;
     const activeSources = sources.filter(s => s.active);
     if (activeSources.length === 0) { opts.onStatusChange('lost'); return; }
 
     const detections = activeSources.map(s => {
       const d = s.lastDetection;
-      if (d.timestamp > 0 && (now - d.timestamp) > STALE_THRESHOLD_MS) {
+      if (d.timestamp > 0 && (now - d.timestamp) > STALE_DETECTION_MS) {
         return { ...d, face: null, confidence: 0 };
       }
       return d;
@@ -751,32 +885,13 @@ export function startHeadTracker(
 
     // Emit face landmarks from the primary camera for gesture detection
     if (opts.onLandmarks) {
-      if (primarySource.lastLandmarks && (now - primarySource.lastLandmarks.timestamp) < STALE_THRESHOLD_MS) {
+      if (primarySource.lastLandmarks && (now - primarySource.lastLandmarks.timestamp) < STALE_DETECTION_MS) {
         opts.onLandmarks(primarySource.lastLandmarks);
       }
     }
 
-    // ── Ego-motion suppression (gap E) ────────────────────────────
-    // If ALL face landmarks shifted by the same delta this frame, the
-    // camera moved (laptop bumped, road shake) — NOT the user. Suppress
-    // cursor update so the cursor stays put while the world wobbles.
-    // Uses head rotation (pitch/yaw/roll) to avoid suppressing intentional
-    // head turns: even a small yaw means user moved their head, not camera.
-    let egoMotionDetected = false;
-    if (primarySource.lastLandmarkPoints) {
-      const prev = (primarySource as { _prevEgoLandmarks?: { x: number; y: number }[] })._prevEgoLandmarks;
-      if (prev) {
-        const headPose = primarySource.lastLandmarks?.headPose;
-        const rotation = headPose
-          ? Math.max(Math.abs(headPose.pitch), Math.abs(headPose.yaw), Math.abs(headPose.roll))
-          : 0;
-        const r = egoMod.classifyMotion(prev, primarySource.lastLandmarkPoints, rotation);
-        egoMotionDetected = r.isEgoMotion;
-      }
-      (primarySource as { _prevEgoLandmarks?: { x: number; y: number }[] })._prevEgoLandmarks =
-        primarySource.lastLandmarkPoints;
-    }
-    if (egoMotionDetected) {
+    // Ego-motion suppression (gap E) — see suppressOnEgoMotion below.
+    if (suppressOnEgoMotion(primarySource)) {
       // Camera shake — keep last cursor position, skip dwell increment.
       opts.onMove(sx, sy);
       return;
@@ -784,82 +899,15 @@ export function startHeadTracker(
 
     const { normX, normY } = fused;
 
-    // ── Background recalibration (gap F) ─────────────────────────
-    // Feed the running baseline tracker. After warmup, if the
-    // user's mean position drifts > offsetThreshold from the
-    // captured baseline, shift all 4 calibration anchors by that
-    // delta and persist. Scale corrections are also applied (when
-    // the user moves closer/farther). This runs once on a
-    // suggestion + cooldown so we don't apply it every frame.
-    const recalTs = Date.now();
-    baselineTracker.push({ normX, normY, timestamp: recalTs });
-    const correction = baselineTracker.suggestCorrection(recalTs);
-    if (correction?.kind === 'offset') {
-      calibration.leftX += correction.deltaNormX;
-      calibration.rightX += correction.deltaNormX;
-      calibration.topY += correction.deltaNormY;
-      calibration.bottomY += correction.deltaNormY;
-      saveCalibration(calibration);
-      baselineTracker.acceptCorrection(recalTs);
-    } else if (correction?.kind === 'scale') {
-      // Stretch from the calibration midpoint by the sqrt of the ratio
-      // so the user's now-tighter motion still spans the full screen.
-      const midX = (calibration.leftX + calibration.rightX) / 2;
-      const midY = (calibration.topY + calibration.bottomY) / 2;
-      const sX = correction.scaleX > 0 ? Math.sqrt(correction.scaleX) : 1;
-      const sY = correction.scaleY > 0 ? Math.sqrt(correction.scaleY) : 1;
-      calibration.leftX  = midX + (calibration.leftX  - midX) * sX;
-      calibration.rightX = midX + (calibration.rightX - midX) * sX;
-      calibration.topY   = midY + (calibration.topY   - midY) * sY;
-      calibration.bottomY = midY + (calibration.bottomY - midY) * sY;
-      saveCalibration(calibration);
-      baselineTracker.acceptCorrection(recalTs);
-    }
+    // Background recalibration (gap F) — see applyRecalibration below.
+    applyRecalibration(normX, normY, now);
 
-    // Map to screen coordinates
-    const rangeX = calibration.leftX - calibration.rightX;
-    const rangeY = calibration.bottomY - calibration.topY;
+    // Calibration → screen-pixel mapping with sensitivity + clamping.
+    const { rawX, rawY } = mapToScreen(normX, normY);
 
-    let rawX = rangeX !== 0
-      ? ((normX - calibration.rightX) / rangeX) * window.innerWidth
-      : window.innerWidth / 2;
-    let rawY = rangeY !== 0
-      ? ((normY - calibration.topY) / rangeY) * window.innerHeight
-      : window.innerHeight / 2;
-
-    // Sensitivity
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-    rawX = centerX + (rawX - centerX) * sensitivityScale;
-    rawY = centerY + (rawY - centerY) * sensitivityScale;
-
-    // Clamp
-    rawX = Math.max(0, Math.min(window.innerWidth, rawX));
-    rawY = Math.max(0, Math.min(window.innerHeight, rawY));
-
-    // ── Confidence-weighted Kalman smoothing (gap D) ──────────────
-    // Replaces velocity-adaptive EMA. The Kalman naturally adapts:
-    //   - high-confidence frame → high gain → snaps toward measurement
-    //   - low-confidence frame → low gain → holds prediction (rejects noise)
-    //   - long stalls grow variance → first good frame snaps fast
-    // We still respect opts.smoothing as an upper bound on the gain by
-    // scaling confidence: smoothing=0.05 → tight max gain; 0.3 → looser.
-    const avgConfidence = activeSources.length > 0
-      ? activeSources.reduce((s, src) => s + (src.lastDetection.confidence || 0), 0) / activeSources.length
-      : 0;
-    // Map face-area confidence (typically 0.005..0.05) into Kalman scale (0..1).
-    // A 5% face-area share is "rock-solid"; below 0.5% we don't trust it.
-    const kalmanConf = Math.max(0, Math.min(1, avgConfidence * 20));
-    if (!kalmanInitialized) {
-      kalmanX.reset(rawX);
-      kalmanY.reset(rawY);
-      kalmanInitialized = true;
-      sx = rawX;
-      sy = rawY;
-    } else {
-      sx = kalmanX.update(rawX, kalmanConf);
-      sy = kalmanY.update(rawY, kalmanConf);
-    }
+    // Confidence-weighted Kalman smoothing (gap D) — see kalmanSmooth below.
+    const avgConfidence = computeAvgConfidence(activeSources);
+    ({ sx, sy } = kalmanSmooth(rawX, rawY, avgConfidence));
 
     opts.onMove(sx, sy);
 
@@ -868,7 +916,7 @@ export function startHeadTracker(
     // gesture has just committed, the user's blink/smile is an
     // intentional gesture, not a dwell action.
     const nowTs = Date.now();
-    const dwellLocked = lockoutMod.isLocked(lastGestureClaimTs, nowTs);
+    const dwellLocked = isLocked(lastGestureClaimTs, nowTs);
 
     const elementUnder = document.elementFromPoint(sx, sy);
     const interactiveEl = elementUnder?.closest('button, a, [role="button"], [data-dwell-target], .aac-btn') ?? elementUnder;
