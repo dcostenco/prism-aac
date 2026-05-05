@@ -22,7 +22,10 @@ export class Kalman1D {
     private readonly q: number;
 
     constructor(q = 4 /* px²/frame for typical user-intent velocity */) {
-        this.q = q;
+        // Negative or non-finite q would cause variance to shrink each
+        // predict() and gain to explode. Floor at a tiny positive value
+        // so the filter is always well-defined.
+        this.q = Number.isFinite(q) && q > 0 ? q : 4;
     }
 
     /** Run a predict step (no measurement). Returns the predicted x. */
@@ -43,6 +46,13 @@ export class Kalman1D {
      * monotonic. We floor confidence at 0.001 to avoid div-by-zero.
      */
     update(measurement: number, confidence: number): number {
+        // Adversarial input handling: NaN/Infinity in measurement or
+        // confidence used to permanently poison `x`. We treat them as
+        // "no measurement" and just predict forward instead of crashing.
+        // Math.max/min propagate NaN, so we must guard explicitly.
+        if (!Number.isFinite(measurement) || !Number.isFinite(confidence)) {
+            return this.predict();
+        }
         // Predict step (handle uneven frame rates: caller can call predict()
         // alone for skipped frames; otherwise update() implies predict()
         // because we add q here).
@@ -63,13 +73,16 @@ export class Kalman1D {
      * snappy while still suppressing high-frequency noise.
      */
     snapTo(measurement: number): void {
+        // Reject non-finite snaps — a NaN saccade target would freeze
+        // the cursor permanently. Better to leave the filter as-is.
+        if (!Number.isFinite(measurement)) return;
         this.x = measurement;
         this.p = 1;
     }
 
     /** Hard reset — call after recalibration / scene change. */
     reset(initial = 0): void {
-        this.x = initial;
+        this.x = Number.isFinite(initial) ? initial : 0;
         this.p = 1;
     }
 

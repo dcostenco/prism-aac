@@ -102,7 +102,7 @@ export function startReliabilityProbe(opts: ReliabilityProbeOpts): ReliabilityPr
                 audio: false,
             };
             stream = await navigator.mediaDevices.getUserMedia(constraints);
-            if (stopped) { stream.getTracks().forEach(t => t.stop()); return; }
+            if (stopped) { teardown(); return; }
 
             video = document.createElement('video');
             video.setAttribute('playsinline', '');
@@ -120,7 +120,11 @@ export function startReliabilityProbe(opts: ReliabilityProbeOpts): ReliabilityPr
                 video.addEventListener('loadedmetadata', () => resolve(), { once: true });
                 setTimeout(resolve, 3000);
             });
-            if (stopped) return;
+            // Stop-during-init: between the metadata-wait above and the
+            // model-load below, a teardown() call from the consumer would
+            // otherwise leak the stream + video element. Always teardown
+            // on any "stopped" check after we've created resources.
+            if (stopped) { teardown(); return; }
 
             // Lazy-import MediaPipe (same module the head tracker uses).
             const vision = await import('@mediapipe/tasks-vision');
