@@ -2,6 +2,7 @@
 
 import { isLocalModelAvailable, LOCAL_OLLAMA_URL, LOCAL_MODEL } from '@/services/localModel';
 import { canonicalizeLang, getLanguageName } from '@/engine/i18n';
+import { stripModelControlTokens } from '@/services/aiService';
 
 /**
  * Text auto-correction — fixes hurried / motor-impaired input.
@@ -148,7 +149,11 @@ async function correctViaPortal(text: string, lang: string, mode: CorrectMode): 
     });
     if (!res.ok) return null;
     const data = await res.json();
-    const corrected = (data?.corrected || '') as string;
+    const raw = (data?.corrected || '') as string;
+    // Defense-in-depth — server SHOULD strip these but if a model leak
+    // sneaks through to the client we don't want `<|synalux_think|>…`
+    // appearing as the suggestion in MessageBar.
+    const corrected = stripModelControlTokens(raw);
     return corrected || null;
   } catch {
     return null;
@@ -176,7 +181,11 @@ async function correctViaLocal(text: string, lang: string, mode: CorrectMode): P
     if (!res.ok) return null;
     const data = await res.json();
     const raw = (data?.response || '').toString().trim();
-    const cleaned = raw.replace(/^["']|["']$/g, '').split('\n')[0].trim();
+    // Strip Synalux thinking tokens BEFORE the per-line / quote cleanup —
+    // otherwise an unterminated `<|synalux_think|>` block can take the
+    // whole first line and leave the suggestion empty.
+    const stripped = stripModelControlTokens(raw);
+    const cleaned = stripped.replace(/^["']|["']$/g, '').split('\n')[0].trim();
     return cleaned || null;
   } catch {
     return null;

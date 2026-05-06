@@ -196,6 +196,45 @@ async function callLocal(prompt: string): Promise<string> {
   }
 }
 
+// ── Model output sanitation ──
+
+/**
+ * Strip chat-template control tokens that the model can leak into the
+ * final response. prism-coder uses Synalux's custom template with
+ * `<|synalux_think|>` / `<|synalux_end|>` / `<|synalux_answer|>` blocks
+ * — when the server forgets to filter the thinking section (or the
+ * stream gets cut mid-token), those tokens land verbatim in the user-
+ * visible string.
+ *
+ * Real-world example caught here: AAC translation pane was rendering
+ *   "🌐 <|synalux_think|> The user said 'I want more apples'. This is
+ *    a non-clinical, personal request that falls outside my scope…"
+ * instead of the Romanian translation. The user only ever wants the
+ * answer; thinking is a backend implementation detail.
+ *
+ * Strip order matters: paired blocks first (so we don't accidentally
+ * strip the close tag and orphan its content), THEN unterminated tail
+ * (covers cut-off streams), THEN any remaining stray control tokens
+ * (catches rare names like `<|im_end|>`, `<|eot|>`, `<|endoftext|>`
+ * from base-model leaks).
+ */
+export function stripModelControlTokens(text: string): string {
+  if (!text) return text;
+  let out = text;
+  // 1. Paired Synalux blocks: open → close.
+  out = out.replace(
+    /<\|synalux_think\|>[\s\S]*?<\|(?:\/synalux_think|synalux_end|synalux_answer)\|>/g,
+    '',
+  );
+  // 2. Unterminated thinking from end of stream (model never emitted close).
+  //    Replace with empty rather than keeping the prefix, since whatever
+  //    follows `<|synalux_think|>` was meant to be hidden.
+  out = out.replace(/<\|synalux_think\|>[\s\S]*$/g, '');
+  // 3. Any other stray control tokens (im_start, eot, endoftext, etc.).
+  out = out.replace(/<\|[a-z0-9_./-]+\|>/gi, '');
+  return out.trim();
+}
+
 // ── Routing: Synalux → local fallback ──
 
 async function route(
@@ -208,7 +247,8 @@ async function route(
 
   // Try Synalux first (online, full features)
   try {
-    return await callSynalux(messages, { webSearch: options?.webSearch, onChunk: options?.onChunk });
+    const raw = await callSynalux(messages, { webSearch: options?.webSearch, onChunk: options?.onChunk });
+    return stripModelControlTokens(raw);
   } catch (err) {
     const msg = err instanceof Error ? err.message : '';
     // Auth/rate errors should not fall back — surface to user
@@ -218,7 +258,8 @@ async function route(
   // Offline fallback: prism-coder:7b
   try {
     const fullPrompt = options?.system ? `${options.system}\n\n${prompt}` : prompt;
-    return await callLocal(fullPrompt);
+    const raw = await callLocal(fullPrompt);
+    return stripModelControlTokens(raw);
   } catch {
     throw new Error('No AI available — check internet connection or start local Ollama');
   }
