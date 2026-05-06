@@ -33,7 +33,10 @@ export function buildLanguageVocabulary(lang: SupportedLanguage): {
   return result;
 }
 
-export const AAC_VOCABULARY: Record<SupportedLanguage, string[]> = {
+// Partial — Sprint 1+ locales (hi/it/pl/he/nl/vi/tl/tr/id) ship with skeleton
+// AAC vocab via predictionSeeds; full word lists land when build_prediction_seeds.py
+// runs against per-language corpora. Consumers must handle the missing-key case.
+export const AAC_VOCABULARY: Partial<Record<SupportedLanguage, string[]>> = {
   en: ['I', 'want', 'need', 'help', 'yes', 'no', 'more', 'stop', 'go', 'please', 'thank you', 'hello', 'goodbye', 'sorry', 'eat', 'drink', 'play', 'read', 'like', 'happy', 'sad', 'mom', 'dad', 'friend', 'school', 'home', 'bathroom', 'water', 'done', 'wait', 'open', 'close', 'big', 'small', 'good', 'bad', 'hot', 'cold', 'all', 'my', 'your', 'we', 'they', 'can', 'do', 'feel', 'think', 'know', 'see'],
   ro: ['eu', 'vreau', 'nevoie', 'ajutor', 'da', 'nu', 'mai', 'stop', 'du-te', 'te rog', 'mulțumesc', 'bună', 'la revedere', 'scuze', 'mâncare', 'bea', 'joacă', 'citește', 'îmi place', 'fericit', 'trist', 'mama', 'tata', 'prieten', 'școală', 'acasă', 'baie', 'apă', 'gata', 'așteaptă', 'deschide', 'închide', 'mare', 'mic', 'bun', 'rău', 'cald', 'rece', 'tot', 'al meu', 'al tău', 'noi', 'ei', 'pot', 'fac', 'simt', 'cred', 'știu', 'văd'],
   es: ['yo', 'quiero', 'necesito', 'ayuda', 'sí', 'no', 'más', 'para', 'ir', 'por favor', 'gracias', 'hola', 'adiós', 'perdón', 'comer', 'beber', 'jugar', 'leer', 'me gusta', 'feliz', 'triste', 'mamá', 'papá', 'amigo', 'escuela', 'casa', 'baño', 'agua', 'listo', 'espera', 'abrir', 'cerrar', 'grande', 'pequeño', 'bueno', 'malo', 'caliente', 'frío', 'todo', 'mi', 'tu', 'nosotros', 'ellos', 'puedo', 'hago', 'siento', 'creo', 'sé', 'veo'],

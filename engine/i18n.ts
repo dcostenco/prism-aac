@@ -31,7 +31,18 @@ export type SupportedLanguage =
   | 'zh-Hans'   // Simplified, Mainland — Mandarin
   | 'zh-Hant'   // Traditional, Taiwan — Taiwanese Mandarin
   | 'zh-HK'     // Traditional, Hong Kong — Cantonese
-  | 'ar';
+  | 'ar'
+  // Sprint 1 expansion — voice infra already wired in synalux portal voice-catalog
+  | 'hi'        // Hindi — Aanya (Inworld)
+  | 'it'        // Italian — Giulia (Inworld)
+  | 'pl'        // Polish — Zofia (Inworld)
+  | 'he'        // Hebrew — Noa (Inworld), RTL
+  | 'nl'        // Dutch — Lotte (Inworld)
+  // Sprint 2/3 expansion — Azure neural voices added in synalux portal voice-catalog
+  | 'vi'        // Vietnamese — Hoài Mỹ / Nam Minh (Azure)
+  | 'tl'        // Filipino/Tagalog — Blessica / Angelo (Azure, fil-PH)
+  | 'tr'        // Turkish — Emel / Ahmet (Azure)
+  | 'id';       // Bahasa Indonesia — Gadis / Ardi (Azure)
 
 const loaded: Partial<Record<SupportedLanguage, Record<string, string>>> = { en };
 
@@ -51,6 +62,15 @@ const loaders: Record<SupportedLanguage, () => Promise<{ default: Record<string,
   'zh-Hant': () => import('@/i18n/zh-Hant.json'),
   'zh-HK': () => import('@/i18n/zh-HK.json'),
   ar: () => import('@/i18n/ar.json'),
+  hi: () => import('@/i18n/hi.json'),
+  it: () => import('@/i18n/it.json'),
+  pl: () => import('@/i18n/pl.json'),
+  he: () => import('@/i18n/he.json'),
+  nl: () => import('@/i18n/nl.json'),
+  vi: () => import('@/i18n/vi.json'),
+  tl: () => import('@/i18n/tl.json'),
+  tr: () => import('@/i18n/tr.json'),
+  id: () => import('@/i18n/id.json'),
 };
 
 export async function loadLanguage(lang: SupportedLanguage): Promise<void> {
@@ -81,6 +101,17 @@ const LANG_META: Array<{ code: SupportedLanguage; name: string; nativeName: stri
   // it's resolved to 'zh-Hans' by canonicalizeLang() below.
   { code: 'zh', name: 'Chinese', nativeName: '中文', rtl: false, ttsCode: 'zh-CN' },
   { code: 'ar', name: 'Arabic', nativeName: 'العربية', rtl: true, ttsCode: 'ar-SA' },
+  // Sprint 1 — Inworld voices (already wired in synalux portal voice-catalog)
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', rtl: false, ttsCode: 'hi-IN' },
+  { code: 'it', name: 'Italian', nativeName: 'Italiano', rtl: false, ttsCode: 'it-IT' },
+  { code: 'pl', name: 'Polish', nativeName: 'Polski', rtl: false, ttsCode: 'pl-PL' },
+  { code: 'he', name: 'Hebrew', nativeName: 'עברית', rtl: true, ttsCode: 'he-IL' },
+  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', rtl: false, ttsCode: 'nl-NL' },
+  // Sprint 2/3 — Azure neural voices (added in synalux portal voice-catalog)
+  { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', rtl: false, ttsCode: 'vi-VN' },
+  { code: 'tl', name: 'Filipino', nativeName: 'Filipino', rtl: false, ttsCode: 'fil-PH' },
+  { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', rtl: false, ttsCode: 'tr-TR' },
+  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', rtl: false, ttsCode: 'id-ID' },
 ];
 
 /** Returns the canonical BCP-47 form of any input language code. */

@@ -176,11 +176,16 @@ const ar = [
   'أنا','أنت','هو','هي','نحن','هم','كان','كانت','كانوا','سوف','سيكون','يمكن','ينبغي','قد','يجب','سأكون','كنت','كان','سأذهب','اعتاد','قادر على','أريد','أحتاج','أحاول','أحب','يجب أن','حول','فوق','عبر','بعد','ضد','على طول','بين','حول','قبل','خلف','تحت','بجانب','بين','وراء','خلال','ما عدا','من','داخل','إلى','قرب','خارج','فوق','ماضي','منذ','عبر','نحو','تحت','حتى','على','ضمن','بدون','أيضاً','بالفعل','دائماً','أبداً','أحياناً','غالباً','عادةً','نادراً','لا يزال','فقط','حتى','جداً','أيضاً','كافي','تقريباً','حقاً','تماماً','بالأحرى','ثم','الآن','هنا','هناك','أين','متى','كيف','ماذا','أي','من','لماذا','لأن','بالرغم','ما لم','بينما','إذا','هذا','هذه','هؤلاء','أولئك','كل','جميع','أي','بعض','لا شيء','كثير','قليل','عدة','آخر','نفس','مختلف','أول','أخير','تالي','جديد','قديم','و','لكن','أو','ولا','من أجل','بالإضافة','ومع ذلك','لذلك','في غضون','مع ذلك','نتيجة','بدلاً',
 ];
 
-export const CLINICAL_VOCABULARY: Record<SupportedLanguage, string[]> = {
+// Partial — clinical vocab is curated by hand and lands per-locale on demand.
+// New Sprint 1+ locales fall through to en when missing. The AAC predictor
+// degrades gracefully to predictionSeeds top words for unstaged langs.
+export const CLINICAL_VOCABULARY: Partial<Record<SupportedLanguage, string[]>> = {
   en, ro, es, fr, pt, de, ru, uk, ja, ko, zh, ar,
   'zh-Hans': zh, 'zh-Hant': zh_Hant, 'zh-HK': zh_HK,
 };
 
 export function getClinicalVocabulary(lang: SupportedLanguage): string[] {
-  return CLINICAL_VOCABULARY[lang] ?? CLINICAL_VOCABULARY.en;
+  // English is the universal fallback and is always populated; the `??`
+  // chain plus the inner fallback to [] keeps the return type narrow.
+  return CLINICAL_VOCABULARY[lang] ?? CLINICAL_VOCABULARY.en ?? [];
 }
