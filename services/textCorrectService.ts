@@ -200,7 +200,9 @@ export async function correctText(
   mode: CorrectMode = 'correct',
 ): Promise<string> {
   const trimmed = text.trim();
-  if (!trimmed || trimmed.length < 3) return text;
+  // Match the MessageBar threshold (2 chars) — pin so a future bump
+  // here doesn't silently kill 2-char autocomplete (e.g. "hw" → "how").
+  if (!trimmed || trimmed.length < 2) return text;
 
   // Canonicalize so synalux portal + local model both receive BCP-47 codes.
   // Critical for Chinese routing: zh-CN vs zh-TW vs zh-HK take different paths.
@@ -233,13 +235,18 @@ export async function correctText(
         if (mode === 'complete' && fromLocal === trimmed) {
           fromLocal = await correctViaLocal(trimmed, effectiveLang, 'correct');
         }
-        if (fromLocal) {
+        // Treat an echoed-back response (local model didn't actually
+        // produce a correction) the SAME as a null response — fall
+        // through to the portal. Without this, a flaky local model
+        // that just returns the input verbatim suppresses the portal
+        // suggestion entirely, and the user sees no autocorrect bar
+        // even when Gemini would have given them a great one.
+        if (fromLocal && fromLocal !== trimmed) {
           memoryCache.set(cacheKey, fromLocal);
           trimCorrectCache();
           return fromLocal;
         }
-        // Local probe said yes but the call failed — fall through to
-        // portal as a backup rather than fail.
+        // Local was useless (null OR echo) — fall through to portal.
       }
       let fromPortal = await correctViaPortal(trimmed, effectiveLang, mode);
       if (mode === 'complete' && fromPortal === trimmed) {
