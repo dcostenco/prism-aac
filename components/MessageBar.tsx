@@ -272,6 +272,13 @@ export default function MessageBar() {
     // Reinforce the accepted utterance so the engine learns the user's
     // patterns (e.g. "лукоморья|дуб" trigram after accepting Pushkin).
     learnUtterance(accepted);
+    // Pre-mark the trailing word as "already spoken" so the silence-
+    // detect useEffect (which fires 400ms after this setText updates
+    // text) doesn't immediately re-speak the last word in a different
+    // (wrong) voice. The user just heard the full phrase via aacSpeak
+    // below — they don't need it again word-by-word.
+    const acceptedTokens = accepted.trim().split(/\s+/);
+    lastSilenceSpokenRef.current = acceptedTokens[acceptedTokens.length - 1] || '';
     // Speak the accepted text immediately. Tapping the suggestion bar
     // is an explicit "I want this" — without speaking, the user has to
     // hit Speak as a second tap, which is exactly the friction the
@@ -330,6 +337,12 @@ export default function MessageBar() {
     // pair/triple. We learn from the SOURCE-language text (what the user
     // typed), not the translation, since that's what they'll type next.
     learnUtterance(toSpeak);
+
+    // Pre-mark trailing word so silence-detect doesn't re-speak it after
+    // the autocorrect useEffect re-runs (text just changed via setText
+    // when auto-apply fired).
+    const toSpeakTokens = toSpeak.split(/\s+/);
+    lastSilenceSpokenRef.current = toSpeakTokens[toSpeakTokens.length - 1] || '';
 
     if (translated) {
       aacSpeak(translated, speechRate, speechVolume, activeTone);
