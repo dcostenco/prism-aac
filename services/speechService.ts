@@ -155,15 +155,22 @@ function isPaidTier(): boolean {
 // American accent. Always add a row when adding a new language to
 // LANG_META in engine/i18n.ts.
 //
-// Romanian + Ukrainian have NO Inworld voice on synalux's catalog —
-// portal routes them to Azure neural voices (ro-RO-AlinaNeural,
-// uk-UA-PolinaNeural) keyed by display name.
+// One default per language Synalux supports. Values are the catalog's
+// `voiceId` field (NOT displayName). For Inworld voices the two are
+// the same string (Sarah, Alex, Diego, Mei, …); for Azure voices the
+// voiceId is the full BCP-47 + voice-name ('ro-RO-AlinaNeural'). The
+// portal /tts/public route looks up via getVoiceEntry(voiceId) and
+// rejects unknown ids with 400.
+//
+// Romanian + Ukrainian have NO Inworld voice on the portal catalog —
+// the portal routes them to Azure neural voices.
 const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
   en: 'Alex',    es: 'Diego',  fr: 'Sarah',  de: 'Mark',
   pt: 'Sarah',   it: 'Sarah',  nl: 'Sarah',  pl: 'Sarah',
   ja: 'Sarah',   zh: 'Mei',    ko: 'Sarah',  ru: 'Sarah',
   he: 'Sarah',   ar: 'Sarah',  hi: 'Aanya',
-  ro: 'Alina',   uk: 'Поліна',
+  ro: 'ro-RO-AlinaNeural',
+  uk: 'uk-UA-PolinaNeural',
 };
 
 /**
