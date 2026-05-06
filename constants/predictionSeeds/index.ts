@@ -8,7 +8,16 @@ export interface PredictionSeed {
   trigrams: Record<string, WordFreqEntry>;
 }
 
-export const SUPPORTED_SEED_LANGS = ["ar", "de", "en", "es", "fr", "ja", "ko", "pt", "ro", "ru", "uk", "zh-HK", "zh-Hans", "zh-Hant"] as const;
+// Sprint 1 (hi/it/pl/he/nl): voice-catalog already has these; seeds use
+// minimal skeletons here. Sprint 2/3 (vi/tl/tr/id): voice IDs added in
+// portal/src/shared/voice-catalog.ts. Full seeds will land via
+// training/build_prediction_seeds.py once corpora are sourced.
+export const SUPPORTED_SEED_LANGS = [
+    "ar", "de", "en", "es", "fr", "ja", "ko", "pt", "ro", "ru", "uk",
+    "zh-HK", "zh-Hans", "zh-Hant",
+    "hi", "it", "pl", "he", "nl",
+    "vi", "tl", "tr", "id",
+] as const;
 export type SeedLang = (typeof SUPPORTED_SEED_LANGS)[number];
 
 const cache = new Map<string, PredictionSeed>();
@@ -56,6 +65,15 @@ async function loadByLang(lang: string): Promise<PredictionSeed> {
     case "zh-HK": return (await import("./zh-HK")).default;
     case "zh-Hans": return (await import("./zh-Hans")).default;
     case "zh-Hant": return (await import("./zh-Hant")).default;
+    case "hi": return (await import("./hi")).default;
+    case "it": return (await import("./it")).default;
+    case "pl": return (await import("./pl")).default;
+    case "he": return (await import("./he")).default;
+    case "nl": return (await import("./nl")).default;
+    case "vi": return (await import("./vi")).default;
+    case "tl": return (await import("./tl")).default;
+    case "tr": return (await import("./tr")).default;
+    case "id": return (await import("./id")).default;
     default: return { wordFreq: {}, bigrams: {}, trigrams: {} };
   }
 }

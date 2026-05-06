@@ -1,0 +1,61 @@
+// Skeleton seed for locale 'it'. Minimal AAC-relevant top vocabulary.
+// Full corpus-derived seed will land via training/build_prediction_seeds.py.
+import { WordFreqEntry } from '@/types';
+
+const WORD_FREQ: Record<string, WordFreqEntry> = {
+  "io": { count: 1500, lastUsed: 0 },
+  "tu": { count: 1100, lastUsed: 0 },
+  "è": { count: 1000, lastUsed: 0 },
+  "non": { count: 950, lastUsed: 0 },
+  "il": { count: 900, lastUsed: 0 },
+  "la": { count: 850, lastUsed: 0 },
+  "e": { count: 800, lastUsed: 0 },
+  "che": { count: 750, lastUsed: 0 },
+  "di": { count: 700, lastUsed: 0 },
+  "un": { count: 650, lastUsed: 0 },
+  "una": { count: 600, lastUsed: 0 },
+  "sì": { count: 580, lastUsed: 0 },
+  "no": { count: 560, lastUsed: 0 },
+  "ho": { count: 540, lastUsed: 0 },
+  "sono": { count: 520, lastUsed: 0 },
+  "voglio": { count: 500, lastUsed: 0 },
+  "posso": { count: 480, lastUsed: 0 },
+  "per": { count: 460, lastUsed: 0 },
+  "con": { count: 440, lastUsed: 0 },
+  "ora": { count: 420, lastUsed: 0 },
+  "qui": { count: 400, lastUsed: 0 },
+  "dove": { count: 380, lastUsed: 0 },
+  "come": { count: 360, lastUsed: 0 },
+  "cosa": { count: 340, lastUsed: 0 },
+  "perché": { count: 320, lastUsed: 0 },
+  "molto": { count: 300, lastUsed: 0 },
+  "bene": { count: 280, lastUsed: 0 },
+  "male": { count: 260, lastUsed: 0 },
+  "aiuto": { count: 250, lastUsed: 0 },
+  "grazie": { count: 240, lastUsed: 0 },
+  "prego": { count: 220, lastUsed: 0 },
+  "ciao": { count: 210, lastUsed: 0 },
+  "casa": { count: 200, lastUsed: 0 },
+  "mangiare": { count: 180, lastUsed: 0 },
+  "bere": { count: 170, lastUsed: 0 },
+  "acqua": { count: 160, lastUsed: 0 },
+  "dolore": { count: 150, lastUsed: 0 },
+  "fame": { count: 140, lastUsed: 0 },
+  "stanco": { count: 130, lastUsed: 0 },
+  "felice": { count: 120, lastUsed: 0 },
+  "triste": { count: 110, lastUsed: 0 },
+  "freddo": { count: 100, lastUsed: 0 },
+  "caldo": { count: 95, lastUsed: 0 },
+  "andare": { count: 90, lastUsed: 0 },
+  "venire": { count: 85, lastUsed: 0 },
+  "fare": { count: 80, lastUsed: 0 },
+  "vedere": { count: 75, lastUsed: 0 },
+  "parlare": { count: 70, lastUsed: 0 },
+  "ascoltare": { count: 65, lastUsed: 0 },
+  "fermati": { count: 60, lastUsed: 0 },
+};
+
+const BIGRAMS: Record<string, WordFreqEntry> = {};
+const TRIGRAMS: Record<string, WordFreqEntry> = {};
+
+export default { wordFreq: WORD_FREQ, bigrams: BIGRAMS, trigrams: TRIGRAMS };

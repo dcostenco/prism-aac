@@ -1,0 +1,61 @@
+// Skeleton seed for locale 'pl'. Minimal AAC-relevant top vocabulary.
+// Full corpus-derived seed will land via training/build_prediction_seeds.py.
+import { WordFreqEntry } from '@/types';
+
+const WORD_FREQ: Record<string, WordFreqEntry> = {
+  "ja": { count: 1500, lastUsed: 0 },
+  "ty": { count: 1100, lastUsed: 0 },
+  "jest": { count: 1000, lastUsed: 0 },
+  "nie": { count: 950, lastUsed: 0 },
+  "to": { count: 900, lastUsed: 0 },
+  "i": { count: 850, lastUsed: 0 },
+  "się": { count: 800, lastUsed: 0 },
+  "co": { count: 750, lastUsed: 0 },
+  "tak": { count: 700, lastUsed: 0 },
+  "na": { count: 650, lastUsed: 0 },
+  "w": { count: 600, lastUsed: 0 },
+  "z": { count: 580, lastUsed: 0 },
+  "do": { count: 560, lastUsed: 0 },
+  "mam": { count: 540, lastUsed: 0 },
+  "jestem": { count: 520, lastUsed: 0 },
+  "chcę": { count: 500, lastUsed: 0 },
+  "mogę": { count: 480, lastUsed: 0 },
+  "proszę": { count: 460, lastUsed: 0 },
+  "dziękuję": { count: 440, lastUsed: 0 },
+  "tutaj": { count: 420, lastUsed: 0 },
+  "tam": { count: 400, lastUsed: 0 },
+  "dlaczego": { count: 380, lastUsed: 0 },
+  "jak": { count: 360, lastUsed: 0 },
+  "kiedy": { count: 340, lastUsed: 0 },
+  "gdzie": { count: 320, lastUsed: 0 },
+  "bardzo": { count: 300, lastUsed: 0 },
+  "dobrze": { count: 280, lastUsed: 0 },
+  "źle": { count: 260, lastUsed: 0 },
+  "pomoc": { count: 250, lastUsed: 0 },
+  "boli": { count: 240, lastUsed: 0 },
+  "głodny": { count: 220, lastUsed: 0 },
+  "spragniony": { count: 200, lastUsed: 0 },
+  "zmęczony": { count: 180, lastUsed: 0 },
+  "szczęśliwy": { count: 170, lastUsed: 0 },
+  "smutny": { count: 160, lastUsed: 0 },
+  "zimno": { count: 150, lastUsed: 0 },
+  "ciepło": { count: 140, lastUsed: 0 },
+  "dom": { count: 130, lastUsed: 0 },
+  "jeść": { count: 120, lastUsed: 0 },
+  "pić": { count: 115, lastUsed: 0 },
+  "woda": { count: 110, lastUsed: 0 },
+  "iść": { count: 105, lastUsed: 0 },
+  "przyjść": { count: 100, lastUsed: 0 },
+  "robić": { count: 95, lastUsed: 0 },
+  "widzieć": { count: 90, lastUsed: 0 },
+  "mówić": { count: 85, lastUsed: 0 },
+  "słuchać": { count: 80, lastUsed: 0 },
+  "stop": { count: 75, lastUsed: 0 },
+  "teraz": { count: 70, lastUsed: 0 },
+  "później": { count: 65, lastUsed: 0 },
+};
+
+const BIGRAMS: Record<string, WordFreqEntry> = {};
+const TRIGRAMS: Record<string, WordFreqEntry> = {};
+
+export default { wordFreq: WORD_FREQ, bigrams: BIGRAMS, trigrams: TRIGRAMS };

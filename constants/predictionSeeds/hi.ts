@@ -1,0 +1,61 @@
+// Skeleton seed for locale 'hi'. Minimal AAC-relevant top vocabulary.
+// Full corpus-derived seed will land via training/build_prediction_seeds.py.
+import { WordFreqEntry } from '@/types';
+
+const WORD_FREQ: Record<string, WordFreqEntry> = {
+  "मैं": { count: 1500, lastUsed: 0 },
+  "तुम": { count: 1100, lastUsed: 0 },
+  "है": { count: 950, lastUsed: 0 },
+  "का": { count: 800, lastUsed: 0 },
+  "की": { count: 750, lastUsed: 0 },
+  "को": { count: 700, lastUsed: 0 },
+  "और": { count: 650, lastUsed: 0 },
+  "मेरा": { count: 600, lastUsed: 0 },
+  "हाँ": { count: 580, lastUsed: 0 },
+  "नहीं": { count: 560, lastUsed: 0 },
+  "क्या": { count: 540, lastUsed: 0 },
+  "हूँ": { count: 520, lastUsed: 0 },
+  "हो": { count: 500, lastUsed: 0 },
+  "में": { count: 480, lastUsed: 0 },
+  "से": { count: 460, lastUsed: 0 },
+  "पर": { count: 440, lastUsed: 0 },
+  "ने": { count: 420, lastUsed: 0 },
+  "यह": { count: 400, lastUsed: 0 },
+  "वह": { count: 380, lastUsed: 0 },
+  "होगा": { count: 360, lastUsed: 0 },
+  "अभी": { count: 340, lastUsed: 0 },
+  "बहुत": { count: 320, lastUsed: 0 },
+  "अच्छा": { count: 300, lastUsed: 0 },
+  "कुछ": { count: 280, lastUsed: 0 },
+  "ठीक": { count: 260, lastUsed: 0 },
+  "धन्यवाद": { count: 240, lastUsed: 0 },
+  "कृपया": { count: 220, lastUsed: 0 },
+  "मदद": { count: 200, lastUsed: 0 },
+  "खाना": { count: 180, lastUsed: 0 },
+  "पानी": { count: 170, lastUsed: 0 },
+  "घर": { count: 160, lastUsed: 0 },
+  "दर्द": { count: 150, lastUsed: 0 },
+  "भूख": { count: 140, lastUsed: 0 },
+  "थकान": { count: 130, lastUsed: 0 },
+  "खुश": { count: 120, lastUsed: 0 },
+  "बाद": { count: 115, lastUsed: 0 },
+  "पहले": { count: 110, lastUsed: 0 },
+  "साथ": { count: 105, lastUsed: 0 },
+  "बात": { count: 100, lastUsed: 0 },
+  "आज": { count: 95, lastUsed: 0 },
+  "कल": { count: 90, lastUsed: 0 },
+  "जाना": { count: 85, lastUsed: 0 },
+  "आना": { count: 80, lastUsed: 0 },
+  "देना": { count: 75, lastUsed: 0 },
+  "लेना": { count: 70, lastUsed: 0 },
+  "करना": { count: 65, lastUsed: 0 },
+  "देखना": { count: 60, lastUsed: 0 },
+  "बात-करना": { count: 55, lastUsed: 0 },
+  "सुनना": { count: 50, lastUsed: 0 },
+  "रुको": { count: 45, lastUsed: 0 },
+};
+
+const BIGRAMS: Record<string, WordFreqEntry> = {};
+const TRIGRAMS: Record<string, WordFreqEntry> = {};
+
+export default { wordFreq: WORD_FREQ, bigrams: BIGRAMS, trigrams: TRIGRAMS };

@@ -1,0 +1,61 @@
+// Skeleton seed for locale 'tl' (Filipino/Tagalog). Minimal AAC-relevant top vocabulary.
+// Full corpus-derived seed will land via training/build_prediction_seeds.py.
+import { WordFreqEntry } from '@/types';
+
+const WORD_FREQ: Record<string, WordFreqEntry> = {
+  "ako": { count: 1500, lastUsed: 0 },
+  "ikaw": { count: 1100, lastUsed: 0 },
+  "ay": { count: 1000, lastUsed: 0 },
+  "hindi": { count: 950, lastUsed: 0 },
+  "oo": { count: 900, lastUsed: 0 },
+  "ang": { count: 850, lastUsed: 0 },
+  "sa": { count: 800, lastUsed: 0 },
+  "ng": { count: 750, lastUsed: 0 },
+  "at": { count: 700, lastUsed: 0 },
+  "ka": { count: 650, lastUsed: 0 },
+  "ko": { count: 600, lastUsed: 0 },
+  "mo": { count: 580, lastUsed: 0 },
+  "siya": { count: 560, lastUsed: 0 },
+  "kami": { count: 540, lastUsed: 0 },
+  "tayo": { count: 520, lastUsed: 0 },
+  "nais": { count: 500, lastUsed: 0 },
+  "kailangan": { count: 480, lastUsed: 0 },
+  "maaari": { count: 460, lastUsed: 0 },
+  "salamat": { count: 440, lastUsed: 0 },
+  "paki": { count: 420, lastUsed: 0 },
+  "kumusta": { count: 400, lastUsed: 0 },
+  "tulong": { count: 380, lastUsed: 0 },
+  "saan": { count: 360, lastUsed: 0 },
+  "kailan": { count: 340, lastUsed: 0 },
+  "bakit": { count: 320, lastUsed: 0 },
+  "paano": { count: 300, lastUsed: 0 },
+  "ano": { count: 280, lastUsed: 0 },
+  "sino": { count: 260, lastUsed: 0 },
+  "ngayon": { count: 240, lastUsed: 0 },
+  "mamaya": { count: 220, lastUsed: 0 },
+  "mabuti": { count: 200, lastUsed: 0 },
+  "masama": { count: 180, lastUsed: 0 },
+  "masakit": { count: 170, lastUsed: 0 },
+  "gutom": { count: 160, lastUsed: 0 },
+  "uhaw": { count: 150, lastUsed: 0 },
+  "pagod": { count: 140, lastUsed: 0 },
+  "masaya": { count: 130, lastUsed: 0 },
+  "malungkot": { count: 120, lastUsed: 0 },
+  "malamig": { count: 115, lastUsed: 0 },
+  "mainit": { count: 110, lastUsed: 0 },
+  "bahay": { count: 105, lastUsed: 0 },
+  "kain": { count: 100, lastUsed: 0 },
+  "inom": { count: 95, lastUsed: 0 },
+  "tubig": { count: 90, lastUsed: 0 },
+  "punta": { count: 85, lastUsed: 0 },
+  "dalo": { count: 80, lastUsed: 0 },
+  "tigil": { count: 75, lastUsed: 0 },
+  "kita": { count: 70, lastUsed: 0 },
+  "sabi": { count: 65, lastUsed: 0 },
+  "dinig": { count: 60, lastUsed: 0 },
+};
+
+const BIGRAMS: Record<string, WordFreqEntry> = {};
+const TRIGRAMS: Record<string, WordFreqEntry> = {};
+
+export default { wordFreq: WORD_FREQ, bigrams: BIGRAMS, trigrams: TRIGRAMS };

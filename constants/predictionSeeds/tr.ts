@@ -1,0 +1,60 @@
+// Skeleton seed for locale 'tr'. Minimal AAC-relevant top vocabulary.
+// Full corpus-derived seed will land via training/build_prediction_seeds.py.
+import { WordFreqEntry } from '@/types';
+
+const WORD_FREQ: Record<string, WordFreqEntry> = {
+  "ben": { count: 1500, lastUsed: 0 },
+  "sen": { count: 1100, lastUsed: 0 },
+  "var": { count: 1000, lastUsed: 0 },
+  "yok": { count: 950, lastUsed: 0 },
+  "evet": { count: 900, lastUsed: 0 },
+  "hayır": { count: 850, lastUsed: 0 },
+  "bir": { count: 800, lastUsed: 0 },
+  "ve": { count: 750, lastUsed: 0 },
+  "için": { count: 700, lastUsed: 0 },
+  "ile": { count: 650, lastUsed: 0 },
+  "bu": { count: 600, lastUsed: 0 },
+  "şu": { count: 580, lastUsed: 0 },
+  "o": { count: 560, lastUsed: 0 },
+  "ne": { count: 540, lastUsed: 0 },
+  "nerede": { count: 520, lastUsed: 0 },
+  "nasıl": { count: 500, lastUsed: 0 },
+  "neden": { count: 480, lastUsed: 0 },
+  "ne-zaman": { count: 460, lastUsed: 0 },
+  "kim": { count: 440, lastUsed: 0 },
+  "istiyorum": { count: 420, lastUsed: 0 },
+  "lütfen": { count: 400, lastUsed: 0 },
+  "teşekkürler": { count: 380, lastUsed: 0 },
+  "yardım": { count: 360, lastUsed: 0 },
+  "iyi": { count: 340, lastUsed: 0 },
+  "kötü": { count: 320, lastUsed: 0 },
+  "çok": { count: 300, lastUsed: 0 },
+  "ağrı": { count: 280, lastUsed: 0 },
+  "açım": { count: 260, lastUsed: 0 },
+  "susadım": { count: 240, lastUsed: 0 },
+  "yorgun": { count: 220, lastUsed: 0 },
+  "mutlu": { count: 200, lastUsed: 0 },
+  "üzgün": { count: 180, lastUsed: 0 },
+  "soğuk": { count: 170, lastUsed: 0 },
+  "sıcak": { count: 160, lastUsed: 0 },
+  "ev": { count: 150, lastUsed: 0 },
+  "yemek": { count: 140, lastUsed: 0 },
+  "su": { count: 130, lastUsed: 0 },
+  "şimdi": { count: 120, lastUsed: 0 },
+  "sonra": { count: 115, lastUsed: 0 },
+  "önce": { count: 110, lastUsed: 0 },
+  "gitmek": { count: 105, lastUsed: 0 },
+  "gelmek": { count: 100, lastUsed: 0 },
+  "yapmak": { count: 95, lastUsed: 0 },
+  "görmek": { count: 90, lastUsed: 0 },
+  "konuşmak": { count: 85, lastUsed: 0 },
+  "duymak": { count: 80, lastUsed: 0 },
+  "yemek-yemek": { count: 75, lastUsed: 0 },
+  "içmek": { count: 70, lastUsed: 0 },
+  "dur": { count: 65, lastUsed: 0 },
+};
+
+const BIGRAMS: Record<string, WordFreqEntry> = {};
+const TRIGRAMS: Record<string, WordFreqEntry> = {};
+
+export default { wordFreq: WORD_FREQ, bigrams: BIGRAMS, trigrams: TRIGRAMS };
