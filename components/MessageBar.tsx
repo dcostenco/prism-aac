@@ -117,6 +117,11 @@ export default function MessageBar() {
   const isPaid = !!profile?.plan && profile.plan !== 'free';
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
   const [translated, setTranslated] = useState<string | null>(null);
+  // Tracks the most recent word we silence-spoke so we don't repeat
+  // "want" every time the user pauses with the same trailing word.
+  // Updated by the autocorrect useEffect after a "no correction
+  // needed" round-trip (the input is well-formed).
+  const lastSilenceSpokenRef = useRef('');
 
   useEffect(() => {
     let mounted = true;
@@ -170,10 +175,37 @@ export default function MessageBar() {
     let cancelled = false;
     const timer = setTimeout(async () => {
       const fixed = await correctText(trimmed, language, mode);
-      if (cancelled || !fixed || fixed === trimmed) return;
-      // Reject "echo" suggestions — same content modulo case/whitespace.
+      if (cancelled) return;
       const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
-      if (norm(fixed) === norm(trimmed)) return;
+      const inputIsValid = !fixed || fixed === trimmed || norm(fixed) === norm(trimmed);
+
+      // Silence-detect speech. After the autocorrect roundtrip confirms
+      // the input is well-formed (server returned no real change), speak
+      // the most recently completed word. This replaces the previous
+      // per-keystroke letter echo (which Azure pronounced as letter
+      // names "aitch / double-yu / tee"). Word-level speech is the right
+      // granularity for AAC: confirms what the user typed without
+      // spelling. Dedup via lastSilenceSpokenRef so the same trailing
+      // word doesn't re-speak on every render.
+      if (inputIsValid) {
+        // Read fresh state from stores rather than relying on closure
+        // captures from the outer render — speechRate / activeTone
+        // could have changed between text-change and timer fire.
+        const ms = useMessageStore.getState();
+        const ss = useSettingsStore.getState();
+        if (ms.soundEnabled) {
+          const tokens = trimmed.split(/\s+/);
+          const lastWord = tokens[tokens.length - 1] || '';
+          if (lastWord && lastWord !== lastSilenceSpokenRef.current) {
+            lastSilenceSpokenRef.current = lastWord;
+            aacSpeak(lastWord, ss.speechRate, ss.speechVolume, ms.activeTone);
+          }
+        }
+        return;
+      }
+      // Reset silence-spoken tracker — input changed enough to need a
+      // suggestion, so the next "input is valid" event should re-speak.
+      lastSilenceSpokenRef.current = '';
       const inputTokens = trimmed.split(/\s+/);
       const fixedTokens = fixed.trim().split(/\s+/);
       // In completion mode, attempt to extract a completion token for the PredictionBar.

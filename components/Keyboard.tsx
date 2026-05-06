@@ -33,16 +33,16 @@ export default function Keyboard() {
     const char = keyboardMode === 'letters' ? (showUpper ? key : key.toLowerCase()) : key;
     appendChar(char);
     if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
-    // Letter echo in auto mode — voices each typed character via local
-    // Web Speech (sub-50ms latency) so single-letter words like "I" or
-    // "a" get audible feedback without waiting for a space, and
-    // motor-impaired users hear immediate phonics confirmation per
-    // keystroke. speakLocal calls speechSynthesis.cancel() first, so
-    // fast typists hear only the most recent letter (no queue flooding).
-    if (autoSpeak && soundEnabled) {
-      speakWord(char, speechRate, speechVolume, getTTSCode(language as SupportedLanguage));
-    }
-  }, [appendChar, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper, autoSpeak, soundEnabled, speechRate, speechVolume, language]);
+    // Per-key letter echo REMOVED. The previous behavior fired
+    // speakWord(char) on every keystroke, which Azure pronounced as
+    // letter names ("aitch", "double-yu", "tee-oh") regardless of
+    // language. AAC users with phonics needs already get word-level
+    // feedback via:
+    //   • handleSpace below — speaks the just-completed word on space
+    //   • MessageBar silence-detect — speaks the latest word once the
+    //     autocorrect roundtrip confirms it's well-formed
+    //   • Speak button — speaks the full utterance on demand
+  }, [appendChar, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper]);
 
   const shiftHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shiftLongPressed = useRef(false);
