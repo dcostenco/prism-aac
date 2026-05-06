@@ -29,10 +29,15 @@ const SYNALUX_API = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_
   ? process.env.NEXT_PUBLIC_SYNALUX_API
   : 'https://synalux.ai/api/v1';
 
-// Hard ceiling per backend. AAC users with motor / cognitive disabilities
-// can't be left waiting; the slow path keeps running in the background
-// for the cache, but the foreground call resolves with the original text.
-const BACKEND_TIMEOUT_MS = 1500;
+// Hard ceiling per backend. Was 1500ms — user reported on synalux.ai
+// /prism-aac (RO setup): every 4th-5th `correct` request was being
+// aborted at exactly 1.50s in the Network tab, leaving the autocorrect
+// bar empty even though the server (Gemini) was about to respond. Cold
+// starts + Romanian inputs + slower client connections regularly cross
+// the 1.5s threshold. 5s is a far better trade-off: the user already
+// stopped typing for 400ms before this fires, so an extra 600ms-3s of
+// "thinking" is fine; getting ZERO suggestion is much worse.
+const BACKEND_TIMEOUT_MS = 5000;
 
 const LOCAL_SYSTEM_CORRECT = `You are a fast text-cleanup engine for an AAC (augmentative and alternative communication) app used by users with motor impairments. Your only job: take possibly-malformed input and return the most likely intended utterance in the specified language.
 
