@@ -64,6 +64,11 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const handleRef = useRef<PoseTrackerHandle | null>(null);
   const sampleBufferRef = useRef<Array<{ normX: number; normY: number }>>([]);
   const detectionCountRef = useRef<Record<string, number>>({});
+  // Held by a useEffect below so startDetection's auto-advance can call
+  // it without a TDZ on the const-declared startCenterCalibration.
+  // Without this, setPhase('calibrate-center') rendered the calibration
+  // UI but the 3-second interval never started → calibration stuck.
+  const startCenterCalibrationRef = useRef<(() => void) | null>(null);
 
   const speak = useCallback((text: string) => {
     aacSpeak(text, speechRate, speechVolume);
@@ -137,12 +142,15 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         // window if the user wants to switch body parts.
         useSettingsStore.getState().update({ cameraTrackingTarget: top.target });
         setTimeout(() => {
-          // Defer to startCenterCalibration via the same handler the
-          // button uses. Calling it directly here would create a
-          // circular useCallback dep; the button handler reads phase
-          // and won't double-fire because phase will already be
-          // 'calibrate-center' by the time the user taps.
-          setPhase('calibrate-center');
+          // Bug fix: previously this only called setPhase('calibrate-
+          // center'), which rendered the calibration UI but NEVER
+          // started the 3-second interval (that lives inside
+          // startCenterCalibration). Result: user saw "Hold still for
+          // 3 seconds" forever. The "circular useCallback dep" comment
+          // was wrong — calling the function isn't circular, it just
+          // means the deps array needs it. Stash the callback in a ref
+          // OR call directly. Direct call is simpler.
+          startCenterCalibrationRef.current?.();
         }, 1500);
       } else {
         setStatusText('No body parts detected. Try moving closer.');
@@ -177,6 +185,13 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
     return () => clearInterval(interval);
   }, [speak]);
+
+  // Keep the ref pointing at the latest startCenterCalibration so
+  // earlier-declared callbacks (startDetection) can invoke it without
+  // a TDZ violation. The deps array refreshes when speak changes.
+  useEffect(() => {
+    startCenterCalibrationRef.current = startCenterCalibration;
+  }, [startCenterCalibration]);
 
   // ── PHASE: Calibrate Corners ──
   useEffect(() => {
