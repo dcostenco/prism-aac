@@ -55,24 +55,53 @@ function isSafeAutoCorrection(original: string, fixed: string): boolean {
   const o = original.trim();
   const f = fixed.trim();
   if (!o || !f || o === f) return false;
-  const oTokens = o.split(/\s+/).length;
-  const fTokens = f.split(/\s+/).length;
+  const oToks = o.split(/\s+/);
+  const fToks = f.split(/\s+/);
 
-  // Short-partial expansion lane: AAC users typing 2-4 chars (e.g.
-  // "hw", "ok", "iwa") clearly haven't finished a thought. Allow the
-  // suggestion to expand to up to 3 tokens — but ONLY if the input
-  // letters survive as a subsequence in the expansion. The
-  // subsequence guard prevents Gemini from auto-rewriting "ok" into
-  // "yes please" or some unrelated phrase; "iwa" → "I want a" is
-  // accepted because i-w-a appears in order.
-  if (o.length <= 4 && oTokens === 1 && fTokens <= 3 && isSubsequence(o, f)) {
+  // Lane 1 — whole-input short-partial: AAC users typing 2-4 chars in
+  // total (e.g. "hw", "ok", "iwa") clearly haven't finished a thought.
+  // Allow up to 3-token expansion BUT only if input letters survive as
+  // a subsequence in the expansion. Prevents Gemini from rewriting
+  // "ok" → "yes please"; accepts "iwa" → "I want a" (i,w,a in order).
+  if (o.length <= 4 && oToks.length === 1 && fToks.length <= 3 && isSubsequence(o, f)) {
     return true;
   }
 
-  // Standard lane: same-or-±1-token cleanup with bounded Levenshtein.
-  // Used for typo fixes ("программычто" → "программа что") and similar
-  // small repairs that are clearly the user's intent, not a paraphrase.
-  if (Math.abs(oTokens - fTokens) > 1) return false;
+  // Lane 2 — mid-word completion with short trailing partial.
+  // User typed normal words plus a short trailing fragment, e.g.
+  //   "i Want y"  → "i Want you to"     (3 → 4 tokens, partial "y")
+  //   "she go"    → "she goes home"     (2 → 3 tokens, partial "go")
+  //   "lets pl"   → "lets play outside" (2 → 3 tokens, partial "pl")
+  // The shape we trust: every PREFIX token matches the corresponding
+  // fixed token (case-insensitive), the fixed token at the partial's
+  // index STARTS WITH the partial, and at most +2 trailing tokens are
+  // added. Without this lane the user has to tap to accept what is
+  // obviously a completion and Speak reads "y" as the letter "wai".
+  if (
+    fToks.length >= oToks.length
+    && fToks.length <= oToks.length + 2
+    && oToks[oToks.length - 1].length <= 3
+  ) {
+    const lastIdx = oToks.length - 1;
+    let prefixMatches = true;
+    for (let i = 0; i < lastIdx; i++) {
+      if (oToks[i].toLowerCase() !== fToks[i].toLowerCase()) {
+        prefixMatches = false;
+        break;
+      }
+    }
+    const partial = oToks[lastIdx].toLowerCase();
+    const partialMatch = fToks[lastIdx]?.toLowerCase().startsWith(partial);
+    if (prefixMatches && partialMatch) {
+      return true;
+    }
+  }
+
+  // Lane 3 — standard: same-or-±1-token cleanup with bounded
+  // Levenshtein. Used for typo fixes ("программычто" → "программа
+  // что") and similar small repairs that are clearly the user's
+  // intent, not a paraphrase.
+  if (Math.abs(oToks.length - fToks.length) > 1) return false;
   const dist = levenshtein(o.toLowerCase(), f.toLowerCase());
   return dist <= Math.max(2, Math.floor(o.length * 0.30));
 }
@@ -226,10 +255,30 @@ export default function MessageBar() {
     // version. The original raw text is also still passed to learnUtterance
     // when we decide NOT to auto-apply.
     let toSpeak = original;
+    let autoApplied = false;
     if (suggestion && isSafeAutoCorrection(original, suggestion)) {
       toSpeak = suggestion.trim();
       setText(toSpeak);
       setSuggestion(null);
+      autoApplied = true;
+    }
+
+    // Defense against letter-by-letter TTS. When auto-apply didn't fire
+    // (no suggestion yet, server down, suggestion rejected by safety
+    // gate) AND the input ends with a single-character trailing token
+    // preceded by at least one full word, strip that trailing char
+    // before speaking. Without this, "i Want y" gets spoken as "i Want
+    // wai", "она пошла д" as "она пошла deh", etc. Language-agnostic:
+    // we don't keep a per-locale exception list, we just trust that a
+    // user who typed 2+ words plus a 1-char tail meant the tail as a
+    // partial, not as a standalone word. Keeps the rest of the
+    // utterance speakable instead of pronouncing the letter.
+    if (!autoApplied) {
+      const tokens = toSpeak.split(/\s+/);
+      if (tokens.length >= 2 && tokens[tokens.length - 1].length === 1) {
+        const trimmed = tokens.slice(0, -1).join(' ');
+        if (trimmed) toSpeak = trimmed;
+      }
     }
 
     addToHistory(toSpeak);
