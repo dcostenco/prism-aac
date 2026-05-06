@@ -4,6 +4,7 @@ import { useScheduleStore } from '@/store/scheduleStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
 import { aacSpeak } from '@/services/aacSpeak';
+import { stopSpeech } from '@/services/speechService';
 import { useT } from '@/engine/useT';
 
 /**
@@ -33,6 +34,10 @@ export default function GreetingBanner() {
   const tasks = useScheduleStore(s => s.tasks);
   const { speechRate, speechVolume } = useSettingsStore();
   const autoSpeak = useMessageStore(s => s.autoSpeak);
+  // Subscribed text — drives the cancel-in-flight effect below. We need
+  // a reactive subscription (not just getState() reads) so mid-speech
+  // composition triggers stopSpeech().
+  const messageText = useMessageStore(s => s.text);
 
   const nextTask = tasks
     .filter(task => !task.done)
@@ -63,14 +68,24 @@ export default function GreetingBanner() {
     const timerId = setTimeout(() => {
       // Last-ditch check: user may have tapped a tile DURING the 500ms
       // pre-speak window. Read the latest store value (the closure
-      // captured an older snapshot) and bail if so. Without this the
-      // banner's "Next is School" played simultaneously with the tile's
-      // word, mashing into "schedule i" in the user's ear.
+      // captured an older snapshot) and bail if so.
       if (useMessageStore.getState().text.trim()) return;
       aacSpeak(speech, speechRate, speechVolume);
     }, BANNER_PRESPEAK_DELAY_MS);
     return () => clearTimeout(timerId);
   }, [visible, autoSpeak, nextTask, speechRate, speechVolume, t]);
+
+  // Cancel in-flight banner speech if the user starts composing AFTER
+  // the announcement has already begun playing. The pre-speak guard
+  // (above) only checks once at fire time; once the audio element is
+  // playing, we need to actively stop() it. Without this, "Good
+  // afternoon, next is School" would keep playing as the user typed,
+  // overlapping with their AAC keyboard's per-key speech.
+  useEffect(() => {
+    if (spokenRef.current && messageText.trim()) {
+      stopSpeech();
+    }
+  }, [messageText]);
 
   if (!visible) return null;
 

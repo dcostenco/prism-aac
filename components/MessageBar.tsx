@@ -234,12 +234,22 @@ export default function MessageBar() {
   const acceptSuggestion = useCallback(() => {
     if (!suggestion) return;
     tapFeedback();
-    setText(suggestion);
+    const accepted = suggestion;
+    setText(accepted);
     setSuggestion(null);
     // Reinforce the accepted utterance so the engine learns the user's
     // patterns (e.g. "лукоморья|дуб" trigram after accepting Pushkin).
-    learnUtterance(suggestion);
-  }, [suggestion, setText, learnUtterance]);
+    learnUtterance(accepted);
+    // Speak the accepted text immediately. Tapping the suggestion bar
+    // is an explicit "I want this" — without speaking, the user has to
+    // hit Speak as a second tap, which is exactly the friction the
+    // suggestion was supposed to remove. Mirror handleSpeak's
+    // translation handling: speak the translated string when one is
+    // active, else the source text.
+    if (soundEnabled) {
+      aacSpeak(translated || accepted, speechRate, speechVolume, activeTone);
+    }
+  }, [suggestion, setText, learnUtterance, soundEnabled, translated, speechRate, speechVolume, activeTone]);
 
   const handleSpeak = useCallback(() => {
     tapFeedback();
