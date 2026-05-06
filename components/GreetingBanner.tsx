@@ -6,6 +6,18 @@ import { useMessageStore } from '@/store/messageStore';
 import { aacSpeak } from '@/services/aacSpeak';
 import { useT } from '@/engine/useT';
 
+/**
+ * 500ms pre-speak window after banner appears. Long enough that the
+ * banner finishes mounting + layout settles before TTS fires; short
+ * enough that the user usually doesn't have time to tap a tile in
+ * between. The overlap-with-tile-press bug ("schedule + I" mash) was
+ * caused by no cleanup on this timer — when the user DID interact in
+ * the window, the banner speech still played, overlapping with their
+ * own composition speech. Fixed by reading the latest message-store
+ * text inside the timer and bailing if the user has started composing.
+ */
+const BANNER_PRESPEAK_DELAY_MS = 500;
+
 function getTimeGreeting(t: (key: string) => string): { greeting: string; icon: string } {
   const hour = new Date().getHours();
   if (hour < 12) return { greeting: t('good_morning'), icon: '🌅' };
@@ -35,12 +47,29 @@ export default function GreetingBanner() {
 
   useEffect(() => {
     if (!visible || spokenRef.current || !autoSpeak) return;
+    // If the user already started composing before the banner mounted
+    // (e.g. they tapped a Quick Cart tile during page hydration), skip
+    // the banner speech entirely — the banner is informational; the
+    // user's own composition takes priority.
+    if (useMessageStore.getState().text.trim()) {
+      spokenRef.current = true;
+      return;
+    }
     spokenRef.current = true;
     const { greeting } = getTimeGreeting(t);
     const speech = nextTask
       ? `${greeting}. ${t('next_is')} ${nextTask.icon} ${nextTask.textKey ? t(nextTask.textKey) : nextTask.text}`
       : greeting;
-    setTimeout(() => aacSpeak(speech, speechRate, speechVolume), 500);
+    const timerId = setTimeout(() => {
+      // Last-ditch check: user may have tapped a tile DURING the 500ms
+      // pre-speak window. Read the latest store value (the closure
+      // captured an older snapshot) and bail if so. Without this the
+      // banner's "Next is School" played simultaneously with the tile's
+      // word, mashing into "schedule i" in the user's ear.
+      if (useMessageStore.getState().text.trim()) return;
+      aacSpeak(speech, speechRate, speechVolume);
+    }, BANNER_PRESPEAK_DELAY_MS);
+    return () => clearTimeout(timerId);
   }, [visible, autoSpeak, nextTask, speechRate, speechVolume, t]);
 
   if (!visible) return null;

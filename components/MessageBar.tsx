@@ -33,12 +33,45 @@ function levenshtein(a: string, b: string): number {
   return prev[n];
 }
 
+/**
+ * Returns true if `f` looks like a 1-letter-at-a-time expansion of `o`,
+ * i.e. every character of o (lowercased, ignoring whitespace) appears
+ * in f IN ORDER. Used to gate short-partial auto-expansion: "iwa" →
+ * "I want a" preserves i,w,a in order ✓; "iwa" → "okay then" doesn't
+ * (no i / no w) and so should require an explicit tap.
+ */
+function isSubsequence(o: string, f: string): boolean {
+  const oChars = o.toLowerCase().replace(/\s+/g, '');
+  const fChars = f.toLowerCase();
+  let i = 0;
+  for (const c of fChars) {
+    if (oChars[i] === c) i++;
+    if (i === oChars.length) return true;
+  }
+  return i === oChars.length;
+}
+
 function isSafeAutoCorrection(original: string, fixed: string): boolean {
   const o = original.trim();
   const f = fixed.trim();
   if (!o || !f || o === f) return false;
   const oTokens = o.split(/\s+/).length;
   const fTokens = f.split(/\s+/).length;
+
+  // Short-partial expansion lane: AAC users typing 2-4 chars (e.g.
+  // "hw", "ok", "iwa") clearly haven't finished a thought. Allow the
+  // suggestion to expand to up to 3 tokens — but ONLY if the input
+  // letters survive as a subsequence in the expansion. The
+  // subsequence guard prevents Gemini from auto-rewriting "ok" into
+  // "yes please" or some unrelated phrase; "iwa" → "I want a" is
+  // accepted because i-w-a appears in order.
+  if (o.length <= 4 && oTokens === 1 && fTokens <= 3 && isSubsequence(o, f)) {
+    return true;
+  }
+
+  // Standard lane: same-or-±1-token cleanup with bounded Levenshtein.
+  // Used for typo fixes ("программычто" → "программа что") and similar
+  // small repairs that are clearly the user's intent, not a paraphrase.
   if (Math.abs(oTokens - fTokens) > 1) return false;
   const dist = levenshtein(o.toLowerCase(), f.toLowerCase());
   return dist <= Math.max(2, Math.floor(o.length * 0.30));
@@ -282,7 +315,16 @@ export default function MessageBar() {
             🌐 {translated}
           </div>
         )}
-        {suggestion && !translated && (
+        {/* Autocorrect bar — shows ALONGSIDE the translation pane (not
+            instead of). Suppressing the bar whenever a translation was
+            shown was the cause of "no suggestion bar appears" in
+            multilingual setups: users with EN→RO translation enabled
+            never saw autocorrect suggestions even when the server had
+            a perfect one. Both signals are useful independently — the
+            translation tells the user what their text means in the
+            target language; the autocorrect tells them what they
+            probably meant to type. Show both, let the user pick. */}
+        {suggestion && (
           <button
             onClick={acceptSuggestion}
             aria-label={`Auto-correct to ${suggestion}`}
