@@ -64,6 +64,11 @@ const KNOWN_QUALITY_VOICES: Record<string, string[]> = {
   ko: ['Yuna', 'SunHi'],
   zh: ['Ting-Ting', 'Sin-Ji', 'Mei-Jia', 'Xiaoxiao'],
   ru: ['Yuri', 'Milena'],
+  // macOS/iOS ships these by default for the right language pack;
+  // Windows/Edge typically also has Microsoft variants.
+  ro: ['Ioana', 'Andrei', 'Emil'],
+  uk: ['Lesya', 'Polina'],
+  ar: ['Maged', 'Tarik', 'Laila', 'Naayf', 'Hoda'],
 };
 
 export function getBestOfflineVoice(lang: string): { voice: SpeechSynthesisVoice | null; quality: VoiceQuality } {
@@ -144,11 +149,21 @@ function isPaidTier(): boolean {
 // languages through Sarah (female, "Clear, professional") to avoid
 // the 502. en stays on Alex ("Friendly, natural"), zh on Mei, hi on
 // Aanya, es on Diego (the original ones that work).
+// One default per language Synalux supports. Missing entries cause
+// voiceId=undefined → portal TTS picks an arbitrary catalog default
+// (frequently English) → user hears their language read with an
+// American accent. Always add a row when adding a new language to
+// LANG_META in engine/i18n.ts.
+//
+// Romanian + Ukrainian have NO Inworld voice on synalux's catalog —
+// portal routes them to Azure neural voices (ro-RO-AlinaNeural,
+// uk-UA-PolinaNeural) keyed by display name.
 const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
   en: 'Alex',    es: 'Diego',  fr: 'Sarah',  de: 'Mark',
   pt: 'Sarah',   it: 'Sarah',  nl: 'Sarah',  pl: 'Sarah',
   ja: 'Sarah',   zh: 'Mei',    ko: 'Sarah',  ru: 'Sarah',
   he: 'Sarah',   ar: 'Sarah',  hi: 'Aanya',
+  ro: 'Alina',   uk: 'Поліна',
 };
 
 /**
