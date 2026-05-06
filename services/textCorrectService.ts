@@ -229,30 +229,36 @@ export async function correctText(
       // device, we ALWAYS prefer it for correction — it's free, fast,
       // private, and works on slow connections. The portal is a
       // network-dependent fallback only.
+      // NORMALIZED echo detection. A previous version compared
+      // strict-equal (`fromLocal === trimmed`), which let case- or
+      // whitespace-only changes from the local model slip through as
+      // "valid" results — but MessageBar then dropped them via its
+      // own norm-equal check, leaving the user with NO suggestion bar
+      // even though the portal would have produced one. Now both
+      // boundaries (here AND MessageBar) use the same normalized
+      // comparison so a case-only echo correctly falls through.
+      const norm = (s: string | null) =>
+        (s ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+      const trimmedNorm = norm(trimmed);
+
       const hasLocal = await isLocalModelAvailable();
       if (hasLocal) {
         let fromLocal = await correctViaLocal(trimmed, effectiveLang, mode);
-        if (mode === 'complete' && fromLocal === trimmed) {
+        if (mode === 'complete' && norm(fromLocal) === trimmedNorm) {
           fromLocal = await correctViaLocal(trimmed, effectiveLang, 'correct');
         }
-        // Treat an echoed-back response (local model didn't actually
-        // produce a correction) the SAME as a null response — fall
-        // through to the portal. Without this, a flaky local model
-        // that just returns the input verbatim suppresses the portal
-        // suggestion entirely, and the user sees no autocorrect bar
-        // even when Gemini would have given them a great one.
-        if (fromLocal && fromLocal !== trimmed) {
+        if (fromLocal && norm(fromLocal) !== trimmedNorm) {
           memoryCache.set(cacheKey, fromLocal);
           trimCorrectCache();
           return fromLocal;
         }
-        // Local was useless (null OR echo) — fall through to portal.
+        // Local was useless (null OR norm-echo) — fall through to portal.
       }
       let fromPortal = await correctViaPortal(trimmed, effectiveLang, mode);
-      if (mode === 'complete' && fromPortal === trimmed) {
+      if (mode === 'complete' && norm(fromPortal) === trimmedNorm) {
         fromPortal = await correctViaPortal(trimmed, effectiveLang, 'correct');
       }
-      if (fromPortal) {
+      if (fromPortal && norm(fromPortal) !== trimmedNorm) {
         memoryCache.set(cacheKey, fromPortal);
         trimCorrectCache();
         return fromPortal;
