@@ -103,7 +103,14 @@ export default function MessageBar() {
         if (ms.soundEnabled) {
           const tokens = trimmed.split(/\s+/);
           const lastWord = tokens[tokens.length - 1] || '';
-          if (lastWord && lastWord !== lastSilenceSpokenRef.current) {
+          // Skip silence speech for short trailing partials (≤2 chars).
+          // "i Want y" — server echoed input as "valid" but the trailing
+          // "y" is clearly a partial mid-word, not a finished word the
+          // user wants spoken. Speaking it here would produce the same
+          // "letter by letter wai" complaint Speak's strip-fallback was
+          // designed to prevent. Only speak words ≥3 chars; users in
+          // mid-typing get silent feedback until they finish a word.
+          if (lastWord.length >= 3 && lastWord !== lastSilenceSpokenRef.current) {
             lastSilenceSpokenRef.current = lastWord;
             aacSpeak(lastWord, ss.speechRate, ss.speechVolume, ms.activeTone);
           }

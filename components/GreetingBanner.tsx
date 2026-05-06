@@ -18,6 +18,12 @@ import { useT } from '@/engine/useT';
  * text inside the timer and bailing if the user has started composing.
  */
 const BANNER_PRESPEAK_DELAY_MS = 500;
+// Banner utterances are short ("Good afternoon, next is School" ≈ 3s).
+// 5s is a comfortable upper bound during which a text-change event
+// could plausibly belong to "user interrupting banner". After this,
+// any subsequent text change is unrelated to banner — don't yank
+// stopSpeech() on USER speech (which would chop user-initiated TTS).
+const BANNER_SPEECH_WINDOW_MS = 5000;
 
 function getTimeGreeting(t: (key: string) => string): { greeting: string; icon: string } {
   const hour = new Date().getHours();
@@ -30,6 +36,14 @@ function getTimeGreeting(t: (key: string) => string): { greeting: string; icon: 
 export default function GreetingBanner() {
   const [visible, setVisible] = useState(false);
   const spokenRef = useRef(false);
+  // Timestamp until which any text-change should be treated as
+  // "interrupting banner speech" → call stopSpeech(). Outside this
+  // window we leave speech alone so we don't kill subsequent USER-
+  // initiated TTS (e.g. acceptSuggestion's aacSpeak fired after the
+  // banner has long finished). Set to Date.now() + WINDOW when banner
+  // aacSpeak fires; cleared when stopSpeech is invoked or after the
+  // window naturally elapses.
+  const bannerSpeechUntilRef = useRef(0);
   const { t } = useT();
   const tasks = useScheduleStore(s => s.tasks);
   const { speechRate, speechVolume } = useSettingsStore();
@@ -66,24 +80,34 @@ export default function GreetingBanner() {
       ? `${greeting}. ${t('next_is')} ${nextTask.icon} ${nextTask.textKey ? t(nextTask.textKey) : nextTask.text}`
       : greeting;
     const timerId = setTimeout(() => {
-      // Last-ditch check: user may have tapped a tile DURING the 500ms
-      // pre-speak window. Read the latest store value (the closure
-      // captured an older snapshot) and bail if so.
       if (useMessageStore.getState().text.trim()) return;
       aacSpeak(speech, speechRate, speechVolume);
+      // Mark "banner speech in flight" for the cancellation window
+      // below. Cleared after BANNER_SPEECH_WINDOW_MS — banner
+      // utterances are at most ~3s; after the window, assume natural
+      // completion so we don't interfere with subsequent USER speech.
+      bannerSpeechUntilRef.current = Date.now() + BANNER_SPEECH_WINDOW_MS;
     }, BANNER_PRESPEAK_DELAY_MS);
     return () => clearTimeout(timerId);
   }, [visible, autoSpeak, nextTask, speechRate, speechVolume, t]);
 
   // Cancel in-flight banner speech if the user starts composing AFTER
-  // the announcement has already begun playing. The pre-speak guard
-  // (above) only checks once at fire time; once the audio element is
-  // playing, we need to actively stop() it. Without this, "Good
-  // afternoon, next is School" would keep playing as the user typed,
-  // overlapping with their AAC keyboard's per-key speech.
+  // the announcement has already begun playing — but ONLY within the
+  // banner's own active window. Previously this called stopSpeech() on
+  // ANY text change, which also yanked legitimate user speech (e.g.
+  // acceptSuggestion's aacSpeak fired during a setText, the text-change
+  // effect ran on the same render and stopSpeech killed the user's TTS
+  // mid-utterance — user heard "I want" instead of the full "I want to").
+  // The window check restricts cancellation to the brief period when
+  // banner speech could plausibly still be playing.
   useEffect(() => {
-    if (spokenRef.current && messageText.trim()) {
+    if (
+      spokenRef.current
+      && messageText.trim()
+      && Date.now() < bannerSpeechUntilRef.current
+    ) {
       stopSpeech();
+      bannerSpeechUntilRef.current = 0;
     }
   }, [messageText]);
 

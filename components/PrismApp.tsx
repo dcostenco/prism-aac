@@ -98,6 +98,14 @@ export default function PrismApp() {
   const theme = useSettingsStore((s) => s.theme);
   const sidePanel = useUIStore((s) => s.sidePanel);
   const inlinePanelOpen = sidePanel !== 'none';
+  // AI Chat is the one inline panel that NEEDS the keyboard visible —
+  // by design (per AIChatPanel.tsx header comment) it has no separate
+  // input field; the user types in the shared MessageBar via the AAC
+  // keyboard and the panel reads from useMessageStore. Without this,
+  // tapping ✨ AI Chat hides both the keyboard and the prediction bar,
+  // leaving the user with no way to compose a question on the AAC
+  // surface (a physical keyboard isn't a substitute for AAC users).
+  const keyboardHidden = inlinePanelOpen && sidePanel !== 'ai-chat';
   const { rtl } = useT();
 
   useEffect(() => {
@@ -195,7 +203,7 @@ export default function PrismApp() {
           <Toolbar />
           <GreetingBanner />
           <MessageBar />
-          {!inlinePanelOpen && <PredictionBar />}
+          {!keyboardHidden && <PredictionBar />}
           <CategoryPanel />
           <MathPanel />
           <CaregiverPanel />
@@ -205,7 +213,7 @@ export default function PrismApp() {
           <MarketplacePanel />
           <PictureEditorPanel />
           <MusicComposerPanel />
-          {!inlinePanelOpen && (
+          {!keyboardHidden && (
             <div className="flex-1 flex flex-col min-h-0">
               <Keyboard />
             </div>
