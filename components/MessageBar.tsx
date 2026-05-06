@@ -96,7 +96,13 @@ export default function MessageBar() {
     });
     if (!aiAutocorrectEnabled) return;
     const trimmed = text.trim();
-    if (trimmed.length < 4) return;
+    // 2-char minimum so partials like "hw" → "how", "ok" stays "ok"
+    // also get a chance at the bar. Below 2 chars there isn't enough
+    // signal for a meaningful prediction. Previously 4, but AAC users
+    // expect help on short keystrokes (motor friction → fewer chars
+    // typed before they want assistance) and Speak otherwise reads
+    // unknown 2-letter strings letter-by-letter.
+    if (trimmed.length < 2) return;
     const isMidWord = !/\s$/.test(text);
     const mode = isMidWord ? 'complete' : 'correct';
     let cancelled = false;
