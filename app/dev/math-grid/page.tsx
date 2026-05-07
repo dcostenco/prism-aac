@@ -11,7 +11,7 @@
  */
 import { useEffect } from 'react';
 import MathGrid from '@/components/math/MathGrid';
-import MathMainKeyboard from '@/components/math/MathMainKeyboard';
+import MathKeyboardRegion from '@/components/math/MathKeyboardRegion';
 import { useMathGridStore } from '@/store/mathGridStore';
 
 export default function MathGridDevPage() {
@@ -53,7 +53,7 @@ export default function MathGridDevPage() {
       <div className="flex-1 min-h-0">
         <MathGrid />
       </div>
-      <MathMainKeyboard />
+      <MathKeyboardRegion />
       <footer className="text-xs text-gray-500 px-3 py-2 border-t shrink-0">
         Tap a key to commit a glyph. Tap on the canvas to move the cursor. Pinch / drag to zoom and pan. Physical keyboard still works for prototyping.
       </footer>
