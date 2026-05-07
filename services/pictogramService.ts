@@ -17,6 +17,7 @@
 
 import { PictureMode } from '@/store/settingsStore';
 import { SynaluxProfile } from '@/services/aiService';
+import { timeoutSignal } from '@/lib/portalConfig';
 
 /**
  * Picture mode is derived from the user's Synalux plan, not from a user
@@ -148,22 +149,33 @@ async function cachePut(key: string, blob: Blob): Promise<void> {
 
 async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
   const langCode = lang.split('-')[0] || 'en';
+  const searchT = timeoutSignal(5000);
+  let id: number | null = null;
   try {
     const res = await fetch(`${ARASAAC_API}/pictograms/${langCode}/search/${encodeURIComponent(token)}`, {
       headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(5000),
+      signal: searchT.signal,
     });
     if (!res.ok) return null;
     const data: ArasaacHit[] = await res.json();
     if (!Array.isArray(data) || data.length === 0) return null;
-    const id = data[0]._id;
+    id = data[0]._id;
+  } catch {
+    return null;
+  } finally {
+    searchT.cancel();
+  }
+  const imgT = timeoutSignal(5000);
+  try {
     const imgRes = await fetch(`${ARASAAC_CDN}/${id}/${id}_500.png`, {
-      signal: AbortSignal.timeout(5000),
+      signal: imgT.signal,
     });
     if (!imgRes.ok) return null;
     return await imgRes.blob();
   } catch {
     return null;
+  } finally {
+    imgT.cancel();
   }
 }
 
@@ -173,6 +185,7 @@ async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null
   const base = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SYNALUX_API)
     ? process.env.NEXT_PUBLIC_SYNALUX_API
     : 'https://synalux.ai/api/v1';
+  const t = timeoutSignal(5000);
   try {
     const res = await fetch(`${base}/prism-aac/pictogram`, {
       method: 'POST',
@@ -184,7 +197,7 @@ async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null
         style: 'aac-pictogram',
         styleVersion: STYLE_VERSION,
       }),
-      signal: AbortSignal.timeout(5000),
+      signal: t.signal,
     });
     if (!res.ok) {
       console.warn(`[pictogram] Synalux AI returned ${res.status} for "${phrase}" (${lang})`);
@@ -199,6 +212,8 @@ async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null
   } catch (e) {
     console.warn(`[pictogram] Synalux AI fetch failed for "${phrase}":`, e instanceof Error ? e.message : e);
     return null;
+  } finally {
+    t.cancel();
   }
 }
 

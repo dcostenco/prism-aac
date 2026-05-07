@@ -20,6 +20,7 @@
 
 import { NoteAction } from '@/types';
 import { DEFAULT_CATEGORIES } from '@/constants/categories';
+import { timeoutSignal } from '@/lib/portalConfig';
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 const LOCAL_OLLAMA_URL = 'http://localhost:11434/api';
@@ -67,11 +68,12 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
   const base = SYNALUX_API.replace(/\/api\/v1$/, '');
   let email = '';
   let name = '';
+  const sessT = timeoutSignal(5000);
   try {
     const sessRes = await fetch(`${base}/api/auth/session`, {
       credentials: 'include',
       headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(5000),
+      signal: sessT.signal,
     });
     if (!sessRes.ok) return null;
     const sess = await sessRes.json();
@@ -80,15 +82,18 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
     name = sess.user.name || sess.user.email;
   } catch {
     return null;
+  } finally {
+    sessT.cancel();
   }
 
   let plan: SynaluxProfile['plan'] = 'free';
   let isPlatformAdmin = false;
+  const meT = timeoutSignal(5000);
   try {
     const meRes = await fetch(`${SYNALUX_API}/roles/me`, {
       credentials: 'include',
       headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(5000),
+      signal: meT.signal,
     });
     if (meRes.ok) {
       const data = await meRes.json();
@@ -96,7 +101,9 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
       else if (data?.plan) plan = data.plan as SynaluxProfile['plan'];
       isPlatformAdmin = !!data?.is_platform_admin;
     }
-  } catch { /* tier lookup is best-effort */ }
+  } catch { /* tier lookup is best-effort */ } finally {
+    meT.cancel();
+  }
 
   return { email, name, plan, isPlatformAdmin };
 }
@@ -127,51 +134,78 @@ async function callSynalux(
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${SYNALUX_API}/chat`, {
-    method: 'POST',
-    credentials: 'include',
-    headers,
-    body: JSON.stringify({
-      messages,
-      stream: false,
-      source: 'prism-aac',
-      ...(options?.webSearch ? { web_search: true } : {}),
-    }),
-    signal: AbortSignal.timeout(30000),
-  });
+  const t = timeoutSignal(30000);
+  let res: Response;
+  try {
+    res = await fetch(`${SYNALUX_API}/chat`, {
+      method: 'POST',
+      credentials: 'include',
+      headers,
+      body: JSON.stringify({
+        messages,
+        stream: false,
+        source: 'prism-aac',
+        ...(options?.webSearch ? { web_search: true } : {}),
+      }),
+      signal: t.signal,
+    });
+  } catch (e) {
+    t.cancel();
+    throw e;
+  }
 
-  if (res.status === 401) { clearAuth(); throw new Error('Session expired — sign in again'); }
-  if (res.status === 429) throw new Error('Rate limit reached — try again in a moment');
-  if (!res.ok) throw new Error(`Synalux API ${res.status}`);
+  if (res.status === 401) { t.cancel(); clearAuth(); throw new Error('Session expired — sign in again'); }
+  if (res.status === 429) { t.cancel(); throw new Error('Rate limit reached — try again in a moment'); }
+  if (!res.ok) { t.cancel(); throw new Error(`Synalux API ${res.status}`); }
 
   const contentType = res.headers.get('content-type') || '';
   if (contentType.includes('text/event-stream') && res.body) {
     const reader = res.body.getReader();
     const decoder = new TextDecoder('utf-8');
     let fullText = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      for (const line of chunk.split('\n')) {
-        if (!line.startsWith('data: ')) continue;
-        try {
-          const parsed = JSON.parse(line.slice(6));
-          const delta = parsed?.choices?.[0]?.delta?.content || '';
-          if (delta) { fullText += delta; options?.onChunk?.(delta); }
-        } catch { /* incomplete chunk */ }
+    /** Streaming-body cap: a hostile/looping model could otherwise
+     *  push tens of MB of `data:` chunks into memory. 1 MB is far
+     *  more than any legitimate AAC chat response (typical ≤ 4 KB)
+     *  and matches MAX_PORTAL_RESPONSE_BYTES. */
+    const STREAM_CAP_BYTES = 1_048_576;
+    let received = 0;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        received += value.byteLength;
+        if (received > STREAM_CAP_BYTES) {
+          try { await reader.cancel(); } catch { /* */ }
+          break;
+        }
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const parsed = JSON.parse(line.slice(6));
+            const delta = parsed?.choices?.[0]?.delta?.content || '';
+            if (delta) { fullText += delta; options?.onChunk?.(delta); }
+          } catch { /* incomplete chunk */ }
+        }
       }
+    } finally {
+      t.cancel();
     }
     return fullText;
   }
 
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content || data?.content || '';
+  try {
+    const data = await res.json();
+    return data?.choices?.[0]?.message?.content || data?.content || '';
+  } finally {
+    t.cancel();
+  }
 }
 
 // ── Local Ollama (offline fallback) ──
 
 async function callLocal(prompt: string): Promise<string> {
+  const t = timeoutSignal(10000);
   try {
     const res = await fetch(`${LOCAL_OLLAMA_URL}/generate`, {
       method: 'POST',
@@ -182,7 +216,7 @@ async function callLocal(prompt: string): Promise<string> {
         stream: false,
         options: { num_predict: 300, temperature: 0.3 },
       }),
-      signal: AbortSignal.timeout(10000),
+      signal: t.signal,
     });
     if (!res.ok) throw new Error('Local model unavailable');
     const data = await res.json();
@@ -193,6 +227,8 @@ async function callLocal(prompt: string): Promise<string> {
       ? 'Local AI unavailable — requires running the app locally (not HTTPS) or configuring Ollama CORS'
       : 'Local AI unavailable';
     throw new Error(msg);
+  } finally {
+    t.cancel();
   }
 }
 

@@ -17,6 +17,39 @@
  */
 
 import { randomId } from '@/lib/uuid';
+import { timeoutSignal } from '@/lib/portalConfig';
+
+/** Cap on best-effort 3rd-party response bodies (Nominatim reverse
+ *  geocode). Hostile/poisoned DNS pointing at a server that streams
+ *  gigabytes would otherwise OOM the AAC tablet — in a literal life-
+ *  safety code path. 64 KB is generous for a single reverse-geocode
+ *  result. */
+const MAX_THIRD_PARTY_BYTES = 64 * 1024;
+
+/** Strict shape check on an email address before composing a mailto:
+ *  URL. Prevents header injection like
+ *      a@b.com?cc=evil@evil.com&bcc=evil2@evil.com
+ *  which a tampered contacts persist could otherwise inject — the
+ *  contacts hydration validator already trims length and strips control
+ *  chars, but does not enforce the basic email shape, and the mailto
+ *  composer below interpolates the address raw. */
+function safeMailtoRecipient(email: string): string | null {
+  if (typeof email !== 'string') return null;
+  const trimmed = email.trim();
+  if (trimmed.length === 0 || trimmed.length > 254) return null;
+  if (!/^[^\s@?&#%/<>"'`\\]+@[^\s@?&#%/<>"'`\\]+\.[^\s@?&#%/<>"'`\\]{2,}$/.test(trimmed)) return null;
+  return encodeURIComponent(trimmed);
+}
+
+/** Strip everything except digits, +, *, # (the legitimate dial chars).
+ *  A tampered contact phone like `5551234?from=evil&body=injection`
+ *  would otherwise inject SMS/tel URI parameters when the alert level
+ *  composes a `sms:` or `tel:` URL via window.open. */
+function safePhoneForUri(phone: string): string | null {
+  if (typeof phone !== 'string') return null;
+  const stripped = phone.replace(/[^0-9+*#]/g, '').slice(0, 32);
+  return stripped || null;
+}
 
 export interface EmergencyContact {
   name: string;
@@ -269,11 +302,126 @@ export const DEFAULT_CONFIG: EmergencyConfig = {
   profile: { name: '' },
 };
 
+/** Bounds applied to localStorage-read emergency config. THIS IS LIFE-
+ *  SAFETY CODE. A tampered persist entry could otherwise:
+ *  - inject a malicious synaluxApiUrl that redirects 911 POSTs (with
+ *    GPS, name, medical profile, message) to an attacker
+ *  - inject attacker phone/email into contacts so alerts go to the
+ *    attacker rather than the caregiver
+ *  - inject NaN / negative / huge countdownSeconds disabling the
+ *    cancel window or leaving the user stuck in countdown
+ *  - disable `enabled` to silently turn the whole system off
+ *  Drop any field that doesn't match its strict shape. */
+const MAX_CONTACTS = 20;
+const MAX_NAME_LEN = 80;
+const MAX_PHONE_LEN = 32;
+const MAX_EMAIL_LEN = 254;
+const MAX_RELATIONSHIP_LEN = 40;
+const MAX_CONDITION_LEN = 120;
+const MAX_CONDITIONS = 30;
+const MAX_ADDRESS_LEN = 200;
+const MAX_API_URL_LEN = 256;
+const ALLOWED_API_HOSTS = new Set([
+  'synalux.ai',
+  'www.synalux.ai',
+  // localhost only valid for dev — env var override at build time
+  // already resolves these in production builds.
+  'localhost',
+  '127.0.0.1',
+]);
+
+function isHttpsSynaluxUrl(value: unknown): value is string {
+  if (typeof value !== 'string' || !value || value.length > MAX_API_URL_LEN) return false;
+  try {
+    const u = new URL(value);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+    return ALLOWED_API_HOSTS.has(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function cleanString(value: unknown, maxLen: number): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  // Strip control chars (defense against weird tampering); cap length.
+  // eslint-disable-next-line no-control-regex
+  const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, maxLen);
+  return cleaned || undefined;
+}
+
+function cleanContact(c: unknown): EmergencyContact | null {
+  if (!c || typeof c !== 'object') return null;
+  const x = c as Record<string, unknown>;
+  const name = cleanString(x.name, MAX_NAME_LEN);
+  const relationship = cleanString(x.relationship, MAX_RELATIONSHIP_LEN);
+  if (!name || !relationship) return null;
+  const phone = cleanString(x.phone, MAX_PHONE_LEN);
+  const email = cleanString(x.email, MAX_EMAIL_LEN);
+  // A contact with neither phone nor email isn't reachable — drop it
+  // so render code doesn't display a useless row.
+  if (!phone && !email) return null;
+  return { name, relationship, ...(phone ? { phone } : {}), ...(email ? { email } : {}) };
+}
+
+function cleanProfile(p: unknown): UserMedicalProfile {
+  if (!p || typeof p !== 'object') return { name: '' };
+  const x = p as Record<string, unknown>;
+  const name = cleanString(x.name, MAX_NAME_LEN) ?? '';
+  const ageRaw = x.age;
+  const age = typeof ageRaw === 'number' && Number.isFinite(ageRaw) && ageRaw >= 0 && ageRaw < 150
+    ? Math.floor(ageRaw)
+    : undefined;
+  const cleanList = (raw: unknown): string[] | undefined => {
+    if (!Array.isArray(raw)) return undefined;
+    const items = raw
+      .map((s) => cleanString(s, MAX_CONDITION_LEN))
+      .filter((s): s is string => !!s)
+      .slice(0, MAX_CONDITIONS);
+    return items.length > 0 ? items : undefined;
+  };
+  return {
+    name,
+    ...(age !== undefined ? { age } : {}),
+    ...(cleanList(x.conditions) ? { conditions: cleanList(x.conditions) } : {}),
+    ...(cleanList(x.allergies) ? { allergies: cleanList(x.allergies) } : {}),
+    ...(cleanList(x.medications) ? { medications: cleanList(x.medications) } : {}),
+    ...(cleanString(x.address, MAX_ADDRESS_LEN) ? { address: cleanString(x.address, MAX_ADDRESS_LEN) } : {}),
+    ...(cleanString(x.callbackNumber, MAX_PHONE_LEN) ? { callbackNumber: cleanString(x.callbackNumber, MAX_PHONE_LEN) } : {}),
+    ...(cleanString(x.country, MAX_NAME_LEN) ? { country: cleanString(x.country, MAX_NAME_LEN) } : {}),
+  };
+}
+
+export function validateEmergencyConfig(raw: unknown): EmergencyConfig {
+  if (!raw || typeof raw !== 'object') return DEFAULT_CONFIG;
+  const x = raw as Record<string, unknown>;
+  const countdownSeconds = typeof x.countdownSeconds === 'number'
+    && Number.isFinite(x.countdownSeconds)
+    && x.countdownSeconds >= 0
+    && x.countdownSeconds <= 60
+    ? Math.floor(x.countdownSeconds)
+    : DEFAULT_CONFIG.countdownSeconds;
+  const contacts = Array.isArray(x.contacts)
+    ? x.contacts.map(cleanContact).filter((c): c is EmergencyContact => c !== null).slice(0, MAX_CONTACTS)
+    : [];
+  return {
+    enabled: typeof x.enabled === 'boolean' ? x.enabled : DEFAULT_CONFIG.enabled,
+    countdownSeconds,
+    autoCall911: typeof x.autoCall911 === 'boolean' ? x.autoCall911 : DEFAULT_CONFIG.autoCall911,
+    contacts,
+    profile: cleanProfile(x.profile),
+    ...(typeof x.language === 'string' && x.language.length > 0 && x.language.length <= 16
+      ? { language: x.language.replace(/[^a-zA-Z-]/g, '').slice(0, 16) }
+      : {}),
+    ...(isHttpsSynaluxUrl(x.synaluxApiUrl) ? { synaluxApiUrl: x.synaluxApiUrl as string } : {}),
+  };
+}
+
 export function getConfig(): EmergencyConfig {
   if (typeof window === 'undefined') return DEFAULT_CONFIG;
   try {
     const raw = localStorage.getItem(CONFIG_KEY);
-    return raw ? { ...DEFAULT_CONFIG, ...JSON.parse(raw) } : DEFAULT_CONFIG;
+    if (!raw) return DEFAULT_CONFIG;
+    return validateEmergencyConfig(JSON.parse(raw));
   } catch {
     return DEFAULT_CONFIG;
   }
@@ -281,7 +429,12 @@ export function getConfig(): EmergencyConfig {
 
 export function saveConfig(config: EmergencyConfig): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  // Re-validate on save too — caller may have been a settings panel
+  // that didn't enforce all the bounds. Persisting a clean shape
+  // means getConfig() doesn't have to deal with mid-tier corruption
+  // from our own code path.
+  const clean = validateEmergencyConfig(config);
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(clean));
 }
 
 export function detectEmergency(text: string): { detected: boolean; severity: 'critical' | 'urgent' | 'medical' | null; phrase: string | null } {
@@ -365,13 +518,22 @@ async function getDeviceLocation(): Promise<{ lat: number; lng: number } | null>
  * This handles: child traveling abroad, school trip, vacation, hospital in another city.
  */
 async function detectCountryFromGPS(lat: number, lng: number): Promise<{ country: string; countryCode: string; language: string } | null> {
+  const t = timeoutSignal(2000);
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`,
-      { signal: AbortSignal.timeout(2000), headers: { 'User-Agent': 'PrismAAC-Emergency/1.0' } },
+      { signal: t.signal, headers: { 'User-Agent': 'PrismAAC-Emergency/1.0' } },
     );
     if (!res.ok) return null;
-    const data = await res.json();
+    // Size guard: a hostile/poisoned Nominatim response could push GBs;
+    // we only need a small JSON object back. Pre-check Content-Length
+    // and reject anything larger than 64 KB before reading the body.
+    const declaredLen = Number(res.headers?.get?.('content-length') ?? '');
+    if (Number.isFinite(declaredLen) && declaredLen > MAX_THIRD_PARTY_BYTES) return null;
+    const text = await res.text();
+    if (text.length > MAX_THIRD_PARTY_BYTES) return null;
+    let data: { address?: { country_code?: string; country?: string } };
+    try { data = JSON.parse(text); } catch { return null; }
     const code = (data.address?.country_code || '').toUpperCase();
     if (!code) return null;
 
@@ -406,6 +568,8 @@ async function detectCountryFromGPS(lat: number, lng: number): Promise<{ country
     };
   } catch {
     return null;
+  } finally {
+    t.cancel();
   }
 }
 
@@ -570,6 +734,7 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   // Works on any device with internet (iPhone, iPad, Watch cellular/WiFi, Android)
   if (navigator.onLine) {
     const apiUrl = config.synaluxApiUrl || SYNALUX_EMERGENCY_API;
+    const t = timeoutSignal(15000);
     try {
       const token = localStorage.getItem('prism-aac-auth-token');
       const res = await fetch(apiUrl, {
@@ -579,7 +744,7 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(15000),
+        signal: t.signal,
       });
       if (res.ok) {
         alert.sent = true;
@@ -587,17 +752,20 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
       }
     } catch {
       // Synalux unreachable — fall through
+    } finally {
+      t.cancel();
     }
   }
 
   // ── LEVEL 2: Emergency contacts via API (SMS/email dispatched server-side) ──
   if (navigator.onLine && config.contacts.length > 0) {
+    const t = timeoutSignal(10000);
     try {
       const res = await fetch(`${config.synaluxApiUrl || SYNALUX_EMERGENCY_API}/notify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(10000),
+        signal: t.signal,
       });
       if (res.ok) {
         alert.sent = true;
@@ -605,6 +773,8 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
       }
     } catch {
       // API failed — fall through
+    } finally {
+      t.cancel();
     }
   }
 
@@ -612,9 +782,15 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   if (navigator.onLine) {
     for (const contact of config.contacts) {
       if (contact.email) {
+        // Defense against mailto header injection. A tampered contact
+        // email like `a@b.com?cc=evil@evil.com` would otherwise inject
+        // a CC into the URL — safeMailtoRecipient enforces basic email
+        // shape AND encodeURIComponent so `?` `&` `#` collapse to %xx.
+        const recipient = safeMailtoRecipient(contact.email);
+        if (!recipient) continue;
         const subject = encodeURIComponent('EMERGENCY — PrismAAC Alert');
         const body = encodeURIComponent(script);
-        window.open(`mailto:${contact.email}?subject=${subject}&body=${body}`, '_blank');
+        window.open(`mailto:${recipient}?subject=${subject}&body=${body}`, '_blank');
         alert.sent = true;
       }
     }
@@ -633,8 +809,10 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
 
   for (const contact of config.contacts) {
     if (contact.phone) {
+      const safePhone = safePhoneForUri(contact.phone);
+      if (!safePhone) continue;
       const encodedBody = encodeURIComponent(smsScript);
-      window.open(`sms:${contact.phone}?body=${encodedBody}`, '_blank');
+      window.open(`sms:${safePhone}?body=${encodedBody}`, '_blank');
     }
   }
 
@@ -652,7 +830,9 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   } else {
     for (const contact of config.contacts) {
       if (contact.phone) {
-        window.open(`tel:${contact.phone}`, '_self');
+        const safePhone = safePhoneForUri(contact.phone);
+        if (!safePhone) continue;
+        window.open(`tel:${safePhone}`, '_self');
         alert.sent = true;
         break;
       }
