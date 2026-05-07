@@ -98,6 +98,12 @@ interface SettingsState {
   // newly-onboarded caregiver hears the alarm without diving into
   // Settings; mutable in Settings → Sound.
   notificationsEnabled: boolean;
+  // Math module hold-time dwell (ms). Every math key tap requires the
+  // user to hold their finger for this many ms before the glyph
+  // commits. 0 = instant (default). 200-1500 ms ranges work well for
+  // motor-imprecision profiles. Visual progress ring fills during
+  // dwell so the user (and caregiver) sees the count-down.
+  mathHoldTimeMs: number;
   // Marketplace-installed app ids (e.g. ['game-packs', 'voice-packs']).
   // Toolbar.tsx renders these as buttons after the built-ins.
   installedApps: string[];
@@ -108,7 +114,7 @@ interface SettingsState {
   // is not user-selectable.
   voicePreferences: Record<string, string>;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'voicePreferences'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'voicePreferences'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -156,6 +162,7 @@ export const useSettingsStore = create<SettingsState>()(
       gestureConfig: { ...DEFAULT_GESTURE_CONFIG },
       aiAutocorrectEnabled: true,
       notificationsEnabled: true,
+      mathHoldTimeMs: 0,
       toolbarConfig: {
         order: [...DEFAULT_TOOLBAR_ORDER],
         // Empty enabled map = all built-ins ON (Partial+default-true). User

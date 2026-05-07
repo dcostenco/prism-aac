@@ -179,6 +179,36 @@ export default function SettingsModal() {
             </div>
           </div>
 
+          {/* Math hold-time dwell */}
+          <div>
+            <h3 className={sectionTitle}>Math</h3>
+            <label className="block py-2">
+              <span className="text-primary text-sm font-semibold block">Math hold-time dwell</span>
+              <p className="text-muted text-[10px] mb-2">
+                How long the user must hold each math key before it commits.
+                0 = instant. 200–1500 ms helps users with motor imprecision —
+                a green progress ring fills during the dwell so they can see it.
+              </p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={1500}
+                  step={50}
+                  value={settings.mathHoldTimeMs}
+                  onChange={(e) => settings.update({ mathHoldTimeMs: parseInt(e.target.value, 10) })}
+                  data-testid="math-hold-time-slider"
+                  className="flex-1"
+                  aria-label="Math hold-time dwell milliseconds"
+                />
+                <span className="text-primary font-mono text-sm min-w-[4ch] text-right">
+                  {settings.mathHoldTimeMs}
+                </span>
+                <span className="text-muted text-xs">ms</span>
+              </div>
+            </label>
+          </div>
+
           {/* Text Input Settings */}
           <div>
             <h3 className={sectionTitle}>Text Input</h3>

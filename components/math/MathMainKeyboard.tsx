@@ -1,6 +1,6 @@
 'use client';
 /**
- * MathMainKeyboard — Phase 1B.
+ * MathMainKeyboard — Phase 1B / updated 5A.
  *
  * The default keyboard for the math module. Three rows:
  *   Row 1 — digits 0–9
@@ -15,12 +15,18 @@
  * scale up on wider viewports via clamp(). Each key has data-glyph
  * for test probing and aria-label for screen reader.
  *
+ * Phase 5A — every key now uses DwellButton, so when
+ * settings.mathHoldTimeMs > 0 the user must dwell on the key for that
+ * duration before it commits. holdTimeMs=0 falls back to instant
+ * onClick semantics (matches Phase 1B behavior).
+ *
  * No reach into anything outside useMathGridStore + tapFeedback —
  * the keyboard is a thin command-emitter, the store is the model.
  */
 import { useCallback } from 'react';
 import { useMathGridStore } from '@/store/mathGridStore';
 import { tapFeedback, deleteFeedback, keyFeedback } from '@/services/feedback';
+import DwellButton from './DwellButton';
 
 export interface MathMainKeyboardProps {
   /** Optional className for outer wrapper sizing. */
@@ -83,32 +89,32 @@ export default function MathMainKeyboard({ className = '' }: MathMainKeyboardPro
       {/* Row 1: digits */}
       <div className="flex gap-1.5">
         {DIGITS.map((d) => (
-          <button
+          <DwellButton
             key={d}
-            onClick={() => onGlyph(d)}
+            onCommit={() => onGlyph(d)}
             data-testid={`math-key-${d}`}
             data-glyph={d}
             aria-label={d}
             className={`${KEY_BASE} flex-1 py-2.5 text-2xl`}
           >
             {d}
-          </button>
+          </DwellButton>
         ))}
       </div>
 
       {/* Row 2: operators */}
       <div className="flex gap-1.5">
         {OPERATORS.map(({ glyph, label }) => (
-          <button
+          <DwellButton
             key={glyph}
-            onClick={() => onGlyph(glyph)}
+            onCommit={() => onGlyph(glyph)}
             data-testid={`math-key-${label.replace(/ /g, '-')}`}
             data-glyph={glyph}
             aria-label={label}
             className={`${KEY_BASE} flex-1 py-2.5 text-2xl`}
           >
             {glyph}
-          </button>
+          </DwellButton>
         ))}
       </div>
 
@@ -117,42 +123,42 @@ export default function MathMainKeyboard({ className = '' }: MathMainKeyboardPro
           leftmost filled cell of the current row (column-add); the
           right ↵ aligns one past the rightmost (next-operand-right). */}
       <div className="flex gap-1.5">
-        <button
-          onClick={onReturn}
+        <DwellButton
+          onCommit={onReturn}
           data-testid="math-key-return"
           data-glyph="return"
           aria-label="Return — next row, leftmost"
           className={`${KEY_BASE} flex-1 py-2.5 text-xl`}
         >
           ⏎
-        </button>
-        <button
-          onClick={onReturnRight}
+        </DwellButton>
+        <DwellButton
+          onCommit={onReturnRight}
           data-testid="math-key-return-right"
           data-glyph="return-right"
           aria-label="Return — next row, rightmost"
           className={`${KEY_BASE} flex-1 py-2.5 text-xl`}
         >
           ↵
-        </button>
-        <button
-          onClick={() => onGlyph(' ')}
+        </DwellButton>
+        <DwellButton
+          onCommit={() => onGlyph(' ')}
           data-testid="math-key-space"
           data-glyph=" "
           aria-label="Space"
           className={`${KEY_BASE} flex-[3] py-2.5 text-base`}
         >
           space
-        </button>
-        <button
-          onClick={onBackspace}
+        </DwellButton>
+        <DwellButton
+          onCommit={onBackspace}
           data-testid="math-key-backspace"
           data-glyph="backspace"
           aria-label="Backspace"
           className={`${KEY_BASE} flex-1 py-2.5 text-xl`}
         >
           ⌫
-        </button>
+        </DwellButton>
       </div>
     </div>
   );

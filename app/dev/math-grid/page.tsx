@@ -14,6 +14,7 @@ import MathGrid from '@/components/math/MathGrid';
 import MathKeyboardRegion from '@/components/math/MathKeyboardRegion';
 import MathLockTool from '@/components/math/MathLockTool';
 import { useMathGridStore } from '@/store/mathGridStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function MathGridDevPage() {
   const cursor = useMathGridStore((s) => s.cursor);
@@ -23,6 +24,15 @@ export default function MathGridDevPage() {
   const commitGlyph = useMathGridStore((s) => s.commitGlyph);
   const backspaceAtCursor = useMathGridStore((s) => s.backspaceAtCursor);
   const setCursor = useMathGridStore((s) => s.setCursor);
+
+  // Expose the stores on window so e2e tests can poke setting values
+  // without going through the AAC Settings modal. DEV-PAGE ONLY —
+  // never do this on the production /aac route.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__devMathStores = { useMathGridStore, useSettingsStore };
+  }, []);
 
   // Tiny dev-only physical-keyboard handler so we can prototype glyph
   // entry without the on-screen keyboard yet.
