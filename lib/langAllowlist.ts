@@ -150,17 +150,30 @@ export function isAllowedInLang(word: string, lang: string): boolean {
   const langCorpus = getCachedPredictionSeed(lang);
   const langFreq = langCorpus?.wordFreq[w]?.count ?? 0;
 
+  // CRITICAL fail-open: if the TARGET lang's corpus hasn't loaded yet,
+  // the cross-corpus comparison is meaningless. EN is preloaded
+  // eagerly by ensureLangCorpusLoaded, so without this guard we'd see
+  // langFreq=0 (target absent) vs enFreq>0 (target's natural words
+  // happen to appear once or twice in EN) → dominatedByOther = true →
+  // EVERY Romanian word filtered out → empty PredictionBar during the
+  // boot race window. The user-visible regression: "no predictions
+  // appear in RO mode" (May 2026 report). The previous guard only
+  // fired when NO corpora at all were loaded — useless because EN
+  // always loads first. Now the guard fires whenever the TARGET lang
+  // is missing, which is the only state where the comparison is
+  // actually undefined. Once the target's seed lands, the strict
+  // check resumes on the next render.
+  if (!langCorpus) return true;
+
   // Cross-corpus comparison: if any OTHER loaded Latin-lang corpus
   // has a higher frequency for this word, the word belongs to that
   // other lang — drop it from this lang's predictions.
-  let anyCorpusLoaded = !!langCorpus;
   let dominatedByOther = false;
   let foundInAnyCorpus = langFreq > 0;
   for (const otherLang of LATIN_LANGS) {
     if (otherLang === lang) continue;
     const otherCorpus = getCachedPredictionSeed(otherLang);
     if (!otherCorpus) continue;
-    anyCorpusLoaded = true;
     const otherFreq = otherCorpus.wordFreq[w]?.count ?? 0;
     if (otherFreq > 0) foundInAnyCorpus = true;
     if (otherFreq > langFreq) {
@@ -168,9 +181,6 @@ export function isAllowedInLang(word: string, lang: string): boolean {
       break;
     }
   }
-
-  // No corpora loaded at all → fail-open (boot race window).
-  if (!anyCorpusLoaded) return true;
 
   // Some other lang has a higher frequency → drop.
   if (dominatedByOther) return false;
