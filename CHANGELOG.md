@@ -1,5 +1,127 @@
 # PrismAAC Changelog
 
+## [0.9.0] - 2026-05-07 — Full high-school curriculum + locale-aware history (Phases 6 → 8)
+
+The math module is now a full high-school program: **19 keyboard tabs**
+covering math + sciences + programming + arts + humanities, with a
+domain-aware AI tutor (33 prompt templates) that knows what subject
+the child is on. History is locale + region aware down to the state /
+province / Land / autonomous-community level.
+
+### Phase 6 — universal-engine subjects
+- **Chemistry** — 24 element symbols, reaction arrows (→ ⇌ ↑ ↓), charges
+  (⁺ ⁻ ²⁺ ²⁻), subscripts (₂ ₃ ₄), Δ, pH, mol, phase markers.
+- **Physics** — full Greek alphabet (lower + upper), 16 SI units,
+  ∫ ∂ ∇ ∑ ∏ + dot/cross products, vectors, constants (c, h, ℏ, G).
+- **Programming — Python + Java** as separate tabs sharing one
+  component. 24 ops/brackets per language; Python keywords (def,
+  class, if, else, elif, for, while, return, import, from, as, in,
+  is, not, and, or, True, False, None, lambda, with, try, except,
+  finally, print, len, range, self) and Java keywords (public,
+  private, protected, class, void, int, String, boolean, if, else,
+  for, while, return, new, this, null, true, false, import, static,
+  final, package, try, catch, throws, extends, implements, interface).
+  Code commits one character per cell so it lays out naturally on
+  the monospace grid (fixes the visual collision when long keywords
+  stuffed into a single 56 px slot).
+- **Domain-aware tutor** — 5 → 9 domains, each with Hint / Check /
+  Solve prompt templates that prepend a domain framing so the model
+  doesn't confuse subjects.
+
+### Phase 7 — full sciences + arts coverage
+- **Biology** — DNA/RNA bases (A T G C U), codon arrows, mRNA/tRNA/
+  rRNA, genetics shorthand (AA / Aa / aa, F1 / F2, ♂ ♀, × cross),
+  Linnaean taxonomy ranks (Domain → Species, 8 levels), 12 cell
+  organelles. Punnett squares draw via the existing lock tool.
+- **Statistics** — Greek population params (μ σ σ² ρ) + sample stats
+  (x̄ s s² r p̂ n N), operators (Σ ∏ P( E[ Var[ SE CI H0 Ha ! C( P()),
+  distributions (𝒩 z t χ² F df α β p-value ∼ ≈ ≠).
+- **Music** — 3 clefs (𝄞 𝄢 𝄡), 6 note durations, 5 rests, 5
+  accidentals (♯ ♭ ♮ + double sharp/flat), 8 dynamics (pp through
+  ff + cresc./dim.). Time signatures via the fraction-box tool.
+- **Earth Science** — 10 weather glyphs, plate-tectonics arrows
+  (→ ← ↑ ↓ ⇄ ⊕ ⊖), full astronomy set (☉ ☾ ⊕ ☿ ♀ ♂ ♃ ♄ ♅ ♆),
+  geologic-time + distance units (AU, ly, pc, Mya, Gya, mb, °C/°F).
+
+### Phase 8 — humanities + locale awareness
+- **Language Arts** — 12 parts-of-speech tags, 6 sentence-type
+  markers, punctuation row, citation labels (MLA, APA, Chicago).
+- **History — locale aware**, driven by `useSettingsStore.language`.
+  Universal core (476, 1453, 1914–1918, 1939–1945, 1969) plus
+  per-language slices for 19 supported languages. Examples:
+  ro → Stephen the Great, Union of Principalities, 1989 Revolution;
+  zh → Tang/Ming/Qing dynasties + 1949 PRC; hi → Mauryan, Mughal,
+  Sepoy 1857, 1947 Independence; ja → Heian, Edo, Meiji 1868; ar →
+  Hijra, Abbasid, Ottoman dissolution.
+- **History — region aware**, driven by new `historyRegion` setting.
+  **230+ sub-national regions across 23 countries**:
+    🇺🇸 US (50 states + DC), 🇨🇦 CA (10 provinces + 3 territories),
+    🇬🇧 UK (4 nations), 🇮🇪 IE (Republic + 4 historical provinces),
+    🇦🇺 AU (8), 🇩🇪 DE (16 Länder), 🇫🇷 FR (13 regions),
+    🇪🇸 ES (17 communities), 🇮🇹 IT (20 regions), 🇲🇽 MX (12),
+    🇧🇷 BR (12), 🇮🇳 IN (15), 🇨🇳 CN (17 incl. autonomous regions),
+    🇷🇺 RU (10 federal subjects), plus BE, CH, NL, AR, ZA, KR, PK,
+    NZ, PL slices.
+  The History keyboard layers WORLD ∪ NATIONAL ∪ REGIONAL when a
+  region is set; the tutor prompt carries both `{lang}` + `{region}`
+  so 1836 in US-TX resolves to the Alamo (not Alabama statehood);
+  1759 in CA-QC anchors to Plains of Abraham; 1714 in ES-CT to the
+  fall of Barcelona; 1066 in UK-ENG to the Norman Conquest while
+  UK-SCT shows Bannockburn 1314 + Acts of Union 1707 instead.
+
+### Bug fixes shipping with 0.9.0
+- **Tutor "Thinking…" hang** — hard 15 s tutor-side timeout via
+  Promise.race so the overlay can no longer hang while askAI's
+  chained timeouts (Synalux + local Ollama fallback) burn ~40 s.
+  Friendly error mapping (auth / network / timeout / other) plus a
+  Retry button. Live curl confirmed PROD CORS preflight was missing
+  Access-Control-Allow-Origin for prism-aac.vercel.app — fixed in
+  the synalux-private middleware (separate repo).
+- **Multi-char glyphs overflowing cells** — SVG `<text>` nodes now
+  set `textLength` + `lengthAdjust='spacingAndGlyphs'` for any
+  glyph > 1 char so chemistry "(aq)", physics "eV", earth-sci
+  "Mya", music "cresc.", stats "p-value" compress to fit one cell
+  width without bleeding into neighbours.
+- **Prediction bar — RO `eu` leaking into EN mode** — dropped the
+  `if (language === 'en') return displayed;` early-return in
+  `dropForeignTiles` so the cross-corpus comparison runs for every
+  language symmetrically.
+- **AAC chrome eating math viewport** — GreetingBanner / MessageBar
+  / PredictionBar / CategoryPanel now hide while the math panel is
+  open. Math board claims ≥ 75 % of viewport.
+- **Toolbar trim** — minimal default (mic + aac_chat + alert +
+  categories + settings); other built-ins opt-in via Settings.
+- **Bigger math keys** — main keyboard min-h 44 → 64 px, py-2.5 →
+  py-4, text-2xl → text-3xl. Easier targets for kids with motor
+  imprecision now that the math panel has room.
+
+### Tests (kept + extended)
+- Math e2e suite: **142 cases / 142 passing**, covering every
+  keyboard, the tutor in 11 domains (with mocked askAI prompt
+  assertions), two-hit magnify, dwell, doc save/open + portal sync,
+  lock tool, chrome-hidden, locale switches, regional swaps, and
+  per-region tutor prompt signal.
+- vitest: **2172 passing**, including new `prediction-bar-en-leak`
+  cross-corpus regression and existing `dwell-button` two-hit state
+  machine, `math-doc-service` portal sync, etc.
+- Per-tab integration tests:
+  - `math-domain-tutor.spec.ts` (12 cases) — chem / phys / py / java
+  - `math-phase7-tutor.spec.ts` (14) — bio / stats / music / earth
+  - `math-phase8-tutor.spec.ts` (10) — history / lang-arts + 10-domain
+    sweep
+  - `math-history-regions.spec.ts` (17) — US/CA/UK/IE/DE/ES/IN region
+    swap + tutor prompt region signal
+- typecheck clean
+
+### Docs
+- 12 new screenshots covering Chemistry, Physics, Biology, Statistics,
+  Music, Earth Science, Java code, Python tab, History (en / US-TX /
+  ro), Language Arts. Captured via `scripts/capture-math-docs.mjs`.
+- README rewrites the "Math module" section with the full curriculum
+  layout + locale + region docs.
+
+---
+
 ## [0.8.0] - 2026-05-07 — Math module rewrite (cell-grid canvas, Phases 1A → 5D)
 
 The whole math module was rebuilt from the ground up. The old LaTeX/KaTeX panel

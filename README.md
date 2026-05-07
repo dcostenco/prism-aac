@@ -22,8 +22,8 @@ Tap PECS-style picture tiles to build sentences. The app reads them aloud in you
 ### ⌨️ Type, predict, speak
 Built-in keyboard with word prediction. Smart suggestions learn from how the child communicates over time.
 
-### 🧮 Math panel for school
-Graph-paper canvas where every glyph occupies its own cell — digits, operators, fractions, long-division houses, square roots, geometry symbols. Type with the on-screen math keyboard or use the AI tutor for hints, answer checks, or step-by-step walkthroughs. Save your work; come back to it later. [See the math module →](#math-module-cell-grid-canvas)
+### 📚 Full high-school curriculum on a cell-grid canvas
+**Math + Chemistry + Physics + Biology + Statistics + Programming (Python/Java) + Music + Earth Science + History + Language Arts** — all on the same graph-paper canvas, each with a domain-aware AI tutor. History is locale-aware: a child in Romania sees Stephen the Great + 1989 Revolution, in Texas sees the Alamo + JFK, in Catalonia sees Crown of Aragon + 2017 Referendum. **230+ sub-national regions across 23 countries.** [See the math module →](#math-module-cell-grid-canvas)
 
 ### 🗓 Visual schedule
 Picture-based routines with rewards. Reduces transition anxiety for children with autism.
@@ -60,20 +60,53 @@ When a caregiver fixes a suggestion the model got wrong (e.g. "no, the word is *
 
 Math in AAC has historically meant either typing LaTeX — impossible for non-readers — or drawing on a freeform whiteboard that no AI can interpret. PrismAAC takes a third path: a **cell-grid model** where every glyph occupies one snap-aligned cell. The child types on a soft keyboard, the cursor advances predictively (column-add carry rules, fraction numerator → denominator, long-division quotient, exponent), and the on-screen layout is automatically structured enough for an AI tutor to read back.
 
+The same canvas hosts **19 subject keyboards** covering the full high-school program: math + sciences + programming + arts + humanities. Each tab routes the AI tutor through a domain-specific prompt template (33 templates total) so the model doesn't apply algebraic reasoning to a Punnett square or mistake a music dynamic for a programming literal.
+
 ### Canvas + main keyboard
 ![Cell-grid canvas with 5 + 7 = 12 typed across cells](docs/screenshots/math-canvas-typed.png)
 
 The HUD shows live cursor position, cell count, and viewport state. Each digit/operator lands in its own cell — the cursor (highlighted blue) automatically moves to the next slot. Pinch-zoom and one-finger pan work on the canvas; the keyboard region is a fixed-height shell below.
 
-### Nine keyboard categories
+### 19 keyboard categories
+Tap a chip to swap the row below. Categories:
+
+**Math (9 keyboards)** — Main (digits + operators), Adv. Math (π √ exponents + 5 decoration tools: fraction box, long-division house, root bar, summation line, fraction bar), a–z, Misc Math (set theory + logic), Time & Dist, Weight, Volume, Geom, Money.
+
+**Sciences (4)** — Chemistry (24 elements + reaction arrows + charges + subscripts + phase markers), Physics (full Greek + 16 SI units + ∫/∂/∇/∑/∏ + constants), Biology (DNA/RNA + genetics + 8 taxonomy ranks + 12 organelles), Statistics (μ σ x̄ + 12 ops + distributions).
+
+**Programming (2)** — Python (24 ops/brackets + 26 keywords) and Java (24 ops + 26 keywords). Code commits one character per cell so it lays out naturally on the monospace grid.
+
+**Arts + Humanities (4)** — Music (3 clefs + 6 notes + 5 rests + 5 accidentals + 8 dynamics), Earth Science (weather + plates + 10 planets + AU/ly/pc/Mya/Gya), History (locale + region aware), Language Arts (12 POS tags + 6 sentence types + punctuation + citation styles).
+
 ![Advanced math keyboard with fraction-bar, long-division, root, summation tools](docs/screenshots/math-keyboard-adv.png)
 
-Tap a chip to swap the row below. Categories: **Main** (digits + operators), **Adv. Math** (inequalities, π, √, exponents, plus 5 decoration tools — fraction box, long-division house, root bar, summation line, fraction bar), **a–z** (letters), **Misc Math** (set theory, logic), **Time & Dist**, **Weight**, **Volume**, **Geom**, **Money**.
-
-### AI tutor — Hint / Check / Solve
+### AI tutor — Hint / Check / Solve, domain-aware
 ![AI tutor overlay showing a mocked hint above the canvas](docs/screenshots/math-tutor-hint.png)
 
-Three modes: 💡 **Hint** (gentle next-step nudge, never solves), ✓ **Check** (validates the child's answer, celebrates if correct), 🎓 **Solve** (full step-by-step walkthrough, max 4 steps). The expression is serialised row-major and sent to `askAI`, which routes through Synalux (paid models) or falls back to local Ollama for offline. Streamed responses render in a floating overlay; typing more cells auto-collapses the overlay so stale advice doesn't block the child.
+Three modes: 💡 **Hint** (gentle next-step nudge, never solves), ✓ **Check** (validates the child's answer, celebrates if correct), 🎓 **Solve** (full step-by-step walkthrough, max 4 steps). The active tab tells the tutor what subject the child is on — chemistry, Python, biology, statistics, history (with locale + region!) — so the prompt is specific enough that the model doesn't confuse domains. 11 domains × 3 modes = 33 prompt templates. The expression is serialised row-major and sent to `askAI`, which routes through Synalux. Hard 15 s timeout in the UI plus a Retry button so the overlay never gets stuck on "Thinking…".
+
+### Sciences — Chemistry · Physics · Biology · Statistics
+![Chemistry keyboard with H₂O typed across cells](docs/screenshots/math-keyboard-chemistry.png)
+![Biology keyboard with A T G nucleotides typed](docs/screenshots/math-keyboard-biology.png)
+
+### Programming — Python + Java
+![Java keyboard with `private String` typed character-per-cell](docs/screenshots/math-keyboard-java.png)
+
+### Music notation
+![Music keyboard with treble clef + quarter + eighth notes typed](docs/screenshots/math-keyboard-music.png)
+
+### History — locale-aware + region-aware
+History is more nuanced than a single global event list — every curriculum is national first, then regional. PrismAAC layers three tiers:
+
+1. **Universal** events taught in every curriculum (476 fall of Rome, 1914 WWI, 1939 WWII, 1969 moon landing).
+2. **National** events selected by `language` (en → Norman Conquest + Magna Carta + US Independence; ro → Stephen the Great + 1989 Revolution; hi → Mauryan + Mughal + 1947; ja → Heian + Edo + Meiji; zh → Tang/Ming/Qing + 1949). 19 supported languages.
+3. **Sub-national** events selected by `historyRegion` (US-TX → Alamo + JFK; CA-QC → Plains of Abraham + Quiet Revolution; UK-SCT → Bannockburn + Acts of Union; ES-CT → Crown of Aragon + 1714 + 2017 Referendum; IN-MH → Shivaji coronation; DE-BY → Wittelsbach). **230+ regions across 23 countries** including all 50 US states, 13 Canadian provinces/territories, all 4 UK nations, Ireland (Republic + 4 historical provinces), all 16 German Länder, all 17 Spanish autonomous communities, all 20 Italian regions, plus AU, FR, MX, BR, IN, CN, RU, BE, CH, NL, AR, ZA, KR, PK, NZ, PL.
+
+The tutor prompt carries the locale + region so an ambiguous date like 1836 in `US-TX` resolves to the Alamo (not Alabama statehood); 1759 in `CA-QC` anchors to the Plains of Abraham; 1714 in `ES-CT` to the fall of Barcelona.
+
+![History keyboard in en locale (no region) — universal + national tiers](docs/screenshots/math-keyboard-history-en.png)
+![History keyboard with US-TX region — Alamo, Texas annexation, JFK appear on top of national + universal](docs/screenshots/math-keyboard-history-us-tx.png)
+![History keyboard in ro locale — Romanian curriculum surfaces Stephen the Great + 1989 Revolution](docs/screenshots/math-keyboard-history-ro.png)
 
 ### Save / Open with portal sync
 ![Saved docs overlay showing one entry and a Sync button](docs/screenshots/math-docs-overlay.png)

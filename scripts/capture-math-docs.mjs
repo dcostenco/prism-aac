@@ -153,5 +153,133 @@ await page.locator('button', { hasText: /lock/i }).first().click();
 await page.waitForTimeout(200);
 await shoot('math-lock-armed');
 
+// ── Phase 6 / 7 / 8 — universal-engine subjects ──────────────────
+
+// 10. Chemistry tab — H + ₂ + O typed.
+await gotoDev();
+await clearLocalDocs();
+await tap('math-category-chemistry');
+await page.waitForTimeout(120);
+await tap('math-chemistry-elements-hydrogen');
+await tap('math-chemistry-ops-subscript-2');
+await tap('math-chemistry-elements-oxygen');
+await page.waitForTimeout(120);
+await shoot('math-keyboard-chemistry');
+
+// 11. Physics tab — α λ μ greek surface.
+await gotoDev();
+await clearLocalDocs();
+await tap('math-category-physics');
+await page.waitForTimeout(120);
+await shoot('math-keyboard-physics');
+
+// 12. Programming Java tab — `private String` typed (verified char-per-cell).
+await gotoDev();
+await clearLocalDocs();
+await tap('math-category-programming-java');
+await page.waitForTimeout(120);
+await tap('math-java-kw-private');
+await tap('math-java-kw-String');
+await page.waitForTimeout(120);
+await shoot('math-keyboard-java');
+
+// 13. Programming Python tab.
+await gotoDev();
+await clearLocalDocs();
+await tap('math-category-programming-python');
+await page.waitForTimeout(120);
+await shoot('math-keyboard-python');
+
+// 14. Biology tab — A + T + G nucleotides.
+await gotoDev();
+await clearLocalDocs();
+await tap('math-category-biology');
+await page.waitForTimeout(120);
+await tap('math-biology-nucleotides-adenine');
+await tap('math-biology-nucleotides-thymine');
+await tap('math-biology-nucleotides-guanine');
+await page.waitForTimeout(120);
+await shoot('math-keyboard-biology');
+
+// 15. Statistics tab — μ + Σ + z.
+await gotoDev();
+await clearLocalDocs();
+await tap('math-category-statistics');
+await page.waitForTimeout(120);
+await tap('math-stats-params-population-mean');
+await page.waitForTimeout(80);
+await shoot('math-keyboard-statistics');
+
+// 16. Music tab — treble clef + quarter note.
+await gotoDev();
+await clearLocalDocs();
+await tap('math-category-music');
+await page.waitForTimeout(120);
+await tap('math-music-clefs-treble-clef');
+await tap('math-music-notes-quarter-note');
+await tap('math-music-notes-eighth-note');
+await page.waitForTimeout(120);
+await shoot('math-keyboard-music');
+
+// 17. Earth Science tab — sun + Mars typed.
+await gotoDev();
+await clearLocalDocs();
+await tap('math-category-earth-science');
+await page.waitForTimeout(120);
+await tap('math-earth-astro-sun-symbol');
+await tap('math-earth-astro-mars');
+await page.waitForTimeout(120);
+await shoot('math-keyboard-earth-science');
+
+// 18. History tab — default `en` locale, no region (national + universal only).
+await gotoDev();
+await clearLocalDocs();
+await page.evaluate(() => {
+  // eslint-disable-next-line no-undef
+  const stores = window.__devMathStores;
+  stores.useSettingsStore.getState().update({ language: 'en', historyRegion: null });
+});
+await page.waitForTimeout(80);
+await tap('math-category-history');
+await page.waitForTimeout(150);
+await shoot('math-keyboard-history-en');
+
+// 19. History tab — US-TX region (Alamo, Texas annexation, JFK).
+await gotoDev();
+await clearLocalDocs();
+await page.evaluate(() => {
+  // eslint-disable-next-line no-undef
+  const stores = window.__devMathStores;
+  stores.useSettingsStore.getState().update({ language: 'en', historyRegion: 'US-TX' });
+});
+await page.waitForTimeout(80);
+await tap('math-category-history');
+await page.waitForTimeout(150);
+await shoot('math-keyboard-history-us-tx');
+
+// 20. History tab — ro locale (Romanian curriculum).
+await gotoDev();
+await clearLocalDocs();
+await page.evaluate(() => {
+  // eslint-disable-next-line no-undef
+  const stores = window.__devMathStores;
+  stores.useSettingsStore.getState().update({ language: 'ro', historyRegion: null });
+});
+await page.waitForTimeout(80);
+await tap('math-category-history');
+await page.waitForTimeout(150);
+await shoot('math-keyboard-history-ro');
+
+// 21. Language Arts tab.
+await gotoDev();
+await clearLocalDocs();
+await tap('math-category-language-arts');
+await page.waitForTimeout(120);
+await tap('math-la-pos-noun');
+await tap('math-la-pos-verb');
+await tap('math-la-pos-adjective');
+await page.waitForTimeout(120);
+await shoot('math-keyboard-language-arts');
+
 await browser.close();
 console.log('✅ Done.');
