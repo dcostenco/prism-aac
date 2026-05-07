@@ -3,6 +3,7 @@
 import { isLocalModelAvailable, LOCAL_OLLAMA_URL, LOCAL_MODEL } from '@/services/localModel';
 import { canonicalizeLang, getLanguageName } from '@/engine/i18n';
 import { stripModelControlTokens } from '@/services/aiService';
+import { portalFetch } from '@/services/portalClient';
 
 /**
  * Text auto-correction — fixes hurried / motor-impaired input.
@@ -24,10 +25,6 @@ import { stripModelControlTokens } from '@/services/aiService';
  * In-memory cache + in-flight dedup so identical inputs only round-trip
  * once per session.
  */
-
-const SYNALUX_API = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SYNALUX_API)
-  ? process.env.NEXT_PUBLIC_SYNALUX_API
-  : 'https://synalux.ai/api/v1';
 
 // Hard ceiling per backend. Was 1500ms — user reported on synalux.ai
 // /prism-aac (RO setup): every 4th-5th `correct` request was being
@@ -143,28 +140,24 @@ function withTimeout(ms: number): { signal: AbortSignal; cancel: () => void } {
 type CorrectMode = 'correct' | 'complete';
 
 async function correctViaPortal(text: string, lang: string, mode: CorrectMode): Promise<string | null> {
-  const t = withTimeout(BACKEND_TIMEOUT_MS);
-  try {
-    const res = await fetch(`${SYNALUX_API}/text/correct`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, lang, mode }),
-      signal: t.signal,
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const raw = (data?.corrected || '') as string;
-    // Defense-in-depth — server SHOULD strip these but if a model leak
-    // sneaks through to the client we don't want `<|synalux_think|>…`
-    // appearing as the suggestion in MessageBar.
-    const corrected = stripModelControlTokens(raw);
-    return corrected || null;
-  } catch {
-    return null;
-  } finally {
-    t.cancel();
-  }
+  // portalFetch enforces 1MB response cap, offline short-circuit,
+  // credentials, JSON parse safety, and 5s timeout. Failure cases
+  // (timeout / offline / HTTP error / invalid JSON) all collapse to
+  // null — the caller treats null as "fall through to next strategy",
+  // never as a hard failure that blocks the user.
+  const result = await portalFetch<{ corrected?: string }>({
+    path: '/text/correct',
+    method: 'POST',
+    body: { text, lang, mode },
+    timeoutMs: BACKEND_TIMEOUT_MS,
+  });
+  if (!result.ok) return null;
+  const raw = (result.data?.corrected || '') as string;
+  // Defense-in-depth — server SHOULD strip these but if a model leak
+  // sneaks through to the client we don't want `<|synalux_think|>…`
+  // appearing as the suggestion in MessageBar.
+  const corrected = stripModelControlTokens(raw);
+  return corrected || null;
 }
 
 async function correctViaLocal(text: string, lang: string, mode: CorrectMode): Promise<string | null> {

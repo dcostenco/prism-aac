@@ -48,7 +48,19 @@ const DEFAULT_TIMEOUT_MS = 8_000;
 async function readCappedText(res: Response, maxBytes: number): Promise<string | null> {
   if (!res.body || typeof res.body.getReader !== 'function') {
     let txt = '';
-    try { txt = await res.text(); } catch { return ''; }
+    if (typeof res.text === 'function') {
+      try { txt = await res.text(); } catch { return ''; }
+    } else if (typeof (res as { json?: () => Promise<unknown> }).json === 'function') {
+      // Last-resort fallback for Response polyfills / test mocks that
+      // expose only `json()` — re-stringify so the caller's JSON.parse
+      // path stays uniform.
+      try {
+        const parsed = await (res as { json: () => Promise<unknown> }).json();
+        txt = JSON.stringify(parsed);
+      } catch { return ''; }
+    } else {
+      return '';
+    }
     return txt.length > maxBytes ? null : txt;
   }
   const reader = res.body.getReader();
@@ -109,11 +121,15 @@ export async function portalFetch<T = unknown>(req: PortalRequest): Promise<Port
     cancel();
   }
   // Content-Length pre-check stops a hostile portal from even starting
-  // to stream gigabytes. Most servers send it; if missing, the
-  // streaming reader below enforces the same cap chunk-by-chunk so a
-  // malicious server that omits the header AND streams a huge body
-  // still hits the 1 MB ceiling without OOM.
-  const declaredLen = Number(res.headers.get('content-length') ?? '');
+  // to stream gigabytes. Most servers send it; if missing OR the
+  // runtime doesn't expose `res.headers.get` (some test mocks, old
+  // WebViews), the streaming reader below enforces the same cap
+  // chunk-by-chunk so a malicious server that omits the header AND
+  // streams a huge body still hits the 1 MB ceiling without OOM.
+  const declaredLenRaw = typeof res.headers?.get === 'function'
+    ? res.headers.get('content-length')
+    : null;
+  const declaredLen = Number(declaredLenRaw ?? '');
   if (Number.isFinite(declaredLen) && declaredLen > MAX_PORTAL_RESPONSE_BYTES) {
     return { ok: false, error: 'payload_too_large', status: res.status };
   }

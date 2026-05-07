@@ -21,7 +21,19 @@ import type {
   ModuleManifest,
   ModuleTier,
 } from '@/lib/marketplace/types';
-import { tierAllows } from '@/lib/marketplace/types';
+import { isValidManifest, tierAllows } from '@/lib/marketplace/types';
+
+/** Caps applied at hydration. Catalog comes from the server but is cached
+ *  in localStorage where a hostile browser ext / sibling tab / devtools edit
+ *  could tamper with it before the next page load. install records feed
+ *  compareVersions, which is used to flag updates — a tampered version
+ *  string with non-numeric content could false-positive the update badge
+ *  forever. */
+const MAX_CATALOG_SIZE = 500;
+const MAX_INSTALL_RECORDS = 500;
+const MAX_SLUG_LEN = 80;
+const MAX_VERSION_LEN = 32;
+const VALID_SOURCES = new Set<MarketplaceState['source']>(['local', 'remote', 'cache', 'unknown']);
 
 export interface MarketplaceState {
   catalog: ModuleManifest[];
@@ -219,6 +231,54 @@ export const useMarketplaceStore = create<MarketplaceState>()(
           s.installs = (s.installs as Record<string, ModuleInstallRecord> | undefined) ?? {};
         }
         return s;
+      },
+      // Hydration validator. Catalog cache + install records are read from
+      // localStorage on every page load and consumed by handler dispatch
+      // (getHandler(manifest.kind)) and the update-badge calculation
+      // (compareVersions). A tampered catalog could inject a manifest with
+      // a kind that points to an unexpected handler; a tampered install
+      // record with a non-numeric version could false-positive hasUpdate
+      // forever. Drop malformed rows, cap counts, force enum types.
+      merge: (persistedState, currentState) => {
+        const incoming = (persistedState ?? {}) as Partial<MarketplaceState>;
+
+        const cleanCatalog = (Array.isArray(incoming.catalog) ? incoming.catalog : [])
+          .filter((m): m is ModuleManifest => isValidManifest(m))
+          .slice(0, MAX_CATALOG_SIZE);
+
+        const cleanInstalls: Record<string, ModuleInstallRecord> = {};
+        if (incoming.installs && typeof incoming.installs === 'object' && !Array.isArray(incoming.installs)) {
+          let count = 0;
+          for (const [key, value] of Object.entries(incoming.installs as Record<string, unknown>)) {
+            if (count >= MAX_INSTALL_RECORDS) break;
+            if (typeof key !== 'string' || !key || key.length > MAX_SLUG_LEN) continue;
+            if (!value || typeof value !== 'object') continue;
+            const r = value as Record<string, unknown>;
+            if (typeof r.slug !== 'string' || !r.slug || r.slug.length > MAX_SLUG_LEN) continue;
+            if (typeof r.version !== 'string' || !r.version || r.version.length > MAX_VERSION_LEN) continue;
+            if (typeof r.installedAt !== 'number' || !Number.isFinite(r.installedAt) || r.installedAt < 0) continue;
+            cleanInstalls[key] = { slug: r.slug, version: r.version, installedAt: r.installedAt };
+            count++;
+          }
+        }
+
+        const fetchedAt = typeof incoming.fetchedAt === 'number'
+          && Number.isFinite(incoming.fetchedAt)
+          && incoming.fetchedAt >= 0
+          ? incoming.fetchedAt
+          : 0;
+
+        const source = typeof incoming.source === 'string' && VALID_SOURCES.has(incoming.source as MarketplaceState['source'])
+          ? incoming.source as MarketplaceState['source']
+          : 'unknown';
+
+        return {
+          ...currentState,
+          catalog: cleanCatalog,
+          fetchedAt,
+          source,
+          installs: cleanInstalls,
+        };
       },
     },
   ),
