@@ -38,7 +38,12 @@ export function isHttpsAllowedUrl(
   allowedHosts: ReadonlySet<string>,
   opts: { maxLen?: number; allowHttp?: boolean } = {},
 ): value is string {
-  const { maxLen = 256, allowHttp = true } = opts;
+  // SECURE-BY-DEFAULT: allowHttp defaults to FALSE. The original
+  // default `true` let emergency PII (GPS, name, medical profile,
+  // message history) route over plaintext http if the caller didn't
+  // explicitly opt out. Localhost dev / test still works because
+  // those callers pass allowHttp:true explicitly.
+  const { maxLen = 256, allowHttp = false } = opts;
   if (typeof value !== 'string' || !value || value.length > maxLen) return false;
   try {
     const u = new URL(value);
@@ -54,12 +59,20 @@ export function isHttpsAllowedUrl(
  *      a@b.com?cc=evil@evil.com&bcc=evil2@evil.com
  *  by requiring no `?`, `&`, `#`, control chars, or shell quoting in
  *  either side of the address. Returns the encodeURIComponent-encoded
- *  recipient, or null if it doesn't look like an email. */
+ *  recipient, or null if it doesn't look like an email.
+ *
+ *  Allows the `+` alias suffix (e.g. user+tag@example.com) which is
+ *  RFC-5322-valid and ubiquitous (Gmail, Fastmail, every modern
+ *  provider). Earlier version rejected `+` because the unsafe-char
+ *  class included it — that was a bandaid that broke real emails. */
 export function safeMailtoRecipient(email: unknown): string | null {
   if (typeof email !== 'string') return null;
   const trimmed = email.trim();
   if (trimmed.length === 0 || trimmed.length > 254) return null;
-  if (!/^[^\s@?&#%/<>"'`\\]+@[^\s@?&#%/<>"'`\\]+\.[^\s@?&#%/<>"'`\\]{2,}$/.test(trimmed)) return null;
+  // Local part: any char except whitespace + URI special chars + control.
+  // Domain: same minus `+` (no `+` in domain by RFC). encodeURIComponent
+  // below converts `+` to `%2B` so it can't break out of the URI.
+  if (!/^[^\s@?&#%/<>"'`\\]+@[^\s@?&#%/<>"'`\\+]+\.[^\s@?&#%/<>"'`\\+]{2,}$/.test(trimmed)) return null;
   return encodeURIComponent(trimmed);
 }
 

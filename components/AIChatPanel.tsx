@@ -132,7 +132,7 @@ export default function AIChatPanel() {
           scheduled = true;
           requestAnimationFrame(flush);
         }
-      });
+      }, language);
       flush();
       // Preserve the user's typed question in the message bar — they may
       // want to edit it, speak it via the Speak button, or compose a

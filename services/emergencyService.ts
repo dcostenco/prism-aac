@@ -303,14 +303,26 @@ const MAX_CONDITION_LEN = 120;
 const MAX_CONDITIONS = 30;
 const MAX_ADDRESS_LEN = 200;
 const MAX_API_URL_LEN = 256;
-const ALLOWED_API_HOSTS = new Set([
-  'synalux.ai',
-  'www.synalux.ai',
-  // localhost only valid for dev — env var override at build time
-  // already resolves these in production builds.
-  'localhost',
-  '127.0.0.1',
-]);
+/** Allowed hostnames for the emergency synaluxApiUrl. Built at module
+ *  load from synalux.ai + localhost defaults plus an opt-in env
+ *  override (NEXT_PUBLIC_SYNALUX_EMERGENCY_HOSTS — comma-separated).
+ *  The env override exists so a future custom domain doesn't silently
+ *  break emergency dispatch — operators can add their domain via env
+ *  without a code change. https-only for the production hosts (via
+ *  isHttpsAllowedUrl below); localhost permits http for local dev. */
+function buildAllowedHosts(): { production: Set<string>; localhost: Set<string> } {
+  const production = new Set<string>(['synalux.ai', 'www.synalux.ai']);
+  const localhost = new Set<string>(['localhost', '127.0.0.1', '0.0.0.0']);
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SYNALUX_EMERGENCY_HOSTS) {
+    for (const h of process.env.NEXT_PUBLIC_SYNALUX_EMERGENCY_HOSTS.split(',')) {
+      const trimmed = h.trim().toLowerCase();
+      if (trimmed) production.add(trimmed);
+    }
+  }
+  return { production, localhost };
+}
+const { production: PROD_API_HOSTS, localhost: LOCAL_API_HOSTS } = buildAllowedHosts();
+const ALLOWED_API_HOSTS = new Set([...PROD_API_HOSTS, ...LOCAL_API_HOSTS]);
 
 /** Coerce sanitizeString's '' return into the presence-or-undefined
  *  idiom the profile builder uses. */
@@ -376,7 +388,13 @@ export function validateEmergencyConfig(raw: unknown): EmergencyConfig {
     ...(typeof x.language === 'string' && x.language.length > 0 && x.language.length <= 16
       ? { language: x.language.replace(/[^a-zA-Z-]/g, '').slice(0, 16) }
       : {}),
-    ...(isHttpsAllowedUrl(x.synaluxApiUrl, ALLOWED_API_HOSTS, { maxLen: MAX_API_URL_LEN })
+    // Production hosts: https-only (PII over plaintext is a hard no).
+    // Localhost dev: http permitted because there's no real PII +
+    // local dev doesn't have a TLS cert. Two-step check keeps the
+    // strict default (allowHttp:false) for the production hostnames
+    // and only relaxes it when the host is explicitly localhost.
+    ...((isHttpsAllowedUrl(x.synaluxApiUrl, PROD_API_HOSTS, { maxLen: MAX_API_URL_LEN })
+      || isHttpsAllowedUrl(x.synaluxApiUrl, LOCAL_API_HOSTS, { maxLen: MAX_API_URL_LEN, allowHttp: true }))
       ? { synaluxApiUrl: x.synaluxApiUrl as string }
       : {}),
   };

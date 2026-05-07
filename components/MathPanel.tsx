@@ -42,7 +42,7 @@ function expressionToSpeech(expr: string): string {
 export default function MathPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { appendText } = useMessageStore();
-  const { speechRate, speechVolume } = useSettingsStore();
+  const { speechRate, speechVolume, language } = useSettingsStore();
   const profile = useAuthStore((s) => s.profile);
   const { t, outputTtsCode } = useT();
   const [expression, setExpression] = useState('');
@@ -168,7 +168,7 @@ export default function MathPanel() {
       await askAI(prompts[mode], MATH_TUTOR_CONTEXT, (delta) => {
         buffer += delta;
         setAiHint(buffer);
-      });
+      }, language);
       setAiHint(buffer);
       if (buffer) aacSpeak(buffer, speechRate, speechVolume);
     } catch {
