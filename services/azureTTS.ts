@@ -188,6 +188,116 @@ export function stopAzureAudio(): void {
   liveBlobUrls.clear();
 }
 
+/**
+ * Decode an audio buffer (MP3 / WAV / Opus / etc. — anything Web Audio
+ * decodeAudioData can handle) into the shared AudioContext and play it
+ * via a BufferSourceNode. Used by both the Gemini primary path and the
+ * Inworld/Azure fallback path. Returns false if anything goes wrong so
+ * the caller can fall through to the next tier.
+ *
+ * Why BufferSourceNode + a singleton AudioContext (not `new Audio()`):
+ * iOS Safari silently rejects `audio.play()` after `await fetch()` —
+ * the user-gesture token is consumed by the await. BufferSourceNode
+ * only needs the AudioContext in 'running' state, which the warmup in
+ * PrismApp.tsx arranges on first interaction.
+ */
+async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string): Promise<boolean> {
+  let ctx: AudioContext;
+  try {
+    ctx = getAudioContext();
+  } catch (e) {
+    console.warn(`[${label}] AudioContext unavailable, audio cannot play:`, e);
+    return false;
+  }
+  if (ctx.state === 'suspended') {
+    try { await ctx.resume(); } catch { /* decode below will signal */ }
+  }
+
+  let decoded: AudioBuffer;
+  try {
+    decoded = await ctx.decodeAudioData(audioBytes.slice(0));
+  } catch (e) {
+    console.warn(`[${label}] decodeAudioData failed:`, e instanceof Error ? e.message : e);
+    return false;
+  }
+
+  const source = ctx.createBufferSource();
+  source.buffer = decoded;
+  const gain = ctx.createGain();
+  gain.gain.value = Math.max(0, Math.min(1, volume));
+  source.connect(gain).connect(ctx.destination);
+
+  activeSources.add(source);
+  source.onended = () => {
+    activeSources.delete(source);
+    try { source.disconnect(); } catch { /* */ }
+    try { gain.disconnect(); } catch { /* */ }
+  };
+
+  try {
+    source.start(0);
+  } catch (e) {
+    console.warn(`[${label}] source.start failed:`, e instanceof Error ? e.message : e);
+    activeSources.delete(source);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Tier 1a — Gemini 2.5 Flash Preview TTS (PRIMARY).
+ * Hits /api/v1/prism-aac/tts/public on the portal. Server returns
+ * audio/wav (PCM wrapped in a RIFF header so decodeAudioData works).
+ * Public route — no auth, CORS allow-*, rate-limited per IP.
+ *
+ * The portal route is the swap point: a future server-side backend
+ * rotation replaces the Gemini fetch on the SERVER side and this
+ * client code stays the same. Backend rotation is invisible here.
+ *
+ * Returns true on play success; false on ANY failure (rate limit,
+ * upstream 5xx, decode failure, etc.) so the caller falls through to
+ * the Inworld two-tier chain.
+ */
+async function speakGemini(
+  text: string,
+  volume: number,
+  controller: AbortController,
+): Promise<boolean> {
+  // Gemini doesn't take SSML — it does its own prosody. Send plain text.
+  // Keep within the server's 4KB UTF-8 cap; longer messages are very
+  // rare on the AAC surface but caps elsewhere will trim if needed.
+  try {
+    const res = await fetch(`${SYNALUX_API}/prism-aac/tts/public`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+      signal: controller.signal,
+      // NO credentials: include — the response uses ACAO=*, which the
+      // CORS spec rejects when combined with credentials. Same fix that
+      // landed on the Inworld fetch below.
+    });
+    if (!res.ok) {
+      // 503 = key not configured, 502 = upstream non-ok, 429 = rate-
+      // limited — every case the route signals `fallback: 'inworld'`
+      // in the JSON body. Caller falls through automatically.
+      console.warn(`[Gemini-TTS] non-ok ${res.status} — falling through to Inworld`);
+      return false;
+    }
+    const audioBytes = await res.arrayBuffer();
+    if (audioBytes.byteLength === 0) {
+      console.warn('[Gemini-TTS] empty audio buffer — falling through to Inworld');
+      return false;
+    }
+    stopAzureAudio();
+    return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS');
+  } catch (e) {
+    // Network / abort / timeout. Speech-service still has Kokoro and
+    // Web Speech to fall back to even if Inworld is also down.
+    console.warn('[Gemini-TTS] fetch threw:', e instanceof Error ? e.message : e);
+    return false;
+  }
+}
+
 export async function speakAzure(
   text: string,
   lang: string,
@@ -204,6 +314,17 @@ export async function speakAzure(
   activeControllers.add(controller);
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
+    // ── Tier 1a: Gemini 2.5 Flash Preview (primary) ──
+    // The Gemini public route runs ahead of Inworld. On any failure
+    // (key missing, rate limit, decode error, network) we fall through
+    // to the existing Inworld two-tier chain — the AAC user never
+    // notices the rotation.
+    if (await speakGemini(text, volume, controller)) {
+      clearTimeout(timeout);
+      activeControllers.delete(controller);
+      return true;
+    }
+
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
     // The portal route accepts voiceId from the catalog and routes to the
@@ -233,6 +354,7 @@ export async function speakAzure(
       reqBody.autoStyle = true;
     }
 
+    // ── Tier 1b: Inworld → Azure (fallback when Gemini is unavailable) ──
     // Two-tier endpoint strategy (matches portal's tier policy):
     //   1. /api/v1/tts/public — Inworld for everyone, no auth, rate-
     //      limited. Natural neural voices for free + paid tiers.
@@ -249,11 +371,19 @@ export async function speakAzure(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reqBody),
       signal: controller.signal,
-      credentials: 'include',
+      // NO credentials: include — the route returns ACAO=*, which the
+      // browser CORS check rejects when combined with credentials=include.
+      // Without this fix the cross-origin call from prism-aac.vercel.app
+      // failed silently before even reaching the server.
     });
     let res = publicRes;
     if (!publicRes.ok && publicRes.status === 502) {
       // Inworld choked. Try the auth route — paid users get Azure here.
+      // This route is NOT cross-origin-CORS'd; it relies on the
+      // synalux.ai NextAuth cookie, which only flows when prism-aac
+      // is served same-site (cookie domain). Cross-origin from
+      // prism-aac.vercel.app this fetch will be 401 — that's fine,
+      // the speech-service tier 2/3 chain takes over.
       const authRes = await fetch(`${SYNALUX_API}/tts`, {
         method: 'POST',
         headers,
@@ -275,56 +405,7 @@ export async function speakAzure(
 
     stopAzureAudio();
     const audioBytes = await res.arrayBuffer();
-
-    // Web Audio API path: decode the MP3/WAV bytes and play via a
-    // BufferSourceNode. Unlike `new Audio().play()` after `await fetch()`,
-    // BufferSourceNode.start() does NOT need a fresh user-gesture token —
-    // only that the AudioContext is in 'running' state. PrismApp.tsx warms
-    // up the context on first interaction so this reliably plays even when
-    // Speak is tapped seconds after the message was last typed.
-    let ctx: AudioContext;
-    try {
-      ctx = getAudioContext();
-    } catch (e) {
-      console.warn('[AzureTTS] AudioContext unavailable, audio cannot play:', e);
-      return false;
-    }
-    if (ctx.state === 'suspended') {
-      try { await ctx.resume(); } catch { /* will fail decode below */ }
-    }
-
-    let decoded: AudioBuffer;
-    try {
-      // decodeAudioData returns a Promise in modern browsers. Older Safari
-      // expected a callback-style API; the Promise form has been stable
-      // since iOS 14 / Chrome 91 so we don't bother with the legacy form.
-      decoded = await ctx.decodeAudioData(audioBytes.slice(0));
-    } catch (e) {
-      console.warn('[AzureTTS] decodeAudioData failed:', e instanceof Error ? e.message : e);
-      return false;
-    }
-
-    const source = ctx.createBufferSource();
-    source.buffer = decoded;
-    const gain = ctx.createGain();
-    gain.gain.value = Math.max(0, Math.min(1, volume));
-    source.connect(gain).connect(ctx.destination);
-
-    activeSources.add(source);
-    source.onended = () => {
-      activeSources.delete(source);
-      try { source.disconnect(); } catch { /* */ }
-      try { gain.disconnect(); } catch { /* */ }
-    };
-
-    try {
-      source.start(0);
-    } catch (e) {
-      console.warn('[AzureTTS] source.start failed:', e instanceof Error ? e.message : e);
-      activeSources.delete(source);
-      return false;
-    }
-    return true;
+    return await decodeAndPlay(audioBytes, volume, 'AzureTTS');
   } catch (e) {
     console.warn('[AzureTTS] Fetch failed:', e instanceof Error ? e.message : e);
     if (url) releaseBlob(url);

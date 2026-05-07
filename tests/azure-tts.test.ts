@@ -62,11 +62,25 @@ beforeEach(() => {
     MockAudioContext as unknown as typeof AudioContext;
 });
 
+// Default Gemini handler — always fail so the existing Inworld
+// assertions in the rest of this file stay meaningful. Tests that
+// specifically exercise the Gemini path opt in by overriding it.
+function geminiFail(): Response {
+  return new Response(JSON.stringify({ error: 'TTS not configured', fallback: 'inworld' }), {
+    status: 503, headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 function mockFetch(handlers: Record<string, () => Response | Promise<Response>>): void {
   const fn = vi.fn(async (url: string) => {
-    for (const [path, handler] of Object.entries(handlers)) {
+    // Most-specific match first so /prism-aac/tts/public doesn't get
+    // swallowed by an /tts/public handler. Sort by descending path length.
+    const entries = Object.entries(handlers).sort((a, b) => b[0].length - a[0].length);
+    for (const [path, handler] of entries) {
       if (url.endsWith(path)) return handler();
     }
+    // Default: Gemini calls fail so Inworld assertions still apply.
+    if (url.includes('/prism-aac/tts/public')) return geminiFail();
     return new Response(JSON.stringify({ error: 'unmocked url ' + url }), { status: 500 });
   });
   vi.stubGlobal('fetch', fn);
@@ -140,62 +154,190 @@ describe('speakAzure — two-tier endpoint strategy', () => {
     expect(MockBufferSource.startCalls).toBe(0);
   });
 
-  it('forwards voiceId in the request body so the portal routes correctly', async () => {
-    let captured: { ssml?: string; voiceId?: string } = {};
-    mockFetch({
-      '/tts/public': async () => {
-        // Replay the most recent fetch's body — the global fn is the
-        // last one stubbed; capture via a side-effect closure.
+  // Body-shape capture: only inspect what's sent to the INWORLD route
+  // (/tts/public), since the Gemini PRIMARY (/prism-aac/tts/public) sends
+  // a different body shape (just { text }). Tests must fail Gemini so
+  // the function falls through and actually fires the Inworld fetch.
+  function captureInworld<T>(): { capture: T; fetchFn: ReturnType<typeof vi.fn> } {
+    const captured = {} as T;
+    const fetchFn = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes('/prism-aac/tts/public')) return geminiFail();
+      if (url.includes('/tts/public') || url.endsWith('/tts')) {
+        if (init?.body) Object.assign(captured as Record<string, unknown>, JSON.parse(String(init.body)));
         return audioOk();
-      },
+      }
+      return new Response('', { status: 500 });
     });
-    // Override fetch with a body-capturing variant for this case.
-    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
-      if (init?.body) captured = JSON.parse(String(init.body));
-      return audioOk();
-    }));
+    return { capture: captured, fetchFn };
+  }
+
+  it('forwards voiceId in the Inworld request body so the portal routes correctly', async () => {
+    const { capture, fetchFn } = captureInworld<{ ssml?: string; voiceId?: string }>();
+    vi.stubGlobal('fetch', fetchFn);
     const { speakAzure } = await import('@/services/azureTTS');
     await speakAzure('hello', 'en-US', 'friendly', 0.5, 1.0, '', 'Alex');
-    expect(captured.voiceId).toBe('Alex');
-    expect(captured.ssml).toContain('en-US');
-    expect(captured.ssml).toContain('hello');
+    expect(capture.voiceId).toBe('Alex');
+    expect(capture.ssml).toContain('en-US');
+    expect(capture.ssml).toContain('hello');
   });
 
-  it('omits voiceId when caller did not specify one (lets server pick)', async () => {
-    let captured: { voiceId?: string } = {};
-    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
-      if (init?.body) captured = JSON.parse(String(init.body));
-      return audioOk();
-    }));
+  it('omits voiceId in Inworld request when caller did not specify one (lets server pick)', async () => {
+    const { capture, fetchFn } = captureInworld<{ voiceId?: string }>();
+    vi.stubGlobal('fetch', fetchFn);
     const { speakAzure } = await import('@/services/azureTTS');
     await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
-    expect(captured.voiceId).toBeUndefined();
+    expect(capture.voiceId).toBeUndefined();
   });
 
-  it('opts into autoStyle + surface=aac when tone is the default friendly', async () => {
-    let captured: { surface?: string; autoStyle?: boolean; style?: string } = {};
-    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
-      if (init?.body) captured = JSON.parse(String(init.body));
-      return audioOk();
-    }));
+  it('opts into Inworld autoStyle + surface=aac when tone is the default friendly', async () => {
+    const { capture, fetchFn } = captureInworld<{ surface?: string; autoStyle?: boolean; style?: string }>();
+    vi.stubGlobal('fetch', fetchFn);
     const { speakAzure } = await import('@/services/azureTTS');
     await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
-    expect(captured.surface).toBe('aac');
-    expect(captured.autoStyle).toBe(true);
+    expect(capture.surface).toBe('aac');
+    expect(capture.autoStyle).toBe(true);
     // explicit style is left unset so the server-side picker chooses.
-    expect(captured.style).toBeUndefined();
+    expect(capture.style).toBeUndefined();
   });
 
   it('sends explicit Inworld style (not autoStyle) when user picked a non-default tone', async () => {
-    let captured: { surface?: string; autoStyle?: boolean; style?: string } = {};
-    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
-      if (init?.body) captured = JSON.parse(String(init.body));
-      return audioOk();
-    }));
+    const { capture, fetchFn } = captureInworld<{ surface?: string; autoStyle?: boolean; style?: string }>();
+    vi.stubGlobal('fetch', fetchFn);
     const { speakAzure } = await import('@/services/azureTTS');
     await speakAzure('Take meds NOW', 'en-US', 'angry', 0.5, 1.0, '');
-    expect(captured.style).toBe('urgent');
-    expect(captured.autoStyle).toBeUndefined();
+    expect(capture.style).toBe('urgent');
+    expect(capture.autoStyle).toBeUndefined();
+  });
+});
+
+// ── Gemini-first primary path ─────────────────────────────────────
+//
+// Gemini 2.5 Flash Preview TTS at /api/v1/prism-aac/tts/public is the
+// PRIMARY backend. The architectural design is: AAC client always tries
+// Gemini first → on any failure (key missing, rate limit, decode error,
+// network) falls through to the Inworld two-tier chain. When prism-coder
+// 72B TTS lands the SERVER swaps the backend behind that URL — this
+// client code stays the same.
+describe('speakAzure — Gemini-first primary backend', () => {
+  function audioOkWav(bytes = 1024): Response {
+    return new Response(new ArrayBuffer(bytes), {
+      status: 200,
+      headers: { 'Content-Type': 'audio/wav', 'X-TTS-Backend': 'gemini-2.5-flash-preview' },
+    });
+  }
+
+  it('calls /api/v1/prism-aac/tts/public BEFORE /api/v1/tts/public (Gemini is primary)', async () => {
+    const callOrder: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/prism-aac/tts/public')) {
+        callOrder.push('gemini');
+        return audioOkWav();
+      }
+      if (url.includes('/tts/public')) {
+        callOrder.push('inworld');
+        return audioOk();
+      }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    const result = await speakAzure('hello', 'en-US', 'friendly', 0.5, 1.0, '');
+    expect(result).toBe(true);
+    expect(callOrder[0]).toBe('gemini');
+    // Inworld is NOT called when Gemini succeeds.
+    expect(callOrder).not.toContain('inworld');
+  });
+
+  it('Gemini sends only { text } — no SSML, voiceId, or style fields', async () => {
+    let geminiBody: { text?: string; ssml?: string; voiceId?: string; style?: string } = {};
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes('/prism-aac/tts/public')) {
+        if (init?.body) geminiBody = JSON.parse(String(init.body));
+        return audioOkWav();
+      }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    await speakAzure('hello world', 'en-US', 'angry', 0.5, 1.0, '', 'Alex');
+    expect(geminiBody.text).toBe('hello world');
+    // Gemini doesn't take SSML / voiceId / style — server picks its own.
+    expect(geminiBody.ssml).toBeUndefined();
+    expect(geminiBody.voiceId).toBeUndefined();
+    expect(geminiBody.style).toBeUndefined();
+  });
+
+  it('NO credentials:include on the Gemini fetch (CORS spec rejects credentials + ACAO=*)', async () => {
+    let geminiCredentials: RequestCredentials | undefined;
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes('/prism-aac/tts/public')) {
+        geminiCredentials = init?.credentials;
+        return audioOkWav();
+      }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
+    // Either undefined (default 'same-origin') or explicitly NOT 'include'.
+    expect(geminiCredentials).not.toBe('include');
+  });
+
+  it('falls through to Inworld on Gemini 503 (key not configured)', async () => {
+    let inworldCalled = false;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/prism-aac/tts/public')) return geminiFail();
+      if (url.includes('/tts/public')) { inworldCalled = true; return audioOk(); }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
+    expect(result).toBe(true);
+    expect(inworldCalled).toBe(true);
+  });
+
+  it('falls through to Inworld on Gemini 502 (upstream non-ok)', async () => {
+    let inworldCalled = false;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/prism-aac/tts/public')) {
+        return new Response(JSON.stringify({ error: 'TTS failed', fallback: 'inworld' }), {
+          status: 502, headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('/tts/public')) { inworldCalled = true; return audioOk(); }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
+    expect(result).toBe(true);
+    expect(inworldCalled).toBe(true);
+  });
+
+  it('falls through to Inworld when Gemini returns empty audio', async () => {
+    let inworldCalled = false;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/prism-aac/tts/public')) {
+        return new Response(new ArrayBuffer(0), {
+          status: 200, headers: { 'Content-Type': 'audio/wav' },
+        });
+      }
+      if (url.includes('/tts/public')) { inworldCalled = true; return audioOk(); }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
+    expect(result).toBe(true);
+    expect(inworldCalled).toBe(true);
+  });
+
+  it('falls through to Inworld when Gemini fetch throws (network / abort)', async () => {
+    let inworldCalled = false;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/prism-aac/tts/public')) throw new Error('network down');
+      if (url.includes('/tts/public')) { inworldCalled = true; return audioOk(); }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
+    expect(result).toBe(true);
+    expect(inworldCalled).toBe(true);
   });
 });
 
