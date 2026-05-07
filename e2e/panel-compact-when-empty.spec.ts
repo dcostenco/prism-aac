@@ -16,7 +16,14 @@
  */
 import { test, expect, type Page } from '@playwright/test';
 
-const COMPACT_MAX_PX = 240; // header + single-row CTA = ~190px; allow slack
+// Cap chosen to match design intent (header + one CTA bar ≤ ~130px),
+// NOT to whatever the unconfigured branch happens to measure. The
+// 240px cap that shipped on 2026-05-07 silently passed the
+// configured-empty branch at 202px, which the user reported as broken.
+// New canonical check is scripts/visual-check.mjs + verify-state-coverage.mjs
+// — covers BOTH unconfigured and configured-empty. This e2e cap is the
+// spec-level guardrail; the runtime verifier is the deep one.
+const COMPACT_MAX_PX = 140;
 
 async function bootClean(page: Page, baseURL: string | undefined) {
   const start = baseURL || '/';

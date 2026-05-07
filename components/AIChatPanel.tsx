@@ -151,16 +151,16 @@ export default function AIChatPanel() {
     setLoading(false);
   };
 
-  // Compact when there's nothing to show. The prior "compact" attempt
-  // only swapped flex-[3]→flex-none; the body still rendered a 3-line
-  // centered placeholder ("Type a question…", big "Ask AI ✨" header,
-  // "Tap any AI response…") that took ~300px on its own — so the panel
-  // *was* compact in the flex sense but visually still ~500px tall, and
-  // the user reported it as still broken (May 2026 screenshot post-deploy).
-  // Real fix: when compact, drop the entire body div. Header (~70px) +
-  // footer with the green Ask AI button (~120px) = ~190px total, qwerty
-  // takes the rest. The footer button alone telegraphs the action; the
-  // placeholder copy was redundant.
+  // Compact when there's nothing to show. THIRD pass at this fix —
+  // first attempt only flipped flex-[3]→flex-none (DOM compact, render
+  // 500px). Second attempt dropped the body but kept the footer
+  // (hint + 🎙 + Ask AI), still ~230px on a wide viewport — keyboard's
+  // bottom row clipped (user screenshot 2026-05-07: "nothing fixed").
+  // Real-real fix: drop the FOOTER too in compact mode. Header only
+  // (~60px). The user types on the qwerty; first character flips
+  // text.trim() truthy → panel becomes expanded → full footer with
+  // hint + mic + Ask AI button reappears. The mic moves into the
+  // header in compact mode so voice input stays discoverable.
   const isCompact = (configured && messages.length === 0 && !loading && !text.trim()) || !configured;
 
   return (
@@ -174,22 +174,41 @@ export default function AIChatPanel() {
       data-testid="ai-chat-panel"
       data-state={isCompact ? 'compact' : 'expanded'}
     >
-      <header className="flex items-center justify-between px-4 py-3 border-b border-theme shrink-0">
-        <span className="text-primary font-bold text-2xl md:text-3xl">✨ {t('ai_chat_title')}</span>
-        <button
-          onClick={() => { tapFeedback(); closeSidePanel(); }}
-          aria-label={t('close_ai_chat')}
-          className="aac-btn w-12 h-12 rounded-xl surface-key text-muted text-2xl flex items-center justify-center border border-theme"
-        >
-          ✕
-        </button>
+      <header className="flex items-center justify-between px-4 py-2 border-b border-theme shrink-0">
+        <span className="text-primary font-bold text-xl md:text-2xl">✨ {t('ai_chat_title')}</span>
+        <div className="flex items-center gap-2">
+          {/* Mic button is part of the header in compact mode so voice
+              input stays one tap away even when the footer is hidden. */}
+          {isCompact && configured && voiceSupported && (
+            <button
+              onClick={toggleVoice}
+              aria-label={listening ? t('stop_voice') : t('start_voice')}
+              aria-pressed={listening}
+              data-testid="ai-mic-compact"
+              className={`aac-btn rounded-lg font-bold text-xl px-3 min-h-[40px] flex items-center justify-center ${
+                listening
+                  ? 'bg-[#F44336] text-white animate-pulse'
+                  : 'surface-key text-primary border border-theme'
+              }`}
+            >
+              {listening ? '⏺' : '🎙'}
+            </button>
+          )}
+          <button
+            onClick={() => { tapFeedback(); closeSidePanel(); }}
+            aria-label={t('close_ai_chat')}
+            className="aac-btn w-10 h-10 rounded-lg surface-key text-muted text-xl flex items-center justify-center border border-theme"
+          >
+            ✕
+          </button>
+        </div>
       </header>
 
       {!configured ? (
-        // Unconfigured: keep a single short hint above the footer (no
-        // tall vertical-centered block) so the section stays compact.
-        <div className="px-4 py-2 text-center shrink-0 border-b border-theme">
-          <p className="text-primary font-bold text-base">{t('ai_chat_requires_account')}</p>
+        // Unconfigured: a single short hint inside the header strip
+        // is enough; no body, no footer, no big vertical-centered card.
+        <div className="px-4 py-1.5 text-center shrink-0 border-b border-theme">
+          <p className="text-primary font-bold text-sm">{t('ai_chat_requires_account')}</p>
         </div>
       ) : (
         <>
@@ -234,6 +253,12 @@ export default function AIChatPanel() {
           </div>
           )}
 
+          {/* Footer — hint + mic + Ask AI. ONLY rendered when not
+              compact, i.e. user has typed something or there are
+              messages. In compact (empty) mode the footer is gone
+              and the qwerty fills its space; the in-header mic stays
+              discoverable. */}
+          {!isCompact && (
           <div className="p-3 border-t border-theme shrink-0">
             <div className="text-muted text-base md:text-lg mb-2 text-center truncate">
               {listening && interim ? (
@@ -273,6 +298,7 @@ export default function AIChatPanel() {
               </button>
             </div>
           </div>
+          )}
         </>
       )}
     </section>
