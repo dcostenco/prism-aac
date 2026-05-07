@@ -147,9 +147,18 @@ const ADV_MATH_KEYS: Array<{ glyph: string; label: string }> = [
 
 function MathAdvMathKeyboard() {
   const commitGlyph = useMathGridStore((s) => s.commitGlyph);
+  const openFractionBox = useMathGridStore((s) => s.openFractionBox);
+  const moveToFractionDenominator = useMathGridStore((s) => s.moveToFractionDenominator);
+  const openLongDivisionHouse = useMathGridStore((s) => s.openLongDivisionHouse);
+  const addRootBar = useMathGridStore((s) => s.addRootBar);
+  const toggleSummationLine = useMathGridStore((s) => s.toggleSummationLine);
   const KEY_BASE =
     'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
     'flex items-center justify-center min-h-[44px] active:translate-y-px';
+  const TOOL_BASE =
+    'aac-btn rounded-lg font-bold border border-transparent select-none ' +
+    'flex items-center justify-center min-h-[44px] active:translate-y-px ' +
+    'bg-[#2196F3] text-white';
   return (
     <div className="p-2 space-y-2" data-testid="math-adv-math-keyboard">
       <div className="grid grid-cols-8 gap-1.5">
@@ -165,6 +174,51 @@ function MathAdvMathKeyboard() {
             {glyph}
           </button>
         ))}
+      </div>
+      {/* Decoration tools — these don't write a single glyph; they
+          insert a structural decoration (fraction bar, long-division
+          house, root bar) and reposition the cursor. */}
+      <div className="grid grid-cols-5 gap-1.5">
+        <button
+          onClick={() => { tapFeedback(); openFractionBox(); }}
+          data-testid="math-tool-fraction-box"
+          aria-label="Open fraction box"
+          className={`${TOOL_BASE} py-2.5 text-base`}
+        >
+          a/b
+        </button>
+        <button
+          onClick={() => { tapFeedback(); moveToFractionDenominator(); }}
+          data-testid="math-tool-fraction-to-denominator"
+          aria-label="Move cursor to denominator"
+          className={`${TOOL_BASE} py-2.5 text-base`}
+        >
+          ⤓ den
+        </button>
+        <button
+          onClick={() => { tapFeedback(); openLongDivisionHouse(); }}
+          data-testid="math-tool-long-division"
+          aria-label="Open long-division house"
+          className={`${TOOL_BASE} py-2.5 text-base`}
+        >
+          ÷⎴
+        </button>
+        <button
+          onClick={() => { tapFeedback(); addRootBar(); }}
+          data-testid="math-tool-root-bar"
+          aria-label="Add root bar above cursor"
+          className={`${TOOL_BASE} py-2.5 text-base`}
+        >
+          √‾
+        </button>
+        <button
+          onClick={() => { tapFeedback(); toggleSummationLine(); }}
+          data-testid="math-tool-summation-line"
+          aria-label="Toggle summation line"
+          className={`${TOOL_BASE} py-2.5 text-base`}
+        >
+          ___
+        </button>
       </div>
     </div>
   );

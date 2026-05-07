@@ -45,6 +45,13 @@ import {
   inferContext,
   type CursorContext,
 } from '@/engine/predictiveCursor';
+import {
+  openFractionBox as openFractionBoxPure,
+  moveToFractionDenominator as moveToFractionDenominatorPure,
+  openLongDivisionHouse as openLongDivisionHousePure,
+  addRootBar as addRootBarPure,
+  toggleSummationLine as toggleSummationLinePure,
+} from '@/engine/decorations';
 
 export interface MathGridStore extends MathGridState {
   // Cell ops
@@ -84,6 +91,12 @@ export interface MathGridStore extends MathGridState {
   // Decorations
   addDecoration: (d: Decoration) => void;
   removeDecoration: (predicate: (d: Decoration) => boolean) => void;
+  // High-level decoration tools (Phase 2B)
+  openFractionBox: (length?: number) => void;
+  moveToFractionDenominator: () => void;
+  openLongDivisionHouse: (length?: number) => void;
+  addRootBar: (length?: number) => void;
+  toggleSummationLine: () => void;
 
   // Doc-level
   reset: () => void;
@@ -119,6 +132,11 @@ export const useMathGridStore = create<MathGridStore>((set, get) => ({
 
   addDecoration: (d) => set((s) => addDecorationPure(s, d)),
   removeDecoration: (predicate) => set((s) => removeDecorationPure(s, predicate)),
+  openFractionBox: (length) => set((s) => openFractionBoxPure(s, length)),
+  moveToFractionDenominator: () => set((s) => moveToFractionDenominatorPure(s)),
+  openLongDivisionHouse: (length) => set((s) => openLongDivisionHousePure(s, length)),
+  addRootBar: (length) => set((s) => addRootBarPure(s, length)),
+  toggleSummationLine: () => set((s) => toggleSummationLinePure(s)),
 
   reset: () => set(() => createEmptyState()),
   loadFromSerialized: (raw) => set(() => deserializePure(raw)),
