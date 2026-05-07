@@ -93,18 +93,30 @@ function escapeXml(text: string): string {
 export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
   const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
   const supportsStyles = STYLE_SUPPORTED.has(voice);
-  const ratePercent = `${Math.round(rate * 100)}%`;
-  const pitchPercent = '+0%';
-  const volumeValue = Math.round(volume * 100);
+  // Multiplier form (1.0 = default, 0.9 = 10% slower, 1.15 = 15% faster).
+  // The `<rate>%</rate>` form was AMBIGUOUS — Azure interprets unsigned
+  // percentages as "delta from default", so `rate="100%"` parses as
+  // +100% (2× speed). That was the chipmunk-Romanian bug: EN routed
+  // through Inworld which strips <prosody>, RO/UK routed straight to
+  // Azure which honored the bogus rate. Multiplier syntax is the form
+  // the Azure SSML reference documents and is unambiguous everywhere.
+  // Clamp to Azure's accepted range to keep a stale settings entry
+  // (rate=10) from producing a 10× speech burst.
+  const rateClamped = Math.max(0.5, Math.min(2.0, Number.isFinite(rate) ? rate : 1));
+  const rateStr = rateClamped.toFixed(2);
+  const volumeValue = Math.max(0, Math.min(100, Math.round(volume * 100)));
 
   let inner = escapeXml(text);
   if (supportsStyles && tone !== 'friendly') {
     inner = `<mstts:express-as style="${tone}">${inner}</mstts:express-as>`;
   }
 
+  // Pitch attribute intentionally omitted — we never vary pitch and
+  // every form ("0%", "+0%", "0Hz") is parser-fragile across SSML
+  // implementations. Default pitch is correct for every supported voice.
   return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${lang}">
   <voice name="${voice}">
-    <prosody rate="${ratePercent}" pitch="${pitchPercent}" volume="${volumeValue}">
+    <prosody rate="${rateStr}" volume="${volumeValue}">
       ${inner}
     </prosody>
   </voice>

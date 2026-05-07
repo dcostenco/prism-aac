@@ -162,15 +162,24 @@ function isPaidTier(): boolean {
 // portal /tts/public route looks up via getVoiceEntry(voiceId) and
 // rejects unknown ids with 400.
 //
-// Romanian + Ukrainian have NO Inworld voice on the portal catalog —
-// the portal routes them to Azure neural voices.
+// Romanian + Ukrainian were previously pinned to ro-RO-AlinaNeural /
+// uk-UA-PolinaNeural (Azure voices). That forced the portal route to
+// Azure direct, where SSML `rate="50%"` (from the default speechRate
+// of 0.5) parsed as +50% = 1.5× speed → "chipmunk Romanian" reported
+// in May 2026. We now omit them entirely so prism-aac sends
+// voiceId=undefined, the portal `/tts/public` route picks Inworld
+// TTS-2 (which covers ro/uk/vi/tr via its multilingual model), and
+// the server-side `pickVoice()` in tts-inworld.ts picks the right
+// per-language voice via INWORLD_VOICE_RO / INWORLD_VOICE_UK env or
+// falls back to the multilingual default (Ashley) with the `language`
+// hint set from SSML. Inworld's prosody is gentler and the language
+// hint produces correct Romanian phonemes — no rate-percent ambiguity.
 const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
   en: 'Alex',    es: 'Diego',  fr: 'Sarah',  de: 'Mark',
   pt: 'Sarah',   it: 'Sarah',  nl: 'Sarah',  pl: 'Sarah',
   ja: 'Sarah',   zh: 'Mei',    ko: 'Sarah',  ru: 'Sarah',
   he: 'Sarah',   ar: 'Sarah',  hi: 'Aanya',
-  ro: 'ro-RO-AlinaNeural',
-  uk: 'uk-UA-PolinaNeural',
+  // ro / uk: intentionally undefined → portal routes to Inworld TTS-2.
 };
 
 /**
