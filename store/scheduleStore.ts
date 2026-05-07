@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { randomId } from '@/lib/uuid';
 import { SAFE_LIMITS } from '@/lib/safeStrings';
+import { safeJSONStorage } from '@/lib/safeStorage';
 
 /** Hard cap on incoming-message tasks before oldest-read eviction
  *  kicks in. 100 fits a chatty caregiver's day without bloating
@@ -215,13 +216,27 @@ export const useScheduleStore = create<ScheduleState>()(
     }),
     {
       name: 'prism-schedule',
-      storage: createJSONStorage(() =>
-        typeof window !== 'undefined' ? localStorage : {
-          getItem: () => null,
-          setItem: () => {},
-          removeItem: () => {},
-        }
-      ),
+      // Quota-safe wrapper — on QuotaExceededError, drop the OLDEST
+      // READ message-kind tasks (the disposable history, never the
+      // user's actual schedule routine items). Lets the AAC user keep
+      // ticking off "Brush teeth" even after a chatty caregiver fills
+      // the inbox cap.
+      storage: createJSONStorage(() => safeJSONStorage({
+        name: 'prism-schedule',
+        onQuotaExceeded: () => {
+          useScheduleStore.setState((s) => {
+            // Sort message tasks by (read first, oldest first) and drop
+            // the front half so the persist re-write fits.
+            const messageIds = s.tasks
+              .filter((t) => t.kind === 'message')
+              .sort((a, b) => Number(b.done) - Number(a.done) || (a.receivedAt ?? 0) - (b.receivedAt ?? 0))
+              .slice(0, Math.floor(MAX_MESSAGE_TASKS / 2))
+              .map((t) => t.id);
+            const dropIds = new Set(messageIds);
+            return { tasks: s.tasks.filter((t) => !dropIds.has(t.id)) };
+          });
+        },
+      })),
       // Hydration validator — drops malformed task entries that could
       // sneak in via tampered localStorage (browser extension / shared-
       // device sibling-tab). Caps task count, sender length, text length

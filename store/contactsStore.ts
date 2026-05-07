@@ -18,6 +18,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { randomId } from '@/lib/uuid';
+import { safeJSONStorage } from '@/lib/safeStorage';
 
 export type ContactProvider =
   | 'telegram'
@@ -187,9 +188,22 @@ export const useContactsStore = create<ContactsState>()(
     }),
     {
       name: 'prism-aac-contacts',
-      storage: createJSONStorage(() => (typeof window !== 'undefined' ? window.localStorage : ({
-        getItem: () => null, setItem: () => {}, removeItem: () => {},
-      } as unknown as Storage))),
+      // Quota-safe wrapper — on QuotaExceededError, drop the lowest-
+      // priority data (lastMessagePreview strings, which are server-
+      // sourced and refreshed on next sync) so the contact list itself
+      // survives. If still over after that, the persist write is lost
+      // for this tick; the in-memory state stays intact.
+      storage: createJSONStorage(() => safeJSONStorage({
+        name: 'prism-aac-contacts',
+        onQuotaExceeded: () => {
+          useContactsStore.setState((s) => ({
+            contacts: s.contacts.map(({ lastMessagePreview, ...c }) => {
+              void lastMessagePreview;
+              return c;
+            }),
+          }));
+        },
+      })),
       // Hydration validator — drops any contact entry that doesn't
       // match the expected shape, then enforces the MAX_CONTACTS cap.
       // Defends against tampered localStorage (browser extension /

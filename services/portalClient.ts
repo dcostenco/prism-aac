@@ -12,15 +12,12 @@
  * safe to surface to a toast (no portal internals leak past the first
  * 80 chars of any returned body).
  */
-import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
+import { SYNALUX_API, timeoutSignal, MAX_PORTAL_RESPONSE_BYTES } from '@/lib/portalConfig';
 import { sanitizeString } from '@/lib/safeStrings';
 
-/** Hard cap on the response body we'll read. A hostile or buggy portal
- *  returning a 100 MB JSON would otherwise OOM the AAC client. 1 MB
- *  fits every legitimate AAC payload (50 inbox messages × 4 KB or 500
- *  contacts × 1 KB row ≈ 500 KB peak). Anything larger is treated as
- *  a payload-too-large error. */
-const MAX_RESPONSE_BYTES = 1_048_576;
+// Local alias so the rest of this file reads the same as before. The
+// canonical knob is in lib/portalConfig — change once, ripples here.
+const MAX_RESPONSE_BYTES = MAX_PORTAL_RESPONSE_BYTES;
 
 export type PortalResult<T> =
   | { ok: true; data: T; status: number }

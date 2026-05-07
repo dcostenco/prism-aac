@@ -13,6 +13,13 @@ export const SYNALUX_API: string =
     ? process.env.NEXT_PUBLIC_SYNALUX_API
     : 'https://synalux.ai/api/v1';
 
+/** Hard cap on any single portal response body. A hostile or buggy
+ *  portal returning a 100 MB JSON would otherwise OOM the AAC client.
+ *  1 MB fits every legitimate AAC payload (50 inbox messages or 500
+ *  contact rows) with 4-5× headroom. Tunable here so other portal
+ *  consumers can pick this up via `import { MAX_PORTAL_RESPONSE_BYTES }`. */
+export const MAX_PORTAL_RESPONSE_BYTES = 1_048_576;
+
 /** True when the runtime supports AbortSignal.timeout (Safari 16+,
  *  Chrome 103+, Firefox 100+). All current browsers we ship to qualify,
  *  but old WKWebViews on aging tablets do not — fall back to a manually-
