@@ -34,6 +34,7 @@ import { useT } from '@/engine/useT';
 import MathGrid from './math/MathGrid';
 import MathKeyboardRegion from './math/MathKeyboardRegion';
 import MathLockTool from './math/MathLockTool';
+import MathDocsTool from './math/MathDocsTool';
 import { parseCellKey } from '@/engine/mathGrid';
 import type { Cell, CellKey } from '@/engine/mathGrid';
 
@@ -95,6 +96,7 @@ export default function MathPanel() {
       <header className="flex items-center justify-between px-4 py-2 border-b border-theme shrink-0 gap-3">
         <span className="text-primary font-bold text-xl">{t('math')}</span>
         <div className="flex items-center gap-2">
+          <MathDocsTool />
           <MathLockTool />
           <button
             onClick={handleDone}
