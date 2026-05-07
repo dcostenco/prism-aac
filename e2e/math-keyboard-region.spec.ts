@@ -65,12 +65,21 @@ test.describe('MathKeyboardRegion (Phase 2A)', () => {
     await expect(page.locator('[data-testid="math-key-ltr-a"]')).toHaveCount(0);
   });
 
-  test('not-yet-implemented categories render the Coming in Phase 2C placeholder', async ({ page, baseURL }) => {
+  test('every category swaps to its own keyboard panel (no placeholders left)', async ({ page, baseURL }) => {
     await gotoDevPage(page, baseURL);
-    for (const cat of ['misc-math', 'time-distance', 'weight', 'volume', 'geom', 'money']) {
+    // Each category id ↔ keyboard testid. Phase 2C wired all of them.
+    const expected: Record<string, string> = {
+      'misc-math':     'math-misc-keyboard',
+      'time-distance': 'math-time-distance-keyboard',
+      'weight':        'math-weight-keyboard',
+      'volume':        'math-volume-keyboard',
+      'geom':          'math-geom-keyboard',
+      'money':         'math-money-keyboard',
+    };
+    for (const [cat, kbId] of Object.entries(expected)) {
       await page.locator(`[data-testid="math-category-${cat}"]`).click();
-      await page.waitForTimeout(80);
-      await expect(page.locator(`[data-testid="math-placeholder-${cat}"]`)).toBeVisible();
+      await page.waitForTimeout(120);
+      await expect(page.locator(`[data-testid="${kbId}"]`)).toBeVisible();
     }
   });
 

@@ -114,11 +114,12 @@ export default function MathKeyboardRegion({ className = '' }: { className?: str
         {activeCategory === 'main' && <MathMainKeyboard />}
         {activeCategory === 'adv-math' && <MathAdvMathKeyboard />}
         {activeCategory === 'letters' && <MathLettersKeyboard />}
-        {(activeCategory === 'misc-math' || activeCategory === 'time-distance' ||
-          activeCategory === 'weight' || activeCategory === 'volume' ||
-          activeCategory === 'geom' || activeCategory === 'money') && (
-          <PlaceholderPanel categoryId={activeCategory} />
-        )}
+        {activeCategory === 'misc-math' && <MathMiscMathKeyboard />}
+        {activeCategory === 'time-distance' && <MathTimeDistanceKeyboard />}
+        {activeCategory === 'weight' && <MathWeightKeyboard />}
+        {activeCategory === 'volume' && <MathVolumeKeyboard />}
+        {activeCategory === 'geom' && <MathGeomKeyboard />}
+        {activeCategory === 'money' && <MathMoneyKeyboard />}
       </div>
     </div>
   );
@@ -266,16 +267,142 @@ function MathLettersKeyboard() {
   );
 }
 
-// ── Placeholder for unimplemented categories ─────────────────────
+// ── Phase 2C — glyph-grid keyboards ──────────────────────────────
 
-function PlaceholderPanel({ categoryId }: { categoryId: MathCategoryId }) {
+const GLYPH_KEY_BASE =
+  'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
+  'flex items-center justify-center min-h-[44px] active:translate-y-px';
+
+interface GlyphGridProps {
+  testid: string;
+  glyphs: Array<{ glyph: string; label: string }>;
+  cols?: number;
+  /** Defaults to text-xl. Pass smaller (text-base) for unit symbols
+   *  that include 2-3 chars. */
+  textSize?: string;
+}
+
+function GlyphGrid({ testid, glyphs, cols = 8, textSize = 'text-xl' }: GlyphGridProps) {
+  const commitGlyph = useMathGridStore((s) => s.commitGlyph);
   return (
-    <div
-      className="p-4 text-center text-muted text-sm"
-      data-testid={`math-placeholder-${categoryId}`}
-    >
-      <p className="font-bold">Coming in Phase 2C</p>
-      <p className="mt-1 text-xs">Tap Main to keep working.</p>
+    <div className="p-2" data-testid={testid}>
+      <div
+        className="grid gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
+        {glyphs.map(({ glyph, label }) => (
+          <button
+            key={`${testid}-${label}`}
+            onClick={() => { keyFeedback(); commitGlyph(glyph); }}
+            data-testid={`${testid}-${label.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`}
+            data-glyph={glyph}
+            aria-label={label}
+            className={`${GLYPH_KEY_BASE} py-2.5 ${textSize} whitespace-nowrap`}
+          >
+            {glyph}
+          </button>
+        ))}
+      </div>
     </div>
   );
+}
+
+const MISC_MATH_GLYPHS: Array<{ glyph: string; label: string }> = [
+  { glyph: '∈', label: 'element of' },
+  { glyph: '∉', label: 'not element of' },
+  { glyph: '⊂', label: 'subset of' },
+  { glyph: '⊆', label: 'subset or equal' },
+  { glyph: '∪', label: 'union' },
+  { glyph: '∩', label: 'intersection' },
+  { glyph: '∅', label: 'empty set' },
+  { glyph: '∀', label: 'for all' },
+  { glyph: '∃', label: 'there exists' },
+  { glyph: '¬', label: 'not' },
+  { glyph: '∧', label: 'and' },
+  { glyph: '∨', label: 'or' },
+  { glyph: '∞', label: 'infinity' },
+  { glyph: '∂', label: 'partial derivative' },
+  { glyph: '∇', label: 'nabla' },
+  { glyph: '∝', label: 'proportional to' },
+];
+function MathMiscMathKeyboard() {
+  return <GlyphGrid testid="math-misc-keyboard" glyphs={MISC_MATH_GLYPHS} cols={8} />;
+}
+
+const TIME_DISTANCE_GLYPHS: Array<{ glyph: string; label: string }> = [
+  { glyph: 's',  label: 'second' },
+  { glyph: 'min', label: 'minute' },
+  { glyph: 'hr', label: 'hour' },
+  { glyph: 'day', label: 'day' },
+  { glyph: 'mm', label: 'millimeter' },
+  { glyph: 'cm', label: 'centimeter' },
+  { glyph: 'm',  label: 'meter' },
+  { glyph: 'km', label: 'kilometer' },
+  { glyph: 'in', label: 'inch' },
+  { glyph: 'ft', label: 'foot' },
+  { glyph: 'yd', label: 'yard' },
+  { glyph: 'mi', label: 'mile' },
+];
+function MathTimeDistanceKeyboard() {
+  return <GlyphGrid testid="math-time-distance-keyboard" glyphs={TIME_DISTANCE_GLYPHS} cols={6} textSize="text-base" />;
+}
+
+const WEIGHT_GLYPHS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'mg', label: 'milligram' },
+  { glyph: 'g',  label: 'gram' },
+  { glyph: 'kg', label: 'kilogram' },
+  { glyph: 't',  label: 'metric ton' },
+  { glyph: 'oz', label: 'ounce' },
+  { glyph: 'lb', label: 'pound' },
+  { glyph: 'st', label: 'stone' },
+  { glyph: 'ton', label: 'ton' },
+];
+function MathWeightKeyboard() {
+  return <GlyphGrid testid="math-weight-keyboard" glyphs={WEIGHT_GLYPHS} cols={4} textSize="text-base" />;
+}
+
+const VOLUME_GLYPHS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'mL', label: 'milliliter' },
+  { glyph: 'L',  label: 'liter' },
+  { glyph: 'tsp', label: 'teaspoon' },
+  { glyph: 'tbsp', label: 'tablespoon' },
+  { glyph: 'cup', label: 'cup' },
+  { glyph: 'pt', label: 'pint' },
+  { glyph: 'qt', label: 'quart' },
+  { glyph: 'gal', label: 'gallon' },
+];
+function MathVolumeKeyboard() {
+  return <GlyphGrid testid="math-volume-keyboard" glyphs={VOLUME_GLYPHS} cols={4} textSize="text-base" />;
+}
+
+const GEOM_GLYPHS: Array<{ glyph: string; label: string }> = [
+  { glyph: '△', label: 'triangle' },
+  { glyph: '▲', label: 'filled triangle' },
+  { glyph: '□', label: 'square' },
+  { glyph: '◯', label: 'circle' },
+  { glyph: '◇', label: 'diamond' },
+  { glyph: '∠', label: 'angle' },
+  { glyph: '⟂', label: 'perpendicular' },
+  { glyph: '∥', label: 'parallel' },
+  { glyph: '°', label: 'degree' },
+  { glyph: '≅', label: 'congruent to' },
+  { glyph: '≈', label: 'approximately equal' },
+  { glyph: '↔', label: 'left-right arrow' },
+];
+function MathGeomKeyboard() {
+  return <GlyphGrid testid="math-geom-keyboard" glyphs={GEOM_GLYPHS} cols={6} />;
+}
+
+const MONEY_GLYPHS: Array<{ glyph: string; label: string }> = [
+  { glyph: '$', label: 'dollar' },
+  { glyph: '¢', label: 'cent' },
+  { glyph: '€', label: 'euro' },
+  { glyph: '£', label: 'pound sterling' },
+  { glyph: '¥', label: 'yen' },
+  { glyph: '₹', label: 'rupee' },
+  { glyph: '₽', label: 'ruble' },
+  { glyph: '₩', label: 'won' },
+];
+function MathMoneyKeyboard() {
+  return <GlyphGrid testid="math-money-keyboard" glyphs={MONEY_GLYPHS} cols={4} />;
 }
