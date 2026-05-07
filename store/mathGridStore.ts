@@ -55,17 +55,22 @@ import {
 
 /** Identifier of the active keyboard panel inside the math module.
  *  The 9 original keyboards are all in the `'math'` domain (algebra,
- *  arithmetic, units, geometry, money). Phase 6 adds three subject
- *  keyboards that route the AI tutor through different prompt
- *  templates. */
+ *  arithmetic, units, geometry, money). Phase 6 added three subject
+ *  keyboards (chemistry / physics / programming-python|java);
+ *  Phase 7 adds biology, statistics, music, and earth-science to
+ *  cover a full high-school curriculum. */
 export type MathCategoryId =
   | 'main' | 'letters' | 'adv-math' | 'misc-math'
   | 'time-distance' | 'weight' | 'volume' | 'geom' | 'money'
-  | 'chemistry' | 'physics' | 'programming-python' | 'programming-java';
+  | 'chemistry' | 'physics' | 'programming-python' | 'programming-java'
+  | 'biology' | 'statistics' | 'music' | 'earth-science';
 
 /** Domain group used by the AI tutor. Multiple categories can share
  *  one domain (e.g. all 9 math keyboards → 'math'). */
-export type MathDomain = 'math' | 'chemistry' | 'physics' | 'programming-python' | 'programming-java';
+export type MathDomain =
+  | 'math' | 'chemistry' | 'physics'
+  | 'programming-python' | 'programming-java'
+  | 'biology' | 'statistics' | 'music' | 'earth-science';
 
 export function domainForCategory(cat: MathCategoryId): MathDomain {
   switch (cat) {
@@ -73,6 +78,10 @@ export function domainForCategory(cat: MathCategoryId): MathDomain {
     case 'physics':             return 'physics';
     case 'programming-python':  return 'programming-python';
     case 'programming-java':    return 'programming-java';
+    case 'biology':             return 'biology';
+    case 'statistics':          return 'statistics';
+    case 'music':               return 'music';
+    case 'earth-science':       return 'earth-science';
     default:                    return 'math';
   }
 }

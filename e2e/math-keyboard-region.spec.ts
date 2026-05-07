@@ -114,9 +114,9 @@ test.describe('MathKeyboardRegion (Phase 2A)', () => {
   test('every category chip meets the 44px tap-target floor', async ({ page, baseURL }) => {
     await gotoDevPage(page, baseURL);
     const chips = await page.locator('[data-testid^="math-category-"]').all();
-    // Phase 6 added Chemistry, Physics, Programming-Python, Programming-Java
-    // → 13 chips total (was 9 in 2A).
-    expect(chips.length, 'all 13 chips present (9 math + 4 universal-engine domains)').toBe(13);
+    // Phase 6 added Chemistry, Physics, Python, Java (→ 13).
+    // Phase 7 added Biology, Statistics, Music, Earth Science (→ 17).
+    expect(chips.length, 'all 17 chips present (9 math + 4 Phase-6 + 4 Phase-7 domains)').toBe(17);
     for (const chip of chips) {
       const box = await chip.boundingBox();
       const id = await chip.getAttribute('data-testid');

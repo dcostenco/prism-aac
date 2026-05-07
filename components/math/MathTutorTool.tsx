@@ -60,6 +60,26 @@ const PROMPT_TEMPLATES: Record<MathDomain, DomainPrompts> = {
     check: 'The child wrote this Java code: "{expr}". Check it: does it compile? Are types and semicolons correct? Will it run? If something is wrong, explain gently. If right, celebrate. Max 2 sentences.',
     solve: 'The child wrote this Java code: "{expr}". Show the corrected, compilable version step by step. Use simple words. Max 4 short steps. End with the working code.',
   },
+  biology: {
+    help:  'The child wrote this biology expression: "{expr}". They are likely working on DNA/RNA codons, taxonomy, genetics (Punnett square), cell organelles, or body systems. Give one hint pointing at the right concept WITHOUT solving. Max 2 sentences.',
+    check: 'The child wrote this biology expression: "{expr}". Check it: are the codons valid? Is the taxonomy ordered correctly (Kingdom → Species)? Are dominant/recessive alleles labelled right? Explain gently if wrong, celebrate if right. Max 2 sentences.',
+    solve: 'The child wrote this biology expression: "{expr}". Walk through the answer step by step (translate the codon, fill the Punnett square, name the organelle, etc.). Use simple language. Max 4 short steps.',
+  },
+  statistics: {
+    help:  'The child wrote this statistics expression: "{expr}". They are likely working with mean / std dev / probability / a hypothesis test / a distribution. Give one hint about the next step or the right formula WITHOUT computing. Max 2 sentences.',
+    check: 'The child wrote this statistics expression: "{expr}". Check it: are the symbols used correctly (μ vs x̄, σ vs s, population vs sample)? Are inequality bounds right? Explain gently if wrong, celebrate if right. Max 2 sentences.',
+    solve: 'The child wrote this statistics expression: "{expr}". Solve it step by step: identify the statistic, plug in numbers, report the result with units. Max 4 short steps.',
+  },
+  music: {
+    help:  'The child wrote this music notation: "{expr}". They are likely working on rhythm, key signatures, intervals, chords, or dynamics. Give one hint about what comes next WITHOUT writing the music. Max 2 sentences.',
+    check: 'The child wrote this music notation: "{expr}". Check it: do the note durations add up to the time signature? Is the key signature consistent? Are dynamics in order (pp < p < mp < mf < f < ff)? Explain gently if wrong, celebrate if right. Max 2 sentences.',
+    solve: 'The child wrote this music notation: "{expr}". Walk through it step by step (count beats, identify the chord, name the key). Use simple language. Max 4 short steps.',
+  },
+  'earth-science': {
+    help:  'The child wrote this earth-science expression: "{expr}". They are likely working on weather, plate tectonics, the rock cycle, or astronomy (planets, AU, light-years). Give one hint about the next step WITHOUT solving. Max 2 sentences.',
+    check: 'The child wrote this earth-science expression: "{expr}". Check it: are the planet symbols in order? Are weather symbols paired with the right phenomena? Are astronomical units (AU, ly, pc) used correctly? Explain gently if wrong, celebrate if right. Max 2 sentences.',
+    solve: 'The child wrote this earth-science expression: "{expr}". Walk through the answer step by step. Use simple language. Max 4 short steps.',
+  },
 };
 
 const TUTOR_CONTEXT_BY_DOMAIN: Record<MathDomain, string> = {
@@ -68,6 +88,10 @@ const TUTOR_CONTEXT_BY_DOMAIN: Record<MathDomain, string> = {
   physics: 'physics-tutor',
   'programming-python': 'python-tutor',
   'programming-java': 'java-tutor',
+  biology: 'biology-tutor',
+  statistics: 'statistics-tutor',
+  music: 'music-tutor',
+  'earth-science': 'earth-science-tutor',
 };
 
 const TUTOR_HARD_TIMEOUT_MS = 15_000;

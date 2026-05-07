@@ -53,6 +53,11 @@ const CATEGORIES: CategoryDef[] = [
   { id: 'physics',           label: 'Phys',   icon: 'Φ'  },
   { id: 'programming-python', label: 'Python', icon: 'py' },
   { id: 'programming-java',   label: 'Java',   icon: 'J'  },
+  // Phase 7 — full high-school curriculum coverage for AAC users.
+  { id: 'biology',      label: 'Bio',   icon: '🧬' },
+  { id: 'statistics',   label: 'Stats', icon: 'σ'  },
+  { id: 'music',        label: 'Music', icon: '𝄞' },
+  { id: 'earth-science', label: 'Earth', icon: '🌍' },
 ];
 
 // Re-export so older imports (`import { MathCategoryId } from '@/components/math/MathKeyboardRegion'`)
@@ -125,6 +130,10 @@ export default function MathKeyboardRegion({ className = '' }: { className?: str
         {activeCategory === 'physics' && <MathPhysicsKeyboard />}
         {activeCategory === 'programming-python' && <MathProgrammingKeyboard lang="python" />}
         {activeCategory === 'programming-java' && <MathProgrammingKeyboard lang="java" />}
+        {activeCategory === 'biology' && <MathBiologyKeyboard />}
+        {activeCategory === 'statistics' && <MathStatisticsKeyboard />}
+        {activeCategory === 'music' && <MathMusicKeyboard />}
+        {activeCategory === 'earth-science' && <MathEarthScienceKeyboard />}
       </div>
     </div>
   );
@@ -595,6 +604,267 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ── Phase 7 — Biology keyboard ───────────────────────────────────
+//
+// DNA/RNA bases, codon arrows, organelles, taxonomy ranks, and
+// genetics shorthand. Punnett squares are drawn directly on the
+// cell-grid canvas via the existing lock tool.
+
+const BIO_NUCLEOTIDES: Array<{ glyph: string; label: string }> = [
+  { glyph: 'A', label: 'adenine' },
+  { glyph: 'T', label: 'thymine' },
+  { glyph: 'G', label: 'guanine' },
+  { glyph: 'C', label: 'cytosine' },
+  { glyph: 'U', label: 'uracil' },
+  { glyph: '→', label: 'translates to' },
+  { glyph: '⇒', label: 'gives rise to' },
+  { glyph: 'mRNA', label: 'messenger rna' },
+  { glyph: 'tRNA', label: 'transfer rna' },
+  { glyph: 'rRNA', label: 'ribosomal rna' },
+  { glyph: 'DNA',  label: 'dna' },
+  { glyph: 'RNA',  label: 'rna' },
+];
+
+const BIO_GENETICS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'AA', label: 'homozygous dominant' },
+  { glyph: 'Aa', label: 'heterozygous' },
+  { glyph: 'aa', label: 'homozygous recessive' },
+  { glyph: 'BB', label: 'big-b homozygous' },
+  { glyph: 'Bb', label: 'big-b heterozygous' },
+  { glyph: 'bb', label: 'big-b homozygous recessive' },
+  { glyph: 'F1', label: 'first generation' },
+  { glyph: 'F2', label: 'second generation' },
+  { glyph: 'P',  label: 'parental' },
+  { glyph: '×',  label: 'cross' },
+  { glyph: '♂',  label: 'male' },
+  { glyph: '♀',  label: 'female' },
+];
+
+const BIO_TAXONOMY: Array<{ glyph: string; label: string }> = [
+  { glyph: 'Domain',  label: 'domain' },
+  { glyph: 'Kingdom', label: 'kingdom' },
+  { glyph: 'Phylum',  label: 'phylum' },
+  { glyph: 'Class',   label: 'class' },
+  { glyph: 'Order',   label: 'order' },
+  { glyph: 'Family',  label: 'family' },
+  { glyph: 'Genus',   label: 'genus' },
+  { glyph: 'Species', label: 'species' },
+];
+
+const BIO_ORGANELLES: Array<{ glyph: string; label: string }> = [
+  { glyph: 'nucleus',     label: 'nucleus' },
+  { glyph: 'mitochondria', label: 'mitochondria' },
+  { glyph: 'ribosome',    label: 'ribosome' },
+  { glyph: 'ER',          label: 'endoplasmic reticulum' },
+  { glyph: 'Golgi',       label: 'golgi' },
+  { glyph: 'lysosome',    label: 'lysosome' },
+  { glyph: 'chloroplast', label: 'chloroplast' },
+  { glyph: 'cell wall',   label: 'cell wall' },
+  { glyph: 'membrane',    label: 'cell membrane' },
+  { glyph: 'cytoplasm',   label: 'cytoplasm' },
+  { glyph: 'vacuole',     label: 'vacuole' },
+  { glyph: 'nucleolus',   label: 'nucleolus' },
+];
+
+function MathBiologyKeyboard() {
+  return (
+    <div className="p-2 space-y-2" data-testid="math-biology-keyboard">
+      <GlyphGrid testid="math-biology-nucleotides" glyphs={BIO_NUCLEOTIDES} cols={6} textSize="text-base" />
+      <GlyphGrid testid="math-biology-genetics" glyphs={BIO_GENETICS} cols={6} textSize="text-base" />
+      <GlyphGrid testid="math-biology-taxonomy" glyphs={BIO_TAXONOMY} cols={8} textSize="text-sm" />
+      <GlyphGrid testid="math-biology-organelles" glyphs={BIO_ORGANELLES} cols={6} textSize="text-sm" />
+    </div>
+  );
+}
+
+// ── Phase 7 — Statistics keyboard ────────────────────────────────
+//
+// Greek + sample stats + distributions + probability operators.
+// Inequality intervals reuse the Adv Math keys via the chip
+// switcher; this tab focuses on the statistics-specific glyphs.
+
+const STATS_PARAMS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'μ',  label: 'population mean' },
+  { glyph: 'σ',  label: 'population std' },
+  { glyph: 'σ²', label: 'population variance' },
+  { glyph: 'ρ',  label: 'correlation' },
+  { glyph: 'x̄',  label: 'sample mean' },
+  { glyph: 's',  label: 'sample std' },
+  { glyph: 's²', label: 'sample variance' },
+  { glyph: 'r',  label: 'sample correlation' },
+  { glyph: 'n',  label: 'sample size' },
+  { glyph: 'N',  label: 'population size' },
+  { glyph: 'p̂',  label: 'sample proportion' },
+  { glyph: 'p',  label: 'probability' },
+];
+
+const STATS_OPS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'Σ',   label: 'summation-stats' },
+  { glyph: '∏',   label: 'product-stats' },
+  { glyph: 'P(',  label: 'probability of' },
+  { glyph: 'E[',  label: 'expected value' },
+  { glyph: 'Var[', label: 'variance of' },
+  { glyph: 'SE',  label: 'standard error' },
+  { glyph: 'CI',  label: 'confidence interval' },
+  { glyph: 'H0',  label: 'null hypothesis' },
+  { glyph: 'Ha',  label: 'alternative hypothesis' },
+  { glyph: '!',   label: 'factorial' },
+  { glyph: 'C(',  label: 'combinations' },
+  { glyph: 'P(',  label: 'permutations' },
+];
+
+const STATS_DISTRIBUTIONS: Array<{ glyph: string; label: string }> = [
+  { glyph: '𝒩',  label: 'normal' },
+  { glyph: 'z',  label: 'z score' },
+  { glyph: 't',  label: 't statistic' },
+  { glyph: 'χ²', label: 'chi squared' },
+  { glyph: 'F',  label: 'f statistic' },
+  { glyph: 'df', label: 'degrees of freedom' },
+  { glyph: 'α',  label: 'alpha-stats' },
+  { glyph: 'β',  label: 'beta-stats' },
+  { glyph: 'p-value', label: 'p value' },
+  { glyph: '≈',  label: 'approximately-stats' },
+  { glyph: '≠',  label: 'not equal-stats' },
+  { glyph: '∼',  label: 'distributed as' },
+];
+
+function MathStatisticsKeyboard() {
+  return (
+    <div className="p-2 space-y-2" data-testid="math-statistics-keyboard">
+      <GlyphGrid testid="math-stats-params" glyphs={STATS_PARAMS} cols={6} textSize="text-base" />
+      <GlyphGrid testid="math-stats-ops" glyphs={STATS_OPS} cols={6} textSize="text-sm" />
+      <GlyphGrid testid="math-stats-dist" glyphs={STATS_DISTRIBUTIONS} cols={6} textSize="text-sm" />
+    </div>
+  );
+}
+
+// ── Phase 7 — Music notation keyboard ────────────────────────────
+//
+// Clefs + note durations + rests + accidentals + dynamics. Time
+// signatures are written via the existing fraction-box decoration
+// tool (Adv Math tab), so the user composes "4/4" by tapping the
+// fraction tool then digits.
+
+const MUSIC_CLEFS: Array<{ glyph: string; label: string }> = [
+  { glyph: '𝄞', label: 'treble clef' },
+  { glyph: '𝄢', label: 'bass clef' },
+  { glyph: '𝄡', label: 'alto clef' },
+];
+
+const MUSIC_NOTES: Array<{ glyph: string; label: string }> = [
+  { glyph: '𝅝',  label: 'whole note' },
+  { glyph: '𝅗𝅥', label: 'half note' },
+  { glyph: '♩',  label: 'quarter note' },
+  { glyph: '♪',  label: 'eighth note' },
+  { glyph: '♫',  label: 'beamed eighths' },
+  { glyph: '𝅘𝅥𝅯', label: 'sixteenth note' },
+];
+
+const MUSIC_RESTS: Array<{ glyph: string; label: string }> = [
+  { glyph: '𝄻', label: 'whole rest' },
+  { glyph: '𝄼', label: 'half rest' },
+  { glyph: '𝄽', label: 'quarter rest' },
+  { glyph: '𝄾', label: 'eighth rest' },
+  { glyph: '𝄿', label: 'sixteenth rest' },
+];
+
+const MUSIC_ACCIDENTALS: Array<{ glyph: string; label: string }> = [
+  { glyph: '♯', label: 'sharp' },
+  { glyph: '♭', label: 'flat' },
+  { glyph: '♮', label: 'natural' },
+  { glyph: '𝄪', label: 'double sharp' },
+  { glyph: '𝄫', label: 'double flat' },
+];
+
+const MUSIC_DYNAMICS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'pp',     label: 'pianissimo' },
+  { glyph: 'p',      label: 'piano' },
+  { glyph: 'mp',     label: 'mezzo piano' },
+  { glyph: 'mf',     label: 'mezzo forte' },
+  { glyph: 'f',      label: 'forte' },
+  { glyph: 'ff',     label: 'fortissimo' },
+  { glyph: 'cresc.', label: 'crescendo' },
+  { glyph: 'dim.',   label: 'diminuendo' },
+];
+
+function MathMusicKeyboard() {
+  return (
+    <div className="p-2 space-y-2" data-testid="math-music-keyboard">
+      <GlyphGrid testid="math-music-clefs" glyphs={MUSIC_CLEFS} cols={3} textSize="text-2xl" />
+      <GlyphGrid testid="math-music-notes" glyphs={MUSIC_NOTES} cols={6} textSize="text-2xl" />
+      <GlyphGrid testid="math-music-rests" glyphs={MUSIC_RESTS} cols={5} textSize="text-2xl" />
+      <GlyphGrid testid="math-music-accidentals" glyphs={MUSIC_ACCIDENTALS} cols={5} textSize="text-xl" />
+      <GlyphGrid testid="math-music-dynamics" glyphs={MUSIC_DYNAMICS} cols={8} textSize="text-sm" />
+    </div>
+  );
+}
+
+// ── Phase 7 — Earth Science keyboard ─────────────────────────────
+//
+// Weather symbols, plate-tectonics arrows (also useful for vector
+// diagrams), astronomical bodies, and the geologic time / distance
+// units a high-school earth-science class actually uses.
+
+const EARTH_WEATHER: Array<{ glyph: string; label: string }> = [
+  { glyph: '☀', label: 'sun' },
+  { glyph: '☁', label: 'cloud' },
+  { glyph: '☂', label: 'rain' },
+  { glyph: '❄', label: 'snow' },
+  { glyph: '⚡', label: 'lightning' },
+  { glyph: '☈', label: 'storm' },
+  { glyph: '☄', label: 'comet' },
+  { glyph: '🌫', label: 'fog' },
+  { glyph: '🌪', label: 'tornado' },
+  { glyph: '🌊', label: 'ocean wave' },
+];
+
+const EARTH_PLATES: Array<{ glyph: string; label: string }> = [
+  { glyph: '→',  label: 'plate east' },
+  { glyph: '←',  label: 'plate west' },
+  { glyph: '↑',  label: 'plate up' },
+  { glyph: '↓',  label: 'plate down' },
+  { glyph: '⇄',  label: 'transform' },
+  { glyph: '⊕',  label: 'subduction' },
+  { glyph: '⊖',  label: 'rifting' },
+];
+
+const EARTH_ASTRO: Array<{ glyph: string; label: string }> = [
+  { glyph: '☉', label: 'sun-symbol' },
+  { glyph: '☾', label: 'moon' },
+  { glyph: '⊕', label: 'earth-symbol' },
+  { glyph: '☿', label: 'mercury' },
+  { glyph: '♀', label: 'venus' },
+  { glyph: '♂', label: 'mars' },
+  { glyph: '♃', label: 'jupiter' },
+  { glyph: '♄', label: 'saturn' },
+  { glyph: '♅', label: 'uranus' },
+  { glyph: '♆', label: 'neptune' },
+];
+
+const EARTH_UNITS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'AU',  label: 'astronomical unit' },
+  { glyph: 'ly',  label: 'light year' },
+  { glyph: 'pc',  label: 'parsec' },
+  { glyph: 'Mya', label: 'million years ago' },
+  { glyph: 'Gya', label: 'billion years ago' },
+  { glyph: 'km',  label: 'kilometre-earth' },
+  { glyph: 'mb',  label: 'millibar' },
+  { glyph: '°C',  label: 'celsius' },
+  { glyph: '°F',  label: 'fahrenheit' },
+  { glyph: 'mph', label: 'miles per hour' },
+];
+
+function MathEarthScienceKeyboard() {
+  return (
+    <div className="p-2 space-y-2" data-testid="math-earth-science-keyboard">
+      <GlyphGrid testid="math-earth-weather" glyphs={EARTH_WEATHER} cols={10} textSize="text-xl" />
+      <GlyphGrid testid="math-earth-plates" glyphs={EARTH_PLATES} cols={7} textSize="text-xl" />
+      <GlyphGrid testid="math-earth-astro" glyphs={EARTH_ASTRO} cols={10} textSize="text-xl" />
+      <GlyphGrid testid="math-earth-units" glyphs={EARTH_UNITS} cols={6} textSize="text-sm" />
     </div>
   );
 }
