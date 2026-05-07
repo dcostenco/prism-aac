@@ -136,8 +136,16 @@ export default function PredictionBar() {
   // language, refill empty slots from langDefaults so the bar always
   // renders 5 tiles. Catches stale carry-overs from a previous EN
   // session AND any word the upstream gates missed.
+  //
+  // Earlier this filter short-circuited when language === 'en', on the
+  // theory that the EN corpus is authoritative. That assumption broke
+  // on multi-language users: an outputLanguage = 'ro' speaker
+  // composing English would see RO words like `eu` slip into the EN
+  // bar, because the upstream mergeAiCompletion gate only runs when
+  // `aiCompletion` is set, NOT for corpus-based tiles. The filter now
+  // runs for every language; isAllowedInLang's cross-corpus comparison
+  // (en_freq vs ro_freq) catches the leak in either direction.
   function dropForeignTiles(displayed: string[]): string[] {
-    if (language === 'en') return displayed;
     const cleaned = displayed.filter((w) => isAllowedInLang(w, language));
     if (cleaned.length === displayed.length) return displayed;
     const filler = langDefaults.filter((w) => !cleaned.includes(w) && isAllowedInLang(w, language));
