@@ -10,67 +10,7 @@ import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramServ
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 
-/** Strict per-script regex for non-Latin languages. A word that fails
- *  is definitely in the wrong script, so we drop it. */
-const SCRIPT_FILTER: Record<string, RegExp> = {
-  ru: /^[а-яё'\-]+$/i,
-  uk: /^[а-яєіїґ'\-]+$/i,
-  ar: /^[؀-ۿݐ-ݿ'\-]+$/,
-  ja: /^[぀-ゟ゠-ヿ一-鿿]+$/,
-  ko: /^[가-힯ᄀ-ᇿ㄰-㆏]+$/,
-  'zh-Hans': /^[一-鿿]+$/,
-  'zh-Hant': /^[一-鿿]+$/,
-  'zh-HK': /^[一-鿿]+$/,
-};
-
-/** English stopwords + the most common AAC English vocabulary. When
- *  the user is composing in a Latin-script non-EN language and the
- *  autocorrect service returns one of these as `aiCompletion`, it's
- *  the wrong-language leak we want to filter — even though the
- *  characters themselves are valid Latin chars in every Latin lang.
- *  This is what catches the user-reported screenshot:
- *      eu / I / to / a / noise  →  RO + EN-leak words I, to, noise.
- *  We can't go the other way (validate "looks Romanian") because
- *  many real RO words are pure ASCII (nu, am, de, mai, la, ce, cu);
- *  excluding the small EN set is precise and doesn't false-positive
- *  on real Romanian. */
-const EN_STOPWORDS = new Set([
-  'i', 'you', 'we', 'he', 'she', 'it', 'they', 'me', 'him', 'her', 'us', 'them',
-  'my', 'your', 'his', 'its', 'our', 'their',
-  'the', 'an', 'this', 'that', 'these', 'those',
-  'and', 'or', 'but', 'if', 'so', 'because', 'as',
-  'in', 'on', 'at', 'by', 'for', 'with', 'from', 'into', 'onto', 'about', 'over', 'under',
-  'is', 'are', 'was', 'were', 'be', 'been', 'being', 'am',
-  'have', 'has', 'had', 'having',
-  'do', 'does', 'did', 'doing', 'done',
-  'will', 'would', 'shall', 'should', 'can', 'could', 'may', 'might', 'must',
-  'not', 'no', 'yes', 'maybe',
-  'want', 'need', 'help', 'like', 'love', 'hate', 'know', 'think', 'feel', 'see', 'go', 'come', 'get',
-  'more', 'less', 'all', 'some', 'any', 'every', 'each', 'few', 'many', 'much',
-  'now', 'then', 'here', 'there', 'when', 'where', 'why', 'how', 'what', 'who',
-  'good', 'bad', 'big', 'small', 'hot', 'cold', 'happy', 'sad', 'tired', 'sick',
-  'noise', 'thing', 'time', 'day', 'night', 'people', 'home', 'work', 'school',
-  // Note: 'a' is omitted — it's also the Romanian preposition "to/of".
-  // Note: 'to' is included; Romanian doesn't use it (Romanian "to" is "la"/"către").
-  'to', 'of', 'too', 'too',
-]);
-
-/** True when `word` is the English-leak we want to drop. Returns
- *  false (= keep) for: empty input, EN language, words containing
- *  lang-specific characters (so we never drop a real RO/ES/FR word),
- *  any word that fails the strict non-Latin script regex. */
-function isEnglishLeak(word: string, lang: string): boolean {
-  if (!word || lang === 'en') return false;
-  const w = word.toLowerCase().trim();
-  if (!w) return false;
-  // Non-Latin script gate: if the script regex exists and the word
-  // FAILS it, drop it as foreign-script. This is the strict path.
-  const strict = SCRIPT_FILTER[lang];
-  if (strict) return !strict.test(w);
-  // Latin-script non-English: drop only if the word is a known EN
-  // stopword. Real lang words (with or without diacritics) pass.
-  return EN_STOPWORDS.has(w);
-}
+import { isAllowedInLang, ensureLangCorpusLoaded } from '@/lib/langAllowlist';
 
 function computeStableSlots(prev: string[], predictions: string[]): string[] {
   const next = [...prev];
@@ -130,6 +70,15 @@ export default function PredictionBar() {
   const [displayed, setDisplayed] = useState<string[]>(langDefaults);
   const prevRef = useRef<string[]>(langDefaults);
 
+  // Eagerly preload the lang's curated corpus on language change so
+  // the allowlist gate has data ready before the first prediction
+  // fires. Without this preload, the gate fail-opens for the first
+  // ~50ms after a language switch and any in-flight aiCompletion
+  // would slip through unfiltered.
+  useEffect(() => {
+    void ensureLangCorpusLoaded(language);
+  }, [language]);
+
   // Immediately show language-specific defaults on language switch,
   // then refine with predictions if there's typed text.
   const prevLangRef = useRef(language);
@@ -163,22 +112,27 @@ export default function PredictionBar() {
   // language. Without this gate, that English word lands as the
   // leftmost tile in the RO bar — exactly what the screenshot bug
   // reported (`eu / I / to / a / noise` — "I" is the aiCompletion).
+  // Single allowlist gate: drop anything not allowed in the current
+  // language. Backed by the curated per-lang corpus (5759 RO words,
+  // 5000+ for every supported lang) plus a diacritic carve-out for
+  // user proper nouns. Replaces the earlier stopword approach which
+  // missed every word not enumerated (Main, noise, to, etc.).
   function mergeAiCompletion(corpusPreds: string[], ai: string | null): string[] {
-    if (!ai || isEnglishLeak(ai, language)) return corpusPreds;
+    if (!ai || !isAllowedInLang(ai, language)) return corpusPreds;
     const lc = ai.toLowerCase();
     const dedup = corpusPreds.filter((p) => p.toLowerCase() !== lc);
     return [ai, ...dedup].slice(0, 5);
   }
 
-  // Final defense-in-depth: anything that survived computeStableSlots
-  // (e.g. a stale carry-over from before a language switch) gets
-  // dropped here too, then refilled from langDefaults so the bar
-  // never shows fewer than 5 tiles.
+  // Final defense-in-depth: drop ANY tile not allowed in the current
+  // language, refill empty slots from langDefaults so the bar always
+  // renders 5 tiles. Catches stale carry-overs from a previous EN
+  // session AND any word the upstream gates missed.
   function dropForeignTiles(displayed: string[]): string[] {
     if (language === 'en') return displayed;
-    const cleaned = displayed.filter((w) => !isEnglishLeak(w, language));
+    const cleaned = displayed.filter((w) => isAllowedInLang(w, language));
     if (cleaned.length === displayed.length) return displayed;
-    const filler = langDefaults.filter((w) => !cleaned.includes(w));
+    const filler = langDefaults.filter((w) => !cleaned.includes(w) && isAllowedInLang(w, language));
     return [...cleaned, ...filler].slice(0, 5);
   }
 

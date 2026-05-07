@@ -4,6 +4,7 @@ import { useCategoryStore } from '@/store/categoryStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { executeAction, executeAllActions } from '@/engine/caregiverActions';
 import { NoteAction } from '@/types';
+import { DEFAULT_PHRASES } from '@/constants/phrases';
 
 beforeEach(() => {
   useNoteStore.setState({ notes: [], authorName: '' });
@@ -193,7 +194,9 @@ describe('CaregiverActions — executeAllActions', () => {
     const results = executeAllActions(actions);
     expect(results).toHaveLength(2);
     expect(results.every(r => r.success)).toBe(true);
-    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(16); // 14 defaults + 2 custom
+    // Phase 1 dict expansion: defaults grew, derive dynamically + 2 custom
+    const helpNeedsDefaults = DEFAULT_PHRASES.filter(p => p.categoryId === 'help-needs').length;
+    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(helpNeedsDefaults + 2);
   });
 });
 

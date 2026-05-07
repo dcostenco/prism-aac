@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCategoryStore } from '@/store/categoryStore';
 import { TEMPLATE_ORDERING_SEQUENCES as DEFAULT_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
+import { DEFAULT_PHRASES } from '@/constants/phrases';
 
 beforeEach(() => useCategoryStore.setState({ customCategories: [], customPhrases: [] }));
+
+// Phase 1 dict expansion changed default counts; derive dynamically
+// so future expansions don't keep breaking these tests.
+const HELP_NEEDS_DEFAULT_COUNT = DEFAULT_PHRASES.filter(p => p.categoryId === 'help-needs').length;
 
 describe('CategoryStore — Default data', () => {
   it('returns 22 default categories', () => {
@@ -19,7 +24,8 @@ describe('CategoryStore — Default data', () => {
 
   it('returns correct phrases for help-needs', () => {
     const phrases = useCategoryStore.getState().getPhrasesForCategory('help-needs');
-    expect(phrases.length).toBe(14);
+    expect(phrases.length).toBe(HELP_NEEDS_DEFAULT_COUNT);
+    // Order pin: original 14 phrases stay at sortOrder 0-13
     expect(phrases[0].text).toBe('All done');
     expect(phrases[7].text).toBe('No');
     expect(phrases[13].text).toBe('I am tired');
@@ -58,7 +64,7 @@ describe('CategoryStore — Custom phrases', () => {
   it('addCustomPhrase adds to existing category', () => {
     useCategoryStore.getState().addCustomPhrase('help-needs', 'I feel sick');
     const phrases = useCategoryStore.getState().getPhrasesForCategory('help-needs');
-    expect(phrases).toHaveLength(15);
+    expect(phrases).toHaveLength(HELP_NEEDS_DEFAULT_COUNT + 1);
     expect(phrases.some(p => p.text === 'I feel sick')).toBe(true);
   });
 
@@ -67,12 +73,12 @@ describe('CategoryStore — Custom phrases', () => {
     const phrases = useCategoryStore.getState().getPhrasesForCategory('help-needs');
     const temp = phrases.find(p => p.text === 'Temp phrase')!;
     useCategoryStore.getState().removeCustomPhrase(temp.id);
-    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(14);
+    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(HELP_NEEDS_DEFAULT_COUNT);
   });
 
   it('cannot remove default phrases', () => {
     useCategoryStore.getState().removeCustomPhrase('help-all-done');
-    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(14);
+    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(HELP_NEEDS_DEFAULT_COUNT);
   });
 });
 

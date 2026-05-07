@@ -68,10 +68,11 @@ describe('predictionStore — fresh user prefix completion', () => {
 
   it('user-typed words rank above seed words (recency + count win)', async () => {
     const store = await freshStore();
-    // User types "goose" three times — should outrank seed "goodbye" / "good"
-    store.getState().learnWord('goose');
-    store.getState().learnWord('goose');
-    store.getState().learnWord('goose');
+    // User types "goose" repeatedly — should outrank seed "goodbye" / "good*".
+    // Note: Phase 1 dict expansion bumped seed count for "good" (we added
+    // "Good morning"/"Good night"/"Good afternoon"/"Good evening"/"Good job"),
+    // so user typings need to clear that bar. 12 typings is conservative.
+    for (let i = 0; i < 12; i++) store.getState().learnWord('goose');
     store.getState().updatePredictions('goo');
     const top = store.getState().predictions[0]?.toLowerCase();
     expect(top).toBe('goose');

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCategoryStore } from '@/store/categoryStore';
+import { DEFAULT_PHRASES } from '@/constants/phrases';
 
 beforeEach(() => {
   useCategoryStore.setState({
@@ -77,11 +78,14 @@ describe('CategoryStore — Category visibility', () => {
 });
 
 describe('CategoryStore — Phrase visibility', () => {
+  // Derive count dynamically; Phase 1 dict expansion bumped help-needs from 14 → 69.
+  const HELP_NEEDS_COUNT = DEFAULT_PHRASES.filter(p => p.categoryId === 'help-needs').length;
+
   it('hideDefaultPhrase hides a phrase from getPhrasesForCategory', () => {
     useCategoryStore.getState().hideDefaultPhrase('help-all-done');
     const phrases = useCategoryStore.getState().getPhrasesForCategory('help-needs');
     expect(phrases.find((p) => p.id === 'help-all-done')).toBeUndefined();
-    expect(phrases).toHaveLength(13);
+    expect(phrases).toHaveLength(HELP_NEEDS_COUNT - 1);
   });
 
   it('unhideDefaultPhrase restores the phrase', () => {
@@ -89,6 +93,6 @@ describe('CategoryStore — Phrase visibility', () => {
     useCategoryStore.getState().unhideDefaultPhrase('help-all-done');
     const phrases = useCategoryStore.getState().getPhrasesForCategory('help-needs');
     expect(phrases.find((p) => p.id === 'help-all-done')).toBeDefined();
-    expect(phrases).toHaveLength(14);
+    expect(phrases).toHaveLength(HELP_NEEDS_COUNT);
   });
 });

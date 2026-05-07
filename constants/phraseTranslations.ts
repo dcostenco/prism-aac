@@ -402,6 +402,915 @@ const T: Record<string, Partial<Record<SupportedLanguage, string>>> = {
   'gen-f1': { ro: 'Asta e tot, mulțumesc', es: 'Eso es todo, gracias', fr: "C'est tout, merci", pt: 'É tudo, obrigado', de: 'Das ist alles, danke', ru: 'Это всё, спасибо', uk: 'Це все, дякую', ja: '以上です、ありがとう', ko: '그게 다예요, 감사합니다', zh: '就这些，谢谢', ar: 'هذا كل شيء، شكرا' },
   'gen-f2': { ro: 'Nota de plată vă rog', es: '¿Puede traer la cuenta?', fr: "L'addition svp", pt: 'A conta por favor', de: 'Die Rechnung bitte', ru: 'Счёт пожалуйста', uk: 'Рахунок будь ласка', ja: 'お会計お願いします', ko: '계산서 주세요', zh: '买单', ar: 'الحساب من فضلك' },
   'gen-f3': { ro: 'A fost delicios', es: 'Estuvo delicioso', fr: "C'était délicieux", pt: 'Estava delicioso', de: 'Es war köstlich', ru: 'Было очень вкусно', uk: 'Було дуже смачно', ja: 'おいしかったです', ko: '맛있었어요', zh: '很好吃', ar: 'كان لذيذا' },
+
+  // Phase 1 expansion (auto-generated 2026-05-07)
+  'cw-us': { ro: 'Pe noi' },
+  'cw-them': { ro: 'Pe ei' },
+  'cw-mine': { ro: 'Al meu' },
+  'cw-yours': { ro: 'Al tău' },
+  'cw-theirs': { ro: 'Al lor' },
+  'cw-ours': { ro: 'Al nostru' },
+  'cw-hers': { ro: 'Al ei' },
+  'cw-myself': { ro: 'Eu însumi' },
+  'cw-yourself': { ro: 'Tu însuți' },
+  'cw-themselves': { ro: 'Ei înșiși' },
+  'cw-ourselves': { ro: 'Noi înșine' },
+  'cw-each-other': { ro: 'Unul pe altul' },
+  'cw-anyone': { ro: 'Oricine' },
+  'cw-someone': { ro: 'Cineva' },
+  'cw-everyone': { ro: 'Toată lumea' },
+  'cw-no-one': { ro: 'Nimeni' },
+  'cw-nobody': { ro: 'Nimeni' },
+  'cw-whose': { ro: 'Al cui' },
+  'cw-wait': { es: 'Esperar' },
+  'cw-stop': { es: 'Parar' },
+  'cw-start': { es: 'Empezar' },
+  'cw-finish': { es: 'Terminar' },
+  'cw-begin': { es: 'Comenzar' },
+  'cw-end': { es: 'Acabar' },
+  'cw-stay': { es: 'Quedar' },
+  'cw-leave': { es: 'Salir' },
+  'cw-look': { es: 'Mirar' },
+  'cw-watch': { es: 'Observar' },
+  'cw-hear': { es: 'Oír' },
+  'cw-listen': { es: 'Escuchar' },
+  'cw-smell': { es: 'Oler' },
+  'cw-taste': { es: 'Probar' },
+  'cw-touch': { es: 'Tocar' },
+  'cw-hold': { es: 'Sostener' },
+  'cw-grab': { es: 'Agarrar' },
+  'cw-push': { es: 'Empujar' },
+  'cw-pull': { es: 'Tirar' },
+  'cw-lift': { es: 'Levantar' },
+  'cw-carry': { es: 'Llevar' },
+  'cw-drop': { es: 'Soltar' },
+  'cw-throw': { es: 'Lanzar' },
+  'cw-catch': { es: 'Atrapar' },
+  'cw-open': { es: 'Abrir' },
+  'cw-close': { es: 'Cerrar' },
+  'cw-turn': { es: 'Girar' },
+  'cw-move': { es: 'Mover' },
+  'cw-sit': { es: 'Sentar' },
+  'cw-stand': { es: 'Pararse' },
+  'cw-walk': { es: 'Caminar' },
+  'cw-run': { es: 'Correr' },
+  'cw-jump': { es: 'Saltar' },
+  'cw-climb': { es: 'Trepar' },
+  'cw-fall': { es: 'Caer' },
+  'cw-rest': { es: 'Descansar' },
+  'cw-sleep': { es: 'Dormir' },
+  'cw-wake': { es: 'Despertar' },
+  'cw-dream': { es: 'Soñar' },
+  'cw-eat': { es: 'Comer' },
+  'cw-drink': { es: 'Beber' },
+  'cw-bite': { es: 'Morder' },
+  'cw-chew': { es: 'Masticar' },
+  'cw-swallow': { es: 'Tragar' },
+  'cw-spit': { es: 'Escupir' },
+  'cw-talk': { es: 'Hablar' },
+  'cw-speak': { es: 'Hablar' },
+  'cw-whisper': { es: 'Susurrar' },
+  'cw-shout': { es: 'Gritar' },
+  'cw-sing': { es: 'Cantar' },
+  'cw-laugh': { es: 'Reír' },
+  'cw-cry': { es: 'Llorar' },
+  'cw-smile': { es: 'Sonreír' },
+  'cw-read': { es: 'Leer' },
+  'cw-write': { es: 'Escribir' },
+  'cw-draw': { es: 'Dibujar' },
+  'cw-paint': { es: 'Pintar' },
+  'cw-color': { es: 'Colorear' },
+  'cw-cut': { es: 'Cortar' },
+  'cw-glue': { es: 'Pegar' },
+  'cw-build': { es: 'Construir' },
+  'cw-break': { es: 'Romper' },
+  'cw-fix': { es: 'Arreglar' },
+  'cw-clean': { es: 'Limpiar' },
+  'cw-wash': { es: 'Lavar' },
+  'cw-find': { es: 'Encontrar' },
+  'cw-look-for': { es: 'Buscar' },
+  'cw-lose': { es: 'Perder' },
+  'cw-save': { es: 'Guardar' },
+  'cw-keep': { es: 'Guardar' },
+  'cw-buy': { es: 'Comprar' },
+  'cw-sell': { es: 'Vender' },
+  'cw-pay': { es: 'Pagar' },
+  'cw-trade': { es: 'Cambiar' },
+  'cw-send': { es: 'Enviar' },
+  'cw-bring': { es: 'Traer' },
+  'cw-take': { es: 'Tomar' },
+  'cw-give': { es: 'Dar' },
+  'cw-share': { es: 'Compartir' },
+  'cw-ask': { es: 'Preguntar' },
+  'cw-answer': { es: 'Responder' },
+  'cw-show': { es: 'Mostrar' },
+  'cw-hide': { es: 'Esconder' },
+  'cw-learn': { es: 'Aprender' },
+  'cw-teach': { es: 'Enseñar' },
+  'cw-study': { es: 'Estudiar' },
+  'cw-practice': { es: 'Practicar' },
+  'cw-work': { es: 'Trabajar' },
+  'cw-play': { es: 'Jugar' },
+  'cw-win': { es: 'Ganar' },
+  'cw-try-again': { es: 'Intentar otra vez' },
+  'cw-hug': { es: 'Abrazar' },
+  'cw-kiss': { es: 'Besar' },
+  'cw-pet': { es: 'Acariciar' },
+  'cw-tickle': { es: 'Hacer cosquillas' },
+  'cw-wait-for-me': { es: 'Espérame' },
+  'cw-help-me': { es: 'Ayúdame' },
+  'cw-show-me': { es: 'Muéstrame' },
+  'cw-tell-me': { es: 'Dime' },
+  'cw-stop-that': { es: 'Para eso' },
+  'cw-don-t-do-that': { es: 'No hagas eso' },
+  'cw-i-want-to': { es: 'Quiero' },
+  'cw-i-do-not-want': { es: 'No quiero' },
+  'cw-let-me-try': { es: 'Déjame intentar' },
+  'cw-let-me-see': { es: 'Déjame ver' },
+  'cw-little': {},  // pending Phase 2 multilingual fill
+  'cw-lots': {},  // pending Phase 2 multilingual fill
+  'cw-many': {},  // pending Phase 2 multilingual fill
+  'cw-few': {},  // pending Phase 2 multilingual fill
+  'cw-every': {},  // pending Phase 2 multilingual fill
+  'cw-any': {},  // pending Phase 2 multilingual fill
+  'cw-only': {},  // pending Phase 2 multilingual fill
+  'cw-just': {},  // pending Phase 2 multilingual fill
+  'cw-full': {},  // pending Phase 2 multilingual fill
+  'cw-empty': {},  // pending Phase 2 multilingual fill
+  'cw-open-2': {},  // pending Phase 2 multilingual fill
+  'cw-closed': {},  // pending Phase 2 multilingual fill
+  'cw-easy': {},  // pending Phase 2 multilingual fill
+  'cw-hard': {},  // pending Phase 2 multilingual fill
+  'cw-soft': {},  // pending Phase 2 multilingual fill
+  'cw-loud': {},  // pending Phase 2 multilingual fill
+  'cw-quiet': {},  // pending Phase 2 multilingual fill
+  'cw-bright': {},  // pending Phase 2 multilingual fill
+  'cw-dark': {},  // pending Phase 2 multilingual fill
+  'cw-heavy': {},  // pending Phase 2 multilingual fill
+  'cw-light': {},  // pending Phase 2 multilingual fill
+  'cw-above': {},  // pending Phase 2 multilingual fill
+  'cw-below': {},  // pending Phase 2 multilingual fill
+  'cw-beside': {},  // pending Phase 2 multilingual fill
+  'cw-between': {},  // pending Phase 2 multilingual fill
+  'cw-near': {},  // pending Phase 2 multilingual fill
+  'cw-far': {},  // pending Phase 2 multilingual fill
+  'cw-around': {},  // pending Phase 2 multilingual fill
+  'cw-through': {},  // pending Phase 2 multilingual fill
+  'cw-over': {},  // pending Phase 2 multilingual fill
+  'cw-under': {},  // pending Phase 2 multilingual fill
+  'cw-across': {},  // pending Phase 2 multilingual fill
+  'cw-behind': {},  // pending Phase 2 multilingual fill
+  'cw-ahead': {},  // pending Phase 2 multilingual fill
+  'cw-always': {},  // pending Phase 2 multilingual fill
+  'cw-never': {},  // pending Phase 2 multilingual fill
+  'cw-often': {},  // pending Phase 2 multilingual fill
+  'cw-sometimes': {},  // pending Phase 2 multilingual fill
+  'cw-maybe': {},  // pending Phase 2 multilingual fill
+  'cw-almost': {},  // pending Phase 2 multilingual fill
+  'cw-already': {},  // pending Phase 2 multilingual fill
+  'cw-still': {},  // pending Phase 2 multilingual fill
+  'cw-yet': {},  // pending Phase 2 multilingual fill
+  'cw-right-now': {},  // pending Phase 2 multilingual fill
+  'cw-right-here': {},  // pending Phase 2 multilingual fill
+  'cw-way-too-much': {},  // pending Phase 2 multilingual fill
+  'cw-not-enough': {},  // pending Phase 2 multilingual fill
+  'cw-by': {},  // pending Phase 2 multilingual fill
+  'cw-from': {},  // pending Phase 2 multilingual fill
+  'cw-since': {},  // pending Phase 2 multilingual fill
+  'cw-until': {},  // pending Phase 2 multilingual fill
+  'cw-into': {},  // pending Phase 2 multilingual fill
+  'cw-onto': {},  // pending Phase 2 multilingual fill
+  'cw-off-of': {},  // pending Phase 2 multilingual fill
+  'cw-away': {},  // pending Phase 2 multilingual fill
+  'cw-back': {},  // pending Phase 2 multilingual fill
+  'cw-beside-2': {},  // pending Phase 2 multilingual fill
+  'cw-past': {},  // pending Phase 2 multilingual fill
+  'cw-among': {},  // pending Phase 2 multilingual fill
+  'cw-during': {},  // pending Phase 2 multilingual fill
+  'cw-while': {},  // pending Phase 2 multilingual fill
+  'cw-whenever': {},  // pending Phase 2 multilingual fill
+  'cw-wherever': {},  // pending Phase 2 multilingual fill
+  'cw-both': {},  // pending Phase 2 multilingual fill
+  'cw-either': {},  // pending Phase 2 multilingual fill
+  'cw-neither': {},  // pending Phase 2 multilingual fill
+  'cw-whether': {},  // pending Phase 2 multilingual fill
+  'cw-although': {},  // pending Phase 2 multilingual fill
+  'cw-though': {},  // pending Phase 2 multilingual fill
+  'cw-unless': {},  // pending Phase 2 multilingual fill
+  'cw-so': {},  // pending Phase 2 multilingual fill
+  'cw-then': {},  // pending Phase 2 multilingual fill
+  'cw-also': {},  // pending Phase 2 multilingual fill
+  'cw-plus': {},  // pending Phase 2 multilingual fill
+  'cw-like-2': {},  // pending Phase 2 multilingual fill
+  'cw-as': {},  // pending Phase 2 multilingual fill
+  'cw-such-as': {},  // pending Phase 2 multilingual fill
+  'cw-versus': {},  // pending Phase 2 multilingual fill
+  'cw-since-then': {},  // pending Phase 2 multilingual fill
+  'cw-until-now': {},  // pending Phase 2 multilingual fill
+  'cw-right-after': {},  // pending Phase 2 multilingual fill
+  'cw-just-before': {},  // pending Phase 2 multilingual fill
+  'cw-up-to': {},  // pending Phase 2 multilingual fill
+  'cw-down-to': {},  // pending Phase 2 multilingual fill
+  'cw-next-to': {},  // pending Phase 2 multilingual fill
+  'cw-out-of': {},  // pending Phase 2 multilingual fill
+  'cw-a-few': {},  // pending Phase 2 multilingual fill
+  'cw-a-lot': {},  // pending Phase 2 multilingual fill
+  'cw-a-little': {},  // pending Phase 2 multilingual fill
+  'help-i-am-cold': { ru: 'Мне холодно' },
+  'help-i-am-hot': { ru: 'Мне жарко' },
+  'help-i-am-sleepy': { ru: 'Я хочу спать' },
+  'help-i-am-scared': { ru: 'Мне страшно' },
+  'help-i-am-sick': { ru: 'Я болею' },
+  'help-i-am-okay': { ru: 'Я в порядке' },
+  'help-i-am-not-okay': { ru: 'Мне нехорошо' },
+  'help-i-am-ready': { ru: 'Я готов' },
+  'help-i-am-not-ready': { ru: 'Я не готов' },
+  'help-too-loud': { ru: 'Слишком громко' },
+  'help-too-bright': { ru: 'Слишком ярко' },
+  'help-too-fast': { ru: 'Слишком быстро' },
+  'help-too-slow': { ru: 'Слишком медленно' },
+  'help-i-need-quiet': { ru: 'Мне нужно тише' },
+  'help-i-need-a-break': { ru: 'Мне нужен перерыв' },
+  'help-i-need-water': { ru: 'Мне нужна вода' },
+  'help-i-need-air': { ru: 'Мне нужен воздух' },
+  'help-i-need-my-mom': { ru: 'Мне нужна мама' },
+  'help-i-need-my-dad': { ru: 'Мне нужен папа' },
+  'help-i-need-my-teacher': { ru: 'Мне нужен учитель' },
+  'help-i-need-a-hug': { ru: 'Мне нужно обнять' },
+  'help-i-need-space': { ru: 'Мне нужно пространство' },
+  'help-i-need-time': { ru: 'Мне нужно время' },
+  'help-hold-my-hand': { ru: 'Возьми меня за руку' },
+  'help-watch-me': { ru: 'Смотри на меня' },
+  'help-listen-to-me': { ru: 'Послушай меня' },
+  'help-look-at-this': { ru: 'Посмотри на это' },
+  'help-help-me-please': { ru: 'Помоги мне, пожалуйста' },
+  'help-help-with-this': { ru: 'Помоги с этим' },
+  'help-wait-for-me': { ru: 'Подожди меня' },
+  'help-slow-down-please': { ru: 'Медленнее, пожалуйста' },
+  'help-speak-more-slowly': { ru: 'Говори медленнее' },
+  'help-one-at-a-time': { ru: 'По одному' },
+  'help-i-am-overwhelmed': { ru: 'Я устал от всего' },
+  'help-i-am-confused': { ru: 'Я запутался' },
+  'help-i-do-not-understand': { ru: 'Я не понимаю' },
+  'help-please-be-patient': { ru: 'Пожалуйста, будь терпелив' },
+  'help-give-me-a-minute': { ru: 'Дай мне минуту' },
+  'help-try-again': { ru: 'Попробуй ещё раз' },
+  'help-calm-down': { ru: 'Успокойся' },
+  'help-let-me-think': { ru: 'Дай мне подумать' },
+  'help-show-me-how': { ru: 'Покажи мне как' },
+  'help-i-do-not-feel-good': { ru: 'Мне нехорошо' },
+  'help-my-head-hurts': { ru: 'У меня болит голова' },
+  'help-my-tummy-hurts': { ru: 'У меня болит живот' },
+  'help-my-ears-hurt': { ru: 'У меня болят уши' },
+  'help-my-eyes-hurt': { ru: 'У меня болят глаза' },
+  'help-i-feel-dizzy': { ru: 'У меня кружится голова' },
+  'help-get-help': { ru: 'Позови на помощь' },
+  'help-call-my-mom': { ru: 'Позвони маме' },
+  'help-call-my-dad': { ru: 'Позвони папе' },
+  'help-call-the-nurse': { ru: 'Позови медсестру' },
+  'help-where-is-my-aac': { ru: 'Где мой AAC' },
+  'help-my-battery-is-low': { ru: 'У меня разряжается батарея' },
+  'help-i-dropped-my-tablet': { ru: 'Я уронил планшет' },
+  'qt-hi': {},  // pending Phase 2 multilingual fill
+  'qt-hey': {},  // pending Phase 2 multilingual fill
+  'qt-bye': {},  // pending Phase 2 multilingual fill
+  'qt-bye-bye': {},  // pending Phase 2 multilingual fill
+  'qt-see-you': {},  // pending Phase 2 multilingual fill
+  'qt-see-you-soon': {},  // pending Phase 2 multilingual fill
+  'qt-see-you-tomorrow': {},  // pending Phase 2 multilingual fill
+  'qt-take-care': {},  // pending Phase 2 multilingual fill
+  'qt-have-fun': {},  // pending Phase 2 multilingual fill
+  'qt-good-morning': {},  // pending Phase 2 multilingual fill
+  'qt-good-afternoon': {},  // pending Phase 2 multilingual fill
+  'qt-good-evening': {},  // pending Phase 2 multilingual fill
+  'qt-good-night': {},  // pending Phase 2 multilingual fill
+  'qt-good-job': {},  // pending Phase 2 multilingual fill
+  'qt-well-done': {},  // pending Phase 2 multilingual fill
+  'qt-way-to-go': {},  // pending Phase 2 multilingual fill
+  'qt-awesome': {},  // pending Phase 2 multilingual fill
+  'qt-cool': {},  // pending Phase 2 multilingual fill
+  'qt-nice': {},  // pending Phase 2 multilingual fill
+  'qt-great': {},  // pending Phase 2 multilingual fill
+  'qt-wonderful': {},  // pending Phase 2 multilingual fill
+  'qt-amazing': {},  // pending Phase 2 multilingual fill
+  'qt-perfect': {},  // pending Phase 2 multilingual fill
+  'qt-yay': {},  // pending Phase 2 multilingual fill
+  'qt-okay': {},  // pending Phase 2 multilingual fill
+  'qt-alright': {},  // pending Phase 2 multilingual fill
+  'qt-sure': {},  // pending Phase 2 multilingual fill
+  'qt-of-course': {},  // pending Phase 2 multilingual fill
+  'qt-definitely': {},  // pending Phase 2 multilingual fill
+  'qt-maybe': {},  // pending Phase 2 multilingual fill
+  'qt-i-think-so': {},  // pending Phase 2 multilingual fill
+  'qt-i-am-not-sure': {},  // pending Phase 2 multilingual fill
+  'qt-it-is-fine': {},  // pending Phase 2 multilingual fill
+  'qt-no-problem': {},  // pending Phase 2 multilingual fill
+  'qt-no-worries': {},  // pending Phase 2 multilingual fill
+  'qt-never-mind': {},  // pending Phase 2 multilingual fill
+  'qt-my-bad': {},  // pending Phase 2 multilingual fill
+  'qt-oops': {},  // pending Phase 2 multilingual fill
+  'qt-bless-you': {},  // pending Phase 2 multilingual fill
+  'qt-happy-birthday': {},  // pending Phase 2 multilingual fill
+  'qt-happy-holidays': {},  // pending Phase 2 multilingual fill
+  'qt-merry-christmas': {},  // pending Phase 2 multilingual fill
+  'qt-happy-new-year': {},  // pending Phase 2 multilingual fill
+  'qt-eid-mubarak': {},  // pending Phase 2 multilingual fill
+  'qt-happy-hanukkah': {},  // pending Phase 2 multilingual fill
+  'qt-congratulations': {},  // pending Phase 2 multilingual fill
+  'qt-i-am-proud-of-you': {},  // pending Phase 2 multilingual fill
+  'qt-you-did-it': {},  // pending Phase 2 multilingual fill
+  'qt-how-was-your-day': {},  // pending Phase 2 multilingual fill
+  'qt-i-had-a-good-day': {},  // pending Phase 2 multilingual fill
+  'qt-i-had-a-bad-day': {},  // pending Phase 2 multilingual fill
+  'qt-tell-me-about-your-day': {},  // pending Phase 2 multilingual fill
+  'qt-i-missed-you': {},  // pending Phase 2 multilingual fill
+  'qt-i-am-here': {},  // pending Phase 2 multilingual fill
+  'qt-i-love-you-too': {},  // pending Phase 2 multilingual fill
+  'qt-you-are-my-friend': {},  // pending Phase 2 multilingual fill
+  'qt-best-friends': {},  // pending Phase 2 multilingual fill
+  'fe-calm': { de: 'Ruhig' },
+  'fe-peaceful': { de: 'Friedlich' },
+  'fe-relaxed': { de: 'Entspannt' },
+  'fe-content': { de: 'Zufrieden' },
+  'fe-joyful': { de: 'Fröhlich' },
+  'fe-glad': { de: 'Froh' },
+  'fe-cheerful': { de: 'Heiter' },
+  'fe-hopeful': { de: 'Hoffnungsvoll' },
+  'fe-grateful': { de: 'Dankbar' },
+  'fe-thankful': { de: 'Dankbar' },
+  'fe-loved': { de: 'Geliebt' },
+  'fe-safe': { de: 'Sicher' },
+  'fe-comfortable': { de: 'Bequem' },
+  'fe-warm-inside': { de: 'Warm im Herzen' },
+  'fe-tired': { de: 'Müde' },
+  'fe-sleepy': { de: 'Schläfrig' },
+  'fe-hungry': { de: 'Hungrig' },
+  'fe-full': { de: 'Satt' },
+  'fe-thirsty': { de: 'Durstig' },
+  'fe-sick': { de: 'Krank' },
+  'fe-lonely': { de: 'Einsam' },
+  'fe-embarrassed': { de: 'Verlegen' },
+  'fe-shy': { de: 'Schüchtern' },
+  'fe-ashamed': { de: 'Beschämt' },
+  'fe-guilty': { de: 'Schuldig' },
+  'fe-jealous': { de: 'Eifersüchtig' },
+  'fe-disappointed': { de: 'Enttäuscht' },
+  'fe-annoyed': { de: 'Genervt' },
+  'fe-anxious': { de: 'Ängstlich' },
+  'fe-worried': { de: 'Besorgt' },
+  'fe-stressed': { de: 'Gestresst' },
+  'fe-panicked': { de: 'Panisch' },
+  'fe-terrified': { de: 'Verängstigt' },
+  'fe-brave': { de: 'Mutig' },
+  'fe-strong': { de: 'Stark' },
+  'fe-weak': { de: 'Schwach' },
+  'fe-dizzy': { de: 'Schwindelig' },
+  'fe-itchy': { de: 'Juckend' },
+  'fe-ticklish': { de: 'Kitzlig' },
+  'fe-numb': { de: 'Taub' },
+  'fe-cold-inside': { de: 'Kalt innen' },
+  'fe-empty': { de: 'Leer' },
+  'fe-heavy-heart': { de: 'Schweres Herz' },
+  'fe-mixed-up': { de: 'Durcheinander' },
+  'fe-confused-inside': { de: 'Innerlich verwirrt' },
+  'fe-stuck': { de: 'Festgefahren' },
+  'fe-missing-someone': { de: 'Jemanden vermissen' },
+  'fe-homesick': { de: 'Heimweh' },
+  'fe-overwhelmed': { de: 'Überwältigt' },
+  'fe-done-with-this': { de: 'Damit fertig' },
+  'fe-i-have-had-enough': { de: 'Ich habe genug' },
+  'fe-i-feel-good': { de: 'Ich fühle mich gut' },
+  'fe-i-feel-bad': { de: 'Ich fühle mich schlecht' },
+  'fe-i-feel-okay': { de: 'Es geht mir okay' },
+  'fe-i-feel-weird': { de: 'Ich fühle mich seltsam' },
+  'qu-who-is-that': {},  // pending Phase 2 multilingual fill
+  'qu-what-is-that': {},  // pending Phase 2 multilingual fill
+  'qu-where-is-it': {},  // pending Phase 2 multilingual fill
+  'qu-when-is-it': {},  // pending Phase 2 multilingual fill
+  'qu-why-is-that': {},  // pending Phase 2 multilingual fill
+  'qu-how-does-it-work': {},  // pending Phase 2 multilingual fill
+  'qu-how-do-i': {},  // pending Phase 2 multilingual fill
+  'qu-can-i-have-it': {},  // pending Phase 2 multilingual fill
+  'qu-can-i-try': {},  // pending Phase 2 multilingual fill
+  'qu-can-i-go': {},  // pending Phase 2 multilingual fill
+  'qu-may-i-please': {},  // pending Phase 2 multilingual fill
+  'qu-will-you-help': {},  // pending Phase 2 multilingual fill
+  'qu-are-you-okay': {},  // pending Phase 2 multilingual fill
+  'qu-are-we-there-yet': {},  // pending Phase 2 multilingual fill
+  'qu-where-are-we-going': {},  // pending Phase 2 multilingual fill
+  'qu-when-will-we-be-there': {},  // pending Phase 2 multilingual fill
+  'qu-how-much-longer': {},  // pending Phase 2 multilingual fill
+  'qu-what-time-is-it': {},  // pending Phase 2 multilingual fill
+  'qu-what-day-is-it': {},  // pending Phase 2 multilingual fill
+  'qu-is-it-ready-yet': {},  // pending Phase 2 multilingual fill
+  'qu-can-we-go-now': {},  // pending Phase 2 multilingual fill
+  'qu-can-we-do-this': {},  // pending Phase 2 multilingual fill
+  'qu-did-you-see-that': {},  // pending Phase 2 multilingual fill
+  'qu-did-i-do-good': {},  // pending Phase 2 multilingual fill
+  'qu-what-happened': {},  // pending Phase 2 multilingual fill
+  'qu-where-did-it-go': {},  // pending Phase 2 multilingual fill
+  'qu-who-said-that': {},  // pending Phase 2 multilingual fill
+  'qu-what-did-they-say': {},  // pending Phase 2 multilingual fill
+  'qu-how-old-are-you': {},  // pending Phase 2 multilingual fill
+  'qu-what-is-your-name': {},  // pending Phase 2 multilingual fill
+  'qu-how-are-you-feeling': {},  // pending Phase 2 multilingual fill
+  'qu-what-is-for-dinner': {},  // pending Phase 2 multilingual fill
+  'qu-what-is-for-snack': {},  // pending Phase 2 multilingual fill
+  'qu-is-it-bedtime': {},  // pending Phase 2 multilingual fill
+  'qu-are-you-my-friend': {},  // pending Phase 2 multilingual fill
+  'qu-will-you-play-with-me': {},  // pending Phase 2 multilingual fill
+  'ac-wave': {},  // pending Phase 2 multilingual fill
+  'ac-clap': {},  // pending Phase 2 multilingual fill
+  'ac-point': {},  // pending Phase 2 multilingual fill
+  'ac-nod': {},  // pending Phase 2 multilingual fill
+  'ac-shake-head': {},  // pending Phase 2 multilingual fill
+  'ac-whisper': {},  // pending Phase 2 multilingual fill
+  'ac-shout': {},  // pending Phase 2 multilingual fill
+  'ac-sing': {},  // pending Phase 2 multilingual fill
+  'ac-hum': {},  // pending Phase 2 multilingual fill
+  'ac-roll': {},  // pending Phase 2 multilingual fill
+  'ac-slide': {},  // pending Phase 2 multilingual fill
+  'ac-spin': {},  // pending Phase 2 multilingual fill
+  'ac-hop': {},  // pending Phase 2 multilingual fill
+  'ac-skip': {},  // pending Phase 2 multilingual fill
+  'ac-crawl': {},  // pending Phase 2 multilingual fill
+  'ac-tiptoe': {},  // pending Phase 2 multilingual fill
+  'ac-tip-toe': {},  // pending Phase 2 multilingual fill
+  'ac-march': {},  // pending Phase 2 multilingual fill
+  'ac-climb-up': {},  // pending Phase 2 multilingual fill
+  'ac-climb-down': {},  // pending Phase 2 multilingual fill
+  'ac-push-it': {},  // pending Phase 2 multilingual fill
+  'ac-pull-it': {},  // pending Phase 2 multilingual fill
+  'ac-pick-it-up': {},  // pending Phase 2 multilingual fill
+  'ac-set-it-down': {},  // pending Phase 2 multilingual fill
+  'ac-pour': {},  // pending Phase 2 multilingual fill
+  'ac-stir': {},  // pending Phase 2 multilingual fill
+  'ac-mix': {},  // pending Phase 2 multilingual fill
+  'ac-spread': {},  // pending Phase 2 multilingual fill
+  'ac-fold': {},  // pending Phase 2 multilingual fill
+  'ac-tie': {},  // pending Phase 2 multilingual fill
+  'ac-untie': {},  // pending Phase 2 multilingual fill
+  'ac-zip': {},  // pending Phase 2 multilingual fill
+  'ac-unzip': {},  // pending Phase 2 multilingual fill
+  'ac-snap': {},  // pending Phase 2 multilingual fill
+  'ac-buckle': {},  // pending Phase 2 multilingual fill
+  'ac-brush-teeth': {},  // pending Phase 2 multilingual fill
+  'ac-brush-hair': {},  // pending Phase 2 multilingual fill
+  'ac-comb': {},  // pending Phase 2 multilingual fill
+  'ac-floss': {},  // pending Phase 2 multilingual fill
+  'ac-get-dressed': {},  // pending Phase 2 multilingual fill
+  'ac-get-undressed': {},  // pending Phase 2 multilingual fill
+  'ac-put-on-shoes': {},  // pending Phase 2 multilingual fill
+  'ac-take-off-shoes': {},  // pending Phase 2 multilingual fill
+  'ac-wash-hands': {},  // pending Phase 2 multilingual fill
+  'ac-take-a-bath': {},  // pending Phase 2 multilingual fill
+  'ac-take-a-shower': {},  // pending Phase 2 multilingual fill
+  'ac-sleep': {},  // pending Phase 2 multilingual fill
+  'ac-take-a-nap': {},  // pending Phase 2 multilingual fill
+  'ac-wake-up': {},  // pending Phase 2 multilingual fill
+  'ac-wait-for': {},  // pending Phase 2 multilingual fill
+  'ac-look-for': {},  // pending Phase 2 multilingual fill
+  'ac-search': {},  // pending Phase 2 multilingual fill
+  'ac-discover': {},  // pending Phase 2 multilingual fill
+  'ac-hide': {},  // pending Phase 2 multilingual fill
+  'ac-seek': {},  // pending Phase 2 multilingual fill
+  'ac-tag': {},  // pending Phase 2 multilingual fill
+  'ac-race': {},  // pending Phase 2 multilingual fill
+  'ac-cuddle': {},  // pending Phase 2 multilingual fill
+  'ac-snuggle': {},  // pending Phase 2 multilingual fill
+  'ac-pat': {},  // pending Phase 2 multilingual fill
+  'ac-tickle': {},  // pending Phase 2 multilingual fill
+  'ac-sweep': {},  // pending Phase 2 multilingual fill
+  'ac-mop': {},  // pending Phase 2 multilingual fill
+  'ac-vacuum': {},  // pending Phase 2 multilingual fill
+  'ac-dust': {},  // pending Phase 2 multilingual fill
+  'ac-carry-it': {},  // pending Phase 2 multilingual fill
+  'ac-drop-it': {},  // pending Phase 2 multilingual fill
+  'ac-toss-it': {},  // pending Phase 2 multilingual fill
+  'ac-roll-it': {},  // pending Phase 2 multilingual fill
+  'dw-tall': {},  // pending Phase 2 multilingual fill
+  'dw-short': {},  // pending Phase 2 multilingual fill
+  'dw-long': {},  // pending Phase 2 multilingual fill
+  'dw-wide': {},  // pending Phase 2 multilingual fill
+  'dw-narrow': {},  // pending Phase 2 multilingual fill
+  'dw-thick': {},  // pending Phase 2 multilingual fill
+  'dw-thin': {},  // pending Phase 2 multilingual fill
+  'dw-round': {},  // pending Phase 2 multilingual fill
+  'dw-square': {},  // pending Phase 2 multilingual fill
+  'dw-smooth': {},  // pending Phase 2 multilingual fill
+  'dw-rough': {},  // pending Phase 2 multilingual fill
+  'dw-sticky': {},  // pending Phase 2 multilingual fill
+  'dw-wet': {},  // pending Phase 2 multilingual fill
+  'dw-dry': {},  // pending Phase 2 multilingual fill
+  'dw-clean': {},  // pending Phase 2 multilingual fill
+  'dw-dirty': {},  // pending Phase 2 multilingual fill
+  'dw-soft': {},  // pending Phase 2 multilingual fill
+  'dw-hard': {},  // pending Phase 2 multilingual fill
+  'dw-sweet': {},  // pending Phase 2 multilingual fill
+  'dw-salty': {},  // pending Phase 2 multilingual fill
+  'dw-sour': {},  // pending Phase 2 multilingual fill
+  'dw-spicy': {},  // pending Phase 2 multilingual fill
+  'dw-bitter': {},  // pending Phase 2 multilingual fill
+  'dw-quiet': {},  // pending Phase 2 multilingual fill
+  'dw-loud': {},  // pending Phase 2 multilingual fill
+  'dw-bright': {},  // pending Phase 2 multilingual fill
+  'dw-dark': {},  // pending Phase 2 multilingual fill
+  'dw-shiny': {},  // pending Phase 2 multilingual fill
+  'dw-heavy': {},  // pending Phase 2 multilingual fill
+  'dw-light': {},  // pending Phase 2 multilingual fill
+  'dw-empty': {},  // pending Phase 2 multilingual fill
+  'dw-full': {},  // pending Phase 2 multilingual fill
+  'dw-easy': {},  // pending Phase 2 multilingual fill
+  'dw-tricky': {},  // pending Phase 2 multilingual fill
+  'dw-simple': {},  // pending Phase 2 multilingual fill
+  'dw-fun': {},  // pending Phase 2 multilingual fill
+  'dw-boring': {},  // pending Phase 2 multilingual fill
+  'dw-cool': {},  // pending Phase 2 multilingual fill
+  'dw-awesome': {},  // pending Phase 2 multilingual fill
+  'dw-scary': {},  // pending Phase 2 multilingual fill
+  'dw-safe': {},  // pending Phase 2 multilingual fill
+  'dw-dangerous': {},  // pending Phase 2 multilingual fill
+  'dw-friendly': {},  // pending Phase 2 multilingual fill
+  'dw-mean': {},  // pending Phase 2 multilingual fill
+  'dw-nice': {},  // pending Phase 2 multilingual fill
+  'dw-helpful': {},  // pending Phase 2 multilingual fill
+  'dw-mine': {},  // pending Phase 2 multilingual fill
+  'dw-special': {},  // pending Phase 2 multilingual fill
+  'pp-aunt': {},  // pending Phase 2 multilingual fill
+  'pp-uncle': {},  // pending Phase 2 multilingual fill
+  'pp-cousin': {},  // pending Phase 2 multilingual fill
+  'pp-stepmom': {},  // pending Phase 2 multilingual fill
+  'pp-stepdad': {},  // pending Phase 2 multilingual fill
+  'pp-bus-driver': {},  // pending Phase 2 multilingual fill
+  'pp-coach': {},  // pending Phase 2 multilingual fill
+  'pp-principal': {},  // pending Phase 2 multilingual fill
+  'pp-counselor': {},  // pending Phase 2 multilingual fill
+  'pp-nurse': {},  // pending Phase 2 multilingual fill
+  'pp-dentist': {},  // pending Phase 2 multilingual fill
+  'pp-bcba': {},  // pending Phase 2 multilingual fill
+  'pp-rbt': {},  // pending Phase 2 multilingual fill
+  'pp-babysitter': {},  // pending Phase 2 multilingual fill
+  'pp-neighbor': {},  // pending Phase 2 multilingual fill
+  'pp-helper': {},  // pending Phase 2 multilingual fill
+  'pp-classmate': {},  // pending Phase 2 multilingual fill
+  'pp-best-friend': {},  // pending Phase 2 multilingual fill
+  'pp-new-friend': {},  // pending Phase 2 multilingual fill
+  'pp-man': {},  // pending Phase 2 multilingual fill
+  'pp-woman': {},  // pending Phase 2 multilingual fill
+  'pp-kid': {},  // pending Phase 2 multilingual fill
+  'pp-grown-up': {},  // pending Phase 2 multilingual fill
+  'pp-stranger': {},  // pending Phase 2 multilingual fill
+  'pp-police-officer': {},  // pending Phase 2 multilingual fill
+  'pp-firefighter': {},  // pending Phase 2 multilingual fill
+  'pp-paramedic': {},  // pending Phase 2 multilingual fill
+  'pp-my-family': {},  // pending Phase 2 multilingual fill
+  'pp-my-class': {},  // pending Phase 2 multilingual fill
+  'pp-my-team': {},  // pending Phase 2 multilingual fill
+  'fd-bread': {},  // pending Phase 2 multilingual fill
+  'fd-toast': {},  // pending Phase 2 multilingual fill
+  'fd-pancakes': {},  // pending Phase 2 multilingual fill
+  'fd-waffles': {},  // pending Phase 2 multilingual fill
+  'fd-eggs': {},  // pending Phase 2 multilingual fill
+  'fd-bacon': {},  // pending Phase 2 multilingual fill
+  'fd-yogurt': {},  // pending Phase 2 multilingual fill
+  'fd-oatmeal': {},  // pending Phase 2 multilingual fill
+  'fd-granola': {},  // pending Phase 2 multilingual fill
+  'fd-smoothie': {},  // pending Phase 2 multilingual fill
+  'fd-pasta': {},  // pending Phase 2 multilingual fill
+  'fd-noodles': {},  // pending Phase 2 multilingual fill
+  'fd-rice': {},  // pending Phase 2 multilingual fill
+  'fd-soup': {},  // pending Phase 2 multilingual fill
+  'fd-salad': {},  // pending Phase 2 multilingual fill
+  'fd-wrap': {},  // pending Phase 2 multilingual fill
+  'fd-hamburger': {},  // pending Phase 2 multilingual fill
+  'fd-hot-dog': {},  // pending Phase 2 multilingual fill
+  'fd-taco': {},  // pending Phase 2 multilingual fill
+  'fd-burrito': {},  // pending Phase 2 multilingual fill
+  'fd-quesadilla': {},  // pending Phase 2 multilingual fill
+  'fd-sushi': {},  // pending Phase 2 multilingual fill
+  'fd-dumplings': {},  // pending Phase 2 multilingual fill
+  'fd-curry': {},  // pending Phase 2 multilingual fill
+  'fd-stir-fry': {},  // pending Phase 2 multilingual fill
+  'fd-carrots': {},  // pending Phase 2 multilingual fill
+  'fd-broccoli': {},  // pending Phase 2 multilingual fill
+  'fd-peas': {},  // pending Phase 2 multilingual fill
+  'fd-corn': {},  // pending Phase 2 multilingual fill
+  'fd-tomato': {},  // pending Phase 2 multilingual fill
+  'fd-cucumber': {},  // pending Phase 2 multilingual fill
+  'fd-lettuce': {},  // pending Phase 2 multilingual fill
+  'fd-spinach': {},  // pending Phase 2 multilingual fill
+  'fd-potato': {},  // pending Phase 2 multilingual fill
+  'fd-sweet-potato': {},  // pending Phase 2 multilingual fill
+  'fd-strawberry': {},  // pending Phase 2 multilingual fill
+  'fd-blueberry': {},  // pending Phase 2 multilingual fill
+  'fd-grapes': {},  // pending Phase 2 multilingual fill
+  'fd-watermelon': {},  // pending Phase 2 multilingual fill
+  'fd-orange': {},  // pending Phase 2 multilingual fill
+  'fd-pear': {},  // pending Phase 2 multilingual fill
+  'fd-peach': {},  // pending Phase 2 multilingual fill
+  'fd-mango': {},  // pending Phase 2 multilingual fill
+  'fd-pineapple': {},  // pending Phase 2 multilingual fill
+  'fd-cake': {},  // pending Phase 2 multilingual fill
+  'fd-cupcake': {},  // pending Phase 2 multilingual fill
+  'fd-brownie': {},  // pending Phase 2 multilingual fill
+  'fd-donut': {},  // pending Phase 2 multilingual fill
+  'fd-muffin': {},  // pending Phase 2 multilingual fill
+  'fd-pie': {},  // pending Phase 2 multilingual fill
+  'fd-pudding': {},  // pending Phase 2 multilingual fill
+  'fd-jello': {},  // pending Phase 2 multilingual fill
+  'fd-candy': {},  // pending Phase 2 multilingual fill
+  'fd-chocolate': {},  // pending Phase 2 multilingual fill
+  'fd-lollipop': {},  // pending Phase 2 multilingual fill
+  'fd-gum': {},  // pending Phase 2 multilingual fill
+  'fd-soda': {},  // pending Phase 2 multilingual fill
+  'fd-tea': {},  // pending Phase 2 multilingual fill
+  'fd-hot-chocolate': {},  // pending Phase 2 multilingual fill
+  'fd-lemonade': {},  // pending Phase 2 multilingual fill
+  'fd-spoon': {},  // pending Phase 2 multilingual fill
+  'fd-fork': {},  // pending Phase 2 multilingual fill
+  'fd-knife': {},  // pending Phase 2 multilingual fill
+  'fd-plate': {},  // pending Phase 2 multilingual fill
+  'fd-bowl': {},  // pending Phase 2 multilingual fill
+  'fd-cup': {},  // pending Phase 2 multilingual fill
+  'fd-straw': {},  // pending Phase 2 multilingual fill
+  'fd-napkin': {},  // pending Phase 2 multilingual fill
+  'fd-bib': {},  // pending Phase 2 multilingual fill
+  'fd-open-it-please': {},  // pending Phase 2 multilingual fill
+  'fd-cut-it-up-please': {},  // pending Phase 2 multilingual fill
+  'fd-not-too-hot': {},  // pending Phase 2 multilingual fill
+  'fd-i-am-allergic': {},  // pending Phase 2 multilingual fill
+  'pl-backyard': {},  // pending Phase 2 multilingual fill
+  'pl-front-yard': {},  // pending Phase 2 multilingual fill
+  'pl-garden': {},  // pending Phase 2 multilingual fill
+  'pl-driveway': {},  // pending Phase 2 multilingual fill
+  'pl-living-room': {},  // pending Phase 2 multilingual fill
+  'pl-dining-room': {},  // pending Phase 2 multilingual fill
+  'pl-garage': {},  // pending Phase 2 multilingual fill
+  'pl-basement': {},  // pending Phase 2 multilingual fill
+  'pl-attic': {},  // pending Phase 2 multilingual fill
+  'pl-hospital': {},  // pending Phase 2 multilingual fill
+  'pl-doctor-office': {},  // pending Phase 2 multilingual fill
+  'pl-dentist-office': {},  // pending Phase 2 multilingual fill
+  'pl-pharmacy': {},  // pending Phase 2 multilingual fill
+  'pl-grocery-store': {},  // pending Phase 2 multilingual fill
+  'pl-mall': {},  // pending Phase 2 multilingual fill
+  'pl-pet-store': {},  // pending Phase 2 multilingual fill
+  'pl-toy-store': {},  // pending Phase 2 multilingual fill
+  'pl-movie-theater': {},  // pending Phase 2 multilingual fill
+  'pl-bowling-alley': {},  // pending Phase 2 multilingual fill
+  'pl-arcade': {},  // pending Phase 2 multilingual fill
+  'pl-beach': {},  // pending Phase 2 multilingual fill
+  'pl-lake': {},  // pending Phase 2 multilingual fill
+  'pl-mountain': {},  // pending Phase 2 multilingual fill
+  'pl-forest': {},  // pending Phase 2 multilingual fill
+  'pl-camp': {},  // pending Phase 2 multilingual fill
+  'pl-zoo': {},  // pending Phase 2 multilingual fill
+  'pl-aquarium': {},  // pending Phase 2 multilingual fill
+  'pl-museum': {},  // pending Phase 2 multilingual fill
+  'pl-farm': {},  // pending Phase 2 multilingual fill
+  'pl-church': {},  // pending Phase 2 multilingual fill
+  'pl-temple': {},  // pending Phase 2 multilingual fill
+  'pl-mosque': {},  // pending Phase 2 multilingual fill
+  'pl-synagogue': {},  // pending Phase 2 multilingual fill
+  'pl-bus-stop': {},  // pending Phase 2 multilingual fill
+  'pl-train-station': {},  // pending Phase 2 multilingual fill
+  'pl-airport': {},  // pending Phase 2 multilingual fill
+  'sw-backpack': {},  // pending Phase 2 multilingual fill
+  'sw-lunchbox': {},  // pending Phase 2 multilingual fill
+  'sw-folder': {},  // pending Phase 2 multilingual fill
+  'sw-notebook': {},  // pending Phase 2 multilingual fill
+  'sw-crayons': {},  // pending Phase 2 multilingual fill
+  'sw-markers': {},  // pending Phase 2 multilingual fill
+  'sw-scissors': {},  // pending Phase 2 multilingual fill
+  'sw-glue': {},  // pending Phase 2 multilingual fill
+  'sw-tape': {},  // pending Phase 2 multilingual fill
+  'sw-eraser': {},  // pending Phase 2 multilingual fill
+  'sw-ruler': {},  // pending Phase 2 multilingual fill
+  'sw-whiteboard': {},  // pending Phase 2 multilingual fill
+  'sw-smart-board': {},  // pending Phase 2 multilingual fill
+  'sw-projector': {},  // pending Phase 2 multilingual fill
+  'sw-math': {},  // pending Phase 2 multilingual fill
+  'sw-reading': {},  // pending Phase 2 multilingual fill
+  'sw-writing': {},  // pending Phase 2 multilingual fill
+  'sw-spelling': {},  // pending Phase 2 multilingual fill
+  'sw-science': {},  // pending Phase 2 multilingual fill
+  'sw-social-studies': {},  // pending Phase 2 multilingual fill
+  'sw-history': {},  // pending Phase 2 multilingual fill
+  'sw-pe': {},  // pending Phase 2 multilingual fill
+  'sw-gym': {},  // pending Phase 2 multilingual fill
+  'sw-recess-time': {},  // pending Phase 2 multilingual fill
+  'sw-library-time': {},  // pending Phase 2 multilingual fill
+  'sw-story-time': {},  // pending Phase 2 multilingual fill
+  'sw-circle-time': {},  // pending Phase 2 multilingual fill
+  'sw-lunch-time': {},  // pending Phase 2 multilingual fill
+  'sw-snack-time': {},  // pending Phase 2 multilingual fill
+  'sw-worksheet': {},  // pending Phase 2 multilingual fill
+  'sw-quiz': {},  // pending Phase 2 multilingual fill
+  'sw-test': {},  // pending Phase 2 multilingual fill
+  'sw-project': {},  // pending Phase 2 multilingual fill
+  'sw-field-trip': {},  // pending Phase 2 multilingual fill
+  'sw-assembly': {},  // pending Phase 2 multilingual fill
+  'sw-bus-ride': {},  // pending Phase 2 multilingual fill
+  'hb-hair': {},  // pending Phase 2 multilingual fill
+  'hb-face': {},  // pending Phase 2 multilingual fill
+  'hb-forehead': {},  // pending Phase 2 multilingual fill
+  'hb-cheek': {},  // pending Phase 2 multilingual fill
+  'hb-chin': {},  // pending Phase 2 multilingual fill
+  'hb-lips': {},  // pending Phase 2 multilingual fill
+  'hb-tongue': {},  // pending Phase 2 multilingual fill
+  'hb-throat': {},  // pending Phase 2 multilingual fill
+  'hb-neck': {},  // pending Phase 2 multilingual fill
+  'hb-shoulder': {},  // pending Phase 2 multilingual fill
+  'hb-elbow': {},  // pending Phase 2 multilingual fill
+  'hb-wrist': {},  // pending Phase 2 multilingual fill
+  'hb-finger': {},  // pending Phase 2 multilingual fill
+  'hb-thumb': {},  // pending Phase 2 multilingual fill
+  'hb-knuckle': {},  // pending Phase 2 multilingual fill
+  'hb-knee': {},  // pending Phase 2 multilingual fill
+  'hb-ankle': {},  // pending Phase 2 multilingual fill
+  'hb-toe': {},  // pending Phase 2 multilingual fill
+  'hb-heel': {},  // pending Phase 2 multilingual fill
+  'hb-chest': {},  // pending Phase 2 multilingual fill
+  'hb-belly': {},  // pending Phase 2 multilingual fill
+  'hb-hip': {},  // pending Phase 2 multilingual fill
+  'hb-bottom': {},  // pending Phase 2 multilingual fill
+  'hb-skin': {},  // pending Phase 2 multilingual fill
+  'hb-bone': {},  // pending Phase 2 multilingual fill
+  'hb-muscle': {},  // pending Phase 2 multilingual fill
+  'hb-headache': {},  // pending Phase 2 multilingual fill
+  'hb-stomachache': {},  // pending Phase 2 multilingual fill
+  'hb-earache': {},  // pending Phase 2 multilingual fill
+  'hb-toothache': {},  // pending Phase 2 multilingual fill
+  'hb-sore-throat': {},  // pending Phase 2 multilingual fill
+  'hb-cough': {},  // pending Phase 2 multilingual fill
+  'hb-sneeze': {},  // pending Phase 2 multilingual fill
+  'hb-runny-nose': {},  // pending Phase 2 multilingual fill
+  'hb-stuffy-nose': {},  // pending Phase 2 multilingual fill
+  'hb-fever': {},  // pending Phase 2 multilingual fill
+  'hb-chills': {},  // pending Phase 2 multilingual fill
+  'hb-shaking': {},  // pending Phase 2 multilingual fill
+  'hb-dizzy-spell': {},  // pending Phase 2 multilingual fill
+  'hb-bruise': {},  // pending Phase 2 multilingual fill
+  'hb-cut': {},  // pending Phase 2 multilingual fill
+  'hb-scrape': {},  // pending Phase 2 multilingual fill
+  'hb-bump': {},  // pending Phase 2 multilingual fill
+  'hb-bandage': {},  // pending Phase 2 multilingual fill
+  'hb-itchy-spot': {},  // pending Phase 2 multilingual fill
+  'hb-rash': {},  // pending Phase 2 multilingual fill
+  'hb-allergic-reaction': {},  // pending Phase 2 multilingual fill
+  'hb-pain': {},  // pending Phase 2 multilingual fill
+  'hb-sharp-pain': {},  // pending Phase 2 multilingual fill
+  'hb-dull-pain': {},  // pending Phase 2 multilingual fill
+  'hb-burning': {},  // pending Phase 2 multilingual fill
+  'hb-vitamins': {},  // pending Phase 2 multilingual fill
+  'hb-inhaler': {},  // pending Phase 2 multilingual fill
+  'hb-epipen': {},  // pending Phase 2 multilingual fill
+  'hb-pill': {},  // pending Phase 2 multilingual fill
+  'hb-drops': {},  // pending Phase 2 multilingual fill
+  'hb-doctor-visit': {},  // pending Phase 2 multilingual fill
+  'hb-shot': {},  // pending Phase 2 multilingual fill
+  'hb-x-ray': {},  // pending Phase 2 multilingual fill
+  'hb-check-up': {},  // pending Phase 2 multilingual fill
+  'hb-wash-my-hands': {},  // pending Phase 2 multilingual fill
+  'hb-brush-my-teeth': {},  // pending Phase 2 multilingual fill
+  'ti-right-now': {},  // pending Phase 2 multilingual fill
+  'ti-in-a-minute': {},  // pending Phase 2 multilingual fill
+  'ti-soon': {},  // pending Phase 2 multilingual fill
+  'ti-later-today': {},  // pending Phase 2 multilingual fill
+  'ti-tonight': {},  // pending Phase 2 multilingual fill
+  'ti-this-morning': {},  // pending Phase 2 multilingual fill
+  'ti-this-afternoon': {},  // pending Phase 2 multilingual fill
+  'ti-this-evening': {},  // pending Phase 2 multilingual fill
+  'ti-last-night': {},  // pending Phase 2 multilingual fill
+  'ti-all-day': {},  // pending Phase 2 multilingual fill
+  'ti-all-night': {},  // pending Phase 2 multilingual fill
+  'ti-a-long-time': {},  // pending Phase 2 multilingual fill
+  'ti-a-short-time': {},  // pending Phase 2 multilingual fill
+  'ti-a-while-ago': {},  // pending Phase 2 multilingual fill
+  'ti-weekend': {},  // pending Phase 2 multilingual fill
+  'ti-weekday': {},  // pending Phase 2 multilingual fill
+  'ti-monday': {},  // pending Phase 2 multilingual fill
+  'ti-tuesday': {},  // pending Phase 2 multilingual fill
+  'ti-wednesday': {},  // pending Phase 2 multilingual fill
+  'ti-thursday': {},  // pending Phase 2 multilingual fill
+  'ti-friday': {},  // pending Phase 2 multilingual fill
+  'ti-saturday': {},  // pending Phase 2 multilingual fill
+  'ti-sunday': {},  // pending Phase 2 multilingual fill
+  'ti-birthday': {},  // pending Phase 2 multilingual fill
+  'ti-holiday': {},  // pending Phase 2 multilingual fill
+  'an-puppy': {},  // pending Phase 2 multilingual fill
+  'an-kitten': {},  // pending Phase 2 multilingual fill
+  'an-hamster': {},  // pending Phase 2 multilingual fill
+  'an-guinea-pig': {},  // pending Phase 2 multilingual fill
+  'an-turtle': {},  // pending Phase 2 multilingual fill
+  'an-frog': {},  // pending Phase 2 multilingual fill
+  'an-snake': {},  // pending Phase 2 multilingual fill
+  'an-lizard': {},  // pending Phase 2 multilingual fill
+  'an-spider': {},  // pending Phase 2 multilingual fill
+  'an-bug': {},  // pending Phase 2 multilingual fill
+  'an-bee': {},  // pending Phase 2 multilingual fill
+  'an-ant': {},  // pending Phase 2 multilingual fill
+  'an-lion': {},  // pending Phase 2 multilingual fill
+  'an-tiger': {},  // pending Phase 2 multilingual fill
+  'an-monkey': {},  // pending Phase 2 multilingual fill
+  'an-giraffe': {},  // pending Phase 2 multilingual fill
+  'an-zebra': {},  // pending Phase 2 multilingual fill
+  'an-hippo': {},  // pending Phase 2 multilingual fill
+  'an-penguin': {},  // pending Phase 2 multilingual fill
+  'an-owl': {},  // pending Phase 2 multilingual fill
+  'an-eagle': {},  // pending Phase 2 multilingual fill
+  'an-parrot': {},  // pending Phase 2 multilingual fill
+  'an-chicken': {},  // pending Phase 2 multilingual fill
+  'an-rooster': {},  // pending Phase 2 multilingual fill
+  'an-sheep': {},  // pending Phase 2 multilingual fill
+  'an-goat': {},  // pending Phase 2 multilingual fill
+  'an-donkey': {},  // pending Phase 2 multilingual fill
+  'an-dolphin': {},  // pending Phase 2 multilingual fill
+  'an-whale': {},  // pending Phase 2 multilingual fill
+  'an-shark': {},  // pending Phase 2 multilingual fill
+  'an-octopus': {},  // pending Phase 2 multilingual fill
+  'an-crab': {},  // pending Phase 2 multilingual fill
+  'an-starfish': {},  // pending Phase 2 multilingual fill
+  'an-my-pet': {},  // pending Phase 2 multilingual fill
+  'an-my-dog': {},  // pending Phase 2 multilingual fill
+  'an-my-cat': {},  // pending Phase 2 multilingual fill
+  'co-gray': {},  // pending Phase 2 multilingual fill
+  'co-silver': {},  // pending Phase 2 multilingual fill
+  'co-gold': {},  // pending Phase 2 multilingual fill
+  'co-beige': {},  // pending Phase 2 multilingual fill
+  'co-tan': {},  // pending Phase 2 multilingual fill
+  'co-light-blue': {},  // pending Phase 2 multilingual fill
+  'co-dark-blue': {},  // pending Phase 2 multilingual fill
+  'co-light-green': {},  // pending Phase 2 multilingual fill
+  'co-dark-green': {},  // pending Phase 2 multilingual fill
+  'co-light-pink': {},  // pending Phase 2 multilingual fill
+  'co-hot-pink': {},  // pending Phase 2 multilingual fill
+  'co-rainbow': {},  // pending Phase 2 multilingual fill
+  'co-my-favorite-color': {},  // pending Phase 2 multilingual fill
+  'cl-t-shirt': {},  // pending Phase 2 multilingual fill
+  'cl-sweater': {},  // pending Phase 2 multilingual fill
+  'cl-sweatshirt': {},  // pending Phase 2 multilingual fill
+  'cl-hoodie': {},  // pending Phase 2 multilingual fill
+  'cl-coat': {},  // pending Phase 2 multilingual fill
+  'cl-shorts': {},  // pending Phase 2 multilingual fill
+  'cl-skirt': {},  // pending Phase 2 multilingual fill
+  'cl-leggings': {},  // pending Phase 2 multilingual fill
+  'cl-sandals': {},  // pending Phase 2 multilingual fill
+  'cl-sneakers': {},  // pending Phase 2 multilingual fill
+  'cl-mittens': {},  // pending Phase 2 multilingual fill
+  'cl-gloves': {},  // pending Phase 2 multilingual fill
+  'cl-scarf': {},  // pending Phase 2 multilingual fill
+  'cl-belt': {},  // pending Phase 2 multilingual fill
+  'cl-backpack': {},  // pending Phase 2 multilingual fill
+  'cl-helmet': {},  // pending Phase 2 multilingual fill
+  'cl-glasses': {},  // pending Phase 2 multilingual fill
+  'cl-sunglasses': {},  // pending Phase 2 multilingual fill
+  'cl-diaper': {},  // pending Phase 2 multilingual fill
+  'cl-pull-up': {},  // pending Phase 2 multilingual fill
+  'tr-stroller': {},  // pending Phase 2 multilingual fill
+  'tr-tricycle': {},  // pending Phase 2 multilingual fill
+  'tr-skateboard': {},  // pending Phase 2 multilingual fill
+  'tr-roller-skates': {},  // pending Phase 2 multilingual fill
+  'tr-subway': {},  // pending Phase 2 multilingual fill
+  'tr-taxi': {},  // pending Phase 2 multilingual fill
+  'tr-helicopter': {},  // pending Phase 2 multilingual fill
+  'tr-rocket': {},  // pending Phase 2 multilingual fill
+  'tr-tractor': {},  // pending Phase 2 multilingual fill
+  'tr-fire-truck': {},  // pending Phase 2 multilingual fill
+  'tr-police-car': {},  // pending Phase 2 multilingual fill
+  'tr-ambulance': {},  // pending Phase 2 multilingual fill
+  'tr-ferry': {},  // pending Phase 2 multilingual fill
+  'tr-sled': {},  // pending Phase 2 multilingual fill
+  'tr-drive': {},  // pending Phase 2 multilingual fill
+  'tr-ride': {},  // pending Phase 2 multilingual fill
+  'we-foggy': {},  // pending Phase 2 multilingual fill
+  'we-rainbow': {},  // pending Phase 2 multilingual fill
+  'we-lightning': {},  // pending Phase 2 multilingual fill
+  'we-thunder': {},  // pending Phase 2 multilingual fill
+  'we-tornado': {},  // pending Phase 2 multilingual fill
+  'we-hurricane': {},  // pending Phase 2 multilingual fill
+  'we-earthquake': {},  // pending Phase 2 multilingual fill
+  'we-warm-out': {},  // pending Phase 2 multilingual fill
+  'we-cool-out': {},  // pending Phase 2 multilingual fill
+  'we-freezing': {},  // pending Phase 2 multilingual fill
+  'we-wear-a-coat': {},  // pending Phase 2 multilingual fill
+  'we-wear-shorts': {},  // pending Phase 2 multilingual fill
+  'tf-stuffed-animal': {},  // pending Phase 2 multilingual fill
+  'tf-action-figure': {},  // pending Phase 2 multilingual fill
+  'tf-lego': {},  // pending Phase 2 multilingual fill
+  'tf-train-set': {},  // pending Phase 2 multilingual fill
+  'tf-card-game': {},  // pending Phase 2 multilingual fill
+  'tf-board-game': {},  // pending Phase 2 multilingual fill
+  'tf-video-game': {},  // pending Phase 2 multilingual fill
+  'tf-crayons': {},  // pending Phase 2 multilingual fill
+  'tf-stickers': {},  // pending Phase 2 multilingual fill
+  'tf-sandbox': {},  // pending Phase 2 multilingual fill
+  'tf-trampoline': {},  // pending Phase 2 multilingual fill
+  'tf-sprinkler': {},  // pending Phase 2 multilingual fill
+  'tf-story': {},  // pending Phase 2 multilingual fill
+  'tf-song': {},  // pending Phase 2 multilingual fill
+  'tf-cartoon': {},  // pending Phase 2 multilingual fill
+
 };
 
 export function getPhraseText(phraseId: string, lang: SupportedLanguage, fallback: string): string {

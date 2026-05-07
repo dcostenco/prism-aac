@@ -50,7 +50,14 @@ function buildSeedForLanguage(lang: SupportedLanguage): {
 } {
   const wordFreq: Record<string, WordFreqEntry> = {};
   const script = SCRIPT_FILTER[lang];
-  const phrases: string[] = DEFAULT_PHRASES.map(p => getPhraseText(p.id, lang, p.text));
+  // Phase 1 dict expansion (1220 phrases) added many entries without per-lang
+  // translations yet. When `getPhraseText` falls back to English text on a
+  // non-EN locale, those English words leak into the seed because the Latin
+  // SCRIPT_FILTER for RO/ES/FR/etc. accepts any [a-z] word. Skip fallbacks.
+  const phrases: string[] = DEFAULT_PHRASES.flatMap(p => {
+    const text = getPhraseText(p.id, lang, p.text);
+    return lang !== 'en' && text === p.text ? [] : [text];
+  });
   for (const phrase of phrases) {
     for (const raw of phrase.split(/\s+/)) {
       const word = raw.toLowerCase().replace(/[^\p{L}'-]/gu, '');
@@ -172,37 +179,16 @@ export const usePredictionStore = create<PredictionState>()(
         const baselineWf = { ...(corpus?.wordFreq ?? {}), ...seed.wordFreq, ...clinical };
         const baselineBg = { ...(corpus?.bigrams ?? {}), ...seed.bigrams };
         const baselineTg = { ...(corpus?.trigrams ?? {}), ...seed.trigrams };
-        // Cross-language leak guard. The user wordFreq/bigrams/trigrams maps
-        // are global (not per-lang) and seeded from English, so when the
-        // user typed English at any point they have "I", "Want", etc. with
-        // high counts. Switching to RO / ES / FR / DE / PT / etc. (Latin
-        // script) — where SCRIPT_FILTER can't tell English from native — let
-        // those English words leak into the prediction bar (fix: confirmed
-        // user report of mixed RO/EN tiles like `I / Eu / Un / Want / să`).
-        // Drop user entries that don't ALSO appear in the lang baseline so
-        // user typing within RO still boosts (RO words exist in the RO
-        // baseline) but English-only words get filtered out. EN keeps its
-        // entire user history. Identity ('en') passthrough costs nothing.
-        const filterCrossLang = (
-          user: Record<string, WordFreqEntry>,
-          baseline: Record<string, WordFreqEntry>,
-        ): Record<string, WordFreqEntry> => {
-          if (lang === 'en') return user;
-          const out: Record<string, WordFreqEntry> = {};
-          for (const k of Object.keys(user)) {
-            // For unigrams just check the key. For n-grams (k = "a|b" or
-            // "a|b|c") require the FULL n-gram to exist in the baseline —
-            // otherwise an English bigram like "i|want" would survive.
-            if (baseline[k]) out[k] = user[k];
-          }
-          return out;
-        };
-        const safeUserWf = filterCrossLang(userWf, baselineWf);
-        const safeUserBg = filterCrossLang(userBg, baselineBg);
-        const safeUserTg = filterCrossLang(userTg, baselineTg);
-        const mergedWf = mergeUserNgramsWithBoost(baselineWf, safeUserWf);
-        const mergedBg = mergeUserNgramsWithBoost(baselineBg, safeUserBg);
-        const mergedTg = mergeUserNgramsWithBoost(baselineTg, safeUserTg);
+        // Cross-language gate is enforced at the render layer
+        // (PredictionBar via lib/langAllowlist.isAllowedInLang) so the
+        // store's merge stays neutral. Doing it both places would be
+        // redundant AND has subtle ranking side-effects when the
+        // baseline filter creates new object identities that change
+        // mergeUserNgramsWithBoost's tie-breaking. Single source of
+        // truth: the render layer.
+        const mergedWf = mergeUserNgramsWithBoost(baselineWf, userWf);
+        const mergedBg = mergeUserNgramsWithBoost(baselineBg, userBg);
+        const mergedTg = mergeUserNgramsWithBoost(baselineTg, userTg);
         // Pass language-specific fallback, no always-capitalized for non-EN,
         // and a script filter that drops any wrong-script candidates that
         // leak in from the English-seeded initial state.
