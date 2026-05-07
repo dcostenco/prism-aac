@@ -1,5 +1,69 @@
 # PrismAAC Changelog
 
+## [0.8.0] - 2026-05-07 — Math module rewrite (cell-grid canvas, Phases 1A → 5D)
+
+The whole math module was rebuilt from the ground up. The old LaTeX/KaTeX panel
+is retained in `MathPanelLegacy` for rollback only — the new architecture is a
+**cell-grid model** where every glyph occupies one snap-aligned cell.
+
+### Architecture
+- **`engine/mathGrid.ts`** — pure cell-grid state. `Map<CellKey, Cell>`, decorations
+  layered separately (`fraction-bar`, `long-division-bar`, `long-division-tick`,
+  `root-bar`, `summation-line`). No LaTeX, no math parser.
+- **`engine/predictiveCursor.ts`** — `inferContext(state)` returns one of
+  `column-add | column-mul | long-div | fraction-num | fraction-den | exponent | default`,
+  so the cursor knows where to land after each commit. Decoration-anchored rules
+  beat operator-above heuristics.
+- **`engine/decorations.ts`** — `openFractionBox`, `moveToFractionDenominator`,
+  `openLongDivisionHouse`, `addRootBar`, `toggleSummationLine`.
+- **`components/math/MathGrid.tsx`** — SVG canvas: grid lines, glyphs, tints,
+  decorations. Pinch-zoom, single-finger pan, tap-to-focus.
+- **`components/math/MathKeyboardRegion.tsx`** — 9 category chips
+  (Main, Adv. Math, a–z, Misc Math, Time & Dist, Weight, Volume, Geom, Money)
+  with embedded keyboards. Fixed-height shell `clamp(220px, 26svh, 300px)`.
+- **`components/math/DwellButton.tsx`** — composes hold-time dwell (5A) +
+  two-hit magnify (5D). Each math key is a `DwellButton` so a caregiver can
+  configure motor-impairment accommodations per-child.
+- **`components/math/MathTutorTool.tsx`** — Hint / Check / Solve. Streams via
+  `askAI`, auto-collapses overlay when grid grows.
+- **`components/math/MathDocsTool.tsx`** — Save / Open with localStorage; Phase
+  5D adds `↻ Sync` driving best-effort portal sync.
+- **`components/math/MathLockTool.tsx`** — lock-equation state machine
+  (idle → lock-start → lock-end → idle).
+
+### Phase 5D — Two-hit magnify, portal sync, deep AI tutor tests
+- DwellButton: `mathTwoHitMagnify` setting → first tap arms (1.4× scale + green
+  halo, no commit), second tap commits, 2 s auto-disarm. Composes with dwell.
+- SettingsModal: toggle row for `mathTwoHitMagnify` next to the dwell-time slider.
+- `mathDocService` portal sync (best-effort, fire-and-forget on save/delete):
+  - `POST /prism-aac/math-doc/{slug}` upsert
+  - `GET /prism-aac/math-doc` list + merge by `updatedAt`
+  - `DELETE /prism-aac/math-doc/{slug}`
+- AI auth gates removed from Math tutor + AI Chat panel — `askAI` handles 401s
+  via the existing catch path; AAC tutor enabled regardless of auth state.
+
+### Tests
+- e2e: `math-grid-canvas` (6) · `math-main-keyboard` (7) · `math-predictive-cursor` (5) ·
+  `math-keyboard-region` (8) · `math-decorations` (6) · `math-keyboards-2c` (13) ·
+  `math-lock-tool` (4) · `math-integrated` (5) · `math-dwell` (4) · `math-docs` (5) ·
+  `math-tutor` (3) · `math-tutor-deep` (9 with mocked askAI) ·
+  `math-two-hit` (6) · `math-doc-sync` (3 with mocked portal) — **84 e2e cases**.
+- vitest: `math-grid` · `predictive-cursor` · `math-decorations` · `math-doc-service`
+  (incl. portal-sync coverage) · `dwell-button` (two-hit state machine).
+- Suite totals: **2200 vitest pass / 0 fail**, typecheck clean.
+
+### Docs
+- `docs/screenshots/math-canvas-empty.png`, `math-canvas-typed.png`,
+  `math-keyboard-adv.png`, `math-keyboard-letters.png`, `math-keyboard-geom.png`,
+  `math-tutor-hint.png`, `math-two-hit-armed.png`, `math-docs-overlay.png`,
+  `math-lock-armed.png` — captured via `scripts/capture-math-docs.mjs`.
+- README: added "Math module (cell-grid canvas)" section embedding the new
+  screenshots; dropped commercial-product-name references and "KaTeX" from the
+  short blurb (no longer accurate).
+- Stale `docs/screenshots/math-panel*.png` (LaTeX-era panel) removed.
+
+---
+
 ## [0.7.0] - 2026-05-05 — Schedule audio fix, preset activities, drag-drop reorder, inline edit
 
 > Note: `0.6.0` was claimed in parallel by the Panther Math redesign release;

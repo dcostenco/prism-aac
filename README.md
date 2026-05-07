@@ -23,7 +23,7 @@ Tap PECS-style picture tiles to build sentences. The app reads them aloud in you
 Built-in keyboard with word prediction. Smart suggestions learn from how the child communicates over time.
 
 ### 🧮 Math panel for school
-Panther Math Paper-style graph-paper canvas with KaTeX rendering. Draw geometric figures, write equations, get an AI tutor that speaks back.
+Graph-paper canvas where every glyph occupies its own cell — digits, operators, fractions, long-division houses, square roots, geometry symbols. Type with the on-screen math keyboard or use the AI tutor for hints, answer checks, or step-by-step walkthroughs. Save your work; come back to it later. [See the math module →](#math-module-cell-grid-canvas)
 
 ### 🗓 Visual schedule
 Picture-based routines with rewards. Reduces transition anxiety for children with autism.
@@ -53,6 +53,42 @@ Static frequency lists are obsolete. PrismAAC ranks suggested phrases via [**Pri
 When a caregiver fixes a suggestion the model got wrong (e.g. "no, the word is *eat*, not *want*"), the [audit-hooks postflight harvester](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md#7-the-recipe-combining-all-of-the-above) extracts the gotcha and persists it. After ~50 sessions, the system warns *before* the model makes a similar mistake. No labelling work for caregivers, no expensive retraining runs — the corrections are the curriculum.
 
 **Honest scope:** the underlying 7B model is mid-tier on standard tool-call benchmarks (BFCL V4 overall 18.77%, like the rest of the 7B class). What makes PrismAAC defensible isn't the model alone — it's the model plus the surrounding Prism algorithm stack. That combination is the wow.
+
+---
+
+## Math module (cell-grid canvas)
+
+Math in AAC has historically meant either typing LaTeX — impossible for non-readers — or drawing on a freeform whiteboard that no AI can interpret. PrismAAC takes a third path: a **cell-grid model** where every glyph occupies one snap-aligned cell. The child types on a soft keyboard, the cursor advances predictively (column-add carry rules, fraction numerator → denominator, long-division quotient, exponent), and the on-screen layout is automatically structured enough for an AI tutor to read back.
+
+### Canvas + main keyboard
+![Cell-grid canvas with 5 + 7 = 12 typed across cells](docs/screenshots/math-canvas-typed.png)
+
+The HUD shows live cursor position, cell count, and viewport state. Each digit/operator lands in its own cell — the cursor (highlighted blue) automatically moves to the next slot. Pinch-zoom and one-finger pan work on the canvas; the keyboard region is a fixed-height shell below.
+
+### Nine keyboard categories
+![Advanced math keyboard with fraction-bar, long-division, root, summation tools](docs/screenshots/math-keyboard-adv.png)
+
+Tap a chip to swap the row below. Categories: **Main** (digits + operators), **Adv. Math** (inequalities, π, √, exponents, plus 5 decoration tools — fraction box, long-division house, root bar, summation line, fraction bar), **a–z** (letters), **Misc Math** (set theory, logic), **Time & Dist**, **Weight**, **Volume**, **Geom**, **Money**.
+
+### AI tutor — Hint / Check / Solve
+![AI tutor overlay showing a mocked hint above the canvas](docs/screenshots/math-tutor-hint.png)
+
+Three modes: 💡 **Hint** (gentle next-step nudge, never solves), ✓ **Check** (validates the child's answer, celebrates if correct), 🎓 **Solve** (full step-by-step walkthrough, max 4 steps). The expression is serialised row-major and sent to `askAI`, which routes through Synalux (paid models) or falls back to local Ollama for offline. Streamed responses render in a floating overlay; typing more cells auto-collapses the overlay so stale advice doesn't block the child.
+
+### Save / Open with portal sync
+![Saved docs overlay showing one entry and a Sync button](docs/screenshots/math-docs-overlay.png)
+
+Local-first: docs persist to `localStorage` so a flaky network never blocks the child. Best-effort sync to Synalux portal happens fire-and-forget; `↻ Sync` pulls every doc the signed-in user owns from the portal and merges by `updatedAt`. Cap is 100 docs / 200 KB body; oldest evicted on overflow.
+
+### Two-hit magnify (accessibility)
+![A digit key armed in the green-halo magnified state](docs/screenshots/math-two-hit-armed.png)
+
+For users with motor imprecision, enable two-hit magnify in Settings: the FIRST tap on any math key arms it (1.4× scale + green halo, no commit), the SECOND tap commits. 2 s of inactivity auto-disarms. Composes with hold-time dwell — both can be on at once. Pairs with the green progress ring shown by `DwellButton` during a held-tap.
+
+### Lock-equation tool
+![Lock tool armed, prompting the user to tap a corner of the region](docs/screenshots/math-lock-armed.png)
+
+After a child finishes solving a problem, tap **Lock**, then two corners of the region. Locked cells render slightly dimmed and reject edits — useful when working on multi-part homework where earlier work shouldn't be accidentally overwritten. Tap **Unlock** to release.
 
 ---
 
