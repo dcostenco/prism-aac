@@ -164,6 +164,38 @@ console.error('--- Pass 3: AAC empty contacts ---');
 await bootClean(false);
 results.push({ pass: 'aac-empty', viewport: { w: VIEWPORT_W, h: VIEWPORT_H }, ...(await snap('aac-chat-compact', /Send|Mesaj|AAC/i, 'aac-chat-panel')) });
 
+// Math panel — TWO branches: showMore=false (default, 3-row keyboard)
+// and showMore=true (5-row keyboard with templates+categories+symbols).
+// User feedback 2026-05-07: showMore=true rendering had the canvas
+// crushed to ~120px because the 5-row keyboard ate the panel.
+async function snapMath(label, openMore) {
+  await bootClean(false);
+  await page.getByRole('button', { name: /^(Math|Matemat)/i }).first().click();
+  await page.waitForSelector('[data-testid="math-panel"]');
+  if (openMore) {
+    await page.locator('[data-testid="math-more-button"]').click();
+  }
+  await page.waitForTimeout(400);
+  const panel = await page.locator('[data-testid="math-panel"]').boundingBox();
+  const canvas = await page.locator('[data-testid="math-canvas"]').boundingBox();
+  const keyboard = await page.locator('[data-testid="math-keyboard"]').boundingBox();
+  const showMoreAttr = await page.locator('[data-testid="math-panel"]').getAttribute('data-show-more');
+  await page.screenshot({ path: `${OUT}/${label}.png`, fullPage: false });
+  return {
+    label,
+    panel: panel ? { y: panel.y, h: Math.round(panel.height) } : null,
+    canvas: canvas ? { y: canvas.y, h: Math.round(canvas.height) } : null,
+    keyboard: keyboard ? { y: keyboard.y, h: Math.round(keyboard.height) } : null,
+    branch: showMoreAttr === '1' ? 'math-more-open' : 'math-more-closed',
+  };
+}
+
+console.error('--- Pass 4: Math, More closed (default) ---');
+results.push({ pass: 'math-more-closed', viewport: { w: VIEWPORT_W, h: VIEWPORT_H }, ...(await snapMath('math-more-closed', false)) });
+
+console.error('--- Pass 5: Math, More open ---');
+results.push({ pass: 'math-more-open', viewport: { w: VIEWPORT_W, h: VIEWPORT_H }, ...(await snapMath('math-more-open', true)) });
+
 console.log(JSON.stringify(results, null, 2));
 fs.writeFileSync(`${OUT}/report.json`, JSON.stringify(results, null, 2));
 await browser.close();

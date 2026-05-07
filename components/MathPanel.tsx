@@ -185,6 +185,8 @@ export default function MathPanel() {
   return (
     <section
       aria-label={t('math')}
+      data-testid="math-panel"
+      data-show-more={showMore ? '1' : '0'}
       className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
     >
       {/* Header */}
@@ -199,15 +201,24 @@ export default function MathPanel() {
       </div>
 
       {/* Canvas — expression display + AI tutor */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
-        {/* Expression canvas — fills the available height with a graph-paper
-            grid background so geometric figures and aligned arithmetic have
-            a visible coordinate system (Panther Math Paper convention). The
-            grid uses CSS linear-gradients so it scales with viewport without
-            shipping an SVG / image asset. */}
+      <div ref={scrollRef} data-testid="math-canvas-scroll" className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
+        {/* Expression canvas — graph-paper background. The min-h is
+            ADAPTIVE: when showMore is open the user is browsing
+            symbols (5-row keyboard), so the canvas shrinks to a sane
+            floor so the keyboard fits without scrolling. When showMore
+            is closed (3-row keyboard) the canvas takes the dominant
+            space, matching Panther Math Paper proportions.
+            User feedback 2026-05-07: "no way to type without that" —
+            the prior unconditional 60svh squeezed the keyboard off
+            the bottom of the viewport when showMore was open. */}
         <div
           ref={canvasRef}
-          className="math-grid-canvas relative flex items-center justify-center rounded-xl border-2 border-theme min-h-[60svh] px-4 bg-white dark:bg-[#1a1a2e] overflow-hidden"
+          data-testid="math-canvas"
+          className={`math-grid-canvas relative flex items-center justify-center rounded-xl border-2 border-theme px-4 bg-white dark:bg-[#1a1a2e] overflow-hidden ${
+            showMore
+              ? 'min-h-[clamp(120px,20svh,200px)]'
+              : 'min-h-[clamp(220px,40svh,420px)]'
+          }`}
           style={{
             backgroundImage:
               'linear-gradient(to right, rgba(120,120,140,0.18) 1px, transparent 1px),' +
@@ -303,7 +314,7 @@ export default function MathPanel() {
           + numeric pad + variables. Symbol library (8 categories × ~30
           symbols each) is gated behind the More button to keep the
           canvas dominating the screen. */}
-      <div className="shrink-0 border-t border-theme p-2 space-y-1.5">
+      <div data-testid="math-keyboard" className="shrink-0 border-t border-theme p-2 space-y-1.5">
         {/* Symbol library (only when More is open) */}
         {showMore && (
           <>
@@ -359,6 +370,7 @@ export default function MathPanel() {
         <div className="flex gap-1.5">
           <button
             onClick={() => { tapFeedback(); setShowMore((v) => !v); }}
+            data-testid="math-more-button"
             className={`${mathKey} px-3 py-2.5 text-sm font-semibold ${showMore ? 'bg-[#4CAF50] text-white border-transparent' : ''}`}
             aria-label="More symbols"
             aria-expanded={showMore}
