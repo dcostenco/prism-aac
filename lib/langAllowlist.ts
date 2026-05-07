@@ -67,13 +67,28 @@ const SCRIPT_FILTER: Record<string, RegExp> = {
   hi: /^[ऀ-ॿ'\-]+$/,
 };
 
-/** Eagerly preload a lang's corpus so isAllowedInLang can answer
- *  synchronously. Call this when the user switches language so the
- *  allowlist is ready before predictions/aiCompletion fire. */
-export function ensureLangCorpusLoaded(lang: string): Promise<void> | null {
-  if (!SUPPORTED_SEED_LANGS.includes(lang as never)) return null;
-  if (getCachedPredictionSeed(lang)) return null;
-  return loadPredictionSeed(lang).then(() => undefined);
+/** Eagerly preload BOTH the target lang's corpus AND the English
+ *  corpus so isAllowedInLang has the cross-lang frequency data it
+ *  needs synchronously. Always returns a Promise so callers can
+ *  reliably await — even when both corpora are already cached
+ *  (returns Promise.resolve()). The previous version returned null
+ *  in the cached path, which let callers think there was nothing to
+ *  wait for and continue rendering before BOTH corpora were loaded
+ *  (English wasn't preloaded at all → cross-lang freq compare ran
+ *  with enFreq=0 → fail-open → English words flashed in the bar).
+ */
+export function ensureLangCorpusLoaded(lang: string): Promise<void> {
+  const targets: Promise<unknown>[] = [];
+  if (SUPPORTED_SEED_LANGS.includes(lang as never) && !getCachedPredictionSeed(lang)) {
+    targets.push(loadPredictionSeed(lang));
+  }
+  // Always ensure EN is loaded too — it's the comparison corpus for
+  // every Latin-script non-EN cross-lang check.
+  if (!getCachedPredictionSeed('en')) {
+    targets.push(loadPredictionSeed('en'));
+  }
+  if (targets.length === 0) return Promise.resolve();
+  return Promise.all(targets).then(() => undefined);
 }
 
 /** True when `word` is allowed for `lang`. Decision tree:
