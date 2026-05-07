@@ -20,7 +20,7 @@ const NOW = 1_700_000_000;
 const DAY = 86_400;
 
 const mkPhrase = (id: string, sortOrder: number, text = id): Phrase => ({
-  id, categoryId: 'help-needs', text, sortOrder,
+  id, categoryId: 'help-needs', text, sortOrder, isCustom: false, usageCount: 0,
 });
 
 describe('baseLevelActivation', () => {
