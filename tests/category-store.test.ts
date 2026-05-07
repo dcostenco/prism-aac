@@ -77,14 +77,16 @@ describe('CategoryStore — Custom phrases', () => {
 });
 
 describe('CategoryStore — Gap tests', () => {
-  it('custom category with empty name still works', () => {
+  it('rejects custom category with empty name (no row created)', () => {
+    const before = useCategoryStore.getState().allCategories().length;
     useCategoryStore.getState().addCustomCategory('', '📌');
-    expect(useCategoryStore.getState().allCategories()).toHaveLength(23);
+    expect(useCategoryStore.getState().allCategories()).toHaveLength(before);
   });
 
-  it('custom phrase with empty text still works', () => {
+  it('rejects custom phrase with empty text (no row created)', () => {
+    const before = useCategoryStore.getState().getPhrasesForCategory('help-needs').length;
     useCategoryStore.getState().addCustomPhrase('help-needs', '');
-    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(15);
+    expect(useCategoryStore.getState().getPhrasesForCategory('help-needs')).toHaveLength(before);
   });
 
   it('ordering sequences exist for food-ordering category', () => {
