@@ -584,6 +584,18 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
     'flex items-center justify-center min-h-[44px] active:translate-y-px font-mono';
   const keywords = lang === 'python' ? PYTHON_KEYWORDS : JAVA_KEYWORDS;
   const testidPrefix = lang === 'python' ? 'math-python' : 'math-java';
+  // Code is character-driven on a monospace grid — committing the
+  // whole keyword into a single cell stuffed "private" / "String"
+  // into one 56 px slot and the glyphs ran into the next cell
+  // (user-reported visual collision). One-char-per-cell matches how
+  // a code editor lays code out and reads naturally on the canvas.
+  // Trailing space lands too so the next keyword doesn't fuse into
+  // the previous one.
+  const commitToken = (token: string) => {
+    keyFeedback();
+    for (const ch of token) commitGlyph(ch);
+    commitGlyph(' ');
+  };
   return (
     <div className="p-2 space-y-2" data-testid={`math-programming-${lang}-keyboard`} data-lang={lang}>
       <GlyphGrid testid={`${testidPrefix}-ops`} glyphs={COMMON_OPS} cols={12} textSize="text-base" />
@@ -591,10 +603,7 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
         {keywords.map((kw) => (
           <button
             key={kw}
-            // Trailing space so "if " feels like a finished token in
-            // the cell grid. The user's next tap lands cleanly without
-            // them having to add the space themselves.
-            onClick={() => { keyFeedback(); commitGlyph(kw + ' '); }}
+            onClick={() => commitToken(kw)}
             data-testid={`${testidPrefix}-kw-${kw}`}
             data-glyph={kw}
             aria-label={`${lang} keyword ${kw}`}

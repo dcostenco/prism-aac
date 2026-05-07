@@ -160,14 +160,18 @@ test.describe('Phase 6 — Programming tabs (Python + Java)', () => {
     await expect(page.locator('[data-testid="math-python-kw-def"]')).toHaveCount(0);
   });
 
-  test('python keywords commit with trailing space (one cell each)', async ({ page, baseURL }) => {
+  test('python keywords commit char-by-char with a trailing space', async ({ page, baseURL }) => {
     await gotoDev(page, baseURL);
     await pickCategory(page, 'programming-python');
+    // "def" + space + "return" + space → 3 + 1 + 6 + 1 = 11 cells.
+    // Code is character-driven on a monospace grid; stuffing whole
+    // keywords into one cell made them visually collide with the
+    // next cell (Phase 7 fix).
     await page.locator('[data-testid="math-python-kw-def"]').click();
     await page.locator('[data-testid="math-python-kw-return"]').click();
     await page.waitForTimeout(120);
     const header = await page.locator('header').first().innerText();
-    expect(header).toMatch(/cells=2/);
+    expect(header).toMatch(/cells=11/);
   });
 
   test('python tutor uses a Python-flavoured prompt', async ({ page, baseURL }) => {

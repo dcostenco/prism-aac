@@ -260,6 +260,16 @@ export default function MathGrid({ scrollLocked = false, skin = 'paper', classNa
         />,
       );
     }
+    // Multi-char glyphs (chemistry "(aq)", biology "Kingdom",
+    // physics "eV", earth-sci "Mya", music "cresc.", stats "p-value")
+    // overflowed adjacent cells with the previous fixed font-size.
+    // textLength + lengthAdjust='spacingAndGlyphs' fits any glyph
+    // into the cell width by compressing inter-letter spacing. We
+    // only apply it for glyphs > 1 char so single-glyph cells render
+    // crisp at full font size. The cap is `cellSize * 0.92` so a
+    // tiny breathing margin remains and the glyph doesn't kiss the
+    // cell border.
+    const glyphLen = cell.glyph.length;
     glyphNodes.push(
       <text
         key={`g${key}`}
@@ -272,6 +282,7 @@ export default function MathGrid({ scrollLocked = false, skin = 'paper', classNa
           fontFamily: 'system-ui, -apple-system, sans-serif',
           fontWeight: 600,
         }}
+        {...(glyphLen > 1 ? { textLength: p.size * 0.92, lengthAdjust: 'spacingAndGlyphs' as const } : {})}
       >
         {cell.glyph}
       </text>,
