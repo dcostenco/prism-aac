@@ -220,14 +220,35 @@ function calibrationKey(orientation?: 'landscape' | 'portrait'): string {
   return `prism-pose-calibration-${orientation || getOrientation()}`;
 }
 
+/** Same NaN-defense as headTracker's calibration validator. Tampered
+ *  persist could otherwise inject Infinity / NaN / strings that
+ *  freeze the body-pose cursor for an AAC user. */
+function isValidPoseCalibration(c: unknown): c is PoseCalibrationData {
+  if (!c || typeof c !== 'object') return false;
+  const x = c as Record<string, unknown>;
+  for (const k of ['leftX', 'rightX', 'topY', 'bottomY'] as const) {
+    const v = x[k];
+    if (typeof v !== 'number' || !Number.isFinite(v) || v < -1 || v > 2) return false;
+  }
+  if ((x.leftX as number) === (x.rightX as number)) return false;
+  if ((x.topY as number) === (x.bottomY as number)) return false;
+  return true;
+}
+
 export function loadPoseCalibration(): PoseCalibrationData {
   if (typeof window === 'undefined') return DEFAULT_CALIBRATION;
   try {
     const raw = localStorage.getItem(calibrationKey());
-    if (raw) return JSON.parse(raw) as PoseCalibrationData;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (isValidPoseCalibration(parsed)) return parsed;
+    }
     // Try legacy key
     const legacy = localStorage.getItem('prism-pose-calibration');
-    if (legacy) return JSON.parse(legacy) as PoseCalibrationData;
+    if (legacy) {
+      const parsed = JSON.parse(legacy);
+      if (isValidPoseCalibration(parsed)) return parsed;
+    }
   } catch { /* use defaults */ }
   return DEFAULT_CALIBRATION;
 }
@@ -251,15 +272,32 @@ export function savePoseMapping(mapping: PoseMapping): void {
   try { localStorage.setItem(POSE_CONFIG_KEY, JSON.stringify(mapping)); } catch { /* */ }
 }
 
+const VALID_TRACKING_TARGETS = new Set(['nose', 'left-eye', 'right-eye', 'left-shoulder', 'right-shoulder', 'left-wrist', 'right-wrist', 'left-index', 'right-index']);
+
+/** Validate the pose mapping. trackingTarget must be one of the
+ *  enum values (a tampered string could land in `LANDMARK_INDEX[c]`
+ *  lookup and downstream switch — the lookup would no-op via the
+ *  `idx === undefined` guard, but better to fail closed at load
+ *  time). cursorSmoothing must be a finite number; the consumer
+ *  already clamps to [0.05, 0.3] so any in-range number is safe. */
+function isValidPoseMapping(m: unknown): m is PoseMapping {
+  if (!m || typeof m !== 'object') return false;
+  const x = m as Record<string, unknown>;
+  if (typeof x.trackingTarget !== 'string' || !VALID_TRACKING_TARGETS.has(x.trackingTarget)) return false;
+  if (typeof x.cursorSmoothing !== 'number' || !Number.isFinite(x.cursorSmoothing)) return false;
+  return true;
+}
+
 export function loadPoseMapping(): PoseMapping {
-  if (typeof window === 'undefined') {
-    return { trackingTarget: 'nose', cursorSmoothing: 0.1 };
-  }
+  const fallback: PoseMapping = { trackingTarget: 'nose', cursorSmoothing: 0.1 };
+  if (typeof window === 'undefined') return fallback;
   try {
     const raw = localStorage.getItem(POSE_CONFIG_KEY);
-    if (raw) return JSON.parse(raw) as PoseMapping;
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return isValidPoseMapping(parsed) ? parsed : fallback;
   } catch { /* use defaults */ }
-  return { trackingTarget: 'nose', cursorSmoothing: 0.1 };
+  return fallback;
 }
 
 // ── Internals ───────────────────────────────────────────────────────────────

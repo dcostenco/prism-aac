@@ -258,11 +258,34 @@ const DEFAULT_CALIBRATION: CalibrationData = {
   leftX: 0.7, rightX: 0.3, topY: 0.3, bottomY: 0.7,
 };
 
+/** Validate a calibration record. Tampered persist could otherwise
+ *  inject NaN / Infinity / non-number values that propagate through
+ *  the cursor mapping math (rangeX = leftX - rightX, divisions by it),
+ *  freezing the head-tracker for an AAC user who can't articulate
+ *  what's wrong. Bounds: normalized coordinates in (-1, 2) — slightly
+ *  generous so off-screen calibration points still work, but
+ *  Infinity / NaN / strings always fail. Also requires non-zero
+ *  range on each axis so downstream divisions don't blow up. */
+function isValidCalibration(c: unknown): c is CalibrationData {
+  if (!c || typeof c !== 'object') return false;
+  const x = c as Record<string, unknown>;
+  for (const k of ['leftX', 'rightX', 'topY', 'bottomY'] as const) {
+    const v = x[k];
+    if (typeof v !== 'number' || !Number.isFinite(v) || v < -1 || v > 2) return false;
+  }
+  // Require non-zero ranges or downstream divisions blow up.
+  if ((x.leftX as number) === (x.rightX as number)) return false;
+  if ((x.topY as number) === (x.bottomY as number)) return false;
+  return true;
+}
+
 export function loadCalibration(): CalibrationData {
   if (typeof window === 'undefined') return DEFAULT_CALIBRATION;
   try {
     const raw = localStorage.getItem('prism-head-calibration');
-    if (raw) return JSON.parse(raw) as CalibrationData;
+    if (!raw) return DEFAULT_CALIBRATION;
+    const parsed = JSON.parse(raw);
+    return isValidCalibration(parsed) ? parsed : DEFAULT_CALIBRATION;
   } catch { /* use defaults */ }
   return DEFAULT_CALIBRATION;
 }
