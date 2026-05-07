@@ -23,9 +23,11 @@
  */
 import { useScheduleStore } from '@/store/scheduleStore';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { portalFetch } from '@/services/portalClient';
 import { sanitizeString, SAFE_LIMITS } from '@/lib/safeStrings';
 import { reportSwallowedError } from '@/lib/devLog';
+import { playTimerRing } from '@/services/feedback';
 
 const reportPollerError = reportSwallowedError('inboxService.pollOnce');
 
@@ -102,12 +104,25 @@ async function pollOnce(): Promise<void> {
     if (!b || typeof b !== 'object') return;
     const rawMessages = Array.isArray(b.messages) ? b.messages.slice(0, MAX_MESSAGES_PER_POLL) : [];
     let maxSeen = since;
+    let deliveredThisBatch = 0;
     for (const m of rawMessages) {
       if (!m || typeof m !== 'object') continue;
       const msg = m as IncomingMessage;
-      deliverIncomingMessage(msg);
+      const id = deliverIncomingMessage(msg);
+      if (id !== null) deliveredThisBatch += 1;
       const r = msg.receivedAt;
       if (typeof r === 'number' && Number.isFinite(r) && r > maxSeen && r <= MAX_SINCE_MS()) maxSeen = r;
+    }
+    // Per-poll alarm chime (NOT per-message — a 50-message backlog
+    // would otherwise spam the AAC user with 50 chimes). Gated on the
+    // notificationsEnabled setting (default true) so caregivers can
+    // mute alarms in quiet contexts (school, sleeping). User
+    // requirement 2026-05-07: "each new message will produce alarm".
+    if (deliveredThisBatch > 0) {
+      const notificationsEnabled = useSettingsStore.getState().notificationsEnabled ?? true;
+      if (notificationsEnabled) {
+        playTimerRing().catch(() => { /* AudioContext may be suspended pre-gesture */ });
+      }
     }
     // Prefer serverTime over client clock to avoid clock-skew gaps.
     if (typeof b.serverTime === 'number' && Number.isFinite(b.serverTime) && b.serverTime > maxSeen) {

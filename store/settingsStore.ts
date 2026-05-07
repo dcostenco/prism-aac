@@ -93,6 +93,11 @@ interface SettingsState {
   toolbarConfig: ToolbarConfig;
   // AI Autocorrect in MessageBar
   aiAutocorrectEnabled: boolean;
+  // Audible chime on each new incoming message batch from connected
+  // providers (Telegram / WhatsApp / Mail / etc.). Default true so a
+  // newly-onboarded caregiver hears the alarm without diving into
+  // Settings; mutable in Settings → Sound.
+  notificationsEnabled: boolean;
   // Marketplace-installed app ids (e.g. ['game-packs', 'voice-packs']).
   // Toolbar.tsx renders these as buttons after the built-ins.
   installedApps: string[];
@@ -103,7 +108,7 @@ interface SettingsState {
   // is not user-selectable.
   voicePreferences: Record<string, string>;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'voicePreferences'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'voicePreferences'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -150,6 +155,7 @@ export const useSettingsStore = create<SettingsState>()(
       cameraTrackingTarget: 'any_wrist',
       gestureConfig: { ...DEFAULT_GESTURE_CONFIG },
       aiAutocorrectEnabled: true,
+      notificationsEnabled: true,
       toolbarConfig: {
         order: [...DEFAULT_TOOLBAR_ORDER],
         // Empty enabled map = all built-ins ON (Partial+default-true). User
