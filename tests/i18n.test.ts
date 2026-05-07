@@ -81,8 +81,8 @@ describe('i18n — RTL support', () => {
 });
 
 describe('i18n — Language metadata', () => {
-  it('has 15 languages', () => {
-    expect(LANG_META).toHaveLength(15);
+  it('has 24 languages', () => {
+    expect(LANG_META).toHaveLength(24);
   });
 
   it('each language has all required fields', () => {
@@ -91,6 +91,7 @@ describe('i18n — Language metadata', () => {
       expect(lang.name).toBeTruthy();
       expect(lang.nativeName).toBeTruthy();
       expect(lang.ttsCode).toBeTruthy();
+      expect(lang.flag, `language ${lang.code} missing flag`).toBeTruthy();
       expect(typeof lang.rtl).toBe('boolean');
     }
   });

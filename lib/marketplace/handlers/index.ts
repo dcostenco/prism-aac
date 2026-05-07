@@ -8,6 +8,7 @@
  */
 import { hasHandler, registerHandler } from '../registry';
 import { boardTemplateHandler } from './boardTemplate';
+import { builtinShortcutHandler } from './builtinShortcut';
 import { gamePackHandler } from './gamePack';
 import { panelHandler } from './panel';
 import { symbolLibraryHandler } from './symbolLibrary';
@@ -27,6 +28,7 @@ export function bootHandlers(): void {
     voicePackHandler,
     panelHandler,
     synaluxAppHandler,
+    builtinShortcutHandler,
   ]) {
     if (!hasHandler(h.kind)) {
       registerHandler(h);

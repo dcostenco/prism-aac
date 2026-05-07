@@ -48,7 +48,7 @@ beforeEach(async () => {
 describe('marketplaceStore — filterCatalog', () => {
   it('all + empty query returns full catalog', () => {
     const out = useMarketplaceStore.getState().filterCatalog('all', '', []);
-    expect(out).toHaveLength(15);
+    expect(out).toHaveLength(16);
   });
 
   it('vocab category returns vocab-set + board-template + the explicit vocab entries', () => {
@@ -73,10 +73,10 @@ describe('marketplaceStore — filterCatalog', () => {
     expect(out.find((m) => m.slug === 'symbol-libraries')).toBeDefined();
   });
 
-  it('tools category returns the 4 panel-kind modules', () => {
+  it('tools category returns the panel-kind modules + the AAC Chat builtin shortcut', () => {
     const out = useMarketplaceStore.getState().filterCatalog('tools', '', []);
     const slugs = out.map((m) => m.slug).sort();
-    expect(slugs).toEqual(['aac-designer', 'music-composer', 'picture-editor', 'video-composer']);
+    expect(slugs).toEqual(['aac-chat', 'aac-designer', 'music-composer', 'picture-editor', 'video-composer']);
   });
 
   it('installed tab with empty installedSlugs returns empty', () => {

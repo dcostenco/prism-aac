@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore, type ToolbarButtonId, DEFAULT_TOOLBAR_ORDER } from '@/store/settingsStore';
-import { SupportedLanguage, LANG_META } from '@/engine/i18n';
+import type { SupportedLanguage } from '@/engine/i18n';
 import { useSyncStatus } from './SyncProvider';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
@@ -11,6 +11,8 @@ import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services
 import { correctText } from '@/services/textCorrectService';
 import { useMarketplaceStore } from '@/store/marketplaceStore';
 import { getHandler } from '@/lib/marketplace/registry';
+import { useScheduleStore, selectUnreadMessageCount } from '@/store/scheduleStore';
+import LanguagePicker, { LanguageButton } from './LanguagePicker';
 
 const SYNC_ICONS: Record<string, string> = {
   idle: '⬡', syncing: '🔄', synced: '🟢', offline: '🔸', error: '🔴',
@@ -40,6 +42,8 @@ interface ButtonHandlers {
   soundEnabled: boolean;
   listening: boolean;
   voiceSupported: boolean;
+  /** Unread incoming-message count — drives the badge on aac_chat. */
+  unreadMessages: number;
 }
 
 interface RenderedButton {
@@ -50,6 +54,9 @@ interface RenderedButton {
   onClick: () => void;
   highlighted?: boolean;
   pulsing?: boolean;
+  /** Numeric overlay rendered top-right of the button (e.g. unread
+   *  incoming messages on aac_chat). Falsy = no badge. */
+  badge?: number;
 }
 
 function buildBuiltInButtons(t: (k: string) => string, h: ButtonHandlers): Record<ToolbarButtonId, RenderedButton | null> {
@@ -69,7 +76,16 @@ function buildBuiltInButtons(t: (k: string) => string, h: ButtonHandlers): Recor
     alert: { id: 'alert', icon: '🚨', ariaLabel: t('alert'), title: t('alert'), onClick: h.triggerAlert },
     math: { id: 'math', icon: '🔢', ariaLabel: t('math'), title: t('math'), onClick: h.openMath },
     ai_chat: { id: 'ai_chat', icon: '✨', ariaLabel: t('ai_chat'), title: t('ai_chat'), onClick: h.openAIChat },
-    aac_chat: { id: 'aac_chat', icon: '💬', ariaLabel: t('aac_chat') || 'Send a message', title: t('aac_chat') || 'Send a message', onClick: h.openAACChat },
+    aac_chat: {
+      id: 'aac_chat',
+      icon: '💬',
+      ariaLabel: h.unreadMessages > 0
+        ? `${t('aac_chat') || 'Send a message'} — ${h.unreadMessages} ${t('unread') || 'unread'}`
+        : (t('aac_chat') || 'Send a message'),
+      title: t('aac_chat') || 'Send a message',
+      onClick: h.openAACChat,
+      badge: h.unreadMessages || undefined,
+    },
     notes: { id: 'notes', icon: '📋', ariaLabel: t('notes'), title: t('notes'), onClick: h.openCaregiver },
     games: { id: 'games', icon: '🎮', ariaLabel: t('games'), title: t('games'), onClick: h.openGames },
     history: { id: 'history', icon: '📜', ariaLabel: t('history'), title: t('history'), onClick: h.toggleHistory },
@@ -147,6 +163,7 @@ export default function Toolbar() {
   const voiceRef = useRef<VoiceSession | null>(null);
   const langRef = useRef<HTMLDivElement>(null);
   const voiceSupported = isVoiceInputSupported();
+  const unreadMessages = useScheduleStore(selectUnreadMessageCount);
 
   useEffect(() => () => { voiceRef.current?.stop(); voiceRef.current = null; setListening(false); }, [language]);
   useEffect(() => {
@@ -176,6 +193,7 @@ export default function Toolbar() {
     toggleSound: () => { tapFeedback(); toggleSound(); },
     toggleMic,
     soundEnabled, listening, voiceSupported,
+    unreadMessages,
   };
 
   // Try the marketplace handler's launch() for an installed app. Returns
@@ -201,6 +219,13 @@ export default function Toolbar() {
         openMarketplace,
         openSettings: () => toggleSettings(),
         openModulePanel: () => {},
+        openBuiltin: (name) => {
+          if (name === 'aac-chat') openAACChat();
+          else if (name === 'ai-chat') openAIChat();
+          else if (name === 'schedule') openSchedule();
+          else if (name === 'caregiver') openCaregiver();
+          else if (name === 'math') openMath();
+        },
       },
     });
     return true;
@@ -254,12 +279,23 @@ export default function Toolbar() {
     return (
       <button
         key={id}
-        className={`${btnClass} ${colorClasses} ${pulseClass}`}
+        className={`${btnClass} ${colorClasses} ${pulseClass} relative`}
         onClick={tap(b.onClick)}
         aria-label={b.ariaLabel}
         title={b.title}
         aria-pressed={b.highlighted}
-      >{b.icon}</button>
+      >
+        {b.icon}
+        {b.badge && b.badge > 0 ? (
+          <span
+            data-testid={`toolbar-badge-${b.id}`}
+            className="absolute -top-1 -right-1 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-[#F44336] text-white text-[0.65rem] font-bold flex items-center justify-center border border-white shadow"
+            aria-hidden
+          >
+            {b.badge > 99 ? '99+' : b.badge}
+          </span>
+        ) : null}
+      </button>
     );
   }
 
@@ -272,56 +308,38 @@ export default function Toolbar() {
         {allButtons.map((id) => renderButton(id))}
       </div>
 
-      {/* Language pair selector (kept centered/right of the button strip).
-          This stays hard-coded — it's not a toolbar button, it's the AAC
-          translate-pair selector. */}
-      <div ref={langRef} className="flex items-center gap-0.5 relative shrink-0 ml-2">
-        <button
-          className="aac-btn h-[clamp(1.75rem,5svh,2.5rem)] px-[clamp(0.3rem,1vw,0.5rem)] rounded-lg bg-[#2196F3] text-white font-bold text-[clamp(0.6rem,2vw,0.85rem)] uppercase select-none border-none"
-          onClick={() => { tapFeedback(); setShowLangPicker(showLangPicker === 'input' ? null : 'input'); }}
-        >
-          {language}
-        </button>
-        <span className="text-[clamp(0.5rem,1.5vw,0.7rem)] text-muted">→</span>
-        <button
-          className={`aac-btn h-[clamp(1.75rem,5svh,2.5rem)] px-[clamp(0.3rem,1vw,0.5rem)] rounded-lg font-bold text-[clamp(0.6rem,2vw,0.85rem)] uppercase select-none border-none ${
-            outputLanguage !== language ? 'bg-[#FF9800] text-white' : 'bg-[#4CAF50] text-white'
-          }`}
-          onClick={() => { tapFeedback(); setShowLangPicker(showLangPicker === 'output' ? null : 'output'); }}
-        >
-          {outputLanguage}
-        </button>
-
+      {/* Language pair selector — input → output. Both buttons use the
+          shared LanguageButton/LanguagePicker so the toolbar and the
+          chat panels render the picker identically. */}
+      <div ref={langRef} className="flex items-center gap-1 relative shrink-0 ml-2">
+        <LanguageButton
+          lang={language}
+          variant="input"
+          onClick={() => setShowLangPicker(showLangPicker === 'input' ? null : 'input')}
+          ariaLabel="Input language"
+        />
+        <span className="text-xs text-muted">→</span>
+        <LanguageButton
+          lang={outputLanguage}
+          variant={outputLanguage !== language ? 'output-mismatch' : 'output'}
+          onClick={() => setShowLangPicker(showLangPicker === 'output' ? null : 'output')}
+          ariaLabel="Output language"
+        />
         {showLangPicker && (
-          <div
-            className="absolute top-full mt-1 right-0 surface-bar rounded-xl border border-theme shadow-2xl z-50 p-2 grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-[80svh] overflow-y-auto"
-            style={{ width: 'min(94vw, 380px)' }}
-          >
-            {LANG_META.map((l) => (
-              <button
-                key={l.code}
-                className={`aac-btn rounded-lg px-1 py-2 text-center font-bold border border-theme min-h-[clamp(2.75rem,7svh,3.5rem)] flex flex-col items-center justify-center gap-0.5 ${
-                  (showLangPicker === 'input' ? language : outputLanguage) === l.code
-                    ? 'bg-[#4CAF50] text-white border-transparent'
-                    : 'surface-key text-primary'
-                }`}
-                onClick={() => {
-                  tapFeedback();
-                  if (showLangPicker === 'input') {
-                    const prev = useSettingsStore.getState();
-                    const sync = prev.language === prev.outputLanguage;
-                    updateSettings({ language: l.code as SupportedLanguage, ...(sync ? { outputLanguage: l.code as SupportedLanguage } : {}) });
-                  } else {
-                    updateSettings({ outputLanguage: l.code as SupportedLanguage });
-                  }
-                  setShowLangPicker(null);
-                }}
-              >
-                <div className="text-[clamp(0.75rem,3vw,0.95rem)] font-bold leading-tight whitespace-nowrap">{l.nativeName}</div>
-                <div className="text-[clamp(0.55rem,1.8vw,0.7rem)] uppercase opacity-75">{l.code}</div>
-              </button>
-            ))}
-          </div>
+          <LanguagePicker
+            selected={showLangPicker === 'input' ? language : outputLanguage}
+            onSelect={(code) => {
+              if (showLangPicker === 'input') {
+                const prev = useSettingsStore.getState();
+                const sync = prev.language === prev.outputLanguage;
+                updateSettings({ language: code, ...(sync ? { outputLanguage: code } : {}) });
+              } else {
+                updateSettings({ outputLanguage: code });
+              }
+            }}
+            onClose={() => setShowLangPicker(null)}
+            anchor="right"
+          />
         )}
       </div>
 

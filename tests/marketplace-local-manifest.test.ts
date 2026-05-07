@@ -3,8 +3,8 @@ import { LOCAL_CATALOG } from '@/lib/marketplace/manifests/local';
 import { isValidManifest } from '@/lib/marketplace/types';
 
 describe('marketplace/local — schema integrity', () => {
-  it('contains exactly 15 entries (13 pre-refactor + Synalux Mail + Drive)', () => {
-    expect(LOCAL_CATALOG).toHaveLength(15);
+  it('contains exactly 16 entries (13 pre-refactor + Synalux Mail + Drive + AAC Chat)', () => {
+    expect(LOCAL_CATALOG).toHaveLength(16);
   });
 
   it('every entry passes isValidManifest', () => {

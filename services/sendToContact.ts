@@ -46,9 +46,19 @@ function bodyFor(contact: AacContact, text: string): Record<string, unknown> {
   }
 }
 
-export async function sendToContact(contact: AacContact, text: string): Promise<SendResult> {
+export async function sendToContact(
+  contact: AacContact,
+  text: string,
+  plan: PlanTier | null | undefined = null,
+): Promise<SendResult> {
   const trimmed = text.trim();
   if (!trimmed) return { ok: false, error: 'empty' };
+  // Client-side tier guard. The portal route also enforces (must, since
+  // this layer is untrusted) but a local check spares the user a 403
+  // round-trip and lets the picker greying stay honest.
+  if (!isProviderAvailable(contact.provider, plan)) {
+    return { ok: false, error: `tier_required:${PROVIDER_MIN_TIER[contact.provider]}` };
+  }
 
   const path = ENDPOINT[contact.provider];
   try {
@@ -88,3 +98,45 @@ export const PROVIDER_ICONS: Record<ContactProvider, string> = {
   instagram: '📸',
   mail:      '📧',
 };
+
+/** Plan tier required to USE a given provider. The AAC Chat component
+ *  itself is on every tier (per product) — only the *send* leg is
+ *  gated. This keeps the picker informative on free accounts: the user
+ *  sees their family Telegram contact greyed out with an upgrade hint
+ *  rather than missing entirely.
+ *
+ *  Mapping rationale:
+ *    free      — mail + sms: ubiquitous, no third-party messaging API
+ *                cost beyond Twilio per-segment.
+ *    standard  — + telegram / whatsapp / viber: most-requested family
+ *                messaging providers; portal pays for WA Cloud API
+ *                conversation fees here.
+ *    advanced  — + messenger / instagram: Meta Business API tier with
+ *                page-scoped IDs and rate limits that need more setup.
+ *    enterprise — same as advanced (no provider beyond Meta Business). */
+export type PlanTier = 'free' | 'standard' | 'advanced' | 'enterprise';
+
+export const PROVIDER_MIN_TIER: Record<ContactProvider, PlanTier> = {
+  mail:      'free',
+  sms:       'free',
+  telegram:  'standard',
+  whatsapp:  'standard',
+  viber:     'standard',
+  messenger: 'advanced',
+  instagram: 'advanced',
+};
+
+const TIER_RANK: Record<PlanTier, number> = {
+  free: 0,
+  standard: 1,
+  advanced: 2,
+  enterprise: 3,
+};
+
+/** True if the given user plan can use the provider. Used to grey out
+ *  contact tiles + block sendToContact from issuing the request. */
+export function isProviderAvailable(provider: ContactProvider, plan: PlanTier | null | undefined): boolean {
+  const userTier = TIER_RANK[plan ?? 'free'];
+  const required = TIER_RANK[PROVIDER_MIN_TIER[provider]];
+  return userTier >= required;
+}

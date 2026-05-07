@@ -59,10 +59,11 @@ describe('marketplace/registry', () => {
 });
 
 describe('marketplace/registry — bootHandlers', () => {
-  it('registers all 7 handlers exactly once', () => {
+  it('registers all 8 handlers exactly once', () => {
     bootHandlers();
     expect(listRegisteredKinds().sort()).toEqual([
       'board-template',
+      'builtin-shortcut',
       'game-pack',
       'panel',
       'symbol-library',
@@ -76,6 +77,6 @@ describe('marketplace/registry — bootHandlers', () => {
   it('is idempotent — second call is a no-op', () => {
     bootHandlers();
     expect(() => bootHandlers()).not.toThrow();
-    expect(listRegisteredKinds()).toHaveLength(7);
+    expect(listRegisteredKinds()).toHaveLength(8);
   });
 });

@@ -15,6 +15,7 @@ import HeadTrackingSettings from './HeadTrackingSettings';
 import HandCalibration from './HandCalibration';
 import InputModesSettings from './InputModesSettings';
 import ToolbarCustomization from './ToolbarCustomization';
+import CaregiverContactsSettings from './CaregiverContactsSettings';
 import VoicePicker from './VoicePicker';
 import { getActiveProfile, loadProfiles, deleteProfile, setActiveProfile, enableContinuousLearning, disableContinuousLearning, isContinuousLearningActive } from '@/services/handProfileService';
 
@@ -203,6 +204,13 @@ export default function SettingsModal() {
           <div>
             <h3 className={sectionTitle}>Toolbar Buttons</h3>
             <ToolbarCustomization />
+          </div>
+
+          {/* AAC Chat — caregiver-curated contact list. The AAC user
+              consumes the list read-only via the AAC Chat picker. */}
+          <div>
+            <h3 className={sectionTitle}>Contacts (Send a message)</h3>
+            <CaregiverContactsSettings />
           </div>
 
           {/* Hand Calibration */}

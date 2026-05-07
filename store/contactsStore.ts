@@ -51,11 +51,20 @@ export interface AacContact {
 
 interface ContactsState {
   contacts: AacContact[];
+  /** Last successful sync timestamp from the portal /contacts endpoint
+   *  — used to throttle automatic refresh + show "last synced" hint in
+   *  the caregiver settings panel. 0 = never. */
+  lastSyncedAt: number;
   addContact: (c: Omit<AacContact, 'id' | 'order'>) => string;
   removeContact: (id: string) => void;
   updateContact: (id: string, patch: Partial<Omit<AacContact, 'id'>>) => void;
   reorderContact: (id: string, newOrder: number) => void;
   setContacts: (cs: AacContact[]) => void;
+  /** Merge a fetched batch with the existing local list. Identity is
+   *  per (provider, recipientId) — same external person arriving via the
+   *  same provider updates in place, never duplicates. Caregiver-edited
+   *  fields (avatar, name override) are preserved on re-sync. */
+  mergeFromIntegrations: (incoming: Array<Omit<AacContact, 'id' | 'order'>>) => { added: number; updated: number };
 }
 
 let nextId = 1;
@@ -65,6 +74,7 @@ export const useContactsStore = create<ContactsState>()(
   persist(
     (set, get) => ({
       contacts: [],
+      lastSyncedAt: 0,
       addContact: (c) => {
         const id = genId();
         const order = get().contacts.length;
@@ -79,6 +89,42 @@ export const useContactsStore = create<ContactsState>()(
         contacts: s.contacts.map((c) => c.id === id ? { ...c, order: newOrder } : c),
       })),
       setContacts: (cs) => set({ contacts: cs }),
+      mergeFromIntegrations: (incoming) => {
+        let added = 0;
+        let updated = 0;
+        const current = get().contacts;
+        // Index existing by composite key so an incoming person with the
+        // same provider+recipientId updates instead of duplicating.
+        const byKey = new Map(current.map((c) => [`${c.provider}::${c.recipientId}`, c]));
+        const merged = [...current];
+        for (const inc of incoming) {
+          if (!inc.provider || !inc.recipientId) continue;
+          const key = `${inc.provider}::${inc.recipientId}`;
+          const existing = byKey.get(key);
+          if (existing) {
+            // Refresh server-sourced fields (lastMessagePreview), but
+            // keep caregiver-edited name/avatar — the AAC user might
+            // know "Mom" by a custom alias the integration doesn't.
+            const idx = merged.findIndex((c) => c.id === existing.id);
+            if (idx >= 0) {
+              merged[idx] = {
+                ...existing,
+                lastMessagePreview: inc.lastMessagePreview ?? existing.lastMessagePreview,
+              };
+              updated++;
+            }
+          } else {
+            merged.push({
+              ...inc,
+              id: genId(),
+              order: merged.length,
+            });
+            added++;
+          }
+        }
+        set({ contacts: merged, lastSyncedAt: Date.now() });
+        return { added, updated };
+      },
     }),
     {
       name: 'prism-aac-contacts',

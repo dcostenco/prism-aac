@@ -3,7 +3,14 @@ import { useState, useCallback, useMemo } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useContactsStore, type AacContact } from '@/store/contactsStore';
-import { sendToContact, PROVIDER_LABELS, PROVIDER_ICONS } from '@/services/sendToContact';
+import { useAuthStore } from '@/store/authStore';
+import {
+  sendToContact,
+  PROVIDER_LABELS,
+  PROVIDER_ICONS,
+  PROVIDER_MIN_TIER,
+  isProviderAvailable,
+} from '@/services/sendToContact';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 
@@ -28,6 +35,8 @@ export default function AACChatPanel() {
   const { sidePanel, closeSidePanel, activeContactId, selectContact, backToContacts } = useUIStore();
   const { text, clearAll } = useMessageStore();
   const contacts = useContactsStore((s) => s.contacts);
+  const profile = useAuthStore((s) => s.profile);
+  const plan = profile?.plan ?? 'free';
   const { t } = useT();
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -40,6 +49,9 @@ export default function AACChatPanel() {
     () => sortedContacts.find((c) => c.id === activeContactId),
     [sortedContacts, activeContactId],
   );
+  const activeContactAvailable = activeContact
+    ? isProviderAvailable(activeContact.provider, plan)
+    : true;
 
   const handlePickContact = useCallback((id: string) => {
     tapFeedback();
@@ -57,16 +69,19 @@ export default function AACChatPanel() {
     if (!trimmed) return;
     tapFeedback();
     setSending(true);
-    const res = await sendToContact(activeContact, trimmed);
+    const res = await sendToContact(activeContact, trimmed, plan);
     setSending(false);
     if (res.ok) {
       setToast(t('aac_chat_sent') || `Sent to ${activeContact.name}`);
       clearAll();
+    } else if (res.error.startsWith('tier_required:')) {
+      const required = res.error.split(':')[1];
+      setToast(`${activeContact.name}: requires ${required} plan`);
     } else {
       setToast(t('aac_chat_send_failed') || `Could not send: ${res.error}`);
     }
     setTimeout(() => setToast(null), 3000);
-  }, [activeContact, sending, text, clearAll, t]);
+  }, [activeContact, sending, text, clearAll, t, plan]);
 
   if (sidePanel !== 'aac-chat') return null;
 
@@ -126,32 +141,55 @@ export default function AACChatPanel() {
 
         {!activeContact && sortedContacts.length > 0 && (
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="aac-chat-contact-list">
-            {sortedContacts.map((c) => (
-              <li key={c.id}>
-                <button
-                  onClick={() => handlePickContact(c.id)}
-                  className="aac-key surface-key text-primary rounded-lg w-full p-4 text-left flex items-center gap-3 min-h-[64px]"
-                  data-testid={`aac-chat-contact-${c.id}`}
-                >
-                  <span aria-hidden className="text-2xl flex-shrink-0">
-                    {c.avatar || PROVIDER_ICONS[c.provider]}
-                  </span>
-                  <span className="flex flex-col min-w-0">
-                    <span className="font-bold truncate">{c.name}</span>
-                    <span className="text-xs text-secondary truncate">
-                      {PROVIDER_LABELS[c.provider]}
-                      {c.lastMessagePreview ? ` · ${c.lastMessagePreview}` : ''}
+            {sortedContacts.map((c) => {
+              const available = isProviderAvailable(c.provider, plan);
+              return (
+                <li key={c.id}>
+                  <button
+                    onClick={() => handlePickContact(c.id)}
+                    className={`aac-key surface-key text-primary rounded-lg w-full p-4 text-left flex items-center gap-3 min-h-[64px] ${available ? '' : 'opacity-60'}`}
+                    data-testid={`aac-chat-contact-${c.id}`}
+                    aria-label={available ? c.name : `${c.name} — requires ${PROVIDER_MIN_TIER[c.provider]} plan`}
+                  >
+                    <span aria-hidden className="text-2xl flex-shrink-0">
+                      {c.avatar || PROVIDER_ICONS[c.provider]}
                     </span>
-                  </span>
-                </button>
-              </li>
-            ))}
+                    <span className="flex flex-col min-w-0 flex-1">
+                      <span className="font-bold truncate">{c.name}</span>
+                      <span className="text-xs text-secondary truncate">
+                        {PROVIDER_LABELS[c.provider]}
+                        {c.lastMessagePreview ? ` · ${c.lastMessagePreview}` : ''}
+                      </span>
+                    </span>
+                    {!available && (
+                      <span
+                        className="text-[10px] text-[#FF9800] font-bold flex-shrink-0"
+                        data-testid={`aac-chat-locked-${c.id}`}
+                      >
+                        🔒 {PROVIDER_MIN_TIER[c.provider]}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
 
         {/* Contact picked → chat compose view */}
         {activeContact && (
           <div className="flex flex-col gap-3">
+            {!activeContactAvailable && (
+              <div
+                className="surface-key border border-[#FF9800] rounded-lg p-3 text-sm text-[#E65100]"
+                data-testid="aac-chat-tier-warning"
+                role="alert"
+              >
+                🔒 {PROVIDER_LABELS[activeContact.provider]} requires the{' '}
+                <strong>{PROVIDER_MIN_TIER[activeContact.provider]}</strong> plan.
+                A caregiver can upgrade on synalux.ai.
+              </div>
+            )}
             <div className="text-sm text-secondary">
               {t('aac_chat_compose_hint') || 'Type your message using the keyboard below, then press Send.'}
             </div>
@@ -167,7 +205,7 @@ export default function AACChatPanel() {
             </div>
             <button
               onClick={handleSend}
-              disabled={sending || !text.trim()}
+              disabled={sending || !text.trim() || !activeContactAvailable}
               data-testid="aac-chat-send-btn"
               className="aac-key surface-key text-primary rounded-lg p-4 font-bold text-lg disabled:opacity-40 bg-green-600 text-white"
             >

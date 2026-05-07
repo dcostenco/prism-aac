@@ -47,6 +47,15 @@ interface ScheduleState {
   reorderTask: (id: string, newOrder: number) => void;
 }
 
+/** Count of incoming-message tasks the user has not yet checked off.
+ *  Surfaced as a toolbar badge on the AAC chat button so the AAC user
+ *  notices new messages from the home screen without opening Schedule. */
+export function selectUnreadMessageCount(s: { tasks: ScheduleTask[] }): number {
+  let n = 0;
+  for (const t of s.tasks) if (t.kind === 'message' && !t.done) n++;
+  return n;
+}
+
 const DEFAULT_TASKS: ScheduleTask[] = [
   { id: 'sched-1', text: 'Morning routine', textKey: 'sched_morning', icon: '🌅', done: false, order: 0 },
   { id: 'sched-2', text: 'Breakfast', textKey: 'sched_breakfast', icon: '🥣', done: false, order: 1 },

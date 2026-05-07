@@ -233,8 +233,9 @@
   "mp_synalux_mail_desc": "Email with AAC-friendly composer and prediction.",
   "mp_synalux_drive": "Synalux Drive",
   "mp_synalux_drive_desc": "Your secure files, photos, and documents in one place.",
+  "mp_aac_chat": "AAC Chat",
+  "mp_aac_chat_desc": "Send messages to family and caregivers via Telegram, WhatsApp, Viber, SMS, Messenger, Instagram, or email — built-in, no install needed.",
   "mp_filter_apps": "Apps",
-
   "vocab_set": "Vocabulary Set",
   "vs_all_categories": "All Categories",
   "vs_all_categories_desc": "Shows every available category",
@@ -256,7 +257,6 @@
   "vs_social_chat_desc": "Quick talk, feelings, people, and questions for social interaction",
   "vs_talk_about": "Talk About",
   "vs_talk_about_desc": "Quick talk, feelings, questions, school, and toys for topic-based conversation",
-
   "word_visibility": "Word Visibility",
   "select_category": "Select category",
   "show_word": "Show word",
@@ -311,7 +311,6 @@
   "sched_play": "Play time",
   "sched_dinner": "Dinner",
   "sched_bedtime": "Bedtime",
-
   "precision_touch": "Precision Touch",
   "enable_precision_touch": "Precision Finger Tracking",
   "precision_touch_desc": "Shows exactly which key your finger is on. Slide to the right key, lift to type.",
@@ -331,7 +330,6 @@
   "face_lost": "Face lost",
   "camera_required": "Camera",
   "starting": "Starting",
-
   "switch_scanning": "Switch Scanning",
   "enable_switch_scan": "Enable Switch Scanning",
   "switch_scan_desc": "For physical accessibility switches (AbleNet, Bluetooth). Cycles through buttons automatically.",
@@ -341,7 +339,6 @@
   "scan_manual": "Manual",
   "group_scan": "Group Scanning",
   "group_scan_desc": "Scan rows first, then items within the row",
-
   "remote_modeling": "Remote Modeling",
   "enable_remote": "Enable Remote Modeling",
   "remote_desc": "Let a caregiver/therapist remotely highlight keys on this device for aided language stimulation.",
@@ -351,10 +348,8 @@
   "start_session": "Start Session",
   "join_session": "Join Session",
   "end_session": "End Session",
-
   "wasm_tts": "Backup Speech Engine",
   "wasm_tts_desc": "Emergency TTS that works even if the browser's speech engine crashes. Uses WebAssembly.",
-
   "voice_picker_title": "Choose Your Voice",
   "voice_picker_desc": "Pick the voice that sounds most like you. Your choice is saved per language.",
   "voice_loading": "Loading voices…",
@@ -367,10 +362,37 @@
   "voice_preview": "Preview",
   "voice_preview_sample": "Hello. This is what I sound like.",
   "voice_reset_default": "Reset to default voice",
-
   "good_morning": "Good morning",
   "good_afternoon": "Good afternoon",
   "good_evening": "Good evening",
   "good_night": "Good night",
-  "next_is": "Next:"
+  "next_is": "Next:",
+  "qc_1": "I",
+  "qc_2": "You",
+  "qc_3": "More",
+  "qc_4": "Want",
+  "qc_5": "Help",
+  "qc_6": "Go",
+  "qc_7": "Look",
+  "qc_8": "Make",
+  "qc_9": "Get",
+  "qc_10": "Put",
+  "qc_11": "Turn",
+  "qc_12": "Good",
+  "qc_13": "Same",
+  "qc_14": "Different",
+  "qc_15": "Some",
+  "qc_16": "Open",
+  "qc_17": "Up",
+  "qc_18": "In",
+  "qc_19": "On",
+  "qc_20": "He",
+  "qc_21": "She",
+  "qc_22": "It",
+  "qc_23": "That",
+  "qc_24": "Who",
+  "qc_25": "What",
+  "qc_26": "When",
+  "qc_27": "Where",
+  "qc_28": "Why"
 }

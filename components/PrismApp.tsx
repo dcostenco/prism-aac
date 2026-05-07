@@ -34,6 +34,7 @@ import { aacSpeak } from '@/services/aacSpeak';
 import { registerPanicListeners } from '@/services/panicService';
 import { preloadKokoro } from '@/services/kokoroTTS';
 import { startInboxPolling } from '@/services/inboxService';
+import { startContactsSync } from '@/services/contactsIntegrationService';
 import { useT } from '@/engine/useT';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -99,15 +100,16 @@ export default function PrismApp() {
   const highContrast = useSettingsStore((s) => s.highContrast);
   const theme = useSettingsStore((s) => s.theme);
   const sidePanel = useUIStore((s) => s.sidePanel);
-  const inlinePanelOpen = sidePanel !== 'none';
-  // AI Chat AND AAC Chat both NEED the keyboard visible — neither panel
-  // has its own input field; both compose via the shared MessageBar
-  // through the AAC keyboard, then consume useMessageStore. Hiding the
-  // keyboard for these surfaces would leave AAC users with no way to
-  // type — a physical keyboard isn't a substitute. Modal placement
-  // matches the standard input layout (keyboard always at bottom,
-  // panel docks above).
-  const keyboardHidden = inlinePanelOpen && sidePanel !== 'ai-chat' && sidePanel !== 'aac-chat';
+  // Keyboard is ALWAYS visible — hard invariant. AAC users can't switch
+  // to a physical keyboard, can't pick another input method, can't even
+  // articulate that the keyboard disappeared. Hiding it for "more screen
+  // space" trades the user's only voice for a UI win nobody asked for.
+  // Every panel (categories, schedule, marketplace, math, games, notes,
+  // ai-chat, aac-chat, ...) renders ABOVE the keyboard with `flex-[3]`
+  // so the panel scrolls inside its share and the keyboard keeps its
+  // share at the bottom — same position the user trained on. Touched
+  // anywhere in PrismApp.tsx, but the contract is: never gate the
+  // <Keyboard /> render on sidePanel state.
   const { rtl } = useT();
 
   useEffect(() => {
@@ -132,9 +134,14 @@ export default function PrismApp() {
     // poller is no-op until the portal /api/v1/prism-aac/inbox/poll
     // endpoint is live (silently bails on 404), so wiring it now is safe.
     const stopInbox = startInboxPolling();
+    // Mirror connected-provider contacts (Telegram/WhatsApp/...) from the
+    // portal into local store so the AAC user sees an instant picker.
+    // Same no-op-on-404 pattern as the inbox poller.
+    const stopContactsSync = startContactsSync();
     return () => {
       unregisterPanic();
       stopInbox();
+      stopContactsSync();
     };
   }, [runDecay, seedTemplates, ensureSeed, refreshAuth]);
 
@@ -212,7 +219,7 @@ export default function PrismApp() {
           <Toolbar />
           <GreetingBanner />
           <MessageBar />
-          {!keyboardHidden && <PredictionBar />}
+          <PredictionBar />
           <CategoryPanel />
           <MathPanel />
           <CaregiverPanel />
@@ -223,11 +230,10 @@ export default function PrismApp() {
           <MarketplacePanel />
           <PictureEditorPanel />
           <MusicComposerPanel />
-          {!keyboardHidden && (
-            <div className="flex-1 flex flex-col min-h-0">
-              <Keyboard />
-            </div>
-          )}
+          {/* Keyboard is unconditional — see invariant comment above. */}
+          <div className="flex-1 flex flex-col min-h-0" data-testid="keyboard-shell">
+            <Keyboard />
+          </div>
           <AlertOverlay />
           {/* True modals — settings/history are configuration UIs, not
               communication panels, so they stay as full-screen overlays. */}

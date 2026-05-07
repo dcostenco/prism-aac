@@ -195,4 +195,19 @@ export const LOCAL_CATALOG: ModuleManifest[] = [
     status: 'available',
     handlerPayload: { path: '/drive' },
   },
+  // Built-in feature surfaced for discovery. Free tier so the listing
+  // shows up for everyone — provider-by-provider tier gating happens
+  // inside the panel (see services/sendToContact.PROVIDER_MIN_TIER).
+  {
+    slug: 'aac-chat',
+    version: '1.0.0',
+    kind: 'builtin-shortcut',
+    tier: 'free',
+    category: 'tools',
+    nameKey: 'mp_aac_chat',
+    descKey: 'mp_aac_chat_desc',
+    icon: '💬',
+    status: 'available',
+    handlerPayload: { builtin: 'aac-chat' },
+  },
 ];

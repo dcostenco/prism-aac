@@ -1,7 +1,14 @@
 /**
  * @vitest-environment node
  *
- * i18n completeness tests — verify locale files are consistent.
+ * i18n SSOT tests — `i18n/translations.json` is the SINGLE source of
+ * truth. Per-locale files (`i18n/<lang>.json`) are generated artifacts
+ * via `scripts/build-i18n.mjs`. These tests enforce:
+ *   1. Every shipped locale (defined in engine/i18n LANG_META) has
+ *      every key from en.json — no English fallback at runtime.
+ *   2. Per-locale JSON files match the matrix exactly (no drift).
+ *   3. AAC quick-card keys (qc_1..qc_28) are present everywhere.
+ *
  * Uses node environment since we only need filesystem access, not DOM.
  */
 import { describe, it, expect } from 'vitest';
@@ -15,9 +22,39 @@ function loadLocale(locale: string): Record<string, string> {
   return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 }
 
-const LOCALES = ['en', 'ar', 'de', 'es', 'fr', 'ja', 'ko', 'pt', 'ro', 'ru', 'uk', 'zh'];
+// Discover every shipped locale from disk. Hardcoded lists drift —
+// the previous version only checked 12 of 24 locales, hiding the
+// "Italian greeting in English" bug for months.
+// `translations.json` is the matrix (the SSOT) not a locale — exclude.
+const LOCALES = fs
+  .readdirSync(I18N_DIR)
+  .filter((f) => f.endsWith('.json') && f !== 'translations.json')
+  .map((f) => f.replace(/\.json$/, ''))
+  .sort();
+
 const enData = loadLocale('en');
 const enKeys = Object.keys(enData);
+
+/** Hot-path keys that MUST be translated in every locale. The user
+ *  experience for these is severe (e.g. Italian banner saying "Good
+ *  morning" while everything else is in Italian) so we enforce 100%
+ *  coverage at CI time rather than relying on opportunistic backfill.
+ *  Add a key here when it's a user-visible greeting / button / status
+ *  that an English fallback would surprise users. */
+const REQUIRED_EVERYWHERE = [
+  'good_morning',
+  'good_afternoon',
+  'good_evening',
+  'good_night',
+  // AAC quick-card row — 28 entries, must localize for every shipped locale.
+  ...Array.from({ length: 28 }, (_, i) => `qc_${i + 1}`),
+];
+
+// Load the SSOT matrix.
+const MATRIX_PATH = path.join(I18N_DIR, 'translations.json');
+const matrix: Record<string, Record<string, string>> = fs.existsSync(MATRIX_PATH)
+  ? JSON.parse(fs.readFileSync(MATRIX_PATH, 'utf-8'))
+  : {};
 
 describe('i18n — Locale file structure', () => {
   it('en.json exists and has keys', () => {
@@ -55,10 +92,70 @@ describe('i18n — Key coverage', () => {
     const missingInRo = enKeys.filter((k) => !roKeys.has(k));
     expect(missingInRo).toEqual([]);
   });
+
+  // Strict enforcement for the hot-path keys. If this test fires, you
+  // shipped a locale where a greeting/quick-card falls back to English
+  // and the user sees mixed-language UI (e.g. Italian banner reading
+  // "Good morning", or Polish quick-cards showing "I/You/More" instead
+  // of "Ja/Ty/Więcej"). Translate the key in the matrix instead of
+  // relaxing the assertion.
+  it.each(LOCALES.filter((l) => l !== 'en'))(
+    '%s.json — every REQUIRED_EVERYWHERE key is translated',
+    (locale) => {
+      const data = loadLocale(locale);
+      const missing = REQUIRED_EVERYWHERE.filter((k) => !(k in data));
+      expect(missing, `Missing required keys in ${locale}.json: ${missing.join(', ')}`).toEqual([]);
+    },
+  );
+});
+
+// SSOT enforcement — the matrix is canonical, per-locale files derive
+// from it via `scripts/build-i18n.mjs`. These tests fire if anyone has
+// hand-edited a per-locale file or skipped the build step.
+describe('i18n — single source of truth (translations.json matrix)', () => {
+  it('translations.json exists and has keys', () => {
+    expect(Object.keys(matrix).length).toBeGreaterThan(0);
+  });
+
+  it('matrix has every en.json key (matrix is the source of en.json itself)', () => {
+    const matrixKeys = new Set(Object.keys(matrix));
+    const missing = enKeys.filter((k) => !matrixKeys.has(k));
+    expect(missing, `Matrix missing keys: ${missing.slice(0, 10).join(', ')}`).toEqual([]);
+  });
+
+  // Every locale that the runtime ships (i.e. exists in i18n/<lang>.json
+  // and is referenced by engine/i18n LANG_META) must have full coverage
+  // in the matrix. Run `node scripts/build-i18n.mjs` after editing the
+  // matrix to refresh per-locale files.
+  it.each(LOCALES.filter((l) => l !== 'en'))(
+    'matrix has %s for every key (no silent English fallback at runtime)',
+    (locale) => {
+      const missing = Object.keys(matrix).filter((k) => typeof matrix[k]?.[locale] !== 'string');
+      expect(
+        missing,
+        `Matrix missing ${missing.length} translations for "${locale}". ` +
+        `Edit i18n/translations.json then run: node scripts/build-i18n.mjs`,
+      ).toEqual([]);
+    },
+  );
+
+  it.each(LOCALES.filter((l) => l !== 'en'))(
+    'i18n/%s.json matches the matrix (no drift — run build-i18n.mjs)',
+    (locale) => {
+      const data = loadLocale(locale);
+      const dataKeys = Object.keys(data);
+      const matrixKeysForLocale = Object.keys(matrix).filter((k) => typeof matrix[k]?.[locale] === 'string');
+      // Per-locale file must contain every (and only) key the matrix has for this locale, in matrix key order.
+      expect(dataKeys, `i18n/${locale}.json drifted from matrix — run scripts/build-i18n.mjs`).toEqual(matrixKeysForLocale);
+      for (const k of matrixKeysForLocale) {
+        expect(data[k]).toBe(matrix[k][locale]);
+      }
+    },
+  );
 });
 
 describe('i18n — No extra keys', () => {
-  it.each(LOCALES.filter((l) => l !== 'en'))('%s.json — no keys that do not exist in en.json', (locale) => {
+  it.each(LOCALES.filter((l) => l !== 'en' && !l.startsWith('zh-')))('%s.json — no keys that do not exist in en.json', (locale) => {
     const data = loadLocale(locale);
     const localeKeys = Object.keys(data);
     const enKeySet = new Set(enKeys);

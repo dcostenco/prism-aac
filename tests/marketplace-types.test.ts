@@ -23,9 +23,10 @@ const VALID: ModuleManifest = {
 };
 
 describe('marketplace/types — constants', () => {
-  it('lists exactly the 7 supported kinds', () => {
+  it('lists exactly the 8 supported kinds', () => {
     expect([...MODULE_KINDS].sort()).toEqual([
       'board-template',
+      'builtin-shortcut',
       'game-pack',
       'panel',
       'symbol-library',

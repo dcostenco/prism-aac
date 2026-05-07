@@ -7,6 +7,7 @@ import { useMarketplaceStore } from '@/store/marketplaceStore';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import type { HandlerContext, ModuleManifest, ModuleTier } from '@/lib/marketplace/types';
+import { getHandler } from '@/lib/marketplace/registry';
 import MarketplaceCard from './marketplace/MarketplaceCard';
 import MarketplaceTabs, { type MarketplaceTab } from './marketplace/MarketplaceTabs';
 import MarketplaceSearch from './marketplace/MarketplaceSearch';
@@ -27,7 +28,7 @@ function PanelShell({ children }: { children: ReactNode }) {
 
 export default function MarketplacePanel() {
   const { t } = useT();
-  const { sidePanel, closeSidePanel, openCategories, openGames, openMarketplace, openModulePanel, toggleSettings } = useUIStore();
+  const { sidePanel, closeSidePanel, openCategories, openGames, openMarketplace, openModulePanel, toggleSettings, openAACChat, openAIChat, openSchedule, openCaregiver, openMath } = useUIStore();
   const profile = useAuthStore((s) => s.profile);
   const settings = useSettingsStore();
   const installedApps = useSettingsStore((s) => s.installedApps);
@@ -62,8 +63,15 @@ export default function MarketplacePanel() {
       openMarketplace,
       openSettings: () => { if (!useUIStore.getState().showSettings) toggleSettings(); },
       openModulePanel,
+      openBuiltin: (name) => {
+        if (name === 'aac-chat') openAACChat();
+        else if (name === 'ai-chat') openAIChat();
+        else if (name === 'schedule') openSchedule();
+        else if (name === 'caregiver') openCaregiver();
+        else if (name === 'math') openMath();
+      },
     },
-  }), [settings, closeSidePanel, openCategories, openGames, openMarketplace, openModulePanel, toggleSettings]);
+  }), [settings, closeSidePanel, openCategories, openGames, openMarketplace, openModulePanel, toggleSettings, openAACChat, openAIChat, openSchedule, openCaregiver, openMath]);
 
   if (sidePanel !== 'marketplace') return null;
 
@@ -73,6 +81,14 @@ export default function MarketplacePanel() {
 
   const handleInstall = async (item: ModuleManifest) => {
     tapFeedback();
+    // builtin-shortcut entries are always "installed" (the toolbar button
+    // ships in the chrome). Tapping the card LAUNCHES the panel rather
+    // than running the no-op install.
+    if (item.kind === 'builtin-shortcut') {
+      const handler = getHandler(item.kind);
+      handler?.launch?.(item, ctx);
+      return;
+    }
     await installModule(item.slug, userTier, ctx);
   };
 

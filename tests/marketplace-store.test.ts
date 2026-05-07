@@ -73,7 +73,7 @@ describe('marketplaceStore — loadCatalog', () => {
     const { catalog, source, loading } = useMarketplaceStore.getState();
     expect(loading).toBe(false);
     expect(source).toBe('local');
-    expect(catalog.length).toBe(15);
+    expect(catalog.length).toBe(16);
   });
 
   it('skips refetch within TTL', async () => {

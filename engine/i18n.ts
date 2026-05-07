@@ -83,36 +83,46 @@ export async function loadLanguage(lang: SupportedLanguage): Promise<void> {
   }
 }
 
-const LANG_META: Array<{ code: SupportedLanguage; name: string; nativeName: string; rtl: boolean; ttsCode: string }> = [
-  { code: 'en', name: 'English', nativeName: 'English', rtl: false, ttsCode: 'en-US' },
-  { code: 'es', name: 'Spanish', nativeName: 'Español', rtl: false, ttsCode: 'es-ES' },
-  { code: 'fr', name: 'French', nativeName: 'Français', rtl: false, ttsCode: 'fr-FR' },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português', rtl: false, ttsCode: 'pt-BR' },
-  { code: 'ro', name: 'Romanian', nativeName: 'Română', rtl: false, ttsCode: 'ro-RO' },
-  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', rtl: false, ttsCode: 'uk-UA' },
-  { code: 'ru', name: 'Russian', nativeName: 'Русский', rtl: false, ttsCode: 'ru-RU' },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', rtl: false, ttsCode: 'de-DE' },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語', rtl: false, ttsCode: 'ja-JP' },
-  { code: 'ko', name: 'Korean', nativeName: '한국어', rtl: false, ttsCode: 'ko-KR' },
-  { code: 'zh-Hans', name: 'Chinese (Simplified)', nativeName: '简体中文', rtl: false, ttsCode: 'zh-CN' },
-  { code: 'zh-Hant', name: 'Chinese (Traditional)', nativeName: '繁體中文', rtl: false, ttsCode: 'zh-TW' },
-  { code: 'zh-HK', name: 'Cantonese (Hong Kong)', nativeName: '廣東話', rtl: false, ttsCode: 'zh-HK' },
+// `flag` is the canonical country/region emoji shown in pickers. For
+// languages spoken across many countries (e.g. English, Arabic, Spanish),
+// we pick the most populous canonical region. Hong Kong gets HK, Chinese
+// Traditional gets TW, Simplified gets CN. Filipino gets PH, Hindi IN.
+const LANG_META: Array<{ code: SupportedLanguage; name: string; nativeName: string; rtl: boolean; ttsCode: string; flag: string }> = [
+  { code: 'en', name: 'English', nativeName: 'English', rtl: false, ttsCode: 'en-US', flag: '🇺🇸' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', rtl: false, ttsCode: 'es-ES', flag: '🇪🇸' },
+  { code: 'fr', name: 'French', nativeName: 'Français', rtl: false, ttsCode: 'fr-FR', flag: '🇫🇷' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', rtl: false, ttsCode: 'pt-BR', flag: '🇧🇷' },
+  { code: 'ro', name: 'Romanian', nativeName: 'Română', rtl: false, ttsCode: 'ro-RO', flag: '🇷🇴' },
+  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', rtl: false, ttsCode: 'uk-UA', flag: '🇺🇦' },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский', rtl: false, ttsCode: 'ru-RU', flag: '🇷🇺' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', rtl: false, ttsCode: 'de-DE', flag: '🇩🇪' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', rtl: false, ttsCode: 'ja-JP', flag: '🇯🇵' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', rtl: false, ttsCode: 'ko-KR', flag: '🇰🇷' },
+  { code: 'zh-Hans', name: 'Chinese (Simplified)', nativeName: '简体中文', rtl: false, ttsCode: 'zh-CN', flag: '🇨🇳' },
+  { code: 'zh-Hant', name: 'Chinese (Traditional)', nativeName: '繁體中文', rtl: false, ttsCode: 'zh-TW', flag: '🇹🇼' },
+  { code: 'zh-HK', name: 'Cantonese (Hong Kong)', nativeName: '廣東話', rtl: false, ttsCode: 'zh-HK', flag: '🇭🇰' },
   // 'zh' (back-compat alias) is intentionally not in the visible language picker —
   // it's resolved to 'zh-Hans' by canonicalizeLang() below.
-  { code: 'zh', name: 'Chinese', nativeName: '中文', rtl: false, ttsCode: 'zh-CN' },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', rtl: true, ttsCode: 'ar-SA' },
+  { code: 'zh', name: 'Chinese', nativeName: '中文', rtl: false, ttsCode: 'zh-CN', flag: '🇨🇳' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', rtl: true, ttsCode: 'ar-SA', flag: '🇸🇦' },
   // Sprint 1 — Inworld voices (already wired in synalux portal voice-catalog)
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', rtl: false, ttsCode: 'hi-IN' },
-  { code: 'it', name: 'Italian', nativeName: 'Italiano', rtl: false, ttsCode: 'it-IT' },
-  { code: 'pl', name: 'Polish', nativeName: 'Polski', rtl: false, ttsCode: 'pl-PL' },
-  { code: 'he', name: 'Hebrew', nativeName: 'עברית', rtl: true, ttsCode: 'he-IL' },
-  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', rtl: false, ttsCode: 'nl-NL' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', rtl: false, ttsCode: 'hi-IN', flag: '🇮🇳' },
+  { code: 'it', name: 'Italian', nativeName: 'Italiano', rtl: false, ttsCode: 'it-IT', flag: '🇮🇹' },
+  { code: 'pl', name: 'Polish', nativeName: 'Polski', rtl: false, ttsCode: 'pl-PL', flag: '🇵🇱' },
+  { code: 'he', name: 'Hebrew', nativeName: 'עברית', rtl: true, ttsCode: 'he-IL', flag: '🇮🇱' },
+  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', rtl: false, ttsCode: 'nl-NL', flag: '🇳🇱' },
   // Sprint 2/3 — Azure neural voices (added in synalux portal voice-catalog)
-  { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', rtl: false, ttsCode: 'vi-VN' },
-  { code: 'tl', name: 'Filipino', nativeName: 'Filipino', rtl: false, ttsCode: 'fil-PH' },
-  { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', rtl: false, ttsCode: 'tr-TR' },
-  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', rtl: false, ttsCode: 'id-ID' },
+  { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', rtl: false, ttsCode: 'vi-VN', flag: '🇻🇳' },
+  { code: 'tl', name: 'Filipino', nativeName: 'Filipino', rtl: false, ttsCode: 'fil-PH', flag: '🇵🇭' },
+  { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', rtl: false, ttsCode: 'tr-TR', flag: '🇹🇷' },
+  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', rtl: false, ttsCode: 'id-ID', flag: '🇮🇩' },
 ];
+
+/** Public helper — gets the flag for a language code, '' if unknown. */
+export function getLanguageFlag(lang: string): string {
+  const canonical = canonicalizeLang(lang);
+  return LANG_META.find((l) => l.code === canonical)?.flag ?? '';
+}
 
 /** Returns the canonical BCP-47 form of any input language code. */
 export function canonicalizeLang(lang: string): SupportedLanguage {

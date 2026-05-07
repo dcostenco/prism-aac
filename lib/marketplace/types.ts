@@ -25,6 +25,10 @@ export const MODULE_KINDS = [
   // so users get a single "App Store" surface. Launches navigate to the live
   // Synalux URL, preserving the cookie session for sign-on.
   'synalux-app',
+  // Built-in features (AAC Chat, AI Chat, ...) surfaced in the marketplace
+  // catalog for discovery. Install/uninstall are no-ops because the toolbar
+  // entry is permanent; tap-to-launch routes to the existing panel.
+  'builtin-shortcut',
 ] as const;
 export type ModuleKind = (typeof MODULE_KINDS)[number];
 
@@ -113,6 +117,10 @@ export interface HandlerContext {
      * Used by panelHandler.launch().
      */
     openModulePanel: (panelId: string) => void;
+    /** Open one of the built-in panels (aac-chat, ai-chat, ...) by name.
+     *  Used by builtinShortcutHandler.launch() so the marketplace can
+     *  surface and launch features that ship in the toolbar by default. */
+    openBuiltin?: (name: 'aac-chat' | 'ai-chat' | 'schedule' | 'caregiver' | 'math') => void;
   };
 }
 
