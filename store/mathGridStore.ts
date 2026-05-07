@@ -1,0 +1,111 @@
+/**
+ * Math Grid store — zustand wrapper around the pure engine in
+ * engine/mathGrid.ts. The store is the single source of truth for
+ * cells, cursor, selection, decorations, and viewport. React
+ * components subscribe via useMathGridStore selectors; pure helpers
+ * stay in the engine so they're trivially unit-testable.
+ *
+ * The store is NOT persisted by default — math docs are saved
+ * explicitly via the (forthcoming) services/mathDocService.
+ */
+import { create } from 'zustand';
+import {
+  type MathGridState,
+  type Cell,
+  type Decoration,
+  type Cursor,
+  type Selection,
+  type Viewport,
+  type CellKey,
+  createEmptyState,
+  setCell as setCellPure,
+  clearCell as clearCellPure,
+  getCell as getCellPure,
+  setCursor as setCursorPure,
+  advanceCursorRight as advanceCursorRightPure,
+  moveCursorBy as moveCursorByPure,
+  returnToNextRow as returnToNextRowPure,
+  backspaceAtCursor as backspaceAtCursorPure,
+  commitGlyph as commitGlyphPure,
+  setSelection as setSelectionPure,
+  clearSelection as clearSelectionPure,
+  lockSelection as lockSelectionPure,
+  unlockSelection as unlockSelectionPure,
+  panBy as panByPure,
+  zoomTo as zoomToPure,
+  addDecoration as addDecorationPure,
+  removeDecoration as removeDecorationPure,
+  serialize as serializePure,
+  deserialize as deserializePure,
+  type SerializedMathGrid,
+} from '@/engine/mathGrid';
+
+export interface MathGridStore extends MathGridState {
+  // Cell ops
+  setCell: (r: number, c: number, glyph: string) => void;
+  clearCell: (r: number, c: number) => void;
+  getCell: (r: number, c: number) => Cell | undefined;
+
+  // Cursor
+  setCursor: (r: number, c: number) => void;
+  advanceCursorRight: () => void;
+  moveCursorBy: (dr: number, dc: number) => void;
+  returnToNextRow: (fromCol?: number) => void;
+
+  // Backspace + commit
+  backspaceAtCursor: () => void;
+  commitGlyph: (glyph: string) => void;
+
+  // Selection + lock
+  setSelection: (from: { r: number; c: number }, to: { r: number; c: number }) => void;
+  clearSelection: () => void;
+  lockSelection: () => void;
+  unlockSelection: () => void;
+
+  // Viewport
+  panBy: (dx: number, dy: number) => void;
+  zoomTo: (scale: number) => void;
+
+  // Decorations
+  addDecoration: (d: Decoration) => void;
+  removeDecoration: (predicate: (d: Decoration) => boolean) => void;
+
+  // Doc-level
+  reset: () => void;
+  loadFromSerialized: (raw: SerializedMathGrid) => void;
+  toSerialized: () => SerializedMathGrid;
+}
+
+export const useMathGridStore = create<MathGridStore>((set, get) => ({
+  ...createEmptyState(),
+
+  setCell: (r, c, glyph) => set((s) => setCellPure(s, r, c, glyph)),
+  clearCell: (r, c) => set((s) => clearCellPure(s, r, c)),
+  getCell: (r, c) => getCellPure(get(), r, c),
+
+  setCursor: (r, c) => set((s) => setCursorPure(s, r, c)),
+  advanceCursorRight: () => set((s) => advanceCursorRightPure(s)),
+  moveCursorBy: (dr, dc) => set((s) => moveCursorByPure(s, dr, dc)),
+  returnToNextRow: (fromCol) => set((s) => returnToNextRowPure(s, fromCol)),
+
+  backspaceAtCursor: () => set((s) => backspaceAtCursorPure(s)),
+  commitGlyph: (glyph) => set((s) => commitGlyphPure(s, glyph)),
+
+  setSelection: (from, to) => set((s) => setSelectionPure(s, from, to)),
+  clearSelection: () => set((s) => clearSelectionPure(s)),
+  lockSelection: () => set((s) => lockSelectionPure(s)),
+  unlockSelection: () => set((s) => unlockSelectionPure(s)),
+
+  panBy: (dx, dy) => set((s) => panByPure(s, dx, dy)),
+  zoomTo: (scale) => set((s) => zoomToPure(s, scale)),
+
+  addDecoration: (d) => set((s) => addDecorationPure(s, d)),
+  removeDecoration: (predicate) => set((s) => removeDecorationPure(s, predicate)),
+
+  reset: () => set(() => createEmptyState()),
+  loadFromSerialized: (raw) => set(() => deserializePure(raw)),
+  toSerialized: () => serializePure(get()),
+}));
+
+// Re-export types for convenient consumer imports
+export type { Cell, Decoration, Cursor, Selection, Viewport, CellKey, MathGridState };

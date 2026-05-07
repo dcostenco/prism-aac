@@ -196,6 +196,31 @@ results.push({ pass: 'math-more-closed', viewport: { w: VIEWPORT_W, h: VIEWPORT_
 console.error('--- Pass 5: Math, More open ---');
 results.push({ pass: 'math-more-open', viewport: { w: VIEWPORT_W, h: VIEWPORT_H }, ...(await snapMath('math-more-open', true)) });
 
+// Phase 1A — MathGrid dev harness at /dev/math-grid. Confirms the new
+// cell-grid canvas mounts standalone without depending on the AAC shell.
+async function snapMathGridDev() {
+  await page.goto(`${BASE}/dev/math-grid`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('[data-testid="math-grid"]');
+  await page.waitForTimeout(400);
+  const grid = await page.locator('[data-testid="math-grid"]').boundingBox();
+  const svg = await page.locator('[data-testid="math-grid-svg"]').boundingBox();
+  // Verify the grid lines + cursor highlight rendered.
+  const hasGridLines = (await page.locator('[data-testid="math-grid-lines"] line').count()) > 0;
+  const hasCursor = (await page.locator('[data-testid="math-grid-cursor"]').count()) > 0;
+  await page.screenshot({ path: `${OUT}/math-grid-empty.png`, fullPage: false });
+  return {
+    label: 'math-grid-empty',
+    panel: grid ? { y: grid.y, h: Math.round(grid.height) } : null,
+    svg: svg ? { w: Math.round(svg.width), h: Math.round(svg.height) } : null,
+    hasGridLines,
+    hasCursor,
+    branch: hasGridLines && hasCursor ? 'mounted' : 'unknown',
+  };
+}
+
+console.error('--- Pass 6: MathGrid dev (Phase 1A canvas) ---');
+results.push({ pass: 'math-grid-empty', viewport: { w: VIEWPORT_W, h: VIEWPORT_H }, ...(await snapMathGridDev()) });
+
 console.log(JSON.stringify(results, null, 2));
 fs.writeFileSync(`${OUT}/report.json`, JSON.stringify(results, null, 2));
 await browser.close();
