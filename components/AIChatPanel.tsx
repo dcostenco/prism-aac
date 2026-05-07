@@ -151,30 +151,28 @@ export default function AIChatPanel() {
     setLoading(false);
   };
 
+  // Compact when there's nothing to show. The prior "compact" attempt
+  // only swapped flex-[3]→flex-none; the body still rendered a 3-line
+  // centered placeholder ("Type a question…", big "Ask AI ✨" header,
+  // "Tap any AI response…") that took ~300px on its own — so the panel
+  // *was* compact in the flex sense but visually still ~500px tall, and
+  // the user reported it as still broken (May 2026 screenshot post-deploy).
+  // Real fix: when compact, drop the entire body div. Header (~70px) +
+  // footer with the green Ask AI button (~120px) = ~190px total, qwerty
+  // takes the rest. The footer button alone telegraphs the action; the
+  // placeholder copy was redundant.
+  const isCompact = (configured && messages.length === 0 && !loading && !text.trim()) || !configured;
+
   return (
     <section
       aria-label={t('ai_chat_title')}
-      // Compact when there's nothing to show (no conversation, not
-      // loading, no in-flight question typed). User feedback (May 2026
-      // screenshot #39): "AI chat empty panel? Waste of a screen." —
-      // the prior unconditional flex-[3] grabbed three quarters of the
-      // viewport just to render a one-line prompt. Now the panel drops
-      // to its natural header+footer height (~190px) when idle and the
-      // qwerty fills the freed space, matching how the user expects
-      // AAC keyboard mode to behave.
       className={
-        (configured && messages.length === 0 && !loading && !text.trim())
-          || (!configured)
+        isCompact
           ? 'flex-none flex flex-col surface-bar border-y border-theme'
           : 'flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme'
       }
       data-testid="ai-chat-panel"
-      data-state={
-        (configured && messages.length === 0 && !loading && !text.trim())
-          || (!configured)
-          ? 'compact'
-          : 'expanded'
-      }
+      data-state={isCompact ? 'compact' : 'expanded'}
     >
       <header className="flex items-center justify-between px-4 py-3 border-b border-theme shrink-0">
         <span className="text-primary font-bold text-2xl md:text-3xl">✨ {t('ai_chat_title')}</span>
@@ -188,22 +186,18 @@ export default function AIChatPanel() {
       </header>
 
       {!configured ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <p className="text-primary font-bold text-2xl md:text-3xl mb-4">{t('ai_chat_requires_account')}</p>
-          <p className="text-muted text-lg md:text-xl mb-3">{t('sign_in_ai_desc')}</p>
-          <p className="text-dim text-base md:text-lg">{t('core_aac_no_account_short')}</p>
+        // Unconfigured: keep a single short hint above the footer (no
+        // tall vertical-centered block) so the section stays compact.
+        <div className="px-4 py-2 text-center shrink-0 border-b border-theme">
+          <p className="text-primary font-bold text-base">{t('ai_chat_requires_account')}</p>
         </div>
       ) : (
         <>
+          {/* Body — only rendered when there's something to show. The
+              empty-state placeholder was redundant: the green Ask AI
+              button in the footer already telegraphs the action. */}
+          {!isCompact && (
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
-            {messages.length === 0 && (
-              <div className="text-muted text-center py-6">
-                <p className="text-xl md:text-2xl mb-2">{t('ai_chat_prompt')}</p>
-                <p className="text-[#4CAF50] font-bold text-2xl md:text-3xl">{t('ask_ai')} ✨</p>
-                <p className="mt-3 text-base md:text-lg text-dim">{t('ai_chat_tap_hint')}</p>
-              </div>
-            )}
-
             {messages.map((msg, i) => (
               <div key={i} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
                 <div
@@ -238,6 +232,7 @@ export default function AIChatPanel() {
               </div>
             )}
           </div>
+          )}
 
           <div className="p-3 border-t border-theme shrink-0">
             <div className="text-muted text-base md:text-lg mb-2 text-center truncate">

@@ -40,9 +40,15 @@ afterEach(() => {
 });
 
 describe('AACChatPanel — empty state', () => {
-  it('shows empty hint when no contacts are configured', () => {
-    render(<AACChatPanel />);
-    expect(screen.getByText(/aac_chat_no_contacts|no contacts/i)).toBeInTheDocument();
+  it('exposes Manage Contacts CTA when no contacts are configured', () => {
+    // The 📭 + "no contacts" copy was dropped in the May 2026 visual
+    // compact pass — the panel now renders header + a single-row green
+    // ⚙️ Manage Contacts button so the AAC user can act without losing
+    // keyboard real estate. Both the header button and the body CTA
+    // expose the same action; this test pins the CTA bar.
+    const { container } = render(<AACChatPanel />);
+    expect(container.querySelector('[data-testid="aac-chat-add-contacts-cta"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="aac-chat-manage-contacts"]')).not.toBeNull();
   });
 });
 

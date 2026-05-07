@@ -128,25 +128,24 @@ export default function AACChatPanel() {
 
   if (sidePanel !== 'aac-chat') return null;
 
+  // Compact when the AAC user has no contacts AND no active selection.
+  // Header (with ⚙️ Manage Contacts) + a single-line CTA row is enough;
+  // the qwerty fills the rest of the screen. Earlier "compact" attempt
+  // dropped flex-[3]→flex-none but kept the 📭 + "No contacts yet" +
+  // CTA stack inside an `flex-1` body, so the panel was still ~200px
+  // tall. Now the body is replaced by a tight header-bottom CTA bar.
+  const isCompact = !activeContact && sortedContacts.length === 0;
+
   return (
     <section
       aria-label={t('aac_chat_title') || 'Send a message'}
-      // Compact mode same as AIChatPanel — when the AAC user has no
-      // contacts AND no active selection, drop to header+CTA height
-      // and let the keyboard fill the rest. May 2026 screenshot #40:
-      // "no contacts small icon - no way to show contacts, inboxes
-      // outboxes?". Header now exposes a Settings ⚙️ icon so the AAC
-      // user (or whoever's helping) can jump straight to contacts
-      // setup instead of being told to "ask a caregiver".
       className={
-        !activeContact && sortedContacts.length === 0
+        isCompact
           ? 'flex-none flex flex-col surface-bar border-y border-theme'
           : 'flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme'
       }
       data-testid="aac-chat-panel"
-      data-state={
-        !activeContact && sortedContacts.length === 0 ? 'compact' : 'expanded'
-      }
+      data-state={isCompact ? 'compact' : 'expanded'}
     >
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-theme">
@@ -194,23 +193,24 @@ export default function AACChatPanel() {
         </div>
       </header>
 
-      {/* Body */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-3">
-        {/* No contact picked → show picker */}
-        {!activeContact && sortedContacts.length === 0 && (
-          <div className="text-center text-secondary py-4 text-base leading-relaxed">
-            <p className="text-lg mb-1">📭</p>
-            <p>{t('aac_chat_no_contacts') || 'No contacts yet.'}</p>
-            <button
-              onClick={() => { tapFeedback(); toggleSettings(); }}
-              data-testid="aac-chat-add-contacts-cta"
-              className="aac-key mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 bg-[#4CAF50] text-white font-bold"
-            >
-              ⚙️ {t('manage_contacts') || 'Manage contacts'}
-            </button>
-          </div>
-        )}
+      {/* Compact CTA bar — single row, no vertical centering, only the
+          green Manage-Contacts button so the user can act on the
+          empty-contacts state without the keyboard losing room. */}
+      {isCompact && (
+        <div className="px-3 py-2 border-b border-theme flex items-center justify-center shrink-0">
+          <button
+            onClick={() => { tapFeedback(); toggleSettings(); }}
+            data-testid="aac-chat-add-contacts-cta"
+            className="aac-key inline-flex items-center gap-2 rounded-lg px-4 py-2 bg-[#4CAF50] text-white font-bold text-base"
+          >
+            ⚙️ {t('manage_contacts') || 'Manage contacts'}
+          </button>
+        </div>
+      )}
 
+      {/* Body — only when expanded (have contacts or active contact). */}
+      {!isCompact && (
+      <div className="flex-1 min-h-0 overflow-y-auto p-3">
         {!activeContact && sortedContacts.length > 0 && (
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="aac-chat-contact-list">
             {sortedContacts.map((c) => {
@@ -288,6 +288,7 @@ export default function AACChatPanel() {
           </div>
         )}
       </div>
+      )}
 
       {/* Toast */}
       {toast && (

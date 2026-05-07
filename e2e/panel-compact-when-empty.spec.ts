@@ -1,27 +1,22 @@
 /**
  * Empty-panel compact behaviour — May 2026 user feedback.
  *
- * User screenshots #39 (AI Chat) and #40 (Send Message) showed both
- * panels claiming flex-[3] of the viewport even when they had nothing
- * useful to render — just a one-line "type a question" prompt or
- * "no contacts yet" placeholder. Quote: "AI chat empty panel? Waste
- * of a screen." and "no contacts small icon - no way to show contacts,
- * inboxes outboxes?".
+ * Lesson learned (logged to skill: visual-verification-required):
+ * a previous version of this spec only checked DOM attributes
+ * (`data-state="compact"` and the class string for `flex-none`) and
+ * passed locally, but the rendered panel was still ~500px tall
+ * because the empty-state body content (centered prompt + "Ask AI ✨"
+ * button + 3-line copy) hadn't been collapsed. The user reported
+ * "all fixes still broken" with a screenshot.
  *
- * Fix:
- *   1. Both panels switch from flex-[3] to flex-none (compact) when
- *      they have no real content — header + footer only — letting the
- *      qwerty fill the freed space.
- *   2. AAC Chat header gains a ⚙️ Manage-Contacts button and the
- *      empty-state body shows the same as a primary CTA, so the user
- *      can jump straight to Settings → Contacts instead of being told
- *      to "ask a caregiver".
- *
- * These tests pin both invariants as L3 component-render / L4 live-DOM
- * checks (a future change that drops the data-state attribute or
- * removes the manage-contacts CTA breaks them loudly).
+ * Pin: any UI-shrinking fix MUST be verified by `boundingBox().height`
+ * AND a saved screenshot, not just attribute presence. DOM-only
+ * assertions are necessary but not sufficient. See SKILL:
+ * visual-verification-required.
  */
 import { test, expect, type Page } from '@playwright/test';
+
+const COMPACT_MAX_PX = 240; // header + single-row CTA = ~190px; allow slack
 
 async function bootClean(page: Page, baseURL: string | undefined) {
   const start = baseURL || '/';
@@ -33,24 +28,40 @@ async function bootClean(page: Page, baseURL: string | undefined) {
   await page.waitForSelector('button[data-key="Q"]', { timeout: 30000 });
 }
 
+async function rectHeight(page: Page, selector: string): Promise<number> {
+  const box = await page.locator(selector).boundingBox();
+  if (!box) throw new Error(`No bounding box for ${selector}`);
+  return Math.round(box.height);
+}
+
 test.describe('Empty-panel compact mode', () => {
-  test('AI Chat panel compacts when empty (no messages, no in-flight question)', async ({ page, baseURL }) => {
+  test('AI Chat panel compacts when empty — DOM + rendered height', async ({ page, baseURL }, testInfo) => {
     await bootClean(page, baseURL);
     await page.getByRole('button', { name: /^(AI|IA)$/ }).first().click();
     const panel = page.locator('[data-testid="ai-chat-panel"]');
     await expect(panel).toBeVisible();
-    // Compact when empty.
+
+    // L1 — DOM attribute
     await expect(panel).toHaveAttribute('data-state', 'compact');
-    // Class string must NOT include flex-[3] when compact (or the panel
-    // would still be claiming three quarters of the viewport).
+
+    // L2 — class string
     const cls = await panel.getAttribute('class');
     expect(cls, 'AI Chat compact class').not.toContain('flex-[3]');
     expect(cls, 'AI Chat compact class').toContain('flex-none');
+
+    // L3 — RENDERED height. The May 2026 regression had data-state
+    // saying "compact" while the panel was ~490px tall because the
+    // empty-state placeholder div was still rendered.
+    const h = await rectHeight(page, '[data-testid="ai-chat-panel"]');
+    await testInfo.attach('ai-chat-compact.png', {
+      body: await page.screenshot({ fullPage: false }),
+      contentType: 'image/png',
+    });
+    expect(h, `AI Chat compact height (rendered, must be ≤ ${COMPACT_MAX_PX}px)`).toBeLessThanOrEqual(COMPACT_MAX_PX);
   });
 
-  test('AAC Chat panel compacts when there are zero contacts', async ({ page, baseURL }) => {
+  test('AAC Chat panel compacts with zero contacts — DOM + rendered height', async ({ page, baseURL }, testInfo) => {
     await bootClean(page, baseURL);
-    // Toolbar's Send-Message button — i18n key aac_chat. EN aria-label.
     await page.getByRole('button', { name: /Send|Mesaj|AAC/i }).first().click();
     const panel = page.locator('[data-testid="aac-chat-panel"]');
     await expect(panel).toBeVisible();
@@ -58,18 +69,34 @@ test.describe('Empty-panel compact mode', () => {
     const cls = await panel.getAttribute('class');
     expect(cls, 'AAC Chat compact class').not.toContain('flex-[3]');
     expect(cls, 'AAC Chat compact class').toContain('flex-none');
+
+    const h = await rectHeight(page, '[data-testid="aac-chat-panel"]');
+    await testInfo.attach('aac-chat-compact.png', {
+      body: await page.screenshot({ fullPage: false }),
+      contentType: 'image/png',
+    });
+    expect(h, `AAC Chat compact height (rendered, must be ≤ ${COMPACT_MAX_PX}px)`).toBeLessThanOrEqual(COMPACT_MAX_PX);
   });
 
-  test('AAC Chat exposes Manage-Contacts buttons (header + empty-state CTA)', async ({ page, baseURL }) => {
+  test('AAC Chat exposes Manage-Contacts buttons (header + CTA bar)', async ({ page, baseURL }) => {
     await bootClean(page, baseURL);
     await page.getByRole('button', { name: /Send|Mesaj|AAC/i }).first().click();
     const headerBtn = page.locator('[data-testid="aac-chat-manage-contacts"]');
     const ctaBtn = page.locator('[data-testid="aac-chat-add-contacts-cta"]');
     await expect(headerBtn).toBeVisible();
     await expect(ctaBtn).toBeVisible();
-    // Both should be clickable (the user shouldn't have to dig through
-    // a menu to find contact management).
     await expect(headerBtn).toBeEnabled();
     await expect(ctaBtn).toBeEnabled();
+  });
+
+  test('Keyboard gets the freed space when AI Chat is compact', async ({ page, baseURL }) => {
+    await bootClean(page, baseURL);
+    await page.getByRole('button', { name: /^(AI|IA)$/ }).first().click();
+    const panelH = await rectHeight(page, '[data-testid="ai-chat-panel"]');
+    const kbH = await rectHeight(page, '[data-testid="keyboard-shell"]');
+    // The whole point of compacting the panel: the keyboard should now
+    // be substantially taller than the panel. Use 1.5× as a sanity
+    // ratio — anything less means the panel is still hogging space.
+    expect(kbH / panelH, `keyboard/panel height ratio (kb=${kbH}px panel=${panelH}px)`).toBeGreaterThan(1.5);
   });
 });
