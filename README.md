@@ -100,10 +100,12 @@ Synalux operates the canonical hosted version (free + paid). Self-hosters and fo
 
 **Stack**: Next.js, Zustand, Whisper WASM (transcription), Inworld TTS-2 + Azure Neural fallback (speech), Kokoro-82M offline TTS, FaceLandmarker (gestures).
 
-**Model routing** (server-side via Synalux portal `/api/v1/chat`):
-- Free tier: prism-coder:7b local for simple AAC queries → Gemini 2.5 Flash for complex
-- Paid tier: prism-coder:7b for short, prism-coder:14b (32K context) for medium AAC queries (5–40 words); Claude Sonnet 4 for complex; Claude Opus 4 on Enterprise
-- Speed-critical paths (button tap → speech) bypass routing — prism-coder:7b inline
+**Model routing** (server-side via Synalux portal):
+- Free tier (chat): prism-coder:7b local for simple AAC → Gemini 2.5 Flash for medium/complex
+- Paid tiers (chat): prism-coder:7b for short → prism-coder:14b (32K ctx) for medium → **Claude Sonnet 4** for complex
+- Anthropic outage fallback: Standard → Gemini 3 Flash Preview, Advanced/Enterprise → Gemini 3 Pro Preview (preserves tier quality on cloud failover)
+- Autocorrect + word prediction (every keystroke pause): **Gemini 2.5 Flash-Lite** — bench-validated multilingual (ro/ru/es), 752ms avg, 4.3× cheaper than 2.5 Flash
+- Speed-critical paths (button tap → speech) bypass routing — never blocks on network
 
 **Voice (TTS)** fallback chain:
 - Tier 1: Inworld TTS-2 (paid all langs; free for ro/uk/ru/de/ko/ar where Synalux absorbs cost)
