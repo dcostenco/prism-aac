@@ -8,6 +8,18 @@ export interface ScheduleTask {
   icon: string;
   done: boolean;
   order: number;
+  /** Source classification — 'task' (normal schedule item) or 'message'
+   *  (incoming caregiver/contact note rendered alongside tasks per the
+   *  "messages live on the calendar" design). Defaults to 'task'. */
+  kind?: 'task' | 'message';
+  /** For kind='message' — sender display name used to format the row
+   *  ("Mom: hi what's up") and to dedupe identical inbound payloads. */
+  sender?: string;
+  /** Provider-supplied message id, when available — used to suppress
+   *  re-adding the same incoming message on poll refresh. */
+  externalId?: string;
+  /** ms since epoch — when the message arrived (for sort + display). */
+  receivedAt?: number;
 }
 
 interface ScheduleState {
@@ -18,6 +30,11 @@ interface ScheduleState {
   // UI computes remaining = max(0, timerEndMs - Date.now()) on every frame.
   timerEndMs: number;
   addTask: (text: string, icon: string, textKey?: string) => void;
+  /** Insert an incoming caregiver/contact message as a schedule entry —
+   *  rendered the same way as morning routine items per the "messages on
+   *  the calendar" design. Returns the new task id, or null if the
+   *  message was deduped (same externalId already present). */
+  addIncomingMessage: (sender: string, text: string, externalId?: string) => string | null;
   removeTask: (id: string) => void;
   toggleDone: (id: string) => void;
   /** Update a task's text/icon/textKey in place. Pass undefined to leave a field unchanged. */
@@ -44,7 +61,7 @@ const DEFAULT_TASKS: ScheduleTask[] = [
 
 export const useScheduleStore = create<ScheduleState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       tasks: DEFAULT_TASKS,
       rewards: 0,
       timerSeconds: 300,
@@ -64,6 +81,37 @@ export const useScheduleStore = create<ScheduleState>()(
             },
           ],
         })),
+
+      addIncomingMessage: (sender, text, externalId) => {
+        const trimmed = text.trim();
+        if (!trimmed || !sender.trim()) return null;
+        // Dedupe by externalId so polling/SSE re-delivery doesn't pile
+        // up duplicate rows. When the provider doesn't give an id we
+        // fall through and accept the dup risk — better than dropping
+        // a real message because of a missing id.
+        const existing = externalId
+          ? get().tasks.find((t) => t.externalId === externalId)
+          : undefined;
+        if (existing) return null;
+        const id = `sched-${crypto.randomUUID()}`;
+        set((s) => ({
+          tasks: [
+            ...s.tasks,
+            {
+              id,
+              text: `${sender}: ${trimmed}`,
+              icon: '💬',
+              done: false,
+              order: s.tasks.length,
+              kind: 'message',
+              sender,
+              ...(externalId ? { externalId } : {}),
+              receivedAt: Date.now(),
+            },
+          ],
+        }));
+        return id;
+      },
 
       removeTask: (id) =>
         set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),

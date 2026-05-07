@@ -33,6 +33,7 @@ import { keyFeedback, deleteFeedback } from '@/services/feedback';
 import { aacSpeak } from '@/services/aacSpeak';
 import { registerPanicListeners } from '@/services/panicService';
 import { preloadKokoro } from '@/services/kokoroTTS';
+import { startInboxPolling } from '@/services/inboxService';
 import { useT } from '@/engine/useT';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -127,7 +128,14 @@ export default function PrismApp() {
     // Kokoro is usually ready by the time the user triggers TTS.
     preloadKokoro();
     const unregisterPanic = registerPanicListeners();
-    return unregisterPanic;
+    // Drain incoming caregiver/contact messages onto the schedule. The
+    // poller is no-op until the portal /api/v1/prism-aac/inbox/poll
+    // endpoint is live (silently bails on 404), so wiring it now is safe.
+    const stopInbox = startInboxPolling();
+    return () => {
+      unregisterPanic();
+      stopInbox();
+    };
   }, [runDecay, seedTemplates, ensureSeed, refreshAuth]);
 
   // Warm up the SHARED AudioContext on first user interaction.

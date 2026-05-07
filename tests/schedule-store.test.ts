@@ -161,3 +161,40 @@ describe('ScheduleStore — Task order', () => {
     expect(task!.order).toBe(5);
   });
 });
+
+describe('ScheduleStore — addIncomingMessage', () => {
+  it('appends incoming message formatted as "Sender: text" with 💬 icon', () => {
+    const id = useScheduleStore.getState().addIncomingMessage('Mom', 'hi whats up');
+    expect(id).not.toBeNull();
+    const task = useScheduleStore.getState().tasks.find((t) => t.id === id);
+    expect(task).toBeDefined();
+    expect(task!.text).toBe('Mom: hi whats up');
+    expect(task!.icon).toBe('💬');
+    expect(task!.kind).toBe('message');
+    expect(task!.sender).toBe('Mom');
+    expect(task!.done).toBe(false);
+    expect(typeof task!.receivedAt).toBe('number');
+  });
+
+  it('places message after existing tasks (preserves morning-routine ordering)', () => {
+    useScheduleStore.getState().addIncomingMessage('Dad', 'on my way');
+    const sorted = [...useScheduleStore.getState().tasks].sort((a, b) => a.order - b.order);
+    expect(sorted[sorted.length - 1].sender).toBe('Dad');
+  });
+
+  it('dedupes by externalId so polling re-delivery does not duplicate', () => {
+    const first = useScheduleStore.getState().addIncomingMessage('Mom', 'hello', 'tg-msg-42');
+    const second = useScheduleStore.getState().addIncomingMessage('Mom', 'hello', 'tg-msg-42');
+    expect(first).not.toBeNull();
+    expect(second).toBeNull();
+    const matching = useScheduleStore.getState().tasks.filter((t) => t.externalId === 'tg-msg-42');
+    expect(matching).toHaveLength(1);
+  });
+
+  it('rejects empty sender or empty text without polluting the schedule', () => {
+    const before = useScheduleStore.getState().tasks.length;
+    expect(useScheduleStore.getState().addIncomingMessage('', 'hi')).toBeNull();
+    expect(useScheduleStore.getState().addIncomingMessage('Mom', '   ')).toBeNull();
+    expect(useScheduleStore.getState().tasks.length).toBe(before);
+  });
+});
