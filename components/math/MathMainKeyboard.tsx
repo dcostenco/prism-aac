@@ -46,9 +46,13 @@ const OPERATORS: Array<{ glyph: string; label: string }> = [
   { glyph: ')', label: 'close parenthesis' },
 ];
 
+// Phase 6A — math-mode owns the full viewport, so keys can grow.
+// Bumped from py-2.5 / text-2xl / min-h-[44px] (WCAG floor) up to
+// py-4 / text-3xl / min-h-[64px]. Easier targets for kids with motor
+// imprecision; still scales by `flex-1` so 10 digits fit any tablet.
 const KEY_BASE =
   'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
-  'flex items-center justify-center min-h-[44px] active:translate-y-px';
+  'flex items-center justify-center min-h-[64px] active:translate-y-px';
 
 export default function MathMainKeyboard({ className = '' }: MathMainKeyboardProps) {
   const commitGlyph = useMathGridStore((s) => s.commitGlyph);
@@ -95,7 +99,7 @@ export default function MathMainKeyboard({ className = '' }: MathMainKeyboardPro
             data-testid={`math-key-${d}`}
             data-glyph={d}
             aria-label={d}
-            className={`${KEY_BASE} flex-1 py-2.5 text-2xl`}
+            className={`${KEY_BASE} flex-1 py-4 text-3xl`}
           >
             {d}
           </DwellButton>
@@ -111,7 +115,7 @@ export default function MathMainKeyboard({ className = '' }: MathMainKeyboardPro
             data-testid={`math-key-${label.replace(/ /g, '-')}`}
             data-glyph={glyph}
             aria-label={label}
-            className={`${KEY_BASE} flex-1 py-2.5 text-2xl`}
+            className={`${KEY_BASE} flex-1 py-4 text-3xl`}
           >
             {glyph}
           </DwellButton>
@@ -128,7 +132,7 @@ export default function MathMainKeyboard({ className = '' }: MathMainKeyboardPro
           data-testid="math-key-return"
           data-glyph="return"
           aria-label="Return — next row, leftmost"
-          className={`${KEY_BASE} flex-1 py-2.5 text-xl`}
+          className={`${KEY_BASE} flex-1 py-4 text-2xl`}
         >
           ⏎
         </DwellButton>
@@ -137,7 +141,7 @@ export default function MathMainKeyboard({ className = '' }: MathMainKeyboardPro
           data-testid="math-key-return-right"
           data-glyph="return-right"
           aria-label="Return — next row, rightmost"
-          className={`${KEY_BASE} flex-1 py-2.5 text-xl`}
+          className={`${KEY_BASE} flex-1 py-4 text-2xl`}
         >
           ↵
         </DwellButton>
@@ -146,7 +150,7 @@ export default function MathMainKeyboard({ className = '' }: MathMainKeyboardPro
           data-testid="math-key-space"
           data-glyph=" "
           aria-label="Space"
-          className={`${KEY_BASE} flex-[3] py-2.5 text-base`}
+          className={`${KEY_BASE} flex-[3] py-4 text-lg`}
         >
           space
         </DwellButton>
@@ -155,7 +159,7 @@ export default function MathMainKeyboard({ className = '' }: MathMainKeyboardPro
           data-testid="math-key-backspace"
           data-glyph="backspace"
           aria-label="Backspace"
-          className={`${KEY_BASE} flex-1 py-2.5 text-xl`}
+          className={`${KEY_BASE} flex-1 py-4 text-2xl`}
         >
           ⌫
         </DwellButton>

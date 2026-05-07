@@ -226,10 +226,14 @@ export default function PrismApp() {
       <SyncProvider>
         <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`}>
           <Toolbar />
-          <GreetingBanner />
-          <MessageBar />
-          <PredictionBar />
-          <CategoryPanel />
+          {/* Math panel takes over the full viewport — hide AAC chrome
+              (banner / message / predictions / categories) so the
+              cell-grid canvas + bigger keyboards have room to breathe.
+              Tapping ✓ Done or ✕ closes math and the chrome returns. */}
+          {sidePanel !== 'math' && <GreetingBanner />}
+          {sidePanel !== 'math' && <MessageBar />}
+          {sidePanel !== 'math' && <PredictionBar />}
+          {sidePanel !== 'math' && <CategoryPanel />}
           <MathPanel />
           <CaregiverPanel />
           <AIChatPanel />

@@ -224,4 +224,59 @@ test.describe('MathTutorTool — deep coverage', () => {
     // After failure, tutor should still be usable.
     await expect(hint, 'enabled after 401').toBeEnabled();
   });
+
+  test('Hard 15 s timeout: hung request resolves with retry button', async ({ page, baseURL }) => {
+    await gotoMath(page, baseURL);
+    await typeOneDigit(page, '5');
+    await blockLocalOllama(page);
+    // Hang the chat endpoint forever — never fulfill, never abort.
+    await page.route('**/chat', async () => { /* intentionally never resolves */ });
+    await page.locator('[data-testid="math-tutor-hint"]').click();
+    const overlay = page.locator('[data-testid="math-tutor-response"]');
+    // Hard timeout in MathTutorTool is 15 s; allow a 5 s safety margin.
+    await expect(overlay).toContainText(/⚠️|too long/i, { timeout: 20000 });
+    await expect(overlay).toHaveAttribute('data-error-kind', 'timeout');
+    await expect(overlay).toHaveAttribute('data-loading', '0');
+    await expect(page.locator('[data-testid="math-tutor-retry"]'), 'retry button visible').toBeVisible();
+  });
+
+  test('401 surfaces friendly auth message, not raw "Session expired"', async ({ page, baseURL }) => {
+    await gotoMath(page, baseURL);
+    await typeOneDigit(page, '4');
+    await blockLocalOllama(page);
+    await mockChat(page, async (route) => {
+      await route.fulfill({ status: 401, contentType: 'application/json', body: '{"error":"unauth"}' });
+    });
+    await page.locator('[data-testid="math-tutor-hint"]').click();
+    const overlay = page.locator('[data-testid="math-tutor-response"]');
+    await expect(overlay).toContainText(/sign in|synalux/i, { timeout: 5000 });
+    await expect(overlay).toHaveAttribute('data-error-kind', 'auth');
+  });
+
+  test('Retry button re-fires the same mode with fresh state', async ({ page, baseURL }) => {
+    await gotoMath(page, baseURL);
+    await typeOneDigit(page, '3');
+    await blockLocalOllama(page);
+    let attempts = 0;
+    await page.route('**/chat', async (route) => {
+      attempts++;
+      if (attempts === 1) {
+        await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+      } else {
+        await route.fulfill({
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+          body: sseBody(['Recovered after retry.']),
+        });
+      }
+    });
+    await page.locator('[data-testid="math-tutor-check"]').click();
+    const overlay = page.locator('[data-testid="math-tutor-response"]');
+    await expect(overlay).toContainText('⚠️', { timeout: 10000 });
+    const retry = page.locator('[data-testid="math-tutor-retry"]');
+    await expect(retry).toBeVisible();
+    await retry.click();
+    await expect(overlay).toContainText('Recovered after retry.', { timeout: 5000 });
+    expect(attempts, 'two attempts fired').toBe(2);
+  });
 });

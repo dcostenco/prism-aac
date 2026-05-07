@@ -28,13 +28,43 @@ export interface ToolbarConfig {
   enabled: Partial<Record<ToolbarButtonId, boolean>>;
 }
 
-// Default toolbar contains the previously-toolbar buttons PLUS everything
-// that lived in the "..." overflow menu — flat, configurable.
+// Default toolbar — Phase 6: trimmed to a minimal set per user request
+// ("leave notifications + microphone etc"). Every other built-in button
+// stays in the type union AND in Settings → Toolbar so the user can
+// re-enable them, but the default is now five icons only:
+//   • mic         — voice input (microphone)
+//   • aac_chat    — incoming messages (the "notifications" surface)
+//   • alert       — life-safety emergency button (non-negotiable)
+//   • categories  — AAC core navigation (without this the app can't
+//                   compose sentences, so it stays even under "minimal")
+//   • settings    — escape hatch back to a fuller toolbar
+// `order` retains the FULL button list so Settings can still toggle them
+// individually; `enabled` is what governs default visibility (see the
+// initial enabled map on the store init below).
 export const DEFAULT_TOOLBAR_ORDER: ToolbarButtonId[] = [
-  'categories', 'mic', 'schedule', 'marketplace', 'alert',
-  'math', 'ai_chat', 'aac_chat', 'notes', 'games', 'history',
-  'sound', 'settings',
+  'categories', 'mic', 'aac_chat', 'alert',
+  'schedule', 'marketplace', 'math', 'ai_chat', 'notes', 'games',
+  'history', 'sound', 'settings',
 ];
+
+/** Built-in buttons that ship enabled by default. Anything not in this
+ *  set is hidden until the user re-enables it via Settings → Toolbar. */
+export const DEFAULT_TOOLBAR_ENABLED: Partial<Record<ToolbarButtonId, boolean>> = {
+  mic: true,
+  aac_chat: true,
+  alert: true,
+  categories: true,
+  settings: true,
+  // Everything else: explicitly disabled out of the box.
+  schedule: false,
+  marketplace: false,
+  math: false,
+  ai_chat: false,
+  notes: false,
+  games: false,
+  history: false,
+  sound: false,
+};
 
 const VALID_TOOLBAR_IDS = new Set<ToolbarButtonId>(DEFAULT_TOOLBAR_ORDER);
 const VALID_THEMES = new Set<Theme>(['light', 'dark']);
@@ -171,9 +201,11 @@ export const useSettingsStore = create<SettingsState>()(
       mathTwoHitMagnify: false,
       toolbarConfig: {
         order: [...DEFAULT_TOOLBAR_ORDER],
-        // Empty enabled map = all built-ins ON (Partial+default-true). User
-        // toggling a button writes an explicit false here.
-        enabled: {},
+        // Phase 6: ship a minimal default — only the 5 essentials are
+        // enabled out of the box (mic, aac_chat, alert, categories,
+        // settings). Users who want the bigger toolbar can re-enable
+        // additional buttons in Settings → Toolbar.
+        enabled: { ...DEFAULT_TOOLBAR_ENABLED },
       },
       installedApps: [],
       voicePreferences: {},
