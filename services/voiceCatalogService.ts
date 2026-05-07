@@ -24,10 +24,11 @@ export interface VoiceEntry {
   tags?: string[];
 }
 
-const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
+import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
 
 let cache: { fetchedAt: number; voices: VoiceEntry[] } | null = null;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
+const FETCH_TIMEOUT_MS = 8_000;
 
 function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -43,6 +44,14 @@ export async function fetchVoiceCatalog(force = false): Promise<VoiceEntry[]> {
     return cache.voices;
   }
 
+  // Skip the round-trip when offline — return cached voices if we have
+  // them (still useful in the picker; caller's own offline UI handles
+  // the "actually try to use them" case).
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return cache?.voices ?? [];
+  }
+
+  const { signal, cancel } = timeoutSignal(FETCH_TIMEOUT_MS);
   try {
     const headers: Record<string, string> = { 'Accept': 'application/json' };
     const token = getAuthToken();
@@ -52,6 +61,7 @@ export async function fetchVoiceCatalog(force = false): Promise<VoiceEntry[]> {
       method: 'GET',
       headers,
       credentials: 'include',
+      signal,
     });
 
     if (!res.ok) {
@@ -62,12 +72,23 @@ export async function fetchVoiceCatalog(force = false): Promise<VoiceEntry[]> {
     }
 
     const json = await res.json();
-    const voices: VoiceEntry[] = Array.isArray(json?.voices) ? json.voices : [];
+    const rawVoices = Array.isArray(json?.voices) ? json.voices as unknown[] : [];
+    // Cap on catalog size — no legitimate reason to ship 10k voices to
+    // the client; defends against a buggy/hostile portal flooding the
+    // settings dropdown.
+    const MAX_CATALOG_SIZE = 1000;
+    const voices: VoiceEntry[] = rawVoices.slice(0, MAX_CATALOG_SIZE).filter(
+      (v): v is VoiceEntry => !!v && typeof v === 'object'
+        && typeof (v as VoiceEntry).voiceId === 'string'
+        && typeof (v as VoiceEntry).lang === 'string',
+    );
     cache = { fetchedAt: Date.now(), voices };
     return voices;
   } catch (e) {
     console.warn('[voiceCatalog] fetch error:', e instanceof Error ? e.message : e);
     return cache?.voices ?? [];
+  } finally {
+    cancel();
   }
 }
 

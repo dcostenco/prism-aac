@@ -35,6 +35,30 @@ export const DEFAULT_TOOLBAR_ORDER: ToolbarButtonId[] = [
   'sound', 'settings',
 ];
 
+const VALID_TOOLBAR_IDS = new Set<ToolbarButtonId>(DEFAULT_TOOLBAR_ORDER);
+const VALID_THEMES = new Set<Theme>(['light', 'dark']);
+/** Plausible numeric bounds — defends against tampered localStorage
+ *  injecting NaN / negative / absurd values that would break the UI. */
+const NUM_BOUNDS = {
+  speechRate: { min: 0.25, max: 4, def: 1 },
+  speechVolume: { min: 0, max: 1, def: 1 },
+  gridSize: { values: [4, 6, 9, 12, 16, 20] as GridSize[], def: 6 as GridSize },
+  headTrackingDwellMs: { min: 200, max: 5000, def: 1200 },
+  headTrackingSensitivity: { min: 1, max: 10, def: 5 },
+  headTrackingDriftThresholdPx: { min: 100, max: 4000, def: 800 },
+  headTrackingDriftWindowMs: { min: 1000, max: 30_000, def: 5000 },
+} as const;
+/** Hard cap on installedApps array length — defends against tampered
+ *  storage injecting thousands of bogus app ids that would explode the
+ *  toolbar render. */
+const MAX_INSTALLED_APPS = 100;
+const MAX_VOICE_PREF_ENTRIES = 50;
+
+function clampNumber(v: unknown, b: { min: number; max: number; def: number }): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return b.def;
+  return v < b.min ? b.min : v > b.max ? b.max : v;
+}
+
 interface SettingsState {
   speechRate: number;
   speechVolume: number;
@@ -256,6 +280,116 @@ export const useSettingsStore = create<SettingsState>()(
           };
         }
         return s;
+      },
+      // Hydration validator — runs AFTER migrate. The migrate fns above
+      // only fill in defaults when fields are missing; they don't reject
+      // bogus shapes. A tampered localStorage (browser extension, shared-
+      // device sibling tab, devtools edit) could otherwise inject:
+      //   - language: 'kk' (unsupported lang) — would fall through to
+      //     the t() English fallback for every UI string
+      //   - installedApps: 'string-not-array' — would break Toolbar
+      //   - toolbarConfig.order: [{evil:true}] — would break Toolbar
+      //   - gestureConfig: {} — would break gesture engine
+      //   - speechRate: NaN — would break TTS
+      // Any field the validator can't make sense of is silently reset
+      // to its default. Strictly local defense; portal-source data
+      // should already be sanitized before write.
+      merge: (persistedState, currentState) => {
+        const incoming = (persistedState ?? {}) as Record<string, unknown>;
+        const cur = currentState as unknown as Record<string, unknown>;
+        const out: Record<string, unknown> = { ...cur };
+
+        // Strings: keep only if the value is a string + non-empty.
+        const strKeys = ['language', 'outputLanguage', 'activeVocabSet', 'cameraTrackingTarget'] as const;
+        for (const k of strKeys) {
+          const v = incoming[k];
+          if (typeof v === 'string' && v.length > 0 && v.length < 64) out[k] = v;
+        }
+        // theme — must be a known enum value.
+        if (typeof incoming.theme === 'string' && VALID_THEMES.has(incoming.theme as Theme)) {
+          out.theme = incoming.theme;
+        }
+        // Booleans: respect the persisted value only if it actually IS one.
+        const boolKeys = [
+          'highContrast', 'headTrackingEnabled', 'headTrackingDriftAutoDisable',
+          'showHandCalibration', 'cameraInputEnabled', 'aiAutocorrectEnabled',
+        ] as const;
+        for (const k of boolKeys) {
+          if (typeof incoming[k] === 'boolean') out[k] = incoming[k];
+        }
+        // Numbers: clamp to plausible bounds.
+        out.speechRate = clampNumber(incoming.speechRate, NUM_BOUNDS.speechRate);
+        out.speechVolume = clampNumber(incoming.speechVolume, NUM_BOUNDS.speechVolume);
+        out.headTrackingDwellMs = clampNumber(incoming.headTrackingDwellMs, NUM_BOUNDS.headTrackingDwellMs);
+        out.headTrackingSensitivity = clampNumber(incoming.headTrackingSensitivity, NUM_BOUNDS.headTrackingSensitivity);
+        out.headTrackingDriftThresholdPx = clampNumber(incoming.headTrackingDriftThresholdPx, NUM_BOUNDS.headTrackingDriftThresholdPx);
+        out.headTrackingDriftWindowMs = clampNumber(incoming.headTrackingDriftWindowMs, NUM_BOUNDS.headTrackingDriftWindowMs);
+        // gridSize must be one of the known enum values.
+        out.gridSize = (NUM_BOUNDS.gridSize.values as GridSize[]).includes(incoming.gridSize as GridSize)
+          ? incoming.gridSize
+          : NUM_BOUNDS.gridSize.def;
+
+        // installedApps — must be a string array, capped, non-empty entries only.
+        if (Array.isArray(incoming.installedApps)) {
+          out.installedApps = (incoming.installedApps as unknown[])
+            .filter((a): a is string => typeof a === 'string' && a.length > 0 && a.length <= 80)
+            .slice(0, MAX_INSTALLED_APPS);
+        } else {
+          out.installedApps = [];
+        }
+
+        // voicePreferences — Record<langCode, voiceId> with bounded entry counts.
+        if (incoming.voicePreferences && typeof incoming.voicePreferences === 'object') {
+          const cleaned: Record<string, string> = {};
+          let count = 0;
+          for (const [lang, voice] of Object.entries(incoming.voicePreferences as Record<string, unknown>)) {
+            if (count >= MAX_VOICE_PREF_ENTRIES) break;
+            if (typeof lang === 'string' && lang.length <= 16
+              && typeof voice === 'string' && voice.length > 0 && voice.length <= 128) {
+              cleaned[lang] = voice;
+              count++;
+            }
+          }
+          out.voicePreferences = cleaned;
+        } else {
+          out.voicePreferences = {};
+        }
+
+        // toolbarConfig — must have an `order` array of valid ToolbarButtonId
+        // values + an `enabled` record of booleans. Settings stays forced-on
+        // here per the v13 invariant — a tampered enabled.settings:false
+        // would lock the user out of getting BACK to settings.
+        const tc = incoming.toolbarConfig as { order?: unknown; enabled?: unknown } | undefined;
+        if (tc && typeof tc === 'object') {
+          const order = Array.isArray(tc.order)
+            ? (tc.order as unknown[])
+                .filter((id): id is ToolbarButtonId => typeof id === 'string' && VALID_TOOLBAR_IDS.has(id as ToolbarButtonId))
+                .slice(0, VALID_TOOLBAR_IDS.size)
+            : [...DEFAULT_TOOLBAR_ORDER];
+          const enabledRaw = (tc.enabled && typeof tc.enabled === 'object') ? tc.enabled as Record<string, unknown> : {};
+          const enabled: Partial<Record<ToolbarButtonId, boolean>> = {};
+          for (const [id, val] of Object.entries(enabledRaw)) {
+            if (VALID_TOOLBAR_IDS.has(id as ToolbarButtonId) && typeof val === 'boolean') {
+              enabled[id as ToolbarButtonId] = val;
+            }
+          }
+          enabled.settings = true; // invariant — see v13 comment
+          out.toolbarConfig = { order, enabled };
+        } else {
+          out.toolbarConfig = { order: [...DEFAULT_TOOLBAR_ORDER], enabled: { settings: true } };
+        }
+
+        // gestureConfig — must be an object; structural validation is
+        // delegated to the gesture engine (which already accepts partial
+        // configs and merges with DEFAULT_GESTURE_CONFIG). Just guard
+        // against a non-object value here.
+        if (incoming.gestureConfig && typeof incoming.gestureConfig === 'object' && !Array.isArray(incoming.gestureConfig)) {
+          out.gestureConfig = incoming.gestureConfig;
+        } else {
+          out.gestureConfig = { ...DEFAULT_GESTURE_CONFIG };
+        }
+
+        return out as unknown as SettingsState;
       },
     },
   ),
