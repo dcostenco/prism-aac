@@ -10,6 +10,7 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useContactsStore } from '@/store/contactsStore';
+import { useAuthStore } from '@/store/authStore';
 import { syncContactsOnce } from '@/services/contactsIntegrationService';
 
 const fetchMock = vi.fn();
@@ -19,6 +20,11 @@ beforeEach(() => {
   globalThis.fetch = fetchMock as unknown as typeof fetch;
   fetchMock.mockReset();
   useContactsStore.setState({ contacts: [], lastSyncedAt: 0 });
+  // Contacts sync now requires an authed profile (server-cookie endpoint).
+  useAuthStore.setState({
+    profile: { email: 't@t', name: 'T', plan: 'standard', isPlatformAdmin: false },
+    loaded: true, loading: false,
+  });
 });
 afterEach(() => {
   vi.useRealTimers();

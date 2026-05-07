@@ -22,11 +22,15 @@
  *   - 401: stop polling until reauth (handled upstream by authStore).
  */
 import { useScheduleStore } from '@/store/scheduleStore';
+import { useAuthStore } from '@/store/authStore';
+import { portalFetch } from '@/services/portalClient';
 
 const LAST_SEEN_KEY = 'prism-aac-inbox-last-seen-ms';
 const POLL_INTERVAL_MS = 30_000;
 const POLL_TIMEOUT_MS = 8_000;
-const ENDPOINT = '/api/v1/prism-aac/inbox/poll';
+// Path is portal-relative; portalFetch prepends the SYNALUX_API base.
+// Note: the leading /api/v1 is part of the base, not this path.
+const ENDPOINT = '/prism-aac/inbox/poll';
 /** Hard cap per poll — if the portal queue ballooned to thousands, drain
  *  in batches rather than locking up the UI dispatching them all at once.
  *  Older messages will roll forward via lastSeenMs on subsequent polls. */
@@ -93,29 +97,21 @@ async function pollOnce(): Promise<void> {
   // next interval tick (pile of in-flight requests + duplicate delivery
   // attempts after the dedupe window).
   if (pollInFlight) return;
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  // Skip the round-trip when the user isn't signed in. The endpoint is
+  // session-cookie gated — without a session it returns 401 every poll,
+  // wasting battery + filling logs. Re-authentication elsewhere triggers
+  // authStore.refresh which restores polling on next interval.
+  if (!useAuthStore.getState().profile) return;
   pollInFlight = true;
   try {
     const since = getLastSeenMs();
-    let res: Response;
-    try {
-      res = await fetch(`${ENDPOINT}?since=${since}`, {
-        credentials: 'include',
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(POLL_TIMEOUT_MS),
-      });
-    } catch {
-      return; // network blip — retry next tick
-    }
-    if (!res.ok) return; // 404 (not shipped), 401 (reauth), 5xx — bail quietly
-    let body: unknown;
-    try {
-      body = await res.json();
-    } catch {
-      return;
-    }
-    if (!body || typeof body !== 'object') return;
-    const b = body as { messages?: unknown; serverTime?: unknown };
+    const res = await portalFetch<{ messages?: unknown; serverTime?: unknown }>({
+      path: `${ENDPOINT}?since=${since}`,
+      timeoutMs: POLL_TIMEOUT_MS,
+    });
+    if (!res.ok) return; // 404 (not shipped), 401 (reauth), timeout — bail quietly
+    const b = res.data;
+    if (!b || typeof b !== 'object') return;
     const rawMessages = Array.isArray(b.messages) ? b.messages.slice(0, MAX_MESSAGES_PER_POLL) : [];
     let maxSeen = since;
     for (const m of rawMessages) {

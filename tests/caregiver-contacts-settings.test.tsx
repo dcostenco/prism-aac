@@ -72,22 +72,33 @@ describe('CaregiverContactsSettings — list rendering + tier locks', () => {
     expect(screen.getByTestId('tier-locked-c2')).toBeInTheDocument();
   });
 
-  it('removes a contact when × is clicked and confirmed', async () => {
-    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+  it('removes a contact via inline two-step confirm', async () => {
     const user = userEvent.setup();
     render(<CaregiverContactsSettings />);
-    await user.click(screen.getByTestId('contact-remove-c1'));
-    expect(useContactsStore.getState().contacts.find((c) => c.id === 'c1')).toBeUndefined();
-    confirmSpy.mockRestore();
-  });
-
-  it('does not remove when the user cancels the confirm prompt', async () => {
-    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
-    const user = userEvent.setup();
-    render(<CaregiverContactsSettings />);
+    // First click the × — should arm the confirm row, NOT remove yet.
     await user.click(screen.getByTestId('contact-remove-c1'));
     expect(useContactsStore.getState().contacts.find((c) => c.id === 'c1')).toBeDefined();
-    confirmSpy.mockRestore();
+    // Confirm row appeared — clicking the "Remove?" button completes it.
+    await user.click(screen.getByTestId('contact-confirm-remove-c1'));
+    expect(useContactsStore.getState().contacts.find((c) => c.id === 'c1')).toBeUndefined();
+  });
+
+  it('does not remove when the user clicks cancel on the confirm row', async () => {
+    const user = userEvent.setup();
+    render(<CaregiverContactsSettings />);
+    await user.click(screen.getByTestId('contact-remove-c1'));
+    await user.click(screen.getByTestId('contact-cancel-remove-c1'));
+    expect(useContactsStore.getState().contacts.find((c) => c.id === 'c1')).toBeDefined();
+  });
+
+  it('renames inline via the ✎ button — Enter commits', async () => {
+    const user = userEvent.setup();
+    render(<CaregiverContactsSettings />);
+    await user.click(screen.getByTestId('contact-rename-c1'));
+    const input = screen.getByTestId('contact-edit-c1') as HTMLInputElement;
+    await user.clear(input);
+    await user.type(input, 'Mama{Enter}');
+    expect(useContactsStore.getState().contacts.find((c) => c.id === 'c1')?.name).toBe('Mama');
   });
 });
 

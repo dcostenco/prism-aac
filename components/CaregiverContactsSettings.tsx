@@ -44,6 +44,14 @@ export default function CaregiverContactsSettings() {
   const [draftError, setDraftError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  // Inline edit state — replaces window.prompt() so tablet AAC users
+  // (and screen-reader caregivers) get a real form instead of a modal
+  // dialog they may not be able to dismiss.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  // Inline confirm state — replaces window.confirm() with a small
+  // two-button row so destructive actions remain reversible-by-cancel.
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   const handleAdd = useCallback(() => {
     const name = draftName.trim();
@@ -170,34 +178,81 @@ export default function CaregiverContactsSettings() {
                 data-testid={`contact-row-${c.id}`}
               >
                 <span className="text-xl shrink-0">{c.avatar || PROVIDER_ICONS[c.provider]}</span>
-                <span className="flex-1 min-w-0">
-                  <span className="text-primary text-sm font-bold block truncate">{c.name}</span>
-                  <span className="text-muted text-xs block truncate">
-                    {PROVIDER_LABELS[c.provider]} · {c.recipientId}
-                    {!available && (
-                      <span className="ml-2 text-[#FF9800]" data-testid={`tier-locked-${c.id}`}>
-                        🔒 {PROVIDER_MIN_TIER[c.provider]} plan
-                      </span>
-                    )}
+                {editingId === c.id ? (
+                  <input
+                    autoFocus
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (editingName.trim()) updateContact(c.id, { name: editingName.trim() });
+                        setEditingId(null);
+                      } else if (e.key === 'Escape') {
+                        setEditingId(null);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (editingName.trim() && editingName.trim() !== c.name) {
+                        updateContact(c.id, { name: editingName.trim() });
+                      }
+                      setEditingId(null);
+                    }}
+                    maxLength={80}
+                    className="flex-1 surface-key rounded-md px-2 py-1 text-primary text-sm border border-theme"
+                    data-testid={`contact-edit-${c.id}`}
+                    aria-label={`Rename contact ${c.name}`}
+                  />
+                ) : (
+                  <span className="flex-1 min-w-0">
+                    <span className="text-primary text-sm font-bold block truncate">{c.name}</span>
+                    <span className="text-muted text-xs block truncate">
+                      {PROVIDER_LABELS[c.provider]} · {c.recipientId}
+                      {!available && (
+                        <span className="ml-2 text-[#FF9800]" data-testid={`tier-locked-${c.id}`}>
+                          🔒 {PROVIDER_MIN_TIER[c.provider]} plan
+                        </span>
+                      )}
+                    </span>
                   </span>
-                </span>
-                <button
-                  className="aac-btn w-7 h-7 rounded-md surface-bar text-primary text-sm border border-theme"
-                  onClick={() => {
-                    tapFeedback();
-                    const next = prompt('Rename contact', c.name);
-                    if (next && next.trim()) updateContact(c.id, { name: next.trim() });
-                  }}
-                  aria-label={`Rename ${c.name}`}
-                  title="Rename"
-                >✎</button>
-                <button
-                  className="aac-btn w-7 h-7 rounded-md bg-[#F44336] text-white text-xs"
-                  onClick={() => { tapFeedback(); if (confirm(`Remove ${c.name}?`)) removeContact(c.id); }}
-                  aria-label={`Remove ${c.name}`}
-                  title="Remove"
-                  data-testid={`contact-remove-${c.id}`}
-                >×</button>
+                )}
+                {confirmRemoveId === c.id ? (
+                  <>
+                    <button
+                      className="aac-btn h-7 px-2 rounded-md bg-[#F44336] text-white text-xs font-bold"
+                      onClick={() => { tapFeedback(); removeContact(c.id); setConfirmRemoveId(null); }}
+                      data-testid={`contact-confirm-remove-${c.id}`}
+                      aria-label={`Confirm remove ${c.name}`}
+                    >Remove?</button>
+                    <button
+                      className="aac-btn h-7 px-2 rounded-md surface-bar text-primary text-xs border border-theme"
+                      onClick={() => { tapFeedback(); setConfirmRemoveId(null); }}
+                      data-testid={`contact-cancel-remove-${c.id}`}
+                      aria-label="Cancel remove"
+                    >×</button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className="aac-btn w-7 h-7 rounded-md surface-bar text-primary text-sm border border-theme"
+                      onClick={() => {
+                        tapFeedback();
+                        setEditingName(c.name);
+                        setEditingId(c.id);
+                        setConfirmRemoveId(null);
+                      }}
+                      aria-label={`Rename ${c.name}`}
+                      title="Rename"
+                      data-testid={`contact-rename-${c.id}`}
+                    >✎</button>
+                    <button
+                      className="aac-btn w-7 h-7 rounded-md bg-[#F44336] text-white text-xs"
+                      onClick={() => { tapFeedback(); setConfirmRemoveId(c.id); setEditingId(null); }}
+                      aria-label={`Remove ${c.name}`}
+                      title="Remove"
+                      data-testid={`contact-remove-${c.id}`}
+                    >×</button>
+                  </>
+                )}
               </li>
             );
           })}

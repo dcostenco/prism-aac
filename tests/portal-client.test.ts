@@ -1,0 +1,106 @@
+/**
+ * portalFetch — single fetch wrapper that owns base URL, timeout,
+ * cookie inclusion, JSON parsing, and offline short-circuit. Tests
+ * the contract every consumer relies on.
+ */
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { portalFetch } from '@/services/portalClient';
+
+const fetchMock = vi.fn();
+beforeEach(() => {
+  globalThis.fetch = fetchMock as unknown as typeof fetch;
+  fetchMock.mockReset();
+});
+afterEach(() => vi.clearAllMocks());
+
+describe('portalFetch — happy path', () => {
+  it('parses JSON and returns ok=true with status', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ x: 1 }), { status: 200 }));
+    const res = await portalFetch<{ x: number }>({ path: '/test' });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data).toEqual({ x: 1 });
+      expect(res.status).toBe(200);
+    }
+  });
+
+  it('handles 204 No Content', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const res = await portalFetch({ path: '/test' });
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.status).toBe(204);
+  });
+
+  it('always sends credentials: include', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }));
+    await portalFetch({ path: '/test' });
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(init.credentials).toBe('include');
+  });
+
+  it('serializes body as JSON for POST', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }));
+    await portalFetch({ path: '/test', method: 'POST', body: { a: 1 } });
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({ a: 1 });
+    expect((init.headers as Record<string, string>)['Content-Type']).toBe('application/json');
+  });
+});
+
+describe('portalFetch — error mapping', () => {
+  it('returns short, sanitized error on non-2xx', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('something\x00broke', { status: 500 }));
+    const res = await portalFetch({ path: '/test' });
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error).toMatch(/^HTTP 500/);
+      expect(res.error).not.toContain('\x00');
+      expect(res.error.length).toBeLessThanOrEqual(80 + 'HTTP 500: '.length);
+    }
+  });
+
+  it('returns ok=false with "timeout" on AbortSignal timeout', async () => {
+    fetchMock.mockRejectedValueOnce(new DOMException('timeout', 'TimeoutError'));
+    const res = await portalFetch({ path: '/test' });
+    expect(res).toEqual({ ok: false, error: 'timeout' });
+  });
+
+  it('returns ok=false with "invalid_json" when body is not valid JSON', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('<html>not json</html>', {
+      status: 200, headers: { 'Content-Type': 'text/html' },
+    }));
+    const res = await portalFetch({ path: '/test' });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toBe('invalid_json');
+  });
+
+  it('returns ok=false with "network error" when fetch rejects unexpectedly', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('connection refused'));
+    const res = await portalFetch({ path: '/test' });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toBe('connection refused');
+  });
+});
+
+describe('portalFetch — offline short-circuit', () => {
+  const origDescriptor = Object.getOwnPropertyDescriptor(navigator, 'onLine');
+  afterEach(() => {
+    if (origDescriptor) Object.defineProperty(navigator, 'onLine', origDescriptor);
+  });
+
+  it('skips the round trip when navigator.onLine === false (default)', async () => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
+    const res = await portalFetch({ path: '/test' });
+    expect(res).toEqual({ ok: false, error: 'offline' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('hits the network anyway when skipIfOffline is false', async () => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }));
+    const res = await portalFetch({ path: '/test', skipIfOffline: false });
+    expect(res.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalled();
+  });
+});

@@ -73,7 +73,7 @@ describe('sendToContact — input validation', () => {
 
 describe('sendToContact — provider dispatch', () => {
   it('Telegram body uses recipientId + text', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
     await sendToContact(baseContact({ provider: 'telegram', recipientId: '12345' }), 'hi', 'standard');
     const [url, init] = fetchMock.mock.calls[0];
     expect(String(url)).toContain('/telegram/send');
@@ -81,14 +81,14 @@ describe('sendToContact — provider dispatch', () => {
   });
 
   it('WhatsApp body uses to + body', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
     await sendToContact(baseContact({ provider: 'whatsapp', recipientId: '+15551234567' }), 'hi', 'standard');
     const init = fetchMock.mock.calls[0][1] as RequestInit;
     expect(JSON.parse(init.body as string)).toEqual({ to: '+15551234567', body: 'hi' });
   });
 
   it('Mail body uses to + subject + body_text and truncates subject', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
     const long = 'a'.repeat(120);
     await sendToContact(baseContact({ provider: 'mail', recipientId: 'mom@example.com' }), long, 'free');
     const init = fetchMock.mock.calls[0][1] as RequestInit;
@@ -120,7 +120,7 @@ describe('sendToContact — recipient-id validation', () => {
 
 describe('sendToContact — length clamping', () => {
   it('truncates oversize text and reports truncation in the result', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
     // SMS cap is 1500 — feed 5000.
     const huge = 'a'.repeat(5000);
     const res = await sendToContact(baseContact({ provider: 'sms', recipientId: '+15551234567' }), huge, 'free');
@@ -132,7 +132,7 @@ describe('sendToContact — length clamping', () => {
   });
 
   it('does not truncate when text fits under the provider cap', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
     const res = await sendToContact(baseContact({ provider: 'sms', recipientId: '+15551234567' }), 'hi mom', 'free');
     expect(res).toEqual({ ok: true, truncated: false });
   });

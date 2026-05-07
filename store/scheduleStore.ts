@@ -207,6 +207,47 @@ export const useScheduleStore = create<ScheduleState>()(
           removeItem: () => {},
         }
       ),
+      // Hydration validator — drops malformed task entries that could
+      // sneak in via tampered localStorage (browser extension / shared-
+      // device sibling-tab). Caps task count, sender length, text length
+      // so a hostile payload can't blow up the schedule render.
+      merge: (persistedState, currentState) => {
+        const incoming = (persistedState ?? {}) as Partial<ScheduleState>;
+        const MAX_TASKS = 200;
+        const MAX_TEXT = 2200;
+        const MAX_SENDER = 80;
+        const cleaned = (Array.isArray(incoming.tasks) ? incoming.tasks : [])
+          .filter((t): t is ScheduleTask => {
+            if (!t || typeof t !== 'object') return false;
+            const x = t as unknown as Record<string, unknown>;
+            if (typeof x.id !== 'string' || !x.id) return false;
+            if (typeof x.text !== 'string' || x.text.length > MAX_TEXT) return false;
+            if (typeof x.icon !== 'string' || x.icon.length > 16) return false;
+            if (typeof x.done !== 'boolean') return false;
+            if (typeof x.order !== 'number' || !Number.isFinite(x.order)) return false;
+            if (x.kind !== undefined && x.kind !== 'task' && x.kind !== 'message') return false;
+            if (x.sender !== undefined && (typeof x.sender !== 'string' || x.sender.length > MAX_SENDER)) return false;
+            if (x.externalId !== undefined && (typeof x.externalId !== 'string' || x.externalId.length > 128)) return false;
+            if (x.receivedAt !== undefined && (typeof x.receivedAt !== 'number' || !Number.isFinite(x.receivedAt))) return false;
+            return true;
+          })
+          .slice(0, MAX_TASKS);
+        const rewards = typeof incoming.rewards === 'number' && Number.isFinite(incoming.rewards) && incoming.rewards >= 0
+          ? Math.min(incoming.rewards, 999) : 0;
+        const timerSeconds = typeof incoming.timerSeconds === 'number' && Number.isFinite(incoming.timerSeconds) && incoming.timerSeconds > 0
+          ? Math.min(incoming.timerSeconds, 60 * 60) : 300;
+        const timerEndMs = typeof incoming.timerEndMs === 'number' && Number.isFinite(incoming.timerEndMs)
+          ? incoming.timerEndMs : 0;
+        return {
+          ...currentState,
+          // Fall back to default tasks if hydration produced nothing —
+          // resetting on tamper preserves the user's daily-routine UI.
+          tasks: cleaned.length > 0 ? cleaned : DEFAULT_TASKS,
+          rewards,
+          timerSeconds,
+          timerEndMs,
+        };
+      },
     }
   )
 );

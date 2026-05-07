@@ -5,6 +5,7 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useScheduleStore } from '@/store/scheduleStore';
+import { useAuthStore } from '@/store/authStore';
 import { deliverIncomingMessage } from '@/services/inboxService';
 
 const fetchMock = vi.fn();
@@ -12,6 +13,13 @@ beforeEach(() => {
   globalThis.fetch = fetchMock as unknown as typeof fetch;
   fetchMock.mockReset();
   useScheduleStore.setState({ tasks: [], rewards: 0, timerSeconds: 300, timerEndMs: 0 });
+  // Inbox poller now skips when not signed in. Tests of the dispatch
+  // path (deliverIncomingMessage) work without auth, but any future
+  // pollOnce coverage needs a profile present.
+  useAuthStore.setState({
+    profile: { email: 't@t', name: 'T', plan: 'standard', isPlatformAdmin: false },
+    loaded: true, loading: false,
+  });
   if (typeof window !== 'undefined') window.localStorage.clear();
 });
 afterEach(() => vi.clearAllMocks());

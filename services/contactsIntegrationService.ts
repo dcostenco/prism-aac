@@ -24,9 +24,12 @@
  *   - 401: skip; authStore handles reauth elsewhere.
  */
 import { useContactsStore, type AacContact, type ContactProvider } from '@/store/contactsStore';
+import { useAuthStore } from '@/store/authStore';
 import { PROVIDERS } from '@/lib/messageProviders';
+import { portalFetch } from '@/services/portalClient';
 
-const ENDPOINT = '/api/v1/prism-aac/contacts';
+// Path is portal-relative; portalFetch prepends the SYNALUX_API base.
+const ENDPOINT = '/prism-aac/contacts';
 // Match the inbox poller cadence — 5min is enough for caregiver-side
 // edits (add new family member) to land without spamming the portal.
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
@@ -104,33 +107,20 @@ let syncInFlight = false;
  *  callers can distinguish "no changes" from "couldn't reach". */
 export async function syncContactsOnce(): Promise<{ added: number; updated: number } | null> {
   if (syncInFlight) return null;
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
+  // Skip when not signed in — session-cookie gated, would 401 forever.
+  if (!useAuthStore.getState().profile) return null;
   syncInFlight = true;
   try {
-    let res: Response;
-    try {
-      res = await fetch(ENDPOINT, {
-        credentials: 'include',
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(SYNC_TIMEOUT_MS),
-      });
-    } catch {
-      return null;
-    }
+    const res = await portalFetch<{ contacts?: unknown }>({
+      path: ENDPOINT,
+      timeoutMs: SYNC_TIMEOUT_MS,
+    });
     if (!res.ok) return null;
-    let body: unknown;
-    try {
-      body = await res.json();
-    } catch {
-      return null;
-    }
+    const body = res.data;
     if (!body || typeof body !== 'object') return null;
-    const incoming = sanitize((body as { contacts?: unknown }).contacts);
-    if (incoming.length === 0) {
-      // Endpoint reachable but empty — still bump lastSyncedAt so the
-      // UI shows a successful sync. Done by passing [] through merge.
-      return useContactsStore.getState().mergeFromIntegrations([]);
-    }
+    const incoming = sanitize(body.contacts);
+    // Endpoint reachable (even with no rows) — bump lastSyncedAt so the
+    // settings UI shows a successful sync.
     return useContactsStore.getState().mergeFromIntegrations(incoming);
   } finally {
     syncInFlight = false;

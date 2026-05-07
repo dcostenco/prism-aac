@@ -78,6 +78,27 @@ const MAX_NAME_LEN = 80;
 const MAX_RECIPIENT_LEN = 254;
 const MAX_AVATAR_LEN = 16;
 
+const VALID_PROVIDERS = new Set<ContactProvider>([
+  'telegram', 'whatsapp', 'viber', 'sms', 'messenger', 'instagram', 'mail',
+]);
+
+/** Validates one contact entry shape after persisted hydration.
+ *  Tampered localStorage (browser extension, sibling-tab on a shared
+ *  device, manual devtools edit) could inject arbitrary objects — we
+ *  drop anything that doesn't fit. */
+function isValidStoredContact(c: unknown): c is AacContact {
+  if (!c || typeof c !== 'object') return false;
+  const x = c as Record<string, unknown>;
+  if (typeof x.id !== 'string' || !x.id) return false;
+  if (typeof x.name !== 'string' || !x.name || x.name.length > MAX_NAME_LEN) return false;
+  if (typeof x.recipientId !== 'string' || !x.recipientId || x.recipientId.length > MAX_RECIPIENT_LEN) return false;
+  if (typeof x.provider !== 'string' || !VALID_PROVIDERS.has(x.provider as ContactProvider)) return false;
+  if (typeof x.order !== 'number' || !Number.isFinite(x.order) || x.order < 0) return false;
+  if (x.avatar !== undefined && (typeof x.avatar !== 'string' || x.avatar.length > MAX_AVATAR_LEN)) return false;
+  if (x.lastMessagePreview !== undefined && typeof x.lastMessagePreview !== 'string') return false;
+  return true;
+}
+
 let nextId = 1;
 const genId = () => `c-${Date.now()}-${nextId++}`;
 
@@ -165,6 +186,22 @@ export const useContactsStore = create<ContactsState>()(
       storage: createJSONStorage(() => (typeof window !== 'undefined' ? window.localStorage : ({
         getItem: () => null, setItem: () => {}, removeItem: () => {},
       } as unknown as Storage))),
+      // Hydration validator — drops any contact entry that doesn't
+      // match the expected shape, then enforces the MAX_CONTACTS cap.
+      // Defends against tampered localStorage (browser extension /
+      // sibling-tab / manual devtools edit). lastSyncedAt is reset to 0
+      // if it wasn't a finite non-negative number.
+      merge: (persistedState, currentState) => {
+        const incoming = (persistedState ?? {}) as Partial<ContactsState>;
+        const rawList = Array.isArray(incoming.contacts) ? incoming.contacts : [];
+        const cleaned = rawList.filter(isValidStoredContact).slice(0, MAX_CONTACTS);
+        const lastSyncedAt = typeof incoming.lastSyncedAt === 'number'
+          && Number.isFinite(incoming.lastSyncedAt)
+          && incoming.lastSyncedAt >= 0
+          ? incoming.lastSyncedAt
+          : 0;
+        return { ...currentState, contacts: cleaned, lastSyncedAt };
+      },
     },
   ),
 );

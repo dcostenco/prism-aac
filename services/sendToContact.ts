@@ -3,9 +3,8 @@
  * recipient via the right Synalux portal endpoint.
  *
  * All provider-specific knowledge (endpoint, body shape, length cap,
- * tier requirement) lives in `lib/messageProviders.ts`. This file is
- * the transport — fetch, abort, error mapping. Adding a new provider
- * means editing only the config table.
+ * tier requirement) lives in `lib/messageProviders.ts`. Transport is
+ * delegated to `services/portalClient` (auth, timeout, error mapping).
  *
  * Failure mode: returns `{ ok: false, error }` so the UI can show a
  * toast + leave the message in the bar for retry. Never throws.
@@ -17,10 +16,7 @@ import {
   clampToProviderLimit,
   type PlanTier,
 } from '@/lib/messageProviders';
-
-const SYNALUX_API = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SYNALUX_API)
-  ? process.env.NEXT_PUBLIC_SYNALUX_API
-  : 'https://synalux.ai/api/v1';
+import { portalFetch } from '@/services/portalClient';
 
 /** Per-call deadline. Long enough for 3G/airplane wifi, short enough that
  *  a stuck send doesn't strand the AAC user staring at "Sending…". */
@@ -59,23 +55,13 @@ export async function sendToContact(
   const clamped = clampToProviderLimit(contact.provider, raw);
   const truncated = clamped.length < raw.length;
 
-  let res: Response;
-  try {
-    res = await fetch(`${SYNALUX_API}${cfg.endpoint}`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cfg.buildBody(contact, clamped)),
-      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
-    });
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'network error' };
-  }
-
-  if (!res.ok) {
-    const errBody = await res.text().catch(() => '');
-    return { ok: false, error: `HTTP ${res.status}${errBody ? ': ' + errBody.slice(0, 80) : ''}` };
-  }
+  const res = await portalFetch({
+    path: cfg.endpoint,
+    method: 'POST',
+    body: cfg.buildBody(contact, clamped),
+    timeoutMs: SEND_TIMEOUT_MS,
+  });
+  if (!res.ok) return { ok: false, error: res.error };
   return { ok: true, truncated };
 }
 
