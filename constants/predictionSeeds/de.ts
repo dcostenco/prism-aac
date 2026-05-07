@@ -222,7 +222,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "hier": { count: 50, lastUsed: 0 },
   "hin": { count: 50, lastUsed: 0 },
   "hätte": { count: 50, lastUsed: 0 },
-  "i": { count: 50, lastUsed: 0 },
   "ihm": { count: 50, lastUsed: 0 },
   "ihn": { count: 50, lastUsed: 0 },
   "ihnen": { count: 50, lastUsed: 0 },
@@ -270,7 +269,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "m": { count: 50, lastUsed: 0 },
   "macht": { count: 50, lastUsed: 0 },
   "mal": { count: 50, lastUsed: 0 },
-  "man": { count: 50, lastUsed: 0 },
   "mann": { count: 50, lastUsed: 0 },
   "mehr": { count: 50, lastUsed: 0 },
   "meinem": { count: 50, lastUsed: 0 },
@@ -301,7 +299,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "nur": { count: 50, lastUsed: 0 },
   "ob": { count: 50, lastUsed: 0 },
   "oder": { count: 50, lastUsed: 0 },
-  "of": { count: 50, lastUsed: 0 },
   "oft": { count: 50, lastUsed: 0 },
   "ohne": { count: 50, lastUsed: 0 },
   "online": { count: 50, lastUsed: 0 },
@@ -353,7 +350,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "tag": { count: 50, lastUsed: 0 },
   "tage": { count: 50, lastUsed: 0 },
   "teil": { count: 50, lastUsed: 0 },
-  "the": { count: 50, lastUsed: 0 },
   "thema": { count: 50, lastUsed: 0 },
   "tun": { count: 50, lastUsed: 0 },
   "u": { count: 50, lastUsed: 0 },
@@ -20256,6 +20252,8 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "zähneflossen": { count: 1, lastUsed: 0 },
   "zähneputzen": { count: 1, lastUsed: 0 },
   "übe": { count: 1, lastUsed: 0 },
+  "man": { count: 50, lastUsed: 0 },
+
 };
 
 const BIGRAMS: Record<string, WordFreqEntry> = {

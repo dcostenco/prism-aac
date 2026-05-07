@@ -44,7 +44,7 @@ export default function GreetingBanner() {
   // aacSpeak fires; cleared when stopSpeech is invoked or after the
   // window naturally elapses.
   const bannerSpeechUntilRef = useRef(0);
-  const { t } = useT();
+  const { t, ready } = useT();
   const tasks = useScheduleStore(s => s.tasks);
   const { speechRate, speechVolume } = useSettingsStore();
   const autoSpeak = useMessageStore(s => s.autoSpeak);
@@ -66,6 +66,16 @@ export default function GreetingBanner() {
 
   useEffect(() => {
     if (!visible || spokenRef.current || !autoSpeak) return;
+    // CRITICAL: gate on i18n readiness. Without this, the banner fires
+    // BEFORE the user's locale (e.g. ro.json) has finished loading;
+    // t('good_morning') falls back to the English bundle and "Good
+    // morning" gets captured into the speech variable. Even after
+    // Romanian loads and re-renders the visible banner text, the
+    // already-captured English string is what aacSpeak speaks. Result:
+    // banner shows "Bună dimineața" but TTS says "Good morning".
+    // Skip and let the effect re-fire when `ready` flips true (deps
+    // include it). spokenRef stays false so the re-fire speaks.
+    if (!ready) return;
     // If the user already started composing before the banner mounted
     // (e.g. they tapped a Quick Cart tile during page hydration), skip
     // the banner speech entirely — the banner is informational; the
@@ -89,7 +99,7 @@ export default function GreetingBanner() {
       bannerSpeechUntilRef.current = Date.now() + BANNER_SPEECH_WINDOW_MS;
     }, BANNER_PRESPEAK_DELAY_MS);
     return () => clearTimeout(timerId);
-  }, [visible, autoSpeak, nextTask, speechRate, speechVolume, t]);
+  }, [visible, autoSpeak, nextTask, speechRate, speechVolume, t, ready]);
 
   // Cancel in-flight banner speech if the user starts composing AFTER
   // the announcement has already begun playing — but ONLY within the

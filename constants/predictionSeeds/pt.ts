@@ -80,7 +80,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "amigo": { count: 50, lastUsed: 0 },
   "amigos": { count: 50, lastUsed: 0 },
   "amor": { count: 50, lastUsed: 0 },
-  "and": { count: 50, lastUsed: 0 },
   "ano": { count: 50, lastUsed: 0 },
   "anos": { count: 50, lastUsed: 0 },
   "antes": { count: 50, lastUsed: 0 },
@@ -197,7 +196,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "fim": { count: 50, lastUsed: 0 },
   "final": { count: 50, lastUsed: 0 },
   "foi": { count: 50, lastUsed: 0 },
-  "for": { count: 50, lastUsed: 0 },
   "fora": { count: 50, lastUsed: 0 },
   "foram": { count: 50, lastUsed: 0 },
   "forma": { count: 50, lastUsed: 0 },
@@ -220,7 +218,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "homens": { count: 50, lastUsed: 0 },
   "horas": { count: 50, lastUsed: 0 },
   "há": { count: 50, lastUsed: 0 },
-  "i": { count: 50, lastUsed: 0 },
   "importante": { count: 50, lastUsed: 0 },
   "in": { count: 50, lastUsed: 0 },
   "informações": { count: 50, lastUsed: 0 },
@@ -286,7 +283,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "nunca": { count: 50, lastUsed: 0 },
   "nós": { count: 50, lastUsed: 0 },
   "número": { count: 50, lastUsed: 0 },
-  "of": { count: 50, lastUsed: 0 },
   "onde": { count: 50, lastUsed: 0 },
   "ou": { count: 50, lastUsed: 0 },
   "outra": { count: 50, lastUsed: 0 },
@@ -381,10 +377,8 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "tenha": { count: 50, lastUsed: 0 },
   "terra": { count: 50, lastUsed: 0 },
   "teve": { count: 50, lastUsed: 0 },
-  "the": { count: 50, lastUsed: 0 },
   "tinha": { count: 50, lastUsed: 0 },
   "tipo": { count: 50, lastUsed: 0 },
-  "to": { count: 50, lastUsed: 0 },
   "toda": { count: 50, lastUsed: 0 },
   "todas": { count: 50, lastUsed: 0 },
   "todo": { count: 50, lastUsed: 0 },
@@ -20114,6 +20108,8 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "ventando": { count: 1, lastUsed: 0 },
   "virgin": { count: 1, lastUsed: 0 },
   "árduo": { count: 1, lastUsed: 0 },
+  "for": { count: 50, lastUsed: 0 },
+
 };
 
 const BIGRAMS: Record<string, WordFreqEntry> = {

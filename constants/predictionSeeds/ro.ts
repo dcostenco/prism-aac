@@ -222,7 +222,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "fără": { count: 50, lastUsed: 0 },
   "general": { count: 50, lastUsed: 0 },
   "greu": { count: 50, lastUsed: 0 },
-  "i": { count: 50, lastUsed: 0 },
   "ia": { count: 50, lastUsed: 0 },
   "ianuarie": { count: 50, lastUsed: 0 },
   "iar": { count: 50, lastUsed: 0 },
@@ -263,7 +262,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "mici": { count: 50, lastUsed: 0 },
   "mihai": { count: 50, lastUsed: 0 },
   "milioane": { count: 50, lastUsed: 0 },
-  "mine": { count: 50, lastUsed: 0 },
   "minute": { count: 50, lastUsed: 0 },
   "mod": { count: 50, lastUsed: 0 },
   "moldova": { count: 50, lastUsed: 0 },
@@ -353,7 +351,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "său": { count: 50, lastUsed: 0 },
   "ta": { count: 50, lastUsed: 0 },
   "tatăl": { count: 50, lastUsed: 0 },
-  "the": { count: 50, lastUsed: 0 },
   "timp": { count: 50, lastUsed: 0 },
   "tine": { count: 50, lastUsed: 0 },
   "tip": { count: 50, lastUsed: 0 },
@@ -20333,6 +20330,8 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "întârziată": { count: 1, lastUsed: 0 },
   "învidiat": { count: 1, lastUsed: 0 },
   "șosetile": { count: 1, lastUsed: 0 },
+  "mine": { count: 50, lastUsed: 0 },
+
 };
 
 const BIGRAMS: Record<string, WordFreqEntry> = {

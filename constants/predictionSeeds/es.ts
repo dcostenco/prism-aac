@@ -198,7 +198,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "hasta": { count: 50, lastUsed: 0 },
   "hay": { count: 50, lastUsed: 0 },
   "haya": { count: 50, lastUsed: 0 },
-  "he": { count: 50, lastUsed: 0 },
   "hecho": { count: 50, lastUsed: 0 },
   "hemos": { count: 50, lastUsed: 0 },
   "hijo": { count: 50, lastUsed: 0 },
@@ -209,7 +208,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "hombres": { count: 50, lastUsed: 0 },
   "horas": { count: 50, lastUsed: 0 },
   "hoy": { count: 50, lastUsed: 0 },
-  "i": { count: 50, lastUsed: 0 },
   "idea": { count: 50, lastUsed: 0 },
   "igual": { count: 50, lastUsed: 0 },
   "importante": { count: 50, lastUsed: 0 },
@@ -369,7 +367,6 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "tema": { count: 50, lastUsed: 0 },
   "tenemos": { count: 50, lastUsed: 0 },
   "tenía": { count: 50, lastUsed: 0 },
-  "the": { count: 50, lastUsed: 0 },
   "ti": { count: 50, lastUsed: 0 },
   "tiempo": { count: 50, lastUsed: 0 },
   "tiene": { count: 50, lastUsed: 0 },
@@ -20205,6 +20202,8 @@ const WORD_FREQ: Record<string, WordFreqEntry> = {
   "vibración": { count: 1, lastUsed: 0 },
   "visitamos": { count: 1, lastUsed: 0 },
   "volamos": { count: 1, lastUsed: 0 },
+  "he": { count: 50, lastUsed: 0 },
+
 };
 
 const BIGRAMS: Record<string, WordFreqEntry> = {
