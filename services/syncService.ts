@@ -12,6 +12,7 @@
 
 import { getSupabase, isSupabaseConfigured as _isConfigured } from './supabase';
 import { WordFreqEntry, HistoryEntry, Category, Phrase } from '@/types';
+import { randomId } from '@/lib/uuid';
 
 export function isSupabaseConfigured(): boolean { return _isConfigured(); }
 
@@ -32,7 +33,10 @@ export interface AACProfile {
 function getDeviceId(): string {
   let id = localStorage.getItem('prism-aac-device-id');
   if (!id) {
-    id = crypto.randomUUID();
+    // Use randomId so this works on the older iPad WebViews where
+    // crypto.randomUUID isn't available — without the fallback the
+    // very first sync attempt on an old tablet would crash.
+    id = randomId();
     localStorage.setItem('prism-aac-device-id', id);
   }
   return id;

@@ -58,7 +58,8 @@ describe('portalFetch — request body validation', () => {
   });
 
   it('returns invalid_request_body on BigInt body without throwing', async () => {
-    const res = await portalFetch({ path: '/test', method: 'POST', body: { n: 9007199254740993n } });
+    // BigInt() ctor avoids the literal `n` syntax that requires ES2020.
+    const res = await portalFetch({ path: '/test', method: 'POST', body: { n: BigInt('9007199254740993') } });
     expect(res).toEqual({ ok: false, error: 'invalid_request_body' });
     expect(fetchMock).not.toHaveBeenCalled();
   });

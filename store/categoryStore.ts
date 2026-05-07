@@ -6,6 +6,7 @@ import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { TEMPLATE_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
 import { VOCAB_SETS } from '@/constants/vocabularySets';
 import { useSettingsStore } from '@/store/settingsStore';
+import { randomId } from '@/lib/uuid';
 
 interface CategoryState {
   customCategories: Category[];
@@ -81,7 +82,7 @@ export const useCategoryStore = create<CategoryState>()(
         set((s) => ({
           customCategories: [
             ...s.customCategories,
-            { id: crypto.randomUUID(), name, icon, sortOrder: DEFAULT_CATEGORIES.length + s.customCategories.length, isCustom: true },
+            { id: randomId(), name, icon, sortOrder: DEFAULT_CATEGORIES.length + s.customCategories.length, isCustom: true },
           ],
         })),
 
@@ -96,7 +97,7 @@ export const useCategoryStore = create<CategoryState>()(
         set((s) => ({
           customPhrases: [
             ...s.customPhrases,
-            { id: crypto.randomUUID(), categoryId, text, sortOrder: s.customPhrases.filter(p => p.categoryId === categoryId && !p.deletedAt).length + 100, isCustom: true, usageCount: 0 },
+            { id: randomId(), categoryId, text, sortOrder: s.customPhrases.filter(p => p.categoryId === categoryId && !p.deletedAt).length + 100, isCustom: true, usageCount: 0 },
           ],
         })),
 

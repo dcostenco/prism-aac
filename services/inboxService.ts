@@ -143,12 +143,11 @@ function resetLastSeen(): void {
 export function startInboxPolling(): () => void {
   if (typeof window === 'undefined') return () => {};
   if (intervalId !== null) return stopInboxPolling;
-  // Subscribe to authStore so we can clear the stale lastSeenMs when
-  // the active profile changes (sign-out, account switch). Without
-  // this, a sign-in by user B reuses user A's lastSeenMs and any
-  // messages older than that timestamp are silently skipped — a
-  // genuine missed-communication bug for an AAC user.
-  lastObservedAccountKey = accountKey(useAuthStore.getState().profile);
+  // Subscribe FIRST, then snapshot the account key, then drain — in
+  // that order so an auth change happening between snapshot and
+  // subscribe can't slip through and cause user B to inherit user A's
+  // lastSeenMs. Order matters: subscribe registers the listener; the
+  // snapshot is what subsequent changes are compared against.
   unsubscribeAuth = useAuthStore.subscribe((state) => {
     const next = accountKey(state.profile);
     if (next !== lastObservedAccountKey) {
@@ -156,6 +155,7 @@ export function startInboxPolling(): () => void {
       lastObservedAccountKey = next;
     }
   });
+  lastObservedAccountKey = accountKey(useAuthStore.getState().profile);
   // Drain once on start so the user sees any backlog without a 30s wait.
   // `.catch` swallows unhandled promise rejections — pollOnce currently
   // can't throw (try/finally + portalFetch never throws), but a future

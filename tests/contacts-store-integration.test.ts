@@ -42,6 +42,38 @@ describe('contactsStore.mergeFromIntegrations', () => {
     expect(useContactsStore.getState().lastSyncedAt).toBe(Date.parse('2026-05-07T12:00:00Z'));
   });
 
+  it('addContact rejects an exact (provider, recipientId) duplicate', () => {
+    const a = useContactsStore.getState().addContact({ name: 'Mom', provider: 'telegram', recipientId: '111' });
+    const b = useContactsStore.getState().addContact({ name: 'Mom (dup)', provider: 'telegram', recipientId: '111' });
+    expect(a).not.toBeNull();
+    expect(b).toBeNull();
+    expect(useContactsStore.getState().contacts).toHaveLength(1);
+  });
+
+  it('addContact rejects when MAX_CONTACTS already reached (atomic check)', () => {
+    // Pre-fill to cap.
+    const seed = Array.from({ length: 200 }, (_, i) => ({
+      name: `n${i}`, provider: 'telegram' as const, recipientId: `${1000 + i}`,
+    }));
+    useContactsStore.getState().mergeFromIntegrations(seed);
+    expect(useContactsStore.getState().contacts).toHaveLength(200);
+    // Now try to add one more directly — must be rejected.
+    const id = useContactsStore.getState().addContact({ name: 'extra', provider: 'mail', recipientId: 'x@y.zz' });
+    expect(id).toBeNull();
+    expect(useContactsStore.getState().contacts).toHaveLength(200);
+  });
+
+  it('updateContact rejects a recipientId that fails the new provider format', () => {
+    useContactsStore.getState().addContact({ name: 'Mom', provider: 'mail', recipientId: 'm@example.com' });
+    const c = useContactsStore.getState().contacts[0];
+    // "abc" is not a valid email — update should leave recipientId untouched.
+    useContactsStore.getState().updateContact(c.id, { recipientId: 'abc' });
+    expect(useContactsStore.getState().contacts[0].recipientId).toBe('m@example.com');
+    // A valid replacement DOES land.
+    useContactsStore.getState().updateContact(c.id, { recipientId: 'mama@example.com' });
+    expect(useContactsStore.getState().contacts[0].recipientId).toBe('mama@example.com');
+  });
+
   it('caps merged contacts at MAX_CONTACTS — drops new entries past the limit', () => {
     // Pre-fill to one short of the cap so we can deterministically observe
     // the boundary behavior.

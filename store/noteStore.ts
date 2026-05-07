@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CaregiverNote, NoteAction } from '@/types';
+import { randomId } from '@/lib/uuid';
 
 /**
  * Caregiver Note Store
@@ -70,7 +71,7 @@ export const useNoteStore = create<NoteState>()(
 
       addNote: (text, actions) => {
         const note: CaregiverNote = {
-          id: crypto.randomUUID(),
+          id: randomId(),
           text,
           timestamp: Date.now(),
           actions: actions ?? [{ type: 'note_only', description: 'Clinical note', payload: {} }],

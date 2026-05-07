@@ -15,10 +15,6 @@
 import { SYNALUX_API, timeoutSignal, MAX_PORTAL_RESPONSE_BYTES } from '@/lib/portalConfig';
 import { sanitizeString } from '@/lib/safeStrings';
 
-// Local alias so the rest of this file reads the same as before. The
-// canonical knob is in lib/portalConfig — change once, ripples here.
-const MAX_RESPONSE_BYTES = MAX_PORTAL_RESPONSE_BYTES;
-
 export type PortalResult<T> =
   | { ok: true; data: T; status: number }
   | { ok: false; error: string; status?: number };
@@ -118,11 +114,11 @@ export async function portalFetch<T = unknown>(req: PortalRequest): Promise<Port
   // malicious server that omits the header AND streams a huge body
   // still hits the 1 MB ceiling without OOM.
   const declaredLen = Number(res.headers.get('content-length') ?? '');
-  if (Number.isFinite(declaredLen) && declaredLen > MAX_RESPONSE_BYTES) {
+  if (Number.isFinite(declaredLen) && declaredLen > MAX_PORTAL_RESPONSE_BYTES) {
     return { ok: false, error: 'payload_too_large', status: res.status };
   }
   if (!res.ok) {
-    const errText = await readCappedText(res, MAX_RESPONSE_BYTES);
+    const errText = await readCappedText(res, MAX_PORTAL_RESPONSE_BYTES);
     if (errText === null) {
       return { ok: false, error: `HTTP ${res.status}: payload_too_large`, status: res.status };
     }
@@ -133,7 +129,7 @@ export async function portalFetch<T = unknown>(req: PortalRequest): Promise<Port
   }
   // 204 No Content — return undefined as data
   if (res.status === 204) return { ok: true, data: undefined as T, status: 204 };
-  const raw = await readCappedText(res, MAX_RESPONSE_BYTES);
+  const raw = await readCappedText(res, MAX_PORTAL_RESPONSE_BYTES);
   if (raw === null) return { ok: false, error: 'payload_too_large', status: res.status };
   let data: T;
   try {

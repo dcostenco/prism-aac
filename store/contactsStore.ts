@@ -19,6 +19,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { randomId } from '@/lib/uuid';
 import { safeJSONStorage } from '@/lib/safeStorage';
+import { PROVIDERS } from '@/lib/messageProviders';
 
 export type ContactProvider =
   | 'telegram'
@@ -117,15 +118,28 @@ export const useContactsStore = create<ContactsState>()(
         const recipientId = (c.recipientId ?? '').trim().slice(0, MAX_RECIPIENT_LEN);
         const avatar = c.avatar ? (c.avatar.trim().slice(0, MAX_AVATAR_LEN) || undefined) : undefined;
         if (!name || !recipientId || !c.provider) return null;
-        const current = get().contacts;
-        if (current.length >= MAX_CONTACTS) return null;
-        // Reject exact (provider, recipientId) dup so the manual-add
-        // form doesn't silently create a second "Mom" tile.
-        if (current.some((x) => x.provider === c.provider && x.recipientId === recipientId)) return null;
         const id = genId();
-        const order = current.length;
-        set({ contacts: [...current, { name, provider: c.provider, recipientId, avatar, lastMessagePreview: c.lastMessagePreview, id, order }] });
-        return id;
+        // Cap + dup checks moved INSIDE the set callback so they read
+        // the freshest committed state. The previous get()-then-set()
+        // pattern had the same TOCTOU window addIncomingMessage had
+        // before pass 4: two synchronously-back-to-back addContact
+        // calls could both pass the cap check and both commit, putting
+        // the store one over MAX_CONTACTS. JS is single-threaded so
+        // the practical risk is small, but the atomic form is also
+        // simpler to reason about and one less subtle invariant.
+        let inserted = false;
+        set((s) => {
+          if (s.contacts.length >= MAX_CONTACTS) return s;
+          if (s.contacts.some((x) => x.provider === c.provider && x.recipientId === recipientId)) return s;
+          inserted = true;
+          return {
+            contacts: [
+              ...s.contacts,
+              { name, provider: c.provider, recipientId, avatar, lastMessagePreview: c.lastMessagePreview, id, order: s.contacts.length },
+            ],
+          };
+        });
+        return inserted ? id : null;
       },
       removeContact: (id) => set((s) => ({ contacts: s.contacts.filter((c) => c.id !== id) })),
       updateContact: (id, patch) => set((s) => ({
@@ -133,8 +147,19 @@ export const useContactsStore = create<ContactsState>()(
           if (c.id !== id) return c;
           const next: AacContact = { ...c };
           if (patch.name !== undefined) next.name = patch.name.trim().slice(0, MAX_NAME_LEN);
-          if (patch.recipientId !== undefined) next.recipientId = patch.recipientId.trim().slice(0, MAX_RECIPIENT_LEN);
           if (patch.provider !== undefined) next.provider = patch.provider;
+          if (patch.recipientId !== undefined) {
+            const trimmed = patch.recipientId.trim().slice(0, MAX_RECIPIENT_LEN);
+            // Validate against the (possibly-updated) provider's format
+            // so a caregiver can't save "abc" as a phone number via
+            // updateContact even though addContact rejects it. Mismatch
+            // = ignore the recipientId update; rest of the patch
+            // proceeds. Empty string is allowed only as a passthrough.
+            const cfg = PROVIDERS[next.provider];
+            if (!trimmed || cfg.validateRecipientId(trimmed)) {
+              next.recipientId = trimmed;
+            }
+          }
           if (patch.avatar !== undefined) next.avatar = patch.avatar.trim().slice(0, MAX_AVATAR_LEN) || undefined;
           if (patch.lastMessagePreview !== undefined) next.lastMessagePreview = patch.lastMessagePreview;
           if (patch.order !== undefined) next.order = patch.order;
