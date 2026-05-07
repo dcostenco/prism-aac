@@ -48,6 +48,22 @@ describe('portalFetch — happy path', () => {
   });
 });
 
+describe('portalFetch — request body validation', () => {
+  it('returns invalid_request_body on circular JSON without throwing', async () => {
+    const circular: Record<string, unknown> = { a: 1 };
+    circular.self = circular;
+    const res = await portalFetch({ path: '/test', method: 'POST', body: circular });
+    expect(res).toEqual({ ok: false, error: 'invalid_request_body' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns invalid_request_body on BigInt body without throwing', async () => {
+    const res = await portalFetch({ path: '/test', method: 'POST', body: { n: 9007199254740993n } });
+    expect(res).toEqual({ ok: false, error: 'invalid_request_body' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe('portalFetch — error mapping', () => {
   it('returns short, sanitized error on non-2xx', async () => {
     fetchMock.mockResolvedValueOnce(new Response('something\x00broke', { status: 500 }));

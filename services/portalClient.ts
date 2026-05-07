@@ -81,16 +81,27 @@ export async function portalFetch<T = unknown>(req: PortalRequest): Promise<Port
   if (req.skipIfOffline !== false && typeof navigator !== 'undefined' && navigator.onLine === false) {
     return { ok: false, error: 'offline' };
   }
+  // Serialize body up front so a JSON.stringify failure (circular ref,
+  // BigInt) is reported as a normal error result instead of an
+  // unhandled exception. Caller almost certainly built bad input.
+  let serialized: string | undefined;
+  if (req.body !== undefined) {
+    try {
+      serialized = JSON.stringify(req.body);
+    } catch {
+      return { ok: false, error: 'invalid_request_body' };
+    }
+  }
   const { signal, cancel } = timeoutSignal(req.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   let res: Response;
   try {
     res = await fetch(`${SYNALUX_API}${req.path}`, {
       method: req.method ?? 'GET',
       credentials: 'include',
-      headers: req.body !== undefined
+      headers: serialized !== undefined
         ? { 'Content-Type': 'application/json', Accept: 'application/json' }
         : { Accept: 'application/json' },
-      ...(req.body !== undefined ? { body: JSON.stringify(req.body) } : {}),
+      ...(serialized !== undefined ? { body: serialized } : {}),
       signal,
     });
   } catch (e) {

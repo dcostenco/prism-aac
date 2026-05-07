@@ -25,6 +25,9 @@ import { useScheduleStore } from '@/store/scheduleStore';
 import { useAuthStore } from '@/store/authStore';
 import { portalFetch } from '@/services/portalClient';
 import { sanitizeString, SAFE_LIMITS } from '@/lib/safeStrings';
+import { reportSwallowedError } from '@/lib/devLog';
+
+const reportPollerError = reportSwallowedError('inboxService.pollOnce');
 
 const LAST_SEEN_KEY = 'prism-aac-inbox-last-seen-ms';
 const POLL_INTERVAL_MS = 30_000;
@@ -158,12 +161,12 @@ export function startInboxPolling(): () => void {
   // can't throw (try/finally + portalFetch never throws), but a future
   // refactor that introduces a throw above the try would otherwise log
   // "unhandled promise rejection" to every browser console.
-  pollOnce().catch(() => { /* swallowed — see comment above */ });
-  intervalId = setInterval(() => { pollOnce().catch(() => {}); }, POLL_INTERVAL_MS);
+  pollOnce().catch(reportPollerError);
+  intervalId = setInterval(() => { pollOnce().catch(reportPollerError); }, POLL_INTERVAL_MS);
   // When the device comes back online, drain immediately rather than
   // waiting up to 30s for the next interval — the most common case for
   // AAC users (tablet woke from sleep on the school bus).
-  onlineHandler = () => { pollOnce().catch(() => {}); };
+  onlineHandler = () => { pollOnce().catch(reportPollerError); };
   window.addEventListener('online', onlineHandler);
   // Dev/QA hook: lets manual testing simulate inbound messages without
   // a live portal endpoint. Gated behind NODE_ENV !== 'production' so

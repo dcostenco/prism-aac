@@ -87,20 +87,28 @@ export const useScheduleStore = create<ScheduleState>()(
       timerSeconds: 300,
       timerEndMs: 0,
 
-      addTask: (text, icon, textKey) =>
+      addTask: (text, icon, textKey) => {
+        // Cap at the same bound the hydration validator uses. Without
+        // this, a caregiver typing a 5000-char "task" (paste accident)
+        // would create a row that gets dropped on the next reload —
+        // a silent data-loss class. Match the persisted-text bound so
+        // anything addTask accepts also survives rehydrate.
+        const cappedText = text.slice(0, SAFE_LIMITS.name + 2 + SAFE_LIMITS.messageText + 100);
+        const cappedIcon = icon.slice(0, 16);
         set((s) => ({
           tasks: [
             ...s.tasks,
             {
               id: randomId('sched-'),
-              text,
-              icon,
+              text: cappedText,
+              icon: cappedIcon,
               ...(textKey ? { textKey } : {}),
               done: false,
               order: s.tasks.length,
             },
           ],
-        })),
+        }));
+      },
 
       addIncomingMessage: (sender, text, externalId) => {
         const trimmedText = text.trim().slice(0, SAFE_LIMITS.messageText);

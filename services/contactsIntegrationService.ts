@@ -28,6 +28,9 @@ import { useAuthStore } from '@/store/authStore';
 import { PROVIDERS } from '@/lib/messageProviders';
 import { portalFetch } from '@/services/portalClient';
 import { sanitizeString, SAFE_LIMITS } from '@/lib/safeStrings';
+import { reportSwallowedError } from '@/lib/devLog';
+
+const reportSyncError = reportSwallowedError('contactsIntegrationService.syncContactsOnce');
 
 // Path is portal-relative; portalFetch prepends the SYNALUX_API base.
 const ENDPOINT = '/prism-aac/contacts';
@@ -116,10 +119,10 @@ let intervalId: ReturnType<typeof setInterval> | null = null;
 export function startContactsSync(): () => void {
   if (typeof window === 'undefined') return () => {};
   if (intervalId !== null) return stopContactsSync;
-  // `.catch(() => {})` swallows unhandled rejection from any future
+  // `.catch(reportSyncError)` swallows unhandled rejection from any future
   // refactor that introduces a throw above syncContactsOnce' try block.
-  syncContactsOnce().catch(() => {});
-  intervalId = setInterval(() => { syncContactsOnce().catch(() => {}); }, SYNC_INTERVAL_MS);
+  syncContactsOnce().catch(reportSyncError);
+  intervalId = setInterval(() => { syncContactsOnce().catch(reportSyncError); }, SYNC_INTERVAL_MS);
   return stopContactsSync;
 }
 

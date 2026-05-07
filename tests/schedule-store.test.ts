@@ -162,6 +162,23 @@ describe('ScheduleStore — Task order', () => {
   });
 });
 
+describe('ScheduleStore — addTask input caps', () => {
+  it('clamps oversized text so the row survives a hydration round-trip', () => {
+    const huge = 't'.repeat(10000);
+    useScheduleStore.getState().addTask(huge, '✅');
+    const last = useScheduleStore.getState().tasks.at(-1)!;
+    // Cap is SAFE_LIMITS.name + 2 + SAFE_LIMITS.messageText + 100 = 2182.
+    expect(last.text.length).toBeLessThanOrEqual(2200);
+  });
+
+  it('clamps oversized icon (defense against paste accidents)', () => {
+    const longIcon = '🎉'.repeat(50);
+    useScheduleStore.getState().addTask('Party', longIcon);
+    const last = useScheduleStore.getState().tasks.at(-1)!;
+    expect(last.icon.length).toBeLessThanOrEqual(16);
+  });
+});
+
 describe('ScheduleStore — addIncomingMessage', () => {
   it('appends incoming message formatted as "Sender: text" with 💬 icon', () => {
     const id = useScheduleStore.getState().addIncomingMessage('Mom', 'hi whats up');
