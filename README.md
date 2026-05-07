@@ -39,6 +39,23 @@ Designed with BCBAs and SLPs. Verbal operant tracking. Caregiver notes that trav
 
 ---
 
+## Why PrismAAC is different
+
+**Three things no other AAC app on the market does together:**
+
+### 1. On-device + HIPAA-safe by default
+The 7B model that powers AAC suggestions runs **on your device** — iPad, Mac, or laptop. No PHI leaves the device for the speech path. Caregiver notes encrypt before any optional cloud sync. Comparable cloud-only AAC platforms (TouchChat, Proloquo2Go cloud sync) require account uploads to function. We don't.
+
+### 2. Phrase ranking that adapts to YOUR child
+Static frequency lists are obsolete. PrismAAC ranks suggested phrases via [**Prism v14.0.0 spreading activation**](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md) — the same ACT-R cognitive memory model behind decades of Carnegie Mellon research. Recency × frequency × per-user history, not a static popularity list. Phrases the child says today rise; phrases unused for a year fade (lesson-rate decay `d=0.25`, ~1-year half-life).
+
+### 3. Caregiver corrections become training data — automatically
+When a caregiver fixes a suggestion the model got wrong (e.g. "no, the word is *eat*, not *want*"), the [audit-hooks postflight harvester](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md#7-the-recipe-combining-all-of-the-above) extracts the gotcha and persists it. After ~50 sessions, the system warns *before* the model makes a similar mistake. No labelling work for caregivers, no expensive retraining runs — the corrections are the curriculum.
+
+**Honest scope:** the underlying 7B model is mid-tier on standard tool-call benchmarks (BFCL V4 overall 18.77%, like the rest of the 7B class). What makes PrismAAC defensible isn't the model alone — it's the model plus the surrounding Prism algorithm stack. That combination is the wow.
+
+---
+
 ## Try it
 
 | | |
