@@ -1,0 +1,292 @@
+'use client';
+/**
+ * Integrations service — lets the AAC user (or caregiver) connect
+ * messaging + mail providers DIRECTLY from PrismAAC settings, instead
+ * of bouncing them to synalux.ai/chat. The OAuth round-trip still has
+ * to land on synalux.ai (that's where the redirect URIs are
+ * registered), but we open it in a popup so the user never browses
+ * the portal UI.
+ *
+ * Flow:
+ *   1. listIntegrations()       — GET /api/v1/chat/providers (chat)
+ *                                 + a synthetic mail-provider list
+ *                                 (Gmail, Outlook). Server resolves
+ *                                 chat status; mail status comes from
+ *                                 the user_oauth_grants table the
+ *                                 portal already maintains.
+ *   2. connectProvider(p)       — opens window.open(connectUrl) on
+ *                                 synalux.ai. We poll window.closed,
+ *                                 then re-fetch status + sync contacts.
+ *                                 On success we emit a same-origin
+ *                                 BroadcastChannel event so other
+ *                                 synalux app tabs (mail, calendar,
+ *                                 chat) refresh immediately.
+ *   3. disconnectProvider(p)    — POST /api/v1/oauth/disconnect on
+ *                                 the portal (when wired); local
+ *                                 fallback otherwise.
+ *
+ * Cross-origin caveat: BroadcastChannel only spans tabs of the SAME
+ * origin. PrismAAC at synalux.ai/prism-aac is same-origin with the
+ * portal and gets the broadcast for free. The Vercel deploy at
+ * prism-aac.vercel.app is a different origin and won't bridge — that
+ * needs a server-side SSE channel which is out of this round's scope.
+ */
+import { portalFetch } from '@/services/portalClient';
+import { SYNALUX_API } from '@/lib/portalConfig';
+
+// SYNALUX_API is e.g. https://synalux.ai/api/v1. The OAuth connect
+// URLs returned by /chat/providers (and the mail synthetics below)
+// live at the SITE root (`/api/auth/connect/...`), not under /api/v1,
+// so we strip /api/v1 to get the site origin.
+const SYNALUX_BASE = SYNALUX_API.replace(/\/api\/v1\/?$/, '');
+import { syncContactsOnce } from '@/services/contactsIntegrationService';
+import { playTimerRing } from '@/services/feedback';
+
+export type IntegrationKind = 'chat' | 'mail';
+export type IntegrationStatus = 'connected' | 'available' | 'planned';
+export type IntegrationAuth = 'oauth2' | 'login-widget' | 'phone-otp' | 'business-api';
+
+export interface IntegrationProvider {
+  id: string;
+  label: string;
+  icon: string;
+  color?: string;
+  kind: IntegrationKind;
+  status: IntegrationStatus;
+  auth: IntegrationAuth;
+  /** Absolute URL on synalux.ai that starts the OAuth dance. */
+  connectUrl?: string;
+  /** Why it isn't shipped yet, when status === 'planned'. */
+  plannedNote?: string;
+}
+
+const BROADCAST_CHANNEL_NAME = 'synalux-integrations';
+/** Same-origin broadcast — used so other open synalux app tabs (mail,
+ *  calendar, chat) refresh their integration status the instant a
+ *  PrismAAC user finishes a connect popup. Cross-origin tabs (e.g.
+ *  prism-aac.vercel.app) won't see this; they need SSE follow-up. */
+function getBroadcastChannel(): BroadcastChannel | null {
+  if (typeof BroadcastChannel === 'undefined') return null;
+  try {
+    return new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+  } catch {
+    return null;
+  }
+}
+
+let broadcastChannelSingleton: BroadcastChannel | null = null;
+function bc(): BroadcastChannel | null {
+  if (broadcastChannelSingleton === null) broadcastChannelSingleton = getBroadcastChannel();
+  return broadcastChannelSingleton;
+}
+
+interface BroadcastEvent {
+  type: 'provider-connected' | 'provider-disconnected' | 'provider-refreshed';
+  provider: string;
+  scope?: string;
+  at: number;
+}
+
+export function broadcastIntegrationEvent(ev: BroadcastEvent): void {
+  const ch = bc();
+  if (!ch) return;
+  try { ch.postMessage(ev); } catch { /* */ }
+}
+
+export function subscribeToIntegrationEvents(
+  handler: (ev: BroadcastEvent) => void,
+): () => void {
+  const ch = bc();
+  if (!ch) return () => {};
+  const listener = (e: MessageEvent) => {
+    if (e?.data && typeof e.data === 'object' && 'type' in e.data) {
+      handler(e.data as BroadcastEvent);
+    }
+  };
+  ch.addEventListener('message', listener);
+  return () => ch.removeEventListener('message', listener);
+}
+
+// ── Provider list ─────────────────────────────────────────────────
+
+interface RawChatProvider {
+  id: string;
+  label: string;
+  icon: string;
+  color?: string;
+  status: IntegrationStatus;
+  auth: IntegrationAuth;
+  connectUrl?: string;
+  plannedNote?: string;
+}
+
+/** Mail providers — synthetic until the portal exposes a unified
+ *  /api/v1/integrations/mail endpoint. Status is "available" by
+ *  default; the caller resolves real "connected" from a follow-up
+ *  /api/v1/messages/folders probe (412 = not connected). */
+const MAIL_PROVIDERS: IntegrationProvider[] = [
+  {
+    id: 'google-gmail',
+    label: 'Gmail',
+    icon: '✉️',
+    color: '#EA4335',
+    kind: 'mail',
+    status: 'available',
+    auth: 'oauth2',
+    connectUrl: '/api/auth/connect/google?scope=gmail',
+  },
+  {
+    id: 'microsoft-mail',
+    label: 'Outlook',
+    icon: '📧',
+    color: '#0078D4',
+    kind: 'mail',
+    status: 'available',
+    auth: 'oauth2',
+    connectUrl: '/api/auth/connect/microsoft?scope=mail',
+  },
+];
+
+export async function listIntegrations(): Promise<IntegrationProvider[]> {
+  const out: IntegrationProvider[] = [];
+
+  // Chat providers — server-resolved status.
+  const res = await portalFetch<{ providers?: RawChatProvider[] }>({
+    path: '/chat/providers',
+    timeoutMs: 6000,
+  });
+  if (res.ok && res.data && Array.isArray(res.data.providers)) {
+    for (const p of res.data.providers) {
+      out.push({
+        id: p.id,
+        label: p.label,
+        icon: p.icon,
+        color: p.color,
+        kind: 'chat',
+        status: p.status,
+        auth: p.auth,
+        connectUrl: absolutize(p.connectUrl),
+        plannedNote: p.plannedNote,
+      });
+    }
+  }
+
+  // Mail providers — append. Status flagged as available; UI will
+  // overlay 'connected' once we wire the per-mail-provider status
+  // probe (next round; needs portal endpoint).
+  for (const m of MAIL_PROVIDERS) {
+    out.push({ ...m, connectUrl: absolutize(m.connectUrl) });
+  }
+
+  return out;
+}
+
+function absolutize(path?: string): string | undefined {
+  if (!path) return undefined;
+  if (/^https?:\/\//i.test(path)) return path;
+  // SYNALUX_BASE is the portal origin (e.g. https://synalux.ai). The
+  // chat/providers endpoint returns site-relative paths.
+  const base = SYNALUX_BASE.replace(/\/$/, '');
+  return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+}
+
+// ── Connect flow (popup) ──────────────────────────────────────────
+
+export interface ConnectResult {
+  ok: boolean;
+  reason?: 'popup-blocked' | 'popup-closed-without-success' | 'no-connect-url';
+}
+
+const POPUP_FEATURES = 'width=520,height=700,left=200,top=120,scrollbars=yes,resizable=yes';
+/** How often we poll window.closed inside the popup loop. */
+const POPUP_POLL_MS = 500;
+/** Hard cap on the popup wait so we don't leak a timer if the user
+ *  navigates away without closing the window. */
+const POPUP_MAX_WAIT_MS = 10 * 60 * 1000; // 10 min
+
+export async function connectProvider(provider: IntegrationProvider): Promise<ConnectResult> {
+  if (typeof window === 'undefined') return { ok: false, reason: 'no-connect-url' };
+  if (!provider.connectUrl) return { ok: false, reason: 'no-connect-url' };
+
+  // Append a return marker so synalux's connect-callback can close
+  // the popup by navigating to a "done" page that calls window.close().
+  // Synalux's existing callback honors `?return=` and appends
+  // ?connected=1&provider=&scope= — we read those if the popup ends up
+  // navigating back to a URL we control.
+  const url = new URL(provider.connectUrl);
+  if (!url.searchParams.has('return')) {
+    url.searchParams.set('return', `${SYNALUX_BASE.replace(/\/$/, '')}/integrations/connect-done`);
+  }
+
+  const popup = window.open(url.toString(), 'synalux-connect', POPUP_FEATURES);
+  if (!popup) return { ok: false, reason: 'popup-blocked' };
+
+  // Poll for close. On close, re-fetch status + sync contacts. We
+  // can't read the popup's URL across origins, so we infer success
+  // by checking whether the user's connected-providers list grew.
+  const before = await listIntegrations();
+  const beforeConnected = new Set(before.filter(p => p.status === 'connected').map(p => p.id));
+
+  const closedAt = await waitForWindowClose(popup);
+  if (!closedAt) return { ok: false, reason: 'popup-closed-without-success' };
+
+  const after = await listIntegrations();
+  const nowConnected = after.find(
+    (p) => p.status === 'connected' && !beforeConnected.has(p.id),
+  );
+
+  if (nowConnected) {
+    // Notify all same-origin synalux tabs so mail/calendar/chat
+    // surfaces refresh their connect cards.
+    broadcastIntegrationEvent({
+      type: 'provider-connected',
+      provider: nowConnected.id,
+      at: Date.now(),
+    });
+    // Pull the caregiver's contacts now that a new provider is wired.
+    await syncContactsOnce().catch(() => null);
+    // Audible chime so the caregiver knows the connect actually
+    // succeeded — important on tablets where the popup might close
+    // off-screen and the user is left wondering.
+    playTimerRing().catch(() => { /* */ });
+    return { ok: true };
+  }
+  return { ok: false, reason: 'popup-closed-without-success' };
+}
+
+function waitForWindowClose(popup: Window): Promise<number | null> {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const tick = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(tick);
+        resolve(Date.now());
+        return;
+      }
+      if (Date.now() - start > POPUP_MAX_WAIT_MS) {
+        clearInterval(tick);
+        try { popup.close(); } catch { /* */ }
+        resolve(null);
+      }
+    }, POPUP_POLL_MS);
+  });
+}
+
+// ── Disconnect ────────────────────────────────────────────────────
+
+export async function disconnectProvider(provider: IntegrationProvider): Promise<boolean> {
+  const res = await portalFetch<{ ok?: boolean }>({
+    path: `/oauth/disconnect/${encodeURIComponent(provider.id)}`,
+    method: 'POST',
+    timeoutMs: 6000,
+  });
+  if (res.ok && res.data?.ok) {
+    broadcastIntegrationEvent({
+      type: 'provider-disconnected',
+      provider: provider.id,
+      at: Date.now(),
+    });
+    return true;
+  }
+  return false;
+}
