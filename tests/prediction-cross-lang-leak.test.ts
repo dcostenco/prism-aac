@@ -56,10 +56,25 @@ describe('langAllowlist.isAllowedInLang — cross-lang frequency gate', () => {
     expect(isAllowedInLang('Mihăilescu', 'ro')).toBe(true);
   });
 
-  it('EN passthrough — every word allowed when lang=en', () => {
-    expect(isAllowedInLang('I', 'en')).toBe(true);
-    expect(isAllowedInLang('eu', 'en')).toBe(true);
-    expect(isAllowedInLang('să', 'en')).toBe(true);
+  it('EN-mode also drops other-lang leaks (symmetric check)', async () => {
+    // When the user is in EN mode but a competing corpus is loaded
+    // (because they used RO earlier, or have outputLanguage=ro),
+    // RO-only words must NOT surface in the EN prediction bar.
+    // User-reported screenshot bug: `eu / a / I / you / to` in EN
+    // mode — "eu" is Romanian and shouldn't be there.
+    await loadPredictionSeed('ro');
+    await loadPredictionSeed('en');
+    expect(isAllowedInLang('I', 'en')).toBe(true);   // EN-dominant
+    expect(isAllowedInLang('eu', 'en')).toBe(false); // RO-dominant
+    expect(isAllowedInLang('să', 'en')).toBe(false); // has RO diacritic → real RO
+  });
+
+  it('EN-mode allows EN words even when RO corpus is loaded', async () => {
+    await loadPredictionSeed('ro');
+    await loadPredictionSeed('en');
+    expect(isAllowedInLang('hello', 'en')).toBe(true);
+    expect(isAllowedInLang('want', 'en')).toBe(true);
+    expect(isAllowedInLang('the', 'en')).toBe(true);
   });
 
   it('non-Latin scripts use strict character regex', () => {

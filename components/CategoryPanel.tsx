@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useCategoryStore } from '@/store/categoryStore';
+import { usePhraseUsageStore } from '@/store/phraseUsageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { tapFeedback } from '@/services/feedback';
 import { useSettingsStore, GridSize } from '@/store/settingsStore';
@@ -56,7 +57,8 @@ export default function CategoryPanel() {
     closeSidePanel, selectCategory, backToCategories, startOrdering, nextStep, prevStep, finishOrdering,
   } = useUIStore();
   const { appendText, text, autoSpeak, soundEnabled } = useMessageStore();
-  const { allCategories, getPhrasesForCategory, getSequencesForCategory } = useCategoryStore();
+  const { allCategories, getRankedPhrasesForCategory, getSequencesForCategory } = useCategoryStore();
+  const recordPhraseUse = usePhraseUsageStore((s) => s.recordUse);
   const { learnWord } = usePredictionStore();
   const gridSize = useSettingsStore((s) => s.gridSize);
   const language = useSettingsStore((s) => s.language);
@@ -69,7 +71,7 @@ export default function CategoryPanel() {
 
   if (!isOpen) return null;
 
-  const handlePhrase = (phraseText: string) => {
+  const handlePhrase = (phraseText: string, phraseId?: string) => {
     tapFeedback();
     const existingWords = text.trim().split(/\s+/).filter(Boolean);
     const prevWord = existingWords.length > 0 ? existingWords[existingWords.length - 1] : undefined;
@@ -83,6 +85,9 @@ export default function CategoryPanel() {
       prevPrev = prev;
       prev = w;
     }
+    // v14.0.0 spreading-activation: record per-phrase citation so the
+    // ranked view can surface phrases the user actually says.
+    if (phraseId) recordPhraseUse(phraseId);
     if (autoSpeak && soundEnabled) aacSpeak(phraseText, speechRate, speechVolume);
   };
 
@@ -134,7 +139,10 @@ export default function CategoryPanel() {
   if (sidePanel === 'category-detail' && activeCategoryId) {
     const categories = allCategories();
     const cat = categories.find((c) => c.id === activeCategoryId);
-    const phrases = getPhrasesForCategory(activeCategoryId);
+    // v14.0.0: phrases the user has said recently float to the top.
+    // Phrases with no usage history fall back to their static sortOrder,
+    // so a brand-new vocabulary still feels familiar.
+    const phrases = getRankedPhrasesForCategory(activeCategoryId).map((r) => r.phrase);
     const sequences = getSequencesForCategory(activeCategoryId);
     return (
       <PanelShell>
@@ -160,7 +168,7 @@ export default function CategoryPanel() {
                 key={p.id}
                 phrase={localText}
                 englishPhrase={p.text}
-                onClick={() => handlePhrase(localText)}
+                onClick={() => handlePhrase(localText, p.id)}
                 className={`${btn} ${TILE_MIN_H[gridSize]}`}
                 style={{ borderLeftColor: color, borderLeftWidth: '5px' }}
               />

@@ -66,18 +66,26 @@ export default function PredictionBar() {
   const { text } = useMessageStore();
   const { predictions, aiCompletion, updatePredictions, learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
+  const outputLanguage = useSettingsStore((s) => s.outputLanguage);
   const langDefaults = getPredictionsForLanguage(language);
   const [displayed, setDisplayed] = useState<string[]>(langDefaults);
   const prevRef = useRef<string[]>(langDefaults);
 
-  // Eagerly preload the lang's curated corpus on language change so
-  // the allowlist gate has data ready before the first prediction
-  // fires. Without this preload, the gate fail-opens for the first
-  // ~50ms after a language switch and any in-flight aiCompletion
-  // would slip through unfiltered.
+  // Eagerly preload BOTH the input language's curated corpus AND the
+  // output language's corpus. The cross-lang frequency gate compares
+  // every word against ALL loaded Latin-script corpora; without
+  // preloading the user's "other side" lang (e.g. RO when language=en
+  // and outputLanguage=ro), the gate can't detect leaks in that
+  // direction (RO word `eu` flashed as the leftmost tile in EN mode
+  // because RO corpus wasn't loaded → no comparison data → fail-open).
+  // ensureLangCorpusLoaded itself also preloads EN unconditionally,
+  // so the EN side is always covered.
   useEffect(() => {
     void ensureLangCorpusLoaded(language);
-  }, [language]);
+    if (outputLanguage && outputLanguage !== language) {
+      void ensureLangCorpusLoaded(outputLanguage);
+    }
+  }, [language, outputLanguage]);
 
   // Immediately show language-specific defaults on language switch,
   // then refine with predictions if there's typed text.

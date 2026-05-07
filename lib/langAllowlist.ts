@@ -91,34 +91,46 @@ export function ensureLangCorpusLoaded(lang: string): Promise<void> {
   return Promise.all(targets).then(() => undefined);
 }
 
+/** Latin-script languages that participate in the cross-corpus
+ *  domination comparison. The current lang is removed from this list
+ *  at check time so we compare against everything else. */
+const LATIN_LANGS = ['en', 'ro', 'es', 'fr', 'de', 'pt', 'it', 'pl', 'nl', 'tr', 'vi'] as const;
+
 /** True when `word` is allowed for `lang`. Decision tree:
  *
- *    1. EN or unknown lang → always true (no filter)
+ *    1. Empty/whitespace → keep
  *    2. Non-Latin script lang → strict character regex
- *    3. Latin-script non-EN word → diacritic carve-out (real lang
- *       word for sure if it has lang-specific accent)
- *    4. Latin-script non-EN word, no diacritic → CROSS-LANGUAGE
- *       FREQUENCY comparison: word is allowed iff its frequency in
- *       the target lang's corpus DOMINATES its frequency in the
- *       English corpus.
+ *    3. Latin-script word → diacritic carve-out (unambiguous lang
+ *       word if it has lang-specific accent)
+ *    4. Latin-script word, no diacritic → CROSS-CORPUS FREQUENCY
+ *       comparison: allowed iff target lang's frequency dominates
+ *       every OTHER loaded Latin-script corpus.
  *
- *  Why frequency comparison and not simple corpus presence: the
- *  curated corpora are auto-generated from training data and contain
- *  some cross-language noise — e.g., "main" appears in the RO corpus
- *  with count=10 (probably scraped from a French/English-mixed text)
- *  but is overwhelmingly English. Presence-only check would let
- *  "main" through. Comparing en_freq vs ro_freq catches it: "main"
- *  has en_freq >> ro_freq → drop in RO mode.
+ *  Why ALL Latin corpora and not just EN: the user's prediction bar
+ *  in EN mode showed `eu` (Romanian for "I") leaking from the RO
+ *  corpus — comparing only against EN missed the inverse-direction
+ *  leak (RO → EN). The cross-corpus check is now symmetric: a word
+ *  belongs to lang X iff X's freq beats every other lang's freq for
+ *  it. This applies to EN too — `eu` has en_freq~0 vs ro_freq~3 →
+ *  drop in EN mode.
  *
- *  Returns true when corpora haven't loaded yet (fail-open). The
- *  lazy load is fired by ensureLangCorpusLoaded on language switch;
- *  callers in production always have data loaded by the time tiles
- *  render. Tests should `await loadPredictionSeed('ro')` +
+ *  Why frequency comparison and not simple corpus presence: corpora
+ *  are auto-generated and contain some cross-language noise — e.g.,
+ *  "main" appears in the RO corpus with count=10 (training-data
+ *  contamination) but is overwhelmingly English. Presence-only
+ *  check would let "main" through. Comparing en_freq=high vs
+ *  ro_freq=10 catches it: "main" → drop in RO mode.
+ *
+ *  Returns true when no corpora are loaded (fail-open). The lazy
+ *  load is fired by ensureLangCorpusLoaded on language switch;
+ *  production callers always have target+EN loaded by render time.
+ *  Tests should `await loadPredictionSeed(lang)` +
  *  `await loadPredictionSeed('en')` in beforeEach to make the gate
- *  strict.
+ *  strict. To pin against a specific competing lang (e.g. RO leak
+ *  in EN mode), preload that competing lang's seed too.
  */
 export function isAllowedInLang(word: string, lang: string): boolean {
-  if (!word || lang === 'en') return true;
+  if (!word) return true;
   const w = word.toLowerCase().trim();
   if (!w) return true;
 
@@ -126,7 +138,7 @@ export function isAllowedInLang(word: string, lang: string): boolean {
   const strict = SCRIPT_FILTER[lang];
   if (strict) return strict.test(w);
 
-  // Latin-script non-EN: diacritic = unambiguous accept.
+  // Latin-script: diacritic = unambiguous accept for this lang.
   const accept = LANG_ACCEPT_REGEX[lang];
   if (accept && accept.test(word)) return true;
 
@@ -136,35 +148,39 @@ export function isAllowedInLang(word: string, lang: string): boolean {
   }
 
   const langCorpus = getCachedPredictionSeed(lang);
-  const enCorpus = getCachedPredictionSeed('en');
-
-  // If neither corpus is loaded, fail-open. The lazy load fires on
-  // language switch; production code always has both loaded by render
-  // time.
-  if (!langCorpus && !enCorpus) return true;
-
   const langFreq = langCorpus?.wordFreq[w]?.count ?? 0;
-  const enFreq = enCorpus?.wordFreq[w]?.count ?? 0;
 
-  // Only-in-EN → drop. Words like "I", "want", "hello", "noise"
-  // appear in the EN corpus but not in the RO corpus → langFreq=0,
-  // enFreq>0 → drop.
-  if (langFreq === 0 && enFreq > 0) return false;
+  // Cross-corpus comparison: if any OTHER loaded Latin-lang corpus
+  // has a higher frequency for this word, the word belongs to that
+  // other lang — drop it from this lang's predictions.
+  let anyCorpusLoaded = !!langCorpus;
+  let dominatedByOther = false;
+  let foundInAnyCorpus = langFreq > 0;
+  for (const otherLang of LATIN_LANGS) {
+    if (otherLang === lang) continue;
+    const otherCorpus = getCachedPredictionSeed(otherLang);
+    if (!otherCorpus) continue;
+    anyCorpusLoaded = true;
+    const otherFreq = otherCorpus.wordFreq[w]?.count ?? 0;
+    if (otherFreq > 0) foundInAnyCorpus = true;
+    if (otherFreq > langFreq) {
+      dominatedByOther = true;
+      break;
+    }
+  }
 
-  // In both corpora → keep iff target lang's frequency dominates EN.
-  // Catches noise entries like "main" (en=high, ro=10 → drop).
-  // Threshold 1 (langFreq must be > enFreq) is conservative; corpus
-  // noise typically has langFreq much smaller than enFreq, so the
-  // simple comparison correctly rejects it. Real lang-only words
-  // have enFreq=0 → fall through the previous branch.
-  if (langFreq > 0 && enFreq > 0) return langFreq >= enFreq;
+  // No corpora loaded at all → fail-open (boot race window).
+  if (!anyCorpusLoaded) return true;
 
-  // langFreq > 0, enFreq === 0 → unambiguous lang word, keep.
+  // Some other lang has a higher frequency → drop.
+  if (dominatedByOther) return false;
+
+  // Target lang has the highest freq among loaded corpora → keep.
   if (langFreq > 0) return true;
 
-  // Both 0 → not in any corpus. Could be a user proper noun. Without
-  // diacritic evidence we can't tell — drop conservatively. (The
-  // diacritic carve-out above already keeps user proper nouns with
-  // accents.)
+  // Word not in ANY loaded corpus → could be a user proper noun.
+  // Without diacritic evidence, drop conservatively. The diacritic
+  // carve-out above already preserved real proper nouns with accents.
+  if (foundInAnyCorpus) return false;
   return false;
 }

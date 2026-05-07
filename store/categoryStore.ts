@@ -9,6 +9,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { randomId } from '@/lib/uuid';
 import { sanitizeString } from '@/lib/safeStrings';
 import { safeJSONStorage } from '@/lib/safeStorage';
+import { rankPhrases, type RankedPhrase } from '@/services/aacPhraseRanking';
+import { usePhraseUsageStore } from '@/store/phraseUsageStore';
 
 /** Per-field bounds. Custom phrases get rendered directly to the AAC
  *  user's UI as tappable buttons; a tampered persist entry could
@@ -32,6 +34,10 @@ interface CategoryState {
   seeded: boolean;
   allCategories: (includeHidden?: boolean) => Category[];
   getPhrasesForCategory: (categoryId: string) => Phrase[];
+  /** v14.0.0 spreading-activation ranking — phrases re-ordered by
+   *  recency × frequency × static priority. Falls back to static
+   *  sortOrder for phrases with no usage history. UI opt-in. */
+  getRankedPhrasesForCategory: (categoryId: string) => RankedPhrase[];
   hideDefaultPhrase: (id: string) => void;
   unhideDefaultPhrase: (id: string) => void;
   hideCategoryId: (id: string) => void;
@@ -76,6 +82,12 @@ export const useCategoryStore = create<CategoryState>()(
         const defaults = DEFAULT_PHRASES.filter((p) => p.categoryId === categoryId && !hidden.has(p.id));
         const custom = get().customPhrases.filter((p) => p.categoryId === categoryId && !p.deletedAt);
         return [...defaults, ...custom].sort((a, b) => a.sortOrder - b.sortOrder);
+      },
+
+      getRankedPhrasesForCategory: (categoryId) => {
+        const phrases = get().getPhrasesForCategory(categoryId);
+        const usage = usePhraseUsageStore.getState().usage;
+        return rankPhrases(phrases, { usage });
       },
 
       hideDefaultPhrase: (id) =>
