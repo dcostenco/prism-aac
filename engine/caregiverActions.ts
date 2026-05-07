@@ -57,6 +57,8 @@
 import { NoteAction, OrderingSequenceData } from '@/types';
 import { useCategoryStore } from '@/store/categoryStore';
 import { usePredictionStore } from '@/store/predictionStore';
+import { recordCaregiverGotcha } from '@/services/aacGotchaRecorder';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export interface ActionResult {
   success: boolean;
@@ -207,5 +209,23 @@ export function executeAction(action: NoteAction): ActionResult {
 }
 
 export function executeAllActions(actions: NoteAction[]): ActionResult[] {
-  return actions.map(executeAction);
+  const results = actions.map(executeAction);
+
+  // v14.0.0 audit-hooks integration: each successful caregiver correction
+  // becomes a gotcha record in the local IndexedDB corpus. Fire-and-forget
+  // (recordCaregiverGotcha never throws). After ~50 sessions the corpus
+  // is large enough for the v14 gate to surface clarifying questions to
+  // future caregiver-note prompts. No PHI leaves the device.
+  try {
+    const userLang = useSettingsStore.getState().language;
+    actions.forEach((action, i) => {
+      const ok = results[i]?.success ?? false;
+      // Don't await — corpus persistence must never block the AAC UX.
+      void recordCaregiverGotcha(action, ok, userLang);
+    });
+  } catch {
+    // Defensive: store/idb access can throw in odd test envs. Never bubble.
+  }
+
+  return results;
 }
