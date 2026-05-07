@@ -21,6 +21,7 @@
  * ────────────────────────────────────────────────────────────────────────── */
 
 import { acquireCamera, type CameraLease } from './cameraStream';
+import { isValidCornerCalibration } from '@/lib/safeValidation';
 
 // ── MediaPipe Pose Landmark Indices ────────────────────────────────────────
 //  0: nose        1-4: eyes       5-6: ears      7-10: mouth
@@ -220,34 +221,22 @@ function calibrationKey(orientation?: 'landscape' | 'portrait'): string {
   return `prism-pose-calibration-${orientation || getOrientation()}`;
 }
 
-/** Same NaN-defense as headTracker's calibration validator. Tampered
- *  persist could otherwise inject Infinity / NaN / strings that
- *  freeze the body-pose cursor for an AAC user. */
-function isValidPoseCalibration(c: unknown): c is PoseCalibrationData {
-  if (!c || typeof c !== 'object') return false;
-  const x = c as Record<string, unknown>;
-  for (const k of ['leftX', 'rightX', 'topY', 'bottomY'] as const) {
-    const v = x[k];
-    if (typeof v !== 'number' || !Number.isFinite(v) || v < -1 || v > 2) return false;
-  }
-  if ((x.leftX as number) === (x.rightX as number)) return false;
-  if ((x.topY as number) === (x.bottomY as number)) return false;
-  return true;
-}
-
 export function loadPoseCalibration(): PoseCalibrationData {
   if (typeof window === 'undefined') return DEFAULT_CALIBRATION;
+  // Shared NaN-defense — same predicate as headTracker.loadCalibration.
+  // Imported from lib/safeValidation to avoid drift across the two
+  // tracker callers.
   try {
     const raw = localStorage.getItem(calibrationKey());
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (isValidPoseCalibration(parsed)) return parsed;
+      if (isValidCornerCalibration(parsed)) return parsed;
     }
     // Try legacy key
     const legacy = localStorage.getItem('prism-pose-calibration');
     if (legacy) {
       const parsed = JSON.parse(legacy);
-      if (isValidPoseCalibration(parsed)) return parsed;
+      if (isValidCornerCalibration(parsed)) return parsed;
     }
   } catch { /* use defaults */ }
   return DEFAULT_CALIBRATION;

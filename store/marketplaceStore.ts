@@ -10,9 +10,10 @@
  * stays the same.
  */
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { fetchCatalog } from '@/lib/marketplace/api';
 import { bootHandlers } from '@/lib/marketplace/handlers';
+import { safeJSONStorage } from '@/lib/safeStorage';
 import { getHandler } from '@/lib/marketplace/registry';
 import type {
   HandlerContext,
@@ -216,6 +217,17 @@ export const useMarketplaceStore = create<MarketplaceState>()(
     {
       name: 'prism-aac-marketplace',
       version: 2,
+      // Quota-safe storage. The catalog cache is the disposable
+      // first-line shed — it's regenerated on next loadCatalog() from
+      // either remote or LOCAL_CATALOG fallback, so dropping it on
+      // quota frees ~500 KB without losing user state. installs (the
+      // version-record map used by hasUpdate badges) is preserved.
+      storage: createJSONStorage(() => safeJSONStorage({
+        name: 'prism-aac-marketplace',
+        onQuotaExceeded: () => {
+          useMarketplaceStore.setState({ catalog: [], fetchedAt: 0, source: 'unknown' });
+        },
+      })),
       // Persist catalog cache + per-slug install records. Selection state
       // and loading flags start fresh on every page load. Phase 3 will
       // mirror installs to the server; Phase 1-2 keep them local.

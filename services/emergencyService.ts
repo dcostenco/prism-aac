@@ -18,6 +18,13 @@
 
 import { randomId } from '@/lib/uuid';
 import { timeoutSignal } from '@/lib/portalConfig';
+import { sanitizeString } from '@/lib/safeStrings';
+import {
+  clampInt,
+  isHttpsAllowedUrl,
+  safeMailtoRecipient,
+  safePhoneForUri,
+} from '@/lib/safeValidation';
 
 /** Cap on best-effort 3rd-party response bodies (Nominatim reverse
  *  geocode). Hostile/poisoned DNS pointing at a server that streams
@@ -25,31 +32,6 @@ import { timeoutSignal } from '@/lib/portalConfig';
  *  safety code path. 64 KB is generous for a single reverse-geocode
  *  result. */
 const MAX_THIRD_PARTY_BYTES = 64 * 1024;
-
-/** Strict shape check on an email address before composing a mailto:
- *  URL. Prevents header injection like
- *      a@b.com?cc=evil@evil.com&bcc=evil2@evil.com
- *  which a tampered contacts persist could otherwise inject — the
- *  contacts hydration validator already trims length and strips control
- *  chars, but does not enforce the basic email shape, and the mailto
- *  composer below interpolates the address raw. */
-function safeMailtoRecipient(email: string): string | null {
-  if (typeof email !== 'string') return null;
-  const trimmed = email.trim();
-  if (trimmed.length === 0 || trimmed.length > 254) return null;
-  if (!/^[^\s@?&#%/<>"'`\\]+@[^\s@?&#%/<>"'`\\]+\.[^\s@?&#%/<>"'`\\]{2,}$/.test(trimmed)) return null;
-  return encodeURIComponent(trimmed);
-}
-
-/** Strip everything except digits, +, *, # (the legitimate dial chars).
- *  A tampered contact phone like `5551234?from=evil&body=injection`
- *  would otherwise inject SMS/tel URI parameters when the alert level
- *  composes a `sms:` or `tel:` URL via window.open. */
-function safePhoneForUri(phone: string): string | null {
-  if (typeof phone !== 'string') return null;
-  const stripped = phone.replace(/[^0-9+*#]/g, '').slice(0, 32);
-  return stripped || null;
-}
 
 export interface EmergencyContact {
   name: string;
@@ -330,33 +312,20 @@ const ALLOWED_API_HOSTS = new Set([
   '127.0.0.1',
 ]);
 
-function isHttpsSynaluxUrl(value: unknown): value is string {
-  if (typeof value !== 'string' || !value || value.length > MAX_API_URL_LEN) return false;
-  try {
-    const u = new URL(value);
-    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
-    return ALLOWED_API_HOSTS.has(u.hostname);
-  } catch {
-    return false;
-  }
-}
-
-function cleanString(value: unknown, maxLen: number): string | undefined {
-  if (typeof value !== 'string') return undefined;
-  // Strip control chars (defense against weird tampering); cap length.
-  // eslint-disable-next-line no-control-regex
-  const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, maxLen);
-  return cleaned || undefined;
+/** Coerce sanitizeString's '' return into the presence-or-undefined
+ *  idiom the profile builder uses. */
+function presentOrUndefined(s: string): string | undefined {
+  return s.length > 0 ? s : undefined;
 }
 
 function cleanContact(c: unknown): EmergencyContact | null {
   if (!c || typeof c !== 'object') return null;
   const x = c as Record<string, unknown>;
-  const name = cleanString(x.name, MAX_NAME_LEN);
-  const relationship = cleanString(x.relationship, MAX_RELATIONSHIP_LEN);
+  const name = presentOrUndefined(sanitizeString(x.name, MAX_NAME_LEN));
+  const relationship = presentOrUndefined(sanitizeString(x.relationship, MAX_RELATIONSHIP_LEN));
   if (!name || !relationship) return null;
-  const phone = cleanString(x.phone, MAX_PHONE_LEN);
-  const email = cleanString(x.email, MAX_EMAIL_LEN);
+  const phone = presentOrUndefined(sanitizeString(x.phone, MAX_PHONE_LEN));
+  const email = presentOrUndefined(sanitizeString(x.email, MAX_EMAIL_LEN));
   // A contact with neither phone nor email isn't reachable — drop it
   // so render code doesn't display a useless row.
   if (!phone && !email) return null;
@@ -366,40 +335,35 @@ function cleanContact(c: unknown): EmergencyContact | null {
 function cleanProfile(p: unknown): UserMedicalProfile {
   if (!p || typeof p !== 'object') return { name: '' };
   const x = p as Record<string, unknown>;
-  const name = cleanString(x.name, MAX_NAME_LEN) ?? '';
-  const ageRaw = x.age;
-  const age = typeof ageRaw === 'number' && Number.isFinite(ageRaw) && ageRaw >= 0 && ageRaw < 150
-    ? Math.floor(ageRaw)
-    : undefined;
+  const name = sanitizeString(x.name, MAX_NAME_LEN);
+  const age = clampInt(x.age, 0, 149, -1);
   const cleanList = (raw: unknown): string[] | undefined => {
     if (!Array.isArray(raw)) return undefined;
     const items = raw
-      .map((s) => cleanString(s, MAX_CONDITION_LEN))
-      .filter((s): s is string => !!s)
+      .map((s) => sanitizeString(s, MAX_CONDITION_LEN))
+      .filter((s) => s.length > 0)
       .slice(0, MAX_CONDITIONS);
     return items.length > 0 ? items : undefined;
   };
+  const address = presentOrUndefined(sanitizeString(x.address, MAX_ADDRESS_LEN));
+  const callbackNumber = presentOrUndefined(sanitizeString(x.callbackNumber, MAX_PHONE_LEN));
+  const country = presentOrUndefined(sanitizeString(x.country, MAX_NAME_LEN));
   return {
     name,
-    ...(age !== undefined ? { age } : {}),
+    ...(age >= 0 ? { age } : {}),
     ...(cleanList(x.conditions) ? { conditions: cleanList(x.conditions) } : {}),
     ...(cleanList(x.allergies) ? { allergies: cleanList(x.allergies) } : {}),
     ...(cleanList(x.medications) ? { medications: cleanList(x.medications) } : {}),
-    ...(cleanString(x.address, MAX_ADDRESS_LEN) ? { address: cleanString(x.address, MAX_ADDRESS_LEN) } : {}),
-    ...(cleanString(x.callbackNumber, MAX_PHONE_LEN) ? { callbackNumber: cleanString(x.callbackNumber, MAX_PHONE_LEN) } : {}),
-    ...(cleanString(x.country, MAX_NAME_LEN) ? { country: cleanString(x.country, MAX_NAME_LEN) } : {}),
+    ...(address ? { address } : {}),
+    ...(callbackNumber ? { callbackNumber } : {}),
+    ...(country ? { country } : {}),
   };
 }
 
 export function validateEmergencyConfig(raw: unknown): EmergencyConfig {
   if (!raw || typeof raw !== 'object') return DEFAULT_CONFIG;
   const x = raw as Record<string, unknown>;
-  const countdownSeconds = typeof x.countdownSeconds === 'number'
-    && Number.isFinite(x.countdownSeconds)
-    && x.countdownSeconds >= 0
-    && x.countdownSeconds <= 60
-    ? Math.floor(x.countdownSeconds)
-    : DEFAULT_CONFIG.countdownSeconds;
+  const countdownSeconds = clampInt(x.countdownSeconds, 0, 60, DEFAULT_CONFIG.countdownSeconds);
   const contacts = Array.isArray(x.contacts)
     ? x.contacts.map(cleanContact).filter((c): c is EmergencyContact => c !== null).slice(0, MAX_CONTACTS)
     : [];
@@ -412,7 +376,9 @@ export function validateEmergencyConfig(raw: unknown): EmergencyConfig {
     ...(typeof x.language === 'string' && x.language.length > 0 && x.language.length <= 16
       ? { language: x.language.replace(/[^a-zA-Z-]/g, '').slice(0, 16) }
       : {}),
-    ...(isHttpsSynaluxUrl(x.synaluxApiUrl) ? { synaluxApiUrl: x.synaluxApiUrl as string } : {}),
+    ...(isHttpsAllowedUrl(x.synaluxApiUrl, ALLOWED_API_HOSTS, { maxLen: MAX_API_URL_LEN })
+      ? { synaluxApiUrl: x.synaluxApiUrl as string }
+      : {}),
   };
 }
 

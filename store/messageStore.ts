@@ -1,8 +1,9 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { HistoryEntry } from '@/types';
 import { ToneStyle } from '@/services/azureTTS';
 import { detectEmergency } from '@/services/emergencyService';
+import { safeJSONStorage } from '@/lib/safeStorage';
 
 const MAX_UNDO = 20;
 /** Cap on the in-progress message buffer. AAC users compose a few
@@ -155,6 +156,22 @@ export const useMessageStore = create<MessageState>()(
     {
       name: 'prism-aac-message',
       version: 3,
+      // Quota-safe storage. history is 100 entries × 4KB = 400KB
+      // potential; sharing localStorage with other prism-aac stores at
+      // the 5–10 MB cap, this can be the straw that breaks the back —
+      // and on an AAC tablet, silently failing to persist preferences
+      // (autoSpeak, toneMode) is the kind of "my settings keep
+      // resetting" complaint we can't debug from a user who can't say
+      // it. On quota: drop the oldest 50% of history (oldest =
+      // disposable record of past speech) — preferences survive.
+      storage: createJSONStorage(() => safeJSONStorage({
+        name: 'prism-aac-message',
+        onQuotaExceeded: () => {
+          useMessageStore.setState((s) => ({
+            history: s.history.slice(0, Math.floor(s.history.length / 2)),
+          }));
+        },
+      })),
       // v2: respect the user's existing autoSpeak preference. If they
       // deliberately turned it off (e.g., quiet classroom), don't override.
       // Only set true when the field was never persisted (undefined).

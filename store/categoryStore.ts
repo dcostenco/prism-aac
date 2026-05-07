@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { Category, Phrase, OrderingSequenceData } from '@/types';
 import { DEFAULT_CATEGORIES } from '@/constants/categories';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
@@ -8,6 +8,7 @@ import { VOCAB_SETS } from '@/constants/vocabularySets';
 import { useSettingsStore } from '@/store/settingsStore';
 import { randomId } from '@/lib/uuid';
 import { sanitizeString } from '@/lib/safeStrings';
+import { safeJSONStorage } from '@/lib/safeStorage';
 
 /** Per-field bounds. Custom phrases get rendered directly to the AAC
  *  user's UI as tappable buttons; a tampered persist entry could
@@ -194,6 +195,20 @@ export const useCategoryStore = create<CategoryState>()(
     }),
     {
       name: 'prism-aac-categories',
+      // Quota-safe storage. customPhrases capped at 1000 × 500 chars
+      // = 500 KB; with the soft-delete tombstone window (deletedAt
+      // entries kept up to 30 days), the real footprint can drift up.
+      // On quota: drop the tombstoned phrases first (they're already
+      // soft-deleted, the 30-day grace window is a nice-to-have not a
+      // requirement) so the user's LIVE phrases survive.
+      storage: createJSONStorage(() => safeJSONStorage({
+        name: 'prism-aac-categories',
+        onQuotaExceeded: () => {
+          useCategoryStore.setState((s) => ({
+            customPhrases: s.customPhrases.filter((p) => !p.deletedAt),
+          }));
+        },
+      })),
       partialize: (s) => ({
         customCategories: s.customCategories,
         customPhrases: s.customPhrases,

@@ -42,6 +42,8 @@
  *   - Module-scoped in-memory profile + 3s debounced localStorage write
  */
 
+import { clampNumber } from '@/lib/safeValidation';
+
 const PROFILE_KEY = 'prism-adaptive-profile';
 const PROFILE_VERSION = 2;
 
@@ -155,10 +157,6 @@ const MAX_CATEGORIES = 200;
 const MAX_TOD_PERIODS = 24;
 const MAX_TOD_WORDS_PER_PERIOD = 100;
 const MAX_KEY_LEN = 200;
-
-function clampNumber(v: unknown, min: number, max: number, fallback: number): number {
-  return typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : fallback;
-}
 
 function sanitizeAdaptiveProfile(raw: unknown): AdaptiveProfile {
   const fresh = freshProfile();

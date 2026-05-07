@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { SupportedLanguage } from '@/engine/i18n';
 import { type GestureConfig, type GestureMapping, DEFAULT_GESTURE_CONFIG } from '@/services/gestureService';
+import { safeJSONStorage } from '@/lib/safeStorage';
 
 export type Theme = 'light' | 'dark';
 export type GridSize = 4 | 6 | 9 | 12 | 16 | 20;

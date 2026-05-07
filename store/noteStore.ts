@@ -1,8 +1,9 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { CaregiverNote, NoteAction } from '@/types';
 import { randomId } from '@/lib/uuid';
 import { sanitizeString } from '@/lib/safeStrings';
+import { safeJSONStorage } from '@/lib/safeStorage';
 
 /** Per-note text and author bounds. Notes are caregiver-typed clinical
  *  observations — well-formed entries are typically 100-300 chars. The
@@ -159,6 +160,29 @@ export const useNoteStore = create<NoteState>()(
     }),
     {
       name: 'prism-aac-notes',
+      // Quota-safe storage. A single 10kB note × 500 entries = 5MB
+      // potential — the same order as the localStorage cap — so a
+      // chatty clinical setting can collapse the entire persist write
+      // on QuotaExceededError. Default zustand persist swallows that
+      // error; the caregiver hits Save and notices nothing, then the
+      // session reloads and their notes are gone. On quota we shed
+      // the OLDEST applied notes (already actioned, not actively
+      // editable) so the unapplied work-in-progress survives.
+      storage: createJSONStorage(() => safeJSONStorage({
+        name: 'prism-aac-notes',
+        onQuotaExceeded: () => {
+          useNoteStore.setState((s) => {
+            // Sort: applied first (disposable), then by oldest timestamp,
+            // and drop the front half.
+            const drop = [...s.notes]
+              .sort((a, b) => Number(b.applied) - Number(a.applied) || a.timestamp - b.timestamp)
+              .slice(0, Math.floor(MAX_NOTES / 2))
+              .map((n) => n.id);
+            const dropIds = new Set(drop);
+            return { notes: s.notes.filter((n) => !dropIds.has(n.id)) };
+          });
+        },
+      })),
       // Hydration validator. Caregiver notes can carry actionable
       // payloads (executeAllActions can call add_phrase / remove_phrase
       // etc.) so a tampered localStorage entry could inject hostile

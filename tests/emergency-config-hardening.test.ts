@@ -102,12 +102,15 @@ describe('validateEmergencyConfig — contacts shape', () => {
     expect(cfg.contacts.length).toBeLessThanOrEqual(20);
   });
 
-  it('strips control chars from contact names', () => {
+  it('replaces control chars in contact names', () => {
     const evil = 'Mom\u0000Evil';
     const cfg = validateEmergencyConfig({
       contacts: [{ name: evil, relationship: 'Mother', phone: '5551234' }],
     });
-    expect(cfg.contacts[0].name).toBe('MomEvil');
+    // Shared sanitizeString replaces control chars with space (preserves
+    // word boundaries) rather than fully stripping. The security goal —
+    // no raw control bytes in render — is identical.
+    expect(cfg.contacts[0].name).toBe('Mom Evil');
   });
 
   it('clamps oversized contact name', () => {
