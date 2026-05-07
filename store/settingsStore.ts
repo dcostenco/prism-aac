@@ -139,6 +139,12 @@ interface SettingsState {
   // For users with significant motor imprecision who need an extra
   // confirmation step. Default false (most users prefer single-tap).
   mathTwoHitMagnify: boolean;
+  /** Sub-national region for the math History keyboard. Format is
+   *  ISO 3166-2 (`US-TX`, `CA-QC`, `UK-SCT`, `DE-BY`, `IN-TN`...).
+   *  The History keyboard layers WORLD ∪ NATIONAL ∪ REGIONAL events;
+   *  this field drives the regional slice. Optional — when unset
+   *  only the universal + national-by-language layers render. */
+  historyRegion: string | null;
   // Marketplace-installed app ids (e.g. ['game-packs', 'voice-packs']).
   // Toolbar.tsx renders these as buttons after the built-ins.
   installedApps: string[];
@@ -149,7 +155,7 @@ interface SettingsState {
   // is not user-selectable.
   voicePreferences: Record<string, string>;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'voicePreferences'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -199,6 +205,7 @@ export const useSettingsStore = create<SettingsState>()(
       notificationsEnabled: true,
       mathHoldTimeMs: 0,
       mathTwoHitMagnify: false,
+      historyRegion: null,
       toolbarConfig: {
         order: [...DEFAULT_TOOLBAR_ORDER],
         // Phase 6: ship a minimal default — only the 5 essentials are

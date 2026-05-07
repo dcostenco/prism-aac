@@ -81,9 +81,9 @@ const PROMPT_TEMPLATES: Record<MathDomain, DomainPrompts> = {
     solve: 'The child wrote this earth-science expression: "{expr}". Walk through the answer step by step. Use simple language. Max 4 short steps.',
   },
   history: {
-    help:  'The child is studying history in the {lang} curriculum and wrote: "{expr}". They are likely working on a date, era marker (BCE / CE), century, or period name from their region. Give one hint about how to read or order it WITHOUT solving, using examples relevant to their curriculum. Max 2 sentences.',
-    check: 'The child is studying history in the {lang} curriculum and wrote: "{expr}". Check it: is the era marker in the right place? Are dates ordered correctly on a timeline? Does the period name match the date? Explain gently if wrong, celebrate if right, using examples from their curriculum. Max 2 sentences.',
-    solve: 'The child is studying history in the {lang} curriculum and wrote: "{expr}". Walk through the answer step by step (compute the year, name the period, locate the event in THEIR region\'s history first, then add a world-history note). Use simple words. Max 4 short steps.',
+    help:  'The child is studying history in the {lang} curriculum (region: {region}) and wrote: "{expr}". They are likely working on a date, era marker (BCE / CE), century, or period name from their region. Give one hint about how to read or order it WITHOUT solving, using examples relevant to their curriculum. Max 2 sentences.',
+    check: 'The child is studying history in the {lang} curriculum (region: {region}) and wrote: "{expr}". Check it: is the era marker in the right place? Are dates ordered correctly on a timeline? Does the period name match the date? Explain gently if wrong, celebrate if right, using examples from their curriculum. Max 2 sentences.',
+    solve: 'The child is studying history in the {lang} curriculum (region: {region}) and wrote: "{expr}". Walk through the answer step by step (compute the year, name the period, locate the event in THEIR region\'s history first, then add a world-history note). Use simple words. Max 4 short steps.',
   },
   'language-arts': {
     help:  'The child wrote this language-arts expression: "{expr}". They are likely tagging parts of speech, fixing punctuation, or marking sentence types. Give one hint about the next step WITHOUT solving. Max 2 sentences.',
@@ -144,6 +144,7 @@ export default function MathTutorTool() {
   const cells = useMathGridStore((s) => s.cells);
   const activeCategory = useMathGridStore((s) => s.activeMathCategory);
   const { speechRate, speechVolume, language } = useSettingsStore();
+  const historyRegion = useSettingsStore((s) => s.historyRegion);
   const [response, setResponse] = useState<string>('');
   const [errorKind, setErrorKind] = useState<'auth' | 'network' | 'timeout' | 'other' | null>(null);
   const [mode, setMode] = useState<TutorMode | null>(null);
@@ -176,13 +177,14 @@ export default function MathTutorTool() {
 
     const domain = domainForCategory(activeCategory);
     const template = PROMPT_TEMPLATES[domain][which];
-    // {expr} is mandatory; {lang} is optional and used by the
-    // history domain to anchor the model in the student's regional
-    // curriculum (so 1859 in 'ro' resolves to the Union of
-    // Principalities, not Italian unification).
+    // {expr} is mandatory; {lang} + {region} are used by the history
+    // domain to anchor the model in the student's regional curriculum
+    // — so 1836 in `US-TX` resolves to the Alamo, not Arkansas
+    // statehood; 1759 in `CA-QC` to the Plains of Abraham.
     const prompt = template
       .replace('{expr}', expression)
-      .replace('{lang}', language || 'en');
+      .replace('{lang}', language || 'en')
+      .replace('{region}', historyRegion || 'unspecified');
     const tutorContext = TUTOR_CONTEXT_BY_DOMAIN[domain];
 
     let buffer = '';
@@ -210,7 +212,7 @@ export default function MathTutorTool() {
     } finally {
       if (mySeq === requestSeqRef.current) setLoading(false);
     }
-  }, [cells, loading, language, speechRate, speechVolume, activeCategory]);
+  }, [cells, loading, language, speechRate, speechVolume, activeCategory, historyRegion]);
 
   const dismiss = useCallback(() => {
     tapFeedback();

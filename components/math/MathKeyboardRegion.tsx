@@ -30,6 +30,7 @@ import MathMainKeyboard from './MathMainKeyboard';
 import { useMathGridStore, type MathCategoryId } from '@/store/mathGridStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { tapFeedback, keyFeedback } from '@/services/feedback';
+import { eventsForRegion } from '@/engine/historyRegions';
 
 interface CategoryDef {
   id: MathCategoryId;
@@ -1143,18 +1144,25 @@ const HIST_PERIODS_BY_LOCALE: Record<string, Array<{ glyph: string; label: strin
 
 function MathHistoryKeyboard() {
   const language = useSettingsStore((s) => s.language);
+  const historyRegion = useSettingsStore((s) => s.historyRegion);
   // Coalesce on the base language tag (en, es-MX → es) so Latin
   // American Spanish gets the same cohort as European Spanish.
   const baseLang = (language || 'en').toLowerCase().split(/[-_]/)[0];
   const localeEvents = HIST_EVENTS_BY_LOCALE[baseLang] ?? HIST_EVENTS_BY_LOCALE['en'];
   const localePeriods = HIST_PERIODS_BY_LOCALE[baseLang] ?? HIST_PERIODS_BY_LOCALE['en'];
-  const events = [...HIST_EVENTS_WORLD, ...localeEvents];
+  // Sub-national region (e.g. US-TX, CA-QC, UK-SCT, DE-BY, IN-TN).
+  // Layered ON TOP of the universal + national tiers — never replaces
+  // them, because high-school curricula always teach a national +
+  // regional mix, not regional alone.
+  const regionalEvents = eventsForRegion(historyRegion);
+  const events = [...HIST_EVENTS_WORLD, ...localeEvents, ...regionalEvents];
   const periods = [...HIST_PERIODS_WORLD, ...localePeriods];
   return (
     <div
       className="p-2 space-y-2"
       data-testid="math-history-keyboard"
       data-locale={baseLang}
+      data-region={historyRegion ?? ''}
     >
       <GlyphGrid testid="math-history-eras" glyphs={HIST_ERAS} cols={9} textSize="text-base" />
       <GlyphGrid testid="math-history-centuries" glyphs={HIST_CENTURIES} cols={6} textSize="text-base" />
