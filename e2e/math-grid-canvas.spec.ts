@@ -36,7 +36,7 @@ test.describe('MathGrid (Phase 1A)', () => {
   test('typing a digit commits a glyph and advances the cursor', async ({ page, baseURL }) => {
     await gotoDevPage(page, baseURL);
     // Focus the page (without clicking the canvas — that would move the cursor).
-    await page.locator('header button').focus();
+    await page.locator('[data-testid="math-dev-reset"]').focus();
     await page.keyboard.press('5');
     await page.waitForTimeout(120);
 
@@ -51,7 +51,7 @@ test.describe('MathGrid (Phase 1A)', () => {
 
   test('backspace clears the cell at cursor when filled', async ({ page, baseURL }) => {
     await gotoDevPage(page, baseURL);
-    await page.locator('header button').focus();
+    await page.locator('[data-testid="math-dev-reset"]').focus();
     await page.keyboard.press('5');
     await page.waitForTimeout(120);
     // Cursor is now at (0,1). Backspace should not delete (0,1) — it's empty —
@@ -86,14 +86,14 @@ test.describe('MathGrid (Phase 1A)', () => {
 
   test('reset clears all cells and returns cursor to (0,0)', async ({ page, baseURL }) => {
     await gotoDevPage(page, baseURL);
-    await page.locator('header button').focus();
+    await page.locator('[data-testid="math-dev-reset"]').focus();
     await page.keyboard.press('5');
     await page.keyboard.press('+');
     await page.keyboard.press('7');
     await page.waitForTimeout(140);
     let header = await page.locator('header').first().innerText();
     expect(header).toMatch(/cells=3/);
-    await page.locator('header button').click();
+    await page.locator('[data-testid="math-dev-reset"]').click();
     await page.waitForTimeout(80);
     header = await page.locator('header').first().innerText();
     expect(header).toMatch(/cursor=\(0,0\).*cells=0/);

@@ -19,7 +19,7 @@
  *     OR error shown). Never leaves loading=true after Promise.race.
  */
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useMathGridStore } from '@/store/mathGridStore';
+import { useMathGridStore, domainForCategory, type MathDomain } from '@/store/mathGridStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { askAI } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
@@ -28,7 +28,48 @@ import { parseCellKey, type Cell, type CellKey } from '@/engine/mathGrid';
 
 type TutorMode = 'help' | 'check' | 'solve';
 
-const MATH_TUTOR_CONTEXT = 'math-tutor';
+/** Per-domain prompt templates. The expression placeholder `{expr}` is
+ *  replaced at request time. We tell the model what subject the child
+ *  is working on so it doesn't apply algebraic reasoning to a chemistry
+ *  equation or mistake a Python `if` for a math conditional. */
+type DomainPrompts = Record<TutorMode, string>;
+
+const PROMPT_TEMPLATES: Record<MathDomain, DomainPrompts> = {
+  math: {
+    help:  'The child wrote this math expression: "{expr}". They need help understanding what to do next. Give a gentle hint — don\'t solve it, just guide them to the next step. Use simple words. Be encouraging. Max 2 sentences.',
+    check: 'The child wrote this math expression: "{expr}". Check if this is correct. If there\'s an error, explain what went wrong gently and show how to fix it. If it\'s correct, celebrate! Use simple words. Max 2 sentences.',
+    solve: 'The child wrote this math expression: "{expr}". Show the solution step by step. Use simple language a child can understand. Use math symbols. Be encouraging — say "Great job trying!" or similar. Max 4 short steps.',
+  },
+  chemistry: {
+    help:  'The child wrote this chemistry expression: "{expr}". They are likely balancing an equation, naming a compound, or writing a reaction. Give one gentle hint about the next step (do not balance or solve). Use simple words. Max 2 sentences.',
+    check: 'The child wrote this chemistry expression: "{expr}". Check it: is it balanced? Are the formulas correct? Are charges right? If something is wrong, explain gently in plain words and show how to fix it. If it is correct, celebrate. Max 2 sentences.',
+    solve: 'The child wrote this chemistry expression: "{expr}". Walk through the full solution step by step (balance the equation, identify products, or compute the requested quantity). Keep each step short and use simple language a child can understand. Max 4 short steps.',
+  },
+  physics: {
+    help:  'The child wrote this physics expression: "{expr}". They are likely working on motion, energy, forces, electricity, or waves. Give one hint that points them at the right formula or concept WITHOUT solving. Use simple words. Max 2 sentences.',
+    check: 'The child wrote this physics expression: "{expr}". Check the equation: are units consistent? Are the variables used correctly? If wrong, explain gently and show the fix. If right, celebrate. Max 2 sentences.',
+    solve: 'The child wrote this physics expression: "{expr}". Solve it step by step: identify the relevant law, plug in known values, and show units. Keep each step short. Max 4 short steps.',
+  },
+  'programming-python': {
+    help:  'The child wrote this Python code: "{expr}". Help them with the next step they need (a missing colon, indentation, what comes after a `def`). Do not write the full solution. Max 2 sentences.',
+    check: 'The child wrote this Python code: "{expr}". Check it: does it parse? Are indentation and colons right? Will it run? If something is wrong, explain gently in plain English. If it is right, celebrate. Max 2 sentences.',
+    solve: 'The child wrote this Python code: "{expr}". Show the corrected, runnable version step by step. Use simple words to explain each step. Max 4 short steps. End with the working code.',
+  },
+  'programming-java': {
+    help:  'The child wrote this Java code: "{expr}". Help with the next step they need (a missing semicolon, type, brace). Do not write the full solution. Max 2 sentences.',
+    check: 'The child wrote this Java code: "{expr}". Check it: does it compile? Are types and semicolons correct? Will it run? If something is wrong, explain gently. If right, celebrate. Max 2 sentences.',
+    solve: 'The child wrote this Java code: "{expr}". Show the corrected, compilable version step by step. Use simple words. Max 4 short steps. End with the working code.',
+  },
+};
+
+const TUTOR_CONTEXT_BY_DOMAIN: Record<MathDomain, string> = {
+  math: 'math-tutor',
+  chemistry: 'chemistry-tutor',
+  physics: 'physics-tutor',
+  'programming-python': 'python-tutor',
+  'programming-java': 'java-tutor',
+};
+
 const TUTOR_HARD_TIMEOUT_MS = 15_000;
 
 function serializeAsExpression(cells: Map<CellKey, Cell>): string {
@@ -65,6 +106,7 @@ const TOOL_BTN =
 
 export default function MathTutorTool() {
   const cells = useMathGridStore((s) => s.cells);
+  const activeCategory = useMathGridStore((s) => s.activeMathCategory);
   const { speechRate, speechVolume, language } = useSettingsStore();
   const [response, setResponse] = useState<string>('');
   const [errorKind, setErrorKind] = useState<'auth' | 'network' | 'timeout' | 'other' | null>(null);
@@ -96,15 +138,14 @@ export default function MathTutorTool() {
     setErrorKind(null);
     const mySeq = ++requestSeqRef.current;
 
-    const prompts: Record<TutorMode, string> = {
-      help:  `The child wrote this math expression: "${expression}". They need help understanding what to do next. Give a gentle hint — don't solve it, just guide them to the next step. Use simple words. Be encouraging. Max 2 sentences.`,
-      check: `The child wrote: "${expression}". Check if this is correct. If there's an error, explain what went wrong gently and show how to fix it. If it's correct, celebrate! Use simple words. Max 2 sentences.`,
-      solve: `The child wrote: "${expression}". Show the solution step by step. Use simple language a child can understand. Use math symbols. Be encouraging — say "Great job trying!" or similar. Max 4 short steps.`,
-    };
+    const domain = domainForCategory(activeCategory);
+    const template = PROMPT_TEMPLATES[domain][which];
+    const prompt = template.replace('{expr}', expression);
+    const tutorContext = TUTOR_CONTEXT_BY_DOMAIN[domain];
 
     let buffer = '';
     try {
-      const askPromise = askAI(prompts[which], MATH_TUTOR_CONTEXT, (delta) => {
+      const askPromise = askAI(prompt, tutorContext, (delta) => {
         if (mySeq !== requestSeqRef.current) return; // user moved on
         buffer += delta;
         setResponse(buffer);
@@ -127,7 +168,7 @@ export default function MathTutorTool() {
     } finally {
       if (mySeq === requestSeqRef.current) setLoading(false);
     }
-  }, [cells, loading, language, speechRate, speechVolume]);
+  }, [cells, loading, language, speechRate, speechVolume, activeCategory]);
 
   const dismiss = useCallback(() => {
     tapFeedback();
@@ -180,6 +221,7 @@ export default function MathTutorTool() {
           className="absolute right-0 top-full mt-2 w-[28rem] max-w-[80vw] surface-bar border border-theme rounded-xl shadow-xl z-40 p-3"
           data-testid="math-tutor-response"
           data-mode={mode ?? ''}
+          data-domain={domainForCategory(activeCategory)}
           data-error-kind={errorKind ?? ''}
           data-loading={loading ? '1' : '0'}
           role="status"

@@ -27,19 +27,8 @@
  */
 import { useState, useCallback } from 'react';
 import MathMainKeyboard from './MathMainKeyboard';
-import { useMathGridStore } from '@/store/mathGridStore';
+import { useMathGridStore, type MathCategoryId } from '@/store/mathGridStore';
 import { tapFeedback, keyFeedback } from '@/services/feedback';
-
-export type MathCategoryId =
-  | 'main'
-  | 'letters'
-  | 'adv-math'
-  | 'misc-math'
-  | 'time-distance'
-  | 'weight'
-  | 'volume'
-  | 'geom'
-  | 'money';
 
 interface CategoryDef {
   id: MathCategoryId;
@@ -57,7 +46,18 @@ const CATEGORIES: CategoryDef[] = [
   { id: 'volume',        label: 'Volume',        icon: '🧪' },
   { id: 'geom',          label: 'Geom',          icon: '△' },
   { id: 'money',         label: 'Money',         icon: '$' },
+  // Phase 6 — universal-engine domains. The AI tutor reads
+  // activeMathCategory from the store and routes the prompt by
+  // domain (chemistry / physics / programming-python / programming-java).
+  { id: 'chemistry',         label: 'Chem',   icon: '🧪' },
+  { id: 'physics',           label: 'Phys',   icon: 'Φ'  },
+  { id: 'programming-python', label: 'Python', icon: 'py' },
+  { id: 'programming-java',   label: 'Java',   icon: 'J'  },
 ];
+
+// Re-export so older imports (`import { MathCategoryId } from '@/components/math/MathKeyboardRegion'`)
+// keep working — the canonical source is now the store.
+export type { MathCategoryId };
 
 // Chip height is fixed at 44px (the AAC tap-target floor) to satisfy
 // the e2e height assertion on every chip — `min-h` was ambiguous in
@@ -68,12 +68,13 @@ const CHIP_BASE =
   'flex items-center justify-center h-11 px-3 whitespace-nowrap shrink-0';
 
 export default function MathKeyboardRegion({ className = '' }: { className?: string }) {
-  const [activeCategory, setActiveCategory] = useState<MathCategoryId>('main');
+  const activeCategory = useMathGridStore((s) => s.activeMathCategory);
+  const setActiveCategory = useMathGridStore((s) => s.setActiveMathCategory);
 
   const onPick = useCallback((id: MathCategoryId) => {
     tapFeedback();
     setActiveCategory(id);
-  }, []);
+  }, [setActiveCategory]);
 
   return (
     <div
@@ -120,6 +121,10 @@ export default function MathKeyboardRegion({ className = '' }: { className?: str
         {activeCategory === 'volume' && <MathVolumeKeyboard />}
         {activeCategory === 'geom' && <MathGeomKeyboard />}
         {activeCategory === 'money' && <MathMoneyKeyboard />}
+        {activeCategory === 'chemistry' && <MathChemistryKeyboard />}
+        {activeCategory === 'physics' && <MathPhysicsKeyboard />}
+        {activeCategory === 'programming-python' && <MathProgrammingKeyboard lang="python" />}
+        {activeCategory === 'programming-java' && <MathProgrammingKeyboard lang="java" />}
       </div>
     </div>
   );
@@ -405,4 +410,191 @@ const MONEY_GLYPHS: Array<{ glyph: string; label: string }> = [
 ];
 function MathMoneyKeyboard() {
   return <GlyphGrid testid="math-money-keyboard" glyphs={MONEY_GLYPHS} cols={4} />;
+}
+
+// ── Phase 6 — Chemistry keyboard ─────────────────────────────────
+//
+// Element symbols are split into rows so multi-char glyphs (Na, Cl,
+// etc.) get their own slot — they commit as a single cell because
+// commitGlyph is glyph-agnostic. Reaction arrows + charges + phase
+// markers + common units round out a typical school-chemistry
+// expression like "2H₂ + O₂ → 2H₂O".
+
+const CHEMISTRY_ELEMENTS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'H',  label: 'hydrogen' },
+  { glyph: 'C',  label: 'carbon' },
+  { glyph: 'N',  label: 'nitrogen' },
+  { glyph: 'O',  label: 'oxygen' },
+  { glyph: 'F',  label: 'fluorine' },
+  { glyph: 'Na', label: 'sodium' },
+  { glyph: 'Mg', label: 'magnesium' },
+  { glyph: 'Al', label: 'aluminium' },
+  { glyph: 'Si', label: 'silicon' },
+  { glyph: 'P',  label: 'phosphorus' },
+  { glyph: 'S',  label: 'sulfur' },
+  { glyph: 'Cl', label: 'chlorine' },
+  { glyph: 'K',  label: 'potassium' },
+  { glyph: 'Ca', label: 'calcium' },
+  { glyph: 'Fe', label: 'iron' },
+  { glyph: 'Cu', label: 'copper' },
+  { glyph: 'Zn', label: 'zinc' },
+  { glyph: 'Ag', label: 'silver' },
+  { glyph: 'Au', label: 'gold' },
+  { glyph: 'Hg', label: 'mercury' },
+  { glyph: 'Pb', label: 'lead' },
+  { glyph: 'Br', label: 'bromine' },
+  { glyph: 'I',  label: 'iodine' },
+  { glyph: 'He', label: 'helium' },
+];
+
+const CHEMISTRY_OPS: Array<{ glyph: string; label: string }> = [
+  { glyph: '→',   label: 'yields' },
+  { glyph: '⇌',   label: 'equilibrium' },
+  { glyph: '↑',   label: 'gas evolved' },
+  { glyph: '↓',   label: 'precipitate' },
+  { glyph: '+',   label: 'plus' },
+  { glyph: '·',   label: 'middle dot' },
+  { glyph: '⁺',   label: 'positive charge' },
+  { glyph: '⁻',   label: 'negative charge' },
+  { glyph: '²⁺',  label: 'two plus' },
+  { glyph: '²⁻',  label: 'two minus' },
+  { glyph: '₂',   label: 'subscript 2' },
+  { glyph: '₃',   label: 'subscript 3' },
+  { glyph: '₄',   label: 'subscript 4' },
+  { glyph: 'Δ',   label: 'delta heat' },
+  { glyph: 'pH',  label: 'pH' },
+  { glyph: 'mol', label: 'mole' },
+  { glyph: '(s)', label: 'solid phase' },
+  { glyph: '(l)', label: 'liquid phase' },
+  { glyph: '(g)', label: 'gas phase' },
+  { glyph: '(aq)', label: 'aqueous phase' },
+];
+
+function MathChemistryKeyboard() {
+  return (
+    <div className="p-2 space-y-2" data-testid="math-chemistry-keyboard">
+      <GlyphGrid testid="math-chemistry-elements" glyphs={CHEMISTRY_ELEMENTS} cols={8} textSize="text-lg" />
+      <GlyphGrid testid="math-chemistry-ops" glyphs={CHEMISTRY_OPS} cols={10} textSize="text-base" />
+    </div>
+  );
+}
+
+// ── Phase 6 — Physics keyboard ───────────────────────────────────
+//
+// Greek letters (lower + upper case used in physics), common SI
+// units, base operators, and the constants the AI tutor expects to
+// see in school-physics expressions (c, h, ℏ, G, k_B, q, e).
+
+const PHYSICS_GREEK: Array<{ glyph: string; label: string }> = [
+  { glyph: 'α', label: 'alpha' }, { glyph: 'β', label: 'beta' },
+  { glyph: 'γ', label: 'gamma' }, { glyph: 'δ', label: 'delta' },
+  { glyph: 'ε', label: 'epsilon' }, { glyph: 'η', label: 'eta' },
+  { glyph: 'θ', label: 'theta' }, { glyph: 'λ', label: 'lambda' },
+  { glyph: 'μ', label: 'mu' }, { glyph: 'ν', label: 'nu' },
+  { glyph: 'π', label: 'pi' }, { glyph: 'ρ', label: 'rho' },
+  { glyph: 'σ', label: 'sigma' }, { glyph: 'τ', label: 'tau' },
+  { glyph: 'φ', label: 'phi' }, { glyph: 'ψ', label: 'psi' },
+  { glyph: 'ω', label: 'omega' },
+  { glyph: 'Δ', label: 'big delta' }, { glyph: 'Σ', label: 'big sigma' },
+  { glyph: 'Φ', label: 'big phi' }, { glyph: 'Ω', label: 'big omega' },
+];
+
+const PHYSICS_UNITS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'm',  label: 'metre' }, { glyph: 's',  label: 'second' },
+  { glyph: 'kg', label: 'kilogram' }, { glyph: 'A',  label: 'ampere' },
+  { glyph: 'K',  label: 'kelvin' }, { glyph: 'mol', label: 'mole-physics' },
+  { glyph: 'N',  label: 'newton' }, { glyph: 'J',  label: 'joule' },
+  { glyph: 'W',  label: 'watt' }, { glyph: 'V',  label: 'volt' },
+  { glyph: 'Ω',  label: 'ohm' }, { glyph: 'Hz', label: 'hertz' },
+  { glyph: 'Pa', label: 'pascal' }, { glyph: 'T',  label: 'tesla' },
+  { glyph: 'C',  label: 'coulomb' }, { glyph: 'eV', label: 'electron volt' },
+];
+
+const PHYSICS_OPS: Array<{ glyph: string; label: string }> = [
+  { glyph: '∫', label: 'integral' }, { glyph: '∂', label: 'partial' },
+  { glyph: '∇', label: 'nabla' }, { glyph: '∑', label: 'sum' },
+  { glyph: '∏', label: 'product' }, { glyph: '·', label: 'dot product' },
+  { glyph: '×', label: 'cross product' }, { glyph: '→', label: 'right arrow' },
+  { glyph: '⃗',  label: 'vector hat' }, { glyph: '|', label: 'magnitude bar' },
+  { glyph: '⟨', label: 'left bracket' }, { glyph: '⟩', label: 'right bracket' },
+  { glyph: 'c', label: 'speed of light' }, { glyph: 'h', label: 'planck' },
+  { glyph: 'ℏ', label: 'hbar' }, { glyph: 'G', label: 'grav constant' },
+  { glyph: '°', label: 'degree' }, { glyph: '∞', label: 'infinity' },
+];
+
+function MathPhysicsKeyboard() {
+  return (
+    <div className="p-2 space-y-2" data-testid="math-physics-keyboard">
+      <GlyphGrid testid="math-physics-greek" glyphs={PHYSICS_GREEK} cols={11} textSize="text-lg" />
+      <GlyphGrid testid="math-physics-units" glyphs={PHYSICS_UNITS} cols={8} textSize="text-base" />
+      <GlyphGrid testid="math-physics-ops" glyphs={PHYSICS_OPS} cols={9} textSize="text-base" />
+    </div>
+  );
+}
+
+// ── Phase 6 — Programming keyboard (Python / Java toggle) ────────
+//
+// Single keyboard component with a `lang` prop. Python and Java
+// share the operator + bracket row; the keyword row swaps. We commit
+// keywords with a trailing space so "if " feels natural rather than
+// running into the next token. Brackets / operators commit raw.
+
+const COMMON_OPS: Array<{ glyph: string; label: string }> = [
+  { glyph: '(',  label: 'open paren' }, { glyph: ')',  label: 'close paren' },
+  { glyph: '[',  label: 'open bracket' }, { glyph: ']',  label: 'close bracket' },
+  { glyph: '{',  label: 'open brace' }, { glyph: '}',  label: 'close brace' },
+  { glyph: '=',  label: 'assign' }, { glyph: '==', label: 'equal' },
+  { glyph: '!=', label: 'not equal' }, { glyph: '<',  label: 'less' },
+  { glyph: '>',  label: 'greater' }, { glyph: '<=', label: 'less eq' },
+  { glyph: '>=', label: 'greater eq' }, { glyph: '+',  label: 'plus-prog' },
+  { glyph: '-',  label: 'minus-prog' }, { glyph: '*',  label: 'star' },
+  { glyph: '/',  label: 'slash' }, { glyph: '%',  label: 'percent-prog' },
+  { glyph: ':',  label: 'colon' }, { glyph: ';',  label: 'semicolon' },
+  { glyph: ',',  label: 'comma-prog' }, { glyph: '.',  label: 'dot' },
+  { glyph: '"',  label: 'dquote' }, { glyph: "'",  label: 'squote' },
+];
+
+const PYTHON_KEYWORDS = [
+  'def', 'class', 'if', 'else', 'elif', 'for', 'while', 'return',
+  'import', 'from', 'as', 'in', 'is', 'not', 'and', 'or',
+  'True', 'False', 'None', 'lambda', 'with', 'try', 'except', 'finally',
+  'print', 'len', 'range', 'self',
+];
+
+const JAVA_KEYWORDS = [
+  'public', 'private', 'protected', 'class', 'void', 'int', 'String', 'boolean',
+  'if', 'else', 'for', 'while', 'return', 'new', 'this', 'null',
+  'true', 'false', 'import', 'static', 'final', 'package',
+  'try', 'catch', 'throws', 'extends', 'implements', 'interface',
+];
+
+function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
+  const commitGlyph = useMathGridStore((s) => s.commitGlyph);
+  const KEY_BASE =
+    'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
+    'flex items-center justify-center min-h-[44px] active:translate-y-px font-mono';
+  const keywords = lang === 'python' ? PYTHON_KEYWORDS : JAVA_KEYWORDS;
+  const testidPrefix = lang === 'python' ? 'math-python' : 'math-java';
+  return (
+    <div className="p-2 space-y-2" data-testid={`math-programming-${lang}-keyboard`} data-lang={lang}>
+      <GlyphGrid testid={`${testidPrefix}-ops`} glyphs={COMMON_OPS} cols={12} textSize="text-base" />
+      <div className="grid grid-cols-7 gap-1.5">
+        {keywords.map((kw) => (
+          <button
+            key={kw}
+            // Trailing space so "if " feels like a finished token in
+            // the cell grid. The user's next tap lands cleanly without
+            // them having to add the space themselves.
+            onClick={() => { keyFeedback(); commitGlyph(kw + ' '); }}
+            data-testid={`${testidPrefix}-kw-${kw}`}
+            data-glyph={kw}
+            aria-label={`${lang} keyword ${kw}`}
+            className={`${KEY_BASE} py-2 text-sm whitespace-nowrap`}
+          >
+            {kw}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }

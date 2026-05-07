@@ -53,7 +53,35 @@ import {
   toggleSummationLine as toggleSummationLinePure,
 } from '@/engine/decorations';
 
+/** Identifier of the active keyboard panel inside the math module.
+ *  The 9 original keyboards are all in the `'math'` domain (algebra,
+ *  arithmetic, units, geometry, money). Phase 6 adds three subject
+ *  keyboards that route the AI tutor through different prompt
+ *  templates. */
+export type MathCategoryId =
+  | 'main' | 'letters' | 'adv-math' | 'misc-math'
+  | 'time-distance' | 'weight' | 'volume' | 'geom' | 'money'
+  | 'chemistry' | 'physics' | 'programming-python' | 'programming-java';
+
+/** Domain group used by the AI tutor. Multiple categories can share
+ *  one domain (e.g. all 9 math keyboards → 'math'). */
+export type MathDomain = 'math' | 'chemistry' | 'physics' | 'programming-python' | 'programming-java';
+
+export function domainForCategory(cat: MathCategoryId): MathDomain {
+  switch (cat) {
+    case 'chemistry':           return 'chemistry';
+    case 'physics':             return 'physics';
+    case 'programming-python':  return 'programming-python';
+    case 'programming-java':    return 'programming-java';
+    default:                    return 'math';
+  }
+}
+
 export interface MathGridStore extends MathGridState {
+  /** Currently-active keyboard category. Read by MathTutorTool to
+   *  pick a domain-specific prompt template. */
+  activeMathCategory: MathCategoryId;
+  setActiveMathCategory: (id: MathCategoryId) => void;
   // Cell ops
   setCell: (r: number, c: number, glyph: string) => void;
   clearCell: (r: number, c: number) => void;
@@ -106,6 +134,8 @@ export interface MathGridStore extends MathGridState {
 
 export const useMathGridStore = create<MathGridStore>((set, get) => ({
   ...createEmptyState(),
+  activeMathCategory: 'main',
+  setActiveMathCategory: (id) => set({ activeMathCategory: id }),
 
   setCell: (r, c, glyph) => set((s) => setCellPure(s, r, c, glyph)),
   clearCell: (r, c) => set((s) => clearCellPure(s, r, c)),

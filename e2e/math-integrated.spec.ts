@@ -13,6 +13,15 @@ async function bootClean(page: Page, baseURL: string | undefined) {
   const start = baseURL || '/';
   await page.goto(start);
   await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch {} });
+  // Phase 6: trimmed default toolbar hides the math button. Re-enable
+  // it via the persisted settings store before navigating again.
+  await page.evaluate(() => {
+    try {
+      const ls = window.localStorage;
+      const cur = { state: { toolbarConfig: { order: [], enabled: { math: true } } }, version: 0 };
+      ls.setItem('prism-aac-settings', JSON.stringify(cur));
+    } catch {}
+  });
   await page.goto(start, { waitUntil: 'domcontentloaded' });
   // Wait for the AAC qwerty to indicate full mount.
   await page.waitForSelector('button[data-key="Q"]', { timeout: 30000 });
@@ -71,11 +80,14 @@ test.describe('MathPanel integrated (Phase 4)', () => {
 
   test('Close discards the grid (no MessageBar update)', async ({ page, baseURL }) => {
     await bootClean(page, baseURL);
+    // Read MessageBar BEFORE opening math (Phase 6 hides chrome
+    // including MessageBar while math is open, so we have to capture
+    // the "before" state first).
+    const beforeText = await page.locator('[data-messaging-mode]').first().innerText();
     await openMath(page);
     await page.locator('[data-testid="math-key-3"]').click();
     await page.locator('[data-testid="math-key-2"]').click();
     await page.waitForTimeout(80);
-    const beforeText = await page.locator('[data-messaging-mode]').first().innerText();
     await page.locator('[data-testid="math-panel-close"]').click();
     await page.waitForTimeout(200);
     await expect(page.locator('[data-testid="math-panel"]')).toHaveCount(0);

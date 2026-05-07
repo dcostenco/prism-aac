@@ -62,6 +62,7 @@ export default function MathGridDevPage() {
           <MathLockTool />
           <button
             onClick={() => reset()}
+            data-testid="math-dev-reset"
             className="rounded bg-red-100 text-red-700 px-2 py-1 text-xs"
           >
             reset
