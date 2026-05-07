@@ -27,6 +27,7 @@ import { useContactsStore, type AacContact, type ContactProvider } from '@/store
 import { useAuthStore } from '@/store/authStore';
 import { PROVIDERS } from '@/lib/messageProviders';
 import { portalFetch } from '@/services/portalClient';
+import { sanitizeString, SAFE_LIMITS } from '@/lib/safeStrings';
 
 // Path is portal-relative; portalFetch prepends the SYNALUX_API base.
 const ENDPOINT = '/prism-aac/contacts';
@@ -34,16 +35,10 @@ const ENDPOINT = '/prism-aac/contacts';
 // edits (add new family member) to land without spamming the portal.
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const SYNC_TIMEOUT_MS = 8_000;
-/** Hard caps on inbound payload — defense against compromised portal /
- *  hostile dev environment. Long names or huge avatar strings would
- *  blow up local persistence + render. */
-const MAX_NAME_LEN = 80;
-const MAX_RECIPIENT_LEN = 254; // ≥ longest valid email
-const MAX_AVATAR_LEN = 16;     // emoji + variation selectors fit
-const MAX_PREVIEW_LEN = 200;
 /** Hard cap on contacts per sync — paranoia against a runaway portal
  *  query returning the entire contact graph. The picker would be
- *  unusable past this anyway. */
+ *  unusable past this anyway. Per-field length caps come from
+ *  lib/safeStrings.SAFE_LIMITS so a single change ripples everywhere. */
 const MAX_CONTACTS_PER_SYNC = 500;
 
 const VALID_PROVIDERS = new Set<ContactProvider>(
@@ -58,17 +53,6 @@ export interface IntegrationContact {
   lastMessagePreview?: string;
 }
 
-function sanitizeStr(s: unknown, maxLen: number): string {
-  if (typeof s !== 'string') return '';
-  // Strip ASCII C0 control chars (0x00..0x1F) + DEL (0x7F). They could
-  // break the schedule row's single-line render or — for terminals — be
-  // an injection vector if values are ever logged unsanitized. Replace
-  // with a single space so word boundaries survive.
-  // eslint-disable-next-line no-control-regex
-  const clean = s.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
-  return clean.length > maxLen ? clean.slice(0, maxLen) : clean;
-}
-
 function sanitize(raw: unknown): Array<Omit<AacContact, 'id' | 'order'>> {
   if (!Array.isArray(raw)) return [];
   const out: Array<Omit<AacContact, 'id' | 'order'>> = [];
@@ -78,16 +62,16 @@ function sanitize(raw: unknown): Array<Omit<AacContact, 'id' | 'order'>> {
   for (const c of limited) {
     if (!c || typeof c !== 'object') continue;
     const cc = c as IntegrationContact;
-    const name = sanitizeStr(cc.name, MAX_NAME_LEN);
-    const recipientId = sanitizeStr(cc.recipientId, MAX_RECIPIENT_LEN);
-    const provider = sanitizeStr(cc.provider, 32) as ContactProvider;
+    const name = sanitizeString(cc.name, SAFE_LIMITS.name);
+    const recipientId = sanitizeString(cc.recipientId, SAFE_LIMITS.recipientId);
+    const provider = sanitizeString(cc.provider, SAFE_LIMITS.providerCode) as ContactProvider;
     if (!name || !recipientId) continue;
     if (!VALID_PROVIDERS.has(provider)) continue;
     // Per-provider id format check — drops bad entries (caregiver
     // editing the source erroneously) at the boundary.
     if (!PROVIDERS[provider].validateRecipientId(recipientId)) continue;
-    const avatar = sanitizeStr(cc.avatar, MAX_AVATAR_LEN);
-    const lastMessagePreview = sanitizeStr(cc.lastMessagePreview, MAX_PREVIEW_LEN);
+    const avatar = sanitizeString(cc.avatar, SAFE_LIMITS.avatar);
+    const lastMessagePreview = sanitizeString(cc.lastMessagePreview, SAFE_LIMITS.preview);
     out.push({
       name,
       provider,

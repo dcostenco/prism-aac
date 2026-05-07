@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useContactsStore, type AacContact } from '@/store/contactsStore';
@@ -40,6 +40,24 @@ export default function AACChatPanel() {
   const { t } = useT();
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // Track mount + clear pending toast timer on unmount. Without this,
+  // the 3-second toast-clear setTimeout would call setState on an
+  // unmounted component when the user closes the panel mid-toast,
+  // tripping React 18's "can't perform a React state update on an
+  // unmounted component" warning.
+  const mountedRef = useRef(true);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    mountedRef.current = false;
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
+  const flashToast = useCallback((msg: string) => {
+    setToast(msg);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      if (mountedRef.current) setToast(null);
+    }, 3000);
+  }, []);
 
   const sortedContacts = useMemo(
     () => [...contacts].sort((a, b) => a.order - b.order),
@@ -70,18 +88,21 @@ export default function AACChatPanel() {
     tapFeedback();
     setSending(true);
     const res = await sendToContact(activeContact, trimmed, plan);
+    if (!mountedRef.current) return; // user closed the panel mid-await
     setSending(false);
     if (res.ok) {
-      setToast(t('aac_chat_sent') || `Sent to ${activeContact.name}`);
+      const baseMsg = t('aac_chat_sent') || `Sent to ${activeContact.name}`;
+      flashToast(res.truncated ? `${baseMsg} (shortened to fit)` : baseMsg);
       clearAll();
     } else if (res.error.startsWith('tier_required:')) {
       const required = res.error.split(':')[1];
-      setToast(`${activeContact.name}: requires ${required} plan`);
+      flashToast(`${activeContact.name}: requires ${required} plan`);
+    } else if (res.error === 'invalid_recipient_id') {
+      flashToast(`${activeContact.name}: contact details look wrong — ask a caregiver to fix.`);
     } else {
-      setToast(t('aac_chat_send_failed') || `Could not send: ${res.error}`);
+      flashToast(t('aac_chat_send_failed') || `Could not send: ${res.error}`);
     }
-    setTimeout(() => setToast(null), 3000);
-  }, [activeContact, sending, text, clearAll, t, plan]);
+  }, [activeContact, sending, text, clearAll, t, plan, flashToast]);
 
   if (sidePanel !== 'aac-chat') return null;
 

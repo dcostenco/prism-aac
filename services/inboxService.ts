@@ -24,6 +24,7 @@
 import { useScheduleStore } from '@/store/scheduleStore';
 import { useAuthStore } from '@/store/authStore';
 import { portalFetch } from '@/services/portalClient';
+import { sanitizeString, SAFE_LIMITS } from '@/lib/safeStrings';
 
 const LAST_SEEN_KEY = 'prism-aac-inbox-last-seen-ms';
 const POLL_INTERVAL_MS = 30_000;
@@ -35,12 +36,6 @@ const ENDPOINT = '/prism-aac/inbox/poll';
  *  in batches rather than locking up the UI dispatching them all at once.
  *  Older messages will roll forward via lastSeenMs on subsequent polls. */
 const MAX_MESSAGES_PER_POLL = 50;
-/** Hard caps on payload fields — defense against a compromised portal or
- *  developer mistake injecting absurdly long strings into the schedule
- *  task list (which is rendered as plain text by React, but would still
- *  destroy the layout / blow up persistence). */
-const MAX_SENDER_LEN = 80;
-const MAX_TEXT_LEN = 2000;
 /** Reject `since` values from localStorage that are obviously bogus
  *  (negative, NaN, > now+1d). Stops a tampered key from sending huge
  *  numeric strings up to the portal. */
@@ -54,25 +49,15 @@ export interface IncomingMessage {
   receivedAt?: number;
 }
 
-function sanitizeStr(s: unknown, maxLen: number): string {
-  if (typeof s !== 'string') return '';
-  // Strip ASCII control chars that could break the schedule row's
-  // single-line rendering. Trim then clamp.
-  // eslint-disable-next-line no-control-regex
-  const clean = s.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
-  return clean.length > maxLen ? clean.slice(0, maxLen) : clean;
-}
-
 /** Apply one incoming message to the schedule. Exposed so future
  *  webhook/SSE listeners can route through the same dedupe + format
  *  path the poller uses. Safe to call from anywhere on the client. */
 export function deliverIncomingMessage(msg: IncomingMessage): string | null {
-  const sender = sanitizeStr(msg?.sender, MAX_SENDER_LEN);
-  const text = sanitizeStr(msg?.text, MAX_TEXT_LEN);
+  const sender = sanitizeString(msg?.sender, SAFE_LIMITS.name);
+  const text = sanitizeString(msg?.text, SAFE_LIMITS.messageText);
   if (!sender || !text) return null;
-  const id = typeof msg?.id === 'string' && msg.id.length > 0 && msg.id.length <= 128
-    ? msg.id
-    : undefined;
+  const rawId = sanitizeString(msg?.id, SAFE_LIMITS.externalId);
+  const id = rawId.length > 0 ? rawId : undefined;
   return useScheduleStore.getState().addIncomingMessage(sender, text, id);
 }
 

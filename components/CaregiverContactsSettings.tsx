@@ -12,7 +12,7 @@
  * Provider tier hints render so a free-plan caregiver isn't surprised
  * when their WhatsApp contact greys out for the AAC user.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useContactsStore, MAX_CONTACTS, type ContactProvider } from '@/store/contactsStore';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -52,6 +52,14 @@ export default function CaregiverContactsSettings() {
   // Inline confirm state — replaces window.confirm() with a small
   // two-button row so destructive actions remain reversible-by-cancel.
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  // Prevent setSyncMsg(null) from firing on an unmounted component when
+  // the user navigates away mid-sync.
+  const mountedRef = useRef(true);
+  const syncMsgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    mountedRef.current = false;
+    if (syncMsgTimerRef.current) clearTimeout(syncMsgTimerRef.current);
+  }, []);
 
   const handleAdd = useCallback(() => {
     const name = draftName.trim();
@@ -87,7 +95,10 @@ export default function CaregiverContactsSettings() {
     } else {
       setSyncMsg(`+${res.added} new, ${res.updated} updated.`);
     }
-    setTimeout(() => setSyncMsg(null), 4000);
+    if (syncMsgTimerRef.current) clearTimeout(syncMsgTimerRef.current);
+    syncMsgTimerRef.current = setTimeout(() => {
+      if (mountedRef.current) setSyncMsg(null);
+    }, 4000);
   }, []);
 
   const inputClass = 'w-full surface-key rounded-lg px-3 py-2 text-primary text-base border border-theme';

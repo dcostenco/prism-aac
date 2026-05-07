@@ -13,6 +13,14 @@
  * 80 chars of any returned body).
  */
 import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
+import { sanitizeString } from '@/lib/safeStrings';
+
+/** Hard cap on the response body we'll read. A hostile or buggy portal
+ *  returning a 100 MB JSON would otherwise OOM the AAC client. 1 MB
+ *  fits every legitimate AAC payload (50 inbox messages × 4 KB or 500
+ *  contacts × 1 KB row ≈ 500 KB peak). Anything larger is treated as
+ *  a payload-too-large error. */
+const MAX_RESPONSE_BYTES = 1_048_576;
 
 export type PortalResult<T> =
   | { ok: true; data: T; status: number }
@@ -59,18 +67,39 @@ export async function portalFetch<T = unknown>(req: PortalRequest): Promise<Port
   } finally {
     cancel();
   }
+  // Content-Length pre-check stops a hostile portal from streaming
+  // gigabytes into res.text()/res.json(). Some servers omit the
+  // header — we still cap by reading text() and length-checking.
+  const declaredLen = Number(res.headers.get('content-length') ?? '');
+  if (Number.isFinite(declaredLen) && declaredLen > MAX_RESPONSE_BYTES) {
+    return { ok: false, error: 'payload_too_large', status: res.status };
+  }
   if (!res.ok) {
-    // Read at most 200 chars of body so a logging endpoint dumping a stack
+    // Read at most 80 chars of body so a logging endpoint dumping a stack
     // trace doesn't end up in the AAC user's toast notification.
     const errText = await res.text().catch(() => '');
-    const safe = errText.replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, 80);
+    if (errText.length > MAX_RESPONSE_BYTES) {
+      return { ok: false, error: `HTTP ${res.status}: payload_too_large`, status: res.status };
+    }
+    const safe = sanitizeString(errText, 80);
     return { ok: false, error: `HTTP ${res.status}${safe ? ': ' + safe : ''}`, status: res.status };
   }
   // 204 No Content — return undefined as data
   if (res.status === 204) return { ok: true, data: undefined as T, status: 204 };
+  // Read as text first so we can length-check before JSON.parse — json()
+  // doesn't expose the buffer length until it's already in memory.
+  let raw: string;
+  try {
+    raw = await res.text();
+  } catch {
+    return { ok: false, error: 'read_error', status: res.status };
+  }
+  if (raw.length > MAX_RESPONSE_BYTES) {
+    return { ok: false, error: 'payload_too_large', status: res.status };
+  }
   let data: T;
   try {
-    data = await res.json() as T;
+    data = JSON.parse(raw) as T;
   } catch {
     return { ok: false, error: 'invalid_json', status: res.status };
   }

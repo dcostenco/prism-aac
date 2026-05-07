@@ -232,6 +232,12 @@ export function stripModelControlTokens(text: string): string {
   out = out.replace(/<\|synalux_think\|>[\s\S]*$/g, '');
   // 3. Any other stray control tokens (im_start, eot, endoftext, etc.).
   out = out.replace(/<\|[a-z0-9_./-]+\|>/gi, '');
+  // 4. Collapse runs of whitespace that the strip left behind. A paired
+  //    block sandwiched between two spaces (`Prefix <|...|>X<|...|> Answer`)
+  //    leaves `Prefix  Answer` with a double space — collapse to single.
+  //    Newlines collapse too: an entire thought block on its own line
+  //    becomes a single line break instead of a blank gap.
+  out = out.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n');
   return out.trim();
 }
 
