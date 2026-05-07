@@ -23,7 +23,9 @@ import {
   isProviderAvailable,
 } from '@/services/sendToContact';
 import { syncContactsOnce } from '@/services/contactsIntegrationService';
+import { subscribeToIntegrationEvents } from '@/services/integrationsService';
 import { tapFeedback } from '@/services/feedback';
+import IntegrationsSettings from './IntegrationsSettings';
 
 const PROVIDER_LIST: ContactProvider[] = [
   'mail', 'sms', 'telegram', 'whatsapp', 'viber', 'messenger', 'instagram',
@@ -101,17 +103,38 @@ export default function CaregiverContactsSettings() {
     }, 4000);
   }, []);
 
+  // When IntegrationsSettings broadcasts a 'provider-connected' event
+  // (caregiver finished an OAuth popup), automatically pull contacts
+  // so the row list refreshes without a separate Sync click.
+  useEffect(() => {
+    const unsub = subscribeToIntegrationEvents((ev) => {
+      if (ev.type === 'provider-connected') {
+        handleSync();
+      }
+    });
+    return unsub;
+  }, [handleSync]);
+
   const inputClass = 'w-full surface-key rounded-lg px-3 py-2 text-primary text-base border border-theme';
   const btnPrimary = 'aac-btn rounded-lg px-4 py-2 bg-[#4CAF50] text-white font-bold disabled:opacity-40';
   const btnSecondary = 'aac-btn rounded-lg px-3 py-2 surface-key text-primary border border-theme text-sm';
 
   return (
     <div className="space-y-3" data-testid="caregiver-contacts-settings">
-      {/* Sync row */}
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-muted text-xs">
-          Pulls contacts you connected on synalux.ai/chat (Telegram / WhatsApp / Mail / …).
-          {lastSyncedAt ? ` Last synced ${new Date(lastSyncedAt).toLocaleString()}.` : ' Never synced.'}
+      {/* In-app integrations connect grid — replaces the prior dead-end
+          "Pulls contacts you connected on synalux.ai/chat" copy. The
+          caregiver authorizes Telegram / Slack / Gmail / Outlook / etc.
+          via popup, never leaving PrismAAC. Contacts re-sync
+          automatically on each successful connect (handleSync runs
+          via subscribeToIntegrationEvents above). */}
+      <IntegrationsSettings />
+
+      {/* Manual sync remains available as an escape hatch — useful if
+          a caregiver added a contact on the portal in another window
+          and wants it to appear here without re-connecting. */}
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-theme">
+        <p className="text-muted text-[11px]">
+          {lastSyncedAt ? `Contacts last synced ${new Date(lastSyncedAt).toLocaleString()}.` : 'Connect a provider above to pull contacts.'}
         </p>
         <button
           className={btnSecondary}
@@ -119,7 +142,7 @@ export default function CaregiverContactsSettings() {
           disabled={syncing}
           data-testid="contacts-sync-btn"
         >
-          {syncing ? 'Syncing…' : '↻ Sync'}
+          {syncing ? 'Syncing…' : '↻ Sync now'}
         </button>
       </div>
       {syncMsg && <p className="text-xs text-[#4CAF50]" data-testid="contacts-sync-msg">{syncMsg}</p>}
