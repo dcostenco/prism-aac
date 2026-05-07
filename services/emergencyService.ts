@@ -294,10 +294,33 @@ export function detectEmergency(text: string): { detected: boolean; severity: 'c
   return { detected: false, severity: null, phrase: null };
 }
 
+/** Strict shape check for entries we read back from the alert queue.
+ *  This is LIFE-SAFETY code — a tampered localStorage entry that
+ *  passes the queue dedup as a "matching" alert could silently
+ *  swallow a real emergency. Drop anything that doesn't have the
+ *  exact required fields. */
+const VALID_SEVERITIES = new Set(['critical', 'urgent', 'medical']);
+function isValidQueuedAlert(a: unknown): a is QueuedAlert {
+  if (!a || typeof a !== 'object') return false;
+  const x = a as Record<string, unknown>;
+  if (typeof x.id !== 'string' || !x.id || x.id.length > 128) return false;
+  if (typeof x.phrase !== 'string' || !x.phrase || x.phrase.length > 1000) return false;
+  if (typeof x.timestamp !== 'number' || !Number.isFinite(x.timestamp) || x.timestamp < 0) return false;
+  if (typeof x.sent !== 'boolean') return false;
+  if (x.severity !== undefined && (typeof x.severity !== 'string' || !VALID_SEVERITIES.has(x.severity))) return false;
+  return true;
+}
+
 function getQueuedAlerts(): QueuedAlert[] {
   if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(localStorage.getItem(ALERT_QUEUE_KEY) || '[]');
+    const parsed = JSON.parse(localStorage.getItem(ALERT_QUEUE_KEY) || '[]');
+    if (!Array.isArray(parsed)) return [];
+    // Hard cap on queue size — defense against tampered storage. A
+    // legitimate queue stays under ~10 entries (only unsent alerts
+    // accumulate); 200 is paranoid headroom that still bounds the
+    // dedup-loop work past which it would noticeably stall.
+    return parsed.filter(isValidQueuedAlert).slice(0, 200) as QueuedAlert[];
   } catch {
     return [];
   }
@@ -305,7 +328,16 @@ function getQueuedAlerts(): QueuedAlert[] {
 
 function saveQueuedAlerts(alerts: QueuedAlert[]): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(ALERT_QUEUE_KEY, JSON.stringify(alerts));
+  // Wrap in try/catch — life-safety code must not throw on
+  // QuotaExceededError. If write fails, in-memory queue still has the
+  // alert; the next online-flush retry will attempt to send it. Logging
+  // helps a caregiver diagnose "why didn't the alert send" later.
+  try {
+    localStorage.setItem(ALERT_QUEUE_KEY, JSON.stringify(alerts));
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[emergency] saveQueuedAlerts failed:', e instanceof Error ? e.message : e);
+  }
 }
 
 /**

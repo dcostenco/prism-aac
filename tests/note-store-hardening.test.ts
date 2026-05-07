@@ -29,8 +29,7 @@ describe('noteStore — addNote input caps', () => {
       { type: 'add_phrase', description: 'good', payload: { categoryId: 'help' } },
       // @ts-expect-error — testing runtime guard
       { type: 'rm_-rf', description: 'evil', payload: { evil: true } },
-      // @ts-expect-error — testing runtime guard
-      { type: 'add_phrase', description: 'a'.repeat(5000), payload: {} }, // description too long
+      { type: 'add_phrase', description: 'a'.repeat(5000), payload: {} }, // description too long — runtime guard drops it
     ]);
     expect(note.actions.length).toBe(1);
     expect(note.actions[0].type).toBe('add_phrase');

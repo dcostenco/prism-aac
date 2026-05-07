@@ -243,12 +243,44 @@ export const usePredictionStore = create<PredictionState>()(
       partialize: (s) => ({ wordFreq: s.wordFreq, bigrams: s.bigrams, trigrams: s.trigrams }),
       merge: (persistedState, currentState) => {
         const p = (persistedState ?? {}) as Partial<PredictionState>;
+        // Sanitize each n-gram map. Without this, a tampered localStorage
+        // entry (browser ext / sibling tab on shared device) could inject
+        // an arbitrary phrase like "click here for free" with a huge
+        // count, dominating the prediction bar and influencing what the
+        // AAC user is led to tap. The shape gate also defends the
+        // prediction engine's sort path from non-numeric counts which
+        // would NaN-poison the comparison.
+        const cleanNgrams = (raw: unknown): Record<string, WordFreqEntry> => {
+          if (!raw || typeof raw !== 'object') return {};
+          const out: Record<string, WordFreqEntry> = {};
+          let count = 0;
+          // Cap at MAX_NGRAM_ENTRIES — defends against runaway storage.
+          // 50k is generous; legitimate corpus rarely exceeds 20k.
+          const MAX_NGRAM_ENTRIES = 50_000;
+          // Cap on individual key length — n-grams are at most ~3 words
+          // separated by spaces; 200 chars is paranoid headroom.
+          const MAX_KEY_LEN = 200;
+          for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+            if (count >= MAX_NGRAM_ENTRIES) break;
+            if (typeof key !== 'string' || !key || key.length > MAX_KEY_LEN) continue;
+            if (!val || typeof val !== 'object') continue;
+            const v = val as Record<string, unknown>;
+            if (typeof v.count !== 'number' || !Number.isFinite(v.count) || v.count < 0) continue;
+            if (v.lastUsed !== undefined && (typeof v.lastUsed !== 'number' || !Number.isFinite(v.lastUsed))) continue;
+            // Cap individual count at a sane upper bound — a tampered
+            // entry with count: 1e9 would dominate sorting forever.
+            const cappedCount = Math.min(v.count, 100_000);
+            out[key] = { count: cappedCount, lastUsed: typeof v.lastUsed === 'number' ? v.lastUsed : 0 };
+            count++;
+          }
+          return out;
+        };
         return {
           ...currentState,
           ...p,
-          wordFreq: { ...SEED_EN.wordFreq, ...(p.wordFreq ?? {}) },
-          bigrams: { ...SEED_EN.bigrams, ...(p.bigrams ?? {}) },
-          trigrams: { ...SEED_EN.trigrams, ...(p.trigrams ?? {}) },
+          wordFreq: { ...SEED_EN.wordFreq, ...cleanNgrams(p.wordFreq) },
+          bigrams: { ...SEED_EN.bigrams, ...cleanNgrams(p.bigrams) },
+          trigrams: { ...SEED_EN.trigrams, ...cleanNgrams(p.trigrams) },
         };
       },
       // Debounced localStorage: writes at most once per 3 seconds.
