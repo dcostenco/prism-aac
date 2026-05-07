@@ -47,7 +47,8 @@ const KEY_BASE =
 export default function MathMainKeyboard({ className = '' }: MathMainKeyboardProps) {
   const commitGlyph = useMathGridStore((s) => s.commitGlyph);
   const backspaceAtCursor = useMathGridStore((s) => s.backspaceAtCursor);
-  const returnToNextRow = useMathGridStore((s) => s.returnToNextRow);
+  const returnSmartLeft = useMathGridStore((s) => s.returnSmartLeft);
+  const returnSmartRight = useMathGridStore((s) => s.returnSmartRight);
 
   const onGlyph = useCallback((g: string) => {
     keyFeedback();
@@ -61,11 +62,18 @@ export default function MathMainKeyboard({ className = '' }: MathMainKeyboardPro
 
   const onReturn = useCallback(() => {
     tapFeedback();
-    // Default Return: drop one row, snap to leftmost contiguous (Phase 1B
-    // simplification: just snap to col 0). Phase 3B will add the
-    // smarter rules-engine version.
-    returnToNextRow(0);
-  }, [returnToNextRow]);
+    // Smart Return: drops to next row aligned with the LEFTMOST filled
+    // cell of the current row — natural for column arithmetic where
+    // the operand digits stack on the same column. Phase 1C.
+    returnSmartLeft();
+  }, [returnSmartLeft]);
+
+  const onReturnRight = useCallback(() => {
+    tapFeedback();
+    // Right Return: rightmost filled cell + 1 — useful for the next
+    // operand on the right of a row.
+    returnSmartRight();
+  }, [returnSmartRight]);
 
   return (
     <div
@@ -104,16 +112,28 @@ export default function MathMainKeyboard({ className = '' }: MathMainKeyboardPro
         ))}
       </div>
 
-      {/* Row 3: utility row */}
+      {/* Row 3: utility row — return-left + return-right are separate
+          keys per the reference design. The left ⏎ aligns to the
+          leftmost filled cell of the current row (column-add); the
+          right ↵ aligns one past the rightmost (next-operand-right). */}
       <div className="flex gap-1.5">
         <button
           onClick={onReturn}
           data-testid="math-key-return"
           data-glyph="return"
-          aria-label="Next row"
+          aria-label="Return — next row, leftmost"
           className={`${KEY_BASE} flex-1 py-2.5 text-xl`}
         >
           ⏎
+        </button>
+        <button
+          onClick={onReturnRight}
+          data-testid="math-key-return-right"
+          data-glyph="return-right"
+          aria-label="Return — next row, rightmost"
+          className={`${KEY_BASE} flex-1 py-2.5 text-xl`}
+        >
+          ↵
         </button>
         <button
           onClick={() => onGlyph(' ')}

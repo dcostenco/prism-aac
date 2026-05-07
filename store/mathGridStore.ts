@@ -39,6 +39,12 @@ import {
   deserialize as deserializePure,
   type SerializedMathGrid,
 } from '@/engine/mathGrid';
+import {
+  returnSmartLeft as returnSmartLeftPure,
+  returnSmartRight as returnSmartRightPure,
+  inferContext,
+  type CursorContext,
+} from '@/engine/predictiveCursor';
 
 export interface MathGridStore extends MathGridState {
   // Cell ops
@@ -51,6 +57,15 @@ export interface MathGridStore extends MathGridState {
   advanceCursorRight: () => void;
   moveCursorBy: (dr: number, dc: number) => void;
   returnToNextRow: (fromCol?: number) => void;
+  /** Drop cursor to next row, aligned with the leftmost filled cell of
+   *  the current row. The natural Return for column arithmetic. */
+  returnSmartLeft: () => void;
+  /** Drop cursor to next row, one cell past the rightmost filled cell. */
+  returnSmartRight: () => void;
+  /** Read-only context inference: column-add / column-mul / long-div /
+   *  fraction-num / fraction-den / exponent / default. Future phases
+   *  use this to drive auto-advance behavior. */
+  cursorContext: () => CursorContext;
 
   // Backspace + commit
   backspaceAtCursor: () => void;
@@ -87,6 +102,9 @@ export const useMathGridStore = create<MathGridStore>((set, get) => ({
   advanceCursorRight: () => set((s) => advanceCursorRightPure(s)),
   moveCursorBy: (dr, dc) => set((s) => moveCursorByPure(s, dr, dc)),
   returnToNextRow: (fromCol) => set((s) => returnToNextRowPure(s, fromCol)),
+  returnSmartLeft: () => set((s) => returnSmartLeftPure(s)),
+  returnSmartRight: () => set((s) => returnSmartRightPure(s)),
+  cursorContext: () => inferContext(get()),
 
   backspaceAtCursor: () => set((s) => backspaceAtCursorPure(s)),
   commitGlyph: (glyph) => set((s) => commitGlyphPure(s, glyph)),
