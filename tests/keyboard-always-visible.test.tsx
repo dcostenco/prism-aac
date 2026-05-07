@@ -1,10 +1,19 @@
 /**
- * HARD INVARIANT: The AAC keyboard must be on screen no matter which
- * panel is open. This is the user's only input method — hiding it for
- * "more space" trades the user's voice for a UI win nobody asked for.
+ * Keyboard visibility invariant — refined 2026-05-07.
  *
- * If a future change starts gating <Keyboard /> on sidePanel state, this
- * suite breaks loudly.
+ * The user always needs a working keyboard. For most panels that means
+ * the global qwerty stays mounted. For panels that ship their OWN
+ * primary keyboard (currently just `math`), rendering the qwerty too
+ * created a clipped double-keyboard ("broken keyboards" user report).
+ *
+ * Two pinned invariants:
+ *   1. For every NON-keyboard panel, the qwerty MUST be in the DOM.
+ *   2. For every PANEL_WITH_OWN_KEYBOARD, the qwerty MUST NOT render
+ *      (panel ships its own input layer).
+ *
+ * If a future change either (a) starts hiding the qwerty on a panel
+ * that doesn't have its own keys, or (b) starts double-rendering for
+ * a math-shaped panel, this suite breaks loudly.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render } from '@testing-library/react';
@@ -67,12 +76,11 @@ beforeEach(() => {
   useSettingsStore.setState({ theme: 'light', highContrast: false } as Partial<ReturnType<typeof useSettingsStore.getState>>);
 });
 
-const PANELS: SidePanelView[] = [
+const PANELS_WITH_QWERTY: SidePanelView[] = [
   'none',
   'categories',
   'category-detail',
   'ordering',
-  'math',
   'caregiver',
   'ai-chat',
   'aac-chat',
@@ -85,16 +93,32 @@ const PANELS: SidePanelView[] = [
   'aac-designer',
 ];
 
-describe('Keyboard always-on-screen invariant', () => {
-  for (const panel of PANELS) {
+const PANELS_WITHOUT_QWERTY: SidePanelView[] = [
+  'math',
+];
+
+describe('Keyboard visibility — qwerty rendered for panels without own input', () => {
+  for (const panel of PANELS_WITH_QWERTY) {
     it(`keyboard renders when sidePanel = "${panel}"`, async () => {
       useUIStore.setState({ sidePanel: panel });
       const { findByTestId } = render(<PrismApp />);
-      // findByTestId waits for the post-hydration render
       const kb = await findByTestId('aac-keyboard-mock');
       expect(kb).toBeInTheDocument();
       const shell = await findByTestId('keyboard-shell');
       expect(shell).toBeInTheDocument();
+    });
+  }
+});
+
+describe('Keyboard visibility — qwerty hidden for panels with their own keyboard', () => {
+  for (const panel of PANELS_WITHOUT_QWERTY) {
+    it(`qwerty does NOT render when sidePanel = "${panel}" (panel owns input)`, async () => {
+      useUIStore.setState({ sidePanel: panel });
+      const { queryByTestId, findByTestId } = render(<PrismApp />);
+      // Wait for the panel itself to mount before asserting absence.
+      await findByTestId(`panel-${panel}`);
+      expect(queryByTestId('keyboard-shell')).not.toBeInTheDocument();
+      expect(queryByTestId('aac-keyboard-mock')).not.toBeInTheDocument();
     });
   }
 });

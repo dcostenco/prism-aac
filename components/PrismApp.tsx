@@ -100,16 +100,25 @@ export default function PrismApp() {
   const highContrast = useSettingsStore((s) => s.highContrast);
   const theme = useSettingsStore((s) => s.theme);
   const sidePanel = useUIStore((s) => s.sidePanel);
-  // Keyboard is ALWAYS visible — hard invariant. AAC users can't switch
-  // to a physical keyboard, can't pick another input method, can't even
-  // articulate that the keyboard disappeared. Hiding it for "more screen
-  // space" trades the user's only voice for a UI win nobody asked for.
-  // Every panel (categories, schedule, marketplace, math, games, notes,
-  // ai-chat, aac-chat, ...) renders ABOVE the keyboard with `flex-[3]`
-  // so the panel scrolls inside its share and the keyboard keeps its
-  // share at the bottom — same position the user trained on. Touched
-  // anywhere in PrismApp.tsx, but the contract is: never gate the
-  // <Keyboard /> render on sidePanel state.
+  // Keyboard visibility — refined invariant.
+  //
+  // Original rule: ALWAYS show the qwerty no matter which panel is
+  // open, so the AAC user never loses their only input method.
+  //
+  // 2026-05-07 user feedback: this rule was too blunt. The Math panel
+  // ships its OWN input keyboard (operators + numbers + variables); when
+  // we also rendered the qwerty below it, the user got a clipped
+  // double-keyboard ("broken keyboards" report). Same shape for any
+  // future panel that owns its input layer.
+  //
+  // New rule: hide the global qwerty ONLY for panels that have their
+  // own primary keyboard. The user still has a working keyboard — just
+  // the panel-specific one. For every other panel (categories, schedule,
+  // ai-chat, aac-chat, marketplace, ...) the qwerty stays mounted with a
+  // sane min-height so flex-[3] panels can't squeeze it to 130px (the
+  // "only the top two rows are visible" bug, also reported May 2026).
+  const PANELS_WITH_OWN_KEYBOARD = new Set(['math']);
+  const showQwerty = !PANELS_WITH_OWN_KEYBOARD.has(sidePanel);
   const { rtl } = useT();
 
   useEffect(() => {
@@ -230,10 +239,18 @@ export default function PrismApp() {
           <MarketplacePanel />
           <PictureEditorPanel />
           <MusicComposerPanel />
-          {/* Keyboard is unconditional — see invariant comment above. */}
-          <div className="flex-1 flex flex-col min-h-0" data-testid="keyboard-shell">
-            <Keyboard />
-          </div>
+          {/* Keyboard — hidden only for panels with their own input
+              keyboard (math). For every other panel the qwerty stays
+              mounted; the min-h prevents flex-[3] panels from squeezing
+              it down to a 2-row clipped sliver. */}
+          {showQwerty && (
+            <div
+              className="flex-1 flex flex-col min-h-[clamp(180px,30svh,300px)]"
+              data-testid="keyboard-shell"
+            >
+              <Keyboard />
+            </div>
+          )}
           <AlertOverlay />
           {/* True modals — settings/history are configuration UIs, not
               communication panels, so they stay as full-screen overlays. */}
