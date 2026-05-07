@@ -43,6 +43,43 @@ export interface PortalRequest {
 
 const DEFAULT_TIMEOUT_MS = 8_000;
 
+/** Reads a Response body as text but caps total bytes — defense against
+ *  a server that omits Content-Length and streams a huge response.
+ *  Returns the decoded string, '' on read error, or null when the body
+ *  exceeded `maxBytes` (caller treats null as payload_too_large).
+ *
+ *  Falls back to res.text() when the runtime doesn't expose
+ *  `Response.body.getReader()` — the cap is then enforced post-buffer
+ *  via length-check, which still bounds memory at roughly 2× maxBytes
+ *  but is the best we can do without streaming primitives. */
+async function readCappedText(res: Response, maxBytes: number): Promise<string | null> {
+  if (!res.body || typeof res.body.getReader !== 'function') {
+    let txt = '';
+    try { txt = await res.text(); } catch { return ''; }
+    return txt.length > maxBytes ? null : txt;
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let received = 0;
+  let out = '';
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      received += value.byteLength;
+      if (received > maxBytes) {
+        try { await reader.cancel(); } catch { /* */ }
+        return null;
+      }
+      out += decoder.decode(value, { stream: true });
+    }
+    out += decoder.decode(); // flush any trailing partial code unit
+  } catch {
+    return out;
+  }
+  return out;
+}
+
 export async function portalFetch<T = unknown>(req: PortalRequest): Promise<PortalResult<T>> {
   if (req.skipIfOffline !== false && typeof navigator !== 'undefined' && navigator.onLine === false) {
     return { ok: false, error: 'offline' };
@@ -67,36 +104,29 @@ export async function portalFetch<T = unknown>(req: PortalRequest): Promise<Port
   } finally {
     cancel();
   }
-  // Content-Length pre-check stops a hostile portal from streaming
-  // gigabytes into res.text()/res.json(). Some servers omit the
-  // header — we still cap by reading text() and length-checking.
+  // Content-Length pre-check stops a hostile portal from even starting
+  // to stream gigabytes. Most servers send it; if missing, the
+  // streaming reader below enforces the same cap chunk-by-chunk so a
+  // malicious server that omits the header AND streams a huge body
+  // still hits the 1 MB ceiling without OOM.
   const declaredLen = Number(res.headers.get('content-length') ?? '');
   if (Number.isFinite(declaredLen) && declaredLen > MAX_RESPONSE_BYTES) {
     return { ok: false, error: 'payload_too_large', status: res.status };
   }
   if (!res.ok) {
-    // Read at most 80 chars of body so a logging endpoint dumping a stack
-    // trace doesn't end up in the AAC user's toast notification.
-    const errText = await res.text().catch(() => '');
-    if (errText.length > MAX_RESPONSE_BYTES) {
+    const errText = await readCappedText(res, MAX_RESPONSE_BYTES);
+    if (errText === null) {
       return { ok: false, error: `HTTP ${res.status}: payload_too_large`, status: res.status };
     }
+    // Read at most 80 chars of body so a logging endpoint dumping a stack
+    // trace doesn't end up in the AAC user's toast notification.
     const safe = sanitizeString(errText, 80);
     return { ok: false, error: `HTTP ${res.status}${safe ? ': ' + safe : ''}`, status: res.status };
   }
   // 204 No Content — return undefined as data
   if (res.status === 204) return { ok: true, data: undefined as T, status: 204 };
-  // Read as text first so we can length-check before JSON.parse — json()
-  // doesn't expose the buffer length until it's already in memory.
-  let raw: string;
-  try {
-    raw = await res.text();
-  } catch {
-    return { ok: false, error: 'read_error', status: res.status };
-  }
-  if (raw.length > MAX_RESPONSE_BYTES) {
-    return { ok: false, error: 'payload_too_large', status: res.status };
-  }
+  const raw = await readCappedText(res, MAX_RESPONSE_BYTES);
+  if (raw === null) return { ok: false, error: 'payload_too_large', status: res.status };
   let data: T;
   try {
     data = JSON.parse(raw) as T;

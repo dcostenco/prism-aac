@@ -160,3 +160,53 @@ describe('AACChatPanel — visibility', () => {
     expect(container.firstChild).toBeNull();
   });
 });
+
+describe('AACChatPanel — concurrency safety', () => {
+  beforeEach(() => {
+    useContactsStore.setState({
+      contacts: [
+        { id: 'c1', name: 'Mom', provider: 'telegram', recipientId: '12345', order: 0 },
+        { id: 'c2', name: 'Dad', provider: 'whatsapp', recipientId: '+15551234567', order: 1 },
+      ],
+      lastSyncedAt: 0,
+    });
+  });
+
+  it('does not clearAll when the user typed new text after submitting', async () => {
+    // Resolve send slowly so we can race a keyboard mutation in.
+    let resolveSend: (v: { ok: true; truncated: boolean }) => void = () => {};
+    sendToContactMock.mockImplementationOnce(() => new Promise((r) => { resolveSend = r; }));
+    useUIStore.setState({ sidePanel: 'aac-chat', activeContactId: 'c1' });
+    useMessageStore.setState({ text: 'hi mom' });
+    const user = userEvent.setup();
+    render(<AACChatPanel />);
+    await user.click(screen.getByTestId('aac-chat-send-btn'));
+    // Mid-await: user types something new for the next message.
+    useMessageStore.setState({ text: 'starting a new message' });
+    // Now let the send resolve.
+    await act(async () => {
+      resolveSend({ ok: true, truncated: false });
+      await Promise.resolve();
+    });
+    // The new text MUST survive — clearAll should have been a no-op.
+    expect(useMessageStore.getState().text).toBe('starting a new message');
+  });
+
+  it('toast credits the contact we sent to, even after the user switched contacts', async () => {
+    let resolveSend: (v: { ok: true; truncated: boolean }) => void = () => {};
+    sendToContactMock.mockImplementationOnce(() => new Promise((r) => { resolveSend = r; }));
+    useUIStore.setState({ sidePanel: 'aac-chat', activeContactId: 'c1' });
+    useMessageStore.setState({ text: 'hi mom' });
+    const user = userEvent.setup();
+    render(<AACChatPanel />);
+    await user.click(screen.getByTestId('aac-chat-send-btn'));
+    // User goes back and picks Dad mid-await.
+    useUIStore.setState({ activeContactId: 'c2' });
+    await act(async () => {
+      resolveSend({ ok: true, truncated: false });
+      await Promise.resolve();
+    });
+    // sendToContact was called with the Mom contact (snapshot at submit).
+    expect(sendToContactMock.mock.calls[0][0]).toMatchObject({ id: 'c1', name: 'Mom' });
+  });
+});

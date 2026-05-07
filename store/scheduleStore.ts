@@ -95,14 +95,6 @@ export const useScheduleStore = create<ScheduleState>()(
         const trimmedText = text.trim().slice(0, 2000);
         const trimmedSender = sender.trim().slice(0, 80);
         if (!trimmedText || !trimmedSender) return null;
-        // Dedupe by externalId so polling/SSE re-delivery doesn't pile
-        // up duplicate rows. When the provider doesn't give an id we
-        // fall through and accept the dup risk — better than dropping
-        // a real message because of a missing id.
-        const existing = externalId
-          ? get().tasks.find((t) => t.externalId === externalId)
-          : undefined;
-        if (existing) return null;
         const id = `sched-${crypto.randomUUID()}`;
         // Eviction policy: hard cap on message-kind tasks at 100 to
         // bound localStorage growth from a chatty caregiver. Drop the
@@ -110,33 +102,48 @@ export const useScheduleStore = create<ScheduleState>()(
         // Falls back to dropping the oldest of any kind=message if all
         // 100 slots are unread (the user has bigger problems then).
         const MAX_MESSAGES = 100;
-        const currentMessages = get().tasks.filter((t) => t.kind === 'message');
-        const dropIds = new Set<string>();
-        if (currentMessages.length >= MAX_MESSAGES) {
-          const sortedByAge = [...currentMessages].sort((a, b) => (a.receivedAt ?? 0) - (b.receivedAt ?? 0));
-          const readFirst = [...sortedByAge].sort((a, b) => Number(b.done) - Number(a.done) || (a.receivedAt ?? 0) - (b.receivedAt ?? 0));
-          for (const t of readFirst) {
-            dropIds.add(t.id);
-            if (currentMessages.length - dropIds.size < MAX_MESSAGES) break;
+        // All decisions (dedup + eviction) live INSIDE the set callback
+        // so they read the freshest committed state and apply to the
+        // same snapshot the new task gets added to. Avoids a TOCTOU
+        // window between get() and set() that would otherwise let two
+        // synchronously-back-to-back deliveries with the same
+        // externalId both pass the dedup check.
+        let inserted = false;
+        set((s) => {
+          if (externalId && s.tasks.some((t) => t.externalId === externalId)) {
+            return s; // dup — leave state unchanged
           }
-        }
-        set((s) => ({
-          tasks: [
-            ...s.tasks.filter((t) => !dropIds.has(t.id)),
-            {
-              id,
-              text: `${trimmedSender}: ${trimmedText}`,
-              icon: '💬',
-              done: false,
-              order: s.tasks.length,
-              kind: 'message',
-              sender: trimmedSender,
-              ...(externalId ? { externalId } : {}),
-              receivedAt: Date.now(),
-            },
-          ],
-        }));
-        return id;
+          inserted = true;
+          const currentMessages = s.tasks.filter((t) => t.kind === 'message');
+          const dropIds = new Set<string>();
+          if (currentMessages.length >= MAX_MESSAGES) {
+            const readFirst = [...currentMessages].sort(
+              (a, b) => Number(b.done) - Number(a.done) || (a.receivedAt ?? 0) - (b.receivedAt ?? 0),
+            );
+            for (const t of readFirst) {
+              dropIds.add(t.id);
+              if (currentMessages.length - dropIds.size < MAX_MESSAGES) break;
+            }
+          }
+          const survivors = dropIds.size > 0 ? s.tasks.filter((t) => !dropIds.has(t.id)) : s.tasks;
+          return {
+            tasks: [
+              ...survivors,
+              {
+                id,
+                text: `${trimmedSender}: ${trimmedText}`,
+                icon: '💬',
+                done: false,
+                order: survivors.length,
+                kind: 'message',
+                sender: trimmedSender,
+                ...(externalId ? { externalId } : {}),
+                receivedAt: Date.now(),
+              },
+            ],
+          };
+        });
+        return inserted ? id : null;
       },
 
       removeTask: (id) =>

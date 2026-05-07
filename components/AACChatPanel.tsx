@@ -85,20 +85,33 @@ export default function AACChatPanel() {
     if (!activeContact || sending) return;
     const trimmed = text.trim();
     if (!trimmed) return;
+    // Snapshot contact + text at submit time. Without these snapshots,
+    // a slow network + a user who taps "Back to contacts" or selects a
+    // different person mid-await would (a) show a success toast naming
+    // the NEW contact even though we sent to the OLD one, and (b) blow
+    // away whatever they started typing for the new contact via the
+    // unconditional clearAll(). Both are silent data-loss bugs the AAC
+    // user can't articulate.
+    const submittedContact = activeContact;
+    const submittedText = trimmed;
     tapFeedback();
     setSending(true);
-    const res = await sendToContact(activeContact, trimmed, plan);
+    const res = await sendToContact(submittedContact, submittedText, plan);
     if (!mountedRef.current) return; // user closed the panel mid-await
     setSending(false);
     if (res.ok) {
-      const baseMsg = t('aac_chat_sent') || `Sent to ${activeContact.name}`;
+      const baseMsg = t('aac_chat_sent') || `Sent to ${submittedContact.name}`;
       flashToast(res.truncated ? `${baseMsg} (shortened to fit)` : baseMsg);
-      clearAll();
+      // Only clear the keyboard buffer if the user hasn't started a new
+      // message in the meantime. `text` from the closure is stale by now;
+      // we read fresh from the store and compare to the captured value.
+      const liveText = useMessageStore.getState().text;
+      if (liveText.trim() === submittedText) clearAll();
     } else if (res.error.startsWith('tier_required:')) {
       const required = res.error.split(':')[1];
-      flashToast(`${activeContact.name}: requires ${required} plan`);
+      flashToast(`${submittedContact.name}: requires ${required} plan`);
     } else if (res.error === 'invalid_recipient_id') {
-      flashToast(`${activeContact.name}: contact details look wrong — ask a caregiver to fix.`);
+      flashToast(`${submittedContact.name}: contact details look wrong — ask a caregiver to fix.`);
     } else {
       flashToast(t('aac_chat_send_failed') || `Could not send: ${res.error}`);
     }

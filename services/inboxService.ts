@@ -125,12 +125,16 @@ export function startInboxPolling(): () => void {
   if (typeof window === 'undefined') return () => {};
   if (intervalId !== null) return stopInboxPolling;
   // Drain once on start so the user sees any backlog without a 30s wait.
-  void pollOnce();
-  intervalId = setInterval(() => { void pollOnce(); }, POLL_INTERVAL_MS);
+  // `.catch` swallows unhandled promise rejections — pollOnce currently
+  // can't throw (try/finally + portalFetch never throws), but a future
+  // refactor that introduces a throw above the try would otherwise log
+  // "unhandled promise rejection" to every browser console.
+  pollOnce().catch(() => { /* swallowed — see comment above */ });
+  intervalId = setInterval(() => { pollOnce().catch(() => {}); }, POLL_INTERVAL_MS);
   // When the device comes back online, drain immediately rather than
   // waiting up to 30s for the next interval — the most common case for
   // AAC users (tablet woke from sleep on the school bus).
-  onlineHandler = () => { void pollOnce(); };
+  onlineHandler = () => { pollOnce().catch(() => {}); };
   window.addEventListener('online', onlineHandler);
   // Dev/QA hook: lets manual testing simulate inbound messages without
   // a live portal endpoint. Gated behind NODE_ENV !== 'production' so

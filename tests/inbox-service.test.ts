@@ -69,6 +69,20 @@ describe('deliverIncomingMessage', () => {
   });
 });
 
+describe('scheduleStore — dedup uses fresh state inside set()', () => {
+  it('rejects a duplicate externalId added back-to-back synchronously', () => {
+    // Both calls happen in the same tick. The dedup decision must read
+    // committed state inside the set() callback, not via get() before
+    // it — otherwise both deliveries pass the check and both commit.
+    const a = useScheduleStore.getState().addIncomingMessage('Mom', 'hi', 'tg-99');
+    const b = useScheduleStore.getState().addIncomingMessage('Mom', 'hi again', 'tg-99');
+    expect(a).not.toBeNull();
+    expect(b).toBeNull();
+    const tasks = useScheduleStore.getState().tasks.filter((t) => t.externalId === 'tg-99');
+    expect(tasks).toHaveLength(1);
+  });
+});
+
 describe('scheduleStore — incoming message cap (oldest-read evicted)', () => {
   it('caps message-kind tasks at 100 by evicting oldest read first', () => {
     // 100 read messages, then push 1 unread — should evict the oldest read.

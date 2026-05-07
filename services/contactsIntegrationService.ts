@@ -116,8 +116,10 @@ let intervalId: ReturnType<typeof setInterval> | null = null;
 export function startContactsSync(): () => void {
   if (typeof window === 'undefined') return () => {};
   if (intervalId !== null) return stopContactsSync;
-  void syncContactsOnce();
-  intervalId = setInterval(() => { void syncContactsOnce(); }, SYNC_INTERVAL_MS);
+  // `.catch(() => {})` swallows unhandled rejection from any future
+  // refactor that introduces a throw above syncContactsOnce' try block.
+  syncContactsOnce().catch(() => {});
+  intervalId = setInterval(() => { syncContactsOnce().catch(() => {}); }, SYNC_INTERVAL_MS);
   return stopContactsSync;
 }
 

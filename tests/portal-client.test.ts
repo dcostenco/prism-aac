@@ -83,6 +83,34 @@ describe('portalFetch — error mapping', () => {
   });
 });
 
+describe('portalFetch — response size cap', () => {
+  it('returns payload_too_large when Content-Length exceeds 1 MB', async () => {
+    const big = new Response('x', {
+      status: 200,
+      headers: { 'Content-Length': String(2 * 1024 * 1024) },
+    });
+    fetchMock.mockResolvedValueOnce(big);
+    const res = await portalFetch({ path: '/test' });
+    expect(res).toEqual({ ok: false, error: 'payload_too_large', status: 200 });
+  });
+
+  it('returns payload_too_large when streaming body exceeds the cap (no Content-Length)', async () => {
+    // Build a Response with a streaming body bigger than 1MB but with no
+    // Content-Length header, so we hit the chunk-by-chunk reader path.
+    const huge = 'A'.repeat(1024 * 1024 + 1024); // ~1 MB + 1 KB
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode(huge));
+        controller.close();
+      },
+    });
+    fetchMock.mockResolvedValueOnce(new Response(stream, { status: 200 }));
+    const res = await portalFetch({ path: '/test' });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toBe('payload_too_large');
+  });
+});
+
 describe('portalFetch — offline short-circuit', () => {
   const origDescriptor = Object.getOwnPropertyDescriptor(navigator, 'onLine');
   afterEach(() => {
