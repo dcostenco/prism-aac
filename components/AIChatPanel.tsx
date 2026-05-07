@@ -30,7 +30,7 @@ interface ChatMessage {
 
 export default function AIChatPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
-  const { text, appendText, clearAll, autoSpeak, soundEnabled } = useMessageStore();
+  const { text, appendText, autoSpeak, soundEnabled } = useMessageStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
   const profile = useAuthStore((s) => s.profile);
   const { t, ttsCode, outputTtsCode } = useT();
@@ -126,7 +126,6 @@ export default function AIChatPanel() {
     };
 
     try {
-      const originalText = question;
       await askAI(question, undefined, (delta) => {
         buffer += delta;
         if (!scheduled) {
@@ -135,7 +134,12 @@ export default function AIChatPanel() {
         }
       });
       flush();
-      if (useMessageStore.getState().text.trim() === originalText) clearAll();
+      // Preserve the user's typed question in the message bar — they may
+      // want to edit it, speak it via the Speak button, or compose a
+      // follow-up. Earlier behaviour cleared the bar on completion which
+      // killed the AAC user's typing context (verified-shipping note:
+      // user reported "AI keyboard should be preserved" after seeing
+      // input wiped post-Ask).
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('could_not_reach_ai');
       setMessages((prev) => {
