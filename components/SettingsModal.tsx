@@ -211,6 +211,21 @@ export default function SettingsModal() {
           <div>
             <h3 className={sectionTitle}>Contacts (Send a message)</h3>
             <CaregiverContactsSettings />
+            <label className="flex items-center justify-between py-2 mt-3 border-t border-theme pt-3">
+              <div>
+                <span className="text-primary text-sm font-semibold">Alarm on new message</span>
+                <p className="text-muted text-[10px]">Plays a chime when an incoming message lands from a connected provider. Mute for school / quiet contexts.</p>
+              </div>
+              <button
+                onClick={() => { tapFeedback(); settings.update({ notificationsEnabled: !settings.notificationsEnabled }); }}
+                aria-pressed={settings.notificationsEnabled}
+                aria-label="Alarm on new message"
+                data-testid="notifications-enabled-toggle"
+                className={`w-12 h-7 rounded-full transition-colors shrink-0 ${settings.notificationsEnabled ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${settings.notificationsEnabled ? 'translate-x-5' : ''}`} />
+              </button>
+            </label>
           </div>
 
           {/* Hand Calibration */}
