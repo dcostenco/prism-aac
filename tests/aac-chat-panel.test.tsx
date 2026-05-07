@@ -192,6 +192,23 @@ describe('AACChatPanel — concurrency safety', () => {
     expect(useMessageStore.getState().text).toBe('starting a new message');
   });
 
+  it('snaps back to picker when sync deletes the active contact mid-view', async () => {
+    useUIStore.setState({ sidePanel: 'aac-chat', activeContactId: 'c1' });
+    render(<AACChatPanel />);
+    expect(useUIStore.getState().activeContactId).toBe('c1');
+    // Sync replaces the contacts list — the previously-active id is gone.
+    await act(async () => {
+      useContactsStore.setState({
+        contacts: [
+          { id: 'c2', name: 'Dad', provider: 'whatsapp', recipientId: '+15551234567', order: 0 },
+        ],
+        lastSyncedAt: 0,
+      });
+      await Promise.resolve();
+    });
+    expect(useUIStore.getState().activeContactId).toBeNull();
+  });
+
   it('toast credits the contact we sent to, even after the user switched contacts', async () => {
     let resolveSend: (v: { ok: true; truncated: boolean }) => void = () => {};
     sendToContactMock.mockImplementationOnce(() => new Promise((r) => { resolveSend = r; }));

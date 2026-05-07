@@ -118,12 +118,41 @@ async function pollOnce(): Promise<void> {
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 let onlineHandler: (() => void) | null = null;
+let unsubscribeAuth: (() => void) | null = null;
+/** Last profile email observed — when this flips (sign-out / account
+ *  switch), we reset the saved `lastSeenMs` so the next poll for the
+ *  new user doesn't miss messages older than the prior user's window.
+ *  Also keys the "should we even poll" decision so we don't accidentally
+ *  drain a stale session-cookie request. */
+let lastObservedAccountKey: string | null = null;
+
+function accountKey(profile: { email?: string } | null): string | null {
+  return profile?.email ? profile.email.toLowerCase() : null;
+}
+
+function resetLastSeen(): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(LAST_SEEN_KEY);
+}
 
 /** Start the inbox poller. Idempotent — calling twice is a no-op.
  *  Returns a stop function for use as a useEffect cleanup. */
 export function startInboxPolling(): () => void {
   if (typeof window === 'undefined') return () => {};
   if (intervalId !== null) return stopInboxPolling;
+  // Subscribe to authStore so we can clear the stale lastSeenMs when
+  // the active profile changes (sign-out, account switch). Without
+  // this, a sign-in by user B reuses user A's lastSeenMs and any
+  // messages older than that timestamp are silently skipped — a
+  // genuine missed-communication bug for an AAC user.
+  lastObservedAccountKey = accountKey(useAuthStore.getState().profile);
+  unsubscribeAuth = useAuthStore.subscribe((state) => {
+    const next = accountKey(state.profile);
+    if (next !== lastObservedAccountKey) {
+      resetLastSeen();
+      lastObservedAccountKey = next;
+    }
+  });
   // Drain once on start so the user sees any backlog without a 30s wait.
   // `.catch` swallows unhandled promise rejections — pollOnce currently
   // can't throw (try/finally + portalFetch never throws), but a future
@@ -156,6 +185,11 @@ export function stopInboxPolling(): void {
     window.removeEventListener('online', onlineHandler);
     onlineHandler = null;
   }
+  if (unsubscribeAuth) {
+    unsubscribeAuth();
+    unsubscribeAuth = null;
+  }
+  lastObservedAccountKey = null;
   if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
     delete (window as unknown as { __prismDeliverIncoming?: unknown }).__prismDeliverIncoming;
   }

@@ -69,6 +69,29 @@ describe('deliverIncomingMessage', () => {
   });
 });
 
+describe('lib/uuid — randomId fallback', () => {
+  it('returns a unique-looking string when crypto.randomUUID is absent', async () => {
+    // Test the helper directly rather than mutating globalThis.crypto
+    // (whose property descriptor is read-only in jsdom). We patch the
+    // module's view of crypto via a vi.spyOn on the global getter.
+    const { randomId } = await import('@/lib/uuid');
+    const spy = vi.spyOn(globalThis, 'crypto', 'get').mockReturnValue({
+      getRandomValues: <T extends ArrayBufferView | null>(arr: T): T => {
+        if (arr instanceof Uint8Array) for (let i = 0; i < arr.length; i++) arr[i] = i;
+        return arr;
+      },
+    } as unknown as Crypto);
+    try {
+      const id = randomId('p-');
+      expect(id.startsWith('p-')).toBe(true);
+      // RFC4122-ish: 8-4-4-4-12 hex groups after the prefix.
+      expect(id.slice(2)).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
+
 describe('scheduleStore — dedup uses fresh state inside set()', () => {
   it('rejects a duplicate externalId added back-to-back synchronously', () => {
     // Both calls happen in the same tick. The dedup decision must read

@@ -17,6 +17,7 @@
  */
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { randomId } from '@/lib/uuid';
 
 export type ContactProvider =
   | 'telegram'
@@ -99,8 +100,11 @@ function isValidStoredContact(c: unknown): c is AacContact {
   return true;
 }
 
-let nextId = 1;
-const genId = () => `c-${Date.now()}-${nextId++}`;
+// Was: `c-${Date.now()}-${counter++}`. Date.now() collisions in fast
+// loops could produce dup ids; the counter wasn't shared across the
+// new mergeFromIntegrations path either. randomId() is collision-free
+// even when the same caller adds 100 contacts in a single tick.
+const genId = () => randomId('c-');
 
 export const useContactsStore = create<ContactsState>()(
   persist(

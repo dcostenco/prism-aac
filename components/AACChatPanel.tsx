@@ -51,6 +51,15 @@ export default function AACChatPanel() {
     mountedRef.current = false;
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
   }, []);
+  // If sync deletes (or the caregiver removes) the active contact while
+  // the AAC user is staring at the compose view, the panel was leaving
+  // the user with a half-empty chat shell and no useful action. Snap
+  // back to the picker so the user always has somewhere to go.
+  useEffect(() => {
+    if (activeContactId && !contacts.some((c) => c.id === activeContactId)) {
+      backToContacts();
+    }
+  }, [activeContactId, contacts, backToContacts]);
   const flashToast = useCallback((msg: string) => {
     setToast(msg);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);

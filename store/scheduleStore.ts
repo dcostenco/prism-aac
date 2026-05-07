@@ -1,5 +1,15 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { randomId } from '@/lib/uuid';
+import { SAFE_LIMITS } from '@/lib/safeStrings';
+
+/** Hard cap on incoming-message tasks before oldest-read eviction
+ *  kicks in. 100 fits a chatty caregiver's day without bloating
+ *  localStorage. */
+export const MAX_MESSAGE_TASKS = 100;
+/** Hard cap on total persisted tasks regardless of kind — defense
+ *  against tampered localStorage. */
+export const MAX_PERSISTED_TASKS = 200;
 
 export interface ScheduleTask {
   id: string;
@@ -81,7 +91,7 @@ export const useScheduleStore = create<ScheduleState>()(
           tasks: [
             ...s.tasks,
             {
-              id: `sched-${crypto.randomUUID()}`,
+              id: randomId('sched-'),
               text,
               icon,
               ...(textKey ? { textKey } : {}),
@@ -92,16 +102,14 @@ export const useScheduleStore = create<ScheduleState>()(
         })),
 
       addIncomingMessage: (sender, text, externalId) => {
-        const trimmedText = text.trim().slice(0, 2000);
-        const trimmedSender = sender.trim().slice(0, 80);
+        const trimmedText = text.trim().slice(0, SAFE_LIMITS.messageText);
+        const trimmedSender = sender.trim().slice(0, SAFE_LIMITS.name);
         if (!trimmedText || !trimmedSender) return null;
-        const id = `sched-${crypto.randomUUID()}`;
-        // Eviction policy: hard cap on message-kind tasks at 100 to
-        // bound localStorage growth from a chatty caregiver. Drop the
-        // oldest READ messages first; never auto-drop unread ones.
-        // Falls back to dropping the oldest of any kind=message if all
-        // 100 slots are unread (the user has bigger problems then).
-        const MAX_MESSAGES = 100;
+        const id = randomId('sched-');
+        // Eviction policy: hard cap on message-kind tasks (see
+        // MAX_MESSAGE_TASKS at top of file). Drop oldest READ messages
+        // first; never auto-drop unread ones. Falls back to dropping
+        // oldest of any kind=message if all slots are unread.
         // All decisions (dedup + eviction) live INSIDE the set callback
         // so they read the freshest committed state and apply to the
         // same snapshot the new task gets added to. Avoids a TOCTOU
@@ -116,13 +124,13 @@ export const useScheduleStore = create<ScheduleState>()(
           inserted = true;
           const currentMessages = s.tasks.filter((t) => t.kind === 'message');
           const dropIds = new Set<string>();
-          if (currentMessages.length >= MAX_MESSAGES) {
+          if (currentMessages.length >= MAX_MESSAGE_TASKS) {
             const readFirst = [...currentMessages].sort(
               (a, b) => Number(b.done) - Number(a.done) || (a.receivedAt ?? 0) - (b.receivedAt ?? 0),
             );
             for (const t of readFirst) {
               dropIds.add(t.id);
-              if (currentMessages.length - dropIds.size < MAX_MESSAGES) break;
+              if (currentMessages.length - dropIds.size < MAX_MESSAGE_TASKS) break;
             }
           }
           const survivors = dropIds.size > 0 ? s.tasks.filter((t) => !dropIds.has(t.id)) : s.tasks;
@@ -220,9 +228,12 @@ export const useScheduleStore = create<ScheduleState>()(
       // so a hostile payload can't blow up the schedule render.
       merge: (persistedState, currentState) => {
         const incoming = (persistedState ?? {}) as Partial<ScheduleState>;
-        const MAX_TASKS = 200;
-        const MAX_TEXT = 2200;
-        const MAX_SENDER = 80;
+        // Persisted-state bounds — slightly larger than the runtime
+        // caps because the persisted text already includes the
+        // "Sender: " prefix (sender 80 + ': ' + body 2000 = 2082).
+        const MAX_TASKS = MAX_PERSISTED_TASKS;
+        const MAX_TEXT = SAFE_LIMITS.name + 2 + SAFE_LIMITS.messageText + 100;
+        const MAX_SENDER = SAFE_LIMITS.name;
         const cleaned = (Array.isArray(incoming.tasks) ? incoming.tasks : [])
           .filter((t): t is ScheduleTask => {
             if (!t || typeof t !== 'object') return false;

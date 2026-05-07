@@ -70,14 +70,29 @@ export default function LanguagePicker({ selected, onSelect, onClose, anchor = '
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    // Outside-click dismissal. Use the *capture* phase so the picker
+    // closes before any inner click handler runs, and avoid the old
+    // setTimeout(0) hack: the button that opens the picker fires its
+    // onClick on bubble; this listener fires on capture of the *next*
+    // pointerdown only — by then the open-click is already past.
+    const onPointerDown = (e: PointerEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     };
-    // Defer registration so the click that opened the picker doesn't immediately close it
-    const id = setTimeout(() => document.addEventListener('pointerdown', handler), 0);
+    // Escape-key dismissal — keyboard accessibility. Without this, a
+    // caregiver navigating with a Bluetooth keyboard couldn't get out
+    // of the picker without clicking elsewhere.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    // The pointerdown that opened this picker is already bubbled; the
+    // next one is what we want to listen for. Registering synchronously
+    // is fine because React fires the open-click's bubble path BEFORE
+    // useEffect runs — the document listener can't see it.
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKey);
     return () => {
-      clearTimeout(id);
-      document.removeEventListener('pointerdown', handler);
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKey);
     };
   }, [onClose]);
 
