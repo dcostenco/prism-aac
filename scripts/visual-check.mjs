@@ -164,37 +164,11 @@ console.error('--- Pass 3: AAC empty contacts ---');
 await bootClean(false);
 results.push({ pass: 'aac-empty', viewport: { w: VIEWPORT_W, h: VIEWPORT_H }, ...(await snap('aac-chat-compact', /Send|Mesaj|AAC/i, 'aac-chat-panel')) });
 
-// Math panel — TWO branches: showMore=false (default, 3-row keyboard)
-// and showMore=true (5-row keyboard with templates+categories+symbols).
-// User feedback 2026-05-07: showMore=true rendering had the canvas
-// crushed to ~120px because the 5-row keyboard ate the panel.
-async function snapMath(label, openMore) {
-  await bootClean(false);
-  await page.getByRole('button', { name: /^(Math|Matemat)/i }).first().click();
-  await page.waitForSelector('[data-testid="math-panel"]');
-  if (openMore) {
-    await page.locator('[data-testid="math-more-button"]').click();
-  }
-  await page.waitForTimeout(400);
-  const panel = await page.locator('[data-testid="math-panel"]').boundingBox();
-  const canvas = await page.locator('[data-testid="math-canvas"]').boundingBox();
-  const keyboard = await page.locator('[data-testid="math-keyboard"]').boundingBox();
-  const showMoreAttr = await page.locator('[data-testid="math-panel"]').getAttribute('data-show-more');
-  await page.screenshot({ path: `${OUT}/${label}.png`, fullPage: false });
-  return {
-    label,
-    panel: panel ? { y: panel.y, h: Math.round(panel.height) } : null,
-    canvas: canvas ? { y: canvas.y, h: Math.round(canvas.height) } : null,
-    keyboard: keyboard ? { y: keyboard.y, h: Math.round(keyboard.height) } : null,
-    branch: showMoreAttr === '1' ? 'math-more-open' : 'math-more-closed',
-  };
-}
-
-console.error('--- Pass 4: Math, More closed (default) ---');
-results.push({ pass: 'math-more-closed', viewport: { w: VIEWPORT_W, h: VIEWPORT_H }, ...(await snapMath('math-more-closed', false)) });
-
-console.error('--- Pass 5: Math, More open ---');
-results.push({ pass: 'math-more-open', viewport: { w: VIEWPORT_W, h: VIEWPORT_H }, ...(await snapMath('math-more-open', true)) });
+// Phase 4: the legacy showMore-based MathPanel was retired and the
+// new cell-grid module took its place (Phases 1A–3A). The two old
+// passes that tested showMore=false / showMore=true are gone — the
+// new module's dev passes (math-grid-empty / math-grid-typed below)
+// + the integrated pass (math-panel-integrated) cover its surface.
 
 // Phase 1A — MathGrid dev harness at /dev/math-grid. Confirms the new
 // cell-grid canvas mounts standalone without depending on the AAC shell.
@@ -235,6 +209,28 @@ results.push({ pass: 'math-grid-empty', viewport: { w: VIEWPORT_W, h: VIEWPORT_H
 
 console.error('--- Pass 7: MathGrid dev with expression typed via keyboard (Phase 1B) ---');
 results.push({ pass: 'math-grid-typed', viewport: { w: VIEWPORT_W, h: VIEWPORT_H }, ...(await snapMathGridDev('math-grid-typed', true)) });
+
+// Phase 4 — new MathPanel integrated into the AAC shell.
+async function snapMathInShell() {
+  await bootClean(false);
+  await page.getByRole('button', { name: /^(Math|Matemat)/i }).first().click();
+  await page.waitForSelector('[data-testid="math-panel"]');
+  await page.waitForTimeout(400);
+  const panel = await page.locator('[data-testid="math-panel"]').boundingBox();
+  const grid = await page.locator('[data-testid="math-grid"]').boundingBox();
+  const region = await page.locator('[data-testid="math-keyboard-region"]').boundingBox();
+  await page.screenshot({ path: `${OUT}/math-panel-integrated.png`, fullPage: false });
+  return {
+    label: 'math-panel-integrated',
+    panel: panel ? { y: panel.y, h: Math.round(panel.height) } : null,
+    grid: grid ? { y: grid.y, h: Math.round(grid.height) } : null,
+    region: region ? { y: region.y, h: Math.round(region.height) } : null,
+    branch: 'mounted',
+  };
+}
+
+console.error('--- Pass 8: MathPanel integrated into AAC shell (Phase 4) ---');
+results.push({ pass: 'math-panel-integrated', viewport: { w: VIEWPORT_W, h: VIEWPORT_H }, ...(await snapMathInShell()) });
 
 console.log(JSON.stringify(results, null, 2));
 fs.writeFileSync(`${OUT}/report.json`, JSON.stringify(results, null, 2));
