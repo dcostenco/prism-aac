@@ -218,7 +218,7 @@ describe('speakAzure — two-tier endpoint strategy', () => {
 // network) falls through to the Inworld two-tier chain. When prism-coder
 // 72B TTS lands the SERVER swaps the backend behind that URL — this
 // client code stays the same.
-describe('speakAzure — Gemini-first primary backend', () => {
+describe('speakAzure — Inworld-first tier order (Gemini is last-resort)', () => {
   function audioOkWav(bytes = 1024): Response {
     return new Response(new ArrayBuffer(bytes), {
       status: 200,
@@ -226,7 +226,7 @@ describe('speakAzure — Gemini-first primary backend', () => {
     });
   }
 
-  it('calls /api/v1/prism-aac/tts/public BEFORE /api/v1/tts/public (Gemini is primary)', async () => {
+  it('calls /api/v1/tts/public (Inworld) BEFORE /api/v1/prism-aac/tts/public (Gemini)', async () => {
     const callOrder: string[] = [];
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       if (url.includes('/prism-aac/tts/public')) {
@@ -242,24 +242,53 @@ describe('speakAzure — Gemini-first primary backend', () => {
     const { speakAzure } = await import('@/services/azureTTS');
     const result = await speakAzure('hello', 'en-US', 'friendly', 0.5, 1.0, '');
     expect(result).toBe(true);
-    expect(callOrder[0]).toBe('gemini');
-    // Inworld is NOT called when Gemini succeeds.
-    expect(callOrder).not.toContain('inworld');
+    // Inworld is the primary tier — Gemini must NOT be called when
+    // Inworld succeeds. RO/UK speakers (where Gemini 503s) get audio
+    // on the first round-trip instead of two wasted ones.
+    expect(callOrder[0]).toBe('inworld');
+    expect(callOrder).not.toContain('gemini');
   });
 
-  it('Gemini sends only { text } — no SSML, voiceId, or style fields', async () => {
+  it('falls through to Gemini ONLY when Inworld + auth /tts both fail', async () => {
+    // URL match order matters: /prism-aac/tts/public must be checked
+    // BEFORE /tts/public because endsWith('/tts/public') also matches
+    // the gemini path. Same idiom in the mockFetch helper above.
+    const callOrder: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/prism-aac/tts/public')) {
+        callOrder.push('gemini');
+        return audioOkWav();
+      }
+      if (url.endsWith('/tts/public')) {
+        callOrder.push('inworld');
+        return new Response(JSON.stringify({ error: 'no voice' }), { status: 502 });
+      }
+      if (url.endsWith('/tts')) {
+        callOrder.push('auth');
+        return new Response('', { status: 401 });
+      }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
+    expect(result).toBe(true);
+    expect(callOrder).toEqual(['inworld', 'auth', 'gemini']);
+  });
+
+  it('Gemini sends only { text } when it IS reached (no SSML / voiceId / style)', async () => {
     let geminiBody: { text?: string; ssml?: string; voiceId?: string; style?: string } = {};
     vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
       if (url.includes('/prism-aac/tts/public')) {
         if (init?.body) geminiBody = JSON.parse(String(init.body));
         return audioOkWav();
       }
+      if (url.endsWith('/tts/public')) return new Response('', { status: 502 });
+      if (url.endsWith('/tts')) return new Response('', { status: 401 });
       return new Response('', { status: 500 });
     }));
     const { speakAzure } = await import('@/services/azureTTS');
     await speakAzure('hello world', 'en-US', 'angry', 0.5, 1.0, '', 'Alex');
     expect(geminiBody.text).toBe('hello world');
-    // Gemini doesn't take SSML / voiceId / style — server picks its own.
     expect(geminiBody.ssml).toBeUndefined();
     expect(geminiBody.voiceId).toBeUndefined();
     expect(geminiBody.style).toBeUndefined();
@@ -272,72 +301,40 @@ describe('speakAzure — Gemini-first primary backend', () => {
         geminiCredentials = init?.credentials;
         return audioOkWav();
       }
+      if (url.endsWith('/tts/public')) return new Response('', { status: 502 });
+      if (url.endsWith('/tts')) return new Response('', { status: 401 });
       return new Response('', { status: 500 });
     }));
     const { speakAzure } = await import('@/services/azureTTS');
     await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
-    // Either undefined (default 'same-origin') or explicitly NOT 'include'.
     expect(geminiCredentials).not.toBe('include');
   });
 
-  it('falls through to Inworld on Gemini 503 (key not configured)', async () => {
-    let inworldCalled = false;
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('/prism-aac/tts/public')) return geminiFail();
-      if (url.includes('/tts/public')) { inworldCalled = true; return audioOk(); }
-      return new Response('', { status: 500 });
-    }));
-    const { speakAzure } = await import('@/services/azureTTS');
-    const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
-    expect(result).toBe(true);
-    expect(inworldCalled).toBe(true);
-  });
-
-  it('falls through to Inworld on Gemini 502 (upstream non-ok)', async () => {
-    let inworldCalled = false;
+  it('Romanian path: Inworld /tts/public 502 → /tts auth 200 — Gemini never called', async () => {
+    // RO/UK: Inworld has no native voice → /tts/public 502, but the
+    // server-side /tts route routes to Azure neural for paid users.
+    // This is THE happy path for Romanian — Gemini never gets called.
+    const callOrder: string[] = [];
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       if (url.includes('/prism-aac/tts/public')) {
-        return new Response(JSON.stringify({ error: 'TTS failed', fallback: 'inworld' }), {
-          status: 502, headers: { 'Content-Type': 'application/json' },
-        });
+        callOrder.push('gemini');
+        return audioOkWav();
       }
-      if (url.includes('/tts/public')) { inworldCalled = true; return audioOk(); }
-      return new Response('', { status: 500 });
-    }));
-    const { speakAzure } = await import('@/services/azureTTS');
-    const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
-    expect(result).toBe(true);
-    expect(inworldCalled).toBe(true);
-  });
-
-  it('falls through to Inworld when Gemini returns empty audio', async () => {
-    let inworldCalled = false;
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('/prism-aac/tts/public')) {
-        return new Response(new ArrayBuffer(0), {
-          status: 200, headers: { 'Content-Type': 'audio/wav' },
-        });
+      if (url.endsWith('/tts/public')) {
+        callOrder.push('inworld');
+        return new Response(JSON.stringify({ error: 'no RO voice' }), { status: 502 });
       }
-      if (url.includes('/tts/public')) { inworldCalled = true; return audioOk(); }
+      if (url.endsWith('/tts')) {
+        callOrder.push('auth');
+        return audioOk();
+      }
       return new Response('', { status: 500 });
     }));
     const { speakAzure } = await import('@/services/azureTTS');
-    const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
+    const result = await speakAzure('Eu vreau apă', 'ro-RO', 'friendly', 0.5, 1.0, 'token', 'ro-RO-AlinaNeural');
     expect(result).toBe(true);
-    expect(inworldCalled).toBe(true);
-  });
-
-  it('falls through to Inworld when Gemini fetch throws (network / abort)', async () => {
-    let inworldCalled = false;
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('/prism-aac/tts/public')) throw new Error('network down');
-      if (url.includes('/tts/public')) { inworldCalled = true; return audioOk(); }
-      return new Response('', { status: 500 });
-    }));
-    const { speakAzure } = await import('@/services/azureTTS');
-    const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
-    expect(result).toBe(true);
-    expect(inworldCalled).toBe(true);
+    expect(callOrder).toEqual(['inworld', 'auth']);
+    expect(callOrder).not.toContain('gemini');
   });
 });
 

@@ -290,18 +290,21 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
 }
 
 /**
- * Tier 1a — Gemini 2.5 Flash Preview TTS (PRIMARY).
+ * Last-resort tier — Gemini 2.5 Flash Preview TTS.
  * Hits /api/v1/prism-aac/tts/public on the portal. Server returns
  * audio/wav (PCM wrapped in a RIFF header so decodeAudioData works).
  * Public route — no auth, CORS allow-*, rate-limited per IP.
  *
- * The portal route is the swap point: a future server-side backend
- * rotation replaces the Gemini fetch on the SERVER side and this
- * client code stays the same. Backend rotation is invisible here.
+ * Runs AFTER the Inworld chain because Gemini doesn't speak
+ * Romanian / Ukrainian / many other languages. For those the call
+ * 503s on the server and wastes a round-trip; we'd rather hit
+ * Inworld first (which routes RO/UK to Azure server-side via the
+ * /tts/public catalog) and only fall through to Gemini for
+ * languages neither covers.
  *
  * Returns true on play success; false on ANY failure (rate limit,
  * upstream 5xx, decode failure, etc.) so the caller falls through to
- * the Inworld two-tier chain.
+ * speech-service's Kokoro / Web Speech tiers.
  */
 async function speakGemini(
   text: string,
@@ -366,20 +369,6 @@ export async function speakAzure(
   activeControllers.add(controller);
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    // ── Tier 1a: Gemini 2.5 Flash Preview (primary) ──
-    // The Gemini public route runs ahead of Inworld. On any failure
-    // (key missing, rate limit, decode error, network) we fall through
-    // to the existing Inworld two-tier chain — the AAC user never
-    // notices the rotation. Important: for languages Gemini doesn't
-    // speak (ro, uk, etc.) this ALWAYS falls through to Inworld/Azure;
-    // any logic that bows out between Gemini and Inworld kills audio
-    // for those languages entirely.
-    if (await speakGemini(text, volume, controller, lang)) {
-      clearTimeout(timeout);
-      activeControllers.delete(controller);
-      return true;
-    }
-
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
     // The portal route accepts voiceId from the catalog and routes to the
@@ -450,21 +439,30 @@ export async function speakAzure(
       // else: keep the original public 502; speech service will fall
       // through to Tier 2/3.
     }
-    clearTimeout(timeout);
-    activeControllers.delete(controller);
-
-    if (!res.ok) {
-      console.warn(`[AzureTTS] Server returned ${res.status}`);
-      return false;
-    }
-
-    stopAzurePlayback();
-    const audioBytes = await readCappedAudio(res);
-    if (!audioBytes) {
+    if (res.ok) {
+      stopAzurePlayback();
+      const audioBytes = await readCappedAudio(res);
+      if (audioBytes) {
+        clearTimeout(timeout);
+        activeControllers.delete(controller);
+        return await decodeAndPlay(audioBytes, volume, 'AzureTTS');
+      }
       console.warn('[AzureTTS] response oversize, dropping');
-      return false;
+    } else {
+      console.warn(`[AzureTTS] /tts/public+/tts both failed (${res.status}) — trying Gemini fallback`);
     }
-    return await decodeAndPlay(audioBytes, volume, 'AzureTTS');
+
+    // ── Last-resort tier: Gemini ──
+    // Inworld + auth /tts both failed (or returned an oversize body).
+    // Try the Gemini public route — useful for English where Gemini
+    // has good voices, never useful for ro/uk/etc. Returns false on
+    // any failure → speech-service falls through to Kokoro / Web Speech.
+    if (await speakGemini(text, volume, controller, lang)) {
+      clearTimeout(timeout);
+      activeControllers.delete(controller);
+      return true;
+    }
+    return false;
   } catch (e) {
     console.warn('[AzureTTS] Fetch failed:', e instanceof Error ? e.message : e);
     if (url) releaseBlob(url);

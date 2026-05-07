@@ -70,11 +70,12 @@ function geminiUnsupported(): Response {
   });
 }
 
-describe('Romanian streaming — Gemini fails, Inworld path must play', () => {
-  it('plays Romanian when Gemini 503s and Inworld returns audio', async () => {
+describe('Romanian streaming — Inworld path must play (Gemini never reached)', () => {
+  it('plays Romanian when Inworld /tts/public returns audio (no Gemini round-trip)', async () => {
     let inworldHit = false;
+    let geminiHit = false;
     const fetchMock = vi.fn(async (url: string) => {
-      if (url.endsWith('/prism-aac/tts/public')) return geminiUnsupported();
+      if (url.endsWith('/prism-aac/tts/public')) { geminiHit = true; return geminiUnsupported(); }
       if (url.endsWith('/tts/public')) { inworldHit = true; return audioOk(2048); }
       return new Response('', { status: 500 });
     });
@@ -85,9 +86,10 @@ describe('Romanian streaming — Gemini fails, Inworld path must play', () => {
 
     expect(ok).toBe(true);
     expect(inworldHit).toBe(true);
-    // The actual regression check: BufferSource.start must fire so the
-    // user hears audio. Before the fix, the Inworld fetch result was
-    // discarded by an early-return bow-out → startCalls stayed at 0.
+    // Inworld-first reorder: for languages the server routes via Azure
+    // (ro/uk/etc.) Gemini is NEVER called — saves a wasted 503 round-
+    // trip on every Speak press.
+    expect(geminiHit).toBe(false);
     expect(MockBufferSource.startCalls).toBe(1);
   });
 });
@@ -100,7 +102,6 @@ describe('Concurrent Speak + silence-detect — both must reach playback', () =>
     // successfully and at minimum the latest one should play.
     let inworldHits = 0;
     const fetchMock = vi.fn(async (url: string) => {
-      if (url.endsWith('/prism-aac/tts/public')) return geminiUnsupported();
       if (url.endsWith('/tts/public')) {
         inworldHits++;
         // Slight async to encourage interleaving
@@ -133,7 +134,6 @@ describe('Concurrent Speak + silence-detect — both must reach playback', () =>
   it('rapid sequential Speak presses each play their own audio', async () => {
     let calls = 0;
     const fetchMock = vi.fn(async (url: string) => {
-      if (url.endsWith('/prism-aac/tts/public')) return geminiUnsupported();
       if (url.endsWith('/tts/public')) {
         calls++;
         return audioOk(1024);
