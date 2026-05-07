@@ -2,6 +2,49 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CaregiverNote, NoteAction } from '@/types';
 import { randomId } from '@/lib/uuid';
+import { sanitizeString } from '@/lib/safeStrings';
+
+/** Per-note text and author bounds. Notes are caregiver-typed clinical
+ *  observations — well-formed entries are typically 100-300 chars. The
+ *  10k cap defends against paste-accident from a clinical EHR import,
+ *  not against a determined adversary; we just want render + storage
+ *  to survive without the AAC user noticing a hang. */
+const MAX_NOTE_TEXT_LEN = 10_000;
+const MAX_AUTHOR_NAME_LEN = 80;
+/** Hard cap on total notes. Per-store: matches the slice(0, 500) the
+ *  addNote path already enforced; surfaced as a constant so the
+ *  hydration validator caps to the same number. */
+const MAX_NOTES = 500;
+/** Per-note action cap. Even the most ambitious caregiver note
+ *  (a complex Subway ordering flow with 5 steps) decomposes to ~10
+ *  actions. 50 is paranoid headroom. */
+const MAX_ACTIONS_PER_NOTE = 50;
+const VALID_ACTION_TYPES = new Set<NoteAction['type']>([
+  'add_phrase', 'remove_phrase', 'add_sequence', 'reorder_phrase',
+  'boost_word', 'note_only',
+]);
+
+/** Drop any action that doesn't match the expected discriminated-union
+ *  shape — defends against a tampered persist payload injecting an
+ *  action with a payload that executeAllActions would happily run. */
+function sanitizeActions(raw: unknown): NoteAction[] {
+  if (!Array.isArray(raw)) return [];
+  const out: NoteAction[] = [];
+  for (const a of raw.slice(0, MAX_ACTIONS_PER_NOTE)) {
+    if (!a || typeof a !== 'object') continue;
+    const x = a as Record<string, unknown>;
+    if (typeof x.type !== 'string' || !VALID_ACTION_TYPES.has(x.type as NoteAction['type'])) continue;
+    if (typeof x.description !== 'string' || x.description.length > 500) continue;
+    if (x.payload === null || (typeof x.payload === 'object' && !Array.isArray(x.payload))) {
+      out.push({
+        type: x.type as NoteAction['type'],
+        description: sanitizeString(x.description, 500),
+        payload: (x.payload ?? {}) as Record<string, unknown>,
+      } as NoteAction);
+    }
+  }
+  return out;
+}
 
 /**
  * Caregiver Note Store
@@ -70,15 +113,27 @@ export const useNoteStore = create<NoteState>()(
       authorName: '',
 
       addNote: (text, actions) => {
+        // Cap text and author at the same bounds the hydration
+        // validator uses so the row survives a rehydrate. Without
+        // this cap a paste accident (10MB log dump from a clinical
+        // EHR) would land in localStorage, fail the next quota write,
+        // and silently lose subsequent saves.
+        const cappedText = (text ?? '').slice(0, MAX_NOTE_TEXT_LEN);
+        const cleanAuthor = sanitizeString(get().authorName, MAX_AUTHOR_NAME_LEN);
+        const cleanActions = actions
+          ? sanitizeActions(actions)
+          : [{ type: 'note_only', description: 'Clinical note', payload: {} } as NoteAction];
         const note: CaregiverNote = {
           id: randomId(),
-          text,
+          text: cappedText,
           timestamp: Date.now(),
-          actions: actions ?? [{ type: 'note_only', description: 'Clinical note', payload: {} }],
+          actions: cleanActions.length > 0
+            ? cleanActions
+            : [{ type: 'note_only', description: 'Clinical note', payload: {} }],
           applied: false,
-          authorName: get().authorName || undefined,
+          authorName: cleanAuthor || undefined,
         };
-        set((s) => ({ notes: [note, ...s.notes].slice(0, 500) }));
+        set((s) => ({ notes: [note, ...s.notes].slice(0, MAX_NOTES) }));
         return note;
       },
 
@@ -90,7 +145,7 @@ export const useNoteStore = create<NoteState>()(
       removeNote: (noteId) =>
         set((s) => ({ notes: s.notes.filter((n) => n.id !== noteId) })),
 
-      setAuthorName: (name) => set({ authorName: name }),
+      setAuthorName: (name) => set({ authorName: sanitizeString(name, MAX_AUTHOR_NAME_LEN) }),
 
       getRecentNotes: (limit = 50) => get().notes.slice(0, limit),
 
@@ -102,6 +157,38 @@ export const useNoteStore = create<NoteState>()(
         return get().notes.filter((n) => n.text.toLowerCase().includes(q));
       },
     }),
-    { name: 'prism-aac-notes' },
+    {
+      name: 'prism-aac-notes',
+      // Hydration validator. Caregiver notes can carry actionable
+      // payloads (executeAllActions can call add_phrase / remove_phrase
+      // etc.) so a tampered localStorage entry could inject hostile
+      // actions that a single "Apply" click would run. We:
+      //   1. Drop entries with bad shape entirely.
+      //   2. Strip actions that don't match the known discriminated
+      //      union — defense-in-depth alongside executeAllActions'
+      //      own type checks.
+      //   3. Cap to MAX_NOTES so a runaway portal/import can't blow up
+      //      localStorage on rehydrate.
+      merge: (persistedState, currentState) => {
+        const incoming = (persistedState ?? {}) as Partial<NoteState>;
+        const cleaned = (Array.isArray(incoming.notes) ? incoming.notes : [])
+          .filter((n): n is CaregiverNote => {
+            if (!n || typeof n !== 'object') return false;
+            const x = n as unknown as Record<string, unknown>;
+            if (typeof x.id !== 'string' || !x.id) return false;
+            if (typeof x.text !== 'string' || x.text.length > MAX_NOTE_TEXT_LEN) return false;
+            if (typeof x.timestamp !== 'number' || !Number.isFinite(x.timestamp)) return false;
+            if (typeof x.applied !== 'boolean') return false;
+            if (x.authorName !== undefined && (typeof x.authorName !== 'string' || x.authorName.length > MAX_AUTHOR_NAME_LEN)) return false;
+            return true;
+          })
+          .map((n) => ({ ...n, actions: sanitizeActions(n.actions) }))
+          .slice(0, MAX_NOTES);
+        const author = typeof incoming.authorName === 'string'
+          ? sanitizeString(incoming.authorName, MAX_AUTHOR_NAME_LEN)
+          : '';
+        return { ...currentState, notes: cleaned, authorName: author };
+      },
+    },
   ),
 );

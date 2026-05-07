@@ -16,6 +16,8 @@
  * This is a life-safety system. It must NEVER fail silently.
  */
 
+import { randomId } from '@/lib/uuid';
+
 export interface EmergencyContact {
   name: string;
   phone?: string;
@@ -414,7 +416,11 @@ async function queueAlert(phrase: string, severity?: 'critical' | 'urgent' | 'me
 
   const geo = await getLocationAndCountry();
   const alert: QueuedAlert & { geo: QueuedAlertGeo } = {
-    id: `em-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    // Use randomId so two alerts triggered in the same millisecond
+    // (rare but possible on a stuttering tap) can't collide on a
+    // Math.random()-derived suffix. Critical because emergency alert
+    // ids key the queued-send dedup logic.
+    id: randomId('em-'),
     phrase,
     timestamp: Date.now(),
     location: geo.location || undefined,
