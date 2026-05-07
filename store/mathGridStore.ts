@@ -63,14 +63,16 @@ export type MathCategoryId =
   | 'main' | 'letters' | 'adv-math' | 'misc-math'
   | 'time-distance' | 'weight' | 'volume' | 'geom' | 'money'
   | 'chemistry' | 'physics' | 'programming-python' | 'programming-java'
-  | 'biology' | 'statistics' | 'music' | 'earth-science';
+  | 'biology' | 'statistics' | 'music' | 'earth-science'
+  | 'history' | 'language-arts';
 
 /** Domain group used by the AI tutor. Multiple categories can share
  *  one domain (e.g. all 9 math keyboards → 'math'). */
 export type MathDomain =
   | 'math' | 'chemistry' | 'physics'
   | 'programming-python' | 'programming-java'
-  | 'biology' | 'statistics' | 'music' | 'earth-science';
+  | 'biology' | 'statistics' | 'music' | 'earth-science'
+  | 'history' | 'language-arts';
 
 export function domainForCategory(cat: MathCategoryId): MathDomain {
   switch (cat) {
@@ -82,6 +84,8 @@ export function domainForCategory(cat: MathCategoryId): MathDomain {
     case 'statistics':          return 'statistics';
     case 'music':               return 'music';
     case 'earth-science':       return 'earth-science';
+    case 'history':             return 'history';
+    case 'language-arts':       return 'language-arts';
     default:                    return 'math';
   }
 }

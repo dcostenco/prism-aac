@@ -116,7 +116,7 @@ test.describe('MathKeyboardRegion (Phase 2A)', () => {
     const chips = await page.locator('[data-testid^="math-category-"]').all();
     // Phase 6 added Chemistry, Physics, Python, Java (→ 13).
     // Phase 7 added Biology, Statistics, Music, Earth Science (→ 17).
-    expect(chips.length, 'all 17 chips present (9 math + 4 Phase-6 + 4 Phase-7 domains)').toBe(17);
+    expect(chips.length, 'all 19 chips (9 math + 4 Phase-6 + 4 Phase-7 + 2 Phase-8 humanities)').toBe(19);
     for (const chip of chips) {
       const box = await chip.boundingBox();
       const id = await chip.getAttribute('data-testid');

@@ -80,6 +80,16 @@ const PROMPT_TEMPLATES: Record<MathDomain, DomainPrompts> = {
     check: 'The child wrote this earth-science expression: "{expr}". Check it: are the planet symbols in order? Are weather symbols paired with the right phenomena? Are astronomical units (AU, ly, pc) used correctly? Explain gently if wrong, celebrate if right. Max 2 sentences.',
     solve: 'The child wrote this earth-science expression: "{expr}". Walk through the answer step by step. Use simple language. Max 4 short steps.',
   },
+  history: {
+    help:  'The child is studying history in the {lang} curriculum and wrote: "{expr}". They are likely working on a date, era marker (BCE / CE), century, or period name from their region. Give one hint about how to read or order it WITHOUT solving, using examples relevant to their curriculum. Max 2 sentences.',
+    check: 'The child is studying history in the {lang} curriculum and wrote: "{expr}". Check it: is the era marker in the right place? Are dates ordered correctly on a timeline? Does the period name match the date? Explain gently if wrong, celebrate if right, using examples from their curriculum. Max 2 sentences.',
+    solve: 'The child is studying history in the {lang} curriculum and wrote: "{expr}". Walk through the answer step by step (compute the year, name the period, locate the event in THEIR region\'s history first, then add a world-history note). Use simple words. Max 4 short steps.',
+  },
+  'language-arts': {
+    help:  'The child wrote this language-arts expression: "{expr}". They are likely tagging parts of speech, fixing punctuation, or marking sentence types. Give one hint about the next step WITHOUT solving. Max 2 sentences.',
+    check: 'The child wrote this language-arts expression: "{expr}". Check it: are the parts-of-speech tags right (NOUN/VERB/ADJ/...)? Is the punctuation correct? Is the sentence type labeled right (declarative / interrogative / imperative / exclamatory)? Explain gently if wrong, celebrate if right. Max 2 sentences.',
+    solve: 'The child wrote this language-arts expression: "{expr}". Tag every part of speech and explain why, step by step. Use simple words. Max 4 short steps.',
+  },
 };
 
 const TUTOR_CONTEXT_BY_DOMAIN: Record<MathDomain, string> = {
@@ -92,6 +102,8 @@ const TUTOR_CONTEXT_BY_DOMAIN: Record<MathDomain, string> = {
   statistics: 'statistics-tutor',
   music: 'music-tutor',
   'earth-science': 'earth-science-tutor',
+  history: 'history-tutor',
+  'language-arts': 'language-arts-tutor',
 };
 
 const TUTOR_HARD_TIMEOUT_MS = 15_000;
@@ -164,7 +176,13 @@ export default function MathTutorTool() {
 
     const domain = domainForCategory(activeCategory);
     const template = PROMPT_TEMPLATES[domain][which];
-    const prompt = template.replace('{expr}', expression);
+    // {expr} is mandatory; {lang} is optional and used by the
+    // history domain to anchor the model in the student's regional
+    // curriculum (so 1859 in 'ro' resolves to the Union of
+    // Principalities, not Italian unification).
+    const prompt = template
+      .replace('{expr}', expression)
+      .replace('{lang}', language || 'en');
     const tutorContext = TUTOR_CONTEXT_BY_DOMAIN[domain];
 
     let buffer = '';

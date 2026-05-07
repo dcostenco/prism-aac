@@ -28,6 +28,7 @@
 import { useState, useCallback } from 'react';
 import MathMainKeyboard from './MathMainKeyboard';
 import { useMathGridStore, type MathCategoryId } from '@/store/mathGridStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { tapFeedback, keyFeedback } from '@/services/feedback';
 
 interface CategoryDef {
@@ -58,6 +59,12 @@ const CATEGORIES: CategoryDef[] = [
   { id: 'statistics',   label: 'Stats', icon: 'σ'  },
   { id: 'music',        label: 'Music', icon: '𝄞' },
   { id: 'earth-science', label: 'Earth', icon: '🌍' },
+  // Phase 8 — humanities surfaces. The cell-grid hosts dates +
+  // era markers (history) and parts-of-speech tagging
+  // (language-arts); free-form prose still lives on the AAC main
+  // qwerty keyboard.
+  { id: 'history',       label: 'Hist',  icon: '📜' },
+  { id: 'language-arts', label: 'Lang',  icon: '📖' },
 ];
 
 // Re-export so older imports (`import { MathCategoryId } from '@/components/math/MathKeyboardRegion'`)
@@ -134,6 +141,8 @@ export default function MathKeyboardRegion({ className = '' }: { className?: str
         {activeCategory === 'statistics' && <MathStatisticsKeyboard />}
         {activeCategory === 'music' && <MathMusicKeyboard />}
         {activeCategory === 'earth-science' && <MathEarthScienceKeyboard />}
+        {activeCategory === 'history' && <MathHistoryKeyboard />}
+        {activeCategory === 'language-arts' && <MathLanguageArtsKeyboard />}
       </div>
     </div>
   );
@@ -874,6 +883,352 @@ function MathEarthScienceKeyboard() {
       <GlyphGrid testid="math-earth-plates" glyphs={EARTH_PLATES} cols={7} textSize="text-xl" />
       <GlyphGrid testid="math-earth-astro" glyphs={EARTH_ASTRO} cols={10} textSize="text-xl" />
       <GlyphGrid testid="math-earth-units" glyphs={EARTH_UNITS} cols={6} textSize="text-sm" />
+    </div>
+  );
+}
+
+// ── Phase 8 — History keyboard (locale-aware) ────────────────────
+//
+// Era markers + century ordinals are universal. Events + periods
+// split into a small WORLD core (taught in every curriculum) plus a
+// per-locale slice driven by useSettingsStore.language so a
+// Romanian student sees Stephen the Great + 1989 Revolution, a
+// Chinese student sees Tang/Song/Ming/Qing + 1949 PRC, etc. Anglo-
+// Western default no longer hides everyone else's history.
+
+const HIST_ERAS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'BCE', label: 'before common era' },
+  { glyph: 'CE',  label: 'common era' },
+  { glyph: 'BC',  label: 'before christ' },
+  { glyph: 'AD',  label: 'anno domini' },
+  { glyph: 'c.',  label: 'circa' },
+  { glyph: 'fl.', label: 'flourished' },
+  { glyph: '–',   label: 'date range dash' },
+  { glyph: '→',   label: 'leads to' },
+  { glyph: '↦',   label: 'continues to' },
+];
+
+const HIST_CENTURIES: Array<{ glyph: string; label: string }> = [
+  { glyph: '1st',  label: 'first' },
+  { glyph: '2nd',  label: 'second' },
+  { glyph: '3rd',  label: 'third' },
+  { glyph: '4th',  label: 'fourth' },
+  { glyph: '5th',  label: 'fifth' },
+  { glyph: '10th', label: 'tenth' },
+  { glyph: '15th', label: 'fifteenth' },
+  { glyph: '17th', label: 'seventeenth' },
+  { glyph: '18th', label: 'eighteenth' },
+  { glyph: '19th', label: 'nineteenth' },
+  { glyph: '20th', label: 'twentieth' },
+  { glyph: '21st', label: 'twenty first' },
+];
+
+/** Events taught in essentially every world-history curriculum.
+ *  Always rendered regardless of locale. */
+const HIST_EVENTS_WORLD: Array<{ glyph: string; label: string }> = [
+  { glyph: '476',  label: 'fall of rome' },
+  { glyph: '1453', label: 'fall of constantinople' },
+  { glyph: '1914', label: 'wwi start' },
+  { glyph: '1918', label: 'wwi end' },
+  { glyph: '1939', label: 'wwii start' },
+  { glyph: '1945', label: 'wwii end' },
+  { glyph: '1969', label: 'moon landing' },
+];
+
+/** Periods taught in every curriculum (era / archaeological scale). */
+const HIST_PERIODS_WORLD: Array<{ glyph: string; label: string }> = [
+  { glyph: 'Stone Age',    label: 'stone age' },
+  { glyph: 'Bronze Age',   label: 'bronze age' },
+  { glyph: 'Iron Age',     label: 'iron age' },
+  { glyph: 'Antiquity',    label: 'antiquity' },
+  { glyph: 'Medieval',     label: 'medieval' },
+  { glyph: 'Modern',       label: 'modern' },
+  { glyph: 'Contemporary', label: 'contemporary' },
+];
+
+/** Per-locale events surfaced when useSettingsStore.language matches.
+ *  Each entry must use globally-unique labels (after slugification)
+ *  because the GlyphGrid testid uses the label as a suffix. */
+const HIST_EVENTS_BY_LOCALE: Record<string, Array<{ glyph: string; label: string }>> = {
+  en: [
+    { glyph: '1066', label: 'norman conquest' },
+    { glyph: '1215', label: 'magna carta' },
+    { glyph: '1607', label: 'jamestown' },
+    { glyph: '1776', label: 'us independence' },
+    { glyph: '1865', label: 'us civil war end' },
+  ],
+  es: [
+    { glyph: '711',  label: 'moorish invasion' },
+    { glyph: '1492', label: 'reconquista' },
+    { glyph: '1810', label: 'spanish american indep' },
+    { glyph: '1898', label: 'spanish american war' },
+  ],
+  pt: [
+    { glyph: '1500', label: 'cabral arrival' },
+    { glyph: '1822', label: 'brazilian independence' },
+    { glyph: '1888', label: 'abolition of slavery' },
+    { glyph: '1974', label: 'carnation revolution' },
+  ],
+  fr: [
+    { glyph: '1789', label: 'french revolution' },
+    { glyph: '1804', label: 'napoleon emperor' },
+    { glyph: '1944', label: 'liberation of france' },
+    { glyph: '1958', label: 'fifth republic' },
+  ],
+  de: [
+    { glyph: '1517', label: 'reformation' },
+    { glyph: '1871', label: 'german unification' },
+    { glyph: '1933', label: 'third reich start' },
+    { glyph: '1989', label: 'berlin wall fall' },
+  ],
+  ro: [
+    { glyph: '1457', label: 'stephen the great' },
+    { glyph: '1859', label: 'union of principalities' },
+    { glyph: '1918', label: 'great union' },
+    { glyph: '1989', label: 'romanian revolution' },
+  ],
+  ru: [
+    { glyph: '988',  label: 'kievan baptism' },
+    { glyph: '1547', label: 'ivan iv crowned' },
+    { glyph: '1812', label: 'napoleonic invasion' },
+    { glyph: '1917', label: 'russian revolution' },
+    { glyph: '1991', label: 'ussr dissolution' },
+  ],
+  uk: [
+    { glyph: '988',  label: 'kyivan baptism' },
+    { glyph: '1709', label: 'battle of poltava' },
+    { glyph: '1932', label: 'holodomor' },
+    { glyph: '1991', label: 'ukrainian independence' },
+  ],
+  ja: [
+    { glyph: '794',  label: 'heian capital' },
+    { glyph: '1185', label: 'kamakura shogunate' },
+    { glyph: '1603', label: 'edo period' },
+    { glyph: '1868', label: 'meiji restoration' },
+    { glyph: '1945', label: 'japan surrender' },
+  ],
+  ko: [
+    { glyph: '668',  label: 'silla unification' },
+    { glyph: '1392', label: 'joseon founding' },
+    { glyph: '1910', label: 'japanese annexation' },
+    { glyph: '1945', label: 'korean liberation' },
+    { glyph: '1953', label: 'armistice' },
+  ],
+  zh: [
+    { glyph: '221',  label: 'qin unification' },
+    { glyph: '618',  label: 'tang dynasty' },
+    { glyph: '1368', label: 'ming dynasty' },
+    { glyph: '1644', label: 'qing dynasty' },
+    { glyph: '1911', label: 'xinhai revolution' },
+    { glyph: '1949', label: 'prc founding' },
+  ],
+  ar: [
+    { glyph: '622',  label: 'hijra' },
+    { glyph: '750',  label: 'abbasid caliphate' },
+    { glyph: '1923', label: 'ottoman dissolution' },
+    { glyph: '2011', label: 'arab spring' },
+  ],
+  it: [
+    { glyph: '27',   label: 'roman empire start' },
+    { glyph: '1494', label: 'italian wars' },
+    { glyph: '1861', label: 'italian unification' },
+    { glyph: '1946', label: 'italian republic' },
+  ],
+  pl: [
+    { glyph: '966',  label: 'poland baptism' },
+    { glyph: '1410', label: 'battle of grunwald' },
+    { glyph: '1791', label: 'may 3 constitution' },
+    { glyph: '1939', label: 'invasion of poland' },
+    { glyph: '1989', label: 'polish round table' },
+  ],
+  nl: [
+    { glyph: '1568', label: 'eighty years war' },
+    { glyph: '1648', label: 'dutch independence' },
+    { glyph: '1815', label: 'kingdom netherlands' },
+  ],
+  he: [
+    { glyph: '70',   label: 'second temple destruction' },
+    { glyph: '1492', label: 'spanish expulsion' },
+    { glyph: '1948', label: 'israel founding' },
+    { glyph: '1967', label: 'six day war' },
+  ],
+  hi: [
+    { glyph: '322',  label: 'mauryan empire' },
+    { glyph: '1526', label: 'mughal empire' },
+    { glyph: '1857', label: 'sepoy rebellion' },
+    { glyph: '1947', label: 'indian independence' },
+    { glyph: '1971', label: 'bangladesh war' },
+  ],
+  vi: [
+    { glyph: '938',  label: 'bach dang victory' },
+    { glyph: '1858', label: 'french colonization' },
+    { glyph: '1945', label: 'vietnamese independence' },
+    { glyph: '1975', label: 'vietnam reunification' },
+  ],
+  tr: [
+    { glyph: '1071', label: 'manzikert' },
+    { glyph: '1453', label: 'conquest of constantinople' },
+    { glyph: '1923', label: 'turkish republic' },
+  ],
+};
+
+/** Per-locale period names that augment the universal set. */
+const HIST_PERIODS_BY_LOCALE: Record<string, Array<{ glyph: string; label: string }>> = {
+  en: [
+    { glyph: 'Renaissance',   label: 'renaissance' },
+    { glyph: 'Enlightenment', label: 'enlightenment' },
+    { glyph: 'Industrial',    label: 'industrial revolution' },
+    { glyph: 'Victorian',     label: 'victorian' },
+  ],
+  es: [
+    { glyph: 'Reconquista',  label: 'reconquista period' },
+    { glyph: 'Habsburg',     label: 'habsburg spain' },
+    { glyph: 'Bourbon',      label: 'bourbon spain' },
+  ],
+  pt: [
+    { glyph: 'Discoveries',  label: 'age of discoveries' },
+    { glyph: 'Império',      label: 'brazilian empire' },
+  ],
+  fr: [
+    { glyph: 'Renaissance',  label: 'french renaissance' },
+    { glyph: 'Ancien',       label: 'ancien regime' },
+    { glyph: 'Belle Époque', label: 'belle epoque' },
+  ],
+  de: [
+    { glyph: 'Reformation',  label: 'reformation period' },
+    { glyph: 'Weimar',       label: 'weimar republic' },
+    { glyph: 'Cold War',     label: 'cold war' },
+  ],
+  ro: [
+    { glyph: 'Phanariot',    label: 'phanariot' },
+    { glyph: 'Wallachia',    label: 'wallachia period' },
+    { glyph: 'Moldavia',     label: 'moldavia period' },
+    { glyph: 'Interbelic',   label: 'interbellum' },
+  ],
+  ru: [
+    { glyph: 'Tsarist',      label: 'tsarist' },
+    { glyph: 'Soviet',       label: 'soviet' },
+    { glyph: 'Imperial',     label: 'russian imperial' },
+  ],
+  ja: [
+    { glyph: 'Heian',        label: 'heian period' },
+    { glyph: 'Kamakura',     label: 'kamakura period' },
+    { glyph: 'Edo',          label: 'edo period' },
+    { glyph: 'Meiji',        label: 'meiji period' },
+    { glyph: 'Shōwa',        label: 'showa period' },
+  ],
+  zh: [
+    { glyph: 'Han',          label: 'han dynasty' },
+    { glyph: 'Tang',         label: 'tang dynasty period' },
+    { glyph: 'Song',         label: 'song dynasty' },
+    { glyph: 'Ming',         label: 'ming dynasty period' },
+    { glyph: 'Qing',         label: 'qing dynasty period' },
+  ],
+  ar: [
+    { glyph: 'Caliphate',    label: 'caliphate' },
+    { glyph: 'Ottoman',      label: 'ottoman period' },
+  ],
+  hi: [
+    { glyph: 'Vedic',        label: 'vedic period' },
+    { glyph: 'Mauryan',      label: 'mauryan period' },
+    { glyph: 'Mughal',       label: 'mughal period' },
+    { glyph: 'British Raj',  label: 'british raj' },
+  ],
+  ko: [
+    { glyph: 'Three Kingdoms', label: 'three kingdoms' },
+    { glyph: 'Goryeo',         label: 'goryeo period' },
+    { glyph: 'Joseon',         label: 'joseon period' },
+  ],
+};
+
+function MathHistoryKeyboard() {
+  const language = useSettingsStore((s) => s.language);
+  // Coalesce on the base language tag (en, es-MX → es) so Latin
+  // American Spanish gets the same cohort as European Spanish.
+  const baseLang = (language || 'en').toLowerCase().split(/[-_]/)[0];
+  const localeEvents = HIST_EVENTS_BY_LOCALE[baseLang] ?? HIST_EVENTS_BY_LOCALE['en'];
+  const localePeriods = HIST_PERIODS_BY_LOCALE[baseLang] ?? HIST_PERIODS_BY_LOCALE['en'];
+  const events = [...HIST_EVENTS_WORLD, ...localeEvents];
+  const periods = [...HIST_PERIODS_WORLD, ...localePeriods];
+  return (
+    <div
+      className="p-2 space-y-2"
+      data-testid="math-history-keyboard"
+      data-locale={baseLang}
+    >
+      <GlyphGrid testid="math-history-eras" glyphs={HIST_ERAS} cols={9} textSize="text-base" />
+      <GlyphGrid testid="math-history-centuries" glyphs={HIST_CENTURIES} cols={6} textSize="text-base" />
+      <GlyphGrid testid="math-history-periods" glyphs={periods} cols={6} textSize="text-sm" />
+      <GlyphGrid testid="math-history-events" glyphs={events} cols={6} textSize="text-base" />
+    </div>
+  );
+}
+
+// ── Phase 8 — Language Arts keyboard ─────────────────────────────
+//
+// Parts-of-speech tags + sentence-type markers + canonical
+// punctuation + citation-style labels. AAC users tag a sentence
+// composed via the main qwerty by laying tags above it on the
+// cell-grid.
+
+const LA_PARTS_OF_SPEECH: Array<{ glyph: string; label: string }> = [
+  { glyph: 'N',     label: 'noun' },
+  { glyph: 'V',     label: 'verb' },
+  { glyph: 'ADJ',   label: 'adjective' },
+  { glyph: 'ADV',   label: 'adverb' },
+  { glyph: 'PRON',  label: 'pronoun' },
+  { glyph: 'PREP',  label: 'preposition' },
+  { glyph: 'CONJ',  label: 'conjunction' },
+  { glyph: 'ART',   label: 'article' },
+  { glyph: 'INTJ',  label: 'interjection' },
+  { glyph: 'AUX',   label: 'auxiliary' },
+  { glyph: 'DET',   label: 'determiner' },
+  { glyph: 'NUM',   label: 'numeral' },
+];
+
+const LA_SENTENCE_TYPES: Array<{ glyph: string; label: string }> = [
+  { glyph: 'DECL',   label: 'declarative' },
+  { glyph: 'INT',    label: 'interrogative' },
+  { glyph: 'IMP',    label: 'imperative' },
+  { glyph: 'EXCL',   label: 'exclamatory' },
+  { glyph: 'COMP',   label: 'compound' },
+  { glyph: 'CPLX',   label: 'complex' },
+];
+
+const LA_PUNCTUATION: Array<{ glyph: string; label: string }> = [
+  { glyph: '.',  label: 'period' },
+  { glyph: ',',  label: 'comma-la' },
+  { glyph: ';',  label: 'semicolon-la' },
+  { glyph: ':',  label: 'colon-la' },
+  { glyph: '!',  label: 'exclamation' },
+  { glyph: '?',  label: 'question' },
+  { glyph: "'",  label: 'apostrophe' },
+  { glyph: '"',  label: 'dquote-la' },
+  { glyph: '(',  label: 'open paren-la' },
+  { glyph: ')',  label: 'close paren-la' },
+  { glyph: '–',  label: 'en dash' },
+  { glyph: '—',  label: 'em dash' },
+  { glyph: '…',  label: 'ellipsis' },
+];
+
+const LA_CITATION: Array<{ glyph: string; label: string }> = [
+  { glyph: 'MLA',   label: 'mla' },
+  { glyph: 'APA',   label: 'apa' },
+  { glyph: 'Chi',   label: 'chicago' },
+  { glyph: 'p.',    label: 'page' },
+  { glyph: 'pp.',   label: 'pages' },
+  { glyph: 'ed.',   label: 'edition' },
+  { glyph: 'vol.',  label: 'volume' },
+  { glyph: 'ibid.', label: 'ibid' },
+];
+
+function MathLanguageArtsKeyboard() {
+  return (
+    <div className="p-2 space-y-2" data-testid="math-language-arts-keyboard">
+      <GlyphGrid testid="math-la-pos" glyphs={LA_PARTS_OF_SPEECH} cols={6} textSize="text-base" />
+      <GlyphGrid testid="math-la-sentence" glyphs={LA_SENTENCE_TYPES} cols={6} textSize="text-base" />
+      <GlyphGrid testid="math-la-punct" glyphs={LA_PUNCTUATION} cols={13} textSize="text-base" />
+      <GlyphGrid testid="math-la-cite" glyphs={LA_CITATION} cols={8} textSize="text-base" />
     </div>
   );
 }
