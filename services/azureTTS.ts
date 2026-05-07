@@ -262,15 +262,19 @@ async function speakGemini(
   text: string,
   volume: number,
   controller: AbortController,
+  lang?: string,
 ): Promise<boolean> {
   // Gemini doesn't take SSML — it does its own prosody. Send plain text.
   // Keep within the server's 4KB UTF-8 cap; longer messages are very
   // rare on the AAC surface but caps elsewhere will trim if needed.
+  // `lang` (e.g. 'ro-RO', 'uk-UA', 'es-ES') tells the server which
+  // language instruction to prefix to the prompt — without it, Gemini's
+  // prebuilt voices default to English phonemes for non-English text.
   try {
     const res = await fetch(`${SYNALUX_API}/prism-aac/tts/public`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, lang }),
       signal: controller.signal,
       // NO credentials: include — the response uses ACAO=*, which the
       // CORS spec rejects when combined with credentials. Same fix that
@@ -319,7 +323,7 @@ export async function speakAzure(
     // (key missing, rate limit, decode error, network) we fall through
     // to the existing Inworld two-tier chain — the AAC user never
     // notices the rotation.
-    if (await speakGemini(text, volume, controller)) {
+    if (await speakGemini(text, volume, controller, lang)) {
       clearTimeout(timeout);
       activeControllers.delete(controller);
       return true;
