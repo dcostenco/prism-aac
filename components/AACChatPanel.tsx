@@ -32,7 +32,7 @@ import { useT } from '@/engine/useT';
  * cannot accidentally lose them.
  */
 export default function AACChatPanel() {
-  const { sidePanel, closeSidePanel, activeContactId, selectContact, backToContacts } = useUIStore();
+  const { sidePanel, closeSidePanel, activeContactId, selectContact, backToContacts, toggleSettings } = useUIStore();
   const { text, clearAll } = useMessageStore();
   const contacts = useContactsStore((s) => s.contacts);
   const profile = useAuthStore((s) => s.profile);
@@ -131,8 +131,22 @@ export default function AACChatPanel() {
   return (
     <section
       aria-label={t('aac_chat_title') || 'Send a message'}
-      className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
+      // Compact mode same as AIChatPanel — when the AAC user has no
+      // contacts AND no active selection, drop to header+CTA height
+      // and let the keyboard fill the rest. May 2026 screenshot #40:
+      // "no contacts small icon - no way to show contacts, inboxes
+      // outboxes?". Header now exposes a Settings ⚙️ icon so the AAC
+      // user (or whoever's helping) can jump straight to contacts
+      // setup instead of being told to "ask a caregiver".
+      className={
+        !activeContact && sortedContacts.length === 0
+          ? 'flex-none flex flex-col surface-bar border-y border-theme'
+          : 'flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme'
+      }
       data-testid="aac-chat-panel"
+      data-state={
+        !activeContact && sortedContacts.length === 0 ? 'compact' : 'expanded'
+      }
     >
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-theme">
@@ -160,25 +174,40 @@ export default function AACChatPanel() {
             )}
           </h2>
         </div>
-        <button
-          onClick={() => { tapFeedback(); closeSidePanel(); }}
-          aria-label={t('close') || 'Close'}
-          className="aac-key surface-key text-primary rounded-lg px-3 py-1 font-bold"
-        >
-          ×
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { tapFeedback(); toggleSettings(); }}
+            aria-label={t('manage_contacts') || 'Manage contacts'}
+            data-testid="aac-chat-manage-contacts"
+            className="aac-key surface-key text-primary rounded-lg px-3 py-1 text-xl"
+            title={t('manage_contacts') || 'Manage contacts'}
+          >
+            ⚙️
+          </button>
+          <button
+            onClick={() => { tapFeedback(); closeSidePanel(); }}
+            aria-label={t('close') || 'Close'}
+            className="aac-key surface-key text-primary rounded-lg px-3 py-1 font-bold"
+          >
+            ×
+          </button>
+        </div>
       </header>
 
       {/* Body */}
       <div className="flex-1 min-h-0 overflow-y-auto p-3">
         {/* No contact picked → show picker */}
         {!activeContact && sortedContacts.length === 0 && (
-          <div className="text-center text-secondary py-8 text-base leading-relaxed">
-            <p className="text-lg mb-2">📭</p>
+          <div className="text-center text-secondary py-4 text-base leading-relaxed">
+            <p className="text-lg mb-1">📭</p>
             <p>{t('aac_chat_no_contacts') || 'No contacts yet.'}</p>
-            <p className="mt-1 text-sm">
-              {t('aac_chat_setup_hint') || 'A caregiver can add contacts in Settings → Contacts.'}
-            </p>
+            <button
+              onClick={() => { tapFeedback(); toggleSettings(); }}
+              data-testid="aac-chat-add-contacts-cta"
+              className="aac-key mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 bg-[#4CAF50] text-white font-bold"
+            >
+              ⚙️ {t('manage_contacts') || 'Manage contacts'}
+            </button>
           </div>
         )}
 

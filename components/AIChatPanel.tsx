@@ -154,8 +154,27 @@ export default function AIChatPanel() {
   return (
     <section
       aria-label={t('ai_chat_title')}
-      className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
+      // Compact when there's nothing to show (no conversation, not
+      // loading, no in-flight question typed). User feedback (May 2026
+      // screenshot #39): "AI chat empty panel? Waste of a screen." —
+      // the prior unconditional flex-[3] grabbed three quarters of the
+      // viewport just to render a one-line prompt. Now the panel drops
+      // to its natural header+footer height (~190px) when idle and the
+      // qwerty fills the freed space, matching how the user expects
+      // AAC keyboard mode to behave.
+      className={
+        (configured && messages.length === 0 && !loading && !text.trim())
+          || (!configured)
+          ? 'flex-none flex flex-col surface-bar border-y border-theme'
+          : 'flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme'
+      }
       data-testid="ai-chat-panel"
+      data-state={
+        (configured && messages.length === 0 && !loading && !text.trim())
+          || (!configured)
+          ? 'compact'
+          : 'expanded'
+      }
     >
       <header className="flex items-center justify-between px-4 py-3 border-b border-theme shrink-0">
         <span className="text-primary font-bold text-2xl md:text-3xl">✨ {t('ai_chat_title')}</span>

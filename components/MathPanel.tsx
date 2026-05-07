@@ -308,13 +308,16 @@ export default function MathPanel() {
         {showMore && (
           <>
             {/* Templates row — KaTeX-rendered structures (fractions,
-                exponents, roots, summation/integral, column addition). */}
+                exponents, roots, summation/integral, column addition).
+                Tap-target floor matches the operator/number rows below
+                (≈44px) so motor-impaired AAC users aren't stuck poking
+                at 28-32px buttons (May 2026 keyboard-fix sweep). */}
             <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
               {TEMPLATES.map((tpl) => (
                 <button
                   key={tpl.label}
                   onClick={() => addToExpression(tpl.latex)}
-                  className={`${mathKey} px-2.5 py-1.5 text-sm whitespace-nowrap shrink-0`}
+                  className={`${mathKey} px-3 py-2 text-base whitespace-nowrap shrink-0 min-w-[44px]`}
                   title={tpl.aria}
                   aria-label={tpl.aria}
                 >
@@ -327,7 +330,7 @@ export default function MathPanel() {
                 <button
                   key={cat.key}
                   onClick={() => { tapFeedback(); setActiveCategory(cat.key); }}
-                  className={`${mathKey} px-2.5 py-1.5 text-xs whitespace-nowrap shrink-0 ${
+                  className={`${mathKey} px-3 py-2 text-sm whitespace-nowrap shrink-0 min-h-[44px] ${
                     activeCategory === cat.key ? 'bg-[#4CAF50] text-white border-transparent' : ''
                   }`}
                 >
