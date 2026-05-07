@@ -11,9 +11,16 @@ interface BuiltinShortcutPayload {
   builtin: 'aac-chat' | 'ai-chat' | 'schedule' | 'caregiver' | 'math';
 }
 
+const ALLOWED_BUILTINS = new Set(['aac-chat', 'ai-chat', 'schedule', 'caregiver', 'math']);
+
 function payload(manifest: ModuleManifest): BuiltinShortcutPayload | null {
   const p = manifest.handlerPayload as BuiltinShortcutPayload | undefined;
-  if (!p || typeof p.builtin !== 'string') return null;
+  // Strict allowlist on `builtin` — a tampered manifest with
+  // builtin: '__proto__' or any non-listed string would otherwise pass
+  // through to ctx.ui.openBuiltin. The current uiStore switch ignores
+  // unknown ids, but new branches added later shouldn't have to
+  // re-prove they're not exploitable; this is the canonical gate.
+  if (!p || typeof p.builtin !== 'string' || !ALLOWED_BUILTINS.has(p.builtin)) return null;
   return p;
 }
 

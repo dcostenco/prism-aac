@@ -144,13 +144,136 @@ function freshProfile(): AdaptiveProfile {
   };
 }
 
+/** Hard caps on adaptive-profile fields read from localStorage. A
+ *  tampered persist could otherwise inject NaN / -Infinity / huge
+ *  values into the math the AAC user's predictions and motor-rhythm
+ *  cursor speeds depend on — silently locking them out of accurate
+ *  recommendations or making the cursor unusable. */
+const MAX_TONE_HISTORY = 200;
+const MAX_MISPRONUNCIATIONS = 500;
+const MAX_CATEGORIES = 200;
+const MAX_TOD_PERIODS = 24;
+const MAX_TOD_WORDS_PER_PERIOD = 100;
+const MAX_KEY_LEN = 200;
+
+function clampNumber(v: unknown, min: number, max: number, fallback: number): number {
+  return typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : fallback;
+}
+
+function sanitizeAdaptiveProfile(raw: unknown): AdaptiveProfile {
+  const fresh = freshProfile();
+  if (!raw || typeof raw !== 'object') return fresh;
+  const r = raw as Record<string, unknown>;
+
+  // Numbers — clamp to plausible bounds so motor-rhythm + noise math
+  // can never see NaN/Infinity from a tampered persist.
+  const out: AdaptiveProfile = {
+    ...fresh,
+    avgDwellMs: clampNumber(r.avgDwellMs, 0, 60_000, fresh.avgDwellMs),
+    avgMoveSpeed: clampNumber(r.avgMoveSpeed, 0, 10_000, fresh.avgMoveSpeed),
+    motorRhythmSamples: clampNumber(r.motorRhythmSamples, 0, 100_000, fresh.motorRhythmSamples),
+    preferredVoiceRate: clampNumber(r.preferredVoiceRate, 0.1, 3, fresh.preferredVoiceRate),
+    noiseFloorDb: clampNumber(r.noiseFloorDb, -120, 20, fresh.noiseFloorDb),
+    noiseAdaptedAt: clampNumber(r.noiseAdaptedAt, 0, Date.now() + 86400_000, fresh.noiseAdaptedAt),
+    quietEnvironment: typeof r.quietEnvironment === 'boolean' ? r.quietEnvironment : fresh.quietEnvironment,
+    avgMessageLength: clampNumber(r.avgMessageLength, 0, 1000, fresh.avgMessageLength),
+    messageSamples: clampNumber(r.messageSamples, 0, 1_000_000, fresh.messageSamples),
+    lastUpdated: clampNumber(r.lastUpdated, 0, Date.now() + 86400_000, fresh.lastUpdated),
+    version: clampNumber(r.version, 1, 100, fresh.version),
+  };
+
+  // toneHistory — array of {context, tone, timestamp}, capped.
+  if (Array.isArray(r.toneHistory)) {
+    const validTones = new Set(['neutral', 'friendly', 'excited', 'empathetic', 'serious']);
+    out.toneHistory = (r.toneHistory as unknown[])
+      .filter((h): h is { context: string; tone: AdaptiveTone; timestamp: number } => {
+        if (!h || typeof h !== 'object') return false;
+        const x = h as Record<string, unknown>;
+        return typeof x.context === 'string' && x.context.length <= MAX_KEY_LEN
+          && typeof x.tone === 'string' && validTones.has(x.tone)
+          && typeof x.timestamp === 'number' && Number.isFinite(x.timestamp);
+      })
+      .slice(0, MAX_TONE_HISTORY);
+  }
+
+  if (typeof r.dominantMood === 'string'
+    && ['neutral', 'urgent', 'happy', 'calm'].includes(r.dominantMood)) {
+    out.dominantMood = r.dominantMood as AdaptiveProfile['dominantMood'];
+  }
+
+  // commonMispronunciations — Record<string, string>, capped.
+  if (r.commonMispronunciations && typeof r.commonMispronunciations === 'object'
+    && !Array.isArray(r.commonMispronunciations)) {
+    const cleaned: Record<string, string> = {};
+    let n = 0;
+    for (const [k, v] of Object.entries(r.commonMispronunciations as Record<string, unknown>)) {
+      if (n >= MAX_MISPRONUNCIATIONS) break;
+      if (typeof k !== 'string' || !k || k.length > MAX_KEY_LEN) continue;
+      if (typeof v !== 'string' || v.length > MAX_KEY_LEN) continue;
+      cleaned[k] = v;
+      n++;
+    }
+    out.commonMispronunciations = cleaned;
+  }
+
+  // categories — Record<string, {count, lastUsed}>, capped + numeric.
+  if (r.categories && typeof r.categories === 'object' && !Array.isArray(r.categories)) {
+    const cleaned: Record<string, CategoryStat> = {};
+    let n = 0;
+    for (const [k, v] of Object.entries(r.categories as Record<string, unknown>)) {
+      if (n >= MAX_CATEGORIES) break;
+      if (typeof k !== 'string' || !k || k.length > MAX_KEY_LEN) continue;
+      if (!v || typeof v !== 'object') continue;
+      const x = v as Record<string, unknown>;
+      const count = clampNumber(x.count, 0, 1_000_000, -1);
+      const lastUsed = clampNumber(x.lastUsed, 0, Date.now() + 86400_000, -1);
+      if (count < 0 || lastUsed < 0) continue;
+      cleaned[k] = { count, lastUsed };
+      n++;
+    }
+    out.categories = cleaned;
+  }
+
+  // timeOfDayPatterns — Record<string, TimePeriodWord[]>, capped.
+  if (r.timeOfDayPatterns && typeof r.timeOfDayPatterns === 'object'
+    && !Array.isArray(r.timeOfDayPatterns)) {
+    const cleaned: Record<string, TimePeriodWord[]> = {};
+    let p = 0;
+    for (const [period, words] of Object.entries(r.timeOfDayPatterns as Record<string, unknown>)) {
+      if (p >= MAX_TOD_PERIODS) break;
+      if (typeof period !== 'string' || !period || period.length > MAX_KEY_LEN) continue;
+      if (!Array.isArray(words)) continue;
+      const cleanWords: TimePeriodWord[] = [];
+      for (const w of words) {
+        if (cleanWords.length >= MAX_TOD_WORDS_PER_PERIOD) break;
+        if (!w || typeof w !== 'object') continue;
+        const x = w as Record<string, unknown>;
+        if (typeof x.w !== 'string' || !x.w || x.w.length > MAX_KEY_LEN) continue;
+        const t = clampNumber(x.t, 0, Date.now() + 86400_000, -1);
+        const n = clampNumber(x.n, 0, 1_000_000, -1);
+        if (t < 0 || n < 0) continue;
+        cleanWords.push({ w: x.w, t, n });
+      }
+      cleaned[period] = cleanWords;
+      p++;
+    }
+    out.timeOfDayPatterns = cleaned;
+  }
+
+  return out;
+}
+
 function readFromStorage(): AdaptiveProfile {
   if (typeof window === 'undefined') return freshProfile();
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
     if (!raw) return freshProfile();
     const parsed = JSON.parse(raw) as Partial<AdaptiveProfile> & { version?: number };
-    return migrate(parsed);
+    // Migrate first (handles v1 → v2 shape lift), then sanitize the
+    // result. Migration trusts shape; sanitization re-validates every
+    // field so migrate() can stay simple AND a tampered persist can't
+    // smuggle NaN through the pre-version branch.
+    return sanitizeAdaptiveProfile(migrate(parsed));
   } catch {
     return freshProfile();
   }

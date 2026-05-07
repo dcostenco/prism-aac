@@ -113,6 +113,25 @@ export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: num
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 
+/** Hard cap on a single TTS audio response. A hostile / buggy backend
+ *  returning a 100 MB blob would otherwise OOM the AAC tablet. 8 MB is
+ *  generous: a 4 KB UTF-8 message at 24 kHz mono MP3 96 kbps is < 5 MB
+ *  even for a 30-second utterance. Caller treats anything larger as a
+ *  failure and falls through to the next TTS tier (Web Speech). */
+const MAX_TTS_BYTES = 8 * 1024 * 1024;
+
+/** Read a Response body as ArrayBuffer with a byte cap enforced
+ *  via Content-Length pre-check + post-read length check. Returns
+ *  null if the body exceeds the cap (caller falls through to next
+ *  TTS tier rather than crashing). */
+async function readCappedAudio(res: Response): Promise<ArrayBuffer | null> {
+  const declaredLen = Number(res.headers?.get?.('content-length') ?? '');
+  if (Number.isFinite(declaredLen) && declaredLen > MAX_TTS_BYTES) return null;
+  const buf = await res.arrayBuffer();
+  if (buf.byteLength > MAX_TTS_BYTES) return null;
+  return buf;
+}
+
 // Singleton AudioContext for all Azure / Inworld TTS playback. Web Audio API
 // avoids the iOS Safari intermittent-failure trap where `audio.play()` after
 // `await fetch()` is silently rejected because the user-gesture token was
@@ -287,9 +306,9 @@ async function speakGemini(
       console.warn(`[Gemini-TTS] non-ok ${res.status} — falling through to Inworld`);
       return false;
     }
-    const audioBytes = await res.arrayBuffer();
-    if (audioBytes.byteLength === 0) {
-      console.warn('[Gemini-TTS] empty audio buffer — falling through to Inworld');
+    const audioBytes = await readCappedAudio(res);
+    if (!audioBytes || audioBytes.byteLength === 0) {
+      console.warn('[Gemini-TTS] empty/oversize audio buffer — falling through to Inworld');
       return false;
     }
     stopAzureAudio();
@@ -408,11 +427,25 @@ export async function speakAzure(
     }
 
     stopAzureAudio();
-    const audioBytes = await res.arrayBuffer();
+    const audioBytes = await readCappedAudio(res);
+    if (!audioBytes) {
+      console.warn('[AzureTTS] response oversize, dropping');
+      return false;
+    }
     return await decodeAndPlay(audioBytes, volume, 'AzureTTS');
   } catch (e) {
     console.warn('[AzureTTS] Fetch failed:', e instanceof Error ? e.message : e);
     if (url) releaseBlob(url);
     return false;
+  } finally {
+    // Belt-and-suspenders cleanup. The success path also clears these
+    // mid-function (so stopAzureAudio() during a slow play doesn't see a
+    // stale controller), but if any throw skipped that cleanup the
+    // controller / timeout would leak forever — the AbortController
+    // pile would grow unbounded across rapid Speak presses, and the
+    // setTimeout would still fire (no-op'ing on an already-aborted
+    // controller, but still wasting timer slots).
+    clearTimeout(timeout);
+    activeControllers.delete(controller);
   }
 }
