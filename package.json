@@ -12,7 +12,11 @@
     "e2e": "playwright test",
     "e2e:desktop": "playwright test --project=desktop",
     "e2e:mobile": "playwright test --project=iphone-6.1 --project=iphone-6.5 --project=iphone-6.9",
-    "e2e:tablet": "playwright test --project=ipad-7 --project=ipad-13"
+    "e2e:tablet": "playwright test --project=ipad-7 --project=ipad-13",
+    "visual:check": "node scripts/visual-check.mjs",
+    "visual:verify": "node scripts/verify-state-coverage.mjs",
+    "visual": "npm run visual:check && PANEL_HEIGHT_CAP=200 ALLOW_BRANCH_UNKNOWN=1 NO_CAP_PASSES=math-more-closed,math-more-open REQUIRED_PASSES=ai-unconfigured,ai-configured-empty,aac-empty,math-more-closed,math-more-open npm run visual:verify",
+    "e2e:watchdog": "MIN_FREE_GB=2 ./scripts/playwright-watchdog.sh e2e/panel-compact-when-empty.spec.ts --project=desktop --workers=1"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.1.0",

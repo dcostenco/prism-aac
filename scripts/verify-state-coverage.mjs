@@ -21,7 +21,11 @@
  * Configure via env:
  *   REPORT_PATH         default: /tmp/prism-aac-visual/report.json
  *   REQUIRED_PASSES     comma-separated, e.g. "ai-unconfigured,ai-configured-empty,aac-empty"
- *   PANEL_HEIGHT_CAP    default: 180   (px; max allowed across ALL branches)
+ *   PANEL_HEIGHT_CAP    default: 180   (px; max allowed across ALL branches NOT in NO_CAP_PASSES)
+ *   NO_CAP_PASSES       comma-separated pass names to skip the height-cap check for.
+ *                       Use for passes where the panel SHOULD be tall by design
+ *                       (e.g. math-more-closed / math-more-open: full panel ≈ 750px).
+ *                       Presence + branch checks still apply.
  *   ALLOW_BRANCH_UNKNOWN default: 0    (1 = don't fail when branch detection couldn't classify)
  */
 import fs from 'node:fs';
@@ -29,6 +33,7 @@ import fs from 'node:fs';
 const REPORT = process.env.REPORT_PATH || '/tmp/prism-aac-visual/report.json';
 const REQUIRED = (process.env.REQUIRED_PASSES || 'ai-unconfigured,ai-configured-empty,aac-empty').split(',').map(s => s.trim()).filter(Boolean);
 const CAP = parseInt(process.env.PANEL_HEIGHT_CAP || '180', 10);
+const NO_CAP = new Set((process.env.NO_CAP_PASSES || '').split(',').map(s => s.trim()).filter(Boolean));
 const ALLOW_UNKNOWN = process.env.ALLOW_BRANCH_UNKNOWN === '1';
 
 if (!fs.existsSync(REPORT)) {
@@ -61,8 +66,10 @@ for (const required of REQUIRED) {
   }
 }
 
-// 2. Cap check — every measured panel must be under the cap.
-const tooTall = report.filter(r => r.panel?.h && r.panel.h > CAP);
+// 2. Cap check — every measured panel must be under the cap, EXCEPT
+//    passes listed in NO_CAP_PASSES (panels that are tall by design,
+//    e.g. Math has header + canvas + keyboard ≈ 750px).
+const tooTall = report.filter(r => r.panel?.h && r.panel.h > CAP && !NO_CAP.has(r.pass));
 for (const r of tooTall) {
   console.error(`[verify-state-coverage] FAIL: pass="${r.pass}" branch="${r.branch}" panel.h=${r.panel.h}px > cap=${CAP}px`);
   bad++;
@@ -83,8 +90,12 @@ if (!ALLOW_UNKNOWN) {
 console.log('[verify-state-coverage] coverage report:');
 for (const r of report) {
   const h = r.panel?.h ?? '?';
-  const flag = r.panel?.h > CAP ? '🔴' : '✅';
-  console.log(`  ${flag}  ${r.pass.padEnd(28)}  branch=${(r.branch || '?').padEnd(20)}  panel.h=${h}px`);
+  const exempt = NO_CAP.has(r.pass);
+  const flag = exempt
+    ? '⚪'
+    : (r.panel?.h > CAP ? '🔴' : '✅');
+  const tail = exempt ? ' (no-cap)' : '';
+  console.log(`  ${flag}  ${r.pass.padEnd(28)}  branch=${(r.branch || '?').padEnd(20)}  panel.h=${h}px${tail}`);
 }
 
 if (bad > 0) {
