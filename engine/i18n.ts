@@ -136,7 +136,11 @@ export function t(key: string, lang: SupportedLanguage = 'en'): string {
   return loaded[lang]?.[key] ?? loaded.en?.[key] ?? key;
 }
 
-export function getTTSCode(lang: SupportedLanguage): string {
+export function getTTSCode(lang: string): string {
+  // Accepts SupportedLanguage AND any string — falls back to en-US for
+  // unknown codes. Widened from `lang: SupportedLanguage` so callers
+  // (locale-tagged user input, settings store, tests) don't need to
+  // narrow before calling. The lookup is already safe.
   return LANG_META.find(l => l.code === lang)?.ttsCode ?? 'en-US';
 }
 

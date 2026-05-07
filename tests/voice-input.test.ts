@@ -118,8 +118,8 @@ describe('Synalux outputLanguage config', () => {
   });
 
   it('translation uses outputLanguage not language', () => {
-    const language = 'ru';
-    const outputLanguage = 'en';
+    const language: string = 'ru';
+    const outputLanguage: string = 'en';
     const needsTranslation = language !== outputLanguage;
     expect(needsTranslation).toBe(true);
   });

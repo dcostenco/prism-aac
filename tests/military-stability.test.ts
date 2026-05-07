@@ -61,8 +61,8 @@ describe('aacSpeak — language fallback', () => {
   });
 
   it('different language = translation active', () => {
-    const inLang = 'ru';
-    const outLang = 'en';
+    const inLang: string = 'ru';
+    const outLang: string = 'en';
     expect(inLang !== outLang).toBe(true);
   });
 });
@@ -228,8 +228,8 @@ describe('Head Tracker — dwell click conditions', () => {
   });
 
   it('different element resets dwell', () => {
-    const prev = 'button-1';
-    const curr = 'button-2';
+    const prev: string = 'button-1';
+    const curr: string = 'button-2';
     expect(prev !== curr).toBe(true);
   });
 
@@ -497,7 +497,7 @@ describe('Multi-Camera — back camera rejection', () => {
     ];
     const front = all.filter(c => c.facing !== 'environment');
     expect(front).toHaveLength(2);
-    expect(front.every(c => c.facing !== 'environment')).toBe(true);
+    expect(front.every((c: { facing: string }) => c.facing !== 'environment')).toBe(true);
   });
 
   it('facingMode=environment from stream settings rejected', () => {
@@ -570,7 +570,7 @@ describe('Voice Input — error conditions', () => {
   });
 
   it('network error = report to user', () => {
-    const error = 'network';
+    const error: string = 'network';
     const isSilence = error === 'no-speech';
     const isAborted = error === 'aborted';
     const shouldReport = !isSilence && !isAborted;
@@ -1477,7 +1477,7 @@ describe('Switch Scanning — configuration', () => {
   });
 
   it('manual mode waits for switch press', () => {
-    const mode = 'manual';
+    const mode: string = 'manual';
     const shouldAutoAdvance = mode === 'auto';
     expect(shouldAutoAdvance).toBe(false);
   });
@@ -1556,7 +1556,7 @@ describe('Switch Scanning — input sources', () => {
   });
 
   it('keyboard Enter = select', () => {
-    const key = 'Enter';
+    const key: string = 'Enter';
     const isSelect = key === ' ' || key === 'Enter';
     expect(isSelect).toBe(true);
   });
@@ -1831,7 +1831,7 @@ describe('Remote Modeling — connection lifecycle', () => {
   });
 
   it('caregiver starts in connecting state', () => {
-    const role = 'caregiver';
+    const role: string = 'caregiver';
     const status = role === 'child' ? 'waiting' : 'connecting';
     expect(status).toBe('connecting');
   });
@@ -2022,15 +2022,15 @@ describe('Speech — speakWord uses user language', () => {
 
 describe('Switch Scanning — HID edge detection', () => {
   it('fires on 0→1 transition', () => {
-    const lastState = 0;
-    const currentState = 1;
+    const lastState: number = 0;
+    const currentState: number = 1;
     const shouldFire = currentState !== 0 && lastState === 0;
     expect(shouldFire).toBe(true);
   });
 
   it('does NOT fire on 1→1 (held switch)', () => {
-    const lastState = 1;
-    const currentState = 1;
+    const lastState: number = 1;
+    const currentState: number = 1;
     const shouldFire = currentState !== 0 && lastState === 0;
     expect(shouldFire).toBe(false);
   });
@@ -2348,7 +2348,7 @@ describe('AudioContext warmup', () => {
   });
 
   it('no-op if context already running', () => {
-    const ctxState = 'running';
+    const ctxState: string = 'running';
     const shouldResume = ctxState === 'suspended';
     expect(shouldResume).toBe(false);
   });
@@ -2462,8 +2462,8 @@ describe('Voice Cursor — dwell click', () => {
   });
 
   it('moving to different element resets dwell', () => {
-    const prev = 'button-a';
-    const curr = 'button-b';
+    const prev: string = 'button-a';
+    const curr: string = 'button-b';
     expect(prev !== curr).toBe(true);
   });
 
