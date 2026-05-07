@@ -21,7 +21,9 @@ test.beforeEach(async ({ page, baseURL }) => {
     } catch { /* sandboxed origin — ignore */ }
   });
   await page.goto(start, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('button:has-text("Categories")', { timeout: 30000 });
+  // Toolbar renders icon-only at narrow viewports — wait for any
+  // qwerty key (always-on at boot) instead of a localized text label.
+  await page.waitForSelector('button[data-key="Q"]', { timeout: 30000 });
 });
 
 test('app boots and renders the keyboard chrome', async ({ page }) => {

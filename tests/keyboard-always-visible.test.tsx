@@ -108,6 +108,34 @@ describe('Keyboard visibility — qwerty rendered for panels without own input',
       expect(shell).toBeInTheDocument();
     });
   }
+
+  // Pin the min-height floor on the keyboard shell. The qwerty has 4
+  // rows (3 letter rows + 1 utility row with mode/space/punctuation/
+  // Speak); each row needs ≥ ~55px to be tappable. With a 180px floor
+  // (the previous value) and a flex-[3] panel above, the bottom row
+  // got clipped — Vorbește/Speak peeked at the viewport edge and the
+  // mode-toggle / space / punctuation buttons ran off-screen
+  // (May 2026 user-reported "keyboard is wrong" with screenshot of
+  // ai-chat panel + clipped 4th row).
+  //
+  // Asserting the className floor (rather than a computed pixel
+  // height) because jsdom doesn't run layout. A future change that
+  // drops the min-h or lowers it below a 4-row-safe value will fail
+  // this assertion.
+  it('keyboard shell has a min-height floor large enough for 4 rows', async () => {
+    useUIStore.setState({ sidePanel: 'ai-chat' });
+    const { findByTestId } = render(<PrismApp />);
+    const shell = await findByTestId('keyboard-shell');
+    const cls = shell.className;
+    // The floor must include a min-h utility AND its lower bound must
+    // be ≥ 260px (4 rows × 60px + padding/gap headroom). Smaller
+    // values produce visually cramped rows even when technically above
+    // the 44px tap-target minimum (May 2026 #37/#38 screenshots).
+    const m = cls.match(/min-h-\[(?:clamp\(\s*)?(\d+)px/);
+    expect(m, `expected keyboard-shell min-h-[<floor>] in className "${cls}"`).not.toBeNull();
+    const floorPx = m ? Number(m[1]) : 0;
+    expect(floorPx).toBeGreaterThanOrEqual(260);
+  });
 });
 
 describe('Keyboard visibility — qwerty hidden for panels with their own keyboard', () => {

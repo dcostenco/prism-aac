@@ -245,7 +245,14 @@ export default function PrismApp() {
               it down to a 2-row clipped sliver. */}
           {showQwerty && (
             <div
-              className="flex-1 flex flex-col min-h-[clamp(180px,30svh,300px)]"
+              // Floor / cap chosen so all 4 rows (qwerty + utility) get
+              // ≥ 60px each across every supported viewport. The
+              // previous floor of 180px collapsed to ~30-40px rows on
+              // iPad landscape with a flex-[3] panel above (May 2026
+              // user screenshots #37 / #38 — Chat IA + Send Message
+              // panels showed compressed rows). 280px floor / 38svh
+              // grow / 440px cap.
+              className="flex-1 flex flex-col min-h-[clamp(280px,38svh,440px)]"
               data-testid="keyboard-shell"
             >
               <Keyboard />
