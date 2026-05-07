@@ -172,9 +172,37 @@ export const usePredictionStore = create<PredictionState>()(
         const baselineWf = { ...(corpus?.wordFreq ?? {}), ...seed.wordFreq, ...clinical };
         const baselineBg = { ...(corpus?.bigrams ?? {}), ...seed.bigrams };
         const baselineTg = { ...(corpus?.trigrams ?? {}), ...seed.trigrams };
-        const mergedWf = mergeUserNgramsWithBoost(baselineWf, userWf);
-        const mergedBg = mergeUserNgramsWithBoost(baselineBg, userBg);
-        const mergedTg = mergeUserNgramsWithBoost(baselineTg, userTg);
+        // Cross-language leak guard. The user wordFreq/bigrams/trigrams maps
+        // are global (not per-lang) and seeded from English, so when the
+        // user typed English at any point they have "I", "Want", etc. with
+        // high counts. Switching to RO / ES / FR / DE / PT / etc. (Latin
+        // script) — where SCRIPT_FILTER can't tell English from native — let
+        // those English words leak into the prediction bar (fix: confirmed
+        // user report of mixed RO/EN tiles like `I / Eu / Un / Want / să`).
+        // Drop user entries that don't ALSO appear in the lang baseline so
+        // user typing within RO still boosts (RO words exist in the RO
+        // baseline) but English-only words get filtered out. EN keeps its
+        // entire user history. Identity ('en') passthrough costs nothing.
+        const filterCrossLang = (
+          user: Record<string, WordFreqEntry>,
+          baseline: Record<string, WordFreqEntry>,
+        ): Record<string, WordFreqEntry> => {
+          if (lang === 'en') return user;
+          const out: Record<string, WordFreqEntry> = {};
+          for (const k of Object.keys(user)) {
+            // For unigrams just check the key. For n-grams (k = "a|b" or
+            // "a|b|c") require the FULL n-gram to exist in the baseline —
+            // otherwise an English bigram like "i|want" would survive.
+            if (baseline[k]) out[k] = user[k];
+          }
+          return out;
+        };
+        const safeUserWf = filterCrossLang(userWf, baselineWf);
+        const safeUserBg = filterCrossLang(userBg, baselineBg);
+        const safeUserTg = filterCrossLang(userTg, baselineTg);
+        const mergedWf = mergeUserNgramsWithBoost(baselineWf, safeUserWf);
+        const mergedBg = mergeUserNgramsWithBoost(baselineBg, safeUserBg);
+        const mergedTg = mergeUserNgramsWithBoost(baselineTg, safeUserTg);
         // Pass language-specific fallback, no always-capitalized for non-EN,
         // and a script filter that drops any wrong-script candidates that
         // leak in from the English-seeded initial state.

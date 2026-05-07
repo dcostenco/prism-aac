@@ -184,18 +184,22 @@ function releaseBlob(url: string): void {
 // fetches. Panic stop must kill ALL of them, not just the last.
 const activeControllers = new Set<AbortController>();
 
-export function stopAzureAudio(): void {
-  for (const ctrl of activeControllers) ctrl.abort();
-  activeControllers.clear();
-  // Stop every queued / playing BufferSourceNode (Web Audio API path).
+/** Stop only ACTIVE PLAYBACK (BufferSourceNodes + HTMLAudioElements +
+ *  blob URLs). Does NOT abort in-flight fetch controllers — those
+ *  belong to whichever speakAzure call owns them and aborting them
+ *  from a peer call cascades into AbortError → tier fall-through →
+ *  silent failure (the user-reported "speak frequently loses
+ *  streaming" bug). The caller-of-the-moment is responsible for
+ *  silencing the previous playback right before its own
+ *  decodeAndPlay; stale fetches that still resolve will simply skip
+ *  playback when their seq check fails (see speakAzure / speakGemini).
+ */
+function stopAzurePlayback(): void {
   for (const src of activeSources) {
     try { src.stop(); } catch { /* already finished */ }
     try { src.disconnect(); } catch { /* */ }
   }
   activeSources.clear();
-  // Legacy: also clean up any HTMLAudioElement instances still tracked from
-  // older code paths. Once the new Web Audio path is the only producer this
-  // block will be a no-op but it keeps panic stop safe during the rollover.
   for (const audio of activeAudioElements) {
     audio.pause();
     audio.removeAttribute('src');
@@ -206,6 +210,25 @@ export function stopAzureAudio(): void {
   for (const url of liveBlobUrls) URL.revokeObjectURL(url);
   liveBlobUrls.clear();
 }
+
+/** Full panic stop: aborts pending fetches AND stops playback. Used by
+ *  the user-driven "stop speech" button (and emergency cancel) — the
+ *  user explicitly wants every TTS path silenced, including the
+ *  in-flight fetch that hasn't returned yet. Do NOT call this from
+ *  within a successful TTS path; use stopAzurePlayback() instead. */
+export function stopAzureAudio(): void {
+  for (const ctrl of activeControllers) ctrl.abort();
+  activeControllers.clear();
+  stopAzurePlayback();
+}
+
+/** Monotonic counter that the most recent speakAzure increments. Older
+ *  in-flight calls compare their captured seq before claiming the
+ *  audio bus — if a newer call already started, the older one returns
+ *  silently without playing or aborting anything. This is the latest-
+ *  wins guard that lets rapid Speak presses + silence-detect speech
+ *  coexist without aborting each other's fetches. */
+let speakSeq = 0;
 
 /**
  * Decode an audio buffer (MP3 / WAV / Opus / etc. — anything Web Audio
@@ -311,7 +334,10 @@ async function speakGemini(
       console.warn('[Gemini-TTS] empty/oversize audio buffer — falling through to Inworld');
       return false;
     }
-    stopAzureAudio();
+    // Silence prior playback only — peer in-flight fetches stay alive
+    // (they own their own controllers and will play if they're newer
+    // per the speakSeq guard in speakAzure).
+    stopAzurePlayback();
     return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS');
   } catch (e) {
     // Network / abort / timeout. Speech-service still has Kokoro and
@@ -332,6 +358,15 @@ export async function speakAzure(
 ): Promise<boolean> {
   const ssml = buildSSML(text, lang, tone, rate, volume);
 
+  // Latest-wins guard. Capture the seq we own; if a newer speakAzure
+  // starts before our fetch returns, we silently bow out instead of
+  // claiming the audio bus mid-playback. This is the fix for the
+  // "Speak frequently loses streaming" report — silence-detect speech
+  // (every keystroke) was racing against the explicit Speak press,
+  // and one was aborting the other's controller via stopAzureAudio().
+  const mySeq = ++speakSeq;
+  const isStillNewest = () => mySeq === speakSeq;
+
   let url: string | null = null;
   const controller = new AbortController();
   activeControllers.add(controller);
@@ -343,6 +378,16 @@ export async function speakAzure(
     // to the existing Inworld two-tier chain — the AAC user never
     // notices the rotation.
     if (await speakGemini(text, volume, controller, lang)) {
+      clearTimeout(timeout);
+      activeControllers.delete(controller);
+      return true;
+    }
+    // If a newer Speak call started while we were waiting on Gemini,
+    // bow out before issuing the Inworld fallback fetch — the newer
+    // call will own playback. Returning true here keeps speech-service
+    // from falling through to Kokoro/Web Speech with our (now-stale)
+    // text.
+    if (!isStillNewest()) {
       clearTimeout(timeout);
       activeControllers.delete(controller);
       return true;
@@ -426,12 +471,18 @@ export async function speakAzure(
       return false;
     }
 
-    stopAzureAudio();
+    // Newer call may have started during the await — same bow-out as
+    // above. Skipping playback here (instead of stopAzureAudio'ing the
+    // newer call) is what keeps the Speak button from "losing
+    // streaming" under rapid taps + silence-detect interleaving.
+    if (!isStillNewest()) return true;
+    stopAzurePlayback();
     const audioBytes = await readCappedAudio(res);
     if (!audioBytes) {
       console.warn('[AzureTTS] response oversize, dropping');
       return false;
     }
+    if (!isStillNewest()) return true;
     return await decodeAndPlay(audioBytes, volume, 'AzureTTS');
   } catch (e) {
     console.warn('[AzureTTS] Fetch failed:', e instanceof Error ? e.message : e);
