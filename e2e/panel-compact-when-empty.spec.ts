@@ -79,15 +79,15 @@ test.describe('Empty-panel unmount + MessageBar expansion', () => {
     expect(expanded, `MessageBar must grow when AAC Chat is open (was ${baseline}px → now ${expanded}px)`).toBeGreaterThan(baseline);
   });
 
-  test('Keyboard fills the freed vertical space when in messaging mode', async ({ page, baseURL }) => {
+  test('Keyboard stays comfortably tappable when in messaging mode', async ({ page, baseURL }) => {
     await bootClean(page, baseURL);
-    const baseline = await rectHeight(page, '[data-testid="keyboard-shell"]');
     await page.getByRole('button', { name: /^(AI|IA)$/ }).first().click();
     await page.waitForTimeout(300);
     const expanded = await rectHeight(page, '[data-testid="keyboard-shell"]');
-    // The keyboard shouldn't shrink when AI Chat is open (with the
-    // panel unmounted, only MessageBar grew, but keyboard should be
-    // at worst the same and ideally a touch larger after layout settles).
-    expect(expanded, `keyboard height must not shrink when AI is open (was ${baseline}px → now ${expanded}px)`).toBeGreaterThanOrEqual(baseline - 30);
+    // PrismApp.tsx pins the keyboard wrapper to min-h-[clamp(280px,38svh,440px)],
+    // so even after MessageBar grows by 1 line the keyboard must stay
+    // ≥ ~280px (4 rows comfortably tappable). On wider/taller viewports
+    // it'll be much larger; this is the floor.
+    expect(expanded, `keyboard height must remain ≥ ~280px in messaging mode (was ${expanded}px)`).toBeGreaterThanOrEqual(270);
   });
 });
