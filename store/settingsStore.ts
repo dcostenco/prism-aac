@@ -104,6 +104,11 @@ interface SettingsState {
   // motor-imprecision profiles. Visual progress ring fills during
   // dwell so the user (and caregiver) sees the count-down.
   mathHoldTimeMs: number;
+  // Two-hit magnify on math keys: first tap previews (key + 8
+  // neighbors enlarged); second tap on the (now-larger) key commits.
+  // For users with significant motor imprecision who need an extra
+  // confirmation step. Default false (most users prefer single-tap).
+  mathTwoHitMagnify: boolean;
   // Marketplace-installed app ids (e.g. ['game-packs', 'voice-packs']).
   // Toolbar.tsx renders these as buttons after the built-ins.
   installedApps: string[];
@@ -114,7 +119,7 @@ interface SettingsState {
   // is not user-selectable.
   voicePreferences: Record<string, string>;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'voicePreferences'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'voicePreferences'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -163,6 +168,7 @@ export const useSettingsStore = create<SettingsState>()(
       aiAutocorrectEnabled: true,
       notificationsEnabled: true,
       mathHoldTimeMs: 0,
+      mathTwoHitMagnify: false,
       toolbarConfig: {
         order: [...DEFAULT_TOOLBAR_ORDER],
         // Empty enabled map = all built-ins ON (Partial+default-true). User

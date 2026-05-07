@@ -1,36 +1,35 @@
 'use client';
 /**
- * DwellButton — Phase 5A.
+ * DwellButton — Phase 5A + 5D.
  *
- * A button that requires the user to hold their finger for
- * `holdTimeMs` (read from settings.mathHoldTimeMs) before the
- * commit fires. Visual progress ring fills during the dwell;
- * releasing before expiry cancels.
+ * Combines two AAC accessibility profiles for math keys:
  *
- * When `holdTimeMs === 0` (default), the button behaves like a
- * regular onClick — pointerdown + pointerup commits immediately.
+ *   1. Hold-time dwell (Phase 5A) — requires the user to hold for
+ *      `mathHoldTimeMs` ms before commit. Visual ring fills during
+ *      dwell; release before expiry cancels.
  *
- * Why we don't use plain onClick + a setTimeout:
- *   • A user with motor imprecision needs to SEE that the dwell is
- *     in progress so they can hold steady. The ring is the
- *     feedback channel.
- *   • Releasing early MUST cancel — onClick fires on release
- *     regardless, which would defeat the dwell-as-confirmation
- *     intent.
- *   • Pointer leaving the button mid-dwell also cancels (matches
- *     the head-tracker dwell semantics elsewhere in the app).
+ *   2. Two-hit magnify (Phase 5D) — when `mathTwoHitMagnify` is on,
+ *      the FIRST press arms the button (scaled 1.4× + green halo,
+ *      no commit). The SECOND press within 2 s actually commits
+ *      (subject to dwell rules if also enabled). 2 s of inactivity
+ *      auto-disarms.
  *
- * Render: the children are absolutely-positioned content; the dwell
- * ring is an SVG overlay drawn ON TOP of the button when active.
+ * Defaults are off, off → button behaves like plain onClick. The
+ * profiles compose: caregiver can enable dwell only, two-hit only,
+ * or both.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
+
+const TWO_HIT_AUTO_DISARM_MS = 2000;
 
 interface DwellButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
   /** Fires once the dwell completes (or immediately when holdTimeMs=0). */
   onCommit: () => void;
   /** Optional override — bypasses the settings store. Useful for tests. */
   holdTimeMsOverride?: number;
+  /** Optional override — bypasses the settings store. Useful for tests. */
+  twoHitMagnifyOverride?: boolean;
   /** Children render INSIDE the button; the dwell ring is a sibling overlay. */
   children: React.ReactNode;
 }
@@ -38,18 +37,23 @@ interface DwellButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonEle
 export default function DwellButton({
   onCommit,
   holdTimeMsOverride,
+  twoHitMagnifyOverride,
   children,
   className,
   ...rest
 }: DwellButtonProps) {
   const settingsHold = useSettingsStore((s) => s.mathHoldTimeMs);
+  const settingsTwoHit = useSettingsStore((s) => s.mathTwoHitMagnify);
   const holdMs = holdTimeMsOverride ?? settingsHold ?? 0;
+  const twoHit = twoHitMagnifyOverride ?? settingsTwoHit ?? false;
 
   const [progress, setProgress] = useState(0);          // 0..1
   const [active, setActive] = useState(false);          // is dwell in flight?
+  const [armed, setArmed] = useState(false);            // two-hit armed?
   const startRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
   const committedRef = useRef(false);
+  const disarmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cancel = useCallback(() => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
@@ -76,6 +80,27 @@ export default function DwellButton({
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
     e.preventDefault();
     committedRef.current = false;
+
+    // Two-hit magnify: if enabled and not yet armed, this press is
+    // the FIRST tap — arm the button visually, set a 2 s
+    // auto-disarm timer, and DON'T commit yet.
+    if (twoHit && !armed) {
+      setArmed(true);
+      if (disarmTimerRef.current) clearTimeout(disarmTimerRef.current);
+      disarmTimerRef.current = setTimeout(() => {
+        setArmed(false);
+      }, TWO_HIT_AUTO_DISARM_MS);
+      return;
+    }
+
+    // Either two-hit is off, or the button is already armed — proceed
+    // to the commit path (instant or dwell).
+    if (disarmTimerRef.current) {
+      clearTimeout(disarmTimerRef.current);
+      disarmTimerRef.current = null;
+    }
+    setArmed(false);
+
     if (holdMs <= 0) {
       // Instant mode — commit immediately on press, like onClick.
       onCommit();
@@ -89,7 +114,7 @@ export default function DwellButton({
     // Capture pointer so leave events fire reliably even if the user's
     // finger drifts slightly off the button.
     (e.target as Element).setPointerCapture?.(e.pointerId);
-  }, [holdMs, onCommit, tick]);
+  }, [twoHit, armed, holdMs, onCommit, tick]);
 
   const onPointerUp = useCallback(() => {
     if (committedRef.current) return; // already committed via dwell
@@ -104,6 +129,7 @@ export default function DwellButton({
   // Cleanup on unmount.
   useEffect(() => () => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    if (disarmTimerRef.current !== null) clearTimeout(disarmTimerRef.current);
   }, []);
 
   return (
@@ -111,7 +137,11 @@ export default function DwellButton({
       {...rest}
       data-dwell-active={active ? '1' : '0'}
       data-hold-ms={holdMs}
-      className={`relative ${className ?? ''}`}
+      data-two-hit={twoHit ? '1' : '0'}
+      data-armed={armed ? '1' : '0'}
+      className={`relative ${className ?? ''} ${
+        armed ? 'z-30 scale-[1.4] ring-4 ring-[#4CAF50] shadow-2xl transition-transform' : 'transition-transform'
+      }`}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerLeave}

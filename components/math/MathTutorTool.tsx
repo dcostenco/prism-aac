@@ -18,7 +18,6 @@
  */
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useMathGridStore } from '@/store/mathGridStore';
-import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { askAI } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
@@ -49,9 +48,12 @@ const TOOL_BTN =
 
 export default function MathTutorTool() {
   const cells = useMathGridStore((s) => s.cells);
-  const profile = useAuthStore((s) => s.profile);
   const { speechRate, speechVolume, language } = useSettingsStore();
-  const aiEnabled = !!profile;
+  // Auth-gate REMOVED 2026-05-07 per user feedback "ai tutor should be
+  // enabled all pages" + "no stubs no hardcoding". askAI handles 401s
+  // gracefully — the catch block shows a friendly error message and
+  // the panel offers to retry. Free-tier / anonymous Synalux access
+  // routes through the same endpoint with a free-tier model.
   const [response, setResponse] = useState<string>('');
   const [mode, setMode] = useState<TutorMode | null>(null);
   const [loading, setLoading] = useState(false);
@@ -68,7 +70,7 @@ export default function MathTutorTool() {
 
   const ask = useCallback(async (which: TutorMode) => {
     const expression = serializeAsExpression(cells);
-    if (!expression || !aiEnabled || loading) return;
+    if (!expression || loading) return;
     tapFeedback();
     setMode(which);
     setLoading(true);
@@ -88,12 +90,13 @@ export default function MathTutorTool() {
       }, language);
       setResponse(buffer);
       if (buffer) aacSpeak(buffer, speechRate, speechVolume);
-    } catch {
-      setResponse('Could not reach the math helper right now.');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Could not reach the math helper right now.';
+      setResponse(`⚠️ ${msg}`);
     } finally {
       setLoading(false);
     }
-  }, [cells, aiEnabled, loading, language, speechRate, speechVolume]);
+  }, [cells, loading, language, speechRate, speechVolume]);
 
   const dismiss = useCallback(() => {
     tapFeedback();
@@ -106,7 +109,7 @@ export default function MathTutorTool() {
       <div className="flex items-center gap-1.5">
         <button
           onClick={() => ask('help')}
-          disabled={!aiEnabled || loading}
+          disabled={loading}
           data-testid="math-tutor-hint"
           aria-label="Get a hint"
           className={`${TOOL_BTN} bg-[#2196F3] text-white`}
@@ -115,7 +118,7 @@ export default function MathTutorTool() {
         </button>
         <button
           onClick={() => ask('check')}
-          disabled={!aiEnabled || loading}
+          disabled={loading}
           data-testid="math-tutor-check"
           aria-label="Check answer"
           className={`${TOOL_BTN} bg-[#FF9800] text-white`}
@@ -124,7 +127,7 @@ export default function MathTutorTool() {
         </button>
         <button
           onClick={() => ask('solve')}
-          disabled={!aiEnabled || loading}
+          disabled={loading}
           data-testid="math-tutor-solve"
           aria-label="Solve step-by-step"
           className={`${TOOL_BTN} bg-[#9C27B0] text-white`}
@@ -164,11 +167,6 @@ export default function MathTutorTool() {
         </div>
       )}
 
-      {!aiEnabled && (
-        <p className="text-muted text-[10px] mt-1 text-center" data-testid="math-tutor-signed-out">
-          Sign in to enable the math tutor.
-        </p>
-      )}
     </div>
   );
 }

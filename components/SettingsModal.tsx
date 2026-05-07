@@ -207,6 +207,25 @@ export default function SettingsModal() {
                 <span className="text-muted text-xs">ms</span>
               </div>
             </label>
+            <label className="flex items-center justify-between py-1.5">
+              <div>
+                <span className="text-primary text-sm font-semibold">Two-hit magnify</span>
+                <p className="text-muted text-[10px]">
+                  First tap on a math key magnifies it (1.4× + green halo) without
+                  committing; the second tap commits. Auto-disarms after 2 s.
+                  Pairs with hold-time dwell.
+                </p>
+              </div>
+              <button
+                onClick={() => { tapFeedback(); settings.update({ mathTwoHitMagnify: !settings.mathTwoHitMagnify }); }}
+                aria-pressed={settings.mathTwoHitMagnify}
+                aria-label="Two-hit magnify"
+                data-testid="math-two-hit-toggle"
+                className={`w-12 h-7 rounded-full transition-colors shrink-0 ${settings.mathTwoHitMagnify ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${settings.mathTwoHitMagnify ? 'translate-x-5' : ''}`} />
+              </button>
+            </label>
           </div>
 
           {/* Text Input Settings */}

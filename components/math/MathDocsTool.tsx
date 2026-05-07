@@ -24,6 +24,7 @@ import {
   loadDoc,
   listDocs,
   deleteDoc,
+  pullFromPortal,
   type MathDoc,
 } from '@/services/mathDocService';
 import { tapFeedback, keyFeedback } from '@/services/feedback';
@@ -38,6 +39,7 @@ export default function MathDocsTool() {
   const [currentSlug, setCurrentSlug] = useState<string | null>(null);
   const [currentName, setCurrentName] = useState<string>('');
   const [toast, setToast] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const toSerialized = useMathGridStore((s) => s.toSerialized);
   const loadFromSerialized = useMathGridStore((s) => s.loadFromSerialized);
@@ -87,6 +89,20 @@ export default function MathDocsTool() {
     setToast(`Opened ${doc.name}`);
   }, [loadFromSerialized]);
 
+  const handleSync = useCallback(async () => {
+    if (syncing) return;
+    tapFeedback();
+    setSyncing(true);
+    const merged = await pullFromPortal();
+    setSyncing(false);
+    if (merged === null) {
+      setToast('Sync failed — sign in to Synalux to sync docs.');
+      return;
+    }
+    setDocs(merged);
+    setToast(`Synced ${merged.length} doc${merged.length === 1 ? '' : 's'}.`);
+  }, [syncing]);
+
   const handleDelete = useCallback((slug: string) => {
     keyFeedback();
     if (!deleteDoc(slug)) return;
@@ -126,7 +142,18 @@ export default function MathDocsTool() {
           className="absolute right-0 top-full mt-2 w-72 max-h-72 overflow-y-auto surface-bar border border-theme rounded-xl shadow-xl z-50"
           data-testid="math-docs-list"
         >
-          <p className="text-muted text-xs font-bold px-3 pt-2">SAVED DOCS</p>
+          <div className="flex items-center justify-between px-3 pt-2">
+            <p className="text-muted text-xs font-bold">SAVED DOCS</p>
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              data-testid="math-docs-sync"
+              aria-label="Sync from cloud"
+              className="text-muted text-xs px-2 py-0.5 rounded hover:bg-black/5 disabled:opacity-40"
+            >
+              {syncing ? '…' : '↻ Sync'}
+            </button>
+          </div>
           {docs.length === 0 ? (
             <p className="text-muted text-xs px-3 py-3">No saved docs yet.</p>
           ) : (

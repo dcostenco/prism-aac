@@ -1,23 +1,34 @@
 'use client';
 /**
- * Math Document Service — Phase 5B (local-first).
+ * Math Document Service — Phase 5B (local-first) + Phase 5D (portal sync).
  *
- * Persists math grid documents to localStorage so the user's work
- * survives across sessions. Each doc is keyed by a slug + a name.
- * The store schema is intentionally compatible with a future portal
- * sync endpoint (Phase 5C) — when that lands, the same JSON shape
- * round-trips through `${SYNALUX_API}/prism-aac/math-doc/{slug}`.
+ * Local: localStorage["prism-aac-math-docs"] → MathDoc[].
+ * Remote: portal endpoints under /prism-aac/math-doc:
+ *   GET  /prism-aac/math-doc           list (signed-in user's docs)
+ *   POST /prism-aac/math-doc/{slug}    upsert (server tracks updatedAt)
+ *   DELETE /prism-aac/math-doc/{slug}  remove
  *
- * Storage layout:
- *   localStorage["prism-aac-math-docs"] → JSON array of MathDoc
+ * Sync semantics:
+ *   • Save flow: write local → fire-and-forget upsert to portal.
+ *     If portal returns 401 / 404 / network error, local stays the
+ *     source of truth.
+ *   • Pull flow: pullFromPortal() merges every remote doc whose
+ *     updatedAt is newer than the local copy with same slug. Local
+ *     docs the portal doesn't know about are kept (will be pushed
+ *     on next save). Portal-only docs are added locally.
+ *   • Delete: local then portal best-effort.
  *
- * Cap on saved docs: 100 (sane upper bound for an AAC user's
- * cumulative homework). Hitting the cap rotates out the oldest
- * doc by `updatedAt`.
+ * Caps:
+ *   MAX_DOCS         100 local (oldest evicted by updatedAt on overflow)
+ *   MAX_BODY_BYTES   200 KB per doc
  */
 import {
   type SerializedMathGrid,
 } from '@/engine/mathGrid';
+import { portalFetch } from '@/services/portalClient';
+import { reportSwallowedError } from '@/lib/devLog';
+
+const reportSyncError = reportSwallowedError('mathDocService.portalSync');
 
 export interface MathDoc {
   /** Slug — generated from name + timestamp; URL-safe + deterministic. */
@@ -126,6 +137,9 @@ export function saveDoc(name: string, body: SerializedMathGrid, slug?: string): 
     docs.length = MAX_DOCS;
   }
   writeAll(docs);
+  // Fire-and-forget portal sync. We deliberately don't await — the
+  // local write is the source of truth, the portal is opportunistic.
+  void pushToPortal(saved).catch(reportSyncError);
   return saved;
 }
 
@@ -147,6 +161,7 @@ export function deleteDoc(slug: string): boolean {
   const next = docs.filter((d) => d.slug !== slug);
   if (next.length === before) return false;
   writeAll(next);
+  void deleteFromPortal(slug).catch(reportSyncError);
   return true;
 }
 
@@ -154,4 +169,98 @@ export function deleteDoc(slug: string): boolean {
  *  is destructive. */
 export function clearAllDocs(): void {
   writeAll([]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Phase 5D — portal sync                                              */
+/* ------------------------------------------------------------------ */
+
+interface PortalDocPayload {
+  slug: string;
+  name: string;
+  createdAt: number;
+  updatedAt: number;
+  body: SerializedMathGrid;
+}
+
+interface PortalListResponse {
+  docs?: PortalDocPayload[];
+}
+
+/** Best-effort upsert to the portal. Never throws — returns false on
+ *  any non-2xx. Caller should treat the local store as the source of
+ *  truth and call this fire-and-forget. */
+export async function pushToPortal(doc: MathDoc): Promise<boolean> {
+  const res = await portalFetch<unknown>({
+    path: `/prism-aac/math-doc/${encodeURIComponent(doc.slug)}`,
+    method: 'POST',
+    body: {
+      slug: doc.slug,
+      name: doc.name,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+      body: doc.body,
+    } satisfies PortalDocPayload,
+  });
+  return res.ok;
+}
+
+/** Fetches every doc the signed-in user owns from the portal and
+ *  merges into local store. Merge rules:
+ *   • portal doc with newer updatedAt → overwrites local
+ *   • local doc the portal doesn't know about → kept (will push on
+ *     next save)
+ *   • portal-only doc → added locally
+ *  Returns the merged list (already written to localStorage), or
+ *  null if the portal is unreachable / not signed in. */
+export async function pullFromPortal(): Promise<MathDoc[] | null> {
+  const res = await portalFetch<PortalListResponse | PortalDocPayload[]>({
+    path: '/prism-aac/math-doc',
+    method: 'GET',
+  });
+  if (!res.ok) return null;
+  const remote: PortalDocPayload[] = Array.isArray(res.data)
+    ? res.data
+    : res.data?.docs ?? [];
+  const local = readAll();
+  const localBySlug = new Map(local.map((d) => [d.slug, d]));
+  for (const r of remote) {
+    if (!isPortalDoc(r)) continue;
+    const existing = localBySlug.get(r.slug);
+    if (!existing || r.updatedAt > existing.updatedAt) {
+      localBySlug.set(r.slug, {
+        slug: r.slug,
+        name: r.name,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        body: r.body,
+      });
+    }
+  }
+  const merged = Array.from(localBySlug.values());
+  if (merged.length > MAX_DOCS) {
+    merged.sort((a, b) => b.updatedAt - a.updatedAt);
+    merged.length = MAX_DOCS;
+  }
+  writeAll(merged);
+  return merged.sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+/** Best-effort delete on the portal. Never throws. */
+export async function deleteFromPortal(slug: string): Promise<boolean> {
+  const res = await portalFetch<unknown>({
+    path: `/prism-aac/math-doc/${encodeURIComponent(slug)}`,
+    method: 'DELETE',
+  });
+  return res.ok;
+}
+
+function isPortalDoc(x: unknown): x is PortalDocPayload {
+  if (!x || typeof x !== 'object') return false;
+  const o = x as Record<string, unknown>;
+  return typeof o.slug === 'string'
+    && typeof o.name === 'string'
+    && typeof o.createdAt === 'number'
+    && typeof o.updatedAt === 'number'
+    && !!o.body && typeof o.body === 'object';
 }

@@ -13,6 +13,8 @@ import { useEffect } from 'react';
 import MathGrid from '@/components/math/MathGrid';
 import MathKeyboardRegion from '@/components/math/MathKeyboardRegion';
 import MathLockTool from '@/components/math/MathLockTool';
+import MathTutorTool from '@/components/math/MathTutorTool';
+import MathDocsTool from '@/components/math/MathDocsTool';
 import { useMathGridStore } from '@/store/mathGridStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -55,6 +57,8 @@ export default function MathGridDevPage() {
       <header className="flex items-center justify-between px-3 py-2 border-b text-sm font-mono shrink-0 bg-gray-50 gap-3">
         <span>MathGrid dev — cursor=({cursor.r},{cursor.c}) cells={cellsCount} scale={viewport.scale.toFixed(2)} pan=({Math.round(viewport.panX)},{Math.round(viewport.panY)})</span>
         <div className="flex items-center gap-2">
+          <MathTutorTool />
+          <MathDocsTool />
           <MathLockTool />
           <button
             onClick={() => reset()}

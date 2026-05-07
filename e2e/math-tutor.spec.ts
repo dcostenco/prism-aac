@@ -1,10 +1,9 @@
 /**
- * MathTutorTool — Phase 5C.
+ * MathTutorTool — Phase 5C (auth gate removed in Phase 5D).
  *
- * AI tutor reintegrated. Tests cover the UI surface only — actual
- * AI calls are NOT made (we'd need a stubbed askAI). The "signed-out"
- * state is the default; we verify buttons disable + the sign-in
- * prompt renders.
+ * Surface-level tests: the three buttons render, hit the 44px floor,
+ * and remain enabled regardless of auth state. Streaming + error
+ * paths are covered in math-tutor-deep.spec.ts via mocked askAI.
  */
 import { test, expect, type Page } from '@playwright/test';
 
@@ -34,14 +33,16 @@ test.describe('MathTutorTool (Phase 5C)', () => {
     await expect(page.locator('[data-testid="math-tutor-solve"]')).toBeVisible();
   });
 
-  test('signed-out: tutor buttons are disabled + a sign-in prompt is shown', async ({ page, baseURL }) => {
+  test('tutor buttons are enabled regardless of auth state (Phase 5D — gate removed)', async ({ page, baseURL }) => {
     await bootClean(page, baseURL);
     await openMath(page);
-    // No mocked profile → aiEnabled = false → all 3 disabled.
+    // No mocked profile → buttons must STILL be enabled. askAI handles
+    // 401s gracefully via the catch handler.
     for (const id of ['math-tutor-hint', 'math-tutor-check', 'math-tutor-solve']) {
-      await expect(page.locator(`[data-testid="${id}"]`)).toBeDisabled();
+      await expect(page.locator(`[data-testid="${id}"]`)).toBeEnabled();
     }
-    await expect(page.locator('[data-testid="math-tutor-signed-out"]')).toBeVisible();
+    // The signed-out hint paragraph must NOT exist.
+    await expect(page.locator('[data-testid="math-tutor-signed-out"]')).toHaveCount(0);
   });
 
   test('all 3 tutor buttons meet the 44px tap-target floor', async ({ page, baseURL }) => {

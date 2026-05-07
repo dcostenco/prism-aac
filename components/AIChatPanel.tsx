@@ -6,7 +6,6 @@ import { tapFeedback } from '@/services/feedback';
 import { askAI } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useAuthStore } from '@/store/authStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
@@ -32,8 +31,7 @@ export default function AIChatPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { text, appendText, autoSpeak, soundEnabled } = useMessageStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
-  const profile = useAuthStore((s) => s.profile);
-  const { t, ttsCode, outputTtsCode } = useT();
+  const { t, ttsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
@@ -41,7 +39,6 @@ export default function AIChatPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const voiceRef = useRef<VoiceSession | null>(null);
   const voiceSupported = isVoiceInputSupported();
-  const configured = !!profile;
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -53,7 +50,7 @@ export default function AIChatPanel() {
       appendText(line);
       if (autoSpeak && soundEnabled) aacSpeak(line, speechRate, speechVolume);
     },
-    [appendText, autoSpeak, soundEnabled, speechRate, speechVolume, outputTtsCode],
+    [appendText, autoSpeak, soundEnabled, speechRate, speechVolume],
   );
 
   // Stop listening when modal closes.
@@ -151,21 +148,18 @@ export default function AIChatPanel() {
     setLoading(false);
   };
 
-  // FOURTH pass. Round 1 flipped flex (still 500px). Round 2 hid body
-  // (still 200px footer). Round 3 hid footer + tightened header (59px).
-  // Round 4 (this version): user feedback 2026-05-07 — "doesnt make
-  // any sense, expand type here panel instead" + "remove ai chat line,
-  // microphone button already existed on the top panel". So when the
-  // panel is compact (nothing to show yet), it unmounts entirely. The
-  // toolbar AI button toggles the panel open/closed; MessageBar reads
-  // sidePanel and grows by one line so the user has a fatter compose
-  // area for the question. As soon as text.trim() is truthy → panel
-  // remounts in expanded form with conversation body + Ask AI footer.
-  const isCompact = (configured && messages.length === 0 && !loading && !text.trim()) || !configured;
+  // FIFTH pass — auth gate REMOVED 2026-05-07 per user feedback "ai
+  // tutor should be enabled all pages" + "no stubs no hardcoding".
+  // The `configured` profile check used to short-circuit the entire
+  // panel into an "AI Chat requires Synalux account" placeholder.
+  // Now the panel renders for everyone; askAI handles 401 / errors
+  // gracefully via the existing catch handler.
+  //
+  // The compact-when-empty rule is preserved: the panel still
+  // unmounts when there is nothing to show, so the qwerty fills
+  // the freed space and MessageBar grows by one line.
+  const isCompact = messages.length === 0 && !loading && !text.trim();
   if (isCompact) return null;
-
-  // Below this point: configured && (messages.length > 0 || loading || text typed).
-  // No more isCompact branching needed.
   return (
     <section
       aria-label={t('ai_chat_title')}
