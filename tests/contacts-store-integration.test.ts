@@ -28,12 +28,29 @@ describe('contactsStore.mergeFromIntegrations', () => {
   it('appends new contacts and bumps lastSyncedAt', () => {
     const res = useContactsStore.getState().mergeFromIntegrations([
       { name: 'Mom', provider: 'telegram', recipientId: '111' },
-      { name: 'Dad', provider: 'whatsapp', recipientId: '+1555' },
+      { name: 'Dad', provider: 'whatsapp', recipientId: '+15551234567' },
     ]);
     expect(res).toEqual({ added: 2, updated: 0 });
     const list = useContactsStore.getState().contacts;
     expect(list).toHaveLength(2);
     expect(useContactsStore.getState().lastSyncedAt).toBe(Date.parse('2026-05-07T12:00:00Z'));
+  });
+
+  it('caps merged contacts at MAX_CONTACTS — drops new entries past the limit', () => {
+    // Pre-fill to one short of the cap so we can deterministically observe
+    // the boundary behavior.
+    const seed = Array.from({ length: 199 }, (_, i) => ({
+      name: `Person ${i}`, provider: 'telegram' as const, recipientId: `${1000 + i}`,
+    }));
+    useContactsStore.getState().mergeFromIntegrations(seed);
+    expect(useContactsStore.getState().contacts).toHaveLength(199);
+    // Push 5 more; only 1 should land (slot 200), the other 4 dropped.
+    const more = Array.from({ length: 5 }, (_, i) => ({
+      name: `Extra ${i}`, provider: 'telegram' as const, recipientId: `${9000 + i}`,
+    }));
+    const res = useContactsStore.getState().mergeFromIntegrations(more);
+    expect(res.added).toBe(1);
+    expect(useContactsStore.getState().contacts).toHaveLength(200);
   });
 
   it('updates by composite (provider, recipientId) without duplicating', () => {

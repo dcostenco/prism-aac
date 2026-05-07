@@ -92,8 +92,9 @@ export const useScheduleStore = create<ScheduleState>()(
         })),
 
       addIncomingMessage: (sender, text, externalId) => {
-        const trimmed = text.trim();
-        if (!trimmed || !sender.trim()) return null;
+        const trimmedText = text.trim().slice(0, 2000);
+        const trimmedSender = sender.trim().slice(0, 80);
+        if (!trimmedText || !trimmedSender) return null;
         // Dedupe by externalId so polling/SSE re-delivery doesn't pile
         // up duplicate rows. When the provider doesn't give an id we
         // fall through and accept the dup risk — better than dropping
@@ -103,17 +104,33 @@ export const useScheduleStore = create<ScheduleState>()(
           : undefined;
         if (existing) return null;
         const id = `sched-${crypto.randomUUID()}`;
+        // Eviction policy: hard cap on message-kind tasks at 100 to
+        // bound localStorage growth from a chatty caregiver. Drop the
+        // oldest READ messages first; never auto-drop unread ones.
+        // Falls back to dropping the oldest of any kind=message if all
+        // 100 slots are unread (the user has bigger problems then).
+        const MAX_MESSAGES = 100;
+        const currentMessages = get().tasks.filter((t) => t.kind === 'message');
+        const dropIds = new Set<string>();
+        if (currentMessages.length >= MAX_MESSAGES) {
+          const sortedByAge = [...currentMessages].sort((a, b) => (a.receivedAt ?? 0) - (b.receivedAt ?? 0));
+          const readFirst = [...sortedByAge].sort((a, b) => Number(b.done) - Number(a.done) || (a.receivedAt ?? 0) - (b.receivedAt ?? 0));
+          for (const t of readFirst) {
+            dropIds.add(t.id);
+            if (currentMessages.length - dropIds.size < MAX_MESSAGES) break;
+          }
+        }
         set((s) => ({
           tasks: [
-            ...s.tasks,
+            ...s.tasks.filter((t) => !dropIds.has(t.id)),
             {
               id,
-              text: `${sender}: ${trimmed}`,
+              text: `${trimmedSender}: ${trimmedText}`,
               icon: '💬',
               done: false,
               order: s.tasks.length,
               kind: 'message',
-              sender,
+              sender: trimmedSender,
               ...(externalId ? { externalId } : {}),
               receivedAt: Date.now(),
             },

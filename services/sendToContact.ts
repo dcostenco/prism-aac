@@ -2,141 +2,103 @@
  * Provider dispatch — sends an AAC user's composed text to a real
  * recipient via the right Synalux portal endpoint.
  *
- * One thin function per provider keeps the call site (AACChatPanel)
- * agnostic. All routes already exist in synalux-private. Auth is
- * cookie-based via fetch credentials: 'include' — caregiver pre-
- * connected the provider OAuth on synalux.ai/chat, the AAC client
- * just reuses that workspace token.
+ * All provider-specific knowledge (endpoint, body shape, length cap,
+ * tier requirement) lives in `lib/messageProviders.ts`. This file is
+ * the transport — fetch, abort, error mapping. Adding a new provider
+ * means editing only the config table.
  *
- * Failure mode: returns { ok: false, error } so the UI can show a
+ * Failure mode: returns `{ ok: false, error }` so the UI can show a
  * toast + leave the message in the bar for retry. Never throws.
  */
 import type { AacContact, ContactProvider } from '@/store/contactsStore';
+import {
+  PROVIDERS,
+  isProviderAvailable as _isProviderAvailable,
+  clampToProviderLimit,
+  type PlanTier,
+} from '@/lib/messageProviders';
 
 const SYNALUX_API = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SYNALUX_API)
   ? process.env.NEXT_PUBLIC_SYNALUX_API
   : 'https://synalux.ai/api/v1';
 
-type SendResult = { ok: true } | { ok: false; error: string };
+/** Per-call deadline. Long enough for 3G/airplane wifi, short enough that
+ *  a stuck send doesn't strand the AAC user staring at "Sending…". */
+const SEND_TIMEOUT_MS = 10_000;
 
-const ENDPOINT: Record<ContactProvider, string> = {
-  telegram:  '/telegram/send',
-  whatsapp:  '/whatsapp/send',
-  viber:     '/viber/send',
-  sms:       '/sms/send',
-  messenger: '/messenger/send',
-  instagram: '/instagram/send',
-  mail:      '/mail/send',
-};
-
-/** Provider-specific request body shape — each provider's send route
- *  accepts a slightly different field name for the recipient. */
-function bodyFor(contact: AacContact, text: string): Record<string, unknown> {
-  switch (contact.provider) {
-    case 'telegram':
-    case 'messenger':
-    case 'instagram':
-    case 'viber':
-      return { recipientId: contact.recipientId, text };
-    case 'whatsapp':
-    case 'sms':
-      return { to: contact.recipientId, body: text };
-    case 'mail':
-      return { to: contact.recipientId, subject: text.slice(0, 60), body_text: text };
-  }
-}
+type SendResult = { ok: true; truncated: boolean } | { ok: false; error: string };
 
 export async function sendToContact(
   contact: AacContact,
   text: string,
   plan: PlanTier | null | undefined = null,
 ): Promise<SendResult> {
-  const trimmed = text.trim();
-  if (!trimmed) return { ok: false, error: 'empty' };
-  // Client-side tier guard. The portal route also enforces (must, since
-  // this layer is untrusted) but a local check spares the user a 403
-  // round-trip and lets the picker greying stay honest.
-  if (!isProviderAvailable(contact.provider, plan)) {
-    return { ok: false, error: `tier_required:${PROVIDER_MIN_TIER[contact.provider]}` };
+  const cfg = PROVIDERS[contact.provider];
+  if (!cfg) return { ok: false, error: `unknown_provider:${contact.provider}` };
+
+  // Empty-text rejection happens BEFORE the tier check so callers always
+  // see a deterministic "empty" error regardless of plan state.
+  const raw = (text ?? '').trim();
+  if (!raw) return { ok: false, error: 'empty' };
+
+  // Client-side tier guard. The portal route also enforces (and must,
+  // since this layer is untrusted) but a local check spares the user a
+  // 403 round-trip and lets the picker greying stay honest.
+  if (!_isProviderAvailable(contact.provider, plan)) {
+    return { ok: false, error: `tier_required:${cfg.minTier}` };
   }
 
-  const path = ENDPOINT[contact.provider];
+  // Recipient-id format guard — catches caregiver typos like "mom" in a
+  // phone number field early. Portal still validates authoritatively.
+  if (!cfg.validateRecipientId(contact.recipientId)) {
+    return { ok: false, error: 'invalid_recipient_id' };
+  }
+
+  // Provider-imposed length cap. We truncate (with ellipsis) rather than
+  // reject so the AAC user's effort isn't wasted on a typo-overflow.
+  const clamped = clampToProviderLimit(contact.provider, raw);
+  const truncated = clamped.length < raw.length;
+
+  let res: Response;
   try {
-    const res = await fetch(`${SYNALUX_API}${path}`, {
+    res = await fetch(`${SYNALUX_API}${cfg.endpoint}`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bodyFor(contact, trimmed)),
-      signal: AbortSignal.timeout(10_000),
+      body: JSON.stringify(cfg.buildBody(contact, clamped)),
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
     });
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => '');
-      return { ok: false, error: `HTTP ${res.status}${errBody ? ': ' + errBody.slice(0, 80) : ''}` };
-    }
-    return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'network error' };
   }
+
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    return { ok: false, error: `HTTP ${res.status}${errBody ? ': ' + errBody.slice(0, 80) : ''}` };
+  }
+  return { ok: true, truncated };
 }
 
-export const PROVIDER_LABELS: Record<ContactProvider, string> = {
-  telegram:  'Telegram',
-  whatsapp:  'WhatsApp',
-  viber:     'Viber',
-  sms:       'SMS',
-  messenger: 'Messenger',
-  instagram: 'Instagram',
-  mail:      'Mail',
-};
+// Re-exports — keep the sendToContact import surface stable for the
+// AAC chat panel + caregiver settings, both of which need access to
+// per-provider metadata for tile rendering and tier hints.
+export {
+  PROVIDERS,
+  clampToProviderLimit,
+  isProviderAvailable,
+  type PlanTier,
+} from '@/lib/messageProviders';
 
-export const PROVIDER_ICONS: Record<ContactProvider, string> = {
-  telegram:  '✈️',
-  whatsapp:  '💬',
-  viber:     '🟣',
-  sms:       '📱',
-  messenger: '💙',
-  instagram: '📸',
-  mail:      '📧',
-};
+// Compatibility shims so existing call sites keep working without
+// touching every component import.
+export const PROVIDER_LABELS: Record<ContactProvider, string> = Object.fromEntries(
+  (Object.keys(PROVIDERS) as ContactProvider[]).map((k) => [k, PROVIDERS[k].label]),
+) as Record<ContactProvider, string>;
 
-/** Plan tier required to USE a given provider. The AAC Chat component
- *  itself is on every tier (per product) — only the *send* leg is
- *  gated. This keeps the picker informative on free accounts: the user
- *  sees their family Telegram contact greyed out with an upgrade hint
- *  rather than missing entirely.
- *
- *  Mapping rationale:
- *    free      — mail + sms: ubiquitous, no third-party messaging API
- *                cost beyond Twilio per-segment.
- *    standard  — + telegram / whatsapp / viber: most-requested family
- *                messaging providers; portal pays for WA Cloud API
- *                conversation fees here.
- *    advanced  — + messenger / instagram: Meta Business API tier with
- *                page-scoped IDs and rate limits that need more setup.
- *    enterprise — same as advanced (no provider beyond Meta Business). */
-export type PlanTier = 'free' | 'standard' | 'advanced' | 'enterprise';
+export const PROVIDER_ICONS: Record<ContactProvider, string> = Object.fromEntries(
+  (Object.keys(PROVIDERS) as ContactProvider[]).map((k) => [k, PROVIDERS[k].icon]),
+) as Record<ContactProvider, string>;
 
-export const PROVIDER_MIN_TIER: Record<ContactProvider, PlanTier> = {
-  mail:      'free',
-  sms:       'free',
-  telegram:  'standard',
-  whatsapp:  'standard',
-  viber:     'standard',
-  messenger: 'advanced',
-  instagram: 'advanced',
-};
-
-const TIER_RANK: Record<PlanTier, number> = {
-  free: 0,
-  standard: 1,
-  advanced: 2,
-  enterprise: 3,
-};
-
-/** True if the given user plan can use the provider. Used to grey out
- *  contact tiles + block sendToContact from issuing the request. */
-export function isProviderAvailable(provider: ContactProvider, plan: PlanTier | null | undefined): boolean {
-  const userTier = TIER_RANK[plan ?? 'free'];
-  const required = TIER_RANK[PROVIDER_MIN_TIER[provider]];
-  return userTier >= required;
-}
+export const PROVIDER_MIN_TIER: Record<ContactProvider, PlanTier> = Object.fromEntries(
+  (Object.keys(PROVIDERS) as ContactProvider[]).map((k) => [k, PROVIDERS[k].minTier]),
+) as Record<ContactProvider, PlanTier>;

@@ -55,7 +55,9 @@ interface ContactsState {
    *  — used to throttle automatic refresh + show "last synced" hint in
    *  the caregiver settings panel. 0 = never. */
   lastSyncedAt: number;
-  addContact: (c: Omit<AacContact, 'id' | 'order'>) => string;
+  /** Returns the new id, or null if the contact was rejected (cap hit
+   *  or invalid input). */
+  addContact: (c: Omit<AacContact, 'id' | 'order'>) => string | null;
   removeContact: (id: string) => void;
   updateContact: (id: string, patch: Partial<Omit<AacContact, 'id'>>) => void;
   reorderContact: (id: string, newOrder: number) => void;
@@ -63,9 +65,18 @@ interface ContactsState {
   /** Merge a fetched batch with the existing local list. Identity is
    *  per (provider, recipientId) — same external person arriving via the
    *  same provider updates in place, never duplicates. Caregiver-edited
-   *  fields (avatar, name override) are preserved on re-sync. */
+   *  fields (avatar, name override) are preserved on re-sync. New
+   *  contacts past MAX_CONTACTS are dropped (oldest-keep-wins). */
   mergeFromIntegrations: (incoming: Array<Omit<AacContact, 'id' | 'order'>>) => { added: number; updated: number };
 }
+
+/** Hard cap on local contact list. AAC pickers past ~200 stop being
+ *  usable (motor + cognitive load). Beyond it, caregiver should use
+ *  the portal contacts UI. Catch synced-from-portal explosions too. */
+export const MAX_CONTACTS = 200;
+const MAX_NAME_LEN = 80;
+const MAX_RECIPIENT_LEN = 254;
+const MAX_AVATAR_LEN = 16;
 
 let nextId = 1;
 const genId = () => `c-${Date.now()}-${nextId++}`;
@@ -76,19 +87,38 @@ export const useContactsStore = create<ContactsState>()(
       contacts: [],
       lastSyncedAt: 0,
       addContact: (c) => {
+        const name = (c.name ?? '').trim().slice(0, MAX_NAME_LEN);
+        const recipientId = (c.recipientId ?? '').trim().slice(0, MAX_RECIPIENT_LEN);
+        const avatar = c.avatar ? (c.avatar.trim().slice(0, MAX_AVATAR_LEN) || undefined) : undefined;
+        if (!name || !recipientId || !c.provider) return null;
+        const current = get().contacts;
+        if (current.length >= MAX_CONTACTS) return null;
+        // Reject exact (provider, recipientId) dup so the manual-add
+        // form doesn't silently create a second "Mom" tile.
+        if (current.some((x) => x.provider === c.provider && x.recipientId === recipientId)) return null;
         const id = genId();
-        const order = get().contacts.length;
-        set((s) => ({ contacts: [...s.contacts, { ...c, id, order }] }));
+        const order = current.length;
+        set({ contacts: [...current, { name, provider: c.provider, recipientId, avatar, lastMessagePreview: c.lastMessagePreview, id, order }] });
         return id;
       },
       removeContact: (id) => set((s) => ({ contacts: s.contacts.filter((c) => c.id !== id) })),
       updateContact: (id, patch) => set((s) => ({
-        contacts: s.contacts.map((c) => c.id === id ? { ...c, ...patch } : c),
+        contacts: s.contacts.map((c) => {
+          if (c.id !== id) return c;
+          const next: AacContact = { ...c };
+          if (patch.name !== undefined) next.name = patch.name.trim().slice(0, MAX_NAME_LEN);
+          if (patch.recipientId !== undefined) next.recipientId = patch.recipientId.trim().slice(0, MAX_RECIPIENT_LEN);
+          if (patch.provider !== undefined) next.provider = patch.provider;
+          if (patch.avatar !== undefined) next.avatar = patch.avatar.trim().slice(0, MAX_AVATAR_LEN) || undefined;
+          if (patch.lastMessagePreview !== undefined) next.lastMessagePreview = patch.lastMessagePreview;
+          if (patch.order !== undefined) next.order = patch.order;
+          return next;
+        }),
       })),
       reorderContact: (id, newOrder) => set((s) => ({
         contacts: s.contacts.map((c) => c.id === id ? { ...c, order: newOrder } : c),
       })),
-      setContacts: (cs) => set({ contacts: cs }),
+      setContacts: (cs) => set({ contacts: cs.slice(0, MAX_CONTACTS) }),
       mergeFromIntegrations: (incoming) => {
         let added = 0;
         let updated = 0;
@@ -114,6 +144,10 @@ export const useContactsStore = create<ContactsState>()(
               updated++;
             }
           } else {
+            // Cap-aware append — drop new entries that would push past
+            // MAX_CONTACTS rather than silently truncating later (which
+            // would lose the lower-ordered contacts the user picked).
+            if (merged.length >= MAX_CONTACTS) continue;
             merged.push({
               ...inc,
               id: genId(),

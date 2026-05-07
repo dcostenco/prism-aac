@@ -13,9 +13,10 @@
  * when their WhatsApp contact greys out for the AAC user.
  */
 import { useState, useCallback } from 'react';
-import { useContactsStore, type AacContact, type ContactProvider } from '@/store/contactsStore';
+import { useContactsStore, MAX_CONTACTS, type ContactProvider } from '@/store/contactsStore';
 import { useAuthStore } from '@/store/authStore';
 import {
+  PROVIDERS as PROVIDER_CFG,
   PROVIDER_LABELS,
   PROVIDER_ICONS,
   PROVIDER_MIN_TIER,
@@ -24,19 +25,9 @@ import {
 import { syncContactsOnce } from '@/services/contactsIntegrationService';
 import { tapFeedback } from '@/services/feedback';
 
-const PROVIDERS: ContactProvider[] = [
+const PROVIDER_LIST: ContactProvider[] = [
   'mail', 'sms', 'telegram', 'whatsapp', 'viber', 'messenger', 'instagram',
 ];
-
-const RECIPIENT_HINT: Record<ContactProvider, string> = {
-  telegram:  'Telegram chat_id (digits)',
-  whatsapp:  '+15551234567',
-  viber:     'Viber user_id',
-  sms:       '+15551234567',
-  messenger: 'Messenger PSID',
-  instagram: 'Instagram IGSID',
-  mail:      'name@example.com',
-};
 
 export default function CaregiverContactsSettings() {
   const contacts = useContactsStore((s) => s.contacts);
@@ -50,15 +41,27 @@ export default function CaregiverContactsSettings() {
   const [draftName, setDraftName] = useState('');
   const [draftProvider, setDraftProvider] = useState<ContactProvider>('mail');
   const [draftRecipientId, setDraftRecipientId] = useState('');
+  const [draftError, setDraftError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
 
   const handleAdd = useCallback(() => {
     const name = draftName.trim();
     const recipientId = draftRecipientId.trim();
+    setDraftError(null);
     if (!name || !recipientId) return;
+    // Local format validation against the provider config — gives a
+    // useful error before the portal would reject with HTTP 400.
+    if (!PROVIDER_CFG[draftProvider].validateRecipientId(recipientId)) {
+      setDraftError(`Invalid format for ${PROVIDER_LABELS[draftProvider]} — ${PROVIDER_CFG[draftProvider].recipientHint}`);
+      return;
+    }
     tapFeedback();
-    addContact({ name, provider: draftProvider, recipientId });
+    const id = addContact({ name, provider: draftProvider, recipientId });
+    if (id === null) {
+      setDraftError(`Could not add — limit is ${MAX_CONTACTS} contacts, or this number is already saved.`);
+      return;
+    }
     setDraftName('');
     setDraftRecipientId('');
   }, [draftName, draftProvider, draftRecipientId, addContact]);
@@ -115,11 +118,11 @@ export default function CaregiverContactsSettings() {
         <div className="grid grid-cols-2 gap-2">
           <select
             value={draftProvider}
-            onChange={(e) => setDraftProvider(e.target.value as ContactProvider)}
+            onChange={(e) => { setDraftProvider(e.target.value as ContactProvider); setDraftError(null); }}
             className={inputClass}
             data-testid="contact-draft-provider"
           >
-            {PROVIDERS.map((p) => {
+            {PROVIDER_LIST.map((p) => {
               const available = isProviderAvailable(p, plan);
               return (
                 <option key={p} value={p}>
@@ -131,12 +134,18 @@ export default function CaregiverContactsSettings() {
           </select>
           <input
             value={draftRecipientId}
-            onChange={(e) => setDraftRecipientId(e.target.value)}
-            placeholder={RECIPIENT_HINT[draftProvider]}
+            onChange={(e) => { setDraftRecipientId(e.target.value); setDraftError(null); }}
+            placeholder={PROVIDER_CFG[draftProvider].recipientHint}
             className={inputClass}
             data-testid="contact-draft-recipient"
+            maxLength={254}
           />
         </div>
+        {draftError && (
+          <p className="text-xs text-[#F44336]" role="alert" data-testid="contact-draft-error">
+            {draftError}
+          </p>
+        )}
         <button
           className={btnPrimary}
           onClick={handleAdd}

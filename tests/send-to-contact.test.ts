@@ -82,20 +82,59 @@ describe('sendToContact — provider dispatch', () => {
 
   it('WhatsApp body uses to + body', async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
-    await sendToContact(baseContact({ provider: 'whatsapp', recipientId: '+1555' }), 'hi', 'standard');
+    await sendToContact(baseContact({ provider: 'whatsapp', recipientId: '+15551234567' }), 'hi', 'standard');
     const init = fetchMock.mock.calls[0][1] as RequestInit;
-    expect(JSON.parse(init.body as string)).toEqual({ to: '+1555', body: 'hi' });
+    expect(JSON.parse(init.body as string)).toEqual({ to: '+15551234567', body: 'hi' });
   });
 
   it('Mail body uses to + subject + body_text and truncates subject', async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
     const long = 'a'.repeat(120);
-    await sendToContact(baseContact({ provider: 'mail', recipientId: 'a@b.c' }), long, 'free');
+    await sendToContact(baseContact({ provider: 'mail', recipientId: 'mom@example.com' }), long, 'free');
     const init = fetchMock.mock.calls[0][1] as RequestInit;
     const body = JSON.parse(init.body as string);
-    expect(body.to).toBe('a@b.c');
+    expect(body.to).toBe('mom@example.com');
     expect(body.subject).toHaveLength(60);
     expect(body.body_text).toBe(long);
+  });
+});
+
+describe('sendToContact — recipient-id validation', () => {
+  it('rejects malformed phone numbers locally before hitting the network', async () => {
+    const res = await sendToContact(baseContact({ provider: 'whatsapp', recipientId: 'not-a-phone' }), 'hi', 'standard');
+    expect(res).toEqual({ ok: false, error: 'invalid_recipient_id' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed emails locally', async () => {
+    const res = await sendToContact(baseContact({ provider: 'mail', recipientId: 'not-an-email' }), 'hi', 'free');
+    expect(res).toEqual({ ok: false, error: 'invalid_recipient_id' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects telegram chat_id that contains letters', async () => {
+    const res = await sendToContact(baseContact({ provider: 'telegram', recipientId: '12abc34' }), 'hi', 'standard');
+    expect(res).toEqual({ ok: false, error: 'invalid_recipient_id' });
+  });
+});
+
+describe('sendToContact — length clamping', () => {
+  it('truncates oversize text and reports truncation in the result', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    // SMS cap is 1500 — feed 5000.
+    const huge = 'a'.repeat(5000);
+    const res = await sendToContact(baseContact({ provider: 'sms', recipientId: '+15551234567' }), huge, 'free');
+    expect(res).toEqual({ ok: true, truncated: true });
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    const body = JSON.parse(init.body as string);
+    expect((body.body as string).length).toBeLessThanOrEqual(1500);
+    expect((body.body as string).endsWith('…')).toBe(true);
+  });
+
+  it('does not truncate when text fits under the provider cap', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    const res = await sendToContact(baseContact({ provider: 'sms', recipientId: '+15551234567' }), 'hi mom', 'free');
+    expect(res).toEqual({ ok: true, truncated: false });
   });
 });
 

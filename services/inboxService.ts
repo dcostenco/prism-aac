@@ -25,7 +25,22 @@ import { useScheduleStore } from '@/store/scheduleStore';
 
 const LAST_SEEN_KEY = 'prism-aac-inbox-last-seen-ms';
 const POLL_INTERVAL_MS = 30_000;
+const POLL_TIMEOUT_MS = 8_000;
 const ENDPOINT = '/api/v1/prism-aac/inbox/poll';
+/** Hard cap per poll — if the portal queue ballooned to thousands, drain
+ *  in batches rather than locking up the UI dispatching them all at once.
+ *  Older messages will roll forward via lastSeenMs on subsequent polls. */
+const MAX_MESSAGES_PER_POLL = 50;
+/** Hard caps on payload fields — defense against a compromised portal or
+ *  developer mistake injecting absurdly long strings into the schedule
+ *  task list (which is rendered as plain text by React, but would still
+ *  destroy the layout / blow up persistence). */
+const MAX_SENDER_LEN = 80;
+const MAX_TEXT_LEN = 2000;
+/** Reject `since` values from localStorage that are obviously bogus
+ *  (negative, NaN, > now+1d). Stops a tampered key from sending huge
+ *  numeric strings up to the portal. */
+const MAX_SINCE_MS = () => Date.now() + 24 * 60 * 60 * 1000;
 
 export interface IncomingMessage {
   id: string;
@@ -35,58 +50,89 @@ export interface IncomingMessage {
   receivedAt?: number;
 }
 
+function sanitizeStr(s: unknown, maxLen: number): string {
+  if (typeof s !== 'string') return '';
+  // Strip ASCII control chars that could break the schedule row's
+  // single-line rendering. Trim then clamp.
+  // eslint-disable-next-line no-control-regex
+  const clean = s.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+  return clean.length > maxLen ? clean.slice(0, maxLen) : clean;
+}
+
 /** Apply one incoming message to the schedule. Exposed so future
  *  webhook/SSE listeners can route through the same dedupe + format
  *  path the poller uses. Safe to call from anywhere on the client. */
 export function deliverIncomingMessage(msg: IncomingMessage): string | null {
-  const sender = (msg.sender || '').trim();
-  const text = (msg.text || '').trim();
+  const sender = sanitizeStr(msg?.sender, MAX_SENDER_LEN);
+  const text = sanitizeStr(msg?.text, MAX_TEXT_LEN);
   if (!sender || !text) return null;
-  return useScheduleStore.getState().addIncomingMessage(sender, text, msg.id);
+  const id = typeof msg?.id === 'string' && msg.id.length > 0 && msg.id.length <= 128
+    ? msg.id
+    : undefined;
+  return useScheduleStore.getState().addIncomingMessage(sender, text, id);
 }
 
 function getLastSeenMs(): number {
   if (typeof window === 'undefined') return 0;
   const raw = window.localStorage.getItem(LAST_SEEN_KEY);
   const n = raw ? parseInt(raw, 10) : 0;
-  return Number.isFinite(n) ? n : 0;
+  if (!Number.isFinite(n) || n < 0 || n > MAX_SINCE_MS()) return 0;
+  return n;
 }
 
 function setLastSeenMs(ms: number) {
   if (typeof window === 'undefined') return;
+  if (!Number.isFinite(ms) || ms < 0 || ms > MAX_SINCE_MS()) return;
   window.localStorage.setItem(LAST_SEEN_KEY, String(ms));
 }
 
+let pollInFlight = false;
+
 async function pollOnce(): Promise<void> {
+  // Single-flight: a slow poll under flaky wifi must not stack with the
+  // next interval tick (pile of in-flight requests + duplicate delivery
+  // attempts after the dedupe window).
+  if (pollInFlight) return;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
-  const since = getLastSeenMs();
-  let res: Response;
+  pollInFlight = true;
   try {
-    res = await fetch(`${ENDPOINT}?since=${since}`, {
-      credentials: 'include',
-      headers: { Accept: 'application/json' },
-    });
-  } catch {
-    return; // network blip — retry next tick
+    const since = getLastSeenMs();
+    let res: Response;
+    try {
+      res = await fetch(`${ENDPOINT}?since=${since}`, {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(POLL_TIMEOUT_MS),
+      });
+    } catch {
+      return; // network blip — retry next tick
+    }
+    if (!res.ok) return; // 404 (not shipped), 401 (reauth), 5xx — bail quietly
+    let body: unknown;
+    try {
+      body = await res.json();
+    } catch {
+      return;
+    }
+    if (!body || typeof body !== 'object') return;
+    const b = body as { messages?: unknown; serverTime?: unknown };
+    const rawMessages = Array.isArray(b.messages) ? b.messages.slice(0, MAX_MESSAGES_PER_POLL) : [];
+    let maxSeen = since;
+    for (const m of rawMessages) {
+      if (!m || typeof m !== 'object') continue;
+      const msg = m as IncomingMessage;
+      deliverIncomingMessage(msg);
+      const r = msg.receivedAt;
+      if (typeof r === 'number' && Number.isFinite(r) && r > maxSeen && r <= MAX_SINCE_MS()) maxSeen = r;
+    }
+    // Prefer serverTime over client clock to avoid clock-skew gaps.
+    if (typeof b.serverTime === 'number' && Number.isFinite(b.serverTime) && b.serverTime > maxSeen) {
+      maxSeen = Math.min(b.serverTime, MAX_SINCE_MS());
+    }
+    if (maxSeen > since) setLastSeenMs(maxSeen);
+  } finally {
+    pollInFlight = false;
   }
-  if (!res.ok) return; // 404 (not shipped), 401 (reauth), 5xx — bail quietly
-  let body: { messages?: IncomingMessage[]; serverTime?: number };
-  try {
-    body = await res.json();
-  } catch {
-    return;
-  }
-  const messages = Array.isArray(body.messages) ? body.messages : [];
-  let maxSeen = since;
-  for (const m of messages) {
-    deliverIncomingMessage(m);
-    if (m.receivedAt && m.receivedAt > maxSeen) maxSeen = m.receivedAt;
-  }
-  // Prefer serverTime over client clock to avoid clock-skew gaps.
-  if (typeof body.serverTime === 'number' && body.serverTime > maxSeen) {
-    maxSeen = body.serverTime;
-  }
-  if (maxSeen > since) setLastSeenMs(maxSeen);
 }
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -106,10 +152,13 @@ export function startInboxPolling(): () => void {
   onlineHandler = () => { void pollOnce(); };
   window.addEventListener('online', onlineHandler);
   // Dev/QA hook: lets manual testing simulate inbound messages without
-  // a live portal endpoint. Off-by-default in prod behavior since it
-  // only fires when somebody calls the function from devtools.
-  (window as unknown as { __prismDeliverIncoming?: typeof deliverIncomingMessage })
-    .__prismDeliverIncoming = deliverIncomingMessage;
+  // a live portal endpoint. Gated behind NODE_ENV !== 'production' so
+  // it doesn't ship as an attack surface for browser-extension tampering
+  // in production builds.
+  if (process.env.NODE_ENV !== 'production') {
+    (window as unknown as { __prismDeliverIncoming?: typeof deliverIncomingMessage })
+      .__prismDeliverIncoming = deliverIncomingMessage;
+  }
   return stopInboxPolling;
 }
 
@@ -121,5 +170,8 @@ export function stopInboxPolling(): void {
   if (typeof window !== 'undefined' && onlineHandler) {
     window.removeEventListener('online', onlineHandler);
     onlineHandler = null;
+  }
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+    delete (window as unknown as { __prismDeliverIncoming?: unknown }).__prismDeliverIncoming;
   }
 }
