@@ -106,10 +106,16 @@ test.describe('Phase 5D — math doc portal sync', () => {
       await route.fulfill({ status: 204, body: '' });
     });
 
-    // Type a glyph so the grid is non-empty, then save.
+    // Type a glyph so the grid is non-empty, then save. Verify the
+    // commit landed before clicking Save — on slower environments a
+    // bare click() can race the React commit phase.
     await page.locator('[data-testid="math-key-7"]').click();
+    await page.waitForFunction(() => {
+      const el = document.querySelector('header');
+      return !!el && /cells=[1-9]/.test(el.textContent || '');
+    }, { timeout: 5000 });
     await page.locator('[data-testid="math-docs-save"]').click();
-    await expect(page.locator('[data-testid="math-docs-toast"]')).toContainText(/Saved as/);
+    await expect(page.locator('[data-testid="math-docs-toast"]')).toContainText(/Saved as/, { timeout: 10000 });
 
     // Wait briefly for the fire-and-forget POST to land in the route handler.
     await page.waitForFunction(() => {
