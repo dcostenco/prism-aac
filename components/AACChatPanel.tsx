@@ -128,26 +128,25 @@ export default function AACChatPanel() {
 
   if (sidePanel !== 'aac-chat') return null;
 
-  // Compact when the AAC user has no contacts AND no active selection.
-  // Header (with ⚙️ Manage Contacts) + a single-line CTA row is enough;
-  // the qwerty fills the rest of the screen. Earlier "compact" attempt
-  // dropped flex-[3]→flex-none but kept the 📭 + "No contacts yet" +
-  // CTA stack inside an `flex-1` body, so the panel was still ~200px
-  // tall. Now the body is replaced by a tight header-bottom CTA bar.
+  // SECOND-pass simplification (2026-05-07 user feedback: "doesnt make
+  // any sense, expand type here panel instead", "remove contacts
+  // button"). When the AAC user has no contacts AND no active
+  // selection, we render NOTHING — the section unmounts. Toolbar's
+  // 💬 button toggles the panel; Settings → Integrations / Contacts
+  // is where caregivers manage the contact list (we just shipped the
+  // in-app provider connect there). MessageBar grows by one line
+  // when sidePanel is 'aac-chat' so the user has more compose room.
   const isCompact = !activeContact && sortedContacts.length === 0;
+  if (isCompact) return null;
 
+  // Below this point: not compact (have contacts or active contact).
   return (
     <section
       aria-label={t('aac_chat_title') || 'Send a message'}
-      className={
-        isCompact
-          ? 'flex-none flex flex-col surface-bar border-y border-theme'
-          : 'flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme'
-      }
+      className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
       data-testid="aac-chat-panel"
-      data-state={isCompact ? 'compact' : 'expanded'}
+      data-state="expanded"
     >
-      {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-theme">
         <div className="flex items-center gap-3">
           {activeContact && (
@@ -173,43 +172,15 @@ export default function AACChatPanel() {
             )}
           </h2>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => { tapFeedback(); toggleSettings(); }}
-            aria-label={t('manage_contacts') || 'Manage contacts'}
-            data-testid="aac-chat-manage-contacts"
-            className="aac-key surface-key text-primary rounded-lg px-3 py-1 text-xl"
-            title={t('manage_contacts') || 'Manage contacts'}
-          >
-            ⚙️
-          </button>
-          <button
-            onClick={() => { tapFeedback(); closeSidePanel(); }}
-            aria-label={t('close') || 'Close'}
-            className="aac-key surface-key text-primary rounded-lg px-3 py-1 font-bold"
-          >
-            ×
-          </button>
-        </div>
+        <button
+          onClick={() => { tapFeedback(); closeSidePanel(); }}
+          aria-label={t('close') || 'Close'}
+          className="aac-key surface-key text-primary rounded-lg px-3 py-1 font-bold"
+        >
+          ×
+        </button>
       </header>
 
-      {/* Compact CTA bar — single row, no vertical centering, only the
-          green Manage-Contacts button so the user can act on the
-          empty-contacts state without the keyboard losing room. */}
-      {isCompact && (
-        <div className="px-3 py-2 border-b border-theme flex items-center justify-center shrink-0">
-          <button
-            onClick={() => { tapFeedback(); toggleSettings(); }}
-            data-testid="aac-chat-add-contacts-cta"
-            className="aac-key inline-flex items-center gap-2 rounded-lg px-4 py-2 bg-[#4CAF50] text-white font-bold text-base"
-          >
-            ⚙️ {t('manage_contacts') || 'Manage contacts'}
-          </button>
-        </div>
-      )}
-
-      {/* Body — only when expanded (have contacts or active contact). */}
-      {!isCompact && (
       <div className="flex-1 min-h-0 overflow-y-auto p-3">
         {!activeContact && sortedContacts.length > 0 && (
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="aac-chat-contact-list">
@@ -288,7 +259,6 @@ export default function AACChatPanel() {
           </div>
         )}
       </div>
-      )}
 
       {/* Toast */}
       {toast && (

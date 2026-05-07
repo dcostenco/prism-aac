@@ -40,15 +40,16 @@ afterEach(() => {
 });
 
 describe('AACChatPanel — empty state', () => {
-  it('exposes Manage Contacts CTA when no contacts are configured', () => {
-    // The 📭 + "no contacts" copy was dropped in the May 2026 visual
-    // compact pass — the panel now renders header + a single-row green
-    // ⚙️ Manage Contacts button so the AAC user can act without losing
-    // keyboard real estate. Both the header button and the body CTA
-    // expose the same action; this test pins the CTA bar.
+  it('renders nothing when there are no contacts and no active selection', () => {
+    // 2026-05-07 user feedback: "doesnt make any sense, expand type
+    // here panel instead", "remove contacts button". When the AAC
+    // user has no contacts AND no active contact, the panel unmounts
+    // entirely (returns null). Caregivers manage contacts via
+    // Settings → Integrations / Contacts. MessageBar grows by one
+    // line so the user has more compose room when sidePanel is
+    // 'aac-chat'. This test pins the unmount.
     const { container } = render(<AACChatPanel />);
-    expect(container.querySelector('[data-testid="aac-chat-add-contacts-cta"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="aac-chat-manage-contacts"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="aac-chat-panel"]')).toBeNull();
   });
 });
 

@@ -70,9 +70,14 @@ async function bootClean(withProfile = false) {
 
 async function snap(label, openerRegex, panelTestId) {
   await page.getByRole('button', { name: openerRegex }).first().click();
-  await page.waitForSelector(`[data-testid="${panelTestId}"]`);
-  await page.waitForTimeout(250);
-  const panel = await page.locator(`[data-testid="${panelTestId}"]`).boundingBox();
+  // 2026-05-07: when AI Chat / AAC Chat are in compact (empty) state
+  // the panel UNMOUNTS entirely (returns null). We can no longer
+  // wait for the testid; instead wait a beat and then probe for
+  // existence as a separate measurement.
+  await page.waitForTimeout(400);
+  const panelLocator = page.locator(`[data-testid="${panelTestId}"]`);
+  const panelExists = (await panelLocator.count()) > 0;
+  const panel = panelExists ? await panelLocator.boundingBox() : null;
   const kb    = await page.locator('[data-testid="keyboard-shell"]').boundingBox().catch(() => null);
   // Detect which branch is rendering by visible markers.
   const requiresAccountVisible = await page
@@ -126,10 +131,21 @@ async function snap(label, openerRegex, panelTestId) {
         : (dataState === 'expanded' ? 'configured-expanded' : 'unknown');
     }
   }
+  // MessageBar measurement — when a messaging side panel is open
+  // (ai-chat or aac-chat) MessageBar reads sidePanel via uiStore and
+  // grows by one line. We measure it so the verifier can confirm the
+  // "expand type here panel by 1 line" rule is in effect.
+  const msgBarLocator = page.locator('[data-messaging-mode]').first();
+  const msgBarExists = (await msgBarLocator.count()) > 0;
+  const msgBar = msgBarExists ? await msgBarLocator.boundingBox() : null;
+  const msgBarMode = msgBarExists ? await msgBarLocator.getAttribute('data-messaging-mode') : null;
   return {
     label,
     panel: panel ? { x: panel.x, y: panel.y, w: panel.width, h: Math.round(panel.height) } : null,
+    panelExists,
     kb: kb ? { y: kb.y, h: Math.round(kb.height) } : null,
+    msgBar: msgBar ? { y: msgBar.y, h: Math.round(msgBar.height) } : null,
+    msgBarMode,
     branch,
   };
 }

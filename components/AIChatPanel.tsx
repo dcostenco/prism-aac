@@ -151,72 +151,40 @@ export default function AIChatPanel() {
     setLoading(false);
   };
 
-  // Compact when there's nothing to show. THIRD pass at this fix —
-  // first attempt only flipped flex-[3]→flex-none (DOM compact, render
-  // 500px). Second attempt dropped the body but kept the footer
-  // (hint + 🎙 + Ask AI), still ~230px on a wide viewport — keyboard's
-  // bottom row clipped (user screenshot 2026-05-07: "nothing fixed").
-  // Real-real fix: drop the FOOTER too in compact mode. Header only
-  // (~60px). The user types on the qwerty; first character flips
-  // text.trim() truthy → panel becomes expanded → full footer with
-  // hint + mic + Ask AI button reappears. The mic moves into the
-  // header in compact mode so voice input stays discoverable.
+  // FOURTH pass. Round 1 flipped flex (still 500px). Round 2 hid body
+  // (still 200px footer). Round 3 hid footer + tightened header (59px).
+  // Round 4 (this version): user feedback 2026-05-07 — "doesnt make
+  // any sense, expand type here panel instead" + "remove ai chat line,
+  // microphone button already existed on the top panel". So when the
+  // panel is compact (nothing to show yet), it unmounts entirely. The
+  // toolbar AI button toggles the panel open/closed; MessageBar reads
+  // sidePanel and grows by one line so the user has a fatter compose
+  // area for the question. As soon as text.trim() is truthy → panel
+  // remounts in expanded form with conversation body + Ask AI footer.
   const isCompact = (configured && messages.length === 0 && !loading && !text.trim()) || !configured;
+  if (isCompact) return null;
 
+  // Below this point: configured && (messages.length > 0 || loading || text typed).
+  // No more isCompact branching needed.
   return (
     <section
       aria-label={t('ai_chat_title')}
-      className={
-        isCompact
-          ? 'flex-none flex flex-col surface-bar border-y border-theme'
-          : 'flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme'
-      }
+      className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
       data-testid="ai-chat-panel"
-      data-state={isCompact ? 'compact' : 'expanded'}
+      data-state="expanded"
     >
       <header className="flex items-center justify-between px-4 py-2 border-b border-theme shrink-0">
         <span className="text-primary font-bold text-xl md:text-2xl">✨ {t('ai_chat_title')}</span>
-        <div className="flex items-center gap-2">
-          {/* Mic button is part of the header in compact mode so voice
-              input stays one tap away even when the footer is hidden. */}
-          {isCompact && configured && voiceSupported && (
-            <button
-              onClick={toggleVoice}
-              aria-label={listening ? t('stop_voice') : t('start_voice')}
-              aria-pressed={listening}
-              data-testid="ai-mic-compact"
-              className={`aac-btn rounded-lg font-bold text-xl px-3 min-h-[40px] flex items-center justify-center ${
-                listening
-                  ? 'bg-[#F44336] text-white animate-pulse'
-                  : 'surface-key text-primary border border-theme'
-              }`}
-            >
-              {listening ? '⏺' : '🎙'}
-            </button>
-          )}
-          <button
-            onClick={() => { tapFeedback(); closeSidePanel(); }}
-            aria-label={t('close_ai_chat')}
-            className="aac-btn w-10 h-10 rounded-lg surface-key text-muted text-xl flex items-center justify-center border border-theme"
-          >
-            ✕
-          </button>
-        </div>
+        <button
+          onClick={() => { tapFeedback(); closeSidePanel(); }}
+          aria-label={t('close_ai_chat')}
+          className="aac-btn w-10 h-10 rounded-lg surface-key text-muted text-xl flex items-center justify-center border border-theme"
+        >
+          ✕
+        </button>
       </header>
 
-      {!configured ? (
-        // Unconfigured: a single short hint inside the header strip
-        // is enough; no body, no footer, no big vertical-centered card.
-        <div className="px-4 py-1.5 text-center shrink-0 border-b border-theme">
-          <p className="text-primary font-bold text-sm">{t('ai_chat_requires_account')}</p>
-        </div>
-      ) : (
-        <>
-          {/* Body — only rendered when there's something to show. The
-              empty-state placeholder was redundant: the green Ask AI
-              button in the footer already telegraphs the action. */}
-          {!isCompact && (
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
             {messages.map((msg, i) => (
               <div key={i} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
                 <div
@@ -250,15 +218,11 @@ export default function AIChatPanel() {
                 <span className="animate-pulse">{t('thinking')}</span>
               </div>
             )}
-          </div>
-          )}
+      </div>
 
-          {/* Footer — hint + mic + Ask AI. ONLY rendered when not
-              compact, i.e. user has typed something or there are
-              messages. In compact (empty) mode the footer is gone
-              and the qwerty fills its space; the in-header mic stays
-              discoverable. */}
-          {!isCompact && (
+      {/* Footer — hint + mic + Ask AI. Only renders when expanded, and
+          we already early-returned when compact, so it's unconditional
+          here. */}
           <div className="p-3 border-t border-theme shrink-0">
             <div className="text-muted text-base md:text-lg mb-2 text-center truncate">
               {listening && interim ? (
@@ -298,9 +262,6 @@ export default function AIChatPanel() {
               </button>
             </div>
           </div>
-          )}
-        </>
-      )}
     </section>
   );
 }

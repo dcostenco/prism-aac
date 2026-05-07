@@ -2,6 +2,7 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useUIStore } from '@/store/uiStore';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback, deleteFeedback } from '@/services/feedback';
 import { correctText } from '@/services/textCorrectService';
@@ -23,6 +24,14 @@ export default function MessageBar() {
   const profile = useAuthStore((s) => s.profile);
   const isPaid = !!profile?.plan && profile.plan !== 'free';
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
+  // When AI Chat or AAC Chat is open, those panels collapse to invisible
+  // in their compact (empty) state. The freed vertical space goes here:
+  // the message bar grows by one extra line so the user has more room
+  // to compose a question / message without the input feeling cramped.
+  // Per user feedback 2026-05-07: "expand type here panel for 1 more
+  // line instead" of showing a redundant AI Chat header strip.
+  const sidePanel = useUIStore((s) => s.sidePanel);
+  const isMessagingMode = sidePanel === 'ai-chat' || sidePanel === 'aac-chat';
   const [translated, setTranslated] = useState<string | null>(null);
   // Tracks the most recent word we silence-spoke so we don't repeat
   // "want" every time the user pauses with the same trailing word.
@@ -289,7 +298,14 @@ export default function MessageBar() {
   const currentTone = TONE_OPTIONS.find(opt => opt.id === activeTone);
 
   return (
-    <div className="flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] py-[clamp(0.3rem,0.6svh,0.6rem)] min-h-[clamp(64px,12svh,96px)] shrink-0 relative border border-theme">
+    <div
+      className={`flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] py-[clamp(0.3rem,0.6svh,0.6rem)] shrink-0 relative border border-theme ${
+        isMessagingMode
+          ? 'min-h-[clamp(96px,18svh,144px)]'
+          : 'min-h-[clamp(64px,12svh,96px)]'
+      }`}
+      data-messaging-mode={isMessagingMode ? '1' : '0'}
+    >
       <button
         onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
         aria-label={autoSpeak ? t('auto_speak_on') : t('auto_speak_off')}
@@ -319,9 +335,17 @@ export default function MessageBar() {
         </button>
       )}
 
-      <div className="flex-1 min-h-[clamp(48px,9svh,72px)] flex flex-col justify-center overflow-hidden">
+      <div className={`flex-1 flex flex-col justify-center overflow-hidden ${
+          isMessagingMode
+            ? 'min-h-[clamp(72px,14svh,108px)]'
+            : 'min-h-[clamp(48px,9svh,72px)]'
+        }`}>
         <div
-          className="text-[clamp(1rem,2.5vw,1.5rem)] leading-snug break-words text-primary line-clamp-2 whitespace-normal min-h-[2.5em]"
+          className={`text-[clamp(1rem,2.5vw,1.5rem)] leading-snug break-words text-primary whitespace-normal ${
+            isMessagingMode
+              ? 'line-clamp-3 min-h-[3.75em]'
+              : 'line-clamp-2 min-h-[2.5em]'
+          }`}
           role="status"
           aria-live="polite"
           aria-label={t('message_text')}
