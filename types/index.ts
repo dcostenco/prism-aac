@@ -88,6 +88,7 @@ export type SidePanelView =
   | 'math'
   | 'caregiver'
   | 'ai-chat'
+  | 'aac-chat'
   | 'schedule'
   | 'games'
   | 'marketplace'

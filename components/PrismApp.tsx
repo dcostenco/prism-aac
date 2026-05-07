@@ -7,6 +7,7 @@ import Keyboard from './Keyboard';
 import CategoryPanel from './CategoryPanel';
 import CaregiverPanel from './CaregiverPanel';
 import AIChatPanel from './AIChatPanel';
+import AACChatPanel from './AACChatPanel';
 import SchedulePanel from './SchedulePanel';
 import GamesPanel from './GamesPanel';
 import MarketplacePanel from './MarketplacePanel';
@@ -98,14 +99,14 @@ export default function PrismApp() {
   const theme = useSettingsStore((s) => s.theme);
   const sidePanel = useUIStore((s) => s.sidePanel);
   const inlinePanelOpen = sidePanel !== 'none';
-  // AI Chat is the one inline panel that NEEDS the keyboard visible —
-  // by design (per AIChatPanel.tsx header comment) it has no separate
-  // input field; the user types in the shared MessageBar via the AAC
-  // keyboard and the panel reads from useMessageStore. Without this,
-  // tapping ✨ AI Chat hides both the keyboard and the prediction bar,
-  // leaving the user with no way to compose a question on the AAC
-  // surface (a physical keyboard isn't a substitute for AAC users).
-  const keyboardHidden = inlinePanelOpen && sidePanel !== 'ai-chat';
+  // AI Chat AND AAC Chat both NEED the keyboard visible — neither panel
+  // has its own input field; both compose via the shared MessageBar
+  // through the AAC keyboard, then consume useMessageStore. Hiding the
+  // keyboard for these surfaces would leave AAC users with no way to
+  // type — a physical keyboard isn't a substitute. Modal placement
+  // matches the standard input layout (keyboard always at bottom,
+  // panel docks above).
+  const keyboardHidden = inlinePanelOpen && sidePanel !== 'ai-chat' && sidePanel !== 'aac-chat';
   const { rtl } = useT();
 
   useEffect(() => {
@@ -208,6 +209,7 @@ export default function PrismApp() {
           <MathPanel />
           <CaregiverPanel />
           <AIChatPanel />
+          <AACChatPanel />
           <SchedulePanel />
           <GamesPanel />
           <MarketplacePanel />

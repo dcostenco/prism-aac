@@ -27,6 +27,7 @@ interface ButtonHandlers {
   openCategories: () => void;
   openMath: () => void;
   openAIChat: () => void;
+  openAACChat: () => void;
   openCaregiver: () => void;
   openSchedule: () => void;
   openGames: () => void;
@@ -68,6 +69,7 @@ function buildBuiltInButtons(t: (k: string) => string, h: ButtonHandlers): Recor
     alert: { id: 'alert', icon: '🚨', ariaLabel: t('alert'), title: t('alert'), onClick: h.triggerAlert },
     math: { id: 'math', icon: '🔢', ariaLabel: t('math'), title: t('math'), onClick: h.openMath },
     ai_chat: { id: 'ai_chat', icon: '✨', ariaLabel: t('ai_chat'), title: t('ai_chat'), onClick: h.openAIChat },
+    aac_chat: { id: 'aac_chat', icon: '💬', ariaLabel: t('aac_chat') || 'Send a message', title: t('aac_chat') || 'Send a message', onClick: h.openAACChat },
     notes: { id: 'notes', icon: '📋', ariaLabel: t('notes'), title: t('notes'), onClick: h.openCaregiver },
     games: { id: 'games', icon: '🎮', ariaLabel: t('games'), title: t('games'), onClick: h.openGames },
     history: { id: 'history', icon: '📜', ariaLabel: t('history'), title: t('history'), onClick: h.toggleHistory },
@@ -131,7 +133,7 @@ function appButton(
 }
 
 export default function Toolbar() {
-  const { openCategories, openMath, openCaregiver, openAIChat, openSchedule, openGames, openMarketplace, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
+  const { openCategories, openMath, openCaregiver, openAIChat, openAACChat, openSchedule, openGames, openMarketplace, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
   const { soundEnabled, toggleSound, appendText } = useMessageStore();
   const language = useSettingsStore((s) => s.language);
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
@@ -169,7 +171,7 @@ export default function Toolbar() {
   };
 
   const handlers: ButtonHandlers = {
-    openCategories, openMath, openAIChat, openCaregiver, openSchedule, openGames, openMarketplace,
+    openCategories, openMath, openAIChat, openAACChat, openCaregiver, openSchedule, openGames, openMarketplace,
     toggleHistory, toggleSettings, triggerAlert,
     toggleSound: () => { tapFeedback(); toggleSound(); },
     toggleMic,

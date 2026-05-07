@@ -4,6 +4,7 @@ import { KeyboardMode, MODULE_PANEL_VIEWS, ModulePanelView, SidePanelView } from
 interface UIState {
   sidePanel: SidePanelView;
   activeCategoryId: string | null;
+  activeContactId: string | null;
   activeSequenceId: string | null;
   activeSequenceStep: number;
   keyboardMode: KeyboardMode;
@@ -16,6 +17,7 @@ interface UIState {
   openMath: () => void;
   openCaregiver: () => void;
   openAIChat: () => void;
+  openAACChat: () => void;
   openSchedule: () => void;
   openGames: () => void;
   openMarketplace: () => void;
@@ -38,6 +40,8 @@ interface UIState {
   toggleHistory: () => void;
   toggleSettings: () => void;
   triggerAlert: () => void;
+  selectContact: (id: string) => void;
+  backToContacts: () => void;
 }
 
 let alertTimer: ReturnType<typeof setTimeout> | null = null;
@@ -45,6 +49,7 @@ let alertTimer: ReturnType<typeof setTimeout> | null = null;
 export const useUIStore = create<UIState>()((set) => ({
   sidePanel: 'none',
   activeCategoryId: null,
+  activeContactId: null,
   activeSequenceId: null,
   activeSequenceStep: 0,
   keyboardMode: 'letters',
@@ -58,6 +63,7 @@ export const useUIStore = create<UIState>()((set) => ({
   openMath: () => set((s) => ({ sidePanel: s.sidePanel === 'math' ? 'none' : 'math' })),
   openCaregiver: () => set((s) => ({ sidePanel: s.sidePanel === 'caregiver' ? 'none' : 'caregiver' })),
   openAIChat: () => set((s) => ({ sidePanel: s.sidePanel === 'ai-chat' ? 'none' : 'ai-chat' as SidePanelView })),
+  openAACChat: () => set((s) => ({ sidePanel: s.sidePanel === 'aac-chat' ? 'none' : 'aac-chat' as SidePanelView, activeContactId: null })),
   openSchedule: () => set((s) => ({ sidePanel: s.sidePanel === 'schedule' ? 'none' : 'schedule' as SidePanelView })),
   openGames: () => set((s) => ({ sidePanel: s.sidePanel === 'games' ? 'none' : 'games' as SidePanelView })),
   openMarketplace: () => set((s) => ({ sidePanel: s.sidePanel === 'marketplace' ? 'none' : 'marketplace' as SidePanelView })),
@@ -86,4 +92,6 @@ export const useUIStore = create<UIState>()((set) => ({
     set({ isAlertFlashing: true });
     alertTimer = setTimeout(() => { set({ isAlertFlashing: false }); alertTimer = null; }, 2000);
   },
+  selectContact: (id) => set({ activeContactId: id }),
+  backToContacts: () => set({ activeContactId: null }),
 }));

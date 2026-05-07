@@ -15,7 +15,7 @@ export type PictureMode = 'off' | 'symbols' | 'symbols-ai';
 export type ToolbarButtonId =
   | 'categories' | 'mic' | 'schedule' | 'marketplace' | 'alert'
   | 'sound' | 'settings'
-  | 'math' | 'ai_chat' | 'notes' | 'games' | 'history';
+  | 'math' | 'ai_chat' | 'aac_chat' | 'notes' | 'games' | 'history';
 
 export interface ToolbarConfig {
   // Render order — first id is leftmost. Disabled ids stay in the array so
@@ -31,7 +31,7 @@ export interface ToolbarConfig {
 // that lived in the "..." overflow menu — flat, configurable.
 export const DEFAULT_TOOLBAR_ORDER: ToolbarButtonId[] = [
   'categories', 'mic', 'schedule', 'marketplace', 'alert',
-  'math', 'ai_chat', 'notes', 'games', 'history',
+  'math', 'ai_chat', 'aac_chat', 'notes', 'games', 'history',
   'sound', 'settings',
 ];
 
