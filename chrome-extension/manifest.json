@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PrismAAC Reading Assistant",
   "version": "0.1.0",
-  "description": "Speak as you type, sentence-end speak, word-by-word highlight, and word prediction — in any text field, on any site. Free Read & Write alternative for AAC users.",
+  "description": "Speak as you type with word-by-word highlight, in any text field. Free Read & Write alternative for AAC users.",
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["<all_urls>"],
   "background": {
