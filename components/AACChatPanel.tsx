@@ -191,23 +191,24 @@ export default function AACChatPanel() {
             standard keyboard without inbox outbox and providers"
             (Image #20, 2026-05-07). */}
         {isEmpty && (
-          <div className="flex flex-col items-center gap-4 py-6" data-testid="aac-chat-empty-state">
-            <div className="text-base text-secondary text-center max-w-sm">
-              {t('aac_chat_empty_hint') || 'No contacts yet. Caregivers can add Telegram / WhatsApp / SMS / Email contacts in Settings → Contacts.'}
+          <div className="flex flex-col items-center gap-3 py-3" data-testid="aac-chat-empty-state">
+            <div className="text-sm text-secondary text-center max-w-sm">
+              <strong>{t('aac_chat_no_contacts')}</strong>{' '}
+              {t('aac_chat_setup_hint')}
             </div>
-            <ul className="flex flex-wrap justify-center gap-3" data-testid="aac-chat-providers">
+            <ul className="flex flex-wrap justify-center gap-2" data-testid="aac-chat-providers">
               {(Object.keys(PROVIDER_LABELS) as Array<keyof typeof PROVIDER_LABELS>).map((provider) => {
                 const available = isProviderAvailable(provider, plan);
                 return (
                   <li
                     key={provider}
                     data-testid={`aac-chat-provider-${provider}`}
-                    className={`surface-key border border-theme rounded-lg px-3 py-2 flex items-center gap-2 min-h-[48px] ${available ? '' : 'opacity-50'}`}
+                    className={`surface-key border border-theme rounded-lg px-2 py-1.5 flex items-center gap-1.5 ${available ? '' : 'opacity-50'}`}
                   >
-                    <span aria-hidden className="text-2xl">{PROVIDER_ICONS[provider]}</span>
-                    <span className="text-sm font-bold text-primary">{PROVIDER_LABELS[provider]}</span>
+                    <span aria-hidden className="text-lg">{PROVIDER_ICONS[provider]}</span>
+                    <span className="text-xs font-bold text-primary">{PROVIDER_LABELS[provider]}</span>
                     {!available && (
-                      <span className="text-[10px] text-[#FF9800] font-bold ml-1">
+                      <span className="text-[9px] text-[#FF9800] font-bold ml-0.5">
                         🔒 {PROVIDER_MIN_TIER[provider]}
                       </span>
                     )}
@@ -218,9 +219,9 @@ export default function AACChatPanel() {
             <button
               onClick={() => { tapFeedback(); toggleSettings(); }}
               data-testid="aac-chat-open-settings"
-              className="aac-btn bg-[#4CAF50] text-white rounded-lg px-5 py-3 font-bold text-base min-h-[44px]"
+              className="aac-btn bg-[#4CAF50] text-white rounded-lg px-4 py-2 font-bold text-sm min-h-[40px]"
             >
-              ⚙ {t('aac_chat_open_settings') || 'Open Settings → Contacts'}
+              ⚙ {t('settings')}
             </button>
           </div>
         )}

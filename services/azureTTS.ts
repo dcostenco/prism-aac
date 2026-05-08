@@ -93,16 +93,34 @@ function escapeXml(text: string): string {
 export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
   const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
   const supportsStyles = STYLE_SUPPORTED.has(voice);
-  // Multiplier form (1.0 = default, 0.9 = 10% slower, 1.15 = 15% faster).
-  // The `<rate>%</rate>` form was AMBIGUOUS — Azure interprets unsigned
-  // percentages as "delta from default", so `rate="100%"` parses as
-  // +100% (2× speed). That was the chipmunk-Romanian bug: EN routed
-  // through Inworld which strips <prosody>, RO/UK routed straight to
-  // Azure which honored the bogus rate. Multiplier syntax is the form
-  // the Azure SSML reference documents and is unambiguous everywhere.
-  // Clamp to Azure's accepted range to keep a stale settings entry
-  // (rate=10) from producing a 10× speech burst.
-  const rateClamped = Math.max(0.5, Math.min(2.0, Number.isFinite(rate) ? rate : 1));
+  // SSML multiplier form (1.0 = default, 0.9 = 10% slower, 1.15 = 15% faster).
+  //
+  // Scale conversion (CRITICAL — fixed May 2026 user report "morning
+  // routine 2× faster, Romanian 2× slower"):
+  //
+  // The rest of prism-aac uses the Web Speech API rate scale where
+  // [0, 1] maps to [slowest, fastest] and 0.5 IS NORMAL SPEED. The
+  // settings store ships speechRate=0.5 by default. Web Speech itself
+  // remaps this internally with `0.1 + rate * 1.8` (so 0.5 → 1.0).
+  //
+  // SSML uses a MULTIPLIER scale where 1.0 IS NORMAL SPEED. If we
+  // pass rate=0.5 directly through, Azure synthesizes at half speed
+  // (2× slower than expected — the Romanian bug). Inworld appears to
+  // interpret 0.50 differently on its side and produces 2× fast for
+  // English (the morning-routine bug). Either way, the fix is to
+  // convert the input from the Web-Speech [0,1] scale into the SSML
+  // multiplier scale BEFORE building the SSML:
+  //
+  //   webRate=0   → SSML 0.5 (slowest allowed)
+  //   webRate=0.5 → SSML 1.0 (normal — the default)
+  //   webRate=1.0 → SSML 1.5 (1.5× fast)
+  //
+  // Linear: ssmlMultiplier = 0.5 + webRate. Clamped to Azure's
+  // accepted [0.5, 2.0] range so a stale settings entry like
+  // rate=10 can't produce a 10× burst.
+  const webRate = Number.isFinite(rate) && rate >= 0 ? rate : 0.5;
+  const ssmlMultiplier = 0.5 + Math.min(1.5, webRate);
+  const rateClamped = Math.max(0.5, Math.min(2.0, ssmlMultiplier));
   const rateStr = rateClamped.toFixed(2);
   const volumeValue = Math.max(0, Math.min(100, Math.round(volume * 100)));
 
