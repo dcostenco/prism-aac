@@ -268,20 +268,36 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       speak(`Now point to ${next.label}.`);
       setStatusText(`Point to ${next.label}, then tap Capture`);
     } else {
-      // All 4 corners captured — compute calibration rect
+      // All 4 corners captured — compute calibration rect.
+      //
+      // NAMING CONVENTION (matches services/bodyPoseService.ts
+      // DEFAULT_CALIBRATION = { leftX: 0.75, rightX: 0.05 }):
+      //   leftX  = the LARGER mirroredX value (head turned right)
+      //   rightX = the SMALLER mirroredX value (head turned left)
+      // The pose service's mapping
+      //   rawX = (mirroredX - rightX) / (leftX - rightX) * width
+      // requires leftX > rightX so rangeX is positive — and the
+      // MIN_RANGE guard at services/bodyPoseService.ts:682 throws
+      // away calibrations where rangeX < 0 and replaces them with
+      // defaults. Prior code captured leftX as min() / rightX as
+      // max(), producing leftX < rightX → calibration silently
+      // discarded → cursor stuck to default-calibration position
+      // regardless of head movement. (User report 2026-05-08
+      // Image #30: cursor pinned to bottom-right corner across
+      // every test target.)
       const tl = newSamples[0];
       const tr = newSamples[1];
       const br = newSamples[2];
       const bl = newSamples[3];
       const mx = (v: number) => 1.0 - v;
+      const allMxX = [mx(tl.x), mx(tr.x), mx(br.x), mx(bl.x)];
+      const allY = [tl.y, tr.y, br.y, bl.y];
       const cal: PoseCalibrationData = {
-        leftX: Math.min(mx(tl.x), mx(bl.x)),
-        rightX: Math.max(mx(tr.x), mx(br.x)),
-        topY: Math.min(tl.y, tr.y),
-        bottomY: Math.max(bl.y, br.y),
+        leftX: Math.max(...allMxX),  // larger mirroredX
+        rightX: Math.min(...allMxX), // smaller mirroredX
+        topY: Math.min(...allY),
+        bottomY: Math.max(...allY),
       };
-      if (cal.leftX >= cal.rightX) [cal.leftX, cal.rightX] = [cal.rightX, cal.leftX];
-      if (cal.topY >= cal.bottomY) [cal.topY, cal.bottomY] = [cal.bottomY, cal.topY];
       savePoseCalibration(cal);
       speak('Calibration saved. Now lets test your accuracy.');
 
