@@ -20,7 +20,7 @@
  * No reach into stores OUTSIDE useMathGridStore — keeps the canvas a
  * pure visual component over the grid state.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   useMathGridStore,
   type MathGridStore,
@@ -31,9 +31,43 @@ import {
   screenToCell,
   cellToScreen,
   isCellInSelection,
+  type Cell,
+  type CellKey,
   type Decoration,
 } from '@/engine/mathGrid';
 import { tapFeedback } from '@/services/feedback';
+import {
+  computeCellColors,
+  isHighlighterReady,
+  loadHighlighter,
+} from '@/services/syntaxColor';
+
+/** Lazy-load Shiki the first time the user is in a programming chip,
+ *  then recompute the per-cell color map whenever the cells change.
+ *  Returns an empty map until the highlighter is ready (the SVG
+ *  renderer falls back to the theme glyph color in that case). */
+function useSyntaxColors(
+  cells: Map<CellKey, Cell>,
+  activeCategory: string,
+): Map<CellKey, string> {
+  const lang: 'python' | 'java' | null =
+    activeCategory === 'programming-python' ? 'python'
+      : activeCategory === 'programming-java' ? 'java'
+      : null;
+  const [hlReady, setHlReady] = useState(isHighlighterReady());
+
+  useEffect(() => {
+    if (!lang || hlReady) return;
+    let cancelled = false;
+    void loadHighlighter().then(() => { if (!cancelled) setHlReady(true); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [lang, hlReady]);
+
+  return useMemo(() => {
+    if (!lang || !hlReady) return new Map<CellKey, string>();
+    return computeCellColors(cells, lang);
+  }, [cells, lang, hlReady]);
+}
 
 interface MathGridProps {
   /** Lock canvas to its initial pan/zoom — disables pan and pinch. Mirrors
@@ -92,6 +126,8 @@ export default function MathGrid({ scrollLocked = false, skin = 'paper', classNa
   const setCursor = useMathGridStore((s: MathGridStore) => s.setCursor);
   const panBy = useMathGridStore((s: MathGridStore) => s.panBy);
   const zoomTo = useMathGridStore((s: MathGridStore) => s.zoomTo);
+  const activeCategory = useMathGridStore((s: MathGridStore) => s.activeMathCategory);
+  const syntaxColors = useSyntaxColors(cells, activeCategory);
 
   const palette = SKINS[skin];
 
@@ -270,13 +306,14 @@ export default function MathGrid({ scrollLocked = false, skin = 'paper', classNa
     // tiny breathing margin remains and the glyph doesn't kiss the
     // cell border.
     const glyphLen = cell.glyph.length;
+    const cellColor = syntaxColors.get(key) ?? palette.glyph;
     glyphNodes.push(
       <text
         key={`g${key}`}
         x={p.x + p.size / 2}
         y={p.y + p.size * 0.7}
         textAnchor="middle"
-        fill={palette.glyph}
+        fill={cellColor}
         style={{
           fontSize: `${p.size * 0.6}px`,
           fontFamily: 'system-ui, -apple-system, sans-serif',
