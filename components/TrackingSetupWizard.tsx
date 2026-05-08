@@ -66,6 +66,13 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const handleRef = useRef<PoseTrackerHandle | null>(null);
   const sampleBufferRef = useRef<Array<{ normX: number; normY: number }>>([]);
   const detectionCountRef = useRef<Record<string, number>>({});
+  // Tracks setTimeout handles spawned by startDetection so we can
+  // clear them on unmount. Without this, a fast Cancel after Get
+  // Started left two timers (5000ms + 1500ms) firing on a stale
+  // component, mutating state on a destroyed wizard.
+  // Identified in May 2026 military-grade review.
+  const detectionTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const mountedRef = useRef(true);
   // Live camera PIP preview. Initially attached the srcObject ONCE
   // and got stuck on a stale (stopped) MediaStream after the tracker
   // restarted for the selected body part — user report 2026-05-08
@@ -107,9 +114,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     aacSpeak(text, speechRate, speechVolume);
   }, [speechRate, speechVolume]);
 
-  // Clean up tracker on unmount
+  // Clean up tracker + pending timers + mark unmounted on cleanup.
   useEffect(() => {
-    return () => { handleRef.current?.stop(); };
+    return () => {
+      mountedRef.current = false;
+      handleRef.current?.stop();
+      for (const id of detectionTimersRef.current) clearTimeout(id);
+      detectionTimersRef.current = [];
+    };
   }, []);
 
   // Listen for raw pose samples
@@ -144,21 +156,35 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   }
   const [latestSample, setLatestSample] = useState<PoseSampleDetail | null>(null);
   const [latestCal, setLatestCal] = useState<PoseCalibrationData | null>(null);
+  // Throttle pose-sample updates to ~5Hz — the diag panel doesn't
+  // need 30Hz refresh for human-readable display, and 30 React
+  // re-renders per second is real CPU/battery drain on iPad mini 6
+  // for AAC users running the wizard for extended setup sessions.
+  // The latest sample is captured on every event into a ref; the
+  // 200ms tick reads the ref into state once per cycle.
+  // Identified in May 2026 military-grade review.
+  const latestSampleRef = useRef<PoseSampleDetail | null>(null);
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as PoseSampleDetail | undefined;
       if (detail?.normX != null) {
-        setLatestSample({
+        latestSampleRef.current = {
           normX: detail.normX,
           normY: detail.normY,
           noiseFloor: detail.noiseFloor,
           visibility: detail.visibility,
           egoSuppressed: detail.egoSuppressed,
-        });
+        };
       }
     };
     window.addEventListener('prism-pose-sample', handler);
-    return () => window.removeEventListener('prism-pose-sample', handler);
+    const flushInterval = setInterval(() => {
+      if (latestSampleRef.current) setLatestSample(latestSampleRef.current);
+    }, 200);
+    return () => {
+      window.removeEventListener('prism-pose-sample', handler);
+      clearInterval(flushInterval);
+    };
   }, []);
   // Re-read the saved calibration whenever phase changes so the
   // diagnostic panel reflects whatever was just captured.
@@ -193,8 +219,11 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     });
     handleRef.current = handle;
 
-    // After 5 seconds, analyze which body parts were detected
-    setTimeout(() => {
+    // After 5 seconds, analyze which body parts were detected.
+    // Timer is tracked + cleared on unmount so a quick Cancel
+    // doesn't leave a stale closure mutating destroyed state.
+    const detectTimer = setTimeout(() => {
+      if (!mountedRef.current) return;
       const counts = detectionCountRef.current;
       const results: DetectedPart[] = [];
       for (const bp of BODY_PARTS) {
@@ -211,27 +240,18 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         setSelectedPart(top.target);
         setStatusText(`Found: ${results.map(r => r.emoji).join(' ')}`);
         speak(`I can see your ${top.label}. Let's calibrate.`);
-        // Auto-advance after 1.5s — users were reading the static
-        // confidence percentage as a stalled progress bar. The
-        // "Calibrate Head" button is still rendered for the grace
-        // window if the user wants to switch body parts.
         useSettingsStore.getState().update({ cameraTrackingTarget: top.target });
-        setTimeout(() => {
-          // Bug fix: previously this only called setPhase('calibrate-
-          // center'), which rendered the calibration UI but NEVER
-          // started the 3-second interval (that lives inside
-          // startCenterCalibration). Result: user saw "Hold still for
-          // 3 seconds" forever. The "circular useCallback dep" comment
-          // was wrong — calling the function isn't circular, it just
-          // means the deps array needs it. Stash the callback in a ref
-          // OR call directly. Direct call is simpler.
+        const advanceTimer = setTimeout(() => {
+          if (!mountedRef.current) return;
           startCenterCalibrationRef.current?.();
         }, 1500);
+        detectionTimersRef.current.push(advanceTimer);
       } else {
         setStatusText('No body parts detected. Try moving closer.');
         speak('I cannot see you. Please move closer to the camera.');
       }
     }, 5000);
+    detectionTimersRef.current.push(detectTimer);
   }, [speak]);
 
   // After detection picks a body part, restart the pose tracker with

@@ -159,8 +159,14 @@ export class BaselineTracker {
         const dyBefore = s.normY - this.meanY;
         const dxAfter = s.normX - nextMeanX;
         const dyAfter = s.normY - nextMeanY;
-        this.varX = this.varX + alphaVar * (dxBefore * dxAfter - this.varX);
-        this.varY = this.varY + alphaVar * (dyBefore * dyAfter - this.varY);
+        // The (dxBefore * dxAfter - varX) term can drive varX briefly
+        // negative on a step change in mean (sample dragged the mean
+        // past the previous mean). Variance is mathematically ≥ 0;
+        // clamp so getNoiseFloor() and the scale-correction ratios
+        // never produce nonsense.
+        // Identified in May 2026 military-grade review.
+        this.varX = Math.max(0, this.varX + alphaVar * (dxBefore * dxAfter - this.varX));
+        this.varY = Math.max(0, this.varY + alphaVar * (dyBefore * dyAfter - this.varY));
         this.meanX = nextMeanX;
         this.meanY = nextMeanY;
         this.lastSampleTs = s.timestamp;
