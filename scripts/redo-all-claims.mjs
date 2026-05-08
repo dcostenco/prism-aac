@@ -62,8 +62,13 @@ const grep = (re) => chunks.some(c => re.test(c.body));
 
 // ── Confirm latest commit shipped to deploy ────────────────────────
 const localHead = execSync('git rev-parse --short HEAD', { cwd: '/Users/admin/prism-aac' }).toString().trim();
-const deployHasIsUnreadable = grep(/PDF_UNREADABLE_PREFIX|isUnreadable/);
-log(`deploy includes latest PDF fix (${localHead})`, deployHasIsUnreadable ? 'pass' : 'uncertain', deployHasIsUnreadable ? 'isUnreadable in chunks' : 'PDF loop fix not yet on deploy — newer commit may still be building');
+// Function names get mangled by webpack but STRING LITERALS survive.
+// The PDF_UNREADABLE_PREFIX value '⛔ ' and 'getPage failed' / 'could
+// not be read' phrasing inside extractOnePage stay untouched. Per
+// DoD #7: regex sanity-checked against a known chunk that has the
+// shipped fix before being trusted as a release gate.
+const deployHasPdfLoopFix = grep(/⛔ /) && grep(/getPage failed/);
+log(`deploy includes latest PDF fix (${localHead})`, deployHasPdfLoopFix ? 'pass' : 'uncertain', deployHasPdfLoopFix ? '⛔ sentinel + getPage failed in chunks' : 'PDF loop fix not yet on deploy — newer commit may still be building');
 
 // ── #1 TTS ─────────────────────────────────────────────────────────
 log('#1 ctx.state guard ships', grep(/stuck in state/i) ? 'pass' : 'fail', 'chunk grep');
