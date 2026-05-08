@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 // intervention. (May 2026: bumped to 2026-05-08-pdf-fix after users
 // were stuck on Apr-30 SW serving stale chunks where PDF reader
 // blew up on clinical PDFs.)
-const SW_KILLSWITCH_VERSION = '2026-05-08-cal-math-extracted-20';
+const SW_KILLSWITCH_VERSION = '2026-05-08-wizard-diag-pip-21';
 
 const swKillswitchScript = `
 (function(){

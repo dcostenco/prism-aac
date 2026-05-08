@@ -5,8 +5,10 @@ import {
   startPoseTracker,
   savePoseCalibration,
   computeCalibrationFromCorners,
+  loadPoseCalibration,
   type PoseTrackerHandle,
   type TrackingTarget,
+  type PoseCalibrationData,
 } from '@/services/bodyPoseService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
@@ -64,6 +66,23 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const handleRef = useRef<PoseTrackerHandle | null>(null);
   const sampleBufferRef = useRef<Array<{ normX: number; normY: number }>>([]);
   const detectionCountRef = useRef<Record<string, number>>({});
+  // Live camera PIP preview — clones the tracker's video stream into a
+  // small visible <video> so the user can confirm the camera is
+  // actually capturing (not just "permission granted but no frames").
+  // User report 2026-05-08: "camera is not enabled .. that could be
+  // the issue - i don't see it working".
+  const pipVideoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const videoEl = handleRef.current?.videoElement;
+      if (videoEl?.srcObject && pipVideoRef.current && !pipVideoRef.current.srcObject) {
+        pipVideoRef.current.srcObject = videoEl.srcObject;
+        pipVideoRef.current.play().catch(() => {});
+        console.log('[wizard] PIP attached to tracker video stream');
+      }
+    }, 300);
+    return () => clearInterval(interval);
+  }, []);
   // Held by a useEffect below so startDetection's auto-advance can call
   // it without a TDZ on the const-declared startCenterCalibration.
   // Without this, setPhase('calibrate-center') rendered the calibration
@@ -94,10 +113,29 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
   // Tracker live-status — exposed in the wizard's status bar so the
   // user knows whether the camera cursor is following their body
-  // (tracking) or stale (lost/stopped). Without this, the cursor
-  // froze at last-known position and the user couldn't tell why
-  // the test wasn't registering hits.
+  // (tracking) or stale (lost/stopped).
   const [trackerStatus, setTrackerStatus] = useState<'starting' | 'tracking' | 'lost' | 'stopped'>('stopped');
+
+  // Live diagnostics — show the user (and us in screenshots) the
+  // raw pose data, captured calibration, and computed mapping. Added
+  // 2026-05-08 after multiple "same" reports where speculation was
+  // out of stock and I needed to see what the runtime was actually
+  // producing.
+  const [latestSample, setLatestSample] = useState<{ normX: number; normY: number } | null>(null);
+  const [latestCal, setLatestCal] = useState<PoseCalibrationData | null>(null);
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.normX != null) setLatestSample({ normX: detail.normX, normY: detail.normY });
+    };
+    window.addEventListener('prism-pose-sample', handler);
+    return () => window.removeEventListener('prism-pose-sample', handler);
+  }, []);
+  // Re-read the saved calibration whenever phase changes so the
+  // diagnostic panel reflects whatever was just captured.
+  useEffect(() => {
+    try { setLatestCal(loadPoseCalibration()); } catch { /* */ }
+  }, [phase, cornerSamples]);
 
   // ── PHASE: Detection ──
   const startDetection = useCallback(() => {
@@ -175,15 +213,19 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   // on 'nose' forever, so moving a hand never moved the cursor.
   const restartTrackerForPart = useCallback((target: TrackingTarget) => {
     if (handleRef.current) handleRef.current.stop();
+    console.log(`[wizard] restartTrackerForPart target=${target}`);
     const handle = startPoseTracker({
-      dwellMs: 99999, // disable dwell-click during calibration
+      dwellMs: 99999,
       sensitivity: 5,
       smoothing: 0.15,
       trackingTarget: target,
       cursorSmoothing: 0.12,
       onMove(x, y) { setCursorPos({ x, y }); },
       onDwell() {},
-      onStatusChange(status) { setTrackerStatus(status); },
+      onStatusChange(status) {
+        setTrackerStatus(status);
+        console.log(`[wizard] tracker status → ${status}`);
+      },
     });
     handleRef.current = handle;
   }, []);
@@ -219,14 +261,17 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
    *  and advance. Refuses to advance if the buffer is empty (no pose
    *  data) so we don't bake (0.5, 0.5) into the calibration. */
   const captureCenter = useCallback(() => {
-    if (sampleBufferRef.current.length === 0) {
+    const n = sampleBufferRef.current.length;
+    console.log(`[wizard] captureCenter — bufferSize=${n}`);
+    if (n === 0) {
       setStatusText("I can't see your finger yet — keep pointing.");
+      console.log('[wizard] captureCenter REFUSED — empty buffer');
       return;
     }
+    const sx = sampleBufferRef.current.reduce((s, v) => s + v.normX, 0) / n;
+    const sy = sampleBufferRef.current.reduce((s, v) => s + v.normY, 0) / n;
+    console.log(`[wizard] center avg normX=${sx.toFixed(3)} normY=${sy.toFixed(3)}`);
     tapFeedback();
-    // Center isn't strictly used for the bounds calculation (corners
-    // define the rect) but capturing here proves the tracker sees the
-    // finger before we ask for 4 corners.
     sampleBufferRef.current = [];
     setCornerIdx(0);
     setCornerSamples([]);
@@ -247,8 +292,12 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   // Capture handler for corners, called when the user taps Capture.
   // Refuses to advance if no pose samples (same guard as center).
   const captureCorner = useCallback(() => {
-    if (sampleBufferRef.current.length === 0) {
+    const n = sampleBufferRef.current.length;
+    const cornerLabel = CORNER_TARGETS[cornerIdx]?.label;
+    console.log(`[wizard] captureCorner ${cornerIdx + 1}/4 (${cornerLabel}) — bufferSize=${n}`);
+    if (n === 0) {
       setStatusText("I can't see your finger yet — keep pointing at the highlighted corner.");
+      console.log('[wizard] captureCorner REFUSED — empty buffer');
       return;
     }
     tapFeedback();
@@ -257,6 +306,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       x: samples.reduce((s, v) => s + v.normX, 0) / samples.length,
       y: samples.reduce((s, v) => s + v.normY, 0) / samples.length,
     };
+    console.log(`[wizard] ${cornerLabel} avg normX=${avg.x.toFixed(3)} normY=${avg.y.toFixed(3)} mirX=${(1-avg.x).toFixed(3)}`);
     const newSamples = [...cornerSamples, avg];
     setCornerSamples(newSamples);
     sampleBufferRef.current = [];
@@ -268,14 +318,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       speak(`Now point to ${next.label}.`);
       setStatusText(`Point to ${next.label}, then tap Capture`);
     } else {
-      // All 4 corners captured — compute calibration rect via the
-      // shared pure helper (services/bodyPoseService.ts) which
-      // enforces the leftX>rightX / topY<bottomY convention the
-      // runtime mapping requires. Prior to commit cd9a491 the
-      // wizard captured leftX/rightX inverted, tripping the
-      // MIN_RANGE guard and silently replacing every saved
-      // calibration with defaults.
+      // All 4 corners captured — compute via the shared pure helper.
       const cal = computeCalibrationFromCorners(newSamples);
+      const rangeX = cal.leftX - cal.rightX;
+      const rangeY = cal.bottomY - cal.topY;
+      console.log('[wizard] === CALIBRATION COMPUTED ===');
+      console.log('[wizard] corner samples (in order TL, TR, BR, BL):', JSON.stringify(newSamples));
+      console.log(`[wizard] cal: leftX=${cal.leftX.toFixed(3)} rightX=${cal.rightX.toFixed(3)} topY=${cal.topY.toFixed(3)} bottomY=${cal.bottomY.toFixed(3)}`);
+      console.log(`[wizard] rangeX=${rangeX.toFixed(3)} rangeY=${rangeY.toFixed(3)} | convention OK=${rangeX>0 && rangeY>0} | minRange OK=${rangeX>=0.30 && rangeY>=0.30}`);
       savePoseCalibration(cal);
       speak('Calibration saved. Now lets test your accuracy.');
 
@@ -712,6 +762,123 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
           {trackerStatus === 'stopped' && 'Camera not running'}
         </span>
       </div>
+
+      {/* Live camera PIP — confirms the camera is actually running.
+          Top-right corner so it doesn't fight with the diag panel. */}
+      <div
+        data-testid="tracking-wizard-pip-wrapper"
+        style={{
+          position: 'fixed',
+          top: 80,
+          right: 12,
+          width: 200,
+          height: 150,
+          borderRadius: 10,
+          overflow: 'hidden',
+          border: '2px solid rgba(76,175,80,0.6)',
+          backgroundColor: '#000',
+          zIndex: 10002,
+        }}
+      >
+        <video
+          ref={pipVideoRef}
+          muted
+          playsInline
+          autoPlay
+          data-testid="tracking-wizard-pip"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            transform: 'scaleX(-1)',
+            backgroundColor: '#000',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 4,
+            left: 6,
+            color: '#9efc9e',
+            fontFamily: 'ui-monospace, monospace',
+            fontSize: 10,
+            background: 'rgba(0,0,0,0.5)',
+            padding: '2px 6px',
+            borderRadius: 4,
+          }}
+        >
+          camera feed
+        </div>
+      </div>
+
+      {/* Live diagnostics overlay — shows raw pose, calibration, and
+          mapping math so screenshots make the failure mode visible.
+          Top-left of viewport, semi-transparent so it doesn't block
+          the targets. Visible during every camera-active phase. */}
+      {(phase === 'detecting' || phase === 'calibrate-center' ||
+        phase === 'calibrate-corners' || phase === 'accuracy-test') && (
+        <div
+          data-testid="tracking-wizard-diag"
+          style={{
+            position: 'fixed',
+            top: 80,
+            left: 8,
+            background: 'rgba(0,0,0,0.7)',
+            color: '#9efc9e',
+            fontFamily: 'ui-monospace, monospace',
+            fontSize: 11,
+            padding: '8px 10px',
+            borderRadius: 6,
+            border: '1px solid rgba(78,255,78,0.3)',
+            maxWidth: 280,
+            lineHeight: 1.4,
+            zIndex: 10002,
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ color: '#fff', fontWeight: 700, marginBottom: 4 }}>
+            🛠 wizard diag
+          </div>
+          <div>phase: <span style={{ color: '#fff' }}>{phase}</span></div>
+          <div>tracker: <span style={{ color: cursorColor }}>{trackerStatus}</span></div>
+          <div>selectedPart: <span style={{ color: '#fff' }}>{selectedPart || 'none'}</span></div>
+          <div>samples in buffer: <span style={{ color: '#fff' }}>{sampleBufferRef.current.length}</span></div>
+          <div>cornerSamples: <span style={{ color: '#fff' }}>{cornerSamples.length}/4</span></div>
+          {latestSample && (
+            <div>
+              normX: <span style={{ color: '#fff' }}>{latestSample.normX.toFixed(3)}</span>{' '}
+              normY: <span style={{ color: '#fff' }}>{latestSample.normY.toFixed(3)}</span>{' '}
+              mirX: <span style={{ color: '#fff' }}>{(1 - latestSample.normX).toFixed(3)}</span>
+            </div>
+          )}
+          <div>
+            cursor: <span style={{ color: '#fff' }}>({Math.round(cursorPos.x)}, {Math.round(cursorPos.y)})</span>
+          </div>
+          {latestCal && (() => {
+            const rangeX = latestCal.leftX - latestCal.rightX;
+            const rangeY = latestCal.bottomY - latestCal.topY;
+            const conventionOK = rangeX > 0 && rangeY > 0;
+            const minRangeOK = rangeX >= 0.30 && rangeY >= 0.30;
+            return (
+              <>
+                <div style={{ marginTop: 4, color: '#fff', fontWeight: 700 }}>cal:</div>
+                <div>
+                  L={latestCal.leftX.toFixed(3)} R={latestCal.rightX.toFixed(3)}{' '}
+                  T={latestCal.topY.toFixed(3)} B={latestCal.bottomY.toFixed(3)}
+                </div>
+                <div>
+                  rangeX=<span style={{ color: rangeX > 0 ? '#9efc9e' : '#ff7e7e' }}>{rangeX.toFixed(3)}</span>{' '}
+                  rangeY=<span style={{ color: rangeY > 0 ? '#9efc9e' : '#ff7e7e' }}>{rangeY.toFixed(3)}</span>
+                </div>
+                <div>
+                  convention: <span style={{ color: conventionOK ? '#9efc9e' : '#ff7e7e' }}>{conventionOK ? 'OK' : 'INVERTED'}</span>{' '}
+                  min-range: <span style={{ color: minRangeOK ? '#9efc9e' : '#ff7e7e' }}>{minRangeOK ? 'OK' : 'TOO NARROW'}</span>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }

@@ -745,8 +745,12 @@ export function startPoseTracker(
           let rangeY = calibration.bottomY - calibration.topY;
           if (rangeX < MIN_RANGE || rangeY < MIN_RANGE || rangeX < 0 || rangeY < 0) {
             console.warn(
-              '[PoseTracker] Calibration collapsed (rangeX=' + rangeX.toFixed(3) +
-              ', rangeY=' + rangeY.toFixed(3) + ') — resetting to defaults'
+              '[PoseTracker] CALIBRATION RESET TO DEFAULTS — saved cal had ' +
+              'rangeX=' + rangeX.toFixed(3) + ' rangeY=' + rangeY.toFixed(3) +
+              ' (need both ≥ 0.30 + positive). leftX=' + calibration.leftX.toFixed(3) +
+              ' rightX=' + calibration.rightX.toFixed(3) +
+              ' topY=' + calibration.topY.toFixed(3) +
+              ' bottomY=' + calibration.bottomY.toFixed(3)
             );
             calibration.leftX = DEFAULT_CALIBRATION.leftX;
             calibration.rightX = DEFAULT_CALIBRATION.rightX;
