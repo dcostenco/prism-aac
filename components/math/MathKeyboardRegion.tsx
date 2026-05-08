@@ -77,7 +77,7 @@ export type { MathCategoryId };
 // some flex contexts (parents with overflow-x-auto). Explicit height
 // removes the ambiguity.
 const CHIP_BASE =
-  'aac-btn rounded-lg border border-theme select-none text-xs font-bold ' +
+  'aac-btn rounded-lg border border-theme select-none text-sm font-bold ' +
   'flex items-center justify-center h-11 px-3 whitespace-nowrap shrink-0';
 
 export default function MathKeyboardRegion({ className = '' }: { className?: string }) {
@@ -125,12 +125,13 @@ export default function MathKeyboardRegion({ className = '' }: { className?: str
         // Programming chip's row layout (after the keywords were
         // packed into a 14-col grid in commit 2026-05-08):
         //   ops × 2 + keywords × 2 + letters × 2 + digits × 1 = 7 rows
-        // At ~46 px per row + ~6 px gaps = ~340 px. Floor 340 / max
-        // 460 leaves the canvas ≥ ~40 % of the viewport on every
-        // device. Earlier 520 px ceiling ate too much canvas (user
-        // report Image #27 "it introduces more bugs" — the keyboard
-        // dominated and the canvas was a sliver).
-        className="h-[clamp(340px,38svh,460px)] overflow-hidden"
+        // After the 2026-05-08 button-size bump (min-h 44 → 52-56 px,
+        // text-xs → text-sm/lg per user "make math buttons bigger"),
+        // each row is ~58 px → 7 × 58 + 6 × 6 gap = ~440 px. Floor
+        // 420 / max 540 keeps the canvas at ≥ ~35 % of the viewport
+        // on every device while letting the bigger keys fit without
+        // overflow-hidden clipping the bottom row.
+        className="h-[clamp(420px,46svh,540px)] overflow-hidden"
         data-testid="math-keyboard-panel"
       >
         {activeCategory === 'main' && <MathMainKeyboard />}
@@ -159,6 +160,12 @@ export default function MathKeyboardRegion({ className = '' }: { className?: str
 
 // ── Adv. Math keyboard — Phase 2A first sketch ───────────────────
 
+// Symbols mirror the Math Paper iPad app's "More Keyboard" reference
+// (IMG_0567 / IMG_0568 / IMG_0557 / IMG_0568): the original ADV_MATH
+// 16-key set is preserved at the front, then we append the reference-
+// only glyphs (subscript marker, cube-root, comma, period, additional
+// variables d/p/r, parentheses companions) so order stays stable for
+// any user that has muscle memory on the first two rows.
 const ADV_MATH_KEYS: Array<{ glyph: string; label: string }> = [
   { glyph: '(', label: 'open paren' },
   { glyph: ')', label: 'close paren' },
@@ -176,6 +183,25 @@ const ADV_MATH_KEYS: Array<{ glyph: string; label: string }> = [
   { glyph: '√', label: 'square root' },
   { glyph: '²', label: 'squared' },
   { glyph: '³', label: 'cubed' },
+  // Reference additions — Math Paper "More Keyboard" (IMG_0568 lower
+  // right). Each entry committed on its own writes a single cell on
+  // the math grid; users compose ³√x by tapping ³√ then x.
+  { glyph: '∛', label: 'cube root' },
+  { glyph: '_', label: 'subscript marker' },
+  { glyph: '.', label: 'decimal point' },
+  { glyph: ',', label: 'comma' },
+  { glyph: 'd', label: 'variable d' },
+  { glyph: 'p', label: 'variable p' },
+  { glyph: 'r', label: 'variable r' },
+  { glyph: 'm', label: 'variable m' },
+  { glyph: 'n', label: 'variable n' },
+  { glyph: '±', label: 'plus minus' },
+  { glyph: '≈', label: 'approximately equal' },
+  { glyph: '≡', label: 'identical to' },
+  { glyph: '|', label: 'absolute bar' },
+  { glyph: '!', label: 'factorial' },
+  { glyph: 'log', label: 'logarithm' },
+  { glyph: 'ln', label: 'natural log' },
 ];
 
 function MathAdvMathKeyboard() {
@@ -187,10 +213,10 @@ function MathAdvMathKeyboard() {
   const toggleSummationLine = useMathGridStore((s) => s.toggleSummationLine);
   const KEY_BASE =
     'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
-    'flex items-center justify-center min-h-[44px] active:translate-y-px';
+    'flex items-center justify-center min-h-[56px] active:translate-y-px';
   const TOOL_BASE =
     'aac-btn rounded-lg font-bold border border-transparent select-none ' +
-    'flex items-center justify-center min-h-[44px] active:translate-y-px ' +
+    'flex items-center justify-center min-h-[56px] active:translate-y-px ' +
     'bg-[#2196F3] text-white';
   return (
     <div className="p-2 space-y-2" data-testid="math-adv-math-keyboard">
@@ -202,7 +228,7 @@ function MathAdvMathKeyboard() {
             data-testid={`math-key-adv-${label.replace(/ /g, '-')}`}
             data-glyph={glyph}
             aria-label={label}
-            className={`${KEY_BASE} py-2.5 text-xl`}
+            className={`${KEY_BASE} py-3 text-2xl`}
           >
             {glyph}
           </button>
@@ -216,7 +242,7 @@ function MathAdvMathKeyboard() {
           onClick={() => { tapFeedback(); openFractionBox(); }}
           data-testid="math-tool-fraction-box"
           aria-label="Open fraction box"
-          className={`${TOOL_BASE} py-2.5 text-base`}
+          className={`${TOOL_BASE} py-3 text-lg`}
         >
           a/b
         </button>
@@ -224,7 +250,7 @@ function MathAdvMathKeyboard() {
           onClick={() => { tapFeedback(); moveToFractionDenominator(); }}
           data-testid="math-tool-fraction-to-denominator"
           aria-label="Move cursor to denominator"
-          className={`${TOOL_BASE} py-2.5 text-base`}
+          className={`${TOOL_BASE} py-3 text-lg`}
         >
           ⤓ den
         </button>
@@ -232,7 +258,7 @@ function MathAdvMathKeyboard() {
           onClick={() => { tapFeedback(); openLongDivisionHouse(); }}
           data-testid="math-tool-long-division"
           aria-label="Open long-division house"
-          className={`${TOOL_BASE} py-2.5 text-base`}
+          className={`${TOOL_BASE} py-3 text-lg`}
         >
           ÷⎴
         </button>
@@ -240,7 +266,7 @@ function MathAdvMathKeyboard() {
           onClick={() => { tapFeedback(); addRootBar(); }}
           data-testid="math-tool-root-bar"
           aria-label="Add root bar above cursor"
-          className={`${TOOL_BASE} py-2.5 text-base`}
+          className={`${TOOL_BASE} py-3 text-lg`}
         >
           √‾
         </button>
@@ -248,7 +274,7 @@ function MathAdvMathKeyboard() {
           onClick={() => { tapFeedback(); toggleSummationLine(); }}
           data-testid="math-tool-summation-line"
           aria-label="Toggle summation line"
-          className={`${TOOL_BASE} py-2.5 text-base`}
+          className={`${TOOL_BASE} py-3 text-lg`}
         >
           ___
         </button>
@@ -276,7 +302,7 @@ function MathLettersKeyboard() {
   const commitGlyph = useMathGridStore((s) => s.commitGlyph);
   const KEY_BASE =
     'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
-    'flex items-center justify-center min-h-[40px] active:translate-y-px';
+    'flex items-center justify-center min-h-[56px] active:translate-y-px';
   return (
     <div className="p-2" data-testid="math-letters-keyboard">
       <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-1 sm:gap-1.5">
@@ -287,7 +313,7 @@ function MathLettersKeyboard() {
             data-testid={`math-key-ltr-${ltr}`}
             data-glyph={ltr}
             aria-label={ltr}
-            className={`${KEY_BASE} py-2 text-lg sm:text-xl`}
+            className={`${KEY_BASE} py-3 text-xl sm:text-2xl`}
           >
             {ltr}
           </button>
@@ -301,18 +327,20 @@ function MathLettersKeyboard() {
 
 const GLYPH_KEY_BASE =
   'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
-  'flex items-center justify-center min-h-[44px] active:translate-y-px';
+  'flex items-center justify-center min-h-[56px] active:translate-y-px';
 
 interface GlyphGridProps {
   testid: string;
   glyphs: Array<{ glyph: string; label: string }>;
   cols?: number;
-  /** Defaults to text-xl. Pass smaller (text-base) for unit symbols
-   *  that include 2-3 chars. */
+  /** Defaults to text-2xl. Pass smaller (text-base / text-lg) for unit
+   *  symbols that include 2-3 chars (mph, mol, etc.). Bumped from
+   *  text-xl after the 2026-05-08 user request "make math buttons
+   *  bigger" — the original tile size was hard to hit on a tablet. */
   textSize?: string;
 }
 
-function GlyphGrid({ testid, glyphs, cols = 8, textSize = 'text-xl' }: GlyphGridProps) {
+function GlyphGrid({ testid, glyphs, cols = 8, textSize = 'text-2xl' }: GlyphGridProps) {
   const commitGlyph = useMathGridStore((s) => s.commitGlyph);
   return (
     <div className="p-2" data-testid={testid}>
@@ -327,7 +355,7 @@ function GlyphGrid({ testid, glyphs, cols = 8, textSize = 'text-xl' }: GlyphGrid
             data-testid={`${testid}-${label.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`}
             data-glyph={glyph}
             aria-label={label}
-            className={`${GLYPH_KEY_BASE} py-2.5 ${textSize} whitespace-nowrap`}
+            className={`${GLYPH_KEY_BASE} py-3 ${textSize} whitespace-nowrap`}
           >
             {glyph}
           </button>
@@ -337,6 +365,9 @@ function GlyphGrid({ testid, glyphs, cols = 8, textSize = 'text-xl' }: GlyphGrid
   );
 }
 
+// Set / logic ops + the Math Paper "Equality Folder" reference set
+// (IMG_0568 lower-left). Existing 16 set/logic glyphs stay first, then
+// brackets / equality / interval punctuation that the reference shows.
 const MISC_MATH_GLYPHS: Array<{ glyph: string; label: string }> = [
   { glyph: '∈', label: 'element of' },
   { glyph: '∉', label: 'not element of' },
@@ -354,6 +385,26 @@ const MISC_MATH_GLYPHS: Array<{ glyph: string; label: string }> = [
   { glyph: '∂', label: 'partial derivative' },
   { glyph: '∇', label: 'nabla' },
   { glyph: '∝', label: 'proportional to' },
+  // Equality Folder additions (IMG_0568): brackets, equality variants,
+  // colon (interval / ratio), forward slash, plus-or-minus, identical,
+  // approximately, therefore / because logic punctuation.
+  { glyph: '≡', label: 'identical to' },
+  { glyph: '≅', label: 'congruent' },
+  { glyph: '≈', label: 'approximately' },
+  { glyph: '±', label: 'plus or minus' },
+  { glyph: '∓', label: 'minus or plus' },
+  { glyph: '[', label: 'open bracket misc' },
+  { glyph: ']', label: 'close bracket misc' },
+  { glyph: '{', label: 'open brace misc' },
+  { glyph: '}', label: 'close brace misc' },
+  { glyph: ':', label: 'ratio colon' },
+  { glyph: '/', label: 'slash misc' },
+  { glyph: '∴', label: 'therefore' },
+  { glyph: '∵', label: 'because' },
+  { glyph: '⊥', label: 'perpendicular misc' },
+  { glyph: '∥', label: 'parallel misc' },
+  { glyph: '⇒', label: 'implies' },
+  { glyph: '⇔', label: 'iff' },
 ];
 function MathMiscMathKeyboard() {
   return <GlyphGrid testid="math-misc-keyboard" glyphs={MISC_MATH_GLYPHS} cols={8} />;
@@ -374,7 +425,7 @@ const TIME_DISTANCE_GLYPHS: Array<{ glyph: string; label: string }> = [
   { glyph: 'mi', label: 'mile' },
 ];
 function MathTimeDistanceKeyboard() {
-  return <GlyphGrid testid="math-time-distance-keyboard" glyphs={TIME_DISTANCE_GLYPHS} cols={6} textSize="text-base" />;
+  return <GlyphGrid testid="math-time-distance-keyboard" glyphs={TIME_DISTANCE_GLYPHS} cols={6} textSize="text-lg" />;
 }
 
 const WEIGHT_GLYPHS: Array<{ glyph: string; label: string }> = [
@@ -388,7 +439,7 @@ const WEIGHT_GLYPHS: Array<{ glyph: string; label: string }> = [
   { glyph: 'ton', label: 'ton' },
 ];
 function MathWeightKeyboard() {
-  return <GlyphGrid testid="math-weight-keyboard" glyphs={WEIGHT_GLYPHS} cols={4} textSize="text-base" />;
+  return <GlyphGrid testid="math-weight-keyboard" glyphs={WEIGHT_GLYPHS} cols={4} textSize="text-lg" />;
 }
 
 const VOLUME_GLYPHS: Array<{ glyph: string; label: string }> = [
@@ -402,9 +453,16 @@ const VOLUME_GLYPHS: Array<{ glyph: string; label: string }> = [
   { glyph: 'gal', label: 'gallon' },
 ];
 function MathVolumeKeyboard() {
-  return <GlyphGrid testid="math-volume-keyboard" glyphs={VOLUME_GLYPHS} cols={4} textSize="text-base" />;
+  return <GlyphGrid testid="math-volume-keyboard" glyphs={VOLUME_GLYPHS} cols={4} textSize="text-lg" />;
 }
 
+// Geom shapes — original 12-key set kept first (preserves muscle
+// memory). Reference IMG_0556 (Math Paper Geom keyboard) shows
+// construction primitives: corner brackets to build rectangles /
+// parallelograms, half-circle arcs, vertical / horizontal segments,
+// 3D cone + cylinder. Anything that has clean BMP Unicode is added;
+// 3D solids use letter labels because Unicode 3D-shape codepoints are
+// SMP and tofu on stock fonts (same rationale as Music keyboard).
 const GEOM_GLYPHS: Array<{ glyph: string; label: string }> = [
   { glyph: '△', label: 'triangle' },
   { glyph: '▲', label: 'filled triangle' },
@@ -418,9 +476,43 @@ const GEOM_GLYPHS: Array<{ glyph: string; label: string }> = [
   { glyph: '≅', label: 'congruent to' },
   { glyph: '≈', label: 'approximately equal' },
   { glyph: '↔', label: 'left-right arrow' },
+  // Reference additions (IMG_0556).
+  { glyph: '▢', label: 'rectangle' },
+  { glyph: '▱', label: 'parallelogram' },
+  { glyph: '⬠', label: 'pentagon' },
+  { glyph: '⬡', label: 'hexagon' },
+  { glyph: '⌒', label: 'arc' },
+  { glyph: '⌓', label: 'segment' },
+  { glyph: '◐', label: 'half circle left' },
+  { glyph: '◑', label: 'half circle right' },
+  { glyph: '◔', label: 'quarter circle' },
+  { glyph: '─', label: 'horizontal line' },
+  { glyph: '│', label: 'vertical line' },
+  { glyph: '⌐', label: 'corner upper left' },
+  { glyph: '¬', label: 'corner upper right' },
+  { glyph: '└', label: 'corner lower left' },
+  { glyph: '┘', label: 'corner lower right' },
+  { glyph: '⊿', label: 'right triangle' },
+  { glyph: '◊', label: 'lozenge' },
+  { glyph: 'cone',     label: 'cone' },
+  { glyph: 'cyl',      label: 'cylinder' },
+  { glyph: 'sphere',   label: 'sphere' },
+  { glyph: 'cube',     label: 'cube' },
+  { glyph: 'prism',    label: 'prism' },
+  { glyph: 'pyramid',  label: 'pyramid' },
+  { glyph: '↑', label: 'arrow up' },
+  { glyph: '↓', label: 'arrow down' },
+  { glyph: '←', label: 'arrow left' },
+  { glyph: '→', label: 'arrow right' },
+  { glyph: 'π',  label: 'pi-geom' },
+  { glyph: 'r',  label: 'radius' },
+  { glyph: 'd',  label: 'diameter' },
+  { glyph: 'A',  label: 'area' },
+  { glyph: 'V',  label: 'volume-geom' },
+  { glyph: 'P',  label: 'perimeter' },
 ];
 function MathGeomKeyboard() {
-  return <GlyphGrid testid="math-geom-keyboard" glyphs={GEOM_GLYPHS} cols={6} />;
+  return <GlyphGrid testid="math-geom-keyboard" glyphs={GEOM_GLYPHS} cols={8} />;
 }
 
 const MONEY_GLYPHS: Array<{ glyph: string; label: string }> = [
@@ -498,8 +590,8 @@ const CHEMISTRY_OPS: Array<{ glyph: string; label: string }> = [
 function MathChemistryKeyboard() {
   return (
     <div className="p-2 space-y-2" data-testid="math-chemistry-keyboard">
-      <GlyphGrid testid="math-chemistry-elements" glyphs={CHEMISTRY_ELEMENTS} cols={8} textSize="text-lg" />
-      <GlyphGrid testid="math-chemistry-ops" glyphs={CHEMISTRY_OPS} cols={10} textSize="text-base" />
+      <GlyphGrid testid="math-chemistry-elements" glyphs={CHEMISTRY_ELEMENTS} cols={8} textSize="text-xl" />
+      <GlyphGrid testid="math-chemistry-ops" glyphs={CHEMISTRY_OPS} cols={10} textSize="text-lg" />
     </div>
   );
 }
@@ -550,9 +642,9 @@ const PHYSICS_OPS: Array<{ glyph: string; label: string }> = [
 function MathPhysicsKeyboard() {
   return (
     <div className="p-2 space-y-2" data-testid="math-physics-keyboard">
-      <GlyphGrid testid="math-physics-greek" glyphs={PHYSICS_GREEK} cols={11} textSize="text-lg" />
-      <GlyphGrid testid="math-physics-units" glyphs={PHYSICS_UNITS} cols={8} textSize="text-base" />
-      <GlyphGrid testid="math-physics-ops" glyphs={PHYSICS_OPS} cols={9} textSize="text-base" />
+      <GlyphGrid testid="math-physics-greek" glyphs={PHYSICS_GREEK} cols={11} textSize="text-xl" />
+      <GlyphGrid testid="math-physics-units" glyphs={PHYSICS_UNITS} cols={8} textSize="text-lg" />
+      <GlyphGrid testid="math-physics-ops" glyphs={PHYSICS_OPS} cols={9} textSize="text-lg" />
     </div>
   );
 }
@@ -604,11 +696,11 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
   const [shifted, setShifted] = useState(false);
   const KEY_BASE =
     'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
-    'flex items-center justify-center min-h-[44px] active:translate-y-px font-mono';
+    'flex items-center justify-center min-h-[52px] active:translate-y-px font-mono';
   const TOGGLE_BASE =
     'aac-btn rounded-lg font-bold border border-transparent select-none ' +
-    'flex items-center justify-center min-h-[44px] px-3 active:translate-y-px ' +
-    'bg-[#2196F3] text-white text-sm whitespace-nowrap font-mono';
+    'flex items-center justify-center min-h-[52px] px-3 active:translate-y-px ' +
+    'bg-[#2196F3] text-white text-base whitespace-nowrap font-mono';
   const keywords = lang === 'python' ? PYTHON_KEYWORDS : JAVA_KEYWORDS;
   const testidPrefix = lang === 'python' ? 'math-python' : 'math-java';
   // Full a-z (no pagination — see comment above on the user report).
@@ -627,7 +719,7 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
   };
   return (
     <div className="p-1.5 space-y-1" data-testid={`math-programming-${lang}-keyboard`} data-lang={lang}>
-      <GlyphGrid testid={`${testidPrefix}-ops`} glyphs={COMMON_OPS} cols={12} textSize="text-sm" />
+      <GlyphGrid testid={`${testidPrefix}-ops`} glyphs={COMMON_OPS} cols={12} textSize="text-base" />
       {/* 14 cols pack the 28-entry PYTHON_KEYWORDS / JAVA_KEYWORDS
           arrays into TWO rows (28/14 = 2). Earlier grid-cols-7 forced
           FOUR rows + the letters + digits which exceeded the panel
@@ -643,7 +735,7 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
             data-testid={`${testidPrefix}-kw-${kw}`}
             data-glyph={kw}
             aria-label={`${lang} keyword ${kw}`}
-            className={`${KEY_BASE} py-1 text-xs whitespace-nowrap`}
+            className={`${KEY_BASE} py-2 text-sm whitespace-nowrap`}
           >
             {kw}
           </button>
@@ -674,7 +766,7 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
               data-testid={`${testidPrefix}-ltr-${ltr.toLowerCase()}`}
               data-glyph={ltr}
               aria-label={`letter ${ltr}`}
-              className={`${KEY_BASE} py-1.5 text-base`}
+              className={`${KEY_BASE} py-2 text-lg`}
             >
               {ltr}
             </button>
@@ -692,7 +784,7 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
             data-testid={`${testidPrefix}-digit-${d}`}
             data-glyph={d}
             aria-label={`digit ${d}`}
-            className={`${KEY_BASE} py-2 text-base`}
+            className={`${KEY_BASE} py-2.5 text-lg`}
           >
             {d}
           </button>
@@ -703,7 +795,7 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
           data-testid={`${testidPrefix}-underscore`}
           data-glyph="_"
           aria-label="underscore"
-          className={`${KEY_BASE} py-2 text-base`}
+          className={`${KEY_BASE} py-2.5 text-lg`}
         >
           _
         </button>
@@ -777,10 +869,10 @@ const BIO_ORGANELLES: Array<{ glyph: string; label: string }> = [
 function MathBiologyKeyboard() {
   return (
     <div className="p-2 space-y-2" data-testid="math-biology-keyboard">
-      <GlyphGrid testid="math-biology-nucleotides" glyphs={BIO_NUCLEOTIDES} cols={6} textSize="text-base" />
-      <GlyphGrid testid="math-biology-genetics" glyphs={BIO_GENETICS} cols={6} textSize="text-base" />
-      <GlyphGrid testid="math-biology-taxonomy" glyphs={BIO_TAXONOMY} cols={8} textSize="text-sm" />
-      <GlyphGrid testid="math-biology-organelles" glyphs={BIO_ORGANELLES} cols={6} textSize="text-sm" />
+      <GlyphGrid testid="math-biology-nucleotides" glyphs={BIO_NUCLEOTIDES} cols={6} textSize="text-lg" />
+      <GlyphGrid testid="math-biology-genetics" glyphs={BIO_GENETICS} cols={6} textSize="text-lg" />
+      <GlyphGrid testid="math-biology-taxonomy" glyphs={BIO_TAXONOMY} cols={8} textSize="text-base" />
+      <GlyphGrid testid="math-biology-organelles" glyphs={BIO_ORGANELLES} cols={6} textSize="text-base" />
     </div>
   );
 }
@@ -839,9 +931,9 @@ const STATS_DISTRIBUTIONS: Array<{ glyph: string; label: string }> = [
 function MathStatisticsKeyboard() {
   return (
     <div className="p-2 space-y-2" data-testid="math-statistics-keyboard">
-      <GlyphGrid testid="math-stats-params" glyphs={STATS_PARAMS} cols={6} textSize="text-base" />
-      <GlyphGrid testid="math-stats-ops" glyphs={STATS_OPS} cols={6} textSize="text-sm" />
-      <GlyphGrid testid="math-stats-dist" glyphs={STATS_DISTRIBUTIONS} cols={6} textSize="text-sm" />
+      <GlyphGrid testid="math-stats-params" glyphs={STATS_PARAMS} cols={6} textSize="text-lg" />
+      <GlyphGrid testid="math-stats-ops" glyphs={STATS_OPS} cols={6} textSize="text-base" />
+      <GlyphGrid testid="math-stats-dist" glyphs={STATS_DISTRIBUTIONS} cols={6} textSize="text-base" />
     </div>
   );
 }
@@ -930,8 +1022,8 @@ function MathMusicKeyboard() {
       <GlyphGrid testid="math-music-clefs" glyphs={MUSIC_CLEFS} cols={3} textSize="text-2xl" />
       <GlyphGrid testid="math-music-notes" glyphs={MUSIC_NOTES} cols={6} textSize="text-2xl" />
       <GlyphGrid testid="math-music-rests" glyphs={MUSIC_RESTS} cols={5} textSize="text-2xl" />
-      <GlyphGrid testid="math-music-accidentals" glyphs={MUSIC_ACCIDENTALS} cols={5} textSize="text-xl" />
-      <GlyphGrid testid="math-music-dynamics" glyphs={MUSIC_DYNAMICS} cols={8} textSize="text-sm" />
+      <GlyphGrid testid="math-music-accidentals" glyphs={MUSIC_ACCIDENTALS} cols={5} textSize="text-2xl" />
+      <GlyphGrid testid="math-music-dynamics" glyphs={MUSIC_DYNAMICS} cols={8} textSize="text-base" />
     </div>
   );
 }
@@ -994,10 +1086,10 @@ const EARTH_UNITS: Array<{ glyph: string; label: string }> = [
 function MathEarthScienceKeyboard() {
   return (
     <div className="p-2 space-y-2" data-testid="math-earth-science-keyboard">
-      <GlyphGrid testid="math-earth-weather" glyphs={EARTH_WEATHER} cols={10} textSize="text-xl" />
-      <GlyphGrid testid="math-earth-plates" glyphs={EARTH_PLATES} cols={7} textSize="text-xl" />
-      <GlyphGrid testid="math-earth-astro" glyphs={EARTH_ASTRO} cols={10} textSize="text-xl" />
-      <GlyphGrid testid="math-earth-units" glyphs={EARTH_UNITS} cols={6} textSize="text-sm" />
+      <GlyphGrid testid="math-earth-weather" glyphs={EARTH_WEATHER} cols={10} textSize="text-2xl" />
+      <GlyphGrid testid="math-earth-plates" glyphs={EARTH_PLATES} cols={7} textSize="text-2xl" />
+      <GlyphGrid testid="math-earth-astro" glyphs={EARTH_ASTRO} cols={10} textSize="text-2xl" />
+      <GlyphGrid testid="math-earth-units" glyphs={EARTH_UNITS} cols={6} textSize="text-base" />
     </div>
   );
 }
@@ -1278,10 +1370,10 @@ function MathHistoryKeyboard() {
       data-locale={baseLang}
       data-region={historyRegion ?? ''}
     >
-      <GlyphGrid testid="math-history-eras" glyphs={HIST_ERAS} cols={9} textSize="text-base" />
-      <GlyphGrid testid="math-history-centuries" glyphs={HIST_CENTURIES} cols={6} textSize="text-base" />
-      <GlyphGrid testid="math-history-periods" glyphs={periods} cols={6} textSize="text-sm" />
-      <GlyphGrid testid="math-history-events" glyphs={events} cols={6} textSize="text-base" />
+      <GlyphGrid testid="math-history-eras" glyphs={HIST_ERAS} cols={9} textSize="text-lg" />
+      <GlyphGrid testid="math-history-centuries" glyphs={HIST_CENTURIES} cols={6} textSize="text-lg" />
+      <GlyphGrid testid="math-history-periods" glyphs={periods} cols={6} textSize="text-base" />
+      <GlyphGrid testid="math-history-events" glyphs={events} cols={6} textSize="text-lg" />
     </div>
   );
 }
@@ -1347,10 +1439,10 @@ const LA_CITATION: Array<{ glyph: string; label: string }> = [
 function MathLanguageArtsKeyboard() {
   return (
     <div className="p-2 space-y-2" data-testid="math-language-arts-keyboard">
-      <GlyphGrid testid="math-la-pos" glyphs={LA_PARTS_OF_SPEECH} cols={6} textSize="text-base" />
-      <GlyphGrid testid="math-la-sentence" glyphs={LA_SENTENCE_TYPES} cols={6} textSize="text-base" />
-      <GlyphGrid testid="math-la-punct" glyphs={LA_PUNCTUATION} cols={13} textSize="text-base" />
-      <GlyphGrid testid="math-la-cite" glyphs={LA_CITATION} cols={8} textSize="text-base" />
+      <GlyphGrid testid="math-la-pos" glyphs={LA_PARTS_OF_SPEECH} cols={6} textSize="text-lg" />
+      <GlyphGrid testid="math-la-sentence" glyphs={LA_SENTENCE_TYPES} cols={6} textSize="text-lg" />
+      <GlyphGrid testid="math-la-punct" glyphs={LA_PUNCTUATION} cols={13} textSize="text-lg" />
+      <GlyphGrid testid="math-la-cite" glyphs={LA_CITATION} cols={8} textSize="text-lg" />
     </div>
   );
 }
