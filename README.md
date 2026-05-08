@@ -390,7 +390,7 @@ Optional camera-based input for users who can't reliably tap. Head-pose dwell-cl
 - Camera-stream singleton (`services/cameraStream.ts`) so head + hand tracker share one stream; switching modes is free.
 - Per-user calibration persists; the body tracker auto-recovers on session resume.
 
-**Detailed docs:** [`docs/GESTURE_RECOGNITION.md`](docs/GESTURE_RECOGNITION.md), [`docs/TRACKING_RELIABILITY.md`](docs/TRACKING_RELIABILITY.md).
+**Detailed docs:** [`docs/TRACKING_MATH.md`](docs/TRACKING_MATH.md) (calibration math, percentile learner, ego-motion, One Euro filter, ~30 tunables), [`docs/GESTURE_RECOGNITION.md`](docs/GESTURE_RECOGNITION.md), [`docs/TRACKING_RELIABILITY.md`](docs/TRACKING_RELIABILITY.md).
 </details>
 
 ---
