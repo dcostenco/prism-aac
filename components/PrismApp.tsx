@@ -217,9 +217,19 @@ export default function PrismApp() {
     const connected = sp.get('connected');
     const errParam = sp.get('error');
     const provider = sp.get('provider') || '';
+    const scope = sp.get('scope') || '';
     if (!connected && !errParam) return;
 
-    const label = PROVIDER_LABEL[provider] || provider || 'provider';
+    // Refine the label by scope: provider=google + scope=gmail should
+    // surface "Gmail" not "Google" (paid-tier users connecting Gmail
+    // expect to see Gmail in the confirmation, not the underlying
+    // OAuth provider id). Same for microsoft+mail → Outlook.
+    const refinedKey = provider === 'google' && scope === 'gmail'
+      ? 'google-gmail'
+      : provider === 'microsoft' && scope === 'mail'
+        ? 'microsoft-mail'
+        : provider;
+    const label = PROVIDER_LABEL[refinedKey] || PROVIDER_LABEL[provider] || provider || 'provider';
     if (connected === '1') {
       setConnectFeedback({ kind: 'ok', msg: `✓ ${label} connected` });
       try {
