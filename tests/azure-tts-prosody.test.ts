@@ -21,41 +21,46 @@ import { buildSSML } from '@/services/azureTTS';
 describe('buildSSML — prosody emission', () => {
   it('emits rate as multiplier number, not unsigned percent', () => {
     const ssml = buildSSML('hello', 'ro-RO', 'friendly', 0.5, 1.0);
-    // Must NOT contain the legacy "100%" form (which Azure parses as +100% = 2×).
     expect(ssml).not.toMatch(/rate="\d+%"/);
     // Web Speech 0.5 (normal) → SSML 1.00 (normal multiplier).
     expect(ssml).toMatch(/rate="1\.00"/);
   });
 
   it('clamps absurd rate values to Azure-safe range', () => {
-    // Web Speech 10 → ssmlMultiplier = 0.5 + min(1.5, 10) = 2.0 (upper clamp)
+    // Web Speech 10 clamps to 1, then ssmlMultiplier = 0.6 + 0.8 = 1.40
     const ssml10x = buildSSML('hi', 'ro-RO', 'friendly', 10, 1);
-    expect(ssml10x).toMatch(/rate="2\.00"/);
-    // Web Speech 0 → ssmlMultiplier = 0.5 + 0 = 0.5 (lower clamp)
+    expect(ssml10x).toMatch(/rate="1\.40"/);
+    // Web Speech 0 → ssmlMultiplier = 0.6 (lower output)
     const ssmlZero = buildSSML('hi', 'ro-RO', 'friendly', 0, 1);
-    expect(ssmlZero).toMatch(/rate="0\.50"/);
+    expect(ssmlZero).toMatch(/rate="0\.60"/);
   });
 
-  // CRITICAL — May 2026 user report: "morning routine prononsuation
-  // is 2 times faster than normal in your tests.. romanian also 2
-  // times slower". Root cause: prism-aac uses the Web Speech rate
-  // scale [0,1] (where 0.5 IS NORMAL) everywhere. SSML was passing
-  // that value as-is to <prosody rate=> which is a MULTIPLIER scale
-  // (where 1.0 IS NORMAL). With default speechRate=0.5, Azure was
-  // synthesizing at 0.5× speed = 2× slower than expected. This pins
-  // the corrected scale conversion (ssmlMultiplier = 0.5 + webRate).
-  it('default speechRate of 0.5 (Web-Speech normal) emits SSML 1.00 (normal multiplier)', () => {
+  // CRITICAL: scale handling rev 2.
+  // - User report 1 (Romanian "2× slow"): rate=0.5 used to pass as
+  //   SSML "0.50" = half speed.
+  // - User report 2 ("morning routine high pitch / chipmunk"):
+  //   first conversion attempt `0.5 + webRate` produced SSML 1.5
+  //   when slider was at max 1.0 → 1.5× chipmunk.
+  // - Fix: linear `0.6 + 0.8 × webRate` keeps the safe range
+  //   [0.7, 1.4] across the full slider, with 0.5 → 1.0 (normal).
+  //   No slider position can produce ≥ 1.5× (chipmunk threshold).
+  it('default speechRate of 0.5 emits SSML 1.00 (normal multiplier)', () => {
     const ssml = buildSSML('Buna dimineata', 'ro-RO', 'friendly', 0.5, 1);
     expect(ssml).toMatch(/rate="1\.00"/);
-    // The earlier OFF-BY-2 bug emitted rate="0.50" here → 2× slow Romanian.
     expect(ssml).not.toMatch(/rate="0\.50"/);
   });
 
-  it('preserves the [0,1] scale: 0.4 (slightly slow) → 0.90, 0.6 (slightly fast) → 1.10', () => {
-    const slow = buildSSML('hi', 'ro-RO', 'friendly', 0.4, 1);
-    expect(slow).toMatch(/rate="0\.90"/);
-    const fast = buildSSML('hi', 'ro-RO', 'friendly', 0.6, 1);
-    expect(fast).toMatch(/rate="1\.10"/);
+  it('slider at max (1.0) produces SSML 1.40 — fast but NOT chipmunk', () => {
+    const ssml = buildSSML('morning routine', 'en-US', 'friendly', 1.0, 1);
+    expect(ssml).toMatch(/rate="1\.40"/);
+    // The "morning routine high pitch" regression emitted 1.50+ here.
+    expect(ssml).not.toMatch(/rate="1\.5\d"/);
+  });
+
+  it('slider at min (0.1) stays intelligible at SSML 0.68', () => {
+    const ssml = buildSSML('slow speech', 'en-US', 'friendly', 0.1, 1);
+    // 0.6 + 0.8 × 0.1 = 0.68, rounded to 2 decimals
+    expect(ssml).toMatch(/rate="0\.68"/);
   });
 
   it('omits pitch attribute (we never vary it; default is correct)', () => {

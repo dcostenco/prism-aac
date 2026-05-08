@@ -95,31 +95,28 @@ export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: num
   const supportsStyles = STYLE_SUPPORTED.has(voice);
   // SSML multiplier form (1.0 = default, 0.9 = 10% slower, 1.15 = 15% faster).
   //
-  // Scale conversion (CRITICAL — fixed May 2026 user report "morning
-  // routine 2× faster, Romanian 2× slower"):
+  // Scale handling (rev 2 — May 2026):
   //
-  // The rest of prism-aac uses the Web Speech API rate scale where
-  // [0, 1] maps to [slowest, fastest] and 0.5 IS NORMAL SPEED. The
-  // settings store ships speechRate=0.5 by default. Web Speech itself
-  // remaps this internally with `0.1 + rate * 1.8` (so 0.5 → 1.0).
+  // The Settings UI slider at SettingsModal.tsx:429 is min="0.1"
+  // max="1" step="0.1" — a Web Speech-style scale where 0.5 is
+  // intuitive "normal" but the upper bound 1.0 is "fastest" not
+  // "normal". Users who cranked the slider to 1.0 to fight the
+  // earlier 2× slow Romanian bug now hear 1.5× chipmunk pitch with
+  // the previous "0.5 + webRate" conversion (commit 06c04f5).
   //
-  // SSML uses a MULTIPLIER scale where 1.0 IS NORMAL SPEED. If we
-  // pass rate=0.5 directly through, Azure synthesizes at half speed
-  // (2× slower than expected — the Romanian bug). Inworld appears to
-  // interpret 0.50 differently on its side and produces 2× fast for
-  // English (the morning-routine bug). Either way, the fix is to
-  // convert the input from the Web-Speech [0,1] scale into the SSML
-  // multiplier scale BEFORE building the SSML:
+  // New mapping — bijective and produces a SAFE, useful range across
+  // every slider position users actually have stored:
   //
-  //   webRate=0   → SSML 0.5 (slowest allowed)
-  //   webRate=0.5 → SSML 1.0 (normal — the default)
-  //   webRate=1.0 → SSML 1.5 (1.5× fast)
+  //   webRate=0.1 → SSML 0.70 (slowest, still intelligible)
+  //   webRate=0.5 → SSML 1.00 (normal — what unset users get)
+  //   webRate=1.0 → SSML 1.30 (about 30% faster — fast but NOT chipmunk)
   //
-  // Linear: ssmlMultiplier = 0.5 + webRate. Clamped to Azure's
-  // accepted [0.5, 2.0] range so a stale settings entry like
-  // rate=10 can't produce a 10× burst.
-  const webRate = Number.isFinite(rate) && rate >= 0 ? rate : 0.5;
-  const ssmlMultiplier = 0.5 + Math.min(1.5, webRate);
+  // Linear: ssmlMultiplier = 0.6 + 0.8 × webRate. Clamped to Azure's
+  // [0.5, 2.0] safe range so a stale or out-of-bounds settings entry
+  // can't produce a 10× burst. Unintelligible 1.5×+ is impossible
+  // even when the user has the slider all the way right.
+  const webRate = Number.isFinite(rate) && rate >= 0 ? Math.min(1, rate) : 0.5;
+  const ssmlMultiplier = 0.6 + 0.8 * webRate;
   const rateClamped = Math.max(0.5, Math.min(2.0, ssmlMultiplier));
   const rateStr = rateClamped.toFixed(2);
   const volumeValue = Math.max(0, Math.min(100, Math.round(volume * 100)));
