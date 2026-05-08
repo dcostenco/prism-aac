@@ -16,7 +16,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
 import { tapFeedback } from '@/services/feedback';
 import { aacSpeak } from '@/services/aacSpeak';
-import { runOcr, tesseractCodeFor } from '@/services/ocr';
+import { runOcr, runOcrOnPdf, tesseractCodeFor } from '@/services/ocr';
 
 export default function OcrCapturePanel() {
   const sidePanel = useUIStore((s) => s.sidePanel);
@@ -36,7 +36,14 @@ export default function OcrCapturePanel() {
     setLoading(true);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(URL.createObjectURL(file));
-    const out = await runOcr(file, language);
+    // Branch on PDF vs image. PDFs go through runOcrOnPdf which
+    // renders each page to canvas and OCRs the canvas — this is the
+    // path the PDF Reader links to when the document has no text
+    // layer (handwritten / scanned classroom worksheets).
+    const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+    const out = isPdf
+      ? await runOcrOnPdf(file, language)
+      : await runOcr(file, language);
     setLoading(false);
     if (out.ok) setResult({ text: out.text, confidence: out.confidence });
     else setError(out.error);
@@ -82,10 +89,10 @@ export default function OcrCapturePanel() {
               data-testid="ocr-capture-pick"
               className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#2196F3] text-white cursor-pointer"
             >
-              ＋ Open image
+              ＋ Open image / PDF
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,application/pdf,.pdf"
                 onChange={onPick}
                 className="hidden"
                 data-testid="ocr-capture-input"
@@ -120,10 +127,10 @@ export default function OcrCapturePanel() {
             data-testid="ocr-capture-pick"
             className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#2196F3] text-white cursor-pointer"
           >
-            ＋ Open image
+            ＋ Open image / PDF
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,application/pdf,.pdf"
               onChange={onPick}
               className="hidden"
               data-testid="ocr-capture-input"
@@ -148,7 +155,7 @@ export default function OcrCapturePanel() {
               className="max-w-full rounded-md border border-theme"
             />
           ) : (
-            <p className="text-muted">No image yet — tap “＋ Open image”.</p>
+            <p className="text-muted">No image yet — tap “＋ Open image / PDF”.</p>
           )}
         </div>
 

@@ -102,6 +102,71 @@ export async function runOcr(
   }
 }
 
+/**
+ * OCR every page of a PDF. Renders each page to an off-screen canvas
+ * via pdfjs, then runs tesseract on the canvas. Used by the OCR
+ * Capture panel when the user picks a .pdf file (and as the fallback
+ * the PDF Reader links to when the document has no text layer —
+ * e.g. handwritten / scanned classroom workflow PDFs).
+ *
+ * Slower than text extraction (each page is a full image-recognition
+ * pass), so we log progress to the console as we go.
+ */
+export async function runOcrOnPdf(
+  file: File,
+  lang: string = 'en',
+): Promise<OcrResult> {
+  if (!file) return { ok: false, error: 'No PDF to read.' };
+  try {
+    const pdfjs = await import('pdfjs-dist');
+    pdfjs.GlobalWorkerOptions.workerSrc =
+      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+    const buf = await file.arrayBuffer();
+    const doc = await pdfjs.getDocument({ data: buf }).promise;
+    const lines: string[] = [];
+    let totalConf = 0;
+    let confSamples = 0;
+    for (let i = 1; i <= doc.numPages; i++) {
+      console.log(`[ocr-pdf] page ${i}/${doc.numPages} rendering…`);
+      const page = await doc.getPage(i);
+      // Render at 2x scale so tesseract gets enough pixel density to
+      // recognize handwritten + small print reliably. 1x is too low
+      // for AAC-grade scanned worksheet PDFs.
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      const context = canvas.getContext('2d');
+      if (!context) continue;
+      await page.render({ canvasContext: context, viewport, canvas } as Parameters<typeof page.render>[0]).promise;
+      page.cleanup();
+      // Convert canvas to Blob for tesseract input.
+      const blob: Blob | null = await new Promise((res) => canvas.toBlob((b) => res(b), 'image/png'));
+      if (!blob) { lines.push(`[page ${i}: render failed]`); continue; }
+      const out = await runOcr(blob, lang);
+      if (out.ok) {
+        lines.push(out.text);
+        totalConf += out.confidence;
+        confSamples++;
+        console.log(`[ocr-pdf] page ${i} → ${out.text.length} chars, conf ${out.confidence}`);
+      } else {
+        console.log(`[ocr-pdf] page ${i} OCR failed: ${out.error}`);
+      }
+    }
+    doc.destroy();
+    const text = lines.join('\n\n').trim();
+    if (!text) return { ok: false, error: 'No readable text found across all pages — try a higher-resolution scan.' };
+    return {
+      ok: true,
+      text,
+      confidence: confSamples > 0 ? Math.round(totalConf / confSamples) : 0,
+    };
+  } catch (e) {
+    const raw = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: friendlyOcrError(raw) };
+  }
+}
+
 /** Cleanup hook for tests / page unload. Tesseract workers hold
  *  WebAssembly memory; freeing them when nobody's using OCR is
  *  polite to the AAC user's RAM-constrained device. */

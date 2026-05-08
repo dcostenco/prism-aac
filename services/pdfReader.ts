@@ -78,9 +78,21 @@ async function loadPdfjs(): Promise<typeof import('pdfjs-dist')> {
  * Returns one entry per page so the AAC UI can let the user pick
  * which page to listen to.
  */
+/**
+ * Diagnostic logger. Writes to console so a user retesting in real
+ * Safari can paste the output back without us having to guess at
+ * what pdfjs returned. Each line is prefixed `[pdfReader]` so the
+ * user can grep-filter their console.
+ */
+function diag(...args: unknown[]): void {
+  if (typeof console !== 'undefined') console.log('[pdfReader]', ...args);
+}
+
 export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExtractResult> {
   const pdfjs = await loadPdfjs();
   const data = source instanceof File ? await source.arrayBuffer() : source;
+  diag(`pdfjs version=${pdfjs.version} workerSrc=${pdfjs.GlobalWorkerOptions?.workerSrc?.slice(0, 80)}`);
+  diag(`source bytes=${data instanceof ArrayBuffer ? data.byteLength : '?'}`);
   // First try with the cross-origin worker (faster). If that path
   // throws on EVERY page (worker unreachable / blocked / mismatched
   // version) the per-page error count would be `numPages` and we'd
@@ -108,13 +120,19 @@ export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExt
     title = info?.Title?.trim() ?? '';
   } catch { /* metadata is optional */ }
 
+  diag(`getDocument ok numPages=${doc.numPages}`);
   let pages: PdfPage[] = [];
   let totalChars = 0;
   for (let i = 1; i <= doc.numPages; i++) {
     const r = await extractOnePage(doc, i);
     pages.push(r);
     totalChars += r.text.length;
+    if (i <= 3 || isUnreadable(r) || !r.text) {
+      // Log first 3 pages always + any error/empty for diagnosis
+      diag(`page ${i}: chars=${r.text.length} unreadable=${isUnreadable(r)} preview="${r.text.slice(0, 60).replace(/\s+/g, ' ')}"`);
+    }
   }
+  diag(`extraction summary: total=${pages.length} unreadable=${pages.filter(isUnreadable).length} empty=${pages.filter(p => !isUnreadable(p) && !p.text).length} ok=${pages.filter(p => !isUnreadable(p) && p.text).length} totalChars=${totalChars}`);
 
   // Whole-document worker-failure retry. If EVERY page came back as
   // unreadable, the most likely cause is the cross-origin worker
