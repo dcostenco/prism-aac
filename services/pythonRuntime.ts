@@ -141,6 +141,137 @@ export async function evaluatePython(code: string): Promise<PyEvalResult> {
   }
 }
 
+/** Single trace event captured during a debug run. */
+export interface TraceStep {
+  /** 1-based line number in the user's source. */
+  line: number;
+  /** Trace event kind — 'line' is the common one (about to execute). */
+  event: 'call' | 'line' | 'return' | 'exception';
+  /** Local variables snapshotted at this step. Values are repr-strings. */
+  locals: Record<string, string>;
+}
+
+export interface TraceSuccess {
+  ok: true;
+  steps: TraceStep[];
+  stdout: string;
+  /** Last expression value (Python repr). */
+  value: string;
+}
+
+export interface TraceFailure {
+  ok: false;
+  error: string;
+  steps: TraceStep[];
+  stdout: string;
+}
+
+export type TraceResult = TraceSuccess | TraceFailure;
+
+/** Run user code under sys.settrace and capture per-line locals.
+ *
+ * The trace runs on the main thread (Pyodide doesn't yet have a
+ * worker mode wired here), so a long-running loop will freeze the
+ * UI. The MVP scope is school-coding tasks (≤ ~50 lines) — fine for
+ * step-debug. Bigger programs will need a worker.
+ *
+ * Locals are captured by reading the current frame's f_locals AFTER
+ * each step's bytecode runs (Python's settrace fires BEFORE for
+ * 'line', so the previous line's effect is visible at the NEXT step).
+ * To keep UI rendering simple, every value is repr()'d to a string
+ * and capped at 80 chars.
+ */
+export async function debugPython(userCode: string): Promise<TraceResult> {
+  if (!userCode.trim()) {
+    return { ok: false, error: 'No Python code to debug yet.', steps: [], stdout: '' };
+  }
+  let py: PyInterp;
+  try {
+    py = await loadInterp();
+  } catch (e) {
+    const raw = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: 'Could not load the Python runtime — check your internet connection.', steps: [], stdout: raw };
+  }
+
+  let stdoutBuf = '';
+  py.setStdout({ batched: (s: string) => { stdoutBuf += s; } });
+  py.setStderr({ batched: () => {} });
+
+  // The runner installs settrace, exec()s the user code in a fresh
+  // namespace (so prior cells don't leak in), and serializes the
+  // captured steps as JSON. We pull the JSON back via Pyodide's
+  // proxy → JS bridge.
+  const wrapper = `
+import json, sys, traceback as _tb
+__user_src = ${JSON.stringify(userCode)}
+__steps = []
+__user_filename = '<aac-user>'
+__user_globals = {'__name__': '__main__', '__builtins__': __builtins__}
+
+def __aac_trace(frame, event, arg):
+    if frame.f_code.co_filename != __user_filename:
+        return __aac_trace
+    if event == 'line':
+        try:
+            snap = {}
+            for k, v in frame.f_locals.items():
+                if k.startswith('__'):
+                    continue
+                try:
+                    rs = repr(v)
+                except Exception:
+                    rs = '<unrepr>'
+                if len(rs) > 80:
+                    rs = rs[:77] + '...'
+                snap[k] = rs
+            __steps.append({'line': frame.f_lineno, 'event': 'line', 'locals': snap})
+        except Exception:
+            pass
+    return __aac_trace
+
+__compiled = compile(__user_src, __user_filename, 'exec')
+__last_value = None
+__error = None
+sys.settrace(__aac_trace)
+try:
+    exec(__compiled, __user_globals)
+    if __steps:
+        __last_value = ''
+except Exception:
+    __error = _tb.format_exc()
+finally:
+    sys.settrace(None)
+__result = {'steps': __steps, 'value': '' if __last_value is None else repr(__last_value), 'error': __error}
+__result_json = json.dumps(__result)
+__result_json
+`;
+
+  try {
+    const raw = py.runPython(wrapper);
+    const jsonStr = typeof raw === 'string'
+      ? raw
+      : (raw as { toString: () => string }).toString();
+    const parsed = JSON.parse(jsonStr) as { steps: TraceStep[]; value: string; error: string | null };
+    if (parsed.error) {
+      return {
+        ok: false,
+        error: childFriendlyPyError(parsed.error),
+        steps: parsed.steps,
+        stdout: stdoutBuf,
+      };
+    }
+    return {
+      ok: true,
+      steps: parsed.steps,
+      stdout: stdoutBuf,
+      value: parsed.value,
+    };
+  } catch (e) {
+    const raw = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: childFriendlyPyError(raw), steps: [], stdout: stdoutBuf };
+  }
+}
+
 function childFriendlyPyError(traceback: string): string {
   // Pyodide bubbles the full Python traceback — pick the last line, which
   // is the actual exception type + message.

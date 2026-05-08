@@ -25,11 +25,11 @@ import { askAI } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 import { evaluateExpression } from '@/services/exprEval';
-import { evaluatePython, isPythonReady } from '@/services/pythonRuntime';
+import { evaluatePython, isPythonReady, debugPython, type TraceStep } from '@/services/pythonRuntime';
 import { serializeAsCode } from '@/services/codeSerialize';
 import { parseCellKey, type Cell, type CellKey } from '@/engine/mathGrid';
 
-type TutorMode = 'help' | 'check' | 'solve' | 'eval';
+type TutorMode = 'help' | 'check' | 'solve' | 'eval' | 'debug';
 
 /** Domains where a deterministic, local evaluator produces a useful
  *  answer. math/physics/statistics → mathjs (instant). programming-python
@@ -47,9 +47,9 @@ const EVAL_DOMAINS: ReadonlySet<MathDomain> = new Set<MathDomain>([
  *  replaced at request time. We tell the model what subject the child
  *  is working on so it doesn't apply algebraic reasoning to a chemistry
  *  equation or mistake a Python `if` for a math conditional.
- *  `eval` mode runs locally via mathjs and never touches a prompt — so
- *  it's excluded from the per-domain template type. */
-type DomainPrompts = Record<Exclude<TutorMode, 'eval'>, string>;
+ *  `eval` and `debug` modes run locally (mathjs / Pyodide trace) and
+ *  never touch a prompt — so they're excluded from the template type. */
+type DomainPrompts = Record<Exclude<TutorMode, 'eval' | 'debug'>, string>;
 
 const PROMPT_TEMPLATES: Record<MathDomain, DomainPrompts> = {
   math: {
@@ -166,6 +166,7 @@ export default function MathTutorTool() {
   const [errorKind, setErrorKind] = useState<'auth' | 'network' | 'timeout' | 'other' | null>(null);
   const [mode, setMode] = useState<TutorMode | null>(null);
   const [loading, setLoading] = useState(false);
+  const [traceSteps, setTraceSteps] = useState<TraceStep[]>([]);
   const lastCellCount = useRef(cells.size);
   // Used to cancel an in-flight tutor request when the user taps a
   // different mode or dismisses. The actual askAI fetch can't be
@@ -182,7 +183,7 @@ export default function MathTutorTool() {
     lastCellCount.current = cells.size;
   }, [cells.size, response, errorKind]);
 
-  const ask = useCallback(async (which: Exclude<TutorMode, 'eval'>) => {
+  const ask = useCallback(async (which: Exclude<TutorMode, 'eval' | 'debug'>) => {
     const expression = serializeAsExpression(cells);
     if (!expression || loading) return;
     tapFeedback();
@@ -293,14 +294,53 @@ export default function MathTutorTool() {
     }
   }, [cells, speechRate, speechVolume, activeCategory]);
 
+  // Step-debugger path — Python only. Runs the user code under
+  // sys.settrace and captures per-line locals. UI shows a scrollable
+  // list of (line, locals) so the AAC user can read what each line did.
+  const localDebug = useCallback(async () => {
+    if (domainForCategory(activeCategory) !== 'programming-python') return;
+    const source = serializeAsCode(cells);
+    if (!source) return;
+    tapFeedback();
+    requestSeqRef.current++;
+    setMode('debug');
+    setErrorKind(null);
+    setTraceSteps([]);
+    const showLoading = !isPythonReady();
+    if (showLoading) {
+      setLoading(true);
+      setResponse('Loading Python runtime…');
+    } else {
+      setResponse('Tracing…');
+      setLoading(true);
+    }
+    const mySeq = requestSeqRef.current;
+    const result = await debugPython(source);
+    if (mySeq !== requestSeqRef.current) return;
+    setLoading(false);
+    setTraceSteps(result.steps);
+    if (result.ok) {
+      const summary = result.steps.length === 0
+        ? '(code ran without entering any line — empty body?)'
+        : `Traced ${result.steps.length} step${result.steps.length === 1 ? '' : 's'}.`;
+      const stdoutLine = result.stdout ? `\nstdout: ${result.stdout.trimEnd()}` : '';
+      setResponse(summary + stdoutLine);
+    } else {
+      setErrorKind('other');
+      setResponse(`⚠️ ${result.error}`);
+    }
+  }, [activeCategory, cells]);
+
   const retry = useCallback(() => {
     if (!mode) return;
-    if (mode === 'eval') { localEval(); return; }
+    if (mode === 'eval') { void localEval(); return; }
+    if (mode === 'debug') { void localDebug(); return; }
     void ask(mode);
-  }, [ask, mode, localEval]);
+  }, [ask, mode, localEval, localDebug]);
 
   const domain = domainForCategory(activeCategory);
   const evalAvailable = EVAL_DOMAINS.has(domain);
+  const debugAvailable = domain === 'programming-python';
 
   return (
     <div data-testid="math-tutor-tool" className="relative">
@@ -343,6 +383,17 @@ export default function MathTutorTool() {
             🧮 Eval
           </button>
         )}
+        {debugAvailable && (
+          <button
+            onClick={localDebug}
+            disabled={loading}
+            data-testid="math-tutor-debug"
+            aria-label="Step-debug Python (sys.settrace)"
+            className={`${TOOL_BTN} bg-[#E91E63] text-white`}
+          >
+            🐛 Debug
+          </button>
+        )}
       </div>
 
       {(loading || response) && (
@@ -357,7 +408,7 @@ export default function MathTutorTool() {
           aria-live="polite"
         >
           <div className="flex items-start gap-2">
-            <span className="text-2xl shrink-0">🤖</span>
+            <span className="text-2xl shrink-0">{mode === 'debug' ? '🐛' : mode === 'eval' ? '🧮' : '🤖'}</span>
             <div className="flex-1 text-primary text-sm leading-relaxed">
               {loading && !response ? (
                 <span className="text-muted animate-pulse">Thinking…</span>
@@ -368,6 +419,37 @@ export default function MathTutorTool() {
               )}
             </div>
           </div>
+          {mode === 'debug' && traceSteps.length > 0 && !loading && (
+            <div
+              className="mt-2 max-h-[40vh] overflow-y-auto border border-theme rounded-md bg-black/[0.04] dark:bg-white/[0.04] text-xs font-mono"
+              data-testid="math-tutor-debug-trace"
+            >
+              {traceSteps.map((step, i) => (
+                <div
+                  key={i}
+                  className="px-2 py-1 border-b border-theme/50 last:border-b-0"
+                  data-testid={`math-tutor-debug-step-${i}`}
+                  data-line={step.line}
+                >
+                  <div className="flex gap-2 items-baseline">
+                    <span className="text-muted shrink-0">L{step.line}</span>
+                    <span className="text-muted">→</span>
+                    <span className="flex-1 break-all">
+                      {Object.keys(step.locals).length === 0
+                        ? <em className="text-muted">no locals yet</em>
+                        : Object.entries(step.locals).map(([k, v], j) => (
+                          <span key={k} className="mr-3">
+                            <span className="text-[#0550ae]">{k}</span>=<span className="text-[#22863a]">{v}</span>
+                            {j < Object.keys(step.locals).length - 1 ? ',' : ''}
+                          </span>
+                        ))
+                      }
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {errorKind && !loading && (
             <div className="mt-2 flex items-center justify-end gap-2">
               <button
