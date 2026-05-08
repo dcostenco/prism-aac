@@ -348,6 +348,29 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     const sy = sampleBufferRef.current.reduce((s, v) => s + v.normY, 0) / n;
     console.log(`[wizard] center avg normX=${sx.toFixed(3)} normY=${sy.toFixed(3)}`);
     centerSampleRef.current = { normX: sx, normY: sy };
+
+    // Immediately apply a DEFAULT-width cal centered on the captured
+    // neutral so the Step-2 cursor preview is correctly anchored.
+    // Without this the online learner in bodyPoseService overwrites
+    // the DEFAULT_CALIBRATION reset (from wizard-start) within
+    // seconds and produces a midpoint biased toward the asymmetric
+    // midpoint of the user's observable range — not their intended
+    // neutral. 2026-05-08 user report (Image #49): cursor 130px right
+    // of center target during Step 1 because learner midpoint (0.428)
+    // didn't match user neutral mirX (0.464).
+    //
+    // This is a TEMPORARY cal that the final captureCorner call will
+    // overwrite with the proper recentered + range-from-corners cal.
+    try {
+      const anchorMirX = 1 - sx;
+      savePoseCalibration({
+        leftX: Math.min(0.95, anchorMirX + 0.35),
+        rightX: Math.max(0.05, anchorMirX - 0.35),
+        topY: Math.max(0.05, sy - 0.30),
+        bottomY: Math.min(0.95, sy + 0.30),
+      });
+    } catch { /* best-effort */ }
+
     tapFeedback();
     sampleBufferRef.current = [];
     setCornerIdx(0);
