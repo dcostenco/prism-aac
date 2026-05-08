@@ -390,46 +390,64 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       console.log(`[wizard] raw cal: leftX=${rawCal.leftX.toFixed(3)} rightX=${rawCal.rightX.toFixed(3)} topY=${rawCal.topY.toFixed(3)} bottomY=${rawCal.bottomY.toFixed(3)}`);
       console.log(`[wizard] rangeX=${rawRangeX.toFixed(3)} rangeY=${rawRangeY.toFixed(3)} | convention OK=${rawRangeX>0 && rawRangeY>0}`);
 
-      // Narrow-range fallback for users who can't physically reach the
-      // screen corners with their tracked body part — head tracking on
-      // a sofa, limited mobility, kids in a car seat. Without this,
-      // computeCalibrationFromCorners over 4 nose samples that all
-      // cluster around (0.5, 0.5) produces rangeX≈0.02, the cursor
-      // becomes pinned to a 2 % pose region, and the wizard run leaves
-      // the user WORSE off than the factory defaults they started with.
-      // 2026-05-08 user report (Image #45): cal: rangeX=0.022 → "TOO NARROW".
+      // The cursor mapping math expects: when the user's tracked
+      // landmark is at the cal's midpoint, the cursor lands at screen
+      // center. So the cal's midpoint MUST match the user's neutral
+      // pose, and the cal's WIDTH defines how much body movement maps
+      // to a full screen-width cursor sweep.
       //
-      // When raw range is too narrow, anchor a DEFAULT-width calibration
-      // on the captured center sample (or the centroid of corners if no
-      // center was captured). This guarantees a wizard run NEVER produces
-      // a worse cursor than a Skip-calibration choice.
+      // The wizard captures BOTH pieces separately:
+      //   • Step 1 ("Face the center circle") → captured center
+      //     sample = the user's actual neutral pose. This is the
+      //     midpoint anchor.
+      //   • Step 2 (4 corners) → range. raw cal's MIDPOINT is wrong
+      //     for two reasons:
+      //       - corner samples are biased by tracker noise / how far
+      //         the user actually moved (rarely symmetric)
+      //       - "neutral facing center" rarely sits at the centroid
+      //         of {TL, TR, BR, BL} — heads tilt up/down at rest,
+      //         mobile users have asymmetric reach
+      // 2026-05-08 user report (Image #46): cursor 170px ABOVE the
+      // center target when facing it. Saved cal Y-midpoint was 0.595;
+      // user's neutral normY was 0.665. Recentering eliminates this.
+      //
+      // Always-recenter is correct even when raw range is wide. The
+      // narrow-range fallback below substitutes a DEFAULT-width
+      // range when corners didn't span enough; the recentering anchor
+      // is the same in both branches.
       const PRACTICAL_MIN_RANGE = 0.10;
-      let cal = rawCal;
-      let usedFallback = false;
-      if (rawRangeX < PRACTICAL_MIN_RANGE || rawRangeY < PRACTICAL_MIN_RANGE) {
-        usedFallback = true;
-        // Anchor on captured center if available, else centroid of corners.
-        const anchor = centerSampleRef.current ?? {
-          normX: newSamples.reduce((s, v) => s + v.x, 0) / newSamples.length,
-          normY: newSamples.reduce((s, v) => s + v.y, 0) / newSamples.length,
-        };
-        const anchorMirX = 1 - anchor.normX;
-        // Default range chosen to mirror DEFAULT_CALIBRATION (rangeX≈0.70,
-        // rangeY≈0.60) — the values the cursor mapping is tuned for.
-        const FALLBACK_RANGE_X = 0.70;
-        const FALLBACK_RANGE_Y = 0.60;
-        cal = {
-          leftX: Math.min(0.95, anchorMirX + FALLBACK_RANGE_X / 2),
-          rightX: Math.max(0.05, anchorMirX - FALLBACK_RANGE_X / 2),
-          topY: Math.max(0.05, anchor.normY - FALLBACK_RANGE_Y / 2),
-          bottomY: Math.min(0.95, anchor.normY + FALLBACK_RANGE_Y / 2),
-        };
-        console.warn('[wizard] CAPTURED RANGE TOO NARROW — anchoring DEFAULT-width cal on user center');
-        console.log(`[wizard] fallback cal: leftX=${cal.leftX.toFixed(3)} rightX=${cal.rightX.toFixed(3)} topY=${cal.topY.toFixed(3)} bottomY=${cal.bottomY.toFixed(3)}`);
+      const center = centerSampleRef.current;
+      const anchor = center ?? {
+        // No captured center (skipped step 1 somehow): fall back to
+        // raw cal's midpoint — same as no recentering.
+        normX: 1 - (rawCal.leftX + rawCal.rightX) / 2,
+        normY: (rawCal.topY + rawCal.bottomY) / 2,
+      };
+      const anchorMirX = 1 - anchor.normX;
+
+      const usedFallbackRange =
+        rawRangeX < PRACTICAL_MIN_RANGE || rawRangeY < PRACTICAL_MIN_RANGE;
+      // Default range chosen to mirror DEFAULT_CALIBRATION (rangeX≈0.70,
+      // rangeY≈0.60) — the values the cursor mapping is tuned for.
+      const FALLBACK_RANGE_X = 0.70;
+      const FALLBACK_RANGE_Y = 0.60;
+      const finalRangeX = usedFallbackRange ? FALLBACK_RANGE_X : rawRangeX;
+      const finalRangeY = usedFallbackRange ? FALLBACK_RANGE_Y : rawRangeY;
+
+      const cal: PoseCalibrationData = {
+        leftX: Math.min(0.95, anchorMirX + finalRangeX / 2),
+        rightX: Math.max(0.05, anchorMirX - finalRangeX / 2),
+        topY: Math.max(0.05, anchor.normY - finalRangeY / 2),
+        bottomY: Math.min(0.95, anchor.normY + finalRangeY / 2),
+      };
+
+      if (usedFallbackRange) {
+        console.warn('[wizard] CAPTURED RANGE TOO NARROW — using DEFAULT-width range');
       }
+      console.log(`[wizard] final cal (recentered on user neutral): leftX=${cal.leftX.toFixed(3)} rightX=${cal.rightX.toFixed(3)} topY=${cal.topY.toFixed(3)} bottomY=${cal.bottomY.toFixed(3)}`);
 
       savePoseCalibration(cal);
-      speak(usedFallback
+      speak(usedFallbackRange
         ? 'Calibration saved with a wide range so the cursor reaches the full screen.'
         : 'Calibration saved. Now lets test your accuracy.');
 

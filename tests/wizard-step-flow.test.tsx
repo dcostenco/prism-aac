@@ -393,10 +393,11 @@ describe('TrackingSetupWizard — narrow-range fallback (head-tracking accessibi
     expect(rangeY).toBeCloseTo(0.60, 2);
   });
 
-  it('genuine wide-range corners save the raw computed cal (no fallback)', async () => {
-    // User can reach screen corners — captured range is healthy.
+  it('wide corners centered on (0.5, 0.5) save raw range with midpoint at (0.5, 0.5)', async () => {
+    // User can reach screen corners AND their neutral pose IS the
+    // midpoint of corners → recentering produces the same cal as raw.
     const saveSpy = await captureFullFlow(
-      [0.5, 0.5], // center
+      [0.5, 0.5], // center matches centroid of corners below
       [
         [0.85, 0.20], // TL
         [0.15, 0.20], // TR
@@ -406,11 +407,41 @@ describe('TrackingSetupWizard — narrow-range fallback (head-tracking accessibi
     );
     expect(saveSpy).toHaveBeenCalledTimes(1);
     const cal = saveSpy.mock.calls[0][0];
-    // Raw cal: leftX = max mirroredX = max(0.15, 0.85, 0.85, 0.15) = 0.85.
-    // rightX = min mirroredX = 0.15.
+    // anchorMirX = 1 - 0.5 = 0.5. rawRangeX = 0.70.
+    // leftX = 0.5 + 0.35 = 0.85, rightX = 0.5 - 0.35 = 0.15.
     expect(cal.leftX).toBeCloseTo(0.85, 2);
     expect(cal.rightX).toBeCloseTo(0.15, 2);
-    expect(cal.bottomY - cal.topY).toBeGreaterThan(0.10);
+    expect(cal.topY).toBeCloseTo(0.20, 2);
+    expect(cal.bottomY).toBeCloseTo(0.80, 2);
+  });
+
+  it('wide corners but OFF-CENTER neutral: cal recenters on captured center (Image #46 fix)', async () => {
+    // User reclining on sofa — their neutral facing-center pose is
+    // normY=0.665 (head tilted slightly down). Corners span a healthy
+    // range but their centroid is NOT where the user's neutral is.
+    // Without recentering: cursor offset 170px from target when
+    // facing center. With recentering: cursor lands on target.
+    const saveSpy = await captureFullFlow(
+      [0.455, 0.665], // captured center — Image #46 actual values
+      [
+        [0.80, 0.50], // TL — corners centroid normY = 0.50
+        [0.20, 0.50], // TR
+        [0.20, 0.80], // BR
+        [0.80, 0.80], // BL
+      ],
+    );
+    const cal = saveSpy.mock.calls[0][0];
+    // Raw cal would give topY=0.50 bottomY=0.80 (Y-midpoint = 0.65).
+    // Captured user neutral normY=0.665.
+    // After recenter, Y-midpoint of cal == 0.665.
+    const calYMid = (cal.topY + cal.bottomY) / 2;
+    expect(calYMid).toBeCloseTo(0.665, 2);
+    // X recenter: anchorMirX = 1 - 0.455 = 0.545.
+    const calXMid = (cal.leftX + cal.rightX) / 2;
+    expect(calXMid).toBeCloseTo(0.545, 2);
+    // Range is preserved (not the narrow-fallback path).
+    expect(cal.leftX - cal.rightX).toBeCloseTo(0.60, 2); // raw rangeX = 0.85-0.20 = 0.60... wait, 0.80-0.20 = 0.60
+    expect(cal.bottomY - cal.topY).toBeCloseTo(0.30, 2);
   });
 
   it('Y-axis-only narrow (user can pan but not nod) still triggers fallback', async () => {
