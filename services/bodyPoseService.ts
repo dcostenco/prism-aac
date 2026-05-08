@@ -22,12 +22,13 @@
 
 import { acquireCamera, type CameraLease } from './cameraStream';
 import { isValidCornerCalibration } from '@/lib/safeValidation';
-// Stabilization stack — same modules headTracker uses (TRACKING_RELIABILITY.md
-// items D / E / F). Body pose path was previously unprotected: no Kalman,
-// no ego-motion suppression, no baseline drift correction. Wired here in
-// May 2026 after user reported "wiggling fast → false moves" + "spec was
-// for heavy jitter in a car" — that's exactly what these modules guard.
-import { Kalman1D } from './kalmanFilter1D';
+// Stabilization stack — TRACKING_RELIABILITY.md items D / E / F.
+// Smoother is One Euro Filter (Casiez 2012) instead of Kalman1D —
+// MediaPipe + Chromium both use One Euro for real-time UI input;
+// our prior Kalman was the outlier. Confidence-aware wrapper keeps
+// the visibility-tracking behavior we needed for cheap webcams.
+// Research report 2026-05-08 in CHANGELOG.
+import { ConfidenceAwareOneEuro } from './oneEuroFilter';
 import { classifyMotion, type Point2D } from './egoMotion';
 import { BaselineTracker } from './recalibration';
 
@@ -538,17 +539,24 @@ export function startPoseTracker(
   let lastLearnerCommitFrame = 0;
 
   // ── Stabilization stack (TRACKING_RELIABILITY.md D + E + F) ─────────────
-  // Same modules headTracker uses, now also wired into the body-pose
-  // path. Life-critical for AAC users — the body-pose path was
-  // previously unprotected: no Kalman, no ego-motion suppression, no
-  // baseline drift correction. Wired May 2026.
-  // Per-axis Kalman replaces the velocity-adaptive EMA. Measurement
-  // noise scales with MediaPipe per-landmark visibility — low
-  // confidence frames hold the cursor instead of following noise.
-  const KALMAN_PROCESS_NOISE = 4; // px²/frame, matches head-tracker default
-  const kalmanX = new Kalman1D(KALMAN_PROCESS_NOISE);
-  const kalmanY = new Kalman1D(KALMAN_PROCESS_NOISE);
-  let kalmanInitialized = false;
+  // Smoother: confidence-aware One Euro Filter (Casiez CHI 2012).
+  // Two parameters (`mincutoff`, `beta`) instead of Kalman's Q/R
+  // tuning. The confidence-aware wrapper modulates `mincutoff` with
+  // MediaPipe's per-landmark visibility — low-vis frames smooth
+  // harder, high-vis frames track responsively.
+  //
+  // Tuning: mincutoff 1.0 Hz at high confidence (Casiez recommended
+  // starting value); 0.3 Hz at low confidence (heavy smoothing for
+  // partly-out-of-frame poses). beta 0.007 keeps lag low during
+  // deliberate fast moves. Both are conservative defaults; the
+  // adaptive cutoff handles the rest.
+  const oneEuroX = new ConfidenceAwareOneEuro({
+    freq: 30, mincutoffHigh: 1.0, mincutoffLow: 0.3, beta: 0.007,
+  });
+  const oneEuroY = new ConfidenceAwareOneEuro({
+    freq: 30, mincutoffHigh: 1.0, mincutoffLow: 0.3, beta: 0.007,
+  });
+  let oneEuroInitialized = false;
   // Ego-motion suppression: previous-frame landmark snapshot. When
   // ALL landmarks shift uniformly (zero per-landmark residual), the
   // CAMERA moved (car bump, lap-held laptop wobble), not the user.
@@ -934,22 +942,30 @@ export function startPoseTracker(
           }
           if (currLandmarksForEgo.length > 0) prevLandmarksForEgo = currLandmarksForEgo;
 
-          // ── Confidence-aware Kalman smoothing (item D) ──
-          // Replaces velocity-adaptive EMA. Measurement noise scales
-          // with the chosen landmark's visibility, so low-confidence
-          // frames hold the cursor instead of following the noise.
+          // ── Confidence-aware One Euro smoothing (item D) ──
+          // Casiez CHI 2012. MediaPipe + Chromium use One Euro for
+          // real-time UI input; it tracks the jitter-vs-lag trade-off
+          // better than Kalman on noisy variable-confidence streams.
+          // The confidence-aware wrapper modulates `mincutoff` with
+          // visibility, so low-confidence frames smooth harder.
           const measurementConfidence = Math.max(0.05, Math.min(1, frameChosenVis));
-          if (!kalmanInitialized) {
-            kalmanX.snapTo(rawX);
-            kalmanY.snapTo(rawY);
-            kalmanInitialized = true;
+          if (!oneEuroInitialized) {
+            oneEuroX.snapTo(rawX);
+            oneEuroY.snapTo(rawY);
+            oneEuroInitialized = true;
           }
+          const nowMs = Date.now();
           if (suppressForEgoMotion) {
-            sx = kalmanX.predict();
-            sy = kalmanY.predict();
+            // During ego-motion, hold the previous filtered value.
+            // (One Euro doesn't have an explicit predict-step like
+            // Kalman, but skipping the update is equivalent — the
+            // filter just doesn't advance until the next non-ego
+            // frame.)
+            sx = oneEuroX.value;
+            sy = oneEuroY.value;
           } else {
-            sx = kalmanX.update(rawX, measurementConfidence);
-            sy = kalmanY.update(rawY, measurementConfidence);
+            sx = oneEuroX.update(rawX, measurementConfidence, nowMs);
+            sy = oneEuroY.update(rawY, measurementConfidence, nowMs);
           }
 
           // ── Baseline drift correction (item F) ──

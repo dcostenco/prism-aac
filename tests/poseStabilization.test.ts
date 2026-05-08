@@ -237,7 +237,7 @@ describe('BaselineTracker — drift correction (item F)', () => {
   });
 
   it('detects center drift after warmup (mean shifts away from baseline)', () => {
-    const b = new BaselineTracker({ warmupMs: 100, halfLifeMs: 200 });
+    const b = new BaselineTracker({ minWarmupMs: 100, meanHalfLifeMs: 200 });
     let t = 0;
     // Phase 1: user centered around (0.5, 0.5) for 5s
     for (let i = 0; i < 200; i++) {
@@ -259,7 +259,7 @@ describe('BaselineTracker — drift correction (item F)', () => {
   });
 
   it('does not suggest spurious correction for a stationary user', () => {
-    const b = new BaselineTracker({ warmupMs: 100 });
+    const b = new BaselineTracker({ minWarmupMs: 100 });
     let t = 0;
     for (let i = 0; i < 400; i++) {
       // Tiny noise around 0.5 but no real drift
