@@ -326,7 +326,21 @@ Paste or upload a photo of a worksheet, screenshot of a webpage, picture of a te
 ### 🧩 Chrome extension — same reading-assistant features in any text field
 The PrismAAC web app covers the reading-assistant flow inside its own surface. The Chrome extension (`chrome-extension/`) brings the **same behavior to ANY text field on ANY site** — Gmail, Google Docs, Word Online, school portals, banking forms — closing the only Read & Write gap that wasn't reachable from a web page alone.
 
-**Install (developer mode for now):**
+![PrismAAC Reading Assistant — speak as you type, with word-by-word highlight, in any text field](docs/screenshots/extension-marquee.png)
+
+The floating overlay attaches above any focused text field. Tap **▶ Speak** to re-read, or just keep typing — finishing a sentence with `.?!` reads it back automatically with each word lighting up in yellow as it's spoken:
+
+![PrismAAC overlay above a compose page, mid-sentence with "school" highlighted yellow as TTS speaks it](docs/screenshots/extension-overlay.png)
+
+Translate-while-speaking shows BOTH the source line (small italic) and the translated line (full size, with active-word highlight as it's spoken). 50+ languages via Google's free public endpoint (no API key):
+
+![PrismAAC overlay translating English to Romanian — source line "I had a really good day at school today" with translated "Am avut o zi foarte bună la școală astăzi" below, "foarte" highlighted](docs/screenshots/extension-translate.png)
+
+Options page — settings sync across the user's Chrome profile via `chrome.storage.sync`. Per-site disable list, voice picker, rate / volume / pitch sliders, language pickers, all opt-in:
+
+![PrismAAC extension options page — speak triggers, target language Romanian, voice picker, rate/volume/pitch sliders](docs/screenshots/extension-options.png)
+
+**Install (developer mode for now — Chrome Web Store listing pending review):**
 
 ```sh
 cd chrome-extension

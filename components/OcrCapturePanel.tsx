@@ -56,10 +56,57 @@ export default function OcrCapturePanel() {
 
   if (sidePanel !== 'ocr-capture') return null;
 
+  // Slim mode when nothing's loaded yet — same pattern AIChatPanel +
+  // PdfReaderPanel use so the qwerty underneath gets full natural
+  // height instead of being squeezed by a flex-[3] panel claiming
+  // space for an empty preview area (per "where is full keyboard"
+  // user feedback 2026-05-08).
+  const hasContent = !!(previewUrl || loading || error || result);
+
+  if (!hasContent) {
+    return (
+      <section
+        aria-label="OCR capture"
+        data-testid="ocr-capture-panel"
+        data-state="slim"
+        className="shrink-0 surface-bar border-y border-theme"
+      >
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">👁</span>
+            <span className="font-bold">Screenshot Reader (OCR)</span>
+            <span className="text-xs text-muted hidden sm:inline">— lang: {tesseractCodeFor(language)} — pick an image to read</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <label
+              data-testid="ocr-capture-pick"
+              className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#2196F3] text-white cursor-pointer"
+            >
+              ＋ Open image
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onPick}
+                className="hidden"
+                data-testid="ocr-capture-input"
+              />
+            </label>
+            <button
+              onClick={() => { tapFeedback(); close(); }}
+              aria-label="Close OCR"
+              className="aac-btn rounded-md px-2 py-1 text-muted text-lg"
+            >×</button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       aria-label="OCR capture"
       data-testid="ocr-capture-panel"
+      data-state="expanded"
       className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden"
     >
       <header className="flex items-center justify-between px-3 py-2 border-b border-theme shrink-0">
