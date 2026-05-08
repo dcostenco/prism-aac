@@ -112,13 +112,36 @@ export default function PrismApp() {
   // future panel that owns its input layer.
   //
   // New rule: hide the global qwerty ONLY for panels that have their
-  // own primary keyboard. The user still has a working keyboard — just
-  // the panel-specific one. For every other panel (categories, schedule,
-  // ai-chat, aac-chat, marketplace, ...) the qwerty stays mounted with a
-  // sane min-height so flex-[3] panels can't squeeze it to 130px (the
-  // "only the top two rows are visible" bug, also reported May 2026).
-  const PANELS_WITH_OWN_KEYBOARD = new Set(['math']);
-  const showQwerty = !PANELS_WITH_OWN_KEYBOARD.has(sidePanel);
+  // own primary keyboard or that don't need typing at all. The user
+  // still has a working interaction model — just not the qwerty:
+  //   • math:               math cell-grid keyboard
+  //   • games:              tap-to-play game cards, no typing
+  //   • marketplace:        browse-and-tap, no typing
+  //   • schedule:           date/time pickers + tap, no typing
+  //   • caregiver:          settings UI
+  //   • picture-editor:     drawing canvas
+  //   • music-composer:     note tiles
+  //
+  // For ai-chat / aac-chat the qwerty STAYS — those are the panels
+  // that need typed input. Keeping qwerty mounted there with a sane
+  // min-height was earlier added to fix the "only the top two rows
+  // are visible" squeeze when a flex-[3] panel sat above.
+  //
+  // User reports May 2026 (Images #19, #20, #21):
+  //   • Games panel had a full qwerty under it eating ~40% of screen
+  //     ("why is keyboard needed for games?")
+  //   • Marketplace / Schedule had the same — keyboard for nothing.
+  // The fix is the allow-list below.
+  const PANELS_WITHOUT_QWERTY = new Set([
+    'math',
+    'games',
+    'marketplace',
+    'schedule',
+    'caregiver',
+    'picture-editor',
+    'music-composer',
+  ]);
+  const showQwerty = !PANELS_WITHOUT_QWERTY.has(sidePanel);
   const { rtl } = useT();
 
   useEffect(() => {
