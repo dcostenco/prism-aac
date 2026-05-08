@@ -30,6 +30,12 @@ import { isValidCornerCalibration } from '@/lib/safeValidation';
 // Research report 2026-05-08 in CHANGELOG.
 import { ConfidenceAwareOneEuro } from './oneEuroFilter';
 import {
+  MEDIAPIPE_WASM_URL,
+  POSE_LANDMARKER_LITE_URL,
+  FACE_DETECTOR_URL,
+  FpsWatchdog,
+} from './mediapipeRuntime';
+import {
   classifyMotion,
   fitSimilarityRansac,
   applyTransform,
@@ -155,14 +161,12 @@ async function initPoseLandmarker(): Promise<boolean> {
     try {
       const vision = await import('@mediapipe/tasks-vision');
       const { PoseLandmarker, FilesetResolver } = vision;
-      const fileset = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-      );
+      const fileset = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
       for (const delegate of ['GPU', 'CPU'] as const) {
         try {
           poseLandmarker = await PoseLandmarker.createFromOptions(fileset, {
             baseOptions: {
-              modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task',
+              modelAssetPath: POSE_LANDMARKER_LITE_URL,
               delegate,
             },
             runningMode: 'VIDEO',
@@ -188,7 +192,7 @@ async function initPoseLandmarker(): Promise<boolean> {
           const { FaceDetector: MPFace } = vision;
           poseLandmarker = await MPFace.createFromOptions(fileset, {
             baseOptions: {
-              modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite',
+              modelAssetPath: FACE_DETECTOR_URL,
               delegate: 'GPU',
             },
             runningMode: 'VIDEO',
@@ -574,6 +578,15 @@ export function startPoseTracker(
   // suggest calibration corrections without forcing recalibration.
   const baselineTracker = new BaselineTracker();
   let lastBaselineApplyTime = 0;
+  // FPS watchdog (TRACKING_RELIABILITY.md item D + research review):
+  // detect thermal throttling on iPad mini 6 / low-end devices and
+  // surface a starvation event so the UI can warn the caregiver
+  // (or, in a future commit, swap to MoveNet Lightning).
+  const fpsWatchdog = new FpsWatchdog({
+    starvationThresholdFps: 12, // < 12 fps for 3s → starved
+    starvationConsecutiveMs: 3000,
+  });
+  let starvationEventDispatched = false;
 
   // Clamp cursor smoothing to valid range
   const cursorAlpha = Math.max(0.05, Math.min(0.3, opts.cursorSmoothing));
@@ -836,6 +849,21 @@ export function startPoseTracker(
           consecutiveErrors = 0;
 
           opts.onStatusChange('tracking', activeTarget);
+
+          // FPS watchdog — only ticks on frames where we got a valid
+          // pose, so dropped/blank frames don't artificially deflate
+          // the FPS estimate. Dispatch a window event ONCE when the
+          // model goes starved so a UI warning can fire.
+          fpsWatchdog.tick(typeof performance !== 'undefined' ? performance.now() : Date.now());
+          if (!starvationEventDispatched && fpsWatchdog.isStarved()) {
+            starvationEventDispatched = true;
+            console.warn(`[PoseTracker] FPS STARVED — model running at ${fpsWatchdog.fps().toFixed(1)} fps for >3s. Device may be throttled or model too heavy.`);
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('prism-pose-starved', {
+                detail: { fps: fpsWatchdog.fps() },
+              }));
+            }
+          }
 
           // Online learning calibration — observe the user's actual
           // pose envelope and adapt on the fly. Replaces the prior

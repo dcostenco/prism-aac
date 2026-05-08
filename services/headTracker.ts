@@ -31,6 +31,11 @@ import { BaselineTracker } from './recalibration';
 import { isValidCornerCalibration } from '@/lib/safeValidation';
 import { acquireCamera, type CameraLease } from './cameraStream';
 import { emitTrackingEvent } from './trackingTelemetry';
+import {
+  MEDIAPIPE_WASM_URL,
+  FACE_DETECTOR_URL,
+  FACE_LANDMARKER_URL,
+} from './mediapipeRuntime';
 
 // ── Public Types ────────────────────────────────────────────────────────────
 
@@ -100,17 +105,10 @@ async function initMediaPipeFace(): Promise<boolean> {
     try {
       const vision = await import('@mediapipe/tasks-vision');
       const { FaceDetector: MPFace, FilesetResolver } = vision;
-      const fileset = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-      );
+      const fileset = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
       mpFaceDetector = await MPFace.createFromOptions(fileset, {
         baseOptions: {
-          // MediaPipe ships this asset as .tflite (not .task) — the .task
-          // URL returns HTTP 404 (probed 2026-05-08). The fallback
-          // FaceDetector silently failed to initialize, leaving head
-          // tracking dependent on FaceLandmarker alone with no degraded
-          // path on phones where Landmarker hits the GPU memory cap.
-          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
+          modelAssetPath: FACE_DETECTOR_URL,
           delegate: 'GPU',
         },
         runningMode: 'VIDEO',
@@ -144,12 +142,10 @@ async function initMediaPipeFaceLandmarker(): Promise<boolean> {
     try {
       const vision = await import('@mediapipe/tasks-vision');
       const { FaceLandmarker, FilesetResolver } = vision;
-      const fileset = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-      );
+      const fileset = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
       mpFaceLandmarker = await FaceLandmarker.createFromOptions(fileset, {
         baseOptions: {
-          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+          modelAssetPath: FACE_LANDMARKER_URL,
           delegate: 'GPU',
         },
         runningMode: 'VIDEO',

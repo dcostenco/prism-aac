@@ -135,13 +135,11 @@ export function startReliabilityProbe(opts: ReliabilityProbeOpts): ReliabilityPr
             // Lazy-import MediaPipe (same module the head tracker uses).
             const vision = await import('@mediapipe/tasks-vision');
             const { FaceDetector, FilesetResolver } = vision;
-            const fileset = await FilesetResolver.forVisionTasks(
-                'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-            );
+            const { MEDIAPIPE_WASM_URL, FACE_DETECTOR_URL } = await import('./mediapipeRuntime');
+            const fileset = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
             detector = await FaceDetector.createFromOptions(fileset, {
                 baseOptions: {
-                    // .tflite, not .task — see headTracker.ts:108 (May 2026 probe).
-                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
+                    modelAssetPath: FACE_DETECTOR_URL,
                     delegate: 'GPU',
                 },
                 runningMode: 'VIDEO',

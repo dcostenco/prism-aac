@@ -324,14 +324,13 @@ export async function initHandDetector(): Promise<boolean> {
     try {
       const vision = await import('@mediapipe/tasks-vision');
       const { HandLandmarker, FilesetResolver } = vision;
+      const { MEDIAPIPE_WASM_URL, HAND_LANDMARKER_URL } = await import('./mediapipeRuntime');
 
-      const filesetResolver = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-      );
+      const filesetResolver = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
 
       handLandmarkerInstance = await HandLandmarker.createFromOptions(filesetResolver, {
         baseOptions: {
-          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task',
+          modelAssetPath: HAND_LANDMARKER_URL,
           delegate: 'GPU',
         },
         runningMode: 'VIDEO',
