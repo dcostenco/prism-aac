@@ -540,12 +540,24 @@ export function startPoseTracker(
   let lastFrameTime = 0;
 
   const calibration = loadPoseCalibration();
+  // Detect whether the loaded calibration is the factory default
+  // (no wizard run yet) or a user-customized one. Drives the
+  // learner's blend mode below: bootstrap when defaults, expand-
+  // only when wizard ran. User design 2026-05-08: "initial
+  // calibration could be done more precisely with caregiver
+  // support; additional calibration should be adaptive [but not
+  // overwrite]". Truth = wizard. Adaptive = nudge.
+  const isFactoryDefaults =
+    Math.abs(calibration.leftX - DEFAULT_CALIBRATION.leftX) < 0.001 &&
+    Math.abs(calibration.rightX - DEFAULT_CALIBRATION.rightX) < 0.001 &&
+    Math.abs(calibration.topY - DEFAULT_CALIBRATION.topY) < 0.001 &&
+    Math.abs(calibration.bottomY - DEFAULT_CALIBRATION.bottomY) < 0.001;
   const sensitivityScale = opts.sensitivity / 5;
-  // Online learner — observes the user's actual pose envelope as
-  // they use the app and updates calibration on the fly. No wizard
-  // required; it's the primary path for accessibility users who
-  // can't complete formal calibration. (Wizard, if completed,
-  // seeds the saved calibration — the learner refines from there.)
+  // Online learner — observes the user's actual pose envelope. In
+  // bootstrap mode (no wizard run yet) it can fully populate the
+  // calibration from observed motion. In expand-only mode (wizard
+  // ran) it can only widen the rect when the user reaches further
+  // than the wizard captured — never shrinks the wizard's truth.
   const learner = new OnlineCalibrationLearner();
   let lastLearnerCommitFrame = 0;
 
@@ -882,20 +894,42 @@ export function startPoseTracker(
           learner.push(mirroredX, clampedY);
           const learned = learner.maybeEmitCalibration();
           if (learned) {
-            // Blend the learned calibration into the live one with
-            // a slow EMA so cursor doesn't lurch when the bounds
-            // shift. Faster blend (0.15) when the learner first
-            // emits, slower (0.05) once a saved calibration is in
-            // place — respects the wizard's contribution.
-            const isFirstCommit = lastLearnerCommitFrame === 0;
-            const BLEND = isFirstCommit ? 0.5 : 0.05;
-            calibration.leftX = calibration.leftX * (1 - BLEND) + learned.leftX * BLEND;
-            calibration.rightX = calibration.rightX * (1 - BLEND) + learned.rightX * BLEND;
-            calibration.topY = calibration.topY * (1 - BLEND) + learned.topY * BLEND;
-            calibration.bottomY = calibration.bottomY * (1 - BLEND) + learned.bottomY * BLEND;
-            // Persist every ~5 seconds so a reload starts close to
-            // where the user left off. (frameCount is per-tracker;
-            // no wall clock available without shipping more state.)
+            if (isFactoryDefaults) {
+              // BOOTSTRAP MODE — no wizard run yet. Aggressively
+              // populate the calibration from the user's observed
+              // motion envelope so the cursor starts working
+              // without manual calibration. Fast blend on first
+              // commit (0.5 → ~50% of observed bounds), slower
+              // thereafter (0.1) so subsequent commits gently
+              // refine.
+              const isFirstCommit = lastLearnerCommitFrame === 0;
+              const BLEND = isFirstCommit ? 0.5 : 0.1;
+              calibration.leftX = calibration.leftX * (1 - BLEND) + learned.leftX * BLEND;
+              calibration.rightX = calibration.rightX * (1 - BLEND) + learned.rightX * BLEND;
+              calibration.topY = calibration.topY * (1 - BLEND) + learned.topY * BLEND;
+              calibration.bottomY = calibration.bottomY * (1 - BLEND) + learned.bottomY * BLEND;
+            } else {
+              // EXPAND-ONLY MODE — wizard ran (cal differs from
+              // defaults). The wizard captured the user's range
+              // with caregiver assistance; that's our floor. We
+              // only nudge bounds OUTWARD when we observe the
+              // user reaching further. Drift correction
+              // (re-centering) is handled by BaselineTracker
+              // via offset suggestions further down.
+              const EXPAND_BLEND = 0.05;
+              if (learned.leftX > calibration.leftX) {
+                calibration.leftX += (learned.leftX - calibration.leftX) * EXPAND_BLEND;
+              }
+              if (learned.rightX < calibration.rightX) {
+                calibration.rightX += (learned.rightX - calibration.rightX) * EXPAND_BLEND;
+              }
+              if (learned.topY < calibration.topY) {
+                calibration.topY += (learned.topY - calibration.topY) * EXPAND_BLEND;
+              }
+              if (learned.bottomY > calibration.bottomY) {
+                calibration.bottomY += (learned.bottomY - calibration.bottomY) * EXPAND_BLEND;
+              }
+            }
             try { savePoseCalibration(calibration); } catch { /* */ }
             lastLearnerCommitFrame++;
           }
@@ -1002,14 +1036,22 @@ export function startPoseTracker(
           const transformMagnitude = Math.hypot(cameraTransform.tx, cameraTransform.ty)
             + Math.abs(Math.log(cameraTransform.scale))
             + Math.abs(cameraTransform.theta);
-          // Only suppress on genuine camera shocks. The One Euro
-          // smoother (Stage 5) handles ongoing micro-jitter via its
-          // adaptive cutoff; ego-motion suppression should ONLY fire
-          // for the obvious cases (sudden whole-body translation
-          // from a road bump). 0.03 normalized ≈ 19 px on a 640-px
-          // frame — well above natural body sway.
-          const EGO_MOTION_THRESHOLD = 0.03;
-          const suppressForEgoMotion = cameraTransformInliers >= 3 && transformMagnitude > EGO_MOTION_THRESHOLD;
+          // Binary ego-motion suppression DISABLED 2026-05-08 after
+          // user reports of "can't pass step 1, stayed still". The
+          // detector kept finding rigid-camera-motion in normal
+          // sitting (breathing, micro-posture, head moving toward
+          // the center target) and freezing the cursor for the
+          // user. The One Euro smoother (Stage 5) already handles
+          // ongoing jitter via its noise-floor-modulated cutoff —
+          // that path is robust and well-tested. The continuous
+          // ego-motion subtraction (research roadmap Step 2.5) is
+          // the proper fix; until then, NEVER suppress and let the
+          // smoother carry the load. cameraTransform is still
+          // computed and exposed via the diag event for visibility.
+          const suppressForEgoMotion = false;
+          // Touch the variables so TS doesn't complain about unused.
+          void cameraTransformInliers;
+          void transformMagnitude;
 
           // ── Confidence-aware One Euro smoothing (item D) ──
           // Casiez CHI 2012. MediaPipe + Chromium use One Euro for

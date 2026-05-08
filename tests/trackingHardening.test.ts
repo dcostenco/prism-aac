@@ -18,6 +18,79 @@
 import { describe, it, expect } from 'vitest';
 import { BaselineTracker } from '@/services/recalibration';
 
+describe('Calibration adaptive policy — wizard truth + adaptive nudge (2026-05-08)', () => {
+  // Pin the two-mode learner blend logic as wired in
+  // services/bodyPoseService.ts:
+  //   • bootstrap mode (factory defaults) → full blend toward
+  //     observed bounds so cursor works without wizard
+  //   • expand-only mode (wizard ran) → only widen, never shrink.
+  //     Wizard captured the user's range with caregiver assistance,
+  //     that's the floor; adaptive layer just nudges outward when
+  //     user reaches further than wizard captured.
+  type Cal = { leftX: number; rightX: number; topY: number; bottomY: number };
+
+  const bootstrapBlend = (cal: Cal, learned: Cal, isFirst: boolean): Cal => {
+    const BLEND = isFirst ? 0.5 : 0.1;
+    return {
+      leftX: cal.leftX * (1 - BLEND) + learned.leftX * BLEND,
+      rightX: cal.rightX * (1 - BLEND) + learned.rightX * BLEND,
+      topY: cal.topY * (1 - BLEND) + learned.topY * BLEND,
+      bottomY: cal.bottomY * (1 - BLEND) + learned.bottomY * BLEND,
+    };
+  };
+
+  const expandOnlyBlend = (cal: Cal, learned: Cal): Cal => {
+    const E = 0.05;
+    return {
+      leftX: learned.leftX > cal.leftX ? cal.leftX + (learned.leftX - cal.leftX) * E : cal.leftX,
+      rightX: learned.rightX < cal.rightX ? cal.rightX + (learned.rightX - cal.rightX) * E : cal.rightX,
+      topY: learned.topY < cal.topY ? cal.topY + (learned.topY - cal.topY) * E : cal.topY,
+      bottomY: learned.bottomY > cal.bottomY ? cal.bottomY + (learned.bottomY - cal.bottomY) * E : cal.bottomY,
+    };
+  };
+
+  it('bootstrap mode replaces factory defaults toward observed range', () => {
+    const factory: Cal = { leftX: 0.75, rightX: 0.05, topY: 0.2, bottomY: 0.8 };
+    const learned: Cal = { leftX: 0.7, rightX: 0.3, topY: 0.4, bottomY: 0.6 };
+    const next = bootstrapBlend(factory, learned, true);
+    expect(next.leftX).toBeCloseTo((0.75 + 0.7) / 2, 3);
+    expect(next.rightX).toBeCloseTo((0.05 + 0.3) / 2, 3);
+  });
+
+  it('expand-only mode does NOT shrink wizard cal when user uses smaller range', () => {
+    // Wizard captured wide range with caregiver help.
+    const wizard: Cal = { leftX: 0.85, rightX: 0.15, topY: 0.20, bottomY: 0.80 };
+    // User during normal use only reaches smaller range.
+    const learned: Cal = { leftX: 0.65, rightX: 0.40, topY: 0.40, bottomY: 0.65 };
+    const next = expandOnlyBlend(wizard, learned);
+    expect(next.leftX).toBe(wizard.leftX);
+    expect(next.rightX).toBe(wizard.rightX);
+    expect(next.topY).toBe(wizard.topY);
+    expect(next.bottomY).toBe(wizard.bottomY);
+  });
+
+  it('expand-only mode DOES widen when user reaches further than wizard captured', () => {
+    const wizard: Cal = { leftX: 0.70, rightX: 0.30, topY: 0.30, bottomY: 0.70 };
+    const learned: Cal = { leftX: 0.90, rightX: 0.10, topY: 0.15, bottomY: 0.85 };
+    const next = expandOnlyBlend(wizard, learned);
+    expect(next.leftX).toBeGreaterThan(wizard.leftX);
+    expect(next.leftX).toBeLessThan(learned.leftX); // partial blend
+    expect(next.rightX).toBeLessThan(wizard.rightX);
+    expect(next.rightX).toBeGreaterThan(learned.rightX);
+    expect(next.topY).toBeLessThan(wizard.topY);
+    expect(next.bottomY).toBeGreaterThan(wizard.bottomY);
+  });
+
+  it('expand-only is asymmetric: widens reached side, preserves the other', () => {
+    const wizard: Cal = { leftX: 0.70, rightX: 0.30, topY: 0.30, bottomY: 0.70 };
+    // User reached further LEFT (higher leftX) but stayed inside on RIGHT.
+    const mixed: Cal = { leftX: 0.85, rightX: 0.40, topY: 0.30, bottomY: 0.70 };
+    const next = expandOnlyBlend(wizard, mixed);
+    expect(next.leftX).toBeGreaterThan(wizard.leftX);
+    expect(next.rightX).toBe(wizard.rightX); // NOT shrunk
+  });
+});
+
 describe('Hardening — BaselineTracker variance clamp (review finding MED-3)', () => {
   it('variance never goes negative on step change in mean', () => {
     const b = new BaselineTracker({
