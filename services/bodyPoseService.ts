@@ -954,38 +954,31 @@ export function startPoseTracker(
           rawX = Math.max(0, Math.min(window.innerWidth, rawX));
           rawY = Math.max(0, Math.min(window.innerHeight, rawY));
 
-          // ── Ego-motion compensation (TRACKING_RELIABILITY.md item E,
-          //    upgraded May 2026 from binary centroid-residual gate to
-          //    Procrustes/RANSAC similarity transform — Umeyama 1991) ──
+          // ── Ego-motion compensation (TRACKING_RELIABILITY.md item E) ──
           //
-          // Snapshot the high-visibility landmarks from THIS frame and
-          // compare with last frame. fitSimilarityRansac recovers a
-          // 4-DOF rigid-body transform (tx, ty, scale, rotation) from
-          // the inlier majority. The transform represents how the
-          // CAMERA moved (lap-held laptop wobble, vehicle roll/pitch).
-          // Subtracting it from the chosen tracking landmark removes
-          // the shake while preserving the user's deliberate motion
-          // (which was the outlier the RANSAC rejected).
+          // CRITICAL: the rigid-majority subset MUST exclude landmarks
+          // that move with the tracked body part. For nose/head
+          // tracking, ears move WITH the head — including them in
+          // "rigid majority" causes RANSAC to classify normal head
+          // movement as camera shake and suppress every cursor update
+          // (user report 2026-05-08, Image #32). Subset is target-
+          // dependent.
           //
-          // Catches in-plane rotation that the legacy classifyMotion
-          // missed: vehicle roll moves top landmarks opposite bottom
-          // landmarks; centroid stays put; classifyMotion sees
-          // residuals exceed threshold and DOESN'T suppress, so the
-          // cursor jets around with each bump. RANSAC fits the
-          // rotation directly.
+          // Threshold raised from 0.005 → 0.03 normalized: small
+          // natural body sway (breathing, posture micro-adjustments)
+          // produces ~0.005-0.015 of frame-to-frame transform that
+          // we DO want to track, not suppress. 0.03 only catches
+          // genuine camera shocks (vehicle bump, lap wobble).
+          const isHeadTracking = activeTarget === 'nose';
+          const SAFE_LANDMARK_INDICES_HEAD = [11, 12, 23, 24]; // shoulders + hips ONLY
+          const SAFE_LANDMARK_INDICES_BODY = [7, 8, 11, 12, 23, 24]; // ears + shoulders + hips
+          const safeIndices = isHeadTracking
+            ? SAFE_LANDMARK_INDICES_HEAD
+            : SAFE_LANDMARK_INDICES_BODY;
+
           const currLandmarksForEgo: Point2D[] = [];
-          const SAFE_LANDMARK_INDICES = [
-            // Pose stability anchors: shoulders, hips, ears.
-            // These move minimally with normal pointing motion so
-            // they're the rigid-majority RANSAC will lock onto.
-            // Wrists/index fingers excluded — those are the OUTLIERS
-            // we want to keep moving.
-            7, 8,   // ears
-            11, 12, // shoulders
-            23, 24, // hips
-          ];
           if (frameLandmarks) {
-            for (const idx of SAFE_LANDMARK_INDICES) {
+            for (const idx of safeIndices) {
               const p = frameLandmarks[idx];
               if (p && (p.visibility ?? 0) >= 0.5) {
                 currLandmarksForEgo.push({ x: p.x, y: p.y });
@@ -1005,15 +998,18 @@ export function startPoseTracker(
             cameraTransformInliers = fit.inlierCount;
           }
           if (currLandmarksForEgo.length > 0) prevLandmarksForEgo = currLandmarksForEgo;
-          // Treat as ego-motion when we got a valid rigid fit AND it
-          // differs meaningfully from identity. This is now used for
-          // the diagnostic flag (`suppressForEgoMotion`) and the
-          // legacy fallback paths; the actual compensation happens
-          // by SUBTRACTING the transform, not by gating updates.
+
           const transformMagnitude = Math.hypot(cameraTransform.tx, cameraTransform.ty)
             + Math.abs(Math.log(cameraTransform.scale))
             + Math.abs(cameraTransform.theta);
-          const suppressForEgoMotion = cameraTransformInliers >= 3 && transformMagnitude > 0.005;
+          // Only suppress on genuine camera shocks. The One Euro
+          // smoother (Stage 5) handles ongoing micro-jitter via its
+          // adaptive cutoff; ego-motion suppression should ONLY fire
+          // for the obvious cases (sudden whole-body translation
+          // from a road bump). 0.03 normalized ≈ 19 px on a 640-px
+          // frame — well above natural body sway.
+          const EGO_MOTION_THRESHOLD = 0.03;
+          const suppressForEgoMotion = cameraTransformInliers >= 3 && transformMagnitude > EGO_MOTION_THRESHOLD;
 
           // ── Confidence-aware One Euro smoothing (item D) ──
           // Casiez CHI 2012. MediaPipe + Chromium use One Euro for

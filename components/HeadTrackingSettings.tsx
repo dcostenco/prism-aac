@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isHeadTrackingSupported, listCameras, saveCalibration, type CalibrationData } from '@/services/headTracker';
-import { requestMotionPermission } from '@/services/deviceMotion';
+// requestMotionPermission removed — toggle moved to InputModesSettings.
 import { isSafeMode, clearDriftHistory } from '@/services/safeMode';
 import { useT } from '@/engine/useT';
 import { tapFeedback } from '@/services/feedback';
@@ -99,41 +99,14 @@ export default function HeadTrackingSettings() {
   return (
     <div>
       <h3 className="text-muted font-semibold text-base uppercase tracking-wider mb-3">
-        {t('head_tracking')}
+        {t('head_tracking')} <span className="text-xs text-muted normal-case">(advanced)</span>
       </h3>
 
-      {/* Enable / Disable Toggle */}
-      <label className="flex items-center justify-between py-2">
-        <span className="text-primary text-lg">{t('enable_head_tracking')}</span>
-        <button
-          onClick={async () => {
-            tapFeedback();
-            const willEnable = !settings.headTrackingEnabled;
-            // Request iOS DeviceMotion permission BEFORE flipping the
-            // toggle. iOS 13+ requires this from a user-gesture context;
-            // doing it here (inside the click handler) is the only place
-            // it'll succeed. On Android / desktop / older iOS this is a
-            // no-op (`not-required` / `unsupported`). We don't block the
-            // toggle on the result — IMU is a bonus signal, not required.
-            if (willEnable) {
-              try { await requestMotionPermission(); } catch { /* */ }
-            }
-            settings.update({ headTrackingEnabled: willEnable });
-          }}
-          aria-pressed={settings.headTrackingEnabled}
-          aria-label={t('enable_head_tracking')}
-          className={`w-14 h-8 rounded-full transition-colors ${
-            settings.headTrackingEnabled ? 'bg-[#4CAF50]' : 'bg-[#999]'
-          }`}
-        >
-          <div
-            className={`w-6 h-6 rounded-full bg-white transition-transform mx-1 ${
-              settings.headTrackingEnabled ? 'translate-x-6' : ''
-            }`}
-          />
-        </button>
-      </label>
-
+      {/* Enable toggle removed in May 2026 — was duplicated with the
+          one in InputModesSettings (user report 2026-05-08:
+          "Enable head tracking is duplicated in settings"). The
+          master toggle lives in Input Modes; this section only
+          exposes the advanced tuning when the master is on. */}
       {settings.headTrackingEnabled && (
         <div className="space-y-4 mt-3">
           {/* Dwell Time Slider */}
