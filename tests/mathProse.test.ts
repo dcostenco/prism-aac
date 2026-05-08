@@ -8,7 +8,7 @@
  * into spoken English BEFORE the text reaches TTS.
  */
 import { describe, it, expect } from 'vitest';
-import { mathTextToProse } from '@/services/mathProse';
+import { mathTextToProse, chunkForTts } from '@/services/mathProse';
 
 describe('mathTextToProse', () => {
   it('handles the user-reported algebra worksheet OCR', () => {
@@ -83,5 +83,70 @@ describe('mathTextToProse', () => {
     // Each transformation ends with a period+space so TTS pauses
     // between problems instead of running them together.
     expect(out.split(/\.\s/).length).toBeGreaterThan(2);
+  });
+});
+
+describe('chunkForTts', () => {
+  it('returns the input as a single chunk when under maxChars', () => {
+    expect(chunkForTts('Short text.', 250)).toEqual(['Short text.']);
+  });
+
+  it('returns empty array for empty/whitespace input', () => {
+    expect(chunkForTts('', 250)).toEqual([]);
+    expect(chunkForTts('   ', 250)).toEqual([]);
+  });
+
+  it('splits on sentence boundaries first', () => {
+    const text = 'First sentence here. Second sentence here. Third sentence here.';
+    const chunks = chunkForTts(text, 30);
+    // Each chunk is sentence-bounded — no chunk starts mid-sentence.
+    chunks.forEach((c) => {
+      expect(c.length).toBeLessThanOrEqual(30);
+      // Each chunk should start with capitalized "First"/"Second"/"Third"
+      expect(c[0]).toMatch(/[A-Z]/);
+    });
+    expect(chunks.join(' ')).toContain('First sentence');
+    expect(chunks.join(' ')).toContain('Third sentence');
+  });
+
+  it('keeps every chunk under maxChars (worksheet OCR sample)', () => {
+    // Realistic length — mirrors what mathTextToProse outputs for the
+    // user's algebra worksheet (~459 chars in trace evidence).
+    const prose =
+      'Problem 0. x plus 15 is less than 12. Grade 9. x is less than 12 minus 15. ' +
+      'Problem 1. y plus 7 is greater than 3. y is greater than 3 minus 7. ' +
+      'Problem 2. 2 times z minus 4 equals 10. z equals 7. ' +
+      'Problem 3. negative 3 plus a is less than or equal to 8. a is less than or equal to 11. ' +
+      'Problem 4. 5 squared plus 3 cubed equals 52.';
+    const chunks = chunkForTts(prose, 250);
+    chunks.forEach((c) => expect(c.length).toBeLessThanOrEqual(250));
+    expect(chunks.length).toBeGreaterThan(1);
+    // Round-trip: joining the chunks reconstructs the input content
+    // (whitespace may differ — we just need every "Problem N." preserved).
+    const joined = chunks.join(' ');
+    for (let n = 0; n <= 4; n++) {
+      expect(joined).toContain(`Problem ${n}.`);
+    }
+  });
+
+  it('falls back to comma split when a sentence exceeds maxChars', () => {
+    const longSent = 'a' + ', b'.repeat(60) + '.';
+    // longSent is one sentence ~243 chars; with maxChars=80 it must
+    // split on commas, never hard-cut mid-clause.
+    const chunks = chunkForTts(longSent, 80);
+    chunks.forEach((c) => expect(c.length).toBeLessThanOrEqual(80));
+    // Reassembled text should still contain all the b's
+    expect(chunks.join(' ').match(/b/g)?.length).toBe(60);
+  });
+
+  it('falls back to word boundary when a comma-split clause still exceeds maxChars', () => {
+    const longWord = 'word '.repeat(50).trim() + '.';
+    // 50 words * 5 chars = 250 chars in one comma-less sentence.
+    const chunks = chunkForTts(longWord, 40);
+    chunks.forEach((c) => {
+      expect(c.length).toBeLessThanOrEqual(40);
+      // Never split mid-word — every chunk must consist of whole words.
+      expect(c).toMatch(/^(\w+\.?)( \w+\.?)*$/);
+    });
   });
 });

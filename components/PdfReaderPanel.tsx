@@ -18,7 +18,8 @@ import { tapFeedback } from '@/services/feedback';
 import { aacSpeak } from '@/services/aacSpeak';
 import { extractPdfText, isUnreadable, type PdfPage } from '@/services/pdfReader';
 import { runOcrOnPdf } from '@/services/ocr';
-import { mathTextToProse } from '@/services/mathProse';
+import { mathTextToProse, chunkForTts } from '@/services/mathProse';
+import { useRef } from 'react';
 import { stopSpeech } from '@/services/speechService';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { useEffect } from 'react';
@@ -61,6 +62,10 @@ export default function PdfReaderPanel() {
 
   const stopSpeakingOcr = useCallback(() => {
     tapFeedback();
+    // Bump the queue token so any in-flight chunked playback (see
+    // speakOcrResult) breaks out of its loop instead of advancing
+    // to the next chunk after the current one is interrupted.
+    speakSeqRef.current++;
     stopSpeech();
     setIsSpeaking(false);
   }, []);
@@ -123,15 +128,40 @@ export default function PdfReaderPanel() {
     }
   }, [pdfFile, language]);
 
-  const speakOcrResult = useCallback(() => {
+  // Chunk-queue cancellation token — incremented when user taps Stop
+  // OR re-taps Speak so any in-flight queue stops feeding new chunks.
+  const speakSeqRef = useRef(0);
+
+  const speakOcrResult = useCallback(async () => {
     if (!ocrResult) return;
     tapFeedback();
-    // Math-text → spoken prose. OCR'd worksheet content is full of
-    // operator glyphs (`<`, `+`, `=`, `-`) that TTS reads literally
-    // — "x+15<12" without preprocessing comes out as a robotic char-
-    // by-char dump. mathTextToProse() rewrites it to spoken English
-    // ("x plus 15, is less than 12") so the listener can follow it.
-    aacSpeak(mathTextToProse(ocrResult), speechRate, speechVolume, activeTone);
+    // Math-text → spoken prose, then chunked into TTS-safe pieces.
+    // Trace evidence (May 2026): the Inworld backend rejects long
+    // inputs (~459 chars from a typical worksheet OCR returns
+    // "Inworld TTS unavailable and Azure fallback also failed"
+    // → falls back to robotic Web Speech). Short chunks (~250 chars
+    // sentence-bounded) consistently land on the neural tier.
+    const prose = mathTextToProse(ocrResult);
+    const chunks = chunkForTts(prose, 250);
+    const mySeq = ++speakSeqRef.current;
+    for (const chunk of chunks) {
+      if (mySeq !== speakSeqRef.current) return; // stop / re-tap
+      // Wait for highlight-end before queueing the next chunk so they
+      // play sequentially, not interleaved.
+      await new Promise<void>((resolve) => {
+        let done = false;
+        const finish = () => { if (!done) { done = true; resolve(); } };
+        const unsub = subscribeTtsHighlight((ev) => {
+          if (ev.type === 'tts-highlight-end') { unsub(); finish(); }
+        });
+        // Hard timeout: if neither start nor end fires within an
+        // estimate-derived budget, move on so we don't deadlock the
+        // queue. ~50 ms per char is generous; real Inworld is faster.
+        const budgetMs = Math.min(20_000, 1500 + chunk.length * 50);
+        setTimeout(() => { unsub(); finish(); }, budgetMs);
+        aacSpeak(chunk, speechRate, speechVolume, activeTone);
+      });
+    }
   }, [ocrResult, speechRate, speechVolume, activeTone]);
 
   const speakPage = useCallback((page: PdfPage) => {

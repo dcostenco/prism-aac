@@ -130,3 +130,57 @@ export function mathTextToProse(input: string): string {
 
   return s.trim();
 }
+
+/**
+ * Chunk a long prose string into TTS-safe pieces.
+ *
+ * The Inworld TTS backend (synalux portal's primary tier) returns
+ * "Inworld TTS unavailable and Azure fallback also failed" on long
+ * inputs — empirically anything over ~300 chars trips it, falls back
+ * to client-side Web Speech (robotic). Short inputs (~40 chars) work
+ * cleanly. Splitting OCR results into sentence-bounded chunks keeps
+ * every request small enough to land on the neural tier.
+ *
+ * Splits on `. ` boundaries first (preserves sentence phrasing); if
+ * a single sentence is itself longer than maxChars, falls back to
+ * splitting on commas, then on word boundaries — never hard-cutting
+ * mid-word.
+ */
+export function chunkForTts(text: string, maxChars = 250): string[] {
+  if (!text?.trim()) return [];
+  if (text.length <= maxChars) return [text];
+
+  const out: string[] = [];
+  // Sentence-level split.
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  let current = '';
+  const flush = () => { if (current.trim()) out.push(current.trim()); current = ''; };
+
+  for (const sent of sentences) {
+    if (sent.length > maxChars) {
+      // A single sentence too long — split on commas.
+      flush();
+      const parts = sent.split(/(?<=,)\s+/);
+      for (const part of parts) {
+        if (part.length > maxChars) {
+          // Comma-split still too long — fall back to word boundary.
+          flush();
+          const words = part.split(/\s+/);
+          for (const w of words) {
+            if ((current + ' ' + w).length > maxChars) flush();
+            current = current ? `${current} ${w}` : w;
+          }
+        } else {
+          if ((current + ' ' + part).length > maxChars) flush();
+          current = current ? `${current} ${part}` : part;
+        }
+      }
+      flush();
+    } else {
+      if ((current + ' ' + sent).length > maxChars) flush();
+      current = current ? `${current} ${sent}` : sent;
+    }
+  }
+  flush();
+  return out;
+}
