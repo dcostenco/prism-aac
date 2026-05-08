@@ -440,7 +440,7 @@ async function speakGemini(
   }
 }
 
-export async function speakAzure(
+export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   text: string,
   lang: string,
   tone: ToneStyle,
