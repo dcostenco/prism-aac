@@ -155,6 +155,28 @@ export default function HeadTrackingSettings() {
             </div>
           </div>
 
+          {/* Eye / Gaze tracking toggle */}
+          <div className="flex items-center justify-between py-2 border-t border-theme">
+            <div>
+              <span className="text-primary text-base font-semibold">Eye / Gaze tracking</span>
+              <p className="text-muted text-xs mt-0.5">
+                Eyes move the cursor instead of head rotation.
+                Reach screen corners without turning your head.
+              </p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={settings.headTrackingEyeGaze}
+              onClick={() => {
+                tapFeedback();
+                settings.update({ headTrackingEyeGaze: !settings.headTrackingEyeGaze });
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.headTrackingEyeGaze ? 'bg-[#4CAF50]' : 'bg-[#999]'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.headTrackingEyeGaze ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
           {/* Camera Selector */}
           {cameras.length > 1 && (
             <div>

@@ -66,6 +66,20 @@ export interface HeadTrackerOptions {
   /** Fire when the post-disable reliability probe says it's safe to re-enable. */
   onAutoRecover?: () => void;
   /**
+   * When true, use iris / gaze position as the cursor signal instead of
+   * (or blended with) face-box centre. Iris can reach screen corners with
+   * eye movement alone — no head rotation required. Critical for users
+   * who can't turn their head (AAC users reclining, motor impairment).
+   * Requires FaceLandmarker to be available (gracefully falls back to
+   * face-box if FaceLandmarker data is absent).
+   */
+  useEyeGaze?: boolean;
+  /**
+   * 0 = face-box only (default), 1 = iris only, 0.5 = equal blend.
+   * Clamped to [0,1]. Only used when useEyeGaze is true.
+   */
+  eyeGazeWeight?: number;
+  /**
    * Optional DeviceMotion-aware drift suppression. When the host is shaking
    * (laptop on lap in moving car), the IMU reports it directly — we use
    * that to NOT trigger drift on what's actually environmental motion.
@@ -302,6 +316,13 @@ interface CameraSource {
   lastLandmarkPoints: { x: number; y: number }[] | null;
   /** Previous frame's `lastLandmarkPoints` — needed for ego-motion delta. */
   prevLandmarkPoints: { x: number; y: number }[] | null;
+  /**
+   * Latest iris gaze position (avg of right+left iris landmarks from
+   * FaceLandmarker). Normalized 0-1 in video-frame space. Null until
+   * FaceLandmarker runs and iris landmarks are visible.
+   * Right iris center: landmark 468, Left iris center: landmark 473.
+   */
+  lastIrisPosition: { x: number; y: number } | null;
   active: boolean;
 }
 
@@ -341,6 +362,7 @@ function createCameraSource(index: number): CameraSource | null {
     lastLandmarks: null,
     lastLandmarkPoints: null,
     prevLandmarkPoints: null,
+    lastIrisPosition: null,
     active: false,
   };
 }
@@ -524,6 +546,19 @@ async function detectFromSource(source: CameraSource): Promise<CameraDetection> 
         }
         if (sparse.length === EGO_MOTION_LANDMARK_INDICES.length) {
           source.lastLandmarkPoints = sparse;
+        }
+        // Iris gaze — landmarks 468 (right iris center) and 473 (left
+        // iris center) in FaceLandmarker's 478-point mesh. Average the
+        // two to get a gaze position that's robust to asymmetric blinks.
+        // The x-axis is mirrored relative to the face-box (landmarks are
+        // in raw camera frame space, same as face-box normX/normY).
+        const rightIris = allLandmarks[468];
+        const leftIris  = allLandmarks[473];
+        if (rightIris && leftIris) {
+          source.lastIrisPosition = {
+            x: (rightIris.x + leftIris.x) / 2,
+            y: (rightIris.y + leftIris.y) / 2,
+          };
         }
       }
     } catch { /* FaceLandmarker failed — gesture detection degrades gracefully */ }
@@ -1005,7 +1040,24 @@ export function startHeadTracker(
       return;
     }
 
-    const { normX, normY } = fused;
+    let { normX, normY } = fused;
+
+    // Eye-gaze blend — when useEyeGaze is true, blend iris position
+    // into the cursor signal. Iris can reach screen corners with eye
+    // movement alone; face-box only moves with head rotation. AAC
+    // users with limited head mobility benefit enormously.
+    //
+    // eyeGazeWeight=1 → pure iris tracking (eyes only).
+    // eyeGazeWeight=0.5 → 50% iris, 50% face-box (default blend).
+    // eyeGazeWeight=0 → face-box only (legacy head tracking).
+    if (opts.useEyeGaze) {
+      const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.8));
+      const iris = primarySource.lastIrisPosition;
+      if (iris) {
+        normX = normX * (1 - w) + iris.x * w;
+        normY = normY * (1 - w) + iris.y * w;
+      }
+    }
 
     // Background recalibration (gap F) — see applyRecalibration below.
     applyRecalibration(normX, normY, now);

@@ -143,6 +143,8 @@ export default function HeadTrackingOverlay() {
   const enabled = useSettingsStore((s) => s.headTrackingEnabled);
   const dwellMs = useSettingsStore((s) => s.headTrackingDwellMs);
   const sensitivity = useSettingsStore((s) => s.headTrackingSensitivity);
+  const eyeGaze = useSettingsStore((s) => s.headTrackingEyeGaze);
+  const eyeGazeWeight = useSettingsStore((s) => s.headTrackingEyeGazeWeight);
   const gestureConfig = useSettingsStore((s) => s.gestureConfig);
   const driftAutoDisable = useSettingsStore((s) => s.headTrackingDriftAutoDisable);
   const driftThresholdPx = useSettingsStore((s) => s.headTrackingDriftThresholdPx);
@@ -226,6 +228,8 @@ export default function HeadTrackingOverlay() {
       dwellMs: effectiveDwellMs,
       sensitivity: effectiveSensitivity,
       smoothing: 0.15,
+      useEyeGaze: eyeGaze,
+      eyeGazeWeight,
       isDeviceShaking: () => isShakingRef.current,
       // Drift safety net — see services/headTrackerStability.ts. The
       // detector lives inside the tracker; here we just react to its
@@ -305,7 +309,7 @@ export default function HeadTrackingOverlay() {
       gestureDetectorRef.current = null;
     };
     // Re-create tracker when key settings change
-  }, [enabled, effectiveDwellMs, effectiveSensitivity, effectiveGestureConfig, driftAutoDisable, driftThresholdPx, driftWindowMs, setSettings, animateDwellProgress]);
+  }, [enabled, effectiveDwellMs, effectiveSensitivity, eyeGaze, eyeGazeWeight, effectiveGestureConfig, driftAutoDisable, driftThresholdPx, driftWindowMs, setSettings, animateDwellProgress]);
 
   // Render the drift recovery toast even when tracking is disabled, so the
   // user has a visible "Try again" path that doesn't depend on the cursor.
