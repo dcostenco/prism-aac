@@ -23,8 +23,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   listIntegrations,
-  connectProvider,
-  openConnectPopup,
   subscribeToIntegrationEvents,
   type IntegrationProvider,
 } from '@/services/integrationsService';
@@ -69,42 +67,37 @@ export default function IntegrationsSettings() {
     return unsub;
   }, [refresh]);
 
-  const handleConnect = useCallback(async (p: IntegrationProvider) => {
+  const handleConnect = useCallback((p: IntegrationProvider) => {
     if (p.status !== 'available') return;
     if (!p.connectUrl) return;
 
-    // Open the popup SYNCHRONOUSLY in the click handler before any
-    // await — Safari (especially iOS Safari on iPad) revokes the
-    // user-gesture token after a microtask boundary, and a deferred
-    // window.open returns null silently. Without this the user sees
-    // "nothing happened" because the popup was blocked but the
-    // failure surfaced ~50ms later when handleConnect resumed.
-    const popup = openConnectPopup();
-    if (!popup) {
-      tapFeedback();
-      setStatusMsg('Popup was blocked — allow popups for synalux.ai and try again.');
-      return;
-    }
-
+    // Same-window navigation, NOT popup. iPad Safari aggressively
+    // blocks popups (even synchronously-opened ones) and opens
+    // surviving popups in background tabs that the user doesn't
+    // notice — both manifest as "nothing happens". Same-window
+    // navigation avoids the entire popup category of bugs.
+    //
+    // Trade-off: the user leaves PrismAAC during OAuth and lands
+    // back at /prism-aac (home, not Settings) on success. Acceptable
+    // for a Connect action since the user explicitly opted in.
+    //
+    // The synalux callback redirects to the `return` path appending
+    // ?connected=1&provider=<id>&scope=<key>; HomePage / SettingsModal
+    // listen for those params and surface a toast ("✓ Gmail connected").
     tapFeedback();
-    setConnecting(p.id);
-    setStatusMsg(`Opening ${p.label}… switch to the new tab to authorize.`);
-    try {
-      const res = await connectProvider(p, popup);
-      if (res.ok) {
-        setStatusMsg(`✓ ${p.label} connected`);
-        await refresh();
-      } else if (res.reason === 'popup-blocked') {
-        setStatusMsg('Popup was blocked — allow popups for synalux.ai and try again.');
-      } else if (res.reason === 'popup-closed-without-success') {
-        setStatusMsg(`${p.label} not connected yet. Try again, or finish the auth in the popup.`);
-      } else {
-        setStatusMsg(`Could not start ${p.label} connect.`);
-      }
-    } finally {
-      setConnecting(null);
+    const url = new URL(p.connectUrl);
+    if (!url.searchParams.has('return')) {
+      url.searchParams.set('return', '/prism-aac');
     }
-  }, [refresh]);
+    setStatusMsg(`Opening ${p.label}…`);
+    setConnecting(p.id);
+    // Tiny delay so the status message paints before navigation kills
+    // this DOM. Without it the user sees nothing between tap and the
+    // OAuth screen — same UX bug as the popup approach, just smaller.
+    setTimeout(() => {
+      window.location.href = url.toString();
+    }, 50);
+  }, []);
 
   const grouped = {
     chat: providers.filter((p) => p.kind === 'chat'),

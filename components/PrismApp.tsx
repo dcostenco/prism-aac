@@ -37,7 +37,25 @@ import { registerPanicListeners } from '@/services/panicService';
 import { preloadKokoro } from '@/services/kokoroTTS';
 import { startInboxPolling } from '@/services/inboxService';
 import { startContactsSync } from '@/services/contactsIntegrationService';
+import { broadcastIntegrationEvent } from '@/services/integrationsService';
 import { useT } from '@/engine/useT';
+
+const PROVIDER_LABEL: Record<string, string> = {
+  'google-gmail': 'Gmail',
+  'microsoft-mail': 'Outlook',
+  google: 'Google',
+  microsoft: 'Microsoft',
+  slack: 'Slack',
+  discord: 'Discord',
+  github: 'GitHub',
+  telegram: 'Telegram',
+  sms: 'SMS',
+  whatsapp: 'WhatsApp',
+  viber: 'Viber',
+  facebook: 'Facebook Messenger',
+  imessage: 'iMessage',
+  facetime: 'FaceTime',
+};
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
@@ -97,6 +115,9 @@ export default function PrismApp() {
   const ensureSeed = usePredictionStore((s) => s.ensureSeed);
   const refreshAuth = useAuthStore((s) => s.refresh);
   const [hydrated, setHydrated] = useState(false);
+  // Banner shown after returning from the OAuth same-window redirect.
+  // Set by the URL-handler useEffect below; auto-dismisses after 4s.
+  const [connectFeedback, setConnectFeedback] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
 
   const seedTemplates = useCategoryStore((s) => s.seedTemplates);
   const highContrast = useSettingsStore((s) => s.highContrast);
@@ -178,6 +199,57 @@ export default function PrismApp() {
       stopContactsSync();
     };
   }, [runDecay, seedTemplates, ensureSeed, refreshAuth]);
+
+  // OAuth-return handler — synalux's connect callback redirects the
+  // user's window to /prism-aac?connected=1&provider=<id>&scope=<key>
+  // (success) or ?error=<reason> (failure). We pop the toast, broadcast
+  // to other tabs so their integration cards refresh, then clean the
+  // query string so a hard reload doesn't re-trigger the toast.
+  //
+  // Same-window navigation (replacing the popup pattern) is the only
+  // OAuth flow that works reliably on iPad Safari — popups get blocked
+  // or open in background tabs that the user doesn't notice. The
+  // banner is the user's only confirmation that the connect succeeded;
+  // skip it and they wonder if anything happened.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    const connected = sp.get('connected');
+    const errParam = sp.get('error');
+    const provider = sp.get('provider') || '';
+    if (!connected && !errParam) return;
+
+    const label = PROVIDER_LABEL[provider] || provider || 'provider';
+    if (connected === '1') {
+      setConnectFeedback({ kind: 'ok', msg: `✓ ${label} connected` });
+      try {
+        broadcastIntegrationEvent({
+          type: 'provider-connected',
+          provider,
+          at: Date.now(),
+        });
+      } catch { /* */ }
+    } else if (errParam) {
+      const human = errParam === 'state_mismatch'
+        ? 'Connect session expired — try again.'
+        : errParam === 'missing_code'
+          ? `Authorization for ${label} was cancelled.`
+          : `Couldn't connect ${label}: ${errParam}`;
+      setConnectFeedback({ kind: 'err', msg: human });
+    }
+
+    // Strip the query so hard-reload doesn't re-fire the toast.
+    sp.delete('connected');
+    sp.delete('provider');
+    sp.delete('scope');
+    sp.delete('error');
+    const cleanedQs = sp.toString();
+    const newUrl = window.location.pathname + (cleanedQs ? `?${cleanedQs}` : '') + window.location.hash;
+    window.history.replaceState({}, '', newUrl);
+
+    const t = setTimeout(() => setConnectFeedback(null), 4000);
+    return () => clearTimeout(t);
+  }, []);
 
   // Warm up the SHARED AudioContext on first user interaction.
   //
@@ -292,6 +364,23 @@ export default function PrismApp() {
     <ErrorBoundary>
       <SyncProvider>
         <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`}>
+          {/* Connect-OAuth return banner. Auto-dismisses after 4s
+              (set by the URL-handler useEffect). Only confirmation
+              the user gets that the OAuth same-window redirect
+              succeeded. */}
+          {connectFeedback && (
+            <div
+              role="status"
+              data-testid="connect-feedback-banner"
+              className={`fixed top-4 right-4 z-[200] max-w-sm rounded-xl shadow-lg px-4 py-3 text-sm font-bold ${
+                connectFeedback.kind === 'ok'
+                  ? 'bg-[#4CAF50] text-white'
+                  : 'bg-[#F44336] text-white'
+              }`}
+            >
+              {connectFeedback.msg}
+            </div>
+          )}
           <Toolbar />
           {/* Math panel takes over the full viewport — hide AAC chrome
               (banner / message / predictions / categories) so the
