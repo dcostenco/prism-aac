@@ -211,11 +211,20 @@ export async function connectProvider(provider: IntegrationProvider): Promise<Co
   // Append a return marker so synalux's connect-callback can close
   // the popup by navigating to a "done" page that calls window.close().
   // Synalux's existing callback honors `?return=` and appends
-  // ?connected=1&provider=&scope= — we read those if the popup ends up
-  // navigating back to a URL we control.
+  // ?connected=1&provider=&scope=.
+  //
+  // CRITICAL: send a RELATIVE path, not an absolute URL. Synalux's
+  // sanitizeReturnTo() rejects anything not starting with '/' as a
+  // security guard against open-redirect attacks (see
+  // synalux-private/portal/src/lib/oauth-providers.ts) — passing an
+  // absolute URL like 'https://synalux.ai/...' silently falls back
+  // to /dashboard, leaving the popup on the synalux dashboard
+  // forever. The popup never calls window.close(), prism-aac waits
+  // 10 min for window.closed, and every Connect button stays
+  // disabled the whole time.
   const url = new URL(provider.connectUrl);
   if (!url.searchParams.has('return')) {
-    url.searchParams.set('return', `${SYNALUX_BASE.replace(/\/$/, '')}/integrations/connect-done`);
+    url.searchParams.set('return', '/integrations/connect-done');
   }
 
   const popup = window.open(url.toString(), 'synalux-connect', POPUP_FEATURES);

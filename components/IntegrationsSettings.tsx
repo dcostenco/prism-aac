@@ -171,7 +171,16 @@ export default function IntegrationsSettings() {
                   {p.status === 'available' && (
                     <button
                       onClick={() => handleConnect(p)}
-                      disabled={connecting !== null}
+                      // Only disable THIS button while it's connecting,
+                      // not every other Connect button on the page.
+                      // Bug history (May 2026): disabled={connecting !== null}
+                      // froze every row when one popup got stuck because the
+                      // synalux /integrations/connect-done page didn't exist
+                      // → popup never closed → connecting never cleared →
+                      // all buttons looked clickable but weren't. Even with
+                      // connect-done now wired, scope the disable so a stuck
+                      // popup never disables the others.
+                      disabled={connecting === p.id}
                       data-testid={`integration-connect-${p.id}`}
                       className="aac-btn rounded-lg px-3 py-1.5 bg-[#4CAF50] text-white font-bold text-xs disabled:opacity-40"
                     >
