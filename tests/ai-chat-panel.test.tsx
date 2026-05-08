@@ -91,7 +91,12 @@ describe('AIChatPanel — layout state machine', () => {
     // Critical: slim mode must NOT contain a "Question:" label section
     // (that earlier sat above the button row, eating ~30px). The slim
     // strip's ONLY child div is the [mic, Ask AI, ✕] flex row.
-    expect(panel.textContent).not.toMatch(/^.*Question.*Ask AI.*$/s);
+    // Both substrings together would mean the old two-row layout
+    // (label "Question" sitting above the button row).
+    const tc = panel.textContent ?? '';
+    const hasQuestion = tc.includes('Question') || tc.includes('question_label');
+    const hasAsk = tc.includes('Ask AI') || tc.includes('ask_ai');
+    expect(hasQuestion && hasAsk).toBe(false);
     // Ask AI button must use h-10 (40px) not py-3/py-4 (which produce
     // ~60-80px buttons that overlap the qwerty top row).
     const ask = container.querySelector('[data-testid="ai-ask-slim"]') as HTMLElement;

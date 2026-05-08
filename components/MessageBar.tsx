@@ -440,7 +440,13 @@ export default function MessageBar() {
           aria-live="polite"
           aria-label={t('message_text')}
         >
-          {text ? <ColoredText text={text} activeWordIndex={activeWordIndex} /> : <span className="text-dim">{t('type_here')}</span>}
+          {/* Empty state: render nothing instead of a "Type here..."
+              placeholder — on narrow viewports it clipped to "Typ" /
+              "Type" which looked like a render bug (user report
+              Image #26 2026-05-08). The Auto / Tone / Speak / ⌫
+              buttons frame the input area clearly enough on their
+              own; the placeholder was redundant noise. */}
+          {text && <ColoredText text={text} activeWordIndex={activeWordIndex} />}
         </div>
         {translated && (
           <div className="text-[clamp(0.75rem,2vw,1.1rem)] text-[#2196F3] font-semibold leading-snug line-clamp-2 whitespace-normal min-h-[2.5em]">

@@ -122,7 +122,7 @@ export default function MathKeyboardRegion({ className = '' }: { className?: str
           (Placeholder, single line) both render inside this stable
           shell. Internal overflow-y-auto handles overflow gracefully. */}
       <div
-        className="h-[clamp(220px,26svh,300px)] overflow-y-auto"
+        className="h-[clamp(280px,32svh,380px)] overflow-hidden"
         data-testid="math-keyboard-panel"
       >
         {activeCategory === 'main' && <MathMainKeyboard />}
@@ -249,43 +249,41 @@ function MathAdvMathKeyboard() {
   );
 }
 
-// ── Letters keyboard — Phase 2A first sketch ─────────────────────
+// ── Letters keyboard — full a-z, no pagination ──────────────────
+//
+// User report 2026-05-08 (Image #25): "a-z should be full a-z - fix
+// it". The earlier paginated layout (16 letters + "q-z →" toggle)
+// forced the user through an extra tap to reach q-z; on Programming
+// chips the same paginated identifier row meant typing a name like
+// `quack` or `xyz` was a multi-tap dance. Full 26 letters in a 13×2
+// grid fits in ~100 px and removes the toggle entirely.
 
-const LETTERS_AP = 'abcdefghijklmnop'.split('');
-const LETTERS_QZ = 'qrstuvwxyz'.split('');
+const LETTERS_AZ = 'abcdefghijklmnopqrstuvwxyz'.split('');
+// Kept for callers that still want to address the historical halves
+// (test fixtures, etc.). Not used by the keyboard itself anymore.
+const LETTERS_AP = LETTERS_AZ.slice(0, 16);
+const LETTERS_QZ = LETTERS_AZ.slice(16);
 
 function MathLettersKeyboard() {
-  const [page, setPage] = useState<'a-p' | 'q-z'>('a-p');
   const commitGlyph = useMathGridStore((s) => s.commitGlyph);
-  const list = page === 'a-p' ? LETTERS_AP : LETTERS_QZ;
   const KEY_BASE =
     'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
-    'flex items-center justify-center min-h-[44px] active:translate-y-px';
+    'flex items-center justify-center min-h-[40px] active:translate-y-px';
   return (
-    <div className="p-2 space-y-2" data-testid="math-letters-keyboard" data-page={page}>
-      <div className="flex gap-1.5">
-        <button
-          onClick={() => { tapFeedback(); setPage(page === 'a-p' ? 'q-z' : 'a-p'); }}
-          data-testid="math-letters-page-toggle"
-          aria-label={page === 'a-p' ? 'switch to q-z' : 'switch to a-p'}
-          className={`${KEY_BASE} px-3 py-2.5 text-base bg-[#2196F3] text-white border-transparent`}
-        >
-          {page === 'a-p' ? 'q-z →' : '← a-p'}
-        </button>
-        <div className="grid grid-cols-8 gap-1.5 flex-1">
-          {list.map((ltr) => (
-            <button
-              key={ltr}
-              onClick={() => { keyFeedback(); commitGlyph(ltr); }}
-              data-testid={`math-key-ltr-${ltr}`}
-              data-glyph={ltr}
-              aria-label={ltr}
-              className={`${KEY_BASE} py-2.5 text-xl`}
-            >
-              {ltr}
-            </button>
-          ))}
-        </div>
+    <div className="p-2" data-testid="math-letters-keyboard">
+      <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-1 sm:gap-1.5">
+        {LETTERS_AZ.map((ltr) => (
+          <button
+            key={ltr}
+            onClick={() => { keyFeedback(); commitGlyph(ltr); }}
+            data-testid={`math-key-ltr-${ltr}`}
+            data-glyph={ltr}
+            aria-label={ltr}
+            className={`${KEY_BASE} py-2 text-lg sm:text-xl`}
+          >
+            {ltr}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -591,11 +589,10 @@ const PROG_DIGITS = '0123456789'.split('');
 
 function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
   const commitGlyph = useMathGridStore((s) => s.commitGlyph);
-  // Letter paging + case shift inside the programming panel — without
-  // these the user dead-ends after `class ` because the chip row
-  // doesn't expose a-z while programming-python/java is active and
-  // switching to the Letters chip kicks them out of the keyword set.
-  const [letterPage, setLetterPage] = useState<'a-p' | 'q-z'>('a-p');
+  // Full a-z always visible (no pagination, per 2026-05-08 user report
+  // "scrollable keyboard is unacceptable when typing codes"). Case
+  // shift remains — Java's class names are PascalCase, Python's
+  // CONSTS are SHOUTY_CASE.
   const [shifted, setShifted] = useState(false);
   const KEY_BASE =
     'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
@@ -606,8 +603,8 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
     'bg-[#2196F3] text-white text-sm whitespace-nowrap font-mono';
   const keywords = lang === 'python' ? PYTHON_KEYWORDS : JAVA_KEYWORDS;
   const testidPrefix = lang === 'python' ? 'math-python' : 'math-java';
-  const baseLetters = letterPage === 'a-p' ? LETTERS_AP : LETTERS_QZ;
-  const letters = shifted ? baseLetters.map((l) => l.toUpperCase()) : baseLetters;
+  // Full a-z (no pagination — see comment above on the user report).
+  const letters = shifted ? LETTERS_AZ.map((l) => l.toUpperCase()) : LETTERS_AZ;
   // Code is character-driven on a monospace grid — committing the
   // whole keyword into a single cell stuffed "private" / "String"
   // into one 56 px slot and the glyphs ran into the next cell
@@ -637,13 +634,12 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
           </button>
         ))}
       </div>
-      {/* Identifier row — page-toggled + case-shifted a-z so the user
-          can actually type a class or variable name without leaving
-          the programming chip. Each tap commits a single character. */}
+      {/* Identifier row — full a-z + case shift, no pagination so the
+          user can type any class / variable name without leaving the
+          programming chip or scrolling. Each tap commits one char. */}
       <div
         className="flex gap-1.5"
         data-testid={`${testidPrefix}-letters-row`}
-        data-page={letterPage}
         data-shift={shifted ? '1' : '0'}
       >
         <button
@@ -655,15 +651,7 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
         >
           {shifted ? 'AA' : 'aa'}
         </button>
-        <button
-          onClick={() => { tapFeedback(); setLetterPage(letterPage === 'a-p' ? 'q-z' : 'a-p'); }}
-          data-testid={`${testidPrefix}-letters-page-toggle`}
-          aria-label={letterPage === 'a-p' ? 'switch to q-z' : 'switch to a-p'}
-          className={TOGGLE_BASE}
-        >
-          {letterPage === 'a-p' ? 'q-z →' : '← a-p'}
-        </button>
-        <div className="grid grid-cols-8 gap-1.5 flex-1">
+        <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-1 sm:gap-1.5 flex-1">
           {letters.map((ltr) => (
             <button
               key={ltr}
@@ -671,7 +659,7 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
               data-testid={`${testidPrefix}-ltr-${ltr.toLowerCase()}`}
               data-glyph={ltr}
               aria-label={`letter ${ltr}`}
-              className={`${KEY_BASE} py-2 text-base`}
+              className={`${KEY_BASE} py-1.5 text-base`}
             >
               {ltr}
             </button>
