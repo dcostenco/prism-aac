@@ -95,7 +95,7 @@ test.describe('Keyboard L4 viewport fit (real browser, real layout)', () => {
     });
   });
 
-  test('math panel: qwerty hidden, math Vorbește visible inside viewport', async ({ page, baseURL }, testInfo) => {
+  test('math panel: qwerty hidden, math Done (Gata) visible inside viewport', async ({ page, baseURL }, testInfo) => {
     await bootClean(page, baseURL);
     await setRomanian(page);
     await page.getByRole('button', { name: /^(Math|Matematică)$/ }).click();
@@ -108,10 +108,14 @@ test.describe('Keyboard L4 viewport fit (real browser, real layout)', () => {
     const qBtn = page.getByRole('button', { name: /^Q$/ });
     await expect(qBtn).toHaveCount(0);
 
-    // Math's own Vorbește (Romanian Speak) must be present and fit.
-    const mathSpeak = page.getByRole('button', { name: /Vorbește|Speak/ }).first();
-    await expect(mathSpeak).toBeVisible();
-    const box = await mathSpeak.boundingBox();
+    // The math panel header has a Done button (data-testid pinned across
+    // locales) — speech is on the AAC main MessageBar Speak, not on the
+    // math panel header. Earlier revision of this test expected a
+    // "Vorbește" button inside the math panel that never landed; pinning
+    // the actual surfaced affordance (Done) instead.
+    const mathDone = page.getByTestId('math-panel-done');
+    await expect(mathDone).toBeVisible();
+    const box = await mathDone.boundingBox();
     expect(box).toBeTruthy();
     if (box && viewport) {
       expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);

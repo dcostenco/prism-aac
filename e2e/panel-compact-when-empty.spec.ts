@@ -51,12 +51,22 @@ test.describe('Empty-panel unmount + MessageBar expansion', () => {
     expect(await panel.count(), 'AI Chat panel must unmount when compact').toBe(0);
   });
 
-  test('AAC Chat panel unmounts when there are zero contacts', async ({ page, baseURL }) => {
+  test('AAC Chat panel MOUNTS on zero contacts and shows provider tiles + Settings CTA', async ({ page, baseURL }) => {
+    // The 2026-05-07 user feedback (Image #20) explicitly REVERSED the
+    // earlier "unmount on empty" behavior for AAC Chat: when the user
+    // taps the message toolbar button they want to SEE the messaging UI
+    // (provider list / "add a contact" CTA), not silently get only the
+    // qwerty back. AACChatPanel.tsx line 131-141 implements the empty
+    // state. This test now pins that intentional design.
     await bootClean(page, baseURL);
     await page.getByRole('button', { name: /Send|Mesaj|AAC/i }).first().click();
     await page.waitForTimeout(300);
     const panel = page.locator('[data-testid="aac-chat-panel"]');
-    expect(await panel.count(), 'AAC Chat panel must unmount when compact').toBe(0);
+    expect(await panel.count(), 'AAC Chat panel must MOUNT on zero contacts').toBe(1);
+    // Empty state must offer a path forward — Settings CTA test-id from
+    // CaregiverContactsSettings is the deep-link the user follows.
+    const ctaCount = await page.locator('[data-testid="aac-chat-open-settings"]').count();
+    expect(ctaCount, 'empty state must surface a Settings link').toBeGreaterThan(0);
   });
 
   test('MessageBar expands by 1 line when AI Chat is open', async ({ page, baseURL }) => {

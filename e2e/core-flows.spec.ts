@@ -82,9 +82,13 @@ test('Settings modal opens and shows Synalux account section', async ({ page }) 
   await expect(page.getByText(/Synalux/i).first()).toBeVisible();
 });
 
-test('AI Chat panel opens (modal renders without crashing)', async ({ page }) => {
+test('AI Chat opens — slim strip when text typed (panel unmounts on empty per "keyboard should be full" feedback)', async ({ page }) => {
   await page.getByRole('button', { name: 'AI' }).click();
-  await expect(page.getByText(/AI Chat/i).first()).toBeVisible();
+  // Per AIChatPanel.tsx line 169: with no messages AND no typed text,
+  // the component returns null so the qwerty keyboard isn't squeezed.
+  // Type something so the slim strip appears, then assert it.
+  await page.keyboard.type('hello');
+  await expect(page.locator('[data-testid="ai-chat-panel"][data-state="slim"]')).toBeVisible();
 });
 
 test('Categories panel opens and shows category buttons', async ({ page }) => {
