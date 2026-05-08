@@ -162,24 +162,24 @@ function isPaidTier(): boolean {
 // portal /tts/public route looks up via getVoiceEntry(voiceId) and
 // rejects unknown ids with 400.
 //
-// Romanian + Ukrainian were previously pinned to ro-RO-AlinaNeural /
-// uk-UA-PolinaNeural (Azure voices). That forced the portal route to
-// Azure direct, where SSML `rate="50%"` (from the default speechRate
-// of 0.5) parsed as +50% = 1.5× speed → "chipmunk Romanian" reported
-// in May 2026. We now omit them entirely so prism-aac sends
-// voiceId=undefined, the portal `/tts/public` route picks Inworld
-// TTS-2 (which covers ro/uk/vi/tr via its multilingual model), and
-// the server-side `pickVoice()` in tts-inworld.ts picks the right
-// per-language voice via INWORLD_VOICE_RO / INWORLD_VOICE_UK env or
-// falls back to the multilingual default (Ashley) with the `language`
-// hint set from SSML. Inworld's prosody is gentler and the language
-// hint produces correct Romanian phonemes — no rate-percent ambiguity.
+// Romanian + Ukrainian: re-pinned to Azure neural voices after the
+// rate-percent bug at azureTTS.ts:97-104 was fixed (multiplier syntax,
+// no more chipmunk Romanian). Without this pin the portal sees
+// voiceId=undefined and routes to Inworld TTS-2's multilingual model
+// — which produces correct phonemes but is ~2× slower than the
+// dedicated v1.5-mini voices used for ru/de/etc. AAC users reported
+// "Romanian translation is twice as slow as Russian", and this
+// asymmetry was the root cause: ru went through Sarah on v1.5-mini,
+// ro fell through to TTS-2. Pinning ro/uk to their dedicated Azure
+// neural voices (the same names as the original 2025 setup) restores
+// per-language parity — Azure handles ro-RO and uk-UA natively.
 const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
   en: 'Alex',    es: 'Diego',  fr: 'Sarah',  de: 'Mark',
   pt: 'Sarah',   it: 'Sarah',  nl: 'Sarah',  pl: 'Sarah',
   ja: 'Sarah',   zh: 'Mei',    ko: 'Sarah',  ru: 'Sarah',
   he: 'Sarah',   ar: 'Sarah',  hi: 'Aanya',
-  // ro / uk: intentionally undefined → portal routes to Inworld TTS-2.
+  ro: 'ro-RO-AlinaNeural',
+  uk: 'uk-UA-PolinaNeural',
 };
 
 /**
