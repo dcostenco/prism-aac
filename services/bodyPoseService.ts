@@ -507,6 +507,21 @@ async function isEnvironmentCamera(deviceId: string): Promise<boolean> {
 
 let activeHandle: PoseTrackerHandle | null = null;
 
+// Wizard calibration freeze — when the TrackingSetupWizard is active, the
+// online learner must NOT overwrite the saved calibration. The wizard is
+// the authoritative calibration source; the learner's job is to adapt AFTER
+// the wizard completes, not sabotage in-progress captures.
+//
+// Without this flag the learner overwrites DEFAULT_CALIBRATION (set at
+// wizard-start) within seconds, producing a biased midpoint that leaves
+// the cursor persistently off-center during wizard Steps 1 and 2.
+//
+// Usage: wizard calls freezeLearnerCalSaves() on "Get Started" and
+// unfreezeLearnerCalSaves() on onComplete / onCancel.
+let _learnerCalSavesFrozen = false;
+export function freezeLearnerCalSaves(): void { _learnerCalSavesFrozen = true; }
+export function unfreezeLearnerCalSaves(): void { _learnerCalSavesFrozen = false; }
+
 // ── Main Entry Point ────────────────────────────────────────────────────────
 
 /**
@@ -986,7 +1001,9 @@ export function startPoseTracker(
                 calibration.bottomY += (learned.bottomY - calibration.bottomY) * EXPAND_BLEND;
               }
             }
-            try { savePoseCalibration(calibration); } catch { /* */ }
+            if (!_learnerCalSavesFrozen) {
+              try { savePoseCalibration(calibration); } catch { /* */ }
+            }
             lastLearnerCommitFrame++;
           }
           calibration.rightX = Math.max(0, Math.min(1, calibration.rightX));

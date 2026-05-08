@@ -7,6 +7,8 @@ import {
   computeCalibrationFromCorners,
   loadPoseCalibration,
   DEFAULT_CALIBRATION,
+  freezeLearnerCalSaves,
+  unfreezeLearnerCalSaves,
   type PoseTrackerHandle,
   type TrackingTarget,
   type PoseCalibrationData,
@@ -213,6 +215,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     speak('Hold still. I am looking for you.');
     detectionCountRef.current = {};
     centerSampleRef.current = null;
+    // Freeze learner saves for the entire wizard run. The online learner
+    // overwrites DEFAULT_CALIBRATION within seconds — freezing it keeps
+    // the wizard-set cal stable throughout Steps 1–2.
+    freezeLearnerCalSaves();
     // Wipe any previously-saved calibration so the running tracker's
     // preview cursor uses DEFAULT_CALIBRATION (a sensible starting
     // mapping) instead of a stale posture-mismatched cal from a
@@ -484,6 +490,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       console.log(`[wizard] final cal (recentered on user neutral): leftX=${cal.leftX.toFixed(3)} rightX=${cal.rightX.toFixed(3)} topY=${cal.topY.toFixed(3)} bottomY=${cal.bottomY.toFixed(3)}`);
 
       savePoseCalibration(cal);
+      // Unfreeze learner so it can adapt (expand-only) during accuracy test.
+      unfreezeLearnerCalSaves();
       speak(usedFallbackRange
         ? 'Calibration saved with a wide range so the cursor reaches the full screen.'
         : 'Calibration saved. Now lets test your accuracy.');
@@ -586,11 +594,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
           onClick={() => {
             // Disable finger/camera tracking on cancel so the user
             // isn't left with an uncalibrated tracker after abandoning
-            // the wizard mid-run. The wizard reset DEFAULT_CALIBRATION
-            // at start so any saved cal is now factory defaults — not
-            // their personal calibration — and an active tracker with
-            // factory defaults pointing away from their neutral posture
-            // is worse than no tracker at all.
+            // the wizard mid-run.
+            unfreezeLearnerCalSaves();
             updateSettings({ cameraInputEnabled: false });
             onCancel();
           }}
@@ -825,8 +830,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 <button
                   onClick={() => {
                     tapFeedback();
-                    // temp cal already saved at captureCenter — just
-                    // advance to test without touching the saved cal.
+                    // temp cal already saved at captureCenter — unfreeze
+                    // learner so it adapts during the accuracy test.
+                    unfreezeLearnerCalSaves();
                     const targets = Array.from({length: 5}, () => ({
                       x: 15 + Math.random() * 70, y: 15 + Math.random() * 70, hit: false
                     }));
@@ -932,6 +938,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
             <button
               onClick={() => {
                 tapFeedback();
+                unfreezeLearnerCalSaves();
                 useSettingsStore.getState().update({ cameraInputEnabled: true });
                 handleRef.current?.stop();
                 onComplete();
