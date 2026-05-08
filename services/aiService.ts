@@ -219,6 +219,13 @@ async function callSynalux(
 // ── Local Ollama (offline fallback) ──
 
 async function callLocal(prompt: string): Promise<string> {
+  // Skip on HTTPS pages: browsers block http://localhost as mixed content
+  // and the failed fetch surfaces in the console as a security error. The
+  // local-Ollama path is only reachable when prism-aac itself is served
+  // over http (dev / local standalone).
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    throw new Error('Local AI unavailable — HTTPS page cannot reach http://localhost');
+  }
   const t = timeoutSignal(10000);
   try {
     const res = await fetch(`${LOCAL_OLLAMA_URL}/generate`, {

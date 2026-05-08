@@ -1,4 +1,11 @@
 'use client';
+
+// Skip static prerender for this dev-only harness — it transitively
+// imports the Pyodide-driven MathTutorTool, whose worker module fails
+// SSR because pyodide.mjs has Node-only top-level imports. The page is
+// fully client-driven anyway and was never linked from the AAC shell.
+export const dynamic = 'force-dynamic';
+
 /**
  * Dev-only isolated harness for MathGrid.
  *
@@ -10,13 +17,18 @@
  * NOT linked from the toolbar. Anyone arriving here did so deliberately.
  */
 import { useEffect } from 'react';
+import dynamicNext from 'next/dynamic';
 import MathGrid from '@/components/math/MathGrid';
 import MathKeyboardRegion from '@/components/math/MathKeyboardRegion';
 import MathLockTool from '@/components/math/MathLockTool';
-import MathTutorTool from '@/components/math/MathTutorTool';
 import MathDocsTool from '@/components/math/MathDocsTool';
 import { useMathGridStore } from '@/store/mathGridStore';
 import { useSettingsStore } from '@/store/settingsStore';
+
+// MathTutorTool transitively pulls Pyodide's pyodide.mjs which has
+// top-level Node-only imports (node:fs, node:path) that fail SSR. Load
+// it client-only.
+const MathTutorTool = dynamicNext(() => import('@/components/math/MathTutorTool'), { ssr: false });
 
 export default function MathGridDevPage() {
   const cursor = useMathGridStore((s) => s.cursor);

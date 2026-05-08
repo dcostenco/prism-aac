@@ -24,6 +24,12 @@ let probePromise: Promise<boolean> | null = null;
 
 async function probeOllama(): Promise<boolean> {
   if (typeof window === 'undefined') return false;
+  // Skip probe on HTTPS pages: browsers block http://localhost as mixed
+  // content, and the failed fetch surfaces in the console as a security
+  // error even though we catch and ignore it. Local Ollama is only
+  // reachable when prism-aac itself is served over http (dev / local
+  // standalone) — on https deploys the portal path is the only option.
+  if (window.location.protocol === 'https:') return false;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), PROBE_TIMEOUT_MS);
   try {

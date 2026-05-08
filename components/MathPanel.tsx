@@ -26,6 +26,7 @@
  * a "calculator-like" surface.
  */
 import { useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useMathGridStore } from '@/store/mathGridStore';
@@ -35,7 +36,11 @@ import MathGrid from './math/MathGrid';
 import MathKeyboardRegion from './math/MathKeyboardRegion';
 import MathLockTool from './math/MathLockTool';
 import MathDocsTool from './math/MathDocsTool';
-import MathTutorTool from './math/MathTutorTool';
+
+// MathTutorTool pulls Pyodide which has Node-only top-level imports
+// (node:fs, node:path) that fail SSR. Load it client-only — the tutor
+// is opened on demand by user gesture, not at panel mount.
+const MathTutorTool = dynamic(() => import('./math/MathTutorTool'), { ssr: false });
 import { parseCellKey } from '@/engine/mathGrid';
 import type { Cell, CellKey } from '@/engine/mathGrid';
 
