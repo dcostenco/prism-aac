@@ -204,7 +204,34 @@ const POPUP_POLL_MS = 500;
  *  navigates away without closing the window. */
 const POPUP_MAX_WAIT_MS = 10 * 60 * 1000; // 10 min
 
-export async function connectProvider(provider: IntegrationProvider): Promise<ConnectResult> {
+/**
+ * Open the OAuth popup synchronously, the moment the user clicks.
+ * Call this FIRST, in the same JS turn as the click event — Safari
+ * (especially iOS Safari on iPad) revokes the user-gesture token
+ * after any await/microtask, so opening the popup later returns
+ * null silently. Returns the popup window or null if blocked.
+ *
+ * After this returns, pass the popup to connectProvider() which
+ * will navigate it to the OAuth URL and poll for close.
+ */
+export function openConnectPopup(): Window | null {
+  if (typeof window === 'undefined') return null;
+  // Open about:blank synchronously — the actual auth URL gets
+  // navigated below from connectProvider(). This split is the
+  // standard popup-OAuth pattern that works across Safari/Chrome/
+  // Firefox + iOS/iPadOS.
+  const popup = window.open('about:blank', 'synalux-connect', POPUP_FEATURES);
+  // Bring it to front. iPad Safari opens new tabs in the background
+  // by default; without focus() the user often doesn't realize the
+  // popup opened and reports "nothing happened".
+  try { popup?.focus(); } catch { /* */ }
+  return popup;
+}
+
+export async function connectProvider(
+  provider: IntegrationProvider,
+  preopenedPopup?: Window | null,
+): Promise<ConnectResult> {
   if (typeof window === 'undefined') return { ok: false, reason: 'no-connect-url' };
   if (!provider.connectUrl) return { ok: false, reason: 'no-connect-url' };
 
@@ -227,8 +254,24 @@ export async function connectProvider(provider: IntegrationProvider): Promise<Co
     url.searchParams.set('return', '/integrations/connect-done');
   }
 
-  const popup = window.open(url.toString(), 'synalux-connect', POPUP_FEATURES);
+  // If the caller pre-opened a popup synchronously (recommended on
+  // iPad Safari to preserve user-gesture context), navigate it to
+  // the auth URL. Otherwise open one now — works on most desktops
+  // but blocked on iOS Safari when called after an await.
+  let popup: Window | null;
+  if (preopenedPopup && !preopenedPopup.closed) {
+    try {
+      preopenedPopup.location.href = url.toString();
+      popup = preopenedPopup;
+    } catch {
+      // SecurityError if the about:blank already cross-origin'd somehow
+      popup = window.open(url.toString(), 'synalux-connect', POPUP_FEATURES);
+    }
+  } else {
+    popup = window.open(url.toString(), 'synalux-connect', POPUP_FEATURES);
+  }
   if (!popup) return { ok: false, reason: 'popup-blocked' };
+  try { popup.focus(); } catch { /* */ }
 
   // Poll for close. On close, re-fetch status + sync contacts. We
   // can't read the popup's URL across origins, so we infer success

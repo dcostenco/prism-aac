@@ -24,6 +24,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   listIntegrations,
   connectProvider,
+  openConnectPopup,
   subscribeToIntegrationEvents,
   type IntegrationProvider,
 } from '@/services/integrationsService';
@@ -71,11 +72,25 @@ export default function IntegrationsSettings() {
   const handleConnect = useCallback(async (p: IntegrationProvider) => {
     if (p.status !== 'available') return;
     if (!p.connectUrl) return;
+
+    // Open the popup SYNCHRONOUSLY in the click handler before any
+    // await — Safari (especially iOS Safari on iPad) revokes the
+    // user-gesture token after a microtask boundary, and a deferred
+    // window.open returns null silently. Without this the user sees
+    // "nothing happened" because the popup was blocked but the
+    // failure surfaced ~50ms later when handleConnect resumed.
+    const popup = openConnectPopup();
+    if (!popup) {
+      tapFeedback();
+      setStatusMsg('Popup was blocked — allow popups for synalux.ai and try again.');
+      return;
+    }
+
     tapFeedback();
     setConnecting(p.id);
-    setStatusMsg(null);
+    setStatusMsg(`Opening ${p.label}… switch to the new tab to authorize.`);
     try {
-      const res = await connectProvider(p);
+      const res = await connectProvider(p, popup);
       if (res.ok) {
         setStatusMsg(`✓ ${p.label} connected`);
         await refresh();
