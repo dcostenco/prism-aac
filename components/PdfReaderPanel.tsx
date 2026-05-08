@@ -98,9 +98,11 @@ export default function PdfReaderPanel() {
    *  and re-pick the same file" detour that the user reported as
    *  not working — the picker filtered to images only and required
    *  the user to navigate Files / Browse to find the same PDF they
-   *  already opened in PdfReader. Inline OCR removes that step. */
-  const runInlineOcr = useCallback(async () => {
-    if (!pdfFile) return;
+   *  already opened in PdfReader. Inline OCR removes that step.
+   *  Returns the OCR text on success so callers (e.g. speakAll) can
+   *  chain into TTS without waiting for setState to flush. */
+  const runInlineOcr = useCallback(async (): Promise<string | null> => {
+    if (!pdfFile) return null;
     tapFeedback();
     setError(null);
     setOcrResult(null);
@@ -118,10 +120,15 @@ export default function PdfReaderPanel() {
       };
       const out = await runOcrOnPdf(pdfFile, language);
       console.log = origLog;
-      if (out.ok) setOcrResult(out.text);
-      else setError(out.error);
+      if (out.ok) {
+        setOcrResult(out.text);
+        return out.text;
+      }
+      setError(out.error);
+      return null;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'OCR failed.');
+      return null;
     } finally {
       setOcrLoading(false);
       setOcrProgress('');
@@ -132,37 +139,35 @@ export default function PdfReaderPanel() {
   // OR re-taps Speak so any in-flight queue stops feeding new chunks.
   const speakSeqRef = useRef(0);
 
-  const speakOcrResult = useCallback(async () => {
-    if (!ocrResult) return;
-    tapFeedback();
-    // Math-text → spoken prose, then chunked into TTS-safe pieces.
-    // Trace evidence (May 2026): the Inworld backend rejects long
-    // inputs (~459 chars from a typical worksheet OCR returns
-    // "Inworld TTS unavailable and Azure fallback also failed"
-    // → falls back to robotic Web Speech). Short chunks (~250 chars
-    // sentence-bounded) consistently land on the neural tier.
-    const prose = mathTextToProse(ocrResult);
+  /** Split text into TTS-safe chunks (Inworld's /tts/public route returns
+   *  HTTP 400 "Text exceeds 500 char limit" on long input — see commit
+   *  f81bac3) and queue them sequentially via the tts-highlight-end bus.
+   *  Cancellable: stopSpeakingOcr / re-tap bumps speakSeqRef and the
+   *  loop exits before queueing the next chunk. */
+  const speakChunked = useCallback(async (raw: string) => {
+    const prose = mathTextToProse(raw);
     const chunks = chunkForTts(prose, 250);
     const mySeq = ++speakSeqRef.current;
     for (const chunk of chunks) {
-      if (mySeq !== speakSeqRef.current) return; // stop / re-tap
-      // Wait for highlight-end before queueing the next chunk so they
-      // play sequentially, not interleaved.
+      if (mySeq !== speakSeqRef.current) return;
       await new Promise<void>((resolve) => {
         let done = false;
         const finish = () => { if (!done) { done = true; resolve(); } };
         const unsub = subscribeTtsHighlight((ev) => {
           if (ev.type === 'tts-highlight-end') { unsub(); finish(); }
         });
-        // Hard timeout: if neither start nor end fires within an
-        // estimate-derived budget, move on so we don't deadlock the
-        // queue. ~50 ms per char is generous; real Inworld is faster.
         const budgetMs = Math.min(20_000, 1500 + chunk.length * 50);
         setTimeout(() => { unsub(); finish(); }, budgetMs);
         aacSpeak(chunk, speechRate, speechVolume, activeTone);
       });
     }
-  }, [ocrResult, speechRate, speechVolume, activeTone]);
+  }, [speechRate, speechVolume, activeTone]);
+
+  const speakOcrResult = useCallback(async () => {
+    if (!ocrResult) return;
+    tapFeedback();
+    await speakChunked(ocrResult);
+  }, [ocrResult, speakChunked]);
 
   const speakPage = useCallback((page: PdfPage) => {
     tapFeedback();
@@ -175,16 +180,35 @@ export default function PdfReaderPanel() {
     aacSpeak(page.text, speechRate, speechVolume, activeTone);
   }, [speechRate, speechVolume, activeTone]);
 
-  const speakAll = useCallback(() => {
+  const speakAll = useCallback(async () => {
     if (!doc || doc.pages.length === 0) return;
     tapFeedback();
-    const all = doc.pages
-      .filter((p) => !isUnreadable(p))
-      .map((p) => p.text)
-      .filter(Boolean)
-      .join(' ');
-    if (all) aacSpeak(all, speechRate, speechVolume, activeTone);
-  }, [doc, speechRate, speechVolume, activeTone]);
+    const readable = doc.pages.filter((p) => !isUnreadable(p) && p.text).map((p) => p.text);
+    if (readable.length > 0) {
+      // Path A: at least one page has a text layer — speak the joined
+      // text via the chunked queue (long PDFs would otherwise also hit
+      // the 500-char Inworld limit and fall to robotic Web Speech).
+      await speakChunked(readable.join(' '));
+      return;
+    }
+    // Path B: image-only PDF. Read all that the user just tapped means
+    // "read every page out loud" — but pdfjs got 0 chars from every
+    // page. Speak the OCR result if it already exists, else run OCR
+    // inline first and then speak. Without this, Read all silently
+    // did nothing on scanned/handwritten worksheets (user report
+    // 2026-05-08 — see CHANGELOG).
+    if (ocrResult) {
+      await speakChunked(ocrResult);
+      return;
+    }
+    if (pdfFile) {
+      // runInlineOcr returns the freshly OCR'd text directly so we
+      // don't need to wait for setOcrResult to flush back into this
+      // closure (which it never would until next render).
+      const text = await runInlineOcr();
+      if (text) await speakChunked(text);
+    }
+  }, [doc, ocrResult, pdfFile, speakChunked, runInlineOcr]);
 
   if (sidePanel !== 'pdf-reader') return null;
 
@@ -252,15 +276,23 @@ export default function PdfReaderPanel() {
           {doc && <span className="text-sm text-muted">— {doc.title} ({doc.pages.length} pages)</span>}
         </div>
         <div className="flex items-center gap-2">
-          {doc && (
-            <button
-              onClick={speakAll}
-              data-testid="pdf-reader-speak-all"
-              className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white"
-            >
-              ▶ Read all
-            </button>
-          )}
+          {doc && (() => {
+            const allUnreadable = doc.pages.length > 0 && doc.pages.every((p) => isUnreadable(p) || !p.text);
+            const needsOcr = allUnreadable && !ocrResult;
+            return (
+              <button
+                onClick={speakAll}
+                disabled={ocrLoading}
+                data-testid="pdf-reader-speak-all"
+                title={needsOcr ? 'OCR this PDF and read it aloud' : 'Read all pages aloud'}
+                className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white disabled:opacity-50"
+              >
+                {needsOcr
+                  ? (ocrLoading ? `🔍 ${ocrProgress || 'OCR…'}` : '🔍▶ OCR & Read all')
+                  : '▶ Read all'}
+              </button>
+            );
+          })()}
           <label
             data-testid="pdf-reader-pick"
             className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#2196F3] text-white cursor-pointer"
@@ -299,26 +331,21 @@ export default function PdfReaderPanel() {
         {doc && doc.pages.length > 0 && doc.pages.every((p) => isUnreadable(p) || !p.text) && !ocrResult && (
           <div
             data-testid="pdf-reader-no-text-banner"
-            className="border border-[#FF9800] bg-[#FF9800]/10 rounded-lg p-3 mb-3 flex items-start gap-3"
+            className="border border-[#FF9800] bg-[#FF9800]/10 rounded-lg p-2 mb-3 flex items-center gap-2 flex-wrap"
           >
-            <span className="text-2xl shrink-0">📷</span>
-            <div className="flex-1 text-sm">
-              <p className="font-bold text-primary mb-1">No text layer in this PDF</p>
-              <p className="text-muted leading-relaxed">
-                This PDF has no machine-readable text — handwritten / scanned
-                pages need OCR. Tap the button below to read each page as an
-                image. Slower than text extraction (a few seconds per page)
-                but it works on any PDF.
-              </p>
-              <button
-                onClick={runInlineOcr}
-                disabled={ocrLoading || !pdfFile}
-                data-testid="pdf-reader-run-ocr"
-                className="aac-btn mt-2 rounded-md px-3 py-1.5 text-sm font-bold bg-[#FF9800] text-white disabled:opacity-50"
-              >
-                {ocrLoading ? `🔍 ${ocrProgress || 'OCR running…'}` : '🔍 Read this PDF with OCR'}
-              </button>
-            </div>
+            <span className="text-xl shrink-0">📷</span>
+            <p className="text-sm text-primary flex-1 min-w-[12ch]">
+              <span className="font-bold">No text layer.</span>{' '}
+              <span className="text-muted">Run OCR to read scanned/handwritten pages.</span>
+            </p>
+            <button
+              onClick={runInlineOcr}
+              disabled={ocrLoading || !pdfFile}
+              data-testid="pdf-reader-run-ocr"
+              className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#FF9800] text-white disabled:opacity-50 shrink-0"
+            >
+              {ocrLoading ? `🔍 ${ocrProgress || 'OCR running…'}` : '🔍 Run OCR'}
+            </button>
           </div>
         )}
         {ocrResult && (
@@ -351,7 +378,7 @@ export default function PdfReaderPanel() {
             <p className="text-sm leading-relaxed whitespace-pre-wrap text-primary">{ocrResult}</p>
           </div>
         )}
-        {doc && doc.pages.length > 0 && (
+        {doc && doc.pages.length > 0 && !(ocrResult && doc.pages.every((p) => isUnreadable(p) || !p.text)) && (
           <ul className="space-y-2" data-testid="pdf-reader-page-list">
             {doc.pages.map((page) => (
               <li
