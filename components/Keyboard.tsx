@@ -17,11 +17,44 @@ import { useT } from '@/engine/useT';
 // outside the range of an unintentional press and still snappy on purpose.
 const CAPS_LOCK_HOLD_MS = 1200;
 
+const SENTENCE_END = /[.?!]/;
+const SENTENCE_TERMINATORS = '.?!';
+
+/**
+ * Extract the just-completed sentence from `text` (which already
+ * contains the trailing terminator the user just typed). Walks
+ * backward, skips trailing terminators (handles "Wait!!"), and
+ * slices from the previous sentence terminator (or buffer start)
+ * to the end. Trims whitespace.
+ *
+ * Examples:
+ *   "Hello. World."  → "World."
+ *   "Just one!"      → "Just one!"
+ *   "Mr. Smith said hello." → "Smith said hello." (over-triggers on
+ *     "Mr." — accepted MVP cost; abbreviation detection is a follow-up)
+ */
+function extractLastSentence(text: string): string {
+  const trimmed = text.trimEnd();
+  if (!trimmed) return '';
+  let end = trimmed.length - 1;
+  while (end >= 0 && SENTENCE_TERMINATORS.includes(trimmed[end])) end--;
+  let start = 0;
+  for (let i = end; i >= 0; i--) {
+    if (SENTENCE_TERMINATORS.includes(trimmed[i])) {
+      start = i + 1;
+      break;
+    }
+  }
+  return trimmed.slice(start).trim();
+}
+
+export const __testing = { extractLastSentence };
+
 export default function Keyboard() {
   const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock } = useUIStore();
   const { learnWord } = usePredictionStore();
-  const { speechRate, speechVolume, language } = useSettingsStore();
+  const { speechRate, speechVolume, language, speakOnSentenceEnd } = useSettingsStore();
   const { t } = useT();
   const letterRows = getLetterRows(language);
 
@@ -42,7 +75,20 @@ export default function Keyboard() {
     //   • MessageBar silence-detect — speaks the latest word once the
     //     autocorrect roundtrip confirms it's well-formed
     //   • Speak button — speaks the full utterance on demand
-  }, [appendChar, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper]);
+    //   • THIS handler — when char is a sentence terminator (.?!),
+    //     speak the just-completed sentence (Read&Write parity for
+    //     users with reading/memory disabilities who lose track of
+    //     what they typed by the period). Gated on speakOnSentenceEnd.
+    if (speakOnSentenceEnd && autoSpeak && soundEnabled && SENTENCE_END.test(char)) {
+      // Read fresh state — appendChar above is async w.r.t. zustand
+      // batching; getState() guarantees the just-typed punctuation
+      // is included in `text` rather than racing the closure.
+      const text = useMessageStore.getState().text;
+      const sentence = extractLastSentence(text);
+      if (sentence) aacSpeak(sentence, speechRate, speechVolume, activeTone);
+    }
+  }, [appendChar, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper,
+      speakOnSentenceEnd, autoSpeak, soundEnabled, speechRate, speechVolume, activeTone]);
 
   const shiftHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shiftLongPressed = useRef(false);

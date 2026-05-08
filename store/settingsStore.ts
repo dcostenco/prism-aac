@@ -123,6 +123,15 @@ interface SettingsState {
   toolbarConfig: ToolbarConfig;
   // AI Autocorrect in MessageBar
   aiAutocorrectEnabled: boolean;
+  // "Read & Write"-style speak-on-sentence-end. When ON, finishing a
+  // sentence with .?! triggers TTS of the just-completed sentence.
+  // The existing per-word echo on space stays unchanged. Targets users
+  // with reading/memory disabilities who lose track of what they typed
+  // by the time they reach a period — they specifically asked for this
+  // when shopping for free Read&Write replacements (Reddit r/AAC, May
+  // 2026). Default ON because the existing autoSpeak is already ON and
+  // these users are the dominant AAC text-input persona.
+  speakOnSentenceEnd: boolean;
   // Audible chime on each new incoming message batch from connected
   // providers (Telegram / WhatsApp / Mail / etc.). Default true so a
   // newly-onboarded caregiver hears the alarm without diving into
@@ -155,7 +164,7 @@ interface SettingsState {
   // is not user-selectable.
   voicePreferences: Record<string, string>;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -202,6 +211,7 @@ export const useSettingsStore = create<SettingsState>()(
       cameraTrackingTarget: 'any_wrist',
       gestureConfig: { ...DEFAULT_GESTURE_CONFIG },
       aiAutocorrectEnabled: true,
+      speakOnSentenceEnd: true,
       notificationsEnabled: true,
       mathHoldTimeMs: 0,
       mathTwoHitMagnify: false,
@@ -372,6 +382,7 @@ export const useSettingsStore = create<SettingsState>()(
         const boolKeys = [
           'highContrast', 'headTrackingEnabled', 'headTrackingDriftAutoDisable',
           'showHandCalibration', 'cameraInputEnabled', 'aiAutocorrectEnabled',
+          'speakOnSentenceEnd',
         ] as const;
         for (const k of boolKeys) {
           if (typeof incoming[k] === 'boolean') out[k] = incoming[k];
