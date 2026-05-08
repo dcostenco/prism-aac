@@ -310,11 +310,41 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   const source = ctx.createBufferSource();
   source.buffer = decoded;
   const gain = ctx.createGain();
-  gain.gain.value = Math.max(0, Math.min(1, volume));
+  // Volume guard: a NaN / undefined / negative input must NOT silence
+  // the user. Math.min(1, NaN) is NaN — assigning NaN to gain.value
+  // produces a 0-volume node that returns true from decodeAndPlay
+  // (silent-success — user hears nothing while [TTS] succeeded logs
+  // fire repeatedly, May 2026 user report Image #23). Reject NaN /
+  // negative explicitly and default to 1.0.
+  const safeVolume =
+    typeof volume === 'number' && Number.isFinite(volume) && volume >= 0
+      ? Math.min(1, volume)
+      : 1;
+  gain.gain.value = safeVolume;
   source.connect(gain).connect(ctx.destination);
 
+  // Stop any prior playback synchronously, immediately before our
+  // own start. Doing this here (instead of at the top of speakAzure
+  // before the fetch + decode awaits) shrinks the peer-race window
+  // from ~50-500 ms down to microseconds — a peer call can no longer
+  // sneak in between our stop and our start to kill our audio.
+  stopAzurePlayback();
   activeSources.add(source);
+  // Race-detection: track when the source actually started so a peer
+  // call's stopAzurePlayback() that fires within ~30 ms of start() is
+  // observable. onended fires on both natural completion AND on
+  // .stop(); if it fires too soon, the audio was killed before the
+  // user could hear it. We log a warning for diagnosability but do
+  // not return false retroactively (the source object is gone).
+  const startedAt = Date.now();
   source.onended = () => {
+    const playedMs = Date.now() - startedAt;
+    const expectedMs = decoded.duration * 1000;
+    if (playedMs < expectedMs - 50 && playedMs < 80) {
+      console.warn(
+        `[${label}] source ended after ${playedMs}ms (expected ~${Math.round(expectedMs)}ms) — likely killed by a peer speak call's stopAzurePlayback. User heard nothing.`,
+      );
+    }
     activeSources.delete(source);
     try { source.disconnect(); } catch { /* */ }
     try { gain.disconnect(); } catch { /* */ }
@@ -381,10 +411,8 @@ async function speakGemini(
       console.warn('[Gemini-TTS] empty/oversize audio buffer — falling through to Inworld');
       return false;
     }
-    // Silence prior playback only — peer in-flight fetches stay alive
-    // (they own their own controllers and will play if they're newer
-    // per the speakSeq guard in speakAzure).
-    stopAzurePlayback();
+    // decodeAndPlay handles stopAzurePlayback synchronously right
+    // before source.start, so the peer-race window is microseconds.
     return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS');
   } catch (e) {
     // Network / abort / timeout. Speech-service still has Kokoro and
@@ -481,7 +509,17 @@ export async function speakAzure(
       // through to Tier 2/3.
     }
     if (res.ok) {
-      stopAzurePlayback();
+      // stopAzurePlayback used to run HERE — before `await readCappedAudio`
+      // and `await decodeAudioData`. That opened a 50–500 ms window where
+      // a peer speakAzure call could ALSO call stopAzurePlayback (no-op
+      // since we just cleared activeSources) and then race ahead, end up
+      // calling stopAzurePlayback again right when our newly-started
+      // source landed in activeSources — killing our audio mid-play.
+      // Symptom: console fires "Portal TTS succeeded" repeatedly while
+      // the user hears nothing (May 2026 user report Image #23).
+      // decodeAndPlay now calls stopAzurePlayback ITSELF, synchronously,
+      // immediately before source.start — so the gap between stop and
+      // start is microseconds and peer races can't slot in.
       const audioBytes = await readCappedAudio(res);
       if (audioBytes) {
         clearTimeout(timeout);
