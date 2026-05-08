@@ -1,4 +1,9 @@
 'use client';
+// CACHE-NUKE 2026-05-08-08:40 — forces Vercel build cache invalidation
+// after multiple identical-output rebuilds where Turbopack reused the
+// compiled azureTTS.ts despite source changes.
+const _BUILD_NUKE = Date.now().toString();
+void _BUILD_NUKE;
 /**
  * Azure Neural TTS — Paid tiers only
  *
