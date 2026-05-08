@@ -67,25 +67,35 @@ const SCRIPT_FILTER: Record<string, RegExp> = {
   hi: /^[ऀ-ॿ'\-]+$/,
 };
 
-/** Eagerly preload BOTH the target lang's corpus AND the English
- *  corpus so isAllowedInLang has the cross-lang frequency data it
- *  needs synchronously. Always returns a Promise so callers can
- *  reliably await — even when both corpora are already cached
- *  (returns Promise.resolve()). The previous version returned null
- *  in the cached path, which let callers think there was nothing to
- *  wait for and continue rendering before BOTH corpora were loaded
- *  (English wasn't preloaded at all → cross-lang freq compare ran
- *  with enFreq=0 → fail-open → English words flashed in the bar).
+/** Eagerly preload the target lang's corpus AND every other Latin-
+ *  script corpus so isAllowedInLang has the cross-lang frequency
+ *  data it needs to spot leaks in either direction. Always returns
+ *  a Promise so callers can reliably await — even when everything
+ *  is already cached (Promise.resolve()).
+ *
+ *  Why ALL Latin langs (not just target + EN): the cross-corpus
+ *  comparison only catches a leak when the COMPETING lang's corpus
+ *  is loaded. With target=EN we never loaded RO, so a Romanian
+ *  word like `eu` (high freq in RO, freq=3 in EN's English-language
+ *  corpus mentioning the European Union) passed the gate as a
+ *  low-freq English word — the May 2026 "eu in EN bar" regression.
+ *  Loading all 11 Latin corpora costs ~500KB compressed on first
+ *  use; subsequent calls hit the in-memory cache.
  */
 export function ensureLangCorpusLoaded(lang: string): Promise<void> {
   const targets: Promise<unknown>[] = [];
   if (SUPPORTED_SEED_LANGS.includes(lang as never) && !getCachedPredictionSeed(lang)) {
     targets.push(loadPredictionSeed(lang));
   }
-  // Always ensure EN is loaded too — it's the comparison corpus for
-  // every Latin-script non-EN cross-lang check.
-  if (!getCachedPredictionSeed('en')) {
-    targets.push(loadPredictionSeed('en'));
+  // Preload every Latin-script lang so the cross-corpus dominance
+  // check in isAllowedInLang can compare in BOTH directions (EN→RO
+  // leak detection as well as RO→EN). Without this, a leak survives
+  // whenever the competing lang's corpus isn't already cached.
+  for (const other of LATIN_LANGS) {
+    if (other === lang) continue;
+    if (!SUPPORTED_SEED_LANGS.includes(other as never)) continue;
+    if (getCachedPredictionSeed(other)) continue;
+    targets.push(loadPredictionSeed(other));
   }
   if (targets.length === 0) return Promise.resolve();
   return Promise.all(targets).then(() => undefined);
