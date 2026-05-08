@@ -26,21 +26,25 @@ import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 import { evaluateExpression } from '@/services/exprEval';
 import { evaluatePython, isPythonReady, debugPython, type TraceStep } from '@/services/pythonRuntime';
+import { evaluateJava } from '@/services/javaRuntime';
 import { serializeAsCode } from '@/services/codeSerialize';
 import { parseCellKey, type Cell, type CellKey } from '@/engine/mathGrid';
 
 type TutorMode = 'help' | 'check' | 'solve' | 'eval' | 'debug';
 
-/** Domains where a deterministic, local evaluator produces a useful
- *  answer. math/physics/statistics → mathjs (instant). programming-python
- *  → Pyodide WASM (~5-15 s first load, then instant). Chemistry / biology
- *  / music / etc. don't reduce to a runnable expression, so the 🧮 Eval
- *  button is hidden there and the user falls back on the AI-driven tutor. */
+/** Domains where a deterministic evaluator produces a useful answer.
+ *  math/physics/statistics → mathjs (instant, in-process).
+ *  programming-python → Pyodide WASM (~5-15 s first load, then instant).
+ *  programming-java → remote Piston API (HTTPS roundtrip, ~1-3 s).
+ *  Chemistry / biology / music / etc. don't reduce to a runnable
+ *  expression, so the 🧮 Eval button is hidden there and the user
+ *  falls back on the AI-driven tutor. */
 const EVAL_DOMAINS: ReadonlySet<MathDomain> = new Set<MathDomain>([
   'math',
   'physics',
   'statistics',
   'programming-python',
+  'programming-java',
 ]);
 
 /** Per-domain prompt templates. The expression placeholder `{expr}` is
@@ -273,6 +277,28 @@ export default function MathTutorTool() {
           result.value,
         ].filter(Boolean).join('\n').trim() || '(no output)';
         setResponse(out);
+        aacSpeak(out.slice(0, 200), speechRate, speechVolume);
+      } else {
+        setErrorKind('other');
+        setResponse(`⚠️ ${result.error}`);
+      }
+      return;
+    }
+    if (evalDomain === 'programming-java') {
+      const source = serializeAsCode(cells);
+      if (!source) {
+        setResponse('No Java code to run yet.');
+        return;
+      }
+      setLoading(true);
+      setResponse('Compiling and running Java…');
+      const mySeq = requestSeqRef.current;
+      const result = await evaluateJava(source);
+      if (mySeq !== requestSeqRef.current) return;
+      setLoading(false);
+      if (result.ok) {
+        const out = result.stdout.trim() || '(no output)';
+        setResponse(out + (result.wrapped ? '\n\n(wrapped in default Main class)' : ''));
         aacSpeak(out.slice(0, 200), speechRate, speechVolume);
       } else {
         setErrorKind('other');
