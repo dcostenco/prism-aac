@@ -160,6 +160,13 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   }, [speak]);
 
   // ── PHASE: Calibrate Center ──
+  // Minimum sample count before advancing — pose tracker emits ~15
+  // samples/sec so 8 samples ≈ 0.5s of actual finger detection. Without
+  // this gate the timer advanced even when no pose was detected,
+  // baking degenerate (0.5, 0.5) coords into the calibration (user
+  // report 2026-05-08: "wizard asked to point a finger but i never
+  // did that and it was continuing to do that by himself").
+  const MIN_SAMPLES = 8;
   const startCenterCalibration = useCallback(() => {
     setPhase('calibrate-center');
     sampleBufferRef.current = [];
@@ -168,12 +175,19 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     speak('Point to the center of the screen. Hold still.');
 
     let elapsed = 0;
+    let waitingPromptShown = false;
     const interval = setInterval(() => {
       elapsed += 100;
       setProgress(Math.min(1, elapsed / 3000));
       if (elapsed >= 3000) {
+        if (sampleBufferRef.current.length < MIN_SAMPLES) {
+          if (!waitingPromptShown) {
+            setStatusText("I can't see your finger yet — keep pointing, or tap Skip below.");
+            waitingPromptShown = true;
+          }
+          return; // hold phase open until samples arrive
+        }
         clearInterval(interval);
-        // Move to corners
         setCornerIdx(0);
         setCornerSamples([]);
         setPhase('calibrate-corners');
@@ -199,12 +213,24 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
     sampleBufferRef.current = [];
     let elapsed = 0;
+    let waitingPromptShown = false;
 
     const interval = setInterval(() => {
       elapsed += 100;
       setProgress(Math.min(1, elapsed / 2500));
 
       if (elapsed >= 2500) {
+        // Same MIN_SAMPLES gate as center phase — without it the wizard
+        // baked (0.5, 0.5) into every corner if pose detection never
+        // landed, producing degenerate calibration that maps every
+        // finger position to the same screen coordinate.
+        if (sampleBufferRef.current.length < MIN_SAMPLES) {
+          if (!waitingPromptShown) {
+            setStatusText("Still looking for your finger — keep pointing, or tap Skip below.");
+            waitingPromptShown = true;
+          }
+          return;
+        }
         clearInterval(interval);
 
         // Average the samples from this corner
@@ -268,23 +294,58 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   }, [phase, cornerIdx, cornerSamples, speak]);
 
   // ── PHASE: Accuracy Test ──
-  const handleTestHit = (idx: number) => {
+  const handleTestHit = useCallback((idx: number) => {
     if (idx !== testIdx) return;
     tapFeedback();
     speak('Great!');
     setTestTargets(prev => prev.map((t, i) => i === idx ? { ...t, hit: true } : t));
 
     if (testIdx >= testTargets.length - 1) {
-      // All targets hit
       setTimeout(() => {
-        const hits = testTargets.filter(t => t.hit).length + 1; // +1 for this one
+        const hits = testTargets.filter(t => t.hit).length + 1;
         speak(`Perfect! You hit ${hits} out of ${testTargets.length} targets.`);
         setPhase('complete');
       }, 500);
     } else {
       setTestIdx(testIdx + 1);
     }
-  };
+  }, [testIdx, testTargets, speak]);
+
+  // Camera-cursor dwell detection — fires handleTestHit when the
+  // camera-tracked cursor stays within the active target's radius
+  // for ~700ms. Without this the user had to physically mouse-click
+  // each circle, defeating the point of the test ("does the camera
+  // cursor land on what you point at?"). User report 2026-05-08 —
+  // calibration stuck at "Step 3: Test (1/5) — 0/5 hits" with the
+  // cursor visibly on the target but no hit firing.
+  const dwellHitRef = useRef<{ idx: number; start: number } | null>(null);
+  useEffect(() => {
+    if (phase !== 'accuracy-test') { dwellHitRef.current = null; return; }
+    const interval = setInterval(() => {
+      const target = testTargets[testIdx];
+      if (!target || target.hit) return;
+      // Targets are positioned in % of viewport; convert to px.
+      const tx = (target.x / 100) * window.innerWidth;
+      const ty = (target.y / 100) * window.innerHeight;
+      const dx = cursorPos.x - tx;
+      const dy = cursorPos.y - ty;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      // 64px button half-width = 32px; add 32px slack for jitter.
+      const HIT_RADIUS = 64;
+      const DWELL_MS = 700;
+      if (dist <= HIT_RADIUS) {
+        if (dwellHitRef.current?.idx !== testIdx) {
+          dwellHitRef.current = { idx: testIdx, start: Date.now() };
+        } else if (Date.now() - dwellHitRef.current.start >= DWELL_MS) {
+          dwellHitRef.current = null;
+          handleTestHit(testIdx);
+        }
+      } else {
+        if (dwellHitRef.current?.idx === testIdx) dwellHitRef.current = null;
+      }
+    }, 80);
+    return () => clearInterval(interval);
+  }, [phase, testIdx, testTargets, cursorPos.x, cursorPos.y, handleTestHit]);
 
   // ── RENDER ──
   return (
@@ -417,6 +478,25 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
             <div className="absolute bottom-20 left-0 right-0 text-center">
               <p className="text-white text-lg font-bold">{statusText}</p>
               <p className="text-white/50 text-sm">Hold still for 3 seconds</p>
+              <button
+                onClick={() => {
+                  tapFeedback();
+                  // Skip directly to test phase with placeholder
+                  // calibration. The user can recalibrate later.
+                  setCornerSamples([{x:0.2,y:0.2},{x:0.8,y:0.2},{x:0.8,y:0.8},{x:0.2,y:0.8}]);
+                  const targets = Array.from({length: 5}, () => ({
+                    x: 15 + Math.random() * 70, y: 15 + Math.random() * 70, hit: false
+                  }));
+                  setTestTargets(targets);
+                  setTestIdx(0);
+                  setPhase('accuracy-test');
+                  setStatusText('Tap the circles!');
+                }}
+                data-testid="tracking-calibrate-skip"
+                className="mt-3 text-white/50 text-xs underline"
+              >
+                Skip calibration → use defaults
+              </button>
             </div>
           </>
         )}
@@ -453,8 +533,31 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               </div>
             ))}
             <div className="absolute bottom-20 left-0 right-0 text-center">
-              <p className="text-white text-lg font-bold">Point to {CORNER_TARGETS[cornerIdx]?.label}</p>
+              <p className="text-white text-lg font-bold">{statusText || `Point to ${CORNER_TARGETS[cornerIdx]?.label}`}</p>
               <p className="text-white/50 text-sm">Hold for 2.5 seconds</p>
+              <button
+                onClick={() => {
+                  tapFeedback();
+                  // Skip remaining corners → straight to test with the
+                  // corners we have plus default fillers.
+                  const filled = [...cornerSamples];
+                  while (filled.length < 4) {
+                    filled.push({ x: 0.5, y: 0.5 });
+                  }
+                  setCornerSamples(filled);
+                  const targets = Array.from({length: 5}, () => ({
+                    x: 15 + Math.random() * 70, y: 15 + Math.random() * 70, hit: false
+                  }));
+                  setTestTargets(targets);
+                  setTestIdx(0);
+                  setPhase('accuracy-test');
+                  setStatusText('Tap the circles!');
+                }}
+                data-testid="tracking-corners-skip"
+                className="mt-3 text-white/50 text-xs underline"
+              >
+                Skip → use defaults
+              </button>
             </div>
           </>
         )}
@@ -466,6 +569,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               <button
                 key={idx}
                 onClick={() => handleTestHit(idx)}
+                data-testid={`tracking-test-target-${idx}`}
+                data-active={idx === testIdx ? 'true' : 'false'}
+                data-hit={target.hit ? 'true' : 'false'}
                 disabled={idx !== testIdx || target.hit}
                 className={`absolute w-16 h-16 rounded-full transition-all duration-300 ${
                   target.hit
@@ -483,9 +589,47 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 {target.hit ? <span className="text-2xl">✓</span> : idx === testIdx ? <span className="text-2xl">👆</span> : null}
               </button>
             ))}
+            {/* Camera cursor dot — shows the user where the tracker
+                thinks they're pointing. Without this dot the user
+                couldn't tell whether the test wasn't registering hits
+                because their finger was off-target or because the
+                hit detection was broken. */}
+            {cursorPos.x > 0 && cursorPos.y > 0 && (
+              <div
+                data-testid="tracking-test-cursor"
+                style={{
+                  position: 'absolute',
+                  left: cursorPos.x - 14,
+                  top: cursorPos.y - 14,
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  backgroundColor: '#4CAF50',
+                  border: '2px solid white',
+                  boxShadow: '0 0 12px rgba(76,175,80,0.6)',
+                  pointerEvents: 'none',
+                  transition: 'left 0.06s linear, top 0.06s linear',
+                  zIndex: 10,
+                }}
+              />
+            )}
             <div className="absolute bottom-20 left-0 right-0 text-center">
               <p className="text-white text-lg font-bold">{statusText}</p>
-              <p className="text-white/50 text-sm">{testTargets.filter(t => t.hit).length}/{testTargets.length} hits</p>
+              <p className="text-white/50 text-sm" data-testid="tracking-test-hits">
+                {testTargets.filter(t => t.hit).length}/{testTargets.length} hits
+              </p>
+              {/* Skip — escape hatch when the user can't complete the
+                  test (low light, occluded camera, motor difficulty).
+                  Saves the calibration we already captured in step 2
+                  and proceeds to "complete" without forcing the user
+                  to abandon the wizard via Cancel and lose progress. */}
+              <button
+                onClick={() => { tapFeedback(); setPhase('complete'); }}
+                data-testid="tracking-test-skip"
+                className="mt-3 text-white/50 text-xs underline"
+              >
+                Skip test → save calibration anyway
+              </button>
             </div>
           </>
         )}
