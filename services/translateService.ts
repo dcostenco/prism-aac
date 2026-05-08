@@ -16,6 +16,15 @@ const LANG_NAMES: Record<string, string> = {
   'zh-Hant': 'Chinese (Traditional, Taiwanese Mandarin)',
   'zh-HK': 'Cantonese (Traditional script, Hong Kong)',
   ar: 'Arabic',
+  // Latin-script European langs that need an explicit name so the
+  // translator's system prompt says "translate to Italian" instead of
+  // "translate to it" (May 2026: RU→IT regression where the AI saw
+  // "to it" and produced English-Italian-Russian mush).
+  it: 'Italian', nl: 'Dutch', pl: 'Polish', tr: 'Turkish',
+  sv: 'Swedish', no: 'Norwegian', da: 'Danish', fi: 'Finnish',
+  cs: 'Czech', el: 'Greek', hu: 'Hungarian', he: 'Hebrew',
+  hi: 'Hindi', vi: 'Vietnamese', th: 'Thai', id: 'Indonesian',
+  tl: 'Tagalog',
 };
 
 const MAX_CACHE = 500;
@@ -39,8 +48,17 @@ function getWordDict(fromLang: SupportedLanguage, toLang: SupportedLanguage): Wo
   const dict: WordDict = new Map();
 
   for (const phrase of DEFAULT_PHRASES) {
-    const fromText = getPhraseText(phrase.id, fromLang, phrase.text).toLowerCase();
-    const toText = getPhraseText(phrase.id, toLang, phrase.text);
+    const fromRaw = getPhraseText(phrase.id, fromLang, phrase.text);
+    const toRaw = getPhraseText(phrase.id, toLang, phrase.text);
+    // Skip when getPhraseText returned the English fallback for a
+    // non-English target — that means the target language has no real
+    // translation for this phrase and we'd otherwise pollute the dict
+    // with English words (May 2026 RU→IT bug: "хочу" → "Want" because
+    // Italian entries were missing in T and "Want" was the fallback).
+    if (toLang !== 'en' && toRaw === phrase.text) continue;
+    if (fromLang !== 'en' && fromRaw === phrase.text) continue;
+    const fromText = fromRaw.toLowerCase();
+    const toText = toRaw;
     dict.set(fromText, toText);
 
     const fromWords = fromText.split(/\s+/);
@@ -145,6 +163,11 @@ const SCRIPT_FOR_LANG: Record<string, RegExp> = {
   // Latin-script targets — reject Cyrillic/CJK/Hebrew/Arabic responses.
   en: /\p{Script=Latin}/u, es: /\p{Script=Latin}/u, fr: /\p{Script=Latin}/u,
   pt: /\p{Script=Latin}/u, ro: /\p{Script=Latin}/u, de: /\p{Script=Latin}/u,
+  it: /\p{Script=Latin}/u, nl: /\p{Script=Latin}/u, pl: /\p{Script=Latin}/u,
+  tr: /\p{Script=Latin}/u, sv: /\p{Script=Latin}/u, no: /\p{Script=Latin}/u,
+  da: /\p{Script=Latin}/u, fi: /\p{Script=Latin}/u, cs: /\p{Script=Latin}/u,
+  hu: /\p{Script=Latin}/u, vi: /\p{Script=Latin}/u, id: /\p{Script=Latin}/u,
+  tl: /\p{Script=Latin}/u,
   // Cyrillic
   ru: /\p{Script=Cyrillic}/u, uk: /\p{Script=Cyrillic}/u,
   // CJK
@@ -152,10 +175,11 @@ const SCRIPT_FOR_LANG: Record<string, RegExp> = {
   ko: /\p{Script=Hangul}/u,
   zh: /\p{Script=Han}/u, 'zh-Hans': /\p{Script=Han}/u,
   'zh-Hant': /\p{Script=Han}/u, 'zh-HK': /\p{Script=Han}/u,
-  // Right-to-left
+  // Other scripts
   ar: /\p{Script=Arabic}/u, he: /\p{Script=Hebrew}/u,
-  // Hindi (Devanagari)
+  el: /\p{Script=Greek}/u,
   hi: /\p{Script=Devanagari}/u,
+  th: /\p{Script=Thai}/u,
 };
 
 /**
