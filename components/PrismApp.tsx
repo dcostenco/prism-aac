@@ -237,6 +237,27 @@ export default function PrismApp() {
     };
   }, []);
 
+  // iOS Safari audio-session reset on last camera lease release.
+  // Once getUserMedia has run in the tab (TrackingSetupWizard PIP,
+  // bodyPoseService, headTracker, reliabilityProbe), Safari may park the
+  // audio session in PlayAndRecord and route AudioContext.destination to
+  // earpiece (silent from speakers) — persists across location.reload().
+  // When the last camera consumer drops, close the AudioContext so the
+  // next gesture's warmup creates a fresh playback-only context. Skipped
+  // mid-utterance (resetSharedAudioContextIfIdle checks activeSources).
+  useEffect(() => {
+    let unsub: (() => void) | null = null;
+    void Promise.all([
+      import('@/services/cameraStream'),
+      import('@/services/azureTTS'),
+    ]).then(([cs, tts]) => {
+      unsub = cs.onAllLeasesReleased(() => {
+        try { tts.resetSharedAudioContextIfIdle(); } catch { /* */ }
+      });
+    }).catch(() => { /* offline / blocked */ });
+    return () => { if (unsub) unsub(); };
+  }, []);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;

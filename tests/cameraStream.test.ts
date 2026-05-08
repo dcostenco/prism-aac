@@ -3,6 +3,7 @@ import {
     acquireCamera,
     leaseKey,
     buildConstraints,
+    onAllLeasesReleased,
     _setGetUserMedia,
     _resetForTests,
     _snapshot,
@@ -274,5 +275,83 @@ describe('cameraStream — military hardening: concurrency + adversarial', () =>
         const snap = _snapshot();
         snap.push({ key: 'fake', refs: 99 });
         expect(_snapshot()).toEqual([]);
+    });
+});
+
+describe('cameraStream — onAllLeasesReleased (iOS audio-session reset hook)', () => {
+    it('fires after the last lease drops, not on intermediate releases', async () => {
+        const gum = vi.fn().mockResolvedValue(fakeStream());
+        _setGetUserMedia(gum);
+        const fired: number[] = [];
+        const unsub = onAllLeasesReleased(() => { fired.push(Date.now()); });
+
+        // Two consumers on different keys.
+        const a = await acquireCamera({ deviceId: 'cam-a' });
+        const b = await acquireCamera({ deviceId: 'cam-b' });
+        expect(a && b).toBeTruthy();
+        expect(fired.length).toBe(0);
+
+        // First release — listener must NOT fire (cam-b still held).
+        a!.release();
+        expect(fired.length).toBe(0);
+
+        // Last release — listener fires exactly once.
+        b!.release();
+        expect(fired.length).toBe(1);
+
+        unsub();
+    });
+
+    it('fires once per drop-to-zero cycle, even across reacquire', async () => {
+        const gum = vi.fn().mockResolvedValue(fakeStream());
+        _setGetUserMedia(gum);
+        let count = 0;
+        onAllLeasesReleased(() => { count++; });
+
+        const l1 = await acquireCamera({ deviceId: 'cam-a' });
+        l1!.release();
+        expect(count).toBe(1);
+
+        const l2 = await acquireCamera({ deviceId: 'cam-a' });
+        l2!.release();
+        expect(count).toBe(2);
+    });
+
+    it('fires when refcount on same key drops, not on each refs--', async () => {
+        const gum = vi.fn().mockResolvedValue(fakeStream());
+        _setGetUserMedia(gum);
+        let count = 0;
+        onAllLeasesReleased(() => { count++; });
+
+        // Two leases on the SAME key (refcount=2).
+        const l1 = await acquireCamera({ deviceId: 'cam-a' });
+        const l2 = await acquireCamera({ deviceId: 'cam-a' });
+        expect(_snapshot()).toEqual([{ key: leaseKey({ deviceId: 'cam-a' }), refs: 2 }]);
+
+        l1!.release();
+        expect(count).toBe(0); // refcount went 2→1, no listener fire
+        l2!.release();
+        expect(count).toBe(1); // refcount went 1→0 AND leases.size→0
+    });
+
+    it('listener errors do not block lease release', async () => {
+        const gum = vi.fn().mockResolvedValue(fakeStream());
+        _setGetUserMedia(gum);
+        onAllLeasesReleased(() => { throw new Error('listener boom'); });
+        const l = await acquireCamera({ deviceId: 'cam-a' });
+        expect(() => l!.release()).not.toThrow();
+        expect(_snapshot()).toEqual([]);
+    });
+
+    it('unsub() removes the listener', async () => {
+        const gum = vi.fn().mockResolvedValue(fakeStream());
+        _setGetUserMedia(gum);
+        let count = 0;
+        const unsub = onAllLeasesReleased(() => { count++; });
+        unsub();
+
+        const l = await acquireCamera({ deviceId: 'cam-a' });
+        l!.release();
+        expect(count).toBe(0);
     });
 });

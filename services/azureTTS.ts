@@ -210,6 +210,21 @@ export function isAudioContextRunning(): boolean {
   return sharedAudioCtx !== null && sharedAudioCtx.state === 'running';
 }
 
+/** iOS Safari audio-session reset. Once a getUserMedia MediaStream has
+ *  lived in the tab, Safari may park the audio session in PlayAndRecord
+ *  and route AudioContext.destination to earpiece (silent from speakers).
+ *  Closing the AudioContext and nulling the singleton forces the next
+ *  warmup-on-gesture to create a fresh context — Safari then re-evaluates
+ *  the session category, sees no live MediaStream, and routes to speakers.
+ *  Skips when audio is currently playing so we don't cut a TTS mid-utterance. */
+export function resetSharedAudioContextIfIdle(): void {
+  if (activeSources.size > 0) return;
+  if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') {
+    try { void sharedAudioCtx.close(); } catch { /* */ }
+  }
+  sharedAudioCtx = null;
+}
+
 // Track every BufferSourceNode that's currently scheduled or playing so a
 // subsequent speak (or panic stop) can silence them — rapid Speak presses on
 // AAC are common and we never want overlapping voices.

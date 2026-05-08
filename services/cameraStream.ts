@@ -204,5 +204,22 @@ function decrementRef(key: string): void {
         try { entry.stream.getTracks().forEach(t => t.stop()); } catch { /* */ }
         try { if (entry.video.parentNode) entry.video.remove(); } catch { /* */ }
         leases.delete(key);
+        if (leases.size === 0 && opening.size === 0) {
+            for (const fn of allLeasesReleasedListeners) {
+                try { fn(); } catch { /* listener errors must not block release */ }
+            }
+        }
     }
+}
+
+// iOS Safari audio-session hook: TTS audio routes to earpiece (silent
+// from speakers) once a `getUserMedia` MediaStream has lived in the tab,
+// even with `audio: false`. Closing + recreating the shared AudioContext
+// after the last camera consumer releases lets the next user gesture
+// build a context with playback-only session category. Generic registry
+// so cameraStream stays decoupled from TTS.
+const allLeasesReleasedListeners = new Set<() => void>();
+export function onAllLeasesReleased(fn: () => void): () => void {
+    allLeasesReleasedListeners.add(fn);
+    return () => { allLeasesReleasedListeners.delete(fn); };
 }
