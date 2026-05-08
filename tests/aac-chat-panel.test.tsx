@@ -40,14 +40,31 @@ afterEach(() => {
 });
 
 describe('AACChatPanel — empty state', () => {
-  it('renders nothing when there are no contacts and no active selection', () => {
-    // 2026-05-07 user feedback: "doesnt make any sense, expand type
-    // here panel instead", "remove contacts button". When the AAC
-    // user has no contacts AND no active contact, the panel unmounts
-    // entirely (returns null). Caregivers manage contacts via
-    // Settings → Integrations / Contacts. MessageBar grows by one
-    // line so the user has more compose room when sidePanel is
-    // 'aac-chat'. This test pins the unmount.
+  it('renders the panel with provider preview + Settings CTA when explicitly opened with no contacts', () => {
+    // 2026-05-07 user report (Image #20): "message tool is broken and
+    // shows a standard keyboard without inbox outbox and providers".
+    // Earlier behavior unmounted the panel when contacts.length === 0
+    // — but the user explicitly tapped 💬, so they want to SEE the
+    // messaging UI (which providers are wired up, how to add contacts),
+    // not silently get the qwerty back. The panel now renders an
+    // empty state with the provider list + "Open Settings → Contacts"
+    // CTA, and only auto-collapses when the user closes via ✕ or
+    // retoggles 💬 (handled at the sidePanel !== 'aac-chat' guard).
+    render(<AACChatPanel />);
+    expect(screen.getByTestId('aac-chat-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('aac-chat-empty-state')).toBeInTheDocument();
+    expect(screen.getByTestId('aac-chat-providers')).toBeInTheDocument();
+    // Spot-check that at least telegram + whatsapp + sms tiles are
+    // rendered (the providers most users have via the in-app Connect
+    // flow).
+    expect(screen.getByTestId('aac-chat-provider-telegram')).toBeInTheDocument();
+    expect(screen.getByTestId('aac-chat-provider-whatsapp')).toBeInTheDocument();
+    expect(screen.getByTestId('aac-chat-provider-sms')).toBeInTheDocument();
+    expect(screen.getByTestId('aac-chat-open-settings')).toBeInTheDocument();
+  });
+
+  it('does NOT render when sidePanel !== aac-chat (user closed it)', () => {
+    useUIStore.setState({ sidePanel: 'none', activeContactId: null });
     const { container } = render(<AACChatPanel />);
     expect(container.querySelector('[data-testid="aac-chat-panel"]')).toBeNull();
   });

@@ -128,16 +128,17 @@ export default function AACChatPanel() {
 
   if (sidePanel !== 'aac-chat') return null;
 
-  // SECOND-pass simplification (2026-05-07 user feedback: "doesnt make
-  // any sense, expand type here panel instead", "remove contacts
-  // button"). When the AAC user has no contacts AND no active
-  // selection, we render NOTHING — the section unmounts. Toolbar's
-  // 💬 button toggles the panel; Settings → Integrations / Contacts
-  // is where caregivers manage the contact list (we just shipped the
-  // in-app provider connect there). MessageBar grows by one line
-  // when sidePanel is 'aac-chat' so the user has more compose room.
-  const isCompact = !activeContact && sortedContacts.length === 0;
-  if (isCompact) return null;
+  // 2026-05-07 user report (Image #20): "message tool is broken and
+  // shows a standard keyboard without inbox outbox and providers".
+  // Earlier behavior unmounted the panel entirely when contacts.length
+  // was zero — but the user EXPLICITLY tapped the 💬 toolbar button,
+  // so they want to SEE the messaging UI (provider list / "add a
+  // contact" CTA), not silently get only the qwerty back. Empty-state
+  // render below shows: header, provider icons row (so the user knows
+  // which channels work), and a "Manage contacts in Settings" CTA.
+  // The panel only auto-collapses when sidePanel !== 'aac-chat' (the
+  // user closed it themselves via ✕ or by retoggling 💬).
+  const isEmpty = !activeContact && sortedContacts.length === 0;
 
   // Below this point: not compact (have contacts or active contact).
   return (
@@ -182,6 +183,47 @@ export default function AACChatPanel() {
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-3">
+        {/* Empty state — user explicitly opened the messaging panel
+            but no contacts exist yet. Show the provider icon row so
+            they know which channels work, and a CTA to manage
+            contacts in Settings. Earlier the panel unmounted in this
+            state; user reported "message tool is broken and shows a
+            standard keyboard without inbox outbox and providers"
+            (Image #20, 2026-05-07). */}
+        {isEmpty && (
+          <div className="flex flex-col items-center gap-4 py-6" data-testid="aac-chat-empty-state">
+            <div className="text-base text-secondary text-center max-w-sm">
+              {t('aac_chat_empty_hint') || 'No contacts yet. Caregivers can add Telegram / WhatsApp / SMS / Email contacts in Settings → Contacts.'}
+            </div>
+            <ul className="flex flex-wrap justify-center gap-3" data-testid="aac-chat-providers">
+              {(Object.keys(PROVIDER_LABELS) as Array<keyof typeof PROVIDER_LABELS>).map((provider) => {
+                const available = isProviderAvailable(provider, plan);
+                return (
+                  <li
+                    key={provider}
+                    data-testid={`aac-chat-provider-${provider}`}
+                    className={`surface-key border border-theme rounded-lg px-3 py-2 flex items-center gap-2 min-h-[48px] ${available ? '' : 'opacity-50'}`}
+                  >
+                    <span aria-hidden className="text-2xl">{PROVIDER_ICONS[provider]}</span>
+                    <span className="text-sm font-bold text-primary">{PROVIDER_LABELS[provider]}</span>
+                    {!available && (
+                      <span className="text-[10px] text-[#FF9800] font-bold ml-1">
+                        🔒 {PROVIDER_MIN_TIER[provider]}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <button
+              onClick={() => { tapFeedback(); toggleSettings(); }}
+              data-testid="aac-chat-open-settings"
+              className="aac-btn bg-[#4CAF50] text-white rounded-lg px-5 py-3 font-bold text-base min-h-[44px]"
+            >
+              ⚙ {t('aac_chat_open_settings') || 'Open Settings → Contacts'}
+            </button>
+          </div>
+        )}
         {!activeContact && sortedContacts.length > 0 && (
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="aac-chat-contact-list">
             {sortedContacts.map((c) => {

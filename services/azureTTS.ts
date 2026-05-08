@@ -171,12 +171,28 @@ function getAudioContext(): AudioContext {
  * handler (touchstart, pointerdown, keydown) so iOS Safari unlocks audio
  * for the lifetime of the context. Subsequent BufferSourceNode.start()
  * calls then play even when triggered after async work.
+ *
+ * SYNCHRONOUS portion (getAudioContext + ctx.resume invocation) runs
+ * before the first await, so callers that invoke this from inside a
+ * click handler preserve the gesture token. Do NOT await this from
+ * the click handler — `void warmupAzureAudio()` is the right pattern,
+ * the click can return while the resume promise resolves in flight.
  */
 export async function warmupAzureAudio(): Promise<void> {
   try {
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') await ctx.resume();
   } catch { /* AudioContext unavailable — silent fail */ }
+}
+
+/** True iff the shared AudioContext exists AND is in 'running' state.
+ *  Tier-1 callers (speakAzure → decodeAndPlay) check this immediately
+ *  before scheduling a BufferSourceNode; if false, they bail out with
+ *  return false so speech-service can fall through to Web Speech tier
+ *  (which has its own gesture handling) instead of decoding silently
+ *  into a suspended context. */
+export function isAudioContextRunning(): boolean {
+  return sharedAudioCtx !== null && sharedAudioCtx.state === 'running';
 }
 
 // Track every BufferSourceNode that's currently scheduled or playing so a

@@ -155,11 +155,72 @@ export default function AIChatPanel() {
   // Now the panel renders for everyone; askAI handles 401 / errors
   // gracefully via the existing catch handler.
   //
-  // The compact-when-empty rule is preserved: the panel still
-  // unmounts when there is nothing to show, so the qwerty fills
-  // the freed space and MessageBar grows by one line.
-  const isCompact = messages.length === 0 && !loading && !text.trim();
-  if (isCompact) return null;
+  // Three layout states (refined 2026-05-07 from user Image #19):
+  //   1. No messages + no typed text: unmount entirely, qwerty fills.
+  //   2. No messages + has text:      slim footer-only mode — Ask AI
+  //      button + mic + ✕, no header strip, no empty scroll area.
+  //      Earlier layout had a flex-[3] panel with an empty scroll
+  //      area that compressed the qwerty to two cramped rows the
+  //      moment the user typed anything ("ai chat layout is broken..
+  //      keyboard should be full without ai chat lines").
+  //   3. Has messages or loading: full panel with header + scroll
+  //      area + footer.
+  const hasMessages = messages.length > 0 || loading;
+  if (!hasMessages && !text.trim()) return null;
+  if (!hasMessages) {
+    return (
+      <section
+        aria-label={t('ai_chat_title')}
+        className="shrink-0 surface-bar border-y border-theme"
+        data-testid="ai-chat-panel"
+        data-state="slim"
+      >
+        <div className="p-3">
+          <div className="text-muted text-base md:text-lg mb-2 text-center truncate">
+            {listening && interim ? (
+              <span className="text-[#4CAF50]">🎙 &ldquo;{interim}&rdquo;</span>
+            ) : (
+              <>{t('question_label')} <span className="text-primary font-semibold">&ldquo;{text.trim()}&rdquo;</span></>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {voiceSupported && (
+              <button
+                onClick={toggleVoice}
+                aria-label={listening ? t('stop_voice') : t('start_voice')}
+                aria-pressed={listening}
+                data-testid="ai-mic-slim"
+                className={`aac-btn rounded-xl font-bold text-2xl px-5 min-w-[72px] flex items-center justify-center ${
+                  listening
+                    ? 'bg-[#F44336] text-white animate-pulse'
+                    : 'surface-key text-primary border border-theme'
+                }`}
+              >
+                {listening ? '⏺' : '🎙'}
+              </button>
+            )}
+            <button
+              onClick={handleAsk}
+              disabled={!text.trim() || loading}
+              data-testid="ai-ask-slim"
+              className={`aac-btn aac-speak flex-1 py-3 rounded-xl font-bold text-xl md:text-2xl ${
+                text.trim() && !loading ? 'bg-[#4CAF50] text-white' : 'surface-key text-dim border border-theme'
+              }`}
+            >
+              {`${t('ask_ai')} ✨`}
+            </button>
+            <button
+              onClick={() => { tapFeedback(); closeSidePanel(); }}
+              aria-label={t('close_ai_chat')}
+              className="aac-btn w-12 rounded-xl surface-key text-muted text-xl flex items-center justify-center border border-theme shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section
       aria-label={t('ai_chat_title')}
