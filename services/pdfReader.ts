@@ -93,51 +93,103 @@ export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExt
   const pages: PdfPage[] = [];
   let totalChars = 0;
   for (let i = 1; i <= doc.numPages; i++) {
-    let text = '';
-    let phase: 'getPage' | 'getTextContent' | 'mapItems' | 'cleanup' = 'getPage';
+    const r = await extractOnePage(doc, i);
+    pages.push(r);
+    totalChars += r.text.length;
+  }
+  doc.destroy();
+  return { pages, title, totalChars };
+}
+
+/** Sentinel marker on text that came from the error path. Speak / read-
+ *  all callers MUST filter on `isUnreadable(page)` before treating the
+ *  text as content — otherwise an error placeholder ends up read aloud
+ *  to the AAC user. (May 2026 user report: PDF reader looping the
+ *  "could not be read" message via Read all.) */
+export const PDF_UNREADABLE_PREFIX = '⛔ ';
+
+export function isUnreadable(page: PdfPage): boolean {
+  return typeof page.text === 'string' && page.text.startsWith(PDF_UNREADABLE_PREFIX);
+}
+
+/** Per-page extraction with TWO fallback strategies. Designed so a
+ *  failure inside one pdfjs option set falls through to the next
+ *  instead of becoming a permanent error placeholder. The page text
+ *  ends up in one of three states:
+ *    1. Real extracted text (success)
+ *    2. '' empty (no text layer — image-only / handwritten scan)
+ *    3. PDF_UNREADABLE_PREFIX + reason (every strategy threw — true
+ *       failure, surfaced to UI but filtered out of speak / read-all)
+ */
+async function extractOnePage(
+  doc: import('pdfjs-dist').PDFDocumentProxy,
+  i: number,
+): Promise<PdfPage> {
+  let page: import('pdfjs-dist').PDFPageProxy | null = null;
+  try {
+    page = await doc.getPage(i);
+  } catch (e) {
+    return {
+      pageNumber: i,
+      text: `${PDF_UNREADABLE_PREFIX}Page ${i} — getPage failed: ${e instanceof Error ? e.message : 'unknown'}`,
+    };
+  }
+
+  // Try strategies in order. Each catches its own throw so a single
+  // failure mode doesn't kill the page — image-only PDFs in particular
+  // tend to throw inside pdfjs's normalization walk on tagged content,
+  // which in Safari surfaces as "undefined is not a function (near
+  // '...t of e...')". Strategy 3 (no options at all) is the last
+  // resort.
+  const strategies: Array<() => Promise<unknown>> = [
+    () => page!.getTextContent({
+      includeMarkedContent: false,
+      disableNormalization: true,
+    } as Parameters<typeof page['getTextContent']>[0]),
+    () => page!.getTextContent({
+      includeMarkedContent: true,
+    } as Parameters<typeof page['getTextContent']>[0]),
+    () => page!.getTextContent(),
+  ];
+
+  let text = '';
+  let strategyOk = false;
+  const errors: string[] = [];
+  for (const strat of strategies) {
     try {
-      const page = await doc.getPage(i);
-      phase = 'getTextContent';
-      // Some clinical PDFs (Vineland-3, Connors, BASC) ship XFA forms
-      // and tagged-PDF marked content. The default getTextContent
-      // options trip a `for...of` over an undefined collection inside
-      // pdfjs on those — surfacing as Safari's
-      // "undefined is not a function (near '...t of e...')". Passing
-      // explicit options (omit normalizeWhitespace, disableNormalization
-      // = true) bypasses the offending normalization path while still
-      // returning items[].
-      const content = await page.getTextContent({
-        includeMarkedContent: false,
-        disableNormalization: true,
-      } as Parameters<typeof page.getTextContent>[0]);
-      phase = 'mapItems';
-      // pdfjs returns `content.items` as TextItem | TextMarkedContent.
-      // Filter to TextItem (those with .str) so iterator-based mapping
-      // can't trip on a marked-content boundary even if includeMarked
-      // wasn't honoured by an older worker.
-      const rawItems: unknown[] = Array.isArray(content?.items) ? content.items : [];
+      const content = await strat();
+      const rawItems: unknown[] = Array.isArray((content as { items?: unknown }).items)
+        ? (content as { items: unknown[] }).items
+        : [];
       const strs: string[] = [];
       for (const it of rawItems) {
         const s = (it as { str?: unknown })?.str;
         if (typeof s === 'string') strs.push(s);
       }
       text = strs.join(' ').replace(/\s+/g, ' ').trim();
-      phase = 'cleanup';
-      try { page.cleanup(); } catch { /* cleanup failure is non-fatal */ }
+      strategyOk = true;
+      break;
     } catch (e) {
-      // Per-page failure must NOT take down the whole document. Surface
-      // the failed phase + a stack frame so future regressions are
-      // diagnosable instead of hidden behind the minified Safari
-      // "undefined is not a function (near '...t of e...')" message.
-      const msg = e instanceof Error ? e.message : 'unknown error';
-      const frame = e instanceof Error && e.stack
-        ? e.stack.split('\n').find((l) => /pdf\.|pdfjs|worker/i.test(l))?.trim()
-        : '';
-      text = `[Page ${i} could not be read at ${phase}: ${msg}${frame ? ` @ ${frame.slice(0, 80)}` : ''}]`;
+      errors.push(e instanceof Error ? e.message : 'unknown');
     }
-    pages.push({ pageNumber: i, text });
-    totalChars += text.length;
   }
-  doc.destroy();
-  return { pages, title, totalChars };
+
+  try { page.cleanup(); } catch { /* non-fatal */ }
+
+  if (!strategyOk) {
+    // Every strategy threw → this is a true unreadable page. Surface
+    // a sentinel-prefixed message that callers filter out of speak /
+    // read-all flows. The first strategy's error is the most
+    // diagnostic.
+    return {
+      pageNumber: i,
+      text: `${PDF_UNREADABLE_PREFIX}Page ${i} — could not be read: ${errors[0]?.slice(0, 120) || 'unknown'}`,
+    };
+  }
+
+  // strategyOk === true. text is either real content or empty (image-
+  // only / handwritten-scan PDFs have no text layer; pdfjs returns
+  // items=[] without throwing, which is correct behavior — we surface
+  // empty rather than fake an error).
+  return { pageNumber: i, text };
 }

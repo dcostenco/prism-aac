@@ -15,7 +15,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
 import { tapFeedback } from '@/services/feedback';
 import { aacSpeak } from '@/services/aacSpeak';
-import { extractPdfText, type PdfPage } from '@/services/pdfReader';
+import { extractPdfText, isUnreadable, type PdfPage } from '@/services/pdfReader';
 
 interface LoadedPdf {
   title: string;
@@ -56,14 +56,23 @@ export default function PdfReaderPanel() {
 
   const speakPage = useCallback((page: PdfPage) => {
     tapFeedback();
-    if (!page.text) return;
+    // Refuse to speak the unreadable-page sentinel string — that's
+    // diagnostic UI, not content. Without this guard, tapping ▶ on an
+    // error tile (or hitting Read all on a doc with errors) read
+    // "Page 1 could not be read at getTextContent ..." aloud and felt
+    // like a loop the user couldn't escape.
+    if (!page.text || isUnreadable(page)) return;
     aacSpeak(page.text, speechRate, speechVolume, activeTone);
   }, [speechRate, speechVolume, activeTone]);
 
   const speakAll = useCallback(() => {
     if (!doc || doc.pages.length === 0) return;
     tapFeedback();
-    const all = doc.pages.map((p) => p.text).filter(Boolean).join(' ');
+    const all = doc.pages
+      .filter((p) => !isUnreadable(p))
+      .map((p) => p.text)
+      .filter(Boolean)
+      .join(' ');
     if (all) aacSpeak(all, speechRate, speechVolume, activeTone);
   }, [doc, speechRate, speechVolume, activeTone]);
 
@@ -189,12 +198,21 @@ export default function PdfReaderPanel() {
                   <button
                     onClick={() => speakPage(page)}
                     aria-label={`Read page ${page.pageNumber}`}
-                    className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white shrink-0"
+                    disabled={isUnreadable(page) || !page.text}
+                    className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     ▶ Page {page.pageNumber}
                   </button>
                   <p className="text-sm leading-relaxed line-clamp-3 flex-1">
-                    {page.text || <em className="text-muted">(empty page)</em>}
+                    {isUnreadable(page) ? (
+                      <em className="text-muted">
+                        (page {page.pageNumber} couldn&apos;t be read — image-only or unsupported encoding)
+                      </em>
+                    ) : page.text ? (
+                      page.text
+                    ) : (
+                      <em className="text-muted">(empty page — no text layer)</em>
+                    )}
                   </p>
                 </div>
               </li>
