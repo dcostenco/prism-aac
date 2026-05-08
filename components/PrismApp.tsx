@@ -11,6 +11,8 @@ import AACChatPanel from './AACChatPanel';
 import SchedulePanel from './SchedulePanel';
 import GamesPanel from './GamesPanel';
 import MarketplacePanel from './MarketplacePanel';
+import PdfReaderPanel from './PdfReaderPanel';
+import OcrCapturePanel from './OcrCapturePanel';
 import PictureEditorPanel from './marketplace/panels/PictureEditorPanel';
 import MusicComposerPanel from './marketplace/panels/MusicComposerPanel';
 import MathPanel from './MathPanel';
@@ -264,6 +266,8 @@ export default function PrismApp() {
           <SchedulePanel />
           <GamesPanel />
           <MarketplacePanel />
+          <PdfReaderPanel />
+          <OcrCapturePanel />
           <PictureEditorPanel />
           <MusicComposerPanel />
           {/* Keyboard — hidden only for panels with their own input

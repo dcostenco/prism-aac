@@ -34,6 +34,8 @@ interface ButtonHandlers {
   openSchedule: () => void;
   openGames: () => void;
   openMarketplace: () => void;
+  openPdfReader: () => void;
+  openOcrCapture: () => void;
   toggleHistory: () => void;
   toggleSettings: () => void;
   triggerAlert: () => void;
@@ -88,6 +90,8 @@ function buildBuiltInButtons(t: (k: string) => string, h: ButtonHandlers): Recor
     },
     notes: { id: 'notes', icon: '📋', ariaLabel: t('notes'), title: t('notes'), onClick: h.openCaregiver },
     games: { id: 'games', icon: '🎮', ariaLabel: t('games'), title: t('games'), onClick: h.openGames },
+    pdf_reader: { id: 'pdf_reader', icon: '📄', ariaLabel: 'PDF reader', title: 'PDF reader', onClick: h.openPdfReader },
+    ocr_capture: { id: 'ocr_capture', icon: '👁', ariaLabel: 'Screenshot reader (OCR)', title: 'Screenshot reader (OCR)', onClick: h.openOcrCapture },
     history: { id: 'history', icon: '📜', ariaLabel: t('history'), title: t('history'), onClick: h.toggleHistory },
     sound: {
       id: 'sound',
@@ -149,7 +153,7 @@ function appButton(
 }
 
 export default function Toolbar() {
-  const { openCategories, openMath, openCaregiver, openAIChat, openAACChat, openSchedule, openGames, openMarketplace, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
+  const { openCategories, openMath, openCaregiver, openAIChat, openAACChat, openSchedule, openGames, openMarketplace, openPdfReader, openOcrCapture, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
   const { soundEnabled, toggleSound, appendText } = useMessageStore();
   const language = useSettingsStore((s) => s.language);
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
@@ -189,6 +193,7 @@ export default function Toolbar() {
 
   const handlers: ButtonHandlers = {
     openCategories, openMath, openAIChat, openAACChat, openCaregiver, openSchedule, openGames, openMarketplace,
+    openPdfReader, openOcrCapture,
     toggleHistory, toggleSettings, triggerAlert,
     toggleSound: () => { tapFeedback(); toggleSound(); },
     toggleMic,

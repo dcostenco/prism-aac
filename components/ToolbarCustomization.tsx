@@ -17,6 +17,8 @@ const BUILTIN_META: Record<ToolbarButtonId, { icon: string; label: string }> = {
   aac_chat:    { icon: '💬', label: 'Send Message' },
   notes:       { icon: '📋', label: 'Caregiver Notes' },
   games:       { icon: '🎮', label: 'Games' },
+  pdf_reader:  { icon: '📄', label: 'PDF Reader' },
+  ocr_capture: { icon: '👁', label: 'Screenshot Reader (OCR)' },
   history:     { icon: '📜', label: 'History' },
   sound:       { icon: '🔊', label: 'Sound Toggle' },
   settings:    { icon: '⚙️', label: 'Settings' },

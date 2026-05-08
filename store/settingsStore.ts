@@ -16,7 +16,8 @@ export type PictureMode = 'off' | 'symbols' | 'symbols-ai';
 export type ToolbarButtonId =
   | 'categories' | 'mic' | 'schedule' | 'marketplace' | 'alert'
   | 'sound' | 'settings'
-  | 'math' | 'ai_chat' | 'aac_chat' | 'notes' | 'games' | 'history';
+  | 'math' | 'ai_chat' | 'aac_chat' | 'notes' | 'games' | 'history'
+  | 'pdf_reader' | 'ocr_capture';
 
 export interface ToolbarConfig {
   // Render order — first id is leftmost. Disabled ids stay in the array so
@@ -44,6 +45,7 @@ export interface ToolbarConfig {
 export const DEFAULT_TOOLBAR_ORDER: ToolbarButtonId[] = [
   'categories', 'mic', 'aac_chat', 'alert',
   'schedule', 'marketplace', 'math', 'ai_chat', 'notes', 'games',
+  'pdf_reader', 'ocr_capture',
   'history', 'sound', 'settings',
 ];
 
@@ -62,6 +64,8 @@ export const DEFAULT_TOOLBAR_ENABLED: Partial<Record<ToolbarButtonId, boolean>> 
   ai_chat: false,
   notes: false,
   games: false,
+  pdf_reader: false,
+  ocr_capture: false,
   history: false,
   sound: false,
 };
