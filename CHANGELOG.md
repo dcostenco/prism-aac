@@ -1,5 +1,152 @@
 # PrismAAC Changelog
 
+## [0.10.0] - 2026-05-08 — Reliability sprint: TTS / translation / PDF / marketplace / tutor language
+
+Single-day reliability run resolving **13 reported bugs** (full audit at
+[`docs/BUGS-2026-05-08.md`](docs/BUGS-2026-05-08.md)). 26/26 live-deploy
+claims verified by `scripts/claims-verify.mjs`. **28 new test cases.**
+
+### Build pipeline
+
+- **Webpack production build.** `next build` defaulted to Turbopack on
+  Next 16; Turbopack silently skips Serwist's webpack plugin so
+  `public/sw.js` was never regenerated. Switched `build` script to
+  `next build --webpack`. Added `node:*` scheme handling for Pyodide,
+  `pyodide` to `serverExternalPackages`, home page `force-dynamic`,
+  dynamic-import wrapping of MathTutorTool.
+- **Service Worker auto-eviction killswitch.** Inline `<script>` in
+  `app/layout.tsx` runs FIRST on every page load. Versioned
+  localStorage marker; on mismatch unregisters every SW, deletes
+  every Cache Storage entry, reloads. End-user self-heals on next
+  visit — no Develop-menu intervention.
+
+### TTS
+
+- **`ctx.state === 'running'` guard** before `BufferSource.start()`.
+  Web Audio queues silently into a suspended ctx — `[TTS] Portal TTS
+  succeeded` was lying. Falls through to Web Speech tier when ctx
+  isn't ready.
+- **Rate clamp `[0.5, 2.0]` pass-through** (no SSML scale conversion).
+  Inworld TTS-2 ignores `rate=` so earlier conversion experiments
+  were chasing a non-bug. Romanian routes to Azure
+  `ro-RO-AlinaNeural`.
+- Verified end-to-end via `scripts/tts-live-diag-webkit.mjs` and
+  `tts-live-diag-multilang.mjs`: state=running, gain=1, source.start
+  fires, fallback to Web Speech when portal aborts. Rate=1.00
+  across en / ro / es / fr.
+
+### AI tutor (math)
+
+- **`outputLanguage` (not UI `language`)** drives tutor reply
+  language. AAC users with asymmetric pairs (input=en, output=ro)
+  now get the localized hint they expect.
+- **`Respond in {LangName}. Use natural {LangName} phrasing.`**
+  appended to user prompt tail — current models weight tail-position
+  directives more than ones buried in a long system list.
+- **Synalux `prism-aac/chat` route now merges client system message**
+  with `AAC_SYSTEM` instead of discarding it (synalux-private
+  `b2d70b0c`). Earlier route hardcoded `system: AAC_SYSTEM` and
+  filtered out `role:'system'` from every backend caller —
+  client-supplied "respond in Romanian" never reached the model.
+
+### Translation
+
+- **No English fallback leak into non-English target dicts.**
+  `getPhraseText('cw-want', 'it', 'Want')` returned the English
+  fallback when IT had no entry; the dict registered that as the
+  IT translation. May 2026 RU→IT bug: "хочу больше свободы" →
+  "Want più свободы". Fixed by skipping pairs where target
+  `getPhraseText` output equals the English fallback.
+- **`LANG_NAMES` + `SCRIPT_FOR_LANG` extended** with it / nl / pl /
+  tr / sv / no / da / fi / cs / el / hu / he / hi / vi / th / id /
+  tl. The AI translator sees "translate to Italian" instead of
+  "translate to it".
+
+### PDF Reader
+
+- **Clinical-PDF support.** Pass `disableNormalization: true` +
+  `includeMarkedContent: false` to `getTextContent()`. pdfjs 5.x
+  default normalization walk trips `for…of` over an undefined
+  collection on tagged-PDF marked content (Vineland-3, Connors,
+  BASC) — surfaces in Safari as "undefined is not a function (near
+  '…t of e…')" on every page.
+- **Per-phase error reporting** — `[Page N could not be read at
+  <phase>: <msg> @ <stack-frame>]` so future regressions are
+  diagnosable instead of opaque.
+
+### Math keyboard
+
+- **Phase 1**: Geom 12→40, Adv-Math 16→32, Misc-Math 16→33; chip
+  min-height 44→56 px, text-xl→text-2xl, panel clamp 340→420 px.
+- **Phase 2** (+231 keys): Adv-Math trig row + lim/dx/dy/f(x)/g(x)
+  + subscripts ₀-₉ ₙ ᵢ; Geom `~` + ³ + l/w/h/s; Physics
+  equation-variables + composite SI units + g/c; Chemistry
+  subscripts ₅-₉ + g/mol + mol/L + %; Bio case-toggle + ²/³/^n +
+  codon glyphs; Stats ME/z*/t* + mirrored hypothesis ops + Cov(/
+  corr(/Pr(; Python built-ins + `#` + indent + newline; Java
+  ++/-- and compound assigns + System.out.println / length / equals
+  / toString / Math. + `@`; Earth scientific-notation helper +
+  superscript digits + yr/kyr/Myr; Lang Arts SUBJ/PRED/OBJ/DO/IO +
+  case-toggle + Q:/A:; History events 1492-1929 + missing
+  centuries 6th-9th / 11th-14th / 16th + Δ/≈/~.
+- **Cross-cutting decoration row** (² ³ ₂ ₃ ₄ Δ ≈) on Main +
+  Adv-Math + Chemistry + Physics + Earth Science.
+
+### Marketplace + UI
+
+- **Single-row toolbar with horizontal overflow scroll.** Earlier
+  `flex-wrap` revision broke the strip onto a second row when
+  marketplace apps were installed, doubling toolbar height and
+  pushing every panel below DOWN. Toolbar height now invariant to
+  installed-app count (verified 52 px with 20 installed apps).
+- **`openCategories` UP-navigation.** From `category-detail` and
+  `ordering` flows now goes one level UP to the categories list.
+  Previously closed everything → read as "folder icon does
+  nothing".
+
+### HTTPS hygiene
+
+- **Ollama probe + call gated on HTTPS.** Browsers block
+  http://localhost:11434 from HTTPS pages as mixed content; the
+  catch swallowed the error but the warning still spammed user
+  consoles. Short-circuits to "unavailable" before fetch.
+
+### Workflow library
+
+12 per-subject step-by-step workflow markdowns + 12 grade-leveled
+classroom workflows + 72 Playwright e2e tests + per-subject
+keyboard gap report. **Index at
+[`docs/WORKFLOWS.md`](docs/WORKFLOWS.md).**
+
+### Testing
+
+- 28 new test cases across 6 files. Suite total **2315 passed / 34
+  skipped / 0 failed** (was 2298 at start of cycle).
+- `scripts/claims-verify.mjs` — Playwright + chunk-grep audit
+  exercising every claim from `docs/BUGS-2026-05-08.md` against the
+  live deploy. **26/26 pass.**
+- `scripts/viewport-overflow-audit.mjs` — body / section overflow
+  at iPhone-6.5 / iPad-7 / iPad-13 / desktop-md. **Zero overflow.**
+
+### Discipline (skill / process)
+
+- `~/.agent/skills/tts-live-diagnostic-mandatory/` extended to a
+  cross-repo trace discipline with a **10-item Definition of Done**.
+  Cross-repo bugs verified at BOTH ends; verification regex must
+  match a known-positive (local source) before being trusted on
+  minified chunks; "done" is the user-confirmed terminal state.
+- Skill auto-syncs to Prism MCP DB on SessionStart / SessionEnd and
+  on the "update skills" prompt phrase.
+- Mirror skill copy at `synalux-private/skills/cross-repo-trace-
+  discipline/`.
+
+### Outstanding
+
+- `#10 hint-close` — code-side correct in fresh headless WebKit
+  state. Awaiting user retest after killswitch eviction.
+
+---
+
 ## [0.9.0] - 2026-05-07 — Full high-school curriculum + locale-aware history (Phases 6 → 8)
 
 The math module is now a full high-school program: **19 keyboard tabs**
