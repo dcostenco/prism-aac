@@ -8,7 +8,7 @@ import { tapFeedback, deleteFeedback } from '@/services/feedback';
 import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
-import { TONE_OPTIONS } from '@/services/azureTTS';
+import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
 import { translateWithAIRefine } from '@/services/translateService';
 import { useAuthStore } from '@/store/authStore';
 import { usePredictionStore } from '@/store/predictionStore';
@@ -214,6 +214,16 @@ export default function MessageBar() {
   }, [suggestion, setText, learnUtterance, soundEnabled, translated, speechRate, speechVolume, activeTone]);
 
   const handleSpeak = useCallback(() => {
+    // CRITICAL: invoke ctx.resume() synchronously inside this click
+    // gesture. iOS Safari (and some Chromium builds when a tab has
+    // been backgrounded) require the resume() call to be in the
+    // synchronous call stack of a user gesture. Without this, the
+    // AudioContext stays suspended, decodeAndPlay() runs successfully
+    // but the BufferSourceNode plays into silence — the "tapped Speak,
+    // heard nothing" regression. warmupAzureAudio is async, but the
+    // important call (getAudioContext().resume()) happens before its
+    // first await — invoking it here preserves the gesture token.
+    void warmupAzureAudio();
     tapFeedback();
     const original = text.trim();
     if (!original || !soundEnabled) return;
@@ -301,8 +311,8 @@ export default function MessageBar() {
     <div
       className={`flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] py-[clamp(0.3rem,0.6svh,0.6rem)] shrink-0 relative border border-theme ${
         isMessagingMode
-          ? 'min-h-[clamp(96px,18svh,144px)]'
-          : 'min-h-[clamp(64px,12svh,96px)]'
+          ? 'min-h-[clamp(124px,22svh,180px)]'
+          : 'min-h-[clamp(88px,16svh,132px)]'
       }`}
       data-messaging-mode={isMessagingMode ? '1' : '0'}
     >
@@ -337,14 +347,14 @@ export default function MessageBar() {
 
       <div className={`flex-1 flex flex-col justify-center overflow-hidden ${
           isMessagingMode
-            ? 'min-h-[clamp(72px,14svh,108px)]'
-            : 'min-h-[clamp(48px,9svh,72px)]'
+            ? 'min-h-[clamp(96px,18svh,144px)]'
+            : 'min-h-[clamp(72px,13svh,108px)]'
         }`}>
         <div
           className={`text-[clamp(1rem,2.5vw,1.5rem)] leading-snug break-words text-primary whitespace-normal ${
             isMessagingMode
-              ? 'line-clamp-3 min-h-[3.75em]'
-              : 'line-clamp-2 min-h-[2.5em]'
+              ? 'line-clamp-4 min-h-[5em]'
+              : 'line-clamp-3 min-h-[3.75em]'
           }`}
           role="status"
           aria-live="polite"

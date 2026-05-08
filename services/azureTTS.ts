@@ -267,7 +267,20 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
     return false;
   }
   if (ctx.state === 'suspended') {
-    try { await ctx.resume(); } catch { /* decode below will signal */ }
+    try { await ctx.resume(); } catch { /* falls through to state check */ }
+  }
+  // iOS Safari + some Chromium edge cases: ctx.resume() can complete
+  // without transitioning to 'running' when the user-gesture token has
+  // already been consumed (typical: the speak path went through one or
+  // more `await fetch(...)` boundaries before reaching here). In that
+  // state, BufferSourceNode.start() resolves successfully but the
+  // audio is queued silently — the user hears nothing. Fail-fast so
+  // speak() can fall through to Web Speech tier (which handles its own
+  // gesture requirement via window.speechSynthesis.speak inside the
+  // click handler synchronously).
+  if (ctx.state !== 'running') {
+    console.warn(`[${label}] AudioContext stuck in state="${ctx.state}" after resume — falling through to next tier so the user hears something.`);
+    return false;
   }
 
   let decoded: AudioBuffer;
