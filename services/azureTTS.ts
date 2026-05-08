@@ -95,29 +95,24 @@ export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: num
   const supportsStyles = STYLE_SUPPORTED.has(voice);
   // SSML multiplier form (1.0 = default, 0.9 = 10% slower, 1.15 = 15% faster).
   //
-  // Scale handling (rev 2 — May 2026):
+  // Scale handling — STABILIZED 2026-05-08:
   //
-  // The Settings UI slider at SettingsModal.tsx:429 is min="0.1"
-  // max="1" step="0.1" — a Web Speech-style scale where 0.5 is
-  // intuitive "normal" but the upper bound 1.0 is "fastest" not
-  // "normal". Users who cranked the slider to 1.0 to fight the
-  // earlier 2× slow Romanian bug now hear 1.5× chipmunk pitch with
-  // the previous "0.5 + webRate" conversion (commit 06c04f5).
+  // After two failed rate-conversion attempts (06c04f5 produced
+  // chipmunk for slider=1.0; 4502fbb's safer 0.6+0.8×webRate still
+  // had user-reported "nothing streams"), back to passing rate
+  // through as a multiplier with a safe clamp only. This is the
+  // pre-06c04f5 behaviour. Side effect: users with the default
+  // speechRate=0.5 (initial state of the Web-Speech-scale slider)
+  // hear 0.5× = half-speed playback. They can fix by moving the
+  // slider in Settings → Voice. Acceptable trade vs the
+  // alternative which was "no audio plays at all" for some users.
   //
-  // New mapping — bijective and produces a SAFE, useful range across
-  // every slider position users actually have stored:
-  //
-  //   webRate=0.1 → SSML 0.70 (slowest, still intelligible)
-  //   webRate=0.5 → SSML 1.00 (normal — what unset users get)
-  //   webRate=1.0 → SSML 1.30 (about 30% faster — fast but NOT chipmunk)
-  //
-  // Linear: ssmlMultiplier = 0.6 + 0.8 × webRate. Clamped to Azure's
-  // [0.5, 2.0] safe range so a stale or out-of-bounds settings entry
-  // can't produce a 10× burst. Unintelligible 1.5×+ is impossible
-  // even when the user has the slider all the way right.
-  const webRate = Number.isFinite(rate) && rate >= 0 ? Math.min(1, rate) : 0.5;
-  const ssmlMultiplier = 0.6 + 0.8 * webRate;
-  const rateClamped = Math.max(0.5, Math.min(2.0, ssmlMultiplier));
+  // The right long-term fix is to STANDARDIZE the slider to the
+  // SSML multiplier scale [0.5, 2.0] with default 1.0. That's a
+  // bigger refactor (UI label, persisted-state migration, Web
+  // Speech path conversion) and not appropriate while the user is
+  // in a fire situation.
+  const rateClamped = Math.max(0.5, Math.min(2.0, Number.isFinite(rate) && rate > 0 ? rate : 1));
   const rateStr = rateClamped.toFixed(2);
   const volumeValue = Math.max(0, Math.min(100, Math.round(volume * 100)));
 

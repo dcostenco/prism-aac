@@ -18,49 +18,24 @@
 import { describe, it, expect } from 'vitest';
 import { buildSSML } from '@/services/azureTTS';
 
-describe('buildSSML — prosody emission', () => {
+describe('buildSSML — prosody emission (stabilized 2026-05-08)', () => {
   it('emits rate as multiplier number, not unsigned percent', () => {
-    const ssml = buildSSML('hello', 'ro-RO', 'friendly', 0.5, 1.0);
+    const ssml = buildSSML('hello', 'ro-RO', 'friendly', 1.0, 1.0);
+    // Must NOT contain the legacy "100%" form (Azure parses as +100% = 2×).
     expect(ssml).not.toMatch(/rate="\d+%"/);
-    // Web Speech 0.5 (normal) → SSML 1.00 (normal multiplier).
     expect(ssml).toMatch(/rate="1\.00"/);
   });
 
   it('clamps absurd rate values to Azure-safe range', () => {
-    // Web Speech 10 clamps to 1, then ssmlMultiplier = 0.6 + 0.8 = 1.40
     const ssml10x = buildSSML('hi', 'ro-RO', 'friendly', 10, 1);
-    expect(ssml10x).toMatch(/rate="1\.40"/);
-    // Web Speech 0 → ssmlMultiplier = 0.6 (lower output)
+    expect(ssml10x).toMatch(/rate="2\.00"/);
     const ssmlZero = buildSSML('hi', 'ro-RO', 'friendly', 0, 1);
-    expect(ssmlZero).toMatch(/rate="0\.60"/);
+    expect(ssmlZero).toMatch(/rate="1\.00"/);  // 0 falls back to default 1
   });
 
-  // CRITICAL: scale handling rev 2.
-  // - User report 1 (Romanian "2× slow"): rate=0.5 used to pass as
-  //   SSML "0.50" = half speed.
-  // - User report 2 ("morning routine high pitch / chipmunk"):
-  //   first conversion attempt `0.5 + webRate` produced SSML 1.5
-  //   when slider was at max 1.0 → 1.5× chipmunk.
-  // - Fix: linear `0.6 + 0.8 × webRate` keeps the safe range
-  //   [0.7, 1.4] across the full slider, with 0.5 → 1.0 (normal).
-  //   No slider position can produce ≥ 1.5× (chipmunk threshold).
-  it('default speechRate of 0.5 emits SSML 1.00 (normal multiplier)', () => {
-    const ssml = buildSSML('Buna dimineata', 'ro-RO', 'friendly', 0.5, 1);
-    expect(ssml).toMatch(/rate="1\.00"/);
-    expect(ssml).not.toMatch(/rate="0\.50"/);
-  });
-
-  it('slider at max (1.0) produces SSML 1.40 — fast but NOT chipmunk', () => {
-    const ssml = buildSSML('morning routine', 'en-US', 'friendly', 1.0, 1);
-    expect(ssml).toMatch(/rate="1\.40"/);
-    // The "morning routine high pitch" regression emitted 1.50+ here.
-    expect(ssml).not.toMatch(/rate="1\.5\d"/);
-  });
-
-  it('slider at min (0.1) stays intelligible at SSML 0.68', () => {
-    const ssml = buildSSML('slow speech', 'en-US', 'friendly', 0.1, 1);
-    // 0.6 + 0.8 × 0.1 = 0.68, rounded to 2 decimals
-    expect(ssml).toMatch(/rate="0\.68"/);
+  it('passes rate through as multiplier (0.9 → "0.90", 1.5 → "1.50")', () => {
+    expect(buildSSML('hi', 'ro-RO', 'friendly', 0.9, 1)).toMatch(/rate="0\.90"/);
+    expect(buildSSML('hi', 'ro-RO', 'friendly', 1.5, 1)).toMatch(/rate="1\.50"/);
   });
 
   it('omits pitch attribute (we never vary it; default is correct)', () => {
