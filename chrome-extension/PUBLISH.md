@@ -51,15 +51,26 @@ Open `chrome-extension/STORE-LISTING.md` — it has the exact copy for every req
 
 Paste each field into the matching dashboard input.
 
-### 5. Upload screenshots (1-5 required, 1280×800 PNG)
+### 5. Generate assets — `npm run assets`
 
-For the first release, take 3 screenshots manually:
+Builds:
 
-1. **Overlay over a Gmail compose field** — show the floating bar with a sentence half-spoken (yellow word highlight visible).
-2. **Translate mode on a Google Docs paragraph** — show source line + translated line in the overlay.
-3. **Options page** — show the language picker open with Romanian / Spanish / Japanese visible.
+- `store-screenshots/screenshot-{1,2,3}.png` — 1280×800 PNG, ready to drop into the Web Store dashboard. Composite renders of the overlay over a demo compose page (English speak, Romanian translate-mode, options page).
+- `store-promo/small-promo-tile.png` — 440×280 promo tile.
+- `store-promo/marquee-promo-tile.png` — 1400×560 marquee tile.
+- `store-video/promo.webm` + `promo.mp4` (if `ffmpeg` is installed) — ~40 s demo loop covering title → speak → translate → options → outro.
 
-Save them under `chrome-extension/store-screenshots/` (gitignored — they're per-release artifacts).
+All output goes under `chrome-extension/store-{screenshots,promo,video}/` (gitignored — per-release artifacts).
+
+Drop the 3 screenshots into the dashboard's **Screenshots** slot. Drop the small + marquee promo tiles into their slots (both optional but make the listing look polished).
+
+### 5a. Upload the promo video to YouTube (optional)
+
+1. Open YouTube Studio → **+ Create** → **Upload video** → pick `store-video/promo.mp4` (or `.webm`).
+2. Title: `PrismAAC Reading Assistant — speak as you type, in any text field`.
+3. Description: copy from `STORE-LISTING.md` detailed description.
+4. Visibility: **Unlisted** is fine (the Web Store listing makes the link discoverable; you don't need it on YouTube search).
+5. Copy the YouTube URL (`https://youtu.be/<id>`) and paste into the dashboard's **Global promo video → YouTube URL** field.
 
 ### 6. Privacy practices form
 

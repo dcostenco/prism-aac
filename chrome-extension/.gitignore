@@ -3,3 +3,5 @@ node_modules/
 *.log
 prism-aac-ext-v*.zip
 store-screenshots/
+store-promo/
+store-video/

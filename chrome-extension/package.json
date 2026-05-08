@@ -9,6 +9,7 @@
     "watch": "node build.mjs --watch",
     "package": "node scripts/gen-icons.mjs && node build.mjs --package",
     "icons": "node scripts/gen-icons.mjs",
+    "assets": "node scripts/gen-store-assets.mjs",
     "test": "vitest run"
   },
   "devDependencies": {
