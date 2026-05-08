@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PrismAAC Reading Assistant — settings</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 20px;
+    min-width: 380px;
+    max-width: 520px;
+    background: #fbfbfb;
+    color: #1a1a1a;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1a1a; color: #f3f3f3; }
+    input[type="text"], select { background: #2c2c2e; color: #f3f3f3; border-color: #444; }
+  }
+  h1 { font-size: 18px; margin: 0 0 4px 0; }
+  .sub { font-size: 13px; opacity: 0.7; margin-bottom: 16px; }
+  fieldset { border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; padding: 12px 14px; margin: 12px 0; }
+  legend { font-weight: 600; font-size: 13px; padding: 0 4px; }
+  label.row { display: flex; align-items: center; gap: 10px; margin: 6px 0; cursor: pointer; }
+  label.row input[type="checkbox"] { transform: scale(1.15); }
+  label.col { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+  label.col span { font-size: 13px; opacity: 0.85; }
+  input[type="range"] { width: 100%; }
+  input[type="text"], select { padding: 6px 8px; font-size: 14px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.2); }
+  .footer { font-size: 12px; opacity: 0.6; margin-top: 16px; }
+  .saved { display: inline-block; margin-left: 6px; opacity: 0; transition: opacity 0.3s; color: #4caf50; font-weight: 600; font-size: 12px; }
+  .saved.show { opacity: 1; }
+  .num { font-variant-numeric: tabular-nums; opacity: 0.8; }
+</style>
+</head>
+<body>
+  <h1>📣 PrismAAC Reading Assistant</h1>
+  <div class="sub">A free Read & Write alternative — speak as you type, in any text field, on any site.</div>
+
+  <fieldset>
+    <legend>Behavior</legend>
+    <label class="row"><input id="enabled" type="checkbox"> Enabled <span class="saved" data-saved="enabled">saved ✓</span></label>
+    <label class="row"><input id="speakOnSentenceEnd" type="checkbox"> Speak the sentence when I finish with <code>. ? !</code> <span class="saved" data-saved="speakOnSentenceEnd">saved ✓</span></label>
+    <label class="row"><input id="speakOnSpace" type="checkbox"> Speak each word as I tap space <span class="saved" data-saved="speakOnSpace">saved ✓</span></label>
+    <label class="row"><input id="showOverlay" type="checkbox"> Show floating overlay above focused fields <span class="saved" data-saved="showOverlay">saved ✓</span></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Translate while speaking</legend>
+    <label class="col">
+      <span>From (source language)</span>
+      <select id="sourceLanguage">
+        <option value="auto">Auto-detect</option>
+      </select>
+    </label>
+    <label class="col">
+      <span>To (target language) — leave blank to skip translation</span>
+      <select id="targetLanguage">
+        <option value="">Off — speak the source text</option>
+      </select>
+    </label>
+    <p style="font-size:12px;opacity:0.7;margin:4px 0 0 0;">When set, the overlay shows BOTH the source line (small italic) and the translated line (with word highlight as it's spoken). Translation uses Google's free public endpoint over HTTPS — no API key, but the source text leaves your device for that one call.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Voice</legend>
+    <label class="col">
+      <span>Voice</span>
+      <select id="voiceURI"></select>
+    </label>
+    <label class="col">
+      <span>Rate <span class="num" id="rateNum">1.00</span></span>
+      <input id="rate" type="range" min="0.5" max="2" step="0.05">
+    </label>
+    <label class="col">
+      <span>Volume <span class="num" id="volumeNum">1.00</span></span>
+      <input id="volume" type="range" min="0" max="1" step="0.05">
+    </label>
+    <label class="col">
+      <span>Pitch <span class="num" id="pitchNum">1.00</span></span>
+      <input id="pitch" type="range" min="0" max="2" step="0.05">
+    </label>
+    <button id="testVoice" style="margin-top:6px;padding:8px 12px;border-radius:6px;border:none;background:#4caf50;color:white;font-weight:600;cursor:pointer;">▶ Test voice</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Per-site</legend>
+    <label class="col">
+      <span>Disable on these domains (one per line, no scheme — e.g. <code>banking.example.com</code>)</span>
+      <textarea id="blockedDomains" rows="3" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;border-radius:6px;border:1px solid rgba(0,0,0,0.2);padding:6px 8px;"></textarea>
+    </label>
+  </fieldset>
+
+  <div class="footer">
+    Settings sync across your Chrome profile via <code>chrome.storage.sync</code>. The extension never sends typed text off-device — Web Speech runs natively in your browser. Source code: <a href="https://github.com/dcostenco/prism-aac/tree/main/chrome-extension">github.com/dcostenco/prism-aac</a>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
