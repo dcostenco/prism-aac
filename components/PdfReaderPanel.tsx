@@ -206,7 +206,7 @@ export default function PdfReaderPanel() {
                   <p className="text-sm leading-relaxed line-clamp-3 flex-1">
                     {isUnreadable(page) ? (
                       <em className="text-muted">
-                        (page {page.pageNumber} couldn&apos;t be read — image-only or unsupported encoding)
+                        {`(page ${page.pageNumber} couldn’t be read — image-only or unsupported encoding)`}
                       </em>
                     ) : page.text ? (
                       page.text

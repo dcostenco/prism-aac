@@ -81,7 +81,25 @@ async function loadPdfjs(): Promise<typeof import('pdfjs-dist')> {
 export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExtractResult> {
   const pdfjs = await loadPdfjs();
   const data = source instanceof File ? await source.arrayBuffer() : source;
-  const doc = await pdfjs.getDocument({ data }).promise;
+  // First try with the cross-origin worker (faster). If that path
+  // throws on EVERY page (worker unreachable / blocked / mismatched
+  // version) the per-page error count would be `numPages` and we'd
+  // report a sentinel-marked unreadable for everyone. The 4th
+  // strategy in extractOnePage falls back to disableWorker for
+  // image-only / tagged-content pages — but the WHOLE-document path
+  // still depends on the initial getDocument honoring whatever
+  // worker state was set. Robust loop: attempt with worker; if
+  // every page returns unreadable, retry the entire document with
+  // disableWorker: true so pdfjs runs on the main thread and is
+  // independent of the cross-origin worker fetch entirely.
+  let doc: import('pdfjs-dist').PDFDocumentProxy;
+  try {
+    doc = await pdfjs.getDocument({ data }).promise;
+  } catch (e) {
+    // getDocument itself failed — likely worker-load failure. Retry
+    // with disableWorker.
+    doc = await pdfjs.getDocument({ data, disableWorker: true } as Parameters<typeof pdfjs.getDocument>[0]).promise;
+  }
 
   let title = '';
   try {
@@ -90,14 +108,54 @@ export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExt
     title = info?.Title?.trim() ?? '';
   } catch { /* metadata is optional */ }
 
-  const pages: PdfPage[] = [];
+  let pages: PdfPage[] = [];
   let totalChars = 0;
   for (let i = 1; i <= doc.numPages; i++) {
     const r = await extractOnePage(doc, i);
     pages.push(r);
     totalChars += r.text.length;
   }
-  doc.destroy();
+
+  // Whole-document worker-failure retry. If EVERY page came back as
+  // unreadable, the most likely cause is the cross-origin worker
+  // (cdn.jsdelivr.net/pdfjs-dist/...pdf.worker.min.mjs) failed to
+  // load OR fails on every getTextContent call — Safari + a stale SW
+  // intercepting the worker fetch produced this exact pattern in the
+  // May 2026 user report (every page of Vineland-3 unreadable, even
+  // though pdfjs's main module loaded fine). Re-running getDocument
+  // with `disableWorker: true` puts the parser on the main thread,
+  // independent of the cross-origin worker entirely.
+  const allUnreadable = pages.length > 0 && pages.every(isUnreadable);
+  if (allUnreadable && doc.numPages > 0) {
+    doc.destroy();
+    try {
+      const docMain = await pdfjs.getDocument({
+        data,
+        disableWorker: true,
+      } as Parameters<typeof pdfjs.getDocument>[0]).promise;
+      const retryPages: PdfPage[] = [];
+      let retryChars = 0;
+      for (let i = 1; i <= docMain.numPages; i++) {
+        const r = await extractOnePage(docMain, i);
+        retryPages.push(r);
+        retryChars += r.text.length;
+      }
+      docMain.destroy();
+      // Only commit the retry if it actually moved the needle —
+      // i.e. at least one page came back not-unreadable.
+      const retryHelped = retryPages.some((p) => !isUnreadable(p));
+      if (retryHelped) {
+        pages = retryPages;
+        totalChars = retryChars;
+      }
+    } catch {
+      // Retry-mode getDocument failed. Keep the original results
+      // (already sentinel-marked) — the user gets graceful "image-
+      // only" tiles rather than a hard error.
+    }
+  } else {
+    doc.destroy();
+  }
   return { pages, title, totalChars };
 }
 
