@@ -76,44 +76,73 @@ await enableAllToolbarButtons();
 await page.waitForTimeout(300);
 await shoot('app-hero');
 
+// Toolbar aria-labels are short i18n strings ("AI" not "AI Chat",
+// "Send a message" not "AAC Chat") so anchor on the icon emoji
+// inside the visible button text — those are stable across locales.
+async function clickToolbarByIcon(emoji) {
+  // The button renders the emoji as the first <span>; its
+  // accessible name is the aria-label, but the visible text
+  // contains the emoji. textContent match is reliable.
+  // Toolbar lives in a flex bar at the top of the AAC shell; emoji
+  // text is rendered inside the button. Filtering on visible text
+  // works regardless of locale.
+  const btn = page.locator(`button:has-text("${emoji}")`).first();
+  await btn.click({ timeout: 5000 });
+}
+
 // 2. Categories panel.
-await page.getByRole('button', { name: /^(Categories|Categorías|Catégories|Categorii)/i }).first().click();
-await page.waitForTimeout(300);
+await clickToolbarByIcon('📂');
+await page.waitForTimeout(400);
 await shoot('panel-categories');
 await closeAnyPanel();
 
-// 3. AI Chat panel.
-await page.getByRole('button', { name: /^(AI Chat|Chat IA)/i }).first().click().catch(() => {});
-await page.waitForTimeout(300);
+// 3. AI Chat panel — type a question first so the panel doesn't
+//    render in compact-empty mode. We write directly into the
+//    messageStore via the existing keyboard so the prediction bar
+//    + ColoredText render too.
+await page.locator('button[data-key="W"]').click();
+await page.locator('button[data-key="H"]').click();
+await page.locator('button[data-key="Y"]').click();
+await page.waitForTimeout(80);
+await clickToolbarByIcon('✨');
+await page.waitForTimeout(500);
 await shoot('panel-ai-chat');
 await closeAnyPanel();
+// Reset the message bar so other panels see a fresh state.
+await page.evaluate(() => {
+  // eslint-disable-next-line no-undef
+  try { window.localStorage.removeItem('aac-message'); } catch {}
+});
 
-// 4. AAC Chat panel.
-await page.getByRole('button', { name: /^(AAC Chat|Mensajes|Messages)/i }).first().click().catch(() => {});
-await page.waitForTimeout(300);
+// 4. AAC Chat panel — needs at least one contact to render
+//    something interesting; if the inbox is empty the panel may
+//    show a placeholder. Tap the icon and capture whatever state.
+await clickToolbarByIcon('💬');
+await page.waitForTimeout(500);
 await shoot('panel-aac-chat');
 await closeAnyPanel();
 
 // 5. Schedule panel.
-await page.getByRole('button', { name: /^(Schedule|Horario|Programul)/i }).first().click().catch(() => {});
-await page.waitForTimeout(400);
+await clickToolbarByIcon('📅');
+await page.waitForTimeout(500);
 await shoot('panel-schedule');
 await closeAnyPanel();
 
 // 6. Games panel.
-await page.getByRole('button', { name: /^(Games|Juegos|Jeux|Jocuri)/i }).first().click().catch(() => {});
-await page.waitForTimeout(400);
+await clickToolbarByIcon('🎮');
+await page.waitForTimeout(500);
 await shoot('panel-games');
 await closeAnyPanel();
 
 // 7. Marketplace panel.
-await page.getByRole('button', { name: /^(Marketplace|Mercado)/i }).first().click().catch(() => {});
-await page.waitForTimeout(400);
+await clickToolbarByIcon('🏪');
+await page.waitForTimeout(500);
 await shoot('panel-marketplace');
 await closeAnyPanel();
 
-// 8. Settings modal — multiple sections.
-await page.getByRole('button', { name: /^(Settings|Ajustes|Paramètres|Setări)/i }).first().click().catch(() => {});
+// 8. Settings modal — settings has its own gear icon ⚙ rendered
+//    as the second-to-last button in the toolbar.
+await clickToolbarByIcon('⚙️');
 await page.waitForTimeout(400);
 await shoot('panel-settings');
 
