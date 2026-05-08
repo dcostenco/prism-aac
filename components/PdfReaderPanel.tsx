@@ -10,6 +10,7 @@
  * of the app.
  */
 import { useCallback, useState } from 'react';
+// (useEffect imported below alongside the TTS highlight subscriber.)
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
@@ -17,6 +18,9 @@ import { tapFeedback } from '@/services/feedback';
 import { aacSpeak } from '@/services/aacSpeak';
 import { extractPdfText, isUnreadable, type PdfPage } from '@/services/pdfReader';
 import { runOcrOnPdf } from '@/services/ocr';
+import { stopSpeech } from '@/services/speechService';
+import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
+import { useEffect } from 'react';
 
 interface LoadedPdf {
   title: string;
@@ -41,6 +45,24 @@ export default function PdfReaderPanel() {
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrProgress, setOcrProgress] = useState<string>('');
   const [ocrResult, setOcrResult] = useState<string | null>(null);
+  // Track whether TTS is currently speaking so the Stop button shows
+  // up when there's something to stop. Subscribes to the global
+  // TTS highlight bus (services/ttsHighlightBus.ts) which emits
+  // start / end events from every speech path (Azure + Web Speech).
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  useEffect(() => {
+    const unsub = subscribeTtsHighlight((ev) => {
+      if (ev.type === 'tts-highlight-start') setIsSpeaking(true);
+      else if (ev.type === 'tts-highlight-end') setIsSpeaking(false);
+    });
+    return unsub;
+  }, []);
+
+  const stopSpeakingOcr = useCallback(() => {
+    tapFeedback();
+    stopSpeech();
+    setIsSpeaking(false);
+  }, []);
 
   const onPick = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -270,13 +292,25 @@ export default function PdfReaderPanel() {
           >
             <div className="flex items-center justify-between mb-2">
               <p className="font-bold text-primary">📖 OCR result ({ocrResult.length} chars)</p>
-              <button
-                onClick={speakOcrResult}
-                data-testid="pdf-reader-speak-ocr"
-                className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white"
-              >
-                ▶ Speak
-              </button>
+              <div className="flex items-center gap-2">
+                {isSpeaking ? (
+                  <button
+                    onClick={stopSpeakingOcr}
+                    data-testid="pdf-reader-stop-ocr"
+                    className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#F44336] text-white"
+                  >
+                    ■ Stop
+                  </button>
+                ) : (
+                  <button
+                    onClick={speakOcrResult}
+                    data-testid="pdf-reader-speak-ocr"
+                    className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white"
+                  >
+                    ▶ Speak
+                  </button>
+                )}
+              </div>
             </div>
             <p className="text-sm leading-relaxed whitespace-pre-wrap text-primary">{ocrResult}</p>
           </div>

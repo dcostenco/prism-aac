@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 // intervention. (May 2026: bumped to 2026-05-08-pdf-fix after users
 // were stuck on Apr-30 SW serving stale chunks where PDF reader
 // blew up on clinical PDFs.)
-const SW_KILLSWITCH_VERSION = '2026-05-08-poll-stop-7';
+const SW_KILLSWITCH_VERSION = '2026-05-08-tts-stop-button-8';
 
 const swKillswitchScript = `
 (function(){
