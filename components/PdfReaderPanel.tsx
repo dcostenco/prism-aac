@@ -18,6 +18,7 @@ import { tapFeedback } from '@/services/feedback';
 import { aacSpeak } from '@/services/aacSpeak';
 import { extractPdfText, isUnreadable, type PdfPage } from '@/services/pdfReader';
 import { runOcrOnPdf } from '@/services/ocr';
+import { mathTextToProse } from '@/services/mathProse';
 import { stopSpeech } from '@/services/speechService';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { useEffect } from 'react';
@@ -125,7 +126,12 @@ export default function PdfReaderPanel() {
   const speakOcrResult = useCallback(() => {
     if (!ocrResult) return;
     tapFeedback();
-    aacSpeak(ocrResult, speechRate, speechVolume, activeTone);
+    // Math-text → spoken prose. OCR'd worksheet content is full of
+    // operator glyphs (`<`, `+`, `=`, `-`) that TTS reads literally
+    // — "x+15<12" without preprocessing comes out as a robotic char-
+    // by-char dump. mathTextToProse() rewrites it to spoken English
+    // ("x plus 15, is less than 12") so the listener can follow it.
+    aacSpeak(mathTextToProse(ocrResult), speechRate, speechVolume, activeTone);
   }, [ocrResult, speechRate, speechVolume, activeTone]);
 
   const speakPage = useCallback((page: PdfPage) => {
