@@ -25,18 +25,22 @@ import { askAI } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 import { evaluateExpression } from '@/services/exprEval';
+import { evaluatePython, isPythonReady } from '@/services/pythonRuntime';
+import { serializeAsCode } from '@/services/codeSerialize';
 import { parseCellKey, type Cell, type CellKey } from '@/engine/mathGrid';
 
 type TutorMode = 'help' | 'check' | 'solve' | 'eval';
 
-/** Domains where a deterministic, local numeric/symbolic evaluator
- *  produces a useful answer. Chemistry / biology / music / etc. don't
- *  reduce to a single number, so the 🧮 Eval button is hidden there
- *  and the user falls back on the AI-driven tutor flow. */
+/** Domains where a deterministic, local evaluator produces a useful
+ *  answer. math/physics/statistics → mathjs (instant). programming-python
+ *  → Pyodide WASM (~5-15 s first load, then instant). Chemistry / biology
+ *  / music / etc. don't reduce to a runnable expression, so the 🧮 Eval
+ *  button is hidden there and the user falls back on the AI-driven tutor. */
 const EVAL_DOMAINS: ReadonlySet<MathDomain> = new Set<MathDomain>([
   'math',
   'physics',
   'statistics',
+  'programming-python',
 ]);
 
 /** Per-domain prompt templates. The expression placeholder `{expr}` is
@@ -237,26 +241,57 @@ export default function MathTutorTool() {
   }, []);
 
   // Local evaluator path — bypasses askAI entirely for math /
-  // physics / statistics. Synchronous, no network, no auth, instant.
-  // Speaks the result via aacSpeak so the AAC user gets the same
-  // multimodal feedback as the AI tutor responses.
-  const localEval = useCallback(() => {
-    const expression = serializeAsExpression(cells);
-    if (!expression) return;
+  // physics / statistics (mathjs, instant) and programming-python
+  // (Pyodide WASM, ~5-15 s first load, then instant). Speaks the
+  // result via aacSpeak so the AAC user gets the same multimodal
+  // feedback as the AI tutor responses.
+  const localEval = useCallback(async () => {
+    const evalDomain = domainForCategory(activeCategory);
     tapFeedback();
     requestSeqRef.current++; // cancel any in-flight AI request
-    setLoading(false);
     setMode('eval');
+    setErrorKind(null);
+    if (evalDomain === 'programming-python') {
+      const source = serializeAsCode(cells);
+      if (!source) {
+        setResponse('No Python code to run yet.');
+        return;
+      }
+      const showLoading = !isPythonReady();
+      if (showLoading) {
+        setLoading(true);
+        setResponse('Loading Python runtime…');
+      }
+      const mySeq = requestSeqRef.current;
+      const result = await evaluatePython(source);
+      if (mySeq !== requestSeqRef.current) return;
+      setLoading(false);
+      if (result.ok) {
+        const out = [
+          result.stdout && result.stdout.trimEnd(),
+          result.value,
+        ].filter(Boolean).join('\n').trim() || '(no output)';
+        setResponse(out);
+        aacSpeak(out.slice(0, 200), speechRate, speechVolume);
+      } else {
+        setErrorKind('other');
+        setResponse(`⚠️ ${result.error}`);
+      }
+      return;
+    }
+    // Math / physics / statistics path — synchronous mathjs.
+    const expression = serializeAsExpression(cells);
+    if (!expression) return;
+    setLoading(false);
     const result = evaluateExpression(expression);
     if (result.ok) {
-      setErrorKind(null);
       setResponse(`= ${result.value}`);
       aacSpeak(`equals ${result.value}`, speechRate, speechVolume);
     } else {
       setErrorKind('other');
       setResponse(`⚠️ ${result.error}`);
     }
-  }, [cells, speechRate, speechVolume]);
+  }, [cells, speechRate, speechVolume, activeCategory]);
 
   const retry = useCallback(() => {
     if (!mode) return;
