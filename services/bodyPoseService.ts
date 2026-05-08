@@ -204,13 +204,77 @@ export interface PoseCalibrationData {
 }
 
 // After X-mirroring (1-normX): mirroredX maps user's physical position to screen.
-// Shifted left to compensate for right-hand bias (wrist center isn't body center).
-const DEFAULT_CALIBRATION: PoseCalibrationData = {
+// Convention (load-bearing for the calibration math below):
+//   leftX  = LARGER mirroredX value (head turned to user-right)
+//   rightX = SMALLER mirroredX value (head turned to user-left)
+//   topY   = SMALLER normY value (head tilted up)
+//   bottomY= LARGER normY value (head tilted down)
+// Inverting this ordering makes rangeX < 0 / rangeY < 0 and
+// `MIN_RANGE` guard at line ~682 silently throws away the
+// calibration — that bug shipped from May 2025 to May 2026 making
+// the setup wizard a placebo.
+export const DEFAULT_CALIBRATION: PoseCalibrationData = {
   leftX: 0.75,
   rightX: 0.05,
   topY: 0.2,
   bottomY: 0.8,
 };
+
+/** Pure calibration math: pose-normalized-x/y → screen pixel coords.
+ *  Mirrors X (front camera), applies calibration rect, applies
+ *  sensitivity zoom around center, clamps to screen.
+ *  Extracted from startPoseTracker so the math can be unit-tested
+ *  without booting MediaPipe. NEVER reads window — caller passes
+ *  screenW/screenH explicitly. */
+export function mapPoseToScreen(
+  normX: number,
+  normY: number,
+  calibration: PoseCalibrationData,
+  sensitivityScale: number,
+  screenW: number,
+  screenH: number,
+): { x: number; y: number; rangeOK: boolean } {
+  const mirroredX = 1.0 - normX;
+  const rangeX = calibration.leftX - calibration.rightX;
+  const rangeY = calibration.bottomY - calibration.topY;
+  const MIN_RANGE = 0.30;
+  // Same guard as the runtime mapping: collapsed/inverted ranges
+  // produce nonsense cursor positions, so we substitute defaults.
+  const rangeOK = rangeX >= MIN_RANGE && rangeY >= MIN_RANGE;
+  const cal = rangeOK ? calibration : DEFAULT_CALIBRATION;
+  const rX = cal.leftX - cal.rightX;
+  const rY = cal.bottomY - cal.topY;
+  let rawX = ((mirroredX - cal.rightX) / rX) * screenW;
+  let rawY = ((normY - cal.topY) / rY) * screenH;
+  const centerX = screenW / 2;
+  const centerY = screenH / 2;
+  rawX = centerX + (rawX - centerX) * sensitivityScale;
+  rawY = centerY + (rawY - centerY) * sensitivityScale;
+  rawX = Math.max(0, Math.min(screenW, rawX));
+  rawY = Math.max(0, Math.min(screenH, rawY));
+  return { x: rawX, y: rawY, rangeOK };
+}
+
+/** Pure calibration computation: 4 corner pose samples (in the order
+ *  TL, TR, BR, BL — matching TrackingSetupWizard's CORNER_TARGETS) →
+ *  PoseCalibrationData in the convention the runtime mapping
+ *  expects. Math.max/min ensures correct ordering by construction
+ *  even if the user's camera or pose detection produces noisy
+ *  corner samples. */
+export function computeCalibrationFromCorners(
+  samples: ReadonlyArray<{ x: number; y: number }>,
+): PoseCalibrationData {
+  if (samples.length !== 4) throw new Error('expected exactly 4 corner samples');
+  const mx = (v: number) => 1.0 - v;
+  const allMxX = samples.map((s) => mx(s.x));
+  const allY = samples.map((s) => s.y);
+  return {
+    leftX: Math.max(...allMxX),
+    rightX: Math.min(...allMxX),
+    topY: Math.min(...allY),
+    bottomY: Math.max(...allY),
+  };
+}
 
 function getOrientation(): 'landscape' | 'portrait' {
   if (typeof window === 'undefined') return 'landscape';

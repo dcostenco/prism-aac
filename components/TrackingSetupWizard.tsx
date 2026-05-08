@@ -4,9 +4,9 @@ import { useSettingsStore } from '@/store/settingsStore';
 import {
   startPoseTracker,
   savePoseCalibration,
+  computeCalibrationFromCorners,
   type PoseTrackerHandle,
   type TrackingTarget,
-  type PoseCalibrationData,
 } from '@/services/bodyPoseService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
@@ -268,36 +268,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       speak(`Now point to ${next.label}.`);
       setStatusText(`Point to ${next.label}, then tap Capture`);
     } else {
-      // All 4 corners captured — compute calibration rect.
-      //
-      // NAMING CONVENTION (matches services/bodyPoseService.ts
-      // DEFAULT_CALIBRATION = { leftX: 0.75, rightX: 0.05 }):
-      //   leftX  = the LARGER mirroredX value (head turned right)
-      //   rightX = the SMALLER mirroredX value (head turned left)
-      // The pose service's mapping
-      //   rawX = (mirroredX - rightX) / (leftX - rightX) * width
-      // requires leftX > rightX so rangeX is positive — and the
-      // MIN_RANGE guard at services/bodyPoseService.ts:682 throws
-      // away calibrations where rangeX < 0 and replaces them with
-      // defaults. Prior code captured leftX as min() / rightX as
-      // max(), producing leftX < rightX → calibration silently
-      // discarded → cursor stuck to default-calibration position
-      // regardless of head movement. (User report 2026-05-08
-      // Image #30: cursor pinned to bottom-right corner across
-      // every test target.)
-      const tl = newSamples[0];
-      const tr = newSamples[1];
-      const br = newSamples[2];
-      const bl = newSamples[3];
-      const mx = (v: number) => 1.0 - v;
-      const allMxX = [mx(tl.x), mx(tr.x), mx(br.x), mx(bl.x)];
-      const allY = [tl.y, tr.y, br.y, bl.y];
-      const cal: PoseCalibrationData = {
-        leftX: Math.max(...allMxX),  // larger mirroredX
-        rightX: Math.min(...allMxX), // smaller mirroredX
-        topY: Math.min(...allY),
-        bottomY: Math.max(...allY),
-      };
+      // All 4 corners captured — compute calibration rect via the
+      // shared pure helper (services/bodyPoseService.ts) which
+      // enforces the leftX>rightX / topY<bottomY convention the
+      // runtime mapping requires. Prior to commit cd9a491 the
+      // wizard captured leftX/rightX inverted, tripping the
+      // MIN_RANGE guard and silently replacing every saved
+      // calibration with defaults.
+      const cal = computeCalibrationFromCorners(newSamples);
       savePoseCalibration(cal);
       speak('Calibration saved. Now lets test your accuracy.');
 
