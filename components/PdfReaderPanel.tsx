@@ -27,6 +27,7 @@ interface LoadedPdf {
 export default function PdfReaderPanel() {
   const sidePanel = useUIStore((s) => s.sidePanel);
   const close = useUIStore((s) => s.closeSidePanel);
+  const openOcrCapture = useUIStore((s) => s.openOcrCapture);
   const { speechRate, speechVolume } = useSettingsStore();
   const activeTone = useMessageStore((s) => s.activeTone);
   const [loading, setLoading] = useState(false);
@@ -185,6 +186,30 @@ export default function PdfReaderPanel() {
           <p className="text-muted" data-testid="pdf-reader-empty">
             This PDF has no readable text — it might be scanned images. Try the OCR tool instead.
           </p>
+        )}
+        {doc && doc.pages.length > 0 && doc.pages.every((p) => isUnreadable(p) || !p.text) && (
+          <div
+            data-testid="pdf-reader-no-text-banner"
+            className="border border-[#FF9800] bg-[#FF9800]/10 rounded-lg p-3 mb-3 flex items-start gap-3"
+          >
+            <span className="text-2xl shrink-0">📷</span>
+            <div className="flex-1 text-sm">
+              <p className="font-bold text-primary mb-1">No text layer in this PDF</p>
+              <p className="text-muted leading-relaxed">
+                This PDF is images only — handwritten or scanned pages have no
+                machine-readable text for the reader to speak. Try the
+                <strong> Screenshot Reader (OCR) </strong>
+                instead — it reads text out of pictures.
+              </p>
+              <button
+                onClick={() => { tapFeedback(); openOcrCapture(); }}
+                data-testid="pdf-reader-switch-to-ocr"
+                className="aac-btn mt-2 rounded-md px-3 py-1.5 text-sm font-bold bg-[#FF9800] text-white"
+              >
+                ▶ Open Screenshot Reader (OCR)
+              </button>
+            </div>
+          </div>
         )}
         {doc && doc.pages.length > 0 && (
           <ul className="space-y-2" data-testid="pdf-reader-page-list">
