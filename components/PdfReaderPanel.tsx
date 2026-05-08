@@ -69,10 +69,61 @@ export default function PdfReaderPanel() {
 
   if (sidePanel !== 'pdf-reader') return null;
 
+  // Three layout states (mirroring the AIChatPanel pattern shipped
+  // 2026-05-07 from the user's "keyboard should be full" feedback):
+  //   1. No doc + no loading + no error → SLIM strip: just the
+  //      header with the "+ Open PDF" button. Keyboard underneath
+  //      gets its full natural height instead of being squeezed by
+  //      a flex-[3] panel claiming space for a single line of intro
+  //      copy.
+  //   2. Has doc / loading / error → full flex-[3] panel with the
+  //      page-list scroll area.
+  const hasContent = !!(doc || loading || error);
+
+  if (!hasContent) {
+    return (
+      <section
+        aria-label="PDF reader"
+        data-testid="pdf-reader-panel"
+        data-state="slim"
+        className="shrink-0 surface-bar border-y border-theme"
+      >
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📄</span>
+            <span className="font-bold">PDF Reader</span>
+            <span className="text-xs text-muted hidden sm:inline">— pick a document to hear it spoken</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <label
+              data-testid="pdf-reader-pick"
+              className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#2196F3] text-white cursor-pointer"
+            >
+              ＋ Open PDF
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={onPick}
+                className="hidden"
+                data-testid="pdf-reader-input"
+              />
+            </label>
+            <button
+              onClick={() => { tapFeedback(); close(); }}
+              aria-label="Close PDF reader"
+              className="aac-btn rounded-md px-2 py-1 text-muted text-lg"
+            >×</button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       aria-label="PDF reader"
       data-testid="pdf-reader-panel"
+      data-state="expanded"
       className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden"
     >
       <header className="flex items-center justify-between px-3 py-2 border-b border-theme shrink-0">
@@ -120,11 +171,6 @@ export default function PdfReaderPanel() {
         )}
         {error && (
           <p className="text-[#F44336]" data-testid="pdf-reader-error">⚠️ {error}</p>
-        )}
-        {!loading && !error && !doc && (
-          <p className="text-muted">
-            Tap “＋ Open PDF” to pick a document. Each page becomes a tile you can tap to hear it spoken.
-          </p>
         )}
         {doc && doc.pages.length === 0 && (
           <p className="text-muted" data-testid="pdf-reader-empty">
