@@ -252,8 +252,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     setPhase('calibrate-center');
     sampleBufferRef.current = [];
     setProgress(0);
-    setStatusText('Look at the center circle, then tap Capture');
-    speak('Look at the center of the screen, then tap Capture.');
+    setStatusText('Face the center circle');
+    speak('Face the green circle in the middle. Then tap Capture.');
     // Critical: re-spin the tracker on the selected part so the
     // cursor actually follows the user's hand/finger, not their nose.
     if (selectedPart) restartTrackerForPart(selectedPart);
@@ -291,8 +291,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     setCornerSamples([]);
     setPhase('calibrate-corners');
     setProgress(0);
-    setStatusText('Point to the highlighted corner, then tap Capture');
-    speak('Now point to the top left corner.');
+    setStatusText('Turn your head as far as you can toward the corner');
+    speak('Turn your head all the way toward the top left corner. Then tap Capture.');
   }, [speak]);
 
   // Keep the ref pointing at the latest startCenterCalibration so
@@ -329,8 +329,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     if (cornerIdx < CORNER_TARGETS.length - 1) {
       setCornerIdx(cornerIdx + 1);
       const next = CORNER_TARGETS[cornerIdx + 1];
-      speak(`Now point to ${next.label}.`);
-      setStatusText(`Point to ${next.label}, then tap Capture`);
+      speak(`Now turn your head all the way toward the ${next.label} corner. Then tap Capture.`);
+      setStatusText(`Turn your head toward the ${next.label} corner`);
     } else {
       // All 4 corners captured — compute via the shared pure helper.
       const cal = computeCalibrationFromCorners(newSamples);
@@ -468,17 +468,25 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
         {/* INTRO */}
         {phase === 'intro' && (
-          <div className="text-center px-8 max-w-md">
+          <div className="text-center px-8 max-w-lg">
             <div className="text-8xl mb-6">🎯</div>
             <h2 className="text-white text-3xl font-black mb-4">Let&apos;s Set Up Tracking</h2>
-            <p className="text-white/70 text-lg mb-3">
-              We&apos;ll find which body parts you can move, then calibrate the cursor to follow you.
+            <p className="text-white/70 text-lg mb-4">
+              We&apos;ll find what you can move (head / hand), then teach
+              the app where your screen edges are.
             </p>
-            <p className="text-white/50 text-sm mb-8">
-              Make sure your camera can see you. This takes about 30 seconds.
+            <ul className="text-white/80 text-sm mb-6 text-left bg-white/5 rounded-xl p-4 space-y-2">
+              <li className="flex gap-2"><span>1️⃣</span><span>Sit ~50cm from the camera so it sees you clearly.</span></li>
+              <li className="flex gap-2"><span>2️⃣</span><span><strong>Physically turn your head</strong> toward each corner — don&apos;t just move your eyes.</span></li>
+              <li className="flex gap-2"><span>3️⃣</span><span>Tap <strong>Capture</strong> when you&apos;re looking at each target.</span></li>
+              <li className="flex gap-2"><span>4️⃣</span><span>Watch the camera preview (top-right) to confirm you&apos;re visible.</span></li>
+            </ul>
+            <p className="text-white/50 text-xs mb-6">
+              ~45 seconds. You can Skip any step if it&apos;s not working.
             </p>
             <button
               onClick={() => { tapFeedback(); startDetection(); }}
+              data-testid="tracking-setup-start"
               className="w-full py-4 rounded-2xl bg-[#4CAF50] text-white font-bold text-xl shadow-lg active:scale-95 transition-transform"
             >
               Start Setup
@@ -488,14 +496,18 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
         {/* DETECTING */}
         {phase === 'detecting' && (
-          <div className="text-center px-8">
+          <div className="text-center px-8 max-w-md">
             <div className="relative w-40 h-40 mx-auto mb-6">
               <div className="absolute inset-0 rounded-full border-4 border-[#4CAF50]/30 animate-ping" />
               <div className="absolute inset-4 rounded-full border-4 border-[#4CAF50]/50 animate-pulse" />
               <div className="absolute inset-0 flex items-center justify-center text-6xl">👁</div>
             </div>
             <p className="text-white text-xl font-bold mb-2">{statusText}</p>
-            <p className="text-white/50">Move your hand, head, or body so I can see you</p>
+            <p className="text-white/60 text-sm">
+              Slowly turn your head left, right, up, down — and wave a hand
+              if you can. I&apos;m looking at the camera feed (top-right) to
+              see what you can move.
+            </p>
 
             {detected.length > 0 && (
               <div className="mt-6 space-y-3">
@@ -558,10 +570,13 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
             </div>
             <div className="absolute bottom-20 left-0 right-0 text-center px-6">
               <p className="text-white text-lg font-bold">{statusText}</p>
-              <p className="text-white/70 text-sm mt-2 max-w-md mx-auto">
-                💡 The green dot doesn&apos;t need to touch the circle yet. Just look
-                at the center, then tap Capture. The cursor will line up after we
-                calibrate all 4 corners.
+              <p className="text-white/80 text-sm mt-2 max-w-md mx-auto">
+                Face the green circle in the middle of the screen. Hold
+                still — your <strong>head</strong> should point straight
+                ahead.
+              </p>
+              <p className="text-white/50 text-xs mt-1 max-w-md mx-auto">
+                💡 The cursor isn&apos;t aligned yet — that&apos;s what these 4 captures fix.
               </p>
               <button
                 onClick={captureCenter}
@@ -569,7 +584,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 disabled={sampleBufferRef.current.length === 0}
                 className="mt-4 py-3 px-8 rounded-2xl bg-[#4CAF50] text-white font-bold text-lg shadow-lg active:scale-95 transition-transform disabled:opacity-30"
               >
-                ✓ Capture center
+                ✓ Capture center{sampleBufferRef.current.length > 0 ? ` (${sampleBufferRef.current.length})` : ''}
               </button>
               <button
                 onClick={() => {
@@ -624,10 +639,16 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               </div>
             ))}
             <div className="absolute bottom-20 left-0 right-0 text-center px-6">
-              <p className="text-white text-lg font-bold">{statusText || `Look at the ${CORNER_TARGETS[cornerIdx]?.label} corner`}</p>
-              <p className="text-white/70 text-sm mt-2 max-w-md mx-auto">
-                💡 Look at the highlighted corner, then tap Capture. Don&apos;t
-                worry about the cursor position — it gets calibrated by these taps.
+              <p className="text-white text-xl font-bold">
+                {`Step ${cornerIdx + 1} of 4: ${CORNER_TARGETS[cornerIdx]?.label}`}
+              </p>
+              <p className="text-white/90 text-base mt-2 max-w-lg mx-auto">
+                <strong>Turn your head as far as you can</strong> toward the
+                highlighted {CORNER_TARGETS[cornerIdx]?.label.toLowerCase()} corner —
+                exaggerate the motion, don&apos;t just glance with your eyes.
+              </p>
+              <p className="text-white/50 text-xs mt-1 max-w-md mx-auto">
+                💡 Calibration only works if your head movement is BIG enough to span the whole screen.
               </p>
               <button
                 onClick={captureCorner}
@@ -635,7 +656,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 disabled={sampleBufferRef.current.length === 0}
                 className="mt-4 py-3 px-8 rounded-2xl bg-[#2196F3] text-white font-bold text-lg shadow-lg active:scale-95 transition-transform disabled:opacity-30"
               >
-                ✓ Capture {CORNER_TARGETS[cornerIdx]?.label}
+                ✓ Capture {CORNER_TARGETS[cornerIdx]?.label}{sampleBufferRef.current.length > 0 ? ` (${sampleBufferRef.current.length})` : ''}
               </button>
               <button
                 onClick={() => {
@@ -697,9 +718,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               <p className="text-white/50 text-sm" data-testid="tracking-test-hits">
                 {testTargets.filter(t => t.hit).length}/{testTargets.length} hits
               </p>
-              <p className="text-white/60 text-xs mt-2 max-w-md mx-auto">
-                💡 Look at the red circle — it counts as hit when the cursor
-                gets close. You can also click the red circle directly.
+              <p className="text-white/80 text-sm mt-2 max-w-lg mx-auto">
+                <strong>Turn your head</strong> toward the red circle — when
+                the green cursor lands on it, it turns green. You can also
+                click the red circle directly.
               </p>
               <button
                 onClick={() => { tapFeedback(); setPhase('complete'); }}
