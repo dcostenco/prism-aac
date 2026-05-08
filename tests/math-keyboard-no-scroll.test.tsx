@@ -42,18 +42,21 @@ describe('Math keyboard — no-scroll panel container', () => {
     expect(panel.className).not.toMatch(/overflow-y-auto/);
   });
 
-  it('panel-height floor is ≥ 380 px so Programming rows never get clipped', () => {
-    // Earlier capture against the live deploy showed only 5 of the
-    // Programming chip's 7 rows visible (ops × 2 + keywords × 3),
-    // with letters + digits clipped. The fix bumped the lower bound
-    // from 280 px → 380 px. Pin it so a future "tighten layout"
-    // refactor can't drop it back below the 7-row threshold.
+  it('panel-height floor is ≥ 340 px so Programming rows never get clipped', () => {
+    // Programming chip needs 7 rows (ops×2 + keywords×2 + letters×2
+    // + digits×1) at ≥ 44 px tap-target = ~340 px floor. Earlier
+    // 280 px floor on a 1280-tall capture viewport (32svh ≈ 256)
+    // chopped letters + digits entirely; an over-corrected 380 px
+    // floor + 4-row keywords + grid-cols-7 ate the canvas (user
+    // Image #27 "introduces more bugs"). The 14-col packing in
+    // commit 2026-05-08 puts keywords back into 2 rows, so the
+    // floor can return to 340 — but never lower.
     const { container } = render(<MathKeyboardRegion />);
     const panel = container.querySelector('[data-testid="math-keyboard-panel"]') as HTMLElement;
     const m = panel.className.match(/clamp\((\d+)px/);
     expect(m, `expected clamp() with px floor in ${panel.className}`).not.toBeNull();
     const floorPx = m ? Number(m[1]) : 0;
-    expect(floorPx).toBeGreaterThanOrEqual(380);
+    expect(floorPx).toBeGreaterThanOrEqual(340);
   });
 });
 

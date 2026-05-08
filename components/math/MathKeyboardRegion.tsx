@@ -122,15 +122,15 @@ export default function MathKeyboardRegion({ className = '' }: { className?: str
           (Placeholder, single line) both render inside this stable
           shell. Internal overflow-y-auto handles overflow gracefully. */}
       <div
-        // Tall enough that the Programming chip's tallest layout
-        // (ops × 1, keywords × 3, letters × 1 (a-z 13×2 grid), digits)
-        // fits without clipping the bottom rows. Earlier 380 px max
-        // on a 1280-tall capture viewport (32svh ≈ 256) chopped the
-        // letters + digits rows entirely. 380 px floor + 42svh growth
-        // + 520 px max gives every Programming row ≥ 48 px (above the
-        // 44 px tap-target floor) while still leaving the canvas
-        // ~half the viewport.
-        className="h-[clamp(380px,42svh,520px)] overflow-hidden"
+        // Programming chip's row layout (after the keywords were
+        // packed into a 14-col grid in commit 2026-05-08):
+        //   ops × 2 + keywords × 2 + letters × 2 + digits × 1 = 7 rows
+        // At ~46 px per row + ~6 px gaps = ~340 px. Floor 340 / max
+        // 460 leaves the canvas ≥ ~40 % of the viewport on every
+        // device. Earlier 520 px ceiling ate too much canvas (user
+        // report Image #27 "it introduces more bugs" — the keyboard
+        // dominated and the canvas was a sliver).
+        className="h-[clamp(340px,38svh,460px)] overflow-hidden"
         data-testid="math-keyboard-panel"
       >
         {activeCategory === 'main' && <MathMainKeyboard />}
@@ -628,7 +628,14 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
   return (
     <div className="p-1.5 space-y-1" data-testid={`math-programming-${lang}-keyboard`} data-lang={lang}>
       <GlyphGrid testid={`${testidPrefix}-ops`} glyphs={COMMON_OPS} cols={12} textSize="text-sm" />
-      <div className="grid grid-cols-7 gap-1">
+      {/* 14 cols pack the 28-entry PYTHON_KEYWORDS / JAVA_KEYWORDS
+          arrays into TWO rows (28/14 = 2). Earlier grid-cols-7 forced
+          FOUR rows + the letters + digits which exceeded the panel
+          container, clipping the bottom rows or eating the canvas
+          (user report Image #27 2026-05-08: "it introduces more
+          bugs"). 14 cols at 1280 px viewport ≈ 91 px per cell — fits
+          "finally" / "implements" / "protected" comfortably. */}
+      <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] gap-1">
         {keywords.map((kw) => (
           <button
             key={kw}
@@ -636,7 +643,7 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
             data-testid={`${testidPrefix}-kw-${kw}`}
             data-glyph={kw}
             aria-label={`${lang} keyword ${kw}`}
-            className={`${KEY_BASE} py-1 text-sm whitespace-nowrap`}
+            className={`${KEY_BASE} py-1 text-xs whitespace-nowrap`}
           >
             {kw}
           </button>

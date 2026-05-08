@@ -36,7 +36,31 @@ async function loadPdfjs(): Promise<typeof import('pdfjs-dist')> {
   if (pdfjsModule) return pdfjsModule;
   // pdfjs-dist's browser entry uses Top-Level Await for the worker,
   // which Next.js handles via a separate chunk on dynamic import.
-  const mod = await import('pdfjs-dist');
+  let mod: typeof import('pdfjs-dist');
+  try {
+    mod = await import('pdfjs-dist');
+  } catch (e) {
+    throw new Error(
+      `Could not load PDF reader runtime — ${e instanceof Error ? e.message : String(e)}. ` +
+        'Check your internet connection and reload.',
+    );
+  }
+  // Defensive checks: dynamic-import shape regressions on the pdfjs
+  // side have produced "undefined is not a function (near '…of e…')"
+  // user reports when a `for…of` walk inside pdfjs hit an undefined
+  // entries collection (May 2026 user Image #28). Surfacing the
+  // missing piece by name makes future failures diagnosable instead
+  // of a generic JS engine message.
+  if (!mod || typeof (mod as { getDocument?: unknown }).getDocument !== 'function') {
+    throw new Error(
+      'PDF reader runtime loaded but `getDocument` is missing — pdfjs-dist version mismatch. Reload the page.',
+    );
+  }
+  if (!mod.GlobalWorkerOptions) {
+    throw new Error(
+      'PDF reader runtime missing GlobalWorkerOptions — pdfjs-dist module shape changed. Reload the page.',
+    );
+  }
   if (!workerSet) {
     // Point the worker at the CDN so we don't have to bundle it
     // manually; matches the pdfjs version exactly.
@@ -69,17 +93,29 @@ export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExt
   const pages: PdfPage[] = [];
   let totalChars = 0;
   for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    // Each item is a span; concat with single spaces, collapse runs.
-    const text = content.items
-      .map((it) => (it as { str?: string }).str ?? '')
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    let text = '';
+    try {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      // pdfjs returns `content.items` as an array of TextItem | TextMarkedContent.
+      // If pdfjs's internal extraction errored out the items array can be
+      // undefined / null on some malformed PDFs (or worker-load races).
+      // Fall back to empty text for that page rather than letting the
+      // for-loop crash — the user still gets the rest of the document.
+      const items = Array.isArray(content?.items) ? content.items : [];
+      text = items
+        .map((it) => (it as { str?: string }).str ?? '')
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      page.cleanup();
+    } catch (e) {
+      // Per-page failure must NOT take down the whole document — speak
+      // what we have, label the bad page so the user knows where to look.
+      text = `[Page ${i} could not be read: ${e instanceof Error ? e.message : 'unknown error'}]`;
+    }
     pages.push({ pageNumber: i, text });
     totalChars += text.length;
-    page.cleanup();
   }
   doc.destroy();
   return { pages, title, totalChars };
