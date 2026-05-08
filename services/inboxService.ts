@@ -82,7 +82,19 @@ function setLastSeenMs(ms: number) {
 
 let pollInFlight = false;
 
+// Module-scoped flag — once we see a 404 from the polling endpoint
+// (which is currently unshipped on the synalux portal), kill polling
+// for the rest of this page session. The endpoint will start
+// returning real data once shipped; until then, retrying every 30 s
+// just floods the user's console with red 404 lines and produces
+// nothing useful. (May 2026 user report: "it's freezing with same
+// 400 errors" — 8x identical poll 404s in the console at once.)
+let endpointKnown404 = false;
+
 async function pollOnce(): Promise<void> {
+  // Bail before any work if we've already learned this endpoint isn't
+  // shipped — no fetch, no console noise.
+  if (endpointKnown404) return;
   // Single-flight: a slow poll under flaky wifi must not stack with the
   // next interval tick (pile of in-flight requests + duplicate delivery
   // attempts after the dedupe window).
@@ -99,7 +111,19 @@ async function pollOnce(): Promise<void> {
       path: `${ENDPOINT}?since=${since}`,
       timeoutMs: POLL_TIMEOUT_MS,
     });
-    if (!res.ok) return; // 404 (not shipped), 401 (reauth), timeout — bail quietly
+    if (!res.ok) {
+      // 404 → endpoint not shipped, kill the loop for this session so
+      // we don't spam the user's console every 30 s. Other failures
+      // (401 reauth, network timeout) are transient — keep polling.
+      if (res.status === 404) {
+        endpointKnown404 = true;
+        if (intervalId !== null) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }
+      return;
+    }
     const b = res.data;
     if (!b || typeof b !== 'object') return;
     const rawMessages = Array.isArray(b.messages) ? b.messages.slice(0, MAX_MESSAGES_PER_POLL) : [];
