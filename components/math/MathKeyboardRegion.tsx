@@ -293,10 +293,6 @@ function MathAdvMathKeyboard() {
 // grid fits in ~100 px and removes the toggle entirely.
 
 const LETTERS_AZ = 'abcdefghijklmnopqrstuvwxyz'.split('');
-// Kept for callers that still want to address the historical halves
-// (test fixtures, etc.). Not used by the keyboard itself anymore.
-const LETTERS_AP = LETTERS_AZ.slice(0, 16);
-const LETTERS_QZ = LETTERS_AZ.slice(16);
 
 function MathLettersKeyboard() {
   const commitGlyph = useMathGridStore((s) => s.commitGlyph);
