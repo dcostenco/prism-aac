@@ -203,13 +203,30 @@ function GestureRecognitionSettings() {
   }, [gestureConfig.mappings]);
 
   return (
-    <div className="mt-4 pt-4 border-t border-theme">
-      <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">
-        Gesture Recognition
-      </h4>
+    // <details> instead of always-open: the gesture section has 7+
+    // sub-controls (mode picker, calibration, 4 mapping rows, 3
+    // sliders, training UI, reset). Caregivers reported "too much"
+    // — collapsed by default trims the settings overview to a single
+    // row showing on/off status. They tap to expand only when tuning.
+    <details
+      className="mt-4 pt-4 border-t border-theme group"
+      data-testid="gesture-recognition-details"
+    >
+      <summary className="cursor-pointer list-none flex items-center justify-between py-1 select-none">
+        <h4 className="text-muted font-semibold text-sm uppercase tracking-wider">
+          Gesture Recognition
+        </h4>
+        <span className="flex items-center gap-2">
+          <span className={`text-[10px] font-bold ${gestureConfig.enabled ? 'text-[#4CAF50]' : 'text-muted'}`}>
+            {gestureConfig.enabled ? 'ON' : 'off'}
+          </span>
+          {/* Chevron rotates when open via group-open: utility */}
+          <span className="text-muted text-xs group-open:rotate-90 transition-transform inline-block">▶</span>
+        </span>
+      </summary>
 
       {/* Enable toggle */}
-      <label className="flex items-center justify-between py-1.5">
+      <label className="flex items-center justify-between py-1.5 mt-2">
         <div>
           <span className="text-primary text-sm font-semibold">Enable Gestures</span>
           <p className="text-muted text-[10px]">Detect head, eye, lip, and brow gestures via camera</p>
@@ -374,6 +391,6 @@ function GestureRecognitionSettings() {
           </button>
         </div>
       )}
-    </div>
+    </details>
   );
 }
