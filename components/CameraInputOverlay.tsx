@@ -44,6 +44,21 @@ export default function CameraInputOverlay() {
   const rafRef = useRef(0);
   const highlightedKeyRef = useRef<HTMLElement | null>(null);
   const [keyBubble, setKeyBubble] = useState<{ char: string; x: number; y: number; visible: boolean }>({ char: '', x: 0, y: 0, visible: false });
+  // Stuck-cursor / no-interaction auto-disable. Tracks the most recent
+  // dwell-trigger timestamp + cursor position samples so we can detect
+  // a user whose calibration is so off the cursor never reaches a
+  // button. Fixes May 2026 user report — "uncalibrated finger" left
+  // them unable to reach Settings, no auto-detect fired because the
+  // existing drift detector lives only in HeadTrackingOverlay.
+  const lastDwellTsRef = useRef(0);
+  const enabledAtRef = useRef(0);
+  const cursorWindowRef = useRef<Array<{ x: number; y: number; t: number }>>([]);
+  const [stuckToast, setStuckToast] = useState(false);
+  const setSettings = useSettingsStore(s => s.update);
+  // Declared up here so the watchdog setInterval inside the main
+  // tracker useEffect can read it without a TDZ error. Mirrored to
+  // current status in a follow-on useEffect below.
+  const statusRef = useRef<Status>('stopped');
 
   const animateDwell = useCallback(function animate() {
     if (!dwellElementRef.current || dwellStartRef.current === 0) {
@@ -73,6 +88,10 @@ export default function CameraInputOverlay() {
       cursorSmoothing: 0.12,
       onMove(x, y) {
         setCursorPos({ x, y });
+        // Watchdog window — only keep the most recent 100 samples to
+        // bound memory; the watchdog filters by timestamp anyway.
+        cursorWindowRef.current.push({ x, y, t: Date.now() });
+        if (cursorWindowRef.current.length > 100) cursorWindowRef.current.shift();
 
         // Proximity detection is fed by real landmark data from the pose
         // tracker (not here — CameraInputOverlay only receives cursor x,y).
@@ -120,6 +139,8 @@ export default function CameraInputOverlay() {
         setDwellProgress(0);
         dwellElementRef.current = null;
         dwellStartRef.current = 0;
+        // Successful interaction — reset the no-interaction timer.
+        lastDwellTsRef.current = Date.now();
       },
       onStatusChange(s, detectedTarget) {
         setStatus(s);
@@ -128,6 +149,69 @@ export default function CameraInputOverlay() {
     });
 
     handleRef.current = handle;
+    enabledAtRef.current = Date.now();
+    lastDwellTsRef.current = 0;
+    cursorWindowRef.current = [];
+
+    // Stuck-cursor / no-interaction watchdog. Runs at 1 Hz. Two
+    // failure modes auto-disable tracking + show a recovery toast:
+    //   1. NO INTERACTION — tracker has been 'tracking' for ≥ 25s
+    //      without a single onDwell. The cursor isn't reaching
+    //      anything interactive (degenerate calibration, cursor
+    //      mapped off-screen, calibration anchored on wrong body
+    //      part). Better to disable than leave the user trapped.
+    //   2. PINNED CURSOR — every cursor sample in the last 10s
+    //      stayed within a 100×100 px box. Calibration range
+    //      collapsed; cursor barely responds to pose movement.
+    //
+    // The watchdog is the CameraInput equivalent of the drift
+    // safety stack in HeadTrackingOverlay (services/headTrackerStability).
+    // Couldn't reuse that primitive directly because it requires
+    // landmark confidence which CameraInputOverlay doesn't get from
+    // the tracker — we only have cursor x/y here.
+    const NO_INTERACTION_MS = 25_000;
+    const PIN_WINDOW_MS = 10_000;
+    const PIN_BOX_PX = 100;
+    const watchdog = setInterval(() => {
+      if (!mounted) return;
+      const now = Date.now();
+      // Only judge once tracker is actually tracking (not 'starting' /
+      // 'lost' / 'stopped') — those have their own UX.
+      if (statusRef.current !== 'tracking') return;
+      // Don't fire while tutorial wizard is running (UI is captive).
+      if (document.querySelector('[data-testid="tracking-setup-wizard"]')) return;
+
+      // 1. No interaction window
+      const enabledFor = now - enabledAtRef.current;
+      const sinceDwell = lastDwellTsRef.current === 0
+        ? enabledFor
+        : now - lastDwellTsRef.current;
+      if (sinceDwell > NO_INTERACTION_MS) {
+        console.warn('[camera-input] no successful interaction for ' + Math.round(sinceDwell / 1000) + 's — auto-disabling, calibration likely degenerate');
+        setStuckToast(true);
+        setSettings({ cameraInputEnabled: false });
+        return;
+      }
+
+      // 2. Pinned cursor in a small box for the last PIN_WINDOW_MS
+      const win = cursorWindowRef.current.filter(p => now - p.t <= PIN_WINDOW_MS);
+      cursorWindowRef.current = win;
+      if (win.length >= 30) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const p of win) {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        }
+        if (maxX - minX < PIN_BOX_PX && maxY - minY < PIN_BOX_PX) {
+          console.warn('[camera-input] cursor pinned to ' + Math.round(maxX - minX) + 'x' + Math.round(maxY - minY) + ' px box for ' + (PIN_WINDOW_MS / 1000) + 's — auto-disabling, calibration likely too narrow');
+          setStuckToast(true);
+          setSettings({ cameraInputEnabled: false });
+          return;
+        }
+      }
+    }, 1000);
 
     return () => {
       cancelAnimationFrame(rafRef.current);
@@ -135,14 +219,15 @@ export default function CameraInputOverlay() {
       highlightedKeyRef.current = null;
       handle.stop();
       handleRef.current = null;
+      clearInterval(watchdog);
       mounted = false;
     };
-  }, [enabled, target, dwellMs, sensitivity, animateDwell]);
+  }, [enabled, target, dwellMs, sensitivity, animateDwell, setSettings]);
 
   // Pointer fallback: when camera is on but can't detect the target
   // (MacBook — hands below FOV), use mouse movement for cursor + highlights.
-  // Uses a ref to avoid stale closure over status.
-  const statusRef = useRef(status);
+  // Mirror status into the ref on every change so the watchdog (above)
+  // and pointer fallback (below) read the latest value.
   useEffect(() => {
     statusRef.current = status;
   }, [status]);
@@ -170,7 +255,37 @@ export default function CameraInputOverlay() {
     return () => window.removeEventListener('mousemove', onMove);
   }, [enabled]);
 
-  if (!enabled) return null;
+  // Render the auto-disable toast even when tracking is disabled, so
+  // the user sees what happened and has a one-tap path back.
+  if (!enabled) {
+    if (!stuckToast) return null;
+    return (
+      <div
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] bg-[#1f1f1f] text-white px-4 py-3 rounded-2xl shadow-2xl border border-white/10 max-w-md pointer-events-auto"
+        data-testid="camera-input-stuck-toast"
+        role="alert"
+      >
+        <p className="font-semibold text-sm">Camera tracking auto-disabled</p>
+        <p className="text-xs text-white/70 mt-1">
+          Cursor wasn&apos;t reaching anything for 25 s — calibration looks off.
+          Re-run setup from Settings, or close this and use touch.
+        </p>
+        <div className="flex gap-2 mt-3 justify-end">
+          <button
+            onClick={() => setStuckToast(false)}
+            className="text-xs px-3 py-1.5 rounded bg-white/10 hover:bg-white/20"
+          >Dismiss</button>
+          <button
+            onClick={() => {
+              setStuckToast(false);
+              setSettings({ cameraInputEnabled: true });
+            }}
+            className="text-xs px-3 py-1.5 rounded bg-[#4CAF50] hover:bg-[#43a047] font-semibold"
+          >Re-enable</button>
+        </div>
+      </div>
+    );
+  }
 
   const statusColor = status === 'tracking' ? '#4CAF50' : status === 'lost' ? '#FF9800' : '#2196F3';
   const bubbleY = keyBubble.visible ? Math.max(5, keyBubble.y - 55) : 0;

@@ -386,22 +386,45 @@ function calibrationKey(orientation?: 'landscape' | 'portrait'): string {
   return `prism-pose-calibration-${orientation || getOrientation()}`;
 }
 
+/** Practical floor for a USABLE saved pose calibration range. Narrower
+ *  than this and the cursor barely responds across the screen — the
+ *  user is better off with DEFAULT_CALIBRATION until they re-run the
+ *  wizard. The wizard's captureCorner now produces a DEFAULT-width
+ *  fallback when corner samples cluster (rangeX≈0.70), so legitimate
+ *  wizard outputs always exceed this floor; cals below the floor
+ *  are degenerate residue from older builds and should be discarded. */
+const MIN_PRACTICAL_SAVED_RANGE = 0.05;
+
+function isUsableCornerCalibration(c: unknown): c is PoseCalibrationData {
+  if (!isValidCornerCalibration(c)) return false;
+  const cal = c as PoseCalibrationData;
+  const rangeX = Math.abs(cal.leftX - cal.rightX);
+  const rangeY = Math.abs(cal.bottomY - cal.topY);
+  return rangeX >= MIN_PRACTICAL_SAVED_RANGE && rangeY >= MIN_PRACTICAL_SAVED_RANGE;
+}
+
 export function loadPoseCalibration(): PoseCalibrationData {
   if (typeof window === 'undefined') return DEFAULT_CALIBRATION;
-  // Shared NaN-defense — same predicate as headTracker.loadCalibration.
-  // Imported from lib/safeValidation to avoid drift across the two
-  // tracker callers.
+  // Shared NaN-defense (isValidCornerCalibration) PLUS narrow-range
+  // defense (isUsableCornerCalibration). A previously-saved
+  // degenerate cal (rangeX≈0.02 from the May 2026 sofa scenario)
+  // would pin the cursor to a 2 % pose region, leaving the user
+  // unable to reach Settings to re-calibrate. Returning
+  // DEFAULT_CALIBRATION on degenerate load gives them a working
+  // cursor by default, and the wizard's online learner will adapt
+  // from there.
   try {
     const raw = localStorage.getItem(calibrationKey());
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (isValidCornerCalibration(parsed)) return parsed;
+      if (isUsableCornerCalibration(parsed)) return parsed;
+      console.warn('[PoseTracker] saved cal rejected — too narrow / invalid; using defaults');
     }
     // Try legacy key
     const legacy = localStorage.getItem('prism-pose-calibration');
     if (legacy) {
       const parsed = JSON.parse(legacy);
-      if (isValidCornerCalibration(parsed)) return parsed;
+      if (isUsableCornerCalibration(parsed)) return parsed;
     }
   } catch { /* use defaults */ }
   return DEFAULT_CALIBRATION;
