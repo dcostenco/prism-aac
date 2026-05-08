@@ -68,7 +68,14 @@ export default function IntegrationsSettings() {
   }, [refresh]);
 
   const handleConnect = useCallback((p: IntegrationProvider) => {
-    if (p.status !== 'available') return;
+    // Allow connect AND reconnect: status === 'available' is a fresh
+    // connect; status === 'connected' is a reconnect to upgrade scope
+    // (e.g. add contacts.readonly to an existing gmail.modify grant).
+    // 'planned' rows have no connectUrl, so the second guard catches them.
+    // Earlier `if (p.status !== 'available') return;` made the ↻
+    // Reconnect button a no-op — the user reported "no way to reconnect"
+    // (Image #25).
+    if (p.status === 'planned') return;
     if (!p.connectUrl) return;
 
     // Same-window navigation, NOT popup. iPad Safari aggressively
