@@ -288,7 +288,11 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
   // ── RENDER ──
   return (
-    <div className="fixed inset-0 z-[10000] bg-[#0a0a1a] flex flex-col">
+    <div
+      className="fixed inset-0 z-[10000] bg-[#0a0a1a] flex flex-col"
+      data-testid="tracking-setup-wizard"
+      data-phase={phase}
+    >
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-6 py-4">
         <button onClick={onCancel} className="text-white/60 text-lg font-semibold">Cancel</button>

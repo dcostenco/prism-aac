@@ -140,7 +140,8 @@ export function startReliabilityProbe(opts: ReliabilityProbeOpts): ReliabilityPr
             );
             detector = await FaceDetector.createFromOptions(fileset, {
                 baseOptions: {
-                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.task',
+                    // .tflite, not .task — see headTracker.ts:108 (May 2026 probe).
+                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
                     delegate: 'GPU',
                 },
                 runningMode: 'VIDEO',

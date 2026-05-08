@@ -105,7 +105,12 @@ async function initMediaPipeFace(): Promise<boolean> {
       );
       mpFaceDetector = await MPFace.createFromOptions(fileset, {
         baseOptions: {
-          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.task',
+          // MediaPipe ships this asset as .tflite (not .task) — the .task
+          // URL returns HTTP 404 (probed 2026-05-08). The fallback
+          // FaceDetector silently failed to initialize, leaving head
+          // tracking dependent on FaceLandmarker alone with no degraded
+          // path on phones where Landmarker hits the GPU memory cap.
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
           delegate: 'GPU',
         },
         runningMode: 'VIDEO',

@@ -177,7 +177,14 @@ export default function CameraInputOverlay() {
   const bubbleX = keyBubble.visible ? Math.max(25, Math.min(typeof window !== 'undefined' ? window.innerWidth - 25 : 9999, keyBubble.x)) : 0;
 
   return (
-    <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9998 }} aria-hidden="true">
+    <div
+      className="fixed inset-0 pointer-events-none"
+      style={{ zIndex: 9998 }}
+      aria-hidden="true"
+      data-testid="camera-input-overlay"
+      data-status={status}
+      data-target={activeTarget}
+    >
       {/* Precision bubble on keyboard key */}
       {keyBubble.visible && (
         <div className="precision-bubble" style={{ left: bubbleX, top: bubbleY, pointerEvents: 'none' }}>
@@ -227,6 +234,7 @@ export default function CameraInputOverlay() {
 
       {/* Status badge */}
       <div
+        data-testid="camera-input-status"
         style={{
           position: 'absolute',
           bottom: 8,

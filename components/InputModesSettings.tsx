@@ -7,7 +7,16 @@ import TrackingSetupWizard from './TrackingSetupWizard';
 import { DEFAULT_GESTURE_CONFIG, type GestureId, type GestureConfig } from '@/services/gestureService';
 import { requestMotionPermission } from '@/services/deviceMotion';
 
+// 'any_*' targets let bodyPoseService pick the more visible side per
+// frame (services/bodyPoseService.ts:78 chooseAggregateTarget). The
+// settings store defaults cameraTrackingTarget to 'any_wrist' — without
+// the matching chip, no target appeared selected and the user was
+// forced to pick a specific side, losing the auto-side fallback that
+// matters for users with asymmetric reach (May 2026 prod probe).
 const TRACKING_TARGETS = [
+  { id: 'any_wrist', label: 'Any Wrist (auto)' },
+  { id: 'any_index', label: 'Any Index (auto)' },
+  { id: 'any_hand', label: 'Any Hand (auto)' },
   { id: 'right_index', label: 'Right Index Finger' },
   { id: 'left_index', label: 'Left Index Finger' },
   { id: 'right_wrist', label: 'Right Wrist' },
@@ -44,9 +53,9 @@ export default function InputModesSettings() {
 
   return (
     <div className="space-y-4">
-      {/* Camera Finger/Body Tracking (DEFAULT ON) */}
-      <div>
-        <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Camera Input (Default)</h4>
+      {/* Camera Finger/Body Tracking (opt-in — settings store default false) */}
+      <div data-testid="camera-input-settings">
+        <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Camera Input</h4>
         <label className="flex items-center justify-between py-1.5">
           <div>
             <span className="text-primary text-sm font-semibold">Camera Finger Tracking</span>
@@ -60,6 +69,8 @@ export default function InputModesSettings() {
             <div className="grid grid-cols-3 gap-1">
               {TRACKING_TARGETS.map(tt => (
                 <button key={tt.id} onClick={() => { tapFeedback(); update({ cameraTrackingTarget: tt.id }); }}
+                  data-testid={`tracking-target-${tt.id}`}
+                  data-selected={cameraTrackingTarget === tt.id ? 'true' : 'false'}
                   className={`aac-btn rounded-lg px-2 py-1.5 text-[10px] font-semibold border border-theme ${
                     cameraTrackingTarget === tt.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                   }`}>

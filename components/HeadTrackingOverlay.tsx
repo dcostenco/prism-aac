@@ -395,6 +395,9 @@ export default function HeadTrackingOverlay() {
       className="fixed inset-0 pointer-events-none"
       style={{ zIndex: 9999 }}
       aria-hidden="true"
+      data-testid="head-tracking-overlay"
+      data-status={status}
+      data-safe-mode={safeMode ? 'true' : 'false'}
     >
       {/* ── Cursor dot + dwell ring — large and visible ── */}
       <div
@@ -459,6 +462,7 @@ export default function HeadTrackingOverlay() {
 
       {/* ── Status indicator (top-center) ── */}
       <div
+        data-testid="head-tracking-status"
         style={{
           position: 'absolute',
           top: 4,
@@ -520,6 +524,7 @@ export default function HeadTrackingOverlay() {
           ref={pipVideoRef}
           muted
           playsInline
+          data-testid="head-tracking-pip"
           style={{
             width: '100%',
             height: '100%',
