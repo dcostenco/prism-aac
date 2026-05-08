@@ -16,6 +16,7 @@ import { translateTextSync } from './translateService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
 import { ToneStyle } from './azureTTS';
+import { emitTtsHighlight, estimateSpeechDurationMs } from './ttsHighlightBus';
 
 // Speak a phrase with optional explicit tone override. When `tone` is omitted,
 // reads `toneMode` + `activeTone` from messageStore: in 'auto' mode the
@@ -39,6 +40,23 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     }
     if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
     const ttsCode = translating ? getTTSCode(outLang) : getTTSCode(inLang);
+    // Emit a highlight-start event so the renderer (MessageBar) can
+    // light up each word as it's spoken. The duration is estimated
+    // — see services/ttsHighlightBus.ts for the heuristic. We emit
+    // the SOURCE-language text, not the translated string, because
+    // the renderer shows the user-typed text and that's what should
+    // be highlighted (the translated bar is shorter and doesn't need
+    // word-by-word follow-along).
+    const { speechRate } = useSettingsStore.getState();
+    const highlightText = translating ? text : toSpeak;
+    if (highlightText.trim()) {
+      emitTtsHighlight({
+        type: 'tts-highlight-start',
+        text: highlightText,
+        estimatedDurationMs: estimateSpeechDurationMs(highlightText, speechRate),
+        timestamp: Date.now(),
+      });
+    }
     // Tone resolution:
     //   - explicit tone arg wins (e.g. emergency UI passes 'serious')
     //   - else read messageStore: 'auto' → speak() runs autoSwitchTone

@@ -8,6 +8,7 @@ import { tapFeedback, deleteFeedback } from '@/services/feedback';
 import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
+import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
 import { translateWithAIRefine } from '@/services/translateService';
 import { useAuthStore } from '@/store/authStore';
@@ -38,6 +39,85 @@ export default function MessageBar() {
   // Updated by the autocorrect useEffect after a "no correction
   // needed" round-trip (the input is well-formed).
   const lastSilenceSpokenRef = useRef('');
+
+  // ── TTS word highlight (Read & Write parity) ────────────────────
+  //
+  // Subscribes to the ttsHighlight bus. When a speak event fires
+  // (Speak button, sentence-end, accept-suggestion, anywhere aacSpeak
+  // runs), we receive (text, estimatedDurationMs) and start a
+  // setInterval that advances `activeWordIndex` until the spoken text
+  // has been fully covered. The render path passes activeWordIndex
+  // into ColoredText which paints the matching word with a yellow
+  // background.
+  //
+  // Notes:
+  //   - Duration is ESTIMATED (60 ms/char @ rate=0.5). Real TTS
+  //     duration depends on the backend; the highlight may finish
+  //     slightly before/after audio. Acceptable trade-off vs a full
+  //     audio-element refactor — the visible "follow along" benefit
+  //     dominates a small drift.
+  //   - We highlight ONLY the bar's `text` (what the user typed). If
+  //     a different string is spoken (e.g. a tutor result), the bus
+  //     event still fires but the renderer shows no highlight because
+  //     no word in `text` matches the spoken string. That's correct:
+  //     don't try to follow-along a string you can't see.
+  const [activeWordIndex, setActiveWordIndex] = useState<number | null>(null);
+  const highlightTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const highlightEndRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const stopHighlight = () => {
+      if (highlightTickRef.current) { clearInterval(highlightTickRef.current); highlightTickRef.current = null; }
+      if (highlightEndRef.current) { clearTimeout(highlightEndRef.current); highlightEndRef.current = null; }
+      setActiveWordIndex(null);
+    };
+    const unsubscribe = subscribeTtsHighlight((event) => {
+      if (event.type === 'tts-highlight-end') {
+        stopHighlight();
+        return;
+      }
+      // tts-highlight-start
+      stopHighlight();
+      // Tokenise the SPOKEN text the same way the renderer does so the
+      // word index matches. We only highlight if the spoken string is
+      // (a prefix of) the current message bar text — sentence-end
+      // events speak the LAST sentence which is a suffix; for those
+      // we'd need a smarter alignment. MVP: highlight when spoken text
+      // === current text exactly OR is a tail substring of it.
+      const currentBar = useMessageStore.getState().text;
+      const spokenWords = event.text.trim().split(/\s+/).filter(Boolean);
+      if (spokenWords.length === 0) return;
+      // Word offset inside the bar text. If the spoken text starts
+      // somewhere in the middle (sentence-end case), find that offset.
+      const barWords = currentBar.trim().split(/\s+/).filter(Boolean);
+      let offset = 0;
+      if (event.text.trim() !== currentBar.trim()) {
+        // Search for the spoken first-word in the bar's word list,
+        // walking from the END so a repeated word ("Mr. Mr.") binds
+        // to the most recent occurrence.
+        for (let i = barWords.length - spokenWords.length; i >= 0; i--) {
+          if (barWords[i]?.toLowerCase() === spokenWords[0].toLowerCase()) {
+            offset = i;
+            break;
+          }
+        }
+      }
+      const perWordMs = Math.max(80, Math.round(event.estimatedDurationMs / spokenWords.length));
+      let wordIdx = 0;
+      setActiveWordIndex(offset);
+      highlightTickRef.current = setInterval(() => {
+        wordIdx++;
+        if (wordIdx >= spokenWords.length) {
+          stopHighlight();
+          return;
+        }
+        setActiveWordIndex(offset + wordIdx);
+      }, perWordMs);
+      // Safety net: clear after the estimated total (in case an interval
+      // tick is dropped under heavy main-thread load).
+      highlightEndRef.current = setTimeout(stopHighlight, event.estimatedDurationMs + 500);
+    });
+    return () => { unsubscribe(); stopHighlight(); };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -360,7 +440,7 @@ export default function MessageBar() {
           aria-live="polite"
           aria-label={t('message_text')}
         >
-          {text ? <ColoredText text={text} /> : <span className="text-dim">{t('type_here')}</span>}
+          {text ? <ColoredText text={text} activeWordIndex={activeWordIndex} /> : <span className="text-dim">{t('type_here')}</span>}
         </div>
         {translated && (
           <div className="text-[clamp(0.75rem,2vw,1.1rem)] text-[#2196F3] font-semibold leading-snug line-clamp-2 whitespace-normal min-h-[2.5em]">
