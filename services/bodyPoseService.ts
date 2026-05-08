@@ -237,9 +237,12 @@ export function mapPoseToScreen(
   const mirroredX = 1.0 - normX;
   const rangeX = calibration.leftX - calibration.rightX;
   const rangeY = calibration.bottomY - calibration.topY;
-  const MIN_RANGE = 0.30;
-  // Same guard as the runtime mapping: collapsed/inverted ranges
-  // produce nonsense cursor positions, so we substitute defaults.
+  // Floor was 0.30 — too strict. Accessibility users with limited
+  // motion operate in 0.05–0.20 range and were getting reset to
+  // defaults every frame. 0.02 still guards against inverted/zero
+  // calibrations (the actual corruption mode) without rejecting
+  // legitimate small-range users.
+  const MIN_RANGE = 0.02;
   const rangeOK = rangeX >= MIN_RANGE && rangeY >= MIN_RANGE;
   const cal = rangeOK ? calibration : DEFAULT_CALIBRATION;
   const rX = cal.leftX - cal.rightX;
@@ -274,6 +277,84 @@ export function computeCalibrationFromCorners(
     topY: Math.min(...allY),
     bottomY: Math.max(...allY),
   };
+}
+
+/** Online (no-wizard) calibration learner — observes the user's
+ *  actual pose range as they use the app and produces a calibration
+ *  that matches their real motion envelope. Built for accessibility
+ *  users (the kind who can't complete a formal corner-pointing
+ *  wizard but can still slowly point their finger / move their head
+ *  during normal use). User request 2026-05-08: "math should be
+ *  working as soon as head/nose detected ... auto correct / learn
+ *  on the fly, don't rely on a settings result".
+ *
+ *  Strategy: keep a sliding window of the last ~10 seconds of pose
+ *  samples (300 at 30Hz). Use the 5th and 95th percentile as the
+ *  user's effective range — robust to MediaPipe outliers without
+ *  requiring the user to ever physically reach the absolute extremes.
+ *  Re-emits a calibration every UPDATE_EVERY frames once enough
+ *  samples are buffered. */
+export class OnlineCalibrationLearner {
+  private bufX: number[] = [];
+  private bufY: number[] = [];
+  private frameCount = 0;
+  private readonly MAX_SAMPLES: number;
+  private readonly MIN_SAMPLES: number;
+  private readonly UPDATE_EVERY: number;
+  private readonly LO_PERCENTILE: number;
+  private readonly HI_PERCENTILE: number;
+
+  constructor(opts: {
+    maxSamples?: number;
+    minSamples?: number;
+    updateEvery?: number;
+    loPercentile?: number;
+    hiPercentile?: number;
+  } = {}) {
+    this.MAX_SAMPLES = opts.maxSamples ?? 300;
+    this.MIN_SAMPLES = opts.minSamples ?? 60;
+    this.UPDATE_EVERY = opts.updateEvery ?? 30;
+    this.LO_PERCENTILE = opts.loPercentile ?? 0.05;
+    this.HI_PERCENTILE = opts.hiPercentile ?? 0.95;
+  }
+
+  push(mirroredX: number, normY: number): void {
+    this.bufX.push(mirroredX);
+    this.bufY.push(normY);
+    if (this.bufX.length > this.MAX_SAMPLES) {
+      this.bufX.shift();
+      this.bufY.shift();
+    }
+    this.frameCount++;
+  }
+
+  /** Returns null until enough samples have accumulated, then a
+   *  fresh calibration on every UPDATE_EVERY-th call. */
+  maybeEmitCalibration(): PoseCalibrationData | null {
+    if (this.bufX.length < this.MIN_SAMPLES) return null;
+    if (this.frameCount % this.UPDATE_EVERY !== 0) return null;
+    return this.snapshot();
+  }
+
+  /** Force-compute a calibration from current samples (for tests
+   *  / on-demand commits — bypasses the UPDATE_EVERY gate). */
+  snapshot(): PoseCalibrationData | null {
+    if (this.bufX.length < this.MIN_SAMPLES) return null;
+    const xs = [...this.bufX].sort((a, b) => a - b);
+    const ys = [...this.bufY].sort((a, b) => a - b);
+    const loIdx = Math.floor(xs.length * this.LO_PERCENTILE);
+    const hiIdx = Math.min(xs.length - 1, Math.floor(xs.length * this.HI_PERCENTILE));
+    return {
+      // leftX/rightX convention: leftX = LARGER mirroredX.
+      leftX: xs[hiIdx],
+      rightX: xs[loIdx],
+      topY: ys[loIdx],
+      bottomY: ys[hiIdx],
+    };
+  }
+
+  size(): number { return this.bufX.length; }
+  reset(): void { this.bufX = []; this.bufY = []; this.frameCount = 0; }
 }
 
 function getOrientation(): 'landscape' | 'portrait' {
@@ -440,6 +521,13 @@ export function startPoseTracker(
 
   const calibration = loadPoseCalibration();
   const sensitivityScale = opts.sensitivity / 5;
+  // Online learner — observes the user's actual pose envelope as
+  // they use the app and updates calibration on the fly. No wizard
+  // required; it's the primary path for accessibility users who
+  // can't complete formal calibration. (Wizard, if completed,
+  // seeds the saved calibration — the learner refines from there.)
+  const learner = new OnlineCalibrationLearner();
+  let lastLearnerCommitFrame = 0;
 
   // Clamp cursor smoothing to valid range
   const cursorAlpha = Math.max(0.05, Math.min(0.3, opts.cursorSmoothing));
@@ -693,39 +781,39 @@ export function startPoseTracker(
 
           opts.onStatusChange('tracking', activeTarget);
 
-          // Adaptive calibration: expand observed range, slowly decay toward
-          // current center. NOT gated on lockedAnchor — gating broke single-
-          // user setups where the anchor briefly drops, leaving calibration
-          // frozen at defaults and producing no cursor movement. Identity
-          // locking does its job in the pose-picking step above; from there
-          // the coords belong to the tracked person, so it's safe to adapt.
-          // Inputs + outputs clamped to [0,1] for defense against bad data.
+          // Online learning calibration — observe the user's actual
+          // pose envelope and adapt on the fly. Replaces the prior
+          // expand-only/decay-toward-center logic, which never
+          // shrunk the calibration to match a user with limited
+          // motion: their actual range stayed inside the wide
+          // defaults so expand never fired, and decay-to-center
+          // only fired when range was already wider than defaults.
+          // Result: accessibility users (the primary AAC audience)
+          // never got an effective calibration without completing
+          // a formal wizard their motor abilities couldn't pass.
+          // User request 2026-05-08: math should work as soon as
+          // pose is detected, with auto-correction during use.
           const mirroredX = Math.max(0, Math.min(1, 1.0 - normX));
           const clampedY = Math.max(0, Math.min(1, normY));
-          const ADAPT_RATE = 0.02;
-          // Decay only fires when the current range is wider than the
-          // default (i.e., the user explored beyond it once and we want to
-          // slowly retract toward typical bounds). Without this guard, idle
-          // frames would shrink the range below useful, freezing cursor
-          // near center until the user moved aggressively.
-          const DECAY_RATE = 0.0002;
-          const MIN_KEEP_RANGE_X = DEFAULT_CALIBRATION.leftX - DEFAULT_CALIBRATION.rightX;
-          const MIN_KEEP_RANGE_Y = DEFAULT_CALIBRATION.bottomY - DEFAULT_CALIBRATION.topY;
-          if (mirroredX < calibration.rightX) calibration.rightX += (mirroredX - calibration.rightX) * ADAPT_RATE;
-          if (mirroredX > calibration.leftX) calibration.leftX += (mirroredX - calibration.leftX) * ADAPT_RATE;
-          if (clampedY < calibration.topY) calibration.topY += (clampedY - calibration.topY) * ADAPT_RATE;
-          if (clampedY > calibration.bottomY) calibration.bottomY += (clampedY - calibration.bottomY) * ADAPT_RATE;
-          const curRangeX = calibration.leftX - calibration.rightX;
-          const curRangeY = calibration.bottomY - calibration.topY;
-          if (curRangeX > MIN_KEEP_RANGE_X) {
-            const midX = (calibration.leftX + calibration.rightX) / 2;
-            calibration.rightX += (midX - calibration.rightX) * DECAY_RATE;
-            calibration.leftX += (midX - calibration.leftX) * DECAY_RATE;
-          }
-          if (curRangeY > MIN_KEEP_RANGE_Y) {
-            const midY = (calibration.topY + calibration.bottomY) / 2;
-            calibration.topY += (midY - calibration.topY) * DECAY_RATE;
-            calibration.bottomY += (midY - calibration.bottomY) * DECAY_RATE;
+          learner.push(mirroredX, clampedY);
+          const learned = learner.maybeEmitCalibration();
+          if (learned) {
+            // Blend the learned calibration into the live one with
+            // a slow EMA so cursor doesn't lurch when the bounds
+            // shift. Faster blend (0.15) when the learner first
+            // emits, slower (0.05) once a saved calibration is in
+            // place — respects the wizard's contribution.
+            const isFirstCommit = lastLearnerCommitFrame === 0;
+            const BLEND = isFirstCommit ? 0.5 : 0.05;
+            calibration.leftX = calibration.leftX * (1 - BLEND) + learned.leftX * BLEND;
+            calibration.rightX = calibration.rightX * (1 - BLEND) + learned.rightX * BLEND;
+            calibration.topY = calibration.topY * (1 - BLEND) + learned.topY * BLEND;
+            calibration.bottomY = calibration.bottomY * (1 - BLEND) + learned.bottomY * BLEND;
+            // Persist every ~5 seconds so a reload starts close to
+            // where the user left off. (frameCount is per-tracker;
+            // no wall clock available without shipping more state.)
+            try { savePoseCalibration(calibration); } catch { /* */ }
+            lastLearnerCommitFrame++;
           }
           calibration.rightX = Math.max(0, Math.min(1, calibration.rightX));
           calibration.leftX = Math.max(0, Math.min(1, calibration.leftX));
@@ -740,15 +828,23 @@ export function startPoseTracker(
           // wide defaults; the adapt step rebuilds the user's actual range.
           // Also: if rightX > leftX (i.e. inverted/swapped — corrupt data),
           // reset unconditionally.
-          const MIN_RANGE = 0.30;
+          // Defensive guard ONLY for inverted/zero ranges — users
+          // with limited motion (e.g. AAC users with motor
+          // disability) routinely operate inside a 0.05–0.20
+          // pose-space range, and the prior 0.30 floor reset their
+          // calibration to defaults every frame. The online learner
+          // above produces correct ordering by construction; this
+          // guard exists for stale localStorage / corrupt data.
+          const MIN_RANGE = 0.02;
           let rangeX = calibration.leftX - calibration.rightX;
           let rangeY = calibration.bottomY - calibration.topY;
           if (rangeX < MIN_RANGE || rangeY < MIN_RANGE || rangeX < 0 || rangeY < 0) {
             console.warn(
-              '[PoseTracker] CALIBRATION RESET TO DEFAULTS — saved cal had ' +
+              '[PoseTracker] CALIBRATION INVALID — saved cal had ' +
               'rangeX=' + rangeX.toFixed(3) + ' rangeY=' + rangeY.toFixed(3) +
-              ' (need both ≥ 0.30 + positive). leftX=' + calibration.leftX.toFixed(3) +
-              ' rightX=' + calibration.rightX.toFixed(3) +
+              ' (need both ≥ 0.02 + positive). Resetting to defaults; ' +
+              'online learner will adapt within ~2 seconds. leftX=' +
+              calibration.leftX.toFixed(3) + ' rightX=' + calibration.rightX.toFixed(3) +
               ' topY=' + calibration.topY.toFixed(3) +
               ' bottomY=' + calibration.bottomY.toFixed(3)
             );

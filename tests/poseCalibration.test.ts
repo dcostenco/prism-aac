@@ -18,6 +18,7 @@ import {
   DEFAULT_CALIBRATION,
   mapPoseToScreen,
   computeCalibrationFromCorners,
+  OnlineCalibrationLearner,
 } from '@/services/bodyPoseService';
 
 const SCREEN_W = 1280;
@@ -161,10 +162,27 @@ describe('mapPoseToScreen — defensive guards', () => {
     expect(r.x).toBeLessThanOrEqual(SCREEN_W);
   });
 
-  it('flags rangeOK=false when range collapses below MIN_RANGE (0.30)', () => {
-    const tooNarrow = { leftX: 0.55, rightX: 0.45, topY: 0.45, bottomY: 0.55 };
-    const r = mapPoseToScreen(0.5, 0.5, tooNarrow, 1.0, SCREEN_W, SCREEN_H);
-    expect(r.rangeOK).toBe(false);
+  it('flags rangeOK=false ONLY when range collapses below MIN_RANGE (0.02)', () => {
+    // Calibrations as narrow as 0.05–0.20 are valid for accessibility
+    // users with limited motion — they were getting reset to defaults
+    // under the prior 0.30 floor. Only inverted / zero-range cals are
+    // rejected now.
+    const narrowButValid = { leftX: 0.55, rightX: 0.45, topY: 0.45, bottomY: 0.55 };
+    expect(mapPoseToScreen(0.5, 0.5, narrowButValid, 1.0, SCREEN_W, SCREEN_H).rangeOK).toBe(true);
+    const tooNarrow = { leftX: 0.51, rightX: 0.50, topY: 0.50, bottomY: 0.51 };
+    expect(mapPoseToScreen(0.5, 0.5, tooNarrow, 1.0, SCREEN_W, SCREEN_H).rangeOK).toBe(false);
+  });
+
+  it('accepts a 0.10-wide accessibility-user calibration', () => {
+    // Real-world AAC user: finger only sweeps from 0.45 to 0.55 of
+    // camera image. Cursor must still span screen.
+    const cal = { leftX: 0.55, rightX: 0.45, topY: 0.45, bottomY: 0.55 };
+    const left = mapPoseToScreen(0.55 /* mirroredX would be 0.45 */, 0.45, cal, 1.0, SCREEN_W, SCREEN_H);
+    const right = mapPoseToScreen(0.45 /* mirroredX would be 0.55 */, 0.55, cal, 1.0, SCREEN_W, SCREEN_H);
+    expect(left.rangeOK).toBe(true);
+    expect(right.rangeOK).toBe(true);
+    expect(left.x).toBeLessThan(SCREEN_W * 0.05);
+    expect(right.x).toBeGreaterThan(SCREEN_W * 0.95);
   });
 
   it('clamps cursor to screen bounds for poses outside calibration rect', () => {
@@ -205,5 +223,89 @@ describe('mapPoseToScreen — sensitivity scaling', () => {
     const dist1 = Math.abs(x1 - SCREEN_W / 2);
     const dist2 = Math.abs(x2 - SCREEN_W / 2);
     expect(dist2).toBeLessThan(dist1);
+  });
+});
+
+describe('OnlineCalibrationLearner — auto-learns from real motion', () => {
+  it('returns null until minimum samples accumulate', () => {
+    const l = new OnlineCalibrationLearner({ minSamples: 60 });
+    for (let i = 0; i < 30; i++) l.push(0.5 + Math.random() * 0.1, 0.5);
+    expect(l.snapshot()).toBeNull();
+    expect(l.maybeEmitCalibration()).toBeNull();
+  });
+
+  it('emits a calibration matching the observed pose envelope', () => {
+    // Simulate 200 samples of a user whose finger sweeps mirroredX
+    // 0.30→0.70 and normY 0.40→0.60 — a realistic limited-motion
+    // user.
+    const l = new OnlineCalibrationLearner();
+    for (let i = 0; i < 200; i++) {
+      const t = i / 199;
+      l.push(0.30 + 0.40 * t, 0.40 + 0.20 * t);
+    }
+    const cal = l.snapshot();
+    expect(cal).not.toBeNull();
+    if (!cal) return;
+    // 5th–95th percentile of a uniform sweep approximates the true
+    // bounds with a small tolerance.
+    expect(cal.rightX).toBeGreaterThan(0.30); // 5th percentile > min
+    expect(cal.rightX).toBeLessThan(0.40);
+    expect(cal.leftX).toBeGreaterThan(0.60);
+    expect(cal.leftX).toBeLessThan(0.70);
+    expect(cal.topY).toBeGreaterThan(0.40);
+    expect(cal.bottomY).toBeLessThan(0.60);
+    expect(cal.leftX).toBeGreaterThan(cal.rightX); // convention OK
+  });
+
+  it('is robust to outlier samples (5th/95th percentile)', () => {
+    const l = new OnlineCalibrationLearner();
+    // Mostly samples in [0.45, 0.55], plus 2 outliers at 0.0 and 1.0
+    for (let i = 0; i < 100; i++) l.push(0.45 + (i / 100) * 0.10, 0.5);
+    l.push(0.0, 0.5);
+    l.push(1.0, 0.5);
+    const cal = l.snapshot();
+    expect(cal).not.toBeNull();
+    if (!cal) return;
+    // Outliers should NOT define the bounds — the 5th/95th
+    // percentile pulls in to the dense cluster.
+    expect(cal.rightX).toBeGreaterThan(0.40);
+    expect(cal.leftX).toBeLessThan(0.60);
+  });
+
+  it('rolls the window — old samples drop out as new ones arrive', () => {
+    const l = new OnlineCalibrationLearner({ maxSamples: 100, minSamples: 50 });
+    // Phase 1: user moves in a small range
+    for (let i = 0; i < 100; i++) l.push(0.45 + (i / 100) * 0.10, 0.5);
+    const phase1 = l.snapshot();
+    // Phase 2: user grows their range — push 100 more samples in
+    // a wider envelope. Window holds last 100 samples, so phase 1
+    // values should be evicted.
+    for (let i = 0; i < 100; i++) l.push(0.20 + (i / 100) * 0.60, 0.5);
+    const phase2 = l.snapshot();
+    expect(phase1).not.toBeNull();
+    expect(phase2).not.toBeNull();
+    if (!phase1 || !phase2) return;
+    // Phase 2 cal range should be wider than phase 1.
+    expect(phase2.leftX - phase2.rightX).toBeGreaterThan(phase1.leftX - phase1.rightX);
+  });
+
+  it('maybeEmitCalibration only fires every UPDATE_EVERY-th call', () => {
+    const l = new OnlineCalibrationLearner({ updateEvery: 30, minSamples: 30 });
+    let emits = 0;
+    for (let i = 0; i < 90; i++) {
+      l.push(0.5, 0.5);
+      if (l.maybeEmitCalibration()) emits++;
+    }
+    // 90 samples / 30 = 3 emissions
+    expect(emits).toBe(3);
+  });
+
+  it('reset() clears the buffer', () => {
+    const l = new OnlineCalibrationLearner({ minSamples: 60 });
+    for (let i = 0; i < 100; i++) l.push(0.5, 0.5);
+    expect(l.size()).toBe(100);
+    l.reset();
+    expect(l.size()).toBe(0);
+    expect(l.snapshot()).toBeNull();
   });
 });
