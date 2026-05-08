@@ -137,7 +137,21 @@ async function callSynalux(
   const t = timeoutSignal(30000);
   let res: Response;
   try {
-    res = await fetch(`${SYNALUX_API}/chat`, {
+    // Route via /api/v1/prism-aac/chat — the dedicated AAC chat
+    // endpoint (synalux-private commits 8607d33c → 05ef1d57). It is
+    // UNAUTHENTICATED BY DESIGN with a per-IP rate limit ("AAC must
+    // work for everyone" per its source comment) and tier-routed to
+    // local prism-coder:7b → 14b → Claude Sonnet / Gemini.
+    //
+    // The previous /api/v1/chat target was the synalux web-app chat,
+    // auth-gated → 401 for anonymous users on prism-aac.vercel.app.
+    // Cross-origin SameSite=Lax NextAuth cookies don't propagate, so
+    // even signed-in synalux.ai users got 401 here. The user-visible
+    // symptom was "Couldn't reach the tutor. Check your internet."
+    // (May 2026 user reports Image #29 / #30 — "why you telling me
+    // it's not a bug?"). This switch makes the tutor work for every
+    // visitor, signed-in or not.
+    res = await fetch(`${SYNALUX_API}/prism-aac/chat`, {
       method: 'POST',
       credentials: 'include',
       headers,
