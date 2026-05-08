@@ -52,7 +52,7 @@ interface Props {
 }
 
 export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
-  const { speechRate, speechVolume } = useSettingsStore();
+  const { speechRate, speechVolume, update: updateSettings } = useSettingsStore();
   const [phase, setPhase] = useState<Phase>('intro');
   const [detected, setDetected] = useState<DetectedPart[]>([]);
   const [selectedPart, setSelectedPart] = useState<TrackingTarget | null>(null);
@@ -582,7 +582,20 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     >
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-6 py-4">
-        <button onClick={onCancel} className="text-white/60 text-lg font-semibold">Cancel</button>
+        <button
+          onClick={() => {
+            // Disable finger/camera tracking on cancel so the user
+            // isn't left with an uncalibrated tracker after abandoning
+            // the wizard mid-run. The wizard reset DEFAULT_CALIBRATION
+            // at start so any saved cal is now factory defaults — not
+            // their personal calibration — and an active tracker with
+            // factory defaults pointing away from their neutral posture
+            // is worse than no tracker at all.
+            updateSettings({ cameraInputEnabled: false });
+            onCancel();
+          }}
+          className="text-white/60 text-lg font-semibold"
+        >Cancel</button>
         <h1 className="text-white font-bold text-xl">
           {phase === 'intro' && 'Tracking Setup'}
           {phase === 'detecting' && 'Finding You...'}
