@@ -198,7 +198,10 @@ export async function debugPython(code: string): Promise<TraceResult> {
   };
 }
 
-function childFriendlyPyError(traceback: string): string {
+/** Map a Python traceback to a one-sentence child-readable summary.
+ *  Exported for unit testing — the matching rules need to stay
+ *  stable across Pyodide upgrades, so we lock them in tests. */
+export function childFriendlyPyError(traceback: string): string {
   const lines = traceback.split('\n').map((l) => l.trim()).filter(Boolean);
   const last = lines[lines.length - 1] ?? traceback;
   if (/SyntaxError/i.test(last)) return 'There is a typo in the code (SyntaxError).';
