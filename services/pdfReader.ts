@@ -94,25 +94,46 @@ export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExt
   let totalChars = 0;
   for (let i = 1; i <= doc.numPages; i++) {
     let text = '';
+    let phase: 'getPage' | 'getTextContent' | 'mapItems' | 'cleanup' = 'getPage';
     try {
       const page = await doc.getPage(i);
-      const content = await page.getTextContent();
-      // pdfjs returns `content.items` as an array of TextItem | TextMarkedContent.
-      // If pdfjs's internal extraction errored out the items array can be
-      // undefined / null on some malformed PDFs (or worker-load races).
-      // Fall back to empty text for that page rather than letting the
-      // for-loop crash — the user still gets the rest of the document.
-      const items = Array.isArray(content?.items) ? content.items : [];
-      text = items
-        .map((it) => (it as { str?: string }).str ?? '')
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      page.cleanup();
+      phase = 'getTextContent';
+      // Some clinical PDFs (Vineland-3, Connors, BASC) ship XFA forms
+      // and tagged-PDF marked content. The default getTextContent
+      // options trip a `for...of` over an undefined collection inside
+      // pdfjs on those — surfacing as Safari's
+      // "undefined is not a function (near '...t of e...')". Passing
+      // explicit options (omit normalizeWhitespace, disableNormalization
+      // = true) bypasses the offending normalization path while still
+      // returning items[].
+      const content = await page.getTextContent({
+        includeMarkedContent: false,
+        disableNormalization: true,
+      } as Parameters<typeof page.getTextContent>[0]);
+      phase = 'mapItems';
+      // pdfjs returns `content.items` as TextItem | TextMarkedContent.
+      // Filter to TextItem (those with .str) so iterator-based mapping
+      // can't trip on a marked-content boundary even if includeMarked
+      // wasn't honoured by an older worker.
+      const rawItems: unknown[] = Array.isArray(content?.items) ? content.items : [];
+      const strs: string[] = [];
+      for (const it of rawItems) {
+        const s = (it as { str?: unknown })?.str;
+        if (typeof s === 'string') strs.push(s);
+      }
+      text = strs.join(' ').replace(/\s+/g, ' ').trim();
+      phase = 'cleanup';
+      try { page.cleanup(); } catch { /* cleanup failure is non-fatal */ }
     } catch (e) {
-      // Per-page failure must NOT take down the whole document — speak
-      // what we have, label the bad page so the user knows where to look.
-      text = `[Page ${i} could not be read: ${e instanceof Error ? e.message : 'unknown error'}]`;
+      // Per-page failure must NOT take down the whole document. Surface
+      // the failed phase + a stack frame so future regressions are
+      // diagnosable instead of hidden behind the minified Safari
+      // "undefined is not a function (near '...t of e...')" message.
+      const msg = e instanceof Error ? e.message : 'unknown error';
+      const frame = e instanceof Error && e.stack
+        ? e.stack.split('\n').find((l) => /pdf\.|pdfjs|worker/i.test(l))?.trim()
+        : '';
+      text = `[Page ${i} could not be read at ${phase}: ${msg}${frame ? ` @ ${frame.slice(0, 80)}` : ''}]`;
     }
     pages.push({ pageNumber: i, text });
     totalChars += text.length;
