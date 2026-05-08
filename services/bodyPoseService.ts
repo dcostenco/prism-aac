@@ -22,6 +22,14 @@
 
 import { acquireCamera, type CameraLease } from './cameraStream';
 import { isValidCornerCalibration } from '@/lib/safeValidation';
+// Stabilization stack — same modules headTracker uses (TRACKING_RELIABILITY.md
+// items D / E / F). Body pose path was previously unprotected: no Kalman,
+// no ego-motion suppression, no baseline drift correction. Wired here in
+// May 2026 after user reported "wiggling fast → false moves" + "spec was
+// for heavy jitter in a car" — that's exactly what these modules guard.
+import { Kalman1D } from './kalmanFilter1D';
+import { classifyMotion, type Point2D } from './egoMotion';
+import { BaselineTracker } from './recalibration';
 
 // ── MediaPipe Pose Landmark Indices ────────────────────────────────────────
 //  0: nose        1-4: eyes       5-6: ears      7-10: mouth
@@ -529,6 +537,29 @@ export function startPoseTracker(
   const learner = new OnlineCalibrationLearner();
   let lastLearnerCommitFrame = 0;
 
+  // ── Stabilization stack (TRACKING_RELIABILITY.md D + E + F) ─────────────
+  // Same modules headTracker uses, now also wired into the body-pose
+  // path. Life-critical for AAC users — the body-pose path was
+  // previously unprotected: no Kalman, no ego-motion suppression, no
+  // baseline drift correction. Wired May 2026.
+  // Per-axis Kalman replaces the velocity-adaptive EMA. Measurement
+  // noise scales with MediaPipe per-landmark visibility — low
+  // confidence frames hold the cursor instead of following noise.
+  const KALMAN_PROCESS_NOISE = 4; // px²/frame, matches head-tracker default
+  const kalmanX = new Kalman1D(KALMAN_PROCESS_NOISE);
+  const kalmanY = new Kalman1D(KALMAN_PROCESS_NOISE);
+  let kalmanInitialized = false;
+  // Ego-motion suppression: previous-frame landmark snapshot. When
+  // ALL landmarks shift uniformly (zero per-landmark residual), the
+  // CAMERA moved (car bump, lap-held laptop wobble), not the user.
+  // classifyMotion returns isEgoMotion=true and we skip onMove.
+  let prevLandmarksForEgo: Point2D[] | null = null;
+  // Baseline tracker — exp-averaged pose center + variance, lets us
+  // detect slow drift (auto-focus shift, user shifted in seat) and
+  // suggest calibration corrections without forcing recalibration.
+  const baselineTracker = new BaselineTracker();
+  let lastBaselineApplyTime = 0;
+
   // Clamp cursor smoothing to valid range
   const cursorAlpha = Math.max(0.05, Math.min(0.3, opts.cursorSmoothing));
 
@@ -661,6 +692,12 @@ export function startPoseTracker(
           }
         }
 
+        // Hoisted so the post-mapping stabilization stack (Kalman /
+        // ego-motion / baseline) below can read the active landmark
+        // visibility and full landmark array.
+        let frameLandmarks: Array<{ x: number; y: number; visibility?: number }> | null = null;
+        let frameChosenVis = 0.5;
+
         if (useFaceDetectorFallback) {
           const det = results?.detections?.[0];
           if (det?.boundingBox) {
@@ -668,6 +705,8 @@ export function startPoseTracker(
             normX = (bb.originX + bb.width / 2) / (video.videoWidth || 640);
             normY = (bb.originY + bb.height / 2) / (video.videoHeight || 480);
             activeTarget = 'nose';
+            frameChosenVis = (det as { categories?: Array<{ score?: number }> })
+              .categories?.[0]?.score ?? 0.7;
           }
         } else if (results?.landmarks?.length > 0) {
           // Identity locking for multi-person frames: when MediaPipe returns
@@ -760,6 +799,8 @@ export function startPoseTracker(
             normX = chosen.mark.x;
             normY = chosen.mark.y;
             activeTarget = chosen.target;
+            frameLandmarks = lm;
+            frameChosenVis = chosen.vis;
             if (chosen.vis < 0.3) {
               lowVisStreak += 1;
               if (lowVisStreak === 30 || lowVisStreak === 300) {
@@ -870,22 +911,69 @@ export function startPoseTracker(
           rawX = Math.max(0, Math.min(window.innerWidth, rawX));
           rawY = Math.max(0, Math.min(window.innerHeight, rawY));
 
-          // Velocity-adaptive smoothing (blended with user cursorSmoothing)
-          const dx = rawX - sx;
-          const dy = rawY - sy;
-          const velocity = Math.sqrt(dx * dx + dy * dy);
-          const screenSize = Math.min(window.innerWidth, window.innerHeight);
-          const screenFactor = screenSize < 768 ? 0.5 : screenSize < 1200 ? 0.7 : 1.0;
-          const velocitySmooth = velocity < 5
-            ? 0.03
-            : velocity > 50
-              ? 0.2 * screenFactor
-              : 0.03 + (velocity - 5) / 45 * (0.2 * screenFactor - 0.03);
-          const finalSmooth = Math.min(cursorAlpha, velocitySmooth);
-          sx = ema(sx, rawX, finalSmooth);
-          sy = ema(sy, rawY, finalSmooth);
+          // ── Ego-motion suppression (TRACKING_RELIABILITY.md item E) ──
+          // Snapshot the high-visibility landmarks from THIS frame and
+          // compare with last frame. If all landmarks shifted uniformly
+          // (centroid moved but per-landmark residual < threshold),
+          // the camera moved (car bump / lap-held wobble), not the
+          // user. Suppress the cursor update on those frames.
+          const currLandmarksForEgo: Point2D[] = [];
+          if (frameLandmarks) {
+            for (let li = 0; li < frameLandmarks.length; li++) {
+              const p = frameLandmarks[li];
+              if ((p?.visibility ?? 0) >= 0.5) {
+                currLandmarksForEgo.push({ x: p.x, y: p.y });
+              }
+            }
+          }
+          let suppressForEgoMotion = false;
+          if (prevLandmarksForEgo && currLandmarksForEgo.length >= 4 &&
+              prevLandmarksForEgo.length === currLandmarksForEgo.length) {
+            const r = classifyMotion(prevLandmarksForEgo, currLandmarksForEgo);
+            if (r.isEgoMotion) suppressForEgoMotion = true;
+          }
+          if (currLandmarksForEgo.length > 0) prevLandmarksForEgo = currLandmarksForEgo;
 
-          opts.onMove(sx, sy);
+          // ── Confidence-aware Kalman smoothing (item D) ──
+          // Replaces velocity-adaptive EMA. Measurement noise scales
+          // with the chosen landmark's visibility, so low-confidence
+          // frames hold the cursor instead of following the noise.
+          const measurementConfidence = Math.max(0.05, Math.min(1, frameChosenVis));
+          if (!kalmanInitialized) {
+            kalmanX.snapTo(rawX);
+            kalmanY.snapTo(rawY);
+            kalmanInitialized = true;
+          }
+          if (suppressForEgoMotion) {
+            sx = kalmanX.predict();
+            sy = kalmanY.predict();
+          } else {
+            sx = kalmanX.update(rawX, measurementConfidence);
+            sy = kalmanY.update(rawY, measurementConfidence);
+          }
+
+          // ── Baseline drift correction (item F) ──
+          if (!suppressForEgoMotion) {
+            baselineTracker.push({ normX: mirroredX, normY: clampedY, timestamp: Date.now() });
+            const now = Date.now();
+            if (now - lastBaselineApplyTime > 5000) {
+              lastBaselineApplyTime = now;
+              const correction = baselineTracker.suggestCorrection(now);
+              if (correction?.kind === 'offset') {
+                const dx = correction.deltaNormX ?? 0;
+                const dy = correction.deltaNormY ?? 0;
+                calibration.leftX = Math.max(0, Math.min(1, calibration.leftX + dx));
+                calibration.rightX = Math.max(0, Math.min(1, calibration.rightX + dx));
+                calibration.topY = Math.max(0, Math.min(1, calibration.topY + dy));
+                calibration.bottomY = Math.max(0, Math.min(1, calibration.bottomY + dy));
+                try { savePoseCalibration(calibration); } catch {}
+              }
+            }
+          }
+
+          if (!suppressForEgoMotion) {
+            opts.onMove(sx, sy);
+          }
 
           // Emit raw normalized coords for calibration UI
           if (typeof window !== 'undefined') {
