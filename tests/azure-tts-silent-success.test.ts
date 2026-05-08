@@ -253,14 +253,15 @@ describe('decodeAndPlay — suspended context attempts playback (no fail-fast re
     fetchSpy.mockRestore();
   });
 
-  it('decodeAndPlay attempts playback even when ctx.state is suspended after resume', async () => {
-    // The fail-fast removed in 2026-05-08 was returning false here,
-    // making speech-service fall through to Web Speech which also
-    // needs a gesture — net effect: silence everywhere. New contract:
-    // start the source unconditionally; the user MIGHT hear nothing
-    // if the context truly can't run, but at minimum the BufferSource
-    // gets started and the onended-too-early warning fires for
-    // diagnosis. Better than guaranteed silence.
+  it.skip('decodeAndPlay attempts playback even when ctx.state is suspended after resume', async () => {
+    // 2026-05-08 evidence: BufferSource.start() on a suspended ctx
+    // QUEUES audio silently (per Web Audio spec) — function returns
+    // true, console logs "succeeded", but user hears nothing. Real
+    // Safari users reproduced this. Fall-through to Web Speech is
+    // the right call: Web Speech IS more permissive on Safari and
+    // produces audible output without an active gesture in many
+    // cases. So decodeAndPlay now correctly returns false on
+    // suspended ctx — pinned by the case below instead.
     class SuspendedStub {
       state: 'running' | 'suspended' | 'closed' = 'suspended';
       destination = {} as unknown;
@@ -290,9 +291,38 @@ describe('decodeAndPlay — suspended context attempts playback (no fail-fast re
       new Response(new ArrayBuffer(64), { status: 200, headers: { 'content-length': '64' } }),
     );
     await mod.speakAzure('hi', 'en-US', 'friendly', 1, 1, '');
-    // The source MUST have been started — no silent fail-fast.
-    expect(stub._sources.length).toBeGreaterThan(0);
-    expect(stub._sources[0]._started).toBe(true);
+    // Old contract (skipped above) expected source.start regardless.
+    // New contract (this case): no source started when ctx stuck —
+    // speakAzure returns false so speech-service falls to Web Speech.
+    expect(stub._sources.length).toBe(0);
+    fetchSpy.mockRestore();
+  });
+
+  it('decodeAndPlay returns false when ctx stuck suspended (Safari silent-queue guard)', async () => {
+    class SuspendedStub {
+      state: 'running' | 'suspended' | 'closed' = 'suspended';
+      destination = {} as unknown;
+      resume = vi.fn(async () => { /* stays suspended */ });
+      decodeAudioData = vi.fn(async () => ({ duration: 0.5 } as unknown as AudioBuffer));
+      _sources: Array<{ start: () => void; _started: boolean }> = [];
+      createBufferSource() {
+        const src = { buffer: null, onended: null as (() => void) | null, start() { src._started = true; }, stop() {}, connect: (d: unknown) => d, disconnect() {}, _started: false };
+        this._sources.push(src);
+        return src;
+      }
+      createGain() { return { gain: { value: 1 }, connect: (d: unknown) => d, disconnect() {} }; }
+    }
+    (globalThis as unknown as { AudioContext: unknown }).AudioContext = function () { return new SuspendedStub(); };
+    vi.resetModules();
+    const mod = await import('@/services/azureTTS');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+      new Response(new ArrayBuffer(64), { status: 200, headers: { 'content-length': '64' } }),
+    );
+    const ok = await mod.speakAzure('hi', 'en-US', 'friendly', 1, 1, '');
+    // Critical: with stuck-suspended ctx, return false so caller
+    // falls through to Web Speech. The user-visible "[TTS] Portal
+    // TTS succeeded" lie that produced silence on Safari is gone.
+    expect(ok).toBe(false);
     fetchSpy.mockRestore();
   });
 });

@@ -293,21 +293,28 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
     return false;
   }
   if (ctx.state === 'suspended') {
-    try { await ctx.resume(); } catch { /* attempt playback anyway */ }
+    try { await ctx.resume(); } catch { /* state check next */ }
   }
-  // 2026-05-08 user report: an earlier fail-fast on
-  // `ctx.state !== 'running'` (commit 500fca6) regressed playback for
-  // every user whose context was transiently suspended at decode time
-  // — the "fix" returned false instead of attempting BufferSourceNode
-  // playback, and the next-tier fallback (Web Speech) ALSO needs a
-  // user gesture so the user heard NOTHING. Removed: try the play
-  // unconditionally. If audio is silent because of a suspended ctx,
-  // the onended-too-early diagnostic below at least makes it
-  // observable in `?debug=tts`. Web Audio actually plays in many
-  // "suspended" states once the source is started, so the fail-fast
-  // was over-cautious.
+  // 2026-05-08 evidence-based: user's Safari console showed
+  // "[TTS] Portal TTS succeeded" ×3 with ZERO audible output. Per
+  // the Web Audio spec, BufferSource.start() does NOT throw on a
+  // suspended AudioContext — it QUEUES the playback for whenever
+  // the context becomes running. If ctx never resumes (Safari's
+  // user-gesture-token consumed by `await fetch(...)` before
+  // resume() runs), the queued audio is permanently silent. The
+  // function then returned `true` and speechService logged
+  // "succeeded" — a false positive that prevented the Tier 3 Web
+  // Speech fallback (which works without a gesture on Safari) from
+  // ever firing.
+  //
+  // Earlier removal-of-fail-fast (commit a8ea5e0) was wrong: I
+  // assumed Web Speech also needed a gesture and would also fail.
+  // Real-browser test on Safari proves Web Speech works without
+  // gesture. So the right call is to return false here and let
+  // speechService fall through.
   if (ctx.state !== 'running') {
-    console.warn(`[${label}] AudioContext.state="${ctx.state}" — attempting playback anyway; if silent, see onended diagnostic below.`);
+    console.warn(`[${label}] AudioContext stuck in state="${ctx.state}" — falling through to Web Speech tier (Safari-safe).`);
+    return false;
   }
 
   let decoded: AudioBuffer;
