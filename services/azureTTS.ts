@@ -214,15 +214,6 @@ export function isAudioContextRunning(): boolean {
 // subsequent speak (or panic stop) can silence them — rapid Speak presses on
 // AAC are common and we never want overlapping voices.
 const activeSources = new Set<AudioBufferSourceNode>();
-
-// Rapid-duplicate dedup. If the same text fires within DEDUP_MS, drop the
-// new request so the current playback isn't killed by stopAzurePlayback.
-// User report 2026-05-08 "audio stopped streaming" — autocorrect or
-// debounced typing was firing speak() multiple times in <50ms, the second
-// call's stopAzurePlayback() killed the first source mid-stream.
-let lastSpokenText = '';
-let lastSpokenAt = 0;
-const DEDUP_MS = 200;
 let currentAudio: HTMLAudioElement | null = null; // legacy back-compat reference
 const activeAudioElements = new Set<HTMLAudioElement>();
 const liveBlobUrls = new Set<string>();
@@ -299,7 +290,6 @@ export function stopAzureAudio(): void {
  * PrismApp.tsx arranges on first interaction.
  */
 async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string): Promise<boolean> {
-  const t0 = Date.now();
   let ctx: AudioContext;
   try {
     ctx = getAudioContext();
@@ -307,10 +297,8 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
     console.warn(`[${label}] AudioContext unavailable, audio cannot play:`, e);
     return false;
   }
-  console.log(`[${label}] decodeAndPlay enter — ctx.state=${ctx.state} bytes=${audioBytes.byteLength}`);
   if (ctx.state === 'suspended') {
     try { await ctx.resume(); } catch { /* state check next */ }
-    console.log(`[${label}] after resume — ctx.state=${ctx.state}`);
   }
   // 2026-05-08 evidence-based: user's Safari console showed
   // "[TTS] Portal TTS succeeded" ×3 with ZERO audible output. Per
@@ -375,16 +363,9 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   source.onended = () => {
     const playedMs = Date.now() - startedAt;
     const expectedMs = decoded.duration * 1000;
-    // Warn on ANY truncation > 200ms below expected duration. Prior
-    // threshold (< 80ms) was too tight — catching only "killed
-    // before user heard anything". User report 2026-05-08 "audio
-    // stopped streaming" was masked because peer kills happened
-    // 100-300ms in, past the 80ms gate. The new gate flags any
-    // source that ended ≥ 50% short of its decoded duration.
-    if (expectedMs > 250 && playedMs < expectedMs * 0.5) {
+    if (playedMs < expectedMs - 50 && playedMs < 80) {
       console.warn(
-        `[${label}] AUDIO TRUNCATED: played ${playedMs}ms of expected ${Math.round(expectedMs)}ms ` +
-        `(${Math.round(playedMs / expectedMs * 100)}%). Likely killed by a peer speak call. User heard partial / no audio.`
+        `[${label}] source ended after ${playedMs}ms (expected ~${Math.round(expectedMs)}ms) — likely killed by a peer speak call's stopAzurePlayback. User heard nothing.`,
       );
     }
     activeSources.delete(source);
@@ -394,7 +375,6 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
 
   try {
     source.start(0);
-    console.log(`[${label}] source.start OK — duration=${decoded.duration.toFixed(2)}s volume=${safeVolume.toFixed(2)} totalElapsed=${Date.now() - t0}ms`);
   } catch (e) {
     console.warn(`[${label}] source.start failed:`, e instanceof Error ? e.message : e);
     activeSources.delete(source);
@@ -474,21 +454,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   authToken: string,
   voiceId?: string,
 ): Promise<boolean> {
-  // Rapid-duplicate suppression — drop a new speak with the same text
-  // if one fired in the last DEDUP_MS. Otherwise the new fetch+decode
-  // races the prior playback and stopAzurePlayback() kills the still-
-  // streaming source. Returns true (claims success) so speechService
-  // doesn't fall through to Web Speech tier — the prior call is the
-  // one playing, no fallback needed.
-  const nowMs = Date.now();
-  if (text === lastSpokenText && nowMs - lastSpokenAt < DEDUP_MS) {
-    console.log(`[AzureTTS] DEDUP — same text "${text.slice(0, 30)}" within ${nowMs - lastSpokenAt}ms; keeping prior playback alive`);
-    return true;
-  }
-  lastSpokenText = text;
-  lastSpokenAt = nowMs;
   const ssml = buildSSML(text, lang, tone, rate, volume);
-  console.log(`[AzureTTS] speakAzure enter — textLen=${text.length} lang=${lang} tone=${tone} voiceId=${voiceId ?? 'auto'} ctxState=${sharedAudioCtx?.state ?? 'none'}`);
 
   let url: string | null = null;
   const controller = new AbortController();
