@@ -33,6 +33,10 @@ Part of the [Synalux platform](https://synalux.ai).
 
 ---
 
+## Free Read & Write alternative
+
+PrismAAC ships every reading-assistant feature most AAC users buy Read & Write for — for free, in the browser, with no account required for the web tier. See [Type & speak](#%EF%B8%8F-type--speak) for sentence-end speak + word highlight, [PDF Reader](#-pdf-reader) and [Screenshot Reader (OCR)](#-screenshot-reader-ocr) for documents, and the [Chrome extension](#-chrome-extension--same-reading-assistant-features-in-any-text-field) for cross-app coverage in Gmail / Docs / Word Online / anywhere else.
+
 ## How PrismAAC compares
 
 | | PrismAAC | TouchChat | Proloquo2Go | LAMP Words | TD Snap | CoughDrop |
@@ -316,6 +320,33 @@ Paste or upload a photo of a worksheet, screenshot of a webpage, picture of a te
 
 **Render path:** `components/OcrCapturePanel.tsx` → `services/ocr.ts` (`tesseract.js` `createWorker` → `recognize`) → `services/aacSpeak.ts` or `messageStore.setText`.
 </details>
+
+---
+
+### 🧩 Chrome extension — same reading-assistant features in any text field
+The PrismAAC web app covers the reading-assistant flow inside its own surface. The Chrome extension (`chrome-extension/`) brings the **same behavior to ANY text field on ANY site** — Gmail, Google Docs, Word Online, school portals, banking forms — closing the only Read & Write gap that wasn't reachable from a web page alone.
+
+**Install (developer mode for now):**
+
+```sh
+cd chrome-extension
+npm install
+npm run build
+```
+
+Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and pick `chrome-extension/dist`.
+
+**Features:**
+
+- Speak the sentence on `.?!`, speak each word on space, all toggleable
+- **Word-by-word highlight** powered by the browser's native `SpeechSynthesisUtterance.boundary` event (TRUE per-word sync, vs the web app's ~60 ms/char heuristic — the portal route returns MP3 with no streaming events, but Web Speech exposes them natively)
+- **Translate while speaking** — pick a target language (50+ supported via Google's free public endpoint, no API key). The overlay shows BOTH the source line (small italic) AND the translated line (with active-word highlight); a Web Speech voice matching the target language is auto-selected
+- Floating Shadow-DOM overlay anchored above the focused field (▶ Speak, 📌 Pin, × Close)
+- `Cmd / Ctrl + Shift + S` to speak the focused field on demand; `Esc` cancels
+- Per-site disable list for banking / sensitive forms
+- Settings sync across the user's Chrome profile via `chrome.storage.sync` — no PrismAAC account required
+
+**Privacy:** no-translate mode is fully offline (Web Speech runs natively). Translate mode makes one HTTPS call per unique sentence to `translate.googleapis.com` (cached after first hit). Source available at [`chrome-extension/`](chrome-extension/) — TypeScript + esbuild bundle (content 18 KB, options 7 KB, background 339 B).
 
 ---
 
