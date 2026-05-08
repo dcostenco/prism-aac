@@ -191,28 +191,49 @@ export default function PrismApp() {
   // creates+resumes the context inside the first touchstart/keydown so
   // every subsequent Speak tap plays reliably.
   useEffect(() => {
-    let warmed = false;
-    const warmup = async () => {
-      if (warmed) return;
-      warmed = true;
-      try {
-        // Lazy-load azureTTS so the AudioContext side-effect only fires
-        // after the user gesture, not at module load time. Then call the
-        // explicit warmup which creates+resumes the singleton context.
-        const mod = await import('@/services/azureTTS');
-        await mod.warmupAzureAudio();
-      } catch { /* */ }
-      window.removeEventListener('touchstart', warmup);
-      window.removeEventListener('keydown', warmup);
-      window.removeEventListener('pointerdown', warmup);
+    // Re-arm warmup on EVERY user gesture, not once per page-load.
+    // 2026-05-08 user report: tutor / prediction-tile speech was
+    // silent because aacSpeak fires 5-15 s after the click that
+    // launched the AI request — by then the click's gesture token
+    // is gone, the AudioContext that the page-load warmup created
+    // has auto-suspended (browser quirk on inactive tabs), and
+    // resume() inside decodeAndPlay can't transition back without
+    // a fresh gesture. The previous `{ once: true }` listener fired
+    // exactly once at first load and then disarmed itself, leaving
+    // every subsequent speak vulnerable.
+    //
+    // New rule: every user gesture (touchstart / keydown /
+    // pointerdown / click) re-warms the AudioContext synchronously.
+    // warmupAzureAudio is idempotent — getAudioContext() returns the
+    // singleton, ctx.resume() on a 'running' context is a no-op, so
+    // the per-gesture overhead is negligible.
+    //
+    // azureTTS lazy-loaded once via a module-level cache; subsequent
+    // gestures call mod.warmupAzureAudio() directly with no import
+    // re-fetch.
+    let mod: typeof import('@/services/azureTTS') | null = null;
+    const warmup = () => {
+      if (mod) {
+        // Synchronous path — preserves the current gesture token.
+        try { void mod.warmupAzureAudio(); } catch { /* */ }
+        return;
+      }
+      // First call: load the module asynchronously, then warmup.
+      // Subsequent gestures hit the sync branch above.
+      import('@/services/azureTTS').then((m) => {
+        mod = m;
+        try { void m.warmupAzureAudio(); } catch { /* */ }
+      }).catch(() => { /* offline / blocked */ });
     };
-    window.addEventListener('touchstart', warmup, { once: true, passive: true });
-    window.addEventListener('keydown', warmup, { once: true });
-    window.addEventListener('pointerdown', warmup, { once: true });
+    window.addEventListener('touchstart', warmup, { passive: true });
+    window.addEventListener('keydown', warmup);
+    window.addEventListener('pointerdown', warmup);
+    window.addEventListener('click', warmup);
     return () => {
       window.removeEventListener('touchstart', warmup);
       window.removeEventListener('keydown', warmup);
       window.removeEventListener('pointerdown', warmup);
+      window.removeEventListener('click', warmup);
     };
   }, []);
 

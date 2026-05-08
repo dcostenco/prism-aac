@@ -39,9 +39,9 @@ describe('askAI — endpoint URL', () => {
     // The prism-aac route is unauthenticated by design (synalux-private
     // route.ts:110 "AAC must work for everyone"). Routing through
     // /chat gates anonymous users at 401.
-    const calledUrls = fetchSpy.mock.calls.map((c) => String(c[0]));
-    const hitAac = calledUrls.some((u) => u.endsWith('/api/v1/prism-aac/chat'));
-    const hitGeneric = calledUrls.some((u) => /\/api\/v1\/chat$/.test(u));
+    const calledUrls = fetchSpy.mock.calls.map((c: unknown[]) => String(c[0]));
+    const hitAac = calledUrls.some((u: string) => u.endsWith('/api/v1/prism-aac/chat'));
+    const hitGeneric = calledUrls.some((u: string) => /\/api\/v1\/chat$/.test(u));
     expect(hitAac, `expected a POST to /api/v1/prism-aac/chat — calls: ${calledUrls.join(', ')}`).toBe(true);
     expect(hitGeneric, `must NOT hit the auth-gated /api/v1/chat — calls: ${calledUrls.join(', ')}`).toBe(false);
   });
