@@ -6,6 +6,7 @@ import {
   savePoseCalibration,
   computeCalibrationFromCorners,
   loadPoseCalibration,
+  DEFAULT_CALIBRATION,
   type PoseTrackerHandle,
   type TrackingTarget,
   type PoseCalibrationData,
@@ -211,6 +212,19 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     setStatusText('Looking for you...');
     speak('Hold still. I am looking for you.');
     detectionCountRef.current = {};
+    centerSampleRef.current = null;
+    // Wipe any previously-saved calibration so the running tracker's
+    // preview cursor uses DEFAULT_CALIBRATION (a sensible starting
+    // mapping) instead of a stale posture-mismatched cal from a
+    // prior wizard session. Without this, users on Step 1 see the
+    // cursor wandering off the center target because the saved cal's
+    // midpoint was anchored on a different posture.
+    // 2026-05-08 user report (Image #47/#48): saved cal midpoint
+    // (0.470, 0.586) didn't match user's CURRENT neutral pose
+    // (mirX=0.533, normY=0.689) — preview cursor offset by ~100px.
+    // The new wizard run will OVERWRITE this on completion anyway;
+    // clearing here just makes the in-wizard preview less confusing.
+    try { savePoseCalibration(DEFAULT_CALIBRATION); } catch { /* */ }
 
     if (handleRef.current) handleRef.current.stop();
 
