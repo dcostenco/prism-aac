@@ -816,6 +816,32 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               >
                 ✓ Capture {CORNER_TARGETS[cornerIdx]?.label}{sampleBufferRef.current.length > 0 ? ` (${sampleBufferRef.current.length})` : ''}
               </button>
+              {/* Limited-mobility path — prominent, clearly worded.
+                  The temp cal saved at captureCenter (DEFAULT range
+                  anchored on captured neutral) is already live and
+                  correct. This button just finalises it as the saved
+                  cal without requiring 4 corner captures. */}
+              {centerSampleRef.current && (
+                <button
+                  onClick={() => {
+                    tapFeedback();
+                    // temp cal already saved at captureCenter — just
+                    // advance to test without touching the saved cal.
+                    const targets = Array.from({length: 5}, () => ({
+                      x: 15 + Math.random() * 70, y: 15 + Math.random() * 70, hit: false
+                    }));
+                    setTestTargets(targets);
+                    setTestIdx(0);
+                    setPhase('accuracy-test');
+                    setStatusText('Look at each red circle until it goes green');
+                    speak('Center calibration saved. Let\'s test it.');
+                  }}
+                  data-testid="tracking-save-center-only"
+                  className="mt-3 py-2 px-6 rounded-xl bg-white/10 text-white text-sm font-semibold block mx-auto active:scale-95 transition-transform"
+                >
+                  Can&apos;t turn head far enough? Save center calibration →
+                </button>
+              )}
               <button
                 onClick={() => {
                   tapFeedback();
@@ -833,9 +859,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                   setStatusText('Look at each red circle until it goes green');
                 }}
                 data-testid="tracking-corners-skip"
-                className="mt-3 text-white/50 text-xs underline block mx-auto"
+                className="mt-2 text-white/40 text-xs underline block mx-auto"
               >
-                Skip → use defaults
+                Skip → use factory defaults
               </button>
             </div>
           </>
