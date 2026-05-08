@@ -196,8 +196,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     setPhase('calibrate-center');
     sampleBufferRef.current = [];
     setProgress(0);
-    setStatusText('Point to the center circle, then tap Capture');
-    speak('Point to the center of the screen, then tap Capture.');
+    setStatusText('Look at the center circle, then tap Capture');
+    speak('Look at the center of the screen, then tap Capture.');
     // Critical: re-spin the tracker on the selected part so the
     // cursor actually follows the user's hand/finger, not their nose.
     if (selectedPart) restartTrackerForPart(selectedPart);
@@ -495,6 +495,11 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
             </div>
             <div className="absolute bottom-20 left-0 right-0 text-center px-6">
               <p className="text-white text-lg font-bold">{statusText}</p>
+              <p className="text-white/70 text-sm mt-2 max-w-md mx-auto">
+                💡 The green dot doesn&apos;t need to touch the circle yet. Just look
+                at the center, then tap Capture. The cursor will line up after we
+                calibrate all 4 corners.
+              </p>
               <button
                 onClick={captureCenter}
                 data-testid="tracking-capture-center"
@@ -503,7 +508,6 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               >
                 ✓ Capture center
               </button>
-              <p className="text-white/40 text-xs mt-2">Tap when you&apos;re pointing at the center</p>
               <button
                 onClick={() => {
                   tapFeedback();
@@ -557,7 +561,11 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               </div>
             ))}
             <div className="absolute bottom-20 left-0 right-0 text-center px-6">
-              <p className="text-white text-lg font-bold">{statusText || `Point to ${CORNER_TARGETS[cornerIdx]?.label}`}</p>
+              <p className="text-white text-lg font-bold">{statusText || `Look at the ${CORNER_TARGETS[cornerIdx]?.label} corner`}</p>
+              <p className="text-white/70 text-sm mt-2 max-w-md mx-auto">
+                💡 Look at the highlighted corner, then tap Capture. Don&apos;t
+                worry about the cursor position — it gets calibrated by these taps.
+              </p>
               <button
                 onClick={captureCorner}
                 data-testid="tracking-capture-corner"
@@ -566,7 +574,6 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               >
                 ✓ Capture {CORNER_TARGETS[cornerIdx]?.label}
               </button>
-              <p className="text-white/40 text-xs mt-2">Tap when you&apos;re pointing at the corner</p>
               <button
                 onClick={() => {
                   tapFeedback();
