@@ -81,20 +81,27 @@ const PANELS_WITH_QWERTY: SidePanelView[] = [
   'categories',
   'category-detail',
   'ordering',
-  'caregiver',
+  // ai-chat / aac-chat take typed input — keep qwerty mounted there.
   'ai-chat',
   'aac-chat',
-  'schedule',
-  'games',
-  'marketplace',
-  'picture-editor',
-  'music-composer',
   'video-composer',
   'aac-designer',
 ];
 
+// Tap-only or own-keyboard panels — qwerty must NOT render so the
+// panel content is not crushed by a vestigial keyboard underneath.
+// Updated 2026-05-07 (commit 7096f05): added games / marketplace /
+// schedule / caregiver / picture-editor / music-composer after user
+// reports of the qwerty eating ~40% of every panel that doesn't take
+// typed input ("why is keyboard needed for games?", Image #21).
 const PANELS_WITHOUT_QWERTY: SidePanelView[] = [
   'math',
+  'games',
+  'marketplace',
+  'schedule',
+  'caregiver',
+  'picture-editor',
+  'music-composer',
 ];
 
 describe('Keyboard visibility — qwerty rendered for panels without own input', () => {
