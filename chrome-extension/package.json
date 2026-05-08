@@ -7,6 +7,8 @@
   "scripts": {
     "build": "node build.mjs",
     "watch": "node build.mjs --watch",
+    "package": "node scripts/gen-icons.mjs && node build.mjs --package",
+    "icons": "node scripts/gen-icons.mjs",
     "test": "vitest run"
   },
   "devDependencies": {
