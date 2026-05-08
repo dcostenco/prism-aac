@@ -345,13 +345,21 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     return () => clearInterval(interval);
   }, [phase]);
 
-  // Live recentering during Step 1 — apply a running-mean temporary cal
-  // every 2 s once ≥ 20 samples exist so the cursor drifts toward the
-  // center target WITHOUT user needing to tap Capture first. Without this
-  // the DEFAULT_CALIBRATION midpoint rarely matches the user's actual
-  // neutral pose and the cursor appears "stuck" offset during step 1.
+  // Live recentering + auto-capture during Step 1.
+  //
+  // Every 2 s once ≥ 20 samples exist:
+  //   1. Apply a running-mean temporary cal (cursor drifts to center).
+  //   2. Check auto-capture condition: if buffer has ≥ 50 samples AND
+  //      pose variance is low (user holding still ≤ 0.004 σ in both
+  //      axes), trigger captureCenter automatically. The user just
+  //      holds still for ~3 s and the step advances without a tap.
+  //
+  // Without the live recentering, DEFAULT_CALIBRATION's midpoint
+  // (0.400, 0.500) rarely matches the user's reclining neutral posture
+  // so the cursor appears offset no matter how well the user centers.
   useEffect(() => {
     if (phase !== 'calibrate-center') return;
+    let stableCount = 0;
     const id = setInterval(() => {
       const buf = sampleBufferRef.current;
       if (buf.length < 20) return;
@@ -366,6 +374,25 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
           bottomY: Math.min(0.95, sy + 0.30),
         });
       } catch { /* best-effort */ }
+
+      // Auto-capture: trigger once the user has ≥ 50 samples and is
+      // holding still (σ < 0.004 in both axes = ≈ 0.6 % of frame width).
+      if (buf.length >= 50) {
+        const varX = buf.reduce((s, v) => s + (v.normX - sx) ** 2, 0) / buf.length;
+        const varY = buf.reduce((s, v) => s + (v.normY - sy) ** 2, 0) / buf.length;
+        const isStable = varX < 0.000016 && varY < 0.000016; // σ < 0.004
+        if (isStable) {
+          stableCount++;
+          // Require 2 consecutive stable checks (~4 s) to avoid capturing
+          // on a momentary pause.
+          if (stableCount >= 2) {
+            console.log('[wizard] auto-capture center — stable hold detected');
+            captureCenterCallbackRef.current?.();
+          }
+        } else {
+          stableCount = 0;
+        }
+      }
     }, 2000);
     return () => clearInterval(id);
   }, [phase]);
@@ -424,6 +451,12 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   useEffect(() => {
     startCenterCalibrationRef.current = startCenterCalibration;
   }, [startCenterCalibration]);
+
+  // Ref for captureCenter — allows the live-recentering/auto-capture
+  // interval (declared above captureCenter due to React hooks ordering)
+  // to call captureCenter without a forward-reference TDZ error.
+  const captureCenterCallbackRef = useRef<(() => void) | null>(null);
+  useEffect(() => { captureCenterCallbackRef.current = captureCenter; }, [captureCenter]);
 
   // ── PHASE: Calibrate Corners — user-driven ──
   // Capture handler for corners, called when the user taps Capture.
