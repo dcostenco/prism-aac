@@ -77,4 +77,27 @@ describe('AIChatPanel — layout state machine', () => {
     const { container } = render(<AIChatPanel />);
     expect(container.querySelector('[data-testid="ai-chat-panel"]')).toBeNull();
   });
+
+  it('slim mode is a single-row strip — no extraneous Question label or large py-3 button', () => {
+    // The earlier slim mode rendered a Question: "..." label row PLUS
+    // a py-3 (12px each side + ~30px line-height) Ask AI button = ~110px
+    // of footer overlapping the keyboard top row visibly (user
+    // Image #22). The fix collapses to a single h-10 (40px) row with
+    // px-2 py-1.5 padding ≈ 52px total.
+    useMessageStore.setState({ text: 'How do I' });
+    const { container } = render(<AIChatPanel />);
+    const panel = container.querySelector('[data-testid="ai-chat-panel"]') as HTMLElement;
+    expect(panel).not.toBeNull();
+    // Critical: slim mode must NOT contain a "Question:" label section
+    // (that earlier sat above the button row, eating ~30px). The slim
+    // strip's ONLY child div is the [mic, Ask AI, ✕] flex row.
+    expect(panel.textContent).not.toMatch(/^.*Question.*Ask AI.*$/s);
+    // Ask AI button must use h-10 (40px) not py-3/py-4 (which produce
+    // ~60-80px buttons that overlap the qwerty top row).
+    const ask = container.querySelector('[data-testid="ai-ask-slim"]') as HTMLElement;
+    expect(ask).not.toBeNull();
+    const cls = ask.className;
+    expect(cls).toMatch(/h-10/);
+    expect(cls).not.toMatch(/py-3|py-4/);
+  });
 });

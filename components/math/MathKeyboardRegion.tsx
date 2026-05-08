@@ -850,10 +850,16 @@ function MathStatisticsKeyboard() {
 // tool (Adv Math tab), so the user composes "4/4" by tapping the
 // fraction tool then digits.
 
+// Clef glyphs are SMP (U+1D11E / U+1D122 / U+1D121). They render on
+// macOS / iOS but tofu on Android Chrome and Linux Firefox stock
+// fonts. Music-theory shorthand "G clef / F clef / C clef" maps the
+// clef to a single Latin letter (the line that names the clef) — use
+// the letter directly so every device renders it. Labels still say
+// "treble clef" / "bass clef" / "alto clef" via aria-label.
 const MUSIC_CLEFS: Array<{ glyph: string; label: string }> = [
-  { glyph: '𝄞', label: 'treble clef' },
-  { glyph: '𝄢', label: 'bass clef' },
-  { glyph: '𝄡', label: 'alto clef' },
+  { glyph: 'G', label: 'treble clef' },
+  { glyph: 'F', label: 'bass clef' },
+  { glyph: 'C', label: 'alto clef' },
 ];
 
 // Music notation glyphs in the Unicode SMP block (U+1D100–U+1D1FF,
