@@ -12,116 +12,324 @@ Part of the [Synalux platform](https://synalux.ai).
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue?style=for-the-badge" alt="AGPL-3.0"></a>
 </p>
 
----
-
-## What Prism AAC does
-
-### 🖼 Pictures → words → speech
-Tap PECS-style picture tiles to build sentences. The app reads them aloud in your child's language with a natural neural voice (Inworld 2.0).
-
-### ⌨️ Type, predict, speak
-Built-in keyboard with word prediction. Smart suggestions learn from how the child communicates over time.
-
-### 📚 Full high-school curriculum on a cell-grid canvas
-**Math + Chemistry + Physics + Biology + Statistics + Programming (Python/Java) + Music + Earth Science + History + Language Arts** — all on the same graph-paper canvas, each with a domain-aware AI tutor. History is locale-aware: a child in Romania sees Stephen the Great + 1989 Revolution, in Texas sees the Alamo + JFK, in Catalonia sees Crown of Aragon + 2017 Referendum. **230+ sub-national regions across 23 countries.** [See the math module →](#math-module-cell-grid-canvas)
-
-### 🗓 Visual schedule
-Picture-based routines with rewards. Reduces transition anxiety for children with autism.
-
-### 🎮 Therapeutic games
-9 evidence-based AAC games (Bubble Pop, Color Hunt, My Story, Match It, Yes/No, Finish It, Category Sort, Emotion Match, What Comes Next). Built to teach communication, not for screen-time.
-
-### 👋 Hands-free with gestures
-Optional gesture recognition for users who can't reliably tap. Camera-based, runs locally — no video leaves the device.
-
-### 🩺 Clinical-grade
-Designed with BCBAs and SLPs. Verbal operant tracking. Caregiver notes that travel between home, school, and clinic. AGPL-3.0 — free to self-host.
+![Prism AAC main screen — toolbar, schedule banner, type-here bar, prediction tiles, and qwerty keyboard](docs/screenshots/app-hero.png)
 
 ---
 
-## Why PrismAAC is different
+## At a glance
 
-**Three things no other AAC app on the market does together:**
-
-### 1. On-device + HIPAA-safe by default
-The 7B model that powers AAC suggestions runs **on your device** — iPad, Mac, or laptop. No PHI leaves the device for the speech path. Caregiver notes encrypt before any optional cloud sync. Comparable cloud-only AAC platforms (TouchChat, Proloquo2Go cloud sync) require account uploads to function. We don't.
-
-### 2. Phrase ranking that adapts to YOUR child
-Static frequency lists are obsolete. PrismAAC ranks suggested phrases via [**Prism v14.0.0 spreading activation**](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md) — the same ACT-R cognitive memory model behind decades of Carnegie Mellon research. Recency × frequency × per-user history, not a static popularity list. Phrases the child says today rise; phrases unused for a year fade (lesson-rate decay `d=0.25`, ~1-year half-life).
-
-### 3. Caregiver corrections become training data — automatically
-When a caregiver fixes a suggestion the model got wrong (e.g. "no, the word is *eat*, not *want*"), the [audit-hooks postflight harvester](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md#7-the-recipe-combining-all-of-the-above) extracts the gotcha and persists it. After ~50 sessions, the system warns *before* the model makes a similar mistake. No labelling work for caregivers, no expensive retraining runs — the corrections are the curriculum.
-
-**Honest scope:** the underlying 7B model is mid-tier on standard tool-call benchmarks (BFCL V4 overall 18.77%, like the rest of the 7B class). What makes PrismAAC defensible isn't the model alone — it's the model plus the surrounding Prism algorithm stack. That combination is the wow.
+| Module | What it does | Picture |
+|---|---|---|
+| 📂 **Categories** | PECS-style picture tiles for non-readers | [↓](#-categories) |
+| ⌨️ **Type & speak** | Keyboard + word prediction + neural voice | [↓](#-type--speak) |
+| ✨ **AI Chat** | On-device + cloud assistant tuned for AAC users | [↓](#-ai-chat) |
+| 💬 **AAC Chat** | Incoming messages from caregivers + contacts | [↓](#-aac-chat) |
+| 🧮 **Math + 18 other school subjects** | Cell-grid canvas with domain-aware tutor | [↓](#-school-subjects) |
+| 🗓 **Schedule** | Visual first-then routines | [↓](#-schedule) |
+| 🎮 **Games** | 9 therapeutic AAC games | [↓](#-games) |
+| 🏪 **Marketplace** | Voice packs, vocab packs, game packs | [↓](#-marketplace) |
+| 👋 **Hands-free** | Head + hand gesture recognition | [↓](#-hands-free-gestures) |
+| ⚙️ **Settings** | 16+ languages, motor accommodations, plan tier | [↓](#-settings) |
 
 ---
 
-## Math module (cell-grid canvas)
+## How PrismAAC compares
 
-Math in AAC has historically meant either typing LaTeX — impossible for non-readers — or drawing on a freeform whiteboard that no AI can interpret. PrismAAC takes a third path: a **cell-grid model** where every glyph occupies one snap-aligned cell. The child types on a soft keyboard, the cursor advances predictively (column-add carry rules, fraction numerator → denominator, long-division quotient, exponent), and the on-screen layout is automatically structured enough for an AI tutor to read back.
+| | PrismAAC | TouchChat | Proloquo2Go | LAMP Words | TD Snap | CoughDrop |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **On-device + HIPAA-safe** speech path | ✅ | ❌ | ❌ | ❌ | partial | partial |
+| **Per-user phrase ranking** (ACT-R + spreading activation) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Caregiver corrections **become training data automatically** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Domain-aware AI tutor** (math + 10 other subjects) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Cell-grid math canvas** (no LaTeX, no whiteboard) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Locale + region-aware history** (230+ regions) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Hands-free** head + hand gesture mode | ✅ | partial | partial | ❌ | ✅ | partial |
+| Therapeutic **AAC games** built in | ✅ (9) | ❌ | ❌ | ❌ | ❌ | partial |
+| **Open source** (AGPL-3.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **Free tier** for life-safety access | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Voice pack **marketplace** | ✅ | ❌ | partial | ❌ | partial | ❌ |
+| **Multi-language** (16+) | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| **Caregiver notes** that travel home / school / clinic | ✅ | ❌ | ❌ | ❌ | partial | partial |
 
-The same canvas hosts **19 subject keyboards** covering the full high-school program: math + sciences + programming + arts + humanities. Each tab routes the AI tutor through a domain-specific prompt template (33 templates total) so the model doesn't apply algebraic reasoning to a Punnett square or mistake a music dynamic for a programming literal.
+> Comparison reflects publicly available product information as of 2026-05. PrismAAC is actively developed; competitors may add features over time. PRs welcome to keep this honest — see `CONTRIBUTING.md`.
 
-### Canvas + main keyboard
+---
+
+## Modules
+
+### 📂 Categories
+PECS-style picture tiles. Tap a category, tap a tile, hear the word, watch it land in the message bar. Works for non-readers, pre-readers, and emerging communicators alike. Tile sets and ordering personalize over time via spreading activation — the tiles your child taps most rise; the ones unused for months fade.
+
+![Categories panel showing colour-coded picture tiles by topic](docs/screenshots/panel-categories.png)
+
+<details>
+<summary><strong>Features + technical details</strong></summary>
+
+- 22 default categories: people, food, feelings, body, clothes, animals, places, etc.
+- Caregiver can add / remove / reorder tiles per child
+- Each tile carries a `textKey` for i18n — switching the app language re-labels every tile in one tap
+- Tile pictograms come from ARASAAC + a curated set; voice cloning lets you match the tile's voice to the child's siblings or parents (paid tier)
+- Per-user n-gram learning: a child who taps "I want eat" three times sees "eat" rise after "want" the next session
+
+**Render path:** `components/CategoryPanel.tsx` → `useCategoryStore` → tiles drawn from `constants/phrases.ts` (system) + Supabase per-user overrides (paid). Tile taps invoke `messageStore.appendText(phrase)` and route through `aacSpeak()` for TTS.
+</details>
+
+---
+
+### ⌨️ Type & speak
+On-screen keyboard with **word prediction**, **AI autocomplete**, and a one-tap **Speak** button that reads the message bar aloud in a natural neural voice. Typing teaches the prediction engine: words your child types most surface earlier next session.
+
+![Prism AAC keyboard with prediction tiles "I / You / More / Want / Help" above](docs/screenshots/app-hero.png)
+
+<details>
+<summary><strong>Features + technical details</strong></summary>
+
+- 5 prediction slots above the qwerty, refreshed on each keystroke
+- AI completion ("hw" → "how", "togoso" → "to go so") via Synalux `text/correct` (Gemini 2.5 Flash-Lite, ~752ms avg, 4.3× cheaper than 2.5 Flash)
+- Cross-language gate: RO `eu` won't leak into EN bar even when both corpora are loaded (cross-corpus frequency comparison)
+- "Speak" reads with auto-tone adaptation (declarative / interrogative / exclamatory inferred from punctuation)
+- Voice tier 1: Inworld TTS-2; tier 1.5: Kokoro-82M offline; tier 2: OS Web Speech; tier 3: WASM espeak-ng
+- 1.5MB SQLite n-gram corpus per language; unigrams + bigrams + trigrams; lazy-loaded on language switch
+
+**Render path:** `components/Keyboard.tsx` → `messageStore.appendChar` → `predictionStore.updatePredictions(text, lang)` → `engine/predictionEngine.ts` (recency × frequency × n-gram boost) + optional `services/textCorrectService.ts` AI overlay.
+</details>
+
+---
+
+### ✨ AI Chat
+On-device + cloud assistant tuned for the AAC user's voice. Streamed responses, every line tap-to-insert into the message bar so authorship stays with the child. Free tier runs through Gemini 2.5 Flash; paid tiers route to Claude Sonnet 4 with the prism-coder fleet for short queries.
+
+![AI Chat panel docked above the keyboard with streamed response lines](docs/screenshots/panel-ai-chat.png)
+
+<details>
+<summary><strong>Features + technical details</strong></summary>
+
+- Inline panel docked above the keyboard — never a modal that hides the message bar
+- Voice input via Web Speech API; mic button shows live interim transcript
+- Tap any AI line to copy it into the message bar (preserves authorship — Valencia et al., CHI 2023)
+- 15s hard timeout client-side + Retry button (so the panel can't get stuck on "Thinking…" if the network drops)
+- 401 / network / timeout / other → friendly error mapping; never shows "Session expired" raw
+- Local Ollama fallback (`prism-coder:7b`) when offline; mixed-content blocked from `prism-aac.vercel.app` browser origin in practice, so the friendly error fires
+
+**Render path:** `components/AIChatPanel.tsx` → `services/aiService.askAI()` → SSE stream from Synalux `/api/v1/chat` with `credentials: 'include'`. CORS allowlists `prism-aac.vercel.app` + localhost dev origins.
+</details>
+
+---
+
+### 💬 AAC Chat
+Incoming messages from connected providers (Telegram, WhatsApp, Email, Slack, etc.) land in this panel. The unread badge on the toolbar shows the count, the alarm + cross-tab notification fires when a new message arrives, and tap-a-message-line copies it into the bar so the child can compose a reply with their own voice.
+
+![AAC Chat panel showing inbound caregiver messages with unread badge](docs/screenshots/panel-aac-chat.png)
+
+<details>
+<summary><strong>Features + technical details</strong></summary>
+
+- Polled inbox via Synalux portal `/api/v1/prism-aac/inbox/poll` (no-op on 404 if portal not configured)
+- Cross-tab `BroadcastChannel` notification on new message
+- Provider abstraction: adding Outlook / Slack / Discord = ~30 LOC each (see `synalux-private/scripts/fetch-messages.mjs`)
+- Read state syncs back so caregivers see when the child has seen their message
+- Free tier: 1 connected provider; paid tier: unlimited
+- Per-message TTS so the child can hear the inbound text in their preferred voice
+
+**Render path:** `components/AACChatPanel.tsx` → `services/inboxPolling.ts` (5s poll when sidePanel === 'aac-chat', 60s otherwise) → `useScheduleStore.setIncomingMessages()`. Each message is also appended to the schedule's "Messages from caregivers" track.
+</details>
+
+---
+
+### 🧮 School subjects
+Cell-grid canvas hosting **19 subject keyboards** that cover the full high-school program: math + sciences + programming + arts + humanities. Each tab routes the AI tutor through a domain-specific prompt template (33 templates total) so the model doesn't apply algebraic reasoning to a Punnett square or mistake a music dynamic for a programming literal. **History is locale + region aware** down to the state / province / Land / autonomous-community level — 230+ regions across 23 countries.
+
 ![Cell-grid canvas with 5 + 7 = 12 typed across cells](docs/screenshots/math-canvas-typed.png)
 
-The HUD shows live cursor position, cell count, and viewport state. Each digit/operator lands in its own cell — the cursor (highlighted blue) automatically moves to the next slot. Pinch-zoom and one-finger pan work on the canvas; the keyboard region is a fixed-height shell below.
+<details>
+<summary><strong>Subject tabs (19 total)</strong></summary>
 
-### 19 keyboard categories
-Tap a chip to swap the row below. Categories:
-
-**Math (9 keyboards)** — Main (digits + operators), Adv. Math (π √ exponents + 5 decoration tools: fraction box, long-division house, root bar, summation line, fraction bar), a–z, Misc Math (set theory + logic), Time & Dist, Weight, Volume, Geom, Money.
+**Math (9 keyboards)** — Main, Adv. Math (π √ exponents + 5 decoration tools: fraction box, long-division house, root bar, summation line, fraction bar), a–z, Misc Math (set theory + logic), Time & Dist, Weight, Volume, Geom, Money.
 
 **Sciences (4)** — Chemistry (24 elements + reaction arrows + charges + subscripts + phase markers), Physics (full Greek + 16 SI units + ∫/∂/∇/∑/∏ + constants), Biology (DNA/RNA + genetics + 8 taxonomy ranks + 12 organelles), Statistics (μ σ x̄ + 12 ops + distributions).
 
-**Programming (2)** — Python (24 ops/brackets + 26 keywords) and Java (24 ops + 26 keywords). Code commits one character per cell so it lays out naturally on the monospace grid.
+**Programming (2)** — Python (24 ops + 26 keywords) and Java (24 ops + 26 keywords). Code commits one char per cell so it lays out naturally on the monospace grid.
 
 **Arts + Humanities (4)** — Music (3 clefs + 6 notes + 5 rests + 5 accidentals + 8 dynamics), Earth Science (weather + plates + 10 planets + AU/ly/pc/Mya/Gya), History (locale + region aware), Language Arts (12 POS tags + 6 sentence types + punctuation + citation styles).
 
-![Advanced math keyboard with fraction-bar, long-division, root, summation tools](docs/screenshots/math-keyboard-adv.png)
+</details>
 
-### AI tutor — Hint / Check / Solve, domain-aware
-![AI tutor overlay showing a mocked hint above the canvas](docs/screenshots/math-tutor-hint.png)
+<details>
+<summary><strong>AI tutor — 11 domains × 3 modes = 33 prompts</strong></summary>
 
-Three modes: 💡 **Hint** (gentle next-step nudge, never solves), ✓ **Check** (validates the child's answer, celebrates if correct), 🎓 **Solve** (full step-by-step walkthrough, max 4 steps). The active tab tells the tutor what subject the child is on — chemistry, Python, biology, statistics, history (with locale + region!) — so the prompt is specific enough that the model doesn't confuse domains. 11 domains × 3 modes = 33 prompt templates. The expression is serialised row-major and sent to `askAI`, which routes through Synalux. Hard 15 s timeout in the UI plus a Retry button so the overlay never gets stuck on "Thinking…".
+![AI tutor overlay with mocked hint above the canvas](docs/screenshots/math-tutor-hint.png)
 
-### Sciences — Chemistry · Physics · Biology · Statistics
-![Chemistry keyboard with H₂O typed across cells](docs/screenshots/math-keyboard-chemistry.png)
-![Biology keyboard with A T G nucleotides typed](docs/screenshots/math-keyboard-biology.png)
+Three modes per subject: 💡 **Hint** (gentle next-step nudge, never solves), ✓ **Check** (validates the child's answer, celebrates if correct), 🎓 **Solve** (full step-by-step walkthrough, max 4 steps). The active tab tells the tutor what subject the child is on. 15 s hard timeout + Retry button so the overlay never gets stuck.
+</details>
 
-### Programming — Python + Java
-![Java keyboard with `private String` typed character-per-cell](docs/screenshots/math-keyboard-java.png)
+<details>
+<summary><strong>History — locale + region aware</strong></summary>
 
-### Music notation
-![Music keyboard with treble clef + quarter + eighth notes typed](docs/screenshots/math-keyboard-music.png)
+![History keyboard in en locale (no region) — universal + national tiers](docs/screenshots/math-keyboard-history-en.png)
+![History keyboard with US-TX region — Alamo, Texas annexation, JFK appear](docs/screenshots/math-keyboard-history-us-tx.png)
 
-### History — locale-aware + region-aware
-History is more nuanced than a single global event list — every curriculum is national first, then regional. PrismAAC layers three tiers:
-
-1. **Universal** events taught in every curriculum (476 fall of Rome, 1914 WWI, 1939 WWII, 1969 moon landing).
-2. **National** events selected by `language` (en → Norman Conquest + Magna Carta + US Independence; ro → Stephen the Great + 1989 Revolution; hi → Mauryan + Mughal + 1947; ja → Heian + Edo + Meiji; zh → Tang/Ming/Qing + 1949). 19 supported languages.
-3. **Sub-national** events selected by `historyRegion` (US-TX → Alamo + JFK; CA-QC → Plains of Abraham + Quiet Revolution; UK-SCT → Bannockburn + Acts of Union; ES-CT → Crown of Aragon + 1714 + 2017 Referendum; IN-MH → Shivaji coronation; DE-BY → Wittelsbach). **230+ regions across 23 countries** including all 50 US states, 13 Canadian provinces/territories, all 4 UK nations, Ireland (Republic + 4 historical provinces), all 16 German Länder, all 17 Spanish autonomous communities, all 20 Italian regions, plus AU, FR, MX, BR, IN, CN, RU, BE, CH, NL, AR, ZA, KR, PK, NZ, PL.
+Three tiers stacked:
+1. **Universal** events taught in every curriculum (476, 1914 WWI, 1939 WWII, 1969 moon)
+2. **National** events selected by `language` (en, es, fr, de, ro, ru, uk, ja, ko, zh, ar, it, pl, nl, he, hi, vi, tr, pt) — 19 supported languages
+3. **Sub-national** events selected by `historyRegion` (US-TX, CA-QC, UK-SCT, ES-CT, IN-MH, DE-BY, …) — **230+ regions across 23 countries** including all 50 US states + DC, 13 Canadian provinces / territories, all 4 UK nations, Ireland (Republic + 4 historical provinces), all 16 German Länder, all 17 Spanish autonomous communities, all 20 Italian regions, plus AU, FR, MX, BR, IN, CN, RU, BE, CH, NL, AR, ZA, KR, PK, NZ, PL.
 
 The tutor prompt carries the locale + region so an ambiguous date like 1836 in `US-TX` resolves to the Alamo (not Alabama statehood); 1759 in `CA-QC` anchors to the Plains of Abraham; 1714 in `ES-CT` to the fall of Barcelona.
 
-![History keyboard in en locale (no region) — universal + national tiers](docs/screenshots/math-keyboard-history-en.png)
-![History keyboard with US-TX region — Alamo, Texas annexation, JFK appear on top of national + universal](docs/screenshots/math-keyboard-history-us-tx.png)
-![History keyboard in ro locale — Romanian curriculum surfaces Stephen the Great + 1989 Revolution](docs/screenshots/math-keyboard-history-ro.png)
+</details>
 
-### Save / Open with portal sync
+<details>
+<summary><strong>Other math features (lock tool, two-hit magnify, save / sync)</strong></summary>
+
+- **Lock tool** — after the child finishes a problem, lock the region. Locked cells render slightly dimmed and reject edits.
+- **Two-hit magnify** — first tap arms the key (1.4× scale + green halo), second tap commits. 2 s auto-disarm. For users with motor imprecision.
+- **Save + sync** — local-first to `localStorage`; best-effort sync to Synalux portal via `↻ Sync` button. Cap 100 docs / 200 KB body; oldest evicted.
+- **Hold-time dwell** — configurable per-key dwell (0–1500ms) with green progress ring.
+
 ![Saved docs overlay showing one entry and a Sync button](docs/screenshots/math-docs-overlay.png)
-
-Local-first: docs persist to `localStorage` so a flaky network never blocks the child. Best-effort sync to Synalux portal happens fire-and-forget; `↻ Sync` pulls every doc the signed-in user owns from the portal and merges by `updatedAt`. Cap is 100 docs / 200 KB body; oldest evicted on overflow.
-
-### Two-hit magnify (accessibility)
 ![A digit key armed in the green-halo magnified state](docs/screenshots/math-two-hit-armed.png)
-
-For users with motor imprecision, enable two-hit magnify in Settings: the FIRST tap on any math key arms it (1.4× scale + green halo, no commit), the SECOND tap commits. 2 s of inactivity auto-disarms. Composes with hold-time dwell — both can be on at once. Pairs with the green progress ring shown by `DwellButton` during a held-tap.
-
-### Lock-equation tool
 ![Lock tool armed, prompting the user to tap a corner of the region](docs/screenshots/math-lock-armed.png)
 
-After a child finishes solving a problem, tap **Lock**, then two corners of the region. Locked cells render slightly dimmed and reject edits — useful when working on multi-part homework where earlier work shouldn't be accidentally overwritten. Tap **Unlock** to release.
+</details>
+
+<details>
+<summary><strong>Subject keyboards — additional pictures</strong></summary>
+
+![Chemistry keyboard with H₂O](docs/screenshots/math-keyboard-chemistry.png)
+![Biology keyboard with A T G](docs/screenshots/math-keyboard-biology.png)
+![Java keyboard with `private String`](docs/screenshots/math-keyboard-java.png)
+![Music keyboard](docs/screenshots/math-keyboard-music.png)
+![Statistics keyboard](docs/screenshots/math-keyboard-statistics.png)
+![Earth Science keyboard](docs/screenshots/math-keyboard-earth-science.png)
+![Language Arts keyboard](docs/screenshots/math-keyboard-language-arts.png)
+![Romanian-locale history](docs/screenshots/math-keyboard-history-ro.png)
+
+</details>
+
+---
+
+### 🗓 Schedule
+Visual first-then schedule for routine + transition support. Each step is a picture tile + label; finishing a tile fires a chime + a visual progress mark. Reward shop (paid tier) unlocks at the end of a routine.
+
+![Schedule panel with first-then board + activity list](docs/screenshots/panel-schedule.png)
+
+<details>
+<summary><strong>Features + technical details</strong></summary>
+
+- 24-tile preset grid for one-tap activity adds: wake up, brush teeth, breakfast, school, snack, lunch, play, read, art, walk, dinner, bath, bedtime story, bedtime, medication, floss, tidy up, laundry, pet care, sports, …
+- Drag-and-drop reorder; pencil-icon inline edit; preset adds carry `textKey` so language switching re-labels
+- First-Then state machine: armed-tile pulse, 3-note rising chime on timer expiry, motion-safe (`prefers-reduced-motion` → static ring), `aria-pressed` semantics
+- Audio warmup: near-silent 1Hz oscillator keeps the AudioContext "running" on iOS Safari so the timer chime actually plays after long silence (without warmup, the chime fires into a suspended context = no sound)
+- Caregiver messages append to the schedule as a "Messages" track so the child sees what's coming + who messaged
+
+**Render path:** `components/SchedulePanel.tsx` → `useScheduleStore` (24 preset activities + custom) → `services/feedback.ts:playTimerRing()` → shared AudioContext via `services/azureTTS.ts:warmupAzureAudio()`.
+</details>
+
+---
+
+### 🎮 Games
+9 evidence-based AAC games. Built to teach communication, **not for screen time**. Each game records utterances + accuracy so the adaptive engine can suggest the next-best-fit game.
+
+![Games panel with 9 game tiles](docs/screenshots/panel-games.png)
+
+<details>
+<summary><strong>The 9 games + technical details</strong></summary>
+
+| Game | Skill targeted |
+|---|---|
+| Bubble Pop | Cause + effect, intentional communication |
+| Color Hunt | Receptive vocabulary (colour names) |
+| My Story | Narrative sequencing |
+| Match It | Matching + categorical thinking |
+| Yes/No | Binary discrimination, request/refuse |
+| Finish It | Sentence completion (cloze) |
+| Category Sort | Semantic categorization |
+| Emotion Match | Affect labelling, ToM |
+| What Comes Next | Sequential reasoning |
+
+- Free tier: Bubble Pop, Color Hunt, My Story (3 games)
+- Paid tier: all 9
+- Per-game data feeds `services/adaptiveEngine.ts` — utterance length / category / time-of-day / outcome → suggests the next game
+- All games disable AAC tile categories that aren't relevant to that game's vocabulary, so the child isn't distracted
+
+**Render path:** `components/GamesPanel.tsx` → individual game components in `components/games/`. Each game records via `useScheduleStore.recordMessage(text, category)`.
+</details>
+
+---
+
+### 🏪 Marketplace
+Voice packs (Inworld voices, custom-cloned voice of a sibling/parent), vocab packs (Spanish core, sign-supported speech), game packs (extra games beyond the 9). Apps install into the toolbar via the same registry the built-in panels use.
+
+![Marketplace panel with installable apps](docs/screenshots/panel-marketplace.png)
+
+<details>
+<summary><strong>Features + technical details</strong></summary>
+
+- Apps live as JSON entries (`marketplace-apps.json`) + a runtime `lib/marketplace/registry.ts` with `getHandler(appId)` returning the panel component
+- Voice cloning (paid tier): 90s recording → trained voice usable for any TTS in the app, including category tiles
+- Installed apps render as toolbar buttons after the built-ins; `useSettingsStore.installedApps` is the source of truth
+- Per-tier gate: marketplace lists everything but install-buttons disable for items above the user's plan
+
+**Render path:** `components/MarketplacePanel.tsx` → `useMarketplaceStore` → backend `synalux/api/v1/marketplace/...` for purchase, then asset download (voice files, vocab JSON) into IndexedDB.
+</details>
+
+---
+
+### 👋 Hands-free gestures
+Optional camera-based input for users who can't reliably tap. Head-pose dwell-click + hand-pose gesture profiles. Runs locally — no video leaves the device.
+
+<details>
+<summary><strong>Features + technical details</strong></summary>
+
+- **Basic mode**: head-pose tracking (FaceLandmarker, Mediapipe). User looks at a key, holds gaze for `headTrackingDwellMs` (default 1200 ms) → click. Visual progress ring fills during the dwell.
+- **Advanced mode**: hand-pose tracking. Custom per-user gesture profiles (open palm = enter, fist = backspace, pinch = space, etc.) configured via `components/HandCalibration.tsx`.
+- Drift safety stack: if the user's head drifts more than `headTrackingDriftThresholdPx` over `headTrackingDriftWindowMs` consecutive frames, tracking auto-disables and shows a recalibration prompt (user-reported May 2026: tracking would silently follow drift over an hour and miss the actual key targets).
+- **Esc escape hatch** — pressing Esc on any keyboard immediately disables tracking and re-shows the qwerty without losing the message bar.
+- Camera-stream singleton (`services/cameraStream.ts`) so head + hand tracker share one stream; switching modes is free.
+- Per-user calibration persists; the body tracker auto-recovers on session resume.
+
+**Detailed docs:** [`docs/GESTURE_RECOGNITION.md`](docs/GESTURE_RECOGNITION.md), [`docs/TRACKING_RELIABILITY.md`](docs/TRACKING_RELIABILITY.md).
+</details>
+
+---
+
+### ⚙️ Settings
+16+ languages, theme (light / dark / high-contrast), grid size (4–20 tiles), motor accommodations (math hold-time dwell, two-hit magnify, head-tracking dwell, gesture sensitivity, drift auto-disable), voice picker (paid), AI autocorrect on/off, notifications, toolbar customization, history region picker.
+
+![Settings — language picker + theme toggle](docs/screenshots/panel-settings.png)
+
+<details>
+<summary><strong>Math + accessibility settings</strong></summary>
+
+![Settings — math hold-time + two-hit magnify](docs/screenshots/panel-settings-math.png)
+
+- **Math hold-time dwell** — 0–1500 ms slider; 0 = instant click, 200–1500 ms helps users with motor imprecision (a green progress ring fills during the dwell so they can see it).
+- **Two-hit magnify** — first tap on any math key arms it (1.4× scale + green halo, no commit), second tap commits. 2 s auto-disarms. Composes with hold-time dwell.
+- **Head-tracking dwell** — 200–5000 ms.
+- **Sensitivity** — 1–10.
+- **Drift auto-disable** — toggle + threshold (px) + window (ms).
+- **Show hand calibration** — opens the hand-pose profile editor.
+
+</details>
+
+<details>
+<summary><strong>Input modes — voice, gestures, AI autocorrect</strong></summary>
+
+![Settings — input modes panel](docs/screenshots/panel-settings-input-modes.png)
+
+- **Voice input** — Web Speech API, language-aware (UK English vs US English etc.); free tier
+- **AI Autocorrect & Completion** — every keystroke pause routes through the cloud autocorrect (Gemini 2.5 Flash-Lite). Off by default in low-bandwidth scenarios.
+- **Notifications** — alarm + cross-tab notification on incoming AAC chat messages.
+- **Camera input** — head + hand tracking master switch.
+- **Camera tracking target** — head, hand, or auto-detect.
+
+</details>
+
+<details>
+<summary><strong>Toolbar customization</strong></summary>
+
+The toolbar is fully reorderable. Default 0.9.0 ships with a minimal set (mic, AAC chat, alert, categories, settings) so the screen stays uncluttered for new users — every other built-in (math, AI chat, schedule, games, marketplace, notes, history, sound) can be re-enabled with one tap in Settings → Toolbar. Marketplace-installed apps slot in after the built-ins automatically.
+
+</details>
 
 ---
 
@@ -142,21 +350,21 @@ After a child finishes solving a problem, tap **Lock**, then two corners of the 
 | Picture tiles + 22 categories | ✅ | ✅ |
 | Type-to-speak | ✅ | ✅ |
 | Default voice (Inworld) | ✅ | ✅ |
-| Math panel | ✅ basic | ✅ + AI tutor |
+| 19-subject school keyboard + AI tutor | ✅ basic | ✅ + premium models |
 | Schedule | ✅ | ✅ + reward shop |
 | Games | 3 (Bubble Pop, Color Hunt, My Story) | All 9 |
 | Voice picker | — | ✅ all Inworld voices |
 | Voice cloning (your own voice) | — | ✅ |
 | Caregiver notes sync | — | ✅ |
 | Word prediction (per-user learning) | — | ✅ |
+| Locale + region history | ✅ | ✅ |
+| Hands-free gesture input | ✅ | ✅ |
 
 [See Synalux pricing →](https://synalux.ai/pricing)
 
 ---
 
 ## Clinical safety
-
-Prism AAC is built on these commitments:
 
 - **AAC access is never restricted as a consequence.** A child must always have their voice.
 - **No PHI in the cloud without consent.** Caregiver notes encrypt before upload.
@@ -182,7 +390,7 @@ Synalux operates the canonical hosted version (free + paid). Self-hosters and fo
 ---
 
 <details>
-<summary>📚 Tech architecture (model routing, voice, gesture recognition, build details)</summary>
+<summary><strong>📚 Tech architecture (model routing, voice, gesture recognition, build details)</strong></summary>
 
 **Stack**: Next.js, Zustand, Whisper WASM (transcription), Inworld TTS-2 + Azure Neural fallback (speech), Kokoro-82M offline TTS, FaceLandmarker (gestures).
 
@@ -217,7 +425,23 @@ Synalux operates the canonical hosted version (free + paid). Self-hosters and fo
 - [`RESEARCH.md`](RESEARCH.md) — evidence base
 - [`CHANGELOG.md`](CHANGELOG.md) — version history
 
-**The original 900-line README is preserved in git history.** To recover any specific section (math panel deep-dive, prism-coder:14b release notes, full feature tier table, competitive analysis): `git show HEAD~1:README.md`.
+</details>
+
+<details>
+<summary><strong>🆕 Why PrismAAC is different (the underlying algorithm stack)</strong></summary>
+
+**Three things no other AAC app on the market does together:**
+
+### 1. On-device + HIPAA-safe by default
+The 7B model that powers AAC suggestions runs **on your device** — iPad, Mac, or laptop. No PHI leaves the device for the speech path. Caregiver notes encrypt before any optional cloud sync. Comparable cloud-only AAC platforms (TouchChat, Proloquo2Go cloud sync) require account uploads to function.
+
+### 2. Phrase ranking that adapts to YOUR child
+Static frequency lists are obsolete. PrismAAC ranks suggested phrases via [**Prism v14.0.0 spreading activation**](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md) — the same ACT-R cognitive memory model behind decades of Carnegie Mellon research. Recency × frequency × per-user history, not a static popularity list. Phrases the child says today rise; phrases unused for a year fade (lesson-rate decay `d=0.25`, ~1-year half-life).
+
+### 3. Caregiver corrections become training data — automatically
+When a caregiver fixes a suggestion the model got wrong (e.g. "no, the word is *eat*, not *want*"), the [audit-hooks postflight harvester](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md#7-the-recipe-combining-all-of-the-above) extracts the gotcha and persists it. After ~50 sessions, the system warns *before* the model makes a similar mistake. No labelling work for caregivers, no expensive retraining runs — the corrections are the curriculum.
+
+**Honest scope:** the underlying 7B model is mid-tier on standard tool-call benchmarks (BFCL V4 overall 18.77%, like the rest of the 7B class). What makes PrismAAC defensible isn't the model alone — it's the model plus the surrounding Prism algorithm stack. That combination is the wow.
 
 </details>
 

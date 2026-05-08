@@ -1,5 +1,19 @@
 # TTS Architecture — All-Neural Across 14 Locales (12 Languages + Chinese variants)
 
+> **TL;DR** — every supported locale gets a neural voice via a 4-tier fallback chain: **Inworld TTS-2** (paid all langs; free for ro/uk/ru/de/ko/ar) → **Kokoro-82M** offline (en/es/fr/pt/ja/zh) → **OS Web Speech** premium voices (offline) → **WASM espeak-ng** (last resort). Speed-critical taps bypass routing — the user never waits on the network for the message-bar Speak button.
+
+![Settings — language picker showing all 14 locales](../docs/screenshots/panel-settings.png)
+
+## At a glance
+
+- ✅ 14 locales / 12 languages — including 3 Chinese variants (Hans / Hant / Cantonese)
+- ✅ Auto-tone adaptation: declarative / interrogative / exclamatory inferred from punctuation
+- ✅ Voice cloning (paid tier) — 90s recording → trained voice usable across the app
+- ✅ Per-language voice picker; default voice per locale ships ready-to-use
+
+<details>
+<summary><strong>📐 Full locale set + tier-by-tier routing</strong></summary>
+
 ## Locale set (BCP-47)
 
 prism-aac ships **14 locales** distributed across **12 written/spoken languages**:
@@ -145,3 +159,5 @@ All Tier 2 engines are Apache-2.0 or MIT. Compatible with:
 - AGPL-3.0 (prism-aac's license)
 - The Synalux paid hosted offering (commercial use OK)
 - Self-hosted forks under AGPL-3.0
+
+</details>

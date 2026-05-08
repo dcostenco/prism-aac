@@ -1,5 +1,18 @@
 # PrismAAC Emergency AI — Native Offline Architecture
 
+> **TL;DR** — when a nonverbal child needs to call 911 with cellular-only / no internet, the AI must keep working. PrismAAC ships an on-device emergency model that runs without any cloud round-trip. No API key, no service tier, no failure mode where the most-life-critical interaction is the one that goes offline.
+
+## At a glance
+
+- ✅ **Fully offline** emergency response — never blocked by network
+- ✅ **Instant TTS + speech-to-text** even without internet
+- ✅ Country-aware emergency numbers (911 / 112 / 999 / 119 / etc.)
+- ✅ One-tap **🚨 alert button** wired to call + caregiver SMS / Telegram broadcast
+- ✅ **Audio context warmup** so iOS Safari doesn't suspend the chime when the child needs it most
+
+<details>
+<summary><strong>📐 Full offline architecture, model footprint, and routing details</strong></summary>
+
 ## The Requirement
 
 A nonverbal child calls 911 through PrismAAC. The device has **cellular only, no internet.** The AI must:
@@ -217,3 +230,5 @@ Example operator questions and AI responses:
 - **AVAudioSession .mixWithOthers**: Shipping since iOS 6 (2012).
 
 Every component is production-ready. The integration is the engineering work.
+
+</details>

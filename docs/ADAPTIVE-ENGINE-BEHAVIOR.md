@@ -1,5 +1,18 @@
 # Adaptive Engine — Behavior & Cross-System Contract
 
+> **TL;DR** — the same ACT-R cognitive memory model used by Carnegie Mellon for decades runs locally inside PrismAAC. Phrases the child uses today rise; phrases unused for a year fade. Caregiver corrections become training data automatically.
+
+## At a glance
+
+- ✅ **Recency × frequency × per-user history** drives every prediction tile — not a static popularity list
+- ✅ **`d = 0.25` lesson-rate decay** — ~1-year half-life for unused phrases
+- ✅ **Tone auto-switch** — declarative / interrogative / exclamatory inferred from punctuation
+- ✅ **Caregiver correction → training data** without an explicit labelling step
+- ✅ Cross-system contract: same algorithm runs identically in PrismAAC, the Synalux portal, and Prism Coder
+
+<details>
+<summary><strong>📐 Full behavior contract + cross-system implementation</strong></summary>
+
 > Single source of truth for how PrismAAC, Synalux portal, and prism-mcp
 > observe the user, share that observation, and shape prism-coder's
 > behavior in response.
@@ -319,3 +332,5 @@ The fresh default profile is what the next read returns.
 | Add new MCP tool | `prism/src/tools/adaptiveDefinitions.ts` + matching handler |
 
 When evolving the schema, **always update all three repos in the same PR**.
+
+</details>

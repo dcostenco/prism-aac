@@ -1,5 +1,18 @@
 # PrismAAC Self-Learning Safety Protocol
 
+> **TL;DR** — the child's voice is sacred. The system learns to AMPLIFY their communication — never override, replace, or restrict it. Three rails: never reject the child's chosen output, never silently change their words, never down-rank a phrase the caregiver corrected toward.
+
+## At a glance
+
+- ✅ **Caregiver corrections become training signal** — without explicit labelling work
+- ✅ **Hard guards** on emergency words (help / hurt / scared / 911 / bleeding / choking / fire / stuck / lost) — never down-rankable
+- ✅ **Slow-roll learning** — needs ≥6 of last 10 events to flip dominant mood
+- ✅ **Per-child profile**, never cross-pollinated between children
+- ✅ AAC access is **never** restricted as a consequence — the child must always have their voice
+
+<details>
+<summary><strong>📐 Full safety contract — guards, sanity checks, escape hatches</strong></summary>
+
 **Guiding principle: The child's voice is sacred. The system learns to AMPLIFY their communication — never to override, replace, or restrict it.**
 
 This document explains every adaptive/learning system in PrismAAC, how it protects the child, and how it aligns with BCBA clinical best practices.
@@ -170,3 +183,5 @@ This document explains every adaptive/learning system in PrismAAC, how it protec
 5. **Never punishes** — No negative consequences for any input pattern
 6. **Never removes learned words** — Decay reduces, never deletes intentional vocabulary
 7. **Never exposes the child to harm** — Emergency system, identity locking, CSP
+
+</details>

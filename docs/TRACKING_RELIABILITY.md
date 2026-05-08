@@ -1,5 +1,18 @@
 # Tracking Reliability — Deep Investigation & Plan
 
+> **TL;DR** — head + gesture + hand tracking work together without interfering, stay reliable in non-stationary contexts (moving car, lap-held laptop, restless child), and **never silently follow drift** when the user doesn't notice. Drift safety stack auto-disables + prompts recalibration; Esc escape hatch is always one keystroke away.
+
+## At a glance
+
+- ✅ **Identity locking** — the camera follows ONE person; siblings or parents passing through don't expand calibration
+- ✅ **Drift threshold + window** — auto-disable + recalibration prompt when tracking diverges from intent
+- ✅ **Camera-stream singleton** — head + hand tracker share one stream; mode switching is free
+- ✅ **Esc escape hatch** — instantly disable tracking and return to qwerty without losing the message bar
+- ✅ **Auto-recovery** — the body tracker resumes after temporary occlusion (e.g. caregiver leans in)
+
+<details>
+<summary><strong>📐 Full investigation, harness, and reliability ledger</strong></summary>
+
 > **Status**: Investigation 2026-05-05 by Dmitri + Claude. Critical gap.
 > Goal: head + gesture + hand tracking work *together* without interfering,
 > stay reliable in non-stationary contexts (moving car, lap-held laptop,
@@ -547,3 +560,5 @@ The phrase is aspirational; the operational definition is:
 We don't promise "battlefield NVG-grade" — that needs IR, IMU, and
 specialized hardware. We promise a much higher floor than today on
 the consumer laptop / iPad webcam class.
+
+</details>

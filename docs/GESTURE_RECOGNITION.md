@@ -1,5 +1,18 @@
 # Gesture Recognition System — Design Document
 
+> **TL;DR** — head-pose dwell click + per-user hand-pose gesture profiles. Runs on FaceLandmarker + MediaPipe Hands locally, no video leaves the device. Configurable per-child via the calibration UI.
+
+## At a glance
+
+- ✅ **Head-pose tracking** — dwell-click on any AAC tile or keyboard key
+- ✅ **Hand-pose gestures** — per-child custom mappings (open palm = enter, fist = backspace, etc.)
+- ✅ **Drift safety stack** — auto-disable + recalibration prompt
+- ✅ **Esc escape hatch** — instantly disable tracking and return to qwerty without losing the message bar
+- ✅ Camera-stream singleton — head + hand tracker share one stream
+
+<details>
+<summary><strong>📐 Full design doc — landmarks, smoothing, calibration, drift</strong></summary>
+
 ## Overview
 
 PrismAAC's gesture recognition system detects head, eye, lip, and body gestures via the device camera and maps them to AAC actions. It is designed for nonverbal children and adults with motor disabilities (CP, spasticity, tremor, limited range of motion).
@@ -362,3 +375,5 @@ gestureConfig: {
 - **Body gesture fusion**: Integrate arm/hand landmarks from existing bodyPoseService.ts
 - **Real-world testing**: Validate with actual AAC users (children with CP, ASD, motor impairments)
 - **Eye gaze direction**: Use eyeLookIn/Out/Up/Down blendshapes for gaze-based selection
+
+</details>

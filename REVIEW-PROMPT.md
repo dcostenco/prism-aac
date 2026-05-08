@@ -12,8 +12,8 @@ Use this prompt when submitting the repomix files for external code review. Atta
 | `repomix-full.txt` (prism-aac-web) | Web app | Same but includes tests (145 tests, 9 files) |
 | `repomix-compact.txt` (prism-aac) | Native app | Expo/React Native iOS/Android AAC app |
 | `repomix-full.txt` (prism-aac) | Native app | Same but includes tests |
-| `repomix-compact.txt` (prism) | Prism MCP | Memory/session management server (Supabase backend) |
-| `repomix-full.txt` (prism) | Prism MCP | Same but includes all source |
+| `repomix-compact.txt` (prism) | Prism Coder | Memory/session management server (Supabase backend) |
+| `repomix-full.txt` (prism) | Prism Coder | Same but includes all source |
 
 ---
 
@@ -26,7 +26,7 @@ The codebase consists of three interconnected repositories:
 
 1. **prism-aac-web** (attached) — The web application (Next.js 16 + React 19)
 2. **prism-aac** — The native iOS/Android app (Expo + React Native)
-3. **prism** — The Prism MCP server (session memory, Supabase backend)
+3. **prism** — The Prism Coder server (session memory, Supabase backend)
 
 Please conduct a thorough review covering:
 

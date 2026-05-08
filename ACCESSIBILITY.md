@@ -1,5 +1,18 @@
 # PrismAAC Accessibility — Camera-Based Input System
 
+> **TL;DR** — every body movement a child can make becomes a way to communicate. Head pose, eyes, mouth, shoulders, elbows, wrists, fingers, hips — any combination, on any device with a camera. No $3,000–$15,000 eye tracker required.
+
+## At a glance
+
+- ✅ **15+ tracked body parts** (head, eyes, mouth, shoulders, elbows, wrists, fingers, hips) — choose any combination
+- ✅ **Velocity-adaptive smoothing** — small + slow vs fast + large movements both read accurately
+- ✅ **Dwell-click** with configurable time (200–5000 ms) and progress-ring feedback
+- ✅ **Drift safety stack** — auto-disable + recalibration prompt if tracking diverges from intent
+- ✅ Runs **fully on-device** — no video leaves the device
+
+<details>
+<summary><strong>📐 Full architecture, body-part landmark map, calibration + drift internals</strong></summary>
+
 ## Mission
 
 **Every body movement a child can make becomes a way to communicate.**
@@ -732,3 +745,5 @@ function decodeMorse(symbols: string): string | null {
 | Blink-to-click | 🔜 Planned | Free |
 | Per-child movement profiles | 🔜 Planned | Free |
 | Session metrics for BCBA/IEP | 🔜 Planned | Free |
+
+</details>
