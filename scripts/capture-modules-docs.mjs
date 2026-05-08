@@ -40,6 +40,7 @@ async function enableAllToolbarButtons() {
         categories: true, mic: true, schedule: true, marketplace: true,
         alert: true, math: true, ai_chat: true, aac_chat: true,
         notes: true, games: true, history: true, sound: true, settings: true,
+        pdf_reader: true, ocr_capture: true,
       } } }, version: 0 };
       ls.setItem('prism-aac-settings', JSON.stringify(cur));
     } catch {}
@@ -138,6 +139,21 @@ await closeAnyPanel();
 await clickToolbarByIcon('🏪');
 await page.waitForTimeout(500);
 await shoot('panel-marketplace');
+await closeAnyPanel();
+
+// 7a. PDF Reader panel — added in May 2026 as part of Read & Write
+//     parity. Empty-state is the most representative — the user
+//     hasn't picked a PDF yet so we show the file-picker prompt.
+await clickToolbarByIcon('📄');
+await page.waitForTimeout(400);
+await shoot('panel-pdf-reader');
+await closeAnyPanel();
+
+// 7b. OCR Capture panel — also Read & Write parity. Empty-state too
+//     since the camera/file picker is the entry point.
+await clickToolbarByIcon('👁');
+await page.waitForTimeout(400);
+await shoot('panel-ocr-capture');
 await closeAnyPanel();
 
 // 8. Settings modal — settings has its own gear icon ⚙ rendered

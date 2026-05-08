@@ -81,6 +81,12 @@ On-screen keyboard with **word prediction**, **AI autocomplete**, and a one-tap 
 
 ![Prism AAC keyboard with prediction tiles "I / You / More / Want / Help" above](docs/screenshots/app-hero.png)
 
+**Reading-assistant features (Read & Write parity)** — for users with reading / memory / cognitive needs:
+
+- **Speak per word** — every word echoes through TTS the moment you tap space, so you hear what you typed without waiting for the full sentence.
+- **Speak the sentence on `.?!`** — finishing a sentence with a period, question mark, or exclamation point reads the whole sentence back so you don't lose track of what you wrote (the gap that disqualifies NVDA for sighted users with cognitive disabilities). Toggle via Settings → `speakOnSentenceEnd` (default on).
+- **Word-by-word highlight while speaking** — every spoken word lights up with a yellow background as TTS reads it. Sighted users with reading disabilities can follow along visually; the highlight tracks the audio without needing a special hardware device.
+
 <details>
 <summary><strong>Features + technical details</strong></summary>
 
@@ -89,9 +95,10 @@ On-screen keyboard with **word prediction**, **AI autocomplete**, and a one-tap 
 - Cross-language gate: RO `eu` won't leak into EN bar even when both corpora are loaded (cross-corpus frequency comparison)
 - "Speak" reads with auto-tone adaptation (declarative / interrogative / exclamatory inferred from punctuation)
 - Voice tier 1: Inworld TTS-2; tier 1.5: Kokoro-82M offline; tier 2: OS Web Speech; tier 3: WASM espeak-ng
+- Word highlight is duration-estimated (~60 ms/char @ rate=0.5, scales with the rate slider) — works across every TTS tier without backend changes; precise sync via Azure `wordBoundary` is a future Pro feature.
 - 1.5MB SQLite n-gram corpus per language; unigrams + bigrams + trigrams; lazy-loaded on language switch
 
-**Render path:** `components/Keyboard.tsx` → `messageStore.appendChar` → `predictionStore.updatePredictions(text, lang)` → `engine/predictionEngine.ts` (recency × frequency × n-gram boost) + optional `services/textCorrectService.ts` AI overlay.
+**Render path:** `components/Keyboard.tsx` → `messageStore.appendChar` → `predictionStore.updatePredictions(text, lang)` → `engine/predictionEngine.ts` (recency × frequency × n-gram boost) + optional `services/textCorrectService.ts` AI overlay. Highlight: `services/aacSpeak.ts` emits `tts-highlight-start` events on the `ttsHighlightBus`; `components/MessageBar.tsx` subscribes and passes `activeWordIndex` to `ColoredText`.
 </details>
 
 ---
@@ -270,6 +277,44 @@ Voice packs (Inworld voices, custom-cloned voice of a sibling/parent), vocab pac
 - Per-tier gate: marketplace lists everything but install-buttons disable for items above the user's plan
 
 **Render path:** `components/MarketplacePanel.tsx` → `useMarketplaceStore` → backend `synalux/api/v1/marketplace/...` for purchase, then asset download (voice files, vocab JSON) into IndexedDB.
+</details>
+
+---
+
+### 📄 PDF Reader
+Open a PDF, see one tile per page, tap to hear it spoken in your voice. School worksheets, take-home letters, articles — feed any PDF in and listen instead of trying to read it. No Adobe Reader required; the entire library runs in your browser.
+
+![PDF Reader panel — empty state with "+ Open PDF" prompt](docs/screenshots/panel-pdf-reader.png)
+
+<details>
+<summary><strong>Features + technical details</strong></summary>
+
+- One tile per page; each shows the first 3 lines + a `▶ Page N` button that pipes through `aacSpeak()` (same voice + tone + word-highlight as everything else)
+- `▶ Read all` concatenates every page into one continuous utterance
+- Empty-page detection (scanned-image PDFs) suggests the OCR tool
+- `pdfjs-dist` dynamic-imported on first open — separate ~3 MB chunk from the CDN, version-pinned to the npm package
+- Toolbar button (📄) is opt-in via Settings → Toolbar so the minimal-default toolbar stays clean
+
+**Render path:** `components/PdfReaderPanel.tsx` → `services/pdfReader.ts` (pdfjs `getDocument` → per-page `getTextContent`) → `services/aacSpeak.ts`.
+</details>
+
+---
+
+### 👁 Screenshot Reader (OCR)
+Paste or upload a photo of a worksheet, screenshot of a webpage, picture of a textbook page — the recognized text shows up next to the image and you can tap **▶ Speak** to hear it, or **↧ Send to message bar** to edit before speaking.
+
+![Screenshot Reader (OCR) panel — empty state with "+ Open image" prompt](docs/screenshots/panel-ocr-capture.png)
+
+<details>
+<summary><strong>Features + technical details</strong></summary>
+
+- 20-language OCR matrix mapped from PrismAAC locales to Tesseract codes (eng / spa / fra / por / deu / ron / ukr / rus / jpn / kor / chi_sim / ara / ita / pol / nld / heb / hin / vie / tur / ind)
+- Per-language traineddata files cached after first use (~10 MB for English, more for CJK) — first run shows "Reading the image… (first run downloads the OCR model — may take 10-30 s)"
+- Confidence percentage shown so the AAC user can tell whether to trust the result or re-shoot
+- `disposeOcr()` cleanup hook terminates every spawned worker on page unload to free WASM memory
+- Toolbar button (👁) is opt-in via Settings → Toolbar
+
+**Render path:** `components/OcrCapturePanel.tsx` → `services/ocr.ts` (`tesseract.js` `createWorker` → `recognize`) → `services/aacSpeak.ts` or `messageStore.setText`.
 </details>
 
 ---
