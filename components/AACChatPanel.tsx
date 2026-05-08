@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useContactsStore, type AacContact } from '@/store/contactsStore';
@@ -13,6 +13,48 @@ import {
 } from '@/services/sendToContact';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
+
+/** Renders one tile in either the Frequent or All-contacts grid.
+ *  Sectioned via `section` so a contact appearing in BOTH lists has
+ *  unique data-testid + React keys (otherwise React warns about
+ *  duplicate keys when the user has only 1-5 contacts and they all
+ *  show in both). */
+function renderContactTile(
+  c: AacContact,
+  available: boolean,
+  onPick: (id: string) => void,
+  section: 'freq' | 'all',
+): React.ReactElement {
+  return (
+    <li key={`${section}:${c.id}`}>
+      <button
+        onClick={() => onPick(c.id)}
+        className={`aac-key surface-key text-primary rounded-lg w-full p-4 text-left flex items-center gap-3 min-h-[64px] ${available ? '' : 'opacity-60'}`}
+        data-testid={`aac-chat-contact-${section}-${c.id}`}
+        aria-label={available ? c.name : `${c.name} — requires ${PROVIDER_MIN_TIER[c.provider]} plan`}
+      >
+        <span aria-hidden className="text-2xl flex-shrink-0">
+          {c.avatar || PROVIDER_ICONS[c.provider]}
+        </span>
+        <span className="flex flex-col min-w-0 flex-1">
+          <span className="font-bold truncate">{c.name}</span>
+          <span className="text-xs text-secondary truncate">
+            {PROVIDER_LABELS[c.provider]}
+            {c.lastMessagePreview ? ` · ${c.lastMessagePreview}` : ''}
+          </span>
+        </span>
+        {!available && (
+          <span
+            className="text-[10px] text-[#FF9800] font-bold flex-shrink-0"
+            data-testid={`aac-chat-locked-${c.id}`}
+          >
+            🔒 {PROVIDER_MIN_TIER[c.provider]}
+          </span>
+        )}
+      </button>
+    </li>
+  );
+}
 
 /**
  * AAC Chat — send messages to real people via Telegram / WhatsApp /
@@ -37,7 +79,19 @@ export default function AACChatPanel() {
   const contacts = useContactsStore((s) => s.contacts);
   const profile = useAuthStore((s) => s.profile);
   const plan = profile?.plan ?? 'free';
+  const noteSentTo = useContactsStore((s) => s.noteSentTo);
   const { t } = useT();
+  // t() returns the raw key when no translation is loaded for it
+  // (engine/i18n.ts:147 — `loaded[lang]?.[key] ?? loaded.en?.[key] ?? key`).
+  // That breaks the `t('x') || 'fallback'` pattern because the key
+  // string is truthy. tx() detects the round-trip and falls through.
+  // Without this you see literal "aac_chat_add_contact" in the UI
+  // when an English string is missing — caregivers screenshot it
+  // and report it as a bug.
+  const tx = useCallback((key: string, fallback: string): string => {
+    const v = t(key);
+    return v === key ? fallback : v;
+  }, [t]);
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // Track mount + clear pending toast timer on unmount. Without this,
@@ -72,6 +126,19 @@ export default function AACChatPanel() {
     () => [...contacts].sort((a, b) => a.order - b.order),
     [contacts],
   );
+  // Frequent = top N by sendCount desc, then lastUsedAt desc as tiebreak.
+  // We only surface contacts the user has actually messaged (sendCount > 0)
+  // — promoting a never-used contact to "Frequent" would be a lie.
+  const FREQUENT_LIMIT = 5;
+  const frequentContacts = useMemo(() => {
+    const used = contacts.filter((c) => (c.sendCount ?? 0) > 0);
+    used.sort((a, b) => {
+      const dc = (b.sendCount ?? 0) - (a.sendCount ?? 0);
+      if (dc !== 0) return dc;
+      return (b.lastUsedAt ?? 0) - (a.lastUsedAt ?? 0);
+    });
+    return used.slice(0, FREQUENT_LIMIT);
+  }, [contacts]);
   const activeContact: AacContact | undefined = useMemo(
     () => sortedContacts.find((c) => c.id === activeContactId),
     [sortedContacts, activeContactId],
@@ -109,7 +176,9 @@ export default function AACChatPanel() {
     if (!mountedRef.current) return; // user closed the panel mid-await
     setSending(false);
     if (res.ok) {
-      const baseMsg = t('aac_chat_sent') || `Sent to ${submittedContact.name}`;
+      // Bump usage so this contact rises in the Frequent section.
+      noteSentTo(submittedContact.id);
+      const baseMsg = tx('aac_chat_sent', `Sent to ${submittedContact.name}`);
       flashToast(res.truncated ? `${baseMsg} (shortened to fit)` : baseMsg);
       // Only clear the keyboard buffer if the user hasn't started a new
       // message in the meantime. `text` from the closure is stale by now;
@@ -122,9 +191,9 @@ export default function AACChatPanel() {
     } else if (res.error === 'invalid_recipient_id') {
       flashToast(`${submittedContact.name}: contact details look wrong — ask a caregiver to fix.`);
     } else {
-      flashToast(t('aac_chat_send_failed') || `Could not send: ${res.error}`);
+      flashToast(tx('aac_chat_send_failed', `Could not send: ${res.error}`));
     }
-  }, [activeContact, sending, text, clearAll, t, plan, flashToast]);
+  }, [activeContact, sending, text, clearAll, tx, plan, flashToast, noteSentTo]);
 
   if (sidePanel !== 'aac-chat') return null;
 
@@ -136,30 +205,31 @@ export default function AACChatPanel() {
   // contact" CTA), not silently get only the qwerty back.
   const isEmpty = !activeContact && sortedContacts.length === 0;
 
-  // Empty-state: SLIM strip (one row). 2026-05-08 user report
-  // (Image #26): the previous flex-[3] empty panel squeezed the
-  // provider chip row + labels into ~50px between the AAC cards and
-  // the keyboard — labels were clipped, the panel looked broken.
-  // Slim variant preserves the discoverability cue (the user
-  // tapped 💬 so they want to know "this is the messaging tool")
-  // while giving the keyboard its full natural height. Mirrors the
-  // PdfReaderPanel slim pattern shipped 2026-05-07.
+  // Empty-state: MEDIUM panel — fixed height (~3 contact rows) so the
+  // user sees what the chat will look like once contacts sync, with a
+  // primary CTA to open caregiver settings. History:
+  //   - flex-[3] (pre-2026-05-08): squeezed the AAC card row + provider
+  //     chips to ~50px — labels clipped, looked broken (Image #26).
+  //   - shrink-0 single-row slim (2026-05-08): too small. User couldn't
+  //     tell if their 100+ Google contacts had landed; just one line
+  //     with raw "aac_chat_add_contact" key showing (Image #24).
+  //   - shrink-0 with bounded min/max height (now): preserves the
+  //     keyboard's natural height AND gives the picker enough room to
+  //     show 3 placeholder rows + the add-contact CTA + sync hint.
   if (isEmpty) {
     return (
       <section
-        aria-label={t('aac_chat_title') || 'Send a message'}
+        aria-label={tx('aac_chat_title', 'Send a message')}
         data-testid="aac-chat-panel"
-        data-state="slim"
-        className="shrink-0 surface-bar border-y border-theme"
+        data-state="medium-empty"
+        className="shrink-0 surface-bar border-y border-theme flex flex-col"
+        style={{ minHeight: 200, maxHeight: 240 }}
       >
-        <div className="flex items-center justify-between px-3 py-2 gap-3">
+        <div className="flex items-center justify-between px-3 py-2 gap-3 border-b border-theme">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-xl shrink-0">💬</span>
             <span className="font-bold text-primary truncate">
-              {t('aac_chat_title') || 'Send a message'}
-            </span>
-            <span className="text-xs text-muted hidden sm:inline truncate">
-              — {t('aac_chat_no_contacts') || 'No contacts yet.'}
+              {tx('aac_chat_title', 'Send a message')}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -168,14 +238,47 @@ export default function AACChatPanel() {
               data-testid="aac-chat-open-settings"
               className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white"
             >
-              ＋ {t('aac_chat_add_contact') || 'Add contact'}
+              ＋ {tx('aac_chat_add_contact', 'Add contact')}
             </button>
             <button
               onClick={() => { tapFeedback(); closeSidePanel(); }}
-              aria-label={t('close') || 'Close'}
+              aria-label={tx('close', 'Close')}
               className="aac-btn rounded-md px-2 py-1 text-muted text-lg"
             >×</button>
           </div>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-2">
+          <p className="text-xs text-muted">
+            {tx('aac_chat_no_contacts', 'No contacts yet.')}{' '}
+            {tx(
+              'aac_chat_empty_hint',
+              'Add one above, or open Caregiver Settings → Contacts → Sync now to pull from Gmail.',
+            )}
+          </p>
+          {/* Three ghost rows so the picker doesn't look like one
+              clipped line — gives caregivers a sense of scale. */}
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 surface-key rounded-lg px-3 py-2 opacity-50 border border-dashed border-theme"
+              data-testid={`aac-chat-ghost-${i}`}
+              aria-hidden
+            >
+              <span className="text-2xl">👤</span>
+              <span className="flex flex-col min-w-0 flex-1">
+                <span className="font-bold text-primary text-sm">
+                  {i === 0
+                    ? tx('aac_chat_ghost_mom', 'e.g. Mom')
+                    : i === 1
+                      ? tx('aac_chat_ghost_dad', 'e.g. Dad')
+                      : tx('aac_chat_ghost_teacher', 'e.g. Teacher')}
+                </span>
+                <span className="text-xs text-secondary truncate">
+                  {tx('aac_chat_ghost_hint', 'Will appear here after sync')}
+                </span>
+              </span>
+            </div>
+          ))}
         </div>
       </section>
     );
@@ -184,7 +287,7 @@ export default function AACChatPanel() {
   // Below this point: have contacts or active contact — full panel.
   return (
     <section
-      aria-label={t('aac_chat_title') || 'Send a message'}
+      aria-label={tx('aac_chat_title', 'Send a message')}
       className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
       data-testid="aac-chat-panel"
       data-state="expanded"
@@ -194,7 +297,7 @@ export default function AACChatPanel() {
           {activeContact && (
             <button
               onClick={handleBack}
-              aria-label={t('back') || 'Back'}
+              aria-label={tx('back', 'Back')}
               className="aac-key surface-key text-primary rounded-lg px-3 py-1 font-bold"
             >
               ←
@@ -209,58 +312,57 @@ export default function AACChatPanel() {
             ) : (
               <>
                 <span aria-hidden>💬</span>
-                {t('aac_chat_title') || 'Send a message'}
+                {tx('aac_chat_title', 'Send a message')}
               </>
             )}
           </h2>
         </div>
         <button
           onClick={() => { tapFeedback(); closeSidePanel(); }}
-          aria-label={t('close') || 'Close'}
+          aria-label={tx('close', 'Close')}
           className="aac-key surface-key text-primary rounded-lg px-3 py-1 font-bold"
         >
           ×
         </button>
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-3">
-        {/* Empty state is now handled by the slim early-return above
-            (2026-05-08, Image #26). */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
+        {/* Empty state is handled by the medium-empty early-return above
+            (2026-05-08, Image #24). This branch only renders when the
+            user has at least one contact. */}
         {!activeContact && sortedContacts.length > 0 && (
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="aac-chat-contact-list">
-            {sortedContacts.map((c) => {
-              const available = isProviderAvailable(c.provider, plan);
-              return (
-                <li key={c.id}>
-                  <button
-                    onClick={() => handlePickContact(c.id)}
-                    className={`aac-key surface-key text-primary rounded-lg w-full p-4 text-left flex items-center gap-3 min-h-[64px] ${available ? '' : 'opacity-60'}`}
-                    data-testid={`aac-chat-contact-${c.id}`}
-                    aria-label={available ? c.name : `${c.name} — requires ${PROVIDER_MIN_TIER[c.provider]} plan`}
-                  >
-                    <span aria-hidden className="text-2xl flex-shrink-0">
-                      {c.avatar || PROVIDER_ICONS[c.provider]}
-                    </span>
-                    <span className="flex flex-col min-w-0 flex-1">
-                      <span className="font-bold truncate">{c.name}</span>
-                      <span className="text-xs text-secondary truncate">
-                        {PROVIDER_LABELS[c.provider]}
-                        {c.lastMessagePreview ? ` · ${c.lastMessagePreview}` : ''}
-                      </span>
-                    </span>
-                    {!available && (
-                      <span
-                        className="text-[10px] text-[#FF9800] font-bold flex-shrink-0"
-                        data-testid={`aac-chat-locked-${c.id}`}
-                      >
-                        🔒 {PROVIDER_MIN_TIER[c.provider]}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            {frequentContacts.length > 0 && (
+              <section data-testid="aac-chat-frequent">
+                <p className="text-muted text-[11px] uppercase tracking-wider mb-1.5">
+                  {tx('aac_chat_frequent', 'Frequent')}
+                </p>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {frequentContacts.map((c) => renderContactTile(
+                    c,
+                    isProviderAvailable(c.provider, plan),
+                    handlePickContact,
+                    'freq',
+                  ))}
+                </ul>
+              </section>
+            )}
+            <section data-testid="aac-chat-all">
+              {frequentContacts.length > 0 && (
+                <p className="text-muted text-[11px] uppercase tracking-wider mb-1.5">
+                  {tx('aac_chat_all_contacts', 'All contacts')}
+                </p>
+              )}
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="aac-chat-contact-list">
+                {sortedContacts.map((c) => renderContactTile(
+                  c,
+                  isProviderAvailable(c.provider, plan),
+                  handlePickContact,
+                  'all',
+                ))}
+              </ul>
+            </section>
+          </>
         )}
 
         {/* Contact picked → chat compose view */}
@@ -278,7 +380,7 @@ export default function AACChatPanel() {
               </div>
             )}
             <div className="text-sm text-secondary">
-              {t('aac_chat_compose_hint') || 'Type your message using the keyboard below, then press Send.'}
+              {tx('aac_chat_compose_hint', 'Type your message using the keyboard below, then press Send.')}
             </div>
             <div
               className="surface-key rounded-lg p-3 min-h-[64px] text-primary text-lg"
@@ -286,7 +388,7 @@ export default function AACChatPanel() {
             >
               {text.trim() || (
                 <span className="text-secondary italic">
-                  {t('aac_chat_compose_placeholder') || 'Your message will appear here…'}
+                  {tx('aac_chat_compose_placeholder', 'Your message will appear here…')}
                 </span>
               )}
             </div>
@@ -297,8 +399,8 @@ export default function AACChatPanel() {
               className="aac-key surface-key text-primary rounded-lg p-4 font-bold text-lg disabled:opacity-40 bg-green-600 text-white"
             >
               {sending
-                ? (t('aac_chat_sending') || 'Sending…')
-                : `${t('aac_chat_send') || 'Send'} → ${activeContact.name}`}
+                ? tx('aac_chat_sending', 'Sending…')
+                : `${tx('aac_chat_send', 'Send')} → ${activeContact.name}`}
             </button>
           </div>
         )}

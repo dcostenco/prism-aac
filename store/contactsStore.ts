@@ -50,6 +50,14 @@ export interface AacContact {
   lastMessagePreview?: string;
   /** Sort order — lower = first */
   order: number;
+  /** How many times the AAC user has successfully sent to this contact.
+   *  Drives the "Frequent" section atop the chat picker (top 5 by
+   *  sendCount desc). Persisted; survives reload. */
+  sendCount?: number;
+  /** Last successful send timestamp (ms). Tiebreaker for sendCount
+   *  when two contacts have the same count, so the more-recent one
+   *  surfaces first. */
+  lastUsedAt?: number;
 }
 
 interface ContactsState {
@@ -71,6 +79,10 @@ interface ContactsState {
    *  fields (avatar, name override) are preserved on re-sync. New
    *  contacts past MAX_CONTACTS are dropped (oldest-keep-wins). */
   mergeFromIntegrations: (incoming: Array<Omit<AacContact, 'id' | 'order'>>) => { added: number; updated: number };
+  /** Bump sendCount + stamp lastUsedAt for a contact. No-op if id is
+   *  unknown (contact removed mid-send). Called by the chat panel on
+   *  successful send so the Frequent section reorders itself. */
+  noteSentTo: (id: string) => void;
 }
 
 /** Hard cap on local contact list. AAC pickers past ~200 stop being
@@ -99,6 +111,8 @@ function isValidStoredContact(c: unknown): c is AacContact {
   if (typeof x.order !== 'number' || !Number.isFinite(x.order) || x.order < 0) return false;
   if (x.avatar !== undefined && (typeof x.avatar !== 'string' || x.avatar.length > MAX_AVATAR_LEN)) return false;
   if (x.lastMessagePreview !== undefined && typeof x.lastMessagePreview !== 'string') return false;
+  if (x.sendCount !== undefined && (typeof x.sendCount !== 'number' || !Number.isFinite(x.sendCount) || x.sendCount < 0)) return false;
+  if (x.lastUsedAt !== undefined && (typeof x.lastUsedAt !== 'number' || !Number.isFinite(x.lastUsedAt) || x.lastUsedAt < 0)) return false;
   return true;
 }
 
@@ -168,6 +182,13 @@ export const useContactsStore = create<ContactsState>()(
       })),
       reorderContact: (id, newOrder) => set((s) => ({
         contacts: s.contacts.map((c) => c.id === id ? { ...c, order: newOrder } : c),
+      })),
+      noteSentTo: (id) => set((s) => ({
+        contacts: s.contacts.map((c) =>
+          c.id === id
+            ? { ...c, sendCount: (c.sendCount ?? 0) + 1, lastUsedAt: Date.now() }
+            : c,
+        ),
       })),
       setContacts: (cs) => set({ contacts: cs.slice(0, MAX_CONTACTS) }),
       mergeFromIntegrations: (incoming) => {

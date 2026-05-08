@@ -46,6 +46,11 @@ export default function CaregiverContactsSettings() {
   const [draftError, setDraftError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  // Per-source advisories from the portal — e.g. "Reconnect Gmail to
+  // grant Contacts permission". Without surfacing these, a 0-contact
+  // sync looks broken when really the user just hasn't granted the
+  // contacts.readonly scope yet.
+  const [syncNotes, setSyncNotes] = useState<string[]>([]);
   // Inline edit state — replaces window.prompt() so tablet AAC users
   // (and screen-reader caregivers) get a real form instead of a modal
   // dialog they may not be able to dismiss.
@@ -92,10 +97,19 @@ export default function CaregiverContactsSettings() {
     setSyncing(false);
     if (res === null) {
       setSyncMsg('Sync unavailable — check your portal connection.');
+      setSyncNotes([]);
     } else if (res.added === 0 && res.updated === 0) {
-      setSyncMsg('Already up to date.');
+      // Distinguish "already up to date with N contacts" from
+      // "no contacts came back at all" — the latter means the user
+      // probably needs to reconnect with broader scope. Without the
+      // distinction the UX reads as "sync works fine, you have 0
+      // friends" which is wrong.
+      const haveContacts = useContactsStore.getState().contacts.length > 0;
+      setSyncMsg(haveContacts ? 'Already up to date.' : 'Synced — 0 contacts available yet.');
+      setSyncNotes(res.notes);
     } else {
       setSyncMsg(`+${res.added} new, ${res.updated} updated.`);
+      setSyncNotes(res.notes);
     }
     if (syncMsgTimerRef.current) clearTimeout(syncMsgTimerRef.current);
     syncMsgTimerRef.current = setTimeout(() => {
@@ -146,6 +160,14 @@ export default function CaregiverContactsSettings() {
         </button>
       </div>
       {syncMsg && <p className="text-xs text-[#4CAF50]" data-testid="contacts-sync-msg">{syncMsg}</p>}
+      {syncNotes.length > 0 && (
+        // Per-source advisories (e.g. "Reconnect Gmail to grant
+        // Contacts permission"). Amber, not red — sync succeeded;
+        // these are next-step CTAs not failures.
+        <ul className="text-xs text-[#FF9800] space-y-0.5" data-testid="contacts-sync-notes">
+          {syncNotes.map((n, i) => (<li key={i}>• {n}</li>))}
+        </ul>
+      )}
 
       {/* Add new contact */}
       <div className="space-y-2 p-3 surface-key rounded-lg border border-theme">

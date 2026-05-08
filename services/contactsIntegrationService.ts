@@ -88,17 +88,28 @@ function sanitize(raw: unknown): Array<Omit<AacContact, 'id' | 'order'>> {
 
 let syncInFlight = false;
 
+export interface SyncOutcome {
+  added: number;
+  updated: number;
+  /** Per-source advisory strings from the portal — e.g.
+   *  "Reconnect Gmail to grant Contacts permission" when the user
+   *  authorized Gmail but not the contacts.readonly scope needed by
+   *  the People API. UI surfaces these so the caregiver knows why
+   *  "Synced — 0 contacts" happened. */
+  notes: string[];
+}
+
 /** Fetch contacts from the portal and merge into the local store.
  *  Returns the merge result for callers that want to surface a toast
  *  ("3 new contacts"). Resolves with null on transport failure so
  *  callers can distinguish "no changes" from "couldn't reach". */
-export async function syncContactsOnce(): Promise<{ added: number; updated: number } | null> {
+export async function syncContactsOnce(): Promise<SyncOutcome | null> {
   if (syncInFlight) return null;
   // Skip when not signed in — session-cookie gated, would 401 forever.
   if (!useAuthStore.getState().profile) return null;
   syncInFlight = true;
   try {
-    const res = await portalFetch<{ contacts?: unknown }>({
+    const res = await portalFetch<{ contacts?: unknown; notes?: unknown }>({
       path: ENDPOINT,
       timeoutMs: SYNC_TIMEOUT_MS,
     });
@@ -106,9 +117,13 @@ export async function syncContactsOnce(): Promise<{ added: number; updated: numb
     const body = res.data;
     if (!body || typeof body !== 'object') return null;
     const incoming = sanitize(body.contacts);
+    const notes = Array.isArray(body.notes)
+      ? body.notes.filter((n): n is string => typeof n === 'string').slice(0, 8)
+      : [];
     // Endpoint reachable (even with no rows) — bump lastSyncedAt so the
     // settings UI shows a successful sync.
-    return useContactsStore.getState().mergeFromIntegrations(incoming);
+    const merge = useContactsStore.getState().mergeFromIntegrations(incoming);
+    return { ...merge, notes };
   } finally {
     syncInFlight = false;
   }

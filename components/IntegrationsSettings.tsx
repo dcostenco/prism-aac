@@ -196,13 +196,31 @@ export default function IntegrationsSettings() {
                     </button>
                   )}
                   {p.status === 'connected' && (
-                    <span
-                      className="text-[#4CAF50] text-base font-bold px-2"
-                      data-testid={`integration-connected-${p.id}`}
-                      aria-label={`${p.label} connected`}
-                    >
-                      ✓
-                    </span>
+                    <>
+                      <span
+                        className="text-[#4CAF50] text-base font-bold pl-2"
+                        data-testid={`integration-connected-${p.id}`}
+                        aria-label={`${p.label} connected`}
+                      >
+                        ✓
+                      </span>
+                      {/* Reconnect path — caregivers need this to upgrade
+                          scope (e.g. add contacts.readonly to an existing
+                          gmail.modify grant) without us building a separate
+                          "permissions" UI. Re-running OAuth re-prompts
+                          consent and writes a fresh grant row. */}
+                      {p.connectUrl && (
+                        <button
+                          onClick={() => handleConnect(p)}
+                          disabled={connecting === p.id}
+                          data-testid={`integration-reconnect-${p.id}`}
+                          className="aac-btn rounded-lg px-2 py-1 surface-key text-primary border border-theme text-[10px] disabled:opacity-40"
+                          title="Reconnect to grant additional permissions"
+                        >
+                          {connecting === p.id ? '…' : '↻'}
+                        </button>
+                      )}
+                    </>
                   )}
                   {p.status === 'planned' && (
                     <span
