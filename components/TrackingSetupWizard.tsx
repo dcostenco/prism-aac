@@ -160,44 +160,55 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   }, [speak]);
 
   // ── PHASE: Calibrate Center ──
-  // Minimum sample count before advancing — pose tracker emits ~15
-  // samples/sec so 8 samples ≈ 0.5s of actual finger detection. Without
-  // this gate the timer advanced even when no pose was detected,
-  // baking degenerate (0.5, 0.5) coords into the calibration (user
-  // report 2026-05-08: "wizard asked to point a finger but i never
-  // did that and it was continuing to do that by himself").
-  const MIN_SAMPLES = 8;
+  // Calibration is user-driven, NOT timer-driven. The previous
+  // implementation auto-advanced after 3s regardless of whether the
+  // user was actually pointing — and the MIN_SAMPLES gate didn't help
+  // because the pose tracker fires `prism-pose-sample` every frame any
+  // landmark is detected (face in frame counts). User report
+  // 2026-05-08: "wizard asked to point a finger but i never did that
+  // and it was continuing to do that by himself".
+  // Now: progress bar pulses while gathering samples, and the user
+  // taps "Capture center" when they're ready. The buffer is cleared
+  // each phase so capture takes the most recent samples.
   const startCenterCalibration = useCallback(() => {
     setPhase('calibrate-center');
     sampleBufferRef.current = [];
     setProgress(0);
-    setStatusText('Point to the center circle');
-    speak('Point to the center of the screen. Hold still.');
+    setStatusText('Point to the center circle, then tap Capture');
+    speak('Point to the center of the screen, then tap Capture.');
+  }, [speak]);
 
-    let elapsed = 0;
-    let waitingPromptShown = false;
+  // Visual progress: while in a calibration phase, animate the ring
+  // based on how many samples we have (caps at 30 → "ready"). The
+  // user can capture at any point — this is just feedback.
+  useEffect(() => {
+    if (phase !== 'calibrate-center' && phase !== 'calibrate-corners') return;
     const interval = setInterval(() => {
-      elapsed += 100;
-      setProgress(Math.min(1, elapsed / 3000));
-      if (elapsed >= 3000) {
-        if (sampleBufferRef.current.length < MIN_SAMPLES) {
-          if (!waitingPromptShown) {
-            setStatusText("I can't see your finger yet — keep pointing, or tap Skip below.");
-            waitingPromptShown = true;
-          }
-          return; // hold phase open until samples arrive
-        }
-        clearInterval(interval);
-        setCornerIdx(0);
-        setCornerSamples([]);
-        setPhase('calibrate-corners');
-        setProgress(0);
-        speak('Now point to the top left corner.');
-        setStatusText('Point to the highlighted corner');
-      }
+      const n = sampleBufferRef.current.length;
+      setProgress(Math.min(1, n / 30));
     }, 100);
-
     return () => clearInterval(interval);
+  }, [phase]);
+
+  /** User taps the Capture button — average the current sample buffer
+   *  and advance. Refuses to advance if the buffer is empty (no pose
+   *  data) so we don't bake (0.5, 0.5) into the calibration. */
+  const captureCenter = useCallback(() => {
+    if (sampleBufferRef.current.length === 0) {
+      setStatusText("I can't see your finger yet — keep pointing.");
+      return;
+    }
+    tapFeedback();
+    // Center isn't strictly used for the bounds calculation (corners
+    // define the rect) but capturing here proves the tracker sees the
+    // finger before we ask for 4 corners.
+    sampleBufferRef.current = [];
+    setCornerIdx(0);
+    setCornerSamples([]);
+    setPhase('calibrate-corners');
+    setProgress(0);
+    setStatusText('Point to the highlighted corner, then tap Capture');
+    speak('Now point to the top left corner.');
   }, [speak]);
 
   // Keep the ref pointing at the latest startCenterCalibration so
@@ -207,91 +218,59 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     startCenterCalibrationRef.current = startCenterCalibration;
   }, [startCenterCalibration]);
 
-  // ── PHASE: Calibrate Corners ──
-  useEffect(() => {
-    if (phase !== 'calibrate-corners') return;
-
+  // ── PHASE: Calibrate Corners — user-driven ──
+  // Capture handler for corners, called when the user taps Capture.
+  // Refuses to advance if no pose samples (same guard as center).
+  const captureCorner = useCallback(() => {
+    if (sampleBufferRef.current.length === 0) {
+      setStatusText("I can't see your finger yet — keep pointing at the highlighted corner.");
+      return;
+    }
+    tapFeedback();
+    const samples = sampleBufferRef.current;
+    const avg = {
+      x: samples.reduce((s, v) => s + v.normX, 0) / samples.length,
+      y: samples.reduce((s, v) => s + v.normY, 0) / samples.length,
+    };
+    const newSamples = [...cornerSamples, avg];
+    setCornerSamples(newSamples);
     sampleBufferRef.current = [];
-    let elapsed = 0;
-    let waitingPromptShown = false;
+    setProgress(0);
 
-    const interval = setInterval(() => {
-      elapsed += 100;
-      setProgress(Math.min(1, elapsed / 2500));
+    if (cornerIdx < CORNER_TARGETS.length - 1) {
+      setCornerIdx(cornerIdx + 1);
+      const next = CORNER_TARGETS[cornerIdx + 1];
+      speak(`Now point to ${next.label}.`);
+      setStatusText(`Point to ${next.label}, then tap Capture`);
+    } else {
+      // All 4 corners captured — compute calibration rect
+      const tl = newSamples[0];
+      const tr = newSamples[1];
+      const br = newSamples[2];
+      const bl = newSamples[3];
+      const mx = (v: number) => 1.0 - v;
+      const cal: PoseCalibrationData = {
+        leftX: Math.min(mx(tl.x), mx(bl.x)),
+        rightX: Math.max(mx(tr.x), mx(br.x)),
+        topY: Math.min(tl.y, tr.y),
+        bottomY: Math.max(bl.y, br.y),
+      };
+      if (cal.leftX >= cal.rightX) [cal.leftX, cal.rightX] = [cal.rightX, cal.leftX];
+      if (cal.topY >= cal.bottomY) [cal.topY, cal.bottomY] = [cal.bottomY, cal.topY];
+      savePoseCalibration(cal);
+      speak('Calibration saved. Now lets test your accuracy.');
 
-      if (elapsed >= 2500) {
-        // Same MIN_SAMPLES gate as center phase — without it the wizard
-        // baked (0.5, 0.5) into every corner if pose detection never
-        // landed, producing degenerate calibration that maps every
-        // finger position to the same screen coordinate.
-        if (sampleBufferRef.current.length < MIN_SAMPLES) {
-          if (!waitingPromptShown) {
-            setStatusText("Still looking for your finger — keep pointing, or tap Skip below.");
-            waitingPromptShown = true;
-          }
-          return;
-        }
-        clearInterval(interval);
-
-        // Average the samples from this corner
-        const samples = sampleBufferRef.current;
-        const avg = samples.length > 0
-          ? {
-              x: samples.reduce((s, v) => s + v.normX, 0) / samples.length,
-              y: samples.reduce((s, v) => s + v.normY, 0) / samples.length,
-            }
-          : { x: 0.5, y: 0.5 };
-
-        const newSamples = [...cornerSamples, avg];
-        setCornerSamples(newSamples);
-
-        if (cornerIdx < CORNER_TARGETS.length - 1) {
-          setCornerIdx(cornerIdx + 1);
-          setProgress(0);
-          sampleBufferRef.current = [];
-          const next = CORNER_TARGETS[cornerIdx + 1];
-          speak(`Now point to ${next.label}.`);
-        } else {
-          // All corners captured — compute calibration
-          const tl = newSamples[0];
-          const tr = newSamples[1];
-          const br = newSamples[2];
-          const bl = newSamples[3];
-
-          const mx = (v: number) => 1.0 - v; // mirror X for front camera
-          const cal: PoseCalibrationData = {
-            leftX: Math.min(mx(tl.x), mx(bl.x)),
-            rightX: Math.max(mx(tr.x), mx(br.x)),
-            topY: Math.min(tl.y, tr.y),
-            bottomY: Math.max(bl.y, br.y),
-          };
-
-          // Ensure valid range
-          if (cal.leftX >= cal.rightX) [cal.leftX, cal.rightX] = [cal.rightX, cal.leftX];
-          if (cal.topY >= cal.bottomY) [cal.topY, cal.bottomY] = [cal.bottomY, cal.topY];
-
-          savePoseCalibration(cal);
-          speak('Calibration saved. Now lets test your accuracy.');
-
-          // Generate test targets
-          const targets = [];
-          for (let i = 0; i < 5; i++) {
-            targets.push({
-              x: 15 + Math.random() * 70,
-              y: 15 + Math.random() * 70,
-              hit: false,
-            });
-          }
-          setTestTargets(targets);
-          setTestIdx(0);
-          setPhase('accuracy-test');
-          setStatusText('Tap the circles!');
-        }
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [phase, cornerIdx, cornerSamples, speak]);
+      const targets = Array.from({ length: 5 }, () => ({
+        x: 15 + Math.random() * 70,
+        y: 15 + Math.random() * 70,
+        hit: false,
+      }));
+      setTestTargets(targets);
+      setTestIdx(0);
+      setPhase('accuracy-test');
+      setStatusText('Look at each red circle until it goes green');
+    }
+  }, [cornerIdx, cornerSamples, speak]);
 
   // ── PHASE: Accuracy Test ──
   const handleTestHit = useCallback((idx: number) => {
@@ -475,14 +454,20 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 </div>
               </div>
             </div>
-            <div className="absolute bottom-20 left-0 right-0 text-center">
+            <div className="absolute bottom-20 left-0 right-0 text-center px-6">
               <p className="text-white text-lg font-bold">{statusText}</p>
-              <p className="text-white/50 text-sm">Hold still for 3 seconds</p>
+              <button
+                onClick={captureCenter}
+                data-testid="tracking-capture-center"
+                disabled={sampleBufferRef.current.length === 0}
+                className="mt-4 py-3 px-8 rounded-2xl bg-[#4CAF50] text-white font-bold text-lg shadow-lg active:scale-95 transition-transform disabled:opacity-30"
+              >
+                ✓ Capture center
+              </button>
+              <p className="text-white/40 text-xs mt-2">Tap when you&apos;re pointing at the center</p>
               <button
                 onClick={() => {
                   tapFeedback();
-                  // Skip directly to test phase with placeholder
-                  // calibration. The user can recalibrate later.
                   setCornerSamples([{x:0.2,y:0.2},{x:0.8,y:0.2},{x:0.8,y:0.8},{x:0.2,y:0.8}]);
                   const targets = Array.from({length: 5}, () => ({
                     x: 15 + Math.random() * 70, y: 15 + Math.random() * 70, hit: false
@@ -490,10 +475,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                   setTestTargets(targets);
                   setTestIdx(0);
                   setPhase('accuracy-test');
-                  setStatusText('Tap the circles!');
+                  setStatusText('Look at each red circle until it goes green');
                 }}
                 data-testid="tracking-calibrate-skip"
-                className="mt-3 text-white/50 text-xs underline"
+                className="mt-3 text-white/50 text-xs underline block mx-auto"
               >
                 Skip calibration → use defaults
               </button>
@@ -532,14 +517,20 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 )}
               </div>
             ))}
-            <div className="absolute bottom-20 left-0 right-0 text-center">
+            <div className="absolute bottom-20 left-0 right-0 text-center px-6">
               <p className="text-white text-lg font-bold">{statusText || `Point to ${CORNER_TARGETS[cornerIdx]?.label}`}</p>
-              <p className="text-white/50 text-sm">Hold for 2.5 seconds</p>
+              <button
+                onClick={captureCorner}
+                data-testid="tracking-capture-corner"
+                disabled={sampleBufferRef.current.length === 0}
+                className="mt-4 py-3 px-8 rounded-2xl bg-[#2196F3] text-white font-bold text-lg shadow-lg active:scale-95 transition-transform disabled:opacity-30"
+              >
+                ✓ Capture {CORNER_TARGETS[cornerIdx]?.label}
+              </button>
+              <p className="text-white/40 text-xs mt-2">Tap when you&apos;re pointing at the corner</p>
               <button
                 onClick={() => {
                   tapFeedback();
-                  // Skip remaining corners → straight to test with the
-                  // corners we have plus default fillers.
                   const filled = [...cornerSamples];
                   while (filled.length < 4) {
                     filled.push({ x: 0.5, y: 0.5 });
@@ -551,10 +542,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                   setTestTargets(targets);
                   setTestIdx(0);
                   setPhase('accuracy-test');
-                  setStatusText('Tap the circles!');
+                  setStatusText('Look at each red circle until it goes green');
                 }}
                 data-testid="tracking-corners-skip"
-                className="mt-3 text-white/50 text-xs underline"
+                className="mt-3 text-white/50 text-xs underline block mx-auto"
               >
                 Skip → use defaults
               </button>
