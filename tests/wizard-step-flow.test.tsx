@@ -329,6 +329,108 @@ describe('TrackingSetupWizard — StrictMode-safe lifecycle (regression)', () =>
   });
 });
 
+describe('TrackingSetupWizard — narrow-range fallback (head-tracking accessibility)', () => {
+  // May 2026 user report (Image #45) — user reclining on sofa runs the
+  // wizard with head tracking. Their nose moves only ~0.02 in normalized
+  // frame coords across the 4 corner captures. Raw cal becomes
+  // rangeX=0.022 ("TOO NARROW") and the cursor is pinned to a tiny
+  // pose region — wizard run left them WORSE than skipping calibration.
+  //
+  // The fix anchors a DEFAULT-width (rangeX≈0.70, rangeY≈0.60)
+  // calibration on the captured center sample whenever raw corner
+  // range falls below PRACTICAL_MIN_RANGE (0.10). Wizard never
+  // produces a worse cursor than Skip would have.
+  async function captureFullFlow(centerXY: [number, number], cornerXY: [number, number][]) {
+    const { savePoseCalibration } = await import('@/services/bodyPoseService');
+    (savePoseCalibration as ReturnType<typeof vi.fn>).mockClear();
+    render(<TrackingSetupWizard onComplete={() => {}} onCancel={() => {}} />);
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    act(() => {
+      for (let i = 0; i < 8; i++) dispatchPoseSample('right_index', 0.5, 0.5);
+      vi.advanceTimersByTime(5000);
+    });
+    act(() => { vi.advanceTimersByTime(1500); });
+
+    // Step 1 — center capture.
+    act(() => {
+      for (let i = 0; i < 5; i++) dispatchPoseSample('right_index', centerXY[0], centerXY[1]);
+      vi.advanceTimersByTime(150);
+    });
+    fireEvent.click(screen.getByTestId('tracking-capture-center'));
+
+    // Step 2 — 4 corners.
+    for (const [nx, ny] of cornerXY) {
+      act(() => {
+        for (let i = 0; i < 5; i++) dispatchPoseSample('right_index', nx, ny);
+        vi.advanceTimersByTime(150);
+      });
+      fireEvent.click(screen.getByTestId('tracking-capture-corner'));
+    }
+    return savePoseCalibration as ReturnType<typeof vi.fn>;
+  }
+
+  it('narrow corner samples (cluster within 0.02) trigger DEFAULT-width fallback anchored on center', async () => {
+    // User on sofa: head moves only ~0.02 across all 4 "corner" attempts.
+    const saveSpy = await captureFullFlow(
+      [0.475, 0.508], // captured center (real Image #44 values)
+      [
+        [0.470, 0.503], // ~TL — head barely moved
+        [0.480, 0.503], // ~TR
+        [0.480, 0.513], // ~BR
+        [0.470, 0.513], // ~BL
+      ],
+    );
+    expect(rootEl()).toHaveAttribute('data-phase', 'accuracy-test');
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    const cal = saveSpy.mock.calls[0][0];
+    const rangeX = cal.leftX - cal.rightX;
+    const rangeY = cal.bottomY - cal.topY;
+    // Fallback anchored on center (anchorMirX = 1 - 0.475 = 0.525).
+    // Expected: leftX = 0.525 + 0.35 = 0.875, rightX = 0.525 - 0.35 = 0.175.
+    expect(cal.leftX).toBeCloseTo(0.875, 2);
+    expect(cal.rightX).toBeCloseTo(0.175, 2);
+    expect(rangeX).toBeCloseTo(0.70, 2);
+    expect(rangeY).toBeCloseTo(0.60, 2);
+  });
+
+  it('genuine wide-range corners save the raw computed cal (no fallback)', async () => {
+    // User can reach screen corners — captured range is healthy.
+    const saveSpy = await captureFullFlow(
+      [0.5, 0.5], // center
+      [
+        [0.85, 0.20], // TL
+        [0.15, 0.20], // TR
+        [0.15, 0.80], // BR
+        [0.85, 0.80], // BL
+      ],
+    );
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    const cal = saveSpy.mock.calls[0][0];
+    // Raw cal: leftX = max mirroredX = max(0.15, 0.85, 0.85, 0.15) = 0.85.
+    // rightX = min mirroredX = 0.15.
+    expect(cal.leftX).toBeCloseTo(0.85, 2);
+    expect(cal.rightX).toBeCloseTo(0.15, 2);
+    expect(cal.bottomY - cal.topY).toBeGreaterThan(0.10);
+  });
+
+  it('Y-axis-only narrow (user can pan but not nod) still triggers fallback', async () => {
+    const saveSpy = await captureFullFlow(
+      [0.5, 0.5],
+      [
+        [0.85, 0.49], // TL — wide X but narrow Y
+        [0.15, 0.49], // TR
+        [0.15, 0.51], // BR
+        [0.85, 0.51], // BL
+      ],
+    );
+    const cal = saveSpy.mock.calls[0][0];
+    // Y-range was 0.02 → fallback fires for Y. Whole cal becomes anchored
+    // on center (anchor=(0.5, 0.5), anchorMirX = 0.5).
+    expect(cal.leftX - cal.rightX).toBeCloseTo(0.70, 2);
+    expect(cal.bottomY - cal.topY).toBeCloseTo(0.60, 2);
+  });
+});
+
 describe('TrackingSetupWizard — Skip + Cancel paths', () => {
   it('Skip in calibrate-center jumps the user past calibration into the test', () => {
     render(<TrackingSetupWizard onComplete={() => {}} onCancel={() => {}} />);

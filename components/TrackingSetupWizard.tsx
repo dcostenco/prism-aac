@@ -66,6 +66,12 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const handleRef = useRef<PoseTrackerHandle | null>(null);
   const sampleBufferRef = useRef<Array<{ normX: number; normY: number }>>([]);
   const detectionCountRef = useRef<Record<string, number>>({});
+  // Captured center sample (raw normX/normY of the user's neutral pose).
+  // Used by captureCorner's narrow-range fallback to anchor a default-
+  // width calibration on the user's actual posture, so users who can't
+  // physically reach screen corners (head tracking on a sofa, limited
+  // mobility) still get a usable cursor mapping.
+  const centerSampleRef = useRef<{ normX: number; normY: number } | null>(null);
   // Tracks setTimeout handles spawned by startDetection so we can
   // clear them on unmount. Without this, a fast Cancel after Get
   // Started left two timers (5000ms + 1500ms) firing on a stale
@@ -327,6 +333,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     const sx = sampleBufferRef.current.reduce((s, v) => s + v.normX, 0) / n;
     const sy = sampleBufferRef.current.reduce((s, v) => s + v.normY, 0) / n;
     console.log(`[wizard] center avg normX=${sx.toFixed(3)} normY=${sy.toFixed(3)}`);
+    centerSampleRef.current = { normX: sx, normY: sy };
     tapFeedback();
     sampleBufferRef.current = [];
     setCornerIdx(0);
@@ -375,15 +382,56 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       setStatusText(`Turn your head toward the ${next.label} corner`);
     } else {
       // All 4 corners captured — compute via the shared pure helper.
-      const cal = computeCalibrationFromCorners(newSamples);
-      const rangeX = cal.leftX - cal.rightX;
-      const rangeY = cal.bottomY - cal.topY;
+      const rawCal = computeCalibrationFromCorners(newSamples);
+      const rawRangeX = rawCal.leftX - rawCal.rightX;
+      const rawRangeY = rawCal.bottomY - rawCal.topY;
       console.log('[wizard] === CALIBRATION COMPUTED ===');
       console.log('[wizard] corner samples (in order TL, TR, BR, BL):', JSON.stringify(newSamples));
-      console.log(`[wizard] cal: leftX=${cal.leftX.toFixed(3)} rightX=${cal.rightX.toFixed(3)} topY=${cal.topY.toFixed(3)} bottomY=${cal.bottomY.toFixed(3)}`);
-      console.log(`[wizard] rangeX=${rangeX.toFixed(3)} rangeY=${rangeY.toFixed(3)} | convention OK=${rangeX>0 && rangeY>0} | minRange OK=${rangeX>=0.30 && rangeY>=0.30}`);
+      console.log(`[wizard] raw cal: leftX=${rawCal.leftX.toFixed(3)} rightX=${rawCal.rightX.toFixed(3)} topY=${rawCal.topY.toFixed(3)} bottomY=${rawCal.bottomY.toFixed(3)}`);
+      console.log(`[wizard] rangeX=${rawRangeX.toFixed(3)} rangeY=${rawRangeY.toFixed(3)} | convention OK=${rawRangeX>0 && rawRangeY>0}`);
+
+      // Narrow-range fallback for users who can't physically reach the
+      // screen corners with their tracked body part — head tracking on
+      // a sofa, limited mobility, kids in a car seat. Without this,
+      // computeCalibrationFromCorners over 4 nose samples that all
+      // cluster around (0.5, 0.5) produces rangeX≈0.02, the cursor
+      // becomes pinned to a 2 % pose region, and the wizard run leaves
+      // the user WORSE off than the factory defaults they started with.
+      // 2026-05-08 user report (Image #45): cal: rangeX=0.022 → "TOO NARROW".
+      //
+      // When raw range is too narrow, anchor a DEFAULT-width calibration
+      // on the captured center sample (or the centroid of corners if no
+      // center was captured). This guarantees a wizard run NEVER produces
+      // a worse cursor than a Skip-calibration choice.
+      const PRACTICAL_MIN_RANGE = 0.10;
+      let cal = rawCal;
+      let usedFallback = false;
+      if (rawRangeX < PRACTICAL_MIN_RANGE || rawRangeY < PRACTICAL_MIN_RANGE) {
+        usedFallback = true;
+        // Anchor on captured center if available, else centroid of corners.
+        const anchor = centerSampleRef.current ?? {
+          normX: newSamples.reduce((s, v) => s + v.x, 0) / newSamples.length,
+          normY: newSamples.reduce((s, v) => s + v.y, 0) / newSamples.length,
+        };
+        const anchorMirX = 1 - anchor.normX;
+        // Default range chosen to mirror DEFAULT_CALIBRATION (rangeX≈0.70,
+        // rangeY≈0.60) — the values the cursor mapping is tuned for.
+        const FALLBACK_RANGE_X = 0.70;
+        const FALLBACK_RANGE_Y = 0.60;
+        cal = {
+          leftX: Math.min(0.95, anchorMirX + FALLBACK_RANGE_X / 2),
+          rightX: Math.max(0.05, anchorMirX - FALLBACK_RANGE_X / 2),
+          topY: Math.max(0.05, anchor.normY - FALLBACK_RANGE_Y / 2),
+          bottomY: Math.min(0.95, anchor.normY + FALLBACK_RANGE_Y / 2),
+        };
+        console.warn('[wizard] CAPTURED RANGE TOO NARROW — anchoring DEFAULT-width cal on user center');
+        console.log(`[wizard] fallback cal: leftX=${cal.leftX.toFixed(3)} rightX=${cal.rightX.toFixed(3)} topY=${cal.topY.toFixed(3)} bottomY=${cal.bottomY.toFixed(3)}`);
+      }
+
       savePoseCalibration(cal);
-      speak('Calibration saved. Now lets test your accuracy.');
+      speak(usedFallback
+        ? 'Calibration saved with a wide range so the cursor reaches the full screen.'
+        : 'Calibration saved. Now lets test your accuracy.');
 
       const targets = Array.from({ length: 5 }, () => ({
         x: 15 + Math.random() * 70,
