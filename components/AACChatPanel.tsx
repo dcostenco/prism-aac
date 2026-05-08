@@ -133,14 +133,55 @@ export default function AACChatPanel() {
   // Earlier behavior unmounted the panel entirely when contacts.length
   // was zero — but the user EXPLICITLY tapped the 💬 toolbar button,
   // so they want to SEE the messaging UI (provider list / "add a
-  // contact" CTA), not silently get only the qwerty back. Empty-state
-  // render below shows: header, provider icons row (so the user knows
-  // which channels work), and a "Manage contacts in Settings" CTA.
-  // The panel only auto-collapses when sidePanel !== 'aac-chat' (the
-  // user closed it themselves via ✕ or by retoggling 💬).
+  // contact" CTA), not silently get only the qwerty back.
   const isEmpty = !activeContact && sortedContacts.length === 0;
 
-  // Below this point: not compact (have contacts or active contact).
+  // Empty-state: SLIM strip (one row). 2026-05-08 user report
+  // (Image #26): the previous flex-[3] empty panel squeezed the
+  // provider chip row + labels into ~50px between the AAC cards and
+  // the keyboard — labels were clipped, the panel looked broken.
+  // Slim variant preserves the discoverability cue (the user
+  // tapped 💬 so they want to know "this is the messaging tool")
+  // while giving the keyboard its full natural height. Mirrors the
+  // PdfReaderPanel slim pattern shipped 2026-05-07.
+  if (isEmpty) {
+    return (
+      <section
+        aria-label={t('aac_chat_title') || 'Send a message'}
+        data-testid="aac-chat-panel"
+        data-state="slim"
+        className="shrink-0 surface-bar border-y border-theme"
+      >
+        <div className="flex items-center justify-between px-3 py-2 gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xl shrink-0">💬</span>
+            <span className="font-bold text-primary truncate">
+              {t('aac_chat_title') || 'Send a message'}
+            </span>
+            <span className="text-xs text-muted hidden sm:inline truncate">
+              — {t('aac_chat_no_contacts') || 'No contacts yet.'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => { tapFeedback(); toggleSettings(); }}
+              data-testid="aac-chat-open-settings"
+              className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white"
+            >
+              ＋ {t('aac_chat_add_contact') || 'Add contact'}
+            </button>
+            <button
+              onClick={() => { tapFeedback(); closeSidePanel(); }}
+              aria-label={t('close') || 'Close'}
+              className="aac-btn rounded-md px-2 py-1 text-muted text-lg"
+            >×</button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Below this point: have contacts or active contact — full panel.
   return (
     <section
       aria-label={t('aac_chat_title') || 'Send a message'}
@@ -183,48 +224,8 @@ export default function AACChatPanel() {
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-3">
-        {/* Empty state — user explicitly opened the messaging panel
-            but no contacts exist yet. Show the provider icon row so
-            they know which channels work, and a CTA to manage
-            contacts in Settings. Earlier the panel unmounted in this
-            state; user reported "message tool is broken and shows a
-            standard keyboard without inbox outbox and providers"
-            (Image #20, 2026-05-07). */}
-        {isEmpty && (
-          <div className="flex flex-col items-center gap-3 py-3" data-testid="aac-chat-empty-state">
-            <div className="text-sm text-secondary text-center max-w-sm">
-              <strong>{t('aac_chat_no_contacts')}</strong>{' '}
-              {t('aac_chat_setup_hint')}
-            </div>
-            <ul className="flex flex-wrap justify-center gap-2" data-testid="aac-chat-providers">
-              {(Object.keys(PROVIDER_LABELS) as Array<keyof typeof PROVIDER_LABELS>).map((provider) => {
-                const available = isProviderAvailable(provider, plan);
-                return (
-                  <li
-                    key={provider}
-                    data-testid={`aac-chat-provider-${provider}`}
-                    className={`surface-key border border-theme rounded-lg px-2 py-1.5 flex items-center gap-1.5 ${available ? '' : 'opacity-50'}`}
-                  >
-                    <span aria-hidden className="text-lg">{PROVIDER_ICONS[provider]}</span>
-                    <span className="text-xs font-bold text-primary">{PROVIDER_LABELS[provider]}</span>
-                    {!available && (
-                      <span className="text-[9px] text-[#FF9800] font-bold ml-0.5">
-                        🔒 {PROVIDER_MIN_TIER[provider]}
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-            <button
-              onClick={() => { tapFeedback(); toggleSettings(); }}
-              data-testid="aac-chat-open-settings"
-              className="aac-btn bg-[#4CAF50] text-white rounded-lg px-4 py-2 font-bold text-sm min-h-[40px]"
-            >
-              ⚙ {t('settings')}
-            </button>
-          </div>
-        )}
+        {/* Empty state is now handled by the slim early-return above
+            (2026-05-08, Image #26). */}
         {!activeContact && sortedContacts.length > 0 && (
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="aac-chat-contact-list">
             {sortedContacts.map((c) => {
