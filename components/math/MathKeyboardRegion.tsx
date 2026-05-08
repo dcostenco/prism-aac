@@ -587,13 +587,27 @@ const JAVA_KEYWORDS = [
   'try', 'catch', 'throws', 'extends', 'implements', 'interface',
 ];
 
+const PROG_DIGITS = '0123456789'.split('');
+
 function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
   const commitGlyph = useMathGridStore((s) => s.commitGlyph);
+  // Letter paging + case shift inside the programming panel — without
+  // these the user dead-ends after `class ` because the chip row
+  // doesn't expose a-z while programming-python/java is active and
+  // switching to the Letters chip kicks them out of the keyword set.
+  const [letterPage, setLetterPage] = useState<'a-p' | 'q-z'>('a-p');
+  const [shifted, setShifted] = useState(false);
   const KEY_BASE =
     'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
     'flex items-center justify-center min-h-[44px] active:translate-y-px font-mono';
+  const TOGGLE_BASE =
+    'aac-btn rounded-lg font-bold border border-transparent select-none ' +
+    'flex items-center justify-center min-h-[44px] px-3 active:translate-y-px ' +
+    'bg-[#2196F3] text-white text-sm whitespace-nowrap font-mono';
   const keywords = lang === 'python' ? PYTHON_KEYWORDS : JAVA_KEYWORDS;
   const testidPrefix = lang === 'python' ? 'math-python' : 'math-java';
+  const baseLetters = letterPage === 'a-p' ? LETTERS_AP : LETTERS_QZ;
+  const letters = shifted ? baseLetters.map((l) => l.toUpperCase()) : baseLetters;
   // Code is character-driven on a monospace grid — committing the
   // whole keyword into a single cell stuffed "private" / "String"
   // into one 56 px slot and the glyphs ran into the next cell
@@ -622,6 +636,74 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
             {kw}
           </button>
         ))}
+      </div>
+      {/* Identifier row — page-toggled + case-shifted a-z so the user
+          can actually type a class or variable name without leaving
+          the programming chip. Each tap commits a single character. */}
+      <div
+        className="flex gap-1.5"
+        data-testid={`${testidPrefix}-letters-row`}
+        data-page={letterPage}
+        data-shift={shifted ? '1' : '0'}
+      >
+        <button
+          onClick={() => { tapFeedback(); setShifted((s) => !s); }}
+          data-testid={`${testidPrefix}-letters-shift`}
+          aria-pressed={shifted}
+          aria-label="toggle letter case"
+          className={TOGGLE_BASE}
+        >
+          {shifted ? 'AA' : 'aa'}
+        </button>
+        <button
+          onClick={() => { tapFeedback(); setLetterPage(letterPage === 'a-p' ? 'q-z' : 'a-p'); }}
+          data-testid={`${testidPrefix}-letters-page-toggle`}
+          aria-label={letterPage === 'a-p' ? 'switch to q-z' : 'switch to a-p'}
+          className={TOGGLE_BASE}
+        >
+          {letterPage === 'a-p' ? 'q-z →' : '← a-p'}
+        </button>
+        <div className="grid grid-cols-8 gap-1.5 flex-1">
+          {letters.map((ltr) => (
+            <button
+              key={ltr}
+              onClick={() => { keyFeedback(); commitGlyph(ltr); }}
+              data-testid={`${testidPrefix}-ltr-${ltr.toLowerCase()}`}
+              data-glyph={ltr}
+              aria-label={`letter ${ltr}`}
+              className={`${KEY_BASE} py-2 text-base`}
+            >
+              {ltr}
+            </button>
+          ))}
+        </div>
+      </div>
+      {/* Digits + underscore — needed for identifiers like var2,
+          snake_case, __init__. Digits also live in the main chip but
+          duplicating here keeps the user in programming mode. */}
+      <div className="grid grid-cols-11 gap-1.5">
+        {PROG_DIGITS.map((d) => (
+          <button
+            key={`prog-d-${d}`}
+            onClick={() => { keyFeedback(); commitGlyph(d); }}
+            data-testid={`${testidPrefix}-digit-${d}`}
+            data-glyph={d}
+            aria-label={`digit ${d}`}
+            className={`${KEY_BASE} py-2 text-base`}
+          >
+            {d}
+          </button>
+        ))}
+        <button
+          key="prog-underscore"
+          onClick={() => { keyFeedback(); commitGlyph('_'); }}
+          data-testid={`${testidPrefix}-underscore`}
+          data-glyph="_"
+          aria-label="underscore"
+          className={`${KEY_BASE} py-2 text-base`}
+        >
+          _
+        </button>
       </div>
     </div>
   );
