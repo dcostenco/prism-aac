@@ -856,29 +856,52 @@ const MUSIC_CLEFS: Array<{ glyph: string; label: string }> = [
   { glyph: '𝄡', label: 'alto clef' },
 ];
 
+// Music notation glyphs in the Unicode SMP block (U+1D100–U+1D1FF,
+// "Musical Symbols") require a font that ships those codepoints —
+// Bravura, Noto Music, or a system fallback. Stock fonts on iOS
+// Safari / Android Chrome / Linux Firefox don't include them, so the
+// glyphs render as ☒ tofu (May 2026 user screenshot: whole note,
+// half note, all rests showed ☒). The BMP block (U+2660–U+266F)
+// covers ♩ ♪ ♫ ♬ ♭ ♮ ♯ which DO render everywhere; whole and half
+// notes have no BMP codepoints, so we use short text labels (W / H)
+// as the on-tile glyph. The committed cell carries the same label so
+// the AAC user can still distinguish them visually, and serialization
+// remains plain ASCII (no broken-glyph copies).
 const MUSIC_NOTES: Array<{ glyph: string; label: string }> = [
-  { glyph: '𝅝',  label: 'whole note' },
-  { glyph: '𝅗𝅥', label: 'half note' },
+  { glyph: 'W',  label: 'whole note' },
+  { glyph: 'H',  label: 'half note' },
   { glyph: '♩',  label: 'quarter note' },
   { glyph: '♪',  label: 'eighth note' },
   { glyph: '♫',  label: 'beamed eighths' },
-  { glyph: '𝅘𝅥𝅯', label: 'sixteenth note' },
+  // A bare sixteenth note (no beam) is U+1D161 (SMP, tofu). The
+  // closest BMP glyph is ♬ U+266C "beamed sixteenths" — semantically
+  // adjacent but not identical. Use the text label "S" instead to
+  // keep the symbol set unambiguous; AAC users see "S" beside W/H/Q/E.
+  { glyph: 'S',  label: 'sixteenth note' },
 ];
 
+// Rests have no BMP codepoints at all — every rest glyph in the
+// "Musical Symbols" block is U+1D13B–U+1D13F. Substitute short
+// readable text labels so the tiles aren't tofu. AAC user can read
+// "WR" and know it means "whole rest" the way they'd read "W" as
+// "whole note" — short, sortable by duration, glyph-safe everywhere.
 const MUSIC_RESTS: Array<{ glyph: string; label: string }> = [
-  { glyph: '𝄻', label: 'whole rest' },
-  { glyph: '𝄼', label: 'half rest' },
-  { glyph: '𝄽', label: 'quarter rest' },
-  { glyph: '𝄾', label: 'eighth rest' },
-  { glyph: '𝄿', label: 'sixteenth rest' },
+  { glyph: 'WR', label: 'whole rest' },
+  { glyph: 'HR', label: 'half rest' },
+  { glyph: 'QR', label: 'quarter rest' },
+  { glyph: 'ER', label: 'eighth rest' },
+  { glyph: 'SR', label: 'sixteenth rest' },
 ];
 
+// ♯ ♭ ♮ are BMP — render fine. Double sharp / double flat are SMP
+// (U+1D12A / U+1D12B) and tofu on stock fonts → use ## / bb which is
+// what music theory textbooks use anyway as ASCII shorthand.
 const MUSIC_ACCIDENTALS: Array<{ glyph: string; label: string }> = [
-  { glyph: '♯', label: 'sharp' },
-  { glyph: '♭', label: 'flat' },
-  { glyph: '♮', label: 'natural' },
-  { glyph: '𝄪', label: 'double sharp' },
-  { glyph: '𝄫', label: 'double flat' },
+  { glyph: '♯',  label: 'sharp' },
+  { glyph: '♭',  label: 'flat' },
+  { glyph: '♮',  label: 'natural' },
+  { glyph: '##', label: 'double sharp' },
+  { glyph: 'bb', label: 'double flat' },
 ];
 
 const MUSIC_DYNAMICS: Array<{ glyph: string; label: string }> = [

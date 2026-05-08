@@ -70,6 +70,7 @@ export default function MathPanel() {
   const { appendText } = useMessageStore();
   const cells = useMathGridStore((s) => s.cells);
   const reset = useMathGridStore((s) => s.reset);
+  const backspaceAtCursor = useMathGridStore((s) => s.backspaceAtCursor);
   const { t } = useT();
 
   const handleDone = useCallback(() => {
@@ -86,6 +87,18 @@ export default function MathPanel() {
     closeSidePanel();
   }, [reset, closeSidePanel]);
 
+  // ⌫ exists on the Main 0-9 keyboard, but every OTHER keyboard
+  // (Music, Java, Python, Letters, …) lacks it — once a user
+  // switches to one of those tabs they have no way to delete a cell
+  // they typed by mistake (May 2026 user report: "where is backspace?
+  // how am I supposed to edit any word?"). Hoisting backspace into
+  // the persistent panel header makes it always reachable, regardless
+  // of which keyboard tab is active.
+  const handleBackspace = useCallback(() => {
+    tapFeedback();
+    backspaceAtCursor();
+  }, [backspaceAtCursor]);
+
   if (sidePanel !== 'math') return null;
 
   return (
@@ -100,6 +113,15 @@ export default function MathPanel() {
           <MathTutorTool />
           <MathDocsTool />
           <MathLockTool />
+          <button
+            onClick={handleBackspace}
+            data-testid="math-panel-backspace"
+            aria-label="Backspace"
+            disabled={cells.size === 0}
+            className="aac-btn bg-[#F44336] text-white rounded-lg px-4 py-2 font-bold text-base min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            ⌫
+          </button>
           <button
             onClick={handleDone}
             data-testid="math-panel-done"
