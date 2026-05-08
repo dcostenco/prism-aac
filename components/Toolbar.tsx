@@ -306,10 +306,17 @@ export default function Toolbar() {
 
   return (
     <div className="flex items-center justify-between px-1 py-[clamp(0.1rem,0.3svh,0.25rem)] surface-bar shrink-0 border-b border-theme relative">
-      {/* All buttons render in a single flat strip — no overflow menu. The
-          flex-wrap allows the toolbar to break onto a second row when there
-          are too many buttons (e.g. many marketplace apps installed). */}
-      <div className="flex flex-wrap gap-1 items-center min-w-0">
+      {/* Single-row toolbar with horizontal overflow scroll. Earlier
+          revision used `flex-wrap` so installed marketplace apps could
+          break onto a second row, but that doubled the toolbar height
+          and pushed every panel below DOWN — users reported "screens
+          overlapping / messed up" the moment they installed anything.
+          Horizontal scroll keeps the toolbar a fixed single-row
+          height; the user pans the strip if it overflows. */}
+      <div
+        className="flex flex-nowrap gap-1 items-center min-w-0 overflow-x-auto overflow-y-hidden flex-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        data-testid="aac-toolbar-strip"
+      >
         {allButtons.map((id) => renderButton(id))}
       </div>
 
