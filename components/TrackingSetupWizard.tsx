@@ -92,6 +92,13 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     return () => window.removeEventListener('prism-pose-sample', handler);
   }, []);
 
+  // Tracker live-status — exposed in the wizard's status bar so the
+  // user knows whether the camera cursor is following their body
+  // (tracking) or stale (lost/stopped). Without this, the cursor
+  // froze at last-known position and the user couldn't tell why
+  // the test wasn't registering hits.
+  const [trackerStatus, setTrackerStatus] = useState<'starting' | 'tracking' | 'lost' | 'stopped'>('stopped');
+
   // ── PHASE: Detection ──
   const startDetection = useCallback(() => {
     setPhase('detecting');
@@ -110,6 +117,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       onMove(x, y) { setCursorPos({ x, y }); },
       onDwell() {},
       onStatusChange(status, activeTarget) {
+        setTrackerStatus(status);
         if (status === 'tracking' && activeTarget) {
           const counts = detectionCountRef.current;
           counts[activeTarget] = (counts[activeTarget] || 0) + 1;
@@ -159,24 +167,41 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     }, 5000);
   }, [speak]);
 
+  // After detection picks a body part, restart the pose tracker with
+  // THAT target — not the hardcoded 'nose' from startDetection. User
+  // report 2026-05-08 (Image #27): "test still failing.. nothing i
+  // can do" / "it appears to be a fake test" / "cursor is not moving
+  // when i point to corners". Root cause: the wizard's tracker stayed
+  // on 'nose' forever, so moving a hand never moved the cursor.
+  const restartTrackerForPart = useCallback((target: TrackingTarget) => {
+    if (handleRef.current) handleRef.current.stop();
+    const handle = startPoseTracker({
+      dwellMs: 99999, // disable dwell-click during calibration
+      sensitivity: 5,
+      smoothing: 0.15,
+      trackingTarget: target,
+      cursorSmoothing: 0.12,
+      onMove(x, y) { setCursorPos({ x, y }); },
+      onDwell() {},
+      onStatusChange(status) { setTrackerStatus(status); },
+    });
+    handleRef.current = handle;
+  }, []);
+
   // ── PHASE: Calibrate Center ──
   // Calibration is user-driven, NOT timer-driven. The previous
   // implementation auto-advanced after 3s regardless of whether the
-  // user was actually pointing — and the MIN_SAMPLES gate didn't help
-  // because the pose tracker fires `prism-pose-sample` every frame any
-  // landmark is detected (face in frame counts). User report
-  // 2026-05-08: "wizard asked to point a finger but i never did that
-  // and it was continuing to do that by himself".
-  // Now: progress bar pulses while gathering samples, and the user
-  // taps "Capture center" when they're ready. The buffer is cleared
-  // each phase so capture takes the most recent samples.
+  // user was actually pointing. Now: user taps Capture when ready.
   const startCenterCalibration = useCallback(() => {
     setPhase('calibrate-center');
     sampleBufferRef.current = [];
     setProgress(0);
     setStatusText('Point to the center circle, then tap Capture');
     speak('Point to the center of the screen, then tap Capture.');
-  }, [speak]);
+    // Critical: re-spin the tracker on the selected part so the
+    // cursor actually follows the user's hand/finger, not their nose.
+    if (selectedPart) restartTrackerForPart(selectedPart);
+  }, [speak, selectedPart, restartTrackerForPart]);
 
   // Visual progress: while in a calibration phase, animate the ring
   // based on how many samples we have (caps at 30 → "ready"). The
@@ -326,12 +351,26 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     return () => clearInterval(interval);
   }, [phase, testIdx, testTargets, cursorPos.x, cursorPos.y, handleTestHit]);
 
+  // Live-cursor — render a dot at cursorPos on EVERY phase except
+  // intro/complete so the user can verify in real time that pointing
+  // their hand actually moves the cursor. User report 2026-05-08:
+  // "it doesnt show tracing when i point to the corners of a screen.
+  // Can you improve it so i will see in a reality that i pointing
+  // correct? Cursor is not moving".
+  const cursorVisible = (phase === 'detecting' || phase === 'calibrate-center' ||
+                          phase === 'calibrate-corners' || phase === 'accuracy-test')
+                          && cursorPos.x > 0 && cursorPos.y > 0;
+  const cursorColor = trackerStatus === 'tracking' ? '#4CAF50'
+    : trackerStatus === 'lost' ? '#FF9800'
+    : '#9E9E9E';
+
   // ── RENDER ──
   return (
     <div
       className="fixed inset-0 z-[10000] bg-[#0a0a1a] flex flex-col"
       data-testid="tracking-setup-wizard"
       data-phase={phase}
+      data-tracker-status={trackerStatus}
     >
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-6 py-4">
@@ -580,30 +619,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 {target.hit ? <span className="text-2xl">✓</span> : idx === testIdx ? <span className="text-2xl">👆</span> : null}
               </button>
             ))}
-            {/* Camera cursor dot — shows the user where the tracker
-                thinks they're pointing. Without this dot the user
-                couldn't tell whether the test wasn't registering hits
-                because their finger was off-target or because the
-                hit detection was broken. */}
-            {cursorPos.x > 0 && cursorPos.y > 0 && (
-              <div
-                data-testid="tracking-test-cursor"
-                style={{
-                  position: 'absolute',
-                  left: cursorPos.x - 14,
-                  top: cursorPos.y - 14,
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  backgroundColor: '#4CAF50',
-                  border: '2px solid white',
-                  boxShadow: '0 0 12px rgba(76,175,80,0.6)',
-                  pointerEvents: 'none',
-                  transition: 'left 0.06s linear, top 0.06s linear',
-                  zIndex: 10,
-                }}
-              />
-            )}
+            {/* Global cursor (rendered below outside the per-phase
+                blocks) shows the camera-tracked position. The accuracy
+                test handler runs the dwell-on-target hit detection. */}
             <div className="absolute bottom-20 left-0 right-0 text-center">
               <p className="text-white text-lg font-bold">{statusText}</p>
               <p className="text-white/50 text-sm" data-testid="tracking-test-hits">
@@ -651,11 +669,42 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         )}
       </div>
 
-      {/* Status bar */}
-      <div className="shrink-0 px-6 py-3 flex items-center justify-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${cursorPos.x > 0 ? 'bg-[#4CAF50]' : 'bg-[#FF9800]'}`} />
-        <span className="text-white/40 text-xs">
-          {cursorPos.x > 0 ? 'Camera active' : 'Waiting for camera...'}
+      {/* Live camera-cursor — visible during every phase that uses
+          the camera so the user can verify in real time that pointing
+          their hand actually moves the cursor. Color reflects status:
+          green = tracking, orange = lost, grey = stopped/starting. */}
+      {cursorVisible && (
+        <div
+          data-testid="tracking-wizard-cursor"
+          style={{
+            position: 'fixed',
+            left: cursorPos.x - 18,
+            top: cursorPos.y - 18,
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            backgroundColor: cursorColor,
+            border: '3px solid white',
+            boxShadow: `0 0 20px ${cursorColor}99, 0 0 40px ${cursorColor}55`,
+            pointerEvents: 'none',
+            transition: 'left 0.06s linear, top 0.06s linear, background-color 0.2s ease',
+            zIndex: 10001,
+          }}
+        />
+      )}
+
+      {/* Status bar — explicit tracking-status text so the user knows
+          why the cursor isn't moving (lost = camera can't see the
+          tracked body part; stopped = tracker not running; tracking =
+          all good). */}
+      <div className="shrink-0 px-6 py-3 flex items-center justify-center gap-2"
+           data-testid="tracking-wizard-status">
+        <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: cursorColor }} />
+        <span className="text-white/60 text-xs font-semibold">
+          {trackerStatus === 'tracking' && `Tracking ${selectedPart ? `your ${BODY_PARTS.find(b => b.target === selectedPart)?.label.toLowerCase() ?? 'finger'}` : 'you'}`}
+          {trackerStatus === 'lost' && (selectedPart ? `Camera can't see your ${BODY_PARTS.find(b => b.target === selectedPart)?.label.toLowerCase() ?? 'finger'} — move into frame` : 'Camera lost — move into frame')}
+          {trackerStatus === 'starting' && 'Loading camera…'}
+          {trackerStatus === 'stopped' && 'Camera not running'}
         </span>
       </div>
     </div>
