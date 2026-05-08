@@ -25,6 +25,7 @@
     "@supabase/supabase-js": "^2.105.1",
     "es-hangul": "^2.3.8",
     "katex": "^0.16.45",
+    "mathjs": "^15.2.0",
     "next": "16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",

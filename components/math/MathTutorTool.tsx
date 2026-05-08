@@ -24,15 +24,28 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { askAI } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
+import { evaluateExpression } from '@/services/exprEval';
 import { parseCellKey, type Cell, type CellKey } from '@/engine/mathGrid';
 
-type TutorMode = 'help' | 'check' | 'solve';
+type TutorMode = 'help' | 'check' | 'solve' | 'eval';
+
+/** Domains where a deterministic, local numeric/symbolic evaluator
+ *  produces a useful answer. Chemistry / biology / music / etc. don't
+ *  reduce to a single number, so the 🧮 Eval button is hidden there
+ *  and the user falls back on the AI-driven tutor flow. */
+const EVAL_DOMAINS: ReadonlySet<MathDomain> = new Set<MathDomain>([
+  'math',
+  'physics',
+  'statistics',
+]);
 
 /** Per-domain prompt templates. The expression placeholder `{expr}` is
  *  replaced at request time. We tell the model what subject the child
  *  is working on so it doesn't apply algebraic reasoning to a chemistry
- *  equation or mistake a Python `if` for a math conditional. */
-type DomainPrompts = Record<TutorMode, string>;
+ *  equation or mistake a Python `if` for a math conditional.
+ *  `eval` mode runs locally via mathjs and never touches a prompt — so
+ *  it's excluded from the per-domain template type. */
+type DomainPrompts = Record<Exclude<TutorMode, 'eval'>, string>;
 
 const PROMPT_TEMPLATES: Record<MathDomain, DomainPrompts> = {
   math: {
@@ -165,7 +178,7 @@ export default function MathTutorTool() {
     lastCellCount.current = cells.size;
   }, [cells.size, response, errorKind]);
 
-  const ask = useCallback(async (which: TutorMode) => {
+  const ask = useCallback(async (which: Exclude<TutorMode, 'eval'>) => {
     const expression = serializeAsExpression(cells);
     if (!expression || loading) return;
     tapFeedback();
@@ -223,10 +236,36 @@ export default function MathTutorTool() {
     setLoading(false);
   }, []);
 
+  // Local evaluator path — bypasses askAI entirely for math /
+  // physics / statistics. Synchronous, no network, no auth, instant.
+  // Speaks the result via aacSpeak so the AAC user gets the same
+  // multimodal feedback as the AI tutor responses.
+  const localEval = useCallback(() => {
+    const expression = serializeAsExpression(cells);
+    if (!expression) return;
+    tapFeedback();
+    requestSeqRef.current++; // cancel any in-flight AI request
+    setLoading(false);
+    setMode('eval');
+    const result = evaluateExpression(expression);
+    if (result.ok) {
+      setErrorKind(null);
+      setResponse(`= ${result.value}`);
+      aacSpeak(`equals ${result.value}`, speechRate, speechVolume);
+    } else {
+      setErrorKind('other');
+      setResponse(`⚠️ ${result.error}`);
+    }
+  }, [cells, speechRate, speechVolume]);
+
   const retry = useCallback(() => {
     if (!mode) return;
+    if (mode === 'eval') { localEval(); return; }
     void ask(mode);
-  }, [ask, mode]);
+  }, [ask, mode, localEval]);
+
+  const domain = domainForCategory(activeCategory);
+  const evalAvailable = EVAL_DOMAINS.has(domain);
 
   return (
     <div data-testid="math-tutor-tool" className="relative">
@@ -258,6 +297,17 @@ export default function MathTutorTool() {
         >
           🎓 Solve
         </button>
+        {evalAvailable && (
+          <button
+            onClick={localEval}
+            disabled={loading}
+            data-testid="math-tutor-eval"
+            aria-label="Evaluate expression locally"
+            className={`${TOOL_BTN} bg-[#4CAF50] text-white`}
+          >
+            🧮 Eval
+          </button>
+        )}
       </div>
 
       {(loading || response) && (
