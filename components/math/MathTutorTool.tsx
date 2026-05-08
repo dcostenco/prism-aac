@@ -21,7 +21,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useMathGridStore, domainForCategory, type MathDomain } from '@/store/mathGridStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { askAI } from '@/services/aiService';
+import { askAI, LANG_NAMES } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 import { evaluateExpression } from '@/services/exprEval';
@@ -164,8 +164,13 @@ const TOOL_BTN =
 export default function MathTutorTool() {
   const cells = useMathGridStore((s) => s.cells);
   const activeCategory = useMathGridStore((s) => s.activeMathCategory);
-  const { speechRate, speechVolume, language } = useSettingsStore();
+  const { speechRate, speechVolume, language, outputLanguage } = useSettingsStore();
   const historyRegion = useSettingsStore((s) => s.historyRegion);
+  // Tutor responds in the user's TTS/output language, NOT the UI
+  // language. They're usually the same, but when the AAC pair is set
+  // to {input: en, output: ro} the child wants Romanian guidance even
+  // if the toolbar is in English.
+  const tutorLang = outputLanguage || language || 'en';
   const [response, setResponse] = useState<string>('');
   const [errorKind, setErrorKind] = useState<'auth' | 'network' | 'timeout' | 'other' | null>(null);
   const [mode, setMode] = useState<TutorMode | null>(null);
@@ -203,10 +208,19 @@ export default function MathTutorTool() {
     // domain to anchor the model in the student's regional curriculum
     // — so 1836 in `US-TX` resolves to the Alamo, not Arkansas
     // statehood; 1759 in `CA-QC` to the Plains of Abraham.
+    const langName = LANG_NAMES[tutorLang] || 'English';
     const prompt = template
       .replace('{expr}', expression)
-      .replace('{lang}', language || 'en')
-      .replace('{region}', historyRegion || 'unspecified');
+      .replace('{lang}', tutorLang)
+      .replace('{region}', historyRegion || 'unspecified')
+      // Append an explicit response-language directive at the END of
+      // the user message. The system prompt already says "respond in
+      // {langName}", but a heavily-English user prompt was strong
+      // enough to override it (May 2026 user report: RO selected, hint
+      // came back in English). Repeating the directive at the tail of
+      // the user message — and including the also-localized "Say:"
+      // suggestion line — makes the model commit to the target lang.
+      + `\n\nRespond in ${langName}. Use natural ${langName} phrasing, not a translated-from-English feel.`;
     const tutorContext = TUTOR_CONTEXT_BY_DOMAIN[domain];
 
     let buffer = '';
@@ -215,7 +229,7 @@ export default function MathTutorTool() {
         if (mySeq !== requestSeqRef.current) return; // user moved on
         buffer += delta;
         setResponse(buffer);
-      }, language);
+      }, tutorLang);
       // Hard tutor-side timeout. askAI's internal timeouts can chain to
       // ~40s in the worst case (Synalux 30s + Ollama 10s). 15s is what
       // an AAC user will tolerate before hitting back.
@@ -234,7 +248,7 @@ export default function MathTutorTool() {
     } finally {
       if (mySeq === requestSeqRef.current) setLoading(false);
     }
-  }, [cells, loading, language, speechRate, speechVolume, activeCategory, historyRegion]);
+  }, [cells, loading, tutorLang, speechRate, speechVolume, activeCategory, historyRegion]);
 
   const dismiss = useCallback(() => {
     tapFeedback();

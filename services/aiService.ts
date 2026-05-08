@@ -354,7 +354,7 @@ export async function translateAI(
 // AAC users include nonverbal kids whose home language is NOT English. The
 // previous prompt didn't pass language at all — Spanish-speaking children got
 // English answers. Critical fix for a multilingual life-safety app.
-const LANG_NAMES: Record<string, string> = {
+export const LANG_NAMES: Record<string, string> = {
   en: 'English', es: 'Spanish', fr: 'French', pt: 'Portuguese', de: 'German',
   ro: 'Romanian', uk: 'Ukrainian', ru: 'Russian', ja: 'Japanese', ko: 'Korean',
   zh: 'Chinese', ar: 'Arabic', it: 'Italian', pl: 'Polish', nl: 'Dutch',
