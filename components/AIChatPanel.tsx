@@ -168,6 +168,12 @@ export default function AIChatPanel() {
   const hasMessages = messages.length > 0 || loading;
   if (!hasMessages && !text.trim()) return null;
   if (!hasMessages) {
+    // Single-row slim strip: [mic] [Ask AI] [×]. Total height ~54px
+    // (py-2 + ~30px line-height + 6px+6px padding). Earlier the strip
+    // included a "Question: …" label row + p-3 padding + py-3 button
+    // that totalled ~110px and overlapped the qwerty top row visibly
+    // (user Image #22). The MessageBar above already shows the typed
+    // text, so the redundant Question label is gone here.
     return (
       <section
         aria-label={t('ai_chat_title')}
@@ -175,48 +181,41 @@ export default function AIChatPanel() {
         data-testid="ai-chat-panel"
         data-state="slim"
       >
-        <div className="p-3">
-          <div className="text-muted text-base md:text-lg mb-2 text-center truncate">
-            {listening && interim ? (
-              <span className="text-[#4CAF50]">🎙 &ldquo;{interim}&rdquo;</span>
-            ) : (
-              <>{t('question_label')} <span className="text-primary font-semibold">&ldquo;{text.trim()}&rdquo;</span></>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {voiceSupported && (
-              <button
-                onClick={toggleVoice}
-                aria-label={listening ? t('stop_voice') : t('start_voice')}
-                aria-pressed={listening}
-                data-testid="ai-mic-slim"
-                className={`aac-btn rounded-xl font-bold text-2xl px-5 min-w-[72px] flex items-center justify-center ${
-                  listening
-                    ? 'bg-[#F44336] text-white animate-pulse'
-                    : 'surface-key text-primary border border-theme'
-                }`}
-              >
-                {listening ? '⏺' : '🎙'}
-              </button>
-            )}
+        <div className="px-2 py-1.5 flex gap-2 items-center">
+          {voiceSupported && (
             <button
-              onClick={handleAsk}
-              disabled={!text.trim() || loading}
-              data-testid="ai-ask-slim"
-              className={`aac-btn aac-speak flex-1 py-3 rounded-xl font-bold text-xl md:text-2xl ${
-                text.trim() && !loading ? 'bg-[#4CAF50] text-white' : 'surface-key text-dim border border-theme'
+              onClick={toggleVoice}
+              aria-label={listening ? t('stop_voice') : t('start_voice')}
+              aria-pressed={listening}
+              data-testid="ai-mic-slim"
+              className={`aac-btn rounded-lg font-bold text-xl px-3 min-w-[48px] h-10 flex items-center justify-center shrink-0 ${
+                listening
+                  ? 'bg-[#F44336] text-white animate-pulse'
+                  : 'surface-key text-primary border border-theme'
               }`}
             >
-              {`${t('ask_ai')} ✨`}
+              {listening ? '⏺' : '🎙'}
             </button>
-            <button
-              onClick={() => { tapFeedback(); closeSidePanel(); }}
-              aria-label={t('close_ai_chat')}
-              className="aac-btn w-12 rounded-xl surface-key text-muted text-xl flex items-center justify-center border border-theme shrink-0"
-            >
-              ✕
-            </button>
-          </div>
+          )}
+          <button
+            onClick={handleAsk}
+            disabled={!text.trim() || loading}
+            data-testid="ai-ask-slim"
+            className={`aac-btn aac-speak flex-1 h-10 rounded-lg font-bold text-base ${
+              text.trim() && !loading ? 'bg-[#4CAF50] text-white' : 'surface-key text-dim border border-theme'
+            }`}
+          >
+            {listening && interim
+              ? `🎙 ${interim.slice(0, 40)}…`
+              : `${t('ask_ai')} ✨`}
+          </button>
+          <button
+            onClick={() => { tapFeedback(); closeSidePanel(); }}
+            aria-label={t('close_ai_chat')}
+            className="aac-btn w-10 h-10 rounded-lg surface-key text-muted text-base flex items-center justify-center border border-theme shrink-0"
+          >
+            ✕
+          </button>
         </div>
       </section>
     );
