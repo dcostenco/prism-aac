@@ -120,10 +120,11 @@ interface RawChatProvider {
   plannedNote?: string;
 }
 
-/** Mail providers — synthetic until the portal exposes a unified
- *  /api/v1/integrations/mail endpoint. Status is "available" by
- *  default; the caller resolves real "connected" from a follow-up
- *  /api/v1/messages/folders probe (412 = not connected). */
+/** Mail providers — synthetic. Status starts 'available'; the
+ *  loader below overlays 'connected' from /api/v1/integrations/grants
+ *  so the row matches what's actually in user_oauth_grants. Without
+ *  this overlay the Connect button stays visible forever even after
+ *  the OAuth callback successfully persisted the grant. */
 const MAIL_PROVIDERS: IntegrationProvider[] = [
   {
     id: 'google-gmail',
@@ -146,6 +147,32 @@ const MAIL_PROVIDERS: IntegrationProvider[] = [
     connectUrl: '/api/auth/connect/microsoft?scope=mail',
   },
 ];
+
+interface GrantRow {
+  provider: string;
+  scope: string;
+  expired: boolean;
+}
+
+/**
+ * Map a (provider, scope-string) grant onto a MAIL_PROVIDERS id.
+ * The OAuth callback stores the raw scope returned by the provider
+ * (e.g. Google returns
+ * 'https://www.googleapis.com/auth/gmail.modify openid email …'),
+ * so we substring-match on the canonical scope token rather than
+ * comparing against the resolved scopes.gmail string verbatim
+ * (Google reorders + adds openid scopes server-side).
+ */
+function grantMatchesMailProvider(grant: GrantRow, mailProviderId: string): boolean {
+  if (grant.expired) return false;
+  if (mailProviderId === 'google-gmail') {
+    return grant.provider === 'google' && /gmail\./i.test(grant.scope);
+  }
+  if (mailProviderId === 'microsoft-mail') {
+    return grant.provider === 'microsoft' && /\bMail\./i.test(grant.scope);
+  }
+  return false;
+}
 
 export async function listIntegrations(): Promise<IntegrationProvider[]> {
   const out: IntegrationProvider[] = [];
@@ -171,11 +198,27 @@ export async function listIntegrations(): Promise<IntegrationProvider[]> {
     }
   }
 
-  // Mail providers — append. Status flagged as available; UI will
-  // overlay 'connected' once we wire the per-mail-provider status
-  // probe (next round; needs portal endpoint).
+  // Mail providers — overlay 'connected' from the user's grant matrix.
+  // /api/v1/integrations/grants returns one row per (provider, scope)
+  // the user has authorized; we map those to MAIL_PROVIDERS ids via
+  // grantMatchesMailProvider. The endpoint is metadata-only (no tokens),
+  // so calling it on every settings open is cheap and safe.
+  let grants: GrantRow[] = [];
+  const grantsRes = await portalFetch<{ grants?: GrantRow[] }>({
+    path: '/integrations/grants',
+    timeoutMs: 6000,
+  });
+  if (grantsRes.ok && grantsRes.data && Array.isArray(grantsRes.data.grants)) {
+    grants = grantsRes.data.grants;
+  }
+
   for (const m of MAIL_PROVIDERS) {
-    out.push({ ...m, connectUrl: absolutize(m.connectUrl) });
+    const isConnected = grants.some((g) => grantMatchesMailProvider(g, m.id));
+    out.push({
+      ...m,
+      status: isConnected ? 'connected' : 'available',
+      connectUrl: absolutize(m.connectUrl),
+    });
   }
 
   return out;

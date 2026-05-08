@@ -196,6 +196,14 @@ export default function CaregiverContactsSettings() {
         >
           + Add contact
         </button>
+        {(!draftName.trim() || !draftRecipientId.trim()) && (
+          // Without this, the disabled state looks "permanently broken"
+          // — users (esp. caregivers tapping on iPad) don't realize the
+          // green button enables once both fields are filled.
+          <p className="text-muted text-[11px]" data-testid="contact-draft-hint">
+            Type a name and {PROVIDER_CFG[draftProvider].recipientHint.toLowerCase()} to enable.
+          </p>
+        )}
       </div>
 
       {/* Existing contacts list */}
