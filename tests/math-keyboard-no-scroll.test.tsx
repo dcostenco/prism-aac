@@ -41,6 +41,20 @@ describe('Math keyboard — no-scroll panel container', () => {
     expect(panel.className).toMatch(/overflow-hidden/);
     expect(panel.className).not.toMatch(/overflow-y-auto/);
   });
+
+  it('panel-height floor is ≥ 380 px so Programming rows never get clipped', () => {
+    // Earlier capture against the live deploy showed only 5 of the
+    // Programming chip's 7 rows visible (ops × 2 + keywords × 3),
+    // with letters + digits clipped. The fix bumped the lower bound
+    // from 280 px → 380 px. Pin it so a future "tighten layout"
+    // refactor can't drop it back below the 7-row threshold.
+    const { container } = render(<MathKeyboardRegion />);
+    const panel = container.querySelector('[data-testid="math-keyboard-panel"]') as HTMLElement;
+    const m = panel.className.match(/clamp\((\d+)px/);
+    expect(m, `expected clamp() with px floor in ${panel.className}`).not.toBeNull();
+    const floorPx = m ? Number(m[1]) : 0;
+    expect(floorPx).toBeGreaterThanOrEqual(380);
+  });
 });
 
 describe('Letters keyboard — full a-z, no pagination', () => {

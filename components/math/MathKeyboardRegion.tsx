@@ -122,7 +122,15 @@ export default function MathKeyboardRegion({ className = '' }: { className?: str
           (Placeholder, single line) both render inside this stable
           shell. Internal overflow-y-auto handles overflow gracefully. */}
       <div
-        className="h-[clamp(280px,32svh,380px)] overflow-hidden"
+        // Tall enough that the Programming chip's tallest layout
+        // (ops × 1, keywords × 3, letters × 1 (a-z 13×2 grid), digits)
+        // fits without clipping the bottom rows. Earlier 380 px max
+        // on a 1280-tall capture viewport (32svh ≈ 256) chopped the
+        // letters + digits rows entirely. 380 px floor + 42svh growth
+        // + 520 px max gives every Programming row ≥ 48 px (above the
+        // 44 px tap-target floor) while still leaving the canvas
+        // ~half the viewport.
+        className="h-[clamp(380px,42svh,520px)] overflow-hidden"
         data-testid="math-keyboard-panel"
       >
         {activeCategory === 'main' && <MathMainKeyboard />}
@@ -618,9 +626,9 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
     commitGlyph(' ');
   };
   return (
-    <div className="p-2 space-y-2" data-testid={`math-programming-${lang}-keyboard`} data-lang={lang}>
-      <GlyphGrid testid={`${testidPrefix}-ops`} glyphs={COMMON_OPS} cols={12} textSize="text-base" />
-      <div className="grid grid-cols-7 gap-1.5">
+    <div className="p-1.5 space-y-1" data-testid={`math-programming-${lang}-keyboard`} data-lang={lang}>
+      <GlyphGrid testid={`${testidPrefix}-ops`} glyphs={COMMON_OPS} cols={12} textSize="text-sm" />
+      <div className="grid grid-cols-7 gap-1">
         {keywords.map((kw) => (
           <button
             key={kw}
@@ -628,7 +636,7 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
             data-testid={`${testidPrefix}-kw-${kw}`}
             data-glyph={kw}
             aria-label={`${lang} keyword ${kw}`}
-            className={`${KEY_BASE} py-2 text-sm whitespace-nowrap`}
+            className={`${KEY_BASE} py-1 text-sm whitespace-nowrap`}
           >
             {kw}
           </button>
