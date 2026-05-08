@@ -334,9 +334,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       const dx = cursorPos.x - tx;
       const dy = cursorPos.y - ty;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      // 64px button half-width = 32px; add 32px slack for jitter.
-      const HIT_RADIUS = 64;
-      const DWELL_MS = 700;
+      // Generous radius — head-tracking calibration on a Mac webcam
+      // often gives only ~50% of true head-movement range so the
+      // cursor barely reaches screen edges. 150px lets "near enough"
+      // count, which is the ACTUAL question the test asks ("does
+      // calibration roughly work?"). 2026-05-08 user report: cursor
+      // visibly tracking head but always 100-150px shy of target.
+      const HIT_RADIUS = 150;
+      const DWELL_MS = 500;
       if (dist <= HIT_RADIUS) {
         if (dwellHitRef.current?.idx !== testIdx) {
           dwellHitRef.current = { idx: testIdx, start: Date.now() };
@@ -610,7 +615,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 data-active={idx === testIdx ? 'true' : 'false'}
                 data-hit={target.hit ? 'true' : 'false'}
                 disabled={idx !== testIdx || target.hit}
-                className={`absolute w-16 h-16 rounded-full transition-all duration-300 ${
+                className={`absolute w-24 h-24 rounded-full transition-all duration-300 ${
                   target.hit
                     ? 'bg-[#4CAF50] scale-75 opacity-50'
                     : idx === testIdx
@@ -629,16 +634,15 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
             {/* Global cursor (rendered below outside the per-phase
                 blocks) shows the camera-tracked position. The accuracy
                 test handler runs the dwell-on-target hit detection. */}
-            <div className="absolute bottom-20 left-0 right-0 text-center">
+            <div className="absolute bottom-20 left-0 right-0 text-center px-6">
               <p className="text-white text-lg font-bold">{statusText}</p>
               <p className="text-white/50 text-sm" data-testid="tracking-test-hits">
                 {testTargets.filter(t => t.hit).length}/{testTargets.length} hits
               </p>
-              {/* Skip — escape hatch when the user can't complete the
-                  test (low light, occluded camera, motor difficulty).
-                  Saves the calibration we already captured in step 2
-                  and proceeds to "complete" without forcing the user
-                  to abandon the wizard via Cancel and lose progress. */}
+              <p className="text-white/60 text-xs mt-2 max-w-md mx-auto">
+                💡 Look at the red circle — it counts as hit when the cursor
+                gets close. You can also click the red circle directly.
+              </p>
               <button
                 onClick={() => { tapFeedback(); setPhase('complete'); }}
                 data-testid="tracking-test-skip"
