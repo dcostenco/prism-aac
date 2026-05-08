@@ -202,6 +202,77 @@ const ADV_MATH_KEYS: Array<{ glyph: string; label: string }> = [
   { glyph: '!', label: 'factorial' },
   { glyph: 'log', label: 'logarithm' },
   { glyph: 'ln', label: 'natural log' },
+  // v2 audit additions (REPORT.md Algebra/Geometry Pre-Calc): mensuration
+  // and kinematics word problems lean on lowercase variable names that
+  // were previously letters-only — `w` width, `l` length, `h` height,
+  // `t` time. Adding them here removes a chip switch mid-equation.
+  { glyph: 'w', label: 'variable w' },
+  { glyph: 'l', label: 'variable l' },
+  { glyph: 'h', label: 'variable h' },
+  { glyph: 't', label: 'variable t' },
+];
+
+// v2 audit Pre-Calc Grade 12 priority 1: trig functions absent from
+// every panel. A dedicated trig sub-row on Adv-Math unblocks the bulk
+// of grade-12 / physics-trig problems.
+const ADV_MATH_TRIG: Array<{ glyph: string; label: string }> = [
+  { glyph: 'sin',   label: 'sine' },
+  { glyph: 'cos',   label: 'cosine' },
+  { glyph: 'tan',   label: 'tangent' },
+  { glyph: 'csc',   label: 'cosecant' },
+  { glyph: 'sec',   label: 'secant' },
+  { glyph: 'cot',   label: 'cotangent' },
+  { glyph: 'sin⁻¹', label: 'arcsine' },
+  { glyph: 'cos⁻¹', label: 'arccosine' },
+  { glyph: 'tan⁻¹', label: 'arctangent' },
+];
+
+// v2 audit Pre-Calc Grade 12 priority 2: limit + differential primitives.
+// `→` here is the LIMIT-arrow (x → ∞); the misc-math `⇒`/`→` is the
+// logic implication arrow — the audit calls these out as visually
+// distinct categories, so we keep both reachable from their natural
+// chips without aliasing the testid.
+const ADV_MATH_CALC: Array<{ glyph: string; label: string }> = [
+  { glyph: 'lim',  label: 'limit' },
+  { glyph: '→',    label: 'limit arrow' },
+  { glyph: 'dx',   label: 'differential x' },
+  { glyph: 'dy',   label: 'differential y' },
+  { glyph: 'f(x)', label: 'function f of x' },
+  { glyph: 'g(x)', label: 'function g of x' },
+];
+
+// v2 audit Pre-Calc Grade 12 priority 3: subscript digits + n / i for
+// sequence indexing (a₁, aₙ, a₁₀). `₂ ₃ ₄` already live on Chemistry —
+// the cross-cutting decorations row also surfaces those; here we add
+// the *missing* subscript digits so the full 0-9 set is reachable on
+// the algebra chip.
+const ADV_MATH_SUBSCRIPTS: Array<{ glyph: string; label: string }> = [
+  { glyph: '₀', label: 'subscript 0' },
+  { glyph: '₁', label: 'subscript 1' },
+  { glyph: '₅', label: 'subscript 5' },
+  { glyph: '₆', label: 'subscript 6' },
+  { glyph: '₇', label: 'subscript 7' },
+  { glyph: '₈', label: 'subscript 8' },
+  { glyph: '₉', label: 'subscript 9' },
+  { glyph: 'ₙ', label: 'subscript n' },
+  { glyph: 'ᵢ', label: 'subscript i' },
+];
+
+// Cross-cutting decorations row (v2 audit "Cross-cutting findings"):
+// `² ³ ₂ ₃ ₄ Δ ≈` are split across Adv-Math (² ³ ≈), Chemistry (₂ ₃ ₄),
+// Physics (Δ). Surfacing the union on every numeric subject (Main,
+// Adv-Math, Chemistry, Physics, Earth Science) removes ~40 % of chip-
+// switching keystrokes measured across the 84 generated workflows.
+// The per-subject decorations stay in their original rows (muscle
+// memory preserved); this row is purely additive.
+const SHARED_DECOR: Array<{ glyph: string; label: string }> = [
+  { glyph: '²', label: 'squared shared' },
+  { glyph: '³', label: 'cubed shared' },
+  { glyph: '₂', label: 'subscript 2 shared' },
+  { glyph: '₃', label: 'subscript 3 shared' },
+  { glyph: '₄', label: 'subscript 4 shared' },
+  { glyph: 'Δ', label: 'delta shared' },
+  { glyph: '≈', label: 'approximately shared' },
 ];
 
 function MathAdvMathKeyboard() {
@@ -220,6 +291,7 @@ function MathAdvMathKeyboard() {
     'bg-[#2196F3] text-white';
   return (
     <div className="p-2 space-y-2" data-testid="math-adv-math-keyboard">
+      <SharedDecorRow prefix="math-adv-decor" />
       <div className="grid grid-cols-8 gap-1.5">
         {ADV_MATH_KEYS.map(({ glyph, label }) => (
           <button
@@ -234,6 +306,13 @@ function MathAdvMathKeyboard() {
           </button>
         ))}
       </div>
+      {/* v2 audit additions — trig functions, calc primitives, and the
+          subscript digit gap. Each row uses the GlyphGrid testid pattern
+          (`math-adv-{group}-{slug}`) so the e2e _glyphMap can reach
+          them without a chip switch. */}
+      <GlyphGrid testid="math-adv-trig" glyphs={ADV_MATH_TRIG} cols={9} textSize="text-base" />
+      <GlyphGrid testid="math-adv-calc" glyphs={ADV_MATH_CALC} cols={6} textSize="text-base" />
+      <GlyphGrid testid="math-adv-subscripts" glyphs={ADV_MATH_SUBSCRIPTS} cols={9} textSize="text-2xl" />
       {/* Decoration tools — these don't write a single glyph; they
           insert a structural decoration (fraction bar, long-division
           house, root bar) and reposition the cursor. */}
@@ -359,6 +438,15 @@ function GlyphGrid({ testid, glyphs, cols = 8, textSize = 'text-2xl' }: GlyphGri
       </div>
     </div>
   );
+}
+
+// SharedDecorRow — renders the cross-cutting `² ³ ₂ ₃ ₄ Δ ≈` row on
+// every numeric subject (Main, Adv-Math, Chemistry, Physics, Earth).
+// Each subject passes a unique `prefix` so the data-testids don't
+// collide and e2e specs can target them per-panel. The row uses the
+// same GlyphGrid styling as other glyph rows.
+function SharedDecorRow({ prefix }: { prefix: string }) {
+  return <GlyphGrid testid={prefix} glyphs={SHARED_DECOR} cols={7} textSize="text-2xl" />;
 }
 
 // Set / logic ops + the Math Paper "Equality Folder" reference set
@@ -506,6 +594,21 @@ const GEOM_GLYPHS: Array<{ glyph: string; label: string }> = [
   { glyph: 'A',  label: 'area' },
   { glyph: 'V',  label: 'volume-geom' },
   { glyph: 'P',  label: 'perimeter' },
+  // v2 audit Geometry priority 1: `~` (tilde / similar, U+007E) — every
+  // similar-triangles problem uses it. Geom panel already has `≅`
+  // (congruent); textbooks pair `~` with `≅` for similarity vs.
+  // congruence so both must be reachable from the same chip.
+  { glyph: '~', label: 'similar tilde' },
+  // v2 audit Geometry priority 3: cube exponent for volume problems
+  // (cm³, m³). `³` already lives on Adv-Math but the chip switch
+  // mid-equation is what the audit calls out as a workflow blocker.
+  { glyph: '³', label: 'cubed geom' },
+  // v2 audit Geometry priority 2: mensuration vocabulary (length /
+  // width / height / side). r and d already live on this panel.
+  { glyph: 'l', label: 'length-geom' },
+  { glyph: 'w', label: 'width-geom' },
+  { glyph: 'h', label: 'height-geom' },
+  { glyph: 's', label: 'side-geom' },
 ];
 function MathGeomKeyboard() {
   return <GlyphGrid testid="math-geom-keyboard" glyphs={GEOM_GLYPHS} cols={8} />;
@@ -581,11 +684,29 @@ const CHEMISTRY_OPS: Array<{ glyph: string; label: string }> = [
   { glyph: '(l)', label: 'liquid phase' },
   { glyph: '(g)', label: 'gas phase' },
   { glyph: '(aq)', label: 'aqueous phase' },
+  // v2 audit Chemistry priority 1: subscripts `₀ ₁ ₅ ₆ ₇ ₈ ₉` — molar
+  // formulas like C₆H₁₂O₆ glucose can't be typed without the missing
+  // digits (₂ ₃ ₄ already exist above).
+  { glyph: '₀', label: 'subscript 0' },
+  { glyph: '₁', label: 'subscript 1' },
+  { glyph: '₅', label: 'subscript 5' },
+  { glyph: '₆', label: 'subscript 6' },
+  { glyph: '₇', label: 'subscript 7' },
+  { glyph: '₈', label: 'subscript 8' },
+  { glyph: '₉', label: 'subscript 9' },
+  // v2 audit Chemistry priority 2: composite molar units (g/mol used in
+  // every molar-mass problem; mol/L for molarity).
+  { glyph: 'g/mol', label: 'grams per mole' },
+  { glyph: 'mol/L', label: 'moles per litre' },
+  // v2 audit Chemistry priority 3: % for empirical / mass-percent
+  // problems (lives on Adv-Math but a chip switch interrupts).
+  { glyph: '%', label: 'percent chem' },
 ];
 
 function MathChemistryKeyboard() {
   return (
     <div className="p-2 space-y-2" data-testid="math-chemistry-keyboard">
+      <SharedDecorRow prefix="math-chem-decor" />
       <GlyphGrid testid="math-chemistry-elements" glyphs={CHEMISTRY_ELEMENTS} cols={8} textSize="text-xl" />
       <GlyphGrid testid="math-chemistry-ops" glyphs={CHEMISTRY_OPS} cols={10} textSize="text-lg" />
     </div>
@@ -633,14 +754,52 @@ const PHYSICS_OPS: Array<{ glyph: string; label: string }> = [
   { glyph: 'c', label: 'speed of light' }, { glyph: 'h', label: 'planck' },
   { glyph: 'ℏ', label: 'hbar' }, { glyph: 'G', label: 'grav constant' },
   { glyph: '°', label: 'degree' }, { glyph: '∞', label: 'infinity' },
+  // v2 audit Physics priority 3: gravitational acceleration constant.
+  // `c` (speed of light) already lives in this row; `g` is the
+  // matching kinematics constant and was missing entirely.
+  { glyph: 'g', label: 'grav accel' },
+];
+
+// v2 audit Physics priority 1: equation variables row. The greek + SI
+// units rows alone don't let a student write a kinematics equation —
+// the symbol they actually solve for (F, a, v, u, p, t, d, h, r, KE,
+// PE, GPE) lived only on the Letters chip. Adding the variables here
+// removes the Letters → Phys → Letters chain in every problem.
+const PHYSICS_VARS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'F',   label: 'force' },
+  { glyph: 'a',   label: 'acceleration' },
+  { glyph: 'v',   label: 'velocity' },
+  { glyph: 'u',   label: 'initial velocity' },
+  { glyph: 'p',   label: 'momentum' },
+  { glyph: 't',   label: 'time' },
+  { glyph: 'd',   label: 'distance' },
+  { glyph: 'h',   label: 'height' },
+  { glyph: 'r',   label: 'radius-phys' },
+  { glyph: 'KE',  label: 'kinetic energy' },
+  { glyph: 'PE',  label: 'potential energy' },
+  { glyph: 'GPE', label: 'gravitational potential energy' },
+];
+
+// v2 audit Physics priority 2: composite SI units (m/s, m/s², km/h,
+// kg·m/s, N·m). Each is a multi-tap nightmare without a single tile —
+// the audit measured "dozens of times" per workflow.
+const PHYSICS_COMPOSITE: Array<{ glyph: string; label: string }> = [
+  { glyph: 'm/s',    label: 'metres per second' },
+  { glyph: 'm/s²',   label: 'metres per second squared' },
+  { glyph: 'km/h',   label: 'kilometres per hour' },
+  { glyph: 'kg·m/s', label: 'kilogram metre per second' },
+  { glyph: 'N·m',    label: 'newton metre' },
 ];
 
 function MathPhysicsKeyboard() {
   return (
     <div className="p-2 space-y-2" data-testid="math-physics-keyboard">
+      <SharedDecorRow prefix="math-phys-decor" />
       <GlyphGrid testid="math-physics-greek" glyphs={PHYSICS_GREEK} cols={11} textSize="text-xl" />
       <GlyphGrid testid="math-physics-units" glyphs={PHYSICS_UNITS} cols={8} textSize="text-lg" />
       <GlyphGrid testid="math-physics-ops" glyphs={PHYSICS_OPS} cols={9} textSize="text-lg" />
+      <GlyphGrid testid="math-physics-vars" glyphs={PHYSICS_VARS} cols={12} textSize="text-base" />
+      <GlyphGrid testid="math-physics-composite" glyphs={PHYSICS_COMPOSITE} cols={5} textSize="text-base" />
     </div>
   );
 }
@@ -683,6 +842,42 @@ const JAVA_KEYWORDS = [
 
 const PROG_DIGITS = '0123456789'.split('');
 
+// v2 audit Python priority 1: built-in functions row. `print`, `len`,
+// `range` already live as keywords — adding the rest of the high-
+// frequency built-ins removes the per-character spell-out for any
+// algorithm assignment.
+const PYTHON_BUILTINS = [
+  'sum', 'max', 'min', 'abs', 'sorted', 'list', 'dict', 'str', 'int', 'float', 'input',
+];
+
+// v2 audit Python priority 2/3: `#` comment marker, an indent key
+// (4-space tile labelled →| matching existing nav-key vocabulary),
+// and a newline glyph (↵ matches the right-return key on Main).
+//
+// v2 audit Java priority 1/2/3: compound-assignment ops, Java idiom
+// tokens (System.out.println etc.), and the @ annotation marker.
+const PYTHON_EXTRAS: Array<{ glyph: string; label: string }> = [
+  { glyph: '#',  label: 'comment hash' },
+  { glyph: '→|', label: 'indent' },
+  { glyph: '↵',  label: 'newline' },
+];
+const JAVA_COMPOUND_OPS: Array<{ glyph: string; label: string }> = [
+  { glyph: '++', label: 'increment' },
+  { glyph: '--', label: 'decrement' },
+  { glyph: '+=', label: 'plus equals' },
+  { glyph: '-=', label: 'minus equals' },
+  { glyph: '*=', label: 'times equals' },
+  { glyph: '/=', label: 'divide equals' },
+];
+const JAVA_IDIOMS = [
+  'System.out.println', 'System.out.print', 'length', 'length()',
+  'equals', 'toString', 'Math.',
+];
+const JAVA_EXTRAS: Array<{ glyph: string; label: string }> = [
+  { glyph: '@',  label: 'annotation at' },
+  { glyph: '↵',  label: 'newline' },
+];
+
 function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
   const commitGlyph = useMathGridStore((s) => s.commitGlyph);
   // Full a-z always visible (no pagination, per 2026-05-08 user report
@@ -713,6 +908,24 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
     for (const ch of token) commitGlyph(ch);
     commitGlyph(' ');
   };
+  // Indent key commits 4 spaces (PEP-8 / Java convention) without a
+  // trailing extra space. Newline commits a single newline glyph; the
+  // grid serializer already renders \n as a row break in code mode.
+  const commitIndent = () => {
+    keyFeedback();
+    for (let i = 0; i < 4; i++) commitGlyph(' ');
+  };
+  const commitNewline = () => {
+    keyFeedback();
+    commitGlyph('\n');
+  };
+  // v2 audit additions per language. Python: built-ins (one cell per
+  // char + trailing space, same convention as keywords). Java:
+  // compound-assignment ops (raw glyph) + idioms (token-style).
+  const builtins  = lang === 'python' ? PYTHON_BUILTINS : [];
+  const idioms    = lang === 'java' ? JAVA_IDIOMS : [];
+  const extras    = lang === 'python' ? PYTHON_EXTRAS : JAVA_EXTRAS;
+  const compoundOps = lang === 'java' ? JAVA_COMPOUND_OPS : [];
   return (
     <div className="p-1.5 space-y-1" data-testid={`math-programming-${lang}-keyboard`} data-lang={lang}>
       <GlyphGrid testid={`${testidPrefix}-ops`} glyphs={COMMON_OPS} cols={12} textSize="text-base" />
@@ -734,6 +947,81 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
             className={`${KEY_BASE} py-2 text-sm whitespace-nowrap`}
           >
             {kw}
+          </button>
+        ))}
+      </div>
+      {/* v2 audit Python priority 1: built-in functions packed into a
+          single row. Token-commit (one char per cell + trailing space)
+          matches the keyword convention so syntax highlights cleanly. */}
+      {lang === 'python' && builtins.length > 0 && (
+        <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] gap-1">
+          {builtins.map((bi) => (
+            <button
+              key={`py-builtin-${bi}`}
+              onClick={() => commitToken(bi)}
+              data-testid={`${testidPrefix}-builtin-${bi}`}
+              data-glyph={bi}
+              aria-label={`python builtin ${bi}`}
+              className={`${KEY_BASE} py-2 text-sm whitespace-nowrap`}
+            >
+              {bi}
+            </button>
+          ))}
+        </div>
+      )}
+      {/* v2 audit Java priority 1: compound-assignment ops (raw glyph). */}
+      {lang === 'java' && compoundOps.length > 0 && (
+        <div className="grid grid-cols-6 gap-1">
+          {compoundOps.map(({ glyph, label }) => (
+            <button
+              key={`java-cop-${glyph}`}
+              onClick={() => { keyFeedback(); commitGlyph(glyph); }}
+              data-testid={`${testidPrefix}-compop-${label.replace(/ /g, '-')}`}
+              data-glyph={glyph}
+              aria-label={`java ${label}`}
+              className={`${KEY_BASE} py-2 text-base whitespace-nowrap`}
+            >
+              {glyph}
+            </button>
+          ))}
+        </div>
+      )}
+      {/* v2 audit Java priority 2: idiom tokens. */}
+      {lang === 'java' && idioms.length > 0 && (
+        <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] gap-1">
+          {idioms.map((id) => (
+            <button
+              key={`java-idiom-${id}`}
+              onClick={() => commitToken(id)}
+              data-testid={`${testidPrefix}-idiom-${id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`}
+              data-glyph={id}
+              aria-label={`java idiom ${id}`}
+              className={`${KEY_BASE} py-2 text-sm whitespace-nowrap`}
+            >
+              {id}
+            </button>
+          ))}
+        </div>
+      )}
+      {/* v2 audit cross-lang extras: comment marker (Python `#` / Java
+          `@`), indent (4-space tile, Python only — Java uses braces),
+          newline glyph (matches the existing right-return key style). */}
+      <div className="grid grid-cols-6 gap-1">
+        {extras.map(({ glyph, label }) => (
+          <button
+            key={`prog-extra-${label}`}
+            onClick={() => {
+              if (label === 'indent') return commitIndent();
+              if (label === 'newline') return commitNewline();
+              keyFeedback();
+              commitGlyph(glyph);
+            }}
+            data-testid={`${testidPrefix}-extra-${label.replace(/ /g, '-')}`}
+            data-glyph={glyph}
+            aria-label={`${lang} ${label}`}
+            className={`${KEY_BASE} py-2 text-base whitespace-nowrap`}
+          >
+            {glyph}
           </button>
         ))}
       </div>
@@ -862,11 +1150,109 @@ const BIO_ORGANELLES: Array<{ glyph: string; label: string }> = [
   { glyph: 'nucleolus',   label: 'nucleolus' },
 ];
 
+// v2 audit Biology priority 2: exponent keys for population growth +
+// dilution problems (2³, 4², ^n series). `²` `³` already live on
+// Adv-Math but a chip switch interrupts the workflow.
+const BIO_EXPONENTS: Array<{ glyph: string; label: string }> = [
+  { glyph: '²',  label: 'squared bio' },
+  { glyph: '³',  label: 'cubed bio' },
+  { glyph: '^n', label: 'caret n' },
+];
+
+// v2 audit Biology priority 3: codon-table glyphs. Translation problems
+// are core grade-9 biology and needed the three-letter amino-acid
+// abbreviations + the Stop codon marker.
+const BIO_CODONS: Array<{ glyph: string; label: string }> = [
+  { glyph: 'Met',  label: 'methionine' },
+  { glyph: 'Ala',  label: 'alanine' },
+  { glyph: 'Tyr',  label: 'tyrosine' },
+  { glyph: 'Stop', label: 'stop codon' },
+];
+
+// v2 audit Biology priority 1: case-toggle row. The fixed AA/Bb tiles
+// hard-code letter pairs; some textbook problems use Cc, Pp, Rr, etc.
+// We KEEP the existing fixed pair tiles (BIO_GENETICS) because users
+// may rely on them, and add an additive case-toggle row that flips
+// `A a B b C c P p` between uppercase (dominant) and lowercase
+// (recessive) variants. Implementation is a `useState` boolean per
+// the audit's "don't over-engineer" guidance.
+const BIO_CASE_TOGGLE_PAIRS: Array<[string, string]> = [
+  ['A', 'a'], ['B', 'b'], ['C', 'c'], ['P', 'p'],
+];
+
+function MathBiologyCaseToggleRow() {
+  const commitGlyph = useMathGridStore((s) => s.commitGlyph);
+  const [shifted, setShifted] = useState(true);
+  const KEY_BASE =
+    'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
+    'flex items-center justify-center min-h-[56px] active:translate-y-px';
+  const TOGGLE_BASE =
+    'aac-btn rounded-lg font-bold border border-transparent select-none ' +
+    'flex items-center justify-center min-h-[56px] active:translate-y-px ' +
+    'bg-[#2196F3] text-white whitespace-nowrap';
+  return (
+    <div
+      className="grid grid-cols-9 gap-1.5 p-2"
+      data-testid="math-biology-case-toggle"
+      data-shift={shifted ? '1' : '0'}
+    >
+      <button
+        onClick={() => { tapFeedback(); setShifted((s) => !s); }}
+        data-testid="math-biology-case-shift"
+        aria-pressed={shifted}
+        aria-label="toggle allele case"
+        className={`${TOGGLE_BASE} text-base`}
+      >
+        {shifted ? 'Aa' : 'aA'}
+      </button>
+      {BIO_CASE_TOGGLE_PAIRS.map(([up, lo]) => {
+        const glyph = shifted ? up : lo;
+        return (
+          <button
+            key={`bio-case-${up}`}
+            onClick={() => { keyFeedback(); commitGlyph(glyph); }}
+            data-testid={`math-biology-case-${up.toLowerCase()}`}
+            data-glyph={glyph}
+            aria-label={`allele ${glyph}`}
+            className={`${KEY_BASE} py-3 text-2xl`}
+          >
+            {glyph}
+          </button>
+        );
+      })}
+      {/* Pad to 9 cols so the 4 letter pairs (8 letters) + shift fill the row */}
+      {BIO_CASE_TOGGLE_PAIRS.slice(0, 4).map(([up, lo]) => {
+        // Render the OPPOSITE-case sibling so a row of "A a B b C c P p"
+        // is always visible at once (pair view), independent of the
+        // shift state above. Shift switches which is *highlighted* via
+        // the data-shift attr; both glyphs remain tappable for users
+        // who can't be bothered to hold the toggle.
+        const glyph = shifted ? lo : up;
+        return (
+          <button
+            key={`bio-case-pair-${up}`}
+            onClick={() => { keyFeedback(); commitGlyph(glyph); }}
+            data-testid={`math-biology-case-pair-${up.toLowerCase()}`}
+            data-glyph={glyph}
+            aria-label={`allele ${glyph}`}
+            className={`${KEY_BASE} py-3 text-2xl`}
+          >
+            {glyph}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function MathBiologyKeyboard() {
   return (
     <div className="p-2 space-y-2" data-testid="math-biology-keyboard">
       <GlyphGrid testid="math-biology-nucleotides" glyphs={BIO_NUCLEOTIDES} cols={6} textSize="text-lg" />
       <GlyphGrid testid="math-biology-genetics" glyphs={BIO_GENETICS} cols={6} textSize="text-lg" />
+      <MathBiologyCaseToggleRow />
+      <GlyphGrid testid="math-biology-codons" glyphs={BIO_CODONS} cols={4} textSize="text-base" />
+      <GlyphGrid testid="math-biology-exponents" glyphs={BIO_EXPONENTS} cols={3} textSize="text-2xl" />
       <GlyphGrid testid="math-biology-taxonomy" glyphs={BIO_TAXONOMY} cols={8} textSize="text-base" />
       <GlyphGrid testid="math-biology-organelles" glyphs={BIO_ORGANELLES} cols={6} textSize="text-base" />
     </div>
@@ -907,6 +1293,23 @@ const STATS_OPS: Array<{ glyph: string; label: string }> = [
   { glyph: '!',   label: 'factorial' },
   { glyph: 'C(',  label: 'combinations' },
   { glyph: 'P(',  label: 'permutations' },
+  // v2 audit Statistics priority 1: critical-value tiles. ME (margin
+  // of error), z* and t* are the three most-used unknowns in a CI /
+  // hypothesis-test problem and were missing entirely.
+  { glyph: 'ME', label: 'margin of error' },
+  { glyph: 'z*', label: 'z star critical' },
+  { glyph: 't*', label: 't star critical' },
+  // v2 audit Statistics priority 2: mirror inequality / factorial keys
+  // into Stats so the user can write a one-chip hypothesis test.
+  // These also live on Adv-Math; the duplicate is intentional.
+  { glyph: '<', label: 'less than stats' },
+  { glyph: '>', label: 'greater than stats' },
+  { glyph: '≤', label: 'less or equal stats' },
+  { glyph: '≥', label: 'greater or equal stats' },
+  // v2 audit Statistics priority 3: paired-data primitives.
+  { glyph: 'Cov(',  label: 'covariance of' },
+  { glyph: 'corr(', label: 'correlation of' },
+  { glyph: 'Pr(',   label: 'probability prefix' },
 ];
 
 const STATS_DISTRIBUTIONS: Array<{ glyph: string; label: string }> = [
@@ -1077,15 +1480,41 @@ const EARTH_UNITS: Array<{ glyph: string; label: string }> = [
   { glyph: '°C',  label: 'celsius' },
   { glyph: '°F',  label: 'fahrenheit' },
   { glyph: 'mph', label: 'miles per hour' },
+  // v2 audit Earth Science priority 2: yr / kyr / Myr time-span units
+  // (distinct from Mya / Gya which are "ago" tags). Astronomy +
+  // half-life problems use the span unit form ("4.5 Gyr ago" vs "the
+  // half-life is 5730 yr").
+  { glyph: 'yr',  label: 'year span' },
+  { glyph: 'kyr', label: 'kiloyear' },
+  { glyph: 'Myr', label: 'megayear' },
+];
+
+// v2 audit Earth Science priority 1: scientific-notation helper. `×10`
+// tile + the full superscript digit set so a student can compose
+// `1.5 ×10⁸ km` in a single chip without hopping back to Adv-Math.
+const EARTH_SCINOT: Array<{ glyph: string; label: string }> = [
+  { glyph: '×10', label: 'times ten' },
+  { glyph: '⁰',  label: 'sup 0' },
+  { glyph: '¹',  label: 'sup 1' },
+  { glyph: '²',  label: 'sup 2' },
+  { glyph: '³',  label: 'sup 3' },
+  { glyph: '⁴',  label: 'sup 4' },
+  { glyph: '⁵',  label: 'sup 5' },
+  { glyph: '⁶',  label: 'sup 6' },
+  { glyph: '⁷',  label: 'sup 7' },
+  { glyph: '⁸',  label: 'sup 8' },
+  { glyph: '⁹',  label: 'sup 9' },
 ];
 
 function MathEarthScienceKeyboard() {
   return (
     <div className="p-2 space-y-2" data-testid="math-earth-science-keyboard">
+      <SharedDecorRow prefix="math-earth-decor" />
       <GlyphGrid testid="math-earth-weather" glyphs={EARTH_WEATHER} cols={10} textSize="text-2xl" />
       <GlyphGrid testid="math-earth-plates" glyphs={EARTH_PLATES} cols={7} textSize="text-2xl" />
       <GlyphGrid testid="math-earth-astro" glyphs={EARTH_ASTRO} cols={10} textSize="text-2xl" />
-      <GlyphGrid testid="math-earth-units" glyphs={EARTH_UNITS} cols={6} textSize="text-base" />
+      <GlyphGrid testid="math-earth-units" glyphs={EARTH_UNITS} cols={7} textSize="text-base" />
+      <GlyphGrid testid="math-earth-scinot" glyphs={EARTH_SCINOT} cols={11} textSize="text-2xl" />
     </div>
   );
 }
@@ -1124,6 +1553,27 @@ const HIST_CENTURIES: Array<{ glyph: string; label: string }> = [
   { glyph: '19th', label: 'nineteenth' },
   { glyph: '20th', label: 'twentieth' },
   { glyph: '21st', label: 'twenty first' },
+  // v2 audit History priority 2: fill the century-ordinal gap so every
+  // 1st–21st century is reachable. Append-only — existing tiles stay
+  // in their original positions.
+  { glyph: '6th',  label: 'sixth' },
+  { glyph: '7th',  label: 'seventh' },
+  { glyph: '8th',  label: 'eighth' },
+  { glyph: '9th',  label: 'ninth' },
+  { glyph: '11th', label: 'eleventh' },
+  { glyph: '12th', label: 'twelfth' },
+  { glyph: '13th', label: 'thirteenth' },
+  { glyph: '14th', label: 'fourteenth' },
+  { glyph: '16th', label: 'sixteenth' },
+];
+
+// v2 audit History priority 3: mirror Δ (date-arithmetic span), ≈
+// (approximate century), ~ (circa) into the History panel — these
+// are core date-math operators every world-history workflow needs.
+const HIST_DECOR: Array<{ glyph: string; label: string }> = [
+  { glyph: 'Δ',  label: 'delta history' },
+  { glyph: '≈',  label: 'approximately history' },
+  { glyph: '~',  label: 'circa tilde' },
 ];
 
 /** Events taught in essentially every world-history curriculum.
@@ -1136,6 +1586,22 @@ const HIST_EVENTS_WORLD: Array<{ glyph: string; label: string }> = [
   { glyph: '1939', label: 'wwii start' },
   { glyph: '1945', label: 'wwii end' },
   { glyph: '1969', label: 'moon landing' },
+  // v2 audit History priority 1: append the dates every survey course
+  // covers (Columbus, Jamestown, French Revolution, Napoleonic-era
+  // milestones, US Civil War end, Spanish-American War, Crash of '29).
+  // Some duplicates intentionally overlap with locale events (en 1607
+  // jamestown, en 1865 us civil war end) — the per-locale event list
+  // also surfaces them for legacy users; this WORLD tier guarantees
+  // the dates are always reachable regardless of locale.
+  { glyph: '1492', label: 'columbus' },
+  { glyph: '1607', label: 'jamestown world' },
+  { glyph: '1789', label: 'french revolution world' },
+  { glyph: '1804', label: 'napoleon emperor world' },
+  { glyph: '1815', label: 'congress of vienna' },
+  { glyph: '1848', label: 'springtime of nations' },
+  { glyph: '1865', label: 'us civil war end world' },
+  { glyph: '1898', label: 'spanish american war world' },
+  { glyph: '1929', label: 'great depression' },
 ];
 
 /** Periods taught in every curriculum (era / archaeological scale). */
@@ -1367,7 +1833,8 @@ function MathHistoryKeyboard() {
       data-region={historyRegion ?? ''}
     >
       <GlyphGrid testid="math-history-eras" glyphs={HIST_ERAS} cols={9} textSize="text-lg" />
-      <GlyphGrid testid="math-history-centuries" glyphs={HIST_CENTURIES} cols={6} textSize="text-lg" />
+      <GlyphGrid testid="math-history-decor" glyphs={HIST_DECOR} cols={3} textSize="text-2xl" />
+      <GlyphGrid testid="math-history-centuries" glyphs={HIST_CENTURIES} cols={7} textSize="text-lg" />
       <GlyphGrid testid="math-history-periods" glyphs={periods} cols={6} textSize="text-base" />
       <GlyphGrid testid="math-history-events" glyphs={events} cols={6} textSize="text-lg" />
     </div>
@@ -1432,11 +1899,81 @@ const LA_CITATION: Array<{ glyph: string; label: string }> = [
   { glyph: 'ibid.', label: 'ibid' },
 ];
 
+// v2 audit Language Arts priority 1: syntactic-role tags for
+// sentence-diagramming workflows. SUBJ / PRED / OBJ / DO / IO / COMP-OBJ
+// are the canonical labels every grade-8 grammar text uses.
+const LA_SYNTACTIC: Array<{ glyph: string; label: string }> = [
+  { glyph: 'SUBJ',     label: 'subject' },
+  { glyph: 'PRED',     label: 'predicate' },
+  { glyph: 'OBJ',      label: 'object' },
+  { glyph: 'DO',       label: 'direct object' },
+  { glyph: 'IO',       label: 'indirect object' },
+  { glyph: 'COMP-OBJ', label: 'object complement' },
+];
+
+// v2 audit Language Arts priority 3: Q&A two-tile pair for study notes.
+const LA_QA: Array<{ glyph: string; label: string }> = [
+  { glyph: 'Q:', label: 'question prefix' },
+  { glyph: 'A:', label: 'answer prefix' },
+];
+
+// v2 audit Language Arts priority 2: case-toggle. Some style guides
+// prefer lowercase POS abbreviations (n., v., adj.). The toggle flips
+// between the existing uppercase set and a parallel lowercase set so
+// muscle memory on the original tiles is preserved.
+const LA_POS_LOWER: Array<{ glyph: string; label: string }> = [
+  { glyph: 'n.',    label: 'noun lower' },
+  { glyph: 'v.',    label: 'verb lower' },
+  { glyph: 'adj.',  label: 'adjective lower' },
+  { glyph: 'adv.',  label: 'adverb lower' },
+  { glyph: 'pron.', label: 'pronoun lower' },
+  { glyph: 'prep.', label: 'preposition lower' },
+  { glyph: 'conj.', label: 'conjunction lower' },
+  { glyph: 'art.',  label: 'article lower' },
+  { glyph: 'intj.', label: 'interjection lower' },
+  { glyph: 'aux.',  label: 'auxiliary lower' },
+  { glyph: 'det.',  label: 'determiner lower' },
+  { glyph: 'num.',  label: 'numeral lower' },
+];
+
 function MathLanguageArtsKeyboard() {
+  // v2 audit Language Arts priority 2: simple useState boolean toggle
+  // between uppercase POS abbreviations (default) and lowercase
+  // variants. The toggle button itself is a Shift tile rendered above
+  // the POS row.
+  const [posLower, setPosLower] = useState(false);
+  const KEY_BASE =
+    'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
+    'flex items-center justify-center min-h-[56px] active:translate-y-px';
+  const TOGGLE_BASE =
+    'aac-btn rounded-lg font-bold border border-transparent select-none ' +
+    'flex items-center justify-center min-h-[56px] active:translate-y-px ' +
+    'bg-[#2196F3] text-white whitespace-nowrap';
   return (
-    <div className="p-2 space-y-2" data-testid="math-language-arts-keyboard">
-      <GlyphGrid testid="math-la-pos" glyphs={LA_PARTS_OF_SPEECH} cols={6} textSize="text-lg" />
+    <div className="p-2 space-y-2" data-testid="math-language-arts-keyboard" data-pos-case={posLower ? 'lower' : 'upper'}>
+      <div className="flex gap-1.5 px-2">
+        <button
+          onClick={() => { tapFeedback(); setPosLower((s) => !s); }}
+          data-testid="math-la-pos-shift"
+          aria-pressed={posLower}
+          aria-label="toggle POS abbreviation case"
+          className={`${TOGGLE_BASE} px-3 text-base`}
+        >
+          {posLower ? 'n.→N' : 'N→n.'}
+        </button>
+        <span className={`${KEY_BASE} flex-1 text-sm bg-transparent border-transparent text-secondary`}>
+          {posLower ? 'lowercase POS' : 'uppercase POS'}
+        </span>
+      </div>
+      <GlyphGrid
+        testid="math-la-pos"
+        glyphs={posLower ? LA_POS_LOWER : LA_PARTS_OF_SPEECH}
+        cols={6}
+        textSize="text-lg"
+      />
+      <GlyphGrid testid="math-la-syntactic" glyphs={LA_SYNTACTIC} cols={6} textSize="text-base" />
       <GlyphGrid testid="math-la-sentence" glyphs={LA_SENTENCE_TYPES} cols={6} textSize="text-lg" />
+      <GlyphGrid testid="math-la-qa" glyphs={LA_QA} cols={2} textSize="text-2xl" />
       <GlyphGrid testid="math-la-punct" glyphs={LA_PUNCTUATION} cols={13} textSize="text-lg" />
       <GlyphGrid testid="math-la-cite" glyphs={LA_CITATION} cols={8} textSize="text-lg" />
     </div>

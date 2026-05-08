@@ -46,6 +46,20 @@ const OPERATORS: Array<{ glyph: string; label: string }> = [
   { glyph: ')', label: 'close parenthesis' },
 ];
 
+// v2 audit cross-cutting findings: surface `² ³ ₂ ₃ ₄ Δ ≈` on Main so
+// any numeric workflow can drop a superscript / subscript / delta /
+// approximate-equals without a chip switch. Additive — does not
+// reorder digits or operators above.
+const SHARED_DECOR_MAIN: Array<{ glyph: string; label: string }> = [
+  { glyph: '²', label: 'squared shared' },
+  { glyph: '³', label: 'cubed shared' },
+  { glyph: '₂', label: 'subscript 2 shared' },
+  { glyph: '₃', label: 'subscript 3 shared' },
+  { glyph: '₄', label: 'subscript 4 shared' },
+  { glyph: 'Δ', label: 'delta shared' },
+  { glyph: '≈', label: 'approximately shared' },
+];
+
 // Phase 6A — math-mode owns the full viewport, so keys can grow.
 // Bumped from py-2.5 / text-2xl / min-h-[44px] (WCAG floor) up to
 // py-4 / text-3xl / min-h-[64px]. Easier targets for kids with motor
@@ -163,6 +177,22 @@ export default function MathMainKeyboard({ className = '' }: MathMainKeyboardPro
         >
           ⌫
         </DwellButton>
+      </div>
+
+      {/* Row 4: shared decorations — see SHARED_DECOR_MAIN above. */}
+      <div className="flex gap-1.5" data-testid="math-main-decor-row">
+        {SHARED_DECOR_MAIN.map(({ glyph, label }) => (
+          <DwellButton
+            key={glyph}
+            onCommit={() => onGlyph(glyph)}
+            data-testid={`math-main-decor-${label.replace(/ /g, '-')}`}
+            data-glyph={glyph}
+            aria-label={label}
+            className={`${KEY_BASE} flex-1 py-3 text-2xl`}
+          >
+            {glyph}
+          </DwellButton>
+        ))}
       </div>
     </div>
   );

@@ -91,6 +91,38 @@ export function tokenise(step: string): string[] {
     'DECL', 'INT', 'IMP', 'EXCL', 'COMP', 'CPLX',
     '==', '!=', '<=', '>=',
     'log', 'ln',
+    // v2 audit additions — multi-char tokens that newly land on
+    // dedicated chips. Order matters (longest-prefix-wins) so
+    // 'System.out.println' beats 'System.out.print' which beats
+    // 'length()' which beats 'length' which beats 'l'.
+    'System.out.println', 'System.out.print', 'length()', 'length',
+    'toString', 'equals', 'Math.',
+    'sin⁻¹', 'cos⁻¹', 'tan⁻¹',
+    'sin', 'cos', 'tan', 'csc', 'sec', 'cot',
+    'lim', 'dx', 'dy', 'f(x)', 'g(x)',
+    'g/mol', 'mol/L',
+    'm/s²', 'm/s', 'km/h', 'kg·m/s', 'N·m',
+    'Cov(', 'corr(', 'Pr(',
+    'Met', 'Ala', 'Tyr', 'Stop',
+    '×10',
+    'KE', 'PE', 'GPE',
+    'ME', 'z*', 't*',
+    'kyr', 'Myr', 'yr',
+    '++', '--', '+=', '-=', '*=', '/=',
+    '^n',
+    '→|',
+    'Q:', 'A:',
+    'COMP-OBJ', 'SUBJ', 'PRED', 'OBJ', 'DO', 'IO',
+    'n.', 'v.', 'adj.', 'adv.', 'pron.', 'prep.', 'conj.',
+    'art.', 'intj.', 'aux.', 'det.', 'num.',
+    '6th', '7th', '8th', '9th', '11th', '12th', '13th', '14th', '16th',
+    'sum', 'max', 'min', 'abs', 'sorted', 'list', 'dict', 'str', 'int',
+    'float', 'input',
+    // Year tiles (history events appended in v2 audit). Span 4 digits so
+    // they win against the single digit fallback. Listed individually
+    // because the tokeniser walks the array in order and we want the
+    // exact match instead of "1" + "4" + "9" + "2".
+    '1492', '1607', '1789', '1804', '1815', '1848', '1865', '1898', '1929',
   ];
   const out: string[] = [];
   let i = 0;

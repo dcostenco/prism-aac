@@ -77,10 +77,44 @@ const ADV: Array<[string, string]> = [
   ['±', 'plus minus'], ['≈', 'approximately equal'],
   ['≡', 'identical to'], ['|', 'absolute bar'], ['!', 'factorial'],
   ['log', 'logarithm'], ['ln', 'natural log'],
+  // v2 audit Adv-Math additions: lowercase variables for
+  // mensuration / kinematics word problems.
+  ['w', 'variable w'], ['l', 'variable l'],
+  ['h', 'variable h'], ['t', 'variable t'],
 ];
 const ADV_MAP: Record<string, KeyRef> = {};
 for (const [g, label] of ADV) {
   ADV_MAP[g] = { category: 'adv-math', testid: `math-key-adv-${label.replace(/ /g, '-')}` };
+}
+
+// v2 audit Adv-Math additions: trig sub-row, calc primitives,
+// subscripts. Each lives on its own GlyphGrid so the testid prefix
+// follows the GlyphGrid convention (`{prefix}-{slug}`).
+const ADV_TRIG: Array<[string, string]> = [
+  ['sin', 'sine'], ['cos', 'cosine'], ['tan', 'tangent'],
+  ['csc', 'cosecant'], ['sec', 'secant'], ['cot', 'cotangent'],
+  ['sin⁻¹', 'arcsine'], ['cos⁻¹', 'arccosine'], ['tan⁻¹', 'arctangent'],
+];
+const ADV_CALC: Array<[string, string]> = [
+  ['lim', 'limit'], ['→', 'limit arrow'],
+  ['dx', 'differential x'], ['dy', 'differential y'],
+  ['f(x)', 'function f of x'], ['g(x)', 'function g of x'],
+];
+const ADV_SUBSCRIPTS: Array<[string, string]> = [
+  ['₀', 'subscript 0'], ['₁', 'subscript 1'],
+  ['₅', 'subscript 5'], ['₆', 'subscript 6'],
+  ['₇', 'subscript 7'], ['₈', 'subscript 8'],
+  ['₉', 'subscript 9'],
+  ['ₙ', 'subscript n'], ['ᵢ', 'subscript i'],
+];
+for (const [g, label] of ADV_TRIG) {
+  if (!ADV_MAP[g]) ADV_MAP[g] = { category: 'adv-math', testid: `math-adv-trig-${slug(label)}` };
+}
+for (const [g, label] of ADV_CALC) {
+  if (!ADV_MAP[g]) ADV_MAP[g] = { category: 'adv-math', testid: `math-adv-calc-${slug(label)}` };
+}
+for (const [g, label] of ADV_SUBSCRIPTS) {
+  if (!ADV_MAP[g]) ADV_MAP[g] = { category: 'adv-math', testid: `math-adv-subscripts-${slug(label)}` };
 }
 
 // ── Letters keyboard (a-z) ──────────────────────────────────────────
@@ -147,6 +181,11 @@ const GRIDS: Grid[] = [
       ['←', 'arrow left'], ['→', 'arrow right'],
       ['π', 'pi-geom'], ['r', 'radius'], ['d', 'diameter'],
       ['A', 'area'], ['V', 'volume-geom'], ['P', 'perimeter'],
+      // v2 audit Geom additions: similar tilde, cube exponent on Geom,
+      // mensuration variables.
+      ['~', 'similar tilde'], ['³', 'cubed geom'],
+      ['l', 'length-geom'], ['w', 'width-geom'],
+      ['h', 'height-geom'], ['s', 'side-geom'],
     ],
   },
   // Time & distance
@@ -211,6 +250,14 @@ const GRIDS: Grid[] = [
       ['Δ', 'delta heat'], ['pH', 'pH'], ['mol', 'mole'],
       ['(s)', 'solid phase'], ['(l)', 'liquid phase'],
       ['(g)', 'gas phase'], ['(aq)', 'aqueous phase'],
+      // v2 audit Chemistry additions: extended subscripts + composite
+      // molar units + percent.
+      ['₀', 'subscript 0'], ['₁', 'subscript 1'],
+      ['₅', 'subscript 5'], ['₆', 'subscript 6'],
+      ['₇', 'subscript 7'], ['₈', 'subscript 8'],
+      ['₉', 'subscript 9'],
+      ['g/mol', 'grams per mole'], ['mol/L', 'moles per litre'],
+      ['%', 'percent chem'],
     ],
   },
   // Physics — greek
@@ -247,6 +294,32 @@ const GRIDS: Grid[] = [
       ['⟨', 'left bracket'], ['⟩', 'right bracket'],
       ['c', 'speed of light'], ['h', 'planck'], ['ℏ', 'hbar'], ['G', 'grav constant'],
       ['°', 'degree'], ['∞', 'infinity'],
+      // v2 audit Physics priority 3.
+      ['g', 'grav accel'],
+    ],
+  },
+  // v2 audit Physics priority 1: equation variables.
+  {
+    category: 'physics',
+    prefix: 'math-physics-vars',
+    pairs: [
+      ['F', 'force'], ['a', 'acceleration'], ['v', 'velocity'],
+      ['u', 'initial velocity'], ['p', 'momentum'], ['t', 'time'],
+      ['d', 'distance'], ['h', 'height'], ['r', 'radius-phys'],
+      ['KE', 'kinetic energy'], ['PE', 'potential energy'],
+      ['GPE', 'gravitational potential energy'],
+    ],
+  },
+  // v2 audit Physics priority 2: composite SI units.
+  {
+    category: 'physics',
+    prefix: 'math-physics-composite',
+    pairs: [
+      ['m/s', 'metres per second'],
+      ['m/s²', 'metres per second squared'],
+      ['km/h', 'kilometres per hour'],
+      ['kg·m/s', 'kilogram metre per second'],
+      ['N·m', 'newton metre'],
     ],
   },
   // Biology — nucleotides
@@ -269,6 +342,23 @@ const GRIDS: Grid[] = [
       ['BB', 'big-b homozygous'], ['Bb', 'big-b heterozygous'], ['bb', 'big-b homozygous recessive'],
       ['F1', 'first generation'], ['F2', 'second generation'],
       ['P', 'parental'], ['×', 'cross'], ['♂', 'male'], ['♀', 'female'],
+    ],
+  },
+  // v2 audit Biology priority 3: codon-table glyphs.
+  {
+    category: 'biology',
+    prefix: 'math-biology-codons',
+    pairs: [
+      ['Met', 'methionine'], ['Ala', 'alanine'],
+      ['Tyr', 'tyrosine'], ['Stop', 'stop codon'],
+    ],
+  },
+  // v2 audit Biology priority 2: exponent keys on Biology.
+  {
+    category: 'biology',
+    prefix: 'math-biology-exponents',
+    pairs: [
+      ['²', 'squared bio'], ['³', 'cubed bio'], ['^n', 'caret n'],
     ],
   },
   // Biology — taxonomy
@@ -318,6 +408,18 @@ const GRIDS: Grid[] = [
       // unreachable through this map, which is OK — workflows only need
       // P( and that exists.
       ['C(', 'combinations'],
+      // v2 audit Statistics additions: critical-value tiles, mirrored
+      // inequalities, and paired-data primitives.
+      ['ME', 'margin of error'],
+      ['z*', 'z star critical'],
+      ['t*', 't star critical'],
+      ['<', 'less than stats'],
+      ['>', 'greater than stats'],
+      ['≤', 'less or equal stats'],
+      ['≥', 'greater or equal stats'],
+      ['Cov(', 'covariance of'],
+      ['corr(', 'correlation of'],
+      ['Pr(', 'probability prefix'],
     ],
   },
   // Statistics — distributions
@@ -341,6 +443,19 @@ const GRIDS: Grid[] = [
       ['Mya', 'million years ago'], ['Gya', 'billion years ago'],
       ['km', 'kilometre-earth'], ['mb', 'millibar'],
       ['°C', 'celsius'], ['°F', 'fahrenheit'], ['mph', 'miles per hour'],
+      // v2 audit Earth priority 2: time-span units distinct from Mya/Gya.
+      ['yr', 'year span'], ['kyr', 'kiloyear'], ['Myr', 'megayear'],
+    ],
+  },
+  // v2 audit Earth priority 1: scientific-notation helper row.
+  {
+    category: 'earth-science',
+    prefix: 'math-earth-scinot',
+    pairs: [
+      ['×10', 'times ten'],
+      ['⁰', 'sup 0'], ['¹', 'sup 1'], ['²', 'sup 2'], ['³', 'sup 3'],
+      ['⁴', 'sup 4'], ['⁵', 'sup 5'], ['⁶', 'sup 6'], ['⁷', 'sup 7'],
+      ['⁸', 'sup 8'], ['⁹', 'sup 9'],
     ],
   },
   // Earth — plates / arrows
@@ -372,6 +487,36 @@ const GRIDS: Grid[] = [
       ['5th', 'fifth'], ['10th', 'tenth'], ['15th', 'fifteenth'],
       ['17th', 'seventeenth'], ['18th', 'eighteenth'],
       ['19th', 'nineteenth'], ['20th', 'twentieth'], ['21st', 'twenty first'],
+      // v2 audit History priority 2: fill the century-ordinal gap.
+      ['6th', 'sixth'], ['7th', 'seventh'], ['8th', 'eighth'],
+      ['9th', 'ninth'], ['11th', 'eleventh'], ['12th', 'twelfth'],
+      ['13th', 'thirteenth'], ['14th', 'fourteenth'], ['16th', 'sixteenth'],
+    ],
+  },
+  // v2 audit History priority 3: Δ ≈ ~ mirrored into history.
+  {
+    category: 'history',
+    prefix: 'math-history-decor',
+    pairs: [
+      ['Δ', 'delta history'],
+      ['≈', 'approximately history'],
+      ['~', 'circa tilde'],
+    ],
+  },
+  // v2 audit History priority 1: appended event tiles.
+  {
+    category: 'history',
+    prefix: 'math-history-events',
+    pairs: [
+      ['1492', 'columbus'],
+      ['1607', 'jamestown world'],
+      ['1789', 'french revolution world'],
+      ['1804', 'napoleon emperor world'],
+      ['1815', 'congress of vienna'],
+      ['1848', 'springtime of nations'],
+      ['1865', 'us civil war end world'],
+      ['1898', 'spanish american war world'],
+      ['1929', 'great depression'],
     ],
   },
   // Language arts — POS
@@ -383,6 +528,38 @@ const GRIDS: Grid[] = [
       ['PRON', 'pronoun'], ['PREP', 'preposition'], ['CONJ', 'conjunction'],
       ['ART', 'article'], ['INTJ', 'interjection'], ['AUX', 'auxiliary'],
       ['DET', 'determiner'], ['NUM', 'numeral'],
+      // v2 audit Language Arts priority 2: lowercase POS abbreviations
+      // — only reachable when the case-shift toggle is active. The
+      // keyboard renders ONE of {LA_PARTS_OF_SPEECH, LA_POS_LOWER}
+      // depending on toggle state, but both share the same `math-la-pos`
+      // testid prefix, so e2e specs that ask for a lowercase variant
+      // need the toggle pressed first. Since first-wins applies above,
+      // these only resolve when no uppercase glyph already maps.
+      ['n.', 'noun lower'], ['v.', 'verb lower'],
+      ['adj.', 'adjective lower'], ['adv.', 'adverb lower'],
+      ['pron.', 'pronoun lower'], ['prep.', 'preposition lower'],
+      ['conj.', 'conjunction lower'], ['art.', 'article lower'],
+      ['intj.', 'interjection lower'], ['aux.', 'auxiliary lower'],
+      ['det.', 'determiner lower'], ['num.', 'numeral lower'],
+    ],
+  },
+  // v2 audit Language Arts priority 1: syntactic-role tags.
+  {
+    category: 'language-arts',
+    prefix: 'math-la-syntactic',
+    pairs: [
+      ['SUBJ', 'subject'], ['PRED', 'predicate'],
+      ['OBJ', 'object'], ['DO', 'direct object'],
+      ['IO', 'indirect object'], ['COMP-OBJ', 'object complement'],
+    ],
+  },
+  // v2 audit Language Arts priority 3: Q&A study-note pair.
+  {
+    category: 'language-arts',
+    prefix: 'math-la-qa',
+    pairs: [
+      ['Q:', 'question prefix'],
+      ['A:', 'answer prefix'],
     ],
   },
   // Language arts — sentence type
@@ -418,6 +595,73 @@ for (const grid of GRIDS) {
   }
 }
 
+// v2 audit cross-cutting findings: the SHARED_DECOR row (² ³ ₂ ₃ ₄ Δ ≈)
+// surfaces on Main, Adv-Math, Chemistry, Physics, Earth Science.
+// Each panel renders its own `SharedDecorRow` with a unique prefix, so
+// the testid is `${prefix}-${slug(label)}`. Existing per-subject maps
+// take precedence (first-wins) so muscle memory is preserved; these
+// fallback entries only kick in when the glyph wasn't already
+// registered on the target chip.
+const SHARED_DECOR_PAIRS: Array<[string, string]> = [
+  ['²', 'squared shared'],
+  ['³', 'cubed shared'],
+  ['₂', 'subscript 2 shared'],
+  ['₃', 'subscript 3 shared'],
+  ['₄', 'subscript 4 shared'],
+  ['Δ', 'delta shared'],
+  ['≈', 'approximately shared'],
+];
+// Adv-math direct map
+for (const [g, label] of SHARED_DECOR_PAIRS) {
+  if (!ADV_MAP[g]) ADV_MAP[g] = { category: 'adv-math', testid: `math-adv-decor-${slug(label)}` };
+}
+// Main direct map — these are the only path for the ² ³ ₂ ₃ ₄ Δ ≈
+// glyphs on the Main chip (MathMainKeyboard renders the same
+// SHARED_DECOR row inline using `math-main-decor-${kebab(label)}`,
+// but as a flex row not a GlyphGrid — so testid uses dashed labels
+// directly, NOT the slugifier).
+for (const [g, label] of SHARED_DECOR_PAIRS) {
+  if (!MAIN[g]) MAIN[g] = { category: 'main', testid: `math-main-decor-${label.replace(/ /g, '-')}` };
+}
+// Chemistry / physics / earth-science — fold into GRID_MAPS so the
+// per-category fallback path picks them up. First-wins above means
+// existing per-panel `Δ` (chemistry-ops 'delta heat', physics-greek
+// 'big delta') keep their original testids — these only register
+// glyphs that were missing on the chip.
+for (const cat of ['chemistry', 'physics', 'earth-science'] as const) {
+  const m = (GRID_MAPS[cat] ??= {});
+  const prefix = cat === 'chemistry' ? 'math-chem-decor'
+               : cat === 'physics'   ? 'math-phys-decor'
+               :                       'math-earth-decor';
+  for (const [g, label] of SHARED_DECOR_PAIRS) {
+    if (!m[g]) m[g] = { category: cat, testid: `${prefix}-${slug(label)}` };
+  }
+}
+
+// v2 audit Biology priority 1: case-toggle row uses non-GlyphGrid
+// testids (direct buttons) so we register them by hand. Both the
+// primary tile (`math-biology-case-{letter}`) and the pair sibling
+// (`math-biology-case-pair-{letter}`) render simultaneously, which
+// keeps both upper- and lowercase variants tappable regardless of
+// shift state. First-wins above means existing `A` / `P` mappings
+// from BIO_NUCLEOTIDES / BIO_GENETICS take precedence — these case-
+// toggle fallbacks only kick in for `a` / `b` / `c` / `p` / `B` / `C`
+// which were previously unreachable on the Biology chip.
+const BIO_CASE_TOGGLE_MAP: Record<string, KeyRef> = {
+  // Lowercase variants — render in pair tiles by default.
+  a: { category: 'biology', testid: 'math-biology-case-pair-a' },
+  b: { category: 'biology', testid: 'math-biology-case-pair-b' },
+  c: { category: 'biology', testid: 'math-biology-case-pair-c' },
+  p: { category: 'biology', testid: 'math-biology-case-pair-p' },
+  // Uppercase variants for B / C (A and P already win via existing maps).
+  B: { category: 'biology', testid: 'math-biology-case-b' },
+  C: { category: 'biology', testid: 'math-biology-case-c' },
+};
+for (const [g, ref] of Object.entries(BIO_CASE_TOGGLE_MAP)) {
+  const m = (GRID_MAPS['biology'] ??= {});
+  if (!m[g]) m[g] = ref;
+}
+
 // ── Programming keyboards ───────────────────────────────────────────
 const PYTHON_KEYWORDS = [
   'def', 'class', 'if', 'else', 'elif', 'for', 'while', 'return',
@@ -440,6 +684,43 @@ const PROG_OPS: Array<[string, string]> = [
   ['+', 'plus-prog'], ['-', 'minus-prog'], ['*', 'star'], ['/', 'slash'],
   ['%', 'percent-prog'], [':', 'colon'], [';', 'semicolon'],
   [',', 'comma-prog'], ['.', 'dot'], ['"', 'dquote'], ["'", 'squote'],
+];
+
+// v2 audit Python priority 1: built-in functions surfaced as token
+// tiles (one cell per char + trailing space, same as keywords). Tile
+// testid: `${prefix}-builtin-${name}`.
+const PYTHON_BUILTINS_LIST = [
+  'sum', 'max', 'min', 'abs', 'sorted', 'list', 'dict', 'str', 'int', 'float', 'input',
+];
+
+// v2 audit Python priority 2/3: comment marker, indent (4-space tile),
+// newline glyph. Tile testid: `${prefix}-extra-${slug(label)}`.
+const PYTHON_EXTRAS_LIST: Array<[string, string]> = [
+  ['#', 'comment hash'],
+  ['→|', 'indent'],
+  ['↵', 'newline'],
+];
+
+// v2 audit Java priority 1: compound-assignment ops (raw glyph commit).
+// Tile testid: `${prefix}-compop-${slug(label)}`.
+const JAVA_COMPOUND_LIST: Array<[string, string]> = [
+  ['++', 'increment'], ['--', 'decrement'],
+  ['+=', 'plus equals'], ['-=', 'minus equals'],
+  ['*=', 'times equals'], ['/=', 'divide equals'],
+];
+
+// v2 audit Java priority 2: idiom tokens (System.out.println etc.).
+// Tile testid: `${prefix}-idiom-${slug(idiom)}`.
+const JAVA_IDIOMS_LIST = [
+  'System.out.println', 'System.out.print', 'length', 'length()',
+  'equals', 'toString', 'Math.',
+];
+
+// v2 audit Java priority 3: @ annotation marker + newline glyph. Tile
+// testid: `${prefix}-extra-${slug(label)}`.
+const JAVA_EXTRAS_LIST: Array<[string, string]> = [
+  ['@', 'annotation at'],
+  ['↵', 'newline'],
 ];
 
 function buildProgMap(lang: 'python' | 'java'): Record<string, KeyRef> {
@@ -465,6 +746,28 @@ function buildProgMap(lang: 'python' | 'java'): Record<string, KeyRef> {
   const kws = lang === 'python' ? PYTHON_KEYWORDS : JAVA_KEYWORDS;
   for (const kw of kws) {
     out[`kw:${kw}`] = { category: cat, testid: `${prefix}-kw-${kw}` };
+  }
+  // v2 audit Python additions: built-ins + extras (#, indent, newline).
+  if (lang === 'python') {
+    for (const bi of PYTHON_BUILTINS_LIST) {
+      if (!out[bi]) out[bi] = { category: cat, testid: `${prefix}-builtin-${bi}` };
+    }
+    for (const [g, label] of PYTHON_EXTRAS_LIST) {
+      if (!out[g]) out[g] = { category: cat, testid: `${prefix}-extra-${label.replace(/ /g, '-')}` };
+    }
+  }
+  // v2 audit Java additions: compound-assignment ops + idiom tokens
+  // + extras (@, newline).
+  if (lang === 'java') {
+    for (const [g, label] of JAVA_COMPOUND_LIST) {
+      if (!out[g]) out[g] = { category: cat, testid: `${prefix}-compop-${label.replace(/ /g, '-')}` };
+    }
+    for (const id of JAVA_IDIOMS_LIST) {
+      if (!out[id]) out[id] = { category: cat, testid: `${prefix}-idiom-${slug(id)}` };
+    }
+    for (const [g, label] of JAVA_EXTRAS_LIST) {
+      if (!out[g]) out[g] = { category: cat, testid: `${prefix}-extra-${label.replace(/ /g, '-')}` };
+    }
   }
   // Shift — spec taps `${prefix}-letters-shift` then a letter to get
   // uppercase. Encoded in the map as literal capital letters routing to
