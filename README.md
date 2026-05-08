@@ -189,6 +189,19 @@ The tutor prompt carries the locale + region so an ambiguous date like 1836 in `
 </details>
 
 <details>
+<summary><strong>Test workflows — 12 subjects × Grade 8-12 word problems × 72 Playwright tests</strong></summary>
+
+Step-by-step problem sheets exercising every subject keyboard, plus an executable Playwright test per problem that drives the live math panel and verifies each step's glyphs land in the cell grid. Modeled directly on a real Grade-9 algebra reference page.
+
+- **Layer 1 — generic step-by-step:** [`tests/workflows/`](tests/workflows/) — 12 markdowns (advanced-math, biology, chemistry, earth-science, geometry, history, language-arts, misc-math, physics, programming-java, programming-python, statistics).
+- **Layer 2 — grade-leveled real classroom:** [`tests/workflows/grade-8-12/`](tests/workflows/grade-8-12/) — 12 markdowns with named-variable word problems (algebra-grade-9, geometry-grade-10, physics-grade-11, chemistry-grade-10, biology-grade-9, statistics-grade-11, programming-python-grade-9, programming-java-grade-11, pre-calc-grade-12, earth-science-grade-9, language-arts-grade-8, world-history-grade-10) + per-subject keyboard-gap [`REPORT.md`](tests/workflows/grade-8-12/REPORT.md).
+- **Layer 3 — Playwright e2e:** [`e2e/math-workflows/`](e2e/math-workflows/) — 72 tests (`npx playwright test --project=desktop e2e/math-workflows`).
+
+Full index, ranked under-supported subjects, and the "how to add a new workflow" runbook → **[`docs/WORKFLOWS.md`](docs/WORKFLOWS.md)**.
+
+</details>
+
+<details>
 <summary><strong>Other math features (lock tool, two-hit magnify, save / sync)</strong></summary>
 
 - **Lock tool** — after the child finishes a problem, lock the region. Locked cells render slightly dimmed and reject edits.
