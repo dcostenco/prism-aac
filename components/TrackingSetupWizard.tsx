@@ -66,19 +66,33 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const handleRef = useRef<PoseTrackerHandle | null>(null);
   const sampleBufferRef = useRef<Array<{ normX: number; normY: number }>>([]);
   const detectionCountRef = useRef<Record<string, number>>({});
-  // Live camera PIP preview — clones the tracker's video stream into a
-  // small visible <video> so the user can confirm the camera is
-  // actually capturing (not just "permission granted but no frames").
-  // User report 2026-05-08: "camera is not enabled .. that could be
-  // the issue - i don't see it working".
+  // Live camera PIP preview. Initially attached the srcObject ONCE
+  // and got stuck on a stale (stopped) MediaStream after the tracker
+  // restarted for the selected body part — user report 2026-05-08
+  // "camera feed was visible for 1 sec or so before diagnostics,
+  // then started black". Now: every 300ms compare the current
+  // tracker's srcObject with the PIP's, and re-attach whenever they
+  // differ. Also detect when the stream's tracks have ended (camera
+  // released) and clear the PIP so the user sees "no feed" honestly
+  // instead of a frozen frame.
   const pipVideoRef = useRef<HTMLVideoElement | null>(null);
   useEffect(() => {
     const interval = setInterval(() => {
+      const pip = pipVideoRef.current;
+      if (!pip) return;
       const videoEl = handleRef.current?.videoElement;
-      if (videoEl?.srcObject && pipVideoRef.current && !pipVideoRef.current.srcObject) {
-        pipVideoRef.current.srcObject = videoEl.srcObject;
-        pipVideoRef.current.play().catch(() => {});
-        console.log('[wizard] PIP attached to tracker video stream');
+      const trackerStream = videoEl?.srcObject as MediaStream | null;
+      const pipStream = pip.srcObject as MediaStream | null;
+      if (trackerStream && trackerStream !== pipStream) {
+        pip.srcObject = trackerStream;
+        pip.play().catch(() => {});
+        console.log(`[wizard] PIP (re)attached — stream tracks=${trackerStream.getTracks().length}`);
+      } else if (pipStream) {
+        const live = pipStream.getVideoTracks().some(t => t.readyState === 'live');
+        if (!live) {
+          pip.srcObject = null;
+          console.log('[wizard] PIP cleared — stream tracks ended');
+        }
       }
     }, 300);
     return () => clearInterval(interval);
