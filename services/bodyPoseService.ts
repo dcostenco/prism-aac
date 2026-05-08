@@ -33,6 +33,7 @@ import {
   MEDIAPIPE_WASM_URL,
   POSE_LANDMARKER_LITE_URL,
   FACE_DETECTOR_URL,
+  FACE_LANDMARKER_URL,
   FpsWatchdog,
 } from './mediapipeRuntime';
 import {
@@ -134,6 +135,10 @@ export interface PoseTrackerOptions {
   onMove: (x: number, y: number) => void;
   onDwell: (element: Element) => void;
   onStatusChange: (status: 'starting' | 'tracking' | 'lost' | 'stopped', activeTarget?: TrackingTarget) => void;
+  /** Blend iris/gaze from FaceLandmarker into cursor position (0=nose only, 1=iris only). */
+  useEyeGaze?: boolean;
+  /** Weight 0–1, default 0.8. Only used when useEyeGaze is true. */
+  eyeGazeWeight?: number;
 }
 
 export interface PoseTrackerHandle {
@@ -212,6 +217,35 @@ async function initPoseLandmarker(): Promise<boolean> {
   await poseLoadPromise;
   poseLoadPromise = null;
   return !!poseLandmarker;
+}
+
+// ── FaceLandmarker (iris/gaze — lazy-initialized only when useEyeGaze) ───────
+
+let faceLandmarkerForGaze: unknown = null;
+let faceLandmarkerLoadPromise: Promise<void> | null = null;
+
+async function initFaceLandmarkerForGaze(): Promise<boolean> {
+  if (faceLandmarkerForGaze) return true;
+  if (faceLandmarkerLoadPromise) { await faceLandmarkerLoadPromise; return !!faceLandmarkerForGaze; }
+  faceLandmarkerLoadPromise = (async () => {
+    try {
+      const vision = await import('@mediapipe/tasks-vision');
+      const { FaceLandmarker, FilesetResolver } = vision;
+      const fileset = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
+      faceLandmarkerForGaze = await FaceLandmarker.createFromOptions(fileset, {
+        baseOptions: { modelAssetPath: FACE_LANDMARKER_URL, delegate: 'GPU' },
+        runningMode: 'VIDEO',
+        numFaces: 1,
+      });
+      console.log('[PoseTracker] FaceLandmarker for eye gaze initialized');
+    } catch (e) {
+      console.warn('[PoseTracker] FaceLandmarker for eye gaze init failed:', e instanceof Error ? e.message : e);
+      faceLandmarkerForGaze = null;
+    }
+  })();
+  await faceLandmarkerLoadPromise;
+  faceLandmarkerLoadPromise = null;
+  return !!faceLandmarkerForGaze;
 }
 
 // ── Calibration ─────────────────────────────────────────────────────────────
@@ -754,7 +788,12 @@ export function startPoseTracker(
       }
     }
 
-    // Step 2: Initialize MediaPipe Pose Landmarker
+    // Step 2: Initialize MediaPipe Pose Landmarker (and optionally FaceLandmarker for iris/gaze)
+    if (opts.useEyeGaze) {
+      // Fire-and-forget — iris blend will start as soon as it's ready;
+      // cursor still works from pose-only in the meantime.
+      void initFaceLandmarkerForGaze();
+    }
     const modelReady = await initPoseLandmarker();
     if (!modelReady) {
       console.error('[PoseTracker] Model failed to load — cursor will use pointer fallback');
@@ -926,6 +965,27 @@ export function startPoseTracker(
               console.debug('[PoseTracker] landmarks present but all below visibility floor — check framing');
             }
           }
+        }
+
+        // Eye/iris gaze blend — when useEyeGaze is requested and
+        // FaceLandmarker has iris data, blend iris position with pose.
+        // Iris moves with GAZE direction (not just head rotation), giving
+        // full-screen cursor reach without any head turning.
+        // Iris landmarks: 468 = right iris center, 473 = left iris center.
+        if (opts.useEyeGaze && normX !== null && normY !== null && faceLandmarkerForGaze) {
+          try {
+            const faceResult = (faceLandmarkerForGaze as { detectForVideo: (v: HTMLVideoElement, t: number) => { faceLandmarks?: Array<Array<{ x: number; y: number }>> } }).detectForVideo(video!, performance.now());
+            const fl = faceResult?.faceLandmarks?.[0];
+            const rightIris = fl?.[468];
+            const leftIris  = fl?.[473];
+            if (rightIris && leftIris) {
+              const irisX = (rightIris.x + leftIris.x) / 2;
+              const irisY = (rightIris.y + leftIris.y) / 2;
+              const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.8));
+              normX = normX * (1 - w) + irisX * w;
+              normY = normY * (1 - w) + irisY * w;
+            }
+          } catch { /* FaceLandmarker failed — continue with pose-only */ }
         }
 
         if (normX !== null && normY !== null) {

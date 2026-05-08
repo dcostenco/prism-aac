@@ -55,6 +55,8 @@ interface Props {
 
 export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const { speechRate, speechVolume, update: updateSettings } = useSettingsStore();
+  const headTrackingEyeGaze = useSettingsStore(s => s.headTrackingEyeGaze);
+  const headTrackingEyeGazeWeight = useSettingsStore(s => s.headTrackingEyeGazeWeight);
   const [phase, setPhase] = useState<Phase>('intro');
   const [detected, setDetected] = useState<DetectedPart[]>([]);
   const [selectedPart, setSelectedPart] = useState<TrackingTarget | null>(null);
@@ -240,6 +242,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       smoothing: 0.15,
       trackingTarget: 'nose',
       cursorSmoothing: 0.12,
+      useEyeGaze: headTrackingEyeGaze,
+      eyeGazeWeight: headTrackingEyeGazeWeight,
       onMove(x, y) { setCursorPos({ x, y }); },
       onDwell() {},
       onStatusChange(status, activeTarget) {
@@ -302,6 +306,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       smoothing: 0.15,
       trackingTarget: target,
       cursorSmoothing: 0.12,
+      useEyeGaze: headTrackingEyeGaze,
+      eyeGazeWeight: headTrackingEyeGazeWeight,
       onMove(x, y) { setCursorPos({ x, y }); },
       onDwell() {},
       onStatusChange(status) {
@@ -337,6 +343,31 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       setProgress(Math.min(1, n / 30));
     }, 100);
     return () => clearInterval(interval);
+  }, [phase]);
+
+  // Live recentering during Step 1 — apply a running-mean temporary cal
+  // every 2 s once ≥ 20 samples exist so the cursor drifts toward the
+  // center target WITHOUT user needing to tap Capture first. Without this
+  // the DEFAULT_CALIBRATION midpoint rarely matches the user's actual
+  // neutral pose and the cursor appears "stuck" offset during step 1.
+  useEffect(() => {
+    if (phase !== 'calibrate-center') return;
+    const id = setInterval(() => {
+      const buf = sampleBufferRef.current;
+      if (buf.length < 20) return;
+      const sx = buf.reduce((s, v) => s + v.normX, 0) / buf.length;
+      const sy = buf.reduce((s, v) => s + v.normY, 0) / buf.length;
+      const anchorMirX = 1 - sx;
+      try {
+        savePoseCalibration({
+          leftX: Math.min(0.95, anchorMirX + 0.35),
+          rightX: Math.max(0.05, anchorMirX - 0.35),
+          topY: Math.max(0.05, sy - 0.30),
+          bottomY: Math.min(0.95, sy + 0.30),
+        });
+      } catch { /* best-effort */ }
+    }, 2000);
+    return () => clearInterval(id);
   }, [phase]);
 
   /** User taps the Capture button — average the current sample buffer
