@@ -29,7 +29,14 @@ import { isValidCornerCalibration } from '@/lib/safeValidation';
 // the visibility-tracking behavior we needed for cheap webcams.
 // Research report 2026-05-08 in CHANGELOG.
 import { ConfidenceAwareOneEuro } from './oneEuroFilter';
-import { classifyMotion, type Point2D } from './egoMotion';
+import {
+  classifyMotion,
+  fitSimilarityRansac,
+  applyTransform,
+  IDENTITY_TRANSFORM,
+  type Point2D,
+  type SimilarityTransform,
+} from './egoMotion';
 import { BaselineTracker } from './recalibration';
 
 // ── MediaPipe Pose Landmark Indices ────────────────────────────────────────
@@ -919,28 +926,66 @@ export function startPoseTracker(
           rawX = Math.max(0, Math.min(window.innerWidth, rawX));
           rawY = Math.max(0, Math.min(window.innerHeight, rawY));
 
-          // ── Ego-motion suppression (TRACKING_RELIABILITY.md item E) ──
+          // ── Ego-motion compensation (TRACKING_RELIABILITY.md item E,
+          //    upgraded May 2026 from binary centroid-residual gate to
+          //    Procrustes/RANSAC similarity transform — Umeyama 1991) ──
+          //
           // Snapshot the high-visibility landmarks from THIS frame and
-          // compare with last frame. If all landmarks shifted uniformly
-          // (centroid moved but per-landmark residual < threshold),
-          // the camera moved (car bump / lap-held wobble), not the
-          // user. Suppress the cursor update on those frames.
+          // compare with last frame. fitSimilarityRansac recovers a
+          // 4-DOF rigid-body transform (tx, ty, scale, rotation) from
+          // the inlier majority. The transform represents how the
+          // CAMERA moved (lap-held laptop wobble, vehicle roll/pitch).
+          // Subtracting it from the chosen tracking landmark removes
+          // the shake while preserving the user's deliberate motion
+          // (which was the outlier the RANSAC rejected).
+          //
+          // Catches in-plane rotation that the legacy classifyMotion
+          // missed: vehicle roll moves top landmarks opposite bottom
+          // landmarks; centroid stays put; classifyMotion sees
+          // residuals exceed threshold and DOESN'T suppress, so the
+          // cursor jets around with each bump. RANSAC fits the
+          // rotation directly.
           const currLandmarksForEgo: Point2D[] = [];
+          const SAFE_LANDMARK_INDICES = [
+            // Pose stability anchors: shoulders, hips, ears.
+            // These move minimally with normal pointing motion so
+            // they're the rigid-majority RANSAC will lock onto.
+            // Wrists/index fingers excluded — those are the OUTLIERS
+            // we want to keep moving.
+            7, 8,   // ears
+            11, 12, // shoulders
+            23, 24, // hips
+          ];
           if (frameLandmarks) {
-            for (let li = 0; li < frameLandmarks.length; li++) {
-              const p = frameLandmarks[li];
-              if ((p?.visibility ?? 0) >= 0.5) {
+            for (const idx of SAFE_LANDMARK_INDICES) {
+              const p = frameLandmarks[idx];
+              if (p && (p.visibility ?? 0) >= 0.5) {
                 currLandmarksForEgo.push({ x: p.x, y: p.y });
               }
             }
           }
-          let suppressForEgoMotion = false;
-          if (prevLandmarksForEgo && currLandmarksForEgo.length >= 4 &&
+          let cameraTransform: SimilarityTransform = { ...IDENTITY_TRANSFORM };
+          let cameraTransformInliers = 0;
+          if (prevLandmarksForEgo && currLandmarksForEgo.length >= 3 &&
               prevLandmarksForEgo.length === currLandmarksForEgo.length) {
-            const r = classifyMotion(prevLandmarksForEgo, currLandmarksForEgo);
-            if (r.isEgoMotion) suppressForEgoMotion = true;
+            const fit = fitSimilarityRansac(prevLandmarksForEgo, currLandmarksForEgo, {
+              iterations: 12,
+              inlierThreshold: 0.01,
+              minInliers: 3,
+            });
+            cameraTransform = fit.transform;
+            cameraTransformInliers = fit.inlierCount;
           }
           if (currLandmarksForEgo.length > 0) prevLandmarksForEgo = currLandmarksForEgo;
+          // Treat as ego-motion when we got a valid rigid fit AND it
+          // differs meaningfully from identity. This is now used for
+          // the diagnostic flag (`suppressForEgoMotion`) and the
+          // legacy fallback paths; the actual compensation happens
+          // by SUBTRACTING the transform, not by gating updates.
+          const transformMagnitude = Math.hypot(cameraTransform.tx, cameraTransform.ty)
+            + Math.abs(Math.log(cameraTransform.scale))
+            + Math.abs(cameraTransform.theta);
+          const suppressForEgoMotion = cameraTransformInliers >= 3 && transformMagnitude > 0.005;
 
           // ── Confidence-aware One Euro smoothing (item D) ──
           // Casiez CHI 2012. MediaPipe + Chromium use One Euro for
