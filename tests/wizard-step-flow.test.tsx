@@ -21,6 +21,7 @@
  * pins the wizard-side logic regardless of the browser's pose detection.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { StrictMode } from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import type {
@@ -295,6 +296,36 @@ describe('TrackingSetupWizard — out-of-view scenarios', () => {
 
     // Wizard remains in detecting phase, NOT auto-advancing.
     expect(rootEl()).toHaveAttribute('data-phase', 'detecting');
+  });
+});
+
+describe('TrackingSetupWizard — StrictMode-safe lifecycle (regression)', () => {
+  // May 2026 — root cause of "can't pass step 1" in dev mode was that
+  // useRef(true) preserves identity across React StrictMode's
+  // intentional mount → cleanup → remount cycle. The cleanup set
+  // mountedRef.current = false on the same ref the remount inherited,
+  // and every detection setTimeout's `if (!mountedRef.current) return;`
+  // guard fired silently. Fix: re-arm mountedRef.current = true in
+  // the mount useEffect so the ref reflects the live mount state.
+  it('remount re-arms mountedRef so detection timers fire after StrictMode cycle', () => {
+    // StrictMode triggers the dev-only double-mount: setup → cleanup
+    // → setup again. Without the mountedRef.current = true re-arm in
+    // the mount effect, the cleanup leaves the ref at false on a ref
+    // instance the remount inherits, and the detection setTimeout's
+    // early-exit guard fires silently → wizard never advances.
+    render(
+      <StrictMode>
+        <TrackingSetupWizard onComplete={() => {}} onCancel={() => {}} />
+      </StrictMode>
+    );
+    fireEvent.click(screen.getByTestId('tracking-setup-start'));
+    act(() => {
+      for (let i = 0; i < 8; i++) dispatchPoseSample('right_index', 0.5, 0.5);
+      vi.advanceTimersByTime(5000);
+    });
+    act(() => { vi.advanceTimersByTime(1500); });
+
+    expect(rootEl()).toHaveAttribute('data-phase', 'calibrate-center');
   });
 });
 

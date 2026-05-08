@@ -115,7 +115,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   }, [speechRate, speechVolume]);
 
   // Clean up tracker + pending timers + mark unmounted on cleanup.
+  // Re-arm mountedRef on every mount: useRef preserves identity across
+  // a React StrictMode dev mount → cleanup → remount cycle, AND across
+  // any parent-driven remount. Without this re-arm, the cleanup of the
+  // first lifecycle stuck mountedRef.current = false on the same ref
+  // the remount inherits, and every detection timer's early-exit guard
+  // fired silently (May 2026 — wizard "can't pass step 1" investigation).
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       handleRef.current?.stop();

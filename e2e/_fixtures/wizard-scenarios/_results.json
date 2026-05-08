@@ -1,0 +1,98 @@
+[
+  {
+    "scenario": "person-on-sofa.jpg",
+    "label": "baseline — person on sofa, full setup walk-through",
+    "expectedPhase": "calibrate-center",
+    "actualPhase": "calibrate-center",
+    "ok": true,
+    "phase": "calibrate-center",
+    "trackerStatus": "starting",
+    "statusText": "Loading camera…",
+    "captureCenterDisabled": true,
+    "captureCornerDisabled": null
+  },
+  {
+    "scenario": "person-pointing-tl.jpg",
+    "label": "pointing top-left — corner 1/4 in step 2",
+    "expectedPhase": "calibrate-corners",
+    "actualPhase": "calibrate-corners",
+    "ok": true,
+    "phase": "calibrate-corners",
+    "trackerStatus": "tracking",
+    "statusText": "Tracking your right finger",
+    "captureCenterDisabled": null,
+    "captureCornerDisabled": false
+  },
+  {
+    "scenario": "person-pointing-tr.jpg",
+    "label": "pointing top-right — corner 2/4",
+    "expectedPhase": "calibrate-corners",
+    "actualPhase": "calibrate-corners",
+    "ok": true,
+    "phase": "calibrate-corners",
+    "trackerStatus": "tracking",
+    "statusText": "Tracking your right finger",
+    "captureCenterDisabled": null,
+    "captureCornerDisabled": false
+  },
+  {
+    "scenario": "person-pointing-br.jpg",
+    "label": "pointing bottom-right — corner 3/4",
+    "expectedPhase": "calibrate-corners",
+    "actualPhase": "calibrate-corners",
+    "ok": true,
+    "phase": "calibrate-corners",
+    "trackerStatus": "tracking",
+    "statusText": "Tracking your right finger",
+    "captureCenterDisabled": null,
+    "captureCornerDisabled": false
+  },
+  {
+    "scenario": "person-pointing-bl.jpg",
+    "label": "pointing bottom-left — corner 4/4 → advances to test",
+    "expectedPhase": "accuracy-test",
+    "actualPhase": "accuracy-test",
+    "ok": true,
+    "phase": "accuracy-test",
+    "trackerStatus": "tracking",
+    "statusText": "Tracking your right finger",
+    "captureCenterDisabled": null,
+    "captureCornerDisabled": null
+  },
+  {
+    "scenario": "finger-out-of-frame.jpg",
+    "label": "finger out of camera view — wizard holds, no false-advance",
+    "expectedPhase": "calibrate-center",
+    "actualPhase": null,
+    "ok": false,
+    "phase": null,
+    "trackerStatus": null,
+    "statusText": null,
+    "captureCenterDisabled": null,
+    "captureCornerDisabled": null
+  },
+  {
+    "scenario": "head-out-body-only.jpg",
+    "label": "head cropped above frame — wizard picks body target",
+    "expectedPhase": "calibrate-center",
+    "actualPhase": "calibrate-center",
+    "ok": true,
+    "phase": "calibrate-center",
+    "trackerStatus": "starting",
+    "statusText": "Loading camera…",
+    "captureCenterDisabled": true,
+    "captureCornerDisabled": null
+  },
+  {
+    "scenario": "person-in-car.jpg",
+    "label": "human in a car — jittery poses around center",
+    "expectedPhase": "calibrate-center",
+    "actualPhase": "calibrate-center",
+    "ok": true,
+    "phase": "calibrate-center",
+    "trackerStatus": "tracking",
+    "statusText": "Tracking your right finger",
+    "captureCenterDisabled": false,
+    "captureCornerDisabled": null
+  }
+]

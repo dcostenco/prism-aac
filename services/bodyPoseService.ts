@@ -505,6 +505,18 @@ export function startPoseTracker(
     activeHandle = null;
   }
 
+  // Test escape-hatch: when window.__POSE_TEST_DRIVE === true, skip
+  // MediaPipe + camera entirely and return a tracker driven by
+  // window.__simulatePose / window.__simulatePoseLost. Used by the
+  // wizard scenario harness (scripts/wizard-scenarios.mjs) so static
+  // photos can serve as PIP backdrops while the wizard's phase
+  // machine is exercised deterministically. NO-OP in production —
+  // the flag is never set on prod-served HTML.
+  if (typeof window !== 'undefined' &&
+      (window as unknown as { __POSE_TEST_DRIVE?: boolean }).__POSE_TEST_DRIVE) {
+    return startTestDrivenTracker(opts);
+  }
+
   let stopped = false;
   let rafId = 0;
   let video: HTMLVideoElement | null = null;
@@ -1235,4 +1247,63 @@ export function stopPoseTracker(): void {
     activeHandle.stop();
     activeHandle = null;
   }
+}
+
+// ── Test-driven tracker (gated on window.__POSE_TEST_DRIVE) ─────────────────
+//
+// Provides window.__simulatePose(target, normX, normY, vis?) and
+// window.__simulatePoseLost() so a Playwright/vitest driver can step the
+// wizard through every phase using synthetic landmarks while a real
+// photograph plays in the PIP via canvas.captureStream. All real users
+// hit the production code path above; this branch is unreachable unless
+// the flag is set BEFORE the bundle loads (page.addInitScript).
+
+interface PoseTestDriveAPI {
+  simulatePose: (target: TrackingTarget, normX: number, normY: number, vis?: number) => void;
+  simulatePoseLost: () => void;
+}
+
+function startTestDrivenTracker(opts: PoseTrackerOptions): PoseTrackerHandle {
+  let stopped = false;
+  // Status flips to 'starting' synchronously, mirroring the real path.
+  opts.onStatusChange('starting');
+
+  const api: PoseTestDriveAPI = {
+    simulatePose(target, normX, normY, vis = 0.9) {
+      if (stopped) return;
+      opts.onStatusChange('tracking', target);
+      // Wizard listens for prism-pose-sample to fill its sample buffer.
+      // Detail mirrors what the real tick() loop dispatches.
+      window.dispatchEvent(new CustomEvent('prism-pose-sample', {
+        detail: {
+          normX, normY,
+          visibility: vis,
+          noiseFloor: 0.005,
+          egoSuppressed: false,
+        },
+      }));
+    },
+    simulatePoseLost() {
+      if (stopped) return;
+      opts.onStatusChange('lost');
+    },
+  };
+
+  const w = window as unknown as {
+    __simulatePose?: PoseTestDriveAPI['simulatePose'];
+    __simulatePoseLost?: PoseTestDriveAPI['simulatePoseLost'];
+  };
+  w.__simulatePose = api.simulatePose;
+  w.__simulatePoseLost = api.simulatePoseLost;
+
+  const handle: PoseTrackerHandle = {
+    stop() {
+      stopped = true;
+      opts.onStatusChange('stopped');
+      if (activeHandle === handle) activeHandle = null;
+    },
+    videoElement: null,
+  };
+  activeHandle = handle;
+  return handle;
 }
