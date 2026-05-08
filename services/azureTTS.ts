@@ -301,20 +301,21 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
     return false;
   }
   if (ctx.state === 'suspended') {
-    try { await ctx.resume(); } catch { /* falls through to state check */ }
+    try { await ctx.resume(); } catch { /* attempt playback anyway */ }
   }
-  // iOS Safari + some Chromium edge cases: ctx.resume() can complete
-  // without transitioning to 'running' when the user-gesture token has
-  // already been consumed (typical: the speak path went through one or
-  // more `await fetch(...)` boundaries before reaching here). In that
-  // state, BufferSourceNode.start() resolves successfully but the
-  // audio is queued silently — the user hears nothing. Fail-fast so
-  // speak() can fall through to Web Speech tier (which handles its own
-  // gesture requirement via window.speechSynthesis.speak inside the
-  // click handler synchronously).
+  // 2026-05-08 user report: an earlier fail-fast on
+  // `ctx.state !== 'running'` (commit 500fca6) regressed playback for
+  // every user whose context was transiently suspended at decode time
+  // — the "fix" returned false instead of attempting BufferSourceNode
+  // playback, and the next-tier fallback (Web Speech) ALSO needs a
+  // user gesture so the user heard NOTHING. Removed: try the play
+  // unconditionally. If audio is silent because of a suspended ctx,
+  // the onended-too-early diagnostic below at least makes it
+  // observable in `?debug=tts`. Web Audio actually plays in many
+  // "suspended" states once the source is started, so the fail-fast
+  // was over-cautious.
   if (ctx.state !== 'running') {
-    console.warn(`[${label}] AudioContext stuck in state="${ctx.state}" after resume — falling through to next tier so the user hears something.`);
-    return false;
+    console.warn(`[${label}] AudioContext.state="${ctx.state}" — attempting playback anyway; if silent, see onended diagnostic below.`);
   }
 
   let decoded: AudioBuffer;

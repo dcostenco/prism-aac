@@ -228,8 +228,8 @@ describe('decodeAndPlay — single-call audible playback contract', () => {
   });
 });
 
-describe('decodeAndPlay — fail-fast on suspended AudioContext', () => {
-  it('returns false when context is stuck suspended after resume (silent-play guard)', async () => {
+describe('decodeAndPlay — suspended context attempts playback (no fail-fast regression)', () => {
+  it.skip('returns false when context is stuck suspended after resume (silent-play guard)', async () => {
     // Build a stub that stays suspended through resume() — simulates
     // the iOS Safari "user-gesture token consumed" failure mode.
     class SuspendedStub {
@@ -247,10 +247,52 @@ describe('decodeAndPlay — fail-fast on suspended AudioContext', () => {
       new Response(new ArrayBuffer(64), { status: 200, headers: { 'content-length': '64' } }),
     );
     const success = await mod.speakAzure('hi', 'en-US', 'friendly', 1, 1, '');
-    // Critical: speakAzure must NOT report success for a play that
-    // would have been silent. Falling through to next tier is the
-    // right outcome.
+    // (Old assertion kept skipped — the fail-fast it asserted regressed
+    // user-visible audio in commit 500fca6 and was removed 2026-05-08.)
     expect(success).toBe(false);
+    fetchSpy.mockRestore();
+  });
+
+  it('decodeAndPlay attempts playback even when ctx.state is suspended after resume', async () => {
+    // The fail-fast removed in 2026-05-08 was returning false here,
+    // making speech-service fall through to Web Speech which also
+    // needs a gesture — net effect: silence everywhere. New contract:
+    // start the source unconditionally; the user MIGHT hear nothing
+    // if the context truly can't run, but at minimum the BufferSource
+    // gets started and the onended-too-early warning fires for
+    // diagnosis. Better than guaranteed silence.
+    class SuspendedStub {
+      state: 'running' | 'suspended' | 'closed' = 'suspended';
+      destination = {} as unknown;
+      resume = vi.fn(async () => { /* stays suspended */ });
+      decodeAudioData = vi.fn(async () => ({ duration: 0.5 } as unknown as AudioBuffer));
+      _sources: Array<{ start: () => void; _started: boolean }> = [];
+      createBufferSource() {
+        const src = {
+          buffer: null,
+          onended: null as (() => void) | null,
+          start() { src._started = true; },
+          stop() {},
+          connect: (d: unknown) => d,
+          disconnect() {},
+          _started: false,
+        };
+        this._sources.push(src);
+        return src;
+      }
+      createGain() { return { gain: { value: 1 }, connect: (d: unknown) => d, disconnect() {} }; }
+    }
+    const stub = new SuspendedStub();
+    (globalThis as unknown as { AudioContext: unknown }).AudioContext = function () { return stub; };
+    vi.resetModules();
+    const mod = await import('@/services/azureTTS');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+      new Response(new ArrayBuffer(64), { status: 200, headers: { 'content-length': '64' } }),
+    );
+    await mod.speakAzure('hi', 'en-US', 'friendly', 1, 1, '');
+    // The source MUST have been started — no silent fail-fast.
+    expect(stub._sources.length).toBeGreaterThan(0);
+    expect(stub._sources[0]._started).toBe(true);
     fetchSpy.mockRestore();
   });
 });
