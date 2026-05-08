@@ -290,6 +290,7 @@ export function stopAzureAudio(): void {
  * PrismApp.tsx arranges on first interaction.
  */
 async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string): Promise<boolean> {
+  const t0 = Date.now();
   let ctx: AudioContext;
   try {
     ctx = getAudioContext();
@@ -297,8 +298,10 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
     console.warn(`[${label}] AudioContext unavailable, audio cannot play:`, e);
     return false;
   }
+  console.log(`[${label}] decodeAndPlay enter — ctx.state=${ctx.state} bytes=${audioBytes.byteLength}`);
   if (ctx.state === 'suspended') {
     try { await ctx.resume(); } catch { /* state check next */ }
+    console.log(`[${label}] after resume — ctx.state=${ctx.state}`);
   }
   // 2026-05-08 evidence-based: user's Safari console showed
   // "[TTS] Portal TTS succeeded" ×3 with ZERO audible output. Per
@@ -375,6 +378,7 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
 
   try {
     source.start(0);
+    console.log(`[${label}] source.start OK — duration=${decoded.duration.toFixed(2)}s volume=${safeVolume.toFixed(2)} totalElapsed=${Date.now() - t0}ms`);
   } catch (e) {
     console.warn(`[${label}] source.start failed:`, e instanceof Error ? e.message : e);
     activeSources.delete(source);
@@ -455,6 +459,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   voiceId?: string,
 ): Promise<boolean> {
   const ssml = buildSSML(text, lang, tone, rate, volume);
+  console.log(`[AzureTTS] speakAzure enter — textLen=${text.length} lang=${lang} tone=${tone} voiceId=${voiceId ?? 'auto'} ctxState=${sharedAudioCtx?.state ?? 'none'}`);
 
   let url: string | null = null;
   const controller = new AbortController();

@@ -539,14 +539,35 @@ export function startPoseTracker(
   let dwellTriggered = false;
   let lastFrameTime = 0;
 
-  const calibration = loadPoseCalibration();
-  // Detect whether the loaded calibration is the factory default
-  // (no wizard run yet) or a user-customized one. Drives the
-  // learner's blend mode below: bootstrap when defaults, expand-
-  // only when wizard ran. User design 2026-05-08: "initial
-  // calibration could be done more precisely with caregiver
-  // support; additional calibration should be adaptive [but not
-  // overwrite]". Truth = wizard. Adaptive = nudge.
+  const loadedCal = loadPoseCalibration();
+  // CORRUPT-NARROW DEFENSE: if the saved cal has a tiny range
+  // (< 0.10 normalized on either axis), treat it as corrupt and
+  // reset to factory defaults so bootstrap mode can rebuild from
+  // observation. User report 2026-05-08: a stuck wizard saved
+  // L=0.524 R=0.493 (rangeX=0.031) — head-still motion baked
+  // into permanent calibration → cursor jumped across the screen
+  // on every tiny head wobble. Threshold 0.10 is well below any
+  // legitimate user range; corrupt cals are typically < 0.05.
+  const RECOVERY_MIN_RANGE = 0.10;
+  const loadedRangeX = loadedCal.leftX - loadedCal.rightX;
+  const loadedRangeY = loadedCal.bottomY - loadedCal.topY;
+  const isCorruptNarrow = loadedRangeX < RECOVERY_MIN_RANGE || loadedRangeY < RECOVERY_MIN_RANGE
+    || loadedRangeX < 0 || loadedRangeY < 0;
+  if (isCorruptNarrow) {
+    console.warn(
+      `[PoseTracker] CORRUPT-NARROW saved calibration detected ` +
+      `(rangeX=${loadedRangeX.toFixed(3)}, rangeY=${loadedRangeY.toFixed(3)}) ` +
+      `— resetting to defaults so adaptive bootstrap can rebuild.`
+    );
+  }
+  const calibration: PoseCalibrationData = isCorruptNarrow
+    ? { ...DEFAULT_CALIBRATION }
+    : loadedCal;
+  if (isCorruptNarrow) {
+    try { savePoseCalibration(calibration); } catch { /* */ }
+  }
+  // After possible reset, detect whether we're at factory defaults
+  // (drives the learner's blend mode below: bootstrap vs expand-only).
   const isFactoryDefaults =
     Math.abs(calibration.leftX - DEFAULT_CALIBRATION.leftX) < 0.001 &&
     Math.abs(calibration.rightX - DEFAULT_CALIBRATION.rightX) < 0.001 &&
