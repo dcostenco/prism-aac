@@ -258,6 +258,47 @@ describe('BaselineTracker — drift correction (item F)', () => {
     }
   });
 
+  it('getNoiseFloor returns 0 during warmup', () => {
+    const b = new BaselineTracker();
+    for (let i = 0; i < 5; i++) b.push({ normX: 0.5, normY: 0.5, timestamp: i * 33 });
+    expect(b.getNoiseFloor()).toBe(0);
+  });
+
+  it('getNoiseFloor reports low value for stationary user', () => {
+    const b = new BaselineTracker();
+    let t = 0;
+    for (let i = 0; i < 200; i++) {
+      const noise = (Math.sin(i * 0.7) + Math.cos(i * 1.3)) * 0.002;
+      b.push({ normX: 0.5 + noise, normY: 0.5 + noise, timestamp: (t += 33) });
+    }
+    const noise = b.getNoiseFloor();
+    expect(noise).toBeGreaterThanOrEqual(0);
+    expect(noise).toBeLessThan(0.01);
+  });
+
+  it('getNoiseFloor reports HIGHER value for jittery vs stationary (relative)', () => {
+    // Use a short variance half-life so the EWMA converges within
+    // the test's 200-sample budget.
+    const stationary = new BaselineTracker({ varianceHalfLifeMs: 1500 });
+    const jittery = new BaselineTracker({ varianceHalfLifeMs: 1500 });
+    let t = 0;
+    for (let i = 0; i < 200; i++) {
+      const tiny = (Math.sin(i * 0.7) + Math.cos(i * 1.3)) * 0.002;
+      const big = (Math.sin(i * 1.7) + Math.cos(i * 2.3)) * 0.05;
+      stationary.push({ normX: 0.5 + tiny, normY: 0.5 + tiny, timestamp: (t += 33) });
+      jittery.push({ normX: 0.5 + big, normY: 0.5 + big, timestamp: t });
+    }
+    const sNoise = stationary.getNoiseFloor();
+    const jNoise = jittery.getNoiseFloor();
+    // Jittery environment must produce a HIGHER noise floor than
+    // stationary — this is the signal the smoother uses to pick
+    // its mincutoff.
+    expect(jNoise).toBeGreaterThan(sNoise);
+    // Order of magnitude: jittery should be at least 10x stationary
+    // for this synthetic with 25x amplitude difference.
+    expect(jNoise / Math.max(sNoise, 1e-9)).toBeGreaterThan(10);
+  });
+
   it('does not suggest spurious correction for a stationary user', () => {
     const b = new BaselineTracker({ minWarmupMs: 100 });
     let t = 0;

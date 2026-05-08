@@ -135,12 +135,27 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   // 2026-05-08 after multiple "same" reports where speculation was
   // out of stock and I needed to see what the runtime was actually
   // producing.
-  const [latestSample, setLatestSample] = useState<{ normX: number; normY: number } | null>(null);
+  interface PoseSampleDetail {
+    normX: number;
+    normY: number;
+    noiseFloor?: number;
+    visibility?: number;
+    egoSuppressed?: boolean;
+  }
+  const [latestSample, setLatestSample] = useState<PoseSampleDetail | null>(null);
   const [latestCal, setLatestCal] = useState<PoseCalibrationData | null>(null);
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.normX != null) setLatestSample({ normX: detail.normX, normY: detail.normY });
+      const detail = (e as CustomEvent).detail as PoseSampleDetail | undefined;
+      if (detail?.normX != null) {
+        setLatestSample({
+          normX: detail.normX,
+          normY: detail.normY,
+          noiseFloor: detail.noiseFloor,
+          visibility: detail.visibility,
+          egoSuppressed: detail.egoSuppressed,
+        });
+      }
     };
     window.addEventListener('prism-pose-sample', handler);
     return () => window.removeEventListener('prism-pose-sample', handler);
@@ -881,11 +896,37 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
           <div>samples in buffer: <span style={{ color: '#fff' }}>{sampleBufferRef.current.length}</span></div>
           <div>cornerSamples: <span style={{ color: '#fff' }}>{cornerSamples.length}/4</span></div>
           {latestSample && (
-            <div>
-              normX: <span style={{ color: '#fff' }}>{latestSample.normX.toFixed(3)}</span>{' '}
-              normY: <span style={{ color: '#fff' }}>{latestSample.normY.toFixed(3)}</span>{' '}
-              mirX: <span style={{ color: '#fff' }}>{(1 - latestSample.normX).toFixed(3)}</span>
-            </div>
+            <>
+              <div>
+                normX: <span style={{ color: '#fff' }}>{latestSample.normX.toFixed(3)}</span>{' '}
+                normY: <span style={{ color: '#fff' }}>{latestSample.normY.toFixed(3)}</span>{' '}
+                mirX: <span style={{ color: '#fff' }}>{(1 - latestSample.normX).toFixed(3)}</span>
+              </div>
+              {latestSample.visibility != null && (
+                <div>
+                  visibility: <span style={{
+                    color: (latestSample.visibility ?? 0) >= 0.5 ? '#9efc9e' : '#ffd47e',
+                  }}>{(latestSample.visibility ?? 0).toFixed(2)}</span>
+                </div>
+              )}
+              {latestSample.noiseFloor != null && (
+                <div>
+                  noise: <span style={{
+                    color: (latestSample.noiseFloor ?? 0) < 0.01 ? '#9efc9e'
+                      : (latestSample.noiseFloor ?? 0) < 0.03 ? '#ffd47e' : '#ff7e7e',
+                  }}>{(latestSample.noiseFloor ?? 0).toFixed(4)}</span>
+                  {' '}
+                  <span style={{ color: '#aaa' }}>
+                    ({(latestSample.noiseFloor ?? 0) < 0.005 ? 'quiet'
+                      : (latestSample.noiseFloor ?? 0) < 0.02 ? 'normal'
+                      : (latestSample.noiseFloor ?? 0) < 0.05 ? 'jittery' : 'heavy'})
+                  </span>
+                </div>
+              )}
+              {latestSample.egoSuppressed && (
+                <div style={{ color: '#ff7e7e' }}>⛔ ego-motion suppressed</div>
+              )}
+            </>
           )}
           <div>
             cursor: <span style={{ color: '#fff' }}>({Math.round(cursorPos.x)}, {Math.round(cursorPos.y)})</span>

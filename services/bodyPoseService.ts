@@ -968,9 +968,19 @@ export function startPoseTracker(
             sy = oneEuroY.update(rawY, measurementConfidence, nowMs);
           }
 
-          // ── Baseline drift correction (item F) ──
+          // ── Baseline drift correction (item F) + live noise floor ──
           if (!suppressForEgoMotion) {
             baselineTracker.push({ normX: mirroredX, normY: clampedY, timestamp: Date.now() });
+            // Live noise → smoother cutoff. Quiet user keeps responsive
+            // tracking; jittery environment / spasticity gets heavier
+            // smoothing automatically without the user touching settings.
+            // The noise floor is RMS of running variance over a 30s
+            // half-life, so it's slow-moving and won't flap with single
+            // bad frames.
+            const noise = baselineTracker.getNoiseFloor();
+            oneEuroX.setNoiseFloor(noise);
+            oneEuroY.setNoiseFloor(noise);
+
             const now = Date.now();
             if (now - lastBaselineApplyTime > 5000) {
               lastBaselineApplyTime = now;
@@ -991,10 +1001,16 @@ export function startPoseTracker(
             opts.onMove(sx, sy);
           }
 
-          // Emit raw normalized coords for calibration UI
+          // Emit raw normalized coords + diagnostic state for the
+          // calibration UI / wizard diag panel.
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('prism-pose-sample', {
-              detail: { normX, normY },
+              detail: {
+                normX, normY,
+                noiseFloor: baselineTracker.getNoiseFloor(),
+                visibility: frameChosenVis,
+                egoSuppressed: suppressForEgoMotion,
+              },
             }));
           }
 

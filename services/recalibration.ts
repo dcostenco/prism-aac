@@ -246,6 +246,28 @@ export class BaselineTracker {
             baselineLocked: this.baselineLockedAt !== 0,
         };
     }
+
+    /**
+     * Live noise floor — RMS of running variance per axis, in
+     * normalized [0..1] pose-space units. Used by the smoother
+     * (services/oneEuroFilter.ts) to auto-tune its mincutoff:
+     * high noise → lower cutoff (heavier smoothing), quiet
+     * environment → higher cutoff (more responsive cursor).
+     *
+     * Returns 0 during warmup (insufficient samples) so the
+     * smoother stays at its default tuning until we have a
+     * meaningful estimate.
+     *
+     * Typical values:
+     *   • Stationary user, good lighting:    ~0.001 – 0.005
+     *   • Light hand jitter / talking:       ~0.005 – 0.015
+     *   • Moving car / lap-held laptop:      ~0.020 – 0.080+
+     *   • Severe spasticity / camera shake:  ~0.050+
+     */
+    getNoiseFloor(): number {
+        if (this.samples < 30) return 0;
+        return Math.sqrt(this.varX * this.varX + this.varY * this.varY);
+    }
 }
 
 /* ── Anchor recording ─────────────────────────────────────────────── */

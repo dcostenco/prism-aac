@@ -183,6 +183,48 @@ describe('ConfidenceAwareOneEuro — visibility-modulated smoothing', () => {
     expect(out).toBe(50);
   });
 
+  it('noise floor scales mincutoff — quiet stays responsive, jittery smooths harder', () => {
+    // Same input + confidence on two filters, different noise floors.
+    // The high-noise one should produce more lag (closer to prior
+    // value) than the quiet one.
+    const quiet = new ConfidenceAwareOneEuro({
+      freq: 30, mincutoffHigh: 1.0, mincutoffLow: 0.3, beta: 0.007,
+    });
+    const jittery = new ConfidenceAwareOneEuro({
+      freq: 30, mincutoffHigh: 1.0, mincutoffLow: 0.3, beta: 0.007,
+    });
+    quiet.setNoiseFloor(0.001);    // very quiet
+    jittery.setNoiseFloor(0.080);  // heavy car-like jitter
+    // Warm both to 0
+    for (let i = 0; i < 10; i++) {
+      quiet.update(0, 1.0);
+      jittery.update(0, 1.0);
+    }
+    // Apply same step input under high confidence — without noise,
+    // a 1.0-confidence frame gets the FULL mincutoffHigh (1.0 Hz).
+    // With heavy noise, the filter should drop toward mincutoffLow
+    // (0.3 Hz) → smoother, more lag.
+    let lastQ = 0, lastJ = 0;
+    for (let i = 0; i < 5; i++) {
+      lastQ = quiet.update(500, 1.0);
+      lastJ = jittery.update(500, 1.0);
+    }
+    expect(Math.abs(lastQ - 500)).toBeLessThan(Math.abs(lastJ - 500));
+  });
+
+  it('zero / NaN noise floor falls through to no-noise behavior', () => {
+    const f = new ConfidenceAwareOneEuro({
+      freq: 30, mincutoffHigh: 1.0, mincutoffLow: 0.3, beta: 0.007,
+    });
+    f.setNoiseFloor(NaN);
+    f.setNoiseFloor(0);
+    f.setNoiseFloor(-1);
+    // Should still produce a valid output unchanged from baseline.
+    for (let i = 0; i < 10; i++) f.update(100, 1.0);
+    expect(f.value).toBeGreaterThan(50); // converged
+    expect(Number.isFinite(f.value)).toBe(true);
+  });
+
   it('AAC use case: slow finger pointing during low-vis frames stays stable', () => {
     // Realistic: user's finger sweeps from 100 → 300 over 30 frames,
     // but every other frame has visibility=0.15 (partly out of

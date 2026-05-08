@@ -199,8 +199,11 @@ export class ConfidenceAwareOneEuro {
     const c = Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0;
     const t = (c - this.confLo) / Math.max(1e-6, this.confHi - this.confLo);
     const tClamped = Math.max(0, Math.min(1, t));
-    // Linear interp from low → high mincutoff.
-    const mc = this.mincutoffLow + (this.mincutoffHigh - this.mincutoffLow) * tClamped;
+    // Linear interp from low → high mincutoff (confidence-driven).
+    const mcConf = this.mincutoffLow + (this.mincutoffHigh - this.mincutoffLow) * tClamped;
+    // Apply noise-driven scale on top — quiet env keeps mcConf,
+    // heavy noise pulls it down toward mincutoffLow.
+    const mc = Math.max(this.mincutoffLow, mcConf * this.noiseScale);
     this.filter.setMinCutoff(mc);
     return this.filter.filter(value, timestampMs);
   }
@@ -208,4 +211,35 @@ export class ConfidenceAwareOneEuro {
   snapTo(value: number): void { this.filter.snapTo(value); }
   reset(): void { this.filter.reset(); }
   get value(): number { return this.filter.value; }
+
+  /**
+   * Apply a noise-floor-driven adjustment on top of the
+   * confidence-driven mincutoff. Reduces cutoff (= more smoothing)
+   * when ambient noise is high. Live noise comes from the
+   * BaselineTracker's running variance — so the smoother
+   * automatically adapts to a moving car / shaky environment
+   * without the user touching settings.
+   *
+   *   noise ≤ 0.005 (quiet, stationary)  → no extra smoothing
+   *   noise ≥ 0.05  (heavy jitter / car) → cap mincutoff at the
+   *                                         filter's configured Low.
+   *   linear interp between, applied as a SCALAR on top of the
+   *   confidence-derived mincutoff so confidence still wins.
+   */
+  setNoiseFloor(noise: number): void {
+    if (!Number.isFinite(noise) || noise <= 0) {
+      this.noiseScale = 1;
+      return;
+    }
+    const NOISE_QUIET = 0.005;
+    const NOISE_HEAVY = 0.05;
+    const t = (noise - NOISE_QUIET) / (NOISE_HEAVY - NOISE_QUIET);
+    const tClamped = Math.max(0, Math.min(1, t));
+    // At quiet end: scale=1.0 (no extra smoothing).
+    // At heavy end: scale=mincutoffLow / mincutoffHigh (cap at Low).
+    const minScale = this.mincutoffLow / Math.max(this.mincutoffHigh, 1e-6);
+    this.noiseScale = 1.0 - tClamped * (1.0 - minScale);
+  }
+  /** Internal scalar applied on top of confidence-derived mincutoff. */
+  private noiseScale = 1.0;
 }
