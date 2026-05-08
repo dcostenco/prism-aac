@@ -61,7 +61,21 @@ export const useUIStore = create<UIState>()((set) => ({
   showSettings: false,
   isAlertFlashing: false,
 
-  openCategories: () => set((s) => ({ sidePanel: s.sidePanel === 'categories' || s.sidePanel === 'category-detail' ? 'none' : 'categories', activeCategoryId: null })),
+  openCategories: () => set((s) => {
+    // Sane navigation from every starting state:
+    //   • 'categories'      → 'none'        (close — second tap dismisses)
+    //   • 'category-detail' → 'categories'  (go UP one level — earlier
+    //                         revision closed the panel here, which read
+    //                         as "tap does nothing" from inside a detail
+    //                         view; May 2026 user report Image #8.)
+    //   • 'ordering'        → 'categories'  (same — escape ordering flow)
+    //   • anything else     → 'categories'  (open at top level)
+    if (s.sidePanel === 'categories') return { sidePanel: 'none', activeCategoryId: null, activeSequenceId: null };
+    if (s.sidePanel === 'category-detail' || s.sidePanel === 'ordering') {
+      return { sidePanel: 'categories', activeCategoryId: null, activeSequenceId: null };
+    }
+    return { sidePanel: 'categories', activeCategoryId: null };
+  }),
   openMath: () => set((s) => ({ sidePanel: s.sidePanel === 'math' ? 'none' : 'math' })),
   openCaregiver: () => set((s) => ({ sidePanel: s.sidePanel === 'caregiver' ? 'none' : 'caregiver' })),
   openAIChat: () => set((s) => ({ sidePanel: s.sidePanel === 'ai-chat' ? 'none' : 'ai-chat' as SidePanelView })),
