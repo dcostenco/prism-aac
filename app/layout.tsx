@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 // intervention. (May 2026: bumped to 2026-05-08-pdf-fix after users
 // were stuck on Apr-30 SW serving stale chunks where PDF reader
 // blew up on clinical PDFs.)
-const SW_KILLSWITCH_VERSION = '2026-05-09-gaze-jitter-fix-39';
+const SW_KILLSWITCH_VERSION = '2026-05-09-refactor-tests-40';
 
 // Emergency reset URL — the user's tracking calibration left them
 // unable to reach Settings to disable. Visiting any page with
