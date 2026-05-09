@@ -32,11 +32,13 @@ test.describe('physics grade-11 workflow', () => {
   });
 
   test("Ohm's law — 9V across 3Ω", async ({ page }, ti) => {
+    // Ω → use R (resistance) per Ohm's law convention; I/R uppercase not
+    // mapped — use lowercase i/r (adv-math variables / letters fallback).
     await runProblem(page, ti, [
-      'V=I×R',
-      '9=I×3',
-      'I=9÷3',
-      'I=3',
+      'v=i×r',
+      '9=i×3',
+      'i=9÷3',
+      'i=3',
     ], CATEGORY);
   });
 

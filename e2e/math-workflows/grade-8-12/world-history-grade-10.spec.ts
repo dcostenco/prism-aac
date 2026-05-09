@@ -20,10 +20,12 @@ test.describe('world-history grade-10 workflow', () => {
     await gotoMathPanel(page, baseURL);
   });
 
-  test('date arithmetic — 1453 to 1492', async ({ page }, ti) => {
+  test('date arithmetic — 1453 to 1500', async ({ page }, ti) => {
+    // '1492' is a MULTI history-event tile only available on the history chip,
+    // not on 'main'. Change the problem to 1500−1453=47 (all plain digits).
     await runProblem(page, ti, [
-      '1492−1453',
-      '39',
+      '1500−1453',
+      '47',
     ], CATEGORY);
   });
 

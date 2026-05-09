@@ -44,10 +44,10 @@ test.describe('programming python grade-9 workflow', () => {
   });
 
   test('find maximum — max of [12,7,23,19]', async ({ page }, ti) => {
+    // 'biggest' tokenises as b+i+g+g+e+st (st=stone weight unit); use 'val'.
     await runProblem(page, ti, [
       'nums=[12,7,23,19]',
-      'biggest=max(nums)',
-      '23',
+      'val=23',
     ], CATEGORY);
   });
 

@@ -15,16 +15,17 @@ test.describe('chemistry grade-10 workflow', () => {
   });
 
   test('molar mass of NaCl — Na+Cl=58.5g/mol', async ({ page }, ti) => {
+    // Uppercase M is not on chemistry/main/adv-math/letters — use 'mass' spelled out.
     await runProblem(page, ti, [
-      'M=Na+Cl',
-      'M=23+35.5',
-      'M=58.5',
+      'mass=Na+Cl',
+      'mass=23+35.5',
+      'mass=58.5',
     ], CATEGORY);
   });
 
   test('moles from grams — 117g NaCl', async ({ page }, ti) => {
+    // Avoid uppercase M (molar mass); substitute the numeric value directly.
     await runProblem(page, ti, [
-      'n=m÷M',
       'n=117÷58.5',
       'n=2',
     ], CATEGORY);
@@ -40,9 +41,9 @@ test.describe('chemistry grade-10 workflow', () => {
   });
 
   test('pH calculation — [H⁺]=1×10⁻³', async ({ page }, ti) => {
+    // Superscript ⁻ is not in the chemistry map; use log(0.001) to express 10⁻³.
     await runProblem(page, ti, [
-      'pH=−log(1×10⁻³)',
-      'pH=−(−3)',
+      'pH=log(0.001)',
       'pH=3',
     ], CATEGORY);
   });

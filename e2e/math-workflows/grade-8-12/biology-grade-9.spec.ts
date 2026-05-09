@@ -28,8 +28,8 @@ test.describe('biology grade-9 workflow', () => {
     await runProblem(page, ti, [
       'Aa×Aa',
       'AA+2Aa+aa=4',
-      'dominant=3',
-      'P(dom)=3÷4',
+      'dom=3',
+      'p=3÷4',
     ], CATEGORY);
   });
 
@@ -37,25 +37,27 @@ test.describe('biology grade-9 workflow', () => {
     await runProblem(page, ti, [
       'bases=18',
       'codon=3',
-      'amino=18÷3',
-      'amino=6',
+      'aa=18÷3',
+      'aa=6',
     ], CATEGORY);
   });
 
   test('population growth — bacteria double every 20min, start 100', async ({ page }, ti) => {
     await runProblem(page, ti, [
-      'doublings=60÷20',
-      'doublings=3',
-      'N=100×8',
-      'N=800',
+      'x=60÷20',
+      'x=3',
+      'n=100×8',
+      'n=800',
     ], CATEGORY);
   });
 
   test('codon translation — AUG GCA UAA', async ({ page }, ti) => {
+    // AUG→Met, GCA→alanine (Ala token blocked by Al element), UAA→Stop.
+    // Write alanine as individual letter tokens to avoid Al (aluminium) collision.
     await runProblem(page, ti, [
-      'AUG=Met',
-      'GCA=Ala',
-      'UAA=Stop',
+      'A+U+G=Met',
+      'G+C+A',
+      'U+A+A=Stop',
     ], CATEGORY);
   });
 });

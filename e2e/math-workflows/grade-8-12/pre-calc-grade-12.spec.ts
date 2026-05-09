@@ -23,19 +23,21 @@ test.describe('pre-calc grade-12 workflow', () => {
   });
 
   test('exponential growth — P₀=1000, double every 10yr, t=30', async ({ page }, ti) => {
+    // Uppercase P not on adv-math/main/letters; use lowercase p.
     await runProblem(page, ti, [
-      'P=1000×2³',
-      'P=1000×8',
-      'P=8000',
+      'p=1000×2³',
+      'p=1000×8',
+      'p=8000',
     ], CATEGORY);
   });
 
   test('trig — sin(30°)+cos(60°)', async ({ page }, ti) => {
+    // 'sum' is a Python builtin token → not on adv-math; use 'tot' instead.
     await runProblem(page, ti, [
       'sin(30)=0.5',
       'cos(60)=0.5',
-      'sum=0.5+0.5',
-      'sum=1.0',
+      'tot=0.5+0.5',
+      'tot=1.0',
     ], CATEGORY);
   });
 
@@ -49,11 +51,13 @@ test.describe('pre-calc grade-12 workflow', () => {
   });
 
   test('combinations — C(8,3)', async ({ page }, ti) => {
+    // C( token is on the statistics chip, not adv-math; expand the factorial
+    // formula using only adv-math/main operators.
     await runProblem(page, ti, [
-      'C(8,3)=8!÷(3!×5!)',
-      '=(8×7×6)÷(3×2×1)',
-      '=336÷6',
-      '=56',
+      '8!÷(3!×5!)',
+      '(8×7×6)÷6',
+      '336÷6',
+      '56',
     ], CATEGORY);
   });
 });

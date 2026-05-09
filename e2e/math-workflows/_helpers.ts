@@ -82,13 +82,18 @@ export function tokenise(step: string): string[] {
     'pt', 'qt',
     '1st', '2nd', '3rd', '4th', '5th', '10th', '15th',
     '17th', '18th', '19th', '20th', '21st',
+    // Language-arts POS tags MUST come before 'BC', 'AD', etc. so that
+    // 'ADJ' matches the full token rather than 'AD' (Anno Domini).
+    'ADJ', 'ADV', 'PRON', 'PREP', 'CONJ', 'INTJ', 'AUX', 'DET', 'NUM',
+    'ART',
+    'DECL', 'IMP', 'EXCL', 'COMP', 'CPLX',
+    // 'INT' sentence-type must come before 'int' Python builtin (case differs
+    // so no real conflict, but keeping INT here for logical grouping).
+    'INT',
     'BCE', 'CE', 'BC', 'AD', 'c.', 'fl.',
     'AA', 'Aa', 'aa', 'BB', 'Bb', 'bb', 'F1', 'F2',
     'p-value', 'H0', 'Ha', 'SE', 'CI', 'df', 'σ²', 's²', 'x̄', 'p̂', 'χ²', '𝒩',
     'P(', 'E[', 'Var[', 'C(',
-    'ADJ', 'ADV', 'PRON', 'PREP', 'CONJ', 'INTJ', 'AUX', 'DET', 'NUM',
-    'ART',
-    'DECL', 'INT', 'IMP', 'EXCL', 'COMP', 'CPLX',
     '==', '!=', '<=', '>=',
     'log', 'ln',
     // v2 audit additions — multi-char tokens that newly land on
@@ -112,6 +117,7 @@ export function tokenise(step: string): string[] {
     '^n',
     '→|',
     'Q:', 'A:',
+    // 'COMP-OBJ' must precede plain tokens to avoid 'COMP' eating its prefix.
     'COMP-OBJ', 'SUBJ', 'PRED', 'OBJ', 'DO', 'IO',
     'n.', 'v.', 'adj.', 'adv.', 'pron.', 'prep.', 'conj.',
     'art.', 'intj.', 'aux.', 'det.', 'num.',

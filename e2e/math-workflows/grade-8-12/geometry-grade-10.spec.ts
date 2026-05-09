@@ -50,11 +50,12 @@ test.describe('geometry grade-10 workflow', () => {
   });
 
   test('surface area of cube — edge 5', async ({ page }, ti) => {
+    // Uppercase S is not on geom/main/adv-math/letters; use lowercase 'sa'.
     await runProblem(page, ti, [
-      'SA=6×s²',
-      'SA=6×5²',
-      'SA=6×25',
-      'SA=150',
+      'sa=6×s×s',
+      'sa=6×5×5',
+      'sa=6×25',
+      'sa=150',
     ], CATEGORY);
   });
 });

@@ -40,9 +40,10 @@ test.describe('earth-science grade-9 workflow', () => {
   });
 
   test('geologic age — fossil 65Mya to today', async ({ page }, ti) => {
+    // 'start' tokenises as st (stone weight unit) + art; use t0/t1 instead.
     await runProblem(page, ti, [
-      'start=65',
-      'end=0',
+      't0=65',
+      'e=0',
       'age=65−0',
       'age=65',
     ], CATEGORY);
