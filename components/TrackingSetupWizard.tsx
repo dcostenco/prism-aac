@@ -141,10 +141,13 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       handleRef.current?.stop();
       for (const id of detectionTimersRef.current) clearTimeout(id);
       detectionTimersRef.current = [];
-      // Always unfreeze on unmount — prevents freeze leaking if settings
-      // is closed abruptly (nav, back button, external close) before the
-      // wizard's explicit complete/cancel paths run.
+      // Always unfreeze + bump generation on unmount — CameraInputOverlay
+      // then restarts with the saved cal AFTER the wizard is gone (no conflict).
       unfreezeLearnerCalSaves();
+      const s = useSettingsStore.getState();
+      if (s.cameraInputEnabled) {
+        s.update({ poseCalibrationGeneration: s.poseCalibrationGeneration + 1 });
+      }
     };
   }, []);
 
@@ -578,7 +581,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       // Also enable tracking in case it was disabled.
       updateSettings({
         cameraInputEnabled: true,
-        poseCalibrationGeneration: useSettingsStore.getState().poseCalibrationGeneration + 1,
+        // NOTE: poseCalibrationGeneration NOT incremented here — wizard is still
+        // mounted. Incrementing would trigger CameraInputOverlay to restart and
+        // stop the wizard's tracker mid-accuracy-test. Generation bumped in
+        // onComplete (after wizard unmounts) and in Cancel path.
       });
       speak(usedFallbackRange
         ? 'Calibration saved with a wide range so the cursor reaches the full screen.'
@@ -988,7 +994,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                     unfreezeLearnerCalSaves();
                     updateSettings({
                       cameraInputEnabled: true,
-                      poseCalibrationGeneration: useSettingsStore.getState().poseCalibrationGeneration + 1,
+                      // NOTE: poseCalibrationGeneration NOT incremented here — wizard is still
+        // mounted. Incrementing would trigger CameraInputOverlay to restart and
+        // stop the wizard's tracker mid-accuracy-test. Generation bumped in
+        // onComplete (after wizard unmounts) and in Cancel path.
                     });
                     const targets = Array.from({length: 5}, () => ({
                       x: 15 + Math.random() * 70, y: 15 + Math.random() * 70, hit: false
@@ -1096,7 +1105,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
               onClick={() => {
                 tapFeedback();
                 unfreezeLearnerCalSaves();
-                useSettingsStore.getState().update({ cameraInputEnabled: true });
+                useSettingsStore.getState().update({
+                  cameraInputEnabled: true,
+                  poseCalibrationGeneration: useSettingsStore.getState().poseCalibrationGeneration + 1,
+                });
                 handleRef.current?.stop();
                 onComplete();
               }}
