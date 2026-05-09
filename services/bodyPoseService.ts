@@ -1005,10 +1005,18 @@ export function startPoseTracker(
               // iris coords are noisy (pixel-level jitter) and blending
               // them unsmoothed into the One-Euro-filtered pose position
               // caused visible cursor wiggling (user report post-corner).
-              const IRIS_ALPHA = 0.4; // ~2-3 frame lag — responsive for gaze, smoothed enough for tremor
+              // Light smoothing — enough to cut single-frame iris noise,
+              // not enough to add visible lag. Iris moves WITH the face
+              // when head rotates, so high weight just adds a second
+              // lagged layer on top of the One Euro-filtered nose signal.
+              const IRIS_ALPHA = 0.6;
               irisSmoothedX = irisSmoothedX === null ? rawIrisX : irisSmoothedX * (1 - IRIS_ALPHA) + rawIrisX * IRIS_ALPHA;
               irisSmoothedY = irisSmoothedY === null ? rawIrisY : irisSmoothedY * (1 - IRIS_ALPHA) + rawIrisY * IRIS_ALPHA;
-              const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.75));
+              // Low weight — iris adds extra gaze reach at extremes but
+              // nose carries the tracking. Higher weight was causing
+              // double-lag (iris EWMA + One Euro on blend result) that
+              // made cursor appear unresponsive to head rotation.
+              const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.3));
               normX = normX! * (1 - w) + irisSmoothedX * w;
               normY = normY! * (1 - w) + irisSmoothedY * w;
             }

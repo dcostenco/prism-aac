@@ -250,7 +250,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
     const handle = startPoseTracker({
       dwellMs: 99999,
-      sensitivity: 5,
+      sensitivity: 8,
       smoothing: 0.15,
       trackingTarget: 'nose',
       cursorSmoothing: 0.12,
@@ -314,7 +314,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     console.log(`[wizard] restartTrackerForPart target=${target}`);
     const handle = startPoseTracker({
       dwellMs: 99999,
-      sensitivity: 5,
+      sensitivity: 8,
       smoothing: 0.15,
       trackingTarget: target,
       cursorSmoothing: 0.12,
@@ -645,8 +645,11 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       // count, which is the ACTUAL question the test asks ("does
       // calibration roughly work?"). 2026-05-08 user report: cursor
       // visibly tracking head but always 100-150px shy of target.
-      const HIT_RADIUS = 150;
-      const DWELL_MS = 500;
+      // Increased from 150→250px for limited-mobility users (reclining,
+      // can't rotate head to reach screen edges). The question is "does
+      // calibration roughly work?" — 250px still answers that.
+      const HIT_RADIUS = 250;
+      const DWELL_MS = 400;
       if (dist <= HIT_RADIUS) {
         if (dwellHitRef.current?.idx !== testIdx) {
           dwellHitRef.current = { idx: testIdx, start: Date.now() };
@@ -660,6 +663,31 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     }, 80);
     return () => clearInterval(interval);
   }, [phase, testIdx, testTargets, cursorPos.x, cursorPos.y, handleTestHit]);
+
+  // Accuracy test auto-complete — after 10s per target, auto-hit and
+  // advance. Calibration was already saved in captureCorner; the
+  // accuracy test is verification only. Limited-mobility users can't
+  // reach all 5 randomly-placed targets so the test would never pass
+  // otherwise. User confirmed (Image #62): 0/5 hits, no way to complete.
+  const testStartRef = useRef<number>(0);
+  const testIdxRef = useRef(testIdx);
+  useEffect(() => { testIdxRef.current = testIdx; }, [testIdx]);
+  const handleTestHitRef = useRef<((idx: number) => void) | null>(null);
+  useEffect(() => { handleTestHitRef.current = handleTestHit; }, [handleTestHit]);
+  useEffect(() => {
+    if (phase !== 'accuracy-test') return;
+    testStartRef.current = Date.now();
+  }, [phase, testIdx]);
+  useEffect(() => {
+    if (phase !== 'accuracy-test') return;
+    const id = setInterval(() => {
+      if (Date.now() - testStartRef.current >= 10_000) {
+        console.log(`[wizard] auto-advance test target ${testIdxRef.current + 1} — 10s timeout`);
+        handleTestHitRef.current?.(testIdxRef.current);
+      }
+    }, 500);
+    return () => clearInterval(id);
+  }, [phase]);
 
   // Corner auto-capture — two triggers:
   //   1. PROXIMITY: cursor within 200px of corner target for 1.5s
