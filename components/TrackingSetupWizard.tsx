@@ -9,6 +9,7 @@ import {
   DEFAULT_CALIBRATION,
   freezeLearnerCalSaves,
   unfreezeLearnerCalSaves,
+  initFaceLandmarkerForGazeEager,
   type PoseTrackerHandle,
   type TrackingTarget,
   type PoseCalibrationData,
@@ -217,6 +218,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     speak('Hold still. I am looking for you.');
     detectionCountRef.current = {};
     centerSampleRef.current = null;
+    // If eye gaze is enabled, start loading FaceLandmarker immediately
+    // so it's ready before the user reaches step 2 corners (~10-20s).
+    if (headTrackingEyeGaze) { initFaceLandmarkerForGazeEager(); }
     // Freeze learner saves for the entire wizard run. The online learner
     // overwrites DEFAULT_CALIBRATION within seconds — freezing it keeps
     // the wizard-set cal stable throughout Steps 1–2.
@@ -367,10 +371,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       const sy = buf.reduce((s, v) => s + v.normY, 0) / buf.length;
       const anchorMirX = 1 - sx;
       const liveCal = {
-        leftX: Math.min(0.95, anchorMirX + 0.35),
-        rightX: Math.max(0.05, anchorMirX - 0.35),
-        topY: Math.max(0.05, sy - 0.30),
-        bottomY: Math.min(0.95, sy + 0.30),
+        leftX: Math.min(0.95, anchorMirX + 0.15),
+        rightX: Math.max(0.05, anchorMirX - 0.15),
+        topY: Math.max(0.05, sy - 0.12),
+        bottomY: Math.min(0.95, sy + 0.12),
       };
       // Update the RUNNING TRACKER's in-memory calibration directly.
       // savePoseCalibration alone only updates localStorage — the tracker
@@ -431,10 +435,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     try {
       const anchorMirX = 1 - sx;
       handleRef.current?.setCalibration({
-        leftX: Math.min(0.95, anchorMirX + 0.35),
-        rightX: Math.max(0.05, anchorMirX - 0.35),
-        topY: Math.max(0.05, sy - 0.30),
-        bottomY: Math.min(0.95, sy + 0.30),
+        leftX: Math.min(0.95, anchorMirX + 0.15),
+        rightX: Math.max(0.05, anchorMirX - 0.15),
+        topY: Math.max(0.05, sy - 0.12),
+        bottomY: Math.min(0.95, sy + 0.12),
       });
     } catch { /* best-effort */ }
 
@@ -539,8 +543,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         rawRangeX < PRACTICAL_MIN_RANGE || rawRangeY < PRACTICAL_MIN_RANGE;
       // Default range chosen to mirror DEFAULT_CALIBRATION (rangeX≈0.70,
       // rangeY≈0.60) — the values the cursor mapping is tuned for.
-      const FALLBACK_RANGE_X = 0.70;
-      const FALLBACK_RANGE_Y = 0.60;
+      // Fallback range for limited-mobility users (corners clustered).
+      // Was 0.70/0.60 (DEFAULT_CALIBRATION width) which mapped a
+      // ±0.08 head/eye movement to only 11% of screen — cursor barely
+      // moved. ±0.15/0.12 maps the same movement to 27%/33% — enough
+      // to reach corners. Image #55 report: "cursor doesn't move when
+      // turning."
+      const FALLBACK_RANGE_X = 0.30;
+      const FALLBACK_RANGE_Y = 0.24;
       const finalRangeX = usedFallbackRange ? FALLBACK_RANGE_X : rawRangeX;
       const finalRangeY = usedFallbackRange ? FALLBACK_RANGE_Y : rawRangeY;
 

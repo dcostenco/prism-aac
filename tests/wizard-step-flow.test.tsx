@@ -394,11 +394,12 @@ describe('TrackingSetupWizard — narrow-range fallback (head-tracking accessibi
     const rangeX = cal.leftX - cal.rightX;
     const rangeY = cal.bottomY - cal.topY;
     // Fallback anchored on center (anchorMirX = 1 - 0.475 = 0.525).
-    // Expected: leftX = 0.525 + 0.35 = 0.875, rightX = 0.525 - 0.35 = 0.175.
-    expect(cal.leftX).toBeCloseTo(0.875, 2);
-    expect(cal.rightX).toBeCloseTo(0.175, 2);
-    expect(rangeX).toBeCloseTo(0.70, 2);
-    expect(rangeY).toBeCloseTo(0.60, 2);
+    // FALLBACK_RANGE_X = 0.30, FALLBACK_RANGE_Y = 0.24.
+    // leftX = 0.525 + 0.15 = 0.675, rightX = 0.525 - 0.15 = 0.375.
+    expect(cal.leftX).toBeCloseTo(0.675, 2);
+    expect(cal.rightX).toBeCloseTo(0.375, 2);
+    expect(rangeX).toBeCloseTo(0.30, 2);
+    expect(rangeY).toBeCloseTo(0.24, 2);
   });
 
   it('wide corners centered on (0.5, 0.5) save raw range with midpoint at (0.5, 0.5)', async () => {
@@ -469,8 +470,9 @@ describe('TrackingSetupWizard — narrow-range fallback (head-tracking accessibi
     const cal = saveSpy.mock.calls[saveSpy.mock.calls.length - 1][0];
     // Y-range was 0.02 → fallback fires for Y. Whole cal becomes anchored
     // on center (anchor=(0.5, 0.5), anchorMirX = 0.5).
-    expect(cal.leftX - cal.rightX).toBeCloseTo(0.70, 2);
-    expect(cal.bottomY - cal.topY).toBeCloseTo(0.60, 2);
+    // FALLBACK_RANGE_X = 0.30, FALLBACK_RANGE_Y = 0.24.
+    expect(cal.leftX - cal.rightX).toBeCloseTo(0.30, 2);
+    expect(cal.bottomY - cal.topY).toBeCloseTo(0.24, 2);
   });
 });
 

@@ -229,6 +229,12 @@ async function initPoseLandmarker(): Promise<boolean> {
 let faceLandmarkerForGaze: unknown = null;
 let faceLandmarkerLoadPromise: Promise<void> | null = null;
 
+/** Public export so the wizard can eagerly start loading FaceLandmarker
+ *  as soon as eye gaze is enabled, before the tracker restarts for corners. */
+export function initFaceLandmarkerForGazeEager(): void {
+  void initFaceLandmarkerForGaze();
+}
+
 async function initFaceLandmarkerForGaze(): Promise<boolean> {
   if (faceLandmarkerForGaze) return true;
   if (faceLandmarkerLoadPromise) { await faceLandmarkerLoadPromise; return !!faceLandmarkerForGaze; }
@@ -977,13 +983,18 @@ export function startPoseTracker(
         // Iris moves with GAZE direction (not just head rotation), giving
         // full-screen cursor reach without any head turning.
         // Iris landmarks: 468 = right iris center, 473 = left iris center.
-        if (opts.useEyeGaze && normX !== null && normY !== null && faceLandmarkerForGaze) {
+        if (opts.useEyeGaze && normX !== null && normY !== null && faceLandmarkerForGaze && video) {
           try {
-            const faceResult = (faceLandmarkerForGaze as { detectForVideo: (v: HTMLVideoElement, t: number) => { faceLandmarks?: Array<Array<{ x: number; y: number }>> } }).detectForVideo(video!, performance.now());
+            const faceResult = (faceLandmarkerForGaze as {
+              detectForVideo: (v: HTMLVideoElement, t: number) => {
+                faceLandmarks?: Array<Array<{ x: number; y: number }>>
+              }
+            }).detectForVideo(video, performance.now());
             const fl = faceResult?.faceLandmarks?.[0];
             const rightIris = fl?.[468];
             const leftIris  = fl?.[473];
-            if (rightIris && leftIris) {
+            if (rightIris && leftIris &&
+                Number.isFinite(rightIris.x) && Number.isFinite(leftIris.x)) {
               const irisX = (rightIris.x + leftIris.x) / 2;
               const irisY = (rightIris.y + leftIris.y) / 2;
               const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.8));
