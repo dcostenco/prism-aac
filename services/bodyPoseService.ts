@@ -144,6 +144,11 @@ export interface PoseTrackerOptions {
 export interface PoseTrackerHandle {
   stop: () => void;
   videoElement: HTMLVideoElement | null;
+  /** Directly update the in-memory calibration used by the running tracker.
+   *  Also persists to localStorage. Use when external code needs to update
+   *  the live cursor mapping without restarting the tracker — e.g. the
+   *  wizard's live-recentering interval. */
+  setCalibration: (data: PoseCalibrationData) => void;
 }
 
 // ── Feature Detection ───────────────────────────────────────────────────────
@@ -1331,6 +1336,13 @@ export function startPoseTracker(
     get videoElement() {
       return video;
     },
+    setCalibration(data: PoseCalibrationData) {
+      calibration.leftX = data.leftX;
+      calibration.rightX = data.rightX;
+      calibration.topY = data.topY;
+      calibration.bottomY = data.bottomY;
+      try { savePoseCalibration(calibration); } catch { /* */ }
+    },
   };
 
   activeHandle = handle;
@@ -1403,6 +1415,7 @@ function startTestDrivenTracker(opts: PoseTrackerOptions): PoseTrackerHandle {
       if (activeHandle === handle) activeHandle = null;
     },
     videoElement: null,
+    setCalibration(_data: PoseCalibrationData) { /* no-op in test mode */ },
   };
   activeHandle = handle;
   return handle;

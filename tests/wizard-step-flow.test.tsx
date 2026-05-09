@@ -57,6 +57,7 @@ vi.mock('@/services/bodyPoseService', async () => {
       return {
         stop() { t.stopped = true; },
         videoElement: null,
+        setCalibration: vi.fn(),
       };
     },
     savePoseCalibration: vi.fn(),

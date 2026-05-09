@@ -366,14 +366,17 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       const sx = buf.reduce((s, v) => s + v.normX, 0) / buf.length;
       const sy = buf.reduce((s, v) => s + v.normY, 0) / buf.length;
       const anchorMirX = 1 - sx;
-      try {
-        savePoseCalibration({
-          leftX: Math.min(0.95, anchorMirX + 0.35),
-          rightX: Math.max(0.05, anchorMirX - 0.35),
-          topY: Math.max(0.05, sy - 0.30),
-          bottomY: Math.min(0.95, sy + 0.30),
-        });
-      } catch { /* best-effort */ }
+      const liveCal = {
+        leftX: Math.min(0.95, anchorMirX + 0.35),
+        rightX: Math.max(0.05, anchorMirX - 0.35),
+        topY: Math.max(0.05, sy - 0.30),
+        bottomY: Math.min(0.95, sy + 0.30),
+      };
+      // Update the RUNNING TRACKER's in-memory calibration directly.
+      // savePoseCalibration alone only updates localStorage — the tracker
+      // uses a closure-local `calibration` variable loaded once at start.
+      // setCalibration() updates both the in-memory cal AND localStorage.
+      handleRef.current?.setCalibration(liveCal);
 
       // Auto-capture: trigger once the user has ≥ 50 samples and is
       // holding still (σ < 0.004 in both axes = ≈ 0.6 % of frame width).
@@ -427,7 +430,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     // overwrite with the proper recentered + range-from-corners cal.
     try {
       const anchorMirX = 1 - sx;
-      savePoseCalibration({
+      handleRef.current?.setCalibration({
         leftX: Math.min(0.95, anchorMirX + 0.35),
         rightX: Math.max(0.05, anchorMirX - 0.35),
         topY: Math.max(0.05, sy - 0.30),
