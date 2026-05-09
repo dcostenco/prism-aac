@@ -64,7 +64,9 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 ### 📂 Categories
 PECS-style picture tiles. Tap a category, tap a tile, hear the word, watch it land in the message bar. Works for non-readers, pre-readers, and emerging communicators alike. Tile sets and ordering personalize over time via spreading activation — the tiles your child taps most rise; the ones unused for months fade.
 
-![Categories panel showing colour-coded picture tiles by topic](docs/screenshots/panel-categories.png)
+**Surround layout** — categories appear in a scrollable left column alongside the keyboard, so the AAC user can tap picture tiles AND type simultaneously without switching modes. The prediction bar stays visible; both inputs are always accessible.
+
+![Categories in surround mode — scrollable category cards on the left, full keyboard on the right](docs/screenshots/categories-surround-v2.png)
 
 <details>
 <summary><strong>Features + technical details</strong></summary>
@@ -98,7 +100,7 @@ On-screen keyboard with **word prediction**, **AI autocomplete**, and a one-tap 
 - AI completion ("hw" → "how", "togoso" → "to go so") via Synalux `text/correct` (Gemini 2.5 Flash-Lite, ~752ms avg, 4.3× cheaper than 2.5 Flash)
 - Cross-language gate: RO `eu` won't leak into EN bar even when both corpora are loaded (cross-corpus frequency comparison)
 - "Speak" reads with auto-tone adaptation (declarative / interrogative / exclamatory inferred from punctuation)
-- Voice tier 1: Inworld TTS-2; tier 1.5: Kokoro-82M offline; tier 2: OS Web Speech; tier 3: WASM espeak-ng
+- Voice tier 1: Inworld TTS-2 → Azure Neural (both natural/neural, all 24 app languages covered); tier 2: Kokoro-82M offline; tier 3: OS Web Speech; tier 4: WASM espeak-ng
 - Word highlight is duration-estimated (~60 ms/char @ rate=0.5, scales with the rate slider) — works across every TTS tier without backend changes; precise sync via Azure `wordBoundary` is a future Pro feature.
 - 1.5MB SQLite n-gram corpus per language; unigrams + bigrams + trigrams; lazy-loaded on language switch
 
@@ -110,7 +112,9 @@ On-screen keyboard with **word prediction**, **AI autocomplete**, and a one-tap 
 ### ✨ AI Chat
 On-device + cloud assistant tuned for the AAC user's voice. Streamed responses, every line tap-to-insert into the message bar so authorship stays with the child. Free tier runs through Gemini 2.5 Flash; paid tiers route to Claude Sonnet 4 with the prism-coder fleet for short queries.
 
-![AI Chat panel docked above the keyboard with streamed response lines](docs/screenshots/panel-ai-chat.png)
+**Clean AI mode** — the word prediction bar hides automatically when AI Chat is open (predictions are irrelevant when composing a question), keeping the focus on the AI response and submit button.
+
+![AI Chat panel — prediction bar hidden in AI mode, full keyboard accessible below](docs/screenshots/panel-ai-chat-v2.png)
 
 <details>
 <summary><strong>Features + technical details</strong></summary>
@@ -124,6 +128,13 @@ On-device + cloud assistant tuned for the AAC user's voice. Streamed responses, 
 
 **Render path:** `components/AIChatPanel.tsx` → `services/aiService.askAI()` → SSE stream from Synalux `/api/v1/chat` with `credentials: 'include'`. CORS allowlists `prism-aac.vercel.app` + localhost dev origins.
 </details>
+
+---
+
+### 📨 Send a message — provider picker
+When a contact has multiple configured providers (e.g. both Mail and SMS), a **"Send via"** section appears above the compose area. One tap switches provider before composing — no need to leave the panel.
+
+![Contact provider picker — 'Send via' row with Mail highlighted green, SMS available](docs/screenshots/contact-provider-picker.png)
 
 ---
 
