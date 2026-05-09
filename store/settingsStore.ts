@@ -202,7 +202,7 @@ export const useSettingsStore = create<SettingsState>()(
       headTrackingEnabled: false,
       headTrackingDwellMs: 1200,
       headTrackingSensitivity: 5,
-      headTrackingEyeGaze: false,
+      headTrackingEyeGaze: true,
       headTrackingEyeGazeWeight: 0.8,
       // Drift-detection safety net (see interface comment). Critical for
       // AAC users — if calibration breaks the cursor will runaway and
@@ -298,7 +298,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prism-aac-settings',
-      version: 15,
+      version: 16,
       migrate: (persisted: unknown, version: number) => {
         let s = persisted as Record<string, unknown>;
         if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
@@ -359,6 +359,12 @@ export const useSettingsStore = create<SettingsState>()(
             headTrackingDriftThresholdPx: s.headTrackingDriftThresholdPx ?? 800,
             headTrackingDriftWindowMs: s.headTrackingDriftWindowMs ?? 5000,
           };
+        }
+        // v16: eye/iris gaze tracking on by default for all users including
+        // existing ones. Users who prefer pure head tracking can disable
+        // in Settings → Head tracking → Eye / Gaze tracking.
+        if (version < 16) {
+          s = { ...s, headTrackingEyeGaze: true, headTrackingEyeGazeWeight: s.headTrackingEyeGazeWeight ?? 0.8 };
         }
         return s;
       },
