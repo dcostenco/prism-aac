@@ -84,7 +84,7 @@ minutes/hours.
 | **C** | Naive avg fusion — bad camera poisons good camera | 🟠 High | 🟢 N/A by design | Active-Failover (best single camera) is intentional — see code comment in `fuseCameraDetections`. `fuseWeighted` stays as a documented building block for future calibrated multi-cam |
 | **D** | EMA filter amplifies high-velocity noise | 🟠 High | ✅ shipped | Confidence-aware Kalman1D replaces velocity-adaptive EMA |
 | **E** | No camera-shake stabilization (the "moving car" gap) | 🟠 High | ✅ shipped | `egoMotion.ts` + sparse-landmark centroid residuals; FaceLandmarker now always-init so non-gesture users get protection too |
-| **F** | No background recalibration / drift correction | 🟠 High | ✅ shipped | `recalibration.ts` `BaselineTracker` — exp-moving-average mean + variance with offset + scale corrections. Wired into `headTracker.tick()` to mutate calibration anchors in place after warmup |
+| **F** | No background recalibration / drift correction | 🟠 High | ✅ shipped | `recalibration.ts` `CorrectionLoop` — L1/L2/L3 three-level loop (see §F). Calls Synalux `/api/v1/prism-aac/tracking/correct` online; falls back to local `BaselineTracker` offline. Wired into `bodyPoseService.requestTick()` every 2 s |
 | **G** | Camera contention between head + body services | 🟠 High | ✅ shipped | `cameraStream.ts` refcounted singleton + both `headTracker` and `bodyPoseService` migrated. Concurrent acquires for the same `(deviceId, w, h)` coalesce; getUserMedia is called exactly once. Stream stays alive while ANY consumer holds a lease |
 | **H** | Cross-modal interference (gesture click during dwell) | 🟡 Medium | ✅ shipped | `crossModalLockout.ts` — gesture commits dispatch claim; dwell suspends 250ms |
 | **I** | No DeviceMotion / IMU input on iOS | 🟡 Medium | ✅ shipped | `deviceMotion.ts` — iOS 13+ permission flow + 500ms rolling-window peak detection with hysteresis. `headTracker` accepts `isDeviceShaking()` callback and gates drift checks while the IMU reports motion |
@@ -247,11 +247,10 @@ suppresses. **Fix**: combine with head-pose matrix (rotation). If
 rotation is non-zero, head moved; if rotation is zero AND centroid
 shifted, it's ego-motion.
 
-### F. Background recalibration / baseline drift correction
+### F. Background recalibration — L1/L2/L3 auto-correction loop
 
-Calibration data: `{ leftX, rightX, topY, bottomY }` — 4 normalized
-positions for screen corners. Set once via 4-corner ritual; never
-refreshed.
+Implements the three-layer correction architecture from
+`prism-training/PLAN_2026-05-09_THREE_LAYER_AAC.md`.
 
 Real-world drift sources:
 1. User shifts in chair (mostly Y drift)
@@ -259,22 +258,28 @@ Real-world drift sources:
 3. User rotates desk chair (Z-rotation → mapping rotation)
 4. Lens auto-focus shifts on cheap webcams (hardware drift)
 
-**Plan**:
+**L1 — Measure**: EWMA of mirroredX/normY with 30 s half-life. Drift
+threshold 3% (0.03 norm units), warmup 15 s. Fires every 2 s check.
 
-1. **Continuous baseline tracking** — exponentially average the
-   user's *mean* (normX, normY) over a long window (60s). When the
-   current mean deviates > 0.05 from the baseline, recenter the
-   calibration (move all 4 corners by the same offset).
-2. **Detect rescaling** — if the variance of (normX, normY) over
-   30s shrinks > 30% (user moved closer → smaller motion range),
-   re-stretch the calibration.
-3. **Quiet-period anchoring** — when the user has NOT moved the
-   cursor for 1.5s+ (intentional dwell on something), use that
-   moment as a "dead reckoning" anchor — assume current normX is
-   precisely the screen-position of the dwell target.
+**L2 — Correct**: Synalux returns offset `{dx, dy}`; PrismAAC shifts
+all 4 calibration anchors by that delta and persists. For scale drift
+(user moved closer/farther), Synalux returns scale factors; PrismAAC
+rescales the rect around its midpoint.
 
-**No user-visible recalibration prompt** until automatic correction
-fails (confidence collapses or drift trips repeatedly).
+**L3 — Verify**: After L2 correction, Synalux collects 10 s of fresh
+drift readings and computes a linearly-weighted summary (recent samples
+count more than early ones):
+- `weightedDrift ≤ 0.015` → **SUCCESS** — correction held, reset to L1
+- `weightedDrift > 0.015`, retries left → **RETRY** from L1
+- 3 retries exhausted OR 2-min timeout → **NEEDS_RECALIBRATION**:
+  fires `prism-recalibration-needed` window event; `CameraInputOverlay`
+  shows a 12 s amber toast prompting the user to re-run the wizard.
+
+**Online path**: `CorrectionLoop` POSTs to
+`POST /api/v1/prism-aac/tracking/correct` (Synalux, stateless).
+
+**Offline fallback**: local `BaselineTracker` single-level correction
+(no L3 verify). Fires `prism-recalibration-needed` after 3 failures.
 
 ### G. Camera contention between services (CRITICAL)
 
