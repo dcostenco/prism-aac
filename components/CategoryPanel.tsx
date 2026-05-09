@@ -19,13 +19,13 @@ import { getPhraseText } from '@/constants/phraseTranslations';
  * Layout:
  *   [Big tile grid — full width]   [Right sidebar: ⌨️ Back Home Search]
  *
- * Color coding:
- *   • Category folders = white (neutral, clearly "drill in")
- *   • Phrase tiles = color by word class (classifyWord + CATEGORY_COLORS)
- *     green = action/verb, orange = descriptor, blue = noun, etc.
+ * Subcategories: categories with children show sub-folder cards before
+ * phrases. Navigation uses a breadcrumb path stack in uiStore.
  *
- * Keyboard drawer: tap ⌨️ in sidebar to show/hide the qwerty.
- * Universal search: tap 🔍 to search across ALL categories + phrases.
+ * Color coding:
+ *   • Category folders = white (neutral, "drill in")
+ *   • Phrase tiles = color by word class
+ *     green = action/verb, orange = descriptor, blue = noun, etc.
  */
 
 function PanelShell({ children }: { children: ReactNode }) {
@@ -58,7 +58,6 @@ const TILE_MIN_H: Record<GridSize, string> = {
   20: 'min-h-[clamp(55px,8vw,85px)]',
 };
 
-// Color map per word class — Image #34 style
 const CLASS_BG: Record<string, string> = {
   verb:       'bg-green-600  text-white border-green-700',
   adjective:  'bg-orange-400 text-white border-orange-500',
@@ -71,7 +70,6 @@ const CLASS_BG: Record<string, string> = {
 
 function wordClassBg(word: string): string {
   const color = CATEGORY_COLORS[classifyWord(word)] ?? '';
-  // Map the hex color from CATEGORY_COLORS to a Tailwind bg class
   if (color === '#4CAF50' || color === '#43A047') return CLASS_BG.verb;
   if (color === '#FF9800' || color === '#F57C00') return CLASS_BG.adjective;
   if (color === '#FFC107' || color === '#FFB300') return CLASS_BG.pronoun;
@@ -81,16 +79,22 @@ function wordClassBg(word: string): string {
   return CLASS_BG.default;
 }
 
+const FOLDER_TILE = `aac-btn bg-white dark:bg-slate-100 text-gray-900 rounded-xl border-2 border-gray-300
+  flex flex-col items-center justify-center gap-2 p-3 font-bold text-base select-none text-center
+  hover:border-[#4CAF50] active:scale-95 transition-transform`;
+
 export default function CategoryPanel() {
   const { t } = useT();
   const {
-    sidePanel, activeCategoryId, activeSequenceId, activeSequenceStep,
+    sidePanel, activeCategoryId, categoryPath, activeSequenceId, activeSequenceStep,
     categoryKeyboardOpen,
-    closeSidePanel, selectCategory, backToCategories, startOrdering,
-    nextStep, prevStep, finishOrdering, toggleCategoryKeyboard,
+    closeSidePanel, selectCategory, drillIntoCategory, navigateCategoryUp,
+    backToCategories, startOrdering, nextStep, prevStep, finishOrdering, toggleCategoryKeyboard,
   } = useUIStore();
   const { appendText, text, autoSpeak, soundEnabled } = useMessageStore();
-  const { allCategories, getRankedPhrasesForCategory, getSequencesForCategory } = useCategoryStore();
+  const {
+    allCategories, getSubcategories, getRankedPhrasesForCategory, getSequencesForCategory,
+  } = useCategoryStore();
   const recordPhraseUse = usePhraseUsageStore((s) => s.recordUse);
   const { learnWord } = usePredictionStore();
   const gridSize = useSettingsStore((s) => s.gridSize);
@@ -154,14 +158,22 @@ export default function CategoryPanel() {
     if (searchOpen) { setSearchOpen(false); setSearchQuery(''); }
   };
 
-  // ── RIGHT SIDEBAR ──────────────────────────────────────────────────────────
+  // ── RIGHT SIDEBAR ────────────────────────────────────────────────────────────
   const sideBtn = 'aac-btn flex flex-col items-center justify-center gap-1 py-4 w-full text-center select-none shrink-0 hover:bg-white/10 active:bg-white/20 transition-colors';
   const sideIcon = 'text-2xl';
   const sideLabel = 'text-[10px] font-bold uppercase tracking-wide opacity-80';
 
+  const canGoBack = sidePanel !== 'categories';
+  const isDeep = categoryPath.length > 1;  // inside a subcategory
+
+  const handleBack = () => {
+    tapFeedback();
+    if (isDeep) navigateCategoryUp();
+    else backToCategories();
+  };
+
   const Sidebar = (
     <nav className="flex flex-col w-[72px] shrink-0 bg-[#3e2a1a] text-white border-l border-[#5c3d25] overflow-y-auto">
-      {/* Keyboard toggle */}
       <button
         onClick={() => { tapFeedback(); toggleCategoryKeyboard(); }}
         aria-label="Toggle keyboard"
@@ -174,15 +186,13 @@ export default function CategoryPanel() {
 
       <div className="h-px bg-white/20 shrink-0" />
 
-      {/* Back */}
-      {sidePanel !== 'categories' && (
-        <button onClick={() => { tapFeedback(); backToCategories(); }} aria-label="Go back" className={sideBtn}>
+      {canGoBack && (
+        <button onClick={handleBack} aria-label="Go back" className={sideBtn}>
           <span className={sideIcon}>←</span>
-          <span className={sideLabel}>Back</span>
+          <span className={sideLabel}>{isDeep ? 'Up' : 'Back'}</span>
         </button>
       )}
 
-      {/* Home */}
       <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close categories" className={sideBtn}>
         <span className={sideIcon}>🏠</span>
         <span className={sideLabel}>Home</span>
@@ -190,7 +200,6 @@ export default function CategoryPanel() {
 
       <div className="h-px bg-white/20 shrink-0" />
 
-      {/* Search */}
       <button
         onClick={() => { tapFeedback(); setSearchOpen(true); setSearchQuery(''); }}
         aria-label="Search all vocabulary"
@@ -202,12 +211,11 @@ export default function CategoryPanel() {
     </nav>
   );
 
-  // ── SEARCH OVERLAY ─────────────────────────────────────────────────────────
+  // ── SEARCH OVERLAY ───────────────────────────────────────────────────────────
   if (searchOpen) {
     return (
       <PanelShell>
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Search bar */}
           <div className="flex items-center gap-2 px-3 py-2 border-b border-theme shrink-0">
             <span className="text-muted text-xl">🔍</span>
             <input
@@ -225,13 +233,12 @@ export default function CategoryPanel() {
               aria-label="Close search"
             >✕</button>
           </div>
-          {/* Results */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {!searchQuery.trim() && (
               <p className="text-muted text-center py-8">Start typing to search all categories…</p>
             )}
             {searchQuery.trim() && searchResults.length === 0 && (
-              <p className="text-muted text-center py-8">No results for "{searchQuery}"</p>
+              <p className="text-muted text-center py-8">No results for &quot;{searchQuery}&quot;</p>
             )}
             {searchResults.map((r, i) => (
               <button
@@ -250,7 +257,7 @@ export default function CategoryPanel() {
     );
   }
 
-  // ── ORDERING FLOW ──────────────────────────────────────────────────────────
+  // ── ORDERING FLOW ────────────────────────────────────────────────────────────
   if (sidePanel === 'ordering' && activeSequenceId) {
     const allSeqs = getSequencesForCategory(activeCategoryId ?? '');
     const seq = allSeqs.find((s) => s.id === activeSequenceId);
@@ -292,19 +299,34 @@ export default function CategoryPanel() {
     );
   }
 
-  // ── CATEGORY DETAIL — phrase grid ──────────────────────────────────────────
+  // ── CATEGORY DETAIL — subcategories + phrases ────────────────────────────────
   if (sidePanel === 'category-detail' && activeCategoryId) {
     const categories = allCategories();
     const cat = categories.find((c) => c.id === activeCategoryId);
+    const subcategories = getSubcategories(activeCategoryId);
     const phrases = getRankedPhrasesForCategory(activeCategoryId).map((r) => r.phrase);
     const sequences = getSequencesForCategory(activeCategoryId);
+
+    // Build breadcrumb labels from the path
+    const breadcrumb = categoryPath.map((id) => {
+      const found = categories.find((c) => c.id === id);
+      return found ? (found.nameKey ? t(found.nameKey) : found.name) : id;
+    });
+
     return (
       <PanelShell>
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Category header */}
+          {/* Category header + breadcrumb */}
           <div className="flex items-center gap-3 px-3 py-2 border-b border-theme shrink-0">
             <span className="text-3xl">{cat?.icon}</span>
-            <span className="text-primary font-bold text-xl">{cat?.nameKey ? t(cat.nameKey) : cat?.name}</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-primary font-bold text-xl leading-tight truncate">
+                {cat?.nameKey ? t(cat.nameKey) : cat?.name}
+              </span>
+              {breadcrumb.length > 1 && (
+                <span className="text-muted text-xs truncate">{breadcrumb.join(' › ')}</span>
+              )}
+            </div>
           </div>
           {sequences.length > 0 && (
             <div className="flex gap-2 px-3 py-2 border-b border-theme shrink-0 overflow-x-auto">
@@ -316,8 +338,20 @@ export default function CategoryPanel() {
               ))}
             </div>
           )}
-          {/* Color-coded phrase tiles */}
+          {/* Grid: subcategory folders first, then phrase tiles */}
           <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
+            {/* Subcategory folder cards */}
+            {subcategories.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
+                className={`${FOLDER_TILE} ${TILE_MIN_H[gridSize]}`}
+              >
+                <span className="text-4xl leading-none">{sub.icon}</span>
+                <span className="leading-tight">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
+              </button>
+            ))}
+            {/* Phrase tiles */}
             {phrases.map((p) => {
               const localText = getPhraseText(p.id, language, p.text);
               const firstWord = p.text.split(/\s+/)[0];
@@ -339,21 +373,17 @@ export default function CategoryPanel() {
     );
   }
 
-  // ── CATEGORY LIST — white folder cards ─────────────────────────────────────
-  const categories = allCategories();
+  // ── CATEGORY LIST — top-level white folder cards only ────────────────────────
+  const topLevelCategories = allCategories().filter((c) => !c.parentId);
   return (
     <PanelShell>
       <div className="flex-1 flex flex-col min-h-0">
         <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
-          {categories.map((cat) => (
+          {topLevelCategories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => { tapFeedback(); selectCategory(cat.id); }}
-              // White/light background for folders — clearly "drill in" (user: "white - folders")
-              className={`aac-btn bg-white dark:bg-slate-100 text-gray-900 rounded-xl border-2 border-gray-300
-                          flex flex-col items-center justify-center gap-2 p-3 font-bold
-                          text-base select-none text-center ${TILE_MIN_H[gridSize]}
-                          hover:border-[#4CAF50] active:scale-95 transition-transform`}
+              className={`${FOLDER_TILE} ${TILE_MIN_H[gridSize]}`}
             >
               <span className="text-4xl leading-none">{cat.icon}</span>
               <span className="leading-tight">{cat.nameKey ? t(cat.nameKey) : cat.name}</span>

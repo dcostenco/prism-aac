@@ -33,6 +33,8 @@ interface CategoryState {
   orderingSequences: OrderingSequenceData[];
   seeded: boolean;
   allCategories: (includeHidden?: boolean) => Category[];
+  /** Direct children (subcategories) of a given parentId. */
+  getSubcategories: (parentId: string) => Category[];
   getPhrasesForCategory: (categoryId: string) => Phrase[];
   /** v14.0.0 spreading-activation ranking — phrases re-ordered by
    *  recency × frequency × static priority. Falls back to static
@@ -75,6 +77,14 @@ export const useCategoryStore = create<CategoryState>()(
         if (includeHidden) return all;
         const hidden = new Set(get().hiddenCategoryIds);
         return all.filter((c) => !hidden.has(c.id));
+      },
+
+      getSubcategories: (parentId) => {
+        const all = [...DEFAULT_CATEGORIES, ...get().customCategories];
+        const hidden = new Set(get().hiddenCategoryIds);
+        return all
+          .filter((c) => c.parentId === parentId && !hidden.has(c.id))
+          .sort((a, b) => a.sortOrder - b.sortOrder);
       },
 
       getPhrasesForCategory: (categoryId) => {

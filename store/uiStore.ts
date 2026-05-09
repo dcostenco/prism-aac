@@ -5,6 +5,8 @@ interface UIState {
   sidePanel: SidePanelView;
   categoryKeyboardOpen: boolean;   // keyboard drawer inside category panel
   activeCategoryId: string | null;
+  /** Full breadcrumb path from root → current category (ids). Last entry is the active one. */
+  categoryPath: string[];
   activeContactId: string | null;
   activeSequenceId: string | null;
   activeSequenceStep: number;
@@ -13,6 +15,7 @@ interface UIState {
   capsLock: boolean;
   showHistory: boolean;
   showSettings: boolean;
+  showCategoryManager: boolean;
   isAlertFlashing: boolean;
   openCategories: () => void;
   openMath: () => void;
@@ -32,6 +35,10 @@ interface UIState {
   openModulePanel: (panelId: string) => void;
   closeSidePanel: () => void;
   selectCategory: (id: string) => void;
+  /** Drill into a subcategory, pushing onto the breadcrumb path. */
+  drillIntoCategory: (id: string) => void;
+  /** Pop one level up in the breadcrumb; goes back to top-level list if path becomes empty. */
+  navigateCategoryUp: () => void;
   backToCategories: () => void;
   startOrdering: (sequenceId: string) => void;
   nextStep: (maxSteps: number) => void;
@@ -42,6 +49,7 @@ interface UIState {
   toggleCapsLock: () => void;
   toggleHistory: () => void;
   toggleSettings: () => void;
+  toggleCategoryManager: () => void;
   triggerAlert: () => void;
   selectContact: (id: string) => void;
   backToContacts: () => void;
@@ -54,6 +62,7 @@ export const useUIStore = create<UIState>()((set) => ({
   sidePanel: 'none',
   categoryKeyboardOpen: false,
   activeCategoryId: null,
+  categoryPath: [],
   activeContactId: null,
   activeSequenceId: null,
   activeSequenceStep: 0,
@@ -62,6 +71,7 @@ export const useUIStore = create<UIState>()((set) => ({
   capsLock: false,
   showHistory: false,
   showSettings: false,
+  showCategoryManager: false,
   isAlertFlashing: false,
 
   openCategories: () => set((s) => {
@@ -73,11 +83,11 @@ export const useUIStore = create<UIState>()((set) => ({
     //                         view; May 2026 user report Image #8.)
     //   • 'ordering'        → 'categories'  (same — escape ordering flow)
     //   • anything else     → 'categories'  (open at top level)
-    if (s.sidePanel === 'categories') return { sidePanel: 'none', activeCategoryId: null, activeSequenceId: null };
+    if (s.sidePanel === 'categories') return { sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null };
     if (s.sidePanel === 'category-detail' || s.sidePanel === 'ordering') {
-      return { sidePanel: 'categories', activeCategoryId: null, activeSequenceId: null };
+      return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [], activeSequenceId: null };
     }
-    return { sidePanel: 'categories', activeCategoryId: null };
+    return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [] };
   }),
   openMath: () => set((s) => ({ sidePanel: s.sidePanel === 'math' ? 'none' : 'math' })),
   openCaregiver: () => set((s) => ({ sidePanel: s.sidePanel === 'caregiver' ? 'none' : 'caregiver' })),
@@ -93,9 +103,19 @@ export const useUIStore = create<UIState>()((set) => ({
     return { sidePanel: panelId as ModulePanelView };
   }),
   toggleCategoryKeyboard: () => set((s) => ({ categoryKeyboardOpen: !s.categoryKeyboardOpen })),
-  closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, activeSequenceId: null, categoryKeyboardOpen: false }),
-  selectCategory: (id) => set({ sidePanel: 'category-detail', activeCategoryId: id }),
-  backToCategories: () => set({ sidePanel: 'categories', activeCategoryId: null, activeSequenceId: null }),
+  closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: false }),
+  selectCategory: (id) => set({ sidePanel: 'category-detail', activeCategoryId: id, categoryPath: [id] }),
+  drillIntoCategory: (id) => set((s) => ({
+    sidePanel: 'category-detail',
+    activeCategoryId: id,
+    categoryPath: [...s.categoryPath, id],
+  })),
+  navigateCategoryUp: () => set((s) => {
+    const newPath = s.categoryPath.slice(0, -1);
+    if (newPath.length === 0) return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [] };
+    return { activeCategoryId: newPath[newPath.length - 1], categoryPath: newPath };
+  }),
+  backToCategories: () => set({ sidePanel: 'categories', activeCategoryId: null, categoryPath: [], activeSequenceId: null }),
   startOrdering: (sequenceId) => set({ sidePanel: 'ordering', activeSequenceId: sequenceId, activeSequenceStep: 0 }),
   nextStep: (maxSteps) => set((s) => ({ activeSequenceStep: Math.min(s.activeSequenceStep + 1, maxSteps - 1) })),
   prevStep: () => set((s) => ({ activeSequenceStep: Math.max(0, s.activeSequenceStep - 1) })),
@@ -109,6 +129,7 @@ export const useUIStore = create<UIState>()((set) => ({
   }),
   toggleHistory: () => set((s) => ({ showHistory: !s.showHistory })),
   toggleSettings: () => set((s) => ({ showSettings: !s.showSettings })),
+  toggleCategoryManager: () => set((s) => ({ showCategoryManager: !s.showCategoryManager })),
   triggerAlert: () => {
     if (alertTimer) clearTimeout(alertTimer);
     set({ isAlertFlashing: true });

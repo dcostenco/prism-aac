@@ -18,6 +18,7 @@ import MusicComposerPanel from './marketplace/panels/MusicComposerPanel';
 import MathPanel from './MathPanel';
 import HistoryModal from './HistoryModal';
 import SettingsModal from './SettingsModal';
+import CategoryManagerModal from './CategoryManagerModal';
 import AlertOverlay from './AlertOverlay';
 import HeadTrackingOverlay from './HeadTrackingOverlay';
 import TrackingDebugOverlay from './TrackingDebugOverlay';
@@ -438,6 +439,7 @@ export default function PrismApp() {
               communication panels, so they stay as full-screen overlays. */}
           <HistoryModal />
           <SettingsModal />
+          <CategoryManagerModal />
           <HeadTrackingOverlay />
           <CameraInputOverlay />
           {/* Hidden by default; activates via ?debug=tracking or

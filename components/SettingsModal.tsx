@@ -341,6 +341,19 @@ export default function SettingsModal() {
             </div>
           </div>
 
+          {/* Category Manager — separate screen for full hierarchy editing */}
+          <div>
+            <h3 className={sectionTitle}>Categories</h3>
+            <p className="text-muted text-sm mb-3">Manage the full category hierarchy, subcategories, and visibility.</p>
+            <button
+              onClick={() => { tapFeedback(); useUIStore.getState().toggleCategoryManager(); }}
+              className="aac-btn w-full rounded-xl px-4 py-4 text-lg font-semibold border border-theme surface-key text-primary flex items-center justify-between"
+            >
+              <span>📂 Open Category Manager</span>
+              <span className="text-muted">→</span>
+            </button>
+          </div>
+
           {/* Category Visibility */}
           <div>
             <h3 className={sectionTitle}>{t('category_visibility')}</h3>

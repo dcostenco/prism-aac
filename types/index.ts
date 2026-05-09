@@ -5,6 +5,7 @@ export interface Category {
   sortOrder: number;
   isCustom: boolean;
   nameKey?: string;
+  parentId?: string;   // set on subcategories — undefined = top-level folder
   updatedAt?: number;
 }
 
