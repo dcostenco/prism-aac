@@ -131,7 +131,7 @@ export default function MathKeyboardRegion({ className = '' }: { className?: str
         // 420 / max 540 keeps the canvas at ≥ ~35 % of the viewport
         // on every device while letting the bigger keys fit without
         // overflow-hidden clipping the bottom row.
-        className="h-[clamp(420px,46svh,540px)] overflow-hidden"
+        className="h-[clamp(300px,38svh,440px)] overflow-y-auto"
         data-testid="math-keyboard-panel"
       >
         {activeCategory === 'main' && <MathMainKeyboard />}
@@ -884,18 +884,11 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
   // "scrollable keyboard is unacceptable when typing codes"). Case
   // shift remains — Java's class names are PascalCase, Python's
   // CONSTS are SHOUTY_CASE.
-  const [shifted, setShifted] = useState(false);
   const KEY_BASE =
     'aac-btn surface-key text-primary rounded-lg font-bold border border-theme select-none ' +
     'flex items-center justify-center min-h-[52px] active:translate-y-px font-mono';
-  const TOGGLE_BASE =
-    'aac-btn rounded-lg font-bold border border-transparent select-none ' +
-    'flex items-center justify-center min-h-[52px] px-3 active:translate-y-px ' +
-    'bg-[#2196F3] text-white text-base whitespace-nowrap font-mono';
   const keywords = lang === 'python' ? PYTHON_KEYWORDS : JAVA_KEYWORDS;
   const testidPrefix = lang === 'python' ? 'math-python' : 'math-java';
-  // Full a-z (no pagination — see comment above on the user report).
-  const letters = shifted ? LETTERS_AZ.map((l) => l.toUpperCase()) : LETTERS_AZ;
   // Code is character-driven on a monospace grid — committing the
   // whole keyword into a single cell stuffed "private" / "String"
   // into one 56 px slot and the glyphs ran into the next cell
@@ -1003,13 +996,15 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
           ))}
         </div>
       )}
-      {/* v2 audit cross-lang extras: comment marker (Python `#` / Java
-          `@`), indent (4-space tile, Python only — Java uses braces),
-          newline glyph (matches the existing right-return key style). */}
-      <div className="grid grid-cols-6 gap-1">
+      {/* extras merged into digit row below */}
+      {/* Digits + underscore + language extras — merged into one row.
+          Letters removed: the 'a a-z' chip covers identifiers without
+          adding a redundant 8th row that pushed the canvas to <100px.
+          Digits stay here for numeric literals without leaving the tab. */}
+      <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] gap-1">
         {extras.map(({ glyph, label }) => (
           <button
-            key={`prog-extra-${label}`}
+            key={`prog-extra2-${label}`}
             onClick={() => {
               if (label === 'indent') return commitIndent();
               if (label === 'newline') return commitNewline();
@@ -1019,48 +1014,11 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
             data-testid={`${testidPrefix}-extra-${label.replace(/ /g, '-')}`}
             data-glyph={glyph}
             aria-label={`${lang} ${label}`}
-            className={`${KEY_BASE} py-2 text-base whitespace-nowrap`}
+            className={`${KEY_BASE} py-1.5 text-base whitespace-nowrap`}
           >
             {glyph}
           </button>
         ))}
-      </div>
-      {/* Identifier row — full a-z + case shift, no pagination so the
-          user can type any class / variable name without leaving the
-          programming chip or scrolling. Each tap commits one char. */}
-      <div
-        className="flex gap-1.5"
-        data-testid={`${testidPrefix}-letters-row`}
-        data-shift={shifted ? '1' : '0'}
-      >
-        <button
-          onClick={() => { tapFeedback(); setShifted((s) => !s); }}
-          data-testid={`${testidPrefix}-letters-shift`}
-          aria-pressed={shifted}
-          aria-label="toggle letter case"
-          className={TOGGLE_BASE}
-        >
-          {shifted ? 'AA' : 'aa'}
-        </button>
-        <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-1 sm:gap-1.5 flex-1">
-          {letters.map((ltr) => (
-            <button
-              key={ltr}
-              onClick={() => { keyFeedback(); commitGlyph(ltr); }}
-              data-testid={`${testidPrefix}-ltr-${ltr.toLowerCase()}`}
-              data-glyph={ltr}
-              aria-label={`letter ${ltr}`}
-              className={`${KEY_BASE} py-2 text-lg`}
-            >
-              {ltr}
-            </button>
-          ))}
-        </div>
-      </div>
-      {/* Digits + underscore — needed for identifiers like var2,
-          snake_case, __init__. Digits also live in the main chip but
-          duplicating here keeps the user in programming mode. */}
-      <div className="grid grid-cols-11 gap-1.5">
         {PROG_DIGITS.map((d) => (
           <button
             key={`prog-d-${d}`}
@@ -1068,18 +1026,17 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
             data-testid={`${testidPrefix}-digit-${d}`}
             data-glyph={d}
             aria-label={`digit ${d}`}
-            className={`${KEY_BASE} py-2.5 text-lg`}
+            className={`${KEY_BASE} py-1.5 text-lg`}
           >
             {d}
           </button>
         ))}
         <button
-          key="prog-underscore"
           onClick={() => { keyFeedback(); commitGlyph('_'); }}
           data-testid={`${testidPrefix}-underscore`}
           data-glyph="_"
           aria-label="underscore"
-          className={`${KEY_BASE} py-2.5 text-lg`}
+          className={`${KEY_BASE} py-1.5 text-lg`}
         >
           _
         </button>

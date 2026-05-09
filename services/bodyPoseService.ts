@@ -44,7 +44,7 @@ import {
   type Point2D,
   type SimilarityTransform,
 } from './egoMotion';
-import { CorrectionLoop } from './recalibration';
+import { BaselineTracker } from './recalibration';
 
 // ── MediaPipe Pose Landmark Indices ────────────────────────────────────────
 //  0: nose        1-4: eyes       5-6: ears      7-10: mouth
@@ -703,9 +703,11 @@ export function startPoseTracker(
   // but removes per-frame jitter that raw FaceLandmarker iris has).
   let irisSmoothedX: number | null = null;
   let irisSmoothedY: number | null = null;
-  // L1/L2/L3 correction loop — calls Synalux for decisions when online,
-  // falls back to local BaselineTracker logic when offline.
-  const correctionLoop = new CorrectionLoop();
+  // Baseline tracker — exp-averaged pose center + variance, lets us
+  // detect slow drift (auto-focus shift, user shifted in seat) and
+  // suggest calibration corrections without forcing recalibration.
+  const baselineTracker = new BaselineTracker();
+  let lastBaselineApplyTime = 0;
   // FPS watchdog (TRACKING_RELIABILITY.md item D + research review):
   // detect thermal throttling on iPad mini 6 / low-end devices and
   // surface a starvation event so the UI can warn the caregiver
@@ -1063,13 +1065,7 @@ export function startPoseTracker(
           const clampedY = Math.max(0, Math.min(1, normY));
           learner.push(mirroredX, clampedY);
           const learned = learner.maybeEmitCalibration();
-          // During the wizard _learnerCalSavesFrozen is true. Skip ALL
-          // in-memory updates — not just saves. BOOTSTRAP MODE converges
-          // topY/bottomY toward the user's static neutral pose (holding
-          // still during Step 1), which makes topY ≈ normY so rawY → 0
-          // and the cursor pins to Y=0. The wizard's setCalibration call
-          // is the single authority on calibration during a wizard run.
-          if (learned && !_learnerCalSavesFrozen) {
+          if (learned) {
             if (isFactoryDefaults) {
               // BOOTSTRAP MODE — no wizard run yet. Aggressively
               // populate the calibration from the user's observed
@@ -1257,37 +1253,33 @@ export function startPoseTracker(
             sy = oneEuroY.update(rawY, measurementConfidence, nowMs);
           }
 
-          // ── L1/L2/L3 drift correction — via Synalux (online) or
-          //    local BaselineTracker fallback (offline) ────────────────
+          // ── Baseline drift correction (item F) + live noise floor ──
           if (!suppressForEgoMotion) {
-            const now = Date.now();
-            correctionLoop.push({ normX: mirroredX, normY: clampedY, timestamp: now });
-
-            const noise = correctionLoop.getNoiseFloor();
+            baselineTracker.push({ normX: mirroredX, normY: clampedY, timestamp: Date.now() });
+            // Live noise → smoother cutoff. Quiet user keeps responsive
+            // tracking; jittery environment / spasticity gets heavier
+            // smoothing automatically without the user touching settings.
+            // The noise floor is RMS of running variance over a 30s
+            // half-life, so it's slow-moving and won't flap with single
+            // bad frames.
+            const noise = baselineTracker.getNoiseFloor();
             oneEuroX.setNoiseFloor(noise);
             oneEuroY.setNoiseFloor(noise);
 
-            correctionLoop.requestTick(
-              now,
-              (dx, dy) => {
-                calibration.leftX   = Math.max(0, Math.min(1, calibration.leftX   + dx));
-                calibration.rightX  = Math.max(0, Math.min(1, calibration.rightX  + dx));
-                calibration.topY    = Math.max(0, Math.min(1, calibration.topY    + dy));
+            const now = Date.now();
+            if (now - lastBaselineApplyTime > 5000) {
+              lastBaselineApplyTime = now;
+              const correction = baselineTracker.suggestCorrection(now);
+              if (correction?.kind === 'offset') {
+                const dx = correction.deltaNormX ?? 0;
+                const dy = correction.deltaNormY ?? 0;
+                calibration.leftX = Math.max(0, Math.min(1, calibration.leftX + dx));
+                calibration.rightX = Math.max(0, Math.min(1, calibration.rightX + dx));
+                calibration.topY = Math.max(0, Math.min(1, calibration.topY + dy));
                 calibration.bottomY = Math.max(0, Math.min(1, calibration.bottomY + dy));
-                try { savePoseCalibration(calibration); } catch { /* */ }
-              },
-              (sX, sY) => {
-                const midX = (calibration.leftX + calibration.rightX) / 2;
-                const midY = (calibration.topY + calibration.bottomY) / 2;
-                const cX = Math.max(0.5, Math.min(1.5, sX));
-                const cY = Math.max(0.5, Math.min(1.5, sY));
-                calibration.leftX   = Math.max(0, Math.min(1, midX + (calibration.leftX   - midX) * cX));
-                calibration.rightX  = Math.max(0, Math.min(1, midX + (calibration.rightX  - midX) * cX));
-                calibration.topY    = Math.max(0, Math.min(1, midY + (calibration.topY    - midY) * cY));
-                calibration.bottomY = Math.max(0, Math.min(1, midY + (calibration.bottomY - midY) * cY));
-                try { savePoseCalibration(calibration); } catch { /* */ }
-              },
-            );
+                try { savePoseCalibration(calibration); } catch {}
+              }
+            }
           }
 
           if (!suppressForEgoMotion) {
@@ -1302,7 +1294,7 @@ export function startPoseTracker(
             window.dispatchEvent(new CustomEvent('prism-pose-sample', {
               detail: {
                 normX: headNormX, normY: headNormY,
-                noiseFloor: correctionLoop.getNoiseFloor(),
+                noiseFloor: baselineTracker.getNoiseFloor(),
                 visibility: frameChosenVis,
                 egoSuppressed: suppressForEgoMotion,
               },
@@ -1388,9 +1380,6 @@ export function startPoseTracker(
       calibration.topY = data.topY;
       calibration.bottomY = data.bottomY;
       try { savePoseCalibration(calibration); } catch { /* */ }
-      // Fresh calibration from wizard — reset correction loop so L3
-      // doesn't try to verify the old anchor against the new calibration.
-      correctionLoop.reset();
     },
   };
 
