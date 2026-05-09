@@ -1005,12 +1005,10 @@ export function startPoseTracker(
               // iris coords are noisy (pixel-level jitter) and blending
               // them unsmoothed into the One-Euro-filtered pose position
               // caused visible cursor wiggling (user report post-corner).
-              const IRIS_ALPHA = 0.25; // ~4 frame lag — fast enough for gaze, slow enough to quiet jitter
+              const IRIS_ALPHA = 0.4; // ~2-3 frame lag — responsive for gaze, smoothed enough for tremor
               irisSmoothedX = irisSmoothedX === null ? rawIrisX : irisSmoothedX * (1 - IRIS_ALPHA) + rawIrisX * IRIS_ALPHA;
               irisSmoothedY = irisSmoothedY === null ? rawIrisY : irisSmoothedY * (1 - IRIS_ALPHA) + rawIrisY * IRIS_ALPHA;
-              // Reduced default weight 0.8 → 0.5: iris still dominates gaze
-              // direction but pose anchor contributes more stability.
-              const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.5));
+              const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.75));
               normX = normX! * (1 - w) + irisSmoothedX * w;
               normY = normY! * (1 - w) + irisSmoothedY * w;
             }
