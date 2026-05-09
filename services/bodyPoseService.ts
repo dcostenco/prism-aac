@@ -987,6 +987,14 @@ export function startPoseTracker(
         // Iris moves with GAZE direction (not just head rotation), giving
         // full-screen cursor reach without any head turning.
         // Iris landmarks: 468 = right iris center, 473 = left iris center.
+        // Preserve the HEAD-only (pre-gaze) normX/normY. This is used in the
+        // prism-pose-sample event for calibration captures — the sample buffer
+        // should record where the HEAD points, not where the eyes look.
+        // Gaze jitter amplified by GAZE_GAIN would make the stable-hold
+        // auto-capture variance check fail even when the user is perfectly still.
+        const headNormX = normX;
+        const headNormY = normY;
+
         if (opts.useEyeGaze && normX !== null && normY !== null && faceLandmarkerForGaze && video) {
           try {
             const faceResult = (faceLandmarkerForGaze as {
@@ -997,39 +1005,26 @@ export function startPoseTracker(
             const fl = faceResult?.faceLandmarks?.[0];
             const rightIris = fl?.[468];
             const leftIris  = fl?.[473];
-            // Nose tip (landmark 1) as face-center reference — makes the
-            // gaze contribution HEAD-ROTATION-INVARIANT. When head turns,
-            // nose tip and iris move together in camera space → offset≈0.
-            // When eyes move, only iris shifts → captures pure gaze direction.
             const faceTip   = fl?.[1];
             if (rightIris && leftIris && faceTip &&
                 Number.isFinite(rightIris.x) && Number.isFinite(leftIris.x) &&
                 Number.isFinite(faceTip.x)) {
               const rawIrisX = (rightIris.x + leftIris.x) / 2;
               const rawIrisY = (rightIris.y + leftIris.y) / 2;
-              // Relative gaze = iris center minus face-nose-tip.
-              // Range: ~±0.03–0.06 when looking at screen edges.
               const rawGazeX = rawIrisX - faceTip.x;
               const rawGazeY = rawIrisY - faceTip.y;
-              const IRIS_ALPHA = 0.5;
+              // Heavy smoothing — iris jitter ±0.005, we need ±<0.001 after smooth.
+              // alpha=0.15 gives σ_out ≈ sqrt(0.15/1.85) × σ_in ≈ 0.28 × σ_in → ±0.0014.
+              const IRIS_ALPHA = 0.15;
               irisSmoothedX = irisSmoothedX === null ? rawGazeX : irisSmoothedX * (1 - IRIS_ALPHA) + rawGazeX * IRIS_ALPHA;
               irisSmoothedY = irisSmoothedY === null ? rawGazeY : irisSmoothedY * (1 - IRIS_ALPHA) + rawGazeY * IRIS_ALPHA;
-              // Adaptive GAZE_GAIN based on:
-              //   1. eyeGazeWeight setting (0.3 → base gain 6)
-              //   2. Noise floor — quiet environments get more gain, jittery less
-              //   3. Screen size — larger screens need more cursor travel per iris unit
-              // Max gain during setup (sensitivity=10): eyeGazeWeight*20=6, noise factor
-              // near 1.0, screen factor ~1.2 for 16" → effective ~7.2 total.
-              const noiseNow = baselineTracker.getNoiseFloor();
-              // Noise ≤ 0.002 (quiet): full gain. Noise ≥ 0.02 (jittery): 50% gain.
-              const noiseFactor = Math.max(0.5, Math.min(1.0, 1.0 - noiseNow * 40));
-              // Screen-size factor: 1.0 at 1024px wide, 1.3 at 1920px wide.
+              // Conservative gain: ±0.0014 smoothed jitter × 4 = ±0.006 cursor jitter.
+              // At rangeX=0.6, sensitivity=10: ±0.006/0.6×1440×2=±29px — acceptable.
+              // Screen-size factor: large screens need slightly more gaze travel.
               const screenFactor = typeof window !== 'undefined'
-                ? Math.max(1.0, Math.min(1.5, window.innerWidth / 1024))
+                ? Math.max(1.0, Math.min(1.4, window.innerWidth / 1200))
                 : 1.0;
-              const GAZE_GAIN = Math.max(0, Math.min(20,
-                (opts.eyeGazeWeight ?? 0.3) * 20 * noiseFactor * screenFactor
-              ));
+              const GAZE_GAIN = (opts.eyeGazeWeight ?? 0.3) * 13 * screenFactor;
               normX = Math.max(0, Math.min(1, normX! + irisSmoothedX * GAZE_GAIN));
               normY = Math.max(0, Math.min(1, normY! + irisSmoothedY * GAZE_GAIN));
             }
@@ -1293,12 +1288,14 @@ export function startPoseTracker(
             opts.onMove(sx, sy);
           }
 
-          // Emit raw normalized coords + diagnostic state for the
-          // calibration UI / wizard diag panel.
+          // Emit HEAD-only (pre-gaze) coords for the calibration sample buffer.
+          // The wizard uses this event to capture stable head poses for center
+          // and corner calibration — using gaze-blended values would pollute
+          // the sample buffer with iris jitter and break stable-hold detection.
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('prism-pose-sample', {
               detail: {
-                normX, normY,
+                normX: headNormX, normY: headNormY,
                 noiseFloor: baselineTracker.getNoiseFloor(),
                 visibility: frameChosenVis,
                 egoSuppressed: suppressForEgoMotion,
