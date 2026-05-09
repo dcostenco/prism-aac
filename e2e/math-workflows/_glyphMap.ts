@@ -727,10 +727,12 @@ function buildProgMap(lang: 'python' | 'java'): Record<string, KeyRef> {
   const cat: KeyRef['category'] = lang === 'python' ? 'programming-python' : 'programming-java';
   const prefix = lang === 'python' ? 'math-python' : 'math-java';
   const out: Record<string, KeyRef> = {};
-  // Letters (a-z; case shift handled by spec via a synthetic '⇧' marker
-  // — the spec taps the shift key explicitly when uppercase is needed).
+  // Letters resolved via the shared 'letters' chip (a a-z tab) — the
+  // programming keyboard's own letter row was removed in 2026-05-09
+  // to give the canvas more room. The typeStep helper will switch to
+  // the 'letters' chip to type identifiers, then switch back.
   for (const c of 'abcdefghijklmnopqrstuvwxyz') {
-    out[c] = { category: cat, testid: `${prefix}-ltr-${c}` };
+    out[c] = { category: 'letters', testid: `math-key-ltr-${c}` };
   }
   // Digits
   for (const d of '0123456789') out[d] = { category: cat, testid: `${prefix}-digit-${d}` };
