@@ -297,7 +297,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       }
     }, 5000);
     detectionTimersRef.current.push(detectTimer);
-  }, [speak]);
+  }, [speak, headTrackingEyeGaze, headTrackingEyeGazeWeight]);
 
   // After detection picks a body part, restart the pose tracker with
   // THAT target — not the hardcoded 'nose' from startDetection. User
@@ -324,7 +324,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       },
     });
     handleRef.current = handle;
-  }, []);
+  }, [headTrackingEyeGaze, headTrackingEyeGazeWeight]);
 
   // ── PHASE: Calibrate Center ──
   // Calibration is user-driven, NOT timer-driven. The previous
@@ -1195,7 +1195,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
             const rangeX = latestCal.leftX - latestCal.rightX;
             const rangeY = latestCal.bottomY - latestCal.topY;
             const conventionOK = rangeX > 0 && rangeY > 0;
-            const minRangeOK = rangeX >= 0.30 && rangeY >= 0.30;
+            const minRangeOK = rangeX >= 0.20 && rangeY >= 0.15;
             return (
               <>
                 <div style={{ marginTop: 4, color: '#fff', fontWeight: 700 }}>cal:</div>
