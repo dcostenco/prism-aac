@@ -200,7 +200,7 @@ export const useSettingsStore = create<SettingsState>()(
       language: 'en',
       outputLanguage: 'en', // syncs with language on first use; only diverges when user explicitly sets translation pair
       highContrast: false,
-      theme: 'light',
+      theme: 'dark',
       gridSize: 6,
       activeVocabSet: 'all',
       headTrackingEnabled: false,
@@ -303,7 +303,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prism-aac-settings',
-      version: 16,
+      version: 17,
       migrate: (persisted: unknown, version: number) => {
         let s = persisted as Record<string, unknown>;
         if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
@@ -369,7 +369,14 @@ export const useSettingsStore = create<SettingsState>()(
         // existing ones. Users who prefer pure head tracking can disable
         // in Settings → Head tracking → Eye / Gaze tracking.
         if (version < 16) {
-          s = { ...s, headTrackingEyeGaze: true, headTrackingEyeGazeWeight: s.headTrackingEyeGazeWeight ?? 0.8 };
+          s = { ...s, headTrackingEyeGaze: true, headTrackingEyeGazeWeight: s.headTrackingEyeGazeWeight ?? 0.3 };
+        }
+        // v17: dark theme default (fixes white-background report Image #63).
+        // Existing users who explicitly set light theme are unaffected since
+        // their persisted value is present. New users and users without a
+        // saved theme get dark.
+        if (version < 17) {
+          s = { ...s, theme: s.theme ?? 'dark' };
         }
         return s;
       },

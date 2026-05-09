@@ -997,28 +997,41 @@ export function startPoseTracker(
             const fl = faceResult?.faceLandmarks?.[0];
             const rightIris = fl?.[468];
             const leftIris  = fl?.[473];
-            if (rightIris && leftIris &&
-                Number.isFinite(rightIris.x) && Number.isFinite(leftIris.x)) {
+            // Nose tip (landmark 1) as face-center reference — makes the
+            // gaze contribution HEAD-ROTATION-INVARIANT. When head turns,
+            // nose tip and iris move together in camera space → offset≈0.
+            // When eyes move, only iris shifts → captures pure gaze direction.
+            const faceTip   = fl?.[1];
+            if (rightIris && leftIris && faceTip &&
+                Number.isFinite(rightIris.x) && Number.isFinite(leftIris.x) &&
+                Number.isFinite(faceTip.x)) {
               const rawIrisX = (rightIris.x + leftIris.x) / 2;
               const rawIrisY = (rightIris.y + leftIris.y) / 2;
-              // EWMA smooth the iris before blending — raw FaceLandmarker
-              // iris coords are noisy (pixel-level jitter) and blending
-              // them unsmoothed into the One-Euro-filtered pose position
-              // caused visible cursor wiggling (user report post-corner).
-              // Light smoothing — enough to cut single-frame iris noise,
-              // not enough to add visible lag. Iris moves WITH the face
-              // when head rotates, so high weight just adds a second
-              // lagged layer on top of the One Euro-filtered nose signal.
-              const IRIS_ALPHA = 0.6;
-              irisSmoothedX = irisSmoothedX === null ? rawIrisX : irisSmoothedX * (1 - IRIS_ALPHA) + rawIrisX * IRIS_ALPHA;
-              irisSmoothedY = irisSmoothedY === null ? rawIrisY : irisSmoothedY * (1 - IRIS_ALPHA) + rawIrisY * IRIS_ALPHA;
-              // Low weight — iris adds extra gaze reach at extremes but
-              // nose carries the tracking. Higher weight was causing
-              // double-lag (iris EWMA + One Euro on blend result) that
-              // made cursor appear unresponsive to head rotation.
-              const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.3));
-              normX = normX! * (1 - w) + irisSmoothedX * w;
-              normY = normY! * (1 - w) + irisSmoothedY * w;
+              // Relative gaze = iris center minus face-nose-tip.
+              // Range: ~±0.03–0.06 when looking at screen edges.
+              const rawGazeX = rawIrisX - faceTip.x;
+              const rawGazeY = rawIrisY - faceTip.y;
+              const IRIS_ALPHA = 0.5;
+              irisSmoothedX = irisSmoothedX === null ? rawGazeX : irisSmoothedX * (1 - IRIS_ALPHA) + rawGazeX * IRIS_ALPHA;
+              irisSmoothedY = irisSmoothedY === null ? rawGazeY : irisSmoothedY * (1 - IRIS_ALPHA) + rawGazeY * IRIS_ALPHA;
+              // Adaptive GAZE_GAIN based on:
+              //   1. eyeGazeWeight setting (0.3 → base gain 6)
+              //   2. Noise floor — quiet environments get more gain, jittery less
+              //   3. Screen size — larger screens need more cursor travel per iris unit
+              // Max gain during setup (sensitivity=10): eyeGazeWeight*20=6, noise factor
+              // near 1.0, screen factor ~1.2 for 16" → effective ~7.2 total.
+              const noiseNow = baselineTracker.getNoiseFloor();
+              // Noise ≤ 0.002 (quiet): full gain. Noise ≥ 0.02 (jittery): 50% gain.
+              const noiseFactor = Math.max(0.5, Math.min(1.0, 1.0 - noiseNow * 40));
+              // Screen-size factor: 1.0 at 1024px wide, 1.3 at 1920px wide.
+              const screenFactor = typeof window !== 'undefined'
+                ? Math.max(1.0, Math.min(1.5, window.innerWidth / 1024))
+                : 1.0;
+              const GAZE_GAIN = Math.max(0, Math.min(20,
+                (opts.eyeGazeWeight ?? 0.3) * 20 * noiseFactor * screenFactor
+              ));
+              normX = Math.max(0, Math.min(1, normX! + irisSmoothedX * GAZE_GAIN));
+              normY = Math.max(0, Math.min(1, normY! + irisSmoothedY * GAZE_GAIN));
             }
           } catch { /* FaceLandmarker failed — continue with pose-only */ }
         }

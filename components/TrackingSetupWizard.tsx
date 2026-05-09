@@ -250,7 +250,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
     const handle = startPoseTracker({
       dwellMs: 99999,
-      sensitivity: 8,
+      sensitivity: 10,
       smoothing: 0.15,
       trackingTarget: 'nose',
       cursorSmoothing: 0.12,
@@ -314,7 +314,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     console.log(`[wizard] restartTrackerForPart target=${target}`);
     const handle = startPoseTracker({
       dwellMs: 99999,
-      sensitivity: 8,
+      sensitivity: 10,
       smoothing: 0.15,
       trackingTarget: target,
       cursorSmoothing: 0.12,
