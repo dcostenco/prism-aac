@@ -701,6 +701,10 @@ export function startPoseTracker(
   // CAMERA moved (car bump, lap-held laptop wobble), not the user.
   // classifyMotion returns isEgoMotion=true and we skip onMove.
   let prevLandmarksForEgo: Point2D[] | null = null;
+  // Smoothed iris position — EWMA with alpha 0.25 (fast enough for gaze
+  // but removes per-frame jitter that raw FaceLandmarker iris has).
+  let irisSmoothedX: number | null = null;
+  let irisSmoothedY: number | null = null;
   // Baseline tracker — exp-averaged pose center + variance, lets us
   // detect slow drift (auto-focus shift, user shifted in seat) and
   // suggest calibration corrections without forcing recalibration.
@@ -995,11 +999,20 @@ export function startPoseTracker(
             const leftIris  = fl?.[473];
             if (rightIris && leftIris &&
                 Number.isFinite(rightIris.x) && Number.isFinite(leftIris.x)) {
-              const irisX = (rightIris.x + leftIris.x) / 2;
-              const irisY = (rightIris.y + leftIris.y) / 2;
-              const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.8));
-              normX = normX * (1 - w) + irisX * w;
-              normY = normY * (1 - w) + irisY * w;
+              const rawIrisX = (rightIris.x + leftIris.x) / 2;
+              const rawIrisY = (rightIris.y + leftIris.y) / 2;
+              // EWMA smooth the iris before blending — raw FaceLandmarker
+              // iris coords are noisy (pixel-level jitter) and blending
+              // them unsmoothed into the One-Euro-filtered pose position
+              // caused visible cursor wiggling (user report post-corner).
+              const IRIS_ALPHA = 0.25; // ~4 frame lag — fast enough for gaze, slow enough to quiet jitter
+              irisSmoothedX = irisSmoothedX === null ? rawIrisX : irisSmoothedX * (1 - IRIS_ALPHA) + rawIrisX * IRIS_ALPHA;
+              irisSmoothedY = irisSmoothedY === null ? rawIrisY : irisSmoothedY * (1 - IRIS_ALPHA) + rawIrisY * IRIS_ALPHA;
+              // Reduced default weight 0.8 → 0.5: iris still dominates gaze
+              // direction but pose anchor contributes more stability.
+              const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.5));
+              normX = normX! * (1 - w) + irisSmoothedX * w;
+              normY = normY! * (1 - w) + irisSmoothedY * w;
             }
           } catch { /* FaceLandmarker failed — continue with pose-only */ }
         }

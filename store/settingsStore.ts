@@ -207,7 +207,7 @@ export const useSettingsStore = create<SettingsState>()(
       headTrackingDwellMs: 1200,
       headTrackingSensitivity: 5,
       headTrackingEyeGaze: true,
-      headTrackingEyeGazeWeight: 0.8,
+      headTrackingEyeGazeWeight: 0.5,
       poseCalibrationGeneration: 0,
       // Drift-detection safety net (see interface comment). Critical for
       // AAC users — if calibration breaks the cursor will runaway and
