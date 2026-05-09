@@ -485,7 +485,6 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28517 */
   // Verified by play log: source.ended after 272ms of 4320ms = second call killed first.
   const nowMs = Date.now();
   const elapsed = nowMs - _lastSpokenAt;
-  console.log(`[AzureTTS] speakAzure text="${text.slice(0,30)}" lc="${text.toLowerCase().slice(0,30)}" prev="${_lastSpokenText.slice(0,30)}" elapsed=${elapsed}ms window=${DEDUP_MS}`);
   if (text.toLowerCase() === _lastSpokenText && elapsed < DEDUP_MS) {
     console.log(`[AzureTTS] DEDUP — "${text.slice(0, 30)}" within ${elapsed}ms; keeping prior audio`);
     return true;

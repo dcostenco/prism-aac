@@ -303,15 +303,25 @@ export default function PrismApp() {
     // azureTTS lazy-loaded once via a module-level cache; subsequent
     // gestures call mod.warmupAzureAudio() directly with no import
     // re-fetch.
+    //
+    // Pre-import: start the import at effect mount (no gesture required)
+    // so the module is cached BEFORE the first user gesture. Without
+    // this, the first gesture triggers an async import → by the time it
+    // resolves, Safari's user-gesture token has expired →
+    // AudioContext.resume() fails silently → context stays suspended →
+    // TTS falls through to Web Speech (robotic). Fix: eager import keeps
+    // the first gesture on the synchronous warmup path.
     let mod: typeof import('@/services/azureTTS') | null = null;
+    import('@/services/azureTTS').then((m) => { mod = m; }).catch(() => {});
     const warmup = () => {
       if (mod) {
         // Synchronous path — preserves the current gesture token.
         try { void mod.warmupAzureAudio(); } catch { /* */ }
         return;
       }
-      // First call: load the module asynchronously, then warmup.
-      // Subsequent gestures hit the sync branch above.
+      // Fallback: module not yet loaded (slow network). Load it now
+      // and warmup after. The gesture token may be gone by then but
+      // subsequent gestures will hit the sync branch.
       import('@/services/azureTTS').then((m) => {
         mod = m;
         try { void m.warmupAzureAudio(); } catch { /* */ }
