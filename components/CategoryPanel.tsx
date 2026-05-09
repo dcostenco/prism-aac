@@ -41,13 +41,15 @@ const GRID_COLS: Record<GridSize, string> = {
   20: 'grid-cols-4 md:grid-cols-5',
 };
 
+// With keyboard hidden (Image #28), tiles get the full remaining height.
+// Use much larger min-h so cards feel like big pictogram buttons.
 const TILE_MIN_H: Record<GridSize, string> = {
-  4:  'min-h-[clamp(120px,22vw,180px)]',
-  6:  'min-h-[clamp(100px,18vw,150px)]',
-  9:  'min-h-[clamp(80px,15vw,120px)]',
-  12: 'min-h-[clamp(70px,12vw,100px)]',
-  16: 'min-h-[clamp(60px,10vw,90px)]',
-  20: 'min-h-[clamp(50px,8vw,80px)]',
+  4:  'min-h-[clamp(160px,28vw,260px)]',
+  6:  'min-h-[clamp(140px,24vw,220px)]',
+  9:  'min-h-[clamp(120px,20vw,180px)]',
+  12: 'min-h-[clamp(100px,16vw,150px)]',
+  16: 'min-h-[clamp(80px,13vw,120px)]',
+  20: 'min-h-[clamp(70px,11vw,100px)]',
 };
 
 export default function CategoryPanel() {

@@ -163,6 +163,11 @@ export default function PrismApp() {
     'caregiver',
     'picture-editor',
     'music-composer',
+    // Categories: big pictogram cards need full height — no keyboard needed
+    // since navigation is tap-only (Image #28).
+    'categories',
+    'category-detail',
+    'ordering',
   ]);
   const showQwerty = !PANELS_WITHOUT_QWERTY.has(sidePanel);
   const { rtl } = useT();
@@ -398,7 +403,13 @@ export default function PrismApp() {
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
           {sidePanel !== 'math' && <GreetingBanner />}
           {sidePanel !== 'math' && <MessageBar />}
-          {sidePanel !== 'math' && <PredictionBar />}
+          {/* Hide PredictionBar in AI chat (typing a question, not AAC phrase)
+              and in categories/category-detail (big-card tap mode, Image #28). */}
+          {sidePanel !== 'math' &&
+           sidePanel !== 'ai-chat' &&
+           sidePanel !== 'categories' &&
+           sidePanel !== 'category-detail' &&
+           sidePanel !== 'ordering' && <PredictionBar />}
           {sidePanel !== 'math' && <CategoryPanel />}
           <MathPanel />
           <CaregiverPanel />

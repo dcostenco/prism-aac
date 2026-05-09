@@ -368,6 +368,44 @@ export default function AACChatPanel() {
         {/* Contact picked → chat compose view */}
         {activeContact && (
           <div className="flex flex-col gap-3">
+            {/* Provider selector — shown when the same person has multiple
+                provider rows (e.g. Mail + SMS). The user must be able to
+                choose how to send before composing (Image #27). */}
+            {siblingContacts.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <p className="text-muted text-xs uppercase tracking-wider px-1">
+                  Send via
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {/* Active provider — highlighted */}
+                  <button
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#4CAF50] text-white font-bold text-sm border-2 border-[#4CAF50]"
+                    disabled
+                    aria-current="true"
+                  >
+                    <span className="text-lg">{PROVIDER_ICONS[activeContact.provider]}</span>
+                    {PROVIDER_LABELS[activeContact.provider]}
+                  </button>
+                  {/* Sibling providers — tappable */}
+                  {siblingContacts.map((s) => {
+                    const avail = isProviderAvailable(s.provider, plan);
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => { tapFeedback(); selectContact(s.id); }}
+                        disabled={!avail}
+                        aria-label={`Send via ${PROVIDER_LABELS[s.provider]}`}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm border-2 ${avail ? 'surface-key text-primary border-theme hover:border-[#4CAF50]' : 'opacity-40 surface-key text-muted border-theme cursor-not-allowed'}`}
+                      >
+                        <span className="text-lg">{PROVIDER_ICONS[s.provider]}</span>
+                        {PROVIDER_LABELS[s.provider]}
+                        {!avail && <span className="text-[10px]">🔒</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {!activeContactAvailable && (
               <div
                 className="surface-key border border-[#FF9800] rounded-lg p-3 text-sm text-[#E65100]"
