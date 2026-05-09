@@ -666,39 +666,52 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   const cornerStartRef = useRef<number>(0);
   const cornerDwellRef = useRef<{ idx: number; start: number } | null>(null);
   const captureCornercallbackRef = useRef<(() => void) | null>(null);
+  const cursorPosRef = useRef(cursorPos);
+  const cornerIdxRef = useRef(cornerIdx);
   useEffect(() => { captureCornercallbackRef.current = captureCorner; }, [captureCorner]);
+  useEffect(() => { cursorPosRef.current = cursorPos; }, [cursorPos]);
+  useEffect(() => { cornerIdxRef.current = cornerIdx; }, [cornerIdx]);
+
+  // Reset the 5s timer ONLY when phase enters calibrate-corners or cornerIdx changes.
+  // NOT on cursor movement — cursor movement was resetting it every frame,
+  // preventing the 5s timeout from ever firing (bug found Image #60).
+  useEffect(() => {
+    if (phase !== 'calibrate-corners') return;
+    cornerStartRef.current = Date.now();
+    cornerDwellRef.current = null;
+  }, [phase, cornerIdx]);
+
   useEffect(() => {
     if (phase !== 'calibrate-corners') {
       cornerDwellRef.current = null;
       return;
     }
-    cornerStartRef.current = Date.now();
     const AUTO_CAPTURE_RADIUS = 200;
     const CORNER_DWELL_MS = 1500;
-    const CORNER_TIMEOUT_MS = 5000; // always auto-capture after 5s
+    const CORNER_TIMEOUT_MS = 5000;
     const id = setInterval(() => {
-      if (sampleBufferRef.current.length === 0) return; // no pose yet
+      if (sampleBufferRef.current.length === 0) return;
       const elapsed = Date.now() - cornerStartRef.current;
-      // Timeout path — capture after 5s regardless of cursor position.
+      const curIdx = cornerIdxRef.current;
+      // Timeout path — always fires after 5s regardless of cursor position.
       if (elapsed >= CORNER_TIMEOUT_MS) {
-        console.log(`[wizard] auto-capture corner ${cornerIdx + 1} — timeout after ${CORNER_TIMEOUT_MS}ms`);
+        console.log(`[wizard] auto-capture corner ${curIdx + 1} — timeout ${CORNER_TIMEOUT_MS}ms`);
         cornerDwellRef.current = null;
         captureCornercallbackRef.current?.();
         return;
       }
-      // Proximity path — capture if cursor near target.
-      const corner = CORNER_TARGETS[cornerIdx];
+      // Proximity path — fires when cursor holds near the corner target.
+      const corner = CORNER_TARGETS[curIdx];
       if (!corner) return;
       const tx = (corner.x / 100) * window.innerWidth;
       const ty = (corner.y / 100) * window.innerHeight;
-      const dx = cursorPos.x - tx;
-      const dy = cursorPos.y - ty;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+      const { x, y } = cursorPosRef.current;
+      const dist = Math.sqrt((x - tx) ** 2 + (y - ty) ** 2);
       if (dist <= AUTO_CAPTURE_RADIUS) {
-        if (!cornerDwellRef.current || cornerDwellRef.current.idx !== cornerIdx) {
-          cornerDwellRef.current = { idx: cornerIdx, start: Date.now() };
+        if (!cornerDwellRef.current || cornerDwellRef.current.idx !== curIdx) {
+          cornerDwellRef.current = { idx: curIdx, start: Date.now() };
         } else if (Date.now() - cornerDwellRef.current.start >= CORNER_DWELL_MS) {
-          console.log(`[wizard] auto-capture corner ${cornerIdx + 1} — proximity (dist=${Math.round(dist)}px)`);
+          console.log(`[wizard] auto-capture corner ${curIdx + 1} — proximity dist=${Math.round(dist)}px`);
           cornerDwellRef.current = null;
           captureCornercallbackRef.current?.();
         }
@@ -707,7 +720,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       }
     }, 200);
     return () => { clearInterval(id); cornerDwellRef.current = null; };
-  }, [phase, cornerIdx, cursorPos.x, cursorPos.y]);
+  }, [phase]);
 
   // Live-cursor — render a dot at cursorPos on EVERY phase except
   // intro/complete so the user can verify in real time that pointing
