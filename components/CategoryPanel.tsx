@@ -25,13 +25,17 @@ function PanelShell({ children }: { children: ReactNode }) {
   return (
     <section
       aria-label={pt('aac_panel')}
-      className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
+      // In surround mode the parent already constrains width; flex-1 fills
+      // the full left-column height. In normal mode flex-[3] above keyboard.
+      className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme"
     >
       {children}
     </section>
   );
 }
 
+// In surround mode the panel is a narrow left column (~140-240px wide),
+// so always use 1 column regardless of gridSize setting.
 const GRID_COLS: Record<GridSize, string> = {
   4:  'grid-cols-2',
   6:  'grid-cols-2 md:grid-cols-3',
@@ -70,6 +74,10 @@ export default function CategoryPanel() {
     sidePanel === 'categories' ||
     sidePanel === 'category-detail' ||
     sidePanel === 'ordering';
+
+  // In surround mode the panel is a narrow column alongside the keyboard.
+  // Force single-column grid so cards are readable at ~140-240px width.
+  const isSurround = isOpen;
 
   if (!isOpen) return null;
 
@@ -160,7 +168,7 @@ export default function CategoryPanel() {
             ))}
           </div>
         )}
-        <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
+        <div className={`grid ${isSurround ? 'grid-cols-1' : GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
           {phrases.map((p) => {
             const localText = getPhraseText(p.id, language, p.text);
             const firstWord = p.text.split(/\s+/)[0];
@@ -189,7 +197,7 @@ export default function CategoryPanel() {
         <span className={headerTitle}>{t('categories')}</span>
         <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label={t('close_panel')} className={closeBtn}>✕</button>
       </div>
-      <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
+      <div className={`grid ${isSurround ? 'grid-cols-1' : GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
         {categories.map((cat) => (
           <button
             key={cat.id}

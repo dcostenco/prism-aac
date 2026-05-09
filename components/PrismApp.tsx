@@ -163,13 +163,13 @@ export default function PrismApp() {
     'caregiver',
     'picture-editor',
     'music-composer',
-    // Categories: big pictogram cards need full height — no keyboard needed
-    // since navigation is tap-only (Image #28).
-    'categories',
-    'category-detail',
-    'ordering',
   ]);
   const showQwerty = !PANELS_WITHOUT_QWERTY.has(sidePanel);
+  // Category surround mode: categories + keyboard side-by-side (Images #30/#31).
+  // Keyboard stays accessible; categories appear in a scrollable left column.
+  const isCategorySurround = sidePanel === 'categories' ||
+    sidePanel === 'category-detail' ||
+    sidePanel === 'ordering';
   const { rtl } = useT();
 
   useEffect(() => {
@@ -403,14 +403,9 @@ export default function PrismApp() {
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
           {sidePanel !== 'math' && <GreetingBanner />}
           {sidePanel !== 'math' && <MessageBar />}
-          {/* Hide PredictionBar in AI chat (typing a question, not AAC phrase)
-              and in categories/category-detail (big-card tap mode, Image #28). */}
-          {sidePanel !== 'math' &&
-           sidePanel !== 'ai-chat' &&
-           sidePanel !== 'categories' &&
-           sidePanel !== 'category-detail' &&
-           sidePanel !== 'ordering' && <PredictionBar />}
-          {sidePanel !== 'math' && <CategoryPanel />}
+          {/* Hide PredictionBar only in AI chat (typing a question, not AAC phrase).
+              Categories keep the prediction bar so the AAC user can still type. */}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />
           <AIChatPanel />
@@ -422,24 +417,40 @@ export default function PrismApp() {
           <OcrCapturePanel />
           <PictureEditorPanel />
           <MusicComposerPanel />
-          {/* Keyboard — hidden only for panels with their own input
-              keyboard (math). For every other panel the qwerty stays
-              mounted; the min-h prevents flex-[3] panels from squeezing
-              it down to a 2-row clipped sliver. */}
-          {showQwerty && (
-            <div
-              // Floor / cap chosen so all 4 rows (qwerty + utility) get
-              // ≥ 60px each across every supported viewport. The
-              // previous floor of 180px collapsed to ~30-40px rows on
-              // iPad landscape with a flex-[3] panel above (May 2026
-              // user screenshots #37 / #38 — Chat IA + Send Message
-              // panels showed compressed rows). 280px floor / 38svh
-              // grow / 440px cap.
-              className="flex-1 flex flex-col min-h-[clamp(280px,38svh,440px)]"
-              data-testid="keyboard-shell"
-            >
-              <Keyboard />
+          {/* Category surround layout (Images #30/#31):
+              In category mode, show the category cards in a scrollable LEFT
+              column alongside the keyboard on the RIGHT — the "AAC surround"
+              pattern where vocabulary cards wrap the central input area.
+              Both remain accessible; the AAC user types AND taps cards.
+              In all other modes: CategoryPanel stacks above the keyboard. */}
+          {isCategorySurround ? (
+            <div className="flex-1 flex flex-row min-h-0">
+              {/* Left column: scrollable category cards, fixed width */}
+              <div className="w-[clamp(140px,30vw,240px)] flex flex-col min-h-0 border-r border-theme">
+                <CategoryPanel />
+              </div>
+              {/* Right: keyboard fills remaining width */}
+              {showQwerty && (
+                <div
+                  className="flex-1 flex flex-col min-h-[clamp(240px,35svh,400px)]"
+                  data-testid="keyboard-shell"
+                >
+                  <Keyboard />
+                </div>
+              )}
             </div>
+          ) : (
+            <>
+              {sidePanel !== 'math' && <CategoryPanel />}
+              {showQwerty && (
+                <div
+                  className="flex-1 flex flex-col min-h-[clamp(280px,38svh,440px)]"
+                  data-testid="keyboard-shell"
+                >
+                  <Keyboard />
+                </div>
+              )}
+            </>
           )}
           <AlertOverlay />
           {/* True modals — settings/history are configuration UIs, not
