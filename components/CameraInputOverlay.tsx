@@ -71,6 +71,15 @@ export default function CameraInputOverlay() {
   const enabledAtRef = useRef(0);
   const cursorWindowRef = useRef<Array<{ x: number; y: number; t: number }>>([]);
   const [stuckToast, setStuckToast] = useState(false);
+  const [recalToast, setRecalToast] = useState(false);
+  useEffect(() => {
+    const handler = () => {
+      setRecalToast(true);
+      setTimeout(() => setRecalToast(false), 12_000);
+    };
+    window.addEventListener('prism-recalibration-needed', handler);
+    return () => window.removeEventListener('prism-recalibration-needed', handler);
+  }, []);
   const setSettings = useSettingsStore(s => s.update);
   // Declared up here so the watchdog setInterval inside the main
   // tracker useEffect can read it without a TDZ error. Mirrored to
@@ -312,10 +321,30 @@ export default function CameraInputOverlay() {
   }
 
   const statusColor = status === 'tracking' ? '#4CAF50' : status === 'lost' ? '#FF9800' : '#2196F3';
+
+  const recalToastEl = recalToast ? (
+    <div
+      className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[10000] bg-[#1a1a2e] text-white px-4 py-3 rounded-2xl shadow-2xl border border-[#FF9800]/40 max-w-sm pointer-events-auto"
+      data-testid="camera-input-recal-toast"
+      role="alert"
+    >
+      <p className="font-semibold text-sm text-[#FF9800]">⚠ Cursor drift — re-calibrate?</p>
+      <p className="text-xs text-white/70 mt-1">
+        Auto-correction tried 3 times but couldn&apos;t fully compensate. Re-run the tracking wizard for best accuracy.
+      </p>
+      <div className="flex gap-2 mt-3 justify-end">
+        <button onClick={() => setRecalToast(false)} className="text-xs px-3 py-1.5 rounded bg-white/10 hover:bg-white/20">
+          Dismiss
+        </button>
+      </div>
+    </div>
+  ) : null;
   const bubbleY = keyBubble.visible ? Math.max(5, keyBubble.y - 55) : 0;
   const bubbleX = keyBubble.visible ? Math.max(25, Math.min(typeof window !== 'undefined' ? window.innerWidth - 25 : 9999, keyBubble.x)) : 0;
 
   return (
+    <>
+    {recalToastEl}
     <div
       className="fixed inset-0 pointer-events-none"
       style={{ zIndex: 9998 }}
@@ -398,5 +427,6 @@ export default function CameraInputOverlay() {
         {status === 'tracking' ? `Tracking ${activeTarget.replace('_', ' ')}` : status}
       </div>
     </div>
+    </>
   );
 }
