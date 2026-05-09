@@ -106,6 +106,10 @@ interface SettingsState {
   headTrackingEnabled: boolean;
   headTrackingDwellMs: number;
   headTrackingSensitivity: number;
+  /** Incremented each time the wizard saves a pose calibration. CameraInputOverlay
+   *  watches this and restarts its tracker so the new cal takes effect immediately
+   *  without needing to toggle cameraInputEnabled off/on. */
+  poseCalibrationGeneration: number;
   /** Use iris/gaze tracking instead of face-box head tracking. Eyes reach
    *  screen corners without head rotation — critical for limited-mobility
    *  AAC users. Default off so existing calibrations aren't disrupted. */
@@ -174,7 +178,7 @@ interface SettingsState {
   // is not user-selectable.
   voicePreferences: Record<string, string>;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -204,6 +208,7 @@ export const useSettingsStore = create<SettingsState>()(
       headTrackingSensitivity: 5,
       headTrackingEyeGaze: true,
       headTrackingEyeGazeWeight: 0.8,
+      poseCalibrationGeneration: 0,
       // Drift-detection safety net (see interface comment). Critical for
       // AAC users — if calibration breaks the cursor will runaway and
       // they may be unable to find the disable button. Default ON.

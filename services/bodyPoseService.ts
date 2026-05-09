@@ -1360,6 +1360,16 @@ export function startPoseTracker(
   return handle;
 }
 
+// ── Module-level calibration update ─────────────────────────────────────────
+
+/** Apply new calibration to whichever tracker is currently active.
+ *  Useful when the wizard saves a new cal while CameraInputOverlay's
+ *  tracker is already running — the active tracker reads cal from
+ *  localStorage only at startup, so in-memory must be updated directly. */
+export function applyCalibrationToActiveTracker(data: PoseCalibrationData): void {
+  if (activeHandle) activeHandle.setCalibration(data);
+}
+
 // ── Module-level stop (convenience) ─────────────────────────────────────────
 
 /**

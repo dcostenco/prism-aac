@@ -10,6 +10,7 @@ import {
   freezeLearnerCalSaves,
   unfreezeLearnerCalSaves,
   initFaceLandmarkerForGazeEager,
+  applyCalibrationToActiveTracker,
   type PoseTrackerHandle,
   type TrackingTarget,
   type PoseCalibrationData,
@@ -240,7 +241,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     // (mirX=0.533, normY=0.689) — preview cursor offset by ~100px.
     // The new wizard run will OVERWRITE this on completion anyway;
     // clearing here just makes the in-wizard preview less confusing.
-    try { savePoseCalibration(DEFAULT_CALIBRATION); } catch { /* */ }
+    try { savePoseCalibration(DEFAULT_CALIBRATION); applyCalibrationToActiveTracker(DEFAULT_CALIBRATION); } catch { /* */ }
 
     if (handleRef.current) handleRef.current.stop();
 
@@ -571,11 +572,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       console.log(`[wizard] final cal (recentered on user neutral): leftX=${cal.leftX.toFixed(3)} rightX=${cal.rightX.toFixed(3)} topY=${cal.topY.toFixed(3)} bottomY=${cal.bottomY.toFixed(3)}`);
 
       savePoseCalibration(cal);
+      applyCalibrationToActiveTracker(cal);
       unfreezeLearnerCalSaves();
-      // Calibration saved — enable tracking so it's live immediately.
-      // "Start Using Prism AAC" also sets this but the user might close
-      // settings before reaching that button.
-      updateSettings({ cameraInputEnabled: true });
+      // Increment generation → CameraInputOverlay restarts tracker with new cal.
+      // Also enable tracking in case it was disabled.
+      updateSettings({
+        cameraInputEnabled: true,
+        poseCalibrationGeneration: useSettingsStore.getState().poseCalibrationGeneration + 1,
+      });
       speak(usedFallbackRange
         ? 'Calibration saved with a wide range so the cursor reaches the full screen.'
         : 'Calibration saved. Now lets test your accuracy.');
@@ -969,8 +973,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                   onClick={() => {
                     tapFeedback();
                     unfreezeLearnerCalSaves();
-                    // Ensure tracking is on — user chose to save cal.
-                    updateSettings({ cameraInputEnabled: true });
+                    updateSettings({
+                      cameraInputEnabled: true,
+                      poseCalibrationGeneration: useSettingsStore.getState().poseCalibrationGeneration + 1,
+                    });
                     const targets = Array.from({length: 5}, () => ({
                       x: 15 + Math.random() * 70, y: 15 + Math.random() * 70, hit: false
                     }));

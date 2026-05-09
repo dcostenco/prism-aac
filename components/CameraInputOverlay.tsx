@@ -29,6 +29,7 @@ type Status = 'starting' | 'tracking' | 'lost' | 'stopped';
 
 export default function CameraInputOverlay() {
   const enabled = useSettingsStore(s => s.cameraInputEnabled);
+  const calGeneration = useSettingsStore(s => s.poseCalibrationGeneration);
   const target = useSettingsStore(s => s.cameraTrackingTarget) as TrackingTarget;
   const dwellMs = useSettingsStore(s => s.headTrackingDwellMs);
   const sensitivity = useSettingsStore(s => s.headTrackingSensitivity);
@@ -226,7 +227,10 @@ export default function CameraInputOverlay() {
       clearInterval(watchdog);
       mounted = false;
     };
-  }, [enabled, target, dwellMs, sensitivity, animateDwell, setSettings]);
+  // calGeneration increments each time the wizard saves a new calibration.
+  // Adding it to deps forces the tracker to restart and reload the new cal
+  // from localStorage — otherwise the running tracker's in-memory cal is stale.
+  }, [enabled, target, dwellMs, sensitivity, animateDwell, setSettings, calGeneration]);
 
   // Pointer fallback: when camera is on but can't detect the target
   // (MacBook — hands below FOV), use mouse movement for cursor + highlights.
