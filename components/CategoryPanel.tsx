@@ -1,5 +1,5 @@
 'use client';
-import { ReactNode, useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useCategoryStore } from '@/store/categoryStore';
@@ -14,78 +14,91 @@ import PhraseTile from './PhraseTile';
 import { getPhraseText } from '@/constants/phraseTranslations';
 
 /**
- * Category panel — full-screen AAC board (Image #32/#34 pattern).
+ * Category panel — matches TouchChat-style AAC board (Images #36/#37).
  *
- * Layout (critical UX requirement):
+ * HOME view:
+ *   [page label "HOME"]
+ *   [dense color-coded core vocab grid | right sidebar nav]
+ *   [scrollable category tab row at bottom]
  *
- *   ┌─────────────────────────────┬──────┐
- *   │ 🔍 [Search bar — always on] │ ← 🏠 │  ← top bar (search prominent)
- *   ├─────────────────────────────┴──────┤
- *   │                                    │
- *   │       tile grid (full width)       │
- *   │                                    │
- *   ├────────────────────────────────────┤
- *   │   ⌨️  Show / Hide Keyboard  ▲      │  ← full-width keyboard drawer handle
- *   └────────────────────────────────────┘
+ * Category detail view:
+ *   [page label "CATEGORY NAME"]
+ *   [phrase/subfolder grid          | right sidebar nav]
  *
- * Search and Keyboard toggle are critical in this mode (user requirement).
- * Both get large, obvious touch targets rather than small sidebar icons.
+ * Color scheme (Image #36):
+ *   pink   = social/quick (yes, no, hi, help)
+ *   yellow = pronouns (I, you, he, she)
+ *   green  = verbs (go, want, do, make)
+ *   orange = connecting words (a, the, and, or)
+ *   blue   = descriptors (more, not, all)
+ *   white  = category folders
+ *
+ * Right sidebar: dark brown #3e2a1a, ~90px, icon + label buttons.
  */
 
-function PanelShell({ children }: { children: ReactNode }) {
-  const { t: pt } = useT();
-  return (
-    <section
-      aria-label={pt('aac_panel')}
-      className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden"
-    >
-      {children}
-    </section>
-  );
+// ── Categories displayed on the HOME core-vocab grid ──────────────────────────
+// Order matters: pink first → yellow → green → orange → blue (matches Image #36)
+const HOME_CATS_ORDERED = [
+  'quick-talk',        // pink  – yes, no, hi, bye
+  'help-needs',        // pink  – help, please, stop, done
+  'core-pronouns',     // yellow
+  'core-verbs',        // green
+  'core-little-words', // orange
+  'core-descriptors',  // blue
+  'feelings',          // purple
+  'questions',         // purple
+];
+const HOME_MAX_PER_CAT = 14;
+
+// ── Tile color by category (for HOME grid) ────────────────────────────────────
+const CAT_BG: Record<string, string> = {
+  'quick-talk':        'bg-pink-400   text-white   border-pink-500',
+  'help-needs':        'bg-pink-300   text-gray-900 border-pink-400',
+  'core-pronouns':     'bg-yellow-400 text-gray-900 border-yellow-500',
+  'core-verbs':        'bg-green-500  text-white   border-green-700',
+  'core-little-words': 'bg-orange-400 text-white   border-orange-600',
+  'core-descriptors':  'bg-sky-400    text-white   border-sky-600',
+  'feelings':          'bg-purple-400 text-white   border-purple-600',
+  'questions':         'bg-purple-300 text-gray-900 border-purple-500',
+};
+
+// ── Word-class fallback color (for category-detail tiles) ─────────────────────
+function wordBg(text: string): string {
+  const c = CATEGORY_COLORS[classifyWord(text.split(/\s+/)[0])] ?? '';
+  if (c === '#4CAF50' || c === '#43A047') return 'bg-green-500  text-white   border-green-700';
+  if (c === '#FF9800' || c === '#F57C00') return 'bg-orange-400 text-white   border-orange-600';
+  if (c === '#FFC107' || c === '#FFB300') return 'bg-yellow-400 text-gray-900 border-yellow-500';
+  if (c === '#2196F3' || c === '#1976D2') return 'bg-sky-400    text-white   border-sky-600';
+  if (c === '#E91E63' || c === '#C2185B') return 'bg-pink-400   text-white   border-pink-500';
+  if (c === '#9C27B0' || c === '#7B1FA2') return 'bg-purple-400 text-white   border-purple-600';
+  return 'bg-slate-500 text-white border-slate-700';
 }
 
+// ── Grid column classes ───────────────────────────────────────────────────────
 const GRID_COLS: Record<GridSize, string> = {
   4:  'grid-cols-2',
-  6:  'grid-cols-2 sm:grid-cols-3',
+  6:  'grid-cols-3',
   9:  'grid-cols-3',
-  12: 'grid-cols-3 sm:grid-cols-4',
+  12: 'grid-cols-4',
   16: 'grid-cols-4',
-  20: 'grid-cols-4 sm:grid-cols-5',
+  20: 'grid-cols-5',
 };
 
-const TILE_MIN_H: Record<GridSize, string> = {
-  4:  'min-h-[clamp(140px,22vw,220px)]',
-  6:  'min-h-[clamp(120px,18vw,180px)]',
-  9:  'min-h-[clamp(100px,14vw,150px)]',
-  12: 'min-h-[clamp(80px,11vw,120px)]',
-  16: 'min-h-[clamp(65px,9vw,100px)]',
-  20: 'min-h-[clamp(55px,8vw,85px)]',
+const TILE_H: Record<GridSize, string> = {
+  4:  'min-h-[clamp(130px,20vw,200px)]',
+  6:  'min-h-[clamp(110px,16vw,170px)]',
+  9:  'min-h-[clamp(90px,13vw,140px)]',
+  12: 'min-h-[clamp(75px,10vw,115px)]',
+  16: 'min-h-[clamp(62px,9vw,95px)]',
+  20: 'min-h-[clamp(52px,7vw,80px)]',
 };
 
-const CLASS_BG: Record<string, string> = {
-  verb:        'bg-green-600  text-white border-green-700',
-  adjective:   'bg-orange-400 text-white border-orange-500',
-  pronoun:     'bg-yellow-400 text-gray-900 border-yellow-500',
-  noun:        'bg-blue-400   text-white border-blue-500',
-  social:      'bg-pink-400   text-white border-pink-500',
-  preposition: 'bg-purple-400 text-white border-purple-500',
-  default:     'bg-slate-600  text-white border-slate-700',
-};
+// HOME grid is always dense regardless of gridSize preference
+const HOME_COLS  = 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7';
+const HOME_TILE_H = 'min-h-[clamp(60px,9vw,100px)]';
 
-function wordClassBg(word: string): string {
-  const color = CATEGORY_COLORS[classifyWord(word)] ?? '';
-  if (color === '#4CAF50' || color === '#43A047') return CLASS_BG.verb;
-  if (color === '#FF9800' || color === '#F57C00') return CLASS_BG.adjective;
-  if (color === '#FFC107' || color === '#FFB300') return CLASS_BG.pronoun;
-  if (color === '#2196F3' || color === '#1976D2') return CLASS_BG.noun;
-  if (color === '#E91E63' || color === '#C2185B') return CLASS_BG.social;
-  if (color === '#9C27B0' || color === '#7B1FA2') return CLASS_BG.preposition;
-  return CLASS_BG.default;
-}
-
-const FOLDER_TILE = `aac-btn bg-white dark:bg-slate-100 text-gray-900 rounded-xl border-2 border-gray-300
-  flex flex-col items-center justify-center gap-2 p-3 font-bold text-base select-none text-center
-  hover:border-[#4CAF50] active:scale-95 transition-transform`;
+// ── Sidebar button ─────────────────────────────────────────────────────────────
+const SIDE_BTN = 'aac-btn flex flex-col items-center justify-center gap-1 py-3 px-1 w-full select-none transition-colors hover:bg-white/15 active:bg-white/25 border-b border-white/10 last:border-b-0';
 
 export default function CategoryPanel() {
   const { t } = useT();
@@ -104,6 +117,7 @@ export default function CategoryPanel() {
   const gridSize = useSettingsStore((s) => s.gridSize);
   const language = useSettingsStore((s) => s.language);
   const { speechRate, speechVolume } = useSettingsStore();
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,156 +132,145 @@ export default function CategoryPanel() {
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
 
-  // Universal search across ALL categories and phrases
+  // Scroll grid up/down (sidebar ↑↓ buttons)
+  const scrollGrid = (dir: 1 | -1) => {
+    gridRef.current?.scrollBy({ top: dir * 220, behavior: 'smooth' });
+  };
+
+  // Universal search
   const searchResults = useMemo(() => {
     if (!searchQuery.trim() || !searchOpen) return [];
     const q = searchQuery.toLowerCase();
-    const categories = allCategories();
-    const results: Array<{ phrase: string; category: string; phraseId?: string }> = [];
-    for (const cat of categories) {
-      const phrases = getRankedPhrasesForCategory(cat.id).map((r) => r.phrase);
-      for (const p of phrases) {
-        const localText = getPhraseText(p.id, language, p.text);
-        if (localText.toLowerCase().includes(q) || p.text.toLowerCase().includes(q)) {
-          results.push({
-            phrase: localText,
-            category: cat.nameKey ? t(cat.nameKey) : cat.name,
-            phraseId: p.id,
-          });
-          if (results.length >= 50) return results;
+    const cats = allCategories();
+    const out: { phrase: string; category: string; phraseId?: string }[] = [];
+    for (const cat of cats) {
+      for (const { phrase: p } of getRankedPhrasesForCategory(cat.id)) {
+        const local = getPhraseText(p.id, language, p.text);
+        if (local.toLowerCase().includes(q) || p.text.toLowerCase().includes(q)) {
+          out.push({ phrase: local, category: cat.nameKey ? t(cat.nameKey) : cat.name, phraseId: p.id });
+          if (out.length >= 50) return out;
         }
       }
     }
-    return results;
+    return out;
   }, [searchQuery, searchOpen, allCategories, getRankedPhrasesForCategory, language, t]);
+
+  // HOME grid: core vocab phrases in color-group order (pink → yellow → green → …)
+  const homeGridPhrases = useMemo(() => {
+    const out: { phrase: ReturnType<typeof getRankedPhrasesForCategory>[number]['phrase']; catId: string }[] = [];
+    for (const catId of HOME_CATS_ORDERED) {
+      const phrases = getRankedPhrasesForCategory(catId).slice(0, HOME_MAX_PER_CAT).map((r) => r.phrase);
+      for (const p of phrases) out.push({ phrase: p, catId });
+    }
+    return out;
+  }, [getRankedPhrasesForCategory]);
 
   if (!isOpen) return null;
 
   const handlePhrase = (phraseText: string, phraseId?: string) => {
     tapFeedback();
-    const existingWords = text.trim().split(/\s+/).filter(Boolean);
-    const prevWord = existingWords.at(-1);
-    const prevPrevWord = existingWords.at(-2);
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    const prev = words.at(-1);
+    const prevPrev = words.at(-2);
     appendText(phraseText);
-    const phraseWords = phraseText.trim().split(/\s+/);
-    let prev = prevWord;
-    let prevPrev = prevPrevWord;
-    for (const w of phraseWords) {
-      learnWord(w.toLowerCase(), prev?.toLowerCase(), prevPrev?.toLowerCase());
-      prevPrev = prev;
-      prev = w;
+    let pw = prev;
+    let ppw = prevPrev;
+    for (const w of phraseText.trim().split(/\s+/)) {
+      learnWord(w.toLowerCase(), pw?.toLowerCase(), ppw?.toLowerCase());
+      ppw = pw; pw = w;
     }
     if (phraseId) recordPhraseUse(phraseId);
     if (autoSpeak && soundEnabled) aacSpeak(phraseText, speechRate, speechVolume);
     if (searchOpen) { setSearchOpen(false); setSearchQuery(''); }
   };
 
-  // ── SHARED: Top bar (search + nav) ──────────────────────────────────────────
-  const canGoBack = sidePanel !== 'categories';
+  const isHome = sidePanel === 'categories';
   const isDeep = categoryPath.length > 1;
 
-  const handleBack = () => {
-    tapFeedback();
-    if (isDeep) navigateCategoryUp();
-    else backToCategories();
-  };
+  // ── RIGHT SIDEBAR (matches Image #36/#37) ────────────────────────────────────
+  // Icon + label, dark brown, 90px wide
+  function SidebarBtn({
+    icon, label, onClick, active = false, disabled = false,
+  }: { icon: string; label: string; onClick: () => void; active?: boolean; disabled?: boolean }) {
+    return (
+      <button
+        onClick={() => { if (!disabled) { tapFeedback(); onClick(); } }}
+        disabled={disabled}
+        className={`${SIDE_BTN} ${active ? 'bg-white/20' : ''} ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`}
+      >
+        <span className="text-[22px] leading-none">{icon}</span>
+        <span className="text-[9px] font-bold uppercase tracking-wide text-white/85 text-center leading-tight px-0.5">
+          {label}
+        </span>
+      </button>
+    );
+  }
 
-  // The top bar appears in EVERY mode (search is always reachable).
-  const TopBar = ({ title }: { title?: string }) => (
-    <div className="flex items-stretch shrink-0 border-b border-theme bg-[#3e2a1a]">
-      {/* ← Back / nav */}
-      {canGoBack ? (
-        <button
-          onClick={handleBack}
-          aria-label="Go back"
-          className="aac-btn flex items-center justify-center w-14 shrink-0 text-white text-2xl hover:bg-white/10 active:bg-white/20 border-r border-white/20"
-        >
-          ←
-        </button>
-      ) : (
-        <button
-          onClick={() => { tapFeedback(); closeSidePanel(); }}
-          aria-label="Home"
-          className="aac-btn flex items-center justify-center w-14 shrink-0 text-white text-2xl hover:bg-white/10 active:bg-white/20 border-r border-white/20"
-        >
-          🏠
-        </button>
-      )}
+  function Sidebar({ showCoreWords = false }: { showCoreWords?: boolean }) {
+    return (
+      <nav className="w-[88px] shrink-0 bg-[#3e2a1a] flex flex-col border-l-2 border-[#5c3d25] overflow-hidden">
+        {/* Go back — shown only when NOT on HOME */}
+        {!isHome && (
+          <SidebarBtn
+            icon="←"
+            label={isDeep ? 'Up' : 'Go back'}
+            onClick={() => { isDeep ? navigateCategoryUp() : backToCategories(); }}
+          />
+        )}
+        <SidebarBtn icon="🏠" label="Home" onClick={closeSidePanel} />
+        {showCoreWords && (
+          <SidebarBtn icon="⌂" label="Core words" onClick={backToCategories} />
+        )}
+        {/* Spacer to push search/keyboard to bottom */}
+        <div className="flex-1" />
+        {/* Scroll up/down (useful in detail view) */}
+        {!isHome && (
+          <>
+            <SidebarBtn icon="↑" label="Up" onClick={() => scrollGrid(-1)} />
+            <SidebarBtn icon="↓" label="Down" onClick={() => scrollGrid(1)} />
+          </>
+        )}
+        {/* Keyboard toggle */}
+        <SidebarBtn
+          icon="⌨️"
+          label={categoryKeyboardOpen ? 'Hide KB' : 'Keyboard'}
+          onClick={toggleCategoryKeyboard}
+          active={categoryKeyboardOpen}
+        />
+        {/* Search */}
+        <SidebarBtn
+          icon="🔍"
+          label="Search"
+          onClick={() => { setSearchOpen((v) => !v); if (!searchOpen) setSearchQuery(''); }}
+          active={searchOpen}
+        />
+      </nav>
+    );
+  }
 
-      {/* 🔍 Search — always visible, large tap target */}
-      {searchOpen ? (
-        <div className="flex-1 flex items-center gap-2 px-3">
-          <span className="text-white/70 text-xl shrink-0">🔍</span>
+  // ── SEARCH PANEL (replaces grid when open) ────────────────────────────────────
+  function SearchPanel() {
+    return (
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-theme bg-[#3e2a1a] shrink-0">
+          <span className="text-white/60 text-xl">🔍</span>
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('search_vocabulary') || 'Search all vocabulary…'}
-            className="flex-1 bg-transparent text-white text-lg outline-none placeholder:text-white/50 py-3"
+            placeholder="Search all vocabulary…"
+            className="flex-1 bg-transparent text-white text-lg outline-none placeholder:text-white/40 py-2"
             autoFocus
           />
-          <button
-            onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-            className="aac-btn text-white/70 hover:text-white text-xl px-3 py-3"
-            aria-label="Close search"
-          >✕</button>
+          <button onClick={() => { setSearchOpen(false); setSearchQuery(''); }} className="text-white/50 hover:text-white text-xl px-2">✕</button>
         </div>
-      ) : (
-        <button
-          onClick={() => { tapFeedback(); setSearchOpen(true); setSearchQuery(''); }}
-          aria-label="Search all vocabulary"
-          className="aac-btn flex-1 flex items-center gap-3 px-4 py-3 text-white/70 hover:text-white hover:bg-white/10 text-left transition-colors"
-        >
-          <span className="text-2xl">🔍</span>
-          <span className="text-base font-medium">
-            {title
-              ? <span className="text-white font-bold">{title}</span>
-              : <span className="opacity-70">{t('search_vocabulary') || 'Search all vocabulary…'}</span>
-            }
-          </span>
-        </button>
-      )}
-
-      {/* Home (when back is shown) */}
-      {canGoBack && (
-        <button
-          onClick={() => { tapFeedback(); closeSidePanel(); }}
-          aria-label="Home"
-          className="aac-btn flex items-center justify-center w-14 shrink-0 text-white text-2xl hover:bg-white/10 active:bg-white/20 border-l border-white/20"
-        >
-          🏠
-        </button>
-      )}
-    </div>
-  );
-
-  // ── SHARED: Keyboard drawer handle (full-width bottom bar) ───────────────────
-  const KeyboardHandle = () => (
-    <button
-      onClick={() => { tapFeedback(); toggleCategoryKeyboard(); }}
-      aria-label={categoryKeyboardOpen ? 'Hide keyboard' : 'Show keyboard'}
-      aria-pressed={categoryKeyboardOpen}
-      className={`aac-btn w-full shrink-0 flex items-center justify-center gap-3 py-3 px-4
-        border-t border-theme font-bold text-base transition-colors select-none
-        ${categoryKeyboardOpen
-          ? 'bg-[#3e2a1a] text-white'
-          : 'surface-key text-primary hover:bg-[#3e2a1a] hover:text-white'
-        }`}
-    >
-      <span className="text-2xl">⌨️</span>
-      <span>{categoryKeyboardOpen ? 'Hide Keyboard ▼' : 'Show Keyboard ▲'}</span>
-    </button>
-  );
-
-  // ── SEARCH RESULTS ───────────────────────────────────────────────────────────
-  if (searchOpen && searchQuery.trim()) {
-    return (
-      <PanelShell>
-        <TopBar />
-        <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
-          {searchResults.length === 0 && (
-            <p className="text-muted text-center py-8">No results for &quot;{searchQuery}&quot;</p>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {!searchQuery.trim() && (
+            <p className="text-muted text-center py-10">Start typing to search all vocabulary…</p>
+          )}
+          {searchQuery.trim() && searchResults.length === 0 && (
+            <p className="text-muted text-center py-10">No results for &quot;{searchQuery}&quot;</p>
           )}
           {searchResults.map((r, i) => (
             <button
@@ -280,8 +283,18 @@ export default function CategoryPanel() {
             </button>
           ))}
         </div>
-        <KeyboardHandle />
-      </PanelShell>
+      </div>
+    );
+  }
+
+  // ── PAGE LABEL (matches reference: centered underlined text between toolbar and grid) ──
+  function PageLabel({ label }: { label: string }) {
+    return (
+      <div className="text-center py-[3px] shrink-0 border-b border-[#5c3d25] bg-[#3e2a1a]">
+        <span className="text-white text-xs font-bold uppercase tracking-widest underline underline-offset-2">
+          {label}
+        </span>
+      </div>
     );
   }
 
@@ -292,121 +305,187 @@ export default function CategoryPanel() {
     if (!seq) return null;
     const step = seq.steps[activeSequenceStep];
     if (!step) return null;
+    const label = `${seq.name} — ${step.label}`;
     return (
-      <PanelShell>
-        <TopBar title={`${seq.name} — ${step.label}`} />
-        <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
-          <div className="flex items-center justify-between px-2 py-1">
-            <span className="text-muted text-sm">{activeSequenceStep + 1} / {seq.steps.length}</span>
-          </div>
-          {step.options.map((opt) => {
-            const localOpt = getPhraseText(opt.id, language, opt.text);
-            return (
-              <button
-                key={opt.id}
-                onClick={() => handlePhrase(localOpt)}
-                className="aac-btn w-full px-4 py-4 rounded-xl surface-key border border-theme text-primary font-bold text-xl text-left"
-              >
-                {localOpt}
+      <section className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
+        <PageLabel label={label} />
+        <div className="flex flex-row flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            <div className="text-muted text-xs text-right px-1">{activeSequenceStep + 1}/{seq.steps.length}</div>
+            {step.options.map((opt) => {
+              const local = getPhraseText(opt.id, language, opt.text);
+              return (
+                <button key={opt.id} onClick={() => handlePhrase(local)}
+                  className="aac-btn w-full px-4 py-4 rounded-xl surface-key border border-theme text-primary font-bold text-xl text-left">
+                  {local}
+                </button>
+              );
+            })}
+            <div className="flex gap-2 pt-2">
+              <button onClick={prevStep} disabled={activeSequenceStep === 0}
+                className="aac-btn flex-1 py-3 rounded-xl surface-key border border-theme text-primary font-bold disabled:opacity-30">
+                ← {t('prev')}
               </button>
-            );
-          })}
+              {activeSequenceStep < seq.steps.length - 1 ? (
+                <button onClick={() => nextStep(seq.steps.length)}
+                  className="aac-btn flex-1 py-3 rounded-xl surface-key border border-theme text-primary font-bold">
+                  {t('next_step')} →
+                </button>
+              ) : (
+                <button onClick={finishOrdering} className="aac-btn flex-1 py-3 rounded-xl bg-[#4CAF50] text-white font-bold">
+                  {t('done')} ✓
+                </button>
+              )}
+            </div>
+          </div>
+          <Sidebar showCoreWords />
         </div>
-        <div className="flex gap-2 p-3 border-t border-theme shrink-0">
-          <button onClick={prevStep} disabled={activeSequenceStep === 0} className="aac-btn flex-1 py-3 rounded-xl surface-key border border-theme text-primary font-bold disabled:opacity-30">← {t('prev')}</button>
-          {activeSequenceStep < seq.steps.length - 1 ? (
-            <button onClick={() => nextStep(seq.steps.length)} className="aac-btn flex-1 py-3 rounded-xl surface-key border border-theme text-primary font-bold">{t('next_step')} →</button>
-          ) : (
-            <button onClick={finishOrdering} className="aac-btn flex-1 py-3 rounded-xl bg-[#4CAF50] text-white font-bold">{t('done')} ✓</button>
-          )}
-        </div>
-        <KeyboardHandle />
-      </PanelShell>
+      </section>
     );
   }
 
-  // ── CATEGORY DETAIL — subcategories + phrases ────────────────────────────────
+  // ── CATEGORY DETAIL VIEW ─────────────────────────────────────────────────────
   if (sidePanel === 'category-detail' && activeCategoryId) {
     const categories = allCategories();
     const cat = categories.find((c) => c.id === activeCategoryId);
     const subcategories = getSubcategories(activeCategoryId);
     const phrases = getRankedPhrasesForCategory(activeCategoryId).map((r) => r.phrase);
     const sequences = getSequencesForCategory(activeCategoryId);
-
-    // Breadcrumb
-    const breadcrumb = categoryPath
-      .map((id) => {
-        const found = categories.find((c) => c.id === id);
-        return found ? (found.nameKey ? t(found.nameKey) : found.name) : id;
-      })
-      .join(' › ');
-
-    const title = `${cat?.icon ?? ''} ${cat?.nameKey ? t(cat.nameKey) : cat?.name ?? ''}${categoryPath.length > 1 ? ` · ${breadcrumb}` : ''}`;
+    const catName = cat ? (cat.nameKey ? t(cat.nameKey) : cat.name) : '';
+    const catBg = CAT_BG[activeCategoryId];
 
     return (
-      <PanelShell>
-        <TopBar title={title} />
-        {sequences.length > 0 && (
-          <div className="flex gap-2 px-3 py-2 border-b border-theme shrink-0 overflow-x-auto">
-            {sequences.map((seq) => (
-              <button key={seq.id} onClick={() => startOrdering(seq.id)}
-                className="aac-btn shrink-0 px-4 py-2 rounded-xl surface-key border border-theme text-primary font-bold">
-                🛒 {seq.name}
-              </button>
-            ))}
-          </div>
-        )}
-        <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
-          {/* Subcategory folder cards */}
-          {subcategories.map((sub) => (
-            <button
-              key={sub.id}
-              onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
-              className={`${FOLDER_TILE} ${TILE_MIN_H[gridSize]}`}
-            >
-              <span className="text-4xl leading-none">{sub.icon}</span>
-              <span className="leading-tight">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
-            </button>
-          ))}
-          {/* Phrase tiles */}
-          {phrases.map((p) => {
-            const localText = getPhraseText(p.id, language, p.text);
-            const firstWord = p.text.split(/\s+/)[0];
-            const colorBg = wordClassBg(firstWord);
-            return (
-              <PhraseTile
-                key={p.id}
-                phrase={localText}
-                englishPhrase={p.text}
-                onClick={() => handlePhrase(localText, p.id)}
-                className={`aac-btn rounded-xl p-2 font-bold text-base select-none text-center border-2 ${TILE_MIN_H[gridSize]} ${colorBg}`}
-              />
-            );
-          })}
+      <section aria-label={catName} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
+        <PageLabel label={catName} />
+        <div className="flex flex-row flex-1 min-h-0">
+          {searchOpen ? (
+            <SearchPanel />
+          ) : (
+            <div className="flex-1 flex flex-col min-h-0">
+              {sequences.length > 0 && (
+                <div className="flex gap-2 px-2 py-1.5 border-b border-theme shrink-0 overflow-x-auto">
+                  {sequences.map((seq) => (
+                    <button key={seq.id} onClick={() => startOrdering(seq.id)}
+                      className="aac-btn shrink-0 px-3 py-1.5 rounded-lg surface-key border border-theme text-primary font-bold text-sm">
+                      🛒 {seq.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div
+                ref={gridRef}
+                className={`grid ${GRID_COLS[gridSize]} gap-2 p-2 overflow-y-auto flex-1 min-h-0`}
+              >
+                {/* Subcategory folders — white, same as Image #37 folder tiles */}
+                {subcategories.map((sub) => (
+                  <button
+                    key={sub.id}
+                    onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
+                    className={`aac-btn bg-[#f5ede4] dark:bg-slate-200 text-gray-900 rounded-2xl border-2 border-[#d4b8a0]
+                      flex flex-col items-center justify-center gap-2 p-3 font-bold select-none text-center
+                      ${TILE_H[gridSize]} hover:border-[#3e2a1a] active:scale-95 transition-transform`}
+                  >
+                    <span className="text-4xl leading-none">{sub.icon}</span>
+                    <span className="text-sm leading-tight uppercase tracking-wide">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
+                  </button>
+                ))}
+                {/* Phrase tiles — color by category BG or word class */}
+                {phrases.map((p) => {
+                  const local = getPhraseText(p.id, language, p.text);
+                  const bg = catBg ?? wordBg(p.text);
+                  return (
+                    <PhraseTile
+                      key={p.id}
+                      phrase={local}
+                      englishPhrase={p.text}
+                      onClick={() => handlePhrase(local, p.id)}
+                      className={`aac-btn rounded-2xl p-2 font-bold text-sm select-none text-center border-2 ${TILE_H[gridSize]} ${bg}`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <Sidebar showCoreWords />
         </div>
-        <KeyboardHandle />
-      </PanelShell>
+      </section>
     );
   }
 
-  // ── CATEGORY LIST — top-level white folder cards ─────────────────────────────
-  const topLevelCategories = allCategories().filter((c) => !c.parentId);
+  // ── HOME VIEW — core vocab board + category tabs ──────────────────────────────
+  const topLevelCats = allCategories().filter((c) => !c.parentId);
+  const homeCatSet = new Set(HOME_CATS_ORDERED);
+  // Fringe categories shown as folder tiles at the end of the HOME grid
+  const fringeCats = topLevelCats.filter((c) => !homeCatSet.has(c.id));
+
   return (
-    <PanelShell>
-      <TopBar />
-      <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
-        {topLevelCategories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => { tapFeedback(); selectCategory(cat.id); }}
-            className={`${FOLDER_TILE} ${TILE_MIN_H[gridSize]}`}
-          >
-            <span className="text-4xl leading-none">{cat.icon}</span>
-            <span className="leading-tight">{cat.nameKey ? t(cat.nameKey) : cat.name}</span>
-          </button>
-        ))}
+    <section aria-label="Home vocabulary board" className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
+      <PageLabel label="HOME" />
+      <div className="flex flex-row flex-1 min-h-0">
+        {searchOpen ? (
+          <SearchPanel />
+        ) : (
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Dense core vocab grid */}
+            <div className={`grid ${HOME_COLS} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`}>
+              {/* Core word tiles — color coded by category */}
+              {homeGridPhrases.map(({ phrase: p, catId }) => {
+                const local = getPhraseText(p.id, language, p.text);
+                const bg = CAT_BG[catId] ?? 'bg-slate-500 text-white border-slate-600';
+                return (
+                  <PhraseTile
+                    key={p.id}
+                    phrase={local}
+                    englishPhrase={p.text}
+                    onClick={() => handlePhrase(local, p.id)}
+                    className={`aac-btn rounded-xl p-1.5 font-bold text-xs sm:text-sm select-none text-center border-2 ${HOME_TILE_H} ${bg}`}
+                  />
+                );
+              })}
+              {/* Fringe category folder tiles at end of grid */}
+              {fringeCats.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => { tapFeedback(); selectCategory(cat.id); }}
+                  className={`aac-btn bg-[#f5ede4] dark:bg-slate-200 text-gray-900 rounded-xl border-2 border-[#d4b8a0]
+                    flex flex-col items-center justify-center gap-1 p-1.5 font-bold text-xs select-none text-center
+                    ${HOME_TILE_H} hover:border-[#3e2a1a] active:scale-95 transition-transform`}
+                >
+                  <span className="text-2xl sm:text-3xl leading-none">{cat.icon}</span>
+                  <span className="leading-tight uppercase tracking-wide text-[10px] sm:text-xs">
+                    {cat.nameKey ? t(cat.nameKey) : cat.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Category tabs row — matches bottom nav strip in Image #36 */}
+            <div className="flex gap-1 px-2 py-1.5 overflow-x-auto shrink-0 border-t-2 border-[#5c3d25] bg-[#3e2a1a]">
+              {topLevelCats.map((cat) => {
+                const isCore = homeCatSet.has(cat.id);
+                const tabBg = isCore
+                  ? (CAT_BG[cat.id] ?? 'bg-white/20 text-white')
+                  : 'bg-[#f5ede4] text-gray-900';
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => { tapFeedback(); selectCategory(cat.id); }}
+                    className={`aac-btn shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg
+                      border border-white/20 select-none text-center min-w-[52px] ${tabBg}`}
+                  >
+                    <span className="text-base leading-none">{cat.icon}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide leading-tight max-w-[60px]">
+                      {cat.nameKey ? t(cat.nameKey) : cat.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {/* Right sidebar — matches Image #36/#37 */}
+        <Sidebar />
       </div>
-      <KeyboardHandle />
-    </PanelShell>
+    </section>
   );
 }
