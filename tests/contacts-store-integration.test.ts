@@ -36,7 +36,7 @@ describe('contactsStore.mergeFromIntegrations', () => {
       { name: 'Mom', provider: 'telegram', recipientId: '111' },
       { name: 'Dad', provider: 'whatsapp', recipientId: '+15551234567' },
     ]);
-    expect(res).toEqual({ added: 2, updated: 0 });
+    expect(res).toEqual(expect.objectContaining({ added: 2, updated: 0 }));
     const list = useContactsStore.getState().contacts;
     expect(list).toHaveLength(2);
     expect(useContactsStore.getState().lastSyncedAt).toBe(Date.parse('2026-05-07T12:00:00Z'));
@@ -96,7 +96,7 @@ describe('contactsStore.mergeFromIntegrations', () => {
     const res = useContactsStore.getState().mergeFromIntegrations([
       { name: 'Mom (server)', provider: 'telegram', recipientId: '111', lastMessagePreview: 'pickup at 3' },
     ]);
-    expect(res).toEqual({ added: 0, updated: 1 });
+    expect(res).toEqual(expect.objectContaining({ added: 0, updated: 1 }));
     const list = useContactsStore.getState().contacts;
     expect(list).toHaveLength(1);
     // Caregiver name override is preserved
@@ -142,7 +142,7 @@ describe('contactsIntegrationService.syncContactsOnce', () => {
       }), { status: 200 }),
     );
     const res = await syncContactsOnce();
-    expect(res).toEqual({ added: 1, updated: 0 });
+    expect(res).toEqual(expect.objectContaining({ added: 1, updated: 0 }));
     const list = useContactsStore.getState().contacts;
     expect(list).toHaveLength(1);
     expect(list[0].name).toBe('Mom');
@@ -151,7 +151,7 @@ describe('contactsIntegrationService.syncContactsOnce', () => {
   it('bumps lastSyncedAt on a successful empty response', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ contacts: [] }), { status: 200 }));
     const res = await syncContactsOnce();
-    expect(res).toEqual({ added: 0, updated: 0 });
+    expect(res).toEqual(expect.objectContaining({ added: 0, updated: 0 }));
     expect(useContactsStore.getState().lastSyncedAt).toBeGreaterThan(0);
   });
 

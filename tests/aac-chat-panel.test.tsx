@@ -52,14 +52,8 @@ describe('AACChatPanel — empty state', () => {
     // retoggles 💬 (handled at the sidePanel !== 'aac-chat' guard).
     render(<AACChatPanel />);
     expect(screen.getByTestId('aac-chat-panel')).toBeInTheDocument();
+    // Compact empty strip — no ghost contacts, just the marker + Add Contact CTA.
     expect(screen.getByTestId('aac-chat-empty-state')).toBeInTheDocument();
-    expect(screen.getByTestId('aac-chat-providers')).toBeInTheDocument();
-    // Spot-check that at least telegram + whatsapp + sms tiles are
-    // rendered (the providers most users have via the in-app Connect
-    // flow).
-    expect(screen.getByTestId('aac-chat-provider-telegram')).toBeInTheDocument();
-    expect(screen.getByTestId('aac-chat-provider-whatsapp')).toBeInTheDocument();
-    expect(screen.getByTestId('aac-chat-provider-sms')).toBeInTheDocument();
     expect(screen.getByTestId('aac-chat-open-settings')).toBeInTheDocument();
   });
 
@@ -85,10 +79,11 @@ describe('AACChatPanel — picker → compose flow', () => {
     const user = userEvent.setup();
     render(<AACChatPanel />);
     expect(screen.getByTestId('aac-chat-contact-list')).toBeInTheDocument();
-    expect(screen.getByTestId('aac-chat-contact-c1')).toBeInTheDocument();
-    expect(screen.getByTestId('aac-chat-contact-c2')).toBeInTheDocument();
+    // Contacts are rendered as aac-chat-contact-{section}-{id}
+    expect(screen.getByTestId('aac-chat-contact-all-c1')).toBeInTheDocument();
+    expect(screen.getByTestId('aac-chat-contact-all-c2')).toBeInTheDocument();
 
-    await user.click(screen.getByTestId('aac-chat-contact-c1'));
+    await user.click(screen.getByTestId('aac-chat-contact-all-c1'));
     expect(useUIStore.getState().activeContactId).toBe('c1');
   });
 

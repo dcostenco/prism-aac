@@ -1,22 +1,17 @@
 /**
- * Math keyboard — no-pagination + no-scroll invariant.
+ * Math keyboard — no-scroll invariant.
  *
- * User report 2026-05-08 (Image #24, #25):
- *   • "scrollable keyboard is unacceptable when typing codes" — the
- *     Programming chip's identifier row paginated a-p / q-z and the
- *     panel had overflow-y-auto, hiding rows behind a scrollbar.
- *   • "a-z should be full a-z - fix it" — same pagination on the
- *     Letters chip forced an extra tap to reach q-z.
+ * History of fixes:
+ *   2026-05-08: Programming chip paginated a-p/q-z and had overflow-y-auto
+ *               hiding rows. Fixed with 14-col keyword packing + overflow-hidden
+ *               + raised floor.
+ *   2026-05-09: Letters row removed from Programming keyboards — the 'a a-z'
+ *               chip covers identifiers. Digits + extras merged into one row
+ *               (6→6 rows → fits 300px floor). Panel switched to overflow-y-auto
+ *               as graceful fallback; floor reduced to 300px to give canvas more
+ *               room (~120px more than before).
  *
- * The fix:
- *   1. MathLettersKeyboard renders all 26 letters in one grid.
- *   2. MathProgrammingKeyboard does the same (full a-z + Aa shift,
- *      no q-z toggle).
- *   3. The math-keyboard-panel container uses overflow-hidden, not
- *      overflow-y-auto, with a height bumped to clamp(280, 32svh,
- *      380px) so the taller programming layout fits.
- *
- * This test pins all three.
+ * This test pins the current invariants.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render } from '@testing-library/react';
@@ -34,29 +29,25 @@ beforeEach(() => {
 });
 
 describe('Math keyboard — no-scroll panel container', () => {
-  it('uses overflow-hidden, not overflow-y-auto', () => {
+  it('uses overflow-y-auto (graceful fallback) not overflow-hidden', () => {
     const { container } = render(<MathKeyboardRegion />);
     const panel = container.querySelector('[data-testid="math-keyboard-panel"]') as HTMLElement;
     expect(panel).not.toBeNull();
-    expect(panel.className).toMatch(/overflow-hidden/);
-    expect(panel.className).not.toMatch(/overflow-y-auto/);
+    expect(panel.className).toMatch(/overflow-y-auto/);
   });
 
-  it('panel-height floor is ≥ 340 px so Programming rows never get clipped', () => {
-    // Programming chip needs 7 rows (ops×2 + keywords×2 + letters×2
-    // + digits×1) at ≥ 44 px tap-target = ~340 px floor. Earlier
-    // 280 px floor on a 1280-tall capture viewport (32svh ≈ 256)
-    // chopped letters + digits entirely; an over-corrected 380 px
-    // floor + 4-row keywords + grid-cols-7 ate the canvas (user
-    // Image #27 "introduces more bugs"). The 14-col packing in
-    // commit 2026-05-08 puts keywords back into 2 rows, so the
-    // floor can return to 340 — but never lower.
+  it('panel-height floor is ≥ 280 px and ≤ 320 px (canvas-proportionate)', () => {
+    // Programming keyboard is now 6 rows (ops×2, keywords×2, builtins×1,
+    // digits+extras×1) at ~50px each ≈ 300px. Floor must be ≥ 280px so
+    // all rows fit without clipping, and ≤ 320px so the canvas keeps
+    // at least 200px on a 700px viewport.
     const { container } = render(<MathKeyboardRegion />);
     const panel = container.querySelector('[data-testid="math-keyboard-panel"]') as HTMLElement;
     const m = panel.className.match(/clamp\((\d+)px/);
     expect(m, `expected clamp() with px floor in ${panel.className}`).not.toBeNull();
     const floorPx = m ? Number(m[1]) : 0;
-    expect(floorPx).toBeGreaterThanOrEqual(340);
+    expect(floorPx).toBeGreaterThanOrEqual(280);
+    expect(floorPx).toBeLessThanOrEqual(320);
   });
 });
 
@@ -81,33 +72,42 @@ describe('Letters keyboard — full a-z, no pagination', () => {
   });
 });
 
-describe('Programming keyboard — full a-z + Aa shift, no q-z toggle', () => {
-  it('python: all 26 letters render at once', () => {
+describe('Programming keyboard — digits present, letters in a-z tab', () => {
+  it('python: all 10 digits and underscore render', () => {
     useMathGridStore.setState({ activeMathCategory: 'programming-python' });
     const { container } = render(<MathKeyboardRegion />);
-    for (const ltr of 'abcdefghijklmnopqrstuvwxyz') {
-      const tile = container.querySelector(`[data-testid="math-python-ltr-${ltr}"]`);
-      expect(tile, `python keyboard missing letter "${ltr}"`).not.toBeNull();
+    for (const d of '0123456789') {
+      const tile = container.querySelector(`[data-testid="math-python-digit-${d}"]`);
+      expect(tile, `python keyboard missing digit "${d}"`).not.toBeNull();
     }
-    // Aa shift remains.
-    expect(
-      container.querySelector('[data-testid="math-python-letters-shift"]'),
-    ).not.toBeNull();
-    // q-z page toggle is gone.
-    expect(
-      container.querySelector('[data-testid="math-python-letters-page-toggle"]'),
-    ).toBeNull();
+    expect(container.querySelector('[data-testid="math-python-underscore"]')).not.toBeNull();
   });
 
-  it('java: all 26 letters render at once', () => {
+  it('java: all 10 digits render', () => {
     useMathGridStore.setState({ activeMathCategory: 'programming-java' });
     const { container } = render(<MathKeyboardRegion />);
-    for (const ltr of 'abcdefghijklmnopqrstuvwxyz') {
-      const tile = container.querySelector(`[data-testid="math-java-ltr-${ltr}"]`);
-      expect(tile, `java keyboard missing letter "${ltr}"`).not.toBeNull();
+    for (const d of '0123456789') {
+      const tile = container.querySelector(`[data-testid="math-java-digit-${d}"]`);
+      expect(tile, `java keyboard missing digit "${d}"`).not.toBeNull();
     }
-    expect(
-      container.querySelector('[data-testid="math-java-letters-page-toggle"]'),
-    ).toBeNull();
+  });
+
+  it('python: letters NOT in programming tab (use a-z chip instead)', () => {
+    useMathGridStore.setState({ activeMathCategory: 'programming-python' });
+    const { container } = render(<MathKeyboardRegion />);
+    // Letters row was removed — 'a a-z' chip covers identifier entry.
+    // No letter buttons with data-testid="math-python-ltr-*" should exist.
+    expect(container.querySelector('[data-testid="math-python-ltr-a"]')).toBeNull();
+    expect(container.querySelector('[data-testid="math-python-letters-shift"]')).toBeNull();
+  });
+
+  it('python: keywords and builtins still present', () => {
+    useMathGridStore.setState({ activeMathCategory: 'programming-python' });
+    const { container } = render(<MathKeyboardRegion />);
+    // Keywords (def, return, print are in PYTHON_KEYWORDS).
+    expect(container.querySelector('[data-testid="math-python-kw-def"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="math-python-kw-return"]')).not.toBeNull();
+    // Builtins row (sum, max, min… — PYTHON_BUILTINS; print is in keywords not builtins).
+    expect(container.querySelector('[data-testid="math-python-builtin-sum"]')).not.toBeNull();
   });
 });

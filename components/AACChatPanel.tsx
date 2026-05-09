@@ -29,12 +29,15 @@ function renderContactTile(
     <li key={`${section}:${c.id}`}>
       <button
         onClick={() => onPick(c.id)}
-        className={`aac-key surface-key text-primary rounded-lg w-full p-4 text-left flex items-center gap-3 min-h-[64px] ${available ? '' : 'opacity-60'}`}
+        className={`aac-key surface-key text-primary rounded-lg w-full px-3 py-2 text-left flex items-center gap-3 min-h-[52px] ${available ? '' : 'opacity-60'}`}
         data-testid={`aac-chat-contact-${section}-${c.id}`}
         aria-label={available ? c.name : `${c.name} — requires ${PROVIDER_MIN_TIER[c.provider]} plan`}
       >
-        <span aria-hidden className="text-2xl flex-shrink-0">
-          {c.avatar || PROVIDER_ICONS[c.provider]}
+        <span aria-hidden className="flex-shrink-0 w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-white/10">
+          {c.avatar
+            ? <img src={c.avatar} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display='none'; }} />
+            : <span className="text-2xl">{PROVIDER_ICONS[c.provider]}</span>
+          }
         </span>
         <span className="flex flex-col min-w-0 flex-1">
           <span className="font-bold truncate">{c.name}</span>
@@ -228,6 +231,7 @@ export default function AACChatPanel() {
         data-state="compact-empty"
         className="shrink-0 surface-bar border-y border-theme"
       >
+        <span data-testid="aac-chat-empty-state" aria-hidden />
         <div className="flex items-center justify-between px-3 py-2 gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-lg shrink-0">💬</span>
@@ -268,11 +272,11 @@ export default function AACChatPanel() {
     <section
       aria-label={tx('aac_chat_title', 'Send a message')}
       className="shrink-0 flex flex-col surface-bar border-y border-theme"
-      style={{ maxHeight: '38svh' }}
+      style={{ maxHeight: 'clamp(180px,22svh,220px)' }}
       data-testid="aac-chat-panel"
       data-state="expanded"
     >
-      <header className="flex items-center justify-between px-4 py-3 border-b border-theme">
+      <header className="flex items-center justify-between px-3 py-2 border-b border-theme shrink-0">
         <div className="flex items-center gap-3">
           {activeContact && (
             <button
