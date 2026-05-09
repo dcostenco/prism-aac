@@ -651,6 +651,41 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     return () => clearInterval(interval);
   }, [phase, testIdx, testTargets, cursorPos.x, cursorPos.y, handleTestHit]);
 
+  // Corner auto-capture — fires captureCorner when the cursor dwells
+  // within AUTO_CAPTURE_RADIUS px of the current corner target for
+  // CORNER_DWELL_MS. Mirrors the accuracy-test dwell-hit mechanism.
+  // Solves the "can't tap corner" problem for users whose cursor
+  // drifts near the target but they can't physically tap the button.
+  const cornerDwellRef = useRef<{ idx: number; start: number } | null>(null);
+  const captureCornercallbackRef = useRef<(() => void) | null>(null);
+  useEffect(() => { captureCornercallbackRef.current = captureCorner; }, [captureCorner]);
+  useEffect(() => {
+    if (phase !== 'calibrate-corners') { cornerDwellRef.current = null; return; }
+    const AUTO_CAPTURE_RADIUS = 200; // px — generous for reclining / limited mobility
+    const CORNER_DWELL_MS = 1500;    // hold near corner for 1.5 s → auto-capture
+    const id = setInterval(() => {
+      const corner = CORNER_TARGETS[cornerIdx];
+      if (!corner) return;
+      const tx = (corner.x / 100) * window.innerWidth;
+      const ty = (corner.y / 100) * window.innerHeight;
+      const dx = cursorPos.x - tx;
+      const dy = cursorPos.y - ty;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= AUTO_CAPTURE_RADIUS) {
+        if (!cornerDwellRef.current || cornerDwellRef.current.idx !== cornerIdx) {
+          cornerDwellRef.current = { idx: cornerIdx, start: Date.now() };
+        } else if (Date.now() - cornerDwellRef.current.start >= CORNER_DWELL_MS) {
+          console.log(`[wizard] auto-capture corner ${cornerIdx + 1} — dwell near target (dist=${Math.round(dist)}px)`);
+          cornerDwellRef.current = null;
+          captureCornercallbackRef.current?.();
+        }
+      } else {
+        cornerDwellRef.current = null;
+      }
+    }, 80);
+    return () => { clearInterval(id); cornerDwellRef.current = null; };
+  }, [phase, cornerIdx, cursorPos.x, cursorPos.y]);
+
   // Live-cursor — render a dot at cursorPos on EVERY phase except
   // intro/complete so the user can verify in real time that pointing
   // their hand actually moves the cursor. User report 2026-05-08:
@@ -895,7 +930,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 exaggerate the motion, don&apos;t just glance with your eyes.
               </p>
               <p className="text-white/50 text-xs mt-1 max-w-md mx-auto">
-                💡 Calibration only works if your head movement is BIG enough to span the whole screen.
+                💡 Hold still near the corner — it auto-captures when the cursor is close.
               </p>
               <button
                 onClick={captureCorner}
