@@ -20,26 +20,47 @@
  *  serves a different version than the npm package. */
 export const MEDIAPIPE_TASKS_VISION_VERSION = '0.10.35';
 
-export const MEDIAPIPE_WASM_URL =
-  `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_TASKS_VISION_VERSION}/wasm`;
-
 /**
- * Body-pose model URL. Pinned to /1/ versioned path (not /latest/) for
- * the same reason as the wasm — stable mapping. The .task file format
- * is what MediaPipe expects for PoseLandmarker; do not swap to .tflite
- * (the format used by FaceDetector / blaze_face).
+ * Self-hosted MediaPipe models on Vercel CDN (public/models/mediapipe/).
+ *
+ * Benefits over Google Storage + jsdelivr:
+ *   • Privacy / GDPR — user device never requests google.com or
+ *     jsdelivr.net. Zero data leaving Synalux-controlled infra.
+ *   • No external CDN dependency — served from prism-aac's Vercel
+ *     deployment, cached at 50+ global edge nodes.
+ *   • Version lock — models committed alongside code in public/.
+ *     CDN/code mismatch is structurally impossible.
+ *   • CSP — external origins removed from Content-Security-Policy.
+ *   • Cost — ~$0/month. Browser caches with immutable 1-year TTL.
+ *
+ * Migration: models downloaded from Google Storage at their pinned
+ * version (float16/1) and committed to public/models/mediapipe/.
+ * WASM files copied from node_modules/@mediapipe/tasks-vision/wasm/
+ * (same version as package.json). ~42 MB total static assets.
+ *
+ * To upgrade MediaPipe version:
+ *   1. Bump @mediapipe/tasks-vision in package.json
+ *   2. Re-run: scripts/update-mediapipe-models.sh (TBD)
+ *   3. Commit updated public/models/mediapipe/ + this constant
  */
+// Next.js basePath (/prism-aac) is prepended to public/ asset paths.
+// process.env.NEXT_PUBLIC_BASE_PATH is set in next.config at build time.
+const _basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+const MEDIAPIPE_BASE = `${_basePath}/models/mediapipe`;
+
+export const MEDIAPIPE_WASM_URL = `${MEDIAPIPE_BASE}/wasm`;
+
 export const POSE_LANDMARKER_LITE_URL =
-  'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+  `${MEDIAPIPE_BASE}/pose_landmarker_lite.task`;
 
 export const FACE_LANDMARKER_URL =
-  'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+  `${MEDIAPIPE_BASE}/face_landmarker.task`;
 
 export const FACE_DETECTOR_URL =
-  'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
+  `${MEDIAPIPE_BASE}/blaze_face_short_range.tflite`;
 
 export const HAND_LANDMARKER_URL =
-  'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+  `${MEDIAPIPE_BASE}/hand_landmarker.task`;
 
 /**
  * FPS watchdog — exponentially-weighted moving average of frame

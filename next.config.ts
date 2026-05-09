@@ -19,6 +19,11 @@ const withSerwist = withSerwistInit({
 // prism-aac.vercel.app/prism-aac (the basePath also applies there).
 const nextConfig: NextConfig = {
   basePath: '/prism-aac',
+  env: {
+    // Expose basePath to client code so mediapipeRuntime can construct
+    // correct self-hosted model URLs (public/ assets are at <basePath>/models/...).
+    NEXT_PUBLIC_BASE_PATH: '/prism-aac',
+  },
   serverExternalPackages: ['@huggingface/transformers', 'pyodide'],
   turbopack: {},
   // Webpack-only fix: Pyodide's `import('pyodide')` (in
