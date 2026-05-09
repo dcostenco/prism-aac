@@ -35,29 +35,38 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
     return () => { cancelled = true; };
   }, [phrase, englishPhrase, pictureMode]);
 
-  // Reserve fixed icon space on every tile so rows stay aligned whether or
-  // not the pictogram has loaded / exists. Empty slot when there's no
-  // icon — keeps the grid honest.
   return (
     <button
       onClick={onClick}
       aria-label={ariaLabel ?? phrase}
       className={className}
-      style={{ border: '2px solid #000', ...style }}
+      style={style}
     >
-      <span className="flex flex-col items-center w-full h-full">
-        <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg">
+      {/* NOT h-full — tile height grows with content so label never clips */}
+      <span className="flex flex-col items-center w-full">
+        {/* Pictogram area — always reserves space even without an image */}
+        <span
+          className="flex items-center justify-center w-full bg-white rounded-t-lg"
+          style={{ minHeight: 'clamp(2.8rem,8vw,5.5rem)' }}
+        >
           {iconUrl && (
             <img
               src={iconUrl}
               alt=""
               aria-hidden
               loading="lazy"
-              className="max-w-[clamp(2.5rem,8vw,5rem)] max-h-[clamp(2.5rem,8vw,5rem)] object-contain"
+              className="object-contain"
+              style={{ maxWidth: 'clamp(2.2rem,7vw,4.5rem)', maxHeight: 'clamp(2.2rem,7vw,4.5rem)' }}
             />
           )}
         </span>
-        <span className="shrink-0 w-full text-center leading-snug text-[clamp(0.65rem,1.3vw,1rem)] font-bold py-1 border-t-2 border-black">{phrase}</span>
+        {/* Label — wraps freely, never clips */}
+        <span
+          className="w-full text-center leading-snug font-bold py-1 px-1 border-t-2 border-black"
+          style={{ fontSize: 'clamp(0.6rem,1.2vw,0.9rem)', wordBreak: 'break-word' }}
+        >
+          {phrase}
+        </span>
       </span>
     </button>
   );
