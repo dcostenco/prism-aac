@@ -237,6 +237,18 @@ function releaseBlob(url: string): void {
   if (liveBlobUrls.delete(url)) URL.revokeObjectURL(url);
 }
 
+// Rapid-duplicate dedup (evidence-based, 2026-05-09).
+// Diagnostic play log confirmed: silence-detect fires aacSpeak("hello")
+// ~272ms after the Speak button fires aacSpeak("HELLO"). The second call's
+// decodeAndPlay calls stopAzurePlayback() and kills the first source at
+// 272ms (user heard ~0.3s then silence). DEDUP_MS=200 (prior fix, reverted)
+// was too short to catch 272ms. Setting 500ms catches autocorrect round-trips
+// (typically 200-400ms on fast connections, up to 800ms on slow school Wi-Fi).
+// Case-insensitive so "HELLO" deduplicates against "hello" and "Hello".
+let _lastSpokenText = '';
+let _lastSpokenAt = 0;
+const DEDUP_MS = 500;
+
 // Track ALL in-flight fetch controllers — not just the latest one.
 // A child with spasticity may mash Speak 5 times, launching 5 concurrent
 // fetches. Panic stop must kill ALL of them, not just the last.
@@ -460,7 +472,7 @@ async function speakGemini(
   }
 }
 
-export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
+export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28517 */
   text: string,
   lang: string,
   tone: ToneStyle,
@@ -469,6 +481,16 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   authToken: string,
   voiceId?: string,
 ): Promise<boolean> {
+  // Evidence-based dedup: same text within DEDUP_MS keeps prior playback alive.
+  // Verified by play log: source.ended after 272ms of 4320ms = second call killed first.
+  const nowMs = Date.now();
+  if (text.toLowerCase() === _lastSpokenText && nowMs - _lastSpokenAt < DEDUP_MS) {
+    console.log(`[AzureTTS] DEDUP — "${text.slice(0, 30)}" within ${nowMs - _lastSpokenAt}ms; keeping prior audio`);
+    return true;
+  }
+  _lastSpokenText = text.toLowerCase();
+  _lastSpokenAt = nowMs;
+
   const ssml = buildSSML(text, lang, tone, rate, volume);
 
   let url: string | null = null;
