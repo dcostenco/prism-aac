@@ -169,15 +169,19 @@ export default function CameraInputOverlay() {
     // Couldn't reuse that primitive directly because it requires
     // landmark confidence which CameraInputOverlay doesn't get from
     // the tracker — we only have cursor x/y here.
-    const NO_INTERACTION_MS = 25_000;
-    const PIN_WINDOW_MS = 10_000;
-    const PIN_BOX_PX = 100;
+    const NO_INTERACTION_MS = 45_000;   // raised from 25s — new calibration needs time to settle
+    const PIN_WINDOW_MS = 15_000;       // raised from 10s — user may sit still briefly
+    const PIN_BOX_PX = 80;
+    const GRACE_PERIOD_MS = 20_000;     // don't fire for 20s after tracker start — calibration just set
     const watchdog = setInterval(() => {
       if (!mounted) return;
       const now = Date.now();
       // Only judge once tracker is actually tracking (not 'starting' /
       // 'lost' / 'stopped') — those have their own UX.
       if (statusRef.current !== 'tracking') return;
+      // Grace period after start — calibration was just set, cursor may
+      // appear stable while user adjusts posture. Don't fire during this window.
+      if (now - enabledAtRef.current < GRACE_PERIOD_MS) return;
       // Don't fire while tutorial wizard is running (UI is captive).
       if (document.querySelector('[data-testid="tracking-setup-wizard"]')) return;
 

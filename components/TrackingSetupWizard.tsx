@@ -140,6 +140,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       handleRef.current?.stop();
       for (const id of detectionTimersRef.current) clearTimeout(id);
       detectionTimersRef.current = [];
+      // Always unfreeze on unmount — prevents freeze leaking if settings
+      // is closed abruptly (nav, back button, external close) before the
+      // wizard's explicit complete/cancel paths run.
+      unfreezeLearnerCalSaves();
     };
   }, []);
 
@@ -567,8 +571,11 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       console.log(`[wizard] final cal (recentered on user neutral): leftX=${cal.leftX.toFixed(3)} rightX=${cal.rightX.toFixed(3)} topY=${cal.topY.toFixed(3)} bottomY=${cal.bottomY.toFixed(3)}`);
 
       savePoseCalibration(cal);
-      // Unfreeze learner so it can adapt (expand-only) during accuracy test.
       unfreezeLearnerCalSaves();
+      // Calibration saved — enable tracking so it's live immediately.
+      // "Start Using Prism AAC" also sets this but the user might close
+      // settings before reaching that button.
+      updateSettings({ cameraInputEnabled: true });
       speak(usedFallbackRange
         ? 'Calibration saved with a wide range so the cursor reaches the full screen.'
         : 'Calibration saved. Now lets test your accuracy.');
@@ -907,9 +914,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 <button
                   onClick={() => {
                     tapFeedback();
-                    // temp cal already saved at captureCenter — unfreeze
-                    // learner so it adapts during the accuracy test.
                     unfreezeLearnerCalSaves();
+                    // Ensure tracking is on — user chose to save cal.
+                    updateSettings({ cameraInputEnabled: true });
                     const targets = Array.from({length: 5}, () => ({
                       x: 15 + Math.random() * 70, y: 15 + Math.random() * 70, hit: false
                     }));
