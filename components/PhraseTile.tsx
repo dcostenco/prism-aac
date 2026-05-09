@@ -40,31 +40,23 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
       onClick={onClick}
       aria-label={ariaLabel ?? phrase}
       className={className}
-      style={style}
+      style={{ border: '2px solid #000', ...style }}
     >
-      {/* NOT h-full — tile height grows with content so label never clips */}
-      <span className="flex flex-col items-center w-full">
-        {/* Pictogram area — always reserves space even without an image */}
-        <span
-          className="flex items-center justify-center w-full bg-white rounded-t-lg"
-          style={{ minHeight: 'clamp(2.8rem,8vw,5.5rem)' }}
-        >
+      {/* h-full fills the tile so image area expands and text is always at bottom */}
+      <span className="flex flex-col items-center w-full h-full">
+        <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg overflow-hidden">
           {iconUrl && (
             <img
               src={iconUrl}
               alt=""
               aria-hidden
               loading="lazy"
-              className="object-contain"
-              style={{ maxWidth: 'clamp(2.2rem,7vw,4.5rem)', maxHeight: 'clamp(2.2rem,7vw,4.5rem)' }}
+              className="max-w-[clamp(2.5rem,8vw,5rem)] max-h-[clamp(2.5rem,8vw,5rem)] object-contain"
             />
           )}
         </span>
-        {/* Label — wraps freely, never clips */}
-        <span
-          className="w-full text-center leading-snug font-bold py-1 px-1 border-t-2 border-black"
-          style={{ fontSize: 'clamp(0.6rem,1.2vw,0.9rem)', wordBreak: 'break-word' }}
-        >
+        {/* Label — shrink-0 keeps it always visible; break-words prevents overflow */}
+        <span className="shrink-0 w-full text-center leading-snug text-[clamp(0.62rem,1.2vw,0.95rem)] font-bold py-1 px-1 border-t-2 border-black break-words" style={{ wordBreak: 'break-word' }}>
           {phrase}
         </span>
       </span>
