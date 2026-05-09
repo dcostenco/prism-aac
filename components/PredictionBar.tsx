@@ -18,25 +18,40 @@ import { isAllowedInLang, ensureLangCorpusLoaded } from '@/lib/langAllowlist';
 // ── Contact tiles for messaging mode ──────────────────────────────────
 
 function filterContacts(contacts: AacContact[], query: string): AacContact[] {
-  if (!query.trim()) return contacts.slice(0, 5);
   const q = query.trim().toLowerCase();
-  return contacts
-    .filter((c) =>
-      c.name.toLowerCase().includes(q) ||
-      c.recipientId.toLowerCase().includes(q)
-    )
-    .slice(0, 5);
+  const filtered = q
+    ? contacts.filter((c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.recipientId.toLowerCase().includes(q)
+      )
+    : contacts;
+  // Dedupe by name (case-insensitive): show one tile per person.
+  // If the same person has both SMS and mail, keep the first entry
+  // (most recently used or mail-first from Google sync order).
+  const seen = new Set<string>();
+  const deduped: AacContact[] = [];
+  for (const c of filtered) {
+    const key = c.name.toLowerCase().trim();
+    if (!seen.has(key)) { seen.add(key); deduped.push(c); }
+    if (deduped.length === 5) break;
+  }
+  return deduped;
 }
 
-function ContactTile({ contact, onTap }: { contact: AacContact; onTap: (id: string) => void }) {
+function ContactTile({ contact, extraCount, onTap }: { contact: AacContact; extraCount: number; onTap: (id: string) => void }) {
   return (
     <button
       onClick={() => { tapFeedback(); onTap(contact.id); }}
       aria-label={`Message ${contact.name}`}
       data-testid={`pred-contact-${contact.id}`}
-      className="aac-btn flex-1 min-w-0 surface-key rounded-xl flex flex-col items-center justify-center py-1 px-1 border-l-[5px] border border-theme overflow-hidden gap-0.5"
+      className="aac-btn flex-1 min-w-0 surface-key rounded-xl flex flex-col items-center justify-center py-1 px-1 border-l-[5px] border border-theme overflow-hidden gap-0.5 relative"
       style={{ borderLeftColor: '#4CAF50' }}
     >
+      {extraCount > 0 && (
+        <span className="absolute top-1 right-1 bg-[#4CAF50] text-white text-[9px] font-bold rounded-full px-1 leading-none py-px">
+          +{extraCount}
+        </span>
+      )}
       <span className="text-xl leading-none">
         {contact.avatar
           ? <img src={contact.avatar} alt="" className="w-7 h-7 rounded-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display='none'; }} />
@@ -242,9 +257,12 @@ export default function PredictionBar() {
           className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 h-[clamp(56px,13svh,110px)]"
           data-testid="prediction-bar-contacts"
         >
-          {matched.map((c) => (
-            <ContactTile key={c.id} contact={c} onTap={selectContact} />
-          ))}
+          {matched.map((c) => {
+            const extras = contacts.filter(
+              (x) => x.id !== c.id && x.name.toLowerCase().trim() === c.name.toLowerCase().trim()
+            ).length;
+            return <ContactTile key={c.id} contact={c} extraCount={extras} onTap={selectContact} />;
+          })}
           {/* Pad to 5 slots so bar doesn't collapse */}
           {Array.from({ length: Math.max(0, 5 - matched.length) }).map((_, i) => (
             <div key={`pad-${i}`} className="flex-1 min-w-0" />

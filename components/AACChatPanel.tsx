@@ -150,6 +150,15 @@ export default function AACChatPanel() {
     ? isProviderAvailable(activeContact.provider, plan)
     : true;
 
+  // Other providers for the same person — quick-switch chips in compose header.
+  const siblingContacts = useMemo(() => {
+    if (!activeContact) return [];
+    const name = activeContact.name.toLowerCase().trim();
+    return contacts.filter(
+      (c) => c.id !== activeContact.id && c.name.toLowerCase().trim() === name
+    );
+  }, [activeContact, contacts]);
+
   const handlePickContact = useCallback((id: string) => {
     tapFeedback();
     selectContact(id);
@@ -314,11 +323,13 @@ export default function AACChatPanel() {
               ←
             </button>
           )}
-          <h2 className="text-lg font-bold text-primary flex items-center gap-2">
+          <div className="flex flex-col min-w-0">
+            <h2 className="text-base font-bold text-primary flex items-center gap-2">
             {activeContact ? (
               <>
                 <span aria-hidden>{PROVIDER_ICONS[activeContact.provider]}</span>
                 {activeContact.name}
+                <span className="text-xs text-secondary font-normal">{PROVIDER_LABELS[activeContact.provider]}</span>
               </>
             ) : (
               <>
@@ -327,14 +338,27 @@ export default function AACChatPanel() {
               </>
             )}
           </h2>
+            {siblingContacts.length > 0 && (
+              <div className="flex gap-1 mt-0.5">
+                {siblingContacts.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => { tapFeedback(); selectContact(s.id); }}
+                    className="text-[10px] px-1.5 py-0.5 rounded surface-key border border-theme text-secondary hover:text-primary"
+                    aria-label={`Switch to ${PROVIDER_LABELS[s.provider]}`}
+                  >
+                    {PROVIDER_ICONS[s.provider]} {PROVIDER_LABELS[s.provider]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <button
           onClick={() => { tapFeedback(); closeSidePanel(); }}
           aria-label={tx('close', 'Close')}
-          className="aac-key surface-key text-primary rounded-lg px-3 py-1 font-bold"
-        >
-          ×
-        </button>
+          className="aac-key surface-key text-primary rounded-lg px-3 py-1 font-bold shrink-0"
+        >×</button>
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
