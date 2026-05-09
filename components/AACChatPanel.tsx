@@ -267,14 +267,41 @@ export default function AACChatPanel() {
     );
   }
 
-  // Below this point: have contacts or active contact — full panel.
+  // Contacts present but no active contact — contacts stream to the
+  // prediction bar (PredictionBar detects sidePanel==='aac-chat').
+  // Collapse to a compact strip so the keyboard keeps full height.
+  if (!activeContact && sortedContacts.length > 0) {
+    return (
+      <section
+        aria-label={tx('aac_chat_title', 'Send a message')}
+        data-testid="aac-chat-panel"
+        data-state="contact-search"
+        className="shrink-0 surface-bar border-y border-theme"
+      >
+        <span data-testid="aac-chat-empty-state" aria-hidden />
+        <div className="flex items-center justify-between px-3 py-2 gap-3">
+          <span className="text-xs text-muted truncate">
+            💬 {tx('aac_chat_title', 'Send a message')}
+            <span className="ml-1 opacity-60">— type to search {sortedContacts.length} contacts</span>
+          </span>
+          <button
+            onClick={() => { tapFeedback(); closeSidePanel(); }}
+            aria-label={tx('close', 'Close')}
+            className="aac-btn rounded-md px-2 py-1 text-muted text-lg shrink-0"
+          >×</button>
+        </div>
+      </section>
+    );
+  }
+
+  // Active contact selected — show compose view.
   return (
     <section
       aria-label={tx('aac_chat_title', 'Send a message')}
       className="shrink-0 flex flex-col surface-bar border-y border-theme"
       style={{ maxHeight: 'clamp(180px,22svh,220px)' }}
       data-testid="aac-chat-panel"
-      data-state="expanded"
+      data-state="compose"
     >
       <header className="flex items-center justify-between px-3 py-2 border-b border-theme shrink-0">
         <div className="flex items-center gap-3">
@@ -311,43 +338,8 @@ export default function AACChatPanel() {
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
-        {/* Empty state is handled by the medium-empty early-return above
-            (2026-05-08, Image #24). This branch only renders when the
-            user has at least one contact. */}
-        {!activeContact && sortedContacts.length > 0 && (
-          <>
-            {frequentContacts.length > 0 && (
-              <section data-testid="aac-chat-frequent">
-                <p className="text-muted text-[11px] uppercase tracking-wider mb-1.5">
-                  {tx('aac_chat_frequent', 'Frequent')}
-                </p>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {frequentContacts.map((c) => renderContactTile(
-                    c,
-                    isProviderAvailable(c.provider, plan),
-                    handlePickContact,
-                    'freq',
-                  ))}
-                </ul>
-              </section>
-            )}
-            <section data-testid="aac-chat-all">
-              {frequentContacts.length > 0 && (
-                <p className="text-muted text-[11px] uppercase tracking-wider mb-1.5">
-                  {tx('aac_chat_all_contacts', 'All contacts')}
-                </p>
-              )}
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="aac-chat-contact-list">
-                {sortedContacts.map((c) => renderContactTile(
-                  c,
-                  isProviderAvailable(c.provider, plan),
-                  handlePickContact,
-                  'all',
-                ))}
-              </ul>
-            </section>
-          </>
-        )}
+        {/* Contact list moved to PredictionBar (contact-search mode).
+            Compose view only renders when a contact is active. */}
 
         {/* Contact picked → chat compose view */}
         {activeContact && (

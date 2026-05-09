@@ -4,13 +4,54 @@ import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
+import { useUIStore } from '@/store/uiStore';
+import { useContactsStore, type AacContact } from '@/store/contactsStore';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
+import { PROVIDER_ICONS, PROVIDER_LABELS } from '@/services/sendToContact';
 
 import { isAllowedInLang, ensureLangCorpusLoaded } from '@/lib/langAllowlist';
+
+// ── Contact tiles for messaging mode ──────────────────────────────────
+
+function filterContacts(contacts: AacContact[], query: string): AacContact[] {
+  if (!query.trim()) return contacts.slice(0, 5);
+  const q = query.trim().toLowerCase();
+  return contacts
+    .filter((c) =>
+      c.name.toLowerCase().includes(q) ||
+      c.recipientId.toLowerCase().includes(q)
+    )
+    .slice(0, 5);
+}
+
+function ContactTile({ contact, onTap }: { contact: AacContact; onTap: (id: string) => void }) {
+  return (
+    <button
+      onClick={() => { tapFeedback(); onTap(contact.id); }}
+      aria-label={`Message ${contact.name}`}
+      data-testid={`pred-contact-${contact.id}`}
+      className="aac-btn flex-1 min-w-0 surface-key rounded-xl flex flex-col items-center justify-center py-1 px-1 border-l-[5px] border border-theme overflow-hidden gap-0.5"
+      style={{ borderLeftColor: '#4CAF50' }}
+    >
+      <span className="text-xl leading-none">
+        {contact.avatar
+          ? <img src={contact.avatar} alt="" className="w-7 h-7 rounded-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display='none'; }} />
+          : PROVIDER_ICONS[contact.provider]
+        }
+      </span>
+      <span className="truncate w-full text-center text-[clamp(0.55rem,1.6vw,0.85rem)] font-bold shrink-0 leading-tight text-primary">
+        {contact.name}
+      </span>
+      <span className="text-[clamp(0.45rem,1.2vw,0.7rem)] text-secondary shrink-0 leading-none">
+        {PROVIDER_LABELS[contact.provider]}
+      </span>
+    </button>
+  );
+}
 
 function computeStableSlots(prev: string[], predictions: string[]): string[] {
   const next = [...prev];
@@ -63,6 +104,9 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
 }
 
 export default function PredictionBar() {
+  const { sidePanel, selectContact } = useUIStore();
+  const contacts = useContactsStore((s) => s.contacts);
+  const activeContactId = useUIStore((s) => s.activeContactId);
   const { text } = useMessageStore();
   const { predictions, aiCompletion, updatePredictions, learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
@@ -188,6 +232,38 @@ export default function PredictionBar() {
     const fullPhrase = isCompletion ? [...words.slice(0, -1), word].join(' ') : [...words, word].join(' ');
     aacSpeak(fullPhrase, speechRate, speechVolume);
   };
+
+  // ── Contact-search mode — replaces word predictions while messaging ──
+  if (sidePanel === 'aac-chat' && !activeContactId) {
+    const matched = filterContacts(contacts, text);
+    if (matched.length > 0) {
+      return (
+        <div
+          className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 h-[clamp(56px,13svh,110px)]"
+          data-testid="prediction-bar-contacts"
+        >
+          {matched.map((c) => (
+            <ContactTile key={c.id} contact={c} onTap={selectContact} />
+          ))}
+          {/* Pad to 5 slots so bar doesn't collapse */}
+          {Array.from({ length: Math.max(0, 5 - matched.length) }).map((_, i) => (
+            <div key={`pad-${i}`} className="flex-1 min-w-0" />
+          ))}
+        </div>
+      );
+    }
+    // No matches / no contacts → show empty search hint.
+    return (
+      <div
+        className="flex items-center justify-center gap-[2px] px-3 py-[2px] shrink-0 h-[clamp(56px,13svh,110px)] text-muted text-sm"
+        data-testid="prediction-bar-contacts-empty"
+      >
+        {contacts.length === 0
+          ? 'Add contacts in Settings → Contacts'
+          : `No contacts match "${text.trim()}"`}
+      </div>
+    );
+  }
 
   const finalTiles = dropForeignTiles(displayed);
 

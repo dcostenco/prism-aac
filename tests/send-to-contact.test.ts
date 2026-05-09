@@ -21,9 +21,9 @@ const baseContact = (overrides: Partial<AacContact> = {}): AacContact => ({
 });
 
 describe('isProviderAvailable', () => {
-  it('free plan can use mail and sms only', () => {
+  it('free plan can use mail only (SMS requires standard — Twilio has per-msg cost)', () => {
     expect(isProviderAvailable('mail', 'free')).toBe(true);
-    expect(isProviderAvailable('sms', 'free')).toBe(true);
+    expect(isProviderAvailable('sms', 'free')).toBe(false);   // standard required
     expect(isProviderAvailable('telegram', 'free')).toBe(false);
     expect(isProviderAvailable('whatsapp', 'free')).toBe(false);
     expect(isProviderAvailable('viber', 'free')).toBe(false);
@@ -31,7 +31,8 @@ describe('isProviderAvailable', () => {
     expect(isProviderAvailable('instagram', 'free')).toBe(false);
   });
 
-  it('standard plan unlocks telegram/whatsapp/viber but not Meta Business', () => {
+  it('standard plan unlocks sms + telegram/whatsapp/viber but not Meta Business', () => {
+    expect(isProviderAvailable('sms', 'standard')).toBe(true);
     expect(isProviderAvailable('telegram', 'standard')).toBe(true);
     expect(isProviderAvailable('whatsapp', 'standard')).toBe(true);
     expect(isProviderAvailable('viber', 'standard')).toBe(true);
@@ -123,7 +124,7 @@ describe('sendToContact — length clamping', () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
     // SMS cap is 1500 — feed 5000.
     const huge = 'a'.repeat(5000);
-    const res = await sendToContact(baseContact({ provider: 'sms', recipientId: '+15551234567' }), huge, 'free');
+    const res = await sendToContact(baseContact({ provider: 'sms', recipientId: '+15551234567' }), huge, 'standard');
     expect(res).toEqual({ ok: true, truncated: true });
     const init = fetchMock.mock.calls[0][1] as RequestInit;
     const body = JSON.parse(init.body as string);
@@ -133,7 +134,7 @@ describe('sendToContact — length clamping', () => {
 
   it('does not truncate when text fits under the provider cap', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
-    const res = await sendToContact(baseContact({ provider: 'sms', recipientId: '+15551234567' }), 'hi mom', 'free');
+    const res = await sendToContact(baseContact({ provider: 'sms', recipientId: '+15551234567' }), 'hi mom', 'standard');
     expect(res).toEqual({ ok: true, truncated: false });
   });
 });

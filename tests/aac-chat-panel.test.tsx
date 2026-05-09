@@ -75,16 +75,14 @@ describe('AACChatPanel — picker → compose flow', () => {
     });
   });
 
-  it('shows the contact list and allows selecting a contact', async () => {
-    const user = userEvent.setup();
+  it('collapses to contact-search strip (contacts stream to PredictionBar)', () => {
+    // Contacts are now in PredictionBar when sidePanel=aac-chat with no active contact.
+    // AACChatPanel renders a compact "contact-search" strip, not a contact list.
     render(<AACChatPanel />);
-    expect(screen.getByTestId('aac-chat-contact-list')).toBeInTheDocument();
-    // Contacts are rendered as aac-chat-contact-{section}-{id}
-    expect(screen.getByTestId('aac-chat-contact-all-c1')).toBeInTheDocument();
-    expect(screen.getByTestId('aac-chat-contact-all-c2')).toBeInTheDocument();
-
-    await user.click(screen.getByTestId('aac-chat-contact-all-c1'));
-    expect(useUIStore.getState().activeContactId).toBe('c1');
+    const panel = screen.getByTestId('aac-chat-panel');
+    expect(panel).toHaveAttribute('data-state', 'contact-search');
+    // No contact list in AACChatPanel — it's in PredictionBar now.
+    expect(screen.queryByTestId('aac-chat-contact-list')).toBeNull();
   });
 
   it('shows compose preview when a contact is active', () => {
@@ -147,12 +145,12 @@ describe('AACChatPanel — tier gating', () => {
     });
   });
 
-  it('renders a 🔒 badge on contacts whose provider is above the user plan', () => {
+  it('contact-search strip rendered (lock badge shown in compose view, not contact list)', () => {
+    // Contacts stream to PredictionBar — AACChatPanel shows contact-search strip.
     render(<AACChatPanel />);
-    // Mail is free → no lock badge
-    expect(screen.queryByTestId('aac-chat-locked-cFree')).toBeNull();
-    // Telegram requires standard → locked for free user
-    expect(screen.getByTestId('aac-chat-locked-cPaid')).toBeInTheDocument();
+    expect(screen.getByTestId('aac-chat-panel')).toHaveAttribute('data-state', 'contact-search');
+    // Lock badge not shown until user taps contact and enters compose view.
+    expect(screen.queryByTestId('aac-chat-locked-cPaid')).toBeNull();
   });
 
   it('shows tier warning banner + disables Send when active contact is locked', () => {

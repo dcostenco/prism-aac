@@ -104,7 +104,9 @@ export const PROVIDERS: Record<ContactProvider, ProviderConfig> = {
     maxTextLength: 1500,
     validateRecipientId: isE164,
     recipientHint: '+15551234567 (E.164 phone)',
-    minTier: 'free',
+    // Portal /api/v1/sms/send requires Standard or above (Twilio cost).
+    // aac_plan='standard' also qualifies via dual-plan lookup in the route.
+    minTier: 'standard',
   },
   messenger: {
     label: 'Messenger',
@@ -130,7 +132,7 @@ export const PROVIDERS: Record<ContactProvider, ProviderConfig> = {
   mail: {
     label: 'Mail',
     icon: '📧',
-    endpoint: '/mail/send',
+    endpoint: '/prism-aac/mail/send',
     buildBody: (c, text) => ({ to: c.recipientId, subject: text.slice(0, 60), body_text: text }),
     // Email body is effectively unbounded but a single AAC message > 10k
     // chars is a typo, not a message. Cap to keep the portal route happy.
