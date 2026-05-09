@@ -1456,13 +1456,29 @@ function startTestDrivenTracker(opts: PoseTrackerOptions): PoseTrackerHandle {
   w.__simulatePose = api.simulatePose;
   w.__simulatePoseLost = api.simulatePoseLost;
 
+  // Use the pre-built test stream stored by addInitScript at window.__testStream.
+  // This avoids calling getUserMedia (which triggers the browser permission dialog)
+  // while still giving the PIP a real MediaStream to display the synthetic person.
+  let pipVideo: HTMLVideoElement | null = null;
+  const testStream = (window as unknown as { __testStream?: MediaStream }).__testStream;
+  if (testStream) {
+    pipVideo = document.createElement('video');
+    pipVideo.setAttribute('playsinline', '');
+    pipVideo.muted = true;
+    pipVideo.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;';
+    document.body.appendChild(pipVideo);
+    pipVideo.srcObject = testStream;
+    pipVideo.play().catch(() => {});
+  }
+
   const handle: PoseTrackerHandle = {
     stop() {
       stopped = true;
       opts.onStatusChange('stopped');
       if (activeHandle === handle) activeHandle = null;
+      if (pipVideo?.parentNode) pipVideo.remove();
     },
-    videoElement: null,
+    get videoElement() { return pipVideo; },
     setCalibration(_data: PoseCalibrationData) { /* no-op in test mode */ },
   };
   activeHandle = handle;

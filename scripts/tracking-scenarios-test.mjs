@@ -74,10 +74,14 @@ async function runScenario(scenario) {
 
   await page.addInitScript(() => {
     Object.defineProperty(window,'__POSE_TEST_DRIVE',{value:true});
-    navigator.mediaDevices = Object.assign(navigator.mediaDevices||{},{
-      getUserMedia: async() => { const c=document.createElement('canvas');c.width=320;c.height=240;return c.captureStream?c.captureStream(15):null; },
-      enumerateDevices: async() => [{kind:'videoinput',deviceId:'fake',label:'Fake',groupId:'g'}]
-    });
+    const __c=document.createElement('canvas'); __c.width=320; __c.height=240;
+    const __s = __c.captureStream ? __c.captureStream(15) : null;
+    window.__testStream = __s;
+    // Prototype override — covers ALL getUserMedia callers (headTracker, bodyPoseService,
+    // cameraStream) without triggering the browser permission dialog.
+    try { if(typeof MediaDevices!=='undefined') MediaDevices.prototype.getUserMedia=async()=>__s; } catch{}
+    try { navigator.mediaDevices.getUserMedia=async()=>__s; } catch{}
+    try { navigator.mediaDevices.enumerateDevices=async()=>[{kind:'videoinput',deviceId:'fake',label:'Fake',groupId:'g'}]; } catch{}
   });
 
   const issues = [];

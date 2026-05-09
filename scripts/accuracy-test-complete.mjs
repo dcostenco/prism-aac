@@ -9,7 +9,8 @@ const page = await (await browser.newContext({ viewport:{width:1400,height:850} 
 page.on('console', m => { const t=m.text().slice(0,200); if(/auto-advance|test target|complete|accuracy/i.test(t)) console.log('  LOG:',t); });
 await page.addInitScript(() => {
   Object.defineProperty(window,'__POSE_TEST_DRIVE',{value:true});
-  navigator.mediaDevices=Object.assign(navigator.mediaDevices||{},{
+  let __s; try { __s=(()=>{const c=document.createElement("canvas");c.width=320;c.height=240;return c.captureStream?c.captureStream(15):null;})(); window.__testStream=__s; } catch{}
+    navigator.mediaDevices=Object.assign(navigator.mediaDevices||{},{
     getUserMedia:async()=>{const c=document.createElement('canvas');c.width=320;c.height=240;return c.captureStream?c.captureStream(15):null;},
     enumerateDevices:async()=>[{kind:'videoinput',deviceId:'fake',label:'Fake',groupId:'g'}]
   });

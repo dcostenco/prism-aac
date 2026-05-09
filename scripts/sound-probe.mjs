@@ -1,0 +1,21 @@
+import { webkit } from '@playwright/test';
+const URL = 'https://prism-aac.vercel.app/prism-aac';
+const browser = await webkit.launch({ headless: true });
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+const page = await ctx.newPage();
+const errors = [];
+const logs = [];
+page.on('console', m => {
+  const t = m.text().slice(0, 220);
+  if (m.type() === 'error') errors.push(t);
+  if (/tts|speak|audio|Audio|TTS|aac|chunkFor|kokoro|Kalman|OneEuro|sample|cal/i.test(t)) logs.push(`[${m.type()}] ${t}`);
+});
+page.on('pageerror', e => errors.push(`PAGE-ERROR: ${e.message}\n  ${e.stack?.split('\n').slice(0, 5).join('\n  ')}`));
+await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+await page.waitForSelector('button[data-key="Q"]', { timeout: 20_000 });
+await page.waitForTimeout(3000);
+console.log('=== Page errors ===');
+errors.forEach(e => console.log(e));
+console.log('\n=== Logs (filtered) ===');
+logs.slice(-20).forEach(l => console.log(l));
+await browser.close();

@@ -24,7 +24,8 @@ page.on('console', m => {
 });
 await page.addInitScript(() => {
   Object.defineProperty(window,'__POSE_TEST_DRIVE',{value:true});
-  navigator.mediaDevices = Object.assign(navigator.mediaDevices||{},{
+  let __s; try { __s=(()=>{const c=document.createElement("canvas");c.width=320;c.height=240;return c.captureStream?c.captureStream(15):null;})(); window.__testStream=__s; } catch{}
+    navigator.mediaDevices = Object.assign(navigator.mediaDevices||{},{
     getUserMedia: async() => { const c=document.createElement('canvas');c.width=320;c.height=240;return c.captureStream?c.captureStream(15):null; },
     enumerateDevices: async() => [{kind:'videoinput',deviceId:'fake',label:'Fake',groupId:'g'}]
   });
@@ -130,3 +131,23 @@ if (final.tracker === 'stopped' || final.tracker === '') {
 console.log(`\nPASS: reached accuracy-test with tracker=${final.tracker}`);
 console.log(`Corners captured by proximity: ${passCount}/4`);
 await browser.close();
+
+// === ACCURACY TEST AUTO-COMPLETE CHECK ===
+// After wizard reaches accuracy-test, verify it auto-advances through all 5
+// targets within 55s (5 targets × 10s each + buffer) even when cursor stays center
+console.log('\n=== Verifying accuracy-test auto-completion ===');
+let accState = await getState();
+if (accState.phase !== 'accuracy-test') {
+  console.log('(already past accuracy-test in main run, skipping this check)');
+} else {
+  const pump2 = setInterval(async()=>{ await page.evaluate(()=>window.__simulatePose?.('right_index',0.5,0.5,0.9)).catch(()=>{}); },200);
+  for (let t=0; t<60; t++) {
+    await page.waitForTimeout(1000);
+    const s = await getState();
+    if (s.phase === 'complete') {
+      console.log(`PASS: reached complete at t=${t+1}s`);
+      clearInterval(pump2); break;
+    }
+    if (t===59) { console.log('FAIL: did not reach complete in 60s'); clearInterval(pump2); }
+  }
+}
