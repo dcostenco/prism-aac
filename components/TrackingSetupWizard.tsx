@@ -706,7 +706,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   // correct? Cursor is not moving".
   const cursorVisible = (phase === 'detecting' || phase === 'calibrate-center' ||
                           phase === 'calibrate-corners' || phase === 'accuracy-test')
-                          && cursorPos.x > 0 && cursorPos.y > 0;
+                          && cursorPos.x >= 0 && cursorPos.y >= 0;
   const cursorColor = trackerStatus === 'tracking' ? '#4CAF50'
     : trackerStatus === 'lost' ? '#FF9800'
     : '#9E9E9E';

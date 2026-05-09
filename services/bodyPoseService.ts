@@ -706,7 +706,14 @@ export function startPoseTracker(
   // Baseline tracker — exp-averaged pose center + variance, lets us
   // detect slow drift (auto-focus shift, user shifted in seat) and
   // suggest calibration corrections without forcing recalibration.
-  const baselineTracker = new BaselineTracker();
+  // Aggressive params: 3% drift triggers correction (vs default 5%),
+  // 15s warmup (vs 30s), 30s mean half-life (vs 60s) for faster
+  // posture-shift detection after a good initial calibration.
+  const baselineTracker = new BaselineTracker({
+    offsetThreshold: 0.03,
+    minWarmupMs: 15_000,
+    meanHalfLifeMs: 30_000,
+  });
   let lastBaselineApplyTime = 0;
   // FPS watchdog (TRACKING_RELIABILITY.md item D + research review):
   // detect thermal throttling on iPad mini 6 / low-end devices and
@@ -1065,7 +1072,13 @@ export function startPoseTracker(
           const clampedY = Math.max(0, Math.min(1, normY));
           learner.push(mirroredX, clampedY);
           const learned = learner.maybeEmitCalibration();
-          if (learned) {
+          // During the wizard _learnerCalSavesFrozen is true. Skip ALL
+          // in-memory updates — not just saves. BOOTSTRAP MODE converges
+          // topY/bottomY toward the user's static neutral pose (holding
+          // still during Step 1), which makes topY ≈ normY so rawY → 0
+          // and the cursor pins to Y=0. The wizard's setCalibration call
+          // is the single authority on calibration during a wizard run.
+          if (learned && !_learnerCalSavesFrozen) {
             if (isFactoryDefaults) {
               // BOOTSTRAP MODE — no wizard run yet. Aggressively
               // populate the calibration from the user's observed
@@ -1267,7 +1280,7 @@ export function startPoseTracker(
             oneEuroY.setNoiseFloor(noise);
 
             const now = Date.now();
-            if (now - lastBaselineApplyTime > 5000) {
+            if (now - lastBaselineApplyTime > 2000) {
               lastBaselineApplyTime = now;
               const correction = baselineTracker.suggestCorrection(now);
               if (correction?.kind === 'offset') {
@@ -1277,6 +1290,18 @@ export function startPoseTracker(
                 calibration.rightX = Math.max(0, Math.min(1, calibration.rightX + dx));
                 calibration.topY = Math.max(0, Math.min(1, calibration.topY + dy));
                 calibration.bottomY = Math.max(0, Math.min(1, calibration.bottomY + dy));
+                try { savePoseCalibration(calibration); } catch {}
+              } else if (correction?.kind === 'scale') {
+                // User moved closer/farther from camera — scale the range
+                // while keeping the anchor (midpoint) fixed.
+                const midX = (calibration.leftX + calibration.rightX) / 2;
+                const midY = (calibration.topY + calibration.bottomY) / 2;
+                const sX = Math.max(0.5, Math.min(1.5, correction.scaleX));
+                const sY = Math.max(0.5, Math.min(1.5, correction.scaleY));
+                calibration.leftX  = Math.max(0, Math.min(1, midX + (calibration.leftX  - midX) * sX));
+                calibration.rightX = Math.max(0, Math.min(1, midX + (calibration.rightX - midX) * sX));
+                calibration.topY   = Math.max(0, Math.min(1, midY + (calibration.topY   - midY) * sY));
+                calibration.bottomY= Math.max(0, Math.min(1, midY + (calibration.bottomY- midY) * sY));
                 try { savePoseCalibration(calibration); } catch {}
               }
             }

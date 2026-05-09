@@ -45,6 +45,22 @@ export default function CameraInputOverlay() {
   const rafRef = useRef(0);
   const highlightedKeyRef = useRef<HTMLElement | null>(null);
   const [keyBubble, setKeyBubble] = useState<{ char: string; x: number; y: number; visible: boolean }>({ char: '', x: 0, y: 0, visible: false });
+  // Cursor radius — sized to ~45% of the nearest AAC letter key height so
+  // the cursor gives the user a realistic sense of dwell precision without
+  // obscuring the button label. Re-measured on mount and every resize.
+  const [cursorRadius, setCursorRadius] = useState(14);
+  useEffect(() => {
+    const measure = () => {
+      const el = document.querySelector<HTMLElement>('[data-key]');
+      if (el) {
+        const h = el.getBoundingClientRect().height;
+        if (h > 0) setCursorRadius(Math.max(10, Math.min(32, Math.round(h * 0.45))));
+      }
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
   // Stuck-cursor / no-interaction auto-disable. Tracks the most recent
   // dwell-trigger timestamp + cursor position samples so we can detect
   // a user whose calibration is so off the cursor never reaches a
@@ -315,45 +331,50 @@ export default function CameraInputOverlay() {
         </div>
       )}
       {/* Cursor dot — only for camera tracking, not mouse fallback */}
-      {status === 'tracking' && cursorPos.x > 0 && cursorPos.y > 0 && <div
+      {status === 'tracking' && cursorPos.x >= 0 && cursorPos.y >= 0 && <div
         style={{
           position: 'absolute',
-          left: cursorPos.x - 14,
-          top: cursorPos.y - 14,
-          width: 28,
-          height: 28,
+          left: cursorPos.x - cursorRadius,
+          top: cursorPos.y - cursorRadius,
+          width: cursorRadius * 2,
+          height: cursorRadius * 2,
           borderRadius: '50%',
           backgroundColor: statusColor,
-          opacity: 0.85,
+          opacity: 0.75,
           border: '2px solid white',
-          boxShadow: `0 0 12px ${statusColor}80`,
+          boxShadow: `0 0 ${cursorRadius}px ${statusColor}80`,
           transition: 'left 0.06s linear, top 0.06s linear',
           pointerEvents: 'none',
         }}
       />}
 
-      {/* Dwell ring */}
-      {dwellProgress > 0 && (
-        <svg
-          width="50" height="50"
-          style={{
-            position: 'absolute',
-            left: cursorPos.x - 25,
-            top: cursorPos.y - 25,
-            transition: 'left 0.06s linear, top 0.06s linear',
-          }}
-        >
-          <circle cx="25" cy="25" r="22" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
-          <circle
-            cx="25" cy="25" r="22"
-            fill="none" stroke="#4CAF50" strokeWidth="4"
-            strokeDasharray={Math.PI * 44}
-            strokeDashoffset={Math.PI * 44 * (1 - dwellProgress)}
-            strokeLinecap="round"
-            transform="rotate(-90 25 25)"
-          />
-        </svg>
-      )}
+      {/* Dwell ring — same size as cursor */}
+      {dwellProgress > 0 && (() => {
+        const r = cursorRadius + 4;
+        const d = r * 2;
+        const circ = Math.PI * 2 * r;
+        return (
+          <svg
+            width={d} height={d}
+            style={{
+              position: 'absolute',
+              left: cursorPos.x - r,
+              top: cursorPos.y - r,
+              transition: 'left 0.06s linear, top 0.06s linear',
+            }}
+          >
+            <circle cx={r} cy={r} r={r - 2} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
+            <circle
+              cx={r} cy={r} r={r - 2}
+              fill="none" stroke="#4CAF50" strokeWidth="4"
+              strokeDasharray={circ}
+              strokeDashoffset={circ * (1 - dwellProgress)}
+              strokeLinecap="round"
+              transform={`rotate(-90 ${r} ${r})`}
+            />
+          </svg>
+        );
+      })()}
 
       {/* Status badge */}
       <div
