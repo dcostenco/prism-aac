@@ -390,26 +390,44 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       // setCalibration() updates both the in-memory cal AND localStorage.
       handleRef.current?.setCalibration(liveCal);
 
-      // Auto-capture: trigger once the user has ≥ 50 samples and is
-      // holding still (σ < 0.004 in both axes = ≈ 0.6 % of frame width).
+      // Auto-capture: stable-hold path (best case — low jitter users).
       if (buf.length >= 50) {
         const varX = buf.reduce((s, v) => s + (v.normX - sx) ** 2, 0) / buf.length;
         const varY = buf.reduce((s, v) => s + (v.normY - sy) ** 2, 0) / buf.length;
         const isStable = varX < 0.000016 && varY < 0.000016; // σ < 0.004
         if (isStable) {
           stableCount++;
-          // Require 2 consecutive stable checks (~4 s) to avoid capturing
-          // on a momentary pause.
           if (stableCount >= 2) {
-            console.log('[wizard] auto-capture center — stable hold detected');
+            console.log('[wizard] auto-capture center — stable hold');
             captureCenterCallbackRef.current?.();
+            return;
           }
         } else {
           stableCount = 0;
         }
       }
+      // Hard timeout path: after 20s at calibrate-center, capture the
+      // running average regardless of variance. Covers heavy-jitter users
+      // (spasticity, car/wheelchair vibration) who can never pass the
+      // stable-hold variance check, and users who are deliberately scanning
+      // (looking around to find center). The running mean IS their neutral.
+      if (buf.length >= 20) {
+        const w = typeof window !== 'undefined' ? (window as unknown as {__centerPhaseStart?:number}) : null;
+        const elapsed = w ? (performance.now() - (w.__centerPhaseStart ?? performance.now())) : 0;
+        if (elapsed >= 20_000) {
+          console.log('[wizard] auto-capture center — 20s timeout (high jitter / movement)');
+          captureCenterCallbackRef.current?.();
+        }
+      }
     }, 2000);
     return () => clearInterval(id);
+  }, [phase]);
+
+  // Stamp the phase-start time so the center hard timeout can measure elapsed.
+  useEffect(() => {
+    if (phase === 'calibrate-center' && typeof window !== 'undefined') {
+      (window as unknown as {__centerPhaseStart:number}).__centerPhaseStart = performance.now();
+    }
   }, [phase]);
 
   /** User taps the Capture button — average the current sample buffer
