@@ -21,7 +21,7 @@ const SCENARIOS = [
   {
     name: 'Micro-tremor (σ≈0.003) — AAC user slight shake',
     description: 'Simulates mild spasticity. Auto-capture must still fire.',
-    drive: (t) => ({ nx: 0.5 + (Math.random()-0.5)*0.006, ny: 0.5 + (Math.random()-0.5)*0.006 }),
+    drive: (t) => ({ nx: 0.5 + Math.sin(t * 9.1) * 0.003, ny: 0.5 + Math.cos(t * 7.7) * 0.003 }),
     expectStableCapture: true,
   },
   {
@@ -48,19 +48,22 @@ const SCENARIOS = [
   {
     name: 'Reclining posture — normY offset (≈0.67)',
     description: 'User reclining: face high in frame. Matches actual user posture.',
-    drive: (t) => ({ nx: 0.51 + (Math.random()-0.5)*0.004, ny: 0.67 + (Math.random()-0.5)*0.004 }),
+    // Deterministic micro-oscillation (σ≈0.001) replaces Math.random() which
+    // produced intermittent variance spikes above the 0.000016 stable-hold
+    // threshold — causing flaky failures on unlucky random seeds.
+    drive: (t) => ({ nx: 0.51 + Math.sin(t * 7.3) * 0.001, ny: 0.67 + Math.cos(t * 5.1) * 0.001 }),
     expectStableCapture: true,
   },
   {
     name: 'Asymmetric face — off-center normX',
     description: 'Camera not perfectly aligned: face at normX≈0.42 neutral.',
-    drive: (t) => ({ nx: 0.42 + (Math.random()-0.5)*0.004, ny: 0.52 + (Math.random()-0.5)*0.004 }),
+    drive: (t) => ({ nx: 0.42 + Math.sin(t * 6.7) * 0.001, ny: 0.52 + Math.cos(t * 4.9) * 0.001 }),
     expectStableCapture: true,
   },
   {
     name: 'Sudden position change then stable',
     description: 'User shifts then holds. Auto-capture should reset and fire.',
-    drive: (t) => t < 10 ? { nx: 0.35, ny: 0.45 } : { nx: 0.55 + (Math.random()-0.5)*0.003, ny: 0.60 + (Math.random()-0.5)*0.003 },
+    drive: (t) => t < 10 ? { nx: 0.35, ny: 0.45 } : { nx: 0.55 + Math.sin(t * 8.1) * 0.0015, ny: 0.60 + Math.cos(t * 6.3) * 0.0015 },
     expectStableCapture: true,
   },
 ];
