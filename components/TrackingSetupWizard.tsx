@@ -4,7 +4,6 @@ import { useSettingsStore } from '@/store/settingsStore';
 import {
   startPoseTracker,
   savePoseCalibration,
-  computeCalibrationFromCorners,
   loadPoseCalibration,
   DEFAULT_CALIBRATION,
   freezeLearnerCalSaves,
@@ -15,6 +14,10 @@ import {
   type TrackingTarget,
   type PoseCalibrationData,
 } from '@/services/bodyPoseService';
+import {
+  computeWizardCalibration,
+  computeCenterPreviewCalibration,
+} from '@/services/wizardCalibration';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 
@@ -377,18 +380,11 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       if (buf.length < 20) return;
       const sx = buf.reduce((s, v) => s + v.normX, 0) / buf.length;
       const sy = buf.reduce((s, v) => s + v.normY, 0) / buf.length;
-      const anchorMirX = 1 - sx;
-      const liveCal = {
-        leftX: Math.min(0.95, anchorMirX + 0.15),
-        rightX: Math.max(0.05, anchorMirX - 0.15),
-        topY: Math.max(0.05, sy - 0.12),
-        bottomY: Math.min(0.95, sy + 0.12),
-      };
-      // Update the RUNNING TRACKER's in-memory calibration directly.
-      // savePoseCalibration alone only updates localStorage — the tracker
-      // uses a closure-local `calibration` variable loaded once at start.
-      // setCalibration() updates both the in-memory cal AND localStorage.
-      handleRef.current?.setCalibration(liveCal);
+      // Update the RUNNING TRACKER's in-memory calibration with the current
+      // running mean as the anchor — cursor drifts to center as user holds still.
+      handleRef.current?.setCalibration(
+        computeCenterPreviewCalibration({ normX: sx, normY: sy })
+      );
 
       // Auto-capture: stable-hold path (best case — low jitter users).
       if (buf.length >= 50) {
@@ -446,26 +442,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     console.log(`[wizard] center avg normX=${sx.toFixed(3)} normY=${sy.toFixed(3)}`);
     centerSampleRef.current = { normX: sx, normY: sy };
 
-    // Immediately apply a DEFAULT-width cal centered on the captured
-    // neutral so the Step-2 cursor preview is correctly anchored.
-    // Without this the online learner in bodyPoseService overwrites
-    // the DEFAULT_CALIBRATION reset (from wizard-start) within
-    // seconds and produces a midpoint biased toward the asymmetric
-    // midpoint of the user's observable range — not their intended
-    // neutral. 2026-05-08 user report (Image #49): cursor 130px right
-    // of center target during Step 1 because learner midpoint (0.428)
-    // didn't match user neutral mirX (0.464).
-    //
-    // This is a TEMPORARY cal that the final captureCorner call will
-    // overwrite with the proper recentered + range-from-corners cal.
+    // Apply preview calibration centered on captured neutral.
+    // wizardCalibration.computeCenterPreviewCalibration anchors the cursor
+    // on the user's actual neutral pose — overrides DEFAULT_CALIBRATION's
+    // generic midpoint so Step-2 cursor tracks correctly from the first frame.
     try {
-      const anchorMirX = 1 - sx;
-      handleRef.current?.setCalibration({
-        leftX: Math.min(0.95, anchorMirX + 0.15),
-        rightX: Math.max(0.05, anchorMirX - 0.15),
-        topY: Math.max(0.05, sy - 0.12),
-        bottomY: Math.min(0.95, sy + 0.12),
-      });
+      handleRef.current?.setCalibration(
+        computeCenterPreviewCalibration({ normX: sx, normY: sy })
+      );
     } catch { /* best-effort */ }
 
     tapFeedback();
@@ -521,76 +505,16 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       speak(`Now turn your head all the way toward the ${next.label} corner. Then tap Capture.`);
       setStatusText(`Turn your head toward the ${next.label} corner`);
     } else {
-      // All 4 corners captured — compute via the shared pure helper.
-      const rawCal = computeCalibrationFromCorners(newSamples);
-      const rawRangeX = rawCal.leftX - rawCal.rightX;
-      const rawRangeY = rawCal.bottomY - rawCal.topY;
+      // All 4 corners captured — delegate to wizardCalibration service.
+      // computeWizardCalibration handles: mirror, narrow-range fallback,
+      // and re-centering on the captured Step-1 neutral pose.
+      const { cal, usedFallbackRange, rangeX, rangeY } = computeWizardCalibration(
+        centerSampleRef.current,
+        newSamples,
+      );
       console.log('[wizard] === CALIBRATION COMPUTED ===');
-      console.log('[wizard] corner samples (in order TL, TR, BR, BL):', JSON.stringify(newSamples));
-      console.log(`[wizard] raw cal: leftX=${rawCal.leftX.toFixed(3)} rightX=${rawCal.rightX.toFixed(3)} topY=${rawCal.topY.toFixed(3)} bottomY=${rawCal.bottomY.toFixed(3)}`);
-      console.log(`[wizard] rangeX=${rawRangeX.toFixed(3)} rangeY=${rawRangeY.toFixed(3)} | convention OK=${rawRangeX>0 && rawRangeY>0}`);
-
-      // The cursor mapping math expects: when the user's tracked
-      // landmark is at the cal's midpoint, the cursor lands at screen
-      // center. So the cal's midpoint MUST match the user's neutral
-      // pose, and the cal's WIDTH defines how much body movement maps
-      // to a full screen-width cursor sweep.
-      //
-      // The wizard captures BOTH pieces separately:
-      //   • Step 1 ("Face the center circle") → captured center
-      //     sample = the user's actual neutral pose. This is the
-      //     midpoint anchor.
-      //   • Step 2 (4 corners) → range. raw cal's MIDPOINT is wrong
-      //     for two reasons:
-      //       - corner samples are biased by tracker noise / how far
-      //         the user actually moved (rarely symmetric)
-      //       - "neutral facing center" rarely sits at the centroid
-      //         of {TL, TR, BR, BL} — heads tilt up/down at rest,
-      //         mobile users have asymmetric reach
-      // 2026-05-08 user report (Image #46): cursor 170px ABOVE the
-      // center target when facing it. Saved cal Y-midpoint was 0.595;
-      // user's neutral normY was 0.665. Recentering eliminates this.
-      //
-      // Always-recenter is correct even when raw range is wide. The
-      // narrow-range fallback below substitutes a DEFAULT-width
-      // range when corners didn't span enough; the recentering anchor
-      // is the same in both branches.
-      const PRACTICAL_MIN_RANGE = 0.10;
-      const center = centerSampleRef.current;
-      const anchor = center ?? {
-        // No captured center (skipped step 1 somehow): fall back to
-        // raw cal's midpoint — same as no recentering.
-        normX: 1 - (rawCal.leftX + rawCal.rightX) / 2,
-        normY: (rawCal.topY + rawCal.bottomY) / 2,
-      };
-      const anchorMirX = 1 - anchor.normX;
-
-      const usedFallbackRange =
-        rawRangeX < PRACTICAL_MIN_RANGE || rawRangeY < PRACTICAL_MIN_RANGE;
-      // Default range chosen to mirror DEFAULT_CALIBRATION (rangeX≈0.70,
-      // rangeY≈0.60) — the values the cursor mapping is tuned for.
-      // Fallback range for limited-mobility users (corners clustered).
-      // Was 0.70/0.60 (DEFAULT_CALIBRATION width) which mapped a
-      // ±0.08 head/eye movement to only 11% of screen — cursor barely
-      // moved. ±0.15/0.12 maps the same movement to 27%/33% — enough
-      // to reach corners. Image #55 report: "cursor doesn't move when
-      // turning."
-      const FALLBACK_RANGE_X = 0.30;
-      const FALLBACK_RANGE_Y = 0.24;
-      const finalRangeX = usedFallbackRange ? FALLBACK_RANGE_X : rawRangeX;
-      const finalRangeY = usedFallbackRange ? FALLBACK_RANGE_Y : rawRangeY;
-
-      const cal: PoseCalibrationData = {
-        leftX: Math.min(0.95, anchorMirX + finalRangeX / 2),
-        rightX: Math.max(0.05, anchorMirX - finalRangeX / 2),
-        topY: Math.max(0.05, anchor.normY - finalRangeY / 2),
-        bottomY: Math.min(0.95, anchor.normY + finalRangeY / 2),
-      };
-
-      if (usedFallbackRange) {
-        console.warn('[wizard] CAPTURED RANGE TOO NARROW — using DEFAULT-width range');
-      }
-      console.log(`[wizard] final cal (recentered on user neutral): leftX=${cal.leftX.toFixed(3)} rightX=${cal.rightX.toFixed(3)} topY=${cal.topY.toFixed(3)} bottomY=${cal.bottomY.toFixed(3)}`);
+      console.log('[wizard] corner samples:', JSON.stringify(newSamples));
+      console.log(`[wizard] final cal: L=${cal.leftX.toFixed(3)} R=${cal.rightX.toFixed(3)} T=${cal.topY.toFixed(3)} B=${cal.bottomY.toFixed(3)} rangeX=${rangeX.toFixed(3)} rangeY=${rangeY.toFixed(3)} fallback=${usedFallbackRange}`);
 
       savePoseCalibration(cal);
       applyCalibrationToActiveTracker(cal);

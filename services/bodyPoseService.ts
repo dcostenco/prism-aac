@@ -438,14 +438,12 @@ function calibrationKey(orientation?: 'landscape' | 'portrait'): string {
  *  fallback when corner samples cluster (rangeX≈0.70), so legitimate
  *  wizard outputs always exceed this floor; cals below the floor
  *  are degenerate residue from older builds and should be discarded. */
-const MIN_PRACTICAL_SAVED_RANGE = 0.05;
+// Delegate to wizardCalibration for single source of truth.
+import { isCalibrationUsable as _isCalibrationUsable } from './wizardCalibration';
 
 function isUsableCornerCalibration(c: unknown): c is PoseCalibrationData {
   if (!isValidCornerCalibration(c)) return false;
-  const cal = c as PoseCalibrationData;
-  const rangeX = Math.abs(cal.leftX - cal.rightX);
-  const rangeY = Math.abs(cal.bottomY - cal.topY);
-  return rangeX >= MIN_PRACTICAL_SAVED_RANGE && rangeY >= MIN_PRACTICAL_SAVED_RANGE;
+  return _isCalibrationUsable(c as PoseCalibrationData);
 }
 
 export function loadPoseCalibration(): PoseCalibrationData {
