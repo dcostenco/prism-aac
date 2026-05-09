@@ -23,12 +23,17 @@ import {
 } from '@/services/mediapipeRuntime';
 
 describe('MediaPipe URL pinning', () => {
-  it('wasm URL embeds the pinned version (no @latest)', () => {
-    expect(MEDIAPIPE_WASM_URL).toContain(MEDIAPIPE_TASKS_VISION_VERSION);
+  it('wasm URL is self-hosted (no external CDN, no @latest)', () => {
+    // Models migrated to Vercel CDN in feat(cdn) commit — served from
+    // public/models/mediapipe/ so no external version pin needed in URL.
     expect(MEDIAPIPE_WASM_URL).not.toContain('@latest');
+    expect(MEDIAPIPE_WASM_URL).not.toContain('cdn.jsdelivr.net');
+    expect(MEDIAPIPE_WASM_URL).not.toContain('storage.googleapis.com');
+    // Self-hosted path served from the app's own domain.
+    expect(MEDIAPIPE_WASM_URL).toContain('/models/mediapipe/');
   });
 
-  it('all model URLs use a versioned path (/1/), not /latest/', () => {
+  it('all model URLs are self-hosted, no /latest/ external path', () => {
     const urls = [
       POSE_LANDMARKER_LITE_URL,
       FACE_LANDMARKER_URL,
@@ -37,7 +42,8 @@ describe('MediaPipe URL pinning', () => {
     ];
     for (const u of urls) {
       expect(u).not.toContain('/latest/');
-      expect(u).toContain('/1/');
+      expect(u).not.toContain('cdn.jsdelivr.net');
+      expect(u).toContain('/models/mediapipe/');
     }
   });
 

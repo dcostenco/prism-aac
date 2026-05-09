@@ -106,10 +106,10 @@ export default function CaregiverContactsSettings() {
       // friends" which is wrong.
       const haveContacts = useContactsStore.getState().contacts.length > 0;
       setSyncMsg(haveContacts ? 'Already up to date.' : 'Synced — 0 contacts available yet.');
-      setSyncNotes(res.notes);
+      setSyncNotes(res.notes ?? []);
     } else {
       setSyncMsg(`+${res.added} new, ${res.updated} updated.`);
-      setSyncNotes(res.notes);
+      setSyncNotes(res.notes ?? []);
     }
     if (syncMsgTimerRef.current) clearTimeout(syncMsgTimerRef.current);
     syncMsgTimerRef.current = setTimeout(() => {
