@@ -227,6 +227,15 @@ function releaseBlob(url: string): void {
 // fetches. Panic stop must kill ALL of them, not just the last.
 const activeControllers = new Set<AbortController>();
 
+// Rapid-duplicate dedup. If the same text fires within DEDUP_MS, drop the
+// new request so the current playback isn't killed by stopAzurePlayback.
+// User report 2026-05-08 "audio stopped streaming" — autocorrect or
+// debounced typing was firing speak() multiple times in <50ms, the second
+// call's stopAzurePlayback() killed the first source mid-stream.
+let lastSpokenText = '';
+let lastSpokenAt = 0;
+const DEDUP_MS = 200;
+
 /** Stop only ACTIVE PLAYBACK (BufferSourceNodes + HTMLAudioElements +
  *  blob URLs). Does NOT abort in-flight fetch controllers — those
  *  belong to whichever speakAzure call owns them and aborting them
@@ -263,6 +272,14 @@ export function stopAzureAudio(): void {
   for (const ctrl of activeControllers) ctrl.abort();
   activeControllers.clear();
   stopAzurePlayback();
+}
+
+export function resetSharedAudioContextIfIdle(): void {
+  if (activeSources.size > 0) return;
+  if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') {
+    try { void sharedAudioCtx.close(); } catch { /* */ }
+  }
+  sharedAudioCtx = null;
 }
 
 // Note: an earlier revision had a `speakSeq` latest-wins guard here
@@ -363,9 +380,10 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   source.onended = () => {
     const playedMs = Date.now() - startedAt;
     const expectedMs = decoded.duration * 1000;
-    if (playedMs < expectedMs - 50 && playedMs < 80) {
+    if (expectedMs > 250 && playedMs < expectedMs * 0.5) {
       console.warn(
-        `[${label}] source ended after ${playedMs}ms (expected ~${Math.round(expectedMs)}ms) — likely killed by a peer speak call's stopAzurePlayback. User heard nothing.`,
+        `[${label}] AUDIO TRUNCATED: played ${playedMs}ms of expected ${Math.round(expectedMs)}ms ` +
+        `(${Math.round(playedMs / expectedMs * 100)}%). Likely killed by a peer speak call. User heard partial / no audio.`,
       );
     }
     activeSources.delete(source);
@@ -454,6 +472,20 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   authToken: string,
   voiceId?: string,
 ): Promise<boolean> {
+  // Rapid-duplicate suppression — drop a new speak with the same text
+  // if one fired in the last DEDUP_MS. Otherwise the new fetch+decode
+  // races the prior playback and stopAzurePlayback() kills the still-
+  // streaming source. Returns true (claims success) so speechService
+  // doesn't fall through to Web Speech tier — the prior call is the
+  // one playing, no fallback needed.
+  const nowMs = Date.now();
+  if (text === lastSpokenText && nowMs - lastSpokenAt < DEDUP_MS) {
+    console.log(`[AzureTTS] DEDUP — same text "${text.slice(0, 30)}" within ${nowMs - lastSpokenAt}ms; keeping prior playback alive`);
+    return true;
+  }
+  lastSpokenText = text;
+  lastSpokenAt = nowMs;
+
   const ssml = buildSSML(text, lang, tone, rate, volume);
 
   let url: string | null = null;
