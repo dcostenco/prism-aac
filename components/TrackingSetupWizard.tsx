@@ -651,19 +651,38 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     return () => clearInterval(interval);
   }, [phase, testIdx, testTargets, cursorPos.x, cursorPos.y, handleTestHit]);
 
-  // Corner auto-capture — fires captureCorner when the cursor dwells
-  // within AUTO_CAPTURE_RADIUS px of the current corner target for
-  // CORNER_DWELL_MS. Mirrors the accuracy-test dwell-hit mechanism.
-  // Solves the "can't tap corner" problem for users whose cursor
-  // drifts near the target but they can't physically tap the button.
+  // Corner auto-capture — two triggers:
+  //   1. PROXIMITY: cursor within 200px of corner target for 1.5s
+  //   2. TIMEOUT: after 5s on a corner, capture whatever position
+  //      the cursor is at (best-effort). If user can't move cursor
+  //      to the corner, the narrow-range fallback uses center-only
+  //      cal anyway. If they can, it captures their real range.
+  //      Either way the wizard completes automatically — user doesn't
+  //      need to interact at all with corners.
+  const cornerStartRef = useRef<number>(0);
   const cornerDwellRef = useRef<{ idx: number; start: number } | null>(null);
   const captureCornercallbackRef = useRef<(() => void) | null>(null);
   useEffect(() => { captureCornercallbackRef.current = captureCorner; }, [captureCorner]);
   useEffect(() => {
-    if (phase !== 'calibrate-corners') { cornerDwellRef.current = null; return; }
-    const AUTO_CAPTURE_RADIUS = 200; // px — generous for reclining / limited mobility
-    const CORNER_DWELL_MS = 1500;    // hold near corner for 1.5 s → auto-capture
+    if (phase !== 'calibrate-corners') {
+      cornerDwellRef.current = null;
+      return;
+    }
+    cornerStartRef.current = Date.now();
+    const AUTO_CAPTURE_RADIUS = 200;
+    const CORNER_DWELL_MS = 1500;
+    const CORNER_TIMEOUT_MS = 5000; // always auto-capture after 5s
     const id = setInterval(() => {
+      if (sampleBufferRef.current.length === 0) return; // no pose yet
+      const elapsed = Date.now() - cornerStartRef.current;
+      // Timeout path — capture after 5s regardless of cursor position.
+      if (elapsed >= CORNER_TIMEOUT_MS) {
+        console.log(`[wizard] auto-capture corner ${cornerIdx + 1} — timeout after ${CORNER_TIMEOUT_MS}ms`);
+        cornerDwellRef.current = null;
+        captureCornercallbackRef.current?.();
+        return;
+      }
+      // Proximity path — capture if cursor near target.
       const corner = CORNER_TARGETS[cornerIdx];
       if (!corner) return;
       const tx = (corner.x / 100) * window.innerWidth;
@@ -675,14 +694,14 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         if (!cornerDwellRef.current || cornerDwellRef.current.idx !== cornerIdx) {
           cornerDwellRef.current = { idx: cornerIdx, start: Date.now() };
         } else if (Date.now() - cornerDwellRef.current.start >= CORNER_DWELL_MS) {
-          console.log(`[wizard] auto-capture corner ${cornerIdx + 1} — dwell near target (dist=${Math.round(dist)}px)`);
+          console.log(`[wizard] auto-capture corner ${cornerIdx + 1} — proximity (dist=${Math.round(dist)}px)`);
           cornerDwellRef.current = null;
           captureCornercallbackRef.current?.();
         }
       } else {
         cornerDwellRef.current = null;
       }
-    }, 80);
+    }, 200);
     return () => { clearInterval(id); cornerDwellRef.current = null; };
   }, [phase, cornerIdx, cursorPos.x, cursorPos.y]);
 
@@ -930,7 +949,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 exaggerate the motion, don&apos;t just glance with your eyes.
               </p>
               <p className="text-white/50 text-xs mt-1 max-w-md mx-auto">
-                💡 Hold still near the corner — it auto-captures when the cursor is close.
+                💡 Look toward the corner and hold still — auto-captures in 5 s.
               </p>
               <button
                 onClick={captureCorner}
