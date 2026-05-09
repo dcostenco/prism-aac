@@ -155,6 +155,7 @@ export default function PrismApp() {
   //     ("why is keyboard needed for games?")
   //   • Marketplace / Schedule had the same — keyboard for nothing.
   // The fix is the allow-list below.
+  const categoryKeyboardOpen = useUIStore((s) => s.categoryKeyboardOpen);
   const PANELS_WITHOUT_QWERTY = new Set([
     'math',
     'games',
@@ -163,13 +164,16 @@ export default function PrismApp() {
     'caregiver',
     'picture-editor',
     'music-composer',
+    // Categories: full-screen cards by default (Image #32 pattern).
+    // Keyboard shown only when categoryKeyboardOpen toggle is on.
+    'categories',
+    'category-detail',
+    'ordering',
   ]);
-  const showQwerty = !PANELS_WITHOUT_QWERTY.has(sidePanel);
-  // Category surround mode: categories + keyboard side-by-side (Images #30/#31).
-  // Keyboard stays accessible; categories appear in a scrollable left column.
-  const isCategorySurround = sidePanel === 'categories' ||
-    sidePanel === 'category-detail' ||
-    sidePanel === 'ordering';
+  const isCategoryMode = ['categories','category-detail','ordering'].includes(sidePanel);
+  const showQwerty = isCategoryMode
+    ? categoryKeyboardOpen
+    : !PANELS_WITHOUT_QWERTY.has(sidePanel);
   const { rtl } = useT();
 
   useEffect(() => {
@@ -417,40 +421,17 @@ export default function PrismApp() {
           <OcrCapturePanel />
           <PictureEditorPanel />
           <MusicComposerPanel />
-          {/* Category surround layout (Images #30/#31):
-              In category mode, show the category cards in a scrollable LEFT
-              column alongside the keyboard on the RIGHT — the "AAC surround"
-              pattern where vocabulary cards wrap the central input area.
-              Both remain accessible; the AAC user types AND taps cards.
-              In all other modes: CategoryPanel stacks above the keyboard. */}
-          {isCategorySurround ? (
-            <div className="flex-1 flex flex-row min-h-0">
-              {/* Left column: scrollable category cards, fixed width */}
-              <div className="w-[clamp(140px,30vw,240px)] flex flex-col min-h-0 border-r border-theme">
-                <CategoryPanel />
-              </div>
-              {/* Right: keyboard fills remaining width */}
-              {showQwerty && (
-                <div
-                  className="flex-1 flex flex-col min-h-[clamp(240px,35svh,400px)]"
-                  data-testid="keyboard-shell"
-                >
-                  <Keyboard />
-                </div>
-              )}
+          {/* Category mode: full-screen cards (Image #32 pattern).
+              Keyboard is a pull-up drawer toggled from inside CategoryPanel.
+              All other modes: CategoryPanel stacks above keyboard as before. */}
+          {sidePanel !== 'math' && <CategoryPanel />}
+          {showQwerty && (
+            <div
+              className="flex-1 flex flex-col min-h-[clamp(280px,38svh,440px)]"
+              data-testid="keyboard-shell"
+            >
+              <Keyboard />
             </div>
-          ) : (
-            <>
-              {sidePanel !== 'math' && <CategoryPanel />}
-              {showQwerty && (
-                <div
-                  className="flex-1 flex flex-col min-h-[clamp(280px,38svh,440px)]"
-                  data-testid="keyboard-shell"
-                >
-                  <Keyboard />
-                </div>
-              )}
-            </>
           )}
           <AlertOverlay />
           {/* True modals — settings/history are configuration UIs, not

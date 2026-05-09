@@ -3,6 +3,7 @@ import { KeyboardMode, MODULE_PANEL_VIEWS, ModulePanelView, SidePanelView } from
 
 interface UIState {
   sidePanel: SidePanelView;
+  categoryKeyboardOpen: boolean;   // keyboard drawer inside category panel
   activeCategoryId: string | null;
   activeContactId: string | null;
   activeSequenceId: string | null;
@@ -44,12 +45,14 @@ interface UIState {
   triggerAlert: () => void;
   selectContact: (id: string) => void;
   backToContacts: () => void;
+  toggleCategoryKeyboard: () => void;
 }
 
 let alertTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useUIStore = create<UIState>()((set) => ({
   sidePanel: 'none',
+  categoryKeyboardOpen: false,
   activeCategoryId: null,
   activeContactId: null,
   activeSequenceId: null,
@@ -89,7 +92,8 @@ export const useUIStore = create<UIState>()((set) => ({
     if (!(MODULE_PANEL_VIEWS as readonly string[]).includes(panelId)) return {};
     return { sidePanel: panelId as ModulePanelView };
   }),
-  closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, activeSequenceId: null }),
+  toggleCategoryKeyboard: () => set((s) => ({ categoryKeyboardOpen: !s.categoryKeyboardOpen })),
+  closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, activeSequenceId: null, categoryKeyboardOpen: false }),
   selectCategory: (id) => set({ sidePanel: 'category-detail', activeCategoryId: id }),
   backToCategories: () => set({ sidePanel: 'categories', activeCategoryId: null, activeSequenceId: null }),
   startOrdering: (sequenceId) => set({ sidePanel: 'ordering', activeSequenceId: sequenceId, activeSequenceStep: 0 }),
