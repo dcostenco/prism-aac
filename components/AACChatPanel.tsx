@@ -217,24 +217,36 @@ export default function AACChatPanel() {
   //     keyboard's natural height AND gives the picker enough room to
   //     show 3 placeholder rows + the add-contact CTA + sync hint.
   if (isEmpty) {
+    // Slim strip — single row, zero ghost contacts, zero keyboard impact.
+    // Ghost contacts were compressing the keyboard below its usable floor
+    // on every screen size. The strip height (~52px) fits in the flex
+    // layout without stealing any space from the keyboard.
     return (
       <section
         aria-label={tx('aac_chat_title', 'Send a message')}
         data-testid="aac-chat-panel"
-        data-state="medium-empty"
-        className="shrink-0 surface-bar border-y border-theme flex flex-col"
-        style={{ minHeight: 200, maxHeight: 240 }}
+        data-state="compact-empty"
+        className="shrink-0 surface-bar border-y border-theme"
       >
-        <div className="flex items-center justify-between px-3 py-2 gap-3 border-b border-theme">
+        <div className="flex items-center justify-between px-3 py-2 gap-3">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xl shrink-0">💬</span>
-            <span className="font-bold text-primary truncate">
-              {tx('aac_chat_title', 'Send a message')}
+            <span className="text-lg shrink-0">💬</span>
+            <span className="text-xs text-muted truncate">
+              {tx('aac_chat_no_contacts', 'No contacts yet.')}{' '}
+              {tx('aac_chat_empty_hint_short', 'Add one or sync Gmail in Settings.')}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => { tapFeedback(); toggleSettings(); }}
+              onClick={() => {
+                tapFeedback();
+                toggleSettings();
+                // Scroll directly to the Contacts section after the modal renders.
+                setTimeout(() => {
+                  document.getElementById('settings-contacts-section')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 120);
+              }}
               data-testid="aac-chat-open-settings"
               className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white"
             >
@@ -247,39 +259,6 @@ export default function AACChatPanel() {
             >×</button>
           </div>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-2">
-          <p className="text-xs text-muted">
-            {tx('aac_chat_no_contacts', 'No contacts yet.')}{' '}
-            {tx(
-              'aac_chat_empty_hint',
-              'Add one above, or open Caregiver Settings → Contacts → Sync now to pull from Gmail.',
-            )}
-          </p>
-          {/* Three ghost rows so the picker doesn't look like one
-              clipped line — gives caregivers a sense of scale. */}
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 surface-key rounded-lg px-3 py-2 opacity-50 border border-dashed border-theme"
-              data-testid={`aac-chat-ghost-${i}`}
-              aria-hidden
-            >
-              <span className="text-2xl">👤</span>
-              <span className="flex flex-col min-w-0 flex-1">
-                <span className="font-bold text-primary text-sm">
-                  {i === 0
-                    ? tx('aac_chat_ghost_mom', 'e.g. Mom')
-                    : i === 1
-                      ? tx('aac_chat_ghost_dad', 'e.g. Dad')
-                      : tx('aac_chat_ghost_teacher', 'e.g. Teacher')}
-                </span>
-                <span className="text-xs text-secondary truncate">
-                  {tx('aac_chat_ghost_hint', 'Will appear here after sync')}
-                </span>
-              </span>
-            </div>
-          ))}
-        </div>
       </section>
     );
   }
@@ -288,7 +267,8 @@ export default function AACChatPanel() {
   return (
     <section
       aria-label={tx('aac_chat_title', 'Send a message')}
-      className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
+      className="shrink-0 flex flex-col surface-bar border-y border-theme"
+      style={{ maxHeight: '38svh' }}
       data-testid="aac-chat-panel"
       data-state="expanded"
     >

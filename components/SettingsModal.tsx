@@ -257,7 +257,7 @@ export default function SettingsModal() {
 
           {/* AAC Chat — caregiver-curated contact list. The AAC user
               consumes the list read-only via the AAC Chat picker. */}
-          <div>
+          <div id="settings-contacts-section">
             <h3 className={sectionTitle}>Contacts (Send a message)</h3>
             <CaregiverContactsSettings />
             <label className="flex items-center justify-between py-2 mt-3 border-t border-theme pt-3">
