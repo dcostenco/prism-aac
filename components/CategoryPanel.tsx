@@ -16,16 +16,20 @@ import { getPhraseText } from '@/constants/phraseTranslations';
 /**
  * Category panel — full-screen AAC board (Image #32/#34 pattern).
  *
- * Layout:
- *   [Big tile grid — full width]   [Right sidebar: ⌨️ Back Home Search]
+ * Layout (critical UX requirement):
  *
- * Subcategories: categories with children show sub-folder cards before
- * phrases. Navigation uses a breadcrumb path stack in uiStore.
+ *   ┌─────────────────────────────┬──────┐
+ *   │ 🔍 [Search bar — always on] │ ← 🏠 │  ← top bar (search prominent)
+ *   ├─────────────────────────────┴──────┤
+ *   │                                    │
+ *   │       tile grid (full width)       │
+ *   │                                    │
+ *   ├────────────────────────────────────┤
+ *   │   ⌨️  Show / Hide Keyboard  ▲      │  ← full-width keyboard drawer handle
+ *   └────────────────────────────────────┘
  *
- * Color coding:
- *   • Category folders = white (neutral, "drill in")
- *   • Phrase tiles = color by word class
- *     green = action/verb, orange = descriptor, blue = noun, etc.
+ * Search and Keyboard toggle are critical in this mode (user requirement).
+ * Both get large, obvious touch targets rather than small sidebar icons.
  */
 
 function PanelShell({ children }: { children: ReactNode }) {
@@ -33,7 +37,7 @@ function PanelShell({ children }: { children: ReactNode }) {
   return (
     <section
       aria-label={pt('aac_panel')}
-      className="flex-1 min-h-0 flex flex-row surface-bar border-y border-theme overflow-hidden"
+      className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden"
     >
       {children}
     </section>
@@ -59,13 +63,13 @@ const TILE_MIN_H: Record<GridSize, string> = {
 };
 
 const CLASS_BG: Record<string, string> = {
-  verb:       'bg-green-600  text-white border-green-700',
-  adjective:  'bg-orange-400 text-white border-orange-500',
-  pronoun:    'bg-yellow-400 text-gray-900 border-yellow-500',
-  noun:       'bg-blue-400   text-white border-blue-500',
-  social:     'bg-pink-400   text-white border-pink-500',
-  preposition:'bg-purple-400 text-white border-purple-500',
-  default:    'bg-slate-600  text-white border-slate-700',
+  verb:        'bg-green-600  text-white border-green-700',
+  adjective:   'bg-orange-400 text-white border-orange-500',
+  pronoun:     'bg-yellow-400 text-gray-900 border-yellow-500',
+  noun:        'bg-blue-400   text-white border-blue-500',
+  social:      'bg-pink-400   text-white border-pink-500',
+  preposition: 'bg-purple-400 text-white border-purple-500',
+  default:     'bg-slate-600  text-white border-slate-700',
 };
 
 function wordClassBg(word: string): string {
@@ -114,7 +118,7 @@ export default function CategoryPanel() {
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
 
-  // Universal search: index all phrases across all categories
+  // Universal search across ALL categories and phrases
   const searchResults = useMemo(() => {
     if (!searchQuery.trim() || !searchOpen) return [];
     const q = searchQuery.toLowerCase();
@@ -158,13 +162,9 @@ export default function CategoryPanel() {
     if (searchOpen) { setSearchOpen(false); setSearchQuery(''); }
   };
 
-  // ── RIGHT SIDEBAR ────────────────────────────────────────────────────────────
-  const sideBtn = 'aac-btn flex flex-col items-center justify-center gap-1 py-4 w-full text-center select-none shrink-0 hover:bg-white/10 active:bg-white/20 transition-colors';
-  const sideIcon = 'text-2xl';
-  const sideLabel = 'text-[10px] font-bold uppercase tracking-wide opacity-80';
-
+  // ── SHARED: Top bar (search + nav) ──────────────────────────────────────────
   const canGoBack = sidePanel !== 'categories';
-  const isDeep = categoryPath.length > 1;  // inside a subcategory
+  const isDeep = categoryPath.length > 1;
 
   const handleBack = () => {
     tapFeedback();
@@ -172,87 +172,115 @@ export default function CategoryPanel() {
     else backToCategories();
   };
 
-  const Sidebar = (
-    <nav className="flex flex-col w-[72px] shrink-0 bg-[#3e2a1a] text-white border-l border-[#5c3d25] overflow-y-auto">
-      <button
-        onClick={() => { tapFeedback(); toggleCategoryKeyboard(); }}
-        aria-label="Toggle keyboard"
-        aria-pressed={categoryKeyboardOpen}
-        className={`${sideBtn} ${categoryKeyboardOpen ? 'bg-white/20' : ''}`}
-      >
-        <span className={sideIcon}>⌨️</span>
-        <span className={sideLabel}>{categoryKeyboardOpen ? 'Hide KB' : 'Keyboard'}</span>
-      </button>
-
-      <div className="h-px bg-white/20 shrink-0" />
-
-      {canGoBack && (
-        <button onClick={handleBack} aria-label="Go back" className={sideBtn}>
-          <span className={sideIcon}>←</span>
-          <span className={sideLabel}>{isDeep ? 'Up' : 'Back'}</span>
+  // The top bar appears in EVERY mode (search is always reachable).
+  const TopBar = ({ title }: { title?: string }) => (
+    <div className="flex items-stretch shrink-0 border-b border-theme bg-[#3e2a1a]">
+      {/* ← Back / nav */}
+      {canGoBack ? (
+        <button
+          onClick={handleBack}
+          aria-label="Go back"
+          className="aac-btn flex items-center justify-center w-14 shrink-0 text-white text-2xl hover:bg-white/10 active:bg-white/20 border-r border-white/20"
+        >
+          ←
+        </button>
+      ) : (
+        <button
+          onClick={() => { tapFeedback(); closeSidePanel(); }}
+          aria-label="Home"
+          className="aac-btn flex items-center justify-center w-14 shrink-0 text-white text-2xl hover:bg-white/10 active:bg-white/20 border-r border-white/20"
+        >
+          🏠
         </button>
       )}
 
-      <button onClick={() => { tapFeedback(); closeSidePanel(); }} aria-label="Close categories" className={sideBtn}>
-        <span className={sideIcon}>🏠</span>
-        <span className={sideLabel}>Home</span>
-      </button>
+      {/* 🔍 Search — always visible, large tap target */}
+      {searchOpen ? (
+        <div className="flex-1 flex items-center gap-2 px-3">
+          <span className="text-white/70 text-xl shrink-0">🔍</span>
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('search_vocabulary') || 'Search all vocabulary…'}
+            className="flex-1 bg-transparent text-white text-lg outline-none placeholder:text-white/50 py-3"
+            autoFocus
+          />
+          <button
+            onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+            className="aac-btn text-white/70 hover:text-white text-xl px-3 py-3"
+            aria-label="Close search"
+          >✕</button>
+        </div>
+      ) : (
+        <button
+          onClick={() => { tapFeedback(); setSearchOpen(true); setSearchQuery(''); }}
+          aria-label="Search all vocabulary"
+          className="aac-btn flex-1 flex items-center gap-3 px-4 py-3 text-white/70 hover:text-white hover:bg-white/10 text-left transition-colors"
+        >
+          <span className="text-2xl">🔍</span>
+          <span className="text-base font-medium">
+            {title
+              ? <span className="text-white font-bold">{title}</span>
+              : <span className="opacity-70">{t('search_vocabulary') || 'Search all vocabulary…'}</span>
+            }
+          </span>
+        </button>
+      )}
 
-      <div className="h-px bg-white/20 shrink-0" />
-
-      <button
-        onClick={() => { tapFeedback(); setSearchOpen(true); setSearchQuery(''); }}
-        aria-label="Search all vocabulary"
-        className={`${sideBtn} ${searchOpen ? 'bg-white/20' : ''}`}
-      >
-        <span className={sideIcon}>🔍</span>
-        <span className={sideLabel}>Search</span>
-      </button>
-    </nav>
+      {/* Home (when back is shown) */}
+      {canGoBack && (
+        <button
+          onClick={() => { tapFeedback(); closeSidePanel(); }}
+          aria-label="Home"
+          className="aac-btn flex items-center justify-center w-14 shrink-0 text-white text-2xl hover:bg-white/10 active:bg-white/20 border-l border-white/20"
+        >
+          🏠
+        </button>
+      )}
+    </div>
   );
 
-  // ── SEARCH OVERLAY ───────────────────────────────────────────────────────────
-  if (searchOpen) {
+  // ── SHARED: Keyboard drawer handle (full-width bottom bar) ───────────────────
+  const KeyboardHandle = () => (
+    <button
+      onClick={() => { tapFeedback(); toggleCategoryKeyboard(); }}
+      aria-label={categoryKeyboardOpen ? 'Hide keyboard' : 'Show keyboard'}
+      aria-pressed={categoryKeyboardOpen}
+      className={`aac-btn w-full shrink-0 flex items-center justify-center gap-3 py-3 px-4
+        border-t border-theme font-bold text-base transition-colors select-none
+        ${categoryKeyboardOpen
+          ? 'bg-[#3e2a1a] text-white'
+          : 'surface-key text-primary hover:bg-[#3e2a1a] hover:text-white'
+        }`}
+    >
+      <span className="text-2xl">⌨️</span>
+      <span>{categoryKeyboardOpen ? 'Hide Keyboard ▼' : 'Show Keyboard ▲'}</span>
+    </button>
+  );
+
+  // ── SEARCH RESULTS ───────────────────────────────────────────────────────────
+  if (searchOpen && searchQuery.trim()) {
     return (
       <PanelShell>
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-theme shrink-0">
-            <span className="text-muted text-xl">🔍</span>
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('search_vocabulary') || 'Search all vocabulary…'}
-              className="flex-1 bg-transparent text-primary text-lg outline-none placeholder:text-muted"
-              autoFocus
-            />
+        <TopBar />
+        <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
+          {searchResults.length === 0 && (
+            <p className="text-muted text-center py-8">No results for &quot;{searchQuery}&quot;</p>
+          )}
+          {searchResults.map((r, i) => (
             <button
-              onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-              className="aac-btn text-muted text-xl px-2"
-              aria-label="Close search"
-            >✕</button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {!searchQuery.trim() && (
-              <p className="text-muted text-center py-8">Start typing to search all categories…</p>
-            )}
-            {searchQuery.trim() && searchResults.length === 0 && (
-              <p className="text-muted text-center py-8">No results for &quot;{searchQuery}&quot;</p>
-            )}
-            {searchResults.map((r, i) => (
-              <button
-                key={i}
-                onClick={() => handlePhrase(r.phrase, r.phraseId)}
-                className="aac-btn w-full flex items-center justify-between px-4 py-3 rounded-xl surface-key border border-theme text-left"
-              >
-                <span className="text-primary font-bold text-lg">{r.phrase}</span>
-                <span className="text-muted text-xs ml-2 shrink-0">{r.category}</span>
-              </button>
-            ))}
-          </div>
+              key={i}
+              onClick={() => handlePhrase(r.phrase, r.phraseId)}
+              className="aac-btn w-full flex items-center justify-between px-4 py-3 rounded-xl surface-key border border-theme text-left"
+            >
+              <span className="text-primary font-bold text-lg">{r.phrase}</span>
+              <span className="text-muted text-xs ml-2 shrink-0">{r.category}</span>
+            </button>
+          ))}
         </div>
-        {Sidebar}
+        <KeyboardHandle />
       </PanelShell>
     );
   }
@@ -266,35 +294,33 @@ export default function CategoryPanel() {
     if (!step) return null;
     return (
       <PanelShell>
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-theme shrink-0">
-            <span className="text-primary font-bold text-xl">{seq.name} — {step.label}</span>
-            <span className="text-muted">{activeSequenceStep + 1}/{seq.steps.length}</span>
+        <TopBar title={`${seq.name} — ${step.label}`} />
+        <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
+          <div className="flex items-center justify-between px-2 py-1">
+            <span className="text-muted text-sm">{activeSequenceStep + 1} / {seq.steps.length}</span>
           </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {step.options.map((opt) => {
-              const localOpt = getPhraseText(opt.id, language, opt.text);
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => handlePhrase(localOpt)}
-                  className="aac-btn w-full px-4 py-4 rounded-xl surface-key border border-theme text-primary font-bold text-xl text-left"
-                >
-                  {localOpt}
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex gap-2 p-3 border-t border-theme shrink-0">
-            <button onClick={prevStep} disabled={activeSequenceStep === 0} className="aac-btn flex-1 py-3 rounded-xl surface-key border border-theme text-primary font-bold disabled:opacity-30">← {t('prev')}</button>
-            {activeSequenceStep < seq.steps.length - 1 ? (
-              <button onClick={() => nextStep(seq.steps.length)} className="aac-btn flex-1 py-3 rounded-xl surface-key border border-theme text-primary font-bold">{t('next_step')} →</button>
-            ) : (
-              <button onClick={finishOrdering} className="aac-btn flex-1 py-3 rounded-xl bg-[#4CAF50] text-white font-bold">{t('done')} ✓</button>
-            )}
-          </div>
+          {step.options.map((opt) => {
+            const localOpt = getPhraseText(opt.id, language, opt.text);
+            return (
+              <button
+                key={opt.id}
+                onClick={() => handlePhrase(localOpt)}
+                className="aac-btn w-full px-4 py-4 rounded-xl surface-key border border-theme text-primary font-bold text-xl text-left"
+              >
+                {localOpt}
+              </button>
+            );
+          })}
         </div>
-        {Sidebar}
+        <div className="flex gap-2 p-3 border-t border-theme shrink-0">
+          <button onClick={prevStep} disabled={activeSequenceStep === 0} className="aac-btn flex-1 py-3 rounded-xl surface-key border border-theme text-primary font-bold disabled:opacity-30">← {t('prev')}</button>
+          {activeSequenceStep < seq.steps.length - 1 ? (
+            <button onClick={() => nextStep(seq.steps.length)} className="aac-btn flex-1 py-3 rounded-xl surface-key border border-theme text-primary font-bold">{t('next_step')} →</button>
+          ) : (
+            <button onClick={finishOrdering} className="aac-btn flex-1 py-3 rounded-xl bg-[#4CAF50] text-white font-bold">{t('done')} ✓</button>
+          )}
+        </div>
+        <KeyboardHandle />
       </PanelShell>
     );
   }
@@ -307,91 +333,80 @@ export default function CategoryPanel() {
     const phrases = getRankedPhrasesForCategory(activeCategoryId).map((r) => r.phrase);
     const sequences = getSequencesForCategory(activeCategoryId);
 
-    // Build breadcrumb labels from the path
-    const breadcrumb = categoryPath.map((id) => {
-      const found = categories.find((c) => c.id === id);
-      return found ? (found.nameKey ? t(found.nameKey) : found.name) : id;
-    });
+    // Breadcrumb
+    const breadcrumb = categoryPath
+      .map((id) => {
+        const found = categories.find((c) => c.id === id);
+        return found ? (found.nameKey ? t(found.nameKey) : found.name) : id;
+      })
+      .join(' › ');
+
+    const title = `${cat?.icon ?? ''} ${cat?.nameKey ? t(cat.nameKey) : cat?.name ?? ''}${categoryPath.length > 1 ? ` · ${breadcrumb}` : ''}`;
 
     return (
       <PanelShell>
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Category header + breadcrumb */}
-          <div className="flex items-center gap-3 px-3 py-2 border-b border-theme shrink-0">
-            <span className="text-3xl">{cat?.icon}</span>
-            <div className="flex flex-col min-w-0">
-              <span className="text-primary font-bold text-xl leading-tight truncate">
-                {cat?.nameKey ? t(cat.nameKey) : cat?.name}
-              </span>
-              {breadcrumb.length > 1 && (
-                <span className="text-muted text-xs truncate">{breadcrumb.join(' › ')}</span>
-              )}
-            </div>
-          </div>
-          {sequences.length > 0 && (
-            <div className="flex gap-2 px-3 py-2 border-b border-theme shrink-0 overflow-x-auto">
-              {sequences.map((seq) => (
-                <button key={seq.id} onClick={() => startOrdering(seq.id)}
-                  className="aac-btn shrink-0 px-4 py-2 rounded-xl surface-key border border-theme text-primary font-bold">
-                  🛒 {seq.name}
-                </button>
-              ))}
-            </div>
-          )}
-          {/* Grid: subcategory folders first, then phrase tiles */}
-          <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
-            {/* Subcategory folder cards */}
-            {subcategories.map((sub) => (
-              <button
-                key={sub.id}
-                onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
-                className={`${FOLDER_TILE} ${TILE_MIN_H[gridSize]}`}
-              >
-                <span className="text-4xl leading-none">{sub.icon}</span>
-                <span className="leading-tight">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
+        <TopBar title={title} />
+        {sequences.length > 0 && (
+          <div className="flex gap-2 px-3 py-2 border-b border-theme shrink-0 overflow-x-auto">
+            {sequences.map((seq) => (
+              <button key={seq.id} onClick={() => startOrdering(seq.id)}
+                className="aac-btn shrink-0 px-4 py-2 rounded-xl surface-key border border-theme text-primary font-bold">
+                🛒 {seq.name}
               </button>
             ))}
-            {/* Phrase tiles */}
-            {phrases.map((p) => {
-              const localText = getPhraseText(p.id, language, p.text);
-              const firstWord = p.text.split(/\s+/)[0];
-              const colorBg = wordClassBg(firstWord);
-              return (
-                <PhraseTile
-                  key={p.id}
-                  phrase={localText}
-                  englishPhrase={p.text}
-                  onClick={() => handlePhrase(localText, p.id)}
-                  className={`aac-btn rounded-xl p-2 font-bold text-base select-none text-center border-2 ${TILE_MIN_H[gridSize]} ${colorBg}`}
-                />
-              );
-            })}
           </div>
+        )}
+        <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
+          {/* Subcategory folder cards */}
+          {subcategories.map((sub) => (
+            <button
+              key={sub.id}
+              onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
+              className={`${FOLDER_TILE} ${TILE_MIN_H[gridSize]}`}
+            >
+              <span className="text-4xl leading-none">{sub.icon}</span>
+              <span className="leading-tight">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
+            </button>
+          ))}
+          {/* Phrase tiles */}
+          {phrases.map((p) => {
+            const localText = getPhraseText(p.id, language, p.text);
+            const firstWord = p.text.split(/\s+/)[0];
+            const colorBg = wordClassBg(firstWord);
+            return (
+              <PhraseTile
+                key={p.id}
+                phrase={localText}
+                englishPhrase={p.text}
+                onClick={() => handlePhrase(localText, p.id)}
+                className={`aac-btn rounded-xl p-2 font-bold text-base select-none text-center border-2 ${TILE_MIN_H[gridSize]} ${colorBg}`}
+              />
+            );
+          })}
         </div>
-        {Sidebar}
+        <KeyboardHandle />
       </PanelShell>
     );
   }
 
-  // ── CATEGORY LIST — top-level white folder cards only ────────────────────────
+  // ── CATEGORY LIST — top-level white folder cards ─────────────────────────────
   const topLevelCategories = allCategories().filter((c) => !c.parentId);
   return (
     <PanelShell>
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
-          {topLevelCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => { tapFeedback(); selectCategory(cat.id); }}
-              className={`${FOLDER_TILE} ${TILE_MIN_H[gridSize]}`}
-            >
-              <span className="text-4xl leading-none">{cat.icon}</span>
-              <span className="leading-tight">{cat.nameKey ? t(cat.nameKey) : cat.name}</span>
-            </button>
-          ))}
-        </div>
+      <TopBar />
+      <div className={`grid ${GRID_COLS[gridSize]} gap-2 p-3 overflow-y-auto flex-1 min-h-0`}>
+        {topLevelCategories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => { tapFeedback(); selectCategory(cat.id); }}
+            className={`${FOLDER_TILE} ${TILE_MIN_H[gridSize]}`}
+          >
+            <span className="text-4xl leading-none">{cat.icon}</span>
+            <span className="leading-tight">{cat.nameKey ? t(cat.nameKey) : cat.name}</span>
+          </button>
+        ))}
       </div>
-      {Sidebar}
+      <KeyboardHandle />
     </PanelShell>
   );
 }
