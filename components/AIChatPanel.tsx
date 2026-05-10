@@ -4,6 +4,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { tapFeedback } from '@/services/feedback';
 import { askAI, translateAI } from '@/services/aiService';
+import { aacSpeak } from '@/services/aacSpeak';
 import { speak } from '@/services/speechService';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
