@@ -12,8 +12,15 @@ import WatchConnectivity
 final class WatchVocabSync: NSObject, ObservableObject, WCSessionDelegate {
 
     @Published private(set) var categories: [WatchCategory] = WatchCategory.offlineCore
-    @Published private(set) var language: String = "en-US"
+    @Published var language: String = Locale.preferredLanguages.first ?? "en-US"
     @Published private(set) var source: Source = .offline
+
+    /// Switch to a different display language and reload vocabulary.
+    func setLanguage(_ lang: String) {
+        language = lang
+        UserDefaults.standard.set(lang, forKey: "watchLanguage")
+        Task { await loadFromAPI(lang: lang) }
+    }
 
     enum Source { case offline, companion, cloud }
 
@@ -21,17 +28,24 @@ final class WatchVocabSync: NSObject, ObservableObject, WCSessionDelegate {
 
     override init() {
         super.init()
+        // Restore last chosen language
+        if let saved = UserDefaults.standard.string(forKey: "watchLanguage") {
+            language = saved
+        }
         if WCSession.isSupported() {
             WCSession.default.delegate = self
             WCSession.default.activate()
         }
-        Task { await loadFromAPI() }
+        Task { await loadFromAPI(lang: language) }
     }
 
     // MARK: - Load from web app API (standalone path)
 
-    func loadFromAPI() async {
-        guard let url = URL(string: "\(apiBase)/vocabulary") else { return }
+    func loadFromAPI(lang: String? = nil) async {
+        let targetLang = lang ?? language
+        var components = URLComponents(string: "\(apiBase)/vocabulary")
+        components?.queryItems = [URLQueryItem(name: "lang", value: targetLang)]
+        guard let url = components?.url else { return }
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             let vocab = try JSONDecoder().decode(VocabResponse.self, from: data)

@@ -44,24 +44,23 @@ struct AACVocab {
     ]
 }
 
-/// Large-picture AAC for Apple Watch — designed for children.
+/// AAC for Apple Watch — 2-column grid, designed for children.
 ///
-/// One big picture per screen. Swipe left/right (or Digital Crown) to browse.
-/// Single tap speaks the word + sends to iPhone.
-/// Emergency button always accessible via red side button / complication.
+/// Two cards always visible (Yes | No at top). Scroll with Digital Crown
+/// to reach More, Help, Water, etc. Single tap speaks + sends to iPhone.
+/// Emergency button pinned to top-right at all times.
 ///
 /// UX rationale:
-///   - Kids cannot use the Watch keyboard or Scribble
-///   - Fine motor skills limited → needs the largest possible tap target
-///   - One word at a time → no cognitive overload
-///   - Tap = speak immediately (no confirm step)
+///   - 2-column grid doubles information density vs single-card swipe
+///   - Yes/No always at positions [0][1] → no hunting required
+///   - Cards large enough (~half-screen width) to tap with coarse motor
+///   - Digital Crown scroll is familiar, no swipe gesture needed
 struct WatchPictogramCards: View {
     @EnvironmentObject var tts: WatchTTS
     @EnvironmentObject var emergency: WatchEmergencyManager
     @EnvironmentObject var session: WatchAISession
     @EnvironmentObject var vocab: WatchVocabSync
 
-    // Use synced phrases from web app; fall back to offline core
     private var allPhrases: [AACPhrase] {
         let synced = vocab.categories.flatMap { cat in
             cat.phrases.map { p in
@@ -80,125 +79,140 @@ struct WatchPictogramCards: View {
         }
     }
 
-    @State private var currentIndex = 0
+    private let columns = [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)]
+
+    // Supported languages — BCP-47 code + display flag + short name
+    private let supportedLanguages: [(code: String, flag: String, name: String)] = [
+        ("en-US", "🇺🇸", "EN"), ("es-ES", "🇪🇸", "ES"), ("fr-FR", "🇫🇷", "FR"),
+        ("de-DE", "🇩🇪", "DE"), ("ro-RO", "🇷🇴", "RO"), ("ru-RU", "🇷🇺", "RU"),
+        ("uk-UA", "🇺🇦", "UA"), ("pt-BR", "🇧🇷", "PT"), ("ja-JP", "🇯🇵", "JA"),
+        ("zh-CN", "🇨🇳", "ZH"), ("ar-SA", "🇸🇦", "AR"),
+    ]
+
+    @State private var showLangPicker = false
+
+    private var currentFlag: String {
+        supportedLanguages.first { $0.code == vocab.language }?.flag ?? "🌐"
+    }
 
     var body: some View {
-        ZStack {
-            // Main swipeable card
-            TabView(selection: $currentIndex) {
-                ForEach(allPhrases.indices, id: \.self) { i in
-                    PictogramCard(phrase: allPhrases[i]) {
-                        tts.speak(allPhrases[i].label)
-                        session.sendPhrase(allPhrases[i].label)
-                        WKInterfaceDevice.current().play(.click)
-                    }
-                    .tag(i)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-
-            // Pager dots at bottom
-            VStack {
-                Spacer()
-                HStack(spacing: 4) {
-                    ForEach(0..<min(allPhrases.count, 8), id: \.self) { i in
-                        Circle()
-                            .fill(i == currentIndex % 8 ? Color.white : Color.white.opacity(0.3))
-                            .frame(width: 4, height: 4)
+        ZStack(alignment: .topTrailing) {
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 6) {
+                    ForEach(allPhrases) { phrase in
+                        PairCard(phrase: phrase) {
+                            tts.speak(phrase.label)
+                            session.sendPhrase(phrase.label)
+                            WKInterfaceDevice.current().play(.click)
+                        }
                     }
                 }
-                .padding(.bottom, 2)
+                .padding(.horizontal, 4)
+                .padding(.top, 32)   // leave room for top buttons
+                .padding(.bottom, 8)
             }
 
-            // SOS overlay — top-right corner, always accessible
-            VStack {
-                HStack {
-                    Spacer()
+            // Top-right button row: language flag | SOS
+            HStack(spacing: 4) {
+                // Language selector
+                Button { showLangPicker = true } label: {
+                    Text(currentFlag)
+                        .font(.system(size: 13))
+                        .frame(width: 24, height: 24)
+                        .background(Color.white.opacity(0.15))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+
+                // SOS — always reachable
+                Button {
+                    emergency.trigger(phrase: "Help me", severity: .critical)
+                    tts.speak("Help!")
+                    WKInterfaceDevice.current().play(.notification)
+                } label: {
+                    Image(systemName: "sos")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 24, height: 24)
+                        .background(Color.red)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.trailing, 2)
+            .padding(.top, 2)
+        }
+        .sheet(isPresented: $showLangPicker) {
+            List {
+                ForEach(supportedLanguages, id: \.code) { lang in
                     Button {
-                        emergency.trigger(phrase: "Help me", severity: .critical)
-                        tts.speak("Help!")
-                        WKInterfaceDevice.current().play(.notification)
+                        vocab.setLanguage(lang.code)
+                        showLangPicker = false
                     } label: {
-                        Image(systemName: "sos")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(width: 28, height: 28)
-                            .background(Color.red)
-                            .clipShape(Circle())
+                        HStack {
+                            Text("\(lang.flag) \(lang.name)")
+                                .font(.system(size: 15))
+                            Spacer()
+                            if vocab.language == lang.code {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.green)
+                            }
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .padding(.trailing, 2)
-                    .padding(.top, 2)
                 }
-                Spacer()
             }
+            .navigationTitle("Language")
         }
     }
 }
 
-// MARK: - Single full-screen picture card
+// MARK: - Compact 2-column card (replaces full-screen PictogramCard)
 
-struct PictogramCard: View {
+struct PairCard: View {
     let phrase: AACPhrase
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 6) {
-                // Picture — fills most of the Watch screen
+            VStack(spacing: 4) {
                 if let url = phrase.arasaacURL {
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let img):
                             img.resizable()
                                .scaledToFit()
-                               .frame(maxWidth: .infinity, maxHeight: 100)
-                               .padding(.horizontal, 8)
-                        case .failure:
-                            LargeSFSymbol(name: phrase.sfSymbol, color: phrase.color)
-                        case .empty:
-                            LargeSFSymbol(name: phrase.sfSymbol, color: phrase.color)
-                                .overlay(ProgressView().scaleEffect(0.5), alignment: .bottom)
-                        @unknown default:
-                            LargeSFSymbol(name: phrase.sfSymbol, color: phrase.color)
+                               .frame(maxWidth: .infinity, maxHeight: 52)
+                        default:
+                            Image(systemName: phrase.sfSymbol)
+                                .font(.system(size: 32))
+                                .foregroundColor(phrase.color)
+                                .frame(maxWidth: .infinity, maxHeight: 52)
                         }
                     }
                 } else {
-                    LargeSFSymbol(name: phrase.sfSymbol, color: phrase.color)
+                    Image(systemName: phrase.sfSymbol)
+                        .font(.system(size: 32))
+                        .foregroundColor(phrase.color)
+                        .frame(maxWidth: .infinity, maxHeight: 52)
                 }
-
-                // Label — large, bold, readable on small screen
                 Text(phrase.label)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundColor(.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-                    .padding(.horizontal, 4)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(phrase.color.opacity(0.12))
-            .cornerRadius(14)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, minHeight: 80)
+            .background(phrase.color.opacity(0.15))
+            .cornerRadius(12)
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 2)
-        .padding(.vertical, 2)
         .accessibilityLabel("Say: \(phrase.label)")
-        .accessibilityHint("Tap to speak")
     }
 }
 
-struct LargeSFSymbol: View {
-    let name: String
-    let color: Color
-    var body: some View {
-        Image(systemName: name)
-            .font(.system(size: 60))
-            .foregroundColor(color)
-            .frame(maxWidth: .infinity, maxHeight: 100)
-    }
-}
-
-// MARK: - Root view: large pictogram cards + emergency overlay
+// MARK: - Root view: 2-column grid + emergency overlay
 
 struct WatchRootView: View {
     @EnvironmentObject var session: WatchAISession
