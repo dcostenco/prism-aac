@@ -22,6 +22,10 @@ interface UIState {
   openCaregiver: () => void;
   openAIChat: () => void;
   openAACChat: () => void;
+  /** Open AAC Chat panel pre-selecting a contact by their phone or display name.
+   *  Used by the Reply button on incoming schedule messages. Looks up the first
+   *  contact whose phone or name contains `senderKey` (case-insensitive). */
+  replyToSender: (senderKey: string) => void;
   openSchedule: () => void;
   openGames: () => void;
   openMarketplace: () => void;
@@ -93,6 +97,20 @@ export const useUIStore = create<UIState>()((set) => ({
   openCaregiver: () => set((s) => ({ sidePanel: s.sidePanel === 'caregiver' ? 'none' : 'caregiver' })),
   openAIChat: () => set((s) => ({ sidePanel: s.sidePanel === 'ai-chat' ? 'none' : 'ai-chat' as SidePanelView })),
   openAACChat: () => set((s) => ({ sidePanel: s.sidePanel === 'aac-chat' ? 'none' : 'aac-chat' as SidePanelView, activeContactId: null })),
+  replyToSender: (senderKey) => {
+    // Dynamically import contactsStore to avoid circular dep at module level.
+    // Find the first contact whose phone or displayName matches senderKey.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { useContactsStore } = require('@/store/contactsStore') as { useContactsStore: { getState: () => { contacts: Array<{ id: string; phone?: string; displayName?: string }> } } };
+    const contacts = useContactsStore.getState().contacts;
+    const key = senderKey.toLowerCase().replace(/\s+/g, '');
+    const match = contacts.find((c) => {
+      const phone = (c.phone ?? '').replace(/\s+/g, '');
+      const name  = (c.displayName ?? '').toLowerCase().replace(/\s+/g, '');
+      return phone.includes(key) || key.includes(phone) || name.includes(key) || key.includes(name);
+    });
+    set({ sidePanel: 'aac-chat', activeContactId: match?.id ?? null });
+  },
   openSchedule: () => set((s) => ({ sidePanel: s.sidePanel === 'schedule' ? 'none' : 'schedule' as SidePanelView })),
   openGames: () => set((s) => ({ sidePanel: s.sidePanel === 'games' ? 'none' : 'games' as SidePanelView })),
   openMarketplace: () => set((s) => ({ sidePanel: s.sidePanel === 'marketplace' ? 'none' : 'marketplace' as SidePanelView })),

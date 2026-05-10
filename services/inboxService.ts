@@ -24,10 +24,12 @@
 import { useScheduleStore } from '@/store/scheduleStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useMessageStore } from '@/store/messageStore';
 import { portalFetch } from '@/services/portalClient';
 import { sanitizeString, SAFE_LIMITS } from '@/lib/safeStrings';
 import { reportSwallowedError } from '@/lib/devLog';
 import { playTimerRing } from '@/services/feedback';
+import { aacSpeak } from '@/services/aacSpeak';
 
 const reportPollerError = reportSwallowedError('inboxService.pollOnce');
 
@@ -137,15 +139,34 @@ async function pollOnce(): Promise<void> {
       const r = msg.receivedAt;
       if (typeof r === 'number' && Number.isFinite(r) && r > maxSeen && r <= MAX_SINCE_MS()) maxSeen = r;
     }
-    // Per-poll alarm chime (NOT per-message — a 50-message backlog
-    // would otherwise spam the AAC user with 50 chimes). Gated on the
-    // notificationsEnabled setting (default true) so caregivers can
-    // mute alarms in quiet contexts (school, sleeping). User
-    // requirement 2026-05-07: "each new message will produce alarm".
+    // Per-poll announcement + chime. Gated on notificationsEnabled.
+    // For ≤3 messages: speak each one ("New message from Mom: are you okay?")
+    // For >3: speak a summary ("3 new messages") to avoid overwhelming the user.
     if (deliveredThisBatch > 0) {
-      const notificationsEnabled = useSettingsStore.getState().notificationsEnabled ?? true;
-      if (notificationsEnabled) {
+      const { notificationsEnabled, speechRate, speechVolume } = useSettingsStore.getState();
+      const { soundEnabled } = useMessageStore.getState();
+      if (notificationsEnabled !== false && soundEnabled) {
         playTimerRing().catch(() => { /* AudioContext may be suspended pre-gesture */ });
+        // Speak after a brief chime gap so TTS doesn't collide with the ring.
+        const newMsgs = rawMessages
+          .slice(0, deliveredThisBatch)
+          .map((m) => m as IncomingMessage)
+          .filter((m) => m.sender && m.text);
+        setTimeout(() => {
+          if (newMsgs.length <= 3) {
+            // Announce each message individually, queued by sentence separator.
+            const announcement = newMsgs
+              .map((m) => {
+                const sender = sanitizeString(m.sender, SAFE_LIMITS.name);
+                const text = sanitizeString(m.text, SAFE_LIMITS.messageText).slice(0, 120);
+                return `New message from ${sender}: ${text}`;
+              })
+              .join('. ');
+            aacSpeak(announcement, speechRate, speechVolume);
+          } else {
+            aacSpeak(`${deliveredThisBatch} new messages`, speechRate, speechVolume);
+          }
+        }, 800); // 800ms after chime
       }
     }
     // Prefer serverTime over client clock to avoid clock-skew gaps.

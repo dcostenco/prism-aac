@@ -276,7 +276,7 @@ function FirstThenBoard({
 /* ── Main SchedulePanel ── */
 export default function SchedulePanel() {
   const { t } = useT();
-  const { sidePanel, closeSidePanel } = useUIStore();
+  const { sidePanel, closeSidePanel, replyToSender } = useUIStore();
   const profile = useAuthStore((s) => s.profile);
   const {
     tasks, rewards, timerSeconds,
@@ -653,6 +653,22 @@ export default function SchedulePanel() {
                   <span className="text-2xl shrink-0 motion-safe:transition-transform motion-safe:duration-300">
                     {task.done ? '✅' : '⬜'}
                   </span>
+                  {task.kind === 'message' && task.sender && (
+                    <button
+                      type="button"
+                      className="aac-btn min-w-[44px] min-h-[44px] rounded-lg bg-[#2196F3] text-white text-base border-0 ml-1 font-bold"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        tapFeedback();
+                        replyToSender(task.sender!);
+                        closeSidePanel();
+                      }}
+                      aria-label={`Reply to ${task.sender}`}
+                      title={`Reply to ${task.sender}`}
+                    >
+                      ↩
+                    </button>
+                  )}
                   {isPaid && (
                     <button
                       type="button"
