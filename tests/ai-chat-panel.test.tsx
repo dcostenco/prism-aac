@@ -140,8 +140,12 @@ describe('AIChatPanel — single-state layout', () => {
 });
 
 // ── Translator mode (regression: 821e321 broke TTS for all modes) ──────────
+// Behavioural tests below are the SPEC for the upcoming translator mode
+// reimplementation. They are skipped while AIChatPanel is at v1.5.0
+// baseline (no translator mode). Un-skip when translator mode is
+// reimplemented and confirmed working with a live Vercel build verify.
 describe('AIChatPanel — translator mode', () => {
-  it('shows 🔄 header and language pair when language !== outputLanguage', () => {
+  it.skip('shows 🔄 header and language pair when language !== outputLanguage', () => {
     useSettingsStore.setState({ language: 'en', outputLanguage: 'ru' });
     render(<AIChatPanel />);
     const text = screen.getByTestId('ai-chat-panel').textContent ?? '';
@@ -157,7 +161,7 @@ describe('AIChatPanel — translator mode', () => {
     expect(text).not.toMatch(/🔄/);
   });
 
-  it('translator mode: translateAI called, askAI NOT called on submit', async () => {
+  it.skip('translator mode: translateAI called, askAI NOT called on submit', async () => {
     const { askAI, translateAI } = await import('@/services/aiService');
     const { speak } = await import('@/services/speechService');
     useSettingsStore.setState({ language: 'en', outputLanguage: 'ru' });
