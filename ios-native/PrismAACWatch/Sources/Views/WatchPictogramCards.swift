@@ -136,86 +136,72 @@ struct WatchPictogramCards: View {
                     }
                 }
                 .padding(.horizontal, 4)
-                .padding(.top, 36)   // leave room for top bar
+                .padding(.top, 48)   // leave room for 44pt top bar
                 .padding(.bottom, 8)
             }
 
-            // Top bar: [EN→RU pill] [🎙 mic] [💬 AI] [SOS]
-            HStack(spacing: 4) {
-                // Language pill
+            // Top bar — 3 buttons only, each ≥ 44pt (Apple HIG minimum).
+            // Mic is inside the chat sheet; AI chat is inside the 💬 sheet.
+            HStack(spacing: 0) {
+                // Language pill — expands to fill space
                 Button {
                     pickingInput = true; showLangPicker = true
                 } label: {
                     Text(langPillLabel)
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.18))
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .frame(minWidth: 44, minHeight: 26)
-
-                // Microphone — shows Watch dictation sheet → translate → speak
-                Button {
-                    dictationText = ""
-                    showDictation = true
-                } label: {
-                    Image(systemName: "mic")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 26, height: 26)
+                        .frame(maxWidth: .infinity, minHeight: 44)
                         .background(Color.white.opacity(0.15))
-                        .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
 
-                // Inbox / Notifications
-                Button { inbox.requestPermissionIfNeeded(); showInbox = true; inbox.markAllRead() } label: {
+                // Inbox / Notifications — badge overlaid
+                Button {
+                    inbox.requestPermissionIfNeeded()
+                    showInbox = true
+                    inbox.markAllRead()
+                } label: {
                     ZStack(alignment: .topTrailing) {
                         Image(systemName: "bell.fill")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.system(size: 17, weight: .bold))
                             .foregroundColor(.white)
-                            .frame(width: 26, height: 26)
-                            .background(Color.orange.opacity(0.5))
-                            .clipShape(Circle())
+                            .frame(width: 44, height: 44)
+                            .background(Color.orange.opacity(0.55))
                         if inbox.unreadCount > 0 {
                             Text(inbox.unreadCount > 9 ? "9+" : "\(inbox.unreadCount)")
-                                .font(.system(size: 7, weight: .bold))
+                                .font(.system(size: 8, weight: .bold))
                                 .foregroundColor(.white)
-                                .padding(2)
+                                .padding(.horizontal, 3)
+                                .padding(.vertical, 1)
                                 .background(Color.red)
-                                .clipShape(Circle())
-                                .offset(x: 5, y: -5)
+                                .clipShape(Capsule())
+                                .offset(x: 2, y: -2)
                         }
                     }
                 }
                 .buttonStyle(.plain)
 
-                // Send Message / AI Chat
+                // Messages / AI Chat — also houses the mic button inside
                 Button { showAIChat = true } label: {
                     Image(systemName: "bubble.left.and.bubble.right.fill")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 26, height: 26)
-                        .background(Color.blue.opacity(0.4))
-                        .clipShape(Circle())
+                        .frame(width: 44, height: 44)
+                        .background(Color.blue.opacity(0.5))
                 }
                 .buttonStyle(.plain)
 
-                // SOS — always reachable
+                // SOS — always reachable, largest tap target
                 Button {
                     emergency.trigger(phrase: "Help me", severity: .critical)
                     tts.speak("Help!")
                     WKInterfaceDevice.current().play(.notification)
                 } label: {
-                    Image(systemName: "sos")
-                        .font(.system(size: 11, weight: .bold))
+                    Text("SOS")
+                        .font(.system(size: 13, weight: .black, design: .rounded))
                         .foregroundColor(.white)
-                        .frame(width: 28, height: 28)
+                        .frame(width: 44, height: 44)
                         .background(Color.red)
-                        .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
             }
@@ -540,12 +526,14 @@ struct WatchAIChatView: View {
     let tts: WatchTTS
     @EnvironmentObject var session: WatchAISession
     @EnvironmentObject var inbox: WatchInbox
-    @State private var tab         = 0   // 0 = Send Message, 1 = AI Chat
+    @State private var tab          = 0
     @State private var contactQuery = ""
-    @State private var msgText     = ""
+    @State private var msgText      = ""
     @State private var aiMessages: [(role: String, text: String)] = []
-    @State private var isWaitingAI = false
+    @State private var isWaitingAI  = false
     @State private var sendStatus: String? = nil
+    @State private var showDictation = false
+    @State private var dictationText = ""
 
     // Contacts synced from iPhone (forwarded via WatchConnectivity)
     // For MVP: show a few hardcoded placeholders until contacts sync
@@ -592,6 +580,23 @@ struct WatchAIChatView: View {
                 }
             }
             .navigationTitle(tab == 0 ? "Send Message" : "AI + Translate")
+        }
+        .sheet(isPresented: $showDictation) {
+            NavigationView {
+                VStack(spacing: 10) {
+                    Image(systemName: "mic.circle.fill").font(.system(size: 36)).foregroundColor(.blue)
+                    Text("Speak or type").font(.system(size: 13)).foregroundColor(.secondary)
+                    TextField("…", text: $dictationText).font(.system(size: 14)).multilineTextAlignment(.center)
+                    Button("Use this text") {
+                        msgText = dictationText; dictationText = ""; showDictation = false
+                    }
+                    .disabled(dictationText.isEmpty)
+                    .buttonStyle(.borderedProminent).tint(.blue)
+                }
+                .padding()
+                .navigationTitle("Dictate")
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showDictation = false } } }
+            }
         }
     }
 
@@ -724,6 +729,18 @@ struct WatchAIChatView: View {
                 .padding(.horizontal, 4)
             }
             HStack(spacing: 6) {
+                // Mic moved from top bar into chat sheet
+                Button {
+                    showDictation = true; dictationText = ""
+                } label: {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white)
+                        .frame(width: 32, height: 32)
+                        .background(Color.white.opacity(0.2))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
                 TextField("Ask AI…", text: $msgText)
                     .font(.system(size: 12))
                 Button {
