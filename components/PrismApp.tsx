@@ -434,11 +434,19 @@ export default function PrismApp() {
               All other modes: CategoryPanel stacks above keyboard as before. */}
           {sidePanel !== 'math' && <CategoryPanel />}
           {showQwerty && (
+            // flex-row so the sidebar column doesn't get covered by keyboard keys.
+            // In category mode the CategoryPanel sidebar is clamp(72px,9vw,96px) wide;
+            // the spacer below mirrors it so the keyboard stops at the same x-boundary.
             <div
-              className="flex-1 flex flex-col min-h-[clamp(280px,38svh,440px)]"
+              className="flex flex-row min-h-[clamp(280px,38svh,440px)]"
               data-testid="keyboard-shell"
             >
-              <Keyboard />
+              <div className="flex-1 flex flex-col">
+                <Keyboard />
+              </div>
+              {isCategoryMode && (
+                <div className="w-[clamp(72px,9vw,96px)] shrink-0 bg-[#3e2a1a] border-l-2 border-[#5c3d25]" />
+              )}
             </div>
           )}
           <AlertOverlay />
