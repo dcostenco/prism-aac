@@ -3,10 +3,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { tapFeedback } from '@/services/feedback';
-import { askAI, translateAI } from '@/services/aiService';
+import { askAI } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
-import { speak } from '@/services/speechService';
-import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
@@ -33,8 +31,7 @@ interface ChatMessage {
 export default function AIChatPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { text, appendText, autoSpeak, soundEnabled } = useMessageStore();
-  const { speechRate, speechVolume, language, outputLanguage } = useSettingsStore();
-  const isTranslatorMode = language !== outputLanguage;
+  const { speechRate, speechVolume, language } = useSettingsStore();
   const { t, ttsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -118,27 +115,14 @@ export default function AIChatPanel() {
     };
 
     try {
-      if (isTranslatorMode) {
-        await translateAI(question, language, outputLanguage, (delta) => {
-          buffer += delta;
-          if (!scheduled) { scheduled = true; requestAnimationFrame(flush); }
-        });
-        flush();
-        // Speak the translation directly in the output language.
-        // speak() bypasses aacSpeak's offline re-translate which would treat
-        // the already-translated text as input-language — wrong direction.
-        const finalText = buffer.trim();
-        if (finalText && soundEnabled) {
-          speak(finalText, speechRate, speechVolume, getTTSCode(outputLanguage as SupportedLanguage), 'auto', true).catch(() => {});
+      await askAI(question, undefined, (delta) => {
+        buffer += delta;
+        if (!scheduled) {
+          scheduled = true;
+          requestAnimationFrame(flush);
         }
-      } else {
-        await askAI(question, undefined, (delta) => {
-          buffer += delta;
-          if (!scheduled) { scheduled = true; requestAnimationFrame(flush); }
-        }, language);
-        flush();
-        // Regular AI chat: no auto-speak — user taps lines to insert/speak them.
-      }
+      }, language);
+      flush();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('could_not_reach_ai');
       setMessages((prev) => {
@@ -148,7 +132,7 @@ export default function AIChatPanel() {
       });
     }
     setLoading(false);
-  }, [loading, language, outputLanguage, isTranslatorMode, soundEnabled, speechRate, speechVolume, t]);
+  }, [loading, language, t]);
 
   // Register / clear the Speak-button intercept for this panel's lifetime.
   useEffect(() => {
@@ -208,11 +192,7 @@ export default function AIChatPanel() {
     >
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 border-b border-theme shrink-0">
-        <span className="text-primary font-bold text-xl">
-          {isTranslatorMode
-            ? `🔄 ${language.toUpperCase()} → ${outputLanguage.toUpperCase()}`
-            : `✨ ${t('ai_chat_title')}`}
-        </span>
+        <span className="text-primary font-bold text-xl">✨ {t('ai_chat_title')}</span>
         <div className="flex items-center gap-2">
           {voiceSupported && (
             <button
@@ -243,12 +223,8 @@ export default function AIChatPanel() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
         {messages.length === 0 && !loading && (
           <div className="h-full flex flex-col items-center justify-center text-center gap-3 text-muted px-6">
-            <span className="text-5xl">{isTranslatorMode ? '🔄' : '✨'}</span>
-            <p className="text-lg font-medium">
-              {isTranslatorMode
-                ? `Translator: ${language.toUpperCase()} → ${outputLanguage.toUpperCase()}`
-                : t('ai_chat_title')}
-            </p>
+            <span className="text-5xl">✨</span>
+            <p className="text-lg font-medium">{t('ai_chat_title')}</p>
             <p className="text-base opacity-70">
               {listening
                 ? interim || t('type_or_speak')
