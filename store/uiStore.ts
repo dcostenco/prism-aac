@@ -83,11 +83,11 @@ export const useUIStore = create<UIState>()((set) => ({
     //                         view; May 2026 user report Image #8.)
     //   • 'ordering'        → 'categories'  (same — escape ordering flow)
     //   • anything else     → 'categories'  (open at top level)
-    if (s.sidePanel === 'categories') return { sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null };
+    if (s.sidePanel === 'categories') return { sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: false };
     if (s.sidePanel === 'category-detail' || s.sidePanel === 'ordering') {
-      return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [], activeSequenceId: null };
+      return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: false };
     }
-    return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [] };
+    return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [], categoryKeyboardOpen: false };
   }),
   openMath: () => set((s) => ({ sidePanel: s.sidePanel === 'math' ? 'none' : 'math' })),
   openCaregiver: () => set((s) => ({ sidePanel: s.sidePanel === 'caregiver' ? 'none' : 'caregiver' })),
@@ -115,7 +115,7 @@ export const useUIStore = create<UIState>()((set) => ({
     if (newPath.length === 0) return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [] };
     return { activeCategoryId: newPath[newPath.length - 1], categoryPath: newPath };
   }),
-  backToCategories: () => set({ sidePanel: 'categories', activeCategoryId: null, categoryPath: [], activeSequenceId: null }),
+  backToCategories: () => set({ sidePanel: 'categories', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: false }),
   startOrdering: (sequenceId) => set({ sidePanel: 'ordering', activeSequenceId: sequenceId, activeSequenceStep: 0 }),
   nextStep: (maxSteps) => set((s) => ({ activeSequenceStep: Math.min(s.activeSequenceStep + 1, maxSteps - 1) })),
   prevStep: () => set((s) => ({ activeSequenceStep: Math.max(0, s.activeSequenceStep - 1) })),

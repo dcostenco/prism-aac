@@ -224,7 +224,7 @@ export default function CategoryPanel() {
   // ⌨️ is FIRST — always visible even when keyboard is open and shrinks the panel.
   // No flex-1 spacer: all buttons compact from top so nothing gets clipped.
   const sidebarJsx = (showCoreWords = false) => (
-    <nav className="w-[88px] shrink-0 bg-[#3e2a1a] flex flex-col border-l-2 border-[#5c3d25] overflow-y-auto overflow-x-hidden">
+    <nav className="w-[96px] shrink-0 bg-[#3e2a1a] flex flex-col border-l-2 border-[#5c3d25] overflow-y-auto overflow-x-hidden">
       {/* Keyboard toggle — ALWAYS FIRST so it's always reachable */}
       <SidebarBtn icon="⌨️" label={categoryKeyboardOpen ? 'Hide KB' : 'Keyboard'} onClick={toggleCategoryKeyboard} active={categoryKeyboardOpen} />
       {/* Search */}
@@ -232,7 +232,7 @@ export default function CategoryPanel() {
       {/* Navigation */}
       {!isHome && <SidebarBtn icon="←" label={isDeep ? 'Up' : 'Go back'} onClick={handleBack} />}
       <SidebarBtn icon="🏠" label="Home" onClick={closeSidePanel} />
-      {showCoreWords && <SidebarBtn icon="⌂" label="Core words" onClick={backToCategories} />}
+      {showCoreWords && <SidebarBtn icon="⌂" label="Words" onClick={backToCategories} />}
       {/* Scroll helpers — lower priority, appear below nav */}
       {!isHome && (
         <>
