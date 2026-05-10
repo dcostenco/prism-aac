@@ -410,13 +410,10 @@ export default function PrismApp() {
               (banner / message / predictions / categories) so the
               cell-grid canvas + bigger keyboards have room to breathe.
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
-          {sidePanel !== 'math' && <GreetingBanner />}
-          {sidePanel !== 'math' && <MessageBar />}
-          {/* Hide PredictionBar in: AI chat, math, and category mode.
-              Category mode: on small landscape phones the prediction bar
-              consumes ~80px that the category tile grid desperately needs.
-              The prediction bar is also redundant in category mode — the
-              user picks phrases from the grid, not by typing. */}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <GreetingBanner />}
+          {/* In AI Chat mode the entire panel IS the input — MessageBar and
+              PredictionBar are redundant and take space away from the chat. */}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <MessageBar />}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />

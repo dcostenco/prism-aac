@@ -8,17 +8,17 @@ import { aacSpeak } from '@/services/aacSpeak';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
+import { registerAISubmit, clearAISubmit } from '@/services/aiChatBridge';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 
 /**
- * AI Chat — inline panel docked above the keyboard.
+ * AI Chat — full-panel chat when sidePanel === 'ai-chat'.
  *
- * Renders as a flex child between PredictionBar and Keyboard, taking all the
- * remaining vertical space. The user keeps typing on the same soft keyboard
- * (no separate input field), text appears in the shared MessageBar, and the
- * AI conversation occupies the panel above. Tapping any AI line copies it to
- * the message bar (preserves authorship — Valencia et al., CHI 2023).
+ * The user types on the shared keyboard, then presses the green Speak
+ * button (which is intercepted via aiChatBridge) to send. No separate
+ * "Ask AI" button — the Speak key IS the send key in this mode.
+ * All available space belongs to the conversation.
  */
 
 interface ChatMessage {
@@ -53,7 +53,63 @@ export default function AIChatPanel() {
     [appendText, autoSpeak, soundEnabled, speechRate, speechVolume],
   );
 
-  // Stop listening when modal closes.
+  const handleAsk = useCallback(async () => {
+    const question = useMessageStore.getState().text.trim();
+    if (!question || loading) return;
+    tapFeedback();
+
+    // Clear the message bar immediately — next typed text is the follow-up.
+    useMessageStore.getState().setText('');
+
+    setMessages((m) => [
+      ...m,
+      { role: 'user', text: question },
+      { role: 'ai', text: '', lines: [] },
+    ]);
+    setLoading(true);
+
+    let buffer = '';
+    let scheduled = false;
+    const flush = () => {
+      scheduled = false;
+      const t = buffer;
+      const lines = t.split(/\n+/).filter((l) => l.trim());
+      setMessages((prev) => {
+        const updated = prev.slice();
+        updated[updated.length - 1] = { role: 'ai', text: t, lines };
+        return updated;
+      });
+    };
+
+    try {
+      await askAI(question, undefined, (delta) => {
+        buffer += delta;
+        if (!scheduled) {
+          scheduled = true;
+          requestAnimationFrame(flush);
+        }
+      }, language);
+      flush();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : t('could_not_reach_ai');
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: 'ai', text: msg, lines: [msg] };
+        return updated;
+      });
+    }
+    setLoading(false);
+  }, [loading, language, t]);
+
+  // Register / clear the Speak-button intercept for this panel's lifetime.
+  useEffect(() => {
+    if (sidePanel === 'ai-chat') {
+      registerAISubmit(handleAsk);
+    }
+    return () => clearAISubmit();
+  }, [sidePanel, handleAsk]);
+
+  // Stop voice when panel closes.
   useEffect(() => {
     if (sidePanel !== 'ai-chat' && voiceRef.current) {
       voiceRef.current.stop();
@@ -94,101 +150,24 @@ export default function AIChatPanel() {
     }
   };
 
-  const handleAsk = async () => {
-    const question = text.trim();
-    if (!question) return;
-    tapFeedback();
-
-    setMessages((m) => [
-      ...m,
-      { role: 'user', text: question },
-      { role: 'ai', text: '', lines: [] },
-    ]);
-    setLoading(true);
-
-    // Accumulate streamed text outside React state and flush at most once per
-    // animation frame. Avoids 1 setState per chunk (the prior pattern caused
-    // hundreds of full-tree re-renders on long responses).
-    let buffer = '';
-    let scheduled = false;
-    const flush = () => {
-      scheduled = false;
-      const text = buffer;
-      const lines = text.split(/\n+/).filter((l) => l.trim());
-      setMessages((prev) => {
-        const updated = prev.slice();
-        updated[updated.length - 1] = { role: 'ai', text, lines };
-        return updated;
-      });
-    };
-
-    try {
-      await askAI(question, undefined, (delta) => {
-        buffer += delta;
-        if (!scheduled) {
-          scheduled = true;
-          requestAnimationFrame(flush);
-        }
-      }, language);
-      flush();
-      // Preserve the user's typed question in the message bar — they may
-      // want to edit it, speak it via the Speak button, or compose a
-      // follow-up. Earlier behaviour cleared the bar on completion which
-      // killed the AAC user's typing context (verified-shipping note:
-      // user reported "AI keyboard should be preserved" after seeing
-      // input wiped post-Ask).
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : t('could_not_reach_ai');
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1] = { role: 'ai', text: msg, lines: [msg] };
-        return updated;
-      });
-    }
-    setLoading(false);
-  };
-
-  // FIFTH pass — auth gate REMOVED 2026-05-07 per user feedback "ai
-  // tutor should be enabled all pages" + "no stubs no hardcoding".
-  // The `configured` profile check used to short-circuit the entire
-  // panel into an "AI Chat requires Synalux account" placeholder.
-  // Now the panel renders for everyone; askAI handles 401 / errors
-  // gracefully via the existing catch handler.
-  //
-  // Three layout states (refined 2026-05-07 from user Image #19):
-  //   1. No messages + no typed text: unmount entirely, qwerty fills.
-  //   2. No messages + has text:      slim footer-only mode — Ask AI
-  //      button + mic + ✕, no header strip, no empty scroll area.
-  //      Earlier layout had a flex-[3] panel with an empty scroll
-  //      area that compressed the qwerty to two cramped rows the
-  //      moment the user typed anything ("ai chat layout is broken..
-  //      keyboard should be full without ai chat lines").
-  //   3. Has messages or loading: full panel with header + scroll
-  //      area + footer.
-  const hasMessages = messages.length > 0 || loading;
-  if (!hasMessages && !text.trim()) return null;
-  if (!hasMessages) {
-    // Single-row slim strip: [mic] [Ask AI] [×]. Total height ~54px
-    // (py-2 + ~30px line-height + 6px+6px padding). Earlier the strip
-    // included a "Question: …" label row + p-3 padding + py-3 button
-    // that totalled ~110px and overlapped the qwerty top row visibly
-    // (user Image #22). The MessageBar above already shows the typed
-    // text, so the redundant Question label is gone here.
-    return (
-      <section
-        aria-label={t('ai_chat_title')}
-        className="shrink-0 surface-bar border-y border-theme"
-        data-testid="ai-chat-panel"
-        data-state="slim"
-      >
-        <div className="px-2 py-1.5 flex gap-2 items-center">
+  return (
+    <section
+      aria-label={t('ai_chat_title')}
+      className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme"
+      data-testid="ai-chat-panel"
+      data-state="expanded"
+    >
+      {/* Header */}
+      <header className="flex items-center justify-between px-4 py-2 border-b border-theme shrink-0">
+        <span className="text-primary font-bold text-xl">✨ {t('ai_chat_title')}</span>
+        <div className="flex items-center gap-2">
           {voiceSupported && (
             <button
               onClick={toggleVoice}
               aria-label={listening ? t('stop_voice') : t('start_voice')}
               aria-pressed={listening}
-              data-testid="ai-mic-slim"
-              className={`aac-btn rounded-lg font-bold text-xl px-3 min-w-[48px] h-10 flex items-center justify-center shrink-0 ${
+              data-testid="ai-mic"
+              className={`aac-btn rounded-lg font-bold text-xl px-3 h-9 flex items-center justify-center ${
                 listening
                   ? 'bg-[#F44336] text-white animate-pulse'
                   : 'surface-key text-primary border border-theme'
@@ -198,124 +177,77 @@ export default function AIChatPanel() {
             </button>
           )}
           <button
-            onClick={handleAsk}
-            disabled={!text.trim() || loading}
-            data-testid="ai-ask-slim"
-            className={`aac-btn aac-speak flex-1 h-10 rounded-lg font-bold text-base ${
-              text.trim() && !loading ? 'bg-[#4CAF50] text-white' : 'surface-key text-dim border border-theme'
-            }`}
-          >
-            {listening && interim
-              ? `🎙 ${interim.slice(0, 40)}…`
-              : `${t('ask_ai')} ✨`}
-          </button>
-          <button
             onClick={() => { tapFeedback(); closeSidePanel(); }}
             aria-label={t('close_ai_chat')}
-            className="aac-btn w-10 h-10 rounded-lg surface-key text-muted text-base flex items-center justify-center border border-theme shrink-0"
+            className="aac-btn w-9 h-9 rounded-lg surface-key text-muted text-lg flex items-center justify-center border border-theme"
           >
             ✕
           </button>
         </div>
-      </section>
-    );
-  }
-  return (
-    <section
-      aria-label={t('ai_chat_title')}
-      className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
-      data-testid="ai-chat-panel"
-      data-state="expanded"
-    >
-      <header className="flex items-center justify-between px-4 py-2 border-b border-theme shrink-0">
-        <span className="text-primary font-bold text-xl md:text-2xl">✨ {t('ai_chat_title')}</span>
-        <button
-          onClick={() => { tapFeedback(); closeSidePanel(); }}
-          aria-label={t('close_ai_chat')}
-          className="aac-btn w-10 h-10 rounded-lg surface-key text-muted text-xl flex items-center justify-center border border-theme"
-        >
-          ✕
-        </button>
       </header>
 
+      {/* Chat scroll area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
-            {messages.map((msg, i) => (
-              <div key={i} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
-                <div
-                  className={`rounded-xl p-3 border border-theme ${
-                    msg.role === 'user' ? 'bg-[#dbeafe] text-[#14161d] dark:bg-[#2a3a5e] dark:text-[#e0e0e0]' : 'surface-key'
-                  }`}
-                >
-                  {msg.role === 'user' ? (
-                    <p className="text-xl md:text-2xl">{msg.text}</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {(msg.lines ?? [msg.text]).map((line, li) => (
-                        <button
-                          key={li}
-                          onClick={() => handleTapLine(line)}
-                          aria-label={`Use: ${line}`}
-                          className="aac-btn block w-full text-left rounded-lg p-2 hover:bg-black/5 transition-colors"
-                        >
-                          <ColoredText text={line} className="text-xl md:text-2xl leading-relaxed" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <p className="text-dim text-base mt-1 px-1">{msg.role === 'user' ? t('you') : t('ai_chat')}</p>
-              </div>
-            ))}
+        {messages.length === 0 && !loading && (
+          <div className="h-full flex flex-col items-center justify-center text-center gap-3 text-muted px-6">
+            <span className="text-5xl">✨</span>
+            <p className="text-lg font-medium">{t('ai_chat_title')}</p>
+            <p className="text-base opacity-70">
+              {listening
+                ? interim || t('type_or_speak')
+                : t('type_or_speak')}
+            </p>
+            <p className="text-sm opacity-50 mt-1">
+              Press <strong>Speak</strong> to send your question
+            </p>
+          </div>
+        )}
 
-            {loading && (
-              <div className="flex items-center gap-2 text-muted text-xl px-2">
-                <span className="animate-pulse">{t('thinking')}</span>
-              </div>
-            )}
+        {messages.map((msg, i) => (
+          <div key={i} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
+            <div
+              className={`rounded-xl p-3 border border-theme ${
+                msg.role === 'user'
+                  ? 'bg-[#dbeafe] text-[#14161d] dark:bg-[#2a3a5e] dark:text-[#e0e0e0]'
+                  : 'surface-key'
+              }`}
+            >
+              {msg.role === 'user' ? (
+                <p className="text-xl">{msg.text}</p>
+              ) : (
+                <div className="space-y-2">
+                  {(msg.lines ?? [msg.text]).map((line, li) => (
+                    <button
+                      key={li}
+                      onClick={() => handleTapLine(line)}
+                      aria-label={`Use: ${line}`}
+                      className="aac-btn block w-full text-left rounded-lg p-2 hover:bg-black/5 transition-colors"
+                    >
+                      <ColoredText text={line} className="text-xl leading-relaxed" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <p className="text-dim text-sm mt-1 px-1">
+              {msg.role === 'user' ? t('you') : t('ai_chat')}
+            </p>
+          </div>
+        ))}
+
+        {loading && (
+          <div className="flex items-center gap-2 text-muted text-xl px-2">
+            <span className="animate-pulse">{t('thinking')}</span>
+          </div>
+        )}
       </div>
 
-      {/* Footer — hint + mic + Ask AI. Only renders when expanded, and
-          we already early-returned when compact, so it's unconditional
-          here. */}
-          <div className="p-3 border-t border-theme shrink-0">
-            <div className="text-muted text-base md:text-lg mb-2 text-center truncate">
-              {listening && interim ? (
-                <span className="text-[#4CAF50]">🎙 &ldquo;{interim}&rdquo;</span>
-              ) : text.trim() ? (
-                <>{t('question_label')} <span className="text-primary font-semibold">&ldquo;{text.trim()}&rdquo;</span></>
-              ) : (
-                voiceSupported
-                  ? t('type_or_speak')
-                  : t('type_question')
-              )}
-            </div>
-            <div className="flex gap-2">
-              {voiceSupported && (
-                <button
-                  onClick={toggleVoice}
-                  aria-label={listening ? t('stop_voice') : t('start_voice')}
-                  aria-pressed={listening}
-                  data-testid="ai-mic"
-                  className={`aac-btn rounded-xl font-bold text-2xl px-5 min-w-[72px] flex items-center justify-center ${
-                    listening
-                      ? 'bg-[#F44336] text-white animate-pulse'
-                      : 'surface-key text-primary border border-theme'
-                  }`}
-                >
-                  {listening ? '⏺' : '🎙'}
-                </button>
-              )}
-              <button
-                onClick={handleAsk}
-                disabled={!text.trim() || loading}
-                className={`aac-btn aac-speak flex-1 py-4 rounded-xl font-bold text-xl md:text-2xl ${
-                  text.trim() && !loading ? 'bg-[#4CAF50] text-white' : 'surface-key text-dim border border-theme'
-                }`}
-              >
-                {loading ? t('thinking') : `${t('ask_ai')} ✨`}
-              </button>
-            </div>
-          </div>
+      {/* Interim voice hint — only when listening */}
+      {listening && interim && (
+        <div className="shrink-0 px-4 py-2 border-t border-theme text-[#4CAF50] text-base text-center truncate">
+          🎙 &ldquo;{interim}&rdquo;
+        </div>
+      )}
     </section>
   );
 }

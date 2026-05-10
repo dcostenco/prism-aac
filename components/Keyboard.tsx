@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { aacSpeak } from '@/services/aacSpeak';
 import { speakWord } from '@/services/speechService';
 import { warmupAzureAudio } from '@/services/azureTTS';
+import { triggerAISubmit } from '@/services/aiChatBridge';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
@@ -133,11 +134,13 @@ export default function Keyboard() {
   }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar, activeTone]);
 
   const handleSpeak = useCallback(() => {
-    // Synchronous AudioContext.resume() inside the click gesture —
-    // see services/azureTTS.ts for why iOS/Chromium need this. Without
-    // it, the BufferSourceNode plays into a suspended context = silence.
     void warmupAzureAudio();
     tapFeedback();
+    // In AI Chat mode the Speak key sends to AI instead of speaking aloud.
+    if (useUIStore.getState().sidePanel === 'ai-chat') {
+      triggerAISubmit();
+      return;
+    }
     const currentText = useMessageStore.getState().text.trim();
     if (!currentText || !soundEnabled) return;
     addToHistory(currentText);
