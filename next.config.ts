@@ -17,12 +17,20 @@ const withSerwist = withSerwistInit({
 //
 // Direct access at prism-aac.vercel.app is at
 // prism-aac.vercel.app/prism-aac (the basePath also applies there).
+// Auto-bump SW killswitch on every deploy.
+// Vercel sets VERCEL_GIT_COMMIT_SHA automatically; local builds fall back to
+// a timestamp so dev reloads still bust the cache.
+const buildId = (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 8) || `local-${Date.now()}`;
+
 const nextConfig: NextConfig = {
   basePath: '/prism-aac',
   env: {
     // Expose basePath to client code so mediapipeRuntime can construct
     // correct self-hosted model URLs (public/ assets are at <basePath>/models/...).
     NEXT_PUBLIC_BASE_PATH: '/prism-aac',
+    // Unique per-deploy build ID — consumed by the SW killswitch in layout.tsx
+    // so every Vercel deploy automatically invalidates stale SW caches.
+    NEXT_PUBLIC_BUILD_ID: buildId,
   },
   serverExternalPackages: ['@huggingface/transformers', 'pyodide'],
   turbopack: {},

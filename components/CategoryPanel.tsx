@@ -12,6 +12,7 @@ import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
 import PhraseTile from './PhraseTile';
 import { getPhraseText } from '@/constants/phraseTranslations';
+import { registerSearchKeyHandler } from '@/services/searchKeyBridge';
 
 // ── Categories on the HOME core-vocab grid ────────────────────────────────────
 // Pink → yellow → green → orange → blue (matches Image #36 left-to-right)
@@ -155,8 +156,23 @@ export default function CategoryPanel() {
     sidePanel === 'category-detail' ||
     sidePanel === 'ordering';
 
+  // Focus the search input and register the search key bridge so on-screen
+  // keyboard presses are routed here instead of the message bar.
   useEffect(() => {
-    if (searchOpen) searchInputRef.current?.focus();
+    if (searchOpen) {
+      searchInputRef.current?.focus();
+      // Route on-screen keyboard keys to the search input
+      registerSearchKeyHandler((char) => {
+        if (char === '\b' || char === 'Backspace') {
+          setSearchQuery((q) => q.slice(0, -1));
+        } else {
+          setSearchQuery((q) => q + char);
+        }
+      });
+    } else {
+      registerSearchKeyHandler(null);
+    }
+    return () => { registerSearchKeyHandler(null); };
   }, [searchOpen]);
 
   const scrollGrid = (dir: 1 | -1) =>
@@ -216,8 +232,18 @@ export default function CategoryPanel() {
   const isHome = sidePanel === 'categories';
   const isDeep = categoryPath.length > 1;
 
-  const openSearch = () => { setSearchOpen(true); setSearchQuery(''); };
-  const closeSearch = () => { setSearchOpen(false); setSearchQuery(''); };
+  const openSearch = () => {
+    setSearchOpen(true);
+    setSearchQuery('');
+    // Always show the keyboard immediately when entering search mode so the
+    // user can type right away without tapping the Keyboard button.
+    if (!categoryKeyboardOpen) toggleCategoryKeyboard();
+  };
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    registerSearchKeyHandler(null);
+  };
   const handleBack = () => { isDeep ? navigateCategoryUp() : backToCategories(); };
 
   // ── SIDEBAR JSX (inlined — not a component, so no remounting) ───────────────

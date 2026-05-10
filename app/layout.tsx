@@ -28,7 +28,10 @@ export const viewport: Viewport = {
 // intervention. (May 2026: bumped to 2026-05-08-pdf-fix after users
 // were stuck on Apr-30 SW serving stale chunks where PDF reader
 // blew up on clinical PDFs.)
-const SW_KILLSWITCH_VERSION = '2026-05-10-audio-fixes-2';
+// Auto-bumped on every Vercel deploy via NEXT_PUBLIC_BUILD_ID (= short git SHA).
+// Local dev falls back to a static string so repeated hot-reloads don't
+// clear the cache on every refresh.
+const SW_KILLSWITCH_VERSION = process.env.NEXT_PUBLIC_BUILD_ID || '2026-05-10-tts-fix';
 
 // Emergency reset URL — the user's tracking calibration left them
 // unable to reach Settings to disable. Visiting any page with

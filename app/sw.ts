@@ -10,7 +10,7 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 
-const SW_VERSION = '2026-05-10-network-first-nav';
+const SW_VERSION = '2026-05-10-tts-fix';
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,

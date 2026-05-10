@@ -10,6 +10,7 @@ import { warmupAzureAudio } from '@/services/azureTTS';
 import { triggerAISubmit } from '@/services/aiChatBridge';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
+import { dispatchToSearch } from '@/services/searchKeyBridge';
 import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
 
@@ -66,6 +67,12 @@ export default function Keyboard() {
   const handleKey = useCallback((key: string) => {
     keyFeedback();
     const char = keyboardMode === 'letters' ? (showUpper ? key : key.toLowerCase()) : key;
+    // Route to search input when category search is active — keys must not
+    // also land in the message bar while the user is searching vocabulary.
+    if (dispatchToSearch(char)) {
+      if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
+      return;
+    }
     appendChar(char);
     if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
     // Per-key letter echo REMOVED. The previous behavior fired
@@ -118,6 +125,8 @@ export default function Keyboard() {
 
   const handleSpace = useCallback(() => {
     keyFeedback();
+    // Route to search when active
+    if (dispatchToSearch(' ')) return;
     const currentText = useMessageStore.getState().text;
     const words = currentText.trim().split(/\s+/).filter(Boolean);
     const lastWord = words.length > 0 ? words[words.length - 1] : '';
@@ -149,6 +158,8 @@ export default function Keyboard() {
 
   const handleBackspace = useCallback(() => {
     deleteFeedback();
+    // Route to search when active
+    if (dispatchToSearch('\b')) return;
     useMessageStore.getState().deleteLastChar();
   }, []);
 
