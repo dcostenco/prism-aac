@@ -82,13 +82,17 @@ test('Settings modal opens and shows Synalux account section', async ({ page }) 
   await expect(page.getByText(/Synalux/i).first()).toBeVisible();
 });
 
-test('AI Chat opens — slim strip when text typed (panel unmounts on empty per "keyboard should be full" feedback)', async ({ page }) => {
+test('AI Chat opens — full panel always visible, Speak key sends (2026-05-10 redesign)', async ({ page }) => {
   await page.getByRole('button', { name: 'AI' }).click();
-  // Per AIChatPanel.tsx line 169: with no messages AND no typed text,
-  // the component returns null so the qwerty keyboard isn't squeezed.
-  // Type something so the slim strip appears, then assert it.
+  // New design: panel always renders as expanded when sidePanel==='ai-chat'.
+  // No slim strip, no "Ask AI" button — Speak key is the send action.
+  await expect(page.locator('[data-testid="ai-chat-panel"][data-state="expanded"]')).toBeVisible();
+  // Typing adds text to MessageBar (visible above the chat panel).
   await page.keyboard.type('hello');
-  await expect(page.locator('[data-testid="ai-chat-panel"][data-state="slim"]')).toBeVisible();
+  // Speak button must remain visible and enabled for sending.
+  const speak = page.getByRole('button', { name: /^Speak$/ }).first();
+  await expect(speak).toBeVisible();
+  await expect(speak).toBeEnabled();
 });
 
 test('Categories panel opens and shows category buttons', async ({ page }) => {

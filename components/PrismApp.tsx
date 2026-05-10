@@ -410,10 +410,8 @@ export default function PrismApp() {
               (banner / message / predictions / categories) so the
               cell-grid canvas + bigger keyboards have room to breathe.
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
-          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <GreetingBanner />}
-          {/* In AI Chat mode the entire panel IS the input — MessageBar and
-              PredictionBar are redundant and take space away from the chat. */}
-          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <MessageBar />}
+          {sidePanel !== 'math' && <GreetingBanner />}
+          {sidePanel !== 'math' && <MessageBar />}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />
@@ -435,7 +433,7 @@ export default function PrismApp() {
             // In category mode the CategoryPanel sidebar is clamp(72px,9vw,96px) wide;
             // the spacer below mirrors it so the keyboard stops at the same x-boundary.
             <div
-              className="flex flex-row min-h-[clamp(280px,38svh,440px)]"
+              className="flex-1 flex flex-row min-h-[clamp(280px,38svh,440px)]"
               data-testid="keyboard-shell"
             >
               <div className="flex-1 flex flex-col">
