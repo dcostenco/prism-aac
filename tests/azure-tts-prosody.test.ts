@@ -1,41 +1,50 @@
 /**
- * SSML prosody format — locks the unambiguous `rate` syntax that
- * routes correctly through Azure Neural.
+ * SSML prosody format — locks the unambiguous `rate` syntax and the
+ * scale-mapping formula that prevents both "2× slow" and "chipmunk".
  *
- * Reproduces the Romanian "chipmunk voice" bug (May 2026): a child in
- * RO mode reported the AAC TTS speaking "high pitch and too fast".
- * Root cause was `buildSSML` emitting `rate="100%"` — per Azure SSML,
- * an UNSIGNED percentage on `<prosody rate>` is a delta from default,
- * so "100%" = +100% = 2× speed. EN escaped the bug because the portal
- * routes EN through Inworld (which discards <prosody>); RO/UK go
- * straight to Azure which honored the bogus rate.
+ * History:
+ *   May 2026 #1: `rate="100%"` caused chipmunk in RO mode (Azure parses
+ *     unsigned % as delta: "100%" = +100% = 2× speed). Fixed to multiplier.
+ *   May 2026 #2: stored rate 0.5 (default) → SSML 0.5 = 2× slow for Azure
+ *     voices (RO, RU). EN escaped because Inworld discards <prosody>.
+ *     Fix: ssmlRate = storedRate × 2, capped at 1.4.
+ *       stored 0.5 (default) → SSML 1.0 (normal)
+ *       stored 1.0 (slider max users crank to) → SSML 1.4 (fast, not chipmunk)
+ *     The 1.4 cap is enforced by tts-live-diag-rate.mjs (rate ≥ 1.5 = ❌).
  *
- * Fix: emit a multiplier number (1.0 = default, 1.15 = 15% faster).
- * That form is documented in Azure's SSML reference and unambiguous
- * across every parser. These tests pin the exact wire format so a
- * future "let's just round to a percent" refactor can't regress this.
+ * These tests pin the wire format AND the mapping so neither can regress.
  */
 import { describe, it, expect } from 'vitest';
 import { buildSSML } from '@/services/azureTTS';
 
 describe('buildSSML — prosody emission (stabilized 2026-05-08)', () => {
   it('emits rate as multiplier number, not unsigned percent', () => {
-    const ssml = buildSSML('hello', 'ro-RO', 'friendly', 1.0, 1.0);
-    // Must NOT contain the legacy "100%" form (Azure parses as +100% = 2×).
+    const ssml = buildSSML('hello', 'ro-RO', 'friendly', 0.5, 1.0);
+    // Must NOT contain the legacy "100%" form.
     expect(ssml).not.toMatch(/rate="\d+%"/);
+    // stored 0.5 (default) → SSML 1.00 (normal speed).
     expect(ssml).toMatch(/rate="1\.00"/);
   });
 
-  it('clamps absurd rate values to Azure-safe range', () => {
-    const ssml10x = buildSSML('hi', 'ro-RO', 'friendly', 10, 1);
-    expect(ssml10x).toMatch(/rate="2\.00"/);
-    const ssmlZero = buildSSML('hi', 'ro-RO', 'friendly', 0, 1);
-    expect(ssmlZero).toMatch(/rate="1\.00"/);  // 0 falls back to default 1
+  it('stored default 0.5 → SSML 1.00 (fixes Romanian/Russian 2× slow)', () => {
+    const ssml = buildSSML('Bună ziua', 'ro-RO', 'friendly', 0.5, 1);
+    expect(ssml).toMatch(/rate="1\.00"/);
   });
 
-  it('passes rate through as multiplier (0.9 → "0.90", 1.5 → "1.50")', () => {
-    expect(buildSSML('hi', 'ro-RO', 'friendly', 0.9, 1)).toMatch(/rate="0\.90"/);
-    expect(buildSSML('hi', 'ro-RO', 'friendly', 1.5, 1)).toMatch(/rate="1\.50"/);
+  it('clamps to 1.4 max — prevents chipmunk at slider=1.0 (tts-live-diag-rate gate)', () => {
+    // stored 1.0 (user cranked slider) → SSML 1.40, not 2.00
+    expect(buildSSML('hi', 'ro-RO', 'friendly', 1.0, 1)).toMatch(/rate="1\.40"/);
+    // absurd values also cap at 1.4
+    expect(buildSSML('hi', 'ro-RO', 'friendly', 10, 1)).toMatch(/rate="1\.40"/);
+    // 0 falls back to default 1.0
+    expect(buildSSML('hi', 'ro-RO', 'friendly', 0, 1)).toMatch(/rate="1\.00"/);
+  });
+
+  it('maps stored rate × 2, capped at 1.4 (0.25→0.50, 0.5→1.00, 0.7→1.40)', () => {
+    expect(buildSSML('hi', 'ro-RO', 'friendly', 0.25, 1)).toMatch(/rate="0\.50"/);
+    expect(buildSSML('hi', 'ro-RO', 'friendly', 0.5,  1)).toMatch(/rate="1\.00"/);
+    expect(buildSSML('hi', 'ro-RO', 'friendly', 0.7,  1)).toMatch(/rate="1\.40"/);
+    expect(buildSSML('hi', 'ro-RO', 'friendly', 1.5,  1)).toMatch(/rate="1\.40"/);
   });
 
   it('omits pitch attribute (we never vary it; default is correct)', () => {

@@ -102,14 +102,18 @@ export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: num
   //
   // The app's speechRate slider stores values on a [0.25, 4] scale where
   // 0.5 is the persisted default. SSML expects [0.5, 2.0] where 1.0 is
-  // normal. Mapping: ssmlRate = storedRate × 2, clamped to [0.5, 2.0].
+  // normal. Mapping: ssmlRate = storedRate × 2, hard-capped at 1.4.
+  //
   //   stored 0.25 → SSML 0.5  (slowest)
   //   stored 0.5  → SSML 1.0  (normal ← the default)
-  //   stored 1.0  → SSML 2.0  (fastest)
-  //   stored >1.0 → SSML 2.0  (clamped)
-  // This replaces the previous pass-through that played the default at
-  // half-speed (stored 0.5 → SSML 0.5 = 2× slower than expected).
-  const rateClamped = Math.max(0.5, Math.min(2.0, Number.isFinite(rate) && rate > 0 ? rate * 2 : 1.0));
+  //   stored 0.7  → SSML 1.4  (fast cap — avoids chipmunk regression)
+  //   stored 1.0  → SSML 1.4  (capped — diagnostic requires < 1.5)
+  //   stored >1.0 → SSML 1.4  (capped)
+  //
+  // The 1.4 cap exists because the chipmunk regression test
+  // (tts-live-diag-rate.mjs) requires rate < 1.5 at slider=1.0.
+  // Without the cap, rate*2 at slider=1.0 gives SSML 2.0 = chipmunk.
+  const rateClamped = Math.max(0.5, Math.min(1.4, Number.isFinite(rate) && rate > 0 ? rate * 2 : 1.0));
   const rateStr = rateClamped.toFixed(2);
   const volumeValue = Math.max(0, Math.min(100, Math.round(volume * 100)));
 
