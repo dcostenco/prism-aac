@@ -17,11 +17,6 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: "#f6f7fb",
-  // Required for env(safe-area-inset-*) to work on iPhones with Dynamic
-  // Island / notch. Without this, black-translucent status bar extends the
-  // content under the notch but the env() values are all zero → toolbar
-  // icons sit behind the Dynamic Island and are unreachable.
-  viewportFit: "cover",
 };
 
 // SW kill-switch version. Bump whenever a deploy needs to evict a

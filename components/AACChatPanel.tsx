@@ -4,7 +4,6 @@ import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useContactsStore, type AacContact } from '@/store/contactsStore';
 import { useAuthStore } from '@/store/authStore';
-import { useScheduleStore, selectUnreadMessageCount } from '@/store/scheduleStore';
 import {
   sendToContact,
   PROVIDER_LABELS,
@@ -98,48 +97,6 @@ export default function AACChatPanel() {
   }, [t]);
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [tab, setTab] = useState<'send' | 'inbox'>('send');
-
-  // Reactive unread count for the badge — a primitive (number) so Zustand's
-  // Object.is comparison is stable across renders.
-  const unreadCount = useScheduleStore(selectUnreadMessageCount);
-
-  // Non-reactive inbox snapshot — loaded imperatively when the inbox tab
-  // opens. Avoids a Zustand reactive selector that returns a new array
-  // reference every render (which would trigger re-renders on every store
-  // update and can cascade into the "Maximum update depth exceeded" error
-  // in test environments with synchronous store update chains).
-  const [inboxMessages, setInboxMessages] = useState(() =>
-    useScheduleStore.getState().tasks
-      .filter((t) => t.kind === 'message')
-      .sort((a, b) => (b.receivedAt ?? 0) - (a.receivedAt ?? 0))
-  );
-
-  // Reload inbox snapshot + mark messages read whenever the inbox tab opens
-  // or new unread messages arrive while inbox is active.
-  useEffect(() => {
-    if (tab !== 'inbox') return;
-    const { tasks, toggleDone: toggle } = useScheduleStore.getState();
-    const msgs = tasks
-      .filter((t) => t.kind === 'message')
-      .sort((a, b) => (b.receivedAt ?? 0) - (a.receivedAt ?? 0));
-    setInboxMessages(msgs);
-    for (const msg of msgs) {
-      if (!msg.done) toggle(msg.id);
-    }
-  }, [tab, unreadCount]);
-
-  // Auto-switch to inbox when new messages arrive (only when not composing).
-  // Uses a ref so we switch at most once per unread-count increment, not on
-  // every render. The setTab call itself re-triggers the effect above which
-  // marks everything as read and drops unreadCount back to 0.
-  const prevUnreadRef = useRef(0);
-  useEffect(() => {
-    if (unreadCount > prevUnreadRef.current && !activeContactId) {
-      setTab('inbox');
-    }
-    prevUnreadRef.current = unreadCount;
-  }, [unreadCount, activeContactId]);
   // Track mount + clear pending toast timer on unmount. Without this,
   // the 3-second toast-clear setTimeout would call setState on an
   // unmounted component when the user closes the panel mid-toast,
@@ -276,105 +233,43 @@ export default function AACChatPanel() {
   //   - shrink-0 with bounded min/max height (now): preserves the
   //     keyboard's natural height AND gives the picker enough room to
   //     show 3 placeholder rows + the add-contact CTA + sync hint.
-  // ── Shared tab bar + inbox list (used by both empty and contact-search states) ──
-  const tabBar = (
-    <div className="flex items-center gap-1 px-3 pt-2 pb-0 shrink-0">
-      <button
-        onClick={() => { tapFeedback(); setTab('send'); }}
-        className={`flex items-center gap-1.5 px-3 py-1 rounded-t-lg text-sm font-bold border-b-2 transition-colors ${
-          tab === 'send'
-            ? 'border-[#4CAF50] text-primary bg-white/5'
-            : 'border-transparent text-muted hover:text-primary'
-        }`}
-        aria-selected={tab === 'send'}
-        data-testid="aac-chat-tab-send"
-      >
-        📤 Send
-      </button>
-      <button
-        onClick={() => { tapFeedback(); setTab('inbox'); }}
-        className={`flex items-center gap-1.5 px-3 py-1 rounded-t-lg text-sm font-bold border-b-2 transition-colors ${
-          tab === 'inbox'
-            ? 'border-[#4CAF50] text-primary bg-white/5'
-            : 'border-transparent text-muted hover:text-primary'
-        }`}
-        aria-selected={tab === 'inbox'}
-        data-testid="aac-chat-tab-inbox"
-      >
-        📥 Inbox
-        {unreadCount > 0 && (
-          <span className="ml-1 min-w-[1.1rem] h-[1.1rem] rounded-full bg-[#F44336] text-white text-[10px] font-bold flex items-center justify-center px-1" data-testid="aac-chat-inbox-badge">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </button>
-    </div>
-  );
-
-  const inboxList = (
-    <div className="overflow-y-auto max-h-48 px-3 pb-2" data-testid="aac-chat-inbox-list">
-      {inboxMessages.length === 0 ? (
-        <p className="text-xs text-muted py-3 text-center">No messages yet. Messages from caregivers will appear here.</p>
-      ) : (
-        <ul className="flex flex-col gap-1 pt-1">
-          {inboxMessages.map((msg) => {
-            const ago = msg.receivedAt
-              ? (() => {
-                  const s = Math.floor((Date.now() - msg.receivedAt) / 1000);
-                  if (s < 60) return 'just now';
-                  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-                  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-                  return `${Math.floor(s / 86400)}d ago`;
-                })()
-              : '';
-            return (
-              <li
-                key={msg.id}
-                data-testid={`aac-chat-inbox-msg-${msg.id}`}
-                className={`rounded-lg px-3 py-2 text-sm flex flex-col gap-0.5 ${msg.done ? 'surface-key opacity-70' : 'bg-[#1a2a1a] border border-[#4CAF50]/40'}`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-primary truncate">{msg.sender ?? 'Unknown'}</span>
-                  {!msg.done && <span className="w-2 h-2 rounded-full bg-[#4CAF50] shrink-0" aria-label="unread" />}
-                  <span className="ml-auto text-[10px] text-muted shrink-0">{ago}</span>
-                </div>
-                <span className="text-secondary">{msg.text}</span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-
   if (isEmpty) {
+    // Slim strip — single row, zero ghost contacts, zero keyboard impact.
+    // Ghost contacts were compressing the keyboard below its usable floor
+    // on every screen size. The strip height (~52px) fits in the flex
+    // layout without stealing any space from the keyboard.
     return (
       <section
         aria-label={tx('aac_chat_title', 'Send a message')}
         data-testid="aac-chat-panel"
         data-state="compact-empty"
-        className="shrink-0 surface-bar border-y border-theme flex flex-col"
+        className="shrink-0 surface-bar border-y border-theme"
       >
         <span data-testid="aac-chat-empty-state" aria-hidden />
         <div className="flex items-center justify-between px-3 py-2 gap-3">
-          {tabBar}
-          <div className="flex items-center gap-2 shrink-0 ml-auto">
-            {tab === 'send' && (
-              <button
-                onClick={() => {
-                  tapFeedback();
-                  toggleSettings();
-                  setTimeout(() => {
-                    document.getElementById('settings-contacts-section')
-                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 120);
-                }}
-                data-testid="aac-chat-open-settings"
-                className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white"
-              >
-                ＋ {tx('aac_chat_add_contact', 'Add contact')}
-              </button>
-            )}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-lg shrink-0">💬</span>
+            <span className="text-xs text-muted truncate">
+              {tx('aac_chat_no_contacts', 'No contacts yet.')}{' '}
+              {tx('aac_chat_empty_hint_short', 'Add one or sync Gmail in Settings.')}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                tapFeedback();
+                toggleSettings();
+                // Scroll directly to the Contacts section after the modal renders.
+                setTimeout(() => {
+                  document.getElementById('settings-contacts-section')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 120);
+              }}
+              data-testid="aac-chat-open-settings"
+              className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white"
+            >
+              ＋ {tx('aac_chat_add_contact', 'Add contact')}
+            </button>
             <button
               onClick={() => { tapFeedback(); closeSidePanel(); }}
               aria-label={tx('close', 'Close')}
@@ -382,13 +277,6 @@ export default function AACChatPanel() {
             >×</button>
           </div>
         </div>
-        {tab === 'send' && (
-          <p className="px-3 pb-2 text-xs text-muted">
-            {tx('aac_chat_no_contacts', 'No contacts yet.')}{' '}
-            {tx('aac_chat_empty_hint_short', 'Add one or sync Gmail in Settings.')}
-          </p>
-        )}
-        {tab === 'inbox' && inboxList}
       </section>
     );
   }
@@ -402,23 +290,20 @@ export default function AACChatPanel() {
         aria-label={tx('aac_chat_title', 'Send a message')}
         data-testid="aac-chat-panel"
         data-state="contact-search"
-        className="shrink-0 surface-bar border-y border-theme flex flex-col"
+        className="shrink-0 surface-bar border-y border-theme"
       >
         <span data-testid="aac-chat-empty-state" aria-hidden />
-        <div className="flex items-center justify-between gap-2">
-          {tabBar}
-          {tab === 'send' && (
-            <span className="text-xs text-muted truncate px-2 hidden sm:block">
-              — type to search {sortedContacts.length} contacts
-            </span>
-          )}
+        <div className="flex items-center justify-between px-3 py-2 gap-3">
+          <span className="text-xs text-muted truncate">
+            💬 {tx('aac_chat_title', 'Send a message')}
+            <span className="ml-1 opacity-60">— type to search {sortedContacts.length} contacts</span>
+          </span>
           <button
             onClick={() => { tapFeedback(); closeSidePanel(); }}
             aria-label={tx('close', 'Close')}
-            className="aac-btn rounded-md px-2 py-1 text-muted text-lg shrink-0 ml-auto mr-2"
+            className="aac-btn rounded-md px-2 py-1 text-muted text-lg shrink-0"
           >×</button>
         </div>
-        {tab === 'inbox' && inboxList}
       </section>
     );
   }
