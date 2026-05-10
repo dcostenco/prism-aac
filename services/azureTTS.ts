@@ -98,26 +98,13 @@ function escapeXml(text: string): string {
 export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
   const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
   const supportsStyles = STYLE_SUPPORTED.has(voice);
-  // SSML multiplier form (1.0 = default, 0.9 = 10% slower, 1.15 = 15% faster).
-  //
-  // Scale handling — STABILIZED 2026-05-08:
-  //
-  // After two failed rate-conversion attempts (06c04f5 produced
-  // chipmunk for slider=1.0; 4502fbb's safer 0.6+0.8×webRate still
-  // had user-reported "nothing streams"), back to passing rate
-  // through as a multiplier with a safe clamp only. This is the
-  // pre-06c04f5 behaviour. Side effect: users with the default
-  // speechRate=0.5 (initial state of the Web-Speech-scale slider)
-  // hear 0.5× = half-speed playback. They can fix by moving the
-  // slider in Settings → Voice. Acceptable trade vs the
-  // alternative which was "no audio plays at all" for some users.
-  //
-  // The right long-term fix is to STANDARDIZE the slider to the
-  // SSML multiplier scale [0.5, 2.0] with default 1.0. That's a
-  // bigger refactor (UI label, persisted-state migration, Web
-  // Speech path conversion) and not appropriate while the user is
-  // in a fire situation.
-  const rateClamped = Math.max(0.5, Math.min(2.0, Number.isFinite(rate) && rate > 0 ? rate : 1));
+  // SSML rate: 1.0 = normal. Stored slider range [0.25-4], default 0.5.
+  // Formula: ssmlRate = stored × 2, hard-capped at 1.4.
+  //   stored 0.25 → SSML 0.50  stored 0.50 → SSML 1.00 (normal, fixes RO/RU slow)
+  //   stored 0.70 → SSML 1.40  stored 1.0+ → SSML 1.40 (cap, no chipmunk)
+  // Verified live 2026-05-10 via tts-live-diag-rate.mjs: rate=1.40, ✅ SAFE.
+  // DO NOT revert to pass-through — stored 0.5 direct → SSML 0.5 = RO/RU 2× slow.
+  const rateClamped = Math.max(0.5, Math.min(1.4, Number.isFinite(rate) && rate > 0 ? rate * 2 : 1.0));
   const rateStr = rateClamped.toFixed(2);
   const volumeValue = Math.max(0, Math.min(100, Math.round(volume * 100)));
 
@@ -166,7 +153,33 @@ async function readCappedAudio(res: Response): Promise<ArrayBuffer | null> {
 // AudioContext to be in 'running' state, which the warmup in PrismApp.tsx
 // already arranges on first user interaction.
 let sharedAudioCtx: AudioContext | null = null;
+let lastPlayedAt = 0;
+const CTX_STALE_MS = 30_000;
+
+// Recreate AudioContext when OS output device changes (USB/BT plug events).
+// macOS Sound panel default-switch is covered by the 30s stale timer below.
+if (typeof window !== 'undefined' && navigator.mediaDevices) {
+  navigator.mediaDevices.addEventListener('devicechange', () => {
+    if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') {
+      sharedAudioCtx.close().catch(() => {});
+      sharedAudioCtx = null;
+    }
+  });
+}
+
 function getAudioContext(): AudioContext {
+  // Stale context: idle > 30s means user may have switched OS audio output.
+  // Recreate so next Speak binds to current default device.
+  if (
+    sharedAudioCtx &&
+    sharedAudioCtx.state !== 'closed' &&
+    activeSources.size === 0 &&
+    lastPlayedAt > 0 &&
+    Date.now() - lastPlayedAt > CTX_STALE_MS
+  ) {
+    sharedAudioCtx.close().catch(() => {});
+    sharedAudioCtx = null;
+  }
   if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') return sharedAudioCtx;
   const Ctor = (typeof window !== 'undefined' ? window.AudioContext : null)
     || (typeof window !== 'undefined' ? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext : null);
@@ -402,6 +415,7 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   }
   stopAzurePlayback();
   activeSources.add(source);
+  lastPlayedAt = Date.now();
   // Race-detection: track when the source actually started so a peer
   // call's stopAzurePlayback() that fires within ~30 ms of start() is
   // observable. onended fires on both natural completion AND on
