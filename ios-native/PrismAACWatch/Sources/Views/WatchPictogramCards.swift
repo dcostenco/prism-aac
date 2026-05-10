@@ -1,4 +1,48 @@
 import SwiftUI
+import WatchKit
+
+// MARK: - AAC data model
+
+struct AACPhrase: Identifiable {
+    let id = UUID()
+    let label: String
+    let sfSymbol: String
+    let color: Color
+    let arasaacId: Int?
+
+    var arasaacURL: URL? {
+        guard let aid = arasaacId else { return nil }
+        return URL(string: "https://static.arasaac.org/pictograms/\(aid)/\(aid)_300.png")
+    }
+}
+
+struct AACVocab {
+    static let categories: [(icon: String, name: String, phrases: [AACPhrase])] = [
+        ("⚡", "Quick", [
+            AACPhrase(label: "Yes",      sfSymbol: "checkmark.circle.fill", color: .green,  arasaacId: 5584),
+            AACPhrase(label: "No",       sfSymbol: "xmark.circle.fill",     color: .red,    arasaacId: 5578),
+            AACPhrase(label: "More",     sfSymbol: "plus.circle",           color: .blue,   arasaacId: 5571),
+            AACPhrase(label: "Stop",     sfSymbol: "hand.raised.fill",      color: .orange, arasaacId: 5581),
+            AACPhrase(label: "Help",     sfSymbol: "sos",                   color: .red,    arasaacId: 5557),
+            AACPhrase(label: "Wait",     sfSymbol: "pause.circle",          color: .yellow, arasaacId: 5583),
+            AACPhrase(label: "Thank you",sfSymbol: "heart.fill",            color: .pink,   arasaacId: 5582),
+            AACPhrase(label: "All done", sfSymbol: "checkmark.seal",        color: .green,  arasaacId: 5552),
+        ]),
+        ("💧", "Needs", [
+            AACPhrase(label: "Water",    sfSymbol: "drop.fill",             color: .blue,   arasaacId: 14981),
+            AACPhrase(label: "Food",     sfSymbol: "fork.knife",            color: .orange, arasaacId: nil),
+            AACPhrase(label: "Bathroom", sfSymbol: "toilet.fill",           color: .teal,   arasaacId: nil),
+            AACPhrase(label: "Medicine", sfSymbol: "pill.fill",             color: .red,    arasaacId: nil),
+            AACPhrase(label: "Home",     sfSymbol: "house.fill",            color: .green,  arasaacId: 8514),
+        ]),
+        ("🆘", "Emergency", [
+            AACPhrase(label: "Call 911",      sfSymbol: "phone.fill",       color: .red,    arasaacId: nil),
+            AACPhrase(label: "Can't breathe", sfSymbol: "lungs.fill",       color: .red,    arasaacId: nil),
+            AACPhrase(label: "I'm in pain",   sfSymbol: "cross.fill",       color: .red,    arasaacId: nil),
+            AACPhrase(label: "Need doctor",   sfSymbol: "stethoscope",      color: .red,    arasaacId: nil),
+        ]),
+    ]
+}
 
 /// Large-picture AAC for Apple Watch — designed for children.
 ///
@@ -208,4 +252,30 @@ extension AACVocab {
         AACPhrase(label: "Outside",    sfSymbol: "sun.max.fill",          color: .yellow, arasaacId: nil),
         AACPhrase(label: "Bed",        sfSymbol: "bed.double.fill",       color: .indigo, arasaacId: nil),
     ]
+}
+
+// MARK: - Emergency active full-screen overlay
+
+struct WatchEmergencyActiveView: View {
+    @EnvironmentObject var emergency: WatchEmergencyManager
+
+    var body: some View {
+        ZStack {
+            Color.red.ignoresSafeArea()
+            VStack(spacing: 12) {
+                Image(systemName: "sos")
+                    .font(.system(size: 48))
+                    .foregroundColor(.white)
+                Text("HELP COMING")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Text(emergency.countdownText)
+                    .font(.title3)
+                    .foregroundColor(.white.opacity(0.8))
+                Button("Cancel") { emergency.cancel() }
+                    .buttonStyle(.bordered)
+                    .tint(.white)
+            }
+        }
+    }
 }
