@@ -94,8 +94,8 @@ function SidebarBtn({ icon, label, onClick, active = false }: SideBtnProps) {
         border-b border-white/10 last:border-b-0 hover:bg-white/15 active:bg-white/25 transition-colors
         ${active ? 'bg-white/20' : ''}`}
     >
-      <span className="text-[22px] leading-none">{icon}</span>
-      <span className="text-[9px] font-bold uppercase tracking-wide text-white/85 text-center leading-tight px-0.5">
+      <span className="text-[26px] leading-none">{icon}</span>
+      <span className="text-[10px] font-bold uppercase tracking-wide text-white/90 text-center leading-tight px-0.5">
         {label}
       </span>
     </button>
@@ -324,7 +324,7 @@ export default function CategoryPanel() {
                   ))}
                 </div>
               )}
-              <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-2 p-2 overflow-y-auto flex-1 min-h-0`}>
+              <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-2 p-2 overflow-y-auto flex-1 min-h-0 content-start`}>
                 {/* Subcategory folders — WHITE, clearly navigable */}
                 {subcategories.map((sub) => (
                   <button key={sub.id} onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
@@ -364,7 +364,7 @@ export default function CategoryPanel() {
         {searchOpen ? searchPanelJsx : (
           <div className="flex-1 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
-            <div className={`grid ${HOME_COLS} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`}>
+            <div className={`grid ${HOME_COLS} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0 content-start`}>
               {homeGridPhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
                 return (
