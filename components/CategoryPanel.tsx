@@ -60,17 +60,21 @@ const GRID_COLS: Record<GridSize, string> = {
   20: 'grid-cols-5',
 };
 
+// Tile heights — kept short enough so at least 2–3 rows are visible
+// even with the keyboard drawer open (keyboard takes ~35% of screen height).
+// vw-based so they scale with viewport but never get too tall.
 const TILE_H: Record<GridSize, string> = {
-  4:  'min-h-[clamp(130px,20vw,200px)]',
-  6:  'min-h-[clamp(110px,16vw,170px)]',
-  9:  'min-h-[clamp(90px,13vw,140px)]',
-  12: 'min-h-[clamp(75px,10vw,115px)]',
-  16: 'min-h-[clamp(62px,9vw,95px)]',
-  20: 'min-h-[clamp(52px,7vw,80px)]',
+  4:  'min-h-[clamp(90px,14vw,140px)]',
+  6:  'min-h-[clamp(80px,11vw,110px)]',
+  9:  'min-h-[clamp(70px,9vw,95px)]',
+  12: 'min-h-[clamp(60px,8vw,85px)]',
+  16: 'min-h-[clamp(52px,7vw,75px)]',
+  20: 'min-h-[clamp(44px,6vw,65px)]',
 };
 
+// Dense HOME board — 7 cols, shorter tiles so more rows show at once
 const HOME_COLS   = 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7';
-const HOME_TILE_H = 'min-h-[clamp(80px,11vw,130px)]';
+const HOME_TILE_H = 'min-h-[clamp(55px,7vw,85px)]';
 
 // Folder tile style — pure white background, clearly "drill in"
 const FOLDER_CLS = 'aac-btn bg-white text-gray-900 rounded-xl border-2 border-gray-300 flex flex-col items-center justify-center gap-1 font-bold select-none text-center hover:border-[#3e2a1a] active:scale-95 transition-transform';
