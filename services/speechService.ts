@@ -211,6 +211,11 @@ export async function speak(
   tone: ToneStyle | 'auto' = 'auto',
 ): Promise<void> {
   if (!text.trim()) return;
+  // Volume=0 guard — catches mis-stored settings before a silent-success
+  if (volume === 0) {
+    console.warn('[TTS] volume=0 — audio will be silent. Check Settings → Voice → Volume slider.');
+    return;
+  }
 
   // Auto tone switch — when caller passes 'auto' (default for new code), the
   // adaptive engine detects emotional context from the text and routes the
@@ -252,7 +257,7 @@ export async function speak(
     const baseLang = lang.toLowerCase().split(/[-_]/)[0];
     const voicePref = (settings as { voicePreferences?: Record<string, string> }).voicePreferences;
     const voiceId = voicePref?.[baseLang] || INWORLD_VOICE_DEFAULTS[baseLang];
-    console.log(`[TTS] Attempting portal TTS: lang=${lang} tone=${effectiveTone} plan=${profile?.plan ?? 'unknown'} voiceId=${voiceId ?? 'auto'} loaded=${useAuthStore.getState().loaded}`);
+    console.log(`[TTS] Attempting portal TTS: lang=${lang} tone=${effectiveTone} plan=${profile?.plan ?? 'unknown'} voiceId=${voiceId ?? 'auto'} loaded=${useAuthStore.getState().loaded} vol=${volume} rate=${effectiveRate}`);
 
     // Tier name reflects the public route's primary backend (Inworld first
     // per speakAzure: it tries /tts/public, then falls back to /tts on 502).
