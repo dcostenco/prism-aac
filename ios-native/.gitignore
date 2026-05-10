@@ -1,3 +1,14 @@
 .build/
+build/
 *.o
 *.d
+*.swiftmodule
+*.swiftdoc
+*.abi.json
+*.swiftsourceinfo
+*.swiftconstvalues
+*.dia
+DerivedData/
+xcuserdata/
+*.xcuserstate
+
