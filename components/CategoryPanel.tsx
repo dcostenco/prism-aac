@@ -347,7 +347,7 @@ export default function CategoryPanel() {
                 {phrases.map((p) => {
                   const local = getPhraseText(p.id, language, p.text);
                   return (
-                    <PhraseTile key={p.id} phrase={local} englishPhrase={p.text}
+                    <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} compact={categoryKeyboardOpen}
                       onClick={() => handlePhrase(local, p.id)}
                       className={`aac-btn rounded-xl font-bold select-none text-center ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]} ${catBg ?? wordBg(p.text)}`}
                     />
@@ -379,7 +379,7 @@ export default function CategoryPanel() {
                 const local = getPhraseText(p.id, language, p.text);
                 const tH = categoryKeyboardOpen ? HOME_TILE_H_KB : HOME_TILE_H;
                 return (
-                  <PhraseTile key={p.id} phrase={local} englishPhrase={p.text}
+                  <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} compact={categoryKeyboardOpen}
                     onClick={() => handlePhrase(local, p.id)}
                     className={`aac-btn rounded-xl font-bold select-none text-center ${tH} ${CAT_BG[catId] ?? 'bg-slate-500 text-white border-slate-600'}`}
                   />

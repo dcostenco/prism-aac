@@ -11,16 +11,12 @@ interface Props {
   style?: React.CSSProperties;
   onClick: () => void;
   ariaLabel?: string;
+  /** Pass true when the tile should be compact (keyboard drawer open).
+   *  Reduces the image max-height so the tile stays at its min-h. */
+  compact?: boolean;
 }
 
-/**
- * Phrase tile that renders a pictogram above the phrase text. The picture
- * source is derived from the user's Synalux plan — Free gets ARASAAC
- * symbols, paid tiers get symbols + AI fallback. Image loads lazily and
- * caches client-side + platform-wide; falls back to text silently if no
- * picture is available.
- */
-export default function PhraseTile({ phrase, englishPhrase, className, style, onClick, ariaLabel }: Props) {
+export default function PhraseTile({ phrase, englishPhrase, className, style, onClick, ariaLabel, compact }: Props) {
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
@@ -33,7 +29,15 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
       if (!cancelled) setIconUrl(url);
     });
     return () => { cancelled = true; };
-  }, [phrase, englishPhrase, pictureMode]);
+  }, [phrase, englishPhrase, pictureMode, language]);
+
+  // Image max size: explicit cap so the image cannot expand the tile beyond min-h.
+  // compact=true (keyboard open) → smaller cap so more rows fit on screen.
+  // Without an explicit max-h, the browser lets the ARASAAC image's intrinsic
+  // size inflate the tile to 135px+ even when min-h is 72px.
+  const imgCls = compact
+    ? 'max-w-[70%] max-h-[2rem] object-contain'   // ≤ 32px — fits compact 72px tile
+    : 'max-w-[clamp(2.5rem,8vw,5rem)] max-h-[clamp(2.5rem,8vw,5rem)] object-contain';
 
   return (
     <button
@@ -42,23 +46,16 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
       className={className}
       style={{ border: '2px solid #000', ...style }}
     >
-      {/* flex-col fills tile height; image takes all space above label */}
       <span className="flex flex-col items-center w-full h-full">
-        {/* Image area — flex-1 so it fills whatever height the tile allows.
-            No hardcoded minHeight so tiles can be compact when keyboard is open. */}
-        <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg overflow-hidden min-h-0">
+        <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg overflow-hidden">
           {iconUrl && (
-            <img
-              src={iconUrl}
-              alt=""
-              aria-hidden
-              loading="lazy"
-              className="max-w-[80%] max-h-full object-contain"
-            />
+            <img src={iconUrl} alt="" aria-hidden loading="lazy" className={imgCls} />
           )}
         </span>
-        {/* Label — always at bottom, wraps freely */}
-        <span className="shrink-0 w-full text-center leading-snug text-[clamp(0.6rem,1.1vw,0.9rem)] font-bold py-1 px-1 border-t-2 border-black break-words" style={{ wordBreak: 'break-word' }}>
+        <span
+          className="shrink-0 w-full text-center leading-snug font-bold py-1 px-1 border-t-2 border-black break-words"
+          style={{ fontSize: 'clamp(0.6rem,1.1vw,0.9rem)', wordBreak: 'break-word' }}
+        >
           {phrase}
         </span>
       </span>
