@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
 import { registerAISubmit, clearAISubmit } from '@/services/aiChatBridge';
+import { checkCrisisSafety } from '@/services/crisisSafetyFilter';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 
@@ -77,6 +78,18 @@ export default function AIChatPanel() {
     const question = useMessageStore.getState().text.trim();
     if (!question || loading) return;
     tapFeedback();
+
+    // Layer 1 — deterministic crisis safety filter (synchronous, no network).
+    const safety = checkCrisisSafety(question);
+    if (!safety.safe) {
+      useMessageStore.getState().setText('');
+      setMessages((m) => [
+        ...m,
+        { role: 'user', text: question },
+        { role: 'ai', text: safety.response, lines: safety.response.split('\n').filter(Boolean) },
+      ]);
+      return;
+    }
 
     // Clear the message bar immediately — next typed text is the follow-up.
     useMessageStore.getState().setText('');

@@ -69,6 +69,7 @@ targets:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       GENERATE_INFOPLIST_FILE: YES
+      PRIVACY_INFO_XCPRIVACY_FILE: PrismAAC/PrivacyInfo.xcprivacy
     dependencies: []
 
   # ── watchOS 7+ standalone app (no extension target needed) ───────────────
