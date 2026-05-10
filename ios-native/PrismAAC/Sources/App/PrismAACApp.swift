@@ -7,6 +7,12 @@ struct PrismAACApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
+                // Simulator / DEBUG: skip model download, show main UI immediately.
+                // The cloud AI path is active — on-device model loads on real device.
+                #if DEBUG || targetEnvironment(simulator)
+                ContentView()
+                    .environmentObject(appState)
+                #else
                 if appState.modelReady || appState.coreOnlyMode {
                     ContentView()
                         .environmentObject(appState)
@@ -14,6 +20,7 @@ struct PrismAACApp: App {
                     ModelLoadingView()
                         .environmentObject(appState)
                 }
+                #endif
             }
         }
     }

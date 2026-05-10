@@ -1,0 +1,587 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		02A1FE49BE312465B8C9EB00 /* WatchRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43748A7D7DBC5E225824C383 /* WatchRootView.swift */; };
+		0F41DF8A255CAB7496EEED20 /* WatchTTS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE9F6102290192A69EA33F /* WatchTTS.swift */; };
+		2CD68B3ABCB8C23FF1104EC7 /* PrismAACApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */; };
+		392B5229AD89E099671B344E /* WatchPhrasePictogramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC463DFBFAE79622422FCD08 /* WatchPhrasePictogramView.swift */; };
+		79A08C2E36B3B5E9C19C91EF /* WatchEmergencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */; };
+		8ACCA7F12A410E5951CB832F /* SafetyFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 824CFF80AABA2799959262E4 /* SafetyFilter.swift */; };
+		96494A55BCE4B701CC283F79 /* WatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7D87755CBCE7686166B1A4 /* WatchApp.swift */; };
+		A2378644AD87D49B61BC9290 /* AACPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */; };
+		A5C28FF4113B9AFFB775B7E7 /* WatchAISession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAD607AA400B994C75354DD /* WatchAISession.swift */; };
+		A761744803E81B1102D1B58A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336C616FA71B6C3F3227FC90 /* ContentView.swift */; };
+		A9A7C3336D26BD9F125CFF29 /* WatchPictogramCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F932363A3D82535E9971EE /* WatchPictogramCards.swift */; };
+		AFA1E81830CA008E80B17F8E /* LLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514A2FD3A0BC693D56606896 /* LLMEngine.swift */; };
+		EF9EBF1590D95DA7BA2B75C2 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DB2AB8796CA83596887AD3 /* AppState.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		79F1897122443ED3CA3471A6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 94B38DF5C167816F45B98216 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 37F3B4323FACF28FDB1C7BA2;
+			remoteInfo = PrismAAC;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchEmergencyManager.swift; sourceTree = "<group>"; };
+		1BAD607AA400B994C75354DD /* WatchAISession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAISession.swift; sourceTree = "<group>"; };
+		2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		336C616FA71B6C3F3227FC90 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		3C1E662AEED98B7777920115 /* PrismAAC.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PrismAAC.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		43748A7D7DBC5E225824C383 /* WatchRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRootView.swift; sourceTree = "<group>"; };
+		514A2FD3A0BC693D56606896 /* LLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEngine.swift; sourceTree = "<group>"; };
+		62DB2AB8796CA83596887AD3 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		67DE9F6102290192A69EA33F /* WatchTTS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTTS.swift; sourceTree = "<group>"; };
+		73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AACPipeline.swift; sourceTree = "<group>"; };
+		824CFF80AABA2799959262E4 /* SafetyFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyFilter.swift; sourceTree = "<group>"; };
+		8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PrismAACWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4F932363A3D82535E9971EE /* WatchPictogramCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPictogramCards.swift; sourceTree = "<group>"; };
+		AA7D87755CBCE7686166B1A4 /* WatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchApp.swift; sourceTree = "<group>"; };
+		DC463DFBFAE79622422FCD08 /* WatchPhrasePictogramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPhrasePictogramView.swift; sourceTree = "<group>"; };
+		F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		21B589C99A1546866494C0DE /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		27E260A2E20EED5FD7D47A08 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				62DB2AB8796CA83596887AD3 /* AppState.swift */,
+				F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		3810A000D727421B7A8621B9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3C1E662AEED98B7777920115 /* PrismAAC.app */,
+				2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */,
+				8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		50079412AC90BAE269F6364D /* PrismAAC */ = {
+			isa = PBXGroup;
+			children = (
+				BF84A2F43F9820AD6D6409EE /* Sources */,
+				21B589C99A1546866494C0DE /* Tests */,
+			);
+			path = PrismAAC;
+			sourceTree = "<group>";
+		};
+		51965D32F560CA8C415B64C0 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				DC463DFBFAE79622422FCD08 /* WatchPhrasePictogramView.swift */,
+				A4F932363A3D82535E9971EE /* WatchPictogramCards.swift */,
+				43748A7D7DBC5E225824C383 /* WatchRootView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		59A0D9C574D82B5EA3441709 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				AA7D87755CBCE7686166B1A4 /* WatchApp.swift */,
+				67DE9F6102290192A69EA33F /* WatchTTS.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		604F964895256A45797E94C1 /* PrismAACWatch */ = {
+			isa = PBXGroup;
+			children = (
+				7795A92B4E6D956D4CC34A5A /* Sources */,
+			);
+			path = PrismAACWatch;
+			sourceTree = "<group>";
+		};
+		6E46E9CBA279114527F4BEFD /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */,
+				514A2FD3A0BC693D56606896 /* LLMEngine.swift */,
+			);
+			path = Engine;
+			sourceTree = "<group>";
+		};
+		7795A92B4E6D956D4CC34A5A /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				969C8F21D16D5D15A3EF068F /* AI */,
+				59A0D9C574D82B5EA3441709 /* App */,
+				98093A83AD7EC30FE022A107 /* Emergency */,
+				51965D32F560CA8C415B64C0 /* Views */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		9447AA50B808C2BC223505DD /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				336C616FA71B6C3F3227FC90 /* ContentView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		969C8F21D16D5D15A3EF068F /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				1BAD607AA400B994C75354DD /* WatchAISession.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+		98093A83AD7EC30FE022A107 /* Emergency */ = {
+			isa = PBXGroup;
+			children = (
+				1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */,
+			);
+			path = Emergency;
+			sourceTree = "<group>";
+		};
+		A8933DF552D882DF9ED39435 /* Safety */ = {
+			isa = PBXGroup;
+			children = (
+				824CFF80AABA2799959262E4 /* SafetyFilter.swift */,
+			);
+			path = Safety;
+			sourceTree = "<group>";
+		};
+		BF84A2F43F9820AD6D6409EE /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				27E260A2E20EED5FD7D47A08 /* App */,
+				6E46E9CBA279114527F4BEFD /* Engine */,
+				A8933DF552D882DF9ED39435 /* Safety */,
+				9447AA50B808C2BC223505DD /* Views */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		F6F72D19BD7F549E86B62BEC = {
+			isa = PBXGroup;
+			children = (
+				50079412AC90BAE269F6364D /* PrismAAC */,
+				604F964895256A45797E94C1 /* PrismAACWatch */,
+				3810A000D727421B7A8621B9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		37F3B4323FACF28FDB1C7BA2 /* PrismAAC */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 95E9AC5685F22E60AF26AD2C /* Build configuration list for PBXNativeTarget "PrismAAC" */;
+			buildPhases = (
+				B370F9EA8C16398E6A8601CC /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PrismAAC;
+			packageProductDependencies = (
+			);
+			productName = PrismAAC;
+			productReference = 3C1E662AEED98B7777920115 /* PrismAAC.app */;
+			productType = "com.apple.product-type.application";
+		};
+		46A764FCF03891511096393D /* PrismAACTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7819616DD5D32FAC90280FE4 /* Build configuration list for PBXNativeTarget "PrismAACTests" */;
+			buildPhases = (
+				F56CB298F95D448ECA73082C /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B345DD75A65DE7B7EDD75EB4 /* PBXTargetDependency */,
+			);
+			name = PrismAACTests;
+			packageProductDependencies = (
+			);
+			productName = PrismAACTests;
+			productReference = 2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		C059824D983FDADEE5E3C89D /* PrismAACWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EB1CCDFE3CF7148A03C82215 /* Build configuration list for PBXNativeTarget "PrismAACWatch" */;
+			buildPhases = (
+				B349B71D3D5FD9432870AA63 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PrismAACWatch;
+			packageProductDependencies = (
+			);
+			productName = PrismAACWatch;
+			productReference = 8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		94B38DF5C167816F45B98216 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 287B58E9C7C10FCE9347EF19 /* Build configuration list for PBXProject "PrismAAC" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = F6F72D19BD7F549E86B62BEC;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 3810A000D727421B7A8621B9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				37F3B4323FACF28FDB1C7BA2 /* PrismAAC */,
+				46A764FCF03891511096393D /* PrismAACTests */,
+				C059824D983FDADEE5E3C89D /* PrismAACWatch */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B349B71D3D5FD9432870AA63 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A5C28FF4113B9AFFB775B7E7 /* WatchAISession.swift in Sources */,
+				96494A55BCE4B701CC283F79 /* WatchApp.swift in Sources */,
+				79A08C2E36B3B5E9C19C91EF /* WatchEmergencyManager.swift in Sources */,
+				392B5229AD89E099671B344E /* WatchPhrasePictogramView.swift in Sources */,
+				A9A7C3336D26BD9F125CFF29 /* WatchPictogramCards.swift in Sources */,
+				02A1FE49BE312465B8C9EB00 /* WatchRootView.swift in Sources */,
+				0F41DF8A255CAB7496EEED20 /* WatchTTS.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B370F9EA8C16398E6A8601CC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A2378644AD87D49B61BC9290 /* AACPipeline.swift in Sources */,
+				EF9EBF1590D95DA7BA2B75C2 /* AppState.swift in Sources */,
+				A761744803E81B1102D1B58A /* ContentView.swift in Sources */,
+				AFA1E81830CA008E80B17F8E /* LLMEngine.swift in Sources */,
+				2CD68B3ABCB8C23FF1104EC7 /* PrismAACApp.swift in Sources */,
+				8ACCA7F12A410E5951CB832F /* SafetyFilter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F56CB298F95D448ECA73082C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B345DD75A65DE7B7EDD75EB4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 37F3B4323FACF28FDB1C7BA2 /* PrismAAC */;
+			targetProxy = 79F1897122443ED3CA3471A6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0D2FB979974D64CDFF7A9B89 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.synalux.PrismAACTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PrismAAC.app/PrismAAC";
+			};
+			name = Release;
+		};
+		5A494470A9CF40DCBB73ED59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_BITCODE = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.10;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Release;
+		};
+		77A31AD5DC29F7325CD80873 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.synalux.PrismAACTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PrismAAC.app/PrismAAC";
+			};
+			name = Debug;
+		};
+		82A7F94C1CA7F769ACD79F43 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PrismAACWatch/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Release;
+		};
+		890A9F6DD7A61A07007D4CCE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_BITCODE = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.10;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Debug;
+		};
+		ACCA8FB65EBB98661B0050B0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PrismAAC/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B3E64B276666250193F9E829 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PrismAAC/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		BC2EDADD9197ADEFDAABE3D8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PrismAACWatch/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		287B58E9C7C10FCE9347EF19 /* Build configuration list for PBXProject "PrismAAC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				890A9F6DD7A61A07007D4CCE /* Debug */,
+				5A494470A9CF40DCBB73ED59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7819616DD5D32FAC90280FE4 /* Build configuration list for PBXNativeTarget "PrismAACTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				77A31AD5DC29F7325CD80873 /* Debug */,
+				0D2FB979974D64CDFF7A9B89 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		95E9AC5685F22E60AF26AD2C /* Build configuration list for PBXNativeTarget "PrismAAC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ACCA8FB65EBB98661B0050B0 /* Debug */,
+				B3E64B276666250193F9E829 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EB1CCDFE3CF7148A03C82215 /* Build configuration list for PBXNativeTarget "PrismAACWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC2EDADD9197ADEFDAABE3D8 /* Debug */,
+				82A7F94C1CA7F769ACD79F43 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 94B38DF5C167816F45B98216 /* Project object */;
+}
