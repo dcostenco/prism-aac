@@ -51,12 +51,21 @@ const serwist = new Serwist({
 
 serwist.addEventListeners();
 
-// On activate: wipe all runtime caches from the previous SW so stale
-// entries don't bleed through. Static assets will be re-fetched and
-// re-cached with the new content-hashed filenames on the next load.
+// On activate: clear only RUNTIME caches from the previous SW version.
+// The Serwist precache (contains `serwist-precache` in its name) MUST
+// be preserved — it is what enables offline functionality. Deleting it
+// makes the app fail offline until all assets are re-fetched.
+// Runtime caches (navigation, static) are safe to clear because new
+// content-hashed assets will be fetched and re-cached on next load.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))),
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((k) => !k.includes('precache') && !k.includes('serwist'))
+          .map((k) => caches.delete(k)),
+      ),
+    ),
   );
 });
 

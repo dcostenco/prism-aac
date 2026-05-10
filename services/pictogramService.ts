@@ -149,8 +149,17 @@ async function cachePut(key: string, blob: Blob): Promise<void> {
 
 // ── ARASAAC lookup ──────────────────────────────────────────────────────────
 
+// In-memory negative cache — words ARASAAC doesn't have pictograms for.
+// Prevents repeated 404 requests for the same word within a session.
+// Key: `${langCode}:${token}`. Cleared on page reload (intentional —
+// session-scoped only, offline cache in IndexedDB holds positives).
+const arasaacMisses = new Set<string>();
+
 async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
   const langCode = lang.split('-')[0] || 'en';
+  const missKey = `${langCode}:${token.toLowerCase()}`;
+  if (arasaacMisses.has(missKey)) return null;
+
   const searchT = timeoutSignal(5000);
   let id: number | null = null;
   try {
@@ -158,9 +167,9 @@ async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
       headers: { 'Accept': 'application/json' },
       signal: searchT.signal,
     });
-    if (!res.ok) return null;
+    if (!res.ok) { arasaacMisses.add(missKey); return null; }
     const data: ArasaacHit[] = await res.json();
-    if (!Array.isArray(data) || data.length === 0) return null;
+    if (!Array.isArray(data) || data.length === 0) { arasaacMisses.add(missKey); return null; }
     id = data[0]._id;
   } catch {
     return null;
