@@ -245,7 +245,7 @@ export default function CategoryPanel() {
 
   // ── SEARCH PANEL JSX (inlined) ───────────────────────────────────────────────
   const searchPanelJsx = (
-    <div className="flex-1 flex flex-col min-h-0">
+    <div className="flex-1 min-w-0 flex flex-col min-h-0">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-theme bg-[#3e2a1a] shrink-0">
         <span className="text-white/60 text-xl">🔍</span>
         <input
@@ -333,7 +333,7 @@ export default function CategoryPanel() {
         <PageLabel label={catName} />
         <div className="flex flex-row flex-1 min-h-0">
           {searchOpen ? searchPanelJsx : (
-            <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 min-w-0 flex flex-col min-h-0">
               {sequences.length > 0 && (
                 <div className="flex gap-2 px-2 py-1.5 border-b border-theme shrink-0 overflow-x-auto">
                   {sequences.map((seq) => (
@@ -382,7 +382,7 @@ export default function CategoryPanel() {
       <PageLabel label="HOME" />
       <div className="flex flex-row flex-1 min-h-0">
         {searchOpen ? searchPanelJsx : (
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 min-w-0 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
             <div className={`grid ${HOME_COLS} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0 content-start`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
               {homeGridPhrases.map(({ phrase: p, catId }) => {
