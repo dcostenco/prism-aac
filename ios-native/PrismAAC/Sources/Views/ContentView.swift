@@ -1,99 +1,221 @@
 import SwiftUI
+import WebKit
+import AVFoundation
+
+/// PrismAAC iOS host — WKWebView wrapping synalux.ai/prism-aac.
+///
+/// Why WKWebView and not a pure SwiftUI rebuild:
+///   - The web app has 22+ categories, math module, AI chat, autocorrect,
+///     all languages, prediction engine — re-implementing in Swift takes months
+///   - Apple guideline 4.2 allows web views that host YOUR OWN first-party
+///     content with significant native enhancement. We add: AVSpeechSynthesizer
+///     TTS (better than WebSpeech on iOS), on-device 1.5B inference, Watch
+///     companion, emergency service, offline cache.
+///
+/// Native bridge (JS → Swift):
+///   prismNative.speak(text, lang, rate)   → AVSpeechSynthesizer
+///   prismNative.emergency(phrase)         → WatchConnectivity + Twilio
+///   prismNative.memoryPressure()          → returns free MB
+///
+/// Offline: WKWebView built-in HTTP cache + content-world localStorage.
+/// First load: fetches live. Subsequent loads: cache-first (works offline).
 
 struct ContentView: View {
     @EnvironmentObject var app: AppState
-    @State private var composedText = ""
-    @State private var showAIPanel = false
-    @State private var selectedLanguage = "en-US"
 
     var body: some View {
-        GeometryReader { geo in
-            let isLandscape = geo.size.width > geo.size.height
-            Group {
-                if isLandscape && geo.size.height < 500 {
-                    // iPhone landscape: side-by-side
-                    landscapeLayout(geo: geo)
-                } else {
-                    // Portrait (all) and iPad landscape: vertical, fills screen
-                    portraitLayout(geo: geo)
+        ZStack(alignment: .top) {
+            PrismWebView(pipeline: app.pipeline)
+                .ignoresSafeArea()
+
+            // Memory pressure banner — overlay when degraded
+            if let banner = app.memoryBanner {
+                VStack {
+                    MemoryBannerView(message: banner, tier: app.tier)
+                    Spacer()
                 }
             }
-        }
-        .background(Color(.systemBackground))
-        .animation(.easeInOut(duration: 0.2), value: app.tier)
-        .animation(.easeInOut(duration: 0.2), value: showAIPanel)
-    }
-
-    // MARK: - Portrait + iPad landscape: vertical, phrase grid fills space
-
-    private func portraitLayout(geo: GeometryProxy) -> some View {
-        let keyboardH = min(geo.size.height * 0.32, 220.0)
-        let msgBarH   = 70.0
-        let phraseH   = geo.size.height - keyboardH - msgBarH - (app.memoryBanner != nil ? 32 : 0)
-
-        return VStack(spacing: 0) {
-            if let banner = app.memoryBanner { MemoryBannerView(message: banner, tier: app.tier) }
-            MessageBarView(
-                text: $composedText,
-                onSpeak: { app.pipeline.speak(text: composedText, language: selectedLanguage) },
-                onClear: { composedText = "" }
-            )
-            .frame(height: msgBarH)
-            if showAIPanel && app.tier.aiEnabled {
-                AIResponseView(pipeline: app.pipeline, question: composedText)
-                    .frame(maxHeight: 180)
-                    .transition(.move(edge: .top))
-            }
-            PhraseBoardView(
-                onPhrase: { phrase in composedText += (composedText.isEmpty ? "" : " ") + phrase },
-                availableHeight: phraseH
-            )
-            .frame(height: phraseH)
-            KeyboardView(
-                text: $composedText,
-                onSpeak: { app.pipeline.speak(text: composedText, language: selectedLanguage) },
-                onAsk: app.tier.aiEnabled ? { showAIPanel.toggle() } : nil
-            )
-            .frame(height: keyboardH)
-        }
-    }
-
-    // MARK: - iPhone landscape: side-by-side
-
-    private func landscapeLayout(geo: GeometryProxy) -> some View {
-        VStack(spacing: 0) {
-            if let banner = app.memoryBanner { MemoryBannerView(message: banner, tier: app.tier) }
-            MessageBarView(
-                text: $composedText,
-                onSpeak: { app.pipeline.speak(text: composedText, language: selectedLanguage) },
-                onClear: { composedText = "" }
-            )
-            .frame(height: 52)
-            HStack(spacing: 0) {
-                PhraseBoardView(
-                    onPhrase: { phrase in composedText += (composedText.isEmpty ? "" : " ") + phrase },
-                    availableHeight: geo.size.height - 52
-                )
-                .frame(width: geo.size.width * 0.42)
-                Divider()
-                KeyboardView(
-                    text: $composedText,
-                    onSpeak: { app.pipeline.speak(text: composedText, language: selectedLanguage) },
-                    onAsk: app.tier.aiEnabled ? { showAIPanel.toggle() } : nil
-                )
-                .frame(maxWidth: .infinity)
-            }
-            .frame(maxHeight: .infinity)
         }
     }
 }
 
-// MARK: - Memory banner
+// MARK: - Web view
+
+struct PrismWebView: UIViewRepresentable {
+    let pipeline: AACPipeline
+
+    func makeCoordinator() -> Coordinator { Coordinator(pipeline: pipeline) }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let config = WKWebViewConfiguration()
+
+        // Allow media playback without user gesture (needed for AAC TTS)
+        config.allowsInlineMediaPlayback = true
+        config.mediaTypesRequiringUserActionForPlayback = []
+
+        // Register native bridge — JS calls prismNative.* methods
+        let contentController = WKUserContentController()
+        contentController.add(context.coordinator, name: "prismNative")
+        config.userContentController = contentController
+
+        // Inject bridge script so the web app can call native methods
+        let bridgeJS = WKUserScript(
+            source: nativeBridgeScript(),
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
+        )
+        contentController.addUserScript(bridgeJS)
+
+        // Generous cache so offline works
+        config.websiteDataStore = .default()
+
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.allowsBackForwardNavigationGestures = false
+        webView.scrollView.bounces = false
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.navigationDelegate = context.coordinator
+        webView.backgroundColor = .systemBackground
+
+        // Load the app
+        let url = URL(string: "https://synalux.ai/prism-aac")!
+        var request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad)
+        request.timeoutInterval = 15
+        webView.load(request)
+
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {}
+
+    // MARK: - Native bridge JS
+
+    private func nativeBridgeScript() -> String {
+        """
+        // Prism Native Bridge — injected before page load.
+        // Intercepts AAC speak calls and routes to AVSpeechSynthesizer via WKScriptMessageHandler.
+        window.prismNativeBridge = {
+            speak: function(text, lang, rate) {
+                window.webkit.messageHandlers.prismNative.postMessage({
+                    action: 'speak', text: text, lang: lang || 'en-US', rate: rate || 0.5
+                });
+            },
+            stopSpeech: function() {
+                window.webkit.messageHandlers.prismNative.postMessage({ action: 'stopSpeech' });
+            },
+            emergency: function(phrase) {
+                window.webkit.messageHandlers.prismNative.postMessage({
+                    action: 'emergency', phrase: phrase
+                });
+            },
+            freeMemoryMB: function() {
+                // Async — returns via prismNativeCallback
+                window.webkit.messageHandlers.prismNative.postMessage({ action: 'memoryPressure' });
+            }
+        };
+        // Override Web Speech API with native TTS for better iOS quality
+        if (window.speechSynthesis) {
+            const _native = window.prismNativeBridge;
+            window.speechSynthesis.speak = function(utt) {
+                _native.speak(utt.text, utt.lang, utt.rate);
+                // Fire onend after estimated duration
+                if (utt.onend) setTimeout(() => utt.onend({}), Math.max(500, utt.text.length * 60));
+            };
+            window.speechSynthesis.cancel = function() { _native.stopSpeech(); };
+        }
+        console.log('[PrismNative] bridge ready');
+        """
+    }
+
+    // MARK: - Coordinator
+
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        let pipeline: AACPipeline
+        let tts = WKWebTTS()
+
+        init(pipeline: AACPipeline) { self.pipeline = pipeline }
+
+        // Handle JS → Native messages
+        func userContentController(_ controller: WKUserContentController,
+                                   didReceive message: WKScriptMessage) {
+            guard let body = message.body as? [String: Any],
+                  let action = body["action"] as? String else { return }
+            switch action {
+            case "speak":
+                let text = body["text"] as? String ?? ""
+                let lang = body["lang"] as? String ?? "en-US"
+                let rate = Float(body["rate"] as? Double ?? 0.5)
+                tts.speak(text, language: lang, rate: rate)
+            case "stopSpeech":
+                tts.stop()
+            case "emergency":
+                let phrase = body["phrase"] as? String ?? "Help"
+                Task { @MainActor in
+                    WatchEmergencyBridge.shared.trigger(phrase: phrase)
+                }
+            case "memoryPressure":
+                let free = AppState.measureFreeMemoryMB()
+                message.webView?.evaluateJavaScript(
+                    "window.prismNativeCallback && window.prismNativeCallback('memoryPressure', \(free))",
+                    completionHandler: nil
+                )
+            default: break
+            }
+        }
+
+        // Show offline fallback if load fails
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error) {
+            let offlineHTML = """
+            <html><body style='background:#14161d;color:white;font-family:sans-serif;
+            display:flex;align-items:center;justify-content:center;height:100vh;margin:0;
+            flex-direction:column;gap:16px;text-align:center;padding:20px'>
+            <div style='font-size:48px'>📵</div>
+            <h2 style='margin:0'>No connection</h2>
+            <p style='margin:0;opacity:0.7'>Core phrases and emergency still work from the Watch app.</p>
+            <button onclick='location.reload()' style='padding:12px 24px;border-radius:8px;
+            background:#4CAF50;color:white;border:none;font-size:16px;cursor:pointer'>
+            Try again</button>
+            </body></html>
+            """
+            webView.loadHTMLString(offlineHTML, baseURL: nil)
+        }
+    }
+}
+
+// MARK: - Native TTS wrapper (better than WebSpeech on iOS)
+
+final class WKWebTTS: NSObject {
+    private let synth = AVSpeechSynthesizer()
+
+    func speak(_ text: String, language: String = "en-US", rate: Float = 0.5) {
+        synth.stopSpeaking(at: .immediate)
+        let utt = AVSpeechUtterance(string: text)
+        utt.voice = AVSpeechSynthesisVoice(language: language)
+        utt.rate = max(AVSpeechUtteranceMinimumSpeechRate,
+                       min(AVSpeechUtteranceMaximumSpeechRate, rate))
+        synth.speak(utt)
+    }
+
+    func stop() { synth.stopSpeaking(at: .immediate) }
+}
+
+// MARK: - Emergency bridge — sends SOS to Watch via WatchConnectivity
+
+@MainActor
+final class WatchEmergencyBridge {
+    static let shared = WatchEmergencyBridge()
+
+    func trigger(phrase: String) {
+        // Relay to Watch for haptic + SMS chain
+        let msg: [String: Any] = ["type": "emergency", "phrase": phrase, "severity": "critical"]
+        NotificationCenter.default.post(name: .init("PrismEmergencyTriggered"), object: msg)
+    }
+}
+
+// MARK: - Memory banner (shown as overlay)
 
 struct MemoryBannerView: View {
     let message: String
     let tier: AppState.FeatureTier
-
     private var color: Color { tier == .emergency ? .red : .orange }
 
     var body: some View {
@@ -103,230 +225,11 @@ struct MemoryBannerView: View {
             Spacer()
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(color.opacity(0.15)).foregroundColor(color)
+        .background(color.opacity(0.9)).foregroundColor(.white)
     }
 }
 
-// MARK: - Message bar
-
-struct MessageBarView: View {
-    @Binding var text: String
-    let onSpeak: () -> Void
-    let onClear: () -> Void
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Text(text.isEmpty ? "Tap to build a message…" : text)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(10)
-                .foregroundColor(text.isEmpty ? .secondary : .primary)
-                .font(.title3)
-                .lineLimit(2)
-
-            Button(action: onSpeak) {
-                Image(systemName: "play.fill")
-                    .font(.title2).foregroundColor(.white)
-                    .frame(width: 52, height: 52)
-                    .background(text.isEmpty ? Color.gray : Color.green)
-                    .cornerRadius(12)
-            }
-            .disabled(text.isEmpty)
-            .accessibilityLabel("Speak")
-
-            Button(action: onClear) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.title2).foregroundColor(.white)
-                    .frame(width: 52, height: 52)
-                    .background(Color.red.opacity(0.8))
-                    .cornerRadius(12)
-            }
-            .accessibilityLabel("Clear")
-        }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(Color(.systemBackground))
-    }
-}
-
-// MARK: - Phrase board (fills all remaining height)
-
-struct PhraseBoardView: View {
-    let onPhrase: (String) -> Void
-    var availableHeight: Double = 300
-
-    private let coreCategories: [(icon: String, label: String, phrases: [String])] = [
-        ("⚡", "Quick",    ["Yes", "No", "More", "Stop", "Help", "Wait", "Thank you", "All done"]),
-        ("😊", "Feelings", ["Happy", "Sad", "Tired", "Hurt", "Scared", "Hungry"]),
-        ("💧", "Needs",    ["Water", "Food", "Bathroom", "Medicine", "Sit down", "Go home"]),
-        ("🏠", "Places",   ["Home", "School", "Hospital", "Bathroom", "Outside", "Car"]),
-    ]
-
-    @State private var selectedCategory = 0
-
-    var body: some View {
-        VStack(spacing: 0) {
-            // Category tabs
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(coreCategories.indices, id: \.self) { i in
-                        Button {
-                            selectedCategory = i
-                        } label: {
-                            Text(coreCategories[i].label)
-                                .padding(.horizontal, 14).padding(.vertical, 8)
-                                .background(selectedCategory == i ? Color.accentColor : Color(.tertiarySystemBackground))
-                                .foregroundColor(selectedCategory == i ? .white : .primary)
-                                .cornerRadius(20)
-                                .font(.subheadline).fontWeight(.medium)
-                        }
-                        .accessibilityLabel(coreCategories[i].label)
-                    }
-                }
-                .padding(.horizontal, 12).padding(.vertical, 6)
-            }
-
-            // Phrase grid — buttons fill ALL available height equally
-            let phrases = coreCategories[selectedCategory].phrases
-            let tabBarH: Double = 44
-            let gridH = max(80, availableHeight - tabBarH - 8)
-            let cols = phrases.count <= 4 ? 2 : (phrases.count <= 6 ? 3 : 4)
-            let rows = Int(ceil(Double(phrases.count) / Double(cols)))
-            let btnH = max(44, (gridH - Double(rows - 1) * 8) / Double(rows))
-
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: cols),
-                spacing: 8
-            ) {
-                ForEach(phrases, id: \.self) { phrase in
-                    Button {
-                        onPhrase(phrase)
-                    } label: {
-                        Text(phrase)
-                            .font(.callout).fontWeight(.semibold)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: btnH)
-                            .background(Color(.secondarySystemBackground))
-                            .cornerRadius(10)
-                            .foregroundColor(.primary)
-                    }
-                    .accessibilityLabel(phrase)
-                }
-            }
-            .padding(.horizontal, 8).padding(.bottom, 4)
-        }
-    }
-}
-
-// MARK: - Key button (extracted to help type-checker)
-
-private struct KeyButton: View {
-    let char: Character
-    let onTap: () -> Void
-    var body: some View {
-        Button(String(char), action: onTap)
-            .font(.title3).fontWeight(.medium)
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .background(Color(.tertiarySystemBackground))
-            .cornerRadius(6)
-            .foregroundColor(.primary)
-            .accessibilityLabel(String(char))
-    }
-}
-
-// MARK: - Keyboard
-
-struct KeyboardView: View {
-    @Binding var text: String
-    let onSpeak: () -> Void
-    let onAsk: (() -> Void)?
-
-    private let rows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
-
-    var body: some View {
-        VStack(spacing: 3) {
-            ForEach(rows, id: \.self) { row in
-                HStack(spacing: 3) {
-                    ForEach(Array(row), id: \.self) { char in
-                        KeyButton(char: char, onTap: { text += String(char).lowercased() })
-                    }
-                }
-            }
-
-            // Utility row — all buttons always visible
-            HStack(spacing: 4) {
-                Button("space") { text += " " }
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(Color(.tertiarySystemBackground))
-                    .cornerRadius(6)
-                    .font(.callout)
-                    .accessibilityLabel("space")
-
-                Button {
-                    if !text.isEmpty { text.removeLast() }
-                } label: {
-                    Image(systemName: "delete.left")
-                        .font(.title3)
-                }
-                .frame(width: 52).frame(minHeight: 44)
-                .background(Color(.tertiarySystemBackground))
-                .cornerRadius(6)
-                .accessibilityLabel("Delete")
-
-                if let onAsk {
-                    Button("AI ✦", action: onAsk)
-                        .frame(width: 68).frame(minHeight: 44)
-                        .background(Color.accentColor)
-                        .foregroundColor(.white)
-                        .cornerRadius(6)
-                        .fontWeight(.bold)
-                        .accessibilityLabel("AI ✦")
-                }
-
-                Button("Speak", action: onSpeak)
-                    .frame(width: 80).frame(minHeight: 44)
-                    .background(text.isEmpty ? Color.gray : Color.green)
-                    .foregroundColor(.white)
-                    .cornerRadius(6)
-                    .fontWeight(.bold)
-                    .disabled(text.isEmpty)
-                    .accessibilityLabel("Speak")
-            }
-        }
-        .padding(.horizontal, 6).padding(.vertical, 6)
-        .background(Color(.secondarySystemBackground))
-    }
-}
-
-// MARK: - AI response panel
-
-struct AIResponseView: View {
-    let pipeline: AACPipeline
-    let question: String
-    @State private var response = ""
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("AI Response", systemImage: "sparkles")
-                .font(.caption).foregroundColor(.secondary)
-            ScrollView {
-                Text(response.isEmpty ? "Thinking…" : response)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .padding(10)
-        .background(Color(.tertiarySystemBackground))
-        .cornerRadius(10)
-        .padding(.horizontal, 10)
-        .task {
-            let stream = pipeline.ask(question: question)
-            for await token in stream { response += token }
-        }
-    }
-}
-
-// MARK: - Model loading view
+// MARK: - Model loading screen (shown before web if model download needed)
 
 struct ModelLoadingView: View {
     @EnvironmentObject var app: AppState
@@ -340,55 +243,50 @@ struct ModelLoadingView: View {
             Spacer()
             Image(systemName: "brain.fill").font(.system(size: 64)).foregroundColor(.accentColor)
             switch phase {
-            case .checking:
-                ProgressView("Checking device memory…")
+            case .checking: ProgressView("Checking…")
             case .downloading:
-                VStack(spacing: 12) {
-                    Text("Downloading AI model").font(.headline)
+                VStack(spacing: 8) {
+                    Text("Downloading AI model (864 MB)").font(.headline)
                     ProgressView(value: progress).padding(.horizontal, 32)
-                    Text("\(Int(progress * 100))% — 864 MB").font(.caption).foregroundColor(.secondary)
+                    Text("\(Int(progress * 100))%").font(.caption).foregroundColor(.secondary)
                 }
             case .lowMemory:
                 VStack(spacing: 12) {
-                    Text("Device memory is low").font(.headline)
-                    Text("Core AAC and cloud AI still work.").font(.callout).foregroundColor(.secondary)
-                    Button("Continue with Core AAC") { app.enterCoreOnlyMode() }.buttonStyle(.borderedProminent)
+                    Text("Low memory").font(.headline)
+                    Text("Cloud AI is active. Core AAC works offline.").foregroundColor(.secondary)
+                    Button("Continue") { app.enterCoreOnlyMode() }.buttonStyle(.borderedProminent)
                 }
             case .failed:
                 VStack(spacing: 12) {
                     Text("Download failed").font(.headline)
-                    Button("Try again") { Task { await startDownload() } }.buttonStyle(.bordered)
-                    Button("Continue without AI") { app.enterCoreOnlyMode() }
+                    Button("Try again") { Task { await start() } }.buttonStyle(.bordered)
+                    Button("Skip") { app.enterCoreOnlyMode() }
                 }
             }
             Spacer()
-            if phase == .downloading || phase == .checking {
-                Button("Use Core AAC only") { app.enterCoreOnlyMode() }
+            if phase != .lowMemory && phase != .failed {
+                Button("Skip AI model") { app.enterCoreOnlyMode() }
                     .font(.caption).foregroundColor(.secondary)
             }
         }
-        .task { await startDownload() }
+        .task { await start() }
     }
 
-    private func startDownload() async {
+    private func start() async {
         phase = .checking
-        let free = AppState.measureFreeMemoryMB()
-        guard free >= 1_200 else { phase = .lowMemory; return }
+        guard AppState.measureFreeMemoryMB() >= 1_200 else { phase = .lowMemory; return }
         let url = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("models/prism-ios-1.5b-q4.gguf")
-        if FileManager.default.fileExists(atPath: url.path) {
-            await app.loadModel(from: url); return
-        }
+        if FileManager.default.fileExists(atPath: url.path) { await app.loadModel(from: url); return }
         phase = .downloading
         do {
-            // Download from CDN (URL set once model is hosted)
             let cdnURL = URL(string: "https://synalux.ai/models/prism-ios-1.5b-q4.gguf")!
             let (bytes, _) = try await URLSession.shared.bytes(from: cdnURL)
-            var data = Data(); var written: Int64 = 0
-            for try await chunk in bytes {
-                data.append(chunk); written += 1
-                if written % 65536 == 0 { await MainActor.run { progress = Double(written) / 864_000_000 } }
+            var data = Data(); var n: Int64 = 0
+            for try await b in bytes {
+                data.append(b); n += 1
+                if n % 65536 == 0 { await MainActor.run { progress = Double(n) / 864_000_000 } }
             }
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try data.write(to: url)

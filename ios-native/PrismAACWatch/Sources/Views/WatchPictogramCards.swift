@@ -59,9 +59,26 @@ struct WatchPictogramCards: View {
     @EnvironmentObject var tts: WatchTTS
     @EnvironmentObject var emergency: WatchEmergencyManager
     @EnvironmentObject var session: WatchAISession
+    @EnvironmentObject var vocab: WatchVocabSync
 
-    // Flat list of all phrases for swiping (most frequent first)
-    private let allPhrases: [AACPhrase] = AACVocab.childFriendlyOrder
+    // Use synced phrases from web app; fall back to offline core
+    private var allPhrases: [AACPhrase] {
+        let synced = vocab.categories.flatMap { cat in
+            cat.phrases.map { p in
+                AACPhrase(label: p.label, sfSymbol: p.sfSymbol, color: phraseColor(cat.id), arasaacId: p.arasaacId)
+            }
+        }
+        return synced.isEmpty ? AACVocab.childFriendlyOrder : synced
+    }
+
+    private func phraseColor(_ categoryId: String) -> Color {
+        switch categoryId {
+        case "help-needs", "emergency": return .red
+        case "feelings": return .blue
+        case "food-ordering", "needs": return .orange
+        default: return .accentColor
+        }
+    }
 
     @State private var currentIndex = 0
 
