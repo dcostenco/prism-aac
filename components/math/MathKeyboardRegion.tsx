@@ -15,15 +15,15 @@
  * the whole point — when the user is in column-arithmetic mode they
  * can't have their work jumping every time they tap a category chip.
  *
- * Phase 2A scope:
- *   • Region container with chip row + active panel.
- *   • Main + Letters + Adv. Math panels (the rest are stubs that
- *     render a "coming in 2C" placeholder).
- *   • Active category state lives in the math store so other parts of
- *     the app (settings, AI tutor) can read which panel is open.
+ * All phases complete. Keyboards implemented:
+ *   Phase 2A: Main, Letters, Adv. Math, Misc Math
+ *   Phase 2C: Time & Distance, Weight, Volume, Geometry, Money
+ *   Phase 6:  Chemistry, Physics, Python, Java
+ *   Phase 7:  Biology, Statistics, Music, Earth Science
+ *   Phase 8:  History (locale-aware), Language Arts
  *
- * Phase 2C will fill in the remaining keyboards (Money, Time & Distance,
- * Weight, Volume, Geom).
+ * Active category state lives in the math store so other parts of the
+ * app (settings, AI tutor) can read which panel is open.
  */
 import { useState, useCallback } from 'react';
 import MathMainKeyboard from './MathMainKeyboard';
