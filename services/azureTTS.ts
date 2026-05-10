@@ -417,6 +417,8 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
     // Current audio is still "young" — let it play, silently drop this new request.
     // Returns true so the caller doesn't fall through to Web Speech (which would
     // queue a second voice on top of the still-playing audio).
+    // If this fires unexpectedly, the caller should pass interrupt=true (explicit press).
+    console.warn(`[AzureTTS] PROTECT_PLAY_MS: dropped call (${Math.round(playedSoFar)}ms < ${PROTECT_PLAY_MS}ms, sources=${activeSources.size}). Use interrupt=true for explicit presses.`);
     try { source.disconnect(); } catch { /* */ }
     try { gain.disconnect(); } catch { /* */ }
     return true;

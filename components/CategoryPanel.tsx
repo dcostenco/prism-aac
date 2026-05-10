@@ -8,6 +8,7 @@ import { usePredictionStore } from '@/store/predictionStore';
 import { tapFeedback } from '@/services/feedback';
 import { useSettingsStore, GridSize } from '@/store/settingsStore';
 import { aacSpeak } from '@/services/aacSpeak';
+import { warmupAzureAudio } from '@/services/azureTTS';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
 import PhraseTile from './PhraseTile';
@@ -209,6 +210,13 @@ export default function CategoryPanel() {
 
   const handlePhrase = (phraseText: string, phraseId?: string) => {
     tapFeedback();
+    // Resume AudioContext synchronously inside the user gesture. iOS Safari
+    // (and WKWebView) require the resume() call to be in the synchronous call
+    // stack of a touchstart/click — if we only resume inside decodeAndPlay
+    // (after await fetch), the gesture token is gone and the context stays
+    // suspended → silent. interrupt=true lets this press override any
+    // still-playing source from the previous tile (PROTECT_PLAY_MS bypass).
+    void warmupAzureAudio();
     // Lowercase phrase words when appending mid-sentence — tile labels are stored
     // in Title Case ("Do", "Like") for display, but composing "like to do" should
     // not capitalise mid-sentence words. Keep single "I" uppercase (English pronoun).
@@ -225,7 +233,7 @@ export default function CategoryPanel() {
       ppw = pw; pw = w;
     }
     if (phraseId) recordPhraseUse(phraseId);
-    if (autoSpeak && soundEnabled) aacSpeak(phraseText, speechRate, speechVolume);
+    if (autoSpeak && soundEnabled) aacSpeak(phraseText, speechRate, speechVolume, undefined, true);
     if (searchOpen) { setSearchOpen(false); setSearchQuery(''); }
   };
 
