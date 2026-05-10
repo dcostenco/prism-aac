@@ -546,8 +546,10 @@ struct WatchAIChatView: View {
     let tts: WatchTTS
     @EnvironmentObject var session: WatchAISession
     @State private var messages: [(role: String, text: String)] = []
-    @State private var inputText   = ""
-    @State private var isWaiting   = false
+    @State private var inputText     = ""
+    @State private var isWaiting     = false
+    @State private var showDictation = false
+    @State private var dictationText = ""
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -608,15 +610,27 @@ struct WatchAIChatView: View {
 
             Divider()
 
-            // Input row — big enough to tap
-            HStack(spacing: 8) {
+            // Input row — mic + text + send
+            HStack(spacing: 6) {
+                // Mic — triggers Watch native dictation
+                Button {
+                    showDictation = true
+                    dictationText = ""
+                } label: {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 38, height: 38)
+                        .background(Color.blue.opacity(0.6))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+
                 TextField("Ask…", text: $inputText)
                     .font(.system(size: 14))
                     .frame(minHeight: 36)
 
-                Button {
-                    sendMessage()
-                } label: {
+                Button { sendMessage() } label: {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 28))
                         .foregroundColor(inputText.isEmpty ? .gray : .blue)
@@ -628,6 +642,37 @@ struct WatchAIChatView: View {
             .padding(.vertical, 6)
         }
         .navigationTitle("AI Chat")
+        .sheet(isPresented: $showDictation) {
+            NavigationView {
+                VStack(spacing: 12) {
+                    Image(systemName: "mic.circle.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.blue)
+                    Text("Speak your question")
+                        .font(.system(size: 13, weight: .semibold))
+                    TextField("…", text: $dictationText)
+                        .font(.system(size: 14))
+                        .multilineTextAlignment(.center)
+                        .frame(minHeight: 36)
+                    Button("Ask AI") {
+                        inputText = dictationText
+                        dictationText = ""
+                        showDictation = false
+                        sendMessage()
+                    }
+                    .disabled(dictationText.isEmpty)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                }
+                .padding()
+                .navigationTitle("Dictate")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { showDictation = false }
+                    }
+                }
+            }
+        }
     }
 
     private func sendMessage() {
