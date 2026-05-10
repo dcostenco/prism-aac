@@ -12,7 +12,8 @@ struct PrismAACWatchApp: App {
     @StateObject private var session   = WatchAISession()
     @StateObject private var emergency = WatchEmergencyManager()
     @StateObject private var tts       = WatchTTS()
-    @StateObject private var vocab     = WatchVocabSync()  // syncs from web app
+    @StateObject private var vocab     = WatchVocabSync()
+    @StateObject private var inbox     = WatchInbox()
 
     var body: some Scene {
         WindowGroup {
@@ -21,6 +22,7 @@ struct PrismAACWatchApp: App {
                 .environmentObject(emergency)
                 .environmentObject(tts)
                 .environmentObject(vocab)
+                .environmentObject(inbox)
         }
     }
 }

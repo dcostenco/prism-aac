@@ -18,6 +18,7 @@
 		A2378644AD87D49B61BC9290 /* AACPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */; };
 		A5C28FF4113B9AFFB775B7E7 /* WatchAISession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAD607AA400B994C75354DD /* WatchAISession.swift */; };
 		B3A1F20C7D4E9F3200CC1234 /* WatchTranslation.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4D8E30FA1B29F4700AA5678 /* WatchTranslation.swift */; };
+		D7E8F10A3B5C9D2100FF4321 /* WatchInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A3C40B2D6F8E1200BB9876 /* WatchInbox.swift */; };
 		A761744803E81B1102D1B58A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336C616FA71B6C3F3227FC90 /* ContentView.swift */; };
 		A9A7C3336D26BD9F125CFF29 /* WatchPictogramCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F932363A3D82535E9971EE /* WatchPictogramCards.swift */; };
 		AFA1E81830CA008E80B17F8E /* LLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514A2FD3A0BC693D56606896 /* LLMEngine.swift */; };
@@ -45,6 +46,7 @@
 		1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchEmergencyManager.swift; sourceTree = "<group>"; };
 		1BAD607AA400B994C75354DD /* WatchAISession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAISession.swift; sourceTree = "<group>"; };
 		C4D8E30FA1B29F4700AA5678 /* WatchTranslation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTranslation.swift; sourceTree = "<group>"; };
+		E1A3C40B2D6F8E1200BB9876 /* WatchInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchInbox.swift; sourceTree = "<group>"; };
 		2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		336C616FA71B6C3F3227FC90 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3C1E662AEED98B7777920115 /* PrismAAC.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PrismAAC.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -168,6 +170,7 @@
 				1BAD607AA400B994C75354DD /* WatchAISession.swift */,
 				DB1FF5018CD7D6ED0E48C17D /* WatchVocabSync.swift */,
 				C4D8E30FA1B29F4700AA5678 /* WatchTranslation.swift */,
+				E1A3C40B2D6F8E1200BB9876 /* WatchInbox.swift */,
 			);
 			path = AI;
 			sourceTree = "<group>";
@@ -334,6 +337,7 @@
 			files = (
 				A5C28FF4113B9AFFB775B7E7 /* WatchAISession.swift in Sources */,
 				B3A1F20C7D4E9F3200CC1234 /* WatchTranslation.swift in Sources */,
+				D7E8F10A3B5C9D2100FF4321 /* WatchInbox.swift in Sources */,
 				96494A55BCE4B701CC283F79 /* WatchApp.swift in Sources */,
 				79A08C2E36B3B5E9C19C91EF /* WatchEmergencyManager.swift in Sources */,
 				A9A7C3336D26BD9F125CFF29 /* WatchPictogramCards.swift in Sources */,

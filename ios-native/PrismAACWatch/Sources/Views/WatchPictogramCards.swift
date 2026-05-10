@@ -1,5 +1,6 @@
 import SwiftUI
 import WatchKit
+import WatchConnectivity
 
 // MARK: - AAC data model
 
@@ -60,6 +61,7 @@ struct WatchPictogramCards: View {
     @EnvironmentObject var emergency: WatchEmergencyManager
     @EnvironmentObject var session: WatchAISession
     @EnvironmentObject var vocab: WatchVocabSync
+    @EnvironmentObject var inbox: WatchInbox
     @StateObject private var translation = WatchTranslation()
 
     private var allPhrases: [AACPhrase] {
@@ -97,6 +99,7 @@ struct WatchPictogramCards: View {
     @State private var showLangPicker  = false
     @State private var pickingInput    = false
     @State private var showAIChat      = false
+    @State private var showInbox       = false
     @State private var showDictation   = false
     @State private var dictationText   = ""
 
@@ -168,7 +171,29 @@ struct WatchPictogramCards: View {
                 }
                 .buttonStyle(.plain)
 
-                // AI Chat
+                // Inbox / Notifications
+                Button { inbox.requestPermissionIfNeeded(); showInbox = true; inbox.markAllRead() } label: {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 26, height: 26)
+                            .background(Color.orange.opacity(0.5))
+                            .clipShape(Circle())
+                        if inbox.unreadCount > 0 {
+                            Text(inbox.unreadCount > 9 ? "9+" : "\(inbox.unreadCount)")
+                                .font(.system(size: 7, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(2)
+                                .background(Color.red)
+                                .clipShape(Circle())
+                                .offset(x: 5, y: -5)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+
+                // Send Message / AI Chat
                 Button { showAIChat = true } label: {
                     Image(systemName: "bubble.left.and.bubble.right.fill")
                         .font(.system(size: 10, weight: .bold))
@@ -210,6 +235,12 @@ struct WatchPictogramCards: View {
                     .padding(.bottom, 4)
                 }
             }
+        }
+        // Inbox / Notification center
+        .sheet(isPresented: $showInbox) {
+            WatchInboxView()
+                .environmentObject(inbox)
+                .environmentObject(tts)
         }
         // Dictation sheet — Watch native voice/keyboard input → translate → speak
         .sheet(isPresented: $showDictation) {
@@ -336,7 +367,171 @@ struct WatchPictogramCards: View {
     }
 }
 
-// MARK: - AI Chat with microphone + live translation
+// MARK: - Inbox / Notification center
+
+struct WatchInboxView: View {
+    @EnvironmentObject var inbox: WatchInbox
+    @EnvironmentObject var tts: WatchTTS
+    @State private var replyingTo: WatchInbox.WatchMessage? = nil
+    @State private var replyText = ""
+
+    private let providerIcon: [String: String] = [
+        "sms": "message.fill", "email": "envelope.fill",
+        "telegram": "paperplane.fill", "whatsapp": "phone.fill",
+        "messenger": "bubble.left.fill", "instagram": "camera.fill",
+    ]
+
+    var body: some View {
+        NavigationView {
+            Group {
+                if inbox.messages.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "bell.slash")
+                            .font(.system(size: 28))
+                            .foregroundColor(.secondary)
+                        Text("No messages yet")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
+                        Text("Messages from caregivers appear here when the app is connected.")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 8)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List {
+                        ForEach(inbox.messages) { msg in
+                            Button {
+                                inbox.markRead(msg.id)
+                                tts.speak("\(msg.sender): \(msg.text)")
+                                replyingTo = msg
+                            } label: {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    HStack {
+                                        Image(systemName: providerIcon[msg.provider] ?? "bubble.left.fill")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(.secondary)
+                                        Text(msg.sender)
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundColor(.primary)
+                                        Spacer()
+                                        if !msg.isRead {
+                                            Circle()
+                                                .fill(Color.blue)
+                                                .frame(width: 6, height: 6)
+                                        }
+                                        Text(relativeTime(msg.receivedAt))
+                                            .font(.system(size: 9))
+                                            .foregroundColor(.secondary)
+                                    }
+                                    Text(msg.text)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(2)
+                                }
+                                .padding(.vertical, 2)
+                            }
+                        }
+                        .onDelete { idx in
+                            idx.forEach { inbox.deleteMessage(inbox.messages[$0].id) }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Messages")
+            .toolbar {
+                if !inbox.messages.isEmpty {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Clear") { inbox.clearAll() }
+                            .font(.system(size: 11))
+                    }
+                }
+            }
+            .sheet(item: $replyingTo) { msg in
+                WatchReplyView(message: msg)
+                    .environmentObject(inbox)
+                    .environmentObject(tts)
+            }
+        }
+    }
+
+    private func relativeTime(_ date: Date) -> String {
+        let s = Int(-date.timeIntervalSinceNow)
+        if s < 60 { return "now" }
+        if s < 3600 { return "\(s/60)m" }
+        if s < 86400 { return "\(s/3600)h" }
+        return "\(s/86400)d"
+    }
+}
+
+// MARK: - Reply sheet
+
+struct WatchReplyView: View {
+    let message: WatchInbox.WatchMessage
+    @EnvironmentObject var inbox: WatchInbox
+    @EnvironmentObject var tts: WatchTTS
+    @State private var replyText = ""
+    @State private var sent = false
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 8) {
+                // Original message context
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(message.sender)
+                        .font(.system(size: 12, weight: .bold))
+                    Text(message.text)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .lineLimit(3)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(8)
+                .background(Color.white.opacity(0.08))
+                .cornerRadius(8)
+
+                // Reply input (dictation supported)
+                TextField("Reply…", text: $replyText)
+                    .font(.system(size: 13))
+
+                if sent {
+                    Label("Sent", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.system(size: 12))
+                } else {
+                    Button {
+                        let text = replyText.trimmingCharacters(in: .whitespaces)
+                        guard !text.isEmpty else { return }
+                        inbox.reply(to: message, text: text)
+                        sent = true
+                        tts.speak("Message sent")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { dismiss() }
+                    } label: {
+                        Label("Send", systemImage: "paperplane.fill")
+                            .font(.system(size: 13, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 7)
+                            .background(replyText.isEmpty ? Color.gray.opacity(0.3) : Color.green.opacity(0.7))
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(replyText.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .padding(.horizontal, 6)
+            .navigationTitle("Reply to \(message.sender)")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - AI Chat + Send Message (contact search + dictation + send)
 
 struct WatchAIChatView: View {
     let inputLang: String
@@ -344,72 +539,215 @@ struct WatchAIChatView: View {
     let translation: WatchTranslation
     let tts: WatchTTS
     @EnvironmentObject var session: WatchAISession
-    @State private var messages: [(role: String, text: String)] = []
+    @EnvironmentObject var inbox: WatchInbox
+    @State private var tab         = 0   // 0 = Send Message, 1 = AI Chat
+    @State private var contactQuery = ""
+    @State private var msgText     = ""
+    @State private var aiMessages: [(role: String, text: String)] = []
     @State private var isWaitingAI = false
-    @State private var chatInput   = ""
+    @State private var sendStatus: String? = nil
+
+    // Contacts synced from iPhone (forwarded via WatchConnectivity)
+    // For MVP: show a few hardcoded placeholders until contacts sync
+    @State private var contacts: [(name: String, provider: String)] = []
+
+    var filteredContacts: [(name: String, provider: String)] {
+        contactQuery.isEmpty ? contacts : contacts.filter {
+            $0.name.localizedCaseInsensitiveContains(contactQuery)
+        }
+    }
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 6) {
+            VStack(spacing: 0) {
+                // Tab picker: Send / AI
+                // watchOS doesn't support .segmented — use button tabs
+                HStack(spacing: 0) {
+                    Button { tab = 0 } label: {
+                        Text("📤 Send")
+                            .font(.system(size: 11, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 5)
+                            .background(tab == 0 ? Color.green.opacity(0.5) : Color.clear)
+                    }
+                    .buttonStyle(.plain)
+                    Button { tab = 1 } label: {
+                        Text("🤖 AI")
+                            .font(.system(size: 11, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 5)
+                            .background(tab == 1 ? Color.blue.opacity(0.4) : Color.clear)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(8)
+                .padding(.horizontal, 4)
+                .padding(.top, 4)
+
+                if tab == 0 {
+                    sendMessagePanel
+                } else {
+                    aiChatPanel
+                }
+            }
+            .navigationTitle(tab == 0 ? "Send Message" : "AI + Translate")
+        }
+    }
+
+    // MARK: Send Message panel (mirrors prism-aac web AACChatPanel)
+    private var sendMessagePanel: some View {
+        VStack(spacing: 6) {
+            // Contact search
+            TextField("Search contacts…", text: $contactQuery)
+                .font(.system(size: 12))
+                .padding(.horizontal, 4)
+
+            if contacts.isEmpty {
+                Text("No contacts synced yet.\nContacts appear here when the iPhone app is connected.")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 6)
+            } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 6) {
-                        if messages.isEmpty {
-                            Text("Tap 🎙 to speak.\nAI answers in \(outputLang).")
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .frame(maxWidth: .infinity)
-                                .padding(.top, 8)
-                        }
-                        ForEach(messages.indices, id: \.self) { i in
-                            let m = messages[i]
-                            HStack {
-                                if m.role == "user" { Spacer(minLength: 20) }
-                                Text(m.text)
-                                    .font(.system(size: 11))
-                                    .padding(5)
-                                    .background(m.role == "user"
-                                        ? Color.blue.opacity(0.4)
-                                        : Color.white.opacity(0.12))
-                                    .cornerRadius(8)
-                                if m.role == "ai" { Spacer(minLength: 20) }
+                    VStack(spacing: 4) {
+                        ForEach(filteredContacts, id: \.name) { contact in
+                            Button {
+                                contactQuery = contact.name
+                            } label: {
+                                HStack {
+                                    Image(systemName: contact.provider == "email" ? "envelope" : "message")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                    Text(contact.name)
+                                        .font(.system(size: 13))
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 4)
+                                .background(Color.white.opacity(0.06))
+                                .cornerRadius(6)
                             }
-                        }
-                        if isWaitingAI {
-                            HStack { ProgressView().scaleEffect(0.6); Text("Thinking…").font(.system(size: 10)).foregroundColor(.secondary) }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, 4)
                 }
+                .frame(maxHeight: 80)
+            }
 
-                // Dictation input row
-                HStack(spacing: 6) {
-                    TextField("Type or dictate…", text: $chatInput)
-                        .font(.system(size: 12))
-                    Button {
-                        let text = chatInput.trimmingCharacters(in: .whitespaces)
-                        guard !text.isEmpty else { return }
-                        chatInput = ""
-                        messages.append((role: "user", text: text))
-                        isWaitingAI = true
-                        Task {
-                            let reply = await session.askAI(text, lang: outputLang) ?? "…"
-                            isWaitingAI = false
-                            messages.append((role: "ai", text: reply))
-                            translation.translateAndSpeak(text: reply, from: outputLang, to: outputLang, tts: tts)
+            // Message compose
+            TextField("Type or dictate message…", text: $msgText)
+                .font(.system(size: 12))
+                .padding(.horizontal, 4)
+
+            if let status = sendStatus {
+                Text(status)
+                    .font(.system(size: 11))
+                    .foregroundColor(status.contains("✓") ? .green : .orange)
+            }
+
+            Button {
+                let to   = contactQuery.trimmingCharacters(in: .whitespaces)
+                let body = msgText.trimmingCharacters(in: .whitespaces)
+                guard !to.isEmpty, !body.isEmpty else { return }
+                // Send via WatchConnectivity → iPhone → provider
+                if WCSession.isSupported() && WCSession.default.isReachable {
+                    WCSession.default.sendMessage(
+                        ["type": "send_message", "to": to, "text": body],
+                        replyHandler: { _ in
+                            Task { @MainActor in
+                                sendStatus = "✓ Sent to \(to)"
+                                msgText = ""
+                                tts.speak("Message sent")
+                            }
+                        },
+                        errorHandler: { _ in
+                            Task { @MainActor in sendStatus = "⚠ Phone unreachable" }
                         }
-                    } label: {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(.blue)
+                    )
+                } else {
+                    sendStatus = "⚠ Phone not connected"
+                }
+            } label: {
+                Label("Send", systemImage: "paperplane.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                    .background((contactQuery.isEmpty || msgText.isEmpty)
+                        ? Color.gray.opacity(0.3)
+                        : Color.green.opacity(0.7))
+                    .cornerRadius(10)
+            }
+            .buttonStyle(.plain)
+            .disabled(contactQuery.isEmpty || msgText.isEmpty)
+            .padding(.horizontal, 4)
+            .padding(.bottom, 4)
+        }
+    }
+
+    // MARK: AI chat panel
+    private var aiChatPanel: some View {
+        VStack(spacing: 6) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 5) {
+                    if aiMessages.isEmpty {
+                        Text("Type or dictate.\nAI responds in \(outputLang).")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 8)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(chatInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                    ForEach(aiMessages.indices, id: \.self) { i in
+                        let m = aiMessages[i]
+                        HStack {
+                            if m.role == "user" { Spacer(minLength: 16) }
+                            Text(m.text)
+                                .font(.system(size: 11))
+                                .padding(5)
+                                .background(m.role == "user"
+                                    ? Color.blue.opacity(0.4)
+                                    : Color.white.opacity(0.12))
+                                .cornerRadius(8)
+                            if m.role == "ai" { Spacer(minLength: 16) }
+                        }
+                    }
+                    if isWaitingAI {
+                        HStack(spacing: 4) {
+                            ProgressView().scaleEffect(0.6)
+                            Text("Thinking…").font(.system(size: 10)).foregroundColor(.secondary)
+                        }
+                    }
                 }
                 .padding(.horizontal, 4)
-                .padding(.bottom, 2)
             }
-            .navigationTitle("AI + Translate")
+            HStack(spacing: 6) {
+                TextField("Ask AI…", text: $msgText)
+                    .font(.system(size: 12))
+                Button {
+                    let text = msgText.trimmingCharacters(in: .whitespaces)
+                    guard !text.isEmpty else { return }
+                    msgText = ""
+                    aiMessages.append((role: "user", text: text))
+                    isWaitingAI = true
+                    Task {
+                        let reply = await session.askAI(text, lang: outputLang) ?? "…"
+                        isWaitingAI = false
+                        aiMessages.append((role: "ai", text: reply))
+                        tts.speak(reply, language: outputLang)
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(msgText.isEmpty ? .gray : .blue)
+                }
+                .buttonStyle(.plain)
+                .disabled(msgText.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .padding(.horizontal, 4)
+            .padding(.bottom, 4)
         }
     }
 }
@@ -466,6 +804,7 @@ struct WatchRootView: View {
     @EnvironmentObject var session: WatchAISession
     @EnvironmentObject var emergency: WatchEmergencyManager
     @EnvironmentObject var tts: WatchTTS
+    @EnvironmentObject var inbox: WatchInbox
 
     var body: some View {
         WatchPictogramCards()
