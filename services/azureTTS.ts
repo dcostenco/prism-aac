@@ -162,6 +162,21 @@ async function readCappedAudio(res: Response): Promise<ArrayBuffer | null> {
 // AudioContext to be in 'running' state, which the warmup in PrismApp.tsx
 // already arranges on first user interaction.
 let sharedAudioCtx: AudioContext | null = null;
+
+// When the OS audio output device changes (e.g. user switches from HDMI TV
+// to MacBook speakers), the existing AudioContext stays bound to the old
+// device and plays silence. Close and recreate it so the next Speak picks
+// up the currently active output. Safari doesn't fire devicechange, but
+// the user can reload the page to recover — no worse than before.
+if (typeof window !== 'undefined' && navigator.mediaDevices) {
+  navigator.mediaDevices.addEventListener('devicechange', () => {
+    if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') {
+      sharedAudioCtx.close().catch(() => {});
+      sharedAudioCtx = null;
+    }
+  });
+}
+
 function getAudioContext(): AudioContext {
   if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') return sharedAudioCtx;
   const Ctor = (typeof window !== 'undefined' ? window.AudioContext : null)
