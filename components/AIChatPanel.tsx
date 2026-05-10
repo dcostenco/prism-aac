@@ -3,7 +3,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { tapFeedback } from '@/services/feedback';
-import { askAI } from '@/services/aiService';
+import { askAI, translateAI } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
@@ -31,7 +31,8 @@ interface ChatMessage {
 export default function AIChatPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { text, appendText, autoSpeak, soundEnabled } = useMessageStore();
-  const { speechRate, speechVolume, language } = useSettingsStore();
+  const { speechRate, speechVolume, language, outputLanguage } = useSettingsStore();
+  const isTranslatorMode = language !== outputLanguage;
   const { t, ttsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -115,14 +116,23 @@ export default function AIChatPanel() {
     };
 
     try {
-      await askAI(question, undefined, (delta) => {
-        buffer += delta;
-        if (!scheduled) {
-          scheduled = true;
-          requestAnimationFrame(flush);
-        }
-      }, language);
+      if (isTranslatorMode) {
+        // Translator mode: stream translation from input lang → output lang
+        await translateAI(question, language, outputLanguage, (delta) => {
+          buffer += delta;
+          if (!scheduled) { scheduled = true; requestAnimationFrame(flush); }
+        });
+      } else {
+        // AI chat mode: regular assistant response in user's language
+        await askAI(question, undefined, (delta) => {
+          buffer += delta;
+          if (!scheduled) { scheduled = true; requestAnimationFrame(flush); }
+        }, language);
+      }
       flush();
+      // Speak the final translation/reply in the output language
+      const finalText = buffer.trim();
+      if (finalText && soundEnabled) aacSpeak(finalText, speechRate, speechVolume);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('could_not_reach_ai');
       setMessages((prev) => {
@@ -132,7 +142,7 @@ export default function AIChatPanel() {
       });
     }
     setLoading(false);
-  }, [loading, language, t]);
+  }, [loading, language, outputLanguage, isTranslatorMode, soundEnabled, speechRate, speechVolume, t]);
 
   // Register / clear the Speak-button intercept for this panel's lifetime.
   useEffect(() => {
@@ -192,7 +202,12 @@ export default function AIChatPanel() {
     >
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 border-b border-theme shrink-0">
-        <span className="text-primary font-bold text-xl">✨ {t('ai_chat_title')}</span>
+        <span className="text-primary font-bold text-xl">
+          {isTranslatorMode ? '🔄' : '✨'}{' '}
+          {isTranslatorMode
+            ? `${language.toUpperCase()} → ${outputLanguage.toUpperCase()}`
+            : t('ai_chat_title')}
+        </span>
         <div className="flex items-center gap-2">
           {voiceSupported && (
             <button
@@ -223,15 +238,21 @@ export default function AIChatPanel() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
         {messages.length === 0 && !loading && (
           <div className="h-full flex flex-col items-center justify-center text-center gap-3 text-muted px-6">
-            <span className="text-5xl">✨</span>
-            <p className="text-lg font-medium">{t('ai_chat_title')}</p>
+            <span className="text-5xl">{isTranslatorMode ? '🔄' : '✨'}</span>
+            <p className="text-lg font-medium">
+              {isTranslatorMode
+                ? `Translator: ${language.toUpperCase()} → ${outputLanguage.toUpperCase()}`
+                : t('ai_chat_title')}
+            </p>
             <p className="text-base opacity-70">
               {listening
                 ? interim || t('type_or_speak')
-                : t('type_or_speak')}
+                : isTranslatorMode
+                  ? 'Type or speak in your language — translation streams instantly'
+                  : t('type_or_speak')}
             </p>
             <p className="text-sm opacity-50 mt-1">
-              Press <strong>Speak</strong> to send your question
+              Press <strong>Speak</strong> to {isTranslatorMode ? 'translate' : 'send your question'}
             </p>
           </div>
         )}

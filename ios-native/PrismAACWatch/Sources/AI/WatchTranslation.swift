@@ -39,6 +39,12 @@ final class WatchTranslation: ObservableObject {
         }
     }
 
+    /// Public version of translate() — used by AI Chat translator mode to
+    /// get the translated string without immediately speaking it.
+    func translateDirect(text: String, to toLang: String) async -> String? {
+        return await translate(text: text, to: toLang)
+    }
+
     private func translate(text: String, to toLang: String) async -> String? {
         // Chat endpoint returns SSE (text/event-stream). Collect all
         // data: {"choices":[{"delta":{"content":"..."}}]} chunks until [DONE].

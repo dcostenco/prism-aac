@@ -552,20 +552,44 @@ struct WatchAIChatView: View {
     @State private var dictationText = ""
     @Environment(\.dismiss) private var dismiss
 
+    /// True when input and output languages differ — chat acts as live translator.
+    private var isTranslatorMode: Bool {
+        inputLang.prefix(2) != outputLang.prefix(2)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
+            // Mode indicator banner
+            if isTranslatorMode {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.system(size: 10))
+                    Text("Translator: \(inputLang.prefix(2).uppercased()) → \(outputLang.prefix(2).uppercased())")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.purple.opacity(0.6))
+                .cornerRadius(8)
+                .padding(.top, 4)
+            }
+
             // Chat history
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 8) {
                         if messages.isEmpty {
                             VStack(spacing: 6) {
-                                Image(systemName: "brain.head.profile")
+                                Image(systemName: isTranslatorMode ? "arrow.left.arrow.right.circle.fill" : "brain.head.profile")
                                     .font(.system(size: 28))
-                                    .foregroundColor(.blue.opacity(0.7))
-                                Text("Ask me anything")
+                                    .foregroundColor(isTranslatorMode ? .purple.opacity(0.8) : .blue.opacity(0.7))
+                                Text(isTranslatorMode ? "Speak or type to translate" : "Ask me anything")
                                     .font(.system(size: 14, weight: .semibold))
-                                Text("I respond in \(outputLang)")
+                                    .multilineTextAlignment(.center)
+                                Text(isTranslatorMode
+                                     ? "\(inputLang.prefix(2).uppercased()) → \(outputLang.prefix(2).uppercased())"
+                                     : "I respond in \(outputLang)")
                                     .font(.system(size: 11))
                                     .foregroundColor(.secondary)
                             }
@@ -681,11 +705,24 @@ struct WatchAIChatView: View {
         inputText = ""
         messages.append((role: "user", text: text))
         isWaiting = true
-        Task {
-            let reply = await session.askAI(text, lang: outputLang) ?? "…"
-            isWaiting = false
-            messages.append((role: "ai", text: reply))
-            tts.speak(reply, language: outputLang)
+
+        if isTranslatorMode {
+            // Translation mode: translate input lang → output lang, speak result
+            Task {
+                let translated = await translation.translateDirect(text: text, to: outputLang)
+                let result = translated ?? text
+                isWaiting = false
+                messages.append((role: "ai", text: result))
+                tts.speak(result, language: outputLang)
+            }
+        } else {
+            // Same language: regular AI chat response
+            Task {
+                let reply = await session.askAI(text, lang: outputLang) ?? "…"
+                isWaiting = false
+                messages.append((role: "ai", text: reply))
+                tts.speak(reply, language: outputLang)
+            }
         }
     }
 }
