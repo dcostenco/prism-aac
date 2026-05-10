@@ -209,6 +209,7 @@ export async function speak(
   volume = 1.0,
   lang = 'en-US',
   tone: ToneStyle | 'auto' = 'auto',
+  interrupt = false,
 ): Promise<void> {
   if (!text.trim()) return;
   // Volume=0 guard — catches mis-stored settings before a silent-success
@@ -268,7 +269,7 @@ export async function speak(
     emitTtsHealthEvent({
       type: 'tts-attempt', tier: 'inworld', text: debugText, lang, timestamp: tier1Start,
     });
-    const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId);
+    const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt);
     if (success) {
       console.log('[TTS] Portal TTS succeeded');
       const now = Date.now();

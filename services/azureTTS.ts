@@ -324,7 +324,7 @@ export function resetSharedAudioContextIfIdle(): void {
  * only needs the AudioContext in 'running' state, which the warmup in
  * PrismApp.tsx arranges on first interaction.
  */
-async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string): Promise<boolean> {
+async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string, interrupt = false): Promise<boolean> {
   let ctx: AudioContext;
   try {
     ctx = getAudioContext();
@@ -389,9 +389,10 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   // calls from prediction-tile taps killing each other — the user would
   // hear nothing because each source played for < 20ms before being killed.
   const playedSoFar = lastSourceStartedAt > 0 ? Date.now() - lastSourceStartedAt : Infinity;
-  const isInterrupt = _nextSpeakInterrupt;
-  _nextSpeakInterrupt = false; // always consume the flag
-  if (!isInterrupt && activeSources.size > 0 && playedSoFar < PROTECT_PLAY_MS) {
+  // Use the parameter, NOT the shared flag (which could be stolen by concurrent calls).
+  // _nextSpeakInterrupt is kept as legacy no-op; parameter is the authoritative source.
+  _nextSpeakInterrupt = false; // clear regardless
+  if (!interrupt && activeSources.size > 0 && playedSoFar < PROTECT_PLAY_MS) {
     // Current audio is still "young" — let it play, silently drop this new request.
     // Returns true so the caller doesn't fall through to Web Speech (which would
     // queue a second voice on top of the still-playing audio).
@@ -505,6 +506,10 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   volume: number,
   authToken: string,
   voiceId?: string,
+  /** Pass true only from the explicit Speak button (handleSpeak). Allows this
+   *  call to interrupt audio that is still within PROTECT_PLAY_MS. Uses a
+   *  parameter (not a shared flag) so concurrent autoSpeak calls can't steal it. */
+  interrupt = false,
 ): Promise<boolean> {
   // Rapid-duplicate suppression — drop a new speak with the same text
   // if one fired in the last DEDUP_MS. Otherwise the new fetch+decode
@@ -613,7 +618,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
       if (audioBytes) {
         clearTimeout(timeout);
         activeControllers.delete(controller);
-        return await decodeAndPlay(audioBytes, volume, 'AzureTTS');
+        return await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt);
       }
       console.warn('[AzureTTS] response oversize, dropping');
     } else {

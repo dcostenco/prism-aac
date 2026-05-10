@@ -9,7 +9,7 @@ import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
-import { TONE_OPTIONS, warmupAzureAudio, markSpeakInterrupt } from '@/services/azureTTS';
+import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
 import { translateWithAIRefine } from '@/services/translateService';
 import { useAuthStore } from '@/store/authStore';
 import { usePredictionStore } from '@/store/predictionStore';
@@ -304,7 +304,6 @@ export default function MessageBar() {
     // important call (getAudioContext().resume()) happens before its
     // first await — invoking it here preserves the gesture token.
     void warmupAzureAudio();
-    markSpeakInterrupt(); // allow this Speak press to interrupt any playing audio immediately
     tapFeedback();
     const original = text.trim();
     if (!original || !soundEnabled) return;
@@ -358,10 +357,13 @@ export default function MessageBar() {
     const toSpeakTokens = toSpeak.split(/\s+/);
     lastSilenceSpokenRef.current = toSpeakTokens[toSpeakTokens.length - 1] || '';
 
+    // interrupt=true: Speak button always overrides any currently-playing audio,
+    // regardless of PROTECT_PLAY_MS. This flag travels through aacSpeak→speak→speakAzure
+    // as a parameter (not a shared flag) so concurrent autoSpeak calls can't steal it.
     if (translated) {
-      aacSpeak(translated, speechRate, speechVolume, activeTone);
+      aacSpeak(translated, speechRate, speechVolume, activeTone, true);
     } else {
-      aacSpeak(toSpeak, speechRate, speechVolume, activeTone);
+      aacSpeak(toSpeak, speechRate, speechVolume, activeTone, true);
     }
   }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance, suggestion, setText]);
 
