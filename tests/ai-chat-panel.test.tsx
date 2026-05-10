@@ -1,5 +1,5 @@
 /**
- * AIChatPanel — single-state layout invariant (2026-05-10 redesign).
+ * AIChatPanel — single-state layout invariant + translator mode routing.
  *
  * Previous design had 3 states (unmount / slim / expanded).
  * New design: panel always renders when sidePanel==='ai-chat'.
@@ -14,23 +14,51 @@
  *   4. No "Question:" label (redundant — MessageBar shows typed text).
  *   5. data-state is always "expanded".
  *   6. Panel has flex-1 (takes all available space).
+ *
+ * Translator mode invariants (regression: 821e321 broke TTS for all modes):
+ *   7. language !== outputLanguage → translateAI called, askAI NOT called.
+ *   8. language === outputLanguage → askAI called, translateAI NOT called.
+ *   9. Translator mode: speak() called once with output-lang TTS code.
+ *  10. Regular mode: speak() NOT called (user taps lines to speak).
+ *  11. Translator header shows 🔄 and the language pair.
+ *  12. Regular header shows ai_chat_title.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { render, screen, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import AIChatPanel from '@/components/AIChatPanel';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
+
+const { registerAISubmitMock } = vi.hoisted(() => ({
+  registerAISubmitMock: vi.fn(),
+}));
 
 vi.mock('@/engine/useT', () => ({
   useT: () => ({ t: (k: string) => k, ttsCode: 'en-US', rtl: false, ready: true }),
 }));
 vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn() }));
-vi.mock('@/services/aiService', () => ({ askAI: vi.fn() }));
+vi.mock('@/services/aiService', () => ({
+  // Production server always streams — mocks simulate onChunk calls so buffer is populated.
+  askAI: vi.fn(async (_q: string, _ctx: unknown, onChunk?: (d: string) => void) => {
+    onChunk?.('reply');
+    return { text: 'reply', lines: ['reply'] };
+  }),
+  translateAI: vi.fn(async (_t: string, _f: string, _to: string, onChunk?: (d: string) => void) => {
+    onChunk?.('traduction');
+    return 'traduction';
+  }),
+}));
+vi.mock('@/services/speechService', () => ({ speak: vi.fn(async () => {}) }));
+vi.mock('@/engine/i18n', () => ({
+  getTTSCode: (lang: string) => `${lang}-XX`,
+  SupportedLanguage: {},
+}));
 vi.mock('@/services/aacSpeak', () => ({ aacSpeak: vi.fn() }));
 vi.mock('@/services/aiChatBridge', () => ({
-  registerAISubmit: vi.fn(),
+  registerAISubmit: registerAISubmitMock,
   clearAISubmit: vi.fn(),
 }));
 vi.mock('@/services/voiceInputService', () => ({
@@ -41,15 +69,20 @@ vi.mock('@/services/textCorrectService', () => ({ correctText: vi.fn(async (t: s
 vi.mock('@/services/ttsHighlightBus', () => ({ subscribeTtsHighlight: () => () => {} }));
 
 beforeEach(() => {
-  // jsdom doesn't implement scrollTo — stub it so useEffect doesn't throw.
+  // jsdom doesn't implement scroll APIs — stub them so useEffect doesn't throw.
   Element.prototype.scrollTo = vi.fn();
+  Element.prototype.scrollIntoView = vi.fn();
   useUIStore.setState({ sidePanel: 'ai-chat' });
-  useMessageStore.setState({ text: '' });
+  useMessageStore.setState({ text: '', soundEnabled: true });
+  useSettingsStore.setState({ language: 'en', outputLanguage: 'en' });
   useAuthStore.setState({
     profile: { email: 't@t', name: 'T', plan: 'standard', isPlatformAdmin: false },
     loaded: true,
     loading: false,
   });
+  registerAISubmitMock.mockClear();
+  vi.clearAllMocks();
+  registerAISubmitMock.mockClear();
 });
 
 describe('AIChatPanel — single-state layout', () => {
@@ -103,5 +136,75 @@ describe('AIChatPanel — single-state layout', () => {
     const text = screen.getByTestId('ai-chat-panel').textContent ?? '';
     // Should mention Speak as the send action.
     expect(text.toLowerCase()).toMatch(/speak/);
+  });
+});
+
+// ── Translator mode (regression: 821e321 broke TTS for all modes) ──────────
+describe('AIChatPanel — translator mode', () => {
+  it('shows 🔄 header and language pair when language !== outputLanguage', () => {
+    useSettingsStore.setState({ language: 'en', outputLanguage: 'ru' });
+    render(<AIChatPanel />);
+    const text = screen.getByTestId('ai-chat-panel').textContent ?? '';
+    expect(text).toMatch(/🔄/);
+    expect(text).toMatch(/EN.*RU|en.*ru/i);
+  });
+
+  it('shows ✨ ai_chat_title header when language === outputLanguage', () => {
+    useSettingsStore.setState({ language: 'en', outputLanguage: 'en' });
+    render(<AIChatPanel />);
+    const text = screen.getByTestId('ai-chat-panel').textContent ?? '';
+    expect(text).toMatch(/ai_chat_title/);
+    expect(text).not.toMatch(/🔄/);
+  });
+
+  it('translator mode: translateAI called, askAI NOT called on submit', async () => {
+    const { askAI, translateAI } = await import('@/services/aiService');
+    const { speak } = await import('@/services/speechService');
+    useSettingsStore.setState({ language: 'en', outputLanguage: 'ru' });
+    useMessageStore.setState({ text: 'hello', soundEnabled: true });
+
+    render(<AIChatPanel />);
+    // handleAsk is registered via registerAISubmit — capture it and invoke.
+    const handleAsk = registerAISubmitMock.mock.calls[0]?.[0] as (() => Promise<void>) | undefined;
+    expect(handleAsk).toBeDefined();
+
+    await act(async () => { await handleAsk?.(); });
+
+    expect(translateAI).toHaveBeenCalledOnce();
+    expect(translateAI).toHaveBeenCalledWith('hello', 'en', 'ru', expect.any(Function));
+    expect(askAI).not.toHaveBeenCalled();
+    // speak() must be called with output-lang TTS code (not aacSpeak, which re-translates)
+    expect(speak).toHaveBeenCalledOnce();
+    expect((speak as Mock).mock.calls[0][3]).toBe('ru-XX');
+  });
+
+  it('regular mode: askAI called, translateAI NOT called, speak NOT auto-called', async () => {
+    const { askAI, translateAI } = await import('@/services/aiService');
+    const { speak } = await import('@/services/speechService');
+    useSettingsStore.setState({ language: 'en', outputLanguage: 'en' });
+    useMessageStore.setState({ text: 'what is rain', soundEnabled: true });
+
+    render(<AIChatPanel />);
+    const handleAsk = registerAISubmitMock.mock.calls[0]?.[0] as (() => Promise<void>) | undefined;
+    expect(handleAsk).toBeDefined();
+
+    await act(async () => { await handleAsk?.(); });
+
+    expect(askAI).toHaveBeenCalledOnce();
+    expect(translateAI).not.toHaveBeenCalled();
+    expect(speak).not.toHaveBeenCalled();
+  });
+
+  it('translator mode: speak NOT called when soundEnabled is false', async () => {
+    const { speak } = await import('@/services/speechService');
+    useSettingsStore.setState({ language: 'en', outputLanguage: 'ru' });
+    useMessageStore.setState({ text: 'hello', soundEnabled: false });
+
+    render(<AIChatPanel />);
+    const handleAsk = registerAISubmitMock.mock.calls[0]?.[0] as (() => Promise<void>) | undefined;
+
+    await act(async () => { await handleAsk?.(); });
+
+    expect(speak).not.toHaveBeenCalled();
   });
 });
