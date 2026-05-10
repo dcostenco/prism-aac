@@ -42,7 +42,7 @@ class MockAudioContext {
     return { duration: 1, length: buf.byteLength, numberOfChannels: 1, sampleRate: 24000 } as AudioBuffer;
   }
   async resume() { /* */ }
-  close() { /* */ }
+  close() { return Promise.resolve(); }
 }
 
 beforeEach(() => {
@@ -260,5 +260,76 @@ describe('Class 6 — Case-mismatch double-speak (silence-detect + handleSpeak r
     // Edge: if word has trailing punctuation stripped differently
     expect(guard('hello', 'Hello')).toBe(false);
     expect(guard('hello!', 'Hello!')).toBe(false);
+  });
+});
+
+describe('Class 7 — Stale AudioContext double-close (web prod silent after 30s idle)', () => {
+  /**
+   * Root cause (May 2026, "web prod is silent" regression):
+   *
+   * getAudioContext() has a stale-context check: if lastPlayedAt > 0 and
+   * more than CTX_STALE_MS (30s) have elapsed, it closes the current context
+   * and creates a new one. This check ran TWICE per speak press:
+   *
+   *   1. warmupAzureAudio() calls getAudioContext() — closes old ctx,
+   *      creates ctx_warm, resumes it (inside gesture token).
+   *   2. decodeAndPlay() calls getAudioContext() — lastPlayedAt still the
+   *      old value (>30s), stale check fires AGAIN → closes ctx_warm,
+   *      creates ctx_decode OUTSIDE the gesture → ctx_decode stays
+   *      suspended → BufferSourceNode plays into silence → "[TTS] Portal
+   *      TTS succeeded" logs fire but user hears nothing.
+   *
+   * Fix: reset lastPlayedAt = 0 when the stale context is closed, so the
+   * second call sees lastPlayedAt === 0 and skips the stale check.
+   *
+   * Test strategy: spy on AudioContext constructor to count creations,
+   * then assert only ONE context is created per speak press after stale
+   * period expires (not two).
+   */
+  it('stale context: getAudioContext creates exactly ONE new context per speak press after 30s idle', async () => {
+    let ctxCreations = 0;
+    class CountedAudioContext extends MockAudioContext {
+      constructor() {
+        super();
+        ctxCreations++;
+      }
+    }
+    (globalThis as unknown as { AudioContext: typeof AudioContext }).AudioContext =
+      CountedAudioContext as unknown as typeof AudioContext;
+
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).endsWith('/tts/public')) return audioOk(1024);
+      return new Response('', { status: 500 });
+    }));
+
+    const { speakAzure, warmupAzureAudio, stopAzureAudio } = await import('@/services/azureTTS');
+
+    // Simulate first speak: plays, sets lastPlayedAt
+    await speakAzure('hello', 'en-US', 'friendly', 0.5, 1.0, '');
+    expect(ctxCreations).toBe(1);
+    expect(MockBufferSource.startCalls).toBe(1);
+
+    // Simulate audio ending (mock onended never fires, so clear manually)
+    // activeSources.size === 0 is required for the stale-context check to fire.
+    stopAzureAudio();
+
+    // Simulate 31s idle by patching Date.now to return future timestamp
+    const realNow = Date.now;
+    const frozenNow = realNow() + 31_000;
+    vi.spyOn(Date, 'now').mockReturnValue(frozenNow);
+
+    ctxCreations = 0;
+    MockBufferSource.startCalls = 0;
+
+    // Second speak after stale period: warmup + decodeAndPlay must share ONE context
+    await warmupAzureAudio();
+    await speakAzure('world', 'en-US', 'friendly', 0.5, 1.0, '');
+
+    vi.spyOn(Date, 'now').mockRestore();
+
+    // Before fix: ctxCreations === 2 (double-close), startCalls === 0 (silent)
+    // After fix: ctxCreations === 1 (single create), startCalls === 1 (audible)
+    expect(ctxCreations).toBe(1);
+    expect(MockBufferSource.startCalls).toBe(1);
   });
 });

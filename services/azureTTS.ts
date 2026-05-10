@@ -179,6 +179,14 @@ function getAudioContext(): AudioContext {
   ) {
     sharedAudioCtx.close().catch(() => {});
     sharedAudioCtx = null;
+    // Reset lastPlayedAt so this same stale condition cannot fire again on
+    // the second getAudioContext() call within the same speak cycle (warmup
+    // + decodeAndPlay both call getAudioContext). Without this reset the
+    // stale check fires in decodeAndPlay (after await fetch), closes the
+    // context that warmup just resumed inside the gesture, creates a new
+    // suspended context outside the gesture → silent audio. See: May 2026
+    // double-close regression — "web prod silent after 30s idle."
+    lastPlayedAt = 0;
   }
   if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') return sharedAudioCtx;
   const Ctor = (typeof window !== 'undefined' ? window.AudioContext : null)
