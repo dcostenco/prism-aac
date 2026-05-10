@@ -74,6 +74,19 @@ const swKillswitchScript = `
 (function(){
   try {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    // ── Auto-reload when a new SW takes control ────────────────────────
+    // When a new build is deployed: new SW installs → skipWaiting activates
+    // it immediately → clientsClaim gives it control → controllerchange fires
+    // → we reload once so the page runs the new JS bundles.
+    // This is the standard PWA update pattern — zero user action needed.
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      window.location.reload();
+    });
+
+    // ── Kill-switch: force-clear on version bump ───────────────────────
+    // Used only when the SW needs a full reset (e.g. corrupted cache).
+    // Normal updates are handled by controllerchange above.
     var KEY = 'prism-aac-sw-killswitch';
     var V = ${JSON.stringify(SW_KILLSWITCH_VERSION)};
     if (window.localStorage.getItem(KEY) === V) return;

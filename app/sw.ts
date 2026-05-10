@@ -1,6 +1,6 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { Serwist } from 'serwist';
+import { Serwist, NetworkFirst, CacheFirst, ExpirationPlugin } from 'serwist';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -10,35 +10,54 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 
-// Force-invalidation marker — bumped 2026-05-08 after 6 stale-bundle
-// reports where users heard chipmunk pitch from cached pre-fix JS
-// (the 0.5+webRate rate-conversion code from commit 06c04f5). The
-// Serwist precacheEntries hash already invalidates on file change,
-// but this constant in the SW source forces the SW itself to be
-// reinstalled so clients get a fresh activate event + clientsClaim
-// takeover. If pitch / no-audio regressions return, bump this again.
-const SW_VERSION = '2026-05-10-category-ui-v2';
+const SW_VERSION = '2026-05-10-network-first-nav';
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,
-  clientsClaim: true,
+  skipWaiting: true,    // activate new SW immediately on install
+  clientsClaim: true,   // take control of all open tabs immediately
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: [
+    // ── Navigation (HTML pages) — NetworkFirst ────────────────────────
+    // Always try the network first so the page gets the latest killswitch
+    // version and new JS references. Falls back to cache when offline so
+    // the app works without internet.
+    {
+      matcher: ({ request }) => request.mode === 'navigate',
+      handler: new NetworkFirst({
+        cacheName: 'prism-navigation',
+        networkTimeoutSeconds: 3,
+        plugins: [
+          new ExpirationPlugin({ maxEntries: 5, maxAgeSeconds: 24 * 60 * 60 }),
+        ],
+      }),
+    },
+    // ── Static Next.js assets — CacheFirst (content-hashed filenames) ─
+    // These have immutable cache headers and content hashes in their
+    // filenames, so CacheFirst is safe and gives the fastest repeat loads.
+    {
+      matcher: ({ url }) => url.pathname.startsWith('/_next/static/'),
+      handler: new CacheFirst({
+        cacheName: 'prism-static',
+        plugins: [
+          new ExpirationPlugin({ maxEntries: 256, maxAgeSeconds: 365 * 24 * 60 * 60 }),
+        ],
+      }),
+    },
+    // ── Everything else — use the Serwist defaults ────────────────────
+    ...defaultCache,
+  ],
 });
 
 serwist.addEventListeners();
 
-// Activate handler: clear ALL Cache Storage entries on activate so
-// the new SW serves fresh content from the network instead of any
-// stale runtime caches the prior SW left behind.
+// On activate: wipe all runtime caches from the previous SW so stale
+// entries don't bleed through. Static assets will be re-fetched and
+// re-cached with the new content-hashed filenames on the next load.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))),
   );
 });
 
-// Tagging the version so DevTools → Application → Service Workers
-// shows the bump and operators can confirm clients picked up the
-// new SW.
-console.log(`[sw] activated ${SW_VERSION}`);
+console.log(`[sw] ${SW_VERSION} activated`);
