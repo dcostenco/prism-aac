@@ -18,7 +18,11 @@
  *     string and appends it to the shared MessageBar via appendText.
  *   • Close button clears the cell grid (next session starts fresh) and
  *     closes the panel.
- *   • TTS / AI tutor are stubs in this phase — Phase 4B fills them in.
+ *   • TTS: the AI tutor (MathTutorTool) uses aacSpeak() to speak its
+ *     responses. The Done button sends the expression to the MessageBar
+ *     where the user can tap Speak to TTS the whole expression.
+ *   • AI tutor: MathTutorTool (Phase 5C/5D/6) supports Hint/Check/Solve
+ *     modes with Pyodide eval, Java runtime, and LLM fallback.
  *
  * The cell grid lives in useMathGridStore (zustand, not persisted).
  * Closing the panel clears the store so opening Math next time starts
