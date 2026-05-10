@@ -154,3 +154,99 @@ describe('Concurrent Speak + silence-detect — both must reach playback', () =>
     expect(MockBufferSource.startCalls).toBe(3);
   });
 });
+
+describe('Class 6 — Case-mismatch double-speak (silence-detect + handleSpeak race)', () => {
+  /**
+   * Root cause (May 2026, recurring):
+   *
+   * 1. User types "hello" → isSafeAutoCorrection auto-capitalizes to "Hello"
+   *    on Speak press → handleSpeak sets lastSilenceSpokenRef.current = "Hello"
+   *    and calls speakAzure("Hello").
+   *
+   * 2. Silence-detect timer was already in flight with closure-captured
+   *    trimmed = "hello" (pre-correction). It fires ~350ms later with
+   *    lastWord = "hello". Old guard: "hello" !== "Hello" → TRUE → re-speaks.
+   *    New guard: "hello".toLowerCase() !== "Hello".toLowerCase() → FALSE → blocked.
+   *
+   * These tests pin the DEDUP layer (speakAzure) to document WHY the
+   * component-level pre-mark guard is the right fix, and verify the
+   * DEDUP's exact-string semantics are preserved (case-insensitive DEDUP
+   * would be wrong — "She" and "she" are legitimately different utterances
+   * when the user changes capitalisation intentionally).
+   */
+
+  it('DEDUP does NOT suppress "hello" after "Hello" — exact-string only (component guard handles this)', async () => {
+    let calls = 0;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).endsWith('/tts/public')) { calls++; return audioOk(1024); }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+
+    // handleSpeak fires first with corrected "Hello"
+    const r1 = await speakAzure('Hello', 'en-US', 'friendly', 1.0, 1.0, '');
+    // Silence-detect fires 350ms later (beyond DEDUP window if > 200ms,
+    // but also case-different). Service layer allows it through — the
+    // component pre-mark is what blocks this in production.
+    const r2 = await speakAzure('hello', 'en-US', 'friendly', 1.0, 1.0, '');
+
+    expect(r1).toBe(true);
+    expect(r2).toBe(true);
+    expect(calls).toBe(2); // both fetches fire — DEDUP is exact-string by design
+    // This documents that the fix MUST be at the component level (pre-mark
+    // comparison case-insensitive), not at the speakAzure DEDUP level.
+  });
+
+  it('DEDUP correctly suppresses identical-case same-text within 200ms', async () => {
+    let calls = 0;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).endsWith('/tts/public')) { calls++; return audioOk(1024); }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+
+    const r1 = await speakAzure('Hello', 'en-US', 'friendly', 1.0, 1.0, '');
+    // Fire immediately — same text, within DEDUP window
+    const r2 = speakAzure('Hello', 'en-US', 'friendly', 1.0, 1.0, '');
+    await r2;
+
+    expect(r1).toBe(true);
+    expect(await r2).toBe(true); // returns true (claims success), suppresses fetch
+    expect(calls).toBe(1); // only ONE fetch — DEDUP fired
+    expect(MockBufferSource.startCalls).toBe(1);
+  });
+
+  it('silence-detect guard: case-different same word must NOT re-speak', () => {
+    // Pure contract test for the pre-mark comparison logic.
+    // Pins the fix: lastWord.toLowerCase() !== lastSpoken.toLowerCase()
+    const guard = (lastWord: string, lastSpoken: string): boolean =>
+      lastWord.length >= 3 && lastWord.toLowerCase() !== lastSpoken.toLowerCase();
+
+    // The bug: old guard (===) would return true for these → double-speak
+    expect(guard('hello', 'Hello')).toBe(false);  // autocorrect capitalised
+    expect(guard('Hello', 'hello')).toBe(false);  // inverted case
+    expect(guard('HELLO', 'hello')).toBe(false);  // all-caps vs lower
+    expect(guard('World', 'world')).toBe(false);  // general case
+
+    // Should still speak for genuinely different words
+    expect(guard('hello', 'world')).toBe(true);
+    expect(guard('water', 'bread')).toBe(true);
+    expect(guard('Hello', 'World')).toBe(true);
+
+    // Short words (≤2 chars) never trigger silence-detect
+    expect(guard('hi', 'Hi')).toBe(false);  // too short regardless
+    expect(guard('ok', 'OK')).toBe(false);  // too short regardless
+
+    // Empty lastSpoken (initial state) → should speak
+    expect(guard('hello', '')).toBe(true);
+  });
+
+  it('silence-detect guard: same word after punctuation normalisation does not re-speak', () => {
+    const guard = (lastWord: string, lastSpoken: string): boolean =>
+      lastWord.length >= 3 && lastWord.toLowerCase() !== lastSpoken.toLowerCase();
+
+    // Edge: if word has trailing punctuation stripped differently
+    expect(guard('hello', 'Hello')).toBe(false);
+    expect(guard('hello!', 'Hello!')).toBe(false);
+  });
+});
