@@ -21,20 +21,6 @@
                ReferencedContainer = "container:PrismAAC.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "C059824D983FDADEE5E3C89D"
-               BuildableName = "PrismAACWatch.app"
-               BlueprintName = "PrismAACWatch"
-               ReferencedContainer = "container:PrismAAC.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -61,6 +47,17 @@
                BlueprintIdentifier = "46A764FCF03891511096393D"
                BuildableName = "PrismAACTests.xctest"
                BlueprintName = "PrismAACTests"
+               ReferencedContainer = "container:PrismAAC.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "081C499743C163B60754C060"
+               BuildableName = "PrismAACUITests.xctest"
+               BlueprintName = "PrismAACUITests"
                ReferencedContainer = "container:PrismAAC.xcodeproj">
             </BuildableReference>
          </TestableReference>

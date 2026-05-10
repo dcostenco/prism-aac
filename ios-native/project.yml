@@ -107,12 +107,24 @@ targets:
     dependencies:
       - target: PrismAAC
 
+  # ── UI tests ─────────────────────────────────────────────────────────────────
+  PrismAACUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: PrismAACUITests
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.uitests
+      TEST_TARGET_NAME: PrismAAC
+    dependencies:
+      - target: PrismAAC
+
 schemes:
   PrismAAC:
     build:
       targets:
         PrismAAC: all
-        PrismAACWatch: all
     run:
       config: Debug
       simulatorId: 7B34EA17-9CDA-4403-BE92-CF1DAD6D5E1F  # iPhone 17 Pro
@@ -120,3 +132,11 @@ schemes:
       config: Debug
       targets:
         - PrismAACTests
+        - PrismAACUITests
+
+  PrismAACWatch:
+    build:
+      targets:
+        PrismAACWatch: all
+    run:
+      config: Debug
