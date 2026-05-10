@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 // intervention. (May 2026: bumped to 2026-05-08-pdf-fix after users
 // were stuck on Apr-30 SW serving stale chunks where PDF reader
 // blew up on clinical PDFs.)
-const SW_KILLSWITCH_VERSION = '2026-05-10-category-fixes-1';
+const SW_KILLSWITCH_VERSION = '2026-05-10-audio-fixes-2';
 
 // Emergency reset URL — the user's tracking calibration left them
 // unable to reach Settings to disable. Visiting any page with
