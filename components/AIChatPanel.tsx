@@ -41,22 +41,25 @@ export default function AIChatPanel() {
   const voiceRef = useRef<VoiceSession | null>(null);
   const voiceSupported = isVoiceInputSupported();
 
-  // Scroll to show the START of each new exchange (user message), not the
-  // bottom of the growing AI response. Only fires when message count grows,
-  // not on every streaming chunk — so the user can read from the top.
+  // Scroll to show the START of the AI response when streaming completes.
+  // While loading, keep the view at the user message (first new row).
+  // When done, jump to the AI reply row so the full answer reads top-down.
   useEffect(() => {
-    if (messages.length <= lastMsgCountRef.current) return;
-    lastMsgCountRef.current = messages.length;
-    // Find the first new message (the user turn that just triggered the round).
-    const firstNewIdx = Math.max(0, messages.length - 2); // user msg before AI placeholder
     const container = scrollRef.current;
     if (!container) return;
     const rows = container.querySelectorAll(':scope > div');
-    const target = rows[firstNewIdx] as HTMLElement | undefined;
-    if (target) {
-      target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+
+    if (messages.length > lastMsgCountRef.current) {
+      // New exchange started — scroll to user message so both are visible.
+      lastMsgCountRef.current = messages.length;
+      const userRow = rows[messages.length - 2] as HTMLElement | undefined;
+      userRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    } else if (!loading && messages.length > 0) {
+      // Streaming finished — scroll to the AI reply so it reads from the top.
+      const aiRow = rows[messages.length - 1] as HTMLElement | undefined;
+      aiRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
-  }, [messages.length]); // intentionally only message COUNT, not content
+  }, [messages.length, loading]);
 
   const handleTapLine = useCallback(
     (line: string) => {
