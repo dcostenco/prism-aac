@@ -127,7 +127,7 @@ struct WatchPictogramCards: View {
                             // Translate if output language differs from input
                             translation.translateAndSpeak(
                                 text: phrase.label,
-                                from: vocab.inputLanguage,
+                                from: vocab.vocabLanguage,  // language of the label text ("en-US" for offline core)
                                 to: vocab.outputLanguage,
                                 tts: tts
                             )

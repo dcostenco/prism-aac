@@ -12,21 +12,27 @@ import WatchConnectivity
 final class WatchVocabSync: NSObject, ObservableObject, WCSessionDelegate {
 
     @Published private(set) var categories: [WatchCategory] = WatchCategory.offlineCore
-    /// Input (typing) language — what the AAC user communicates in.
+    /// Input (typing/selection) language — what the AAC user communicates in.
     @Published var inputLanguage: String = "en-US"
-    /// Output (TTS/translation) language — what is spoken aloud, may differ for translation.
+    /// Output (TTS/translation) language — what is spoken aloud.
     @Published var outputLanguage: String = "en-US"
-    /// Legacy single-language alias for API calls — uses outputLanguage.
+    /// Language the loaded vocabulary labels are written in.
+    /// Offline core = "en-US"; API-loaded = whatever lang was fetched.
+    /// This is the correct `from` parameter for translation — NOT inputLanguage.
+    @Published private(set) var vocabLanguage: String = "en-US"
+    /// Legacy alias.
     var language: String { outputLanguage }
     @Published private(set) var source: Source = .offline
 
     /// Update the language pair and reload vocabulary.
+    /// Vocabulary labels are loaded in `input` language so the AAC user
+    /// can read them in their native language. TTS speaks in `output`.
     func setLanguages(input: String, output: String) {
         inputLanguage = input
         outputLanguage = output
         UserDefaults.standard.set(input,  forKey: "watchInputLanguage")
         UserDefaults.standard.set(output, forKey: "watchOutputLanguage")
-        Task { await loadFromAPI(lang: output) }
+        Task { await loadFromAPI(lang: input) }   // vocab labels in INPUT lang
     }
 
     /// Shorthand: set only output language (input unchanged).
@@ -65,7 +71,7 @@ final class WatchVocabSync: NSObject, ObservableObject, WCSessionDelegate {
             let (data, _) = try await URLSession.shared.data(from: url)
             let vocab = try JSONDecoder().decode(VocabResponse.self, from: data)
             categories = vocab.categories.map { WatchCategory(from: $0) }
-            outputLanguage = vocab.language
+            vocabLanguage = vocab.language   // labels are in this language
             source = .cloud
         } catch {
             // Keep offline core — never leave user without communication
