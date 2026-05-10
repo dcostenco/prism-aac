@@ -303,155 +303,120 @@ export default function AACChatPanel() {
     );
   }
 
-  // Active contact selected — show compose view.
+  // Active contact selected — compact compose strip.
+  // SEND button is in the HEADER so it is always visible regardless of
+  // how much the provider-picker or message preview needs below it.
+  if (!activeContact) return null;  // guard for TS narrowing
+  const canSend = !sending && !!text.trim() && activeContactAvailable;
   return (
     <section
       aria-label={tx('aac_chat_title', 'Send a message')}
       className="shrink-0 flex flex-col surface-bar border-y border-theme"
-      style={{ maxHeight: 'clamp(180px,22svh,220px)' }}
       data-testid="aac-chat-panel"
       data-state="compose"
     >
-      <header className="flex items-center justify-between px-3 py-2 border-b border-theme shrink-0">
-        <div className="flex items-center gap-3">
-          {activeContact && (
-            <button
-              onClick={handleBack}
-              aria-label={tx('back', 'Back')}
-              className="aac-key surface-key text-primary rounded-lg px-3 py-1 font-bold"
-            >
-              ←
-            </button>
-          )}
-          <div className="flex flex-col min-w-0">
-            <h2 className="text-base font-bold text-primary flex items-center gap-2">
-            {activeContact ? (
-              <>
-                <span aria-hidden>{PROVIDER_ICONS[activeContact.provider]}</span>
-                {activeContact.name}
-                <span className="text-xs text-secondary font-normal">{PROVIDER_LABELS[activeContact.provider]}</span>
-              </>
-            ) : (
-              <>
-                <span aria-hidden>💬</span>
-                {tx('aac_chat_title', 'Send a message')}
-              </>
-            )}
-          </h2>
-            {siblingContacts.length > 0 && (
-              <div className="flex gap-1 mt-0.5">
-                {siblingContacts.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => { tapFeedback(); selectContact(s.id); }}
-                    className="text-[10px] px-1.5 py-0.5 rounded surface-key border border-theme text-secondary hover:text-primary"
-                    aria-label={`Switch to ${PROVIDER_LABELS[s.provider]}`}
-                  >
-                    {PROVIDER_ICONS[s.provider]} {PROVIDER_LABELS[s.provider]}
-                  </button>
-                ))}
-              </div>
-            )}
+      {/* ── Header: nav + contact label + SEND (always visible) ── */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-theme shrink-0">
+        <button
+          onClick={handleBack}
+          aria-label={tx('back', 'Back')}
+          className="aac-key surface-key text-primary rounded-lg px-3 py-1.5 font-bold shrink-0"
+        >
+          ←
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-primary truncate">
+            <span aria-hidden>{PROVIDER_ICONS[activeContact.provider]}</span>{' '}
+            {activeContact.name}
+            <span className="ml-2 text-xs text-secondary font-normal">{PROVIDER_LABELS[activeContact.provider]}</span>
+          </div>
+          {/* Message preview — always visible in header row */}
+          <div
+            className="text-sm text-secondary truncate mt-0.5"
+            data-testid="aac-chat-compose-preview"
+          >
+            {text.trim()
+              ? <span className="text-primary">{text.trim()}</span>
+              : <span className="italic">{tx('aac_chat_compose_placeholder', 'Type a message using the keyboard…')}</span>
+            }
           </div>
         </div>
+        {/* SEND — lives here so it's ALWAYS visible */}
+        <button
+          onClick={handleSend}
+          disabled={!canSend}
+          data-testid="aac-chat-send-btn"
+          aria-label={sending ? 'Sending…' : `Send to ${activeContact.name}`}
+          className={`aac-key shrink-0 rounded-xl px-5 py-2.5 font-bold text-base transition-colors
+            ${canSend
+              ? 'bg-[#4CAF50] hover:bg-[#388E3C] text-white'
+              : 'bg-slate-400 text-white opacity-50 cursor-not-allowed'
+            }`}
+        >
+          {sending ? '⏳' : `📤 ${tx('aac_chat_send', 'Send')}`}
+        </button>
         <button
           onClick={() => { tapFeedback(); closeSidePanel(); }}
           aria-label={tx('close', 'Close')}
-          className="aac-key surface-key text-primary rounded-lg px-3 py-1 font-bold shrink-0"
-        >×</button>
-      </header>
-
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
-        {/* Contact list moved to PredictionBar (contact-search mode).
-            Compose view only renders when a contact is active. */}
-
-        {/* Contact picked → chat compose view */}
-        {activeContact && (
-          <div className="flex flex-col gap-3">
-            {/* Provider selector — shown when the same person has multiple
-                provider rows (e.g. Mail + SMS). The user must be able to
-                choose how to send before composing (Image #27). */}
-            {siblingContacts.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                <p className="text-muted text-xs uppercase tracking-wider px-1">
-                  Send via
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {/* Active provider — highlighted */}
-                  <button
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#4CAF50] text-white font-bold text-sm border-2 border-[#4CAF50]"
-                    disabled
-                    aria-current="true"
-                  >
-                    <span className="text-lg">{PROVIDER_ICONS[activeContact.provider]}</span>
-                    {PROVIDER_LABELS[activeContact.provider]}
-                  </button>
-                  {/* Sibling providers — tappable */}
-                  {siblingContacts.map((s) => {
-                    const avail = isProviderAvailable(s.provider, plan);
-                    return (
-                      <button
-                        key={s.id}
-                        onClick={() => { tapFeedback(); selectContact(s.id); }}
-                        disabled={!avail}
-                        aria-label={`Send via ${PROVIDER_LABELS[s.provider]}`}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm border-2 ${avail ? 'surface-key text-primary border-theme hover:border-[#4CAF50]' : 'opacity-40 surface-key text-muted border-theme cursor-not-allowed'}`}
-                      >
-                        <span className="text-lg">{PROVIDER_ICONS[s.provider]}</span>
-                        {PROVIDER_LABELS[s.provider]}
-                        {!avail && <span className="text-[10px]">🔒</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            {!activeContactAvailable && (
-              <div
-                className="surface-key border border-[#FF9800] rounded-lg p-3 text-sm text-[#E65100]"
-                data-testid="aac-chat-tier-warning"
-                role="alert"
-              >
-                🔒 {PROVIDER_LABELS[activeContact.provider]} requires the{' '}
-                <strong>{PROVIDER_MIN_TIER[activeContact.provider]}</strong> plan.
-                A caregiver can upgrade on synalux.ai.
-              </div>
-            )}
-            <div className="text-sm text-secondary">
-              {tx('aac_chat_compose_hint', 'Type your message using the keyboard below, then press Send.')}
-            </div>
-            <div
-              className="surface-key rounded-lg p-3 min-h-[64px] text-primary text-lg"
-              data-testid="aac-chat-compose-preview"
-            >
-              {text.trim() || (
-                <span className="text-secondary italic">
-                  {tx('aac_chat_compose_placeholder', 'Your message will appear here…')}
-                </span>
-              )}
-            </div>
-            <button
-              onClick={handleSend}
-              disabled={sending || !text.trim() || !activeContactAvailable}
-              data-testid="aac-chat-send-btn"
-              className="aac-key surface-key text-primary rounded-lg p-4 font-bold text-lg disabled:opacity-40 bg-green-600 text-white"
-            >
-              {sending
-                ? tx('aac_chat_sending', 'Sending…')
-                : `${tx('aac_chat_send', 'Send')} → ${activeContact.name}`}
-            </button>
-          </div>
-        )}
+          className="aac-key surface-key text-muted rounded-lg px-3 py-1.5 font-bold shrink-0"
+        >
+          ✕
+        </button>
       </div>
+
+      {/* ── Provider picker (only when the same person has multiple providers) ── */}
+      {siblingContacts.length > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-theme shrink-0 overflow-x-auto">
+          <span className="text-xs text-muted shrink-0 uppercase tracking-wider">Send via</span>
+          {/* Active provider chip */}
+          <button
+            disabled
+            aria-current="true"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4CAF50] text-white font-bold text-sm shrink-0"
+          >
+            <span>{PROVIDER_ICONS[activeContact.provider]}</span>
+            {PROVIDER_LABELS[activeContact.provider]}
+          </button>
+          {/* Other provider chips */}
+          {siblingContacts.map((s) => {
+            const avail = isProviderAvailable(s.provider, plan);
+            return (
+              <button
+                key={s.id}
+                onClick={() => { tapFeedback(); selectContact(s.id); }}
+                disabled={!avail}
+                aria-label={`Send via ${PROVIDER_LABELS[s.provider]}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-sm shrink-0 border border-theme ${avail ? 'surface-key text-primary hover:border-[#4CAF50]' : 'opacity-40 cursor-not-allowed surface-key text-muted'}`}
+              >
+                <span>{PROVIDER_ICONS[s.provider]}</span>
+                {PROVIDER_LABELS[s.provider]}
+                {!avail && <span className="text-[10px]">🔒</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Tier warning */}
+      {!activeContactAvailable && (
+        <div
+          className="px-3 py-2 text-sm text-[#E65100] border-b border-[#FF9800]/40"
+          data-testid="aac-chat-tier-warning"
+          role="alert"
+        >
+          🔒 {PROVIDER_LABELS[activeContact.provider]} requires the{' '}
+          <strong>{PROVIDER_MIN_TIER[activeContact.provider]}</strong> plan.
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (
         <div
           role="status"
-          className="absolute bottom-20 left-1/2 -translate-x-1/2 surface-bar px-4 py-2 rounded-lg shadow-lg text-primary"
+          className="px-3 py-2 text-sm font-bold text-[#4CAF50] border-t border-theme"
           data-testid="aac-chat-toast"
         >
-          {toast}
+          ✓ {toast}
         </div>
       )}
     </section>
