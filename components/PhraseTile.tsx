@@ -49,7 +49,14 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
       <span className="flex flex-col items-center w-full h-full">
         <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg overflow-hidden">
           {iconUrl && (
-            <img src={iconUrl} alt="" aria-hidden loading="lazy" className={imgCls} />
+            <img
+              src={iconUrl}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              className={imgCls}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+            />
           )}
         </span>
         <span

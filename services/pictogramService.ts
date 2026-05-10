@@ -41,17 +41,19 @@ export function pictureModeForProfile(profile: SynaluxProfile | null): PictureMo
 const STYLE_VERSION = 1;
 const ARASAAC_API = 'https://api.arasaac.org/v1';
 const ARASAAC_CDN = 'https://static.arasaac.org/pictograms';
-const MAX_MEM_CACHE = 100;
+// Large enough to hold a full vocabulary board without eviction.
+// We do NOT revoke on eviction — a PhraseTile component may still hold
+// the old blob URL in its iconUrl state and revoking causes
+// WebKitBlobResource error 1. Blob URLs are cleaned up by the browser
+// when the page unloads; the memory cost is negligible.
+const MAX_MEM_CACHE = 600;
 const MEM_CACHE = new Map<string, string | null>();
 
 function memCacheSet(key: string, value: string | null) {
   if (MEM_CACHE.size >= MAX_MEM_CACHE) {
     const oldest = MEM_CACHE.keys().next().value;
-    if (oldest !== undefined) {
-      const oldUrl = MEM_CACHE.get(oldest);
-      if (oldUrl) URL.revokeObjectURL(oldUrl);
-      MEM_CACHE.delete(oldest);
-    }
+    if (oldest !== undefined) MEM_CACHE.delete(oldest);
+    // No URL.revokeObjectURL — component may still hold the old URL.
   }
   MEM_CACHE.set(key, value);
 }

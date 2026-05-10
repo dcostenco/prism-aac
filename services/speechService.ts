@@ -226,7 +226,9 @@ export async function speak(
 
   const settings = useSettingsStore.getState() as { useHighQualityOfflineVoice?: boolean };
   const kokoroVoice = getKokoroVoice(lang);
-  const kokoroEnabled = settings.useHighQualityOfflineVoice !== false; // default ON
+  // Kokoro disabled: model unavailable (huggingface 404 + unsupported model
+  // type style_text_to_speech_2). Falls through to Azure/Portal TTS (Alex).
+  const kokoroEnabled = false;
 
   // Bus debug header — only the first 80 chars of utterance, never logged
   // by the bus itself. Used by the debug overlay to correlate events with

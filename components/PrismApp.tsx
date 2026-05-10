@@ -35,7 +35,8 @@ import { useUIStore } from '@/store/uiStore';
 import { keyFeedback, deleteFeedback } from '@/services/feedback';
 import { aacSpeak } from '@/services/aacSpeak';
 import { registerPanicListeners } from '@/services/panicService';
-import { preloadKokoro } from '@/services/kokoroTTS';
+// Kokoro removed: model format (style_text_to_speech_2) unsupported by
+// current transformers.js + huggingface 404 on preprocessor_config.json.
 import { startInboxPolling } from '@/services/inboxService';
 import { startContactsSync } from '@/services/contactsIntegrationService';
 import { broadcastIntegrationEvent } from '@/services/integrationsService';
@@ -186,14 +187,7 @@ export default function PrismApp() {
     seedTemplates();
     ensureSeed();
     refreshAuth();
-    // Pre-warm Kokoro neural TTS in the background. The 350MB ONNX model
-    // takes 20-40s to download on first load. Without preloading, the
-    // first English speech that falls past Tier 1 (cross-origin auth
-    // blocked when AAC is served from prism-aac.vercel.app instead of
-    // synalux.ai/prism-aac) hits Tier 3 Web Speech, which on macOS picks
-    // a basic compact voice that sounds robotic. With preload, Tier 2
-    // Kokoro is usually ready by the time the user triggers TTS.
-    preloadKokoro();
+    // Kokoro preload removed — model unavailable (404 on HuggingFace).
     const unregisterPanic = registerPanicListeners();
     // Drain incoming caregiver/contact messages onto the schedule. The
     // poller is no-op until the portal /api/v1/prism-aac/inbox/poll
