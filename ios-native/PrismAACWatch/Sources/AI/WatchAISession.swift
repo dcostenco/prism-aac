@@ -100,18 +100,39 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
     // MARK: - Direct cloud path (Watch WiFi/LTE)
 
     private func askViaCloud(question: String, language: String) async throws -> String {
+        let langCode = String(language.prefix(2))
+        let system = "You are a friendly helper for a child who uses AAC. Reply in \(language) language. Keep answers short (2-3 sentences max)."
         var req = URLRequest(url: cloudURL, timeoutInterval: timeoutSec)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONSerialization.data(withJSONObject: [
-            "message": question,
-            "language": language,
-            "mode": "aac",
-            "source": "watch",
+            "messages": [
+                ["role": "system", "content": system],
+                ["role": "user",   "content": question],
+            ],
+            "language": langCode,
         ])
         let (data, _) = try await URLSession.shared.data(for: req)
-        let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        return obj?["reply"] as? String ?? ""
+        // Endpoint returns SSE — assemble all content chunks
+        return assembleSSE(data) ?? ""
+    }
+
+    private func assembleSSE(_ data: Data) -> String? {
+        guard let raw = String(data: data, encoding: .utf8) else { return nil }
+        var result = ""
+        for line in raw.components(separatedBy: "\n") {
+            guard line.hasPrefix("data: ") else { continue }
+            let payload = String(line.dropFirst(6))
+            if payload == "[DONE]" { break }
+            guard let d = payload.data(using: .utf8),
+                  let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
+                  let choices = obj["choices"] as? [[String: Any]],
+                  let delta = choices.first?["delta"] as? [String: Any],
+                  let chunk = delta["content"] as? String else { continue }
+            result += chunk
+        }
+        let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     /// Ask AI and return the reply string (for inline use by WatchAIChatView).
