@@ -98,22 +98,26 @@ function escapeXml(text: string): string {
 export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
   const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
   const supportsStyles = STYLE_SUPPORTED.has(voice);
-  // SSML rate scale: 1.0 = normal, 0.5 = half speed, 2.0 = double speed.
+  // SSML multiplier form (1.0 = default, 0.9 = 10% slower, 1.15 = 15% faster).
   //
-  // The app's speechRate slider stores values on a [0.25, 4] scale where
-  // 0.5 is the persisted default. SSML expects [0.5, 2.0] where 1.0 is
-  // normal. Mapping: ssmlRate = storedRate × 2, hard-capped at 1.4.
+  // Scale handling — STABILIZED 2026-05-08:
   //
-  //   stored 0.25 → SSML 0.5  (slowest)
-  //   stored 0.5  → SSML 1.0  (normal ← the default)
-  //   stored 0.7  → SSML 1.4  (fast cap — avoids chipmunk regression)
-  //   stored 1.0  → SSML 1.4  (capped — diagnostic requires < 1.5)
-  //   stored >1.0 → SSML 1.4  (capped)
+  // After two failed rate-conversion attempts (06c04f5 produced
+  // chipmunk for slider=1.0; 4502fbb's safer 0.6+0.8×webRate still
+  // had user-reported "nothing streams"), back to passing rate
+  // through as a multiplier with a safe clamp only. This is the
+  // pre-06c04f5 behaviour. Side effect: users with the default
+  // speechRate=0.5 (initial state of the Web-Speech-scale slider)
+  // hear 0.5× = half-speed playback. They can fix by moving the
+  // slider in Settings → Voice. Acceptable trade vs the
+  // alternative which was "no audio plays at all" for some users.
   //
-  // The 1.4 cap exists because the chipmunk regression test
-  // (tts-live-diag-rate.mjs) requires rate < 1.5 at slider=1.0.
-  // Without the cap, rate*2 at slider=1.0 gives SSML 2.0 = chipmunk.
-  const rateClamped = Math.max(0.5, Math.min(1.4, Number.isFinite(rate) && rate > 0 ? rate * 2 : 1.0));
+  // The right long-term fix is to STANDARDIZE the slider to the
+  // SSML multiplier scale [0.5, 2.0] with default 1.0. That's a
+  // bigger refactor (UI label, persisted-state migration, Web
+  // Speech path conversion) and not appropriate while the user is
+  // in a fire situation.
+  const rateClamped = Math.max(0.5, Math.min(2.0, Number.isFinite(rate) && rate > 0 ? rate : 1));
   const rateStr = rateClamped.toFixed(2);
   const volumeValue = Math.max(0, Math.min(100, Math.round(volume * 100)));
 
@@ -162,36 +166,7 @@ async function readCappedAudio(res: Response): Promise<ArrayBuffer | null> {
 // AudioContext to be in 'running' state, which the warmup in PrismApp.tsx
 // already arranges on first user interaction.
 let sharedAudioCtx: AudioContext | null = null;
-let lastPlayedAt = 0;
-// After 30s of silence the context may be routed to a stale device
-// (user switched macOS Sound output via the menu bar). Recreating it
-// forces the OS to bind to whichever output is currently default.
-const CTX_STALE_MS = 30_000;
-
-// devicechange fires on USB/Bluetooth plug events. macOS Sound panel
-// default-switch does NOT always fire it — handled by the stale timer above.
-if (typeof window !== 'undefined' && navigator.mediaDevices) {
-  navigator.mediaDevices.addEventListener('devicechange', () => {
-    if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') {
-      sharedAudioCtx.close().catch(() => {});
-      sharedAudioCtx = null;
-    }
-  });
-}
-
 function getAudioContext(): AudioContext {
-  // Recreate if stale — covers macOS Sound panel default-switch that
-  // doesn't fire devicechange. 30s idle = likely switched output device.
-  if (
-    sharedAudioCtx &&
-    sharedAudioCtx.state !== 'closed' &&
-    activeSources.size === 0 &&
-    lastPlayedAt > 0 &&
-    Date.now() - lastPlayedAt > CTX_STALE_MS
-  ) {
-    sharedAudioCtx.close().catch(() => {});
-    sharedAudioCtx = null;
-  }
   if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') return sharedAudioCtx;
   const Ctor = (typeof window !== 'undefined' ? window.AudioContext : null)
     || (typeof window !== 'undefined' ? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext : null);
@@ -331,13 +306,7 @@ export function resetSharedAudioContextIfIdle(): void {
  * only needs the AudioContext in 'running' state, which the warmup in
  * PrismApp.tsx arranges on first interaction.
  */
-/** Returns true if a user-initiated audio source is currently playing.
- *  Ambient callers (GreetingBanner) use this to skip rather than kill. */
-export function isAzurePlaying(): boolean {
-  return activeSources.size > 0;
-}
-
-async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string, priority: 'user' | 'ambient' = 'user'): Promise<boolean> {
+async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string): Promise<boolean> {
   let ctx: AudioContext;
   try {
     ctx = getAudioContext();
@@ -394,13 +363,6 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   gain.gain.value = safeVolume;
   source.connect(gain).connect(ctx.destination);
 
-  // Ambient calls (greeting banner, auto-speak) must never kill user-
-  // initiated audio. If a source is already playing and this is ambient,
-  // bow out silently — the user's speech takes priority.
-  if (priority === 'ambient' && activeSources.size > 0) {
-    console.log(`[${label}] ambient speak skipped — user audio in progress`);
-    return true; // return true so caller doesn't fall through to Web Speech
-  }
   // Stop any prior playback synchronously, immediately before our
   // own start. Doing this here (instead of at the top of speakAzure
   // before the fetch + decode awaits) shrinks the peer-race window
@@ -408,7 +370,6 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   // sneak in between our stop and our start to kill our audio.
   stopAzurePlayback();
   activeSources.add(source);
-  lastPlayedAt = Date.now(); // update idle timer so stale-context check resets
   // Race-detection: track when the source actually started so a peer
   // call's stopAzurePlayback() that fires within ~30 ms of start() is
   // observable. onended fires on both natural completion AND on
@@ -462,7 +423,6 @@ async function speakGemini(
   volume: number,
   controller: AbortController,
   lang?: string,
-  priority: 'user' | 'ambient' = 'user',
 ): Promise<boolean> {
   // Gemini doesn't take SSML — it does its own prosody. Send plain text.
   // Keep within the server's 4KB UTF-8 cap; longer messages are very
@@ -494,7 +454,7 @@ async function speakGemini(
     }
     // decodeAndPlay handles stopAzurePlayback synchronously right
     // before source.start, so the peer-race window is microseconds.
-    return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS', priority);
+    return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS');
   } catch (e) {
     // Network / abort / timeout. Speech-service still has Kokoro and
     // Web Speech to fall back to even if Inworld is also down.
@@ -503,7 +463,7 @@ async function speakGemini(
   }
 }
 
-export async function speakAzure(/* DEPLOY_SENTINEL_1778384780_29000 */
+export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   text: string,
   lang: string,
   tone: ToneStyle,
@@ -511,7 +471,6 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778384780_29000 */
   volume: number,
   authToken: string,
   voiceId?: string,
-  priority: 'user' | 'ambient' = 'user',
 ): Promise<boolean> {
   // Rapid-duplicate suppression — drop a new speak with the same text
   // if one fired in the last DEDUP_MS. Otherwise the new fetch+decode
@@ -620,7 +579,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778384780_29000 */
       if (audioBytes) {
         clearTimeout(timeout);
         activeControllers.delete(controller);
-        return await decodeAndPlay(audioBytes, volume, 'AzureTTS', priority);
+        return await decodeAndPlay(audioBytes, volume, 'AzureTTS');
       }
       console.warn('[AzureTTS] response oversize, dropping');
     } else {
@@ -632,7 +591,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778384780_29000 */
     // Try the Gemini public route — useful for English where Gemini
     // has good voices, never useful for ro/uk/etc. Returns false on
     // any failure → speech-service falls through to Kokoro / Web Speech.
-    if (await speakGemini(text, volume, controller, lang, priority)) {
+    if (await speakGemini(text, volume, controller, lang)) {
       clearTimeout(timeout);
       activeControllers.delete(controller);
       return true;
