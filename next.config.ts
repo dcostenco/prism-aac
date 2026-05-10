@@ -4,7 +4,11 @@ import type { NextConfig } from 'next';
 const withSerwist = withSerwistInit({
   swSrc: 'app/sw.ts',
   swDest: 'public/sw.js',
-  disable: process.env.NODE_ENV !== 'production',
+  // Disable SW completely — the SW was intercepting HTML navigation
+  // requests and serving stale cached bundles, preventing UI fixes from
+  // reaching users even after multiple cache-bust attempts.
+  // Re-enable once a proper cache-invalidation strategy is in place.
+  disable: true,
 });
 
 // basePath: '/prism-aac' makes Next.js emit asset URLs and route links
