@@ -189,7 +189,10 @@ async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null
   try {
     const res = await fetch(`${base}/prism-aac/pictogram`, {
       method: 'POST',
-      credentials: 'include',
+      // 'same-origin': credentials sent to synalux.ai but NOT on cross-origin
+      // redirects to supabase.co (which returns ACAO:* — incompatible with
+      // credentials:include and triggers a browser CORS block).
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         phrase: phrase.slice(0, 100),
