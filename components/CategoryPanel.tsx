@@ -51,13 +51,14 @@ function wordBg(text: string): string {
   return 'bg-slate-500 text-white border-slate-700';
 }
 
+// Category detail columns — always at least 1 col on very small screens
 const GRID_COLS: Record<GridSize, string> = {
-  4:  'grid-cols-2',
-  6:  'grid-cols-3',
-  9:  'grid-cols-3',
-  12: 'grid-cols-4',
-  16: 'grid-cols-4',
-  20: 'grid-cols-5',
+  4:  'grid-cols-1 sm:grid-cols-2',
+  6:  'grid-cols-2 sm:grid-cols-3',
+  9:  'grid-cols-2 sm:grid-cols-3',
+  12: 'grid-cols-3 sm:grid-cols-4',
+  16: 'grid-cols-3 sm:grid-cols-4',
+  20: 'grid-cols-4 sm:grid-cols-5',
 };
 
 // Normal tile heights (keyboard hidden)
@@ -70,21 +71,23 @@ const TILE_H: Record<GridSize, string> = {
   20: 'min-h-[clamp(44px,6vw,65px)]',
 };
 
-// Compact tile heights when keyboard drawer is open — need to fit 4+ rows
-// in the ~35% of screen height left after the keyboard takes the bottom half.
+// Compact tile heights when keyboard drawer is open.
+// Use BOTH min-h AND max-h (same value = fixed height) so tiles can never
+// expand beyond the cap — min-h alone is insufficient because flex/grid
+// children can still grow past their min-height when content overflows.
 const TILE_H_KB: Record<GridSize, string> = {
-  4:  'min-h-[clamp(55px,8vw,80px)]',
-  6:  'min-h-[clamp(50px,7vw,72px)]',
-  9:  'min-h-[clamp(45px,6vw,65px)]',
-  12: 'min-h-[clamp(40px,5vw,58px)]',
-  16: 'min-h-[clamp(36px,5vw,52px)]',
-  20: 'min-h-[clamp(32px,4vw,46px)]',
+  4:  'min-h-[80px] max-h-[80px]',
+  6:  'min-h-[72px] max-h-[72px]',
+  9:  'min-h-[65px] max-h-[65px]',
+  12: 'min-h-[58px] max-h-[58px]',
+  16: 'min-h-[52px] max-h-[52px]',
+  20: 'min-h-[46px] max-h-[46px]',
 };
 
-// Dense HOME board — 7 cols, shorter tiles so more rows show at once
-const HOME_COLS        = 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7';
-const HOME_TILE_H      = 'min-h-[clamp(55px,7vw,85px)]';
-const HOME_TILE_H_KB   = 'min-h-[clamp(42px,5vw,60px)]';
+// HOME board columns: 2 on phones (readable tiles), more on tablet/desktop
+const HOME_COLS        = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7';
+const HOME_TILE_H      = 'min-h-[clamp(70px,12vw,110px)]';
+const HOME_TILE_H_KB   = 'min-h-[52px] max-h-[52px]';
 
 // Folder tile style — pure white background, clearly "drill in"
 const FOLDER_CLS = 'aac-btn bg-white text-gray-900 rounded-xl border-2 border-gray-300 flex flex-col items-center justify-center gap-1 font-bold select-none text-center hover:border-[#3e2a1a] active:scale-95 transition-transform';
@@ -190,11 +193,18 @@ export default function CategoryPanel() {
 
   const handlePhrase = (phraseText: string, phraseId?: string) => {
     tapFeedback();
+    // Lowercase phrase words when appending mid-sentence — tile labels are stored
+    // in Title Case ("Do", "Like") for display, but composing "like to do" should
+    // not capitalise mid-sentence words. Keep single "I" uppercase (English pronoun).
+    const toAppend = phraseText
+      .split(/\s+/)
+      .map((w) => (w === 'I' ? 'I' : w.toLowerCase()))
+      .join(' ');
     const words = text.trim().split(/\s+/).filter(Boolean);
     let pw = words.at(-1);
     let ppw = words.at(-2);
-    appendText(phraseText);
-    for (const w of phraseText.trim().split(/\s+/)) {
+    appendText(toAppend);
+    for (const w of toAppend.trim().split(/\s+/)) {
       learnWord(w.toLowerCase(), pw?.toLowerCase(), ppw?.toLowerCase());
       ppw = pw; pw = w;
     }
@@ -334,7 +344,7 @@ export default function CategoryPanel() {
                   ))}
                 </div>
               )}
-              <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-2 p-2 overflow-y-auto flex-1 min-h-0 content-start`}>
+              <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-2 p-2 overflow-y-auto flex-1 min-h-0 content-start`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
                 {/* Subcategory folders — WHITE, clearly navigable */}
                 {subcategories.map((sub) => (
                   <button key={sub.id} onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
@@ -374,7 +384,7 @@ export default function CategoryPanel() {
         {searchOpen ? searchPanelJsx : (
           <div className="flex-1 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
-            <div className={`grid ${HOME_COLS} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0 content-start`}>
+            <div className={`grid ${HOME_COLS} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0 content-start`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
               {homeGridPhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
                 const tH = categoryKeyboardOpen ? HOME_TILE_H_KB : HOME_TILE_H;

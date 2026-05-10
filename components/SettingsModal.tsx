@@ -16,6 +16,7 @@ import HandCalibration from './HandCalibration';
 import InputModesSettings from './InputModesSettings';
 import ToolbarCustomization from './ToolbarCustomization';
 import VoicePicker from './VoicePicker';
+import CaregiverContactsSettings from './CaregiverContactsSettings';
 import { getActiveProfile, loadProfiles, deleteProfile, setActiveProfile, enableContinuousLearning, disableContinuousLearning, isContinuousLearningActive } from '@/services/handProfileService';
 
 // ── Accordion section ────────────────────────────────────────────────────────
@@ -307,20 +308,9 @@ export default function SettingsModal() {
 
           {/* ── CONTACTS ── collapsed, just a button, no expanded list ── */}
           <Section icon="💬" title="Contacts">
-            <p className="text-muted text-xs mb-2">Manage caregiver contacts for sending messages via AAC Chat.</p>
-            <button
-              onClick={() => {
-                tapFeedback();
-                toggleSettings();
-                // Scroll to contacts section in main UI or open AAC Chat
-                useUIStore.getState().openAACChat();
-              }}
-              className="aac-btn w-full rounded-xl px-4 py-3 font-semibold border border-theme surface-key text-primary flex items-center justify-between"
-            >
-              <span>💬 Open AAC Chat / Contacts</span>
-              <span className="text-muted">→</span>
-            </button>
-            <label className="flex items-center justify-between py-1.5 mt-2">
+            {/* Full contacts manager — includes Gmail/Outlook connect + reconnect */}
+            <CaregiverContactsSettings />
+            <label className="flex items-center justify-between py-1.5 mt-2 border-t border-theme pt-2">
               <div>
                 <span className="text-primary text-sm font-semibold">Alarm on new message</span>
                 <p className="text-muted text-[10px]">Chime when a message arrives from a contact</p>

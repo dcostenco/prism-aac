@@ -35,9 +35,10 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
   // compact=true (keyboard open) → smaller cap so more rows fit on screen.
   // Without an explicit max-h, the browser lets the ARASAAC image's intrinsic
   // size inflate the tile to 135px+ even when min-h is 72px.
+  // max-w/max-h as % of the parent span so image scales with tile size on all devices
   const imgCls = compact
-    ? 'max-w-[70%] max-h-[2rem] object-contain'   // ≤ 32px — fits compact 72px tile
-    : 'max-w-[clamp(2.5rem,8vw,5rem)] max-h-[clamp(2.5rem,8vw,5rem)] object-contain';
+    ? 'max-w-[60%] max-h-[55%] object-contain'
+    : 'max-w-[80%] max-h-[75%] object-contain';
 
   return (
     <button
