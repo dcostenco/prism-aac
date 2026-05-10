@@ -236,6 +236,24 @@ let lastSpokenText = '';
 let lastSpokenAt = 0;
 const DEDUP_MS = 200;
 
+// Minimum time (ms) a source must have been playing before an autoSpeak call
+// is allowed to interrupt it. Prevents rapid prediction-tile taps from all
+// killing each other so the user hears nothing.
+// The explicit Speak button bypasses this guard via markSpeakInterrupt().
+const PROTECT_PLAY_MS = 600;
+let lastSourceStartedAt = 0;
+let _nextSpeakInterrupt = false;
+
+/**
+ * Call this immediately before aacSpeak when the user presses the
+ * explicit Speak button. Allows the next speakAzure call to interrupt
+ * any currently-playing audio regardless of how recently it started.
+ * Without this, autoSpeak calls respect PROTECT_PLAY_MS.
+ */
+export function markSpeakInterrupt(): void {
+  _nextSpeakInterrupt = true;
+}
+
 /** Stop only ACTIVE PLAYBACK (BufferSourceNodes + HTMLAudioElements +
  *  blob URLs). Does NOT abort in-flight fetch controllers — those
  *  belong to whichever speakAzure call owns them and aborting them
@@ -364,10 +382,23 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   source.connect(gain).connect(ctx.destination);
 
   // Stop any prior playback synchronously, immediately before our
-  // own start. Doing this here (instead of at the top of speakAzure
-  // before the fetch + decode awaits) shrinks the peer-race window
-  // from ~50-500 ms down to microseconds — a peer call can no longer
-  // sneak in between our stop and our start to kill our audio.
+  // own start. Respect the PROTECT_PLAY_MS guard: if the current source
+  // has been playing for less than PROTECT_PLAY_MS (600ms) AND this is
+  // not an explicit Speak-button press (markSpeakInterrupt was NOT called),
+  // skip the stop and abort this call instead. This prevents rapid autoSpeak
+  // calls from prediction-tile taps killing each other — the user would
+  // hear nothing because each source played for < 20ms before being killed.
+  const playedSoFar = lastSourceStartedAt > 0 ? Date.now() - lastSourceStartedAt : Infinity;
+  const isInterrupt = _nextSpeakInterrupt;
+  _nextSpeakInterrupt = false; // always consume the flag
+  if (!isInterrupt && activeSources.size > 0 && playedSoFar < PROTECT_PLAY_MS) {
+    // Current audio is still "young" — let it play, silently drop this new request.
+    // Returns true so the caller doesn't fall through to Web Speech (which would
+    // queue a second voice on top of the still-playing audio).
+    try { source.disconnect(); } catch { /* */ }
+    try { gain.disconnect(); } catch { /* */ }
+    return true;
+  }
   stopAzurePlayback();
   activeSources.add(source);
   // Race-detection: track when the source actually started so a peer
@@ -387,15 +418,18 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
       );
     }
     activeSources.delete(source);
+    if (activeSources.size === 0) lastSourceStartedAt = 0; // no more active sources
     try { source.disconnect(); } catch { /* */ }
     try { gain.disconnect(); } catch { /* */ }
   };
 
   try {
     source.start(0);
+    lastSourceStartedAt = Date.now();
   } catch (e) {
     console.warn(`[${label}] source.start failed:`, e instanceof Error ? e.message : e);
     activeSources.delete(source);
+    lastSourceStartedAt = 0;
     return false;
   }
   return true;

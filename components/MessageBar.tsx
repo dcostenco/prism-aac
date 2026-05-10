@@ -9,7 +9,7 @@ import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
-import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
+import { TONE_OPTIONS, warmupAzureAudio, markSpeakInterrupt } from '@/services/azureTTS';
 import { translateWithAIRefine } from '@/services/translateService';
 import { useAuthStore } from '@/store/authStore';
 import { usePredictionStore } from '@/store/predictionStore';
@@ -304,6 +304,7 @@ export default function MessageBar() {
     // important call (getAudioContext().resume()) happens before its
     // first await — invoking it here preserves the gesture token.
     void warmupAzureAudio();
+    markSpeakInterrupt(); // allow this Speak press to interrupt any playing audio immediately
     tapFeedback();
     const original = text.trim();
     if (!original || !soundEnabled) return;
