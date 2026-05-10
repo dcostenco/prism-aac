@@ -37,12 +37,26 @@ export default function AIChatPanel() {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastMsgCountRef = useRef(0);
   const voiceRef = useRef<VoiceSession | null>(null);
   const voiceSupported = isVoiceInputSupported();
 
+  // Scroll to show the START of each new exchange (user message), not the
+  // bottom of the growing AI response. Only fires when message count grows,
+  // not on every streaming chunk — so the user can read from the top.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, loading]);
+    if (messages.length <= lastMsgCountRef.current) return;
+    lastMsgCountRef.current = messages.length;
+    // Find the first new message (the user turn that just triggered the round).
+    const firstNewIdx = Math.max(0, messages.length - 2); // user msg before AI placeholder
+    const container = scrollRef.current;
+    if (!container) return;
+    const rows = container.querySelectorAll(':scope > div');
+    const target = rows[firstNewIdx] as HTMLElement | undefined;
+    if (target) {
+      target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+  }, [messages.length]); // intentionally only message COUNT, not content
 
   const handleTapLine = useCallback(
     (line: string) => {

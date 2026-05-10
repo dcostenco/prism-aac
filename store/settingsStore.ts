@@ -195,7 +195,7 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      speechRate: 0.5,
+      speechRate: 1.0,
       speechVolume: 1.0,
       language: 'en',
       outputLanguage: 'en', // syncs with language on first use; only diverges when user explicitly sets translation pair
