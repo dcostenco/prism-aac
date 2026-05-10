@@ -107,8 +107,8 @@ function SidebarBtn({ icon, label, onClick, active = false }: SideBtnProps) {
         border-b border-white/10 last:border-b-0 hover:bg-white/15 active:bg-white/25 transition-colors
         ${active ? 'bg-white/20' : ''}`}
     >
-      <span className="text-[26px] leading-none">{icon}</span>
-      <span className="text-[10px] font-bold uppercase tracking-wide text-white/90 text-center leading-tight px-0.5">
+      <span className="text-[clamp(18px,2.5vw,26px)] leading-none">{icon}</span>
+      <span className="text-[clamp(8px,0.9vw,10px)] font-bold uppercase tracking-wide text-white/90 text-center leading-tight px-0.5">
         {label}
       </span>
     </button>
@@ -224,7 +224,7 @@ export default function CategoryPanel() {
   // ⌨️ is FIRST — always visible even when keyboard is open and shrinks the panel.
   // No flex-1 spacer: all buttons compact from top so nothing gets clipped.
   const sidebarJsx = (showCoreWords = false) => (
-    <nav className="w-[96px] shrink-0 bg-[#3e2a1a] flex flex-col border-l-2 border-[#5c3d25] overflow-y-auto overflow-x-hidden">
+    <nav className="w-[clamp(72px,9vw,96px)] shrink-0 bg-[#3e2a1a] flex flex-col border-l-2 border-[#5c3d25] overflow-y-auto overflow-x-hidden">
       {/* Keyboard toggle — ALWAYS FIRST so it's always reachable */}
       <SidebarBtn icon="⌨️" label={categoryKeyboardOpen ? 'Hide KB' : 'Keyboard'} onClick={toggleCategoryKeyboard} active={categoryKeyboardOpen} />
       {/* Search */}
