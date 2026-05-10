@@ -42,21 +42,23 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
       className={className}
       style={{ border: '2px solid #000', ...style }}
     >
-      {/* h-full fills the tile so image area expands and text is always at bottom */}
+      {/* flex-col fills tile height; image takes all space above label */}
       <span className="flex flex-col items-center w-full h-full">
-        <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg overflow-hidden">
+        {/* Image area — flex-1 so it fills whatever height the tile allows.
+            No hardcoded minHeight so tiles can be compact when keyboard is open. */}
+        <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg overflow-hidden min-h-0">
           {iconUrl && (
             <img
               src={iconUrl}
               alt=""
               aria-hidden
               loading="lazy"
-              className="max-w-[clamp(2.5rem,8vw,5rem)] max-h-[clamp(2.5rem,8vw,5rem)] object-contain"
+              className="max-w-[80%] max-h-full object-contain"
             />
           )}
         </span>
-        {/* Label — shrink-0 keeps it always visible; break-words prevents overflow */}
-        <span className="shrink-0 w-full text-center leading-snug text-[clamp(0.62rem,1.2vw,0.95rem)] font-bold py-1 px-1 border-t-2 border-black break-words" style={{ wordBreak: 'break-word' }}>
+        {/* Label — always at bottom, wraps freely */}
+        <span className="shrink-0 w-full text-center leading-snug text-[clamp(0.6rem,1.1vw,0.9rem)] font-bold py-1 px-1 border-t-2 border-black break-words" style={{ wordBreak: 'break-word' }}>
           {phrase}
         </span>
       </span>

@@ -60,9 +60,7 @@ const GRID_COLS: Record<GridSize, string> = {
   20: 'grid-cols-5',
 };
 
-// Tile heights — kept short enough so at least 2–3 rows are visible
-// even with the keyboard drawer open (keyboard takes ~35% of screen height).
-// vw-based so they scale with viewport but never get too tall.
+// Normal tile heights (keyboard hidden)
 const TILE_H: Record<GridSize, string> = {
   4:  'min-h-[clamp(90px,14vw,140px)]',
   6:  'min-h-[clamp(80px,11vw,110px)]',
@@ -72,9 +70,21 @@ const TILE_H: Record<GridSize, string> = {
   20: 'min-h-[clamp(44px,6vw,65px)]',
 };
 
+// Compact tile heights when keyboard drawer is open — need to fit 4+ rows
+// in the ~35% of screen height left after the keyboard takes the bottom half.
+const TILE_H_KB: Record<GridSize, string> = {
+  4:  'min-h-[clamp(55px,8vw,80px)]',
+  6:  'min-h-[clamp(50px,7vw,72px)]',
+  9:  'min-h-[clamp(45px,6vw,65px)]',
+  12: 'min-h-[clamp(40px,5vw,58px)]',
+  16: 'min-h-[clamp(36px,5vw,52px)]',
+  20: 'min-h-[clamp(32px,4vw,46px)]',
+};
+
 // Dense HOME board — 7 cols, shorter tiles so more rows show at once
-const HOME_COLS   = 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7';
-const HOME_TILE_H = 'min-h-[clamp(55px,7vw,85px)]';
+const HOME_COLS        = 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7';
+const HOME_TILE_H      = 'min-h-[clamp(55px,7vw,85px)]';
+const HOME_TILE_H_KB   = 'min-h-[clamp(42px,5vw,60px)]';
 
 // Folder tile style — pure white background, clearly "drill in"
 const FOLDER_CLS = 'aac-btn bg-white text-gray-900 rounded-xl border-2 border-gray-300 flex flex-col items-center justify-center gap-1 font-bold select-none text-center hover:border-[#3e2a1a] active:scale-95 transition-transform';
@@ -328,18 +338,18 @@ export default function CategoryPanel() {
                 {/* Subcategory folders — WHITE, clearly navigable */}
                 {subcategories.map((sub) => (
                   <button key={sub.id} onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
-                    className={`${FOLDER_CLS} p-3 ${TILE_H[gridSize]}`}>
-                    <span className="text-4xl leading-none">{sub.icon}</span>
-                    <span className="text-sm leading-tight uppercase tracking-wide">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
+                    className={`${FOLDER_CLS} p-3 ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]}`}>
+                    <span className="text-3xl leading-none">{sub.icon}</span>
+                    <span className="text-xs leading-tight uppercase tracking-wide">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
                   </button>
                 ))}
-                {/* Phrase tiles — color coded */}
+                {/* Phrase tiles — color coded, compact when keyboard open */}
                 {phrases.map((p) => {
                   const local = getPhraseText(p.id, language, p.text);
                   return (
                     <PhraseTile key={p.id} phrase={local} englishPhrase={p.text}
                       onClick={() => handlePhrase(local, p.id)}
-                      className={`aac-btn rounded-xl font-bold select-none text-center ${TILE_H[gridSize]} ${catBg ?? wordBg(p.text)}`}
+                      className={`aac-btn rounded-xl font-bold select-none text-center ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]} ${catBg ?? wordBg(p.text)}`}
                     />
                   );
                 })}
@@ -367,23 +377,27 @@ export default function CategoryPanel() {
             <div className={`grid ${HOME_COLS} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0 content-start`}>
               {homeGridPhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
+                const tH = categoryKeyboardOpen ? HOME_TILE_H_KB : HOME_TILE_H;
                 return (
                   <PhraseTile key={p.id} phrase={local} englishPhrase={p.text}
                     onClick={() => handlePhrase(local, p.id)}
-                    className={`aac-btn rounded-xl font-bold select-none text-center ${HOME_TILE_H} ${CAT_BG[catId] ?? 'bg-slate-500 text-white border-slate-600'}`}
+                    className={`aac-btn rounded-xl font-bold select-none text-center ${tH} ${CAT_BG[catId] ?? 'bg-slate-500 text-white border-slate-600'}`}
                   />
                 );
               })}
               {/* WHITE folder tiles for fringe categories */}
-              {fringeCats.map((cat) => (
+              {fringeCats.map((cat) => {
+                const tH = categoryKeyboardOpen ? HOME_TILE_H_KB : HOME_TILE_H;
+                return (
                 <button key={cat.id} onClick={() => { tapFeedback(); selectCategory(cat.id); }}
-                  className={`${FOLDER_CLS} gap-1 p-1.5 text-xs ${HOME_TILE_H}`}>
+                  className={`${FOLDER_CLS} gap-1 p-1.5 text-xs ${tH}`}>
                   <span className="text-2xl sm:text-3xl leading-none">{cat.icon}</span>
                   <span className="leading-tight uppercase tracking-wide text-[10px] sm:text-xs">
                     {cat.nameKey ? t(cat.nameKey) : cat.name}
                   </span>
                 </button>
-              ))}
+                );
+              })}
             </div>
             {/* Bottom category tab strip — dark brown bar */}
             <div className="flex gap-1 px-2 py-1.5 overflow-x-auto shrink-0 border-t-2 border-[#5c3d25] bg-[#3e2a1a]">
