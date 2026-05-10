@@ -55,12 +55,12 @@ function wordBg(text: string): string {
 
 // Category detail columns — always at least 1 col on very small screens
 const GRID_COLS: Record<GridSize, string> = {
-  4:  'grid-cols-1 sm:grid-cols-2',
-  6:  'grid-cols-2 sm:grid-cols-3',
-  9:  'grid-cols-2 sm:grid-cols-3',
-  12: 'grid-cols-3 sm:grid-cols-4',
-  16: 'grid-cols-3 sm:grid-cols-4',
-  20: 'grid-cols-4 sm:grid-cols-5',
+  4:  'grid-cols-2',          // 2×2 = 4 large tiles
+  6:  'grid-cols-2',          // 2×3 = 6
+  9:  'grid-cols-3',          // 3×3 = 9
+  12: 'grid-cols-3',          // 3×4 = 12
+  16: 'grid-cols-4',          // 4×4 = 16
+  20: 'grid-cols-4',          // 4×5 = 20
 };
 
 // Normal tile heights (keyboard hidden)
@@ -379,7 +379,7 @@ export default function CategoryPanel() {
                 </div>
               )}
               <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-2 p-2 overflow-y-auto flex-1 min-h-0 content-start`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-                {/* Subcategory folders — WHITE, clearly navigable */}
+                {/* Subcategory folders — always shown, count toward gridSize */}
                 {subcategories.map((sub) => (
                   <button key={sub.id} onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
                     className={`${FOLDER_CLS} p-3 ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]}`}>
@@ -387,8 +387,9 @@ export default function CategoryPanel() {
                     <span className="text-xs leading-tight uppercase tracking-wide">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
                   </button>
                 ))}
-                {/* Phrase tiles — color coded, compact when keyboard open */}
-                {phrases.map((p) => {
+                {/* Phrase tiles — sliced to fit gridSize (SLP setting: fewer tiles
+                    for beginning communicators so each tile is large + unambiguous) */}
+                {phrases.slice(0, Math.max(0, gridSize - subcategories.length)).map((p) => {
                   const local = getPhraseText(p.id, language, p.text);
                   return (
                     <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} compact={categoryKeyboardOpen}
