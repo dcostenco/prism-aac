@@ -103,7 +103,7 @@ final class WatchVocabSync: NSObject, ObservableObject, WCSessionDelegate {
         guard let data = reply["vocab"] as? Data,
               let vocab = try? JSONDecoder().decode(VocabResponse.self, from: data) else { return }
         categories = vocab.categories.map { WatchCategory(from: $0) }
-        outputLanguage = vocab.language
+        vocabLanguage = vocab.language   // labels written in this language (not output lang)
         source = .companion
     }
 }
