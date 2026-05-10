@@ -162,12 +162,14 @@ async function readCappedAudio(res: Response): Promise<ArrayBuffer | null> {
 // AudioContext to be in 'running' state, which the warmup in PrismApp.tsx
 // already arranges on first user interaction.
 let sharedAudioCtx: AudioContext | null = null;
+let lastPlayedAt = 0;
+// After 30s of silence the context may be routed to a stale device
+// (user switched macOS Sound output via the menu bar). Recreating it
+// forces the OS to bind to whichever output is currently default.
+const CTX_STALE_MS = 30_000;
 
-// When the OS audio output device changes (e.g. user switches from HDMI TV
-// to MacBook speakers), the existing AudioContext stays bound to the old
-// device and plays silence. Close and recreate it so the next Speak picks
-// up the currently active output. Safari doesn't fire devicechange, but
-// the user can reload the page to recover — no worse than before.
+// devicechange fires on USB/Bluetooth plug events. macOS Sound panel
+// default-switch does NOT always fire it — handled by the stale timer above.
 if (typeof window !== 'undefined' && navigator.mediaDevices) {
   navigator.mediaDevices.addEventListener('devicechange', () => {
     if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') {
@@ -178,6 +180,18 @@ if (typeof window !== 'undefined' && navigator.mediaDevices) {
 }
 
 function getAudioContext(): AudioContext {
+  // Recreate if stale — covers macOS Sound panel default-switch that
+  // doesn't fire devicechange. 30s idle = likely switched output device.
+  if (
+    sharedAudioCtx &&
+    sharedAudioCtx.state !== 'closed' &&
+    activeSources.size === 0 &&
+    lastPlayedAt > 0 &&
+    Date.now() - lastPlayedAt > CTX_STALE_MS
+  ) {
+    sharedAudioCtx.close().catch(() => {});
+    sharedAudioCtx = null;
+  }
   if (sharedAudioCtx && sharedAudioCtx.state !== 'closed') return sharedAudioCtx;
   const Ctor = (typeof window !== 'undefined' ? window.AudioContext : null)
     || (typeof window !== 'undefined' ? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext : null);
@@ -394,6 +408,7 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   // sneak in between our stop and our start to kill our audio.
   stopAzurePlayback();
   activeSources.add(source);
+  lastPlayedAt = Date.now(); // update idle timer so stale-context check resets
   // Race-detection: track when the source actually started so a peer
   // call's stopAzurePlayback() that fires within ~30 ms of start() is
   // observable. onended fires on both natural completion AND on
