@@ -162,7 +162,10 @@ export default function AACChatPanel() {
   const handlePickContact = useCallback((id: string) => {
     tapFeedback();
     selectContact(id);
-  }, [selectContact]);
+    // Clear the message bar — it contained the contact search term (e.g. "dm")
+    // which must not be pre-filled into the compose field and accidentally sent.
+    clearAll();
+  }, [selectContact, clearAll]);
 
   const handleBack = useCallback(() => {
     tapFeedback();

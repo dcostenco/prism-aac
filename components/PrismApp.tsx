@@ -418,9 +418,12 @@ export default function PrismApp() {
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
           {sidePanel !== 'math' && <GreetingBanner />}
           {sidePanel !== 'math' && <MessageBar />}
-          {/* Hide PredictionBar only in AI chat (typing a question, not AAC phrase).
-              Categories keep the prediction bar so the AAC user can still type. */}
-          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <PredictionBar />}
+          {/* Hide PredictionBar in: AI chat, math, and category mode.
+              Category mode: on small landscape phones the prediction bar
+              consumes ~80px that the category tile grid desperately needs.
+              The prediction bar is also redundant in category mode — the
+              user picks phrases from the grid, not by typing. */}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />
           <AIChatPanel />
