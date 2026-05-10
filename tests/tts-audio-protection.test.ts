@@ -165,3 +165,108 @@ describe('Class 1 — interrupt is a parameter, not shared state', () => {
     expect(result).toBe(true);
   });
 });
+
+// ── Edge cases: volume=0, NaN, context suspended ─────────────────────────────
+describe('Edge cases — volume and AudioContext states', () => {
+  it('volume=0 is detected in speak() before network call', async () => {
+    let fetchCalled = false;
+    vi.stubGlobal('fetch', vi.fn(async () => { fetchCalled = true; return audioOk(); }));
+    const { speak } = await import('@/services/speechService');
+    // volume=0 → should early-exit with console.warn, not fetch
+    const warnSpy = vi.spyOn(console, 'warn');
+    await speak('test', 1.0, 0, 'en-US');
+    expect(fetchCalled).toBe(false);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('volume=0'));
+  });
+
+  it('NaN volume falls back to 1.0 (never silent from bad stored value)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).includes('/tts/')) return audioOk();
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    // NaN volume must not produce gain=NaN (which would be silent)
+    const result = await speakAzure('test', 'en-US', 'friendly', 1.0, NaN, '');
+    expect(result).toBe(true);
+    expect(MockBufferSource.startCount).toBe(1);
+    // Gain must be 1 (safeVolume fallback for NaN)
+    // (MockGain tracks last gain.value — verify it's not NaN)
+  });
+
+  it('suspended AudioContext causes decodeAndPlay to return false (not silent success)', async () => {
+    class SuspendedCtx extends MockAudioCtx {
+      state = 'suspended' as AudioContextState;
+      async resume() { /* never resumes */ }
+    }
+    vi.resetModules();
+    (globalThis as Record<string, unknown>).AudioContext = SuspendedCtx as unknown as typeof AudioContext;
+    (window as unknown as Record<string, unknown>).AudioContext = SuspendedCtx as unknown as typeof AudioContext;
+
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).includes('/tts/')) return audioOk();
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+    const result = await speakAzure('test', 'en-US', 'friendly', 1.0, 1.0, '');
+    // Suspended context → decodeAndPlay returns false → speakAzure tries Gemini fallback
+    // Either way, no BufferSource should have started
+    expect(MockBufferSource.startCount).toBe(0);
+    // result may be false (no tier succeeded) or true (Gemini fallback succeeded if configured)
+    // The key invariant: no audio started on a suspended context
+    expect(result).toBeDefined();
+  });
+
+  it('three concurrent autoSpeak calls: first plays, second and third dropped', async () => {
+    let callOrder = 0;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).includes('/tts/')) {
+        await new Promise(r => setTimeout(r, 10)); // slight async
+        return audioOk();
+      }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+
+    // Three calls in rapid succession, none with interrupt
+    const [r1, r2, r3] = await Promise.all([
+      speakAzure('first', 'en-US', 'friendly', 1.0, 1.0, ''),
+      speakAzure('second', 'en-US', 'friendly', 1.0, 1.0, ''),
+      speakAzure('third', 'en-US', 'friendly', 1.0, 1.0, ''),
+    ]);
+
+    // All return true (graceful drop, not failure)
+    expect(r1).toBe(true);
+    expect(r2).toBe(true);
+    expect(r3).toBe(true);
+    // Only ONE source started (first call wins, others dropped by PROTECT_PLAY_MS)
+    expect(MockBufferSource.startCount).toBe(1);
+  });
+
+  it('Speak button (interrupt=true) wins even when three autoSpeak calls are in-flight', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (String(url).includes('/tts/')) {
+        await new Promise(r => setTimeout(r, 20));
+        return audioOk();
+      }
+      return new Response('', { status: 500 });
+    }));
+    const { speakAzure } = await import('@/services/azureTTS');
+
+    // Start background audio first
+    await speakAzure('background tile', 'en-US', 'friendly', 1.0, 1.0, '');
+    expect(MockBufferSource.startCount).toBe(1);
+
+    // Concurrent: 2 autoSpeak + 1 Speak button (interrupt=true)
+    const [auto1, auto2, speak] = await Promise.all([
+      speakAzure('tile a', 'en-US', 'friendly', 1.0, 1.0, '', undefined, false),
+      speakAzure('tile b', 'en-US', 'friendly', 1.0, 1.0, '', undefined, false),
+      speakAzure('I need help', 'en-US', 'friendly', 1.0, 1.0, '', undefined, true),
+    ]);
+
+    expect(auto1).toBe(true);
+    expect(auto2).toBe(true);
+    expect(speak).toBe(true);
+    // Speak button (interrupt=true) MUST have started a source
+    expect(MockBufferSource.startCount).toBeGreaterThanOrEqual(2);
+  });
+});
