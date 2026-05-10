@@ -10,7 +10,7 @@ import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
-import { translateWithAIRefine } from '@/services/translateService';
+import { translateWithAIRefine, looksLikeTargetLang } from '@/services/translateService';
 import { useAuthStore } from '@/store/authStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { isSafeAutoCorrection } from '@/services/autocorrectSafety';
@@ -128,7 +128,12 @@ export default function MessageBar() {
       text.trim(), language, outputLanguage,
       (refined) => { if (!cancelled) setTranslated(refined); },
     );
-    if (instant.toLowerCase() !== text.trim().toLowerCase()) {
+    // Only show the offline-dict result if it actually looks like the target
+    // language script (≥60% matching letters). Partial offline results like
+    // "Я хочу К быть - best player" (mixed script) are hidden — the AI
+    // refine fires after 200ms and shows the correct translation instead.
+    const isChanged = instant.toLowerCase() !== text.trim().toLowerCase();
+    if (isChanged && looksLikeTargetLang(instant, outputLanguage)) {
       queueMicrotask(() => { if (mounted) setTranslated(instant); });
     }
     return () => { cancelled = true; mounted = false; };

@@ -186,8 +186,11 @@ const SCRIPT_FOR_LANG: Record<string, RegExp> = {
  * Returns true if the response looks like a plausible translation in
  * targetLang (i.e. its dominant script matches the target). Returns true
  * for short responses where script detection is unreliable.
+ * Exported so MessageBar can gate the instant-offline display — prevents
+ * showing garbage like "Я хочу К быть - best player" when the offline
+ * dict only translates some words (script mismatch on the untranslated ones).
  */
-function looksLikeTargetLang(response: string, targetLang: string): boolean {
+export function looksLikeTargetLang(response: string, targetLang: string): boolean {
   const trimmed = response.trim();
   if (trimmed.length < 3) return true;
   const expected = SCRIPT_FOR_LANG[targetLang];
@@ -241,7 +244,7 @@ export function translateWithAIRefine(
       // are you?"). Log so failures are visible in DevTools.
       console.warn('[translate] AI refine failed; staying on offline result:', e instanceof Error ? e.message : e);
     }
-  }, 600);
+  }, 200);
 
   return instant;
 }
