@@ -209,6 +209,7 @@ export async function speak(
   volume = 1.0,
   lang = 'en-US',
   tone: ToneStyle | 'auto' = 'auto',
+  priority: 'user' | 'ambient' = 'user',
 ): Promise<void> {
   if (!text.trim()) return;
 
@@ -263,7 +264,7 @@ export async function speak(
     emitTtsHealthEvent({
       type: 'tts-attempt', tier: 'inworld', text: debugText, lang, timestamp: tier1Start,
     });
-    const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId);
+    const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, priority);
     if (success) {
       console.log('[TTS] Portal TTS succeeded');
       const now = Date.now();

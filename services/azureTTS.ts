@@ -317,7 +317,13 @@ export function resetSharedAudioContextIfIdle(): void {
  * only needs the AudioContext in 'running' state, which the warmup in
  * PrismApp.tsx arranges on first interaction.
  */
-async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string): Promise<boolean> {
+/** Returns true if a user-initiated audio source is currently playing.
+ *  Ambient callers (GreetingBanner) use this to skip rather than kill. */
+export function isAzurePlaying(): boolean {
+  return activeSources.size > 0;
+}
+
+async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string, priority: 'user' | 'ambient' = 'user'): Promise<boolean> {
   let ctx: AudioContext;
   try {
     ctx = getAudioContext();
@@ -374,6 +380,13 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   gain.gain.value = safeVolume;
   source.connect(gain).connect(ctx.destination);
 
+  // Ambient calls (greeting banner, auto-speak) must never kill user-
+  // initiated audio. If a source is already playing and this is ambient,
+  // bow out silently — the user's speech takes priority.
+  if (priority === 'ambient' && activeSources.size > 0) {
+    console.log(`[${label}] ambient speak skipped — user audio in progress`);
+    return true; // return true so caller doesn't fall through to Web Speech
+  }
   // Stop any prior playback synchronously, immediately before our
   // own start. Doing this here (instead of at the top of speakAzure
   // before the fetch + decode awaits) shrinks the peer-race window
@@ -434,6 +447,7 @@ async function speakGemini(
   volume: number,
   controller: AbortController,
   lang?: string,
+  priority: 'user' | 'ambient' = 'user',
 ): Promise<boolean> {
   // Gemini doesn't take SSML — it does its own prosody. Send plain text.
   // Keep within the server's 4KB UTF-8 cap; longer messages are very
@@ -465,7 +479,7 @@ async function speakGemini(
     }
     // decodeAndPlay handles stopAzurePlayback synchronously right
     // before source.start, so the peer-race window is microseconds.
-    return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS');
+    return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS', priority);
   } catch (e) {
     // Network / abort / timeout. Speech-service still has Kokoro and
     // Web Speech to fall back to even if Inworld is also down.
@@ -482,6 +496,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   volume: number,
   authToken: string,
   voiceId?: string,
+  priority: 'user' | 'ambient' = 'user',
 ): Promise<boolean> {
   // Rapid-duplicate suppression — drop a new speak with the same text
   // if one fired in the last DEDUP_MS. Otherwise the new fetch+decode
@@ -590,7 +605,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
       if (audioBytes) {
         clearTimeout(timeout);
         activeControllers.delete(controller);
-        return await decodeAndPlay(audioBytes, volume, 'AzureTTS');
+        return await decodeAndPlay(audioBytes, volume, 'AzureTTS', priority);
       }
       console.warn('[AzureTTS] response oversize, dropping');
     } else {
@@ -602,7 +617,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     // Try the Gemini public route — useful for English where Gemini
     // has good voices, never useful for ro/uk/etc. Returns false on
     // any failure → speech-service falls through to Kokoro / Web Speech.
-    if (await speakGemini(text, volume, controller, lang)) {
+    if (await speakGemini(text, volume, controller, lang, priority)) {
       clearTimeout(timeout);
       activeControllers.delete(controller);
       return true;

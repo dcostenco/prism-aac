@@ -91,7 +91,7 @@ export default function GreetingBanner() {
       : greeting;
     const timerId = setTimeout(() => {
       if (useMessageStore.getState().text.trim()) return;
-      aacSpeak(speech, speechRate, speechVolume);
+      aacSpeak(speech, speechRate, speechVolume, undefined, 'ambient');
       // Mark "banner speech in flight" for the cancellation window
       // below. Cleared after BANNER_SPEECH_WINDOW_MS — banner
       // utterances are at most ~3s; after the window, assume natural

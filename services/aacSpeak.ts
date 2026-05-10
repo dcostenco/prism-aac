@@ -22,7 +22,7 @@ import { emitTtsHighlight, estimateSpeechDurationMs } from './ttsHighlightBus';
 // reads `toneMode` + `activeTone` from messageStore: in 'auto' mode the
 // adaptive engine picks the tone from the text; in 'manual' mode the user's
 // last picked tone is forced for every utterance.
-export function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle): void {
+export function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, priority: 'user' | 'ambient' = 'user'): void {
   if (!text?.trim()) return;
 
   try {
@@ -64,11 +64,11 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     const ms = useMessageStore.getState();
     const effectiveTone: ToneStyle | 'auto' = tone
       ?? (ms.toneMode === 'auto' ? 'auto' : ms.activeTone);
-    speak(toSpeak, rate, volume, ttsCode, effectiveTone);
+    speak(toSpeak, rate, volume, ttsCode, effectiveTone, priority);
   } catch {
     // Last resort: speak original text using the user's configured language,
     // NOT hardcoded en-US (which would mangle non-Latin text).
     const fallbackLang = useSettingsStore.getState().language || 'en';
-    try { speak(text, rate, volume, getTTSCode(fallbackLang as SupportedLanguage)); } catch { /* truly fatal */ }
+    try { speak(text, rate, volume, getTTSCode(fallbackLang as SupportedLanguage), 'auto', priority); } catch { /* truly fatal */ }
   }
 }
