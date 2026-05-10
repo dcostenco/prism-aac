@@ -67,7 +67,11 @@ struct WatchPictogramCards: View {
                 AACPhrase(label: p.label, sfSymbol: p.sfSymbol, color: phraseColor(cat.id), arasaacId: p.arasaacId)
             }
         }
-        return synced.isEmpty ? AACVocab.childFriendlyOrder : synced
+        // Use the full 28-phrase childFriendlyOrder when:
+        //   - No synced vocabulary at all, OR
+        //   - Only the minimal offline core loaded (≤8 phrases from API unavailable)
+        // API-synced vocab replaces this once connectivity is available.
+        return synced.count > 8 ? synced : AACVocab.childFriendlyOrder
     }
 
     private func phraseColor(_ categoryId: String) -> Color {
@@ -81,7 +85,7 @@ struct WatchPictogramCards: View {
 
     private let columns = [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)]
 
-    // Supported languages — BCP-47 code + display flag + short name
+    // Supported languages — BCP-47 code + display flag + 2-letter code
     private let supportedLanguages: [(code: String, flag: String, name: String)] = [
         ("en-US", "🇺🇸", "EN"), ("es-ES", "🇪🇸", "ES"), ("fr-FR", "🇫🇷", "FR"),
         ("de-DE", "🇩🇪", "DE"), ("ro-RO", "🇷🇴", "RO"), ("ru-RU", "🇷🇺", "RU"),
@@ -90,9 +94,20 @@ struct WatchPictogramCards: View {
     ]
 
     @State private var showLangPicker = false
+    @State private var pickingInput = false  // true = picking input lang, false = output
 
-    private var currentFlag: String {
-        supportedLanguages.first { $0.code == vocab.language }?.flag ?? "🌐"
+    private func code(_ bcp: String) -> String {
+        supportedLanguages.first { $0.code == bcp }?.name ?? String(bcp.prefix(2)).uppercased()
+    }
+    private func flag(_ bcp: String) -> String {
+        supportedLanguages.first { $0.code == bcp }?.flag ?? "🌐"
+    }
+
+    // "EN→RU" pill label
+    private var langPillLabel: String {
+        let inCode  = code(vocab.inputLanguage)
+        let outCode = code(vocab.outputLanguage)
+        return inCode == outCode ? inCode : "\(inCode)→\(outCode)"
     }
 
     var body: some View {
@@ -108,21 +123,27 @@ struct WatchPictogramCards: View {
                     }
                 }
                 .padding(.horizontal, 4)
-                .padding(.top, 32)   // leave room for top buttons
+                .padding(.top, 36)   // leave room for top bar
                 .padding(.bottom, 8)
             }
 
-            // Top-right button row: language flag | SOS
-            HStack(spacing: 4) {
-                // Language selector
-                Button { showLangPicker = true } label: {
-                    Text(currentFlag)
-                        .font(.system(size: 13))
-                        .frame(width: 24, height: 24)
-                        .background(Color.white.opacity(0.15))
-                        .clipShape(Circle())
+            // Top bar: [EN→RU pill]  [SOS]
+            HStack(spacing: 5) {
+                // Language pill — min 44pt wide for Apple HIG touch target
+                Button {
+                    pickingInput = true
+                    showLangPicker = true
+                } label: {
+                    Text(langPillLabel)
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 5)
+                        .background(Color.white.opacity(0.18))
+                        .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .frame(minWidth: 44, minHeight: 26)
 
                 // SOS — always reachable
                 Button {
@@ -133,35 +154,93 @@ struct WatchPictogramCards: View {
                     Image(systemName: "sos")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 24, height: 24)
+                        .frame(width: 28, height: 28)
                         .background(Color.red)
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.trailing, 2)
-            .padding(.top, 2)
+            .padding(.trailing, 4)
+            .padding(.top, 4)
         }
         .sheet(isPresented: $showLangPicker) {
-            List {
-                ForEach(supportedLanguages, id: \.code) { lang in
-                    Button {
-                        vocab.setLanguage(lang.code)
-                        showLangPicker = false
-                    } label: {
-                        HStack {
-                            Text("\(lang.flag) \(lang.name)")
-                                .font(.system(size: 15))
-                            Spacer()
-                            if vocab.language == lang.code {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.green)
+            NavigationView {
+                VStack(spacing: 0) {
+                    // Input / Output toggle
+                    HStack(spacing: 0) {
+                        Button {
+                            pickingInput = true
+                        } label: {
+                            Text("Input")
+                                .font(.system(size: 13, weight: .semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 7)
+                                .background(pickingInput ? Color.accentColor : Color.clear)
+                                .foregroundColor(pickingInput ? .white : .primary)
+                        }
+                        .buttonStyle(.plain)
+                        Button {
+                            pickingInput = false
+                        } label: {
+                            Text("Output")
+                                .font(.system(size: 13, weight: .semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 7)
+                                .background(!pickingInput ? Color.accentColor : Color.clear)
+                                .foregroundColor(!pickingInput ? .white : .primary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 6)
+                    .padding(.top, 6)
+
+                    // Current selection summary: EN → RU
+                    HStack(spacing: 4) {
+                        Text("\(flag(vocab.inputLanguage)) \(code(vocab.inputLanguage))")
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 10))
+                        Text("\(flag(vocab.outputLanguage)) \(code(vocab.outputLanguage))")
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
+                    .padding(.vertical, 4)
+
+                    Divider()
+
+                    List {
+                        ForEach(supportedLanguages, id: \.code) { lang in
+                            Button {
+                                if pickingInput {
+                                    vocab.setLanguages(input: lang.code, output: vocab.outputLanguage)
+                                } else {
+                                    vocab.setLanguages(input: vocab.inputLanguage, output: lang.code)
+                                }
+                            } label: {
+                                HStack {
+                                    Text("\(lang.flag) \(lang.name)")
+                                        .font(.system(size: 15))
+                                    Spacer()
+                                    let active = pickingInput
+                                        ? vocab.inputLanguage == lang.code
+                                        : vocab.outputLanguage == lang.code
+                                    if active {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(.green)
+                                    }
+                                }
                             }
                         }
                     }
                 }
+                .navigationTitle(pickingInput ? "Input language" : "Output language")
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { showLangPicker = false }
+                    }
+                }
             }
-            .navigationTitle("Language")
         }
     }
 }

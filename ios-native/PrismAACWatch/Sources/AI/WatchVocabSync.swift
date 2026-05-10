@@ -12,14 +12,26 @@ import WatchConnectivity
 final class WatchVocabSync: NSObject, ObservableObject, WCSessionDelegate {
 
     @Published private(set) var categories: [WatchCategory] = WatchCategory.offlineCore
-    @Published var language: String = Locale.preferredLanguages.first ?? "en-US"
+    /// Input (typing) language — what the AAC user communicates in.
+    @Published var inputLanguage: String = "en-US"
+    /// Output (TTS/translation) language — what is spoken aloud, may differ for translation.
+    @Published var outputLanguage: String = "en-US"
+    /// Legacy single-language alias for API calls — uses outputLanguage.
+    var language: String { outputLanguage }
     @Published private(set) var source: Source = .offline
 
-    /// Switch to a different display language and reload vocabulary.
+    /// Update the language pair and reload vocabulary.
+    func setLanguages(input: String, output: String) {
+        inputLanguage = input
+        outputLanguage = output
+        UserDefaults.standard.set(input,  forKey: "watchInputLanguage")
+        UserDefaults.standard.set(output, forKey: "watchOutputLanguage")
+        Task { await loadFromAPI(lang: output) }
+    }
+
+    /// Shorthand: set only output language (input unchanged).
     func setLanguage(_ lang: String) {
-        language = lang
-        UserDefaults.standard.set(lang, forKey: "watchLanguage")
-        Task { await loadFromAPI(lang: lang) }
+        setLanguages(input: inputLanguage, output: lang)
     }
 
     enum Source { case offline, companion, cloud }
@@ -28,9 +40,12 @@ final class WatchVocabSync: NSObject, ObservableObject, WCSessionDelegate {
 
     override init() {
         super.init()
-        // Restore last chosen language
-        if let saved = UserDefaults.standard.string(forKey: "watchLanguage") {
-            language = saved
+        // Restore saved language pair
+        if let inp = UserDefaults.standard.string(forKey: "watchInputLanguage")  { inputLanguage  = inp }
+        if let out = UserDefaults.standard.string(forKey: "watchOutputLanguage") { outputLanguage = out }
+        // Legacy single-key migration
+        if inputLanguage == "en-US", let legacy = UserDefaults.standard.string(forKey: "watchLanguage") {
+            inputLanguage = legacy; outputLanguage = legacy
         }
         if WCSession.isSupported() {
             WCSession.default.delegate = self
@@ -50,7 +65,7 @@ final class WatchVocabSync: NSObject, ObservableObject, WCSessionDelegate {
             let (data, _) = try await URLSession.shared.data(from: url)
             let vocab = try JSONDecoder().decode(VocabResponse.self, from: data)
             categories = vocab.categories.map { WatchCategory(from: $0) }
-            language = vocab.language
+            outputLanguage = vocab.language
             source = .cloud
         } catch {
             // Keep offline core — never leave user without communication
@@ -82,7 +97,7 @@ final class WatchVocabSync: NSObject, ObservableObject, WCSessionDelegate {
         guard let data = reply["vocab"] as? Data,
               let vocab = try? JSONDecoder().decode(VocabResponse.self, from: data) else { return }
         categories = vocab.categories.map { WatchCategory(from: $0) }
-        language = vocab.language
+        outputLanguage = vocab.language
         source = .companion
     }
 }
