@@ -205,6 +205,8 @@ export default function AACChatPanel() {
       flashToast(`${submittedContact.name}: requires ${required} plan`);
     } else if (res.error === 'invalid_recipient_id') {
       flashToast(`${submittedContact.name}: contact details look wrong — ask a caregiver to fix.`);
+    } else if (res.error?.includes('not connected') || res.error?.includes('not_configured')) {
+      flashToast(`${submittedContact.name}: Gmail not connected — go to Settings → Contacts → Reconnect Gmail`);
     } else {
       flashToast(tx('aac_chat_send_failed', `Could not send: ${res.error}`));
     }
