@@ -497,14 +497,19 @@ export function autoSwitchTone(text: string): AdaptiveTone {
   return tone;
 }
 
-/** Map AdaptiveTone → Azure TTS style. Used by speechService. */
+/**
+ * Map AdaptiveTone → ToneStyle (must be a member of azureTTS.TONE_OPTIONS).
+ * 'general' and 'gentle' are NOT valid ToneStyle values — they were causing
+ * tone=general in TTS logs and passing an invalid style to the portal.
+ */
 export function toneToAzureStyle(tone: AdaptiveTone): string {
   switch (tone) {
-    case 'serious': return 'sad';        // Azure has no "urgent" — sad is closest somber register
-    case 'excited': return 'cheerful';
-    case 'friendly': return 'friendly';
-    case 'empathetic': return 'gentle';
-    default: return 'general';
+    case 'serious':    return 'calm';        // measured, not distressed
+    case 'excited':    return 'cheerful';
+    case 'friendly':   return 'friendly';
+    case 'empathetic': return 'empathetic';  // valid Azure SSML style
+    case 'neutral':    return 'friendly';    // neutral → friendly default
+    default:           return 'friendly';    // safe fallback (→ autoStyle on portal)
   }
 }
 
