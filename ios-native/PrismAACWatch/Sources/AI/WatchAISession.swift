@@ -114,6 +114,12 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
         return obj?["reply"] as? String ?? ""
     }
 
+    /// Ask AI and return the reply string (for inline use by WatchAIChatView).
+    func askAI(_ question: String, lang: String = "en-US") async -> String? {
+        await ask(question, language: lang)
+        return reply.isEmpty ? nil : reply
+    }
+
     /// Send a phrase to iPhone for richer TTS / logging (non-blocking).
     func sendPhrase(_ phrase: String) {
         guard WCSession.isSupported() && WCSession.default.isReachable else { return }

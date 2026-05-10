@@ -60,6 +60,7 @@ struct WatchPictogramCards: View {
     @EnvironmentObject var emergency: WatchEmergencyManager
     @EnvironmentObject var session: WatchAISession
     @EnvironmentObject var vocab: WatchVocabSync
+    @StateObject private var translation = WatchTranslation()
 
     private var allPhrases: [AACPhrase] {
         let synced = vocab.categories.flatMap { cat in
@@ -93,8 +94,11 @@ struct WatchPictogramCards: View {
         ("zh-CN", "🇨🇳", "ZH"), ("ar-SA", "🇸🇦", "AR"),
     ]
 
-    @State private var showLangPicker = false
-    @State private var pickingInput = false  // true = picking input lang, false = output
+    @State private var showLangPicker  = false
+    @State private var pickingInput    = false
+    @State private var showAIChat      = false
+    @State private var showDictation   = false
+    @State private var dictationText   = ""
 
     private func code(_ bcp: String) -> String {
         supportedLanguages.first { $0.code == bcp }?.name ?? String(bcp.prefix(2)).uppercased()
@@ -116,9 +120,15 @@ struct WatchPictogramCards: View {
                 LazyVGrid(columns: columns, spacing: 6) {
                     ForEach(allPhrases) { phrase in
                         PairCard(phrase: phrase) {
-                            tts.speak(phrase.label)
-                            session.sendPhrase(phrase.label)
                             WKInterfaceDevice.current().play(.click)
+                            // Translate if output language differs from input
+                            translation.translateAndSpeak(
+                                text: phrase.label,
+                                from: vocab.inputLanguage,
+                                to: vocab.outputLanguage,
+                                tts: tts
+                            )
+                            session.sendPhrase(phrase.label)
                         }
                     }
                 }
@@ -127,23 +137,47 @@ struct WatchPictogramCards: View {
                 .padding(.bottom, 8)
             }
 
-            // Top bar: [EN→RU pill]  [SOS]
-            HStack(spacing: 5) {
-                // Language pill — min 44pt wide for Apple HIG touch target
+            // Top bar: [EN→RU pill] [🎙 mic] [💬 AI] [SOS]
+            HStack(spacing: 4) {
+                // Language pill
                 Button {
-                    pickingInput = true
-                    showLangPicker = true
+                    pickingInput = true; showLangPicker = true
                 } label: {
                     Text(langPillLabel)
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .font(.system(size: 10, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
                         .background(Color.white.opacity(0.18))
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
                 .frame(minWidth: 44, minHeight: 26)
+
+                // Microphone — shows Watch dictation sheet → translate → speak
+                Button {
+                    dictationText = ""
+                    showDictation = true
+                } label: {
+                    Image(systemName: "mic")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 26, height: 26)
+                        .background(Color.white.opacity(0.15))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+
+                // AI Chat
+                Button { showAIChat = true } label: {
+                    Image(systemName: "bubble.left.and.bubble.right.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 26, height: 26)
+                        .background(Color.blue.opacity(0.4))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
 
                 // SOS — always reachable
                 Button {
@@ -160,8 +194,65 @@ struct WatchPictogramCards: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.trailing, 4)
-            .padding(.top, 4)
+            .padding(.trailing, 3)
+            .padding(.top, 3)
+
+            // Translation activity indicator
+            if translation.isTranslating {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 4) {
+                        ProgressView().scaleEffect(0.6)
+                        Text("Translating…")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.bottom, 4)
+                }
+            }
+        }
+        // Dictation sheet — Watch native voice/keyboard input → translate → speak
+        .sheet(isPresented: $showDictation) {
+            NavigationView {
+                VStack(spacing: 10) {
+                    Image(systemName: "mic.circle.fill")
+                        .font(.system(size: 36))
+                        .foregroundColor(.blue)
+                    Text("Speak or type")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                    TextField("…", text: $dictationText)
+                        .font(.system(size: 14))
+                        .multilineTextAlignment(.center)
+                    Button("Translate & Speak") {
+                        translation.handleDictation(
+                            text: dictationText,
+                            inputLang: vocab.inputLanguage,
+                            outputLang: vocab.outputLanguage,
+                            tts: tts
+                        )
+                        showDictation = false
+                    }
+                    .disabled(dictationText.isEmpty)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                }
+                .padding()
+                .navigationTitle("Translate")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { showDictation = false }
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showAIChat) {
+            WatchAIChatView(
+                inputLang: vocab.inputLanguage,
+                outputLang: vocab.outputLanguage,
+                translation: translation,
+                tts: tts
+            )
         }
         .sheet(isPresented: $showLangPicker) {
             NavigationView {
@@ -241,6 +332,84 @@ struct WatchPictogramCards: View {
                     }
                 }
             }
+        }
+    }
+}
+
+// MARK: - AI Chat with microphone + live translation
+
+struct WatchAIChatView: View {
+    let inputLang: String
+    let outputLang: String
+    let translation: WatchTranslation
+    let tts: WatchTTS
+    @EnvironmentObject var session: WatchAISession
+    @State private var messages: [(role: String, text: String)] = []
+    @State private var isWaitingAI = false
+    @State private var chatInput   = ""
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 6) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 6) {
+                        if messages.isEmpty {
+                            Text("Tap 🎙 to speak.\nAI answers in \(outputLang).")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 8)
+                        }
+                        ForEach(messages.indices, id: \.self) { i in
+                            let m = messages[i]
+                            HStack {
+                                if m.role == "user" { Spacer(minLength: 20) }
+                                Text(m.text)
+                                    .font(.system(size: 11))
+                                    .padding(5)
+                                    .background(m.role == "user"
+                                        ? Color.blue.opacity(0.4)
+                                        : Color.white.opacity(0.12))
+                                    .cornerRadius(8)
+                                if m.role == "ai" { Spacer(minLength: 20) }
+                            }
+                        }
+                        if isWaitingAI {
+                            HStack { ProgressView().scaleEffect(0.6); Text("Thinking…").font(.system(size: 10)).foregroundColor(.secondary) }
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+
+                // Dictation input row
+                HStack(spacing: 6) {
+                    TextField("Type or dictate…", text: $chatInput)
+                        .font(.system(size: 12))
+                    Button {
+                        let text = chatInput.trimmingCharacters(in: .whitespaces)
+                        guard !text.isEmpty else { return }
+                        chatInput = ""
+                        messages.append((role: "user", text: text))
+                        isWaitingAI = true
+                        Task {
+                            let reply = await session.askAI(text, lang: outputLang) ?? "…"
+                            isWaitingAI = false
+                            messages.append((role: "ai", text: reply))
+                            translation.translateAndSpeak(text: reply, from: outputLang, to: outputLang, tts: tts)
+                        }
+                    } label: {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.blue)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(chatInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+                .padding(.horizontal, 4)
+                .padding(.bottom, 2)
+            }
+            .navigationTitle("AI + Translate")
         }
     }
 }
