@@ -98,26 +98,18 @@ function escapeXml(text: string): string {
 export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
   const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
   const supportsStyles = STYLE_SUPPORTED.has(voice);
-  // SSML multiplier form (1.0 = default, 0.9 = 10% slower, 1.15 = 15% faster).
+  // SSML rate scale: 1.0 = normal, 0.5 = half speed, 2.0 = double speed.
   //
-  // Scale handling — STABILIZED 2026-05-08:
-  //
-  // After two failed rate-conversion attempts (06c04f5 produced
-  // chipmunk for slider=1.0; 4502fbb's safer 0.6+0.8×webRate still
-  // had user-reported "nothing streams"), back to passing rate
-  // through as a multiplier with a safe clamp only. This is the
-  // pre-06c04f5 behaviour. Side effect: users with the default
-  // speechRate=0.5 (initial state of the Web-Speech-scale slider)
-  // hear 0.5× = half-speed playback. They can fix by moving the
-  // slider in Settings → Voice. Acceptable trade vs the
-  // alternative which was "no audio plays at all" for some users.
-  //
-  // The right long-term fix is to STANDARDIZE the slider to the
-  // SSML multiplier scale [0.5, 2.0] with default 1.0. That's a
-  // bigger refactor (UI label, persisted-state migration, Web
-  // Speech path conversion) and not appropriate while the user is
-  // in a fire situation.
-  const rateClamped = Math.max(0.5, Math.min(2.0, Number.isFinite(rate) && rate > 0 ? rate : 1));
+  // The app's speechRate slider stores values on a [0.25, 4] scale where
+  // 0.5 is the persisted default. SSML expects [0.5, 2.0] where 1.0 is
+  // normal. Mapping: ssmlRate = storedRate × 2, clamped to [0.5, 2.0].
+  //   stored 0.25 → SSML 0.5  (slowest)
+  //   stored 0.5  → SSML 1.0  (normal ← the default)
+  //   stored 1.0  → SSML 2.0  (fastest)
+  //   stored >1.0 → SSML 2.0  (clamped)
+  // This replaces the previous pass-through that played the default at
+  // half-speed (stored 0.5 → SSML 0.5 = 2× slower than expected).
+  const rateClamped = Math.max(0.5, Math.min(2.0, Number.isFinite(rate) && rate > 0 ? rate * 2 : 1.0));
   const rateStr = rateClamped.toFixed(2);
   const volumeValue = Math.max(0, Math.min(100, Math.round(volume * 100)));
 

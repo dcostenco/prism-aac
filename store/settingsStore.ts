@@ -195,7 +195,7 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      speechRate: 1.0,
+      speechRate: 0.5,
       speechVolume: 1.0,
       language: 'en',
       outputLanguage: 'en', // syncs with language on first use; only diverges when user explicitly sets translation pair
@@ -419,10 +419,6 @@ export const useSettingsStore = create<SettingsState>()(
         }
         // Numbers: clamp to plausible bounds.
         out.speechRate = clampNumber(incoming.speechRate, NUM_BOUNDS.speechRate);
-        // Migration 2026-05-10: the old persisted default was 0.5 (half-speed),
-        // which made Azure SSML voices (Romanian, Russian, etc.) play at 0.5×.
-        // Upgrade any user stuck at the bad default to 1.0 (normal speed).
-        if (out.speechRate === 0.5 && incoming.speechRate === 0.5) out.speechRate = 1.0;
         out.speechVolume = clampNumber(incoming.speechVolume, NUM_BOUNDS.speechVolume);
         out.headTrackingDwellMs = clampNumber(incoming.headTrackingDwellMs, NUM_BOUNDS.headTrackingDwellMs);
         out.headTrackingSensitivity = clampNumber(incoming.headTrackingSensitivity, NUM_BOUNDS.headTrackingSensitivity);

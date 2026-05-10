@@ -37,27 +37,30 @@ export default function AIChatPanel() {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
-  const lastMsgCountRef = useRef(0);
+  const wasLoadingRef = useRef(false);
   const voiceRef = useRef<VoiceSession | null>(null);
   const voiceSupported = isVoiceInputSupported();
 
-  // Scroll to show the START of the AI response when streaming completes.
-  // While loading, keep the view at the user message (first new row).
-  // When done, jump to the AI reply row so the full answer reads top-down.
+  // Scroll strategy: when streaming finishes, show the START of the AI
+  // reply so the user reads top-down. During streaming: no scroll (user
+  // can see the response beginning). New exchange: scroll to user message.
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
-    const rows = container.querySelectorAll(':scope > div');
 
-    if (messages.length > lastMsgCountRef.current) {
-      // New exchange started — scroll to user message so both are visible.
-      lastMsgCountRef.current = messages.length;
-      const userRow = rows[messages.length - 2] as HTMLElement | undefined;
-      userRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    } else if (!loading && messages.length > 0) {
-      // Streaming finished — scroll to the AI reply so it reads from the top.
-      const aiRow = rows[messages.length - 1] as HTMLElement | undefined;
+    const justFinished = wasLoadingRef.current && !loading;
+    wasLoadingRef.current = loading;
+
+    if (justFinished && messages.length > 0) {
+      // Stream done — scroll AI reply to the top of the view.
+      const rows = container.querySelectorAll(':scope > div');
+      const aiRow = rows[rows.length - 1] as HTMLElement | undefined;
       aiRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    } else if (messages.length > 0 && !loading) {
+      // New user message just added — show it at the top.
+      const rows = container.querySelectorAll(':scope > div');
+      const userRow = rows[Math.max(0, rows.length - 2)] as HTMLElement | undefined;
+      userRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
   }, [messages.length, loading]);
 
