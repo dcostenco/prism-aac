@@ -122,7 +122,7 @@ export default function PredictionBar() {
   const { sidePanel, selectContact } = useUIStore();
   const contacts = useContactsStore((s) => s.contacts);
   const activeContactId = useUIStore((s) => s.activeContactId);
-  const { text } = useMessageStore();
+  const { text, clearAll } = useMessageStore();
   const { predictions, aiCompletion, updatePredictions, learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language } = useSettingsStore();
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
@@ -261,7 +261,7 @@ export default function PredictionBar() {
             const extras = contacts.filter(
               (x) => x.id !== c.id && x.name.toLowerCase().trim() === c.name.toLowerCase().trim()
             ).length;
-            return <ContactTile key={c.id} contact={c} extraCount={extras} onTap={selectContact} />;
+            return <ContactTile key={c.id} contact={c} extraCount={extras} onTap={(id) => { selectContact(id); clearAll(); }} />;
           })}
           {/* Pad to 5 slots so bar doesn't collapse */}
           {Array.from({ length: Math.max(0, 5 - matched.length) }).map((_, i) => (
