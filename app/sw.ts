@@ -17,7 +17,7 @@ declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 // but this constant in the SW source forces the SW itself to be
 // reinstalled so clients get a fresh activate event + clientsClaim
 // takeover. If pitch / no-audio regressions return, bump this again.
-const SW_VERSION = '2026-05-08-tts-cache-bust-1';
+const SW_VERSION = '2026-05-10-category-ui-v2';
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
