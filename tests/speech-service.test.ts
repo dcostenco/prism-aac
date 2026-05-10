@@ -73,8 +73,10 @@ describe('SpeechService — Gap tests', () => {
     expect(() => speak('test', 0, 1.0)).not.toThrow();
   });
 
-  it('speak with volume 0 still calls speak', async () => {
+  it('speak with volume 0 exits early — no silent TTS call (53bed12 guard)', async () => {
+    // volume=0 guard added in 53bed12: warn + return instead of silent TTS call.
+    // Prevents misleading "[TTS] Portal TTS succeeded" logs when audio is muted.
     await speak('test', 0.5, 0);
-    expect(window.speechSynthesis.speak).toHaveBeenCalled();
+    expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
   });
 });

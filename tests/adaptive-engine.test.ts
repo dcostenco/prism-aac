@@ -131,11 +131,12 @@ describe('Tone: Auto switch records as it detects', () => {
   });
 
   it('toneToAzureStyle maps known tones', () => {
-    expect(toneToAzureStyle('serious')).toBe('sad');
+    // Updated for f153864: invalid Azure SSML styles ('gentle','general') replaced
+    expect(toneToAzureStyle('serious')).toBe('calm');
     expect(toneToAzureStyle('excited')).toBe('cheerful');
     expect(toneToAzureStyle('friendly')).toBe('friendly');
-    expect(toneToAzureStyle('empathetic')).toBe('gentle');
-    expect(toneToAzureStyle('neutral')).toBe('general');
+    expect(toneToAzureStyle('empathetic')).toBe('empathetic');
+    expect(toneToAzureStyle('neutral')).toBe('friendly');
   });
 
   it('toneToRate slows for serious + speeds for excited', () => {

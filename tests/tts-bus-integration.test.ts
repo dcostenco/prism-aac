@@ -85,7 +85,10 @@ describe('speak() → bus integration', () => {
     expect(webAttempt).toBeDefined();
   });
 
-  it('Tier 1 fail when Kokoro available: fallback toTier=kokoro', async () => {
+  it('Tier 1 fail when Kokoro available: kokoroEnabled=false bypasses Kokoro → web-speech', async () => {
+    // kokoroEnabled is hardcoded false in speechService — Kokoro is never reached
+    // even when isKokoroSupported() and getKokoroVoice() both return truthy values.
+    // This pins the direct inworld→web-speech path that is currently active.
     speakAzureMock.mockResolvedValueOnce(false);
     isKokoroSupportedMock.mockReturnValue(true);
     getKokoroVoiceMock.mockReturnValue({ name: 'af_sky' });
@@ -98,20 +101,16 @@ describe('speak() → bus integration', () => {
     expect(fallback).toMatchObject({
       type: 'tts-fallback',
       fromTier: 'inworld',
-      toTier: 'kokoro',
+      toTier: 'web-speech',
     });
-    // Kokoro attempt + success should be on the bus
-    const kokoroAttempt = events.find(
-      (e) => e.type === 'tts-attempt' && e.tier === 'kokoro',
-    );
-    const kokoroSuccess = events.find(
-      (e) => e.type === 'tts-success' && e.tier === 'kokoro',
-    );
-    expect(kokoroAttempt).toBeDefined();
-    expect(kokoroSuccess).toBeDefined();
+    // Kokoro must NOT appear on the bus
+    expect(events.find((e) => e.tier === 'kokoro')).toBeUndefined();
   });
 
-  it('Tier 1 fail + Kokoro fail: emits double fallback (inworld→kokoro, kokoro→web-speech)', async () => {
+  it('Tier 1 fail + Kokoro fail: kokoroEnabled=false → single fallback inworld→web-speech only', async () => {
+    // When kokoroEnabled=false the double-fallback chain (inworld→kokoro→web-speech)
+    // cannot fire. Kokoro is skipped entirely regardless of isKokoroSupported().
+    // This test documents that single-fallback is the correct observable behaviour.
     speakAzureMock.mockResolvedValueOnce(false);
     isKokoroSupportedMock.mockReturnValue(true);
     getKokoroVoiceMock.mockReturnValue({ name: 'af_sky' });
@@ -121,11 +120,9 @@ describe('speak() → bus integration', () => {
     await speak('test', 0.5, 1.0, 'en-US', 'friendly');
 
     const fallbacks = events.filter((e) => e.type === 'tts-fallback');
-    expect(fallbacks).toHaveLength(2);
-    expect(fallbacks[0]).toMatchObject({ fromTier: 'inworld', toTier: 'kokoro' });
-    expect(fallbacks[1]).toMatchObject({ fromTier: 'kokoro', toTier: 'web-speech' });
-    // Reason text from the kokoro error must surface
-    expect(fallbacks[1].reason).toContain('model load failed');
+    expect(fallbacks).toHaveLength(1);
+    expect(fallbacks[0]).toMatchObject({ fromTier: 'inworld', toTier: 'web-speech' });
+    expect(events.find((e) => e.tier === 'kokoro')).toBeUndefined();
   });
 
   it('attempt event includes lang + first 80 chars of text', async () => {
