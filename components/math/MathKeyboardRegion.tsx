@@ -927,39 +927,43 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
           FOUR rows + the letters + digits which exceeded the panel
           container, clipping the bottom rows or eating the canvas
           (user report Image #27 2026-05-08: "it introduces more
-          bugs"). 14 cols at 1280 px viewport ≈ 91 px per cell — fits
-          "finally" / "implements" / "protected" comfortably. */}
-      <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] gap-1">
-        {keywords.map((kw) => (
-          <button
-            key={kw}
-            onClick={() => commitToken(kw)}
-            data-testid={`${testidPrefix}-kw-${kw}`}
-            data-glyph={kw}
-            aria-label={`${lang} keyword ${kw}`}
-            className={`${KEY_BASE} py-2 text-sm whitespace-nowrap`}
-          >
-            {kw}
-          </button>
-        ))}
-      </div>
-      {/* v2 audit Python priority 1: built-in functions packed into a
-          single row. Token-commit (one char per cell + trailing space)
-          matches the keyword convention so syntax highlights cleanly. */}
-      {lang === 'python' && builtins.length > 0 && (
-        <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] gap-1">
-          {builtins.map((bi) => (
+          bugs"). On narrow phones (iPhone portrait ≈ 302px available) 14
+          cols → 21px/col → keywords overflow and smash together. Fix:
+          horizontally scrollable flex row — each keyword gets its natural
+          width and the user swipes to reach the rest. */}
+      <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+        <div className="flex gap-1 pb-1" style={{ minWidth: 'max-content' }}>
+          {keywords.map((kw) => (
             <button
-              key={`py-builtin-${bi}`}
-              onClick={() => commitToken(bi)}
-              data-testid={`${testidPrefix}-builtin-${bi}`}
-              data-glyph={bi}
-              aria-label={`python builtin ${bi}`}
-              className={`${KEY_BASE} py-2 text-sm whitespace-nowrap`}
+              key={kw}
+              onClick={() => commitToken(kw)}
+              data-testid={`${testidPrefix}-kw-${kw}`}
+              data-glyph={kw}
+              aria-label={`${lang} keyword ${kw}`}
+              className={`${KEY_BASE} py-2 text-sm whitespace-nowrap px-2 shrink-0`}
             >
-              {bi}
+              {kw}
             </button>
           ))}
+        </div>
+      </div>
+      {/* v2 audit Python priority 1: built-in functions — also scrollable. */}
+      {lang === 'python' && builtins.length > 0 && (
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+          <div className="flex gap-1 pb-1" style={{ minWidth: 'max-content' }}>
+            {builtins.map((bi) => (
+              <button
+                key={`py-builtin-${bi}`}
+                onClick={() => commitToken(bi)}
+                data-testid={`${testidPrefix}-builtin-${bi}`}
+                data-glyph={bi}
+                aria-label={`python builtin ${bi}`}
+                className={`${KEY_BASE} py-2 text-sm whitespace-nowrap px-2 shrink-0`}
+              >
+                {bi}
+              </button>
+            ))}
+          </div>
         </div>
       )}
       {/* v2 audit Java priority 1: compound-assignment ops (raw glyph). */}
@@ -981,7 +985,7 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
       )}
       {/* v2 audit Java priority 2: idiom tokens. */}
       {lang === 'java' && idioms.length > 0 && (
-        <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] gap-1">
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}><div className="flex gap-1 pb-1" style={{ minWidth: 'max-content' }}>
           {idioms.map((id) => (
             <button
               key={`java-idiom-${id}`}
@@ -989,12 +993,12 @@ function MathProgrammingKeyboard({ lang }: { lang: 'python' | 'java' }) {
               data-testid={`${testidPrefix}-idiom-${id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`}
               data-glyph={id}
               aria-label={`java idiom ${id}`}
-              className={`${KEY_BASE} py-2 text-sm whitespace-nowrap`}
+              className={`${KEY_BASE} py-2 text-sm whitespace-nowrap px-2 shrink-0`}
             >
               {id}
             </button>
           ))}
-        </div>
+        </div></div>
       )}
       {/* extras merged into digit row below */}
       {/* Digits + underscore + language extras — merged into one row.
