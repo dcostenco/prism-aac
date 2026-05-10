@@ -1349,10 +1349,12 @@ export const DEFAULT_PHRASES: Phrase[] = [
   p('tdate-31', 'time-dates', '31st', 30),
 
   // ── Time › Seasons ────────────────────────────────────────────────────────
-  p('ts-spring', 'time-seasons', 'Spring', 0),
-  p('ts-summer', 'time-seasons', 'Summer', 1),
-  p('ts-fall',   'time-seasons', 'Fall',   2),
-  p('ts-winter', 'time-seasons', 'Winter', 3),
+  p('ts-spring',  'time-seasons', 'Spring',      0),
+  p('ts-summer',  'time-seasons', 'Summer',      1),
+  p('ts-fall',    'time-seasons', 'Fall',        2),
+  p('ts-winter',  'time-seasons', 'Winter',      3),
+  p('ts-hot',     'time-seasons', 'It is hot',   4),
+  p('ts-cold',    'time-seasons', 'It is cold',  5),
 
   // ── Food › Meals ─────────────────────────────────────────────────────────
   p('fm-breakfast', 'food-meals', 'Breakfast', 0),
@@ -1399,15 +1401,15 @@ export const DEFAULT_PHRASES: Phrase[] = [
   p('fv-spinach',  'food-veggies', 'Spinach',  9),
 
   // ── Food › Drinks ─────────────────────────────────────────────────────────
-  p('fd-water',    'food-drinks', 'Water',        0),
-  p('fd-milk',     'food-drinks', 'Milk',         1),
-  p('fd-juice',    'food-drinks', 'Juice',        2),
-  p('fd-lemonade', 'food-drinks', 'Lemonade',     3),
-  p('fd-smoothie', 'food-drinks', 'Smoothie',     4),
-  p('fd-hot-choc', 'food-drinks', 'Hot chocolate',5),
-  p('fd-soda',     'food-drinks', 'Soda',         6),
-  p('fd-tea',      'food-drinks', 'Tea',          7),
-  p('fd-coffee',   'food-drinks', 'Coffee',       8),
+  p('fd-water-2',    'food-drinks', 'Water',        0),
+  p('fd-milk-2',     'food-drinks', 'Milk',         1),
+  p('fd-juice-2',    'food-drinks', 'Juice',        2),
+  p('fd-lemonade-2', 'food-drinks', 'Lemonade',     3),
+  p('fd-smoothie-2', 'food-drinks', 'Smoothie',     4),
+  p('fd-hot-choc',   'food-drinks', 'Hot chocolate',5),
+  p('fd-soda-2',     'food-drinks', 'Soda',         6),
+  p('fd-tea-2',      'food-drinks', 'Tea',          7),
+  p('fd-coffee',     'food-drinks', 'Coffee',       8),
 
   // ── Food › Snacks ─────────────────────────────────────────────────────────
   p('fs-crackers', 'food-snacks', 'Crackers',   0),

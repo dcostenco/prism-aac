@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useCategoryStore } from '@/store/categoryStore';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 
+// Derive total dynamically so category expansions don't break counts.
+const TOTAL = useCategoryStore.getState().allCategories().length;
+
 beforeEach(() => {
   useCategoryStore.setState({
     customCategories: [],
@@ -16,14 +19,14 @@ describe('CategoryStore — Category visibility', () => {
     useCategoryStore.getState().hideCategoryId('help-needs');
     const visible = useCategoryStore.getState().allCategories();
     expect(visible.find((c) => c.id === 'help-needs')).toBeUndefined();
-    expect(visible).toHaveLength(21);
+    expect(visible).toHaveLength(TOTAL - 1);
   });
 
   it('hidden category still appears in allCategories(true)', () => {
     useCategoryStore.getState().hideCategoryId('help-needs');
     const all = useCategoryStore.getState().allCategories(true);
     expect(all.find((c) => c.id === 'help-needs')).toBeDefined();
-    expect(all).toHaveLength(22);
+    expect(all).toHaveLength(TOTAL);
   });
 
   it('unhideCategoryId restores the category', () => {
@@ -31,7 +34,7 @@ describe('CategoryStore — Category visibility', () => {
     useCategoryStore.getState().unhideCategoryId('help-needs');
     const visible = useCategoryStore.getState().allCategories();
     expect(visible.find((c) => c.id === 'help-needs')).toBeDefined();
-    expect(visible).toHaveLength(22);
+    expect(visible).toHaveLength(TOTAL);
   });
 
   it('hidden category keeps its sort position when restored', () => {
@@ -47,7 +50,7 @@ describe('CategoryStore — Category visibility', () => {
     useCategoryStore.getState().hideCategoryId('quick-talk');
     useCategoryStore.getState().hideCategoryId('feelings');
     const visible = useCategoryStore.getState().allCategories();
-    expect(visible).toHaveLength(19);
+    expect(visible).toHaveLength(TOTAL - 3);
     expect(visible.find((c) => c.id === 'help-needs')).toBeUndefined();
     expect(visible.find((c) => c.id === 'quick-talk')).toBeUndefined();
     expect(visible.find((c) => c.id === 'feelings')).toBeUndefined();
@@ -57,10 +60,10 @@ describe('CategoryStore — Category visibility', () => {
     useCategoryStore.getState().hideCategoryId('help-needs');
     useCategoryStore.getState().hideCategoryId('help-needs');
     const visible = useCategoryStore.getState().allCategories();
-    expect(visible).toHaveLength(21);
+    expect(visible).toHaveLength(TOTAL - 1);
     // Unhide once should fully restore
     useCategoryStore.getState().unhideCategoryId('help-needs');
-    expect(useCategoryStore.getState().allCategories()).toHaveLength(22);
+    expect(useCategoryStore.getState().allCategories()).toHaveLength(TOTAL);
   });
 
   it('all hidden categories still appear in allCategories(true)', () => {
@@ -68,12 +71,12 @@ describe('CategoryStore — Category visibility', () => {
     useCategoryStore.getState().hideCategoryId('actions');
     useCategoryStore.getState().hideCategoryId('animals');
     const all = useCategoryStore.getState().allCategories(true);
-    expect(all).toHaveLength(22);
+    expect(all).toHaveLength(TOTAL);
   });
 
   it('unhiding a non-hidden category is a no-op', () => {
     useCategoryStore.getState().unhideCategoryId('help-needs');
-    expect(useCategoryStore.getState().allCategories()).toHaveLength(22);
+    expect(useCategoryStore.getState().allCategories()).toHaveLength(TOTAL);
   });
 });
 

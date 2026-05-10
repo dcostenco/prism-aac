@@ -52,7 +52,14 @@ vi.mock('@/components/Keyboard', () => ({
 vi.mock('@/components/Toolbar', () => ({ default: () => <div data-testid="panel-toolbar" /> }));
 vi.mock('@/components/MessageBar', () => ({ default: () => <div data-testid="panel-message-bar" /> }));
 vi.mock('@/components/PredictionBar', () => ({ default: () => <div data-testid="panel-prediction-bar" /> }));
-vi.mock('@/components/CategoryPanel', () => ({ default: () => <div data-testid="panel-categories" /> }));
+vi.mock('@/components/CategoryPanel', () => ({
+  default: () => {
+    const { sidePanel } = useUIStore.getState();
+    const catPanels = ['categories', 'category-detail', 'ordering'];
+    const id = catPanels.includes(sidePanel) ? sidePanel : 'categories';
+    return <div data-testid={`panel-${id}`} />;
+  },
+}));
 vi.mock('@/components/CaregiverPanel', () => ({ default: () => <div data-testid="panel-caregiver" /> }));
 vi.mock('@/components/AIChatPanel', () => ({ default: () => <div data-testid="panel-ai-chat" /> }));
 vi.mock('@/components/AACChatPanel', () => ({ default: () => <div data-testid="panel-aac-chat" /> }));
@@ -78,9 +85,6 @@ beforeEach(() => {
 
 const PANELS_WITH_QWERTY: SidePanelView[] = [
   'none',
-  'categories',
-  'category-detail',
-  'ordering',
   // ai-chat / aac-chat take typed input — keep qwerty mounted there.
   'ai-chat',
   'aac-chat',
@@ -88,12 +92,9 @@ const PANELS_WITH_QWERTY: SidePanelView[] = [
   'aac-designer',
 ];
 
-// Tap-only or own-keyboard panels — qwerty must NOT render so the
-// panel content is not crushed by a vestigial keyboard underneath.
-// Updated 2026-05-07 (commit 7096f05): added games / marketplace /
-// schedule / caregiver / picture-editor / music-composer after user
-// reports of the qwerty eating ~40% of every panel that doesn't take
-// typed input ("why is keyboard needed for games?", Image #21).
+// Tap-only or own-keyboard panels — qwerty must NOT render.
+// categories/category-detail/ordering added in commit 64b5ee3 (Image #28):
+// big pictogram cards are tap-only, keyboard eats ~40% of screen for nothing.
 const PANELS_WITHOUT_QWERTY: SidePanelView[] = [
   'math',
   'games',
@@ -102,6 +103,9 @@ const PANELS_WITHOUT_QWERTY: SidePanelView[] = [
   'caregiver',
   'picture-editor',
   'music-composer',
+  'categories',
+  'category-detail',
+  'ordering',
 ];
 
 describe('Keyboard visibility — qwerty rendered for panels without own input', () => {
