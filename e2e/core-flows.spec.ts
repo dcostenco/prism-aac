@@ -102,9 +102,11 @@ test('Settings shows real Sign-in button (not a token paste field)', async ({ pa
   // No password field for an "auth token" — that was the broken UX.
   const tokenField = page.getByPlaceholder(/auth token/i);
   await expect(tokenField).toHaveCount(0);
+  // Account section is collapsed by default — expand it first.
+  await page.getByRole('button', { name: /account/i }).click();
   // The real button: link to NextAuth signin route.
   const signInLink = page.locator('[data-testid="synalux-signin"]');
-  await expect(signInLink).toBeVisible();
+  await expect(signInLink).toBeVisible({ timeout: 3000 });
   await expect(signInLink).toHaveAttribute('href', /\/api\/auth\/signin\/google/);
 });
 

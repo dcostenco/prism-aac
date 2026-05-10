@@ -197,20 +197,25 @@ export default function CategoryPanel() {
   const handleBack = () => { isDeep ? navigateCategoryUp() : backToCategories(); };
 
   // ── SIDEBAR JSX (inlined — not a component, so no remounting) ───────────────
+  // ⌨️ is FIRST — always visible even when keyboard is open and shrinks the panel.
+  // No flex-1 spacer: all buttons compact from top so nothing gets clipped.
   const sidebarJsx = (showCoreWords = false) => (
-    <nav className="w-[88px] shrink-0 bg-[#3e2a1a] flex flex-col border-l-2 border-[#5c3d25] overflow-hidden">
+    <nav className="w-[88px] shrink-0 bg-[#3e2a1a] flex flex-col border-l-2 border-[#5c3d25] overflow-y-auto overflow-x-hidden">
+      {/* Keyboard toggle — ALWAYS FIRST so it's always reachable */}
+      <SidebarBtn icon="⌨️" label={categoryKeyboardOpen ? 'Hide KB' : 'Keyboard'} onClick={toggleCategoryKeyboard} active={categoryKeyboardOpen} />
+      {/* Search */}
+      <SidebarBtn icon="🔍" label="Search" onClick={searchOpen ? closeSearch : openSearch} active={searchOpen} />
+      {/* Navigation */}
       {!isHome && <SidebarBtn icon="←" label={isDeep ? 'Up' : 'Go back'} onClick={handleBack} />}
       <SidebarBtn icon="🏠" label="Home" onClick={closeSidePanel} />
       {showCoreWords && <SidebarBtn icon="⌂" label="Core words" onClick={backToCategories} />}
-      <div className="flex-1" />
+      {/* Scroll helpers — lower priority, appear below nav */}
       {!isHome && (
         <>
           <SidebarBtn icon="↑" label="Up" onClick={() => scrollGrid(-1)} />
           <SidebarBtn icon="↓" label="Down" onClick={() => scrollGrid(1)} />
         </>
       )}
-      <SidebarBtn icon="⌨️" label={categoryKeyboardOpen ? 'Hide KB' : 'Keyboard'} onClick={toggleCategoryKeyboard} active={categoryKeyboardOpen} />
-      <SidebarBtn icon="🔍" label="Search" onClick={searchOpen ? closeSearch : openSearch} active={searchOpen} />
     </nav>
   );
 
