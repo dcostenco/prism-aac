@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* iOS safe-area utility — use on the root app div so content never hides
+ * behind the Dynamic Island, notch, or home indicator on any iPhone/iPad.
+ * Requires viewport-fit=cover in the <meta viewport> (set in layout.tsx). */
+.safe-insets {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
 :root {
   /* Surface palette — light theme (default) */
   --bg-app: #f6f7fb;

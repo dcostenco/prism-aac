@@ -104,7 +104,7 @@ describe('speak() → bus integration', () => {
       toTier: 'web-speech',
     });
     // Kokoro must NOT appear on the bus
-    expect(events.find((e) => e.tier === 'kokoro')).toBeUndefined();
+    expect(events.find((e) => ('tier' in e && e.tier === 'kokoro') || ('fromTier' in e && e.fromTier === 'kokoro') || ('toTier' in e && e.toTier === 'kokoro'))).toBeUndefined();
   });
 
   it('Tier 1 fail + Kokoro fail: kokoroEnabled=false → single fallback inworld→web-speech only', async () => {
@@ -122,7 +122,7 @@ describe('speak() → bus integration', () => {
     const fallbacks = events.filter((e) => e.type === 'tts-fallback');
     expect(fallbacks).toHaveLength(1);
     expect(fallbacks[0]).toMatchObject({ fromTier: 'inworld', toTier: 'web-speech' });
-    expect(events.find((e) => e.tier === 'kokoro')).toBeUndefined();
+    expect(events.find((e) => ('tier' in e && e.tier === 'kokoro') || ('fromTier' in e && e.fromTier === 'kokoro') || ('toTier' in e && e.toTier === 'kokoro'))).toBeUndefined();
   });
 
   it('attempt event includes lang + first 80 chars of text', async () => {

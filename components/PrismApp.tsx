@@ -387,7 +387,7 @@ export default function PrismApp() {
   return (
     <ErrorBoundary>
       <SyncProvider>
-        <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`}>
+        <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app safe-insets`}>
           {/* Connect-OAuth return banner. Auto-dismisses after 4s
               (set by the URL-handler useEffect). Only confirmation
               the user gets that the OAuth same-window redirect
