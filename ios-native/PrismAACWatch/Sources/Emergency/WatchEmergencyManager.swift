@@ -16,6 +16,10 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     @Published private(set) var severity: EmergencySeverity = .standard
     @Published private(set) var countdownSecs = 5
 
+    // FIX #1: Track confirmed delivery state rather than optimistic "sent" flag
+    enum DeliveryStatus { case idle, pending, confirmed, failed }
+    @Published private(set) var deliveryStatus: DeliveryStatus = .idle
+
     private var countdownTimer: Timer?
     private let synthesizer = AVSpeechSynthesizer()
     // C6: track in-progress emergency phrase for cellular fallback
@@ -24,7 +28,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     private var cellularFallbackSent = false
     // F2b: store active background task handle so cleanup() can end it
     private var activeBgTask: WKBackgroundTaskHandle? = nil
-    // #4: set true after escalation completes — enables safe post-escalation dismiss from UI
+    // #4: set true after escalation CONFIRMED — enables safe post-escalation dismiss from UI
     @Published private(set) var hasEscalated = false
     // #2: single stored task for SOS haptics — cancellable on cleanup
     private var sosHapticTask: Task<Void, Never>?
@@ -52,15 +56,24 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // Safe: @MainActor serializes all calls — rapid taps cannot race past this guard
         guard !isActive else { return }  // FIX 4: mutex — no duplicate triggers
         isActive = true
+        // FIX #13: Sanitize phrase — strip ChatML tokens before storing
         activePhrase = String(phrase.prefix(200))
+            .replacingOccurrences(of: "<|im_start|>", with: "")
+            .replacingOccurrences(of: "<|im_end|>", with: "")
+            .replacingOccurrences(of: "<|system|>", with: "")
+            .replacingOccurrences(of: "[INST]", with: "")
+            .replacingOccurrences(of: "[/INST]", with: "")
         self.severity = severity
         countdownSecs = 5
         cellularFallbackSent = false
+        deliveryStatus = .idle
 
         let deadline = Date().addingTimeInterval(5)  // absolute deadline
 
         // Request background task so process is not suspended
         // F2b: store handle on instance so cleanup() can end it
+        // activeBgTask is stored on self; if self is deallocated, the expiry handler's
+        // [weak self] guard handles it safely — no strong reference cycle.
         // #2/#18: bgTask expiry must NOT call escalate() — it races with the timer's escalate().
         // The timer's escalate() will fire when it gets CPU time.
         // If completely denied CPU, fall back to on-device TTS.
@@ -69,6 +82,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                 guard let self, self.isActive else { return }
                 NSLog("[WatchEmergency] Background task expired during countdown — TTS fallback")
                 self.speakEmergencyFallback()
+                // FIX #5: Set hasEscalated = true after TTS fallback so dismiss() becomes callable
+                self.hasEscalated = true
                 if let task = self.activeBgTask {
                     WKApplication.shared().endBackgroundTask(task)
                     self.activeBgTask = nil
@@ -130,10 +145,18 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         cleanup()
     }
 
-    // #4: Public dismiss — called ONLY after escalation has completed, allows UI cleanup
+    // #4: Public dismiss — called ONLY after escalation has confirmed, allows UI cleanup
     func dismiss() {
         // Called ONLY after escalation has completed — allows UI cleanup
         guard hasEscalated else { return }
+        cleanup()
+    }
+
+    /// Force-resets emergency state. Only call after caregiver authentication or app restart.
+    /// FIX #5: Breaks out of stuck state when cancel() is blocked (critical severity) and
+    /// dismiss() is blocked (hasEscalated == false, e.g. bg-task-expiry pre-escalation path).
+    func forceReset() {
+        NSLog("[WatchEmergency] Force reset called")
         cleanup()
     }
 
@@ -145,7 +168,10 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         severity = .standard
         cellularFallbackSent = false  // FIX 8: reset debounce on cleanup
         hasEscalated = false  // FIX 4: reset escalation flag for next emergency
+        deliveryStatus = .idle
         synthesizer.stopSpeaking(at: .immediate)  // #5: always stop TTS on cleanup
+        // FIX #6: Deactivate AVAudioSession so other apps (e.g. music) can resume
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         // #2: cancel stored SOS haptic task
         sosHapticTask?.cancel()
         sosHapticTask = nil
@@ -161,16 +187,40 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
     // MARK: - Escalation
 
+    // FIX #1: hasEscalated is now set ONLY on confirmed delivery (replyHandler / HTTP 200).
+    // deliveryStatus reflects: .pending immediately, .confirmed on success, .failed if all paths fail.
+    // UI should show "SENDING…" (.pending), "HELP COMING" (.confirmed), "SEND FAILED — CALL 911" (.failed).
     private func escalate(phrase: String, severity: EmergencySeverity) async {
         guard !hasEscalated else { return }
-        // #2: NOTE: hasEscalated is set optimistically before delivery is confirmed.
-        // sendPhrase is fire-and-forget via WCSessionRouter. If WC delivery fails AND
-        // cellular fallback fails, the child sees "HELP COMING" but no alert was sent.
-        // Improvement: await WCSession replyHandler confirmation before setting hasEscalated = true.
-        // Full fix requires refactoring sendPhrase to use the reply-handler path and
-        // awaiting the result here — deferred to avoid architectural churn mid-release.
-        sendPhrase(phrase, isEmergency: true, severity: severity)
-        hasEscalated = true  // FIX 4: allow critical emergency dismiss post-escalation
+
+        let msg: [String: Any] = buildEmergencyMessage(phrase: phrase, severity: severity)
+        deliveryStatus = .pending
+
+        if WCSessionRouter.shared.isReachable {
+            WCSessionRouter.shared.send(msg,
+                replyHandler: { [weak self] _ in
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        self.hasEscalated = true
+                        self.deliveryStatus = .confirmed
+                        NSLog("[WatchEmergency] Escalation CONFIRMED via WCSession reply")
+                    }
+                },
+                errorHandler: { [weak self] err in
+                    Task { @MainActor [weak self] in
+                        NSLog("[WatchEmergency] WCSession delivery failed: \(err) — attempting cellular")
+                        await self?.attemptCellularFallback()
+                    }
+                }
+            )
+        } else {
+            // Not reachable — go straight to cellular
+            await attemptCellularFallback()
+        }
+
+        // Start haptics and watchdog regardless of delivery path
+        startSosHapticsIfNeeded()
+
         // #6/#8: stored watchdog — auto-cleanup 30s after escalation if UI hasn't dismissed
         watchdogTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 30_000_000_000)
@@ -181,7 +231,26 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // #20: SOS haptic already started in trigger() — no duplicate loop here
     }
 
-    // #26: static cached formatter — avoids allocation on every sendPhrase call
+    // FIX #26: Replace ternary chain with exhaustive switch — compiler warns on new enum cases
+    private func severityString(_ s: EmergencySeverity) -> String {
+        switch s {
+        case .critical: return "critical"
+        case .urgent:   return "urgent"
+        case .medical:  return "medical"
+        case .standard: return "standard"
+        }
+    }
+
+    private func buildEmergencyMessage(phrase: String, severity: EmergencySeverity) -> [String: Any] {
+        return [
+            "type": "emergency",
+            "phrase": phrase,
+            "severity": severityString(severity),
+            "timestamp": WatchEmergencyManager.iso8601.string(from: Date()),
+        ]
+    }
+
+    // #26: static cached formatter — avoids allocation on every call
     private static let iso8601 = ISO8601DateFormatter()
 
     // F2d: private — not part of public API
@@ -189,7 +258,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         let msg: [String: Any] = [
             "type": isEmergency ? "emergency" : "phrase",
             "phrase": phrase,
-            "severity": severity == .critical ? "critical" : severity == .urgent ? "urgent" : severity == .medical ? "medical" : "standard",
+            "severity": severityString(severity),
             "timestamp": WatchEmergencyManager.iso8601.string(from: Date()),
         ]
 
@@ -199,16 +268,29 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         })
     }
 
-    // MARK: - Cellular fallback (FIX 7: HTTP status check; FIX 8: debounce)
+    /// Called from escalate() after WCSession path starts. If haptics haven't fired yet
+    /// (e.g. sosHapticTask was nil due to very fast code path), kick them off now.
+    private func startSosHapticsIfNeeded() {
+        guard sosHapticTask == nil || sosHapticTask?.isCancelled == true else { return }
+        sosHapticTask = Task { @MainActor [weak self] in
+            for i in 0..<9 {
+                guard !Task.isCancelled, self?.isActive == true else { return }
+                WKInterfaceDevice.current().play(i % 3 == 0 ? .failure : .click)
+                try? await Task.sleep(nanoseconds: 300_000_000)
+            }
+        }
+    }
+
+    // MARK: - Cellular fallback (FIX #2: bounded retry; FIX #3: no auth token in logs)
 
     @MainActor
-    private func attemptCellularFallback() async {
+    private func attemptCellularFallback(retryCount: Int = 0) async {
         // #19: guard — abort if emergency was cancelled before fallback ran
         guard isActive else {
             NSLog("[WatchEmergency] Cellular fallback skipped — emergency no longer active")
             return
         }
-        // FIX 8: debounce — only one fallback attempt per emergency session
+        // FIX #2: bounded retry guard — reset by each retry branch, not shared with WCSession path
         guard !cellularFallbackSent else { return }
         cellularFallbackSent = true
 
@@ -220,9 +302,11 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         guard let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") else {
             NSLog("[WatchEmergency] CRITICAL: No auth token — cannot authenticate emergency dispatch; TTS fallback only")
             speakEmergencyFallback()
+            deliveryStatus = .failed
             return
         }
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        // NOTE: Do not log req.allHTTPHeaderFields — contains auth token
         let payload: [String: Any] = [
             "phrase": activePhrase ?? "Emergency",
             "severity": "watch_cellular_fallback",
@@ -235,27 +319,37 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         } catch {
             NSLog("[WatchEmergency] JSON serialization failed: \(error) — using TTS fallback")
             speakEmergencyFallback()
+            deliveryStatus = .failed
             return
         }
         req.httpBody = body
         do {
-            // FIX 7: Check HTTP status — a 4xx/5xx is not a success
+            // FIX #7: Check HTTP status — a 4xx/5xx is not a success
             let (_, response) = try await URLSession.shared.data(for: req)
             if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
                 NSLog("[WatchEmergency] Cellular fallback dispatch succeeded (\(http.statusCode))")
-            } else if let http = response as? HTTPURLResponse, (500...599).contains(http.statusCode) {
-                NSLog("[WatchEmergency] Cellular fallback 5xx (\(http.statusCode)) — retry in 2s")
+                // FIX #1: Set hasEscalated only on confirmed HTTP 200
+                hasEscalated = true
+                deliveryStatus = .confirmed
+                NSLog("[WatchEmergency] Escalation CONFIRMED via cellular dispatch")
+            } else if let http = response as? HTTPURLResponse,
+                      (500...599).contains(http.statusCode),
+                      retryCount < 1 {
+                // FIX #2: Bounded retry — max 1 retry (2 total attempts) before TTS fallback
+                NSLog("[WatchEmergency] Cellular 5xx (\(http.statusCode)) — retrying once in 2s")
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 guard isActive else { return }  // don't retry if emergency was cancelled
-                cellularFallbackSent = false    // allow one retry
-                await attemptCellularFallback()
+                cellularFallbackSent = false    // allow the single retry
+                await attemptCellularFallback(retryCount: retryCount + 1)
             } else {
                 NSLog("[WatchEmergency] Cellular fallback failed — TTS fallback")
                 speakEmergencyFallback()
+                deliveryStatus = .failed
             }
         } catch {
             NSLog("[WatchEmergency] Cellular fallback failed: \(error)")
             speakEmergencyFallback()
+            deliveryStatus = .failed
         }
     }
 

@@ -49,8 +49,17 @@ internal final class KeychainHelper {
             var addQuery = query
             addQuery[kSecValueData as String] = data
             addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-            let status = SecItemAdd(addQuery as CFDictionary, nil)
-            if status != errSecSuccess { NSLog("[KeychainHelper] SecItemAdd failed: \(status) for \(service)/\(account)") }
+            let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
+            if addStatus == errSecDuplicateItem {
+                // #27: TOCTOU race — another concurrent write succeeded between our update and add.
+                // Retry the update to converge on the correct final value.
+                let retryStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+                if retryStatus != errSecSuccess {
+                    NSLog("[KeychainHelper] Retry update failed: \(retryStatus) for \(service)/\(account)")
+                }
+            } else if addStatus != errSecSuccess {
+                NSLog("[KeychainHelper] SecItemAdd failed: \(addStatus) for \(service)/\(account)")
+            }
         } else if updateStatus != errSecSuccess {
             NSLog("[KeychainHelper] SecItemUpdate failed: \(updateStatus) for \(service)/\(account)")
         }

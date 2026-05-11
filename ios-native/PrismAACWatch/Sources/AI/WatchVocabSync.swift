@@ -176,13 +176,9 @@ final class WatchVocabSync: NSObject, ObservableObject {
         // #8: size check BEFORE decode — prevents JSON bomb allocation
         // #33: log type mismatch instead of silently returning — helps diagnose companion path issues
         guard let data = reply["vocab"] as? Data else {
-            // #20: Try alt format — some WC paths serialize vocab as dict instead of Data
-            if let dict = reply["vocab"] as? [String: Any] {
-                NSLog("[VocabSync] Companion vocab arrived as dict instead of Data — processing directly")
-                // Handle dict format if needed in future
-            } else {
-                NSLog("[VocabSync] Companion vocab: expected Data, got \(type(of: reply["vocab"])) — ignoring")
-            }
+            // #12: removed dead dict branch — WC always delivers companion vocab as Data;
+            // dict format was never implemented and silently swallowed delivery failures.
+            NSLog("[VocabSync] Companion vocab: expected Data, got \(type(of: reply["vocab"])) — ignoring. Companion app may need update.")
             return
         }
         guard data.count <= 512_000 else {

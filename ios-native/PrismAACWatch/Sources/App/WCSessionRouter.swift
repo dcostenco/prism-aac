@@ -66,10 +66,16 @@ final class WCSessionRouter: NSObject, ObservableObject {
             }
             return
         }
-        WCSession.default.sendMessage(message, replyHandler: replyHandler) { error in
-            NSLog("[WCRouter] sendMessage failed, queuing via transferUserInfo: \(error)")
-            WCSession.default.transferUserInfo(message)
-            errorHandler?(error)
+        WCSession.default.sendMessage(message, replyHandler: replyHandler) { [weak self] error in
+            NSLog("[WCRouter] sendMessage failed: \(error) — queueing via transferUserInfo")
+            // Queue for delivery; only propagate error when a reply was expected,
+            // since fire-and-forget messages are now safely queued (#11)
+            if self != nil { WCSession.default.transferUserInfo(message) }
+            if replyHandler != nil {
+                // Reply was expected — caller must know delivery is uncertain
+                errorHandler?(error)
+            }
+            // No reply expected → message queued, not an error
         }
     }
 }

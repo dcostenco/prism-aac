@@ -15,9 +15,11 @@ final class WatchTranslation: ObservableObject {
     @Published var errorMessage: String?
 
     private var translateTask: Task<Void, Never>?
+    private var listeningWatchdog: Task<Void, Never>?
 
     deinit {
         translateTask?.cancel()
+        listeningWatchdog?.cancel()
     }
 
     // Uses the same working chat endpoint as WatchAISession — no dedicated
@@ -71,7 +73,14 @@ final class WatchTranslation: ObservableObject {
 
         // Validate lang against known-good allowlist before injecting into prompt
         let allowedLangs: Set<String> = ["en", "en-US", "es", "ro", "ru", "fr", "de", "it", "pt", "ar", "zh-Hans", "zh-Hant", "ja", "ko", "he", "hi", "nl", "pl", "uk", "tr", "vi", "tl", "id"]
-        let validLang = allowedLangs.contains(safeLang) ? safeLang : "en-US"
+        // #22: BCP-47 regex guard in addition to allowlist — prevents prompt injection if allowlist entry is malformed
+        let bcp47Regex = #"^[a-zA-Z]{2,8}(-[a-zA-Z0-9]{1,8})*$"#
+        let validLang: String
+        if allowedLangs.contains(safeLang) && safeLang.range(of: bcp47Regex, options: .regularExpression) != nil {
+            validLang = safeLang
+        } else {
+            validLang = "en-US"
+        }
 
         // Sanitize user text — cap length, strip ChatML control tokens
         let safeText = String(text.prefix(300))
@@ -94,6 +103,7 @@ final class WatchTranslation: ObservableObject {
             .replacingOccurrences(of: "<|start_of_turn|>", with: "")
             // #23: HTML entity stripping — prevents prompt injection via encoded angle brackets
             .replacingOccurrences(of: "&#x", with: "")  // #24: hex entities (e.g. &#x3C; = <)
+            .replacingOccurrences(of: "&#X", with: "")  // uppercase X variant bypass (#23)
             .replacingOccurrences(of: "&#", with: "")
             .replacingOccurrences(of: "&lt;", with: "")
             .replacingOccurrences(of: "&gt;", with: "")
@@ -174,11 +184,14 @@ final class WatchTranslation: ObservableObject {
     /// Show Watch dictation UI (caller presents a TextField sheet).
     func startListening(inputLang: String, outputLang: String, tts: WatchTTS) {
         isListening = true
+        // #10: store watchdog Task so it can be cancelled when dictation completes;
         // #28: safety reset — if handleDictation is never called (e.g. user cancels without submitting),
         // isListening would remain true indefinitely. Reset after 60s max.
-        Task { @MainActor [weak self] in
+        listeningWatchdog?.cancel()
+        listeningWatchdog = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 60_000_000_000)
             self?.isListening = false
+            self?.listeningWatchdog = nil
         }
     }
 
@@ -192,6 +205,9 @@ final class WatchTranslation: ObservableObject {
         outputLang: String,
         tts: WatchTTS
     ) {
+        // #10: cancel watchdog — dictation completed normally
+        listeningWatchdog?.cancel()
+        listeningWatchdog = nil
         isListening = false
         pendingText = text
         guard !text.isEmpty else { return }

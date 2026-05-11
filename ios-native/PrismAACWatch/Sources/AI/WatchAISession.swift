@@ -122,7 +122,11 @@ final class WatchAISession: NSObject, ObservableObject {
                         replyHandler: { reply in
                             lock.lock(); let was = resumed; if !was { resumed = true }; lock.unlock()
                             guard !was else { return }
-                            cont.resume(returning: reply["text"] as? String ?? "")
+                            if let text = reply["text"] as? String, !text.isEmpty {
+                                cont.resume(returning: text)
+                            } else {
+                                cont.resume(throwing: URLError(.cannotParseResponse))
+                            }
                         },
                         errorHandler: { err in
                             lock.lock(); let was = resumed; if !was { resumed = true }; lock.unlock()
@@ -175,6 +179,7 @@ final class WatchAISession: NSObject, ObservableObject {
             .replacingOccurrences(of: "<|start_of_turn|>", with: "")
             // #23: HTML entity stripping — prevents prompt injection via encoded angle brackets
             .replacingOccurrences(of: "&#x", with: "")  // #24: hex entities (&#xNN;) before decimal strip
+            .replacingOccurrences(of: "&#X", with: "")  // uppercase X variant bypass (#23)
             .replacingOccurrences(of: "&#", with: "")
             .replacingOccurrences(of: "&lt;", with: "")
             .replacingOccurrences(of: "&gt;", with: "")
@@ -197,7 +202,7 @@ final class WatchAISession: NSObject, ObservableObject {
                 ["role": "user",   "content": safeQuestion],
             ],
             "language": String(validatedLanguage.prefix(2)),
-            "stream": true,   // #9: required for SSE endpoint
+            "stream": false,   // #8: data(for:) buffers full response — use non-streaming JSON; SSE fallback below
         ] as [String: Any])
         let (data, response) = try await URLSession.shared.data(for: req)
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
@@ -208,13 +213,22 @@ final class WatchAISession: NSObject, ObservableObject {
             NSLog("[WatchAI] Response too large (\(data.count) bytes) — ignoring")
             throw WatchAIError.responseTooLarge
         }
-        // Endpoint returns SSE — assemble all content chunks
-        return assembleSSE(data) ?? ""
+        // Prefer non-streaming JSON; fall back to SSE assembly if server sends SSE anyway
+        return parseNonStreaming(data) ?? assembleSSE(data) ?? ""
+    }
+
+    private func parseNonStreaming(_ data: Data) -> String? {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let choices = obj["choices"] as? [[String: Any]],
+              let msg = choices.first?["message"] as? [String: Any],
+              let content = msg["content"] as? String else { return nil }
+        return String(content.prefix(4000)).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func assembleSSE(_ data: Data) -> String? {
         guard let raw = String(data: data, encoding: .utf8) else { return nil }
         var result = ""
+        var failedChunks = 0
         for line in raw.components(separatedBy: "\n") {
             guard line.count <= 4096 else { continue }  // skip malformed mega-lines
             guard line.hasPrefix("data: ") else { continue }
@@ -229,8 +243,12 @@ final class WatchAISession: NSObject, ObservableObject {
                     result += chunk
                     if result.count > 4000 { break }  // cap total response
                 } else if parsed != nil {
+                    failedChunks += 1
+                    if failedChunks > 3 { NSLog("[WatchAI] \(failedChunks) SSE chunks failed to parse") }
                     NSLog("[WatchAI] SSE chunk parsed but unexpected structure: \(payload.prefix(100))")
                 } else if !payload.isEmpty && payload != "[DONE]" {
+                    failedChunks += 1
+                    if failedChunks > 3 { NSLog("[WatchAI] \(failedChunks) SSE chunks failed to parse") }
                     NSLog("[WatchAI] Unexpected SSE payload (first 100 chars): \(payload.prefix(100))")
                 }
             }
@@ -283,8 +301,13 @@ struct WatchSafetyFilter {
         }
     }
     private static let _crisisPatternCheck: Void = {
-        assert(crisisPatterns.count == crisisKeywords.count,
-            "[WatchSafetyFilter] \(crisisKeywords.count - crisisPatterns.count) pattern(s) failed to compile")
+        let missing = crisisKeywords.count - crisisPatterns.count
+        if missing > 0 {
+            NSLog("[WatchSafetyFilter] CRITICAL: \(missing) crisis pattern(s) failed to compile — coverage degraded")
+            #if DEBUG
+            fatalError("[WatchSafetyFilter] \(missing) crisis pattern(s) failed to compile")
+            #endif
+        }
     }()
     private static let medicalPatterns: [NSRegularExpression] = medicalKeywords.compactMap { keyword in
         let pattern = "(?:^|[^\\p{L}\\p{N}])\(NSRegularExpression.escapedPattern(for: keyword))(?:$|[^\\p{L}\\p{N}])"
@@ -296,8 +319,13 @@ struct WatchSafetyFilter {
         }
     }
     private static let _medicalPatternCheck: Void = {
-        assert(medicalPatterns.count == medicalKeywords.count,
-            "[WatchSafetyFilter] \(medicalKeywords.count - medicalPatterns.count) medical pattern(s) failed to compile")
+        let missing = medicalKeywords.count - medicalPatterns.count
+        if missing > 0 {
+            NSLog("[WatchSafetyFilter] CRITICAL: \(missing) medical pattern(s) failed to compile — coverage degraded")
+            #if DEBUG
+            fatalError("[WatchSafetyFilter] \(missing) medical pattern(s) failed to compile")
+            #endif
+        }
     }()
 
     static func check(_ input: String) -> Result {

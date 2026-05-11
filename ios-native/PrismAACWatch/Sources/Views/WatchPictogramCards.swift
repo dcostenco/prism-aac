@@ -576,6 +576,10 @@ struct WatchAIChatView: View {
     @State private var translateTask2: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
 
+    // #25: typed role constants — using these in all append calls makes typos a compile-time error.
+    private let userRole = "user"
+    private let aiRole   = "ai"
+
     /// True when input and output languages differ — chat acts as live translator.
     private var isTranslatorMode: Bool {
         inputLang.prefix(2) != outputLang.prefix(2)
@@ -623,16 +627,16 @@ struct WatchAIChatView: View {
                         ForEach(messages.indices, id: \.self) { i in
                             let m = messages[i]
                             HStack(alignment: .top) {
-                                if m.role == "user" { Spacer(minLength: 24) }
+                                if m.role == userRole { Spacer(minLength: 24) }
                                 Text(m.text)
                                     .font(.system(size: 13))
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 7)
-                                    .background(m.role == "user"
+                                    .background(m.role == userRole
                                         ? Color.blue.opacity(0.5)
                                         : Color.white.opacity(0.12))
                                     .cornerRadius(12)
-                                if m.role == "ai" { Spacer(minLength: 24) }
+                                if m.role == aiRole { Spacer(minLength: 24) }
                             }
                             .id(i)
                         }
@@ -698,7 +702,9 @@ struct WatchAIChatView: View {
                 sendMessage()
             }
         }
-        // Tasks cancelled on disappear — WatchTranslation.translateTask also cancelled via deinit
+        // #14: onDisappear is on the OUTERMOST VStack of WatchAIChatView — this is the correct placement.
+        // aiTask and translateTask2 are @State vars; cancelling them here prevents dangling Tasks
+        // that would otherwise continue executing after the sheet is dismissed.
         .onDisappear {
             aiTask?.cancel()
             translateTask2?.cancel()
@@ -714,7 +720,7 @@ struct WatchAIChatView: View {
         // #17: cap at 50 (>= 50 removes before adding, keeping array at ≤50 at all times)
         // #9: cap individual message text at 500 chars to prevent unbounded memory growth
         if messages.count >= 50 { messages.removeFirst() }
-        messages.append((role: "user", text: text))  // already capped
+        messages.append((role: userRole, text: text))  // already capped
         isWaiting = true
 
         if isTranslatorMode {
@@ -725,7 +731,7 @@ struct WatchAIChatView: View {
                 let result = translated ?? text
                 isWaiting = false
                 if messages.count >= 50 { messages.removeFirst() }
-                messages.append((role: "ai", text: String(result.prefix(500))))
+                messages.append((role: aiRole, text: String(result.prefix(500))))
                 tts.speak(result, language: outputLang)
             }
         } else {
@@ -735,7 +741,7 @@ struct WatchAIChatView: View {
                 let reply = await session.askAI(text, lang: outputLang) ?? "…"
                 isWaiting = false
                 if messages.count >= 50 { messages.removeFirst() }
-                messages.append((role: "ai", text: String(reply.prefix(500))))
+                messages.append((role: aiRole, text: String(reply.prefix(500))))
                 tts.speak(reply, language: outputLang)
             }
         }
@@ -868,9 +874,13 @@ struct WatchSendMessageView: View {
                     let safeBody = String(msgText.prefix(500))
 
                     guard !safeTo.isEmpty, !safeBody.isEmpty else { return }
-                    // Validate: must be a phone number or email
-                    let isValidPhone = safeTo.range(of: #"^\+?[0-9 \-\(\)]{7,20}$"#, options: .regularExpression) != nil
-                    let isValidEmail = safeTo.range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]+$"#, options: .regularExpression) != nil
+                    // Validate: must be a phone number or email.
+                    // #18: phone regex requires 10–15 clean digits only (+ optional leading +).
+                    // Spaces, hyphens, and parens removed — SMS APIs expect clean digit strings.
+                    // 7-char minimum was too loose and accepted strings that cannot route SMS.
+                    let isValidPhone = safeTo.range(of: #"^\+?[0-9]{10,15}$"#, options: .regularExpression) != nil
+                    // #18: email TLD must be at least 2 chars (e.g. .co, .uk, .com)
+                    let isValidEmail = safeTo.range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"#, options: .regularExpression) != nil
                     guard isValidPhone || isValidEmail else {
                         sendStatus = "Invalid contact format"
                         return
@@ -885,8 +895,10 @@ struct WatchSendMessageView: View {
                         dismissTask = Task { @MainActor in
                             sendStatus = "✓ Sent to \(safeTo)"
                             msgText = ""
-                            tts.speak("Message sent")
                             try? await Task.sleep(nanoseconds: 1_500_000_000)
+                            // #21: TTS plays only after the delay — confirms delivery window passed
+                            // without cancellation; avoids false "sent" audio if task is cancelled early.
+                            tts.speak("Message sent")
                             dismiss()
                         }
                     } else {
@@ -930,13 +942,13 @@ struct PairCard: View {
         Button(action: onTap) {
             VStack(spacing: 4) {
                 // If emergency is active, skip pictogram network loads to free URLSession connections
+                // #17: emergencyIsActive skips AsyncImage entirely when true, freeing URLSession slots
+                // for emergency/translation requests. Falls through to sfSymbol fallback below.
                 if let url = phrase.arasaacURL, !emergencyIsActive {
                     // Pictogram images: use a dedicated short-timeout URLSession to avoid
                     // starving emergency/translation requests that share URLSession.shared.
                     // LIMITATION: .task(id: url) cancels the Task but NOT AsyncImage's internal URLSession request.
                     // A separate URLSession with timeoutIntervalForResource: 5 would be needed for true timeout.
-                    // During active emergency (emergency.isActive), pictogram loading is not disabled.
-                    // TODO: Disable AsyncImage loading when emergency.isActive to free URLSession slots.
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let img):

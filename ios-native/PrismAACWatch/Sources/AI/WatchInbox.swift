@@ -65,6 +65,11 @@ final class WatchInbox: NSObject, ObservableObject {
         if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") &&
            UserDefaults.standard.data(forKey: storageKey) != nil {
             Task { @MainActor [weak self] in self?.persistToKeychain() }
+        } else {
+            // #9: Always purge any residual UserDefaults PII on every launch after migration is complete.
+            // Covers the race window where migration succeeded but a prior launch crashed before
+            // removeObject() ran inside persistToKeychain().
+            UserDefaults.standard.removeObject(forKey: storageKey)
         }
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerMessageHandler(for: "inbox_message") { [weak self] _, msg in
@@ -161,9 +166,11 @@ final class WatchInbox: NSObject, ObservableObject {
         let rawProvider = message["provider"] as? String ?? "sms"
         let provider = allowedProviders.contains(rawProvider) ? rawProvider : "sms"
         // #19: clamp receivedAt — reject timestamps more than 1 year old or more than 1 min in the future
-        let now      = Date().timeIntervalSince1970
-        let rawTs    = message["receivedAt"] as? TimeInterval ?? now
-        let ts       = min(max(rawTs, now - 86_400 * 365), now + 60)
+        // #16: explicit Double cast makes the 64-bit arithmetic intent clear
+        let now        = Date().timeIntervalSince1970
+        let rawTs      = message["receivedAt"] as? TimeInterval ?? now
+        let oneYearAgo = now - Double(86_400 * 365)
+        let ts         = min(max(rawTs, oneYearAgo), now + 60)
         let msg = WatchMessage(id: id, sender: sender, text: safeText,
                                provider: provider, receivedAt: Date(timeIntervalSince1970: ts))
         deliver(msg)
@@ -252,7 +259,8 @@ final class WatchInbox: NSObject, ObservableObject {
         }
     }
 
-    @MainActor
+    // #24: @MainActor annotation removed — WatchInbox is @MainActor final class,
+    // so all instance methods are implicitly @MainActor. Explicit annotation is redundant.
     private func loadFromDefaults() -> [WatchMessage] {
         // Migration path only — UserDefaults is cleared immediately after Keychain write succeeds.
         // Message PII is in UserDefaults only during the first-launch migration window.
