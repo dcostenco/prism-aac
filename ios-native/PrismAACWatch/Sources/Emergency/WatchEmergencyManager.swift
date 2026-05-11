@@ -29,6 +29,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     @Published private(set) var hasEscalated = false
     // #2: single stored task for SOS haptics — cancellable on cleanup
     private var sosHapticTask: Task<Void, Never>?
+    // #6: stored watchdog handle so cleanup() can cancel it
+    private var watchdogTask: Task<Void, Never>?
 
     override init() {
         super.init()
@@ -89,8 +91,14 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         RunLoop.main.add(timer, forMode: .common)
         countdownTimer = timer
 
-        // Immediate haptic + audio — no network needed
-        playSosHaptics()
+        // #20: Start full SOS haptic pattern immediately on trigger — don't wait for escalation
+        sosHapticTask = Task { @MainActor [weak self] in
+            for i in 0..<9 {
+                guard !Task.isCancelled, self?.isActive == true else { return }
+                WKInterfaceDevice.current().play(i % 3 == 0 ? .failure : .click)
+                try? await Task.sleep(nanoseconds: 300_000_000)
+            }
+        }
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
             try AVAudioSession.sharedInstance().setActive(true)
@@ -128,6 +136,9 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // #2: cancel stored SOS haptic task
         sosHapticTask?.cancel()
         sosHapticTask = nil
+        // #6: cancel stored watchdog task
+        watchdogTask?.cancel()
+        watchdogTask = nil
         // F2b: end any leaked background task on cancel path
         if let task = activeBgTask {
             WKApplication.shared().endBackgroundTask(task)
@@ -138,23 +149,17 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     // MARK: - Escalation
 
     private func escalate(phrase: String, severity: EmergencySeverity) async {
+        guard !hasEscalated else { return }
         sendPhrase(phrase, isEmergency: true, severity: severity)
         hasEscalated = true  // FIX 4: allow critical emergency dismiss post-escalation
-        // #8: post-escalation watchdog — auto-cleanup 30s after escalation if UI hasn't dismissed
-        Task { @MainActor [weak self] in
+        // #6/#8: stored watchdog — auto-cleanup 30s after escalation if UI hasn't dismissed
+        watchdogTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 30_000_000_000)
             guard let self, self.hasEscalated, self.isActive else { return }
             NSLog("[WatchEmergency] Post-escalation watchdog: auto-cleanup after 30s")
             self.cleanup()
         }
-        // #2: Haptic — SOS pattern (3 short, 3 long, 3 short) — single stored task, cancellable
-        sosHapticTask = Task { @MainActor [weak self] in
-            for i in 0..<9 {
-                guard !Task.isCancelled, self?.isActive == true else { return }
-                WKInterfaceDevice.current().play(i % 3 == 0 ? .failure : .click)
-                try? await Task.sleep(nanoseconds: 300_000_000)
-            }
-        }
+        // #20: SOS haptic already started in trigger() — no duplicate loop here
     }
 
     // #26: static cached formatter — avoids allocation on every sendPhrase call

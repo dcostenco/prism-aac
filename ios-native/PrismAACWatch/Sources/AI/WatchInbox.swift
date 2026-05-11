@@ -98,7 +98,25 @@ final class WatchInbox: NSObject, ObservableObject {
         // F4c: length caps on all string fields immediately after extraction
         guard let rawSender = message["sender"] as? String,
               let rawText   = message["text"]   as? String else { return }
-        let sender   = String(rawSender.prefix(100))
+        let sender: String = {
+            let capped = String(rawSender.prefix(100))
+            return capped
+                .replacingOccurrences(of: "\u{202E}", with: "")  // RLO
+                .replacingOccurrences(of: "\u{202D}", with: "")  // LRO
+                .replacingOccurrences(of: "\u{202B}", with: "")  // RLE
+                .replacingOccurrences(of: "\u{202A}", with: "")  // LRE
+                .replacingOccurrences(of: "\u{202C}", with: "")  // PDF
+                .replacingOccurrences(of: "\u{200F}", with: "")  // RLM
+                .replacingOccurrences(of: "\u{200E}", with: "")  // LRM
+                .replacingOccurrences(of: "\u{2066}", with: "")  // LRI
+                .replacingOccurrences(of: "\u{2067}", with: "")  // RLI
+                .replacingOccurrences(of: "\u{2068}", with: "")  // FSI
+                .replacingOccurrences(of: "\u{2069}", with: "")  // PDI
+                .replacingOccurrences(of: "\u{200B}", with: "")  // ZWSP
+                .replacingOccurrences(of: "\u{200C}", with: "")  // ZWNJ
+                .replacingOccurrences(of: "\u{200D}", with: "")  // ZWJ
+                .replacingOccurrences(of: "\u{FEFF}", with: "")  // BOM
+        }()
         let text     = String(rawText.prefix(500))
         let id       = String((message["id"]       as? String ?? UUID().uuidString).prefix(36))
         let provider = String((message["provider"] as? String ?? "sms").prefix(20))
@@ -161,23 +179,33 @@ final class WatchInbox: NSObject, ObservableObject {
                 kSecAttrAccount as String:        keychainAccount,
                 kSecAttrSynchronizable as String: false,
             ]
-            let updateAttrs: [String: Any] = [kSecValueData as String: data]
+            let updateAttrs: [String: Any] = [
+                kSecValueData as String: data,
+                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+            ]
             let updateStatus = SecItemUpdate(updateQuery as CFDictionary, updateAttrs as CFDictionary)
             if updateStatus == errSecItemNotFound {
                 var addQuery = updateQuery
                 addQuery[kSecValueData as String] = data
                 addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
                 let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
-                if addStatus != errSecSuccess {
-                    NSLog("[WatchInbox] Keychain add failed: \(addStatus)")
+                guard addStatus == errSecSuccess || addStatus == errSecDuplicateItem else {
+                    NSLog("[WatchInbox] Keychain add failed: \(addStatus) — NOT removing UserDefaults backup")
+                    return  // abort; DO NOT erase UserDefaults
                 }
-            } else if updateStatus != errSecSuccess {
+                // Only erase UserDefaults if Keychain write confirmed successful
+                if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") {
+                    UserDefaults.standard.removeObject(forKey: storageKey)
+                    UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
+                }
+            } else if updateStatus == errSecSuccess {
+                // After successful update, set migration flag only once
+                if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") {
+                    UserDefaults.standard.removeObject(forKey: storageKey)
+                    UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
+                }
+            } else {
                 NSLog("[WatchInbox] Keychain update failed: \(updateStatus)")
-            }
-            // #14: remove legacy UserDefaults entry only once (migration flag prevents repeat removals)
-            if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") {
-                UserDefaults.standard.removeObject(forKey: storageKey)
-                UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
             }
         } catch {
             NSLog("[WatchInbox] Encode failed: \(error)")

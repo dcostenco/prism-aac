@@ -26,8 +26,8 @@ struct PrismAACWatchApp: App {
                 .environmentObject(tts)
                 .environmentObject(vocab)
                 .environmentObject(inbox)
-                .onChange(of: scenePhase) { phase in
-                    if phase == .active && emergency.isActive {
+                .onChange(of: scenePhase) { _, newPhase in
+                    if newPhase == .active && emergency.isActive {
                         NSLog("[WatchApp] Resumed active — emergency still in progress (isActive=\(emergency.isActive))")
                         // Emergency fullScreenCover is driven by emergency.isActive binding — re-evaluation forces it
                     }

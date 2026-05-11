@@ -36,7 +36,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
         outputLanguage = safeOutput
         KeychainHelper.shared.write(value: safeInput,  service: "prism-aac", account: "watchInputLanguage")
         KeychainHelper.shared.write(value: safeOutput, service: "prism-aac", account: "watchOutputLanguage")
-        Task { await loadFromAPI(lang: safeInput) }   // vocab labels in INPUT lang
+        vocabTask?.cancel()
+        vocabTask = Task { await loadFromAPI(lang: safeInput) }   // vocab labels in INPUT lang
     }
 
     /// Shorthand: set only output language (input unchanged).
@@ -45,6 +46,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
     }
 
     enum Source { case offline, companion, cloud }
+
+    private var vocabTask: Task<Void, Never>?
 
     private let apiBase = "https://synalux.ai/api/v1/prism-aac"
 
@@ -63,7 +66,23 @@ final class WatchVocabSync: NSObject, ObservableObject {
         WCSessionRouter.shared.registerMessageHandler(for: "vocabulary") { [weak self] _, msg in
             Task { @MainActor in self?.handleVocabReply(msg) }
         }
-        Task { await loadFromAPI(lang: inputLanguage) }
+        vocabTask = Task { await loadFromAPI(lang: inputLanguage) }
+    }
+
+    // MARK: - Label sanitization
+
+    fileprivate static func sanitizeLabel(_ raw: String) -> String {
+        raw.replacingOccurrences(of: "<|im_start|>", with: "")
+           .replacingOccurrences(of: "<|im_end|>", with: "")
+           .replacingOccurrences(of: "<|system|>", with: "")
+           .replacingOccurrences(of: "[INST]", with: "")
+           .replacingOccurrences(of: "[/INST]", with: "")
+           .replacingOccurrences(of: "<<SYS>>", with: "")
+           .replacingOccurrences(of: "<</SYS>>", with: "")
+           .replacingOccurrences(of: "<|eot_id|>", with: "")
+           .replacingOccurrences(of: "<|start_header_id|>", with: "")
+           .replacingOccurrences(of: "<|end_header_id|>", with: "")
+           .prefix(120).description
     }
 
     // MARK: - Load from web app API (standalone path)
@@ -110,11 +129,11 @@ final class WatchVocabSync: NSObject, ObservableObject {
             let safeCats: [WatchCategory] = vocab.categories.prefix(50).map { cat in
                 let safePhrases = cat.phrases.prefix(100).map { ph in
                     VocabPhrase(id: ph.id,
-                                label: String(ph.label.prefix(120)),
+                                label: Self.sanitizeLabel(ph.label),
                                 arasaacId: ph.arasaacId,
                                 sfSymbol: ph.sfSymbol)
                 }
-                return WatchCategory(from: VocabCategory(id: cat.id,
+                return WatchCategory(from: VocabCategory(id: String(cat.id.prefix(50)),
                                                          icon: String(cat.icon.prefix(4)),
                                                          name: String(cat.name.prefix(120)),
                                                          phrases: Array(safePhrases)))
@@ -148,13 +167,14 @@ final class WatchVocabSync: NSObject, ObservableObject {
         // Apply same caps as API path:
         let safeCats = vocab.categories.prefix(50).map { cat -> WatchCategory in
             // #10: propagate emergency flag from category id (companion path)
-            let isEmergencyCat = cat.id == "emergency" || cat.id == "help-needs"
+            let catId = String(cat.id.prefix(50))
+            let isEmergencyCat = catId == "emergency" || catId == "help-needs"
             return WatchCategory(
-                id: cat.id,
+                id: catId,
                 icon: String(cat.icon.prefix(4)),
                 name: String(cat.name.prefix(120)),
                 phrases: cat.phrases.prefix(100).map { ph in
-                    WatchPhrase(id: ph.id, label: String(ph.label.prefix(120)),
+                    WatchPhrase(id: ph.id, label: Self.sanitizeLabel(ph.label),
                                 arasaacId: ph.arasaacId,
                                 sfSymbol: ph.sfSymbol ?? "circle.fill",
                                 isEmergency: isEmergencyCat)
@@ -207,11 +227,11 @@ struct VocabPhrase: Decodable {
 
 extension WatchCategory {
     init(from c: VocabCategory) {
-        id = c.id; icon = c.icon; name = c.name
+        id = String(c.id.prefix(50)); icon = c.icon; name = c.name
         // #10: mark phrases as emergency when they come from an emergency category
-        let isEmergencyCat = c.id == "emergency" || c.id == "help-needs"
+        let isEmergencyCat = String(c.id.prefix(50)) == "emergency" || String(c.id.prefix(50)) == "help-needs"
         phrases = c.phrases.map {
-            WatchPhrase(id: $0.id, label: $0.label,
+            WatchPhrase(id: $0.id, label: WatchVocabSync.sanitizeLabel($0.label),
                         arasaacId: $0.arasaacId,
                         sfSymbol: $0.sfSymbol ?? "circle.fill",
                         isEmergency: isEmergencyCat)

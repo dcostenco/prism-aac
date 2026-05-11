@@ -15,7 +15,6 @@ internal final class KeychainHelper {
             kSecClass as String:              kSecClassGenericPassword,
             kSecAttrService as String:        service,
             kSecAttrAccount as String:        account,
-            kSecAttrAccessible as String:     kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
             kSecAttrSynchronizable as String: false,
             kSecReturnData as String:         true,
             kSecMatchLimit as String:         kSecMatchLimitOne,

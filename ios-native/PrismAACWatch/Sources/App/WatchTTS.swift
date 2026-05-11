@@ -14,8 +14,9 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     }
 
     func speak(_ text: String, language: String = "en-US", rate: Float = 0.52) {
+        let safe = String(text.prefix(1000))
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
-        let utt = AVSpeechUtterance(string: text)
+        let utt = AVSpeechUtterance(string: safe)
         utt.voice = AVSpeechSynthesisVoice(language: language)
         utt.rate = max(AVSpeechUtteranceMinimumSpeechRate,
                        min(AVSpeechUtteranceMaximumSpeechRate, rate))

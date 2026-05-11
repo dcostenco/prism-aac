@@ -26,7 +26,7 @@ final class WatchAISession: NSObject, ObservableObject {
     }
 
     private let cloudURL = URL(string: "https://synalux.ai/api/v1/prism-aac/chat")!
-    private let timeoutSec: Double = 10
+    private let timeoutSec: Double = 15
 
     // MARK: - Init / WatchConnectivity
 
@@ -87,13 +87,13 @@ final class WatchAISession: NSObject, ObservableObject {
                 reply = try await askViaPhone(question: question, language: language)
             } else {
                 reply = try await askViaCloud(question: question, language: language)
-                mode = .cloudDirect
+                // #25: do not overwrite mode here — updateMode() is sole authority
             }
         } catch WatchAIError.notAuthenticated {
             reply = "Please sign in on your iPhone to enable AI features."
         } catch {
             // Full offline fallback
-            mode = .offline
+            // #25: do not set mode = .offline here via ask(); let updateMode() govern
             offlineBanner = "No connection — using offline phrases only"
             reply = "I'm offline right now. Use the phrase buttons below."
         }
@@ -104,27 +104,32 @@ final class WatchAISession: NSObject, ObservableObject {
     private func askViaPhone(question: String, language: String) async throws -> String {
         let msg: [String: Any] = [
             "type": "ai_ask",
-            "question": question,
+            "question": String(question.prefix(500)),
             "language": language,
         ]
         // #3: route through WCSessionRouter.shared.send — no direct WCSession bypass
         // #11: resumed bool prevents double-resume race between reply and timeout tasks
         let result = try await withThrowingTaskGroup(of: String.self) { group in
             group.addTask {
-                try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
-                    var resumed = false
-                    WCSessionRouter.shared.send(msg,
-                        replyHandler: { reply in
-                            guard !resumed else { return }
-                            resumed = true
-                            cont.resume(returning: reply["text"] as? String ?? "")
-                        },
-                        errorHandler: { err in
-                            guard !resumed else { return }
-                            resumed = true
-                            cont.resume(throwing: err)
-                        }
-                    )
+                try await withTaskCancellationHandler {
+                    try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
+                        var resumed = false
+                        WCSessionRouter.shared.send(msg,
+                            replyHandler: { reply in
+                                guard !resumed else { return }
+                                resumed = true
+                                cont.resume(returning: reply["text"] as? String ?? "")
+                            },
+                            errorHandler: { err in
+                                guard !resumed else { return }
+                                resumed = true
+                                cont.resume(throwing: err)
+                            }
+                        )
+                    }
+                } onCancel: {
+                    // Continuation abandoned by timeout — log but no double-resume
+                    NSLog("[WatchAI] askViaPhone continuation cancelled by timeout")
                 }
             }
             group.addTask {
@@ -155,9 +160,16 @@ final class WatchAISession: NSObject, ObservableObject {
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
+            .replacingOccurrences(of: "[INST]", with: "")
+            .replacingOccurrences(of: "[/INST]", with: "")
+            .replacingOccurrences(of: "<<SYS>>", with: "")
+            .replacingOccurrences(of: "<</SYS>>", with: "")
+            .replacingOccurrences(of: "<|eot_id|>", with: "")
+            .replacingOccurrences(of: "<|start_header_id|>", with: "")
+            .replacingOccurrences(of: "<|end_header_id|>", with: "")
 
         let system = "You are a friendly helper for a child who uses AAC. Reply in \(validatedLanguage) language. Keep answers short (2-3 sentences max)."
-        var req = URLRequest(url: cloudURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 15)
+        var req = URLRequest(url: cloudURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: timeoutSec)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         // Auth is required — throw rather than silently continuing unauthenticated
@@ -267,8 +279,14 @@ struct WatchSafetyFilter {
             return nil
         }
     }
+    private static let _medicalPatternCheck: Void = {
+        assert(medicalPatterns.count == medicalKeywords.count,
+            "[WatchSafetyFilter] \(medicalKeywords.count - medicalPatterns.count) medical pattern(s) failed to compile")
+    }()
 
     static func check(_ input: String) -> Result {
+        _ = _crisisPatternCheck  // force evaluation of compile-failure assert
+        _ = _medicalPatternCheck // force evaluation of medical compile-failure assert
         let lower = input.lowercased()
         let range = NSRange(lower.startIndex..., in: lower)
         for regex in Self.crisisPatterns {

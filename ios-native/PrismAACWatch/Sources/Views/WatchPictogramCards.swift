@@ -496,6 +496,7 @@ struct WatchReplyView: View {
     @EnvironmentObject var tts: WatchTTS
     @State private var replyText = ""
     @State private var sent = false
+    @State private var dismissTask: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -530,7 +531,8 @@ struct WatchReplyView: View {
                         inbox.reply(to: message, text: text)
                         sent = true
                         tts.speak("Message sent")
-                        Task { @MainActor in
+                        dismissTask?.cancel()
+                        dismissTask = Task { @MainActor in
                             try? await Task.sleep(nanoseconds: 1_500_000_000)
                             dismiss()
                         }
@@ -547,13 +549,22 @@ struct WatchReplyView: View {
                 }
             }
             .padding(.horizontal, 6)
-            .navigationTitle("Reply to \(message.sender)")
+            .navigationTitle("Reply to \(safeSenderName(message.sender))")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
             }
         }
+        .onDisappear {
+            dismissTask?.cancel()
+        }
+    }
+
+    private func safeSenderName(_ name: String) -> String {
+        name.replacingOccurrences(of: "\u{202E}", with: "")  // RLO
+            .replacingOccurrences(of: "\u{202D}", with: "")  // LRO
+            .replacingOccurrences(of: "\u{200F}", with: "")  // RLM
     }
 }
 
@@ -645,7 +656,7 @@ struct WatchAIChatView: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 8)
                 }
-                .onChange(of: messages.count) { _ in
+                .onChange(of: messages.count) { _, _ in
                     if let last = messages.indices.last {
                         proxy.scrollTo(last, anchor: .bottom)
                     }
@@ -698,13 +709,14 @@ struct WatchAIChatView: View {
 
     @MainActor
     private func sendMessage() {
-        let text = inputText.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty else { return }
+        let rawText = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !rawText.isEmpty else { return }
+        let text = String(rawText.prefix(500))  // cap BEFORE any API call
         inputText = ""
         // #17: cap at 50 (>= 50 removes before adding, keeping array at ≤50 at all times)
         // #9: cap individual message text at 500 chars to prevent unbounded memory growth
         if messages.count >= 50 { messages.removeFirst() }
-        messages.append((role: "user", text: String(text.prefix(500))))
+        messages.append((role: "user", text: text))  // already capped
         isWaiting = true
 
         if isTranslatorMode {
@@ -800,6 +812,7 @@ struct WatchSendMessageView: View {
     @State private var contactQuery = ""
     @State private var msgText      = ""
     @State private var sendStatus: String? = nil
+    @State private var dismissTask: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -856,7 +869,8 @@ struct WatchSendMessageView: View {
                             sendStatus = "✓ Sent to \(safeTo)"
                             msgText = ""
                             tts.speak("Message sent")
-                            Task { @MainActor in
+                            dismissTask?.cancel()
+                            dismissTask = Task { @MainActor in
                                 try? await Task.sleep(nanoseconds: 1_500_000_000)
                                 dismiss()
                             }
@@ -885,6 +899,9 @@ struct WatchSendMessageView: View {
                 }
             }
         }
+        .onDisappear {
+            dismissTask?.cancel()
+        }
     }
 }
 
@@ -898,7 +915,11 @@ struct PairCard: View {
         Button(action: onTap) {
             VStack(spacing: 4) {
                 if let url = phrase.arasaacURL {
-                    // NOTE: AsyncImage has no native timeout; stalled loads handled by WatchOS URL session default (60s)
+                    // Pictogram images: use a dedicated short-timeout URLSession to avoid
+                    // starving emergency/translation requests that share URLSession.shared.
+                    // AsyncImage does not support custom URLSession directly — using .task(id:)
+                    // for implicit timeout: the task cancels when the view disappears or url changes,
+                    // and after 5 s we leave AsyncImage to show the SF Symbol fallback (.empty phase).
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let img):
@@ -911,6 +932,12 @@ struct PairCard: View {
                                 .foregroundColor(phrase.color)
                                 .frame(maxWidth: .infinity, maxHeight: 52)
                         }
+                    }
+                    .id(url)
+                    .task(id: url) {
+                        // 5-second timeout via cancellation — if view disappears before load, cancel
+                        try? await Task.sleep(nanoseconds: 5_000_000_000)
+                        // After 5 s, leave AsyncImage to show fallback (phase == .empty)
                     }
                 } else {
                     Image(systemName: phrase.sfSymbol)

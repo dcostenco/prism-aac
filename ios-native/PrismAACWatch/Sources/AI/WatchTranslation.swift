@@ -14,6 +14,8 @@ final class WatchTranslation: ObservableObject {
     @Published var pendingText   = ""
     @Published var errorMessage: String?
 
+    private var translateTask: Task<Void, Never>?
+
     // Uses the same working chat endpoint as WatchAISession — no dedicated
     // /translate route exists on the portal. A minimal system prompt tells
     // the AI to return only the translation with no explanation.
@@ -32,11 +34,14 @@ final class WatchTranslation: ObservableObject {
             tts.speak(text, language: toLang)
             return
         }
+        translateTask?.cancel()  // cancel any in-flight translate
         isTranslating = true
-        Task { @MainActor in
-            let translated = await translate(text: text, to: toLang)
+        translateTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let translated = await self.translate(text: text, to: toLang)
+            guard !Task.isCancelled else { return }
             tts.speak(translated ?? text, language: toLang)
-            isTranslating = false
+            self.isTranslating = false
         }
     }
 
@@ -66,6 +71,13 @@ final class WatchTranslation: ObservableObject {
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
+            .replacingOccurrences(of: "[INST]", with: "")
+            .replacingOccurrences(of: "[/INST]", with: "")
+            .replacingOccurrences(of: "<<SYS>>", with: "")
+            .replacingOccurrences(of: "<</SYS>>", with: "")
+            .replacingOccurrences(of: "<|eot_id|>", with: "")
+            .replacingOccurrences(of: "<|start_header_id|>", with: "")
+            .replacingOccurrences(of: "<|end_header_id|>", with: "")
 
         // Chat endpoint returns SSE (text/event-stream). Collect all
         // data: {"choices":[{"delta":{"content":"..."}}]} chunks until [DONE].
