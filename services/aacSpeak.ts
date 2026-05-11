@@ -35,11 +35,20 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     // ("capital I" instead of the pronoun "I"). Appending a period forces
     // the TTS engine to read it as a word, not spell it.
     let toSpeak = text;
+    let translationSucceeded = false;
     if (translating) {
-      toSpeak = translateTextSync(text, inLang, outLang);
+      const translated = translateTextSync(text, inLang, outLang);
+      translationSucceeded = translated.toLowerCase() !== text.trim().toLowerCase();
+      toSpeak = translated;
     }
     if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
-    const ttsCode = translating ? getTTSCode(outLang) : getTTSCode(inLang);
+    // Use target-language voice only when translation actually changed the text.
+    // If the word wasn't in the dictionary (e.g. "mânânc" → no Russian mapping),
+    // speak it with the SOURCE voice so Romanian words don't get mangled by a
+    // Russian TTS engine (which produces wrong/English-sounding accent).
+    const ttsCode = (translating && translationSucceeded)
+      ? getTTSCode(outLang)
+      : getTTSCode(inLang);
     // Emit a highlight-start event so the renderer (MessageBar) can
     // light up each word as it's spoken. The duration is estimated
     // — see services/ttsHighlightBus.ts for the heuristic. We emit
