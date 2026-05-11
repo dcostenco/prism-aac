@@ -134,7 +134,6 @@ function PageLabel({ label }: { label: string }) {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function CategoryPanel() {
-  console.count('[render] CategoryPanel');
   const { t } = useT();
   const {
     sidePanel, activeCategoryId, categoryPath, activeSequenceId, activeSequenceStep,

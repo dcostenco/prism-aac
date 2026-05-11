@@ -99,7 +99,6 @@ function computeStableSlots(prev: string[], predictions: string[]): string[] {
 }
 
 const PredictionTile = memo(function PredictionTile({ word, color, onTap }: { word: string; color: string; onTap: (w: string) => void }) {
-  console.count(`[render] PredictionTile:${word}`);
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
@@ -131,7 +130,6 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap }: { wo
 });
 
 export default function PredictionBar() {
-  console.count('[render] PredictionBar');
   const sidePanel = useUIStore((s) => s.sidePanel);
   const selectContact = useUIStore((s) => s.selectContact);
   const contacts = useContactsStore((s) => s.contacts);
