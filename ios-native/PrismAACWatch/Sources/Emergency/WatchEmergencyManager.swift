@@ -13,7 +13,6 @@ enum EmergencySeverity { case critical, urgent, medical, standard }
 final class WatchEmergencyManager: NSObject, ObservableObject {
 
     @Published private(set) var isActive = false
-    @Published private(set) var countdownText = "5"
     @Published private(set) var severity: EmergencySeverity = .standard
     @Published private(set) var countdownSecs = 5
 
@@ -56,7 +55,6 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         activePhrase = String(phrase.prefix(200))
         self.severity = severity
         countdownSecs = 5
-        countdownText = "5"
         cellularFallbackSent = false
 
         let deadline = Date().addingTimeInterval(5)  // absolute deadline
@@ -85,7 +83,6 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                 // Use absolute deadline, not tick count — immune to background freeze
                 let remaining = max(0, Int(deadline.timeIntervalSinceNow.rounded(.up)))
                 self.countdownSecs = remaining
-                self.countdownText = "\(remaining)"
                 if Date() >= deadline {
                     t.invalidate()
                     if let task = self.activeBgTask {
@@ -97,7 +94,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                         NSLog("[WatchEmergency] Timer fired but activePhrase is nil — aborting escalation")
                         return
                     }
-                    await self.escalate(phrase: p, severity: severity)
+                    await self.escalate(phrase: p, severity: self.severity)  // #22: use self.severity, not captured parameter
                 }
             }
         }
@@ -118,7 +115,10 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         } catch {
             NSLog("[WatchEmergency] AVAudioSession setup failed: \(error) — proceeding with speech anyway")
         }
-        synthesizer.speak(AVSpeechUtterance(string: "Help! Emergency!"))
+        let triggerUtt = AVSpeechUtterance(string: "Help! Emergency!")
+        triggerUtt.volume = 1.0
+        triggerUtt.rate = 0.4
+        synthesizer.speak(triggerUtt)
     }
 
     // FIX 5: Severity guard on cancel — critical emergencies cannot be cancelled
@@ -142,16 +142,10 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         countdownTimer = nil
         isActive = false
         activePhrase = nil  // C6: clear on cancel
-        // #19: Capture flags before reset — used to decide whether to stop synthesizer
-        let didEscalate = hasEscalated
-        let currentSeverity = severity
         severity = .standard
         cellularFallbackSent = false  // FIX 8: reset debounce on cleanup
         hasEscalated = false  // FIX 4: reset escalation flag for next emergency
-        // #19: Don't cut off the emergency TTS if it hasn't escalated yet
-        if didEscalate || currentSeverity == .standard {
-            synthesizer.stopSpeaking(at: .immediate)
-        }
+        synthesizer.stopSpeaking(at: .immediate)  // #5: always stop TTS on cleanup
         // #2: cancel stored SOS haptic task
         sosHapticTask?.cancel()
         sosHapticTask = nil
@@ -169,10 +163,13 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
     private func escalate(phrase: String, severity: EmergencySeverity) async {
         guard !hasEscalated else { return }
+        // #2: NOTE: hasEscalated is set optimistically before delivery is confirmed.
+        // sendPhrase is fire-and-forget via WCSessionRouter. If WC delivery fails AND
+        // cellular fallback fails, the child sees "HELP COMING" but no alert was sent.
+        // Improvement: await WCSession replyHandler confirmation before setting hasEscalated = true.
+        // Full fix requires refactoring sendPhrase to use the reply-handler path and
+        // awaiting the result here — deferred to avoid architectural churn mid-release.
         sendPhrase(phrase, isEmergency: true, severity: severity)
-        // #18: hasEscalated is set optimistically — sendPhrase is fire-and-forget.
-        // TODO: await delivery confirmation from WCSession reply before setting hasEscalated = true
-        // Currently: if WC and cellular both fail, UI says "HELP COMING" but no alert was sent.
         hasEscalated = true  // FIX 4: allow critical emergency dismiss post-escalation
         // #6/#8: stored watchdog — auto-cleanup 30s after escalation if UI hasn't dismissed
         watchdogTask = Task { @MainActor [weak self] in
@@ -246,8 +243,14 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             let (_, response) = try await URLSession.shared.data(for: req)
             if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
                 NSLog("[WatchEmergency] Cellular fallback dispatch succeeded (\(http.statusCode))")
+            } else if let http = response as? HTTPURLResponse, (500...599).contains(http.statusCode) {
+                NSLog("[WatchEmergency] Cellular fallback 5xx (\(http.statusCode)) — retry in 2s")
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                guard isActive else { return }  // don't retry if emergency was cancelled
+                cellularFallbackSent = false    // allow one retry
+                await attemptCellularFallback()
             } else {
-                NSLog("[WatchEmergency] Cellular fallback returned error status — using TTS fallback")
+                NSLog("[WatchEmergency] Cellular fallback failed — TTS fallback")
                 speakEmergencyFallback()
             }
         } catch {

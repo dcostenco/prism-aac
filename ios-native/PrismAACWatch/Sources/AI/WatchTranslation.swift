@@ -23,12 +23,8 @@ final class WatchTranslation: ObservableObject {
     // Uses the same working chat endpoint as WatchAISession — no dedicated
     // /translate route exists on the portal. A minimal system prompt tells
     // the AI to return only the translation with no explanation.
-    private let chatURL: URL = {
-        guard let url = URL(string: "https://synalux.ai/api/v1/prism-aac/chat") else {
-            fatalError("[WatchTranslation] Invalid chat URL")
-        }
-        return url
-    }()
+    // #18: force-unwrap instead of fatalError — both crash on bad literal, but ! is idiomatic for known-good literals
+    private let chatURL = URL(string: "https://synalux.ai/api/v1/prism-aac/chat")!
 
     // MARK: - Phrase translation (tap-to-speak)
 
@@ -97,6 +93,7 @@ final class WatchTranslation: ObservableObject {
             .replacingOccurrences(of: "<|end_of_turn|>", with: "")
             .replacingOccurrences(of: "<|start_of_turn|>", with: "")
             // #23: HTML entity stripping — prevents prompt injection via encoded angle brackets
+            .replacingOccurrences(of: "&#x", with: "")  // #24: hex entities (e.g. &#x3C; = <)
             .replacingOccurrences(of: "&#", with: "")
             .replacingOccurrences(of: "&lt;", with: "")
             .replacingOccurrences(of: "&gt;", with: "")
@@ -117,7 +114,7 @@ final class WatchTranslation: ObservableObject {
                     ["role": "user", "content": safeText],
                 ],
                 "max_tokens": 50,
-                "stream": false,
+                "stream": true,   // #7: matches assembleSSE() SSE parser — stream:false sent non-SSE, silently failing
             ])
         } catch {
             NSLog("[WatchTranslation] JSON serialization failed: \(error) — returning nil")
@@ -177,6 +174,12 @@ final class WatchTranslation: ObservableObject {
     /// Show Watch dictation UI (caller presents a TextField sheet).
     func startListening(inputLang: String, outputLang: String, tts: WatchTTS) {
         isListening = true
+        // #28: safety reset — if handleDictation is never called (e.g. user cancels without submitting),
+        // isListening would remain true indefinitely. Reset after 60s max.
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 60_000_000_000)
+            self?.isListening = false
+        }
     }
 
     // #45: stopListening() removed — handleDictation() sets isListening = false directly

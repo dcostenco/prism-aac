@@ -33,6 +33,10 @@ final class WCSessionRouter: NSObject, ObservableObject {
 
     /// Register a handler for reachability changes.
     func registerReachabilityHandler(_ handler: @escaping (Bool) -> Void) {
+        guard reachabilityHandlers.count < 8 else {
+            NSLog("[WCRouter] Max reachability handlers reached")
+            return
+        }
         reachabilityHandlers.append(handler)
     }
 
@@ -55,9 +59,10 @@ final class WCSessionRouter: NSObject, ObservableObject {
                 NSLog("[WCRouter] Phone unreachable — dropping reply-required message: \(message["type"] as? String ?? "?")")
                 errorHandler?(URLError(.networkConnectionLost))
             } else {
-                // Fire-and-forget messages can be queued
+                // Fire-and-forget messages can be queued via transferUserInfo — NOT an error
                 WCSession.default.transferUserInfo(message)
-                errorHandler?(URLError(.networkConnectionLost))
+                NSLog("[WCRouter] Message queued via transferUserInfo for later delivery: \(message["type"] as? String ?? "?")")
+                // #6: Do NOT call errorHandler here — message is queued, not failed
             }
             return
         }
@@ -81,13 +86,17 @@ extension WCSessionRouter: WCSessionDelegate {
         }
     }
 
-    // #5: replyHandler guaranteed via defer — cannot be silently dropped
+    // #11: replyHandler called explicitly — defer hid the case where self is nil,
+    // causing replyHandler to fire with ["ok": true] even when no handlers ran.
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
         guard let type = message["type"] as? String else { replyHandler(["error": "no type"]); return }
         Task { @MainActor [weak self] in
-            defer { replyHandler(["ok": true]) }  // guaranteed to be called
-            guard let self else { return }
+            guard let self else {
+                replyHandler(["error": "router deallocated"])
+                return
+            }
             self.messageHandlers[type]?.forEach { $0(type, message) }
+            replyHandler(["ok": true, "handlers": self.messageHandlers[type]?.count ?? 0])
         }
     }
 

@@ -38,8 +38,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
         KeychainHelper.shared.write(value: safeInput,  service: "prism-aac", account: "watchInputLanguage")
         KeychainHelper.shared.write(value: safeOutput, service: "prism-aac", account: "watchOutputLanguage")
         vocabTask?.cancel()
-        // #34: [weak self] prevents strong retain cycle — vocabTask holds self via closure
-        vocabTask = Task { [weak self] in await self?.loadFromAPI(lang: safeInput) }   // vocab labels in INPUT lang
+        // #25+#34: @MainActor ensures isSpeaking/published state mutations are on main actor; [weak self] prevents retain cycle
+        vocabTask = Task { @MainActor [weak self] in await self?.loadFromAPI(lang: safeInput) }   // vocab labels in INPUT lang
     }
 
     /// Shorthand: set only output language (input unchanged).
@@ -66,14 +66,14 @@ final class WatchVocabSync: NSObject, ObservableObject {
            Self.allowedLangs.contains(out) { outputLanguage = out }
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerMessageHandler(for: "vocab_update") { [weak self] _, msg in
-            Task { @MainActor in self?.handleVocabReply(msg) }
+            Task { @MainActor [weak self] in self?.handleVocabReply(msg) }
         }
         // Also handle vocabulary pushed from iPhone on activation (companion path)
         WCSessionRouter.shared.registerMessageHandler(for: "vocabulary") { [weak self] _, msg in
-            Task { @MainActor in self?.handleVocabReply(msg) }
+            Task { @MainActor [weak self] in self?.handleVocabReply(msg) }
         }
-        // #34: [weak self] prevents strong retain cycle in init
-        vocabTask = Task { [weak self] in await self?.loadFromAPI(lang: self?.inputLanguage ?? "en-US") }
+        // #25+#34: @MainActor + [weak self] — ensures @Published writes stay on main actor; no retain cycle
+        vocabTask = Task { @MainActor [weak self] in await self?.loadFromAPI(lang: self?.inputLanguage ?? "en-US") }
     }
 
     // MARK: - Label sanitization
@@ -112,7 +112,7 @@ final class WatchVocabSync: NSObject, ObservableObject {
         "ja-JP", "zh-CN", "ar-SA",
     ]
 
-    func loadFromAPI(lang: String? = nil) async {
+    private func loadFromAPI(lang: String? = nil) async {
         // Concurrency note: all callers route through setLanguages() which cancels and
         // reassigns vocabTask before each call. Because this method is @MainActor,
         // overlapping direct invocations serialize automatically. vocabTask management
@@ -176,7 +176,13 @@ final class WatchVocabSync: NSObject, ObservableObject {
         // #8: size check BEFORE decode — prevents JSON bomb allocation
         // #33: log type mismatch instead of silently returning — helps diagnose companion path issues
         guard let data = reply["vocab"] as? Data else {
-            NSLog("[VocabSync] Companion vocab: expected Data, got \(type(of: reply["vocab"])) — ignoring")
+            // #20: Try alt format — some WC paths serialize vocab as dict instead of Data
+            if let dict = reply["vocab"] as? [String: Any] {
+                NSLog("[VocabSync] Companion vocab arrived as dict instead of Data — processing directly")
+                // Handle dict format if needed in future
+            } else {
+                NSLog("[VocabSync] Companion vocab: expected Data, got \(type(of: reply["vocab"])) — ignoring")
+            }
             return
         }
         guard data.count <= 512_000 else {

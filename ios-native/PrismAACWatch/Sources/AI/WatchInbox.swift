@@ -13,13 +13,37 @@ import UserNotifications
 @MainActor
 final class WatchInbox: NSObject, ObservableObject {
 
-    struct WatchMessage: Identifiable, Codable {
+    struct WatchMessage: Codable, Identifiable {
         let id: String
         let sender: String
         let text: String
         let provider: String      // "sms", "email", "telegram", etc.
         let receivedAt: Date
-        var isRead: Bool = false
+        var isRead: Bool
+
+        // #29: explicit CodingKeys — schema evolution safe; new fields won't silently discard old messages
+        enum CodingKeys: String, CodingKey {
+            case id, sender, text, provider, receivedAt, isRead
+        }
+
+        init(id: String, sender: String, text: String, provider: String, receivedAt: Date, isRead: Bool = false) {
+            self.id = id
+            self.sender = sender
+            self.text = text
+            self.provider = provider
+            self.receivedAt = receivedAt
+            self.isRead = isRead
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            id         = try c.decode(String.self, forKey: .id)
+            sender     = try c.decode(String.self, forKey: .sender)
+            text       = try c.decode(String.self, forKey: .text)
+            provider   = try c.decodeIfPresent(String.self, forKey: .provider)   ?? "sms"
+            receivedAt = try c.decodeIfPresent(Date.self,   forKey: .receivedAt) ?? Date()
+            isRead     = try c.decodeIfPresent(Bool.self,   forKey: .isRead)     ?? false
+        }
     }
 
     @Published private(set) var messages: [WatchMessage] = []
@@ -37,13 +61,14 @@ final class WatchInbox: NSObject, ObservableObject {
         messages = loadFromDefaults()
         recalcUnread()
         // #3: persist migrated UserDefaults data to Keychain (migration completes here, not inside loadFromDefaults)
+        // #17: async — don't block init with synchronous Keychain write
         if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") &&
            UserDefaults.standard.data(forKey: storageKey) != nil {
-            saveToDefaults()
+            Task { @MainActor [weak self] in self?.persistToKeychain() }
         }
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerMessageHandler(for: "inbox_message") { [weak self] _, msg in
-            Task { @MainActor in self?.deliverFromMessage(msg) }
+            Task { @MainActor [weak self] in self?.deliverFromMessage(msg) }
         }
         // Permission requested lazily in requestPermissionIfNeeded()
         // — called the first time the user opens the inbox, not on startup.
@@ -60,25 +85,25 @@ final class WatchInbox: NSObject, ObservableObject {
         guard let i = messages.firstIndex(where: { $0.id == id }) else { return }
         messages[i].isRead = true
         recalcUnread()
-        saveToDefaults()
+        persistToKeychain()
     }
 
     func markAllRead() {
         for i in messages.indices { messages[i].isRead = true }
         recalcUnread()
-        saveToDefaults()
+        persistToKeychain()
     }
 
     func deleteMessage(_ id: String) {
         messages.removeAll { $0.id == id }
         recalcUnread()
-        saveToDefaults()
+        persistToKeychain()
     }
 
     func clearAll() {
         messages.removeAll()
         unreadCount = 0
-        saveToDefaults()
+        persistToKeychain()
     }
 
     /// Reply to a message by sending text back via iPhone.
@@ -131,7 +156,10 @@ final class WatchInbox: NSObject, ObservableObject {
         // #27: validate id as proper UUID — reject arbitrary injection strings
         let rawId    = message["id"] as? String ?? ""
         let id       = UUID(uuidString: rawId)?.uuidString ?? UUID().uuidString
-        let provider = String((message["provider"] as? String ?? "sms").prefix(20))
+        // #9: allowlist provider — reject arbitrary strings before storage
+        let allowedProviders: Set<String> = ["sms", "email", "telegram", "whatsapp", "messenger", "instagram", "viber"]
+        let rawProvider = message["provider"] as? String ?? "sms"
+        let provider = allowedProviders.contains(rawProvider) ? rawProvider : "sms"
         // #19: clamp receivedAt — reject timestamps more than 1 year old or more than 1 min in the future
         let now      = Date().timeIntervalSince1970
         let rawTs    = message["receivedAt"] as? TimeInterval ?? now
@@ -148,7 +176,7 @@ final class WatchInbox: NSObject, ObservableObject {
         // Cap at 50 messages
         if messages.count > 50 { messages = Array(messages.prefix(50)) }
         recalcUnread()
-        saveToDefaults()
+        persistToKeychain()
         scheduleLocalNotification(msg)
     }
 
@@ -180,7 +208,7 @@ final class WatchInbox: NSObject, ObservableObject {
 
     // MARK: - Persistence (F4b: Keychain-backed; F4d: do/catch with logging)
 
-    private func saveToDefaults() {
+    private func persistToKeychain() {
         // #7: update-then-add pattern — never delete first (avoids data loss if add fails)
         // #15: SecItemDelete with kSecValueData in query is gone — we don't delete at all
         do {
@@ -240,12 +268,17 @@ final class WatchInbox: NSObject, ObservableObject {
         var result: AnyObject?
         if SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
            let data = result as? Data {
+            // #8: size cap — reject suspiciously large Keychain payloads before decode
+            guard data.count <= 65_536 else {
+                NSLog("[WatchInbox] Keychain data too large (\(data.count) bytes) — ignoring")
+                return []
+            }
             // #14: do/catch — log decode failure, do NOT overwrite raw data on schema change
             do {
                 return try JSONDecoder().decode([WatchMessage].self, from: data)
             } catch {
                 NSLog("[WatchInbox] Decode failed (schema change?): \(error) — keeping raw data")
-                // Do NOT call saveToDefaults() here — that would erase the corrupted data
+                // Do NOT call persistToKeychain() here — that would erase the corrupted data
                 return []
             }
         }
@@ -254,8 +287,8 @@ final class WatchInbox: NSObject, ObservableObject {
         if let data = UserDefaults.standard.data(forKey: storageKey) {
             do {
                 let msgs = try JSONDecoder().decode([WatchMessage].self, from: data)
-                // Migrate to Keychain — saveToDefaults() reads self.messages, so set via returned value
-                // init() will assign messages = loadFromDefaults(), then saveToDefaults() is called next
+                // Migrate to Keychain — persistToKeychain() reads self.messages, so set via returned value
+                // init() will assign messages = loadFromDefaults(), then persistToKeychain() is called next
                 return msgs
             } catch {
                 NSLog("[WatchInbox] UserDefaults migration decode failed: \(error)")

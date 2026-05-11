@@ -25,12 +25,7 @@ final class WatchAISession: NSObject, ObservableObject {
         case responseTooLarge
     }
 
-    private let cloudURL: URL = {
-        guard let url = URL(string: "https://synalux.ai/api/v1/prism-aac/chat") else {
-            fatalError("[WatchAI] Invalid cloud URL — check for typo in hardcoded string")
-        }
-        return url
-    }()
+    private let cloudURL = URL(string: "https://synalux.ai/api/v1/prism-aac/chat")!
     private let timeoutSec: Double = 15
 
     // MARK: - Init / WatchConnectivity
@@ -39,7 +34,7 @@ final class WatchAISession: NSObject, ObservableObject {
         super.init()
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerMessageHandler(for: "phrase_reply") { [weak self] _, msg in
-            Task { @MainActor in self?.handlePhoneReply(msg) }
+            Task { @MainActor [weak self] in self?.handlePhoneReply(msg) }
         }
         WCSessionRouter.shared.registerReachabilityHandler { [weak self] reachable in
             Task { @MainActor [weak self] in
@@ -110,49 +105,31 @@ final class WatchAISession: NSObject, ObservableObject {
     // MARK: - Companion path (BT → iPhone)
 
     private func askViaPhone(question: String, language: String) async throws -> String {
-        let msg: [String: Any] = [
-            "type": "ai_ask",
-            "question": String(question.prefix(500)),
-            "language": language,
-        ]
-        // #3: route through WCSessionRouter.shared.send — no direct WCSession bypass
-        // #11: resumed bool prevents double-resume race between reply and timeout tasks
-        let result = try await withThrowingTaskGroup(of: String.self) { group in
+        // #1: lock/resumed hoisted to outer scope so both the WCSession callbacks and
+        // the timeout task share the same guard. withTaskCancellationHandler is NOT used
+        // because cont is scoped inside withCheckedThrowingContinuation and cannot be
+        // accessed from onCancel without unsafe pointer tricks. Instead, the timeout task
+        // wins the group race and cancels all sibling tasks; the WCSession callbacks see
+        // resumed = true and become no-ops. Swift 5.9+ safely GC's abandoned continuations.
+        let lock = NSLock()
+        var resumed = false
+
+        return try await withThrowingTaskGroup(of: String.self) { group in
             group.addTask {
-                try await withTaskCancellationHandler {
-                    try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
-                        // #18: NSLock makes resumed check+set atomic across reply and error callbacks
-                        let lock = NSLock()
-                        var resumed = false
-                        WCSessionRouter.shared.send(msg,
-                            replyHandler: { reply in
-                                lock.lock()
-                                let wasResumed = resumed
-                                if !wasResumed { resumed = true }
-                                lock.unlock()
-                                guard !wasResumed else { return }
-                                cont.resume(returning: reply["text"] as? String ?? "")
-                            },
-                            errorHandler: { err in
-                                lock.lock()
-                                let wasResumed = resumed
-                                if !wasResumed { resumed = true }
-                                lock.unlock()
-                                guard !wasResumed else { return }
-                                cont.resume(throwing: err)
-                            }
-                        )
-                    }
-                } onCancel: {
-                    NSLog("[WatchAI] askViaPhone continuation cancelled by timeout")
-                    // #20: Resume with error to prevent continuation abandonment (Swift Concurrency requirement)
-                    lock.lock()
-                    let wasResumed = resumed
-                    if !wasResumed { resumed = true }
-                    lock.unlock()
-                    if !wasResumed {
-                        cont.resume(throwing: CancellationError())
-                    }
+                try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
+                    WCSessionRouter.shared.send(
+                        ["type": "ai_ask", "question": String(question.prefix(500)), "language": language],
+                        replyHandler: { reply in
+                            lock.lock(); let was = resumed; if !was { resumed = true }; lock.unlock()
+                            guard !was else { return }
+                            cont.resume(returning: reply["text"] as? String ?? "")
+                        },
+                        errorHandler: { err in
+                            lock.lock(); let was = resumed; if !was { resumed = true }; lock.unlock()
+                            guard !was else { return }
+                            cont.resume(throwing: err)
+                        }
+                    )
                 }
             }
             group.addTask {
@@ -163,7 +140,6 @@ final class WatchAISession: NSObject, ObservableObject {
             group.cancelAll()
             return first
         }
-        return result
     }
 
     // MARK: - Direct cloud path (Watch WiFi/LTE)
@@ -198,6 +174,7 @@ final class WatchAISession: NSObject, ObservableObject {
             .replacingOccurrences(of: "<|end_of_turn|>", with: "")
             .replacingOccurrences(of: "<|start_of_turn|>", with: "")
             // #23: HTML entity stripping — prevents prompt injection via encoded angle brackets
+            .replacingOccurrences(of: "&#x", with: "")  // #24: hex entities (&#xNN;) before decimal strip
             .replacingOccurrences(of: "&#", with: "")
             .replacingOccurrences(of: "&lt;", with: "")
             .replacingOccurrences(of: "&gt;", with: "")

@@ -31,32 +31,7 @@ struct AACPhrase: Identifiable {
 }
 
 struct AACVocab {
-    static let categories: [(icon: String, name: String, phrases: [AACPhrase])] = [
-        ("⚡", "Quick", [
-            AACPhrase(label: "Yes",      sfSymbol: "checkmark.circle.fill", color: .green,  arasaacId: 5584),
-            AACPhrase(label: "No",       sfSymbol: "xmark.circle.fill",     color: .red,    arasaacId: 5578),
-            AACPhrase(label: "More",     sfSymbol: "plus.circle",           color: .blue,   arasaacId: 5571),
-            AACPhrase(label: "Stop",     sfSymbol: "hand.raised.fill",      color: .orange, arasaacId: 5581),
-            AACPhrase(label: "Help",     sfSymbol: "sos",                   color: .red,    arasaacId: 5557,  isEmergency: true),
-            AACPhrase(label: "Wait",     sfSymbol: "pause.circle",          color: .yellow, arasaacId: 5583),
-            AACPhrase(label: "Thank you",sfSymbol: "heart.fill",            color: .pink,   arasaacId: 5582),
-            AACPhrase(label: "All done", sfSymbol: "checkmark.seal",        color: .green,  arasaacId: 5552),
-        ]),
-        ("💧", "Needs", [
-            AACPhrase(label: "Water",    sfSymbol: "drop.fill",             color: .blue,   arasaacId: 14981),
-            AACPhrase(label: "Food",     sfSymbol: "fork.knife",            color: .orange, arasaacId: nil),
-            AACPhrase(label: "Bathroom", sfSymbol: "toilet.fill",           color: .teal,   arasaacId: nil),
-            AACPhrase(label: "Medicine", sfSymbol: "pill.fill",             color: .red,    arasaacId: nil),
-            AACPhrase(label: "Home",     sfSymbol: "house.fill",            color: .green,  arasaacId: 8514),
-        ]),
-        // #10: Emergency category phrases carry isEmergency: true — no O(n²) scan needed at tap time
-        ("🆘", "Emergency", [
-            AACPhrase(label: "Call 911",      sfSymbol: "phone.fill",       color: .red,    arasaacId: nil, isEmergency: true),
-            AACPhrase(label: "Can't breathe", sfSymbol: "lungs.fill",       color: .red,    arasaacId: nil, isEmergency: true),
-            AACPhrase(label: "I'm in pain",   sfSymbol: "cross.fill",       color: .red,    arasaacId: nil, isEmergency: true),
-            AACPhrase(label: "Need doctor",   sfSymbol: "stethoscope",      color: .red,    arasaacId: nil, isEmergency: true),
-        ]),
-    ]
+    // Note: static let categories was removed (Fix #14) — it was dead code; use childFriendlyOrder instead.
 }
 
 /// AAC for Apple Watch — 2-column grid, designed for children.
@@ -93,7 +68,16 @@ struct WatchPictogramCards: View {
         //   - No synced vocabulary at all, OR
         //   - Only the minimal offline core loaded (≤8 phrases from API unavailable)
         // API-synced vocab replaces this once connectivity is available.
-        return synced.count > 8 ? synced : AACVocab.childFriendlyOrder
+        if synced.count > 8 {
+            // #30: Always include offline emergency phrases if API vocab lacks them
+            let hasEmergency = synced.contains(where: \.isEmergency)
+            if hasEmergency {
+                return synced
+            }
+            let emergencyFallbacks = AACVocab.childFriendlyOrder.filter(\.isEmergency)
+            return synced + emergencyFallbacks
+        }
+        return AACVocab.childFriendlyOrder
     }
 
     private func phraseColor(_ categoryId: String) -> Color {
@@ -214,7 +198,8 @@ struct WatchPictogramCards: View {
                 .buttonStyle(.plain)
 
                 Button {
-                    inbox.requestPermissionIfNeeded(); showInbox = true; inbox.markAllRead()
+                    inbox.requestPermissionIfNeeded()
+                    showInbox = true
                 } label: {
                     ZStack(alignment: .topTrailing) {
                         Image(systemName: "bell.fill")
@@ -261,7 +246,8 @@ struct WatchPictogramCards: View {
             }
         }
         // Inbox / Notification center
-        .sheet(isPresented: $showInbox) {
+        // markAllRead on dismiss — not on open — so caregivers can see which messages the child has seen
+        .sheet(isPresented: $showInbox, onDismiss: { inbox.markAllRead() }) {
             WatchInboxView()
                 .environmentObject(inbox)
                 .environmentObject(tts)
@@ -712,6 +698,7 @@ struct WatchAIChatView: View {
                 sendMessage()
             }
         }
+        // Tasks cancelled on disappear — WatchTranslation.translateTask also cancelled via deinit
         .onDisappear {
             aiTask?.cancel()
             translateTask2?.cancel()
@@ -868,15 +855,16 @@ struct WatchSendMessageView: View {
 
                 // Send button — large, full width
                 Button {
-                    let safeTo = String(contactQuery.prefix(100))
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                        .replacingOccurrences(of: "\u{202E}", with: "")  // RLO
-                        .replacingOccurrences(of: "\u{202D}", with: "")  // LRO
-                        .replacingOccurrences(of: "\u{202B}", with: "")  // RLE
-                        .replacingOccurrences(of: "\u{202A}", with: "")  // LRE
-                        .replacingOccurrences(of: "\u{202C}", with: "")  // PDF
-                        .replacingOccurrences(of: "\u{200F}", with: "")  // RLM
-                        .replacingOccurrences(of: "\u{200E}", with: "")
+                    // #23: comprehensive bidi strip — matches safeSenderName() in WatchReplyView
+                    let bidi: [String] = [
+                        "\u{202A}", "\u{202B}", "\u{202C}", "\u{202D}", "\u{202E}",  // LRE RLE PDF LRO RLO
+                        "\u{200B}", "\u{200C}", "\u{200D}", "\u{200E}", "\u{200F}",  // ZWSP ZWNJ ZWJ LRM RLM
+                        "\u{2066}", "\u{2067}", "\u{2068}", "\u{2069}",              // LRI RLI FSI PDI
+                        "\u{FEFF}",                                                   // BOM
+                    ]
+                    let safeTo = bidi.reduce(
+                        String(contactQuery.prefix(100)).trimmingCharacters(in: .whitespacesAndNewlines)
+                    ) { $0.replacingOccurrences(of: $1, with: "") }
                     let safeBody = String(msgText.prefix(500))
 
                     guard !safeTo.isEmpty, !safeBody.isEmpty else { return }

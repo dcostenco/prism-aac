@@ -7,6 +7,7 @@ import AVFoundation
 final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     private let synthesizer = AVSpeechSynthesizer()
     @Published private(set) var isSpeaking = false
+    private var watchdogTask: Task<Void, Never>?
 
     override init() {
         super.init()
@@ -18,6 +19,7 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     // which ducks this synthesizer's output if active. This is acceptable — emergency speech has priority.
     func speak(_ text: String, language: String = "en-US", rate: Float = 0.52) {
         let safe = String(text.prefix(1000))
+        watchdogTask?.cancel()  // cancel previous watchdog
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
         let utt = AVSpeechUtterance(string: safe)
         utt.voice = AVSpeechSynthesisVoice(language: language)
@@ -31,9 +33,9 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         }
         isSpeaking = true
         synthesizer.speak(utt)
-        // #9: isSpeaking watchdog — resets stuck state if delegate never fires
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 60_000_000_000)
+        // #3: Cancellable watchdog — 30s max per utterance (replaces uncancellable 60s Task)
+        watchdogTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 30_000_000_000)
             guard self?.isSpeaking == true else { return }
             NSLog("[WatchTTS] isSpeaking watchdog fired — resetting stuck state")
             self?.isSpeaking = false
@@ -41,6 +43,8 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     }
 
     func stop() {
+        watchdogTask?.cancel()
+        watchdogTask = nil
         synthesizer.stopSpeaking(at: .immediate)
         isSpeaking = false
     }
@@ -50,6 +54,8 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer,
                                        didFinish utterance: AVSpeechUtterance) {
         Task { @MainActor [weak self] in
+            self?.watchdogTask?.cancel()
+            self?.watchdogTask = nil
             self?.isSpeaking = false
             // Deactivate session so other audio (calls, music) can resume
             // #10: Log deactivation errors instead of silently swallowing them
@@ -64,6 +70,8 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer,
                                        didCancel utterance: AVSpeechUtterance) {
         Task { @MainActor [weak self] in
+            self?.watchdogTask?.cancel()
+            self?.watchdogTask = nil
             self?.isSpeaking = false
             // #10: Log deactivation errors instead of silently swallowing them
             do {
