@@ -17,6 +17,8 @@ interface UIState {
   showSettings: boolean;
   showCategoryManager: boolean;
   isAlertFlashing: boolean;
+  /** Timestamp of last triggerAlert call — used for 5s cooldown. In state so tests can reset it. */
+  _alertLastFiredAt: number;
   openCategories: () => void;
   openMath: () => void;
   openCaregiver: () => void;
@@ -77,6 +79,7 @@ export const useUIStore = create<UIState>()((set) => ({
   showSettings: false,
   showCategoryManager: false,
   isAlertFlashing: false,
+  _alertLastFiredAt: 0,
 
   openCategories: () => set((s) => {
     // Sane navigation from every starting state:
@@ -101,13 +104,18 @@ export const useUIStore = create<UIState>()((set) => ({
     // Dynamically import contactsStore to avoid circular dep at module level.
     // Find the first contact whose phone or displayName matches senderKey.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { useContactsStore } = require('@/store/contactsStore') as { useContactsStore: { getState: () => { contacts: Array<{ id: string; phone?: string; displayName?: string }> } } };
+    const { useContactsStore } = require('@/store/contactsStore') as { useContactsStore: { getState: () => { contacts: Array<{ id: string; recipientId?: string; name?: string }> } } };
     const contacts = useContactsStore.getState().contacts;
-    const key = senderKey.toLowerCase().replace(/\s+/g, '');
+    if (!Array.isArray(contacts)) return;  // guard against SSR/edge cold start
+    const key = senderKey.slice(0, 200).toLowerCase().replace(/\s+/g, '');
     const match = contacts.find((c) => {
-      const phone = (c.phone ?? '').replace(/\s+/g, '');
-      const name  = (c.displayName ?? '').toLowerCase().replace(/\s+/g, '');
-      return phone.includes(key) || key.includes(phone) || name.includes(key) || key.includes(name);
+      const recipientId = (c.recipientId ?? '').toLowerCase().replace(/\s+/g, '');
+      const name = (c.name ?? '').toLowerCase().replace(/\s+/g, '');
+      // One-directional: contact fields must contain the key (not the reverse).
+      // Bidirectional key.includes(name) would match any short contact name
+      // (e.g. "Al") against unrelated senders that contain those letters.
+      return recipientId === key || name === key
+        || (key.length >= 4 && (recipientId.startsWith(key) || name.startsWith(key)));
     });
     set({ sidePanel: 'aac-chat', activeContactId: match?.id ?? null });
   },
@@ -123,11 +131,15 @@ export const useUIStore = create<UIState>()((set) => ({
   toggleCategoryKeyboard: () => set((s) => ({ categoryKeyboardOpen: !s.categoryKeyboardOpen })),
   closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: false }),
   selectCategory: (id) => set({ sidePanel: 'category-detail', activeCategoryId: id, categoryPath: [id] }),
-  drillIntoCategory: (id) => set((s) => ({
-    sidePanel: 'category-detail',
-    activeCategoryId: id,
-    categoryPath: [...s.categoryPath, id],
-  })),
+  drillIntoCategory: (id) => set((s) => {
+    if (typeof id !== 'string' || !id || id.length > 64) return s;
+    if (s.categoryPath.length >= 20) return s;
+    return {
+      sidePanel: 'category-detail',
+      activeCategoryId: id,
+      categoryPath: [...s.categoryPath, id],
+    };
+  }),
   navigateCategoryUp: () => set((s) => {
     const newPath = s.categoryPath.slice(0, -1);
     if (newPath.length === 0) return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [] };
@@ -149,9 +161,15 @@ export const useUIStore = create<UIState>()((set) => ({
   toggleSettings: () => set((s) => ({ showSettings: !s.showSettings })),
   toggleCategoryManager: () => set((s) => ({ showCategoryManager: !s.showCategoryManager })),
   triggerAlert: () => {
-    if (alertTimer) clearTimeout(alertTimer);
-    set({ isAlertFlashing: true });
-    alertTimer = setTimeout(() => { set({ isAlertFlashing: false }); alertTimer = null; }, 2000);
+    // 5-second cooldown prevents flooding emergency contacts on accidental rapid taps.
+    // _alertLastFiredAt lives in store state so test beforeEach resets it cleanly.
+    const now = Date.now();
+    set((s) => {
+      if (now - s._alertLastFiredAt < 5000) return {};
+      if (alertTimer) clearTimeout(alertTimer);
+      alertTimer = setTimeout(() => { set({ isAlertFlashing: false }); alertTimer = null; }, 2000);
+      return { isAlertFlashing: true, _alertLastFiredAt: now };
+    });
   },
   selectContact: (id) => set({ activeContactId: id }),
   backToContacts: () => set({ activeContactId: null }),

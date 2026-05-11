@@ -39,6 +39,7 @@ export function pictureModeForProfile(profile: SynaluxProfile | null): PictureMo
 }
 
 const STYLE_VERSION = 1;
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB cap — prevents OOM from oversized blobs
 const ARASAAC_API = 'https://api.arasaac.org/v1';
 const ARASAAC_CDN = 'https://static.arasaac.org/pictograms';
 // Large enough to hold a full vocabulary board without eviction.
@@ -167,9 +168,9 @@ async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
       headers: { 'Accept': 'application/json' },
       signal: searchT.signal,
     });
-    if (!res.ok) { arasaacMisses.add(missKey); return null; }
+    if (!res.ok) { if (arasaacMisses.size > 5000) arasaacMisses.clear(); arasaacMisses.add(missKey); return null; }
     const data: ArasaacHit[] = await res.json();
-    if (!Array.isArray(data) || data.length === 0) { arasaacMisses.add(missKey); return null; }
+    if (!Array.isArray(data) || data.length === 0) { if (arasaacMisses.size > 5000) arasaacMisses.clear(); arasaacMisses.add(missKey); return null; }
     id = data[0]._id;
   } catch {
     return null;
@@ -182,7 +183,11 @@ async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
       signal: imgT.signal,
     });
     if (!imgRes.ok) return null;
-    return await imgRes.blob();
+    const cl = imgRes.headers.get('content-length');
+    if (cl && parseInt(cl, 10) > MAX_IMAGE_BYTES) return null;
+    const blob = await imgRes.blob();
+    if (blob.size > MAX_IMAGE_BYTES) return null;
+    return blob;
   } catch {
     return null;
   } finally {
@@ -222,7 +227,17 @@ async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null
       console.warn(`[pictogram] Synalux AI returned non-image content-type "${ct}" for "${phrase}"`);
       return null;
     }
-    return await res.blob();
+    const cl = res.headers.get('content-length');
+    if (cl && parseInt(cl, 10) > MAX_IMAGE_BYTES) {
+      console.warn(`[pictogram] Synalux AI response too large (${cl} bytes) for "${phrase}"; skipping`);
+      return null;
+    }
+    const blob = await res.blob();
+    if (blob.size > MAX_IMAGE_BYTES) {
+      console.warn(`[pictogram] Synalux AI blob too large (${blob.size} bytes) for "${phrase}"; skipping`);
+      return null;
+    }
+    return blob;
   } catch (e) {
     console.warn(`[pictogram] Synalux AI fetch failed for "${phrase}":`, e instanceof Error ? e.message : e);
     return null;

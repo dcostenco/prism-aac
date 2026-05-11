@@ -243,7 +243,23 @@ export const useSettingsStore = create<SettingsState>()(
       },
       installedApps: [],
       voicePreferences: {},
-      update: (partial) => set((s) => ({ ...s, ...partial })),
+      update: (partial) => set((s) => {
+        // Persist language changes to a cookie so the SSR layout.tsx can
+        // read the correct lang attribute on the first server render, before
+        // client-side hydration. SameSite=Lax prevents cross-site leakage.
+        if (partial.language !== undefined && typeof document !== 'undefined') {
+          document.cookie = `prism-aac-settings-lang=${partial.language}; path=/; max-age=31536000; SameSite=Lax`;
+        }
+        return {
+          ...s,
+          ...partial,
+          // Clamp numeric fields so callers cannot persist out-of-range values
+          ...(partial.speechRate !== undefined
+            ? { speechRate: clampNumber(partial.speechRate, NUM_BOUNDS.speechRate) } : {}),
+          ...(partial.speechVolume !== undefined
+            ? { speechVolume: clampNumber(partial.speechVolume, NUM_BOUNDS.speechVolume) } : {}),
+        };
+      }),
       setTheme: (theme) => set({ theme }),
       setVoiceForLang: (lang, voiceId) => set((s) => {
         const baseLang = lang.toLowerCase().split(/[-_]/)[0];
@@ -290,7 +306,7 @@ export const useSettingsStore = create<SettingsState>()(
         };
       }),
       toolbarReset: () => set((s) => ({
-        toolbarConfig: { order: [...DEFAULT_TOOLBAR_ORDER], enabled: {} },
+        toolbarConfig: { order: [...DEFAULT_TOOLBAR_ORDER], enabled: { ...DEFAULT_TOOLBAR_ENABLED } },
         installedApps: s.installedApps,
       })),
       installApp: (appId) => set((s) => {
@@ -311,6 +327,7 @@ export const useSettingsStore = create<SettingsState>()(
         if (version < 4) s = { ...s, outputLanguage: s.outputLanguage ?? s.language ?? 'en' };
         if (version < 5) s = { ...s, headTrackingEnabled: s.headTrackingEnabled ?? false, headTrackingDwellMs: s.headTrackingDwellMs ?? 1200, headTrackingSensitivity: s.headTrackingSensitivity ?? 5 };
         if (version < 6) s = { ...s, showHandCalibration: s.showHandCalibration ?? true };
+        // NOTE: ?? true here was a regression — camera was incorrectly defaulted to ON. This was corrected in the v9 migration which forces cameraInputEnabled: false.
         if (version < 7) s = { ...s, cameraInputEnabled: s.cameraInputEnabled ?? true, cameraTrackingTarget: s.cameraTrackingTarget ?? 'right_wrist' };
         if (version < 8) s = { ...s, cameraTrackingTarget: s.cameraTrackingTarget === 'right_index' ? 'right_wrist' : (s.cameraTrackingTarget ?? 'right_wrist') };
         // v9: force-disable camera input on upgrade — the overlay was
@@ -412,10 +429,29 @@ export const useSettingsStore = create<SettingsState>()(
         const boolKeys = [
           'highContrast', 'headTrackingEnabled', 'headTrackingDriftAutoDisable',
           'showHandCalibration', 'cameraInputEnabled', 'aiAutocorrectEnabled',
-          'speakOnSentenceEnd',
+          'speakOnSentenceEnd', 'notificationsEnabled', 'mathTwoHitMagnify',
+          'headTrackingEyeGaze',
         ] as const;
         for (const k of boolKeys) {
           if (typeof incoming[k] === 'boolean') out[k] = incoming[k];
+        }
+        // mathHoldTimeMs — number clamped to plausible range (0 = instant, max 1500ms)
+        if (typeof incoming.mathHoldTimeMs === 'number' && Number.isFinite(incoming.mathHoldTimeMs)) {
+          out.mathHoldTimeMs = Math.min(Math.max(0, incoming.mathHoldTimeMs), 1500);
+        }
+        // headTrackingEyeGazeWeight — 0–1 blend weight
+        if (typeof incoming.headTrackingEyeGazeWeight === 'number' && Number.isFinite(incoming.headTrackingEyeGazeWeight)) {
+          out.headTrackingEyeGazeWeight = Math.min(Math.max(0, incoming.headTrackingEyeGazeWeight), 1);
+        }
+        // poseCalibrationGeneration — non-negative integer
+        if (typeof incoming.poseCalibrationGeneration === 'number' && Number.isFinite(incoming.poseCalibrationGeneration) && incoming.poseCalibrationGeneration >= 0) {
+          out.poseCalibrationGeneration = Math.floor(incoming.poseCalibrationGeneration);
+        }
+        // historyRegion — null or short ISO 3166-2 string
+        if (incoming.historyRegion === null) {
+          out.historyRegion = null;
+        } else if (typeof incoming.historyRegion === 'string' && /^[A-Z]{2}(-[A-Z0-9]{1,3})?$/i.test(incoming.historyRegion)) {
+          out.historyRegion = incoming.historyRegion;
         }
         // Numbers: clamp to plausible bounds.
         out.speechRate = clampNumber(incoming.speechRate, NUM_BOUNDS.speechRate);

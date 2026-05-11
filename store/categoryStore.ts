@@ -205,10 +205,27 @@ export const useCategoryStore = create<CategoryState>()(
       removeOrderingSequence: (id) =>
         set((s) => ({ orderingSequences: s.orderingSequences.filter((seq) => seq.id !== id) })),
 
-      updateOrderingSequence: (updated) =>
+      updateOrderingSequence: (updated) => {
+        if (!updated || typeof updated !== 'object') return;
+        if (typeof updated.id !== 'string' || !updated.id) return;
+        const cleanUpdated: OrderingSequenceData = {
+          ...updated,
+          name: sanitizeString(updated.name ?? '', MAX_NAME_LEN),
+          steps: (Array.isArray(updated.steps) ? updated.steps : []).slice(0, MAX_SEQUENCE_STEPS).map((step) => ({
+            ...step,
+            label: typeof step.label === 'string' ? sanitizeString(step.label, MAX_NAME_LEN) : '',
+            options: Array.isArray(step.options)
+              ? step.options
+                  .slice(0, MAX_SEQUENCE_OPTIONS_PER_STEP)
+                  .filter((o) => o && typeof o === 'object' && typeof o.text === 'string')
+                  .map((o) => ({ ...o, text: sanitizeString(o.text, MAX_PHRASE_LEN) }))
+              : [],
+          })),
+        };
         set((s) => ({
-          orderingSequences: s.orderingSequences.map((seq) => seq.id === updated.id ? updated : seq),
-        })),
+          orderingSequences: s.orderingSequences.map((seq) => seq.id === cleanUpdated.id ? cleanUpdated : seq),
+        }));
+      },
 
       seedTemplates: () => {
         if (get().seeded) return;

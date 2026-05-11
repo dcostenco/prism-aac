@@ -344,6 +344,8 @@ export default function SchedulePanel() {
   const ALARM_MAX_TICKS = 30; // ~60s ceiling
   const HAPTIC_PATTERN = [200, 100, 200, 100, 200]; // 3 short pulses
   const [alarmFlash, setAlarmFlash] = useState(false);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (flashTimerRef.current) clearTimeout(flashTimerRef.current); }, []);
   useEffect(() => {
     const isAlarmPhase = phase === 'first-armed' || phase === 'then-armed';
     if (!isAlarmPhase) {
@@ -357,9 +359,9 @@ export default function SchedulePanel() {
       setAlarmFlash(true);
       // Flash duration ≈ 600ms — long enough to be visually obvious,
       // short enough to leave the tile readable for the rest of the
-      // 2-second cycle. setTimeout cleanup is handled by the effect's
-      // disposer below since the flash is bounded.
-      window.setTimeout(() => setAlarmFlash(false), 600);
+      // 2-second cycle.
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = setTimeout(() => setAlarmFlash(false), 600);
     };
     fireAlarmCycle();
     ticks++;
@@ -367,6 +369,7 @@ export default function SchedulePanel() {
       if (ticks >= ALARM_MAX_TICKS) {
         clearInterval(id);
         setAlarmFlash(false);
+        stopAudioWarmup();  // MEDIUM #4 — release warmup when alarm ceiling hit
         return;
       }
       fireAlarmCycle();
@@ -438,6 +441,20 @@ export default function SchedulePanel() {
       </div>
 
       <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Screen-reader announcement for timer completion — assertive so it
+            interrupts any current readout and announces immediately when the
+            alarm phase begins (WCAG 2.1 SC 4.1.3 status messages). */}
+        <span
+          role="alert"
+          aria-live="assertive"
+          className="sr-only"
+          aria-atomic="true"
+        >
+          {(phase === 'first-armed' || phase === 'then-armed')
+            ? 'Timer complete — tap the button to confirm'
+            : ''}
+        </span>
+
         {/* First-Then Board */}
         <FirstThenBoard
           tasks={tasks}
@@ -503,6 +520,7 @@ export default function SchedulePanel() {
                   onChange={(e) => setNewTaskText(e.target.value)}
                   placeholder={t('add_task')}
                   className="flex-1 px-3 py-2 rounded-xl border border-theme surface-bar text-primary text-lg"
+                  maxLength={200}
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && newTaskText.trim()) {
@@ -614,6 +632,7 @@ export default function SchedulePanel() {
                         if (e.key === 'Escape') { setEditingTaskId(null); }
                       }}
                       className="flex-1 px-2 py-1 rounded-lg border border-theme surface-bar text-primary text-lg"
+                      maxLength={200}
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
                       aria-label={t('edit_task') ?? 'Edit task'}
@@ -756,15 +775,6 @@ function AlarmFlashOverlay() {
         background: 'rgba(255, 152, 0, 0.35)',  // amber — high-contrast yet eye-safe
         animation: 'prism-alarm-flash 600ms ease-out',
       }}
-    >
-      <style>{`
-        @keyframes prism-alarm-flash {
-          0%   { background: rgba(255, 152, 0, 0); }
-          30%  { background: rgba(255, 152, 0, 0.45); }
-          70%  { background: rgba(255, 152, 0, 0.45); }
-          100% { background: rgba(255, 152, 0, 0); }
-        }
-      `}</style>
-    </div>
+    />
   );
 }

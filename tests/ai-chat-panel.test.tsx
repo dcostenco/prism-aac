@@ -54,6 +54,8 @@ vi.mock('@/services/aiService', () => ({
 vi.mock('@/services/speechService', () => ({ speak: vi.fn(async () => {}) }));
 vi.mock('@/engine/i18n', () => ({
   getTTSCode: (lang: string) => `${lang}-XX`,
+  canonicalizeLang: (lang: string) => lang,
+  isRTL: () => false,
   SupportedLanguage: {},
 }));
 vi.mock('@/services/aacSpeak', () => ({ aacSpeak: vi.fn() }));

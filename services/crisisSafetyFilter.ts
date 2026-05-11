@@ -7,6 +7,14 @@
  * Also post-checks AI responses before display.
  */
 
+// Use word-boundary matching to prevent false positives
+// e.g. "sos" inside "osmosis", "please help" inside "pleasantly helpful"
+function wordBoundaryMatch(text: string, phrase: string): boolean {
+  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+');
+  // Use Unicode-aware word boundaries so Cyrillic/Arabic/CJK phrases match correctly
+  return new RegExp(`(?:^|[^\\p{L}])${escaped}(?:$|[^\\p{L}])`, 'iu').test(text);
+}
+
 const CRISIS_KEYWORDS = new Set([
   'kill myself', 'end my life', 'want to die', 'suicide', 'hurt myself',
   'self harm', "can't breathe", 'cant breathe', 'choking', 'help me',
@@ -15,10 +23,40 @@ const CRISIS_KEYWORDS = new Set([
   'not breathing', 'sos', 'please help',
 ]);
 
+// Multilingual crisis keywords — same deterministic Layer 1 protection for non-English users
+const CRISIS_KEYWORDS_MULTILINGUAL = new Set([
+  // Spanish
+  'quiero morir', 'quiero hacerme daño', 'no puedo respirar', 'necesito ayuda', 'llama al 911',
+  'alguien me lastimó', 'no estoy seguro', 'tengo miedo',
+  // French
+  'je veux mourir', 'je veux me faire du mal', 'au secours', 'appelez le 15', 'je ne peux pas respirer',
+  // Portuguese
+  'quero morrer', 'me machuquei', 'socorro', 'ligue 192', 'não consigo respirar',
+  // Romanian
+  'vreau să mor', 'ajutor', 'nu pot respira', 'sunați la 112', 'cineva m-a rănit',
+  // Russian
+  'хочу умереть', 'помогите', 'не могу дышать', 'позвони 112', 'мне плохо',
+  // Ukrainian
+  'хочу померти', 'допоможіть', 'не можу дихати', 'зателефонуйте 112',
+  // Arabic
+  'أريد أن أموت', 'ساعدني', 'لا أستطيع التنفس', 'اتصل بـ 911',
+  // German
+  'ich will sterben', 'ich kann nicht atmen', 'hilfe', 'ruf 112 an',
+  // Japanese
+  'しにたい', 'たすけて', 'いきができない', '119にかけて',
+  // Korean
+  '죽고 싶어', '도와주세요', '숨을 못 쉬어요', '119에 전화해',
+  // Chinese
+  '我想死', '救命', '我不能呼吸', '打911',
+]);
+
 const MEDICAL_DOSE_KEYWORDS = new Set([
   'how many mg', 'how many pills', 'how much medication',
   'medication dose', 'drug dose', 'overdose amount',
   'how much tylenol', 'how much ibuprofen', 'maximum dose', 'lethal dose',
+  // Pediatric / chronic illness dosing phrases common in AAC contexts
+  'how many units', 'how many drops', 'how many ml', 'how many milligrams',
+  'insulin dose', 'how much insulin', 'seizure medication dose',
 ]);
 
 export type SafetyResult =
@@ -28,26 +66,35 @@ export type SafetyResult =
 export function checkCrisisSafety(input: string): SafetyResult {
   const lower = input.toLowerCase();
 
+  const crisisResponse = {
+    safe: false as const,
+    kind: 'crisis' as const,
+    response: [
+      'If this is an emergency, call 911 (US) or your local emergency number now.',
+      '',
+      'For mental health crisis support:',
+      '• Call or text 988 (Suicide & Crisis Lifeline, US)',
+      '• Text HOME to 741741 (Crisis Text Line)',
+      '',
+      "I'm here with you. You are not alone.",
+    ].join('\n'),
+  };
+
   for (const kw of CRISIS_KEYWORDS) {
-    if (lower.includes(kw)) {
-      return {
-        safe: false,
-        kind: 'crisis',
-        response: [
-          'If this is an emergency, call 911 (US) or your local emergency number now.',
-          '',
-          'For mental health crisis support:',
-          '• Call or text 988 (Suicide & Crisis Lifeline, US)',
-          '• Text HOME to 741741 (Crisis Text Line)',
-          '',
-          "I'm here with you. You are not alone.",
-        ].join('\n'),
-      };
+    if (wordBoundaryMatch(lower, kw)) {
+      return crisisResponse;
+    }
+  }
+
+  const allMultilingualKeywords = [...CRISIS_KEYWORDS_MULTILINGUAL];
+  for (const kw of allMultilingualKeywords) {
+    if (wordBoundaryMatch(lower, kw)) {
+      return crisisResponse;
     }
   }
 
   for (const kw of MEDICAL_DOSE_KEYWORDS) {
-    if (lower.includes(kw)) {
+    if (wordBoundaryMatch(lower, kw)) {
       return {
         safe: false,
         kind: 'medical',

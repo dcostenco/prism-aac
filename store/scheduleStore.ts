@@ -180,8 +180,8 @@ export const useScheduleStore = create<ScheduleState>()(
           tasks: s.tasks.map((t) => {
             if (t.id !== id) return t;
             const next = { ...t };
-            if (patch.text !== undefined) next.text = patch.text;
-            if (patch.icon !== undefined) next.icon = patch.icon;
+            if (patch.text !== undefined) next.text = patch.text.slice(0, 500);
+            if (patch.icon !== undefined) next.icon = patch.icon.slice(0, 16);
             if (patch.textKey === null) {
               delete next.textKey;
             } else if (patch.textKey !== undefined) {
@@ -198,12 +198,18 @@ export const useScheduleStore = create<ScheduleState>()(
         })),
 
       addReward: (count = 1) =>
-        set((s) => ({ rewards: s.rewards + count })),
+        set((s) => ({
+          rewards: Math.min(s.rewards + Math.max(0, Math.floor(Number(count) || 1)), 999),
+        })),
 
-      setTimerSeconds: (seconds) => set({ timerSeconds: seconds }),
+      setTimerSeconds: (seconds) => set({
+        timerSeconds: Math.min(Math.max(1, Math.floor(Number(seconds) || 1)), 3600),
+      }),
 
-      startTimer: (durationSeconds) =>
-        set({ timerEndMs: Date.now() + durationSeconds * 1000 }),
+      startTimer: (durationSeconds) => {
+        const safe = Math.min(Math.max(1, Math.floor(Number(durationSeconds) || 1)), 3600);
+        set({ timerEndMs: Date.now() + safe * 1000 });
+      },
 
       resetTimer: () => set({ timerEndMs: 0 }),
 

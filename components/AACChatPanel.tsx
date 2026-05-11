@@ -14,6 +14,17 @@ import {
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 
+const AVATAR_ALLOWED_DOMAINS = ['synalux.ai', 'googleusercontent.com', 'telegram.org', 'whatsapp.net', 'fbcdn.net', 'twimg.com'];
+
+function isSafeAvatarUrl(url: string): boolean {
+  if (/^blob:/.test(url)) return true;
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:') return false;
+    return AVATAR_ALLOWED_DOMAINS.some((d) => u.hostname === d || u.hostname.endsWith('.' + d));
+  } catch { return false; }
+}
+
 /** Renders one tile in either the Frequent or All-contacts grid.
  *  Sectioned via `section` so a contact appearing in BOTH lists has
  *  unique data-testid + React keys (otherwise React warns about
@@ -34,8 +45,8 @@ function renderContactTile(
         aria-label={available ? c.name : `${c.name} — requires ${PROVIDER_MIN_TIER[c.provider]} plan`}
       >
         <span aria-hidden className="flex-shrink-0 w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-white/10">
-          {c.avatar
-            ? <img src={c.avatar} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display='none'; }} />
+          {c.avatar && isSafeAvatarUrl(c.avatar)
+            ? <img src={c.avatar} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display='none'; }} />
             : <span className="text-2xl">{PROVIDER_ICONS[c.provider]}</span>
           }
         </span>
@@ -43,7 +54,7 @@ function renderContactTile(
           <span className="font-bold truncate">{c.name}</span>
           <span className="text-xs text-secondary truncate">
             {PROVIDER_LABELS[c.provider]}
-            {c.lastMessagePreview ? ` · ${c.lastMessagePreview}` : ''}
+            {c.lastMessagePreview ? ` · ${c.lastMessagePreview.slice(0, 60)}${c.lastMessagePreview.length > 60 ? '…' : ''}` : ''}
           </span>
         </span>
         {!available && (
@@ -187,7 +198,23 @@ export default function AACChatPanel() {
     const submittedText = trimmed;
     tapFeedback();
     setSending(true);
-    const res = await sendToContact(submittedContact, submittedText, plan);
+    let res: Awaited<ReturnType<typeof sendToContact>>;
+    try {
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('timeout')), 15000);
+      });
+      try {
+        res = await Promise.race([sendToContact(submittedContact, submittedText, plan), timeoutPromise]);
+      } finally {
+        if (timeoutId !== null) clearTimeout(timeoutId);
+      }
+    } catch (e) {
+      if (!mountedRef.current) return;
+      setSending(false);
+      flashToast(tx('aac_chat_send_failed', 'Could not send. Please try again.'));
+      return;
+    }
     if (!mountedRef.current) return; // user closed the panel mid-await
     setSending(false);
     if (res.ok) {
@@ -208,7 +235,7 @@ export default function AACChatPanel() {
     } else if (res.error?.includes('not connected') || res.error?.includes('not_configured')) {
       flashToast(`${submittedContact.name}: Gmail not connected — go to Settings → Contacts → Reconnect Gmail`);
     } else {
-      flashToast(tx('aac_chat_send_failed', `Could not send: ${res.error}`));
+      flashToast(tx('aac_chat_send_failed', 'Could not send. Please try again.'));
     }
   }, [activeContact, sending, text, clearAll, tx, plan, flashToast, noteSentTo]);
 

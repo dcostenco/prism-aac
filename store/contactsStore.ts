@@ -110,7 +110,7 @@ function isValidStoredContact(c: unknown): c is AacContact {
   if (typeof x.provider !== 'string' || !VALID_PROVIDERS.has(x.provider as ContactProvider)) return false;
   if (typeof x.order !== 'number' || !Number.isFinite(x.order) || x.order < 0) return false;
   if (x.avatar !== undefined && (typeof x.avatar !== 'string' || x.avatar.length > MAX_AVATAR_LEN)) return false;
-  if (x.lastMessagePreview !== undefined && typeof x.lastMessagePreview !== 'string') return false;
+  if (x.lastMessagePreview !== undefined && (typeof x.lastMessagePreview !== 'string' || x.lastMessagePreview.length > 500)) return false;
   if (x.sendCount !== undefined && (typeof x.sendCount !== 'number' || !Number.isFinite(x.sendCount) || x.sendCount < 0)) return false;
   if (x.lastUsedAt !== undefined && (typeof x.lastUsedAt !== 'number' || !Number.isFinite(x.lastUsedAt) || x.lastUsedAt < 0)) return false;
   return true;
@@ -149,7 +149,7 @@ export const useContactsStore = create<ContactsState>()(
           return {
             contacts: [
               ...s.contacts,
-              { name, provider: c.provider, recipientId, avatar, lastMessagePreview: c.lastMessagePreview, id, order: s.contacts.length },
+              { name, provider: c.provider, recipientId, avatar, ...(c.lastMessagePreview ? { lastMessagePreview: c.lastMessagePreview.slice(0, 200) } : {}), id, order: s.contacts.length },
             ],
           };
         });
@@ -175,14 +175,17 @@ export const useContactsStore = create<ContactsState>()(
             }
           }
           if (patch.avatar !== undefined) next.avatar = patch.avatar.trim().slice(0, MAX_AVATAR_LEN) || undefined;
-          if (patch.lastMessagePreview !== undefined) next.lastMessagePreview = patch.lastMessagePreview;
-          if (patch.order !== undefined) next.order = patch.order;
+          if (typeof patch.lastMessagePreview === 'string') next.lastMessagePreview = patch.lastMessagePreview.slice(0, 200);
+          if (typeof patch.order === 'number' && Number.isFinite(patch.order) && patch.order >= 0) next.order = Math.floor(patch.order);
           return next;
         }),
       })),
-      reorderContact: (id, newOrder) => set((s) => ({
-        contacts: s.contacts.map((c) => c.id === id ? { ...c, order: newOrder } : c),
-      })),
+      reorderContact: (id, newOrder) => set((s) => {
+        if (!Number.isFinite(newOrder) || newOrder < 0) return s;
+        return {
+          contacts: s.contacts.map((c) => c.id === id ? { ...c, order: newOrder } : c),
+        };
+      }),
       noteSentTo: (id) => set((s) => ({
         contacts: s.contacts.map((c) =>
           c.id === id
@@ -201,6 +204,9 @@ export const useContactsStore = create<ContactsState>()(
         const merged = [...current];
         for (const inc of incoming) {
           if (!inc.provider || !inc.recipientId) continue;
+          // Reject contacts with unknown providers to prevent prototype pollution
+          // or unexpected data from integration sources.
+          if (!VALID_PROVIDERS.has(inc.provider as ContactProvider)) continue;
           const key = `${inc.provider}::${inc.recipientId}`;
           const existing = byKey.get(key);
           if (existing) {
@@ -211,7 +217,7 @@ export const useContactsStore = create<ContactsState>()(
             if (idx >= 0) {
               merged[idx] = {
                 ...existing,
-                lastMessagePreview: inc.lastMessagePreview ?? existing.lastMessagePreview,
+                lastMessagePreview: inc.lastMessagePreview ? inc.lastMessagePreview.slice(0, 200) : existing.lastMessagePreview,
               };
               updated++;
             }

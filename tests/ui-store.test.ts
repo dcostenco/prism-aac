@@ -6,6 +6,7 @@ beforeEach(() => {
     sidePanel: 'none', activeCategoryId: null, activeSequenceId: null,
     activeSequenceStep: 0, keyboardMode: 'letters', isUpperCase: false,
     showHistory: false, showSettings: false, isAlertFlashing: false,
+    _alertLastFiredAt: 0,  // reset cooldown between tests
   });
 });
 
@@ -119,15 +120,24 @@ describe('UIStore — Alert (motor safety)', () => {
     vi.useRealTimers();
   });
 
-  it('rapid-fire alert resets timer (does not cut short)', () => {
+  it('rapid-fire within 5s cooldown: second tap ignored, flash clears at 2s from first', () => {
     vi.useFakeTimers();
     useUIStore.getState().triggerAlert();
+    expect(useUIStore.getState().isAlertFlashing).toBe(true);
     vi.advanceTimersByTime(1500);
-    useUIStore.getState().triggerAlert(); // re-trigger
-    vi.advanceTimersByTime(1500); // 1500ms after second trigger
-    expect(useUIStore.getState().isAlertFlashing).toBe(true); // still flashing
-    vi.advanceTimersByTime(600);
+    useUIStore.getState().triggerAlert(); // within 5s cooldown — blocked
+    // Flash clears at 2000ms from first trigger (not reset by blocked second tap)
+    vi.advanceTimersByTime(600); // 2100ms total from first trigger
     expect(useUIStore.getState().isAlertFlashing).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it('second alert fires after 5s cooldown expires', () => {
+    vi.useFakeTimers();
+    useUIStore.getState().triggerAlert();
+    vi.advanceTimersByTime(5100); // cooldown expires + first flash clears
+    useUIStore.getState().triggerAlert(); // should work now
+    expect(useUIStore.getState().isAlertFlashing).toBe(true);
     vi.useRealTimers();
   });
 });

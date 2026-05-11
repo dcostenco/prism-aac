@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { headers, cookies } from "next/headers";
 import "./globals.css";
+import HtmlLangSync from "@/components/HtmlLangSync";
 
 const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 
@@ -17,6 +19,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: "#f6f7fb",
+  viewportFit: 'cover',
 };
 
 // SW kill-switch version. Bump whenever a deploy needs to evict a
@@ -48,10 +51,14 @@ const trackingResetScript = `
     if (raw) {
       var s = JSON.parse(raw);
       var st = typeof s.state === 'string' ? JSON.parse(s.state) : (s.state || {});
+      if (typeof st !== 'object' || Array.isArray(st) || st === null) st = {};
       st.cameraInputEnabled = false;
       st.headTrackingEnabled = false;
       st.showHandCalibration = false;
       s.state = typeof s.state === 'string' ? JSON.stringify(st) : st;
+      // Preserve version so Zustand migration runs correctly on next hydration
+      // s.version is intentionally not modified here — only st (state) fields are changed.
+      if (s.version !== undefined) { /* version preserved */ }
       window.localStorage.setItem('prism-aac-settings', JSON.stringify(s));
     }
     // Also drop any saved tracking calibrations that might be degenerate.
@@ -83,7 +90,12 @@ const swKillswitchScript = `
     // it immediately → clientsClaim gives it control → controllerchange fires
     // → we reload once so the page runs the new JS bundles.
     // This is the standard PWA update pattern — zero user action needed.
+    // Guard against infinite-reload loop: a compromised CDN SW claiming control
+    // would fire controllerchange repeatedly. Limit to one reload per session.
+    var _reloaded = false;
     navigator.serviceWorker.addEventListener('controllerchange', function() {
+      if (_reloaded) return;
+      _reloaded = true;
       window.location.reload();
     });
 
@@ -100,7 +112,10 @@ const swKillswitchScript = `
       .then(function(){
         if (typeof caches === 'undefined') return;
         return caches.keys().then(function(keys){
-          return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+          var toDelete = keys.filter(function(k){
+            return !k.includes('precache') && !k.includes('serwist');
+          });
+          return Promise.all(toDelete.map(function(k){ return caches.delete(k); }));
         });
       })
       .then(function(){ window.location.reload(); })
@@ -109,19 +124,43 @@ const swKillswitchScript = `
 })();
 `;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// Supported language codes — must stay in sync with SupportedLanguage in engine/i18n.ts.
+const SUPPORTED_LANGS = ['en','es','fr','pt','ro','uk','ru','de','ja','ko','zh','ar','hi','it','pl','he','nl','vi','tl','tr','id'];
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Read the per-request nonce injected by middleware.ts so inline scripts
+  // can be whitelisted without 'unsafe-inline' in the CSP.
+  const headerStore = await headers();
+  const nonce = headerStore.get('x-nonce') ?? '';
+
+  // Read the persisted language preference from a cookie written by
+  // settingsStore when the user changes language. Falls back to 'en'.
+  const cookieStore = await cookies();
+  const lang = (() => {
+    try {
+      const v = cookieStore.get('prism-aac-settings-lang')?.value;
+      if (v && SUPPORTED_LANGS.includes(v)) return v;
+    } catch { /* cookies() may throw during static generation */ }
+    return 'en';
+  })();
+
   return (
-    <html lang="en" className={`${geist.variable} h-full`}>
+    <html lang={lang} className={`${geist.variable} h-full`}>
       <head>
+        {/* SECURITY R13: these scripts contain ONLY build-time constants. Never interpolate user data. */}
         {/* Tracking emergency reset — runs FIRST so the user can
             escape a bad calibration via ?reset=tracking before any
             overlay mounts. Build-time constant content, no user input. */}
-        <script dangerouslySetInnerHTML={{ __html: trackingResetScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: trackingResetScript }} />
+        {/* SECURITY R13: these scripts contain ONLY build-time constants. Never interpolate user data. */}
         {/* Kill-switch — runs FIRST so it executes before any stale
             chunk loads. Build-time constant content, no user input. */}
-        <script dangerouslySetInnerHTML={{ __html: swKillswitchScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: swKillswitchScript }} />
       </head>
-      <body className="h-full overflow-hidden">{children}</body>
+      <body className="h-full overflow-hidden">
+        <HtmlLangSync />
+        {children}
+      </body>
     </html>
   );
 }

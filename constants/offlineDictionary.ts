@@ -183,6 +183,11 @@ export const OFFLINE_DICT_1 = _OFFLINE_DICT_1;
 // Runtime validation: all language arrays must have the same length
 const _dictValues = Object.values(OFFLINE_DICT_1);
 const _expectedLength = _dictValues[0]?.length;
-if (_expectedLength && _dictValues.some(arr => arr.length !== _expectedLength)) {
-  console.error('[offlineDictionary] Language array length mismatch — translations may be misaligned');
+const _hasMismatch = !!(_expectedLength && _dictValues.some(arr => arr.length !== _expectedLength));
+if (_hasMismatch) {
+  if (process.env.NODE_ENV !== 'production') {
+    throw new Error('[offlineDictionary] language array length mismatch — see console');
+  } else {
+    console.error('[offlineDictionary] Language array length mismatch — translations may be misaligned');
+  }
 }

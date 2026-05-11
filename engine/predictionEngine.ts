@@ -396,6 +396,7 @@ export function recordWord(
   wordFreq: Record<string, WordFreqEntry>,
   word: string,
 ): Record<string, WordFreqEntry> {
+  if (!word || word.length > 200) return wordFreq;
   const key = word.toLowerCase();
   const existing = wordFreq[key];
   const updated = { ...wordFreq, [key]: { count: (existing?.count ?? 0) + 1, lastUsed: Date.now() } };

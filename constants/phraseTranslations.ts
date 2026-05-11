@@ -533,95 +533,95 @@ const T: Record<string, Partial<Record<SupportedLanguage, string>>> = {
   'cw-i-do-not-want': { es: 'No quiero' },
   'cw-let-me-try': { es: 'Déjame intentar' },
   'cw-let-me-see': { es: 'Déjame ver' },
-  'cw-little': {},  // pending Phase 2 multilingual fill
-  'cw-lots': {},  // pending Phase 2 multilingual fill
-  'cw-many': {},  // pending Phase 2 multilingual fill
-  'cw-few': {},  // pending Phase 2 multilingual fill
-  'cw-every': {},  // pending Phase 2 multilingual fill
-  'cw-any': {},  // pending Phase 2 multilingual fill
-  'cw-only': {},  // pending Phase 2 multilingual fill
-  'cw-just': {},  // pending Phase 2 multilingual fill
-  'cw-full': {},  // pending Phase 2 multilingual fill
-  'cw-empty': {},  // pending Phase 2 multilingual fill
-  'cw-open-2': {},  // pending Phase 2 multilingual fill
-  'cw-closed': {},  // pending Phase 2 multilingual fill
-  'cw-easy': {},  // pending Phase 2 multilingual fill
-  'cw-hard': {},  // pending Phase 2 multilingual fill
-  'cw-soft': {},  // pending Phase 2 multilingual fill
-  'cw-loud': {},  // pending Phase 2 multilingual fill
-  'cw-quiet': {},  // pending Phase 2 multilingual fill
-  'cw-bright': {},  // pending Phase 2 multilingual fill
-  'cw-dark': {},  // pending Phase 2 multilingual fill
-  'cw-heavy': {},  // pending Phase 2 multilingual fill
-  'cw-light': {},  // pending Phase 2 multilingual fill
-  'cw-above': {},  // pending Phase 2 multilingual fill
-  'cw-below': {},  // pending Phase 2 multilingual fill
-  'cw-beside': {},  // pending Phase 2 multilingual fill
-  'cw-between': {},  // pending Phase 2 multilingual fill
-  'cw-near': {},  // pending Phase 2 multilingual fill
-  'cw-far': {},  // pending Phase 2 multilingual fill
-  'cw-around': {},  // pending Phase 2 multilingual fill
-  'cw-through': {},  // pending Phase 2 multilingual fill
-  'cw-over': {},  // pending Phase 2 multilingual fill
-  'cw-under': {},  // pending Phase 2 multilingual fill
-  'cw-across': {},  // pending Phase 2 multilingual fill
-  'cw-behind': {},  // pending Phase 2 multilingual fill
-  'cw-ahead': {},  // pending Phase 2 multilingual fill
-  'cw-always': {},  // pending Phase 2 multilingual fill
-  'cw-never': {},  // pending Phase 2 multilingual fill
-  'cw-often': {},  // pending Phase 2 multilingual fill
-  'cw-sometimes': {},  // pending Phase 2 multilingual fill
-  'cw-maybe': {},  // pending Phase 2 multilingual fill
-  'cw-almost': {},  // pending Phase 2 multilingual fill
-  'cw-already': {},  // pending Phase 2 multilingual fill
-  'cw-still': {},  // pending Phase 2 multilingual fill
-  'cw-yet': {},  // pending Phase 2 multilingual fill
-  'cw-right-now': {},  // pending Phase 2 multilingual fill
-  'cw-right-here': {},  // pending Phase 2 multilingual fill
-  'cw-way-too-much': {},  // pending Phase 2 multilingual fill
-  'cw-not-enough': {},  // pending Phase 2 multilingual fill
-  'cw-by': {},  // pending Phase 2 multilingual fill
-  'cw-from': {},  // pending Phase 2 multilingual fill
-  'cw-since': {},  // pending Phase 2 multilingual fill
-  'cw-until': {},  // pending Phase 2 multilingual fill
-  'cw-into': {},  // pending Phase 2 multilingual fill
-  'cw-onto': {},  // pending Phase 2 multilingual fill
-  'cw-off-of': {},  // pending Phase 2 multilingual fill
-  'cw-away': {},  // pending Phase 2 multilingual fill
-  'cw-back': {},  // pending Phase 2 multilingual fill
-  'cw-beside-2': {},  // pending Phase 2 multilingual fill
-  'cw-past': {},  // pending Phase 2 multilingual fill
-  'cw-among': {},  // pending Phase 2 multilingual fill
-  'cw-during': {},  // pending Phase 2 multilingual fill
-  'cw-while': {},  // pending Phase 2 multilingual fill
-  'cw-whenever': {},  // pending Phase 2 multilingual fill
-  'cw-wherever': {},  // pending Phase 2 multilingual fill
-  'cw-both': {},  // pending Phase 2 multilingual fill
-  'cw-either': {},  // pending Phase 2 multilingual fill
-  'cw-neither': {},  // pending Phase 2 multilingual fill
-  'cw-whether': {},  // pending Phase 2 multilingual fill
-  'cw-although': {},  // pending Phase 2 multilingual fill
-  'cw-though': {},  // pending Phase 2 multilingual fill
-  'cw-unless': {},  // pending Phase 2 multilingual fill
-  'cw-so': {},  // pending Phase 2 multilingual fill
-  'cw-then': {},  // pending Phase 2 multilingual fill
-  'cw-also': {},  // pending Phase 2 multilingual fill
-  'cw-plus': {},  // pending Phase 2 multilingual fill
-  'cw-like-2': {},  // pending Phase 2 multilingual fill
-  'cw-as': {},  // pending Phase 2 multilingual fill
-  'cw-such-as': {},  // pending Phase 2 multilingual fill
-  'cw-versus': {},  // pending Phase 2 multilingual fill
-  'cw-since-then': {},  // pending Phase 2 multilingual fill
-  'cw-until-now': {},  // pending Phase 2 multilingual fill
-  'cw-right-after': {},  // pending Phase 2 multilingual fill
-  'cw-just-before': {},  // pending Phase 2 multilingual fill
-  'cw-up-to': {},  // pending Phase 2 multilingual fill
-  'cw-down-to': {},  // pending Phase 2 multilingual fill
-  'cw-next-to': {},  // pending Phase 2 multilingual fill
-  'cw-out-of': {},  // pending Phase 2 multilingual fill
-  'cw-a-few': {},  // pending Phase 2 multilingual fill
-  'cw-a-lot': {},  // pending Phase 2 multilingual fill
-  'cw-a-little': {},  // pending Phase 2 multilingual fill
+  'cw-little': { ro: 'Puțin', es: 'Poco', fr: 'Peu', pt: 'Pouco', de: 'Wenig', ru: 'Мало', uk: 'Мало', ja: '少し', ko: '조금', zh: '一点', ar: 'قليل', hi: 'थोड़ा', it: 'Poco', pl: 'Trochę', he: 'מעט', nl: 'Weinig', vi: 'Một chút', tl: 'Kaunti', tr: 'Az', id: 'Sedikit' },
+  'cw-lots': { ro: 'Mult', es: 'Mucho', fr: 'Beaucoup', pt: 'Muito', de: 'Viel', ru: 'Много', uk: 'Багато', ja: 'たくさん', ko: '많이', zh: '很多', ar: 'كثير', hi: 'बहुत', it: 'Molto', pl: 'Dużo', he: 'הרבה', nl: 'Veel', vi: 'Nhiều', tl: 'Marami', tr: 'Çok', id: 'Banyak' },
+  'cw-many': { ro: 'Mulți', es: 'Muchos', fr: 'Beaucoup', pt: 'Muitos', de: 'Viele', ru: 'Много', uk: 'Багато', ja: 'たくさん', ko: '많은', zh: '许多', ar: 'كثيرون', hi: 'कई', it: 'Molti', pl: 'Wiele', he: 'רבים', nl: 'Veel', vi: 'Nhiều', tl: 'Marami', tr: 'Çok', id: 'Banyak' },
+  'cw-few': { ro: 'Câțiva', es: 'Pocos', fr: 'Peu', pt: 'Poucos', de: 'Wenige', ru: 'Мало', uk: 'Мало', ja: '少ない', ko: '적은', zh: '几个', ar: 'قليلون', hi: 'कुछ', it: 'Pochi', pl: 'Kilka', he: 'מעטים', nl: 'Weinig', vi: 'Ít', tl: 'Ilang', tr: 'Az', id: 'Sedikit' },
+  'cw-every': { ro: 'Fiecare', es: 'Cada', fr: 'Chaque', pt: 'Cada', de: 'Jeder', ru: 'Каждый', uk: 'Кожен', ja: 'すべての', ko: '모든', zh: '每个', ar: 'كل', hi: 'हर', it: 'Ogni', pl: 'Każdy', he: 'כל', nl: 'Elke', vi: 'Mỗi', tl: 'Bawat', tr: 'Her', id: 'Setiap' },
+  'cw-any': { ro: 'Oricare', es: 'Cualquier', fr: "N'importe quel", pt: 'Qualquer', de: 'Irgendein', ru: 'Любой', uk: 'Будь-який', ja: 'どんな', ko: '어떤', zh: '任何', ar: 'أي', hi: 'कोई भी', it: 'Qualsiasi', pl: 'Dowolny', he: 'כלשהו', nl: 'Elk', vi: 'Bất kỳ', tl: 'Anuman', tr: 'Herhangi', id: 'Apapun' },
+  'cw-only': { ro: 'Doar', es: 'Solo', fr: 'Seulement', pt: 'Só', de: 'Nur', ru: 'Только', uk: 'Тільки', ja: 'だけ', ko: '만', zh: '只', ar: 'فقط', hi: 'केवल', it: 'Solo', pl: 'Tylko', he: 'רק', nl: 'Alleen', vi: 'Chỉ', tl: 'Lamang', tr: 'Sadece', id: 'Hanya' },
+  'cw-just': { ro: 'Tocmai', es: 'Justo', fr: 'Juste', pt: 'Justo', de: 'Gerade', ru: 'Просто', uk: 'Просто', ja: 'ちょうど', ko: '막', zh: '刚刚', ar: 'للتو', hi: 'बस', it: 'Appena', pl: 'Właśnie', he: 'בדיוק', nl: 'Net', vi: 'Vừa', tl: 'Kaka', tr: 'Az önce', id: 'Baru saja' },
+  'cw-full': { ro: 'Plin', es: 'Lleno', fr: 'Plein', pt: 'Cheio', de: 'Voll', ru: 'Полный', uk: 'Повний', ja: 'いっぱい', ko: '가득', zh: '满', ar: 'ممتلئ', hi: 'भरा', it: 'Pieno', pl: 'Pełny', he: 'מלא', nl: 'Vol', vi: 'Đầy', tl: 'Puno', tr: 'Dolu', id: 'Penuh' },
+  'cw-empty': { ro: 'Gol', es: 'Vacío', fr: 'Vide', pt: 'Vazio', de: 'Leer', ru: 'Пустой', uk: 'Порожній', ja: '空っぽ', ko: '비어있어요', zh: '空', ar: 'فارغ', hi: 'खाली', it: 'Vuoto', pl: 'Pusty', he: 'ריק', nl: 'Leeg', vi: 'Trống', tl: 'Walang laman', tr: 'Boş', id: 'Kosong' },
+  'cw-open-2': { ro: 'Deschis', es: 'Abierto', fr: 'Ouvert', pt: 'Aberto', de: 'Offen', ru: 'Открыт', uk: 'Відкрито', ja: '開いている', ko: '열려있어요', zh: '开着', ar: 'مفتوح', hi: 'खुला', it: 'Aperto', pl: 'Otwarty', he: 'פתוח', nl: 'Open', vi: 'Mở', tl: 'Bukas', tr: 'Açık', id: 'Terbuka' },
+  'cw-closed': { ro: 'Închis', es: 'Cerrado', fr: 'Fermé', pt: 'Fechado', de: 'Geschlossen', ru: 'Закрыт', uk: 'Закрито', ja: '閉まっている', ko: '닫혀있어요', zh: '关着', ar: 'مغلق', hi: 'बंद', it: 'Chiuso', pl: 'Zamknięty', he: 'סגור', nl: 'Gesloten', vi: 'Đóng', tl: 'Sarado', tr: 'Kapalı', id: 'Tertutup' },
+  'cw-easy': { ro: 'Ușor', es: 'Fácil', fr: 'Facile', pt: 'Fácil', de: 'Einfach', ru: 'Легко', uk: 'Легко', ja: '簡単', ko: '쉬워요', zh: '容易', ar: 'سهل', hi: 'आसान', it: 'Facile', pl: 'Łatwy', he: 'קל', nl: 'Makkelijk', vi: 'Dễ', tl: 'Madali', tr: 'Kolay', id: 'Mudah' },
+  'cw-hard': { ro: 'Greu', es: 'Difícil', fr: 'Difficile', pt: 'Difícil', de: 'Schwer', ru: 'Трудно', uk: 'Важко', ja: '難しい', ko: '어려워요', zh: '难', ar: 'صعب', hi: 'मुश्किल', it: 'Difficile', pl: 'Trudny', he: 'קשה', nl: 'Moeilijk', vi: 'Khó', tl: 'Mahirap', tr: 'Zor', id: 'Sulit' },
+  'cw-soft': { ro: 'Moale', es: 'Suave', fr: 'Doux', pt: 'Macio', de: 'Weich', ru: 'Мягкий', uk: 'М\'який', ja: '柔らかい', ko: '부드러워요', zh: '软', ar: 'ناعم', hi: 'नरम', it: 'Morbido', pl: 'Miękki', he: 'רך', nl: 'Zacht', vi: 'Mềm', tl: 'Malambot', tr: 'Yumuşak', id: 'Lembut' },
+  'cw-loud': { ro: 'Tare', es: 'Ruidoso', fr: 'Fort', pt: 'Alto', de: 'Laut', ru: 'Громко', uk: 'Гучно', ja: 'うるさい', ko: '시끄러워요', zh: '响', ar: 'صاخب', hi: 'तेज़', it: 'Rumoroso', pl: 'Głośny', he: 'רועש', nl: 'Luid', vi: 'To', tl: 'Malakas', tr: 'Gürültülü', id: 'Keras' },
+  'cw-quiet': { ro: 'Liniștit', es: 'Quieto', fr: 'Calme', pt: 'Quieto', de: 'Ruhig', ru: 'Тихо', uk: 'Тихо', ja: '静か', ko: '조용해요', zh: '安静', ar: 'هادئ', hi: 'शांत', it: 'Silenzioso', pl: 'Cichy', he: 'שקט', nl: 'Stil', vi: 'Yên lặng', tl: 'Tahimik', tr: 'Sessiz', id: 'Tenang' },
+  'cw-bright': { ro: 'Luminos', es: 'Brillante', fr: 'Lumineux', pt: 'Brilhante', de: 'Hell', ru: 'Яркий', uk: 'Яскравий', ja: '明るい', ko: '밝아요', zh: '亮', ar: 'مضيء', hi: 'चमकीला', it: 'Luminoso', pl: 'Jasny', he: 'בהיר', nl: 'Helder', vi: 'Sáng', tl: 'Maliwanag', tr: 'Parlak', id: 'Terang' },
+  'cw-dark': { ro: 'Întunecat', es: 'Oscuro', fr: 'Sombre', pt: 'Escuro', de: 'Dunkel', ru: 'Тёмный', uk: 'Темний', ja: '暗い', ko: '어두워요', zh: '暗', ar: 'مظلم', hi: 'अंधेरा', it: 'Buio', pl: 'Ciemny', he: 'חשוך', nl: 'Donker', vi: 'Tối', tl: 'Madilim', tr: 'Karanlık', id: 'Gelap' },
+  'cw-heavy': { ro: 'Greu', es: 'Pesado', fr: 'Lourd', pt: 'Pesado', de: 'Schwer', ru: 'Тяжёлый', uk: 'Важкий', ja: '重い', ko: '무거워요', zh: '重', ar: 'ثقيل', hi: 'भारी', it: 'Pesante', pl: 'Ciężki', he: 'כבד', nl: 'Zwaar', vi: 'Nặng', tl: 'Mabigat', tr: 'Ağır', id: 'Berat' },
+  'cw-light': { ro: 'Ușor', es: 'Ligero', fr: 'Léger', pt: 'Leve', de: 'Leicht', ru: 'Лёгкий', uk: 'Легкий', ja: '軽い', ko: '가벼워요', zh: '轻', ar: 'خفيف', hi: 'हल्का', it: 'Leggero', pl: 'Lekki', he: 'קל', nl: 'Licht', vi: 'Nhẹ', tl: 'Magaan', tr: 'Hafif', id: 'Ringan' },
+  'cw-above': { ro: 'Deasupra', es: 'Encima', fr: 'Au-dessus', pt: 'Acima', de: 'Oben', ru: 'Над', uk: 'Над', ja: '上に', ko: '위에', zh: '上面', ar: 'فوق', hi: 'ऊपर', it: 'Sopra', pl: 'Powyżej', he: 'מעל', nl: 'Boven', vi: 'Trên', tl: 'Sa itaas', tr: 'Üzerinde', id: 'Di atas' },
+  'cw-below': { ro: 'Dedesubt', es: 'Debajo', fr: 'En dessous', pt: 'Abaixo', de: 'Unten', ru: 'Под', uk: 'Під', ja: '下に', ko: '아래에', zh: '下面', ar: 'تحت', hi: 'नीचे', it: 'Sotto', pl: 'Poniżej', he: 'מתחת', nl: 'Onder', vi: 'Dưới', tl: 'Sa ibaba', tr: 'Altında', id: 'Di bawah' },
+  'cw-beside': { ro: 'Lângă', es: 'Al lado', fr: 'À côté', pt: 'Ao lado', de: 'Neben', ru: 'Рядом', uk: 'Поруч', ja: '横に', ko: '옆에', zh: '旁边', ar: 'بجانب', hi: 'बगल में', it: 'Accanto', pl: 'Obok', he: 'לצד', nl: 'Naast', vi: 'Bên cạnh', tl: 'Sa tabi', tr: 'Yanında', id: 'Di samping' },
+  'cw-between': { ro: 'Între', es: 'Entre', fr: 'Entre', pt: 'Entre', de: 'Zwischen', ru: 'Между', uk: 'Між', ja: 'の間に', ko: '사이에', zh: '之间', ar: 'بين', hi: 'के बीच', it: 'Tra', pl: 'Między', he: 'בין', nl: 'Tussen', vi: 'Giữa', tl: 'Sa pagitan', tr: 'Arasında', id: 'Di antara' },
+  'cw-near': { ro: 'Aproape', es: 'Cerca', fr: 'Près', pt: 'Perto', de: 'Nah', ru: 'Близко', uk: 'Близько', ja: '近く', ko: '가까이', zh: '附近', ar: 'قريب', hi: 'पास', it: 'Vicino', pl: 'Blisko', he: 'קרוב', nl: 'Dichtbij', vi: 'Gần', tl: 'Malapit', tr: 'Yakın', id: 'Dekat' },
+  'cw-far': { ro: 'Departe', es: 'Lejos', fr: 'Loin', pt: 'Longe', de: 'Weit', ru: 'Далеко', uk: 'Далеко', ja: '遠く', ko: '멀리', zh: '远', ar: 'بعيد', hi: 'दूर', it: 'Lontano', pl: 'Daleko', he: 'רחוק', nl: 'Ver', vi: 'Xa', tl: 'Malayo', tr: 'Uzak', id: 'Jauh' },
+  'cw-around': { ro: 'În jur', es: 'Alrededor', fr: 'Autour', pt: 'Em volta', de: 'Herum', ru: 'Вокруг', uk: 'Навколо', ja: '周りに', ko: '주변에', zh: '周围', ar: 'حول', hi: 'चारों ओर', it: 'Intorno', pl: 'Wokół', he: 'סביב', nl: 'Rondom', vi: 'Xung quanh', tl: 'Sa paligid', tr: 'Çevresinde', id: 'Di sekitar' },
+  'cw-through': { ro: 'Prin', es: 'A través', fr: 'À travers', pt: 'Através', de: 'Durch', ru: 'Через', uk: 'Через', ja: 'を通って', ko: '통해서', zh: '穿过', ar: 'عبر', hi: 'के माध्यम से', it: 'Attraverso', pl: 'Przez', he: 'דרך', nl: 'Door', vi: 'Xuyên qua', tl: 'Sa pamamagitan', tr: 'İçinden', id: 'Melalui' },
+  'cw-over': { ro: 'Peste', es: 'Sobre', fr: 'Par-dessus', pt: 'Sobre', de: 'Über', ru: 'Над', uk: 'Над', ja: 'の上に', ko: '위로', zh: '越过', ar: 'فوق', hi: 'के ऊपर', it: 'Sopra', pl: 'Nad', he: 'מעל', nl: 'Over', vi: 'Qua', tl: 'Sa ibabaw', tr: 'Üzerinden', id: 'Di atas' },
+  'cw-under': { ro: 'Sub', es: 'Bajo', fr: 'Sous', pt: 'Embaixo', de: 'Unter', ru: 'Под', uk: 'Під', ja: 'の下に', ko: '아래에', zh: '下面', ar: 'تحت', hi: 'के नीचे', it: 'Sotto', pl: 'Pod', he: 'מתחת', nl: 'Onder', vi: 'Dưới', tl: 'Sa ilalim', tr: 'Altında', id: 'Di bawah' },
+  'cw-across': { ro: 'De cealaltă parte', es: 'Al otro lado', fr: 'En face', pt: 'Do outro lado', de: 'Drüben', ru: 'Напротив', uk: 'Навпроти', ja: '向こうに', ko: '건너편에', zh: '对面', ar: 'عبر', hi: 'के पार', it: 'Dall\'altra parte', pl: 'Po drugiej stronie', he: 'מעבר', nl: 'Aan de overkant', vi: 'Qua bên kia', tl: 'Sa kabilang panig', tr: 'Karşıda', id: 'Di seberang' },
+  'cw-behind': { ro: 'În spate', es: 'Detrás', fr: 'Derrière', pt: 'Atrás', de: 'Hinter', ru: 'Позади', uk: 'Позаду', ja: 'うしろに', ko: '뒤에', zh: '后面', ar: 'خلف', hi: 'पीछे', it: 'Dietro', pl: 'Za', he: 'מאחור', nl: 'Achter', vi: 'Phía sau', tl: 'Sa likod', tr: 'Arkasında', id: 'Di belakang' },
+  'cw-ahead': { ro: 'Înainte', es: 'Adelante', fr: 'En avant', pt: 'À frente', de: 'Voraus', ru: 'Впереди', uk: 'Попереду', ja: '前に', ko: '앞에', zh: '前面', ar: 'أمام', hi: 'आगे', it: 'Avanti', pl: 'Przed', he: 'קדימה', nl: 'Vooruit', vi: 'Phía trước', tl: 'Sa harap', tr: 'İlerde', id: 'Di depan' },
+  'cw-always': { ro: 'Întotdeauna', es: 'Siempre', fr: 'Toujours', pt: 'Sempre', de: 'Immer', ru: 'Всегда', uk: 'Завжди', ja: 'いつも', ko: '항상', zh: '总是', ar: 'دائماً', hi: 'हमेशा', it: 'Sempre', pl: 'Zawsze', he: 'תמיד', nl: 'Altijd', vi: 'Luôn luôn', tl: 'Lagi', tr: 'Her zaman', id: 'Selalu' },
+  'cw-never': { ro: 'Niciodată', es: 'Nunca', fr: 'Jamais', pt: 'Nunca', de: 'Nie', ru: 'Никогда', uk: 'Ніколи', ja: '決して', ko: '절대', zh: '从不', ar: 'أبداً', hi: 'कभी नहीं', it: 'Mai', pl: 'Nigdy', he: 'אף פעם', nl: 'Nooit', vi: 'Không bao giờ', tl: 'Hindi kailanman', tr: 'Hiçbir zaman', id: 'Tidak pernah' },
+  'cw-often': { ro: 'Adesea', es: 'A menudo', fr: 'Souvent', pt: 'Frequentemente', de: 'Oft', ru: 'Часто', uk: 'Часто', ja: 'よく', ko: '자주', zh: '经常', ar: 'كثيراً', hi: 'अक्सर', it: 'Spesso', pl: 'Często', he: 'לעתים קרובות', nl: 'Vaak', vi: 'Thường xuyên', tl: 'Madalas', tr: 'Sık sık', id: 'Sering' },
+  'cw-sometimes': { ro: 'Uneori', es: 'A veces', fr: 'Parfois', pt: 'Às vezes', de: 'Manchmal', ru: 'Иногда', uk: 'Іноді', ja: 'ときどき', ko: '가끔', zh: '有时', ar: 'أحياناً', hi: 'कभी-कभी', it: 'A volte', pl: 'Czasami', he: 'לפעמים', nl: 'Soms', vi: 'Đôi khi', tl: 'Minsan', tr: 'Bazen', id: 'Kadang-kadang' },
+  'cw-maybe': { ro: 'Poate', es: 'Quizás', fr: 'Peut-être', pt: 'Talvez', de: 'Vielleicht', ru: 'Может быть', uk: 'Може бути', ja: 'たぶん', ko: '아마도', zh: '也许', ar: 'ربما', hi: 'शायद', it: 'Forse', pl: 'Może', he: 'אולי', nl: 'Misschien', vi: 'Có thể', tl: 'Siguro', tr: 'Belki', id: 'Mungkin' },
+  'cw-almost': { ro: 'Aproape', es: 'Casi', fr: 'Presque', pt: 'Quase', de: 'Fast', ru: 'Почти', uk: 'Майже', ja: 'もうすぐ', ko: '거의', zh: '几乎', ar: 'تقريباً', hi: 'लगभग', it: 'Quasi', pl: 'Prawie', he: 'כמעט', nl: 'Bijna', vi: 'Gần như', tl: 'Halos', tr: 'Neredeyse', id: 'Hampir' },
+  'cw-already': { ro: 'Deja', es: 'Ya', fr: 'Déjà', pt: 'Já', de: 'Schon', ru: 'Уже', uk: 'Вже', ja: 'もう', ko: '이미', zh: '已经', ar: 'بالفعل', hi: 'पहले से', it: 'Già', pl: 'Już', he: 'כבר', nl: 'Al', vi: 'Rồi', tl: 'Na', tr: 'Zaten', id: 'Sudah' },
+  'cw-still': { ro: 'Încă', es: 'Todavía', fr: 'Encore', pt: 'Ainda', de: 'Noch', ru: 'Ещё', uk: 'Ще', ja: 'まだ', ko: '아직', zh: '还', ar: 'لا يزال', hi: 'अभी भी', it: 'Ancora', pl: 'Jeszcze', he: 'עדיין', nl: 'Nog', vi: 'Vẫn', tl: 'Pa rin', tr: 'Hâlâ', id: 'Masih' },
+  'cw-yet': { ro: 'Încă', es: 'Aún', fr: 'Encore', pt: 'Ainda', de: 'Noch', ru: 'Ещё', uk: 'Ще', ja: 'まだ', ko: '아직', zh: '还没', ar: 'بعد', hi: 'अभी तक', it: 'Ancora', pl: 'Jeszcze', he: 'עוד', nl: 'Nog', vi: 'Chưa', tl: 'Pa', tr: 'Henüz', id: 'Belum' },
+  'cw-right-now': { ro: 'Chiar acum', es: 'Ahora mismo', fr: 'Tout de suite', pt: 'Agora mesmo', de: 'Jetzt gleich', ru: 'Прямо сейчас', uk: 'Прямо зараз', ja: '今すぐ', ko: '지금 당장', zh: '现在马上', ar: 'الآن فوراً', hi: 'अभी', it: 'Adesso', pl: 'Zaraz', he: 'עכשיו', nl: 'Nu meteen', vi: 'Ngay bây giờ', tl: 'Ngayon na', tr: 'Şu an', id: 'Sekarang juga' },
+  'cw-right-here': { ro: 'Chiar aici', es: 'Justo aquí', fr: 'Juste ici', pt: 'Bem aqui', de: 'Hier', ru: 'Прямо здесь', uk: 'Прямо тут', ja: 'ここに', ko: '바로 여기에', zh: '就在这里', ar: 'هنا بالضبط', hi: 'यहीं', it: 'Proprio qui', pl: 'Tu zaraz', he: 'ממש כאן', nl: 'Hier', vi: 'Ngay đây', tl: 'Dito mismo', tr: 'Tam burada', id: 'Di sini' },
+  'cw-way-too-much': { ro: 'Mult prea mult', es: 'Demasiado', fr: 'Beaucoup trop', pt: 'Demais', de: 'Viel zu viel', ru: 'Слишком много', uk: 'Занадто багато', ja: '多すぎる', ko: '너무 많아요', zh: '太多了', ar: 'أكثر من اللازم', hi: 'बहुत ज़्यादा', it: 'Troppo', pl: 'Za dużo', he: 'יותר מדי', nl: 'Veel te veel', vi: 'Quá nhiều', tl: 'Sobra sobra', tr: 'Çok fazla', id: 'Terlalu banyak' },
+  'cw-not-enough': { ro: 'Nu ajunge', es: 'No es suficiente', fr: 'Pas assez', pt: 'Não é suficiente', de: 'Nicht genug', ru: 'Недостаточно', uk: 'Недостатньо', ja: '足りない', ko: '부족해요', zh: '不够', ar: 'غير كافٍ', hi: 'पर्याप्त नहीं', it: 'Non abbastanza', pl: 'Niewystarczająco', he: 'לא מספיק', nl: 'Niet genoeg', vi: 'Không đủ', tl: 'Hindi sapat', tr: 'Yeterli değil', id: 'Tidak cukup' },
+  'cw-by': { ro: 'De lângă', es: 'Por', fr: 'Par', pt: 'Por', de: 'Bei', ru: 'У', uk: 'Біля', ja: 'によって', ko: '에 의해', zh: '由', ar: 'بواسطة', hi: 'द्वारा', it: 'Da', pl: 'Przez', he: 'על ידי', nl: 'Bij', vi: 'Bởi', tl: 'Sa tabi ng', tr: 'Tarafından', id: 'Oleh' },
+  'cw-from': { ro: 'De la', es: 'De', fr: 'De', pt: 'De', de: 'Von', ru: 'От', uk: 'Від', ja: 'から', ko: '에서', zh: '从', ar: 'من', hi: 'से', it: 'Da', pl: 'Od', he: 'מ', nl: 'Van', vi: 'Từ', tl: 'Mula sa', tr: 'Dan', id: 'Dari' },
+  'cw-since': { ro: 'De când', es: 'Desde', fr: 'Depuis', pt: 'Desde', de: 'Seit', ru: 'С', uk: 'З', ja: 'から', ko: '부터', zh: '从…起', ar: 'منذ', hi: 'से', it: 'Da', pl: 'Od', he: 'מאז', nl: 'Sinds', vi: 'Từ khi', tl: 'Mula noong', tr: 'Beri', id: 'Sejak' },
+  'cw-until': { ro: 'Până', es: 'Hasta', fr: "Jusqu'à", pt: 'Até', de: 'Bis', ru: 'До', uk: 'До', ja: 'まで', ko: '까지', zh: '直到', ar: 'حتى', hi: 'तक', it: 'Fino a', pl: 'Do', he: 'עד', nl: 'Tot', vi: 'Cho đến', tl: 'Hanggang', tr: 'Kadar', id: 'Sampai' },
+  'cw-into': { ro: 'Înăuntru', es: 'Dentro de', fr: 'Dans', pt: 'Para dentro', de: 'Hinein', ru: 'Внутрь', uk: 'Усередину', ja: 'の中へ', ko: '안으로', zh: '进入', ar: 'إلى داخل', hi: 'के अंदर', it: 'Dentro', pl: 'Do środka', he: 'לתוך', nl: 'In', vi: 'Vào trong', tl: 'Sa loob ng', tr: 'İçine', id: 'Ke dalam' },
+  'cw-onto': { ro: 'Pe', es: 'Sobre', fr: 'Sur', pt: 'Em cima de', de: 'Auf', ru: 'На', uk: 'На', ja: 'の上へ', ko: '위로', zh: '到…上', ar: 'على', hi: 'पर', it: 'Su', pl: 'Na', he: 'על', nl: 'Op', vi: 'Lên trên', tl: 'Sa ibabaw ng', tr: 'Üstüne', id: 'Ke atas' },
+  'cw-off-of': { ro: 'De pe', es: 'Fuera de', fr: 'De dessus', pt: 'De cima de', de: 'Von ... ab', ru: 'С', uk: 'З', ja: 'から', ko: '에서 내려', zh: '离开', ar: 'من على', hi: 'से नीचे', it: 'Da sopra', pl: 'Z', he: 'מעל', nl: 'Van af', vi: 'Ra khỏi', tl: 'Mula sa', tr: 'Üzerinden', id: 'Dari atas' },
+  'cw-away': { ro: 'Departe', es: 'Lejos', fr: 'Loin', pt: 'Longe', de: 'Weg', ru: 'Прочь', uk: 'Геть', ja: '離れて', ko: '멀리', zh: '离开', ar: 'بعيداً', hi: 'दूर', it: 'Via', pl: 'Precz', he: 'הרחק', nl: 'Weg', vi: 'Ra đi', tl: 'Palayo', tr: 'Uzağa', id: 'Pergi' },
+  'cw-back': { ro: 'Înapoi', es: 'Atrás', fr: 'En arrière', pt: 'De volta', de: 'Zurück', ru: 'Назад', uk: 'Назад', ja: '戻って', ko: '뒤로', zh: '回来', ar: 'عودة', hi: 'वापस', it: 'Indietro', pl: 'Z powrotem', he: 'חזרה', nl: 'Terug', vi: 'Quay lại', tl: 'Bumalik', tr: 'Geri', id: 'Kembali' },
+  'cw-beside-2': { ro: 'Alături', es: 'Junto a', fr: 'À côté de', pt: 'Junto de', de: 'Neben', ru: 'Рядом', uk: 'Поруч', ja: 'そばに', ko: '곁에', zh: '在…旁边', ar: 'بجانب', hi: 'बगल में', it: 'Accanto a', pl: 'Przy', he: 'לצד', nl: 'Naast', vi: 'Bên cạnh', tl: 'Katabi', tr: 'Yanında', id: 'Di sebelah' },
+  'cw-past': { ro: 'Trecut', es: 'Pasado', fr: 'Passé', pt: 'Passado', de: 'Vorbei', ru: 'Мимо', uk: 'Повз', ja: '過ぎ', ko: '지나서', zh: '过了', ar: 'بعد', hi: 'के पार', it: 'Oltre', pl: 'Obok', he: 'מעבר ל', nl: 'Voorbij', vi: 'Qua', tl: 'Lampas', tr: 'Ötesinde', id: 'Melewati' },
+  'cw-among': { ro: 'Printre', es: 'Entre', fr: 'Parmi', pt: 'Entre', de: 'Unter', ru: 'Среди', uk: 'Серед', ja: 'の中で', ko: '사이에서', zh: '在…中间', ar: 'بين', hi: 'के बीच', it: 'Tra', pl: 'Wśród', he: 'בין', nl: 'Tussen', vi: 'Trong số', tl: 'Sa gitna ng', tr: 'Arasında', id: 'Di antara' },
+  'cw-during': { ro: 'În timpul', es: 'Durante', fr: 'Pendant', pt: 'Durante', de: 'Während', ru: 'Во время', uk: 'Під час', ja: 'の間', ko: '동안', zh: '在…期间', ar: 'خلال', hi: 'के दौरान', it: 'Durante', pl: 'Podczas', he: 'במהלך', nl: 'Tijdens', vi: 'Trong khi', tl: 'Sa panahon ng', tr: 'Sırasında', id: 'Selama' },
+  'cw-while': { ro: 'În timp ce', es: 'Mientras', fr: 'Pendant que', pt: 'Enquanto', de: 'Während', ru: 'Пока', uk: 'Поки', ja: 'の間', ko: '하는 동안', zh: '当…的时候', ar: 'بينما', hi: 'जबकि', it: 'Mentre', pl: 'Podczas gdy', he: 'בזמן ש', nl: 'Terwijl', vi: 'Trong khi', tl: 'Habang', tr: 'Esnasında', id: 'Sementara' },
+  'cw-whenever': { ro: 'Ori de câte ori', es: 'Cuando sea', fr: 'Chaque fois que', pt: 'Sempre que', de: 'Wann immer', ru: 'Всякий раз', uk: 'Щоразу', ja: 'いつでも', ko: '언제든지', zh: '每当', ar: 'كلما', hi: 'जब भी', it: 'Quando', pl: 'Kiedy', he: 'בכל פעם ש', nl: 'Wanneer ook', vi: 'Bất cứ khi nào', tl: 'Kahit kailan', tr: 'Her ne zaman', id: 'Kapanpun' },
+  'cw-wherever': { ro: 'Oriunde', es: 'Donde sea', fr: "N'importe où", pt: 'Onde quer que', de: 'Wo immer', ru: 'Везде', uk: 'Де б не', ja: 'どこでも', ko: '어디든', zh: '无论哪里', ar: 'أينما', hi: 'जहाँ भी', it: 'Ovunque', pl: 'Gdziekolwiek', he: 'בכל מקום', nl: 'Waar ook', vi: 'Bất cứ đâu', tl: 'Kahit saan', tr: 'Her nerede', id: 'Dimanapun' },
+  'cw-both': { ro: 'Ambii', es: 'Ambos', fr: 'Les deux', pt: 'Ambos', de: 'Beide', ru: 'Оба', uk: 'Обидва', ja: '両方', ko: '둘 다', zh: '两个都', ar: 'كلاهما', hi: 'दोनों', it: 'Entrambi', pl: 'Oboje', he: 'שניהם', nl: 'Beide', vi: 'Cả hai', tl: 'Pareho', tr: 'Her ikisi de', id: 'Keduanya' },
+  'cw-either': { ro: 'Oricare', es: 'Cualquiera', fr: "L'un ou l'autre", pt: 'Qualquer um', de: 'Entweder', ru: 'Любой', uk: 'Будь-який', ja: 'どちらか', ko: '어느 쪽이든', zh: '任意一个', ar: 'أي منهما', hi: 'कोई भी एक', it: "L'uno o l'altro", pl: 'Którykolwiek', he: 'כל אחד מהם', nl: 'Een van beide', vi: 'Một trong hai', tl: 'Alinman', tr: 'Her ikisi de', id: 'Salah satu' },
+  'cw-neither': { ro: 'Nici unul', es: 'Ninguno', fr: 'Ni l\'un ni l\'autre', pt: 'Nenhum', de: 'Keines', ru: 'Ни один', uk: 'Жоден', ja: 'どちらも…ない', ko: '둘 다 아닌', zh: '两个都不', ar: 'لا هذا ولا ذاك', hi: 'दोनों में से कोई नहीं', it: 'Né l\'uno né l\'altro', pl: 'Żaden', he: 'אף אחד מהם', nl: 'Geen van beide', vi: 'Không cái nào', tl: 'Wala sa dalawa', tr: 'Hiçbiri', id: 'Keduanya tidak' },
+  'cw-whether': { ro: 'Dacă', es: 'Si', fr: 'Si', pt: 'Se', de: 'Ob', ru: 'Ли', uk: 'Чи', ja: 'かどうか', ko: '~인지', zh: '是否', ar: 'ما إذا', hi: 'चाहे', it: 'Se', pl: 'Czy', he: 'האם', nl: 'Of', vi: 'Liệu', tl: 'Kung', tr: 'Olup olmadığı', id: 'Apakah' },
+  'cw-although': { ro: 'Deși', es: 'Aunque', fr: 'Bien que', pt: 'Embora', de: 'Obwohl', ru: 'Хотя', uk: 'Хоча', ja: 'だけれども', ko: '비록', zh: '虽然', ar: 'رغم أن', hi: 'हालांकि', it: 'Benché', pl: 'Chociaż', he: 'למרות ש', nl: 'Hoewel', vi: 'Mặc dù', tl: 'Kahit na', tr: 'Her ne kadar', id: 'Meskipun' },
+  'cw-though': { ro: 'Deși', es: 'Aunque', fr: 'Quoique', pt: 'Embora', de: 'Obwohl', ru: 'Хотя', uk: 'Хоча', ja: 'けれども', ko: '그래도', zh: '尽管', ar: 'رغم أن', hi: 'हालांकि', it: 'Sebbene', pl: 'Choć', he: 'אף על פי ש', nl: 'Hoewel', vi: 'Dù', tl: 'Kahit', tr: 'Yine de', id: 'Walaupun' },
+  'cw-unless': { ro: 'Dacă nu', es: 'A menos que', fr: 'À moins que', pt: 'A menos que', de: 'Es sei denn', ru: 'Если не', uk: 'Якщо не', ja: 'でなければ', ko: '~가 아니면', zh: '除非', ar: 'ما لم', hi: 'जब तक', it: 'A meno che', pl: 'Chyba że', he: 'אלא אם', nl: 'Tenzij', vi: 'Trừ khi', tl: 'Maliban kung', tr: 'Eğer … değilse', id: 'Kecuali jika' },
+  'cw-so': { ro: 'Deci', es: 'Entonces', fr: 'Donc', pt: 'Então', de: 'Also', ru: 'Поэтому', uk: 'Тому', ja: 'だから', ko: '그래서', zh: '所以', ar: 'إذن', hi: 'इसलिए', it: 'Quindi', pl: 'Więc', he: 'לכן', nl: 'Dus', vi: 'Vậy', tl: 'Kaya', tr: 'Öyleyse', id: 'Jadi' },
+  'cw-then': { ro: 'Atunci', es: 'Entonces', fr: 'Alors', pt: 'Então', de: 'Dann', ru: 'Потом', uk: 'Потім', ja: 'それから', ko: '그다음', zh: '然后', ar: 'ثم', hi: 'फिर', it: 'Poi', pl: 'Potem', he: 'אז', nl: 'Dan', vi: 'Rồi thì', tl: 'Saka', tr: 'Sonra', id: 'Kemudian' },
+  'cw-also': { ro: 'De asemenea', es: 'También', fr: 'Aussi', pt: 'Também', de: 'Auch', ru: 'Также', uk: 'Також', ja: 'また', ko: '또한', zh: '也', ar: 'أيضاً', hi: 'भी', it: 'Anche', pl: 'Również', he: 'גם', nl: 'Ook', vi: 'Cũng', tl: 'Gayundin', tr: 'Ayrıca', id: 'Juga' },
+  'cw-plus': { ro: 'Plus', es: 'Más', fr: 'Plus', pt: 'Mais', de: 'Plus', ru: 'Плюс', uk: 'Плюс', ja: 'プラス', ko: '더하기', zh: '加', ar: 'زائد', hi: 'जमा', it: 'Più', pl: 'Plus', he: 'פלוס', nl: 'Plus', vi: 'Cộng', tl: 'Plus', tr: 'Artı', id: 'Plus' },
+  'cw-like-2': { ro: 'Ca', es: 'Como', fr: 'Comme', pt: 'Como', de: 'Wie', ru: 'Как', uk: 'Як', ja: 'のように', ko: '처럼', zh: '像', ar: 'مثل', hi: 'की तरह', it: 'Come', pl: 'Jak', he: 'כמו', nl: 'Zoals', vi: 'Như', tl: 'Tulad ng', tr: 'Gibi', id: 'Seperti' },
+  'cw-as': { ro: 'Ca', es: 'Como', fr: 'Comme', pt: 'Como', de: 'Als', ru: 'Как', uk: 'Як', ja: 'として', ko: '로서', zh: '作为', ar: 'كـ', hi: 'के रूप में', it: 'Come', pl: 'Jako', he: 'כ', nl: 'Als', vi: 'Như là', tl: 'Bilang', tr: 'Olarak', id: 'Sebagai' },
+  'cw-such-as': { ro: 'Precum', es: 'Tal como', fr: 'Tel que', pt: 'Tal como', de: 'Zum Beispiel', ru: 'Такой как', uk: 'Такий як', ja: 'たとえば', ko: '예를 들어', zh: '例如', ar: 'مثل', hi: 'जैसे कि', it: 'Come ad esempio', pl: 'Taki jak', he: 'כגון', nl: 'Zoals', vi: 'Chẳng hạn như', tl: 'Tulad ng', tr: 'Gibi', id: 'Seperti' },
+  'cw-versus': { ro: 'Versus', es: 'Versus', fr: 'Contre', pt: 'Versus', de: 'Gegen', ru: 'Против', uk: 'Проти', ja: '対', ko: '대', zh: '对比', ar: 'مقابل', hi: 'बनाम', it: 'Contro', pl: 'Przeciwko', he: 'מול', nl: 'Versus', vi: 'Đối với', tl: 'Laban sa', tr: 'Karşısında', id: 'Lawan' },
+  'cw-since-then': { ro: 'De atunci', es: 'Desde entonces', fr: 'Depuis lors', pt: 'Desde então', de: 'Seitdem', ru: 'С тех пор', uk: 'Відтоді', ja: 'それ以来', ko: '그때 이후로', zh: '从那以后', ar: 'منذ ذلك الحين', hi: 'तब से', it: 'Da allora', pl: 'Od tamtej pory', he: 'מאז אז', nl: 'Sindsdien', vi: 'Từ đó', tl: 'Mula noon', tr: 'O zamandan beri', id: 'Sejak saat itu' },
+  'cw-until-now': { ro: 'Până acum', es: 'Hasta ahora', fr: "Jusqu'à maintenant", pt: 'Até agora', de: 'Bis jetzt', ru: 'До сих пор', uk: 'Досі', ja: '今まで', ko: '지금까지', zh: '到目前为止', ar: 'حتى الآن', hi: 'अब तक', it: 'Finora', pl: 'Do tej pory', he: 'עד עכשיו', nl: 'Tot nu toe', vi: 'Cho đến bây giờ', tl: 'Hanggang ngayon', tr: 'Şimdiye kadar', id: 'Sampai sekarang' },
+  'cw-right-after': { ro: 'Imediat după', es: 'Justo después', fr: 'Juste après', pt: 'Logo depois', de: 'Gleich danach', ru: 'Сразу после', uk: 'Одразу після', ja: 'すぐ後に', ko: '바로 후에', zh: '紧接着', ar: 'مباشرة بعد', hi: 'तुरंत बाद', it: 'Subito dopo', pl: 'Zaraz po', he: 'מיד אחרי', nl: 'Meteen daarna', vi: 'Ngay sau', tl: 'Agad pagkatapos', tr: 'Hemen sonra', id: 'Tepat setelah' },
+  'cw-just-before': { ro: 'Chiar înainte', es: 'Justo antes', fr: 'Juste avant', pt: 'Logo antes', de: 'Kurz davor', ru: 'Прямо перед', uk: 'Прямо перед', ja: 'すぐ前に', ko: '바로 전에', zh: '就在之前', ar: 'قبل مباشرة', hi: 'ठीक पहले', it: 'Appena prima', pl: 'Tuż przed', he: 'ממש לפני', nl: 'Net daarvoor', vi: 'Ngay trước', tl: 'Kaagad bago', tr: 'Hemen önce', id: 'Tepat sebelum' },
+  'cw-up-to': { ro: 'Până la', es: 'Hasta', fr: "Jusqu'à", pt: 'Até', de: 'Bis zu', ru: 'До', uk: 'До', ja: 'まで', ko: '까지', zh: '直到', ar: 'حتى', hi: 'तक', it: 'Fino a', pl: 'Do', he: 'עד', nl: 'Tot', vi: 'Đến', tl: 'Hanggang sa', tr: 'Kadar', id: 'Hingga' },
+  'cw-down-to': { ro: 'Până jos la', es: 'Hasta abajo', fr: "Jusqu'en bas", pt: 'Até baixo', de: 'Hinunter bis', ru: 'Вниз до', uk: 'Вниз до', ja: 'まで下へ', ko: '아래로', zh: '低至', ar: 'حتى أسفل', hi: 'नीचे तक', it: 'Fino in basso', pl: 'Aż do dołu', he: 'למטה עד', nl: 'Tot beneden', vi: 'Xuống đến', tl: 'Pababa hanggang', tr: 'Aşağı kadar', id: 'Turun ke' },
+  'cw-next-to': { ro: 'Lângă', es: 'Al lado de', fr: 'À côté de', pt: 'Do lado de', de: 'Neben', ru: 'Рядом с', uk: 'Поруч з', ja: 'の隣に', ko: '옆에', zh: '紧挨着', ar: 'بجانب', hi: 'के बगल में', it: 'Accanto a', pl: 'Obok', he: 'ליד', nl: 'Naast', vi: 'Kế bên', tl: 'Sa tabi ng', tr: 'Yanında', id: 'Di sebelah' },
+  'cw-out-of': { ro: 'În afara', es: 'Fuera de', fr: 'Hors de', pt: 'Fora de', de: 'Außerhalb', ru: 'Из', uk: 'З', ja: 'の外へ', ko: '밖으로', zh: '出去', ar: 'خارج من', hi: 'से बाहर', it: 'Fuori da', pl: 'Poza', he: 'מחוץ ל', nl: 'Uit', vi: 'Ra ngoài', tl: 'Palabas ng', tr: 'Dışından', id: 'Keluar dari' },
+  'cw-a-few': { ro: 'Câțiva', es: 'Unos pocos', fr: 'Quelques-uns', pt: 'Alguns poucos', de: 'Ein paar', ru: 'Несколько', uk: 'Кілька', ja: 'いくつか', ko: '몇 가지', zh: '几个', ar: 'بضعة', hi: 'कुछ', it: 'Alcuni', pl: 'Kilka', he: 'כמה', nl: 'Een paar', vi: 'Một vài', tl: 'Ilang', tr: 'Birkaç', id: 'Beberapa' },
+  'cw-a-lot': { ro: 'Mult', es: 'Mucho', fr: 'Beaucoup', pt: 'Muito', de: 'Viel', ru: 'Много', uk: 'Багато', ja: 'たくさん', ko: '많이', zh: '很多', ar: 'كثيراً', hi: 'बहुत', it: 'Molto', pl: 'Dużo', he: 'הרבה', nl: 'Veel', vi: 'Rất nhiều', tl: 'Marami', tr: 'Çok', id: 'Banyak' },
+  'cw-a-little': { ro: 'Puțin', es: 'Un poco', fr: 'Un peu', pt: 'Um pouco', de: 'Ein bisschen', ru: 'Немного', uk: 'Трохи', ja: '少し', ko: '조금', zh: '一点点', ar: 'قليلاً', hi: 'थोड़ा', it: 'Un po\'', pl: 'Trochę', he: 'קצת', nl: 'Een beetje', vi: 'Một chút', tl: 'Kaunti', tr: 'Biraz', id: 'Sedikit' },
   'help-i-am-cold': { ru: 'Мне холодно' },
   'help-i-am-hot': { ru: 'Мне жарко' },
   'help-i-am-sleepy': { ru: 'Я хочу спать' },
@@ -677,63 +677,63 @@ const T: Record<string, Partial<Record<SupportedLanguage, string>>> = {
   'help-where-is-my-aac': { ru: 'Где мой AAC' },
   'help-my-battery-is-low': { ru: 'У меня разряжается батарея' },
   'help-i-dropped-my-tablet': { ru: 'Я уронил планшет' },
-  'qt-hi': {},  // pending Phase 2 multilingual fill
-  'qt-hey': {},  // pending Phase 2 multilingual fill
-  'qt-bye': {},  // pending Phase 2 multilingual fill
-  'qt-bye-bye': {},  // pending Phase 2 multilingual fill
-  'qt-see-you': {},  // pending Phase 2 multilingual fill
-  'qt-see-you-soon': {},  // pending Phase 2 multilingual fill
-  'qt-see-you-tomorrow': {},  // pending Phase 2 multilingual fill
-  'qt-take-care': {},  // pending Phase 2 multilingual fill
-  'qt-have-fun': {},  // pending Phase 2 multilingual fill
-  'qt-good-morning': {},  // pending Phase 2 multilingual fill
-  'qt-good-afternoon': {},  // pending Phase 2 multilingual fill
-  'qt-good-evening': {},  // pending Phase 2 multilingual fill
-  'qt-good-night': {},  // pending Phase 2 multilingual fill
-  'qt-good-job': {},  // pending Phase 2 multilingual fill
-  'qt-well-done': {},  // pending Phase 2 multilingual fill
-  'qt-way-to-go': {},  // pending Phase 2 multilingual fill
-  'qt-awesome': {},  // pending Phase 2 multilingual fill
-  'qt-cool': {},  // pending Phase 2 multilingual fill
-  'qt-nice': {},  // pending Phase 2 multilingual fill
-  'qt-great': {},  // pending Phase 2 multilingual fill
-  'qt-wonderful': {},  // pending Phase 2 multilingual fill
-  'qt-amazing': {},  // pending Phase 2 multilingual fill
-  'qt-perfect': {},  // pending Phase 2 multilingual fill
-  'qt-yay': {},  // pending Phase 2 multilingual fill
-  'qt-okay': {},  // pending Phase 2 multilingual fill
-  'qt-alright': {},  // pending Phase 2 multilingual fill
-  'qt-sure': {},  // pending Phase 2 multilingual fill
-  'qt-of-course': {},  // pending Phase 2 multilingual fill
-  'qt-definitely': {},  // pending Phase 2 multilingual fill
-  'qt-maybe': {},  // pending Phase 2 multilingual fill
-  'qt-i-think-so': {},  // pending Phase 2 multilingual fill
-  'qt-i-am-not-sure': {},  // pending Phase 2 multilingual fill
-  'qt-it-is-fine': {},  // pending Phase 2 multilingual fill
-  'qt-no-problem': {},  // pending Phase 2 multilingual fill
-  'qt-no-worries': {},  // pending Phase 2 multilingual fill
-  'qt-never-mind': {},  // pending Phase 2 multilingual fill
-  'qt-my-bad': {},  // pending Phase 2 multilingual fill
-  'qt-oops': {},  // pending Phase 2 multilingual fill
-  'qt-bless-you': {},  // pending Phase 2 multilingual fill
-  'qt-happy-birthday': {},  // pending Phase 2 multilingual fill
-  'qt-happy-holidays': {},  // pending Phase 2 multilingual fill
-  'qt-merry-christmas': {},  // pending Phase 2 multilingual fill
-  'qt-happy-new-year': {},  // pending Phase 2 multilingual fill
-  'qt-eid-mubarak': {},  // pending Phase 2 multilingual fill
-  'qt-happy-hanukkah': {},  // pending Phase 2 multilingual fill
-  'qt-congratulations': {},  // pending Phase 2 multilingual fill
-  'qt-i-am-proud-of-you': {},  // pending Phase 2 multilingual fill
-  'qt-you-did-it': {},  // pending Phase 2 multilingual fill
-  'qt-how-was-your-day': {},  // pending Phase 2 multilingual fill
-  'qt-i-had-a-good-day': {},  // pending Phase 2 multilingual fill
-  'qt-i-had-a-bad-day': {},  // pending Phase 2 multilingual fill
-  'qt-tell-me-about-your-day': {},  // pending Phase 2 multilingual fill
-  'qt-i-missed-you': {},  // pending Phase 2 multilingual fill
-  'qt-i-am-here': {},  // pending Phase 2 multilingual fill
-  'qt-i-love-you-too': {},  // pending Phase 2 multilingual fill
-  'qt-you-are-my-friend': {},  // pending Phase 2 multilingual fill
-  'qt-best-friends': {},  // pending Phase 2 multilingual fill
+  'qt-hi': { ro: 'Salut', es: 'Hola', fr: 'Salut', pt: 'Oi', de: 'Hi', ru: 'Привет', uk: 'Привіт', ja: 'やあ', ko: '안녕', zh: '嗨', ar: 'مرحبا', hi: 'हाय', it: 'Ciao', pl: 'Cześć', he: 'היי', nl: 'Hoi', vi: 'Xin chào', tl: 'Hi', tr: 'Merhaba', id: 'Hai' },
+  'qt-hey': { ro: 'Hei', es: 'Oye', fr: 'Hé', pt: 'Ei', de: 'Hey', ru: 'Эй', uk: 'Гей', ja: 'ねえ', ko: '야', zh: '嘿', ar: 'هيه', hi: 'अरे', it: 'Ehi', pl: 'Hej', he: 'היי', nl: 'Hey', vi: 'Này', tl: 'Hey', tr: 'Hey', id: 'Hei' },
+  'qt-bye': { ro: 'Pa', es: 'Adiós', fr: 'Au revoir', pt: 'Tchau', de: 'Tschüss', ru: 'Пока', uk: 'Бувай', ja: 'バイバイ', ko: '잘 가요', zh: '拜', ar: 'وداعاً', hi: 'अलविदा', it: 'Arrivederci', pl: 'Pa', he: 'ביי', nl: 'Doei', vi: 'Tạm biệt', tl: 'Paalam', tr: 'Güle güle', id: 'Bye' },
+  'qt-bye-bye': { ro: 'Pa pa', es: 'Chao chao', fr: 'Au revoir', pt: 'Tchau tchau', de: 'Tschüss', ru: 'Пока-пока', uk: 'Пока-пока', ja: 'バイバイ', ko: '잘 가요', zh: '再见', ar: 'مع السلامة', hi: 'बाय बाय', it: 'Ciao ciao', pl: 'Pa pa', he: 'ביי ביי', nl: 'Doei doei', vi: 'Bái bái', tl: 'Paalam na', tr: 'Hoşça kal', id: 'Bye bye' },
+  'qt-see-you': { ro: 'Ne vedem', es: 'Nos vemos', fr: 'À bientôt', pt: 'Até logo', de: 'Bis bald', ru: 'Увидимся', uk: 'Побачимось', ja: 'またね', ko: '나중에 봐요', zh: '再见', ar: 'أراك', hi: 'मिलते हैं', it: 'Ci vediamo', pl: 'Do zobaczenia', he: 'להתראות', nl: 'Tot ziens', vi: 'Hẹn gặp lại', tl: 'Magkita tayo', tr: 'Görüşürüz', id: 'Sampai jumpa' },
+  'qt-see-you-soon': { ro: 'Ne vedem curând', es: 'Hasta pronto', fr: 'À très bientôt', pt: 'Até logo', de: 'Bis bald', ru: 'До скорого', uk: 'До скорого', ja: 'またすぐね', ko: '곧 봐요', zh: '很快见', ar: 'أراك قريباً', hi: 'जल्दी मिलेंगे', it: 'A presto', pl: 'Do zobaczenia wkrótce', he: 'להתראות בקרוב', nl: 'Tot snel', vi: 'Gặp lại sớm nhé', tl: 'Magkita din tayo', tr: 'Yakında görüşürüz', id: 'Sampai jumpa lagi' },
+  'qt-see-you-tomorrow': { ro: 'Ne vedem mâine', es: 'Hasta mañana', fr: 'À demain', pt: 'Até amanhã', de: 'Bis morgen', ru: 'До завтра', uk: 'До завтра', ja: 'また明日', ko: '내일 봐요', zh: '明天见', ar: 'أراك غداً', hi: 'कल मिलेंगे', it: 'A domani', pl: 'Do jutra', he: 'להתראות מחר', nl: 'Tot morgen', vi: 'Hẹn gặp ngày mai', tl: 'Magkita tayo bukas', tr: 'Yarın görüşürüz', id: 'Sampai besok' },
+  'qt-take-care': { ro: 'Ai grijă', es: 'Cuídate', fr: 'Prends soin de toi', pt: 'Cuide-se', de: 'Pass auf dich auf', ru: 'Береги себя', uk: 'Бережи себе', ja: '気をつけて', ko: '조심해요', zh: '保重', ar: 'اعتنِ بنفسك', hi: 'अपना ख्याल रखो', it: 'Prenditi cura di te', pl: 'Dbaj o siebie', he: 'תשמור על עצמך', nl: 'Pas goed op jezelf', vi: 'Giữ sức khỏe nhé', tl: 'Mag-ingat ka', tr: 'Kendine iyi bak', id: 'Jaga diri' },
+  'qt-have-fun': { ro: 'Distrează-te', es: 'Diviértete', fr: 'Amuse-toi bien', pt: 'Divirta-se', de: 'Viel Spaß', ru: 'Веселись', uk: 'Веселись', ja: '楽しんで', ko: '재미있게 놀아요', zh: '玩得开心', ar: 'استمتع', hi: 'मज़े करो', it: 'Divertiti', pl: 'Baw się dobrze', he: 'תהנה', nl: 'Veel plezier', vi: 'Chúc vui', tl: 'Magsaya ka', tr: 'İyi eğlenceler', id: 'Selamat bersenang-senang' },
+  'qt-good-morning': { ro: 'Bună dimineața', es: 'Buenos días', fr: 'Bonjour', pt: 'Bom dia', de: 'Guten Morgen', ru: 'Доброе утро', uk: 'Доброго ранку', ja: 'おはよう', ko: '좋은 아침이에요', zh: '早上好', ar: 'صباح الخير', hi: 'सुप्रभात', it: 'Buongiorno', pl: 'Dzień dobry', he: 'בוקר טוב', nl: 'Goedemorgen', vi: 'Chào buổi sáng', tl: 'Magandang umaga', tr: 'Günaydın', id: 'Selamat pagi' },
+  'qt-good-afternoon': { ro: 'Bună ziua', es: 'Buenas tardes', fr: 'Bonne après-midi', pt: 'Boa tarde', de: 'Guten Nachmittag', ru: 'Добрый день', uk: 'Добрий день', ja: 'こんにちは', ko: '좋은 오후예요', zh: '下午好', ar: 'مساء الخير', hi: 'नमस्ते', it: 'Buon pomeriggio', pl: 'Dzień dobry', he: 'צהריים טובים', nl: 'Goedemiddag', vi: 'Chào buổi chiều', tl: 'Magandang hapon', tr: 'İyi öğleden sonralar', id: 'Selamat siang' },
+  'qt-good-evening': { ro: 'Bună seara', es: 'Buenas noches', fr: 'Bonsoir', pt: 'Boa noite', de: 'Guten Abend', ru: 'Добрый вечер', uk: 'Добрий вечір', ja: 'こんばんは', ko: '좋은 저녁이에요', zh: '晚上好', ar: 'مساء الخير', hi: 'शुभ संध्या', it: 'Buonasera', pl: 'Dobry wieczór', he: 'ערב טוב', nl: 'Goedenavond', vi: 'Chào buổi tối', tl: 'Magandang gabi', tr: 'İyi akşamlar', id: 'Selamat sore' },
+  'qt-good-night': { ro: 'Noapte bună', es: 'Buenas noches', fr: 'Bonne nuit', pt: 'Boa noite', de: 'Gute Nacht', ru: 'Спокойной ночи', uk: 'Надобраніч', ja: 'おやすみ', ko: '잘 자요', zh: '晚安', ar: 'تصبح على خير', hi: 'शुभ रात्रि', it: 'Buonanotte', pl: 'Dobranoc', he: 'לילה טוב', nl: 'Goedenacht', vi: 'Chúc ngủ ngon', tl: 'Magandang gabi', tr: 'İyi geceler', id: 'Selamat malam' },
+  'qt-good-job': { ro: 'Bravo', es: 'Buen trabajo', fr: 'Bon travail', pt: 'Bom trabalho', de: 'Gute Arbeit', ru: 'Молодец', uk: 'Молодець', ja: 'よくできました', ko: '잘했어요', zh: '做得好', ar: 'عمل جيد', hi: 'शाबाश', it: 'Bravo', pl: 'Dobra robota', he: 'כל הכבוד', nl: 'Goed gedaan', vi: 'Làm tốt lắm', tl: 'Magaling', tr: 'İyi iş', id: 'Bagus sekali' },
+  'qt-well-done': { ro: 'Bine făcut', es: 'Bien hecho', fr: 'Bien joué', pt: 'Muito bem', de: 'Gut gemacht', ru: 'Отлично', uk: 'Добре зроблено', ja: 'よくできた', ko: '잘했어요', zh: '干得好', ar: 'أحسنت', hi: 'बहुत अच्छा', it: 'Ben fatto', pl: 'Świetnie', he: 'כל הכבוד', nl: 'Goed gedaan', vi: 'Giỏi lắm', tl: 'Magaling', tr: 'Aferin', id: 'Hebat' },
+  'qt-way-to-go': { ro: 'Bravo', es: 'Así se hace', fr: 'Bien joué', pt: 'Isso aí', de: 'So geht das', ru: 'Отлично', uk: 'Ось так', ja: 'すごいね', ko: '대단해요', zh: '厉害', ar: 'هكذا يكون', hi: 'वाह', it: 'Bravo così', pl: 'No i brawo', he: 'כך זה עובד', nl: 'Goed zo', vi: 'Tuyệt vời', tl: 'Ganyan', tr: 'İşte böyle', id: 'Begitu caranya' },
+  'qt-awesome': { ro: 'Grozav', es: 'Increíble', fr: 'Super', pt: 'Incrível', de: 'Toll', ru: 'Здорово', uk: 'Чудово', ja: 'すごい', ko: '대박이에요', zh: '太棒了', ar: 'رائع', hi: 'अद्भुत', it: 'Fantastico', pl: 'Wspaniały', he: 'מדהים', nl: 'Geweldig', vi: 'Tuyệt vời', tl: 'Galing', tr: 'Harika', id: 'Luar biasa' },
+  'qt-cool': { ro: 'Mișto', es: 'Genial', fr: 'Cool', pt: 'Legal', de: 'Cool', ru: 'Круто', uk: 'Круто', ja: 'かっこいい', ko: '멋져요', zh: '酷', ar: 'رائع', hi: 'बढ़िया', it: 'Figo', pl: 'Fajnie', he: 'מגניב', nl: 'Cool', vi: 'Tuyệt', tl: 'Astig', tr: 'Harika', id: 'Keren' },
+  'qt-nice': { ro: 'Drăguț', es: 'Genial', fr: 'Super', pt: 'Legal', de: 'Schön', ru: 'Хорошо', uk: 'Гарно', ja: 'いいね', ko: '좋아요', zh: '不错', ar: 'جميل', hi: 'अच्छा', it: 'Bello', pl: 'Fajnie', he: 'נחמד', nl: 'Mooi', vi: 'Hay', tl: 'Maganda', tr: 'Güzel', id: 'Bagus' },
+  'qt-great': { ro: 'Excelent', es: 'Excelente', fr: 'Excellent', pt: 'Ótimo', de: 'Toll', ru: 'Отлично', uk: 'Чудово', ja: 'すばらしい', ko: '훌륭해요', zh: '很棒', ar: 'ممتاز', hi: 'शानदार', it: 'Ottimo', pl: 'Świetnie', he: 'נהדר', nl: 'Geweldig', vi: 'Tuyệt', tl: 'Napakagaling', tr: 'Muhteşem', id: 'Hebat' },
+  'qt-wonderful': { ro: 'Minunat', es: 'Maravilloso', fr: 'Merveilleux', pt: 'Maravilhoso', de: 'Wunderbar', ru: 'Замечательно', uk: 'Чудово', ja: 'すてき', ko: '훌륭해요', zh: '美妙', ar: 'رائع جداً', hi: 'अद्भुत', it: 'Meraviglioso', pl: 'Cudownie', he: 'נפלא', nl: 'Prachtig', vi: 'Tuyệt diệu', tl: 'Kahanga-hanga', tr: 'Harika', id: 'Menakjubkan' },
+  'qt-amazing': { ro: 'Uimitor', es: 'Asombroso', fr: 'Incroyable', pt: 'Incrível', de: 'Erstaunlich', ru: 'Удивительно', uk: 'Дивовижно', ja: 'すごい', ko: '놀라워요', zh: '惊人', ar: 'مذهل', hi: 'अविश्वसनीय', it: 'Straordinario', pl: 'Niesamowite', he: 'מדהים', nl: 'Verbazingwekkend', vi: 'Kinh ngạc', tl: 'Kahanga-hanga', tr: 'İnanılmaz', id: 'Mengagumkan' },
+  'qt-perfect': { ro: 'Perfect', es: 'Perfecto', fr: 'Parfait', pt: 'Perfeito', de: 'Perfekt', ru: 'Отлично', uk: 'Чудово', ja: 'パーフェクト', ko: '완벽해요', zh: '完美', ar: 'مثالي', hi: 'बिल्कुल सही', it: 'Perfetto', pl: 'Idealnie', he: 'מושלם', nl: 'Perfect', vi: 'Hoàn hảo', tl: 'Perpekto', tr: 'Mükemmel', id: 'Sempurna' },
+  'qt-yay': { ro: 'Ura', es: 'Hurra', fr: 'Youpi', pt: 'Eba', de: 'Juchhu', ru: 'Ура', uk: 'Ура', ja: 'やったー', ko: '야호', zh: '耶', ar: 'هراي', hi: 'वाह', it: 'Evviva', pl: 'Hurra', he: 'יאי', nl: 'Hoera', vi: 'Hoan hô', tl: 'Yehey', tr: 'Yaşasın', id: 'Hore' },
+  'qt-okay': { ro: 'Bine', es: 'Está bien', fr: "D'accord", pt: 'Ok', de: 'Okay', ru: 'Хорошо', uk: 'Добре', ja: 'オーケー', ko: '알겠어요', zh: '好的', ar: 'حسناً', hi: 'ठीक है', it: "Va bene", pl: 'Okej', he: 'בסדר', nl: 'Oké', vi: 'Được', tl: 'Sige', tr: 'Tamam', id: 'Oke' },
+  'qt-alright': { ro: 'Bine', es: 'De acuerdo', fr: "D'accord", pt: 'Tudo bem', de: 'Alles klar', ru: 'Ладно', uk: 'Добре', ja: 'わかった', ko: '알겠어요', zh: '好吧', ar: 'حسناً', hi: 'ठीक है', it: 'Va bene', pl: 'W porządku', he: 'בסדר', nl: 'Oké', vi: 'Được rồi', tl: 'Sige na', tr: 'Tamam', id: 'Baiklah' },
+  'qt-sure': { ro: 'Sigur', es: 'Claro', fr: 'Bien sûr', pt: 'Claro', de: 'Sicher', ru: 'Конечно', uk: 'Звісно', ja: 'もちろん', ko: '물론이죠', zh: '当然', ar: 'بالتأكيد', hi: 'ज़रूर', it: 'Certo', pl: 'Pewnie', he: 'בטח', nl: 'Zeker', vi: 'Chắc chắn', tl: 'Siyempre', tr: 'Tabii', id: 'Tentu' },
+  'qt-of-course': { ro: 'Desigur', es: 'Por supuesto', fr: 'Bien sûr', pt: 'Claro', de: 'Natürlich', ru: 'Конечно', uk: 'Звичайно', ja: 'もちろん', ko: '물론이죠', zh: '当然了', ar: 'بالطبع', hi: 'बिलकुल', it: 'Certo', pl: 'Oczywiście', he: 'כמובן', nl: 'Natuurlijk', vi: 'Tất nhiên', tl: 'Syempre', tr: 'Tabii ki', id: 'Tentu saja' },
+  'qt-definitely': { ro: 'Absolut', es: 'Definitivamente', fr: 'Absolument', pt: 'Definitivamente', de: 'Definitiv', ru: 'Определённо', uk: 'Однозначно', ja: '絶対に', ko: '확실히', zh: '绝对', ar: 'بالتأكيد', hi: 'निश्चित रूप से', it: 'Assolutamente', pl: 'Zdecydowanie', he: 'בהחלט', nl: 'Zeker', vi: 'Chắc chắn', tl: 'Tiyak', tr: 'Kesinlikle', id: 'Pasti' },
+  'qt-maybe': { ro: 'Poate', es: 'Quizás', fr: 'Peut-être', pt: 'Talvez', de: 'Vielleicht', ru: 'Может быть', uk: 'Можливо', ja: 'たぶん', ko: '아마도요', zh: '也许', ar: 'ربما', hi: 'शायद', it: 'Forse', pl: 'Może', he: 'אולי', nl: 'Misschien', vi: 'Có thể', tl: 'Siguro', tr: 'Belki', id: 'Mungkin' },
+  'qt-i-think-so': { ro: 'Cred că da', es: 'Creo que sí', fr: 'Je pense que oui', pt: 'Acho que sim', de: 'Ich denke schon', ru: 'Я думаю, да', uk: 'Я думаю, так', ja: 'そう思います', ko: '그런 것 같아요', zh: '我想是的', ar: 'أعتقد ذلك', hi: 'मुझे लगता है हाँ', it: 'Penso di sì', pl: 'Myślę, że tak', he: 'אני חושב שכן', nl: 'Ik denk het', vi: 'Tôi nghĩ vậy', tl: 'Sa tingin ko oo', tr: 'Öyle sanırım', id: 'Sepertinya begitu' },
+  'qt-i-am-not-sure': { ro: 'Nu sunt sigur', es: 'No estoy seguro', fr: 'Je ne suis pas sûr', pt: 'Não tenho certeza', de: 'Ich bin nicht sicher', ru: 'Я не уверен', uk: 'Я не впевнений', ja: 'わかりません', ko: '잘 모르겠어요', zh: '我不确定', ar: 'لست متأكداً', hi: 'मुझे यकीन नहीं', it: 'Non sono sicuro', pl: 'Nie jestem pewien', he: 'אני לא בטוח', nl: 'Ik weet het niet zeker', vi: 'Tôi không chắc', tl: 'Hindi ako sigurado', tr: 'Emin değilim', id: 'Saya tidak yakin' },
+  'qt-it-is-fine': { ro: 'E bine', es: 'Está bien', fr: "C'est bon", pt: 'Está tudo bem', de: 'Das ist okay', ru: 'Всё нормально', uk: 'Все добре', ja: '大丈夫です', ko: '괜찮아요', zh: '没关系', ar: 'لا بأس', hi: 'ठीक है', it: 'Va bene', pl: 'Dobrze', he: 'בסדר', nl: 'Het is oké', vi: 'Ổn thôi', tl: 'Okay lang', tr: 'Sorun değil', id: 'Tidak apa-apa' },
+  'qt-no-problem': { ro: 'Nicio problemă', es: 'Sin problema', fr: 'Pas de problème', pt: 'Sem problema', de: 'Kein Problem', ru: 'Без проблем', uk: 'Без проблем', ja: '大丈夫', ko: '문제 없어요', zh: '没问题', ar: 'لا مشكلة', hi: 'कोई बात नहीं', it: 'Nessun problema', pl: 'Żaden problem', he: 'אין בעיה', nl: 'Geen probleem', vi: 'Không vấn đề gì', tl: 'Walang problema', tr: 'Sorun değil', id: 'Tidak masalah' },
+  'qt-no-worries': { ro: 'Fără griji', es: 'Sin preocupaciones', fr: 'Ne t\'inquiète pas', pt: 'Sem preocupação', de: 'Kein Stress', ru: 'Не беспокойся', uk: 'Не хвилюйся', ja: '心配しないで', ko: '걱정 마요', zh: '别担心', ar: 'لا تقلق', hi: 'चिंता मत करो', it: 'Non preoccuparti', pl: 'Nie martw się', he: 'אל תדאג', nl: 'Geen zorgen', vi: 'Đừng lo', tl: 'Huwag mag-alala', tr: 'Merak etme', id: 'Jangan khawatir' },
+  'qt-never-mind': { ro: 'Lasă', es: 'No importa', fr: "Peu importe", pt: 'Deixa pra lá', de: 'Egal', ru: 'Неважно', uk: 'Неважливо', ja: 'いいです', ko: '괜찮아요', zh: '算了', ar: 'لا يهم', hi: 'छोड़ो', it: 'Non importa', pl: 'Nieważne', he: 'לא משנה', nl: 'Laat maar', vi: 'Thôi kệ đi', tl: 'Wag na', tr: 'Boşver', id: 'Tidak apa-apa' },
+  'qt-my-bad': { ro: 'Vina mea', es: 'Fue mi culpa', fr: 'Ma faute', pt: 'Minha culpa', de: 'Mein Fehler', ru: 'Моя ошибка', uk: 'Моя помилка', ja: '私のせいです', ko: '제 잘못이에요', zh: '我的错', ar: 'خطأي', hi: 'मेरी गलती', it: 'Colpa mia', pl: 'Mój błąd', he: 'אשמתי', nl: 'Mijn fout', vi: 'Lỗi của tôi', tl: 'Kasalanan ko', tr: 'Benim hatam', id: 'Kesalahan saya' },
+  'qt-oops': { ro: 'Ups', es: 'Uy', fr: 'Oups', pt: 'Ops', de: 'Hoppla', ru: 'Ой', uk: 'Ой', ja: 'おっと', ko: '이런', zh: '哎呀', ar: 'أوه', hi: 'अरे', it: 'Oops', pl: 'Ojej', he: 'אופס', nl: 'Oeps', vi: 'Ối', tl: 'Ay', tr: 'Hoppala', id: 'Ups' },
+  'qt-bless-you': { ro: 'Sănătate', es: 'Salud', fr: 'À tes souhaits', pt: 'Saúde', de: 'Gesundheit', ru: 'Будь здоров', uk: 'Будь здоровий', ja: 'お大事に', ko: '건강하세요', zh: '保重', ar: 'يرحمك الله', hi: 'सेहत रहे', it: 'Salute', pl: 'Na zdrowie', he: 'לבריאות', nl: 'Gezondheid', vi: 'Sức khỏe', tl: 'Bless you', tr: 'Sağlıklı olasın', id: 'Semoga sehat' },
+  'qt-happy-birthday': { ro: 'La mulți ani', es: 'Feliz cumpleaños', fr: 'Joyeux anniversaire', pt: 'Feliz aniversário', de: 'Alles Gute zum Geburtstag', ru: 'С днём рождения', uk: 'З днем народження', ja: 'お誕生日おめでとう', ko: '생일 축하해요', zh: '生日快乐', ar: 'عيد ميلاد سعيد', hi: 'जन्मदिन मुबारक', it: 'Buon compleanno', pl: 'Wszystkiego najlepszego', he: 'יום הולדת שמח', nl: 'Gelukkige verjaardag', vi: 'Chúc mừng sinh nhật', tl: 'Maligayang kaarawan', tr: 'İyi ki doğdun', id: 'Selamat ulang tahun' },
+  'qt-happy-holidays': { ro: 'Sărbători fericite', es: 'Felices fiestas', fr: 'Bonnes fêtes', pt: 'Boas festas', de: 'Frohe Feiertage', ru: 'Счастливых праздников', uk: 'Зі святом', ja: '楽しい休日を', ko: '즐거운 휴일 되세요', zh: '节日快乐', ar: 'عيد سعيد', hi: 'खुशहाल त्योहार', it: 'Buone feste', pl: 'Wesołych świąt', he: 'חג שמח', nl: 'Fijne feestdagen', vi: 'Chúc mừng lễ', tl: 'Maligayang pista', tr: 'Mutlu tatiller', id: 'Selamat liburan' },
+  'qt-merry-christmas': { ro: 'Crăciun fericit', es: 'Feliz Navidad', fr: 'Joyeux Noël', pt: 'Feliz Natal', de: 'Frohe Weihnachten', ru: 'С Рождеством', uk: 'З Різдвом', ja: 'メリークリスマス', ko: '메리 크리스마스', zh: '圣诞快乐', ar: 'عيد ميلاد مجيد', hi: 'मेरी क्रिसमस', it: 'Buon Natale', pl: 'Wesołych Świąt', he: 'חג מולד שמח', nl: 'Vrolijk Kerstfeest', vi: 'Giáng sinh vui vẻ', tl: 'Maligayang Pasko', tr: 'Mutlu Noeller', id: 'Selamat Natal' },
+  'qt-happy-new-year': { ro: 'An nou fericit', es: 'Feliz año nuevo', fr: 'Bonne année', pt: 'Feliz ano novo', de: 'Frohes neues Jahr', ru: 'С новым годом', uk: 'З новим роком', ja: '新年おめでとう', ko: '새해 복 많이 받으세요', zh: '新年快乐', ar: 'سنة سعيدة', hi: 'नया साल मुबारक', it: 'Buon anno nuovo', pl: 'Szczęśliwego nowego roku', he: 'שנה טובה', nl: 'Gelukkig nieuwjaar', vi: 'Chúc mừng năm mới', tl: 'Maligayang Bagong Taon', tr: 'Mutlu yıllar', id: 'Selamat tahun baru' },
+  'qt-eid-mubarak': { ro: 'Eid Mubarak', es: 'Eid Mubarak', fr: 'Eid Mubarak', pt: 'Eid Mubarak', de: 'Eid Mubarak', ru: 'Ид Мубарак', uk: 'Ід Мубарак', ja: 'イード・ムバラク', ko: '이드 무바라크', zh: '开斋节快乐', ar: 'عيد مبارك', hi: 'ईद मुबारक', it: 'Eid Mubarak', pl: 'Eid Mubarak', he: 'עיד מובארק', nl: 'Eid Mubarak', vi: 'Eid Mubarak', tl: 'Eid Mubarak', tr: 'Eid Mubarak', id: 'Selamat Hari Raya' },
+  'qt-happy-hanukkah': { ro: 'Hanuka fericită', es: 'Feliz Janucá', fr: 'Joyeuse Hanoucca', pt: 'Feliz Hanukkah', de: 'Frohes Chanukka', ru: 'Хануки', uk: 'Хануки', ja: 'ハヌカおめでとう', ko: '하누카 축하해요', zh: '光明节快乐', ar: 'حانوكا سعيدة', hi: 'हैप्पी हनुक्का', it: 'Felice Hanukkah', pl: 'Wesołej Chanuki', he: 'חנוכה שמח', nl: 'Prettige Chanoeka', vi: 'Chúc mừng Hanukkah', tl: 'Maligayang Hanukkah', tr: 'Mutlu Hanuka', id: 'Selamat Hanukkah' },
+  'qt-congratulations': { ro: 'Felicitări', es: 'Felicitaciones', fr: 'Félicitations', pt: 'Parabéns', de: 'Herzlichen Glückwunsch', ru: 'Поздравляю', uk: 'Вітаю', ja: 'おめでとう', ko: '축하해요', zh: '恭喜', ar: 'تهانينا', hi: 'बधाई हो', it: 'Congratulazioni', pl: 'Gratulacje', he: 'ברכות', nl: 'Gefeliciteerd', vi: 'Chúc mừng', tl: 'Maligayang bati', tr: 'Tebrikler', id: 'Selamat' },
+  'qt-i-am-proud-of-you': { ro: 'Sunt mândru de tine', es: 'Estoy orgulloso de ti', fr: 'Je suis fier de toi', pt: 'Tenho orgulho de você', de: 'Ich bin stolz auf dich', ru: 'Я горжусь тобой', uk: 'Я пишаюся тобою', ja: 'あなたを誇りに思う', ko: '네가 자랑스러워요', zh: '我为你骄傲', ar: 'أنا فخور بك', hi: 'मुझे तुम पर गर्व है', it: 'Sono orgoglioso di te', pl: 'Jestem z ciebie dumny', he: 'אני גאה בך', nl: 'Ik ben trots op je', vi: 'Tôi tự hào về bạn', tl: 'Ipinagmamalaki kita', tr: 'Seninle gurur duyuyorum', id: 'Saya bangga padamu' },
+  'qt-you-did-it': { ro: 'Ai reușit', es: 'Lo lograste', fr: "Tu l'as fait", pt: 'Você conseguiu', de: 'Du hast es geschafft', ru: 'Ты сделал это', uk: 'Ти зробив це', ja: 'やったね', ko: '해냈어요', zh: '你做到了', ar: 'نجحت', hi: 'तुमने कर दिखाया', it: "Ce l'hai fatta", pl: 'Udało ci się', he: 'הצלחת', nl: 'Je hebt het gedaan', vi: 'Bạn đã làm được', tl: 'Nagawa mo', tr: 'Başardın', id: 'Kamu berhasil' },
+  'qt-how-was-your-day': { ro: 'Cum a fost ziua ta?', es: '¿Cómo estuvo tu día?', fr: 'Comment était ta journée?', pt: 'Como foi o seu dia?', de: 'Wie war dein Tag?', ru: 'Как прошёл твой день?', uk: 'Як пройшов твій день?', ja: '今日はどうだった?', ko: '오늘 어땠어요?', zh: '今天过得怎么样?', ar: 'كيف كان يومك؟', hi: 'आपका दिन कैसा रहा?', it: 'Com\'era la tua giornata?', pl: 'Jak minął ci dzień?', he: 'איך היה היום שלך?', nl: 'Hoe was je dag?', vi: 'Ngày hôm nay của bạn thế nào?', tl: 'Kumusta ang iyong araw?', tr: 'Günün nasıl geçti?', id: 'Bagaimana harimu?' },
+  'qt-i-had-a-good-day': { ro: 'Am avut o zi bună', es: 'Tuve un buen día', fr: "J'ai eu une bonne journée", pt: 'Tive um bom dia', de: 'Ich hatte einen guten Tag', ru: 'У меня был хороший день', uk: 'У мене був гарний день', ja: '良い一日でした', ko: '좋은 하루였어요', zh: '今天过得很好', ar: 'كان يومي جيداً', hi: 'मेरा दिन अच्छा था', it: 'Ho avuto una bella giornata', pl: 'Miałem dobry dzień', he: 'היה לי יום טוב', nl: 'Ik had een goede dag', vi: 'Tôi có một ngày tốt', tl: 'Maganda ang aking araw', tr: 'İyi bir gün geçirdim', id: 'Hari saya menyenangkan' },
+  'qt-i-had-a-bad-day': { ro: 'Am avut o zi proastă', es: 'Tuve un mal día', fr: "J'ai eu une mauvaise journée", pt: 'Tive um dia ruim', de: 'Ich hatte einen schlechten Tag', ru: 'У меня был плохой день', uk: 'У мене був поганий день', ja: '今日は良くなかった', ko: '힘든 하루였어요', zh: '今天过得不好', ar: 'كان يومي سيئاً', hi: 'मेरा दिन अच्छा नहीं था', it: 'Ho avuto una brutta giornata', pl: 'Miałem zły dzień', he: 'היה לי יום גרוע', nl: 'Ik had een slechte dag', vi: 'Hôm nay tôi không vui', tl: 'Hindi maganda ang aking araw', tr: 'Kötü bir gün geçirdim', id: 'Hari saya tidak menyenangkan' },
+  'qt-tell-me-about-your-day': { ro: 'Spune-mi despre ziua ta', es: 'Cuéntame sobre tu día', fr: 'Parle-moi de ta journée', pt: 'Me conta sobre o seu dia', de: 'Erzähl mir von deinem Tag', ru: 'Расскажи мне о своём дне', uk: 'Розкажи мені про свій день', ja: '今日のことを話して', ko: '오늘 있었던 일 얘기해 줘요', zh: '给我讲讲你今天的事', ar: 'أخبرني عن يومك', hi: 'मुझे अपने दिन के बारे में बताओ', it: 'Dimmi della tua giornata', pl: 'Opowiedz mi o swoim dniu', he: 'ספר לי על היום שלך', nl: 'Vertel me over je dag', vi: 'Kể cho tôi về ngày hôm nay của bạn', tl: 'Kwentuhan mo ako tungkol sa iyong araw', tr: 'Günün hakkında anlat', id: 'Ceritakan tentang harimu' },
+  'qt-i-missed-you': { ro: 'Mi-a fost dor de tine', es: 'Te extrañé', fr: 'Tu m\'as manqué', pt: 'Senti sua falta', de: 'Ich habe dich vermisst', ru: 'Я скучал по тебе', uk: 'Я сумував за тобою', ja: 'さみしかったよ', ko: '보고 싶었어요', zh: '我想你了', ar: 'اشتقت إليك', hi: 'मैं तुम्हें याद करता था', it: 'Mi sei mancato', pl: 'Tęskniłem za tobą', he: 'געגעתי אליך', nl: 'Ik heb je gemist', vi: 'Tôi nhớ bạn', tl: 'Namiss kita', tr: 'Seni özledim', id: 'Aku merindukanmu' },
+  'qt-i-am-here': { ro: 'Sunt aici', es: 'Estoy aquí', fr: 'Je suis là', pt: 'Estou aqui', de: 'Ich bin hier', ru: 'Я здесь', uk: 'Я тут', ja: 'ここにいるよ', ko: '여기 있어요', zh: '我在这儿', ar: 'أنا هنا', hi: 'मैं यहाँ हूँ', it: 'Sono qui', pl: 'Jestem tutaj', he: 'אני כאן', nl: 'Ik ben hier', vi: 'Tôi ở đây', tl: 'Nandito ako', tr: 'Buradayım', id: 'Saya di sini' },
+  'qt-i-love-you-too': { ro: 'Și eu te iubesc', es: 'Yo también te quiero', fr: 'Je t\'aime aussi', pt: 'Eu também te amo', de: 'Ich liebe dich auch', ru: 'Я тебя тоже люблю', uk: 'Я тебе теж люблю', ja: '私も大好き', ko: '저도 사랑해요', zh: '我也爱你', ar: 'أنا أحبك أيضاً', hi: 'मैं भी तुमसे प्यार करता हूँ', it: 'Anch\'io ti voglio bene', pl: 'Ja też cię kocham', he: 'גם אני אוהב אותך', nl: 'Ik hou ook van jou', vi: 'Tôi cũng yêu bạn', tl: 'Mahal din kita', tr: 'Ben de seni seviyorum', id: 'Aku juga mencintaimu' },
+  'qt-you-are-my-friend': { ro: 'Ești prietenul meu', es: 'Eres mi amigo', fr: 'Tu es mon ami', pt: 'Você é meu amigo', de: 'Du bist mein Freund', ru: 'Ты мой друг', uk: 'Ти мій друг', ja: 'あなたは友達です', ko: '당신은 내 친구예요', zh: '你是我的朋友', ar: 'أنت صديقي', hi: 'तुम मेरे दोस्त हो', it: 'Sei mio amico', pl: 'Jesteś moim przyjacielem', he: 'אתה חברי', nl: 'Jij bent mijn vriend', vi: 'Bạn là bạn của tôi', tl: 'Kaibigan kita', tr: 'Sen benim arkadaşımsın', id: 'Kamu adalah temanku' },
+  'qt-best-friends': { ro: 'Cei mai buni prieteni', es: 'Mejores amigos', fr: 'Meilleurs amis', pt: 'Melhores amigos', de: 'Beste Freunde', ru: 'Лучшие друзья', uk: 'Найкращі друзі', ja: '親友', ko: '가장 친한 친구', zh: '最好的朋友', ar: 'أفضل الأصدقاء', hi: 'सबसे अच्छे दोस्त', it: 'Migliori amici', pl: 'Najlepsi przyjaciele', he: 'חברים כי טובים', nl: 'Beste vrienden', vi: 'Bạn thân nhất', tl: 'Pinakamatalik na kaibigan', tr: 'En iyi arkadaşlar', id: 'Sahabat terbaik' },
   'fe-calm': { de: 'Ruhig' },
   'fe-peaceful': { de: 'Friedlich' },
   'fe-relaxed': { de: 'Entspannt' },
@@ -789,537 +789,542 @@ const T: Record<string, Partial<Record<SupportedLanguage, string>>> = {
   'fe-i-feel-bad': { de: 'Ich fühle mich schlecht' },
   'fe-i-feel-okay': { de: 'Es geht mir okay' },
   'fe-i-feel-weird': { de: 'Ich fühle mich seltsam' },
-  'qu-who-is-that': {},  // pending Phase 2 multilingual fill
-  'qu-what-is-that': {},  // pending Phase 2 multilingual fill
-  'qu-where-is-it': {},  // pending Phase 2 multilingual fill
-  'qu-when-is-it': {},  // pending Phase 2 multilingual fill
-  'qu-why-is-that': {},  // pending Phase 2 multilingual fill
-  'qu-how-does-it-work': {},  // pending Phase 2 multilingual fill
-  'qu-how-do-i': {},  // pending Phase 2 multilingual fill
-  'qu-can-i-have-it': {},  // pending Phase 2 multilingual fill
-  'qu-can-i-try': {},  // pending Phase 2 multilingual fill
-  'qu-can-i-go': {},  // pending Phase 2 multilingual fill
-  'qu-may-i-please': {},  // pending Phase 2 multilingual fill
-  'qu-will-you-help': {},  // pending Phase 2 multilingual fill
-  'qu-are-you-okay': {},  // pending Phase 2 multilingual fill
-  'qu-are-we-there-yet': {},  // pending Phase 2 multilingual fill
-  'qu-where-are-we-going': {},  // pending Phase 2 multilingual fill
-  'qu-when-will-we-be-there': {},  // pending Phase 2 multilingual fill
-  'qu-how-much-longer': {},  // pending Phase 2 multilingual fill
-  'qu-what-time-is-it': {},  // pending Phase 2 multilingual fill
-  'qu-what-day-is-it': {},  // pending Phase 2 multilingual fill
-  'qu-is-it-ready-yet': {},  // pending Phase 2 multilingual fill
-  'qu-can-we-go-now': {},  // pending Phase 2 multilingual fill
-  'qu-can-we-do-this': {},  // pending Phase 2 multilingual fill
-  'qu-did-you-see-that': {},  // pending Phase 2 multilingual fill
-  'qu-did-i-do-good': {},  // pending Phase 2 multilingual fill
-  'qu-what-happened': {},  // pending Phase 2 multilingual fill
-  'qu-where-did-it-go': {},  // pending Phase 2 multilingual fill
-  'qu-who-said-that': {},  // pending Phase 2 multilingual fill
-  'qu-what-did-they-say': {},  // pending Phase 2 multilingual fill
-  'qu-how-old-are-you': {},  // pending Phase 2 multilingual fill
-  'qu-what-is-your-name': {},  // pending Phase 2 multilingual fill
-  'qu-how-are-you-feeling': {},  // pending Phase 2 multilingual fill
-  'qu-what-is-for-dinner': {},  // pending Phase 2 multilingual fill
-  'qu-what-is-for-snack': {},  // pending Phase 2 multilingual fill
-  'qu-is-it-bedtime': {},  // pending Phase 2 multilingual fill
-  'qu-are-you-my-friend': {},  // pending Phase 2 multilingual fill
-  'qu-will-you-play-with-me': {},  // pending Phase 2 multilingual fill
-  'ac-wave': {},  // pending Phase 2 multilingual fill
-  'ac-clap': {},  // pending Phase 2 multilingual fill
-  'ac-point': {},  // pending Phase 2 multilingual fill
-  'ac-nod': {},  // pending Phase 2 multilingual fill
-  'ac-shake-head': {},  // pending Phase 2 multilingual fill
-  'ac-whisper': {},  // pending Phase 2 multilingual fill
-  'ac-shout': {},  // pending Phase 2 multilingual fill
-  'ac-sing': {},  // pending Phase 2 multilingual fill
-  'ac-hum': {},  // pending Phase 2 multilingual fill
-  'ac-roll': {},  // pending Phase 2 multilingual fill
-  'ac-slide': {},  // pending Phase 2 multilingual fill
-  'ac-spin': {},  // pending Phase 2 multilingual fill
-  'ac-hop': {},  // pending Phase 2 multilingual fill
-  'ac-skip': {},  // pending Phase 2 multilingual fill
-  'ac-crawl': {},  // pending Phase 2 multilingual fill
-  'ac-tiptoe': {},  // pending Phase 2 multilingual fill
-  'ac-tip-toe': {},  // pending Phase 2 multilingual fill
-  'ac-march': {},  // pending Phase 2 multilingual fill
-  'ac-climb-up': {},  // pending Phase 2 multilingual fill
-  'ac-climb-down': {},  // pending Phase 2 multilingual fill
-  'ac-push-it': {},  // pending Phase 2 multilingual fill
-  'ac-pull-it': {},  // pending Phase 2 multilingual fill
-  'ac-pick-it-up': {},  // pending Phase 2 multilingual fill
-  'ac-set-it-down': {},  // pending Phase 2 multilingual fill
-  'ac-pour': {},  // pending Phase 2 multilingual fill
-  'ac-stir': {},  // pending Phase 2 multilingual fill
-  'ac-mix': {},  // pending Phase 2 multilingual fill
-  'ac-spread': {},  // pending Phase 2 multilingual fill
-  'ac-fold': {},  // pending Phase 2 multilingual fill
-  'ac-tie': {},  // pending Phase 2 multilingual fill
-  'ac-untie': {},  // pending Phase 2 multilingual fill
-  'ac-zip': {},  // pending Phase 2 multilingual fill
-  'ac-unzip': {},  // pending Phase 2 multilingual fill
-  'ac-snap': {},  // pending Phase 2 multilingual fill
-  'ac-buckle': {},  // pending Phase 2 multilingual fill
-  'ac-brush-teeth': {},  // pending Phase 2 multilingual fill
-  'ac-brush-hair': {},  // pending Phase 2 multilingual fill
-  'ac-comb': {},  // pending Phase 2 multilingual fill
-  'ac-floss': {},  // pending Phase 2 multilingual fill
-  'ac-get-dressed': {},  // pending Phase 2 multilingual fill
-  'ac-get-undressed': {},  // pending Phase 2 multilingual fill
-  'ac-put-on-shoes': {},  // pending Phase 2 multilingual fill
-  'ac-take-off-shoes': {},  // pending Phase 2 multilingual fill
-  'ac-wash-hands': {},  // pending Phase 2 multilingual fill
-  'ac-take-a-bath': {},  // pending Phase 2 multilingual fill
-  'ac-take-a-shower': {},  // pending Phase 2 multilingual fill
-  'ac-sleep': {},  // pending Phase 2 multilingual fill
-  'ac-take-a-nap': {},  // pending Phase 2 multilingual fill
-  'ac-wake-up': {},  // pending Phase 2 multilingual fill
-  'ac-wait-for': {},  // pending Phase 2 multilingual fill
-  'ac-look-for': {},  // pending Phase 2 multilingual fill
-  'ac-search': {},  // pending Phase 2 multilingual fill
-  'ac-discover': {},  // pending Phase 2 multilingual fill
-  'ac-hide': {},  // pending Phase 2 multilingual fill
-  'ac-seek': {},  // pending Phase 2 multilingual fill
-  'ac-tag': {},  // pending Phase 2 multilingual fill
-  'ac-race': {},  // pending Phase 2 multilingual fill
-  'ac-cuddle': {},  // pending Phase 2 multilingual fill
-  'ac-snuggle': {},  // pending Phase 2 multilingual fill
-  'ac-pat': {},  // pending Phase 2 multilingual fill
-  'ac-tickle': {},  // pending Phase 2 multilingual fill
-  'ac-sweep': {},  // pending Phase 2 multilingual fill
-  'ac-mop': {},  // pending Phase 2 multilingual fill
-  'ac-vacuum': {},  // pending Phase 2 multilingual fill
-  'ac-dust': {},  // pending Phase 2 multilingual fill
-  'ac-carry-it': {},  // pending Phase 2 multilingual fill
-  'ac-drop-it': {},  // pending Phase 2 multilingual fill
-  'ac-toss-it': {},  // pending Phase 2 multilingual fill
-  'ac-roll-it': {},  // pending Phase 2 multilingual fill
-  'dw-tall': {},  // pending Phase 2 multilingual fill
-  'dw-short': {},  // pending Phase 2 multilingual fill
-  'dw-long': {},  // pending Phase 2 multilingual fill
-  'dw-wide': {},  // pending Phase 2 multilingual fill
-  'dw-narrow': {},  // pending Phase 2 multilingual fill
-  'dw-thick': {},  // pending Phase 2 multilingual fill
-  'dw-thin': {},  // pending Phase 2 multilingual fill
-  'dw-round': {},  // pending Phase 2 multilingual fill
-  'dw-square': {},  // pending Phase 2 multilingual fill
-  'dw-smooth': {},  // pending Phase 2 multilingual fill
-  'dw-rough': {},  // pending Phase 2 multilingual fill
-  'dw-sticky': {},  // pending Phase 2 multilingual fill
-  'dw-wet': {},  // pending Phase 2 multilingual fill
-  'dw-dry': {},  // pending Phase 2 multilingual fill
-  'dw-clean': {},  // pending Phase 2 multilingual fill
-  'dw-dirty': {},  // pending Phase 2 multilingual fill
-  'dw-soft': {},  // pending Phase 2 multilingual fill
-  'dw-hard': {},  // pending Phase 2 multilingual fill
-  'dw-sweet': {},  // pending Phase 2 multilingual fill
-  'dw-salty': {},  // pending Phase 2 multilingual fill
-  'dw-sour': {},  // pending Phase 2 multilingual fill
-  'dw-spicy': {},  // pending Phase 2 multilingual fill
-  'dw-bitter': {},  // pending Phase 2 multilingual fill
-  'dw-quiet': {},  // pending Phase 2 multilingual fill
-  'dw-loud': {},  // pending Phase 2 multilingual fill
-  'dw-bright': {},  // pending Phase 2 multilingual fill
-  'dw-dark': {},  // pending Phase 2 multilingual fill
-  'dw-shiny': {},  // pending Phase 2 multilingual fill
-  'dw-heavy': {},  // pending Phase 2 multilingual fill
-  'dw-light': {},  // pending Phase 2 multilingual fill
-  'dw-empty': {},  // pending Phase 2 multilingual fill
-  'dw-full': {},  // pending Phase 2 multilingual fill
-  'dw-easy': {},  // pending Phase 2 multilingual fill
-  'dw-tricky': {},  // pending Phase 2 multilingual fill
-  'dw-simple': {},  // pending Phase 2 multilingual fill
-  'dw-fun': {},  // pending Phase 2 multilingual fill
-  'dw-boring': {},  // pending Phase 2 multilingual fill
-  'dw-cool': {},  // pending Phase 2 multilingual fill
-  'dw-awesome': {},  // pending Phase 2 multilingual fill
-  'dw-scary': {},  // pending Phase 2 multilingual fill
-  'dw-safe': {},  // pending Phase 2 multilingual fill
-  'dw-dangerous': {},  // pending Phase 2 multilingual fill
-  'dw-friendly': {},  // pending Phase 2 multilingual fill
-  'dw-mean': {},  // pending Phase 2 multilingual fill
-  'dw-nice': {},  // pending Phase 2 multilingual fill
-  'dw-helpful': {},  // pending Phase 2 multilingual fill
-  'dw-mine': {},  // pending Phase 2 multilingual fill
-  'dw-special': {},  // pending Phase 2 multilingual fill
-  'pp-aunt': {},  // pending Phase 2 multilingual fill
-  'pp-uncle': {},  // pending Phase 2 multilingual fill
-  'pp-cousin': {},  // pending Phase 2 multilingual fill
-  'pp-stepmom': {},  // pending Phase 2 multilingual fill
-  'pp-stepdad': {},  // pending Phase 2 multilingual fill
-  'pp-bus-driver': {},  // pending Phase 2 multilingual fill
-  'pp-coach': {},  // pending Phase 2 multilingual fill
-  'pp-principal': {},  // pending Phase 2 multilingual fill
-  'pp-counselor': {},  // pending Phase 2 multilingual fill
-  'pp-nurse': {},  // pending Phase 2 multilingual fill
-  'pp-dentist': {},  // pending Phase 2 multilingual fill
-  'pp-bcba': {},  // pending Phase 2 multilingual fill
-  'pp-rbt': {},  // pending Phase 2 multilingual fill
-  'pp-babysitter': {},  // pending Phase 2 multilingual fill
-  'pp-neighbor': {},  // pending Phase 2 multilingual fill
-  'pp-helper': {},  // pending Phase 2 multilingual fill
-  'pp-classmate': {},  // pending Phase 2 multilingual fill
-  'pp-best-friend': {},  // pending Phase 2 multilingual fill
-  'pp-new-friend': {},  // pending Phase 2 multilingual fill
-  'pp-man': {},  // pending Phase 2 multilingual fill
-  'pp-woman': {},  // pending Phase 2 multilingual fill
-  'pp-kid': {},  // pending Phase 2 multilingual fill
-  'pp-grown-up': {},  // pending Phase 2 multilingual fill
-  'pp-stranger': {},  // pending Phase 2 multilingual fill
-  'pp-police-officer': {},  // pending Phase 2 multilingual fill
-  'pp-firefighter': {},  // pending Phase 2 multilingual fill
-  'pp-paramedic': {},  // pending Phase 2 multilingual fill
-  'pp-my-family': {},  // pending Phase 2 multilingual fill
-  'pp-my-class': {},  // pending Phase 2 multilingual fill
-  'pp-my-team': {},  // pending Phase 2 multilingual fill
-  'fd-bread': {},  // pending Phase 2 multilingual fill
-  'fd-toast': {},  // pending Phase 2 multilingual fill
-  'fd-pancakes': {},  // pending Phase 2 multilingual fill
-  'fd-waffles': {},  // pending Phase 2 multilingual fill
-  'fd-eggs': {},  // pending Phase 2 multilingual fill
-  'fd-bacon': {},  // pending Phase 2 multilingual fill
-  'fd-yogurt': {},  // pending Phase 2 multilingual fill
-  'fd-oatmeal': {},  // pending Phase 2 multilingual fill
-  'fd-granola': {},  // pending Phase 2 multilingual fill
-  'fd-smoothie': {},  // pending Phase 2 multilingual fill
-  'fd-pasta': {},  // pending Phase 2 multilingual fill
-  'fd-noodles': {},  // pending Phase 2 multilingual fill
-  'fd-rice': {},  // pending Phase 2 multilingual fill
-  'fd-soup': {},  // pending Phase 2 multilingual fill
-  'fd-salad': {},  // pending Phase 2 multilingual fill
-  'fd-wrap': {},  // pending Phase 2 multilingual fill
-  'fd-hamburger': {},  // pending Phase 2 multilingual fill
-  'fd-hot-dog': {},  // pending Phase 2 multilingual fill
-  'fd-taco': {},  // pending Phase 2 multilingual fill
-  'fd-burrito': {},  // pending Phase 2 multilingual fill
-  'fd-quesadilla': {},  // pending Phase 2 multilingual fill
-  'fd-sushi': {},  // pending Phase 2 multilingual fill
-  'fd-dumplings': {},  // pending Phase 2 multilingual fill
-  'fd-curry': {},  // pending Phase 2 multilingual fill
-  'fd-stir-fry': {},  // pending Phase 2 multilingual fill
-  'fd-carrots': {},  // pending Phase 2 multilingual fill
-  'fd-broccoli': {},  // pending Phase 2 multilingual fill
-  'fd-peas': {},  // pending Phase 2 multilingual fill
-  'fd-corn': {},  // pending Phase 2 multilingual fill
-  'fd-tomato': {},  // pending Phase 2 multilingual fill
-  'fd-cucumber': {},  // pending Phase 2 multilingual fill
-  'fd-lettuce': {},  // pending Phase 2 multilingual fill
-  'fd-spinach': {},  // pending Phase 2 multilingual fill
-  'fd-potato': {},  // pending Phase 2 multilingual fill
-  'fd-sweet-potato': {},  // pending Phase 2 multilingual fill
-  'fd-strawberry': {},  // pending Phase 2 multilingual fill
-  'fd-blueberry': {},  // pending Phase 2 multilingual fill
-  'fd-grapes': {},  // pending Phase 2 multilingual fill
-  'fd-watermelon': {},  // pending Phase 2 multilingual fill
-  'fd-orange': {},  // pending Phase 2 multilingual fill
-  'fd-pear': {},  // pending Phase 2 multilingual fill
-  'fd-peach': {},  // pending Phase 2 multilingual fill
-  'fd-mango': {},  // pending Phase 2 multilingual fill
-  'fd-pineapple': {},  // pending Phase 2 multilingual fill
-  'fd-cake': {},  // pending Phase 2 multilingual fill
-  'fd-cupcake': {},  // pending Phase 2 multilingual fill
-  'fd-brownie': {},  // pending Phase 2 multilingual fill
-  'fd-donut': {},  // pending Phase 2 multilingual fill
-  'fd-muffin': {},  // pending Phase 2 multilingual fill
-  'fd-pie': {},  // pending Phase 2 multilingual fill
-  'fd-pudding': {},  // pending Phase 2 multilingual fill
-  'fd-jello': {},  // pending Phase 2 multilingual fill
-  'fd-candy': {},  // pending Phase 2 multilingual fill
-  'fd-chocolate': {},  // pending Phase 2 multilingual fill
-  'fd-lollipop': {},  // pending Phase 2 multilingual fill
-  'fd-gum': {},  // pending Phase 2 multilingual fill
-  'fd-soda': {},  // pending Phase 2 multilingual fill
-  'fd-tea': {},  // pending Phase 2 multilingual fill
-  'fd-hot-chocolate': {},  // pending Phase 2 multilingual fill
-  'fd-lemonade': {},  // pending Phase 2 multilingual fill
-  'fd-spoon': {},  // pending Phase 2 multilingual fill
-  'fd-fork': {},  // pending Phase 2 multilingual fill
-  'fd-knife': {},  // pending Phase 2 multilingual fill
-  'fd-plate': {},  // pending Phase 2 multilingual fill
-  'fd-bowl': {},  // pending Phase 2 multilingual fill
-  'fd-cup': {},  // pending Phase 2 multilingual fill
-  'fd-straw': {},  // pending Phase 2 multilingual fill
-  'fd-napkin': {},  // pending Phase 2 multilingual fill
-  'fd-bib': {},  // pending Phase 2 multilingual fill
-  'fd-open-it-please': {},  // pending Phase 2 multilingual fill
-  'fd-cut-it-up-please': {},  // pending Phase 2 multilingual fill
-  'fd-not-too-hot': {},  // pending Phase 2 multilingual fill
-  'fd-i-am-allergic': {},  // pending Phase 2 multilingual fill
-  'pl-backyard': {},  // pending Phase 2 multilingual fill
-  'pl-front-yard': {},  // pending Phase 2 multilingual fill
-  'pl-garden': {},  // pending Phase 2 multilingual fill
-  'pl-driveway': {},  // pending Phase 2 multilingual fill
-  'pl-living-room': {},  // pending Phase 2 multilingual fill
-  'pl-dining-room': {},  // pending Phase 2 multilingual fill
-  'pl-garage': {},  // pending Phase 2 multilingual fill
-  'pl-basement': {},  // pending Phase 2 multilingual fill
-  'pl-attic': {},  // pending Phase 2 multilingual fill
-  'pl-hospital': {},  // pending Phase 2 multilingual fill
-  'pl-doctor-office': {},  // pending Phase 2 multilingual fill
-  'pl-dentist-office': {},  // pending Phase 2 multilingual fill
-  'pl-pharmacy': {},  // pending Phase 2 multilingual fill
-  'pl-grocery-store': {},  // pending Phase 2 multilingual fill
-  'pl-mall': {},  // pending Phase 2 multilingual fill
-  'pl-pet-store': {},  // pending Phase 2 multilingual fill
-  'pl-toy-store': {},  // pending Phase 2 multilingual fill
-  'pl-movie-theater': {},  // pending Phase 2 multilingual fill
-  'pl-bowling-alley': {},  // pending Phase 2 multilingual fill
-  'pl-arcade': {},  // pending Phase 2 multilingual fill
-  'pl-beach': {},  // pending Phase 2 multilingual fill
-  'pl-lake': {},  // pending Phase 2 multilingual fill
-  'pl-mountain': {},  // pending Phase 2 multilingual fill
-  'pl-forest': {},  // pending Phase 2 multilingual fill
-  'pl-camp': {},  // pending Phase 2 multilingual fill
-  'pl-zoo': {},  // pending Phase 2 multilingual fill
-  'pl-aquarium': {},  // pending Phase 2 multilingual fill
-  'pl-museum': {},  // pending Phase 2 multilingual fill
-  'pl-farm': {},  // pending Phase 2 multilingual fill
-  'pl-church': {},  // pending Phase 2 multilingual fill
-  'pl-temple': {},  // pending Phase 2 multilingual fill
-  'pl-mosque': {},  // pending Phase 2 multilingual fill
-  'pl-synagogue': {},  // pending Phase 2 multilingual fill
-  'pl-bus-stop': {},  // pending Phase 2 multilingual fill
-  'pl-train-station': {},  // pending Phase 2 multilingual fill
-  'pl-airport': {},  // pending Phase 2 multilingual fill
-  'sw-backpack': {},  // pending Phase 2 multilingual fill
-  'sw-lunchbox': {},  // pending Phase 2 multilingual fill
-  'sw-folder': {},  // pending Phase 2 multilingual fill
-  'sw-notebook': {},  // pending Phase 2 multilingual fill
-  'sw-crayons': {},  // pending Phase 2 multilingual fill
-  'sw-markers': {},  // pending Phase 2 multilingual fill
-  'sw-scissors': {},  // pending Phase 2 multilingual fill
-  'sw-glue': {},  // pending Phase 2 multilingual fill
-  'sw-tape': {},  // pending Phase 2 multilingual fill
-  'sw-eraser': {},  // pending Phase 2 multilingual fill
-  'sw-ruler': {},  // pending Phase 2 multilingual fill
-  'sw-whiteboard': {},  // pending Phase 2 multilingual fill
-  'sw-smart-board': {},  // pending Phase 2 multilingual fill
-  'sw-projector': {},  // pending Phase 2 multilingual fill
-  'sw-math': {},  // pending Phase 2 multilingual fill
-  'sw-reading': {},  // pending Phase 2 multilingual fill
-  'sw-writing': {},  // pending Phase 2 multilingual fill
-  'sw-spelling': {},  // pending Phase 2 multilingual fill
-  'sw-science': {},  // pending Phase 2 multilingual fill
-  'sw-social-studies': {},  // pending Phase 2 multilingual fill
-  'sw-history': {},  // pending Phase 2 multilingual fill
-  'sw-pe': {},  // pending Phase 2 multilingual fill
-  'sw-gym': {},  // pending Phase 2 multilingual fill
-  'sw-recess-time': {},  // pending Phase 2 multilingual fill
-  'sw-library-time': {},  // pending Phase 2 multilingual fill
-  'sw-story-time': {},  // pending Phase 2 multilingual fill
-  'sw-circle-time': {},  // pending Phase 2 multilingual fill
-  'sw-lunch-time': {},  // pending Phase 2 multilingual fill
-  'sw-snack-time': {},  // pending Phase 2 multilingual fill
-  'sw-worksheet': {},  // pending Phase 2 multilingual fill
-  'sw-quiz': {},  // pending Phase 2 multilingual fill
-  'sw-test': {},  // pending Phase 2 multilingual fill
-  'sw-project': {},  // pending Phase 2 multilingual fill
-  'sw-field-trip': {},  // pending Phase 2 multilingual fill
-  'sw-assembly': {},  // pending Phase 2 multilingual fill
-  'sw-bus-ride': {},  // pending Phase 2 multilingual fill
-  'hb-hair': {},  // pending Phase 2 multilingual fill
-  'hb-face': {},  // pending Phase 2 multilingual fill
-  'hb-forehead': {},  // pending Phase 2 multilingual fill
-  'hb-cheek': {},  // pending Phase 2 multilingual fill
-  'hb-chin': {},  // pending Phase 2 multilingual fill
-  'hb-lips': {},  // pending Phase 2 multilingual fill
-  'hb-tongue': {},  // pending Phase 2 multilingual fill
-  'hb-throat': {},  // pending Phase 2 multilingual fill
-  'hb-neck': {},  // pending Phase 2 multilingual fill
-  'hb-shoulder': {},  // pending Phase 2 multilingual fill
-  'hb-elbow': {},  // pending Phase 2 multilingual fill
-  'hb-wrist': {},  // pending Phase 2 multilingual fill
-  'hb-finger': {},  // pending Phase 2 multilingual fill
-  'hb-thumb': {},  // pending Phase 2 multilingual fill
-  'hb-knuckle': {},  // pending Phase 2 multilingual fill
-  'hb-knee': {},  // pending Phase 2 multilingual fill
-  'hb-ankle': {},  // pending Phase 2 multilingual fill
-  'hb-toe': {},  // pending Phase 2 multilingual fill
-  'hb-heel': {},  // pending Phase 2 multilingual fill
-  'hb-chest': {},  // pending Phase 2 multilingual fill
-  'hb-belly': {},  // pending Phase 2 multilingual fill
-  'hb-hip': {},  // pending Phase 2 multilingual fill
-  'hb-bottom': {},  // pending Phase 2 multilingual fill
-  'hb-skin': {},  // pending Phase 2 multilingual fill
-  'hb-bone': {},  // pending Phase 2 multilingual fill
-  'hb-muscle': {},  // pending Phase 2 multilingual fill
-  'hb-headache': {},  // pending Phase 2 multilingual fill
-  'hb-stomachache': {},  // pending Phase 2 multilingual fill
-  'hb-earache': {},  // pending Phase 2 multilingual fill
-  'hb-toothache': {},  // pending Phase 2 multilingual fill
-  'hb-sore-throat': {},  // pending Phase 2 multilingual fill
-  'hb-cough': {},  // pending Phase 2 multilingual fill
-  'hb-sneeze': {},  // pending Phase 2 multilingual fill
-  'hb-runny-nose': {},  // pending Phase 2 multilingual fill
-  'hb-stuffy-nose': {},  // pending Phase 2 multilingual fill
-  'hb-fever': {},  // pending Phase 2 multilingual fill
-  'hb-chills': {},  // pending Phase 2 multilingual fill
-  'hb-shaking': {},  // pending Phase 2 multilingual fill
-  'hb-dizzy-spell': {},  // pending Phase 2 multilingual fill
-  'hb-bruise': {},  // pending Phase 2 multilingual fill
-  'hb-cut': {},  // pending Phase 2 multilingual fill
-  'hb-scrape': {},  // pending Phase 2 multilingual fill
-  'hb-bump': {},  // pending Phase 2 multilingual fill
-  'hb-bandage': {},  // pending Phase 2 multilingual fill
-  'hb-itchy-spot': {},  // pending Phase 2 multilingual fill
-  'hb-rash': {},  // pending Phase 2 multilingual fill
-  'hb-allergic-reaction': {},  // pending Phase 2 multilingual fill
-  'hb-pain': {},  // pending Phase 2 multilingual fill
-  'hb-sharp-pain': {},  // pending Phase 2 multilingual fill
-  'hb-dull-pain': {},  // pending Phase 2 multilingual fill
-  'hb-burning': {},  // pending Phase 2 multilingual fill
-  'hb-vitamins': {},  // pending Phase 2 multilingual fill
-  'hb-inhaler': {},  // pending Phase 2 multilingual fill
-  'hb-epipen': {},  // pending Phase 2 multilingual fill
-  'hb-pill': {},  // pending Phase 2 multilingual fill
-  'hb-drops': {},  // pending Phase 2 multilingual fill
-  'hb-doctor-visit': {},  // pending Phase 2 multilingual fill
-  'hb-shot': {},  // pending Phase 2 multilingual fill
-  'hb-x-ray': {},  // pending Phase 2 multilingual fill
-  'hb-check-up': {},  // pending Phase 2 multilingual fill
-  'hb-wash-my-hands': {},  // pending Phase 2 multilingual fill
-  'hb-brush-my-teeth': {},  // pending Phase 2 multilingual fill
-  'ti-right-now': {},  // pending Phase 2 multilingual fill
-  'ti-in-a-minute': {},  // pending Phase 2 multilingual fill
-  'ti-soon': {},  // pending Phase 2 multilingual fill
-  'ti-later-today': {},  // pending Phase 2 multilingual fill
-  'ti-tonight': {},  // pending Phase 2 multilingual fill
-  'ti-this-morning': {},  // pending Phase 2 multilingual fill
-  'ti-this-afternoon': {},  // pending Phase 2 multilingual fill
-  'ti-this-evening': {},  // pending Phase 2 multilingual fill
-  'ti-last-night': {},  // pending Phase 2 multilingual fill
-  'ti-all-day': {},  // pending Phase 2 multilingual fill
-  'ti-all-night': {},  // pending Phase 2 multilingual fill
-  'ti-a-long-time': {},  // pending Phase 2 multilingual fill
-  'ti-a-short-time': {},  // pending Phase 2 multilingual fill
-  'ti-a-while-ago': {},  // pending Phase 2 multilingual fill
-  'ti-weekend': {},  // pending Phase 2 multilingual fill
-  'ti-weekday': {},  // pending Phase 2 multilingual fill
-  'ti-monday': {},  // pending Phase 2 multilingual fill
-  'ti-tuesday': {},  // pending Phase 2 multilingual fill
-  'ti-wednesday': {},  // pending Phase 2 multilingual fill
-  'ti-thursday': {},  // pending Phase 2 multilingual fill
-  'ti-friday': {},  // pending Phase 2 multilingual fill
-  'ti-saturday': {},  // pending Phase 2 multilingual fill
-  'ti-sunday': {},  // pending Phase 2 multilingual fill
-  'ti-birthday': {},  // pending Phase 2 multilingual fill
-  'ti-holiday': {},  // pending Phase 2 multilingual fill
-  'an-puppy': {},  // pending Phase 2 multilingual fill
-  'an-kitten': {},  // pending Phase 2 multilingual fill
-  'an-hamster': {},  // pending Phase 2 multilingual fill
-  'an-guinea-pig': {},  // pending Phase 2 multilingual fill
-  'an-turtle': {},  // pending Phase 2 multilingual fill
-  'an-frog': {},  // pending Phase 2 multilingual fill
-  'an-snake': {},  // pending Phase 2 multilingual fill
-  'an-lizard': {},  // pending Phase 2 multilingual fill
-  'an-spider': {},  // pending Phase 2 multilingual fill
-  'an-bug': {},  // pending Phase 2 multilingual fill
-  'an-bee': {},  // pending Phase 2 multilingual fill
-  'an-ant': {},  // pending Phase 2 multilingual fill
-  'an-lion': {},  // pending Phase 2 multilingual fill
-  'an-tiger': {},  // pending Phase 2 multilingual fill
-  'an-monkey': {},  // pending Phase 2 multilingual fill
-  'an-giraffe': {},  // pending Phase 2 multilingual fill
-  'an-zebra': {},  // pending Phase 2 multilingual fill
-  'an-hippo': {},  // pending Phase 2 multilingual fill
-  'an-penguin': {},  // pending Phase 2 multilingual fill
-  'an-owl': {},  // pending Phase 2 multilingual fill
-  'an-eagle': {},  // pending Phase 2 multilingual fill
-  'an-parrot': {},  // pending Phase 2 multilingual fill
-  'an-chicken': {},  // pending Phase 2 multilingual fill
-  'an-rooster': {},  // pending Phase 2 multilingual fill
-  'an-sheep': {},  // pending Phase 2 multilingual fill
-  'an-goat': {},  // pending Phase 2 multilingual fill
-  'an-donkey': {},  // pending Phase 2 multilingual fill
-  'an-dolphin': {},  // pending Phase 2 multilingual fill
-  'an-whale': {},  // pending Phase 2 multilingual fill
-  'an-shark': {},  // pending Phase 2 multilingual fill
-  'an-octopus': {},  // pending Phase 2 multilingual fill
-  'an-crab': {},  // pending Phase 2 multilingual fill
-  'an-starfish': {},  // pending Phase 2 multilingual fill
-  'an-my-pet': {},  // pending Phase 2 multilingual fill
-  'an-my-dog': {},  // pending Phase 2 multilingual fill
-  'an-my-cat': {},  // pending Phase 2 multilingual fill
-  'co-gray': {},  // pending Phase 2 multilingual fill
-  'co-silver': {},  // pending Phase 2 multilingual fill
-  'co-gold': {},  // pending Phase 2 multilingual fill
-  'co-beige': {},  // pending Phase 2 multilingual fill
-  'co-tan': {},  // pending Phase 2 multilingual fill
-  'co-light-blue': {},  // pending Phase 2 multilingual fill
-  'co-dark-blue': {},  // pending Phase 2 multilingual fill
-  'co-light-green': {},  // pending Phase 2 multilingual fill
-  'co-dark-green': {},  // pending Phase 2 multilingual fill
-  'co-light-pink': {},  // pending Phase 2 multilingual fill
-  'co-hot-pink': {},  // pending Phase 2 multilingual fill
-  'co-rainbow': {},  // pending Phase 2 multilingual fill
-  'co-my-favorite-color': {},  // pending Phase 2 multilingual fill
-  'cl-t-shirt': {},  // pending Phase 2 multilingual fill
-  'cl-sweater': {},  // pending Phase 2 multilingual fill
-  'cl-sweatshirt': {},  // pending Phase 2 multilingual fill
-  'cl-hoodie': {},  // pending Phase 2 multilingual fill
-  'cl-coat': {},  // pending Phase 2 multilingual fill
-  'cl-shorts': {},  // pending Phase 2 multilingual fill
-  'cl-skirt': {},  // pending Phase 2 multilingual fill
-  'cl-leggings': {},  // pending Phase 2 multilingual fill
-  'cl-sandals': {},  // pending Phase 2 multilingual fill
-  'cl-sneakers': {},  // pending Phase 2 multilingual fill
-  'cl-mittens': {},  // pending Phase 2 multilingual fill
-  'cl-gloves': {},  // pending Phase 2 multilingual fill
-  'cl-scarf': {},  // pending Phase 2 multilingual fill
-  'cl-belt': {},  // pending Phase 2 multilingual fill
-  'cl-backpack': {},  // pending Phase 2 multilingual fill
-  'cl-helmet': {},  // pending Phase 2 multilingual fill
-  'cl-glasses': {},  // pending Phase 2 multilingual fill
-  'cl-sunglasses': {},  // pending Phase 2 multilingual fill
-  'cl-diaper': {},  // pending Phase 2 multilingual fill
-  'cl-pull-up': {},  // pending Phase 2 multilingual fill
-  'tr-stroller': {},  // pending Phase 2 multilingual fill
-  'tr-tricycle': {},  // pending Phase 2 multilingual fill
-  'tr-skateboard': {},  // pending Phase 2 multilingual fill
-  'tr-roller-skates': {},  // pending Phase 2 multilingual fill
-  'tr-subway': {},  // pending Phase 2 multilingual fill
-  'tr-taxi': {},  // pending Phase 2 multilingual fill
-  'tr-helicopter': {},  // pending Phase 2 multilingual fill
-  'tr-rocket': {},  // pending Phase 2 multilingual fill
-  'tr-tractor': {},  // pending Phase 2 multilingual fill
-  'tr-fire-truck': {},  // pending Phase 2 multilingual fill
-  'tr-police-car': {},  // pending Phase 2 multilingual fill
-  'tr-ambulance': {},  // pending Phase 2 multilingual fill
-  'tr-ferry': {},  // pending Phase 2 multilingual fill
-  'tr-sled': {},  // pending Phase 2 multilingual fill
-  'tr-drive': {},  // pending Phase 2 multilingual fill
-  'tr-ride': {},  // pending Phase 2 multilingual fill
-  'we-foggy': {},  // pending Phase 2 multilingual fill
-  'we-rainbow': {},  // pending Phase 2 multilingual fill
-  'we-lightning': {},  // pending Phase 2 multilingual fill
-  'we-thunder': {},  // pending Phase 2 multilingual fill
-  'we-tornado': {},  // pending Phase 2 multilingual fill
-  'we-hurricane': {},  // pending Phase 2 multilingual fill
-  'we-earthquake': {},  // pending Phase 2 multilingual fill
-  'we-warm-out': {},  // pending Phase 2 multilingual fill
-  'we-cool-out': {},  // pending Phase 2 multilingual fill
-  'we-freezing': {},  // pending Phase 2 multilingual fill
-  'we-wear-a-coat': {},  // pending Phase 2 multilingual fill
-  'we-wear-shorts': {},  // pending Phase 2 multilingual fill
-  'tf-stuffed-animal': {},  // pending Phase 2 multilingual fill
-  'tf-action-figure': {},  // pending Phase 2 multilingual fill
-  'tf-lego': {},  // pending Phase 2 multilingual fill
-  'tf-train-set': {},  // pending Phase 2 multilingual fill
-  'tf-card-game': {},  // pending Phase 2 multilingual fill
-  'tf-board-game': {},  // pending Phase 2 multilingual fill
-  'tf-video-game': {},  // pending Phase 2 multilingual fill
-  'tf-crayons': {},  // pending Phase 2 multilingual fill
-  'tf-stickers': {},  // pending Phase 2 multilingual fill
-  'tf-sandbox': {},  // pending Phase 2 multilingual fill
-  'tf-trampoline': {},  // pending Phase 2 multilingual fill
-  'tf-sprinkler': {},  // pending Phase 2 multilingual fill
-  'tf-story': {},  // pending Phase 2 multilingual fill
-  'tf-song': {},  // pending Phase 2 multilingual fill
-  'tf-cartoon': {},  // pending Phase 2 multilingual fill
+  'qu-who-is-that': { ro: 'Cine e acela?', es: '¿Quién es ese?', fr: 'Qui est-ce?', pt: 'Quem é esse?', de: 'Wer ist das?', ru: 'Кто это?', uk: 'Хто це?', ja: 'あれは誰?', ko: '저 사람은 누구예요?', zh: '那是谁?', ar: 'من هذا؟', hi: 'वो कौन है?', it: 'Chi è quello?', pl: 'Kto to jest?', he: 'מי זה?', nl: 'Wie is dat?', vi: 'Đó là ai?', tl: 'Sino iyon?', tr: 'O kim?', id: 'Siapa itu?' },
+  'qu-what-is-that': { ro: 'Ce e asta?', es: '¿Qué es eso?', fr: "C'est quoi?", pt: 'O que é isso?', de: 'Was ist das?', ru: 'Что это?', uk: 'Що це?', ja: 'それは何?', ko: '저게 뭐예요?', zh: '那是什么?', ar: 'ما هذا؟', hi: 'वो क्या है?', it: "Cos'è quello?", pl: 'Co to jest?', he: 'מה זה?', nl: 'Wat is dat?', vi: 'Đó là gì?', tl: 'Ano iyon?', tr: 'O ne?', id: 'Apa itu?' },
+  'qu-where-is-it': { ro: 'Unde este?', es: '¿Dónde está?', fr: 'Où est-il?', pt: 'Onde está?', de: 'Wo ist es?', ru: 'Где это?', uk: 'Де це?', ja: 'どこにあるの?', ko: '그게 어디 있어요?', zh: '在哪里?', ar: 'أين هو؟', hi: 'वो कहाँ है?', it: "Dov'è?", pl: 'Gdzie to jest?', he: 'איפה זה?', nl: 'Waar is het?', vi: 'Nó ở đâu?', tl: 'Nasaan iyon?', tr: 'Nerede?', id: 'Di mana itu?' },
+  'qu-when-is-it': { ro: 'Când este?', es: '¿Cuándo es?', fr: "C'est quand?", pt: 'Quando é?', de: 'Wann ist es?', ru: 'Когда это?', uk: 'Коли це?', ja: 'それはいつ?', ko: '언제예요?', zh: '什么时候?', ar: 'متى هذا؟', hi: 'वो कब है?', it: "Quand'è?", pl: 'Kiedy to jest?', he: 'מתי זה?', nl: 'Wanneer is het?', vi: 'Khi nào vậy?', tl: 'Kailan iyon?', tr: 'Ne zaman?', id: 'Kapan itu?' },
+  'qu-why-is-that': { ro: 'De ce e asta?', es: '¿Por qué es eso?', fr: 'Pourquoi?', pt: 'Por que é isso?', de: 'Warum das?', ru: 'Почему так?', uk: 'Чому так?', ja: 'なんで?', ko: '왜 그래요?', zh: '为什么这样?', ar: 'لماذا هذا؟', hi: 'ऐसा क्यों है?', it: 'Perché?', pl: 'Czemu tak?', he: 'למה?', nl: 'Waarom?', vi: 'Tại sao vậy?', tl: 'Bakit iyon?', tr: 'Neden?', id: 'Kenapa begitu?' },
+  'qu-how-does-it-work': { ro: 'Cum funcționează?', es: '¿Cómo funciona?', fr: 'Comment ça marche?', pt: 'Como funciona?', de: 'Wie funktioniert das?', ru: 'Как это работает?', uk: 'Як це працює?', ja: 'どうやって使うの?', ko: '어떻게 작동해요?', zh: '怎么用?', ar: 'كيف يعمل؟', hi: 'यह कैसे काम करता है?', it: 'Come funziona?', pl: 'Jak to działa?', he: 'איך זה עובד?', nl: 'Hoe werkt het?', vi: 'Cái này hoạt động thế nào?', tl: 'Paano ito gumagana?', tr: 'Bu nasıl çalışır?', id: 'Bagaimana cara kerjanya?' },
+  'qu-how-do-i': { ro: 'Cum pot să...?', es: '¿Cómo puedo...?', fr: 'Comment je fais...?', pt: 'Como eu...?', de: 'Wie mache ich...?', ru: 'Как мне...?', uk: 'Як мені...?', ja: 'どうすれば...?', ko: '어떻게 해요?', zh: '我怎么...?', ar: 'كيف أستطيع...؟', hi: 'मैं कैसे...?', it: 'Come faccio...?', pl: 'Jak mogę...?', he: 'איך אני...?', nl: 'Hoe doe ik...?', vi: 'Tôi làm thế nào...?', tl: 'Paano ko...?', tr: 'Nasıl yapabilirim?', id: 'Bagaimana saya...?' },
+  'qu-can-i-have-it': { ro: 'Pot să-l am?', es: '¿Puedo tenerlo?', fr: 'Je peux l\'avoir?', pt: 'Posso ter?', de: 'Kann ich es haben?', ru: 'Можно мне это?', uk: 'Можна мені це?', ja: 'もらえる?', ko: '가져도 돼요?', zh: '我可以要那个吗?', ar: 'هل يمكنني الحصول عليه؟', hi: 'क्या मुझे वो मिल सकता है?', it: 'Posso averlo?', pl: 'Czy mogę to mieć?', he: 'אפשר לי לקחת?', nl: 'Mag ik het hebben?', vi: 'Tôi có thể lấy không?', tl: 'Pwede ba akong kumuha niyon?', tr: 'Alabilir miyim?', id: 'Boleh saya ambil?' },
+  'qu-can-i-try': { ro: 'Pot să încerc?', es: '¿Puedo intentar?', fr: 'Je peux essayer?', pt: 'Posso tentar?', de: 'Darf ich es versuchen?', ru: 'Можно попробовать?', uk: 'Можна спробувати?', ja: 'やってみていい?', ko: '해봐도 돼요?', zh: '我可以试试吗?', ar: 'هل يمكنني المحاولة؟', hi: 'क्या मैं कोशिश कर सकता हूँ?', it: 'Posso provare?', pl: 'Czy mogę spróbować?', he: 'אפשר לנסות?', nl: 'Mag ik het proberen?', vi: 'Tôi có thể thử không?', tl: 'Pwede ba akong subukan?', tr: 'Deneyebilir miyim?', id: 'Boleh saya coba?' },
+  'qu-can-i-go': { ro: 'Pot să merg?', es: '¿Puedo ir?', fr: 'Je peux y aller?', pt: 'Posso ir?', de: 'Darf ich gehen?', ru: 'Можно пойти?', uk: 'Можна піти?', ja: '行っていい?', ko: '가도 돼요?', zh: '我可以去吗?', ar: 'هل يمكنني الذهاب؟', hi: 'क्या मैं जा सकता हूँ?', it: 'Posso andare?', pl: 'Czy mogę iść?', he: 'אפשר לי ללכת?', nl: 'Mag ik gaan?', vi: 'Tôi có thể đi không?', tl: 'Pwede ba akong pumunta?', tr: 'Gidebilir miyim?', id: 'Boleh saya pergi?' },
+  'qu-may-i-please': { ro: 'Pot vă rog?', es: '¿Podría por favor?', fr: 'Est-ce que je peux s\'il vous plaît?', pt: 'Posso por favor?', de: 'Darf ich bitte?', ru: 'Можно пожалуйста?', uk: 'Можна будь ласка?', ja: 'お願いしていい?', ko: '부탁드려도 될까요?', zh: '请问可以吗?', ar: 'هل يمكنني من فضلك؟', hi: 'क्या मैं कृपया...?', it: 'Posso per favore?', pl: 'Czy mogę proszę?', he: 'אפשר בבקשה?', nl: 'Mag ik alsjeblieft?', vi: 'Làm ơn cho tôi...?', tl: 'Pwede ba naman?', tr: 'Lütfen, yapabilir miyim?', id: 'Bolehkah saya?' },
+  'qu-will-you-help': { ro: 'Mă ajuți?', es: '¿Me ayudarás?', fr: 'Tu peux m\'aider?', pt: 'Você vai me ajudar?', de: 'Kannst du mir helfen?', ru: 'Ты поможешь?', uk: 'Ти допоможеш?', ja: '助けてくれる?', ko: '도와줄 거예요?', zh: '你会帮我吗?', ar: 'هل ستساعدني؟', hi: 'क्या तुम मेरी मदद करोगे?', it: 'Mi aiuterai?', pl: 'Pomożesz mi?', he: 'תעזור לי?', nl: 'Wil je me helpen?', vi: 'Bạn có giúp tôi không?', tl: 'Tulungan mo naman ako?', tr: 'Yardım edecek misin?', id: 'Maukah kamu membantuku?' },
+  'qu-are-you-okay': { ro: 'Ești bine?', es: '¿Estás bien?', fr: 'Ça va?', pt: 'Você está bem?', de: 'Geht es dir gut?', ru: 'Ты в порядке?', uk: 'Ти добре?', ja: '大丈夫?', ko: '괜찮아요?', zh: '你还好吗?', ar: 'هل أنت بخير؟', hi: 'क्या तुम ठीक हो?', it: 'Stai bene?', pl: 'Czy wszystko w porządku?', he: 'אתה בסדר?', nl: 'Gaat het goed?', vi: 'Bạn có ổn không?', tl: 'Okay ka ba?', tr: 'İyi misin?', id: 'Kamu baik-baik saja?' },
+  'qu-are-we-there-yet': { ro: 'Am ajuns?', es: '¿Ya llegamos?', fr: 'On est arrivé?', pt: 'Já chegamos?', de: 'Sind wir schon da?', ru: 'Мы уже приехали?', uk: 'Ми вже приїхали?', ja: 'まだ着かないの?', ko: '다 왔어요?', zh: '到了吗?', ar: 'هل وصلنا؟', hi: 'क्या हम पहुँच गए?', it: 'Siamo arrivati?', pl: 'Już jesteśmy?', he: 'הגענו?', nl: 'Zijn we er al?', vi: 'Đến chưa?', tl: 'Nandoon na ba tayo?', tr: 'Vardık mı?', id: 'Sudah sampai?' },
+  'qu-where-are-we-going': { ro: 'Unde mergem?', es: '¿A dónde vamos?', fr: 'Où est-ce qu\'on va?', pt: 'Para onde vamos?', de: 'Wohin gehen wir?', ru: 'Куда мы идём?', uk: 'Куди ми йдемо?', ja: 'どこに行くの?', ko: '어디 가요?', zh: '我们去哪?', ar: 'إلى أين نحن ذاهبون؟', hi: 'हम कहाँ जा रहे हैं?', it: 'Dove stiamo andando?', pl: 'Dokąd idziemy?', he: 'לאן אנחנו הולכים?', nl: 'Waar gaan we heen?', vi: 'Chúng ta đi đâu?', tl: 'Saan tayo pupunta?', tr: 'Nereye gidiyoruz?', id: 'Kita mau ke mana?' },
+  'qu-when-will-we-be-there': { ro: 'Când ajungem?', es: '¿Cuándo llegaremos?', fr: 'On arrive quand?', pt: 'Quando chegamos?', de: 'Wann sind wir da?', ru: 'Когда мы прибудем?', uk: 'Коли ми прибудемо?', ja: 'いつ着くの?', ko: '언제 도착해요?', zh: '什么时候到?', ar: 'متى سنصل؟', hi: 'हम कब पहुँचेंगे?', it: 'Quando arriviamo?', pl: 'Kiedy tam będziemy?', he: 'מתי נגיע?', nl: 'Wanneer zijn we er?', vi: 'Khi nào chúng ta đến?', tl: 'Kailan tayo darating?', tr: 'Ne zaman varacağız?', id: 'Kapan kita sampai?' },
+  'qu-how-much-longer': { ro: 'Cât mai durează?', es: '¿Cuánto más falta?', fr: 'Encore combien de temps?', pt: 'Quanto tempo falta?', de: 'Wie viel länger noch?', ru: 'Сколько ещё?', uk: 'Ще скільки?', ja: 'あとどれくらい?', ko: '얼마나 더 걸려요?', zh: '还要多久?', ar: 'كم من الوقت بعد؟', hi: 'कितना और समय लगेगा?', it: 'Ancora quanto?', pl: 'Jak długo jeszcze?', he: 'עוד כמה זמן?', nl: 'Hoe lang nog?', vi: 'Còn bao lâu nữa?', tl: 'Gaano pa kalaon?', tr: 'Ne kadar daha var?', id: 'Masih berapa lama?' },
+  'qu-what-time-is-it': { ro: 'Ce oră este?', es: '¿Qué hora es?', fr: 'Quelle heure est-il?', pt: 'Que horas são?', de: 'Wie spät ist es?', ru: 'Который час?', uk: 'Котра година?', ja: '今何時?', ko: '몇 시예요?', zh: '现在几点?', ar: 'كم الساعة؟', hi: 'अभी कितने बजे हैं?', it: 'Che ore sono?', pl: 'Która godzina?', he: 'מה השעה?', nl: 'Hoe laat is het?', vi: 'Mấy giờ rồi?', tl: 'Anong oras na?', tr: 'Saat kaç?', id: 'Jam berapa sekarang?' },
+  'qu-what-day-is-it': { ro: 'Ce zi este?', es: '¿Qué día es hoy?', fr: 'Quel jour sommes-nous?', pt: 'Que dia é hoje?', de: 'Was für ein Tag ist heute?', ru: 'Какой сегодня день?', uk: 'Який сьогодні день?', ja: '今日は何曜日?', ko: '오늘 무슨 요일이에요?', zh: '今天是星期几?', ar: 'ما هو اليوم؟', hi: 'आज कौन सा दिन है?', it: 'Che giorno è oggi?', pl: 'Jaki dziś dzień?', he: 'איזה יום היום?', nl: 'Welke dag is het?', vi: 'Hôm nay là thứ mấy?', tl: 'Anong araw ngayon?', tr: 'Bugün günlerden ne?', id: 'Hari apa sekarang?' },
+  'qu-is-it-ready-yet': { ro: 'Este gata?', es: '¿Ya está listo?', fr: "C'est prêt?", pt: 'Já está pronto?', de: 'Ist es schon fertig?', ru: 'Уже готово?', uk: 'Вже готово?', ja: 'もう準備できた?', ko: '다 됐어요?', zh: '好了吗?', ar: 'هل أصبح جاهزاً؟', hi: 'क्या अभी तैयार है?', it: 'È pronto?', pl: 'Czy już gotowe?', he: 'מוכן כבר?', nl: 'Is het al klaar?', vi: 'Xong chưa?', tl: 'Handa na ba?', tr: 'Hazır mı?', id: 'Sudah siap?' },
+  'qu-can-we-go-now': { ro: 'Putem pleca acum?', es: '¿Podemos ir ahora?', fr: 'On peut y aller?', pt: 'Podemos ir agora?', de: 'Können wir jetzt gehen?', ru: 'Мы можем идти?', uk: 'Ми можемо йти?', ja: 'もう行っていい?', ko: '지금 가도 돼요?', zh: '现在可以去吗?', ar: 'هل يمكننا الذهاب الآن؟', hi: 'क्या हम अभी जा सकते हैं?', it: 'Possiamo andare adesso?', pl: 'Możemy teraz iść?', he: 'אפשר ללכת עכשיו?', nl: 'Kunnen we nu gaan?', vi: 'Chúng ta có thể đi bây giờ không?', tl: 'Pwede na tayong umalis?', tr: 'Şimdi gidebilir miyiz?', id: 'Boleh kita pergi sekarang?' },
+  'qu-can-we-do-this': { ro: 'Putem face asta?', es: '¿Podemos hacer esto?', fr: 'On peut faire ça?', pt: 'Podemos fazer isso?', de: 'Können wir das machen?', ru: 'Мы можем это сделать?', uk: 'Ми можемо це зробити?', ja: 'これできる?', ko: '이거 할 수 있어요?', zh: '我们可以做这个吗?', ar: 'هل يمكننا فعل هذا؟', hi: 'क्या हम यह कर सकते हैं?', it: 'Possiamo farlo?', pl: 'Możemy to zrobić?', he: 'אפשר לנו לעשות זאת?', nl: 'Kunnen we dit doen?', vi: 'Chúng ta có thể làm điều này không?', tl: 'Kaya ba nating gawin ito?', tr: 'Bunu yapabilir miyiz?', id: 'Bisakah kita melakukan ini?' },
+  'qu-did-you-see-that': { ro: 'Ai văzut asta?', es: '¿Viste eso?', fr: 'Tu as vu ça?', pt: 'Você viu isso?', de: 'Hast du das gesehen?', ru: 'Ты видел это?', uk: 'Ти бачив це?', ja: 'あれ見た?', ko: '저거 봤어요?', zh: '你看到了吗?', ar: 'هل رأيت ذلك؟', hi: 'क्या तुमने वो देखा?', it: 'Hai visto?', pl: 'Widziałeś to?', he: 'ראית את זה?', nl: 'Heb je dat gezien?', vi: 'Bạn thấy cái đó chưa?', tl: 'Nakita mo ba iyon?', tr: 'Bunu gördün mü?', id: 'Kamu lihat itu?' },
+  'qu-did-i-do-good': { ro: 'Am făcut bine?', es: '¿Lo hice bien?', fr: "J'ai bien fait?", pt: 'Eu fiz bem?', de: 'Habe ich es gut gemacht?', ru: 'Я хорошо сделал?', uk: 'Я добре зробив?', ja: 'うまくできた?', ko: '잘 했어요?', zh: '我做得好吗?', ar: 'هل أحسنت؟', hi: 'मैंने अच्छा किया?', it: 'Ho fatto bene?', pl: 'Dobrze to zrobiłem?', he: 'עשיתי טוב?', nl: 'Deed ik het goed?', vi: 'Tôi làm tốt chưa?', tl: 'Magaling ba ang ginawa ko?', tr: 'İyi mi yaptım?', id: 'Apakah saya melakukannya dengan baik?' },
+  'qu-what-happened': { ro: 'Ce s-a întâmplat?', es: '¿Qué pasó?', fr: "Qu'est-ce qui s'est passé?", pt: 'O que aconteceu?', de: 'Was ist passiert?', ru: 'Что случилось?', uk: 'Що сталося?', ja: '何が起きたの?', ko: '무슨 일이에요?', zh: '发生了什么?', ar: 'ماذا حدث؟', hi: 'क्या हुआ?', it: "Cos'è successo?", pl: 'Co się stało?', he: 'מה קרה?', nl: 'Wat is er gebeurd?', vi: 'Chuyện gì xảy ra vậy?', tl: 'Anong nangyari?', tr: 'Ne oldu?', id: 'Apa yang terjadi?' },
+  'qu-where-did-it-go': { ro: 'Unde s-a dus?', es: '¿A dónde fue?', fr: 'Où est-il allé?', pt: 'Para onde foi?', de: 'Wo ist es geblieben?', ru: 'Куда это делось?', uk: 'Куди це поділось?', ja: 'どこに行ったの?', ko: '어디 갔어요?', zh: '它去哪了?', ar: 'أين ذهب؟', hi: 'वो कहाँ गया?', it: "Dov'è andato?", pl: 'Gdzie to poszło?', he: 'לאן זה הלך?', nl: 'Waar is het gebleven?', vi: 'Nó đi đâu rồi?', tl: 'Nasaan na iyon?', tr: 'Nereye gitti?', id: 'Ke mana itu pergi?' },
+  'qu-who-said-that': { ro: 'Cine a zis asta?', es: '¿Quién dijo eso?', fr: 'Qui a dit ça?', pt: 'Quem disse isso?', de: 'Wer hat das gesagt?', ru: 'Кто это сказал?', uk: 'Хто це сказав?', ja: '誰がそう言ったの?', ko: '누가 그랬어요?', zh: '谁说的?', ar: 'من قال ذلك؟', hi: 'ये किसने कहा?', it: 'Chi l\'ha detto?', pl: 'Kto to powiedział?', he: 'מי אמר את זה?', nl: 'Wie zei dat?', vi: 'Ai nói vậy?', tl: 'Sino ang nagsabi niyon?', tr: 'Bunu kim söyledi?', id: 'Siapa yang bilang itu?' },
+  'qu-what-did-they-say': { ro: 'Ce au zis?', es: '¿Qué dijeron?', fr: "Qu'est-ce qu'ils ont dit?", pt: 'O que eles disseram?', de: 'Was haben sie gesagt?', ru: 'Что они сказали?', uk: 'Що вони сказали?', ja: '何て言ったの?', ko: '뭐라고 했어요?', zh: '他们说什么?', ar: 'ماذا قالوا؟', hi: 'उन्होंने क्या कहा?', it: 'Cosa hanno detto?', pl: 'Co powiedzieli?', he: 'מה הם אמרו?', nl: 'Wat zeiden ze?', vi: 'Họ nói gì?', tl: 'Ano ang sinabi nila?', tr: 'Ne dediler?', id: 'Apa yang mereka katakan?' },
+  'qu-how-old-are-you': { ro: 'Câți ani ai?', es: '¿Cuántos años tienes?', fr: 'Tu as quel âge?', pt: 'Quantos anos você tem?', de: 'Wie alt bist du?', ru: 'Сколько тебе лет?', uk: 'Скільки тобі років?', ja: '何歳ですか?', ko: '몇 살이에요?', zh: '你几岁?', ar: 'كم عمرك؟', hi: 'तुम्हारी उम्र क्या है?', it: 'Quanti anni hai?', pl: 'Ile masz lat?', he: 'בן כמה אתה?', nl: 'Hoe oud ben je?', vi: 'Bạn bao nhiêu tuổi?', tl: 'Ilang taon ka na?', tr: 'Kaç yaşındasın?', id: 'Berapa umurmu?' },
+  'qu-what-is-your-name': { ro: 'Cum te numești?', es: '¿Cómo te llamas?', fr: 'Comment tu t\'appelles?', pt: 'Como você se chama?', de: 'Wie heißt du?', ru: 'Как тебя зовут?', uk: 'Як тебе звати?', ja: 'お名前は?', ko: '이름이 뭐예요?', zh: '你叫什么名字?', ar: 'ما اسمك؟', hi: 'तुम्हारा नाम क्या है?', it: 'Come ti chiami?', pl: 'Jak masz na imię?', he: 'מה שמך?', nl: 'Hoe heet je?', vi: 'Bạn tên gì?', tl: 'Ano ang iyong pangalan?', tr: 'Adın ne?', id: 'Siapa namamu?' },
+  'qu-how-are-you-feeling': { ro: 'Cum te simți?', es: '¿Cómo te sientes?', fr: 'Comment tu te sens?', pt: 'Como você está se sentindo?', de: 'Wie fühlst du dich?', ru: 'Как ты себя чувствуешь?', uk: 'Як ти себе почуваєш?', ja: '気分はどう?', ko: '기분이 어때요?', zh: '你感觉怎么样?', ar: 'كيف تشعر؟', hi: 'तुम कैसा महसूस कर रहे हो?', it: 'Come ti senti?', pl: 'Jak się czujesz?', he: 'איך אתה מרגיש?', nl: 'Hoe voel je je?', vi: 'Bạn cảm thấy thế nào?', tl: 'Kumusta ang pakiramdam mo?', tr: 'Nasıl hissediyorsun?', id: 'Bagaimana perasaanmu?' },
+  'qu-what-is-for-dinner': { ro: 'Ce e la cină?', es: '¿Qué hay de cenar?', fr: "Qu'est-ce qu'il y a pour dîner?", pt: 'O que tem para o jantar?', de: 'Was gibt es zum Abendessen?', ru: 'Что на ужин?', uk: 'Що на вечерю?', ja: '夕ご飯は何?', ko: '저녁 뭐 먹어요?', zh: '晚饭吃什么?', ar: 'ما الذي سيكون على العشاء؟', hi: 'रात का खाना क्या है?', it: 'Cosa c\'è per cena?', pl: 'Co jest na kolację?', he: 'מה לארוחת ערב?', nl: 'Wat is er voor diner?', vi: 'Tối nay ăn gì?', tl: 'Ano ang para sa hapunan?', tr: 'Akşam yemeği ne?', id: 'Makan malam apa?' },
+  'qu-what-is-for-snack': { ro: 'Ce gustare avem?', es: '¿Qué hay de merienda?', fr: "Qu'est-ce qu'il y a pour le goûter?", pt: 'O que tem de lanche?', de: 'Was gibt es als Snack?', ru: 'Что на перекус?', uk: 'Що перекусимо?', ja: 'おやつは何?', ko: '간식 뭐예요?', zh: '零食是什么?', ar: 'ما الذي سيكون للوجبة الخفيفة؟', hi: 'नाश्ते में क्या है?', it: 'Cosa c\'è per merenda?', pl: 'Co jest na przekąskę?', he: 'מה לנשנוש?', nl: 'Wat is er voor tussendoor?', vi: 'Ăn vặt gì?', tl: 'Ano ang meryenda?', tr: 'Atıştırmalık ne?', id: 'Snack apa?' },
+  'qu-is-it-bedtime': { ro: 'E ora de culcare?', es: '¿Es hora de dormir?', fr: "C'est l'heure de dormir?", pt: 'É hora de dormir?', de: 'Ist es Schlafenszeit?', ru: 'Уже время спать?', uk: 'Вже час спати?', ja: '寝る時間?', ko: '잘 시간이에요?', zh: '该睡觉了吗?', ar: 'هل حان وقت النوم؟', hi: 'क्या सोने का समय हो गया है?', it: "È l'ora di andare a letto?", pl: 'Czas iść spać?', he: 'זה זמן שינה?', nl: 'Is het bedtijd?', vi: 'Đến giờ đi ngủ chưa?', tl: 'Oras na ba para matulog?', tr: 'Uyuma vakti mi?', id: 'Sudah waktunya tidur?' },
+  'qu-are-you-my-friend': { ro: 'Ești prietenul meu?', es: '¿Eres mi amigo?', fr: 'Tu es mon ami?', pt: 'Você é meu amigo?', de: 'Bist du mein Freund?', ru: 'Ты мой друг?', uk: 'Ти мій друг?', ja: 'ともだち?', ko: '내 친구예요?', zh: '你是我的朋友吗?', ar: 'هل أنت صديقي؟', hi: 'क्या तुम मेरे दोस्त हो?', it: 'Sei mio amico?', pl: 'Jesteś moim przyjacielem?', he: 'אתה החבר שלי?', nl: 'Ben jij mijn vriend?', vi: 'Bạn có phải bạn của tôi không?', tl: 'Kaibigan mo ba ako?', tr: 'Arkadaşım mısın?', id: 'Apakah kamu temanku?' },
+  'qu-will-you-play-with-me': { ro: 'Vrei să te joci cu mine?', es: '¿Juegas conmigo?', fr: 'Tu veux jouer avec moi?', pt: 'Você vai brincar comigo?', de: 'Spielst du mit mir?', ru: 'Поиграешь со мной?', uk: 'Пограєш зі мною?', ja: '一緒に遊ぶ?', ko: '같이 놀 거예요?', zh: '你跟我玩吗?', ar: 'هل ستلعب معي؟', hi: 'क्या तुम मेरे साथ खेलोगे?', it: 'Giochi con me?', pl: 'Pobawisz się ze mną?', he: 'תשחק איתי?', nl: 'Wil je met mij spelen?', vi: 'Bạn có chơi với tôi không?', tl: 'Laro tayo?', tr: 'Benimle oynayacak mısın?', id: 'Maukah kamu bermain denganku?' },
+  'ac-wave': { ro: 'Flutura', es: 'Saludar', fr: 'Faire signe', pt: 'Acenar', de: 'Winken', ru: 'Махать', uk: 'Махати', ja: '手を振る', ko: '손 흔들다', zh: '挥手', ar: 'يلوح', hi: 'हाथ हिलाना', it: 'Salutare', pl: 'Machać', he: 'לנופף', nl: 'Zwaaien', vi: 'Vẫy tay', tl: 'Kumaway', tr: 'El sallamak', id: 'Melambaikan tangan' },
+  'ac-clap': { ro: 'Bate din palme', es: 'Aplaudir', fr: 'Applaudir', pt: 'Bater palmas', de: 'Klatschen', ru: 'Хлопать', uk: 'Плескати', ja: '拍手する', ko: '박수치다', zh: '拍手', ar: 'يصفق', hi: 'ताली बजाना', it: 'Applaudire', pl: 'Klaskać', he: 'למחוא כפיים', nl: 'Klappen', vi: 'Vỗ tay', tl: 'Pumalo ng kamay', tr: 'Alkışlamak', id: 'Tepuk tangan' },
+  'ac-point': { ro: 'Arăta', es: 'Señalar', fr: 'Pointer', pt: 'Apontar', de: 'Zeigen', ru: 'Указывать', uk: 'Вказувати', ja: '指差す', ko: '가리키다', zh: '指', ar: 'يشير', hi: 'इशारा करना', it: 'Indicare', pl: 'Wskazywać', he: 'להצביע', nl: 'Wijzen', vi: 'Chỉ', tl: 'Ituro', tr: 'İşaret etmek', id: 'Menunjuk' },
+  'ac-nod': { ro: 'Da din cap', es: 'Asentir', fr: 'Acquiescer', pt: 'Balançar a cabeça', de: 'Nicken', ru: 'Кивать', uk: 'Кивати', ja: 'うなずく', ko: '끄덕이다', zh: '点头', ar: 'يومئ', hi: 'सिर हिलाना (हाँ)', it: 'Annuire', pl: 'Kiwać głową', he: 'לנוד בראש', nl: 'Knikken', vi: 'Gật đầu', tl: 'Tumango', tr: 'Baş sallamak', id: 'Mengangguk' },
+  'ac-shake-head': { ro: 'Dă din cap nu', es: 'Negar con la cabeza', fr: 'Secouer la tête', pt: 'Balançar a cabeça não', de: 'Kopf schütteln', ru: 'Мотать головой', uk: 'Хитати головою', ja: '首を振る', ko: '고개 젓다', zh: '摇头', ar: 'يهز رأسه', hi: 'सिर हिलाना (ना)', it: 'Scuotere la testa', pl: 'Kręcić głową', he: 'לנענע בראש', nl: 'Hoofd schudden', vi: 'Lắc đầu', tl: 'Umiling', tr: 'Başını sallamak (hayır)', id: 'Menggelengkan kepala' },
+  'ac-whisper': { ro: 'Șoptește', es: 'Susurrar', fr: 'Chuchoter', pt: 'Sussurrar', de: 'Flüstern', ru: 'Шептать', uk: 'Шептати', ja: 'ささやく', ko: '속삭이다', zh: '低声说', ar: 'يهمس', hi: 'फुसफुसाना', it: 'Sussurrare', pl: 'Szeptać', he: 'ללחוש', nl: 'Fluisteren', vi: 'Thì thầm', tl: 'Bulong', tr: 'Fısıldamak', id: 'Berbisik' },
+  'ac-shout': { ro: 'Strigă', es: 'Gritar', fr: 'Crier', pt: 'Gritar', de: 'Schreien', ru: 'Кричать', uk: 'Кричати', ja: '叫ぶ', ko: '소리치다', zh: '大叫', ar: 'يصرخ', hi: 'चिल्लाना', it: 'Urlare', pl: 'Krzyczeć', he: 'לצעוק', nl: 'Schreeuwen', vi: 'La hét', tl: 'Sumigaw', tr: 'Bağırmak', id: 'Berteriak' },
+  'ac-sing': { ro: 'Cântă', es: 'Cantar', fr: 'Chanter', pt: 'Cantar', de: 'Singen', ru: 'Петь', uk: 'Співати', ja: '歌う', ko: '노래하다', zh: '唱歌', ar: 'يغني', hi: 'गाना', it: 'Cantare', pl: 'Śpiewać', he: 'לשיר', nl: 'Zingen', vi: 'Hát', tl: 'Kumanta', tr: 'Şarkı söylemek', id: 'Bernyanyi' },
+  'ac-hum': { ro: 'Fredona', es: 'Tararear', fr: 'Fredonner', pt: 'Cantarolar', de: 'Summen', ru: 'Мурлыкать', uk: 'Наспівувати', ja: '鼻歌を歌う', ko: '흥얼거리다', zh: '哼歌', ar: 'يدندن', hi: 'गुनगुनाना', it: 'Canticchiare', pl: 'Nucić', he: 'לזמזם', nl: 'Neuriën', vi: 'Ngân nga', tl: 'Iumit', tr: 'Mırıldanmak', id: 'Berdengung' },
+  'ac-roll': { ro: 'Rostogolește', es: 'Rodar', fr: 'Rouler', pt: 'Rolar', de: 'Rollen', ru: 'Катиться', uk: 'Котитися', ja: '転がる', ko: '구르다', zh: '滚', ar: 'يتدحرج', hi: 'लुढ़कना', it: 'Rotolare', pl: 'Toczyć się', he: 'להתגלגל', nl: 'Rollen', vi: 'Lăn', tl: 'Gumulong', tr: 'Yuvarlanmak', id: 'Berguling' },
+  'ac-slide': { ro: 'Alunecă', es: 'Deslizarse', fr: 'Glisser', pt: 'Deslizar', de: 'Rutschen', ru: 'Скользить', uk: 'Ковзати', ja: 'すべる', ko: '미끄러지다', zh: '滑', ar: 'ينزلق', hi: 'फिसलना', it: 'Scivolare', pl: 'Ślizgać się', he: 'להחליק', nl: 'Glijden', vi: 'Trượt', tl: 'Mag-slide', tr: 'Kaymak', id: 'Meluncur' },
+  'ac-spin': { ro: 'Învârte', es: 'Girar', fr: 'Tourner', pt: 'Girar', de: 'Drehen', ru: 'Крутиться', uk: 'Крутитися', ja: '回る', ko: '빙글빙글 돌다', zh: '旋转', ar: 'يدور', hi: 'घूमना', it: 'Girare', pl: 'Kręcić się', he: 'להסתובב', nl: 'Draaien', vi: 'Xoay', tl: 'Umikot', tr: 'Dönmek', id: 'Berputar' },
+  'ac-hop': { ro: 'Sare', es: 'Saltar', fr: 'Sautiller', pt: 'Pular', de: 'Hüpfen', ru: 'Прыгать', uk: 'Стрибати', ja: 'ぴょんぴょん跳ぶ', ko: '깡충 뛰다', zh: '跳', ar: 'يقفز', hi: 'उछलना', it: 'Saltellare', pl: 'Skakać', he: 'לקפץ', nl: 'Huppelen', vi: 'Nhảy', tl: 'Lumundag', tr: 'Sıçramak', id: 'Melompat' },
+  'ac-skip': { ro: 'Schioppetea', es: 'Brincar', fr: 'Sautiller', pt: 'Saltitar', de: 'Hüpfen', ru: 'Скакать', uk: 'Підстрибувати', ja: 'スキップする', ko: '스킵하다', zh: '跳步', ar: 'يقفز', hi: 'स्किप करना', it: 'Saltare', pl: 'Skakać na jednej nodze', he: 'לדלג', nl: 'Huppelen', vi: 'Nhảy chân sáo', tl: 'Lumukso', tr: 'Atlamak', id: 'Berlompat' },
+  'ac-crawl': { ro: 'Târăște', es: 'Gatear', fr: 'Ramper', pt: 'Engatinhar', de: 'Krabbeln', ru: 'Ползти', uk: 'Повзти', ja: 'はう', ko: '기다', zh: '爬', ar: 'يزحف', hi: 'रेंगना', it: 'Gattonare', pl: 'Raczkować', he: 'לזחול', nl: 'Kruipen', vi: 'Bò', tl: 'Gumapang', tr: 'Emeklemek', id: 'Merangkak' },
+  'ac-tiptoe': { ro: 'Merge pe vârfuri', es: 'Caminar de puntillas', fr: 'Marcher sur la pointe des pieds', pt: 'Andar na ponta dos pés', de: 'Auf Zehenspitzen gehen', ru: 'Идти на цыпочках', uk: 'Іти навшпиньки', ja: 'つま先歩きする', ko: '까치발로 걷다', zh: '踮着脚走', ar: 'يمشي على رؤوس أصابعه', hi: 'पंजों के बल चलना', it: 'Camminare in punta di piedi', pl: 'Chodzić na palcach', he: 'ללכת על קצות האצבעות', nl: 'Op tenen lopen', vi: 'Đi nhón chân', tl: 'Maglakad nang may dulo ng paa', tr: 'Parmak uçlarında yürümek', id: 'Berjalan berjinjit' },
+  'ac-tip-toe': { ro: 'Merge pe vârfuri', es: 'Caminar de puntillas', fr: 'Marcher sur la pointe des pieds', pt: 'Andar na ponta dos pés', de: 'Auf Zehenspitzen gehen', ru: 'Идти на цыпочках', uk: 'Іти навшпиньки', ja: 'つま先歩きする', ko: '까치발로 걷다', zh: '踮着脚走', ar: 'يمشي على رؤوس أصابعه', hi: 'पंजों के बल चलना', it: 'Camminare in punta di piedi', pl: 'Chodzić na palcach', he: 'ללכת על קצות האצבעות', nl: 'Op tenen lopen', vi: 'Đi nhón chân', tl: 'Maglakad nang may dulo ng paa', tr: 'Parmak uçlarında yürümek', id: 'Berjalan berjinjit' },
+  'ac-march': { ro: 'Marșuiește', es: 'Marchar', fr: 'Marcher au pas', pt: 'Marchar', de: 'Marschieren', ru: 'Маршировать', uk: 'Маршувати', ja: '行進する', ko: '행진하다', zh: '行进', ar: 'يسير بخطى منتظمة', hi: 'कदमताल करना', it: 'Marciare', pl: 'Maszerować', he: 'לצעוד', nl: 'Marcheren', vi: 'Diễu hành', tl: 'Magmartsa', tr: 'Yürüyüş yapmak', id: 'Berbaris' },
+  'ac-climb-up': { ro: 'Urcă', es: 'Subir', fr: 'Monter', pt: 'Subir', de: 'Hochklettern', ru: 'Подняться', uk: 'Підніматися', ja: '登る', ko: '올라가다', zh: '爬上去', ar: 'يصعد', hi: 'चढ़ना', it: 'Salire', pl: 'Wspinać się', he: 'לטפס למעלה', nl: 'Omhoog klimmen', vi: 'Leo lên', tl: 'Umakyat', tr: 'Tırmanmak', id: 'Mendaki' },
+  'ac-climb-down': { ro: 'Coboară', es: 'Bajar', fr: 'Descendre', pt: 'Descer', de: 'Herunterklettern', ru: 'Спуститься', uk: 'Спускатися', ja: '降りる', ko: '내려가다', zh: '爬下来', ar: 'ينزل', hi: 'उतरना', it: 'Scendere', pl: 'Schodzić', he: 'לטפס למטה', nl: 'Omlaag klimmen', vi: 'Leo xuống', tl: 'Bumaba', tr: 'İnmek', id: 'Turun' },
+  'ac-push-it': { ro: 'Împinge', es: 'Empujarlo', fr: 'Le pousser', pt: 'Empurrar', de: 'Schieben', ru: 'Толкни', uk: 'Штовхни', ja: '押して', ko: '밀어요', zh: '推它', ar: 'ادفعه', hi: 'इसे धकेलो', it: 'Spingerlo', pl: 'Popchnij to', he: 'לדחוף', nl: 'Duw het', vi: 'Đẩy nó', tl: 'Itulak', tr: 'Onu it', id: 'Dorong' },
+  'ac-pull-it': { ro: 'Trage', es: 'Halarlo', fr: 'Le tirer', pt: 'Puxar', de: 'Ziehen', ru: 'Потяни', uk: 'Потягни', ja: '引いて', ko: '당겨요', zh: '拉它', ar: 'اسحبه', hi: 'इसे खींचो', it: 'Tirarlo', pl: 'Pociągnij to', he: 'למשוך', nl: 'Trek het', vi: 'Kéo nó', tl: 'Hilahin', tr: 'Onu çek', id: 'Tarik' },
+  'ac-pick-it-up': { ro: 'Ridică', es: 'Levantarlo', fr: 'Le ramasser', pt: 'Pegar', de: 'Aufheben', ru: 'Подними', uk: 'Підніми', ja: '拾って', ko: '집어요', zh: '捡起来', ar: 'التقطه', hi: 'उठाओ', it: 'Raccoglierlo', pl: 'Podnieś to', he: 'להרים', nl: 'Oppakken', vi: 'Nhặt lên', tl: 'Kunin', tr: 'Onu kaldır', id: 'Ambil' },
+  'ac-set-it-down': { ro: 'Pune jos', es: 'Dejarlo', fr: 'Le poser', pt: 'Colocar', de: 'Abstellen', ru: 'Положи', uk: 'Поклади', ja: '置いて', ko: '내려놔요', zh: '放下来', ar: 'ضعه', hi: 'रखो', it: 'Posarlo', pl: 'Postaw to', he: 'להניח', nl: 'Neerzetten', vi: 'Đặt xuống', tl: 'Ilagay pababa', tr: 'Onu bırak', id: 'Letakkan' },
+  'ac-pour': { ro: 'Toarnă', es: 'Verter', fr: 'Verser', pt: 'Derramar', de: 'Gießen', ru: 'Лить', uk: 'Наливати', ja: '注ぐ', ko: '따르다', zh: '倒', ar: 'يسكب', hi: 'डालना', it: 'Versare', pl: 'Wlać', he: 'לשפוך', nl: 'Gieten', vi: 'Đổ', tl: 'Ibuhos', tr: 'Dökmek', id: 'Menuang' },
+  'ac-stir': { ro: 'Amestecă', es: 'Remover', fr: 'Remuer', pt: 'Mexer', de: 'Rühren', ru: 'Размешивать', uk: 'Перемішувати', ja: 'かき混ぜる', ko: '젓다', zh: '搅拌', ar: 'يحرك', hi: 'हिलाना', it: 'Mescolare', pl: 'Mieszać', he: 'לערבב', nl: 'Roeren', vi: 'Khuấy', tl: 'Haluin', tr: 'Karıştırmak', id: 'Mengaduk' },
+  'ac-mix': { ro: 'Amestecă', es: 'Mezclar', fr: 'Mélanger', pt: 'Misturar', de: 'Mischen', ru: 'Смешать', uk: 'Змішати', ja: '混ぜる', ko: '섞다', zh: '混合', ar: 'يخلط', hi: 'मिलाना', it: 'Mescolare', pl: 'Wymieszać', he: 'לערבב', nl: 'Mengen', vi: 'Trộn', tl: 'Ihalo', tr: 'Karıştırmak', id: 'Mencampur' },
+  'ac-spread': { ro: 'Întinde', es: 'Untar', fr: 'Étaler', pt: 'Espalhar', de: 'Streichen', ru: 'Намазывать', uk: 'Намазувати', ja: '塗る', ko: '펴 바르다', zh: '涂抹', ar: 'ينشر', hi: 'फैलाना', it: 'Spalmare', pl: 'Rozsmarowywać', he: 'למרוח', nl: 'Smeren', vi: 'Phết', tl: 'Ikalat', tr: 'Yaymak', id: 'Mengoleskan' },
+  'ac-fold': { ro: 'Pliază', es: 'Doblar', fr: 'Plier', pt: 'Dobrar', de: 'Falten', ru: 'Складывать', uk: 'Складати', ja: '折る', ko: '접다', zh: '折叠', ar: 'يطوي', hi: 'मोड़ना', it: 'Piegare', pl: 'Składać', he: 'לקפל', nl: 'Vouwen', vi: 'Gấp', tl: 'Tiklupin', tr: 'Katlamak', id: 'Melipat' },
+  'ac-tie': { ro: 'Leagă', es: 'Atar', fr: 'Attacher', pt: 'Amarrar', de: 'Binden', ru: 'Завязывать', uk: 'Зав\'язувати', ja: '結ぶ', ko: '묶다', zh: '系', ar: 'يربط', hi: 'बाँधना', it: 'Allacciare', pl: 'Wiązać', he: 'לקשור', nl: 'Vastmaken', vi: 'Buộc', tl: 'Itali', tr: 'Bağlamak', id: 'Mengikat' },
+  'ac-untie': { ro: 'Dezleagă', es: 'Desatar', fr: 'Détacher', pt: 'Desapertar', de: 'Aufbinden', ru: 'Развязывать', uk: 'Розв\'язувати', ja: 'ほどく', ko: '풀다', zh: '解开', ar: 'يحل', hi: 'खोलना', it: 'Slegare', pl: 'Rozwiązywać', he: 'לפתוח', nl: 'Losmaken', vi: 'Cởi ra', tl: 'Kalagan', tr: 'Çözmek', id: 'Melepas ikatan' },
+  'ac-zip': { ro: 'Trage fermoarul', es: 'Subir la cremallera', fr: 'Zipper', pt: 'Fechar o zíper', de: 'Reißverschluss ziehen', ru: 'Застегнуть молнию', uk: 'Застебнути блискавку', ja: 'ジッパーを閉める', ko: '지퍼 잠그다', zh: '拉上拉链', ar: 'يغلق السحاب', hi: 'ज़िप करना', it: 'Chiudere la zip', pl: 'Zapinać zamek', he: 'לסגור רוכסן', nl: 'Rits sluiten', vi: 'Kéo khóa', tl: 'Isara ang zipper', tr: 'Fermuar çekmek', id: 'Menarik ritsleting' },
+  'ac-unzip': { ro: 'Deschide fermoarul', es: 'Bajar la cremallera', fr: 'Dézipper', pt: 'Abrir o zíper', de: 'Reißverschluss öffnen', ru: 'Расстегнуть молнию', uk: 'Розстебнути блискавку', ja: 'ジッパーを開ける', ko: '지퍼 열다', zh: '拉开拉链', ar: 'يفتح السحاب', hi: 'अनज़िप करना', it: 'Aprire la zip', pl: 'Otwierać zamek', he: 'לפתוח רוכסן', nl: 'Rits openen', vi: 'Kéo mở khóa', tl: 'Buksan ang zipper', tr: 'Fermuar açmak', id: 'Membuka ritsleting' },
+  'ac-snap': { ro: 'Pocni din degete', es: 'Chasquear', fr: 'Claquer des doigts', pt: 'Estalar os dedos', de: 'Schnipsen', ru: 'Щёлкнуть пальцами', uk: 'Клацнути пальцями', ja: '指をはじく', ko: '딱 소리내다', zh: '打响指', ar: 'يفرقع بأصابعه', hi: 'उँगली चटकाना', it: 'Schioccare le dita', pl: 'Pstrykać palcami', he: 'לנקר באצבעות', nl: 'Met vingers knippen', vi: 'Búng ngón tay', tl: 'Mag-snap', tr: 'Parmak şıklatmak', id: 'Menjentikkan jari' },
+  'ac-buckle': { ro: 'Încuie catarama', es: 'Abrochar', fr: 'Boucler', pt: 'Abotoar', de: 'Schnallen', ru: 'Застегнуть пряжку', uk: 'Застебнути пряжку', ja: 'バックルを留める', ko: '버클 잠그다', zh: '扣上', ar: 'يربط الحزام', hi: 'बकल लगाना', it: 'Allacciare', pl: 'Zapinać', he: 'לאבזם', nl: 'Vastgesp doen', vi: 'Cài khóa', tl: 'Ikabit ang buckle', tr: 'Toka bağlamak', id: 'Mengencangkan gesper' },
+  'ac-brush-teeth': { ro: 'Spală dinții', es: 'Cepillarse los dientes', fr: 'Se brosser les dents', pt: 'Escovar os dentes', de: 'Zähne putzen', ru: 'Чистить зубы', uk: 'Чистити зуби', ja: '歯を磨く', ko: '이를 닦다', zh: '刷牙', ar: 'يفرشي أسنانه', hi: 'दाँत साफ करना', it: 'Lavarsi i denti', pl: 'Myć zęby', he: 'לצחצח שיניים', nl: 'Tanden poetsen', vi: 'Đánh răng', tl: 'Magsipilyo ng ngipin', tr: 'Diş fırçalamak', id: 'Menyikat gigi' },
+  'ac-brush-hair': { ro: 'Piaptănă părul', es: 'Cepillarse el cabello', fr: 'Se brosser les cheveux', pt: 'Escovar o cabelo', de: 'Haare bürsten', ru: 'Расчесать волосы', uk: 'Розчесати волосся', ja: '髪をとかす', ko: '머리 빗다', zh: '梳头', ar: 'يمشط شعره', hi: 'बाल संवारना', it: 'Spazzolarsi i capelli', pl: 'Szczotkować włosy', he: 'למרוח שיער', nl: 'Haar borstelen', vi: 'Chải tóc', tl: 'Mag-brush ng buhok', tr: 'Saç fırçalamak', id: 'Menyisir rambut' },
+  'ac-comb': { ro: 'Piaptănă', es: 'Peinar', fr: 'Peigner', pt: 'Pentear', de: 'Kämmen', ru: 'Расчесывать', uk: 'Розчісувати', ja: 'くしでとかす', ko: '빗질하다', zh: '梳', ar: 'يمشط', hi: 'कंघी करना', it: 'Pettinare', pl: 'Czesać', he: 'לסרק', nl: 'Kammen', vi: 'Chải lược', tl: 'Suklayin', tr: 'Taramak', id: 'Menyisir' },
+  'ac-floss': { ro: 'Folosește ața dentară', es: 'Usar hilo dental', fr: 'Utiliser du fil dentaire', pt: 'Usar fio dental', de: 'Zahnseide benutzen', ru: 'Чистить зубы нитью', uk: 'Чистити зуби ниткою', ja: 'デンタルフロスをする', ko: '치실 사용하다', zh: '用牙线', ar: 'يستخدم خيط الأسنان', hi: 'फ्लॉस करना', it: 'Usare il filo interdentale', pl: 'Używać nici dentystycznej', he: 'להשתמש בחוט דנטלי', nl: 'Flossen', vi: 'Dùng chỉ nha khoa', tl: 'Gumamit ng dental floss', tr: 'Diş ipi kullanmak', id: 'Memakai benang gigi' },
+  'ac-get-dressed': { ro: 'Îmbracă-te', es: 'Vestirse', fr: "S'habiller", pt: 'Se vestir', de: 'Sich anziehen', ru: 'Одеться', uk: 'Одягнутися', ja: '着替える', ko: '옷 입다', zh: '穿衣', ar: 'يلبس ملابسه', hi: 'कपड़े पहनना', it: 'Vestirsi', pl: 'Ubierać się', he: 'להתלבש', nl: 'Aankleden', vi: 'Mặc quần áo', tl: 'Magbihis', tr: 'Giyinmek', id: 'Berpakaian' },
+  'ac-get-undressed': { ro: 'Dezbracă-te', es: 'Desvestirse', fr: 'Se déshabiller', pt: 'Se despir', de: 'Sich ausziehen', ru: 'Раздеться', uk: 'Роздягнутися', ja: '服を脱ぐ', ko: '옷 벗다', zh: '脱衣', ar: 'يخلع ملابسه', hi: 'कपड़े उतारना', it: 'Svestirsi', pl: 'Rozbierać się', he: 'להתפשט', nl: 'Uitkleden', vi: 'Cởi quần áo', tl: 'Maghubad', tr: 'Soyunmak', id: 'Melepas pakaian' },
+  'ac-put-on-shoes': { ro: 'Pune pantofii', es: 'Ponerse los zapatos', fr: 'Mettre les chaussures', pt: 'Colocar os sapatos', de: 'Schuhe anziehen', ru: 'Надеть обувь', uk: 'Взути взуття', ja: '靴をはく', ko: '신발 신다', zh: '穿鞋', ar: 'يلبس حذاءه', hi: 'जूते पहनना', it: 'Mettere le scarpe', pl: 'Wkładać buty', he: 'לנעול נעליים', nl: 'Schoenen aantrekken', vi: 'Đi giày', tl: 'Magsuot ng sapatos', tr: 'Ayakkabı giymek', id: 'Memakai sepatu' },
+  'ac-take-off-shoes': { ro: 'Scoate pantofii', es: 'Quitarse los zapatos', fr: 'Enlever les chaussures', pt: 'Tirar os sapatos', de: 'Schuhe ausziehen', ru: 'Снять обувь', uk: 'Роззутися', ja: '靴を脱ぐ', ko: '신발 벗다', zh: '脱鞋', ar: 'يخلع حذاءه', hi: 'जूते उतारना', it: 'Togliere le scarpe', pl: 'Zdejmować buty', he: 'לחלוץ נעליים', nl: 'Schoenen uitdoen', vi: 'Cởi giày', tl: 'Maghubad ng sapatos', tr: 'Ayakkabı çıkarmak', id: 'Melepas sepatu' },
+  'ac-wash-hands': { ro: 'Spală mâinile', es: 'Lavarse las manos', fr: 'Se laver les mains', pt: 'Lavar as mãos', de: 'Hände waschen', ru: 'Мыть руки', uk: 'Мити руки', ja: '手を洗う', ko: '손 씻다', zh: '洗手', ar: 'يغسل يديه', hi: 'हाथ धोना', it: 'Lavarsi le mani', pl: 'Myć ręce', he: 'לרחוץ ידיים', nl: 'Handen wassen', vi: 'Rửa tay', tl: 'Maghugas ng kamay', tr: 'El yıkamak', id: 'Mencuci tangan' },
+  'ac-take-a-bath': { ro: 'Fă baie', es: 'Bañarse', fr: 'Prendre un bain', pt: 'Tomar banho', de: 'Baden', ru: 'Принять ванну', uk: 'Прийняти ванну', ja: 'お風呂に入る', ko: '목욕하다', zh: '洗澡', ar: 'يستحم', hi: 'नहाना', it: 'Fare il bagno', pl: 'Wziąć kąpiel', he: 'להתרחץ', nl: 'Bad nemen', vi: 'Tắm bồn', tl: 'Maligo sa banyo', tr: 'Banyo yapmak', id: 'Mandi' },
+  'ac-take-a-shower': { ro: 'Fă duș', es: 'Ducharse', fr: 'Prendre une douche', pt: 'Tomar banho de chuveiro', de: 'Duschen', ru: 'Принять душ', uk: 'Прийняти душ', ja: 'シャワーを浴びる', ko: '샤워하다', zh: '淋浴', ar: 'يأخذ دشاً', hi: 'शॉवर लेना', it: 'Fare la doccia', pl: 'Wziąć prysznic', he: 'להתקלח', nl: 'Douchen', vi: 'Tắm vòi hoa sen', tl: 'Mag-shower', tr: 'Duş almak', id: 'Mandi shower' },
+  'ac-sleep': { ro: 'Dormi', es: 'Dormir', fr: 'Dormir', pt: 'Dormir', de: 'Schlafen', ru: 'Спать', uk: 'Спати', ja: '寝る', ko: '자다', zh: '睡觉', ar: 'ينام', hi: 'सोना', it: 'Dormire', pl: 'Spać', he: 'לישון', nl: 'Slapen', vi: 'Ngủ', tl: 'Matulog', tr: 'Uyumak', id: 'Tidur' },
+  'ac-take-a-nap': { ro: 'Fă un pui de somn', es: 'Tomar una siesta', fr: 'Faire une sieste', pt: 'Tirar um cochilo', de: 'Schläfchen machen', ru: 'Вздремнуть', uk: 'Подрімати', ja: '昼寝する', ko: '낮잠 자다', zh: '打盹', ar: 'يأخذ قيلولة', hi: 'झपकी लेना', it: 'Fare un pisolino', pl: 'Zdrzemnąć się', he: 'לנמנם', nl: 'Een dutje doen', vi: 'Ngủ trưa', tl: 'Mag-idlip', tr: 'Kestirmek', id: 'Tidur siang' },
+  'ac-wake-up': { ro: 'Trezește-te', es: 'Despertarse', fr: 'Se réveiller', pt: 'Acordar', de: 'Aufwachen', ru: 'Проснуться', uk: 'Прокинутися', ja: '起きる', ko: '일어나다', zh: '起床', ar: 'يستيقظ', hi: 'जागना', it: 'Svegliarsi', pl: 'Obudzić się', he: 'להתעורר', nl: 'Wakker worden', vi: 'Thức dậy', tl: 'Gumising', tr: 'Uyanmak', id: 'Bangun' },
+  'ac-wait-for': { ro: 'Așteaptă', es: 'Esperar', fr: 'Attendre', pt: 'Esperar', de: 'Warten auf', ru: 'Ждать', uk: 'Чекати', ja: '待つ', ko: '기다리다', zh: '等待', ar: 'ينتظر', hi: 'इंतज़ार करना', it: 'Aspettare', pl: 'Czekać', he: 'לחכות', nl: 'Wachten', vi: 'Chờ', tl: 'Maghintay', tr: 'Beklemek', id: 'Menunggu' },
+  'ac-look-for': { ro: 'Cauta', es: 'Buscar', fr: 'Chercher', pt: 'Procurar', de: 'Suchen', ru: 'Искать', uk: 'Шукати', ja: '探す', ko: '찾다', zh: '寻找', ar: 'يبحث عن', hi: 'ढूँढना', it: 'Cercare', pl: 'Szukać', he: 'לחפש', nl: 'Zoeken', vi: 'Tìm kiếm', tl: 'Hanapin', tr: 'Aramak', id: 'Mencari' },
+  'ac-search': { ro: 'Cauta', es: 'Buscar', fr: 'Chercher', pt: 'Pesquisar', de: 'Suchen', ru: 'Искать', uk: 'Шукати', ja: '探す', ko: '검색하다', zh: '搜索', ar: 'يبحث', hi: 'खोजना', it: 'Cercare', pl: 'Przeszukać', he: 'לחפש', nl: 'Zoeken', vi: 'Tìm', tl: 'Hanapin', tr: 'Aramak', id: 'Mencari' },
+  'ac-discover': { ro: 'Descoperă', es: 'Descubrir', fr: 'Découvrir', pt: 'Descobrir', de: 'Entdecken', ru: 'Обнаружить', uk: 'Відкривати', ja: '発見する', ko: '발견하다', zh: '发现', ar: 'يكتشف', hi: 'खोजना', it: 'Scoprire', pl: 'Odkryć', he: 'לגלות', nl: 'Ontdekken', vi: 'Khám phá', tl: 'Tuklasin', tr: 'Keşfetmek', id: 'Menemukan' },
+  'ac-hide': { ro: 'Ascunde-te', es: 'Esconderse', fr: 'Se cacher', pt: 'Esconder', de: 'Verstecken', ru: 'Прятаться', uk: 'Ховатися', ja: '隠れる', ko: '숨다', zh: '躲', ar: 'يختبئ', hi: 'छिपना', it: 'Nascondersi', pl: 'Chować się', he: 'להתחבא', nl: 'Verstoppen', vi: 'Trốn', tl: 'Magtago', tr: 'Saklanmak', id: 'Bersembunyi' },
+  'ac-seek': { ro: 'Cauta', es: 'Buscar', fr: 'Chercher', pt: 'Procurar', de: 'Suchen', ru: 'Искать', uk: 'Шукати', ja: 'さがす', ko: '찾다', zh: '寻', ar: 'يبحث', hi: 'खोजना', it: 'Cercare', pl: 'Szukać', he: 'לחפש', nl: 'Zoeken', vi: 'Tìm', tl: 'Hanapin', tr: 'Aramak', id: 'Mencari' },
+  'ac-tag': { ro: 'Prinde', es: 'Tocar', fr: 'Toucher', pt: 'Pegar', de: 'Abschlagen', ru: 'Осалить', uk: 'Осалити', ja: '鬼ごっこ', ko: '술래잡기', zh: '抓人', ar: 'يلمس', hi: 'छूना', it: 'Toccare', pl: 'Dotknąć', he: 'לתייג', nl: 'Tikken', vi: 'Đuổi bắt', tl: 'Hulihin', tr: 'Ebelemek', id: 'Sentuh' },
+  'ac-race': { ro: 'Concurează', es: 'Correr carreras', fr: 'Faire la course', pt: 'Correr', de: 'Rennen', ru: 'Гонять', uk: 'Змагатися', ja: '競走する', ko: '경주하다', zh: '比赛', ar: 'يتسابق', hi: 'दौड़ लगाना', it: 'Gareggiare', pl: 'Ścigać się', he: 'להתחרות', nl: 'Racen', vi: 'Đua chạy', tl: 'Makipagkarera', tr: 'Yarışmak', id: 'Berlomba' },
+  'ac-cuddle': { ro: 'Îmbrățișează', es: 'Abrazar', fr: 'Câliner', pt: 'Abraçar', de: 'Kuscheln', ru: 'Обниматься', uk: 'Обійматися', ja: 'だっこ', ko: '꼭 안다', zh: '拥抱', ar: 'يعانق', hi: 'गले लगाना', it: 'Coccolare', pl: 'Przytulać', he: 'להתכרבל', nl: 'Knuffelen', vi: 'Ôm ấp', tl: 'Yakapin', tr: 'Sarılmak', id: 'Memeluk' },
+  'ac-snuggle': { ro: 'Ghemotocit', es: 'Acurrucarse', fr: 'Se blottir', pt: 'Aconchegar', de: 'Schmusen', ru: 'Прижаться', uk: 'Пригорнутися', ja: 'くっつく', ko: '딱 붙다', zh: '依偎', ar: 'يتقرب', hi: 'सटकर लेटना', it: 'Stringersi', pl: 'Wtulić się', he: 'להתכרבל', nl: 'Nestelen', vi: 'Nằm sát', tl: 'Sumiksik', tr: 'Sokulmak', id: 'Meringkuk' },
+  'ac-pat': { ro: 'Mângâie', es: 'Palmear', fr: 'Tapoter', pt: 'Dar tapinha', de: 'Tätscheln', ru: 'Похлопать', uk: 'Поплескати', ja: 'なでる', ko: '토닥이다', zh: '轻拍', ar: 'يربت', hi: 'थपथपाना', it: 'Accarezzare', pl: 'Poklepywać', he: 'לטפוח', nl: 'Aaien', vi: 'Vỗ nhẹ', tl: 'Tapukin', tr: 'Sıvazlamak', id: 'Menepuk' },
+  'ac-tickle': { ro: 'Gâdilă', es: 'Hacer cosquillas', fr: 'Chatouiller', pt: 'Fazer cócegas', de: 'Kitzeln', ru: 'Щекотать', uk: 'Лоскотати', ja: 'くすぐる', ko: '간지럽히다', zh: '挠痒痒', ar: 'يدغدغ', hi: 'गुदगुदाना', it: 'Fare il solletico', pl: 'Łaskotać', he: 'לדגדג', nl: 'Kietelen', vi: 'Cù léng', tl: 'Kitikin', tr: 'Gıdıklamak', id: 'Menggelitik' },
+  'ac-sweep': { ro: 'Mătură', es: 'Barrer', fr: 'Balayer', pt: 'Varrer', de: 'Fegen', ru: 'Подметать', uk: 'Підмітати', ja: '掃く', ko: '쓸다', zh: '扫地', ar: 'يكنس', hi: 'बुहारना', it: 'Spazzare', pl: 'Zamiatać', he: 'לכבד', nl: 'Vegen', vi: 'Quét', tl: 'Magwalis', tr: 'Süpürmek', id: 'Menyapu' },
+  'ac-mop': { ro: 'Spala pe jos', es: 'Trapear', fr: 'Passer la serpillère', pt: 'Passar o pano', de: 'Wischen', ru: 'Мыть пол', uk: 'Мити підлогу', ja: '床を拭く', ko: '걸레질하다', zh: '拖地', ar: 'يمسح الأرض', hi: 'पोंछा लगाना', it: 'Passare il mocio', pl: 'Myć podłogę', he: 'לסחוב', nl: 'Dweilen', vi: 'Lau sàn', tl: 'Magpunas ng sahig', tr: 'Moplamak', id: 'Mengepel' },
+  'ac-vacuum': { ro: 'Aspiră', es: 'Aspirar', fr: 'Passer l\'aspirateur', pt: 'Passar o aspirador', de: 'Staubsaugen', ru: 'Пылесосить', uk: 'Пилососити', ja: '掃除機をかける', ko: '청소기 돌리다', zh: '吸尘', ar: 'يكنس بالمكنسة الكهربائية', hi: 'वैक्यूम करना', it: 'Passare l\'aspirapolvere', pl: 'Odkurzać', he: 'לשאוב אבק', nl: 'Stofzuigen', vi: 'Hút bụi', tl: 'Mag-vacuum', tr: 'Elektrik süpürgesiyle süpürmek', id: 'Menyedot debu' },
+  'ac-dust': { ro: 'Șterge praful', es: 'Quitar el polvo', fr: 'Dépoussiérer', pt: 'Tirar o pó', de: 'Abstauben', ru: 'Вытирать пыль', uk: 'Витирати пил', ja: '埃を拭く', ko: '먼지 닦다', zh: '除尘', ar: 'ينفض الغبار', hi: 'धूल साफ करना', it: 'Spolverare', pl: 'Ścierać kurz', he: 'לנגב אבק', nl: 'Afstoffen', vi: 'Lau bụi', tl: 'Magalis ng alikabok', tr: 'Toz almak', id: 'Mengelap debu' },
+  'ac-carry-it': { ro: 'Du-l', es: 'Llevarlo', fr: 'Le porter', pt: 'Carregar', de: 'Tragen', ru: 'Нести', uk: 'Нести', ja: '運ぶ', ko: '들고 가다', zh: '拿着走', ar: 'يحمله', hi: 'इसे ले जाओ', it: 'Portarlo', pl: 'Nieść to', he: 'לשאת', nl: 'Dragen', vi: 'Mang nó', tl: 'Dalhin', tr: 'Onu taşı', id: 'Membawanya' },
+  'ac-drop-it': { ro: 'Lasă-l jos', es: 'Dejarlo caer', fr: 'Le lâcher', pt: 'Soltar', de: 'Fallenlassen', ru: 'Бросить', uk: 'Кинути', ja: '落として', ko: '떨어뜨리다', zh: '放手', ar: 'يتركه يسقط', hi: 'इसे गिराओ', it: 'Lasciarlo cadere', pl: 'Upuścić', he: 'להפיל', nl: 'Laten vallen', vi: 'Thả nó', tl: 'Ihulog', tr: 'Düşür', id: 'Jatuhkan' },
+  'ac-toss-it': { ro: 'Aruncă', es: 'Lanzarlo', fr: 'Le lancer', pt: 'Jogar', de: 'Werfen', ru: 'Бросить', uk: 'Кинути', ja: '投げる', ko: '던지다', zh: '扔', ar: 'يرميه', hi: 'इसे उछालो', it: 'Lanciarlo', pl: 'Rzucić', he: 'להשליך', nl: 'Gooien', vi: 'Ném nó', tl: 'Ihagis', tr: 'Fırlat', id: 'Lempar' },
+  'ac-roll-it': { ro: 'Rostogoliți', es: 'Hacerlo rodar', fr: 'Le faire rouler', pt: 'Rolar', de: 'Rollen', ru: 'Катить', uk: 'Котити', ja: '転がす', ko: '굴리다', zh: '滚它', ar: 'يدحرجه', hi: 'इसे घुमाओ', it: 'Farlo rotolare', pl: 'Toczyć', he: 'לגלגל', nl: 'Rollen', vi: 'Lăn nó', tl: 'Igulong', tr: 'Onu yuvarla', id: 'Gulingkan' },
+  'dw-tall': { ro: 'Înalt', es: 'Alto', fr: 'Grand', pt: 'Alto', de: 'Groß', ru: 'Высокий', uk: 'Високий', ja: '背が高い', ko: '키가 커요', zh: '高', ar: 'طويل', hi: 'लंबा', it: 'Alto', pl: 'Wysoki', he: 'גבוה', nl: 'Lang', vi: 'Cao', tl: 'Matangkad', tr: 'Uzun', id: 'Tinggi' },
+  'dw-short': { ro: 'Scund', es: 'Bajo', fr: 'Petit', pt: 'Baixo', de: 'Klein', ru: 'Низкий', uk: 'Низький', ja: '背が低い', ko: '키가 작아요', zh: '矮', ar: 'قصير', hi: 'छोटा', it: 'Basso', pl: 'Niski', he: 'נמוך', nl: 'Klein', vi: 'Thấp', tl: 'Mababa', tr: 'Kısa', id: 'Pendek' },
+  'dw-long': { ro: 'Lung', es: 'Largo', fr: 'Long', pt: 'Longo', de: 'Lang', ru: 'Длинный', uk: 'Довгий', ja: '長い', ko: '길어요', zh: '长', ar: 'طويل', hi: 'लंबा', it: 'Lungo', pl: 'Długi', he: 'ארוך', nl: 'Lang', vi: 'Dài', tl: 'Mahaba', tr: 'Uzun', id: 'Panjang' },
+  'dw-wide': { ro: 'Lat', es: 'Ancho', fr: 'Large', pt: 'Largo', de: 'Breit', ru: 'Широкий', uk: 'Широкий', ja: '広い', ko: '넓어요', zh: '宽', ar: 'عريض', hi: 'चौड़ा', it: 'Largo', pl: 'Szeroki', he: 'רחב', nl: 'Breed', vi: 'Rộng', tl: 'Maluwag', tr: 'Geniş', id: 'Lebar' },
+  'dw-narrow': { ro: 'Îngust', es: 'Estrecho', fr: 'Étroit', pt: 'Estreito', de: 'Schmal', ru: 'Узкий', uk: 'Вузький', ja: '狭い', ko: '좁아요', zh: '窄', ar: 'ضيق', hi: 'संकरा', it: 'Stretto', pl: 'Wąski', he: 'צר', nl: 'Smal', vi: 'Hẹp', tl: 'Makitid', tr: 'Dar', id: 'Sempit' },
+  'dw-thick': { ro: 'Gros', es: 'Grueso', fr: 'Épais', pt: 'Grosso', de: 'Dick', ru: 'Толстый', uk: 'Товстий', ja: '厚い', ko: '두꺼워요', zh: '厚', ar: 'سميك', hi: 'मोटा', it: 'Spesso', pl: 'Gruby', he: 'עבה', nl: 'Dik', vi: 'Dày', tl: 'Makapal', tr: 'Kalın', id: 'Tebal' },
+  'dw-thin': { ro: 'Subțire', es: 'Delgado', fr: 'Mince', pt: 'Fino', de: 'Dünn', ru: 'Тонкий', uk: 'Тонкий', ja: '薄い', ko: '얇아요', zh: '薄', ar: 'رفيع', hi: 'पतला', it: 'Sottile', pl: 'Cienki', he: 'דק', nl: 'Dun', vi: 'Mỏng', tl: 'Manipis', tr: 'İnce', id: 'Tipis' },
+  'dw-round': { ro: 'Rotund', es: 'Redondo', fr: 'Rond', pt: 'Redondo', de: 'Rund', ru: 'Круглый', uk: 'Круглий', ja: '丸い', ko: '둥글어요', zh: '圆', ar: 'مستدير', hi: 'गोल', it: 'Rotondo', pl: 'Okrągły', he: 'עגול', nl: 'Rond', vi: 'Tròn', tl: 'Bilog', tr: 'Yuvarlak', id: 'Bulat' },
+  'dw-square': { ro: 'Pătrat', es: 'Cuadrado', fr: 'Carré', pt: 'Quadrado', de: 'Quadratisch', ru: 'Квадратный', uk: 'Квадратний', ja: '四角い', ko: '네모예요', zh: '方形', ar: 'مربع', hi: 'वर्गाकार', it: 'Quadrato', pl: 'Kwadratowy', he: 'מרובע', nl: 'Vierkant', vi: 'Vuông', tl: 'Parisukat', tr: 'Kare', id: 'Kotak' },
+  'dw-smooth': { ro: 'Neted', es: 'Liso', fr: 'Lisse', pt: 'Liso', de: 'Glatt', ru: 'Гладкий', uk: 'Гладкий', ja: 'なめらか', ko: '매끄러워요', zh: '光滑', ar: 'أملس', hi: 'चिकना', it: 'Liscio', pl: 'Gładki', he: 'חלק', nl: 'Glad', vi: 'Mịn', tl: 'Makinis', tr: 'Pürüzsüz', id: 'Halus' },
+  'dw-rough': { ro: 'Rugos', es: 'Rugoso', fr: 'Rugueux', pt: 'Áspero', de: 'Rau', ru: 'Шероховатый', uk: 'Шорсткий', ja: 'ざらざら', ko: '거칠어요', zh: '粗糙', ar: 'خشن', hi: 'खुरदुरा', it: 'Ruvido', pl: 'Szorstki', he: 'מחוספס', nl: 'Ruw', vi: 'Thô ráp', tl: 'Magaspang', tr: 'Pürüzlü', id: 'Kasar' },
+  'dw-sticky': { ro: 'Lipicios', es: 'Pegajoso', fr: 'Collant', pt: 'Pegajoso', de: 'Klebrig', ru: 'Липкий', uk: 'Клейкий', ja: 'べたべた', ko: '끈적해요', zh: '粘', ar: 'لزج', hi: 'चिपचिपा', it: 'Appiccicoso', pl: 'Lepki', he: 'דביק', nl: 'Plakkerig', vi: 'Dính', tl: 'Malagkit', tr: 'Yapışkan', id: 'Lengket' },
+  'dw-wet': { ro: 'Ud', es: 'Mojado', fr: 'Mouillé', pt: 'Molhado', de: 'Nass', ru: 'Мокрый', uk: 'Мокрий', ja: 'ぬれている', ko: '젖어요', zh: '湿', ar: 'رطب', hi: 'गीला', it: 'Bagnato', pl: 'Mokry', he: 'רטוב', nl: 'Nat', vi: 'Ướt', tl: 'Basa', tr: 'Islak', id: 'Basah' },
+  'dw-dry': { ro: 'Uscat', es: 'Seco', fr: 'Sec', pt: 'Seco', de: 'Trocken', ru: 'Сухой', uk: 'Сухий', ja: '乾いている', ko: '건조해요', zh: '干', ar: 'جاف', hi: 'सूखा', it: 'Asciutto', pl: 'Suchy', he: 'יבש', nl: 'Droog', vi: 'Khô', tl: 'Tuyo', tr: 'Kuru', id: 'Kering' },
+  'dw-clean': { ro: 'Curat', es: 'Limpio', fr: 'Propre', pt: 'Limpo', de: 'Sauber', ru: 'Чистый', uk: 'Чистий', ja: 'きれい', ko: '깨끗해요', zh: '干净', ar: 'نظيف', hi: 'साफ', it: 'Pulito', pl: 'Czysty', he: 'נקי', nl: 'Schoon', vi: 'Sạch', tl: 'Malinis', tr: 'Temiz', id: 'Bersih' },
+  'dw-dirty': { ro: 'Murdar', es: 'Sucio', fr: 'Sale', pt: 'Sujo', de: 'Schmutzig', ru: 'Грязный', uk: 'Брудний', ja: '汚い', ko: '더러워요', zh: '脏', ar: 'قذر', hi: 'गंदा', it: 'Sporco', pl: 'Brudny', he: 'מלוכלך', nl: 'Vies', vi: 'Bẩn', tl: 'Marumi', tr: 'Kirli', id: 'Kotor' },
+  'dw-soft': { ro: 'Moale', es: 'Suave', fr: 'Doux', pt: 'Macio', de: 'Weich', ru: 'Мягкий', uk: 'М\'який', ja: '柔らかい', ko: '부드러워요', zh: '软', ar: 'ناعم', hi: 'नरम', it: 'Morbido', pl: 'Miękki', he: 'רך', nl: 'Zacht', vi: 'Mềm', tl: 'Malambot', tr: 'Yumuşak', id: 'Lembut' },
+  'dw-hard': { ro: 'Tare', es: 'Duro', fr: 'Dur', pt: 'Duro', de: 'Hart', ru: 'Твёрдый', uk: 'Твердий', ja: '硬い', ko: '딱딱해요', zh: '硬', ar: 'صلب', hi: 'कठोर', it: 'Duro', pl: 'Twardy', he: 'קשיח', nl: 'Hard', vi: 'Cứng', tl: 'Matigas', tr: 'Sert', id: 'Keras' },
+  'dw-sweet': { ro: 'Dulce', es: 'Dulce', fr: 'Sucré', pt: 'Doce', de: 'Süß', ru: 'Сладкий', uk: 'Солодкий', ja: '甘い', ko: '달아요', zh: '甜', ar: 'حلو', hi: 'मीठा', it: 'Dolce', pl: 'Słodki', he: 'מתוק', nl: 'Zoet', vi: 'Ngọt', tl: 'Matamis', tr: 'Tatlı', id: 'Manis' },
+  'dw-salty': { ro: 'Sărat', es: 'Salado', fr: 'Salé', pt: 'Salgado', de: 'Salzig', ru: 'Солёный', uk: 'Солоний', ja: 'しょっぱい', ko: '짜요', zh: '咸', ar: 'مالح', hi: 'नमकीन', it: 'Salato', pl: 'Słony', he: 'מלוח', nl: 'Zout', vi: 'Mặn', tl: 'Maalat', tr: 'Tuzlu', id: 'Asin' },
+  'dw-sour': { ro: 'Acru', es: 'Ácido', fr: 'Aigre', pt: 'Azedo', de: 'Sauer', ru: 'Кислый', uk: 'Кислий', ja: '酸っぱい', ko: '새요', zh: '酸', ar: 'حامض', hi: 'खट्टा', it: 'Acido', pl: 'Kwaśny', he: 'חמוץ', nl: 'Zuur', vi: 'Chua', tl: 'Maasim', tr: 'Ekşi', id: 'Asam' },
+  'dw-spicy': { ro: 'Picant', es: 'Picante', fr: 'Épicé', pt: 'Picante', de: 'Scharf', ru: 'Острый', uk: 'Гострий', ja: '辛い', ko: '매워요', zh: '辣', ar: 'حار', hi: 'मसालेदार', it: 'Piccante', pl: 'Pikantny', he: 'חריף', nl: 'Gekruid', vi: 'Cay', tl: 'Maanghang', tr: 'Acı', id: 'Pedas' },
+  'dw-bitter': { ro: 'Amar', es: 'Amargo', fr: 'Amer', pt: 'Amargo', de: 'Bitter', ru: 'Горький', uk: 'Гіркий', ja: '苦い', ko: '써요', zh: '苦', ar: 'مر', hi: 'कड़वा', it: 'Amaro', pl: 'Gorzki', he: 'מר', nl: 'Bitter', vi: 'Đắng', tl: 'Mapait', tr: 'Acı', id: 'Pahit' },
+  'dw-quiet': { ro: 'Liniștit', es: 'Tranquilo', fr: 'Silencieux', pt: 'Silencioso', de: 'Leise', ru: 'Тихий', uk: 'Тихий', ja: '静か', ko: '조용해요', zh: '安静', ar: 'هادئ', hi: 'शांत', it: 'Silenzioso', pl: 'Cichy', he: 'שקט', nl: 'Stil', vi: 'Yên lặng', tl: 'Tahimik', tr: 'Sessiz', id: 'Tenang' },
+  'dw-loud': { ro: 'Zgomotos', es: 'Ruidoso', fr: 'Bruyant', pt: 'Barulhento', de: 'Laut', ru: 'Громкий', uk: 'Гучний', ja: 'うるさい', ko: '시끄러워요', zh: '响亮', ar: 'صاخب', hi: 'तेज़', it: 'Rumoroso', pl: 'Głośny', he: 'רועש', nl: 'Luid', vi: 'Ồn', tl: 'Malakas', tr: 'Gürültülü', id: 'Keras' },
+  'dw-bright': { ro: 'Luminos', es: 'Brillante', fr: 'Lumineux', pt: 'Brilhante', de: 'Hell', ru: 'Яркий', uk: 'Яскравий', ja: '明るい', ko: '밝아요', zh: '明亮', ar: 'مضيء', hi: 'चमकीला', it: 'Luminoso', pl: 'Jasny', he: 'בהיר', nl: 'Helder', vi: 'Sáng', tl: 'Maliwanag', tr: 'Parlak', id: 'Terang' },
+  'dw-dark': { ro: 'Întunecat', es: 'Oscuro', fr: 'Sombre', pt: 'Escuro', de: 'Dunkel', ru: 'Тёмный', uk: 'Темний', ja: '暗い', ko: '어두워요', zh: '黑暗', ar: 'مظلم', hi: 'अंधेरा', it: 'Buio', pl: 'Ciemny', he: 'חשוך', nl: 'Donker', vi: 'Tối', tl: 'Madilim', tr: 'Karanlık', id: 'Gelap' },
+  'dw-shiny': { ro: 'Lucios', es: 'Brilloso', fr: 'Brillant', pt: 'Brilhante', de: 'Glänzend', ru: 'Блестящий', uk: 'Блискучий', ja: 'ピカピカ', ko: '반짝여요', zh: '闪亮', ar: 'لامع', hi: 'चमकदार', it: 'Lucido', pl: 'Błyszczący', he: 'מבריק', nl: 'Glanzend', vi: 'Bóng', tl: 'Makintab', tr: 'Parlak', id: 'Berkilau' },
+  'dw-heavy': { ro: 'Greu', es: 'Pesado', fr: 'Lourd', pt: 'Pesado', de: 'Schwer', ru: 'Тяжёлый', uk: 'Важкий', ja: '重い', ko: '무거워요', zh: '重', ar: 'ثقيل', hi: 'भारी', it: 'Pesante', pl: 'Ciężki', he: 'כבד', nl: 'Zwaar', vi: 'Nặng', tl: 'Mabigat', tr: 'Ağır', id: 'Berat' },
+  'dw-light': { ro: 'Ușor', es: 'Ligero', fr: 'Léger', pt: 'Leve', de: 'Leicht', ru: 'Лёгкий', uk: 'Легкий', ja: '軽い', ko: '가벼워요', zh: '轻', ar: 'خفيف', hi: 'हल्का', it: 'Leggero', pl: 'Lekki', he: 'קל', nl: 'Licht', vi: 'Nhẹ', tl: 'Magaan', tr: 'Hafif', id: 'Ringan' },
+  'dw-empty': { ro: 'Gol', es: 'Vacío', fr: 'Vide', pt: 'Vazio', de: 'Leer', ru: 'Пустой', uk: 'Порожній', ja: '空っぽ', ko: '비어있어요', zh: '空', ar: 'فارغ', hi: 'खाली', it: 'Vuoto', pl: 'Pusty', he: 'ריק', nl: 'Leeg', vi: 'Trống', tl: 'Walang laman', tr: 'Boş', id: 'Kosong' },
+  'dw-full': { ro: 'Plin', es: 'Lleno', fr: 'Plein', pt: 'Cheio', de: 'Voll', ru: 'Полный', uk: 'Повний', ja: 'いっぱい', ko: '가득해요', zh: '满', ar: 'ممتلئ', hi: 'भरा', it: 'Pieno', pl: 'Pełny', he: 'מלא', nl: 'Vol', vi: 'Đầy', tl: 'Puno', tr: 'Dolu', id: 'Penuh' },
+  'dw-easy': { ro: 'Ușor', es: 'Fácil', fr: 'Facile', pt: 'Fácil', de: 'Einfach', ru: 'Лёгкий', uk: 'Легкий', ja: '簡単', ko: '쉬워요', zh: '容易', ar: 'سهل', hi: 'आसान', it: 'Facile', pl: 'Łatwy', he: 'קל', nl: 'Makkelijk', vi: 'Dễ', tl: 'Madali', tr: 'Kolay', id: 'Mudah' },
+  'dw-tricky': { ro: 'Dificil', es: 'Complicado', fr: 'Compliqué', pt: 'Complicado', de: 'Knifflig', ru: 'Сложный', uk: 'Складний', ja: 'むずかしい', ko: '까다로워요', zh: '棘手', ar: 'صعب', hi: 'पेचीदा', it: 'Difficile', pl: 'Podchwytliwy', he: 'מסובך', nl: 'Lastig', vi: 'Khó', tl: 'Mahirap', tr: 'Çetrefilli', id: 'Rumit' },
+  'dw-simple': { ro: 'Simplu', es: 'Simple', fr: 'Simple', pt: 'Simples', de: 'Einfach', ru: 'Простой', uk: 'Простий', ja: 'シンプル', ko: '간단해요', zh: '简单', ar: 'بسيط', hi: 'सरल', it: 'Semplice', pl: 'Prosty', he: 'פשוט', nl: 'Eenvoudig', vi: 'Đơn giản', tl: 'Simple', tr: 'Basit', id: 'Sederhana' },
+  'dw-fun': { ro: 'Distractiv', es: 'Divertido', fr: 'Amusant', pt: 'Divertido', de: 'Spaßig', ru: 'Весёлый', uk: 'Веселий', ja: '楽しい', ko: '재미있어요', zh: '有趣', ar: 'ممتع', hi: 'मज़ेदार', it: 'Divertente', pl: 'Zabawny', he: 'כיפי', nl: 'Leuk', vi: 'Vui', tl: 'Masaya', tr: 'Eğlenceli', id: 'Menyenangkan' },
+  'dw-boring': { ro: 'Plictisitor', es: 'Aburrido', fr: 'Ennuyeux', pt: 'Chato', de: 'Langweilig', ru: 'Скучный', uk: 'Нудний', ja: 'つまらない', ko: '지루해요', zh: '无聊', ar: 'ممل', hi: 'उबाऊ', it: 'Noioso', pl: 'Nudny', he: 'משעמם', nl: 'Saai', vi: 'Nhàm chán', tl: 'Nakakainis', tr: 'Sıkıcı', id: 'Membosankan' },
+  'dw-cool': { ro: 'Mișto', es: 'Chévere', fr: 'Cool', pt: 'Legal', de: 'Cool', ru: 'Классный', uk: 'Класний', ja: 'かっこいい', ko: '멋져요', zh: '酷', ar: 'رائع', hi: 'बढ़िया', it: 'Figo', pl: 'Fajny', he: 'מגניב', nl: 'Gaaf', vi: 'Ngầu', tl: 'Astig', tr: 'Harika', id: 'Keren' },
+  'dw-awesome': { ro: 'Grozav', es: 'Increíble', fr: 'Super', pt: 'Incrível', de: 'Toll', ru: 'Потрясающий', uk: 'Чудовий', ja: 'すごい', ko: '대단해요', zh: '厉害', ar: 'مذهل', hi: 'अद्भुत', it: 'Fantastico', pl: 'Niesamowity', he: 'מדהים', nl: 'Geweldig', vi: 'Tuyệt', tl: 'Galing', tr: 'Muhteşem', id: 'Luar biasa' },
+  'dw-scary': { ro: 'Înfricoșător', es: 'Aterrador', fr: 'Effrayant', pt: 'Assustador', de: 'Gruselig', ru: 'Страшный', uk: 'Страшний', ja: '怖い', ko: '무서워요', zh: '可怕', ar: 'مخيف', hi: 'डरावना', it: 'Spaventoso', pl: 'Straszny', he: 'מפחיד', nl: 'Eng', vi: 'Đáng sợ', tl: 'Nakakatakot', tr: 'Korkutucu', id: 'Menakutkan' },
+  'dw-safe': { ro: 'Sigur', es: 'Seguro', fr: 'Sûr', pt: 'Seguro', de: 'Sicher', ru: 'Безопасный', uk: 'Безпечний', ja: '安全', ko: '안전해요', zh: '安全', ar: 'آمن', hi: 'सुरक्षित', it: 'Sicuro', pl: 'Bezpieczny', he: 'בטוח', nl: 'Veilig', vi: 'An toàn', tl: 'Ligtas', tr: 'Güvenli', id: 'Aman' },
+  'dw-dangerous': { ro: 'Periculos', es: 'Peligroso', fr: 'Dangereux', pt: 'Perigoso', de: 'Gefährlich', ru: 'Опасный', uk: 'Небезпечний', ja: '危ない', ko: '위험해요', zh: '危险', ar: 'خطير', hi: 'खतरनाक', it: 'Pericoloso', pl: 'Niebezpieczny', he: 'מסוכן', nl: 'Gevaarlijk', vi: 'Nguy hiểm', tl: 'Mapanganib', tr: 'Tehlikeli', id: 'Berbahaya' },
+  'dw-friendly': { ro: 'Prietenos', es: 'Amigable', fr: 'Amical', pt: 'Amigável', de: 'Freundlich', ru: 'Дружелюбный', uk: 'Дружелюбний', ja: '親切', ko: '친근해요', zh: '友好', ar: 'ودود', hi: 'मिलनसार', it: 'Amichevole', pl: 'Przyjazny', he: 'ידידותי', nl: 'Vriendelijk', vi: 'Thân thiện', tl: 'Magiliw', tr: 'Dostane', id: 'Ramah' },
+  'dw-mean': { ro: 'Rău', es: 'Malo', fr: 'Méchant', pt: 'Mau', de: 'Gemein', ru: 'Злой', uk: 'Злий', ja: 'いじわる', ko: '나빠요', zh: '坏', ar: 'قاسٍ', hi: 'बुरा', it: 'Cattivo', pl: 'Złośliwy', he: 'אכזרי', nl: 'Gemeen', vi: 'Ác', tl: 'Masamain', tr: 'Kötü', id: 'Jahat' },
+  'dw-nice': { ro: 'Drăguț', es: 'Agradable', fr: 'Gentil', pt: 'Agradável', de: 'Nett', ru: 'Хороший', uk: 'Гарний', ja: 'やさしい', ko: '착해요', zh: '好', ar: 'لطيف', hi: 'अच्छा', it: 'Gentile', pl: 'Miły', he: 'נחמד', nl: 'Aardig', vi: 'Tốt bụng', tl: 'Mabait', tr: 'İyi huylu', id: 'Baik' },
+  'dw-helpful': { ro: 'Util', es: 'Útil', fr: 'Utile', pt: 'Útil', de: 'Hilfsbereit', ru: 'Полезный', uk: 'Корисний', ja: '役に立つ', ko: '도움이 돼요', zh: '有帮助', ar: 'مفيد', hi: 'सहायक', it: 'Utile', pl: 'Pomocny', he: 'מועיל', nl: 'Behulpzaam', vi: 'Hữu ích', tl: 'Matulungin', tr: 'Yararlı', id: 'Membantu' },
+  'dw-mine': { ro: 'Al meu', es: 'Mío', fr: 'Le mien', pt: 'Meu', de: 'Meins', ru: 'Мой', uk: 'Мій', ja: '私の', ko: '내 거예요', zh: '我的', ar: 'لي', hi: 'मेरा', it: 'Mio', pl: 'Moje', he: 'שלי', nl: 'Van mij', vi: 'Của tôi', tl: 'Akin', tr: 'Benimki', id: 'Milikku' },
+  'dw-special': { ro: 'Special', es: 'Especial', fr: 'Spécial', pt: 'Especial', de: 'Besonders', ru: 'Особенный', uk: 'Особливий', ja: '特別', ko: '특별해요', zh: '特别', ar: 'خاص', hi: 'खास', it: 'Speciale', pl: 'Szczególny', he: 'מיוחד', nl: 'Speciaal', vi: 'Đặc biệt', tl: 'Espesyal', tr: 'Özel', id: 'Istimewa' },
+  'pp-aunt': { ro: 'Mătușă', es: 'Tía', fr: 'Tante', pt: 'Tia', de: 'Tante', ru: 'Тётя', uk: 'Тітка', ja: 'おばさん', ko: '이모/고모', zh: '姑姑', ar: 'عمة', hi: 'मौसी', it: 'Zia', pl: 'Ciocia', he: 'דודה', nl: 'Tante', vi: 'Cô/Dì', tl: 'Tita', tr: 'Teyze/Hala', id: 'Bibi' },
+  'pp-uncle': { ro: 'Unchi', es: 'Tío', fr: 'Oncle', pt: 'Tio', de: 'Onkel', ru: 'Дядя', uk: 'Дядько', ja: 'おじさん', ko: '삼촌', zh: '叔叔', ar: 'عم', hi: 'चाचा', it: 'Zio', pl: 'Wujek', he: 'דוד', nl: 'Oom', vi: 'Chú/Bác', tl: 'Tito', tr: 'Amca/Dayı', id: 'Paman' },
+  'pp-cousin': { ro: 'Văr', es: 'Primo', fr: 'Cousin', pt: 'Primo', de: 'Cousin', ru: 'Двоюродный брат', uk: 'Двоюрідний брат', ja: 'いとこ', ko: '사촌', zh: '表哥/弟', ar: 'ابن عم', hi: 'चचेरे भाई', it: 'Cugino', pl: 'Kuzyn', he: 'בן דוד', nl: 'Neef', vi: 'Anh chị em họ', tl: 'Pinsan', tr: 'Kuzen', id: 'Sepupu' },
+  'pp-stepmom': { ro: 'Mamă vitregă', es: 'Madrastra', fr: 'Belle-mère', pt: 'Madrasta', de: 'Stiefmutter', ru: 'Мачеха', uk: 'Мачуха', ja: '継母', ko: '새엄마', zh: '继母', ar: 'زوجة الأب', hi: 'सौतेली माँ', it: 'Matrigna', pl: 'Macocha', he: 'אמא חורגת', nl: 'Stiefmoeder', vi: 'Mẹ kế', tl: 'Inang-ampon', tr: 'Üvey anne', id: 'Ibu tiri' },
+  'pp-stepdad': { ro: 'Tată vitreg', es: 'Padrastro', fr: 'Beau-père', pt: 'Padrasto', de: 'Stiefvater', ru: 'Отчим', uk: 'Вітчим', ja: '継父', ko: '새아빠', zh: '继父', ar: 'زوج الأم', hi: 'सौतेले पिता', it: 'Patrigno', pl: 'Ojczym', he: 'אבא חורג', nl: 'Stiefvader', vi: 'Bố dượng', tl: 'Amang-ampon', tr: 'Üvey baba', id: 'Ayah tiri' },
+  'pp-bus-driver': { ro: 'Șofer de autobuz', es: 'Conductor de autobús', fr: 'Chauffeur de bus', pt: 'Motorista de ônibus', de: 'Busfahrer', ru: 'Водитель автобуса', uk: 'Водій автобуса', ja: 'バスの運転手', ko: '버스 기사', zh: '公交司机', ar: 'سائق الحافلة', hi: 'बस चालक', it: 'Autista del bus', pl: 'Kierowca autobusu', he: 'נהג אוטובוס', nl: 'Buschauffeur', vi: 'Tài xế xe buýt', tl: 'Driver ng bus', tr: 'Otobüs şoförü', id: 'Sopir bus' },
+  'pp-coach': { ro: 'Antrenor', es: 'Entrenador', fr: 'Entraîneur', pt: 'Treinador', de: 'Trainer', ru: 'Тренер', uk: 'Тренер', ja: 'コーチ', ko: '코치', zh: '教练', ar: 'مدرب', hi: 'कोच', it: 'Allenatore', pl: 'Trener', he: 'מאמן', nl: 'Coach', vi: 'Huấn luyện viên', tl: 'Coach', tr: 'Antrenör', id: 'Pelatih' },
+  'pp-principal': { ro: 'Director', es: 'Director', fr: 'Directeur', pt: 'Diretor', de: 'Schulleiter', ru: 'Директор', uk: 'Директор', ja: '校長先生', ko: '교장선생님', zh: '校长', ar: 'مدير المدرسة', hi: 'प्रधानाचार्य', it: 'Preside', pl: 'Dyrektor', he: 'מנהל בית ספר', nl: 'Schooldirecteur', vi: 'Hiệu trưởng', tl: 'Punong-guro', tr: 'Okul müdürü', id: 'Kepala sekolah' },
+  'pp-counselor': { ro: 'Consilier', es: 'Consejero', fr: 'Conseiller', pt: 'Conselheiro', de: 'Berater', ru: 'Советник', uk: 'Консультант', ja: 'カウンセラー', ko: '상담사', zh: '辅导员', ar: 'مستشار', hi: 'परामर्शदाता', it: 'Consulente', pl: 'Doradca', he: 'יועץ', nl: 'Begeleider', vi: 'Cố vấn', tl: 'Konselor', tr: 'Danışman', id: 'Konselor' },
+  'pp-nurse': { ro: 'Asistentă', es: 'Enfermera', fr: 'Infirmière', pt: 'Enfermeira', de: 'Krankenschwester', ru: 'Медсестра', uk: 'Медсестра', ja: '看護師', ko: '간호사', zh: '护士', ar: 'ممرضة', hi: 'नर्स', it: 'Infermiera', pl: 'Pielęgniarka', he: 'אחות', nl: 'Verpleegkundige', vi: 'Y tá', tl: 'Nars', tr: 'Hemşire', id: 'Perawat' },
+  'pp-dentist': { ro: 'Dentist', es: 'Dentista', fr: 'Dentiste', pt: 'Dentista', de: 'Zahnarzt', ru: 'Стоматолог', uk: 'Стоматолог', ja: '歯医者さん', ko: '치과의사', zh: '牙医', ar: 'طبيب الأسنان', hi: 'दंत चिकित्सक', it: 'Dentista', pl: 'Dentysta', he: 'רופא שיניים', nl: 'Tandarts', vi: 'Nha sĩ', tl: 'Dentista', tr: 'Diş hekimi', id: 'Dokter gigi' },
+  'pp-bcba': { ro: 'BCBA', es: 'BCBA', fr: 'BCBA', pt: 'BCBA', de: 'BCBA', ru: 'BCBA', uk: 'BCBA', ja: 'BCBA', ko: 'BCBA', zh: 'BCBA', ar: 'BCBA', hi: 'BCBA', it: 'BCBA', pl: 'BCBA', he: 'BCBA', nl: 'BCBA', vi: 'BCBA', tl: 'BCBA', tr: 'BCBA', id: 'BCBA' },
+  'pp-rbt': { ro: 'RBT', es: 'RBT', fr: 'RBT', pt: 'RBT', de: 'RBT', ru: 'RBT', uk: 'RBT', ja: 'RBT', ko: 'RBT', zh: 'RBT', ar: 'RBT', hi: 'RBT', it: 'RBT', pl: 'RBT', he: 'RBT', nl: 'RBT', vi: 'RBT', tl: 'RBT', tr: 'RBT', id: 'RBT' },
+  'pp-babysitter': { ro: 'Bonă', es: 'Niñera', fr: 'Babysitter', pt: 'Babá', de: 'Babysitter', ru: 'Няня', uk: 'Няня', ja: 'ベビーシッター', ko: '베이비시터', zh: '保姆', ar: 'جليسة الأطفال', hi: 'नैनी', it: 'Babysitter', pl: 'Niania', he: 'בייביסיטר', nl: 'Oppas', vi: 'Người trông trẻ', tl: 'Babysitter', tr: 'Bebek bakıcısı', id: 'Pengasuh' },
+  'pp-neighbor': { ro: 'Vecin', es: 'Vecino', fr: 'Voisin', pt: 'Vizinho', de: 'Nachbar', ru: 'Сосед', uk: 'Сусід', ja: '隣人', ko: '이웃', zh: '邻居', ar: 'جار', hi: 'पड़ोसी', it: 'Vicino', pl: 'Sąsiad', he: 'שכן', nl: 'Buur', vi: 'Hàng xóm', tl: 'Kapitbahay', tr: 'Komşu', id: 'Tetangga' },
+  'pp-helper': { ro: 'Ajutor', es: 'Ayudante', fr: 'Aide', pt: 'Ajudante', de: 'Helfer', ru: 'Помощник', uk: 'Помічник', ja: 'お助け係', ko: '도우미', zh: '帮手', ar: 'مساعد', hi: 'सहायक', it: 'Aiutante', pl: 'Pomocnik', he: 'עוזר', nl: 'Helper', vi: 'Người giúp đỡ', tl: 'Katulong', tr: 'Yardımcı', id: 'Penolong' },
+  'pp-classmate': { ro: 'Coleg de clasă', es: 'Compañero de clase', fr: 'Camarade de classe', pt: 'Colega de classe', de: 'Mitschüler', ru: 'Одноклассник', uk: 'Однокласник', ja: 'クラスメート', ko: '반 친구', zh: '同学', ar: 'زميل الفصل', hi: 'सहपाठी', it: 'Compagno di classe', pl: 'Kolega z klasy', he: 'חבר לכיתה', nl: 'Klasgenoot', vi: 'Bạn cùng lớp', tl: 'Kaklase', tr: 'Sınıf arkadaşı', id: 'Teman sekelas' },
+  'pp-best-friend': { ro: 'Cel mai bun prieten', es: 'Mejor amigo', fr: 'Meilleur ami', pt: 'Melhor amigo', de: 'Bester Freund', ru: 'Лучший друг', uk: 'Найкращий друг', ja: '親友', ko: '가장 친한 친구', zh: '最好的朋友', ar: 'الصديق المفضل', hi: 'सबसे अच्छा दोस्त', it: 'Migliore amico', pl: 'Najlepszy przyjaciel', he: 'חבר הכי טוב', nl: 'Beste vriend', vi: 'Bạn thân nhất', tl: 'Pinakamatalik na kaibigan', tr: 'En iyi arkadaş', id: 'Sahabat terbaik' },
+  'pp-new-friend': { ro: 'Prieten nou', es: 'Nuevo amigo', fr: 'Nouvel ami', pt: 'Novo amigo', de: 'Neuer Freund', ru: 'Новый друг', uk: 'Новий друг', ja: '新しい友達', ko: '새 친구', zh: '新朋友', ar: 'صديق جديد', hi: 'नया दोस्त', it: 'Nuovo amico', pl: 'Nowy przyjaciel', he: 'חבר חדש', nl: 'Nieuwe vriend', vi: 'Bạn mới', tl: 'Bagong kaibigan', tr: 'Yeni arkadaş', id: 'Teman baru' },
+  'pp-man': { ro: 'Bărbat', es: 'Hombre', fr: 'Homme', pt: 'Homem', de: 'Mann', ru: 'Мужчина', uk: 'Чоловік', ja: '男の人', ko: '남자', zh: '男人', ar: 'رجل', hi: 'आदमी', it: 'Uomo', pl: 'Mężczyzna', he: 'גבר', nl: 'Man', vi: 'Đàn ông', tl: 'Lalaki', tr: 'Adam', id: 'Pria' },
+  'pp-woman': { ro: 'Femeie', es: 'Mujer', fr: 'Femme', pt: 'Mulher', de: 'Frau', ru: 'Женщина', uk: 'Жінка', ja: '女の人', ko: '여자', zh: '女人', ar: 'امرأة', hi: 'औरत', it: 'Donna', pl: 'Kobieta', he: 'אישה', nl: 'Vrouw', vi: 'Phụ nữ', tl: 'Babae', tr: 'Kadın', id: 'Wanita' },
+  'pp-kid': { ro: 'Copil', es: 'Niño', fr: 'Enfant', pt: 'Criança', de: 'Kind', ru: 'Ребёнок', uk: 'Дитина', ja: '子供', ko: '아이', zh: '孩子', ar: 'طفل', hi: 'बच्चा', it: 'Bambino', pl: 'Dziecko', he: 'ילד', nl: 'Kind', vi: 'Trẻ em', tl: 'Bata', tr: 'Çocuk', id: 'Anak' },
+  'pp-grown-up': { ro: 'Adult', es: 'Adulto', fr: 'Adulte', pt: 'Adulto', de: 'Erwachsener', ru: 'Взрослый', uk: 'Доросла людина', ja: '大人', ko: '어른', zh: '大人', ar: 'بالغ', hi: 'बड़ा', it: 'Adulto', pl: 'Dorosły', he: 'מבוגר', nl: 'Volwassene', vi: 'Người lớn', tl: 'Matatanda', tr: 'Yetişkin', id: 'Orang dewasa' },
+  'pp-stranger': { ro: 'Necunoscut', es: 'Extraño', fr: 'Étranger', pt: 'Estranho', de: 'Fremder', ru: 'Незнакомец', uk: 'Незнайомець', ja: '知らない人', ko: '낯선 사람', zh: '陌生人', ar: 'غريب', hi: 'अजनबी', it: 'Sconosciuto', pl: 'Obcy', he: 'זר', nl: 'Vreemdeling', vi: 'Người lạ', tl: 'Estranyo', tr: 'Yabancı', id: 'Orang asing' },
+  'pp-police-officer': { ro: 'Polițist', es: 'Policía', fr: 'Policier', pt: 'Policial', de: 'Polizist', ru: 'Полицейский', uk: 'Поліцейський', ja: '警察官', ko: '경찰관', zh: '警察', ar: 'ضابط شرطة', hi: 'पुलिस अधिकारी', it: 'Poliziotto', pl: 'Policjant', he: 'שוטר', nl: 'Politieagent', vi: 'Cảnh sát', tl: 'Pulis', tr: 'Polis memuru', id: 'Polisi' },
+  'pp-firefighter': { ro: 'Pompier', es: 'Bombero', fr: 'Pompier', pt: 'Bombeiro', de: 'Feuerwehrmann', ru: 'Пожарный', uk: 'Пожежний', ja: '消防士', ko: '소방관', zh: '消防员', ar: 'رجل الإطفاء', hi: 'अग्निशामक', it: 'Pompiere', pl: 'Strażak', he: 'כבאי', nl: 'Brandweerman', vi: 'Lính cứu hỏa', tl: 'Bombero', tr: 'İtfaiyeci', id: 'Pemadam kebakaran' },
+  'pp-paramedic': { ro: 'Paramedic', es: 'Paramédico', fr: 'Ambulancier', pt: 'Paramédico', de: 'Sanitäter', ru: 'Парамедик', uk: 'Парамедик', ja: '救急隊員', ko: '응급구조사', zh: '急救员', ar: 'مسعف', hi: 'पैरामेडिक', it: 'Paramedico', pl: 'Ratownik medyczny', he: 'חובש', nl: 'Ambulancemedewerker', vi: 'Nhân viên cấp cứu', tl: 'Paramediko', tr: 'Paramedik', id: 'Paramedis' },
+  'pp-my-family': { ro: 'Familia mea', es: 'Mi familia', fr: 'Ma famille', pt: 'Minha família', de: 'Meine Familie', ru: 'Моя семья', uk: 'Моя сім\'я', ja: '私の家族', ko: '내 가족', zh: '我的家人', ar: 'عائلتي', hi: 'मेरा परिवार', it: 'La mia famiglia', pl: 'Moja rodzina', he: 'המשפחה שלי', nl: 'Mijn familie', vi: 'Gia đình tôi', tl: 'Ang aking pamilya', tr: 'Ailem', id: 'Keluargaku' },
+  'pp-my-class': { ro: 'Clasa mea', es: 'Mi clase', fr: 'Ma classe', pt: 'Minha turma', de: 'Meine Klasse', ru: 'Мой класс', uk: 'Мій клас', ja: '私のクラス', ko: '우리 반', zh: '我们班', ar: 'فصلي', hi: 'मेरी कक्षा', it: 'La mia classe', pl: 'Moja klasa', he: 'הכיתה שלי', nl: 'Mijn klas', vi: 'Lớp của tôi', tl: 'Ang aking klase', tr: 'Sınıfım', id: 'Kelasku' },
+  'pp-my-team': { ro: 'Echipa mea', es: 'Mi equipo', fr: 'Mon équipe', pt: 'Meu time', de: 'Mein Team', ru: 'Моя команда', uk: 'Моя команда', ja: '私のチーム', ko: '우리 팀', zh: '我的队', ar: 'فريقي', hi: 'मेरी टीम', it: 'La mia squadra', pl: 'Mój zespół', he: 'הצוות שלי', nl: 'Mijn team', vi: 'Đội của tôi', tl: 'Ang aking koponan', tr: 'Takımım', id: 'Tim saya' },
+  'fd-bread': { ro: 'Pâine', es: 'Pan', fr: 'Pain', pt: 'Pão', de: 'Brot', ru: 'Хлеб', uk: 'Хліб', ja: 'パン', ko: '빵', zh: '面包', ar: 'خبز', hi: 'रोटी', it: 'Pane', pl: 'Chleb', he: 'לחם', nl: 'Brood', vi: 'Bánh mì', tl: 'Tinapay', tr: 'Ekmek', id: 'Roti' },
+  'fd-toast': { ro: 'Pâine prăjită', es: 'Pan tostado', fr: 'Toast', pt: 'Torrada', de: 'Toast', ru: 'Тост', uk: 'Тост', ja: 'トースト', ko: '토스트', zh: '吐司', ar: 'خبز محمص', hi: 'टोस्ट', it: 'Toast', pl: 'Tost', he: 'טוסט', nl: 'Toast', vi: 'Bánh mì nướng', tl: 'Toast', tr: 'Tost', id: 'Roti panggang' },
+  'fd-pancakes': { ro: 'Clătite', es: 'Panqueques', fr: 'Crêpes', pt: 'Panquecas', de: 'Pfannkuchen', ru: 'Блины', uk: 'Млинці', ja: 'ホットケーキ', ko: '팬케이크', zh: '薄煎饼', ar: 'فطائر', hi: 'पैनकेक', it: 'Pancake', pl: 'Naleśniki', he: 'פנקייק', nl: 'Pannenkoeken', vi: 'Bánh pancake', tl: 'Pancake', tr: 'Krep', id: 'Pancake' },
+  'fd-waffles': { ro: 'Vafe', es: 'Waffles', fr: 'Gaufres', pt: 'Waffles', de: 'Waffeln', ru: 'Вафли', uk: 'Вафлі', ja: 'ワッフル', ko: '와플', zh: '华夫饼', ar: 'وافل', hi: 'वफ़ल', it: 'Waffle', pl: 'Gofry', he: 'וואפל', nl: 'Wafels', vi: 'Bánh quế', tl: 'Waffle', tr: 'Waffle', id: 'Wafel' },
+  'fd-eggs': { ro: 'Ouă', es: 'Huevos', fr: 'Œufs', pt: 'Ovos', de: 'Eier', ru: 'Яйца', uk: 'Яйця', ja: '卵', ko: '계란', zh: '鸡蛋', ar: 'بيض', hi: 'अंडे', it: 'Uova', pl: 'Jajka', he: 'ביצים', nl: 'Eieren', vi: 'Trứng', tl: 'Itlog', tr: 'Yumurta', id: 'Telur' },
+  'fd-bacon': { ro: 'Bacon', es: 'Tocino', fr: 'Bacon', pt: 'Bacon', de: 'Speck', ru: 'Бекон', uk: 'Бекон', ja: 'ベーコン', ko: '베이컨', zh: '培根', ar: 'لحم مقدد', hi: 'बेकन', it: 'Pancetta', pl: 'Boczek', he: 'בייקון', nl: 'Spek', vi: 'Thịt xông khói', tl: 'Bacon', tr: 'Pastırma', id: 'Bacon' },
+  'fd-yogurt': { ro: 'Iaurt', es: 'Yogur', fr: 'Yaourt', pt: 'Iogurte', de: 'Joghurt', ru: 'Йогурт', uk: 'Йогурт', ja: 'ヨーグルト', ko: '요거트', zh: '酸奶', ar: 'زبادي', hi: 'दही', it: 'Yogurt', pl: 'Jogurt', he: 'יוגורט', nl: 'Yoghurt', vi: 'Sữa chua', tl: 'Yogurt', tr: 'Yoğurt', id: 'Yogurt' },
+  'fd-oatmeal': { ro: 'Fulgi de ovăz', es: 'Avena', fr: 'Porridge', pt: 'Mingau de aveia', de: 'Haferbrei', ru: 'Овсянка', uk: 'Вівсянка', ja: 'オートミール', ko: '오트밀', zh: '燕麦粥', ar: 'شوفان', hi: 'दलिया', it: 'Porridge', pl: 'Owsianka', he: 'דייסת שיבולת שועל', nl: 'Havermout', vi: 'Cháo yến mạch', tl: 'Oatmeal', tr: 'Yulaf ezmesi', id: 'Bubur oat' },
+  'fd-granola': { ro: 'Granola', es: 'Granola', fr: 'Granola', pt: 'Granola', de: 'Granola', ru: 'Гранола', uk: 'Гранола', ja: 'グラノーラ', ko: '그래놀라', zh: '格兰诺拉', ar: 'جرانولا', hi: 'ग्रेनोला', it: 'Granola', pl: 'Granola', he: 'גרנולה', nl: 'Granola', vi: 'Granola', tl: 'Granola', tr: 'Granola', id: 'Granola' },
+  'fd-smoothie': { ro: 'Smoothie', es: 'Batido', fr: 'Smoothie', pt: 'Vitamina', de: 'Smoothie', ru: 'Смузи', uk: 'Смузі', ja: 'スムージー', ko: '스무디', zh: '冰沙', ar: 'عصير سميك', hi: 'स्मूदी', it: 'Frullato', pl: 'Koktajl', he: 'שייק', nl: 'Smoothie', vi: 'Sinh tố', tl: 'Smoothie', tr: 'Smoothie', id: 'Smoothie' },
+  'fd-pasta': { ro: 'Paste', es: 'Pasta', fr: 'Pâtes', pt: 'Macarrão', de: 'Nudeln', ru: 'Паста', uk: 'Макарони', ja: 'パスタ', ko: '파스타', zh: '面食', ar: 'مكرونة', hi: 'पास्ता', it: 'Pasta', pl: 'Makaron', he: 'פסטה', nl: 'Pasta', vi: 'Mì ống', tl: 'Pasta', tr: 'Makarna', id: 'Pasta' },
+  'fd-noodles': { ro: 'Tăiței', es: 'Fideos', fr: 'Nouilles', pt: 'Macarrão', de: 'Nudeln', ru: 'Лапша', uk: 'Локшина', ja: 'めん', ko: '국수', zh: '面条', ar: 'شعرية', hi: 'नूडल्स', it: 'Tagliolini', pl: 'Makaron', he: 'אטריות', nl: 'Noedels', vi: 'Mì', tl: 'Pansit', tr: 'Erişte', id: 'Mie' },
+  'fd-rice': { ro: 'Orez', es: 'Arroz', fr: 'Riz', pt: 'Arroz', de: 'Reis', ru: 'Рис', uk: 'Рис', ja: 'ご飯', ko: '밥', zh: '米饭', ar: 'أرز', hi: 'चावल', it: 'Riso', pl: 'Ryż', he: 'אורז', nl: 'Rijst', vi: 'Cơm', tl: 'Kanin', tr: 'Pilav', id: 'Nasi' },
+  'fd-soup': { ro: 'Supă', es: 'Sopa', fr: 'Soupe', pt: 'Sopa', de: 'Suppe', ru: 'Суп', uk: 'Суп', ja: 'スープ', ko: '수프', zh: '汤', ar: 'حساء', hi: 'सूप', it: 'Zuppa', pl: 'Zupa', he: 'מרק', nl: 'Soep', vi: 'Súp', tl: 'Sopas', tr: 'Çorba', id: 'Sup' },
+  'fd-salad': { ro: 'Salată', es: 'Ensalada', fr: 'Salade', pt: 'Salada', de: 'Salat', ru: 'Салат', uk: 'Салат', ja: 'サラダ', ko: '샐러드', zh: '沙拉', ar: 'سلطة', hi: 'सलाद', it: 'Insalata', pl: 'Sałatka', he: 'סלט', nl: 'Salade', vi: 'Salad', tl: 'Ensalada', tr: 'Salata', id: 'Salad' },
+  'fd-wrap': { ro: 'Wrap', es: 'Wrap', fr: 'Wrap', pt: 'Wrap', de: 'Wrap', ru: 'Ролл', uk: 'Рол', ja: 'ラップ', ko: '랩', zh: '卷', ar: 'رول', hi: 'रैप', it: 'Wrap', pl: 'Wrap', he: 'רול', nl: 'Wrap', vi: 'Bánh cuộn', tl: 'Wrap', tr: 'Dürüm', id: 'Wrap' },
+  'fd-hamburger': { ro: 'Hamburger', es: 'Hamburguesa', fr: 'Hamburger', pt: 'Hambúrguer', de: 'Hamburger', ru: 'Гамбургер', uk: 'Гамбургер', ja: 'ハンバーガー', ko: '햄버거', zh: '汉堡', ar: 'برجر', hi: 'हैम्बर्गर', it: 'Hamburger', pl: 'Hamburger', he: 'המבורגר', nl: 'Hamburger', vi: 'Hamburger', tl: 'Hamburger', tr: 'Hamburger', id: 'Hamburger' },
+  'fd-hot-dog': { ro: 'Hot dog', es: 'Hot dog', fr: 'Hot-dog', pt: 'Cachorro-quente', de: 'Hotdog', ru: 'Хот-дог', uk: 'Хот-дог', ja: 'ホットドッグ', ko: '핫도그', zh: '热狗', ar: 'هوت دوج', hi: 'हॉट डॉग', it: 'Hot dog', pl: 'Hot dog', he: 'נקניקייה', nl: 'Hotdog', vi: 'Xúc xích', tl: 'Hot dog', tr: 'Sosisli sandviç', id: 'Hot dog' },
+  'fd-taco': { ro: 'Taco', es: 'Taco', fr: 'Taco', pt: 'Taco', de: 'Taco', ru: 'Тако', uk: 'Тако', ja: 'タコス', ko: '타코', zh: '玉米饼', ar: 'تاكو', hi: 'टैको', it: 'Taco', pl: 'Taco', he: 'טאקו', nl: 'Taco', vi: 'Taco', tl: 'Taco', tr: 'Taco', id: 'Taco' },
+  'fd-burrito': { ro: 'Burrito', es: 'Burrito', fr: 'Burrito', pt: 'Burrito', de: 'Burrito', ru: 'Буррито', uk: 'Буріто', ja: 'ブリトー', ko: '부리또', zh: '卷饼', ar: 'بوريتو', hi: 'बुर्रिटो', it: 'Burrito', pl: 'Burrito', he: 'בוריטו', nl: 'Burrito', vi: 'Burrito', tl: 'Burrito', tr: 'Burrito', id: 'Burrito' },
+  'fd-quesadilla': { ro: 'Quesadilla', es: 'Quesadilla', fr: 'Quesadilla', pt: 'Quesadilla', de: 'Quesadilla', ru: 'Кесадилья', uk: 'Кесаділья', ja: 'ケサディーヤ', ko: '케사디야', zh: '芝士玉米饼', ar: 'كيساديا', hi: 'केसाडिला', it: 'Quesadilla', pl: 'Quesadilla', he: 'קסדיה', nl: 'Quesadilla', vi: 'Quesadilla', tl: 'Quesadilla', tr: 'Quesadilla', id: 'Quesadilla' },
+  'fd-sushi': { ro: 'Sushi', es: 'Sushi', fr: 'Sushi', pt: 'Sushi', de: 'Sushi', ru: 'Суши', uk: 'Суші', ja: '寿司', ko: '초밥', zh: '寿司', ar: 'سوشي', hi: 'सुशी', it: 'Sushi', pl: 'Sushi', he: 'סושי', nl: 'Sushi', vi: 'Sushi', tl: 'Sushi', tr: 'Sushi', id: 'Sushi' },
+  'fd-dumplings': { ro: 'Găluște', es: 'Dumplings', fr: 'Raviolis', pt: 'Dumplings', de: 'Teigtaschen', ru: 'Пельмени', uk: 'Вареники', ja: '餃子', ko: '만두', zh: '饺子', ar: 'دمبلنجز', hi: 'पकौड़े', it: 'Ravioli', pl: 'Pierogi', he: 'כופתאות', nl: 'Dumplings', vi: 'Há cảo', tl: 'Siomai', tr: 'Manti', id: 'Dumpling' },
+  'fd-curry': { ro: 'Curry', es: 'Curry', fr: 'Curry', pt: 'Curry', de: 'Curry', ru: 'Карри', uk: 'Каррі', ja: 'カレー', ko: '카레', zh: '咖喱', ar: 'كاري', hi: 'करी', it: 'Curry', pl: 'Curry', he: 'קארי', nl: 'Curry', vi: 'Cà ri', tl: 'Kare-kare', tr: 'Köri', id: 'Kari' },
+  'fd-stir-fry': { ro: 'Prăjeală', es: 'Salteado', fr: 'Sauté', pt: 'Refogado', de: 'Pfannengericht', ru: 'Жареное блюдо', uk: 'Смажене', ja: '炒め物', ko: '볶음', zh: '炒菜', ar: 'قلي بالتقليب', hi: 'स्टर फ्राई', it: 'Saltato in padella', pl: 'Smażone', he: 'מוקפץ', nl: 'Roerbak', vi: 'Xào', tl: 'Prito', tr: 'Sote', id: 'Tumis' },
+  'fd-carrots': { ro: 'Morcovi', es: 'Zanahorias', fr: 'Carottes', pt: 'Cenouras', de: 'Karotten', ru: 'Морковь', uk: 'Морква', ja: 'にんじん', ko: '당근', zh: '胡萝卜', ar: 'جزر', hi: 'गाजर', it: 'Carote', pl: 'Marchewki', he: 'גזרים', nl: 'Wortels', vi: 'Cà rốt', tl: 'Karot', tr: 'Havuç', id: 'Wortel' },
+  'fd-broccoli': { ro: 'Broccoli', es: 'Brócoli', fr: 'Brocoli', pt: 'Brócolis', de: 'Brokkoli', ru: 'Брокколи', uk: 'Броколі', ja: 'ブロッコリー', ko: '브로콜리', zh: '西兰花', ar: 'بروكلي', hi: 'ब्रोकोली', it: 'Broccoli', pl: 'Brokuły', he: 'ברוקולי', nl: 'Broccoli', vi: 'Bông cải xanh', tl: 'Broccoli', tr: 'Brokoli', id: 'Brokoli' },
+  'fd-peas': { ro: 'Mazăre', es: 'Guisantes', fr: 'Petits pois', pt: 'Ervilhas', de: 'Erbsen', ru: 'Горошек', uk: 'Горох', ja: 'グリーンピース', ko: '완두콩', zh: '豌豆', ar: 'بازلاء', hi: 'मटर', it: 'Piselli', pl: 'Groszek', he: 'אפונה', nl: 'Erwten', vi: 'Đậu Hà Lan', tl: 'Gisantes', tr: 'Bezelye', id: 'Kacang polong' },
+  'fd-corn': { ro: 'Porumb', es: 'Maíz', fr: 'Maïs', pt: 'Milho', de: 'Mais', ru: 'Кукуруза', uk: 'Кукурудза', ja: 'とうもろこし', ko: '옥수수', zh: '玉米', ar: 'ذرة', hi: 'मकई', it: 'Mais', pl: 'Kukurydza', he: 'תירס', nl: 'Maïs', vi: 'Ngô', tl: 'Mais', tr: 'Mısır', id: 'Jagung' },
+  'fd-tomato': { ro: 'Roșie', es: 'Tomate', fr: 'Tomate', pt: 'Tomate', de: 'Tomate', ru: 'Помидор', uk: 'Помідор', ja: 'トマト', ko: '토마토', zh: '番茄', ar: 'طماطم', hi: 'टमाटर', it: 'Pomodoro', pl: 'Pomidor', he: 'עגבנייה', nl: 'Tomaat', vi: 'Cà chua', tl: 'Kamatis', tr: 'Domates', id: 'Tomat' },
+  'fd-cucumber': { ro: 'Castravete', es: 'Pepino', fr: 'Concombre', pt: 'Pepino', de: 'Gurke', ru: 'Огурец', uk: 'Огірок', ja: 'きゅうり', ko: '오이', zh: '黄瓜', ar: 'خيار', hi: 'खीरा', it: 'Cetriolo', pl: 'Ogórek', he: 'מלפפון', nl: 'Komkommer', vi: 'Dưa chuột', tl: 'Pipino', tr: 'Salatalık', id: 'Timun' },
+  'fd-lettuce': { ro: 'Salată verde', es: 'Lechuga', fr: 'Laitue', pt: 'Alface', de: 'Salat', ru: 'Салат', uk: 'Салат', ja: 'レタス', ko: '상추', zh: '生菜', ar: 'خس', hi: 'सलाद पत्ता', it: 'Lattuga', pl: 'Sałata', he: 'חסה', nl: 'Sla', vi: 'Rau diếp', tl: 'Litsugas', tr: 'Marul', id: 'Selada' },
+  'fd-spinach': { ro: 'Spanac', es: 'Espinaca', fr: 'Épinards', pt: 'Espinafre', de: 'Spinat', ru: 'Шпинат', uk: 'Шпинат', ja: 'ほうれん草', ko: '시금치', zh: '菠菜', ar: 'سبانخ', hi: 'पालक', it: 'Spinaci', pl: 'Szpinak', he: 'תרד', nl: 'Spinazie', vi: 'Rau bina', tl: 'Spinach', tr: 'Ispanak', id: 'Bayam' },
+  'fd-potato': { ro: 'Cartof', es: 'Papa', fr: 'Pomme de terre', pt: 'Batata', de: 'Kartoffel', ru: 'Картошка', uk: 'Картопля', ja: 'じゃがいも', ko: '감자', zh: '土豆', ar: 'بطاطس', hi: 'आलू', it: 'Patata', pl: 'Ziemniak', he: 'תפוח אדמה', nl: 'Aardappel', vi: 'Khoai tây', tl: 'Patatas', tr: 'Patates', id: 'Kentang' },
+  'fd-sweet-potato': { ro: 'Cartof dulce', es: 'Batata', fr: 'Patate douce', pt: 'Batata-doce', de: 'Süßkartoffel', ru: 'Батат', uk: 'Батат', ja: 'さつまいも', ko: '고구마', zh: '红薯', ar: 'بطاطا حلوة', hi: 'शकरकंद', it: 'Patata dolce', pl: 'Batat', he: 'בטטה', nl: 'Zoete aardappel', vi: 'Khoai lang', tl: 'Kamote', tr: 'Tatlı patates', id: 'Ubi jalar' },
+  'fd-strawberry': { ro: 'Căpșună', es: 'Fresa', fr: 'Fraise', pt: 'Morango', de: 'Erdbeere', ru: 'Клубника', uk: 'Полуниця', ja: 'いちご', ko: '딸기', zh: '草莓', ar: 'فراولة', hi: 'स्ट्रॉबेरी', it: 'Fragola', pl: 'Truskawka', he: 'תות', nl: 'Aardbei', vi: 'Dâu tây', tl: 'Strawberry', tr: 'Çilek', id: 'Stroberi' },
+  'fd-blueberry': { ro: 'Afine', es: 'Arándano', fr: 'Myrtille', pt: 'Mirtilo', de: 'Heidelbeere', ru: 'Черника', uk: 'Чорниця', ja: 'ブルーベリー', ko: '블루베리', zh: '蓝莓', ar: 'عنب بري', hi: 'ब्लूबेरी', it: 'Mirtillo', pl: 'Jagoda', he: 'אוכמנית', nl: 'Bosbes', vi: 'Việt quất', tl: 'Blueberry', tr: 'Yaban mersini', id: 'Blueberry' },
+  'fd-grapes': { ro: 'Struguri', es: 'Uvas', fr: 'Raisins', pt: 'Uvas', de: 'Trauben', ru: 'Виноград', uk: 'Виноград', ja: 'ぶどう', ko: '포도', zh: '葡萄', ar: 'عنب', hi: 'अंगूर', it: 'Uva', pl: 'Winogrona', he: 'ענבים', nl: 'Druiven', vi: 'Nho', tl: 'Ubas', tr: 'Üzüm', id: 'Anggur' },
+  'fd-watermelon': { ro: 'Pepene verde', es: 'Sandía', fr: 'Pastèque', pt: 'Melancia', de: 'Wassermelone', ru: 'Арбуз', uk: 'Кавун', ja: 'スイカ', ko: '수박', zh: '西瓜', ar: 'بطيخ', hi: 'तरबूज', it: 'Anguria', pl: 'Arbuz', he: 'אבטיח', nl: 'Watermeloen', vi: 'Dưa hấu', tl: 'Pakwan', tr: 'Karpuz', id: 'Semangka' },
+  'fd-orange': { ro: 'Portocală', es: 'Naranja', fr: 'Orange', pt: 'Laranja', de: 'Orange', ru: 'Апельсин', uk: 'Апельсин', ja: 'オレンジ', ko: '오렌지', zh: '橙子', ar: 'برتقال', hi: 'संतरा', it: 'Arancia', pl: 'Pomarańcza', he: 'תפוז', nl: 'Sinaasappel', vi: 'Cam', tl: 'Dalandan', tr: 'Portakal', id: 'Jeruk' },
+  'fd-pear': { ro: 'Pară', es: 'Pera', fr: 'Poire', pt: 'Pera', de: 'Birne', ru: 'Груша', uk: 'Груша', ja: '梨', ko: '배', zh: '梨', ar: 'كمثرى', hi: 'नाशपाती', it: 'Pera', pl: 'Gruszka', he: 'אגס', nl: 'Peer', vi: 'Lê', tl: 'Peras', tr: 'Armut', id: 'Pir' },
+  'fd-peach': { ro: 'Piersică', es: 'Durazno', fr: 'Pêche', pt: 'Pêssego', de: 'Pfirsich', ru: 'Персик', uk: 'Персик', ja: 'もも', ko: '복숭아', zh: '桃子', ar: 'خوخ', hi: 'आड़ू', it: 'Pesca', pl: 'Brzoskwinia', he: 'אפרסק', nl: 'Perzik', vi: 'Đào', tl: 'Melokoton', tr: 'Şeftali', id: 'Persik' },
+  'fd-mango': { ro: 'Mango', es: 'Mango', fr: 'Mangue', pt: 'Manga', de: 'Mango', ru: 'Манго', uk: 'Манго', ja: 'マンゴー', ko: '망고', zh: '芒果', ar: 'مانجو', hi: 'आम', it: 'Mango', pl: 'Mango', he: 'מנגו', nl: 'Mango', vi: 'Xoài', tl: 'Mangga', tr: 'Mango', id: 'Mangga' },
+  'fd-pineapple': { ro: 'Ananas', es: 'Piña', fr: 'Ananas', pt: 'Abacaxi', de: 'Ananas', ru: 'Ананас', uk: 'Ананас', ja: 'パイナップル', ko: '파인애플', zh: '菠萝', ar: 'أناناس', hi: 'अनानास', it: 'Ananas', pl: 'Ananas', he: 'אננס', nl: 'Ananas', vi: 'Dứa', tl: 'Pinya', tr: 'Ananas', id: 'Nanas' },
+  'fd-cake': { ro: 'Tort', es: 'Pastel', fr: 'Gâteau', pt: 'Bolo', de: 'Kuchen', ru: 'Торт', uk: 'Торт', ja: 'ケーキ', ko: '케이크', zh: '蛋糕', ar: 'كعكة', hi: 'केक', it: 'Torta', pl: 'Ciasto', he: 'עוגה', nl: 'Taart', vi: 'Bánh ngọt', tl: 'Cake', tr: 'Pasta', id: 'Kue' },
+  'fd-cupcake': { ro: 'Cupcake', es: 'Cupcake', fr: 'Cupcake', pt: 'Cupcake', de: 'Cupcake', ru: 'Кекс', uk: 'Кекс', ja: 'カップケーキ', ko: '컵케이크', zh: '纸杯蛋糕', ar: 'كب كيك', hi: 'कपकेक', it: 'Cupcake', pl: 'Babeczka', he: 'קאפקייק', nl: 'Cupcake', vi: 'Bánh cupcake', tl: 'Cupcake', tr: 'Kek', id: 'Cupcake' },
+  'fd-brownie': { ro: 'Brownie', es: 'Brownie', fr: 'Brownie', pt: 'Brownie', de: 'Brownie', ru: 'Брауни', uk: 'Брауні', ja: 'ブラウニー', ko: '브라우니', zh: '布朗尼', ar: 'براوني', hi: 'ब्राउनी', it: 'Brownie', pl: 'Brownie', he: 'בראוני', nl: 'Brownie', vi: 'Bánh brownie', tl: 'Brownie', tr: 'Brownie', id: 'Brownie' },
+  'fd-donut': { ro: 'Gogoașă', es: 'Dona', fr: 'Donut', pt: 'Rosquinha', de: 'Donut', ru: 'Пончик', uk: 'Пончик', ja: 'ドーナツ', ko: '도넛', zh: '甜甜圈', ar: 'دونات', hi: 'डोनट', it: 'Ciambella', pl: 'Pączek', he: 'סופגנייה', nl: 'Donut', vi: 'Bánh donut', tl: 'Donut', tr: 'Donut', id: 'Donat' },
+  'fd-muffin': { ro: 'Brioșă', es: 'Muffin', fr: 'Muffin', pt: 'Muffin', de: 'Muffin', ru: 'Кекс', uk: 'Кекс', ja: 'マフィン', ko: '머핀', zh: '松饼', ar: 'مافن', hi: 'मफिन', it: 'Muffin', pl: 'Muffin', he: 'מאפין', nl: 'Muffin', vi: 'Bánh muffin', tl: 'Muffin', tr: 'Muffin', id: 'Muffin' },
+  'fd-pie': { ro: 'Plăcintă', es: 'Pay', fr: 'Tarte', pt: 'Torta', de: 'Kuchen', ru: 'Пирог', uk: 'Пиріг', ja: 'パイ', ko: '파이', zh: '派', ar: 'فطيرة', hi: 'पाई', it: 'Torta', pl: 'Ciasto', he: 'פאי', nl: 'Taart', vi: 'Bánh pie', tl: 'Pie', tr: 'Turta', id: 'Pie' },
+  'fd-pudding': { ro: 'Pudingă', es: 'Pudín', fr: 'Pudding', pt: 'Pudim', de: 'Pudding', ru: 'Пудинг', uk: 'Пудинг', ja: 'プリン', ko: '푸딩', zh: '布丁', ar: 'بودينغ', hi: 'पुडिंग', it: 'Budino', pl: 'Pudding', he: 'פודינג', nl: 'Pudding', vi: 'Bánh pudding', tl: 'Pudding', tr: 'Puding', id: 'Pudding' },
+  'fd-jello': { ro: 'Jeleu', es: 'Gelatina', fr: 'Gélatine', pt: 'Gelatina', de: 'Wackelpudding', ru: 'Желе', uk: 'Желе', ja: 'ゼリー', ko: '젤로', zh: '果冻', ar: 'هلام', hi: 'जेली', it: 'Gelatina', pl: 'Galaretka', he: 'ג\'לו', nl: 'Gelei', vi: 'Thạch', tl: 'Gelatin', tr: 'Jöle', id: 'Jeli' },
+  'fd-candy': { ro: 'Bomboane', es: 'Dulces', fr: 'Bonbons', pt: 'Bala', de: 'Süßigkeiten', ru: 'Конфеты', uk: 'Цукерки', ja: 'キャンディ', ko: '사탕', zh: '糖果', ar: 'حلوى', hi: 'कैंडी', it: 'Caramelle', pl: 'Cukierki', he: 'סוכרייה', nl: 'Snoep', vi: 'Kẹo', tl: 'Kendi', tr: 'Şeker', id: 'Permen' },
+  'fd-chocolate': { ro: 'Ciocolată', es: 'Chocolate', fr: 'Chocolat', pt: 'Chocolate', de: 'Schokolade', ru: 'Шоколад', uk: 'Шоколад', ja: 'チョコレート', ko: '초콜릿', zh: '巧克力', ar: 'شوكولاتة', hi: 'चॉकलेट', it: 'Cioccolata', pl: 'Czekolada', he: 'שוקולד', nl: 'Chocolade', vi: 'Sô cô la', tl: 'Tsokolate', tr: 'Çikolata', id: 'Cokelat' },
+  'fd-lollipop': { ro: 'Acadea', es: 'Paleta', fr: 'Sucette', pt: 'Pirulito', de: 'Lutscher', ru: 'Леденец', uk: 'Льодяник', ja: 'ロリポップ', ko: '막대사탕', zh: '棒棒糖', ar: 'مصاصة', hi: 'लॉलीपॉप', it: 'Lecca-lecca', pl: 'Lizak', he: 'מקל ממתק', nl: 'Lolly', vi: 'Kẹo que', tl: 'Lollipop', tr: 'Lolipop', id: 'Permen lolipop' },
+  'fd-gum': { ro: 'Gumă de mestecat', es: 'Chicle', fr: 'Chewing-gum', pt: 'Chiclete', de: 'Kaugummi', ru: 'Жвачка', uk: 'Жуйка', ja: 'ガム', ko: '껌', zh: '口香糖', ar: 'علكة', hi: 'गम', it: 'Gomma da masticare', pl: 'Guma do żucia', he: 'מסטיק', nl: 'Kauwgom', vi: 'Kẹo cao su', tl: 'Goma', tr: 'Sakız', id: 'Permen karet' },
+  'fd-soda': { ro: 'Suc carbogazos', es: 'Refresco', fr: 'Soda', pt: 'Refrigerante', de: 'Limonade', ru: 'Газировка', uk: 'Газовані напої', ja: 'ソーダ', ko: '탄산음료', zh: '汽水', ar: 'مشروب غازي', hi: 'सोडा', it: 'Bibita', pl: 'Napój gazowany', he: 'סודה', nl: 'Frisdrank', vi: 'Nước ngọt', tl: 'Softdrinks', tr: 'Gazlı içecek', id: 'Soda' },
+  'fd-tea': { ro: 'Ceai', es: 'Té', fr: 'Thé', pt: 'Chá', de: 'Tee', ru: 'Чай', uk: 'Чай', ja: 'お茶', ko: '차', zh: '茶', ar: 'شاي', hi: 'चाय', it: 'Tè', pl: 'Herbata', he: 'תה', nl: 'Thee', vi: 'Trà', tl: 'Tsaa', tr: 'Çay', id: 'Teh' },
+  'fd-hot-chocolate': { ro: 'Ciocolată caldă', es: 'Chocolate caliente', fr: 'Chocolat chaud', pt: 'Chocolate quente', de: 'Heiße Schokolade', ru: 'Горячий шоколад', uk: 'Гарячий шоколад', ja: 'ホットチョコレート', ko: '핫초코', zh: '热巧克力', ar: 'شوكولاتة ساخنة', hi: 'गर्म चॉकलेट', it: 'Cioccolata calda', pl: 'Gorąca czekolada', he: 'שוקו חם', nl: 'Warme chocolademelk', vi: 'Cacao nóng', tl: 'Hot chocolate', tr: 'Sıcak çikolata', id: 'Cokelat panas' },
+  'fd-lemonade': { ro: 'Limonadă', es: 'Limonada', fr: 'Limonade', pt: 'Limonada', de: 'Limonade', ru: 'Лимонад', uk: 'Лимонад', ja: 'レモネード', ko: '레모네이드', zh: '柠檬水', ar: 'ليموناضة', hi: 'नींबू पानी', it: 'Limonata', pl: 'Lemoniada', he: 'לימונדה', nl: 'Limonade', vi: 'Nước chanh', tl: 'Lemonade', tr: 'Limonata', id: 'Limun' },
+  'fd-spoon': { ro: 'Lingură', es: 'Cuchara', fr: 'Cuillère', pt: 'Colher', de: 'Löffel', ru: 'Ложка', uk: 'Ложка', ja: 'スプーン', ko: '숟가락', zh: '勺子', ar: 'ملعقة', hi: 'चम्मच', it: 'Cucchiaio', pl: 'Łyżka', he: 'כף', nl: 'Lepel', vi: 'Thìa', tl: 'Kutsara', tr: 'Kaşık', id: 'Sendok' },
+  'fd-fork': { ro: 'Furculiță', es: 'Tenedor', fr: 'Fourchette', pt: 'Garfo', de: 'Gabel', ru: 'Вилка', uk: 'Виделка', ja: 'フォーク', ko: '포크', zh: '叉子', ar: 'شوكة', hi: 'काँटा', it: 'Forchetta', pl: 'Widelec', he: 'מזלג', nl: 'Vork', vi: 'Nĩa', tl: 'Tinidor', tr: 'Çatal', id: 'Garpu' },
+  'fd-knife': { ro: 'Cuțit', es: 'Cuchillo', fr: 'Couteau', pt: 'Faca', de: 'Messer', ru: 'Нож', uk: 'Ніж', ja: 'ナイフ', ko: '칼', zh: '刀', ar: 'سكين', hi: 'चाकू', it: 'Coltello', pl: 'Nóż', he: 'סכין', nl: 'Mes', vi: 'Dao', tl: 'Kutsilyo', tr: 'Bıçak', id: 'Pisau' },
+  'fd-plate': { ro: 'Farfurie', es: 'Plato', fr: 'Assiette', pt: 'Prato', de: 'Teller', ru: 'Тарелка', uk: 'Тарілка', ja: 'お皿', ko: '접시', zh: '盘子', ar: 'طبق', hi: 'थाली', it: 'Piatto', pl: 'Talerz', he: 'צלחת', nl: 'Bord', vi: 'Đĩa', tl: 'Plato', tr: 'Tabak', id: 'Piring' },
+  'fd-bowl': { ro: 'Bol', es: 'Tazón', fr: 'Bol', pt: 'Tigela', de: 'Schüssel', ru: 'Миска', uk: 'Миска', ja: 'ボウル', ko: '그릇', zh: '碗', ar: 'وعاء', hi: 'कटोरा', it: 'Ciotola', pl: 'Miska', he: 'קערה', nl: 'Kom', vi: 'Bát', tl: 'Mangkok', tr: 'Kase', id: 'Mangkuk' },
+  'fd-cup': { ro: 'Ceașcă', es: 'Taza', fr: 'Tasse', pt: 'Xícara', de: 'Tasse', ru: 'Стакан', uk: 'Стакан', ja: 'コップ', ko: '컵', zh: '杯子', ar: 'كوب', hi: 'कप', it: 'Tazza', pl: 'Kubek', he: 'כוס', nl: 'Beker', vi: 'Cốc', tl: 'Tasa', tr: 'Fincan', id: 'Cangkir' },
+  'fd-straw': { ro: 'Pai', es: 'Popote', fr: 'Paille', pt: 'Canudinho', de: 'Strohhalm', ru: 'Соломинка', uk: 'Соломинка', ja: 'ストロー', ko: '빨대', zh: '吸管', ar: 'قشة', hi: 'स्ट्रॉ', it: 'Cannuccia', pl: 'Słomka', he: 'קש', nl: 'Rietje', vi: 'Ống hút', tl: 'Sedotan', tr: 'Pipet', id: 'Sedotan' },
+  'fd-napkin': { ro: 'Șervețel', es: 'Servilleta', fr: 'Serviette', pt: 'Guardanapo', de: 'Serviette', ru: 'Салфетка', uk: 'Серветка', ja: 'ナプキン', ko: '냅킨', zh: '纸巾', ar: 'منديل', hi: 'नैपकिन', it: 'Tovagliolo', pl: 'Serwetka', he: 'מפית', nl: 'Servet', vi: 'Khăn ăn', tl: 'Servilyeta', tr: 'Peçete', id: 'Serbet' },
+  'fd-bib': { ro: 'Bavețică', es: 'Babero', fr: 'Bavoir', pt: 'Babador', de: 'Lätzchen', ru: 'Нагрудник', uk: 'Нагрудник', ja: 'よだれかけ', ko: '턱받이', zh: '围兜', ar: 'مريلة', hi: 'बिब', it: 'Bavaglino', pl: 'Śliniaczek', he: 'חוטמית', nl: 'Slabbetje', vi: 'Yếm', tl: 'Pang-agas', tr: 'Önlük', id: 'Celemek' },
+  'fd-open-it-please': { ro: 'Deschide-l vă rog', es: 'Ábrelo por favor', fr: "Ouvre-le s'il te plaît", pt: 'Abre por favor', de: 'Bitte aufmachen', ru: 'Открой, пожалуйста', uk: 'Відкрий будь ласка', ja: '開けてください', ko: '열어주세요', zh: '请帮我打开', ar: 'افتحه من فضلك', hi: 'कृपया खोलो', it: 'Aprilo per favore', pl: 'Otwórz to proszę', he: 'פתח בבקשה', nl: 'Open het alsjeblieft', vi: 'Mở ra giúp tôi', tl: 'Buksan mo please', tr: 'Lütfen aç', id: 'Tolong buka' },
+  'fd-cut-it-up-please': { ro: 'Taie-l vă rog', es: 'Córtalo por favor', fr: "Coupe-le s'il te plaît", pt: 'Corte por favor', de: 'Bitte schneiden', ru: 'Нарежь, пожалуйста', uk: 'Поріж будь ласка', ja: '切ってください', ko: '잘라주세요', zh: '请帮我切', ar: 'قطعه من فضلك', hi: 'कृपया काटो', it: 'Taglialo per favore', pl: 'Pokrój to proszę', he: 'חתוך לי בבקשה', nl: 'Snij het alsjeblieft', vi: 'Cắt giúp tôi', tl: 'Hiwain mo please', tr: 'Lütfen kes', id: 'Tolong potong' },
+  'fd-not-too-hot': { ro: 'Nu prea fierbinte', es: 'No muy caliente', fr: 'Pas trop chaud', pt: 'Não muito quente', de: 'Nicht zu heiß', ru: 'Не слишком горячо', uk: 'Не надто гаряче', ja: '熱すぎないで', ko: '너무 뜨겁지 않게', zh: '不要太烫', ar: 'ليس ساخناً جداً', hi: 'ज्यादा गर्म नहीं', it: 'Non troppo caldo', pl: 'Nie za gorące', he: 'לא חם מדי', nl: 'Niet te heet', vi: 'Không quá nóng', tl: 'Hindi masyadong mainit', tr: 'Çok sıcak olmasın', id: 'Jangan terlalu panas' },
+  'fd-i-am-allergic': { ro: 'Sunt alergic la', es: 'Soy alérgico a', fr: 'Je suis allergique à', pt: 'Sou alérgico a', de: 'Ich bin allergisch gegen', ru: 'У меня аллергия на', uk: 'У мене алергія на', ja: 'アレルギーがあります', ko: '저 알레르기 있어요', zh: '我对…过敏', ar: 'أنا حساس من', hi: 'मुझे एलर्जी है', it: 'Sono allergico a', pl: 'Mam alergię na', he: 'אני אלרגי ל', nl: 'Ik ben allergisch voor', vi: 'Tôi dị ứng với', tl: 'Allergic ako sa', tr: 'Alerjim var', id: 'Saya alergi' },
+  'pl-backyard': { ro: 'Curte spate', es: 'Patio trasero', fr: 'Jardin arrière', pt: 'Quintal', de: 'Hinterhof', ru: 'Задний двор', uk: 'Задній двір', ja: '裏庭', ko: '뒷마당', zh: '后院', ar: 'الفناء الخلفي', hi: 'पिछवाड़ा', it: 'Cortile posteriore', pl: 'Ogród', he: 'חצר אחורית', nl: 'Achtertuin', vi: 'Sân sau', tl: 'Likurang bakuran', tr: 'Arka bahçe', id: 'Halaman belakang' },
+  'pl-front-yard': { ro: 'Curte față', es: 'Jardín delantero', fr: 'Jardin avant', pt: 'Jardim da frente', de: 'Vorgarten', ru: 'Передний двор', uk: 'Передній двір', ja: '前庭', ko: '앞마당', zh: '前院', ar: 'الفناء الأمامي', hi: 'आगे का आँगन', it: 'Giardino frontale', pl: 'Podjazd', he: 'חצר קדמית', nl: 'Voortuin', vi: 'Sân trước', tl: 'Harapang bakuran', tr: 'Ön bahçe', id: 'Halaman depan' },
+  'pl-garden': { ro: 'Grădină', es: 'Jardín', fr: 'Jardin', pt: 'Jardim', de: 'Garten', ru: 'Сад', uk: 'Сад', ja: '庭', ko: '정원', zh: '花园', ar: 'حديقة', hi: 'बगीचा', it: 'Giardino', pl: 'Ogród', he: 'גן', nl: 'Tuin', vi: 'Vườn', tl: 'Hardin', tr: 'Bahçe', id: 'Kebun' },
+  'pl-driveway': { ro: 'Alee intrare', es: 'Entrada del garaje', fr: "Allée de garage", pt: 'Entrada de garagem', de: 'Einfahrt', ru: 'Въезд', uk: 'Під\'їзд', ja: '私道', ko: '진입로', zh: '车道', ar: 'ممر السيارة', hi: 'ड्राइवेवे', it: 'Vialetto', pl: 'Podjazd', he: 'דרך כניסה', nl: 'Oprit', vi: 'Đường vào nhà', tl: 'Daan papasok sa garahe', tr: 'Garaj yolu', id: 'Jalan masuk' },
+  'pl-living-room': { ro: 'Sufragerie', es: 'Sala de estar', fr: 'Salon', pt: 'Sala de estar', de: 'Wohnzimmer', ru: 'Гостиная', uk: 'Вітальня', ja: 'リビング', ko: '거실', zh: '客厅', ar: 'غرفة المعيشة', hi: 'बैठक', it: 'Soggiorno', pl: 'Salon', he: 'סלון', nl: 'Woonkamer', vi: 'Phòng khách', tl: 'Living room', tr: 'Oturma odası', id: 'Ruang tamu' },
+  'pl-dining-room': { ro: 'Sufragerie', es: 'Comedor', fr: 'Salle à manger', pt: 'Sala de jantar', de: 'Esszimmer', ru: 'Столовая', uk: 'Їдальня', ja: 'ダイニング', ko: '식당', zh: '餐厅', ar: 'غرفة الطعام', hi: 'भोजन कक्ष', it: 'Sala da pranzo', pl: 'Jadalnia', he: 'חדר אוכל', nl: 'Eetkamer', vi: 'Phòng ăn', tl: 'Dining room', tr: 'Yemek odası', id: 'Ruang makan' },
+  'pl-garage': { ro: 'Garaj', es: 'Garaje', fr: 'Garage', pt: 'Garagem', de: 'Garage', ru: 'Гараж', uk: 'Гараж', ja: 'ガレージ', ko: '차고', zh: '车库', ar: 'مرآب', hi: 'गैराज', it: 'Garage', pl: 'Garaż', he: 'גראז׳', nl: 'Garage', vi: 'Gara', tl: 'Garahe', tr: 'Garaj', id: 'Garasi' },
+  'pl-basement': { ro: 'Subsol', es: 'Sótano', fr: 'Sous-sol', pt: 'Porão', de: 'Keller', ru: 'Подвал', uk: 'Підвал', ja: '地下室', ko: '지하실', zh: '地下室', ar: 'قبو', hi: 'तहखाना', it: 'Cantina', pl: 'Piwnica', he: 'מרתף', nl: 'Kelder', vi: 'Tầng hầm', tl: 'Basement', tr: 'Bodrum kat', id: 'Ruang bawah tanah' },
+  'pl-attic': { ro: 'Pod', es: 'Ático', fr: 'Grenier', pt: 'Sótão', de: 'Dachboden', ru: 'Чердак', uk: 'Горище', ja: '屋根裏部屋', ko: '다락방', zh: '阁楼', ar: 'علية', hi: 'अटारी', it: 'Soffitta', pl: 'Poddasze', he: 'עליית גג', nl: 'Zolder', vi: 'Gác mái', tl: 'Atik', tr: 'Çatı katı', id: 'Loteng' },
+  'pl-hospital': { ro: 'Spital', es: 'Hospital', fr: 'Hôpital', pt: 'Hospital', de: 'Krankenhaus', ru: 'Больница', uk: 'Лікарня', ja: '病院', ko: '병원', zh: '医院', ar: 'مستشفى', hi: 'अस्पताल', it: 'Ospedale', pl: 'Szpital', he: 'בית חולים', nl: 'Ziekenhuis', vi: 'Bệnh viện', tl: 'Ospital', tr: 'Hastane', id: 'Rumah sakit' },
+  'pl-doctor-office': { ro: 'Cabinet medical', es: 'Consultorio médico', fr: 'Cabinet médical', pt: 'Consultório médico', de: 'Arztpraxis', ru: 'Кабинет врача', uk: 'Кабінет лікаря', ja: '診療所', ko: '병원', zh: '诊所', ar: 'عيادة', hi: 'डॉक्टर का दफ्तर', it: 'Studio medico', pl: 'Gabinet lekarski', he: 'מרפאה', nl: 'Doktersspreekuur', vi: 'Phòng khám bác sĩ', tl: 'Klinika ng doktor', tr: 'Doktor muayenehanesi', id: 'Kantor dokter' },
+  'pl-dentist-office': { ro: 'Cabinet stomatologic', es: 'Dentista', fr: 'Cabinet dentaire', pt: 'Dentista', de: 'Zahnarztpraxis', ru: 'Стоматология', uk: 'Стоматологічна клініка', ja: '歯医者', ko: '치과', zh: '牙科诊所', ar: 'عيادة طبيب الأسنان', hi: 'दंत चिकित्सालय', it: 'Dentista', pl: 'Gabinet dentystyczny', he: 'רופא שיניים', nl: 'Tandarts', vi: 'Phòng khám nha sĩ', tl: 'Klinika ng dentista', tr: 'Diş hekimi kliniği', id: 'Klinik dokter gigi' },
+  'pl-pharmacy': { ro: 'Farmacie', es: 'Farmacia', fr: 'Pharmacie', pt: 'Farmácia', de: 'Apotheke', ru: 'Аптека', uk: 'Аптека', ja: '薬局', ko: '약국', zh: '药店', ar: 'صيدلية', hi: 'फार्मेसी', it: 'Farmacia', pl: 'Apteka', he: 'בית מרקחת', nl: 'Apotheek', vi: 'Nhà thuốc', tl: 'Botika', tr: 'Eczane', id: 'Apotek' },
+  'pl-grocery-store': { ro: 'Magazin alimentar', es: 'Supermercado', fr: 'Épicerie', pt: 'Supermercado', de: 'Lebensmittelgeschäft', ru: 'Продуктовый магазин', uk: 'Продуктовий магазин', ja: 'スーパー', ko: '마트', zh: '超市', ar: 'متجر بقالة', hi: 'किराने की दुकान', it: 'Supermercato', pl: 'Sklep spożywczy', he: 'מכולת', nl: 'Supermarkt', vi: 'Siêu thị', tl: 'Tindahan', tr: 'Market', id: 'Toko kelontong' },
+  'pl-mall': { ro: 'Mall', es: 'Centro comercial', fr: 'Centre commercial', pt: 'Shopping', de: 'Einkaufszentrum', ru: 'Торговый центр', uk: 'Торговий центр', ja: 'ショッピングモール', ko: '쇼핑몰', zh: '商场', ar: 'مركز تسوق', hi: 'मॉल', it: 'Centro commerciale', pl: 'Centrum handlowe', he: 'קניון', nl: 'Winkelcentrum', vi: 'Trung tâm mua sắm', tl: 'Mall', tr: 'Alışveriş merkezi', id: 'Mall' },
+  'pl-pet-store': { ro: 'Magazin animale', es: 'Tienda de mascotas', fr: 'Animalerie', pt: 'Pet shop', de: 'Zoohandlung', ru: 'Зоомагазин', uk: 'Зоомагазин', ja: 'ペットショップ', ko: '애완동물 가게', zh: '宠物店', ar: 'متجر الحيوانات', hi: 'पालतू जानवरों की दुकान', it: 'Negozio di animali', pl: 'Sklep zoologiczny', he: 'חנות חיות', nl: 'Dierenwinkel', vi: 'Cửa hàng thú cưng', tl: 'Pet store', tr: 'Evcil hayvan dükkanı', id: 'Toko hewan peliharaan' },
+  'pl-toy-store': { ro: 'Magazin de jucării', es: 'Juguetería', fr: 'Magasin de jouets', pt: 'Loja de brinquedos', de: 'Spielzeuggeschäft', ru: 'Магазин игрушек', uk: 'Магазин іграшок', ja: 'おもちゃ屋さん', ko: '장난감 가게', zh: '玩具店', ar: 'متجر ألعاب', hi: 'खिलौनों की दुकान', it: 'Negozio di giocattoli', pl: 'Sklep z zabawkami', he: 'חנות צעצועים', nl: 'Speelgoedwinkel', vi: 'Cửa hàng đồ chơi', tl: 'Tindahan ng laruan', tr: 'Oyuncak dükkanı', id: 'Toko mainan' },
+  'pl-movie-theater': { ro: 'Cinematograf', es: 'Cine', fr: 'Cinéma', pt: 'Cinema', de: 'Kino', ru: 'Кинотеатр', uk: 'Кінотеатр', ja: '映画館', ko: '영화관', zh: '电影院', ar: 'دار سينما', hi: 'सिनेमा हॉल', it: 'Cinema', pl: 'Kino', he: 'בית קולנוע', nl: 'Bioscoop', vi: 'Rạp chiếu phim', tl: 'Sinehan', tr: 'Sinema', id: 'Bioskop' },
+  'pl-bowling-alley': { ro: 'Bowling', es: 'Boliche', fr: 'Bowling', pt: 'Boliche', de: 'Bowling', ru: 'Боулинг', uk: 'Боулінг', ja: 'ボウリング場', ko: '볼링장', zh: '保龄球馆', ar: 'ممر بولينج', hi: 'बोलिंग एली', it: 'Bowling', pl: 'Kręgielnia', he: 'בולינג', nl: 'Bowlingbaan', vi: 'Sân bowling', tl: 'Bowling alley', tr: 'Bowling salonu', id: 'Tempat bowling' },
+  'pl-arcade': { ro: 'Arcade', es: 'Salón de juegos', fr: "Salle d'arcade", pt: 'Fliperama', de: 'Spielhalle', ru: 'Аркада', uk: 'Аркада', ja: 'ゲームセンター', ko: '오락실', zh: '游戏厅', ar: 'صالة ألعاب', hi: 'आर्केड', it: 'Sala giochi', pl: 'Salon gier', he: 'ארקייד', nl: 'Speelhal', vi: 'Phòng game', tl: 'Arcade', tr: 'Oyun salonu', id: 'Tempat arcade' },
+  'pl-beach': { ro: 'Plajă', es: 'Playa', fr: 'Plage', pt: 'Praia', de: 'Strand', ru: 'Пляж', uk: 'Пляж', ja: 'ビーチ', ko: '해변', zh: '海滩', ar: 'شاطئ', hi: 'समुद्र तट', it: 'Spiaggia', pl: 'Plaża', he: 'חוף', nl: 'Strand', vi: 'Bãi biển', tl: 'Dalampasigan', tr: 'Plaj', id: 'Pantai' },
+  'pl-lake': { ro: 'Lac', es: 'Lago', fr: 'Lac', pt: 'Lago', de: 'See', ru: 'Озеро', uk: 'Озеро', ja: '湖', ko: '호수', zh: '湖', ar: 'بحيرة', hi: 'झील', it: 'Lago', pl: 'Jezioro', he: 'אגם', nl: 'Meer', vi: 'Hồ', tl: 'Lawa', tr: 'Göl', id: 'Danau' },
+  'pl-mountain': { ro: 'Munte', es: 'Montaña', fr: 'Montagne', pt: 'Montanha', de: 'Berg', ru: 'Гора', uk: 'Гора', ja: '山', ko: '산', zh: '山', ar: 'جبل', hi: 'पहाड़', it: 'Montagna', pl: 'Góra', he: 'הר', nl: 'Berg', vi: 'Núi', tl: 'Bundok', tr: 'Dağ', id: 'Gunung' },
+  'pl-forest': { ro: 'Pădure', es: 'Bosque', fr: 'Forêt', pt: 'Floresta', de: 'Wald', ru: 'Лес', uk: 'Ліс', ja: '森', ko: '숲', zh: '森林', ar: 'غابة', hi: 'जंगल', it: 'Foresta', pl: 'Las', he: 'יער', nl: 'Bos', vi: 'Rừng', tl: 'Kagubatan', tr: 'Orman', id: 'Hutan' },
+  'pl-camp': { ro: 'Tabără', es: 'Campamento', fr: 'Camp', pt: 'Acampamento', de: 'Lager', ru: 'Лагерь', uk: 'Табір', ja: 'キャンプ場', ko: '캠프', zh: '营地', ar: 'مخيم', hi: 'कैंप', it: 'Campo', pl: 'Obóz', he: 'מחנה', nl: 'Kamp', vi: 'Trại', tl: 'Kampo', tr: 'Kamp', id: 'Perkemahan' },
+  'pl-zoo': { ro: 'Zoo', es: 'Zoológico', fr: 'Zoo', pt: 'Zoológico', de: 'Zoo', ru: 'Зоопарк', uk: 'Зоопарк', ja: '動物園', ko: '동물원', zh: '动物园', ar: 'حديقة حيوانات', hi: 'चिड़ियाघर', it: 'Zoo', pl: 'Zoo', he: 'גן חיות', nl: 'Dierentuin', vi: 'Vườn thú', tl: 'Tuluyan ng mga hayop', tr: 'Hayvanat bahçesi', id: 'Kebun binatang' },
+  'pl-aquarium': { ro: 'Acvariu', es: 'Acuario', fr: 'Aquarium', pt: 'Aquário', de: 'Aquarium', ru: 'Аквариум', uk: 'Акваріум', ja: '水族館', ko: '수족관', zh: '水族馆', ar: 'حوض الأسماك', hi: 'एक्वेरियम', it: 'Acquario', pl: 'Akwarium', he: 'אקווריום', nl: 'Aquarium', vi: 'Thủy cung', tl: 'Aquarium', tr: 'Akvaryum', id: 'Akuarium' },
+  'pl-museum': { ro: 'Muzeu', es: 'Museo', fr: 'Musée', pt: 'Museu', de: 'Museum', ru: 'Музей', uk: 'Музей', ja: '博物館', ko: '박물관', zh: '博物馆', ar: 'متحف', hi: 'संग्रहालय', it: 'Museo', pl: 'Muzeum', he: 'מוזיאון', nl: 'Museum', vi: 'Bảo tàng', tl: 'Museo', tr: 'Müze', id: 'Museum' },
+  'pl-farm': { ro: 'Fermă', es: 'Granja', fr: 'Ferme', pt: 'Fazenda', de: 'Bauernhof', ru: 'Ферма', uk: 'Ферма', ja: '農場', ko: '농장', zh: '农场', ar: 'مزرعة', hi: 'खेत', it: 'Fattoria', pl: 'Farma', he: 'חווה', nl: 'Boerderij', vi: 'Trang trại', tl: 'Bukid', tr: 'Çiftlik', id: 'Pertanian' },
+  'pl-church': { ro: 'Biserică', es: 'Iglesia', fr: 'Église', pt: 'Igreja', de: 'Kirche', ru: 'Церковь', uk: 'Церква', ja: '教会', ko: '교회', zh: '教堂', ar: 'كنيسة', hi: 'चर्च', it: 'Chiesa', pl: 'Kościół', he: 'כנסייה', nl: 'Kerk', vi: 'Nhà thờ', tl: 'Simbahan', tr: 'Kilise', id: 'Gereja' },
+  'pl-temple': { ro: 'Templu', es: 'Templo', fr: 'Temple', pt: 'Templo', de: 'Tempel', ru: 'Храм', uk: 'Храм', ja: '寺', ko: '사원', zh: '寺庙', ar: 'معبد', hi: 'मंदिर', it: 'Tempio', pl: 'Świątynia', he: 'מקדש', nl: 'Tempel', vi: 'Đền', tl: 'Templo', tr: 'Tapınak', id: 'Kuil' },
+  'pl-mosque': { ro: 'Moschee', es: 'Mezquita', fr: 'Mosquée', pt: 'Mesquita', de: 'Moschee', ru: 'Мечеть', uk: 'Мечеть', ja: 'モスク', ko: '모스크', zh: '清真寺', ar: 'مسجد', hi: 'मस्जिद', it: 'Moschea', pl: 'Meczet', he: 'מסגד', nl: 'Moskee', vi: 'Nhà thờ Hồi giáo', tl: 'Masjid', tr: 'Cami', id: 'Masjid' },
+  'pl-synagogue': { ro: 'Sinagogă', es: 'Sinagoga', fr: 'Synagogue', pt: 'Sinagoga', de: 'Synagoge', ru: 'Синагога', uk: 'Синагога', ja: 'シナゴーグ', ko: '시나고그', zh: '犹太教堂', ar: 'كنيس', hi: 'सिनेगॉग', it: 'Sinagoga', pl: 'Synagoga', he: 'בית כנסת', nl: 'Synagoge', vi: 'Giáo đường Do Thái', tl: 'Sinagoga', tr: 'Sinagog', id: 'Sinagoge' },
+  'pl-bus-stop': { ro: 'Stație de autobuz', es: 'Parada de autobús', fr: "Arrêt d'autobus", pt: 'Ponto de ônibus', de: 'Bushaltestelle', ru: 'Остановка автобуса', uk: 'Автобусна зупинка', ja: 'バス停', ko: '버스 정류장', zh: '公交站', ar: 'موقف الحافلة', hi: 'बस स्टॉप', it: 'Fermata del bus', pl: 'Przystanek autobusowy', he: 'תחנת אוטובוס', nl: 'Bushalte', vi: 'Trạm xe buýt', tl: 'Himpilan ng bus', tr: 'Otobüs durağı', id: 'Halte bus' },
+  'pl-train-station': { ro: 'Gară', es: 'Estación de tren', fr: 'Gare', pt: 'Estação de trem', de: 'Bahnhof', ru: 'Вокзал', uk: 'Залізничний вокзал', ja: '駅', ko: '기차역', zh: '火车站', ar: 'محطة القطار', hi: 'रेलवे स्टेशन', it: 'Stazione ferroviaria', pl: 'Dworzec kolejowy', he: 'תחנת רכבת', nl: 'Treinstation', vi: 'Ga tàu', tl: 'Estasyon ng tren', tr: 'Tren istasyonu', id: 'Stasiun kereta' },
+  'pl-airport': { ro: 'Aeroport', es: 'Aeropuerto', fr: 'Aéroport', pt: 'Aeroporto', de: 'Flughafen', ru: 'Аэропорт', uk: 'Аеропорт', ja: '空港', ko: '공항', zh: '机场', ar: 'مطار', hi: 'हवाई अड्डा', it: 'Aeroporto', pl: 'Lotnisko', he: 'שדה תעופה', nl: 'Luchthaven', vi: 'Sân bay', tl: 'Paliparan', tr: 'Havalimanı', id: 'Bandara' },
+  'sw-backpack': { ro: 'Ghiozdan', es: 'Mochila', fr: 'Sac à dos', pt: 'Mochila', de: 'Rucksack', ru: 'Рюкзак', uk: 'Рюкзак', ja: 'ランドセル', ko: '책가방', zh: '书包', ar: 'حقيبة ظهر', hi: 'बैगपैक', it: 'Zaino', pl: 'Plecak', he: 'תרמיל', nl: 'Rugzak', vi: 'Ba lô', tl: 'Bag-bag', tr: 'Sırt çantası', id: 'Tas punggung' },
+  'sw-lunchbox': { ro: 'Cutie prânz', es: 'Lonchera', fr: 'Boîte à lunch', pt: 'Lancheira', de: 'Lunchbox', ru: 'Ланчбокс', uk: 'Ланч-бокс', ja: 'お弁当箱', ko: '도시락통', zh: '饭盒', ar: 'صندوق الغداء', hi: 'लंचबॉक्स', it: 'Portapranzo', pl: 'Lunchbox', he: 'קופסת אוכל', nl: 'Lunchbox', vi: 'Hộp cơm', tl: 'Lunchbox', tr: 'Yemek kutusu', id: 'Kotak makan siang' },
+  'sw-folder': { ro: 'Dosar', es: 'Carpeta', fr: 'Classeur', pt: 'Pasta', de: 'Mappe', ru: 'Папка', uk: 'Папка', ja: 'フォルダー', ko: '파일 폴더', zh: '文件夹', ar: 'ملف', hi: 'फोल्डर', it: 'Cartella', pl: 'Teczka', he: 'תיקייה', nl: 'Map', vi: 'Thư mục', tl: 'Folder', tr: 'Klasör', id: 'Map' },
+  'sw-notebook': { ro: 'Caiet', es: 'Cuaderno', fr: 'Cahier', pt: 'Caderno', de: 'Heft', ru: 'Тетрадь', uk: 'Зошит', ja: 'ノート', ko: '공책', zh: '笔记本', ar: 'دفتر', hi: 'नोटबुक', it: 'Quaderno', pl: 'Zeszyt', he: 'מחברת', nl: 'Schrift', vi: 'Vở', tl: 'Notebook', tr: 'Defter', id: 'Buku tulis' },
+  'sw-crayons': { ro: 'Creioane colorate', es: 'Crayones', fr: 'Crayons de couleur', pt: 'Giz de cera', de: 'Buntstifte', ru: 'Цветные карандаши', uk: 'Кольорові олівці', ja: 'クレヨン', ko: '크레용', zh: '蜡笔', ar: 'أقلام تلوين', hi: 'क्रेयॉन', it: 'Pastelli', pl: 'Kredki', he: 'צבעי שעווה', nl: 'Kleurpotloden', vi: 'Bút màu sáp', tl: 'Crayons', tr: 'Renkli boya kalemleri', id: 'Krayon' },
+  'sw-markers': { ro: 'Markere', es: 'Marcadores', fr: 'Marqueurs', pt: 'Canetinhas', de: 'Marker', ru: 'Маркеры', uk: 'Маркери', ja: 'マーカー', ko: '마커', zh: '马克笔', ar: 'أقلام تحديد', hi: 'मार्कर', it: 'Pennarelli', pl: 'Flamastry', he: 'מרקרים', nl: 'Stiften', vi: 'Bút dạ', tl: 'Markers', tr: 'Markörler', id: 'Spidol' },
+  'sw-scissors': { ro: 'Foarfece', es: 'Tijeras', fr: 'Ciseaux', pt: 'Tesoura', de: 'Schere', ru: 'Ножницы', uk: 'Ножиці', ja: 'ハサミ', ko: '가위', zh: '剪刀', ar: 'مقص', hi: 'कैंची', it: 'Forbici', pl: 'Nożyczki', he: 'מספריים', nl: 'Schaar', vi: 'Kéo', tl: 'Gunting', tr: 'Makas', id: 'Gunting' },
+  'sw-glue': { ro: 'Lipici', es: 'Pegamento', fr: 'Colle', pt: 'Cola', de: 'Kleber', ru: 'Клей', uk: 'Клей', ja: 'のり', ko: '풀', zh: '胶水', ar: 'غراء', hi: 'गोंद', it: 'Colla', pl: 'Klej', he: 'דבק', nl: 'Lijm', vi: 'Keo', tl: 'Pandikit', tr: 'Yapıştırıcı', id: 'Lem' },
+  'sw-tape': { ro: 'Bandă adezivă', es: 'Cinta adhesiva', fr: 'Ruban adhésif', pt: 'Fita adesiva', de: 'Klebeband', ru: 'Скотч', uk: 'Скотч', ja: 'セロテープ', ko: '테이프', zh: '胶带', ar: 'شريط لاصق', hi: 'टेप', it: 'Nastro adesivo', pl: 'Taśma', he: 'סרט הדבקה', nl: 'Plakband', vi: 'Băng dính', tl: 'Tape', tr: 'Yapışkan bant', id: 'Selotip' },
+  'sw-eraser': { ro: 'Gumă de șters', es: 'Borrador', fr: 'Gomme', pt: 'Borracha', de: 'Radiergummi', ru: 'Ластик', uk: 'Гумка', ja: '消しゴム', ko: '지우개', zh: '橡皮', ar: 'ممحاة', hi: 'इरेज़र', it: 'Gomma', pl: 'Gumka', he: 'מחק', nl: 'Gum', vi: 'Tẩy', tl: 'Pambura', tr: 'Silgi', id: 'Penghapus' },
+  'sw-ruler': { ro: 'Riglă', es: 'Regla', fr: 'Règle', pt: 'Régua', de: 'Lineal', ru: 'Линейка', uk: 'Лінійка', ja: '定規', ko: '자', zh: '尺子', ar: 'مسطرة', hi: 'रूलर', it: 'Righello', pl: 'Linijka', he: 'סרגל', nl: 'Liniaal', vi: 'Thước kẻ', tl: 'Ruler', tr: 'Cetvel', id: 'Penggaris' },
+  'sw-whiteboard': { ro: 'Tablă albă', es: 'Pizarrón', fr: 'Tableau blanc', pt: 'Quadro branco', de: 'Whiteboard', ru: 'Белая доска', uk: 'Біла дошка', ja: 'ホワイトボード', ko: '화이트보드', zh: '白板', ar: 'لوح أبيض', hi: 'व्हाइटबोर्ड', it: 'Lavagna bianca', pl: 'Tablica', he: 'לוח לבן', nl: 'Whiteboard', vi: 'Bảng trắng', tl: 'Whiteboard', tr: 'Beyaz tahta', id: 'Papan tulis putih' },
+  'sw-smart-board': { ro: 'Tablă inteligentă', es: 'Pizarra inteligente', fr: 'Tableau interactif', pt: 'Quadro interativo', de: 'Smartboard', ru: 'Интерактивная доска', uk: 'Інтерактивна дошка', ja: 'スマートボード', ko: '스마트보드', zh: '智能白板', ar: 'سبورة ذكية', hi: 'स्मार्ट बोर्ड', it: 'Lavagna interattiva', pl: 'Tablica interaktywna', he: 'לוח חכם', nl: 'Smartboard', vi: 'Bảng thông minh', tl: 'Smart board', tr: 'Akıllı tahta', id: 'Papan pintar' },
+  'sw-projector': { ro: 'Proiector', es: 'Proyector', fr: 'Projecteur', pt: 'Projetor', de: 'Projektor', ru: 'Проектор', uk: 'Проектор', ja: 'プロジェクター', ko: '프로젝터', zh: '投影仪', ar: 'جهاز عرض', hi: 'प्रोजेक्टर', it: 'Proiettore', pl: 'Projektor', he: 'מקרן', nl: 'Projector', vi: 'Máy chiếu', tl: 'Projector', tr: 'Projeksiyon', id: 'Proyektor' },
+  'sw-math': { ro: 'Matematică', es: 'Matemáticas', fr: 'Maths', pt: 'Matemática', de: 'Mathe', ru: 'Математика', uk: 'Математика', ja: '算数', ko: '수학', zh: '数学', ar: 'الرياضيات', hi: 'गणित', it: 'Matematica', pl: 'Matematyka', he: 'מתמטיקה', nl: 'Wiskunde', vi: 'Toán', tl: 'Matematika', tr: 'Matematik', id: 'Matematika' },
+  'sw-reading': { ro: 'Lectură', es: 'Lectura', fr: 'Lecture', pt: 'Leitura', de: 'Lesen', ru: 'Чтение', uk: 'Читання', ja: '読み', ko: '읽기', zh: '阅读', ar: 'القراءة', hi: 'पढ़ना', it: 'Lettura', pl: 'Czytanie', he: 'קריאה', nl: 'Lezen', vi: 'Đọc sách', tl: 'Pagbabasa', tr: 'Okuma', id: 'Membaca' },
+  'sw-writing': { ro: 'Scriere', es: 'Escritura', fr: 'Écriture', pt: 'Escrita', de: 'Schreiben', ru: 'Письмо', uk: 'Письмо', ja: '書き', ko: '쓰기', zh: '写作', ar: 'الكتابة', hi: 'लेखन', it: 'Scrittura', pl: 'Pisanie', he: 'כתיבה', nl: 'Schrijven', vi: 'Viết', tl: 'Pagsulat', tr: 'Yazma', id: 'Menulis' },
+  'sw-spelling': { ro: 'Ortografie', es: 'Ortografía', fr: 'Orthographe', pt: 'Ortografia', de: 'Rechtschreibung', ru: 'Правописание', uk: 'Правопис', ja: 'スペリング', ko: '철자', zh: '拼写', ar: 'الإملاء', hi: 'वर्तनी', it: 'Ortografia', pl: 'Pisownia', he: 'איות', nl: 'Spelling', vi: 'Đánh vần', tl: 'Ispeling', tr: 'Yazım', id: 'Ejaan' },
+  'sw-science': { ro: 'Știință', es: 'Ciencias', fr: 'Sciences', pt: 'Ciências', de: 'Wissenschaft', ru: 'Наука', uk: 'Наука', ja: '理科', ko: '과학', zh: '科学', ar: 'العلوم', hi: 'विज्ञान', it: 'Scienze', pl: 'Nauki', he: 'מדע', nl: 'Wetenschap', vi: 'Khoa học', tl: 'Agham', tr: 'Fen', id: 'Sains' },
+  'sw-social-studies': { ro: 'Științe sociale', es: 'Estudios sociales', fr: 'Sciences sociales', pt: 'Estudos sociais', de: 'Sozialkunde', ru: 'Обществознание', uk: 'Суспільствознавство', ja: '社会', ko: '사회', zh: '社会学', ar: 'الدراسات الاجتماعية', hi: 'सामाजिक अध्ययन', it: 'Studi sociali', pl: 'Wiedza o społeczeństwie', he: 'לימודי חברה', nl: 'Maatschappijleer', vi: 'Khoa học xã hội', tl: 'Araling panlipunan', tr: 'Sosyal bilgiler', id: 'Ilmu sosial' },
+  'sw-history': { ro: 'Istorie', es: 'Historia', fr: 'Histoire', pt: 'História', de: 'Geschichte', ru: 'История', uk: 'Історія', ja: '歴史', ko: '역사', zh: '历史', ar: 'التاريخ', hi: 'इतिहास', it: 'Storia', pl: 'Historia', he: 'היסטוריה', nl: 'Geschiedenis', vi: 'Lịch sử', tl: 'Kasaysayan', tr: 'Tarih', id: 'Sejarah' },
+  'sw-pe': { ro: 'Educație fizică', es: 'Educación física', fr: 'EPS', pt: 'Educação física', de: 'Sport', ru: 'Физкультура', uk: 'Фізкультура', ja: '体育', ko: '체육', zh: '体育', ar: 'التربية الرياضية', hi: 'शारीरिक शिक्षा', it: 'Educazione fisica', pl: 'Wychowanie fizyczne', he: 'חינוך גופני', nl: 'Gym', vi: 'Thể dục', tl: 'Pisikal na edukasyon', tr: 'Beden eğitimi', id: 'Pendidikan jasmani' },
+  'sw-gym': { ro: 'Sală de sport', es: 'Gimnasio', fr: 'Salle de sport', pt: 'Ginásio', de: 'Turnhalle', ru: 'Спортзал', uk: 'Спортзал', ja: '体育館', ko: '체육관', zh: '体育馆', ar: 'صالة رياضية', hi: 'जिम', it: 'Palestra', pl: 'Sala gimnastyczna', he: 'חדר כושר', nl: 'Gymzaal', vi: 'Phòng thể dục', tl: 'Gym', tr: 'Spor salonu', id: 'Gym' },
+  'sw-recess-time': { ro: 'Timp de pauză', es: 'Tiempo de recreo', fr: 'Récréation', pt: 'Hora do recreio', de: 'Pause', ru: 'Время перемены', uk: 'Час перерви', ja: '休み時間', ko: '쉬는 시간', zh: '课间休息', ar: 'وقت الاستراحة', hi: 'विश्राम का समय', it: 'Ora di ricreazione', pl: 'Czas przerwy', he: 'זמן הפסקה', nl: 'Pauzetijd', vi: 'Giờ ra chơi', tl: 'Oras ng recess', tr: 'Teneffüs zamanı', id: 'Waktu istirahat' },
+  'sw-library-time': { ro: 'Timp la bibliotecă', es: 'Hora de biblioteca', fr: 'Heure de bibliothèque', pt: 'Hora da biblioteca', de: 'Bibliothekszeit', ru: 'Время в библиотеке', uk: 'Час у бібліотеці', ja: '図書の時間', ko: '도서관 시간', zh: '图书馆时间', ar: 'وقت المكتبة', hi: 'पुस्तकालय का समय', it: 'Ora di biblioteca', pl: 'Czas w bibliotece', he: 'שעת ספרייה', nl: 'Bibliotheektijd', vi: 'Giờ thư viện', tl: 'Oras sa library', tr: 'Kütüphane zamanı', id: 'Waktu di perpustakaan' },
+  'sw-story-time': { ro: 'Timp de povești', es: 'Hora del cuento', fr: 'Heure du conte', pt: 'Hora da história', de: 'Vorlesezeit', ru: 'Время для историй', uk: 'Час для оповідань', ja: '絵本の時間', ko: '이야기 시간', zh: '故事时间', ar: 'وقت القصة', hi: 'कहानी का समय', it: 'Ora del racconto', pl: 'Czas na bajki', he: 'שעת הסיפור', nl: 'Verhaaltjestijd', vi: 'Giờ kể chuyện', tl: 'Oras ng kwento', tr: 'Hikaye zamanı', id: 'Waktu cerita' },
+  'sw-circle-time': { ro: 'Timp în cerc', es: 'Tiempo en círculo', fr: 'Temps du cercle', pt: 'Hora do círculo', de: 'Kreis-Zeit', ru: 'Время в кругу', uk: 'Час у колі', ja: 'サークルタイム', ko: '모둠 시간', zh: '圆圈时间', ar: 'وقت الدائرة', hi: 'सर्कल टाइम', it: 'Tempo del cerchio', pl: 'Czas w kole', he: 'זמן מעגל', nl: 'Kringtijd', vi: 'Giờ sinh hoạt vòng tròn', tl: 'Circle time', tr: 'Çember zamanı', id: 'Waktu lingkaran' },
+  'sw-lunch-time': { ro: 'Masa de prânz', es: 'Hora de almuerzo', fr: 'Heure du déjeuner', pt: 'Hora do almoço', de: 'Mittagessen', ru: 'Время обеда', uk: 'Час обіду', ja: '給食の時間', ko: '점심 시간', zh: '午餐时间', ar: 'وقت الغداء', hi: 'दोपहर के खाने का समय', it: 'Ora di pranzo', pl: 'Czas obiadu', he: 'שעת צהריים', nl: 'Lunchtijd', vi: 'Giờ ăn trưa', tl: 'Oras ng tanghalian', tr: 'Öğle yemeği zamanı', id: 'Waktu makan siang' },
+  'sw-snack-time': { ro: 'Gustare', es: 'Hora de la merienda', fr: 'Heure du goûter', pt: 'Hora do lanche', de: 'Snackzeit', ru: 'Время перекуса', uk: 'Час перекусу', ja: 'おやつの時間', ko: '간식 시간', zh: '零食时间', ar: 'وقت الوجبة الخفيفة', hi: 'नाश्ते का समय', it: 'Ora della merenda', pl: 'Czas na przekąskę', he: 'שעת נשנוש', nl: 'Snacktijd', vi: 'Giờ ăn nhẹ', tl: 'Oras ng meryenda', tr: 'Atıştırmalık zamanı', id: 'Waktu camilan' },
+  'sw-worksheet': { ro: 'Fișă de lucru', es: 'Hoja de trabajo', fr: 'Feuille de travail', pt: 'Folha de atividade', de: 'Arbeitsblatt', ru: 'Рабочий лист', uk: 'Робочий аркуш', ja: 'ワークシート', ko: '학습지', zh: '工作表', ar: 'ورقة عمل', hi: 'वर्कशीट', it: 'Scheda di lavoro', pl: 'Arkusz ćwiczeń', he: 'דף עבודה', nl: 'Werkblad', vi: 'Phiếu bài tập', tl: 'Worksheet', tr: 'Çalışma kağıdı', id: 'Lembar kerja' },
+  'sw-quiz': { ro: 'Test', es: 'Prueba', fr: 'Quiz', pt: 'Quiz', de: 'Quiz', ru: 'Тест', uk: 'Тест', ja: 'クイズ', ko: '퀴즈', zh: '小测', ar: 'اختبار قصير', hi: 'क्विज़', it: 'Quiz', pl: 'Quiz', he: 'חידון', nl: 'Quiz', vi: 'Bài kiểm tra ngắn', tl: 'Quiz', tr: 'Sınav', id: 'Kuis' },
+  'sw-test': { ro: 'Examen', es: 'Examen', fr: 'Examen', pt: 'Prova', de: 'Test', ru: 'Экзамен', uk: 'Іспит', ja: 'テスト', ko: '시험', zh: '考试', ar: 'امتحان', hi: 'परीक्षा', it: 'Esame', pl: 'Sprawdzian', he: 'מבחן', nl: 'Toets', vi: 'Bài thi', tl: 'Pagsubok', tr: 'Sınav', id: 'Ujian' },
+  'sw-project': { ro: 'Proiect', es: 'Proyecto', fr: 'Projet', pt: 'Projeto', de: 'Projekt', ru: 'Проект', uk: 'Проект', ja: 'プロジェクト', ko: '프로젝트', zh: '项目', ar: 'مشروع', hi: 'परियोजना', it: 'Progetto', pl: 'Projekt', he: 'פרויקט', nl: 'Project', vi: 'Dự án', tl: 'Proyekto', tr: 'Proje', id: 'Proyek' },
+  'sw-field-trip': { ro: 'Excursie', es: 'Excursión', fr: 'Sortie scolaire', pt: 'Passeio escolar', de: 'Schulausflug', ru: 'Экскурсия', uk: 'Екскурсія', ja: '遠足', ko: '소풍', zh: '郊游', ar: 'رحلة ميدانية', hi: 'फील्ड ट्रिप', it: 'Gita scolastica', pl: 'Wycieczka', he: 'טיול שדה', nl: 'Schoolreisje', vi: 'Dã ngoại', tl: 'Field trip', tr: 'Okul gezisi', id: 'Kunjungan lapangan' },
+  'sw-assembly': { ro: 'Adunare', es: 'Asamblea', fr: 'Assemblée', pt: 'Assembleia', de: 'Versammlung', ru: 'Собрание', uk: 'Збори', ja: '全体集会', ko: '조회', zh: '集会', ar: 'تجمع', hi: 'सभा', it: 'Assemblea', pl: 'Zebranie', he: 'אסיפה', nl: 'Vergadering', vi: 'Buổi họp mặt', tl: 'Assembly', tr: 'Toplantı', id: 'Pertemuan' },
+  'sw-bus-ride': { ro: 'Drum cu autobuzul', es: 'Viaje en autobús', fr: 'Trajet en bus', pt: 'Viagem de ônibus', de: 'Busfahrt', ru: 'Поездка на автобусе', uk: 'Поїздка на автобусі', ja: 'バス通学', ko: '버스 타기', zh: '坐公交', ar: 'ركوب الحافلة', hi: 'बस की सवारी', it: 'Giro in autobus', pl: 'Jazda autobusem', he: 'נסיעה באוטובוס', nl: 'Busrit', vi: 'Đi xe buýt', tl: 'Biyahe sa bus', tr: 'Otobüs yolculuğu', id: 'Naik bus' },
+  'hb-hair': { ro: 'Păr', es: 'Cabello', fr: 'Cheveux', pt: 'Cabelo', de: 'Haare', ru: 'Волосы', uk: 'Волосся', ja: '髪', ko: '머리카락', zh: '头发', ar: 'شعر', hi: 'बाल', it: 'Capelli', pl: 'Włosy', he: 'שיער', nl: 'Haar', vi: 'Tóc', tl: 'Buhok', tr: 'Saç', id: 'Rambut' },
+  'hb-face': { ro: 'Față', es: 'Cara', fr: 'Visage', pt: 'Rosto', de: 'Gesicht', ru: 'Лицо', uk: 'Обличчя', ja: '顔', ko: '얼굴', zh: '脸', ar: 'وجه', hi: 'चेहरा', it: 'Viso', pl: 'Twarz', he: 'פנים', nl: 'Gezicht', vi: 'Mặt', tl: 'Mukha', tr: 'Yüz', id: 'Wajah' },
+  'hb-forehead': { ro: 'Frunte', es: 'Frente', fr: 'Front', pt: 'Testa', de: 'Stirn', ru: 'Лоб', uk: 'Лоб', ja: 'おでこ', ko: '이마', zh: '额头', ar: 'جبهة', hi: 'माथा', it: 'Fronte', pl: 'Czoło', he: 'מצח', nl: 'Voorhoofd', vi: 'Trán', tl: 'Noo', tr: 'Alın', id: 'Dahi' },
+  'hb-cheek': { ro: 'Obraz', es: 'Mejilla', fr: 'Joue', pt: 'Bochecha', de: 'Wange', ru: 'Щека', uk: 'Щока', ja: 'ほっぺ', ko: '볼', zh: '脸颊', ar: 'خد', hi: 'गाल', it: 'Guancia', pl: 'Policzek', he: 'לחי', nl: 'Wang', vi: 'Má', tl: 'Pisngi', tr: 'Yanak', id: 'Pipi' },
+  'hb-chin': { ro: 'Bărbie', es: 'Barbilla', fr: 'Menton', pt: 'Queixo', de: 'Kinn', ru: 'Подбородок', uk: 'Підборіддя', ja: 'あご', ko: '턱', zh: '下巴', ar: 'ذقن', hi: 'ठोड़ी', it: 'Mento', pl: 'Podbródek', he: 'סנטר', nl: 'Kin', vi: 'Cằm', tl: 'Baba', tr: 'Çene', id: 'Dagu' },
+  'hb-lips': { ro: 'Buze', es: 'Labios', fr: 'Lèvres', pt: 'Lábios', de: 'Lippen', ru: 'Губы', uk: 'Губи', ja: '唇', ko: '입술', zh: '嘴唇', ar: 'شفاه', hi: 'होंठ', it: 'Labbra', pl: 'Usta', he: 'שפתיים', nl: 'Lippen', vi: 'Môi', tl: 'Labi', tr: 'Dudaklar', id: 'Bibir' },
+  'hb-tongue': { ro: 'Limbă', es: 'Lengua', fr: 'Langue', pt: 'Língua', de: 'Zunge', ru: 'Язык', uk: 'Язик', ja: '舌', ko: '혀', zh: '舌头', ar: 'لسان', hi: 'जीभ', it: 'Lingua', pl: 'Język', he: 'לשון', nl: 'Tong', vi: 'Lưỡi', tl: 'Dila', tr: 'Dil', id: 'Lidah' },
+  'hb-throat': { ro: 'Gât', es: 'Garganta', fr: 'Gorge', pt: 'Garganta', de: 'Hals', ru: 'Горло', uk: 'Горло', ja: 'のど', ko: '목구멍', zh: '喉咙', ar: 'حلق', hi: 'गला', it: 'Gola', pl: 'Gardło', he: 'גרון', nl: 'Keel', vi: 'Cổ họng', tl: 'Lalamunan', tr: 'Boğaz', id: 'Tenggorokan' },
+  'hb-neck': { ro: 'Gât', es: 'Cuello', fr: 'Cou', pt: 'Pescoço', de: 'Hals', ru: 'Шея', uk: 'Шия', ja: '首', ko: '목', zh: '脖子', ar: 'رقبة', hi: 'गर्दन', it: 'Collo', pl: 'Szyja', he: 'צוואר', nl: 'Nek', vi: 'Cổ', tl: 'Leeg', tr: 'Boyun', id: 'Leher' },
+  'hb-shoulder': { ro: 'Umăr', es: 'Hombro', fr: 'Épaule', pt: 'Ombro', de: 'Schulter', ru: 'Плечо', uk: 'Плече', ja: '肩', ko: '어깨', zh: '肩膀', ar: 'كتف', hi: 'कंधा', it: 'Spalla', pl: 'Ramię', he: 'כתף', nl: 'Schouder', vi: 'Vai', tl: 'Balikat', tr: 'Omuz', id: 'Bahu' },
+  'hb-elbow': { ro: 'Cot', es: 'Codo', fr: 'Coude', pt: 'Cotovelo', de: 'Ellenbogen', ru: 'Локоть', uk: 'Лікоть', ja: 'ひじ', ko: '팔꿈치', zh: '肘', ar: 'كوع', hi: 'कोहनी', it: 'Gomito', pl: 'Łokieć', he: 'מרפק', nl: 'Elleboog', vi: 'Khuỷu tay', tl: 'Siko', tr: 'Dirsek', id: 'Siku' },
+  'hb-wrist': { ro: 'Încheietură', es: 'Muñeca', fr: 'Poignet', pt: 'Pulso', de: 'Handgelenk', ru: 'Запястье', uk: 'Зап\'ясток', ja: '手首', ko: '손목', zh: '手腕', ar: 'معصم', hi: 'कलाई', it: 'Polso', pl: 'Nadgarstek', he: 'פרק כף יד', nl: 'Pols', vi: 'Cổ tay', tl: 'Pulso', tr: 'Bilek', id: 'Pergelangan tangan' },
+  'hb-finger': { ro: 'Deget', es: 'Dedo', fr: 'Doigt', pt: 'Dedo', de: 'Finger', ru: 'Палец', uk: 'Палець', ja: '指', ko: '손가락', zh: '手指', ar: 'إصبع', hi: 'उँगली', it: 'Dito', pl: 'Palec', he: 'אצבע', nl: 'Vinger', vi: 'Ngón tay', tl: 'Daliri', tr: 'Parmak', id: 'Jari' },
+  'hb-thumb': { ro: 'Degetul mare', es: 'Pulgar', fr: 'Pouce', pt: 'Polegar', de: 'Daumen', ru: 'Большой палец', uk: 'Великий палець', ja: 'おやゆび', ko: '엄지손가락', zh: '拇指', ar: 'إبهام', hi: 'अंगूठा', it: 'Pollice', pl: 'Kciuk', he: 'אגודל', nl: 'Duim', vi: 'Ngón cái', tl: 'Hinlalaki', tr: 'Baş parmak', id: 'Ibu jari' },
+  'hb-knuckle': { ro: 'Articulație', es: 'Nudillo', fr: 'Articulation', pt: 'Nó do dedo', de: 'Knöchel', ru: 'Костяшка', uk: 'Кістяшка', ja: 'こぶし', ko: '손가락 관절', zh: '指节', ar: 'مفصل الإصبع', hi: 'पोर', it: 'Nocca', pl: 'Knykieć', he: 'קנוקל', nl: 'Knokkel', vi: 'Đốt ngón tay', tl: 'Buko ng daliri', tr: 'Parmak eklemi', id: 'Buku jari' },
+  'hb-knee': { ro: 'Genunchi', es: 'Rodilla', fr: 'Genou', pt: 'Joelho', de: 'Knie', ru: 'Колено', uk: 'Коліно', ja: 'ひざ', ko: '무릎', zh: '膝盖', ar: 'ركبة', hi: 'घुटना', it: 'Ginocchio', pl: 'Kolano', he: 'ברך', nl: 'Knie', vi: 'Đầu gối', tl: 'Tuhod', tr: 'Diz', id: 'Lutut' },
+  'hb-ankle': { ro: 'Gleznă', es: 'Tobillo', fr: 'Cheville', pt: 'Tornozelo', de: 'Knöchel', ru: 'Лодыжка', uk: 'Кісточка', ja: 'くるぶし', ko: '발목', zh: '脚踝', ar: 'كاحل', hi: 'टखना', it: 'Caviglia', pl: 'Kostka', he: 'קרסול', nl: 'Enkel', vi: 'Mắt cá chân', tl: 'Bukong-bukong', tr: 'Ayak bileği', id: 'Pergelangan kaki' },
+  'hb-toe': { ro: 'Deget de la picior', es: 'Dedo del pie', fr: 'Orteil', pt: 'Dedo do pé', de: 'Zeh', ru: 'Палец ноги', uk: 'Палець ноги', ja: 'あしゆび', ko: '발가락', zh: '脚趾', ar: 'إصبع القدم', hi: 'पैर की उँगली', it: 'Dito del piede', pl: 'Palec u nogi', he: 'אצבע כף רגל', nl: 'Teen', vi: 'Ngón chân', tl: 'Daliri ng paa', tr: 'Ayak parmağı', id: 'Jari kaki' },
+  'hb-heel': { ro: 'Călcâi', es: 'Talón', fr: 'Talon', pt: 'Calcanhar', de: 'Ferse', ru: 'Пятка', uk: 'П\'ятка', ja: 'かかと', ko: '발뒤꿈치', zh: '脚跟', ar: 'كعب', hi: 'एड़ी', it: 'Tallone', pl: 'Pięta', he: 'עקב', nl: 'Hiel', vi: 'Gót chân', tl: 'Sakong', tr: 'Topuk', id: 'Tumit' },
+  'hb-chest': { ro: 'Piept', es: 'Pecho', fr: 'Poitrine', pt: 'Peito', de: 'Brust', ru: 'Грудь', uk: 'Груди', ja: '胸', ko: '가슴', zh: '胸', ar: 'صدر', hi: 'सीना', it: 'Petto', pl: 'Klatka piersiowa', he: 'חזה', nl: 'Borst', vi: 'Ngực', tl: 'Dibdib', tr: 'Göğüs', id: 'Dada' },
+  'hb-belly': { ro: 'Burtică', es: 'Barriga', fr: 'Ventre', pt: 'Barriga', de: 'Bauch', ru: 'Животик', uk: 'Животик', ja: 'おなか', ko: '배', zh: '肚子', ar: 'بطن', hi: 'पेट', it: 'Pancia', pl: 'Brzuszek', he: 'בטן', nl: 'Buik', vi: 'Bụng', tl: 'Tiyan', tr: 'Göbek', id: 'Perut' },
+  'hb-hip': { ro: 'Șold', es: 'Cadera', fr: 'Hanche', pt: 'Quadril', de: 'Hüfte', ru: 'Бедро', uk: 'Стегно', ja: 'お尻', ko: '엉덩이', zh: '臀部', ar: 'ورك', hi: 'कूल्हा', it: 'Fianco', pl: 'Biodro', he: 'ירך', nl: 'Heup', vi: 'Hông', tl: 'Balakang', tr: 'Kalça', id: 'Pinggul' },
+  'hb-bottom': { ro: 'Fund', es: 'Trasero', fr: 'Fesses', pt: 'Bumbum', de: 'Po', ru: 'Попа', uk: 'Попа', ja: 'おしり', ko: '엉덩이', zh: '屁股', ar: 'مؤخرة', hi: 'नितंब', it: 'Sedere', pl: 'Pupa', he: 'ישבן', nl: 'Billen', vi: 'Mông', tl: 'Puwet', tr: 'Popo', id: 'Pantat' },
+  'hb-skin': { ro: 'Piele', es: 'Piel', fr: 'Peau', pt: 'Pele', de: 'Haut', ru: 'Кожа', uk: 'Шкіра', ja: '皮膚', ko: '피부', zh: '皮肤', ar: 'جلد', hi: 'त्वचा', it: 'Pelle', pl: 'Skóra', he: 'עור', nl: 'Huid', vi: 'Da', tl: 'Balat', tr: 'Deri', id: 'Kulit' },
+  'hb-bone': { ro: 'Os', es: 'Hueso', fr: 'Os', pt: 'Osso', de: 'Knochen', ru: 'Кость', uk: 'Кістка', ja: '骨', ko: '뼈', zh: '骨头', ar: 'عظم', hi: 'हड्डी', it: 'Osso', pl: 'Kość', he: 'עצם', nl: 'Bot', vi: 'Xương', tl: 'Buto', tr: 'Kemik', id: 'Tulang' },
+  'hb-muscle': { ro: 'Mușchi', es: 'Músculo', fr: 'Muscle', pt: 'Músculo', de: 'Muskel', ru: 'Мышца', uk: 'М\'яз', ja: '筋肉', ko: '근육', zh: '肌肉', ar: 'عضلة', hi: 'मांसपेशी', it: 'Muscolo', pl: 'Mięsień', he: 'שריר', nl: 'Spier', vi: 'Cơ', tl: 'Kalamnan', tr: 'Kas', id: 'Otot' },
+  'hb-headache': { ro: 'Durere de cap', es: 'Dolor de cabeza', fr: 'Mal de tête', pt: 'Dor de cabeça', de: 'Kopfschmerzen', ru: 'Головная боль', uk: 'Головний біль', ja: '頭が痛い', ko: '두통이에요', zh: '头痛', ar: 'صداع', hi: 'सिरदर्द', it: 'Mal di testa', pl: 'Ból głowy', he: 'כאב ראש', nl: 'Hoofdpijn', vi: 'Đau đầu', tl: 'Masakit ang ulo', tr: 'Baş ağrısı', id: 'Sakit kepala' },
+  'hb-stomachache': { ro: 'Durere de burtă', es: 'Dolor de estómago', fr: "Mal d'estomac", pt: 'Dor de estômago', de: 'Bauchschmerzen', ru: 'Боль в животе', uk: 'Біль у животі', ja: 'お腹が痛い', ko: '배가 아파요', zh: '肚子痛', ar: 'ألم في المعدة', hi: 'पेटदर्द', it: 'Mal di stomaco', pl: 'Ból brzucha', he: 'כאב בטן', nl: 'Buikpijn', vi: 'Đau bụng', tl: 'Masakit ang tiyan', tr: 'Karın ağrısı', id: 'Sakit perut' },
+  'hb-earache': { ro: 'Durere de ureche', es: 'Dolor de oído', fr: "Mal d'oreille", pt: 'Dor de ouvido', de: 'Ohrenschmerzen', ru: 'Боль в ухе', uk: 'Біль у вусі', ja: '耳が痛い', ko: '귀가 아파요', zh: '耳朵痛', ar: 'ألم في الأذن', hi: 'कान में दर्द', it: 'Mal d\'orecchio', pl: 'Ból ucha', he: 'כאב אוזן', nl: 'Oorpijn', vi: 'Đau tai', tl: 'Masakit ang tenga', tr: 'Kulak ağrısı', id: 'Sakit telinga' },
+  'hb-toothache': { ro: 'Durere de dinți', es: 'Dolor de muelas', fr: 'Mal aux dents', pt: 'Dor de dente', de: 'Zahnschmerzen', ru: 'Зубная боль', uk: 'Зубний біль', ja: '歯が痛い', ko: '이가 아파요', zh: '牙痛', ar: 'ألم في الأسنان', hi: 'दाँत दर्द', it: 'Mal di denti', pl: 'Ból zęba', he: 'כאב שיניים', nl: 'Tandpijn', vi: 'Đau răng', tl: 'Masakit ang ngipin', tr: 'Diş ağrısı', id: 'Sakit gigi' },
+  'hb-sore-throat': { ro: 'Durere în gât', es: 'Dolor de garganta', fr: 'Mal de gorge', pt: 'Dor de garganta', de: 'Halsschmerzen', ru: 'Боль в горле', uk: 'Біль у горлі', ja: 'のどが痛い', ko: '목이 아파요', zh: '喉咙痛', ar: 'التهاب الحلق', hi: 'गले में दर्द', it: 'Mal di gola', pl: 'Ból gardła', he: 'כאב גרון', nl: 'Keelpijn', vi: 'Đau họng', tl: 'Masakit ang lalamunan', tr: 'Boğaz ağrısı', id: 'Sakit tenggorokan' },
+  'hb-cough': { ro: 'Tuse', es: 'Tos', fr: 'Toux', pt: 'Tosse', de: 'Husten', ru: 'Кашель', uk: 'Кашель', ja: '咳', ko: '기침', zh: '咳嗽', ar: 'سعال', hi: 'खांसी', it: 'Tosse', pl: 'Kaszel', he: 'שיעול', nl: 'Hoest', vi: 'Ho', tl: 'Ubo', tr: 'Öksürük', id: 'Batuk' },
+  'hb-sneeze': { ro: 'Strănut', es: 'Estornudo', fr: 'Éternuement', pt: 'Espirro', de: 'Niesen', ru: 'Чихание', uk: 'Чхання', ja: 'くしゃみ', ko: '재채기', zh: '打喷嚏', ar: 'عطاس', hi: 'छींकना', it: 'Starnuto', pl: 'Kichanie', he: 'עיטוש', nl: 'Nies', vi: 'Hắt hơi', tl: 'Bahin', tr: 'Hapşırık', id: 'Bersin' },
+  'hb-runny-nose': { ro: 'Nas curgător', es: 'Nariz mocosa', fr: 'Nez qui coule', pt: 'Nariz escorrendo', de: 'Laufende Nase', ru: 'Насморк', uk: 'Нежить', ja: '鼻水', ko: '콧물이 나요', zh: '流鼻涕', ar: 'أنف سائل', hi: 'बहती नाक', it: 'Naso che cola', pl: 'Katar', he: 'נזלת', nl: 'Loopneus', vi: 'Chảy nước mũi', tl: 'Sipon', tr: 'Akıntılı burun', id: 'Hidung meler' },
+  'hb-stuffy-nose': { ro: 'Nas înfundat', es: 'Nariz tapada', fr: 'Nez bouché', pt: 'Nariz entupido', de: 'Verstopfte Nase', ru: 'Заложенный нос', uk: 'Закладений ніс', ja: '鼻詰まり', ko: '코가 막혀요', zh: '鼻子塞', ar: 'انسداد الأنف', hi: 'बंद नाक', it: 'Naso otturato', pl: 'Zapchany nos', he: 'אף סתום', nl: 'Verstopte neus', vi: 'Nghẹt mũi', tl: 'Baradong ilong', tr: 'Tıkanan burun', id: 'Hidung tersumbat' },
+  'hb-fever': { ro: 'Febră', es: 'Fiebre', fr: 'Fièvre', pt: 'Febre', de: 'Fieber', ru: 'Жар', uk: 'Жар', ja: '熱', ko: '열이 나요', zh: '发烧', ar: 'حمى', hi: 'बुखार', it: 'Febbre', pl: 'Gorączka', he: 'חום', nl: 'Koorts', vi: 'Sốt', tl: 'Lagnat', tr: 'Ateş', id: 'Demam' },
+  'hb-chills': { ro: 'Frisoane', es: 'Escalofríos', fr: 'Frissons', pt: 'Calafrios', de: 'Schüttelfrost', ru: 'Озноб', uk: 'Озноб', ja: '悪寒', ko: '오한이 나요', zh: '发冷', ar: 'قشعريرة', hi: 'ठंड लगना', it: 'Brividi', pl: 'Dreszcze', he: 'צמרמורת', nl: 'Rillingen', vi: 'Rét run', tl: 'Panginginig', tr: 'Titreme', id: 'Menggigil' },
+  'hb-shaking': { ro: 'Tremurând', es: 'Temblando', fr: 'Tremblant', pt: 'Tremendo', de: 'Zittern', ru: 'Дрожь', uk: 'Тремтіння', ja: '震えている', ko: '떨려요', zh: '发抖', ar: 'ارتجاف', hi: 'कंपना', it: 'Tremare', pl: 'Trzęsie się', he: 'רועד', nl: 'Trillen', vi: 'Run', tl: 'Nanginginig', tr: 'Titreme', id: 'Gemetar' },
+  'hb-dizzy-spell': { ro: 'Amețeală', es: 'Mareo', fr: 'Vertiges', pt: 'Tontura', de: 'Schwindel', ru: 'Головокружение', uk: 'Запаморочення', ja: 'めまい', ko: '어지러워요', zh: '头晕', ar: 'دوار', hi: 'चक्कर आना', it: 'Vertigini', pl: 'Zawroty głowy', he: 'סחרחורת', nl: 'Duizeling', vi: 'Chóng mặt', tl: 'Nahihilo', tr: 'Baş dönmesi', id: 'Pusing' },
+  'hb-bruise': { ro: 'Vânătaie', es: 'Moretón', fr: 'Bleu', pt: 'Contusão', de: 'Blauer Fleck', ru: 'Синяк', uk: 'Синець', ja: 'あざ', ko: '멍', zh: '淤青', ar: 'كدمة', hi: 'चोट का निशान', it: 'Livido', pl: 'Siniak', he: 'חבורה', nl: 'Blauwe plek', vi: 'Bầm tím', tl: 'Pasa', tr: 'Çürük', id: 'Memar' },
+  'hb-cut': { ro: 'Tăietură', es: 'Cortada', fr: 'Coupure', pt: 'Corte', de: 'Schnitt', ru: 'Порез', uk: 'Порізання', ja: '切り傷', ko: '베었어요', zh: '割伤', ar: 'جرح', hi: 'कटना', it: 'Taglio', pl: 'Skaleczenie', he: 'חתך', nl: 'Snee', vi: 'Vết cắt', tl: 'Sugat', tr: 'Kesik', id: 'Luka sayat' },
+  'hb-scrape': { ro: 'Zgârietură', es: 'Raspón', fr: 'Égratignure', pt: 'Arranhão', de: 'Schürfwunde', ru: 'Ссадина', uk: 'Подряпина', ja: 'すり傷', ko: '긁혔어요', zh: '擦伤', ar: 'خدش', hi: 'खरोंच', it: 'Escoriazione', pl: 'Otarcie', he: 'שריטה', nl: 'Schaafwond', vi: 'Trầy xước', tl: 'Gasgas', tr: 'Sıyrık', id: 'Lecet' },
+  'hb-bump': { ro: 'Umflătură', es: 'Chichón', fr: 'Bosse', pt: 'Galo', de: 'Beule', ru: 'Шишка', uk: 'Гуля', ja: 'こぶ', ko: '혹', zh: '肿块', ar: 'كتلة', hi: 'गाँठ', it: 'Bernoccolo', pl: 'Guz', he: 'גוש', nl: 'Bult', vi: 'U bướu', tl: 'Paga', tr: 'Yumru', id: 'Benjolan' },
+  'hb-bandage': { ro: 'Bandaj', es: 'Vendaje', fr: 'Pansement', pt: 'Curativo', de: 'Verband', ru: 'Повязка', uk: 'Пов\'язка', ja: 'ばんそうこう', ko: '붕대', zh: '绷带', ar: 'ضمادة', hi: 'पट्टी', it: 'Cerotto', pl: 'Bandaż', he: 'תחבושת', nl: 'Verband', vi: 'Băng bó', tl: 'Benda', tr: 'Bandaj', id: 'Perban' },
+  'hb-itchy-spot': { ro: 'Loc care mănâncă', es: 'Picazón', fr: 'Démangeaison', pt: 'Coceira', de: 'Juckende Stelle', ru: 'Зуд', uk: 'Свербіж', ja: 'かゆい', ko: '가려워요', zh: '发痒', ar: 'حكة', hi: 'खुजली', it: 'Prurito', pl: 'Swędzenie', he: 'גרד', nl: 'Jeukende plek', vi: 'Chỗ ngứa', tl: 'Makati', tr: 'Kaşıntı yeri', id: 'Tempat gatal' },
+  'hb-rash': { ro: 'Erupție', es: 'Sarpullido', fr: 'Éruption', pt: 'Erupção', de: 'Ausschlag', ru: 'Сыпь', uk: 'Висип', ja: '発疹', ko: '발진', zh: '皮疹', ar: 'طفح جلدي', hi: 'दाने', it: 'Eruzione cutanea', pl: 'Wysypka', he: 'פריחה', nl: 'Uitslag', vi: 'Phát ban', tl: 'Pantal', tr: 'Kızarıklık', id: 'Ruam' },
+  'hb-allergic-reaction': { ro: 'Reacție alergică', es: 'Reacción alérgica', fr: 'Réaction allergique', pt: 'Reação alérgica', de: 'Allergische Reaktion', ru: 'Аллергическая реакция', uk: 'Алергічна реакція', ja: 'アレルギー反応', ko: '알레르기 반응', zh: '过敏反应', ar: 'رد فعل تحسسي', hi: 'एलर्जी की प्रतिक्रिया', it: 'Reazione allergica', pl: 'Reakcja alergiczna', he: 'תגובה אלרגית', nl: 'Allergische reactie', vi: 'Phản ứng dị ứng', tl: 'Allergic reaction', tr: 'Alerjik tepki', id: 'Reaksi alergi' },
+  'hb-pain': { ro: 'Durere', es: 'Dolor', fr: 'Douleur', pt: 'Dor', de: 'Schmerz', ru: 'Боль', uk: 'Біль', ja: '痛み', ko: '통증', zh: '疼痛', ar: 'ألم', hi: 'दर्द', it: 'Dolore', pl: 'Ból', he: 'כאב', nl: 'Pijn', vi: 'Đau', tl: 'Sakit', tr: 'Ağrı', id: 'Sakit' },
+  'hb-sharp-pain': { ro: 'Durere ascuțită', es: 'Dolor agudo', fr: 'Douleur aiguë', pt: 'Dor aguda', de: 'Stechender Schmerz', ru: 'Острая боль', uk: 'Гострий біль', ja: '鋭い痛み', ko: '날카로운 통증', zh: '刺痛', ar: 'ألم حاد', hi: 'तीव्र दर्द', it: 'Dolore acuto', pl: 'Ostry ból', he: 'כאב חד', nl: 'Stekende pijn', vi: 'Đau nhói', tl: 'Matalim na sakit', tr: 'Keskin ağrı', id: 'Nyeri tajam' },
+  'hb-dull-pain': { ro: 'Durere surdă', es: 'Dolor sordo', fr: 'Douleur sourde', pt: 'Dor surda', de: 'Dumpfer Schmerz', ru: 'Тупая боль', uk: 'Тупий біль', ja: '鈍い痛み', ko: '둔한 통증', zh: '隐痛', ar: 'ألم خفيف', hi: 'हल्का दर्द', it: 'Dolore sordo', pl: 'Tępy ból', he: 'כאב קהה', nl: 'Dofpijn', vi: 'Đau âm ỉ', tl: 'Malabong sakit', tr: 'Künt ağrı', id: 'Nyeri tumpul' },
+  'hb-burning': { ro: 'Senzație de arsură', es: 'Ardor', fr: 'Brûlure', pt: 'Queimação', de: 'Brennen', ru: 'Жжение', uk: 'Печіння', ja: 'ヒリヒリ', ko: '타는 느낌', zh: '灼热感', ar: 'حرقة', hi: 'जलन', it: 'Bruciore', pl: 'Pieczenie', he: 'צריבה', nl: 'Branderig gevoel', vi: 'Cảm giác nóng rát', tl: 'Sunog na pakiramdam', tr: 'Yanma hissi', id: 'Rasa terbakar' },
+  'hb-vitamins': { ro: 'Vitamine', es: 'Vitaminas', fr: 'Vitamines', pt: 'Vitaminas', de: 'Vitamine', ru: 'Витамины', uk: 'Вітаміни', ja: 'ビタミン', ko: '비타민', zh: '维生素', ar: 'فيتامينات', hi: 'विटामिन', it: 'Vitamine', pl: 'Witaminy', he: 'ויטמינים', nl: 'Vitaminen', vi: 'Vitamin', tl: 'Vitamins', tr: 'Vitaminler', id: 'Vitamin' },
+  'hb-inhaler': { ro: 'Inhalator', es: 'Inhalador', fr: 'Inhalateur', pt: 'Inalador', de: 'Inhalator', ru: 'Ингалятор', uk: 'Інгалятор', ja: '吸入器', ko: '흡입기', zh: '吸入器', ar: 'بخاخ', hi: 'इनहेलर', it: 'Inalatore', pl: 'Inhalator', he: 'משאף', nl: 'Inhalator', vi: 'Máy hít', tl: 'Inhaler', tr: 'İnhaler', id: 'Inhaler' },
+  'hb-epipen': { ro: 'EpiPen', es: 'EpiPen', fr: 'EpiPen', pt: 'EpiPen', de: 'EpiPen', ru: 'ЭпиПен', uk: 'ЕпіПен', ja: 'エピペン', ko: '에피펜', zh: '肾上腺素笔', ar: 'قلم الإبينفرين', hi: 'एपीपेन', it: 'EpiPen', pl: 'EpiPen', he: 'EpiPen', nl: 'EpiPen', vi: 'EpiPen', tl: 'EpiPen', tr: 'EpiPen', id: 'EpiPen' },
+  'hb-pill': { ro: 'Pastilă', es: 'Pastilla', fr: 'Pilule', pt: 'Comprimido', de: 'Pille', ru: 'Таблетка', uk: 'Таблетка', ja: '錠剤', ko: '알약', zh: '药片', ar: 'حبة دواء', hi: 'गोली', it: 'Pillola', pl: 'Tabletka', he: 'כדור', nl: 'Pil', vi: 'Viên thuốc', tl: 'Tableta', tr: 'Hap', id: 'Pil' },
+  'hb-drops': { ro: 'Picături', es: 'Gotas', fr: 'Gouttes', pt: 'Gotas', de: 'Tropfen', ru: 'Капли', uk: 'Краплі', ja: '目薬', ko: '물약', zh: '眼药水', ar: 'قطرات', hi: 'बूंदें', it: 'Gocce', pl: 'Krople', he: 'טיפות', nl: 'Druppels', vi: 'Thuốc nhỏ', tl: 'Patak', tr: 'Damla', id: 'Tetes' },
+  'hb-doctor-visit': { ro: 'Vizită la medic', es: 'Visita al médico', fr: 'Visite chez le médecin', pt: 'Consulta médica', de: 'Arztbesuch', ru: 'Визит к врачу', uk: 'Візит до лікаря', ja: '病院に行く', ko: '병원 방문', zh: '看医生', ar: 'زيارة الطبيب', hi: 'डॉक्टर के पास जाना', it: 'Visita medica', pl: 'Wizyta u lekarza', he: 'ביקור אצל רופא', nl: 'Doktersbezoek', vi: 'Khám bác sĩ', tl: 'Pagbisita sa doktor', tr: 'Doktor ziyareti', id: 'Kunjungan dokter' },
+  'hb-shot': { ro: 'Injecție', es: 'Inyección', fr: 'Piqûre', pt: 'Injeção', de: 'Spritze', ru: 'Укол', uk: 'Укол', ja: '注射', ko: '주사', zh: '打针', ar: 'حقنة', hi: 'इंजेक्शन', it: 'Iniezione', pl: 'Zastrzyk', he: 'זריקה', nl: 'Injectie', vi: 'Tiêm', tl: 'Iniksyon', tr: 'Enjeksiyon', id: 'Suntikan' },
+  'hb-x-ray': { ro: 'Radiografie', es: 'Radiografía', fr: 'Radiographie', pt: 'Raio X', de: 'Röntgen', ru: 'Рентген', uk: 'Рентген', ja: 'レントゲン', ko: '엑스레이', zh: 'X光', ar: 'أشعة سينية', hi: 'एक्स-रे', it: 'Radiografia', pl: 'Rentgen', he: 'צילום רנטגן', nl: 'Röntgenfoto', vi: 'Chụp X-quang', tl: 'X-ray', tr: 'Röntgen', id: 'Sinar X' },
+  'hb-check-up': { ro: 'Control medical', es: 'Revisión médica', fr: 'Bilan de santé', pt: 'Check-up', de: 'Vorsorgeuntersuchung', ru: 'Медосмотр', uk: 'Медичний огляд', ja: '健康診断', ko: '건강 검진', zh: '体检', ar: 'فحص طبي', hi: 'स्वास्थ्य जाँच', it: 'Visita di controllo', pl: 'Badanie kontrolne', he: 'בדיקת בריאות', nl: 'Gezondheidscontrole', vi: 'Khám sức khỏe định kỳ', tl: 'Check-up', tr: 'Sağlık kontrolü', id: 'Pemeriksaan kesehatan' },
+  'hb-wash-my-hands': { ro: 'Spală-mă pe mâini', es: 'Lavarme las manos', fr: 'Me laver les mains', pt: 'Lavar minhas mãos', de: 'Hände waschen', ru: 'Помыть руки', uk: 'Помити руки', ja: '手を洗う', ko: '손 씻어요', zh: '洗手', ar: 'أغسل يدي', hi: 'हाथ धोना', it: 'Lavarmi le mani', pl: 'Umyć ręce', he: 'לרחוץ ידיים', nl: 'Handen wassen', vi: 'Rửa tay', tl: 'Hugasan ang aking mga kamay', tr: 'Ellerimi yıkamak', id: 'Cuci tangan' },
+  'hb-brush-my-teeth': { ro: 'Periere dinți', es: 'Cepillarme los dientes', fr: 'Me brosser les dents', pt: 'Escovar meus dentes', de: 'Zähne putzen', ru: 'Почистить зубы', uk: 'Почистити зуби', ja: '歯を磨く', ko: '이 닦아요', zh: '刷牙', ar: 'تفريش أسناني', hi: 'दाँत ब्रश करना', it: 'Lavarmi i denti', pl: 'Szczotkować zęby', he: 'לצחצח שיניים', nl: 'Tanden poetsen', vi: 'Đánh răng', tl: 'Magsipilyo ng ngipin', tr: 'Dişlerimi fırçalamak', id: 'Sikat gigi' },
+  'ti-right-now': { ro: 'Chiar acum', es: 'Ahora mismo', fr: 'Tout de suite', pt: 'Agora mesmo', de: 'Jetzt gleich', ru: 'Прямо сейчас', uk: 'Прямо зараз', ja: '今すぐ', ko: '지금 당장', zh: '现在马上', ar: 'الآن فوراً', hi: 'अभी', it: 'Adesso', pl: 'Zaraz', he: 'עכשיו', nl: 'Nu meteen', vi: 'Ngay bây giờ', tl: 'Ngayon na', tr: 'Şu an', id: 'Sekarang juga' },
+  'ti-in-a-minute': { ro: 'Peste un minut', es: 'En un momento', fr: 'Dans une minute', pt: 'Em um minuto', de: 'In einer Minute', ru: 'Через минуту', uk: 'За хвилину', ja: 'あと少しで', ko: '잠깐만요', zh: '一分钟后', ar: 'بعد دقيقة', hi: 'एक मिनट में', it: 'Tra un minuto', pl: 'Za chwilę', he: 'עוד דקה', nl: 'Over een minuutje', vi: 'Một chút nữa', tl: 'Sa isang minuto', tr: 'Bir dakika içinde', id: 'Sebentar lagi' },
+  'ti-soon': { ro: 'Curând', es: 'Pronto', fr: 'Bientôt', pt: 'Em breve', de: 'Bald', ru: 'Скоро', uk: 'Незабаром', ja: 'もうすぐ', ko: '곧', zh: '很快', ar: 'قريباً', hi: 'जल्दी', it: 'Presto', pl: 'Wkrótce', he: 'בקרוב', nl: 'Snel', vi: 'Sớm thôi', tl: 'Sa lalong madaling panahon', tr: 'Yakında', id: 'Segera' },
+  'ti-later-today': { ro: 'Mai târziu azi', es: 'Más tarde hoy', fr: "Plus tard aujourd'hui", pt: 'Mais tarde hoje', de: 'Heute später', ru: 'Позднее сегодня', uk: 'Пізніше сьогодні', ja: '今日の後で', ko: '오늘 나중에', zh: '今天晚些时候', ar: 'في وقت لاحق اليوم', hi: 'आज बाद में', it: 'Più tardi oggi', pl: 'Dzisiaj później', he: 'מאוחר יותר היום', nl: 'Later vandaag', vi: 'Hôm nay sau này', tl: 'Mamaya ngayong araw', tr: 'Bugün daha sonra', id: 'Nanti hari ini' },
+  'ti-tonight': { ro: 'Diseară', es: 'Esta noche', fr: 'Ce soir', pt: 'Esta noite', de: 'Heute Abend', ru: 'Сегодня вечером', uk: 'Сьогодні ввечері', ja: '今夜', ko: '오늘 밤', zh: '今晚', ar: 'الليلة', hi: 'आज रात', it: 'Stasera', pl: 'Dziś wieczór', he: 'הלילה', nl: 'Vanavond', vi: 'Tối nay', tl: 'Mamayang gabi', tr: 'Bu gece', id: 'Malam ini' },
+  'ti-this-morning': { ro: 'Azi dimineață', es: 'Esta mañana', fr: 'Ce matin', pt: 'Esta manhã', de: 'Heute Morgen', ru: 'Сегодня утром', uk: 'Сьогодні вранці', ja: '今朝', ko: '오늘 아침', zh: '今天早上', ar: 'هذا الصباح', hi: 'आज सुबह', it: 'Stamattina', pl: 'Dziś rano', he: 'הבוקר', nl: 'Vanmorgen', vi: 'Sáng nay', tl: 'Ngayong umaga', tr: 'Bu sabah', id: 'Pagi ini' },
+  'ti-this-afternoon': { ro: 'Azi după-amiază', es: 'Esta tarde', fr: "Cet après-midi", pt: 'Esta tarde', de: 'Heute Nachmittag', ru: 'Сегодня днём', uk: 'Сьогодні вдень', ja: '今日の午後', ko: '오늘 오후', zh: '今天下午', ar: 'هذا الظهر', hi: 'आज दोपहर', it: 'Questo pomeriggio', pl: 'Dziś po południu', he: 'אחר הצהריים', nl: 'Vanmiddag', vi: 'Chiều nay', tl: 'Ngayong hapon', tr: 'Bu öğleden sonra', id: 'Siang ini' },
+  'ti-this-evening': { ro: 'Diseară', es: 'Esta tarde-noche', fr: 'Ce soir', pt: 'Esta tarde', de: 'Heute Abend', ru: 'Сегодня вечером', uk: 'Сьогодні ввечері', ja: '今晩', ko: '오늘 저녁', zh: '今天傍晚', ar: 'هذا المساء', hi: 'आज शाम', it: 'Stasera', pl: 'Dziś wieczorem', he: 'הערב', nl: 'Vanavond', vi: 'Tối nay', tl: 'Ngayong gabi', tr: 'Bu akşam', id: 'Malam ini' },
+  'ti-last-night': { ro: 'Aseară', es: 'Anoche', fr: 'Hier soir', pt: 'Ontem à noite', de: 'Gestern Nacht', ru: 'Вчера ночью', uk: 'Вчора вночі', ja: '昨夜', ko: '어젯밤', zh: '昨晚', ar: 'الليلة الماضية', hi: 'कल रात', it: 'Ieri sera', pl: 'Wczoraj wieczorem', he: 'אמש', nl: 'Gisternacht', vi: 'Tối qua', tl: 'Kagabi', tr: 'Dün gece', id: 'Semalam' },
+  'ti-all-day': { ro: 'Toată ziua', es: 'Todo el día', fr: 'Toute la journée', pt: 'O dia inteiro', de: 'Den ganzen Tag', ru: 'Весь день', uk: 'Весь день', ja: '一日中', ko: '하루 종일', zh: '整天', ar: 'طوال اليوم', hi: 'पूरे दिन', it: 'Tutto il giorno', pl: 'Cały dzień', he: 'כל היום', nl: 'De hele dag', vi: 'Suốt ngày', tl: 'Buong araw', tr: 'Bütün gün', id: 'Sepanjang hari' },
+  'ti-all-night': { ro: 'Toată noaptea', es: 'Toda la noche', fr: 'Toute la nuit', pt: 'A noite toda', de: 'Die ganze Nacht', ru: 'Всю ночь', uk: 'Всю ніч', ja: '一晩中', ko: '밤새', zh: '整夜', ar: 'طوال الليل', hi: 'पूरी रात', it: 'Tutta la notte', pl: 'Całą noc', he: 'כל הלילה', nl: 'De hele nacht', vi: 'Suốt đêm', tl: 'Buong gabi', tr: 'Bütün gece', id: 'Sepanjang malam' },
+  'ti-a-long-time': { ro: 'Mult timp', es: 'Mucho tiempo', fr: 'Longtemps', pt: 'Muito tempo', de: 'Lange Zeit', ru: 'Долгое время', uk: 'Довгий час', ja: '長い時間', ko: '오랫동안', zh: '很长时间', ar: 'وقت طويل', hi: 'बहुत समय', it: 'Molto tempo', pl: 'Długi czas', he: 'זמן רב', nl: 'Lange tijd', vi: 'Rất lâu', tl: 'Matagal na panahon', tr: 'Uzun zaman', id: 'Waktu lama' },
+  'ti-a-short-time': { ro: 'Puțin timp', es: 'Poco tiempo', fr: 'Peu de temps', pt: 'Pouco tempo', de: 'Kurze Zeit', ru: 'Короткое время', uk: 'Короткий час', ja: '短い時間', ko: '잠깐', zh: '短时间', ar: 'وقت قصير', hi: 'थोड़े समय के लिए', it: 'Poco tempo', pl: 'Krótki czas', he: 'זמן קצר', nl: 'Korte tijd', vi: 'Thời gian ngắn', tl: 'Maikling panahon', tr: 'Kısa süre', id: 'Waktu singkat' },
+  'ti-a-while-ago': { ro: 'Acum ceva timp', es: 'Hace un rato', fr: 'Il y a peu', pt: 'Há pouco', de: 'Vor einer Weile', ru: 'Некоторое время назад', uk: 'Деякий час тому', ja: 'しばらく前', ko: '아까', zh: '一会儿前', ar: 'منذ قليل', hi: 'कुछ देर पहले', it: 'Un po\' fa', pl: 'Jakiś czas temu', he: 'לפני קצת', nl: 'Een tijdje geleden', vi: 'Một lúc trước', tl: 'Kanina', tr: 'Az önce', id: 'Tadi' },
+  'ti-weekend': { ro: 'Weekend', es: 'Fin de semana', fr: 'Week-end', pt: 'Fim de semana', de: 'Wochenende', ru: 'Выходные', uk: 'Вихідні', ja: '週末', ko: '주말', zh: '周末', ar: 'عطلة نهاية الأسبوع', hi: 'सप्ताहांत', it: 'Fine settimana', pl: 'Weekend', he: 'סוף שבוע', nl: 'Weekend', vi: 'Cuối tuần', tl: 'Weekend', tr: 'Hafta sonu', id: 'Akhir pekan' },
+  'ti-weekday': { ro: 'Zi lucrătoare', es: 'Día de semana', fr: 'Jour de semaine', pt: 'Dia de semana', de: 'Wochentag', ru: 'Будни', uk: 'Будній день', ja: '平日', ko: '평일', zh: '工作日', ar: 'يوم أسبوعي', hi: 'सप्ताह का दिन', it: 'Giorno feriale', pl: 'Dzień roboczy', he: 'יום חול', nl: 'Werkdag', vi: 'Ngày trong tuần', tl: 'Araw ng linggo', tr: 'Hafta içi', id: 'Hari kerja' },
+  'ti-monday': { ro: 'Luni', es: 'Lunes', fr: 'Lundi', pt: 'Segunda-feira', de: 'Montag', ru: 'Понедельник', uk: 'Понеділок', ja: '月曜日', ko: '월요일', zh: '星期一', ar: 'الاثنين', hi: 'सोमवार', it: 'Lunedì', pl: 'Poniedziałek', he: 'יום שני', nl: 'Maandag', vi: 'Thứ Hai', tl: 'Lunes', tr: 'Pazartesi', id: 'Senin' },
+  'ti-tuesday': { ro: 'Marți', es: 'Martes', fr: 'Mardi', pt: 'Terça-feira', de: 'Dienstag', ru: 'Вторник', uk: 'Вівторок', ja: '火曜日', ko: '화요일', zh: '星期二', ar: 'الثلاثاء', hi: 'मंगलवार', it: 'Martedì', pl: 'Wtorek', he: 'יום שלישי', nl: 'Dinsdag', vi: 'Thứ Ba', tl: 'Martes', tr: 'Salı', id: 'Selasa' },
+  'ti-wednesday': { ro: 'Miercuri', es: 'Miércoles', fr: 'Mercredi', pt: 'Quarta-feira', de: 'Mittwoch', ru: 'Среда', uk: 'Середа', ja: '水曜日', ko: '수요일', zh: '星期三', ar: 'الأربعاء', hi: 'बुधवार', it: 'Mercoledì', pl: 'Środa', he: 'יום רביעי', nl: 'Woensdag', vi: 'Thứ Tư', tl: 'Miyerkules', tr: 'Çarşamba', id: 'Rabu' },
+  'ti-thursday': { ro: 'Joi', es: 'Jueves', fr: 'Jeudi', pt: 'Quinta-feira', de: 'Donnerstag', ru: 'Четверг', uk: 'Четвер', ja: '木曜日', ko: '목요일', zh: '星期四', ar: 'الخميس', hi: 'गुरुवार', it: 'Giovedì', pl: 'Czwartek', he: 'יום חמישי', nl: 'Donderdag', vi: 'Thứ Năm', tl: 'Huwebes', tr: 'Perşembe', id: 'Kamis' },
+  'ti-friday': { ro: 'Vineri', es: 'Viernes', fr: 'Vendredi', pt: 'Sexta-feira', de: 'Freitag', ru: 'Пятница', uk: 'П\'ятниця', ja: '金曜日', ko: '금요일', zh: '星期五', ar: 'الجمعة', hi: 'शुक्रवार', it: 'Venerdì', pl: 'Piątek', he: 'יום שישי', nl: 'Vrijdag', vi: 'Thứ Sáu', tl: 'Biyernes', tr: 'Cuma', id: 'Jumat' },
+  'ti-saturday': { ro: 'Sâmbătă', es: 'Sábado', fr: 'Samedi', pt: 'Sábado', de: 'Samstag', ru: 'Суббота', uk: 'Субота', ja: '土曜日', ko: '토요일', zh: '星期六', ar: 'السبت', hi: 'शनिवार', it: 'Sabato', pl: 'Sobota', he: 'שבת', nl: 'Zaterdag', vi: 'Thứ Bảy', tl: 'Sabado', tr: 'Cumartesi', id: 'Sabtu' },
+  'ti-sunday': { ro: 'Duminică', es: 'Domingo', fr: 'Dimanche', pt: 'Domingo', de: 'Sonntag', ru: 'Воскресенье', uk: 'Неділя', ja: '日曜日', ko: '일요일', zh: '星期日', ar: 'الأحد', hi: 'रविवार', it: 'Domenica', pl: 'Niedziela', he: 'ראשון', nl: 'Zondag', vi: 'Chủ Nhật', tl: 'Linggo', tr: 'Pazar', id: 'Minggu' },
+  'ti-birthday': { ro: 'Zi de naștere', es: 'Cumpleaños', fr: 'Anniversaire', pt: 'Aniversário', de: 'Geburtstag', ru: 'День рождения', uk: 'День народження', ja: '誕生日', ko: '생일', zh: '生日', ar: 'عيد الميلاد', hi: 'जन्मदिन', it: 'Compleanno', pl: 'Urodziny', he: 'יום הולדת', nl: 'Verjaardag', vi: 'Sinh nhật', tl: 'Kaarawan', tr: 'Doğum günü', id: 'Ulang tahun' },
+  'ti-holiday': { ro: 'Vacanță', es: 'Día festivo', fr: 'Vacances', pt: 'Feriado', de: 'Feiertag', ru: 'Праздник', uk: 'Свято', ja: '祝日', ko: '공휴일', zh: '节日', ar: 'عطلة', hi: 'छुट्टी', it: 'Vacanza', pl: 'Święto', he: 'חג', nl: 'Feestdag', vi: 'Ngày lễ', tl: 'Pista opisyal', tr: 'Tatil', id: 'Liburan' },
+  'an-puppy': { ro: 'Cățel', es: 'Cachorro', fr: 'Chiot', pt: 'Filhote', de: 'Welpe', ru: 'Щенок', uk: 'Щеня', ja: '子犬', ko: '강아지', zh: '小狗', ar: 'جرو', hi: 'पिल्ला', it: 'Cucciolo', pl: 'Szczeniak', he: 'גור', nl: 'Puppy', vi: 'Chó con', tl: 'Tuta', tr: 'Yavru köpek', id: 'Anak anjing' },
+  'an-kitten': { ro: 'Pisicuță', es: 'Gatito', fr: 'Chaton', pt: 'Gatinho', de: 'Kätzchen', ru: 'Котёнок', uk: 'Кошеня', ja: '子猫', ko: '새끼 고양이', zh: '小猫', ar: 'هريرة صغيرة', hi: 'बिल्ली का बच्चा', it: 'Gattino', pl: 'Kotek', he: 'גורת חתולים', nl: 'Kitten', vi: 'Mèo con', tl: 'Kuting', tr: 'Yavru kedi', id: 'Anak kucing' },
+  'an-hamster': { ro: 'Hamster', es: 'Hámster', fr: 'Hamster', pt: 'Hamster', de: 'Hamster', ru: 'Хомяк', uk: 'Хом\'як', ja: 'ハムスター', ko: '햄스터', zh: '仓鼠', ar: 'هامستر', hi: 'हैम्स्टर', it: 'Criceto', pl: 'Chomik', he: 'אוגר', nl: 'Hamster', vi: 'Chuột hamster', tl: 'Hamster', tr: 'Hamster', id: 'Hamster' },
+  'an-guinea-pig': { ro: 'Cobai', es: 'Conejillo de Indias', fr: "Cochon d'Inde", pt: 'Porquinho da índia', de: 'Meerschweinchen', ru: 'Морская свинка', uk: 'Морська свинка', ja: 'モルモット', ko: '기니피그', zh: '豚鼠', ar: 'خنزير غينيا', hi: 'गिनी पिग', it: 'Porcellino d\'India', pl: 'Świnka morska', he: 'שרקן', nl: 'Cavia', vi: 'Chuột lang', tl: 'Guinea pig', tr: 'Guinea domuz', id: 'Guinea pig' },
+  'an-turtle': { ro: 'Broască țestoasă', es: 'Tortuga', fr: 'Tortue', pt: 'Tartaruga', de: 'Schildkröte', ru: 'Черепаха', uk: 'Черепаха', ja: 'カメ', ko: '거북이', zh: '乌龟', ar: 'سلحفاة', hi: 'कछुआ', it: 'Tartaruga', pl: 'Żółw', he: 'צב', nl: 'Schildpad', vi: 'Rùa', tl: 'Pagong', tr: 'Kaplumbağa', id: 'Kura-kura' },
+  'an-frog': { ro: 'Broaște', es: 'Rana', fr: 'Grenouille', pt: 'Sapo', de: 'Frosch', ru: 'Лягушка', uk: 'Жаба', ja: 'カエル', ko: '개구리', zh: '青蛙', ar: 'ضفدع', hi: 'मेंढक', it: 'Rana', pl: 'Żaba', he: 'צפרדע', nl: 'Kikker', vi: 'Con ếch', tl: 'Palaka', tr: 'Kurbağa', id: 'Katak' },
+  'an-snake': { ro: 'Șarpe', es: 'Serpiente', fr: 'Serpent', pt: 'Cobra', de: 'Schlange', ru: 'Змея', uk: 'Змія', ja: 'ヘビ', ko: '뱀', zh: '蛇', ar: 'ثعبان', hi: 'सांप', it: 'Serpente', pl: 'Wąż', he: 'נחש', nl: 'Slang', vi: 'Rắn', tl: 'Ahas', tr: 'Yılan', id: 'Ular' },
+  'an-lizard': { ro: 'Șopârlă', es: 'Lagarto', fr: 'Lézard', pt: 'Lagarto', de: 'Eidechse', ru: 'Ящерица', uk: 'Ящірка', ja: 'トカゲ', ko: '도마뱀', zh: '蜥蜴', ar: 'سحلية', hi: 'छिपकली', it: 'Lucertola', pl: 'Jaszczurka', he: 'לטאה', nl: 'Hagedis', vi: 'Thằn lằn', tl: 'Butiki', tr: 'Kertenkele', id: 'Kadal' },
+  'an-spider': { ro: 'Păianjen', es: 'Araña', fr: 'Araignée', pt: 'Aranha', de: 'Spinne', ru: 'Паук', uk: 'Павук', ja: 'クモ', ko: '거미', zh: '蜘蛛', ar: 'عنكبوت', hi: 'मकड़ी', it: 'Ragno', pl: 'Pająk', he: 'עכביש', nl: 'Spin', vi: 'Nhện', tl: 'Gagamba', tr: 'Örümcek', id: 'Laba-laba' },
+  'an-bug': { ro: 'Gândac', es: 'Bicho', fr: 'Insecte', pt: 'Inseto', de: 'Käfer', ru: 'Жучок', uk: 'Комаха', ja: '虫', ko: '벌레', zh: '虫子', ar: 'حشرة', hi: 'कीड़ा', it: 'Insetto', pl: 'Owad', he: 'חיפושית', nl: 'Insect', vi: 'Sâu bọ', tl: 'Kulisap', tr: 'Böcek', id: 'Serangga' },
+  'an-bee': { ro: 'Albină', es: 'Abeja', fr: 'Abeille', pt: 'Abelha', de: 'Biene', ru: 'Пчела', uk: 'Бджола', ja: 'ハチ', ko: '벌', zh: '蜜蜂', ar: 'نحلة', hi: 'मधुमक्खी', it: 'Ape', pl: 'Pszczoła', he: 'דבורה', nl: 'Bij', vi: 'Con ong', tl: 'Bubuyog', tr: 'Arı', id: 'Lebah' },
+  'an-ant': { ro: 'Furnică', es: 'Hormiga', fr: 'Fourmi', pt: 'Formiga', de: 'Ameise', ru: 'Муравей', uk: 'Мурашка', ja: 'アリ', ko: '개미', zh: '蚂蚁', ar: 'نملة', hi: 'चींटी', it: 'Formica', pl: 'Mrówka', he: 'נמלה', nl: 'Mier', vi: 'Con kiến', tl: 'Langgam', tr: 'Karınca', id: 'Semut' },
+  'an-lion': { ro: 'Leu', es: 'León', fr: 'Lion', pt: 'Leão', de: 'Löwe', ru: 'Лев', uk: 'Лев', ja: 'ライオン', ko: '사자', zh: '狮子', ar: 'أسد', hi: 'शेर', it: 'Leone', pl: 'Lew', he: 'אריה', nl: 'Leeuw', vi: 'Sư tử', tl: 'Leon', tr: 'Aslan', id: 'Singa' },
+  'an-tiger': { ro: 'Tigru', es: 'Tigre', fr: 'Tigre', pt: 'Tigre', de: 'Tiger', ru: 'Тигр', uk: 'Тигр', ja: 'トラ', ko: '호랑이', zh: '老虎', ar: 'نمر', hi: 'बाघ', it: 'Tigre', pl: 'Tygrys', he: 'נמר', nl: 'Tijger', vi: 'Hổ', tl: 'Tigre', tr: 'Kaplan', id: 'Harimau' },
+  'an-monkey': { ro: 'Maimuță', es: 'Mono', fr: 'Singe', pt: 'Macaco', de: 'Affe', ru: 'Обезьяна', uk: 'Мавпа', ja: 'サル', ko: '원숭이', zh: '猴子', ar: 'قرد', hi: 'बंदर', it: 'Scimmia', pl: 'Małpa', he: 'קוף', nl: 'Aap', vi: 'Khỉ', tl: 'Unggoy', tr: 'Maymun', id: 'Monyet' },
+  'an-giraffe': { ro: 'Girafă', es: 'Jirafa', fr: 'Girafe', pt: 'Girafa', de: 'Giraffe', ru: 'Жираф', uk: 'Жираф', ja: 'キリン', ko: '기린', zh: '长颈鹿', ar: 'زرافة', hi: 'जिराफ', it: 'Giraffa', pl: 'Żyrafa', he: 'ג\'ירף', nl: 'Giraf', vi: 'Hươu cao cổ', tl: 'Jirapa', tr: 'Zürafa', id: 'Jerapah' },
+  'an-zebra': { ro: 'Zebră', es: 'Cebra', fr: 'Zèbre', pt: 'Zebra', de: 'Zebra', ru: 'Зебра', uk: 'Зебра', ja: 'シマウマ', ko: '얼룩말', zh: '斑马', ar: 'حمار وحشي', hi: 'ज़ेबरा', it: 'Zebra', pl: 'Zebra', he: 'זברה', nl: 'Zebra', vi: 'Ngựa vằn', tl: 'Zebra', tr: 'Zebra', id: 'Zebra' },
+  'an-hippo': { ro: 'Hipopotam', es: 'Hipopótamo', fr: 'Hippopotame', pt: 'Hipopótamo', de: 'Nilpferd', ru: 'Бегемот', uk: 'Бегемот', ja: 'カバ', ko: '하마', zh: '河马', ar: 'فرس النهر', hi: 'दरियाई घोड़ा', it: 'Ippopotamo', pl: 'Hipopotam', he: 'היפופוטם', nl: 'Nijlpaard', vi: 'Hà mã', tl: 'Hipopotamo', tr: 'Suaygırı', id: 'Kuda nil' },
+  'an-penguin': { ro: 'Pinguin', es: 'Pingüino', fr: 'Pingouin', pt: 'Pinguim', de: 'Pinguin', ru: 'Пингвин', uk: 'Пінгвін', ja: 'ペンギン', ko: '펭귄', zh: '企鹅', ar: 'بطريق', hi: 'पेंगुइन', it: 'Pinguino', pl: 'Pingwin', he: 'פינגווין', nl: 'Pinguïn', vi: 'Chim cánh cụt', tl: 'Pengwino', tr: 'Penguen', id: 'Penguin' },
+  'an-owl': { ro: 'Bufniță', es: 'Búho', fr: 'Hibou', pt: 'Coruja', de: 'Eule', ru: 'Сова', uk: 'Сова', ja: 'フクロウ', ko: '올빼미', zh: '猫头鹰', ar: 'بومة', hi: 'उल्लू', it: 'Gufo', pl: 'Sowa', he: 'ינשוף', nl: 'Uil', vi: 'Cú', tl: 'Kuwago', tr: 'Baykuş', id: 'Burung hantu' },
+  'an-eagle': { ro: 'Vultur', es: 'Águila', fr: 'Aigle', pt: 'Águia', de: 'Adler', ru: 'Орёл', uk: 'Орел', ja: 'ワシ', ko: '독수리', zh: '鹰', ar: 'نسر', hi: 'चील', it: 'Aquila', pl: 'Orzeł', he: 'נשר', nl: 'Adelaar', vi: 'Đại bàng', tl: 'Agila', tr: 'Kartal', id: 'Elang' },
+  'an-parrot': { ro: 'Papagal', es: 'Loro', fr: 'Perroquet', pt: 'Papagaio', de: 'Papagei', ru: 'Попугай', uk: 'Папуга', ja: 'オウム', ko: '앵무새', zh: '鹦鹉', ar: 'ببغاء', hi: 'तोता', it: 'Pappagallo', pl: 'Papuga', he: 'תוכי', nl: 'Papegaai', vi: 'Con vẹt', tl: 'Loro', tr: 'Papağan', id: 'Burung beo' },
+  'an-chicken': { ro: 'Pui', es: 'Pollo', fr: 'Poulet', pt: 'Frango', de: 'Huhn', ru: 'Курица', uk: 'Курка', ja: 'ニワトリ', ko: '닭', zh: '鸡', ar: 'دجاجة', hi: 'मुर्गी', it: 'Pollo', pl: 'Kurczak', he: 'תרנגולת', nl: 'Kip', vi: 'Gà', tl: 'Manok', tr: 'Tavuk', id: 'Ayam' },
+  'an-rooster': { ro: 'Cocoș', es: 'Gallo', fr: 'Coq', pt: 'Galo', de: 'Hahn', ru: 'Петух', uk: 'Півень', ja: 'おんどり', ko: '수탉', zh: '公鸡', ar: 'ديك', hi: 'मुर्गा', it: 'Gallo', pl: 'Kogut', he: 'תרנגול', nl: 'Haan', vi: 'Gà trống', tl: 'Tandang', tr: 'Horoz', id: 'Ayam jantan' },
+  'an-sheep': { ro: 'Oaie', es: 'Oveja', fr: 'Mouton', pt: 'Ovelha', de: 'Schaf', ru: 'Овца', uk: 'Вівця', ja: 'ヒツジ', ko: '양', zh: '羊', ar: 'خروف', hi: 'भेड़', it: 'Pecora', pl: 'Owca', he: 'כבש', nl: 'Schaap', vi: 'Cừu', tl: 'Tupa', tr: 'Koyun', id: 'Domba' },
+  'an-goat': { ro: 'Capră', es: 'Cabra', fr: 'Chèvre', pt: 'Cabra', de: 'Ziege', ru: 'Коза', uk: 'Коза', ja: 'ヤギ', ko: '염소', zh: '山羊', ar: 'ماعز', hi: 'बकरी', it: 'Capra', pl: 'Koza', he: 'עז', nl: 'Geit', vi: 'Dê', tl: 'Kambing', tr: 'Keçi', id: 'Kambing' },
+  'an-donkey': { ro: 'Măgar', es: 'Burro', fr: 'Âne', pt: 'Burro', de: 'Esel', ru: 'Осёл', uk: 'Осел', ja: 'ロバ', ko: '당나귀', zh: '驴', ar: 'حمار', hi: 'गधा', it: 'Asino', pl: 'Osioł', he: 'חמור', nl: 'Ezel', vi: 'Con lừa', tl: 'Asno', tr: 'Eşek', id: 'Keledai' },
+  'an-dolphin': { ro: 'Delfin', es: 'Delfín', fr: 'Dauphin', pt: 'Golfinho', de: 'Delfin', ru: 'Дельфин', uk: 'Дельфін', ja: 'イルカ', ko: '돌고래', zh: '海豚', ar: 'دلفين', hi: 'डॉल्फिन', it: 'Delfino', pl: 'Delfin', he: 'דולפין', nl: 'Dolfijn', vi: 'Cá heo', tl: 'Dolphin', tr: 'Yunus', id: 'Lumba-lumba' },
+  'an-whale': { ro: 'Balenă', es: 'Ballena', fr: 'Baleine', pt: 'Baleia', de: 'Wal', ru: 'Кит', uk: 'Кит', ja: 'クジラ', ko: '고래', zh: '鲸鱼', ar: 'حوت', hi: 'व्हेल', it: 'Balena', pl: 'Wieloryb', he: 'לוויתן', nl: 'Walvis', vi: 'Cá voi', tl: 'Balyena', tr: 'Balina', id: 'Paus' },
+  'an-shark': { ro: 'Rechin', es: 'Tiburón', fr: 'Requin', pt: 'Tubarão', de: 'Hai', ru: 'Акула', uk: 'Акула', ja: 'サメ', ko: '상어', zh: '鲨鱼', ar: 'قرش', hi: 'शार्क', it: 'Squalo', pl: 'Rekin', he: 'כריש', nl: 'Haai', vi: 'Cá mập', tl: 'Pating', tr: 'Köpek balığı', id: 'Hiu' },
+  'an-octopus': { ro: 'Caracatiță', es: 'Pulpo', fr: 'Pieuvre', pt: 'Polvo', de: 'Tintenfisch', ru: 'Осьминог', uk: 'Восьминіг', ja: 'タコ', ko: '문어', zh: '章鱼', ar: 'أخطبوط', hi: 'ऑक्टोपस', it: 'Polpo', pl: 'Ośmiornica', he: 'תמנון', nl: 'Octopus', vi: 'Bạch tuộc', tl: 'Pugita', tr: 'Ahtapot', id: 'Gurita' },
+  'an-crab': { ro: 'Crab', es: 'Cangrejo', fr: 'Crabe', pt: 'Caranguejo', de: 'Krabbe', ru: 'Краб', uk: 'Краб', ja: 'カニ', ko: '게', zh: '螃蟹', ar: 'سرطان البحر', hi: 'केकड़ा', it: 'Granchio', pl: 'Krab', he: 'סרטן', nl: 'Krab', vi: 'Cua', tl: 'Alimango', tr: 'Yengeç', id: 'Kepiting' },
+  'an-starfish': { ro: 'Stea de mare', es: 'Estrella de mar', fr: 'Étoile de mer', pt: 'Estrela do mar', de: 'Seestern', ru: 'Морская звезда', uk: 'Морська зірка', ja: 'ヒトデ', ko: '불가사리', zh: '海星', ar: 'نجم البحر', hi: 'समुद्री तारा', it: 'Stella marina', pl: 'Rozgwiazda', he: 'כוכב ים', nl: 'Zeester', vi: 'Sao biển', tl: 'Bituin ng dagat', tr: 'Deniz yıldızı', id: 'Bintang laut' },
+  'an-my-pet': { ro: 'Animalul meu', es: 'Mi mascota', fr: 'Mon animal', pt: 'Meu animal', de: 'Mein Haustier', ru: 'Мой питомец', uk: 'Мій улюбленець', ja: 'ペット', ko: '내 반려동물', zh: '我的宠物', ar: 'حيواني الأليف', hi: 'मेरा पालतू जानवर', it: 'Il mio animale', pl: 'Moje zwierzę', he: 'חיית המחמד שלי', nl: 'Mijn huisdier', vi: 'Thú cưng của tôi', tl: 'Ang aking alagang hayop', tr: 'Evcil hayvanım', id: 'Hewan peliharaan saya' },
+  'an-my-dog': { ro: 'Câinele meu', es: 'Mi perro', fr: 'Mon chien', pt: 'Meu cachorro', de: 'Mein Hund', ru: 'Моя собака', uk: 'Мій пес', ja: '私の犬', ko: '내 강아지', zh: '我的狗', ar: 'كلبي', hi: 'मेरा कुत्ता', it: 'Il mio cane', pl: 'Mój pies', he: 'הכלב שלי', nl: 'Mijn hond', vi: 'Con chó của tôi', tl: 'Ang aking aso', tr: 'Benim köpeğim', id: 'Anjing saya' },
+  'an-my-cat': { ro: 'Pisica mea', es: 'Mi gato', fr: 'Mon chat', pt: 'Meu gato', de: 'Meine Katze', ru: 'Моя кошка', uk: 'Мій кіт', ja: '私の猫', ko: '내 고양이', zh: '我的猫', ar: 'قطتي', hi: 'मेरी बिल्ली', it: 'Il mio gatto', pl: 'Mój kot', he: 'החתול שלי', nl: 'Mijn kat', vi: 'Con mèo của tôi', tl: 'Ang aking pusa', tr: 'Benim kedim', id: 'Kucing saya' },
+  'co-gray': { ro: 'Gri', es: 'Gris', fr: 'Gris', pt: 'Cinza', de: 'Grau', ru: 'Серый', uk: 'Сірий', ja: 'グレー', ko: '회색', zh: '灰色', ar: 'رمادي', hi: 'स्लेटी', it: 'Grigio', pl: 'Szary', he: 'אפור', nl: 'Grijs', vi: 'Màu xám', tl: 'Kulay-abo', tr: 'Gri', id: 'Abu-abu' },
+  'co-silver': { ro: 'Argintiu', es: 'Plateado', fr: 'Argenté', pt: 'Prateado', de: 'Silber', ru: 'Серебристый', uk: 'Сріблястий', ja: 'シルバー', ko: '은색', zh: '银色', ar: 'فضي', hi: 'चांदी', it: 'Argento', pl: 'Srebrny', he: 'כסוף', nl: 'Zilver', vi: 'Màu bạc', tl: 'Pilak', tr: 'Gümüş', id: 'Perak' },
+  'co-gold': { ro: 'Auriu', es: 'Dorado', fr: 'Doré', pt: 'Dourado', de: 'Gold', ru: 'Золотой', uk: 'Золотий', ja: 'ゴールド', ko: '금색', zh: '金色', ar: 'ذهبي', hi: 'सुनहरा', it: 'Oro', pl: 'Złoty', he: 'זהוב', nl: 'Goud', vi: 'Màu vàng kim', tl: 'Ginto', tr: 'Altın', id: 'Emas' },
+  'co-beige': { ro: 'Bej', es: 'Beige', fr: 'Beige', pt: 'Bege', de: 'Beige', ru: 'Бежевый', uk: 'Бежевий', ja: 'ベージュ', ko: '베이지', zh: '米色', ar: 'بيج', hi: 'बेज', it: 'Beige', pl: 'Beżowy', he: 'בז\'', nl: 'Beige', vi: 'Màu be', tl: 'Beige', tr: 'Bej', id: 'Krem' },
+  'co-tan': { ro: 'Brun deschis', es: 'Bronceado', fr: 'Havane', pt: 'Marrom claro', de: 'Hellbraun', ru: 'Загорелый', uk: 'Коричнево-жовтий', ja: 'タン', ko: '황갈색', zh: '棕褐色', ar: 'بني فاتح', hi: 'हल्का भूरा', it: 'Bruno chiaro', pl: 'Opalony', he: 'חום בהיר', nl: 'Zandbruin', vi: 'Màu nâu tan', tl: 'Tan', tr: 'Sarımsı kahve', id: 'Krem kecokelatan' },
+  'co-light-blue': { ro: 'Albastru deschis', es: 'Azul claro', fr: 'Bleu clair', pt: 'Azul claro', de: 'Hellblau', ru: 'Голубой', uk: 'Блакитний', ja: '水色', ko: '하늘색', zh: '浅蓝色', ar: 'أزرق فاتح', hi: 'आसमानी', it: 'Azzurro', pl: 'Jasnoniebieski', he: 'כחול בהיר', nl: 'Lichtblauw', vi: 'Xanh nhạt', tl: 'Maliwanag na asul', tr: 'Açık mavi', id: 'Biru muda' },
+  'co-dark-blue': { ro: 'Albastru închis', es: 'Azul oscuro', fr: 'Bleu foncé', pt: 'Azul escuro', de: 'Dunkelblau', ru: 'Тёмно-синий', uk: 'Темно-синій', ja: '紺色', ko: '남색', zh: '深蓝色', ar: 'أزرق داكن', hi: 'गहरा नीला', it: 'Blu scuro', pl: 'Granatowy', he: 'כחול כהה', nl: 'Donkerblauw', vi: 'Xanh đậm', tl: 'Madilim na asul', tr: 'Koyu mavi', id: 'Biru tua' },
+  'co-light-green': { ro: 'Verde deschis', es: 'Verde claro', fr: 'Vert clair', pt: 'Verde claro', de: 'Hellgrün', ru: 'Светло-зелёный', uk: 'Світло-зелений', ja: '黄緑', ko: '연두색', zh: '浅绿色', ar: 'أخضر فاتح', hi: 'हल्का हरा', it: 'Verde chiaro', pl: 'Jasnozielony', he: 'ירוק בהיר', nl: 'Lichtgroen', vi: 'Xanh lá nhạt', tl: 'Maliwanag na berde', tr: 'Açık yeşil', id: 'Hijau muda' },
+  'co-dark-green': { ro: 'Verde închis', es: 'Verde oscuro', fr: 'Vert foncé', pt: 'Verde escuro', de: 'Dunkelgrün', ru: 'Тёмно-зелёный', uk: 'Темно-зелений', ja: '深緑', ko: '진녹색', zh: '深绿色', ar: 'أخضر داكن', hi: 'गहरा हरा', it: 'Verde scuro', pl: 'Ciemnozielony', he: 'ירוק כהה', nl: 'Donkergroen', vi: 'Xanh lá đậm', tl: 'Madilim na berde', tr: 'Koyu yeşil', id: 'Hijau tua' },
+  'co-light-pink': { ro: 'Roz deschis', es: 'Rosa claro', fr: 'Rose clair', pt: 'Rosa claro', de: 'Hellrosa', ru: 'Светло-розовый', uk: 'Світло-рожевий', ja: 'ライトピンク', ko: '연분홍', zh: '淡粉色', ar: 'وردي فاتح', hi: 'हल्का गुलाबी', it: 'Rosa chiaro', pl: 'Jasnoróżowy', he: 'ורוד בהיר', nl: 'Lichtroze', vi: 'Hồng nhạt', tl: 'Maliwanag na rosas', tr: 'Açık pembe', id: 'Merah muda muda' },
+  'co-hot-pink': { ro: 'Roz intens', es: 'Rosa fuerte', fr: 'Rose vif', pt: 'Rosa vibrante', de: 'Knallrosa', ru: 'Ярко-розовый', uk: 'Яскраво-рожевий', ja: 'ホットピンク', ko: '핫핑크', zh: '亮粉色', ar: 'وردي زاهٍ', hi: 'चटख गुलाबी', it: 'Rosa acceso', pl: 'Jaskraworóżowy', he: 'ורוד בוהק', nl: 'Felroze', vi: 'Hồng đậm', tl: 'Maliwanag na rosas', tr: 'Canlı pembe', id: 'Pink cerah' },
+  'co-rainbow': { ro: 'Curcubeu', es: 'Arcoíris', fr: 'Arc-en-ciel', pt: 'Arco-íris', de: 'Regenbogen', ru: 'Радуга', uk: 'Райдуга', ja: '虹色', ko: '무지개', zh: '彩虹色', ar: 'قوس قزح', hi: 'इंद्रधनुष', it: 'Arcobaleno', pl: 'Tęczowy', he: 'קשת', nl: 'Regenboog', vi: 'Cầu vồng', tl: 'Bahaghari', tr: 'Gökkuşağı', id: 'Pelangi' },
+  'co-my-favorite-color': { ro: 'Culoarea mea preferată', es: 'Mi color favorito', fr: 'Ma couleur préférée', pt: 'Minha cor favorita', de: 'Meine Lieblingsfarbe', ru: 'Мой любимый цвет', uk: 'Мій улюблений колір', ja: '好きな色', ko: '제가 좋아하는 색', zh: '我最喜欢的颜色', ar: 'لوني المفضل', hi: 'मेरा पसंदीदा रंग', it: 'Il mio colore preferito', pl: 'Mój ulubiony kolor', he: 'הצבע האהוב עלי', nl: 'Mijn favoriete kleur', vi: 'Màu yêu thích của tôi', tl: 'Ang aking paboritong kulay', tr: 'En sevdiğim renk', id: 'Warna favorit saya' },
+  'cl-t-shirt': { ro: 'Tricou', es: 'Camiseta', fr: 'T-shirt', pt: 'Camiseta', de: 'T-Shirt', ru: 'Футболка', uk: 'Футболка', ja: 'Tシャツ', ko: '티셔츠', zh: 'T恤', ar: 'تي شيرت', hi: 'टी-शर्ट', it: 'T-shirt', pl: 'T-shirt', he: 'חולצת טי', nl: 'T-shirt', vi: 'Áo phông', tl: 'T-shirt', tr: 'Tişört', id: 'Kaos' },
+  'cl-sweater': { ro: 'Pulover', es: 'Suéter', fr: 'Pull', pt: 'Suéter', de: 'Pullover', ru: 'Свитер', uk: 'Светр', ja: 'セーター', ko: '스웨터', zh: '毛衣', ar: 'كنزة', hi: 'स्वेटर', it: 'Maglione', pl: 'Sweter', he: 'סוודר', nl: 'Trui', vi: 'Áo len', tl: 'Sweater', tr: 'Kazak', id: 'Sweater' },
+  'cl-sweatshirt': { ro: 'Hanorac', es: 'Sudadera', fr: 'Sweat-shirt', pt: 'Moletom', de: 'Sweatshirt', ru: 'Толстовка', uk: 'Кофта', ja: 'トレーナー', ko: '맨투맨', zh: '卫衣', ar: 'سترة رياضية', hi: 'स्वेटशर्ट', it: 'Felpa', pl: 'Bluza', he: 'חולצת ספורט', nl: 'Sweatshirt', vi: 'Áo nỉ', tl: 'Sweatshirt', tr: 'Sweatshirt', id: 'Sweatshirt' },
+  'cl-hoodie': { ro: 'Hanorac', es: 'Sudadera con capucha', fr: 'Sweat à capuche', pt: 'Moletom com capuz', de: 'Kapuzenpulli', ru: 'Худи', uk: 'Худі', ja: 'パーカー', ko: '후드티', zh: '连帽衫', ar: 'هودي', hi: 'हुडी', it: 'Felpa con cappuccio', pl: 'Bluza z kapturem', he: 'הודי', nl: 'Hoodie', vi: 'Áo hoodie', tl: 'Hoodie', tr: 'Kapüşonlu sweatshirt', id: 'Hoodie' },
+  'cl-coat': { ro: 'Haină', es: 'Abrigo', fr: 'Manteau', pt: 'Casaco', de: 'Mantel', ru: 'Пальто', uk: 'Пальто', ja: 'コート', ko: '코트', zh: '大衣', ar: 'معطف', hi: 'कोट', it: 'Cappotto', pl: 'Płaszcz', he: 'מעיל', nl: 'Jas', vi: 'Áo khoác dài', tl: 'Amerikana', tr: 'Palto', id: 'Mantel' },
+  'cl-shorts': { ro: 'Pantaloni scurți', es: 'Shorts', fr: 'Short', pt: 'Shorts', de: 'Shorts', ru: 'Шорты', uk: 'Шорти', ja: 'ショートパンツ', ko: '반바지', zh: '短裤', ar: 'شورت', hi: 'शॉर्ट्स', it: 'Pantaloncini', pl: 'Spodenki', he: 'מכנסיים קצרים', nl: 'Shorts', vi: 'Quần ngắn', tl: 'Shorts', tr: 'Şort', id: 'Celana pendek' },
+  'cl-skirt': { ro: 'Fustă', es: 'Falda', fr: 'Jupe', pt: 'Saia', de: 'Rock', ru: 'Юбка', uk: 'Спідниця', ja: 'スカート', ko: '치마', zh: '裙子', ar: 'تنورة', hi: 'स्कर्ट', it: 'Gonna', pl: 'Spódnica', he: 'חצאית', nl: 'Rok', vi: 'Váy', tl: 'Palda', tr: 'Etek', id: 'Rok' },
+  'cl-leggings': { ro: 'Colanti', es: 'Leggings', fr: 'Leggings', pt: 'Leggings', de: 'Leggings', ru: 'Леггинсы', uk: 'Легінси', ja: 'レギンス', ko: '레깅스', zh: '紧身裤', ar: 'ليغنز', hi: 'लेगिंग', it: 'Leggings', pl: 'Legginsy', he: 'לגינס', nl: 'Leggings', vi: 'Quần legging', tl: 'Leggings', tr: 'Tayt', id: 'Legging' },
+  'cl-sandals': { ro: 'Sandale', es: 'Sandalias', fr: 'Sandales', pt: 'Sandálias', de: 'Sandalen', ru: 'Сандалии', uk: 'Сандалі', ja: 'サンダル', ko: '샌들', zh: '凉鞋', ar: 'صندل', hi: 'सैंडल', it: 'Sandali', pl: 'Sandały', he: 'סנדלים', nl: 'Sandalen', vi: 'Dép', tl: 'Sandals', tr: 'Sandalet', id: 'Sandal' },
+  'cl-sneakers': { ro: 'Adidași', es: 'Tenis', fr: 'Baskets', pt: 'Tênis', de: 'Turnschuhe', ru: 'Кроссовки', uk: 'Кросівки', ja: 'スニーカー', ko: '운동화', zh: '运动鞋', ar: 'حذاء رياضي', hi: 'स्नीकर', it: 'Scarpe da ginnastica', pl: 'Trampki', he: 'נעלי ספורט', nl: 'Sneakers', vi: 'Giày thể thao', tl: 'Sneakers', tr: 'Spor ayakkabı', id: 'Sepatu olahraga' },
+  'cl-mittens': { ro: 'Mănuși', es: 'Mitones', fr: 'Moufles', pt: 'Luvas', de: 'Fäustlinge', ru: 'Варежки', uk: 'Варежки', ja: 'ミトン', ko: '벙어리장갑', zh: '连指手套', ar: 'قفازات', hi: 'मिट्टन', it: 'Muffole', pl: 'Rękawiczki', he: 'כפפות', nl: 'Wanten', vi: 'Găng tay', tl: 'Mittens', tr: 'Lüle eldiven', id: 'Sarung tangan' },
+  'cl-gloves': { ro: 'Mănuși', es: 'Guantes', fr: 'Gants', pt: 'Luvas', de: 'Handschuhe', ru: 'Перчатки', uk: 'Рукавички', ja: '手袋', ko: '장갑', zh: '手套', ar: 'قفازات', hi: 'दस्ताने', it: 'Guanti', pl: 'Rękawice', he: 'כפפות', nl: 'Handschoenen', vi: 'Găng tay có ngón', tl: 'Guwantes', tr: 'Eldiven', id: 'Sarung tangan berjari' },
+  'cl-scarf': { ro: 'Eșarfă', es: 'Bufanda', fr: 'Écharpe', pt: 'Cachecol', de: 'Schal', ru: 'Шарф', uk: 'Шарф', ja: 'マフラー', ko: '목도리', zh: '围巾', ar: 'وشاح', hi: 'स्कार्फ', it: 'Sciarpa', pl: 'Szalik', he: 'צעיף', nl: 'Sjaal', vi: 'Khăn quàng', tl: 'Scarf', tr: 'Eşarp', id: 'Syal' },
+  'cl-belt': { ro: 'Curea', es: 'Cinturón', fr: 'Ceinture', pt: 'Cinto', de: 'Gürtel', ru: 'Ремень', uk: 'Пасок', ja: 'ベルト', ko: '벨트', zh: '皮带', ar: 'حزام', hi: 'बेल्ट', it: 'Cintura', pl: 'Pasek', he: 'חגורה', nl: 'Riem', vi: 'Dây lưng', tl: 'Sinturon', tr: 'Kemer', id: 'Sabuk' },
+  'cl-backpack': { ro: 'Rucsac', es: 'Mochila', fr: 'Sac à dos', pt: 'Mochila', de: 'Rucksack', ru: 'Рюкзак', uk: 'Рюкзак', ja: 'リュック', ko: '백팩', zh: '背包', ar: 'حقيبة ظهر', hi: 'बैकपैक', it: 'Zaino', pl: 'Plecak', he: 'תרמיל', nl: 'Rugzak', vi: 'Ba lô', tl: 'Backpack', tr: 'Sırt çantası', id: 'Ransel' },
+  'cl-helmet': { ro: 'Cască', es: 'Casco', fr: 'Casque', pt: 'Capacete', de: 'Helm', ru: 'Шлем', uk: 'Шолом', ja: 'ヘルメット', ko: '헬멧', zh: '头盔', ar: 'خوذة', hi: 'हेलमेट', it: 'Casco', pl: 'Kask', he: 'קסדה', nl: 'Helm', vi: 'Mũ bảo hiểm', tl: 'Helmet', tr: 'Kask', id: 'Helm' },
+  'cl-glasses': { ro: 'Ochelari', es: 'Anteojos', fr: 'Lunettes', pt: 'Óculos', de: 'Brille', ru: 'Очки', uk: 'Окуляри', ja: 'メガネ', ko: '안경', zh: '眼镜', ar: 'نظارات', hi: 'चश्मा', it: 'Occhiali', pl: 'Okulary', he: 'משקפיים', nl: 'Bril', vi: 'Kính mắt', tl: 'Salamin', tr: 'Gözlük', id: 'Kacamata' },
+  'cl-sunglasses': { ro: 'Ochelari de soare', es: 'Lentes de sol', fr: 'Lunettes de soleil', pt: 'Óculos de sol', de: 'Sonnenbrille', ru: 'Солнечные очки', uk: 'Сонцезахисні окуляри', ja: 'サングラス', ko: '선글라스', zh: '太阳镜', ar: 'نظارات شمسية', hi: 'धूप का चश्मा', it: 'Occhiali da sole', pl: 'Okulary słoneczne', he: 'משקפי שמש', nl: 'Zonnebril', vi: 'Kính râm', tl: 'Sunglasses', tr: 'Güneş gözlüğü', id: 'Kacamata hitam' },
+  'cl-diaper': { ro: 'Scutec', es: 'Pañal', fr: 'Couche', pt: 'Fralda', de: 'Windel', ru: 'Подгузник', uk: 'Підгузок', ja: 'おむつ', ko: '기저귀', zh: '尿布', ar: 'حفاضة', hi: 'डायपर', it: 'Pannolino', pl: 'Pieluszka', he: 'חיתול', nl: 'Luier', vi: 'Tã', tl: 'Lampin', tr: 'Bez', id: 'Popok' },
+  'cl-pull-up': { ro: 'Pampers de antrenament', es: 'Pañal de entrenamiento', fr: 'Culotte d\'apprentissage', pt: 'Fralda de treinamento', de: 'Lernwindel', ru: 'Тренировочные подгузники', uk: 'Навчальні підгузки', ja: 'トレーニングパンツ', ko: '팬티형 기저귀', zh: '学步裤', ar: 'حفاضة تدريب', hi: 'ट्रेनिंग पैंट', it: 'Mutandine assorbenti', pl: 'Pieluszka treningowa', he: 'חיתול אימון', nl: 'Training broekje', vi: 'Quần tã', tl: 'Pull-up na lampin', tr: 'Eğitim bezi', id: 'Popok celana' },
+  'tr-stroller': { ro: 'Cărucior', es: 'Carriola', fr: 'Poussette', pt: 'Carrinho de bebê', de: 'Kinderwagen', ru: 'Коляска', uk: 'Коляска', ja: 'ベビーカー', ko: '유모차', zh: '婴儿车', ar: 'عربة أطفال', hi: 'घुमक्कड़', it: 'Passeggino', pl: 'Wózek', he: 'עגלת תינוק', nl: 'Kinderwagen', vi: 'Xe đẩy em bé', tl: 'Stroller', tr: 'Bebek arabası', id: 'Kereta bayi' },
+  'tr-tricycle': { ro: 'Tricicletă', es: 'Triciclo', fr: 'Tricycle', pt: 'Triciclo', de: 'Dreirad', ru: 'Трёхколёсный велосипед', uk: 'Триколісний велосипед', ja: '三輪車', ko: '세발자전거', zh: '三轮车', ar: 'دراجة ثلاثية العجلات', hi: 'तिपहिया साइकिल', it: 'Triciclo', pl: 'Trójkołowy', he: 'אופניים תלת-גלגלים', nl: 'Driewieler', vi: 'Xe ba bánh', tl: 'Tricycle', tr: 'Üç tekerlekli bisiklet', id: 'Sepeda roda tiga' },
+  'tr-skateboard': { ro: 'Skateboard', es: 'Patineta', fr: 'Skateboard', pt: 'Skate', de: 'Skateboard', ru: 'Скейтборд', uk: 'Скейтборд', ja: 'スケートボード', ko: '스케이트보드', zh: '滑板', ar: 'لوح تزلج', hi: 'स्केटबोर्ड', it: 'Skateboard', pl: 'Deskorolka', he: 'סקייטבורד', nl: 'Skateboard', vi: 'Ván trượt', tl: 'Skateboard', tr: 'Kaykay', id: 'Skateboard' },
+  'tr-roller-skates': { ro: 'Patine cu rotile', es: 'Patines', fr: 'Patins à roulettes', pt: 'Patins', de: 'Rollschuhe', ru: 'Роликовые коньки', uk: 'Ролики', ja: 'ローラースケート', ko: '롤러스케이트', zh: '旱冰鞋', ar: 'حذاء التزحلق', hi: 'रोलर स्केट', it: 'Pattini a rotelle', pl: 'Wrotki', he: 'גלגיליות', nl: 'Rolschaatsen', vi: 'Giày trượt patin', tl: 'Roller skates', tr: 'Paten', id: 'Sepatu roda' },
+  'tr-subway': { ro: 'Metrou', es: 'Metro', fr: 'Métro', pt: 'Metrô', de: 'U-Bahn', ru: 'Метро', uk: 'Метро', ja: '地下鉄', ko: '지하철', zh: '地铁', ar: 'مترو الأنفاق', hi: 'मेट्रो', it: 'Metro', pl: 'Metro', he: 'רכבת תחתית', nl: 'Metro', vi: 'Tàu điện ngầm', tl: 'Subway', tr: 'Metro', id: 'Kereta bawah tanah' },
+  'tr-taxi': { ro: 'Taxi', es: 'Taxi', fr: 'Taxi', pt: 'Táxi', de: 'Taxi', ru: 'Такси', uk: 'Таксі', ja: 'タクシー', ko: '택시', zh: '出租车', ar: 'تاكسي', hi: 'टैक्सी', it: 'Taxi', pl: 'Taksówka', he: 'מונית', nl: 'Taxi', vi: 'Taxi', tl: 'Taxi', tr: 'Taksi', id: 'Taksi' },
+  'tr-helicopter': { ro: 'Elicopter', es: 'Helicóptero', fr: 'Hélicoptère', pt: 'Helicóptero', de: 'Hubschrauber', ru: 'Вертолёт', uk: 'Гелікоптер', ja: 'ヘリコプター', ko: '헬리콥터', zh: '直升机', ar: 'طائرة مروحية', hi: 'हेलिकॉप्टर', it: 'Elicottero', pl: 'Helikopter', he: 'מסוק', nl: 'Helikopter', vi: 'Máy bay trực thăng', tl: 'Helicopter', tr: 'Helikopter', id: 'Helikopter' },
+  'tr-rocket': { ro: 'Rachetă', es: 'Cohete', fr: 'Fusée', pt: 'Foguete', de: 'Rakete', ru: 'Ракета', uk: 'Ракета', ja: 'ロケット', ko: '로켓', zh: '火箭', ar: 'صاروخ', hi: 'रॉकेट', it: 'Razzo', pl: 'Rakieta', he: 'טיל', nl: 'Raket', vi: 'Tên lửa', tl: 'Rocket', tr: 'Roket', id: 'Roket' },
+  'tr-tractor': { ro: 'Tractor', es: 'Tractor', fr: 'Tracteur', pt: 'Trator', de: 'Traktor', ru: 'Трактор', uk: 'Трактор', ja: 'トラクター', ko: '트랙터', zh: '拖拉机', ar: 'جرار', hi: 'ट्रैक्टर', it: 'Trattore', pl: 'Traktor', he: 'טרקטור', nl: 'Tractor', vi: 'Máy cày', tl: 'Traktor', tr: 'Traktör', id: 'Traktor' },
+  'tr-fire-truck': { ro: 'Camion de pompieri', es: 'Camión de bomberos', fr: 'Camion de pompiers', pt: 'Caminhão de bombeiros', de: 'Feuerwehrauto', ru: 'Пожарная машина', uk: 'Пожежна машина', ja: '消防車', ko: '소방차', zh: '消防车', ar: 'سيارة إطفاء', hi: 'दमकल', it: 'Autopompa', pl: 'Wóz strażacki', he: 'משאית כיבוי', nl: 'Brandweerauto', vi: 'Xe cứu hỏa', tl: 'Fire truck', tr: 'İtfaiye arabası', id: 'Mobil pemadam kebakaran' },
+  'tr-police-car': { ro: 'Mașină de poliție', es: 'Carro de policía', fr: 'Voiture de police', pt: 'Carro de polícia', de: 'Polizeiauto', ru: 'Полицейская машина', uk: 'Поліцейська машина', ja: 'パトカー', ko: '경찰차', zh: '警车', ar: 'سيارة الشرطة', hi: 'पुलिस कार', it: 'Auto della polizia', pl: 'Radiowóz', he: 'מכונית משטרה', nl: 'Politieauto', vi: 'Xe cảnh sát', tl: 'Police car', tr: 'Polis arabası', id: 'Mobil polisi' },
+  'tr-ambulance': { ro: 'Ambulanță', es: 'Ambulancia', fr: 'Ambulance', pt: 'Ambulância', de: 'Krankenwagen', ru: 'Скорая помощь', uk: 'Швидка допомога', ja: '救急車', ko: '구급차', zh: '救护车', ar: 'سيارة إسعاف', hi: 'एम्बुलेंस', it: 'Ambulanza', pl: 'Karetka', he: 'אמבולנס', nl: 'Ambulance', vi: 'Xe cấp cứu', tl: 'Ambulansya', tr: 'Ambulans', id: 'Ambulans' },
+  'tr-ferry': { ro: 'Feribot', es: 'Ferry', fr: 'Ferry', pt: 'Balsa', de: 'Fähre', ru: 'Паром', uk: 'Пором', ja: 'フェリー', ko: '페리', zh: '渡船', ar: 'عبارة', hi: 'फेरी', it: 'Traghetto', pl: 'Prom', he: 'מעבורת', nl: 'Veerboot', vi: 'Phà', tl: 'Ferry', tr: 'Feribot', id: 'Kapal feri' },
+  'tr-sled': { ro: 'Sanie', es: 'Trineo', fr: 'Luge', pt: 'Trenó', de: 'Schlitten', ru: 'Сани', uk: 'Санки', ja: 'そり', ko: '썰매', zh: '雪橇', ar: 'مزلقة', hi: 'स्लेज', it: 'Slitta', pl: 'Sanki', he: 'מזחלת', nl: 'Slee', vi: 'Xe trượt tuyết', tl: 'Sled', tr: 'Kızak', id: 'Kereta luncur' },
+  'tr-drive': { ro: 'Conduce', es: 'Manejar', fr: 'Conduire', pt: 'Dirigir', de: 'Fahren', ru: 'Ехать на машине', uk: 'Їхати на машині', ja: '運転する', ko: '운전하다', zh: '开车', ar: 'يقود', hi: 'गाड़ी चलाना', it: 'Guidare', pl: 'Prowadzić', he: 'לנהוג', nl: 'Rijden', vi: 'Lái xe', tl: 'Magmaneho', tr: 'Araba sürmek', id: 'Mengemudi' },
+  'tr-ride': { ro: 'Merge cu', es: 'Montar', fr: 'Aller en', pt: 'Andar de', de: 'Fahren', ru: 'Ехать на', uk: 'Їхати на', ja: '乗る', ko: '타다', zh: '乘坐', ar: 'يركب', hi: 'सवारी करना', it: 'Andare in', pl: 'Jechać', he: 'לרכוב', nl: 'Rijden', vi: 'Đi xe', tl: 'Sumakay', tr: 'Binmek', id: 'Naik' },
+  'we-foggy': { ro: 'Ceațos', es: 'Neblinoso', fr: 'Brumeux', pt: 'Nublado', de: 'Neblig', ru: 'Туманный', uk: 'Туманний', ja: '霧', ko: '안개 껴요', zh: '有雾', ar: 'ضبابي', hi: 'धुंध भरा', it: 'Nebbioso', pl: 'Mglisty', he: 'ערפילי', nl: 'Mistig', vi: 'Có sương mù', tl: 'Makulimlim', tr: 'Sisli', id: 'Berkabut' },
+  'we-rainbow': { ro: 'Curcubeu', es: 'Arcoíris', fr: 'Arc-en-ciel', pt: 'Arco-íris', de: 'Regenbogen', ru: 'Радуга', uk: 'Веселка', ja: '虹', ko: '무지개', zh: '彩虹', ar: 'قوس قزح', hi: 'इंद्रधनुष', it: 'Arcobaleno', pl: 'Tęcza', he: 'קשת בענן', nl: 'Regenboog', vi: 'Cầu vồng', tl: 'Bahaghari', tr: 'Gökkuşağı', id: 'Pelangi' },
+  'we-lightning': { ro: 'Fulger', es: 'Relámpago', fr: 'Éclair', pt: 'Relâmpago', de: 'Blitz', ru: 'Молния', uk: 'Блискавка', ja: '雷', ko: '번개', zh: '闪电', ar: 'برق', hi: 'बिजली', it: 'Fulmine', pl: 'Błyskawica', he: 'ברק', nl: 'Bliksem', vi: 'Sét', tl: 'Kidlat', tr: 'Şimşek', id: 'Kilat' },
+  'we-thunder': { ro: 'Tunet', es: 'Trueno', fr: 'Tonnerre', pt: 'Trovão', de: 'Donner', ru: 'Гром', uk: 'Грім', ja: 'かみなり', ko: '천둥', zh: '打雷', ar: 'رعد', hi: 'गरज', it: 'Tuono', pl: 'Grzmot', he: 'רעם', nl: 'Donder', vi: 'Sấm', tl: 'Kulog', tr: 'Gök gürültüsü', id: 'Guntur' },
+  'we-tornado': { ro: 'Tornadă', es: 'Tornado', fr: 'Tornade', pt: 'Tornado', de: 'Tornado', ru: 'Торнадо', uk: 'Торнадо', ja: '竜巻', ko: '토네이도', zh: '龙卷风', ar: 'إعصار', hi: 'बवंडर', it: 'Tornado', pl: 'Tornado', he: 'טורנדו', nl: 'Tornado', vi: 'Lốc xoáy', tl: 'Tornado', tr: 'Hortum', id: 'Tornado' },
+  'we-hurricane': { ro: 'Uragan', es: 'Huracán', fr: 'Ouragan', pt: 'Furacão', de: 'Hurrikan', ru: 'Ураган', uk: 'Ураган', ja: 'ハリケーン', ko: '허리케인', zh: '飓风', ar: 'إعصار', hi: 'तूफान', it: 'Uragano', pl: 'Huragan', he: 'הוריקן', nl: 'Orkaan', vi: 'Bão', tl: 'Bagyo', tr: 'Kasırga', id: 'Badai' },
+  'we-earthquake': { ro: 'Cutremur', es: 'Terremoto', fr: 'Tremblement de terre', pt: 'Terremoto', de: 'Erdbeben', ru: 'Землетрясение', uk: 'Землетрус', ja: '地震', ko: '지진', zh: '地震', ar: 'زلزال', hi: 'भूकंप', it: 'Terremoto', pl: 'Trzęsienie ziemi', he: 'רעידת אדמה', nl: 'Aardbeving', vi: 'Động đất', tl: 'Lindol', tr: 'Deprem', id: 'Gempa bumi' },
+  'we-warm-out': { ro: 'E cald afară', es: 'Hace calor afuera', fr: 'Il fait chaud dehors', pt: 'Está quente fora', de: 'Es ist warm draußen', ru: 'На улице тепло', uk: 'Надворі тепло', ja: '外は暖かい', ko: '밖이 따뜻해요', zh: '外面很暖和', ar: 'الجو دافئ في الخارج', hi: 'बाहर गर्म है', it: 'È caldo fuori', pl: 'Na zewnątrz jest ciepło', he: 'חם בחוץ', nl: 'Het is warm buiten', vi: 'Ngoài trời ấm', tl: 'Mainit sa labas', tr: 'Dışarısı sıcak', id: 'Di luar hangat' },
+  'we-cool-out': { ro: 'E răcoare afară', es: 'Hace fresco afuera', fr: 'Il fait frais dehors', pt: 'Está fresco lá fora', de: 'Es ist kühl draußen', ru: 'На улице прохладно', uk: 'Надворі прохолодно', ja: '外は涼しい', ko: '밖이 시원해요', zh: '外面凉快', ar: 'الجو بارد في الخارج', hi: 'बाहर ठंडा है', it: 'È fresco fuori', pl: 'Na zewnątrz jest chłodno', he: 'קריר בחוץ', nl: 'Het is koel buiten', vi: 'Ngoài trời mát', tl: 'Malamig sa labas', tr: 'Dışarısı serin', id: 'Di luar sejuk' },
+  'we-freezing': { ro: 'Ger', es: 'Helado', fr: 'Il gèle', pt: 'Congelando', de: 'Eiskalt', ru: 'Мороз', uk: 'Мороз', ja: '凍えそう', ko: '얼어요', zh: '冰冻', ar: 'متجمد', hi: 'जमा देने वाली ठंड', it: 'Gelido', pl: 'Mróz', he: 'קפוא', nl: 'IJskoud', vi: 'Giá rét', tl: 'Nagyeyelo', tr: 'Dondurucu soğuk', id: 'Membeku' },
+  'we-wear-a-coat': { ro: 'Îmbracă haina', es: 'Ponte un abrigo', fr: 'Mets un manteau', pt: 'Vista um casaco', de: 'Zieh einen Mantel an', ru: 'Надень пальто', uk: 'Вдягни пальто', ja: 'コートを着て', ko: '코트 입어요', zh: '穿大衣', ar: 'البس معطفاً', hi: 'कोट पहनो', it: 'Metti un cappotto', pl: 'Załóż płaszcz', he: 'לבש מעיל', nl: 'Trek een jas aan', vi: 'Mặc áo khoác', tl: 'Suotin ang jacket', tr: 'Palto giy', id: 'Pakai mantel' },
+  'we-wear-shorts': { ro: 'Îmbracă pantaloni scurți', es: 'Ponte shorts', fr: 'Mets des shorts', pt: 'Vista shorts', de: 'Zieh Shorts an', ru: 'Надень шорты', uk: 'Вдягни шорти', ja: '短パンを履いて', ko: '반바지 입어요', zh: '穿短裤', ar: 'البس شورتاً', hi: 'शॉर्ट्स पहनो', it: 'Indossa i pantaloncini', pl: 'Załóż szorty', he: 'לבש מכנסיים קצרים', nl: 'Draag een korte broek', vi: 'Mặc quần ngắn', tl: 'Suotin ang shorts', tr: 'Şort giy', id: 'Pakai celana pendek' },
+  'tf-stuffed-animal': { ro: 'Animal de pluș', es: 'Peluche', fr: 'Peluche', pt: 'Pelúcia', de: 'Stofftier', ru: 'Мягкая игрушка', uk: 'М\'яка іграшка', ja: 'ぬいぐるみ', ko: '인형', zh: '毛绒玩具', ar: 'لعبة محشوة', hi: 'भरवाँ खिलौना', it: 'Peluche', pl: 'Pluszak', he: 'בובת קטיפה', nl: 'Knuffeldier', vi: 'Thú bông', tl: 'Stuffed animal', tr: 'Peluş oyuncak', id: 'Boneka mainan' },
+  'tf-action-figure': { ro: 'Figurină', es: 'Figura de acción', fr: "Figurine d'action", pt: 'Boneco de ação', de: 'Actionfigur', ru: 'Экшн-фигурка', uk: 'Фігурка', ja: 'フィギュア', ko: '액션 피규어', zh: '动作玩偶', ar: 'شخصية بطولية', hi: 'एक्शन फिगर', it: 'Action figure', pl: 'Figurka akcji', he: 'דמות', nl: 'Actiefiguur', vi: 'Nhân vật đồ chơi', tl: 'Action figure', tr: 'Aksiyon figürü', id: 'Figur aksi' },
+  'tf-lego': { ro: 'Lego', es: 'Lego', fr: 'Lego', pt: 'Lego', de: 'Lego', ru: 'Лего', uk: 'Лего', ja: 'レゴ', ko: '레고', zh: '乐高', ar: 'ليغو', hi: 'लेगो', it: 'Lego', pl: 'Lego', he: 'לגו', nl: 'Lego', vi: 'Lego', tl: 'Lego', tr: 'Lego', id: 'Lego' },
+  'tf-train-set': { ro: 'Set de trenulețe', es: 'Set de trenes', fr: 'Ensemble de trains', pt: 'Trem de brinquedo', de: 'Eisenbahnset', ru: 'Железная дорога', uk: 'Залізниця', ja: '電車セット', ko: '기차 세트', zh: '火车玩具', ar: 'مجموعة قطار', hi: 'ट्रेन सेट', it: 'Set di treni', pl: 'Kolejka', he: 'מסלול רכבת', nl: 'Treinset', vi: 'Bộ tàu hỏa', tl: 'Train set', tr: 'Tren seti', id: 'Set kereta' },
+  'tf-card-game': { ro: 'Joc de cărți', es: 'Juego de cartas', fr: 'Jeu de cartes', pt: 'Jogo de cartas', de: 'Kartenspiel', ru: 'Карточная игра', uk: 'Карткова гра', ja: 'カードゲーム', ko: '카드 게임', zh: '纸牌游戏', ar: 'لعبة بطاقات', hi: 'कार्ड गेम', it: 'Gioco di carte', pl: 'Gra karciana', he: 'משחק קלפים', nl: 'Kaartspel', vi: 'Trò chơi bài', tl: 'Card game', tr: 'Kart oyunu', id: 'Permainan kartu' },
+  'tf-board-game': { ro: 'Joc de societate', es: 'Juego de mesa', fr: 'Jeu de société', pt: 'Jogo de tabuleiro', de: 'Brettspiel', ru: 'Настольная игра', uk: 'Настільна гра', ja: 'ボードゲーム', ko: '보드 게임', zh: '桌游', ar: 'لعبة ورقية', hi: 'बोर्ड गेम', it: 'Gioco da tavolo', pl: 'Gra planszowa', he: 'משחק לוח', nl: 'Bordspel', vi: 'Trò chơi cờ', tl: 'Board game', tr: 'Masa oyunu', id: 'Permainan papan' },
+  'tf-video-game': { ro: 'Joc video', es: 'Videojuego', fr: 'Jeu vidéo', pt: 'Videogame', de: 'Videospiel', ru: 'Видеоигра', uk: 'Відеогра', ja: 'ビデオゲーム', ko: '비디오 게임', zh: '电子游戏', ar: 'لعبة فيديو', hi: 'वीडियो गेम', it: 'Videogioco', pl: 'Gra wideo', he: 'משחק וידאו', nl: 'Videospelletje', vi: 'Trò chơi điện tử', tl: 'Video game', tr: 'Video oyunu', id: 'Permainan video' },
+  'tf-crayons': { ro: 'Creioane colorate', es: 'Crayones', fr: 'Crayons de couleur', pt: 'Lápis de cor', de: 'Buntstifte', ru: 'Мелки', uk: 'Кольорові крейди', ja: 'クレヨン', ko: '크레용', zh: '蜡笔', ar: 'أقلام تلوين', hi: 'क्रेयॉन', it: 'Pastelli', pl: 'Kredki', he: 'צבעי שעווה', nl: 'Kleurpotloden', vi: 'Bút màu', tl: 'Crayons', tr: 'Boya kalemleri', id: 'Krayon' },
+  'tf-stickers': { ro: 'Abțibilduri', es: 'Calcomanías', fr: 'Autocollants', pt: 'Adesivos', de: 'Aufkleber', ru: 'Наклейки', uk: 'Наклейки', ja: 'シール', ko: '스티커', zh: '贴纸', ar: 'ملصقات', hi: 'स्टीकर', it: 'Adesivi', pl: 'Naklejki', he: 'מדבקות', nl: 'Stickers', vi: 'Nhãn dán', tl: 'Stickers', tr: 'Çıkartmalar', id: 'Stiker' },
+  'tf-sandbox': { ro: 'Cutie cu nisip', es: 'Arenero', fr: 'Bac à sable', pt: 'Caixa de areia', de: 'Sandkasten', ru: 'Песочница', uk: 'Пісочниця', ja: '砂場', ko: '모래 놀이터', zh: '沙坑', ar: 'صندوق الرمال', hi: 'रेत का बक्सा', it: 'Sabbiera', pl: 'Piaskownica', he: 'ארגז חול', nl: 'Zandbak', vi: 'Hộp cát', tl: 'Sandbox', tr: 'Kum havuzu', id: 'Kotak pasir' },
+  'tf-trampoline': { ro: 'Trambulină', es: 'Trampolín', fr: 'Trampoline', pt: 'Trampolim', de: 'Trampolin', ru: 'Батут', uk: 'Батут', ja: 'トランポリン', ko: '트램폴린', zh: '蹦床', ar: 'ترامبولين', hi: 'ट्रैम्पोलिन', it: 'Trampolino', pl: 'Trampolina', he: 'טרמפולינה', nl: 'Trampoline', vi: 'Máy nhún', tl: 'Trampoline', tr: 'Trambolin', id: 'Trampolin' },
+  'tf-sprinkler': { ro: 'Aspersoare', es: 'Aspersor', fr: 'Arroseur', pt: 'Irrigador', de: 'Wassersprinkler', ru: 'Разбрызгиватель', uk: 'Бризкалка', ja: 'スプリンクラー', ko: '스프링클러', zh: '洒水器', ar: 'رذاذ الماء', hi: 'फव्वारा', it: 'Sprinkler', pl: 'Zraszacz', he: 'מרסס', nl: 'Sproeier', vi: 'Vòi phun nước', tl: 'Sprinkler', tr: 'Su serpiştirici', id: 'Penyemprot air' },
+  'tf-story': { ro: 'Poveste', es: 'Cuento', fr: 'Histoire', pt: 'História', de: 'Geschichte', ru: 'Сказка', uk: 'Казка', ja: 'おはなし', ko: '이야기', zh: '故事', ar: 'قصة', hi: 'कहानी', it: 'Storia', pl: 'Bajka', he: 'סיפור', nl: 'Verhaal', vi: 'Câu chuyện', tl: 'Kwento', tr: 'Hikaye', id: 'Cerita' },
+  'tf-song': { ro: 'Cântec', es: 'Canción', fr: 'Chanson', pt: 'Música', de: 'Lied', ru: 'Песня', uk: 'Пісня', ja: 'うた', ko: '노래', zh: '歌曲', ar: 'أغنية', hi: 'गाना', it: 'Canzone', pl: 'Piosenka', he: 'שיר', nl: 'Liedje', vi: 'Bài hát', tl: 'Kanta', tr: 'Şarkı', id: 'Lagu' },
+  'tf-cartoon': { ro: 'Desen animat', es: 'Caricatura', fr: 'Dessin animé', pt: 'Desenho animado', de: 'Trickfilm', ru: 'Мультфильм', uk: 'Мультфільм', ja: 'アニメ', ko: '만화', zh: '卡通', ar: 'رسوم متحركة', hi: 'कार्टून', it: 'Cartone animato', pl: 'Bajka', he: 'סרטון אנימציה', nl: 'Tekenfilm', vi: 'Hoạt hình', tl: 'Cartoon', tr: 'Çizgi film', id: 'Kartun' },
 
 };
 
 export function getPhraseText(phraseId: string, lang: SupportedLanguage, fallback: string): string {
   if (lang === 'en') return fallback;
-  return T[phraseId]?.[lang] ?? fallback;
+  // BCP-47 Chinese variants all map to the 'zh' translation bucket.
+  // phraseTranslations stores entries under 'zh' only; 'zh-Hans', 'zh-Hant',
+  // 'zh-HK' are aliases so Chinese AAC users see Chinese, not English fallbacks.
+  const key: SupportedLanguage =
+    (lang === 'zh-Hans' || lang === 'zh-Hant' || lang === 'zh-HK') ? 'zh' : lang;
+  return T[phraseId]?.[key] ?? fallback;
 }

@@ -10,7 +10,7 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
 
-const SW_VERSION = '2026-05-10-tts-fix';
+const SW_VERSION = process.env.NEXT_PUBLIC_BUILD_ID || 'dev';
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -69,4 +69,4 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-console.log(`[sw] ${SW_VERSION} activated`);
+if (process.env.NODE_ENV !== 'production') console.log(`[sw] ${SW_VERSION} activated`);

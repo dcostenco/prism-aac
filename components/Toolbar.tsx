@@ -185,8 +185,8 @@ export default function Toolbar() {
     const session = startVoiceInput({
       lang: ttsCode,
       onInterim: () => {},
-      onFinal: async (txt) => { const fixed = await correctText(txt.trim(), language); appendText((fixed || txt).trim() + ' '); },
-      onError: () => { voiceRef.current = null; setListening(false); },
+      onFinal: async (txt) => { const fixed = await correctText(txt.trim(), language); if (!voiceRef.current) return; appendText((fixed || txt).trim() + ' '); },
+      onError: () => { voiceRef.current?.stop(); voiceRef.current = null; setListening(false); },
     });
     if (session) { voiceRef.current = session; setListening(true); }
   };

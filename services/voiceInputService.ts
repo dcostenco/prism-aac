@@ -63,7 +63,8 @@ export function startVoiceInput(opts: {
     ko: 'ko-KR', ar: 'ar-SA', it: 'it-IT', nl: 'nl-NL', pl: 'pl-PL',
     tr: 'tr-TR', vi: 'vi-VN', th: 'th-TH', hi: 'hi-IN',
   };
-  rec.lang = lang.includes('-') ? lang : (LANG_MAP[lang] || `${lang}-${lang.toUpperCase()}`);
+  const computedLang = LANG_MAP[lang.split('-')[0]] || LANG_MAP[lang] || 'en-US';
+  rec.lang = computedLang;
 
   let stopped = false;
   let lastSpeechTime = Date.now();

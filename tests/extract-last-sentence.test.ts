@@ -42,12 +42,11 @@ describe('extractLastSentence', () => {
     expect(extractLastSentence('First.   Second.')).toBe('Second.');
   });
 
-  it('over-triggers on abbreviations (known MVP cost — documented)', () => {
-    // "Mr. Smith said hello." → after typing the second '.', the
-    // previous '.' from "Mr." is treated as a sentence boundary, so
-    // we speak "Smith said hello." instead of the full "Mr. Smith
-    // said hello.". Acceptable for MVP — abbreviation detection is a
-    // future improvement.
-    expect(extractLastSentence('Mr. Smith said hello.')).toBe('Smith said hello.');
+  it('does not split on abbreviation boundaries', () => {
+    // "Mr." is in the ABBREVIATIONS set — the "." after it must not be
+    // treated as a sentence boundary. The full sentence should be returned.
+    expect(extractLastSentence('Mr. Smith said hello.')).toBe('Mr. Smith said hello.');
+    expect(extractLastSentence('Dr. Jones arrived.')).toBe('Dr. Jones arrived.');
+    expect(extractLastSentence('Call me at 5. Dr. Smith will see you.')).toBe('Dr. Smith will see you.');
   });
 });

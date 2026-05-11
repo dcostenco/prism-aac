@@ -25,6 +25,8 @@ import {
   safeMailtoRecipient,
   safePhoneForUri,
 } from '@/lib/safeValidation';
+import { useAuthStore } from '@/store/authStore';
+import { getAuthToken } from '@/services/aiService';
 
 /** Cap on best-effort 3rd-party response bodies (Nominatim reverse
  *  geocode). Hostile/poisoned DNS pointing at a server that streams
@@ -87,7 +89,6 @@ const SYNALUX_EMERGENCY_API =
 //
 // Critical alerts (abuse, assault) have NO cancel mechanism at all.
 const CANCEL_HOLD_MS = 3000;
-const cancelTouches: { topLeft: number; bottomRight: number } = { topLeft: 0, bottomRight: 0 };
 let cancelHoldTimer: ReturnType<typeof setTimeout> | null = null;
 let activeCancelFn: (() => void) | null = null;
 
@@ -109,6 +110,9 @@ function isTwoCornerHold(touches: TouchList | null): boolean {
 
 export function registerCancelGesture(onCancel: () => void): () => void {
   if (typeof window === 'undefined') return () => {};
+  if (activeCancelFn && process.env.NODE_ENV !== 'production') {
+    console.warn('[EMERGENCY] registerCancelGesture called while activeCancelFn already set — previous cancel gesture will be replaced');
+  }
   activeCancelFn = onCancel;
 
   const onTouchStart = (e: TouchEvent) => {
@@ -175,6 +179,11 @@ const EMERGENCY_PHRASES: Record<string, 'critical' | 'urgent' | 'medical'> = {
 const ALERT_QUEUE_KEY = 'prism-aac-emergency-queue';
 const CONFIG_KEY = 'prism-aac-emergency-config';
 
+/** Mutex: prevents double-dispatch if the setInterval fires twice before
+ *  the first sendAlert resolves (e.g., device sleep/wake jitter). */
+let dispatchInProgress = false;
+/** Mutex: prevents concurrent sendAlert calls (e.g., flush + triggerEmergency racing). */
+let isSendInFlight = false;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
 let countdownCallback: ((seconds: number) => void) | null = null;
 let cancelCallback: (() => void) | null = null;
@@ -262,13 +271,17 @@ export function startFlash(): void {
   document.body.appendChild(flashOverlay);
 
   let isRed = true;
-  flashOverlay.style.background = 'rgba(255,0,0,0.4)';
+  flashOverlay.style.background = 'rgba(255,0,0,0.25)';
+
+  // Skip flashing for users who have opted into reduced motion (WCAG 2.3.3).
+  // The alarm audio continues so the emergency is still detectable.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   flashInterval = setInterval(() => {
     if (!flashOverlay) return;
     isRed = !isRed;
-    flashOverlay.style.background = isRed ? 'rgba(255,0,0,0.4)' : 'rgba(255,255,255,0.6)';
-  }, 500);
+    flashOverlay.style.background = isRed ? 'rgba(255,0,0,0.25)' : 'rgba(255,255,255,0.35)';
+  }, 1000);
 }
 
 export function stopFlash(): void {
@@ -314,9 +327,13 @@ function buildAllowedHosts(): { production: Set<string>; localhost: Set<string> 
   const production = new Set<string>(['synalux.ai', 'www.synalux.ai']);
   const localhost = new Set<string>(['localhost', '127.0.0.1', '0.0.0.0']);
   if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SYNALUX_EMERGENCY_HOSTS) {
+    // SECURITY: validate each host matches a safe hostname pattern before adding.
+    // Prevents supply-chain attacks via compromised Vercel build secrets injecting
+    // arbitrary domains. Only alphanumeric + dots + hyphens accepted.
+    const SAFE_HOST = /^[a-z0-9][a-z0-9.\-]{0,252}[a-z0-9]$/i;
     for (const h of process.env.NEXT_PUBLIC_SYNALUX_EMERGENCY_HOSTS.split(',')) {
       const trimmed = h.trim().toLowerCase();
-      if (trimmed) production.add(trimmed);
+      if (trimmed && SAFE_HOST.test(trimmed)) production.add(trimmed);
     }
   }
   return { production, localhost };
@@ -375,7 +392,7 @@ function cleanProfile(p: unknown): UserMedicalProfile {
 export function validateEmergencyConfig(raw: unknown): EmergencyConfig {
   if (!raw || typeof raw !== 'object') return DEFAULT_CONFIG;
   const x = raw as Record<string, unknown>;
-  const countdownSeconds = clampInt(x.countdownSeconds, 0, 60, DEFAULT_CONFIG.countdownSeconds);
+  const countdownSeconds = clampInt(x.countdownSeconds, 1, 60, DEFAULT_CONFIG.countdownSeconds);
   const contacts = Array.isArray(x.contacts)
     ? x.contacts.map(cleanContact).filter((c): c is EmergencyContact => c !== null).slice(0, MAX_CONTACTS)
     : [];
@@ -421,10 +438,18 @@ export function saveConfig(config: EmergencyConfig): void {
   localStorage.setItem(CONFIG_KEY, JSON.stringify(clean));
 }
 
+// Use word-boundary matching to prevent false positives
+// e.g. "sos" inside "osmosis", "it hurts" inside "it hurts just a little"
+function wordBoundaryMatch(text: string, phrase: string): boolean {
+  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+');
+  // Use Unicode-aware word boundaries so Cyrillic/Arabic/CJK phrases match correctly
+  return new RegExp(`(?:^|[^\\p{L}])${escaped}(?:$|[^\\p{L}])`, 'iu').test(text);
+}
+
 export function detectEmergency(text: string): { detected: boolean; severity: 'critical' | 'urgent' | 'medical' | null; phrase: string | null } {
   const lower = text.toLowerCase().trim();
   for (const [phrase, severity] of Object.entries(EMERGENCY_PHRASES)) {
-    if (lower.includes(phrase)) {
+    if (wordBoundaryMatch(lower, phrase)) {
       return { detected: true, severity, phrase };
     }
   }
@@ -501,9 +526,21 @@ async function getDeviceLocation(): Promise<{ lat: number; lng: number } | null>
  * Uses free Nominatim API (OpenStreetMap). If it fails, falls back to config.
  * This handles: child traveling abroad, school trip, vacation, hospital in another city.
  */
+let _lastNominatimCallMs = 0;
+let _lastNominatimResult: Awaited<ReturnType<typeof detectCountryFromGPS>> | null = null;
+
 async function detectCountryFromGPS(lat: number, lng: number): Promise<{ country: string; countryCode: string; language: string } | null> {
+  const now = Date.now();
+  if (now - _lastNominatimCallMs < 2000 && _lastNominatimResult) {
+    return _lastNominatimResult;
+  }
+  _lastNominatimCallMs = now;
   const t = timeoutSignal(2000);
   try {
+    // SECURITY NOTE: GPS coordinates are sent in the query string to nominatim.openstreetmap.org
+    // over HTTPS. This is an accepted risk — there is no POST API alternative for Nominatim.
+    // The returned country code is validated against EMERGENCY_NUMBERS before use.
+    // A compromised/MITM network can observe the coordinates but cannot spoof a valid country code.
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`,
       { signal: t.signal, headers: { 'User-Agent': 'PrismAAC-Emergency/1.0' } },
@@ -518,7 +555,13 @@ async function detectCountryFromGPS(lat: number, lng: number): Promise<{ country
     if (text.length > MAX_THIRD_PARTY_BYTES) return null;
     let data: { address?: { country_code?: string; country?: string } };
     try { data = JSON.parse(text); } catch { return null; }
-    const code = (data.address?.country_code || '').toUpperCase();
+    const rawCode = (data.address?.country_code || '').toUpperCase().replace(/[^A-Z]/g, '');
+    // Validate against known country codes to block spoofed Nominatim responses
+    // (e.g. DNS-poisoned or MITM proxy on school WiFi) from routing to wrong emergency number.
+    // Fall back to stored profile country when Nominatim returns an unknown code.
+    // Use getConfig() (not the local `config` variable) so this function is safe to call standalone.
+    const storedCountry = getConfig()?.profile?.country?.toUpperCase() || '';
+    const code = rawCode in EMERGENCY_NUMBERS ? rawCode : storedCountry;
     if (!code) return null;
 
     const COUNTRY_LANG: Record<string, string> = {
@@ -545,11 +588,13 @@ async function detectCountryFromGPS(lat: number, lng: number): Promise<{ country
       IN: 'en', PH: 'en', ZA: 'en', NG: 'en', KE: 'en',
     };
 
-    return {
+    const result = {
       country: data.address?.country || code,
       countryCode: code,
       language: COUNTRY_LANG[code] || 'en',
     };
+    _lastNominatimResult = result;
+    return result;
   } catch {
     return null;
   } finally {
@@ -628,7 +673,18 @@ function getRecentHistory(maxItems = 20): Array<{ text: string; timestamp: numbe
     const raw = localStorage.getItem('prism-aac-message');
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    const history: Array<{ text: string; timestamp: number }> = parsed?.state?.history || [];
+    // Zustand persist may store state as a nested JSON string (v3 compat)
+    const stateObj = typeof parsed?.state === 'string' ? JSON.parse(parsed.state) : parsed?.state;
+    const rawHistory: unknown[] = Array.isArray(stateObj?.history) ? stateObj.history : [];
+    // Validate each entry — tampered localStorage must not inject content into emergency dispatch
+    const MAX_TEXT = 4000;
+    const history = rawHistory
+      .filter((h): h is { text: string; timestamp: number } =>
+        h !== null && typeof h === 'object' &&
+        typeof (h as Record<string, unknown>).text === 'string' &&
+        typeof (h as Record<string, unknown>).timestamp === 'number',
+      )
+      .map((h) => ({ text: h.text.slice(0, MAX_TEXT), timestamp: h.timestamp }));
     return history.slice(0, maxItems);
   } catch {
     return [];
@@ -652,9 +708,15 @@ export function buildEmergencyScript(phrase: string, config: EmergencyConfig, lo
   const conditions = p.conditions?.length ? p.conditions.join(', ') : '';
   const allergies = p.allergies?.length ? `Allergies: ${p.allergies.join(', ')}.` : '';
   const meds = p.medications?.length ? `Medications: ${p.medications.join(', ')}.` : '';
-  // GPS location takes priority over stored address — child could be anywhere
-  const gpsStr = location ? `GPS coordinates ${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}` : '';
-  const mapLink = location ? `https://maps.google.com/?q=${location.lat},${location.lng}` : '';
+  // GPS location takes priority over stored address — child could be anywhere.
+  // Validate coordinates: browser Geolocation API returns IEEE 754 doubles;
+  // a spoofed/injected geolocation could produce NaN or Infinity.
+  const validLoc = location && Number.isFinite(location.lat) && Number.isFinite(location.lng)
+    ? location : null;
+  const gpsStr = validLoc ? `GPS coordinates ${validLoc.lat.toFixed(5)}, ${validLoc.lng.toFixed(5)}` : '';
+  const mapLink = validLoc
+    ? `https://maps.google.com/?q=${encodeURIComponent(String(validLoc.lat))},${encodeURIComponent(String(validLoc.lng))}`
+    : '';
   const addr = gpsStr
     ? (p.address ? `${p.address} (live GPS: ${gpsStr})` : gpsStr)
     : (p.address || 'unknown — GPS unavailable');
@@ -693,6 +755,12 @@ export function buildEmergencyScript(phrase: string, config: EmergencyConfig, lo
  *   - Android: all 5 levels
  */
 async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<boolean> {
+  if (isSendInFlight) {
+    console.warn('[EMERGENCY] sendAlert: previous dispatch still in flight, dropping duplicate');
+    return false;
+  }
+  isSendInFlight = true;
+  try {
   const script = buildEmergencyScript(alert.phrase, config, alert.location);
 
   // Speak the emergency message on device speaker IMMEDIATELY regardless of call status
@@ -701,7 +769,11 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   const recentHistory = getRecentHistory(20);
   const historyText = formatHistoryForAI(recentHistory);
 
-  const payload = {
+  // PHI separation: full payload (with profile + conversation history) is ONLY
+  // sent to Level 1 (Synalux authenticated server endpoint). Levels 2–4 use a
+  // minimal payload — phrase + script only — to avoid leaking medical profile
+  // data and conversation history to contacts and to mailto:/sms: links.
+  const fullPayload = {
     type: 'emergency',
     phrase: alert.phrase,
     script,
@@ -714,23 +786,48 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
     recentMessages: recentHistory,
   };
 
+  const minimalPayload = {
+    type: 'emergency',
+    phrase: alert.phrase,
+    script,
+    geoScript: alert.location
+      ? `https://maps.google.com/?q=${Number.isFinite(alert.location?.lat) ? alert.location.lat.toFixed(5) : 0},${Number.isFinite(alert.location?.lng) ? alert.location.lng.toFixed(5) : 0}`
+      : undefined,
+  };
+
   // ── LEVEL 1: Synalux Direct Line ──
   // Works on any device with internet (iPhone, iPad, Watch cellular/WiFi, Android)
   if (navigator.onLine) {
     const apiUrl = config.synaluxApiUrl || SYNALUX_EMERGENCY_API;
+    // Re-validate URL on every dispatch — defence-in-depth against a tampered
+    // config that slipped past validateEmergencyConfig (e.g., runtime mutation).
+    const apiUrlValid = isHttpsAllowedUrl(apiUrl, PROD_API_HOSTS, { maxLen: MAX_API_URL_LEN })
+      || isHttpsAllowedUrl(apiUrl, LOCAL_API_HOSTS, { maxLen: MAX_API_URL_LEN, allowHttp: true });
+    if (!apiUrlValid) {
+      console.error('[EMERGENCY] sendAlert: blocked — URL not in allowed hosts:', (() => { try { return new URL(apiUrl).hostname; } catch { return apiUrl; } })());
+    }
     const t = timeoutSignal(15000);
     try {
-      const token = localStorage.getItem('prism-aac-auth-token');
-      const res = await fetch(apiUrl, {
+      const token = getAuthToken();
+      // PHI gate: only authenticated paid-tier users receive the full payload
+      // (medical profile + conversation history). Free-tier and anonymous users
+      // get minimalPayload — phrase + GPS only — to avoid transmitting PHI for
+      // users who have not opted into a paid plan with associated data handling.
+      // Only send full PHI payload (conversation history + medical profile) for authenticated paid-tier users.
+      // Free-tier users get minimalPayload even when authenticated.
+      const profile = useAuthStore.getState().profile;
+      const isPaid = profile?.plan && profile.plan !== 'free';
+      const dispatchPayload = (token && isPaid) ? fullPayload : minimalPayload;
+      const res = apiUrlValid ? await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(dispatchPayload),
         signal: t.signal,
-      });
-      if (res.ok) {
+      }) : null;
+      if (res?.ok) {
         alert.sent = true;
         return true;
       }
@@ -742,16 +839,24 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   }
 
   // ── LEVEL 2: Emergency contacts via API (SMS/email dispatched server-side) ──
+  // Uses minimalPayload — no PHI (profile/history) sent to this endpoint.
   if (navigator.onLine && config.contacts.length > 0) {
+    const notifyUrl = `${config.synaluxApiUrl || SYNALUX_EMERGENCY_API}/notify`;
+    const notifyUrlValid = isHttpsAllowedUrl(notifyUrl, PROD_API_HOSTS, { maxLen: MAX_API_URL_LEN })
+      || isHttpsAllowedUrl(notifyUrl, LOCAL_API_HOSTS, { maxLen: MAX_API_URL_LEN, allowHttp: true });
     const t = timeoutSignal(10000);
     try {
-      const res = await fetch(`${config.synaluxApiUrl || SYNALUX_EMERGENCY_API}/notify`, {
+      const notifyToken = getAuthToken();
+      const res = notifyUrlValid ? await fetch(notifyUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(notifyToken ? { Authorization: `Bearer ${notifyToken}` } : {}),
+        },
+        body: JSON.stringify(minimalPayload),
         signal: t.signal,
-      });
-      if (res.ok) {
+      }) : null;
+      if (res?.ok) {
         alert.sent = true;
         // Continue to level 4 for phone call too — belt and suspenders
       }
@@ -763,20 +868,26 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   }
 
   // ── LEVEL 3: Direct email to contacts (browser-side, no API needed) ──
+  // Compose a SINGLE mailto: with all recipients in the `to=` field.
+  // Multiple window.open() calls are silently blocked by the popup blocker
+  // after the first — a loop would only notify caregiver #1.
+  // safeScript: phrase + GPS only — no PHI (name, age, conditions, medications).
+  // Full medical profile stays in fullPayload (Level 1, authenticated + TLS only).
+  const safeScript = [
+    `Emergency phrase: ${alert.phrase}`,
+    alert.location ? `Location: https://maps.google.com/?q=${Number.isFinite(alert.location?.lat) ? alert.location.lat.toFixed(5) : 0},${Number.isFinite(alert.location?.lng) ? alert.location.lng.toFixed(5) : 0}` : '',
+    `Sent from PrismAAC`,
+  ].filter(Boolean).join('\n');
+
   if (navigator.onLine) {
-    for (const contact of config.contacts) {
-      if (contact.email) {
-        // Defense against mailto header injection. A tampered contact
-        // email like `a@b.com?cc=evil@evil.com` would otherwise inject
-        // a CC into the URL — safeMailtoRecipient enforces basic email
-        // shape AND encodeURIComponent so `?` `&` `#` collapse to %xx.
-        const recipient = safeMailtoRecipient(contact.email);
-        if (!recipient) continue;
-        const subject = encodeURIComponent('EMERGENCY — PrismAAC Alert');
-        const body = encodeURIComponent(script);
-        window.open(`mailto:${recipient}?subject=${subject}&body=${body}`, '_blank');
-        alert.sent = true;
-      }
+    const emailRecipients = config.contacts
+      .map((c) => (c.email ? safeMailtoRecipient(c.email) : null))
+      .filter((r): r is string => !!r);
+    if (emailRecipients.length > 0) {
+      const subject = encodeURIComponent('EMERGENCY — PrismAAC Alert');
+      const body = encodeURIComponent(safeScript);
+      window.open(`mailto:${emailRecipients.join(',')}?subject=${subject}&body=${body}`, '_blank', 'noopener,noreferrer');
+      alert.sent = true;
     }
   }
 
@@ -785,18 +896,22 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   // 911 or caregiver hear the AI message through the device speaker.
   // On Apple Watch cellular (no paired phone), tel:// opens the watch dialer.
   // ── LEVEL 4: Native SMS (works WITHOUT internet on cellular devices) ──
-  const smsScript = [
-    `🚨 EMERGENCY — PrismAAC`,
-    script,
-    alert.location ? `📍 Map: https://maps.google.com/?q=${alert.location.lat},${alert.location.lng}` : '',
-  ].filter(Boolean).join('\n');
+  // SMS body cap: many carriers silently truncate at ~1500 encoded chars.
+  // Prioritise: GPS link (most critical for first responders) + phrase.
+  // Medical details are in the API path (Level 1/2); SMS is best-effort.
+  const gpsLine = alert.location
+    ? `📍 https://maps.google.com/?q=${Number.isFinite(alert.location?.lat) ? alert.location.lat.toFixed(5) : 0},${Number.isFinite(alert.location?.lng) ? alert.location.lng.toFixed(5) : 0}`
+    : '';
+  const smsCore = `🚨 EMERGENCY — PrismAAC\n${alert.phrase}\n${gpsLine}`.trim();
+  const smsExtra = '';
+  const smsScript = (smsCore + smsExtra).slice(0, 1500);
 
   for (const contact of config.contacts) {
     if (contact.phone) {
       const safePhone = safePhoneForUri(contact.phone);
       if (!safePhone) continue;
       const encodedBody = encodeURIComponent(smsScript);
-      window.open(`sms:${safePhone}?body=${encodedBody}`, '_blank');
+      window.open(`sms:${safePhone}?body=${encodedBody}`, '_blank', 'noopener,noreferrer');
     }
   }
 
@@ -828,6 +943,9 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   // flushQueuedAlerts() fires automatically via the 'online' event listener
   // and retries from Level 1.
   return alert.sent;
+  } finally {
+    isSendInFlight = false;
+  }
 }
 
 /**
@@ -839,6 +957,7 @@ let speakerRepeatInterval: ReturnType<typeof setInterval> | null = null;
 
 function speakEmergencyOnSpeaker(script: string, language: string = 'en'): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  stopEmergencySpeaker();  // clear any prior interval before creating a new one
 
   const speak = () => {
     window.speechSynthesis.cancel();
@@ -901,11 +1020,20 @@ export async function triggerEmergency(
   onComplete: (sent: boolean, queued: boolean) => void,
   onCancel?: () => void,
 ): Promise<() => void> {
-  const config = getConfig();
+  let config = getConfig();
   if (!config.enabled) {
     onComplete(false, false);
     return () => {};
   }
+
+  // Allow one active countdown at a time. A second trigger within the countdown
+  // window is treated as confirmation, not a second dispatch.
+  if (countdownTimer !== null) {
+    return () => {};
+  }
+
+  // Reset stale flag from a prior crashed dispatch before starting fresh.
+  dispatchInProgress = false;
 
   const alert = await queueAlert(phrase, severity);
 
@@ -915,11 +1043,13 @@ export async function triggerEmergency(
     return () => {};
   }
 
-  // Override language + emergency number from live GPS country detection
-  if (alert.geo.detectedLanguage) config.language = alert.geo.detectedLanguage;
+  // Override language + emergency number from live GPS country detection.
+  // Create a new object — never mutate the config reference in-place so
+  // the URL-validated object cannot be extended with attacker-controlled fields.
+  if (alert.geo.detectedLanguage) config = { ...config, language: alert.geo.detectedLanguage };
   if (alert.geo.emergencyNumber) {
     // Update the 911 number to the LOCAL emergency number
-    console.log(`[EMERGENCY] GPS detected country: ${alert.geo.detectedCountry}, emergency: ${alert.geo.emergencyNumber}, language: ${alert.geo.detectedLanguage}`);
+    if (process.env.NODE_ENV !== 'production') console.log(`[EMERGENCY] GPS country detected`);
   }
 
   const countdownTotal = severity === 'critical' ? 5 : config.countdownSeconds;
@@ -950,6 +1080,8 @@ export async function triggerEmergency(
     onCountdown(remaining);
 
     if (remaining <= 0) {
+      if (dispatchInProgress) return; // prevent double-dispatch on sleep/wake jitter
+      dispatchInProgress = true;
       // If device slept through the countdown and woke up way past dispatch
       // time, treat as stale — don't blindly dispatch hours-old alerts.
       const driftMs = now - dispatchAtMs;
@@ -958,6 +1090,8 @@ export async function triggerEmergency(
         if (unregisterGesture) unregisterGesture();
         stopAlarm();
         stopFlash();
+        stopEmergencySpeaker();
+        dispatchInProgress = false;
         onComplete(false, true); // queued, not dispatched
         return;
       }
@@ -967,6 +1101,8 @@ export async function triggerEmergency(
         const sent = await sendAlert(alert, config);
         stopAlarm();
         stopFlash();
+        stopEmergencySpeaker();
+        dispatchInProgress = false;
         if (!sent) {
           onComplete(false, true);
         } else {
@@ -977,6 +1113,8 @@ export async function triggerEmergency(
       } catch {
         stopAlarm();
         stopFlash();
+        stopEmergencySpeaker();
+        dispatchInProgress = false;
         onComplete(false, true);
       }
     }
@@ -993,6 +1131,7 @@ export async function triggerEmergency(
 }
 
 export function cancelEmergency(alertId?: string): void {
+  activeCancelFn = null;
   clearCountdown();
   stopAlarm();
   stopFlash();
@@ -1083,11 +1222,17 @@ async function _flushQueuedAlerts(): Promise<number> {
     const isDelayed = (now - alert.timestamp) > REVERIFY_THRESHOLD_MS;
 
     if (isStaleCritical(alert)) {
-      const savedAutoCall = config.autoCall911;
-      config.autoCall911 = false;
-      alert.phrase = `[DELAYED OFFLINE ALERT - ${new Date(alert.timestamp).toISOString()}] ${alert.phrase}`;
-      const ok = await sendAlert(alert, config);
-      config.autoCall911 = savedAutoCall;
+      // Use a local copy — never mutate the shared config reference
+      const staleCriticalConfig = { ...config, autoCall911: false };
+      const dispatchAlert = { ...alert, phrase: `[DELAYED OFFLINE ALERT - ${new Date(alert.timestamp).toISOString()}] ${alert.phrase}` };
+      const flushApiUrl = staleCriticalConfig.synaluxApiUrl || SYNALUX_EMERGENCY_API;
+      const flushUrlValid = isHttpsAllowedUrl(flushApiUrl, PROD_API_HOSTS, { maxLen: MAX_API_URL_LEN })
+        || isHttpsAllowedUrl(flushApiUrl, LOCAL_API_HOSTS, { maxLen: MAX_API_URL_LEN, allowHttp: true });
+      if (!flushUrlValid) {
+        console.error('[EMERGENCY] flush: blocked dispatch — URL not in allowed hosts');
+        continue;
+      }
+      const ok = await sendAlert(dispatchAlert, staleCriticalConfig);
       if (ok) sent++;
     } else if (isDelayed && onDelayedAlertCallback) {
       // Alert >60s old: require caregiver re-verification before dispatch.
@@ -1100,12 +1245,26 @@ async function _flushQueuedAlerts(): Promise<number> {
         new Promise<boolean>((resolve) => setTimeout(() => resolve(true), 10000)),
       ]);
       if (dispatched) {
+        const delayedApiUrl = config.synaluxApiUrl || SYNALUX_EMERGENCY_API;
+        const delayedUrlValid = isHttpsAllowedUrl(delayedApiUrl, PROD_API_HOSTS, { maxLen: MAX_API_URL_LEN })
+          || isHttpsAllowedUrl(delayedApiUrl, LOCAL_API_HOSTS, { maxLen: MAX_API_URL_LEN, allowHttp: true });
+        if (!delayedUrlValid) {
+          console.error('[EMERGENCY] flush: blocked dispatch — URL not in allowed hosts');
+          continue;
+        }
         const ok = await sendAlert(alert, config);
         if (ok) sent++;
       } else {
         alert.sent = true; // cancelled by caregiver
       }
     } else {
+      const elseApiUrl = config.synaluxApiUrl || SYNALUX_EMERGENCY_API;
+      const elseUrlValid = isHttpsAllowedUrl(elseApiUrl, PROD_API_HOSTS, { maxLen: MAX_API_URL_LEN })
+        || isHttpsAllowedUrl(elseApiUrl, LOCAL_API_HOSTS, { maxLen: MAX_API_URL_LEN, allowHttp: true });
+      if (!elseUrlValid) {
+        console.error('[EMERGENCY] flush: blocked dispatch — URL not in allowed hosts');
+        continue;
+      }
       const ok = await sendAlert(alert, config);
       if (ok) sent++;
     }

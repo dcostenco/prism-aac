@@ -65,8 +65,11 @@ export function safeJSONStorage(opts: SafeStorageOptions): StateStorage {
             console.warn(`[safeStorage] localStorage quota exceeded for "${opts.name}" — shedding data`);
           }
           opts.onQuotaExceeded?.();
-          // Best-effort retry after the trim. If it still fails, the
-          // write is lost but in-memory state survives until reload.
+          // Retry once after the trim callback. For transient quota errors
+          // (another store freed space), this succeeds immediately.
+          // If this store itself is oversized, the retry fails silently —
+          // recovery then happens on the next Zustand state mutation which
+          // will write the newly trimmed state.
           try { window.localStorage.setItem(name, value); } catch { /* */ }
           return;
         }

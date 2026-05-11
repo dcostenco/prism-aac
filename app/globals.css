@@ -155,6 +155,13 @@ html, body {
   50% { opacity: 0.6; }
 }
 
+@keyframes prism-alarm-flash {
+  0%   { background: rgba(255, 152, 0, 0); }
+  30%  { background: rgba(255, 152, 0, 0.45); }
+  70%  { background: rgba(255, 152, 0, 0.45); }
+  100% { background: rgba(255, 152, 0, 0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .aac-btn:active, .aac-key:active, .aac-speak:active, .aac-delete:active {
     transform: none;

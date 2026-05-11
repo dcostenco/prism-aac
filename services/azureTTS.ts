@@ -1,9 +1,4 @@
 'use client';
-// CACHE-NUKE 2026-05-08-08:40 — forces Vercel build cache invalidation
-// after multiple identical-output rebuilds where Turbopack reused the
-// compiled azureTTS.ts despite source changes.
-const _BUILD_NUKE = Date.now().toString();
-void _BUILD_NUKE;
 /**
  * Azure Neural TTS — Paid tiers only
  *
@@ -96,7 +91,9 @@ function escapeXml(text: string): string {
 }
 
 export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
-  const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
+  const safeLang = lang.replace(/[^a-zA-Z0-9\-]/g, '').slice(0, 20);
+  const voice = AZURE_VOICES[safeLang] || AZURE_VOICES['en-US'];
+  const safeVoice = voice.replace(/[^a-zA-Z0-9\-]/g, '').slice(0, 80);
   const supportsStyles = STYLE_SUPPORTED.has(voice);
   // SSML rate: 1.0 = normal. Stored slider range [0.25-4], default 0.5.
   // Formula: ssmlRate = stored × 2, hard-capped at 1.4.
@@ -108,16 +105,19 @@ export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: num
   const rateStr = rateClamped.toFixed(2);
   const volumeValue = Math.max(0, Math.min(100, Math.round(volume * 100)));
 
+  const SAFE_TONES = new Set(['friendly','cheerful','calm','serious','excited','hopeful','empathetic','sad','angry','neutral']);
+  const safeTone = SAFE_TONES.has(tone as string) ? tone : 'friendly';
+
   let inner = escapeXml(text);
-  if (supportsStyles && tone !== 'friendly') {
-    inner = `<mstts:express-as style="${tone}">${inner}</mstts:express-as>`;
+  if (supportsStyles && safeTone !== 'friendly') {
+    inner = `<mstts:express-as style="${safeTone}">${inner}</mstts:express-as>`;
   }
 
   // Pitch attribute intentionally omitted — we never vary pitch and
   // every form ("0%", "+0%", "0Hz") is parser-fragile across SSML
   // implementations. Default pitch is correct for every supported voice.
-  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${lang}">
-  <voice name="${voice}">
+  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${safeLang}">
+  <voice name="${safeVoice}">
     <prosody rate="${rateStr}" volume="${volumeValue}">
       ${inner}
     </prosody>
@@ -235,7 +235,6 @@ export function isAudioContextRunning(): boolean {
 // subsequent speak (or panic stop) can silence them — rapid Speak presses on
 // AAC are common and we never want overlapping voices.
 const activeSources = new Set<AudioBufferSourceNode>();
-let currentAudio: HTMLAudioElement | null = null; // legacy back-compat reference
 const activeAudioElements = new Set<HTMLAudioElement>();
 const liveBlobUrls = new Set<string>();
 
@@ -260,20 +259,9 @@ const DEDUP_MS = 200;
 // Minimum time (ms) a source must have been playing before an autoSpeak call
 // is allowed to interrupt it. Prevents rapid prediction-tile taps from all
 // killing each other so the user hears nothing.
-// The explicit Speak button bypasses this guard via markSpeakInterrupt().
+// The explicit Speak button passes interrupt=true to speakAzure() directly.
 const PROTECT_PLAY_MS = 600;
 let lastSourceStartedAt = 0;
-let _nextSpeakInterrupt = false;
-
-/**
- * Call this immediately before aacSpeak when the user presses the
- * explicit Speak button. Allows the next speakAzure call to interrupt
- * any currently-playing audio regardless of how recently it started.
- * Without this, autoSpeak calls respect PROTECT_PLAY_MS.
- */
-export function markSpeakInterrupt(): void {
-  _nextSpeakInterrupt = true;
-}
 
 /** Stop only ACTIVE PLAYBACK (BufferSourceNodes + HTMLAudioElements +
  *  blob URLs). Does NOT abort in-flight fetch controllers — those
@@ -297,7 +285,6 @@ function stopAzurePlayback(): void {
     audio.load();
   }
   activeAudioElements.clear();
-  currentAudio = null;
   for (const url of liveBlobUrls) URL.revokeObjectURL(url);
   liveBlobUrls.clear();
 }
@@ -405,14 +392,12 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   // Stop any prior playback synchronously, immediately before our
   // own start. Respect the PROTECT_PLAY_MS guard: if the current source
   // has been playing for less than PROTECT_PLAY_MS (600ms) AND this is
-  // not an explicit Speak-button press (markSpeakInterrupt was NOT called),
+  // not an explicit Speak-button press (interrupt parameter is false),
   // skip the stop and abort this call instead. This prevents rapid autoSpeak
   // calls from prediction-tile taps killing each other — the user would
   // hear nothing because each source played for < 20ms before being killed.
   const playedSoFar = lastSourceStartedAt > 0 ? Date.now() - lastSourceStartedAt : Infinity;
-  // Use the parameter, NOT the shared flag (which could be stolen by concurrent calls).
-  // _nextSpeakInterrupt is kept as legacy no-op; parameter is the authoritative source.
-  _nextSpeakInterrupt = false; // clear regardless
+  // Use the parameter — the authoritative source for interrupt intent.
   if (!interrupt && activeSources.size > 0 && playedSoFar < PROTECT_PLAY_MS) {
     // Current audio is still "young" — let it play, silently drop this new request.
     // Returns true so the caller doesn't fall through to Web Speech (which would
@@ -543,7 +528,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   // one playing, no fallback needed.
   const nowMs = Date.now();
   if (text === lastSpokenText && nowMs - lastSpokenAt < DEDUP_MS) {
-    console.log(`[AzureTTS] DEDUP — same text "${text.slice(0, 30)}" within ${nowMs - lastSpokenAt}ms; keeping prior playback alive`);
+    if (process.env.NODE_ENV !== 'production') console.log(`[AzureTTS] DEDUP — same text "${text.slice(0, 30)}" within ${nowMs - lastSpokenAt}ms; keeping prior playback alive`);
     return true;
   }
   lastSpokenText = text;
@@ -551,7 +536,6 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
 
   const ssml = buildSSML(text, lang, tone, rate, volume);
 
-  let url: string | null = null;
   const controller = new AbortController();
   activeControllers.add(controller);
   const timeout = setTimeout(() => controller.abort(), 8000);
@@ -662,7 +646,6 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     return false;
   } catch (e) {
     console.warn('[AzureTTS] Fetch failed:', e instanceof Error ? e.message : e);
-    if (url) releaseBlob(url);
     return false;
   } finally {
     // Belt-and-suspenders cleanup. The success path also clears these
@@ -676,3 +659,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     activeControllers.delete(controller);
   }
 }
+
+/** @deprecated No-op kept for backward compatibility. Pass `interrupt=true` to speakAzure() directly. */
+export function markSpeakInterrupt(): void { /* intentional no-op — see interrupt parameter */ }
+

@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
@@ -23,6 +23,12 @@ const CAPS_LOCK_HOLD_MS = 1200;
 const SENTENCE_END = /[.?!]/;
 const SENTENCE_TERMINATORS = '.?!';
 
+const ABBREVIATIONS = new Set(['mr', 'mrs', 'ms', 'dr', 'jr', 'sr', 'prof', 'rev', 'gen', 'sgt', 'cpl', 'pvt', 'vs', 'no', 'vol', 'dept', 'approx', 'inc', 'ltd', 'corp', 'est']);
+
+function isAbbreviation(word: string): boolean {
+  return ABBREVIATIONS.has(word.toLowerCase().replace(/\./g, ''));
+}
+
 /**
  * Extract the just-completed sentence from `text` (which already
  * contains the trailing terminator the user just typed). Walks
@@ -44,6 +50,12 @@ function extractLastSentence(text: string): string {
   let start = 0;
   for (let i = end; i >= 0; i--) {
     if (SENTENCE_TERMINATORS.includes(trimmed[i])) {
+      // Skip this boundary if the word immediately before the terminator is
+      // an abbreviation (e.g. "Mr." in "Mr. Smith said hello.").
+      const beforeDot = trimmed.slice(0, i).trimEnd();
+      const wordMatch = beforeDot.match(/(\S+)$/);
+      const precedingWord = wordMatch ? wordMatch[1] : '';
+      if (isAbbreviation(precedingWord)) continue;
       start = i + 1;
       break;
     }
@@ -102,6 +114,15 @@ export default function Keyboard() {
   const shiftHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shiftLongPressed = useRef(false);
 
+  // Clean up the shift hold timer on unmount to prevent memory leaks.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => () => {
+    if (shiftHoldTimer.current) {
+      clearTimeout(shiftHoldTimer.current);
+      shiftHoldTimer.current = null;
+    }
+  }, []);
+
   const handleShiftDown = useCallback(() => {
     shiftLongPressed.current = false;
     if (shiftHoldTimer.current) clearTimeout(shiftHoldTimer.current);
@@ -147,6 +168,10 @@ export default function Keyboard() {
   }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar, activeTone]);
 
   const handleSpeak = useCallback(() => {
+    // HIGH #1 — check text + soundEnabled FIRST before warming up audio,
+    // unless we are in AI Chat mode (which has its own routing path).
+    const currentText = useMessageStore.getState().text.trim();
+    if (useUIStore.getState().sidePanel !== 'ai-chat' && (!currentText || !soundEnabled)) return;
     void warmupAzureAudio();
     tapFeedback();
     // In AI Chat mode the Speak key sends to AI instead of speaking aloud.
@@ -154,7 +179,6 @@ export default function Keyboard() {
       triggerAISubmit();
       return;
     }
-    const currentText = useMessageStore.getState().text.trim();
     if (!currentText || !soundEnabled) return;
     addToHistory(currentText);
     // In translation mode, prefer the translated text from MessageBar's state.
@@ -229,7 +253,7 @@ export default function Keyboard() {
         </div>
       ))}
 
-      <div className="flex gap-[1px] flex-1">
+      <div className="flex gap-[1px] flex-1" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" data-action="mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>

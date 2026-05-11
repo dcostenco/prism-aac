@@ -5,6 +5,13 @@ import { ToneStyle } from '@/services/azureTTS';
 import { detectEmergency } from '@/services/emergencyService';
 import { safeJSONStorage } from '@/lib/safeStorage';
 
+let activeEmergencyCancel: (() => void) | null = null;
+
+export function cancelActiveEmergency() {
+  activeEmergencyCancel?.();
+  activeEmergencyCancel = null;
+}
+
 const MAX_UNDO = 20;
 /** Cap on the in-progress message buffer. AAC users compose a few
  *  sentences at a time; 4000 chars is paranoid headroom for a long
@@ -55,7 +62,7 @@ interface MessageState {
   setText: (text: string) => void;
   toggleAutoSpeak: () => void;
   toggleSound: () => void;
-  addToHistory: (text: string) => void;
+  addToHistory: (text: string, source?: 'user' | 'system') => void;
   clearHistory: () => void;
 }
 
@@ -120,18 +127,20 @@ export const useMessageStore = create<MessageState>()(
 
       toggleSound: () => set((s) => ({ soundEnabled: !s.soundEnabled })),
 
-      addToHistory: (text) => {
+      addToHistory: (text, source = 'user') => {
         // Feed the adaptive engine: every history entry is a real authored
         // message worth learning from (length, time-of-day, content). The
         // category is unknown at this layer; callers that DO know it should
         // call recordMessage(text, categoryId) directly.
-        try {
-          import('@/services/adaptiveEngine').then((m) => m.recordMessage(text));
-        } catch {}
+        if (source === 'user') {
+          try {
+            import('@/services/adaptiveEngine').then((m) => m.recordMessage(text));
+          } catch {}
+        }
 
-        // Emergency detection: check every spoken message for crisis phrases.
-        // If detected, trigger the emergency response system.
-        const emergency = detectEmergency(text);
+        // Emergency detection: only runs on user-authored text.
+        // System-generated text (AI replies, announcements) must not trigger dispatch.
+        const emergency = source === 'user' ? detectEmergency(text) : { detected: false, severity: null, phrase: null };
         if (emergency.detected && emergency.severity) {
           import('@/services/emergencyService').then((mod) => {
             mod.triggerEmergency(
@@ -139,7 +148,7 @@ export const useMessageStore = create<MessageState>()(
               emergency.severity!,
               (_seconds) => { /* countdown handled by EmergencyOverlay if mounted */ },
               (_sent, _queued) => { /* completion logged by service */ },
-            );
+            ).then((cancelFn) => { activeEmergencyCancel = cancelFn; });
           }).catch(() => { /* emergency service import failed — non-blocking */ });
         }
 

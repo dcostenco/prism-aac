@@ -30,17 +30,26 @@ const SCRIPT_FILTER: Partial<Record<SupportedLanguage, RegExp>> = {
   ar: /^[؀-ۿݐ-ݿ'\-]+$/,
   ja: /^[぀-ゟ゠-ヿ一-鿿]+$/,
   ko: /^[가-힯ᄀ-ᇿ㄰-㆏]+$/,
+  zh: /^[一-鿿]+$/,
   'zh-Hans': /^[一-鿿]+$/,
   'zh-Hant': /^[一-鿿]+$/,
   'zh-HK': /^[一-鿿]+$/,
-  // Latin-script European langs share the loose matcher — they may include
-  // accented variants of any letter in their alphabet.
+  hi: /^[ऀ-ॿ'\-]+$/,
+  he: /^[א-ת'\-]+$/,
+  // Latin-script European and other langs
   en: /^[a-z'\-]+$/,
   es: /^[a-zñáéíóúü'\-]+$/,
   fr: /^[a-zàâäçéèêëîïôœùûüÿ'\-]+$/,
   de: /^[a-zäöüß'\-]+$/,
   pt: /^[a-záàâãçéêíóôõú'\-]+$/,
   ro: /^[a-zăâîșțşţ'\-]+$/,
+  it: /^[a-zàèéìíîòóùú'\-]+$/,
+  pl: /^[a-ząćęłńóśźż'\-]+$/,
+  nl: /^[a-zàáâäèéêëìíîïòóôöùúûü'\-]+$/,
+  vi: /^[a-zàáâãèéêìíòóôõùúýăđơưÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝĂĐƠƯ'\-]+$/,
+  tl: /^[a-zñ'\-]+$/,
+  tr: /^[a-zçğıöşü'\-]+$/,
+  id: /^[a-z'\-]+$/,
 };
 
 function buildSeedForLanguage(lang: SupportedLanguage): {
@@ -89,7 +98,11 @@ function getSeed(lang: SupportedLanguage) {
   return seedCache.get(lang)!;
 }
 
-const SEED_EN = getSeed('en');
+let _seedEN: ReturnType<typeof getSeed> | null = null;
+function getSeedEN() {
+  if (!_seedEN) _seedEN = getSeed('en');
+  return _seedEN;
+}
 
 const PAID_PLANS = new Set(['standard', 'advanced', 'enterprise']);
 const clinicalCache = new Map<string, Record<string, WordFreqEntry>>();
@@ -161,9 +174,9 @@ export const usePredictionStore = create<PredictionState>()(
     (set, get) => ({
       predictions: DEFAULT_PREDICTIONS,
       aiCompletion: null,
-      wordFreq: { ...SEED_EN.wordFreq },
-      bigrams: { ...SEED_EN.bigrams },
-      trigrams: { ...SEED_EN.trigrams },
+      wordFreq: { ...getSeedEN().wordFreq },
+      bigrams: { ...getSeedEN().bigrams },
+      trigrams: { ...getSeedEN().trigrams },
 
       updatePredictions: (text, lang = 'en') => {
         const seed = getSeed(lang);
@@ -242,15 +255,17 @@ export const usePredictionStore = create<PredictionState>()(
       version: 4,
       migrate: (persistedState: unknown, version: number) => {
         const s = (persistedState ?? {}) as Partial<PredictionState>;
+        // Safety fallback: ensure trigrams always exists regardless of migration path.
+        if (!s.trigrams) s.trigrams = {};
         if (version < 3) {
-          const wf = { ...SEED_EN.wordFreq, ...(s.wordFreq ?? {}) };
-          const bg = { ...SEED_EN.bigrams, ...(s.bigrams ?? {}) };
-          return { ...s, wordFreq: wf, bigrams: bg, trigrams: { ...SEED_EN.trigrams } };
+          const wf = { ...getSeedEN().wordFreq, ...(s.wordFreq ?? {}) };
+          const bg = { ...getSeedEN().bigrams, ...(s.bigrams ?? {}) };
+          return { ...s, wordFreq: wf, bigrams: bg, trigrams: { ...getSeedEN().trigrams } };
         }
         if (version < 4) {
           // v4 adds user trigram tracking. Earlier versions never recorded
           // user trigrams; seed-only trigrams are added here.
-          return { ...s, trigrams: { ...SEED_EN.trigrams, ...((s as Partial<PredictionState>).trigrams ?? {}) } };
+          return { ...s, trigrams: { ...getSeedEN().trigrams, ...((s as Partial<PredictionState>).trigrams ?? {}) } };
         }
         return s as PredictionState;
       },
@@ -292,9 +307,9 @@ export const usePredictionStore = create<PredictionState>()(
         return {
           ...currentState,
           ...p,
-          wordFreq: { ...SEED_EN.wordFreq, ...cleanNgrams(p.wordFreq) },
-          bigrams: { ...SEED_EN.bigrams, ...cleanNgrams(p.bigrams) },
-          trigrams: { ...SEED_EN.trigrams, ...cleanNgrams(p.trigrams) },
+          wordFreq: { ...getSeedEN().wordFreq, ...cleanNgrams(p.wordFreq) },
+          bigrams: { ...getSeedEN().bigrams, ...cleanNgrams(p.bigrams) },
+          trigrams: { ...getSeedEN().trigrams, ...cleanNgrams(p.trigrams) },
         };
       },
       // Debounced localStorage: writes at most once per 3 seconds.
@@ -321,7 +336,15 @@ export const usePredictionStore = create<PredictionState>()(
             pendingName = name; pendingValue = value;
             if (writeTimer) clearTimeout(writeTimer);
             writeTimer = setTimeout(() => {
-              try { localStorage.setItem(name, JSON.stringify(value)); } catch { /* quota */ }
+              try {
+                localStorage.setItem(name, JSON.stringify(value));
+              } catch (e) {
+                if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+                  // Shed old prediction data to free space, then retry
+                  usePredictionStore.getState().runDecay();
+                  try { localStorage.setItem(name, JSON.stringify(usePredictionStore.getState())); } catch { /* still too large */ }
+                }
+              }
               pendingName = null; pendingValue = null; writeTimer = null;
             }, 3000);
           },

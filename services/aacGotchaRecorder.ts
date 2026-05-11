@@ -31,6 +31,7 @@
  * This module is a write-only sink for now. Reads come later.
  */
 import { NoteAction } from '@/types';
+import { sanitizeString } from '@/lib/safeStrings';
 
 /** One Experience row, mirroring the Python postflight shape. */
 export interface AacGotchaRecord {
@@ -90,17 +91,17 @@ function distillGotcha(action: NoteAction): string {
   const p = action.payload as Record<string, unknown>;
   switch (action.type) {
     case 'add_phrase':
-      return `caregiver added phrase "${p.text}" to ${p.categoryId} — model's previous suggestion was incomplete`;
+      return `caregiver added phrase "${String(p.text ?? '').slice(0, 200)}" to ${String(p.categoryId ?? '').slice(0, 80)} — model's previous suggestion was incomplete`;
     case 'remove_phrase':
-      return `caregiver removed phrase "${p.phraseText}" from ${p.categoryId} — model previously surfaced the wrong phrase`;
+      return `caregiver removed phrase "${String(p.phraseText ?? '').slice(0, 200)}" from ${String(p.categoryId ?? '').slice(0, 80)} — model previously surfaced the wrong phrase`;
     case 'reorder_phrase':
-      return `caregiver reordered phrase ${p.phraseId} in ${p.categoryId} — model's ordering was suboptimal`;
+      return `caregiver reordered phrase ${String(p.phraseId ?? '').slice(0, 80)} in ${String(p.categoryId ?? '').slice(0, 80)} — model's ordering was suboptimal`;
     case 'boost_word':
-      return `caregiver boosted word "${p.word}" — model under-weighted user vocab`;
+      return `caregiver boosted word "${String(p.word ?? '').slice(0, 100)}" — model under-weighted user vocab`;
     case 'add_sequence':
-      return `caregiver added ordering sequence "${p.name}" in ${p.categoryId}`;
+      return `caregiver added ordering sequence "${String(p.name ?? '').slice(0, 200)}" in ${String(p.categoryId ?? '').slice(0, 80)}`;
     case 'remove_sequence':
-      return `caregiver removed ordering sequence "${p.sequenceName}"`;
+      return `caregiver removed ordering sequence "${String(p.sequenceName ?? '').slice(0, 200)}"`;
     case 'note_only':
       return '';  // not actionable — skip
     default:
@@ -115,15 +116,16 @@ export async function recordCaregiverGotcha(
   ok: boolean,
   userLang?: string,
 ): Promise<boolean> {
+  if (typeof crypto === 'undefined' || typeof crypto.randomUUID !== 'function') return false;
   if (!ok) return false;  // failed actions don't tell us what the user wanted
-  const gotcha = distillGotcha(action);
+  const gotcha = sanitizeString(distillGotcha(action), 500);
   if (!gotcha) return false;  // note_only and unknowns are not corpus-worthy
 
   const record: AacGotchaRecord = {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+    id: crypto.randomUUID(),
     fingerprint: fingerprintFor(action),
     level: 'failed',
-    summary: action.description ?? action.type,
+    summary: sanitizeString(action.description ?? action.type, 500),
     gotchas: [gotcha],
     session_date: Math.floor(Date.now() / 1000),
     metadata: {
@@ -157,6 +159,7 @@ export async function recordCaregiverGotcha(
               cur.continue();
             }
           };
+          cursorReq.onerror = () => { /* cursor failed — overflow not trimmed this cycle, acceptable */ };
         }
       };
 

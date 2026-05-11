@@ -154,16 +154,21 @@ async function pollOnce(): Promise<void> {
           .filter((m) => m.sender && m.text);
         setTimeout(() => {
           if (newMsgs.length <= 3) {
-            // Announce each message individually, queued by sentence separator.
+            // Announce sender name only — body omitted for privacy (caregiver gate).
+            // TODO(i18n): announcement string is hardcoded English — use a
+            // translation lookup keyed on useSettingsStore.getState().language
+            // once a t() helper is available in this service context.
             const announcement = newMsgs
               .map((m) => {
                 const sender = sanitizeString(m.sender, SAFE_LIMITS.name);
-                const text = sanitizeString(m.text, SAFE_LIMITS.messageText).slice(0, 120);
-                return `New message from ${sender}: ${text}`;
+                // Speak first name only — limits social engineering via crafted sender names
+                const firstName = (sender.split(/[\s,]/)[0] || sender).replace(/\d/g, '').slice(0, 20);
+                return `New message from ${firstName}`;  // body removed for privacy; sanitizeString already handled escaping
               })
               .join('. ');
             aacSpeak(announcement, speechRate, speechVolume);
           } else {
+            // TODO(i18n): "new messages" string is hardcoded English.
             aacSpeak(`${deliveredThisBatch} new messages`, speechRate, speechVolume);
           }
         }, 800); // 800ms after chime

@@ -1,7 +1,8 @@
 import { SupportedLanguage } from '@/engine/i18n';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
-import { getClinicalVocabulary } from '@/constants/clinicalVocabulary';
+import { getClinicalDict } from '@/constants/clinicalVocabulary';
+import { applyGrammarRules } from '@/constants/languageRules';
 import { AAC_VOCABULARY } from '@/constants/languageVocabulary';
 import { OFFLINE_DICT_1 } from '@/constants/offlineDictionary';
 
@@ -40,6 +41,7 @@ function trimCache() {
 
 type WordDict = Map<string, string>;
 const dictCache = new Map<string, WordDict>();
+const MAX_DICT_CACHE = 20;
 
 function getWordDict(fromLang: SupportedLanguage, toLang: SupportedLanguage): WordDict {
   const key = `${fromLang}:${toLang}`;
@@ -84,14 +86,18 @@ function getWordDict(fromLang: SupportedLanguage, toLang: SupportedLanguage): Wo
     if (!dict.has(fw)) dict.set(fw, toDict1[i]);
   }
 
-  const fromClinical = getClinicalVocabulary(fromLang);
-  const toClinical = getClinicalVocabulary(toLang);
-  const clinLen = Math.min(fromClinical.length, toClinical.length);
-  for (let i = 0; i < clinLen; i++) {
-    const fw = fromClinical[i].toLowerCase();
-    if (!dict.has(fw)) dict.set(fw, toClinical[i]);
+  // Dictionary-based clinical vocab lookup — no positional misalignment.
+  // getClinicalDict uses English as the pivot: each VocabEntry maps one
+  // concept across all languages, so ro["vreau să"] → ru["хочу"] is exact.
+  const clinicalDict = getClinicalDict(fromLang, toLang);
+  for (const [from, to] of clinicalDict) {
+    if (!dict.has(from)) dict.set(from, to);
   }
 
+  if (dictCache.size >= MAX_DICT_CACHE) {
+    const oldest = dictCache.keys().next().value;
+    if (oldest !== undefined) dictCache.delete(oldest);
+  }
   dictCache.set(key, dict);
   return dict;
 }
@@ -130,15 +136,7 @@ function offlineTranslate(text: string, fromLang: SupportedLanguage, toLang: Sup
 
   const joined = result.join(' ').trim();
 
-  // Slavic/CJK languages: lowercase mid-sentence words to avoid ALL-CAPS
-  // artifacts from dictionary entries (e.g. "Я хочу Слушать" → "Я хочу слушать").
-  // First word keeps its capitalisation from the dict (typically sentence-initial cap).
-  const LOWERCASE_MID: SupportedLanguage[] = ['ru', 'uk'];
-  if (LOWERCASE_MID.includes(toLang)) {
-    return joined.replace(/(\S+\s+)(\S+)/g, (_, head, rest) => head + rest.toLowerCase());
-  }
-
-  return joined;
+  return applyGrammarRules(joined, toLang);
 }
 
 export function translateTextSync(
@@ -160,6 +158,7 @@ export function translateTextSync(
 }
 
 let aiTimer: ReturnType<typeof setTimeout> | null = null;
+let aiAbortController: AbortController | null = null;
 let lastAiText = '';
 
 /**
@@ -223,15 +222,27 @@ export function translateWithAIRefine(
 ): string {
   const instant = translateTextSync(text, fromLang, toLang);
 
-  if (aiTimer) clearTimeout(aiTimer);
+  if (aiTimer) { clearTimeout(aiTimer); aiTimer = null; }
+  if (aiAbortController) { aiAbortController.abort(); aiAbortController = null; }
   const trimmed = text.trim();
   if (trimmed === lastAiText || trimmed.split(/\s+/).length < 2) return instant;
 
+  aiAbortController = new AbortController();
+  const currentSignal = aiAbortController.signal;
   aiTimer = setTimeout(async () => {
     lastAiText = trimmed;
     try {
+      if (currentSignal.aborted) return;
       const { translateAI } = await import('./aiService');
-      const result = await translateAI(trimmed, LANG_NAMES[fromLang] ?? fromLang, LANG_NAMES[toLang] ?? toLang);
+      const resultRace = await Promise.race([
+        translateAI(trimmed, LANG_NAMES[fromLang] ?? fromLang, LANG_NAMES[toLang] ?? toLang),
+        new Promise<never>((_, reject) => {
+          const t = setTimeout(() => reject(new Error('AI translate timeout')), 15000);
+          currentSignal.addEventListener('abort', () => { clearTimeout(t); reject(new Error('aborted')); }, { once: true });
+        }),
+      ]);
+      if (currentSignal.aborted) return;
+      const result = resultRace;
       const refined = result.trim().replace(/^["']|["']$/g, '');
       if (
         refined &&
@@ -259,6 +270,11 @@ export function translateWithAIRefine(
   }, 200);
 
   return instant;
+}
+
+export function clearTranslationCache(): void {
+  cache.clear();
+  dictCache.clear();
 }
 
 export async function translateText(

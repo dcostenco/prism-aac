@@ -67,8 +67,8 @@ describe('validateEmergencyConfig — countdownSeconds bounds', () => {
     expect(cfg.countdownSeconds).toBe(DEFAULT_CONFIG.countdownSeconds);
   });
 
-  it('accepts valid 0..60', () => {
-    expect(validateEmergencyConfig({ countdownSeconds: 0 }).countdownSeconds).toBe(0);
+  it('accepts valid 1..60 (0 raised to 1 — prevents instant-dispatch)', () => {
+    expect(validateEmergencyConfig({ countdownSeconds: 0 }).countdownSeconds).toBe(10) // below min → falls back to default;
     expect(validateEmergencyConfig({ countdownSeconds: 60 }).countdownSeconds).toBe(60);
     expect(validateEmergencyConfig({ countdownSeconds: 7 }).countdownSeconds).toBe(7);
   });

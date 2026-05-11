@@ -85,7 +85,8 @@ const SCRIPT_RANGES: Array<{ regex: RegExp; lang: string }> = [
     // Ordered so the first match wins. Cyrillic is the most common AAC
     // mismatch (per our user reports), so it leads. Each regex matches
     // a SINGLE codepoint in the Unicode range.
-    { regex: /[Ѐ-ӿ]/, lang: 'ru' },   // Cyrillic
+    { regex: /[іїєґ]/, lang: 'uk' },   // Ukrainian-specific chars — check BEFORE generic Cyrillic
+    { regex: /[Ѐ-ӿ]/, lang: 'ru' },   // Generic Cyrillic → Russian
     { regex: /[֐-׿]/, lang: 'he' },   // Hebrew
     { regex: /[؀-ۿ]/, lang: 'ar' },   // Arabic
     { regex: /[Ͱ-Ͽ]/, lang: 'el' },   // Greek
@@ -121,6 +122,10 @@ export function disambiguateLangByScript(text: string, callerLang: string): stri
     if (bestCount / total < 0.7) return callerLang;
     if (bestLang === callerBase) return callerLang;
     return bestLang;
+}
+
+export function clearTextCorrectCache(): void {
+  memoryCache.clear();
 }
 
 function trimCorrectCache() {
@@ -170,7 +175,7 @@ async function correctViaLocal(text: string, lang: string, mode: CorrectMode): P
       body: JSON.stringify({
         model: LOCAL_MODEL,
         system: mode === 'complete' ? LOCAL_SYSTEM_COMPLETE : LOCAL_SYSTEM_CORRECT,
-        prompt: `Language: ${langName} (${lang}). Input: "${text}"`,
+        prompt: `Language: ${langName} (${lang}). Input: ${JSON.stringify(text)}`,
         stream: false,
         options: { temperature: 0.0, num_predict: 80 },
       }),
@@ -197,7 +202,7 @@ export async function correctText(
   lang = 'en',
   mode: CorrectMode = 'correct',
 ): Promise<string> {
-  const trimmed = text.trim();
+  const trimmed = text.trim().slice(0, 4000);
   // Match the MessageBar threshold (2 chars) — pin so a future bump
   // here doesn't silently kill 2-char autocomplete (e.g. "hw" → "how").
   if (!trimmed || trimmed.length < 2) return text;

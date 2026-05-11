@@ -73,7 +73,7 @@ export interface AdaptiveProfile {
   version: number;
 
   // 1. Tone
-  toneHistory: Array<{ context: string; tone: AdaptiveTone; timestamp: number }>;
+  toneHistory: Array<{ tone: AdaptiveTone; timestamp: number }>;
   /** sustained mood — only flips when ≥5 of last 10 events agree */
   dominantMood: 'neutral' | 'urgent' | 'happy' | 'calm';
 
@@ -151,7 +151,7 @@ function freshProfile(): AdaptiveProfile {
  *  values into the math the AAC user's predictions and motor-rhythm
  *  cursor speeds depend on — silently locking them out of accurate
  *  recommendations or making the cursor unusable. */
-const MAX_TONE_HISTORY = 200;
+const MAX_TONE_HISTORY = 100;
 const MAX_MISPRONUNCIATIONS = 500;
 const MAX_CATEGORIES = 200;
 const MAX_TOD_PERIODS = 24;
@@ -184,11 +184,10 @@ function sanitizeAdaptiveProfile(raw: unknown): AdaptiveProfile {
   if (Array.isArray(r.toneHistory)) {
     const validTones = new Set(['neutral', 'friendly', 'excited', 'empathetic', 'serious']);
     out.toneHistory = (r.toneHistory as unknown[])
-      .filter((h): h is { context: string; tone: AdaptiveTone; timestamp: number } => {
+      .filter((h): h is { tone: AdaptiveTone; timestamp: number } => {
         if (!h || typeof h !== 'object') return false;
         const x = h as Record<string, unknown>;
-        return typeof x.context === 'string' && x.context.length <= MAX_KEY_LEN
-          && typeof x.tone === 'string' && validTones.has(x.tone)
+        return typeof x.tone === 'string' && validTones.has(x.tone)
           && typeof x.timestamp === 'number' && Number.isFinite(x.timestamp);
       })
       .slice(0, MAX_TONE_HISTORY);
@@ -369,11 +368,11 @@ function mutate(fn: (p: AdaptiveProfile) => void): void {
 
 // Flush on page hide / visibility change so we never lose the last few seconds
 // of adaptation when the user closes the tab. Mirrors predictionStore pattern.
+// Named handler so it can be removed if cleanup is ever needed (tests, PWA re-mount)
+const _adaptiveOnVisibility = () => { if (document.visibilityState === 'hidden') flushNow(); };
 if (typeof window !== 'undefined') {
   window.addEventListener('pagehide', flushNow);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushNow();
-  });
+  document.addEventListener('visibilitychange', _adaptiveOnVisibility);
 }
 
 export function resetProfile(): void {
@@ -464,7 +463,8 @@ export function detectTone(text: string): AdaptiveTone {
 
 export function recordTone(text: string, tone: AdaptiveTone): void {
   mutate((p) => {
-    p.toneHistory.push({ context: text.slice(0, 50), tone, timestamp: Date.now() });
+    // SECURITY: context (message text) MUST NOT be persisted — it may contain PHI (medical symptoms, names, locations). Only the detected tone enum is stored. Do not re-add the context field.
+    p.toneHistory.push({ tone, timestamp: Date.now() });
     if (p.toneHistory.length > 100) p.toneHistory = p.toneHistory.slice(-100);
 
     // Hysteresis: dominant mood only flips when ≥5 of last 10 events agree.
@@ -673,17 +673,22 @@ export function recordMessage(text: string, categoryId?: string): void {
       p.categories[categoryId] = { count: cur.count + 1, lastUsed: Date.now() };
     }
 
-    // Time-of-day patterns with per-word counts; decay applied lazily on read.
+    // Time-of-day patterns with per-word counts; decay applied on write.
     const period = periodForHour(new Date().getHours());
-    const list = p.timeOfDayPatterns[period] ?? [];
     const now = Date.now();
+    const cutoff = now - TOD_DECAY_MS;
+    const list = (p.timeOfDayPatterns[period] ?? []).filter((e) => e.t >= cutoff);
     for (const w of tokens.filter((t) => t.length > 2)) {
-      const existing = list.find((e) => e.w === w);
+      const wordLower = w;
+      // Never store emergency words — they must always pass through
+      // unfiltered and should not influence pattern/prediction ranking.
+      if (EMERGENCY_WORDS.has(wordLower)) continue;
+      const existing = list.find((e) => e.w === wordLower);
       if (existing) {
         existing.t = now;
         existing.n += 1;
       } else {
-        list.push({ w, t: now, n: 1 });
+        list.push({ w: wordLower, t: now, n: 1 });
       }
     }
     // Cap to top 50 by count — drop least-used to keep storage small

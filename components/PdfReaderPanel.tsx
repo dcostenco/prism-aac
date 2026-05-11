@@ -73,6 +73,11 @@ export default function PdfReaderPanel() {
   const onPick = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      setError('PDF too large — maximum 50 MB.');
+      setLoading(false);
+      return;
+    }
     setError(null);
     setLoading(true);
     setDoc(null);
@@ -87,7 +92,8 @@ export default function PdfReaderPanel() {
         totalChars: result.totalChars,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not read this PDF.');
+      console.warn('[pdf] load failed:', err instanceof Error ? err.message : err);
+      setError('Could not read this PDF. Please check the file and try again.');
     } finally {
       setLoading(false);
     }
@@ -101,8 +107,13 @@ export default function PdfReaderPanel() {
    *  already opened in PdfReader. Inline OCR removes that step.
    *  Returns the OCR text on success so callers (e.g. speakAll) can
    *  chain into TTS without waiting for setState to flush. */
+  // Guard against concurrent OCR runs that would corrupt the console.log patch.
+  const ocrInFlightRef = useRef(false);
+
   const runInlineOcr = useCallback(async (): Promise<string | null> => {
     if (!pdfFile) return null;
+    if (ocrInFlightRef.current) return null;
+    ocrInFlightRef.current = true;
     tapFeedback();
     setError(null);
     setOcrResult(null);
@@ -113,23 +124,28 @@ export default function PdfReaderPanel() {
       // adding a callback signature to runOcrOnPdf. The service
       // already logs `[ocr-pdf] page N/T → C chars` per page.
       const origLog = console.log;
-      console.log = (...args: unknown[]) => {
-        const s = args.map((a) => String(a)).join(' ');
-        if (/\[ocr-pdf\]/.test(s)) setOcrProgress(s.replace(/^\[ocr-pdf\]\s*/, ''));
-        origLog.apply(console, args);
-      };
-      const out = await runOcrOnPdf(pdfFile, language);
-      console.log = origLog;
-      if (out.ok) {
-        setOcrResult(out.text);
-        return out.text;
+      try {
+        console.log = (...args: unknown[]) => {
+          const s = args.map((a) => String(a)).join(' ');
+          if (/\[ocr-pdf\]/.test(s)) setOcrProgress(s.replace(/^\[ocr-pdf\]\s*/, '').slice(0, 100));
+          origLog.apply(console, args);
+        };
+        const out = await runOcrOnPdf(pdfFile, language);
+        if (out.ok) {
+          setOcrResult(out.text);
+          return out.text;
+        }
+        setError(out.error);
+        return null;
+      } finally {
+        console.log = origLog;
       }
-      setError(out.error);
-      return null;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'OCR failed.');
+      console.warn('[pdf-ocr] failed:', e instanceof Error ? e.message : e);
+      setError('OCR failed. Please try a clearer image.');
       return null;
     } finally {
+      ocrInFlightRef.current = false;
       setOcrLoading(false);
       setOcrProgress('');
     }

@@ -10,7 +10,7 @@
  * bar so they can tap Speak (or auto-speak fires via existing
  * sentence-end logic).
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
@@ -28,9 +28,20 @@ export default function OcrCapturePanel() {
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // CRITICAL #4 — revoke the preview Object URL on unmount to prevent memory leaks.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
   const onPick = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      setError('File too large — maximum 20 MB.');
+      return;
+    }
     setError(null);
     setResult(null);
     setLoading(true);

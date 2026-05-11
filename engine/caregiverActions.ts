@@ -71,45 +71,58 @@ export function executeAction(action: NoteAction): ActionResult {
 
   switch (action.type) {
     case 'add_phrase': {
-      const { categoryId, text } = action.payload as { categoryId: string; text: string };
+      const raw = action.payload as { categoryId: string; text: string };
+      const categoryId = String(raw.categoryId ?? '').slice(0, 80);
+      const text = String(raw.text ?? '').slice(0, 500);
       if (!categoryId || !text) return { success: false, message: 'Missing category or text' };
       catStore.addCustomPhrase(categoryId, text);
-      return { success: true, message: `Added "${text}" to category` };
+      return { success: true, message: `Added phrase to category` };
     }
 
     case 'remove_phrase': {
       const { phraseText, categoryId } = action.payload as { phraseText: string; categoryId: string };
-      const phrases = catStore.getPhrasesForCategory(categoryId);
-      const match = phrases.find((p) => p.text.toLowerCase() === phraseText.toLowerCase());
-      if (!match) return { success: false, message: `Phrase "${phraseText}" not found` };
+      const safePhrase = String(phraseText ?? '').slice(0, 500);
+      const safeCatId = String(categoryId ?? '').slice(0, 80);
+      const phrases = catStore.getPhrasesForCategory(safeCatId);
+      const match = phrases.find((p) => p.text.toLowerCase() === safePhrase.toLowerCase());
+      if (!match) return { success: false, message: `Phrase "${safePhrase}" not found` };
       if (match.isCustom) {
         catStore.removeCustomPhrase(match.id);
-        return { success: true, message: `Removed "${phraseText}"` };
+        return { success: true, message: `Removed "${safePhrase}"` };
       }
       catStore.hideDefaultPhrase(match.id);
-      return { success: true, message: `Hidden "${phraseText}" (can be restored in Settings)` };
+      return { success: true, message: `Hidden "${safePhrase}" (can be restored in Settings)` };
     }
 
     case 'reorder_phrase': {
       const { phraseId, newSortOrder, categoryId } = action.payload as { phraseId: string; newSortOrder: number; categoryId: string };
-      const phrases = catStore.getPhrasesForCategory(categoryId);
+      const safeOrder = typeof newSortOrder === 'number' && Number.isFinite(newSortOrder)
+        ? Math.max(0, Math.min(Math.floor(newSortOrder), 9999)) : 0;
+      const safeCategoryId = String(categoryId ?? '').slice(0, 64);
+      const phrases = catStore.getPhrasesForCategory(safeCategoryId);
       const target = phrases.find((p) => p.id === phraseId);
       if (!target) return { success: false, message: 'Phrase not found' };
       if (!target.isCustom) catStore.hideDefaultPhrase(target.id);
-      useCategoryStore.setState((s) => ({
-        customPhrases: [
-          ...s.customPhrases,
-          { id: crypto.randomUUID(), categoryId, text: target.text, sortOrder: newSortOrder, isCustom: true, usageCount: 0 },
-        ],
-      }));
-      return { success: true, message: `Moved "${target.text}" to position ${newSortOrder + 1}` };
+      useCategoryStore.setState((s) => {
+        const liveCount = s.customPhrases.filter((p) => !p.deletedAt).length;
+        if (liveCount >= 1000) return s;  // respect MAX_CUSTOM_PHRASES cap
+        return {
+          customPhrases: [
+            ...s.customPhrases,
+            { id: crypto.randomUUID(), categoryId: safeCategoryId, text: target.text, sortOrder: safeOrder, isCustom: true, usageCount: 0 },
+          ],
+        };
+      });
+      return { success: true, message: `Moved "${target.text}" to position ${safeOrder + 1}` };
     }
 
     case 'add_category': {
-      const { name, icon } = action.payload as { name: string; icon: string };
+      const rawCat = action.payload as { name: string; icon: string };
+      const name = String(rawCat.name ?? '').slice(0, 80);
+      const icon = String(rawCat.icon ?? '📌').slice(0, 8);
       if (!name) return { success: false, message: 'Missing category name' };
       catStore.addCustomCategory(name, icon || '📌');
-      return { success: true, message: `Created category "${name}"` };
+      return { success: true, message: `Created category` };
     }
 
     case 'remove_category': {
@@ -128,12 +141,19 @@ export function executeAction(action: NoteAction): ActionResult {
       };
       if (!name) return { success: false, message: 'Missing sequence name' };
 
+      const MAX_STEPS = 20;
+      const MAX_OPTIONS = 10;
+      const seqName = String(name ?? '').slice(0, 80);
+      const safeSteps = (steps ?? [{ label: 'Order', options: ['Option 1', 'Option 2'] }]).slice(0, MAX_STEPS).map((s: { label: string; options: string[] }) => ({
+        label: String(s.label ?? '').slice(0, 80),
+        options: (s.options ?? []).slice(0, MAX_OPTIONS).map((o: string) => String(o).slice(0, 200)),
+      }));
       const seq: OrderingSequenceData = {
         id: crypto.randomUUID(),
-        name,
+        name: seqName,
         categoryId: categoryId || 'food-ordering',
         sortOrder: catStore.getSequencesForCategory(categoryId || 'food-ordering').length,
-        steps: (steps ?? [{ label: 'Order', options: ['Option 1', 'Option 2'] }]).map((s, si) => ({
+        steps: safeSteps.map((s, si) => ({
           id: crypto.randomUUID(),
           label: s.label,
           stepOrder: si,
@@ -145,16 +165,17 @@ export function executeAction(action: NoteAction): ActionResult {
         })),
       };
       catStore.addOrderingSequence(seq);
-      return { success: true, message: `Created "${name}" ordering flow with ${seq.steps.length} steps` };
+      return { success: true, message: `Created "${seqName}" ordering flow with ${seq.steps.length} steps` };
     }
 
     case 'remove_sequence': {
       const { sequenceName } = action.payload as { sequenceName: string };
+      const safeName = String(sequenceName ?? '').slice(0, 80);
       const allSeqs = useCategoryStore.getState().orderingSequences;
-      const match = allSeqs.find((s) => s.name.toLowerCase() === sequenceName.toLowerCase());
-      if (!match) return { success: false, message: `Ordering flow "${sequenceName}" not found` };
+      const match = allSeqs.find((s) => s.name.toLowerCase() === safeName.toLowerCase());
+      if (!match) return { success: false, message: `Ordering flow "${safeName}" not found` };
       catStore.removeOrderingSequence(match.id);
-      return { success: true, message: `Removed "${sequenceName}" ordering flow` };
+      return { success: true, message: `Removed "${safeName}" ordering flow` };
     }
 
     case 'edit_sequence': {
@@ -165,10 +186,11 @@ export function executeAction(action: NoteAction): ActionResult {
       const seq = allSeqs.find((s) => s.name.toLowerCase() === sequenceName.toLowerCase());
       if (!seq) return { success: false, message: `Ordering flow "${sequenceName}" not found` };
 
+      const safeNewOptions = (newOptions ?? []).slice(0, 30).map((o: unknown) => String(o ?? '').slice(0, 500)).filter(Boolean);
       const updatedSeq = { ...seq, steps: seq.steps.map((step) => {
         if (step.label.toLowerCase() === stepLabel.toLowerCase()) {
           const existingTexts = new Set(step.options.map((o) => o.text.toLowerCase()));
-          const additions = newOptions.filter((o) => !existingTexts.has(o.toLowerCase()));
+          const additions = safeNewOptions.filter((o) => !existingTexts.has(o.toLowerCase()));
           return {
             ...step,
             options: [
@@ -189,15 +211,17 @@ export function executeAction(action: NoteAction): ActionResult {
 
     case 'boost_word': {
       const { word, boostCount } = action.payload as { word: string; boostCount: number };
-      if (!word) return { success: false, message: 'Missing word' };
-      const key = word.toLowerCase();
+      const key = String(word ?? '').toLowerCase().slice(0, 100);
+      if (!key) return { success: false, message: 'Invalid word' };
+      const rawBoost = typeof boostCount === 'number' && Number.isFinite(boostCount) ? boostCount : 10;
+      const clampedBoost = Math.min(Math.max(1, rawBoost), 100);
       const existing = predStore.wordFreq[key];
       const newFreq = {
         ...predStore.wordFreq,
-        [key]: { count: (existing?.count ?? 0) + (boostCount || 10), lastUsed: Date.now() },
+        [key]: { count: (existing?.count ?? 0) + clampedBoost, lastUsed: Date.now() },
       };
       usePredictionStore.setState({ wordFreq: newFreq });
-      return { success: true, message: `Boosted "${word}" prediction frequency by ${boostCount || 10}` };
+      return { success: true, message: `Boosted "${word}" prediction frequency by ${clampedBoost}` };
     }
 
     case 'note_only':

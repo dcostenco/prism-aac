@@ -27,7 +27,7 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
     const searchPhrase = englishPhrase || phrase;
     getPictogramUrl(searchPhrase, 'en', pictureMode).then((url) => {
       if (!cancelled) setIconUrl(url);
-    });
+    }).catch(() => { if (!cancelled) setIconUrl(null); });
     return () => { cancelled = true; };
   }, [phrase, englishPhrase, pictureMode, language]);
 

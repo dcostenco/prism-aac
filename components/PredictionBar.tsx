@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -38,6 +38,17 @@ function filterContacts(contacts: AacContact[], query: string): AacContact[] {
   return deduped;
 }
 
+const AVATAR_ALLOWED_DOMAINS = ['synalux.ai', 'googleusercontent.com', 'telegram.org', 'whatsapp.net', 'fbcdn.net', 'twimg.com'];
+
+function isSafeAvatarUrl(url: string): boolean {
+  if (/^blob:/.test(url)) return true;
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:') return false;
+    return AVATAR_ALLOWED_DOMAINS.some((d) => u.hostname === d || u.hostname.endsWith('.' + d));
+  } catch { return false; }
+}
+
 function ContactTile({ contact, extraCount, onTap }: { contact: AacContact; extraCount: number; onTap: (id: string) => void }) {
   return (
     <button
@@ -53,8 +64,8 @@ function ContactTile({ contact, extraCount, onTap }: { contact: AacContact; extr
         </span>
       )}
       <span className="text-xl leading-none">
-        {contact.avatar
-          ? <img src={contact.avatar} alt="" className="w-7 h-7 rounded-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display='none'; }} />
+        {contact.avatar && isSafeAvatarUrl(contact.avatar)
+          ? <img src={contact.avatar} alt="" referrerPolicy="no-referrer" className="w-7 h-7 rounded-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display='none'; }} />
           : PROVIDER_ICONS[contact.provider]
         }
       </span>
@@ -110,7 +121,7 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
     >
       <span className="flex-1 flex items-center justify-center">
         {iconUrl && (
-          <img src={iconUrl} alt="" aria-hidden loading="lazy" className="max-w-[clamp(1.5rem,4vw,2.5rem)] max-h-[clamp(1.5rem,5svh,2.5rem)] object-contain" />
+          <img src={iconUrl} alt="" aria-hidden loading="lazy" className="max-w-[clamp(1.5rem,4vw,2.5rem)] max-h-[clamp(1.5rem,5svh,2.5rem)] object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
         )}
       </span>
       <span className="truncate w-full text-center text-[clamp(0.6rem,1.8vw,1rem)] font-bold shrink-0 leading-tight">{word}</span>
@@ -283,7 +294,8 @@ export default function PredictionBar() {
     );
   }
 
-  const finalTiles = dropForeignTiles(displayed);
+  // MEDIUM #3 — memoize so dropForeignTiles doesn't run on every render.
+  const finalTiles = useMemo(() => dropForeignTiles(displayed), [displayed, language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 h-[clamp(56px,13svh,110px)]">

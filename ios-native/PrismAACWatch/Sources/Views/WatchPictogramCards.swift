@@ -243,37 +243,13 @@ struct WatchPictogramCards: View {
         }
         // Dictation sheet — Watch native voice/keyboard input → translate → speak
         .sheet(isPresented: $showDictation) {
-            NavigationView {
-                VStack(spacing: 10) {
-                    Image(systemName: "mic.circle.fill")
-                        .font(.system(size: 36))
-                        .foregroundColor(.blue)
-                    Text("Speak or type")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-                    TextField("…", text: $dictationText)
-                        .font(.system(size: 14))
-                        .multilineTextAlignment(.center)
-                    Button("Translate & Speak") {
-                        translation.handleDictation(
-                            text: dictationText,
-                            inputLang: vocab.inputLanguage,
-                            outputLang: vocab.outputLanguage,
-                            tts: tts
-                        )
-                        showDictation = false
-                    }
-                    .disabled(dictationText.isEmpty)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                }
-                .padding()
-                .navigationTitle("Translate")
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { showDictation = false }
-                    }
-                }
+            WatchDictationView(title: "Translate", submitLabel: "Translate & Speak") { text in
+                translation.handleDictation(
+                    text: text,
+                    inputLang: vocab.inputLanguage,
+                    outputLang: vocab.outputLanguage,
+                    tts: tts
+                )
             }
         }
         // Dedicated AI Chat sheet (from panel tile)
@@ -639,7 +615,6 @@ struct WatchAIChatView: View {
                 // Mic — triggers Watch native dictation
                 Button {
                     showDictation = true
-                    dictationText = ""
                 } label: {
                     Image(systemName: "mic.fill")
                         .font(.system(size: 16, weight: .bold))
@@ -667,34 +642,12 @@ struct WatchAIChatView: View {
         }
         .navigationTitle("AI Chat")
         .sheet(isPresented: $showDictation) {
-            NavigationView {
-                VStack(spacing: 12) {
-                    Image(systemName: "mic.circle.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(.blue)
-                    Text("Speak your question")
-                        .font(.system(size: 13, weight: .semibold))
-                    TextField("…", text: $dictationText)
-                        .font(.system(size: 14))
-                        .multilineTextAlignment(.center)
-                        .frame(minHeight: 36)
-                    Button("Ask AI") {
-                        inputText = dictationText
-                        dictationText = ""
-                        showDictation = false
-                        sendMessage()
-                    }
-                    .disabled(dictationText.isEmpty)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                }
-                .padding()
-                .navigationTitle("Dictate")
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { showDictation = false }
-                    }
-                }
+            WatchDictationView(
+                title: isTranslatorMode ? "Translate" : "Dictate",
+                submitLabel: isTranslatorMode ? "Translate" : "Ask AI"
+            ) { text in
+                inputText = text
+                sendMessage()
             }
         }
     }
@@ -722,6 +675,65 @@ struct WatchAIChatView: View {
                 isWaiting = false
                 messages.append((role: "ai", text: reply))
                 tts.speak(reply, language: outputLang)
+            }
+        }
+    }
+}
+
+// MARK: - Dictation input view (auto-focuses TextField → triggers Watch input controller)
+
+/// Single-purpose dictation sheet for watchOS.
+/// Uses @FocusState to programmatically focus the TextField on appear —
+/// this automatically presents the Watch input controller (dictation +
+/// keyboard + scribble) without requiring the user to tap first.
+struct WatchDictationView: View {
+    let title: String
+    let submitLabel: String
+    let onSubmit: (String) -> Void
+
+    @State private var text = ""
+    @FocusState private var fieldFocused: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 10) {
+                Image(systemName: "mic.circle.fill")
+                    .font(.system(size: 36))
+                    .foregroundColor(.blue)
+                    .onAppear { fieldFocused = true }   // auto-opens Watch input controller
+
+                TextField("Speak or type…", text: $text)
+                    .font(.system(size: 15))
+                    .multilineTextAlignment(.center)
+                    .focused($fieldFocused)
+                    .frame(minHeight: 40)
+                    .submitLabel(.done)
+                    .onSubmit {
+                        guard !text.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                        let result = text
+                        text = ""
+                        dismiss()
+                        onSubmit(result)
+                    }
+
+                Button(submitLabel) {
+                    let result = text.trimmingCharacters(in: .whitespaces)
+                    guard !result.isEmpty else { return }
+                    text = ""
+                    dismiss()
+                    onSubmit(result)
+                }
+                .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
+                .buttonStyle(.borderedProminent)
+                .tint(.blue)
+            }
+            .padding()
+            .navigationTitle(title)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
             }
         }
     }

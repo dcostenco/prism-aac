@@ -34,6 +34,10 @@ export default function MessageBar() {
   const sidePanel = useUIStore((s) => s.sidePanel);
   const isMessagingMode = sidePanel === 'ai-chat' || sidePanel === 'aac-chat';
   const [translated, setTranslated] = useState<string | null>(null);
+  // Ref so the 2s translation auto-speak timer always reads the latest
+  // translated value even when `translated` is excluded from its deps array.
+  const translatedRef = useRef(translated);
+  useEffect(() => { translatedRef.current = translated; }, [translated]);
   // Tracks the most recent word we silence-spoke so we don't repeat
   // "want" every time the user pauses with the same trailing word.
   // Updated by the autocorrect useEffect after a "no correction
@@ -157,9 +161,11 @@ export default function MessageBar() {
     translationSpeakTimer.current = setTimeout(() => {
       const { autoSpeak, soundEnabled } = useMessageStore.getState();
       if (!autoSpeak || !soundEnabled) return;
-      // Prefer AI-refined translation (in `translated` state) if available,
-      // otherwise aacSpeak translates inline via the offline dict.
-      aacSpeak(text.trim(), speechRate, speechVolume, activeTone);
+      // Use translatedRef.current so we always read the latest AI-refined
+      // translation — the closure over `translated` would be stale here
+      // because `translated` is intentionally excluded from the deps array.
+      const latestTranslated = translatedRef.current;
+      aacSpeak(latestTranslated || text.trim(), speechRate, speechVolume, activeTone);
     }, TRANSLATION_SILENCE_MS);
 
     return () => {
@@ -507,16 +513,18 @@ export default function MessageBar() {
             translation tells the user what their text means in the
             target language; the autocorrect tells them what they
             probably meant to type. Show both, let the user pick. */}
-        {suggestion && (
-          <button
-            onClick={acceptSuggestion}
-            aria-label={`Auto-correct to ${suggestion}`}
-            data-testid="autocorrect-suggestion"
-            className="text-left text-base md:text-lg text-[#4CAF50] truncate hover:underline mt-1"
-          >
-            ✨ {t('did_you_mean')} <span className="font-semibold">{suggestion}</span> <span className="text-dim text-sm">{t('tap_or_press')}</span>
-          </button>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {suggestion && (
+            <button
+              onClick={acceptSuggestion}
+              aria-label={`Auto-correct to ${suggestion}`}
+              data-testid="autocorrect-suggestion"
+              className="text-left text-base md:text-lg text-[#4CAF50] truncate hover:underline mt-1"
+            >
+              ✨ {t('did_you_mean')} <span className="font-semibold">{suggestion}</span> <span className="text-dim text-sm">{t('tap_or_press')}</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-[clamp(2.75rem,5vw,4rem)] h-[clamp(2.75rem,5vw,4rem)] rounded-xl surface-key text-muted text-[clamp(1rem,1.8vw,1.375rem)] flex items-center justify-center shrink-0 border border-theme">↩</button>

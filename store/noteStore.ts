@@ -23,6 +23,7 @@ const MAX_ACTIONS_PER_NOTE = 50;
 const VALID_ACTION_TYPES = new Set<NoteAction['type']>([
   'add_phrase', 'remove_phrase', 'add_sequence', 'reorder_phrase',
   'boost_word', 'note_only',
+  'add_category', 'remove_category', 'remove_sequence', 'edit_sequence',
 ]);
 
 /** Drop any action that doesn't match the expected discriminated-union
@@ -154,7 +155,8 @@ export const useNoteStore = create<NoteState>()(
         get().notes.filter((n) => !n.applied && n.actions.some((a) => a.type !== 'note_only')),
 
       searchNotes: (query) => {
-        const q = query.toLowerCase();
+        const q = query.slice(0, 200).toLowerCase();
+        if (!q) return get().notes;
         return get().notes.filter((n) => n.text.toLowerCase().includes(q));
       },
     }),

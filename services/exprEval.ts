@@ -13,7 +13,21 @@
  * tutor surface displays it as text. The `🧮 Eval` button is the
  * fastest, lowest-cost feedback path: no AI roundtrip, instant.
  */
-import { evaluate as mjsEvaluate, type MathScope } from 'mathjs';
+import { create, all, type MathScope } from 'mathjs';
+
+// Restricted mathjs instance. Block all dynamic code loading and
+// recursive evaluation paths that could be used to escape the sandbox.
+const _math = create(all, {});
+const _sandbox_deny = () => { throw new Error('not allowed in AAC math'); };
+_math.import({
+  import: _sandbox_deny,      // blocks dynamic code loading
+  createUnit: _sandbox_deny,  // blocks new unit injection
+  reviver: _sandbox_deny,     // blocks custom deserialization
+  // Note: parse and evaluate cannot be blocked — they are used internally
+  // by mjsEvaluate itself. The expression length cap (500 chars) and
+  // scope freeze are the primary defences against abuse.
+}, { override: true });
+const { evaluate: mjsEvaluate } = _math;
 
 export interface EvalSuccess {
   ok: true;
@@ -155,8 +169,15 @@ export function evaluateExpression(
   if (!cleaned) {
     return { ok: false, error: 'Nothing to evaluate yet — tap some math first.' };
   }
+  if (cleaned.length > 500) {
+    return { ok: false, error: 'Expression too complex — simplify and try again.', cleaned };
+  }
   try {
-    const result = mjsEvaluate(cleaned, scope ?? {});
+    // No callers currently pass scope. Normal object (not Object.create(null))
+    // is required — mathjs needs Object.prototype for isComplex checks.
+    const safeScope = scope ? Object.assign({}, scope) : {};
+    Object.freeze(safeScope);
+    const result = mjsEvaluate(cleaned, safeScope);
     if (result === undefined || result === null) {
       return { ok: false, error: 'No result.', cleaned };
     }

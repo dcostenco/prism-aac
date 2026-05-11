@@ -98,10 +98,11 @@ export function subscribeToIntegrationEvents(
 ): () => void {
   const ch = bc();
   if (!ch) return () => {};
+  const VALID_BC_TYPES = new Set(['provider-connected', 'provider-disconnected', 'provider-refreshed']);
   const listener = (e: MessageEvent) => {
-    if (e?.data && typeof e.data === 'object' && 'type' in e.data) {
-      handler(e.data as BroadcastEvent);
-    }
+    if (!e?.data || typeof e.data.type !== 'string' || !VALID_BC_TYPES.has(e.data.type)) return;
+    if (typeof e.data.provider !== 'string' || e.data.provider.length > 100 || !e.data.provider) return;
+    handler(e.data as BroadcastEvent);
   };
   ch.addEventListener('message', listener);
   return () => ch.removeEventListener('message', listener);
@@ -292,7 +293,17 @@ export async function connectProvider(
   // forever. The popup never calls window.close(), prism-aac waits
   // 10 min for window.closed, and every Connect button stays
   // disabled the whole time.
-  const url = new URL(provider.connectUrl);
+  const url = new URL(provider.connectUrl, SYNALUX_BASE || undefined);
+  if (SYNALUX_BASE) {
+    try {
+      const expectedOrigin = new URL(SYNALUX_BASE).origin;
+      if (url.origin !== expectedOrigin) {
+        return { ok: false, reason: 'no-connect-url' };
+      }
+    } catch {
+      return { ok: false, reason: 'no-connect-url' };
+    }
+  }
   if (!url.searchParams.has('return')) {
     url.searchParams.set('return', '/integrations/connect-done');
   }

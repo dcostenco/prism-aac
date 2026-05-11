@@ -62,11 +62,13 @@ async function loadPdfjs(): Promise<typeof import('pdfjs-dist')> {
     );
   }
   if (!workerSet) {
-    // Point the worker at the CDN so we don't have to bundle it
-    // manually; matches the pdfjs version exactly.
-    const version = mod.version;
-    mod.GlobalWorkerOptions.workerSrc =
-      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+    // Resolve the worker from the installed npm package via Next.js/Webpack
+    // URL bundling. The resulting URL is content-hashed and served locally,
+    // eliminating any CDN dependency or SRI risk at runtime.
+    mod.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.mjs',
+      import.meta.url,
+    ).toString();
     workerSet = true;
   }
   pdfjsModule = mod;
@@ -85,6 +87,7 @@ async function loadPdfjs(): Promise<typeof import('pdfjs-dist')> {
  * user can grep-filter their console.
  */
 function diag(...args: unknown[]): void {
+  if (process.env.NODE_ENV === 'production') return;
   if (typeof console !== 'undefined') console.log('[pdfReader]', ...args);
 }
 
@@ -182,10 +185,13 @@ export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExt
  *  text as content — otherwise an error placeholder ends up read aloud
  *  to the AAC user. (May 2026 user report: PDF reader looping the
  *  "could not be read" message via Read all.) */
+/** SECURITY: This sentinel must not be exposed as user-configurable. R13 review. */
 export const PDF_UNREADABLE_PREFIX = '⛔ ';
 
 export function isUnreadable(page: PdfPage): boolean {
-  return typeof page.text === 'string' && page.text.startsWith(PDF_UNREADABLE_PREFIX);
+  return typeof page.text === 'string' &&
+    page.text.startsWith(PDF_UNREADABLE_PREFIX) &&
+    page.text.length < 200; // real PDF text starting with ⛔ would be longer
 }
 
 /** Per-page extraction with TWO fallback strategies. Designed so a

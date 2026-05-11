@@ -1,11 +1,12 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNoteStore } from '@/store/noteStore';
 import { useUIStore } from '@/store/uiStore';
 import { tapFeedback } from '@/services/feedback';
 import { executeAllActions, ActionResult } from '@/engine/caregiverActions';
 import { CaregiverNote } from '@/types';
 import { parseCaregiverNote } from '@/services/aiService';
+import { sanitizeString } from '@/lib/safeStrings';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { useT } from '@/engine/useT';
@@ -25,6 +26,11 @@ export default function CaregiverPanel() {
   const [results, setResults] = useState<ActionResult[] | null>(null);
   const [tab, setTab] = useState<'add' | 'log'>('add');
   const [parsing, setParsing] = useState(false);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const handleApplyActions = useCallback(
     (note: CaregiverNote) => {
@@ -40,16 +46,20 @@ export default function CaregiverPanel() {
 
   const handleSubmitNote = async () => {
     if (!input.trim()) return;
+    if (input.trim().length > 2000) return; // already capped by textarea
     tapFeedback();
 
     if (aiEnabled) {
       setParsing(true);
       try {
         const parsed = await parseCaregiverNote(input.trim());
+        if (!mountedRef.current) return;
         addNote(input.trim(), parsed.actions);
       } catch {
+        if (!mountedRef.current) return;
         addNote(input.trim());
       }
+      if (!mountedRef.current) return;
       setParsing(false);
     } else {
       addNote(input.trim());
@@ -85,8 +95,9 @@ export default function CaregiverPanel() {
             <label className="text-muted text-base font-bold block mb-1">{t('your_name')}</label>
             <input
               value={authorName}
-              onChange={(e) => setAuthorName(e.target.value)}
+              onChange={(e) => setAuthorName(sanitizeString(e.target.value, 100))}
               placeholder={t('role_placeholder')}
+              maxLength={100}
               className="w-full surface-key rounded-lg px-3 py-3 text-primary text-lg border border-theme"
             />
           </div>
@@ -98,6 +109,7 @@ export default function CaregiverPanel() {
               onChange={(e) => setInput(e.target.value)}
               placeholder={t('note_examples')}
               className="flex-1 min-h-[120px] surface-key rounded-lg px-3 py-2 text-primary text-lg resize-none border border-theme"
+              maxLength={2000}
             />
           </div>
 

@@ -22,7 +22,8 @@ export default function GreetingBanner() {
 
   useEffect(() => {
     let mounted = true;
-    const dismissed = sessionStorage.getItem('prism-greeting-dismissed');
+    let dismissed = false;
+    try { dismissed = !!sessionStorage.getItem('prism-greeting-dismissed'); } catch { /* private context */ }
     if (!dismissed) queueMicrotask(() => { if (mounted) setVisible(true); });
     return () => { mounted = false; };
   }, []);
@@ -32,11 +33,11 @@ export default function GreetingBanner() {
   const { greeting, icon } = getTimeGreeting(t);
   const dismiss = () => {
     setVisible(false);
-    sessionStorage.setItem('prism-greeting-dismissed', '1');
+    try { sessionStorage.setItem('prism-greeting-dismissed', '1'); } catch { /* private context */ }
   };
 
   return (
-    <div className="shrink-0 px-3 py-2 surface-bar border-b border-theme flex items-center gap-3" onClick={dismiss}>
+    <div className="shrink-0 px-3 py-2 surface-bar border-b border-theme flex items-center gap-3">
       <span className="text-3xl">{icon}</span>
       <div className="flex-1 min-w-0">
         <p className="text-primary font-bold text-lg truncate">{greeting}</p>
@@ -46,7 +47,7 @@ export default function GreetingBanner() {
           </p>
         )}
       </div>
-      <button className="text-muted text-xl px-2" aria-label={t('close_panel')}>✕</button>
+      <button onClick={dismiss} className="text-muted text-xl px-2" aria-label={t('close_panel')}>✕</button>
     </div>
   );
 }

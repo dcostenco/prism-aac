@@ -183,6 +183,7 @@ export default function CategoryPanel() {
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim() || !searchOpen) return [];
+    if (searchQuery.length > 200) return [];
     const q = searchQuery.toLowerCase();
     const cats = allCategories();
     const out: { phrase: string; category: string; phraseId?: string }[] = [];
@@ -322,15 +323,19 @@ export default function CategoryPanel() {
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search all vocabulary…"
           className="flex-1 bg-transparent text-white text-lg outline-none placeholder:text-white/40 py-2"
+          maxLength={200}
           autoFocus
+          aria-label="Search all vocabulary"
+          aria-controls="category-search-results"
+          aria-autocomplete="list"
         />
         <button onClick={closeSearch} className="text-white/50 hover:text-white text-xl px-2">✕</button>
       </div>
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      <div id="category-search-results" className="flex-1 overflow-y-auto p-3 space-y-2">
         {!searchQuery.trim() && <p className="text-muted text-center py-10">Start typing to search all vocabulary…</p>}
-        {searchQuery.trim() && searchResults.length === 0 && <p className="text-muted text-center py-10">No results for &quot;{searchQuery}&quot;</p>}
-        {searchResults.map((r, i) => (
-          <button key={i} onClick={() => handlePhrase(r.phrase, r.phraseId)}
+        {searchQuery.trim() && searchResults.length === 0 && <p className="text-muted text-center py-10">No results for &quot;{searchQuery.slice(0, 50)}{searchQuery.length > 50 ? '…' : ''}&quot;</p>}
+        {searchResults.map((r) => (
+          <button key={r.phraseId ?? `${r.category ?? ''}:${r.phrase ?? ''}`} onClick={() => handlePhrase(r.phrase, r.phraseId)}
             className="aac-btn w-full flex items-center justify-between px-4 py-3 rounded-xl surface-key border border-theme text-left">
             <span className="text-primary font-bold text-lg">{r.phrase}</span>
             <span className="text-muted text-xs ml-2 shrink-0">{r.category}</span>

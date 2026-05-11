@@ -45,7 +45,8 @@ export default function IntegrationsSettings() {
       setLoadState('idle');
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load integrations.');
+      console.warn('[integrations] load failed:', e instanceof Error ? e.message : e);
+      setError('Could not load integrations. Please check your connection.');
       setLoadState('error');
     }
   }, []);
@@ -78,6 +79,20 @@ export default function IntegrationsSettings() {
     if (p.status === 'planned') return;
     if (!p.connectUrl) return;
 
+    // CRITICAL #1 — origin validation: block open-redirect to unexpected origins.
+    // Fail-closed: require https and, when base is configured, exact origin match.
+    const SYNALUX_BASE = process.env.NEXT_PUBLIC_SYNALUX_BASE ?? '';
+    let url: URL;
+    try {
+      url = new URL(p.connectUrl);
+      // Always require https — blocks data:, javascript:, blob:, http: redirects
+      if (url.protocol !== 'https:') return;
+      if (SYNALUX_BASE) {
+        const expectedOrigin = new URL(SYNALUX_BASE).origin;
+        if (url.origin !== expectedOrigin) return; // block unexpected origin
+      }
+    } catch { return; }
+
     // Same-window navigation, NOT popup. iPad Safari aggressively
     // blocks popups (even synchronously-opened ones) and opens
     // surviving popups in background tabs that the user doesn't
@@ -92,7 +107,6 @@ export default function IntegrationsSettings() {
     // ?connected=1&provider=<id>&scope=<key>; HomePage / SettingsModal
     // listen for those params and surface a toast ("✓ Gmail connected").
     tapFeedback();
-    const url = new URL(p.connectUrl);
     if (!url.searchParams.has('return')) {
       url.searchParams.set('return', '/prism-aac');
     }

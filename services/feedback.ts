@@ -12,11 +12,9 @@ let warmGain: GainNode | null = null;
 
 function getAudioCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null;
+  if (audioCtx && audioCtx.state === 'closed') audioCtx = null;  // re-create if killed by iOS
   if (!audioCtx) {
     try { audioCtx = new AudioContext(); } catch { return null; }
-  }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume();
   }
   return audioCtx;
 }
@@ -68,9 +66,12 @@ export function hapticHeavy(): void {
   }
 }
 
-function playTone(freq: number, type: OscillatorType, peak: number, durationSec: number): void {
+async function playTone(freq: number, type: OscillatorType, peak: number, durationSec: number): Promise<void> {
   const ctx = getAudioCtx();
   if (!ctx) return;
+  if (ctx.state === 'suspended') {
+    try { await ctx.resume(); } catch { /* iOS may refuse without gesture */ }
+  }
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.connect(gain);
@@ -143,4 +144,22 @@ export function keyFeedback(): void {
 export function deleteFeedback(): void {
   hapticHeavy();
   playDelete();
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => {
+    stopAudioWarmup();
+    if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; }
+  });
+}
+
+// Reset AudioContext when output device changes (speaker plugged in, BT headset connected)
+// Mirrors the pattern in azureTTS.ts to ensure click/chime feedback plays through the new device.
+if (typeof window !== 'undefined' && navigator.mediaDevices) {
+  navigator.mediaDevices.addEventListener('devicechange', () => {
+    if (audioCtx && audioCtx.state !== 'closed') {
+      audioCtx.close().catch(() => {});
+      audioCtx = null;
+    }
+  });
 }

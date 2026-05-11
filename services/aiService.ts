@@ -23,22 +23,34 @@ import { DEFAULT_CATEGORIES } from '@/constants/categories';
 import { timeoutSignal } from '@/lib/portalConfig';
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
-const LOCAL_OLLAMA_URL = 'http://localhost:11434/api';
+const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
 const LOCAL_MODEL = 'prism-coder:7b';
 
 // ── Auth ──
 
-function getAuthToken(): string | null {
+const TOKEN_KEY = 'prism-aac-auth-token';
+const TOKEN_EXP_KEY = 'prism-aac-auth-token-exp';
+const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+export function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('prism-aac-auth-token') || null;
+  const exp = Number(sessionStorage.getItem(TOKEN_EXP_KEY));
+  if (exp && Date.now() > exp) {
+    // Token expired — clear silently so next request redirects to sign-in
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_EXP_KEY);
+    return null;
+  }
+  return sessionStorage.getItem(TOKEN_KEY) || null;
 }
 
 export function setAuthToken(token: string): void {
-  localStorage.setItem('prism-aac-auth-token', token);
+  sessionStorage.setItem(TOKEN_KEY, token);
+  sessionStorage.setItem(TOKEN_EXP_KEY, String(Date.now() + TOKEN_TTL_MS));
 }
 
 export function clearAuth(): void {
-  localStorage.removeItem('prism-aac-auth-token');
+  sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(TOKEN_EXP_KEY);
 }
 
 export function hasApiKey(): boolean {
@@ -110,8 +122,10 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
 
 export function synaluxSignInUrl(): string {
   const base = SYNALUX_API.replace(/\/api\/v1$/, '');
+  // Use origin+pathname only — no query string or hash to prevent open-redirect
+  // via attacker-controlled params (e.g. prism-aac.vercel.app?redirect=evil.com).
   const callback = typeof window !== 'undefined'
-    ? window.location.href
+    ? `${window.location.origin}${window.location.pathname}`
     : `${base}/prism-aac`;
   return `${base}/api/auth/signin/google?callbackUrl=${encodeURIComponent(callback)}`;
 }
@@ -119,7 +133,7 @@ export function synaluxSignInUrl(): string {
 export function synaluxSignOutUrl(): string {
   const base = SYNALUX_API.replace(/\/api\/v1$/, '');
   const callback = typeof window !== 'undefined'
-    ? window.location.href
+    ? `${window.location.origin}${window.location.pathname}`
     : `${base}/prism-aac`;
   return `${base}/api/auth/signout?callbackUrl=${encodeURIComponent(callback)}`;
 }
@@ -138,10 +152,9 @@ async function callSynalux(
   let res: Response;
   try {
     // Route via /api/v1/prism-aac/chat — the dedicated AAC chat
-    // endpoint (synalux-private commits 8607d33c → 05ef1d57). It is
-    // UNAUTHENTICATED BY DESIGN with a per-IP rate limit ("AAC must
-    // work for everyone" per its source comment) and tier-routed to
-    // local prism-coder:7b → 14b → Claude Sonnet / Gemini.
+    // endpoint (synalux-private commits 8607d33c → 05ef1d57).
+    // Public route — no session cookie required (AAC must work for every child, including those without a caregiver account). Rate-limited per IP on the server.
+    // Tier-routed to local prism-coder:7b → 14b → Claude Sonnet / Gemini.
     //
     // The previous /api/v1/chat target was the synalux web-app chat,
     // auth-gated → 401 for anonymous users on prism-aac.vercel.app.
@@ -377,7 +390,7 @@ export async function askAI(
     '- 2-3 short sentences max. Aim for K-2 reading level.',
     '- Use simple, everyday words. Avoid jargon, idioms, sarcasm.',
     '- Be warm, patient, dignifying. Never condescend.',
-    context ? `- The child is currently in the "${context}" section of their AAC app.` : '',
+    context ? `- The child is currently in the "${context.replace(/[^a-zA-Z0-9 \-_]/g, '').slice(0, 60)}" section of their AAC app.` : '',
     '',
     'SAFETY (life-saving app — these are non-negotiable)',
     '- Never give medical advice, dosages, or diagnoses. If asked about health symptoms or medication, say: "Please ask a grown-up or a doctor about this." (translated to ' + langName + ')',
@@ -392,14 +405,19 @@ export async function askAI(
     '- If unsure or asked something out of scope: "I am not sure. Let\'s ask a grown-up." (translated)',
   ].filter(Boolean).join('\n');
 
-  const needsSearch = /what|who|where|when|why|how|explain|tell me about/i.test(question);
-
-  const text = await route(question, { system, webSearch: needsSearch, onChunk });
+  const cappedQuestion = question.slice(0, 2000);
+  const needsSearch = /what|who|where|when|why|how|explain|tell me about/i.test(cappedQuestion);
+  const text = await route(cappedQuestion, { system, webSearch: needsSearch, onChunk });
   const lines = text.split(/\n+/).filter((l) => l.trim());
   return { text, lines };
 }
 
-export async function parseCaregiverNote(noteText: string): Promise<ParsedNoteResult> {
+export async function parseCaregiverNote(rawNoteText: string): Promise<ParsedNoteResult> {
+  if (!rawNoteText?.trim()) return { actions: [{ type: 'note_only', description: 'Empty note', payload: {} }], summary: '' };
+  // Cap at 2000 chars and JSON-encode so structural chars ({, }, [, ], :, quotes,
+  // newlines, backslashes) become escaped sequences — structurally inert to the LLM parser.
+  const noteText = JSON.stringify(rawNoteText.slice(0, 2000));
+  // noteText is now a JSON string literal including surrounding double-quotes.
   const categoryList = DEFAULT_CATEGORIES.map((c) => `${c.id}: ${c.name}`).join(', ');
 
   const prompt = [
@@ -419,7 +437,7 @@ export async function parseCaregiverNote(noteText: string): Promise<ParsedNoteRe
     '  boost_word: { word, boostCount }',
     '  note_only: {} (for observations with no configuration change)',
     '',
-    `Caregiver says: "${noteText}"`,
+    `Caregiver says: ${noteText}`,
     '',
     'Return JSON array like: [{"type":"add_phrase","description":"...","payload":{...}}]',
   ].join('\n');
@@ -428,10 +446,25 @@ export async function parseCaregiverNote(noteText: string): Promise<ParsedNoteRe
 
   try {
     const cleaned = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-    const actions = JSON.parse(cleaned) as NoteAction[];
+    const actions = JSON.parse(cleaned) as Array<Record<string, unknown>>;
     if (!Array.isArray(actions)) throw new Error('Not an array');
-    const summary = actions.map((a) => a.description || a.type).join('; ');
-    return { actions, summary };
+    // Validate each action's payload fields — cap strings so LLM output
+    // cannot inject oversized data into the AAC store.
+    const validatedActions = actions.slice(0, 20).filter(a => {
+      if (typeof a?.type !== 'string') return false;
+      if (a.payload && typeof a.payload === 'object') {
+        const p = a.payload as Record<string, unknown>;
+        if (typeof p.text === 'string') p.text = p.text.slice(0, 500);
+        if (typeof p.phraseText === 'string') p.phraseText = p.phraseText.slice(0, 500);
+        if (typeof p.name === 'string') p.name = p.name.slice(0, 80);
+        if (typeof p.categoryId === 'string') p.categoryId = p.categoryId.slice(0, 80);
+        if (typeof p.word === 'string') p.word = p.word.slice(0, 100);
+      }
+      if (typeof a.description === 'string') a.description = a.description.slice(0, 500);
+      return true;
+    }) as NoteAction[];
+    const summary = validatedActions.map((a) => a.description || a.type).join('; ');
+    return { actions: validatedActions, summary };
   } catch {
     return {
       actions: [{ type: 'note_only', description: 'Saved as clinical note', payload: {} }],

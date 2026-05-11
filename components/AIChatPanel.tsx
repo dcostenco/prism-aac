@@ -34,13 +34,19 @@ export default function AIChatPanel() {
   const { speechRate, speechVolume, language } = useSettingsStore();
   const { t, ttsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const MAX_MESSAGES = 50;
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const wasLoadingRef = useRef(false);
   const voiceRef = useRef<VoiceSession | null>(null);
+  const askAbortRef = useRef<AbortController | null>(null);
   const voiceSupported = isVoiceInputSupported();
+  const activeRef = useRef(sidePanel === 'ai-chat');
+  useEffect(() => {
+    activeRef.current = sidePanel === 'ai-chat';
+  }, [sidePanel]);
 
   // Scroll strategy: when streaming finishes, show the START of the AI
   // reply so the user reads top-down. During streaming: no scroll (user
@@ -75,9 +81,15 @@ export default function AIChatPanel() {
   );
 
   const handleAsk = useCallback(async () => {
-    const question = useMessageStore.getState().text.trim();
+    // Using getState() rather than reactive text to avoid stale closure — reads latest text at submit time.
+    const question = useMessageStore.getState().text.trim().slice(0, 500);
     if (!question || loading) return;
     tapFeedback();
+
+    // Cancel any previous in-flight stream before starting a new one.
+    if (askAbortRef.current) askAbortRef.current.abort();
+    const askController = new AbortController();
+    askAbortRef.current = askController;
 
     // Layer 1 — deterministic crisis safety filter (synchronous, no network).
     const safety = checkCrisisSafety(question);
@@ -98,25 +110,40 @@ export default function AIChatPanel() {
       ...m,
       { role: 'user', text: question },
       { role: 'ai', text: '', lines: [] },
-    ]);
+    ].slice(-MAX_MESSAGES));
     setLoading(true);
 
     let buffer = '';
     let scheduled = false;
     const flush = () => {
+      if (!activeRef.current) return;  // panel no longer active
+      if (askController.signal.aborted) return;  // request was cancelled
       scheduled = false;
       const t = buffer;
-      const lines = t.split(/\n+/).filter((l) => l.trim());
+      // Post-check AI response for crisis content (model jailbreak defense).
+      // Check both start and end: a safe preamble followed by injected crisis
+      // content would be missed if only the first 500 chars were examined.
+      const checkText = t.length <= 2000 ? t : t.slice(0, 500) + ' ' + t.slice(-500); // scan full for ≤2KB, sample edges for longer
+      const safety = checkCrisisSafety(checkText);
+      const safeText = safety.safe ? t : safety.response;
+      const lines = safeText.split(/\n+/).filter((l) => l.trim());
       setMessages((prev) => {
         const updated = prev.slice();
-        updated[updated.length - 1] = { role: 'ai', text: t, lines };
+        updated[updated.length - 1] = { role: 'ai', text: safeText, lines };
         return updated;
       });
     };
 
     try {
       await askAI(question, undefined, (delta) => {
-        buffer += delta;
+        // Cap at 32KB — sufficient for any AAC clinical exchange.
+        // The service-level cap is 1MB (STREAM_CAP_BYTES); this is a UI guard.
+        // Truncation is indicated by '…' appended to buffer.
+        if (buffer.length < 32_000) {
+          buffer += delta;
+        } else if (!buffer.endsWith('…')) {
+          buffer += '…';  // mark truncation
+        }
         if (!scheduled) {
           scheduled = true;
           requestAnimationFrame(flush);
@@ -124,13 +151,20 @@ export default function AIChatPanel() {
       }, language);
       flush();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : t('could_not_reach_ai');
+      if (askController.signal.aborted) {
+        // Request was intentionally cancelled (panel closed) — don't update UI.
+        return;
+      }
+      console.warn('[ai-chat] request failed:', e instanceof Error ? e.message : e);
+      const msg = t('could_not_reach_ai');
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = { role: 'ai', text: msg, lines: [msg] };
         return updated;
       });
     }
+    if (askAbortRef.current === askController) askAbortRef.current = null;
+    if (!activeRef.current) return;
     setLoading(false);
   }, [loading, language, t]);
 
@@ -142,15 +176,30 @@ export default function AIChatPanel() {
     return () => clearAISubmit();
   }, [sidePanel, handleAsk]);
 
-  // Stop voice when panel closes.
+  // Stop voice and abort in-flight AI request when panel closes.
   useEffect(() => {
-    if (sidePanel !== 'ai-chat' && voiceRef.current) {
-      voiceRef.current.stop();
-      voiceRef.current = null;
-      setListening(false);
-      setInterim('');
+    if (sidePanel !== 'ai-chat') {
+      askAbortRef.current?.abort();
+      askAbortRef.current = null;
+      if (voiceRef.current) {
+        voiceRef.current.stop();
+        voiceRef.current = null;
+        setListening(false);
+        setInterim('');
+      }
     }
   }, [sidePanel]);
+
+  // Stop voice, abort in-flight AI request, and reset scroll-tracking ref on unmount.
+  useEffect(() => {
+    return () => {
+      askAbortRef.current?.abort();
+      askAbortRef.current = null;
+      voiceRef.current?.stop();
+      voiceRef.current = null;
+      wasLoadingRef.current = false;  // prevent stale justFinished scroll on remount
+    };
+  }, []);
 
   if (sidePanel !== 'ai-chat') return null;
 
@@ -168,6 +217,7 @@ export default function AIChatPanel() {
       onInterim: (t) => setInterim(t),
       onFinal: async (t) => {
         const fixed = await correctText(t.trim(), language);
+        if (!voiceRef.current) return;  // panel closed while awaiting
         appendText((fixed || t).trim() + ' ');
         setInterim('');
       },
@@ -186,6 +236,7 @@ export default function AIChatPanel() {
   return (
     <section
       aria-label={t('ai_chat_title')}
+      aria-busy={loading}
       className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme"
       data-testid="ai-chat-panel"
       data-state="expanded"
@@ -220,7 +271,7 @@ export default function AIChatPanel() {
       </header>
 
       {/* Chat scroll area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+      <div ref={scrollRef} aria-live="polite" aria-atomic="false" className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
         {messages.length === 0 && !loading && (
           <div className="h-full flex flex-col items-center justify-center text-center gap-3 text-muted px-6">
             <span className="text-5xl">✨</span>
@@ -237,7 +288,7 @@ export default function AIChatPanel() {
         )}
 
         {messages.map((msg, i) => (
-          <div key={i} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
+          <div key={`${msg.role}-${i}-${msg.text.slice(0, 8)}`} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
             <div
               className={`rounded-xl p-3 border border-theme ${
                 msg.role === 'user'
@@ -251,7 +302,7 @@ export default function AIChatPanel() {
                 <div className="space-y-2">
                   {(msg.lines ?? [msg.text]).map((line, li) => (
                     <button
-                      key={li}
+                      key={`line-${li}-${line.slice(0, 12)}`}
                       onClick={() => handleTapLine(line)}
                       aria-label={`Use: ${line}`}
                       className="aac-btn block w-full text-left rounded-lg p-2 hover:bg-black/5 transition-colors"
@@ -278,7 +329,7 @@ export default function AIChatPanel() {
       {/* Interim voice hint — only when listening */}
       {listening && interim && (
         <div className="shrink-0 px-4 py-2 border-t border-theme text-[#4CAF50] text-base text-center truncate">
-          🎙 &ldquo;{interim}&rdquo;
+          🎙 &ldquo;{interim.slice(0, 200)}{interim.length > 200 ? '…' : ''}&rdquo;
         </div>
       )}
     </section>
