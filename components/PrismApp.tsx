@@ -435,7 +435,7 @@ export default function PrismApp() {
             // In category mode the CategoryPanel sidebar is clamp(72px,9vw,96px) wide;
             // the spacer below mirrors it so the keyboard stops at the same x-boundary.
             <div
-              className="flex-1 flex flex-row min-h-[clamp(280px,38svh,440px)]"
+              className={`flex flex-row min-h-[clamp(280px,38svh,440px)] ${sidePanel === 'ai-chat' ? 'flex-none shrink-0' : 'flex-1'}`}
               data-testid="keyboard-shell"
             >
               <div className="flex-1 flex flex-col">
