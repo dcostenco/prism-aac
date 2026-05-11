@@ -31,7 +31,7 @@ interface ChatMessage {
 export default function AIChatPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { text, appendText, autoSpeak, soundEnabled } = useMessageStore();
-  const { speechRate, speechVolume, language } = useSettingsStore();
+  const { speechRate, speechVolume, language, outputLanguage } = useSettingsStore();
   const { t, ttsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const MAX_MESSAGES = 50;
@@ -157,7 +157,7 @@ export default function AIChatPanel() {
           scheduled = true;
           requestAnimationFrame(flush);
         }
-      }, language);
+      }, language !== outputLanguage ? outputLanguage : language);
       flush();
     } catch (e: unknown) {
       if (askController.signal.aborted) {
