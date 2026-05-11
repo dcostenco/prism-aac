@@ -66,26 +66,19 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
       const cat = useCategoryStore.getState();
       const msg = useMessageStore.getState();
 
-      if (remote.word_freq) {
-        const merged = mergeWordFreq(pred.wordFreq, remote.word_freq as Record<string, { count: number; lastUsed: number }>);
-        usePredictionStore.setState({ wordFreq: merged });
-      }
-      if (remote.bigrams) {
-        const merged = mergeWordFreq(pred.bigrams, remote.bigrams as Record<string, { count: number; lastUsed: number }>);
-        usePredictionStore.setState({ bigrams: merged });
-      }
-      if (remote.custom_categories) {
-        const merged = mergeCustomItems(cat.customCategories, remote.custom_categories);
-        useCategoryStore.setState({ customCategories: merged });
-      }
-      if (remote.custom_phrases) {
-        const merged = mergeCustomItems(cat.customPhrases, remote.custom_phrases);
-        useCategoryStore.setState({ customPhrases: merged });
-      }
-      if (remote.history) {
-        const merged = mergeHistory(msg.history, remote.history);
-        useMessageStore.setState({ history: merged });
-      }
+      // Batch prediction updates into ONE setState call to avoid multiple
+      // rapid Zustand notifications that cascade into React #300 crashes.
+      const predUpdate: Record<string, unknown> = {};
+      if (remote.word_freq) predUpdate.wordFreq = mergeWordFreq(pred.wordFreq, remote.word_freq as Record<string, { count: number; lastUsed: number }>);
+      if (remote.bigrams) predUpdate.bigrams = mergeWordFreq(pred.bigrams, remote.bigrams as Record<string, { count: number; lastUsed: number }>);
+      if (Object.keys(predUpdate).length) usePredictionStore.setState(predUpdate as any);
+
+      const catUpdate: Record<string, unknown> = {};
+      if (remote.custom_categories) catUpdate.customCategories = mergeCustomItems(cat.customCategories, remote.custom_categories);
+      if (remote.custom_phrases) catUpdate.customPhrases = mergeCustomItems(cat.customPhrases, remote.custom_phrases);
+      if (Object.keys(catUpdate).length) useCategoryStore.setState(catUpdate as any);
+
+      if (remote.history) useMessageStore.setState({ history: mergeHistory(msg.history, remote.history) });
     })();
 
     const unsub = subscribeToChanges((remote) => {
@@ -93,10 +86,15 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
       const cat = useCategoryStore.getState();
       const msg = useMessageStore.getState();
 
-      if (remote.word_freq) usePredictionStore.setState({ wordFreq: mergeWordFreq(pred.wordFreq, remote.word_freq as Record<string, { count: number; lastUsed: number }>) });
-      if (remote.bigrams) usePredictionStore.setState({ bigrams: mergeWordFreq(pred.bigrams, remote.bigrams as Record<string, { count: number; lastUsed: number }>) });
-      if (remote.custom_categories) useCategoryStore.setState({ customCategories: mergeCustomItems(cat.customCategories, remote.custom_categories) });
-      if (remote.custom_phrases) useCategoryStore.setState({ customPhrases: mergeCustomItems(cat.customPhrases, remote.custom_phrases) });
+      // Batch into single setState calls per store to prevent React #300 cascade
+      const rPred: Record<string, unknown> = {};
+      if (remote.word_freq) rPred.wordFreq = mergeWordFreq(pred.wordFreq, remote.word_freq as Record<string, { count: number; lastUsed: number }>);
+      if (remote.bigrams) rPred.bigrams = mergeWordFreq(pred.bigrams, remote.bigrams as Record<string, { count: number; lastUsed: number }>);
+      if (Object.keys(rPred).length) usePredictionStore.setState(rPred as any);
+      const rCat: Record<string, unknown> = {};
+      if (remote.custom_categories) rCat.customCategories = mergeCustomItems(cat.customCategories, remote.custom_categories);
+      if (remote.custom_phrases) rCat.customPhrases = mergeCustomItems(cat.customPhrases, remote.custom_phrases);
+      if (Object.keys(rCat).length) useCategoryStore.setState(rCat as any);
       if (remote.history) useMessageStore.setState({ history: mergeHistory(msg.history, remote.history) });
     });
 
