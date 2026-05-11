@@ -99,8 +99,8 @@ export default function AIChatPanel() {
       useMessageStore.getState().setText('');
       setMessages((m) => [
         ...m,
-        { role: 'user', text: question },
-        { role: 'ai', text: safety.response, lines: safety.response.split('\n').filter(Boolean) },
+        { role: 'user' as const, text: question },
+        { role: 'ai' as const, text: safety.response, lines: safety.response.split('\n').filter(Boolean) },
       ]);
       return;
     }
@@ -110,9 +110,9 @@ export default function AIChatPanel() {
 
     setMessages((m) => [
       ...m,
-      { role: 'user', text: question },
-      { role: 'ai', text: '', lines: [] },
-    ].slice(-MAX_MESSAGES));
+      { role: 'user' as const, text: question },
+      { role: 'ai' as const, text: '', lines: [] },
+    ].slice(-MAX_MESSAGES) as ChatMessage[]);
     setLoading(true);
 
     let buffer = '';

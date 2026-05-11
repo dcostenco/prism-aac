@@ -473,7 +473,7 @@ export async function parseCaregiverNote(rawNoteText: string): Promise<ParsedNot
       }
       if (typeof a.description === 'string') a.description = a.description.slice(0, 500);
       return true;
-    }) as NoteAction[];
+    }) as unknown as NoteAction[];
     const summary = validatedActions.map((a) => a.description || a.type).join('; ');
     return { actions: validatedActions, summary };
   } catch {
