@@ -60,9 +60,12 @@ const PROVIDER_LABEL: Record<string, string> = {
   facetime: 'FaceTime',
 };
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
-  state: { error: Error | null } = { error: null };
-  static getDerivedStateFromError(error: Error) { return { error }; }
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; info: string }> {
+  state: { error: Error | null; info: string } = { error: null, info: '' };
+  static getDerivedStateFromError(error: Error) { return { error, info: '' }; }
+  componentDidCatch(error: Error, info: { componentStack: string }) {
+    console.error('[ErrorBoundary] CRASH:', error.message, info.componentStack.slice(0, 400));
+  }
   render() {
     if (this.state.error) {
       return (

@@ -8,7 +8,7 @@ import { aacSpeak } from '@/services/aacSpeak';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
-import { registerAISubmit, clearAISubmit } from '@/services/aiChatBridge';
+import { registerAISubmit, clearAISubmit, triggerAISubmit } from '@/services/aiChatBridge';
 import { checkCrisisSafety } from '@/services/crisisSafetyFilter';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
@@ -31,7 +31,7 @@ interface ChatMessage {
 export default function AIChatPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { text, appendText, autoSpeak, soundEnabled } = useMessageStore();
-  const { speechRate, speechVolume, language } = useSettingsStore();
+  const { speechRate, speechVolume, language, outputLanguage } = useSettingsStore();
   const { t, ttsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const MAX_MESSAGES = 50;
@@ -157,7 +157,8 @@ export default function AIChatPanel() {
           scheduled = true;
           requestAnimationFrame(flush);
         }
-      }, language);
+      // In translate mode (RU→EN etc.) respond in the OUTPUT language.
+      }, language !== outputLanguage ? outputLanguage : language);
       flush();
     } catch (e: unknown) {
       if (askController.signal.aborted) {
@@ -229,6 +230,9 @@ export default function AIChatPanel() {
         if (!voiceRef.current) return;  // panel closed while awaiting
         appendText((fixed || t).trim() + ' ');
         setInterim('');
+        // Auto-submit voice input to AI immediately — no need to press Speak.
+        // Short delay lets appendText commit to store before handleAsk reads it.
+        setTimeout(() => { if (activeRef.current) triggerAISubmit(); }, 50);
       },
       onError: () => {
         setListening(false);
