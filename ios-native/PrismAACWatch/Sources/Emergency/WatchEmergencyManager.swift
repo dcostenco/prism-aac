@@ -25,6 +25,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     private var cellularFallbackSent = false
     // F2b: store active background task handle so cleanup() can end it
     private var activeBgTask: WKBackgroundTaskHandle? = nil
+    // #4: set true after escalation completes — enables safe post-escalation dismiss from UI
+    @Published private(set) var hasEscalated = false
 
     override init() {
         super.init()
@@ -42,6 +44,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
     // FIX 4: Timer background freeze fix — absolute deadline + RunLoop.main .common + background task
     func trigger(phrase: String, severity: EmergencySeverity = .critical) {
+        // Safe: @MainActor serializes all calls — rapid taps cannot race past this guard
         guard !isActive else { return }  // FIX 4: mutex — no duplicate triggers
         isActive = true
         activePhrase = String(phrase.prefix(200))
@@ -55,8 +58,10 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // Request background task so process is not suspended
         // F2b: store handle on instance so cleanup() can end it
         activeBgTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-countdown") {
-            // Expiry: fire immediately
-            Task { @MainActor [weak self] in await self?.escalate(phrase: phrase, severity: severity) }
+            // Expiry: fire immediately — FIX 16: use activePhrase, not the raw captured param
+            Task { @MainActor [weak self] in
+                await self?.escalate(phrase: self?.activePhrase ?? String(phrase.prefix(200)), severity: severity)
+            }
         }
 
         // Schedule on .common mode so timer fires during touch tracking
@@ -73,7 +78,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                         WKApplication.shared().endBackgroundTask(task)
                         self.activeBgTask = nil
                     }
-                    await self.escalate(phrase: phrase, severity: severity)
+                    // FIX 16: use activePhrase, not the raw captured param
+                    await self.escalate(phrase: self.activePhrase ?? String(phrase.prefix(200)), severity: severity)
                 }
             }
         }
@@ -82,8 +88,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
         // Immediate haptic + audio — no network needed
         playSosHaptics()
-        try? AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
-        try? AVAudioSession.sharedInstance().setActive(true)
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            NSLog("[WatchEmergency] AVAudioSession setup failed: \(error) — proceeding with speech anyway")
+        }
         synthesizer.speak(AVSpeechUtterance(string: "Help! Emergency!"))
     }
 
@@ -96,6 +106,13 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         cleanup()
     }
 
+    // #4: Public dismiss — called ONLY after escalation has completed, allows UI cleanup
+    func dismiss() {
+        // Called ONLY after escalation has completed — allows UI cleanup
+        guard hasEscalated else { return }
+        cleanup()
+    }
+
     private func cleanup() {
         countdownTimer?.invalidate()
         countdownTimer = nil
@@ -103,6 +120,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         activePhrase = nil  // C6: clear on cancel
         severity = .standard
         cellularFallbackSent = false  // FIX 8: reset debounce on cleanup
+        hasEscalated = false  // FIX 4: reset escalation flag for next emergency
         synthesizer.stopSpeaking(at: .immediate)
         // F2b: end any leaked background task on cancel path
         if let task = activeBgTask {
@@ -115,9 +133,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
     private func escalate(phrase: String, severity: EmergencySeverity) async {
         sendPhrase(phrase, isEmergency: true, severity: severity)
+        hasEscalated = true  // FIX 4: allow critical emergency dismiss post-escalation
         // Haptic — SOS pattern (3 short, 3 long, 3 short)
+        // FIX 12: use actor-safe Tasks instead of DispatchQueue.main.asyncAfter
         for i in 0..<9 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.3) { [weak self] in
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64(i) * 300_000_000)
                 guard self?.isActive == true else { return }
                 WKInterfaceDevice.current().play(i % 3 == 0 ? .failure : .click)
             }
@@ -195,8 +216,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     }
 
     private func speakEmergencyFallback() {
-        try? AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
-        try? AVAudioSession.sharedInstance().setActive(true)
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            NSLog("[WatchEmergency] AVAudioSession setup failed: \(error) — proceeding with speech anyway")
+        }
         let utterance = AVSpeechUtterance(string: "Emergency. Please call 911.")
         utterance.volume = 1.0
         utterance.rate = 0.4

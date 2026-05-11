@@ -29,11 +29,14 @@ final class WatchVocabSync: NSObject, ObservableObject {
     /// Vocabulary labels are loaded in `input` language so the AAC user
     /// can read them in their native language. TTS speaks in `output`.
     func setLanguages(input: String, output: String) {
-        inputLanguage = input
-        outputLanguage = output
-        UserDefaults.standard.set(input,  forKey: "watchInputLanguage")
-        UserDefaults.standard.set(output, forKey: "watchOutputLanguage")
-        Task { await loadFromAPI(lang: input) }   // vocab labels in INPUT lang
+        // #13: validate before writing — rejects arbitrary locale strings from the wire
+        let safeInput  = Self.allowedLangs.contains(input)  ? input  : "en-US"
+        let safeOutput = Self.allowedLangs.contains(output) ? output : "en-US"
+        inputLanguage  = safeInput
+        outputLanguage = safeOutput
+        UserDefaults.standard.set(safeInput,  forKey: "watchInputLanguage")
+        UserDefaults.standard.set(safeOutput, forKey: "watchOutputLanguage")
+        Task { await loadFromAPI(lang: safeInput) }   // vocab labels in INPUT lang
     }
 
     /// Shorthand: set only output language (input unchanged).
@@ -47,11 +50,15 @@ final class WatchVocabSync: NSObject, ObservableObject {
 
     override init() {
         super.init()
-        // Restore saved language pair
-        if let inp = UserDefaults.standard.string(forKey: "watchInputLanguage")  { inputLanguage  = inp }
-        if let out = UserDefaults.standard.string(forKey: "watchOutputLanguage") { outputLanguage = out }
-        // Legacy single-key migration
-        if inputLanguage == "en-US", let legacy = UserDefaults.standard.string(forKey: "watchLanguage") {
+        // Restore saved language pair — #18: validate against allowlist before trusting UserDefaults
+        if let inp = UserDefaults.standard.string(forKey: "watchInputLanguage"),
+           Self.allowedLangs.contains(inp) { inputLanguage = inp }
+        if let out = UserDefaults.standard.string(forKey: "watchOutputLanguage"),
+           Self.allowedLangs.contains(out) { outputLanguage = out }
+        // Legacy single-key migration (validate before accepting)
+        if inputLanguage == "en-US",
+           let legacy = UserDefaults.standard.string(forKey: "watchLanguage"),
+           Self.allowedLangs.contains(legacy) {
             inputLanguage = legacy; outputLanguage = legacy
         }
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
@@ -67,10 +74,13 @@ final class WatchVocabSync: NSObject, ObservableObject {
 
     // MARK: - Load from web app API (standalone path)
 
-    private static let allowedLangs = [
-        "en", "es", "ro", "ru", "fr", "de", "it", "pt", "ar", "zh-Hans", "zh-Hant",
-        "en-US", "es-ES", "fr-FR", "de-DE", "ro-RO", "ru-RU",
-        "uk-UA", "pt-BR", "ja-JP", "zh-CN", "ar-SA",
+    // #13+#18: Set for O(1) lookup; used in setLanguages + init to validate UserDefaults reads
+    private static let allowedLangs: Set<String> = [
+        "en", "en-US", "es", "es-ES", "ro", "ru", "fr", "de", "it", "pt",
+        "ar", "zh-Hans", "zh-Hant", "ja", "ko", "he", "hi", "nl", "pl",
+        "uk", "tr", "vi", "tl", "id",
+        "fr-FR", "de-DE", "ro-RO", "ru-RU", "uk-UA", "pt-BR",
+        "ja-JP", "zh-CN", "ar-SA",
     ]
 
     func loadFromAPI(lang: String? = nil) async {
@@ -127,22 +137,26 @@ final class WatchVocabSync: NSObject, ObservableObject {
     // MARK: - Handle vocabulary from iPhone (companion path)
 
     private func handleVocabReply(_ reply: [String: Any]) {
-        guard let data = reply["vocab"] as? Data,
-              let vocab = try? JSONDecoder().decode(VocabResponse.self, from: data) else { return }
+        // #8: size check BEFORE decode — prevents JSON bomb allocation
+        guard let data = reply["vocab"] as? Data else { return }
         guard data.count <= 512_000 else {
-            NSLog("[VocabSync] Companion vocab too large (\(data.count) bytes) — ignoring")
+            NSLog("[VocabSync] Companion vocab too large (\(data.count) bytes)")
             return
         }
+        guard let vocab = try? JSONDecoder().decode(VocabResponse.self, from: data) else { return }
         // Apply same caps as API path:
         let safeCats = vocab.categories.prefix(50).map { cat -> WatchCategory in
-            WatchCategory(
+            // #10: propagate emergency flag from category id (companion path)
+            let isEmergencyCat = cat.id == "emergency" || cat.id == "help-needs"
+            return WatchCategory(
                 id: cat.id,
                 icon: String(cat.icon.prefix(4)),
                 name: String(cat.name.prefix(120)),
                 phrases: cat.phrases.prefix(100).map { ph in
                     WatchPhrase(id: ph.id, label: String(ph.label.prefix(120)),
                                 arasaacId: ph.arasaacId,
-                                sfSymbol: ph.sfSymbol ?? "circle.fill")
+                                sfSymbol: ph.sfSymbol ?? "circle.fill",
+                                isEmergency: isEmergencyCat)
                 }
             )
         }
@@ -166,6 +180,8 @@ struct WatchPhrase: Identifiable {
     let label: String
     let arasaacId: Int?
     let sfSymbol: String
+    // #10: set true for phrases decoded from emergency-category API responses
+    var isEmergency: Bool = false
 }
 
 struct VocabResponse: Decodable {
@@ -190,9 +206,14 @@ struct VocabPhrase: Decodable {
 extension WatchCategory {
     init(from c: VocabCategory) {
         id = c.id; icon = c.icon; name = c.name
-        phrases = c.phrases.map { WatchPhrase(id: $0.id, label: $0.label,
-                                               arasaacId: $0.arasaacId,
-                                               sfSymbol: $0.sfSymbol ?? "circle.fill") }
+        // #10: mark phrases as emergency when they come from an emergency category
+        let isEmergencyCat = c.id == "emergency" || c.id == "help-needs"
+        phrases = c.phrases.map {
+            WatchPhrase(id: $0.id, label: $0.label,
+                        arasaacId: $0.arasaacId,
+                        sfSymbol: $0.sfSymbol ?? "circle.fill",
+                        isEmergency: isEmergencyCat)
+        }
     }
 
     // Minimal offline core — always available even with no connectivity.

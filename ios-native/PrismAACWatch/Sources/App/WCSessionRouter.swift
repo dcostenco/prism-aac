@@ -31,6 +31,9 @@ final class WCSessionRouter: NSObject, ObservableObject {
         reachabilityHandlers.append(handler)
     }
 
+    /// Whether the paired iPhone is immediately reachable via Bluetooth.
+    var isReachable: Bool { WCSession.isSupported() && WCSession.default.isReachable }
+
     /// Send a message via WCSession (convenience wrapper).
     func send(_ message: [String: Any], replyHandler: (([String: Any]) -> Void)? = nil, errorHandler: ((Error) -> Void)? = nil) {
         guard WCSession.default.isReachable else {

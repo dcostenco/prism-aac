@@ -19,6 +19,12 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         utt.voice = AVSpeechSynthesisVoice(language: language)
         utt.rate = max(AVSpeechUtteranceMinimumSpeechRate,
                        min(AVSpeechUtteranceMaximumSpeechRate, rate))
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            NSLog("[WatchTTS] AVAudioSession setup failed: \(error)")
+        }
         isSpeaking = true
         synthesizer.speak(utt)
     }

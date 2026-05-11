@@ -5,11 +5,24 @@ import WatchConnectivity
 // MARK: - AAC data model
 
 struct AACPhrase: Identifiable {
-    let id = UUID()
+    // #10/#30: stable string id (label-derived) instead of UUID() — survives re-renders
+    let id: String
     let label: String
     let sfSymbol: String
     let color: Color
     let arasaacId: Int?
+    // #10: explicit flag so emergency detection works for both static and API-loaded vocab
+    let isEmergency: Bool
+
+    init(label: String, sfSymbol: String, color: Color, arasaacId: Int?, isEmergency: Bool = false) {
+        // Stable id: lowercase label, keep only alphanumerics
+        self.id = label.lowercased().filter { $0.isLetter || $0.isNumber }
+        self.label = label
+        self.sfSymbol = sfSymbol
+        self.color = color
+        self.arasaacId = arasaacId
+        self.isEmergency = isEmergency
+    }
 
     var arasaacURL: URL? {
         guard let aid = arasaacId else { return nil }
@@ -36,11 +49,12 @@ struct AACVocab {
             AACPhrase(label: "Medicine", sfSymbol: "pill.fill",             color: .red,    arasaacId: nil),
             AACPhrase(label: "Home",     sfSymbol: "house.fill",            color: .green,  arasaacId: 8514),
         ]),
+        // #10: Emergency category phrases carry isEmergency: true — no O(n²) scan needed at tap time
         ("🆘", "Emergency", [
-            AACPhrase(label: "Call 911",      sfSymbol: "phone.fill",       color: .red,    arasaacId: nil),
-            AACPhrase(label: "Can't breathe", sfSymbol: "lungs.fill",       color: .red,    arasaacId: nil),
-            AACPhrase(label: "I'm in pain",   sfSymbol: "cross.fill",       color: .red,    arasaacId: nil),
-            AACPhrase(label: "Need doctor",   sfSymbol: "stethoscope",      color: .red,    arasaacId: nil),
+            AACPhrase(label: "Call 911",      sfSymbol: "phone.fill",       color: .red,    arasaacId: nil, isEmergency: true),
+            AACPhrase(label: "Can't breathe", sfSymbol: "lungs.fill",       color: .red,    arasaacId: nil, isEmergency: true),
+            AACPhrase(label: "I'm in pain",   sfSymbol: "cross.fill",       color: .red,    arasaacId: nil, isEmergency: true),
+            AACPhrase(label: "Need doctor",   sfSymbol: "stethoscope",      color: .red,    arasaacId: nil, isEmergency: true),
         ]),
     ]
 }
@@ -66,8 +80,12 @@ struct WatchPictogramCards: View {
 
     private var allPhrases: [AACPhrase] {
         let synced = vocab.categories.flatMap { cat in
-            cat.phrases.map { p in
-                AACPhrase(label: p.label, sfSymbol: p.sfSymbol, color: phraseColor(cat.id), arasaacId: p.arasaacId)
+            // #10: mark emergency phrases from API vocab using category id
+            let isEmergencyCat = cat.id == "emergency" || cat.id == "help-needs"
+            return cat.phrases.map { p in
+                AACPhrase(label: p.label, sfSymbol: p.sfSymbol,
+                          color: phraseColor(cat.id), arasaacId: p.arasaacId,
+                          isEmergency: isEmergencyCat)
             }
         }
         // Use the full 28-phrase childFriendlyOrder when:
@@ -161,8 +179,8 @@ struct WatchPictogramCards: View {
                         ForEach(allPhrases) { phrase in
                             PairCard(phrase: phrase) {
                                 WKInterfaceDevice.current().play(.click)
-                                // Emergency phrases require confirmation before sending
-                                if phrase.color == .red && AACVocab.categories.contains(where: { $0.name == "Emergency" && $0.phrases.contains(where: { $0.label == phrase.label }) }) {
+                                // #10/#19: use isEmergency flag — O(1), works for API-loaded vocab
+                                if phrase.isEmergency {
                                     pendingEmergencyPhrase = phrase
                                 } else {
                                     translation.translateAndSpeak(
@@ -678,7 +696,8 @@ struct WatchAIChatView: View {
         let text = inputText.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty else { return }
         inputText = ""
-        if messages.count > 50 { messages.removeFirst() }
+        // #17: cap at 50 (>= 50 removes before adding, keeping array at ≤50 at all times)
+        if messages.count >= 50 { messages.removeFirst() }
         messages.append((role: "user", text: text))
         isWaiting = true
 
@@ -688,7 +707,7 @@ struct WatchAIChatView: View {
                 let translated = await translation.translateDirect(text: text, to: outputLang)
                 let result = translated ?? text
                 isWaiting = false
-                if messages.count > 50 { messages.removeFirst() }
+                if messages.count >= 50 { messages.removeFirst() }
                 messages.append((role: "ai", text: result))
                 tts.speak(result, language: outputLang)
             }
@@ -697,7 +716,7 @@ struct WatchAIChatView: View {
             Task { @MainActor in
                 let reply = await session.askAI(text, lang: outputLang) ?? "…"
                 isWaiting = false
-                if messages.count > 50 { messages.removeFirst() }
+                if messages.count >= 50 { messages.removeFirst() }
                 messages.append((role: "ai", text: reply))
                 tts.speak(reply, language: outputLang)
             }
@@ -736,15 +755,18 @@ struct WatchDictationView: View {
                     .submitLabel(.done)
                     .onSubmit {
                         guard !text.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                        let result = text
+                        // #31: cap dictation text at view layer before passing to caller
+                        let result = String(text.prefix(500))
                         text = ""
                         dismiss()
                         onSubmit(result)
                     }
 
                 Button(submitLabel) {
-                    let result = text.trimmingCharacters(in: .whitespaces)
-                    guard !result.isEmpty else { return }
+                    let trimmed = text.trimmingCharacters(in: .whitespaces)
+                    guard !trimmed.isEmpty else { return }
+                    // #31: cap dictation text at view layer
+                    let result = String(trimmed.prefix(500))
                     text = ""
                     dismiss()
                     onSubmit(result)
@@ -818,7 +840,8 @@ struct WatchSendMessageView: View {
                     let safeBody = String(msgText.prefix(500))
 
                     guard !safeTo.isEmpty, !safeBody.isEmpty else { return }
-                    if WCSession.isSupported() && WCSession.default.isReachable {
+                    // #5/#28: use WCSessionRouter.shared.isReachable instead of direct WCSession check
+                    if WCSessionRouter.shared.isReachable {
                         WCSessionRouter.shared.send(
                             ["type": "send_message", "to": safeTo, "text": safeBody],
                             errorHandler: { err in NSLog("[WatchSend] Failed: \(err)") }
@@ -923,11 +946,17 @@ struct WatchRootView: View {
                         .padding(2)
                 }
             }
+            // #4/#20: fullScreenCover binding allows post-escalation dismiss for critical severity
             .fullScreenCover(isPresented: Binding(
                 get: { emergency.isActive },
                 set: { active in
-                    if !active && emergency.severity != .critical {
-                        emergency.cancel()
+                    if !active {
+                        if emergency.hasEscalated {
+                            emergency.dismiss()  // post-escalation cleanup — always allowed
+                        } else if emergency.severity != .critical {
+                            emergency.cancel()   // pre-escalation cancel — non-critical only
+                        }
+                        // pre-escalation critical: binding set to false is ignored (cover stays up)
                     }
                 }
             )) {

@@ -119,7 +119,10 @@ final class WatchInbox: NSObject, ObservableObject {
 
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current()
-            .requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+            .requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                if let error = error { NSLog("[WatchInbox] Notification auth error: \(error)") }
+                if !granted { NSLog("[WatchInbox] Notification permission denied") }
+            }
     }
 
     private func scheduleLocalNotification(_ msg: WatchMessage) {
@@ -132,29 +135,42 @@ final class WatchInbox: NSObject, ObservableObject {
             content: content,
             trigger: nil       // deliver immediately
         )
-        UNUserNotificationCenter.current().add(req, withCompletionHandler: nil)
+        // #21: log delivery failures instead of silently dropping with nil handler
+        UNUserNotificationCenter.current().add(req) { error in
+            if let error = error { NSLog("[WatchInbox] Notification delivery failed: \(error)") }
+        }
     }
 
     // MARK: - Persistence (F4b: Keychain-backed; F4d: do/catch with logging)
 
     private func saveToDefaults() {
+        // #7: update-then-add pattern — never delete first (avoids data loss if add fails)
+        // #15: SecItemDelete with kSecValueData in query is gone — we don't delete at all
         do {
             let data = try JSONEncoder().encode(messages)
-            // Store in Keychain
-            let addQuery: [String: Any] = [
+            let updateQuery: [String: Any] = [
                 kSecClass as String:              kSecClassGenericPassword,
                 kSecAttrService as String:        keychainService,
                 kSecAttrAccount as String:        keychainAccount,
-                kSecAttrAccessible as String:     kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
                 kSecAttrSynchronizable as String: false,
-                kSecValueData as String:          data,
             ]
-            SecItemDelete(addQuery as CFDictionary)
-            SecItemAdd(addQuery as CFDictionary, nil)
+            let updateAttrs: [String: Any] = [kSecValueData as String: data]
+            let updateStatus = SecItemUpdate(updateQuery as CFDictionary, updateAttrs as CFDictionary)
+            if updateStatus == errSecItemNotFound {
+                var addQuery = updateQuery
+                addQuery[kSecValueData as String] = data
+                addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+                let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
+                if addStatus != errSecSuccess {
+                    NSLog("[WatchInbox] Keychain add failed: \(addStatus)")
+                }
+            } else if updateStatus != errSecSuccess {
+                NSLog("[WatchInbox] Keychain update failed: \(updateStatus)")
+            }
             // Remove any legacy UserDefaults entry
             UserDefaults.standard.removeObject(forKey: storageKey)
         } catch {
-            NSLog("[WatchInbox] saveToDefaults failed: \(error)")
+            NSLog("[WatchInbox] Encode failed: \(error)")
         }
     }
 
@@ -170,17 +186,27 @@ final class WatchInbox: NSObject, ObservableObject {
         ]
         var result: AnyObject?
         if SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-           let data = result as? Data,
-           let msgs = try? JSONDecoder().decode([WatchMessage].self, from: data) {
-            return msgs
+           let data = result as? Data {
+            // #14: do/catch — log decode failure, do NOT overwrite raw data on schema change
+            do {
+                return try JSONDecoder().decode([WatchMessage].self, from: data)
+            } catch {
+                NSLog("[WatchInbox] Decode failed (schema change?): \(error) — keeping raw data")
+                // Do NOT call saveToDefaults() here — that would erase the corrupted data
+                return []
+            }
         }
-        // Migration from UserDefaults
-        if let data = UserDefaults.standard.data(forKey: storageKey),
-           let msgs = try? JSONDecoder().decode([WatchMessage].self, from: data) {
-            // Migrate to Keychain
-            messages = msgs
-            saveToDefaults()
-            return msgs
+        // Migration from UserDefaults — #14: do/catch for migration path too
+        if let data = UserDefaults.standard.data(forKey: storageKey) {
+            do {
+                let msgs = try JSONDecoder().decode([WatchMessage].self, from: data)
+                // Migrate to Keychain
+                messages = msgs
+                saveToDefaults()
+                return msgs
+            } catch {
+                NSLog("[WatchInbox] UserDefaults migration decode failed: \(error)")
+            }
         }
         return []
     }

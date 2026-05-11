@@ -39,7 +39,10 @@ internal final class KeychainHelper {
         if SecItemUpdate(query as CFDictionary, attributes as CFDictionary) == errSecItemNotFound {
             var addQuery = query
             addQuery[kSecValueData as String] = data
-            SecItemAdd(addQuery as CFDictionary, nil)
+            let status = SecItemAdd(addQuery as CFDictionary, nil)
+            if status != errSecSuccess && status != errSecDuplicateItem {
+                NSLog("[KeychainHelper] SecItemAdd failed: \(status) for service=\(service) account=\(account)")
+            }
         }
     }
 

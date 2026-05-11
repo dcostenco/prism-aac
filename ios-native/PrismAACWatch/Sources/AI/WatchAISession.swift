@@ -43,7 +43,8 @@ final class WatchAISession: NSObject, ObservableObject {
     }
 
     private func updateMode() {
-        let reachable = WCSession.isSupported() && WCSession.default.isReachable
+        // #6: use router's isReachable — no direct WCSession.default reads
+        let reachable = WCSessionRouter.shared.isReachable
         if reachable {
             mode = .companion
             offlineBanner = nil
@@ -81,7 +82,8 @@ final class WatchAISession: NSObject, ObservableObject {
         defer { isThinking = false }
 
         do {
-            if mode == .companion && WCSession.default.isReachable {
+            // #6: use router's isReachable — no direct WCSession.default reads
+            if mode == .companion && WCSessionRouter.shared.isReachable {
                 reply = try await askViaPhone(question: question, language: language)
             } else {
                 reply = try await askViaCloud(question: question, language: language)
@@ -105,14 +107,24 @@ final class WatchAISession: NSObject, ObservableObject {
             "question": question,
             "language": language,
         ]
+        // #3: route through WCSessionRouter.shared.send — no direct WCSession bypass
+        // #11: resumed bool prevents double-resume race between reply and timeout tasks
         let result = try await withThrowingTaskGroup(of: String.self) { group in
             group.addTask {
-                try await withCheckedThrowingContinuation { cont in
-                    WCSession.default.sendMessage(msg, replyHandler: { reply in
-                        Task { @MainActor in cont.resume(returning: reply["text"] as? String ?? "") }
-                    }, errorHandler: { err in
-                        cont.resume(throwing: err)
-                    })
+                try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
+                    var resumed = false
+                    WCSessionRouter.shared.send(msg,
+                        replyHandler: { reply in
+                            guard !resumed else { return }
+                            resumed = true
+                            Task { @MainActor in cont.resume(returning: reply["text"] as? String ?? "") }
+                        },
+                        errorHandler: { err in
+                            guard !resumed else { return }
+                            resumed = true
+                            cont.resume(throwing: err)
+                        }
+                    )
                 }
             }
             group.addTask {
@@ -134,13 +146,17 @@ final class WatchAISession: NSObject, ObservableObject {
             .components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-")).inverted)
             .joined()
 
+        // #22+#23: Validate sanitized language against explicit allowlist — fall back to en-US
+        let allowedLangs: Set<String> = ["en", "en-US", "es", "es-ES", "ro", "ru", "fr", "de", "it", "pt", "ar", "zh-Hans", "zh-Hant", "ja", "ko", "he", "hi", "nl", "pl", "uk", "tr", "vi", "tl", "id"]
+        let validatedLanguage = allowedLangs.contains(safeLanguage) ? safeLanguage : "en-US"
+
         // Sanitize question — cap length, strip ChatML control tokens
         let safeQuestion = String(question.prefix(500))
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
 
-        let system = "You are a friendly helper for a child who uses AAC. Reply in \(safeLanguage) language. Keep answers short (2-3 sentences max)."
+        let system = "You are a friendly helper for a child who uses AAC. Reply in \(validatedLanguage) language. Keep answers short (2-3 sentences max)."
         var req = URLRequest(url: cloudURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 15)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -155,7 +171,7 @@ final class WatchAISession: NSObject, ObservableObject {
                 ["role": "system", "content": system],
                 ["role": "user",   "content": safeQuestion],
             ],
-            "language": String(safeLanguage.prefix(2)),
+            "language": String(validatedLanguage.prefix(2)),
         ])
         let (data, response) = try await URLSession.shared.data(for: req)
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
@@ -203,7 +219,8 @@ final class WatchAISession: NSObject, ObservableObject {
 
     /// Send a phrase to iPhone for richer TTS / logging (non-blocking).
     func sendPhrase(_ phrase: String) {
-        guard WCSession.isSupported() && WCSession.default.isReachable else { return }
+        // #6: use router's isReachable — no direct WCSession.default reads
+        guard WCSessionRouter.shared.isReachable else { return }
         WCSessionRouter.shared.send(
             ["type": "phrase", "text": phrase],
             errorHandler: { err in NSLog("[WatchAI] Phrase relay failed: \(err)") }

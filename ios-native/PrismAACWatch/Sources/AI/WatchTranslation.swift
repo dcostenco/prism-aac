@@ -57,6 +57,10 @@ final class WatchTranslation: ObservableObject {
             .components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-")).inverted)
             .joined()
 
+        // Validate lang against known-good allowlist before injecting into prompt
+        let allowedLangs: Set<String> = ["en", "en-US", "es", "ro", "ru", "fr", "de", "it", "pt", "ar", "zh-Hans", "zh-Hant", "ja", "ko", "he", "hi", "nl", "pl", "uk", "tr", "vi", "tl", "id"]
+        let validLang = allowedLangs.contains(safeLang) ? safeLang : "en-US"
+
         // Sanitize user text — cap length, strip ChatML control tokens
         let safeText = String(text.prefix(300))
             .replacingOccurrences(of: "<|im_start|>", with: "")
@@ -72,7 +76,7 @@ final class WatchTranslation: ObservableObject {
         do {
             req.httpBody = try JSONSerialization.data(withJSONObject: [
                 "messages": [
-                    ["role": "system", "content": "Translate to \(safeLang). Return ONLY the translated word or phrase, nothing else."],
+                    ["role": "system", "content": "Translate to \(validLang). Return ONLY the translated word or phrase, nothing else."],
                     ["role": "user", "content": safeText],
                 ],
                 "max_tokens": 50,
@@ -82,9 +86,11 @@ final class WatchTranslation: ObservableObject {
             NSLog("[WatchTranslation] JSON serialization failed: \(error) — returning nil")
             return nil
         }
-        if let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
-            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        guard let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") else {
+            NSLog("[WatchTranslation] No auth token — skipping translation request")
+            return nil
         }
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         do {
             let (data, response) = try await URLSession.shared.data(for: req)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
