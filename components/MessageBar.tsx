@@ -39,6 +39,8 @@ export default function MessageBar() {
   // Updated by the autocorrect useEffect after a "no correction
   // needed" round-trip (the input is well-formed).
   const lastSilenceSpokenRef = useRef('');
+  // Timer ref for translation-mode auto-speak after silence.
+  const translationSpeakTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── TTS word highlight (Read & Write parity) ────────────────────
   //
@@ -138,6 +140,32 @@ export default function MessageBar() {
     }
     return () => { cancelled = true; mounted = false; };
   }, [text, language, outputLanguage]);
+
+  // ── Translation auto-speak after silence ─────────────────────────────────
+  // When translation mode is active (language ≠ outputLanguage) and autoSpeak
+  // is on, speak the full translated phrase after 2 seconds of inactivity.
+  // This replaces word-by-word auto-speak (suppressed in translation mode) with
+  // a single clean utterance in the target language once the user pauses.
+  const TRANSLATION_SILENCE_MS = 2000;
+  useEffect(() => {
+    if (translationSpeakTimer.current) clearTimeout(translationSpeakTimer.current);
+    const { language: lang, outputLanguage: outLang } = useSettingsStore.getState();
+    const translationActive = lang !== outLang;
+    const { autoSpeak: as, soundEnabled: se } = useMessageStore.getState();
+    if (!translationActive || !as || !se || !text.trim()) return;
+
+    translationSpeakTimer.current = setTimeout(() => {
+      const { autoSpeak, soundEnabled } = useMessageStore.getState();
+      if (!autoSpeak || !soundEnabled) return;
+      // Prefer AI-refined translation (in `translated` state) if available,
+      // otherwise aacSpeak translates inline via the offline dict.
+      aacSpeak(text.trim(), speechRate, speechVolume, activeTone);
+    }, TRANSLATION_SILENCE_MS);
+
+    return () => {
+      if (translationSpeakTimer.current) clearTimeout(translationSpeakTimer.current);
+    };
+  }, [text, translated, speechRate, speechVolume, activeTone]);
 
   // Debounced background suggestion — child must explicitly tap to accept,
   // never auto-applied.
