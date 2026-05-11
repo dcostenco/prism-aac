@@ -18,8 +18,23 @@ import { isSafeAutoCorrection } from '@/services/autocorrectSafety';
 
 export default function MessageBar() {
   console.count('[render] MessageBar');
-  const { text, activeTone, toneMode, setTone, setToneMode, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
-  const { speechRate, speechVolume, language, aiAutocorrectEnabled } = useSettingsStore();
+  const text = useMessageStore((s) => s.text);
+  const activeTone = useMessageStore((s) => s.activeTone);
+  const toneMode = useMessageStore((s) => s.toneMode);
+  const setTone = useMessageStore((s) => s.setTone);
+  const setToneMode = useMessageStore((s) => s.setToneMode);
+  const autoSpeak = useMessageStore((s) => s.autoSpeak);
+  const soundEnabled = useMessageStore((s) => s.soundEnabled);
+  const deleteLastWord = useMessageStore((s) => s.deleteLastWord);
+  const clearAll = useMessageStore((s) => s.clearAll);
+  const undo = useMessageStore((s) => s.undo);
+  const addToHistory = useMessageStore((s) => s.addToHistory);
+  const toggleAutoSpeak = useMessageStore((s) => s.toggleAutoSpeak);
+  const setText = useMessageStore((s) => s.setText);
+  const speechRate = useSettingsStore((s) => s.speechRate);
+  const speechVolume = useSettingsStore((s) => s.speechVolume);
+  const language = useSettingsStore((s) => s.language);
+  const aiAutocorrectEnabled = useSettingsStore((s) => s.aiAutocorrectEnabled);
   const { t } = useT();
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showTones, setShowTones] = useState(false);

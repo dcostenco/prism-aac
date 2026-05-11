@@ -131,12 +131,19 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
 
 export default function PredictionBar() {
   console.count('[render] PredictionBar');
-  const { sidePanel, selectContact } = useUIStore();
+  const sidePanel = useUIStore((s) => s.sidePanel);
+  const selectContact = useUIStore((s) => s.selectContact);
   const contacts = useContactsStore((s) => s.contacts);
   const activeContactId = useUIStore((s) => s.activeContactId);
-  const { text, clearAll } = useMessageStore();
-  const { predictions, aiCompletion, updatePredictions, learnWord } = usePredictionStore();
-  const { speechRate, speechVolume, language } = useSettingsStore();
+  const text = useMessageStore((s) => s.text);
+  const clearAll = useMessageStore((s) => s.clearAll);
+  const predictions = usePredictionStore((s) => s.predictions);
+  const aiCompletion = usePredictionStore((s) => s.aiCompletion);
+  const updatePredictions = usePredictionStore((s) => s.updatePredictions);
+  const learnWord = usePredictionStore((s) => s.learnWord);
+  const speechRate = useSettingsStore((s) => s.speechRate);
+  const speechVolume = useSettingsStore((s) => s.speechVolume);
+  const language = useSettingsStore((s) => s.language);
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
   const langDefaults = getPredictionsForLanguage(language);
   const [displayed, setDisplayed] = useState<string[]>(langDefaults);

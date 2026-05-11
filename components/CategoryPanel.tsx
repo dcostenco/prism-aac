@@ -142,15 +142,19 @@ export default function CategoryPanel() {
     closeSidePanel, selectCategory, drillIntoCategory, navigateCategoryUp,
     backToCategories, startOrdering, nextStep, prevStep, finishOrdering, toggleCategoryKeyboard,
   } = useUIStore();
-  const { appendText, text, autoSpeak, soundEnabled } = useMessageStore();
+  const appendText = useMessageStore((s) => s.appendText);
+  const text = useMessageStore((s) => s.text);
+  const autoSpeak = useMessageStore((s) => s.autoSpeak);
+  const soundEnabled = useMessageStore((s) => s.soundEnabled);
   const {
     allCategories, getSubcategories, getRankedPhrasesForCategory, getSequencesForCategory,
   } = useCategoryStore();
   const recordPhraseUse = usePhraseUsageStore((s) => s.recordUse);
-  const { learnWord } = usePredictionStore();
+  const learnWord = usePredictionStore((s) => s.learnWord);
   const gridSize = useSettingsStore((s) => s.gridSize);
   const language = useSettingsStore((s) => s.language);
-  const { speechRate, speechVolume } = useSettingsStore();
+  const speechRate = useSettingsStore((s) => s.speechRate);
+  const speechVolume = useSettingsStore((s) => s.speechVolume);
   const gridRef = useRef<HTMLDivElement>(null);
 
   const [searchOpen, setSearchOpen] = useState(false);
