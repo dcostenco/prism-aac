@@ -343,6 +343,9 @@ final class WatchInbox: NSObject, ObservableObject {
         if let data = UserDefaults.standard.data(forKey: storageKey) {
             do {
                 let msgs = try JSONDecoder().decode([WatchMessage].self, from: data)
+                // Immediately remove from UserDefaults — data is now in memory
+                // Keychain write happens asynchronously via persistToKeychain()
+                UserDefaults.standard.removeObject(forKey: storageKey)
                 // Migrate to Keychain — persistToKeychain() reads self.messages, so set via returned value
                 // init() will assign messages = loadFromDefaults(), then persistToKeychain() is called next
                 return msgs

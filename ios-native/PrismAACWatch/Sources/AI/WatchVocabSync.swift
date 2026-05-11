@@ -59,6 +59,13 @@ final class WatchVocabSync: NSObject, ObservableObject {
 
     private let apiBase = "https://synalux.ai/api/v1/prism-aac"
 
+    private static let vocabSession: URLSession = {
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.timeoutIntervalForRequest = 10
+        cfg.timeoutIntervalForResource = 20
+        return URLSession(configuration: cfg)
+    }()
+
     override init() {
         super.init()
         // Restore saved language pair — #15: stored in Keychain (PII-adjacent), validated against allowlist
@@ -153,7 +160,7 @@ final class WatchVocabSync: NSObject, ObservableObject {
         }
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: req)
+            let (data, response) = try await WatchVocabSync.vocabSession.data(for: req)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
                 NSLog("[VocabSync] HTTP error \(http.statusCode)")
                 return

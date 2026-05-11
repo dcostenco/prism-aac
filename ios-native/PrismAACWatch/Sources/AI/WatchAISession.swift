@@ -28,6 +28,14 @@ final class WatchAISession: NSObject, ObservableObject {
     private let cloudURL = URL(string: "https://synalux.ai/api/v1/prism-aac/chat")!
     private let timeoutSec: Double = 15
 
+    private static let aiSession: URLSession = {
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.timeoutIntervalForRequest = 15
+        cfg.timeoutIntervalForResource = 30
+        cfg.httpMaximumConnectionsPerHost = 2
+        return URLSession(configuration: cfg)
+    }()
+
     // MARK: - Init / WatchConnectivity
 
     override init() {
@@ -208,7 +216,7 @@ final class WatchAISession: NSObject, ObservableObject {
             "language": String(validatedLanguage.prefix(2)),
             "stream": false,   // #8: data(for:) buffers full response — use non-streaming JSON; SSE fallback below
         ] as [String: Any])
-        let (data, response) = try await URLSession.shared.data(for: req)
+        let (data, response) = try await WatchAISession.aiSession.data(for: req)
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
             NSLog("[WatchAI] HTTP error \(http.statusCode)")
             throw URLError(.badServerResponse)

@@ -183,6 +183,9 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         cleanup()
     }
 
+    // NOTE: escalate() may still be in-flight (as a @MainActor Task) when cleanup() is called.
+    // The guard !hasEscalated at the start of escalate() prevents double-escalation.
+    // This is an intentional design: cleanup() is safe to call at any time.
     private func cleanup() {
         countdownTimer?.invalidate()
         countdownTimer = nil

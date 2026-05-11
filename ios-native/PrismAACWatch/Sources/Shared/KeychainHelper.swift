@@ -65,6 +65,44 @@ internal final class KeychainHelper {
         }
     }
 
+    func readData(service: String, account: String) -> Data? {
+        let query: [String: Any] = [
+            kSecClass as String:              kSecClassGenericPassword,
+            kSecAttrService as String:        service,
+            kSecAttrAccount as String:        account,
+            kSecAttrSynchronizable as String: false,
+            kSecReturnData as String:         true,
+            kSecMatchLimit as String:         kSecMatchLimitOne,
+        ]
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data else { return nil }
+        return data.count <= 65_536 ? data : nil
+    }
+
+    func writeData(_ data: Data, service: String, account: String) {
+        let query: [String: Any] = [
+            kSecClass as String:              kSecClassGenericPassword,
+            kSecAttrService as String:        service,
+            kSecAttrAccount as String:        account,
+            kSecAttrSynchronizable as String: false,
+        ]
+        let attributes: [String: Any] = [
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+        ]
+        let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+        if updateStatus == errSecItemNotFound {
+            var addQuery = query
+            addQuery[kSecValueData as String] = data
+            addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            let status = SecItemAdd(addQuery as CFDictionary, nil)
+            if status != errSecSuccess { NSLog("[KeychainHelper] writeData add failed: \(status)") }
+        } else if updateStatus != errSecSuccess {
+            NSLog("[KeychainHelper] writeData update failed: \(updateStatus)")
+        }
+    }
+
     func delete(service: String, account: String) {
         let query: [String: Any] = [
             kSecClass as String:              kSecClassGenericPassword,

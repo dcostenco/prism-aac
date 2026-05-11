@@ -478,7 +478,7 @@ struct WatchInboxView: View {
     private func relativeTime(_ date: Date) -> String {
         let s = Int(-date.timeIntervalSinceNow)
         if s <= 0 { return "now" }   // handles future-dated messages
-        if s < 60 { return "now" }
+        if s < 60 { return "\(s)s" }
         if s < 3600 { return "\(s/60)m" }
         if s < 86400 { return "\(s/3600)h" }
         return "\(s/86400)d"
@@ -717,18 +717,19 @@ struct WatchAIChatView: View {
                 sendMessage()
             }
         }
-        // #26: Restore last 10 messages from UserDefaults on appear
+        // #26: Restore last 10 messages from Keychain on appear (fix #6: moved from UserDefaults)
         .onAppear {
-            if let data = UserDefaults.standard.data(forKey: "watchAIChatHistory"),
+            if let data = KeychainHelper.shared.readData(service: "prism-aac-chat", account: "history"),
+               data.count <= 65_536,
                let saved = try? JSONDecoder().decode([ChatMessage].self, from: data) {
                 messages = Array(saved.suffix(10)).map { (role: $0.role, text: $0.text) }
             }
         }
-        // #26: Persist last 10 messages to UserDefaults whenever the list changes
+        // #26: Persist last 10 messages to Keychain whenever the list changes (fix #6: moved from UserDefaults)
         .onChange(of: messages.count) { _, _ in
             let toSave = Array(messages.suffix(10)).map { ChatMessage(role: $0.role, text: $0.text) }
-            if let data = try? JSONEncoder().encode(toSave) {
-                UserDefaults.standard.set(data, forKey: "watchAIChatHistory")
+            if let data = try? JSONEncoder().encode(toSave), data.count <= 65_536 {
+                KeychainHelper.shared.writeData(data, service: "prism-aac-chat", account: "history")
             }
         }
         // #14: onDisappear is on the OUTERMOST VStack of WatchAIChatView — this is the correct placement.
@@ -918,7 +919,7 @@ struct WatchSendMessageView: View {
                     if WCSessionRouter.shared.isReachable {
                         WCSessionRouter.shared.send(
                             ["type": "send_message", "to": safeTo, "text": safeBody],
-                            replyHandler: { [weak tts] _ in
+                            replyHandler: { _ in
                                 Task { @MainActor in
                                     sendStatus = "✓ Sent to \(safeTo)"
                                     // Now start the dismiss task
@@ -926,7 +927,7 @@ struct WatchSendMessageView: View {
                                     dismissTask = Task { @MainActor in
                                         msgText = ""
                                         try? await Task.sleep(nanoseconds: 1_500_000_000)
-                                        tts?.speak("Message sent")
+                                        tts.speak("Message sent")
                                         dismiss()
                                     }
                                 }
@@ -1135,7 +1136,7 @@ struct WatchEmergencyActiveView: View {
                 if emergency.countdownSecs > 0 {
                     Text("SENDING IN \(emergency.countdownSecs)s")
                         .font(.headline)
-                        .foregroundColor(.red)
+                        .foregroundColor(.white)
                     Text("\(emergency.countdownSecs)")
                         .font(.title3)
                         .foregroundColor(.white.opacity(0.8))
@@ -1154,6 +1155,14 @@ struct WatchEmergencyActiveView: View {
                     }
                     .buttonStyle(.bordered)
                     .tint(.white)
+                }
+                if emergency.deliveryStatus == .failed {
+                    Button("Force Close") {
+                        emergency.forceReset()
+                    }
+                    .foregroundColor(.white)
+                    .padding(.top, 8)
+                    .font(.caption)
                 }
             }
         }
