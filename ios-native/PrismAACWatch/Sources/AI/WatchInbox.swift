@@ -10,7 +10,7 @@ import UserNotifications
 ///
 /// Persists unread messages in UserDefaults so they survive app restarts.
 @MainActor
-final class WatchInbox: NSObject, ObservableObject, WCSessionDelegate {
+final class WatchInbox: NSObject, ObservableObject {
 
     struct WatchMessage: Identifiable, Codable {
         let id: String
@@ -29,9 +29,9 @@ final class WatchInbox: NSObject, ObservableObject, WCSessionDelegate {
     override init() {
         super.init()
         loadFromDefaults()
-        if WCSession.isSupported() {
-            WCSession.default.delegate = self
-            WCSession.default.activate()
+        // FIX 3: Register with router instead of setting WCSession.default.delegate = self
+        WCSessionRouter.shared.registerMessageHandler(for: "inbox_message") { [weak self] _, msg in
+            Task { @MainActor in self?.deliverFromMessage(msg) }
         }
         // Permission requested lazily in requestPermissionIfNeeded()
         // — called the first time the user opens the inbox, not on startup.
@@ -81,6 +81,17 @@ final class WatchInbox: NSObject, ObservableObject, WCSessionDelegate {
 
     // MARK: - Incoming message delivery
 
+    private func deliverFromMessage(_ message: [String: Any]) {
+        guard let sender   = message["sender"]   as? String,
+              let text     = message["text"]     as? String else { return }
+        let id       = message["id"]       as? String ?? UUID().uuidString
+        let provider = message["provider"] as? String ?? "sms"
+        let ts       = message["receivedAt"] as? TimeInterval ?? Date().timeIntervalSince1970
+        let msg = WatchMessage(id: id, sender: sender, text: text,
+                               provider: provider, receivedAt: Date(timeIntervalSince1970: ts))
+        deliver(msg)
+    }
+
     private func deliver(_ msg: WatchMessage) {
         // Deduplicate by id
         guard !messages.contains(where: { $0.id == msg.id }) else { return }
@@ -90,25 +101,6 @@ final class WatchInbox: NSObject, ObservableObject, WCSessionDelegate {
         recalcUnread()
         saveToDefaults()
         scheduleLocalNotification(msg)
-    }
-
-    // MARK: - WatchConnectivity — receives forwarded inbox messages from iPhone
-
-    nonisolated func session(_ session: WCSession,
-                              activationDidCompleteWith state: WCSessionActivationState,
-                              error: Error?) {}
-
-    nonisolated func session(_ session: WCSession,
-                              didReceiveMessage message: [String: Any]) {
-        guard message["type"] as? String == "inbox_message",
-              let sender   = message["sender"]   as? String,
-              let text     = message["text"]     as? String else { return }
-        let id       = message["id"]       as? String ?? UUID().uuidString
-        let provider = message["provider"] as? String ?? "sms"
-        let ts       = message["receivedAt"] as? TimeInterval ?? Date().timeIntervalSince1970
-        let msg = WatchMessage(id: id, sender: sender, text: text,
-                               provider: provider, receivedAt: Date(timeIntervalSince1970: ts))
-        Task { @MainActor [weak self] in self?.deliver(msg) }
     }
 
     // MARK: - Local notification

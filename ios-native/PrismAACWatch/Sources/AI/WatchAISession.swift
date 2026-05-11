@@ -5,18 +5,24 @@ import WatchConnectivity
 /// Manages AI requests from the Watch.
 /// Tries WatchConnectivity first (iPhone 1.5B), falls back to cloud URLSession.
 @MainActor
-final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
+final class WatchAISession: NSObject, ObservableObject {
 
     @Published private(set) var reply = ""
     @Published private(set) var isThinking = false
     @Published private(set) var mode: Mode = .unknown
     @Published private(set) var offlineBanner: String? = nil
+    @Published private(set) var isPhoneReachable = false
 
     enum Mode {
         case unknown
         case companion   // BT → iPhone → 1.5B on-device
         case cloudDirect // Watch WiFi/LTE → synalux.ai
         case offline     // no network, no BT — phrases + Layer 1 only
+    }
+
+    enum WatchAIError: Error {
+        case notAuthenticated
+        case responseTooLarge
     }
 
     private let cloudURL = URL(string: "https://synalux.ai/api/v1/prism-aac/chat")!
@@ -26,9 +32,12 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
 
     override init() {
         super.init()
-        if WCSession.isSupported() {
-            WCSession.default.delegate = self
-            WCSession.default.activate()
+        // FIX 3: Register with router instead of setting WCSession.default.delegate = self
+        WCSessionRouter.shared.registerMessageHandler(for: "phrase_reply") { [weak self] _, msg in
+            Task { @MainActor in self?.handlePhoneReply(msg) }
+        }
+        WCSessionRouter.shared.registerReachabilityHandler { [weak self] reachable in
+            Task { @MainActor in self?.isPhoneReachable = reachable }
         }
         updateMode()
     }
@@ -45,9 +54,16 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
         }
     }
 
+    private func handlePhoneReply(_ message: [String: Any]) {
+        if let text = message["tts_text"] as? String {
+            reply = text
+        }
+    }
+
     // MARK: - Ask AI
 
     func ask(_ question: String, language: String = "en") async {
+
         // Layer 1 safety — always synchronous, no network needed
         switch WatchSafetyFilter.check(question) {
         case .crisis(let r):
@@ -71,6 +87,8 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
                 reply = try await askViaCloud(question: question, language: language)
                 mode = .cloudDirect
             }
+        } catch WatchAIError.notAuthenticated {
+            reply = "Please sign in on your iPhone to enable AI features."
         } catch {
             // Full offline fallback
             mode = .offline
@@ -101,28 +119,38 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
     // MARK: - Direct cloud path (Watch WiFi/LTE)
 
     private func askViaCloud(question: String, language: String) async throws -> String {
-        let langCode = String(language.prefix(2))
-        let system = "You are a friendly helper for a child who uses AAC. Reply in \(language) language. Keep answers short (2-3 sentences max)."
-        var req = URLRequest(url: cloudURL, timeoutInterval: timeoutSec)
+        // Sanitize language code — allowlist BCP-47 format only (alphanumerics + hyphen, max 10 chars)
+        let safeLanguage = String(language.prefix(10))
+            .components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-")).inverted)
+            .joined()
+
+        // Sanitize question — cap length, strip ChatML control tokens
+        let safeQuestion = String(question.prefix(500))
+            .replacingOccurrences(of: "<|im_start|>", with: "")
+            .replacingOccurrences(of: "<|im_end|>", with: "")
+            .replacingOccurrences(of: "<|system|>", with: "")
+
+        let system = "You are a friendly helper for a child who uses AAC. Reply in \(safeLanguage) language. Keep answers short (2-3 sentences max)."
+        var req = URLRequest(url: cloudURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 15)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // H20: Attach stored auth token from Keychain
-        if let authToken = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
-            req.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        } else {
-            NSLog("[WatchAI] No auth token found — cloud request may fail")
+        // Auth is required — throw rather than silently continuing unauthenticated
+        guard let authToken = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") else {
+            NSLog("[WatchAI] No auth token — cannot make cloud request")
+            throw WatchAIError.notAuthenticated
         }
+        req.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         req.httpBody = try JSONSerialization.data(withJSONObject: [
             "messages": [
                 ["role": "system", "content": system],
-                ["role": "user",   "content": question],
+                ["role": "user",   "content": safeQuestion],
             ],
-            "language": langCode,
+            "language": String(safeLanguage.prefix(2)),
         ])
         let (data, _) = try await URLSession.shared.data(for: req)
         guard data.count <= 65_536 else {
             NSLog("[WatchAI] Response too large (\(data.count) bytes) — ignoring")
-            throw URLError(.dataLengthExceededMaximum)
+            throw WatchAIError.responseTooLarge
         }
         // Endpoint returns SSE — assemble all content chunks
         return assembleSSE(data) ?? ""
@@ -132,6 +160,7 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
         guard let raw = String(data: data, encoding: .utf8) else { return nil }
         var result = ""
         for line in raw.components(separatedBy: "\n") {
+            guard line.count <= 4096 else { continue }  // skip malformed mega-lines
             guard line.hasPrefix("data: ") else { continue }
             let payload = String(line.dropFirst(6))
             if payload == "[DONE]" { break }
@@ -141,6 +170,7 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
                   let delta = choices.first?["delta"] as? [String: Any],
                   let chunk = delta["content"] as? String else { continue }
             result += chunk
+            if result.count > 4000 { break }  // cap total response
         }
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
@@ -155,39 +185,25 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
     /// Send a phrase to iPhone for richer TTS / logging (non-blocking).
     func sendPhrase(_ phrase: String) {
         guard WCSession.isSupported() && WCSession.default.isReachable else { return }
-        WCSession.default.sendMessage(["type": "phrase", "text": phrase], replyHandler: nil, errorHandler: nil)
-    }
-
-    // MARK: - WCSessionDelegate
-
-    nonisolated func session(_ session: WCSession, activationDidCompleteWith state: WCSessionActivationState, error: Error?) {
-        Task { @MainActor in self.updateMode() }
-    }
-
-    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
-        Task { @MainActor in self.updateMode() }
-    }
-
-    // Handle messages pushed from iPhone (e.g. phrase spoken on iPhone appears on Watch)
-    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-        if let text = message["tts_text"] as? String {
-            Task { @MainActor in
-                self.reply = text
-            }
-        }
+        WCSessionRouter.shared.send(
+            ["type": "phrase", "text": phrase],
+            errorHandler: { err in NSLog("[WatchAI] Phrase relay failed: \(err)") }
+        )
     }
 }
 
-// MARK: - Keychain helper (H20)
+// MARK: - Keychain helper (H20 — FIX 6: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
 
-private class KeychainHelper {
+class KeychainHelper {
     static let shared = KeychainHelper()
     func read(service: String, account: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
             kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
         ]
         var result: AnyObject?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,

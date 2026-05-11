@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import Security
 
 /// Translation + live voice input for the Watch.
 ///
@@ -46,20 +47,47 @@ final class WatchTranslation: ObservableObject {
     }
 
     private func translate(text: String, to toLang: String) async -> String? {
+        // Safety gate — don't translate crisis or medical dosing phrases
+        let safety = WatchSafetyFilter.check(text)
+        if case .crisis = safety { return nil }
+        if case .medical = safety { return nil }
+
+        // Sanitize language code — allowlist BCP-47 format only (alphanumerics + hyphen, max 20 chars)
+        let safeLang = String(toLang.prefix(20))
+            .components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-")).inverted)
+            .joined()
+
+        // Sanitize user text — cap length, strip ChatML control tokens
+        let safeText = String(text.prefix(300))
+            .replacingOccurrences(of: "<|im_start|>", with: "")
+            .replacingOccurrences(of: "<|im_end|>", with: "")
+
         // Chat endpoint returns SSE (text/event-stream). Collect all
         // data: {"choices":[{"delta":{"content":"..."}}]} chunks until [DONE].
-        let prompt = "Translate to \(toLang). Return ONLY the translated word or phrase, nothing else: \(text)"
+        // User text is a separate message — NOT inlined in the system prompt.
         var req = URLRequest(url: chatURL)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.timeoutInterval = 10
         req.httpBody = try? JSONSerialization.data(withJSONObject: [
-            "messages": [["role": "user", "content": prompt]],
+            "messages": [
+                ["role": "system", "content": "Translate to \(safeLang). Return ONLY the translated word or phrase, nothing else."],
+                ["role": "user",   "content": safeText],
+            ],
+            "max_tokens": 50,
+            "stream": false,
         ])
+        if let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         do {
             let (data, _) = try await URLSession.shared.data(for: req)
+            guard data.count <= 65_536 else { return nil }
             return assembleSSE(data)
-        } catch { return nil }
+        } catch {
+            NSLog("[WatchTranslation] Translation failed: \(error)")
+            return nil
+        }
     }
 
     /// Parse SSE chunks: "data: {...}\n\ndata: [DONE]\n\n" → assembled string.
@@ -67,6 +95,7 @@ final class WatchTranslation: ObservableObject {
         guard let raw = String(data: data, encoding: .utf8) else { return nil }
         var result = ""
         for line in raw.components(separatedBy: "\n") {
+            guard line.count <= 4096 else { continue }  // skip malformed mega-lines
             guard line.hasPrefix("data: ") else { continue }
             let payload = String(line.dropFirst(6))
             if payload == "[DONE]" { break }
@@ -76,6 +105,7 @@ final class WatchTranslation: ObservableObject {
                   let delta = choices.first?["delta"] as? [String: Any],
                   let chunk = delta["content"] as? String else { continue }
             result += chunk
+            if result.count > 4000 { break }  // cap total response
         }
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
                             .trimmingCharacters(in: .init(charactersIn: "\"'"))

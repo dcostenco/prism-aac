@@ -96,13 +96,14 @@ struct WatchPictogramCards: View {
         ("zh-CN", "🇨🇳", "ZH"), ("ar-SA", "🇸🇦", "AR"),
     ]
 
-    @State private var showLangPicker   = false
-    @State private var pickingInput     = false
-    @State private var showAIChat       = false   // AI chat from panel tile
-    @State private var showSendMessage  = false   // send message from 💬 button
-    @State private var showInbox        = false
-    @State private var showDictation    = false
-    @State private var dictationText    = ""
+    @State private var showLangPicker         = false
+    @State private var pickingInput           = false
+    @State private var showAIChat             = false   // AI chat from panel tile
+    @State private var showSendMessage        = false   // send message from 💬 button
+    @State private var showInbox              = false
+    @State private var showDictation          = false
+    @State private var dictationText          = ""
+    @State private var pendingEmergencyPhrase: AACPhrase? = nil
 
     private func code(_ bcp: String) -> String {
         supportedLanguages.first { $0.code == bcp }?.name ?? String(bcp.prefix(2)).uppercased()
@@ -160,13 +161,18 @@ struct WatchPictogramCards: View {
                         ForEach(allPhrases) { phrase in
                             PairCard(phrase: phrase) {
                                 WKInterfaceDevice.current().play(.click)
-                                translation.translateAndSpeak(
-                                    text: phrase.label,
-                                    from: vocab.vocabLanguage,
-                                    to: vocab.outputLanguage,
-                                    tts: tts
-                                )
-                                session.sendPhrase(phrase.label)
+                                // Emergency phrases require confirmation before sending
+                                if phrase.color == .red && AACVocab.categories.contains(where: { $0.name == "Emergency" && $0.phrases.contains(where: { $0.label == phrase.label }) }) {
+                                    pendingEmergencyPhrase = phrase
+                                } else {
+                                    translation.translateAndSpeak(
+                                        text: phrase.label,
+                                        from: vocab.vocabLanguage,
+                                        to: vocab.outputLanguage,
+                                        tts: tts
+                                    )
+                                    session.sendPhrase(phrase.label)
+                                }
                             }
                         }
                     }
@@ -266,6 +272,22 @@ struct WatchPictogramCards: View {
             WatchSendMessageView()
                 .environmentObject(inbox)
                 .environmentObject(tts)
+        }
+        .confirmationDialog(
+            "Send Emergency?",
+            isPresented: Binding(
+                get: { pendingEmergencyPhrase != nil },
+                set: { if !$0 { pendingEmergencyPhrase = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let phrase = pendingEmergencyPhrase {
+                Button(phrase.label, role: .destructive) {
+                    emergency.trigger(phrase: phrase.label, severity: .critical)
+                    pendingEmergencyPhrase = nil
+                }
+                Button("Cancel", role: .cancel) { pendingEmergencyPhrase = nil }
+            }
         }
         .sheet(isPresented: $showLangPicker) {
             NavigationView {
@@ -386,7 +408,7 @@ struct WatchInboxView: View {
                         ForEach(inbox.messages) { msg in
                             Button {
                                 inbox.markRead(msg.id)
-                                tts.speak("\(msg.sender): \(msg.text)")
+                                tts.speak("\(msg.sender.prefix(50)): \(msg.text.prefix(300))")
                                 replyingTo = msg
                             } label: {
                                 VStack(alignment: .leading, spacing: 3) {
@@ -656,6 +678,7 @@ struct WatchAIChatView: View {
         let text = inputText.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty else { return }
         inputText = ""
+        if messages.count > 50 { messages.removeFirst() }
         messages.append((role: "user", text: text))
         isWaiting = true
 
@@ -665,6 +688,7 @@ struct WatchAIChatView: View {
                 let translated = await translation.translateDirect(text: text, to: outputLang)
                 let result = translated ?? text
                 isWaiting = false
+                if messages.count > 50 { messages.removeFirst() }
                 messages.append((role: "ai", text: result))
                 tts.speak(result, language: outputLang)
             }
@@ -673,6 +697,7 @@ struct WatchAIChatView: View {
             Task {
                 let reply = await session.askAI(text, lang: outputLang) ?? "…"
                 isWaiting = false
+                if messages.count > 50 { messages.removeFirst() }
                 messages.append((role: "ai", text: reply))
                 tts.speak(reply, language: outputLang)
             }
@@ -789,24 +814,21 @@ struct WatchSendMessageView: View {
 
                 // Send button — large, full width
                 Button {
-                    let to   = contactQuery.trimmingCharacters(in: .whitespaces)
-                    let body = msgText.trimmingCharacters(in: .whitespaces)
-                    guard !to.isEmpty, !body.isEmpty else { return }
+                    let safeTo   = String(contactQuery.prefix(100)).trimmingCharacters(in: .whitespacesAndNewlines)
+                    let safeBody = String(msgText.prefix(500))
+
+                    guard !safeTo.isEmpty, !safeBody.isEmpty else { return }
                     if WCSession.isSupported() && WCSession.default.isReachable {
-                        WCSession.default.sendMessage(
-                            ["type": "send_message", "to": to, "text": body],
-                            replyHandler: { _ in
-                                Task { @MainActor in
-                                    sendStatus = "✓ Sent to \(to)"
-                                    msgText = ""
-                                    tts.speak("Message sent")
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { dismiss() }
-                                }
-                            },
-                            errorHandler: { _ in
-                                Task { @MainActor in sendStatus = "⚠ Phone unreachable" }
-                            }
+                        WCSessionRouter.shared.send(
+                            ["type": "send_message", "to": safeTo, "text": safeBody],
+                            errorHandler: { err in NSLog("[WatchSend] Failed: \(err)") }
                         )
+                        Task { @MainActor in
+                            sendStatus = "✓ Sent to \(safeTo)"
+                            msgText = ""
+                            tts.speak("Message sent")
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { dismiss() }
+                        }
                     } else {
                         sendStatus = "⚠ Phone not connected"
                     }
@@ -966,15 +988,25 @@ struct WatchEmergencyActiveView: View {
                 Image(systemName: "sos")
                     .font(.system(size: 48))
                     .foregroundColor(.white)
-                Text("HELP COMING")
-                    .font(.headline)
-                    .foregroundColor(.white)
+                if emergency.countdownSecs > 0 {
+                    Text("SENDING IN \(emergency.countdownSecs)s")
+                        .font(.headline)
+                        .foregroundColor(.red)
+                } else {
+                    Text("HELP COMING")
+                        .font(.headline)
+                        .foregroundColor(.orange)
+                }
                 Text(emergency.countdownText)
                     .font(.title3)
                     .foregroundColor(.white.opacity(0.8))
-                Button("Cancel") { emergency.cancel() }
+                if emergency.severity != .critical {
+                    Button("Cancel") {
+                        emergency.cancel()
+                    }
                     .buttonStyle(.bordered)
                     .tint(.white)
+                }
             }
         }
     }

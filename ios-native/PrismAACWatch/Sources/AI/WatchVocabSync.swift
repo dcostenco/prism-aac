@@ -1,4 +1,5 @@
 import Foundation
+import Security
 import WatchConnectivity
 
 /// Syncs vocabulary from the web app to the Watch.
@@ -9,7 +10,7 @@ import WatchConnectivity
 ///
 /// Falls back to a minimal offline core if both unavailable.
 @MainActor
-final class WatchVocabSync: NSObject, ObservableObject, WCSessionDelegate {
+final class WatchVocabSync: NSObject, ObservableObject {
 
     @Published private(set) var categories: [WatchCategory] = WatchCategory.offlineCore
     /// Input (typing/selection) language — what the AAC user communicates in.
@@ -53,51 +54,73 @@ final class WatchVocabSync: NSObject, ObservableObject, WCSessionDelegate {
         if inputLanguage == "en-US", let legacy = UserDefaults.standard.string(forKey: "watchLanguage") {
             inputLanguage = legacy; outputLanguage = legacy
         }
-        if WCSession.isSupported() {
-            WCSession.default.delegate = self
-            WCSession.default.activate()
+        // FIX 3: Register with router instead of setting WCSession.default.delegate = self
+        WCSessionRouter.shared.registerMessageHandler(for: "vocab_update") { [weak self] _, msg in
+            Task { @MainActor in self?.handleVocabReply(msg) }
         }
-        Task { await loadFromAPI(lang: language) }
+        // Also handle vocabulary pushed from iPhone on activation (companion path)
+        WCSessionRouter.shared.registerMessageHandler(for: "vocabulary") { [weak self] _, msg in
+            Task { @MainActor in self?.handleVocabReply(msg) }
+        }
+        Task { await loadFromAPI(lang: inputLanguage) }
     }
 
     // MARK: - Load from web app API (standalone path)
 
+    private static let allowedLangs = [
+        "en", "es", "ro", "ru", "fr", "de", "it", "pt", "ar", "zh-Hans", "zh-Hant",
+        "en-US", "es-ES", "fr-FR", "de-DE", "ro-RO", "ru-RU",
+        "uk-UA", "pt-BR", "ja-JP", "zh-CN", "ar-SA",
+    ]
+
     func loadFromAPI(lang: String? = nil) async {
         let targetLang = lang ?? language
-        var components = URLComponents(string: "\(apiBase)/vocabulary")
-        components?.queryItems = [URLQueryItem(name: "lang", value: targetLang)]
-        guard let url = components?.url else { return }
+
+        // Validate language code against allowlist before using in URL
+        guard WatchVocabSync.allowedLangs.contains(targetLang) else {
+            NSLog("[VocabSync] Unsupported language: \(targetLang)")
+            return
+        }
+
+        guard var components = URLComponents(string: "\(apiBase)/vocabulary") else { return }
+        components.queryItems = [URLQueryItem(name: "lang", value: targetLang)]
+        guard let url = components.url else { return }
+
+        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
+        if let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            let (data, _) = try await URLSession.shared.data(for: req)
+            guard data.count <= 512_000 else {
+                NSLog("[VocabSync] Response too large (\(data.count) bytes)")
+                return
+            }
             let vocab = try JSONDecoder().decode(VocabResponse.self, from: data)
-            categories = vocab.categories.map { WatchCategory(from: $0) }
+            // Cap categories and phrase counts; sanitize string field lengths
+            let safeCats: [WatchCategory] = vocab.categories.prefix(50).map { cat in
+                let safePhrases = cat.phrases.prefix(100).map { ph in
+                    VocabPhrase(id: ph.id,
+                                label: String(ph.label.prefix(120)),
+                                arasaacId: ph.arasaacId,
+                                sfSymbol: ph.sfSymbol)
+                }
+                return WatchCategory(from: VocabCategory(id: cat.id,
+                                                         icon: String(cat.icon.prefix(4)),
+                                                         name: String(cat.name.prefix(120)),
+                                                         phrases: Array(safePhrases)))
+            }
+            categories = safeCats
             vocabLanguage = vocab.language   // labels are in this language
             source = .cloud
         } catch {
+            NSLog("[VocabSync] API load failed: \(error)")
             // Keep offline core — never leave user without communication
         }
     }
 
-    // MARK: - WatchConnectivity (companion path, faster)
-
-    nonisolated func session(_ session: WCSession, activationDidCompleteWith state: WCSessionActivationState, error: Error?) {
-        if state == .activated {
-            // Request vocabulary from iPhone
-            if session.isReachable {
-                session.sendMessage(["type": "requestVocabulary"], replyHandler: { reply in
-                    Task { @MainActor [weak self] in
-                        self?.handleVocabReply(reply)
-                    }
-                }, errorHandler: nil)
-            }
-        }
-    }
-
-    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-        if message["type"] as? String == "vocabulary" {
-            Task { @MainActor [weak self] in self?.handleVocabReply(message) }
-        }
-    }
+    // MARK: - Handle vocabulary from iPhone (companion path)
 
     private func handleVocabReply(_ reply: [String: Any]) {
         guard let data = reply["vocab"] as? Data,
