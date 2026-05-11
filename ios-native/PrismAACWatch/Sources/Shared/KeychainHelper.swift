@@ -53,6 +53,10 @@ internal final class KeychainHelper {
             kSecAttrAccount as String:        account,
             kSecAttrSynchronizable as String: false,
         ]
-        SecItemDelete(query as CFDictionary)
+        // #23: log unexpected SecItemDelete failures (errSecItemNotFound is expected and ignored)
+        let status = SecItemDelete(query as CFDictionary)
+        if status != errSecSuccess && status != errSecItemNotFound {
+            NSLog("[KeychainHelper] SecItemDelete failed: \(status) for \(service)/\(account)")
+        }
     }
 }

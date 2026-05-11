@@ -34,8 +34,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
         let safeOutput = Self.allowedLangs.contains(output) ? output : "en-US"
         inputLanguage  = safeInput
         outputLanguage = safeOutput
-        UserDefaults.standard.set(safeInput,  forKey: "watchInputLanguage")
-        UserDefaults.standard.set(safeOutput, forKey: "watchOutputLanguage")
+        KeychainHelper.shared.write(value: safeInput,  service: "prism-aac", account: "watchInputLanguage")
+        KeychainHelper.shared.write(value: safeOutput, service: "prism-aac", account: "watchOutputLanguage")
         Task { await loadFromAPI(lang: safeInput) }   // vocab labels in INPUT lang
     }
 
@@ -50,17 +50,11 @@ final class WatchVocabSync: NSObject, ObservableObject {
 
     override init() {
         super.init()
-        // Restore saved language pair — #18: validate against allowlist before trusting UserDefaults
-        if let inp = UserDefaults.standard.string(forKey: "watchInputLanguage"),
+        // Restore saved language pair — #15: stored in Keychain (PII-adjacent), validated against allowlist
+        if let inp = KeychainHelper.shared.read(service: "prism-aac", account: "watchInputLanguage"),
            Self.allowedLangs.contains(inp) { inputLanguage = inp }
-        if let out = UserDefaults.standard.string(forKey: "watchOutputLanguage"),
+        if let out = KeychainHelper.shared.read(service: "prism-aac", account: "watchOutputLanguage"),
            Self.allowedLangs.contains(out) { outputLanguage = out }
-        // Legacy single-key migration (validate before accepting)
-        if inputLanguage == "en-US",
-           let legacy = UserDefaults.standard.string(forKey: "watchLanguage"),
-           Self.allowedLangs.contains(legacy) {
-            inputLanguage = legacy; outputLanguage = legacy
-        }
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerMessageHandler(for: "vocab_update") { [weak self] _, msg in
             Task { @MainActor in self?.handleVocabReply(msg) }
@@ -126,7 +120,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
                                                          phrases: Array(safePhrases)))
             }
             categories = safeCats
-            vocabLanguage = String(vocab.language.prefix(20))   // labels are in this language
+            let rawLang = String(vocab.language.prefix(20))
+            vocabLanguage = Self.allowedLangs.contains(rawLang) ? rawLang : "en-US"   // labels are in this language
             source = .cloud
         } catch {
             NSLog("[VocabSync] API load failed: \(error)")
@@ -143,7 +138,13 @@ final class WatchVocabSync: NSObject, ObservableObject {
             NSLog("[VocabSync] Companion vocab too large (\(data.count) bytes)")
             return
         }
-        guard let vocab = try? JSONDecoder().decode(VocabResponse.self, from: data) else { return }
+        let vocab: VocabResponse
+        do {
+            vocab = try JSONDecoder().decode(VocabResponse.self, from: data)
+        } catch {
+            NSLog("[VocabSync] Companion vocab decode failed: \(error)")
+            return
+        }
         // Apply same caps as API path:
         let safeCats = vocab.categories.prefix(50).map { cat -> WatchCategory in
             // #10: propagate emergency flag from category id (companion path)
@@ -161,7 +162,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
             )
         }
         categories = Array(safeCats)
-        vocabLanguage = String(vocab.language.prefix(20))   // labels written in this language (not output lang)
+        let rawLang = String(vocab.language.prefix(20))
+        vocabLanguage = Self.allowedLangs.contains(rawLang) ? rawLang : "en-US"   // labels written in this language (not output lang)
         source = .companion
     }
 }

@@ -27,6 +27,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     private var activeBgTask: WKBackgroundTaskHandle? = nil
     // #4: set true after escalation completes — enables safe post-escalation dismiss from UI
     @Published private(set) var hasEscalated = false
+    // #2: single stored task for SOS haptics — cancellable on cleanup
+    private var sosHapticTask: Task<Void, Never>?
 
     override init() {
         super.init()
@@ -57,10 +59,11 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
         // Request background task so process is not suspended
         // F2b: store handle on instance so cleanup() can end it
+        // #18: simplified expiry — escalate from stored activePhrase, no confusing dual-capture
         activeBgTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-countdown") {
-            // Expiry: fire immediately — FIX 16: use activePhrase, not the raw captured param
             Task { @MainActor [weak self] in
-                await self?.escalate(phrase: self?.activePhrase ?? String(phrase.prefix(200)), severity: severity)
+                guard let self, let phrase = self.activePhrase else { return }
+                await self.escalate(phrase: phrase, severity: self.severity)
             }
         }
 
@@ -122,6 +125,9 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         cellularFallbackSent = false  // FIX 8: reset debounce on cleanup
         hasEscalated = false  // FIX 4: reset escalation flag for next emergency
         synthesizer.stopSpeaking(at: .immediate)
+        // #2: cancel stored SOS haptic task
+        sosHapticTask?.cancel()
+        sosHapticTask = nil
         // F2b: end any leaked background task on cancel path
         if let task = activeBgTask {
             WKApplication.shared().endBackgroundTask(task)
@@ -134,16 +140,25 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     private func escalate(phrase: String, severity: EmergencySeverity) async {
         sendPhrase(phrase, isEmergency: true, severity: severity)
         hasEscalated = true  // FIX 4: allow critical emergency dismiss post-escalation
-        // Haptic — SOS pattern (3 short, 3 long, 3 short)
-        // FIX 12: use actor-safe Tasks instead of DispatchQueue.main.asyncAfter
-        for i in 0..<9 {
-            Task { @MainActor [weak self] in
-                try? await Task.sleep(nanoseconds: UInt64(i) * 300_000_000)
-                guard self?.isActive == true else { return }
+        // #8: post-escalation watchdog — auto-cleanup 30s after escalation if UI hasn't dismissed
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 30_000_000_000)
+            guard let self, self.hasEscalated, self.isActive else { return }
+            NSLog("[WatchEmergency] Post-escalation watchdog: auto-cleanup after 30s")
+            self.cleanup()
+        }
+        // #2: Haptic — SOS pattern (3 short, 3 long, 3 short) — single stored task, cancellable
+        sosHapticTask = Task { @MainActor [weak self] in
+            for i in 0..<9 {
+                guard !Task.isCancelled, self?.isActive == true else { return }
                 WKInterfaceDevice.current().play(i % 3 == 0 ? .failure : .click)
+                try? await Task.sleep(nanoseconds: 300_000_000)
             }
         }
     }
+
+    // #26: static cached formatter — avoids allocation on every sendPhrase call
+    private static let iso8601 = ISO8601DateFormatter()
 
     // F2d: private — not part of public API
     private func sendPhrase(_ phrase: String, isEmergency: Bool = false, severity: EmergencySeverity = .urgent) {
@@ -151,7 +166,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             "type": isEmergency ? "emergency" : "phrase",
             "phrase": phrase,
             "severity": severity == .critical ? "critical" : severity == .urgent ? "urgent" : severity == .medical ? "medical" : "standard",
-            "timestamp": ISO8601DateFormatter().string(from: Date()),
+            "timestamp": WatchEmergencyManager.iso8601.string(from: Date()),
         ]
 
         // F2a: route through WCSessionRouter.shared.send instead of direct WCSession calls
@@ -179,12 +194,13 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         req.httpMethod = "POST"
         req.timeoutInterval = 10
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // F2f: use shared KeychainHelper instead of deleted WatchEmergencyKeychainHelper
-        if let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
-            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        } else {
-            NSLog("[WatchEmergency] No auth token — cellular fallback will be unauthenticated")
+        // #4: guard — abort immediately if no auth token; unauthenticated dispatch is never sent
+        guard let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") else {
+            NSLog("[WatchEmergency] CRITICAL: No auth token — cannot authenticate emergency dispatch; TTS fallback only")
+            speakEmergencyFallback()
+            return
         }
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         let payload: [String: Any] = [
             "phrase": activePhrase ?? "Emergency",
             "severity": "watch_cellular_fallback",
@@ -216,6 +232,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     }
 
     private func speakEmergencyFallback() {
+        // #13: stop any active speech before starting fallback utterance
+        if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
             try AVAudioSession.sharedInstance().setActive(true)

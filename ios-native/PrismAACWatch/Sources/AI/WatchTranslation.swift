@@ -65,6 +65,7 @@ final class WatchTranslation: ObservableObject {
         let safeText = String(text.prefix(300))
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
+            .replacingOccurrences(of: "<|system|>", with: "")
 
         // Chat endpoint returns SSE (text/event-stream). Collect all
         // data: {"choices":[{"delta":{"content":"..."}}]} chunks until [DONE].
@@ -120,12 +121,12 @@ final class WatchTranslation: ObservableObject {
                   let delta = choices.first?["delta"] as? [String: Any],
                   let chunk = delta["content"] as? String else {
                 if !payload.isEmpty && payload != "[DONE]" {
-                    NSLog("[WatchAI] Unexpected SSE payload (first 100 chars): \(payload.prefix(100))")
+                    NSLog("[WatchTranslation] Unexpected SSE payload (first 100 chars): \(payload.prefix(100))")
                 }
                 continue
             }
             result += chunk
-            if result.count > 4000 { break }  // cap total response
+            if result.count > 300 { break }  // translations are short phrases
         }
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
                             .trimmingCharacters(in: .init(charactersIn: "\"'"))

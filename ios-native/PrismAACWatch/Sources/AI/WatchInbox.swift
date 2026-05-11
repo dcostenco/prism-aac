@@ -36,6 +36,10 @@ final class WatchInbox: NSObject, ObservableObject {
         super.init()
         messages = loadFromDefaults()
         recalcUnread()
+        // #3: persist migrated UserDefaults data to Keychain (migration completes here, not inside loadFromDefaults)
+        if UserDefaults.standard.data(forKey: storageKey) != nil {
+            saveToDefaults()
+        }
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerMessageHandler(for: "inbox_message") { [weak self] _, msg in
             Task { @MainActor in self?.deliverFromMessage(msg) }
@@ -98,7 +102,10 @@ final class WatchInbox: NSObject, ObservableObject {
         let text     = String(rawText.prefix(500))
         let id       = String((message["id"]       as? String ?? UUID().uuidString).prefix(36))
         let provider = String((message["provider"] as? String ?? "sms").prefix(20))
-        let ts       = message["receivedAt"] as? TimeInterval ?? Date().timeIntervalSince1970
+        // #19: clamp receivedAt — reject timestamps more than 1 year old or more than 1 min in the future
+        let now      = Date().timeIntervalSince1970
+        let rawTs    = message["receivedAt"] as? TimeInterval ?? now
+        let ts       = min(max(rawTs, now - 86_400 * 365), now + 60)
         let msg = WatchMessage(id: id, sender: sender, text: text,
                                provider: provider, receivedAt: Date(timeIntervalSince1970: ts))
         deliver(msg)
@@ -167,13 +174,17 @@ final class WatchInbox: NSObject, ObservableObject {
             } else if updateStatus != errSecSuccess {
                 NSLog("[WatchInbox] Keychain update failed: \(updateStatus)")
             }
-            // Remove any legacy UserDefaults entry
-            UserDefaults.standard.removeObject(forKey: storageKey)
+            // #14: remove legacy UserDefaults entry only once (migration flag prevents repeat removals)
+            if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") {
+                UserDefaults.standard.removeObject(forKey: storageKey)
+                UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
+            }
         } catch {
             NSLog("[WatchInbox] Encode failed: \(error)")
         }
     }
 
+    @MainActor
     private func loadFromDefaults() -> [WatchMessage] {
         let query: [String: Any] = [
             kSecClass as String:              kSecClassGenericPassword,
@@ -196,13 +207,13 @@ final class WatchInbox: NSObject, ObservableObject {
                 return []
             }
         }
-        // Migration from UserDefaults — #14: do/catch for migration path too
+        // Migration from UserDefaults — #3: do not assign messages= here; let init() assign the return value
+        // #14: do/catch for migration path too
         if let data = UserDefaults.standard.data(forKey: storageKey) {
             do {
                 let msgs = try JSONDecoder().decode([WatchMessage].self, from: data)
-                // Migrate to Keychain
-                messages = msgs
-                saveToDefaults()
+                // Migrate to Keychain — saveToDefaults() reads self.messages, so set via returned value
+                // init() will assign messages = loadFromDefaults(), then saveToDefaults() is called next
                 return msgs
             } catch {
                 NSLog("[WatchInbox] UserDefaults migration decode failed: \(error)")

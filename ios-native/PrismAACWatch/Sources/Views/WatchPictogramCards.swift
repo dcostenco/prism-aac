@@ -15,8 +15,9 @@ struct AACPhrase: Identifiable {
     let isEmergency: Bool
 
     init(label: String, sfSymbol: String, color: Color, arasaacId: Int?, isEmergency: Bool = false) {
-        // Stable id: lowercase label, keep only alphanumerics
-        self.id = label.lowercased().filter { $0.isLetter || $0.isNumber }
+        // Stable id: lowercase label + sfSymbol — prevents collision for same label across categories
+        // e.g. "Help" (sfSymbol: "sos") vs "Help" (sfSymbol: "hand.raised") get distinct ids
+        self.id = "\(label.lowercased().filter { $0.isLetter || $0.isNumber })-\(sfSymbol)"
         self.label = label
         self.sfSymbol = sfSymbol
         self.color = color
@@ -529,7 +530,10 @@ struct WatchReplyView: View {
                         inbox.reply(to: message, text: text)
                         sent = true
                         tts.speak("Message sent")
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { dismiss() }
+                        Task { @MainActor in
+                            try? await Task.sleep(nanoseconds: 1_500_000_000)
+                            dismiss()
+                        }
                     } label: {
                         Label("Send", systemImage: "paperplane.fill")
                             .font(.system(size: 13, weight: .semibold))
@@ -692,13 +696,15 @@ struct WatchAIChatView: View {
         }
     }
 
+    @MainActor
     private func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty else { return }
         inputText = ""
         // #17: cap at 50 (>= 50 removes before adding, keeping array at ≤50 at all times)
+        // #9: cap individual message text at 500 chars to prevent unbounded memory growth
         if messages.count >= 50 { messages.removeFirst() }
-        messages.append((role: "user", text: text))
+        messages.append((role: "user", text: String(text.prefix(500))))
         isWaiting = true
 
         if isTranslatorMode {
@@ -708,7 +714,7 @@ struct WatchAIChatView: View {
                 let result = translated ?? text
                 isWaiting = false
                 if messages.count >= 50 { messages.removeFirst() }
-                messages.append((role: "ai", text: result))
+                messages.append((role: "ai", text: String(result.prefix(500))))
                 tts.speak(result, language: outputLang)
             }
         } else {
@@ -717,7 +723,7 @@ struct WatchAIChatView: View {
                 let reply = await session.askAI(text, lang: outputLang) ?? "…"
                 isWaiting = false
                 if messages.count >= 50 { messages.removeFirst() }
-                messages.append((role: "ai", text: reply))
+                messages.append((role: "ai", text: String(reply.prefix(500))))
                 tts.speak(reply, language: outputLang)
             }
         }
@@ -850,7 +856,10 @@ struct WatchSendMessageView: View {
                             sendStatus = "✓ Sent to \(safeTo)"
                             msgText = ""
                             tts.speak("Message sent")
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { dismiss() }
+                            Task { @MainActor in
+                                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                                dismiss()
+                            }
                         }
                     } else {
                         sendStatus = "⚠ Phone not connected"
@@ -889,6 +898,7 @@ struct PairCard: View {
         Button(action: onTap) {
             VStack(spacing: 4) {
                 if let url = phrase.arasaacURL {
+                    // NOTE: AsyncImage has no native timeout; stalled loads handled by WatchOS URL session default (60s)
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let img):
@@ -932,6 +942,7 @@ struct WatchRootView: View {
     @EnvironmentObject var emergency: WatchEmergencyManager
     @EnvironmentObject var tts: WatchTTS
     @EnvironmentObject var inbox: WatchInbox
+    @EnvironmentObject var vocab: WatchVocabSync
 
     var body: some View {
         WatchPictogramCards()

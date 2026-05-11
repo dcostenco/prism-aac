@@ -57,7 +57,7 @@ final class WatchAISession: NSObject, ObservableObject {
 
     private func handlePhoneReply(_ message: [String: Any]) {
         if let text = message["tts_text"] as? String {
-            reply = text
+            reply = String(text.prefix(500))
         }
     }
 
@@ -117,7 +117,7 @@ final class WatchAISession: NSObject, ObservableObject {
                         replyHandler: { reply in
                             guard !resumed else { return }
                             resumed = true
-                            Task { @MainActor in cont.resume(returning: reply["text"] as? String ?? "") }
+                            cont.resume(returning: reply["text"] as? String ?? "")
                         },
                         errorHandler: { err in
                             guard !resumed else { return }
@@ -131,7 +131,7 @@ final class WatchAISession: NSObject, ObservableObject {
                 try await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
                 throw URLError(.timedOut)
             }
-            let first = try await group.next()!
+            guard let first = try await group.next() else { throw URLError(.timedOut) }
             group.cancelAll()
             return first
         }
@@ -254,6 +254,10 @@ struct WatchSafetyFilter {
             return nil
         }
     }
+    private static let _crisisPatternCheck: Void = {
+        assert(crisisPatterns.count == crisisKeywords.count,
+            "[WatchSafetyFilter] \(crisisKeywords.count - crisisPatterns.count) pattern(s) failed to compile")
+    }()
     private static let medicalPatterns: [NSRegularExpression] = medicalKeywords.compactMap { keyword in
         let pattern = "(?:^|[^\\p{L}\\p{N}])\(NSRegularExpression.escapedPattern(for: keyword))(?:$|[^\\p{L}\\p{N}])"
         do {

@@ -62,9 +62,12 @@ extension WCSessionRouter: WCSessionDelegate {
 
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
         guard let type = message["type"] as? String else { replyHandler(["error": "no type"]); return }
+        // #5: reply includes handler count — lets iPhone side detect zero-handler dispatch
         Task { @MainActor [weak self] in
-            self?.messageHandlers[type]?.forEach { $0(type, message) }
-            replyHandler(["ok": true])  // ← inside Task, after handlers run
+            guard let self else { replyHandler(["ok": false, "error": "router deallocated"]); return }
+            let handlers = self.messageHandlers[type] ?? []
+            handlers.forEach { $0(type, message) }
+            replyHandler(["ok": true, "handlers": handlers.count])
         }
     }
 
