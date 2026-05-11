@@ -8,6 +8,8 @@ import { usePredictionStore } from '@/store/predictionStore';
 import { tapFeedback } from '@/services/feedback';
 import { useSettingsStore, GridSize } from '@/store/settingsStore';
 import { aacSpeak } from '@/services/aacSpeak';
+import { translateTextSync, looksLikeTargetLang } from '@/services/translateService';
+import { SupportedLanguage } from '@/engine/i18n';
 import { warmupAzureAudio } from '@/services/azureTTS';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
@@ -233,7 +235,38 @@ export default function CategoryPanel() {
       ppw = pw; pw = w;
     }
     if (phraseId) recordPhraseUse(phraseId);
-    if (autoSpeak && soundEnabled) aacSpeak(phraseText, speechRate, speechVolume, undefined, true);
+    if (autoSpeak && soundEnabled) {
+      const { language, outputLanguage } = useSettingsStore.getState();
+      const translationActive = language !== outputLanguage;
+      if (!translationActive) {
+        // No translation — speak the tile text immediately.
+        aacSpeak(phraseText, speechRate, speechVolume, undefined, true);
+      } else {
+        // Translation mode: individual word tiles produce out-of-context audio
+        // (e.g. tapping "eu" speaks "Я", then "vreau" speaks "хочу" — heard as
+        // disjointed words, not a sentence). Only auto-speak if this tile
+        // contributes ≥2 words (a meaningful phrase), AND the offline translation
+        // is fully in the target script (no mixed-language result).
+        // Single-word tiles are silenced; the user presses Speak for the full phrase.
+        const wordCount = phraseText.trim().split(/\s+/).filter(Boolean).length;
+        if (wordCount >= 2) {
+          const offlineResult = translateTextSync(
+            phraseText, language as SupportedLanguage, outputLanguage as SupportedLanguage
+          );
+          const isClean = looksLikeTargetLang(offlineResult, outputLanguage);
+          if (isClean) {
+            // Full clean translation available offline — speak immediately.
+            aacSpeak(phraseText, speechRate, speechVolume, undefined, true);
+          } else {
+            // Partial translation — wait 260ms for AI refine, then speak.
+            setTimeout(() => {
+              aacSpeak(phraseText, speechRate, speechVolume, undefined, true);
+            }, 260);
+          }
+        }
+        // Single word tile + translation active → silent (avoid fragment audio).
+      }
+    }
     if (searchOpen) { setSearchOpen(false); setSearchQuery(''); }
   };
 

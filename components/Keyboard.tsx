@@ -135,7 +135,11 @@ export default function Keyboard() {
       const prevPrevWord = words.length > 2 ? words[words.length - 3] : undefined;
       learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase(), prevPrevWord?.toLowerCase());
       const translationActive = useSettingsStore.getState().language !== useSettingsStore.getState().outputLanguage;
-      if (translationActive || (autoSpeak && soundEnabled)) {
+      if (translationActive) {
+        // In translation mode, individual word-level audio is out of context
+        // (source language fragments heard mid-phrase). Suppress here; the user
+        // presses Speak to hear the full translated phrase.
+      } else if (autoSpeak && soundEnabled) {
         aacSpeak(lastWord, speechRate, speechVolume, activeTone);
       }
     }
