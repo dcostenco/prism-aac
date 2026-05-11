@@ -32,6 +32,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     @Published private(set) var hasEscalated = false
     // #2: single stored task for SOS haptics — cancellable on cleanup
     private var sosHapticTask: Task<Void, Never>?
+    // #12: tracks natural completion of SOS haptic loop (not just nil/cancelled state)
+    private var sosHapticsFinished = false
     // #6: stored watchdog handle so cleanup() can cancel it
     private var watchdogTask: Task<Void, Never>?
 
@@ -96,21 +98,24 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // #2/#18: bgTask expiry must NOT call escalate() — it races with the timer's escalate().
         // The timer's escalate() will fire when it gets CPU time.
         // If completely denied CPU, fall back to on-device TTS.
-        activeBgTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-countdown") {
+        activeBgTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-countdown") { [weak self] in
+            guard let self else { return }
+            // End THIS background task synchronously (required by watchOS)
+            if let t = self.activeBgTask {
+                WKApplication.shared().endBackgroundTask(t)
+                self.activeBgTask = nil
+            }
+            // Spin a short new task for TTS + cellular attempt
+            let fallbackTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-fallback") {}
             Task { @MainActor [weak self] in
+                defer { WKApplication.shared().endBackgroundTask(fallbackTask) }
                 guard let self, self.isActive else { return }
-                NSLog("[WatchEmergency] Background task expired — speaking TTS and attempting cellular dispatch")
+                NSLog("[WatchEmergency] BG expiry: cellular attempted — hasEscalated set only on confirmed delivery")
                 self.speakEmergencyFallback()
-                // FIX #29: Attempt cellular dispatch too — phone may still be reachable over LTE
                 if !self.cellularFallbackSent {
                     await self.attemptCellularFallback()
                 }
-                // FIX #5: Set hasEscalated = true after TTS fallback so dismiss() becomes callable
-                self.hasEscalated = true
-                if let task = self.activeBgTask {
-                    WKApplication.shared().endBackgroundTask(task)
-                    self.activeBgTask = nil
-                }
+                // hasEscalated is set by attemptCellularFallback on success only
             }
         }
 
@@ -140,12 +145,14 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         countdownTimer = timer
 
         // #20: Start full SOS haptic pattern immediately on trigger — don't wait for escalation
+        sosHapticsFinished = false
         sosHapticTask = Task { @MainActor [weak self] in
             for i in 0..<9 {
                 guard !Task.isCancelled, self?.isActive == true else { return }
                 WKInterfaceDevice.current().play(i % 3 == 0 ? .failure : .click)
                 try? await Task.sleep(nanoseconds: 300_000_000)
             }
+            self?.sosHapticsFinished = true
         }
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
@@ -202,9 +209,10 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         } catch {
             NSLog("[WatchEmergency] AVAudioSession deactivate failed in cleanup: \(error)")
         }
-        // #2: cancel stored SOS haptic task
+        // #2: cancel stored SOS haptic task; #12: reset finished flag
         sosHapticTask?.cancel()
         sosHapticTask = nil
+        sosHapticsFinished = false
         // #6: cancel stored watchdog task
         watchdogTask?.cancel()
         watchdogTask = nil
@@ -295,13 +303,15 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     /// Called from escalate() after WCSession path starts. If haptics haven't fired yet
     /// (e.g. sosHapticTask was nil due to very fast code path), kick them off now.
     private func startSosHapticsIfNeeded() {
-        guard sosHapticTask == nil || sosHapticTask?.isCancelled == true else { return }
+        guard sosHapticTask == nil || sosHapticTask?.isCancelled == true || sosHapticsFinished else { return }
+        sosHapticsFinished = false
         sosHapticTask = Task { @MainActor [weak self] in
             for i in 0..<9 {
                 guard !Task.isCancelled, self?.isActive == true else { return }
                 WKInterfaceDevice.current().play(i % 3 == 0 ? .failure : .click)
                 try? await Task.sleep(nanoseconds: 300_000_000)
             }
+            self?.sosHapticsFinished = true
         }
     }
 

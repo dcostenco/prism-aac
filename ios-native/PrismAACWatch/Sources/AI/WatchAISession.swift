@@ -100,6 +100,10 @@ final class WatchAISession: NSObject, ObservableObject {
                 reply = try await askViaCloud(question: question, language: language)
                 // #25: do not overwrite mode here — updateMode() is sole authority
             }
+        } catch is CancellationError {
+            // FIX #4: User navigated away — not a network or auth failure; do not set offline mode
+            NSLog("[WatchAI] AI request cancelled")
+            return
         } catch WatchAIError.notAuthenticated {
             reply = "Please sign in on your iPhone to enable AI features."
         } catch {
@@ -264,11 +268,17 @@ final class WatchAISession: NSObject, ObservableObject {
                     if result.count > 4000 { break }  // cap total response
                 } else if parsed != nil {
                     failedChunks += 1
-                    if failedChunks > 3 { NSLog("[WatchAI] \(failedChunks) SSE chunks failed to parse") }
+                    // FIX #13: log once at exactly 3 failures, not on every subsequent failure
+                    if failedChunks == 3 {
+                        NSLog("[WatchAI] 3+ SSE chunks failed to parse — possible API format change")
+                    }
                     NSLog("[WatchAI] SSE chunk parsed but unexpected structure: \(payload.prefix(100))")
                 } else if !payload.isEmpty && payload != "[DONE]" {
                     failedChunks += 1
-                    if failedChunks > 3 { NSLog("[WatchAI] \(failedChunks) SSE chunks failed to parse") }
+                    // FIX #13: log once at exactly 3 failures, not on every subsequent failure
+                    if failedChunks == 3 {
+                        NSLog("[WatchAI] 3+ SSE chunks failed to parse — possible API format change")
+                    }
                     NSLog("[WatchAI] Unexpected SSE payload (first 100 chars): \(payload.prefix(100))")
                 }
             }
@@ -303,6 +313,15 @@ struct WatchSafetyFilter {
         "help me", "can't breathe", "cant breathe", "call 911", "emergency",
         "heart attack", "i'm dying", "im dying", "not breathing", "choking",
         "kill myself", "hurt myself",
+        // FIX #10: Multilingual crisis keyword coverage
+        // Spanish
+        "ayuda", "ayúdame", "no puedo respirar", "llama al 911", "emergencia",
+        // French
+        "aidez-moi", "au secours", "je ne peux pas respirer", "appel le 911",
+        // Romanian
+        "ajutor", "nu pot respira",
+        // Russian (transliterated)
+        "pomogite", "ne mogu dyshat",
     ]
     private static let medicalKeywords: [String] = [
         "how many mg", "how many pills", "medication dose", "overdose amount",

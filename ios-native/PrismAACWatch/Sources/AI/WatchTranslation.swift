@@ -182,8 +182,9 @@ final class WatchTranslation: ObservableObject {
                   let chunk = delta["content"] as? String else {
                 if !payload.isEmpty && payload != "[DONE]" {
                     failedChunks += 1
-                    if failedChunks > 3 {
-                        NSLog("[WatchTranslation] \(failedChunks) SSE chunks failed to parse")
+                    // FIX #13: log once at exactly 3 failures, not on every subsequent failure
+                    if failedChunks == 3 {
+                        NSLog("[WatchTranslation] 3+ SSE chunks failed to parse — possible API format change")
                     }
                 }
                 continue

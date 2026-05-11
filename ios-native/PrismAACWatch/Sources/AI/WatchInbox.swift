@@ -58,22 +58,32 @@ final class WatchInbox: NSObject, ObservableObject {
 
     override init() {
         super.init()
-        messages = loadFromDefaults()
-        recalcUnread()
-        // #3: persist migrated UserDefaults data to Keychain (migration completes here, not inside loadFromDefaults)
-        // #17: async — don't block init with synchronous Keychain write
-        if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") &&
-           UserDefaults.standard.data(forKey: storageKey) != nil {
-            Task.detached(priority: .utility) { [weak self] in await self?.persistToKeychain() }
-        } else {
-            // #9: Always purge any residual UserDefaults PII on every launch after migration is complete.
-            // Covers the race window where migration succeeded but a prior launch crashed before
-            // removeObject() ran inside persistToKeychain().
-            UserDefaults.standard.removeObject(forKey: storageKey)
-        }
+        // FIX #2: Check needsMigration BEFORE loadFromDefaults() so the UserDefaults entry
+        // is still present when we decide whether to trigger persistToKeychain().
+        // loadFromDefaults() must NOT remove the UserDefaults entry — that happens inside
+        // persistToKeychain() only after a confirmed Keychain write.
+        let needsMigration = !UserDefaults.standard.bool(forKey: "watchInboxMigrated") &&
+                             UserDefaults.standard.data(forKey: storageKey) != nil
+        // FIX #6: Keychain I/O is synchronous and must not block @MainActor init.
+        // Register handlers synchronously, then load messages asynchronously.
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerMessageHandler(for: "inbox_message") { [weak self] _, msg in
             Task { @MainActor [weak self] in self?.deliverFromMessage(msg) }
+        }
+        // FIX #6: Async load — doesn't block init()
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.messages = self.loadFromDefaults()
+            self.recalcUnread()
+            if needsMigration {
+                // #3/#17: persist migrated UserDefaults data to Keychain asynchronously
+                Task.detached(priority: .utility) { [weak self] in await self?.persistToKeychain() }
+            } else {
+                // #9: Always purge any residual UserDefaults PII on every launch after migration is complete.
+                // Covers the race window where migration succeeded but a prior launch crashed before
+                // removeObject() ran inside persistToKeychain().
+                UserDefaults.standard.removeObject(forKey: self.storageKey)
+            }
         }
         // Permission requested lazily in requestPermissionIfNeeded()
         // — called the first time the user opens the inbox, not on startup.
@@ -226,8 +236,11 @@ final class WatchInbox: NSObject, ObservableObject {
 
     private func scheduleLocalNotification(_ msg: WatchMessage) {
         let content = UNMutableNotificationContent()
-        content.title = msg.sender
-        content.body  = String(msg.text.prefix(200))
+        // FIX #7: Redact PII from lock-screen notifications — sender name and message body
+        // must not appear on the lock screen. Message ID stored in userInfo for deep-link on tap.
+        content.title = "New Message"
+        content.body  = "Tap to view"
+        content.userInfo = ["messageId": msg.id]
         content.sound = .default
         let req = UNNotificationRequest(
             identifier: msg.id,
@@ -286,12 +299,18 @@ final class WatchInbox: NSObject, ObservableObject {
                     return  // abort; DO NOT erase UserDefaults
                 }
                 // Only erase UserDefaults if Keychain write confirmed successful
+                // NOTE: UserDefaults is NOT excluded from iCloud backup by default.
+                // PII is only present during the brief migration window before persistToKeychain() completes.
+                // Resolved by immediate removal after confirmed Keychain write.
                 if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") {
                     UserDefaults.standard.removeObject(forKey: storageKey)
                     UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
                 }
             } else if updateStatus == errSecSuccess {
                 // After successful update, set migration flag only once
+                // NOTE: UserDefaults is NOT excluded from iCloud backup by default.
+                // PII is only present during the brief migration window before persistToKeychain() completes.
+                // Resolved by immediate removal after confirmed Keychain write.
                 if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") {
                     UserDefaults.standard.removeObject(forKey: storageKey)
                     UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
@@ -340,12 +359,15 @@ final class WatchInbox: NSObject, ObservableObject {
         }
         // Migration from UserDefaults — #3: do not assign messages= here; let init() assign the return value
         // #14: do/catch for migration path too
+        // FIX #2: Do NOT remove UserDefaults data here. persistToKeychain() removes it only
+        // after a confirmed Keychain write. Removing here causes a race where init() checks
+        // needsMigration after the entry is already gone, skipping persistToKeychain() entirely.
         if let data = UserDefaults.standard.data(forKey: storageKey) {
             do {
                 let msgs = try JSONDecoder().decode([WatchMessage].self, from: data)
-                // Immediately remove from UserDefaults — data is now in memory
-                // Keychain write happens asynchronously via persistToKeychain()
-                UserDefaults.standard.removeObject(forKey: storageKey)
+                // NOTE: UserDefaults is NOT excluded from iCloud backup by default.
+                // PII is only present during the brief migration window before persistToKeychain() completes.
+                // Resolved by immediate removal after confirmed Keychain write (inside persistToKeychain()).
                 // Migrate to Keychain — persistToKeychain() reads self.messages, so set via returned value
                 // init() will assign messages = loadFromDefaults(), then persistToKeychain() is called next
                 return msgs

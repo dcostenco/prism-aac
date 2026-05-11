@@ -19,7 +19,11 @@ struct AACPhrase: Identifiable {
         // #28: For emoji-only or non-Latin labels, the filtered prefix is empty and would cause
         // collisions. Fall back to a hash-based prefix to guarantee uniqueness.
         let prefix = label.lowercased().filter { $0.isLetter || $0.isNumber }
-        let uniquePrefix = prefix.isEmpty ? "emoji\(label.hashValue)" : prefix
+        // FIX #5: hashValue is non-deterministic across process launches (Swift 4.2+).
+        // Use a stable polynomial hash over Unicode scalar values instead.
+        let uniquePrefix = prefix.isEmpty
+            ? "emoji\(abs(label.unicodeScalars.reduce(0) { $0 &* 31 &+ Int($1.value) }))"
+            : prefix
         self.id = "\(uniquePrefix)-\(sfSymbol)-\(arasaacId.map(String.init) ?? "x")"
         self.label = label
         self.sfSymbol = sfSymbol
@@ -718,11 +722,14 @@ struct WatchAIChatView: View {
             }
         }
         // #26: Restore last 10 messages from Keychain on appear (fix #6: moved from UserDefaults)
+        // FIX #6: Keychain I/O is synchronous — run off @MainActor to avoid blocking UI thread.
         .onAppear {
-            if let data = KeychainHelper.shared.readData(service: "prism-aac-chat", account: "history"),
-               data.count <= 65_536,
-               let saved = try? JSONDecoder().decode([ChatMessage].self, from: data) {
-                messages = Array(saved.suffix(10)).map { (role: $0.role, text: $0.text) }
+            Task.detached(priority: .userInitiated) {
+                guard let data = KeychainHelper.shared.readData(service: "prism-aac-chat", account: "history"),
+                      data.count <= 65_536,
+                      let saved = try? JSONDecoder().decode([ChatMessage].self, from: data) else { return }
+                let msgs = Array(saved.suffix(10)).map { (role: $0.role, text: $0.text) }
+                await MainActor.run { messages = msgs }
             }
         }
         // #26: Persist last 10 messages to Keychain whenever the list changes (fix #6: moved from UserDefaults)
@@ -848,6 +855,7 @@ struct WatchSendMessageView: View {
     @State private var contactQuery = ""
     @State private var msgText      = ""
     @State private var sendStatus: String? = nil
+    @State private var isSending    = false  // FIX #8: prevents double-send on rapid taps
     @State private var dismissTask: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
 
@@ -891,6 +899,9 @@ struct WatchSendMessageView: View {
 
                 // Send button — large, full width
                 Button {
+                    // FIX #8: prevent double-send on rapid taps
+                    guard !isSending else { return }
+                    isSending = true
                     // #23: comprehensive bidi strip — matches safeSenderName() in WatchReplyView
                     let bidi: [String] = [
                         "\u{202A}", "\u{202B}", "\u{202C}", "\u{202D}", "\u{202E}",  // LRE RLE PDF LRO RLO
@@ -903,7 +914,7 @@ struct WatchSendMessageView: View {
                     ) { $0.replacingOccurrences(of: $1, with: "") }
                     let safeBody = String(msgText.prefix(500))
 
-                    guard !safeTo.isEmpty, !safeBody.isEmpty else { return }
+                    guard !safeTo.isEmpty, !safeBody.isEmpty else { isSending = false; return }
                     // Validate: must be a phone number or email.
                     // #18: phone regex requires 10–15 clean digits only (+ optional leading +).
                     // Spaces, hyphens, and parens removed — SMS APIs expect clean digit strings.
@@ -913,6 +924,7 @@ struct WatchSendMessageView: View {
                     let isValidEmail = safeTo.range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"#, options: .regularExpression) != nil
                     guard isValidPhone || isValidEmail else {
                         sendStatus = "Invalid contact format"
+                        isSending = false
                         return
                     }
                     // #5/#28: use WCSessionRouter.shared.isReachable instead of direct WCSession check
@@ -921,6 +933,7 @@ struct WatchSendMessageView: View {
                             ["type": "send_message", "to": safeTo, "text": safeBody],
                             replyHandler: { _ in
                                 Task { @MainActor in
+                                    isSending = false
                                     sendStatus = "✓ Sent to \(safeTo)"
                                     // Now start the dismiss task
                                     dismissTask?.cancel()
@@ -934,6 +947,7 @@ struct WatchSendMessageView: View {
                             },
                             errorHandler: { err in
                                 Task { @MainActor in
+                                    isSending = false
                                     sendStatus = "⚠ Send failed"
                                     NSLog("[WatchSend] Send failed: \(err)")
                                 }
@@ -941,19 +955,20 @@ struct WatchSendMessageView: View {
                         )
                         // Don't set sendStatus here — wait for replyHandler
                     } else {
+                        isSending = false
                         sendStatus = "⚠ Phone not connected"
                     }
                 } label: {
                     Label("Send", systemImage: "paperplane.fill")
                         .font(.system(size: 16, weight: .bold))
                         .frame(maxWidth: .infinity, minHeight: 44)
-                        .background((contactQuery.isEmpty || msgText.isEmpty)
+                        .background((contactQuery.isEmpty || msgText.isEmpty || isSending)
                             ? Color.gray.opacity(0.3) : Color.green.opacity(0.8))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .foregroundColor(.white)
                 }
                 .buttonStyle(.plain)
-                .disabled(contactQuery.isEmpty || msgText.isEmpty)
+                .disabled(contactQuery.isEmpty || msgText.isEmpty || isSending)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
@@ -1035,6 +1050,9 @@ struct PairCard: View {
 
 // MARK: - Root view: 2-column grid + emergency overlay
 
+// FIX #11: WatchTranslation, WatchVocabSync, and all other EnvironmentObjects are injected
+// by WatchApp.body and propagate automatically through SwiftUI's environment.
+// Do not add redundant .environmentObject() calls here unless the chain is broken.
 struct WatchRootView: View {
     @EnvironmentObject var session: WatchAISession
     @EnvironmentObject var emergency: WatchEmergencyManager
