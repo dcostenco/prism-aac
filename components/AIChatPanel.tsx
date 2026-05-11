@@ -31,7 +31,14 @@ interface ChatMessage {
 export default function AIChatPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { text, appendText, autoSpeak, soundEnabled } = useMessageStore();
-  const { speechRate, speechVolume, language, outputLanguage } = useSettingsStore();
+  // Use selectors to avoid subscribing to the entire settings store.
+  // Without selectors, ANY settings change (volume, theme, etc.) re-renders
+  // AIChatPanel, which recreates handleAsk, which triggers registerAISubmit
+  // effect, which can overflow React's render budget → error #300.
+  const language = useSettingsStore((s) => s.language);
+  const outputLanguage = useSettingsStore((s) => s.outputLanguage);
+  const speechRate = useSettingsStore((s) => s.speechRate);
+  const speechVolume = useSettingsStore((s) => s.speechVolume);
   const { t, ttsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const MAX_MESSAGES = 50;
@@ -157,7 +164,8 @@ export default function AIChatPanel() {
           scheduled = true;
           requestAnimationFrame(flush);
         }
-      }, language !== outputLanguage ? outputLanguage : language);
+      // AI always responds in the user's selected output language (what they hear).
+      }, outputLanguage || language);
       flush();
     } catch (e: unknown) {
       if (askController.signal.aborted) {
@@ -175,7 +183,7 @@ export default function AIChatPanel() {
     if (askAbortRef.current === askController) askAbortRef.current = null;
     if (!activeRef.current) return;
     setLoading(false);
-  }, [loading, language, t]);
+  }, [loading, language, outputLanguage, t]);
 
   // Register / clear the Speak-button intercept for this panel's lifetime.
   useEffect(() => {
