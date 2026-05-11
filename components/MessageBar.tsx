@@ -157,9 +157,9 @@ export default function MessageBar() {
     // refine fires after 200ms and shows the correct translation instead.
     const isChanged = instant.toLowerCase() !== text.trim().toLowerCase();
     if (isChanged && looksLikeTargetLang(instant, outputLanguage)) {
-      queueMicrotask(() => { if (mounted) setTranslated(instant); });
+      setTranslated(instant);
     }
-    return () => { cancelled = true; mounted = false; };
+    return () => { cancelled = true; };
   }, [text, language, outputLanguage]);
 
   // ── Translation auto-speak after silence ─────────────────────────────────
