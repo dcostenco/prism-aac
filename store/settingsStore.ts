@@ -248,7 +248,7 @@ export const useSettingsStore = create<SettingsState>()(
         // read the correct lang attribute on the first server render, before
         // client-side hydration. SameSite=Lax prevents cross-site leakage.
         if (partial.language !== undefined && typeof document !== 'undefined') {
-          document.cookie = `prism-aac-settings-lang=${partial.language}; path=/; max-age=31536000; SameSite=Lax`;
+          const _isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:'; document.cookie = `prism-aac-settings-lang=${encodeURIComponent(partial.language)}; path=/; max-age=31536000; SameSite=Lax${_isSecure ? '; Secure' : ''}`;
         }
         return {
           ...s,
