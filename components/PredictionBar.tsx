@@ -130,6 +130,7 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
 }
 
 export default function PredictionBar() {
+  console.count('[render] PredictionBar');
   const { sidePanel, selectContact } = useUIStore();
   const contacts = useContactsStore((s) => s.contacts);
   const activeContactId = useUIStore((s) => s.activeContactId);

@@ -17,6 +17,7 @@ import { triggerAISubmit } from '@/services/aiChatBridge';
 import { isSafeAutoCorrection } from '@/services/autocorrectSafety';
 
 export default function MessageBar() {
+  console.count('[render] MessageBar');
   const { text, activeTone, toneMode, setTone, setToneMode, autoSpeak, soundEnabled, deleteLastWord, clearAll, undo, addToHistory, toggleAutoSpeak, setText } = useMessageStore();
   const { speechRate, speechVolume, language, aiAutocorrectEnabled } = useSettingsStore();
   const { t } = useT();
