@@ -68,7 +68,9 @@ const T: Record<string, Partial<Record<SupportedLanguage, string>>> = {
   'cw-and':       { ro: 'Și', es: 'Y', fr: 'Et', pt: 'E', de: 'Und', ru: 'И', uk: 'І', ja: 'と', ko: '그리고', zh: '和', ar: 'و' },
   'cw-but':       { ro: 'Dar', es: 'Pero', fr: 'Mais', pt: 'Mas', de: 'Aber', ru: 'Но', uk: 'Але', ja: 'でも', ko: '하지만', zh: '但是', ar: 'لكن' },
   'cw-or':        { ro: 'Sau', es: 'O', fr: 'Ou', pt: 'Ou', de: 'Oder', ru: 'Или', uk: 'Або', ja: 'か', ko: '또는', zh: '或者', ar: 'أو' },
-  'cw-to':        { ro: 'La', es: 'A', fr: 'À', pt: 'Para', de: 'Zu', ru: 'К', uk: 'До', ja: 'へ', ko: '에', zh: '到', ar: 'إلى' },
+  // ru/uk: infinitive "to" has no equivalent in Russian/Ukrainian (bare infinitive).
+  // "К" / "До" are directional prepositions handled by AI-refine when needed.
+  'cw-to':        { ro: 'La', es: 'A', fr: 'À', pt: 'Para', de: 'Zu', ru: '', uk: '', ja: 'へ', ko: '에', zh: '到', ar: 'إلى' },
   'cw-for':       { ro: 'Pentru', es: 'Para', fr: 'Pour', pt: 'Para', de: 'Für', ru: 'Для', uk: 'Для', ja: 'のために', ko: '위해', zh: '为了', ar: 'لأجل' },
   'cw-with':      { ro: 'Cu', es: 'Con', fr: 'Avec', pt: 'Com', de: 'Mit', ru: 'С', uk: 'З', ja: 'と一緒に', ko: '같이', zh: '跟', ar: 'مع' },
   'cw-at':        { ro: 'La', es: 'En', fr: 'À', pt: 'Em', de: 'Bei', ru: 'В', uk: 'В', ja: 'で', ko: '에서', zh: '在', ar: 'في' },

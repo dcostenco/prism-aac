@@ -121,12 +121,24 @@ function offlineTranslate(text: string, fromLang: SupportedLanguage, toLang: Sup
     }
     if (!matched) {
       const lookup = dict.get(words[i]);
-      result.push(lookup ?? text.trim().split(/\s+/)[i] ?? words[i]);
+      // Skip empty-string translations (e.g. ru/uk infinitive "to" → '')
+      const token = lookup ?? text.trim().split(/\s+/)[i] ?? words[i];
+      if (token !== '') result.push(token);
       i++;
     }
   }
 
-  return result.join(' ');
+  const joined = result.join(' ').trim();
+
+  // Slavic/CJK languages: lowercase mid-sentence words to avoid ALL-CAPS
+  // artifacts from dictionary entries (e.g. "Я хочу Слушать" → "Я хочу слушать").
+  // First word keeps its capitalisation from the dict (typically sentence-initial cap).
+  const LOWERCASE_MID: SupportedLanguage[] = ['ru', 'uk'];
+  if (LOWERCASE_MID.includes(toLang)) {
+    return joined.replace(/(\S+\s+)(\S+)/g, (_, head, rest) => head + rest.toLowerCase());
+  }
+
+  return joined;
 }
 
 export function translateTextSync(
