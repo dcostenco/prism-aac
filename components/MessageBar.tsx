@@ -13,6 +13,7 @@ import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
 import { translateWithAIRefine, looksLikeTargetLang } from '@/services/translateService';
 import { useAuthStore } from '@/store/authStore';
 import { usePredictionStore } from '@/store/predictionStore';
+import { triggerAISubmit } from '@/services/aiChatBridge';
 import { isSafeAutoCorrection } from '@/services/autocorrectSafety';
 
 export default function MessageBar() {
@@ -342,17 +343,14 @@ export default function MessageBar() {
   }, [suggestion, setText, learnUtterance, soundEnabled, translated, speechRate, speechVolume, activeTone]);
 
   const handleSpeak = useCallback(() => {
-    // CRITICAL: invoke ctx.resume() synchronously inside this click
-    // gesture. iOS Safari (and some Chromium builds when a tab has
-    // been backgrounded) require the resume() call to be in the
-    // synchronous call stack of a user gesture. Without this, the
-    // AudioContext stays suspended, decodeAndPlay() runs successfully
-    // but the BufferSourceNode plays into silence — the "tapped Speak,
-    // heard nothing" regression. warmupAzureAudio is async, but the
-    // important call (getAudioContext().resume()) happens before its
-    // first await — invoking it here preserves the gesture token.
     void warmupAzureAudio();
     tapFeedback();
+    // When AI Chat panel is open, ▶ sends the message to AI instead of speaking aloud.
+    // Same routing that Keyboard.tsx Speak key does.
+    if (useUIStore.getState().sidePanel === 'ai-chat') {
+      triggerAISubmit();
+      return;
+    }
     const original = text.trim();
     if (!original || !soundEnabled) return;
 
