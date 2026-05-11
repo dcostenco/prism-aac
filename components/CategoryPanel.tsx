@@ -146,9 +146,10 @@ export default function CategoryPanel() {
   const text = useMessageStore((s) => s.text);
   const autoSpeak = useMessageStore((s) => s.autoSpeak);
   const soundEnabled = useMessageStore((s) => s.soundEnabled);
-  const {
-    allCategories, getSubcategories, getRankedPhrasesForCategory, getSequencesForCategory,
-  } = useCategoryStore();
+  const allCategories = useCategoryStore((s) => s.allCategories);
+  const getSubcategories = useCategoryStore((s) => s.getSubcategories);
+  const getRankedPhrasesForCategory = useCategoryStore((s) => s.getRankedPhrasesForCategory);
+  const getSequencesForCategory = useCategoryStore((s) => s.getSequencesForCategory);
   const recordPhraseUse = usePhraseUsageStore((s) => s.recordUse);
   const learnWord = usePredictionStore((s) => s.learnWord);
   const gridSize = useSettingsStore((s) => s.gridSize);

@@ -21,11 +21,9 @@ export default function GreetingBanner() {
     .sort((a, b) => a.order - b.order)[0];
 
   useEffect(() => {
-    let mounted = true;
     let dismissed = false;
     try { dismissed = !!sessionStorage.getItem('prism-greeting-dismissed'); } catch { /* private context */ }
-    if (!dismissed) queueMicrotask(() => { if (mounted) setVisible(true); });
-    return () => { mounted = false; };
+    if (!dismissed) setVisible(true);
   }, []);
 
   if (!visible) return null;
