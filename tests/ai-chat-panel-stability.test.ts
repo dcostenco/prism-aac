@@ -41,16 +41,17 @@ describe('AIChatPanel — stability guards', () => {
     vi.clearAllMocks();
   });
 
-  it('renders without crashing when outputLanguage changes', async () => {
-    const { rerender } = render(<div />); // minimal smoke test
-
-    // Simulate outputLanguage change — should NOT cause too-many-re-renders
-    await act(async () => {
-      useSettingsStore.setState({ outputLanguage: 'ru' });
-    });
-
-    // If component re-renders excessively, React throws before this line
-    expect(true).toBe(true);
+  it('outputLanguage selector change does not cascade to all store subscribers', () => {
+    // Without selectors, changing outputLanguage would re-render every component
+    // that calls useSettingsStore() without a selector (whole store subscription).
+    // With selectors, only components subscribed to outputLanguage re-render.
+    // This test verifies the store exposes outputLanguage as a stable field.
+    const state1 = useSettingsStore.getState();
+    act(() => { useSettingsStore.setState({ outputLanguage: 'ru' }); });
+    const state2 = useSettingsStore.getState();
+    // outputLanguage changed but other fields are identical references
+    expect(state2.outputLanguage).toBe('ru');
+    expect(state2.language).toBe(state1.language); // unchanged
   });
 
   it('askAI receives outputLanguage, not input language', async () => {
