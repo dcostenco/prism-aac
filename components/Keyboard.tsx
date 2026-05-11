@@ -157,7 +157,16 @@ export default function Keyboard() {
     const currentText = useMessageStore.getState().text.trim();
     if (!currentText || !soundEnabled) return;
     addToHistory(currentText);
-    aacSpeak(currentText, speechRate, speechVolume, activeTone);
+    // In translation mode, prefer the translated text from MessageBar's state.
+    // Fall back to aacSpeak(currentText) which handles offline translation internally.
+    const { language, outputLanguage } = useSettingsStore.getState();
+    if (language !== outputLanguage) {
+      // Import the translated state from the message bar via the shared store if available,
+      // otherwise aacSpeak will translate inline. Use interrupt=true to override PROTECT_PLAY_MS.
+      aacSpeak(currentText, speechRate, speechVolume, activeTone, true);
+    } else {
+      aacSpeak(currentText, speechRate, speechVolume, activeTone);
+    }
   }, [soundEnabled, speechRate, speechVolume, addToHistory, activeTone]);
 
   const handleBackspace = useCallback(() => {

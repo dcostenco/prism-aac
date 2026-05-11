@@ -204,7 +204,12 @@ export default function MessageBar() {
           // "letter by letter wai" complaint Speak's strip-fallback was
           // designed to prevent. Only speak words ≥3 chars; users in
           // mid-typing get silent feedback until they finish a word.
-          if (lastWord.length >= 3 && lastWord.toLowerCase() !== lastSilenceSpokenRef.current.toLowerCase()) {
+          // In translation mode, suppress word-by-word silence-detect speech.
+          // Speaking individual source-language words with the target voice produces
+          // mixed-language audio (ro-RO + ru-RU simultaneously). The user presses
+          // Speak to hear the full translated phrase.
+          const translationActive = ss.language !== ss.outputLanguage;
+          if (!translationActive && lastWord.length >= 3 && lastWord.toLowerCase() !== lastSilenceSpokenRef.current.toLowerCase()) {
             lastSilenceSpokenRef.current = lastWord;
             aacSpeak(lastWord, ss.speechRate, ss.speechVolume, ms.activeTone);
           }
