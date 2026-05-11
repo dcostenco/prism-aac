@@ -391,7 +391,8 @@ function cleanProfile(p: unknown): UserMedicalProfile {
     return items.length > 0 ? items : undefined;
   };
   const address = presentOrUndefined(sanitizeString(x.address, MAX_ADDRESS_LEN));
-  const callbackNumber = presentOrUndefined(sanitizeString(x.callbackNumber, MAX_PHONE_LEN));
+  const rawCallback = presentOrUndefined(sanitizeString(x.callbackNumber, MAX_PHONE_LEN));
+  const callbackNumber = (rawCallback && isValidE164Phone(rawCallback)) ? rawCallback : undefined;
   const country = presentOrUndefined(sanitizeString(x.country, MAX_NAME_LEN));
   return {
     name,
@@ -418,8 +419,8 @@ export function validateEmergencyConfig(raw: unknown): EmergencyConfig {
     autoCall911: typeof x.autoCall911 === 'boolean' ? x.autoCall911 : DEFAULT_CONFIG.autoCall911,
     contacts,
     profile: cleanProfile(x.profile),
-    ...(typeof x.language === 'string' && x.language.length > 0 && x.language.length <= 16
-      ? { language: x.language.replace(/[^a-zA-Z-]/g, '').slice(0, 16) }
+    ...(typeof x.language === 'string' && /^[a-z]{2,3}(-[A-Z]{2})?$/.test(x.language)
+      ? { language: x.language }
       : {}),
     // Production hosts: https-only (PII over plaintext is a hard no).
     // Localhost dev: http permitted because there's no real PII +
@@ -657,7 +658,10 @@ async function queueAlert(phrase: string, severity?: 'critical' | 'urgent' | 'me
     a.severity === severity &&
     (now - a.timestamp) < DEDUP_WINDOW_MS
   );
-  if (isDuplicate) return null;
+  if (isDuplicate) {
+    console.warn(`[EMERGENCY] Duplicate ${severity ?? 'unknown'} alert suppressed (DEDUP_WINDOW_MS) — phrase="${phrase.slice(0, 30)}"`);
+    return null;
+  }
 
   const geo = await getLocationAndCountry();
   const alert: QueuedAlert & { geo: QueuedAlertGeo } = {
@@ -733,6 +737,7 @@ export function buildEmergencyScript(phrase: string, config: EmergencyConfig, lo
   // a spoofed/injected geolocation could produce NaN or Infinity.
   const validLoc = location && Number.isFinite(location.lat) && Number.isFinite(location.lng)
     ? location : null;
+  if (location && !validLoc) console.warn('[EMERGENCY] GPS invalid (NaN/non-finite) — omitting from script');
   const gpsStr = validLoc ? `GPS coordinates ${validLoc.lat.toFixed(5)}, ${validLoc.lng.toFixed(5)}` : '';
   const mapLink = validLoc
     ? `https://maps.google.com/?q=${encodeURIComponent(String(validLoc.lat))},${encodeURIComponent(String(validLoc.lng))}`

@@ -56,13 +56,15 @@ function wordBg(text: string): string {
 }
 
 // Category detail columns — always at least 1 col on very small screens
+// Columns are forced at all breakpoints so the user's chosen grid size
+// actually takes effect on tablets and wide screens (not overridden by sm:).
 const GRID_COLS: Record<GridSize, string> = {
-  4:  'grid-cols-1 sm:grid-cols-2',
-  6:  'grid-cols-2 sm:grid-cols-3',
-  9:  'grid-cols-2 sm:grid-cols-3',
-  12: 'grid-cols-3 sm:grid-cols-4',
-  16: 'grid-cols-3 sm:grid-cols-4',
-  20: 'grid-cols-4 sm:grid-cols-5',
+  4:  'grid-cols-2',
+  6:  'grid-cols-3',
+  9:  'grid-cols-3',
+  12: 'grid-cols-4',
+  16: 'grid-cols-4',
+  20: 'grid-cols-5',
 };
 
 // Normal tile heights (keyboard hidden)
@@ -183,7 +185,7 @@ export default function CategoryPanel() {
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim() || !searchOpen) return [];
-    if (searchQuery.length > 200) return [];
+    if (searchQuery.trim().length < 2 || searchQuery.length > 200) return [];
     const q = searchQuery.toLowerCase();
     const cats = allCategories();
     const out: { phrase: string; category: string; phraseId?: string }[] = [];

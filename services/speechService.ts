@@ -219,6 +219,10 @@ export async function speak(
   // Volume=0 guard — catches mis-stored settings before a silent-success
   if (volume === 0) {
     console.warn('[TTS] volume=0 — audio will be silent. Check Settings → Voice → Volume slider.');
+    emitTtsHealthEvent({
+      type: 'tts-give-up', lastTier: 'inworld', triedTiers: [],
+      reason: 'volume=0 in settings — speech suppressed', timestamp: Date.now(),
+    });
     return;
   }
 

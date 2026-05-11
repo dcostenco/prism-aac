@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 let _authRefreshTimer: ReturnType<typeof setInterval> | null = null;
 if (typeof window !== 'undefined' && !_authRefreshTimer) {
   _authRefreshTimer = setInterval(() => {
-    useAuthStore.getState().refresh();
+    if (useAuthStore.getState().profile) useAuthStore.getState().refresh();
   }, 30 * 60 * 1000);
 }
 
