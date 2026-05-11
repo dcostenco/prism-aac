@@ -50,6 +50,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
     enum Source { case offline, companion, cloud }
 
     private var vocabTask: Task<Void, Never>?
+    // #20: track when companion delivered fresh vocab so API fetch doesn't clobber it
+    private var lastCompanionUpdate: Date = .distantPast
 
     deinit {
         vocabTask?.cancel()
@@ -78,27 +80,36 @@ final class WatchVocabSync: NSObject, ObservableObject {
 
     // MARK: - Label sanitization
 
-    fileprivate static func sanitizeLabel(_ raw: String) -> String {
-        String(
-            raw.replacingOccurrences(of: "<|im_start|>", with: "")
-               .replacingOccurrences(of: "<|im_end|>", with: "")
-               .replacingOccurrences(of: "<|system|>", with: "")
-               .replacingOccurrences(of: "[INST]", with: "")
-               .replacingOccurrences(of: "[/INST]", with: "")
-               .replacingOccurrences(of: "<<SYS>>", with: "")
-               .replacingOccurrences(of: "<</SYS>>", with: "")
-               .replacingOccurrences(of: "<|eot_id|>", with: "")
-               .replacingOccurrences(of: "<|start_header_id|>", with: "")
-               .replacingOccurrences(of: "<|end_header_id|>", with: "")
-               .replacingOccurrences(of: "<|user|>", with: "")
-               .replacingOccurrences(of: "<|assistant|>", with: "")
-               .replacingOccurrences(of: "<|endoftext|>", with: "")
-               .replacingOccurrences(of: "<s>", with: "")
-               .replacingOccurrences(of: "</s>", with: "")
-               .replacingOccurrences(of: "<|end_of_turn|>", with: "")
-               .replacingOccurrences(of: "<|start_of_turn|>", with: "")
-               .prefix(120)
-        )
+    // #27: changed from fileprivate → internal so tests and companion types can access it
+    internal static func sanitizeLabel(_ raw: String) -> String {
+        // #4: expanded to full token list — ChatML, Llama, Gemma, Mistral, legacy special tokens,
+        // HTML entities, and JSON-escaped angle brackets; prevents prompt injection via vocab labels
+        return raw
+            .replacingOccurrences(of: "<|im_start|>", with: "")
+            .replacingOccurrences(of: "<|im_end|>", with: "")
+            .replacingOccurrences(of: "<|system|>", with: "")
+            .replacingOccurrences(of: "[INST]", with: "")
+            .replacingOccurrences(of: "[/INST]", with: "")
+            .replacingOccurrences(of: "<<SYS>>", with: "")
+            .replacingOccurrences(of: "<</SYS>>", with: "")
+            .replacingOccurrences(of: "<|eot_id|>", with: "")
+            .replacingOccurrences(of: "<|start_header_id|>", with: "")
+            .replacingOccurrences(of: "<|end_header_id|>", with: "")
+            .replacingOccurrences(of: "<|user|>", with: "")
+            .replacingOccurrences(of: "<|assistant|>", with: "")
+            .replacingOccurrences(of: "<|endoftext|>", with: "")
+            .replacingOccurrences(of: "<s>", with: "")
+            .replacingOccurrences(of: "</s>", with: "")
+            .replacingOccurrences(of: "<|end_of_turn|>", with: "")
+            .replacingOccurrences(of: "<|start_of_turn|>", with: "")
+            .replacingOccurrences(of: "&#x", with: "")
+            .replacingOccurrences(of: "&#X", with: "")
+            .replacingOccurrences(of: "&#", with: "")
+            .replacingOccurrences(of: "&lt;", with: "")
+            .replacingOccurrences(of: "&gt;", with: "")
+            .replacingOccurrences(of: "\\u003c", with: "")
+            .replacingOccurrences(of: "\\u003e", with: "")
+            .prefix(120).description
     }
 
     // MARK: - Load from web app API (standalone path)
@@ -119,6 +130,12 @@ final class WatchVocabSync: NSObject, ObservableObject {
         // ensures that language-change calls cancel any in-progress task.
         // #46: default to inputLanguage (not outputLanguage alias) — vocab labels are in input lang
         let targetLang = lang ?? inputLanguage
+
+        // #20: skip API fetch if companion delivered fresher data in the last 5 seconds
+        guard Date().timeIntervalSince(lastCompanionUpdate) > 5 else {
+            NSLog("[VocabSync] Skipping API fetch — companion data is fresher (<5s ago)")
+            return
+        }
 
         // Validate language code against allowlist before using in URL
         guard WatchVocabSync.allowedLangs.contains(targetLang) else {
@@ -156,7 +173,7 @@ final class WatchVocabSync: NSObject, ObservableObject {
                                 sfSymbol: ph.sfSymbol)
                 }
                 return WatchCategory(from: VocabCategory(id: String(cat.id.prefix(50)),
-                                                         icon: String(cat.icon.prefix(4)),
+                                                         icon: String(cat.icon.prefix(1)),
                                                          name: String(cat.name.prefix(120)),
                                                          phrases: Array(safePhrases)))
             }
@@ -173,6 +190,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
     // MARK: - Handle vocabulary from iPhone (companion path)
 
     private func handleVocabReply(_ reply: [String: Any]) {
+        // #20: record arrival time — used by loadFromAPI to avoid overwriting fresher companion data
+        lastCompanionUpdate = Date()
         // #8: size check BEFORE decode — prevents JSON bomb allocation
         // #33: log type mismatch instead of silently returning — helps diagnose companion path issues
         guard let data = reply["vocab"] as? Data else {
@@ -199,7 +218,7 @@ final class WatchVocabSync: NSObject, ObservableObject {
             let isEmergencyCat = catId == "emergency" || catId == "help-needs"
             return WatchCategory(
                 id: catId,
-                icon: String(cat.icon.prefix(4)),
+                icon: String(cat.icon.prefix(1)),
                 name: String(cat.name.prefix(120)),
                 phrases: cat.phrases.prefix(100).map { ph in
                     // #35: cap phrase id length (companion path)
@@ -257,7 +276,7 @@ struct VocabPhrase: Decodable {
 extension WatchCategory {
     init(from c: VocabCategory) {
         id     = String(c.id.prefix(50))
-        icon   = String(c.icon.prefix(4))     // cap icon to 1 emoji (≤4 bytes)
+        icon   = String(c.icon.prefix(1))     // #12: cap icon to 1 grapheme cluster (single emoji)
         name   = String(c.name.prefix(120))   // cap name length
         // #10: mark phrases as emergency when they come from an emergency category
         let isEmergencyCat = id == "emergency" || id == "help-needs"

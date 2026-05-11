@@ -17,6 +17,10 @@ final class WatchTranslation: ObservableObject {
     private var translateTask: Task<Void, Never>?
     private var listeningWatchdog: Task<Void, Never>?
 
+    // #11: store parameters so handleDictation() can access them even if called from a different context
+    private var pendingInputLang: String = "en-US"
+    private var pendingOutputLang: String = "en-US"
+
     deinit {
         translateTask?.cancel()
         listeningWatchdog?.cancel()
@@ -27,6 +31,14 @@ final class WatchTranslation: ObservableObject {
     // the AI to return only the translation with no explanation.
     // #18: force-unwrap instead of fatalError — both crash on bad literal, but ! is idiomatic for known-good literals
     private let chatURL = URL(string: "https://synalux.ai/api/v1/prism-aac/chat")!
+
+    // #8: dedicated session with both request and resource timeouts — URLSession.shared has no resource timeout
+    private static let translationSession: URLSession = {
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.timeoutIntervalForRequest  = 10
+        cfg.timeoutIntervalForResource = 15
+        return URLSession(configuration: cfg)
+    }()
 
     // MARK: - Phrase translation (tap-to-speak)
 
@@ -136,7 +148,7 @@ final class WatchTranslation: ObservableObject {
         }
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         do {
-            let (data, response) = try await URLSession.shared.data(for: req)
+            let (data, response) = try await WatchTranslation.translationSession.data(for: req)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
                 NSLog("[WatchTranslation] HTTP error \(http.statusCode)")
                 return nil
@@ -156,6 +168,8 @@ final class WatchTranslation: ObservableObject {
     private func assembleSSE(_ data: Data) -> String? {
         guard let raw = String(data: data, encoding: .utf8) else { return nil }
         var result = ""
+        // #19: track failed chunks to surface persistent parse errors in logs
+        var failedChunks = 0
         for line in raw.components(separatedBy: "\n") {
             guard line.count <= 4096 else { continue }  // skip malformed mega-lines
             guard line.hasPrefix("data: ") else { continue }
@@ -167,7 +181,10 @@ final class WatchTranslation: ObservableObject {
                   let delta = choices.first?["delta"] as? [String: Any],
                   let chunk = delta["content"] as? String else {
                 if !payload.isEmpty && payload != "[DONE]" {
-                    NSLog("[WatchTranslation] Unexpected SSE payload (first 100 chars): \(payload.prefix(100))")
+                    failedChunks += 1
+                    if failedChunks > 3 {
+                        NSLog("[WatchTranslation] \(failedChunks) SSE chunks failed to parse")
+                    }
                 }
                 continue
             }
@@ -183,15 +200,20 @@ final class WatchTranslation: ObservableObject {
 
     /// Show Watch dictation UI (caller presents a TextField sheet).
     func startListening(inputLang: String, outputLang: String, tts: WatchTTS) {
+        // #11: store parameters so they survive until handleDictation() is called
+        pendingInputLang  = inputLang
+        pendingOutputLang = outputLang
         isListening = true
         // #10: store watchdog Task so it can be cancelled when dictation completes;
-        // #28: safety reset — if handleDictation is never called (e.g. user cancels without submitting),
-        // isListening would remain true indefinitely. Reset after 60s max.
+        // #24/#28: safety reset — if handleDictation is never called (e.g. user cancels without submitting),
+        // isListening would remain true indefinitely. Reset after 30s max (reduced from 60s).
         listeningWatchdog?.cancel()
         listeningWatchdog = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 60_000_000_000)
-            self?.isListening = false
-            self?.listeningWatchdog = nil
+            try? await Task.sleep(nanoseconds: 30_000_000_000)
+            guard let self, self.isListening else { return }
+            NSLog("[WatchTranslation] Listening watchdog fired — resetting isListening")
+            self.isListening = false
+            self.listeningWatchdog = nil
         }
     }
 

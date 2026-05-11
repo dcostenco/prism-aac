@@ -111,6 +111,10 @@ final class WatchAISession: NSObject, ObservableObject {
         // accessed from onCancel without unsafe pointer tricks. Instead, the timeout task
         // wins the group race and cancels all sibling tasks; the WCSession callbacks see
         // resumed = true and become no-ops. Swift 5.9+ safely GC's abandoned continuations.
+        // lock and resumed are captured by the WCSession reply/error handler closures.
+        // They are retained by those closures until WCSession calls them (or they are GC'd on session reset).
+        // This is safe: ARC cleans up the closures when WCSession releases them.
+        // The group.cancelAll() above stops the Task group; WCSession callbacks become no-ops via the resumed guard.
         let lock = NSLock()
         var resumed = false
 
@@ -218,11 +222,19 @@ final class WatchAISession: NSObject, ObservableObject {
     }
 
     private func parseNonStreaming(_ data: Data) -> String? {
-        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let choices = obj["choices"] as? [[String: Any]],
-              let msg = choices.first?["message"] as? [String: Any],
-              let content = msg["content"] as? String else { return nil }
-        return String(content.prefix(4000)).trimmingCharacters(in: .whitespacesAndNewlines)
+        do {
+            guard let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let choices = obj["choices"] as? [[String: Any]],
+                  let msg = choices.first?["message"] as? [String: Any],
+                  let content = msg["content"] as? String else {
+                NSLog("[WatchAI] parseNonStreaming: response missing expected fields")
+                return nil
+            }
+            return String(content.prefix(4000)).trimmingCharacters(in: .whitespacesAndNewlines)
+        } catch {
+            NSLog("[WatchAI] parseNonStreaming JSON parse failed: \(error)")
+            return nil
+        }
     }
 
     private func assembleSSE(_ data: Data) -> String? {

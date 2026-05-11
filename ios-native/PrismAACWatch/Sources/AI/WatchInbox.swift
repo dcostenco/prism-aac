@@ -64,7 +64,7 @@ final class WatchInbox: NSObject, ObservableObject {
         // #17: async — don't block init with synchronous Keychain write
         if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") &&
            UserDefaults.standard.data(forKey: storageKey) != nil {
-            Task { @MainActor [weak self] in self?.persistToKeychain() }
+            Task.detached(priority: .utility) { [weak self] in await self?.persistToKeychain() }
         } else {
             // #9: Always purge any residual UserDefaults PII on every launch after migration is complete.
             // Covers the race window where migration succeeded but a prior launch crashed before
@@ -90,30 +90,38 @@ final class WatchInbox: NSObject, ObservableObject {
         guard let i = messages.firstIndex(where: { $0.id == id }) else { return }
         messages[i].isRead = true
         recalcUnread()
-        persistToKeychain()
+        Task.detached(priority: .utility) { [weak self] in await self?.persistToKeychain() }
     }
 
     func markAllRead() {
         for i in messages.indices { messages[i].isRead = true }
         recalcUnread()
-        persistToKeychain()
+        Task.detached(priority: .utility) { [weak self] in await self?.persistToKeychain() }
     }
 
     func deleteMessage(_ id: String) {
         messages.removeAll { $0.id == id }
         recalcUnread()
-        persistToKeychain()
+        Task.detached(priority: .utility) { [weak self] in await self?.persistToKeychain() }
     }
 
     func clearAll() {
         messages.removeAll()
         unreadCount = 0
-        persistToKeychain()
+        Task.detached(priority: .utility) { [weak self] in await self?.persistToKeychain() }
     }
 
     /// Reply to a message by sending text back via iPhone.
     /// F4a: routes through WCSessionRouter (no direct WCSession bypass, no nil errorHandler)
     func reply(to msg: WatchMessage, text: String) {
+        // #10: Check for crisis content — may need emergency protocol instead of plain reply
+        let safetyResult = WatchSafetyFilter.check(text)
+        if case .crisis = safetyResult {
+            NSLog("[WatchInbox] Crisis content detected in reply — routing to emergency instead of sending as message")
+            // Don't send as reply — the emergency panel should handle this
+            return
+        }
+
         // #29: re-validate provider against allowlist before sending — prevents injection via stored message
         let safeProvider = ["sms", "email", "telegram", "whatsapp", "messenger", "instagram", "viber"]
             .contains(msg.provider) ? msg.provider : "sms"
@@ -151,13 +159,32 @@ final class WatchInbox: NSObject, ObservableObject {
                 .replacingOccurrences(of: "\u{200D}", with: "")  // ZWJ
                 .replacingOccurrences(of: "\u{FEFF}", with: "")  // BOM
         }()
-        // #25: strip ChatML control tokens from message text before storage and TTS
+        // #3: strip full WatchAISession token list — ChatML, Llama, Gemma, Mistral, legacy special tokens, HTML entities, JSON-escaped angle brackets
         let safeText = String(rawText.prefix(500))
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
             .replacingOccurrences(of: "[INST]", with: "")
             .replacingOccurrences(of: "[/INST]", with: "")
+            .replacingOccurrences(of: "<<SYS>>", with: "")
+            .replacingOccurrences(of: "<</SYS>>", with: "")
+            .replacingOccurrences(of: "<|eot_id|>", with: "")
+            .replacingOccurrences(of: "<|start_header_id|>", with: "")
+            .replacingOccurrences(of: "<|end_header_id|>", with: "")
+            .replacingOccurrences(of: "<|user|>", with: "")
+            .replacingOccurrences(of: "<|assistant|>", with: "")
+            .replacingOccurrences(of: "<|endoftext|>", with: "")
+            .replacingOccurrences(of: "<s>", with: "")
+            .replacingOccurrences(of: "</s>", with: "")
+            .replacingOccurrences(of: "<|end_of_turn|>", with: "")
+            .replacingOccurrences(of: "<|start_of_turn|>", with: "")
+            .replacingOccurrences(of: "&#x", with: "")
+            .replacingOccurrences(of: "&#X", with: "")
+            .replacingOccurrences(of: "&#", with: "")
+            .replacingOccurrences(of: "&lt;", with: "")
+            .replacingOccurrences(of: "&gt;", with: "")
+            .replacingOccurrences(of: "\\u003c", with: "")
+            .replacingOccurrences(of: "\\u003e", with: "")
         // #27: validate id as proper UUID — reject arbitrary injection strings
         let rawId    = message["id"] as? String ?? ""
         let id       = UUID(uuidString: rawId)?.uuidString ?? UUID().uuidString
@@ -183,7 +210,7 @@ final class WatchInbox: NSObject, ObservableObject {
         // Cap at 50 messages
         if messages.count > 50 { messages = Array(messages.prefix(50)) }
         recalcUnread()
-        persistToKeychain()
+        Task.detached(priority: .utility) { [weak self] in await self?.persistToKeychain() }
         scheduleLocalNotification(msg)
     }
 
@@ -215,11 +242,19 @@ final class WatchInbox: NSObject, ObservableObject {
 
     // MARK: - Persistence (F4b: Keychain-backed; F4d: do/catch with logging)
 
-    private func persistToKeychain() {
+    // #6: nonisolated so Task.detached can call this without hopping back to @MainActor.
+    // Captures a snapshot of messages at call time; Keychain I/O runs off the main thread.
+    nonisolated private func persistToKeychain() async {
+        // Capture messages snapshot on @MainActor before doing Keychain work off-actor
+        let snapshot = await MainActor.run { messages }
+        let keychainService = await MainActor.run { self.keychainService }
+        let keychainAccount = await MainActor.run { self.keychainAccount }
+        let storageKey      = await MainActor.run { self.storageKey }
+
         // #7: update-then-add pattern — never delete first (avoids data loss if add fails)
         // #15: SecItemDelete with kSecValueData in query is gone — we don't delete at all
         do {
-            let data = try JSONEncoder().encode(messages)
+            let data = try JSONEncoder().encode(snapshot)
             let updateQuery: [String: Any] = [
                 kSecClass as String:              kSecClassGenericPassword,
                 kSecAttrService as String:        keychainService,
@@ -236,7 +271,17 @@ final class WatchInbox: NSObject, ObservableObject {
                 addQuery[kSecValueData as String] = data
                 addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
                 let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
-                guard addStatus == errSecSuccess || addStatus == errSecDuplicateItem else {
+                if addStatus == errSecDuplicateItem {
+                    // #16: Race — another write beat us; retry the update
+                    let retryAttrs: [String: Any] = [
+                        kSecValueData as String: data,
+                        kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+                    ]
+                    let retryStatus = SecItemUpdate(updateQuery as CFDictionary, retryAttrs as CFDictionary)
+                    if retryStatus != errSecSuccess {
+                        NSLog("[WatchInbox] Retry update after duplicate failed: \(retryStatus)")
+                    }
+                } else if addStatus != errSecSuccess {
                     NSLog("[WatchInbox] Keychain add failed: \(addStatus) — NOT removing UserDefaults backup")
                     return  // abort; DO NOT erase UserDefaults
                 }
@@ -283,7 +328,10 @@ final class WatchInbox: NSObject, ObservableObject {
             }
             // #14: do/catch — log decode failure, do NOT overwrite raw data on schema change
             do {
-                return try JSONDecoder().decode([WatchMessage].self, from: data)
+                let msgs = try JSONDecoder().decode([WatchMessage].self, from: data)
+                // #22: log on successful Keychain load
+                NSLog("[WatchInbox] Loaded \(msgs.count) messages (\(data.count) bytes) from Keychain")
+                return msgs
             } catch {
                 NSLog("[WatchInbox] Decode failed (schema change?): \(error) — keeping raw data")
                 // Do NOT call persistToKeychain() here — that would erase the corrupted data
@@ -302,7 +350,12 @@ final class WatchInbox: NSObject, ObservableObject {
                 NSLog("[WatchInbox] UserDefaults migration decode failed: \(error)")
             }
         }
-        return []
+        // #25: Keychain returned empty — check whether migration was marked complete (possible Keychain wipe)
+        let msgs: [WatchMessage] = []
+        if msgs.isEmpty && UserDefaults.standard.bool(forKey: "watchInboxMigrated") {
+            NSLog("[WatchInbox] Keychain empty after migration flag set — possible Keychain wipe; starting fresh")
+        }
+        return msgs
     }
 
     private func recalcUnread() {

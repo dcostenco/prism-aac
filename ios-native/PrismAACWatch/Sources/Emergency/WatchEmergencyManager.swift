@@ -56,13 +56,32 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // Safe: @MainActor serializes all calls — rapid taps cannot race past this guard
         guard !isActive else { return }  // FIX 4: mutex — no duplicate triggers
         isActive = true
-        // FIX #13: Sanitize phrase — strip ChatML tokens before storing
+        // FIX #13/#2: Sanitize phrase — strip ChatML, Llama, Gemma, and HTML-encoded tokens before storing
         activePhrase = String(phrase.prefix(200))
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
             .replacingOccurrences(of: "[INST]", with: "")
             .replacingOccurrences(of: "[/INST]", with: "")
+            .replacingOccurrences(of: "<<SYS>>", with: "")
+            .replacingOccurrences(of: "<</SYS>>", with: "")
+            .replacingOccurrences(of: "<|eot_id|>", with: "")
+            .replacingOccurrences(of: "<|start_header_id|>", with: "")
+            .replacingOccurrences(of: "<|end_header_id|>", with: "")
+            .replacingOccurrences(of: "<|user|>", with: "")
+            .replacingOccurrences(of: "<|assistant|>", with: "")
+            .replacingOccurrences(of: "<|endoftext|>", with: "")
+            .replacingOccurrences(of: "<s>", with: "")
+            .replacingOccurrences(of: "</s>", with: "")
+            .replacingOccurrences(of: "<|end_of_turn|>", with: "")
+            .replacingOccurrences(of: "<|start_of_turn|>", with: "")
+            .replacingOccurrences(of: "&#x", with: "")
+            .replacingOccurrences(of: "&#X", with: "")
+            .replacingOccurrences(of: "&#", with: "")
+            .replacingOccurrences(of: "&lt;", with: "")
+            .replacingOccurrences(of: "&gt;", with: "")
+            .replacingOccurrences(of: "\\u003c", with: "")
+            .replacingOccurrences(of: "\\u003e", with: "")
         self.severity = severity
         countdownSecs = 5
         cellularFallbackSent = false
@@ -80,8 +99,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         activeBgTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-countdown") {
             Task { @MainActor [weak self] in
                 guard let self, self.isActive else { return }
-                NSLog("[WatchEmergency] Background task expired during countdown — TTS fallback")
+                NSLog("[WatchEmergency] Background task expired — speaking TTS and attempting cellular dispatch")
                 self.speakEmergencyFallback()
+                // FIX #29: Attempt cellular dispatch too — phone may still be reachable over LTE
+                if !self.cellularFallbackSent {
+                    await self.attemptCellularFallback()
+                }
                 // FIX #5: Set hasEscalated = true after TTS fallback so dismiss() becomes callable
                 self.hasEscalated = true
                 if let task = self.activeBgTask {
@@ -170,8 +193,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         hasEscalated = false  // FIX 4: reset escalation flag for next emergency
         deliveryStatus = .idle
         synthesizer.stopSpeaking(at: .immediate)  // #5: always stop TTS on cleanup
-        // FIX #6: Deactivate AVAudioSession so other apps (e.g. music) can resume
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        // FIX #6/#14: Deactivate AVAudioSession so other apps (e.g. music) can resume; log failure
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        } catch {
+            NSLog("[WatchEmergency] AVAudioSession deactivate failed in cleanup: \(error)")
+        }
         // #2: cancel stored SOS haptic task
         sosHapticTask?.cancel()
         sosHapticTask = nil
@@ -253,20 +280,14 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     // #26: static cached formatter — avoids allocation on every call
     private static let iso8601 = ISO8601DateFormatter()
 
-    // F2d: private — not part of public API
-    private func sendPhrase(_ phrase: String, isEmergency: Bool = false, severity: EmergencySeverity = .urgent) {
-        let msg: [String: Any] = [
-            "type": isEmergency ? "emergency" : "phrase",
-            "phrase": phrase,
-            "severity": severityString(severity),
-            "timestamp": WatchEmergencyManager.iso8601.string(from: Date()),
-        ]
-
-        // F2a: route through WCSessionRouter.shared.send instead of direct WCSession calls
-        WCSessionRouter.shared.send(msg, errorHandler: { err in
-            NSLog("[WatchEmergency] sendPhrase relay failed: \(err)")
-        })
-    }
+    // FIX #7: Dedicated session so emergency HTTP is never starved by image loads on URLSession.shared
+    private static let emergencySession: URLSession = {
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.timeoutIntervalForRequest = 5
+        cfg.timeoutIntervalForResource = 10
+        cfg.httpMaximumConnectionsPerHost = 2
+        return URLSession(configuration: cfg)
+    }()
 
     /// Called from escalate() after WCSession path starts. If haptics haven't fired yet
     /// (e.g. sosHapticTask was nil due to very fast code path), kick them off now.
@@ -290,9 +311,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             NSLog("[WatchEmergency] Cellular fallback skipped — emergency no longer active")
             return
         }
-        // FIX #2: bounded retry guard — reset by each retry branch, not shared with WCSession path
-        guard !cellularFallbackSent else { return }
-        cellularFallbackSent = true
+        // FIX #2/#21: bounded retry guard — first attempt sets the flag; retry path passes retryCount > 0
+        // so reachabilityHandler cannot fire a duplicate while the 2s sleep is in progress.
+        if retryCount == 0 {
+            guard !cellularFallbackSent else { return }
+            cellularFallbackSent = true
+        }
 
         guard let url = URL(string: "https://synalux.ai/api/v1/emergency/dispatch") else { return }
         var req = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 5)
@@ -325,7 +349,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         req.httpBody = body
         do {
             // FIX #7: Check HTTP status — a 4xx/5xx is not a success
-            let (_, response) = try await URLSession.shared.data(for: req)
+            let (_, response) = try await WatchEmergencyManager.emergencySession.data(for: req)
             if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
                 NSLog("[WatchEmergency] Cellular fallback dispatch succeeded (\(http.statusCode))")
                 // FIX #1: Set hasEscalated only on confirmed HTTP 200
@@ -335,11 +359,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             } else if let http = response as? HTTPURLResponse,
                       (500...599).contains(http.statusCode),
                       retryCount < 1 {
-                // FIX #2: Bounded retry — max 1 retry (2 total attempts) before TTS fallback
+                // FIX #2/#21: Bounded retry — max 1 retry (2 total attempts) before TTS fallback
+                // cellularFallbackSent stays true — retryCount is the gate; resetting it here
+                // would allow reachabilityHandler to fire a duplicate dispatch during the 2s sleep.
                 NSLog("[WatchEmergency] Cellular 5xx (\(http.statusCode)) — retrying once in 2s")
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 guard isActive else { return }  // don't retry if emergency was cancelled
-                cellularFallbackSent = false    // allow the single retry
                 await attemptCellularFallback(retryCount: retryCount + 1)
             } else {
                 NSLog("[WatchEmergency] Cellular fallback failed — TTS fallback")

@@ -16,7 +16,11 @@ struct AACPhrase: Identifiable {
     init(label: String, sfSymbol: String, color: Color, arasaacId: Int?, isEmergency: Bool = false) {
         // Stable id: lowercase label + sfSymbol — prevents collision for same label across categories
         // e.g. "Help" (sfSymbol: "sos") vs "Help" (sfSymbol: "hand.raised") get distinct ids
-        self.id = "\(label.lowercased().filter { $0.isLetter || $0.isNumber })-\(sfSymbol)-\(arasaacId.map(String.init) ?? "x")"
+        // #28: For emoji-only or non-Latin labels, the filtered prefix is empty and would cause
+        // collisions. Fall back to a hash-based prefix to guarantee uniqueness.
+        let prefix = label.lowercased().filter { $0.isLetter || $0.isNumber }
+        let uniquePrefix = prefix.isEmpty ? "emoji\(label.hashValue)" : prefix
+        self.id = "\(uniquePrefix)-\(sfSymbol)-\(arasaacId.map(String.init) ?? "x")"
         self.label = label
         self.sfSymbol = sfSymbol
         self.color = color
@@ -25,7 +29,12 @@ struct AACPhrase: Identifiable {
     }
 
     var arasaacURL: URL? {
-        guard let aid = arasaacId, aid > 0, aid < 100_000 else { return nil }
+        guard let aid = arasaacId, aid > 0, aid < 200_000 else {
+            if let aid = arasaacId {
+                NSLog("[PairCard] arasaacId \(aid) out of range — using sfSymbol fallback")
+            }
+            return nil
+        }
         return URL(string: "https://static.arasaac.org/pictograms/\(aid)/\(aid)_300.png")
     }
 }
@@ -154,7 +163,7 @@ struct WatchPictogramCards: View {
                                 startPoint: .leading, endPoint: .trailing
                             )
                         )
-                        .cornerRadius(14)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal, 4)
@@ -326,6 +335,7 @@ struct WatchPictogramCards: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .padding(.horizontal, 6)
                     .padding(.top, 6)
+
 
                     // Current selection summary: EN → RU
                     HStack(spacing: 4) {
@@ -501,7 +511,7 @@ struct WatchReplyView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(8)
                 .background(Color.white.opacity(0.08))
-                .cornerRadius(8)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 // Reply input (dictation supported)
                 TextField("Reply…", text: $replyText)
@@ -529,7 +539,7 @@ struct WatchReplyView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 7)
                             .background(replyText.isEmpty ? Color.gray.opacity(0.3) : Color.green.opacity(0.7))
-                            .cornerRadius(10)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                     .buttonStyle(.plain)
                     .disabled(replyText.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -560,6 +570,11 @@ struct WatchReplyView: View {
 }
 
 // MARK: - AI Chat (dedicated sheet from panel tile — full-screen, big UI)
+
+private struct ChatMessage: Codable {
+    let role: String
+    let text: String
+}
 
 struct WatchAIChatView: View {
     let inputLang: String
@@ -599,7 +614,7 @@ struct WatchAIChatView: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background(Color.purple.opacity(0.6))
-                .cornerRadius(8)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
                 .padding(.top, 4)
             }
 
@@ -635,7 +650,7 @@ struct WatchAIChatView: View {
                                     .background(m.role == userRole
                                         ? Color.blue.opacity(0.5)
                                         : Color.white.opacity(0.12))
-                                    .cornerRadius(12)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                                 if m.role == aiRole { Spacer(minLength: 24) }
                             }
                             .id(i)
@@ -700,6 +715,20 @@ struct WatchAIChatView: View {
             ) { text in
                 inputText = text
                 sendMessage()
+            }
+        }
+        // #26: Restore last 10 messages from UserDefaults on appear
+        .onAppear {
+            if let data = UserDefaults.standard.data(forKey: "watchAIChatHistory"),
+               let saved = try? JSONDecoder().decode([ChatMessage].self, from: data) {
+                messages = Array(saved.suffix(10)).map { (role: $0.role, text: $0.text) }
+            }
+        }
+        // #26: Persist last 10 messages to UserDefaults whenever the list changes
+        .onChange(of: messages.count) { _, _ in
+            let toSave = Array(messages.suffix(10)).map { ChatMessage(role: $0.role, text: $0.text) }
+            if let data = try? JSONEncoder().encode(toSave) {
+                UserDefaults.standard.set(data, forKey: "watchAIChatHistory")
             }
         }
         // #14: onDisappear is on the OUTERMOST VStack of WatchAIChatView — this is the correct placement.
@@ -833,7 +862,7 @@ struct WatchSendMessageView: View {
                         .font(.system(size: 14))
                         .padding(8)
                         .background(Color.white.opacity(0.08))
-                        .cornerRadius(10)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
 
                 // Message field
@@ -845,7 +874,7 @@ struct WatchSendMessageView: View {
                         .font(.system(size: 14))
                         .padding(8)
                         .background(Color.white.opacity(0.08))
-                        .cornerRadius(10)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                         .frame(minHeight: 44)
                 }
 
@@ -889,18 +918,27 @@ struct WatchSendMessageView: View {
                     if WCSessionRouter.shared.isReachable {
                         WCSessionRouter.shared.send(
                             ["type": "send_message", "to": safeTo, "text": safeBody],
-                            errorHandler: { err in NSLog("[WatchSend] Failed: \(err)") }
+                            replyHandler: { [weak tts] _ in
+                                Task { @MainActor in
+                                    sendStatus = "✓ Sent to \(safeTo)"
+                                    // Now start the dismiss task
+                                    dismissTask?.cancel()
+                                    dismissTask = Task { @MainActor in
+                                        msgText = ""
+                                        try? await Task.sleep(nanoseconds: 1_500_000_000)
+                                        tts?.speak("Message sent")
+                                        dismiss()
+                                    }
+                                }
+                            },
+                            errorHandler: { err in
+                                Task { @MainActor in
+                                    sendStatus = "⚠ Send failed"
+                                    NSLog("[WatchSend] Send failed: \(err)")
+                                }
+                            }
                         )
-                        dismissTask?.cancel()
-                        dismissTask = Task { @MainActor in
-                            sendStatus = "✓ Sent to \(safeTo)"
-                            msgText = ""
-                            try? await Task.sleep(nanoseconds: 1_500_000_000)
-                            // #21: TTS plays only after the delay — confirms delivery window passed
-                            // without cancellation; avoids false "sent" audio if task is cancelled early.
-                            tts.speak("Message sent")
-                            dismiss()
-                        }
+                        // Don't set sendStatus here — wait for replyHandler
                     } else {
                         sendStatus = "⚠ Phone not connected"
                     }
@@ -910,7 +948,7 @@ struct WatchSendMessageView: View {
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .background((contactQuery.isEmpty || msgText.isEmpty)
                             ? Color.gray.opacity(0.3) : Color.green.opacity(0.8))
-                        .cornerRadius(12)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                         .foregroundColor(.white)
                 }
                 .buttonStyle(.plain)
@@ -944,6 +982,9 @@ struct PairCard: View {
                 // If emergency is active, skip pictogram network loads to free URLSession connections
                 // #17: emergencyIsActive skips AsyncImage entirely when true, freeing URLSession slots
                 // for emergency/translation requests. Falls through to sfSymbol fallback below.
+                // Fix #17 (intentional): AsyncImage is gated on !emergencyIsActive so that
+                // pictogram network loads are skipped during emergencies, freeing URLSession
+                // connections for emergency and translation requests. sfSymbol fallback below.
                 if let url = phrase.arasaacURL, !emergencyIsActive {
                     // Pictogram images: use a dedicated short-timeout URLSession to avoid
                     // starving emergency/translation requests that share URLSession.shared.
@@ -984,7 +1025,7 @@ struct PairCard: View {
             .padding(.horizontal, 4)
             .frame(maxWidth: .infinity, minHeight: 80)
             .background(phrase.color.opacity(0.15))
-            .cornerRadius(12)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Say: \(phrase.label)")
@@ -1009,7 +1050,7 @@ struct WatchRootView: View {
                         .foregroundColor(.orange)
                         .padding(3)
                         .background(Color.black.opacity(0.5))
-                        .cornerRadius(4)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
                         .padding(2)
                 }
             }

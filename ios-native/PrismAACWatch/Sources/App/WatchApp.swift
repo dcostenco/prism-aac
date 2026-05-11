@@ -31,9 +31,8 @@ struct PrismAACWatchApp: App {
                 .environmentObject(translation)
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active && emergency.isActive {
-                        NSLog("[WatchApp] Resumed active — emergency still in progress (isActive=\(emergency.isActive))")
-                        // #8: Re-speak emergency alert so child/caregiver hears it on wake
-                        tts.speak("Emergency alert active. Help is coming.", language: "en-US", rate: 0.45)
+                        NSLog("[WatchApp] Resumed active — emergency still in progress (deliveryStatus=\(emergency.deliveryStatus))")
+                        // Emergency manager handles TTS — do NOT call tts.speak() here as it ducks the emergency synthesizer
                     }
                 }
         }
