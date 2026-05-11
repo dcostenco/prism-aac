@@ -31,14 +31,12 @@ interface ChatMessage {
 export default function AIChatPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { text, appendText, autoSpeak, soundEnabled } = useMessageStore();
-  // Use selectors to avoid subscribing to the entire settings store.
-  // Without selectors, ANY settings change (volume, theme, etc.) re-renders
-  // AIChatPanel, which recreates handleAsk, which triggers registerAISubmit
-  // effect, which can overflow React's render budget → error #300.
-  const language = useSettingsStore((s) => s.language);
-  const outputLanguage = useSettingsStore((s) => s.outputLanguage);
+  // Only subscribe to settings values used in the render or in stable callbacks.
+  // language/outputLanguage are read via getState() inside handleAsk to avoid
+  // recreating handleAsk on every settings change → which overflows React (#300).
   const speechRate = useSettingsStore((s) => s.speechRate);
   const speechVolume = useSettingsStore((s) => s.speechVolume);
+  const language = useSettingsStore((s) => s.language); // used in voice input ttsCode + onFinal correctText
   const { t, ttsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const MAX_MESSAGES = 50;
@@ -164,8 +162,10 @@ export default function AIChatPanel() {
           scheduled = true;
           requestAnimationFrame(flush);
         }
-      // AI always responds in the user's selected output language (what they hear).
-      }, outputLanguage || language);
+      // Read language at call-time via getState() — same pattern as text,
+      // avoids adding language to deps which would recreate handleAsk on
+      // every settings change and overflow React's render budget (#300).
+      }, useSettingsStore.getState().outputLanguage || useSettingsStore.getState().language);
       flush();
     } catch (e: unknown) {
       if (askController.signal.aborted) {
@@ -183,7 +183,9 @@ export default function AIChatPanel() {
     if (askAbortRef.current === askController) askAbortRef.current = null;
     if (!activeRef.current) return;
     setLoading(false);
-  }, [loading, language, outputLanguage, t]);
+  // language/outputLanguage removed from deps — read via getState() inside
+  // the callback to avoid recreating handleAsk on every settings change.
+  }, [loading, t]);
 
   // Register / clear the Speak-button intercept for this panel's lifetime.
   useEffect(() => {
