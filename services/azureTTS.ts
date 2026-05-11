@@ -465,7 +465,7 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
 async function speakGemini(
   text: string,
   volume: number,
-  controller: AbortController,
+  _sharedController: AbortController,
   lang?: string,
 ): Promise<boolean> {
   // Gemini doesn't take SSML — it does its own prosody. Send plain text.
@@ -474,6 +474,12 @@ async function speakGemini(
   // `lang` (e.g. 'ro-RO', 'uk-UA', 'es-ES') tells the server which
   // language instruction to prefix to the prompt — without it, Gemini's
   // prebuilt voices default to English phonemes for non-English text.
+  //
+  // H8: use an independent AbortController so Gemini's 5s timeout doesn't
+  // inherit the shared controller's abort (which may have already been
+  // triggered by speakAzure's 8s timeout, starving Gemini's own window).
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5_000);
   try {
     const res = await fetch(`${SYNALUX_API}/prism-aac/tts/public`, {
       method: 'POST',
@@ -484,6 +490,7 @@ async function speakGemini(
       // CORS spec rejects when combined with credentials. Same fix that
       // landed on the Inworld fetch below.
     });
+    clearTimeout(timeoutId);
     if (!res.ok) {
       // 503 = key not configured, 502 = upstream non-ok, 429 = rate-
       // limited — every case the route signals `fallback: 'inworld'`
@@ -500,6 +507,7 @@ async function speakGemini(
     // before source.start, so the peer-race window is microseconds.
     return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS');
   } catch (e) {
+    clearTimeout(timeoutId);
     // Network / abort / timeout. Speech-service still has Kokoro and
     // Web Speech to fall back to even if Inworld is also down.
     console.warn('[Gemini-TTS] fetch threw:', e instanceof Error ? e.message : e);

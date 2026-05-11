@@ -192,7 +192,20 @@ export async function createVoiceCloneRecorder(): Promise<RecorderApi> {
                 if (!recorder || state !== 'recording') {
                     return reject(new Error('Recorder is not active.'));
                 }
+                // M17: guard against onstop never firing (browser bug, device removal)
+                const timeoutId = setTimeout(() => {
+                    releaseStream();
+                    reject(new Error('Recording stop timed out'));
+                }, 10_000);
+
+                recorder.onerror = () => {
+                    clearTimeout(timeoutId);
+                    releaseStream();
+                    reject(new Error('Recording error'));
+                };
+
                 const handle = () => {
+                    clearTimeout(timeoutId);
                     const durationMs = Date.now() - startedAt;
                     const blob = new Blob(chunks, { type: mimeType });
                     setState('stopped');

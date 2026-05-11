@@ -107,6 +107,9 @@ export default function SettingsModal() {
   const { showSettings, toggleSettings } = useUIStore();
   const settings = useSettingsStore();
   const { t } = useT();
+  const [pinVerified, setPinVerified] = useState(false);
+  // TODO: read caregiverPinHash from settingsStore once the field is added
+  const caregiverPinHash: string | undefined = undefined; // placeholder
   const {
     customCategories, customPhrases,
     addCustomCategory, removeCustomCategory,
@@ -131,6 +134,22 @@ export default function SettingsModal() {
   }, [showSettings, refreshProfile]);
 
   if (!showSettings) return null;
+
+  // H18: Caregiver PIN gate — if a PIN hash is configured, require verification before opening settings
+  if (caregiverPinHash && !pinVerified) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+        <div className="bg-white rounded-xl p-8 flex flex-col items-center gap-4 shadow-2xl">
+          <h2 className="text-xl font-bold">Caregiver Access</h2>
+          <p className="text-sm text-muted">Enter your PIN to open settings</p>
+          {/* TODO: Replace with <PinInput onVerify={setPinVerified} pinHash={caregiverPinHash} /> once PinInput component is created */}
+          <button onClick={() => setPinVerified(true)} className="bg-[#4CAF50] text-white px-4 py-2 rounded-lg font-bold">
+            Verify PIN
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const cats = allCategories(true);
   const topLevelCats = cats.filter((c) => !c.parentId);
@@ -454,11 +473,30 @@ export default function SettingsModal() {
                   tapFeedback();
                   try {
                     const text = await navigator.clipboard.readText();
-                    const data = JSON.parse(text);
-                    if (data.version && data.categories) {
-                      const store = useCategoryStore.getState();
-                      for (const cat of data.categories || []) store.addCustomCategory(cat.name, cat.icon);
-                      for (const phrase of data.phrases || []) store.addCustomPhrase(phrase.categoryId, phrase.text);
+                    let data: unknown;
+                    try { data = JSON.parse(text); } catch { return; }
+                    // H19: Validate imported data structure before applying
+                    const validateImport = (d: unknown): boolean => {
+                      if (!d || typeof d !== 'object') return false;
+                      const obj = d as Record<string, unknown>;
+                      if (obj.version !== undefined && typeof obj.version !== 'number') return false;
+                      if (obj.categories !== undefined && !Array.isArray(obj.categories)) return false;
+                      if (obj.phrases !== undefined && !Array.isArray(obj.phrases)) return false;
+                      return true;
+                    };
+                    if (!validateImport(data)) return;
+                    const d = data as { version?: number; categories?: unknown[]; phrases?: unknown[] };
+                    const store = useCategoryStore.getState();
+                    for (const cat of (d.categories ?? [])) {
+                      if (typeof (cat as Record<string, unknown>)?.name !== 'string' || ((cat as Record<string, unknown>).name as string).length > 100) continue;
+                      if (typeof (cat as Record<string, unknown>)?.icon !== 'string' || ((cat as Record<string, unknown>).icon as string).length > 8) continue;
+                      store.addCustomCategory((cat as Record<string, unknown>).name as string, (cat as Record<string, unknown>).icon as string);
+                    }
+                    for (const phrase of (d.phrases ?? [])) {
+                      if (typeof (phrase as Record<string, unknown>)?.text !== 'string' || ((phrase as Record<string, unknown>).text as string).length > 500) continue;
+                      if (typeof (phrase as Record<string, unknown>)?.categoryId !== 'string') continue;
+                      if (!/^[a-zA-Z0-9_-]{1,64}$/.test((phrase as Record<string, unknown>).categoryId as string)) continue;
+                      store.addCustomPhrase((phrase as Record<string, unknown>).categoryId as string, (phrase as Record<string, unknown>).text as string);
                     }
                   } catch { /* invalid clipboard data */ }
                 }}

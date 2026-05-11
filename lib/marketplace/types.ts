@@ -161,6 +161,18 @@ export interface ModuleHandler {
   renderPanel?(manifest: ModuleManifest, ctx: HandlerContext): ReactNode;
 }
 
+const TRUSTED_ASSET_HOSTS = new Set(['assets.synalux.ai', 'cdn.synalux.ai', 'static.synalux.ai']);
+
+/** C17: Validate that asset URLs (screenshots, preview, icon-as-url) are from trusted CDN hosts. */
+export function isTrustedAssetUrl(url: unknown): boolean {
+  if (typeof url !== 'string') return false;
+  if (url.length === 0) return true; // empty string OK
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' && TRUSTED_ASSET_HOSTS.has(u.hostname);
+  } catch { return false; }
+}
+
 /**
  * Strict manifest schema check. Dropped rows are logged to console.warn so
  * a malformed server response doesn't poison the entire panel.
@@ -176,7 +188,16 @@ export function isValidManifest(value: unknown): value is ModuleManifest {
   if (typeof m.category !== 'string' || !MODULE_CATEGORIES.includes(m.category as ModuleCategory)) return false;
   if (typeof m.nameKey !== 'string' || !m.nameKey) return false;
   if (typeof m.descKey !== 'string' || !m.descKey) return false;
+  // Icon must be 1-4 chars (emoji) or a trusted HTTPS URL
   if (typeof m.icon !== 'string' || !m.icon) return false;
+  if (m.icon.length > 512) return false;
+  if ((m.icon as string).includes('://') && !isTrustedAssetUrl(m.icon)) return false;
+  // C17: validate optional asset URL fields
+  if (m.preview !== undefined && !isTrustedAssetUrl(m.preview)) return false;
+  if (m.screenshots !== undefined) {
+    if (!Array.isArray(m.screenshots)) return false;
+    if (!(m.screenshots as unknown[]).every(isTrustedAssetUrl)) return false;
+  }
   return true;
 }
 

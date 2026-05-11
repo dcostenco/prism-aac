@@ -1,4 +1,5 @@
 import Foundation
+import Security
 import WatchConnectivity
 
 /// Manages AI requests from the Watch.
@@ -105,6 +106,12 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
         var req = URLRequest(url: cloudURL, timeoutInterval: timeoutSec)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // H20: Attach stored auth token from Keychain
+        if let authToken = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
+            req.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        } else {
+            NSLog("[WatchAI] No auth token found — cloud request may fail")
+        }
         req.httpBody = try JSONSerialization.data(withJSONObject: [
             "messages": [
                 ["role": "system", "content": system],
@@ -164,6 +171,24 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
                 self.reply = text
             }
         }
+    }
+}
+
+// MARK: - Keychain helper (H20)
+
+private class KeychainHelper {
+    static let shared = KeychainHelper()
+    func read(service: String, account: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+        ]
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 }
 

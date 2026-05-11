@@ -17,6 +17,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject, WCSessionDelegate
     private var countdownTimer: Timer?
     private var countdownSecs = 5
     private let synthesizer = AVSpeechSynthesizer()
+    // C6: track in-progress emergency phrase for cellular fallback
+    private var activePhrase: String?
 
     override init() {
         super.init()
@@ -30,6 +32,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject, WCSessionDelegate
 
     func trigger(phrase: String, severity: EmergencySeverity = .critical) {
         isActive = true
+        activePhrase = phrase  // C6: store for cellular fallback
         countdownSecs = 5
         countdownText = "5"
 
@@ -55,6 +58,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject, WCSessionDelegate
         countdownTimer?.invalidate()
         countdownTimer = nil
         isActive = false
+        activePhrase = nil  // C6: clear on cancel
         synthesizer.stopSpeaking(at: .immediate)
     }
 
@@ -91,5 +95,40 @@ final class WatchEmergencyManager: NSObject, ObservableObject, WCSessionDelegate
     // MARK: - WCSessionDelegate
 
     nonisolated func session(_ session: WCSession, activationDidCompleteWith state: WCSessionActivationState, error: Error?) {}
-    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {}
+
+    // C6: Detect iPhone becoming unreachable during active emergency and attempt cellular fallback
+    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        guard !session.isReachable else { return }
+        Task { @MainActor in
+            guard self.isActive else { return }
+            NSLog("[WatchEmergency] iPhone unreachable during emergency — attempting cellular dispatch")
+            await self.attemptCellularFallback()
+        }
+    }
+
+    @MainActor
+    private func attemptCellularFallback() async {
+        guard let url = URL(string: "https://synalux.ai/api/v1/emergency/dispatch") else { return }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.timeoutInterval = 10
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let payload: [String: Any] = [
+            "phrase": activePhrase ?? "Emergency",
+            "severity": "watch_cellular_fallback",
+            "source": "watchos",
+        ]
+        req.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+        do {
+            _ = try await URLSession.shared.data(for: req)
+            NSLog("[WatchEmergency] Cellular fallback dispatch succeeded")
+        } catch {
+            NSLog("[WatchEmergency] Cellular fallback failed: \(error)")
+            // Final fallback: speak aloud
+            let synth = AVSpeechSynthesizer()
+            let utt = AVSpeechUtterance(string: "Emergency. Please call 911.")
+            utt.volume = 1.0
+            synth.speak(utt)
+        }
+    }
 }

@@ -157,6 +157,7 @@ if (typeof window !== 'undefined') {
 // Mirrors the pattern in azureTTS.ts to ensure click/chime feedback plays through the new device.
 if (typeof window !== 'undefined' && navigator.mediaDevices) {
   navigator.mediaDevices.addEventListener('devicechange', () => {
+    stopAudioWarmup(); // H12: stop warmOsc before closing AudioContext to prevent node leak
     if (audioCtx && audioCtx.state !== 'closed') {
       audioCtx.close().catch(() => {});
       audioCtx = null;

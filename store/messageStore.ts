@@ -142,14 +142,24 @@ export const useMessageStore = create<MessageState>()(
         // System-generated text (AI replies, announcements) must not trigger dispatch.
         const emergency = source === 'user' ? detectEmergency(text) : { detected: false, severity: null, phrase: null };
         if (emergency.detected && emergency.severity) {
-          import('@/services/emergencyService').then((mod) => {
-            mod.triggerEmergency(
-              emergency.phrase || text,
-              emergency.severity!,
-              (_seconds) => { /* countdown handled by EmergencyOverlay if mounted */ },
-              (_sent, _queued) => { /* completion logged by service */ },
-            ).then((cancelFn) => { activeEmergencyCancel = cancelFn; });
-          }).catch(() => { /* emergency service import failed — non-blocking */ });
+          // C16: Use a try/catch with error logging instead of silently swallowing failures.
+          // A dropped .catch(() => {}) would silently prevent emergency dispatch on chunk-load failure.
+          (async () => {
+            try {
+              const { triggerEmergency } = await import('@/services/emergencyService');
+              const cancelFn = await triggerEmergency(
+                emergency.phrase || text,
+                emergency.severity!,
+                (_seconds) => { /* countdown handled by EmergencyOverlay if mounted */ },
+                (_sent, _queued) => { /* completion logged by service */ },
+              );
+              activeEmergencyCancel = cancelFn;
+            } catch (e) {
+              console.error('[emergency] CRITICAL: emergency service failed to load', e);
+              // Fallback: play alarm sound directly if possible
+              try { new Audio('/alarm.mp3').play(); } catch {}
+            }
+          })();
         }
 
         set((s) => ({
@@ -202,7 +212,14 @@ export const useMessageStore = create<MessageState>()(
         }
         return s;
       },
-      partialize: (s) => ({ autoSpeak: s.autoSpeak, soundEnabled: s.soundEnabled, history: s.history, activeTone: s.activeTone, toneMode: s.toneMode }),
+      // C9: Exclude history from localStorage persistence — history entries contain PHI
+      // (the child's spoken messages). History is session-only; it is fetched from the
+      // server on login for authenticated users. TODO: encrypt before storing if offline
+      // persistence of history is required.
+      partialize: (s) => {
+        const { history: _history, ...persistedState } = s;
+        return { autoSpeak: persistedState.autoSpeak, soundEnabled: persistedState.soundEnabled, activeTone: persistedState.activeTone, toneMode: persistedState.toneMode };
+      },
       // Hydration validator. emergencyService.getRecentHistory reads
       // `parsed?.state?.history` directly from this store's localStorage
       // entry and feeds the entries into the AI emergency context — a

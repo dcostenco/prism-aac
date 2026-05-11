@@ -1,4 +1,10 @@
+'use client';
+
 import { emitTrackingEvent } from './trackingTelemetry';
+
+// In-memory authority — cannot be bypassed by localStorage manipulation
+let _inMemorySafeModeActive = false;
+let _inMemoryDriftEvents: number[] = [];
 
 /**
  * safeMode — degraded-operation mode after repeated drift events.
@@ -72,20 +78,21 @@ export function freshEvents(history: number[], now: number, windowMs: number): n
 /** Record a drift auto-disable event. Call from the onDrift handler. */
 export function recordDriftEvent(now: number = Date.now(), opts: SafeModeOptions = {}): void {
     const { triggerCount, windowMs } = { ...DEFAULTS, ...opts };
-    // Read, append, evict-old, write. Eviction keeps the storage tiny.
-    const before = freshEvents(readHistory(), now, windowMs);
-    const history = [...before, now];
-    writeHistory(history);
+    // Update in-memory state first (H8: cannot be bypassed by localStorage)
+    _inMemoryDriftEvents = [..._inMemoryDriftEvents, now]
+        .filter(t => now - t < windowMs);
+    // Also update localStorage as secondary backup for reload persistence
+    try { writeHistory(_inMemoryDriftEvents); } catch {}
+    const wasActive = _inMemoryDriftEvents.length - 1 >= triggerCount;
+    if (_inMemoryDriftEvents.length >= triggerCount) {
+        _inMemorySafeModeActive = true;
+    }
     // Telemetry: detect the moment we cross into safe mode and emit
-    // exactly once per transition. Importing inside the function avoids
-    // a circular dep at module load and keeps safeMode usable in tests
-    // that don't want telemetry side-effects.
-    const wasActive = before.length >= triggerCount;
-    const isActive = history.length >= triggerCount;
-    if (!wasActive && isActive) {
+    // exactly once per transition.
+    if (!wasActive && _inMemorySafeModeActive) {
         emitTrackingEvent({
             type: 'safe-mode-enter',
-            driftCount: history.length,
+            driftCount: _inMemoryDriftEvents.length,
             timestamp: now,
         });
     }
@@ -93,14 +100,25 @@ export function recordDriftEvent(now: number = Date.now(), opts: SafeModeOptions
 
 /** True iff the user has tripped enough drift events to enter safe mode. */
 export function isSafeMode(now: number = Date.now(), opts: SafeModeOptions = {}): boolean {
-    const { triggerCount, windowMs } = { ...DEFAULTS, ...opts };
-    return freshEvents(readHistory(), now, windowMs).length >= triggerCount;
+    // H8: check in-memory first — cannot be bypassed by localStorage manipulation
+    if (_inMemorySafeModeActive) return true;
+    // Fall back to localStorage only for restore-on-reload
+    try {
+        const { triggerCount, windowMs } = { ...DEFAULTS, ...opts };
+        return freshEvents(readHistory(), now, windowMs).length >= triggerCount;
+    } catch { return false; }
 }
 
-/** Clear all drift events. Call when the user manually re-enables tracking. */
-export function clearDriftHistory(): void {
-    const wasActive = freshEvents(readHistory(), Date.now(), DEFAULTS.windowMs).length >= DEFAULTS.triggerCount;
-    writeHistory([]);
+/** Clear all drift events. Requires confirmed=true to prevent accidental bypass. */
+export function clearDriftHistory(confirmed = false): void {
+    if (!confirmed) {
+        console.warn('[safeMode] clearDriftHistory requires confirmed=true');
+        return;
+    }
+    const wasActive = _inMemorySafeModeActive;
+    _inMemorySafeModeActive = false;
+    _inMemoryDriftEvents = [];
+    try { writeHistory([]); } catch {}
     if (wasActive) {
         emitTrackingEvent({
             type: 'safe-mode-exit',

@@ -90,6 +90,8 @@ let beepAbortController: AbortController | null = null;
 // Without this, oscillators scheduled via ctx.currentTime continue playing
 // even after abort — causing unstoppable noise for sensory-sensitive children.
 let activeOscillators: OscillatorNode[] = [];
+// H11: track active BufferSourceNodes so stopWasmSpeech() can kill them immediately
+const _activeBufferSources = new Set<AudioBufferSourceNode>();
 
 // ---------------------------------------------------------------------------
 // Config persistence
@@ -252,6 +254,12 @@ export function stopWasmSpeech(): void {
   }
   activeOscillators = [];
 
+  // H11: stop all active BufferSourceNodes (espeak playback)
+  for (const src of _activeBufferSources) {
+    try { src.stop(); } catch { /* already stopped */ }
+  }
+  _activeBufferSources.clear();
+
   // If espeak has a stop mechanism, call it
   if (espeakModule?.stop) {
     try { espeakModule.stop(); } catch { /* best-effort */ }
@@ -387,11 +395,26 @@ async function speakWithEspeak(
   source.connect(gainNode);
   gainNode.connect(ctx.destination);
 
+  // H11: track source so stopWasmSpeech() can kill it immediately
+  _activeBufferSources.add(source);
+
   return new Promise<boolean>((resolve) => {
-    source.onended = () => resolve(true);
+    // Add timeout to prevent indefinite hang (buffer duration + 2s grace)
+    const timeoutId = setTimeout(() => {
+      _activeBufferSources.delete(source);
+      resolve(true); // resolve (not reject) to allow fallback chain to continue normally
+    }, Math.ceil(audioBuffer.duration * 1000) + 2000);
+
+    source.onended = () => {
+      clearTimeout(timeoutId);
+      _activeBufferSources.delete(source);
+      resolve(true);
+    };
     try {
       source.start(0);
     } catch {
+      clearTimeout(timeoutId);
+      _activeBufferSources.delete(source);
       resolve(false);
     }
   });

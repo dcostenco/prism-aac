@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useT } from '@/engine/useT';
 import type { ModuleManifest, ModuleTier } from '@/lib/marketplace/types';
-import { tierAllows } from '@/lib/marketplace/types';
+import { tierAllows, isTrustedAssetUrl } from '@/lib/marketplace/types';
 import { tapFeedback } from '@/services/feedback';
 
 interface Props {
@@ -122,11 +122,13 @@ export default function MarketplaceDetail({
           <div className="flex flex-col gap-2" data-testid="mp-screenshots">
             <div className="relative aspect-video surface-key rounded-xl overflow-hidden border border-theme">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={screenshots[shotIdx]}
-                alt={t(manifest.nameKey)}
-                className="w-full h-full object-cover"
-              />
+              {isTrustedAssetUrl(screenshots[shotIdx]) ? (
+                <img
+                  src={screenshots[shotIdx]}
+                  alt={t(manifest.nameKey)}
+                  className="w-full h-full object-cover"
+                />
+              ) : null}
             </div>
             {screenshots.length > 1 && (
               <div className="flex justify-center gap-1">

@@ -353,16 +353,6 @@ export interface ParsedNoteResult {
   summary: string;
 }
 
-export async function translateAI(
-  text: string,
-  fromLang: string,
-  toLang: string,
-  onChunk?: (delta: string) => void,
-): Promise<string> {
-  const system = `You are a translator. Translate the input from ${fromLang} to ${toLang}. Return ONLY the translation — no explanations, no quotes, no extra text.`;
-  return route(text, { system, onChunk });
-}
-
 // Language-name lookup so the system prompt can anchor in the user's locale.
 // AAC users include nonverbal kids whose home language is NOT English. The
 // previous prompt didn't pass language at all — Spanish-speaking children got
@@ -374,6 +364,27 @@ export const LANG_NAMES: Record<string, string> = {
   he: 'Hebrew', hi: 'Hindi', vi: 'Vietnamese', tl: 'Tagalog', tr: 'Turkish',
   id: 'Indonesian',
 };
+
+// H7: Allowlist validation for language codes interpolated into system prompts.
+// Prevents prompt injection via attacker-controlled fromLang/toLang parameters.
+const _safeLang = (lang: string): string => {
+  // Exact match on key (e.g. 'en', 'es') or value (e.g. 'English', 'Spanish')
+  const key = Object.keys(LANG_NAMES).find(k => k === lang || LANG_NAMES[k] === lang);
+  return LANG_NAMES[key ?? ''] ?? 'English';
+};
+
+export async function translateAI(
+  text: string,
+  fromLang: string,
+  toLang: string,
+  onChunk?: (delta: string) => void,
+): Promise<string> {
+  // H7: Sanitize language params through the LANG_NAMES allowlist before interpolation
+  const safeFrom = _safeLang(fromLang);
+  const safeTo = _safeLang(toLang);
+  const system = `You are a translator. Translate the input from ${safeFrom} to ${safeTo}. Return ONLY the translation — no explanations, no quotes, no extra text.`;
+  return route(text, { system, onChunk });
+}
 
 export async function askAI(
   question: string,

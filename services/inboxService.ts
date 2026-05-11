@@ -152,13 +152,17 @@ async function pollOnce(): Promise<void> {
           .slice(0, deliveredThisBatch)
           .map((m) => m as IncomingMessage)
           .filter((m) => m.sender && m.text);
+        // H10: Gate sender-name announcement on user preference (defaults to false for privacy)
+        // TODO: add announceSenderName to settingsStore when available
+        const announceSender = (useSettingsStore.getState() as unknown as Record<string, unknown>).announceSenderName === true;
         setTimeout(() => {
-          if (newMsgs.length <= 3) {
+          let announcement: string;
+          if (announceSender && newMsgs.length <= 3) {
             // Announce sender name only — body omitted for privacy (caregiver gate).
             // TODO(i18n): announcement string is hardcoded English — use a
             // translation lookup keyed on useSettingsStore.getState().language
             // once a t() helper is available in this service context.
-            const announcement = newMsgs
+            announcement = newMsgs
               .map((m) => {
                 const sender = sanitizeString(m.sender, SAFE_LIMITS.name);
                 // Speak first name only — limits social engineering via crafted sender names
@@ -166,11 +170,14 @@ async function pollOnce(): Promise<void> {
                 return `New message from ${firstName}`;  // body removed for privacy; sanitizeString already handled escaping
               })
               .join('. ');
-            aacSpeak(announcement, speechRate, speechVolume);
+          } else if (newMsgs.length === 1) {
+            // TODO(i18n): "new message received" string is hardcoded English.
+            announcement = 'New message received';
           } else {
             // TODO(i18n): "new messages" string is hardcoded English.
-            aacSpeak(`${deliveredThisBatch} new messages`, speechRate, speechVolume);
+            announcement = `${deliveredThisBatch} new messages`;
           }
+          aacSpeak(announcement, speechRate, speechVolume);
         }, 800); // 800ms after chime
       }
     }

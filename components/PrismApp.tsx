@@ -40,6 +40,7 @@ import { registerPanicListeners } from '@/services/panicService';
 import { startInboxPolling } from '@/services/inboxService';
 import { startContactsSync } from '@/services/contactsIntegrationService';
 import { broadcastIntegrationEvent } from '@/services/integrationsService';
+import { registerConnectivityListener } from '@/services/emergencyService';
 import { useT } from '@/engine/useT';
 
 const PROVIDER_LABEL: Record<string, string> = {
@@ -189,6 +190,7 @@ export default function PrismApp() {
     refreshAuth();
     // Kokoro preload removed — model unavailable (404 on HuggingFace).
     const unregisterPanic = registerPanicListeners();
+    const cleanupConnectivity = registerConnectivityListener();
     // Drain incoming caregiver/contact messages onto the schedule. The
     // poller is no-op until the portal /api/v1/prism-aac/inbox/poll
     // endpoint is live (silently bails on 404), so wiring it now is safe.
@@ -199,6 +201,7 @@ export default function PrismApp() {
     const stopContactsSync = startContactsSync();
     return () => {
       unregisterPanic();
+      cleanupConnectivity?.();
       stopInbox();
       stopContactsSync();
     };
@@ -444,6 +447,7 @@ export default function PrismApp() {
               )}
             </div>
           )}
+          {/* TODO CRITICAL: Replace with EmergencyCountdownModal that shows countdown, cancel button, and phrase text */}
           <AlertOverlay />
           {/* True modals — settings/history are configuration UIs, not
               communication panels, so they stay as full-screen overlays. */}

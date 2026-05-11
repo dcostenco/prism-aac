@@ -33,6 +33,10 @@ export function middleware(request: NextRequest) {
     "frame-ancestors 'none'",
   ].join('; ');
   response.headers.set('Content-Security-Policy', csp);
+  // H13: Add missing security headers
+  response.headers.set('Referrer-Policy', 'no-referrer');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Permissions-Policy', 'camera=(), geolocation=(self), microphone=(self)');
   return response;
 }
 

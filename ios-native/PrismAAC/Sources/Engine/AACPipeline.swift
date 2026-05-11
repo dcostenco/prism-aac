@@ -139,6 +139,10 @@ final class AACPipeline: ObservableObject {
             "mode": "aac",
         ])
         let (data, _) = try await URLSession.shared.data(for: req)
+        // M25: Reject oversized cloud responses to prevent memory bombs
+        guard data.count <= 65_536 else {
+            throw URLError(.dataLengthExceededMaximum)
+        }
         let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         let text = obj?["reply"] as? String ?? ""
         stream.yield(text)
@@ -166,13 +170,19 @@ If any fail: REWRITE: {corrected version in 1-2 short sentences}
     }
 
     private func buildPrompt(question: String, language: String) -> String {
-        """
+        // M24: Sanitize chatml control tokens to prevent prompt injection
+        let sanitized = question
+            .replacingOccurrences(of: "<|im_start|>", with: "")
+            .replacingOccurrences(of: "<|im_end|>", with: "")
+            .replacingOccurrences(of: "<|system|>", with: "")
+        let safeQuestion = String(sanitized.prefix(1000)) // cap input length
+        return """
 <|im_start|>system
 You are Prism, an AAC communication assistant. The user cannot speak and uses this app to communicate.
 Rules: respond in \(language), 1-2 short sentences only, plain language, no jargon, dignified and supportive.
 <|im_end|>
 <|im_start|>user
-\(question)<|im_end|>
+\(safeQuestion)<|im_end|>
 <|im_start|>assistant
 """
     }

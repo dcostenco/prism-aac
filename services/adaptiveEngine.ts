@@ -341,7 +341,12 @@ function flushNow(): void {
   if (!_profile || typeof window === 'undefined') return;
   _profile.lastUpdated = Date.now();
   try {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(_profile));
+    // H7: exclude health-sensitive word patterns from localStorage persistence.
+    // timeOfDayPatterns and commonMispronunciations contain vocabulary that may
+    // reveal medical conditions, locations, or personal routines. They are
+    // rebuilt from session usage each time and do not need to survive reloads.
+    const { timeOfDayPatterns: _tod, commonMispronunciations: _mis, ..._safe } = _profile;
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(_safe));
   } catch {
     // Quota or private mode — best-effort, the in-memory profile keeps working.
   }
@@ -353,9 +358,11 @@ function flushNow(): void {
 
 function notify(): void {
   if (!_profile || _listeners.size === 0) return;
-  const snapshot = _profile;
+  // M13: deliver only the privacy-safe signals subset, not the full profile
+  // (which contains timeOfDayPatterns / commonMispronunciations / toneHistory).
+  const signals = getAdaptiveSignals(); // privacy-safe signals, not full profile
   for (const l of _listeners) {
-    try { l(snapshot); } catch { /* listener errors don't break engine */ }
+    try { l(signals as unknown as Readonly<AdaptiveProfile>); } catch { /* listener errors don't break engine */ }
   }
 }
 

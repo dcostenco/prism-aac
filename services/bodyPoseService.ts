@@ -546,6 +546,17 @@ async function isEnvironmentCamera(deviceId: string): Promise<boolean> {
   }
 }
 
+// Internal pub/sub for pose samples — does NOT use window events (biometric data privacy)
+type PoseSampleListener = (detail: { normX: number; normY: number; noiseFloor: number; visibility: number; egoSuppressed: boolean }) => void;
+const _poseSampleListeners = new Set<PoseSampleListener>();
+export function subscribePoseSamples(fn: PoseSampleListener): () => void {
+    _poseSampleListeners.add(fn);
+    return () => _poseSampleListeners.delete(fn);
+}
+function emitPoseSample(detail: Parameters<PoseSampleListener>[0]): void {
+    for (const fn of _poseSampleListeners) { try { fn(detail); } catch {} }
+}
+
 // ── Active tracker reference (for stopPoseTracker) ─────────────────────────
 
 let activeHandle: PoseTrackerHandle | null = null;
@@ -594,6 +605,7 @@ export function startPoseTracker(
   // machine is exercised deterministically. NO-OP in production —
   // the flag is never set on prod-served HTML.
   if (typeof window !== 'undefined' &&
+      process.env.NODE_ENV !== 'production' &&
       (window as unknown as { __POSE_TEST_DRIVE?: boolean }).__POSE_TEST_DRIVE) {
     return startTestDrivenTracker(opts);
   }
@@ -1290,16 +1302,12 @@ export function startPoseTracker(
           // The wizard uses this event to capture stable head poses for center
           // and corner calibration — using gaze-blended values would pollute
           // the sample buffer with iris jitter and break stable-hold detection.
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('prism-pose-sample', {
-              detail: {
-                normX: headNormX, normY: headNormY,
-                noiseFloor: baselineTracker.getNoiseFloor(),
-                visibility: frameChosenVis,
-                egoSuppressed: suppressForEgoMotion,
-              },
-            }));
-          }
+          emitPoseSample({
+            normX: headNormX ?? 0, normY: headNormY ?? 0,
+            noiseFloor: baselineTracker.getNoiseFloor(),
+            visibility: frameChosenVis,
+            egoSuppressed: suppressForEgoMotion,
+          });
 
           // ── Dwell Detection ───────────────────────────────────────
           const elementUnder = document.elementFromPoint(sx, sy);
@@ -1434,14 +1442,12 @@ function startTestDrivenTracker(opts: PoseTrackerOptions): PoseTrackerHandle {
       opts.onStatusChange('tracking', target);
       // Wizard listens for prism-pose-sample to fill its sample buffer.
       // Detail mirrors what the real tick() loop dispatches.
-      window.dispatchEvent(new CustomEvent('prism-pose-sample', {
-        detail: {
-          normX, normY,
-          visibility: vis,
-          noiseFloor: 0.005,
-          egoSuppressed: false,
-        },
-      }));
+      emitPoseSample({
+        normX, normY,
+        visibility: vis,
+        noiseFloor: 0.005,
+        egoSuppressed: false,
+      });
     },
     simulatePoseLost() {
       if (stopped) return;

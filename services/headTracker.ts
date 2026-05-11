@@ -599,21 +599,21 @@ function stopCameraSource(source: CameraSource): void {
 // Failover: if the best camera loses the face for >3 consecutive frames,
 // switch to the next best camera instantly.
 const FAILOVER_THRESHOLD = 3;
-let primaryCameraIndex = 0;
-let lostFrameCount = 0;
+// NOTE: primaryCameraIndex and lostFrameCount are declared inside startHeadTracker (H5 fix)
+// so multi-start races don't share mutable state between concurrent tracker instances.
 
-function fuseCameraDetections(detections: CameraDetection[]): { normX: number; normY: number } | null {
+function fuseCameraDetections(detections: CameraDetection[], state: { primaryCameraIndex: number; lostFrameCount: number }): { normX: number; normY: number } | null {
   const valid = detections.filter(d => d.face !== null);
   if (valid.length === 0) {
-    lostFrameCount++;
+    state.lostFrameCount++;
     return null;
   }
 
   // Check if current primary camera still has a detection
-  const primaryDetection = valid.find(d => d.cameraIndex === primaryCameraIndex);
+  const primaryDetection = valid.find(d => d.cameraIndex === state.primaryCameraIndex);
 
   if (primaryDetection) {
-    lostFrameCount = 0;
+    state.lostFrameCount = 0;
     const f = primaryDetection.face!;
     return {
       normX: (f.x + f.width / 2) / primaryDetection.canvasWidth,
@@ -622,13 +622,13 @@ function fuseCameraDetections(detections: CameraDetection[]): { normX: number; n
   }
 
   // Primary lost face — count consecutive lost frames
-  lostFrameCount++;
+  state.lostFrameCount++;
 
-  if (lostFrameCount >= FAILOVER_THRESHOLD) {
+  if (state.lostFrameCount >= FAILOVER_THRESHOLD) {
     // Failover: switch to the camera with highest confidence
     const best = valid.reduce((a, b) => a.confidence > b.confidence ? a : b);
-    primaryCameraIndex = best.cameraIndex;
-    lostFrameCount = 0;
+    state.primaryCameraIndex = best.cameraIndex;
+    state.lostFrameCount = 0;
     const f = best.face!;
     return {
       normX: (f.x + f.width / 2) / best.canvasWidth,
@@ -664,6 +664,11 @@ export function startHeadTracker(
   let rafId = 0;
   const sources: CameraSource[] = [];
   const abortController = new AbortController();
+
+  // H5 fix: per-invocation mutable fusion state — module-level vars caused
+  // race conditions when startHeadTracker was called multiple times (React
+  // StrictMode double-mount, settings toggle). Each call now owns its state.
+  const fusionState = { primaryCameraIndex: 0, lostFrameCount: 0 };
 
   // Reliability primitives (statically imported at top — no circular dep).
   // Each is pure / DOM-free, so they can be unit-tested without the
@@ -756,6 +761,7 @@ export function startHeadTracker(
     if (stopped) { sources.forEach(stopCameraSource); return; }
     const activeSources = sources.filter(s => s.active);
     if (activeSources.length === 0) {
+      window.removeEventListener('resize', onResize);  // M16: clean up before early return
       opts.onStatusChange('stopped');
       return;
     }
@@ -1008,7 +1014,7 @@ export function startHeadTracker(
       }
       return d;
     });
-    const fused = fuseCameraDetections(detections);
+    const fused = fuseCameraDetections(detections, fusionState);
 
     if (!fused) {
       opts.onStatusChange('lost');

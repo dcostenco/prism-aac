@@ -6,19 +6,21 @@
  * over a button can fire BOTH the gesture click AND the dwell click,
  * yielding double-action.
  *
- * Solution: gestureService dispatches a `gesture-claim` window event
- * the moment it commits to a gesture. The headTracker subscribes and
- * suppresses dwell-click for `lockoutMs` afterward. Dwell counter also
- * resets so the user must re-acquire the target.
+ * Solution: gestureService calls dispatchGestureClaim() the moment it
+ * commits to a gesture. The headTracker subscribes via onGestureClaim()
+ * and suppresses dwell-click for `lockoutMs` afterward. Dwell counter
+ * also resets so the user must re-acquire the target.
  *
  * The reverse direction is intentionally NOT done — dwell does NOT
  * suspend gestures. Gestures should always be available as an
  * interrupt (e.g. "I want to stop right now" via blink).
  *
+ * M19 fix: biometric gesture data must NOT be broadcast to all window
+ * listeners. Replaced window.dispatchEvent / window.addEventListener
+ * with a module-internal pub/sub so only explicit subscribers receive it.
+ *
  * Plan ref: docs/TRACKING_RELIABILITY.md § H.
  */
-
-const EVENT = 'prism-gesture-claim';
 
 export interface GestureClaimDetail {
     gesture: string;
@@ -26,18 +28,18 @@ export interface GestureClaimDetail {
     timestamp: number;
 }
 
+// Internal pub/sub — biometric gesture data must not be broadcast to all window listeners
+const _gestureListeners = new Set<(detail: GestureClaimDetail) => void>();
+
 /** Fire from gestureService when a gesture is being committed. */
 export function dispatchGestureClaim(detail: GestureClaimDetail): void {
-    if (typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent<GestureClaimDetail>(EVENT, { detail }));
+    for (const fn of _gestureListeners) { try { fn(detail); } catch {} }
 }
 
 /** Subscribe (e.g. from headTracker) to lockout claims. Returns disposer. */
 export function onGestureClaim(handler: (d: GestureClaimDetail) => void): () => void {
-    if (typeof window === 'undefined') return () => {};
-    const wrapped = (e: Event) => handler((e as CustomEvent<GestureClaimDetail>).detail);
-    window.addEventListener(EVENT, wrapped);
-    return () => window.removeEventListener(EVENT, wrapped);
+    _gestureListeners.add(handler);
+    return () => _gestureListeners.delete(handler);
 }
 
 /**

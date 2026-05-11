@@ -31,6 +31,21 @@ const PROVIDER_LIST: ContactProvider[] = [
   'mail', 'sms', 'telegram', 'whatsapp', 'viber', 'messenger', 'instagram',
 ];
 
+// Mask sensitive recipient IDs (phone numbers, emails)
+function maskRecipientId(id: string, provider: string): string {
+  if (provider === 'sms' || provider === 'whatsapp' || provider === 'viber') {
+    // E.164 phone: show last 4 digits
+    return id.length > 4 ? `+***${id.slice(-4)}` : '****';
+  }
+  if (id.includes('@')) {
+    // Email: show first char and domain
+    const [local, domain] = id.split('@');
+    return `${local?.[0] ?? '*'}***@${domain ?? '***'}`;
+  }
+  // Default: show last 4 chars only
+  return id.length > 4 ? `***${id.slice(-4)}` : '****';
+}
+
 export default function CaregiverContactsSettings() {
   const contacts = useContactsStore((s) => s.contacts);
   const lastSyncedAt = useContactsStore((s) => s.lastSyncedAt);
@@ -270,7 +285,7 @@ export default function CaregiverContactsSettings() {
                   <span className="flex-1 min-w-0">
                     <span className="text-primary text-sm font-bold block truncate">{c.name}</span>
                     <span className="text-muted text-xs block truncate">
-                      {PROVIDER_LABELS[c.provider]} · {c.recipientId}
+                      {PROVIDER_LABELS[c.provider]} · {maskRecipientId(c.recipientId, c.provider)}
                       {!available && (
                         <span className="ml-2 text-[#FF9800]" data-testid={`tier-locked-${c.id}`}>
                           🔒 {PROVIDER_MIN_TIER[c.provider]} plan

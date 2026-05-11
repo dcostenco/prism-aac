@@ -196,6 +196,15 @@ export default function AACChatPanel() {
     // user can't articulate.
     const submittedContact = activeContact;
     const submittedText = trimmed;
+    // H9: Re-validate recipientId at send time to catch stale/bad contacts
+    if (!submittedContact.recipientId || submittedContact.recipientId.trim().length === 0) {
+      flashToast('Invalid contact configuration');
+      return;
+    }
+    if (submittedContact.recipientId.length > 200) {
+      flashToast('Invalid contact configuration');
+      return;
+    }
     tapFeedback();
     setSending(true);
     let res: Awaited<ReturnType<typeof sendToContact>>;

@@ -74,6 +74,7 @@ export interface EmergencyConfig {
   profile: UserMedicalProfile;
   language?: string;
   synaluxApiUrl?: string;
+  shareHistoryInEmergency?: boolean;
 }
 
 // Emergency features work for ALL tiers — free, standard, advanced, enterprise.
@@ -184,6 +185,9 @@ const CONFIG_KEY = 'prism-aac-emergency-config';
 let dispatchInProgress = false;
 /** Mutex: prevents concurrent sendAlert calls (e.g., flush + triggerEmergency racing). */
 let isSendInFlight = false;
+/** Tracks the severity of the currently active emergency countdown. Used by cancelEmergency
+ *  to block programmatic cancellation of urgent/medical alerts without a PIN. */
+let _activeCountdownSeverity: 'critical' | 'urgent' | 'medical' | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
 let countdownCallback: ((seconds: number) => void) | null = null;
 let cancelCallback: (() => void) | null = null;
@@ -347,13 +351,23 @@ function presentOrUndefined(s: string): string | undefined {
   return s.length > 0 ? s : undefined;
 }
 
+// H10: Validate phone numbers are in E.164 format to prevent injection and ensure SMS/VoIP delivery.
+function isValidE164Phone(phone: string): boolean {
+  return /^\+[1-9]\d{6,14}$/.test(phone);
+}
+
 function cleanContact(c: unknown): EmergencyContact | null {
   if (!c || typeof c !== 'object') return null;
   const x = c as Record<string, unknown>;
   const name = presentOrUndefined(sanitizeString(x.name, MAX_NAME_LEN));
   const relationship = presentOrUndefined(sanitizeString(x.relationship, MAX_RELATIONSHIP_LEN));
   if (!name || !relationship) return null;
-  const phone = presentOrUndefined(sanitizeString(x.phone, MAX_PHONE_LEN));
+  const rawPhone = presentOrUndefined(sanitizeString(x.phone, MAX_PHONE_LEN));
+  // H10: Reject phone numbers that are not E.164 format (e.g. +14155551234)
+  if (rawPhone && !isValidE164Phone(rawPhone)) {
+    throw new Error('Invalid phone number format — must be E.164 (e.g. +14155551234)');
+  }
+  const phone = rawPhone;
   const email = presentOrUndefined(sanitizeString(x.email, MAX_EMAIL_LEN));
   // A contact with neither phone nor email isn't reachable — drop it
   // so render code doesn't display a useless row.
@@ -435,7 +449,11 @@ export function saveConfig(config: EmergencyConfig): void {
   // means getConfig() doesn't have to deal with mid-tier corruption
   // from our own code path.
   const clean = validateEmergencyConfig(config);
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(clean));
+  // PHI fields are NOT persisted to localStorage — they must be re-entered each session.
+  // medicalProfile (name, age, conditions, allergies, medications, address, callbackNumber)
+  // stays in memory only to prevent PHI exposure if localStorage is read by a third party.
+  const { profile: _stripped, ...safeConfig } = clean;
+  localStorage.setItem(CONFIG_KEY, JSON.stringify({ ...safeConfig, profile: undefined }));
 }
 
 // Use word-boundary matching to prevent false positives
@@ -766,8 +784,11 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   // Speak the emergency message on device speaker IMMEDIATELY regardless of call status
   speakEmergencyOnSpeaker(script, config.language || 'en');
 
-  const recentHistory = getRecentHistory(20);
-  const historyText = formatHistoryForAI(recentHistory);
+  // H9: Only include conversation history in the alert payload when the user has explicitly
+  // consented to share it. Default is false — opt-in only.
+  const shareHistory = config.shareHistoryInEmergency ?? false;
+  const recentHistory = shareHistory ? getRecentHistory(20) : [];
+  const historyText = shareHistory ? formatHistoryForAI(recentHistory) : '';
 
   // PHI separation: full payload (with profile + conversation history) is ONLY
   // sent to Level 1 (Synalux authenticated server endpoint). Levels 2–4 use a
@@ -1062,6 +1083,7 @@ export async function triggerEmergency(
   startAlarm();
   startFlash();
 
+  _activeCountdownSeverity = severity;
   countdownCallback = onCountdown;
   cancelCallback = onCancel || null;
   onCountdown(countdownTotal);
@@ -1131,6 +1153,18 @@ export async function triggerEmergency(
 }
 
 export function cancelEmergency(alertId?: string): void {
+  // C12: For urgent/medical severity, cancel requires a PIN (enforced in UI).
+  // This service-level guard prevents programmatic bypass (e.g., scripted cancel).
+  // 'critical' alerts are already uncancellable (triggerEmergency returns no-op cancel fn).
+  if (_activeCountdownSeverity === 'urgent' || _activeCountdownSeverity === 'medical') {
+    // Do not allow programmatic cancel for high-severity — require PIN from UI
+    console.warn('[emergency] Attempted to cancel urgent/medical without PIN — blocked');
+    return;
+  }
+  // C1: Reset in-flight mutexes so a cancelled emergency doesn't permanently block
+  // the next emergency trigger.
+  isSendInFlight = false;
+  dispatchInProgress = false;
   activeCancelFn = null;
   clearCountdown();
   stopAlarm();
@@ -1150,6 +1184,7 @@ function clearCountdown(): void {
   }
   countdownCallback = null;
   cancelCallback = null;
+  _activeCountdownSeverity = null;
 }
 
 /**

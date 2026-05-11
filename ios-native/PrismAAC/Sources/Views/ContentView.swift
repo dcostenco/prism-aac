@@ -62,7 +62,7 @@ struct PrismWebView: UIViewRepresentable {
         let bridgeJS = WKUserScript(
             source: nativeBridgeScript(),
             injectionTime: .atDocumentStart,
-            forMainFrameOnly: false
+            forMainFrameOnly: true  // C13: prevent iframes from triggering emergency
         )
         contentController.addUserScript(bridgeJS)
 
@@ -131,6 +131,8 @@ struct PrismWebView: UIViewRepresentable {
     class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         let pipeline: AACPipeline
         let tts = WKWebTTS()
+        // C14: rate-limit emergency triggers
+        private var lastEmergencyTriggerTime: TimeInterval = 0
 
         init(pipeline: AACPipeline) { self.pipeline = pipeline }
 
@@ -148,7 +150,28 @@ struct PrismWebView: UIViewRepresentable {
             case "stopSpeech":
                 tts.stop()
             case "emergency":
-                let phrase = body["phrase"] as? String ?? "Help"
+                // C14: Rate limit — max 1 emergency trigger per 30 seconds
+                let now = Date().timeIntervalSince1970
+                guard now - lastEmergencyTriggerTime >= 30 else {
+                    NSLog("[PrismAAC] Emergency rate-limited (too frequent)")
+                    return
+                }
+                lastEmergencyTriggerTime = now
+
+                // C14: Origin validation — only honor from verified origin
+                guard let pageURL = message.webView?.url,
+                      pageURL.host?.hasSuffix("synalux.ai") == true ||
+                      pageURL.host == "localhost" ||
+                      pageURL.isFileURL else {
+                    NSLog("[PrismAAC] Emergency blocked from untrusted origin: \(message.webView?.url?.host ?? "nil")")
+                    return
+                }
+
+                // C14: Main frame only
+                guard message.frameInfo.isMainFrame else { return }
+
+                // C14: Phrase length cap
+                let phrase = String((body["phrase"] as? String ?? "Help").prefix(500))
                 Task { @MainActor in
                     WatchEmergencyBridge.shared.trigger(phrase: phrase)
                 }
@@ -164,8 +187,14 @@ struct PrismWebView: UIViewRepresentable {
 
         // Show offline fallback if load fails
         func webView(_ webView: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error) {
+            // M22: Add CSP to offline fallback HTML; M23: use about:blank baseURL
             let offlineHTML = """
-            <html><body style='background:#14161d;color:white;font-family:sans-serif;
+            <!DOCTYPE html>
+            <html>
+            <head>
+            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
+            </head>
+            <body style='background:#14161d;color:white;font-family:sans-serif;
             display:flex;align-items:center;justify-content:center;height:100vh;margin:0;
             flex-direction:column;gap:16px;text-align:center;padding:20px'>
             <div style='font-size:48px'>📵</div>
@@ -176,7 +205,7 @@ struct PrismWebView: UIViewRepresentable {
             Try again</button>
             </body></html>
             """
-            webView.loadHTMLString(offlineHTML, baseURL: nil)
+            webView.loadHTMLString(offlineHTML, baseURL: URL(string: "about:blank"))
         }
     }
 }

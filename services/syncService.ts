@@ -113,17 +113,27 @@ export function pushToCloudKeepalive(data: Partial<AACProfile>): void {
 
     const record = { device_id: getDeviceId(), user_id: getUserId(), ...data };
     const body = JSON.stringify(record);
+    // C2: Do NOT append apikey as a URL query parameter — it would be logged in
+    // server access logs, CDN logs, and visible in browser network panels.
+    // Use keepalive fetch with the key in request headers only.
     const endpoint = `${url}/rest/v1/${AAC_TABLE}?on_conflict=user_id,device_id`;
-
-    // sendBeacon cannot set custom headers, so we pass apikey as a query
-    // parameter. Supabase PostgREST accepts ?apikey= as an alternative to
-    // the apikey header. Without this, every sendBeacon was silently 401'd.
-    const authedEndpoint = `${endpoint}&apikey=${encodeURIComponent(key)}`;
 
     const blob = new Blob([body], { type: 'application/json' });
     if (blob.size < BEACON_SIZE_LIMIT) {
-      const sent = navigator.sendBeacon?.(authedEndpoint, blob);
-      if (sent) return;
+      // sendBeacon cannot set custom headers. Use keepalive fetch instead so
+      // the apikey stays in headers (not URL). sendBeacon path is removed entirely.
+      fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': key,
+          'Authorization': `Bearer ${key}`,
+          'Prefer': 'resolution=merge-duplicates',
+        },
+        body: blob,
+        keepalive: true,
+      }).catch(() => {});
+      return;
     } else {
       const criticalRecord = {
         device_id: record.device_id,
@@ -132,25 +142,37 @@ export function pushToCloudKeepalive(data: Partial<AACProfile>): void {
         custom_phrases: record.custom_phrases,
       };
       const criticalBlob = new Blob([JSON.stringify(criticalRecord)], { type: 'application/json' });
-      if (criticalBlob.size < BEACON_SIZE_LIMIT) {
-        const sent = navigator.sendBeacon?.(authedEndpoint, criticalBlob);
-        if (sent) return;
-      }
+      fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': key,
+          'Authorization': `Bearer ${key}`,
+          'Prefer': 'resolution=merge-duplicates',
+        },
+        body: criticalBlob,
+        keepalive: true,
+      }).catch(() => {});
+      return;
     }
-
-    // Last resort: keepalive fetch (may fail > 64KB but worth trying)
-    fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': key,
-        'Authorization': `Bearer ${key}`,
-        'Prefer': 'resolution=merge-duplicates',
-      },
-      body,
-      keepalive: true,
-    }).catch(() => {});
   } catch { /* best effort */ }
+}
+
+// H10: Validate and cap array lengths from pulled Supabase profile to prevent OOM attacks.
+function validateProfile(raw: unknown): AACProfile {
+  if (!raw || typeof raw !== 'object') throw new Error('Invalid profile data');
+  const p = raw as Record<string, unknown>;
+  // Cap array lengths to prevent OOM from a malicious or corrupted server response
+  if (Array.isArray(p.custom_phrases) && p.custom_phrases.length > 500) {
+    p.custom_phrases = p.custom_phrases.slice(0, 500);
+  }
+  if (Array.isArray(p.custom_categories) && p.custom_categories.length > 100) {
+    p.custom_categories = p.custom_categories.slice(0, 100);
+  }
+  if (Array.isArray(p.history) && p.history.length > 200) {
+    p.history = p.history.slice(0, 200);
+  }
+  return p as unknown as AACProfile;
 }
 
 export async function pullFromCloud(): Promise<Partial<AACProfile> | null> {
@@ -171,7 +193,7 @@ export async function pullFromCloud(): Promise<Partial<AACProfile> | null> {
     if (error) { setStatus('error'); return null; }
     if (!data || data.length === 0) { setStatus('synced'); return null; }
     setStatus('synced');
-    return data[0] as AACProfile;
+    return validateProfile(data[0]);
   } catch {
     setStatus('offline');
     return null;
@@ -240,7 +262,14 @@ export function subscribeToChanges(
   const sb = getSupabase();
   if (!sb) return null;
 
-  const userId = getUserId();
+  // M18: Validate userId is a proper UUID before using it in the realtime filter.
+  // An invalid (e.g. tampered or default) userId in the filter could cause unexpected
+  // subscription behavior or injection into PostgREST filter strings.
+  const UUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const rawUserId = getUserId();
+  const safeUserId = UUID_RX.test(rawUserId) ? rawUserId : null;
+  if (!safeUserId) return null; // Don't subscribe with an invalid/default user ID
+
   const deviceId = getDeviceId();
 
   const channel = sb
@@ -251,7 +280,7 @@ export function subscribeToChanges(
         event: 'UPDATE',
         schema: 'public',
         table: AAC_TABLE,
-        filter: `user_id=eq.${userId}`,
+        filter: `user_id=eq.${safeUserId}`,
       },
       (payload) => {
         const remote = payload.new as AACProfile;

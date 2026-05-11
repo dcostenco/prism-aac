@@ -38,8 +38,15 @@ struct SafetyFilter {
     static func check(_ input: String) -> Result {
         let lower = input.lowercased()
 
-        for keyword in crisisKeywords where lower.contains(keyword) {
-            return .crisis(response: crisisResponse())
+        for keyword in crisisKeywords {
+            // C4: Word-boundary regex to avoid false positives (e.g. "emergency room" matching "emergency")
+            let pattern = "(?:^|[^\\p{L}\\p{N}])\(NSRegularExpression.escapedPattern(for: keyword))(?:$|[^\\p{L}\\p{N}])"
+            if let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) {
+                let range = NSRange(lower.startIndex..., in: lower)
+                if regex.firstMatch(in: lower, range: range) != nil {
+                    return .crisis(response: crisisResponse())
+                }
+            }
         }
 
         for keyword in medicalDoseKeywords where lower.contains(keyword) {

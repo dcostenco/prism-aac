@@ -340,9 +340,13 @@ export const usePredictionStore = create<PredictionState>()(
                 localStorage.setItem(name, JSON.stringify(value));
               } catch (e) {
                 if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-                  // Shed old prediction data to free space, then retry
+                  // Shed old prediction data to free space, then retry with only partialized (non-PHI) state
                   usePredictionStore.getState().runDecay();
-                  try { localStorage.setItem(name, JSON.stringify(usePredictionStore.getState())); } catch { /* still too large */ }
+                  try {
+                    const s = usePredictionStore.getState();
+                    const partialized = { wordFreq: s.wordFreq, bigrams: s.bigrams, trigrams: s.trigrams };
+                    localStorage.setItem(name, JSON.stringify({ state: partialized, version: 4 }));
+                  } catch { /* still too large */ }
                 }
               }
               pendingName = null; pendingValue = null; writeTimer = null;

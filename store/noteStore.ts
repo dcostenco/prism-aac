@@ -4,6 +4,7 @@ import { CaregiverNote, NoteAction } from '@/types';
 import { randomId } from '@/lib/uuid';
 import { sanitizeString } from '@/lib/safeStrings';
 import { safeJSONStorage } from '@/lib/safeStorage';
+import { useAuthStore } from '@/store/authStore';
 
 /** Per-note text and author bounds. Notes are caregiver-typed clinical
  *  observations — well-formed entries are typically 100-300 chars. The
@@ -121,7 +122,9 @@ export const useNoteStore = create<NoteState>()(
         // EHR) would land in localStorage, fail the next quota write,
         // and silently lose subsequent saves.
         const cappedText = (text ?? '').slice(0, MAX_NOTE_TEXT_LEN);
-        const cleanAuthor = sanitizeString(get().authorName, MAX_AUTHOR_NAME_LEN);
+        // M18: Prefer authenticated profile name to prevent attribution fraud
+        const authName = useAuthStore.getState().profile?.name;
+        const cleanAuthor = sanitizeString(authName || get().authorName, MAX_AUTHOR_NAME_LEN);
         const cleanActions = actions
           ? sanitizeActions(actions)
           : [{ type: 'note_only', description: 'Clinical note', payload: {} } as NoteAction];
