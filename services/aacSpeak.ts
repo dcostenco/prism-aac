@@ -22,7 +22,7 @@ import { emitTtsHighlight, estimateSpeechDurationMs } from './ttsHighlightBus';
 // reads `toneMode` + `activeTone` from messageStore: in 'auto' mode the
 // adaptive engine picks the tone from the text; in 'manual' mode the user's
 // last picked tone is forced for every utterance.
-export function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, interrupt = false): void {
+export function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, interrupt = false, overrideLang?: string): void {
   if (!text?.trim()) return;
 
   try {
@@ -36,19 +36,21 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     // the TTS engine to read it as a word, not spell it.
     let toSpeak = text;
     let translationSucceeded = false;
-    if (translating) {
+    if (translating && !overrideLang) {
+      // Only re-translate if text isn't already in the target language.
+      // When MessageBar passes pre-translated text + overrideLang, skip re-translation.
       const translated = translateTextSync(text, inLang, outLang);
       translationSucceeded = translated.toLowerCase() !== text.trim().toLowerCase();
       toSpeak = translated;
     }
     if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
-    // Use target-language voice only when translation actually changed the text.
-    // If the word wasn't in the dictionary (e.g. "mânânc" → no Russian mapping),
-    // speak it with the SOURCE voice so Romanian words don't get mangled by a
-    // Russian TTS engine (which produces wrong/English-sounding accent).
-    const ttsCode = (translating && translationSucceeded)
-      ? getTTSCode(outLang)
-      : getTTSCode(inLang);
+    // overrideLang: caller knows the text is already in target language
+    // (e.g. MessageBar passing AI-refined Russian text). Use that lang for TTS.
+    const ttsCode = overrideLang
+      ? getTTSCode(overrideLang as SupportedLanguage)
+      : (translating && translationSucceeded)
+        ? getTTSCode(outLang)
+        : getTTSCode(inLang);
     // Emit a highlight-start event so the renderer (MessageBar) can
     // light up each word as it's spoken. The duration is estimated
     // — see services/ttsHighlightBus.ts for the heuristic. We emit

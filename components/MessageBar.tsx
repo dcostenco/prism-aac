@@ -407,7 +407,9 @@ export default function MessageBar() {
     // regardless of PROTECT_PLAY_MS. This flag travels through aacSpeak→speak→speakAzure
     // as a parameter (not a shared flag) so concurrent autoSpeak calls can't steal it.
     if (translated) {
-      aacSpeak(translated, speechRate, speechVolume, activeTone, true);
+      // Pass outputLanguage so aacSpeak uses the correct TTS voice (e.g. Russian voice
+      // for Russian text) instead of re-translating already-translated text.
+      aacSpeak(translated, speechRate, speechVolume, activeTone, true, outputLanguage);
     } else {
       aacSpeak(toSpeak, speechRate, speechVolume, activeTone, true);
     }
