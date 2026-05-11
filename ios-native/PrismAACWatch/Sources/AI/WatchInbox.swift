@@ -37,7 +37,8 @@ final class WatchInbox: NSObject, ObservableObject {
         messages = loadFromDefaults()
         recalcUnread()
         // #3: persist migrated UserDefaults data to Keychain (migration completes here, not inside loadFromDefaults)
-        if UserDefaults.standard.data(forKey: storageKey) != nil {
+        if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") &&
+           UserDefaults.standard.data(forKey: storageKey) != nil {
             saveToDefaults()
         }
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
@@ -153,7 +154,7 @@ final class WatchInbox: NSObject, ObservableObject {
     private func scheduleLocalNotification(_ msg: WatchMessage) {
         let content = UNMutableNotificationContent()
         content.title = msg.sender
-        content.body  = msg.text
+        content.body  = String(msg.text.prefix(200))
         content.sound = .default
         let req = UNNotificationRequest(
             identifier: msg.id,
@@ -214,11 +215,13 @@ final class WatchInbox: NSObject, ObservableObject {
 
     @MainActor
     private func loadFromDefaults() -> [WatchMessage] {
+        // Migration path only — UserDefaults is cleared immediately after Keychain write succeeds.
+        // Message PII is in UserDefaults only during the first-launch migration window.
+        // This is an accepted limitation; new installs write only to Keychain.
         let query: [String: Any] = [
             kSecClass as String:              kSecClassGenericPassword,
             kSecAttrService as String:        keychainService,
             kSecAttrAccount as String:        keychainAccount,
-            kSecAttrAccessible as String:     kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
             kSecAttrSynchronizable as String: false,
             kSecReturnData as String:         true,
             kSecMatchLimit as String:         kSecMatchLimitOne,

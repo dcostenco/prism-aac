@@ -61,11 +61,17 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
         // Request background task so process is not suspended
         // F2b: store handle on instance so cleanup() can end it
-        // #18: simplified expiry — escalate from stored activePhrase, no confusing dual-capture
+        // #2/#18: bgTask expiry must NOT call escalate() — it races with the timer's escalate().
+        // The timer's escalate() will fire when it gets CPU time.
+        // If completely denied CPU, fall back to on-device TTS.
         activeBgTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-countdown") {
             Task { @MainActor [weak self] in
-                guard let self, let phrase = self.activePhrase else { return }
-                await self.escalate(phrase: phrase, severity: self.severity)
+                guard let self, self.isActive else { return }
+                NSLog("[WatchEmergency] Background task expired during countdown — escalating via TTS only")
+                // Don't call escalate() here — it races with the timer's escalate()
+                self.speakEmergencyFallback()
+                WKApplication.shared().endBackgroundTask(self.activeBgTask ?? .init(rawValue: 0))
+                self.activeBgTask = nil
             }
         }
 
@@ -180,16 +186,15 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         })
     }
 
-    // MARK: - SOS haptics
-
-    private func playSosHaptics() {
-        WKInterfaceDevice.current().play(.notification)
-    }
-
     // MARK: - Cellular fallback (FIX 7: HTTP status check; FIX 8: debounce)
 
     @MainActor
     private func attemptCellularFallback() async {
+        // #19: guard — abort if emergency was cancelled before fallback ran
+        guard isActive else {
+            NSLog("[WatchEmergency] Cellular fallback skipped — emergency no longer active")
+            return
+        }
         // FIX 8: debounce — only one fallback attempt per emergency session
         guard !cellularFallbackSent else { return }
         cellularFallbackSent = true

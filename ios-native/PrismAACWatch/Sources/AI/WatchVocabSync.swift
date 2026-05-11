@@ -49,6 +49,10 @@ final class WatchVocabSync: NSObject, ObservableObject {
 
     private var vocabTask: Task<Void, Never>?
 
+    deinit {
+        vocabTask?.cancel()
+    }
+
     private let apiBase = "https://synalux.ai/api/v1/prism-aac"
 
     override init() {
@@ -72,17 +76,26 @@ final class WatchVocabSync: NSObject, ObservableObject {
     // MARK: - Label sanitization
 
     fileprivate static func sanitizeLabel(_ raw: String) -> String {
-        raw.replacingOccurrences(of: "<|im_start|>", with: "")
-           .replacingOccurrences(of: "<|im_end|>", with: "")
-           .replacingOccurrences(of: "<|system|>", with: "")
-           .replacingOccurrences(of: "[INST]", with: "")
-           .replacingOccurrences(of: "[/INST]", with: "")
-           .replacingOccurrences(of: "<<SYS>>", with: "")
-           .replacingOccurrences(of: "<</SYS>>", with: "")
-           .replacingOccurrences(of: "<|eot_id|>", with: "")
-           .replacingOccurrences(of: "<|start_header_id|>", with: "")
-           .replacingOccurrences(of: "<|end_header_id|>", with: "")
-           .prefix(120).description
+        String(
+            raw.replacingOccurrences(of: "<|im_start|>", with: "")
+               .replacingOccurrences(of: "<|im_end|>", with: "")
+               .replacingOccurrences(of: "<|system|>", with: "")
+               .replacingOccurrences(of: "[INST]", with: "")
+               .replacingOccurrences(of: "[/INST]", with: "")
+               .replacingOccurrences(of: "<<SYS>>", with: "")
+               .replacingOccurrences(of: "<</SYS>>", with: "")
+               .replacingOccurrences(of: "<|eot_id|>", with: "")
+               .replacingOccurrences(of: "<|start_header_id|>", with: "")
+               .replacingOccurrences(of: "<|end_header_id|>", with: "")
+               .replacingOccurrences(of: "<|user|>", with: "")
+               .replacingOccurrences(of: "<|assistant|>", with: "")
+               .replacingOccurrences(of: "<|endoftext|>", with: "")
+               .replacingOccurrences(of: "<s>", with: "")
+               .replacingOccurrences(of: "</s>", with: "")
+               .replacingOccurrences(of: "<|end_of_turn|>", with: "")
+               .replacingOccurrences(of: "<|start_of_turn|>", with: "")
+               .prefix(120)
+        )
     }
 
     // MARK: - Load from web app API (standalone path)
@@ -97,6 +110,10 @@ final class WatchVocabSync: NSObject, ObservableObject {
     ]
 
     func loadFromAPI(lang: String? = nil) async {
+        // Concurrency note: all callers route through setLanguages() which cancels and
+        // reassigns vocabTask before each call. Because this method is @MainActor,
+        // overlapping direct invocations serialize automatically. vocabTask management
+        // ensures that language-change calls cancel any in-progress task.
         let targetLang = lang ?? language
 
         // Validate language code against allowlist before using in URL
@@ -227,14 +244,19 @@ struct VocabPhrase: Decodable {
 
 extension WatchCategory {
     init(from c: VocabCategory) {
-        id = String(c.id.prefix(50)); icon = c.icon; name = c.name
+        id     = String(c.id.prefix(50))
+        icon   = String(c.icon.prefix(4))     // cap icon to 1 emoji (≤4 bytes)
+        name   = String(c.name.prefix(120))   // cap name length
         // #10: mark phrases as emergency when they come from an emergency category
-        let isEmergencyCat = String(c.id.prefix(50)) == "emergency" || String(c.id.prefix(50)) == "help-needs"
+        let isEmergencyCat = id == "emergency" || id == "help-needs"
         phrases = c.phrases.map {
-            WatchPhrase(id: $0.id, label: WatchVocabSync.sanitizeLabel($0.label),
-                        arasaacId: $0.arasaacId,
-                        sfSymbol: $0.sfSymbol ?? "circle.fill",
-                        isEmergency: isEmergencyCat)
+            WatchPhrase(
+                id:          String($0.id.prefix(50)),   // cap phrase id
+                label:       WatchVocabSync.sanitizeLabel($0.label),
+                sfSymbol:    String($0.sfSymbol?.prefix(50) ?? "circle.fill"),
+                arasaacId:   $0.arasaacId,
+                isEmergency: isEmergencyCat
+            )
         }
     }
 

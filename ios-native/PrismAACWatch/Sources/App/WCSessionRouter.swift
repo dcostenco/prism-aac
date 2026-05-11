@@ -37,7 +37,14 @@ final class WCSessionRouter: NSObject, ObservableObject {
     /// Send a message via WCSession (convenience wrapper).
     func send(_ message: [String: Any], replyHandler: (([String: Any]) -> Void)? = nil, errorHandler: ((Error) -> Void)? = nil) {
         guard WCSession.default.isReachable else {
+            guard WCSession.default.activationState == .activated else {
+                NSLog("[WCRouter] Session not activated — dropping message type: \(message["type"] as? String ?? "?")")
+                errorHandler?(URLError(.networkConnectionLost))
+                return
+            }
             WCSession.default.transferUserInfo(message)
+            // #1: Call errorHandler so continuation is never abandoned
+            errorHandler?(URLError(.networkConnectionLost))
             return
         }
         WCSession.default.sendMessage(message, replyHandler: replyHandler) { error in

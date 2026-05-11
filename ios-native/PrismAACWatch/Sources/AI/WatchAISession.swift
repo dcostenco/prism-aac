@@ -25,7 +25,12 @@ final class WatchAISession: NSObject, ObservableObject {
         case responseTooLarge
     }
 
-    private let cloudURL = URL(string: "https://synalux.ai/api/v1/prism-aac/chat")!
+    private let cloudURL: URL = {
+        guard let url = URL(string: "https://synalux.ai/api/v1/prism-aac/chat") else {
+            fatalError("[WatchAI] Invalid cloud URL — check for typo in hardcoded string")
+        }
+        return url
+    }()
     private let timeoutSec: Double = 15
 
     // MARK: - Init / WatchConnectivity
@@ -37,7 +42,10 @@ final class WatchAISession: NSObject, ObservableObject {
             Task { @MainActor in self?.handlePhoneReply(msg) }
         }
         WCSessionRouter.shared.registerReachabilityHandler { [weak self] reachable in
-            Task { @MainActor in self?.isPhoneReachable = reachable }
+            Task { @MainActor [weak self] in
+                self?.isPhoneReachable = reachable
+                self?.updateMode()  // #5: keep mode in sync on reachability change
+            }
         }
         updateMode()
     }
@@ -93,8 +101,8 @@ final class WatchAISession: NSObject, ObservableObject {
             reply = "Please sign in on your iPhone to enable AI features."
         } catch {
             // Full offline fallback
-            // #25: do not set mode = .offline here via ask(); let updateMode() govern
-            offlineBanner = "No connection — using offline phrases only"
+            mode = .offline  // #13: set offline mode when cloud call fails
+            offlineBanner = "Offline — phrase buttons only"
             reply = "I'm offline right now. Use the phrase buttons below."
         }
     }
@@ -113,16 +121,24 @@ final class WatchAISession: NSObject, ObservableObject {
             group.addTask {
                 try await withTaskCancellationHandler {
                     try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
+                        // #18: NSLock makes resumed check+set atomic across reply and error callbacks
+                        let lock = NSLock()
                         var resumed = false
                         WCSessionRouter.shared.send(msg,
                             replyHandler: { reply in
-                                guard !resumed else { return }
-                                resumed = true
+                                lock.lock()
+                                let wasResumed = resumed
+                                if !wasResumed { resumed = true }
+                                lock.unlock()
+                                guard !wasResumed else { return }
                                 cont.resume(returning: reply["text"] as? String ?? "")
                             },
                             errorHandler: { err in
-                                guard !resumed else { return }
-                                resumed = true
+                                lock.lock()
+                                let wasResumed = resumed
+                                if !wasResumed { resumed = true }
+                                lock.unlock()
+                                guard !wasResumed else { return }
                                 cont.resume(throwing: err)
                             }
                         )
@@ -167,6 +183,13 @@ final class WatchAISession: NSObject, ObservableObject {
             .replacingOccurrences(of: "<|eot_id|>", with: "")
             .replacingOccurrences(of: "<|start_header_id|>", with: "")
             .replacingOccurrences(of: "<|end_header_id|>", with: "")
+            .replacingOccurrences(of: "<|user|>", with: "")
+            .replacingOccurrences(of: "<|assistant|>", with: "")
+            .replacingOccurrences(of: "<|endoftext|>", with: "")
+            .replacingOccurrences(of: "<s>", with: "")
+            .replacingOccurrences(of: "</s>", with: "")
+            .replacingOccurrences(of: "<|end_of_turn|>", with: "")
+            .replacingOccurrences(of: "<|start_of_turn|>", with: "")
 
         let system = "You are a friendly helper for a child who uses AAC. Reply in \(validatedLanguage) language. Keep answers short (2-3 sentences max)."
         var req = URLRequest(url: cloudURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: timeoutSec)
@@ -184,7 +207,8 @@ final class WatchAISession: NSObject, ObservableObject {
                 ["role": "user",   "content": safeQuestion],
             ],
             "language": String(validatedLanguage.prefix(2)),
-        ])
+            "stream": true,   // #9: required for SSE endpoint
+        ] as [String: Any])
         let (data, response) = try await URLSession.shared.data(for: req)
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
             NSLog("[WatchAI] HTTP error \(http.statusCode)")
@@ -206,18 +230,20 @@ final class WatchAISession: NSObject, ObservableObject {
             guard line.hasPrefix("data: ") else { continue }
             let payload = String(line.dropFirst(6))
             if payload == "[DONE]" { break }
-            guard let d = payload.data(using: .utf8),
-                  let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
-                  let choices = obj["choices"] as? [[String: Any]],
-                  let delta = choices.first?["delta"] as? [String: Any],
-                  let chunk = delta["content"] as? String else {
-                if !payload.isEmpty && payload != "[DONE]" {
+            if let d = payload.data(using: .utf8) {
+                let parsed = try? JSONSerialization.jsonObject(with: d)
+                if let obj = parsed as? [String: Any],
+                   let choices = obj["choices"] as? [[String: Any]],
+                   let delta = choices.first?["delta"] as? [String: Any],
+                   let chunk = delta["content"] as? String {
+                    result += chunk
+                    if result.count > 4000 { break }  // cap total response
+                } else if parsed != nil {
+                    NSLog("[WatchAI] SSE chunk parsed but unexpected structure: \(payload.prefix(100))")
+                } else if !payload.isEmpty && payload != "[DONE]" {
                     NSLog("[WatchAI] Unexpected SSE payload (first 100 chars): \(payload.prefix(100))")
                 }
-                continue
             }
-            result += chunk
-            if result.count > 4000 { break }  // cap total response
         }
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed

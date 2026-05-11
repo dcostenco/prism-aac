@@ -1,6 +1,5 @@
 import SwiftUI
 import WatchKit
-import WatchConnectivity
 
 // MARK: - AAC data model
 
@@ -17,7 +16,7 @@ struct AACPhrase: Identifiable {
     init(label: String, sfSymbol: String, color: Color, arasaacId: Int?, isEmergency: Bool = false) {
         // Stable id: lowercase label + sfSymbol — prevents collision for same label across categories
         // e.g. "Help" (sfSymbol: "sos") vs "Help" (sfSymbol: "hand.raised") get distinct ids
-        self.id = "\(label.lowercased().filter { $0.isLetter || $0.isNumber })-\(sfSymbol)"
+        self.id = "\(label.lowercased().filter { $0.isLetter || $0.isNumber })-\(sfSymbol)-\(arasaacId.map(String.init) ?? "x")"
         self.label = label
         self.sfSymbol = sfSymbol
         self.color = color
@@ -562,9 +561,13 @@ struct WatchReplyView: View {
     }
 
     private func safeSenderName(_ name: String) -> String {
-        name.replacingOccurrences(of: "\u{202E}", with: "")  // RLO
-            .replacingOccurrences(of: "\u{202D}", with: "")  // LRO
-            .replacingOccurrences(of: "\u{200F}", with: "")  // RLM
+        let bidi: [String] = [
+            "\u{202A}", "\u{202B}", "\u{202C}", "\u{202D}", "\u{202E}",  // LRE RLE PDF LRO RLO
+            "\u{200B}", "\u{200C}", "\u{200D}", "\u{200E}", "\u{200F}",  // ZWSP ZWNJ ZWJ LRM RLM
+            "\u{2066}", "\u{2067}", "\u{2068}", "\u{2069}",              // LRI RLI FSI PDI
+            "\u{FEFF}",                                                   // BOM
+        ]
+        return bidi.reduce(name) { $0.replacingOccurrences(of: $1, with: "") }
     }
 }
 
@@ -573,7 +576,7 @@ struct WatchReplyView: View {
 struct WatchAIChatView: View {
     let inputLang: String
     let outputLang: String
-    let translation: WatchTranslation
+    @ObservedObject var translation: WatchTranslation
     let tts: WatchTTS
     @EnvironmentObject var session: WatchAISession
     @State private var messages: [(role: String, text: String)] = []
@@ -581,6 +584,8 @@ struct WatchAIChatView: View {
     @State private var isWaiting     = false
     @State private var showDictation = false
     @State private var dictationText = ""
+    @State private var aiTask: Task<Void, Never>?
+    @State private var translateTask2: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
 
     /// True when input and output languages differ — chat acts as live translator.
@@ -705,6 +710,10 @@ struct WatchAIChatView: View {
                 sendMessage()
             }
         }
+        .onDisappear {
+            aiTask?.cancel()
+            translateTask2?.cancel()
+        }
     }
 
     @MainActor
@@ -721,7 +730,8 @@ struct WatchAIChatView: View {
 
         if isTranslatorMode {
             // Translation mode: translate input lang → output lang, speak result
-            Task { @MainActor in
+            translateTask2?.cancel()
+            translateTask2 = Task { @MainActor in
                 let translated = await translation.translateDirect(text: text, to: outputLang)
                 let result = translated ?? text
                 isWaiting = false
@@ -731,7 +741,8 @@ struct WatchAIChatView: View {
             }
         } else {
             // Same language: regular AI chat response
-            Task { @MainActor in
+            aiTask?.cancel()
+            aiTask = Task { @MainActor in
                 let reply = await session.askAI(text, lang: outputLang) ?? "…"
                 isWaiting = false
                 if messages.count >= 50 { messages.removeFirst() }
@@ -855,7 +866,15 @@ struct WatchSendMessageView: View {
 
                 // Send button — large, full width
                 Button {
-                    let safeTo   = String(contactQuery.prefix(100)).trimmingCharacters(in: .whitespacesAndNewlines)
+                    let safeTo = String(contactQuery.prefix(100))
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .replacingOccurrences(of: "\u{202E}", with: "")  // RLO
+                        .replacingOccurrences(of: "\u{202D}", with: "")  // LRO
+                        .replacingOccurrences(of: "\u{202B}", with: "")  // RLE
+                        .replacingOccurrences(of: "\u{202A}", with: "")  // LRE
+                        .replacingOccurrences(of: "\u{202C}", with: "")  // PDF
+                        .replacingOccurrences(of: "\u{200F}", with: "")  // RLM
+                        .replacingOccurrences(of: "\u{200E}", with: "")
                     let safeBody = String(msgText.prefix(500))
 
                     guard !safeTo.isEmpty, !safeBody.isEmpty else { return }
@@ -865,15 +884,13 @@ struct WatchSendMessageView: View {
                             ["type": "send_message", "to": safeTo, "text": safeBody],
                             errorHandler: { err in NSLog("[WatchSend] Failed: \(err)") }
                         )
-                        Task { @MainActor in
+                        dismissTask?.cancel()
+                        dismissTask = Task { @MainActor in
                             sendStatus = "✓ Sent to \(safeTo)"
                             msgText = ""
                             tts.speak("Message sent")
-                            dismissTask?.cancel()
-                            dismissTask = Task { @MainActor in
-                                try? await Task.sleep(nanoseconds: 1_500_000_000)
-                                dismiss()
-                            }
+                            try? await Task.sleep(nanoseconds: 1_500_000_000)
+                            dismiss()
                         }
                     } else {
                         sendStatus = "⚠ Phone not connected"
@@ -1066,14 +1083,14 @@ struct WatchEmergencyActiveView: View {
                     Text("SENDING IN \(emergency.countdownSecs)s")
                         .font(.headline)
                         .foregroundColor(.red)
+                    Text("\(emergency.countdownSecs)")
+                        .font(.title3)
+                        .foregroundColor(.white.opacity(0.8))
                 } else {
                     Text("HELP COMING")
                         .font(.headline)
                         .foregroundColor(.orange)
                 }
-                Text(emergency.countdownText)
-                    .font(.title3)
-                    .foregroundColor(.white.opacity(0.8))
                 if emergency.severity != .critical {
                     Button("Cancel") {
                         emergency.cancel()

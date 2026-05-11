@@ -16,10 +16,19 @@ final class WatchTranslation: ObservableObject {
 
     private var translateTask: Task<Void, Never>?
 
+    deinit {
+        translateTask?.cancel()
+    }
+
     // Uses the same working chat endpoint as WatchAISession — no dedicated
     // /translate route exists on the portal. A minimal system prompt tells
     // the AI to return only the translation with no explanation.
-    private let chatURL = URL(string: "https://synalux.ai/api/v1/prism-aac/chat")!
+    private let chatURL: URL = {
+        guard let url = URL(string: "https://synalux.ai/api/v1/prism-aac/chat") else {
+            fatalError("[WatchTranslation] Invalid chat URL")
+        }
+        return url
+    }()
 
     // MARK: - Phrase translation (tap-to-speak)
 
@@ -38,10 +47,10 @@ final class WatchTranslation: ObservableObject {
         isTranslating = true
         translateTask = Task { @MainActor [weak self] in
             guard let self else { return }
+            defer { self.isTranslating = false }  // always resets regardless of path
             let translated = await self.translate(text: text, to: toLang)
             guard !Task.isCancelled else { return }
             tts.speak(translated ?? text, language: toLang)
-            self.isTranslating = false
         }
     }
 
@@ -78,6 +87,13 @@ final class WatchTranslation: ObservableObject {
             .replacingOccurrences(of: "<|eot_id|>", with: "")
             .replacingOccurrences(of: "<|start_header_id|>", with: "")
             .replacingOccurrences(of: "<|end_header_id|>", with: "")
+            .replacingOccurrences(of: "<|user|>", with: "")
+            .replacingOccurrences(of: "<|assistant|>", with: "")
+            .replacingOccurrences(of: "<|endoftext|>", with: "")
+            .replacingOccurrences(of: "<s>", with: "")
+            .replacingOccurrences(of: "</s>", with: "")
+            .replacingOccurrences(of: "<|end_of_turn|>", with: "")
+            .replacingOccurrences(of: "<|start_of_turn|>", with: "")
 
         // Chat endpoint returns SSE (text/event-stream). Collect all
         // data: {"choices":[{"delta":{"content":"..."}}]} chunks until [DONE].
