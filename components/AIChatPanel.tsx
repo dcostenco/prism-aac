@@ -246,7 +246,7 @@ export default function AIChatPanel() {
     <section
       aria-label={t('ai_chat_title')}
       aria-busy={loading}
-      className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme"
+      className="flex-[3] min-h-0 flex flex-col surface-bar border-y border-theme"
       data-testid="ai-chat-panel"
       data-state="expanded"
     >
