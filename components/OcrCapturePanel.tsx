@@ -69,7 +69,7 @@ export default function OcrCapturePanel() {
   const speakNow = useCallback(() => {
     if (!result) return;
     tapFeedback();
-    aacSpeak(result.text, speechRate, speechVolume, activeTone);
+    aacSpeak(result.text, speechRate, speechVolume, activeTone, true);
   }, [result, speechRate, speechVolume, activeTone]);
 
   if (sidePanel !== 'ocr-capture') return null;

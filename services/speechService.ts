@@ -124,7 +124,7 @@ function clearResumeWorkaround() {
 
 function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('prism-aac-auth-token') || null;
+  return sessionStorage.getItem('prism-aac-auth-token') || null;
 }
 
 function isPaidTier(): boolean {

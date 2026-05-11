@@ -541,9 +541,20 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   // streaming source. Returns true (claims success) so speechService
   // doesn't fall through to Web Speech tier — the prior call is the
   // one playing, no fallback needed.
+  // Abort all in-flight fetches when the caller explicitly interrupts.
+  // Without this, a stale TTS fetch (e.g. OCR Speak while main Speak fires)
+  // completes after the interrupt and its decodeAndPlay races or overlaps
+  // with the new audio — two simultaneous AudioBufferSources → chipmunk.
+  if (interrupt) {
+    activeControllers.forEach((c) => c.abort());
+    activeControllers.clear();
+    stopAzurePlayback();
+    if (typeof window !== 'undefined') window.speechSynthesis?.cancel();
+  }
+
   const nowMs = Date.now();
   if (text === lastSpokenText && nowMs - lastSpokenAt < DEDUP_MS) {
-    console.log(`[AzureTTS] DEDUP — same text "${text.slice(0, 30)}" within ${nowMs - lastSpokenAt}ms; keeping prior playback alive`);
+    if (process.env.NODE_ENV !== 'production') console.log(`[AzureTTS] DEDUP — same text "${text.slice(0, 30)}" within ${nowMs - lastSpokenAt}ms; keeping prior playback alive`);
     return true;
   }
   lastSpokenText = text;
