@@ -71,6 +71,10 @@ const T: Record<string, Partial<Record<SupportedLanguage, string>>> = {
   // ru/uk: infinitive "to" has no equivalent in Russian/Ukrainian (bare infinitive).
   // "К" / "До" are directional prepositions handled by AI-refine when needed.
   'cw-to':        { ro: 'La', es: 'A', fr: 'À', pt: 'Para', de: 'Zu', ru: '', uk: '', ja: 'へ', ko: '에', zh: '到', ar: 'إلى' },
+  // "vreau să" (RO: "I want to") — explicit override because clinicalVocabulary has a
+  // positional misalignment that maps "vreau să" → "нравится" (like) instead of "хочу" (want).
+  // Since phraseTranslations runs before clinical vocab in dict-build, this takes precedence.
+  'cw-want-to':   { ro: 'Vreau să', es: 'Quiero', fr: 'Je veux', pt: 'Quero', de: 'Ich will', ru: 'Я хочу', uk: 'Я хочу', ja: 'したい', ko: '하고 싶어요', zh: '我想', ar: 'أريد أن' },
   'cw-for':       { ro: 'Pentru', es: 'Para', fr: 'Pour', pt: 'Para', de: 'Für', ru: 'Для', uk: 'Для', ja: 'のために', ko: '위해', zh: '为了', ar: 'لأجل' },
   'cw-with':      { ro: 'Cu', es: 'Con', fr: 'Avec', pt: 'Com', de: 'Mit', ru: 'С', uk: 'З', ja: 'と一緒に', ko: '같이', zh: '跟', ar: 'مع' },
   'cw-at':        { ro: 'La', es: 'En', fr: 'À', pt: 'Em', de: 'Bei', ru: 'В', uk: 'В', ja: 'で', ko: '에서', zh: '在', ar: 'في' },

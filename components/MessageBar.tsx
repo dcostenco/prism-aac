@@ -165,7 +165,11 @@ export default function MessageBar() {
     return () => {
       if (translationSpeakTimer.current) clearTimeout(translationSpeakTimer.current);
     };
-  }, [text, translated, speechRate, speechVolume, activeTone]);
+  // NOTE: `translated` intentionally excluded from deps — including it would
+  // restart the 2s timer when AI-refine updates the translation, causing a
+  // second auto-speak. The timer callback reads translated state at fire time.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, speechRate, speechVolume, activeTone]);
 
   // Debounced background suggestion — child must explicitly tap to accept,
   // never auto-applied.

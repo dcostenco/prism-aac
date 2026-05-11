@@ -41,6 +41,7 @@ export const DEFAULT_PHRASES: Phrase[] = [
 
   // Core Words — Verbs
   p('cw-want', 'core-verbs', 'Want', 0),
+  p('cw-want-to', 'core-verbs', 'Want to', 0),  // 2-word override for RO→RU dict (fixes "vreau să" → нравится bug)
   p('cw-like', 'core-verbs', 'Like', 1),
   p('cw-have', 'core-verbs', 'Have', 2),
   p('cw-do', 'core-verbs', 'Do', 3),
