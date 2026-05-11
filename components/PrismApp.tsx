@@ -60,14 +60,21 @@ const PROVIDER_LABEL: Record<string, string> = {
   facetime: 'FaceTime',
 };
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
-  state: { error: Error | null } = { error: null };
-  static getDerivedStateFromError(error: Error) { return { error }; }
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; stack: string }> {
+  state: { error: Error | null; stack: string } = { error: null, stack: '' };
+  static getDerivedStateFromError(error: Error) { return { error, stack: '' }; }
+  componentDidCatch(error: Error, info: { componentStack: string }) {
+    const stack = info.componentStack.slice(0, 500);
+    console.error('[CRASH]', error.message, stack);
+    this.setState({ stack });
+  }
   render() {
     if (this.state.error) {
       return (
-        <div className="h-svh flex flex-col bg-white p-4">
-          <p className="text-[#F44336] text-lg font-bold mb-2">Error — Emergency AAC Mode</p>
+        <div className="h-svh flex flex-col bg-white p-4 overflow-auto">
+          <p className="text-[#F44336] text-lg font-bold mb-1">Error — Emergency AAC Mode</p>
+          <p className="text-[#F44336] text-xs mb-1 font-mono break-all">{this.state.error.message}</p>
+          <pre className="text-[8px] text-gray-500 mb-2 whitespace-pre-wrap break-all">{this.state.stack}</pre>
           <input
             id="emergency-input"
             type="text"
