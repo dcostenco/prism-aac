@@ -8,7 +8,7 @@ import { aacSpeak } from '@/services/aacSpeak';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
-import { registerAISubmit, clearAISubmit, triggerAISubmit } from '@/services/aiChatBridge';
+import { registerAISubmit, clearAISubmit } from '@/services/aiChatBridge';
 import { checkCrisisSafety } from '@/services/crisisSafetyFilter';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
@@ -31,7 +31,7 @@ interface ChatMessage {
 export default function AIChatPanel() {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { text, appendText, autoSpeak, soundEnabled } = useMessageStore();
-  const { speechRate, speechVolume, language, outputLanguage } = useSettingsStore();
+  const { speechRate, speechVolume, language } = useSettingsStore();
   const { t, ttsCode } = useT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const MAX_MESSAGES = 50;
@@ -62,16 +62,16 @@ export default function AIChatPanel() {
     const rows = container.querySelectorAll<HTMLElement>(':scope > div');
 
     if (justStarted && rows.length > 0) {
-      // Stream just started — scroll the USER message to the top so the
-      // conversation reads: [user question at top] → [AI response streams below].
-      // Scrolling the AI row instead hides the question above the fold.
-      const userRow = rows[Math.max(0, rows.length - 2)];
-      userRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      // Stream just started — scroll the AI reply (last row) to the TOP
+      // immediately so the user reads from the beginning as text streams in,
+      // not from the bottom where only the tail is visible.
+      const aiRow = rows[rows.length - 1];
+      aiRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     } else if (justFinished && rows.length > 0) {
-      // Stream done — re-anchor to the user message so the full exchange
-      // is readable without manual scrolling.
-      const userRow = rows[Math.max(0, rows.length - 2)];
-      userRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      // Stream done — re-anchor to the top of the AI reply in case it
+      // shifted during streaming (panel resize, word wrap reflow, etc.).
+      const aiRow = rows[rows.length - 1];
+      aiRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     } else if (messages.length > 0 && !loading) {
       // New user message just added (no active stream) — show it at top.
       const userRow = rows[Math.max(0, rows.length - 2)];
@@ -157,8 +157,7 @@ export default function AIChatPanel() {
           scheduled = true;
           requestAnimationFrame(flush);
         }
-      // In translate mode (RU→EN etc.) respond in the OUTPUT language.
-      }, language !== outputLanguage ? outputLanguage : language);
+      }, language);
       flush();
     } catch (e: unknown) {
       if (askController.signal.aborted) {
@@ -230,9 +229,6 @@ export default function AIChatPanel() {
         if (!voiceRef.current) return;  // panel closed while awaiting
         appendText((fixed || t).trim() + ' ');
         setInterim('');
-        // Auto-submit voice input to AI immediately — no need to press Speak.
-        // Short delay lets appendText commit to store before handleAsk reads it.
-        setTimeout(() => { if (activeRef.current) triggerAISubmit(); }, 50);
       },
       onError: () => {
         setListening(false);

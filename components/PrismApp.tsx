@@ -60,19 +60,14 @@ const PROVIDER_LABEL: Record<string, string> = {
   facetime: 'FaceTime',
 };
 
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; info: string }> {
-  state: { error: Error | null; info: string } = { error: null, info: '' };
-  static getDerivedStateFromError(error: Error) { return { error, info: '' }; }
-  componentDidCatch(error: Error, info: { componentStack: string }) {
-    console.error('[ErrorBoundary] CRASH:', error.message, info.componentStack.slice(0, 600));
-    this.setState({ info: info.componentStack.slice(0, 200) });
-  }
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
   render() {
     if (this.state.error) {
       return (
         <div className="h-svh flex flex-col bg-white p-4">
           <p className="text-[#F44336] text-lg font-bold mb-2">Error — Emergency AAC Mode</p>
-          <p className="text-[#F44336] text-xs mb-2 font-mono break-all">{this.state.error.message}</p>
           <input
             id="emergency-input"
             type="text"
@@ -418,7 +413,7 @@ export default function PrismApp() {
               (banner / message / predictions / categories) so the
               cell-grid canvas + bigger keyboards have room to breathe.
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
-          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <GreetingBanner />}
+          {sidePanel !== 'math' && <GreetingBanner />}
           {sidePanel !== 'math' && <MessageBar />}
           {!PANELS_WITHOUT_QWERTY.has(sidePanel) && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
           <MathPanel />
@@ -432,15 +427,16 @@ export default function PrismApp() {
           <OcrCapturePanel />
           <PictureEditorPanel />
           <MusicComposerPanel />
-          {/* CategoryPanel stays mounted so its store state is preserved
-              across AI Chat open/close. It renders nothing when inactive. */}
+          {/* Category mode: full-screen cards (Image #32 pattern).
+              Keyboard is a pull-up drawer toggled from inside CategoryPanel.
+              All other modes: CategoryPanel stacks above keyboard as before. */}
           {sidePanel !== 'math' && <CategoryPanel />}
           {showQwerty && (
             // flex-row so the sidebar column doesn't get covered by keyboard keys.
             // In category mode the CategoryPanel sidebar is clamp(72px,9vw,96px) wide;
             // the spacer below mirrors it so the keyboard stops at the same x-boundary.
             <div
-              className={`flex flex-row min-h-[clamp(280px,38svh,440px)] ${sidePanel === 'ai-chat' ? 'flex-none shrink-0' : 'flex-1'}`}
+              className="flex-1 flex flex-row min-h-[clamp(280px,38svh,440px)]"
               data-testid="keyboard-shell"
             >
               <div className="flex-1 flex flex-col">

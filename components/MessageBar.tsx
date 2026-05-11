@@ -439,11 +439,9 @@ export default function MessageBar() {
   return (
     <div
       className={`flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] py-[clamp(0.3rem,0.6svh,0.6rem)] shrink-0 relative border border-theme ${
-        sidePanel === 'ai-chat'
-          ? 'min-h-[clamp(56px,9svh,80px)]'
-          : isMessagingMode
-            ? 'min-h-[clamp(124px,22svh,180px)]'
-            : 'min-h-[clamp(88px,16svh,132px)]'
+        isMessagingMode
+          ? 'min-h-[clamp(124px,22svh,180px)]'
+          : 'min-h-[clamp(88px,16svh,132px)]'
       }`}
       data-messaging-mode={isMessagingMode ? '1' : '0'}
     >
@@ -477,19 +475,15 @@ export default function MessageBar() {
       )}
 
       <div className={`flex-1 flex flex-col justify-center overflow-hidden ${
-          sidePanel === 'ai-chat'
-            ? 'min-h-[clamp(32px,6svh,48px)]'
-            : isMessagingMode
-              ? 'min-h-[clamp(96px,18svh,144px)]'
-              : 'min-h-[clamp(72px,13svh,108px)]'
+          isMessagingMode
+            ? 'min-h-[clamp(96px,18svh,144px)]'
+            : 'min-h-[clamp(72px,13svh,108px)]'
         }`}>
         <div
           className={`text-[clamp(1rem,2.5vw,1.5rem)] leading-snug break-words text-primary whitespace-normal ${
-            sidePanel === 'ai-chat'
-              ? 'line-clamp-1 min-h-[1.5em]'
-              : isMessagingMode
-                ? 'line-clamp-4 min-h-[5em]'
-                : 'line-clamp-3 min-h-[3.75em]'
+            isMessagingMode
+              ? 'line-clamp-4 min-h-[5em]'
+              : 'line-clamp-3 min-h-[3.75em]'
           }`}
           role="status"
           aria-live="polite"

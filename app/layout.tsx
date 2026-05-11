@@ -34,7 +34,7 @@ export const viewport: Viewport = {
 // Auto-bumped on every Vercel deploy via NEXT_PUBLIC_BUILD_ID (= short git SHA).
 // Local dev falls back to a static string so repeated hot-reloads don't
 // clear the cache on every refresh.
-const SW_KILLSWITCH_VERSION = process.env.NEXT_PUBLIC_BUILD_ID || '2026-05-11-crash-fix';
+const SW_KILLSWITCH_VERSION = process.env.NEXT_PUBLIC_BUILD_ID || '2026-05-11-tts-revert';
 
 // Emergency reset URL — the user's tracking calibration left them
 // unable to reach Settings to disable. Visiting any page with
