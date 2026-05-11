@@ -162,20 +162,18 @@ export default function PredictionBar() {
   // then refine with predictions if there's typed text.
   const prevLangRef = useRef(language);
   useEffect(() => {
-    let mounted = true;
     const defaults = getPredictionsForLanguage(language);
     if (language !== prevLangRef.current) {
       prevRef.current = defaults;
-      queueMicrotask(() => { if (mounted) setDisplayed(defaults); });
+      setDisplayed(defaults);
       prevLangRef.current = language;
     }
     if (!text.trim()) {
       prevRef.current = defaults;
-      queueMicrotask(() => { if (mounted) setDisplayed(defaults); });
-      return () => { mounted = false; };
+      setDisplayed(defaults);
+      return;
     }
     updatePredictions(text, language);
-    return () => { mounted = false; };
   }, [text, updatePredictions, language]);
 
   // Merge AI completion into the prediction list as the leftmost tile.

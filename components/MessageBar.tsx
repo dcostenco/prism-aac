@@ -128,9 +128,9 @@ export default function MessageBar() {
   }, []);
 
   useEffect(() => {
-    let mounted = true;
-    queueMicrotask(() => { if (mounted) setTranslated(null); });
+    setTranslated(null);
     if (language === outputLanguage || !text.trim()) return;
+    let mounted = true;
     let cancelled = false;
     const instant = translateWithAIRefine(
       text.trim(), language, outputLanguage,
