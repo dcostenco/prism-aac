@@ -32,7 +32,7 @@ const FETCH_TIMEOUT_MS = 8_000;
 
 function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('prism-aac-auth-token') || null;
+  return sessionStorage.getItem('prism-aac-auth-token') || null;
 }
 
 /**
