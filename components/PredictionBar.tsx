@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback, memo } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -98,7 +98,7 @@ function computeStableSlots(prev: string[], predictions: string[]): string[] {
   return next;
 }
 
-function PredictionTile({ word, color, onTap }: { word: string; color: string; onTap: (w: string) => void }) {
+const PredictionTile = memo(function PredictionTile({ word, color, onTap }: { word: string; color: string; onTap: (w: string) => void }) {
   console.count(`[render] PredictionTile:${word}`);
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
@@ -128,7 +128,7 @@ function PredictionTile({ word, color, onTap }: { word: string; color: string; o
       <span className="truncate w-full text-center text-[clamp(0.6rem,1.8vw,1rem)] font-bold shrink-0 leading-tight">{word}</span>
     </button>
   );
-}
+});
 
 export default function PredictionBar() {
   console.count('[render] PredictionBar');
@@ -238,7 +238,7 @@ export default function PredictionBar() {
     setDisplayed(next);
   }, [predictions, aiCompletion, text]);
 
-  const handleTap = (word: string) => {
+  const handleTap = useCallback((word: string) => {
     tapFeedback();
     const midWord = text.length > 0 && !text.endsWith(' ');
     const words = text.trim().split(/\s+/).filter(Boolean);
@@ -264,7 +264,7 @@ export default function PredictionBar() {
     learnWord(word.toLowerCase(), previousWord?.toLowerCase(), prevPrevWord?.toLowerCase());
     const fullPhrase = isCompletion ? [...words.slice(0, -1), word].join(' ') : [...words, word].join(' ');
     aacSpeak(fullPhrase, speechRate, speechVolume);
-  };
+  }, [text, learnWord, speechRate, speechVolume, language]);
 
   // ── Contact-search mode — replaces word predictions while messaging ──
   if (sidePanel === 'aac-chat' && !activeContactId) {
