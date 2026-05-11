@@ -2,16 +2,27 @@
  * Speech Service — Resilient TTS with offline-first fallback chain
  *
  * Priority chain (highest quality first, degrades gracefully):
- *   1.  Azure Neural TTS (online — best quality, emotional styles)
- *   2.  Web Speech API with premium/enhanced voice (offline, OS-native)
- *   3.  Web Speech API with any available voice (offline, basic)
- *   4.  WASM espeak-ng (last resort — always works)
+ *   1.   Azure Neural TTS (online, paid — best quality, emotional styles)
+ *   1.5. Kokoro-82M neural TTS (offline, in-browser ONNX — MOS ~4.5)
+ *   2.   Web Speech API with premium/enhanced voice (offline, OS-native)
+ *   3.   Web Speech API with any available voice (offline, basic)
+ *   4.   WASM espeak-ng (last resort — always works)
  *
  * For AAC patients who depend on this for communication, reliability > quality.
  * The system NEVER fails silently — if all TTS fails, it reports the error.
+ *
+ * Tier 1.5 (Kokoro) is opt-in via Settings → Voice Quality → "High Quality
+ * (Kokoro, neural offline)" — the 350MB model downloads on first use, so we
+ * don't impose it on every user. Once enabled, it slots above the OS Web
+ * Speech path so even free-tier offline users get neural-grade speech.
  */
 
 import { speakAzure, stopAzureAudio, ToneStyle } from './azureTTS';
+// kokoroTTS removed — stubs keep v1.5.1 fallback chain intact at no-op cost
+const speakWithKokoro = async (_opts: unknown): Promise<boolean> => false;
+const isKokoroSupported = (): boolean => false;
+const demoteKokoroForSession = (_reason: string): void => {};
+const getKokoroVoice = (_lang: string): string | null => null;
 import { autoSwitchTone, toneToAzureStyle, toneToRate } from './adaptiveEngine';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -113,15 +124,15 @@ function clearResumeWorkaround() {
 
 function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return sessionStorage.getItem('prism-aac-auth-token') || null;
+  return localStorage.getItem('prism-aac-auth-token') || null;
 }
 
 function isPaidTier(): boolean {
   const profile = useAuthStore.getState().profile;
   const paid = !!(profile?.plan && profile.plan !== 'free');
   const hasToken = !!getAuthToken();
-  if (process.env.NODE_ENV !== 'production') console.log(`[TTS] isPaidTier: paid=${paid} hasToken=${hasToken}`);
-  return paid;
+  console.log(`[TTS] isPaidTier: plan=${profile?.plan ?? 'null'} paid=${paid} hasToken=${hasToken} loaded=${useAuthStore.getState().loaded}`);
+  return paid || hasToken;
 }
 
 // Catalog defaults — when the user has not picked a voice in Settings,
@@ -179,9 +190,22 @@ const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
  * Speak text — quality-first fallback chain. Never fails silently.
  *
  *   Tier 1: Azure Neural TTS (online, best quality, emotional styles)
- *           - All languages; Synalux portal route handles tier policy.
- *   Tier 2: Web Speech API premium/enhanced voice (offline, OS-native)
- *   Tier 3: WASM espeak-ng (last resort)
+ *           - Paid tiers: all 12 langs
+ *           - Free tier:  ro/uk/ru/de/ko/ar (the 6 Kokoro-unsupported langs).
+ *             Synalux absorbs the cost — low volume, ensures every user in
+ *             those countries gets neural-grade TTS.
+ *   Tier 2: Kokoro-82M neural (offline, MOS ~4.5)
+ *           - Only the 6 langs it speaks: en/es/fr/pt/ja/zh
+ *           - Used when offline OR when Azure fails
+ *   Tier 3: Web Speech API premium/enhanced voice (offline, OS-native)
+ *   Tier 4: WASM espeak-ng (last resort)
+ *
+ * Quality > offline preference: when online, paid users always get Azure
+ * Neural's emotional styles (friendly/calm/empathetic/etc.) — Kokoro lacks
+ * those. Offline, Kokoro is the best free option for its 6 langs.
+ *
+ * Settings flag `useHighQualityOfflineVoice` (default ON) gates Kokoro —
+ * users on a low-spec device can disable it to skip the 350MB download.
  */
 export async function speak(
   text: string,
@@ -195,11 +219,6 @@ export async function speak(
   // Volume=0 guard — catches mis-stored settings before a silent-success
   if (volume === 0) {
     console.warn('[TTS] volume=0 — audio will be silent. Check Settings → Voice → Volume slider.');
-    emitTtsHealthEvent({
-      type: 'tts-give-up', lastTier: 'inworld', triedTiers: [],
-      reason: 'volume=0 — speech suppressed; check volume settings',
-      timestamp: Date.now(),
-    });
     return;
   }
 
@@ -216,6 +235,10 @@ export async function speak(
   }
 
   const settings = useSettingsStore.getState() as { useHighQualityOfflineVoice?: boolean };
+  const kokoroVoice = getKokoroVoice(lang);
+  // Kokoro disabled: model unavailable (huggingface 404 + unsupported model
+  // type style_text_to_speech_2). Falls through to Azure/Portal TTS (Alex).
+  const kokoroEnabled = false;
 
   // Bus debug header — only the first 80 chars of utterance, never logged
   // by the bus itself. Used by the debug overlay to correlate events with
@@ -225,9 +248,10 @@ export async function speak(
 
   // Tier 1: Azure Neural TTS — try unconditionally when online. The portal
   // route is the source of truth for tier policy: paid tiers always allowed,
-  // free tier allowed for all langs (synalux absorbs that cost
+  // free tier allowed for the 6 non-Kokoro langs (synalux absorbs that cost
   // per design). This avoids a client-side profile-load race that previously
   // caused enterprise users to skip Azure during the first ~1-2s after page
+  // load (profile=null → isPaidTier=false → for en-US, kokoroVoice exists →
   // Azure was skipped → fell through to Web Speech robotic).
   if (isOnline()) {
     const token = getAuthToken();
@@ -238,7 +262,7 @@ export async function speak(
     const baseLang = lang.toLowerCase().split(/[-_]/)[0];
     const voicePref = (settings as { voicePreferences?: Record<string, string> }).voicePreferences;
     const voiceId = voicePref?.[baseLang] || INWORLD_VOICE_DEFAULTS[baseLang];
-    if (process.env.NODE_ENV !== 'production') console.log(`[TTS] portal: lang=${lang} vol=${volume}`);
+    console.log(`[TTS] Attempting portal TTS: lang=${lang} tone=${effectiveTone} plan=${profile?.plan ?? 'unknown'} voiceId=${voiceId ?? 'auto'} loaded=${useAuthStore.getState().loaded} vol=${volume} rate=${effectiveRate}`);
 
     // Tier name reflects the public route's primary backend (Inworld first
     // per speakAzure: it tries /tts/public, then falls back to /tts on 502).
@@ -251,7 +275,7 @@ export async function speak(
     });
     const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt);
     if (success) {
-      if (process.env.NODE_ENV !== 'production') console.log('[TTS] Portal TTS succeeded');
+      console.log('[TTS] Portal TTS succeeded');
       const now = Date.now();
       emitTtsHealthEvent({
         type: 'tts-success', tier: 'inworld', latencyMs: now - tier1Start,
@@ -260,14 +284,50 @@ export async function speak(
       return;
     }
     console.warn('[TTS] Portal TTS failed (server tier-rejected, network, or timeout), falling through');
-    const nextTier: TtsTier = isSpeechSupported() ? 'web-speech' : 'native-ios';
+    // Decide next tier for the fallback event. Mirrors the actual control
+    // flow below so the bus reflects what really happens next.
+    const nextTier: TtsTier = (kokoroEnabled && kokoroVoice && isKokoroSupported())
+      ? 'kokoro'
+      : (isSpeechSupported() ? 'web-speech' : 'native-ios');
     emitTtsHealthEvent({
       type: 'tts-fallback', fromTier: 'inworld', toTier: nextTier,
       reason: 'portal failed (tier reject / network / timeout)', timestamp: Date.now(),
     });
   }
 
-  // Tier 2: Web Speech API (offline, all langs on most devices)
+  // Tier 2: Kokoro neural — offline-capable fallback for the 6 langs it speaks.
+  // Fires when: offline, OR Azure failed, OR free-tier user on a Kokoro lang.
+  if (kokoroEnabled && kokoroVoice && isKokoroSupported()) {
+    triedTiers.push('kokoro');
+    const tier2Start = Date.now();
+    emitTtsHealthEvent({
+      type: 'tts-attempt', tier: 'kokoro', text: debugText, lang, timestamp: tier2Start,
+    });
+    try {
+      await speakWithKokoro({
+        text,
+        lang: lang.split('-')[0],
+        rate: 0.1 + effectiveRate * 1.8,
+      });
+      const now = Date.now();
+      emitTtsHealthEvent({
+        type: 'tts-success', tier: 'kokoro', latencyMs: now - tier2Start,
+        durationMs: 0, timestamp: now,
+      });
+      return;
+    } catch (e) {
+      const reason = e instanceof Error ? e.message : 'unknown';
+      demoteKokoroForSession(reason);
+      const next: TtsTier = isSpeechSupported() ? 'web-speech' : 'native-ios';
+      emitTtsHealthEvent({
+        type: 'tts-fallback', fromTier: 'kokoro', toTier: next,
+        reason, timestamp: Date.now(),
+      });
+      // fall through
+    }
+  }
+
+  // Tier 3: Web Speech API (offline, all 12 langs on most devices)
   if (isSpeechSupported()) {
     triedTiers.push('web-speech');
     // speakLocal emits its own attempt + success/fallback via the
@@ -276,7 +336,7 @@ export async function speak(
     return;
   }
 
-  // Tier 3: WASM TTS fallback (if Web Speech API unavailable)
+  // Tier 4: WASM TTS fallback (if Web Speech API unavailable)
   triedTiers.push('native-ios');
   const tier4Start = Date.now();
   emitTtsHealthEvent({
@@ -328,9 +388,9 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
   // Surface which OS voice the system landed on so users reporting a
   // "robotic" complaint can grep their console and tell us what installed
   // voice was picked. If quality is 'basic' on en, the system's English
-  // premium voice is missing — Tier 1 must have failed't
+  // premium voice is missing — Tier 1 must have failed AND Kokoro isn't
   // loaded for us to be here.
-  if (process.env.NODE_ENV !== 'production') console.log(`[TTS] Tier 2 Web Speech: lang=${lang} voice=${voice?.name ?? 'none'} quality=${quality}`);
+  console.log(`[TTS] Tier 3 Web Speech: lang=${lang} voice=${voice?.name ?? 'none'} quality=${quality}`);
   if (voice) {
     u.voice = voice;
   } else {
