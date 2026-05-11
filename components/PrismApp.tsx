@@ -64,13 +64,15 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   state: { error: Error | null; info: string } = { error: null, info: '' };
   static getDerivedStateFromError(error: Error) { return { error, info: '' }; }
   componentDidCatch(error: Error, info: { componentStack: string }) {
-    console.error('[ErrorBoundary] CRASH:', error.message, info.componentStack.slice(0, 400));
+    console.error('[ErrorBoundary] CRASH:', error.message, info.componentStack.slice(0, 600));
+    this.setState({ info: info.componentStack.slice(0, 200) });
   }
   render() {
     if (this.state.error) {
       return (
         <div className="h-svh flex flex-col bg-white p-4">
           <p className="text-[#F44336] text-lg font-bold mb-2">Error — Emergency AAC Mode</p>
+          <p className="text-[#F44336] text-xs mb-2 font-mono break-all">{this.state.error.message}</p>
           <input
             id="emergency-input"
             type="text"
@@ -430,9 +432,9 @@ export default function PrismApp() {
           <OcrCapturePanel />
           <PictureEditorPanel />
           <MusicComposerPanel />
-          {/* Category mode: full-screen cards. When AI Chat is open, hide
-              CategoryPanel so the chat gets all available vertical space. */}
-          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <CategoryPanel />}
+          {/* CategoryPanel stays mounted so its store state is preserved
+              across AI Chat open/close. It renders nothing when inactive. */}
+          {sidePanel !== 'math' && <CategoryPanel />}
           {showQwerty && (
             // flex-row so the sidebar column doesn't get covered by keyboard keys.
             // In category mode the CategoryPanel sidebar is clamp(72px,9vw,96px) wide;
