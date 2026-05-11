@@ -8,7 +8,7 @@ import { aacSpeak } from '@/services/aacSpeak';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
-import { registerAISubmit, clearAISubmit } from '@/services/aiChatBridge';
+import { registerAISubmit, clearAISubmit, triggerAISubmit } from '@/services/aiChatBridge';
 import { checkCrisisSafety } from '@/services/crisisSafetyFilter';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
@@ -229,6 +229,8 @@ export default function AIChatPanel() {
         if (!voiceRef.current) return;  // panel closed while awaiting
         appendText((fixed || t).trim() + ' ');
         setInterim('');
+        // Auto-submit to AI after text lands in the store
+        setTimeout(() => { if (activeRef.current) triggerAISubmit(); }, 80);
       },
       onError: () => {
         setListening(false);
