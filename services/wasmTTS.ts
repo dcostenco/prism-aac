@@ -547,19 +547,23 @@ async function speakWithBeeps(
 
   // Wait for the full sequence to finish
   const totalDuration = (offset - ctx.currentTime) * 1000;
-  await new Promise<void>((resolve) => {
-    activeBeepTimeout = setTimeout(() => {
-      activeBeepTimeout = null;
-      resolve();
-    }, totalDuration + 50);
-
-    // If aborted while waiting, resolve immediately
-    signal.addEventListener('abort', () => {
-      if (activeBeepTimeout) {
-        clearTimeout(activeBeepTimeout);
+  try {
+    await new Promise<void>((resolve) => {
+      activeBeepTimeout = setTimeout(() => {
         activeBeepTimeout = null;
-      }
-      resolve();
-    }, { once: true });
-  });
+        resolve();
+      }, totalDuration + 50);
+
+      // If aborted while waiting, resolve immediately
+      signal.addEventListener('abort', () => {
+        if (activeBeepTimeout) {
+          clearTimeout(activeBeepTimeout);
+          activeBeepTimeout = null;
+        }
+        resolve();
+      }, { once: true });
+    });
+  } finally {
+    try { masterGain.disconnect(); } catch { /* already disconnected */ }
+  }
 }

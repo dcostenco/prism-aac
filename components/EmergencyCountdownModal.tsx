@@ -16,6 +16,19 @@ export default function EmergencyCountdownModal() {
     const { phase, phrase, severity, countdown, reset } = useEmergencyStore();
     const [pinInput, setPinInput] = useState('');
     const [pinError, setPinError] = useState(false);
+    const [pinAttempts, setPinAttempts] = useState(0);
+    const [pinLockedUntil, setPinLockedUntil] = useState(0);
+    const isLocked = Date.now() < pinLockedUntil;
+
+    // Timer to force re-render while locked so countdown display updates
+    useEffect(() => {
+        if (!isLocked) return;
+        const id = setInterval(() => {
+            if (Date.now() >= pinLockedUntil) clearInterval(id);
+            else setPinAttempts(a => a); // force re-render
+        }, 1000);
+        return () => clearInterval(id);
+    }, [isLocked, pinLockedUntil]);
 
     // Get caregiver PIN hash from settings
     const caregiverPinHash = useSettingsStore(s => s.caregiverPinHash);
@@ -24,10 +37,14 @@ export default function EmergencyCountdownModal() {
     if (phase === 'idle' || phase === 'cancelled') return null;
 
     const handleCancel = async () => {
+        if (isLocked) return;
         if (requiresPin) {
             const entered = pinInput.trim();
             const ok = entered ? await verifyPin(entered, caregiverPinHash!) : false;
             if (!ok) {
+                const next = pinAttempts + 1;
+                setPinAttempts(next);
+                if (next >= 3) setPinLockedUntil(Date.now() + next * 10_000); // 30s, 40s, 50s...
                 setPinError(true);
                 setPinInput('');
                 setTimeout(() => setPinError(false), 2000);
@@ -108,6 +125,11 @@ export default function EmergencyCountdownModal() {
                         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
                             Caregiver PIN required to cancel
                         </div>
+                        {isLocked && (
+                            <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px' }}>
+                                Too many attempts — wait {Math.ceil((pinLockedUntil - Date.now()) / 1000)}s
+                            </div>
+                        )}
                         <input
                             type="password"
                             inputMode="numeric"
@@ -116,6 +138,7 @@ export default function EmergencyCountdownModal() {
                             onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
                             onKeyDown={e => { if (e.key === 'Enter') void handleCancel(); }}
                             placeholder="Enter PIN"
+                            disabled={isLocked}
                             style={{
                                 border: `2px solid ${pinError ? '#dc2626' : '#d1d5db'}`,
                                 borderRadius: '8px', padding: '8px 12px',
@@ -134,10 +157,12 @@ export default function EmergencyCountdownModal() {
                     {!isCritical && phase === 'countdown' && (
                         <button
                             onClick={() => { void handleCancel(); }}
+                            disabled={isLocked}
                             style={{
                                 padding: '12px 28px', borderRadius: '10px',
                                 background: '#f3f4f6', border: '2px solid #d1d5db',
-                                fontSize: '16px', fontWeight: 600, cursor: 'pointer', color: '#374151',
+                                fontSize: '16px', fontWeight: 600, cursor: isLocked ? 'not-allowed' : 'pointer', color: '#374151',
+                                opacity: isLocked ? 0.5 : 1,
                             }}
                         >
                             Cancel

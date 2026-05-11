@@ -3,8 +3,21 @@
  * PinPad — numeric PIN entry for caregiver authentication.
  * Used by SettingsModal to gate access to caregiver-only settings.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { hashPin, verifyPin } from '@/lib/pinCrypto';
+
+const SESSION_KEY = 'prism-pin-lockout';
+
+function getLockoutState(): { attempts: number; lockedUntil: number } {
+    try {
+        const raw = sessionStorage.getItem(SESSION_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch {}
+    return { attempts: 0, lockedUntil: 0 };
+}
+function saveLockoutState(s: { attempts: number; lockedUntil: number }) {
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch {}
+}
 
 interface Props {
     onVerify: (verified: boolean) => void;
@@ -18,11 +31,24 @@ export default function PinPad({ onVerify, pinHash, onSetPin }: Props) {
     const [setupMode, setSetupMode] = useState(!pinHash && !!onSetPin);
     const [confirmPin, setConfirmPin] = useState('');
     const [setupStep, setSetupStep] = useState<'enter' | 'confirm'>('enter');
-    const [attempts, setAttempts] = useState(0);
-    const [lockedUntil, setLockedUntil] = useState(0);
+    const [lockState, setLockState] = useState(getLockoutState);
+    const isLocked = Date.now() < lockState.lockedUntil;
+    const lockSecondsLeft = Math.ceil((lockState.lockedUntil - Date.now()) / 1000);
 
-    const isLocked = Date.now() < lockedUntil;
-    const lockSecondsLeft = Math.ceil((lockedUntil - Date.now()) / 1000);
+    // Countdown interval: force re-render every second while locked so the
+    // displayed countdown stays accurate and the UI unlocks automatically.
+    useEffect(() => {
+        if (!isLocked) return;
+        const id = setInterval(() => {
+            if (Date.now() >= lockState.lockedUntil) {
+                clearInterval(id);
+                setLockState(s => ({ ...s, lockedUntil: 0 })); // force re-render to unlock
+            } else {
+                setLockState(s => ({ ...s })); // force re-render to update seconds
+            }
+        }, 1000);
+        return () => clearInterval(id);
+    }, [isLocked, lockState.lockedUntil]);
 
     const press = (d: string) => {
         if (isLocked) return;
@@ -54,14 +80,14 @@ export default function PinPad({ onVerify, pinHash, onSetPin }: Props) {
         if (ok) {
             onVerify(true);
         } else {
-            // Brute-force protection: increment attempt count
-            setAttempts(prev => {
-                const next = prev + 1;
-                if (next >= 5) {
-                    setLockedUntil(Date.now() + 30_000); // 30-second lockout after 5 failures
-                }
-                return next;
-            });
+            // Brute-force protection: increment attempt count, persist across re-mounts
+            const next = lockState.attempts + 1;
+            const newState = {
+                attempts: next,
+                lockedUntil: next >= 5 ? Date.now() + next * 6_000 : 0,
+            };
+            saveLockoutState(newState);
+            setLockState(newState);
             setError(true);
             setEntered('');
             setTimeout(() => setError(false), 1500);

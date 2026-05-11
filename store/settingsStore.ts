@@ -177,7 +177,7 @@ interface SettingsState {
   // (Inworld vs Azure) is chosen server-side based on language support and
   // is not user-selectable.
   voicePreferences: Record<string, string>;
-  /** Caregiver PIN hash (btoa of 4-6 digit PIN). When set, settings modal requires PIN entry. */
+  /** Caregiver PIN hash (SHA-256 hex, 64 chars). Set via PinPad → hashPin(). */
   caregiverPinHash?: string;
   /** Announce sender name aloud via TTS when message arrives. Default false for privacy. */
   announceSenderName: boolean;
@@ -538,6 +538,18 @@ export const useSettingsStore = create<SettingsState>()(
           out.gestureConfig = incoming.gestureConfig;
         } else {
           out.gestureConfig = { ...DEFAULT_GESTURE_CONFIG };
+        }
+
+        // caregiverPinHash — must be 64-char hex (SHA-256)
+        if (typeof incoming.caregiverPinHash === 'string'
+            && /^[0-9a-f]{64}$/.test(incoming.caregiverPinHash)) {
+          out.caregiverPinHash = incoming.caregiverPinHash;
+        } else {
+          out.caregiverPinHash = undefined;
+        }
+        // announceSenderName
+        if (typeof incoming.announceSenderName === 'boolean') {
+          out.announceSenderName = incoming.announceSenderName;
         }
 
         return out as unknown as SettingsState;

@@ -35,9 +35,3 @@ export async function verifyPin(entered: string, storedHash: string): Promise<bo
     }
     return diff === 0;
 }
-
-/** Legacy: detect and migrate btoa-encoded PINs from old versions */
-export function isLegacyBtoaHash(hash: string): boolean {
-    // btoa('1234') = 'MTIzNA==' — base64 pattern, not hex
-    return /^[A-Za-z0-9+/]+=*$/.test(hash) && !(/^[0-9a-f]+$/i.test(hash));
-}

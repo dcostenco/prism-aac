@@ -1168,8 +1168,8 @@ export function cancelEmergency(alertId?: string): void {
   // This service-level guard prevents programmatic bypass (e.g., scripted cancel).
   // 'critical' alerts are already uncancellable (triggerEmergency returns no-op cancel fn).
   if (_activeCountdownSeverity === 'urgent' || _activeCountdownSeverity === 'medical') {
-    // Do not allow programmatic cancel for high-severity — require PIN from UI
-    console.warn('[emergency] Attempted to cancel urgent/medical without PIN — blocked');
+    console.warn('[emergency] cancelEmergency() blocked for urgent/medical — use cancelEmergencyVerified() after PIN check');
+    // Do NOT stop the alarm here — alarm must continue until PIN-verified cancel
     return;
   }
   // C1: Reset in-flight mutexes so a cancelled emergency doesn't permanently block
@@ -1195,13 +1195,18 @@ export function cancelEmergency(alertId?: string): void {
  */
 export function cancelEmergencyVerified(): void {
   isSendInFlight = false;
-  if (typeof dispatchInProgress !== 'undefined') dispatchInProgress = false;
+  dispatchInProgress = false;
+  cancelCallback?.();
+  cancelCallback = null;
   clearCountdown();
   stopAlarm();
   stopFlash();
   stopEmergencySpeaker();
   activeCancelFn?.();
   activeCancelFn = null;
+  // Invoke the stored cancelFn from emergencyStore (which calls cancelEmergency(alertId) → removes from queue)
+  const storeCancelFn = useEmergencyStore.getState().cancelFn;
+  storeCancelFn?.();
   try { useEmergencyStore.getState().reset(); } catch {}
 }
 

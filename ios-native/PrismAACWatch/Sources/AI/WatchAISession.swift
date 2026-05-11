@@ -120,6 +120,10 @@ final class WatchAISession: NSObject, ObservableObject, WCSessionDelegate {
             "language": langCode,
         ])
         let (data, _) = try await URLSession.shared.data(for: req)
+        guard data.count <= 65_536 else {
+            NSLog("[WatchAI] Response too large (\(data.count) bytes) — ignoring")
+            throw URLError(.dataLengthExceededMaximum)
+        }
         // Endpoint returns SSE — assemble all content chunks
         return assembleSSE(data) ?? ""
     }
@@ -197,22 +201,39 @@ private class KeychainHelper {
 struct WatchSafetyFilter {
     enum Result { case safe, crisis(response: String), medical(response: String) }
 
-    private static let crisis: Set<String> = [
+    private static let crisisKeywords: [String] = [
         "help me", "can't breathe", "cant breathe", "call 911", "emergency",
         "heart attack", "i'm dying", "im dying", "not breathing", "choking",
         "kill myself", "hurt myself",
     ]
-    private static let medical: Set<String> = [
+    private static let medicalKeywords: [String] = [
         "how many mg", "how many pills", "medication dose", "overdose amount",
     ]
 
+    // Word-boundary regex patterns — prevents false positives from substrings
+    // (e.g. "emergencies" should match "emergency"; partial word inside larger
+    // word should not suppress a false match). Mirrors SafetyFilter.swift.
+    private static let crisisPatterns: [NSRegularExpression] = crisisKeywords.compactMap { keyword in
+        let pattern = "(?:^|[^\\p{L}\\p{N}])\(NSRegularExpression.escapedPattern(for: keyword))(?:$|[^\\p{L}\\p{N}])"
+        return try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive])
+    }
+    private static let medicalPatterns: [NSRegularExpression] = medicalKeywords.compactMap { keyword in
+        let pattern = "(?:^|[^\\p{L}\\p{N}])\(NSRegularExpression.escapedPattern(for: keyword))(?:$|[^\\p{L}\\p{N}])"
+        return try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive])
+    }
+
     static func check(_ input: String) -> Result {
         let lower = input.lowercased()
-        if crisis.first(where: { lower.contains($0) }) != nil {
-            return .crisis(response: "🆘 Call 911 · Text 988 (US crisis line)\nI'm with you.")
+        let range = NSRange(lower.startIndex..., in: lower)
+        for regex in Self.crisisPatterns {
+            if regex.firstMatch(in: lower, range: range) != nil {
+                return .crisis(response: "🆘 Call 911 · Text 988 (US crisis line)\nI'm with you.")
+            }
         }
-        if medical.first(where: { lower.contains($0) }) != nil {
-            return .medical(response: "Ask your doctor or pharmacist for dosing questions.")
+        for regex in Self.medicalPatterns {
+            if regex.firstMatch(in: lower, range: range) != nil {
+                return .medical(response: "Ask your doctor or pharmacist for dosing questions.")
+            }
         }
         return .safe
     }

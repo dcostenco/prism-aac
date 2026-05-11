@@ -1,7 +1,6 @@
 'use client';
-// TODO CRITICAL: This component must be replaced with a proper EmergencyCountdownModal
-// that provides countdown timer, cancel button (PIN-gated for urgent/medical),
-// and spoken phrase display. The current implementation provides only a visual flash.
+// DEPRECATED: EmergencyCountdownModal (mounted in PrismApp.tsx) is the real emergency UI.
+// This component is kept as a minimal accessibility stub only.
 import { useUIStore } from '@/store/uiStore';
 
 export default function AlertOverlay() {

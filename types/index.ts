@@ -137,4 +137,6 @@ export interface CaregiverNote {
   actions: NoteAction[];
   applied: boolean;
   authorName?: string;
+  /** Immutable authenticated user identifier (email). Display name (authorName) can change. */
+  authorId?: string;
 }

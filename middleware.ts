@@ -27,7 +27,13 @@ export function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "connect-src 'self' https://synalux.ai https://*.synalux.ai https://api.arasaac.org https://static.arasaac.org https://nominatim.openstreetmap.org wss://synalux.ai wss://*.synalux.ai",
     "media-src 'self' blob: https://synalux.ai https://*.synalux.ai",
-    "img-src 'self' blob: data: https://static.arasaac.org https://api.arasaac.org",
+    "img-src 'self' blob: data: " +
+    "https://static.arasaac.org https://api.arasaac.org " +
+    "https://lh3.googleusercontent.com " +
+    "https://*.telegram.org https://t.me " +
+    "https://*.whatsapp.net " +
+    "https://*.fbcdn.net " +
+    "https://pbs.twimg.com https://abs.twimg.com",
     "worker-src blob:",
     "font-src 'self'",
     "frame-ancestors 'none'",

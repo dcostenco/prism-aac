@@ -123,7 +123,9 @@ export const useNoteStore = create<NoteState>()(
         // and silently lose subsequent saves.
         const cappedText = (text ?? '').slice(0, MAX_NOTE_TEXT_LEN);
         // M18: Prefer authenticated profile name to prevent attribution fraud
-        const authName = useAuthStore.getState().profile?.name;
+        const authProfile = useAuthStore.getState().profile;
+        const authName = authProfile?.name;
+        const authorId = authProfile?.email ?? undefined;
         const cleanAuthor = sanitizeString(authName || get().authorName, MAX_AUTHOR_NAME_LEN);
         const cleanActions = actions
           ? sanitizeActions(actions)
@@ -137,6 +139,7 @@ export const useNoteStore = create<NoteState>()(
             : [{ type: 'note_only', description: 'Clinical note', payload: {} }],
           applied: false,
           authorName: cleanAuthor || undefined,
+          authorId,
         };
         set((s) => ({ notes: [note, ...s.notes].slice(0, MAX_NOTES) }));
         return note;
@@ -209,6 +212,7 @@ export const useNoteStore = create<NoteState>()(
             if (typeof x.timestamp !== 'number' || !Number.isFinite(x.timestamp)) return false;
             if (typeof x.applied !== 'boolean') return false;
             if (x.authorName !== undefined && (typeof x.authorName !== 'string' || x.authorName.length > MAX_AUTHOR_NAME_LEN)) return false;
+            if (x.authorId !== undefined && typeof x.authorId !== 'string') return false;
             return true;
           })
           .map((n) => ({ ...n, actions: sanitizeActions(n.actions) }))

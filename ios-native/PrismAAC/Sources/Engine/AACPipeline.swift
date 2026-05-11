@@ -130,7 +130,9 @@ final class AACPipeline: ObservableObject {
         stream: AsyncStream<String>.Continuation
     ) async throws -> String {
         aiAvailable = .cloudFallback
-        var req = URLRequest(url: cloudBaseURL.appendingPathComponent("prism-aac/chat"))
+        var req = URLRequest(url: cloudBaseURL.appendingPathComponent("prism-aac/chat"),
+                             cachePolicy: .useProtocolCachePolicy,
+                             timeoutInterval: 15)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONSerialization.data(withJSONObject: [

@@ -329,6 +329,19 @@ export const usePredictionStore = create<PredictionState>()(
         if (typeof window !== 'undefined') {
           window.addEventListener('pagehide', flushNow);
           document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNow(); });
+          window.addEventListener('beforeunload', () => {
+            if (writeTimer !== null) {
+              clearTimeout(writeTimer);
+              writeTimer = null;
+              // Flush immediately
+              try {
+                const s = usePredictionStore.getState();
+                const partial = { wordFreq: s.wordFreq, bigrams: s.bigrams, trigrams: s.trigrams };
+                localStorage.setItem(pendingName ?? 'prism-aac-predictions', JSON.stringify({ state: partial, version: 4 }));
+              } catch { /* quota exceeded — best effort */ }
+              pendingName = null; pendingValue = null;
+            }
+          });
         }
         return {
           getItem: (name: string) => { try { const v = localStorage.getItem(name); return v ? JSON.parse(v) : null; } catch { return null; } },
@@ -350,7 +363,7 @@ export const usePredictionStore = create<PredictionState>()(
                 }
               }
               pendingName = null; pendingValue = null; writeTimer = null;
-            }, 3000);
+            }, 1_000); // was 3000 — reduced to minimize data loss window
           },
           removeItem: (name: string) => { try { localStorage.removeItem(name); } catch {} },
         };

@@ -2,8 +2,9 @@ import Foundation
 import WatchKit
 import WatchConnectivity
 import AVFoundation
+import Security
 
-enum EmergencySeverity { case critical, urgent, medical }
+enum EmergencySeverity { case critical, urgent, medical, standard }
 
 /// Standalone emergency manager for Apple Watch.
 /// Works without iPhone — escalates via WatchConnectivity when available.
@@ -78,7 +79,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject, WCSessionDelegate
         let msg: [String: Any] = [
             "type": isEmergency ? "emergency" : "phrase",
             "phrase": phrase,
-            "severity": severity == .critical ? "critical" : severity == .urgent ? "urgent" : "medical",
+            "severity": severity == .critical ? "critical" : severity == .urgent ? "urgent" : severity == .medical ? "medical" : "standard",
             "timestamp": ISO8601DateFormatter().string(from: Date()),
         ]
 
@@ -113,15 +114,19 @@ final class WatchEmergencyManager: NSObject, ObservableObject, WCSessionDelegate
         req.httpMethod = "POST"
         req.timeoutInterval = 10
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // TODO: attach auth token from Keychain (WatchAISession.KeychainHelper pattern)
-        // Server-side rate limiting is required on this endpoint
+        // Attach auth token from Keychain using the same pattern as WatchAISession.swift
+        if let token = WatchEmergencyKeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else {
+            NSLog("[WatchEmergency] No auth token — cellular fallback will be unauthenticated")
+        }
         let payload: [String: Any] = [
             "phrase": activePhrase ?? "Emergency",
             "severity": "watch_cellular_fallback",
             "source": "watchos",
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: payload) else {
-            NSLog("[WatchEmergency] Failed to serialize payload — using TTS fallback")
+            NSLog("[WatchEmergency] JSON serialization failed — using TTS fallback")
             speakEmergencyFallback()
             return
         }
@@ -140,5 +145,23 @@ final class WatchEmergencyManager: NSObject, ObservableObject, WCSessionDelegate
         utterance.volume = 1.0
         utterance.rate = 0.4
         synthesizer.speak(utterance)
+    }
+}
+
+// MARK: - Keychain helper (mirrors WatchAISession.KeychainHelper, private to this file)
+
+private class WatchEmergencyKeychainHelper {
+    static let shared = WatchEmergencyKeychainHelper()
+    func read(service: String, account: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+        ]
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 }

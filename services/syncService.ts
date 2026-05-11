@@ -66,6 +66,15 @@ function setStatus(s: SyncStatus) {
   listeners.forEach(fn => fn(s));
 }
 
+async function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('Supabase timeout')), ms),
+    ),
+  ]);
+}
+
 export async function pushToCloud(data: Partial<AACProfile>): Promise<void> {
   if (!_isConfigured()) { setStatus('offline'); return; }
   const sb = getSupabase();
@@ -79,7 +88,10 @@ export async function pushToCloud(data: Partial<AACProfile>): Promise<void> {
       ...data,
 
     };
-    await sb.from(AAC_TABLE).upsert(record, { onConflict: 'user_id,device_id' });
+    await withTimeout(
+      sb.from(AAC_TABLE).upsert(record, { onConflict: 'user_id,device_id' }),
+      10_000,
+    );
     setStatus('synced');
   } catch {
     setStatus('error');
@@ -183,12 +195,15 @@ export async function pullFromCloud(): Promise<Partial<AACProfile> | null> {
   setStatus('syncing');
   try {
     const userId = getUserId();
-    const { data, error } = await sb
-      .from(AAC_TABLE)
-      .select('*')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false })
-      .limit(1);
+    const { data, error } = await withTimeout(
+      sb
+        .from(AAC_TABLE)
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1),
+      10_000,
+    );
 
     if (error) { setStatus('error'); return null; }
     if (!data || data.length === 0) { setStatus('synced'); return null; }

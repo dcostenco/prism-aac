@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { HistoryEntry } from '@/types';
 import { ToneStyle } from '@/services/azureTTS';
-import { detectEmergency } from '@/services/emergencyService';
 import { safeJSONStorage } from '@/lib/safeStorage';
 
 let activeEmergencyCancel: (() => void) | null = null;
@@ -140,20 +139,23 @@ export const useMessageStore = create<MessageState>()(
 
         // Emergency detection: only runs on user-authored text.
         // System-generated text (AI replies, announcements) must not trigger dispatch.
-        const emergency = source === 'user' ? detectEmergency(text) : { detected: false, severity: null, phrase: null };
-        if (emergency.detected && emergency.severity) {
+        // Dynamic import breaks the circular dependency: messageStore ↔ emergencyService.
+        if (source === 'user') {
           // C16: Use a try/catch with error logging instead of silently swallowing failures.
           // A dropped .catch(() => {}) would silently prevent emergency dispatch on chunk-load failure.
           (async () => {
             try {
-              const { triggerEmergency } = await import('@/services/emergencyService');
-              const cancelFn = await triggerEmergency(
-                emergency.phrase || text,
-                emergency.severity!,
-                (_seconds) => { /* countdown handled by EmergencyOverlay if mounted */ },
-                (_sent, _queued) => { /* completion logged by service */ },
-              );
-              activeEmergencyCancel = cancelFn;
+              const { detectEmergency: detect, triggerEmergency } = await import('@/services/emergencyService');
+              const emergency = detect(text);
+              if (emergency.detected && emergency.severity) {
+                const cancelFn = await triggerEmergency(
+                  emergency.phrase || text,
+                  emergency.severity!,
+                  (_seconds) => { /* countdown handled by EmergencyOverlay if mounted */ },
+                  (_sent, _queued) => { /* completion logged by service */ },
+                );
+                activeEmergencyCancel = cancelFn;
+              }
             } catch (e) {
               console.error('[emergency] CRITICAL: emergency service failed to load', e);
               // Fallback: play alarm sound directly if possible

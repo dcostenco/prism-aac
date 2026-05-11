@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 import AVFoundation
+import WatchConnectivity
 
 /// PrismAAC iOS host — WKWebView wrapping synalux.ai/prism-aac.
 ///
@@ -162,8 +163,7 @@ struct PrismWebView: UIViewRepresentable {
                 guard let pageURL = message.webView?.url,
                       pageURL.host == "synalux.ai" ||
                       pageURL.host?.hasSuffix(".synalux.ai") == true ||
-                      pageURL.host == "localhost" ||
-                      pageURL.isFileURL else {
+                      pageURL.host == "localhost" else {
                     NSLog("[PrismAAC] Emergency blocked from untrusted origin: \(message.webView?.url?.host ?? "nil")")
                     return
                 }
@@ -235,9 +235,25 @@ final class WatchEmergencyBridge {
     static let shared = WatchEmergencyBridge()
 
     func trigger(phrase: String) {
-        // Relay to Watch for haptic + SMS chain
-        let msg: [String: Any] = ["type": "emergency", "phrase": phrase, "severity": "critical"]
-        NotificationCenter.default.post(name: .init("PrismEmergencyTriggered"), object: msg)
+        // Direct WatchConnectivity dispatch instead of the previous fragile
+        // NotificationCenter.post(name: "PrismEmergencyTriggered") which had
+        // no registered observer and was silently a no-op in production.
+        let msg: [String: Any] = [
+            "type": "emergency",
+            "phrase": phrase,
+            "severity": "standard",
+            "timestamp": ISO8601DateFormatter().string(from: Date()),
+        ]
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        if session.isReachable {
+            session.sendMessage(msg, replyHandler: nil, errorHandler: { _ in
+                session.transferUserInfo(msg)
+            })
+        } else {
+            // Queue for delivery when Watch becomes reachable
+            session.transferUserInfo(msg)
+        }
     }
 }
 

@@ -166,7 +166,7 @@ const TRUSTED_ASSET_HOSTS = new Set(['assets.synalux.ai', 'cdn.synalux.ai', 'sta
 /** C17: Validate that asset URLs (screenshots, preview, icon-as-url) are from trusted CDN hosts. */
 export function isTrustedAssetUrl(url: unknown): boolean {
   if (typeof url !== 'string') return false;
-  if (url.length === 0) return true; // empty string OK
+  if (url.length === 0) return false; // empty src causes spurious GET /
   try {
     const u = new URL(url);
     return u.protocol === 'https:' && TRUSTED_ASSET_HOSTS.has(u.hostname);
@@ -192,6 +192,7 @@ export function isValidManifest(value: unknown): value is ModuleManifest {
   if (typeof m.icon !== 'string' || !m.icon) return false;
   if (m.icon.length > 512) return false;
   if ((m.icon as string).includes('://') && !isTrustedAssetUrl(m.icon)) return false;
+  if (typeof m.icon === 'string' && !m.icon.includes('://') && m.icon.length > 8) return false;
   // C17: validate optional asset URL fields
   if (m.preview !== undefined && !isTrustedAssetUrl(m.preview)) return false;
   if (m.screenshots !== undefined) {

@@ -18,7 +18,7 @@ struct SafetyFilter {
 
     // MARK: - Keyword sets
 
-    private static let crisisKeywords: Set<String> = [
+    private static let crisisKeywords: [String] = [
         "kill myself", "end my life", "want to die", "suicide", "hurt myself",
         "self harm", "can't breathe", "cant breathe", "choking", "help me",
         "call 911", "call 999", "call 112", "emergency", "heart attack",
@@ -26,7 +26,7 @@ struct SafetyFilter {
         "help i", "please help", "sos", "not breathing",
     ]
 
-    private static let medicalDoseKeywords: Set<String> = [
+    private static let medicalDoseKeywords: [String] = [
         "how many mg", "how many pills", "how much medication",
         "medication dose", "pill dose", "drug dose", "overdose amount",
         "safe amount to take", "maximum dose", "lethal dose",

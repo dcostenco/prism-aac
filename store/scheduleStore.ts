@@ -4,6 +4,45 @@ import { randomId } from '@/lib/uuid';
 import { SAFE_LIMITS } from '@/lib/safeStrings';
 import { safeJSONStorage } from '@/lib/safeStorage';
 
+// ── Background alarm via Web Push / Service Worker ───────────────────────────
+// Stores the alarm time in localStorage so the SW can check it on fetch events.
+// If the Push API is available, also schedules a showNotification via setTimeout
+// (best-effort — only fires if the tab is still open; true background delivery
+// requires a push subscription which is configured server-side).
+async function scheduleBackgroundAlarm(timerEndMs: number, label: string): Promise<void> {
+  if (typeof window === 'undefined') return;
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    const reg = await navigator.serviceWorker.ready;
+    // Store the alarm time for the service worker to check on fetch events
+    // (true background notification requires push subscription — store for SW to handle)
+    localStorage.setItem('prism-schedule-alarm', JSON.stringify({
+      timerEndMs,
+      label: label.slice(0, 100),
+      scheduledAt: Date.now(),
+    }));
+
+    // If Push API available, try to schedule via showNotification
+    if ('showNotification' in reg) {
+      const delayMs = Math.max(0, timerEndMs - Date.now());
+      setTimeout(() => {
+        if (Date.now() < timerEndMs + 5000) { // still relevant
+          reg.showNotification('⏰ ' + label, {
+            body: 'Your scheduled activity is starting now.',
+            tag: 'schedule-timer',
+            requireInteraction: true,
+            silent: false,
+          } as NotificationOptions).catch(() => {});
+        }
+      }, delayMs);
+    }
+  } catch { /* notifications not available */ }
+}
+
 /** Hard cap on incoming-message tasks before oldest-read eviction
  *  kicks in. 100 fits a chatty caregiver's day without bloating
  *  localStorage. */
@@ -208,7 +247,10 @@ export const useScheduleStore = create<ScheduleState>()(
 
       startTimer: (durationSeconds) => {
         const safe = Math.min(Math.max(1, Math.floor(Number(durationSeconds) || 1)), 3600);
-        set({ timerEndMs: Date.now() + safe * 1000 });
+        const endMs = Date.now() + safe * 1000;
+        set({ timerEndMs: endMs });
+        // Best-effort background alarm via service worker notification
+        scheduleBackgroundAlarm(endMs, 'Timer').catch(() => {});
       },
 
       resetTimer: () => set({ timerEndMs: 0 }),

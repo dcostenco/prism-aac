@@ -377,9 +377,19 @@ function mutate(fn: (p: AdaptiveProfile) => void): void {
 // of adaptation when the user closes the tab. Mirrors predictionStore pattern.
 // Named handler so it can be removed if cleanup is ever needed (tests, PWA re-mount)
 const _adaptiveOnVisibility = () => { if (document.visibilityState === 'hidden') flushNow(); };
-if (typeof window !== 'undefined') {
+let _adaptiveListenersRegistered = false;
+if (typeof window !== 'undefined' && !_adaptiveListenersRegistered) {
+  _adaptiveListenersRegistered = true;
   window.addEventListener('pagehide', flushNow);
   document.addEventListener('visibilitychange', _adaptiveOnVisibility);
+}
+
+export function cleanupAdaptiveListeners(): void {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('pagehide', flushNow);
+    document.removeEventListener('visibilitychange', _adaptiveOnVisibility);
+    _adaptiveListenersRegistered = false;
+  }
 }
 
 export function resetProfile(): void {
