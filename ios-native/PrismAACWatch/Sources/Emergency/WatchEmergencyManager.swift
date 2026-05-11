@@ -34,6 +34,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        // #19: Set delegate so we know when emergency TTS utterance completes
+        synthesizer.delegate = self
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerReachabilityHandler { [weak self] reachable in
             Task { @MainActor [weak self] in
@@ -67,11 +69,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         activeBgTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-countdown") {
             Task { @MainActor [weak self] in
                 guard let self, self.isActive else { return }
-                NSLog("[WatchEmergency] Background task expired during countdown — escalating via TTS only")
-                // Don't call escalate() here — it races with the timer's escalate()
+                NSLog("[WatchEmergency] Background task expired during countdown — TTS fallback")
                 self.speakEmergencyFallback()
-                WKApplication.shared().endBackgroundTask(self.activeBgTask ?? .init(rawValue: 0))
-                self.activeBgTask = nil
+                if let task = self.activeBgTask {
+                    WKApplication.shared().endBackgroundTask(task)
+                    self.activeBgTask = nil
+                }
             }
         }
 
@@ -89,8 +92,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                         WKApplication.shared().endBackgroundTask(task)
                         self.activeBgTask = nil
                     }
-                    // FIX 16: use activePhrase, not the raw captured param
-                    await self.escalate(phrase: self.activePhrase ?? String(phrase.prefix(200)), severity: severity)
+                    // #14: use activePhrase only — never fall back to raw captured param
+                    guard let p = self.activePhrase else {
+                        NSLog("[WatchEmergency] Timer fired but activePhrase is nil — aborting escalation")
+                        return
+                    }
+                    await self.escalate(phrase: p, severity: severity)
                 }
             }
         }
@@ -135,10 +142,16 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         countdownTimer = nil
         isActive = false
         activePhrase = nil  // C6: clear on cancel
+        // #19: Capture flags before reset — used to decide whether to stop synthesizer
+        let didEscalate = hasEscalated
+        let currentSeverity = severity
         severity = .standard
         cellularFallbackSent = false  // FIX 8: reset debounce on cleanup
         hasEscalated = false  // FIX 4: reset escalation flag for next emergency
-        synthesizer.stopSpeaking(at: .immediate)
+        // #19: Don't cut off the emergency TTS if it hasn't escalated yet
+        if didEscalate || currentSeverity == .standard {
+            synthesizer.stopSpeaking(at: .immediate)
+        }
         // #2: cancel stored SOS haptic task
         sosHapticTask?.cancel()
         sosHapticTask = nil
@@ -157,6 +170,9 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     private func escalate(phrase: String, severity: EmergencySeverity) async {
         guard !hasEscalated else { return }
         sendPhrase(phrase, isEmergency: true, severity: severity)
+        // #18: hasEscalated is set optimistically — sendPhrase is fire-and-forget.
+        // TODO: await delivery confirmation from WCSession reply before setting hasEscalated = true
+        // Currently: if WC and cellular both fail, UI says "HELP COMING" but no alert was sent.
         hasEscalated = true  // FIX 4: allow critical emergency dismiss post-escalation
         // #6/#8: stored watchdog — auto-cleanup 30s after escalation if UI hasn't dismissed
         watchdogTask = Task { @MainActor [weak self] in
@@ -200,9 +216,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         cellularFallbackSent = true
 
         guard let url = URL(string: "https://synalux.ai/api/v1/emergency/dispatch") else { return }
-        var req = URLRequest(url: url)
+        var req = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 5)
         req.httpMethod = "POST"
-        req.timeoutInterval = 10
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         // #4: guard — abort immediately if no auth token; unauthenticated dispatch is never sent
         guard let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") else {
@@ -254,5 +269,13 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         utterance.volume = 1.0
         utterance.rate = 0.4
         synthesizer.speak(utterance)
+    }
+}
+
+// MARK: - AVSpeechSynthesizerDelegate (#19)
+
+extension WatchEmergencyManager: AVSpeechSynthesizerDelegate {
+    nonisolated func speechSynthesizer(_ s: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        NSLog("[WatchEmergency] Emergency TTS utterance completed")
     }
 }

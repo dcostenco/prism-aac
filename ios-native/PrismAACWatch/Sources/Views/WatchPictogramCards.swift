@@ -25,7 +25,7 @@ struct AACPhrase: Identifiable {
     }
 
     var arasaacURL: URL? {
-        guard let aid = arasaacId else { return nil }
+        guard let aid = arasaacId, aid > 0, aid < 100_000 else { return nil }
         return URL(string: "https://static.arasaac.org/pictograms/\(aid)/\(aid)_300.png")
     }
 }
@@ -37,7 +37,7 @@ struct AACVocab {
             AACPhrase(label: "No",       sfSymbol: "xmark.circle.fill",     color: .red,    arasaacId: 5578),
             AACPhrase(label: "More",     sfSymbol: "plus.circle",           color: .blue,   arasaacId: 5571),
             AACPhrase(label: "Stop",     sfSymbol: "hand.raised.fill",      color: .orange, arasaacId: 5581),
-            AACPhrase(label: "Help",     sfSymbol: "sos",                   color: .red,    arasaacId: 5557),
+            AACPhrase(label: "Help",     sfSymbol: "sos",                   color: .red,    arasaacId: 5557,  isEmergency: true),
             AACPhrase(label: "Wait",     sfSymbol: "pause.circle",          color: .yellow, arasaacId: 5583),
             AACPhrase(label: "Thank you",sfSymbol: "heart.fill",            color: .pink,   arasaacId: 5582),
             AACPhrase(label: "All done", sfSymbol: "checkmark.seal",        color: .green,  arasaacId: 5552),
@@ -76,7 +76,8 @@ struct WatchPictogramCards: View {
     @EnvironmentObject var session: WatchAISession
     @EnvironmentObject var vocab: WatchVocabSync
     @EnvironmentObject var inbox: WatchInbox
-    @StateObject private var translation = WatchTranslation()
+    // WatchTranslation is provided via environment from WatchApp
+    @EnvironmentObject private var translation: WatchTranslation
 
     private var allPhrases: [AACPhrase] {
         let synced = vocab.categories.flatMap { cat in
@@ -177,7 +178,7 @@ struct WatchPictogramCards: View {
                     // ── 2-column AAC vocabulary grid ──
                     LazyVGrid(columns: columns, spacing: 6) {
                         ForEach(allPhrases) { phrase in
-                            PairCard(phrase: phrase) {
+                            PairCard(phrase: phrase, emergencyIsActive: emergency.isActive) {
                                 WKInterfaceDevice.current().play(.click)
                                 // #10/#19: use isEmergency flag — O(1), works for API-loaded vocab
                                 if phrase.isEmergency {
@@ -480,6 +481,7 @@ struct WatchInboxView: View {
 
     private func relativeTime(_ date: Date) -> String {
         let s = Int(-date.timeIntervalSinceNow)
+        if s <= 0 { return "now" }   // handles future-dated messages
         if s < 60 { return "now" }
         if s < 3600 { return "\(s/60)m" }
         if s < 86400 { return "\(s/3600)h" }
@@ -878,6 +880,13 @@ struct WatchSendMessageView: View {
                     let safeBody = String(msgText.prefix(500))
 
                     guard !safeTo.isEmpty, !safeBody.isEmpty else { return }
+                    // Validate: must be a phone number or email
+                    let isValidPhone = safeTo.range(of: #"^\+?[0-9 \-\(\)]{7,20}$"#, options: .regularExpression) != nil
+                    let isValidEmail = safeTo.range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]+$"#, options: .regularExpression) != nil
+                    guard isValidPhone || isValidEmail else {
+                        sendStatus = "Invalid contact format"
+                        return
+                    }
                     // #5/#28: use WCSessionRouter.shared.isReachable instead of direct WCSession check
                     if WCSessionRouter.shared.isReachable {
                         WCSessionRouter.shared.send(
@@ -927,16 +936,19 @@ struct WatchSendMessageView: View {
 struct PairCard: View {
     let phrase: AACPhrase
     let onTap: () -> Void
+    var emergencyIsActive: Bool = false
 
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 4) {
-                if let url = phrase.arasaacURL {
+                // If emergency is active, skip pictogram network loads to free URLSession connections
+                if let url = phrase.arasaacURL, !emergencyIsActive {
                     // Pictogram images: use a dedicated short-timeout URLSession to avoid
                     // starving emergency/translation requests that share URLSession.shared.
-                    // AsyncImage does not support custom URLSession directly — using .task(id:)
-                    // for implicit timeout: the task cancels when the view disappears or url changes,
-                    // and after 5 s we leave AsyncImage to show the SF Symbol fallback (.empty phase).
+                    // LIMITATION: .task(id: url) cancels the Task but NOT AsyncImage's internal URLSession request.
+                    // A separate URLSession with timeoutIntervalForResource: 5 would be needed for true timeout.
+                    // During active emergency (emergency.isActive), pictogram loading is not disabled.
+                    // TODO: Disable AsyncImage loading when emergency.isActive to free URLSession slots.
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let img):
@@ -1032,7 +1044,7 @@ extension AACVocab {
         AACPhrase(label: "No",         sfSymbol: "xmark.circle.fill",     color: .red,    arasaacId: 5578),
         AACPhrase(label: "More",       sfSymbol: "plus.circle",           color: .blue,   arasaacId: 5571),
         AACPhrase(label: "All done",   sfSymbol: "checkmark.seal",        color: .green,  arasaacId: 5552),
-        AACPhrase(label: "Help",       sfSymbol: "sos",                   color: .red,    arasaacId: 5557),
+        AACPhrase(label: "Help",       sfSymbol: "sos",                   color: .red,    arasaacId: 5557,  isEmergency: true),
         AACPhrase(label: "Want",       sfSymbol: "hand.point.right.fill", color: .blue,   arasaacId: 5583),
         AACPhrase(label: "Stop",       sfSymbol: "hand.raised.fill",      color: .orange, arasaacId: 5581),
         AACPhrase(label: "Go",         sfSymbol: "arrow.right.circle",    color: .green,  arasaacId: nil),
@@ -1041,7 +1053,7 @@ extension AACVocab {
         AACPhrase(label: "Water",      sfSymbol: "drop.fill",             color: .blue,   arasaacId: 14981),
         AACPhrase(label: "Food",       sfSymbol: "fork.knife",            color: .orange, arasaacId: nil),
         AACPhrase(label: "Bathroom",   sfSymbol: "toilet.fill",           color: .teal,   arasaacId: nil),
-        AACPhrase(label: "Hurt",       sfSymbol: "cross.circle.fill",     color: .red,    arasaacId: nil),
+        AACPhrase(label: "Hurt",       sfSymbol: "cross.circle.fill",     color: .red,    arasaacId: nil,   isEmergency: true),
         AACPhrase(label: "Tired",      sfSymbol: "moon.zzz.fill",         color: .gray,   arasaacId: nil),
         AACPhrase(label: "Hot",        sfSymbol: "thermometer.sun",       color: .red,    arasaacId: nil),
         AACPhrase(label: "Cold",       sfSymbol: "thermometer.snowflake", color: .blue,   arasaacId: nil),
@@ -1086,10 +1098,14 @@ struct WatchEmergencyActiveView: View {
                     Text("\(emergency.countdownSecs)")
                         .font(.title3)
                         .foregroundColor(.white.opacity(0.8))
-                } else {
+                } else if emergency.hasEscalated {
                     Text("HELP COMING")
                         .font(.headline)
                         .foregroundColor(.orange)
+                } else {
+                    Text("SENDING…")
+                        .font(.headline)
+                        .foregroundColor(.yellow)
                 }
                 if emergency.severity != .critical {
                     Button("Cancel") {

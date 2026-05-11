@@ -13,6 +13,9 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         synthesizer.delegate = self  // delegate-based isSpeaking reset, no Task.sleep
     }
 
+    // #11: NOTE: WatchEmergencyManager has its own AVSpeechSynthesizer for emergency TTS.
+    // Both share the Watch speaker. Emergency manager configures AVAudioSession before speaking,
+    // which ducks this synthesizer's output if active. This is acceptable — emergency speech has priority.
     func speak(_ text: String, language: String = "en-US", rate: Float = 0.52) {
         let safe = String(text.prefix(1000))
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
@@ -28,6 +31,13 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         }
         isSpeaking = true
         synthesizer.speak(utt)
+        // #9: isSpeaking watchdog — resets stuck state if delegate never fires
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 60_000_000_000)
+            guard self?.isSpeaking == true else { return }
+            NSLog("[WatchTTS] isSpeaking watchdog fired — resetting stuck state")
+            self?.isSpeaking = false
+        }
     }
 
     func stop() {
@@ -42,7 +52,12 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         Task { @MainActor [weak self] in
             self?.isSpeaking = false
             // Deactivate session so other audio (calls, music) can resume
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            // #10: Log deactivation errors instead of silently swallowing them
+            do {
+                try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            } catch {
+                NSLog("[WatchTTS] AVAudioSession deactivate failed: \(error)")
+            }
         }
     }
 
@@ -50,7 +65,12 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
                                        didCancel utterance: AVSpeechUtterance) {
         Task { @MainActor [weak self] in
             self?.isSpeaking = false
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            // #10: Log deactivation errors instead of silently swallowing them
+            do {
+                try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            } catch {
+                NSLog("[WatchTTS] AVAudioSession deactivate failed: \(error)")
+            }
         }
     }
 }

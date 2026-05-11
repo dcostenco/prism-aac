@@ -21,8 +21,9 @@ final class WatchVocabSync: NSObject, ObservableObject {
     /// Offline core = "en-US"; API-loaded = whatever lang was fetched.
     /// This is the correct `from` parameter for translation — NOT inputLanguage.
     @Published private(set) var vocabLanguage: String = "en-US"
-    /// Legacy alias.
-    var language: String { outputLanguage }
+    /// Deprecated: use inputLanguage or outputLanguage directly.
+    /// Retained for any external callers during transition — do not use in new code.
+    // var language: String { outputLanguage }
     @Published private(set) var source: Source = .offline
 
     /// Update the language pair and reload vocabulary.
@@ -37,7 +38,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
         KeychainHelper.shared.write(value: safeInput,  service: "prism-aac", account: "watchInputLanguage")
         KeychainHelper.shared.write(value: safeOutput, service: "prism-aac", account: "watchOutputLanguage")
         vocabTask?.cancel()
-        vocabTask = Task { await loadFromAPI(lang: safeInput) }   // vocab labels in INPUT lang
+        // #34: [weak self] prevents strong retain cycle — vocabTask holds self via closure
+        vocabTask = Task { [weak self] in await self?.loadFromAPI(lang: safeInput) }   // vocab labels in INPUT lang
     }
 
     /// Shorthand: set only output language (input unchanged).
@@ -70,7 +72,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
         WCSessionRouter.shared.registerMessageHandler(for: "vocabulary") { [weak self] _, msg in
             Task { @MainActor in self?.handleVocabReply(msg) }
         }
-        vocabTask = Task { await loadFromAPI(lang: inputLanguage) }
+        // #34: [weak self] prevents strong retain cycle in init
+        vocabTask = Task { [weak self] in await self?.loadFromAPI(lang: self?.inputLanguage ?? "en-US") }
     }
 
     // MARK: - Label sanitization
@@ -114,7 +117,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
         // reassigns vocabTask before each call. Because this method is @MainActor,
         // overlapping direct invocations serialize automatically. vocabTask management
         // ensures that language-change calls cancel any in-progress task.
-        let targetLang = lang ?? language
+        // #46: default to inputLanguage (not outputLanguage alias) — vocab labels are in input lang
+        let targetLang = lang ?? inputLanguage
 
         // Validate language code against allowlist before using in URL
         guard WatchVocabSync.allowedLangs.contains(targetLang) else {
@@ -145,7 +149,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
             // Cap categories and phrase counts; sanitize string field lengths
             let safeCats: [WatchCategory] = vocab.categories.prefix(50).map { cat in
                 let safePhrases = cat.phrases.prefix(100).map { ph in
-                    VocabPhrase(id: ph.id,
+                    // #35: cap phrase id length to prevent oversized strings from wire data
+                    VocabPhrase(id: String(ph.id.prefix(50)),
                                 label: Self.sanitizeLabel(ph.label),
                                 arasaacId: ph.arasaacId,
                                 sfSymbol: ph.sfSymbol)
@@ -169,7 +174,11 @@ final class WatchVocabSync: NSObject, ObservableObject {
 
     private func handleVocabReply(_ reply: [String: Any]) {
         // #8: size check BEFORE decode — prevents JSON bomb allocation
-        guard let data = reply["vocab"] as? Data else { return }
+        // #33: log type mismatch instead of silently returning — helps diagnose companion path issues
+        guard let data = reply["vocab"] as? Data else {
+            NSLog("[VocabSync] Companion vocab: expected Data, got \(type(of: reply["vocab"])) — ignoring")
+            return
+        }
         guard data.count <= 512_000 else {
             NSLog("[VocabSync] Companion vocab too large (\(data.count) bytes)")
             return
@@ -191,7 +200,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
                 icon: String(cat.icon.prefix(4)),
                 name: String(cat.name.prefix(120)),
                 phrases: cat.phrases.prefix(100).map { ph in
-                    WatchPhrase(id: ph.id, label: Self.sanitizeLabel(ph.label),
+                    // #35: cap phrase id length (companion path)
+                    WatchPhrase(id: String(ph.id.prefix(50)), label: Self.sanitizeLabel(ph.label),
                                 arasaacId: ph.arasaacId,
                                 sfSymbol: ph.sfSymbol ?? "circle.fill",
                                 isEmergency: isEmergencyCat)

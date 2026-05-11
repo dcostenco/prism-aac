@@ -55,11 +55,11 @@ final class WatchAISession: NSObject, ObservableObject {
         let reachable = WCSessionRouter.shared.isReachable
         if reachable {
             mode = .companion
-            offlineBanner = nil
+            offlineBanner = nil  // safe to clear — BT is back
         } else {
             // URLSession will succeed if Watch has WiFi or LTE
             mode = .cloudDirect
-            offlineBanner = nil
+            // Do NOT clear offlineBanner here — it may have been set by a failed cloud call (#21)
         }
     }
 
@@ -144,8 +144,15 @@ final class WatchAISession: NSObject, ObservableObject {
                         )
                     }
                 } onCancel: {
-                    // Continuation abandoned by timeout — log but no double-resume
                     NSLog("[WatchAI] askViaPhone continuation cancelled by timeout")
+                    // #20: Resume with error to prevent continuation abandonment (Swift Concurrency requirement)
+                    lock.lock()
+                    let wasResumed = resumed
+                    if !wasResumed { resumed = true }
+                    lock.unlock()
+                    if !wasResumed {
+                        cont.resume(throwing: CancellationError())
+                    }
                 }
             }
             group.addTask {
@@ -190,6 +197,12 @@ final class WatchAISession: NSObject, ObservableObject {
             .replacingOccurrences(of: "</s>", with: "")
             .replacingOccurrences(of: "<|end_of_turn|>", with: "")
             .replacingOccurrences(of: "<|start_of_turn|>", with: "")
+            // #23: HTML entity stripping — prevents prompt injection via encoded angle brackets
+            .replacingOccurrences(of: "&#", with: "")
+            .replacingOccurrences(of: "&lt;", with: "")
+            .replacingOccurrences(of: "&gt;", with: "")
+            .replacingOccurrences(of: "\\u003c", with: "")  // JSON-escaped <
+            .replacingOccurrences(of: "\\u003e", with: "")  // JSON-escaped >
 
         let system = "You are a friendly helper for a child who uses AAC. Reply in \(validatedLanguage) language. Keep answers short (2-3 sentences max)."
         var req = URLRequest(url: cloudURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: timeoutSec)

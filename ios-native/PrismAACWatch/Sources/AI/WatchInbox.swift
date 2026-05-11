@@ -84,10 +84,13 @@ final class WatchInbox: NSObject, ObservableObject {
     /// Reply to a message by sending text back via iPhone.
     /// F4a: routes through WCSessionRouter (no direct WCSession bypass, no nil errorHandler)
     func reply(to msg: WatchMessage, text: String) {
+        // #29: re-validate provider against allowlist before sending — prevents injection via stored message
+        let safeProvider = ["sms", "email", "telegram", "whatsapp", "messenger", "instagram", "viber"]
+            .contains(msg.provider) ? msg.provider : "sms"
         WCSessionRouter.shared.send(
             ["type": "inbox_reply",
              "sender": String(msg.sender.prefix(100)),
-             "provider": String(msg.provider.prefix(20)),
+             "provider": safeProvider,
              "text": String(text.prefix(500))],
             errorHandler: { err in NSLog("[WatchInbox] Reply failed: \(err)") }
         )
@@ -118,14 +121,22 @@ final class WatchInbox: NSObject, ObservableObject {
                 .replacingOccurrences(of: "\u{200D}", with: "")  // ZWJ
                 .replacingOccurrences(of: "\u{FEFF}", with: "")  // BOM
         }()
-        let text     = String(rawText.prefix(500))
-        let id       = String((message["id"]       as? String ?? UUID().uuidString).prefix(36))
+        // #25: strip ChatML control tokens from message text before storage and TTS
+        let safeText = String(rawText.prefix(500))
+            .replacingOccurrences(of: "<|im_start|>", with: "")
+            .replacingOccurrences(of: "<|im_end|>", with: "")
+            .replacingOccurrences(of: "<|system|>", with: "")
+            .replacingOccurrences(of: "[INST]", with: "")
+            .replacingOccurrences(of: "[/INST]", with: "")
+        // #27: validate id as proper UUID — reject arbitrary injection strings
+        let rawId    = message["id"] as? String ?? ""
+        let id       = UUID(uuidString: rawId)?.uuidString ?? UUID().uuidString
         let provider = String((message["provider"] as? String ?? "sms").prefix(20))
         // #19: clamp receivedAt — reject timestamps more than 1 year old or more than 1 min in the future
         let now      = Date().timeIntervalSince1970
         let rawTs    = message["receivedAt"] as? TimeInterval ?? now
         let ts       = min(max(rawTs, now - 86_400 * 365), now + 60)
-        let msg = WatchMessage(id: id, sender: sender, text: text,
+        let msg = WatchMessage(id: id, sender: sender, text: safeText,
                                provider: provider, receivedAt: Date(timeIntervalSince1970: ts))
         deliver(msg)
     }

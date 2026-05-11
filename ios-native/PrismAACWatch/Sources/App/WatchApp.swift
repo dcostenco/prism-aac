@@ -10,12 +10,14 @@ import SwiftUI
 @main
 struct PrismAACWatchApp: App {
     // Router MUST be first — it sets WCSession.default.delegate before any other init
-    @StateObject private var wcRouter  = WCSessionRouter.shared
-    @StateObject private var session   = WatchAISession()
-    @StateObject private var emergency = WatchEmergencyManager()
-    @StateObject private var tts       = WatchTTS()
-    @StateObject private var vocab     = WatchVocabSync()
-    @StateObject private var inbox     = WatchInbox()
+    @StateObject private var wcRouter     = WCSessionRouter.shared
+    @StateObject private var session      = WatchAISession()
+    @StateObject private var emergency    = WatchEmergencyManager()
+    @StateObject private var tts          = WatchTTS()
+    @StateObject private var vocab        = WatchVocabSync()
+    @StateObject private var inbox        = WatchInbox()
+    // WatchTranslation lifted to app level (#37) so view re-creation doesn't orphan in-flight tasks
+    @StateObject private var translation  = WatchTranslation()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
@@ -26,10 +28,12 @@ struct PrismAACWatchApp: App {
                 .environmentObject(tts)
                 .environmentObject(vocab)
                 .environmentObject(inbox)
+                .environmentObject(translation)
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active && emergency.isActive {
                         NSLog("[WatchApp] Resumed active — emergency still in progress (isActive=\(emergency.isActive))")
-                        // Emergency fullScreenCover is driven by emergency.isActive binding — re-evaluation forces it
+                        // #8: Re-speak emergency alert so child/caregiver hears it on wake
+                        tts.speak("Emergency alert active. Help is coming.", language: "en-US", rate: 0.45)
                     }
                 }
         }

@@ -23,6 +23,11 @@ final class WCSessionRouter: NSObject, ObservableObject {
 
     /// Register a handler for a specific message type key.
     func registerMessageHandler(for type: String, handler: @escaping (String, [String: Any]) -> Void) {
+        // #6: Cap handler arrays — prevent unbounded growth from repeated registrations
+        guard (messageHandlers[type]?.count ?? 0) < 8 else {
+            NSLog("[WCRouter] Max handlers reached for type '\(type)'")
+            return
+        }
         messageHandlers[type, default: []].append(handler)
     }
 
@@ -38,13 +43,22 @@ final class WCSessionRouter: NSObject, ObservableObject {
     func send(_ message: [String: Any], replyHandler: (([String: Any]) -> Void)? = nil, errorHandler: ((Error) -> Void)? = nil) {
         guard WCSession.default.isReachable else {
             guard WCSession.default.activationState == .activated else {
-                NSLog("[WCRouter] Session not activated — dropping message type: \(message["type"] as? String ?? "?")")
+                NSLog("[WCRouter] Session not activated")
+                // #7: Using URLError(.networkConnectionLost) as a proxy for WC session errors
+                // Callers should not rely on specific URLError codes from this router
                 errorHandler?(URLError(.networkConnectionLost))
                 return
             }
-            WCSession.default.transferUserInfo(message)
-            // #1: Call errorHandler so continuation is never abandoned
-            errorHandler?(URLError(.networkConnectionLost))
+            if replyHandler != nil {
+                // #4: Reply-dependent messages cannot be queued via transferUserInfo
+                // (reply would arrive long after the caller has timed out)
+                NSLog("[WCRouter] Phone unreachable — dropping reply-required message: \(message["type"] as? String ?? "?")")
+                errorHandler?(URLError(.networkConnectionLost))
+            } else {
+                // Fire-and-forget messages can be queued
+                WCSession.default.transferUserInfo(message)
+                errorHandler?(URLError(.networkConnectionLost))
+            }
             return
         }
         WCSession.default.sendMessage(message, replyHandler: replyHandler) { error in
@@ -67,14 +81,13 @@ extension WCSessionRouter: WCSessionDelegate {
         }
     }
 
+    // #5: replyHandler guaranteed via defer — cannot be silently dropped
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
         guard let type = message["type"] as? String else { replyHandler(["error": "no type"]); return }
-        // #5: reply includes handler count — lets iPhone side detect zero-handler dispatch
         Task { @MainActor [weak self] in
-            guard let self else { replyHandler(["ok": false, "error": "router deallocated"]); return }
-            let handlers = self.messageHandlers[type] ?? []
-            handlers.forEach { $0(type, message) }
-            replyHandler(["ok": true, "handlers": handlers.count])
+            defer { replyHandler(["ok": true]) }  // guaranteed to be called
+            guard let self else { return }
+            self.messageHandlers[type]?.forEach { $0(type, message) }
         }
     }
 

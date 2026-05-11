@@ -61,6 +61,8 @@ final class WatchTranslation: ObservableObject {
     }
 
     private func translate(text: String, to toLang: String) async -> String? {
+        // #31: bail immediately if caller's task was cancelled before network work begins
+        guard !Task.isCancelled else { return nil }
         // Safety gate — don't translate crisis or medical dosing phrases
         let safety = WatchSafetyFilter.check(text)
         if case .crisis = safety { return nil }
@@ -94,6 +96,12 @@ final class WatchTranslation: ObservableObject {
             .replacingOccurrences(of: "</s>", with: "")
             .replacingOccurrences(of: "<|end_of_turn|>", with: "")
             .replacingOccurrences(of: "<|start_of_turn|>", with: "")
+            // #23: HTML entity stripping — prevents prompt injection via encoded angle brackets
+            .replacingOccurrences(of: "&#", with: "")
+            .replacingOccurrences(of: "&lt;", with: "")
+            .replacingOccurrences(of: "&gt;", with: "")
+            .replacingOccurrences(of: "\\u003c", with: "")  // JSON-escaped <
+            .replacingOccurrences(of: "\\u003e", with: "")  // JSON-escaped >
 
         // Chat endpoint returns SSE (text/event-stream). Collect all
         // data: {"choices":[{"delta":{"content":"..."}}]} chunks until [DONE].
@@ -128,6 +136,9 @@ final class WatchTranslation: ObservableObject {
             }
             guard data.count <= 65_536 else { return nil }
             return assembleSSE(data)
+        } catch is CancellationError {
+            // #30: Task was cancelled (user navigated away) — not an error worth logging
+            return nil
         } catch {
             NSLog("[WatchTranslation] Translation failed: \(error)")
             return nil
@@ -168,7 +179,8 @@ final class WatchTranslation: ObservableObject {
         isListening = true
     }
 
-    func stopListening() { isListening = false }
+    // #45: stopListening() removed — handleDictation() sets isListening = false directly
+    // and no external caller uses this function. isListening property is retained for SwiftUI bindings.
 
     /// Handle text from Watch dictation sheet → translate → speak.
     func handleDictation(

@@ -22,26 +22,37 @@ internal final class KeychainHelper {
         var result: AnyObject?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
               let data = result as? Data else { return nil }
+        // #3: Cap read return value — guard against malformed/oversized Keychain items
+        guard data.count <= 4096 else {
+            NSLog("[KeychainHelper] Keychain item too large (\(data.count) bytes) for \(service)/\(account)")
+            return nil
+        }
         return String(data: data, encoding: .utf8)
     }
 
     func write(value: String, service: String, account: String) {
         guard let data = value.data(using: .utf8) else { return }
+        // #1: Search query — NO kSecAttrAccessible (invalid in SecItemUpdate query dict)
         let query: [String: Any] = [
             kSecClass as String:              kSecClassGenericPassword,
             kSecAttrService as String:        service,
             kSecAttrAccount as String:        account,
-            kSecAttrAccessible as String:     kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
             kSecAttrSynchronizable as String: false,
         ]
-        let attributes: [String: Any] = [kSecValueData as String: data]
-        if SecItemUpdate(query as CFDictionary, attributes as CFDictionary) == errSecItemNotFound {
+        // Attributes to update/add — kSecAttrAccessible goes here
+        let attributes: [String: Any] = [
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+        ]
+        let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+        if updateStatus == errSecItemNotFound {
             var addQuery = query
             addQuery[kSecValueData as String] = data
+            addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
             let status = SecItemAdd(addQuery as CFDictionary, nil)
-            if status != errSecSuccess && status != errSecDuplicateItem {
-                NSLog("[KeychainHelper] SecItemAdd failed: \(status) for service=\(service) account=\(account)")
-            }
+            if status != errSecSuccess { NSLog("[KeychainHelper] SecItemAdd failed: \(status) for \(service)/\(account)") }
+        } else if updateStatus != errSecSuccess {
+            NSLog("[KeychainHelper] SecItemUpdate failed: \(updateStatus) for \(service)/\(account)")
         }
     }
 
