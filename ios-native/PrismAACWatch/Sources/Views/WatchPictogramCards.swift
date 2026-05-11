@@ -67,7 +67,9 @@ struct WatchPictogramCards: View {
     // WatchTranslation is provided via environment from WatchApp
     @EnvironmentObject private var translation: WatchTranslation
 
-    private var allPhrases: [AACPhrase] {
+    @State private var cachedPhrases: [AACPhrase] = AACVocab.childFriendlyOrder
+
+    private func computeAllPhrases() -> [AACPhrase] {
         let synced = vocab.categories.flatMap { cat in
             // #10: mark emergency phrases from API vocab using category id
             let isEmergencyCat = cat.id == "emergency" || cat.id == "help-needs"
@@ -174,7 +176,7 @@ struct WatchPictogramCards: View {
 
                     // ── 2-column AAC vocabulary grid ──
                     LazyVGrid(columns: columns, spacing: 6) {
-                        ForEach(allPhrases) { phrase in
+                        ForEach(cachedPhrases) { phrase in
                             PairCard(phrase: phrase, emergencyIsActive: emergency.isActive) {
                                 WKInterfaceDevice.current().play(.click)
                                 // #10/#19: use isEmergency flag — O(1), works for API-loaded vocab
@@ -257,6 +259,12 @@ struct WatchPictogramCards: View {
                     .padding(.bottom, 4)
                 }
             }
+        }
+        .onAppear {
+            cachedPhrases = computeAllPhrases()
+        }
+        .onChange(of: vocab.categories.count) { _, _ in
+            cachedPhrases = computeAllPhrases()
         }
         // Inbox / Notification center
         // markAllRead on dismiss — not on open — so caregivers can see which messages the child has seen
@@ -728,15 +736,17 @@ struct WatchAIChatView: View {
                 guard let data = KeychainHelper.shared.readData(service: "prism-aac-chat", account: "history"),
                       data.count <= 65_536,
                       let saved = try? JSONDecoder().decode([ChatMessage].self, from: data) else { return }
-                let msgs = Array(saved.suffix(10)).map { (role: $0.role, text: $0.text) }
+                let msgs = Array(saved.suffix(10)).map { (role: ["user", "ai"].contains($0.role) ? $0.role : "ai", text: $0.text) }
                 await MainActor.run { messages = msgs }
             }
         }
         // #26: Persist last 10 messages to Keychain whenever the list changes (fix #6: moved from UserDefaults)
         .onChange(of: messages.count) { _, _ in
             let toSave = Array(messages.suffix(10)).map { ChatMessage(role: $0.role, text: $0.text) }
-            if let data = try? JSONEncoder().encode(toSave), data.count <= 65_536 {
-                KeychainHelper.shared.writeData(data, service: "prism-aac-chat", account: "history")
+            Task.detached(priority: .utility) {
+                if let data = try? JSONEncoder().encode(toSave), data.count <= 65_536 {
+                    KeychainHelper.shared.writeData(data, service: "prism-aac-chat", account: "history")
+                }
             }
         }
         // #14: onDisappear is on the OUTERMOST VStack of WatchAIChatView — this is the correct placement.
@@ -850,6 +860,9 @@ struct WatchDictationView: View {
 // MARK: - Send Message (dedicated sheet from 📨 top bar button)
 
 struct WatchSendMessageView: View {
+    private static let phoneRegex = try? NSRegularExpression(pattern: #"^\+?[0-9]{10,15}$"#)
+    private static let emailRegex = try? NSRegularExpression(pattern: #"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"#)
+
     @EnvironmentObject var inbox: WatchInbox
     @EnvironmentObject var tts: WatchTTS
     @State private var contactQuery = ""
@@ -919,9 +932,10 @@ struct WatchSendMessageView: View {
                     // #18: phone regex requires 10–15 clean digits only (+ optional leading +).
                     // Spaces, hyphens, and parens removed — SMS APIs expect clean digit strings.
                     // 7-char minimum was too loose and accepted strings that cannot route SMS.
-                    let isValidPhone = safeTo.range(of: #"^\+?[0-9]{10,15}$"#, options: .regularExpression) != nil
+                    let range = NSRange(safeTo.startIndex..., in: safeTo)
+                    let isValidPhone = WatchSendMessageView.phoneRegex?.firstMatch(in: safeTo, range: range) != nil
                     // #18: email TLD must be at least 2 chars (e.g. .co, .uk, .com)
-                    let isValidEmail = safeTo.range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"#, options: .regularExpression) != nil
+                    let isValidEmail = WatchSendMessageView.emailRegex?.firstMatch(in: safeTo, range: range) != nil
                     guard isValidPhone || isValidEmail else {
                         sendStatus = "Invalid contact format"
                         isSending = false
@@ -934,7 +948,9 @@ struct WatchSendMessageView: View {
                             replyHandler: { _ in
                                 Task { @MainActor in
                                     isSending = false
-                                    sendStatus = "✓ Sent to \(safeTo)"
+                                    let displayTo = safeTo.components(separatedBy: .controlCharacters).joined()
+                                        .prefix(20).description  // short form for display
+                                    sendStatus = "✓ Sent to \(displayTo)"
                                     // Now start the dismiss task
                                     dismissTask?.cancel()
                                     dismissTask = Task { @MainActor in
@@ -1020,11 +1036,9 @@ struct PairCard: View {
                         }
                     }
                     .id(url)
-                    .task(id: url) {
-                        // 5-second timeout via cancellation — if view disappears before load, cancel
-                        try? await Task.sleep(nanoseconds: 5_000_000_000)
-                        // After 5 s, leave AsyncImage to show fallback (phase == .empty)
-                    }
+                    // AsyncImage has no native timeout. The dedicated AISession/translation sessions
+                    // have separate connection pools. Image loads use URLSession.shared implicitly
+                    // but are skipped entirely during emergencies (emergencyIsActive gate above).
                 } else {
                     Image(systemName: phrase.sfSymbol)
                         .font(.system(size: 32))

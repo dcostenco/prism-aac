@@ -201,12 +201,17 @@ final class WatchVocabSync: NSObject, ObservableObject {
         lastCompanionUpdate = Date()
         // #8: size check BEFORE decode — prevents JSON bomb allocation
         // #33: log type mismatch instead of silently returning — helps diagnose companion path issues
-        guard let data = reply["vocab"] as? Data else {
-            // #12: removed dead dict branch — WC always delivers companion vocab as Data;
-            // dict format was never implemented and silently swallowed delivery failures.
-            NSLog("[VocabSync] Companion vocab: expected Data, got \(type(of: reply["vocab"])) — ignoring. Companion app may need update.")
-            return
-        }
+        guard let data: Data = {
+            if let d = reply["vocab"] as? Data { return d }
+            // Fallback: companion may send dict instead of Data
+            if let dict = reply["vocab"] as? [String: Any],
+               let encoded = try? JSONSerialization.data(withJSONObject: dict) {
+                NSLog("[VocabSync] Companion sent vocab as dict — re-encoding as Data")
+                return encoded
+            }
+            NSLog("[VocabSync] Companion vocab: expected Data, got \(type(of: reply["vocab"])) — ignoring")
+            return nil
+        }() else { return }
         guard data.count <= 512_000 else {
             NSLog("[VocabSync] Companion vocab too large (\(data.count) bytes)")
             return

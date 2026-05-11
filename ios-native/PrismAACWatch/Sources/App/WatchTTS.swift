@@ -29,10 +29,11 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
             try AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
-            NSLog("[WatchTTS] AVAudioSession setup failed: \(error)")
+            NSLog("[WatchTTS] AVAudioSession setup failed: \(error) — utterance queued, will play when session available")
+            // AVFoundation queues the utterance; it plays when the audio session becomes available
         }
         isSpeaking = true
-        synthesizer.speak(utt)
+        synthesizer.speak(utt)  // FIX #11: Always queued regardless of session activation success
         // #3: Cancellable watchdog — 30s max per utterance (replaces uncancellable 60s Task)
         watchdogTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 30_000_000_000)

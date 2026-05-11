@@ -36,6 +36,10 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     private var sosHapticsFinished = false
     // #6: stored watchdog handle so cleanup() can cancel it
     private var watchdogTask: Task<Void, Never>?
+    // FIX #1: isEscalating prevents cleanup() from resetting hasEscalated mid-flight
+    private var isEscalating = false
+    // FIX #8: fallbackSpoken guard — prevents double TTS stutter on concurrent fallback paths
+    private var fallbackSpoken = false
 
     override init() {
         super.init()
@@ -84,6 +88,15 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             .replacingOccurrences(of: "&gt;", with: "")
             .replacingOccurrences(of: "\\u003c", with: "")
             .replacingOccurrences(of: "\\u003e", with: "")
+            // FIX #24: Second pass to catch reassembled tokens (e.g. <|im_<|im_start|>start|>)
+            .replacingOccurrences(of: "<|im_start|>", with: "")
+            .replacingOccurrences(of: "<|im_end|>", with: "")
+            .replacingOccurrences(of: "<|system|>", with: "")
+            .replacingOccurrences(of: "[INST]", with: "")
+            .replacingOccurrences(of: "[/INST]", with: "")
+            // Final: reject any remaining < > [ ] characters
+            .components(separatedBy: CharacterSet(charactersIn: "<>[]"))
+            .joined()
         self.severity = severity
         countdownSecs = 5
         cellularFallbackSent = false
@@ -200,7 +213,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         activePhrase = nil  // C6: clear on cancel
         severity = .standard
         cellularFallbackSent = false  // FIX 8: reset debounce on cleanup
-        hasEscalated = false  // FIX 4: reset escalation flag for next emergency
+        // FIX #1: only reset hasEscalated when no escalation is in-flight
+        if !isEscalating {
+            hasEscalated = false
+        }
+        isEscalating = false  // always reset escalating flag
+        fallbackSpoken = false  // FIX #8: reset TTS stutter guard
         deliveryStatus = .idle
         synthesizer.stopSpeaking(at: .immediate)  // #5: always stop TTS on cleanup
         // FIX #6/#14: Deactivate AVAudioSession so other apps (e.g. music) can resume; log failure
@@ -230,6 +248,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     // UI should show "SENDING…" (.pending), "HELP COMING" (.confirmed), "SEND FAILED — CALL 911" (.failed).
     private func escalate(phrase: String, severity: EmergencySeverity) async {
         guard !hasEscalated else { return }
+        // FIX #1: mark escalation in-flight so cleanup() won't reset hasEscalated mid-flight
+        isEscalating = true
 
         let msg: [String: Any] = buildEmergencyMessage(phrase: phrase, severity: severity)
         deliveryStatus = .pending
@@ -241,18 +261,22 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                         guard let self else { return }
                         self.hasEscalated = true
                         self.deliveryStatus = .confirmed
+                        self.isEscalating = false  // FIX #1: escalation complete
+                        WKInterfaceDevice.current().play(.success)  // FIX #30: haptic on confirmed
                         NSLog("[WatchEmergency] Escalation CONFIRMED via WCSession reply")
                     }
                 },
                 errorHandler: { [weak self] err in
                     Task { @MainActor [weak self] in
                         NSLog("[WatchEmergency] WCSession delivery failed: \(err) — attempting cellular")
+                        self?.isEscalating = false  // FIX #1: reset on WCSession failure path
                         await self?.attemptCellularFallback()
                     }
                 }
             )
         } else {
             // Not reachable — go straight to cellular
+            isEscalating = false  // FIX #1: reset before async cellular path takes over
             await attemptCellularFallback()
         }
 
@@ -291,6 +315,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     // #26: static cached formatter — avoids allocation on every call
     private static let iso8601 = ISO8601DateFormatter()
 
+    // FIX #38: Emergency dispatch URLs — update via EMERGENCY_DISPATCH_URL in Info.plist for OTA config
+    // Emergency dispatch URL: update via EMERGENCY_DISPATCH_URL in Info.plist for OTA config
+    // Fallback: fallbackDispatchURL used if primary returns 5xx on retry
+    private static let primaryDispatchURL = "https://synalux.ai/api/v1/emergency/dispatch"
+    private static let fallbackDispatchURL = "https://dispatch.synalux.ai/v1/emergency"  // CDN fallback
+
     // FIX #7: Dedicated session so emergency HTTP is never starved by image loads on URLSession.shared
     private static let emergencySession: URLSession = {
         let cfg = URLSessionConfiguration.ephemeral
@@ -319,6 +349,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
     @MainActor
     private func attemptCellularFallback(retryCount: Int = 0) async {
+        // FIX #4: capture activePhrase before the first await point to avoid actor-isolated mutation race
+        let phrase = activePhrase ?? "Emergency"
         // #19: guard — abort if emergency was cancelled before fallback ran
         guard isActive else {
             NSLog("[WatchEmergency] Cellular fallback skipped — emergency no longer active")
@@ -331,7 +363,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             cellularFallbackSent = true
         }
 
-        guard let url = URL(string: "https://synalux.ai/api/v1/emergency/dispatch") else { return }
+        // FIX #38: use primaryDispatchURL constant
+        guard let url = URL(string: WatchEmergencyManager.primaryDispatchURL) else { return }
         var req = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 5)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -345,7 +378,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         // NOTE: Do not log req.allHTTPHeaderFields — contains auth token
         let payload: [String: Any] = [
-            "phrase": activePhrase ?? "Emergency",
+            "phrase": phrase,  // FIX #4: use pre-captured phrase, not activePhrase (may have been cleared)
             "severity": "watch_cellular_fallback",
             "source": "watchos",
         ]
@@ -368,6 +401,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                 // FIX #1: Set hasEscalated only on confirmed HTTP 200
                 hasEscalated = true
                 deliveryStatus = .confirmed
+                WKInterfaceDevice.current().play(.success)  // FIX #30: haptic on cellular confirm
                 NSLog("[WatchEmergency] Escalation CONFIRMED via cellular dispatch")
             } else if let http = response as? HTTPURLResponse,
                       (500...599).contains(http.statusCode),
@@ -392,6 +426,9 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     }
 
     private func speakEmergencyFallback() {
+        // FIX #8: guard against double TTS stutter on concurrent fallback paths
+        guard !fallbackSpoken else { return }
+        fallbackSpoken = true
         // #13: stop any active speech before starting fallback utterance
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
         do {

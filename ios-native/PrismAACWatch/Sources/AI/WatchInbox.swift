@@ -70,11 +70,17 @@ final class WatchInbox: NSObject, ObservableObject {
         WCSessionRouter.shared.registerMessageHandler(for: "inbox_message") { [weak self] _, msg in
             Task { @MainActor [weak self] in self?.deliverFromMessage(msg) }
         }
-        // FIX #6: Async load — doesn't block init()
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            self.messages = self.loadFromDefaults()
-            self.recalcUnread()
+        // FIX #14: loadFromDefaults() is nonisolated (Keychain reads are safe off main thread).
+        // Run it on a detached task to avoid blocking @MainActor init, then assign results on main.
+        Task {
+            let msgs = await Task.detached(priority: .userInitiated) { [weak self] in
+                self?.loadFromDefaults() ?? []
+            }.value
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.messages = msgs
+                self.recalcUnread()
+            }
             if needsMigration {
                 // #3/#17: persist migrated UserDefaults data to Keychain asynchronously
                 Task.detached(priority: .utility) { [weak self] in await self?.persistToKeychain() }
@@ -82,7 +88,10 @@ final class WatchInbox: NSObject, ObservableObject {
                 // #9: Always purge any residual UserDefaults PII on every launch after migration is complete.
                 // Covers the race window where migration succeeded but a prior launch crashed before
                 // removeObject() ran inside persistToKeychain().
-                UserDefaults.standard.removeObject(forKey: self.storageKey)
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    UserDefaults.standard.removeObject(forKey: self.storageKey)
+                }
             }
         }
         // Permission requested lazily in requestPermissionIfNeeded()
@@ -207,7 +216,7 @@ final class WatchInbox: NSObject, ObservableObject {
         let now        = Date().timeIntervalSince1970
         let rawTs      = message["receivedAt"] as? TimeInterval ?? now
         let oneYearAgo = now - Double(86_400 * 365)
-        let ts         = min(max(rawTs, oneYearAgo), now + 60)
+        let ts         = min(max(rawTs, oneYearAgo), now + 300)  // FIX #39: 5-min future window (was 60s)
         let msg = WatchMessage(id: id, sender: sender, text: safeText,
                                provider: provider, receivedAt: Date(timeIntervalSince1970: ts))
         deliver(msg)
@@ -258,11 +267,17 @@ final class WatchInbox: NSObject, ObservableObject {
     // #6: nonisolated so Task.detached can call this without hopping back to @MainActor.
     // Captures a snapshot of messages at call time; Keychain I/O runs off the main thread.
     nonisolated private func persistToKeychain() async {
-        // Capture messages snapshot on @MainActor before doing Keychain work off-actor
-        let snapshot = await MainActor.run { messages }
-        let keychainService = await MainActor.run { self.keychainService }
-        let keychainAccount = await MainActor.run { self.keychainAccount }
-        let storageKey      = await MainActor.run { self.storageKey }
+        // FIX #5: Single MainActor round-trip instead of four separate awaits — avoids
+        // interleaved mutations between hops (each await is a suspension point where other
+        // @MainActor work can run and mutate state).
+        let (snapshot, svc, acct, storeKey, migrated) = await MainActor.run {
+            (messages, keychainService, keychainAccount, storageKey,
+             UserDefaults.standard.bool(forKey: "watchInboxMigrated"))
+        }
+        // Use snapshot, svc, acct, storeKey, migrated below instead of separate awaits
+        let keychainService = svc
+        let keychainAccount = acct
+        let storageKey      = storeKey
 
         // #7: update-then-add pattern — never delete first (avoids data loss if add fails)
         // #15: SecItemDelete with kSecValueData in query is gone — we don't delete at all
@@ -302,7 +317,10 @@ final class WatchInbox: NSObject, ObservableObject {
                 // NOTE: UserDefaults is NOT excluded from iCloud backup by default.
                 // PII is only present during the brief migration window before persistToKeychain() completes.
                 // Resolved by immediate removal after confirmed Keychain write.
-                if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") {
+                // FIX #26: Using "watchInboxMigrated" in UserDefaults.standard — iCloud KVS disabled
+                // since NSUbiquitousKeyValueStore is not enabled in entitlements.
+                // If KVS is ever added, this flag must be moved to a non-synced store.
+                if !migrated {
                     UserDefaults.standard.removeObject(forKey: storageKey)
                     UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
                 }
@@ -311,7 +329,10 @@ final class WatchInbox: NSObject, ObservableObject {
                 // NOTE: UserDefaults is NOT excluded from iCloud backup by default.
                 // PII is only present during the brief migration window before persistToKeychain() completes.
                 // Resolved by immediate removal after confirmed Keychain write.
-                if !UserDefaults.standard.bool(forKey: "watchInboxMigrated") {
+                // FIX #26: Using "watchInboxMigrated" in UserDefaults.standard — iCloud KVS disabled
+                // since NSUbiquitousKeyValueStore is not enabled in entitlements.
+                // If KVS is ever added, this flag must be moved to a non-synced store.
+                if !migrated {
                     UserDefaults.standard.removeObject(forKey: storageKey)
                     UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
                 }
@@ -323,9 +344,10 @@ final class WatchInbox: NSObject, ObservableObject {
         }
     }
 
+    // FIX #14: nonisolated — Keychain reads are safe off main thread; called from detached Task in init().
     // #24: @MainActor annotation removed — WatchInbox is @MainActor final class,
     // so all instance methods are implicitly @MainActor. Explicit annotation is redundant.
-    private func loadFromDefaults() -> [WatchMessage] {
+    nonisolated private func loadFromDefaults() -> [WatchMessage] {
         // Migration path only — UserDefaults is cleared immediately after Keychain write succeeds.
         // Message PII is in UserDefaults only during the first-launch migration window.
         // This is an accepted limitation; new installs write only to Keychain.

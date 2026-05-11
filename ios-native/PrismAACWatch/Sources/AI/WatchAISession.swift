@@ -40,6 +40,9 @@ final class WatchAISession: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        // Force safety pattern validation at startup (not lazily on first user input)
+        _ = WatchSafetyFilter._crisisPatternCheck
+        _ = WatchSafetyFilter._medicalPatternCheck
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerMessageHandler(for: "phrase_reply") { [weak self] _, msg in
             Task { @MainActor [weak self] in self?.handlePhoneReply(msg) }
@@ -95,9 +98,9 @@ final class WatchAISession: NSObject, ObservableObject {
         do {
             // #6: use router's isReachable — no direct WCSession.default reads
             if mode == .companion && WCSessionRouter.shared.isReachable {
-                reply = try await askViaPhone(question: question, language: language)
+                reply = sanitizeResponse(try await askViaPhone(question: question, language: language))
             } else {
-                reply = try await askViaCloud(question: question, language: language)
+                reply = sanitizeResponse(try await askViaCloud(question: question, language: language))
                 // #25: do not overwrite mode here — updateMode() is sole authority
             }
         } catch is CancellationError {
@@ -114,19 +117,30 @@ final class WatchAISession: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Response sanitization
+
+    private func sanitizeResponse(_ raw: String) -> String {
+        return raw
+            .replacingOccurrences(of: "<|im_start|>", with: "")
+            .replacingOccurrences(of: "<|im_end|>", with: "")
+            .replacingOccurrences(of: "<|system|>", with: "")
+            .replacingOccurrences(of: "[INST]", with: "")
+            .replacingOccurrences(of: "[/INST]", with: "")
+            .replacingOccurrences(of: "<|eot_id|>", with: "")
+            .replacingOccurrences(of: "<|start_header_id|>", with: "")
+            .replacingOccurrences(of: "<|end_header_id|>", with: "")
+    }
+
     // MARK: - Companion path (BT → iPhone)
 
     private func askViaPhone(question: String, language: String) async throws -> String {
-        // #1: lock/resumed hoisted to outer scope so both the WCSession callbacks and
-        // the timeout task share the same guard. withTaskCancellationHandler is NOT used
-        // because cont is scoped inside withCheckedThrowingContinuation and cannot be
-        // accessed from onCancel without unsafe pointer tricks. Instead, the timeout task
-        // wins the group race and cancels all sibling tasks; the WCSession callbacks see
-        // resumed = true and become no-ops. Swift 5.9+ safely GC's abandoned continuations.
-        // lock and resumed are captured by the WCSession reply/error handler closures.
-        // They are retained by those closures until WCSession calls them (or they are GC'd on session reset).
-        // This is safe: ARC cleans up the closures when WCSession releases them.
-        // The group.cancelAll() above stops the Task group; WCSession callbacks become no-ops via the resumed guard.
+        // KNOWN LIMITATION: CheckedContinuation + WCSession callbacks
+        // When the task group timeout fires (group.cancelAll()), the continuation task
+        // is cancelled. WCSession may still hold strong references to replyHandler/errorHandler
+        // closures. If WCSession calls these after cancellation, the 'resumed' guard
+        // prevents cont.resume() — the continuation is abandoned (not resumed with error).
+        // 'CheckedContinuation' warns on abandonment in debug builds (not release).
+        // This is acceptable: the timeout path already throws URLError(.timedOut) to the caller.
         let lock = NSLock()
         var resumed = false
 
@@ -272,7 +286,7 @@ final class WatchAISession: NSObject, ObservableObject {
                     if failedChunks == 3 {
                         NSLog("[WatchAI] 3+ SSE chunks failed to parse — possible API format change")
                     }
-                    NSLog("[WatchAI] SSE chunk parsed but unexpected structure: \(payload.prefix(100))")
+                    NSLog("[WatchAI] SSE chunk parsed but unexpected structure (length=\(payload.count))")
                 } else if !payload.isEmpty && payload != "[DONE]" {
                     failedChunks += 1
                     // FIX #13: log once at exactly 3 failures, not on every subsequent failure

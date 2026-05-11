@@ -69,15 +69,17 @@ final class WCSessionRouter: NSObject, ObservableObject {
         WCSession.default.sendMessage(message, replyHandler: replyHandler) { error in
             NSLog("[WCRouter] sendMessage failed: \(error)")
             let msg = message  // already captured by value
-            // Fire-and-forget: queuing transferUserInfo on error is idempotent and short-lived.
-            // Not stored since WCSession.default singleton ensures it completes.
             Task { @MainActor in
-                WCSession.default.transferUserInfo(msg)
+                if replyHandler == nil {
+                    // FIX #31: Only queue fire-and-forget messages — reply-dependent messages
+                    // cannot be safely queued (reply would arrive after caller timed out,
+                    // and the iPhone may process the message twice)
+                    WCSession.default.transferUserInfo(msg)
+                }
                 if replyHandler != nil {
                     errorHandler?(error)
                 }
             }
-            // No reply expected → message queued, not an error
         }
     }
 }

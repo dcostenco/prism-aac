@@ -60,7 +60,12 @@ final class WatchTranslation: ObservableObject {
             defer { self.isTranslating = false }  // always resets regardless of path
             let translated = await self.translate(text: text, to: toLang)
             guard !Task.isCancelled else { return }
-            tts.speak(translated ?? text, language: toLang)
+            if let translated = translated {
+                tts.speak(translated, language: toLang)
+            } else {
+                // Translation was nil (safety filter or network error) — speak original in input language
+                tts.speak(text, language: fromLang.isEmpty ? toLang : fromLang)
+            }
         }
     }
 
@@ -128,7 +133,7 @@ final class WatchTranslation: ObservableObject {
         var req = URLRequest(url: chatURL)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.timeoutInterval = 10
+        // timeout configured on translationSession (timeoutIntervalForRequest: 10, timeoutIntervalForResource: 15)
         do {
             req.httpBody = try JSONSerialization.data(withJSONObject: [
                 "messages": [
