@@ -90,7 +90,16 @@ extension WCSessionRouter: WCSessionDelegate {
     }
 
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-        guard let type = message["type"] as? String else { return }
+        // FIX #5 (CRITICAL): Guard against unbounded payload — prevents memory exhaustion
+        // from malformed or malicious messages sent via WCSession.
+        guard let type = message["type"] as? String, type.count <= 64 else {
+            NSLog("[WCRouter] Dropping message: missing type or type too long")
+            return
+        }
+        guard message.count <= 20 else {
+            NSLog("[WCRouter] Dropping oversized message (fields: \(message.count))")
+            return
+        }
         Task { @MainActor [weak self] in
             self?.messageHandlers[type]?.forEach { $0(type, message) }
         }
@@ -99,7 +108,17 @@ extension WCSessionRouter: WCSessionDelegate {
     // #11: replyHandler called explicitly — defer hid the case where self is nil,
     // causing replyHandler to fire with ["ok": true] even when no handlers ran.
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
-        guard let type = message["type"] as? String else { replyHandler(["error": "no type"]); return }
+        // FIX #5 (CRITICAL): Guard against unbounded payload — same checks as no-reply variant.
+        guard let type = message["type"] as? String, type.count <= 64 else {
+            NSLog("[WCRouter] Dropping message (reply): missing type or type too long")
+            replyHandler(["error": "no type"])
+            return
+        }
+        guard message.count <= 20 else {
+            NSLog("[WCRouter] Dropping oversized message (reply) (fields: \(message.count))")
+            replyHandler(["error": "oversized"])
+            return
+        }
         Task { @MainActor [weak self] in
             guard let self else {
                 replyHandler(["error": "router deallocated"])
@@ -111,7 +130,15 @@ extension WCSessionRouter: WCSessionDelegate {
     }
 
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
-        guard let type = userInfo["type"] as? String else { return }
+        // FIX #5 (CRITICAL): Guard against unbounded payload in transferUserInfo path.
+        guard let type = userInfo["type"] as? String, type.count <= 64 else {
+            NSLog("[WCRouter] Dropping userInfo: missing type or type too long")
+            return
+        }
+        guard userInfo.count <= 20 else {
+            NSLog("[WCRouter] Dropping oversized userInfo (fields: \(userInfo.count))")
+            return
+        }
         Task { @MainActor [weak self] in
             self?.messageHandlers[type]?.forEach { $0(type, userInfo) }
         }

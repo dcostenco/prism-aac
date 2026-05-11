@@ -11,7 +11,7 @@ final class WatchTranslation: ObservableObject {
 
     @Published private(set) var isTranslating = false
     @Published var isListening   = false
-    @Published var pendingText   = ""
+    @Published private(set) var pendingText = ""  // FIX #32: restrict external mutation
     @Published var errorMessage: String?
 
     private var translateTask: Task<Void, Never>?
@@ -141,7 +141,7 @@ final class WatchTranslation: ObservableObject {
                     ["role": "user", "content": safeText],
                 ],
                 "max_tokens": 50,
-                "stream": true,   // #7: matches assembleSSE() SSE parser — stream:false sent non-SSE, silently failing
+                "stream": false,  // FIX #17: non-streaming for translation (short responses); data(for:) buffers entire SSE
             ])
         } catch {
             NSLog("[WatchTranslation] JSON serialization failed: \(error) — returning nil")
@@ -159,7 +159,9 @@ final class WatchTranslation: ObservableObject {
                 return nil
             }
             guard data.count <= 65_536 else { return nil }
-            return assembleSSE(data)
+            // FIX #17: try non-streaming parse first (stream:false); fall back to SSE assembler for
+            // servers that ignore stream:false and return SSE anyway.
+            return parseNonStreaming(data) ?? assembleSSE(data)
         } catch is CancellationError {
             // #30: Task was cancelled (user navigated away) — not an error worth logging
             return nil
@@ -167,6 +169,21 @@ final class WatchTranslation: ObservableObject {
             NSLog("[WatchTranslation] Translation failed: \(error)")
             return nil
         }
+    }
+
+    /// Parse a non-streaming (stream:false) OpenAI-compatible JSON response.
+    /// Returns the content string, capped to 300 chars, or nil if the response
+    /// does not match the expected schema.
+    // FIX #17: added to handle stream:false responses from the translation endpoint.
+    private func parseNonStreaming(_ data: Data) -> String? {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let choices = obj["choices"] as? [[String: Any]],
+              let msg = choices.first?["message"] as? [String: Any],
+              let content = msg["content"] as? String else { return nil }
+        let trimmed = String(content.prefix(300))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: .init(charactersIn: "\"'"))
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     /// Parse SSE chunks: "data: {...}\n\ndata: [DONE]\n\n" → assembled string.
@@ -180,6 +197,8 @@ final class WatchTranslation: ObservableObject {
             guard line.hasPrefix("data: ") else { continue }
             let payload = String(line.dropFirst(6))
             if payload == "[DONE]" { break }
+            // FIX #8: per-chunk size cap — reject oversized SSE payloads before JSON decode.
+            guard payload.count <= 200 else { continue }
             guard let d = payload.data(using: .utf8),
                   let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
                   let choices = obj["choices"] as? [[String: Any]],

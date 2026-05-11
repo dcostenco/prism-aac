@@ -35,8 +35,12 @@ final class WatchVocabSync: NSObject, ObservableObject {
         let safeOutput = Self.allowedLangs.contains(output) ? output : "en-US"
         inputLanguage  = safeInput
         outputLanguage = safeOutput
-        KeychainHelper.shared.write(value: safeInput,  service: "prism-aac", account: "watchInputLanguage")
-        KeychainHelper.shared.write(value: safeOutput, service: "prism-aac", account: "watchOutputLanguage")
+        // FIX #28: Keychain writes are synchronous SecItem calls; move off @MainActor to avoid
+        // blocking the UI thread for the duration of the write.
+        Task.detached(priority: .utility) {
+            KeychainHelper.shared.write(value: safeInput,  service: "prism-aac", account: "watchInputLanguage")
+            KeychainHelper.shared.write(value: safeOutput, service: "prism-aac", account: "watchOutputLanguage")
+        }
         vocabTask?.cancel()
         // #25+#34: @MainActor ensures isSpeaking/published state mutations are on main actor; [weak self] prevents retain cycle
         vocabTask = Task { @MainActor [weak self] in await self?.loadFromAPI(lang: safeInput) }   // vocab labels in INPUT lang
@@ -91,7 +95,7 @@ final class WatchVocabSync: NSObject, ObservableObject {
     internal static func sanitizeLabel(_ raw: String) -> String {
         // #4: expanded to full token list — ChatML, Llama, Gemma, Mistral, legacy special tokens,
         // HTML entities, and JSON-escaped angle brackets; prevents prompt injection via vocab labels
-        return raw
+        let tokenStripped = raw
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
@@ -116,7 +120,13 @@ final class WatchVocabSync: NSObject, ObservableObject {
             .replacingOccurrences(of: "&gt;", with: "")
             .replacingOccurrences(of: "\\u003c", with: "")
             .replacingOccurrences(of: "\\u003e", with: "")
-            .prefix(120).description
+        // FIX #16: strip bidi override characters from vocab labels before length cap.
+        // These can render as invisible/reversed text in SwiftUI labels.
+        let bidi = ["\u{202A}","\u{202B}","\u{202C}","\u{202D}","\u{202E}",
+                    "\u{200B}","\u{200C}","\u{200D}","\u{200E}","\u{200F}",
+                    "\u{2066}","\u{2067}","\u{2068}","\u{2069}","\u{FEFF}"]
+        let bidiStripped = bidi.reduce(tokenStripped) { $0.replacingOccurrences(of: $1, with: "") }
+        return String(bidiStripped.prefix(120))
     }
 
     // MARK: - Load from web app API (standalone path)
@@ -204,10 +214,15 @@ final class WatchVocabSync: NSObject, ObservableObject {
         guard let data: Data = {
             if let d = reply["vocab"] as? Data { return d }
             // Fallback: companion may send dict instead of Data
-            if let dict = reply["vocab"] as? [String: Any],
-               let encoded = try? JSONSerialization.data(withJSONObject: dict) {
-                NSLog("[VocabSync] Companion sent vocab as dict — re-encoding as Data")
-                return encoded
+            // FIX #22: use do/catch instead of try? so re-encoding failures are logged.
+            if let dict = reply["vocab"] as? [String: Any] {
+                do {
+                    let encoded = try JSONSerialization.data(withJSONObject: dict)
+                    NSLog("[VocabSync] Companion sent vocab as dict — re-encoded as Data")
+                    return encoded
+                } catch {
+                    NSLog("[VocabSync] Companion vocab dict re-encoding failed: \(error)")
+                }
             }
             NSLog("[VocabSync] Companion vocab: expected Data, got \(type(of: reply["vocab"])) — ignoring")
             return nil

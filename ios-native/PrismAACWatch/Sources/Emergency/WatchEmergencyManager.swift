@@ -45,6 +45,13 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         super.init()
         // #19: Set delegate so we know when emergency TTS utterance completes
         synthesizer.delegate = self
+        // FIX #26: Check for uncleared emergency flag from a previous process termination.
+        // Full state recovery (re-entering countdown, resuming cellular dispatch) is a future
+        // enhancement. For now, flag the condition so the UI can prompt the caregiver.
+        if UserDefaults.standard.bool(forKey: "watchEmergencyActive") {
+            NSLog("[WatchEmergency] Previous emergency session detected — show recovery UI")
+            // TODO: Post a local notification or set a @Published flag to display recovery UI.
+        }
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerReachabilityHandler { [weak self] reachable in
             Task { @MainActor [weak self] in
@@ -62,6 +69,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // Safe: @MainActor serializes all calls — rapid taps cannot race past this guard
         guard !isActive else { return }  // FIX 4: mutex — no duplicate triggers
         isActive = true
+        // FIX #26: Persist active flag so next launch can show recovery UI after process termination
+        UserDefaults.standard.set(true, forKey: "watchEmergencyActive")
         // FIX #13/#2: Sanitize phrase — strip ChatML, Llama, Gemma, and HTML-encoded tokens before storing
         activePhrase = String(phrase.prefix(200))
             .replacingOccurrences(of: "<|im_start|>", with: "")
@@ -97,6 +106,15 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             // Final: reject any remaining < > [ ] characters
             .components(separatedBy: CharacterSet(charactersIn: "<>[]"))
             .joined()
+        // FIX #1 (CRITICAL): Apply Unicode NFKC normalization to collapse fullwidth/homoglyph
+        // variants (e.g. ｉｍ＿ｓｔａｒｔ → im_start) before the final character-class filter.
+        // applyingTransform removes combining marks ([:Mn:] Remove) and re-normalizes,
+        // then the second components/join strips any angle brackets that emerged from normalization.
+        let nfkcSanitized = (activePhrase ?? "")
+            .applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? (activePhrase ?? "")
+        activePhrase = nfkcSanitized
+            .components(separatedBy: CharacterSet(charactersIn: "<>[]"))
+            .joined()
         self.severity = severity
         countdownSecs = 5
         cellularFallbackSent = false
@@ -118,16 +136,18 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                 WKApplication.shared().endBackgroundTask(t)
                 self.activeBgTask = nil
             }
-            // Spin a short new task for TTS + cellular attempt
+            // FIX #20 (MEDIUM): speakEmergencyFallback() is non-blocking (AVSpeechSynthesizer.speak
+            // returns immediately) — call it synchronously here so TTS fires even if the async
+            // Task below is denied CPU time. Only the cellular network attempt is inherently async.
+            self.speakEmergencyFallback()
+            NSLog("[WatchEmergency] BG expiry: TTS fallback spoken synchronously")
+            // Schedule cellular attempt on a new background task (network is async)
             let fallbackTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-fallback") {}
             Task { @MainActor [weak self] in
                 defer { WKApplication.shared().endBackgroundTask(fallbackTask) }
-                guard let self, self.isActive else { return }
-                NSLog("[WatchEmergency] BG expiry: cellular attempted — hasEscalated set only on confirmed delivery")
-                self.speakEmergencyFallback()
-                if !self.cellularFallbackSent {
-                    await self.attemptCellularFallback()
-                }
+                guard let self, self.isActive, !self.cellularFallbackSent else { return }
+                NSLog("[WatchEmergency] BG expiry: attempting cellular — hasEscalated set only on confirmed delivery")
+                await self.attemptCellularFallback()
                 // hasEscalated is set by attemptCellularFallback on success only
             }
         }
@@ -203,6 +223,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         cleanup()
     }
 
+    // FIX #26 (LOW): Emergency state is not fully persisted across Watch process restarts.
+    // Full persistence is a future enhancement. A lightweight signal is written on trigger
+    // and cleared on cleanup so the next launch can show a recovery UI if needed.
+    // Future work: persist countdownSecs, severity, and activePhrase to UserDefaults for
+    // full state recovery after watchOS process termination.
+    //
     // NOTE: escalate() may still be in-flight (as a @MainActor Task) when cleanup() is called.
     // The guard !hasEscalated at the start of escalate() prevents double-escalation.
     // This is an intentional design: cleanup() is safe to call at any time.
@@ -211,6 +237,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         countdownTimer = nil
         isActive = false
         activePhrase = nil  // C6: clear on cancel
+        // FIX #26: Clear persistence flag on clean cleanup
+        UserDefaults.standard.removeObject(forKey: "watchEmergencyActive")
         severity = .standard
         cellularFallbackSent = false  // FIX 8: reset debounce on cleanup
         // FIX #1: only reset hasEscalated when no escalation is in-flight
@@ -286,7 +314,11 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // #6/#8: stored watchdog — auto-cleanup 30s after escalation if UI hasn't dismissed
         watchdogTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 30_000_000_000)
-            guard let self, self.hasEscalated, self.isActive else { return }
+            // FIX #4 (CRITICAL): Guard only on isActive — do NOT require hasEscalated.
+            // If the watchdog fires before escalation confirmed (e.g. WCSession stall),
+            // isEscalating must be force-reset or the flag becomes permanently stuck.
+            guard let self, self.isActive else { return }
+            self.isEscalating = false  // force reset regardless of hasEscalated
             NSLog("[WatchEmergency] Post-escalation watchdog: auto-cleanup after 30s")
             self.cleanup()
         }
@@ -322,6 +354,13 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     private static let fallbackDispatchURL = "https://dispatch.synalux.ai/v1/emergency"  // CDN fallback
 
     // FIX #7: Dedicated session so emergency HTTP is never starved by image loads on URLSession.shared
+    // SECURITY NOTE (#13): Emergency dispatch uses HTTPS with system TLS validation.
+    // Certificate pinning is not implemented due to watchOS URLSession constraints.
+    // The endpoint is protected by:
+    //   1. Bearer token authentication (401 = silent failure → TTS-only fallback)
+    //   2. HTTPS with Apple's trusted CA root store
+    //   3. Dedicated ephemeral session (no credential caching)
+    // TODO: Add SPKI pinning via URLSessionDelegate for enhanced MITM protection.
     private static let emergencySession: URLSession = {
         let cfg = URLSessionConfiguration.ephemeral
         cfg.timeoutIntervalForRequest = 5

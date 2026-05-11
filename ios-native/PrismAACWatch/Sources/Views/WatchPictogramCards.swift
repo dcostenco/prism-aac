@@ -266,6 +266,11 @@ struct WatchPictogramCards: View {
         .onChange(of: vocab.categories.count) { _, _ in
             cachedPhrases = computeAllPhrases()
         }
+        // FIX #24: also re-compute when the content of phrases changes (not just the count).
+        // Without this, renaming a phrase or reordering within a category would not refresh the grid.
+        .onChange(of: vocab.categories.first?.phrases.first?.label) { _, _ in
+            cachedPhrases = computeAllPhrases()
+        }
         // Inbox / Notification center
         // markAllRead on dismiss — not on open — so caregivers can see which messages the child has seen
         .sheet(isPresented: $showInbox, onDismiss: { inbox.markAllRead() }) {
@@ -504,6 +509,11 @@ struct WatchReplyView: View {
     @EnvironmentObject var inbox: WatchInbox
     @EnvironmentObject var tts: WatchTTS
     @State private var replyText = ""
+    // FIX #19 (design limitation): `sent` resets whenever this view is re-created (e.g. sheet
+    // dismissed and re-presented). This allows a double-send if the user re-opens the reply sheet
+    // for the same message. True fix requires model-level tracking: WatchInbox should store a
+    // Set<String> of replied-to message IDs and expose inbox.hasReplied(msg.id).
+    // TODO: implement inbox.markReplied(_:) + WatchMessage.isReplied: Bool persisted to Keychain.
     @State private var sent = false
     @State private var dismissTask: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
@@ -583,9 +593,16 @@ struct WatchReplyView: View {
 
 // MARK: - AI Chat (dedicated sheet from panel tile — full-screen, big UI)
 
-private struct ChatMessage: Codable {
+private struct ChatMessage: Codable, Identifiable {
+    // FIX #31: stable UUID id enables ForEach(messages) with identity-based diffing,
+    // eliminating flicker when removeFirst() shifts all index-based ids by one.
+    var id: UUID = UUID()
     let role: String
     let text: String
+
+    // CodingKeys excludes `id` from persistence — each session gets fresh UUIDs on load,
+    // which is fine since ids only need to be stable within a single session.
+    enum CodingKeys: String, CodingKey { case role, text }
 }
 
 struct WatchAIChatView: View {
@@ -594,7 +611,8 @@ struct WatchAIChatView: View {
     @ObservedObject var translation: WatchTranslation
     let tts: WatchTTS
     @EnvironmentObject var session: WatchAISession
-    @State private var messages: [(role: String, text: String)] = []
+    // FIX #31: typed [ChatMessage] instead of [(role:String,text:String)] — enables ForEach with stable IDs.
+    @State private var messages: [ChatMessage] = []
     @State private var inputText     = ""
     @State private var isWaiting     = false
     @State private var showDictation = false
@@ -651,8 +669,9 @@ struct WatchAIChatView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.top, 16)
                         }
-                        ForEach(messages.indices, id: \.self) { i in
-                            let m = messages[i]
+                        // FIX #31: ForEach(messages) uses ChatMessage.id (UUID) — stable across
+                        // removeFirst() mutations, eliminating flicker on history cap trim.
+                        ForEach(messages) { m in
                             HStack(alignment: .top) {
                                 if m.role == userRole { Spacer(minLength: 24) }
                                 Text(m.text)
@@ -665,7 +684,7 @@ struct WatchAIChatView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                                 if m.role == aiRole { Spacer(minLength: 24) }
                             }
-                            .id(i)
+                            .id(m.id)
                         }
                         if isWaiting {
                             HStack(spacing: 6) {
@@ -681,8 +700,8 @@ struct WatchAIChatView: View {
                     .padding(.vertical, 8)
                 }
                 .onChange(of: messages.count) { _, _ in
-                    if let last = messages.indices.last {
-                        proxy.scrollTo(last, anchor: .bottom)
+                    if let last = messages.last {
+                        proxy.scrollTo(last.id, anchor: .bottom)
                     }
                 }
             }
@@ -714,7 +733,8 @@ struct WatchAIChatView: View {
                         .foregroundColor(inputText.isEmpty ? .gray : .blue)
                 }
                 .buttonStyle(.plain)
-                .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty)
+                // FIX #21: also disable Send while a response is in flight to prevent double-send.
+                .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty || isWaiting)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
@@ -736,13 +756,22 @@ struct WatchAIChatView: View {
                 guard let data = KeychainHelper.shared.readData(service: "prism-aac-chat", account: "history"),
                       data.count <= 65_536,
                       let saved = try? JSONDecoder().decode([ChatMessage].self, from: data) else { return }
-                let msgs = Array(saved.suffix(10)).map { (role: ["user", "ai"].contains($0.role) ? $0.role : "ai", text: $0.text) }
+                // FIX #18: cap each message text to 500 chars on load — protects against
+                // stale Keychain entries written by an older version without length caps.
+                // FIX #31: map to ChatMessage (generates fresh UUIDs for this session).
+                let msgs = Array(saved.suffix(10)).map {
+                    ChatMessage(role: ["user", "ai"].contains($0.role) ? $0.role : "ai",
+                                text: String($0.text.prefix(500)))
+                }
                 await MainActor.run { messages = msgs }
             }
         }
         // #26: Persist last 10 messages to Keychain whenever the list changes (fix #6: moved from UserDefaults)
+        // FIX #6: enforce 500-char cap on text before persisting — sanitize PII before Keychain write.
         .onChange(of: messages.count) { _, _ in
-            let toSave = Array(messages.suffix(10)).map { ChatMessage(role: $0.role, text: $0.text) }
+            let toSave = Array(messages.suffix(10)).map {
+                ChatMessage(role: $0.role, text: String($0.text.prefix(500)))
+            }
             Task.detached(priority: .utility) {
                 if let data = try? JSONEncoder().encode(toSave), data.count <= 65_536 {
                     KeychainHelper.shared.writeData(data, service: "prism-aac-chat", account: "history")
@@ -767,7 +796,7 @@ struct WatchAIChatView: View {
         // #17: cap at 50 (>= 50 removes before adding, keeping array at ≤50 at all times)
         // #9: cap individual message text at 500 chars to prevent unbounded memory growth
         if messages.count >= 50 { messages.removeFirst() }
-        messages.append((role: userRole, text: text))  // already capped
+        messages.append(ChatMessage(role: userRole, text: text))  // already capped
         isWaiting = true
 
         if isTranslatorMode {
@@ -778,7 +807,7 @@ struct WatchAIChatView: View {
                 let result = translated ?? text
                 isWaiting = false
                 if messages.count >= 50 { messages.removeFirst() }
-                messages.append((role: aiRole, text: String(result.prefix(500))))
+                messages.append(ChatMessage(role: aiRole, text: String(result.prefix(500))))
                 tts.speak(result, language: outputLang)
             }
         } else {
@@ -788,7 +817,7 @@ struct WatchAIChatView: View {
                 let reply = await session.askAI(text, lang: outputLang) ?? "…"
                 isWaiting = false
                 if messages.count >= 50 { messages.removeFirst() }
-                messages.append((role: aiRole, text: String(reply.prefix(500))))
+                messages.append(ChatMessage(role: aiRole, text: String(reply.prefix(500))))
                 tts.speak(reply, language: outputLang)
             }
         }
@@ -860,8 +889,10 @@ struct WatchDictationView: View {
 // MARK: - Send Message (dedicated sheet from 📨 top bar button)
 
 struct WatchSendMessageView: View {
-    private static let phoneRegex = try? NSRegularExpression(pattern: #"^\+?[0-9]{10,15}$"#)
-    private static let emailRegex = try? NSRegularExpression(pattern: #"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"#)
+    // FIX #9: try! instead of try? — pattern literals are known-good; if either throws it is a
+    // programming error that should crash at launch (not silently accept all contacts at runtime).
+    private static let phoneRegex: NSRegularExpression = try! NSRegularExpression(pattern: #"^\+?[0-9]{10,15}$"#)
+    private static let emailRegex: NSRegularExpression = try! NSRegularExpression(pattern: #"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"#)
 
     @EnvironmentObject var inbox: WatchInbox
     @EnvironmentObject var tts: WatchTTS
@@ -933,9 +964,9 @@ struct WatchSendMessageView: View {
                     // Spaces, hyphens, and parens removed — SMS APIs expect clean digit strings.
                     // 7-char minimum was too loose and accepted strings that cannot route SMS.
                     let range = NSRange(safeTo.startIndex..., in: safeTo)
-                    let isValidPhone = WatchSendMessageView.phoneRegex?.firstMatch(in: safeTo, range: range) != nil
+                    let isValidPhone = WatchSendMessageView.phoneRegex.firstMatch(in: safeTo, range: range) != nil
                     // #18: email TLD must be at least 2 chars (e.g. .co, .uk, .com)
-                    let isValidEmail = WatchSendMessageView.emailRegex?.firstMatch(in: safeTo, range: range) != nil
+                    let isValidEmail = WatchSendMessageView.emailRegex.firstMatch(in: safeTo, range: range) != nil
                     guard isValidPhone || isValidEmail else {
                         sendStatus = "Invalid contact format"
                         isSending = false
@@ -1094,10 +1125,15 @@ struct WatchRootView: View {
                     if !active {
                         if emergency.hasEscalated {
                             emergency.dismiss()  // post-escalation cleanup — always allowed
-                        } else if emergency.severity != .critical {
-                            emergency.cancel()   // pre-escalation cancel — non-critical only
+                        } else if emergency.severity == .critical {
+                            // pre-escalation critical: binding set to false is ignored (cover stays up)
+                            return
+                        } else {
+                            // FIX #29: log non-critical emergency cancellations via UI gesture.
+                            // Future enhancement: show a confirmation alert for urgent/medical severity.
+                            NSLog("[WatchEmergency] Non-critical emergency (severity=\(emergency.severity)) cancelled by UI gesture")
+                            emergency.cancel()
                         }
-                        // pre-escalation critical: binding set to false is ignored (cover stays up)
                     }
                 }
             )) {

@@ -119,6 +119,9 @@ final class WatchAISession: NSObject, ObservableObject {
 
     // MARK: - Response sanitization
 
+    // FIX #2 (CRITICAL): Expanded to match the full input sanitizer token set.
+    // Previously only stripped 8 ChatML/Llama tokens — leaving Gemma, Mistral, Falcon,
+    // Alpaca, HTML-encoded, and JSON-escaped variants intact in model responses.
     private func sanitizeResponse(_ raw: String) -> String {
         return raw
             .replacingOccurrences(of: "<|im_start|>", with: "")
@@ -126,44 +129,71 @@ final class WatchAISession: NSObject, ObservableObject {
             .replacingOccurrences(of: "<|system|>", with: "")
             .replacingOccurrences(of: "[INST]", with: "")
             .replacingOccurrences(of: "[/INST]", with: "")
+            .replacingOccurrences(of: "<<SYS>>", with: "")
+            .replacingOccurrences(of: "<</SYS>>", with: "")
             .replacingOccurrences(of: "<|eot_id|>", with: "")
             .replacingOccurrences(of: "<|start_header_id|>", with: "")
             .replacingOccurrences(of: "<|end_header_id|>", with: "")
+            .replacingOccurrences(of: "<|user|>", with: "")
+            .replacingOccurrences(of: "<|assistant|>", with: "")
+            .replacingOccurrences(of: "<|endoftext|>", with: "")
+            .replacingOccurrences(of: "<s>", with: "")
+            .replacingOccurrences(of: "</s>", with: "")
+            .replacingOccurrences(of: "<|end_of_turn|>", with: "")
+            .replacingOccurrences(of: "<|start_of_turn|>", with: "")
+            .replacingOccurrences(of: "&#x", with: "")
+            .replacingOccurrences(of: "&#X", with: "")
+            .replacingOccurrences(of: "&#", with: "")
+            .replacingOccurrences(of: "&lt;", with: "")
+            .replacingOccurrences(of: "&gt;", with: "")
+            .replacingOccurrences(of: "\\u003c", with: "")
+            .replacingOccurrences(of: "\\u003e", with: "")
     }
 
     // MARK: - Companion path (BT → iPhone)
 
     private func askViaPhone(question: String, language: String) async throws -> String {
-        // KNOWN LIMITATION: CheckedContinuation + WCSession callbacks
-        // When the task group timeout fires (group.cancelAll()), the continuation task
-        // is cancelled. WCSession may still hold strong references to replyHandler/errorHandler
-        // closures. If WCSession calls these after cancellation, the 'resumed' guard
-        // prevents cont.resume() — the continuation is abandoned (not resumed with error).
-        // 'CheckedContinuation' warns on abandonment in debug builds (not release).
-        // This is acceptable: the timeout path already throws URLError(.timedOut) to the caller.
+        // FIX #12 (HIGH): Hoist lock/resumed/contRef outside the group so onCancel can reach them.
+        // withTaskCancellationHandler fires synchronously when the task is cancelled (e.g. on
+        // group.cancelAll() from the timeout task), resuming the continuation with CancellationError
+        // rather than abandoning it — which avoids CheckedContinuation abandonment warnings and
+        // ensures the task group terminates cleanly.
         let lock = NSLock()
         var resumed = false
+        var contRef: CheckedContinuation<String, Error>?
 
         return try await withThrowingTaskGroup(of: String.self) { group in
             group.addTask {
-                try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
-                    WCSessionRouter.shared.send(
-                        ["type": "ai_ask", "question": String(question.prefix(500)), "language": language],
-                        replyHandler: { reply in
-                            lock.lock(); let was = resumed; if !was { resumed = true }; lock.unlock()
-                            guard !was else { return }
-                            if let text = reply["text"] as? String, !text.isEmpty {
-                                cont.resume(returning: text)
-                            } else {
-                                cont.resume(throwing: URLError(.cannotParseResponse))
+                try await withTaskCancellationHandler {
+                    try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
+                        // Store ref so onCancel can resume it
+                        lock.lock(); contRef = cont; lock.unlock()
+                        WCSessionRouter.shared.send(
+                            ["type": "ai_ask", "question": String(question.prefix(500)), "language": language],
+                            replyHandler: { reply in
+                                lock.lock(); let was = resumed; if !was { resumed = true }; lock.unlock()
+                                guard !was else { return }
+                                if let text = reply["text"] as? String, !text.isEmpty {
+                                    cont.resume(returning: text)
+                                } else {
+                                    cont.resume(throwing: URLError(.cannotParseResponse))
+                                }
+                            },
+                            errorHandler: { err in
+                                lock.lock(); let was = resumed; if !was { resumed = true }; lock.unlock()
+                                guard !was else { return }
+                                cont.resume(throwing: err)
                             }
-                        },
-                        errorHandler: { err in
-                            lock.lock(); let was = resumed; if !was { resumed = true }; lock.unlock()
-                            guard !was else { return }
-                            cont.resume(throwing: err)
-                        }
-                    )
+                        )
+                    }
+                } onCancel: {
+                    lock.lock()
+                    let was = resumed
+                    if !was { resumed = true }
+                    let c = contRef
+                    lock.unlock()
+                    guard !was, let cont = c else { return }
+                    cont.resume(throwing: CancellationError())
                 }
             }
             group.addTask {
@@ -336,6 +366,15 @@ struct WatchSafetyFilter {
         "ajutor", "nu pot respira",
         // Russian (transliterated)
         "pomogite", "ne mogu dyshat",
+        // FIX #25 (LOW): Add native Cyrillic, Arabic, and Hebrew crisis keywords.
+        // Transliterated forms above cover keyboard-latin input; native scripts cover
+        // voice-to-text and copied/pasted phrases from native-script IMEs.
+        // Russian Cyrillic script
+        "помогите", "не могу дышать", "скорую", "помощь",
+        // Arabic script
+        "النجدة", "لا أستطيع التنفس",
+        // Hebrew
+        "עזרה",
     ]
     private static let medicalKeywords: [String] = [
         "how many mg", "how many pills", "medication dose", "overdose amount",

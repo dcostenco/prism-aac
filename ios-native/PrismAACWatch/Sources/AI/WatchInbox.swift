@@ -72,9 +72,11 @@ final class WatchInbox: NSObject, ObservableObject {
         }
         // FIX #14: loadFromDefaults() is nonisolated (Keychain reads are safe off main thread).
         // Run it on a detached task to avoid blocking @MainActor init, then assign results on main.
+        // FIX #3: nonisolated func cannot read actor-isolated properties; capture them first on MainActor.
         Task {
+            let (svc, acct, key) = (keychainService, keychainAccount, storageKey)
             let msgs = await Task.detached(priority: .userInitiated) { [weak self] in
-                self?.loadFromDefaults() ?? []
+                self?.loadFromDefaults(service: svc, account: acct, storageKey: key) ?? []
             }.value
             await MainActor.run { [weak self] in
                 guard let self else { return }
@@ -161,7 +163,8 @@ final class WatchInbox: NSObject, ObservableObject {
               let rawText   = message["text"]   as? String else { return }
         let sender: String = {
             let capped = String(rawSender.prefix(100))
-            return capped
+            // Strip bidi override characters
+            let bidiStripped = capped
                 .replacingOccurrences(of: "\u{202E}", with: "")  // RLO
                 .replacingOccurrences(of: "\u{202D}", with: "")  // LRO
                 .replacingOccurrences(of: "\u{202B}", with: "")  // RLE
@@ -177,6 +180,9 @@ final class WatchInbox: NSObject, ObservableObject {
                 .replacingOccurrences(of: "\u{200C}", with: "")  // ZWNJ
                 .replacingOccurrences(of: "\u{200D}", with: "")  // ZWJ
                 .replacingOccurrences(of: "\u{FEFF}", with: "")  // BOM
+            // FIX #23: Also strip ChatML tokens from sender field — prevents prompt injection
+            // via a maliciously crafted sender name delivered from iPhone companion app.
+            return stripChatMLTokens(bidiStripped)
         }()
         // #3: strip full WatchAISession token list — ChatML, Llama, Gemma, Mistral, legacy special tokens, HTML entities, JSON-escaped angle brackets
         let safeText = String(rawText.prefix(500))
@@ -317,11 +323,17 @@ final class WatchInbox: NSObject, ObservableObject {
                 // NOTE: UserDefaults is NOT excluded from iCloud backup by default.
                 // PII is only present during the brief migration window before persistToKeychain() completes.
                 // Resolved by immediate removal after confirmed Keychain write.
-                // FIX #26: Using "watchInboxMigrated" in UserDefaults.standard — iCloud KVS disabled
+                // FIX #26/#15: Using "watchInboxMigrated" in UserDefaults.standard — iCloud KVS disabled
                 // since NSUbiquitousKeyValueStore is not enabled in entitlements.
-                // If KVS is ever added, this flag must be moved to a non-synced store.
+                // SECURITY: If NSUbiquitousKeyValueStore is ever added to the entitlements, this flag
+                // could sync across devices and cause migration to be skipped on new installations.
+                // A future entitlements change MUST move this key to a non-synced store first.
+                #if DEBUG
+                // Verify iCloud KVS is not enabled in entitlements before shipping:
+                // grep NSUbiquitousKeyValueStoreURL ios-native/PrismAAC/PrismAAC.entitlements
+                #endif
                 if !migrated {
-                    UserDefaults.standard.removeObject(forKey: storageKey)
+                    UserDefaults.standard.removeObject(forKey: storeKey)
                     UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
                 }
             } else if updateStatus == errSecSuccess {
@@ -329,11 +341,17 @@ final class WatchInbox: NSObject, ObservableObject {
                 // NOTE: UserDefaults is NOT excluded from iCloud backup by default.
                 // PII is only present during the brief migration window before persistToKeychain() completes.
                 // Resolved by immediate removal after confirmed Keychain write.
-                // FIX #26: Using "watchInboxMigrated" in UserDefaults.standard — iCloud KVS disabled
+                // FIX #26/#15: Using "watchInboxMigrated" in UserDefaults.standard — iCloud KVS disabled
                 // since NSUbiquitousKeyValueStore is not enabled in entitlements.
-                // If KVS is ever added, this flag must be moved to a non-synced store.
+                // SECURITY: If NSUbiquitousKeyValueStore is ever added to the entitlements, this flag
+                // could sync across devices and cause migration to be skipped on new installations.
+                // A future entitlements change MUST move this key to a non-synced store first.
+                #if DEBUG
+                // Verify iCloud KVS is not enabled in entitlements before shipping:
+                // grep NSUbiquitousKeyValueStoreURL ios-native/PrismAAC/PrismAAC.entitlements
+                #endif
                 if !migrated {
-                    UserDefaults.standard.removeObject(forKey: storageKey)
+                    UserDefaults.standard.removeObject(forKey: storeKey)
                     UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
                 }
             } else {
@@ -345,16 +363,17 @@ final class WatchInbox: NSObject, ObservableObject {
     }
 
     // FIX #14: nonisolated — Keychain reads are safe off main thread; called from detached Task in init().
+    // FIX #3: parameters replace actor-isolated property reads; caller captures them on @MainActor first.
     // #24: @MainActor annotation removed — WatchInbox is @MainActor final class,
     // so all instance methods are implicitly @MainActor. Explicit annotation is redundant.
-    nonisolated private func loadFromDefaults() -> [WatchMessage] {
+    nonisolated private func loadFromDefaults(service: String, account: String, storageKey: String) -> [WatchMessage] {
         // Migration path only — UserDefaults is cleared immediately after Keychain write succeeds.
         // Message PII is in UserDefaults only during the first-launch migration window.
         // This is an accepted limitation; new installs write only to Keychain.
         let query: [String: Any] = [
             kSecClass as String:              kSecClassGenericPassword,
-            kSecAttrService as String:        keychainService,
-            kSecAttrAccount as String:        keychainAccount,
+            kSecAttrService as String:        service,
+            kSecAttrAccount as String:        account,
             kSecAttrSynchronizable as String: false,
             kSecReturnData as String:         true,
             kSecMatchLimit as String:         kSecMatchLimitOne,
@@ -372,7 +391,30 @@ final class WatchInbox: NSObject, ObservableObject {
                 let msgs = try JSONDecoder().decode([WatchMessage].self, from: data)
                 // #22: log on successful Keychain load
                 NSLog("[WatchInbox] Loaded \(msgs.count) messages (\(data.count) bytes) from Keychain")
-                return msgs
+                // FIX #7: Re-sanitize messages loaded from Keychain — may be from an older app
+                // version that did not strip bidi/ChatML tokens before persisting. Apply the same
+                // stripping chain as deliverFromMessage() to catch stale data.
+                let bidi = ["\u{202A}","\u{202B}","\u{202C}","\u{202D}","\u{202E}",
+                            "\u{200B}","\u{200C}","\u{200D}","\u{200E}","\u{200F}",
+                            "\u{2066}","\u{2067}","\u{2068}","\u{2069}","\u{FEFF}"]
+                let chatMLTokens = ["<|im_start|>","<|im_end|>","<|system|>","[INST]","[/INST]",
+                                    "<<SYS>>","<</SYS>>","<|eot_id|>","<|start_header_id|>",
+                                    "<|end_header_id|>","<|user|>","<|assistant|>","<|endoftext|>",
+                                    "<s>","</s>","<|end_of_turn|>","<|start_of_turn|>",
+                                    "&#x","&#X","&#","&lt;","&gt;","\\u003c","\\u003e"]
+                let sanitized = msgs.map { msg -> WatchMessage in
+                    let cleanSender: String = {
+                        let capped = String(msg.sender.prefix(100))
+                        let bidiStripped = bidi.reduce(capped) { $0.replacingOccurrences(of: $1, with: "") }
+                        return chatMLTokens.reduce(bidiStripped) { $0.replacingOccurrences(of: $1, with: "") }
+                    }()
+                    let cleanText = chatMLTokens.reduce(String(msg.text.prefix(500))) {
+                        $0.replacingOccurrences(of: $1, with: "")
+                    }
+                    return WatchMessage(id: msg.id, sender: cleanSender, text: cleanText,
+                                       provider: msg.provider, receivedAt: msg.receivedAt, isRead: msg.isRead)
+                }
+                return sanitized
             } catch {
                 NSLog("[WatchInbox] Decode failed (schema change?): \(error) — keeping raw data")
                 // Do NOT call persistToKeychain() here — that would erase the corrupted data
@@ -407,6 +449,37 @@ final class WatchInbox: NSObject, ObservableObject {
 
     private func recalcUnread() {
         unreadCount = messages.filter { !$0.isRead }.count
+    }
+
+    // FIX #23: Strips ChatML / Llama / Gemma / Mistral prompt-injection tokens.
+    // Used for both sender and text fields so the same chain is applied consistently.
+    // nonisolated so it can be called from detached tasks and loadFromDefaults().
+    nonisolated private func stripChatMLTokens(_ input: String) -> String {
+        return input
+            .replacingOccurrences(of: "<|im_start|>", with: "")
+            .replacingOccurrences(of: "<|im_end|>", with: "")
+            .replacingOccurrences(of: "<|system|>", with: "")
+            .replacingOccurrences(of: "[INST]", with: "")
+            .replacingOccurrences(of: "[/INST]", with: "")
+            .replacingOccurrences(of: "<<SYS>>", with: "")
+            .replacingOccurrences(of: "<</SYS>>", with: "")
+            .replacingOccurrences(of: "<|eot_id|>", with: "")
+            .replacingOccurrences(of: "<|start_header_id|>", with: "")
+            .replacingOccurrences(of: "<|end_header_id|>", with: "")
+            .replacingOccurrences(of: "<|user|>", with: "")
+            .replacingOccurrences(of: "<|assistant|>", with: "")
+            .replacingOccurrences(of: "<|endoftext|>", with: "")
+            .replacingOccurrences(of: "<s>", with: "")
+            .replacingOccurrences(of: "</s>", with: "")
+            .replacingOccurrences(of: "<|end_of_turn|>", with: "")
+            .replacingOccurrences(of: "<|start_of_turn|>", with: "")
+            .replacingOccurrences(of: "&#x", with: "")
+            .replacingOccurrences(of: "&#X", with: "")
+            .replacingOccurrences(of: "&#", with: "")
+            .replacingOccurrences(of: "&lt;", with: "")
+            .replacingOccurrences(of: "&gt;", with: "")
+            .replacingOccurrences(of: "\\u003c", with: "")
+            .replacingOccurrences(of: "\\u003e", with: "")
     }
 
     // MARK: - Dev helpers
