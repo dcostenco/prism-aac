@@ -33,7 +33,7 @@ final class WatchTranslation: ObservableObject {
             return
         }
         isTranslating = true
-        Task {
+        Task { @MainActor in
             let translated = await translate(text: text, to: toLang)
             tts.speak(translated ?? text, language: toLang)
             isTranslating = false
@@ -69,19 +69,28 @@ final class WatchTranslation: ObservableObject {
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.timeoutInterval = 10
-        req.httpBody = try? JSONSerialization.data(withJSONObject: [
-            "messages": [
-                ["role": "system", "content": "Translate to \(safeLang). Return ONLY the translated word or phrase, nothing else."],
-                ["role": "user",   "content": safeText],
-            ],
-            "max_tokens": 50,
-            "stream": false,
-        ])
+        do {
+            req.httpBody = try JSONSerialization.data(withJSONObject: [
+                "messages": [
+                    ["role": "system", "content": "Translate to \(safeLang). Return ONLY the translated word or phrase, nothing else."],
+                    ["role": "user", "content": safeText],
+                ],
+                "max_tokens": 50,
+                "stream": false,
+            ])
+        } catch {
+            NSLog("[WatchTranslation] JSON serialization failed: \(error) — returning nil")
+            return nil
+        }
         if let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         do {
-            let (data, _) = try await URLSession.shared.data(for: req)
+            let (data, response) = try await URLSession.shared.data(for: req)
+            if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                NSLog("[WatchTranslation] HTTP error \(http.statusCode)")
+                return nil
+            }
             guard data.count <= 65_536 else { return nil }
             return assembleSSE(data)
         } catch {
@@ -103,7 +112,12 @@ final class WatchTranslation: ObservableObject {
                   let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
                   let choices = obj["choices"] as? [[String: Any]],
                   let delta = choices.first?["delta"] as? [String: Any],
-                  let chunk = delta["content"] as? String else { continue }
+                  let chunk = delta["content"] as? String else {
+                if !payload.isEmpty && payload != "[DONE]" {
+                    NSLog("[WatchAI] Unexpected SSE payload (first 100 chars): \(payload.prefix(100))")
+                }
+                continue
+            }
             result += chunk
             if result.count > 4000 { break }  // cap total response
         }

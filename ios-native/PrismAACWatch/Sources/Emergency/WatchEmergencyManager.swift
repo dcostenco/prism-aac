@@ -23,6 +23,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     private var activePhrase: String?
     // FIX 8: debounce guard — prevents duplicate cellular fallback on reachability flap
     private var cellularFallbackSent = false
+    // F2b: store active background task handle so cleanup() can end it
+    private var activeBgTask: WKBackgroundTaskHandle? = nil
 
     override init() {
         super.init()
@@ -51,7 +53,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         let deadline = Date().addingTimeInterval(5)  // absolute deadline
 
         // Request background task so process is not suspended
-        let bgTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-countdown") {
+        // F2b: store handle on instance so cleanup() can end it
+        activeBgTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-countdown") {
             // Expiry: fire immediately
             Task { @MainActor [weak self] in await self?.escalate(phrase: phrase, severity: severity) }
         }
@@ -66,7 +69,10 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                 self.countdownText = "\(remaining)"
                 if Date() >= deadline {
                     t.invalidate()
-                    WKApplication.shared().endBackgroundTask(bgTask)
+                    if let task = self.activeBgTask {
+                        WKApplication.shared().endBackgroundTask(task)
+                        self.activeBgTask = nil
+                    }
                     await self.escalate(phrase: phrase, severity: severity)
                 }
             }
@@ -76,6 +82,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
         // Immediate haptic + audio — no network needed
         playSosHaptics()
+        try? AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
+        try? AVAudioSession.sharedInstance().setActive(true)
         synthesizer.speak(AVSpeechUtterance(string: "Help! Emergency!"))
     }
 
@@ -96,6 +104,11 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         severity = .standard
         cellularFallbackSent = false  // FIX 8: reset debounce on cleanup
         synthesizer.stopSpeaking(at: .immediate)
+        // F2b: end any leaked background task on cancel path
+        if let task = activeBgTask {
+            WKApplication.shared().endBackgroundTask(task)
+            activeBgTask = nil
+        }
     }
 
     // MARK: - Escalation
@@ -111,7 +124,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         }
     }
 
-    func sendPhrase(_ phrase: String, isEmergency: Bool = false, severity: EmergencySeverity = .urgent) {
+    // F2d: private — not part of public API
+    private func sendPhrase(_ phrase: String, isEmergency: Bool = false, severity: EmergencySeverity = .urgent) {
         let msg: [String: Any] = [
             "type": isEmergency ? "emergency" : "phrase",
             "phrase": phrase,
@@ -119,14 +133,10 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             "timestamp": ISO8601DateFormatter().string(from: Date()),
         ]
 
-        if WCSession.isSupported() && WCSession.default.isReachable {
-            WCSession.default.sendMessage(msg, replyHandler: nil, errorHandler: { _ in
-                WCSession.default.transferUserInfo(msg)
-            })
-        } else {
-            // Queue for delivery when iPhone wakes
-            WCSession.default.transferUserInfo(msg)
-        }
+        // F2a: route through WCSessionRouter.shared.send instead of direct WCSession calls
+        WCSessionRouter.shared.send(msg, errorHandler: { err in
+            NSLog("[WatchEmergency] sendPhrase relay failed: \(err)")
+        })
     }
 
     // MARK: - SOS haptics
@@ -148,8 +158,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         req.httpMethod = "POST"
         req.timeoutInterval = 10
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // Attach auth token from Keychain using the same pattern as WatchAISession.swift
-        if let token = WatchEmergencyKeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
+        // F2f: use shared KeychainHelper instead of deleted WatchEmergencyKeychainHelper
+        if let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         } else {
             NSLog("[WatchEmergency] No auth token — cellular fallback will be unauthenticated")
@@ -159,8 +169,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             "severity": "watch_cellular_fallback",
             "source": "watchos",
         ]
-        guard let body = try? JSONSerialization.data(withJSONObject: payload) else {
-            NSLog("[WatchEmergency] JSON serialization failed — using TTS fallback")
+        // F2c: do/catch instead of try? so we get a log + TTS fallback on failure
+        let body: Data
+        do {
+            body = try JSONSerialization.data(withJSONObject: payload)
+        } catch {
+            NSLog("[WatchEmergency] JSON serialization failed: \(error) — using TTS fallback")
             speakEmergencyFallback()
             return
         }
@@ -181,30 +195,11 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     }
 
     private func speakEmergencyFallback() {
+        try? AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
+        try? AVAudioSession.sharedInstance().setActive(true)
         let utterance = AVSpeechUtterance(string: "Emergency. Please call 911.")
         utterance.volume = 1.0
         utterance.rate = 0.4
         synthesizer.speak(utterance)
-    }
-}
-
-// MARK: - Keychain helper (mirrors WatchAISession.KeychainHelper, private to this file)
-// FIX 6: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly — readable in background after first unlock
-
-private class WatchEmergencyKeychainHelper {
-    static let shared = WatchEmergencyKeychainHelper()
-    func read(service: String, account: String) -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var result: AnyObject?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-              let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
     }
 }

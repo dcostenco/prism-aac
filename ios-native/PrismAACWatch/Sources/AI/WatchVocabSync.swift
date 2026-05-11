@@ -92,7 +92,11 @@ final class WatchVocabSync: NSObject, ObservableObject {
         }
 
         do {
-            let (data, _) = try await URLSession.shared.data(for: req)
+            let (data, response) = try await URLSession.shared.data(for: req)
+            if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                NSLog("[VocabSync] HTTP error \(http.statusCode)")
+                return
+            }
             guard data.count <= 512_000 else {
                 NSLog("[VocabSync] Response too large (\(data.count) bytes)")
                 return
@@ -112,7 +116,7 @@ final class WatchVocabSync: NSObject, ObservableObject {
                                                          phrases: Array(safePhrases)))
             }
             categories = safeCats
-            vocabLanguage = vocab.language   // labels are in this language
+            vocabLanguage = String(vocab.language.prefix(20))   // labels are in this language
             source = .cloud
         } catch {
             NSLog("[VocabSync] API load failed: \(error)")
@@ -125,8 +129,25 @@ final class WatchVocabSync: NSObject, ObservableObject {
     private func handleVocabReply(_ reply: [String: Any]) {
         guard let data = reply["vocab"] as? Data,
               let vocab = try? JSONDecoder().decode(VocabResponse.self, from: data) else { return }
-        categories = vocab.categories.map { WatchCategory(from: $0) }
-        vocabLanguage = vocab.language   // labels written in this language (not output lang)
+        guard data.count <= 512_000 else {
+            NSLog("[VocabSync] Companion vocab too large (\(data.count) bytes) — ignoring")
+            return
+        }
+        // Apply same caps as API path:
+        let safeCats = vocab.categories.prefix(50).map { cat -> WatchCategory in
+            WatchCategory(
+                id: cat.id,
+                icon: String(cat.icon.prefix(4)),
+                name: String(cat.name.prefix(120)),
+                phrases: cat.phrases.prefix(100).map { ph in
+                    WatchPhrase(id: ph.id, label: String(ph.label.prefix(120)),
+                                arasaacId: ph.arasaacId,
+                                sfSymbol: ph.sfSymbol ?? "circle.fill")
+                }
+            )
+        }
+        categories = Array(safeCats)
+        vocabLanguage = String(vocab.language.prefix(20))   // labels written in this language (not output lang)
         source = .companion
     }
 }

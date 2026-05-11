@@ -61,8 +61,8 @@ extension WCSessionRouter: WCSessionDelegate {
         guard let type = message["type"] as? String else { replyHandler(["error": "no type"]); return }
         Task { @MainActor [weak self] in
             self?.messageHandlers[type]?.forEach { $0(type, message) }
+            replyHandler(["ok": true])  // ← inside Task, after handlers run
         }
-        replyHandler(["ok": true])
     }
 
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {

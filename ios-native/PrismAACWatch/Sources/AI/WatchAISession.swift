@@ -100,20 +100,30 @@ final class WatchAISession: NSObject, ObservableObject {
     // MARK: - Companion path (BT → iPhone)
 
     private func askViaPhone(question: String, language: String) async throws -> String {
-        try await withCheckedThrowingContinuation { cont in
-            let msg: [String: Any] = [
-                "type": "ai_ask",
-                "question": question,
-                "language": language,
-            ]
-            WCSession.default.sendMessage(msg, replyHandler: { reply in
-                Task { @MainActor in
-                    cont.resume(returning: reply["text"] as? String ?? "")
+        let msg: [String: Any] = [
+            "type": "ai_ask",
+            "question": question,
+            "language": language,
+        ]
+        let result = try await withThrowingTaskGroup(of: String.self) { group in
+            group.addTask {
+                try await withCheckedThrowingContinuation { cont in
+                    WCSession.default.sendMessage(msg, replyHandler: { reply in
+                        Task { @MainActor in cont.resume(returning: reply["text"] as? String ?? "") }
+                    }, errorHandler: { err in
+                        cont.resume(throwing: err)
+                    })
                 }
-            }, errorHandler: { err in
-                cont.resume(throwing: err)
-            })
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
+                throw URLError(.timedOut)
+            }
+            let first = try await group.next()!
+            group.cancelAll()
+            return first
         }
+        return result
     }
 
     // MARK: - Direct cloud path (Watch WiFi/LTE)
@@ -147,7 +157,11 @@ final class WatchAISession: NSObject, ObservableObject {
             ],
             "language": String(safeLanguage.prefix(2)),
         ])
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, response) = try await URLSession.shared.data(for: req)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            NSLog("[WatchAI] HTTP error \(http.statusCode)")
+            throw URLError(.badServerResponse)
+        }
         guard data.count <= 65_536 else {
             NSLog("[WatchAI] Response too large (\(data.count) bytes) — ignoring")
             throw WatchAIError.responseTooLarge
@@ -168,7 +182,12 @@ final class WatchAISession: NSObject, ObservableObject {
                   let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
                   let choices = obj["choices"] as? [[String: Any]],
                   let delta = choices.first?["delta"] as? [String: Any],
-                  let chunk = delta["content"] as? String else { continue }
+                  let chunk = delta["content"] as? String else {
+                if !payload.isEmpty && payload != "[DONE]" {
+                    NSLog("[WatchAI] Unexpected SSE payload (first 100 chars): \(payload.prefix(100))")
+                }
+                continue
+            }
             result += chunk
             if result.count > 4000 { break }  // cap total response
         }
@@ -192,26 +211,6 @@ final class WatchAISession: NSObject, ObservableObject {
     }
 }
 
-// MARK: - Keychain helper (H20 — FIX 6: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
-
-class KeychainHelper {
-    static let shared = KeychainHelper()
-    func read(service: String, account: String) -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var result: AnyObject?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-              let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
-    }
-}
-
 // MARK: - Watch-local Layer 1 safety
 
 struct WatchSafetyFilter {
@@ -231,11 +230,21 @@ struct WatchSafetyFilter {
     // word should not suppress a false match). Mirrors SafetyFilter.swift.
     private static let crisisPatterns: [NSRegularExpression] = crisisKeywords.compactMap { keyword in
         let pattern = "(?:^|[^\\p{L}\\p{N}])\(NSRegularExpression.escapedPattern(for: keyword))(?:$|[^\\p{L}\\p{N}])"
-        return try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive])
+        do {
+            return try NSRegularExpression(pattern: pattern, options: [.caseInsensitive])
+        } catch {
+            NSLog("[WatchSafetyFilter] CRITICAL: Pattern compile failed for '\(keyword)': \(error)")
+            return nil
+        }
     }
     private static let medicalPatterns: [NSRegularExpression] = medicalKeywords.compactMap { keyword in
         let pattern = "(?:^|[^\\p{L}\\p{N}])\(NSRegularExpression.escapedPattern(for: keyword))(?:$|[^\\p{L}\\p{N}])"
-        return try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive])
+        do {
+            return try NSRegularExpression(pattern: pattern, options: [.caseInsensitive])
+        } catch {
+            NSLog("[WatchSafetyFilter] CRITICAL: Pattern compile failed for '\(keyword)': \(error)")
+            return nil
+        }
     }
 
     static func check(_ input: String) -> Result {

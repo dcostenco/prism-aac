@@ -1,4 +1,5 @@
 import Foundation
+import Security
 import WatchConnectivity
 import UserNotifications
 
@@ -8,7 +9,7 @@ import UserNotifications
 ///   1. WatchConnectivity — iPhone forwards inbox_message when phone receives SMS/email/chat
 ///   2. Local test injection (dev only) via injectTestMessage()
 ///
-/// Persists unread messages in UserDefaults so they survive app restarts.
+/// Persists unread messages in Keychain (migrates legacy UserDefaults entries on first load).
 @MainActor
 final class WatchInbox: NSObject, ObservableObject {
 
@@ -24,11 +25,17 @@ final class WatchInbox: NSObject, ObservableObject {
     @Published private(set) var messages: [WatchMessage] = []
     @Published private(set) var unreadCount: Int = 0
 
+    // Legacy UserDefaults key — used only for migration path in loadFromDefaults()
     private let storageKey = "watchInboxMessages"
+
+    // F4b: Keychain coordinates for message storage
+    private let keychainService = "prism-aac-inbox"
+    private let keychainAccount = "messages"
 
     override init() {
         super.init()
-        loadFromDefaults()
+        messages = loadFromDefaults()
+        recalcUnread()
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerMessageHandler(for: "inbox_message") { [weak self] _, msg in
             Task { @MainActor in self?.deliverFromMessage(msg) }
@@ -70,22 +77,27 @@ final class WatchInbox: NSObject, ObservableObject {
     }
 
     /// Reply to a message by sending text back via iPhone.
+    /// F4a: routes through WCSessionRouter (no direct WCSession bypass, no nil errorHandler)
     func reply(to msg: WatchMessage, text: String) {
-        guard WCSession.isSupported() && WCSession.default.isReachable else { return }
-        WCSession.default.sendMessage(
-            ["type": "inbox_reply", "sender": msg.sender, "provider": msg.provider, "text": text],
-            replyHandler: nil,
-            errorHandler: nil
+        WCSessionRouter.shared.send(
+            ["type": "inbox_reply",
+             "sender": String(msg.sender.prefix(100)),
+             "provider": String(msg.provider.prefix(20)),
+             "text": String(text.prefix(500))],
+            errorHandler: { err in NSLog("[WatchInbox] Reply failed: \(err)") }
         )
     }
 
     // MARK: - Incoming message delivery
 
     private func deliverFromMessage(_ message: [String: Any]) {
-        guard let sender   = message["sender"]   as? String,
-              let text     = message["text"]     as? String else { return }
-        let id       = message["id"]       as? String ?? UUID().uuidString
-        let provider = message["provider"] as? String ?? "sms"
+        // F4c: length caps on all string fields immediately after extraction
+        guard let rawSender = message["sender"] as? String,
+              let rawText   = message["text"]   as? String else { return }
+        let sender   = String(rawSender.prefix(100))
+        let text     = String(rawText.prefix(500))
+        let id       = String((message["id"]       as? String ?? UUID().uuidString).prefix(36))
+        let provider = String((message["provider"] as? String ?? "sms").prefix(20))
         let ts       = message["receivedAt"] as? TimeInterval ?? Date().timeIntervalSince1970
         let msg = WatchMessage(id: id, sender: sender, text: text,
                                provider: provider, receivedAt: Date(timeIntervalSince1970: ts))
@@ -123,19 +135,54 @@ final class WatchInbox: NSObject, ObservableObject {
         UNUserNotificationCenter.current().add(req, withCompletionHandler: nil)
     }
 
-    // MARK: - Persistence
+    // MARK: - Persistence (F4b: Keychain-backed; F4d: do/catch with logging)
 
     private func saveToDefaults() {
-        if let data = try? JSONEncoder().encode(messages) {
-            UserDefaults.standard.set(data, forKey: storageKey)
+        do {
+            let data = try JSONEncoder().encode(messages)
+            // Store in Keychain
+            let addQuery: [String: Any] = [
+                kSecClass as String:              kSecClassGenericPassword,
+                kSecAttrService as String:        keychainService,
+                kSecAttrAccount as String:        keychainAccount,
+                kSecAttrAccessible as String:     kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+                kSecAttrSynchronizable as String: false,
+                kSecValueData as String:          data,
+            ]
+            SecItemDelete(addQuery as CFDictionary)
+            SecItemAdd(addQuery as CFDictionary, nil)
+            // Remove any legacy UserDefaults entry
+            UserDefaults.standard.removeObject(forKey: storageKey)
+        } catch {
+            NSLog("[WatchInbox] saveToDefaults failed: \(error)")
         }
     }
 
-    private func loadFromDefaults() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
-              let saved = try? JSONDecoder().decode([WatchMessage].self, from: data) else { return }
-        messages = saved
-        recalcUnread()
+    private func loadFromDefaults() -> [WatchMessage] {
+        let query: [String: Any] = [
+            kSecClass as String:              kSecClassGenericPassword,
+            kSecAttrService as String:        keychainService,
+            kSecAttrAccount as String:        keychainAccount,
+            kSecAttrAccessible as String:     kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+            kSecAttrSynchronizable as String: false,
+            kSecReturnData as String:         true,
+            kSecMatchLimit as String:         kSecMatchLimitOne,
+        ]
+        var result: AnyObject?
+        if SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+           let data = result as? Data,
+           let msgs = try? JSONDecoder().decode([WatchMessage].self, from: data) {
+            return msgs
+        }
+        // Migration from UserDefaults
+        if let data = UserDefaults.standard.data(forKey: storageKey),
+           let msgs = try? JSONDecoder().decode([WatchMessage].self, from: data) {
+            // Migrate to Keychain
+            messages = msgs
+            saveToDefaults()
+            return msgs
+        }
+        return []
     }
 
     private func recalcUnread() {

@@ -684,7 +684,7 @@ struct WatchAIChatView: View {
 
         if isTranslatorMode {
             // Translation mode: translate input lang → output lang, speak result
-            Task {
+            Task { @MainActor in
                 let translated = await translation.translateDirect(text: text, to: outputLang)
                 let result = translated ?? text
                 isWaiting = false
@@ -694,7 +694,7 @@ struct WatchAIChatView: View {
             }
         } else {
             // Same language: regular AI chat response
-            Task {
+            Task { @MainActor in
                 let reply = await session.askAI(text, lang: outputLang) ?? "…"
                 isWaiting = false
                 if messages.count > 50 { messages.removeFirst() }
@@ -923,7 +923,14 @@ struct WatchRootView: View {
                         .padding(2)
                 }
             }
-            .fullScreenCover(isPresented: .constant(emergency.isActive)) {
+            .fullScreenCover(isPresented: Binding(
+                get: { emergency.isActive },
+                set: { active in
+                    if !active && emergency.severity != .critical {
+                        emergency.cancel()
+                    }
+                }
+            )) {
                 WatchEmergencyActiveView()
                     .environmentObject(emergency)
             }
