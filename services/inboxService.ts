@@ -153,8 +153,7 @@ async function pollOnce(): Promise<void> {
           .map((m) => m as IncomingMessage)
           .filter((m) => m.sender && m.text);
         // H10: Gate sender-name announcement on user preference (defaults to false for privacy)
-        // TODO: add announceSenderName to settingsStore when available
-        const announceSender = (useSettingsStore.getState() as unknown as Record<string, unknown>).announceSenderName === true;
+        const announceSender = useSettingsStore.getState().announceSenderName ?? false;
         setTimeout(() => {
           let announcement: string;
           if (announceSender && newMsgs.length <= 3) {

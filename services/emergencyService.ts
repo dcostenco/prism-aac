@@ -27,6 +27,8 @@ import {
 } from '@/lib/safeValidation';
 import { useAuthStore } from '@/store/authStore';
 import { getAuthToken } from '@/services/aiService';
+import { useEmergencyStore } from '@/store/emergencyStore';
+import { useMessageStore } from '@/store/messageStore';
 
 /** Cap on best-effort 3rd-party response bodies (Nominatim reverse
  *  geocode). Hostile/poisoned DNS pointing at a server that streams
@@ -787,7 +789,11 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   // H9: Only include conversation history in the alert payload when the user has explicitly
   // consented to share it. Default is false — opt-in only.
   const shareHistory = config.shareHistoryInEmergency ?? false;
-  const recentHistory = shareHistory ? getRecentHistory(20) : [];
+  // Read from the in-memory Zustand store (not localStorage) so history is always current.
+  // history is excluded from the persist partialize, so localStorage always returns empty.
+  const recentHistory = shareHistory
+    ? useMessageStore.getState().history.slice(-20).map((h) => ({ text: h.text, timestamp: h.timestamp }))
+    : [];
   const historyText = shareHistory ? formatHistoryForAI(recentHistory) : '';
 
   // PHI separation: full payload (with profile + conversation history) is ONLY
@@ -1080,6 +1086,9 @@ export async function triggerEmergency(
   const dispatchAtMs = Date.now() + countdownTotal * 1000;
   const STALE_THRESHOLD_MS = 5 * 60 * 1000;
 
+  // Activate the emergency store so EmergencyCountdownModal can render.
+  useEmergencyStore.getState().setActive(phrase, severity as import('@/store/emergencyStore').EmergencySeverity, () => cancelEmergency(alert.id));
+
   startAlarm();
   startFlash();
 
@@ -1100,6 +1109,7 @@ export async function triggerEmergency(
     const now = Date.now();
     const remaining = Math.max(0, Math.ceil((dispatchAtMs - now) / 1000));
     onCountdown(remaining);
+    useEmergencyStore.getState().setCountdown(remaining);
 
     if (remaining <= 0) {
       if (dispatchInProgress) return; // prevent double-dispatch on sleep/wake jitter
@@ -1130,6 +1140,7 @@ export async function triggerEmergency(
         } else {
           const queue = getQueuedAlerts();
           saveQueuedAlerts(queue.filter((a) => a.id !== alert.id));
+          useEmergencyStore.getState().setPhase('dispatched');
           onComplete(true, false);
         }
       } catch {
@@ -1175,6 +1186,23 @@ export function cancelEmergency(alertId?: string): void {
     saveQueuedAlerts(queue);
   }
   cancelCallback?.();
+  useEmergencyStore.getState().reset();
+}
+
+/**
+ * Cancel an emergency ONLY after caregiver PIN has been verified by the UI.
+ * Do NOT call this directly — only EmergencyCountdownModal should call it after PIN check.
+ */
+export function cancelEmergencyVerified(): void {
+  isSendInFlight = false;
+  if (typeof dispatchInProgress !== 'undefined') dispatchInProgress = false;
+  clearCountdown();
+  stopAlarm();
+  stopFlash();
+  stopEmergencySpeaker();
+  activeCancelFn?.();
+  activeCancelFn = null;
+  try { useEmergencyStore.getState().reset(); } catch {}
 }
 
 function clearCountdown(): void {

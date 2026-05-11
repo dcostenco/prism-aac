@@ -113,22 +113,32 @@ final class WatchEmergencyManager: NSObject, ObservableObject, WCSessionDelegate
         req.httpMethod = "POST"
         req.timeoutInterval = 10
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // TODO: attach auth token from Keychain (WatchAISession.KeychainHelper pattern)
+        // Server-side rate limiting is required on this endpoint
         let payload: [String: Any] = [
             "phrase": activePhrase ?? "Emergency",
             "severity": "watch_cellular_fallback",
             "source": "watchos",
         ]
-        req.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+        guard let body = try? JSONSerialization.data(withJSONObject: payload) else {
+            NSLog("[WatchEmergency] Failed to serialize payload — using TTS fallback")
+            speakEmergencyFallback()
+            return
+        }
+        req.httpBody = body
         do {
             _ = try await URLSession.shared.data(for: req)
             NSLog("[WatchEmergency] Cellular fallback dispatch succeeded")
         } catch {
             NSLog("[WatchEmergency] Cellular fallback failed: \(error)")
-            // Final fallback: speak aloud
-            let synth = AVSpeechSynthesizer()
-            let utt = AVSpeechUtterance(string: "Emergency. Please call 911.")
-            utt.volume = 1.0
-            synth.speak(utt)
+            speakEmergencyFallback()
         }
+    }
+
+    private func speakEmergencyFallback() {
+        let utterance = AVSpeechUtterance(string: "Emergency. Please call 911.")
+        utterance.volume = 1.0
+        utterance.rate = 0.4
+        synthesizer.speak(utterance)
     }
 }

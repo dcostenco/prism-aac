@@ -17,6 +17,7 @@ import InputModesSettings from './InputModesSettings';
 import ToolbarCustomization from './ToolbarCustomization';
 import VoicePicker from './VoicePicker';
 import CaregiverContactsSettings from './CaregiverContactsSettings';
+import PinPad from './PinPad';
 import { getActiveProfile, loadProfiles, deleteProfile, setActiveProfile, enableContinuousLearning, disableContinuousLearning, isContinuousLearningActive } from '@/services/handProfileService';
 
 // ── Accordion section ────────────────────────────────────────────────────────
@@ -108,8 +109,7 @@ export default function SettingsModal() {
   const settings = useSettingsStore();
   const { t } = useT();
   const [pinVerified, setPinVerified] = useState(false);
-  // TODO: read caregiverPinHash from settingsStore once the field is added
-  const caregiverPinHash: string | undefined = undefined; // placeholder
+  const caregiverPinHash = useSettingsStore(s => s.caregiverPinHash);
   const {
     customCategories, customPhrases,
     addCustomCategory, removeCustomCategory,
@@ -142,10 +142,11 @@ export default function SettingsModal() {
         <div className="bg-white rounded-xl p-8 flex flex-col items-center gap-4 shadow-2xl">
           <h2 className="text-xl font-bold">Caregiver Access</h2>
           <p className="text-sm text-muted">Enter your PIN to open settings</p>
-          {/* TODO: Replace with <PinInput onVerify={setPinVerified} pinHash={caregiverPinHash} /> once PinInput component is created */}
-          <button onClick={() => setPinVerified(true)} className="bg-[#4CAF50] text-white px-4 py-2 rounded-lg font-bold">
-            Verify PIN
-          </button>
+          <PinPad
+            pinHash={caregiverPinHash!}
+            onVerify={setPinVerified}
+            onSetPin={(hash) => useSettingsStore.getState().update({ caregiverPinHash: hash })}
+          />
         </div>
       </div>
     );
@@ -539,6 +540,30 @@ export default function SettingsModal() {
                 <p className="text-dim text-xs mt-2">{t('core_aac_no_account')}</p>
               </div>
             )}
+          </Section>
+
+          {/* ── CAREGIVER PIN ── */}
+          <Section icon="🔒" title="Caregiver PIN">
+            <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+              <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '8px' }}>Caregiver PIN</div>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>
+                {caregiverPinHash ? 'PIN is set. Settings require PIN to open.' : 'No PIN set. Anyone can access settings.'}
+              </div>
+              {caregiverPinHash && (
+                <button type="button"
+                  onClick={() => useSettingsStore.getState().update({ caregiverPinHash: undefined })}
+                  style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid #fca5a5', background: '#fef2f2', color: '#dc2626', fontSize: '12px', cursor: 'pointer' }}>
+                  Remove PIN
+                </button>
+              )}
+              {!caregiverPinHash && pinVerified && (
+                <PinPad
+                  pinHash=""
+                  onVerify={() => {}}
+                  onSetPin={(hash) => useSettingsStore.getState().update({ caregiverPinHash: hash })}
+                />
+              )}
+            </div>
           </Section>
 
           {/* ── RESOURCES ── */}

@@ -19,7 +19,7 @@ import MathPanel from './MathPanel';
 import HistoryModal from './HistoryModal';
 import SettingsModal from './SettingsModal';
 import CategoryManagerModal from './CategoryManagerModal';
-import AlertOverlay from './AlertOverlay';
+import EmergencyCountdownModal from './EmergencyCountdownModal';
 import HeadTrackingOverlay from './HeadTrackingOverlay';
 import TrackingDebugOverlay from './TrackingDebugOverlay';
 import TtsDebugOverlay from './TtsDebugOverlay';
@@ -447,8 +447,8 @@ export default function PrismApp() {
               )}
             </div>
           )}
-          {/* TODO CRITICAL: Replace with EmergencyCountdownModal that shows countdown, cancel button, and phrase text */}
-          <AlertOverlay />
+          {/* Emergency modal — mounted unconditionally at root, above all other UI */}
+          <EmergencyCountdownModal />
           {/* True modals — settings/history are configuration UIs, not
               communication panels, so they stay as full-screen overlays. */}
           <HistoryModal />

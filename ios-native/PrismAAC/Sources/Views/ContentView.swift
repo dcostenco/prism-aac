@@ -160,7 +160,8 @@ struct PrismWebView: UIViewRepresentable {
 
                 // C14: Origin validation — only honor from verified origin
                 guard let pageURL = message.webView?.url,
-                      pageURL.host?.hasSuffix("synalux.ai") == true ||
+                      pageURL.host == "synalux.ai" ||
+                      pageURL.host?.hasSuffix(".synalux.ai") == true ||
                       pageURL.host == "localhost" ||
                       pageURL.isFileURL else {
                     NSLog("[PrismAAC] Emergency blocked from untrusted origin: \(message.webView?.url?.host ?? "nil")")

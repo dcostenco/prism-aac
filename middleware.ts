@@ -36,6 +36,7 @@ export function middleware(request: NextRequest) {
   // H13: Add missing security headers
   response.headers.set('Referrer-Policy', 'no-referrer');
   response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Permissions-Policy', 'camera=(), geolocation=(self), microphone=(self)');
   return response;
 }

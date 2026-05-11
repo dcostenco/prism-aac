@@ -177,8 +177,12 @@ interface SettingsState {
   // (Inworld vs Azure) is chosen server-side based on language support and
   // is not user-selectable.
   voicePreferences: Record<string, string>;
+  /** Caregiver PIN hash (btoa of 4-6 digit PIN). When set, settings modal requires PIN entry. */
+  caregiverPinHash?: string;
+  /** Announce sender name aloud via TTS when message arrives. Default false for privacy. */
+  announceSenderName: boolean;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd' | 'caregiverPinHash' | 'announceSenderName'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -243,6 +247,8 @@ export const useSettingsStore = create<SettingsState>()(
       },
       installedApps: [],
       voicePreferences: {},
+      caregiverPinHash: undefined,
+      announceSenderName: false,
       update: (partial) => set((s) => {
         // Persist language changes to a cookie so the SSR layout.tsx can
         // read the correct lang attribute on the first server render, before
@@ -319,7 +325,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prism-aac-settings',
-      version: 17,
+      version: 18,
       migrate: (persisted: unknown, version: number) => {
         let s = persisted as Record<string, unknown>;
         if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
@@ -394,6 +400,15 @@ export const useSettingsStore = create<SettingsState>()(
         // saved theme get dark.
         if (version < 17) {
           s = { ...s, theme: s.theme ?? 'dark' };
+        }
+        // v18: caregiver PIN hash + announce-sender-name privacy toggle.
+        if (version < 18) {
+          s = { ...s, announceSenderName: s.announceSenderName ?? false };
+          // Invalidate any btoa-encoded PINs from before SHA-256 migration.
+          // SHA-256 hashes are exactly 64 hex chars; btoa hashes are base64.
+          if (typeof s.caregiverPinHash === 'string' && !/^[0-9a-f]{64}$/.test(s.caregiverPinHash)) {
+            s = { ...s, caregiverPinHash: undefined }; // force re-setup with new SHA-256 hash
+          }
         }
         return s;
       },

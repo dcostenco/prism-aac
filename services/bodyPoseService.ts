@@ -492,7 +492,11 @@ export function savePoseMapping(mapping: PoseMapping): void {
   try { localStorage.setItem(POSE_CONFIG_KEY, JSON.stringify(mapping)); } catch { /* */ }
 }
 
-const VALID_TRACKING_TARGETS = new Set(['nose', 'left-eye', 'right-eye', 'left-shoulder', 'right-shoulder', 'left-wrist', 'right-wrist', 'left-index', 'right-index']);
+const VALID_TRACKING_TARGETS = new Set<TrackingTarget>([
+    'nose', 'left_wrist', 'right_wrist', 'any_wrist',
+    'left_elbow', 'right_elbow', 'left_shoulder', 'right_shoulder',
+    'left_index', 'right_index', 'any_index', 'any_hand',
+]);
 
 /** Validate the pose mapping. trackingTarget must be one of the
  *  enum values (a tampered string could land in `LANDMARK_INDEX[c]`
@@ -503,7 +507,7 @@ const VALID_TRACKING_TARGETS = new Set(['nose', 'left-eye', 'right-eye', 'left-s
 function isValidPoseMapping(m: unknown): m is PoseMapping {
   if (!m || typeof m !== 'object') return false;
   const x = m as Record<string, unknown>;
-  if (typeof x.trackingTarget !== 'string' || !VALID_TRACKING_TARGETS.has(x.trackingTarget)) return false;
+  if (typeof x.trackingTarget !== 'string' || !VALID_TRACKING_TARGETS.has(x.trackingTarget as TrackingTarget)) return false;
   if (typeof x.cursorSmoothing !== 'number' || !Number.isFinite(x.cursorSmoothing)) return false;
   return true;
 }
