@@ -99,6 +99,7 @@ function computeStableSlots(prev: string[], predictions: string[]): string[] {
 }
 
 function PredictionTile({ word, color, onTap }: { word: string; color: string; onTap: (w: string) => void }) {
+  console.count(`[render] PredictionTile:${word}`);
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
