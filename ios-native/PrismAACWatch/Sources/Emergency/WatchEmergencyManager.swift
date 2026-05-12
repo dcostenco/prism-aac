@@ -438,10 +438,9 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     }()
 
     private final class EmergencyPinningDelegate: NSObject, URLSessionDelegate {
-        // SHA-256 SPKI pin for synalux.ai (update when certificate rotates)
+        // SHA-256 SPKI pin for synalux.ai — extracted 2026-05-11; update when certificate rotates
         private static let pinnedHashes: Set<String> = [
-            // Primary leaf cert pin — update via OTA config or app update
-            "PLACEHOLDER_BASE64_SHA256_HASH",
+            "DS99YMdYp5aeUCqdma9PVTVUd/YO6YfxjwlaZnB2Pzw=",
         ]
 
         func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge,
@@ -465,10 +464,6 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             let hashBase64 = Data(hash).base64EncodedString()
 
             if Self.pinnedHashes.contains(hashBase64) {
-                completionHandler(.useCredential, URLCredential(trust: serverTrust))
-            } else if Self.pinnedHashes.contains("PLACEHOLDER_BASE64_SHA256_HASH") {
-                // FIX M3: Pre-deployment mode — accept any valid cert but log prominently
-                NSLog("[WatchEmergency] ⚠️ CERT PIN PLACEHOLDER ACTIVE — pinning disabled; replace before production")
                 completionHandler(.useCredential, URLCredential(trust: serverTrust))
             } else {
                 NSLog("[WatchEmergency] CRITICAL: Certificate pin mismatch — blocking emergency dispatch")
