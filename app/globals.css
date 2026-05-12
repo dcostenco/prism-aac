@@ -307,3 +307,14 @@ input[type="range"] {
 .high-contrast .remote-model-highlight {
   outline-color: #00FF00 !important;
 }
+
+.prediction-bar-height {
+  height: clamp(48px, 10svh, 110px);
+}
+
+.message-bar-height {
+  min-height: clamp(72px, 10svh, 132px);
+}
+.message-bar-messaging-height {
+  min-height: clamp(100px, 14svh, 180px);
+}

@@ -85,13 +85,25 @@ const swKillswitchScript = `
   try {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
+    // ── Dev mode: always unregister SW ─────────────────────────────────
+    // In development the SW only causes stale-cache bugs. Serwist's
+    // disable:true stops generating a NEW sw but doesn't unregister one
+    // left over from a previous production build or 'next build'.
+    // Unregister + clear runtime caches on every dev load. Precache is
+    // irrelevant in dev (no precache manifest generated).
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        regs.forEach(function(r){ r.unregister(); });
+      });
+      if (typeof caches !== 'undefined') {
+        caches.keys().then(function(keys){
+          keys.forEach(function(k){ caches.delete(k); });
+        });
+      }
+      return;
+    }
+
     // ── Auto-reload when a new SW takes control ────────────────────────
-    // When a new build is deployed: new SW installs → skipWaiting activates
-    // it immediately → clientsClaim gives it control → controllerchange fires
-    // → we reload once so the page runs the new JS bundles.
-    // This is the standard PWA update pattern — zero user action needed.
-    // Guard against infinite-reload loop: a compromised CDN SW claiming control
-    // would fire controllerchange repeatedly. Limit to one reload per session.
     var _reloaded = false;
     navigator.serviceWorker.addEventListener('controllerchange', function() {
       if (_reloaded) return;
@@ -100,8 +112,6 @@ const swKillswitchScript = `
     });
 
     // ── Kill-switch: force-clear on version bump ───────────────────────
-    // Used only when the SW needs a full reset (e.g. corrupted cache).
-    // Normal updates are handled by controllerchange above.
     var KEY = 'prism-aac-sw-killswitch';
     var V = ${JSON.stringify(SW_KILLSWITCH_VERSION)};
     if (window.localStorage.getItem(KEY) === V) return;

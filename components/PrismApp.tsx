@@ -421,7 +421,7 @@ export default function PrismApp() {
               (banner / message / predictions / categories) so the
               cell-grid canvas + bigger keyboards have room to breathe.
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
-          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <GreetingBanner />}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && !showQwerty && <GreetingBanner />}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <MessageBar />}
           {!PANELS_WITHOUT_QWERTY.has(sidePanel) && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
           <MathPanel />
@@ -438,7 +438,7 @@ export default function PrismApp() {
           {/* Category mode: full-screen cards (Image #32 pattern).
               Keyboard is a pull-up drawer toggled from inside CategoryPanel.
               All other modes: CategoryPanel stacks above keyboard as before. */}
-          {sidePanel !== 'math' && <CategoryPanel />}
+          {sidePanel !== 'math' && <div className="flex-[3] min-h-0 flex flex-col">{<CategoryPanel />}</div>}
           {showQwerty && (
             // flex-row so the sidebar column doesn't get covered by keyboard keys.
             // In category mode the CategoryPanel sidebar is clamp(72px,9vw,96px) wide;
@@ -453,7 +453,7 @@ export default function PrismApp() {
             // keyboard's internal rows are all flex-1 with no hard mins, so they
             // distribute available space evenly however much is left.
             <div
-              className="flex-1 min-h-0 flex flex-row"
+              className="shrink-0 h-[clamp(170px,25svh,260px)] flex flex-row"
               data-testid="keyboard-shell"
             >
               <div className="flex-1 flex flex-col">

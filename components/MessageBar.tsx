@@ -453,11 +453,8 @@ export default function MessageBar() {
 
   return (
     <div
-      className={`flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] py-[clamp(0.3rem,0.6svh,0.6rem)] shrink-0 relative border border-theme ${
-        isMessagingMode
-          ? 'min-h-[clamp(124px,22svh,180px)]'
-          : 'min-h-[clamp(88px,16svh,132px)]'
-      }`}
+      className="flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] py-[clamp(0.3rem,0.6svh,0.6rem)] shrink-0 relative border border-theme"
+      style={{ minHeight: isMessagingMode ? 'clamp(100px, 14svh, 180px)' : 'clamp(72px, 10svh, 132px)' }}
       data-messaging-mode={isMessagingMode ? '1' : '0'}
     >
       <button

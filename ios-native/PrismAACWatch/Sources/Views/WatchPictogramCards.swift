@@ -1,5 +1,6 @@
 import SwiftUI
 import WatchKit
+import AVFoundation
 
 // MARK: - AAC data model
 
@@ -705,6 +706,9 @@ struct WatchAIChatView: View {
             HStack(spacing: 6) {
                 // Mic — triggers Watch native dictation
                 Button {
+                    // Deactivate TTS audio session so system dictation can use the mic
+                    tts.stop()
+                    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
                     showDictation = true
                 } label: {
                     Image(systemName: "mic.fill")

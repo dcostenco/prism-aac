@@ -109,12 +109,13 @@ function SidebarBtn({ icon, label, onClick, active = false }: SideBtnProps) {
   return (
     <button
       onClick={() => { tapFeedback(); onClick(); }}
-      className={`aac-btn flex flex-col items-center justify-center gap-1 py-3 px-1 w-full select-none
+      className={`aac-btn flex flex-col items-center gap-0 px-1 w-full select-none
         border-b border-white/10 last:border-b-0 hover:bg-white/15 active:bg-white/25 transition-colors
         ${active ? 'bg-white/20' : ''}`}
+      style={{ height: 'clamp(36px, 5svh, 60px)' }}
     >
-      <span className="text-[clamp(18px,2.5vw,26px)] leading-none">{icon}</span>
-      <span className="text-[clamp(8px,0.9vw,10px)] font-bold uppercase tracking-wide text-white/90 text-center leading-tight px-0.5">
+      <span className="flex-1 flex items-center text-[clamp(16px,2.5vw,24px)] leading-none">{icon}</span>
+      <span className="text-[clamp(6px,0.7vw,9px)] font-bold uppercase tracking-wide text-white/90 text-center leading-none px-0.5 shrink-0 pb-[2px]">
         {label}
       </span>
     </button>
@@ -280,7 +281,7 @@ export default function CategoryPanel() {
     if (searchOpen) { setSearchOpen(false); setSearchQuery(''); }
   };
 
-  const isHome = sidePanel === 'categories';
+  const isHome = sidePanel === 'categories' || sidePanel === 'none';
   const isDeep = categoryPath.length > 1;
 
   const openSearch = () => {
@@ -465,7 +466,7 @@ export default function CategoryPanel() {
         {searchOpen ? searchPanelJsx : (
           <div className="flex-1 min-w-0 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
-            <div className={`grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+            <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
               {homeGridPhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
                 const tH = categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];

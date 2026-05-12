@@ -276,7 +276,8 @@ export default function PredictionBar() {
     if (matched.length > 0) {
       return (
         <div
-          className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 h-[clamp(56px,13svh,110px)]"
+          className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0"
+          style={{ height: 'clamp(48px, 10svh, 110px)' }}
           data-testid="prediction-bar-contacts"
         >
           {matched.map((c) => {
@@ -295,7 +296,8 @@ export default function PredictionBar() {
     // No matches / no contacts → show empty search hint.
     return (
       <div
-        className="flex items-center justify-center gap-[2px] px-3 py-[2px] shrink-0 h-[clamp(56px,13svh,110px)] text-muted text-sm"
+        className="flex items-center justify-center gap-[2px] px-3 py-[2px] shrink-0 text-muted text-sm"
+        style={{ height: 'clamp(48px, 10svh, 110px)' }}
         data-testid="prediction-bar-contacts-empty"
       >
         {contacts.length === 0
@@ -306,7 +308,7 @@ export default function PredictionBar() {
   }
 
   return (
-    <div className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 h-[clamp(56px,13svh,110px)]">
+    <div className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0" style={{ height: 'clamp(48px, 10svh, 110px)' }}>
       {finalTiles.map((word, i) => {
         const color = CATEGORY_COLORS[classifyWord(word)];
         return <PredictionTile key={`slot-${i}`} word={word} color={color} onTap={handleTap} />;
