@@ -144,7 +144,8 @@ struct PrismWebView: UIViewRepresentable {
                   let action = body["action"] as? String else { return }
             switch action {
             case "speak":
-                let text = body["text"] as? String ?? ""
+                // FIX M5: cap text length to prevent memory exhaustion from malicious pages
+                let text = String((body["text"] as? String ?? "").prefix(2000))
                 let lang = body["lang"] as? String ?? "en-US"
                 let rate = Float(body["rate"] as? Double ?? 0.5)
                 tts.speak(text, language: lang, rate: rate)
@@ -218,7 +219,8 @@ final class WKWebTTS: NSObject {
 
     func speak(_ text: String, language: String = "en-US", rate: Float = 0.5) {
         synth.stopSpeaking(at: .immediate)
-        let utt = AVSpeechUtterance(string: text)
+        // FIX L3: cap text length
+        let utt = AVSpeechUtterance(string: String(text.prefix(2000)))
         utt.voice = AVSpeechSynthesisVoice(language: language)
         utt.rate = max(AVSpeechUtteranceMinimumSpeechRate,
                        min(AVSpeechUtteranceMaximumSpeechRate, rate))
@@ -233,25 +235,31 @@ final class WKWebTTS: NSObject {
 @MainActor
 final class WatchEmergencyBridge {
     static let shared = WatchEmergencyBridge()
+    private static let iso8601 = ISO8601DateFormatter()
 
     func trigger(phrase: String) {
-        // Direct WatchConnectivity dispatch instead of the previous fragile
-        // NotificationCenter.post(name: "PrismEmergencyTriggered") which had
-        // no registered observer and was silently a no-op in production.
+        // FIX H4: Sanitize phrase before sending to Watch (defense-in-depth)
+        let safePhrase = AACPipeline.sanitizeText(phrase, maxLength: 200)
         let msg: [String: Any] = [
             "type": "emergency",
-            "phrase": phrase,
+            "phrase": safePhrase.isEmpty ? "Emergency" : safePhrase,
             "severity": "standard",
-            "timestamp": ISO8601DateFormatter().string(from: Date()),
+            "timestamp": Self.iso8601.string(from: Date()),
         ]
         guard WCSession.isSupported() else { return }
         let session = WCSession.default
+        // FIX M4: Check activation state before sending
+        guard session.activationState == .activated else {
+            NSLog("[WatchEmergencyBridge] Session not activated — queueing via transferUserInfo")
+            session.transferUserInfo(msg)
+            return
+        }
         if session.isReachable {
-            session.sendMessage(msg, replyHandler: nil, errorHandler: { _ in
+            session.sendMessage(msg, replyHandler: nil, errorHandler: { err in
+                NSLog("[WatchEmergencyBridge] sendMessage failed: \(err) — queueing")
                 session.transferUserInfo(msg)
             })
         } else {
-            // Queue for delivery when Watch becomes reachable
             session.transferUserInfo(msg)
         }
     }
@@ -280,7 +288,6 @@ struct MemoryBannerView: View {
 struct ModelLoadingView: View {
     @EnvironmentObject var app: AppState
     @State private var phase: Phase = .checking
-    @State private var progress: Double = 0
 
     enum Phase { case checking, downloading, failed, lowMemory }
 
@@ -293,8 +300,7 @@ struct ModelLoadingView: View {
             case .downloading:
                 VStack(spacing: 8) {
                     Text("Downloading AI model (864 MB)").font(.headline)
-                    ProgressView(value: progress).padding(.horizontal, 32)
-                    Text("\(Int(progress * 100))%").font(.caption).foregroundColor(.secondary)
+                    ProgressView().padding(.horizontal, 32)
                 }
             case .lowMemory:
                 VStack(spacing: 12) {
@@ -327,15 +333,14 @@ struct ModelLoadingView: View {
         if FileManager.default.fileExists(atPath: url.path) { await app.loadModel(from: url); return }
         phase = .downloading
         do {
+            // FIX L4: Use download task instead of byte-by-byte streaming (avoids quadratic realloc)
             let cdnURL = URL(string: "https://synalux.ai/models/prism-ios-1.5b-q4.gguf")!
-            let (bytes, _) = try await URLSession.shared.bytes(from: cdnURL)
-            var data = Data(); var n: Int64 = 0
-            for try await b in bytes {
-                data.append(b); n += 1
-                if n % 65536 == 0 { await MainActor.run { progress = Double(n) / 864_000_000 } }
-            }
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try data.write(to: url)
+            let (tempURL, response) = try await URLSession.shared.download(from: cdnURL)
+            if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                phase = .failed; return
+            }
+            try FileManager.default.moveItem(at: tempURL, to: url)
             await app.loadModel(from: url)
         } catch { phase = .failed }
     }

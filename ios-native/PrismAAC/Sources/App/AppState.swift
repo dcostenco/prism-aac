@@ -118,10 +118,8 @@ final class AppState: ObservableObject {
         case .emergency:
             // Proactively unload model — prevents jetsam kill
             if llm.isLoaded {
-                Task {
-                    await llm.unload()
-                    modelReady = false
-                }
+                llm.unload()
+                modelReady = false
             }
         case .coreOnly, .cloudAI, .fullAI:
             break  // no automatic action — user may reload model via settings
@@ -174,7 +172,10 @@ final class AppState: ObservableObject {
                 task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
             }
         }
-        guard result == KERN_SUCCESS else { return 1_000 }
+        guard result == KERN_SUCCESS else {
+            NSLog("[AppState] task_info failed (\(result)) — defaulting to 1000 MB free")
+            return 1_000
+        }
 
         let usedBytes = Int(info.phys_footprint)
         let totalBytes = Int(ProcessInfo.processInfo.physicalMemory)
