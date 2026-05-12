@@ -103,8 +103,9 @@ final class AACPipeline: ObservableObject {
                     if !response.isEmpty {
                         let validated = try await self.validateResponse(response,
                                                                         language: language)
-                        if validated != response {
-                            // Validator rewrote — emit the correction
+                        // FIX L1: compare against same-cap sanitized text to avoid spurious corrections
+                        let comparable = Self.sanitizeText(response, maxLength: 500)
+                        if validated != comparable {
                             continuation.yield("\n[corrected]\n" + validated)
                             self.lastResponse = validated
                         } else {
