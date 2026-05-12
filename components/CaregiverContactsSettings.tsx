@@ -75,7 +75,7 @@ export default function CaregiverContactsSettings() {
   // remount re-runs the initializer and resets the user's toggle.
   // localStorage read is sync + cheap; only fires on initial mount.
   const MANUAL_OPEN_KEY = 'prism-aac-contacts-manual-open';
-  const [manualOpen, setManualOpenState] = useState<boolean>(() => {
+  const [manualOpen, setManualOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return contacts.length === 0;
     try {
       const stored = window.localStorage.getItem(MANUAL_OPEN_KEY);
@@ -84,13 +84,17 @@ export default function CaregiverContactsSettings() {
     } catch { /* private mode / quota — fall through to default */ }
     return contacts.length === 0;
   });
-  const setManualOpen = useCallback((updater: (v: boolean) => boolean) => {
-    setManualOpenState((prev) => {
-      const next = updater(prev);
-      try { window.localStorage.setItem(MANUAL_OPEN_KEY, next ? 'true' : 'false'); } catch { /* */ }
-      return next;
-    });
-  }, []);
+  // Write to localStorage SYNCHRONOUSLY inside the click handler (below)
+  // — NOT inside a setState updater. If the parent is remounting this
+  // component between click and React's commit phase (confirmed by
+  // earlier diag MOUNT/UNMOUNT cycle), an updater-scoped write would
+  // never commit, and the next mount's lazy init would read the stale
+  // value. Writing first guarantees the next mount sees the new state.
+  const toggleManualOpen = useCallback(() => {
+    const next = !manualOpen;
+    try { window.localStorage.setItem(MANUAL_OPEN_KEY, next ? 'true' : 'false'); } catch { /* */ }
+    setManualOpen(next);
+  }, [manualOpen]);
   // Per-source advisories from the portal — e.g. "Reconnect Gmail to
   // grant Contacts permission". Without surfacing these, a 0-contact
   // sync looks broken when really the user just hasn't granted the
@@ -218,7 +222,7 @@ export default function CaregiverContactsSettings() {
       <div className="space-y-2 p-3 surface-key rounded-lg border border-theme">
         <button
           type="button"
-          onClick={() => setManualOpen((v) => !v)}
+          onClick={toggleManualOpen}
           aria-expanded={manualOpen}
           aria-controls="manual-add-body"
           className="w-full flex items-center justify-between text-left"
