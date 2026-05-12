@@ -50,7 +50,8 @@ final class WatchTranslation: ObservableObject {
         tts: WatchTTS
     ) {
         // Skip translation when source and output language are the same
-        if fromLang.prefix(2) == toLang.prefix(2) {
+        // FIX L1: Chinese exception — zh-Hans ≠ zh-Hant (Simplified ≠ Traditional)
+        if fromLang.prefix(2) == toLang.prefix(2) && !(fromLang.prefix(2) == "zh" && fromLang != toLang) {
             tts.speak(text, language: toLang)
             return
         }

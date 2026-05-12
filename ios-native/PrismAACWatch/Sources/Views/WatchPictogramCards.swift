@@ -618,8 +618,9 @@ struct WatchAIChatView: View {
     private let aiRole   = "ai"
 
     /// True when input and output languages differ — chat acts as live translator.
+    // FIX L1: Chinese exception — zh-Hans ≠ zh-Hant are different scripts
     private var isTranslatorMode: Bool {
-        inputLang.prefix(2) != outputLang.prefix(2)
+        inputLang.prefix(2) != outputLang.prefix(2) || (inputLang.prefix(2) == "zh" && inputLang != outputLang)
     }
 
     var body: some View {
