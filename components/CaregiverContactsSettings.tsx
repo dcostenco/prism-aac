@@ -67,20 +67,30 @@ export default function CaregiverContactsSettings() {
   // "+ Add manually" header. When contacts.length===0 the form starts
   // expanded so the user has somewhere to start.
   // Initial: collapsed when contacts already exist, expanded for fresh
-  // accounts so the user has somewhere to start. Stays whatever the
-  // user last toggled it to (state, not derived).
-  const [manualOpen, setManualOpen] = useState(() => contacts.length === 0);
-  // TEMP DIAG (May 2026 — user reports form auto-collapses ~1 sec after
-  // expand click). Logs mount/unmount + every manualOpen state change
-  // so we can tell remount-vs-state-reset from the next console paste.
-  useEffect(() => {
-    console.log('[contacts-diag] CaregiverContactsSettings MOUNT, manualOpen=', manualOpen, 'contacts.length=', contacts.length);
-    return () => console.log('[contacts-diag] CaregiverContactsSettings UNMOUNT');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // accounts so the user has somewhere to start.
+  //
+  // Persisted in localStorage so the choice survives whatever was
+  // remounting this component (diag MOUNT/UNMOUNT log cycle on every
+  // Settings open, root cause upstream). Without persistence, every
+  // remount re-runs the initializer and resets the user's toggle.
+  // localStorage read is sync + cheap; only fires on initial mount.
+  const MANUAL_OPEN_KEY = 'prism-aac-contacts-manual-open';
+  const [manualOpen, setManualOpenState] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return contacts.length === 0;
+    try {
+      const stored = window.localStorage.getItem(MANUAL_OPEN_KEY);
+      if (stored === 'true') return true;
+      if (stored === 'false') return false;
+    } catch { /* private mode / quota — fall through to default */ }
+    return contacts.length === 0;
+  });
+  const setManualOpen = useCallback((updater: (v: boolean) => boolean) => {
+    setManualOpenState((prev) => {
+      const next = updater(prev);
+      try { window.localStorage.setItem(MANUAL_OPEN_KEY, next ? 'true' : 'false'); } catch { /* */ }
+      return next;
+    });
   }, []);
-  useEffect(() => {
-    console.log('[contacts-diag] manualOpen changed →', manualOpen);
-  }, [manualOpen]);
   // Per-source advisories from the portal — e.g. "Reconnect Gmail to
   // grant Contacts permission". Without surfacing these, a 0-contact
   // sync looks broken when really the user just hasn't granted the
