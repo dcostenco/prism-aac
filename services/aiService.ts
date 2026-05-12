@@ -142,7 +142,7 @@ export function synaluxSignOutUrl(): string {
 
 async function callSynalux(
   messages: Array<{ role: string; content: string }>,
-  options?: { webSearch?: boolean; onChunk?: (delta: string) => void },
+  options?: { webSearch?: boolean; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate' },
 ): Promise<string> {
   const token = getAuthToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -172,6 +172,14 @@ async function callSynalux(
         messages,
         stream: false,
         source: 'prism-aac',
+        // intent tells the portal whether to prepend the AAC_SYSTEM
+        // friendly-helper prompt. translateAI sets 'translate' so the
+        // server passes our "You are a translator" system through
+        // verbatim instead of merging it with the AAC chrome (which
+        // made the model reply with chat suggestions in English →
+        // looksLikeTargetLang rejected them → user stuck on offline
+        // word-by-word "Я хочу ты" for "I want you").
+        intent: options?.intent ?? 'chat',
         ...(options?.webSearch ? { web_search: true } : {}),
       }),
       signal: t.signal,
@@ -315,7 +323,7 @@ export function stripModelControlTokens(text: string): string {
 
 async function route(
   prompt: string,
-  options?: { webSearch?: boolean; system?: string; onChunk?: (delta: string) => void },
+  options?: { webSearch?: boolean; system?: string; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate' },
 ): Promise<string> {
   const messages: Array<{ role: string; content: string }> = [];
   if (options?.system) messages.push({ role: 'system', content: options.system });
@@ -323,7 +331,7 @@ async function route(
 
   // Try Synalux first (online, full features)
   try {
-    const raw = await callSynalux(messages, { webSearch: options?.webSearch, onChunk: options?.onChunk });
+    const raw = await callSynalux(messages, { webSearch: options?.webSearch, onChunk: options?.onChunk, intent: options?.intent });
     return stripModelControlTokens(raw);
   } catch (err) {
     const msg = err instanceof Error ? err.message : '';
@@ -383,7 +391,7 @@ export async function translateAI(
   const safeFrom = _safeLang(fromLang);
   const safeTo = _safeLang(toLang);
   const system = `You are a translator. Translate the input from ${safeFrom} to ${safeTo}. Return ONLY the translation — no explanations, no quotes, no extra text.`;
-  return route(text, { system, onChunk });
+  return route(text, { system, onChunk, intent: 'translate' });
 }
 
 export async function askAI(
