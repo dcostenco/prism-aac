@@ -83,7 +83,11 @@ internal final class KeychainHelper {
         var result: AnyObject?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
               let data = result as? Data else { return nil }
-        return data.count <= 65_536 ? data : nil
+        guard data.count <= 65_536 else {
+            NSLog("[KeychainHelper] readData item too large (\(data.count) bytes) for \(service)/\(account)")
+            return nil
+        }
+        return data
     }
 
     func writeData(_ data: Data, service: String, account: String) {

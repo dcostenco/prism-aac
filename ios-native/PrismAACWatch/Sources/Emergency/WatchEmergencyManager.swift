@@ -452,10 +452,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
         func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge,
                         completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+            // FIX L1: SecTrustCopyCertificateChain replaces deprecated SecTrustGetCertificateAtIndex
             guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
                   let serverTrust = challenge.protectionSpace.serverTrust,
                   SecTrustEvaluateWithError(serverTrust, nil),
-                  let cert = SecTrustGetCertificateAtIndex(serverTrust, 0) else {
+                  let chain = SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate],
+                  let cert = chain.first else {
                 completionHandler(.cancelAuthenticationChallenge, nil)
                 return
             }
@@ -468,8 +470,11 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             let hash = SHA256.hash(data: pubKeyData)
             let hashBase64 = Data(hash).base64EncodedString()
 
-            if Self.pinnedHashes.contains("PLACEHOLDER_BASE64_SHA256_HASH") || Self.pinnedHashes.contains(hashBase64) {
-                // Accept: pin matches OR placeholder (pre-deployment — allows any valid cert)
+            if Self.pinnedHashes.contains(hashBase64) {
+                completionHandler(.useCredential, URLCredential(trust: serverTrust))
+            } else if Self.pinnedHashes.contains("PLACEHOLDER_BASE64_SHA256_HASH") {
+                // FIX M3: Pre-deployment mode — accept any valid cert but log prominently
+                NSLog("[WatchEmergency] ⚠️ CERT PIN PLACEHOLDER ACTIVE — pinning disabled; replace before production")
                 completionHandler(.useCredential, URLCredential(trust: serverTrust))
             } else {
                 NSLog("[WatchEmergency] CRITICAL: Certificate pin mismatch — blocking emergency dispatch")

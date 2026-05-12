@@ -517,7 +517,7 @@ struct WatchReplyView: View {
     @State private var dismissTask: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
 
-    init(message: WatchInbox.WatchMessage, inbox: WatchInbox? = nil, tts: WatchTTS? = nil) {
+    init(message: WatchInbox.WatchMessage) {
         self.message = message
         self._sent = State(initialValue: message.isReplied)
     }
@@ -808,8 +808,10 @@ struct WatchAIChatView: View {
         .onDisappear {
             aiTask?.cancel()
             translateTask2?.cancel()
-            // Final save on sheet dismiss (catches messages 2-4)
-            let toSave = Array(messages.suffix(10))
+            // FIX L6: cap text to 500 chars on dismiss save (matches onChange handler)
+            let toSave = Array(messages.suffix(10)).map {
+                ChatMessage(role: $0.role, text: String($0.text.prefix(500)))
+            }
             Task.detached(priority: .utility) {
                 do {
                     let data = try JSONEncoder().encode(toSave)

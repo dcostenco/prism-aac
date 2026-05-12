@@ -205,32 +205,9 @@ final class WatchInbox: NSObject, ObservableObject {
             // via a maliciously crafted sender name delivered from iPhone companion app.
             return stripChatMLTokens(bidiStripped)
         }()
-        // #3: strip full WatchAISession token list — ChatML, Llama, Gemma, Mistral, legacy special tokens, HTML entities, JSON-escaped angle brackets
-        let safeText = String(rawText.prefix(500))
-            .replacingOccurrences(of: "<|im_start|>", with: "")
-            .replacingOccurrences(of: "<|im_end|>", with: "")
-            .replacingOccurrences(of: "<|system|>", with: "")
-            .replacingOccurrences(of: "[INST]", with: "")
-            .replacingOccurrences(of: "[/INST]", with: "")
-            .replacingOccurrences(of: "<<SYS>>", with: "")
-            .replacingOccurrences(of: "<</SYS>>", with: "")
-            .replacingOccurrences(of: "<|eot_id|>", with: "")
-            .replacingOccurrences(of: "<|start_header_id|>", with: "")
-            .replacingOccurrences(of: "<|end_header_id|>", with: "")
-            .replacingOccurrences(of: "<|user|>", with: "")
-            .replacingOccurrences(of: "<|assistant|>", with: "")
-            .replacingOccurrences(of: "<|endoftext|>", with: "")
-            .replacingOccurrences(of: "<s>", with: "")
-            .replacingOccurrences(of: "</s>", with: "")
-            .replacingOccurrences(of: "<|end_of_turn|>", with: "")
-            .replacingOccurrences(of: "<|start_of_turn|>", with: "")
-            .replacingOccurrences(of: "&#x", with: "")
-            .replacingOccurrences(of: "&#X", with: "")
-            .replacingOccurrences(of: "&#", with: "")
-            .replacingOccurrences(of: "&lt;", with: "")
-            .replacingOccurrences(of: "&gt;", with: "")
-            .replacingOccurrences(of: "\\u003c", with: "")
-            .replacingOccurrences(of: "\\u003e", with: "")
+        // FIX H1: Use sanitizeInboxField for text — includes NFKC normalization and bidi stripping
+        // that the previous inline .replacingOccurrences chain was missing.
+        let safeText = sanitizeInboxField(String(rawText.prefix(500)))
         // FIX #19: Drop message if text is empty after sanitization — avoids storing/speaking blank entries.
         guard !safeText.isEmpty else {
             NSLog("[WatchInbox] Message text empty after sanitization — dropping message")
@@ -348,47 +325,24 @@ final class WatchInbox: NSObject, ObservableObject {
                     NSLog("[WatchInbox] Keychain add failed: \(addStatus) — NOT removing UserDefaults backup")
                     return  // abort; DO NOT erase UserDefaults
                 }
-                // Only erase UserDefaults if Keychain write confirmed successful
-                // NOTE: UserDefaults is NOT excluded from iCloud backup by default.
-                // PII is only present during the brief migration window before persistToKeychain() completes.
-                // Resolved by immediate removal after confirmed Keychain write.
-                // FIX #26/#15: Using "watchInboxMigrated" in UserDefaults.standard — iCloud KVS disabled
-                // since NSUbiquitousKeyValueStore is not enabled in entitlements.
-                // SECURITY: If NSUbiquitousKeyValueStore is ever added to the entitlements, this flag
-                // could sync across devices and cause migration to be skipped on new installations.
-                // A future entitlements change MUST move this key to a non-synced store first.
-                #if DEBUG
-                // Verify iCloud KVS is not enabled in entitlements before shipping:
-                // grep NSUbiquitousKeyValueStoreURL ios-native/PrismAAC/PrismAAC.entitlements
-                #endif
-                if !migrated {
-                    UserDefaults.standard.removeObject(forKey: storeKey)
-                    UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
-                }
+                completeMigrationIfNeeded(migrated: migrated, storageKey: storeKey)
             } else if updateStatus == errSecSuccess {
-                // After successful update, set migration flag only once
-                // NOTE: UserDefaults is NOT excluded from iCloud backup by default.
-                // PII is only present during the brief migration window before persistToKeychain() completes.
-                // Resolved by immediate removal after confirmed Keychain write.
-                // FIX #26/#15: Using "watchInboxMigrated" in UserDefaults.standard — iCloud KVS disabled
-                // since NSUbiquitousKeyValueStore is not enabled in entitlements.
-                // SECURITY: If NSUbiquitousKeyValueStore is ever added to the entitlements, this flag
-                // could sync across devices and cause migration to be skipped on new installations.
-                // A future entitlements change MUST move this key to a non-synced store first.
-                #if DEBUG
-                // Verify iCloud KVS is not enabled in entitlements before shipping:
-                // grep NSUbiquitousKeyValueStoreURL ios-native/PrismAAC/PrismAAC.entitlements
-                #endif
-                if !migrated {
-                    UserDefaults.standard.removeObject(forKey: storeKey)
-                    UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
-                }
+                completeMigrationIfNeeded(migrated: migrated, storageKey: storeKey)
             } else {
                 NSLog("[WatchInbox] Keychain update failed: \(updateStatus)")
             }
         } catch {
             NSLog("[WatchInbox] Encode failed: \(error)")
         }
+    }
+
+    // FIX L8: extracted from duplicated blocks in persistToKeychain errSecItemNotFound + errSecSuccess paths.
+    // SECURITY: If NSUbiquitousKeyValueStore is ever added to entitlements, this flag could sync across
+    // devices and cause migration to be skipped on new installations. Move to a non-synced store first.
+    private func completeMigrationIfNeeded(migrated: Bool, storageKey: String) {
+        guard !migrated else { return }
+        UserDefaults.standard.removeObject(forKey: storageKey)
+        UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
     }
 
     // FIX #14: nonisolated — Keychain reads are safe off main thread; called from detached Task in init().
@@ -464,11 +418,10 @@ final class WatchInbox: NSObject, ObservableObject {
             }
         }
         // #25: Keychain returned empty — check whether migration was marked complete (possible Keychain wipe)
-        let msgs: [WatchMessage] = []
-        if msgs.isEmpty && UserDefaults.standard.bool(forKey: "watchInboxMigrated") {
+        if UserDefaults.standard.bool(forKey: "watchInboxMigrated") {
             NSLog("[WatchInbox] Keychain empty after migration flag set — possible Keychain wipe; starting fresh")
         }
-        return msgs
+        return []
     }
 
     private func recalcUnread() {
@@ -479,17 +432,19 @@ final class WatchInbox: NSObject, ObservableObject {
     // Strips ChatML / Llama / Gemma / Mistral prompt-injection tokens, bidi override characters,
     // and applies NFKC normalization. nonisolated so it can be called from detached tasks and
     // loadFromDefaults() without hopping back to @MainActor.
-    nonisolated private func sanitizeInboxField(_ raw: String) -> String {
-        let tokens = ["<|im_start|>","<|im_end|>","<|system|>","[INST]","[/INST]",
+    // FIX L4: static arrays — avoid allocation on every sanitizeInboxField call
+    private static let injectionTokens = ["<|im_start|>","<|im_end|>","<|system|>","[INST]","[/INST]",
                       "<<SYS>>","<</SYS>>","<|eot_id|>","<|start_header_id|>",
                       "<|end_header_id|>","<|user|>","<|assistant|>","<|endoftext|>",
                       "<s>","</s>","<|end_of_turn|>","<|start_of_turn|>",
                       "&#x","&#X","&#","&lt;","&gt;","\\u003c","\\u003e"]
-        let bidi = ["\u{202A}","\u{202B}","\u{202C}","\u{202D}","\u{202E}",
+    private static let bidiChars = ["\u{202A}","\u{202B}","\u{202C}","\u{202D}","\u{202E}",
                     "\u{200B}","\u{200C}","\u{200D}","\u{200E}","\u{200F}",
                     "\u{2066}","\u{2067}","\u{2068}","\u{2069}","\u{FEFF}"]
-        let stripped = tokens.reduce(raw) { $0.replacingOccurrences(of: $1, with: "") }
-        let bidiCleaned = bidi.reduce(stripped) { $0.replacingOccurrences(of: $1, with: "") }
+
+    nonisolated private func sanitizeInboxField(_ raw: String) -> String {
+        let stripped = Self.injectionTokens.reduce(raw) { $0.replacingOccurrences(of: $1, with: "") }
+        let bidiCleaned = Self.bidiChars.reduce(stripped) { $0.replacingOccurrences(of: $1, with: "") }
         let nfkc = bidiCleaned.applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? bidiCleaned
         return nfkc.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
     }

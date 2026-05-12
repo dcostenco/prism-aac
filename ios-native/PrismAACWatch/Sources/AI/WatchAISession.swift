@@ -30,10 +30,15 @@ final class WatchAISession: NSObject, ObservableObject {
     }
 
     // FIX #6: Support Info.plist override for AI cloud endpoint URL
+    // FIX M1: guard against invalid Info.plist URL — fall back to known-good default instead of crashing
     private let cloudURL: URL = {
-        let urlString = Bundle.main.infoDictionary?["PRISM_AI_URL"] as? String
-            ?? "https://synalux.ai/api/v1/prism-aac/chat"
-        return URL(string: urlString)!
+        let fallback = URL(string: "https://synalux.ai/api/v1/prism-aac/chat")!
+        guard let override = Bundle.main.infoDictionary?["PRISM_AI_URL"] as? String else { return fallback }
+        guard let url = URL(string: override) else {
+            NSLog("[WatchAI] PRISM_AI_URL is not a valid URL ('\(override)') — using default")
+            return fallback
+        }
+        return url
     }()
     private let timeoutSec: Double = 15
 
@@ -336,15 +341,7 @@ final class WatchAISession: NSObject, ObservableObject {
                    let chunk = delta["content"] as? String {
                     result += chunk
                     if result.count > 4000 { break }  // cap total response
-                } else if parsed != nil {
-                    failedChunks += 1
-                    if failedChunks <= 3 {
-                        NSLog("[WatchAI] SSE chunk failed to parse (length=\(payload.count))")
-                    }
-                    if failedChunks == 3 {
-                        NSLog("[WatchAI] 3+ SSE chunks failed — suppressing further parse logs")
-                    }
-                } else if !payload.isEmpty && payload != "[DONE]" {
+                } else if parsed != nil || (!payload.isEmpty && payload != "[DONE]") {
                     failedChunks += 1
                     if failedChunks <= 3 {
                         NSLog("[WatchAI] SSE chunk failed to parse (length=\(payload.count))")

@@ -21,10 +21,6 @@ final class WatchTranslation: ObservableObject {
     private var translateTask: Task<Void, Never>?
     private var listeningWatchdog: Task<Void, Never>?
 
-    // #11: store parameters so handleDictation() can access them even if called from a different context
-    private var pendingInputLang: String = "en-US"
-    private var pendingOutputLang: String = "en-US"
-
     deinit {
         // NOTE: deinit accesses @MainActor-isolated properties. Task.cancel() is safe
         // from any thread — it only sets an atomic flag. No actor state mutation occurs.
@@ -253,9 +249,6 @@ final class WatchTranslation: ObservableObject {
 
     /// Show Watch dictation UI (caller presents a TextField sheet).
     func startListening(inputLang: String, outputLang: String, tts: WatchTTS) {
-        // #11: store parameters so they survive until handleDictation() is called
-        pendingInputLang  = inputLang
-        pendingOutputLang = outputLang
         isListening = true
         // #10: store watchdog Task so it can be cancelled when dictation completes;
         // #24/#28: safety reset — if handleDictation is never called (e.g. user cancels without submitting),
