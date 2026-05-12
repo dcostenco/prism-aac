@@ -162,6 +162,7 @@ export default function CategoryPanel() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const isOpen =
+    sidePanel === 'none' ||
     sidePanel === 'categories' ||
     sidePanel === 'category-detail' ||
     sidePanel === 'ordering';
@@ -464,7 +465,7 @@ export default function CategoryPanel() {
         {searchOpen ? searchPanelJsx : (
           <div className="flex-1 min-w-0 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
-            <div className={`grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0 content-start`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+            <div className={`grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
               {homeGridPhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
                 const tH = categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
