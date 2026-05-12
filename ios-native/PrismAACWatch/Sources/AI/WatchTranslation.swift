@@ -95,7 +95,11 @@ final class WatchTranslation: ObservableObject {
             .joined()
 
         // Validate lang against known-good allowlist before injecting into prompt
-        let allowedLangs: Set<String> = ["en", "en-US", "es", "ro", "ru", "fr", "de", "it", "pt", "ar", "zh-Hans", "zh-Hant", "ja", "ko", "he", "hi", "nl", "pl", "uk", "tr", "vi", "tl", "id"]
+        // FIX M1: include regional BCP-47 codes that the UI lang picker uses
+        let allowedLangs: Set<String> = ["en", "en-US", "es", "es-ES", "ro", "ro-RO", "ru", "ru-RU",
+            "fr", "fr-FR", "de", "de-DE", "it", "pt", "pt-BR", "ar", "ar-SA",
+            "zh-Hans", "zh-Hant", "zh-CN", "ja", "ja-JP", "ko", "he", "hi",
+            "nl", "pl", "uk", "uk-UA", "tr", "vi", "tl", "id"]
         // #22: BCP-47 regex guard in addition to allowlist — prevents prompt injection if allowlist entry is malformed
         let bcp47Regex = #"^[a-zA-Z]{2,8}(-[a-zA-Z0-9]{1,8})*$"#
         let validLang: String

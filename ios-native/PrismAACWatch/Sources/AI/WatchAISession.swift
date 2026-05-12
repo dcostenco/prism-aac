@@ -239,7 +239,11 @@ final class WatchAISession: NSObject, ObservableObject {
             .joined()
 
         // #22+#23: Validate sanitized language against explicit allowlist — fall back to en-US
-        let allowedLangs: Set<String> = ["en", "en-US", "es", "es-ES", "ro", "ru", "fr", "de", "it", "pt", "ar", "zh-Hans", "zh-Hant", "ja", "ko", "he", "hi", "nl", "pl", "uk", "tr", "vi", "tl", "id"]
+        // FIX M1: include regional BCP-47 codes that the UI lang picker uses
+        let allowedLangs: Set<String> = ["en", "en-US", "es", "es-ES", "ro", "ro-RO", "ru", "ru-RU",
+            "fr", "fr-FR", "de", "de-DE", "it", "pt", "pt-BR", "ar", "ar-SA",
+            "zh-Hans", "zh-Hant", "zh-CN", "ja", "ja-JP", "ko", "he", "hi",
+            "nl", "pl", "uk", "uk-UA", "tr", "vi", "tl", "id"]
         let validatedLanguage = allowedLangs.contains(safeLanguage) ? safeLanguage : "en-US"
 
         // Step 1: NFKC normalize to collapse fullwidth/confusable variants BEFORE literal stripping

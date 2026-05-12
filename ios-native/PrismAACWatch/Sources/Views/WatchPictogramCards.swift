@@ -341,7 +341,6 @@ struct WatchPictogramCards: View {
                     .padding(.horizontal, 6)
                     .padding(.top, 6)
 
-
                     // Current selection summary: EN → RU
                     HStack(spacing: 4) {
                         Text("\(flag(vocab.inputLanguage)) \(code(vocab.inputLanguage))")
@@ -402,6 +401,7 @@ struct WatchInboxView: View {
         "sms": "message.fill", "email": "envelope.fill",
         "telegram": "paperplane.fill", "whatsapp": "phone.fill",
         "messenger": "bubble.left.fill", "instagram": "camera.fill",
+        "viber": "phone.bubble.fill",
     ]
 
     var body: some View {
