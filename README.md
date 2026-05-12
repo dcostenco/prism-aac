@@ -2,7 +2,7 @@
 
 **Help nonverbal kids talk.**
 
-Augmentative & Alternative Communication app for children with motor impairments and complex communication needs. Tap pictures, build sentences, hear them spoken aloud — in 21 languages. Works on any tablet, laptop, iPhone, iPad, and Apple Watch.
+Augmentative & Alternative Communication app for children with motor impairments and complex communication needs. Tap pictures, build sentences, hear them spoken aloud — in 23 languages. Works on any tablet, laptop, iPhone, iPad, and Apple Watch.
 
 Part of the [Synalux platform](https://synalux.ai).
 
@@ -10,6 +10,8 @@ Part of the [Synalux platform](https://synalux.ai).
   <a href="https://prism-aac.vercel.app"><img src="https://img.shields.io/badge/Try_It-Free-43e97b?style=for-the-badge" alt="Try Free"></a>
   <a href="https://synalux.ai/pricing"><img src="https://img.shields.io/badge/Plans-Free_+_Paid-764ba2?style=for-the-badge" alt="Pricing"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue?style=for-the-badge" alt="AGPL-3.0"></a>
+  <a href="PRIVACY.md"><img src="https://img.shields.io/badge/Privacy-Policy-lightgrey?style=for-the-badge" alt="Privacy"></a>
+  <a href="TERMS.md"><img src="https://img.shields.io/badge/Terms-of_Service-lightgrey?style=for-the-badge" alt="Terms"></a>
 </p>
 
 ![Prism AAC main screen — toolbar, schedule banner, type-here bar, prediction tiles, and qwerty keyboard](docs/screenshots/app-hero.png)
@@ -39,12 +41,12 @@ Part of the [Synalux platform](https://synalux.ai).
 | ⌨️ **Type & speak** | Keyboard + word prediction + neural voice | [↓](#-type--speak) |
 | ✨ **AI Chat** | On-device + cloud assistant tuned for AAC users | [↓](#-ai-chat) |
 | 💬 **AAC Chat** | Incoming messages from caregivers + contacts | [↓](#-aac-chat) |
-| 🧮 **Math + 18 other school subjects** | Cell-grid canvas with domain-aware tutor | [↓](#-school-subjects) |
+| 🧮 **Math + 10 other school subjects** | Cell-grid canvas with domain-aware tutor | [↓](#-school-subjects) |
 | 🗓 **Schedule** | Visual first-then routines | [↓](#-schedule) |
-| 🎮 **Games** | 9 therapeutic AAC games | [↓](#-games) |
+| 🎮 **Games** | 12 therapeutic AAC games | [↓](#-games) |
 | 🏪 **Marketplace** | Voice packs, vocab packs, game packs | [↓](#-marketplace) |
 | 👋 **Hands-free** | Head + hand gesture recognition | [↓](#-hands-free-gestures) |
-| ⚙️ **Settings** | 16+ languages, motor accommodations, plan tier | [↓](#-settings) |
+| ⚙️ **Settings** | 23 languages, motor accommodations, plan tier | [↓](#-settings) |
 
 ---
 
@@ -61,13 +63,13 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 | Caregiver corrections **become training data automatically** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Domain-aware AI tutor** (math + 10 other subjects) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Cell-grid math canvas** (no LaTeX, no whiteboard) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Locale + region-aware history** (230+ regions) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Locale + region-aware history** (280+ regions) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Hands-free** head + hand gesture mode | ✅ | partial | partial | ❌ | ✅ | partial |
-| Therapeutic **AAC games** built in | ✅ (9) | ❌ | ❌ | ❌ | ❌ | partial |
+| Therapeutic **AAC games** built in | ✅ (12) | ❌ | ❌ | ❌ | ❌ | partial |
 | **Open source** (AGPL-3.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | **Free tier** for life-safety access | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Voice pack **marketplace** | ✅ | ❌ | partial | ❌ | partial | ❌ |
-| **Multi-language** (21) | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| **Multi-language** (23) | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | **Caregiver notes** that travel home / school / clinic | ✅ | ❌ | ❌ | ❌ | partial | partial |
 
 > Comparison reflects publicly available product information as of 2026-05. PrismAAC is actively developed; competitors may add features over time. PRs welcome to keep this honest — see `CONTRIBUTING.md`.
@@ -83,7 +85,7 @@ Native Swift app wrapping the web UI in WKWebView + on-device 1.5B LLM via llama
 - Safe area inset for Dynamic Island / notch
 - WCSession bridge for Apple Watch emergency dispatch
 - Keychain-backed auth tokens
-- Certificate pinning (SPKI SHA-256) on emergency dispatch
+
 
 ### Apple Watch (standalone)
 
@@ -97,8 +99,9 @@ Works without iPhone — WiFi/LTE for AI, Bluetooth for faster on-device path.
 - 2-column pictogram grid with ARASAAC images
 - AI Chat with dictation + keyboard input
 - Emergency system: countdown → WCSession → cellular fallback → TTS
-- Translation between 21 languages with TTS output
+- Translation between 23 languages with TTS output
 - Inbox: receive and reply to messages from caregivers
+- Certificate pinning (SPKI SHA-256) on emergency dispatch
 - NFKC + 23-token injection sanitization on all AI paths
 
 ---
@@ -144,7 +147,7 @@ On-screen keyboard with **word prediction**, **AI autocomplete**, and a one-tap 
 - AI completion ("hw" → "how", "togoso" → "to go so") via Synalux `text/correct` (Gemini 2.5 Flash-Lite, ~752ms avg, 4.3× cheaper than 2.5 Flash)
 - Cross-language gate: RO `eu` won't leak into EN bar even when both corpora are loaded (cross-corpus frequency comparison)
 - "Speak" reads with auto-tone adaptation (declarative / interrogative / exclamatory inferred from punctuation)
-- Voice tier 1: Inworld TTS-2 → Azure Neural (both natural/neural, all 24 app languages covered); tier 2: Kokoro-82M offline; tier 3: OS Web Speech; tier 4: WASM espeak-ng
+- Voice tier 1: Inworld TTS-2 → Azure Neural (both natural/neural, all 23 app languages covered); tier 2: Kokoro-82M offline; tier 3: OS Web Speech; tier 4: WASM espeak-ng
 - Word highlight is duration-estimated (~60 ms/char @ rate=0.5, scales with the rate slider) — works across every TTS tier without backend changes; precise sync via Azure `wordBoundary` is a future Pro feature.
 - 1.5MB SQLite n-gram corpus per language; unigrams + bigrams + trigrams; lazy-loaded on language switch
 
@@ -203,7 +206,7 @@ Incoming messages from connected providers (Telegram, WhatsApp, Email, Slack, et
 ---
 
 ### 🧮 School subjects
-Cell-grid canvas hosting **19 subject keyboards** that cover the full high-school program: math + sciences + programming + arts + humanities. Each tab routes the AI tutor through a domain-specific prompt template (33 templates total) so the model doesn't apply algebraic reasoning to a Punnett square or mistake a music dynamic for a programming literal. **History is locale + region aware** down to the state / province / Land / autonomous-community level — 230+ regions across 23 countries.
+Cell-grid canvas hosting **19 subject keyboards** that cover the full high-school program: math + sciences + programming + arts + humanities. Each tab routes the AI tutor through a domain-specific prompt template (33 templates total) so the model doesn't apply algebraic reasoning to a Punnett square or mistake a music dynamic for a programming literal. **History is locale + region aware** down to the state / province / Land / autonomous-community level — 280+ regions across 23 countries.
 
 ![Cell-grid canvas with 5 + 7 = 12 typed across cells](docs/screenshots/math-canvas-typed.png)
 
@@ -237,7 +240,7 @@ Three modes per subject: 💡 **Hint** (gentle next-step nudge, never solves), �
 Three tiers stacked:
 1. **Universal** events taught in every curriculum (476, 1914 WWI, 1939 WWII, 1969 moon)
 2. **National** events selected by `language` (en, es, fr, de, ro, ru, uk, ja, ko, zh, ar, it, pl, nl, he, hi, vi, tr, pt) — 19 supported languages
-3. **Sub-national** events selected by `historyRegion` (US-TX, CA-QC, UK-SCT, ES-CT, IN-MH, DE-BY, …) — **230+ regions across 23 countries** including all 50 US states + DC, 13 Canadian provinces / territories, all 4 UK nations, Ireland (Republic + 4 historical provinces), all 16 German Länder, all 17 Spanish autonomous communities, all 20 Italian regions, plus AU, FR, MX, BR, IN, CN, RU, BE, CH, NL, AR, ZA, KR, PK, NZ, PL.
+3. **Sub-national** events selected by `historyRegion` (US-TX, CA-QC, UK-SCT, ES-CT, IN-MH, DE-BY, …) — **280+ regions across 23 countries** including all 50 US states + DC, 13 Canadian provinces / territories, all 4 UK nations, Ireland (Republic + 4 historical provinces), all 16 German Länder, all 17 Spanish autonomous communities, all 20 Italian regions, plus AU, FR, MX, BR, IN, CN, RU, BE, CH, NL, AR, ZA, KR, PK, NZ, PL.
 
 The tutor prompt carries the locale + region so an ambiguous date like 1836 in `US-TX` resolves to the Alamo (not Alabama statehood); 1759 in `CA-QC` anchors to the Plains of Abraham; 1714 in `ES-CT` to the fall of Barcelona.
 
@@ -306,7 +309,7 @@ Visual first-then schedule for routine + transition support. Each step is a pict
 ---
 
 ### 🎮 Games
-9 evidence-based AAC games. Built to teach communication, **not for screen time**. Each game records utterances + accuracy so the adaptive engine can suggest the next-best-fit game.
+12 evidence-based AAC games. Built to teach communication, **not for screen time**. Each game records utterances + accuracy so the adaptive engine can suggest the next-best-fit game.
 
 ![Games panel with 9 game tiles](docs/screenshots/panel-games.png)
 
@@ -324,6 +327,9 @@ Visual first-then schedule for routine + transition support. Each step is a pict
 | Category Sort | Semantic categorization |
 | Emotion Match | Affect labelling, ToM |
 | What Comes Next | Sequential reasoning |
+| Same / Different | Visual discrimination — match or contrast |
+| I Hear It (Sound Match) | Auditory discrimination + vocabulary |
+| Turn Taker | Social turn-taking practice |
 
 - Free tier: Bubble Pop, Color Hunt, My Story (3 games)
 - Paid tier: all 9
@@ -343,7 +349,7 @@ Voice packs (Inworld voices, custom-cloned voice of a sibling/parent), vocab pac
 <details>
 <summary><strong>Features + technical details</strong></summary>
 
-- Apps live as JSON entries (`marketplace-apps.json`) + a runtime `lib/marketplace/registry.ts` with `getHandler(appId)` returning the panel component
+- Apps live as JSON entries (`lib/marketplace/manifests/local.ts`) + a runtime `lib/marketplace/registry.ts` with `getHandler(appId)` returning the panel component
 - Voice cloning (paid tier): 90s recording → trained voice usable for any TTS in the app, including category tiles
 - Installed apps render as toolbar buttons after the built-ins; `useSettingsStore.installedApps` is the source of truth
 - Per-tier gate: marketplace lists everything but install-buttons disable for items above the user's plan
@@ -451,7 +457,7 @@ Optional camera-based input for users who can't reliably tap. Head-pose dwell-cl
 ---
 
 ### ⚙️ Settings
-16+ languages, theme (light / dark / high-contrast), grid size (4–20 tiles), motor accommodations (math hold-time dwell, two-hit magnify, head-tracking dwell, gesture sensitivity, drift auto-disable), voice picker (paid), AI autocorrect on/off, notifications, toolbar customization, history region picker.
+23 languages, theme (light / dark / high-contrast), grid size (4–20 tiles), motor accommodations (math hold-time dwell, two-hit magnify, head-tracking dwell, gesture sensitivity, drift auto-disable), voice picker (paid), AI autocorrect on/off, notifications, toolbar customization, history region picker.
 
 ![Settings — language picker + theme toggle](docs/screenshots/panel-settings.png)
 
@@ -510,7 +516,7 @@ The toolbar is fully reorderable. Default 0.9.0 ships with a minimal set (mic, A
 | Default voice (Inworld) | ✅ | ✅ |
 | 19-subject school keyboard + AI tutor | ✅ basic | ✅ + premium models |
 | Schedule | ✅ | ✅ + reward shop |
-| Games | 3 (Bubble Pop, Color Hunt, My Story) | All 9 |
+| Games | 3 (Bubble Pop, Color Hunt, My Story) | All 12 |
 | Voice picker | — | ✅ all Inworld voices |
 | Voice cloning (your own voice) | — | ✅ |
 | Caregiver notes sync | — | ✅ |
@@ -526,7 +532,7 @@ The toolbar is fully reorderable. Default 0.9.0 ships with a minimal set (mic, A
 
 - **AAC access is never restricted as a consequence.** A child must always have their voice.
 - **No PHI in the cloud without consent.** Caregiver notes encrypt before upload.
-- **Audio stays local.** Voice input transcribes in the browser via Whisper WASM.
+- **Audio stays local.** Voice input transcribes in the browser via Web Speech API.
 - **Designed by BCBAs.** Verbal operant tracking matches BACB Task List 5th Edition.
 - **Trauma-informed defaults.** No punishment mechanics. Reward shop is opt-in.
 
@@ -550,7 +556,7 @@ Synalux operates the canonical hosted version (free + paid). Self-hosters and fo
 <details>
 <summary><strong>📚 Tech architecture (model routing, voice, gesture recognition, build details)</strong></summary>
 
-**Stack**: Next.js, Zustand, Whisper WASM (transcription), Inworld TTS-2 + Azure Neural fallback (speech), Kokoro-82M offline TTS, FaceLandmarker (gestures).
+**Stack**: Next.js, Zustand, Web Speech API (transcription), Inworld TTS-2 + Azure Neural fallback (speech), Kokoro-82M offline TTS, FaceLandmarker (gestures).
 
 **Model routing** (server-side via Synalux portal):
 - Free tier (chat): prism-coder:7b local for simple AAC → Gemini 2.5 Flash for medium/complex
