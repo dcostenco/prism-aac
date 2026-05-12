@@ -123,7 +123,10 @@ final class WatchAISession: NSObject, ObservableObject {
     // Previously only stripped 8 ChatML/Llama tokens — leaving Gemma, Mistral, Falcon,
     // Alpaca, HTML-encoded, and JSON-escaped variants intact in model responses.
     private func sanitizeResponse(_ raw: String) -> String {
-        let stripped = raw
+        // Step 1: NFKC normalize BEFORE literal token stripping to collapse fullwidth/confusable variants
+        let nfkcRaw = raw.applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? raw
+        // Step 2: Strip literal injection tokens from normalized input
+        let stripped = nfkcRaw
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
@@ -148,9 +151,8 @@ final class WatchAISession: NSObject, ObservableObject {
             .replacingOccurrences(of: "&gt;", with: "")
             .replacingOccurrences(of: "\\u003c", with: "")
             .replacingOccurrences(of: "\\u003e", with: "")
-        // #5: Apply NFKC to catch fullwidth/homoglyph variants not caught by literal token strips
-        let normalized = stripped.applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? stripped
-        return normalized.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
+        // Step 3: Final character-class filter
+        return stripped.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
     }
 
     // MARK: - Companion path (BT → iPhone)
@@ -221,8 +223,13 @@ final class WatchAISession: NSObject, ObservableObject {
         let allowedLangs: Set<String> = ["en", "en-US", "es", "es-ES", "ro", "ru", "fr", "de", "it", "pt", "ar", "zh-Hans", "zh-Hant", "ja", "ko", "he", "hi", "nl", "pl", "uk", "tr", "vi", "tl", "id"]
         let validatedLanguage = allowedLangs.contains(safeLanguage) ? safeLanguage : "en-US"
 
-        // Sanitize question — cap length, strip ChatML control tokens
-        let safeQuestion = String(question.prefix(500))
+        // Step 1: NFKC normalize to collapse fullwidth/confusable variants BEFORE literal stripping
+        let nfkcInput = String(question.prefix(500))
+            .applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false)
+            ?? String(question.prefix(500))
+
+        // Step 2: Strip literal injection tokens from the normalized input
+        let safeQuestion = nfkcInput
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
@@ -249,9 +256,8 @@ final class WatchAISession: NSObject, ObservableObject {
             .replacingOccurrences(of: "\\u003c", with: "")  // JSON-escaped <
             .replacingOccurrences(of: "\\u003e", with: "")  // JSON-escaped >
 
-        // #6: NFKC normalization to catch fullwidth injection attempts before cloud send
-        let nfkcQuestion = safeQuestion.applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? safeQuestion
-        let finalQuestion = nfkcQuestion.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
+        // Step 3: Final character-class filter
+        let finalQuestion = safeQuestion.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
 
         let system = "You are a friendly helper for a child who uses AAC. Reply in \(validatedLanguage) language. Keep answers short (2-3 sentences max)."
         var req = URLRequest(url: cloudURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: timeoutSec)
@@ -429,6 +435,19 @@ struct WatchSafetyFilter {
         }
     }()
 
+    private static func crisisResponseString() -> String {
+        let lang = Locale.current.language.languageCode?.identifier ?? "en"
+        switch lang {
+        case "es": return "🆘 Llama al 911 · Estoy aquí contigo."
+        case "fr": return "🆘 Appelle le 15/112 · Je suis avec toi."
+        case "ro": return "🆘 Sună la 112 · Sunt cu tine."
+        case "ru": return "🆘 Звони 112 · Я рядом с тобой."
+        case "ar": return "🆘 اتصل بـ 911 · أنا معك."
+        case "he": return "🆘 חייג 100/101 · אני איתך."
+        default:   return "🆘 Call 911 · Text 988\nI'm with you."
+        }
+    }
+
     static func check(_ input: String) -> Result {
         _ = _crisisPatternCheck  // force evaluation of compile-failure assert
         _ = _medicalPatternCheck // force evaluation of medical compile-failure assert
@@ -437,7 +456,7 @@ struct WatchSafetyFilter {
         let range = NSRange(input.startIndex..., in: input)
         for regex in Self.crisisPatterns {
             if regex.firstMatch(in: input, options: [], range: range) != nil {
-                return .crisis(response: "🆘 Call 911 · Text 988 (US crisis line)\nI'm with you.")
+                return .crisis(response: crisisResponseString())
             }
         }
         for regex in Self.medicalPatterns {

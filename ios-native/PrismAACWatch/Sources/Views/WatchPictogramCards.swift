@@ -797,14 +797,30 @@ struct WatchAIChatView: View {
         // #14: onDisappear is on the OUTERMOST VStack of WatchAIChatView — this is the correct placement.
         // aiTask and translateTask2 are @State vars; cancelling them here prevents dangling Tasks
         // that would otherwise continue executing after the sheet is dismissed.
+        // FIX #12: Final save on sheet dismiss — catches messages 2–4 that the count%5 guard skips.
         .onDisappear {
             aiTask?.cancel()
             translateTask2?.cancel()
+            // Final save on sheet dismiss (catches messages 2-4)
+            let toSave = Array(messages.suffix(10))
+            Task.detached(priority: .utility) {
+                do {
+                    let data = try JSONEncoder().encode(toSave)
+                    guard data.count <= 65_536 else { return }
+                    KeychainHelper.shared.writeData(data, service: "prism-aac-chat", account: "history")
+                } catch {
+                    NSLog("[WatchAIChat] Failed to encode history on disappear: \(error)")
+                }
+            }
         }
     }
 
     @MainActor
     private func sendMessage() {
+        // FIX #17: Always cancel both tasks before starting new send — handles mode-switch mid-flight
+        // where the previous send was running in the opposite mode (AI vs. translation).
+        aiTask?.cancel()
+        translateTask2?.cancel()
         let rawText = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !rawText.isEmpty else { return }
         let text = String(rawText.prefix(500))  // cap BEFORE any API call
@@ -1005,9 +1021,9 @@ struct WatchSendMessageView: View {
                             replyHandler: { _ in
                                 Task { @MainActor in
                                     isSending = false
-                                    let displayTo = safeTo.components(separatedBy: .controlCharacters).joined()
-                                        .prefix(20).description  // short form for display
-                                    sendStatus = "✓ Sent to \(displayTo)"
+                                    // FIX #16: Redact phone/email in status — never show full recipient on screen
+                                    let redacted = safeTo.count > 4 ? "***\(safeTo.suffix(4))" : "****"
+                                    sendStatus = "✓ Sent to \(redacted)"
                                     // Now start the dismiss task
                                     dismissTask?.cancel()
                                     dismissTask = Task { @MainActor in

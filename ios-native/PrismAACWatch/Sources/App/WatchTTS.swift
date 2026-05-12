@@ -55,6 +55,14 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         watchdogTask = nil
         synthesizer.stopSpeaking(at: .immediate)
         isSpeaking = false
+        if audioSessionActive {
+            do {
+                try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            } catch {
+                NSLog("[WatchTTS] AVAudioSession deactivate in stop() failed: \(error)")
+            }
+            audioSessionActive = false
+        }
     }
 
     // MARK: - AVSpeechSynthesizerDelegate

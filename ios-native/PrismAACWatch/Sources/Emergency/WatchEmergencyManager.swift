@@ -4,6 +4,7 @@ import WatchConnectivity
 import AVFoundation
 import Security
 import LocalAuthentication
+import UserNotifications
 
 enum EmergencySeverity { case critical, urgent, medical, standard }
 
@@ -31,6 +32,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     private var activeBgTask: WKBackgroundTaskHandle? = nil
     // #4: set true after escalation CONFIRMED — enables safe post-escalation dismiss from UI
     @Published private(set) var hasEscalated = false
+    // Fix #4: set true when a stale emergency flag is detected at launch — shows recovery UI
+    @Published var needsEmergencyRecovery: Bool = false
     // #2: single stored task for SOS haptics — cancellable on cleanup
     private var sosHapticTask: Task<Void, Never>?
     // #12: tracks natural completion of SOS haptic loop (not just nil/cancelled state)
@@ -50,8 +53,18 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // Full state recovery (re-entering countdown, resuming cellular dispatch) is a future
         // enhancement. For now, flag the condition so the UI can prompt the caregiver.
         if KeychainHelper.shared.read(service: "prism-aac", account: "emergencyActive") == "1" {
-            NSLog("[WatchEmergency] Previous emergency session detected — show recovery UI")
-            // TODO: Post a local notification or set a @Published flag to display recovery UI.
+            NSLog("[WatchEmergency] Previous emergency session detected — showing recovery notification")
+            // Set recoverable published state for UI
+            needsEmergencyRecovery = true
+            // Fire a local notification immediately
+            let content = UNMutableNotificationContent()
+            content.title = "Emergency Alert"
+            content.body  = "A previous emergency alert may not have been delivered. Please check on the child."
+            content.sound = .defaultCritical
+            let req = UNNotificationRequest(identifier: "emergency-recovery", content: content, trigger: nil)
+            UNUserNotificationCenter.current().add(req) { err in
+                if let err = err { NSLog("[WatchEmergency] Recovery notification failed: \(err)") }
+            }
         }
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerReachabilityHandler { [weak self] reachable in
@@ -234,8 +247,12 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         let context = LAContext()
         var error: NSError?
         guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
-            NSLog("[WatchEmergency] LAContext unavailable — forcing reset without auth")
-            cleanup()
+            NSLog("[WatchEmergency] LAContext unavailable — forceReset denied; passcode/biometrics required")
+            // Do NOT call cleanup(). Leave emergency active.
+            // Show a hint in the UI that device authentication is required.
+            Task { @MainActor [weak self] in
+                self?.deliveryStatus = .failed  // ensure UI shows Force Close button
+            }
             return
         }
         context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Confirm to close emergency alert") { success, authError in
@@ -323,6 +340,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                         guard let self else { return }
                         self.hasEscalated = true
                         self.deliveryStatus = .confirmed
+                        self.watchdogTask?.cancel()  // cancel watchdog now that delivery confirmed
+                        self.watchdogTask = nil
                         self.isEscalating = false  // FIX #1: escalation complete
                         WKInterfaceDevice.current().play(.success)  // FIX #30: haptic on confirmed
                         NSLog("[WatchEmergency] Escalation CONFIRMED via WCSession reply")
@@ -485,6 +504,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                 // FIX #1: Set hasEscalated only on confirmed HTTP 200 + body validation
                 hasEscalated = true
                 deliveryStatus = .confirmed
+                watchdogTask?.cancel()  // cancel watchdog now that delivery confirmed
+                watchdogTask = nil
                 WKInterfaceDevice.current().play(.success)  // FIX #30: haptic on cellular confirm
                 NSLog("[WatchEmergency] Cellular fallback dispatch succeeded and confirmed")
             } else if let http = response as? HTTPURLResponse,
@@ -494,7 +515,11 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                 // cellularFallbackSent stays true — retryCount is the gate; resetting it here
                 // would allow reachabilityHandler to fire a duplicate dispatch during the 2s sleep.
                 NSLog("[WatchEmergency] Cellular 5xx (\(http.statusCode)) — retrying once in 2s")
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                do {
+                    try await Task.sleep(nanoseconds: 2_000_000_000)
+                } catch {
+                    return  // Task cancelled — abort retry
+                }
                 guard isActive else { return }  // don't retry if emergency was cancelled
                 await attemptCellularFallback(retryCount: retryCount + 1)
             } else {

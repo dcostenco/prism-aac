@@ -18,6 +18,8 @@ final class WCSessionRouter: NSObject, ObservableObject {
         if WCSession.isSupported() {
             WCSession.default.delegate = self
             WCSession.default.activate()
+        } else {
+            NSLog("[WCRouter] WCSession not supported on this device — all WC features disabled")
         }
     }
 
@@ -75,8 +77,7 @@ final class WCSessionRouter: NSObject, ObservableObject {
                     // cannot be safely queued (reply would arrive after caller timed out,
                     // and the iPhone may process the message twice)
                     WCSession.default.transferUserInfo(msg)
-                }
-                if replyHandler != nil {
+                } else {
                     errorHandler?(error)
                 }
             }

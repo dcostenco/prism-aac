@@ -97,7 +97,15 @@ internal final class KeychainHelper {
             addQuery[kSecValueData as String] = data
             addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
             let status = SecItemAdd(addQuery as CFDictionary, nil)
-            if status != errSecSuccess { NSLog("[KeychainHelper] writeData add failed: \(status)") }
+            if status == errSecDuplicateItem {
+                // Race: another write succeeded between our update and add — retry update
+                let retryStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+                if retryStatus != errSecSuccess {
+                    NSLog("[KeychainHelper] writeData retry update failed: \(retryStatus) for \(service)/\(account)")
+                }
+            } else if status != errSecSuccess {
+                NSLog("[KeychainHelper] writeData add failed: \(status) for \(service)/\(account)")
+            }
         } else if updateStatus != errSecSuccess {
             NSLog("[KeychainHelper] writeData update failed: \(updateStatus)")
         }

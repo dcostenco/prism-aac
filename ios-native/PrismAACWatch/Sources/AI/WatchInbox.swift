@@ -423,7 +423,8 @@ final class WatchInbox: NSObject, ObservableObject {
                     let cleanSender = sanitizeInboxField(msg.sender)
                     let cleanText   = sanitizeInboxField(msg.text)
                     return WatchMessage(id: msg.id, sender: cleanSender, text: cleanText,
-                                       provider: msg.provider, receivedAt: msg.receivedAt, isRead: msg.isRead)
+                                       provider: msg.provider, receivedAt: msg.receivedAt,
+                                       isRead: msg.isRead, isReplied: msg.isReplied)
                 }
                 return sanitized
             } catch {

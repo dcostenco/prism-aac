@@ -99,8 +99,17 @@ final class WatchTranslation: ObservableObject {
             validLang = "en-US"
         }
 
-        // Sanitize user text — cap length, strip ChatML control tokens
-        let safeText = String(text.prefix(300))
+        // Sanitize user text — FIX #8: NFKC normalize FIRST (before literal stripping)
+        // so that composed/compatibility forms of token characters are normalized into
+        // the canonical ASCII form that the literal strip chain can then match.
+
+        // Step 1: NFKC normalize first (before literal stripping)
+        let nfkcText = String(text.prefix(300))
+            .applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false)
+            ?? String(text.prefix(300))
+
+        // Step 2: Literal token strip on normalized input
+        let safeText = nfkcText
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
@@ -127,6 +136,9 @@ final class WatchTranslation: ObservableObject {
             .replacingOccurrences(of: "\\u003c", with: "")  // JSON-escaped <
             .replacingOccurrences(of: "\\u003e", with: "")  // JSON-escaped >
 
+        // Step 3: Final bracket strip on normalized+stripped text
+        let finalText = safeText.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
+
         // Chat endpoint returns SSE (text/event-stream). Collect all
         // data: {"choices":[{"delta":{"content":"..."}}]} chunks until [DONE].
         // User text is a separate message — NOT inlined in the system prompt.
@@ -138,7 +150,7 @@ final class WatchTranslation: ObservableObject {
             req.httpBody = try JSONSerialization.data(withJSONObject: [
                 "messages": [
                     ["role": "system", "content": "Translate to \(validLang). Return ONLY the translated word or phrase, nothing else."],
-                    ["role": "user", "content": safeText],
+                    ["role": "user", "content": finalText],
                 ],
                 "max_tokens": 50,
                 "stream": false,  // FIX #17: non-streaming for translation (short responses); data(for:) buffers entire SSE

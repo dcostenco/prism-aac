@@ -43,7 +43,12 @@ final class WatchVocabSync: NSObject, ObservableObject {
         }
         vocabTask?.cancel()
         // #25+#34: @MainActor ensures isSpeaking/published state mutations are on main actor; [weak self] prevents retain cycle
-        vocabTask = Task { @MainActor [weak self] in await self?.loadFromAPI(lang: safeInput) }   // vocab labels in INPUT lang
+        vocabTask = Task { @MainActor [weak self] in
+            // Debounce: wait 250ms to coalesce rapid language changes
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            guard !Task.isCancelled else { return }
+            await self?.loadFromAPI(lang: safeInput)
+        }   // vocab labels in INPUT lang
     }
 
     /// Shorthand: set only output language (input unchanged).
@@ -128,7 +133,9 @@ final class WatchVocabSync: NSObject, ObservableObject {
                     "\u{200B}","\u{200C}","\u{200D}","\u{200E}","\u{200F}",
                     "\u{2066}","\u{2067}","\u{2068}","\u{2069}","\u{FEFF}"]
         let bidiStripped = bidi.reduce(tokenStripped) { $0.replacingOccurrences(of: $1, with: "") }
-        return String(bidiStripped.prefix(120))
+        let nfkc = bidiStripped
+            .applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? bidiStripped
+        return String(nfkc.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined().prefix(120))
     }
 
     // MARK: - Load from web app API (standalone path)
@@ -316,7 +323,7 @@ extension WatchCategory {
         name   = String(c.name.prefix(120))   // cap name length
         // #10: mark phrases as emergency when they come from an emergency category
         let isEmergencyCat = id == "emergency" || id == "help-needs"
-        phrases = c.phrases.map {
+        phrases = c.phrases.prefix(100).map {
             WatchPhrase(
                 id:          String($0.id.prefix(50)),   // cap phrase id
                 label:       WatchVocabSync.sanitizeLabel($0.label),
