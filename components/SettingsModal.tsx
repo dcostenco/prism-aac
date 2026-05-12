@@ -106,7 +106,21 @@ const PLAN_LABEL_KEYS: Record<SynaluxProfile['plan'], string> = {
 
 export default function SettingsModal() {
   const { showSettings, toggleSettings } = useUIStore();
-  const settings = useSettingsStore();
+  const settings = useSettingsStore;  // namespace only — selectors below avoid whole-store subscription
+  const gridSize = useSettingsStore(s => s.gridSize);
+  const theme = useSettingsStore(s => s.theme);
+  const speechRate = useSettingsStore(s => s.speechRate);
+  const speechVolume = useSettingsStore(s => s.speechVolume);
+  const language = useSettingsStore(s => s.language);
+  const activeVocabSet = useSettingsStore(s => s.activeVocabSet);
+  const highContrast = useSettingsStore(s => s.highContrast);
+  const notificationsEnabled = useSettingsStore(s => s.notificationsEnabled);
+  const setTheme = useSettingsStore(s => s.setTheme);
+  const update = useSettingsStore(s => s.update);
+  const aiAutocorrectEnabled = useSettingsStore(s => s.aiAutocorrectEnabled);
+  const mathHoldTimeMs = useSettingsStore(s => s.mathHoldTimeMs);
+  const mathTwoHitMagnify = useSettingsStore(s => s.mathTwoHitMagnify);
+  const showHandCalibration = useSettingsStore(s => s.showHandCalibration);
   const { t } = useT();
   const [pinVerified, setPinVerified] = useState(false);
   const pinJustSet = useRef(false);
@@ -215,9 +229,9 @@ export default function SettingsModal() {
               {GRID_OPTIONS.map((size) => (
                 <button
                   key={size}
-                  onClick={() => settings.update({ gridSize: size })}
+                  onClick={() => update({ gridSize: size })}
                   className={`aac-btn rounded-xl px-2 py-3 text-lg font-bold border border-theme text-center ${
-                    settings.gridSize === size ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+                    gridSize === size ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                   }`}
                 >
                   {size}
@@ -230,9 +244,9 @@ export default function SettingsModal() {
           <Section icon="🎨" title={t('theme')} defaultOpen>
             <div className="grid grid-cols-2 gap-2">
               {(['light', 'dark'] as const).map((th) => (
-                <button key={th} onClick={() => settings.setTheme(th)} aria-pressed={settings.theme === th}
+                <button key={th} onClick={() => setTheme(th)} aria-pressed={theme === th}
                   className={`aac-btn rounded-xl px-4 py-3 font-semibold border border-theme ${
-                    settings.theme === th ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+                    theme === th ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                   }`}>
                   {th === 'light' ? '☀ Light' : '🌙 Dark'}
                 </button>
@@ -243,16 +257,16 @@ export default function SettingsModal() {
           {/* ── VOICE ── */}
           <Section icon="🔊" title={t('voice')} defaultOpen>
             <label className="flex items-center justify-between">
-              <span className="text-primary text-sm">{t('speed')} — {settings.speechRate.toFixed(1)}</span>
+              <span className="text-primary text-sm">{t('speed')} — {speechRate.toFixed(1)}</span>
             </label>
-            <input type="range" min="0.1" max="1" step="0.1" value={settings.speechRate}
-              onChange={(e) => settings.update({ speechRate: parseFloat(e.target.value) })}
+            <input type="range" min="0.1" max="1" step="0.1" value={speechRate}
+              onChange={(e) => update({ speechRate: parseFloat(e.target.value) })}
               className="w-full accent-[#4CAF50]" />
             <label className="flex items-center justify-between mt-2">
-              <span className="text-primary text-sm">{t('volume')} — {Math.round(settings.speechVolume * 100)}%</span>
+              <span className="text-primary text-sm">{t('volume')} — {Math.round(speechVolume * 100)}%</span>
             </label>
-            <input type="range" min="0" max="1" step="0.1" value={settings.speechVolume}
-              onChange={(e) => settings.update({ speechVolume: parseFloat(e.target.value) })}
+            <input type="range" min="0" max="1" step="0.1" value={speechVolume}
+              onChange={(e) => update({ speechVolume: parseFloat(e.target.value) })}
               className="w-full accent-[#2196F3]" />
             {profile?.plan && profile.plan !== 'free' && (
               <div className="mt-2">
@@ -267,9 +281,9 @@ export default function SettingsModal() {
             <div className="grid grid-cols-3 gap-2">
               {LANG_META.map((lang) => (
                 <button key={lang.code}
-                  onClick={() => settings.update({ language: lang.code as SupportedLanguage })}
+                  onClick={() => update({ language: lang.code as SupportedLanguage })}
                   className={`aac-btn rounded-xl px-3 py-2 text-sm text-left border border-theme ${
-                    settings.language === lang.code ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+                    language === lang.code ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                   }`}
                 >
                   <div className="font-semibold">{lang.nativeName}</div>
@@ -284,10 +298,10 @@ export default function SettingsModal() {
             <div className="grid grid-cols-2 gap-2">
               {VOCAB_SETS.map((vs) => (
                 <button key={vs.id}
-                  onClick={() => { tapFeedback(); settings.update({ activeVocabSet: vs.id }); }}
-                  aria-pressed={settings.activeVocabSet === vs.id}
+                  onClick={() => { tapFeedback(); update({ activeVocabSet: vs.id }); }}
+                  aria-pressed={activeVocabSet === vs.id}
                   className={`aac-btn rounded-xl px-3 py-2 text-left border border-theme ${
-                    settings.activeVocabSet === vs.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+                    activeVocabSet === vs.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -297,7 +311,7 @@ export default function SettingsModal() {
                       <span className="ml-auto text-[10px] uppercase px-1.5 py-0.5 rounded bg-black/15 font-bold">{vs.tier}</span>
                     )}
                   </div>
-                  <p className={`text-xs mt-1 ${settings.activeVocabSet === vs.id ? 'opacity-80' : 'text-muted'}`}>{t(vs.descKey)}</p>
+                  <p className={`text-xs mt-1 ${activeVocabSet === vs.id ? 'opacity-80' : 'text-muted'}`}>{t(vs.descKey)}</p>
                 </button>
               ))}
             </div>
@@ -315,7 +329,7 @@ export default function SettingsModal() {
               <div className="max-h-[200px] overflow-y-auto space-y-0.5 border border-theme rounded-xl p-2 mt-2">
                 {DEFAULT_PHRASES.filter((p) => p.categoryId === wordVisCat).map((p) => {
                   const phraseVisible = !hiddenPhraseIds.includes(p.id);
-                  const localText = getPhraseText(p.id, settings.language, p.text);
+                  const localText = getPhraseText(p.id, language, p.text);
                   return (
                     <label key={p.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-black/5">
                       <span className="text-primary text-sm">{localText}</span>
@@ -338,9 +352,9 @@ export default function SettingsModal() {
                 <p className="text-muted text-[10px]">Chime when a message arrives from a contact</p>
               </div>
               <Toggle
-                on={settings.notificationsEnabled}
+                on={notificationsEnabled}
                 label="Alarm on new message"
-                onToggle={() => settings.update({ notificationsEnabled: !settings.notificationsEnabled })}
+                onToggle={() => update({ notificationsEnabled: !notificationsEnabled })}
               />
             </label>
           </Section>
@@ -354,16 +368,16 @@ export default function SettingsModal() {
           <Section icon="♿" title={`${t('accessibility')} & Input Modes`}>
             <label className="flex items-center justify-between py-1.5">
               <span className="text-primary text-sm">{t('high_contrast')}</span>
-              <Toggle on={settings.highContrast} label={t('high_contrast')}
-                onToggle={() => settings.update({ highContrast: !settings.highContrast })} />
+              <Toggle on={highContrast} label={t('high_contrast')}
+                onToggle={() => update({ highContrast: !highContrast })} />
             </label>
             <label className="flex items-center justify-between py-1.5">
               <div>
                 <span className="text-primary text-sm">AI Autocorrect</span>
                 <p className="text-muted text-[10px]">Suggests corrections while typing</p>
               </div>
-              <Toggle on={settings.aiAutocorrectEnabled} label="AI Autocorrect"
-                onToggle={() => settings.update({ aiAutocorrectEnabled: !settings.aiAutocorrectEnabled })} />
+              <Toggle on={aiAutocorrectEnabled} label="AI Autocorrect"
+                onToggle={() => update({ aiAutocorrectEnabled: !aiAutocorrectEnabled })} />
             </label>
             <div className="border-t border-theme pt-3 mt-1">
               <InputModesSettings />
@@ -379,10 +393,10 @@ export default function SettingsModal() {
               <span className="text-primary text-sm font-semibold">Hold-time dwell</span>
               <p className="text-muted text-[10px] mb-1">0 = instant · 200–1500 ms helps users with motor imprecision</p>
               <div className="flex items-center gap-3">
-                <input type="range" min={0} max={1500} step={50} value={settings.mathHoldTimeMs}
-                  onChange={(e) => settings.update({ mathHoldTimeMs: parseInt(e.target.value, 10) })}
+                <input type="range" min={0} max={1500} step={50} value={mathHoldTimeMs}
+                  onChange={(e) => update({ mathHoldTimeMs: parseInt(e.target.value, 10) })}
                   className="flex-1" />
-                <span className="text-primary font-mono text-sm min-w-[4ch] text-right">{settings.mathHoldTimeMs}ms</span>
+                <span className="text-primary font-mono text-sm min-w-[4ch] text-right">{mathHoldTimeMs}ms</span>
               </div>
             </label>
             <label className="flex items-center justify-between py-1.5">
@@ -390,13 +404,13 @@ export default function SettingsModal() {
                 <span className="text-primary text-sm">Two-hit magnify</span>
                 <p className="text-muted text-[10px]">First tap magnifies; second tap commits</p>
               </div>
-              <Toggle on={settings.mathTwoHitMagnify} label="Two-hit magnify"
-                onToggle={() => settings.update({ mathTwoHitMagnify: !settings.mathTwoHitMagnify })} />
+              <Toggle on={mathTwoHitMagnify} label="Two-hit magnify"
+                onToggle={() => update({ mathTwoHitMagnify: !mathTwoHitMagnify })} />
             </label>
           </Section>
 
           {/* ── HAND CALIBRATION ── */}
-          {settings.showHandCalibration && (
+          {showHandCalibration && (
             <Section icon="🤚" title="Hand Calibration">
               <HandProfileSection />
             </Section>
@@ -463,7 +477,7 @@ export default function SettingsModal() {
                     phrases: useCategoryStore.getState().customPhrases.filter(p => !p.deletedAt),
                     hiddenCategories: useCategoryStore.getState().hiddenCategoryIds,
                     hiddenPhrases: useCategoryStore.getState().hiddenPhraseIds,
-                    settings: { gridSize: settings.gridSize, activeVocabSet: settings.activeVocabSet },
+                    settings: { gridSize: gridSize, activeVocabSet: activeVocabSet },
                   };
                   navigator.clipboard.writeText(JSON.stringify(data, null, 2));
                 }}
