@@ -251,11 +251,22 @@ export default function CaregiverContactsSettings() {
         </div>
       </div>
 
-      {/* Existing contacts list */}
+      {/* Existing contacts list — capped at ~5 visible rows with internal
+          scroll so a synced inbox of 100+ contacts doesn't drown out the
+          rest of Settings (May 2026 user report — "showing all the
+          contacts on one form is unacceptable with 100+ contacts").
+          Pure-CSS cap, no remount-fragile collapse state. */}
       {contacts.length === 0 ? (
         <p className="text-muted text-xs">No contacts yet. Add one above or click Sync.</p>
       ) : (
-        <ul className="space-y-1" data-testid="contacts-list">
+        <>
+        <p className="text-muted text-xs">
+          {contacts.length} contact{contacts.length === 1 ? '' : 's'} — scroll to see more.
+        </p>
+        <ul
+          className="space-y-1 max-h-[clamp(180px,32svh,360px)] overflow-y-auto pr-1"
+          data-testid="contacts-list"
+        >
           {[...contacts].sort((a, b) => a.order - b.order).map((c) => {
             const available = isProviderAvailable(c.provider, plan);
             return (
@@ -344,6 +355,7 @@ export default function CaregiverContactsSettings() {
             );
           })}
         </ul>
+        </>
       )}
     </div>
   );
