@@ -2,7 +2,7 @@
 
 **Help nonverbal kids talk.**
 
-Augmentative & Alternative Communication app for children with motor impairments and complex communication needs. Tap pictures, build sentences, hear them spoken aloud — in 16+ languages. Works on any tablet or laptop.
+Augmentative & Alternative Communication app for children with motor impairments and complex communication needs. Tap pictures, build sentences, hear them spoken aloud — in 21 languages. Works on any tablet, laptop, iPhone, iPad, and Apple Watch.
 
 Part of the [Synalux platform](https://synalux.ai).
 
@@ -13,6 +13,21 @@ Part of the [Synalux platform](https://synalux.ai).
 </p>
 
 ![Prism AAC main screen — toolbar, schedule banner, type-here bar, prediction tiles, and qwerty keyboard](docs/screenshots/app-hero.png)
+
+### Native apps
+
+<p align="center">
+  <img src="docs/screenshots/ios-iphone.png" alt="PrismAAC on iPhone" width="220" />
+  <img src="docs/screenshots/ios-ipad.png" alt="PrismAAC on iPad" width="360" />
+  <img src="docs/screenshots/watch-ultra.png" alt="PrismAAC on Apple Watch Ultra" width="120" />
+</p>
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| **Web** (PWA) | Production | Any browser, installable |
+| **iPhone / iPad** | Production | Native WKWebView + on-device 1.5B LLM |
+| **Apple Watch** | Production | Standalone — pictograms, AI chat, emergency, translation |
+| **Chrome Extension** | Production | Reading assistant in any text field |
 
 ---
 
@@ -52,10 +67,39 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 | **Open source** (AGPL-3.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | **Free tier** for life-safety access | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Voice pack **marketplace** | ✅ | ❌ | partial | ❌ | partial | ❌ |
-| **Multi-language** (16+) | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| **Multi-language** (21) | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | **Caregiver notes** that travel home / school / clinic | ✅ | ❌ | ❌ | ❌ | partial | partial |
 
 > Comparison reflects publicly available product information as of 2026-05. PrismAAC is actively developed; competitors may add features over time. PRs welcome to keep this honest — see `CONTRIBUTING.md`.
+
+---
+
+## iOS & Apple Watch
+
+### iPhone / iPad
+
+Native Swift app wrapping the web UI in WKWebView + on-device 1.5B LLM via llama.cpp Metal. Three-layer safety architecture: synchronous crisis filter → on-device AI → cloud fallback. Memory-aware feature gating degrades gracefully from full AI → cloud AI → core-only → emergency mode.
+
+- Safe area inset for Dynamic Island / notch
+- WCSession bridge for Apple Watch emergency dispatch
+- Keychain-backed auth tokens
+- Certificate pinning (SPKI SHA-256) on emergency dispatch
+
+### Apple Watch (standalone)
+
+Works without iPhone — WiFi/LTE for AI, Bluetooth for faster on-device path.
+
+<p align="center">
+  <img src="docs/screenshots/watch-series.png" alt="Watch Series 11" width="140" />
+  <img src="docs/screenshots/watch-ultra.png" alt="Watch Ultra 3" width="140" />
+</p>
+
+- 2-column pictogram grid with ARASAAC images
+- AI Chat with dictation + keyboard input
+- Emergency system: countdown → WCSession → cellular fallback → TTS
+- Translation between 21 languages with TTS output
+- Inbox: receive and reply to messages from caregivers
+- NFKC + 23-token injection sanitization on all AI paths
 
 ---
 
