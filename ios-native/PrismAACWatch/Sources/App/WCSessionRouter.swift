@@ -50,7 +50,8 @@ final class WCSessionRouter: NSObject, ObservableObject {
     var isReachable: Bool { WCSession.isSupported() && WCSession.default.isReachable }
 
     /// Send a message via WCSession (convenience wrapper).
-    func send(_ message: [String: Any], replyHandler: (([String: Any]) -> Void)? = nil, errorHandler: ((Error) -> Void)? = nil) {
+    /// Nonisolated because WCSession.default is thread-safe and callers may be off MainActor.
+    nonisolated func send(_ message: [String: Any], replyHandler: (([String: Any]) -> Void)? = nil, errorHandler: ((Error) -> Void)? = nil) {
         guard WCSession.default.isReachable else {
             guard WCSession.default.activationState == .activated else {
                 NSLog("[WCRouter] Session not activated")

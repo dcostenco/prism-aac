@@ -33,8 +33,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     private var activePhrase: String?
     // FIX 8: debounce guard — prevents duplicate cellular fallback on reachability flap
     private var cellularFallbackSent = false
-    // F2b: store active background task handle so cleanup() can end it
-    private var activeBgTask: WKBackgroundTaskHandle? = nil
+    // F2b: extended runtime session keeps Watch app alive during emergency countdown + escalation
+    private var extendedSession: WKExtendedRuntimeSession?
     // #4: set true after escalation CONFIRMED — enables safe post-escalation dismiss from UI
     @Published private(set) var hasEscalated = false
     // Fix #4: set true when a stale emergency flag is detected at launch — shows recovery UI
@@ -163,35 +163,13 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
         let deadline = Date().addingTimeInterval(5)  // absolute deadline
 
-        // Request background task so process is not suspended
-        // F2b: store handle on instance so cleanup() can end it
-        // activeBgTask is stored on self; if self is deallocated, the expiry handler's
-        // [weak self] guard handles it safely — no strong reference cycle.
-        // #2/#18: bgTask expiry must NOT call escalate() — it races with the timer's escalate().
-        // The timer's escalate() will fire when it gets CPU time.
-        // If completely denied CPU, fall back to on-device TTS.
-        activeBgTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-countdown") { [weak self] in
-            guard let self else { return }
-            // End THIS background task synchronously (required by watchOS)
-            if let t = self.activeBgTask {
-                WKApplication.shared().endBackgroundTask(t)
-                self.activeBgTask = nil
-            }
-            // FIX #20 (MEDIUM): speakEmergencyFallback() is non-blocking (AVSpeechSynthesizer.speak
-            // returns immediately) — call it synchronously here so TTS fires even if the async
-            // Task below is denied CPU time. Only the cellular network attempt is inherently async.
-            self.speakEmergencyFallback()
-            NSLog("[WatchEmergency] BG expiry: TTS fallback spoken synchronously")
-            // Schedule cellular attempt on a new background task (network is async)
-            let fallbackTask = WKApplication.shared().beginBackgroundTask(withName: "emergency-fallback") {}
-            Task { @MainActor [weak self] in
-                defer { WKApplication.shared().endBackgroundTask(fallbackTask) }
-                guard let self, self.isActive, !self.cellularFallbackSent else { return }
-                NSLog("[WatchEmergency] BG expiry: attempting cellular — hasEscalated set only on confirmed delivery")
-                await self.attemptCellularFallback()
-                // hasEscalated is set by attemptCellularFallback on success only
-            }
-        }
+        // Request extended runtime so Watch process stays alive during countdown + escalation.
+        // WKExtendedRuntimeSession gives up to 30 min for self-care / emergency scenarios.
+        extendedSession?.invalidate()
+        let ers = WKExtendedRuntimeSession()
+        ers.delegate = self
+        ers.start()
+        extendedSession = ers
 
         // Schedule on .common mode so timer fires during touch tracking
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] t in
@@ -202,10 +180,6 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
                 self.countdownSecs = remaining
                 if Date() >= deadline {
                     t.invalidate()
-                    if let task = self.activeBgTask {
-                        WKApplication.shared().endBackgroundTask(task)
-                        self.activeBgTask = nil
-                    }
                     // #14: use activePhrase only — never fall back to raw captured param
                     guard let p = self.activePhrase else {
                         NSLog("[WatchEmergency] Timer fired but activePhrase is nil — aborting escalation")
@@ -326,11 +300,9 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // #6: cancel stored watchdog task
         watchdogTask?.cancel()
         watchdogTask = nil
-        // F2b: end any leaked background task on cancel path
-        if let task = activeBgTask {
-            WKApplication.shared().endBackgroundTask(task)
-            activeBgTask = nil
-        }
+        // F2b: end extended runtime session on cancel/cleanup path
+        extendedSession?.invalidate()
+        extendedSession = nil
     }
 
     // MARK: - Escalation
@@ -607,5 +579,28 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 extension WatchEmergencyManager: AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ s: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         NSLog("[WatchEmergency] Emergency TTS utterance completed")
+    }
+}
+
+// MARK: - WKExtendedRuntimeSessionDelegate
+
+extension WatchEmergencyManager: WKExtendedRuntimeSessionDelegate {
+    nonisolated func extendedRuntimeSessionDidStart(_ session: WKExtendedRuntimeSession) {
+        NSLog("[WatchEmergency] Extended runtime session started")
+    }
+
+    nonisolated func extendedRuntimeSessionWillExpire(_ session: WKExtendedRuntimeSession) {
+        NSLog("[WatchEmergency] Extended runtime session expiring — firing TTS fallback")
+        Task { @MainActor [weak self] in
+            guard let self, self.isActive else { return }
+            self.speakEmergencyFallback()
+            if !self.cellularFallbackSent {
+                await self.attemptCellularFallback()
+            }
+        }
+    }
+
+    nonisolated func extendedRuntimeSession(_ session: WKExtendedRuntimeSession, didInvalidateWith reason: WKExtendedRuntimeSessionInvalidationReason, error: (any Error)?) {
+        NSLog("[WatchEmergency] Extended runtime session invalidated: reason=\(reason.rawValue) error=\(error?.localizedDescription ?? "none")")
     }
 }

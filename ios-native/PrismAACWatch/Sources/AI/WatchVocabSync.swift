@@ -108,7 +108,7 @@ final class WatchVocabSync: NSObject, ObservableObject {
     // MARK: - Label sanitization
 
     // #27: changed from fileprivate → internal so tests and companion types can access it
-    internal static func sanitizeLabel(_ raw: String) -> String {
+    nonisolated internal static func sanitizeLabel(_ raw: String) -> String {
         // FIX #31: preliminary cap before processing — prevents quadratic cost on pathological inputs.
         let capped = String(raw.prefix(200))
         // #4: expanded to full token list — ChatML, Llama, Gemma, Mistral, legacy special tokens,
@@ -336,10 +336,10 @@ extension WatchCategory {
         let isEmergencyCat = id == "emergency" || id == "help-needs"
         phrases = c.phrases.prefix(100).map {
             WatchPhrase(
-                id:          String($0.id.prefix(50)),   // cap phrase id
+                id:          String($0.id.prefix(50)),
                 label:       WatchVocabSync.sanitizeLabel($0.label),
-                sfSymbol:    String($0.sfSymbol?.prefix(50) ?? "circle.fill"),
                 arasaacId:   $0.arasaacId,
+                sfSymbol:    String($0.sfSymbol?.prefix(50) ?? "circle.fill"),
                 isEmergency: isEmergencyCat
             )
         }

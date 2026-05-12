@@ -422,7 +422,7 @@ struct WatchSafetyFilter {
             return nil
         }
     }
-    private static let _crisisPatternCheck: Void = {
+    static let _crisisPatternCheck: Void = {
         let missing = crisisKeywords.count - crisisPatterns.count
         if missing > 0 {
             NSLog("[WatchSafetyFilter] CRITICAL: \(missing) crisis pattern(s) failed to compile — coverage degraded")
@@ -440,7 +440,7 @@ struct WatchSafetyFilter {
             return nil
         }
     }
-    private static let _medicalPatternCheck: Void = {
+    static let _medicalPatternCheck: Void = {
         let missing = medicalKeywords.count - medicalPatterns.count
         if missing > 0 {
             NSLog("[WatchSafetyFilter] CRITICAL: \(missing) medical pattern(s) failed to compile — coverage degraded")

@@ -31,7 +31,7 @@ struct PrismAACWatchApp: App {
                 .environmentObject(vocab)
                 .environmentObject(inbox)
                 .environmentObject(translation)
-                .onChange(of: scenePhase) { _, newPhase in
+                .onChange(of: scenePhase) { newPhase in
                     if newPhase == .active && emergency.isActive {
                         NSLog("[WatchApp] Resumed active — emergency still in progress (deliveryStatus=\(emergency.deliveryStatus))")
                         // Emergency manager handles TTS — do NOT call tts.speak() here as it ducks the emergency synthesizer

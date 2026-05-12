@@ -254,26 +254,28 @@ final class WatchInbox: NSObject, ObservableObject {
     // #6: nonisolated so Task.detached can call this without hopping back to @MainActor.
     // Captures a snapshot of messages at call time; Keychain I/O runs off the main thread.
     nonisolated private func persistToKeychain() async {
-        // FIX #5: Single MainActor round-trip instead of four separate awaits — avoids
-        // interleaved mutations between hops (each await is a suspension point where other
-        // @MainActor work can run and mutate state).
-        let (snapshot, svc, acct, storeKey, migrated) = await MainActor.run {
-            (messages, keychainService, keychainAccount, storageKey,
-             UserDefaults.standard.bool(forKey: "watchInboxMigrated"))
+        // FIX #5: Single MainActor round-trip instead of four separate awaits
+        struct PersistContext {
+            let snapshot: [WatchMessage]
+            let service: String
+            let account: String
+            let storeKey: String
+            let migrated: Bool
         }
-        // Use snapshot, svc, acct, storeKey, migrated below instead of separate awaits
-        let keychainService = svc
-        let keychainAccount = acct
-        let storageKey      = storeKey
+        let ctx: PersistContext = await MainActor.run {
+            PersistContext(snapshot: messages, service: keychainService,
+                          account: keychainAccount, storeKey: storageKey,
+                          migrated: UserDefaults.standard.bool(forKey: "watchInboxMigrated"))
+        }
 
         // #7: update-then-add pattern — never delete first (avoids data loss if add fails)
         // #15: SecItemDelete with kSecValueData in query is gone — we don't delete at all
         do {
-            let data = try JSONEncoder().encode(snapshot)
+            let data = try JSONEncoder().encode(ctx.snapshot)
             let updateQuery: [String: Any] = [
                 kSecClass as String:              kSecClassGenericPassword,
-                kSecAttrService as String:        keychainService,
-                kSecAttrAccount as String:        keychainAccount,
+                kSecAttrService as String:        ctx.service,
+                kSecAttrAccount as String:        ctx.account,
                 kSecAttrSynchronizable as String: false,
             ]
             let updateAttrs: [String: Any] = [
@@ -300,9 +302,9 @@ final class WatchInbox: NSObject, ObservableObject {
                     NSLog("[WatchInbox] Keychain add failed: \(addStatus) — NOT removing UserDefaults backup")
                     return  // abort; DO NOT erase UserDefaults
                 }
-                completeMigrationIfNeeded(migrated: migrated, storageKey: storeKey)
+                completeMigrationIfNeeded(migrated: ctx.migrated, storageKey: ctx.storeKey)
             } else if updateStatus == errSecSuccess {
-                completeMigrationIfNeeded(migrated: migrated, storageKey: storeKey)
+                completeMigrationIfNeeded(migrated: ctx.migrated, storageKey: ctx.storeKey)
             } else {
                 NSLog("[WatchInbox] Keychain update failed: \(updateStatus)")
             }

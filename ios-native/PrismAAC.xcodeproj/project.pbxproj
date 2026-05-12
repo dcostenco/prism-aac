@@ -24,6 +24,10 @@
 		D7E8F10A3B5C9D2100FF4321 /* WatchInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A3C40B2D6F8E1200BB9876 /* WatchInbox.swift */; };
 		EF9EBF1590D95DA7BA2B75C2 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DB2AB8796CA83596887AD3 /* AppState.swift */; };
 		A1B2C3D4E5F6A1B2C3D40002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A1B2C3D40001 /* Assets.xcassets */; };
+		FFAA010000000000000000A2 /* WCSessionRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFAA010000000000000000A1 /* WCSessionRouter.swift */; };
+		FFAA010000000000000000B2 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFAA010000000000000000B1 /* KeychainHelper.swift */; };
+		FFAA010000000000000000D1 /* PrismAACWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		FFAA010000000000000000E2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FFAA010000000000000000E1 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +44,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 37F3B4323FACF28FDB1C7BA2;
 			remoteInfo = PrismAAC;
+		};
+		FFAA010000000000000000D2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 94B38DF5C167816F45B98216 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C059824D983FDADEE5E3C89D;
+			remoteInfo = PrismAACWatch;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -80,6 +91,9 @@
 		E1A3C40B2D6F8E1200BB9876 /* WatchInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchInbox.swift; sourceTree = "<group>"; };
 		F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACApp.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A1B2C3D40001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FFAA010000000000000000A1 /* WCSessionRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WCSessionRouter.swift; sourceTree = "<group>"; };
+		FFAA010000000000000000B1 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		FFAA010000000000000000E1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -142,6 +156,7 @@
 			children = (
 				AA7D87755CBCE7686166B1A4 /* WatchApp.swift */,
 				67DE9F6102290192A69EA33F /* WatchTTS.swift */,
+				FFAA010000000000000000A1 /* WCSessionRouter.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -150,6 +165,7 @@
 			isa = PBXGroup;
 			children = (
 				7795A92B4E6D956D4CC34A5A /* Sources */,
+				FFAA010000000000000000E1 /* Assets.xcassets */,
 			);
 			path = PrismAACWatch;
 			sourceTree = "<group>";
@@ -169,9 +185,18 @@
 				969C8F21D16D5D15A3EF068F /* AI */,
 				59A0D9C574D82B5EA3441709 /* App */,
 				98093A83AD7EC30FE022A107 /* Emergency */,
+				FFAA010000000000000000C1 /* Shared */,
 				51965D32F560CA8C415B64C0 /* Views */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		FFAA010000000000000000C1 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				FFAA010000000000000000B1 /* KeychainHelper.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		84AA94E42FB3A6830050C9EB /* AppIcon.appiconset */ = {
@@ -280,10 +305,12 @@
 			buildPhases = (
 				A1B2C3D4E5F6A1B2C3D40003 /* Resources */,
 				B370F9EA8C16398E6A8601CC /* Sources */,
+				FFAA010000000000000000D4 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				FFAA010000000000000000D3 /* PBXTargetDependency */,
 			);
 			name = PrismAAC;
 			packageProductDependencies = (
@@ -314,6 +341,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = EB1CCDFE3CF7148A03C82215 /* Build configuration list for PBXNativeTarget "PrismAACWatch" */;
 			buildPhases = (
+				FFAA010000000000000000E3 /* Resources */,
 				B349B71D3D5FD9432870AA63 /* Sources */,
 			);
 			buildRules = (
@@ -363,7 +391,29 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		FFAA010000000000000000D4 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				FFAA010000000000000000D1 /* PrismAACWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXResourcesBuildPhase section */
+		FFAA010000000000000000E3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FFAA010000000000000000E2 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1B2C3D4E5F6A1B2C3D40003 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -396,6 +446,8 @@
 				A9A7C3336D26BD9F125CFF29 /* WatchPictogramCards.swift in Sources */,
 				0F41DF8A255CAB7496EEED20 /* WatchTTS.swift in Sources */,
 				298E5CAC051C4E6C40B9309A /* WatchVocabSync.swift in Sources */,
+				FFAA010000000000000000A2 /* WCSessionRouter.swift in Sources */,
+				FFAA010000000000000000B2 /* KeychainHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -431,6 +483,11 @@
 			isa = PBXTargetDependency;
 			target = 37F3B4323FACF28FDB1C7BA2 /* PrismAAC */;
 			targetProxy = 79F1897122443ED3CA3471A6 /* PBXContainerItemProxy */;
+		};
+		FFAA010000000000000000D3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C059824D983FDADEE5E3C89D /* PrismAACWatch */;
+			targetProxy = FFAA010000000000000000D2 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -548,11 +605,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 9.0;
 			};
@@ -629,6 +689,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -636,6 +697,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.0;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -649,6 +711,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -656,6 +719,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.0;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -667,11 +731,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 9.0;
 			};

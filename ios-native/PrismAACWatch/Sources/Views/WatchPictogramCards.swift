@@ -22,7 +22,7 @@ struct AACPhrase: Identifiable {
         // FIX #5: hashValue is non-deterministic across process launches (Swift 4.2+).
         // Use a stable polynomial hash over Unicode scalar values instead.
         let uniquePrefix = prefix.isEmpty
-            ? "emoji\(abs(label.unicodeScalars.reduce(0) { $0 &* 31 &+ Int($1.value) }) & 0x7FFFFFFFFFFFFFFF)"
+            ? "emoji\(abs(label.unicodeScalars.reduce(0) { $0 &* 31 &+ Int($1.value) }) & Int.max)"
             : prefix
         self.id = "\(uniquePrefix)-\(sfSymbol)-\(arasaacId.map(String.init) ?? "x")"
         self.label = label
@@ -267,7 +267,7 @@ struct WatchPictogramCards: View {
         // Performance note: the .map/.joined key is O(categories) per SwiftUI evaluation.
         // This is acceptable for ≤50 categories on watchOS — measured at <1ms on Series 8.
         // If performance degrades, replace with a version counter on WatchVocabSync.
-        .onChange(of: vocab.categories.map { "\($0.id):\($0.phrases.count)" }.joined(separator: ",")) { _, _ in
+        .onChange(of: vocab.categories.map { "\($0.id):\($0.phrases.count)" }.joined(separator: ",")) { _ in
             cachedPhrases = computeAllPhrases()
         }
         // Inbox / Notification center
@@ -692,7 +692,7 @@ struct WatchAIChatView: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 8)
                 }
-                .onChange(of: messages.count) { _, _ in
+                .onChange(of: messages.count) { _ in
                     if let last = messages.last {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
@@ -770,7 +770,7 @@ struct WatchAIChatView: View {
         // FIX #6: enforce 500-char cap on text before persisting — sanitize PII before Keychain write.
         // FIX #10: debounce — only write every 5th message or on first message to reduce concurrent
         // Keychain write contention. Use do/catch instead of try? so encode errors are logged.
-        .onChange(of: messages.count) { _, count in
+        .onChange(of: messages.count) { count in
             guard count % 5 == 0 || count == 1 else { return }
             let toSave = Array(messages.suffix(10)).map {
                 ChatMessage(role: $0.role, text: String($0.text.prefix(500)))
