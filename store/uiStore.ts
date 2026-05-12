@@ -60,6 +60,10 @@ interface UIState {
   selectContact: (id: string) => void;
   backToContacts: () => void;
   toggleCategoryKeyboard: () => void;
+  contactDraftName: string;
+  contactDraftRecipient: string;
+  setContactDraftName: (v: string) => void;
+  setContactDraftRecipient: (v: string) => void;
 }
 
 let alertTimer: ReturnType<typeof setTimeout> | null = null;
@@ -80,6 +84,10 @@ export const useUIStore = create<UIState>()((set) => ({
   showCategoryManager: false,
   isAlertFlashing: false,
   _alertLastFiredAt: 0,
+  contactDraftName: '',
+  contactDraftRecipient: '',
+  setContactDraftName: (v) => set({ contactDraftName: v }),
+  setContactDraftRecipient: (v) => set({ contactDraftRecipient: v }),
 
   openCategories: () => set((s) => {
     // Sane navigation from every starting state:

@@ -26,6 +26,7 @@ import { syncContactsOnce } from '@/services/contactsIntegrationService';
 import { subscribeToIntegrationEvents } from '@/services/integrationsService';
 import { tapFeedback } from '@/services/feedback';
 import IntegrationsSettings from './IntegrationsSettings';
+import { useUIStore } from '@/store/uiStore';
 
 const PROVIDER_LIST: ContactProvider[] = [
   'mail', 'sms', 'telegram', 'whatsapp', 'viber', 'messenger', 'instagram',
@@ -55,9 +56,11 @@ export default function CaregiverContactsSettings() {
   const profile = useAuthStore((s) => s.profile);
   const plan = profile?.plan ?? 'free';
 
-  const [draftName, setDraftName] = useState('');
+  const draftName = useUIStore((s) => s.contactDraftName);
+  const setDraftName = useUIStore((s) => s.setContactDraftName);
+  const draftRecipientId = useUIStore((s) => s.contactDraftRecipient);
+  const setDraftRecipientId = useUIStore((s) => s.setContactDraftRecipient);
   const [draftProvider, setDraftProvider] = useState<ContactProvider>('mail');
-  const [draftRecipientId, setDraftRecipientId] = useState('');
   const [draftError, setDraftError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);

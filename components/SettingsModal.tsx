@@ -556,7 +556,7 @@ export default function SettingsModal() {
                   Remove PIN
                 </button>
               )}
-              {!caregiverPinHash && pinVerified && (
+              {!caregiverPinHash && (
                 <PinPad
                   pinHash=""
                   onVerify={() => {}}
