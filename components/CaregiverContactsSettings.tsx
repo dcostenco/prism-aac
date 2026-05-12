@@ -66,7 +66,10 @@ export default function CaregiverContactsSettings() {
   // or trigger Sync, not to type one in. The form expands on tap of the
   // "+ Add manually" header. When contacts.length===0 the form starts
   // expanded so the user has somewhere to start.
-  const [manualOpen, setManualOpen] = useState<boolean | null>(null);
+  // Initial: collapsed when contacts already exist, expanded for fresh
+  // accounts so the user has somewhere to start. Stays whatever the
+  // user last toggled it to (state, not derived).
+  const [manualOpen, setManualOpen] = useState(() => contacts.length === 0);
   // Per-source advisories from the portal — e.g. "Reconnect Gmail to
   // grant Contacts permission". Without surfacing these, a 0-contact
   // sync looks broken when really the user just hasn't granted the
@@ -192,24 +195,18 @@ export default function CaregiverContactsSettings() {
 
       {/* Add new contact — collapsed by default when contacts already exist */}
       <div className="space-y-2 p-3 surface-key rounded-lg border border-theme">
-        {(() => {
-          // Effective open state: explicit user toggle wins; otherwise open
-          // when there are no contacts, closed when there are.
-          const isOpen = manualOpen ?? contacts.length === 0;
-          return (
-        <>
         <button
           type="button"
-          onClick={() => setManualOpen(!isOpen)}
-          aria-expanded={isOpen}
+          onClick={() => setManualOpen((v) => !v)}
+          aria-expanded={manualOpen}
           aria-controls="manual-add-body"
           className="w-full flex items-center justify-between text-left"
           data-testid="manual-add-toggle"
         >
           <span className="text-primary text-sm font-bold">＋ Add a contact manually</span>
-          <span className="text-muted text-sm shrink-0" aria-hidden>{isOpen ? '▾' : '▸'}</span>
+          <span className="text-muted text-sm shrink-0" aria-hidden>{manualOpen ? '▾' : '▸'}</span>
         </button>
-        {isOpen && (
+        {manualOpen && (
         <div id="manual-add-body" className="space-y-2 pt-2">
         <input
           value={draftName}
@@ -267,9 +264,6 @@ export default function CaregiverContactsSettings() {
         )}
         </div>
         )}
-        </>
-        );
-        })()}
       </div>
 
       {/* Existing contacts list */}
