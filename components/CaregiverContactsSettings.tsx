@@ -61,6 +61,12 @@ export default function CaregiverContactsSettings() {
   const [draftError, setDraftError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  // Collapse the "Add a contact manually" form by default when contacts
+  // already exist — caregivers usually open Settings to see their list
+  // or trigger Sync, not to type one in. The form expands on tap of the
+  // "+ Add manually" header. When contacts.length===0 the form starts
+  // expanded so the user has somewhere to start.
+  const [manualOpen, setManualOpen] = useState<boolean | null>(null);
   // Per-source advisories from the portal — e.g. "Reconnect Gmail to
   // grant Contacts permission". Without surfacing these, a 0-contact
   // sync looks broken when really the user just hasn't granted the
@@ -184,9 +190,27 @@ export default function CaregiverContactsSettings() {
         </ul>
       )}
 
-      {/* Add new contact */}
+      {/* Add new contact — collapsed by default when contacts already exist */}
       <div className="space-y-2 p-3 surface-key rounded-lg border border-theme">
-        <p className="text-primary text-sm font-bold">Add a contact manually</p>
+        {(() => {
+          // Effective open state: explicit user toggle wins; otherwise open
+          // when there are no contacts, closed when there are.
+          const isOpen = manualOpen ?? contacts.length === 0;
+          return (
+        <>
+        <button
+          type="button"
+          onClick={() => setManualOpen(!isOpen)}
+          aria-expanded={isOpen}
+          aria-controls="manual-add-body"
+          className="w-full flex items-center justify-between text-left"
+          data-testid="manual-add-toggle"
+        >
+          <span className="text-primary text-sm font-bold">＋ Add a contact manually</span>
+          <span className="text-muted text-sm shrink-0" aria-hidden>{isOpen ? '▾' : '▸'}</span>
+        </button>
+        {isOpen && (
+        <div id="manual-add-body" className="space-y-2 pt-2">
         <input
           value={draftName}
           onChange={(e) => setDraftName(e.target.value)}
@@ -241,6 +265,11 @@ export default function CaregiverContactsSettings() {
             Type a name and {PROVIDER_CFG[draftProvider].recipientHint.toLowerCase()} to enable.
           </p>
         )}
+        </div>
+        )}
+        </>
+        );
+        })()}
       </div>
 
       {/* Existing contacts list */}
