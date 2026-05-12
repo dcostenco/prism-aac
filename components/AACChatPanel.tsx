@@ -326,9 +326,11 @@ export default function AACChatPanel() {
 
   // Contacts present but no active contact — show inbox + contact search.
   if (!activeContact && sortedContacts.length > 0) {
-    // Pull incoming messages from schedule store
+    // Pull incoming messages from schedule store — only from known contacts
+    const contactNames = new Set(sortedContacts.map(c => c.name.toLowerCase()));
+    const decodeHtml = (s: string) => s.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16))).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
     const inboxMessages = useScheduleStore.getState().tasks
-      .filter((t: { kind?: string; done?: boolean }) => t.kind === 'message' && !t.done)
+      .filter(t => t.kind === 'message' && !t.done && t.sender && contactNames.has(t.sender.toLowerCase()))
       .slice(0, 5);
 
     return (
@@ -336,16 +338,15 @@ export default function AACChatPanel() {
         aria-label={tx('aac_chat_title', 'Send a message')}
         data-testid="aac-chat-panel"
         data-state="contact-search"
-        className="shrink-0 surface-bar border-y border-theme"
+        className="shrink-0 surface-bar border-y border-theme max-h-[40svh] overflow-y-auto"
       >
         <span data-testid="aac-chat-empty-state" aria-hidden />
-        {/* Inbox: show unread incoming messages */}
         {inboxMessages.length > 0 && (
           <div className="px-3 py-2 border-b border-theme space-y-1">
             <span className="text-xs text-muted font-bold uppercase tracking-wider">📨 Inbox</span>
             {inboxMessages.map((msg) => (
               <div key={msg.id} className="flex items-center gap-2 py-1">
-                <span className="flex-1 text-sm text-primary truncate">{msg.icon} {msg.text}</span>
+                <span className="flex-1 text-sm text-primary truncate">{msg.icon} {decodeHtml(msg.text)}</span>
                 {msg.sender && (
                   <button
                     onClick={() => { tapFeedback(); replyToSender(msg.sender!); }}
