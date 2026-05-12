@@ -13,6 +13,7 @@ import {
 } from '@/services/sendToContact';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
+import { useScheduleStore } from '@/store/scheduleStore';
 
 const AVATAR_ALLOWED_DOMAINS = ['synalux.ai', 'googleusercontent.com', 'telegram.org', 'whatsapp.net', 'fbcdn.net', 'twimg.com'];
 
@@ -88,7 +89,7 @@ function renderContactTile(
  * cannot accidentally lose them.
  */
 export default function AACChatPanel() {
-  const { sidePanel, closeSidePanel, activeContactId, selectContact, backToContacts, toggleSettings } = useUIStore();
+  const { sidePanel, closeSidePanel, activeContactId, selectContact, backToContacts, toggleSettings, replyToSender } = useUIStore();
   const { text, clearAll } = useMessageStore();
   const contacts = useContactsStore((s) => s.contacts);
   const profile = useAuthStore((s) => s.profile);
@@ -317,10 +318,13 @@ export default function AACChatPanel() {
     );
   }
 
-  // Contacts present but no active contact — contacts stream to the
-  // prediction bar (PredictionBar detects sidePanel==='aac-chat').
-  // Collapse to a compact strip so the keyboard keeps full height.
+  // Contacts present but no active contact — show inbox + contact search.
   if (!activeContact && sortedContacts.length > 0) {
+    // Pull incoming messages from schedule store
+    const inboxMessages = useScheduleStore.getState().tasks
+      .filter((t: { kind?: string; done?: boolean }) => t.kind === 'message' && !t.done)
+      .slice(0, 5);
+
     return (
       <section
         aria-label={tx('aac_chat_title', 'Send a message')}
@@ -329,6 +333,26 @@ export default function AACChatPanel() {
         className="shrink-0 surface-bar border-y border-theme"
       >
         <span data-testid="aac-chat-empty-state" aria-hidden />
+        {/* Inbox: show unread incoming messages */}
+        {inboxMessages.length > 0 && (
+          <div className="px-3 py-2 border-b border-theme space-y-1">
+            <span className="text-xs text-muted font-bold uppercase tracking-wider">📨 Inbox</span>
+            {inboxMessages.map((msg) => (
+              <div key={msg.id} className="flex items-center gap-2 py-1">
+                <span className="flex-1 text-sm text-primary truncate">{msg.icon} {msg.text}</span>
+                {msg.sender && (
+                  <button
+                    onClick={() => { tapFeedback(); replyToSender(msg.sender!); }}
+                    className="aac-btn rounded-lg px-3 py-1 bg-[#2196F3] text-white text-xs font-bold shrink-0"
+                    aria-label={`Reply to ${msg.sender}`}
+                  >
+                    ↩ Reply
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
         <div className="flex items-center justify-between px-3 py-2 gap-3">
           <span className="text-xs text-muted truncate">
             💬 {tx('aac_chat_title', 'Send a message')}
