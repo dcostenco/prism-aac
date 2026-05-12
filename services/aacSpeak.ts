@@ -12,7 +12,7 @@
  */
 import { SupportedLanguage, getTTSCode } from '@/engine/i18n';
 import { speak } from './speechService';
-import { translateTextSync } from './translateService';
+import { translateTextSync, looksLikeTargetLang } from './translateService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
 import { ToneStyle } from './azureTTS';
@@ -37,9 +37,28 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     let toSpeak = text;
     let translationSucceeded = false;
     if (translating) {
-      const translated = translateTextSync(text, inLang, outLang);
-      translationSucceeded = translated.toLowerCase() !== text.trim().toLowerCase();
-      toSpeak = translated;
+      // If caller already passed text in the target language's script
+      // (MessageBar's translationSpeakTimer fires aacSpeak with the
+      // AI-refined Russian phrase), skip re-translating. Without this,
+      // translateTextSync runs the en→ru offline dict on Cyrillic input,
+      // returns the input unchanged → translationSucceeded=false →
+      // selects the English voice → Russian spoken with English accent
+      // (May 2026 user report).
+      //
+      // Gate: text must pass the target's script test AND fail the
+      // source's. That distinguishes "already translated Cyrillic input
+      // in an en→ru pair" (passes ru, fails en) from "ambiguous Latin
+      // input in an en→ro pair" (passes both — needs dict translation).
+      const alreadyInTargetScript =
+        looksLikeTargetLang(text, outLang) && !looksLikeTargetLang(text, inLang);
+      if (alreadyInTargetScript) {
+        toSpeak = text;
+        translationSucceeded = true;
+      } else {
+        const translated = translateTextSync(text, inLang, outLang);
+        translationSucceeded = translated.toLowerCase() !== text.trim().toLowerCase();
+        toSpeak = translated;
+      }
     }
     if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
     // Use target-language voice only when translation actually changed the text.
