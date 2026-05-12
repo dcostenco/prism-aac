@@ -58,7 +58,10 @@ for (const device of DEVICES) {
       expect(disabled).toBe(false);
     });
 
-    test('08. Backspace', async () => { expect(await clk('button[aria-label="Backspace"]')).toBe(true); });
+    test('08. Backspace', async () => {
+      await page.waitForTimeout(500);
+      expect(await clk('button[aria-label="Backspace"]')).toBe(true);
+    });
 
     test('09. Phrase tile tap', async () => {
       const ok = await clk('button[aria-label="Hello"]') || await clk('button[aria-label*="Predict:"]');
@@ -78,9 +81,13 @@ for (const device of DEVICES) {
     });
 
     test('12. SEARCH', async () => {
-      expect(await clk('button:has-text("SEARCH")')).toBe(true);
+      // SidebarBtn renders label "Search" with CSS uppercase — use case-insensitive match.
+      // On landscape viewports the sidebar may need a moment to layout.
       await page.waitForTimeout(500);
-      await clk('button:has-text("GO BACK")');
+      const ok = await clk('button:has-text("SEARCH")') || await clk('button:has-text("Search")');
+      expect(ok).toBe(true);
+      await page.waitForTimeout(500);
+      await clk('button:has-text("GO BACK")') || await clk('button:has-text("Go back")');
     });
 
     test('13. HOME', async () => {

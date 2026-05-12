@@ -45,7 +45,7 @@ export default function GreetingBanner() {
           </p>
         )}
       </div>
-      <button onClick={dismiss} className="text-muted text-xl px-2" aria-label={t('close_panel')}>✕</button>
+      <button onClick={dismiss} className="text-muted text-xl px-2" aria-label="Dismiss greeting">✕</button>
     </div>
   );
 }

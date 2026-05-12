@@ -43,6 +43,17 @@ describe('UIStore — Side panel management', () => {
     expect(useUIStore.getState().activeSequenceId).toBeNull();
   });
 
+  it('closeSidePanel restores categoryKeyboardOpen for home keyboard', () => {
+    // Regression: keyboard must be visible on home screen after closing any panel.
+    // closeSidePanel must set categoryKeyboardOpen=true so the showQwerty
+    // ternary (isCategoryMode||homeWithBoard ? categoryKeyboardOpen : ...) is true.
+    useUIStore.getState().openGames();
+    expect(useUIStore.getState().sidePanel).toBe('games');
+    useUIStore.getState().closeSidePanel();
+    expect(useUIStore.getState().sidePanel).toBe('none');
+    expect(useUIStore.getState().categoryKeyboardOpen).toBe(true);
+  });
+
   it('openMath toggles math panel', () => {
     useUIStore.getState().openMath();
     expect(useUIStore.getState().sidePanel).toBe('math');
