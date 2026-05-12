@@ -175,15 +175,24 @@ final class WatchTranslation: ObservableObject {
     /// Returns the content string, capped to 300 chars, or nil if the response
     /// does not match the expected schema.
     // FIX #17: added to handle stream:false responses from the translation endpoint.
+    // FIX #8: use do/catch instead of try? so JSON parse failures are logged.
     private func parseNonStreaming(_ data: Data) -> String? {
-        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let choices = obj["choices"] as? [[String: Any]],
-              let msg = choices.first?["message"] as? [String: Any],
-              let content = msg["content"] as? String else { return nil }
-        let trimmed = String(content.prefix(300))
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .trimmingCharacters(in: .init(charactersIn: "\"'"))
-        return trimmed.isEmpty ? nil : trimmed
+        do {
+            guard let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let choices = obj["choices"] as? [[String: Any]],
+                  let msg = choices.first?["message"] as? [String: Any],
+                  let content = msg["content"] as? String else {
+                NSLog("[WatchTranslation] parseNonStreaming: unexpected response structure")
+                return nil
+            }
+            let trimmed = String(content.prefix(300))
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .trimmingCharacters(in: .init(charactersIn: "\"'"))
+            return trimmed.isEmpty ? nil : trimmed
+        } catch {
+            NSLog("[WatchTranslation] parseNonStreaming JSON parse failed: \(error)")
+            return nil
+        }
     }
 
     /// Parse SSE chunks: "data: {...}\n\ndata: [DONE]\n\n" → assembled string.

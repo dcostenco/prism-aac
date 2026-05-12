@@ -93,9 +93,11 @@ final class WatchVocabSync: NSObject, ObservableObject {
 
     // #27: changed from fileprivate → internal so tests and companion types can access it
     internal static func sanitizeLabel(_ raw: String) -> String {
+        // FIX #31: preliminary cap before processing — prevents quadratic cost on pathological inputs.
+        let capped = String(raw.prefix(200))
         // #4: expanded to full token list — ChatML, Llama, Gemma, Mistral, legacy special tokens,
         // HTML entities, and JSON-escaped angle brackets; prevents prompt injection via vocab labels
-        let tokenStripped = raw
+        let tokenStripped = capped
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
@@ -164,10 +166,15 @@ final class WatchVocabSync: NSObject, ObservableObject {
         components.queryItems = [URLQueryItem(name: "lang", value: targetLang)]
         guard let url = components.url else { return }
 
-        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
-        if let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
-            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        // FIX #13: guard instead of if-let — unauthenticated fetch must not proceed silently.
+        var req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
+        // FIX #14: timeout is configured on vocabSession (timeoutIntervalForRequest: 10,
+        // timeoutIntervalForResource: 20); redundant timeoutInterval on URLRequest removed.
+        guard let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") else {
+            NSLog("[VocabSync] No auth token — skipping API fetch, using offline core vocabulary")
+            return
         }
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
         do {
             let (data, response) = try await WatchVocabSync.vocabSession.data(for: req)
@@ -215,6 +222,8 @@ final class WatchVocabSync: NSObject, ObservableObject {
             if let d = reply["vocab"] as? Data { return d }
             // Fallback: companion may send dict instead of Data
             // FIX #22: use do/catch instead of try? so re-encoding failures are logged.
+            // NOTE: JSONSerialization→JSONDecoder round-trip: type coercions (NSNumber→Bool)
+            // are possible. Primary path (Data) is preferred; dict fallback is for legacy companions.
             if let dict = reply["vocab"] as? [String: Any] {
                 do {
                     let encoded = try JSONSerialization.data(withJSONObject: dict)
@@ -329,7 +338,7 @@ extension WatchCategory {
             WatchPhrase(id: "help",  label: "Help",     arasaacId: 5557, sfSymbol: "sos"),
             WatchPhrase(id: "stop",  label: "Stop",     arasaacId: 5581, sfSymbol: "hand.raised.fill"),
             WatchPhrase(id: "water", label: "Water",    arasaacId: 14981, sfSymbol: "drop.fill"),
-            WatchPhrase(id: "hurt",  label: "Hurt",     arasaacId: nil,  sfSymbol: "cross.fill"),
+            WatchPhrase(id: "hurt",  label: "Hurt",     arasaacId: nil,  sfSymbol: "cross.fill", isEmergency: true),
         ]),
     ]
 }

@@ -3,6 +3,7 @@ import WatchKit
 import WatchConnectivity
 import AVFoundation
 import Security
+import LocalAuthentication
 
 enum EmergencySeverity { case critical, urgent, medical, standard }
 
@@ -48,7 +49,7 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // FIX #26: Check for uncleared emergency flag from a previous process termination.
         // Full state recovery (re-entering countdown, resuming cellular dispatch) is a future
         // enhancement. For now, flag the condition so the UI can prompt the caregiver.
-        if UserDefaults.standard.bool(forKey: "watchEmergencyActive") {
+        if KeychainHelper.shared.read(service: "prism-aac", account: "emergencyActive") == "1" {
             NSLog("[WatchEmergency] Previous emergency session detected — show recovery UI")
             // TODO: Post a local notification or set a @Published flag to display recovery UI.
         }
@@ -69,8 +70,9 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // Safe: @MainActor serializes all calls — rapid taps cannot race past this guard
         guard !isActive else { return }  // FIX 4: mutex — no duplicate triggers
         isActive = true
-        // FIX #26: Persist active flag so next launch can show recovery UI after process termination
-        UserDefaults.standard.set(true, forKey: "watchEmergencyActive")
+        // FIX #26/#4: Persist active flag so next launch can show recovery UI after process termination
+        // #4: use Keychain instead of UserDefaults to avoid iCloud backup exposure
+        KeychainHelper.shared.write(value: "1", service: "prism-aac", account: "emergencyActive")
         // FIX #13/#2: Sanitize phrase — strip ChatML, Llama, Gemma, and HTML-encoded tokens before storing
         activePhrase = String(phrase.prefix(200))
             .replacingOccurrences(of: "<|im_start|>", with: "")
@@ -112,9 +114,18 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // then the second components/join strips any angle brackets that emerged from normalization.
         let nfkcSanitized = (activePhrase ?? "")
             .applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? (activePhrase ?? "")
-        activePhrase = nfkcSanitized
-            .components(separatedBy: CharacterSet(charactersIn: "<>[]"))
+        // #1 (CRITICAL): After NFKC pass, apply Latin/ASCII normalization for confusable scripts
+        let latinized = nfkcSanitized.applyingTransform(.toLatin, reverse: false)
+            ?? nfkcSanitized
+        // Final pass: strip remaining angle brackets and brackets after normalization
+        activePhrase = latinized
+            .components(separatedBy: CharacterSet(charactersIn: "<>[]|"))
             .joined()
+        // #20: empty-phrase fallback — phrase sanitized to empty string
+        if activePhrase?.isEmpty == true || activePhrase == nil {
+            activePhrase = "Emergency"
+            NSLog("[WatchEmergency] Phrase sanitized to empty — using fallback 'Emergency'")
+        }
         self.severity = severity
         countdownSecs = 5
         cellularFallbackSent = false
@@ -218,9 +229,25 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     /// Force-resets emergency state. Only call after caregiver authentication or app restart.
     /// FIX #5: Breaks out of stuck state when cancel() is blocked (critical severity) and
     /// dismiss() is blocked (hasEscalated == false, e.g. bg-task-expiry pre-escalation path).
+    /// FIX #16: Requires LAContext device owner authentication before allowing reset.
     func forceReset() {
-        NSLog("[WatchEmergency] Force reset called")
-        cleanup()
+        let context = LAContext()
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+            NSLog("[WatchEmergency] LAContext unavailable — forcing reset without auth")
+            cleanup()
+            return
+        }
+        context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Confirm to close emergency alert") { success, authError in
+            Task { @MainActor [weak self] in
+                if success {
+                    NSLog("[WatchEmergency] Force reset authorized")
+                    self?.cleanup()
+                } else {
+                    NSLog("[WatchEmergency] Force reset denied: \(authError?.localizedDescription ?? "unknown")")
+                }
+            }
+        }
     }
 
     // FIX #26 (LOW): Emergency state is not fully persisted across Watch process restarts.
@@ -237,8 +264,8 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         countdownTimer = nil
         isActive = false
         activePhrase = nil  // C6: clear on cancel
-        // FIX #26: Clear persistence flag on clean cleanup
-        UserDefaults.standard.removeObject(forKey: "watchEmergencyActive")
+        // FIX #26/#4: Clear persistence flag on clean cleanup (Keychain, not UserDefaults)
+        KeychainHelper.shared.delete(service: "prism-aac", account: "emergencyActive")
         severity = .standard
         cellularFallbackSent = false  // FIX 8: reset debounce on cleanup
         // FIX #1: only reset hasEscalated when no escalation is in-flight
@@ -284,7 +311,14 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
 
         if WCSessionRouter.shared.isReachable {
             WCSessionRouter.shared.send(msg,
-                replyHandler: { [weak self] _ in
+                replyHandler: { [weak self] reply in
+                    // #3: Validate reply indicates actual dispatch, not just router receipt
+                    let dispatched = reply["dispatched"] as? Bool ?? reply["ok"] as? Bool ?? false
+                    guard dispatched else {
+                        NSLog("[WatchEmergency] WCSession reply missing dispatch confirmation — attempting cellular")
+                        Task { @MainActor [weak self] in await self?.attemptCellularFallback() }
+                        return
+                    }
                     Task { @MainActor [weak self] in
                         guard let self else { return }
                         self.hasEscalated = true
@@ -311,16 +345,17 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // Start haptics and watchdog regardless of delivery path
         startSosHapticsIfNeeded()
 
-        // #6/#8: stored watchdog — auto-cleanup 30s after escalation if UI hasn't dismissed
+        // #6/#8/#9: stored watchdog — marks failed 30s after escalation if delivery unconfirmed
         watchdogTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 30_000_000_000)
-            // FIX #4 (CRITICAL): Guard only on isActive — do NOT require hasEscalated.
-            // If the watchdog fires before escalation confirmed (e.g. WCSession stall),
-            // isEscalating must be force-reset or the flag becomes permanently stuck.
             guard let self, self.isActive else { return }
-            self.isEscalating = false  // force reset regardless of hasEscalated
-            NSLog("[WatchEmergency] Post-escalation watchdog: auto-cleanup after 30s")
-            self.cleanup()
+            self.isEscalating = false  // always force-reset
+            if !self.hasEscalated {
+                // #9: Dispatch neither confirmed nor failed — set failed and leave UI for explicit dismiss
+                self.deliveryStatus = .failed
+                NSLog("[WatchEmergency] Post-escalation watchdog: delivery unconfirmed after 30s — marked failed")
+                // Do NOT call cleanup() — let user trigger forceReset() explicitly
+            }
         }
         // #20: SOS haptic already started in trigger() — no duplicate loop here
     }
@@ -433,15 +468,25 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         }
         req.httpBody = body
         do {
-            // FIX #7: Check HTTP status — a 4xx/5xx is not a success
-            let (_, response) = try await WatchEmergencyManager.emergencySession.data(for: req)
+            // FIX #7/#2: Check HTTP status — a 4xx/5xx is not a success; also validate response body
+            let (data, response) = try await WatchEmergencyManager.emergencySession.data(for: req)
             if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
                 NSLog("[WatchEmergency] Cellular fallback dispatch succeeded (\(http.statusCode))")
-                // FIX #1: Set hasEscalated only on confirmed HTTP 200
+                // #2: Validate response body indicates actual dispatch, not just router receipt
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    let dispatched = json["dispatched"] as? Bool ?? json["ok"] as? Bool ?? true
+                    if !dispatched {
+                        NSLog("[WatchEmergency] Server 200 but dispatched=false — treating as failure")
+                        deliveryStatus = .failed
+                        speakEmergencyFallback()
+                        return
+                    }
+                }
+                // FIX #1: Set hasEscalated only on confirmed HTTP 200 + body validation
                 hasEscalated = true
                 deliveryStatus = .confirmed
                 WKInterfaceDevice.current().play(.success)  // FIX #30: haptic on cellular confirm
-                NSLog("[WatchEmergency] Escalation CONFIRMED via cellular dispatch")
+                NSLog("[WatchEmergency] Cellular fallback dispatch succeeded and confirmed")
             } else if let http = response as? HTTPURLResponse,
                       (500...599).contains(http.statusCode),
                       retryCount < 1 {

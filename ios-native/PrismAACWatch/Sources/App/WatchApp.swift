@@ -9,8 +9,11 @@ import SwiftUI
 ///   3. Offline: core phrase pictograms + Layer 1 safety + TTS
 @main
 struct PrismAACWatchApp: App {
-    // Router MUST be first — it sets WCSession.default.delegate before any other init
-    @StateObject private var wcRouter     = WCSessionRouter.shared
+    // Router MUST be first — it sets WCSession.default.delegate before any other init.
+    // FIX #28: @ObservedObject (not @StateObject) because WCSessionRouter.shared is a pre-constructed
+    // singleton. @StateObject with a pre-built value would wrap it in a redundant Box and break
+    // SwiftUI's ownership semantics. The singleton manages its own lifetime.
+    @ObservedObject private var wcRouter  = WCSessionRouter.shared
     @StateObject private var session      = WatchAISession()
     @StateObject private var emergency    = WatchEmergencyManager()
     @StateObject private var tts          = WatchTTS()

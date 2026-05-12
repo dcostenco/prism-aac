@@ -20,19 +20,23 @@ final class WatchInbox: NSObject, ObservableObject {
         let provider: String      // "sms", "email", "telegram", etc.
         let receivedAt: Date
         var isRead: Bool
+        // FIX #11: Track reply state in the model so re-presenting the sheet doesn't reset sent flag.
+        var isReplied: Bool
 
         // #29: explicit CodingKeys — schema evolution safe; new fields won't silently discard old messages
         enum CodingKeys: String, CodingKey {
-            case id, sender, text, provider, receivedAt, isRead
+            case id, sender, text, provider, receivedAt, isRead, isReplied
         }
 
-        init(id: String, sender: String, text: String, provider: String, receivedAt: Date, isRead: Bool = false) {
+        init(id: String, sender: String, text: String, provider: String, receivedAt: Date,
+             isRead: Bool = false, isReplied: Bool = false) {
             self.id = id
             self.sender = sender
             self.text = text
             self.provider = provider
             self.receivedAt = receivedAt
             self.isRead = isRead
+            self.isReplied = isReplied
         }
 
         init(from decoder: Decoder) throws {
@@ -43,6 +47,7 @@ final class WatchInbox: NSObject, ObservableObject {
             provider   = try c.decodeIfPresent(String.self, forKey: .provider)   ?? "sms"
             receivedAt = try c.decodeIfPresent(Date.self,   forKey: .receivedAt) ?? Date()
             isRead     = try c.decodeIfPresent(Bool.self,   forKey: .isRead)     ?? false
+            isReplied  = try c.decodeIfPresent(Bool.self,   forKey: .isReplied)  ?? false
         }
     }
 
@@ -117,6 +122,18 @@ final class WatchInbox: NSObject, ObservableObject {
     func markAllRead() {
         for i in messages.indices { messages[i].isRead = true }
         recalcUnread()
+        Task.detached(priority: .utility) { [weak self] in await self?.persistToKeychain() }
+    }
+
+    // FIX #11: Mark a message as replied — persisted to Keychain so the sent state survives
+    // sheet re-presentation within the same session.
+    func markReplied(_ id: String) {
+        messages = messages.map { msg in
+            guard msg.id == id else { return msg }
+            return WatchMessage(id: msg.id, sender: msg.sender, text: msg.text,
+                                provider: msg.provider, receivedAt: msg.receivedAt,
+                                isRead: msg.isRead, isReplied: true)
+        }
         Task.detached(priority: .utility) { [weak self] in await self?.persistToKeychain() }
     }
 
@@ -210,6 +227,11 @@ final class WatchInbox: NSObject, ObservableObject {
             .replacingOccurrences(of: "&gt;", with: "")
             .replacingOccurrences(of: "\\u003c", with: "")
             .replacingOccurrences(of: "\\u003e", with: "")
+        // FIX #19: Drop message if text is empty after sanitization — avoids storing/speaking blank entries.
+        guard !safeText.isEmpty else {
+            NSLog("[WatchInbox] Message text empty after sanitization — dropping message")
+            return
+        }
         // #27: validate id as proper UUID — reject arbitrary injection strings
         let rawId    = message["id"] as? String ?? ""
         let id       = UUID(uuidString: rawId)?.uuidString ?? UUID().uuidString
@@ -229,8 +251,11 @@ final class WatchInbox: NSObject, ObservableObject {
     }
 
     private func deliver(_ msg: WatchMessage) {
-        // Deduplicate by id
-        guard !messages.contains(where: { $0.id == msg.id }) else { return }
+        // Deduplicate by id — FIX #25: log drop for diagnostics
+        guard !messages.contains(where: { $0.id == msg.id }) else {
+            NSLog("[WatchInbox] Duplicate message id \(msg.id) — dropping")
+            return
+        }
         messages.insert(msg, at: 0)
         // Cap at 50 messages
         if messages.count > 50 { messages = Array(messages.prefix(50)) }
@@ -392,25 +417,11 @@ final class WatchInbox: NSObject, ObservableObject {
                 // #22: log on successful Keychain load
                 NSLog("[WatchInbox] Loaded \(msgs.count) messages (\(data.count) bytes) from Keychain")
                 // FIX #7: Re-sanitize messages loaded from Keychain — may be from an older app
-                // version that did not strip bidi/ChatML tokens before persisting. Apply the same
-                // stripping chain as deliverFromMessage() to catch stale data.
-                let bidi = ["\u{202A}","\u{202B}","\u{202C}","\u{202D}","\u{202E}",
-                            "\u{200B}","\u{200C}","\u{200D}","\u{200E}","\u{200F}",
-                            "\u{2066}","\u{2067}","\u{2068}","\u{2069}","\u{FEFF}"]
-                let chatMLTokens = ["<|im_start|>","<|im_end|>","<|system|>","[INST]","[/INST]",
-                                    "<<SYS>>","<</SYS>>","<|eot_id|>","<|start_header_id|>",
-                                    "<|end_header_id|>","<|user|>","<|assistant|>","<|endoftext|>",
-                                    "<s>","</s>","<|end_of_turn|>","<|start_of_turn|>",
-                                    "&#x","&#X","&#","&lt;","&gt;","\\u003c","\\u003e"]
+                // version that did not strip bidi/ChatML tokens before persisting. Apply full
+                // sanitizeInboxField() including NFKC normalization to catch stale data.
                 let sanitized = msgs.map { msg -> WatchMessage in
-                    let cleanSender: String = {
-                        let capped = String(msg.sender.prefix(100))
-                        let bidiStripped = bidi.reduce(capped) { $0.replacingOccurrences(of: $1, with: "") }
-                        return chatMLTokens.reduce(bidiStripped) { $0.replacingOccurrences(of: $1, with: "") }
-                    }()
-                    let cleanText = chatMLTokens.reduce(String(msg.text.prefix(500))) {
-                        $0.replacingOccurrences(of: $1, with: "")
-                    }
+                    let cleanSender = sanitizeInboxField(msg.sender)
+                    let cleanText   = sanitizeInboxField(msg.text)
                     return WatchMessage(id: msg.id, sender: cleanSender, text: cleanText,
                                        provider: msg.provider, receivedAt: msg.receivedAt, isRead: msg.isRead)
                 }
@@ -451,35 +462,29 @@ final class WatchInbox: NSObject, ObservableObject {
         unreadCount = messages.filter { !$0.isRead }.count
     }
 
-    // FIX #23: Strips ChatML / Llama / Gemma / Mistral prompt-injection tokens.
-    // Used for both sender and text fields so the same chain is applied consistently.
-    // nonisolated so it can be called from detached tasks and loadFromDefaults().
+    // FIX #7: Canonical sanitizer used for ALL inbox string fields (sender + text).
+    // Strips ChatML / Llama / Gemma / Mistral prompt-injection tokens, bidi override characters,
+    // and applies NFKC normalization. nonisolated so it can be called from detached tasks and
+    // loadFromDefaults() without hopping back to @MainActor.
+    nonisolated private func sanitizeInboxField(_ raw: String) -> String {
+        let tokens = ["<|im_start|>","<|im_end|>","<|system|>","[INST]","[/INST]",
+                      "<<SYS>>","<</SYS>>","<|eot_id|>","<|start_header_id|>",
+                      "<|end_header_id|>","<|user|>","<|assistant|>","<|endoftext|>",
+                      "<s>","</s>","<|end_of_turn|>","<|start_of_turn|>",
+                      "&#x","&#X","&#","&lt;","&gt;","\\u003c","\\u003e"]
+        let bidi = ["\u{202A}","\u{202B}","\u{202C}","\u{202D}","\u{202E}",
+                    "\u{200B}","\u{200C}","\u{200D}","\u{200E}","\u{200F}",
+                    "\u{2066}","\u{2067}","\u{2068}","\u{2069}","\u{FEFF}"]
+        let stripped = tokens.reduce(raw) { $0.replacingOccurrences(of: $1, with: "") }
+        let bidiCleaned = bidi.reduce(stripped) { $0.replacingOccurrences(of: $1, with: "") }
+        let nfkc = bidiCleaned.applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? bidiCleaned
+        return nfkc.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
+    }
+
+    // FIX #23: Retained for sender field in deliverFromMessage() — calls through to sanitizeInboxField().
+    // nonisolated so it can be called from detached tasks.
     nonisolated private func stripChatMLTokens(_ input: String) -> String {
-        return input
-            .replacingOccurrences(of: "<|im_start|>", with: "")
-            .replacingOccurrences(of: "<|im_end|>", with: "")
-            .replacingOccurrences(of: "<|system|>", with: "")
-            .replacingOccurrences(of: "[INST]", with: "")
-            .replacingOccurrences(of: "[/INST]", with: "")
-            .replacingOccurrences(of: "<<SYS>>", with: "")
-            .replacingOccurrences(of: "<</SYS>>", with: "")
-            .replacingOccurrences(of: "<|eot_id|>", with: "")
-            .replacingOccurrences(of: "<|start_header_id|>", with: "")
-            .replacingOccurrences(of: "<|end_header_id|>", with: "")
-            .replacingOccurrences(of: "<|user|>", with: "")
-            .replacingOccurrences(of: "<|assistant|>", with: "")
-            .replacingOccurrences(of: "<|endoftext|>", with: "")
-            .replacingOccurrences(of: "<s>", with: "")
-            .replacingOccurrences(of: "</s>", with: "")
-            .replacingOccurrences(of: "<|end_of_turn|>", with: "")
-            .replacingOccurrences(of: "<|start_of_turn|>", with: "")
-            .replacingOccurrences(of: "&#x", with: "")
-            .replacingOccurrences(of: "&#X", with: "")
-            .replacingOccurrences(of: "&#", with: "")
-            .replacingOccurrences(of: "&lt;", with: "")
-            .replacingOccurrences(of: "&gt;", with: "")
-            .replacingOccurrences(of: "\\u003c", with: "")
-            .replacingOccurrences(of: "\\u003e", with: "")
+        return sanitizeInboxField(input)
     }
 
     // MARK: - Dev helpers

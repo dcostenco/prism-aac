@@ -8,6 +8,8 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     private let synthesizer = AVSpeechSynthesizer()
     @Published private(set) var isSpeaking = false
     private var watchdogTask: Task<Void, Never>?
+    // FIX #24: Track audio session state to avoid redundant setActive calls on every speak.
+    private var audioSessionActive = false
 
     override init() {
         super.init()
@@ -25,12 +27,17 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         utt.voice = AVSpeechSynthesisVoice(language: language)
         utt.rate = max(AVSpeechUtteranceMinimumSpeechRate,
                        min(AVSpeechUtteranceMaximumSpeechRate, rate))
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            NSLog("[WatchTTS] AVAudioSession setup failed: \(error) — utterance queued, will play when session available")
-            // AVFoundation queues the utterance; it plays when the audio session becomes available
+        // FIX #24: Only activate the audio session if not already active — avoids redundant
+        // setActive(true) calls on every utterance which can cause unnecessary interruption overhead.
+        if !audioSessionActive {
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback, options: .duckOthers)
+                try AVAudioSession.sharedInstance().setActive(true)
+                audioSessionActive = true
+            } catch {
+                NSLog("[WatchTTS] AVAudioSession setup failed: \(error) — utterance queued, will play when session available")
+                // AVFoundation queues the utterance; it plays when the audio session becomes available
+            }
         }
         isSpeaking = true
         synthesizer.speak(utt)  // FIX #11: Always queued regardless of session activation success
@@ -58,6 +65,8 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
             self?.watchdogTask?.cancel()
             self?.watchdogTask = nil
             self?.isSpeaking = false
+            // FIX #24: Reset session active flag so the next speak() can re-activate as needed.
+            self?.audioSessionActive = false
             // Deactivate session so other audio (calls, music) can resume
             // #10: Log deactivation errors instead of silently swallowing them
             do {
@@ -74,6 +83,8 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
             self?.watchdogTask?.cancel()
             self?.watchdogTask = nil
             self?.isSpeaking = false
+            // FIX #24: Reset session active flag so the next speak() can re-activate as needed.
+            self?.audioSessionActive = false
             // #10: Log deactivation errors instead of silently swallowing them
             do {
                 try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)

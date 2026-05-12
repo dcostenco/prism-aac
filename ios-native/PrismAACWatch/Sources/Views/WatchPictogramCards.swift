@@ -263,12 +263,10 @@ struct WatchPictogramCards: View {
         .onAppear {
             cachedPhrases = computeAllPhrases()
         }
-        .onChange(of: vocab.categories.count) { _, _ in
-            cachedPhrases = computeAllPhrases()
-        }
-        // FIX #24: also re-compute when the content of phrases changes (not just the count).
-        // Without this, renaming a phrase or reordering within a category would not refresh the grid.
-        .onChange(of: vocab.categories.first?.phrases.first?.label) { _, _ in
+        // FIX #12: Replace single-category/phrase observers with a comprehensive key that detects
+        // any category id or phrase count change. Previously only .count and the first phrase of
+        // the first category were observed — adding phrases to non-first categories was invisible.
+        .onChange(of: vocab.categories.map { "\($0.id):\($0.phrases.count)" }.joined(separator: ",")) { _, _ in
             cachedPhrases = computeAllPhrases()
         }
         // Inbox / Notification center
@@ -509,14 +507,16 @@ struct WatchReplyView: View {
     @EnvironmentObject var inbox: WatchInbox
     @EnvironmentObject var tts: WatchTTS
     @State private var replyText = ""
-    // FIX #19 (design limitation): `sent` resets whenever this view is re-created (e.g. sheet
-    // dismissed and re-presented). This allows a double-send if the user re-opens the reply sheet
-    // for the same message. True fix requires model-level tracking: WatchInbox should store a
-    // Set<String> of replied-to message IDs and expose inbox.hasReplied(msg.id).
-    // TODO: implement inbox.markReplied(_:) + WatchMessage.isReplied: Bool persisted to Keychain.
-    @State private var sent = false
+    // FIX #11: Initialize `sent` from model so re-presenting the sheet reflects the persisted reply state.
+    // inbox.markReplied(_:) is called after a successful send to persist the flag to Keychain.
+    @State private var sent: Bool
     @State private var dismissTask: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
+
+    init(message: WatchInbox.WatchMessage, inbox: WatchInbox? = nil, tts: WatchTTS? = nil) {
+        self.message = message
+        self._sent = State(initialValue: message.isReplied)
+    }
 
     var body: some View {
         NavigationView {
@@ -548,6 +548,8 @@ struct WatchReplyView: View {
                         let text = replyText.trimmingCharacters(in: .whitespaces)
                         guard !text.isEmpty else { return }
                         inbox.reply(to: message, text: text)
+                        // FIX #11: Persist replied state to model so re-opening the sheet shows "Sent".
+                        inbox.markReplied(message.id)
                         sent = true
                         tts.speak("Message sent")
                         dismissTask?.cancel()
@@ -751,30 +753,44 @@ struct WatchAIChatView: View {
         }
         // #26: Restore last 10 messages from Keychain on appear (fix #6: moved from UserDefaults)
         // FIX #6: Keychain I/O is synchronous — run off @MainActor to avoid blocking UI thread.
+        // FIX #26: Use do/catch instead of try? so decode failures are logged (schema change detection).
         .onAppear {
             Task.detached(priority: .userInitiated) {
                 guard let data = KeychainHelper.shared.readData(service: "prism-aac-chat", account: "history"),
-                      data.count <= 65_536,
-                      let saved = try? JSONDecoder().decode([ChatMessage].self, from: data) else { return }
+                      data.count <= 65_536 else { return }
+                let saved: [ChatMessage]
+                do {
+                    saved = try JSONDecoder().decode([ChatMessage].self, from: data)
+                } catch {
+                    NSLog("[WatchAIChat] History decode failed (schema change?): \(error) — starting fresh")
+                    return
+                }
                 // FIX #18: cap each message text to 500 chars on load — protects against
                 // stale Keychain entries written by an older version without length caps.
                 // FIX #31: map to ChatMessage (generates fresh UUIDs for this session).
-                let msgs = Array(saved.suffix(10)).map {
+                let capped = Array(saved.suffix(10)).map {
                     ChatMessage(role: ["user", "ai"].contains($0.role) ? $0.role : "ai",
                                 text: String($0.text.prefix(500)))
                 }
-                await MainActor.run { messages = msgs }
+                await MainActor.run { messages = capped }
             }
         }
         // #26: Persist last 10 messages to Keychain whenever the list changes (fix #6: moved from UserDefaults)
         // FIX #6: enforce 500-char cap on text before persisting — sanitize PII before Keychain write.
-        .onChange(of: messages.count) { _, _ in
+        // FIX #10: debounce — only write every 5th message or on first message to reduce concurrent
+        // Keychain write contention. Use do/catch instead of try? so encode errors are logged.
+        .onChange(of: messages.count) { _, count in
+            guard count % 5 == 0 || count == 1 else { return }
             let toSave = Array(messages.suffix(10)).map {
                 ChatMessage(role: $0.role, text: String($0.text.prefix(500)))
             }
             Task.detached(priority: .utility) {
-                if let data = try? JSONEncoder().encode(toSave), data.count <= 65_536 {
+                do {
+                    let data = try JSONEncoder().encode(toSave)
+                    guard data.count <= 65_536 else { return }
                     KeychainHelper.shared.writeData(data, service: "prism-aac-chat", account: "history")
+                } catch {
+                    NSLog("[WatchAIChat] Failed to encode history: \(error)")
                 }
             }
         }
@@ -803,9 +819,11 @@ struct WatchAIChatView: View {
             // Translation mode: translate input lang → output lang, speak result
             translateTask2?.cancel()
             translateTask2 = Task { @MainActor in
+                // FIX #21: defer ensures isWaiting resets even if the task is cancelled before completion.
+                defer { isWaiting = false }
                 let translated = await translation.translateDirect(text: text, to: outputLang)
+                guard !Task.isCancelled else { return }
                 let result = translated ?? text
-                isWaiting = false
                 if messages.count >= 50 { messages.removeFirst() }
                 messages.append(ChatMessage(role: aiRole, text: String(result.prefix(500))))
                 tts.speak(result, language: outputLang)
@@ -814,8 +832,10 @@ struct WatchAIChatView: View {
             // Same language: regular AI chat response
             aiTask?.cancel()
             aiTask = Task { @MainActor in
+                // FIX #21: defer ensures isWaiting resets even if the task is cancelled before completion.
+                defer { isWaiting = false }
                 let reply = await session.askAI(text, lang: outputLang) ?? "…"
-                isWaiting = false
+                guard !Task.isCancelled else { return }
                 if messages.count >= 50 { messages.removeFirst() }
                 messages.append(ChatMessage(role: aiRole, text: String(reply.prefix(500))))
                 tts.speak(reply, language: outputLang)
@@ -891,7 +911,9 @@ struct WatchDictationView: View {
 struct WatchSendMessageView: View {
     // FIX #9: try! instead of try? — pattern literals are known-good; if either throws it is a
     // programming error that should crash at launch (not silently accept all contacts at runtime).
-    private static let phoneRegex: NSRegularExpression = try! NSRegularExpression(pattern: #"^\+?[0-9]{10,15}$"#)
+    // FIX #23: Require + prefix — bare digit strings (e.g. "5551234567") are unroutable by SMS APIs
+    // because they lack a country code. Users must include country code (e.g. +12125551234).
+    private static let phoneRegex: NSRegularExpression = try! NSRegularExpression(pattern: #"^\+[0-9]{10,15}$"#)
     private static let emailRegex: NSRegularExpression = try! NSRegularExpression(pattern: #"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"#)
 
     @EnvironmentObject var inbox: WatchInbox
@@ -916,6 +938,10 @@ struct WatchSendMessageView: View {
                         .padding(8)
                         .background(Color.white.opacity(0.08))
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                    // FIX #23: Hint that country code is required (e.g. +12125551234).
+                    Text("Include country code (e.g. +12125551234)")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                 }
 
                 // Message field

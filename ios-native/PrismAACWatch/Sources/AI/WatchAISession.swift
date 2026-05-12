@@ -123,7 +123,7 @@ final class WatchAISession: NSObject, ObservableObject {
     // Previously only stripped 8 ChatML/Llama tokens — leaving Gemma, Mistral, Falcon,
     // Alpaca, HTML-encoded, and JSON-escaped variants intact in model responses.
     private func sanitizeResponse(_ raw: String) -> String {
-        return raw
+        let stripped = raw
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
@@ -148,6 +148,9 @@ final class WatchAISession: NSObject, ObservableObject {
             .replacingOccurrences(of: "&gt;", with: "")
             .replacingOccurrences(of: "\\u003c", with: "")
             .replacingOccurrences(of: "\\u003e", with: "")
+        // #5: Apply NFKC to catch fullwidth/homoglyph variants not caught by literal token strips
+        let normalized = stripped.applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? stripped
+        return normalized.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
     }
 
     // MARK: - Companion path (BT → iPhone)
@@ -246,6 +249,10 @@ final class WatchAISession: NSObject, ObservableObject {
             .replacingOccurrences(of: "\\u003c", with: "")  // JSON-escaped <
             .replacingOccurrences(of: "\\u003e", with: "")  // JSON-escaped >
 
+        // #6: NFKC normalization to catch fullwidth injection attempts before cloud send
+        let nfkcQuestion = safeQuestion.applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? safeQuestion
+        let finalQuestion = nfkcQuestion.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
+
         let system = "You are a friendly helper for a child who uses AAC. Reply in \(validatedLanguage) language. Keep answers short (2-3 sentences max)."
         var req = URLRequest(url: cloudURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: timeoutSec)
         req.httpMethod = "POST"
@@ -259,7 +266,7 @@ final class WatchAISession: NSObject, ObservableObject {
         req.httpBody = try JSONSerialization.data(withJSONObject: [
             "messages": [
                 ["role": "system", "content": system],
-                ["role": "user",   "content": safeQuestion],
+                ["role": "user",   "content": finalQuestion],
             ],
             "language": String(validatedLanguage.prefix(2)),
             "stream": false,   // #8: data(for:) buffers full response — use non-streaming JSON; SSE fallback below
@@ -312,18 +319,20 @@ final class WatchAISession: NSObject, ObservableObject {
                     if result.count > 4000 { break }  // cap total response
                 } else if parsed != nil {
                     failedChunks += 1
-                    // FIX #13: log once at exactly 3 failures, not on every subsequent failure
-                    if failedChunks == 3 {
-                        NSLog("[WatchAI] 3+ SSE chunks failed to parse — possible API format change")
+                    if failedChunks <= 3 {
+                        NSLog("[WatchAI] SSE chunk failed to parse (length=\(payload.count))")
                     }
-                    NSLog("[WatchAI] SSE chunk parsed but unexpected structure (length=\(payload.count))")
+                    if failedChunks == 3 {
+                        NSLog("[WatchAI] 3+ SSE chunks failed — suppressing further parse logs")
+                    }
                 } else if !payload.isEmpty && payload != "[DONE]" {
                     failedChunks += 1
-                    // FIX #13: log once at exactly 3 failures, not on every subsequent failure
-                    if failedChunks == 3 {
-                        NSLog("[WatchAI] 3+ SSE chunks failed to parse — possible API format change")
+                    if failedChunks <= 3 {
+                        NSLog("[WatchAI] SSE chunk failed to parse (length=\(payload.count))")
                     }
-                    NSLog("[WatchAI] Unexpected SSE payload (first 100 chars): \(payload.prefix(100))")
+                    if failedChunks == 3 {
+                        NSLog("[WatchAI] 3+ SSE chunks failed — suppressing further parse logs")
+                    }
                 }
             }
         }
@@ -423,15 +432,16 @@ struct WatchSafetyFilter {
     static func check(_ input: String) -> Result {
         _ = _crisisPatternCheck  // force evaluation of compile-failure assert
         _ = _medicalPatternCheck // force evaluation of medical compile-failure assert
-        let lower = input.lowercased()
-        let range = NSRange(lower.startIndex..., in: lower)
+        // #18: Use input directly — regex uses .caseInsensitive (ICU Unicode-aware case folding)
+        // Avoids locale-sensitive lowercased() (e.g. Turkish dotless-i folding bugs)
+        let range = NSRange(input.startIndex..., in: input)
         for regex in Self.crisisPatterns {
-            if regex.firstMatch(in: lower, range: range) != nil {
+            if regex.firstMatch(in: input, options: [], range: range) != nil {
                 return .crisis(response: "🆘 Call 911 · Text 988 (US crisis line)\nI'm with you.")
             }
         }
         for regex in Self.medicalPatterns {
-            if regex.firstMatch(in: lower, range: range) != nil {
+            if regex.firstMatch(in: input, options: [], range: range) != nil {
                 return .medical(response: "Ask your doctor or pharmacist for dosing questions.")
             }
         }
