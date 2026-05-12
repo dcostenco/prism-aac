@@ -311,13 +311,9 @@ export default function CategoryPanel() {
       {!isHome && <SidebarBtn icon="←" label={isDeep ? 'Up' : 'Go back'} onClick={handleBack} />}
       <SidebarBtn icon="🏠" label="Home" onClick={closeSidePanel} />
       {showCoreWords && <SidebarBtn icon="⌂" label="Words" onClick={backToCategories} />}
-      {/* Scroll helpers — lower priority, appear below nav */}
-      {!isHome && (
-        <>
-          <SidebarBtn icon="↑" label="Up" onClick={() => scrollGrid(-1)} />
-          <SidebarBtn icon="↓" label="Down" onClick={() => scrollGrid(1)} />
-        </>
-      )}
+      {/* Scroll helpers */}
+      <SidebarBtn icon="↑" label="Up" onClick={() => scrollGrid(-1)} />
+      <SidebarBtn icon="↓" label="Down" onClick={() => scrollGrid(1)} />
     </nav>
   );
 
