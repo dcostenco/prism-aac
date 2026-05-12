@@ -78,9 +78,9 @@ describe('validateEmergencyConfig — contacts shape', () => {
   it('drops contacts missing name OR relationship', () => {
     const cfg = validateEmergencyConfig({
       contacts: [
-        { name: '', relationship: 'Mom', phone: '5551234' },     // bad: empty name
-        { name: 'Mom', relationship: '', phone: '5551234' },     // bad: empty relationship
-        { name: 'Mom', relationship: 'Mother', phone: '5551234' }, // good
+        { name: '', relationship: 'Mom', phone: '+15551234567' },     // bad: empty name
+        { name: 'Mom', relationship: '', phone: '+15551234567' },     // bad: empty relationship
+        { name: 'Mom', relationship: 'Mother', phone: '+15551234567' }, // good
       ],
     });
     expect(cfg.contacts).toHaveLength(1);
@@ -96,7 +96,7 @@ describe('validateEmergencyConfig — contacts shape', () => {
 
   it('caps contacts list at MAX_CONTACTS', () => {
     const huge = Array.from({ length: 100 }, (_, i) => ({
-      name: `c${i}`, relationship: 'Friend', phone: '5551234',
+      name: `c${i}`, relationship: 'Friend', phone: '+15551234567',
     }));
     const cfg = validateEmergencyConfig({ contacts: huge });
     expect(cfg.contacts.length).toBeLessThanOrEqual(20);
@@ -105,7 +105,7 @@ describe('validateEmergencyConfig — contacts shape', () => {
   it('replaces control chars in contact names', () => {
     const evil = 'Mom\u0000Evil';
     const cfg = validateEmergencyConfig({
-      contacts: [{ name: evil, relationship: 'Mother', phone: '5551234' }],
+      contacts: [{ name: evil, relationship: 'Mother', phone: '+15551234567' }],
     });
     // Shared sanitizeString replaces control chars with space (preserves
     // word boundaries) rather than fully stripping. The security goal —
@@ -115,7 +115,7 @@ describe('validateEmergencyConfig — contacts shape', () => {
 
   it('clamps oversized contact name', () => {
     const cfg = validateEmergencyConfig({
-      contacts: [{ name: 'a'.repeat(500), relationship: 'Friend', phone: '5551234' }],
+      contacts: [{ name: 'a'.repeat(500), relationship: 'Friend', phone: '+15551234567' }],
     });
     expect(cfg.contacts[0].name.length).toBeLessThanOrEqual(80);
   });

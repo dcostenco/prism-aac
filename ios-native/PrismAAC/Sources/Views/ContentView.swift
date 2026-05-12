@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 import AVFoundation
+import Speech
 import WatchConnectivity
 
 /// PrismAAC iOS host — WKWebView wrapping synalux.ai/prism-aac.
@@ -75,6 +76,7 @@ struct PrismWebView: UIViewRepresentable {
         webView.scrollView.bounces = false
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.backgroundColor = .systemBackground
 
         // Load the app
@@ -108,6 +110,12 @@ struct PrismWebView: UIViewRepresentable {
             stopSpeech: function() {
                 window.webkit.messageHandlers.prismNative.postMessage({ action: 'stopSpeech' });
             },
+            startVoice: function(lang) {
+                window.webkit.messageHandlers.prismNative.postMessage({ action: 'startVoice', lang: lang || 'en-US' });
+            },
+            stopVoice: function() {
+                window.webkit.messageHandlers.prismNative.postMessage({ action: 'stopVoice' });
+            },
             emergency: function(phrase) {
                 window.webkit.messageHandlers.prismNative.postMessage({
                     action: 'emergency', phrase: phrase
@@ -134,11 +142,17 @@ struct PrismWebView: UIViewRepresentable {
 
     // MARK: - Coordinator
 
-    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         let pipeline: AACPipeline
         let tts = WKWebTTS()
         // C14: rate-limit emergency triggers
         private var lastEmergencyTriggerTime: TimeInterval = 0
+        // SFSpeechRecognizer bridge for web app voice input
+        private var speechRecognizer: SFSpeechRecognizer?
+        private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+        private var recognitionTask: SFSpeechRecognitionTask?
+        private lazy var audioEngine = AVAudioEngine()
+        private weak var activeWebView: WKWebView?
 
         init(pipeline: AACPipeline) { self.pipeline = pipeline }
 
@@ -197,8 +211,192 @@ struct PrismWebView: UIViewRepresentable {
                     "window.prismNativeCallback && window.prismNativeCallback('memoryPressure', \(free))",
                     completionHandler: nil
                 )
+            case "startVoice":
+                guard let pageURL = message.webView?.url,
+                      Self.isAllowedOrigin(pageURL),
+                      message.frameInfo.isMainFrame else { return }
+                let lang = body["lang"] as? String ?? "en-US"
+                startSpeechRecognition(lang: lang, webView: message.webView)
+            case "stopVoice":
+                stopSpeechRecognition()
             default: break
             }
+        }
+
+        func webView(_ webView: WKWebView,
+                     requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+                     initiatedByFrame frame: WKFrameInfo,
+                     type: WKMediaCaptureType,
+                     decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+            guard let originURL = URL(string: "\(origin.protocol)://\(origin.host)"),
+                  Self.isAllowedOrigin(originURL) else {
+                decisionHandler(.deny)
+                return
+            }
+            switch type {
+            case .microphone, .cameraAndMicrophone:
+                decisionHandler(.grant)
+            case .camera:
+                decisionHandler(.deny)
+            @unknown default:
+                decisionHandler(.prompt)
+            }
+        }
+
+        // MARK: - SFSpeechRecognizer bridge
+
+        private static let langPattern = try! NSRegularExpression(pattern: "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})?$")
+        private var recognitionGeneration: UInt64 = 0
+        private var recognitionTimeout: DispatchWorkItem?
+        private var lastStartVoiceTime: TimeInterval = 0
+
+        private func startSpeechRecognition(lang: String, webView: WKWebView?) {
+            let now = Date().timeIntervalSince1970
+            guard now - lastStartVoiceTime >= 0.5 else { return }
+            lastStartVoiceTime = now
+
+            stopSpeechRecognition()
+            activeWebView = webView
+            recognitionGeneration &+= 1
+            let gen = recognitionGeneration
+
+            let safeLang = String(lang.prefix(11))
+            let range = NSRange(safeLang.startIndex..., in: safeLang)
+            guard Self.langPattern.firstMatch(in: safeLang, range: range) != nil else {
+                sendSpeechError("invalid-language")
+                return
+            }
+
+            let locale = Locale(identifier: safeLang)
+            speechRecognizer = SFSpeechRecognizer(locale: locale) ?? SFSpeechRecognizer()
+
+            guard let speechRecognizer, speechRecognizer.isAvailable else {
+                sendSpeechError("unavailable")
+                return
+            }
+
+            SFSpeechRecognizer.requestAuthorization { [weak self] status in
+                DispatchQueue.main.async {
+                    guard let self, self.recognitionGeneration == gen else { return }
+                    switch status {
+                    case .authorized:
+                        self.beginRecognitionSession(generation: gen)
+                    case .denied:
+                        self.sendSpeechError("denied")
+                    case .restricted:
+                        self.sendSpeechError("restricted")
+                    case .notDetermined:
+                        self.sendSpeechError("not-determined")
+                    @unknown default:
+                        self.sendSpeechError("unavailable")
+                    }
+                }
+            }
+        }
+
+        private func beginRecognitionSession(generation: UInt64) {
+            guard recognitionGeneration == generation else { return }
+
+            let audioSession = AVAudioSession.sharedInstance()
+            do {
+                try audioSession.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetooth])
+                try audioSession.setMode(.measurement)
+                try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            } catch {
+                sendSpeechError("audio-session-failed")
+                return
+            }
+
+            recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
+            guard let recognitionRequest else {
+                sendSpeechError("request-failed")
+                return
+            }
+            recognitionRequest.shouldReportPartialResults = true
+
+            let inputNode = audioEngine.inputNode
+            let recordingFormat = inputNode.outputFormat(forBus: 0)
+            inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+                self?.recognitionRequest?.append(buffer)
+            }
+
+            recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
+                DispatchQueue.main.async {
+                    guard let self, self.recognitionGeneration == generation else { return }
+                    if let result {
+                        let text = String(result.bestTranscription.formattedString.prefix(2000))
+                        self.sendSpeechResult(interim: result.isFinal ? "" : text,
+                                              final: result.isFinal ? text : "")
+                        if result.isFinal { self.stopSpeechRecognition() }
+                    } else if let error {
+                        if (error as NSError).code != 216 {
+                            self.sendSpeechError("recognition-failed")
+                            NSLog("[PrismAAC] Recognition error: \(error.localizedDescription)")
+                        }
+                    }
+                }
+            }
+
+            guard recognitionTask != nil else {
+                audioEngine.inputNode.removeTap(onBus: 0)
+                sendSpeechError("recognition-failed")
+                return
+            }
+
+            audioEngine.prepare()
+            do {
+                try audioEngine.start()
+            } catch {
+                sendSpeechError("audio-engine-failed")
+                stopSpeechRecognition()
+                return
+            }
+
+            recognitionTimeout?.cancel()
+            let timeout = DispatchWorkItem { [weak self] in
+                guard let self, self.recognitionGeneration == generation else { return }
+                self.sendSpeechError("timeout")
+                self.stopSpeechRecognition()
+            }
+            recognitionTimeout = timeout
+            DispatchQueue.main.asyncAfter(deadline: .now() + 120, execute: timeout)
+        }
+
+        private func stopSpeechRecognition() {
+            recognitionTimeout?.cancel()
+            recognitionTimeout = nil
+            if audioEngine.isRunning {
+                audioEngine.stop()
+                audioEngine.inputNode.removeTap(onBus: 0)
+            }
+            recognitionRequest?.endAudio()
+            recognitionRequest = nil
+            recognitionTask?.cancel()
+            recognitionTask = nil
+            speechRecognizer = nil
+            // Restore audio session for TTS
+            try? AVAudioSession.sharedInstance().setCategory(.playback, options: [.defaultToSpeaker])
+            try? AVAudioSession.sharedInstance().setMode(.default)
+            try? AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
+        }
+
+        private func sendSpeechResult(interim: String, final: String) {
+            guard let data = try? JSONSerialization.data(withJSONObject: ["interim": interim, "final": final]),
+                  let json = String(data: data, encoding: .utf8) else { return }
+            activeWebView?.evaluateJavaScript(
+                "window.prismNativeSpeechResult && window.prismNativeSpeechResult(\(json))"
+            ) { [weak self] _, error in
+                if error != nil { self?.stopSpeechRecognition() }
+            }
+        }
+
+        private func sendSpeechError(_ code: String) {
+            NSLog("[PrismAAC] Speech error: \(code)")
+            guard let data = try? JSONSerialization.data(withJSONObject: code),
+                  let json = String(data: data, encoding: .utf8) else { return }
+            activeWebView?.evaluateJavaScript(
+                "window.prismNativeSpeechError && window.prismNativeSpeechError(\(json))"
+            ) { _, _ in }
         }
 
         // Show offline fallback if load fails

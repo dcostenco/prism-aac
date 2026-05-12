@@ -877,7 +877,10 @@ struct WatchDictationView: View {
                 Image(systemName: "mic.circle.fill")
                     .font(.system(size: 36))
                     .foregroundColor(.blue)
-                    .onAppear { fieldFocused = true }   // auto-opens Watch input controller
+
+                Text("Tap the field or wait for dictation")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
 
                 TextField("Speak or type…", text: $text)
                     .font(.system(size: 15))
@@ -887,7 +890,6 @@ struct WatchDictationView: View {
                     .submitLabel(.done)
                     .onSubmit {
                         guard !text.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                        // #31: cap dictation text at view layer before passing to caller
                         let result = String(text.prefix(500))
                         text = ""
                         dismiss()
@@ -897,7 +899,6 @@ struct WatchDictationView: View {
                 Button(submitLabel) {
                     let trimmed = text.trimmingCharacters(in: .whitespaces)
                     guard !trimmed.isEmpty else { return }
-                    // #31: cap dictation text at view layer
                     let result = String(trimmed.prefix(500))
                     text = ""
                     dismiss()
@@ -912,6 +913,13 @@ struct WatchDictationView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                }
+            }
+            .onAppear {
+                // Delay focus so sheet animation completes first —
+                // without this, watchOS drops the system input controller presentation.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    fieldFocused = true
                 }
             }
         }

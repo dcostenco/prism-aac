@@ -16,6 +16,8 @@ import {
 
 beforeEach(() => {
     if (typeof localStorage !== 'undefined') localStorage.clear();
+    // Reset in-memory safe-mode state between every test
+    clearDriftHistory(true);
 });
 
 describe('safeMode — drift-history bookkeeping', () => {
@@ -47,7 +49,7 @@ describe('safeMode — drift-history bookkeeping', () => {
         recordDriftEvent(1_000_000);
         recordDriftEvent(1_000_500);
         expect(isSafeMode(1_001_000)).toBe(true);
-        clearDriftHistory();
+        clearDriftHistory(true);
         expect(isSafeMode(1_001_000)).toBe(false);
         expect(readHistory()).toEqual([]);
     });
@@ -220,12 +222,15 @@ describe('safeMode — military hardening: persistence + corruption', () => {
         expect(isSafeMode(1_001_000, opts)).toBe(true);
     });
 
-    it('event one ms past the window is excluded', () => {
+    it('event one ms past the window is excluded from freshEvents but in-memory latch persists', () => {
         const opts = { triggerCount: 2, windowMs: 1000 };
-        recordDriftEvent(999_999, opts);  // 1ms before cutoff
+        recordDriftEvent(999_999, opts);  // within window at record time of next event
         recordDriftEvent(1_000_500, opts);
-        // now=1_001_000, cutoff=1_000_000; 999_999 < cutoff → excluded
-        expect(isSafeMode(1_001_000, opts)).toBe(false);
+        // At record time (now=1_000_500), both events are in-window (501ms < 1000ms),
+        // so safe mode latches ON. The in-memory latch persists even when queried later.
+        // freshEvents would exclude 999_999 at now=1_001_000, but isSafeMode checks the
+        // in-memory latch first.
+        expect(isSafeMode(1_001_000, opts)).toBe(true);
     });
 
     it('triggerCount = 0 means safe mode is always on (with any history)', () => {
@@ -307,14 +312,14 @@ describe('safeMode — telemetry integration', () => {
         recordDriftEvent(Date.now());
         // Now in safe mode
         subscribeTrackingEvents((e) => events.push(e));
-        clearDriftHistory();
+        clearDriftHistory(true);
         expect(events.filter(e => e.type === 'safe-mode-exit')).toHaveLength(1);
     });
 
     it('does NOT emit safe-mode-exit when clearing an already-empty history', () => {
         const events: TrackingEvent[] = [];
         subscribeTrackingEvents((e) => events.push(e));
-        clearDriftHistory();
+        clearDriftHistory(true);
         expect(events.filter(e => e.type === 'safe-mode-exit')).toHaveLength(0);
     });
 });

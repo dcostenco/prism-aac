@@ -10,7 +10,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies before importing the module under test
 vi.mock('@/services/speechService', () => ({ speak: vi.fn() }));
-vi.mock('@/services/translateService', () => ({ translateTextSync: vi.fn((t) => t) }));
+vi.mock('@/services/translateService', () => ({
+  translateTextSync: vi.fn((t: string) => t),
+  looksLikeTargetLang: vi.fn(() => false),
+}));
 vi.mock('@/services/ttsHighlightBus', () => ({
   emitTtsHighlight: vi.fn(),
   estimateSpeechDurationMs: vi.fn(() => 1000),

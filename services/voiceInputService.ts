@@ -29,12 +29,117 @@ type VoiceWindow = Window & {
 
 export function isVoiceInputSupported(): boolean {
   if (typeof window === 'undefined') return false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((window as any).prismNativeBridge?.startVoice) return true;
   const w = window as VoiceWindow;
   return !!(w.SpeechRecognition || w.webkitSpeechRecognition);
 }
 
 export interface VoiceSession {
   stop: () => void;
+}
+
+const LANG_MAP: Record<string, string> = {
+  en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', ru: 'ru-RU',
+  ro: 'ro-RO', uk: 'uk-UA', pt: 'pt-BR', 'pt-PT': 'pt-PT',
+  zh: 'zh-CN', 'zh-TW': 'zh-TW', ja: 'ja-JP',
+  ko: 'ko-KR', ar: 'ar-SA', it: 'it-IT', nl: 'nl-NL', pl: 'pl-PL',
+  tr: 'tr-TR', vi: 'vi-VN', th: 'th-TH', hi: 'hi-IN',
+};
+
+function computeLang(lang: string): string {
+  if (LANG_MAP[lang]) return LANG_MAP[lang];
+  return LANG_MAP[lang.split('-')[0]] || 'en-US';
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function startNativeVoice(opts: {
+  lang?: string;
+  onInterim: (text: string) => void;
+  onFinal: (text: string) => void;
+  onSilence?: () => void;
+  onError?: (err: string) => void;
+  silenceMs?: number;
+  autoStop?: boolean;
+}, bridge: any): VoiceSession {
+  let stopped = false;
+  let speechStarted = false;
+  let silenceTimer: ReturnType<typeof setTimeout> | null = null;
+  const silenceThreshold = opts.silenceMs ?? 2000;
+
+  const checkSilence = () => {
+    if (silenceTimer) clearTimeout(silenceTimer);
+    if (stopped) return;
+    silenceTimer = setTimeout(() => {
+      if (!stopped) opts.onSilence?.();
+    }, silenceThreshold);
+  };
+
+  const setCallback = (name: string, fn: (arg: unknown) => void) => {
+    try {
+      Object.defineProperty(window, name, { value: fn, writable: true, configurable: true });
+    } catch {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any)[name] = fn;
+    }
+  };
+  const deleteCallback = (name: string) => {
+    try {
+      Object.defineProperty(window, name, { value: undefined, writable: true, configurable: true });
+    } catch {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as any)[name];
+    }
+  };
+
+  const cleanup = () => {
+    if (silenceTimer) clearTimeout(silenceTimer);
+    deleteCallback('prismNativeSpeechResult');
+    deleteCallback('prismNativeSpeechError');
+  };
+
+  setCallback('prismNativeSpeechResult', (result: unknown) => {
+    if (stopped) return;
+    if (!result || typeof result !== 'object') return;
+    const r = result as Record<string, unknown>;
+    const interim = typeof r.interim === 'string' ? r.interim.slice(0, 2000) : '';
+    const final = typeof r.final === 'string' ? r.final.slice(0, 2000) : '';
+    if (!speechStarted && (interim || final)) {
+      speechStarted = true;
+      checkSilence();
+    }
+    if (interim) {
+      opts.onInterim(interim);
+      checkSilence();
+    }
+    if (final) {
+      opts.onFinal(final);
+      checkSilence();
+      if (opts.autoStop) {
+        stopped = true;
+        cleanup();
+      }
+    }
+  });
+
+  setCallback('prismNativeSpeechError', (error: unknown) => {
+    if (stopped) return;
+    stopped = true;
+    try { bridge.stopVoice(); } catch { /* native bridge may be gone */ }
+    cleanup();
+    opts.onError?.(typeof error === 'string' ? error : 'unknown');
+  });
+
+  bridge.startVoice(computeLang(opts.lang || 'en-US'));
+
+  return {
+    stop: () => {
+      if (stopped) return;
+      stopped = true;
+      try { bridge.stopVoice(); } catch { /* native bridge may be gone */ }
+      cleanup();
+    },
+  };
 }
 
 export function startVoiceInput(opts: {
@@ -47,6 +152,13 @@ export function startVoiceInput(opts: {
   autoStop?: boolean;
 }): VoiceSession | null {
   if (!isVoiceInputSupported()) return null;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const bridge = (window as any).prismNativeBridge;
+  if (bridge?.startVoice) {
+    return startNativeVoice(opts, bridge);
+  }
+
   const w = window as VoiceWindow;
   const Ctor = w.SpeechRecognition || w.webkitSpeechRecognition;
   if (!Ctor) return null;
@@ -56,15 +168,7 @@ export function startVoiceInput(opts: {
   rec.interimResults = true;
   rec.maxAlternatives = 1;
 
-  const lang = opts.lang || 'en-US';
-  const LANG_MAP: Record<string, string> = {
-    en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', ru: 'ru-RU',
-    ro: 'ro-RO', uk: 'uk-UA', pt: 'pt-BR', zh: 'zh-CN', ja: 'ja-JP',
-    ko: 'ko-KR', ar: 'ar-SA', it: 'it-IT', nl: 'nl-NL', pl: 'pl-PL',
-    tr: 'tr-TR', vi: 'vi-VN', th: 'th-TH', hi: 'hi-IN',
-  };
-  const computedLang = LANG_MAP[lang.split('-')[0]] || LANG_MAP[lang] || 'en-US';
-  rec.lang = computedLang;
+  rec.lang = computeLang(opts.lang || 'en-US');
 
   let stopped = false;
   let lastSpeechTime = Date.now();

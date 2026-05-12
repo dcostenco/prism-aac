@@ -145,8 +145,8 @@ describe('marketplace/types — isValidManifest', () => {
   it('accepts manifests with optional fields populated', () => {
     expect(isValidManifest({
       ...VALID,
-      preview: 'https://cdn/p.png',
-      screenshots: ['https://cdn/1.png'],
+      preview: 'https://cdn.synalux.ai/p.png',
+      screenshots: ['https://cdn.synalux.ai/1.png'],
       sizeKb: 240,
       deps: ['other-slug'],
       handlerPayload: { vocabSetId: 'my-core' },

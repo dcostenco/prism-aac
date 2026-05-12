@@ -1,15 +1,18 @@
 /**
- * Keyboard visibility invariant — refined 2026-05-07.
+ * Keyboard visibility invariant — refined 2026-05-07, updated 2026-05-12.
  *
  * The user always needs a working keyboard. For most panels that means
  * the global qwerty stays mounted. For panels that ship their OWN
  * primary keyboard (currently just `math`), rendering the qwerty too
  * created a clipped double-keyboard ("broken keyboards" user report).
  *
- * Two pinned invariants:
+ * Three pinned invariants:
  *   1. For every NON-keyboard panel, the qwerty MUST be in the DOM.
  *   2. For every PANEL_WITH_OWN_KEYBOARD, the qwerty MUST NOT render
  *      (panel ships its own input layer).
+ *   3. Category-mode panels (categories/category-detail/ordering) and
+ *      the home panel use a categoryKeyboardOpen toggle — keyboard
+ *      renders when toggle is on, hides when off.
  *
  * If a future change either (a) starts hiding the qwerty on a panel
  * that doesn't have its own keys, or (b) starts double-rendering for
@@ -84,7 +87,6 @@ beforeEach(() => {
 });
 
 const PANELS_WITH_QWERTY: SidePanelView[] = [
-  'none',
   // ai-chat / aac-chat take typed input — keep qwerty mounted there.
   'ai-chat',
   'aac-chat',
@@ -93,8 +95,6 @@ const PANELS_WITH_QWERTY: SidePanelView[] = [
 ];
 
 // Tap-only or own-keyboard panels — qwerty must NOT render.
-// categories/category-detail/ordering added in commit 64b5ee3 (Image #28):
-// big pictogram cards are tap-only, keyboard eats ~40% of screen for nothing.
 const PANELS_WITHOUT_QWERTY: SidePanelView[] = [
   'math',
   'games',
@@ -103,6 +103,14 @@ const PANELS_WITHOUT_QWERTY: SidePanelView[] = [
   'caregiver',
   'picture-editor',
   'music-composer',
+];
+
+// Category-mode panels and home ('none') use categoryKeyboardOpen toggle.
+// When the toggle is on, the keyboard renders; when off, it hides.
+// Default store state has categoryKeyboardOpen: true, but navigating
+// into categories via toggleCategories sets it to false.
+const TOGGLE_PANELS: SidePanelView[] = [
+  'none',
   'categories',
   'category-detail',
   'ordering',
@@ -120,32 +128,23 @@ describe('Keyboard visibility — qwerty rendered for panels without own input',
     });
   }
 
-  // Pin the min-height floor on the keyboard shell. The qwerty has 4
-  // rows (3 letter rows + 1 utility row with mode/space/punctuation/
-  // Speak); each row needs ≥ ~55px to be tappable. With a 180px floor
-  // (the previous value) and a flex-[3] panel above, the bottom row
-  // got clipped — Vorbește/Speak peeked at the viewport edge and the
-  // mode-toggle / space / punctuation buttons ran off-screen
-  // (May 2026 user-reported "keyboard is wrong" with screenshot of
-  // ai-chat panel + clipped 4th row).
+  // The keyboard shell uses flex-1 + min-h-0 so it can shrink freely
+  // when tall panels (AACChatPanel compose strip, provider picker) sit
+  // above. The old min-h-[clamp(280px,...)] caused total enforced
+  // minimums (toolbar + greeting + message + prediction + chat +
+  // keyboard) to exceed 100svh on shorter viewports, clipping the
+  // bottom row. The keyboard's internal rows are all flex-1 with no
+  // hard mins, so they distribute available space evenly.
   //
-  // Asserting the className floor (rather than a computed pixel
-  // height) because jsdom doesn't run layout. A future change that
-  // drops the min-h or lowers it below a 4-row-safe value will fail
-  // this assertion.
-  it('keyboard shell has a min-height floor large enough for 4 rows', async () => {
+  // This test asserts the min-h-0 strategy is in place — any future
+  // change that reintroduces a large floor will break it.
+  it('keyboard shell uses min-h-0 so it can shrink freely', async () => {
     useUIStore.setState({ sidePanel: 'ai-chat' });
     const { findByTestId } = render(<PrismApp />);
     const shell = await findByTestId('keyboard-shell');
     const cls = shell.className;
-    // The floor must include a min-h utility AND its lower bound must
-    // be ≥ 260px (4 rows × 60px + padding/gap headroom). Smaller
-    // values produce visually cramped rows even when technically above
-    // the 44px tap-target minimum (May 2026 #37/#38 screenshots).
-    const m = cls.match(/min-h-\[(?:clamp\(\s*)?(\d+)px/);
-    expect(m, `expected keyboard-shell min-h-[<floor>] in className "${cls}"`).not.toBeNull();
-    const floorPx = m ? Number(m[1]) : 0;
-    expect(floorPx).toBeGreaterThanOrEqual(260);
+    expect(cls).toContain('min-h-0');
+    expect(cls).toContain('flex-1');
   });
 });
 
@@ -156,6 +155,28 @@ describe('Keyboard visibility — qwerty hidden for panels with their own keyboa
       const { queryByTestId, findByTestId } = render(<PrismApp />);
       // Wait for the panel itself to mount before asserting absence.
       await findByTestId(`panel-${panel}`);
+      expect(queryByTestId('keyboard-shell')).not.toBeInTheDocument();
+      expect(queryByTestId('aac-keyboard-mock')).not.toBeInTheDocument();
+    });
+  }
+});
+
+describe('Keyboard visibility — toggle-controlled panels (category mode + home)', () => {
+  for (const panel of TOGGLE_PANELS) {
+    it(`keyboard renders when sidePanel = "${panel}" and categoryKeyboardOpen = true`, async () => {
+      useUIStore.setState({ sidePanel: panel, categoryKeyboardOpen: true });
+      const { findByTestId } = render(<PrismApp />);
+      const kb = await findByTestId('aac-keyboard-mock');
+      expect(kb).toBeInTheDocument();
+      const shell = await findByTestId('keyboard-shell');
+      expect(shell).toBeInTheDocument();
+    });
+
+    it(`keyboard hidden when sidePanel = "${panel}" and categoryKeyboardOpen = false`, async () => {
+      useUIStore.setState({ sidePanel: panel, categoryKeyboardOpen: false });
+      const { queryByTestId } = render(<PrismApp />);
+      // Small wait for render to settle.
+      await new Promise((r) => setTimeout(r, 50));
       expect(queryByTestId('keyboard-shell')).not.toBeInTheDocument();
       expect(queryByTestId('aac-keyboard-mock')).not.toBeInTheDocument();
     });
