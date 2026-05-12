@@ -233,9 +233,25 @@ final class WKWebTTS: NSObject {
 // MARK: - Emergency bridge — sends SOS to Watch via WatchConnectivity
 
 @MainActor
-final class WatchEmergencyBridge {
+final class WatchEmergencyBridge: NSObject, WCSessionDelegate {
     static let shared = WatchEmergencyBridge()
     private static let iso8601 = ISO8601DateFormatter()
+
+    // FIX H1: Activate WCSession at app startup with a delegate
+    func activateSession() {
+        guard WCSession.isSupported() else { return }
+        WCSession.default.delegate = self
+        WCSession.default.activate()
+    }
+
+    // WCSessionDelegate required methods
+    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        if let error = error { NSLog("[WatchEmergencyBridge] Activation error: \(error)") }
+    }
+    nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
+    nonisolated func sessionDidDeactivate(_ session: WCSession) {
+        session.activate()
+    }
 
     func trigger(phrase: String) {
         // FIX H4: Sanitize phrase before sending to Watch (defense-in-depth)
@@ -248,10 +264,9 @@ final class WatchEmergencyBridge {
         ]
         guard WCSession.isSupported() else { return }
         let session = WCSession.default
-        // FIX M4: Check activation state before sending
+        // FIX M2: transferUserInfo also requires activated session — log and return
         guard session.activationState == .activated else {
-            NSLog("[WatchEmergencyBridge] Session not activated — queueing via transferUserInfo")
-            session.transferUserInfo(msg)
+            NSLog("[WatchEmergencyBridge] Session not activated — cannot dispatch emergency")
             return
         }
         if session.isReachable {

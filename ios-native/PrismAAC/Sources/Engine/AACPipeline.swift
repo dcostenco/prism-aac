@@ -47,7 +47,7 @@ final class AACPipeline: ObservableObject {
     /// This is the primary communication path and MUST always work.
     func speak(text: String, language: String = "en-US", rate: Float = 0.5) {
         synthesizer.stopSpeaking(at: .immediate)
-        let utterance = AVSpeechUtterance(string: text)
+        let utterance = AVSpeechUtterance(string: String(text.prefix(2000)))
         utterance.voice = AVSpeechSynthesisVoice(language: language)
         utterance.rate = max(AVSpeechUtteranceMinimumSpeechRate,
                              min(AVSpeechUtteranceMaximumSpeechRate, rate))
@@ -83,7 +83,7 @@ final class AACPipeline: ObservableObject {
                 }
 
                 self.isThinking = true
-                defer { Task { @MainActor in self.isThinking = false } }
+                defer { self.isThinking = false }
 
                 do {
                     let response: String
@@ -128,8 +128,10 @@ final class AACPipeline: ObservableObject {
     ) async throws -> String {
         let prompt = buildPrompt(question: question, language: language)
         var full = ""
+        // FIX M3: sanitize individual streamed tokens before yielding to UI
         full = try await llm.generate(prompt: prompt) { token in
-            Task { @MainActor in stream.yield(token) }
+            let safe = AACPipeline.sanitizeText(token, maxLength: 200)
+            Task { @MainActor in stream.yield(safe) }
         }
         return full
     }
@@ -149,10 +151,13 @@ final class AACPipeline: ObservableObject {
                              timeoutInterval: 15)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // FIX H2: Require auth token — unauthenticated requests must not proceed
-        if let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
-            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        // FIX M1: Hard guard — unauthenticated cloud requests must not proceed
+        guard let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") else {
+            NSLog("[AACPipeline] No auth token — cloud AI unavailable")
+            aiAvailable = .unavailable
+            throw URLError(.userAuthenticationRequired)
         }
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.httpBody = try JSONSerialization.data(withJSONObject: [
             "message": safeQuestion,
             "language": validLang,

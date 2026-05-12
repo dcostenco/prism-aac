@@ -4,6 +4,11 @@ import SwiftUI
 struct PrismAACApp: App {
     @StateObject private var appState = AppState()
 
+    init() {
+        // FIX H1: Activate WCSession at app launch so emergency dispatch works
+        WatchEmergencyBridge.shared.activateSession()
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {

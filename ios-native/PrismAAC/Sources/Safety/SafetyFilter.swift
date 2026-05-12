@@ -62,7 +62,7 @@ struct SafetyFilter {
         }
     }
 
-    static let _crisisPatternCheck: Void = {
+    private static let _crisisPatternCheck: Void = {
         let missing = crisisKeywords.count - crisisPatterns.count
         if missing > 0 {
             NSLog("[SafetyFilter] CRITICAL: \(missing) crisis pattern(s) failed to compile")
@@ -72,7 +72,7 @@ struct SafetyFilter {
         }
     }()
 
-    static let _dosePatternCheck: Void = {
+    private static let _dosePatternCheck: Void = {
         let missing = medicalDoseKeywords.count - dosePatterns.count
         if missing > 0 {
             NSLog("[SafetyFilter] CRITICAL: \(missing) dose pattern(s) failed to compile")

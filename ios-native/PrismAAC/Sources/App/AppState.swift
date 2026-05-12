@@ -69,7 +69,6 @@ final class AppState: ObservableObject {
     private static let T_FULL_AI    = 1_400
     private static let T_CLOUD_AI   = 800
     private static let T_EMERGENCY  = 300
-    private static let T_UNLOAD     = 250  // unload model to free memory
 
     // MARK: - Memory monitoring
 
