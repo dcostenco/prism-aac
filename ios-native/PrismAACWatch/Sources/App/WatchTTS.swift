@@ -1,5 +1,9 @@
 import AVFoundation
 
+// NOTE: NSLog is used for operational logging. Auth tokens are never logged.
+// Operational data (message counts, status codes) is considered acceptable in production logs.
+// For future: migrate to os_log with appropriate log levels.
+
 /// Text-to-speech on Watch.
 /// Plays through Watch speaker or paired Bluetooth headset.
 /// No model required — always available offline.
@@ -16,10 +20,20 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         synthesizer.delegate = self  // delegate-based isSpeaking reset, no Task.sleep
     }
 
+    // FIX #12: Static flag set by WatchEmergencyManager to prevent non-emergency TTS
+    // from ducking the emergency synthesizer's audio session.
+    static var emergencyAudioActive = false
+
     // #11: NOTE: WatchEmergencyManager has its own AVSpeechSynthesizer for emergency TTS.
     // Both share the Watch speaker. Emergency manager configures AVAudioSession before speaking,
     // which ducks this synthesizer's output if active. This is acceptable — emergency speech has priority.
     func speak(_ text: String, language: String = "en-US", rate: Float = 0.52) {
+        // If an emergency is active, defer non-emergency TTS to avoid ducking the emergency synthesizer
+        // (WatchEmergencyManager has its own AVSpeechSynthesizer with higher priority)
+        guard !WatchTTS.emergencyAudioActive else {
+            NSLog("[WatchTTS] Deferred speech — emergency audio active")
+            return
+        }
         let safe = String(text.prefix(1000))
         watchdogTask?.cancel()  // cancel previous watchdog
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }

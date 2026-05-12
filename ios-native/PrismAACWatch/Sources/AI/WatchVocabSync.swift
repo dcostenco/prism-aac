@@ -2,6 +2,10 @@ import Foundation
 import Security
 import WatchConnectivity
 
+// NOTE: NSLog is used for operational logging. Auth tokens are never logged.
+// Operational data (message counts, status codes) is considered acceptable in production logs.
+// For future: migrate to os_log with appropriate log levels.
+
 /// Syncs vocabulary from the web app to the Watch.
 ///
 /// Two paths:
@@ -63,6 +67,7 @@ final class WatchVocabSync: NSObject, ObservableObject {
     private var lastCompanionUpdate: Date = .distantPast
 
     deinit {
+        // Task.cancel() is thread-safe — sets an atomic flag, no actor state mutation.
         vocabTask?.cancel()
     }
 
@@ -91,7 +96,13 @@ final class WatchVocabSync: NSObject, ObservableObject {
             Task { @MainActor [weak self] in self?.handleVocabReply(msg) }
         }
         // #25+#34: @MainActor + [weak self] — ensures @Published writes stay on main actor; no retain cycle
-        vocabTask = Task { @MainActor [weak self] in await self?.loadFromAPI(lang: self?.inputLanguage ?? "en-US") }
+        // FIX #18: capture inputLanguage at call site to avoid self?.inputLanguage in async closure
+        let lang = inputLanguage
+        vocabTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            guard !Task.isCancelled else { return }
+            await self?.loadFromAPI(lang: lang)
+        }
     }
 
     // MARK: - Label sanitization

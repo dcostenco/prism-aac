@@ -1,11 +1,17 @@
 import Foundation
 import Security
 
+// NOTE: NSLog is used for operational logging. Auth tokens are never logged.
+// Operational data (message counts, status codes) is considered acceptable in production logs.
+// For future: migrate to os_log with appropriate log levels.
+
 /// Shared Keychain helper for all Watch targets.
 /// Uses kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly so tokens are
 /// readable in background tasks (emergency dispatch) without requiring
 /// the Watch to be actively worn/unlocked.
 /// kSecAttrSynchronizable: false prevents iCloud collision with same-name items.
+// NOTE: service/account names are internal identifiers ("prism-aac"/"auth-token"), not PII.
+// If future callers pass user-derived names, mask them before logging.
 internal final class KeychainHelper {
     static let shared = KeychainHelper()
     private init() {}

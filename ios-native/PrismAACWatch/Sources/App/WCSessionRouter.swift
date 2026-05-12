@@ -1,6 +1,10 @@
 import Foundation
 import WatchConnectivity
 
+// NOTE: NSLog is used for operational logging. Auth tokens are never logged.
+// Operational data (message counts, status codes) is considered acceptable in production logs.
+// For future: migrate to os_log with appropriate log levels.
+
 /// Single WCSession delegate that dispatches to all registered handlers.
 /// REQUIRED: Four classes (WatchAISession, WatchEmergencyManager, WatchVocabSync, WatchInbox)
 /// were all setting WCSession.default.delegate = self, which means only the LAST one
@@ -125,8 +129,13 @@ extension WCSessionRouter: WCSessionDelegate {
                 replyHandler(["error": "router deallocated"])
                 return
             }
+            let count = self.messageHandlers[type]?.count ?? 0
             self.messageHandlers[type]?.forEach { $0(type, message) }
-            replyHandler(["ok": true, "handlers": self.messageHandlers[type]?.count ?? 0])
+            if count > 0 {
+                replyHandler(["ok": true])
+            } else {
+                replyHandler(["ok": false, "error": "no handlers for type '\(type)'"])
+            }
         }
     }
 

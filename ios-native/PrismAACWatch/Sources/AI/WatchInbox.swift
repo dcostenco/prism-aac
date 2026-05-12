@@ -3,6 +3,10 @@ import Security
 import WatchConnectivity
 import UserNotifications
 
+// NOTE: NSLog is used for operational logging. Auth tokens are never logged.
+// Operational data (message counts, status codes) is considered acceptable in production logs.
+// For future: migrate to os_log with appropriate log levels.
+
 /// Incoming message inbox for the Watch.
 ///
 /// Messages arrive from two paths:
@@ -253,7 +257,7 @@ final class WatchInbox: NSObject, ObservableObject {
     private func deliver(_ msg: WatchMessage) {
         // Deduplicate by id — FIX #25: log drop for diagnostics
         guard !messages.contains(where: { $0.id == msg.id }) else {
-            NSLog("[WatchInbox] Duplicate message id \(msg.id) — dropping")
+            NSLog("[WatchInbox] Duplicate message id \(msg.id) — dropping (possible replay)")
             return
         }
         messages.insert(msg, at: 0)
@@ -391,6 +395,8 @@ final class WatchInbox: NSObject, ObservableObject {
     // FIX #3: parameters replace actor-isolated property reads; caller captures them on @MainActor first.
     // #24: @MainActor annotation removed — WatchInbox is @MainActor final class,
     // so all instance methods are implicitly @MainActor. Explicit annotation is redundant.
+    // UserDefaults.standard is thread-safe for reads (Apple docs: "You can safely read
+    // and write values from UserDefaults on any thread"). No dispatch needed.
     nonisolated private func loadFromDefaults(service: String, account: String, storageKey: String) -> [WatchMessage] {
         // Migration path only — UserDefaults is cleared immediately after Keychain write succeeds.
         // Message PII is in UserDefaults only during the first-launch migration window.
@@ -426,7 +432,13 @@ final class WatchInbox: NSObject, ObservableObject {
                                        provider: msg.provider, receivedAt: msg.receivedAt,
                                        isRead: msg.isRead, isReplied: msg.isReplied)
                 }
-                return sanitized
+                // FIX #5: Purge messages older than 30 days
+                let thirtyDaysAgo = Date().addingTimeInterval(-30 * 86_400)
+                let freshMessages = sanitized.filter { $0.receivedAt > thirtyDaysAgo }
+                if freshMessages.count < sanitized.count {
+                    NSLog("[WatchInbox] Purged \(sanitized.count - freshMessages.count) messages older than 30 days")
+                }
+                return freshMessages
             } catch {
                 NSLog("[WatchInbox] Decode failed (schema change?): \(error) — keeping raw data")
                 // Do NOT call persistToKeychain() here — that would erase the corrupted data

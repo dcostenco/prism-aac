@@ -2,6 +2,10 @@ import Foundation
 import Security
 import WatchConnectivity
 
+// NOTE: NSLog is used for operational logging. Auth tokens are never logged.
+// Operational data (message counts, status codes) is considered acceptable in production logs.
+// For future: migrate to os_log with appropriate log levels.
+
 /// Manages AI requests from the Watch.
 /// Tries WatchConnectivity first (iPhone 1.5B), falls back to cloud URLSession.
 @MainActor
@@ -25,7 +29,12 @@ final class WatchAISession: NSObject, ObservableObject {
         case responseTooLarge
     }
 
-    private let cloudURL = URL(string: "https://synalux.ai/api/v1/prism-aac/chat")!
+    // FIX #6: Support Info.plist override for AI cloud endpoint URL
+    private let cloudURL: URL = {
+        let urlString = Bundle.main.infoDictionary?["PRISM_AI_URL"] as? String
+            ?? "https://synalux.ai/api/v1/prism-aac/chat"
+        return URL(string: urlString)!
+    }()
     private let timeoutSec: Double = 15
 
     private static let aiSession: URLSession = {
@@ -163,6 +172,10 @@ final class WatchAISession: NSObject, ObservableObject {
         // group.cancelAll() from the timeout task), resuming the continuation with CancellationError
         // rather than abandoning it — which avoids CheckedContinuation abandonment warnings and
         // ensures the task group terminates cleanly.
+        //
+        // KNOWN: WCSession may call replyHandler/errorHandler after Task cancellation.
+        // The 'resumed' flag + NSLock prevent double-resume (CheckedContinuation requirement).
+        // The closure executes but returns early — acceptable CPU cost, no behavioral impact.
         let lock = NSLock()
         var resumed = false
         var contRef: CheckedContinuation<String, Error>?

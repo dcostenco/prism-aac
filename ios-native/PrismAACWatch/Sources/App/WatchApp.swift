@@ -10,10 +10,9 @@ import SwiftUI
 @main
 struct PrismAACWatchApp: App {
     // Router MUST be first — it sets WCSession.default.delegate before any other init.
-    // FIX #28: @ObservedObject (not @StateObject) because WCSessionRouter.shared is a pre-constructed
-    // singleton. @StateObject with a pre-built value would wrap it in a redundant Box and break
-    // SwiftUI's ownership semantics. The singleton manages its own lifetime.
-    @ObservedObject private var wcRouter  = WCSessionRouter.shared
+    // FIX #25: WCSessionRouter has no @Published properties — `let` is sufficient.
+    // @ObservedObject on a singleton with no @Published causes unnecessary SwiftUI redraws.
+    private let wcRouter = WCSessionRouter.shared
     @StateObject private var session      = WatchAISession()
     @StateObject private var emergency    = WatchEmergencyManager()
     @StateObject private var tts          = WatchTTS()

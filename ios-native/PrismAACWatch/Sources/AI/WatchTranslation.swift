@@ -2,6 +2,10 @@ import Foundation
 import AVFoundation
 import Security
 
+// NOTE: NSLog is used for operational logging. Auth tokens are never logged.
+// Operational data (message counts, status codes) is considered acceptable in production logs.
+// For future: migrate to os_log with appropriate log levels.
+
 /// Translation + live voice input for the Watch.
 ///
 /// Phrase tap:  translate label via synalux API → speak in output lang
@@ -22,6 +26,8 @@ final class WatchTranslation: ObservableObject {
     private var pendingOutputLang: String = "en-US"
 
     deinit {
+        // NOTE: deinit accesses @MainActor-isolated properties. Task.cancel() is safe
+        // from any thread — it only sets an atomic flag. No actor state mutation occurs.
         translateTask?.cancel()
         listeningWatchdog?.cancel()
     }
@@ -78,6 +84,11 @@ final class WatchTranslation: ObservableObject {
     private func translate(text: String, to toLang: String) async -> String? {
         // #31: bail immediately if caller's task was cancelled before network work begins
         guard !Task.isCancelled else { return nil }
+        // FIX #7: Auth check FIRST — don't construct request body if we can't send it
+        guard let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") else {
+            NSLog("[WatchTranslation] No auth token — skipping translation request")
+            return nil
+        }
         // Safety gate — don't translate crisis or medical dosing phrases
         let safety = WatchSafetyFilter.check(text)
         if case .crisis = safety { return nil }
@@ -157,10 +168,6 @@ final class WatchTranslation: ObservableObject {
             ])
         } catch {
             NSLog("[WatchTranslation] JSON serialization failed: \(error) — returning nil")
-            return nil
-        }
-        guard let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") else {
-            NSLog("[WatchTranslation] No auth token — skipping translation request")
             return nil
         }
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
