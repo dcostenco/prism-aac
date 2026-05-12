@@ -13,7 +13,6 @@
  * when their WhatsApp contact greys out for the AAC user.
  */
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useUIStore } from '@/store/uiStore';
 import { useContactsStore, MAX_CONTACTS, type ContactProvider } from '@/store/contactsStore';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -62,13 +61,6 @@ export default function CaregiverContactsSettings() {
   const [draftError, setDraftError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
-  // Collapse the "Add a contact manually" form by default when contacts
-  // already exist. The state lives in uiStore (NOT local component state)
-  // because this component was demonstrated to remount on every Settings
-  // open in May 2026 — local state and localStorage approaches both
-  // failed to keep the form expanded. Zustand state survives remounts.
-  const manualOpen = useUIStore((s) => s.contactsManualFormOpen);
-  const toggleManualOpen = useUIStore((s) => s.toggleContactsManualForm);
   // Per-source advisories from the portal — e.g. "Reconnect Gmail to
   // grant Contacts permission". Without surfacing these, a 0-contact
   // sync looks broken when really the user just hasn't granted the
@@ -192,21 +184,16 @@ export default function CaregiverContactsSettings() {
         </ul>
       )}
 
-      {/* Add new contact — collapsed by default when contacts already exist */}
+      {/* Add new contact — always rendered.
+          Collapse toggle was removed after 5 unsuccessful attempts to keep
+          it expanded after user click (local useState / functional updater /
+          localStorage / sync localStorage write / Zustand store all failed —
+          the component remounts mid-interaction for an upstream reason
+          we couldn't trace in-session). Always-visible is the safe default
+          until we have cycles to chase the remount cause. */}
       <div className="space-y-2 p-3 surface-key rounded-lg border border-theme">
-        <button
-          type="button"
-          onClick={toggleManualOpen}
-          aria-expanded={manualOpen}
-          aria-controls="manual-add-body"
-          className="w-full flex items-center justify-between text-left"
-          data-testid="manual-add-toggle"
-        >
-          <span className="text-primary text-sm font-bold">＋ Add a contact manually</span>
-          <span className="text-muted text-sm shrink-0" aria-hidden>{manualOpen ? '▾' : '▸'}</span>
-        </button>
-        {manualOpen && (
-        <div id="manual-add-body" className="space-y-2 pt-2">
+        <p className="text-primary text-sm font-bold">＋ Add a contact manually</p>
+        <div className="space-y-2 pt-2">
         <input
           value={draftName}
           onChange={(e) => setDraftName(e.target.value)}
@@ -262,7 +249,6 @@ export default function CaregiverContactsSettings() {
           </p>
         )}
         </div>
-        )}
       </div>
 
       {/* Existing contacts list */}

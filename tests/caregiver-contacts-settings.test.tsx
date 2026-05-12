@@ -9,8 +9,6 @@ import '@testing-library/jest-dom/vitest';
 import CaregiverContactsSettings from '@/components/CaregiverContactsSettings';
 import { useContactsStore } from '@/store/contactsStore';
 import { useAuthStore } from '@/store/authStore';
-import { useUIStore } from '@/store/uiStore';
-
 vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn() }));
 
 const syncMock = vi.fn();
@@ -22,10 +20,6 @@ beforeEach(() => {
   syncMock.mockReset();
   useContactsStore.setState({ contacts: [], lastSyncedAt: 0 });
   useAuthStore.setState({ profile: { email: 'a@b.c', name: 'A', plan: 'free', isPlatformAdmin: false }, loaded: true, loading: false });
-  // Open the "Add a contact manually" form so the input testids exist in DOM.
-  // Production default is collapsed (state lives in uiStore — see May 2026 fix
-  // for the remount-resilient toggle in CaregiverContactsSettings).
-  useUIStore.setState({ contactsManualFormOpen: true });
 });
 afterEach(() => vi.clearAllMocks());
 
