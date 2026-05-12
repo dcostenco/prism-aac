@@ -16,7 +16,6 @@ final class WatchTranslation: ObservableObject {
     @Published private(set) var isTranslating = false
     @Published var isListening   = false
     @Published private(set) var pendingText = ""  // FIX #32: restrict external mutation
-    @Published var errorMessage: String?
 
     private var translateTask: Task<Void, Never>?
     private var listeningWatchdog: Task<Void, Never>?
@@ -176,7 +175,9 @@ final class WatchTranslation: ObservableObject {
             guard data.count <= 65_536 else { return nil }
             // FIX #17: try non-streaming parse first (stream:false); fall back to SSE assembler for
             // servers that ignore stream:false and return SSE anyway.
-            return parseNonStreaming(data) ?? assembleSSE(data)
+            // FIX M1: sanitize AI response — strip ChatML/injection tokens before returning
+            guard let raw = parseNonStreaming(data) ?? assembleSSE(data) else { return nil }
+            return sanitizeTranslation(raw)
         } catch is CancellationError {
             // #30: Task was cancelled (user navigated away) — not an error worth logging
             return nil
@@ -243,6 +244,19 @@ final class WatchTranslation: ObservableObject {
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
                             .trimmingCharacters(in: .init(charactersIn: "\"'"))
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    // FIX M1: sanitize translation AI output — matches WatchAISession.sanitizeResponse()
+    private static let outputTokens = ["<|im_start|>","<|im_end|>","<|system|>","[INST]","[/INST]",
+                      "<<SYS>>","<</SYS>>","<|eot_id|>","<|start_header_id|>",
+                      "<|end_header_id|>","<|user|>","<|assistant|>","<|endoftext|>",
+                      "<s>","</s>","<|end_of_turn|>","<|start_of_turn|>",
+                      "&#x","&#X","&#","&lt;","&gt;","\\u003c","\\u003e"]
+
+    private func sanitizeTranslation(_ raw: String) -> String {
+        let nfkc = raw.applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? raw
+        let stripped = Self.outputTokens.reduce(nfkc) { $0.replacingOccurrences(of: $1, with: "") }
+        return stripped.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
     }
 
     // MARK: - Voice / dictation input

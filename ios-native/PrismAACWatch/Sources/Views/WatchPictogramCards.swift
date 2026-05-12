@@ -397,7 +397,6 @@ struct WatchInboxView: View {
     @EnvironmentObject var inbox: WatchInbox
     @EnvironmentObject var tts: WatchTTS
     @State private var replyingTo: WatchInbox.WatchMessage? = nil
-    @State private var replyText = ""
 
     private let providerIcon: [String: String] = [
         "sms": "message.fill", "email": "envelope.fill",
@@ -927,6 +926,12 @@ struct WatchSendMessageView: View {
     // because they lack a country code. Users must include country code (e.g. +12125551234).
     private static let phoneRegex: NSRegularExpression = try! NSRegularExpression(pattern: #"^\+[0-9]{10,15}$"#)
     private static let emailRegex: NSRegularExpression = try! NSRegularExpression(pattern: #"^[^@\s<>]+@[^@\s<>]+\.[^@\s<>]{2,}$"#)
+    // FIX L3: static to avoid allocation on every send tap
+    private static let bidiChars: [String] = [
+        "\u{202A}", "\u{202B}", "\u{202C}", "\u{202D}", "\u{202E}",
+        "\u{200B}", "\u{200C}", "\u{200D}", "\u{200E}", "\u{200F}",
+        "\u{2066}", "\u{2067}", "\u{2068}", "\u{2069}", "\u{FEFF}",
+    ]
 
     @EnvironmentObject var inbox: WatchInbox
     @EnvironmentObject var tts: WatchTTS
@@ -984,14 +989,7 @@ struct WatchSendMessageView: View {
                     // FIX #8: prevent double-send on rapid taps
                     guard !isSending else { return }
                     isSending = true
-                    // #23: comprehensive bidi strip — matches safeSenderName() in WatchReplyView
-                    let bidi: [String] = [
-                        "\u{202A}", "\u{202B}", "\u{202C}", "\u{202D}", "\u{202E}",  // LRE RLE PDF LRO RLO
-                        "\u{200B}", "\u{200C}", "\u{200D}", "\u{200E}", "\u{200F}",  // ZWSP ZWNJ ZWJ LRM RLM
-                        "\u{2066}", "\u{2067}", "\u{2068}", "\u{2069}",              // LRI RLI FSI PDI
-                        "\u{FEFF}",                                                   // BOM
-                    ]
-                    let safeTo = bidi.reduce(
+                    let safeTo = Self.bidiChars.reduce(
                         String(contactQuery.prefix(100)).trimmingCharacters(in: .whitespacesAndNewlines)
                     ) { $0.replacingOccurrences(of: $1, with: "") }
                     let safeBody = String(msgText.prefix(500))
