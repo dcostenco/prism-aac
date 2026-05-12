@@ -264,6 +264,12 @@ export default function PredictionBar() {
     aacSpeak(fullPhrase, speechRate, speechVolume);
   }, [text, learnWord, speechRate, speechVolume, language]);
 
+  // Must be computed before any early returns — hooks must be called unconditionally.
+  // (useMemo after a conditional return violates Rules of Hooks → React #300 crash
+  // when sidePanel toggles between 'aac-chat' and anything else.)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const finalTiles = useMemo(() => dropForeignTiles(displayed), [displayed, language]);
+
   // ── Contact-search mode — replaces word predictions while messaging ──
   if (sidePanel === 'aac-chat' && !activeContactId) {
     const matched = filterContacts(contacts, text);
@@ -298,9 +304,6 @@ export default function PredictionBar() {
       </div>
     );
   }
-
-  // MEDIUM #3 — memoize so dropForeignTiles doesn't run on every render.
-  const finalTiles = useMemo(() => dropForeignTiles(displayed), [displayed, language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 h-[clamp(56px,13svh,110px)]">
