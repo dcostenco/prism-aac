@@ -70,8 +70,8 @@ export default function PinPad({ onVerify, pinHash, onSetPin }: Props) {
             } else {
                 if (entered !== confirmPin) { setError(true); setEntered(''); setSetupStep('enter'); return; }
                 const hash = await hashPin(entered);
-                onSetPin?.(hash);
                 onVerify(true);
+                onSetPin?.(hash);
             }
             return;
         }

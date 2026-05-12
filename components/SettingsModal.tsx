@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore, GridSize } from '@/store/settingsStore';
 import { useCategoryStore } from '@/store/categoryStore';
@@ -109,6 +109,7 @@ export default function SettingsModal() {
   const settings = useSettingsStore();
   const { t } = useT();
   const [pinVerified, setPinVerified] = useState(false);
+  const pinJustSet = useRef(false);
   const caregiverPinHash = useSettingsStore(s => s.caregiverPinHash);
   const {
     customCategories, customPhrases,
@@ -136,7 +137,8 @@ export default function SettingsModal() {
   if (!showSettings) return null;
 
   // H18: Caregiver PIN gate — if a PIN hash is configured, require verification before opening settings
-  if (caregiverPinHash && !pinVerified) {
+  // Skip gate if PIN was just set in this session (pinJustSet ref survives the Zustand re-render)
+  if (caregiverPinHash && !pinVerified && !pinJustSet.current) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
         <div className="bg-white rounded-xl p-8 flex flex-col items-center gap-4 shadow-2xl">
@@ -560,7 +562,7 @@ export default function SettingsModal() {
                 <PinPad
                   pinHash=""
                   onVerify={() => {}}
-                  onSetPin={(hash) => useSettingsStore.getState().update({ caregiverPinHash: hash })}
+                  onSetPin={(hash) => { pinJustSet.current = true; useSettingsStore.getState().update({ caregiverPinHash: hash }); }}
                 />
               )}
             </div>
