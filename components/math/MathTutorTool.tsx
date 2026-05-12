@@ -502,6 +502,28 @@ export default function MathTutorTool() {
               </button>
             </div>
           )}
+          {/* Parse **Say:** suggestions into tappable AAC buttons */}
+          {(() => {
+            const sayMatch = response.match(/\*\*Say:\*\*\s*(.+)/);
+            if (!sayMatch) return null;
+            const options = sayMatch[1].split('|').map(s => s.trim().replace(/^[""]|[""]$/g, ''));
+            return (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {options.filter(Boolean).map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      tapFeedback();
+                      aacSpeak(opt, speechRate, speechVolume);
+                    }}
+                    className="aac-btn rounded-xl px-4 py-2 bg-[#4CAF50] text-white font-bold text-sm"
+                  >
+                    🗣 {opt}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
           <button
             onClick={dismiss}
             className="absolute top-1 right-2 text-muted text-xs px-1"
