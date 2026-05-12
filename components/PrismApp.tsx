@@ -420,8 +420,8 @@ export default function PrismApp() {
               (banner / message / predictions / categories) so the
               cell-grid canvas + bigger keyboards have room to breathe.
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
-          {sidePanel !== 'math' && <GreetingBanner />}
-          {sidePanel !== 'math' && <MessageBar />}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <GreetingBanner />}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <MessageBar />}
           {!PANELS_WITHOUT_QWERTY.has(sidePanel) && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />
