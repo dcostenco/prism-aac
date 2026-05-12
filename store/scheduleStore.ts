@@ -87,6 +87,7 @@ interface ScheduleState {
   addIncomingMessage: (sender: string, text: string, externalId?: string) => string | null;
   removeTask: (id: string) => void;
   toggleDone: (id: string) => void;
+  markMessagesRead: () => void;
   /** Update a task's text/icon/textKey in place. Pass undefined to leave a field unchanged. */
   editTask: (id: string, patch: { text?: string; icon?: string; textKey?: string | null }) => void;
   resetDay: () => void;
@@ -209,6 +210,13 @@ export const useScheduleStore = create<ScheduleState>()(
         set((s) => ({
           tasks: s.tasks.map((t) =>
             t.id === id ? { ...t, done: !t.done } : t
+          ),
+        })),
+
+      markMessagesRead: () =>
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.kind === 'message' && !t.done ? { ...t, done: true } : t
           ),
         })),
 

@@ -85,7 +85,7 @@ function buildBuiltInButtons(t: (k: string) => string, h: ButtonHandlers): Recor
         ? `${t('aac_chat') || 'Send a message'} — ${h.unreadMessages} ${t('unread') || 'unread'}`
         : (t('aac_chat') || 'Send a message'),
       title: h.unreadMessages > 0 ? `${h.unreadMessages} new messages` : (t('aac_chat') || 'Send a message'),
-      onClick: h.unreadMessages > 0 ? h.openSchedule : h.openAACChat,
+      onClick: h.openAACChat,
       badge: h.unreadMessages || undefined,
     },
     notes: { id: 'notes', icon: '📋', ariaLabel: t('notes'), title: t('notes'), onClick: h.openCaregiver },

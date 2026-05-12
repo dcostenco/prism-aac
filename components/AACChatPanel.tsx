@@ -95,7 +95,13 @@ export default function AACChatPanel() {
   const profile = useAuthStore((s) => s.profile);
   const plan = profile?.plan ?? 'free';
   const noteSentTo = useContactsStore((s) => s.noteSentTo);
+  const markMessagesRead = useScheduleStore((s) => s.markMessagesRead);
   const { t } = useT();
+
+  // Clear unread badge when AAC Chat opens
+  useEffect(() => {
+    if (sidePanel === 'aac-chat') markMessagesRead();
+  }, [sidePanel, markMessagesRead]);
   // t() returns the raw key when no translation is loaded for it
   // (engine/i18n.ts:147 — `loaded[lang]?.[key] ?? loaded.en?.[key] ?? key`).
   // That breaks the `t('x') || 'fallback'` pattern because the key
