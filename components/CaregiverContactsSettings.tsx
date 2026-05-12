@@ -13,6 +13,7 @@
  * when their WhatsApp contact greys out for the AAC user.
  */
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useUIStore } from '@/store/uiStore';
 import { useContactsStore, MAX_CONTACTS, type ContactProvider } from '@/store/contactsStore';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -62,39 +63,12 @@ export default function CaregiverContactsSettings() {
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   // Collapse the "Add a contact manually" form by default when contacts
-  // already exist — caregivers usually open Settings to see their list
-  // or trigger Sync, not to type one in. The form expands on tap of the
-  // "+ Add manually" header. When contacts.length===0 the form starts
-  // expanded so the user has somewhere to start.
-  // Initial: collapsed when contacts already exist, expanded for fresh
-  // accounts so the user has somewhere to start.
-  //
-  // Persisted in localStorage so the choice survives whatever was
-  // remounting this component (diag MOUNT/UNMOUNT log cycle on every
-  // Settings open, root cause upstream). Without persistence, every
-  // remount re-runs the initializer and resets the user's toggle.
-  // localStorage read is sync + cheap; only fires on initial mount.
-  const MANUAL_OPEN_KEY = 'prism-aac-contacts-manual-open';
-  const [manualOpen, setManualOpen] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return contacts.length === 0;
-    try {
-      const stored = window.localStorage.getItem(MANUAL_OPEN_KEY);
-      if (stored === 'true') return true;
-      if (stored === 'false') return false;
-    } catch { /* private mode / quota — fall through to default */ }
-    return contacts.length === 0;
-  });
-  // Write to localStorage SYNCHRONOUSLY inside the click handler (below)
-  // — NOT inside a setState updater. If the parent is remounting this
-  // component between click and React's commit phase (confirmed by
-  // earlier diag MOUNT/UNMOUNT cycle), an updater-scoped write would
-  // never commit, and the next mount's lazy init would read the stale
-  // value. Writing first guarantees the next mount sees the new state.
-  const toggleManualOpen = useCallback(() => {
-    const next = !manualOpen;
-    try { window.localStorage.setItem(MANUAL_OPEN_KEY, next ? 'true' : 'false'); } catch { /* */ }
-    setManualOpen(next);
-  }, [manualOpen]);
+  // already exist. The state lives in uiStore (NOT local component state)
+  // because this component was demonstrated to remount on every Settings
+  // open in May 2026 — local state and localStorage approaches both
+  // failed to keep the form expanded. Zustand state survives remounts.
+  const manualOpen = useUIStore((s) => s.contactsManualFormOpen);
+  const toggleManualOpen = useUIStore((s) => s.toggleContactsManualForm);
   // Per-source advisories from the portal — e.g. "Reconnect Gmail to
   // grant Contacts permission". Without surfacing these, a 0-contact
   // sync looks broken when really the user just hasn't granted the

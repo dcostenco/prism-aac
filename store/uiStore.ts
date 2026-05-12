@@ -16,6 +16,14 @@ interface UIState {
   showHistory: boolean;
   showSettings: boolean;
   showCategoryManager: boolean;
+  /** Whether the "Add a contact manually" form in CaregiverContactsSettings
+   *  is expanded. Lives here (not local component state) because
+   *  CaregiverContactsSettings was demonstrated to remount on every
+   *  Settings open (May 2026 user diag), which kept resetting local
+   *  state regardless of localStorage persistence attempts. Store state
+   *  survives the remounts cleanly. */
+  contactsManualFormOpen: boolean;
+  toggleContactsManualForm: () => void;
   isAlertFlashing: boolean;
   /** Timestamp of last triggerAlert call — used for 5s cooldown. In state so tests can reset it. */
   _alertLastFiredAt: number;
@@ -78,6 +86,8 @@ export const useUIStore = create<UIState>()((set) => ({
   showHistory: false,
   showSettings: false,
   showCategoryManager: false,
+  contactsManualFormOpen: false,
+  toggleContactsManualForm: () => set((s) => ({ contactsManualFormOpen: !s.contactsManualFormOpen })),
   isAlertFlashing: false,
   _alertLastFiredAt: 0,
 
