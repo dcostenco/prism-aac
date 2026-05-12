@@ -117,7 +117,7 @@ internal final class KeychainHelper {
                 NSLog("[KeychainHelper] writeData add failed: \(status) for \(service)/\(account)")
             }
         } else if updateStatus != errSecSuccess {
-            NSLog("[KeychainHelper] writeData update failed: \(updateStatus)")
+            NSLog("[KeychainHelper] writeData update failed: \(updateStatus) for \(service)/\(account)")
         }
     }
 

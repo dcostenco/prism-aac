@@ -119,8 +119,6 @@ struct WatchPictogramCards: View {
     @State private var showAIChat             = false   // AI chat from panel tile
     @State private var showSendMessage        = false   // send message from 💬 button
     @State private var showInbox              = false
-    @State private var showDictation          = false
-    @State private var dictationText          = ""
     @State private var pendingEmergencyPhrase: AACPhrase? = nil
 
     private func code(_ bcp: String) -> String {
@@ -278,17 +276,6 @@ struct WatchPictogramCards: View {
             WatchInboxView()
                 .environmentObject(inbox)
                 .environmentObject(tts)
-        }
-        // Dictation sheet — Watch native voice/keyboard input → translate → speak
-        .sheet(isPresented: $showDictation) {
-            WatchDictationView(title: "Translate", submitLabel: "Translate & Speak") { text in
-                translation.handleDictation(
-                    text: text,
-                    inputLang: vocab.inputLanguage,
-                    outputLang: vocab.outputLanguage,
-                    tts: tts
-                )
-            }
         }
         // Dedicated AI Chat sheet (from panel tile)
         .sheet(isPresented: $showAIChat) {
@@ -586,14 +573,15 @@ struct WatchReplyView: View {
         }
     }
 
+    // FIX L8: static to avoid allocation on every call
+    private static let bidiChars: [String] = [
+        "\u{202A}", "\u{202B}", "\u{202C}", "\u{202D}", "\u{202E}",
+        "\u{200B}", "\u{200C}", "\u{200D}", "\u{200E}", "\u{200F}",
+        "\u{2066}", "\u{2067}", "\u{2068}", "\u{2069}", "\u{FEFF}",
+    ]
+
     private func safeSenderName(_ name: String) -> String {
-        let bidi: [String] = [
-            "\u{202A}", "\u{202B}", "\u{202C}", "\u{202D}", "\u{202E}",  // LRE RLE PDF LRO RLO
-            "\u{200B}", "\u{200C}", "\u{200D}", "\u{200E}", "\u{200F}",  // ZWSP ZWNJ ZWJ LRM RLM
-            "\u{2066}", "\u{2067}", "\u{2068}", "\u{2069}",              // LRI RLI FSI PDI
-            "\u{FEFF}",                                                   // BOM
-        ]
-        return bidi.reduce(name) { $0.replacingOccurrences(of: $1, with: "") }
+        Self.bidiChars.reduce(name) { $0.replacingOccurrences(of: $1, with: "") }
     }
 }
 
@@ -622,7 +610,6 @@ struct WatchAIChatView: View {
     @State private var inputText     = ""
     @State private var isWaiting     = false
     @State private var showDictation = false
-    @State private var dictationText = ""
     @State private var aiTask: Task<Void, Never>?
     @State private var translateTask2: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss

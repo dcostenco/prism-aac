@@ -100,8 +100,16 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
         // FIX #26/#4: Persist active flag so next launch can show recovery UI after process termination
         // #4: use Keychain instead of UserDefaults to avoid iCloud backup exposure
         KeychainHelper.shared.write(value: "1", service: "prism-aac", account: "emergencyActive")
-        // FIX #13/#2: Sanitize phrase — strip ChatML, Llama, Gemma, and HTML-encoded tokens before storing
-        activePhrase = String(phrase.prefix(200))
+        // FIX M3: NFKC normalize FIRST (before literal stripping) — consistent with all other sanitization paths.
+        // This ensures fullwidth ChatML tokens (e.g. ＜｜ｉｍ＿ｓｔａｒｔ｜＞) are collapsed to ASCII
+        // form before the literal .replacingOccurrences chain tries to match them.
+        let nfkcPhrase = String(phrase.prefix(200))
+            .applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false)
+            ?? String(phrase.prefix(200))
+        // After NFKC, apply Latin/ASCII normalization for confusable scripts
+        let latinized = nfkcPhrase.applyingTransform(.toLatin, reverse: false) ?? nfkcPhrase
+        // Now strip literal tokens on normalized input
+        activePhrase = latinized
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
@@ -126,33 +134,21 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
             .replacingOccurrences(of: "&gt;", with: "")
             .replacingOccurrences(of: "\\u003c", with: "")
             .replacingOccurrences(of: "\\u003e", with: "")
-            // FIX #24: Second pass to catch reassembled tokens (e.g. <|im_<|im_start|>start|>)
+            // Second pass to catch reassembled tokens
             .replacingOccurrences(of: "<|im_start|>", with: "")
             .replacingOccurrences(of: "<|im_end|>", with: "")
             .replacingOccurrences(of: "<|system|>", with: "")
             .replacingOccurrences(of: "[INST]", with: "")
             .replacingOccurrences(of: "[/INST]", with: "")
-            // Final: reject any remaining < > [ ] characters
             .components(separatedBy: CharacterSet(charactersIn: "<>[]"))
             .joined()
-        // FIX #1 (CRITICAL): Apply Unicode NFKC normalization to collapse fullwidth/homoglyph
-        // variants (e.g. ｉｍ＿ｓｔａｒｔ → im_start) before the final character-class filter.
-        // applyingTransform removes combining marks ([:Mn:] Remove) and re-normalizes,
-        // then the second components/join strips any angle brackets that emerged from normalization.
-        let nfkcSanitized = (activePhrase ?? "")
-            .applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? (activePhrase ?? "")
-        // #1 (CRITICAL): After NFKC pass, apply Latin/ASCII normalization for confusable scripts
-        let latinized = nfkcSanitized.applyingTransform(.toLatin, reverse: false)
-            ?? nfkcSanitized
-        // Strip dangerous URL schemes from the phrase
-        let urlSchemeStripped = latinized
+        // Strip dangerous URL schemes, then final bracket pass
+        activePhrase = (activePhrase ?? "")
             .replacingOccurrences(of: "javascript:", with: "", options: .caseInsensitive)
             .replacingOccurrences(of: "data:", with: "", options: .caseInsensitive)
             .replacingOccurrences(of: "file:", with: "", options: .caseInsensitive)
             .replacingOccurrences(of: "tel:", with: "", options: .caseInsensitive)
             .replacingOccurrences(of: "sms:", with: "", options: .caseInsensitive)
-        // Final pass: strip remaining angle brackets and brackets after normalization
-        activePhrase = urlSchemeStripped
             .components(separatedBy: CharacterSet(charactersIn: "<>[]|"))
             .joined()
         // #20: empty-phrase fallback — phrase sanitized to empty string
@@ -425,13 +421,11 @@ final class WatchEmergencyManager: NSObject, ObservableObject {
     // #26: static cached formatter — avoids allocation on every call
     private static let iso8601 = ISO8601DateFormatter()
 
-    // FIX #38/#17: Emergency dispatch URLs — configurable via EMERGENCY_DISPATCH_URL in Info.plist
-    // Fallback: fallbackDispatchURL used if primary returns 5xx on retry
+    // FIX #38/#17: Emergency dispatch URL — configurable via EMERGENCY_DISPATCH_URL in Info.plist
     private static let primaryDispatchURL: String = {
         Bundle.main.infoDictionary?["EMERGENCY_DISPATCH_URL"] as? String
             ?? "https://synalux.ai/api/v1/emergency/dispatch"
     }()
-    private static let fallbackDispatchURL = "https://dispatch.synalux.ai/v1/emergency"  // CDN fallback
 
     // FIX #7: Dedicated session so emergency HTTP is never starved by image loads on URLSession.shared
     // SECURITY: SPKI pinning via URLSessionDelegate for MITM protection on emergency dispatch.

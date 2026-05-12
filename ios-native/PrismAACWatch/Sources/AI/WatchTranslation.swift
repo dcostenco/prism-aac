@@ -248,7 +248,7 @@ final class WatchTranslation: ObservableObject {
     // MARK: - Voice / dictation input
 
     /// Show Watch dictation UI (caller presents a TextField sheet).
-    func startListening(inputLang: String, outputLang: String, tts: WatchTTS) {
+    func startListening() {
         isListening = true
         // #10: store watchdog Task so it can be cancelled when dictation completes;
         // #24/#28: safety reset — if handleDictation is never called (e.g. user cancels without submitting),

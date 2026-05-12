@@ -85,7 +85,8 @@ final class WatchAISession: NSObject, ObservableObject {
 
     private func handlePhoneReply(_ message: [String: Any]) {
         if let text = message["tts_text"] as? String {
-            reply = String(text.prefix(500))
+            // FIX M2: sanitize companion-pushed replies (same path as AI responses)
+            reply = sanitizeResponse(String(text.prefix(500)))
         }
     }
 

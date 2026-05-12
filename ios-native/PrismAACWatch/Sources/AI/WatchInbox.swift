@@ -164,9 +164,7 @@ final class WatchInbox: NSObject, ObservableObject {
             return
         }
 
-        // #29: re-validate provider against allowlist before sending — prevents injection via stored message
-        let safeProvider = ["sms", "email", "telegram", "whatsapp", "messenger", "instagram", "viber"]
-            .contains(msg.provider) ? msg.provider : "sms"
+        let safeProvider = Self.allowedProviders.contains(msg.provider) ? msg.provider : "sms"
         WCSessionRouter.shared.send(
             ["type": "inbox_reply",
              "sender": String(msg.sender.prefix(100)),
@@ -182,29 +180,8 @@ final class WatchInbox: NSObject, ObservableObject {
         // F4c: length caps on all string fields immediately after extraction
         guard let rawSender = message["sender"] as? String,
               let rawText   = message["text"]   as? String else { return }
-        let sender: String = {
-            let capped = String(rawSender.prefix(100))
-            // Strip bidi override characters
-            let bidiStripped = capped
-                .replacingOccurrences(of: "\u{202E}", with: "")  // RLO
-                .replacingOccurrences(of: "\u{202D}", with: "")  // LRO
-                .replacingOccurrences(of: "\u{202B}", with: "")  // RLE
-                .replacingOccurrences(of: "\u{202A}", with: "")  // LRE
-                .replacingOccurrences(of: "\u{202C}", with: "")  // PDF
-                .replacingOccurrences(of: "\u{200F}", with: "")  // RLM
-                .replacingOccurrences(of: "\u{200E}", with: "")  // LRM
-                .replacingOccurrences(of: "\u{2066}", with: "")  // LRI
-                .replacingOccurrences(of: "\u{2067}", with: "")  // RLI
-                .replacingOccurrences(of: "\u{2068}", with: "")  // FSI
-                .replacingOccurrences(of: "\u{2069}", with: "")  // PDI
-                .replacingOccurrences(of: "\u{200B}", with: "")  // ZWSP
-                .replacingOccurrences(of: "\u{200C}", with: "")  // ZWNJ
-                .replacingOccurrences(of: "\u{200D}", with: "")  // ZWJ
-                .replacingOccurrences(of: "\u{FEFF}", with: "")  // BOM
-            // FIX #23: Also strip ChatML tokens from sender field — prevents prompt injection
-            // via a maliciously crafted sender name delivered from iPhone companion app.
-            return stripChatMLTokens(bidiStripped)
-        }()
+        // FIX L1/L2: sanitizeInboxField handles bidi + ChatML + NFKC in one pass
+        let sender = sanitizeInboxField(String(rawSender.prefix(100)))
         // FIX H1: Use sanitizeInboxField for text — includes NFKC normalization and bidi stripping
         // that the previous inline .replacingOccurrences chain was missing.
         let safeText = sanitizeInboxField(String(rawText.prefix(500)))
@@ -216,10 +193,8 @@ final class WatchInbox: NSObject, ObservableObject {
         // #27: validate id as proper UUID — reject arbitrary injection strings
         let rawId    = message["id"] as? String ?? ""
         let id       = UUID(uuidString: rawId)?.uuidString ?? UUID().uuidString
-        // #9: allowlist provider — reject arbitrary strings before storage
-        let allowedProviders: Set<String> = ["sms", "email", "telegram", "whatsapp", "messenger", "instagram", "viber"]
         let rawProvider = message["provider"] as? String ?? "sms"
-        let provider = allowedProviders.contains(rawProvider) ? rawProvider : "sms"
+        let provider = Self.allowedProviders.contains(rawProvider) ? rawProvider : "sms"
         // #19: clamp receivedAt — reject timestamps more than 1 year old or more than 1 min in the future
         // #16: explicit Double cast makes the 64-bit arithmetic intent clear
         let now        = Date().timeIntervalSince1970
@@ -337,9 +312,10 @@ final class WatchInbox: NSObject, ObservableObject {
     }
 
     // FIX L8: extracted from duplicated blocks in persistToKeychain errSecItemNotFound + errSecSuccess paths.
+    // FIX M1: nonisolated — called from nonisolated persistToKeychain; only touches UserDefaults (thread-safe).
     // SECURITY: If NSUbiquitousKeyValueStore is ever added to entitlements, this flag could sync across
     // devices and cause migration to be skipped on new installations. Move to a non-synced store first.
-    private func completeMigrationIfNeeded(migrated: Bool, storageKey: String) {
+    nonisolated private func completeMigrationIfNeeded(migrated: Bool, storageKey: String) {
         guard !migrated else { return }
         UserDefaults.standard.removeObject(forKey: storageKey)
         UserDefaults.standard.set(true, forKey: "watchInboxMigrated")
@@ -432,6 +408,8 @@ final class WatchInbox: NSObject, ObservableObject {
     // Strips ChatML / Llama / Gemma / Mistral prompt-injection tokens, bidi override characters,
     // and applies NFKC normalization. nonisolated so it can be called from detached tasks and
     // loadFromDefaults() without hopping back to @MainActor.
+    // FIX L3: shared provider allowlist — used by both reply() and deliverFromMessage()
+    private static let allowedProviders: Set<String> = ["sms", "email", "telegram", "whatsapp", "messenger", "instagram", "viber"]
     // FIX L4: static arrays — avoid allocation on every sanitizeInboxField call
     private static let injectionTokens = ["<|im_start|>","<|im_end|>","<|system|>","[INST]","[/INST]",
                       "<<SYS>>","<</SYS>>","<|eot_id|>","<|start_header_id|>",
@@ -447,12 +425,6 @@ final class WatchInbox: NSObject, ObservableObject {
         let bidiCleaned = Self.bidiChars.reduce(stripped) { $0.replacingOccurrences(of: $1, with: "") }
         let nfkc = bidiCleaned.applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? bidiCleaned
         return nfkc.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
-    }
-
-    // FIX #23: Retained for sender field in deliverFromMessage() — calls through to sanitizeInboxField().
-    // nonisolated so it can be called from detached tasks.
-    nonisolated private func stripChatMLTokens(_ input: String) -> String {
-        return sanitizeInboxField(input)
     }
 
     // MARK: - Dev helpers
