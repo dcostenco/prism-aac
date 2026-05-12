@@ -108,7 +108,6 @@ final class AppState: ObservableObject {
         let free = freeMemoryMB
         if free < Self.T_EMERGENCY { return .emergency }
         if free < Self.T_CLOUD_AI  { return .coreOnly  }
-        if llm.isLoaded && free >= Self.T_CLOUD_AI { return free >= Self.T_FULL_AI ? .fullAI : .cloudAI }
         return free >= Self.T_FULL_AI ? .fullAI : .cloudAI
     }
 

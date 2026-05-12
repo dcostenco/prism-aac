@@ -128,12 +128,12 @@ final class AACPipeline: ObservableObject {
     ) async throws -> String {
         let prompt = buildPrompt(question: question, language: language)
         var full = ""
-        // FIX M3: sanitize individual streamed tokens before yielding to UI
         full = try await llm.generate(prompt: prompt) { token in
             let safe = AACPipeline.sanitizeText(token, maxLength: 200)
             Task { @MainActor in stream.yield(safe) }
         }
-        return full
+        // FIX M1: return sanitized text so ask() comparison with validated is consistent
+        return Self.sanitizeText(full, maxLength: 4000)
     }
 
     private func runCloud(

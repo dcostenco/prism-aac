@@ -137,6 +137,17 @@ struct PrismWebView: UIViewRepresentable {
 
         init(pipeline: AACPipeline) { self.pipeline = pipeline }
 
+        // FIX L1: clear #if DEBUG boundary — no mid-expression preprocessor directives
+        private static func isAllowedOrigin(_ url: URL) -> Bool {
+            if url.host == "synalux.ai" || url.host?.hasSuffix(".synalux.ai") == true {
+                return true
+            }
+            #if DEBUG
+            if url.host == "localhost" { return true }
+            #endif
+            return false
+        }
+
         // Handle JS → Native messages
         func userContentController(_ controller: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
@@ -161,15 +172,8 @@ struct PrismWebView: UIViewRepresentable {
                 lastEmergencyTriggerTime = now
 
                 // C14: Origin validation — only honor from verified origin
-                // FIX L1: localhost only allowed in DEBUG builds
-                let isAllowedOrigin: (URL) -> Bool = { url in
-                    url.host == "synalux.ai" ||
-                    url.host?.hasSuffix(".synalux.ai") == true
-                    #if DEBUG
-                    || url.host == "localhost"
-                    #endif
-                }
-                guard let pageURL = message.webView?.url, isAllowedOrigin(pageURL) else {
+                guard let pageURL = message.webView?.url,
+                      Self.isAllowedOrigin(pageURL) else {
                     NSLog("[PrismAAC] Emergency blocked from untrusted origin: \(message.webView?.url?.host ?? "nil")")
                     return
                 }
