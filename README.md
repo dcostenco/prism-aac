@@ -132,7 +132,7 @@ PECS-style picture tiles. Tap a category, tap a tile, hear the word, watch it la
 ### ⌨️ Type & speak
 On-screen keyboard with **word prediction**, **AI autocomplete**, and a one-tap **Speak** button that reads the message bar aloud in a natural neural voice. Typing teaches the prediction engine: words your child types most surface earlier next session.
 
-![Prism AAC keyboard with prediction tiles "I / You / More / Want / Help" above](docs/screenshots/app-hero.png)
+![Prism AAC keyboard with "hello" typed, prediction tiles, and Speak button](docs/screenshots/keyboard-typing.png)
 
 **Reading-assistant features (Read & Write parity)** — for users with reading / memory / cognitive needs:
 
