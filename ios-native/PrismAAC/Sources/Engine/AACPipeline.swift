@@ -196,9 +196,12 @@ If any fail: REWRITE: {corrected version in 1-2 short sentences}
 """
         let validatorOut = try await llm.generate(prompt: prompt) { _ in }
         if validatorOut.hasPrefix("REWRITE:") {
-            return String(validatorOut.dropFirst("REWRITE:".count)).trimmingCharacters(in: .whitespaces)
+            return Self.sanitizeText(
+                String(validatorOut.dropFirst("REWRITE:".count)).trimmingCharacters(in: .whitespaces),
+                maxLength: 500)
         }
-        return response
+        // FIX M1: return sanitized version, not raw — ensures lastResponse is always clean
+        return safeResponse
     }
 
     // FIX C1: Full injection token list — matches Watch sanitizer (23 tokens + NFKC + bracket filter)

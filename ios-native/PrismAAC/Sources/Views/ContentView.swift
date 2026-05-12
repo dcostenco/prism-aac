@@ -161,10 +161,15 @@ struct PrismWebView: UIViewRepresentable {
                 lastEmergencyTriggerTime = now
 
                 // C14: Origin validation — only honor from verified origin
-                guard let pageURL = message.webView?.url,
-                      pageURL.host == "synalux.ai" ||
-                      pageURL.host?.hasSuffix(".synalux.ai") == true ||
-                      pageURL.host == "localhost" else {
+                // FIX L1: localhost only allowed in DEBUG builds
+                let isAllowedOrigin: (URL) -> Bool = { url in
+                    url.host == "synalux.ai" ||
+                    url.host?.hasSuffix(".synalux.ai") == true
+                    #if DEBUG
+                    || url.host == "localhost"
+                    #endif
+                }
+                guard let pageURL = message.webView?.url, isAllowedOrigin(pageURL) else {
                     NSLog("[PrismAAC] Emergency blocked from untrusted origin: \(message.webView?.url?.host ?? "nil")")
                     return
                 }
