@@ -11,8 +11,6 @@ interface Props {
   style?: React.CSSProperties;
   onClick: () => void;
   ariaLabel?: string;
-  /** Pass true when the tile should be compact (keyboard drawer open).
-   *  Reduces the image max-height so the tile stays at its min-h. */
   compact?: boolean;
 }
 
@@ -31,42 +29,34 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
     return () => { cancelled = true; };
   }, [phrase, englishPhrase, pictureMode, language]);
 
-  // Image max size: explicit cap so the image cannot expand the tile beyond min-h.
-  // compact=true (keyboard open) → smaller cap so more rows fit on screen.
-  // Without an explicit max-h, the browser lets the ARASAAC image's intrinsic
-  // size inflate the tile to 135px+ even when min-h is 72px.
-  // max-w/max-h as % of the parent span so image scales with tile size on all devices
-  const imgCls = compact
-    ? 'max-w-[60%] max-h-[55%] object-contain'
-    : 'max-w-[80%] max-h-[75%] object-contain';
-
   return (
     <button
       onClick={onClick}
       aria-label={ariaLabel ?? phrase}
       className={className}
-      style={{ border: '2px solid #000', ...style }}
+      style={{
+        border: '2px solid #000',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        ...style,
+      }}
     >
-      <span className="flex flex-col items-center w-full h-full">
-        <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg overflow-hidden">
-          {iconUrl && (
-            <img
-              src={iconUrl}
-              alt=""
-              aria-hidden
-              loading="lazy"
-              className={imgCls}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-            />
-          )}
-        </span>
-        <span
-          className="shrink-0 w-full text-center leading-snug font-bold py-1 px-1 border-t-2 border-black break-words"
-          style={{ fontSize: 'clamp(0.6rem,1.1vw,0.9rem)', wordBreak: 'break-word' }}
-        >
-          {phrase}
-        </span>
-      </span>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', borderRadius: '8px 8px 0 0', overflow: 'hidden', minHeight: 0 }}>
+        {iconUrl && (
+          <img
+            src={iconUrl}
+            alt=""
+            aria-hidden
+            loading="lazy"
+            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+          />
+        )}
+      </div>
+      <div style={{ flexShrink: 0, textAlign: 'center', fontWeight: 'bold', padding: '2px 4px', borderTop: '1px solid rgba(0,0,0,0.2)', fontSize: 'clamp(0.65rem, 1.5svh, 1rem)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {phrase}
+      </div>
     </button>
   );
 }

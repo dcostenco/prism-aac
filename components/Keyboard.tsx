@@ -202,10 +202,10 @@ export default function Keyboard() {
 
   const kc = 'aac-key surface-key text-primary rounded-lg font-bold select-none flex items-center justify-center';
   const letterSize = capsLock
-    ? 'text-[clamp(1.5rem,4vw,3.5rem)]'
-    : 'text-[clamp(1.25rem,3.5vw,2.75rem)]';
-  const utilSize = 'text-[clamp(1rem,2.2vw,1.75rem)]';
-  const wordSize = 'text-[clamp(0.875rem,1.8vw,1.5rem)]';
+    ? 'text-[clamp(1.75rem,4.8svh,3.5rem)]'
+    : 'text-[clamp(1.55rem,4.2svh,3rem)]';
+  const utilSize = 'text-[clamp(1rem,2.5svh,1.75rem)]';
+  const wordSize = 'text-[clamp(0.9rem,2svh,1.5rem)]';
 
   const shiftStyle = capsLock
     ? 'bg-[#4CAF50] text-white'

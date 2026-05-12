@@ -116,15 +116,15 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap }: { wo
     <button
       onClick={() => onTap(word)}
       aria-label={`Predict: ${word}`}
-      className="aac-btn flex-1 min-w-0 surface-key rounded-xl flex flex-col items-center justify-between py-1 px-1 border-l-[5px] border border-theme overflow-hidden"
+      className="aac-btn flex-1 min-w-0 rounded-xl flex flex-col items-center overflow-hidden border-l-[5px] border border-theme"
       style={{ borderLeftColor: color, color }}
     >
-      <span className="flex-1 flex items-center justify-center">
+      <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg overflow-hidden min-h-0">
         {iconUrl && (
-          <img src={iconUrl} alt="" aria-hidden loading="lazy" className="max-w-[clamp(1.5rem,4vw,2.5rem)] max-h-[clamp(1.5rem,5svh,2.5rem)] object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+          <img src={iconUrl} alt="" aria-hidden loading="lazy" className="max-w-full max-h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
         )}
       </span>
-      <span className="truncate w-full text-center text-[clamp(0.6rem,1.8vw,1rem)] font-bold shrink-0 leading-tight">{word}</span>
+      <span className="truncate w-full text-center text-[clamp(0.65rem,1.5svh,1rem)] font-bold shrink-0 leading-tight py-0.5">{word}</span>
     </button>
   );
 });

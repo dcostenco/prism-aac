@@ -951,15 +951,11 @@ struct WatchSendMessageView: View {
                     Text("To:")
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
-                    TextField("Search contacts…", text: $contactQuery)
+                    TextField("+1234567890 or email", text: $contactQuery)
                         .font(.system(size: 14))
                         .padding(8)
                         .background(Color.white.opacity(0.08))
                         .clipShape(RoundedRectangle(cornerRadius: 10))
-                    // FIX #23: Hint that country code is required (e.g. +12125551234).
-                    Text("Include country code (e.g. +12125551234)")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
                 }
 
                 // Message field

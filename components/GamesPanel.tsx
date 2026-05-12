@@ -57,7 +57,7 @@ function shuffle<T>(arr: T[]): T[] {
 function getChildWords(lang: string): string[] {
   const wf = usePredictionStore.getState().wordFreq;
   const topWords = Object.entries(wf)
-    .filter(([w]) => w.length > 1 && w.length < 12)
+    .filter(([w]) => [...w].length >= 1 && w.length < 12)
     .sort((a, b) => b[1].count - a[1].count)
     .slice(0, 30)
     .map(([w]) => w.charAt(0).toUpperCase() + w.slice(1));
@@ -66,7 +66,7 @@ function getChildWords(lang: string): string[] {
     const defaults = DEFAULT_PHRASES.slice(0, 20).map(p => {
       const text = getPhraseText(p.id, lang as never, p.text);
       return text.split(/\s+/)[0];
-    }).filter(w => w.length > 1 && w.length < 10);
+    }).filter(w => [...w].length >= 1 && w.length < 10);
     return shuffle([...new Set([...topWords, ...defaults])]).slice(0, 20);
   }
   return topWords;

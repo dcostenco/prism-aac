@@ -43,10 +43,10 @@ export function LanguageButton({ lang, variant = 'neutral', onClick, ariaLabel }
       onClick={() => { tapFeedback(); onClick(); }}
       aria-label={ariaLabel ?? `Language: ${meta?.name ?? lang}. Tap to change.`}
       data-testid={`language-button-${variant}`}
-      className={`aac-btn h-11 px-3 rounded-xl font-bold uppercase select-none flex items-center gap-1.5 text-sm md:text-base ${colorClass}`}
+      className={`aac-btn h-[clamp(2rem,6svh,2.75rem)] px-[clamp(0.25rem,0.8vw,0.5rem)] rounded-lg font-bold uppercase select-none flex items-center gap-0.5 text-[clamp(0.55rem,1.5vw,0.75rem)] ${colorClass}`}
     >
-      <span aria-hidden className="text-xl leading-none">{flag}</span>
-      <span>{code}</span>
+      <span aria-hidden className="text-[clamp(0.85rem,2.5vw,1.1rem)] leading-none">{flag}</span>
+      <span className="hidden sm:inline">{code}</span>
     </button>
   );
 }

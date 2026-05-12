@@ -268,14 +268,9 @@ export async function getPictogramUrl(
     return url;
   }
 
-  // Single-character tokens are prepositions / articles / pronouns ("у",
-  // "и", "a", "I"). ARASAAC returns "letter X" alphabet pictograms for
-  // these, which is misleading in an AAC context. Skip pictogram fetch
-  // entirely for these short tokens.
-  if (token.length <= 1) {
-    memCacheSet(key, null);
-    return null;
-  }
+  // Single-character tokens (pronouns like "I"/"я", articles like "a"/"и")
+  // are valid AAC words across all 20 supported languages. Let ARASAAC
+  // search determine the best pictogram — no length-based skip.
 
   const fullPhrase = normalize(phrase);
   let blob = fullPhrase !== token ? await fetchArasaac(fullPhrase, lang) : null;

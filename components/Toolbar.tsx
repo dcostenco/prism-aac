@@ -320,10 +320,9 @@ export default function Toolbar() {
         {allButtons.map((id) => renderButton(id))}
       </div>
 
-      {/* Language pair selector — input → output. Both buttons use the
-          shared LanguageButton/LanguagePicker so the toolbar and the
-          chat panels render the picker identically. */}
-      <div ref={langRef} className="flex items-center gap-1 relative shrink-0 ml-2">
+      {/* Language pair selector — outside scroll strip but compact to avoid
+          covering toolbar buttons. */}
+      <div ref={langRef} className="flex items-center gap-0.5 relative shrink-0 ml-1">
         <LanguageButton
           lang={language}
           variant="input"

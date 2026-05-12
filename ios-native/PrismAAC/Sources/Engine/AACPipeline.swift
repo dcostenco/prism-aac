@@ -152,8 +152,7 @@ final class AACPipeline: ObservableObject {
                              timeoutInterval: 15)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // FIX M1: Hard guard — unauthenticated cloud requests must not proceed
-        guard let token = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") else {
+        guard let token = Self.readKeychainToken() else {
             NSLog("[AACPipeline] No auth token — cloud AI unavailable")
             aiAvailable = .unavailable
             throw URLError(.userAuthenticationRequired)
@@ -170,7 +169,7 @@ final class AACPipeline: ObservableObject {
             throw URLError(.badServerResponse)
         }
         guard data.count <= 65_536 else {
-            throw URLError(.dataLengthExceededMaximum)
+            throw URLError(.resourceUnavailable)
         }
         let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         let rawText = obj?["reply"] as? String ?? ""
@@ -225,6 +224,21 @@ If any fail: REWRITE: {corrected version in 1-2 short sentences}
         let nfkc = capped.applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? capped
         let stripped = Self.injectionTokens.reduce(nfkc) { $0.replacingOccurrences(of: $1, with: "") }
         return stripped.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
+    }
+
+    private static func readKeychainToken() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String:              kSecClassGenericPassword,
+            kSecAttrService as String:        "prism-aac",
+            kSecAttrAccount as String:        "auth-token",
+            kSecAttrSynchronizable as String: false,
+            kSecReturnData as String:         true,
+            kSecMatchLimit as String:         kSecMatchLimitOne,
+        ]
+        var result: AnyObject?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data, data.count <= 4096 else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 
     private func buildPrompt(question: String, language: String) -> String {

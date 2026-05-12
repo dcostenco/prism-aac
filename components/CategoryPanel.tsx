@@ -82,18 +82,18 @@ const TILE_H: Record<GridSize, string> = {
 // expand beyond the cap — min-h alone is insufficient because flex/grid
 // children can still grow past their min-height when content overflows.
 const TILE_H_KB: Record<GridSize, string> = {
-  4:  'min-h-[80px] max-h-[80px]',
-  6:  'min-h-[72px] max-h-[72px]',
-  9:  'min-h-[65px] max-h-[65px]',
-  12: 'min-h-[58px] max-h-[58px]',
-  16: 'min-h-[52px] max-h-[52px]',
-  20: 'min-h-[46px] max-h-[46px]',
+  4:  'min-h-[clamp(100px,16svh,160px)]',
+  6:  'min-h-[clamp(90px,14svh,140px)]',
+  9:  'min-h-[clamp(80px,12svh,120px)]',
+  12: 'min-h-[clamp(72px,10svh,100px)]',
+  16: 'min-h-[clamp(64px,8svh,90px)]',
+  20: 'min-h-[clamp(56px,7svh,80px)]',
 };
 
 // HOME board columns: 2 on phones (readable tiles), more on tablet/desktop
 const HOME_COLS        = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7';
-const HOME_TILE_H      = 'min-h-[clamp(70px,12vw,110px)]';
-const HOME_TILE_H_KB   = 'min-h-[52px] max-h-[52px]';
+const HOME_TILE_H      = 'min-h-[clamp(90px,15vw,160px)]';
+const HOME_TILE_H_KB   = 'min-h-[clamp(80px,14svh,140px)]';
 
 // Folder tile style — pure white background, clearly "drill in"
 const FOLDER_CLS = 'aac-btn bg-white text-gray-900 rounded-xl border-2 border-gray-300 flex flex-col items-center justify-center gap-1 font-bold select-none text-center hover:border-[#3e2a1a] active:scale-95 transition-transform';
@@ -190,7 +190,8 @@ export default function CategoryPanel() {
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim() || !searchOpen) return [];
-    if (searchQuery.trim().length < 2 || searchQuery.length > 200) return [];
+    const trimmed = searchQuery.trim();
+    if ([...trimmed].length < 1 || trimmed.length > 200) return [];
     const q = searchQuery.toLowerCase();
     const cats = allCategories();
     const out: { phrase: string; category: string; phraseId?: string }[] = [];
@@ -463,10 +464,10 @@ export default function CategoryPanel() {
         {searchOpen ? searchPanelJsx : (
           <div className="flex-1 min-w-0 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
-            <div className={`grid ${HOME_COLS} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0 content-start`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+            <div className={`grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0 content-start`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
               {homeGridPhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
-                const tH = categoryKeyboardOpen ? HOME_TILE_H_KB : HOME_TILE_H;
+                const tH = categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
                 return (
                   <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} compact={categoryKeyboardOpen}
                     onClick={() => handlePhrase(local, p.id)}
@@ -476,7 +477,7 @@ export default function CategoryPanel() {
               })}
               {/* WHITE folder tiles for fringe categories */}
               {fringeCats.map((cat) => {
-                const tH = categoryKeyboardOpen ? HOME_TILE_H_KB : HOME_TILE_H;
+                const tH = categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
                 return (
                 <button key={cat.id} onClick={() => { tapFeedback(); selectCategory(cat.id); }}
                   className={`${FOLDER_CLS} gap-1 p-1.5 text-xs ${tH}`}>
