@@ -352,7 +352,7 @@ export default function AACChatPanel() {
   return (
     <section
       aria-label={tx('aac_chat_title', 'Send a message')}
-      className="shrink-0 flex flex-col surface-bar border-y border-theme"
+      className="relative shrink-0 flex flex-col surface-bar border-y border-theme"
       data-testid="aac-chat-panel"
       data-state="compose"
     >
@@ -450,11 +450,15 @@ export default function AACChatPanel() {
         </div>
       )}
 
-      {/* Toast */}
+      {/* Toast — absolute-positioned overlay so it doesn't take layout
+          height. Inline toast (May 2026 user report) grew the panel by
+          ~36px after each send, which combined with the keyboard's
+          min-h-0 shrunk the keyboard rows below their natural size →
+          bottom row clipped / "keyboard pushed down" out of viewport. */}
       {toast && (
         <div
           role="status"
-          className="px-3 py-2 text-sm font-bold text-[#4CAF50] border-t border-theme"
+          className="pointer-events-none absolute right-2 top-2 z-10 rounded-md bg-[#4CAF50] px-3 py-1.5 text-sm font-bold text-white shadow-lg"
           data-testid="aac-chat-toast"
         >
           ✓ {toast}
