@@ -512,9 +512,25 @@ export default function MathTutorTool() {
                 {options.filter(Boolean).map((opt, i) => (
                   <button
                     key={i}
-                    onClick={() => {
+                    onClick={async () => {
                       tapFeedback();
                       aacSpeak(opt, speechRate, speechVolume);
+                      // Send as follow-up to the AI tutor
+                      setLoading(true);
+                      setResponse('');
+                      const mySeq = ++requestSeqRef.current;
+                      const domain = domainForCategory(activeCategory);
+                      const tutorContext = TUTOR_CONTEXT_BY_DOMAIN[domain];
+                      let buf = '';
+                      try {
+                        await askAI(opt, tutorContext, (delta) => {
+                          if (mySeq !== requestSeqRef.current) return;
+                          buf += delta;
+                          setResponse(buf);
+                        }, tutorLang);
+                        if (mySeq === requestSeqRef.current && buf) aacSpeak(buf, speechRate, speechVolume);
+                      } catch { if (mySeq === requestSeqRef.current) setResponse('⚠️ Could not get a response.'); }
+                      if (mySeq === requestSeqRef.current) setLoading(false);
                     }}
                     className="aac-btn rounded-xl px-4 py-2 bg-[#4CAF50] text-white font-bold text-sm"
                   >
