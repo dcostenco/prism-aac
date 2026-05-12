@@ -35,18 +35,18 @@ Part of the [Synalux platform](https://synalux.ai).
 
 ## At a glance
 
-| Module | What it does | Picture |
+| Module | What it does | Preview |
 |---|---|---|
-| 📂 **Categories** | PECS-style picture tiles for non-readers | [↓](#-categories) |
-| ⌨️ **Type & speak** | Keyboard + word prediction + neural voice | [↓](#-type--speak) |
-| ✨ **AI Chat** | On-device + cloud assistant tuned for AAC users | [↓](#-ai-chat) |
-| 💬 **AAC Chat** | Incoming messages from caregivers + contacts | [↓](#-aac-chat) |
-| 🧮 **Math + 10 other school subjects** | Cell-grid canvas with domain-aware tutor | [↓](#-school-subjects) |
-| 🗓 **Schedule** | Visual first-then routines | [↓](#-schedule) |
-| 🎮 **Games** | 12 therapeutic AAC games | [↓](#-games) |
-| 🏪 **Marketplace** | Voice packs, vocab packs, game packs | [↓](#-marketplace) |
-| 👋 **Hands-free** | Head + hand gesture recognition | [↓](#-hands-free-gestures) |
-| ⚙️ **Settings** | 23 languages, motor accommodations, plan tier | [↓](#-settings) |
+| 📂 **Categories** | PECS-style picture tiles for non-readers | <img src="docs/screenshots/panel-categories.png" width="120"> |
+| ⌨️ **Type & speak** | Keyboard + word prediction + neural voice | <img src="docs/screenshots/app-hero.png" width="120"> |
+| ✨ **AI Chat** | On-device + cloud assistant tuned for AAC users | <img src="docs/screenshots/panel-ai-chat.png" width="120"> |
+| 💬 **AAC Chat** | Incoming messages from caregivers + contacts | <img src="docs/screenshots/panel-aac-chat.png" width="120"> |
+| 🧮 **Math + subjects** | Cell-grid canvas with domain-aware tutor | <img src="docs/screenshots/math-canvas-typed.png" width="120"> |
+| 🗓 **Schedule** | Visual first-then routines | <img src="docs/screenshots/panel-schedule.png" width="120"> |
+| 🎮 **Games** | 12 therapeutic AAC games | <img src="docs/screenshots/panel-games.png" width="120"> |
+| 🏪 **Marketplace** | Voice packs, vocab packs, game packs | <img src="docs/screenshots/panel-marketplace.png" width="120"> |
+| 👋 **Hands-free** | Head + hand gesture recognition | <img src="docs/screenshots/panel-settings-input-modes.png" width="120"> |
+| ⚙️ **Settings** | 23 languages, motor accommodations, plan tier | <img src="docs/screenshots/panel-settings.png" width="120"> |
 
 ---
 
