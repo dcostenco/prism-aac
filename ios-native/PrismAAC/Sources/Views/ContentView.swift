@@ -79,7 +79,7 @@ struct PrismWebView: UIViewRepresentable {
 
         // Load the app
         #if DEBUG
-        let url = URL(string: "http://localhost:3001/prism-aac?v=\(Int(Date().timeIntervalSince1970))")!
+        let url = URL(string: "http://localhost:3001/prism-aac")!
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
         #else
         let url = URL(string: "https://synalux.ai/prism-aac")!
