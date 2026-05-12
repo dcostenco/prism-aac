@@ -70,7 +70,7 @@ let alertTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useUIStore = create<UIState>()((set) => ({
   sidePanel: 'none',
-  categoryKeyboardOpen: false,
+  categoryKeyboardOpen: true,
   activeCategoryId: null,
   categoryPath: [],
   activeContactId: null,
@@ -137,7 +137,7 @@ export const useUIStore = create<UIState>()((set) => ({
     return { sidePanel: panelId as ModulePanelView };
   }),
   toggleCategoryKeyboard: () => set((s) => ({ categoryKeyboardOpen: !s.categoryKeyboardOpen })),
-  closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: false }),
+  closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: true }),
   selectCategory: (id) => set({ sidePanel: 'category-detail', activeCategoryId: id, categoryPath: [id] }),
   drillIntoCategory: (id) => set((s) => {
     if (typeof id !== 'string' || !id || id.length > 64) return s;

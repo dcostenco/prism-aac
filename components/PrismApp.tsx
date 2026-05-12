@@ -181,7 +181,8 @@ export default function PrismApp() {
     'ordering',
   ]);
   const isCategoryMode = ['categories','category-detail','ordering'].includes(sidePanel);
-  const showQwerty = isCategoryMode
+  const homeWithBoard = sidePanel === 'none';
+  const showQwerty = isCategoryMode || homeWithBoard
     ? categoryKeyboardOpen
     : !PANELS_WITHOUT_QWERTY.has(sidePanel);
   const { rtl } = useT();
