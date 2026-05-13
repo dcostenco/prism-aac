@@ -464,7 +464,8 @@ export async function askAI(
   const cappedQuestion = question.slice(0, 2000);
 
   // On-device path: iOS native bridge → llama.cpp 1.7B (no network, no latency)
-  if (isNativeBridgeAvailable()) {
+  // Only for AAC chat (no context) — math/tutor uses cloud for better quality
+  if (isNativeBridgeAvailable() && !context) {
     try {
       const raw = await callNativeBridge(cappedQuestion, language, onChunk);
       const text = stripModelControlTokens(raw);

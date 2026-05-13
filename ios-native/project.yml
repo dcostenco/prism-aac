@@ -33,8 +33,8 @@ targets:
       path: PrismAAC/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
-        CFBundleShortVersionString: "1.1.0"
-        CFBundleVersion: "14"
+        CFBundleShortVersionString: "1.2.0"
+        CFBundleVersion: "15"
         UILaunchScreen:
           UIColorName: systemBackground
         UISupportedInterfaceOrientations:
@@ -70,11 +70,13 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      CURRENT_PROJECT_VERSION: "13"
-      MARKETING_VERSION: "1.1.0"
+      CURRENT_PROJECT_VERSION: "15"
+      MARKETING_VERSION: "1.2.0"
       GENERATE_INFOPLIST_FILE: NO
       PRIVACY_INFO_XCPRIVACY_FILE: PrismAAC/PrivacyInfo.xcprivacy
-    dependencies: []
+    dependencies:
+      - target: PrismAACWatch
+        embed: true
 
   # ── watchOS 7+ standalone app (no extension target needed) ───────────────
   PrismAACWatch:
@@ -85,23 +87,28 @@ targets:
       - path: PrismAACWatch/Sources
         excludes:
           - "**/*.md"
+    resources:
+      - path: PrismAACWatch/Assets.xcassets
     info:
       path: PrismAACWatch/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
-        CFBundleShortVersionString: "1.1.0"
-        CFBundleVersion: "14"
+        CFBundleShortVersionString: "1.2.0"
+        CFBundleVersion: "15"
         WKApplication: true
         WKRunsIndependentlyOfCompanionApp: true   # standalone without iPhone
         WKCompanionAppBundleIdentifier: ai.synalux.prism-aac
+        CFBundleIconName: AppIcon
         NSMicrophoneUsageDescription: "Prism AAC uses the microphone for voice dictation."
         NSSpeechRecognitionUsageDescription: "Prism AAC converts your voice to text for hands-free communication."
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.watchkitapp
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      CURRENT_PROJECT_VERSION: "13"
-      MARKETING_VERSION: "1.1.0"
-      GENERATE_INFOPLIST_FILE: YES
+      CURRENT_PROJECT_VERSION: "15"
+      MARKETING_VERSION: "1.2.0"
+      GENERATE_INFOPLIST_FILE: NO
+      SDKROOT: watchos
+      SUPPORTED_PLATFORMS: watchos watchsimulator
 
   # ── Unit tests ──────────────────────────────────────────────────────────────
   PrismAACTests:
