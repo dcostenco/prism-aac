@@ -94,7 +94,10 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     const ms = useMessageStore.getState();
     const effectiveTone: ToneStyle | 'auto' = tone
       ?? (ms.toneMode === 'auto' ? 'auto' : ms.activeTone);
-    speak(toSpeak, rate, volume, ttsCode, effectiveTone, interrupt);
+    // Slow translated speech by 20% — the child is hearing a foreign
+    // language and needs time to process. Does not affect source-language speech.
+    const effectiveRate = (translating || spokenLang) ? rate * 0.8 : rate;
+    speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt);
   } catch {
     // Last resort: speak original text using the user's configured language,
     // NOT hardcoded en-US (which would mangle non-Latin text).
