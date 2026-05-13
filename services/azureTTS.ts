@@ -345,7 +345,7 @@ export function resetSharedAudioContextIfIdle(): void {
  * only needs the AudioContext in 'running' state, which the warmup in
  * PrismApp.tsx arranges on first interaction.
  */
-async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string, interrupt = false): Promise<boolean> {
+async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string, interrupt = false, playbackRate = 1.0): Promise<boolean> {
   let ctx: AudioContext;
   try {
     ctx = getAudioContext();
@@ -388,6 +388,7 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
 
   const source = ctx.createBufferSource();
   source.buffer = decoded;
+  if (playbackRate !== 1.0) source.playbackRate.value = playbackRate;
   const gain = ctx.createGain();
   // Volume guard: a NaN / undefined / negative input must NOT silence
   // the user. Math.min(1, NaN) is NaN — assigning NaN to gain.value
@@ -653,7 +654,10 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
       if (audioBytes) {
         clearTimeout(timeout);
         activeControllers.delete(controller);
-        return await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt);
+        // Inworld ignores SSML rate — apply it as audio playbackRate instead.
+        // rate*2 mirrors buildSSML's formula; values < 1.0 = slower than normal.
+        const pbRate = Math.max(0.5, Math.min(1.4, rate * 2));
+        return await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt, pbRate);
       }
       console.warn('[AzureTTS] response oversize, dropping');
     } else {
