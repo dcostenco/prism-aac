@@ -7,6 +7,7 @@ Augmentative & Alternative Communication app for children with motor impairments
 Part of the [Synalux platform](https://synalux.ai).
 
 <p align="center">
+  <a href="https://apps.apple.com/app/id6764692277"><img src="https://img.shields.io/badge/App_Store-Download-0D96F6?style=for-the-badge&logo=apple&logoColor=white" alt="App Store"></a>
   <a href="https://prism-aac.vercel.app"><img src="https://img.shields.io/badge/Try_It-Free-43e97b?style=for-the-badge" alt="Try Free"></a>
   <a href="https://synalux.ai/pricing"><img src="https://img.shields.io/badge/Plans-Free_+_Paid-764ba2?style=for-the-badge" alt="Pricing"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue?style=for-the-badge" alt="AGPL-3.0"></a>
@@ -537,7 +538,7 @@ The toolbar is fully reorderable. Default 0.9.0 ships with a minimal set (mic, A
 | | |
 |---|---|
 | 🌐 **Web app** | [prism-aac.vercel.app](https://prism-aac.vercel.app) — try in any browser |
-| 📱 **iOS** | TestFlight (request invite via [synalux.ai/contact](https://synalux.ai/contact)) |
+| 📱 **iOS** | [App Store](https://apps.apple.com/app/id6764692277) — iPhone, iPad, Apple Watch |
 | 💻 **Source** | This repo. AGPL-3.0 — fork freely, share modifications |
 
 ---
