@@ -53,3 +53,4 @@ prism-deep-review.txt
 # autocorrect / TTS investigation sessions.
 /test-correct*.js
 /test-correct*.ts
+ios-native/PrismAAC/Resources/*.gguf
