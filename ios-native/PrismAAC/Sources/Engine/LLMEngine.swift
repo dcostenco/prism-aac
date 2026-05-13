@@ -142,7 +142,7 @@ final class LLMEngine: ObservableObject {
     // MARK: - Helpers
 
     #if canImport(llama)
-    private static func tokenize(model: OpaquePointer, text: String, addBos: Bool) -> [llama_token] {
+    nonisolated private static func tokenize(model: OpaquePointer, text: String, addBos: Bool) -> [llama_token] {
         let utf8 = Array(text.utf8)
         let maxTokens = utf8.count + (addBos ? 1 : 0) + 1
         var tokens = [llama_token](repeating: 0, count: maxTokens)
@@ -151,13 +151,13 @@ final class LLMEngine: ObservableObject {
         return Array(tokens.prefix(Int(n)))
     }
 
-    private static func findToken(model: OpaquePointer, text: String) -> llama_token {
+    nonisolated private static func findToken(model: OpaquePointer, text: String) -> llama_token {
         var tokens = [llama_token](repeating: 0, count: 16)
         let n = llama_tokenize(model, text, Int32(text.utf8.count), &tokens, 16, false, true)
         return n == 1 ? tokens[0] : -1
     }
 
-    private static func createSampler() -> UnsafeMutablePointer<llama_sampler> {
+    nonisolated private static func createSampler() -> UnsafeMutablePointer<llama_sampler> {
         let params = llama_sampler_chain_default_params()
         let chain = llama_sampler_chain_init(params)!
         llama_sampler_chain_add(chain, llama_sampler_init_temp(0.7))
@@ -168,7 +168,7 @@ final class LLMEngine: ObservableObject {
         return chain
     }
 
-    private static func batchAdd(_ batch: inout llama_batch, token: llama_token, pos: Int32, seqIds: [Int32], logits: Bool) {
+    nonisolated private static func batchAdd(_ batch: inout llama_batch, token: llama_token, pos: Int32, seqIds: [Int32], logits: Bool) {
         let i = Int(batch.n_tokens)
         batch.token[i] = token
         batch.pos[i] = pos
