@@ -22,7 +22,7 @@ import { emitTtsHighlight, estimateSpeechDurationMs } from './ttsHighlightBus';
 // reads `toneMode` + `activeTone` from messageStore: in 'auto' mode the
 // adaptive engine picks the tone from the text; in 'manual' mode the user's
 // last picked tone is forced for every utterance.
-export function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, interrupt = false): void {
+export function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, interrupt = false, spokenLang?: SupportedLanguage): void {
   if (!text?.trim()) return;
 
   try {
@@ -31,12 +31,17 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     const outLang = (outputLanguage || language || 'en') as SupportedLanguage;
     const translating = inLang !== outLang;
 
-    // Single-character words (I, Я, я) get spoken as letter names by TTS
-    // ("capital I" instead of the pronoun "I"). Appending a period forces
-    // the TTS engine to read it as a word, not spell it.
     let toSpeak = text;
-    let translationSucceeded = false;
-    if (translating) {
+    let ttsCode: string;
+
+    if (spokenLang) {
+      // Caller already knows the language of the text (e.g. MessageBar
+      // passing AI-translated Romanian). Skip all translation/script
+      // detection — use the specified language directly.
+      if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
+      ttsCode = getTTSCode(spokenLang);
+    } else if (translating) {
+      let translationSucceeded = false;
       // If caller already passed text in the target language's script
       // (MessageBar's translationSpeakTimer fires aacSpeak with the
       // AI-refined Russian phrase), skip re-translating. Without this,
@@ -59,15 +64,12 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
         translationSucceeded = translated.toLowerCase() !== text.trim().toLowerCase();
         toSpeak = translated;
       }
+      if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
+      ttsCode = (translationSucceeded) ? getTTSCode(outLang) : getTTSCode(inLang);
+    } else {
+      if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
+      ttsCode = getTTSCode(inLang);
     }
-    if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
-    // Use target-language voice only when translation actually changed the text.
-    // If the word wasn't in the dictionary (e.g. "mânânc" → no Russian mapping),
-    // speak it with the SOURCE voice so Romanian words don't get mangled by a
-    // Russian TTS engine (which produces wrong/English-sounding accent).
-    const ttsCode = (translating && translationSucceeded)
-      ? getTTSCode(outLang)
-      : getTTSCode(inLang);
     // Emit a highlight-start event so the renderer (MessageBar) can
     // light up each word as it's spoken. The duration is estimated
     // — see services/ttsHighlightBus.ts for the heuristic. We emit

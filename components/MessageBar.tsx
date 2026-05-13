@@ -4,6 +4,7 @@ import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
 import { aacSpeak } from '@/services/aacSpeak';
+import type { SupportedLanguage } from '@/engine/i18n';
 import { tapFeedback, deleteFeedback } from '@/services/feedback';
 import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
@@ -181,7 +182,8 @@ export default function MessageBar() {
       // translation — the closure over `translated` would be stale here
       // because `translated` is intentionally excluded from the deps array.
       const latestTranslated = translatedRef.current;
-      aacSpeak(latestTranslated || text.trim(), speechRate, speechVolume, activeTone);
+      const outLang = useSettingsStore.getState().outputLanguage as SupportedLanguage | undefined;
+      aacSpeak(latestTranslated || text.trim(), speechRate, speechVolume, activeTone, false, latestTranslated ? outLang : undefined);
     }, TRANSLATION_SILENCE_MS);
 
     return () => {
@@ -353,7 +355,8 @@ export default function MessageBar() {
     // translation handling: speak the translated string when one is
     // active, else the source text.
     if (soundEnabled) {
-      aacSpeak(translated || accepted, speechRate, speechVolume, activeTone);
+      const outLang = useSettingsStore.getState().outputLanguage as SupportedLanguage | undefined;
+      aacSpeak(translated || accepted, speechRate, speechVolume, activeTone, false, translated ? outLang : undefined);
     }
   }, [suggestion, setText, learnUtterance, soundEnabled, translated, speechRate, speechVolume, activeTone]);
 
@@ -422,7 +425,7 @@ export default function MessageBar() {
     // regardless of PROTECT_PLAY_MS. This flag travels through aacSpeak→speak→speakAzure
     // as a parameter (not a shared flag) so concurrent autoSpeak calls can't steal it.
     if (translated) {
-      aacSpeak(translated, speechRate, speechVolume, activeTone, true);
+      aacSpeak(translated, speechRate, speechVolume, activeTone, true, outputLanguage as SupportedLanguage);
     } else {
       aacSpeak(toSpeak, speechRate, speechVolume, activeTone, true);
     }
