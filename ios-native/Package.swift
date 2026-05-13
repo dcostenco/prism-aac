@@ -23,8 +23,7 @@ let package = Package(
             ],
             path: "PrismAAC/Sources",
             resources: [
-                .process("../Resources/offline.html"),
-                .copy("../Resources/prism-aac-1b7-q8.gguf"),
+                .process("../Resources"),
             ]
         ),
         .testTarget(
