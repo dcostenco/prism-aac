@@ -544,7 +544,7 @@ describe('ComfortPlayerPanel — media element attributes', () => {
     }
   });
 
-  it('video element has autoplay attribute', async () => {
+  it('video calls play() on loadedData event', async () => {
     useComfortPlayerStore.setState({
       items: [makeItem({ id: 'v1', label: 'Video', type: 'video', mimeType: 'video/mp4' })],
       isPlaying: true,
@@ -554,11 +554,12 @@ describe('ComfortPlayerPanel — media element attributes', () => {
     await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
     const video = document.querySelector('video');
     if (video) {
-      expect(video.autoplay).toBe(true);
+      fireEvent.loadedData(video);
+      expect(video.play).toHaveBeenCalled();
     }
   });
 
-  it('audio element has playsinline and autoplay attributes', async () => {
+  it('audio calls play() on loadedData event', async () => {
     getBlobMock.mockResolvedValue(new Blob(['audio-data'], { type: 'audio/webm' }));
     useComfortPlayerStore.setState({
       items: [makeItem({ id: 'a1', label: 'Audio', type: 'audio', mimeType: 'audio/webm' })],
@@ -569,8 +570,8 @@ describe('ComfortPlayerPanel — media element attributes', () => {
     await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
     const audio = document.querySelector('audio');
     if (audio) {
-      expect(audio.hasAttribute('playsinline') || audio.hasAttribute('playsInline')).toBe(true);
-      expect(audio.autoplay).toBe(true);
+      fireEvent.loadedData(audio);
+      expect(audio.play).toHaveBeenCalled();
     }
   });
 

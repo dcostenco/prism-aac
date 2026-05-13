@@ -57,15 +57,10 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
     };
   }, [isPlaying, currentIndex, currentItem?.id]);
 
-  // Force play after mediaUrl is set — autoPlay attribute alone fails for blob URLs
-  useEffect(() => {
-    if (!isPlaying || !mediaUrl || !currentItem) return;
-    const el = currentItem.type === 'video' ? videoRef.current : currentItem.type === 'audio' ? audioRef.current : null;
-    if (el) {
-      el.load();
-      el.play().catch(() => {});
-    }
-  }, [mediaUrl, isPlaying, currentItem?.id]);
+  const handleLoadedData = useCallback((e: React.SyntheticEvent<HTMLMediaElement>) => {
+    const el = e.currentTarget;
+    el.play().then(() => { setTimeout(() => { el.muted = false; }, 200); }).catch(() => {});
+  }, []);
 
   // M7: Clear photo timer before setting new one
   useEffect(() => {
@@ -204,14 +199,13 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
           <img src={mediaUrl} alt={`Comfort media: ${currentItem.label}`} className="max-w-full max-h-full object-contain" />
         )}
         {currentItem.type === 'video' && (
-          <video ref={videoRef} src={mediaUrl} autoPlay playsInline muted onEnded={handleMediaEnded} className="max-w-full max-h-full"
-              onPlay={(e) => { const v = e.currentTarget; setTimeout(() => { v.muted = false; }, 100); }} />
+          <video ref={videoRef} src={mediaUrl} playsInline muted onEnded={handleMediaEnded} onLoadedData={handleLoadedData} className="max-w-full max-h-full" />
         )}
         {currentItem.type === 'audio' && (
           <div className="text-center text-white">
             <div className="text-8xl mb-4 animate-pulse">🎵</div>
             <p className="text-2xl">{currentItem.label}</p>
-            <audio ref={audioRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded} />
+            <audio ref={audioRef} src={mediaUrl} playsInline onEnded={handleMediaEnded} onLoadedData={handleLoadedData} />
           </div>
         )}
         {/* L3: Adequate touch target */}
@@ -257,11 +251,10 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
               aria-label="Skip to next item">Skip ⏭</button>
           </div>
           {currentItem.type === 'audio' && (
-            <audio ref={audioRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded} className="w-full mt-2" controls />
+            <audio ref={audioRef} src={mediaUrl} playsInline onEnded={handleMediaEnded} onLoadedData={handleLoadedData} className="w-full mt-2" controls />
           )}
           {currentItem.type === 'video' && (
-            <video ref={videoRef} src={mediaUrl} autoPlay playsInline muted onEnded={handleMediaEnded} className="w-full mt-2 rounded-lg max-h-48" controls
-              onPlay={(e) => { const v = e.currentTarget; setTimeout(() => { v.muted = false; }, 100); }} />
+            <video ref={videoRef} src={mediaUrl} playsInline muted onEnded={handleMediaEnded} onLoadedData={handleLoadedData} className="w-full mt-2 rounded-lg max-h-48" controls />
           )}
           {currentItem.type === 'photo' && (
             <img src={mediaUrl} alt={`Comfort media: ${currentItem.label}`} className="w-full mt-2 rounded-lg max-h-48 object-contain" />
