@@ -68,16 +68,13 @@ export default function AIChatPanel() {
     const rows = container.querySelectorAll<HTMLElement>(':scope > div');
 
     if (justStarted && rows.length > 0) {
-      // Stream just started — scroll the AI reply (last row) to the TOP
-      // immediately so the user reads from the beginning as text streams in,
-      // not from the bottom where only the tail is visible.
-      const aiRow = rows[rows.length - 1];
-      aiRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      // Stream just started — scroll so user message + AI reply are both visible.
+      const userRow = rows.length >= 2 ? rows[rows.length - 2] : rows[rows.length - 1];
+      userRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     } else if (justFinished && rows.length > 0) {
-      // Stream done — re-anchor to the top of the AI reply in case it
-      // shifted during streaming (panel resize, word wrap reflow, etc.).
-      const aiRow = rows[rows.length - 1];
-      aiRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      // Stream done — show from user message so full exchange is visible.
+      const userRow = rows.length >= 2 ? rows[rows.length - 2] : rows[rows.length - 1];
+      userRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     } else if (messages.length > 0 && !loading) {
       // New user message just added (no active stream) — show it at top.
       const userRow = rows[Math.max(0, rows.length - 2)];
