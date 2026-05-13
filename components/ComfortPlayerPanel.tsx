@@ -194,13 +194,14 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
           <img src={mediaUrl} alt={`Comfort media: ${currentItem.label}`} className="max-w-full max-h-full object-contain" />
         )}
         {currentItem.type === 'video' && (
-          <video ref={videoRef} src={mediaUrl} autoPlay onEnded={handleMediaEnded} className="max-w-full max-h-full" />
+          <video ref={videoRef} src={mediaUrl} autoPlay playsInline muted onEnded={handleMediaEnded} className="max-w-full max-h-full"
+              onPlay={(e) => { const v = e.currentTarget; setTimeout(() => { v.muted = false; }, 100); }} />
         )}
         {currentItem.type === 'audio' && (
           <div className="text-center text-white">
             <div className="text-8xl mb-4 animate-pulse">🎵</div>
             <p className="text-2xl">{currentItem.label}</p>
-            <audio ref={audioRef} src={mediaUrl} autoPlay onEnded={handleMediaEnded} />
+            <audio ref={audioRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded} />
           </div>
         )}
         {/* L3: Adequate touch target */}
@@ -246,10 +247,11 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
               aria-label="Skip to next item">Skip ⏭</button>
           </div>
           {currentItem.type === 'audio' && (
-            <audio ref={audioRef} src={mediaUrl} autoPlay onEnded={handleMediaEnded} className="w-full mt-2" controls />
+            <audio ref={audioRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded} className="w-full mt-2" controls />
           )}
           {currentItem.type === 'video' && (
-            <video ref={videoRef} src={mediaUrl} autoPlay onEnded={handleMediaEnded} className="w-full mt-2 rounded-lg max-h-48" controls />
+            <video ref={videoRef} src={mediaUrl} autoPlay playsInline muted onEnded={handleMediaEnded} className="w-full mt-2 rounded-lg max-h-48" controls
+              onPlay={(e) => { const v = e.currentTarget; setTimeout(() => { v.muted = false; }, 100); }} />
           )}
           {currentItem.type === 'photo' && (
             <img src={mediaUrl} alt={`Comfort media: ${currentItem.label}`} className="w-full mt-2 rounded-lg max-h-48 object-contain" />
