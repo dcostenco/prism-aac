@@ -39,6 +39,7 @@ interface UIState {
    * Unknown panelIds silently no-op.
    */
   openModulePanel: (panelId: string) => void;
+  openComfortPlayer: () => void;
   closeSidePanel: () => void;
   selectCategory: (id: string) => void;
   /** Drill into a subcategory, pushing onto the breadcrumb path. */
@@ -130,6 +131,7 @@ export const useUIStore = create<UIState>()((set) => ({
   openSchedule: () => set((s) => ({ sidePanel: s.sidePanel === 'schedule' ? 'none' : 'schedule' as SidePanelView })),
   openGames: () => set((s) => ({ sidePanel: s.sidePanel === 'games' ? 'none' : 'games' as SidePanelView })),
   openMarketplace: () => set((s) => ({ sidePanel: s.sidePanel === 'marketplace' ? 'none' : 'marketplace' as SidePanelView })),
+  openComfortPlayer: () => set((s) => ({ sidePanel: s.sidePanel === 'comfort-player' ? 'none' : 'comfort-player' as SidePanelView })),
   openPdfReader: () => set((s) => ({ sidePanel: s.sidePanel === 'pdf-reader' ? 'none' : 'pdf-reader' as SidePanelView })),
   openOcrCapture: () => set((s) => ({ sidePanel: s.sidePanel === 'ocr-capture' ? 'none' : 'ocr-capture' as SidePanelView })),
   openModulePanel: (panelId: string) => set(() => {

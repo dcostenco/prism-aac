@@ -17,7 +17,7 @@ export type ToolbarButtonId =
   | 'categories' | 'mic' | 'schedule' | 'marketplace' | 'alert'
   | 'sound' | 'settings'
   | 'math' | 'ai_chat' | 'aac_chat' | 'notes' | 'games' | 'history'
-  | 'pdf_reader' | 'ocr_capture';
+  | 'pdf_reader' | 'ocr_capture' | 'comfort_player';
 
 export interface ToolbarConfig {
   // Render order — first id is leftmost. Disabled ids stay in the array so
@@ -45,7 +45,7 @@ export interface ToolbarConfig {
 export const DEFAULT_TOOLBAR_ORDER: ToolbarButtonId[] = [
   'categories', 'mic', 'aac_chat', 'alert',
   'schedule', 'marketplace', 'math', 'ai_chat', 'notes', 'games',
-  'pdf_reader', 'ocr_capture',
+  'pdf_reader', 'ocr_capture', 'comfort_player',
   'history', 'sound', 'settings',
 ];
 
@@ -66,6 +66,7 @@ export const DEFAULT_TOOLBAR_ENABLED: Partial<Record<ToolbarButtonId, boolean>> 
   games: false,
   pdf_reader: false,
   ocr_capture: false,
+  comfort_player: false,
   history: false,
   sound: false,
 };

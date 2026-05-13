@@ -96,6 +96,7 @@ export type SidePanelView =
   // Read & Write parity panels (Reddit r/AAC May 2026 feedback).
   | 'pdf-reader'
   | 'ocr-capture'
+  | 'comfort-player'
   // Marketplace-installable module panels (Phases 4-7).
   | 'picture-editor'
   | 'music-composer'

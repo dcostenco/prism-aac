@@ -13,6 +13,7 @@ import GamesPanel from './GamesPanel';
 import MarketplacePanel from './MarketplacePanel';
 import PdfReaderPanel from './PdfReaderPanel';
 import OcrCapturePanel from './OcrCapturePanel';
+import ComfortPlayerPanel from './ComfortPlayerPanel';
 import PictureEditorPanel from './marketplace/panels/PictureEditorPanel';
 import MusicComposerPanel from './marketplace/panels/MusicComposerPanel';
 import MathPanel from './MathPanel';
@@ -174,6 +175,7 @@ export default function PrismApp() {
     'caregiver',
     'picture-editor',
     'music-composer',
+    'comfort-player',
     // Categories: full-screen cards by default (Image #32 pattern).
     // Keyboard shown only when categoryKeyboardOpen toggle is on.
     'categories',
@@ -433,6 +435,7 @@ export default function PrismApp() {
           <MarketplacePanel />
           <PdfReaderPanel />
           <OcrCapturePanel />
+          <ComfortPlayerPanel />
           <PictureEditorPanel />
           <MusicComposerPanel />
           {/* Category mode: full-screen cards (Image #32 pattern).

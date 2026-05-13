@@ -36,6 +36,7 @@ interface ButtonHandlers {
   openMarketplace: () => void;
   openPdfReader: () => void;
   openOcrCapture: () => void;
+  openComfortPlayer: () => void;
   toggleHistory: () => void;
   toggleSettings: () => void;
   triggerAlert: () => void;
@@ -92,6 +93,7 @@ function buildBuiltInButtons(t: (k: string) => string, h: ButtonHandlers): Recor
     games: { id: 'games', icon: '🎮', ariaLabel: t('games'), title: t('games'), onClick: h.openGames },
     pdf_reader: { id: 'pdf_reader', icon: '📄', ariaLabel: 'PDF reader', title: 'PDF reader', onClick: h.openPdfReader },
     ocr_capture: { id: 'ocr_capture', icon: '👁', ariaLabel: 'Screenshot reader (OCR)', title: 'Screenshot reader (OCR)', onClick: h.openOcrCapture },
+    comfort_player: { id: 'comfort_player', icon: '🎧', ariaLabel: 'Comfort Player', title: 'Comfort Player', onClick: h.openComfortPlayer },
     history: { id: 'history', icon: '📜', ariaLabel: t('history'), title: t('history'), onClick: h.toggleHistory },
     sound: {
       id: 'sound',
@@ -153,7 +155,7 @@ function appButton(
 }
 
 export default function Toolbar() {
-  const { openCategories, openMath, openCaregiver, openAIChat, openAACChat, openSchedule, openGames, openMarketplace, openPdfReader, openOcrCapture, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
+  const { openCategories, openMath, openCaregiver, openAIChat, openAACChat, openSchedule, openGames, openMarketplace, openPdfReader, openOcrCapture, openComfortPlayer, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
   const { soundEnabled, toggleSound, appendText } = useMessageStore();
   const language = useSettingsStore((s) => s.language);
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
@@ -193,7 +195,7 @@ export default function Toolbar() {
 
   const handlers: ButtonHandlers = {
     openCategories, openMath, openAIChat, openAACChat, openCaregiver, openSchedule, openGames, openMarketplace,
-    openPdfReader, openOcrCapture,
+    openPdfReader, openOcrCapture, openComfortPlayer,
     toggleHistory, toggleSettings, triggerAlert,
     toggleSound: () => { tapFeedback(); toggleSound(); },
     toggleMic,
