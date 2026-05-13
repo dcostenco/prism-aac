@@ -11,7 +11,11 @@ function openDb(): Promise<IDBDatabase> {
     req.onupgradeneeded = () => {
       req.result.createObjectStore(STORE_NAME);
     };
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      const db = req.result;
+      db.onclose = () => { dbPromise = null; };
+      resolve(db);
+    };
     req.onerror = () => { dbPromise = null; reject(req.error); };
   });
   return dbPromise;
@@ -55,9 +59,4 @@ export async function deleteAllBlobs(): Promise<void> {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
-}
-
-export async function getBlobUrl(id: string): Promise<string | null> {
-  const blob = await getBlob(id);
-  return blob ? URL.createObjectURL(blob) : null;
 }
