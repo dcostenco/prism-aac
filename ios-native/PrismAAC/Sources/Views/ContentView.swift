@@ -586,7 +586,7 @@ struct ModelLoadingView: View {
         phase = .downloading
         do {
             // FIX L4: Use download task instead of byte-by-byte streaming (avoids quadratic realloc)
-            let cdnURL = URL(string: "https://synalux.ai/models/prism-aac-1b7-q4km.gguf")!
+            let cdnURL = URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-aac-1b7-q4km.gguf")!
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             let (tempURL, response) = try await URLSession.shared.download(from: cdnURL)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
