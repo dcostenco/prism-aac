@@ -4,24 +4,22 @@ import PackageDescription
 let package = Package(
     name: "PrismAAC",
     platforms: [
-        .iOS(.v16),   // A13 Bionic minimum — 4 GB RAM required for 1.5B model
+        .iOS(.v16),   // A13 Bionic minimum — 4 GB RAM, ~1.6 GB for Q4_K_M 1.7B model
     ],
     products: [
         .library(name: "PrismAAC", targets: ["PrismAAC"]),
     ],
     dependencies: [
         // llama.cpp — Metal-accelerated on-device inference.
-        // Pinned to a release that includes the Metal backend fixes for A-series.
-        .package(
-            url: "https://github.com/ggerganov/llama.cpp",
-            revision: "b5396"   // update to latest stable before submission
-        ),
+        // Local copy at _llama_cpp_local/ — avoids network fetch in CI and Xcode.
+        // Source: https://github.com/ggerganov/llama.cpp (revision b5396)
+        .package(path: "_llama_cpp_local"),
     ],
     targets: [
         .target(
             name: "PrismAAC",
             dependencies: [
-                .product(name: "llama", package: "llama.cpp"),
+                .product(name: "llama", package: "_llama_cpp_local"),
             ],
             path: "PrismAAC/Sources",
             resources: [
