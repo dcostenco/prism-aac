@@ -105,6 +105,9 @@ targets:
     sources:
       - path: PrismAAC/Tests
         optional: true
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+      PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.tests
     dependencies:
       - target: PrismAAC
 
@@ -116,6 +119,7 @@ targets:
     sources:
       - path: PrismAACUITests
     settings:
+      GENERATE_INFOPLIST_FILE: YES
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.uitests
       TEST_TARGET_NAME: PrismAAC
     dependencies:
