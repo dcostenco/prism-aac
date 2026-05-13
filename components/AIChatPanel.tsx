@@ -129,15 +129,41 @@ export default function AIChatPanel() {
     setLoading(true);
 
     let buffer = '';
+    let spokenUpTo = 0;
     let scheduled = false;
+
+    const getSpokenLang = () => {
+      const outLang = useSettingsStore.getState().outputLanguage;
+      const lang = useSettingsStore.getState().language;
+      return (outLang && outLang !== lang) ? outLang as import('@/engine/i18n').SupportedLanguage : undefined;
+    };
+
+    const speakSentence = (sentence: string) => {
+      if (!sentence.trim() || !soundEnabled) return;
+      aacSpeak(sentence.trim(), speechRate, speechVolume, undefined, false, getSpokenLang());
+    };
+
+    const speakCompletedSentences = () => {
+      const unspoken = buffer.slice(spokenUpTo);
+      const sentenceEnd = /[.!?。]\s/g;
+      let match: RegExpExecArray | null;
+      let lastEnd = 0;
+      while ((match = sentenceEnd.exec(unspoken)) !== null) {
+        lastEnd = match.index + match[0].length;
+      }
+      if (lastEnd > 0) {
+        const toSpeak = unspoken.slice(0, lastEnd);
+        spokenUpTo += lastEnd;
+        speakSentence(toSpeak);
+      }
+    };
+
     const flush = () => {
-      if (!activeRef.current) return;  // panel no longer active
-      if (askController.signal.aborted) return;  // request was cancelled
+      if (!activeRef.current) return;
+      if (askController.signal.aborted) return;
       scheduled = false;
       const t = buffer;
-      // Post-check AI response for crisis content (model jailbreak defense).
-      // H13: check FULL response — do not sample edges (injected content in middle is missed)
-      const checkText = t; // was: t.length <= 2000 ? t : t.slice(0, 500) + ' ' + t.slice(-500)
+      const checkText = t;
       const safety = checkCrisisSafety(checkText);
       const safeText = safety.safe ? t : safety.response;
       const lines = safeText.split(/\n+/).filter((l) => l.trim());
@@ -150,30 +176,21 @@ export default function AIChatPanel() {
 
     try {
       await askAI(question, undefined, (delta) => {
-        // Cap at 32KB — sufficient for any AAC clinical exchange.
-        // The service-level cap is 1MB (STREAM_CAP_BYTES); this is a UI guard.
-        // Truncation is indicated by '…' appended to buffer.
         if (buffer.length < 32_000) {
           buffer += delta;
         } else if (!buffer.endsWith('…')) {
-          buffer += '…';  // mark truncation
+          buffer += '…';
         }
         if (!scheduled) {
           scheduled = true;
           requestAnimationFrame(flush);
         }
-      // Read language at call-time via getState() — same pattern as text,
-      // avoids adding language to deps which would recreate handleAsk on
-      // every settings change and overflow React's render budget (#300).
+        speakCompletedSentences();
       }, useSettingsStore.getState().outputLanguage || useSettingsStore.getState().language);
       flush();
-      // Auto-speak the AI response after streaming completes.
-      if (buffer.trim() && soundEnabled) {
-        const outLang = useSettingsStore.getState().outputLanguage;
-        const lang = useSettingsStore.getState().language;
-        const spokenLang = (outLang && outLang !== lang) ? outLang : undefined;
-        aacSpeak(buffer.trim(), speechRate, speechVolume, undefined, true, spokenLang as import('@/engine/i18n').SupportedLanguage | undefined);
-      }
+      // Speak any remaining unspoken tail after stream ends.
+      const tail = buffer.slice(spokenUpTo).trim();
+      if (tail) speakSentence(tail);
     } catch (e: unknown) {
       if (askController.signal.aborted) {
         // Request was intentionally cancelled (panel closed) — don't update UI.
