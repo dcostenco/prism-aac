@@ -11,7 +11,7 @@
  * cannot communicate. Every error path must be handled gracefully.
  */
 import { SupportedLanguage, getTTSCode } from '@/engine/i18n';
-import { speak } from './speechService';
+import { speak, speakWord } from './speechService';
 import { translateTextSync, looksLikeTargetLang } from './translateService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
@@ -94,11 +94,14 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     const ms = useMessageStore.getState();
     const effectiveTone: ToneStyle | 'auto' = tone
       ?? (ms.toneMode === 'auto' ? 'auto' : ms.activeTone);
-    // Slow translated speech by 40% — the child is hearing a foreign
-    // language and needs time to process. Does not affect source-language speech.
-    // At default rate 0.5: effective=0.3 → SSML 0.60 (deliberate, clear pace).
-    const effectiveRate = (translating || spokenLang) ? rate * 0.6 : rate;
-    speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt);
+    // Translated speech uses local Web Speech API — Inworld TTS-2 has
+    // no rate param and ignores SSML prosody, so portal speech is always
+    // full speed regardless of the rate slider. Web Speech respects rate.
+    if (translating || spokenLang) {
+      speakWord(toSpeak, rate * 0.6, volume, ttsCode);
+    } else {
+      speak(toSpeak, rate, volume, ttsCode, effectiveTone, interrupt);
+    }
   } catch {
     // Last resort: speak original text using the user's configured language,
     // NOT hardcoded en-US (which would mangle non-Latin text).
