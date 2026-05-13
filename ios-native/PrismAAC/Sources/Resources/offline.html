@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
+<title>Prism AAC — Offline</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#14161d;color:#fff;font-family:-apple-system,sans-serif;padding:env(safe-area-inset-top) 0 0;overflow-x:hidden}
+.bar{background:#1e2030;border-radius:12px;padding:14px 16px;margin:8px 12px;font-size:20px;min-height:52px;display:flex;align-items:center;gap:8px}
+.bar span{flex:1}
+.bar .speak{background:#4CAF50;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:16px;font-weight:600;cursor:pointer;white-space:nowrap}
+.tabs{display:flex;overflow-x:auto;gap:4px;padding:4px 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{background:#1e2030;border:none;color:#fff;border-radius:10px;padding:8px 14px;font-size:14px;white-space:nowrap;cursor:pointer;flex-shrink:0}
+.tab.active{background:#4a3f8a;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 12px;overflow-y:auto;max-height:calc(100vh - 180px)}
+.tile{background:#1e2030;border-radius:12px;padding:12px 6px;text-align:center;font-size:15px;cursor:pointer;border:none;color:#fff;min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.tile:active{background:#2a3050}
+.tile .e{font-size:28px}
+.foot{text-align:center;padding:8px;font-size:12px;opacity:0.35}
+.foot button{background:#2a3050;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;margin-bottom:4px}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:1000px){.grid{grid-template-columns:repeat(6,1fr)}}
+</style>
+</head>
+<body>
+<div class="bar">
+  <span id="msg" style="opacity:0.5">Tap a phrase to speak</span>
+  <button class="speak" onclick="speakBar()">Speak ▶</button>
+</div>
+<div class="tabs" id="tabs"></div>
+<div class="grid" id="grid"></div>
+<div class="foot">
+  <button onclick="location.reload()">🔄 Reconnect to full app</button>
+  <div>Prism AAC — Offline Mode</div>
+</div>
+<script>
+var C=[
+{n:'Help / Needs',icon:'🆘',p:[
+['🆘','Help'],['✅','Yes'],['❌','No'],['🛑','Stop'],['➕','More'],['👋','I want'],
+['🙏','Please'],['🚰','Water'],['🍽️','Hungry'],['🚻','Bathroom'],['😴','Tired'],['🤒','I feel sick'],
+['💊','Medicine'],['🔇','Too loud'],['🥶','Cold'],['🥵','Hot'],['😣','Hurts'],['📞','Call someone']]},
+{n:'Quick Talk',icon:'💬',p:[
+['👋','Hello'],['👋','Goodbye'],['😊','Thank you'],['🙏','Please'],['👍','OK'],['🤷','I don\'t know'],
+['😞','Sorry'],['⏳','Wait'],['🔄','Again'],['✋','Excuse me'],['👏','Good job'],['😂','Funny'],
+['🫶','I love you'],['🫂','Hug'],['👊','High five'],['🎉','Yay'],['🤝','Nice to meet you'],['👀','Look']]},
+{n:'Feelings',icon:'😊',p:[
+['😊','Happy'],['😢','Sad'],['😠','Angry'],['😨','Scared'],['😴','Tired'],['🤢','Sick'],
+['🤗','Excited'],['😐','Bored'],['😟','Worried'],['🥰','Loved'],['😤','Frustrated'],['😳','Embarrassed'],
+['🤔','Confused'],['😌','Calm'],['🫣','Shy'],['💪','Proud'],['🥺','Lonely'],['😮','Surprised']]},
+{n:'I / You / We',icon:'👤',p:[
+['👆','I'],['👉','You'],['👫','We'],['👦','He'],['👧','She'],['👥','They'],
+['🙋','Me'],['✋','My'],['👈','Your'],['📍','This'],['👇','That'],['🙋‍♂️','Us']]},
+{n:'Core Verbs',icon:'⚡',p:[
+['❤️','Want'],['👍','Like'],['✋','Have'],['⚡','Do'],['💪','Can'],['🙏','Need'],
+['🧠','Know'],['👁️','See'],['💭','Think'],['❤️‍🔥','Feel'],['🗣️','Say'],['👂','Tell'],
+['🏃','Go'],['📥','Get'],['📤','Put'],['⏸️','Wait'],['🛑','Stop'],['🚀','Start']]},
+{n:'Questions',icon:'❓',p:[
+['❓','What'],['❓','Where'],['❓','When'],['❓','Who'],['❓','Why'],['❓','How'],
+['❓','How many'],['❓','Which one'],['❓','Can I'],['❓','What is that'],['❓','Where is it'],['❓','When is it']]},
+{n:'Food & Drink',icon:'🍽️',p:[
+['💧','Water'],['🥛','Milk'],['🧃','Juice'],['🍎','Apple'],['🍌','Banana'],['🍞','Bread'],
+['🧀','Cheese'],['🍗','Chicken'],['🍝','Pasta'],['🍕','Pizza'],['🍪','Cookie'],['🍦','Ice cream'],
+['🥣','Cereal'],['🥪','Sandwich'],['🍚','Rice'],['🍳','Eggs'],['🥕','Vegetables'],['🍫','Snack']]},
+{n:'People',icon:'👥',p:[
+['👩','Mom'],['👨','Dad'],['👶','Baby'],['👧','Sister'],['👦','Brother'],['👵','Grandma'],
+['👴','Grandpa'],['👩‍🏫','Teacher'],['👨‍⚕️','Doctor'],['🧑‍🤝‍🧑','Friend'],['👨‍👩‍👧','Family'],['🧑','Person']]},
+{n:'Places',icon:'📍',p:[
+['🏠','Home'],['🏫','School'],['🏥','Hospital'],['🏪','Store'],['🌳','Park'],['🏖️','Beach'],
+['🚗','Car'],['🛁','Bathroom'],['🛏️','Bedroom'],['🍳','Kitchen'],['📺','Living room'],['🏢','Outside']]},
+{n:'School / Work',icon:'📚',p:[
+['📖','Read'],['✏️','Write'],['🔢','Math'],['🎨','Art'],['🎵','Music'],['🏃','Gym'],
+['📝','Homework'],['✅','Done'],['❓','Question'],['🙋','My turn'],['📚','Book'],['💻','Computer']]},
+{n:'Health / Body',icon:'🏥',p:[
+['🤕','Head hurts'],['🦷','Tooth hurts'],['🤢','Stomach hurts'],['💊','Medicine'],['🤧','Nose'],['👂','Ear hurts'],
+['👁️','Eyes'],['🖐️','Hand'],['🦶','Foot'],['🤒','Fever'],['🩹','Band-aid'],['😣','Pain']]},
+{n:'Actions',icon:'🏃',p:[
+['🍽️','Eat'],['🥤','Drink'],['🏃','Run'],['🚶','Walk'],['🪑','Sit'],['🧍','Stand'],
+['😴','Sleep'],['🛀','Bath'],['👗','Get dressed'],['🎮','Play'],['📺','Watch'],['🎵','Listen']]},
+{n:'Describing',icon:'🎨',p:[
+['👍','Good'],['👎','Bad'],['📏','Big'],['🤏','Small'],['🔥','Hot'],['🧊','Cold'],
+['⬆️','Up'],['⬇️','Down'],['✨','New'],['📦','Old'],['😊','Nice'],['😢','Sad']]},
+{n:'Time',icon:'🕐',p:[
+['☀️','Morning'],['🌤️','Afternoon'],['🌙','Night'],['📅','Today'],['📅','Tomorrow'],['📅','Yesterday'],
+['⏰','Now'],['⏳','Later'],['🔜','Soon'],['✅','Done'],['🔄','Again'],['⏰','What time']]},
+{n:'Colors',icon:'🌈',p:[
+['🔴','Red'],['🔵','Blue'],['🟢','Green'],['🟡','Yellow'],['🟠','Orange'],['🟣','Purple'],
+['⚫','Black'],['⚪','White'],['🟤','Brown'],['💗','Pink'],['🩶','Gray'],['🌈','Rainbow']]},
+{n:'Animals',icon:'🐾',p:[
+['🐕','Dog'],['🐈','Cat'],['🐟','Fish'],['🐦','Bird'],['🐰','Rabbit'],['🐴','Horse'],
+['🐢','Turtle'],['🦋','Butterfly'],['🐘','Elephant'],['🐻','Bear'],['🐒','Monkey'],['🐄','Cow']]},
+{n:'Weather',icon:'🌤️',p:[
+['☀️','Sunny'],['🌧️','Rainy'],['❄️','Snowy'],['🌬️','Windy'],['☁️','Cloudy'],['⛈️','Stormy'],
+['🥶','Cold'],['🥵','Hot'],['🌈','Rainbow'],['☂️','Umbrella'],['🧥','Jacket'],['🌡️','Temperature']]},
+{n:'Toys & Fun',icon:'🎮',p:[
+['🎮','Play game'],['⚽','Ball'],['🧸','Teddy bear'],['📺','TV'],['🎵','Music'],['📖','Story'],
+['🖍️','Draw'],['🧩','Puzzle'],['🎭','Pretend'],['🏊','Swim'],['🚲','Bike'],['🎨','Paint']]},
+{n:'Clothes',icon:'👕',p:[
+['👕','Shirt'],['👖','Pants'],['👟','Shoes'],['🧦','Socks'],['🧥','Jacket'],['👒','Hat'],
+['👗','Dress'],['🩲','Underwear'],['🧤','Gloves'],['🧣','Scarf'],['👓','Glasses'],['🎒','Backpack']]},
+{n:'Transport',icon:'🚗',p:[
+['🚗','Car'],['🚌','Bus'],['🚂','Train'],['✈️','Airplane'],['🚲','Bicycle'],['🚶','Walk'],
+['🚕','Taxi'],['🚢','Boat'],['🏍️','Motorcycle'],['🛴','Scooter'],['🚑','Ambulance'],['🚒','Fire truck']]}
+];
+var cur='',ci=0;
+function render(){
+  var tb=document.getElementById('tabs'),gr=document.getElementById('grid');
+  tb.innerHTML='';gr.innerHTML='';
+  C.forEach(function(c,i){
+    var b=document.createElement('button');
+    b.className='tab'+(i===ci?' active':'');
+    b.textContent=c.icon+' '+c.n;
+    b.onclick=function(){ci=i;render()};
+    tb.appendChild(b);
+  });
+  C[ci].p.forEach(function(p){
+    var b=document.createElement('button');
+    b.className='tile';
+    b.innerHTML='<span class="e">'+p[0]+'</span>'+p[1];
+    b.onclick=function(){say(p[1])};
+    gr.appendChild(b);
+  });
+  tb.children[ci].scrollIntoView({inline:'center',behavior:'smooth'});
+}
+function say(t){
+  cur+=(cur?' ':'')+t;
+  var m=document.getElementById('msg');
+  m.textContent=cur;m.style.opacity='1';
+  if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.prismNative){
+    window.webkit.messageHandlers.prismNative.postMessage({action:'speak',text:t,lang:'en-US',rate:0.4});
+  }else if(window.speechSynthesis){
+    window.speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(t);u.rate=0.8;window.speechSynthesis.speak(u);
+  }
+}
+function speakBar(){
+  if(!cur)return;
+  if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.prismNative){
+    window.webkit.messageHandlers.prismNative.postMessage({action:'speak',text:cur,lang:'en-US',rate:0.4});
+  }else if(window.speechSynthesis){
+    window.speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(cur);u.rate=0.8;window.speechSynthesis.speak(u);
+  }
+}
+render();
+</script>
+</body>
+</html>

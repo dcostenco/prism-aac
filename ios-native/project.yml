@@ -26,15 +26,17 @@ targets:
         excludes:
           - "**/*.md"
     resources:
-      - path: PrismAAC/Resources
-        optional: true
+      - path: PrismAAC/Assets.xcassets
+      - path: PrismAAC/Resources/offline.html
+      - path: PrismAAC/Resources/prism-aac-1b7-q8.gguf
     info:
       path: PrismAAC/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
         CFBundleShortVersionString: "1.1.0"
-        CFBundleVersion: "2"
-        UILaunchStoryboardName: LaunchScreen
+        CFBundleVersion: "13"
+        UILaunchScreen:
+          UIColorName: systemBackground
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
@@ -68,7 +70,9 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      GENERATE_INFOPLIST_FILE: YES
+      CURRENT_PROJECT_VERSION: "13"
+      MARKETING_VERSION: "1.1.0"
+      GENERATE_INFOPLIST_FILE: NO
       PRIVACY_INFO_XCPRIVACY_FILE: PrismAAC/PrivacyInfo.xcprivacy
     dependencies: []
 
@@ -86,7 +90,7 @@ targets:
       properties:
         CFBundleDisplayName: Prism AAC
         CFBundleShortVersionString: "1.1.0"
-        CFBundleVersion: "2"
+        CFBundleVersion: "13"
         WKApplication: true
         WKRunsIndependentlyOfCompanionApp: true   # standalone without iPhone
         WKCompanionAppBundleIdentifier: ai.synalux.prism-aac
@@ -95,6 +99,8 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.watchkitapp
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      CURRENT_PROJECT_VERSION: "13"
+      MARKETING_VERSION: "1.1.0"
       GENERATE_INFOPLIST_FILE: YES
 
   # ── Unit tests ──────────────────────────────────────────────────────────────

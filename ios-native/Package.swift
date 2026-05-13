@@ -23,7 +23,7 @@ let package = Package(
             ],
             path: "PrismAAC/Sources",
             resources: [
-                .process("../Resources"),
+                .process("Resources"),
             ]
         ),
         .testTarget(

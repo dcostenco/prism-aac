@@ -14,13 +14,31 @@ struct PrismAACApp: App {
             ContentView()
                 .environmentObject(appState)
                 .task {
-                    // Load embedded model from app bundle (v24-l3, Q8, 1.7GB).
-                    // No download needed — works offline from first launch.
-                    guard let url = Bundle.main.url(forResource: "prism-aac-1b7-q8", withExtension: "gguf") else {
-                        NSLog("[PrismAAC] Model not found in bundle — cloud AI only")
+                    // Try bundle first, then background download
+                    if let bundleURL = Bundle.main.url(forResource: "prism-aac-1b7-q8", withExtension: "gguf") {
+                        await appState.loadModel(from: bundleURL)
                         return
                     }
-                    await appState.loadModel(from: url)
+                    // Background download — never blocks UI
+                    let url = FileManager.default
+                        .urls(for: .documentDirectory, in: .userDomainMask)[0]
+                        .appendingPathComponent("models/prism-aac-1b7-q8.gguf")
+                    if FileManager.default.fileExists(atPath: url.path) {
+                        await appState.loadModel(from: url)
+                        return
+                    }
+                    guard AppState.measureFreeMemoryMB() >= 1_200 else { return }
+                    do {
+                        let cdnURL = URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-aac-1b7-q4km.gguf")!
+                        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                        let (tempURL, response) = try await URLSession.shared.download(from: cdnURL)
+                        if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
+                            try FileManager.default.moveItem(at: tempURL, to: url)
+                            await appState.loadModel(from: url)
+                        }
+                    } catch {
+                        NSLog("[PrismAAC] Background model download failed: \(error.localizedDescription)")
+                    }
                 }
         }
     }
