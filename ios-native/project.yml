@@ -34,7 +34,7 @@ targets:
       properties:
         CFBundleDisplayName: Prism AAC
         CFBundleShortVersionString: "1.1.0"
-        CFBundleVersion: "13"
+        CFBundleVersion: "14"
         UILaunchScreen:
           UIColorName: systemBackground
         UISupportedInterfaceOrientations:
@@ -90,7 +90,7 @@ targets:
       properties:
         CFBundleDisplayName: Prism AAC
         CFBundleShortVersionString: "1.1.0"
-        CFBundleVersion: "13"
+        CFBundleVersion: "14"
         WKApplication: true
         WKRunsIndependentlyOfCompanionApp: true   # standalone without iPhone
         WKCompanionAppBundleIdentifier: ai.synalux.prism-aac
