@@ -628,10 +628,10 @@ Auto-routing: 1.7B → AAC phrase suggestions · 14B → complex queries · 32B 
   | Model | Accuracy | Avg latency | Invented tools |
   |---|---|---|---|
   | Sonnet 4 (cloud) | **99%** | 3.2s | 0 |
-  | prism-coder:14b (local) | **99%** | 9.0s | 0 |
+  | prism-coder:14b (local) | **100%** | 9.0s | 0 |
   | Opus 4.7 (cloud) | **98%** | 3.0s | 0 |
-  | prism-coder:32b (local) | **99%** | 3.6s | 0 |
-  | prism-coder:1b7 (local) | **86%** | 6.0s | 0 |
+  | prism-coder:32b (local) | **100%** | 3.6s | 0 |
+  | prism-coder:1b7 (local) | **96%** | 6.0s | 0 |
 
 **Voice (TTS)** fallback chain:
 - Tier 1: Inworld TTS-2 (paid all langs; free for ro/uk/ru/de/ko/ar where Synalux absorbs cost)
@@ -703,7 +703,7 @@ Static frequency lists are obsolete. PrismAAC ranks suggested phrases via [**Pri
 ### 3. Caregiver corrections become training data — automatically
 When a caregiver fixes a suggestion the model got wrong (e.g. "no, the word is *eat*, not *want*"), the [audit-hooks postflight harvester](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md#7-the-recipe-combining-all-of-the-above) extracts the gotcha and persists it. After ~50 sessions, the system warns *before* the model makes a similar mistake. No labelling work for caregivers, no expensive retraining runs — the corrections are the curriculum.
 
-**Honest scope:** Routing accuracy on the [100-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100) (7 Prism tools, 13 categories, seed=2026): **14B = 99% · 32B = 99% · 1.7B = 86%**. Zero invented tool names across all model sizes. The 1.7B is used on-device for fast phrase routing (load/save/compact); the 14B/32B cloud tiers handle complex sessions and clinical workflows. On the full Berkeley BFCL V4 leaderboard (2,000+ cases, general function-calling), the 1.7B scores ~59% — comparable to other sub-2B models. What makes PrismAAC defensible isn't the model score alone — it's the model plus the surrounding Prism spreading-activation algorithm stack.
+**Honest scope:** Routing accuracy on the [100-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100) (7 Prism tools, 13 categories, seed=2026): **14B = 100% · 32B = 100% · 1.7B = 96%**. Zero invented tool names across all model sizes. The 1.7B is used on-device for fast phrase routing (load/save/compact); the 14B/32B cloud tiers handle complex sessions and clinical workflows. On the full Berkeley BFCL V4 leaderboard (2,000+ cases, general function-calling), the 1.7B scores ~59% — comparable to other sub-2B models. What makes PrismAAC defensible isn't the model score alone — it's the model plus the surrounding Prism spreading-activation algorithm stack.
 
 </details>
 
