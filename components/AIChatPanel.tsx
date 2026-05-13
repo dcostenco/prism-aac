@@ -10,6 +10,7 @@ import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services
 import { correctText } from '@/services/textCorrectService';
 import { registerAISubmit, clearAISubmit, triggerAISubmit } from '@/services/aiChatBridge';
 import { checkCrisisSafety } from '@/services/crisisSafetyFilter';
+import { estimateSpeechDurationMs } from '@/services/ttsHighlightBus';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 
@@ -131,6 +132,9 @@ export default function AIChatPanel() {
     let buffer = '';
     let spokenUpTo = 0;
     let scheduled = false;
+    const sentenceQueue: string[] = [];
+    let speaking = false;
+    const queueTimers: ReturnType<typeof setTimeout>[] = [];
 
     const getSpokenLang = () => {
       const outLang = useSettingsStore.getState().outputLanguage;
@@ -138,23 +142,37 @@ export default function AIChatPanel() {
       return (outLang && outLang !== lang) ? outLang as import('@/engine/i18n').SupportedLanguage : undefined;
     };
 
-    const speakSentence = (sentence: string) => {
-      if (!sentence.trim() || !soundEnabled) return;
-      aacSpeak(sentence.trim(), speechRate, speechVolume, undefined, false, getSpokenLang());
+    const drainQueue = () => {
+      if (speaking || sentenceQueue.length === 0 || !soundEnabled) return;
+      speaking = true;
+      const sentence = sentenceQueue.shift()!;
+      aacSpeak(sentence, speechRate, speechVolume, undefined, false, getSpokenLang());
+      const dur = estimateSpeechDurationMs(sentence, speechRate * 0.6) + 300;
+      const timer = setTimeout(() => { speaking = false; drainQueue(); }, dur);
+      queueTimers.push(timer);
     };
 
-    const speakCompletedSentences = () => {
+    const enqueueSentence = (sentence: string) => {
+      if (!sentence.trim()) return;
+      sentenceQueue.push(sentence.trim());
+      drainQueue();
+    };
+
+    const checkNewSentences = () => {
       const unspoken = buffer.slice(spokenUpTo);
-      const sentenceEnd = /[.!?。]\s/g;
+      const re = /[.!?。！？]\s/g;
       let match: RegExpExecArray | null;
       let lastEnd = 0;
-      while ((match = sentenceEnd.exec(unspoken)) !== null) {
-        lastEnd = match.index + match[0].length;
+      const sentences: string[] = [];
+      let prev = 0;
+      while ((match = re.exec(unspoken)) !== null) {
+        sentences.push(unspoken.slice(prev, match.index + 1));
+        prev = match.index + match[0].length;
+        lastEnd = prev;
       }
       if (lastEnd > 0) {
-        const toSpeak = unspoken.slice(0, lastEnd);
         spokenUpTo += lastEnd;
-        speakSentence(toSpeak);
+        for (const s of sentences) enqueueSentence(s);
       }
     };
 
@@ -185,15 +203,14 @@ export default function AIChatPanel() {
           scheduled = true;
           requestAnimationFrame(flush);
         }
-        speakCompletedSentences();
+        checkNewSentences();
       }, useSettingsStore.getState().outputLanguage || useSettingsStore.getState().language);
       flush();
-      // Speak any remaining unspoken tail after stream ends.
       const tail = buffer.slice(spokenUpTo).trim();
-      if (tail) speakSentence(tail);
+      if (tail) enqueueSentence(tail);
     } catch (e: unknown) {
+      queueTimers.forEach(clearTimeout);
       if (askController.signal.aborted) {
-        // Request was intentionally cancelled (panel closed) — don't update UI.
         return;
       }
       console.warn('[ai-chat] request failed:', e instanceof Error ? e.message : e);
