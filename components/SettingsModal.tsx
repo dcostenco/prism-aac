@@ -12,6 +12,7 @@ import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { tapFeedback } from '@/services/feedback';
 import HeadTrackingSettings from './HeadTrackingSettings';
+import LocalAISettings from './LocalAISettings';
 import HandCalibration from './HandCalibration';
 import InputModesSettings from './InputModesSettings';
 import ToolbarCustomization from './ToolbarCustomization';
@@ -583,6 +584,10 @@ export default function SettingsModal() {
           </Section>
 
           {/* ── RESOURCES ── */}
+          <Section icon="🤖" title="Local AI Models">
+            <LocalAISettings />
+          </Section>
+
           <Section icon="📖" title={t('aac_resources')}>
             <div className="space-y-1">
               <a href="https://www.asha.org/practice-portal/professional-issues/augmentative-and-alternative-communication/" target="_blank" rel="noopener" className="block text-[#2563eb] text-sm hover:underline">ASHA — AAC Practice Portal</a>

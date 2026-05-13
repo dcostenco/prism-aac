@@ -551,6 +551,25 @@ npm run dev    # http://localhost:3000
 
 Synalux operates the canonical hosted version (free + paid). Self-hosters and forks must release modifications under AGPL-3.0.
 
+### Local AI models (zero cloud cost)
+
+Install [Ollama](https://ollama.com) then pull the Prism model fleet:
+
+```bash
+ollama pull dcostenco/prism-coder:1b7   # 2.2 GB — fast AAC routing (~0.5s)
+ollama pull dcostenco/prism-coder:14b   # 9.3 GB — standard tier (~3s)
+ollama pull dcostenco/prism-coder:32b   # 19 GB  — enterprise/clinical (~8s)
+```
+
+Add to your `.env.local`:
+```bash
+LOCAL_LLM_URL=http://localhost:11434
+```
+
+The app auto-routes: 1.7B handles fast AAC phrase suggestions, 14B handles complex queries, 32B handles clinical/enterprise reasoning. Cloud (OpenRouter/Claude) is the fallback when Ollama is unreachable.
+
+**iOS on same WiFi**: run `OLLAMA_HOST=0.0.0.0 ollama serve` on Mac, set `LOCAL_LLM_URL=http://<mac-ip>:11434`.
+
 ---
 
 <details>
