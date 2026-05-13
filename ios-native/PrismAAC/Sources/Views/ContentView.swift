@@ -24,13 +24,28 @@ import WatchConnectivity
 
 struct ContentView: View {
     @EnvironmentObject var app: AppState
+    @State private var webLoaded = false
 
     var body: some View {
         ZStack(alignment: .top) {
-            PrismWebView(pipeline: app.pipeline)
+            PrismWebView(pipeline: app.pipeline, onLoaded: { webLoaded = true })
                 .ignoresSafeArea()
 
-            // Memory pressure banner — overlay when degraded
+            if !webLoaded {
+                VStack(spacing: 16) {
+                    Spacer()
+                    Image(systemName: "bubble.left.and.text.bubble.right.fill")
+                        .font(.system(size: 56))
+                        .foregroundColor(.accentColor)
+                    Text("Prism AAC").font(.title).fontWeight(.bold)
+                    ProgressView("Loading…").tint(.accentColor)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(UIColor.systemBackground))
+                .transition(.opacity)
+            }
+
             if let banner = app.memoryBanner {
                 VStack {
                     MemoryBannerView(message: banner, tier: app.tier)
@@ -38,6 +53,7 @@ struct ContentView: View {
                 }
             }
         }
+        .animation(.easeOut(duration: 0.3), value: webLoaded)
     }
 }
 
@@ -45,8 +61,9 @@ struct ContentView: View {
 
 struct PrismWebView: UIViewRepresentable {
     let pipeline: AACPipeline
+    var onLoaded: (() -> Void)?
 
-    func makeCoordinator() -> Coordinator { Coordinator(pipeline: pipeline) }
+    func makeCoordinator() -> Coordinator { Coordinator(pipeline: pipeline, onLoaded: onLoaded) }
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
@@ -150,16 +167,22 @@ struct PrismWebView: UIViewRepresentable {
     class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         let pipeline: AACPipeline
         let tts = WKWebTTS()
-        // C14: rate-limit emergency triggers
+        var onLoaded: (() -> Void)?
         private var lastEmergencyTriggerTime: TimeInterval = 0
-        // SFSpeechRecognizer bridge for web app voice input
         private var speechRecognizer: SFSpeechRecognizer?
         private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
         private var recognitionTask: SFSpeechRecognitionTask?
         private lazy var audioEngine = AVAudioEngine()
         private weak var activeWebView: WKWebView?
 
-        init(pipeline: AACPipeline) { self.pipeline = pipeline }
+        init(pipeline: AACPipeline, onLoaded: (() -> Void)? = nil) {
+            self.pipeline = pipeline
+            self.onLoaded = onLoaded
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            Task { @MainActor in onLoaded?(); onLoaded = nil }
+        }
 
         // FIX L1: clear #if DEBUG boundary — no mid-expression preprocessor directives
         private static func isAllowedOrigin(_ url: URL) -> Bool {
@@ -431,17 +454,58 @@ struct PrismWebView: UIViewRepresentable {
             <!DOCTYPE html>
             <html>
             <head>
+            <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
             <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
+            <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+            body { background: #14161d; color: #fff; font-family: -apple-system, sans-serif; padding: env(safe-area-inset-top) 12px 12px; }
+            .bar { background: #1e2030; border-radius: 12px; padding: 16px; margin-bottom: 12px; font-size: 22px; min-height: 56px; display: flex; align-items: center; }
+            .bar span { opacity: 0.5; }
+            .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+            .tile { background: #1e2030; border-radius: 12px; padding: 16px 8px; text-align: center; font-size: 18px; cursor: pointer; border: none; color: #fff; }
+            .tile:active { background: #2a3050; }
+            .tile .emoji { font-size: 32px; display: block; margin-bottom: 4px; }
+            .speak { background: #4CAF50; color: #fff; border: none; border-radius: 12px; padding: 14px; width: 100%; font-size: 20px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
+            .retry { background: #2a3050; color: #fff; border: none; border-radius: 12px; padding: 10px; width: 100%; font-size: 14px; cursor: pointer; opacity: 0.7; }
+            .status { text-align: center; font-size: 13px; opacity: 0.4; margin-top: 8px; }
+            </style>
             </head>
-            <body style='background:#14161d;color:white;font-family:sans-serif;
-            display:flex;align-items:center;justify-content:center;height:100vh;margin:0;
-            flex-direction:column;gap:16px;text-align:center;padding:20px'>
-            <div style='font-size:48px'>📵</div>
-            <h2 style='margin:0'>No connection</h2>
-            <p style='margin:0;opacity:0.7'>Core phrases and emergency still work from the Watch app.</p>
-            <button onclick='location.reload()' style='padding:12px 24px;border-radius:8px;
-            background:#4CAF50;color:white;border:none;font-size:16px;cursor:pointer'>
-            Try again</button>
+            <body>
+            <div class="bar"><span id="msg">Tap a phrase to speak</span></div>
+            <div class="grid">
+              <button class="tile" onclick="say('Help')"><span class="emoji">🆘</span>Help</button>
+              <button class="tile" onclick="say('Yes')"><span class="emoji">✅</span>Yes</button>
+              <button class="tile" onclick="say('No')"><span class="emoji">❌</span>No</button>
+              <button class="tile" onclick="say('I want')"><span class="emoji">👋</span>I want</button>
+              <button class="tile" onclick="say('Thank you')"><span class="emoji">😊</span>Thanks</button>
+              <button class="tile" onclick="say('More please')"><span class="emoji">➕</span>More</button>
+              <button class="tile" onclick="say('I need water')"><span class="emoji">💧</span>Water</button>
+              <button class="tile" onclick="say('I am hungry')"><span class="emoji">🍽️</span>Hungry</button>
+              <button class="tile" onclick="say('I need help')"><span class="emoji">🙏</span>Need help</button>
+              <button class="tile" onclick="say('I feel sick')"><span class="emoji">🤒</span>Sick</button>
+              <button class="tile" onclick="say('Stop')"><span class="emoji">🛑</span>Stop</button>
+              <button class="tile" onclick="say('I love you')"><span class="emoji">❤️</span>Love you</button>
+            </div>
+            <button class="speak" id="spk" onclick="speakBar()">Speak</button>
+            <button class="retry" onclick="location.reload()">🔄 Reconnect to full app</button>
+            <div class="status">Offline mode — core phrases available</div>
+            <script>
+            var current = '';
+            function say(t) {
+              current = t;
+              document.getElementById('msg').textContent = t;
+              document.getElementById('msg').style.opacity = '1';
+              if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.prismNative) {
+                window.webkit.messageHandlers.prismNative.postMessage({action:'speak', text:t, lang:'en-US', rate:0.4});
+              } else if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+                var u = new SpeechSynthesisUtterance(t); u.rate = 0.8; window.speechSynthesis.speak(u);
+              }
+            }
+            function speakBar() {
+              if (current) say(current);
+            }
+            </script>
             </body></html>
             """
             webView.loadHTMLString(offlineHTML, baseURL: URL(string: "about:blank"))
