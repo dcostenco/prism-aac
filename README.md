@@ -575,6 +575,47 @@ Read more: [`ACCESSIBILITY.md`](ACCESSIBILITY.md), [`SECURITY.md`](SECURITY.md).
 
 ---
 
+## Infrastructure & GDPR
+
+### Multi-region architecture
+
+| Component | Region | Purpose |
+|---|---|---|
+| **Supabase US** | US East (Virginia) | Primary database — auth, user data, caregiver notes |
+| **Supabase EU** | EU Central (Frankfurt) | GDPR-compliant — EU user data never leaves the EU |
+| **Vercel** | Global Edge | Web app, API routes, CDN |
+| **Inworld TTS** | US | Neural text-to-speech |
+| **HuggingFace Hub** | US/EU | Model weights (1.7B, 14B, 32B) |
+| **On-device** | User's device | llama.cpp inference (iPhone/iPad/Mac) |
+
+### GDPR compliance
+
+EU users' data is stored exclusively in the Frankfurt (eu-central-1) region. The portal detects user location via Vercel's `x-vercel-ip-country` header and routes database operations to the appropriate Supabase instance:
+
+- **EU users** → `supabase-eu` (Frankfurt) — personal data, auth, preferences, caregiver notes
+- **Non-EU users** → `supabase-us` (Virginia) — same data categories, US jurisdiction
+- **AI inference** → on-device (no data leaves the device) or Synalux API (no PII stored)
+- **TTS audio** → generated server-side, streamed to client, not stored
+
+**Data residency guarantees:**
+- EU personal data never transits through US servers
+- Auth tokens scoped to the regional Supabase instance
+- Caregiver notes encrypted at rest (Supabase AES-256)
+- Voice recordings (Comfort Player) stored in browser IndexedDB — never uploaded
+- On-device AI model runs locally — zero cloud telemetry
+
+**Right to erasure:** User deletion cascades across auth, profiles, caregiver notes, and usage analytics in the regional database. Self-hosted instances can be wiped with `supabase db reset`.
+
+### Costs at scale
+
+| Users | Supabase | Vercel | TTS | AI Models | Total |
+|---|---|---|---|---|---|
+| 0–1K | $50/mo (2 regions) | $0 (Hobby) | ~$5/mo | $0 (on-device) | ~$55/mo |
+| 1K–10K | $50/mo | $20/mo (Pro) | ~$50/mo | $0 | ~$120/mo |
+| 10K–100K | $50/mo + compute add-ons | $20/mo | ~$200/mo | RunPod $125/mo | ~$395/mo |
+
+---
+
 ## Self-host
 
 ```bash
