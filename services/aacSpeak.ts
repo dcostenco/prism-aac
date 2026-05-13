@@ -94,7 +94,7 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     const ms = useMessageStore.getState();
     const effectiveTone: ToneStyle | 'auto' = tone
       ?? (ms.toneMode === 'auto' ? 'auto' : ms.activeTone);
-    const effectiveRate = (translating || spokenLang) ? rate * 0.6 : rate;
+    const effectiveRate = rate * 0.6;
     speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt);
   } catch {
     // Last resort: speak original text using the user's configured language,
