@@ -43,7 +43,7 @@ final class LLMEngine: ObservableObject {
         let loadedModel: OpaquePointer? = await Task.detached(priority: .userInitiated) {
             var params = llama_model_default_params()
             params.n_gpu_layers = 99
-            return llama_model_load_from_file(path, params)
+            return llama_load_model_from_file(path, params)
         }.value
 
         guard let loadedModel else { throw LLMError.notLoaded }
@@ -51,12 +51,12 @@ final class LLMEngine: ObservableObject {
         var ctxParams = llama_context_default_params()
         ctxParams.n_ctx = Self.CONTEXT_SIZE
         ctxParams.n_batch = 512
-        ctxParams.n_threads = UInt32(min(ProcessInfo.processInfo.activeProcessorCount, 4))
+        ctxParams.n_threads = Int32(min(ProcessInfo.processInfo.activeProcessorCount, 4))
         ctxParams.n_threads_batch = ctxParams.n_threads
 
-        let ctx = llama_init_from_model(loadedModel, ctxParams)
+        let ctx = llama_new_context_with_model(loadedModel, ctxParams)
         guard ctx != nil else {
-            llama_model_free(loadedModel)
+            llama_free_model(loadedModel)
             throw LLMError.notLoaded
         }
 
@@ -72,7 +72,7 @@ final class LLMEngine: ObservableObject {
     func unload() {
         #if canImport(llama)
         if let ctx = context { llama_free(ctx) }
-        if let mdl = model { llama_model_free(mdl) }
+        if let mdl = model { llama_free_model(mdl) }
         #endif
         context = nil
         model = nil
@@ -87,12 +87,10 @@ final class LLMEngine: ObservableObject {
         isGenerating = true
         defer { isGenerating = false }
 
-        let vocab = llama_model_get_vocab(mdl)
-
         return try await Task.detached(priority: .userInitiated) { [weak self] in
             guard self != nil else { throw LLMError.notLoaded }
 
-            let promptTokens = Self.tokenize(vocab: vocab, text: prompt, addBos: true)
+            let promptTokens = Self.tokenize(model: mdl, text: prompt, addBos: true)
             guard !promptTokens.isEmpty else { throw LLMError.notLoaded }
 
             llama_kv_cache_clear(ctx)
@@ -110,10 +108,10 @@ final class LLMEngine: ObservableObject {
             var generated = ""
             var nCur = Int32(promptTokens.count)
             let nMax = nCur + Int32(LLMEngine.MAX_NEW_TOKENS)
-            let eosId = llama_vocab_eos(vocab)
-            let imEndId = Self.findToken(vocab: vocab, text: "<|im_end|>")
+            let eosId = llama_token_eos(mdl)
+            let imEndId = Self.findToken(model: mdl, text: "<|im_end|>")
 
-            let sampler = Self.createSampler(vocab: vocab)
+            let sampler = Self.createSampler()
             defer { llama_sampler_free(sampler) }
 
             while nCur < nMax {
@@ -121,7 +119,7 @@ final class LLMEngine: ObservableObject {
                 if newToken == eosId || newToken == imEndId { break }
 
                 var buf = [CChar](repeating: 0, count: 256)
-                let n = llama_token_to_piece(vocab, newToken, &buf, Int32(buf.count), 0, true)
+                let n = llama_token_to_piece(mdl, newToken, &buf, Int32(buf.count), 0, true)
                 if n > 0 {
                     let piece = String(cString: buf.prefix(Int(n)) + [0])
                     generated += piece
@@ -144,22 +142,22 @@ final class LLMEngine: ObservableObject {
     // MARK: - Helpers
 
     #if canImport(llama)
-    private static func tokenize(vocab: OpaquePointer, text: String, addBos: Bool) -> [llama_token] {
+    private static func tokenize(model: OpaquePointer, text: String, addBos: Bool) -> [llama_token] {
         let utf8 = Array(text.utf8)
         let maxTokens = utf8.count + (addBos ? 1 : 0) + 1
         var tokens = [llama_token](repeating: 0, count: maxTokens)
-        let n = llama_tokenize(vocab, text, Int32(utf8.count), &tokens, Int32(maxTokens), addBos, true)
+        let n = llama_tokenize(model, text, Int32(utf8.count), &tokens, Int32(maxTokens), addBos, true)
         guard n >= 0 else { return [] }
         return Array(tokens.prefix(Int(n)))
     }
 
-    private static func findToken(vocab: OpaquePointer, text: String) -> llama_token {
+    private static func findToken(model: OpaquePointer, text: String) -> llama_token {
         var tokens = [llama_token](repeating: 0, count: 16)
-        let n = llama_tokenize(vocab, text, Int32(text.utf8.count), &tokens, 16, false, true)
+        let n = llama_tokenize(model, text, Int32(text.utf8.count), &tokens, 16, false, true)
         return n == 1 ? tokens[0] : -1
     }
 
-    private static func createSampler(vocab: OpaquePointer) -> OpaquePointer {
+    private static func createSampler() -> OpaquePointer {
         let params = llama_sampler_chain_default_params()
         let chain = llama_sampler_chain_init(params)!
         llama_sampler_chain_add(chain, llama_sampler_init_temp(0.7))
