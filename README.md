@@ -623,7 +623,15 @@ Auto-routing: 1.7B → AAC phrase suggestions · 14B → complex queries · 32B 
 - **Cloud complex** (reasoning, pro tier): `prism-coder:32b` (QwQ-32B fine-tuned, RunPod) → Claude Sonnet 4 fallback
 - **Autocorrect + word prediction**: Gemini 2.5 Flash-Lite — 752ms avg, multilingual (ro/ru/es)
 - Speed-critical paths (button tap → speech) bypass routing — never blocks on network
-- Routing accuracy ([100-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100), May 2026): **14B = 99% · 32B = 99% · 1.7B = 86%** · invented tools = 0
+- Routing accuracy ([100-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100), 3 rounds, May 2026):
+
+  | Model | Accuracy | Avg latency | Invented tools |
+  |---|---|---|---|
+  | Sonnet 4 (cloud) | **99%** | 3.2s | 0 |
+  | prism-coder:14b (local) | **99%** | 9.0s | 0 |
+  | Opus 4.7 (cloud) | **98%** | 3.0s | 0 |
+  | prism-coder:32b (local) | **99%** | 3.6s | 0 |
+  | prism-coder:1b7 (local) | **86%** | 6.0s | 0 |
 
 **Voice (TTS)** fallback chain:
 - Tier 1: Inworld TTS-2 (paid all langs; free for ro/uk/ru/de/ko/ar where Synalux absorbs cost)
