@@ -84,14 +84,15 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
   // M6: Guard against double recording
   const startRecording = async () => {
     if (recording || mediaRecorderRef.current) return;
+    let stream: MediaStream | null = null;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       chunksRef.current = [];
       recordStartRef.current = performance.now();
       mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       mr.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
+        stream!.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         if (blob.size < 100) return;
         if (blob.size > MAX_FILE_SIZE) { alert('Recording too large (max 100 MB).'); return; }
@@ -124,6 +125,8 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
       setRecordTime(0);
       timerRef.current = setInterval(() => setRecordTime((t) => t + 1), 1000);
     } catch {
+      // R3-1: Stop stream tracks if getUserMedia succeeded but MediaRecorder failed
+      if (stream) stream.getTracks().forEach((t) => t.stop());
       // L6: Feedback on mic permission denied
       alert('Microphone access is required to record. Please allow microphone access in your browser settings.');
     }
