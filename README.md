@@ -27,7 +27,7 @@ Part of the [Synalux platform](https://synalux.ai).
 | Platform | Status | Notes |
 |----------|--------|-------|
 | **Web** (PWA) | Production | Any browser, installable |
-| **iPhone / iPad** | Production | Native WKWebView + on-device 1.5B LLM |
+| **iPhone / iPad / iPad Pro** | Production | WKWebView + on-device 1.7B (llama.cpp) + 14B/32B via WiFi to Mac Ollama |
 | **Apple Watch** | Production | Standalone — pictograms, AI chat, emergency, translation |
 | **Chrome Extension** | Production | Reading assistant in any text field |
 
@@ -80,11 +80,19 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 
 ### iPhone / iPad
 
-Native Swift app wrapping the web UI in WKWebView + on-device 1.5B LLM via llama.cpp Metal. Three-layer safety architecture: synchronous crisis filter → on-device AI → cloud fallback. Memory-aware feature gating degrades gracefully from full AI → cloud AI → core-only → emergency mode.
+Native Swift app wrapping the web UI in WKWebView + on-device 1.7B LLM via llama.cpp Metal. Three-layer safety architecture: synchronous crisis filter → on-device AI → cloud fallback. Memory-aware feature gating degrades gracefully from full AI → cloud AI → core-only → emergency mode.
 
 - Safe area inset for Dynamic Island / notch
 - WCSession bridge for Apple Watch emergency dispatch
 - Keychain-backed auth tokens
+
+**iPad Pro (M1/M2/M4):** Full on-device 1.7B inference via llama.cpp (~1.6 GB RAM). For 14B/32B models, connect to a Mac on the same WiFi running Ollama — Settings → 🤖 Local AI Models → enter Mac IP. No new build required.
+
+**Settings → 🤖 Local AI Models** — download and manage Prism models directly from the app:
+- Detects Ollama automatically at `localhost:11434`
+- Shows a URL field for WiFi connections (iPad/iPhone → Mac Ollama)
+- Per-model download with live progress bar, install/remove controls
+- Models: `dcostenco/prism-coder:1b7` (2.2 GB) · `:14b` (9.3 GB) · `:32b` (19 GB)
 
 
 ### Apple Watch (standalone)
@@ -553,22 +561,27 @@ Synalux operates the canonical hosted version (free + paid). Self-hosters and fo
 
 ### Local AI models (zero cloud cost)
 
-Install [Ollama](https://ollama.com) then pull the Prism model fleet:
+**Option A — In-app (recommended):** Settings → 🤖 Local AI Models → click Download next to any model. Progress bar included. Works from iPad/iPhone on same WiFi as a Mac running Ollama.
+
+**Option B — Command line:**
+
+Install [Ollama](https://ollama.com), then:
 
 ```bash
-ollama pull dcostenco/prism-coder:1b7   # 2.2 GB — fast AAC routing (~0.5s)
-ollama pull dcostenco/prism-coder:14b   # 9.3 GB — standard tier (~3s)
-ollama pull dcostenco/prism-coder:32b   # 19 GB  — enterprise/clinical (~8s)
+ollama pull dcostenco/prism-coder:1b7   # 2.2 GB — fast (~0.5s), iPhone 12+ / any Mac
+ollama pull dcostenco/prism-coder:14b   # 9.3 GB — standard (~3s), Mac M2 Pro+
+ollama pull dcostenco/prism-coder:32b   # 19 GB  — enterprise (~8s), Mac M2 Ultra+
 ```
 
-Add to your `.env.local`:
+Add to `.env.local`: `LOCAL_LLM_URL=http://localhost:11434`
+
+**iPad Pro / iPhone on WiFi:**
 ```bash
-LOCAL_LLM_URL=http://localhost:11434
+OLLAMA_HOST=0.0.0.0 ollama serve   # on Mac
+# Then in app Settings → Local AI → enter: http://<mac-ip>:11434
 ```
 
-The app auto-routes: 1.7B handles fast AAC phrase suggestions, 14B handles complex queries, 32B handles clinical/enterprise reasoning. Cloud (OpenRouter/Claude) is the fallback when Ollama is unreachable.
-
-**iOS on same WiFi**: run `OLLAMA_HOST=0.0.0.0 ollama serve` on Mac, set `LOCAL_LLM_URL=http://<mac-ip>:11434`.
+Auto-routing: 1.7B → AAC phrase suggestions · 14B → complex queries · 32B → clinical/enterprise. Cloud fallback when Ollama is unreachable.
 
 ---
 
@@ -616,8 +629,38 @@ The app auto-routes: 1.7B handles fast AAC phrase suggestions, 14B handles compl
 
 **Three things no other AAC app on the market does together:**
 
-### 1. On-device + HIPAA-safe by default
-The 7B model that powers AAC suggestions runs **on your device** — iPad, Mac, or laptop. No PHI leaves the device for the speech path. Caregiver notes encrypt before any optional cloud sync. Comparable cloud-only AAC platforms (TouchChat, Proloquo2Go cloud sync) require account uploads to function.
+### 1. On-device AI + HIPAA-safe by default
+
+**Why local AI matters for AAC — speed, security, and reliability:**
+
+| | Cloud AI only | PrismAAC (local-first) |
+|--|---|---|
+| Button tap → speech | 2–30s (network round-trip) | **~0.5s** (on-device) |
+| Works offline | ❌ No | ✅ Yes |
+| PHI leaves device | ✅ Always | ❌ Never (speech path) |
+| HIPAA compliance | Requires BAA with every vendor | **On-device = no BAA needed** |
+| Rural / poor WiFi | Broken | **Fully functional** |
+| Monthly cost per user | $2–15 API fees | **$0 (local)** |
+
+**The 1.7B model runs entirely on your device** — iPad M1+, Mac, or laptop. A child pressing a button gets a response in ~500ms with zero network calls. No PHI, no utterances, no communication patterns ever leave the device during normal use.
+
+Caregiver notes encrypt locally before any optional cloud sync. Comparable cloud-only AAC platforms (TouchChat, Proloquo2Go cloud sync) require account uploads to function — PrismAAC does not.
+
+**For enterprise / clinical deployments (14B + 32B):** the 14B and 32B models run on a dedicated Mac via Ollama on the clinical network. iPads connect over the local WiFi — data never leaves the building. No cloud vendor agreements needed for HIPAA compliance.
+
+**How to set it up:**
+
+```
+iPad / iPhone (on same WiFi as Mac)
+    ↓  connects to
+Mac running Ollama (OLLAMA_HOST=0.0.0.0)
+    ↓  serves
+prism-coder:1b7 · :14b · :32b
+    ↓  all inference stays on
+Local network — nothing reaches the internet
+```
+
+Settings → 🤖 Local AI Models → enter Mac IP → all models available instantly. No cloud cost. No PHI exposure. No network dependency for AAC communication.
 
 ### 2. Phrase ranking that adapts to YOUR child
 Static frequency lists are obsolete. PrismAAC ranks suggested phrases via [**Prism v14.0.0 spreading activation**](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md) — the same ACT-R cognitive memory model behind decades of Carnegie Mellon research. Recency × frequency × per-user history, not a static popularity list. Phrases the child says today rise; phrases unused for a year fade (lesson-rate decay `d=0.25`, ~1-year half-life).
