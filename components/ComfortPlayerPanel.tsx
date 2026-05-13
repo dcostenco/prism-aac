@@ -36,6 +36,8 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const photoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [soundUnlocked, setSoundUnlocked] = useState(false);
+  const pendingPlayRef = useRef(false);
 
   const currentItem = items[currentIndex] ?? null;
 
@@ -49,11 +51,6 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
       if (!blob) { removeItem(currentItem.id); return; }
       url = URL.createObjectURL(blob);
       setMediaUrl(url);
-      // Play after URL is set
-      setTimeout(() => {
-        const el = videoRef.current || audioRef.current;
-        if (el) el.play().catch(() => {});
-      }, 50);
     });
     return () => {
       cancelled = true;
@@ -62,19 +59,11 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
     };
   }, [isPlaying, currentIndex, currentItem?.id]);
 
-  const pendingPlayRef = useRef(false);
-
-  // Unlock audio context on any user click — enables subsequent programmatic play()
-  useEffect(() => {
-    const unlock = () => {
-      const v = videoRef.current;
-      const a = audioRef.current;
-      // Play+pause on an empty element "unlocks" media playback for this page
-      if (v && v.paused && !v.src) { v.play().catch(() => {}); v.pause(); }
-      if (a && a.paused && !a.src) { a.play().catch(() => {}); a.pause(); }
-    };
-    document.addEventListener('click', unlock, { once: true });
-    return () => document.removeEventListener('click', unlock);
+  // Unmute and play — called from user gesture (tap overlay)
+  const unlockSound = useCallback(() => {
+    const el = videoRef.current || audioRef.current;
+    if (el) { el.muted = false; el.play().catch(() => {}); }
+    setSoundUnlocked(true);
   }, []);
 
   // M7: Clear photo timer before setting new one
@@ -267,14 +256,25 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
 
       {/* Video/photo — fills ALL remaining space */}
       {showingVisual && (
-        <div className="flex-1 bg-black min-h-0 flex items-center justify-center" aria-live="polite">
+        <div className="flex-1 bg-black min-h-0 flex items-center justify-center relative" aria-live="polite">
           {currentItem!.type === 'video' && (
-            <video ref={videoRef} src={mediaUrl!} playsInline onEnded={handleMediaEnded}
+            <video ref={videoRef} src={mediaUrl!} autoPlay muted playsInline onEnded={handleMediaEnded}
               className="w-full h-full object-contain" controls />
           )}
           {currentItem!.type === 'photo' && (
             <img src={mediaUrl!} alt={`Comfort media: ${currentItem!.label}`}
               className="w-full h-full object-contain" />
+          )}
+          {/* Tap-to-unmute overlay — shown until user taps */}
+          {currentItem!.type === 'video' && !soundUnlocked && (
+            <button onClick={unlockSound}
+              className="absolute inset-0 flex items-center justify-center bg-black/40 z-10 cursor-pointer"
+              aria-label="Tap for sound">
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-8 py-4 flex items-center gap-3">
+                <span className="text-4xl">🔊</span>
+                <span className="text-white text-xl font-semibold">Tap for sound</span>
+              </div>
+            </button>
           )}
         </div>
       )}
@@ -282,7 +282,11 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
       {/* Audio — compact bar */}
       {showingMedia && currentItem?.type === 'audio' && (
         <div className="px-4 py-2 shrink-0 surface-key border-b border-theme">
-          <audio ref={audioRef} src={mediaUrl!} playsInline onEnded={handleMediaEnded} className="w-full" controls />
+          <audio ref={audioRef} src={mediaUrl!} autoPlay muted playsInline onEnded={handleMediaEnded} className="w-full" controls />
+          {!soundUnlocked && (
+            <button onClick={unlockSound} className="w-full mt-2 py-2 rounded-lg bg-green-600 text-white font-semibold text-lg"
+              aria-label="Tap for sound">🔊 Tap for sound</button>
+          )}
         </div>
       )}
 
