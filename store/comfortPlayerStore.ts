@@ -82,7 +82,10 @@ export const useComfortPlayerStore = create<ComfortPlayerState>()(
       next: () => set((s) => ({
         currentIndex: s.items.length > 0 ? (s.currentIndex + 1) % s.items.length : 0,
       })),
-      setIndex: (i) => set({ currentIndex: i, isPlaying: true }),
+      setIndex: (i) => set((s) => {
+        if (i < 0 || i >= s.items.length) return s;
+        return { currentIndex: i, isPlaying: true };
+      }),
       clear: () => {
         deleteAllBlobs().catch((err) => {
           console.error('[ComfortPlayer] Failed to delete all blobs:', err);

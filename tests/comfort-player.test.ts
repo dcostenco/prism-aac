@@ -2,7 +2,8 @@
  * Comfort Player — Zustand store unit tests.
  *
  * Covers the comfortPlayerStore state machine:
- *   addItem, removeItem, reorderItem, play, pause, next, setIndex, clear
+ *   addItem, removeItem, reorderItem, play, pause, next, setIndex, clear,
+ *   totalBytes, MAX_ITEMS guard.
  *
  * comfortMediaStorage is mocked so store tests stay isolated from IndexedDB.
  * Storage tests live in comfort-media-storage.test.ts (uses real fake-indexeddb).
@@ -18,8 +19,15 @@ vi.mock('@/services/comfortMediaStorage', () => ({
   getBlobUrl: vi.fn().mockResolvedValue(null),
 }));
 
-import { useComfortPlayerStore, ComfortMediaItem } from '@/store/comfortPlayerStore';
-import { deleteBlob as deleteBlobMock, deleteAllBlobs as deleteAllBlobsMock } from '@/services/comfortMediaStorage';
+import {
+  useComfortPlayerStore,
+  ComfortMediaItem,
+  MAX_ITEMS,
+} from '@/store/comfortPlayerStore';
+import {
+  deleteBlob as deleteBlobMock,
+  deleteAllBlobs as deleteAllBlobsMock,
+} from '@/services/comfortMediaStorage';
 
 function makeItem(overrides: Partial<ComfortMediaItem> = {}): ComfortMediaItem {
   return {
@@ -61,6 +69,19 @@ describe('comfortPlayerStore — playlist state machine', () => {
     useComfortPlayerStore.getState().addItem(b);
     expect(useComfortPlayerStore.getState().items).toHaveLength(2);
     expect(useComfortPlayerStore.getState().items.map((i) => i.id)).toEqual(['a1', 'b1']);
+  });
+
+  it('addItem refuses items beyond MAX_ITEMS', () => {
+    // Fill to MAX_ITEMS
+    for (let n = 0; n < MAX_ITEMS; n++) {
+      useComfortPlayerStore.getState().addItem(makeItem({ id: `fill-${n}` }));
+    }
+    expect(useComfortPlayerStore.getState().items).toHaveLength(MAX_ITEMS);
+
+    // Attempt one more — should be silently rejected
+    useComfortPlayerStore.getState().addItem(makeItem({ id: 'overflow' }));
+    expect(useComfortPlayerStore.getState().items).toHaveLength(MAX_ITEMS);
+    expect(useComfortPlayerStore.getState().items.find((i) => i.id === 'overflow')).toBeUndefined();
   });
 
   // ── removeItem ──
@@ -170,6 +191,35 @@ describe('comfortPlayerStore — playlist state machine', () => {
     expect(useComfortPlayerStore.getState().items.map((i) => i.id)).toEqual(['a1']);
   });
 
+  it('reorderItem updates currentIndex when the playing item moves', () => {
+    const a = makeItem({ id: 'a1' });
+    const b = makeItem({ id: 'b1' });
+    const c = makeItem({ id: 'c1' });
+    useComfortPlayerStore.getState().addItem(a);
+    useComfortPlayerStore.getState().addItem(b);
+    useComfortPlayerStore.getState().addItem(c);
+    // Currently playing item at index 1 (b1)
+    useComfortPlayerStore.setState({ currentIndex: 1 });
+    // Move b1 up -> b1 goes to index 0, currentIndex should follow
+    useComfortPlayerStore.getState().reorderItem('b1', 'up');
+    expect(useComfortPlayerStore.getState().currentIndex).toBe(0);
+    expect(useComfortPlayerStore.getState().items.map((i) => i.id)).toEqual(['b1', 'a1', 'c1']);
+  });
+
+  it('reorderItem updates currentIndex when the swap target is the playing item', () => {
+    const a = makeItem({ id: 'a1' });
+    const b = makeItem({ id: 'b1' });
+    const c = makeItem({ id: 'c1' });
+    useComfortPlayerStore.getState().addItem(a);
+    useComfortPlayerStore.getState().addItem(b);
+    useComfortPlayerStore.getState().addItem(c);
+    // Currently playing item at index 0 (a1)
+    useComfortPlayerStore.setState({ currentIndex: 0 });
+    // Move b1 up -> a1 goes to index 1, currentIndex should follow a1 to 1
+    useComfortPlayerStore.getState().reorderItem('b1', 'up');
+    expect(useComfortPlayerStore.getState().currentIndex).toBe(1);
+  });
+
   // ── play / pause ──
 
   it('play sets isPlaying=true when items exist', () => {
@@ -236,6 +286,19 @@ describe('comfortPlayerStore — playlist state machine', () => {
     expect(state.isPlaying).toBe(false);
     expect(state.currentIndex).toBe(0);
     expect(deleteAllBlobsMock).toHaveBeenCalledOnce();
+  });
+
+  // ── totalBytes ──
+
+  it('totalBytes returns sum of all item sizeBytes', () => {
+    useComfortPlayerStore.getState().addItem(makeItem({ id: 'a', sizeBytes: 1000 }));
+    useComfortPlayerStore.getState().addItem(makeItem({ id: 'b', sizeBytes: 2500 }));
+    useComfortPlayerStore.getState().addItem(makeItem({ id: 'c', sizeBytes: 500 }));
+    expect(useComfortPlayerStore.getState().totalBytes()).toBe(4000);
+  });
+
+  it('totalBytes returns 0 for empty playlist', () => {
+    expect(useComfortPlayerStore.getState().totalBytes()).toBe(0);
   });
 
   // ── Complex scenarios ──

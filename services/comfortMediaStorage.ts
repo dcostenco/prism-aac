@@ -14,6 +14,7 @@ function openDb(): Promise<IDBDatabase> {
     req.onsuccess = () => {
       const db = req.result;
       db.onclose = () => { dbPromise = null; };
+      db.onversionchange = () => { db.close(); dbPromise = null; };
       resolve(db);
     };
     req.onerror = () => { dbPromise = null; reject(req.error); };

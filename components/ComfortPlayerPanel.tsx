@@ -46,7 +46,7 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
     let url: string | null = null;
     getBlob(currentItem.id).then((blob) => {
       if (cancelled) return;
-      if (!blob) { next(); return; }
+      if (!blob) { removeItem(currentItem.id); return; }
       url = URL.createObjectURL(blob);
       setMediaUrl(url);
     });
@@ -70,9 +70,7 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
   // C4 + C5: Cleanup recording + media on unmount
   useEffect(() => {
     return () => {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
+      try { if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop(); } catch { /* already stopped */ }
       if (timerRef.current) clearInterval(timerRef.current);
       audioRef.current?.pause();
       videoRef.current?.pause();
@@ -96,10 +94,12 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         if (blob.size < 100) return;
+        if (blob.size > MAX_FILE_SIZE) { alert('Recording too large (max 100 MB).'); return; }
         const id = crypto.randomUUID();
-        // H7: Read current state at save time
         const currentItems = useComfortPlayerStore.getState().items;
         if (currentItems.length >= MAX_ITEMS) return;
+        const totalUsed = currentItems.reduce((sum, i) => sum + i.sizeBytes, 0);
+        if (totalUsed + blob.size > MAX_TOTAL_STORAGE) { alert('Storage full (500 MB max). Remove items first.'); return; }
         // M5: Accurate duration from performance.now
         const durationMs = Math.round(performance.now() - recordStartRef.current);
         try {
@@ -145,6 +145,7 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
       if (useComfortPlayerStore.getState().items.length >= MAX_ITEMS) {
         alert(`Maximum ${MAX_ITEMS} items reached.`); break;
       }
+      if (file.size === 0) { alert('Empty file skipped.'); continue; }
       if (!ALLOWED_MIME_TYPES.has(file.type)) {
         alert(`Unsupported file type: ${file.type || 'unknown'}`); continue;
       }
