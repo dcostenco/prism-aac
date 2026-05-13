@@ -71,15 +71,15 @@
 /* Begin PBXFileReference section */
 		1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchEmergencyManager.swift; sourceTree = "<group>"; };
 		1BAD607AA400B994C75354DD /* WatchAISession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAISession.swift; sourceTree = "<group>"; };
-		2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrismAACTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		336C616FA71B6C3F3227FC90 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		3C1E662AEED98B7777920115 /* PrismAAC.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PrismAAC.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C1E662AEED98B7777920115 /* PrismAAC.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PrismAAC.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		514A2FD3A0BC693D56606896 /* LLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEngine.swift; sourceTree = "<group>"; };
 		62DB2AB8796CA83596887AD3 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		67DE9F6102290192A69EA33F /* WatchTTS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTTS.swift; sourceTree = "<group>"; };
 		71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACUITests.swift; sourceTree = "<group>"; };
 		73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AACPipeline.swift; sourceTree = "<group>"; };
-		81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrismAACUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		824CFF80AABA2799959262E4 /* SafetyFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyFilter.swift; sourceTree = "<group>"; };
 		84AA94D52FB3A6830050C9EB /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Contents.json; sourceTree = "<group>"; };
 		84AA94D62FB3A6830050C9EB /* icon-20.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-20.png"; sourceTree = "<group>"; };
@@ -501,6 +501,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = Z4UYN9388M;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -518,6 +519,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = Z4UYN9388M;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -593,6 +595,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = Z4UYN9388M;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -610,7 +613,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = Z4UYN9388M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
 				MARKETING_VERSION = 1.1.0;
@@ -694,7 +698,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = Z4UYN9388M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -716,7 +721,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = Z4UYN9388M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -736,7 +742,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = Z4UYN9388M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
 				MARKETING_VERSION = 1.1.0;
@@ -753,6 +760,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = Z4UYN9388M;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
