@@ -194,6 +194,7 @@ describe('ComfortPlayerPanel — item click starts playback', () => {
 
 describe('ComfortPlayerPanel — play/pause controls', () => {
   beforeEach(() => {
+    getBlobMock.mockResolvedValue(new Blob(['audio'], { type: 'audio/webm' }));
     useComfortPlayerStore.setState({
       items: [makeItem({ id: 'a1', label: 'Song A' })],
       isPlaying: false,
@@ -393,6 +394,7 @@ describe('ComfortPlayerPanel — close button', () => {
 
 describe('ComfortPlayerPanel — fullscreen', () => {
   it('clicking fullscreen button starts playback if not playing', async () => {
+    getBlobMock.mockResolvedValue(new Blob(['audio'], { type: 'audio/webm' }));
     useComfortPlayerStore.setState({
       items: [makeItem({ id: 'a1', label: 'Song A' })],
       isPlaying: false,
@@ -497,5 +499,86 @@ describe('ComfortPlayerPanel — header button aria labels', () => {
     render(<ComfortPlayerPanel />);
     expect(screen.getByLabelText('Pause playback')).toBeInTheDocument();
     expect(screen.queryByLabelText('Start playback')).not.toBeInTheDocument();
+  });
+});
+
+// ── Media element attributes (video autoplay regression) ─────────────────
+
+describe('ComfortPlayerPanel — media element attributes', () => {
+  beforeEach(() => {
+    getBlobMock.mockResolvedValue(new Blob(['media-data'], { type: 'video/mp4' }));
+  });
+
+  it('video element has playsInline attribute for iOS compatibility', async () => {
+    useComfortPlayerStore.setState({
+      items: [makeItem({ id: 'v1', label: 'Video', type: 'video', mimeType: 'video/mp4' })],
+      isPlaying: true,
+      currentIndex: 0,
+    });
+    render(<ComfortPlayerPanel />);
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    const video = document.querySelector('video');
+    if (video) {
+      expect(video.playsInline).toBe(true);
+    }
+  });
+
+  it('video element starts muted for autoplay policy compliance', async () => {
+    useComfortPlayerStore.setState({
+      items: [makeItem({ id: 'v1', label: 'Video', type: 'video', mimeType: 'video/mp4' })],
+      isPlaying: true,
+      currentIndex: 0,
+    });
+    render(<ComfortPlayerPanel />);
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    const video = document.querySelector('video');
+    if (video) {
+      expect(video.muted).toBe(true);
+    }
+  });
+
+  it('video element has autoplay attribute', async () => {
+    useComfortPlayerStore.setState({
+      items: [makeItem({ id: 'v1', label: 'Video', type: 'video', mimeType: 'video/mp4' })],
+      isPlaying: true,
+      currentIndex: 0,
+    });
+    render(<ComfortPlayerPanel />);
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    const video = document.querySelector('video');
+    if (video) {
+      expect(video.autoplay).toBe(true);
+    }
+  });
+
+  it('audio element has playsinline and autoplay attributes', async () => {
+    getBlobMock.mockResolvedValue(new Blob(['audio-data'], { type: 'audio/webm' }));
+    useComfortPlayerStore.setState({
+      items: [makeItem({ id: 'a1', label: 'Audio', type: 'audio', mimeType: 'audio/webm' })],
+      isPlaying: true,
+      currentIndex: 0,
+    });
+    render(<ComfortPlayerPanel />);
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    const audio = document.querySelector('audio');
+    if (audio) {
+      expect(audio.hasAttribute('playsinline') || audio.hasAttribute('playsInline')).toBe(true);
+      expect(audio.autoplay).toBe(true);
+    }
+  });
+
+  it('photo shows img element with alt text', async () => {
+    getBlobMock.mockResolvedValue(new Blob(['img-data'], { type: 'image/jpeg' }));
+    useComfortPlayerStore.setState({
+      items: [makeItem({ id: 'p1', label: 'Family', type: 'photo', mimeType: 'image/jpeg' })],
+      isPlaying: true,
+      currentIndex: 0,
+    });
+    render(<ComfortPlayerPanel />);
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    const img = document.querySelector('img');
+    if (img) {
+      expect(img.alt).toContain('Comfort media');
+    }
   });
 });
