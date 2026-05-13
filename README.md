@@ -559,11 +559,12 @@ Synalux operates the canonical hosted version (free + paid). Self-hosters and fo
 **Stack**: Next.js, Zustand, Web Speech API (transcription), Inworld TTS-2 + Azure Neural fallback (speech), Kokoro-82M offline TTS, FaceLandmarker (gestures).
 
 **Model routing** (server-side via Synalux portal):
-- Free tier (chat): prism-coder:7b local for simple AAC → Gemini 2.5 Flash for medium/complex
-- Paid tiers (chat): prism-coder:7b for short → prism-coder:14b (32K ctx) for medium → **Claude Sonnet 4** for complex
-- Anthropic outage fallback: Standard → Gemini 3 Flash Preview, Advanced/Enterprise → Gemini 3 Pro Preview (preserves tier quality on cloud failover)
-- Autocorrect + word prediction (every keystroke pause): **Gemini 2.5 Flash-Lite** — bench-validated multilingual (ro/ru/es), 752ms avg, 4.3× cheaper than 2.5 Flash
+- **On-device** (button tap → phrase): `prism-coder:1b7-v19-q8` (Qwen3-1.7B Q8, Ollama) — zero network, zero cost, ~0.5s
+- **Cloud simple** (chat, free tier): `prism-coder:14b` (Qwen3-14B fine-tuned, RunPod) → Gemini 2.5 Flash fallback
+- **Cloud complex** (reasoning, pro tier): `prism-coder:32b` (QwQ-32B fine-tuned, RunPod) → Claude Sonnet 4 fallback
+- **Autocorrect + word prediction**: Gemini 2.5 Flash-Lite — 752ms avg, multilingual (ro/ru/es)
 - Speed-critical paths (button tap → speech) bypass routing — never blocks on network
+- All fine-tuned models: 100% on Synalux internal BFCL eval (16-case tool-routing suite)
 
 **Voice (TTS)** fallback chain:
 - Tier 1: Inworld TTS-2 (paid all langs; free for ro/uk/ru/de/ko/ar where Synalux absorbs cost)
@@ -605,7 +606,7 @@ Static frequency lists are obsolete. PrismAAC ranks suggested phrases via [**Pri
 ### 3. Caregiver corrections become training data — automatically
 When a caregiver fixes a suggestion the model got wrong (e.g. "no, the word is *eat*, not *want*"), the [audit-hooks postflight harvester](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md#7-the-recipe-combining-all-of-the-above) extracts the gotcha and persists it. After ~50 sessions, the system warns *before* the model makes a similar mistake. No labelling work for caregivers, no expensive retraining runs — the corrections are the curriculum.
 
-**Honest scope:** the underlying 7B model is mid-tier on standard tool-call benchmarks (BFCL V4 overall 18.77%, like the rest of the 7B class). What makes PrismAAC defensible isn't the model alone — it's the model plus the surrounding Prism algorithm stack. That combination is the wow.
+**Honest scope:** The fine-tuned models score 100% on Synalux's internal 16-case routing eval (single tool-call, 7 Prism tools). On the full Berkeley BFCL V4 leaderboard (2,000+ cases), the 1.7B scores ~59% — comparable to other sub-2B models. What makes PrismAAC defensible isn't the model score alone — it's the model plus the surrounding Prism spreading-activation algorithm stack.
 
 </details>
 
