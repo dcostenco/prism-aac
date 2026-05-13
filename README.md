@@ -45,6 +45,7 @@ Part of the [Synalux platform](https://synalux.ai).
 | 🗓 **Schedule** | Visual first-then routines | <img src="docs/screenshots/panel-schedule.png" width="120"> |
 | 🎮 **Games** | 12 therapeutic AAC games | <img src="docs/screenshots/panel-games.png" width="120"> |
 | 🏪 **Marketplace** | Voice packs, vocab packs, game packs | <img src="docs/screenshots/panel-marketplace.png" width="120"> |
+| 🎧 **Comfort Player** | Bedside media player for hospital patients | <img src="docs/screenshots/panel-comfort-player.png" width="120"> |
 | 👋 **Hands-free** | Head + hand gesture recognition | <img src="docs/screenshots/panel-settings-input-modes.png" width="120"> |
 | ⚙️ **Settings** | 23 languages, motor accommodations, plan tier | <img src="docs/screenshots/panel-settings.png" width="120"> |
 
@@ -405,6 +406,32 @@ Paste or upload a photo of a worksheet, screenshot of a webpage, picture of a te
 
 ---
 
+### 🎧 Comfort Player
+
+Bedside media player for hospital patients — coma, ICU, non-verbal, or anyone who needs continuous comfort content at the bedside.
+
+<details>
+<summary>Feature details</summary>
+
+Family and friends record voice messages, upload photos and videos. The playlist loops continuously so the patient always has familiar voices and faces nearby.
+
+- **Record** voice messages directly in the app (MediaRecorder API)
+- **Upload** audio files, photos, and video clips (100 MB per file, 500 MB total)
+- **Auto-loop** through all items continuously — set it and walk away
+- **Fullscreen** mode for photos and video (bedside display)
+- **Native TTS** integration — tapped phrases speak via AVSpeechSynthesizer on iOS
+- **Offline** — all media stored in IndexedDB, works without internet
+- **Keyboard accessible** — every control has ARIA labels and keyboard navigation
+- **Military-grade reviewed** — 27 security findings fixed (blob URL leaks, quota handling, input validation, MIME allowlists, unmount cleanup)
+- Toolbar button (🎧) is opt-in via Settings → Toolbar
+
+**Storage limits:** 50 items max, 100 MB per file, 500 MB total. MIME types restricted to audio (webm/mp4/mpeg/ogg/wav), images (jpeg/png/gif/webp/heic), and video (mp4/webm/quicktime).
+
+**Render path:** `components/ComfortPlayerPanel.tsx` → `store/comfortPlayerStore.ts` (Zustand + persist) → `services/comfortMediaStorage.ts` (IndexedDB blobs).
+</details>
+
+---
+
 ### 🧩 Chrome extension — same reading-assistant features in any text field
 The PrismAAC web app covers the reading-assistant flow inside its own surface. The Chrome extension (`chrome-extension/`) brings the **same behavior to ANY text field on ANY site** — Gmail, Google Docs, Word Online, school portals, banking forms — closing the only Read & Write gap that wasn't reachable from a web page alone.
 
@@ -499,7 +526,7 @@ Optional camera-based input for users who can't reliably tap. Head-pose dwell-cl
 <details>
 <summary><strong>Toolbar customization</strong></summary>
 
-The toolbar is fully reorderable. Default 0.9.0 ships with a minimal set (mic, AAC chat, alert, categories, settings) so the screen stays uncluttered for new users — every other built-in (math, AI chat, schedule, games, marketplace, notes, history, sound) can be re-enabled with one tap in Settings → Toolbar. Marketplace-installed apps slot in after the built-ins automatically.
+The toolbar is fully reorderable. Default 0.9.0 ships with a minimal set (mic, AAC chat, alert, categories, settings) so the screen stays uncluttered for new users — every other built-in (math, AI chat, schedule, games, marketplace, comfort player, notes, history, sound) can be re-enabled with one tap in Settings → Toolbar. Marketplace-installed apps slot in after the built-ins automatically.
 
 </details>
 
