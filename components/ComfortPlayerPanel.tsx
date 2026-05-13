@@ -245,31 +245,40 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
           aria-label="Close comfort player">✕</button>
       </header>
 
-      {/* L2: aria-live for now playing */}
+      {/* Now Playing bar */}
       {isPlaying && currentItem && mediaUrl && (
-        <div className="px-4 py-3 border-b border-theme surface-key" aria-live="polite" aria-atomic="true">
-          <p className="text-sm text-muted mb-1">Now Playing</p>
+        <div className="px-4 py-2 border-b border-theme surface-key shrink-0" aria-live="polite" aria-atomic="true">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">{typeIcon(currentItem.type)}</span>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{currentItem.label}</p>
-            </div>
+            <span className="text-lg">{typeIcon(currentItem.type)}</span>
+            <p className="font-medium truncate flex-1 text-sm">{currentItem.label}</p>
             <button onClick={() => { tapFeedback(); next(); }} className="aac-btn px-3 py-1 rounded-lg surface-key border border-theme text-sm"
               aria-label="Skip to next item">Skip ⏭</button>
           </div>
-          {currentItem.type === 'audio' && (
-            <audio ref={audioRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded} className="w-full mt-2" controls />
-          )}
+        </div>
+      )}
+
+      {/* Media playback area — fills available space */}
+      {isPlaying && currentItem && mediaUrl && (currentItem.type === 'video' || currentItem.type === 'photo') && (
+        <div className="flex-1 flex items-center justify-center bg-black min-h-0 overflow-hidden">
           {currentItem.type === 'video' && (
-            <video ref={videoRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded} className="w-full mt-2 rounded-lg max-h-48" controls />
+            <video ref={videoRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded}
+              className="w-full h-full object-contain" controls />
           )}
           {currentItem.type === 'photo' && (
-            <img src={mediaUrl} alt={`Comfort media: ${currentItem.label}`} className="w-full mt-2 rounded-lg max-h-48 object-contain" />
+            <img src={mediaUrl} alt={`Comfort media: ${currentItem.label}`}
+              className="w-full h-full object-contain" />
           )}
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
+      {/* Audio player — compact, leaves room for playlist */}
+      {isPlaying && currentItem && mediaUrl && currentItem.type === 'audio' && (
+        <div className="px-4 py-3 shrink-0">
+          <audio ref={audioRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded} className="w-full" controls />
+        </div>
+      )}
+
+      <div className={`${isPlaying && currentItem && mediaUrl && (currentItem.type === 'video' || currentItem.type === 'photo') ? 'hidden' : 'flex-1'} overflow-y-auto p-4 space-y-2 min-h-0`}>
         {view === 'record' ? (
           <div className="flex flex-col items-center justify-center gap-4 py-8">
             <div className={`text-6xl ${recording ? 'animate-pulse' : ''}`}>🎙️</div>
