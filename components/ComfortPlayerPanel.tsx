@@ -39,7 +39,7 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
 
   const currentItem = items[currentIndex] ?? null;
 
-  // C1: Fix blob URL leak race condition
+  // Load blob URL when item/play state changes
   useEffect(() => {
     if (!isPlaying || !currentItem) { setMediaUrl(null); return; }
     let cancelled = false;
@@ -49,6 +49,11 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
       if (!blob) { removeItem(currentItem.id); return; }
       url = URL.createObjectURL(blob);
       setMediaUrl(url);
+      // Trigger play after URL is set — delayed to ensure DOM has the src
+      if (pendingPlayRef.current) {
+        pendingPlayRef.current = false;
+        setTimeout(playMedia, 100);
+      }
     });
     return () => {
       cancelled = true;
@@ -57,9 +62,11 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
     };
   }, [isPlaying, currentIndex, currentItem?.id]);
 
-  const handleLoadedData = useCallback((e: React.SyntheticEvent<HTMLMediaElement>) => {
-    const el = e.currentTarget;
-    el.play().then(() => { setTimeout(() => { el.muted = false; }, 200); }).catch(() => {});
+  // Play media after user gesture — ref tracks pending play
+  const pendingPlayRef = useRef(false);
+  const playMedia = useCallback(() => {
+    const el = videoRef.current || audioRef.current;
+    if (el) el.play().catch(() => {});
   }, []);
 
   // M7: Clear photo timer before setting new one
@@ -199,13 +206,13 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
           <img src={mediaUrl} alt={`Comfort media: ${currentItem.label}`} className="max-w-full max-h-full object-contain" />
         )}
         {currentItem.type === 'video' && (
-          <video ref={videoRef} src={mediaUrl} playsInline muted onEnded={handleMediaEnded} onLoadedData={handleLoadedData} className="max-w-full max-h-full" />
+          <video ref={videoRef} src={mediaUrl} autoPlay playsInline controls onEnded={handleMediaEnded} className="max-w-full max-h-full" />
         )}
         {currentItem.type === 'audio' && (
           <div className="text-center text-white">
             <div className="text-8xl mb-4 animate-pulse">🎵</div>
             <p className="text-2xl">{currentItem.label}</p>
-            <audio ref={audioRef} src={mediaUrl} playsInline onEnded={handleMediaEnded} onLoadedData={handleLoadedData} />
+            <audio ref={audioRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded} />
           </div>
         )}
         {/* L3: Adequate touch target */}
@@ -223,12 +230,12 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
         <h2 className="font-semibold text-lg flex-1">Comfort Player</h2>
         {items.length > 0 && (
           <>
-            <button onClick={() => { tapFeedback(); isPlaying ? pause() : play(); }}
+            <button onClick={() => { tapFeedback(); if (isPlaying) { pause(); } else { pendingPlayRef.current = true; play(); } }}
               className="aac-btn w-9 h-9 rounded-lg surface-key text-lg flex items-center justify-center border border-theme"
               aria-label={isPlaying ? 'Pause playback' : 'Start playback'}>
               {isPlaying ? '⏸' : '▶️'}
             </button>
-            <button onClick={() => { tapFeedback(); setIsFullscreen(true); if (!isPlaying) play(); }}
+            <button onClick={() => { tapFeedback(); setIsFullscreen(true); if (!isPlaying) { pendingPlayRef.current = true; play(); } }}
               className="aac-btn w-9 h-9 rounded-lg surface-key text-lg flex items-center justify-center border border-theme"
               aria-label="Fullscreen playback">⛶</button>
           </>
@@ -251,10 +258,10 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
               aria-label="Skip to next item">Skip ⏭</button>
           </div>
           {currentItem.type === 'audio' && (
-            <audio ref={audioRef} src={mediaUrl} playsInline onEnded={handleMediaEnded} onLoadedData={handleLoadedData} className="w-full mt-2" controls />
+            <audio ref={audioRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded} className="w-full mt-2" controls />
           )}
           {currentItem.type === 'video' && (
-            <video ref={videoRef} src={mediaUrl} playsInline muted onEnded={handleMediaEnded} onLoadedData={handleLoadedData} className="w-full mt-2 rounded-lg max-h-48" controls />
+            <video ref={videoRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded} className="w-full mt-2 rounded-lg max-h-48" controls />
           )}
           {currentItem.type === 'photo' && (
             <img src={mediaUrl} alt={`Comfort media: ${currentItem.label}`} className="w-full mt-2 rounded-lg max-h-48 object-contain" />
@@ -296,7 +303,7 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
                   aria-label={`Play ${item.label}, ${item.type}, ${formatSize(item.sizeBytes)}`}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tapFeedback(); setIndex(i); }}}
                   className={`flex items-center gap-3 p-3 rounded-xl border border-theme cursor-pointer ${i === currentIndex && isPlaying ? 'surface-key ring-2 ring-green-500/50' : 'hover:bg-black/5'}`}
-                  onClick={() => { tapFeedback(); setIndex(i); }}>
+                  onClick={() => { tapFeedback(); pendingPlayRef.current = true; setIndex(i); }}>
                   <span className="text-2xl">{typeIcon(item.type)}</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{item.label}</p>

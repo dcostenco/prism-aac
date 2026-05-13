@@ -530,7 +530,7 @@ describe('ComfortPlayerPanel — media element attributes', () => {
     }
   });
 
-  it('video element starts muted for autoplay policy compliance', async () => {
+  it('video element has autoPlay and controls for native playback', async () => {
     useComfortPlayerStore.setState({
       items: [makeItem({ id: 'v1', label: 'Video', type: 'video', mimeType: 'video/mp4' })],
       isPlaying: true,
@@ -540,26 +540,12 @@ describe('ComfortPlayerPanel — media element attributes', () => {
     await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
     const video = document.querySelector('video');
     if (video) {
-      expect(video.muted).toBe(true);
+      expect(video.autoplay).toBe(true);
+      expect(video.controls).toBe(true);
     }
   });
 
-  it('video calls play() on loadedData event', async () => {
-    useComfortPlayerStore.setState({
-      items: [makeItem({ id: 'v1', label: 'Video', type: 'video', mimeType: 'video/mp4' })],
-      isPlaying: true,
-      currentIndex: 0,
-    });
-    render(<ComfortPlayerPanel />);
-    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
-    const video = document.querySelector('video');
-    if (video) {
-      fireEvent.loadedData(video);
-      expect(video.play).toHaveBeenCalled();
-    }
-  });
-
-  it('audio calls play() on loadedData event', async () => {
+  it('audio element has autoPlay and controls', async () => {
     getBlobMock.mockResolvedValue(new Blob(['audio-data'], { type: 'audio/webm' }));
     useComfortPlayerStore.setState({
       items: [makeItem({ id: 'a1', label: 'Audio', type: 'audio', mimeType: 'audio/webm' })],
@@ -570,8 +556,8 @@ describe('ComfortPlayerPanel — media element attributes', () => {
     await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
     const audio = document.querySelector('audio');
     if (audio) {
-      fireEvent.loadedData(audio);
-      expect(audio.play).toHaveBeenCalled();
+      expect(audio.autoplay).toBe(true);
+      expect(audio.controls).toBe(true);
     }
   });
 
