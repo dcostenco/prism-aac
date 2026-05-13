@@ -49,11 +49,11 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
       if (!blob) { removeItem(currentItem.id); return; }
       url = URL.createObjectURL(blob);
       setMediaUrl(url);
-      // Trigger play after URL is set — delayed to ensure DOM has the src
-      if (pendingPlayRef.current) {
-        pendingPlayRef.current = false;
-        setTimeout(playMedia, 100);
-      }
+      // Play after URL is set
+      setTimeout(() => {
+        const el = videoRef.current || audioRef.current;
+        if (el) el.play().catch(() => {});
+      }, 50);
     });
     return () => {
       cancelled = true;
@@ -62,11 +62,19 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
     };
   }, [isPlaying, currentIndex, currentItem?.id]);
 
-  // Play media after user gesture — ref tracks pending play
   const pendingPlayRef = useRef(false);
-  const playMedia = useCallback(() => {
-    const el = videoRef.current || audioRef.current;
-    if (el) el.play().catch(() => {});
+
+  // Unlock audio context on any user click — enables subsequent programmatic play()
+  useEffect(() => {
+    const unlock = () => {
+      const v = videoRef.current;
+      const a = audioRef.current;
+      // Play+pause on an empty element "unlocks" media playback for this page
+      if (v && v.paused && !v.src) { v.play().catch(() => {}); v.pause(); }
+      if (a && a.paused && !a.src) { a.play().catch(() => {}); a.pause(); }
+    };
+    document.addEventListener('click', unlock, { once: true });
+    return () => document.removeEventListener('click', unlock);
   }, []);
 
   // M7: Clear photo timer before setting new one
@@ -223,62 +231,62 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
     );
   }
 
+  const showingMedia = isPlaying && currentItem && mediaUrl;
+  const showingVisual = showingMedia && (currentItem?.type === 'video' || currentItem?.type === 'photo');
+
   return (
     <section className="flex flex-col h-full min-h-0">
-      <header className="flex items-center gap-2 px-4 py-2 border-b border-theme shrink-0">
-        <span className="text-xl">🎧</span>
-        <h2 className="font-semibold text-lg flex-1">Comfort Player</h2>
+      {/* Compact header — minimal when playing */}
+      <header className="flex items-center gap-1 px-3 py-1 border-b border-theme shrink-0">
+        <span className="text-lg">🎧</span>
+        {showingMedia ? (
+          <p className="font-medium truncate flex-1 text-sm">{currentItem?.label}</p>
+        ) : (
+          <h2 className="font-semibold text-base flex-1">Comfort Player</h2>
+        )}
         {items.length > 0 && (
           <>
+            {showingMedia && (
+              <button onClick={() => { tapFeedback(); next(); }} className="aac-btn px-2 py-1 rounded-lg surface-key border border-theme text-xs"
+                aria-label="Skip to next item">⏭</button>
+            )}
             <button onClick={() => { tapFeedback(); if (isPlaying) { pause(); } else { pendingPlayRef.current = true; play(); } }}
-              className="aac-btn w-9 h-9 rounded-lg surface-key text-lg flex items-center justify-center border border-theme"
+              className="aac-btn w-8 h-8 rounded-lg surface-key text-base flex items-center justify-center border border-theme"
               aria-label={isPlaying ? 'Pause playback' : 'Start playback'}>
               {isPlaying ? '⏸' : '▶️'}
             </button>
             <button onClick={() => { tapFeedback(); setIsFullscreen(true); if (!isPlaying) { pendingPlayRef.current = true; play(); } }}
-              className="aac-btn w-9 h-9 rounded-lg surface-key text-lg flex items-center justify-center border border-theme"
+              className="aac-btn w-8 h-8 rounded-lg surface-key text-base flex items-center justify-center border border-theme"
               aria-label="Fullscreen playback">⛶</button>
           </>
         )}
         <button onClick={() => { tapFeedback(); onClose(); }}
-          className="aac-btn w-9 h-9 rounded-lg surface-key text-muted text-lg flex items-center justify-center border border-theme"
+          className="aac-btn w-8 h-8 rounded-lg surface-key text-muted text-base flex items-center justify-center border border-theme"
           aria-label="Close comfort player">✕</button>
       </header>
 
-      {/* Now Playing bar */}
-      {isPlaying && currentItem && mediaUrl && (
-        <div className="px-4 py-2 border-b border-theme surface-key shrink-0" aria-live="polite" aria-atomic="true">
-          <div className="flex items-center gap-3">
-            <span className="text-lg">{typeIcon(currentItem.type)}</span>
-            <p className="font-medium truncate flex-1 text-sm">{currentItem.label}</p>
-            <button onClick={() => { tapFeedback(); next(); }} className="aac-btn px-3 py-1 rounded-lg surface-key border border-theme text-sm"
-              aria-label="Skip to next item">Skip ⏭</button>
-          </div>
-        </div>
-      )}
-
-      {/* Media playback area — fills available space */}
-      {isPlaying && currentItem && mediaUrl && (currentItem.type === 'video' || currentItem.type === 'photo') && (
-        <div className="flex-1 flex items-center justify-center bg-black min-h-0 overflow-hidden">
-          {currentItem.type === 'video' && (
-            <video ref={videoRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded}
+      {/* Video/photo — fills ALL remaining space */}
+      {showingVisual && (
+        <div className="flex-1 bg-black min-h-0 flex items-center justify-center" aria-live="polite">
+          {currentItem!.type === 'video' && (
+            <video ref={videoRef} src={mediaUrl!} playsInline onEnded={handleMediaEnded}
               className="w-full h-full object-contain" controls />
           )}
-          {currentItem.type === 'photo' && (
-            <img src={mediaUrl} alt={`Comfort media: ${currentItem.label}`}
+          {currentItem!.type === 'photo' && (
+            <img src={mediaUrl!} alt={`Comfort media: ${currentItem!.label}`}
               className="w-full h-full object-contain" />
           )}
         </div>
       )}
 
-      {/* Audio player — compact, leaves room for playlist */}
-      {isPlaying && currentItem && mediaUrl && currentItem.type === 'audio' && (
-        <div className="px-4 py-3 shrink-0">
-          <audio ref={audioRef} src={mediaUrl} autoPlay playsInline onEnded={handleMediaEnded} className="w-full" controls />
+      {/* Audio — compact bar */}
+      {showingMedia && currentItem?.type === 'audio' && (
+        <div className="px-4 py-2 shrink-0 surface-key border-b border-theme">
+          <audio ref={audioRef} src={mediaUrl!} playsInline onEnded={handleMediaEnded} className="w-full" controls />
         </div>
       )}
 
-      <div className={`${isPlaying && currentItem && mediaUrl && (currentItem.type === 'video' || currentItem.type === 'photo') ? 'hidden' : 'flex-1'} overflow-y-auto p-4 space-y-2 min-h-0`}>
+      <div className={`${showingVisual ? 'hidden' : 'flex-1'} overflow-y-auto p-4 space-y-2 min-h-0`}>
         {view === 'record' ? (
           <div className="flex flex-col items-center justify-center gap-4 py-8">
             <div className={`text-6xl ${recording ? 'animate-pulse' : ''}`}>🎙️</div>
