@@ -157,7 +157,7 @@ final class LLMEngine: ObservableObject {
         return n == 1 ? tokens[0] : -1
     }
 
-    private static func createSampler() -> OpaquePointer {
+    private static func createSampler() -> UnsafeMutablePointer<llama_sampler> {
         let params = llama_sampler_chain_default_params()
         let chain = llama_sampler_chain_init(params)!
         llama_sampler_chain_add(chain, llama_sampler_init_temp(0.7))
