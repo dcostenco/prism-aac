@@ -319,6 +319,43 @@ export function stripModelControlTokens(text: string): string {
   return out.trim();
 }
 
+// ── Native bridge (iOS on-device 1.7B via llama.cpp) ──
+
+function isNativeBridgeAvailable(): boolean {
+  return typeof window !== 'undefined' && !!(window as any).prismNativeBridge?.askAI;
+}
+
+function callNativeBridge(
+  question: string,
+  lang: string,
+  onChunk?: (delta: string) => void,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let fullText = '';
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error('Native AI timeout'));
+    }, 30_000);
+
+    function cleanup() {
+      clearTimeout(timeout);
+      delete (window as any).prismNativeAIResult;
+      delete (window as any).prismNativeAIDone;
+    }
+
+    (window as any).prismNativeAIResult = (token: string) => {
+      fullText += token;
+      onChunk?.(token);
+    };
+    (window as any).prismNativeAIDone = () => {
+      cleanup();
+      resolve(fullText);
+    };
+
+    (window as any).prismNativeBridge.askAI(question, lang);
+  });
+}
+
 // ── Routing: Synalux → local fallback ──
 
 async function route(
@@ -425,6 +462,18 @@ export async function askAI(
   ].filter(Boolean).join('\n');
 
   const cappedQuestion = question.slice(0, 2000);
+
+  // On-device path: iOS native bridge → llama.cpp 1.7B (no network, no latency)
+  if (isNativeBridgeAvailable()) {
+    try {
+      const raw = await callNativeBridge(cappedQuestion, language, onChunk);
+      const text = stripModelControlTokens(raw);
+      return { text, lines: text.split(/\n+/).filter((l) => l.trim()) };
+    } catch {
+      // Fall through to cloud/local
+    }
+  }
+
   const needsSearch = /what|who|where|when|why|how|explain|tell me about/i.test(cappedQuestion);
   const text = await route(cappedQuestion, { system, webSearch: needsSearch, onChunk });
   const lines = text.split(/\n+/).filter((l) => l.trim());

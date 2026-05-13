@@ -1,5 +1,10 @@
 import Foundation
+#if canImport(llama)
 import llama
+private let llamaAvailable = true
+#else
+private let llamaAvailable = false
+#endif
 
 /// On-device inference engine — Qwen3 1.7B via llama.cpp Metal backend.
 ///
@@ -22,6 +27,7 @@ final class LLMEngine: ObservableObject {
     private var context: OpaquePointer?
 
     func load(from url: URL) async throws {
+        #if canImport(llama)
         guard !isLoaded else { return }
 
         let free = AppState.measureFreeMemoryMB()
@@ -40,9 +46,7 @@ final class LLMEngine: ObservableObject {
             return llama_model_load_from_file(path, params)
         }.value
 
-        guard let loadedModel else {
-            throw LLMError.notLoaded
-        }
+        guard let loadedModel else { throw LLMError.notLoaded }
 
         var ctxParams = llama_context_default_params()
         ctxParams.n_ctx = Self.CONTEXT_SIZE
@@ -60,18 +64,23 @@ final class LLMEngine: ObservableObject {
         self.context = ctx
         self.isLoaded = true
         NSLog("[LLMEngine] Model loaded: \(url.lastPathComponent)")
+        #else
+        throw LLMError.notLoaded
+        #endif
     }
 
     func unload() {
+        #if canImport(llama)
         if let ctx = context { llama_free(ctx) }
         if let mdl = model { llama_model_free(mdl) }
+        #endif
         context = nil
         model = nil
         isLoaded = false
-        NSLog("[LLMEngine] Model unloaded")
     }
 
     func generate(prompt: String, onToken: @escaping (String) -> Void) async throws -> String {
+        #if canImport(llama)
         guard let ctx = context, let mdl = model else { throw LLMError.notLoaded }
         guard !isGenerating else { throw LLMError.alreadyGenerating }
 
@@ -80,7 +89,7 @@ final class LLMEngine: ObservableObject {
 
         let vocab = llama_model_get_vocab(mdl)
 
-        let result: String = try await Task.detached(priority: .userInitiated) { [weak self] in
+        return try await Task.detached(priority: .userInitiated) { [weak self] in
             guard self != nil else { throw LLMError.notLoaded }
 
             let promptTokens = Self.tokenize(vocab: vocab, text: prompt, addBos: true)
@@ -109,7 +118,6 @@ final class LLMEngine: ObservableObject {
 
             while nCur < nMax {
                 let newToken = llama_sampler_sample(sampler, ctx, -1)
-
                 if newToken == eosId || newToken == imEndId { break }
 
                 var buf = [CChar](repeating: 0, count: 256)
@@ -117,25 +125,25 @@ final class LLMEngine: ObservableObject {
                 if n > 0 {
                     let piece = String(cString: buf.prefix(Int(n)) + [0])
                     generated += piece
-                    let safePiece = piece
-                    Task { @MainActor in onToken(safePiece) }
+                    Task { @MainActor in onToken(piece) }
                 }
 
                 batch.n_tokens = 0
                 Self.batchAdd(&batch, token: newToken, pos: nCur, seqIds: [0], logits: true)
-
                 guard llama_decode(ctx, batch) == 0 else { break }
                 nCur += 1
             }
 
             return generated
         }.value
-
-        return result
+        #else
+        throw LLMError.notLoaded
+        #endif
     }
 
     // MARK: - Helpers
 
+    #if canImport(llama)
     private static func tokenize(vocab: OpaquePointer, text: String, addBos: Bool) -> [llama_token] {
         let utf8 = Array(text.utf8)
         let maxTokens = utf8.count + (addBos ? 1 : 0) + 1
@@ -173,6 +181,7 @@ final class LLMEngine: ObservableObject {
         batch.logits[i] = logits ? 1 : 0
         batch.n_tokens += 1
     }
+    #endif
 }
 
 enum LLMError: LocalizedError {

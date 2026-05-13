@@ -17,7 +17,7 @@ final class AACPipeline: ObservableObject {
 
     enum AIAvailability {
         case unknown
-        case onDevice           // 1.5B loaded in memory
+        case onDevice           // 1.7B loaded in memory
         case cloudFallback      // 3 GB device or model not downloaded
         case unavailable        // no network + no model
     }
@@ -252,6 +252,10 @@ Rules: respond in \(validLang), 1-2 short sentences only, plain language, no jar
 <|im_start|>user
 \(safeQuestion)<|im_end|>
 <|im_start|>assistant
+<think>
+
+</think>
+
 """
     }
 }

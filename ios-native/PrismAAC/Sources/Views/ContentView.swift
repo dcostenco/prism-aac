@@ -11,7 +11,7 @@ import WatchConnectivity
 ///     all languages, prediction engine — re-implementing in Swift takes months
 ///   - Apple guideline 4.2 allows web views that host YOUR OWN first-party
 ///     content with significant native enhancement. We add: AVSpeechSynthesizer
-///     TTS (better than WebSpeech on iOS), on-device 1.5B inference, Watch
+///     TTS (better than WebSpeech on iOS), on-device 1.7B inference, Watch
 ///     companion, emergency service, offline cache.
 ///
 /// Native bridge (JS → Swift):
@@ -124,6 +124,11 @@ struct PrismWebView: UIViewRepresentable {
             freeMemoryMB: function() {
                 // Async — returns via prismNativeCallback
                 window.webkit.messageHandlers.prismNative.postMessage({ action: 'memoryPressure' });
+            },
+            askAI: function(question, lang) {
+                window.webkit.messageHandlers.prismNative.postMessage({
+                    action: 'askAI', question: question, lang: lang || 'en'
+                });
             }
         };
         // Override Web Speech API with native TTS for better iOS quality
@@ -211,6 +216,26 @@ struct PrismWebView: UIViewRepresentable {
                     "window.prismNativeCallback && window.prismNativeCallback('memoryPressure', \(free))",
                     completionHandler: nil
                 )
+            case "askAI":
+                guard let pageURL = message.webView?.url,
+                      Self.isAllowedOrigin(pageURL),
+                      message.frameInfo.isMainFrame else { return }
+                let question = String((body["question"] as? String ?? "").prefix(500))
+                let lang = body["lang"] as? String ?? "en"
+                guard !question.isEmpty else { return }
+                let webView = message.webView
+                Task { @MainActor in
+                    for await token in self.pipeline.ask(question: question, language: lang) {
+                        guard let data = try? JSONSerialization.data(withJSONObject: token),
+                              let json = String(data: data, encoding: .utf8) else { continue }
+                        webView?.evaluateJavaScript(
+                            "window.prismNativeAIResult && window.prismNativeAIResult(\(json))"
+                        ) { _, _ in }
+                    }
+                    webView?.evaluateJavaScript(
+                        "window.prismNativeAIDone && window.prismNativeAIDone()"
+                    ) { _, _ in }
+                }
             case "startVoice":
                 guard let pageURL = message.webView?.url,
                       Self.isAllowedOrigin(pageURL),
@@ -299,7 +324,7 @@ struct PrismWebView: UIViewRepresentable {
 
             let audioSession = AVAudioSession.sharedInstance()
             do {
-                try audioSession.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetooth])
+                try audioSession.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP])
                 try audioSession.setMode(.measurement)
                 try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
             } catch {
@@ -526,7 +551,7 @@ struct ModelLoadingView: View {
             case .checking: ProgressView("Checking…")
             case .downloading:
                 VStack(spacing: 8) {
-                    Text("Downloading AI model (864 MB)").font(.headline)
+                    Text("Downloading AI model (1 GB)").font(.headline)
                     ProgressView().padding(.horizontal, 32)
                 }
             case .lowMemory:
@@ -556,12 +581,12 @@ struct ModelLoadingView: View {
         guard AppState.measureFreeMemoryMB() >= 1_200 else { phase = .lowMemory; return }
         let url = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("models/prism-ios-1.5b-q4.gguf")
+            .appendingPathComponent("models/prism-aac-1b7-q4km.gguf")
         if FileManager.default.fileExists(atPath: url.path) { await app.loadModel(from: url); return }
         phase = .downloading
         do {
             // FIX L4: Use download task instead of byte-by-byte streaming (avoids quadratic realloc)
-            let cdnURL = URL(string: "https://synalux.ai/models/prism-ios-1.5b-q4.gguf")!
+            let cdnURL = URL(string: "https://synalux.ai/models/prism-aac-1b7-q4km.gguf")!
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             let (tempURL, response) = try await URLSession.shared.download(from: cdnURL)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {

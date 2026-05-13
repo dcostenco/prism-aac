@@ -7,7 +7,7 @@ import UIKit
 /// Feature tiers (degrade automatically on memory pressure):
 ///
 ///   TIER 3 — Full AI   (≥ 1,400 MB free)
-///     • On-device 1.5B inference
+///     • On-device 1.7B inference
 ///     • AI chat, smart predictions, validator loop
 ///
 ///   TIER 2 — Cloud AI  (800–1,399 MB free, or 3 GB device with model loaded)
