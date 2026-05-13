@@ -15,7 +15,7 @@
  *   - Clear confirmation flow (M4: in-app confirm, not window.confirm)
  *   - Aria labels for accessibility
  */
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
@@ -49,6 +49,13 @@ function makeItem(overrides: Partial<ComfortMediaItem> = {}): ComfortMediaItem {
     ...overrides,
   };
 }
+
+// jsdom doesn't implement HTMLMediaElement methods
+beforeAll(() => {
+  window.HTMLMediaElement.prototype.load = vi.fn();
+  window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
+  window.HTMLMediaElement.prototype.pause = vi.fn();
+});
 
 // ── Setup ──────────────────────────────────────────────────────────────────
 

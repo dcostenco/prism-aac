@@ -57,6 +57,16 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
     };
   }, [isPlaying, currentIndex, currentItem?.id]);
 
+  // Force play after mediaUrl is set — autoPlay attribute alone fails for blob URLs
+  useEffect(() => {
+    if (!isPlaying || !mediaUrl || !currentItem) return;
+    const el = currentItem.type === 'video' ? videoRef.current : currentItem.type === 'audio' ? audioRef.current : null;
+    if (el) {
+      el.load();
+      el.play().catch(() => {});
+    }
+  }, [mediaUrl, isPlaying, currentItem?.id]);
+
   // M7: Clear photo timer before setting new one
   useEffect(() => {
     if (!isPlaying || !currentItem || !mediaUrl) return;
