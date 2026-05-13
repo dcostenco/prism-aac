@@ -447,68 +447,13 @@ struct PrismWebView: UIViewRepresentable {
             ) { _, _ in }
         }
 
-        // Show offline fallback if load fails
         func webView(_ webView: WKWebView, didFailProvisionalNavigation _: WKNavigation!, withError error: Error) {
-            // M22: Add CSP to offline fallback HTML; M23: use about:blank baseURL
-            let offlineHTML = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-            <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
-            <style>
-            * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-            body { background: #14161d; color: #fff; font-family: -apple-system, sans-serif; padding: env(safe-area-inset-top) 12px 12px; }
-            .bar { background: #1e2030; border-radius: 12px; padding: 16px; margin-bottom: 12px; font-size: 22px; min-height: 56px; display: flex; align-items: center; }
-            .bar span { opacity: 0.5; }
-            .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-            .tile { background: #1e2030; border-radius: 12px; padding: 16px 8px; text-align: center; font-size: 18px; cursor: pointer; border: none; color: #fff; }
-            .tile:active { background: #2a3050; }
-            .tile .emoji { font-size: 32px; display: block; margin-bottom: 4px; }
-            .speak { background: #4CAF50; color: #fff; border: none; border-radius: 12px; padding: 14px; width: 100%; font-size: 20px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
-            .retry { background: #2a3050; color: #fff; border: none; border-radius: 12px; padding: 10px; width: 100%; font-size: 14px; cursor: pointer; opacity: 0.7; }
-            .status { text-align: center; font-size: 13px; opacity: 0.4; margin-top: 8px; }
-            </style>
-            </head>
-            <body>
-            <div class="bar"><span id="msg">Tap a phrase to speak</span></div>
-            <div class="grid">
-              <button class="tile" onclick="say('Help')"><span class="emoji">🆘</span>Help</button>
-              <button class="tile" onclick="say('Yes')"><span class="emoji">✅</span>Yes</button>
-              <button class="tile" onclick="say('No')"><span class="emoji">❌</span>No</button>
-              <button class="tile" onclick="say('I want')"><span class="emoji">👋</span>I want</button>
-              <button class="tile" onclick="say('Thank you')"><span class="emoji">😊</span>Thanks</button>
-              <button class="tile" onclick="say('More please')"><span class="emoji">➕</span>More</button>
-              <button class="tile" onclick="say('I need water')"><span class="emoji">💧</span>Water</button>
-              <button class="tile" onclick="say('I am hungry')"><span class="emoji">🍽️</span>Hungry</button>
-              <button class="tile" onclick="say('I need help')"><span class="emoji">🙏</span>Need help</button>
-              <button class="tile" onclick="say('I feel sick')"><span class="emoji">🤒</span>Sick</button>
-              <button class="tile" onclick="say('Stop')"><span class="emoji">🛑</span>Stop</button>
-              <button class="tile" onclick="say('I love you')"><span class="emoji">❤️</span>Love you</button>
-            </div>
-            <button class="speak" id="spk" onclick="speakBar()">Speak</button>
-            <button class="retry" onclick="location.reload()">🔄 Reconnect to full app</button>
-            <div class="status">Offline mode — core phrases available</div>
-            <script>
-            var current = '';
-            function say(t) {
-              current = t;
-              document.getElementById('msg').textContent = t;
-              document.getElementById('msg').style.opacity = '1';
-              if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.prismNative) {
-                window.webkit.messageHandlers.prismNative.postMessage({action:'speak', text:t, lang:'en-US', rate:0.4});
-              } else if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
-                var u = new SpeechSynthesisUtterance(t); u.rate = 0.8; window.speechSynthesis.speak(u);
-              }
+            if let url = Bundle.main.url(forResource: "offline", withExtension: "html"),
+               let html = try? String(contentsOf: url, encoding: .utf8) {
+                webView.loadHTMLString(html, baseURL: url.deletingLastPathComponent())
+            } else {
+                webView.loadHTMLString("<body style='background:#14161d;color:#fff;text-align:center;padding-top:40vh'><h2>No connection</h2><button onclick='location.reload()'>Retry</button></body>", baseURL: nil)
             }
-            function speakBar() {
-              if (current) say(current);
-            }
-            </script>
-            </body></html>
-            """
-            webView.loadHTMLString(offlineHTML, baseURL: URL(string: "about:blank"))
         }
     }
 }
