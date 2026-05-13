@@ -167,6 +167,13 @@ export default function AIChatPanel() {
       // every settings change and overflow React's render budget (#300).
       }, useSettingsStore.getState().outputLanguage || useSettingsStore.getState().language);
       flush();
+      // Auto-speak the AI response after streaming completes.
+      if (buffer.trim() && soundEnabled) {
+        const outLang = useSettingsStore.getState().outputLanguage;
+        const lang = useSettingsStore.getState().language;
+        const spokenLang = (outLang && outLang !== lang) ? outLang : undefined;
+        aacSpeak(buffer.trim(), speechRate, speechVolume, undefined, true, spokenLang as import('@/engine/i18n').SupportedLanguage | undefined);
+      }
     } catch (e: unknown) {
       if (askController.signal.aborted) {
         // Request was intentionally cancelled (panel closed) — don't update UI.
