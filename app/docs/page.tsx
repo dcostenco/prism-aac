@@ -12,7 +12,7 @@ export default function DocsPage() {
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 20, marginBottom: 12 }}>Getting Started</h2>
         <ul style={{ lineHeight: 1.8 }}>
-          <li>Open <a href="https://synalux.ai/prism-aac" style={{ color: '#6366f1' }}>synalux.ai/prism-aac</a> on any device</li>
+          <li>Open <a href="https://prism-aac.vercel.app" style={{ color: '#6366f1' }}>prism-aac.vercel.app</a> on any device, or download from the <a href="https://apps.apple.com/app/id6764692277" style={{ color: '#6366f1' }}>App Store</a></li>
           <li>Tap a category (Help, Food, People, etc.) to see phrase tiles</li>
           <li>Tap a phrase — it appears in the message bar and speaks aloud</li>
           <li>Use the keyboard to type custom messages</li>

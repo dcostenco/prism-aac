@@ -14,10 +14,10 @@ Prism AAC is an Augmentative and Alternative Communication application designed 
 
 | Tier | Cost | Features |
 |------|------|----------|
-| Free | $0 | Core AAC (phrase board, keyboard, TTS), offline-only |
-| Standard | Paid | Cloud AI, messaging, contact sync, marketplace |
-| Advanced | Paid | On-device LLM, voice cloning, priority support |
-| Enterprise | Custom | Multi-seat, SSO, HIPAA BAA, custom vocabulary |
+| Free | $0 | Core AAC (phrase board, keyboard, TTS), on-device 1.7B LLM, 3 games |
+| Standard | $19/mo | Cloud AI (14B), 2,000 requests/day, messaging, contact sync, marketplace |
+| Advanced | $49/mo | QwQ-32B reasoning, voice cloning, clinical reports, priority support |
+| Enterprise | $99/mo | Unlimited cloud, Claude Opus 4 routing, HIPAA BAA, SSO, dedicated SLA |
 
 ## 4. Medical disclaimer
 
@@ -47,4 +47,4 @@ We may update these terms. Material changes will be communicated via the App or 
 
 ## 10. Contact
 
-questions@synalux.ai | [synalux.ai/terms](https://synalux.ai/terms)
+support@synalux.ai | [synalux.ai/terms](https://synalux.ai/terms)

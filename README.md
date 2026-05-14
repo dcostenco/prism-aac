@@ -157,7 +157,7 @@ On-screen keyboard with **word prediction**, **AI autocomplete**, and a one-tap 
 - AI completion ("hw" → "how", "togoso" → "to go so") via Synalux `text/correct` (Gemini 2.5 Flash-Lite, ~752ms avg, 4.3× cheaper than 2.5 Flash)
 - Cross-language gate: RO `eu` won't leak into EN bar even when both corpora are loaded (cross-corpus frequency comparison)
 - "Speak" reads with auto-tone adaptation (declarative / interrogative / exclamatory inferred from punctuation)
-- Voice tier 1: Inworld TTS-2 → Azure Neural (both natural/neural, all 23 app languages covered); tier 2: Kokoro-82M offline; tier 3: OS Web Speech; tier 4: WASM espeak-ng
+- Voice tier 1: Inworld TTS-2 (natural/neural, all 23 app languages); tier 1.5: Kokoro-82M offline (en/es/fr/pt/ja/zh); tier 2: OS Web Speech; tier 3: WASM espeak-ng
 - Word highlight is duration-estimated (~60 ms/char @ rate=0.5, scales with the rate slider) — works across every TTS tier without backend changes; precise sync via Azure `wordBoundary` is a future Pro feature.
 - 1.5MB SQLite n-gram corpus per language; unigrams + bigrams + trigrams; lazy-loaded on language switch
 
@@ -324,7 +324,7 @@ Visual first-then schedule for routine + transition support. Each step is a pict
 ![Games panel with 9 game tiles](docs/screenshots/panel-games.png)
 
 <details>
-<summary><strong>The 9 games + technical details</strong></summary>
+<summary><strong>The 12 games + technical details</strong></summary>
 
 | Game | Skill targeted |
 |---|---|
@@ -342,7 +342,7 @@ Visual first-then schedule for routine + transition support. Each step is a pict
 | Turn Taker | Social turn-taking practice |
 
 - Free tier: Bubble Pop, Color Hunt, My Story (3 games)
-- Paid tier: all 9
+- Paid tier: all 12
 - Per-game data feeds `services/adaptiveEngine.ts` — utterance length / category / time-of-day / outcome → suggests the next game
 - All games disable AAC tile categories that aren't relevant to that game's vocabulary, so the child isn't distracted
 
