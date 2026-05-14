@@ -133,17 +133,17 @@ export default function AIChatPanel() {
     let speaking = false;
     const queueTimers: ReturnType<typeof setTimeout>[] = [];
 
-    const getSpokenLang = () => {
-      const outLang = useSettingsStore.getState().outputLanguage;
-      const lang = useSettingsStore.getState().language;
-      return (outLang && outLang !== lang) ? outLang as import('@/engine/i18n').SupportedLanguage : undefined;
-    };
+    // Do NOT override spokenLang for AI streaming speech. The AI may respond
+    // in any language (native 1.7B on iOS often responds in English even when
+    // prompted in Russian). Let aacSpeak detect the language naturally via its
+    // translation/script-detection logic — same as the non-streaming tap path
+    // on line 89 which passes no spokenLang and works correctly.
 
     const drainQueue = () => {
       if (speaking || sentenceQueue.length === 0 || !soundEnabled) return;
       speaking = true;
       const sentence = sentenceQueue.shift()!;
-      aacSpeak(sentence, speechRate, speechVolume, undefined, false, getSpokenLang());
+      aacSpeak(sentence, speechRate, speechVolume);
       const dur = estimateSpeechDurationMs(sentence, speechRate * 0.6) + 300;
       const timer = setTimeout(() => { speaking = false; drainQueue(); }, dur);
       queueTimers.push(timer);
