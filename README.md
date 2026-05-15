@@ -25,12 +25,15 @@ Part of the [Synalux platform](https://synalux.ai).
   <img src="docs/screenshots/watch-ultra.png" alt="PrismAAC on Apple Watch Ultra" width="120" />
 </p>
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| **Web** (PWA) | Production | Any browser, installable |
-| **iPhone / iPad / iPad Pro** | Production | WKWebView + on-device 1.7B (llama.cpp) + 14B/32B via WiFi to Mac Ollama |
-| **Apple Watch** | Production | Standalone — pictograms, AI chat, emergency, translation |
-| **Chrome Extension** | Production | Reading assistant in any text field |
+| Platform | Status | On-device AI | Notes |
+|----------|--------|-------------|-------|
+| **Web** (PWA) | Production | Auto-sideload via Ollama (14B→8B→1.7B) | Any browser, installable |
+| **iPad Pro 16GB** | Production | 14B Q4_K_M (98% accuracy) | Native llama.cpp Metal, auto-selected by RAM |
+| **iPhone / iPad 8GB** | Production | 8B Q4_K_M (96%) → 1.7B fallback | OOM-safe: tries 8B, falls back to 1.7B |
+| **iPhone / iPad <8GB** | Production | 1.7B Q4_K_M (88%) | Always fits, 1.0 GB |
+| **Apple Watch** | Production | Offline phrase dictionary (1,261 × 20 langs) | Standalone — pictograms, TTS, emergency |
+| **Chrome Extension** | Production | — | Reading assistant in any text field |
+| **WiFi to Mac** | Production | 14B/32B via Ollama | Settings → Local AI → enter Mac IP |
 
 ---
 
@@ -180,34 +183,42 @@ Three modes cycle with a single tap. The active mode persists across sessions so
 
 ### iPhone / iPad
 
-Native Swift app wrapping the web UI in WKWebView + on-device 1.7B LLM via llama.cpp Metal. Three-layer safety architecture: synchronous crisis filter → on-device AI → cloud fallback. Memory-aware feature gating degrades gracefully from full AI → cloud AI → core-only → emergency mode.
+Native Swift app wrapping the web UI in WKWebView + on-device AI via llama.cpp Metal. Auto-selects the best model by device RAM:
+
+| Device | RAM | Model | Accuracy | Download |
+|---|---|---|---|---|
+| iPad Pro M1/M2/M4 | 16 GB | 14B Q4_K_M | **98%** | 8.4 GB from HF CDN |
+| iPhone 15/16 Pro, iPad Air | 8 GB | 8B Q4_K_M → 1.7B fallback | **96%** or 88% | 4.7 GB / 1.0 GB |
+| iPhone 12-14, older iPads | <8 GB | 1.7B Q4_K_M | 88% | 1.0 GB |
+
+Three-layer safety: synchronous crisis filter → on-device AI → cloud fallback. Memory-aware gating degrades gracefully: full AI → cloud AI → core-only → emergency mode.
 
 - Safe area inset for Dynamic Island / notch
 - WCSession bridge for Apple Watch emergency dispatch
 - Keychain-backed auth tokens
+- OOM fallback: if the larger model doesn't fit, automatically loads the next smaller one
 
-**iPad Pro (M1/M2/M4):** Full on-device 1.7B inference via llama.cpp (~1.6 GB RAM). For 14B/32B models, connect to a Mac on the same WiFi running Ollama — Settings → 🤖 Local AI Models → enter Mac IP. No new build required.
-
-**Settings → 🤖 Local AI Models** — download and manage Prism models directly from the app:
+**Settings → 🤖 Local AI Models** — download and manage Prism models:
 - Detects Ollama automatically at `localhost:11434`
-- Shows a URL field for WiFi connections (iPad/iPhone → Mac Ollama)
-- Per-model download with live progress bar, install/remove controls
-- Models: `dcostenco/prism-coder:1b7` (2.2 GB) · `:14b` (9.3 GB) · `:32b` (19 GB)
+- WiFi connections: iPad/iPhone → Mac Ollama (14B/32B at full accuracy)
+- Per-model download with live progress bar
+- Models: `:1b7` (2.2 GB) · `:8b` (4.7 GB) · `:14b` (8.4 GB) · `:32b` (19 GB)
 
 
 ### Apple Watch (standalone)
 
-Works without iPhone — WiFi/LTE for AI, Bluetooth for faster on-device path.
+Works without iPhone — standalone with offline phrase dictionary.
 
 <p align="center">
   <img src="docs/screenshots/watch-series.png" alt="Watch Series 11" width="140" />
   <img src="docs/screenshots/watch-ultra.png" alt="Watch Ultra 3" width="140" />
 </p>
 
+- **Offline translation:** 1,261 phrases × 20 languages bundled (411 KB JSON) — instant lookup, 100% accurate, no network
 - 2-column pictogram grid with ARASAAC images
-- AI Chat with dictation + keyboard input
+- AI Chat with dictation + keyboard input (cloud when online, phrase dict when offline)
 - Emergency system: countdown → WCSession → cellular fallback → TTS
-- Translation between 23 languages with TTS output
+- Translation with TTS output (offline dictionary first, cloud fallback)
 - Inbox: receive and reply to messages from caregivers
 - Certificate pinning (SPKI SHA-256) on emergency dispatch
 - NFKC + 23-token injection sanitization on all AI paths
