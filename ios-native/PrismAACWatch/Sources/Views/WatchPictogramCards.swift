@@ -264,11 +264,14 @@ struct WatchPictogramCards: View {
                 .buttonStyle(.plain)
 
                 Button { showAlertConfirm = true } label: {
-                    Image(systemName: "sos")
-                        .font(.system(size: 12, weight: .heavy))
+                    // Text label — the "sos" SF symbol renders inconsistently
+                    // at small sizes on watchOS, leaving a gap. Text is
+                    // unambiguous and always visible.
+                    Text("SOS")
+                        .font(.system(size: 10, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                         .frame(width: 40, height: 28)
-                        .background(Color.red.opacity(0.7))
+                        .background(Color.red.opacity(0.8))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Send to caregiver")
