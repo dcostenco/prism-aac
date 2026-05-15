@@ -152,12 +152,13 @@ struct WatchPictogramCards: View {
     /// starts after the buttons. No manual .padding(.top) needed.
     @ViewBuilder
     private var topBar: some View {
+        // Compact top bar — max screen real estate goes to cards below.
         HStack(spacing: 0) {
             Button { pickingInput = true; showLangPicker = true } label: {
                 Text(langPillLabel)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
-                    .frame(maxWidth: .infinity, minHeight: 28)
+                    .frame(maxWidth: .infinity, minHeight: 22)
                     .background(Color.white.opacity(0.15))
             }
             .buttonStyle(.plain)
@@ -168,40 +169,39 @@ struct WatchPictogramCards: View {
             } label: {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "bell.fill")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 40, height: 28)
+                        .frame(width: 34, height: 22)
                         .background(Color.orange.opacity(0.55))
                     if inbox.unreadCount > 0 {
                         Text(inbox.unreadCount > 9 ? "9+" : "\(inbox.unreadCount)")
-                            .font(.system(size: 8, weight: .bold))
+                            .font(.system(size: 7, weight: .bold))
                             .foregroundColor(.white)
-                            .padding(.horizontal, 3).padding(.vertical, 1)
+                            .padding(.horizontal, 2).padding(.vertical, 1)
                             .background(Color.red).clipShape(Capsule())
-                            .offset(x: 2, y: -2)
+                            .offset(x: 1, y: -1)
                     }
                 }
             }
             .buttonStyle(.plain)
 
+            // Combined SOS + Message — tap opens the choice dialog (Alert /
+            // Message / Cancel). Replaces the previous separate paperplane
+            // button so the top bar stays compact and the time has room.
             Button { showAlertConfirm = true } label: {
-                Text("SOS")
-                    .font(.system(size: 10, weight: .heavy, design: .rounded))
-                    .foregroundColor(.white)
-                    .frame(width: 40, height: 28)
-                    .background(Color.red.opacity(0.8))
+                HStack(spacing: 2) {
+                    Text("SOS")
+                        .font(.system(size: 9, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.white.opacity(0.85))
+                }
+                .frame(width: 48, height: 22)
+                .background(Color.red.opacity(0.8))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Send to caregiver")
-
-            Button { showSendMessage = true } label: {
-                Image(systemName: "paperplane.fill")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(width: 40, height: 28)
-                    .background(Color.green.opacity(0.6))
-            }
-            .buttonStyle(.plain)
+            .accessibilityLabel("Send to caregiver — Alert or Message")
         }
     }
 
@@ -215,7 +215,34 @@ struct WatchPictogramCards: View {
             // start directly below it (no manual .padding hacks).
             ScrollView {
                 VStack(spacing: 6) {
-                    // ── Yes/No row — first item, at the top of the scroll ──
+                    // ── AI Chat tile — slim entry point at the top ──
+                    Button { showAIChat = true } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "brain.head.profile")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("AI Chat")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .frame(maxWidth: .infinity, minHeight: 30)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.7)],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
+
+                    // ── Yes/No row ──
                     LazyVGrid(columns: columns, spacing: 6) {
                         ForEach(yesNoPhrases) { phrase in
                             PairCard(
@@ -225,38 +252,6 @@ struct WatchPictogramCards: View {
                             )
                         }
                     }
-
-                    // ── AI Chat tile ──
-                    Button { showAIChat = true } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "brain.head.profile")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(.white)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text("AI Chat")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                Text("Ask anything · Translate")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.5))
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.7)],
-                                startPoint: .leading, endPoint: .trailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                    }
-                    .buttonStyle(.plain)
 
                     // ── Predictions (recents) ──
                     if !recentPhraseCards.isEmpty {
@@ -640,7 +635,7 @@ struct CategoryCardView: View {
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 4)
-            .frame(maxWidth: .infinity, minHeight: 80)
+            .frame(maxWidth: .infinity, minHeight: 64)
             .background(color.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(alignment: .topTrailing) {
@@ -1440,7 +1435,7 @@ struct PairCard: View {
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 4)
-            .frame(maxWidth: .infinity, minHeight: 80)
+            .frame(maxWidth: .infinity, minHeight: 64)
             .background(phrase.color.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
