@@ -83,7 +83,7 @@ async function routeWithModel(prompt: string, model: string): Promise<string> {
 }
 
 function extractTool(text: string): string | null {
-  const m = text.match(/<\|tool_call\|>\s*(\{.*?\})\s*(?:<\|tool_call_end\|>|$)/s);
+  const m = text.match(/<\|tool_call\|>\s*(\{[\s\S]*?\})\s*(?:<\|tool_call_end\|>|$)/);
   if (!m) return null;
   try { return JSON.parse(m[1]).name ?? null; }
   catch { return null; }

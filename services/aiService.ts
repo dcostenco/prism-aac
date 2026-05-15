@@ -24,7 +24,7 @@ import { timeoutSignal } from '@/lib/portalConfig';
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
-const LOCAL_MODELS = ['prism-coder:1b7', 'prism-coder:14b'] as const;
+const LOCAL_MODELS = ['prism-coder:14b', 'prism-coder:1b7'] as const;
 const LOCAL_MODEL = LOCAL_MODELS[0];
 
 // ── Auth ──
