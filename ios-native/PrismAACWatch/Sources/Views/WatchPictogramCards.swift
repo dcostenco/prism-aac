@@ -152,27 +152,64 @@ struct WatchPictogramCards: View {
     /// starts after the buttons. No manual .padding(.top) needed.
     @ViewBuilder
     private var topBar: some View {
-        // Compact top bar — max screen real estate goes to cards below.
+        // Compact top bar — 4 buttons in one line. Each button stacks
+        // an icon over a 1-word label (VStack) so the action is
+        // recognizable without relying on icon literacy alone.
+        // Button height = 32pt (half of a 64pt card). Max screen real
+        // estate stays with the cards below.
         HStack(spacing: 0) {
             Button { pickingInput = true; showLangPicker = true } label: {
-                Text(langPillLabel)
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity, minHeight: 22)
-                    .background(Color.white.opacity(0.15))
+                VStack(spacing: 0) {
+                    Image(systemName: "globe")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                    Text(langPillLabel)
+                        .font(.system(size: 8, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
+                .frame(maxWidth: .infinity, minHeight: 32)
+                .background(Color.white.opacity(0.15))
             }
             .buttonStyle(.plain)
+
+            // AI Chat — promoted from a scroll-row tile to a top-bar button.
+            Button { showAIChat = true } label: {
+                VStack(spacing: 0) {
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("AI")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                .frame(width: 44, height: 32)
+                .background(
+                    LinearGradient(
+                        colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.7)],
+                        startPoint: .leading, endPoint: .trailing
+                    )
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("AI Chat")
 
             Button {
                 inbox.requestPermissionIfNeeded()
                 showInbox = true
             } label: {
                 ZStack(alignment: .topTrailing) {
-                    Image(systemName: "bell.fill")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 34, height: 22)
-                        .background(Color.orange.opacity(0.55))
+                    VStack(spacing: 0) {
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("Inbox")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    .frame(width: 44, height: 32)
+                    .background(Color.orange.opacity(0.55))
                     if inbox.unreadCount > 0 {
                         Text(inbox.unreadCount > 9 ? "9+" : "\(inbox.unreadCount)")
                             .font(.system(size: 7, weight: .bold))
@@ -184,24 +221,24 @@ struct WatchPictogramCards: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Notifications")
 
-            // Combined SOS + Message — tap opens the choice dialog (Alert /
-            // Message / Cancel). Replaces the previous separate paperplane
-            // button so the top bar stays compact and the time has room.
+            // Single combined send button — tap opens a chooser:
+            // "Send SOS to caregiver" OR "Send Message".
             Button { showAlertConfirm = true } label: {
-                HStack(spacing: 2) {
-                    Text("SOS")
-                        .font(.system(size: 9, weight: .heavy, design: .rounded))
-                        .foregroundColor(.white)
+                VStack(spacing: 0) {
                     Image(systemName: "paperplane.fill")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(.white.opacity(0.85))
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("Send")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.white)
                 }
-                .frame(width: 48, height: 22)
-                .background(Color.red.opacity(0.8))
+                .frame(width: 44, height: 32)
+                .background(Color.green.opacity(0.7))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Send to caregiver — Alert or Message")
+            .accessibilityLabel("Send — SOS to caregiver or compose message")
         }
     }
 
@@ -215,32 +252,8 @@ struct WatchPictogramCards: View {
             // start directly below it (no manual .padding hacks).
             ScrollView {
                 VStack(spacing: 6) {
-                    // ── AI Chat tile — slim entry point at the top ──
-                    Button { showAIChat = true } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "brain.head.profile")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("AI Chat")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.5))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .frame(maxWidth: .infinity, minHeight: 30)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.7)],
-                                startPoint: .leading, endPoint: .trailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
-                    .buttonStyle(.plain)
+                    // AI Chat tile removed — it's now a top-bar button.
+                    // Scroll order: Yes/No → Predictions → Categories.
 
                     // ── Yes/No row ──
                     LazyVGrid(columns: columns, spacing: 6) {
