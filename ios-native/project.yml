@@ -21,6 +21,9 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "16.0"
+    settings:
+      DEVELOPMENT_TEAM: Z4UYN9388M
+      CODE_SIGN_STYLE: Automatic
     sources:
       - path: PrismAAC/Sources
         excludes:
@@ -33,8 +36,8 @@ targets:
       path: PrismAAC/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
-        CFBundleShortVersionString: "1.2.0"
-        CFBundleVersion: "15"
+        CFBundleShortVersionString: "1.4.0"
+        CFBundleVersion: "17"
         UILaunchScreen:
           UIColorName: systemBackground
         UISupportedInterfaceOrientations:
@@ -70,8 +73,8 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      CURRENT_PROJECT_VERSION: "15"
-      MARKETING_VERSION: "1.2.0"
+      CURRENT_PROJECT_VERSION: "17"
+      MARKETING_VERSION: "1.4.0"
       GENERATE_INFOPLIST_FILE: NO
       PRIVACY_INFO_XCPRIVACY_FILE: PrismAAC/PrivacyInfo.xcprivacy
     dependencies:
@@ -83,18 +86,19 @@ targets:
     type: application
     platform: watchOS
     deploymentTarget: "9.0"
+    settings:
+      DEVELOPMENT_TEAM: Z4UYN9388M
+      CODE_SIGN_STYLE: Automatic
     sources:
       - path: PrismAACWatch/Sources
         excludes:
           - "**/*.md"
-    resources:
-      - path: PrismAACWatch/Assets.xcassets
     info:
       path: PrismAACWatch/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
-        CFBundleShortVersionString: "1.2.0"
-        CFBundleVersion: "15"
+        CFBundleShortVersionString: "1.4.0"
+        CFBundleVersion: "17"
         WKApplication: true
         WKRunsIndependentlyOfCompanionApp: true   # standalone without iPhone
         WKCompanionAppBundleIdentifier: ai.synalux.prism-aac
@@ -104,8 +108,8 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.watchkitapp
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      CURRENT_PROJECT_VERSION: "15"
-      MARKETING_VERSION: "1.2.0"
+      CURRENT_PROJECT_VERSION: "17"
+      MARKETING_VERSION: "1.4.0"
       GENERATE_INFOPLIST_FILE: NO
       SDKROOT: watchos
       SUPPORTED_PLATFORMS: watchos watchsimulator

@@ -8,28 +8,44 @@
 
 /* Begin PBXBuildFile section */
 		0F41DF8A255CAB7496EEED20 /* WatchTTS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE9F6102290192A69EA33F /* WatchTTS.swift */; };
+		12D45E7B40FD87921C2E498C /* AppIcon46x46@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */; };
+		15329694952B810BB933A054 /* AppIcon24x24@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B665BC61F5A2CB0E5F7A9D6C /* AppIcon24x24@2x.png */; };
 		1A4BB303CB66396A33449A7C /* PrismAACWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1B7A5CF4B9FB846133F1E17B /* WCSessionRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD099E82E6D5296F74BC5242 /* WCSessionRouter.swift */; };
 		1BAB0485396C63FC134A5A4B /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF5CCFCBAAF60AAE468A1EBB /* KeychainHelper.swift */; };
 		1CF623FFAC2C87AE0A84E560 /* WatchTranslation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE377D198DA564653BA6171 /* WatchTranslation.swift */; };
+		26A7AD7DDCBA8B0B8D19ECA0 /* AppIcon54x54@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 95805409B214B9D6DF2076F7 /* AppIcon54x54@2x.png */; };
 		287EB175AC807A70ED2E2AB1 /* ButtonCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B596E9E9B51A0D4D3C329C9F /* ButtonCoverageTests.swift */; };
 		298E5CAC051C4E6C40B9309A /* WatchVocabSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1FF5018CD7D6ED0E48C17D /* WatchVocabSync.swift */; };
 		2CD68B3ABCB8C23FF1104EC7 /* PrismAACApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */; };
 		35D9A95BD14055A496098878 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 27F621FF903791DF9713E9E5 /* Assets.xcassets */; };
+		3A86633A7C7348A6B94B45B1 /* AppIcon50x50@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7F5B86B0B8D15149418A59D8 /* AppIcon50x50@2x.png */; };
 		3D08BF95A6574850121B9852 /* PrismAACUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B17D9B0D21E9712DE4058F /* PrismAACUnitTests.swift */; };
 		4845E40319EC76BF7B3D85D9 /* PrismAACUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */; };
+		555C0BC04B53500144B4F875 /* AppIcon86x86@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */; };
 		64BFB93793BFBD59BD651173 /* offline.html in Resources */ = {isa = PBXBuildFile; fileRef = 378A42F7E901AC2CE6A66DF0 /* offline.html */; };
 		6BDCC5044BD258312294B7A8 /* WatchInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */; };
+		6FBD9B75E28C4569B1FFF7A5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BDF1E2439453E4F2F472830B /* Assets.xcassets */; };
 		79A08C2E36B3B5E9C19C91EF /* WatchEmergencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */; };
+		7D9AE38FAC869992527D4493 /* AppIcon40x40@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 48264733CC75753DEBCDDC22 /* AppIcon40x40@2x.png */; };
+		873D9BA3D593822D10162ACC /* AppIcon29x29@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 0D5FF922BC8B7B4BC0A6B33E /* AppIcon29x29@3x.png */; };
 		8ACCA7F12A410E5951CB832F /* SafetyFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 824CFF80AABA2799959262E4 /* SafetyFilter.swift */; };
+		8E2FAA24B4AD8AA0AAA04E86 /* AppIcon108x108@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A9608B96E043220F2C92F586 /* AppIcon108x108@2x.png */; };
+		94E29A997D40284D44549165 /* AppIcon51x51@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B44E4E794C34AA7DA358C6AD /* AppIcon51x51@2x.png */; };
 		96494A55BCE4B701CC283F79 /* WatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7D87755CBCE7686166B1A4 /* WatchApp.swift */; };
+		969F45250B5E084068175FC7 /* AppIcon33x33@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = FCD52807AECA71B546A28725 /* AppIcon33x33@2x.png */; };
 		A2378644AD87D49B61BC9290 /* AACPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */; };
 		A5C28FF4113B9AFFB775B7E7 /* WatchAISession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAD607AA400B994C75354DD /* WatchAISession.swift */; };
 		A761744803E81B1102D1B58A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336C616FA71B6C3F3227FC90 /* ContentView.swift */; };
+		A7E2FBB0D485DD0753609E0D /* AppIcon29x29@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = DD4FFEB0EB8A7E77D36FE3FF /* AppIcon29x29@2x.png */; };
 		A9A7C3336D26BD9F125CFF29 /* WatchPictogramCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F932363A3D82535E9971EE /* WatchPictogramCards.swift */; };
 		AFA1E81830CA008E80B17F8E /* LLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514A2FD3A0BC693D56606896 /* LLMEngine.swift */; };
+		BD48CFC0BB74B04161F4F234 /* AppIcon1024x1024.png in Resources */ = {isa = PBXBuildFile; fileRef = 996E43914516CE515BD9BB2E /* AppIcon1024x1024.png */; };
 		D77E71A3AFF973A5D7A80182 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50392198C3596E4E3CAA44 /* KeychainHelper.swift */; };
+		E9A7C699E922142DFCCC4200 /* AppIcon27.5x27.5@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B9DB1CD80C21089C5CCFBB7B /* AppIcon27.5x27.5@2x.png */; };
+		EB90BA7A0874A4AD712029BA /* AppIcon44x44@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EA856F3C86008948B1F59274 /* AppIcon44x44@2x.png */; };
 		EF9EBF1590D95DA7BA2B75C2 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DB2AB8796CA83596887AD3 /* AppState.swift */; };
+		F29F5361641432A04AF77701 /* AppIcon98x98@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 99E02A56FC22AA400043891E /* AppIcon98x98@2x.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,31 +87,47 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0D5FF922BC8B7B4BC0A6B33E /* AppIcon29x29@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon29x29@3x.png"; sourceTree = "<group>"; };
 		1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchEmergencyManager.swift; sourceTree = "<group>"; };
 		1BAD607AA400B994C75354DD /* WatchAISession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAISession.swift; sourceTree = "<group>"; };
 		27F621FF903791DF9713E9E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon46x46@2x.png"; sourceTree = "<group>"; };
 		2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		336C616FA71B6C3F3227FC90 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		378A42F7E901AC2CE6A66DF0 /* offline.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = offline.html; sourceTree = "<group>"; };
+		3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon86x86@2x.png"; sourceTree = "<group>"; };
 		3C1E662AEED98B7777920115 /* PrismAAC.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PrismAAC.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		48264733CC75753DEBCDDC22 /* AppIcon40x40@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon40x40@2x.png"; sourceTree = "<group>"; };
 		514A2FD3A0BC693D56606896 /* LLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEngine.swift; sourceTree = "<group>"; };
 		60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchInbox.swift; sourceTree = "<group>"; };
 		62DB2AB8796CA83596887AD3 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		67DE9F6102290192A69EA33F /* WatchTTS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTTS.swift; sourceTree = "<group>"; };
 		71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACUITests.swift; sourceTree = "<group>"; };
 		73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AACPipeline.swift; sourceTree = "<group>"; };
+		7F5B86B0B8D15149418A59D8 /* AppIcon50x50@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon50x50@2x.png"; sourceTree = "<group>"; };
 		81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		824CFF80AABA2799959262E4 /* SafetyFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyFilter.swift; sourceTree = "<group>"; };
 		8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PrismAACWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		95805409B214B9D6DF2076F7 /* AppIcon54x54@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon54x54@2x.png"; sourceTree = "<group>"; };
+		996E43914516CE515BD9BB2E /* AppIcon1024x1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppIcon1024x1024.png; sourceTree = "<group>"; };
+		99E02A56FC22AA400043891E /* AppIcon98x98@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon98x98@2x.png"; sourceTree = "<group>"; };
 		A4F932363A3D82535E9971EE /* WatchPictogramCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPictogramCards.swift; sourceTree = "<group>"; };
+		A9608B96E043220F2C92F586 /* AppIcon108x108@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon108x108@2x.png"; sourceTree = "<group>"; };
 		AA7D87755CBCE7686166B1A4 /* WatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchApp.swift; sourceTree = "<group>"; };
 		AD099E82E6D5296F74BC5242 /* WCSessionRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WCSessionRouter.swift; sourceTree = "<group>"; };
+		B44E4E794C34AA7DA358C6AD /* AppIcon51x51@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon51x51@2x.png"; sourceTree = "<group>"; };
 		B4B17D9B0D21E9712DE4058F /* PrismAACUnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACUnitTests.swift; sourceTree = "<group>"; };
 		B596E9E9B51A0D4D3C329C9F /* ButtonCoverageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonCoverageTests.swift; sourceTree = "<group>"; };
+		B665BC61F5A2CB0E5F7A9D6C /* AppIcon24x24@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon24x24@2x.png"; sourceTree = "<group>"; };
+		B9DB1CD80C21089C5CCFBB7B /* AppIcon27.5x27.5@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon27.5x27.5@2x.png"; sourceTree = "<group>"; };
+		BDF1E2439453E4F2F472830B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CDE377D198DA564653BA6171 /* WatchTranslation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTranslation.swift; sourceTree = "<group>"; };
 		CF5CCFCBAAF60AAE468A1EBB /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		DB1FF5018CD7D6ED0E48C17D /* WatchVocabSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchVocabSync.swift; sourceTree = "<group>"; };
+		DD4FFEB0EB8A7E77D36FE3FF /* AppIcon29x29@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon29x29@2x.png"; sourceTree = "<group>"; };
+		EA856F3C86008948B1F59274 /* AppIcon44x44@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon44x44@2x.png"; sourceTree = "<group>"; };
 		F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACApp.swift; sourceTree = "<group>"; };
+		FCD52807AECA71B546A28725 /* AppIcon33x33@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon33x33@2x.png"; sourceTree = "<group>"; };
 		FE50392198C3596E4E3CAA44 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -200,11 +232,13 @@
 		7795A92B4E6D956D4CC34A5A /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				BDF1E2439453E4F2F472830B /* Assets.xcassets */,
 				969C8F21D16D5D15A3EF068F /* AI */,
 				59A0D9C574D82B5EA3441709 /* App */,
 				98093A83AD7EC30FE022A107 /* Emergency */,
 				18D635BB530A54414C7CFB29 /* Shared */,
 				51965D32F560CA8C415B64C0 /* Views */,
+				E970667AC8E75965175D46B2 /* WatchIcons */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -264,6 +298,28 @@
 				9447AA50B808C2BC223505DD /* Views */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		E970667AC8E75965175D46B2 /* WatchIcons */ = {
+			isa = PBXGroup;
+			children = (
+				B665BC61F5A2CB0E5F7A9D6C /* AppIcon24x24@2x.png */,
+				B9DB1CD80C21089C5CCFBB7B /* AppIcon27.5x27.5@2x.png */,
+				DD4FFEB0EB8A7E77D36FE3FF /* AppIcon29x29@2x.png */,
+				0D5FF922BC8B7B4BC0A6B33E /* AppIcon29x29@3x.png */,
+				FCD52807AECA71B546A28725 /* AppIcon33x33@2x.png */,
+				48264733CC75753DEBCDDC22 /* AppIcon40x40@2x.png */,
+				EA856F3C86008948B1F59274 /* AppIcon44x44@2x.png */,
+				288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */,
+				7F5B86B0B8D15149418A59D8 /* AppIcon50x50@2x.png */,
+				B44E4E794C34AA7DA358C6AD /* AppIcon51x51@2x.png */,
+				95805409B214B9D6DF2076F7 /* AppIcon54x54@2x.png */,
+				3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */,
+				99E02A56FC22AA400043891E /* AppIcon98x98@2x.png */,
+				A9608B96E043220F2C92F586 /* AppIcon108x108@2x.png */,
+				996E43914516CE515BD9BB2E /* AppIcon1024x1024.png */,
+			);
+			path = WatchIcons;
 			sourceTree = "<group>";
 		};
 		F6F72D19BD7F549E86B62BEC = {
@@ -340,6 +396,7 @@
 			buildConfigurationList = EB1CCDFE3CF7148A03C82215 /* Build configuration list for PBXNativeTarget "PrismAACWatch" */;
 			buildPhases = (
 				B349B71D3D5FD9432870AA63 /* Sources */,
+				604D2E3D24C8DC7EED136626 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -389,6 +446,29 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		604D2E3D24C8DC7EED136626 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD48CFC0BB74B04161F4F234 /* AppIcon1024x1024.png in Resources */,
+				8E2FAA24B4AD8AA0AAA04E86 /* AppIcon108x108@2x.png in Resources */,
+				15329694952B810BB933A054 /* AppIcon24x24@2x.png in Resources */,
+				E9A7C699E922142DFCCC4200 /* AppIcon27.5x27.5@2x.png in Resources */,
+				A7E2FBB0D485DD0753609E0D /* AppIcon29x29@2x.png in Resources */,
+				873D9BA3D593822D10162ACC /* AppIcon29x29@3x.png in Resources */,
+				969F45250B5E084068175FC7 /* AppIcon33x33@2x.png in Resources */,
+				7D9AE38FAC869992527D4493 /* AppIcon40x40@2x.png in Resources */,
+				EB90BA7A0874A4AD712029BA /* AppIcon44x44@2x.png in Resources */,
+				12D45E7B40FD87921C2E498C /* AppIcon46x46@2x.png in Resources */,
+				3A86633A7C7348A6B94B45B1 /* AppIcon50x50@2x.png in Resources */,
+				94E29A997D40284D44549165 /* AppIcon51x51@2x.png in Resources */,
+				26A7AD7DDCBA8B0B8D19ECA0 /* AppIcon54x54@2x.png in Resources */,
+				555C0BC04B53500144B4F875 /* AppIcon86x86@2x.png in Resources */,
+				F29F5361641432A04AF77701 /* AppIcon98x98@2x.png in Resources */,
+				6FBD9B75E28C4569B1FFF7A5 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7E19B79B2D5F1EAF66BA9023 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -586,11 +666,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = Z4UYN9388M;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -671,7 +751,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = Z4UYN9388M;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
@@ -680,7 +760,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -694,7 +774,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = Z4UYN9388M;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
@@ -703,7 +783,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -715,11 +795,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = Z4UYN9388M;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
