@@ -198,6 +198,9 @@ export default function PrismApp() {
     seedTemplates();
     ensureSeed();
     refreshAuth();
+    // Auto-sideload: detect local Ollama → pull best prism-coder model
+    // so route() uses local inference instead of cloud. Non-blocking.
+    import('@/services/aiService').then(m => m.autoSideload?.()).catch(() => {});
     // Kokoro preload removed — model unavailable (404 on HuggingFace).
     const unregisterPanic = registerPanicListeners();
     const cleanupConnectivity = registerConnectivityListener();

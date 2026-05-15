@@ -24,8 +24,110 @@ import { timeoutSignal } from '@/lib/portalConfig';
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
-const LOCAL_MODELS = ['prism-coder:14b', 'prism-coder:1b7'] as const;
+const LOCAL_MODELS = ['prism-coder:14b', 'prism-coder:8b', 'prism-coder:1b7'] as const;
 const LOCAL_MODEL = LOCAL_MODELS[0];
+
+// ── Auto-sideload: detect Ollama → pull best model → avoid cloud ──
+
+const SIDELOAD_KEY = 'prism-aac-sideload-status';
+const OLLAMA_BASE = LOCAL_OLLAMA_URL.replace(/\/api\/?$/, '');
+
+type SideloadStatus = { state: 'idle' | 'pulling' | 'done' | 'error'; model?: string; progress?: number };
+let sideloadStatus: SideloadStatus = { state: 'idle' };
+
+export function getSideloadStatus(): SideloadStatus { return sideloadStatus; }
+
+const PULLABLE_MODELS = [
+  { tag: 'dcostenco/prism-coder:14b', sizeGB: 9.3, accuracy: 98 },
+  { tag: 'dcostenco/prism-coder:8b',  sizeGB: 4.7, accuracy: 96 },
+  { tag: 'dcostenco/prism-coder:1b7', sizeGB: 2.2, accuracy: 88 },
+] as const;
+
+async function ollamaReachable(): Promise<boolean> {
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') return false;
+  try {
+    const r = await fetch(`${OLLAMA_BASE}/api/tags`, { signal: AbortSignal.timeout(3000) });
+    return r.ok;
+  } catch { return false; }
+}
+
+async function ollamaInstalledModels(): Promise<Set<string>> {
+  try {
+    const r = await fetch(`${OLLAMA_BASE}/api/tags`, { signal: AbortSignal.timeout(3000) });
+    const data = await r.json() as { models?: Array<{ name: string }> };
+    return new Set((data.models ?? []).map(m => m.name));
+  } catch { return new Set(); }
+}
+
+async function ollamaPull(tag: string): Promise<boolean> {
+  try {
+    sideloadStatus = { state: 'pulling', model: tag, progress: 0 };
+    const r = await fetch(`${OLLAMA_BASE}/api/pull`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: tag, stream: true }),
+    });
+    if (!r.ok || !r.body) return false;
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const lines = decoder.decode(value, { stream: true }).split('\n');
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const j = JSON.parse(line);
+          if (j.total && j.completed) {
+            sideloadStatus = { state: 'pulling', model: tag, progress: Math.round(j.completed / j.total * 100) };
+          }
+          if (j.status === 'success') {
+            sideloadStatus = { state: 'done', model: tag };
+            return true;
+          }
+        } catch { /* partial JSON line */ }
+      }
+    }
+    sideloadStatus = { state: 'done', model: tag };
+    return true;
+  } catch {
+    sideloadStatus = { state: 'error', model: tag };
+    return false;
+  }
+}
+
+/**
+ * Auto-sideload: runs once on app mount. Detects Ollama, checks installed
+ * models, pulls the best one that isn't already present. Non-blocking.
+ *
+ * Goal: avoid cloud calls. If the user has Ollama running, get a local
+ * model installed so route() uses it instead of Synalux API.
+ */
+export async function autoSideload(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  if (window.location.protocol === 'https:') return;
+
+  const already = sessionStorage.getItem(SIDELOAD_KEY);
+  if (already === 'done') return;
+
+  if (!await ollamaReachable()) return;
+
+  const installed = await ollamaInstalledModels();
+  const hasPrism = [...installed].some(n => n.includes('prism-coder'));
+  if (hasPrism) {
+    sessionStorage.setItem(SIDELOAD_KEY, 'done');
+    sideloadStatus = { state: 'done', model: 'already installed' };
+    return;
+  }
+
+  // Pick best model — try 14B first, fall back to 8B, then 1.7B
+  for (const { tag } of PULLABLE_MODELS) {
+    if (await ollamaPull(tag)) {
+      sessionStorage.setItem(SIDELOAD_KEY, 'done');
+      return;
+    }
+  }
+}
 
 // ── Auth ──
 
