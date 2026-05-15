@@ -380,34 +380,42 @@ function callNativeBridge(
   });
 }
 
-// ── Routing: Synalux → local fallback ──
+// ── Routing: local-first → cloud fallback ──
+//
+// Priority: avoid cloud calls at all cost.
+//   1. Native bridge (iOS on-device 1.7B/14B via llama.cpp)
+//   2. Local Ollama (WiFi to Mac — 14B at 98%)
+//   3. Synalux cloud (Claude — last resort)
 
 async function route(
   prompt: string,
   options?: { webSearch?: boolean; system?: string; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate' },
 ): Promise<string> {
+  const fullPrompt = options?.system ? `${options.system}\n\n${prompt}` : prompt;
+
+  // 1. Try local Ollama first (Mac on WiFi — 14B at 98%, free)
+  if (!options?.webSearch) {
+    try {
+      const raw = await callLocal(fullPrompt);
+      return stripModelControlTokens(raw);
+    } catch {
+      // Local unavailable — continue to cloud
+    }
+  }
+
+  // 2. Cloud fallback (Synalux API)
   const messages: Array<{ role: string; content: string }> = [];
   if (options?.system) messages.push({ role: 'system', content: options.system });
   messages.push({ role: 'user', content: prompt });
-
-  // Try Synalux first (online, full features)
   try {
     const raw = await callSynalux(messages, { webSearch: options?.webSearch, onChunk: options?.onChunk, intent: options?.intent });
     return stripModelControlTokens(raw);
   } catch (err) {
     const msg = err instanceof Error ? err.message : '';
-    // Auth/rate errors should not fall back — surface to user
     if (msg.includes('expired') || msg.includes('Rate limit')) throw err;
   }
 
-  // Offline fallback: cascade through local models (1.7B → 14B)
-  try {
-    const fullPrompt = options?.system ? `${options.system}\n\n${prompt}` : prompt;
-    const raw = await callLocal(fullPrompt);
-    return stripModelControlTokens(raw);
-  } catch {
-    throw new Error('No AI available — check internet connection or start local Ollama');
-  }
+  throw new Error('No AI available — check internet connection or start local Ollama');
 }
 
 // ── Public API ──
