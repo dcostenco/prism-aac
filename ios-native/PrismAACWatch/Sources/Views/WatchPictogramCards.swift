@@ -1008,20 +1008,33 @@ struct WatchAIChatView: View {
 
             // Input row — mic + text + send
             HStack(spacing: 6) {
-                // Single tap target: the TextField itself. Pure SwiftUI
-                // watchOS cannot programmatically present the system input
-                // controller — only a USER TAP on a TextField triggers it.
-                // So the only way to achieve one-tap dictation is to make
-                // the TextField the primary surface, styled as a tappable
-                // mic prompt. Previously the separate mic button forced a
-                // tap-then-tap-field flow (or a sheet that needed its own
-                // second tap), the "2 clicks" bug the user kept hitting.
-                TextField("🎙 Speak or type…", text: $inputText)
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                // TextFieldLink (watchOS 10+) — the proper SwiftUI API for
+                // one-tap system input controller presentation. Tapping the
+                // label opens the dictation/keyboard/scribble sheet directly,
+                // no @FocusState dance, no sheet wrapping, no race conditions.
+                // onSubmit fires with the final transcript when the user
+                // finishes input. We auto-send so dictation is single-action.
+                TextFieldLink {
+                    HStack(spacing: 6) {
+                        Image(systemName: "mic.fill")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                        Text(inputText.isEmpty ? "Speak or type…" : inputText)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white.opacity(inputText.isEmpty ? 0.7 : 1.0))
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     .padding(.horizontal, 10)
-                    .background(Color.blue.opacity(0.2))
+                    .background(Color.blue.opacity(0.3))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                } onSubmit: { newValue in
+                    let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    inputText = String(trimmed.prefix(500))
+                    sendMessage()
+                }
+                .buttonStyle(.plain)
 
                 Button { sendMessage() } label: {
                     Image(systemName: "arrow.up.circle.fill")
