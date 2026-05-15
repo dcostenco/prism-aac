@@ -225,16 +225,18 @@ struct WatchPictogramCards: View {
                     .padding(.bottom, 8)
                 }
             }
-            .padding(.top, 48)
+            .padding(.top, 32)
 
-            // Top bar: [EN→RU] [🔔 inbox] [💬 send message]
-            // SOS removed — watchOS has native emergency via side button hold.
+            // Top bar — compact: shorter height + narrower icons so the
+            // 4 buttons sit proportional to the cards below. Earlier 44pt
+            // height + 54pt width made the top bar dominate the viewport
+            // on Series 11 46mm (~25% of vertical space).
             HStack(spacing: 0) {
                 Button { pickingInput = true; showLangPicker = true } label: {
                     Text(langPillLabel)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
-                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .frame(maxWidth: .infinity, minHeight: 28)
                         .background(Color.white.opacity(0.15))
                 }
                 .buttonStyle(.plain)
@@ -245,9 +247,9 @@ struct WatchPictogramCards: View {
                 } label: {
                     ZStack(alignment: .topTrailing) {
                         Image(systemName: "bell.fill")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white)
-                            .frame(width: 54, height: 44)
+                            .frame(width: 40, height: 28)
                             .background(Color.orange.opacity(0.55))
                         if inbox.unreadCount > 0 {
                             Text(inbox.unreadCount > 9 ? "9+" : "\(inbox.unreadCount)")
@@ -263,9 +265,9 @@ struct WatchPictogramCards: View {
 
                 Button { showAlertConfirm = true } label: {
                     Image(systemName: "sos")
-                        .font(.system(size: 16, weight: .heavy))
+                        .font(.system(size: 12, weight: .heavy))
                         .foregroundColor(.white)
-                        .frame(width: 54, height: 44)
+                        .frame(width: 40, height: 28)
                         .background(Color.red.opacity(0.7))
                 }
                 .buttonStyle(.plain)
@@ -273,9 +275,9 @@ struct WatchPictogramCards: View {
 
                 Button { showSendMessage = true } label: {
                     Image(systemName: "paperplane.fill")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 54, height: 44)
+                        .frame(width: 40, height: 28)
                         .background(Color.green.opacity(0.6))
                 }
                 .buttonStyle(.plain)
