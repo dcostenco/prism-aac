@@ -21,6 +21,8 @@
 import { NoteAction } from '@/types';
 import { DEFAULT_CATEGORIES } from '@/constants/categories';
 import { timeoutSignal } from '@/lib/portalConfig';
+import { DEFAULT_PHRASES } from '@/constants/phrases';
+import { getPhraseText } from '@/constants/phraseTranslations';
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
@@ -574,36 +576,23 @@ export async function translateAI(
   return route(text, { system, onChunk, intent: 'translate' });
 }
 
-let _offlineDict: Record<string, Record<string, string>> | null = null;
+let _offlineLookup: Map<string, string> | null = null;
 
-function loadOfflineDict(): Record<string, Record<string, string>> {
-  if (_offlineDict) return _offlineDict;
-  try {
-    const { getPhraseText } = require('@/constants/phraseTranslations');
-    const { DEFAULT_PHRASES } = require('@/constants/phrases');
-    _offlineDict = {};
-    for (const p of DEFAULT_PHRASES) {
-      _offlineDict[p.text.toLowerCase()] = { _id: p.id };
-    }
-    return _offlineDict;
-  } catch {
-    _offlineDict = {};
-    return _offlineDict;
+function getOfflineLookup(): Map<string, string> {
+  if (_offlineLookup) return _offlineLookup;
+  _offlineLookup = new Map();
+  for (const p of DEFAULT_PHRASES) {
+    _offlineLookup.set(p.text.toLowerCase(), p.id);
   }
+  return _offlineLookup;
 }
 
 function offlineTranslate(text: string, toLang: string): string | null {
-  try {
-    const { getPhraseText } = require('@/constants/phraseTranslations');
-    const { DEFAULT_PHRASES } = require('@/constants/phrases');
-    const needle = text.toLowerCase().trim();
-    for (const p of DEFAULT_PHRASES) {
-      if (p.text.toLowerCase() === needle) {
-        const translated = getPhraseText(p.id, toLang, '');
-        if (translated && translated !== p.text) return translated;
-      }
-    }
-  } catch { /* phraseTranslations not available */ }
+  const lookup = getOfflineLookup();
+  const id = lookup.get(text.toLowerCase().trim());
+  if (!id) return null;
+  const translated = getPhraseText(id, toLang as any, '');
+  if (translated && translated !== text) return translated;
   return null;
 }
 
