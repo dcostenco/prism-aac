@@ -196,7 +196,7 @@ export default function AIChatPanel() {
     };
 
     try {
-      await askAI(question, undefined, (delta) => {
+      const response = await askAI(question, undefined, (delta) => {
         if (buffer.length < 32_000) {
           buffer += delta;
         } else if (!buffer.endsWith('…')) {
@@ -208,6 +208,13 @@ export default function AIChatPanel() {
         }
         checkNewSentences();
       }, useSettingsStore.getState().outputLanguage || useSettingsStore.getState().language);
+      // Fallback for non-streaming providers (local Ollama path uses stream:false
+      // and never calls onChunk). Without this, the AI bubble renders empty even
+      // though askAI returned a full response. Treat the full return value as
+      // one big chunk arriving at the end.
+      if (!buffer && response?.text) {
+        buffer = response.text;
+      }
       flush();
       const tail = buffer.slice(spokenUpTo).trim();
       if (tail) enqueueSentence(tail);

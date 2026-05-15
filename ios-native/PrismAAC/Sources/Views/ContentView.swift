@@ -274,8 +274,13 @@ struct PrismWebView: UIViewRepresentable {
                 guard !question.isEmpty else { return }
                 let webView = message.webView
                 Task { @MainActor in
+                    let encoder = JSONEncoder()
                     for await token in self.pipeline.ask(question: question, language: lang) {
-                        guard let data = try? JSONSerialization.data(withJSONObject: token),
+                        // JSONSerialization.data(withJSONObject:) requires Array/Dict at top
+                        // level — passing a String raises NSInvalidArgumentException which
+                        // `try?` cannot catch (NSException → SIGABRT). JSONEncoder safely
+                        // encodes primitive Encodable values including String.
+                        guard let data = try? encoder.encode(token),
                               let json = String(data: data, encoding: .utf8) else { continue }
                         webView?.evaluateJavaScript(
                             "window.prismNativeAIResult && window.prismNativeAIResult(\(json))"
@@ -466,7 +471,10 @@ struct PrismWebView: UIViewRepresentable {
 
         private func sendSpeechError(_ code: String) {
             NSLog("[PrismAAC] Speech error: \(code)")
-            guard let data = try? JSONSerialization.data(withJSONObject: code),
+            // Same SIGABRT class as the askAI streaming path: JSONSerialization
+            // raises NSException on non-Array/Dict top-level. Use JSONEncoder
+            // which handles Encodable primitives safely.
+            guard let data = try? JSONEncoder().encode(code),
                   let json = String(data: data, encoding: .utf8) else { return }
             activeWebView?.evaluateJavaScript(
                 "window.prismNativeSpeechError && window.prismNativeSpeechError(\(json))"

@@ -924,6 +924,12 @@ struct WatchAIChatView: View {
     @State private var aiTask: Task<Void, Never>?
     @State private var translateTask2: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
+    // FocusState on the inline TextField — focusing it triggers watchOS to
+    // auto-present the system input controller (dictation + scribble + keyboard).
+    // This is the SwiftUI-native one-tap path. The earlier WKApplication.shared()
+    // .visibleInterfaceController approach returned nil in pure SwiftUI watchOS
+    // apps and fell back to a 2-tap sheet — that's the bug this @FocusState fixes.
+    @FocusState private var inputFocused: Bool
 
     // #25: typed role constants — using these in all append calls makes typos a compile-time error.
     private let userRole = "user"
@@ -1039,6 +1045,7 @@ struct WatchAIChatView: View {
                 TextField("Ask…", text: $inputText)
                     .font(.system(size: 14))
                     .frame(minHeight: 36)
+                    .focused($inputFocused)
 
                 Button { sendMessage() } label: {
                     Image(systemName: "arrow.up.circle.fill")
@@ -1131,33 +1138,24 @@ struct WatchAIChatView: View {
         }
     }
 
-    /// One-tap dictation. Drops the SwiftUI sheet path and presents the
-    /// system input controller directly on the visible WKInterfaceController.
-    /// Falls back to the old sheet only if visibleInterfaceController is nil
-    /// (shouldn't happen in a running SwiftUI Watch app, but defensive).
+    /// One-tap dictation for SwiftUI watchOS.
+    /// Sets @FocusState on the inline TextField — watchOS responds by auto-
+    /// presenting the system input controller (dictation/scribble/keyboard tabs)
+    /// on the next runloop tick. The earlier `WKApplication.shared().visible
+    /// InterfaceController?.presentTextInputController(...)` path returned nil
+    /// in pure SwiftUI Watch apps (no UIKit interface controller exists) and
+    /// fell back to a 2-tap sheet. Inline focus is the canonical SwiftUI path
+    /// and reliably triggers the input controller on a single tap.
+    ///
+    /// The DispatchQueue.main.async hop is required: setting @FocusState
+    /// synchronously inside a Button action sometimes races with SwiftUI's
+    /// gesture-end processing and the input controller never appears.
     @MainActor
     private func presentDictation() {
         tts.stop()
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        if let controller = WKApplication.shared().visibleInterfaceController {
-            controller.presentTextInputController(
-                withSuggestions: nil,
-                allowedInputMode: .plain
-            ) { results in
-                guard
-                    let first = (results?.first as? String)?
-                        .trimmingCharacters(in: .whitespacesAndNewlines),
-                    !first.isEmpty
-                else { return }
-                Task { @MainActor in
-                    inputText = String(first.prefix(500))
-                    sendMessage()
-                }
-            }
-        } else {
-            // Defensive fallback — keeps the legacy sheet path alive in case
-            // visibleInterfaceController is nil on some watchOS configuration.
-            showDictation = true
+        DispatchQueue.main.async {
+            inputFocused = true
         }
     }
 

@@ -171,13 +171,19 @@ export function startVoiceInput(opts: {
   rec.lang = computeLang(opts.lang || 'en-US');
 
   let stopped = false;
+  let speechStarted = false;
   let lastSpeechTime = Date.now();
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
   const silenceThreshold = opts.silenceMs ?? 2000;
 
+  // Only arm the silence timer AFTER the engine has produced at least one
+  // result. Otherwise the initial post-start `checkSilence()` call would
+  // fire onSilence ~2s after tap when the user is still drawing breath,
+  // killing the session before they say anything. Same behavior as the
+  // native bridge path above (speechStarted flag).
   const checkSilence = () => {
     if (silenceTimer) clearTimeout(silenceTimer);
-    if (stopped) return;
+    if (stopped || !speechStarted) return;
     lastSpeechTime = Date.now();
     silenceTimer = setTimeout(() => {
       if (Date.now() - lastSpeechTime >= silenceThreshold && !stopped) {
@@ -195,6 +201,7 @@ export function startVoiceInput(opts: {
       if (res.isFinal) final += transcript;
       else interim += transcript;
     }
+    if (interim || final) speechStarted = true;
     if (interim) {
       opts.onInterim(interim);
       checkSilence();
@@ -206,8 +213,11 @@ export function startVoiceInput(opts: {
   };
 
   rec.onerror = (event) => {
+    // no-speech only counts as silence AFTER we've heard something. Before
+    // that it just means "user hasn't started speaking yet" — let the
+    // session continue rather than stopping it preemptively.
     if (event.error === 'no-speech') {
-      opts.onSilence?.();
+      if (speechStarted) opts.onSilence?.();
       return;
     }
     if (event.error === 'aborted') return;
@@ -232,7 +242,8 @@ export function startVoiceInput(opts: {
     return null;
   }
 
-  checkSilence();
+  // Note: do NOT call checkSilence() here. The silence timer is armed by
+  // the first speech result; arming it on start would race the user.
 
   return {
     stop: () => {
