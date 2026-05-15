@@ -5,66 +5,99 @@ struct PrismAACApp: App {
     @StateObject private var appState = AppState()
 
     init() {
-        // FIX H1: Activate WCSession at app launch so emergency dispatch works
         WatchEmergencyBridge.shared.activateSession()
     }
+
+    /// Model candidates in priority order for each device tier.
+    /// The loader tries each in order — if a model OOMs or isn't cached,
+    /// it falls through to the next. This lets 8GB devices ATTEMPT the
+    /// 8B (96% accuracy) and gracefully fall back to 1.7B (88%) if it
+    /// doesn't fit.
+    private static let modelCandidates: [(file: String, cdn: String, minFreeMB: Int)] = {
+        switch LLMEngine.preferredTier {
+        case .large14B:
+            return [
+                ("prism-aac-14b-q4km",  "dcostenco/prism-coder-14b/resolve/main/prism-aac-14b-q4km.gguf",  10_000),
+                ("prism-aac-1b7-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-aac-1b7-q4km.gguf", 1_200),
+            ]
+        case .medium8B:
+            return [
+                ("prism-aac-8b-q4km",   "dcostenco/prism-coder-8b/resolve/main/prism-aac-8b-q4km.gguf",    4_500),
+                ("prism-aac-1b7-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-aac-1b7-q4km.gguf", 1_200),
+            ]
+        case .small1B7:
+            return [
+                ("prism-aac-1b7-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-aac-1b7-q4km.gguf", 1_200),
+            ]
+        }
+    }()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
                 .task {
-                    // Select model tier by device RAM:
-                    //   16 GB+ (iPad Pro M1/M2/M4): 14B Q4_K_M (98% accuracy)
-                    //   4-15 GB (iPhone, iPad Air):  1.7B Q4_K_M (88% accuracy)
-                    let use14B = LLMEngine.canLoad14B
-                    let modelFile = use14B ? "prism-aac-14b-q4km" : "prism-aac-1b7-q8"
-                    let cdnPath = use14B
-                        ? "dcostenco/prism-coder-14b/resolve/main/prism-aac-14b-q4km.gguf"
-                        : "dcostenco/prism-coder-1.7b/resolve/main/prism-aac-1b7-q4km.gguf"
-                    let minFreeMB = use14B ? 10_000 : 1_200
+                    let tier = LLMEngine.preferredTier
+                    NSLog("[PrismAAC] Device RAM: \(LLMEngine.totalDeviceMemoryGB) GB → tier: \(tier.rawValue)")
 
-                    NSLog("[PrismAAC] Device RAM: \(LLMEngine.totalDeviceMemoryGB) GB → loading \(use14B ? "14B" : "1.7B")")
-
-                    // Try bundle first
-                    if let bundleURL = Bundle.main.url(forResource: modelFile, withExtension: "gguf") {
-                        await appState.loadModel(from: bundleURL)
-                        return
+                    for candidate in Self.modelCandidates {
+                        if await tryLoadModel(candidate) { return }
                     }
-                    // Check cached download
-                    let url = FileManager.default
-                        .urls(for: .documentDirectory, in: .userDomainMask)[0]
-                        .appendingPathComponent("models/\(modelFile).gguf")
-                    if FileManager.default.fileExists(atPath: url.path) {
-                        await appState.loadModel(from: url)
-                        return
-                    }
-                    // Background download — never blocks UI
-                    guard AppState.measureFreeMemoryMB() >= minFreeMB else {
-                        // Not enough free memory for target model — try 1.7B fallback
-                        if use14B {
-                            NSLog("[PrismAAC] Not enough memory for 14B, falling back to 1.7B")
-                            let fallbackURL = FileManager.default
-                                .urls(for: .documentDirectory, in: .userDomainMask)[0]
-                                .appendingPathComponent("models/prism-aac-1b7-q4km.gguf")
-                            if FileManager.default.fileExists(atPath: fallbackURL.path) {
-                                await appState.loadModel(from: fallbackURL)
-                            }
-                        }
-                        return
-                    }
-                    do {
-                        let cdnURL = URL(string: "https://huggingface.co/\(cdnPath)")!
-                        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-                        let (tempURL, response) = try await URLSession.shared.download(from: cdnURL)
-                        if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
-                            try FileManager.default.moveItem(at: tempURL, to: url)
-                            await appState.loadModel(from: url)
-                        }
-                    } catch {
-                        NSLog("[PrismAAC] Background model download failed: \(error.localizedDescription)")
-                    }
+                    NSLog("[PrismAAC] No model could be loaded — using cloud AI only")
                 }
         }
+    }
+
+    private func tryLoadModel(_ candidate: (file: String, cdn: String, minFreeMB: Int)) async -> Bool {
+        let (file, cdn, minFreeMB) = candidate
+        NSLog("[PrismAAC] Trying \(file)...")
+
+        // 1. Check bundle
+        if let bundleURL = Bundle.main.url(forResource: file, withExtension: "gguf") {
+            do {
+                try await appState.loadModelSafe(from: bundleURL)
+                NSLog("[PrismAAC] Loaded \(file) from bundle")
+                return true
+            } catch {
+                NSLog("[PrismAAC] \(file) bundle load failed: \(error.localizedDescription)")
+                return false
+            }
+        }
+
+        // 2. Check cached download
+        let url = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("models/\(file).gguf")
+        if FileManager.default.fileExists(atPath: url.path) {
+            do {
+                try await appState.loadModelSafe(from: url)
+                NSLog("[PrismAAC] Loaded \(file) from cache")
+                return true
+            } catch {
+                NSLog("[PrismAAC] \(file) cache load failed (OOM?): \(error.localizedDescription)")
+                // OOM — try next candidate
+                return false
+            }
+        }
+
+        // 3. Download if enough memory
+        guard AppState.measureFreeMemoryMB() >= minFreeMB else {
+            NSLog("[PrismAAC] Not enough free memory for \(file) (need \(minFreeMB) MB)")
+            return false
+        }
+        do {
+            let cdnURL = URL(string: "https://huggingface.co/\(cdn)")!
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let (tempURL, response) = try await URLSession.shared.download(from: cdnURL)
+            if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
+                try FileManager.default.moveItem(at: tempURL, to: url)
+                try await appState.loadModelSafe(from: url)
+                NSLog("[PrismAAC] Downloaded and loaded \(file)")
+                return true
+            }
+        } catch {
+            NSLog("[PrismAAC] \(file) download/load failed: \(error.localizedDescription)")
+        }
+        return false
     }
 }

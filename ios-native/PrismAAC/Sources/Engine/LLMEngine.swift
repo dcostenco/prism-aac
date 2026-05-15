@@ -35,10 +35,28 @@ final class LLMEngine: ObservableObject {
         return Int(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024))
     }()
 
-    static var canLoad14B: Bool { totalDeviceMemoryGB >= 16 }
+    /// Model tier selection:
+    ///   16 GB+ → 14B Q4_K_M (98% accuracy, guaranteed fit)
+    ///   8 GB   → TRY 8B Q4_K_M (96%), OOM fallback to 1.7B (88%)
+    ///   <8 GB  → 1.7B Q4_K_M (88%, always fits)
+    enum ModelTier: String {
+        case large14B = "14B"
+        case medium8B = "8B"
+        case small1B7 = "1.7B"
+    }
+
+    static var preferredTier: ModelTier {
+        if totalDeviceMemoryGB >= 16 { return .large14B }
+        if totalDeviceMemoryGB >= 8  { return .medium8B }
+        return .small1B7
+    }
 
     static var MIN_FREE_MB: Int {
-        canLoad14B ? 10_000 : 1_600
+        switch preferredTier {
+        case .large14B: return 10_000
+        case .medium8B: return 4_500  // 8B Q4_K_M is tight — 128 MB over theoretical budget
+        case .small1B7: return 1_600
+        }
     }
 
     private var model: OpaquePointer?

@@ -66,7 +66,7 @@ final class AppState: ObservableObject {
 
     // MARK: - Thresholds (MB)
 
-    private static var T_FULL_AI: Int { LLMEngine.canLoad14B ? 10_000 : 1_400 }
+    private static var T_FULL_AI: Int { LLMEngine.MIN_FREE_MB }
     private static let T_CLOUD_AI   = 800
     private static let T_EMERGENCY  = 300
 
@@ -131,13 +131,20 @@ final class AppState: ObservableObject {
         do {
             try await llm.load(from: url)
             modelReady = true
-            tick()  // re-evaluate tier now that model is loaded
+            tick()
         } catch LLMError.insufficientMemory {
             coreOnlyMode = true
             modelReady = false
         } catch {
             modelReady = false
         }
+    }
+
+    /// Throwing variant — lets the caller catch OOM and try a smaller model.
+    func loadModelSafe(from url: URL) async throws {
+        try await llm.load(from: url)
+        modelReady = true
+        tick()
     }
 
     func enterCoreOnlyMode() {
