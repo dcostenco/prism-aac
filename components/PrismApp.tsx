@@ -445,8 +445,8 @@ export default function PrismApp() {
           {/* Category mode: full-screen cards (Image #32 pattern).
               Keyboard is a pull-up drawer toggled from inside CategoryPanel.
               All other modes: CategoryPanel stacks above keyboard as before. */}
-          {sidePanel !== 'math' && sidePanel !== 'comfort-player' && (
-            <div className={`${showQwerty && keyboardMaximized ? 'flex-[1]' : 'flex-[3]'} min-h-0 flex flex-col`}>
+          {sidePanel !== 'math' && sidePanel !== 'comfort-player' && !(showQwerty && keyboardMaximized) && (
+            <div className="flex-[3] min-h-0 flex flex-col">
               <CategoryPanel />
             </div>
           )}
@@ -454,7 +454,7 @@ export default function PrismApp() {
             <div
               className={
                 keyboardMaximized
-                  ? "flex-[3] min-h-0 flex flex-row"
+                  ? "flex-1 min-h-0 flex flex-row"
                   : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-row"
               }
               data-testid="keyboard-shell"
