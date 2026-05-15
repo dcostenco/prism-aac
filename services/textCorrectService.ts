@@ -12,7 +12,7 @@ import { portalFetch } from '@/services/portalClient';
  * connections can't afford a portal round-trip on every keystroke.
  * Strategy:
  *
- *   1. Probe local prism-coder:7b once at boot.
+ *   1. Probe local prism-coder:14b once at boot.
  *   2. If local is reachable → use ONLY local for the rest of the
  *      session. ~200-400ms on consumer hardware, free, private,
  *      offline-capable. No portal cost, no network dependency.
@@ -228,7 +228,7 @@ export async function correctText(
 
   const promise = (async () => {
     try {
-      // Local-first. If the user has prism-coder:7b running on their
+      // Local-first. If the user has prism-coder:14b running on their
       // device, we ALWAYS prefer it for correction — it's free, fast,
       // private, and works on slow connections. The portal is a
       // network-dependent fallback only.

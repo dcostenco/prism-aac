@@ -1,7 +1,7 @@
 /**
  * Auto-correction unit tests — service contract only.
  *
- * Live integration tests (real Synalux portal + local prism-coder:7b)
+ * Live integration tests (real Synalux portal + local prism-coder:14b)
  * live in `tests/text-correct.integration.test.ts` under the node test
  * environment. This file stays in jsdom env and mocks fetch + the
  * local-model probe.
@@ -17,7 +17,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 vi.mock('@/services/localModel', () => ({
   isLocalModelAvailable: vi.fn(),
   LOCAL_OLLAMA_URL: 'http://localhost:11434/api/generate',
-  LOCAL_MODEL: 'prism-coder:7b',
+  LOCAL_MODEL: 'prism-coder:14b',
   getLocalModelStatus: () => null,
 }));
 

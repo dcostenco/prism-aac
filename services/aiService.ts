@@ -7,7 +7,7 @@
  *   - All Synalux modules available (web search, etc.)
  *   - Free: Gemini 2.5 Flash | Standard/Advanced: Claude Sonnet 4 | Enterprise: Claude Opus 4
  *
- * OFFLINE: Falls back to prism-coder:7b via local Ollama
+ * OFFLINE: Falls back to prism-coder:14b via local Ollama
  *   - Limited but functional — handles simple Q&A and note parsing
  *   - No web search, no premium models
  *   - Ensures the child always has AI help even without internet
@@ -259,7 +259,7 @@ async function callSynalux(
     // Route via /api/v1/prism-aac/chat — the dedicated AAC chat
     // endpoint (synalux-private commits 8607d33c → 05ef1d57).
     // Public route — no session cookie required (AAC must work for every child, including those without a caregiver account). Rate-limited per IP on the server.
-    // Tier-routed to local prism-coder:7b → 14b → Claude Sonnet / Gemini.
+    // Tier-routed to local prism-coder:14b → 14b → Claude Sonnet / Gemini.
     //
     // The previous /api/v1/chat target was the synalux web-app chat,
     // auth-gated → 401 for anonymous users on prism-aac.vercel.app.

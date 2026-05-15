@@ -70,7 +70,7 @@ describe('localModel HTTPS gate', () => {
     setProtocol('http:');
     vi.spyOn(global, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({
-        models: [{ name: 'prism-coder:7b' }, { name: 'llama3:8b' }],
+        models: [{ name: 'prism-coder:14b' }, { name: 'llama3:8b' }],
       }), { status: 200 }),
     );
 
