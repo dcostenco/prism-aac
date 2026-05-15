@@ -67,7 +67,7 @@ export const __testing = { extractLastSentence };
 
 export default function Keyboard() {
   const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
-  const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock } = useUIStore();
+  const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock, keyboardMaximized, cycleKeyboardMode } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language, speakOnSentenceEnd } = useSettingsStore();
   const { t } = useT();
@@ -257,6 +257,17 @@ export default function Keyboard() {
         <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" data-action="mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>
+        {keyboardMaximized && (
+          <button
+            onClick={() => { tapFeedback(); cycleKeyboardMode(); }}
+            aria-label="Minimize keyboard"
+            data-action="kb-minimize"
+            data-testid="kb-minimize"
+            className={`${kc} ${wordSize} min-w-[clamp(2.5rem,5vw,4rem)] px-[clamp(0.25rem,0.5vw,0.5rem)] text-yellow-400`}
+          >
+            ⬇
+          </button>
+        )}
         <button onClick={handleSpace} aria-label={t('space')} data-action="space" className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
         <button onClick={() => handleKey('.')} aria-label="." data-key="." data-display="." className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>.</button>
         <button onClick={() => handleKey(',')} aria-label="," data-key="," data-display="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>,</button>
