@@ -142,23 +142,23 @@ The native app probes available RAM at launch, downloads the right model from Hu
 Three modes cycle with a single tap. The active mode persists across sessions so the child's preferred layout is always restored on launch.
 
 ```
-  MAX KB                    MIN KB                    HIDE KB
-  ┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
-  │ Toolbar          │      │ Toolbar          │      │ Toolbar          │
-  │ Prediction bar   │      │ Prediction bar   │      │ Greeting banner  │
-  │                  │      │                  │      │                  │
-  │   KEYBOARD       │      │  Categories (75%)│      │  Categories      │
-  │   fills entire   │      │                  │      │  (full screen)   │
-  │   space below    │      │──────────────────│      │                  │
-  │   prediction     │      │  Keyboard (25%)  │      │                  │
-  │ [123] [⬇] [space]│      │                  │      │                  │
-  └──────────────────┘      └──────────────────┘      └──────────────────┘
-         │                        │                        │
-         └── ⬇ button ──────────>└── sidebar MIN KB ──────>└── sidebar MAX KB ─┐
-         ^                                                                     │
-         └────────────────────────────────────────────────────────────────────-─┘
+  MAX KB                 MIN KB                 HIDE KB
+  +--------------------+ +--------------------+ +--------------------+
+  | Toolbar            | | Toolbar            | | Toolbar            |
+  | Prediction bar     | | Prediction bar     | | Greeting banner    |
+  |                    | |                    | |                    |
+  |  KEYBOARD          | | Categories  (75%)  | | Categories         |
+  |  fills all space   | |                    | | (full screen)      |
+  |  below prediction  | |--------------------| |                    |
+  |                    | | Keyboard    (25%)  | |                    |
+  | [123][v][  space  ]| |                    | |                    |
+  +--------------------+ +--------------------+ +--------------------+
+        |                      |                      |
+        +-- [v] button ------->+-- sidebar btn ------>+-- sidebar btn --+
+        |                                                               |
+        +<--------------------------------------------------------------+
 
-  Persisted in localStorage — restored on every launch.
+  Persisted in localStorage -- restored on every launch.
 ```
 
 ### Cost summary
