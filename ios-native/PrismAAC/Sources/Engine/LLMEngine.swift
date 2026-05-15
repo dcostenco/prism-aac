@@ -6,22 +6,35 @@ private let llamaAvailable = true
 private let llamaAvailable = false
 #endif
 
-/// On-device inference engine — Qwen3 1.7B via llama.cpp Metal backend.
+/// On-device inference engine — Qwen3 via llama.cpp Metal backend.
 ///
-/// Memory contract (Q4_K_M 1.7B):
-///   Model weights  : ~1050 MB
-///   KV cache @2048 : ~200 MB
-///   ggml overhead  : ~100 MB  → Total ~1350 MB (needs 4 GB device)
+/// Model selection by device RAM:
+///   16 GB+ (iPad Pro M1/M2/M4): prism-coder 14B Q4_K_M — 98% routing accuracy
+///   4–15 GB (iPhone, iPad Air):  prism-coder 1.7B Q4_K_M — 88% routing accuracy
+///
+/// Memory contract (Q4_K_M):
+///   1.7B:  ~1050 MB weights + ~200 MB KV + ~100 MB overhead = ~1350 MB
+///   14B:   ~8400 MB weights + ~600 MB KV + ~200 MB overhead = ~9200 MB
 @MainActor
 final class LLMEngine: ObservableObject {
 
     @Published private(set) var isLoaded = false
     @Published private(set) var isGenerating = false
     @Published private(set) var memoryWarning = false
+    @Published private(set) var loadedModelTier: String = ""
 
     static let MAX_NEW_TOKENS = 256
-    static let MIN_FREE_MB = 1_600
     static let CONTEXT_SIZE: UInt32 = 2048
+
+    static let totalDeviceMemoryGB: Int = {
+        Int(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024))
+    }()
+
+    static var canLoad14B: Bool { totalDeviceMemoryGB >= 16 }
+
+    static var MIN_FREE_MB: Int {
+        canLoad14B ? 10_000 : 1_600
+    }
 
     private var model: OpaquePointer?
     private var context: OpaquePointer?
@@ -63,7 +76,8 @@ final class LLMEngine: ObservableObject {
         self.model = loadedModel
         self.context = ctx
         self.isLoaded = true
-        NSLog("[LLMEngine] Model loaded: \(url.lastPathComponent)")
+        self.loadedModelTier = url.lastPathComponent.contains("14b") ? "14B" : "1.7B"
+        NSLog("[LLMEngine] Model loaded: \(url.lastPathComponent) (tier: \(loadedModelTier), device RAM: \(Self.totalDeviceMemoryGB) GB)")
         #else
         throw LLMError.notLoaded
         #endif

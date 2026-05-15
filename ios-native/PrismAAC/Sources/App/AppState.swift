@@ -66,7 +66,7 @@ final class AppState: ObservableObject {
 
     // MARK: - Thresholds (MB)
 
-    private static let T_FULL_AI    = 1_400
+    private static var T_FULL_AI: Int { LLMEngine.canLoad14B ? 10_000 : 1_400 }
     private static let T_CLOUD_AI   = 800
     private static let T_EMERGENCY  = 300
 
