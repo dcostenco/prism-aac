@@ -24,7 +24,8 @@ import { timeoutSignal } from '@/lib/portalConfig';
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
-const LOCAL_MODEL = 'prism-coder:7b';
+const LOCAL_MODELS = ['prism-coder:1b7', 'prism-coder:14b'] as const;
+const LOCAL_MODEL = LOCAL_MODELS[0];
 
 // ── Auth ──
 
@@ -239,39 +240,62 @@ async function callSynalux(
 
 // ── Local Ollama (offline fallback) ──
 
-async function callLocal(prompt: string): Promise<string> {
-  // Skip on HTTPS pages: browsers block http://localhost as mixed content
-  // and the failed fetch surfaces in the console as a security error. The
-  // local-Ollama path is only reachable when prism-aac itself is served
-  // over http (dev / local standalone).
+async function callLocalModel(prompt: string, model: string, timeoutMs = 10000): Promise<string> {
   if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
     throw new Error('Local AI unavailable — HTTPS page cannot reach http://localhost');
   }
-  const t = timeoutSignal(10000);
+  const t = timeoutSignal(timeoutMs);
   try {
     const res = await fetch(`${LOCAL_OLLAMA_URL}/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: LOCAL_MODEL,
+        model,
         prompt,
         stream: false,
-        options: { num_predict: 300, temperature: 0.3 },
+        options: { num_predict: 300, temperature: 0 },
       }),
       signal: t.signal,
     });
-    if (!res.ok) throw new Error('Local model unavailable');
+    if (!res.ok) throw new Error(`Model ${model} unavailable`);
     const data = await res.json();
     return data?.response ?? '';
   } catch (e) {
-    // Mixed content (HTTPS→HTTP) or CORS will throw TypeError: Failed to fetch
     const msg = e instanceof TypeError
       ? 'Local AI unavailable — requires running the app locally (not HTTPS) or configuring Ollama CORS'
-      : 'Local AI unavailable';
+      : `Local AI unavailable (${model})`;
     throw new Error(msg);
   } finally {
     t.cancel();
   }
+}
+
+function isConfidentResponse(text: string): boolean {
+  if (!text || text.trim().length < 2) return false;
+  const hasToolCall = text.includes('<|tool_call|>');
+  const hasPlainText = text.trim().length > 10 && !hasToolCall;
+  if (hasToolCall) {
+    const knownTools = [
+      'session_load_context', 'session_save_ledger', 'session_save_handoff',
+      'session_compact_ledger', 'session_search_memory', 'knowledge_search',
+      'brave_web_search',
+    ];
+    return knownTools.some(t => text.includes(`"${t}"`));
+  }
+  return hasPlainText;
+}
+
+async function callLocal(prompt: string): Promise<string> {
+  for (const model of LOCAL_MODELS) {
+    try {
+      const timeoutMs = model.includes('1b7') ? 8000 : 15000;
+      const result = await callLocalModel(prompt, model, timeoutMs);
+      if (isConfidentResponse(result)) return result;
+    } catch {
+      continue;
+    }
+  }
+  throw new Error('No local AI model available — start Ollama');
 }
 
 // ── Model output sanitation ──
@@ -376,7 +400,7 @@ async function route(
     if (msg.includes('expired') || msg.includes('Rate limit')) throw err;
   }
 
-  // Offline fallback: prism-coder:7b
+  // Offline fallback: cascade through local models (1.7B → 14B)
   try {
     const fullPrompt = options?.system ? `${options.system}\n\n${prompt}` : prompt;
     const raw = await callLocal(fullPrompt);
