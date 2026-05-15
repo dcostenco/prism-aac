@@ -5,7 +5,7 @@
  *
  * Many AAC paths are too latency-sensitive to round-trip to the synalux
  * portal — typing-as-you-go correction, voice transcript cleanup, future
- * predict-on-keystroke. We'd rather use the local prism-coder:7b on
+ * predict-on-keystroke. We'd rather use the local prism-coder on
  * Ollama if it's there.
  *
  * This module probes Ollama once at app boot. If it answers, every
@@ -37,7 +37,7 @@ async function probeOllama(): Promise<boolean> {
     if (!res.ok) return false;
     const data = await res.json();
     const models = (data?.models ?? []) as Array<{ name: string }>;
-    return models.some((m) => m.name === 'prism-coder:7b' || m.name.startsWith('prism-coder'));
+    return models.some((m) => m.name.startsWith('prism-coder'));
   } catch {
     return false;
   } finally {
@@ -79,4 +79,4 @@ export function getLocalModelStatus(): boolean | null {
 }
 
 export const LOCAL_OLLAMA_URL = `${OLLAMA_BASE}/api/generate`;
-export const LOCAL_MODEL = 'prism-coder:7b';
+export const LOCAL_MODEL = 'prism-coder:14b';
