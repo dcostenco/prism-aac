@@ -144,148 +144,155 @@ struct WatchPictogramCards: View {
         return inCode == outCode ? inCode : "\(inCode)→\(outCode)"
     }
 
+    /// Top bar — extracted as a property so it can be attached via
+    /// `.safeAreaInset(edge: .top)` on the ScrollView. That makes
+    /// SwiftUI compose the inset above the system safe area (where
+    /// the watchOS time renders) correctly: time sits in its own
+    /// zone, buttons start immediately below it, ScrollView content
+    /// starts after the buttons. No manual .padding(.top) needed.
+    @ViewBuilder
+    private var topBar: some View {
+        HStack(spacing: 0) {
+            Button { pickingInput = true; showLangPicker = true } label: {
+                Text(langPillLabel)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, minHeight: 28)
+                    .background(Color.white.opacity(0.15))
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                inbox.requestPermissionIfNeeded()
+                showInbox = true
+            } label: {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 40, height: 28)
+                        .background(Color.orange.opacity(0.55))
+                    if inbox.unreadCount > 0 {
+                        Text(inbox.unreadCount > 9 ? "9+" : "\(inbox.unreadCount)")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 3).padding(.vertical, 1)
+                            .background(Color.red).clipShape(Capsule())
+                            .offset(x: 2, y: -2)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+
+            Button { showAlertConfirm = true } label: {
+                Text("SOS")
+                    .font(.system(size: 10, weight: .heavy, design: .rounded))
+                    .foregroundColor(.white)
+                    .frame(width: 40, height: 28)
+                    .background(Color.red.opacity(0.8))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Send to caregiver")
+
+            Button { showSendMessage = true } label: {
+                Image(systemName: "paperplane.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 40, height: 28)
+                    .background(Color.green.opacity(0.6))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            VStack(spacing: 6) {
-                // ── AI Chat tile — pinned above sticky Yes/No ──
-                Button { showAIChat = true } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "brain.head.profile")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(.white)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("AI Chat")
-                                .font(.system(size: 16, weight: .bold))
+            // Single scrollable column — Yes/No on top, then AI Chat,
+            // then predictions, then category cards. All scroll together.
+            // .safeAreaInset(edge: .top) attaches the top bar above the
+            // ScrollView's safe area — SwiftUI composes the inset properly
+            // so the system time sits in its own area and the buttons
+            // start directly below it (no manual .padding hacks).
+            ScrollView {
+                VStack(spacing: 6) {
+                    // ── Yes/No row — first item, at the top of the scroll ──
+                    LazyVGrid(columns: columns, spacing: 6) {
+                        ForEach(yesNoPhrases) { phrase in
+                            PairCard(
+                                phrase: phrase,
+                                onTap: { tapPhrase(phrase, recordRecent: false) },
+                                emergencyIsActive: emergency.isActive
+                            )
+                        }
+                    }
+
+                    // ── AI Chat tile ──
+                    Button { showAIChat = true } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "brain.head.profile")
+                                .font(.system(size: 22, weight: .bold))
                                 .foregroundColor(.white)
-                            Text("Ask anything · Translate")
-                                .font(.system(size: 10))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.5))
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity, minHeight: 56)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.7)],
-                            startPoint: .leading, endPoint: .trailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 4)
-
-                // ── STICKY Yes/No row — outside the ScrollView, never scrolls ──
-                LazyVGrid(columns: columns, spacing: 6) {
-                    ForEach(yesNoPhrases) { phrase in
-                        PairCard(
-                            phrase: phrase,
-                            onTap: { tapPhrase(phrase, recordRecent: false) },
-                            emergencyIsActive: emergency.isActive
-                        )
-                    }
-                }
-                .padding(.horizontal, 4)
-
-                // ── Scrollable region: predictions cards, then category cards ──
-                ScrollView {
-                    VStack(spacing: 6) {
-                        if !recentPhraseCards.isEmpty {
-                            LazyVGrid(columns: columns, spacing: 6) {
-                                ForEach(recentPhraseCards) { phrase in
-                                    PairCard(
-                                        phrase: phrase,
-                                        onTap: { tapPhrase(phrase, recordRecent: true) },
-                                        emergencyIsActive: emergency.isActive
-                                    )
-                                    .overlay(alignment: .topTrailing) {
-                                        Image(systemName: "star.fill")
-                                            .font(.system(size: 8))
-                                            .foregroundColor(.yellow)
-                                            .padding(4)
-                                    }
-                                }
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("AI Chat")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                                Text("Ask anything · Translate")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.white.opacity(0.7))
                             }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.5))
                         }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.7)],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+
+                    // ── Predictions (recents) ──
+                    if !recentPhraseCards.isEmpty {
                         LazyVGrid(columns: columns, spacing: 6) {
-                            ForEach(displayCategories) { cat in
-                                CategoryCardView(category: cat, color: phraseColor(cat.id)) {
-                                    WKInterfaceDevice.current().play(.click)
-                                    presentedCategory = cat
+                            ForEach(recentPhraseCards) { phrase in
+                                PairCard(
+                                    phrase: phrase,
+                                    onTap: { tapPhrase(phrase, recordRecent: true) },
+                                    emergencyIsActive: emergency.isActive
+                                )
+                                .overlay(alignment: .topTrailing) {
+                                    Image(systemName: "star.fill")
+                                        .font(.system(size: 8))
+                                        .foregroundColor(.yellow)
+                                        .padding(4)
                                 }
                             }
                         }
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.bottom, 8)
-                }
-            }
-            .padding(.top, 64)  // clear: safe area (28) + top bar (28) + spacing (8)
 
-            // Top bar — .padding(.top, 28) pushes it below the watchOS system
-            // status area where the time is rendered, so the time doesn't
-            // overlap the buttons.
-            HStack(spacing: 0) {
-                Button { pickingInput = true; showLangPicker = true } label: {
-                    Text(langPillLabel)
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity, minHeight: 28)
-                        .background(Color.white.opacity(0.15))
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    inbox.requestPermissionIfNeeded()
-                    showInbox = true
-                } label: {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "bell.fill")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(width: 40, height: 28)
-                            .background(Color.orange.opacity(0.55))
-                        if inbox.unreadCount > 0 {
-                            Text(inbox.unreadCount > 9 ? "9+" : "\(inbox.unreadCount)")
-                                .font(.system(size: 8, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 3).padding(.vertical, 1)
-                                .background(Color.red).clipShape(Capsule())
-                                .offset(x: 2, y: -2)
+                    // ── Categories ──
+                    LazyVGrid(columns: columns, spacing: 6) {
+                        ForEach(displayCategories) { cat in
+                            CategoryCardView(category: cat, color: phraseColor(cat.id)) {
+                                WKInterfaceDevice.current().play(.click)
+                                presentedCategory = cat
+                            }
                         }
                     }
                 }
-                .buttonStyle(.plain)
-
-                Button { showAlertConfirm = true } label: {
-                    // Text label — the "sos" SF symbol renders inconsistently
-                    // at small sizes on watchOS, leaving a gap. Text is
-                    // unambiguous and always visible.
-                    Text("SOS")
-                        .font(.system(size: 10, weight: .heavy, design: .rounded))
-                        .foregroundColor(.white)
-                        .frame(width: 40, height: 28)
-                        .background(Color.red.opacity(0.8))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Send to caregiver")
-
-                Button { showSendMessage = true } label: {
-                    Image(systemName: "paperplane.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 40, height: 28)
-                        .background(Color.green.opacity(0.6))
-                }
-                .buttonStyle(.plain)
+                .padding(.horizontal, 4)
+                .padding(.bottom, 8)
             }
-            .padding(.trailing, 3)
-            .padding(.top, 28)  // clear the system status / time area
+            .safeAreaInset(edge: .top, spacing: 0) {
+                topBar
+            }
 
             // Translation activity indicator
             if translation.isTranslating {
