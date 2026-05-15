@@ -27,7 +27,12 @@ final class LLMEngine: ObservableObject {
     static let CONTEXT_SIZE: UInt32 = 2048
 
     static let totalDeviceMemoryGB: Int = {
-        Int(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024))
+        if let override = ProcessInfo.processInfo.environment["PRISM_DEVICE_RAM_GB"],
+           let gb = Int(override) {
+            NSLog("[LLMEngine] RAM override: \(gb) GB (real: \(ProcessInfo.processInfo.physicalMemory / (1024*1024*1024)) GB)")
+            return gb
+        }
+        return Int(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024))
     }()
 
     static var canLoad14B: Bool { totalDeviceMemoryGB >= 16 }
