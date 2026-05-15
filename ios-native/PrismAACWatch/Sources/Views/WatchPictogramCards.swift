@@ -225,12 +225,11 @@ struct WatchPictogramCards: View {
                     .padding(.bottom, 8)
                 }
             }
-            .padding(.top, 32)
+            .padding(.top, 64)  // clear: safe area (28) + top bar (28) + spacing (8)
 
-            // Top bar — compact: shorter height + narrower icons so the
-            // 4 buttons sit proportional to the cards below. Earlier 44pt
-            // height + 54pt width made the top bar dominate the viewport
-            // on Series 11 46mm (~25% of vertical space).
+            // Top bar — .padding(.top, 28) pushes it below the watchOS system
+            // status area where the time is rendered, so the time doesn't
+            // overlap the buttons.
             HStack(spacing: 0) {
                 Button { pickingInput = true; showLangPicker = true } label: {
                     Text(langPillLabel)
@@ -286,7 +285,7 @@ struct WatchPictogramCards: View {
                 .buttonStyle(.plain)
             }
             .padding(.trailing, 3)
-            .padding(.top, 3)
+            .padding(.top, 28)  // clear the system status / time area
 
             // Translation activity indicator
             if translation.isTranslating {
@@ -915,16 +914,9 @@ struct WatchAIChatView: View {
     @State private var messages: [ChatMessage] = []
     @State private var inputText     = ""
     @State private var isWaiting     = false
-    @State private var showDictation = false
     @State private var aiTask: Task<Void, Never>?
     @State private var translateTask2: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
-    // FocusState on the inline TextField — focusing it triggers watchOS to
-    // auto-present the system input controller (dictation + scribble + keyboard).
-    // This is the SwiftUI-native one-tap path. The earlier WKApplication.shared()
-    // .visibleInterfaceController approach returned nil in pure SwiftUI watchOS
-    // apps and fell back to a 2-tap sheet — that's the bug this @FocusState fixes.
-    @FocusState private var inputFocused: Bool
 
     // #25: typed role constants — using these in all append calls makes typos a compile-time error.
     private let userRole = "user"
@@ -1016,31 +1008,20 @@ struct WatchAIChatView: View {
 
             // Input row — mic + text + send
             HStack(spacing: 6) {
-                // Mic — triggers Watch native dictation on a SINGLE tap.
-                // Previous implementation opened a sheet with a focused TextField
-                // and delayed @FocusState by 600ms hoping the system input
-                // controller would auto-present — it didn't, forcing a second
-                // tap on the field. Fix: call presentTextInputController on the
-                // visible WKInterfaceController directly. That bypasses the
-                // sheet, the delayed focus, and the AVAudioSession handoff
-                // race entirely.
-                Button {
-                    presentDictation()
-                } label: {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 38, height: 38)
-                        .background(Color.blue.opacity(0.6))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Dictate")
-
-                TextField("Ask…", text: $inputText)
-                    .font(.system(size: 14))
-                    .frame(minHeight: 36)
-                    .focused($inputFocused)
+                // Single tap target: the TextField itself. Pure SwiftUI
+                // watchOS cannot programmatically present the system input
+                // controller — only a USER TAP on a TextField triggers it.
+                // So the only way to achieve one-tap dictation is to make
+                // the TextField the primary surface, styled as a tappable
+                // mic prompt. Previously the separate mic button forced a
+                // tap-then-tap-field flow (or a sheet that needed its own
+                // second tap), the "2 clicks" bug the user kept hitting.
+                TextField("🎙 Speak or type…", text: $inputText)
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .padding(.horizontal, 10)
+                    .background(Color.blue.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
 
                 Button { sendMessage() } label: {
                     Image(systemName: "arrow.up.circle.fill")
@@ -1048,22 +1029,12 @@ struct WatchAIChatView: View {
                         .foregroundColor(inputText.isEmpty ? .gray : .blue)
                 }
                 .buttonStyle(.plain)
-                // FIX #21: also disable Send while a response is in flight to prevent double-send.
                 .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty || isWaiting)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
         }
         .navigationTitle("AI Chat")
-        .sheet(isPresented: $showDictation) {
-            WatchDictationView(
-                title: isTranslatorMode ? "Translate" : "Dictate",
-                submitLabel: isTranslatorMode ? "Translate" : "Ask AI"
-            ) { text in
-                inputText = text
-                sendMessage()
-            }
-        }
         // #26: Restore last 10 messages from Keychain on appear (fix #6: moved from UserDefaults)
         // FIX #6: Keychain I/O is synchronous — run off @MainActor to avoid blocking UI thread.
         // FIX #26: Use do/catch instead of try? so decode failures are logged (schema change detection).
@@ -1131,22 +1102,6 @@ struct WatchAIChatView: View {
                 }
             }
         }
-    }
-
-    /// One-tap dictation for SwiftUI watchOS.
-    /// Opens a dedicated dictation sheet whose TextField is focused via .task
-    /// (runs after the view enters the hierarchy). Earlier approaches:
-    ///   - WKApplication.shared().visibleInterfaceController?.presentTextInput
-    ///     Controller(...) → returns nil in pure SwiftUI Watch apps.
-    ///   - Inline @FocusState on the chat-row TextField → unreliable when
-    ///     TextField is nested in a NavigationStack body, fails silently.
-    /// The sheet + .task pattern is the canonical SwiftUI watchOS path for
-    /// reliably presenting the input controller on a single tap.
-    @MainActor
-    private func presentDictation() {
-        tts.stop()
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        showDictation = true
     }
 
     @MainActor
