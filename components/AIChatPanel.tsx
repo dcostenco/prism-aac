@@ -282,41 +282,50 @@ export default function AIChatPanel() {
       setInterim('');
       return;
     }
+    // Track the last interim so we can fall back to it if the engine
+    // ends the session WITHOUT producing a final result. Some browsers
+    // emit interims then end without finalizing when rec.stop() is called
+    // mid-utterance, which would otherwise discard everything the user said.
+    let lastInterim = '';
+    let submitted = false;
+    const finalize = (text: string) => {
+      if (submitted) return;
+      submitted = true;
+      voiceRef.current = null;
+      setListening(false);
+      setInterim('');
+      const trimmed = text.trim();
+      if (!trimmed || !activeRef.current) return;
+      void correctText(trimmed, language).then((fixed) => {
+        if (!activeRef.current) return;
+        appendText((fixed || trimmed) + ' ');
+        setTimeout(() => { if (activeRef.current) triggerAISubmit(); }, 80);
+      });
+    };
     const session = startVoiceInput({
       lang: ttsCode,
-      silenceMs: 1500,
-      onInterim: (t) => setInterim(t),
-      onFinal: async (t) => {
-        const fixed = await correctText(t.trim(), language);
-        if (!voiceRef.current) return;  // panel closed while awaiting
-        appendText((fixed || t).trim() + ' ');
-        setInterim('');
-        // Auto-submit to AI after text lands in the store
-        setTimeout(() => { if (activeRef.current) triggerAISubmit(); }, 80);
+      silenceMs: 2500,  // give the user time to actually finish a phrase
+      onInterim: (t) => {
+        lastInterim = t;
+        setInterim(t);
       },
-      // Auto-submit when the user stops speaking for >silenceMs without the
-      // engine producing a `final` transcript. Some browsers/native engines
-      // never emit a final until the session is stopped — onSilence is the
-      // fallback path that ensures "go silent → AI responds" still works.
+      onFinal: (t) => finalize(t),
+      // Silence detected after speech started. Stop the recognition
+      // (which causes the engine to emit a final result if it has one),
+      // then wait briefly. If onFinal fires, it submits. If it doesn't
+      // (some engines skip the final on rec.stop()), use the last interim.
       onSilence: () => {
-        if (!voiceRef.current || !activeRef.current) return;
-        // Stop voice session so the mic releases; final-if-any will deliver
-        // through onFinal. If there's no pending final, submit current
-        // message bar text as the question.
-        voiceRef.current.stop();
-        voiceRef.current = null;
-        setListening(false);
-        setInterim('');
+        if (!voiceRef.current || submitted) return;
+        try { voiceRef.current.stop(); } catch { /* engine already stopped */ }
         setTimeout(() => {
-          if (activeRef.current && useMessageStore.getState().text.trim()) {
-            triggerAISubmit();
-          }
-        }, 120);
+          if (!submitted) finalize(lastInterim);
+        }, 600);
       },
       onError: () => {
+        if (submitted) return;
+        voiceRef.current = null;
         setListening(false);
         setInterim('');
-        voiceRef.current = null;
       },
     });
     if (session) {

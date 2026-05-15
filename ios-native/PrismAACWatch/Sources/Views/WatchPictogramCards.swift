@@ -180,30 +180,6 @@ struct WatchPictogramCards: View {
                 .buttonStyle(.plain)
                 .padding(.horizontal, 4)
 
-                // ── Alert-to-caregiver pill — full-width, distinct from top bar ──
-                Button { showAlertConfirm = true } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "sos")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-                        Text("Alert caregiver")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.red.opacity(0.85))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 4)
-                .accessibilityLabel("Alert caregiver")
-
                 // ── STICKY Yes/No row — outside the ScrollView, never scrolls ──
                 LazyVGrid(columns: columns, spacing: 6) {
                     ForEach(yesNoPhrases) { phrase in
@@ -284,6 +260,16 @@ struct WatchPictogramCards: View {
                     }
                 }
                 .buttonStyle(.plain)
+
+                Button { showAlertConfirm = true } label: {
+                    Image(systemName: "sos")
+                        .font(.system(size: 16, weight: .heavy))
+                        .foregroundColor(.white)
+                        .frame(width: 54, height: 44)
+                        .background(Color.red.opacity(0.7))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Send to caregiver")
 
                 Button { showSendMessage = true } label: {
                     Image(systemName: "paperplane.fill")
@@ -369,16 +355,20 @@ struct WatchPictogramCards: View {
                 Button("Cancel", role: .cancel) { pendingEmergencyPhrase = nil }
             }
         }
-        // Alert-to-caregiver confirmation (Send/Cancel, no countdown, no escalation)
+        // Caregiver chooser: Alert (pre-canned SMS) | Message (compose) | Cancel
         .confirmationDialog(
-            "Send alert to caregiver?",
+            "Send to caregiver",
             isPresented: $showAlertConfirm,
             titleVisibility: .visible
         ) {
-            Button("Send", role: .destructive) { sendAlertSMS() }
+            Button("🚨 Alert", role: .destructive) { sendAlertSMS() }
+            Button("💬 Message…") {
+                showAlertConfirm = false
+                showSendMessage = true
+            }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Sends an SMS to your primary caregiver.")
+            Text("Alert = quick SOS. Message = compose your own.")
         }
         .sheet(item: $presentedCategory) { cat in
             WatchCategoryDetail(
@@ -1139,24 +1129,19 @@ struct WatchAIChatView: View {
     }
 
     /// One-tap dictation for SwiftUI watchOS.
-    /// Sets @FocusState on the inline TextField — watchOS responds by auto-
-    /// presenting the system input controller (dictation/scribble/keyboard tabs)
-    /// on the next runloop tick. The earlier `WKApplication.shared().visible
-    /// InterfaceController?.presentTextInputController(...)` path returned nil
-    /// in pure SwiftUI Watch apps (no UIKit interface controller exists) and
-    /// fell back to a 2-tap sheet. Inline focus is the canonical SwiftUI path
-    /// and reliably triggers the input controller on a single tap.
-    ///
-    /// The DispatchQueue.main.async hop is required: setting @FocusState
-    /// synchronously inside a Button action sometimes races with SwiftUI's
-    /// gesture-end processing and the input controller never appears.
+    /// Opens a dedicated dictation sheet whose TextField is focused via .task
+    /// (runs after the view enters the hierarchy). Earlier approaches:
+    ///   - WKApplication.shared().visibleInterfaceController?.presentTextInput
+    ///     Controller(...) → returns nil in pure SwiftUI Watch apps.
+    ///   - Inline @FocusState on the chat-row TextField → unreliable when
+    ///     TextField is nested in a NavigationStack body, fails silently.
+    /// The sheet + .task pattern is the canonical SwiftUI watchOS path for
+    /// reliably presenting the input controller on a single tap.
     @MainActor
     private func presentDictation() {
         tts.stop()
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        DispatchQueue.main.async {
-            inputFocused = true
-        }
+        showDictation = true
     }
 
     @MainActor
@@ -1263,12 +1248,14 @@ struct WatchDictationView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
-            .onAppear {
-                // Delay focus so sheet animation completes first —
-                // without this, watchOS drops the system input controller presentation.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    fieldFocused = true
-                }
+            .task {
+                // .task runs once the view is in the hierarchy. Setting focus
+                // here reliably triggers the watchOS system input controller
+                // (keyboard + scribble + dictate). Earlier .onAppear + 0.6s
+                // asyncAfter was racy: sometimes the input controller never
+                // appeared, forcing the user to tap the field manually — that
+                // was the "2 taps" bug. .task is the canonical SwiftUI hook.
+                fieldFocused = true
             }
         }
     }
