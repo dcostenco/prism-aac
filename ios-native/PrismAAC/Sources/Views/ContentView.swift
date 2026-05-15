@@ -148,6 +148,15 @@ struct PrismWebView: UIViewRepresentable {
                 });
             }
         };
+        // Watch→web bridge: native side calls window.prismOnWatchMessage(payload)
+        // when the Watch sends send_alert or send_message. Web installs a handler
+        // (services/watchAlertBridge.ts) to route via sendToContact.
+        if (!window.prismOnWatchMessage) {
+            window.prismOnWatchMessage = function(payload) {
+                // Default no-op until the web app installs the real handler.
+                console.warn('[PrismNative] prismOnWatchMessage fired before web handler registered', payload);
+            };
+        }
         // Override Web Speech API with native TTS for better iOS quality
         if (window.speechSynthesis) {
             const _native = window.prismNativeBridge;
@@ -181,6 +190,23 @@ struct PrismWebView: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            activeWebView = webView
+            // Install the Watch→web forwarder now that the page is loaded and
+            // window.prismOnWatchMessage exists (either from the injected default
+            // no-op or from the web app's services/watchAlertBridge.ts handler).
+            WatchEmergencyBridge.shared.watchMessageForwarder = { [weak webView] type, body, to in
+                let payload: [String: Any] = [
+                    "type": type,
+                    "body": body,
+                    "to": to as Any,
+                ]
+                guard let data = try? JSONSerialization.data(withJSONObject: payload),
+                      let json = String(data: data, encoding: .utf8) else { return }
+                webView?.evaluateJavaScript(
+                    "window.prismOnWatchMessage && window.prismOnWatchMessage(\(json))",
+                    completionHandler: nil
+                )
+            }
             Task { @MainActor in onLoaded?(); onLoaded = nil }
         }
 
@@ -483,6 +509,12 @@ final class WatchEmergencyBridge: NSObject, WCSessionDelegate {
     static let shared = WatchEmergencyBridge()
     private static let iso8601 = ISO8601DateFormatter()
 
+    /// Forwarder installed by the WKWebView Coordinator. When the Watch
+    /// sends `send_alert` or `send_message`, this closure is invoked on
+    /// MainActor with the parsed payload so the web app can ship the SMS
+    /// via its existing portal/sendToContact infrastructure.
+    var watchMessageForwarder: ((_ type: String, _ body: String, _ to: String?) -> Void)?
+
     // FIX H1: Activate WCSession at app startup with a delegate
     func activateSession() {
         guard WCSession.isSupported() else { return }
@@ -497,6 +529,37 @@ final class WatchEmergencyBridge: NSObject, WCSessionDelegate {
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
         session.activate()
+    }
+
+    /// Watch → iPhone message receiver. Reachable-mode path (live, replyHandler available).
+    /// Catches `send_alert` (one-tap caregiver alert) and `send_message` (composed SMS from
+    /// WatchSendMessageView). Both route through the webview to the existing web sendToContact
+    /// infrastructure. Replies optimistically ("queued"); actual delivery error surfaces in
+    /// the iPhone UI rather than racing back to the Watch.
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
+        let type = (message["type"] as? String) ?? ""
+        let body = String(((message["text"] as? String) ?? "").prefix(500))
+        let to = (message["to"] as? String).map { String($0.prefix(100)) }
+        guard type == "send_alert" || type == "send_message", !body.isEmpty else {
+            replyHandler(["ok": false, "reason": "unsupported_or_empty"])
+            return
+        }
+        Task { @MainActor in
+            WatchEmergencyBridge.shared.watchMessageForwarder?(type, body, to)
+            replyHandler(["ok": true, "status": "queued"])
+        }
+    }
+
+    /// Watch → iPhone message receiver. Background-queue path (transferUserInfo).
+    /// No replyHandler available. Forwards to the same path.
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String : Any] = [:]) {
+        let type = (userInfo["type"] as? String) ?? ""
+        let body = String(((userInfo["text"] as? String) ?? "").prefix(500))
+        let to = (userInfo["to"] as? String).map { String($0.prefix(100)) }
+        guard type == "send_alert" || type == "send_message", !body.isEmpty else { return }
+        Task { @MainActor in
+            WatchEmergencyBridge.shared.watchMessageForwarder?(type, body, to)
+        }
     }
 
     func trigger(phrase: String) {

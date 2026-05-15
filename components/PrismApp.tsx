@@ -21,6 +21,7 @@ import HistoryModal from './HistoryModal';
 import SettingsModal from './SettingsModal';
 import CategoryManagerModal from './CategoryManagerModal';
 import EmergencyCountdownModal from './EmergencyCountdownModal';
+import AlertConfirmModal from './AlertConfirmModal';
 import HeadTrackingOverlay from './HeadTrackingOverlay';
 import TrackingDebugOverlay from './TrackingDebugOverlay';
 import TtsDebugOverlay from './TtsDebugOverlay';
@@ -199,6 +200,8 @@ export default function PrismApp() {
     seedTemplates();
     ensureSeed();
     refreshAuth();
+    // Install Watch→web alert bridge. Idempotent — safe under StrictMode.
+    void import('@/services/watchAlertBridge').then((m) => m.registerWatchAlertBridge());
     // Auto-sideload: detect local Ollama → pull best prism-coder model
     import('@/services/aiService').then(m => m.autoSideload?.()).catch(() => {});
     // Pre-cache all pictograms for offline — runs in background
@@ -472,6 +475,10 @@ export default function PrismApp() {
           )}
           {/* Emergency modal — mounted unconditionally at root, above all other UI */}
           <EmergencyCountdownModal />
+          {/* Alert-to-caregiver confirmation + status toast. Mounted at root
+              so the Watch bridge (window.prismOnWatchMessage) and the toolbar
+              🚨 button both route through the same modal/status surface. */}
+          <AlertConfirmModal />
           {/* True modals — settings/history are configuration UIs, not
               communication panels, so they stay as full-screen overlays. */}
           <HistoryModal />

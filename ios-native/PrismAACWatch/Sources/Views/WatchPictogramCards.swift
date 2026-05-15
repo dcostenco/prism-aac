@@ -121,6 +121,14 @@ struct WatchPictogramCards: View {
     @State private var showSendMessage        = false   // send message from 💬 button
     @State private var showInbox              = false
     @State private var pendingEmergencyPhrase: AACPhrase? = nil
+    // Alert-to-caregiver: tap → confirmation dialog → SMS via iPhone bridge.
+    // Separate from the heavy emergency path: no countdown, no escalation, no lockout.
+    @State private var showAlertConfirm       = false
+    @State private var alertSendStatus: String? = nil
+    @State private var presentedCategory: WatchCategory? = nil
+    // Recents ring buffer (last 6 tapped phrase labels, excluding Yes/No).
+    // JSON-encoded into AppStorage so a single key holds the ordered list.
+    @AppStorage("recent_phrase_labels") private var recentPhraseLabelsJSON: String = "[]"
 
     private func code(_ bcp: String) -> String {
         supportedLanguages.first { $0.code == bcp }?.name ?? String(bcp.prefix(2)).uppercased()
@@ -138,66 +146,110 @@ struct WatchPictogramCards: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            ScrollView {
-                VStack(spacing: 6) {
-                    // ── Full-width AI Chat tile — always first, always big ──
-                    Button { showAIChat = true } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "brain.head.profile")
-                                .font(.system(size: 22, weight: .bold))
+            VStack(spacing: 6) {
+                // ── AI Chat tile — pinned above sticky Yes/No ──
+                Button { showAIChat = true } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "brain.head.profile")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.white)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("AI Chat")
+                                .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text("AI Chat")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                Text("Ask anything · Translate")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.5))
+                            Text("Ask anything · Translate")
+                                .font(.system(size: 10))
+                                .foregroundColor(.white.opacity(0.7))
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                        .frame(maxWidth: .infinity, minHeight: 56)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.7)],
-                                startPoint: .leading, endPoint: .trailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.5))
                     }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, minHeight: 56)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.7)],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 4)
 
-                    // ── 2-column AAC vocabulary grid ──
-                    LazyVGrid(columns: columns, spacing: 6) {
-                        ForEach(cachedPhrases) { phrase in
-                            PairCard(phrase: phrase, emergencyIsActive: emergency.isActive) {
-                                WKInterfaceDevice.current().play(.click)
-                                // #10/#19: use isEmergency flag — O(1), works for API-loaded vocab
-                                if phrase.isEmergency {
-                                    pendingEmergencyPhrase = phrase
-                                } else {
-                                    translation.translateAndSpeak(
-                                        text: phrase.label,
-                                        from: vocab.vocabLanguage,
-                                        to: vocab.outputLanguage,
-                                        tts: tts
+                // ── Alert-to-caregiver pill — full-width, distinct from top bar ──
+                Button { showAlertConfirm = true } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sos")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("Alert caregiver")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.red.opacity(0.85))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 4)
+                .accessibilityLabel("Alert caregiver")
+
+                // ── STICKY Yes/No row — outside the ScrollView, never scrolls ──
+                LazyVGrid(columns: columns, spacing: 6) {
+                    ForEach(yesNoPhrases) { phrase in
+                        PairCard(
+                            phrase: phrase,
+                            onTap: { tapPhrase(phrase, recordRecent: false) },
+                            emergencyIsActive: emergency.isActive
+                        )
+                    }
+                }
+                .padding(.horizontal, 4)
+
+                // ── Scrollable region: predictions cards, then category cards ──
+                ScrollView {
+                    VStack(spacing: 6) {
+                        if !recentPhraseCards.isEmpty {
+                            LazyVGrid(columns: columns, spacing: 6) {
+                                ForEach(recentPhraseCards) { phrase in
+                                    PairCard(
+                                        phrase: phrase,
+                                        onTap: { tapPhrase(phrase, recordRecent: true) },
+                                        emergencyIsActive: emergency.isActive
                                     )
-                                    session.sendPhrase(phrase.label)
+                                    .overlay(alignment: .topTrailing) {
+                                        Image(systemName: "star.fill")
+                                            .font(.system(size: 8))
+                                            .foregroundColor(.yellow)
+                                            .padding(4)
+                                    }
+                                }
+                            }
+                        }
+                        LazyVGrid(columns: columns, spacing: 6) {
+                            ForEach(displayCategories) { cat in
+                                CategoryCardView(category: cat, color: phraseColor(cat.id)) {
+                                    WKInterfaceDevice.current().play(.click)
+                                    presentedCategory = cat
                                 }
                             }
                         }
                     }
                     .padding(.horizontal, 4)
+                    .padding(.bottom, 8)
                 }
-                .padding(.top, 48)
-                .padding(.bottom, 8)
             }
+            .padding(.top, 48)
 
             // Top bar: [EN→RU] [🔔 inbox] [💬 send message]
             // SOS removed — watchOS has native emergency via side button hold.
@@ -271,6 +323,14 @@ struct WatchPictogramCards: View {
         .onChange(of: vocab.categories.map { "\($0.id):\($0.phrases.count)" }.joined(separator: ",")) { _ in
             cachedPhrases = computeAllPhrases()
         }
+        .onChange(of: alertSendStatus) { newValue in
+            // Auto-dismiss the inline status pill after 2s
+            guard newValue != nil else { return }
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                withAnimation { alertSendStatus = nil }
+            }
+        }
         // Inbox / Notification center
         // markAllRead on dismiss — not on open — so caregivers can see which messages the child has seen
         .sheet(isPresented: $showInbox, onDismiss: { inbox.markAllRead() }) {
@@ -307,6 +367,46 @@ struct WatchPictogramCards: View {
                     pendingEmergencyPhrase = nil
                 }
                 Button("Cancel", role: .cancel) { pendingEmergencyPhrase = nil }
+            }
+        }
+        // Alert-to-caregiver confirmation (Send/Cancel, no countdown, no escalation)
+        .confirmationDialog(
+            "Send alert to caregiver?",
+            isPresented: $showAlertConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Send", role: .destructive) { sendAlertSMS() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Sends an SMS to your primary caregiver.")
+        }
+        .sheet(item: $presentedCategory) { cat in
+            WatchCategoryDetail(
+                category: cat,
+                color: phraseColor(cat.id),
+                onTapPhrase: { phrase in
+                    let p = AACPhrase(
+                        label: phrase.label,
+                        sfSymbol: phrase.sfSymbol,
+                        color: phraseColor(cat.id),
+                        arasaacId: phrase.arasaacId,
+                        isEmergency: phrase.isEmergency
+                    )
+                    tapPhrase(p, recordRecent: true)
+                    presentedCategory = nil
+                }
+            )
+        }
+        .overlay(alignment: .bottom) {
+            if let status = alertSendStatus {
+                Text(status)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(status.contains("✓") ? .green : .orange)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Color.black.opacity(0.7))
+                    .clipShape(Capsule())
+                    .padding(.bottom, 6)
+                    .transition(.opacity)
             }
         }
         .sheet(isPresented: $showLangPicker) {
@@ -389,6 +489,217 @@ struct WatchPictogramCards: View {
             }
         }
     }
+
+    // MARK: - Yes/No / predictions / categories derivation
+
+    /// Yes/No are pinned above the scroll. Match by stable id prefix to survive
+    /// localized labels and so a category named "Yes/No" can't double-render.
+    /// arasaacId is intentionally nil so the AsyncImage path is skipped — the
+    /// arasaac "no" pictogram renders as a marked-up arm bitmap which looks
+    /// unsettling on a child's Watch. SF symbols are clean and universal.
+    private var yesNoPhrases: [AACPhrase] {
+        let yesLabel = cachedPhrases.first { $0.id.hasPrefix("yes-") }?.label ?? "Yes"
+        let noLabel  = cachedPhrases.first { $0.id.hasPrefix("no-") }?.label ?? "No"
+        return [
+            AACPhrase(label: yesLabel, sfSymbol: "checkmark.circle.fill", color: .green, arasaacId: nil),
+            AACPhrase(label: noLabel,  sfSymbol: "xmark.circle.fill",     color: .red,   arasaacId: nil),
+        ]
+    }
+
+    /// Recently-tapped phrases (up to 6, MRU first, Yes/No excluded).
+    /// Decoded from @AppStorage JSON; resolved against current cachedPhrases
+    /// so that re-rendering picks up updated arasaacId / color from API vocab.
+    private var recentPhraseCards: [AACPhrase] {
+        let labels = decodeRecentLabels()
+        guard !labels.isEmpty else { return [] }
+        var out: [AACPhrase] = []
+        for label in labels {
+            if let p = cachedPhrases.first(where: { $0.label == label }), !p.id.hasPrefix("yes-"), !p.id.hasPrefix("no-") {
+                out.append(p)
+                if out.count >= 6 { break }
+            }
+        }
+        return out
+    }
+
+    /// Category cards source. Falls back to a synthetic-tier split when
+    /// `vocab.categories` is empty/minimal (offline-only state).
+    private var displayCategories: [WatchCategory] {
+        if vocab.categories.count > 1 {
+            return vocab.categories
+        }
+        // Offline fallback: synthesize from AACVocab.childFriendlyOrder tiers.
+        // Tier boundaries follow the comment markers in the static list.
+        let core = AACVocab.childFriendlyOrder
+        func slice(_ from: Int, _ to: Int) -> [WatchPhrase] {
+            let range = max(0, from)..<min(core.count, to)
+            return core[range].map {
+                WatchPhrase(id: $0.id, label: $0.label, arasaacId: $0.arasaacId,
+                            sfSymbol: $0.sfSymbol, isEmergency: $0.isEmergency)
+            }
+        }
+        return [
+            WatchCategory(id: "needs",    icon: "fork.knife",      name: "Needs",    phrases: slice(8, 16)),
+            WatchCategory(id: "feelings", icon: "face.smiling",    name: "Feelings", phrases: slice(16, 20)),
+            WatchCategory(id: "social",   icon: "hand.wave.fill",  name: "Social",   phrases: slice(20, 24)),
+            WatchCategory(id: "places",   icon: "house.fill",      name: "Places",   phrases: slice(24, 28)),
+        ]
+    }
+
+    /// Single tap handler — speak + sync, plus optional recents bookkeeping.
+    /// Emergency phrases route to the confirmation-dialog path, never to recents.
+    private func tapPhrase(_ phrase: AACPhrase, recordRecent: Bool) {
+        WKInterfaceDevice.current().play(.click)
+        if phrase.isEmergency {
+            pendingEmergencyPhrase = phrase
+            return
+        }
+        translation.translateAndSpeak(
+            text: phrase.label,
+            from: vocab.vocabLanguage,
+            to: vocab.outputLanguage,
+            tts: tts
+        )
+        session.sendPhrase(phrase.label)
+        if recordRecent { appendRecent(phrase.label) }
+    }
+
+    /// MRU-prepend with dedupe; cap 6. Persisted as JSON in @AppStorage.
+    private func appendRecent(_ label: String) {
+        var labels = decodeRecentLabels()
+        labels.removeAll { $0 == label }
+        labels.insert(label, at: 0)
+        if labels.count > 6 { labels = Array(labels.prefix(6)) }
+        if let data = try? JSONEncoder().encode(labels),
+           let json = String(data: data, encoding: .utf8) {
+            recentPhraseLabelsJSON = json
+        }
+    }
+
+    private func decodeRecentLabels() -> [String] {
+        guard let data = recentPhraseLabelsJSON.data(using: .utf8),
+              let list = try? JSONDecoder().decode([String].self, from: data) else {
+            return []
+        }
+        return list
+    }
+
+    // MARK: - Alert-to-caregiver SMS path
+
+    /// Lightweight alert: routes via existing WC "send_message" channel that the
+    /// iPhone bridge already implements for WatchSendMessageView. Recipient is
+    /// resolved on the iPhone side from the primary caregiver contact, so the
+    /// Watch never has to hold a phone number.
+    private func sendAlertSMS() {
+        let timestamp = DateFormatter.alertTimeFormatter.string(from: Date())
+        let body = "⚠️ Alert from Apple Watch — needs check-in · \(timestamp)"
+        if WCSessionRouter.shared.isReachable {
+            WCSessionRouter.shared.send(
+                ["type": "send_alert", "text": body],
+                replyHandler: { _ in
+                    Task { @MainActor in
+                        WKInterfaceDevice.current().play(.success)
+                        alertSendStatus = "✓ Alert sent"
+                    }
+                },
+                errorHandler: { err in
+                    Task { @MainActor in
+                        WKInterfaceDevice.current().play(.failure)
+                        alertSendStatus = "⚠ Send failed"
+                        NSLog("[WatchAlert] Send failed: \(err)")
+                    }
+                }
+            )
+        } else {
+            WKInterfaceDevice.current().play(.failure)
+            alertSendStatus = "⚠ Phone not connected"
+        }
+    }
+}
+
+// MARK: - Category card (tappable tile in the home grid)
+
+struct CategoryCardView: View {
+    let category: WatchCategory
+    let color: Color
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 4) {
+                Image(systemName: category.icon.isEmpty ? "square.grid.2x2" : category.icon)
+                    .font(.system(size: 28))
+                    .foregroundColor(color)
+                    .frame(maxWidth: .infinity, maxHeight: 44)
+                Text(category.name)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, minHeight: 80)
+            .background(color.opacity(0.15))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.secondary)
+                    .padding(5)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(category.name) category")
+    }
+}
+
+// MARK: - Category detail (sheet pushed when a CategoryCardView is tapped)
+
+struct WatchCategoryDetail: View {
+    let category: WatchCategory
+    let color: Color
+    let onTapPhrase: (WatchPhrase) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private let columns = [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)]
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 6) {
+                    ForEach(category.phrases) { phrase in
+                        let aac = AACPhrase(
+                            label: phrase.label,
+                            sfSymbol: phrase.sfSymbol,
+                            color: color,
+                            arasaacId: phrase.arasaacId,
+                            isEmergency: phrase.isEmergency
+                        )
+                        PairCard(phrase: aac) {
+                            onTapPhrase(phrase)
+                        }
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.vertical, 6)
+            }
+            .navigationTitle(category.name)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+private extension DateFormatter {
+    static let alertTimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f
+    }()
 }
 
 // MARK: - Inbox / Notification center
@@ -704,12 +1015,16 @@ struct WatchAIChatView: View {
 
             // Input row — mic + text + send
             HStack(spacing: 6) {
-                // Mic — triggers Watch native dictation
+                // Mic — triggers Watch native dictation on a SINGLE tap.
+                // Previous implementation opened a sheet with a focused TextField
+                // and delayed @FocusState by 600ms hoping the system input
+                // controller would auto-present — it didn't, forcing a second
+                // tap on the field. Fix: call presentTextInputController on the
+                // visible WKInterfaceController directly. That bypasses the
+                // sheet, the delayed focus, and the AVAudioSession handoff
+                // race entirely.
                 Button {
-                    // Deactivate TTS audio session so system dictation can use the mic
-                    tts.stop()
-                    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-                    showDictation = true
+                    presentDictation()
                 } label: {
                     Image(systemName: "mic.fill")
                         .font(.system(size: 16, weight: .bold))
@@ -719,6 +1034,7 @@ struct WatchAIChatView: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Dictate")
 
                 TextField("Ask…", text: $inputText)
                     .font(.system(size: 14))
@@ -812,6 +1128,36 @@ struct WatchAIChatView: View {
                     NSLog("[WatchAIChat] Failed to encode history on disappear: \(error)")
                 }
             }
+        }
+    }
+
+    /// One-tap dictation. Drops the SwiftUI sheet path and presents the
+    /// system input controller directly on the visible WKInterfaceController.
+    /// Falls back to the old sheet only if visibleInterfaceController is nil
+    /// (shouldn't happen in a running SwiftUI Watch app, but defensive).
+    @MainActor
+    private func presentDictation() {
+        tts.stop()
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        if let controller = WKApplication.shared().visibleInterfaceController {
+            controller.presentTextInputController(
+                withSuggestions: nil,
+                allowedInputMode: .plain
+            ) { results in
+                guard
+                    let first = (results?.first as? String)?
+                        .trimmingCharacters(in: .whitespacesAndNewlines),
+                    !first.isEmpty
+                else { return }
+                Task { @MainActor in
+                    inputText = String(first.prefix(500))
+                    sendMessage()
+                }
+            }
+        } else {
+            // Defensive fallback — keeps the legacy sheet path alive in case
+            // visibleInterfaceController is nil on some watchOS configuration.
+            showDictation = true
         }
     }
 

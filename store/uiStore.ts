@@ -20,6 +20,12 @@ interface UIState {
   isAlertFlashing: boolean;
   /** Timestamp of last triggerAlert call — used for 5s cooldown. In state so tests can reset it. */
   _alertLastFiredAt: number;
+  /** True when the alert-to-caregiver confirmation modal is showing.
+   *  triggerAlert sets this; confirmAlertSend / dismissAlertConfirm clear it. */
+  alertConfirmOpen: boolean;
+  /** Status of the in-flight or just-completed alert send. UI surfaces this
+   *  as a toast/banner that auto-clears after 2s. */
+  alertSendStatus: null | 'sending' | 'sent' | 'failed_no_caregiver' | 'failed_send';
   openCategories: () => void;
   openMath: () => void;
   openCaregiver: () => void;
@@ -59,6 +65,11 @@ interface UIState {
   toggleSettings: () => void;
   toggleCategoryManager: () => void;
   triggerAlert: () => void;
+  /** Confirm and dispatch the alert. Called from AlertConfirmModal's Send button.
+   *  Imports the sender lazily so the store doesn't depend on the contacts store
+   *  at module load (breaks circular import otherwise). */
+  confirmAlertSend: () => Promise<void>;
+  dismissAlertConfirm: () => void;
   selectContact: (id: string) => void;
   backToContacts: () => void;
   toggleCategoryKeyboard: () => void;
@@ -90,6 +101,8 @@ export const useUIStore = create<UIState>()((set) => ({
   showCategoryManager: false,
   isAlertFlashing: false,
   _alertLastFiredAt: 0,
+  alertConfirmOpen: false,
+  alertSendStatus: null,
   contactDraftName: '',
   contactDraftRecipient: '',
   setContactDraftName: (v) => set({ contactDraftName: v }),
@@ -198,11 +211,26 @@ export const useUIStore = create<UIState>()((set) => ({
     const now = Date.now();
     set((s) => {
       if (now - s._alertLastFiredAt < 5000) return {};
-      if (alertTimer) clearTimeout(alertTimer);
-      alertTimer = setTimeout(() => { set({ isAlertFlashing: false }); alertTimer = null; }, 2000);
-      return { isAlertFlashing: true, _alertLastFiredAt: now };
+      // Open the confirmation modal — the actual flash + SMS dispatch
+      // happens inside confirmAlertSend so a stray tap is recoverable.
+      return { alertConfirmOpen: true, _alertLastFiredAt: now };
     });
   },
+  confirmAlertSend: async () => {
+    set({ alertConfirmOpen: false, alertSendStatus: 'sending', isAlertFlashing: true });
+    if (alertTimer) clearTimeout(alertTimer);
+    alertTimer = setTimeout(() => { set({ isAlertFlashing: false }); alertTimer = null; }, 2000);
+    // Lazy import — keeps uiStore free of a hard dependency on the contacts
+    // store + sendToContact (which would create a circular chain).
+    const { sendAlertToCaregiver } = await import('@/services/sendAlertToCaregiver');
+    const res = await sendAlertToCaregiver();
+    set({
+      alertSendStatus: res.ok ? 'sent' : (res.error === 'no_caregiver' ? 'failed_no_caregiver' : 'failed_send'),
+    });
+    // Auto-clear status after 2.5s so the toast doesn't linger.
+    setTimeout(() => set({ alertSendStatus: null }), 2500);
+  },
+  dismissAlertConfirm: () => set({ alertConfirmOpen: false }),
   selectContact: (id) => set({ activeContactId: id }),
   backToContacts: () => set({ activeContactId: null }),
 }));
