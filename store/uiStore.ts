@@ -4,6 +4,7 @@ import { KeyboardMode, MODULE_PANEL_VIEWS, ModulePanelView, SidePanelView } from
 interface UIState {
   sidePanel: SidePanelView;
   categoryKeyboardOpen: boolean;   // keyboard drawer inside category panel
+  keyboardMaximized: boolean;      // keyboard takes max space, categories shrink
   activeCategoryId: string | null;
   /** Full breadcrumb path from root → current category (ids). Last entry is the active one. */
   categoryPath: string[];
@@ -61,6 +62,9 @@ interface UIState {
   selectContact: (id: string) => void;
   backToContacts: () => void;
   toggleCategoryKeyboard: () => void;
+  toggleKeyboardMaximized: () => void;
+  /** Cycle: maximized → normal → hidden → maximized */
+  cycleKeyboardMode: () => void;
   contactDraftName: string;
   contactDraftRecipient: string;
   setContactDraftName: (v: string) => void;
@@ -72,6 +76,7 @@ let alertTimer: ReturnType<typeof setTimeout> | null = null;
 export const useUIStore = create<UIState>()((set) => ({
   sidePanel: 'none',
   categoryKeyboardOpen: true,
+  keyboardMaximized: typeof window !== 'undefined' && localStorage.getItem('prism-kb-max') === 'true',
   activeCategoryId: null,
   categoryPath: [],
   activeContactId: null,
@@ -139,6 +144,23 @@ export const useUIStore = create<UIState>()((set) => ({
     return { sidePanel: panelId as ModulePanelView };
   }),
   toggleCategoryKeyboard: () => set((s) => ({ categoryKeyboardOpen: !s.categoryKeyboardOpen })),
+  toggleKeyboardMaximized: () => set((s) => {
+    const next = !s.keyboardMaximized;
+    try { localStorage.setItem('prism-kb-max', String(next)); } catch {}
+    return { keyboardMaximized: next, categoryKeyboardOpen: true };
+  }),
+  cycleKeyboardMode: () => set((s) => {
+    // maximized → normal → hidden → maximized
+    if (s.keyboardMaximized) {
+      try { localStorage.setItem('prism-kb-max', 'false'); } catch {}
+      return { keyboardMaximized: false, categoryKeyboardOpen: true };
+    }
+    if (s.categoryKeyboardOpen) {
+      return { categoryKeyboardOpen: false, keyboardMaximized: false };
+    }
+    try { localStorage.setItem('prism-kb-max', 'true'); } catch {}
+    return { keyboardMaximized: true, categoryKeyboardOpen: true };
+  }),
   closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: true }),
   selectCategory: (id) => set({ sidePanel: 'category-detail', activeCategoryId: id, categoryPath: [id] }),
   drillIntoCategory: (id) => set((s) => {

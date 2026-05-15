@@ -167,6 +167,7 @@ export default function PrismApp() {
   //   • Marketplace / Schedule had the same — keyboard for nothing.
   // The fix is the allow-list below.
   const categoryKeyboardOpen = useUIStore((s) => s.categoryKeyboardOpen);
+  const keyboardMaximized = useUIStore((s) => s.keyboardMaximized);
   const PANELS_WITHOUT_QWERTY = new Set([
     'math',
     'games',
@@ -444,22 +445,18 @@ export default function PrismApp() {
           {/* Category mode: full-screen cards (Image #32 pattern).
               Keyboard is a pull-up drawer toggled from inside CategoryPanel.
               All other modes: CategoryPanel stacks above keyboard as before. */}
-          {sidePanel !== 'math' && sidePanel !== 'comfort-player' && <div className="flex-[3] min-h-0 flex flex-col">{<CategoryPanel />}</div>}
+          {sidePanel !== 'math' && sidePanel !== 'comfort-player' && (
+            <div className={`${showQwerty && keyboardMaximized ? 'flex-[1]' : 'flex-[3]'} min-h-0 flex flex-col`}>
+              <CategoryPanel />
+            </div>
+          )}
           {showQwerty && (
-            // flex-row so the sidebar column doesn't get covered by keyboard keys.
-            // In category mode the CategoryPanel sidebar is clamp(72px,9vw,96px) wide;
-            // the spacer below mirrors it so the keyboard stops at the same x-boundary.
-            //
-            // min-h-0 (not the prior min-h-[clamp(280px,38svh,440px)]) lets flex-1
-            // actually shrink when AACChatPanel opens its compose strip + provider
-            // picker above the keyboard. With the old floor, total enforced minimums
-            // (toolbar 7svh + greeting 5 + MessageBar 16 + PredictionBar 13 + AAC
-            // chat ~10 + keyboard 38) exceeded 100svh on shorter viewports and the
-            // parent overflow-hidden clipped the keyboard's bottom row. The
-            // keyboard's internal rows are all flex-1 with no hard mins, so they
-            // distribute available space evenly however much is left.
             <div
-              className="shrink-0 h-[clamp(170px,25svh,260px)] flex flex-row"
+              className={
+                keyboardMaximized
+                  ? "flex-[3] min-h-0 flex flex-row"
+                  : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-row"
+              }
               data-testid="keyboard-shell"
             >
               <div className="flex-1 flex flex-col">

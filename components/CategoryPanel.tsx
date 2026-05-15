@@ -138,9 +138,9 @@ export default function CategoryPanel() {
   const { t } = useT();
   const {
     sidePanel, activeCategoryId, categoryPath, activeSequenceId, activeSequenceStep,
-    categoryKeyboardOpen,
+    categoryKeyboardOpen, keyboardMaximized,
     closeSidePanel, selectCategory, drillIntoCategory, navigateCategoryUp,
-    backToCategories, startOrdering, nextStep, prevStep, finishOrdering, toggleCategoryKeyboard,
+    backToCategories, startOrdering, nextStep, prevStep, finishOrdering, toggleCategoryKeyboard, cycleKeyboardMode,
   } = useUIStore();
   const appendText = useMessageStore((s) => s.appendText);
   const text = useMessageStore((s) => s.text);
@@ -304,7 +304,12 @@ export default function CategoryPanel() {
   const sidebarJsx = (showCoreWords = false) => (
     <nav className="w-[clamp(72px,9vw,96px)] shrink-0 bg-[#3e2a1a] flex flex-col border-l-2 border-[#5c3d25] overflow-y-auto overflow-x-hidden">
       {/* Keyboard toggle — ALWAYS FIRST so it's always reachable */}
-      <SidebarBtn icon="⌨️" label={categoryKeyboardOpen ? 'Hide KB' : 'Keyboard'} onClick={toggleCategoryKeyboard} active={categoryKeyboardOpen} />
+      <SidebarBtn
+        icon="⌨️"
+        label={!categoryKeyboardOpen ? 'MAX KB' : keyboardMaximized ? 'HIDE KB' : 'MIN KB'}
+        onClick={cycleKeyboardMode}
+        active={categoryKeyboardOpen}
+      />
       {/* Search */}
       <SidebarBtn icon="🔍" label="Search" onClick={searchOpen ? closeSearch : openSearch} active={searchOpen} />
       {/* Navigation */}
