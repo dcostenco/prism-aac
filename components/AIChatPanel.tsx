@@ -143,7 +143,13 @@ export default function AIChatPanel() {
       if (speaking || sentenceQueue.length === 0 || !soundEnabled) return;
       speaking = true;
       const sentence = sentenceQueue.shift()!;
-      aacSpeak(sentence, speechRate, speechVolume);
+      // interrupt=true required: PROTECT_PLAY_MS (azureTTS.ts:417) drops any
+      // non-interrupt aacSpeak call while another source has played <600ms.
+      // Streaming sentences arrive in tight succession and were being silently
+      // dropped — chat text appeared on screen but audio stayed silent.
+      // Each sentence is gated behind its own duration timer, so we DO want
+      // interrupt semantics: the previous source has finished (per timer).
+      aacSpeak(sentence, speechRate, speechVolume, undefined, true);
       const dur = estimateSpeechDurationMs(sentence, speechRate * 0.6) + 300;
       const timer = setTimeout(() => { speaking = false; drainQueue(); }, dur);
       queueTimers.push(timer);
@@ -271,6 +277,7 @@ export default function AIChatPanel() {
     }
     const session = startVoiceInput({
       lang: ttsCode,
+      silenceMs: 1500,
       onInterim: (t) => setInterim(t),
       onFinal: async (t) => {
         const fixed = await correctText(t.trim(), language);
@@ -279,6 +286,25 @@ export default function AIChatPanel() {
         setInterim('');
         // Auto-submit to AI after text lands in the store
         setTimeout(() => { if (activeRef.current) triggerAISubmit(); }, 80);
+      },
+      // Auto-submit when the user stops speaking for >silenceMs without the
+      // engine producing a `final` transcript. Some browsers/native engines
+      // never emit a final until the session is stopped — onSilence is the
+      // fallback path that ensures "go silent → AI responds" still works.
+      onSilence: () => {
+        if (!voiceRef.current || !activeRef.current) return;
+        // Stop voice session so the mic releases; final-if-any will deliver
+        // through onFinal. If there's no pending final, submit current
+        // message bar text as the question.
+        voiceRef.current.stop();
+        voiceRef.current = null;
+        setListening(false);
+        setInterim('');
+        setTimeout(() => {
+          if (activeRef.current && useMessageStore.getState().text.trim()) {
+            triggerAISubmit();
+          }
+        }, 120);
       },
       onError: () => {
         setListening(false);
@@ -328,6 +354,26 @@ export default function AIChatPanel() {
           </button>
         </div>
       </header>
+
+      {/* Typed-input preview — MessageBar is hidden globally in ai-chat mode
+          (PrismApp.tsx suppresses it), so without this strip the user types
+          into the void: keys land in useMessageStore but nothing displays.
+          The strip is read-only here; Keyboard's existing Backspace already
+          mutates messageStore. */}
+      <div
+        className="shrink-0 px-4 py-2 border-b border-theme bg-black/5 dark:bg-white/5"
+        data-testid="ai-chat-input-preview"
+      >
+        <p
+          className="text-xl text-primary leading-snug min-h-[1.75rem] break-words"
+          aria-label={t('current_message')}
+        >
+          {text || (
+            <span className="text-muted text-base italic">{t('type_or_speak')}</span>
+          )}
+          {text && <span className="text-muted animate-pulse">▎</span>}
+        </p>
+      </div>
 
       {/* Chat scroll area */}
       <div ref={scrollRef} aria-live="polite" aria-atomic="false" className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">

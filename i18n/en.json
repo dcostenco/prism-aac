@@ -169,6 +169,7 @@
   "could_not_reach_ai": "Could not reach AI",
   "question_label": "Question:",
   "type_or_speak": "Type on the keyboard or tap 🎙 to speak.",
+  "current_message": "Current message",
   "type_question": "Type your question on the keyboard.",
   "auto": "Auto",
   "did_you_mean": "Did you mean:",
