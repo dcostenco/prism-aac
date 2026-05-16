@@ -423,6 +423,14 @@ struct PrismWebView: UIViewRepresentable {
                 return
             }
             recognitionRequest.shouldReportPartialResults = true
+            // Force server-based recognition. On the iOS Simulator the
+            // on-device speech recognizer (`localspeechrecognition` daemon)
+            // often fails to initialize with kLSRErrorDomain code=300
+            // "Failed to initialize recognizer" because the on-device
+            // language model isn't shipped with the simulator runtime.
+            // Server-based works fine on both sim and device when online.
+            recognitionRequest.requiresOnDeviceRecognition = false
+            recognitionRequest.taskHint = .dictation
 
             let inputNode = audioEngine.inputNode
             let recordingFormat = inputNode.outputFormat(forBus: 0)
@@ -449,7 +457,15 @@ struct PrismWebView: UIViewRepresentable {
                         let nsErr = error as NSError
                         if nsErr.code != 216 {
                             NSLog("[PrismAAC-MIC-DIAG] ✗ recognition error code=\(nsErr.code) domain=\(nsErr.domain): \(error.localizedDescription)")
-                            self.sendSpeechError("recognition-failed")
+                            // kLSRErrorDomain 300/301 → on-device model
+                            // missing (typical on iOS Simulator).
+                            // Differentiate so the UI can show a useful
+                            // hint instead of a generic failure.
+                            if nsErr.domain == "kLSRErrorDomain" {
+                                self.sendSpeechError("ondevice-unavailable")
+                            } else {
+                                self.sendSpeechError("recognition-failed")
+                            }
                         }
                     }
                 }

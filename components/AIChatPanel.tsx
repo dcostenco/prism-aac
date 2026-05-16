@@ -356,6 +356,8 @@ export default function AIChatPanel() {
           ? 'Speech recognition unavailable for the current language.'
           : err === 'audio-session-failed' || err === 'audio-engine-failed'
           ? 'Microphone is busy (another app may be using it).'
+          : err === 'ondevice-unavailable'
+          ? 'On-device speech recognition unavailable (typical on iOS Simulator). Try a real device, or check internet connection for server-based recognition.'
           : `Mic error: ${err}`;
         setMicError(reason);
         setTimeout(() => setMicError(null), 6000);
