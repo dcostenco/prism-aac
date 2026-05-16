@@ -685,8 +685,9 @@ struct CategoryCardView: View {
                 Text(category.name)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.85)
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 4)
@@ -1506,8 +1507,9 @@ struct PairCard: View {
                 Text(phrase.label)
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.85)
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 4)
