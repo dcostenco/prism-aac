@@ -633,8 +633,14 @@ export async function askAI(
   if (isNativeBridgeAvailable() && !context) {
     try {
       const raw = await callNativeBridge(cappedQuestion, language, onChunk);
-      const text = stripModelControlTokens(raw);
-      return { text, lines: text.split(/\n+/).filter((l) => l.trim()) };
+      const text = stripModelControlTokens(raw).trim();
+      // Fall through to cloud/local route when on-device produces an empty
+      // or trivially-short response. Happens on iOS Simulator (no model
+      // loaded, pipeline yields a placeholder) and when the bundled GGUF
+      // failed to load on real device. Avoids user-facing "no reply" cases.
+      if (text.length >= 8) {
+        return { text, lines: text.split(/\n+/).filter((l) => l.trim()) };
+      }
     } catch {
       // Fall through to cloud/local
     }
