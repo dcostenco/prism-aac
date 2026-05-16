@@ -142,7 +142,7 @@ function startNativeVoice(opts: {
   };
 }
 
-export function startVoiceInput(opts: {
+type VoiceOpts = {
   lang?: string;
   onInterim: (text: string) => void;
   onFinal: (text: string) => void;
@@ -150,15 +150,52 @@ export function startVoiceInput(opts: {
   onError?: (err: string) => void;
   silenceMs?: number;
   autoStop?: boolean;
-}): VoiceSession | null {
+};
+
+export function startVoiceInput(opts: VoiceOpts): VoiceSession | null {
   if (!isVoiceInputSupported()) return null;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bridge = (window as any).prismNativeBridge;
   if (bridge?.startVoice) {
-    return startNativeVoice(opts, bridge);
+    // Wrap onError so daemon-init failures (iOS Simulator's broken
+    // localspeechrecognition) automatically retry via Web Speech API.
+    // Lets QA test mic in the sim while real-device path uses
+    // SFSpeechRecognizer normally.
+    let fellBack = false;
+    let nativeSession: VoiceSession | null = null;
+    let webSession: VoiceSession | null = null;
+    const wrapped: VoiceOpts = {
+      ...opts,
+      onError: (err) => {
+        const isDaemonError =
+          err === 'ondevice-unavailable' ||
+          err === 'recognition-failed' ||
+          err === 'unavailable';
+        if (!fellBack && isDaemonError) {
+          fellBack = true;
+          // eslint-disable-next-line no-console
+          console.log('[voice] native bridge failed (', err, ') — falling back to Web Speech API');
+          webSession = startWebSpeech(opts);
+          if (!webSession) opts.onError?.('no-fallback-available');
+          return;
+        }
+        opts.onError?.(err);
+      },
+    };
+    nativeSession = startNativeVoice(wrapped, bridge);
+    return {
+      stop: () => {
+        nativeSession?.stop();
+        webSession?.stop();
+      },
+    };
   }
 
+  return startWebSpeech(opts);
+}
+
+function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
   const w = window as VoiceWindow;
   const Ctor = w.SpeechRecognition || w.webkitSpeechRecognition;
   if (!Ctor) return null;
@@ -172,23 +209,20 @@ export function startVoiceInput(opts: {
 
   let stopped = false;
   let speechStarted = false;
-  let lastSpeechTime = Date.now();
+  let lastInterimText = '';
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
   const silenceThreshold = opts.silenceMs ?? 2000;
 
-  // Only arm the silence timer AFTER the engine has produced at least one
-  // result. Otherwise the initial post-start `checkSilence()` call would
-  // fire onSilence ~2s after tap when the user is still drawing breath,
-  // killing the session before they say anything. Same behavior as the
-  // native bridge path above (speechStarted flag).
-  const checkSilence = () => {
+  // Arm the silence timer ONLY when the transcript text changes. iOS
+  // WKWebView's Web Speech API polls onresult repeatedly with the same
+  // interim text every few hundred ms even when the user is silent —
+  // resetting the timer on every fire would prevent silence from EVER
+  // triggering. Re-arm only when text actually advances.
+  const armSilence = () => {
     if (silenceTimer) clearTimeout(silenceTimer);
     if (stopped || !speechStarted) return;
-    lastSpeechTime = Date.now();
     silenceTimer = setTimeout(() => {
-      if (Date.now() - lastSpeechTime >= silenceThreshold && !stopped) {
-        opts.onSilence?.();
-      }
+      if (!stopped) opts.onSilence?.();
     }, silenceThreshold);
   };
 
@@ -204,11 +238,14 @@ export function startVoiceInput(opts: {
     if (interim || final) speechStarted = true;
     if (interim) {
       opts.onInterim(interim);
-      checkSilence();
+      if (interim !== lastInterimText) {
+        lastInterimText = interim;
+        armSilence();
+      }
     }
     if (final) {
       opts.onFinal(final);
-      checkSilence();
+      armSilence();
     }
   };
 
