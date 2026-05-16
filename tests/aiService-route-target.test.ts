@@ -48,13 +48,15 @@ describe('askAI — endpoint URL', () => {
 
   it('sends credentials:include so signed-in synalux users still get their tier routing', async () => {
     await askAI('hi', 'math-tutor');
-    const opts = fetchSpy.mock.calls[0]?.[1] as RequestInit | undefined;
+    const aacCall = fetchSpy.mock.calls.find((c: unknown[]) => String(c[0]).includes('/prism-aac/chat'));
+    const opts = aacCall?.[1] as RequestInit | undefined;
     expect(opts?.credentials).toBe('include');
   });
 
   it('threads the source=prism-aac body field for portal observability', async () => {
     await askAI('hi', 'math-tutor');
-    const opts = fetchSpy.mock.calls[0]?.[1] as RequestInit | undefined;
+    const aacCall = fetchSpy.mock.calls.find((c: unknown[]) => String(c[0]).includes('/prism-aac/chat'));
+    const opts = aacCall?.[1] as RequestInit | undefined;
     const body = opts?.body ? JSON.parse(opts.body as string) : {};
     expect(body.source).toBe('prism-aac');
   });
