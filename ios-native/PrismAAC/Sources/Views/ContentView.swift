@@ -362,8 +362,22 @@ struct PrismWebView: UIViewRepresentable {
             }
             lastStartVoiceTime = now
 
+            // iOS Simulator: SFSpeechRecognizer's on-device daemon
+            // (localspeechrecognition) is broken (kLSRErrorDomain 300) AND
+            // AVAudioEngine.start() can SIGABRT when AURemoteIO gets stuck
+            // after prior bad cycles. We surface the error immediately
+            // without touching the audio session/engine at all — the JS
+            // side maps "ondevice-unavailable" to a clear banner and the
+            // Web Speech API fallback.
+            #if targetEnvironment(simulator)
+            NSLog("[PrismAAC-MIC-DIAG] SIM detected — skipping audio engine to avoid AURemoteIO SIGABRT")
+            activeWebView = webView
+            sendSpeechError("ondevice-unavailable")
+            return
+            #else
             stopSpeechRecognition()
             activeWebView = webView
+            #endif
             recognitionGeneration &+= 1
             let gen = recognitionGeneration
 
