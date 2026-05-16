@@ -48,13 +48,22 @@ export default function AIChatPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const wasLoadingRef = useRef(false);
   const voiceRef = useRef<VoiceSession | null>(null);
-  // Lifted out of toggleVoice scope so the stop-tap branch can also access
-  // the last interim transcript to submit on stop.
-  const lastInterimRef = useRef('');
-  const voiceSubmittedRef = useRef(false);
-  const voiceFinalizeRef = useRef<((text: string) => void) | null>(null);
   const askAbortRef = useRef<AbortController | null>(null);
   const voiceSupported = isVoiceInputSupported();
+  // Diagnostic — fires once when AI panel mounts so we can see in iOS sim
+  // logs whether the bridge was detected at the time the panel renders.
+  // Filter logs with `eventMessage CONTAINS "[AI-MIC-DEBUG]"`.
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bridge = (window as any).prismNativeBridge;
+    // eslint-disable-next-line no-console
+    console.log('[AI-MIC-DEBUG]',
+      'voiceSupported=', voiceSupported,
+      'bridge?=', !!bridge,
+      'startVoice?=', typeof bridge?.startVoice,
+      'webkitSpeechRecognition?=', typeof (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition,
+    );
+  }, [voiceSupported]);
   const activeRef = useRef(sidePanel === 'ai-chat');
   useEffect(() => {
     activeRef.current = sidePanel === 'ai-chat';
@@ -280,29 +289,25 @@ export default function AIChatPanel() {
   if (sidePanel !== 'ai-chat') return null;
 
   const toggleVoice = () => {
+    // eslint-disable-next-line no-console
+    console.log('[AI-MIC-DEBUG] toggleVoice tapped, listening=', listening, 'hasSession=', !!voiceRef.current);
     tapFeedback();
     if (voiceRef.current) {
-      // Stop tap: if user has spoken anything, submit it. Otherwise just cancel.
       voiceRef.current.stop();
-      const pending = lastInterimRef.current.trim();
-      if (pending && !voiceSubmittedRef.current && voiceFinalizeRef.current) {
-        voiceFinalizeRef.current(pending);
-      } else {
-        voiceRef.current = null;
-        setListening(false);
-        setInterim('');
-      }
+      voiceRef.current = null;
+      setListening(false);
+      setInterim('');
       return;
     }
     // Track the last interim so we can fall back to it if the engine
     // ends the session WITHOUT producing a final result. Some browsers
     // emit interims then end without finalizing when rec.stop() is called
     // mid-utterance, which would otherwise discard everything the user said.
-    lastInterimRef.current = '';
-    voiceSubmittedRef.current = false;
+    let lastInterim = '';
+    let submitted = false;
     const finalize = (text: string) => {
-      if (voiceSubmittedRef.current) return;
-      voiceSubmittedRef.current = true;
+      if (submitted) return;
+      submitted = true;
       voiceRef.current = null;
       setListening(false);
       setInterim('');
@@ -314,12 +319,11 @@ export default function AIChatPanel() {
         setTimeout(() => { if (activeRef.current) triggerAISubmit(); }, 80);
       });
     };
-    voiceFinalizeRef.current = finalize;
     const session = startVoiceInput({
       lang: ttsCode,
       silenceMs: 2500,  // give the user time to actually finish a phrase
       onInterim: (t) => {
-        lastInterimRef.current = t;
+        lastInterim = t;
         setInterim(t);
       },
       onFinal: (t) => finalize(t),
@@ -328,14 +332,14 @@ export default function AIChatPanel() {
       // then wait briefly. If onFinal fires, it submits. If it doesn't
       // (some engines skip the final on rec.stop()), use the last interim.
       onSilence: () => {
-        if (!voiceRef.current || voiceSubmittedRef.current) return;
+        if (!voiceRef.current || submitted) return;
         try { voiceRef.current.stop(); } catch { /* engine already stopped */ }
         setTimeout(() => {
-          if (!voiceSubmittedRef.current) finalize(lastInterimRef.current);
+          if (!submitted) finalize(lastInterim);
         }, 600);
       },
       onError: (err) => {
-        if (voiceSubmittedRef.current) return;
+        if (submitted) return;
         voiceRef.current = null;
         setListening(false);
         setInterim('');
@@ -359,6 +363,8 @@ export default function AIChatPanel() {
         setTimeout(() => setMicError(null), 6000);
       },
     });
+    // eslint-disable-next-line no-console
+    console.log('[AI-MIC-DEBUG] startVoiceInput returned session=', !!session);
     if (session) {
       voiceRef.current = session;
       setListening(true);
