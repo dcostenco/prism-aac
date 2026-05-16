@@ -97,6 +97,10 @@ struct PrismWebView: UIViewRepresentable {
         webView.backgroundColor = .systemBackground
 
         // Load the app
+        // DEBUG defaults to fresh fetch from the dev server so web-layer
+        // iteration shows up immediately. RELEASE uses cache-first so the
+        // app survives a network failure once it's been loaded at least
+        // once (service worker + WKWebView cache).
         #if DEBUG
         let url = URL(string: "http://localhost:3001/prism-aac")!
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
@@ -291,12 +295,18 @@ struct PrismWebView: UIViewRepresentable {
                     ) { _, _ in }
                 }
             case "startVoice":
+                NSLog("[PrismAAC-MIC-DIAG] startVoice message received")
                 guard let pageURL = message.webView?.url,
                       Self.isAllowedOrigin(pageURL),
-                      message.frameInfo.isMainFrame else { return }
+                      message.frameInfo.isMainFrame else {
+                    NSLog("[PrismAAC-MIC-DIAG] startVoice REJECTED — origin/frame check failed (url=\(message.webView?.url?.absoluteString ?? "nil"))")
+                    return
+                }
                 let lang = body["lang"] as? String ?? "en-US"
+                NSLog("[PrismAAC-MIC-DIAG] startVoice → startSpeechRecognition(lang=\(lang))")
                 startSpeechRecognition(lang: lang, webView: message.webView)
             case "stopVoice":
+                NSLog("[PrismAAC-MIC-DIAG] stopVoice message received")
                 stopSpeechRecognition()
             default: break
             }
@@ -331,7 +341,10 @@ struct PrismWebView: UIViewRepresentable {
 
         private func startSpeechRecognition(lang: String, webView: WKWebView?) {
             let now = Date().timeIntervalSince1970
-            guard now - lastStartVoiceTime >= 0.5 else { return }
+            guard now - lastStartVoiceTime >= 0.5 else {
+                NSLog("[PrismAAC-MIC-DIAG] DEBOUNCED — last start was \(now - lastStartVoiceTime)s ago")
+                return
+            }
             lastStartVoiceTime = now
 
             stopSpeechRecognition()
@@ -342,6 +355,7 @@ struct PrismWebView: UIViewRepresentable {
             let safeLang = String(lang.prefix(11))
             let range = NSRange(safeLang.startIndex..., in: safeLang)
             guard Self.langPattern.firstMatch(in: safeLang, range: range) != nil else {
+                NSLog("[PrismAAC-MIC-DIAG] FAILED — invalid-language: \(safeLang)")
                 sendSpeechError("invalid-language")
                 return
             }
@@ -350,23 +364,34 @@ struct PrismWebView: UIViewRepresentable {
             speechRecognizer = SFSpeechRecognizer(locale: locale) ?? SFSpeechRecognizer()
 
             guard let speechRecognizer, speechRecognizer.isAvailable else {
+                NSLog("[PrismAAC-MIC-DIAG] FAILED — SFSpeechRecognizer unavailable (locale=\(safeLang), isAvailable=\(speechRecognizer?.isAvailable ?? false))")
                 sendSpeechError("unavailable")
                 return
             }
+            NSLog("[PrismAAC-MIC-DIAG] requesting authorization (locale=\(safeLang))")
 
             SFSpeechRecognizer.requestAuthorization { [weak self] status in
                 DispatchQueue.main.async {
-                    guard let self, self.recognitionGeneration == gen else { return }
+                    NSLog("[PrismAAC-MIC-DIAG] authorization status: \(status.rawValue)")
+                    guard let self, self.recognitionGeneration == gen else {
+                        NSLog("[PrismAAC-MIC-DIAG] stale generation — aborting")
+                        return
+                    }
                     switch status {
                     case .authorized:
+                        NSLog("[PrismAAC-MIC-DIAG] ✓ authorized → beginRecognitionSession")
                         self.beginRecognitionSession(generation: gen)
                     case .denied:
+                        NSLog("[PrismAAC-MIC-DIAG] ✗ denied")
                         self.sendSpeechError("denied")
                     case .restricted:
+                        NSLog("[PrismAAC-MIC-DIAG] ✗ restricted")
                         self.sendSpeechError("restricted")
                     case .notDetermined:
+                        NSLog("[PrismAAC-MIC-DIAG] ✗ not-determined")
                         self.sendSpeechError("not-determined")
                     @unknown default:
+                        NSLog("[PrismAAC-MIC-DIAG] ✗ unknown status \(status.rawValue)")
                         self.sendSpeechError("unavailable")
                     }
                 }
@@ -374,14 +399,19 @@ struct PrismWebView: UIViewRepresentable {
         }
 
         private func beginRecognitionSession(generation: UInt64) {
-            guard recognitionGeneration == generation else { return }
-
+            guard recognitionGeneration == generation else {
+                NSLog("[PrismAAC-MIC-DIAG] beginRecognitionSession — stale generation")
+                return
+            }
+            NSLog("[PrismAAC-MIC-DIAG] configuring AVAudioSession")
             let audioSession = AVAudioSession.sharedInstance()
             do {
                 try audioSession.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP])
                 try audioSession.setMode(.measurement)
                 try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+                NSLog("[PrismAAC-MIC-DIAG] ✓ audio session active")
             } catch {
+                NSLog("[PrismAAC-MIC-DIAG] ✗ audio-session-failed: \(error.localizedDescription)")
                 sendSpeechError("audio-session-failed")
                 return
             }
