@@ -115,7 +115,7 @@ function SidebarBtn({ icon, label, onClick, active = false }: SideBtnProps) {
       style={{ height: 'clamp(36px, 5svh, 60px)' }}
     >
       <span className="flex-1 flex items-center text-[clamp(16px,2.5vw,24px)] leading-none">{icon}</span>
-      <span className="text-[clamp(6px,0.7vw,9px)] font-bold uppercase tracking-wide text-white/90 text-center leading-none px-0.5 shrink-0 pb-[2px]">
+      <span className="text-[clamp(10px,1.2vw,14px)] font-bold uppercase tracking-wide text-white/90 text-center leading-tight px-0.5 shrink-0 pb-[2px]">
         {label}
       </span>
     </button>
@@ -427,7 +427,7 @@ export default function CategoryPanel() {
                   ))}
                 </div>
               )}
-              <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-2 p-2 overflow-y-auto flex-1 min-h-0 content-start`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+              <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-2 p-2 overflow-y-auto flex-1 min-h-0 content-start`} style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', overscrollBehavior: 'contain' } as React.CSSProperties}>
                 {/* Subcategory folders — WHITE, clearly navigable */}
                 {subcategories.map((sub) => (
                   <button key={sub.id} onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
@@ -467,7 +467,7 @@ export default function CategoryPanel() {
         {searchOpen ? searchPanelJsx : (
           <div className="flex-1 min-w-0 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
-            <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+            <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`} style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', overscrollBehavior: 'contain' } as React.CSSProperties}>
               {homeGridPhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
                 const tH = categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
