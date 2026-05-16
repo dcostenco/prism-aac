@@ -152,45 +152,39 @@ struct WatchPictogramCards: View {
     /// starts after the buttons. No manual .padding(.top) needed.
     @ViewBuilder
     private var topBar: some View {
-        // Compact top bar — 4 buttons in one line. Each button stacks
-        // an icon over a 1-word label (VStack) so the action is
-        // recognizable without relying on icon literacy alone.
-        // Button height = 32pt (half of a 64pt card). Max screen real
-        // estate stays with the cards below.
-        HStack(spacing: 0) {
+        // Top bar = utility row. Buttons are SUBDUED (black bg, muted
+        // colored icons) — they shouldn't compete with the bright cards
+        // below for the kid's attention. These actions are caregiver-side
+        // and infrequent (language pick, AI chat, inbox, send-to-caregiver).
+        // Height ≈ card / 4 = 16pt, leaving max area for the cards.
+        HStack(spacing: 1) {
             Button { pickingInput = true; showLangPicker = true } label: {
-                VStack(spacing: 0) {
+                HStack(spacing: 2) {
                     Image(systemName: "globe")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white.opacity(0.6))
                     Text(langPillLabel)
-                        .font(.system(size: 8, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.7))
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                 }
-                .frame(maxWidth: .infinity, minHeight: 32)
-                .background(Color.white.opacity(0.15))
+                .frame(maxWidth: .infinity, minHeight: 24)
+                .background(Color.black)
             }
             .buttonStyle(.plain)
 
-            // AI Chat — promoted from a scroll-row tile to a top-bar button.
             Button { showAIChat = true } label: {
-                VStack(spacing: 0) {
+                HStack(spacing: 2) {
                     Image(systemName: "brain.head.profile")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.blue.opacity(0.8))
                     Text("AI")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white.opacity(0.7))
                 }
-                .frame(width: 44, height: 32)
-                .background(
-                    LinearGradient(
-                        colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.7)],
-                        startPoint: .leading, endPoint: .trailing
-                    )
-                )
+                .frame(width: 46, height: 24)
+                .background(Color.black)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("AI Chat")
@@ -200,21 +194,21 @@ struct WatchPictogramCards: View {
                 showInbox = true
             } label: {
                 ZStack(alignment: .topTrailing) {
-                    VStack(spacing: 0) {
+                    HStack(spacing: 2) {
                         Image(systemName: "bell.fill")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.white)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.orange.opacity(0.8))
                         Text("Inbox")
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundColor(.white)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
                     }
-                    .frame(width: 44, height: 32)
-                    .background(Color.orange.opacity(0.55))
+                    .frame(width: 64, height: 24)
+                    .background(Color.black)
                     if inbox.unreadCount > 0 {
                         Text(inbox.unreadCount > 9 ? "9+" : "\(inbox.unreadCount)")
-                            .font(.system(size: 7, weight: .bold))
+                            .font(.system(size: 6, weight: .bold))
                             .foregroundColor(.white)
-                            .padding(.horizontal, 2).padding(.vertical, 1)
+                            .padding(.horizontal, 2)
                             .background(Color.red).clipShape(Capsule())
                             .offset(x: 1, y: -1)
                     }
@@ -223,23 +217,24 @@ struct WatchPictogramCards: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Notifications")
 
-            // Single combined send button — tap opens a chooser:
-            // "Send SOS to caregiver" OR "Send Message".
             Button { showAlertConfirm = true } label: {
-                VStack(spacing: 0) {
+                HStack(spacing: 2) {
                     Image(systemName: "paperplane.fill")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.green.opacity(0.8))
                     Text("Send")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white.opacity(0.7))
                 }
-                .frame(width: 44, height: 32)
-                .background(Color.green.opacity(0.7))
+                .frame(width: 62, height: 24)
+                .background(Color.black)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Send — SOS to caregiver or compose message")
         }
+        .frame(height: 16)
+        .frame(maxWidth: .infinity)
+        .background(Color.black)
     }
 
     var body: some View {
@@ -298,7 +293,7 @@ struct WatchPictogramCards: View {
                 .padding(.horizontal, 4)
                 .padding(.bottom, 8)
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
+            .safeAreaInset(edge: .top, spacing: 16) {
                 topBar
             }
 
@@ -873,7 +868,7 @@ struct WatchReplyView: View {
                             .font(.system(size: 13, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 7)
-                            .background(replyText.isEmpty ? Color.gray.opacity(0.3) : Color.green.opacity(0.7))
+                            .background(replyText.isEmpty ? Color.gray.opacity(0.3) : Color.green)
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                     .buttonStyle(.plain)
