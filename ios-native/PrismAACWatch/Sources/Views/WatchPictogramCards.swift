@@ -526,28 +526,15 @@ struct WatchPictogramCards: View {
         return out
     }
 
-    /// Category cards source. Falls back to a synthetic-tier split when
-    /// `vocab.categories` is empty/minimal (offline-only state).
+    /// Category cards source. Mirrors the iOS top-level set from
+    /// `constants/categories.ts` (22 categories) when companion vocab is
+    /// unavailable — previously a 4-tier synthetic fallback that the user
+    /// (rightly) flagged as "critically small".
     private var displayCategories: [WatchCategory] {
         if vocab.categories.count > 1 {
             return vocab.categories
         }
-        // Offline fallback: synthesize from AACVocab.childFriendlyOrder tiers.
-        // Tier boundaries follow the comment markers in the static list.
-        let core = AACVocab.childFriendlyOrder
-        func slice(_ from: Int, _ to: Int) -> [WatchPhrase] {
-            let range = max(0, from)..<min(core.count, to)
-            return core[range].map {
-                WatchPhrase(id: $0.id, label: $0.label, arasaacId: $0.arasaacId,
-                            sfSymbol: $0.sfSymbol, isEmergency: $0.isEmergency)
-            }
-        }
-        return [
-            WatchCategory(id: "needs",    icon: "fork.knife",      name: "Needs",    phrases: slice(8, 16)),
-            WatchCategory(id: "feelings", icon: "face.smiling",    name: "Feelings", phrases: slice(16, 20)),
-            WatchCategory(id: "social",   icon: "hand.wave.fill",  name: "Social",   phrases: slice(20, 24)),
-            WatchCategory(id: "places",   icon: "house.fill",      name: "Places",   phrases: slice(24, 28)),
-        ]
+        return WatchCategory.iOSDefaultSet
     }
 
     /// Single tap handler — speak + sync, plus optional recents bookkeeping.
@@ -1024,9 +1011,18 @@ struct WatchAIChatView: View {
             // inside a sheet view.
             HStack(spacing: 6) {
                 Button {
+                    NSLog("[WatchAIChat-DIAG] mic button tapped")
                     tts.stop()
-                    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+                    NSLog("[WatchAIChat-DIAG] tts.stop() returned")
+                    do {
+                        try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+                        NSLog("[WatchAIChat-DIAG] AVAudioSession deactivated OK")
+                    } catch {
+                        NSLog("[WatchAIChat-DIAG] AVAudioSession.setActive(false) threw: \(error.localizedDescription) — non-fatal, continuing")
+                    }
+                    NSLog("[WatchAIChat-DIAG] setting showDictation=true")
                     showDictation = true
+                    NSLog("[WatchAIChat-DIAG] showDictation set; sheet should mount next runloop")
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "mic.fill")
@@ -1239,7 +1235,14 @@ struct WatchDictationView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
+            .onAppear {
+                NSLog("[WatchDictation-DIAG] sheet onAppear")
+            }
+            .onDisappear {
+                NSLog("[WatchDictation-DIAG] sheet onDisappear (text len=\(text.count))")
+            }
             .task {
+                NSLog("[WatchDictation-DIAG] .task fired; setting fieldFocused=true")
                 // .task runs once the view is in the hierarchy. Setting focus
                 // here reliably triggers the watchOS system input controller
                 // (keyboard + scribble + dictate). Earlier .onAppear + 0.6s
