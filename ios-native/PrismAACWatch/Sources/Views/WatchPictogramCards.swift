@@ -924,6 +924,7 @@ struct WatchAIChatView: View {
     @State private var messages: [ChatMessage] = []
     @State private var inputText     = ""
     @State private var isWaiting     = false
+    @State private var showDictation = false
     @State private var aiTask: Task<Void, Never>?
     @State private var translateTask2: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
@@ -1016,15 +1017,17 @@ struct WatchAIChatView: View {
 
             Divider()
 
-            // Input row — mic + text + send
+            // Input row — Button (opens sheet with focused TextField) + send.
+            // The TextFieldLink API rendered but didn't respond to taps in
+            // the current sim; reverting to the Button+sheet pattern which
+            // reliably presents the system input controller via @FocusState
+            // inside a sheet view.
             HStack(spacing: 6) {
-                // TextFieldLink (watchOS 10+) — the proper SwiftUI API for
-                // one-tap system input controller presentation. Tapping the
-                // label opens the dictation/keyboard/scribble sheet directly,
-                // no @FocusState dance, no sheet wrapping, no race conditions.
-                // onSubmit fires with the final transcript when the user
-                // finishes input. We auto-send so dictation is single-action.
-                TextFieldLink {
+                Button {
+                    tts.stop()
+                    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+                    showDictation = true
+                } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "mic.fill")
                             .font(.system(size: 14, weight: .bold))
@@ -1036,15 +1039,11 @@ struct WatchAIChatView: View {
                     }
                     .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     .padding(.horizontal, 10)
-                    .background(Color.blue.opacity(0.3))
+                    .background(Color.blue.opacity(0.6))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
-                } onSubmit: { newValue in
-                    let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !trimmed.isEmpty else { return }
-                    inputText = String(trimmed.prefix(500))
-                    sendMessage()
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Dictate or type a message")
 
                 Button { sendMessage() } label: {
                     Image(systemName: "arrow.up.circle.fill")
@@ -1058,6 +1057,15 @@ struct WatchAIChatView: View {
             .padding(.vertical, 6)
         }
         .navigationTitle("AI Chat")
+        .sheet(isPresented: $showDictation) {
+            WatchDictationView(
+                title: isTranslatorMode ? "Translate" : "Dictate",
+                submitLabel: isTranslatorMode ? "Translate" : "Ask AI"
+            ) { text in
+                inputText = text
+                sendMessage()
+            }
+        }
         // #26: Restore last 10 messages from Keychain on appear (fix #6: moved from UserDefaults)
         // FIX #6: Keychain I/O is synchronous — run off @MainActor to avoid blocking UI thread.
         // FIX #26: Use do/catch instead of try? so decode failures are logged (schema change detection).
