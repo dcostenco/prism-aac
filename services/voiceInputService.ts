@@ -142,7 +142,7 @@ function startNativeVoice(opts: {
   };
 }
 
-type VoiceOpts = {
+export function startVoiceInput(opts: {
   lang?: string;
   onInterim: (text: string) => void;
   onFinal: (text: string) => void;
@@ -150,56 +150,15 @@ type VoiceOpts = {
   onError?: (err: string) => void;
   silenceMs?: number;
   autoStop?: boolean;
-};
-
-export function startVoiceInput(opts: VoiceOpts): VoiceSession | null {
+}): VoiceSession | null {
   if (!isVoiceInputSupported()) return null;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bridge = (window as any).prismNativeBridge;
   if (bridge?.startVoice) {
-    // Wrap onError so daemon-init failures (e.g. iOS Simulator's broken
-    // localspeechrecognition) automatically fall back to the Web Speech
-    // API path. Lets QA test mic in the sim while the device path uses
-    // SFSpeechRecognizer normally.
-    let fellBack = false;
-    let nativeSession: VoiceSession | null = null;
-    let webSession: VoiceSession | null = null;
-    const wrapped: VoiceOpts = {
-      ...opts,
-      onError: (err) => {
-        // Daemon-init errors from the native bridge — try Web Speech
-        // before surfacing to the caller. Only fall back once.
-        const isDaemonError =
-          err === 'ondevice-unavailable' ||
-          err === 'recognition-failed' ||
-          err === 'unavailable';
-        if (!fellBack && isDaemonError) {
-          fellBack = true;
-          // eslint-disable-next-line no-console
-          console.log('[voice] native bridge failed (', err, ') — falling back to Web Speech API');
-          webSession = startWebSpeech(opts);
-          if (!webSession) {
-            opts.onError?.('no-fallback-available');
-          }
-          return;
-        }
-        opts.onError?.(err);
-      },
-    };
-    nativeSession = startNativeVoice(wrapped, bridge);
-    return {
-      stop: () => {
-        nativeSession?.stop();
-        webSession?.stop();
-      },
-    };
+    return startNativeVoice(opts, bridge);
   }
 
-  return startWebSpeech(opts);
-}
-
-function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
   const w = window as VoiceWindow;
   const Ctor = w.SpeechRecognition || w.webkitSpeechRecognition;
   if (!Ctor) return null;
