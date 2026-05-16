@@ -418,6 +418,7 @@ struct PrismWebView: UIViewRepresentable {
 
             recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
             guard let recognitionRequest else {
+                NSLog("[PrismAAC-MIC-DIAG] ✗ request-failed (couldn't create SFSpeechAudioBufferRecognitionRequest)")
                 sendSpeechError("request-failed")
                 return
             }
@@ -425,7 +426,13 @@ struct PrismWebView: UIViewRepresentable {
 
             let inputNode = audioEngine.inputNode
             let recordingFormat = inputNode.outputFormat(forBus: 0)
+            NSLog("[PrismAAC-MIC-DIAG] input format: \(recordingFormat) (sampleRate=\(recordingFormat.sampleRate))")
+            var bufferCount = 0
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+                bufferCount += 1
+                if bufferCount == 1 || bufferCount % 50 == 0 {
+                    NSLog("[PrismAAC-MIC-DIAG] audio buffer #\(bufferCount) frames=\(buffer.frameLength)")
+                }
                 self?.recognitionRequest?.append(buffer)
             }
 
@@ -434,19 +441,22 @@ struct PrismWebView: UIViewRepresentable {
                     guard let self, self.recognitionGeneration == generation else { return }
                     if let result {
                         let text = String(result.bestTranscription.formattedString.prefix(2000))
+                        NSLog("[PrismAAC-MIC-DIAG] result text='\(text.prefix(60))' isFinal=\(result.isFinal)")
                         self.sendSpeechResult(interim: result.isFinal ? "" : text,
                                               final: result.isFinal ? text : "")
                         if result.isFinal { self.stopSpeechRecognition() }
                     } else if let error {
-                        if (error as NSError).code != 216 {
+                        let nsErr = error as NSError
+                        if nsErr.code != 216 {
+                            NSLog("[PrismAAC-MIC-DIAG] ✗ recognition error code=\(nsErr.code) domain=\(nsErr.domain): \(error.localizedDescription)")
                             self.sendSpeechError("recognition-failed")
-                            NSLog("[PrismAAC] Recognition error: \(error.localizedDescription)")
                         }
                     }
                 }
             }
 
             guard recognitionTask != nil else {
+                NSLog("[PrismAAC-MIC-DIAG] ✗ recognitionTask is nil")
                 audioEngine.inputNode.removeTap(onBus: 0)
                 sendSpeechError("recognition-failed")
                 return
@@ -455,7 +465,9 @@ struct PrismWebView: UIViewRepresentable {
             audioEngine.prepare()
             do {
                 try audioEngine.start()
+                NSLog("[PrismAAC-MIC-DIAG] ✓ audioEngine started — listening")
             } catch {
+                NSLog("[PrismAAC-MIC-DIAG] ✗ audio-engine-failed: \(error.localizedDescription)")
                 sendSpeechError("audio-engine-failed")
                 stopSpeechRecognition()
                 return
