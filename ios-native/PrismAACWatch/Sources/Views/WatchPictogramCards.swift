@@ -359,13 +359,6 @@ struct WatchPictogramCards: View {
         }
         .onAppear {
             cachedPhrases = computeAllPhrases()
-            // DEBUG: launch-arg `-prismDebugOpenAIChat YES` auto-opens AI Chat
-            // so synthetic-click diagnostics can isolate the mic flow without
-            // having to land a precise tap on the top-bar AI button.
-            if UserDefaults.standard.bool(forKey: "prismDebugOpenAIChat") {
-                NSLog("[WatchAIChat-DIAG] launch-arg prismDebugOpenAIChat=YES — auto-opening AI Chat sheet")
-                showAIChat = true
-            }
         }
         // FIX #12: Replace single-category/phrase observers with a comprehensive key that detects
         // any category id or phrase count change. Previously only .count and the first phrase of
@@ -1072,18 +1065,12 @@ struct WatchAIChatView: View {
             // inside a sheet view.
             HStack(spacing: 6) {
                 Button {
-                    NSLog("[WatchAIChat-DIAG] mic button tapped")
                     tts.stop()
-                    NSLog("[WatchAIChat-DIAG] tts.stop() returned")
                     do {
                         try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-                        NSLog("[WatchAIChat-DIAG] AVAudioSession deactivated OK")
                     } catch {
-                        NSLog("[WatchAIChat-DIAG] AVAudioSession.setActive(false) threw: \(error.localizedDescription) — non-fatal, continuing")
                     }
-                    NSLog("[WatchAIChat-DIAG] setting showDictation=true")
                     showDictation = true
-                    NSLog("[WatchAIChat-DIAG] showDictation set; sheet should mount next runloop")
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "mic.fill")
@@ -1274,7 +1261,6 @@ struct WatchDictationView: View {
                     .background(Color.blue)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 }, onSubmit: { newValue in
-                    NSLog("[WatchDictation-DIAG] TextFieldLink onSubmit fired (len=\(newValue.count))")
                     let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard !trimmed.isEmpty else { return }
                     let result = String(trimmed.prefix(500))
@@ -1304,10 +1290,8 @@ struct WatchDictationView: View {
                 }
             }
             .onAppear {
-                NSLog("[WatchDictation-DIAG] sheet onAppear")
             }
             .onDisappear {
-                NSLog("[WatchDictation-DIAG] sheet onDisappear (text len=\(text.count))")
             }
         }
     }

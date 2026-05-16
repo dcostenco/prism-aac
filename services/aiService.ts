@@ -628,20 +628,15 @@ export async function askAI(
 
   const cappedQuestion = question.slice(0, 2000);
 
-  // On-device path: iOS native bridge → llama.cpp 1.7B (no network, no latency)
-  // Only when explicitly READY — bridge exposes a `aiReady` flag once the
-  // GGUF has been loaded successfully. Without it, askAI() falls straight
-  // through to route() (local Ollama → Synalux cloud), which works on
-  // iOS Simulator (where no GGUF is bundled) and on real devices where
-  // the model download hasn't completed yet.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const nb = (window as any).prismNativeBridge;
-  const nativeReady = !!(nb?.askAI && nb?.aiReady === true);
-  if (nativeReady && !context) {
+  // On-device path: iOS native bridge → llama.cpp 1.7B (no network, no latency).
+  // Falls through to cloud/local route when the on-device pipeline returns
+  // a near-empty response — typically the "I'm having trouble responding
+  // right now." placeholder yielded when the GGUF isn't loaded.
+  if (isNativeBridgeAvailable() && !context) {
     try {
       const raw = await callNativeBridge(cappedQuestion, language, onChunk);
       const text = stripModelControlTokens(raw).trim();
-      if (text.length >= 8) {
+      if (text.length >= 12) {
         return { text, lines: text.split(/\n+/).filter((l) => l.trim()) };
       }
     } catch {
