@@ -275,7 +275,7 @@ async function callSynalux(
       headers,
       body: JSON.stringify({
         messages,
-        stream: false,
+        stream: !!options?.onChunk,
         source: 'prism-aac',
         // intent tells the portal whether to prepend the AAC_SYSTEM
         // friendly-helper prompt. translateAI sets 'translate' so the
