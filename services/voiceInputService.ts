@@ -158,38 +158,7 @@ export function startVoiceInput(opts: VoiceOpts): VoiceSession | null {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bridge = (window as any).prismNativeBridge;
   if (bridge?.startVoice) {
-    // Wrap onError so daemon-init failures (iOS Simulator's broken
-    // localspeechrecognition) automatically retry via Web Speech API.
-    // Lets QA test mic in the sim while real-device path uses
-    // SFSpeechRecognizer normally.
-    let fellBack = false;
-    let nativeSession: VoiceSession | null = null;
-    let webSession: VoiceSession | null = null;
-    const wrapped: VoiceOpts = {
-      ...opts,
-      onError: (err) => {
-        const isDaemonError =
-          err === 'ondevice-unavailable' ||
-          err === 'recognition-failed' ||
-          err === 'unavailable';
-        if (!fellBack && isDaemonError) {
-          fellBack = true;
-          // eslint-disable-next-line no-console
-          console.log('[voice] native bridge failed (', err, ') — falling back to Web Speech API');
-          webSession = startWebSpeech(opts);
-          if (!webSession) opts.onError?.('no-fallback-available');
-          return;
-        }
-        opts.onError?.(err);
-      },
-    };
-    nativeSession = startNativeVoice(wrapped, bridge);
-    return {
-      stop: () => {
-        nativeSession?.stop();
-        webSession?.stop();
-      },
-    };
+    return startNativeVoice(opts, bridge);
   }
 
   return startWebSpeech(opts);
