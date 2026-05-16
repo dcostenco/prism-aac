@@ -313,6 +313,13 @@ struct WatchPictogramCards: View {
         }
         .onAppear {
             cachedPhrases = computeAllPhrases()
+            // DEBUG: launch-arg `-prismDebugOpenAIChat YES` auto-opens AI Chat
+            // so synthetic-click diagnostics can isolate the mic flow without
+            // having to land a precise tap on the top-bar AI button.
+            if UserDefaults.standard.bool(forKey: "prismDebugOpenAIChat") {
+                NSLog("[WatchAIChat-DIAG] launch-arg prismDebugOpenAIChat=YES — auto-opening AI Chat sheet")
+                showAIChat = true
+            }
         }
         // FIX #12: Replace single-category/phrase observers with a comprehensive key that detects
         // any category id or phrase count change. Previously only .count and the first phrase of
