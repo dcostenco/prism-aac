@@ -3,12 +3,12 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { tapFeedback } from '@/services/feedback';
-import { askAI } from '@/services/aiService';
+import { askAI, translateAI } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
-import { registerAISubmit, clearAISubmit, triggerAISubmit } from '@/services/aiChatBridge';
+import { registerAISubmit, clearAISubmit } from '@/services/aiChatBridge';
 import { checkCrisisSafety } from '@/services/crisisSafetyFilter';
 import { estimateSpeechDurationMs } from '@/services/ttsHighlightBus';
 import ColoredText from './ColoredText';
@@ -49,6 +49,7 @@ export default function AIChatPanel() {
   const wasLoadingRef = useRef(false);
   const voiceRef = useRef<VoiceSession | null>(null);
   const askAbortRef = useRef<AbortController | null>(null);
+  const handleAskRef = useRef<(() => void) | null>(null);
   const voiceSupported = isVoiceInputSupported();
   const activeRef = useRef(sidePanel === 'ai-chat');
   useEffect(() => {
@@ -197,7 +198,12 @@ export default function AIChatPanel() {
     };
 
     try {
-      const response = await askAI(question, undefined, (delta) => {
+      const outputLang = useSettingsStore.getState().outputLanguage;
+      const inputLang = useSettingsStore.getState().language || language;
+      const needsTranslation = !!(outputLang && inputLang && outputLang !== inputLang);
+      const targetLang = needsTranslation ? outputLang : (outputLang || inputLang);
+
+      const onChunk = (delta: string) => {
         if (buffer.length < 32_000) {
           buffer += delta;
         } else if (!buffer.endsWith('…')) {
@@ -208,13 +214,21 @@ export default function AIChatPanel() {
           requestAnimationFrame(flush);
         }
         checkNewSentences();
-      }, useSettingsStore.getState().outputLanguage || useSettingsStore.getState().language);
+      };
+
+      let responseText = '';
+      if (needsTranslation) {
+        responseText = await translateAI(question, inputLang, outputLang, onChunk);
+      } else {
+        const response = await askAI(question, undefined, onChunk, targetLang);
+        responseText = response?.text ?? '';
+      }
       // Fallback for non-streaming providers (local Ollama path uses stream:false
       // and never calls onChunk). Without this, the AI bubble renders empty even
       // though askAI returned a full response. Treat the full return value as
       // one big chunk arriving at the end.
-      if (!buffer && response?.text) {
-        buffer = response.text;
+      if (!buffer && responseText) {
+        buffer = responseText;
       }
       flush();
       const tail = buffer.slice(spokenUpTo).trim();
@@ -238,6 +252,7 @@ export default function AIChatPanel() {
   // language/outputLanguage removed from deps — read via getState() inside
   // the callback to avoid recreating handleAsk on every settings change.
   }, [loading, t]);
+  useEffect(() => { handleAskRef.current = handleAsk; }, [handleAsk]);
 
   // Register / clear the Speak-button intercept for this panel's lifetime.
   useEffect(() => {
@@ -292,7 +307,9 @@ export default function AIChatPanel() {
     const finalize = (text: string) => {
       if (submitted) return;
       submitted = true;
+      const session = voiceRef.current;
       voiceRef.current = null;
+      session?.stop();
       setListening(false);
       setInterim('');
       const trimmed = text.trim();
@@ -300,7 +317,7 @@ export default function AIChatPanel() {
       void correctText(trimmed, language).then((fixed) => {
         if (!activeRef.current) return;
         appendText((fixed || trimmed) + ' ');
-        setTimeout(() => { if (activeRef.current) triggerAISubmit(); }, 80);
+        setTimeout(() => { handleAskRef.current?.(); }, 80);
       });
     };
     const session = startVoiceInput({
