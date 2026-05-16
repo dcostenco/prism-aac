@@ -97,11 +97,33 @@ struct WatchPictogramCards: View {
     }
 
     private func phraseColor(_ categoryId: String) -> Color {
+        // Color-code each iOS-parity category. Without explicit colors here,
+        // SwiftUI falls back to .accentColor which renders system gray in
+        // dark mode — that was the "b/w" complaint.
         switch categoryId {
-        case "help-needs", "emergency": return .red
-        case "feelings": return .blue
-        case "food-ordering", "needs": return .orange
-        default: return .accentColor
+        case "core-pronouns":            return .blue
+        case "core-verbs":               return .yellow
+        case "core-descriptors":         return .purple
+        case "core-little-words":        return .gray
+        case "help-needs", "emergency":  return .red
+        case "quick-talk":               return .green
+        case "feelings":                 return .blue
+        case "questions":                return .purple
+        case "actions":                  return .orange
+        case "describing":               return .pink
+        case "people-social":            return .indigo
+        case "food-ordering", "needs":   return .orange
+        case "places-plans":             return .teal
+        case "school-work":              return .brown
+        case "health-body":              return .red
+        case "time":                     return .cyan
+        case "animals":                  return .green
+        case "colors":                   return .pink
+        case "clothes":                  return .mint
+        case "transport":                return .blue
+        case "weather":                  return .yellow
+        case "toys-fun":                 return .purple
+        default:                         return .accentColor
         }
     }
 
