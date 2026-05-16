@@ -115,7 +115,7 @@ function SidebarBtn({ icon, label, onClick, active = false }: SideBtnProps) {
       style={{ height: 'clamp(36px, 5svh, 60px)' }}
     >
       <span className="flex-1 flex items-center text-[clamp(16px,2.5vw,24px)] leading-none">{icon}</span>
-      <span className="text-[clamp(8px,0.9vw,11px)] font-bold uppercase tracking-wide text-white/90 text-center leading-tight px-0.5 shrink-0 pb-[2px]">
+      <span className="text-[clamp(10px,1.2vw,14px)] font-bold uppercase tracking-wide text-white/90 text-center leading-tight px-0.5 shrink-0 pb-[2px]">
         {label}
       </span>
     </button>

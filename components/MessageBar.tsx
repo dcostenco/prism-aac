@@ -532,8 +532,7 @@ export default function MessageBar() {
               onClick={acceptSuggestion}
               aria-label={`Auto-correct to ${suggestion}`}
               data-testid="autocorrect-suggestion"
-              className="text-left text-base md:text-lg text-[#4CAF50] hover:underline mt-1 break-words whitespace-normal"
-              style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+              className="text-left text-base md:text-lg text-[#4CAF50] truncate hover:underline mt-1"
             >
               ✨ {t('did_you_mean')} <span className="font-semibold">{suggestion}</span> <span className="text-dim text-sm">{t('tap_or_press')}</span>
             </button>
