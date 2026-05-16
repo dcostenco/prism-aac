@@ -50,20 +50,6 @@ export default function AIChatPanel() {
   const voiceRef = useRef<VoiceSession | null>(null);
   const askAbortRef = useRef<AbortController | null>(null);
   const voiceSupported = isVoiceInputSupported();
-  // Diagnostic — fires once when AI panel mounts so we can see in iOS sim
-  // logs whether the bridge was detected at the time the panel renders.
-  // Filter logs with `eventMessage CONTAINS "[AI-MIC-DEBUG]"`.
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const bridge = (window as any).prismNativeBridge;
-    // eslint-disable-next-line no-console
-    console.log('[AI-MIC-DEBUG]',
-      'voiceSupported=', voiceSupported,
-      'bridge?=', !!bridge,
-      'startVoice?=', typeof bridge?.startVoice,
-      'webkitSpeechRecognition?=', typeof (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition,
-    );
-  }, [voiceSupported]);
   const activeRef = useRef(sidePanel === 'ai-chat');
   useEffect(() => {
     activeRef.current = sidePanel === 'ai-chat';
@@ -289,8 +275,6 @@ export default function AIChatPanel() {
   if (sidePanel !== 'ai-chat') return null;
 
   const toggleVoice = () => {
-    // eslint-disable-next-line no-console
-    console.log('[AI-MIC-DEBUG] toggleVoice tapped, listening=', listening, 'hasSession=', !!voiceRef.current);
     tapFeedback();
     if (voiceRef.current) {
       voiceRef.current.stop();
@@ -363,8 +347,6 @@ export default function AIChatPanel() {
         setTimeout(() => setMicError(null), 6000);
       },
     });
-    // eslint-disable-next-line no-console
-    console.log('[AI-MIC-DEBUG] startVoiceInput returned session=', !!session);
     if (session) {
       voiceRef.current = session;
       setListening(true);
