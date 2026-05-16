@@ -270,16 +270,30 @@ struct PrismWebView: UIViewRepresentable {
                     completionHandler: nil
                 )
             case "askAI":
+                NSLog("[PrismAAC-AI-DIAG] askAI message received")
                 guard let pageURL = message.webView?.url,
                       Self.isAllowedOrigin(pageURL),
-                      message.frameInfo.isMainFrame else { return }
+                      message.frameInfo.isMainFrame else {
+                    NSLog("[PrismAAC-AI-DIAG] askAI REJECTED — origin/frame")
+                    return
+                }
                 let question = String((body["question"] as? String ?? "").prefix(500))
                 let lang = body["lang"] as? String ?? "en"
-                guard !question.isEmpty else { return }
+                NSLog("[PrismAAC-AI-DIAG] askAI question='\(question.prefix(40))' lang=\(lang)")
+                guard !question.isEmpty else {
+                    NSLog("[PrismAAC-AI-DIAG] askAI empty question")
+                    return
+                }
                 let webView = message.webView
                 Task { @MainActor in
                     let encoder = JSONEncoder()
+                    NSLog("[PrismAAC-AI-DIAG] askAI calling pipeline.ask")
+                    var tokenCount = 0
                     for await token in self.pipeline.ask(question: question, language: lang) {
+                        tokenCount += 1
+                        if tokenCount == 1 || tokenCount % 20 == 0 {
+                            NSLog("[PrismAAC-AI-DIAG] token #\(tokenCount): '\(token.prefix(40))'")
+                        }
                         // JSONSerialization.data(withJSONObject:) requires Array/Dict at top
                         // level — passing a String raises NSInvalidArgumentException which
                         // `try?` cannot catch (NSException → SIGABRT). JSONEncoder safely
@@ -290,6 +304,7 @@ struct PrismWebView: UIViewRepresentable {
                             "window.prismNativeAIResult && window.prismNativeAIResult(\(json))"
                         ) { _, _ in }
                     }
+                    NSLog("[PrismAAC-AI-DIAG] askAI done — total tokens=\(tokenCount)")
                     webView?.evaluateJavaScript(
                         "window.prismNativeAIDone && window.prismNativeAIDone()"
                     ) { _, _ in }
