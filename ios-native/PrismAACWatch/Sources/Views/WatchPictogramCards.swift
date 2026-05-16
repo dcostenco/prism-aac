@@ -96,6 +96,37 @@ struct WatchPictogramCards: View {
         return AACVocab.childFriendlyOrder
     }
 
+    /// Translate a phrase label to vocab.inputLanguage via the bundled
+    /// offline dictionary. Falls through to the original (English) label
+    /// for phrases not in the dictionary.
+    private func localized(_ phrase: AACPhrase) -> AACPhrase {
+        let newLabel = WatchTranslation.localizedLabel(phrase.label, to: vocab.inputLanguage)
+        if newLabel == phrase.label { return phrase }
+        return AACPhrase(label: newLabel, sfSymbol: phrase.sfSymbol,
+                         color: phrase.color, arasaacId: phrase.arasaacId,
+                         isEmergency: phrase.isEmergency)
+    }
+
+    private func localized(_ label: String) -> String {
+        WatchTranslation.localizedLabel(label, to: vocab.inputLanguage)
+    }
+
+    /// Return a copy of the category with its name and all phrase labels
+    /// translated into the user's input language (offline dict only).
+    private func localized(category cat: WatchCategory) -> WatchCategory {
+        let lang = vocab.inputLanguage
+        let translatedName = WatchTranslation.localizedLabel(cat.name, to: lang)
+        let translatedPhrases = cat.phrases.map { p in
+            WatchPhrase(id: p.id,
+                        label: WatchTranslation.localizedLabel(p.label, to: lang),
+                        arasaacId: p.arasaacId,
+                        sfSymbol: p.sfSymbol,
+                        isEmergency: p.isEmergency)
+        }
+        return WatchCategory(id: cat.id, icon: cat.icon,
+                             name: translatedName, phrases: translatedPhrases)
+    }
+
     private func phraseColor(_ categoryId: String) -> Color {
         // Color-code each iOS-parity category. Without explicit colors here,
         // SwiftUI falls back to .accentColor which renders system gray in
@@ -266,7 +297,7 @@ struct WatchPictogramCards: View {
                     LazyVGrid(columns: columns, spacing: 6) {
                         ForEach(yesNoPhrases) { phrase in
                             PairCard(
-                                phrase: phrase,
+                                phrase: localized(phrase),
                                 onTap: { tapPhrase(phrase, recordRecent: false) },
                                 emergencyIsActive: emergency.isActive
                             )
@@ -278,7 +309,7 @@ struct WatchPictogramCards: View {
                         LazyVGrid(columns: columns, spacing: 6) {
                             ForEach(recentPhraseCards) { phrase in
                                 PairCard(
-                                    phrase: phrase,
+                                    phrase: localized(phrase),
                                     onTap: { tapPhrase(phrase, recordRecent: true) },
                                     emergencyIsActive: emergency.isActive
                                 )
@@ -295,7 +326,10 @@ struct WatchPictogramCards: View {
                     // ── Categories ──
                     LazyVGrid(columns: columns, spacing: 6) {
                         ForEach(displayCategories) { cat in
-                            CategoryCardView(category: cat, color: phraseColor(cat.id)) {
+                            CategoryCardView(
+                                category: localized(category: cat),
+                                color: phraseColor(cat.id)
+                            ) {
                                 WKInterfaceDevice.current().play(.click)
                                 presentedCategory = cat
                             }
@@ -404,16 +438,23 @@ struct WatchPictogramCards: View {
             Text("Alert = quick SOS. Message = compose your own.")
         }
         .sheet(item: $presentedCategory) { cat in
+            // Show category name + phrase labels in inputLanguage via offline
+            // dict; tap handler uses the ORIGINAL English label so TTS can
+            // route through translateAndSpeak() with proper from→to mapping.
             WatchCategoryDetail(
-                category: cat,
+                category: localized(category: cat),
                 color: phraseColor(cat.id),
-                onTapPhrase: { phrase in
+                onTapPhrase: { translatedPhrase in
+                    // Find the source (English) phrase matching the translated id
+                    // so translateAndSpeak gets the canonical source text.
+                    let source = cat.phrases.first(where: { $0.id == translatedPhrase.id })
+                        ?? translatedPhrase
                     let p = AACPhrase(
-                        label: phrase.label,
-                        sfSymbol: phrase.sfSymbol,
+                        label: source.label,
+                        sfSymbol: source.sfSymbol,
                         color: phraseColor(cat.id),
-                        arasaacId: phrase.arasaacId,
-                        isEmergency: phrase.isEmergency
+                        arasaacId: source.arasaacId,
+                        isEmergency: source.isEmergency
                     )
                     tapPhrase(p, recordRecent: true)
                     presentedCategory = nil

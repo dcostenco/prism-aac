@@ -43,7 +43,7 @@ final class WatchTranslation: ObservableObject {
 
     // MARK: - Offline dictionary (1,261 phrases × 20 languages, 100% accurate)
 
-    private static let offlineDict: [String: [String: String]] = {
+    nonisolated private static let offlineDict: [String: [String: String]] = {
         guard let url = Bundle.main.url(forResource: "aacTranslations", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -64,6 +64,16 @@ final class WatchTranslation: ObservableObject {
     private func offlineTranslate(text: String, to toLang: String) -> String? {
         let lang = String(toLang.prefix(2))
         return Self.offlineDict[text.lowercased()]?[lang]
+    }
+
+    /// Synchronous offline-only label translation for UI rendering.
+    /// Returns the translation if available, otherwise the original text.
+    /// Used to localize card labels in the user's input language without
+    /// blocking the UI on a network round-trip.
+    nonisolated static func localizedLabel(_ text: String, to toLang: String) -> String {
+        let lang = String(toLang.prefix(2))
+        if lang == "en" { return text }
+        return offlineDict[text.lowercased()]?[lang] ?? text
     }
 
     // MARK: - Phrase translation (tap-to-speak)
