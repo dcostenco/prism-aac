@@ -39,10 +39,6 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        // Let vertical pan gestures scroll the grid instead of being
-        // captured by this button. 'manipulation' also disables 300ms
-        // double-tap zoom on iOS Safari/WKWebView so taps feel snappier.
-        touchAction: 'manipulation',
         ...style,
       }}
     >
