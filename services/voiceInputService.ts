@@ -213,23 +213,20 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
 
   let stopped = false;
   let speechStarted = false;
-  let lastSpeechTime = Date.now();
+  let lastInterimText = '';
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
   const silenceThreshold = opts.silenceMs ?? 2000;
 
-  // Only arm the silence timer AFTER the engine has produced at least one
-  // result. Otherwise the initial post-start `checkSilence()` call would
-  // fire onSilence ~2s after tap when the user is still drawing breath,
-  // killing the session before they say anything. Same behavior as the
-  // native bridge path above (speechStarted flag).
-  const checkSilence = () => {
+  // Arm a silence timer ONLY when the transcript text changes. iOS WKWebView's
+  // Web Speech API polls onresult repeatedly with the same interim text every
+  // few hundred ms even when the user is silent — resetting the timer on
+  // every fire would prevent silence from EVER triggering. We only restart
+  // the timer when interim TEXT actually advances.
+  const armSilence = () => {
     if (silenceTimer) clearTimeout(silenceTimer);
     if (stopped || !speechStarted) return;
-    lastSpeechTime = Date.now();
     silenceTimer = setTimeout(() => {
-      if (Date.now() - lastSpeechTime >= silenceThreshold && !stopped) {
-        opts.onSilence?.();
-      }
+      if (!stopped) opts.onSilence?.();
     }, silenceThreshold);
   };
 
@@ -245,11 +242,15 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
     if (interim || final) speechStarted = true;
     if (interim) {
       opts.onInterim(interim);
-      checkSilence();
+      // Only re-arm silence when text changed
+      if (interim !== lastInterimText) {
+        lastInterimText = interim;
+        armSilence();
+      }
     }
     if (final) {
       opts.onFinal(final);
-      checkSilence();
+      armSilence();
     }
   };
 
