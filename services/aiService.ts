@@ -629,15 +629,18 @@ export async function askAI(
   const cappedQuestion = question.slice(0, 2000);
 
   // On-device path: iOS native bridge → llama.cpp 1.7B (no network, no latency)
-  // Only for AAC chat (no context) — math/tutor uses cloud for better quality
-  if (isNativeBridgeAvailable() && !context) {
+  // Only when explicitly READY — bridge exposes a `aiReady` flag once the
+  // GGUF has been loaded successfully. Without it, askAI() falls straight
+  // through to route() (local Ollama → Synalux cloud), which works on
+  // iOS Simulator (where no GGUF is bundled) and on real devices where
+  // the model download hasn't completed yet.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const nb = (window as any).prismNativeBridge;
+  const nativeReady = !!(nb?.askAI && nb?.aiReady === true);
+  if (nativeReady && !context) {
     try {
       const raw = await callNativeBridge(cappedQuestion, language, onChunk);
       const text = stripModelControlTokens(raw).trim();
-      // Fall through to cloud/local route when on-device produces an empty
-      // or trivially-short response. Happens on iOS Simulator (no model
-      // loaded, pipeline yields a placeholder) and when the bundled GGUF
-      // failed to load on real device. Avoids user-facing "no reply" cases.
       if (text.length >= 8) {
         return { text, lines: text.split(/\n+/).filter((l) => l.trim()) };
       }
