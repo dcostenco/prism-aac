@@ -368,13 +368,13 @@ extension WatchCategory {
     /// update this list in the SAME commit (see `web-to-ios` skill).
     static let iOSDefaultSet: [WatchCategory] = [
         // Core Words
-        WatchCategory(id: "core-pronouns", icon: "👤", name: "I / You / We", phrases: [
+        WatchCategory(id: "core-pronouns", icon: "person.2.fill", name: "I / You / We", phrases: [
             WatchPhrase(id: "i",    label: "I",    arasaacId: nil, sfSymbol: "person.fill"),
             WatchPhrase(id: "you",  label: "You",  arasaacId: nil, sfSymbol: "person.2.fill"),
             WatchPhrase(id: "we",   label: "We",   arasaacId: nil, sfSymbol: "person.3.fill"),
             WatchPhrase(id: "they", label: "They", arasaacId: nil, sfSymbol: "person.3"),
         ]),
-        WatchCategory(id: "core-verbs", icon: "⚡", name: "Core Verbs", phrases: [
+        WatchCategory(id: "core-verbs", icon: "bolt.fill", name: "Core Verbs", phrases: [
             WatchPhrase(id: "want", label: "Want", arasaacId: 5583, sfSymbol: "hand.point.right.fill"),
             WatchPhrase(id: "go",   label: "Go",   arasaacId: nil,  sfSymbol: "arrow.right.circle"),
             WatchPhrase(id: "stop", label: "Stop", arasaacId: 5581, sfSymbol: "hand.raised.fill"),
@@ -384,7 +384,7 @@ extension WatchCategory {
             WatchPhrase(id: "help", label: "Help", arasaacId: 5557, sfSymbol: "sos"),
             WatchPhrase(id: "make", label: "Make", arasaacId: nil,  sfSymbol: "hammer"),
         ]),
-        WatchCategory(id: "core-descriptors", icon: "📐", name: "More / Not / All", phrases: [
+        WatchCategory(id: "core-descriptors", icon: "ruler.fill", name: "More / Not / All", phrases: [
             WatchPhrase(id: "more", label: "More",     arasaacId: 5571, sfSymbol: "plus.circle"),
             WatchPhrase(id: "done", label: "All done", arasaacId: 5552, sfSymbol: "checkmark.seal"),
             WatchPhrase(id: "not",  label: "Not",      arasaacId: nil,  sfSymbol: "nosign"),
@@ -392,7 +392,7 @@ extension WatchCategory {
             WatchPhrase(id: "big",  label: "Big",      arasaacId: nil,  sfSymbol: "arrow.up.left.and.arrow.down.right"),
             WatchPhrase(id: "lil",  label: "Small",    arasaacId: nil,  sfSymbol: "arrow.down.right.and.arrow.up.left"),
         ]),
-        WatchCategory(id: "core-little-words", icon: "🔗", name: "Little Words", phrases: [
+        WatchCategory(id: "core-little-words", icon: "link", name: "Little Words", phrases: [
             WatchPhrase(id: "a",    label: "a",    arasaacId: nil, sfSymbol: "textformat"),
             WatchPhrase(id: "the",  label: "the",  arasaacId: nil, sfSymbol: "textformat"),
             WatchPhrase(id: "and",  label: "and",  arasaacId: nil, sfSymbol: "plus"),
@@ -401,7 +401,7 @@ extension WatchCategory {
         ]),
 
         // Communicative Functions
-        WatchCategory(id: "help-needs", icon: "🆘", name: "Help / Needs", phrases: [
+        WatchCategory(id: "help-needs", icon: "sos", name: "Help / Needs", phrases: [
             WatchPhrase(id: "help-n",   label: "Help",     arasaacId: 5557, sfSymbol: "sos",                 isEmergency: true),
             WatchPhrase(id: "bathroom", label: "Bathroom", arasaacId: nil,  sfSymbol: "toilet.fill"),
             WatchPhrase(id: "water-n",  label: "Water",    arasaacId: 14981, sfSymbol: "drop.fill"),
@@ -411,14 +411,14 @@ extension WatchCategory {
             WatchPhrase(id: "med-n",    label: "Medicine", arasaacId: nil,  sfSymbol: "pill.fill"),
             WatchPhrase(id: "stop-n",   label: "Stop",     arasaacId: 5581, sfSymbol: "hand.raised.fill"),
         ]),
-        WatchCategory(id: "quick-talk", icon: "💬", name: "Quick Talk", phrases: [
+        WatchCategory(id: "quick-talk", icon: "bubble.left.and.bubble.right.fill", name: "Quick Talk", phrases: [
             WatchPhrase(id: "hello",   label: "Hello",     arasaacId: nil, sfSymbol: "hand.wave.fill"),
             WatchPhrase(id: "thanks",  label: "Thank you", arasaacId: nil, sfSymbol: "heart.fill"),
             WatchPhrase(id: "please",  label: "Please",    arasaacId: nil, sfSymbol: "hands.clap.fill"),
             WatchPhrase(id: "sorry",   label: "Sorry",     arasaacId: nil, sfSymbol: "hand.thumbsdown"),
             WatchPhrase(id: "bye",     label: "Bye",       arasaacId: nil, sfSymbol: "hand.wave"),
         ]),
-        WatchCategory(id: "feelings", icon: "😊", name: "Feelings", phrases: [
+        WatchCategory(id: "feelings", icon: "face.smiling", name: "Feelings", phrases: [
             WatchPhrase(id: "happy",   label: "Happy",   arasaacId: nil, sfSymbol: "face.smiling"),
             WatchPhrase(id: "sad",     label: "Sad",     arasaacId: nil, sfSymbol: "cloud.rain.fill"),
             WatchPhrase(id: "scared",  label: "Scared",  arasaacId: nil, sfSymbol: "bolt.heart.fill"),
@@ -426,7 +426,7 @@ extension WatchCategory {
             WatchPhrase(id: "tired",   label: "Tired",   arasaacId: nil, sfSymbol: "moon.zzz.fill"),
             WatchPhrase(id: "excited", label: "Excited", arasaacId: nil, sfSymbol: "sparkles"),
         ]),
-        WatchCategory(id: "questions", icon: "❓", name: "Questions", phrases: [
+        WatchCategory(id: "questions", icon: "questionmark.circle.fill", name: "Questions", phrases: [
             WatchPhrase(id: "what",  label: "What?",  arasaacId: nil, sfSymbol: "questionmark.circle"),
             WatchPhrase(id: "where", label: "Where?", arasaacId: nil, sfSymbol: "mappin.circle"),
             WatchPhrase(id: "who",   label: "Who?",   arasaacId: nil, sfSymbol: "person.fill.questionmark"),
@@ -436,7 +436,7 @@ extension WatchCategory {
         ]),
 
         // Fringe Vocabulary
-        WatchCategory(id: "actions", icon: "🏃", name: "Actions", phrases: [
+        WatchCategory(id: "actions", icon: "figure.run", name: "Actions", phrases: [
             WatchPhrase(id: "run",   label: "Run",   arasaacId: nil, sfSymbol: "figure.run"),
             WatchPhrase(id: "jump",  label: "Jump",  arasaacId: nil, sfSymbol: "arrow.up.circle"),
             WatchPhrase(id: "sit",   label: "Sit",   arasaacId: nil, sfSymbol: "chair"),
@@ -446,7 +446,7 @@ extension WatchCategory {
             WatchPhrase(id: "drink", label: "Drink", arasaacId: nil, sfSymbol: "cup.and.saucer"),
             WatchPhrase(id: "play",  label: "Play",  arasaacId: nil, sfSymbol: "gamecontroller"),
         ]),
-        WatchCategory(id: "describing", icon: "🎨", name: "Describing Words", phrases: [
+        WatchCategory(id: "describing", icon: "paintpalette.fill", name: "Describing Words", phrases: [
             WatchPhrase(id: "big-d",   label: "Big",   arasaacId: nil, sfSymbol: "arrow.up.left.and.arrow.down.right"),
             WatchPhrase(id: "small-d", label: "Small", arasaacId: nil, sfSymbol: "arrow.down.right.and.arrow.up.left"),
             WatchPhrase(id: "hot-d",   label: "Hot",   arasaacId: nil, sfSymbol: "thermometer.sun"),
@@ -456,7 +456,7 @@ extension WatchCategory {
             WatchPhrase(id: "good-d",  label: "Good",  arasaacId: nil, sfSymbol: "hand.thumbsup.fill"),
             WatchPhrase(id: "bad-d",   label: "Bad",   arasaacId: nil, sfSymbol: "hand.thumbsdown.fill"),
         ]),
-        WatchCategory(id: "people-social", icon: "👥", name: "People", phrases: [
+        WatchCategory(id: "people-social", icon: "person.3.fill", name: "People", phrases: [
             WatchPhrase(id: "mom",     label: "Mom",     arasaacId: nil, sfSymbol: "figure.dress"),
             WatchPhrase(id: "dad",     label: "Dad",     arasaacId: nil, sfSymbol: "figure.stand"),
             WatchPhrase(id: "friend",  label: "Friend",  arasaacId: nil, sfSymbol: "person.2.fill"),
@@ -464,7 +464,7 @@ extension WatchCategory {
             WatchPhrase(id: "brother", label: "Brother", arasaacId: nil, sfSymbol: "person.fill"),
             WatchPhrase(id: "sister",  label: "Sister",  arasaacId: nil, sfSymbol: "person.fill"),
         ]),
-        WatchCategory(id: "food-ordering", icon: "🍽", name: "Food & Drink", phrases: [
+        WatchCategory(id: "food-ordering", icon: "fork.knife", name: "Food & Drink", phrases: [
             WatchPhrase(id: "water-f", label: "Water",   arasaacId: 14981, sfSymbol: "drop.fill"),
             WatchPhrase(id: "apple",   label: "Apple",   arasaacId: nil,  sfSymbol: "applelogo"),
             WatchPhrase(id: "bread",   label: "Bread",   arasaacId: nil,  sfSymbol: "fork.knife"),
@@ -472,7 +472,7 @@ extension WatchCategory {
             WatchPhrase(id: "cookie",  label: "Cookie",  arasaacId: nil,  sfSymbol: "circle.fill"),
             WatchPhrase(id: "pizza",   label: "Pizza",   arasaacId: nil,  sfSymbol: "fork.knife.circle"),
         ]),
-        WatchCategory(id: "places-plans", icon: "📍", name: "Places", phrases: [
+        WatchCategory(id: "places-plans", icon: "mappin.and.ellipse", name: "Places", phrases: [
             WatchPhrase(id: "home",    label: "Home",    arasaacId: 8514, sfSymbol: "house.fill"),
             WatchPhrase(id: "school",  label: "School",  arasaacId: nil,  sfSymbol: "graduationcap.fill"),
             WatchPhrase(id: "outside", label: "Outside", arasaacId: nil,  sfSymbol: "sun.max.fill"),
@@ -480,21 +480,21 @@ extension WatchCategory {
             WatchPhrase(id: "park",    label: "Park",    arasaacId: nil,  sfSymbol: "tree.fill"),
             WatchPhrase(id: "bath-p",  label: "Bathroom", arasaacId: nil, sfSymbol: "toilet.fill"),
         ]),
-        WatchCategory(id: "school-work", icon: "📚", name: "School / Work", phrases: [
+        WatchCategory(id: "school-work", icon: "book.fill", name: "School / Work", phrases: [
             WatchPhrase(id: "book",      label: "Book",      arasaacId: nil, sfSymbol: "book.fill"),
             WatchPhrase(id: "pencil",    label: "Pencil",    arasaacId: nil, sfSymbol: "pencil"),
             WatchPhrase(id: "computer",  label: "Computer",  arasaacId: nil, sfSymbol: "laptopcomputer"),
             WatchPhrase(id: "teacher-s", label: "Teacher",   arasaacId: nil, sfSymbol: "graduationcap.fill"),
             WatchPhrase(id: "friend-s",  label: "Friend",    arasaacId: nil, sfSymbol: "person.2.fill"),
         ]),
-        WatchCategory(id: "health-body", icon: "🏥", name: "Health / Body", phrases: [
+        WatchCategory(id: "health-body", icon: "cross.case.fill", name: "Health / Body", phrases: [
             WatchPhrase(id: "hurt-h",   label: "Hurt",     arasaacId: nil, sfSymbol: "cross.fill",     isEmergency: true),
             WatchPhrase(id: "med-h",    label: "Medicine", arasaacId: nil, sfSymbol: "pill.fill"),
             WatchPhrase(id: "doctor",   label: "Doctor",   arasaacId: nil, sfSymbol: "stethoscope"),
             WatchPhrase(id: "tired-h",  label: "Tired",    arasaacId: nil, sfSymbol: "moon.zzz.fill"),
             WatchPhrase(id: "sick",     label: "Sick",     arasaacId: nil, sfSymbol: "thermometer"),
         ]),
-        WatchCategory(id: "time", icon: "🕐", name: "Time", phrases: [
+        WatchCategory(id: "time", icon: "clock.fill", name: "Time", phrases: [
             WatchPhrase(id: "now",       label: "Now",       arasaacId: nil, sfSymbol: "clock.fill"),
             WatchPhrase(id: "later",     label: "Later",     arasaacId: nil, sfSymbol: "clock.arrow.circlepath"),
             WatchPhrase(id: "today",     label: "Today",     arasaacId: nil, sfSymbol: "calendar"),
@@ -503,14 +503,14 @@ extension WatchCategory {
             WatchPhrase(id: "morning",   label: "Morning",   arasaacId: nil, sfSymbol: "sunrise.fill"),
             WatchPhrase(id: "night",     label: "Night",     arasaacId: nil, sfSymbol: "moon.stars.fill"),
         ]),
-        WatchCategory(id: "animals", icon: "🐾", name: "Animals", phrases: [
+        WatchCategory(id: "animals", icon: "pawprint.fill", name: "Animals", phrases: [
             WatchPhrase(id: "dog",  label: "Dog",  arasaacId: nil, sfSymbol: "pawprint.fill"),
             WatchPhrase(id: "cat",  label: "Cat",  arasaacId: nil, sfSymbol: "pawprint"),
             WatchPhrase(id: "bird", label: "Bird", arasaacId: nil, sfSymbol: "bird.fill"),
             WatchPhrase(id: "fish", label: "Fish", arasaacId: nil, sfSymbol: "fish.fill"),
             WatchPhrase(id: "cow",  label: "Cow",  arasaacId: nil, sfSymbol: "pawprint.fill"),
         ]),
-        WatchCategory(id: "colors", icon: "🌈", name: "Colors", phrases: [
+        WatchCategory(id: "colors", icon: "paintpalette", name: "Colors", phrases: [
             WatchPhrase(id: "red",    label: "Red",    arasaacId: nil, sfSymbol: "circle.fill"),
             WatchPhrase(id: "blue",   label: "Blue",   arasaacId: nil, sfSymbol: "circle.fill"),
             WatchPhrase(id: "green",  label: "Green",  arasaacId: nil, sfSymbol: "circle.fill"),
@@ -519,21 +519,21 @@ extension WatchCategory {
             WatchPhrase(id: "black",  label: "Black",  arasaacId: nil, sfSymbol: "circle.fill"),
             WatchPhrase(id: "white",  label: "White",  arasaacId: nil, sfSymbol: "circle"),
         ]),
-        WatchCategory(id: "clothes", icon: "👕", name: "Clothes", phrases: [
+        WatchCategory(id: "clothes", icon: "tshirt.fill", name: "Clothes", phrases: [
             WatchPhrase(id: "shirt", label: "Shirt", arasaacId: nil, sfSymbol: "tshirt.fill"),
             WatchPhrase(id: "pants", label: "Pants", arasaacId: nil, sfSymbol: "rectangle.portrait"),
             WatchPhrase(id: "shoes", label: "Shoes", arasaacId: nil, sfSymbol: "shoe.fill"),
             WatchPhrase(id: "coat",  label: "Coat",  arasaacId: nil, sfSymbol: "tshirt"),
             WatchPhrase(id: "hat",   label: "Hat",   arasaacId: nil, sfSymbol: "hat.cap"),
         ]),
-        WatchCategory(id: "transport", icon: "🚗", name: "Transportation", phrases: [
+        WatchCategory(id: "transport", icon: "car.fill", name: "Transportation", phrases: [
             WatchPhrase(id: "car",   label: "Car",   arasaacId: nil, sfSymbol: "car.fill"),
             WatchPhrase(id: "bus",   label: "Bus",   arasaacId: nil, sfSymbol: "bus.fill"),
             WatchPhrase(id: "bike",  label: "Bike",  arasaacId: nil, sfSymbol: "bicycle"),
             WatchPhrase(id: "plane", label: "Plane", arasaacId: nil, sfSymbol: "airplane"),
             WatchPhrase(id: "train", label: "Train", arasaacId: nil, sfSymbol: "tram.fill"),
         ]),
-        WatchCategory(id: "weather", icon: "🌤", name: "Weather", phrases: [
+        WatchCategory(id: "weather", icon: "cloud.sun.fill", name: "Weather", phrases: [
             WatchPhrase(id: "sun-w",   label: "Sun",    arasaacId: nil, sfSymbol: "sun.max.fill"),
             WatchPhrase(id: "rain",    label: "Rain",   arasaacId: nil, sfSymbol: "cloud.rain.fill"),
             WatchPhrase(id: "snow",    label: "Snow",   arasaacId: nil, sfSymbol: "snowflake"),
@@ -541,7 +541,7 @@ extension WatchCategory {
             WatchPhrase(id: "cold-w",  label: "Cold",   arasaacId: nil, sfSymbol: "thermometer.snowflake"),
             WatchPhrase(id: "cloudy",  label: "Cloudy", arasaacId: nil, sfSymbol: "cloud.fill"),
         ]),
-        WatchCategory(id: "toys-fun", icon: "🎮", name: "Toys & Fun", phrases: [
+        WatchCategory(id: "toys-fun", icon: "gamecontroller.fill", name: "Toys & Fun", phrases: [
             WatchPhrase(id: "toy",    label: "Toy",   arasaacId: nil, sfSymbol: "teddybear.fill"),
             WatchPhrase(id: "ball",   label: "Ball",  arasaacId: nil, sfSymbol: "soccerball"),
             WatchPhrase(id: "book-t", label: "Book",  arasaacId: nil, sfSymbol: "book.fill"),

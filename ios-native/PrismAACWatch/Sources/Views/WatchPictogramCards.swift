@@ -1188,33 +1188,40 @@ struct WatchDictationView: View {
     let onSubmit: (String) -> Void
 
     @State private var text = ""
-    @FocusState private var fieldFocused: Bool
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationView {
             VStack(spacing: 10) {
-                Image(systemName: "mic.circle.fill")
-                    .font(.system(size: 36))
-                    .foregroundColor(.blue)
-
-                Text("Tap the field or wait for dictation")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-
-                TextField("Speak or type…", text: $text)
-                    .font(.system(size: 15))
-                    .multilineTextAlignment(.center)
-                    .focused($fieldFocused)
-                    .frame(minHeight: 40)
-                    .submitLabel(.done)
-                    .onSubmit {
-                        guard !text.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                        let result = String(text.prefix(500))
-                        text = ""
-                        dismiss()
-                        onSubmit(result)
+                // Mic is now the primary tap target — TextFieldLink opens the
+                // watchOS system input controller (Dictate / Scribble / Keyboard)
+                // directly. No @FocusState race; the system picker handles input
+                // selection. Prior bug: static Image + auto-focus on TextField
+                // looked tappable but wasn't — user reported "mic not clickable".
+                TextFieldLink(label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: "mic.circle.fill")
+                            .font(.system(size: 44))
+                            .foregroundColor(.white)
+                        Text(text.isEmpty ? "Tap to speak or type" : text)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white.opacity(text.isEmpty ? 0.75 : 1.0))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
                     }
+                    .frame(maxWidth: .infinity, minHeight: 96)
+                    .background(Color.blue)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }, onSubmit: { newValue in
+                    NSLog("[WatchDictation-DIAG] TextFieldLink onSubmit fired (len=\(newValue.count))")
+                    let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    let result = String(trimmed.prefix(500))
+                    text = ""
+                    dismiss()
+                    onSubmit(result)
+                })
+                .buttonStyle(.plain)
 
                 Button(submitLabel) {
                     let trimmed = text.trimmingCharacters(in: .whitespaces)
@@ -1240,16 +1247,6 @@ struct WatchDictationView: View {
             }
             .onDisappear {
                 NSLog("[WatchDictation-DIAG] sheet onDisappear (text len=\(text.count))")
-            }
-            .task {
-                NSLog("[WatchDictation-DIAG] .task fired; setting fieldFocused=true")
-                // .task runs once the view is in the hierarchy. Setting focus
-                // here reliably triggers the watchOS system input controller
-                // (keyboard + scribble + dictate). Earlier .onAppear + 0.6s
-                // asyncAfter was racy: sometimes the input controller never
-                // appeared, forcing the user to tap the field manually — that
-                // was the "2 taps" bug. .task is the canonical SwiftUI hook.
-                fieldFocused = true
             }
         }
     }
