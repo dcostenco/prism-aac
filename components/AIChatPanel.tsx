@@ -44,6 +44,7 @@ export default function AIChatPanel() {
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
+  const [micError, setMicError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const wasLoadingRef = useRef(false);
   const voiceRef = useRef<VoiceSession | null>(null);
@@ -337,11 +338,27 @@ export default function AIChatPanel() {
           if (!submitted) finalize(lastInterim);
         }, 600);
       },
-      onError: () => {
+      onError: (err) => {
         if (submitted) return;
         voiceRef.current = null;
         setListening(false);
         setInterim('');
+        // Surface the failure code so the user knows WHY mic didn't work.
+        // Code values come from the native bridge (denied / restricted /
+        // not-determined / unavailable / audio-session-failed /
+        // audio-engine-failed / recognition-failed / invalid-language /
+        // timeout) or the Web Speech API errors.
+        const reason = err === 'denied'
+          ? 'Microphone or Speech Recognition permission denied. Allow it in Settings → Privacy.'
+          : err === 'not-determined'
+          ? 'Microphone permission not granted yet. Tap mic and accept the prompt.'
+          : err === 'unavailable'
+          ? 'Speech recognition unavailable for the current language.'
+          : err === 'audio-session-failed' || err === 'audio-engine-failed'
+          ? 'Microphone is busy (another app may be using it).'
+          : `Mic error: ${err}`;
+        setMicError(reason);
+        setTimeout(() => setMicError(null), 6000);
       },
     });
     // eslint-disable-next-line no-console
@@ -349,6 +366,9 @@ export default function AIChatPanel() {
     if (session) {
       voiceRef.current = session;
       setListening(true);
+    } else if (!voiceSupported) {
+      setMicError('Voice input not available on this device.');
+      setTimeout(() => setMicError(null), 4000);
     }
   };
 
@@ -360,6 +380,15 @@ export default function AIChatPanel() {
       data-testid="ai-chat-panel"
       data-state="expanded"
     >
+      {micError && (
+        <div
+          role="alert"
+          data-testid="ai-mic-error"
+          className="bg-[#F44336] text-white text-sm font-semibold px-3 py-2 text-center shrink-0"
+        >
+          {micError}
+        </div>
+      )}
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 border-b border-theme shrink-0">
         <span className="text-primary font-bold text-xl">✨ {t('ai_chat_title')}</span>
