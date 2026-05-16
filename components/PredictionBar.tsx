@@ -69,7 +69,7 @@ function ContactTile({ contact, extraCount, onTap }: { contact: AacContact; extr
           : PROVIDER_ICONS[contact.provider]
         }
       </span>
-      <span className="truncate w-full text-center text-[clamp(0.55rem,1.6vw,0.85rem)] font-bold shrink-0 leading-tight text-primary">
+      <span className="line-clamp-2 break-words w-full text-center text-[clamp(0.55rem,1.6vw,0.85rem)] font-bold shrink-0 leading-tight text-primary">
         {contact.name}
       </span>
       <span className="text-[clamp(0.45rem,1.2vw,0.7rem)] text-secondary shrink-0 leading-none">
@@ -124,7 +124,7 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap }: { wo
           <img src={iconUrl} alt="" aria-hidden loading="lazy" className="max-w-full max-h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
         )}
       </span>
-      <span className="truncate w-full text-center text-[clamp(0.65rem,1.5svh,1rem)] font-bold shrink-0 leading-tight py-0.5">{word}</span>
+      <span className="line-clamp-2 break-words w-full text-center text-[clamp(0.65rem,1.5svh,1rem)] font-bold shrink-0 leading-tight py-0.5">{word}</span>
     </button>
   );
 });
