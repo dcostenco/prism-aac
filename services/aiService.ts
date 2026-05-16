@@ -26,7 +26,7 @@ import { getPhraseText } from '@/constants/phraseTranslations';
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
-const LOCAL_MODELS = ['prism-coder:14b', 'prism-coder:8b', 'prism-coder:1b7'] as const;
+const LOCAL_MODELS = ['prism-coder:14b', 'prism-coder:8b-v29', 'prism-coder:1b7'] as const;
 const LOCAL_MODEL = LOCAL_MODELS[0];
 
 // ── Auto-sideload: detect Ollama → pull best model → avoid cloud ──
@@ -40,9 +40,9 @@ let sideloadStatus: SideloadStatus = { state: 'idle' };
 export function getSideloadStatus(): SideloadStatus { return sideloadStatus; }
 
 const PULLABLE_MODELS = [
-  { tag: 'dcostenco/prism-coder:14b', sizeGB: 9.3, accuracy: 98 },
-  { tag: 'dcostenco/prism-coder:8b',  sizeGB: 4.7, accuracy: 96 },
-  { tag: 'dcostenco/prism-coder:1b7', sizeGB: 2.2, accuracy: 88 },
+  { tag: 'dcostenco/prism-coder:14b',     sizeGB: 9.3, accuracy: 97 },
+  { tag: 'dcostenco/prism-coder:8b-v29',  sizeGB: 4.7, accuracy: 96 },
+  { tag: 'dcostenco/prism-coder:1b7',     sizeGB: 1.1, accuracy: 100 },
 ] as const;
 
 async function ollamaReachable(): Promise<boolean> {
@@ -382,7 +382,6 @@ function isConfidentResponse(text: string): boolean {
     const knownTools = [
       'session_load_context', 'session_save_ledger', 'session_save_handoff',
       'session_compact_ledger', 'session_search_memory', 'knowledge_search',
-      'brave_web_search',
     ];
     return knownTools.some(t => text.includes(`"${t}"`));
   }

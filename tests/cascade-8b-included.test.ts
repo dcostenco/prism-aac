@@ -1,7 +1,7 @@
 /**
  * 8B cascade inclusion tests.
  *
- * Verifies that prism-coder:8b is properly included in the local model
+ * Verifies that prism-coder:8b-v29 is properly included in the local model
  * cascade between 14B and 1.7B, and in the auto-sideload PULLABLE_MODELS
  * list. The 8B model is the sweet spot for 8GB-RAM devices where 14B
  * doesn't fit but 1.7B is too weak.
@@ -32,7 +32,7 @@ function localModelsCalled(): string[] {
     .map(c => c.body.model);
 }
 
-describe('LOCAL_MODELS contains prism-coder:8b between 14b and 1b7', () => {
+describe('LOCAL_MODELS contains prism-coder:8b-v29 between 14b and 1b7', () => {
   it('cascade order is 14b → 8b → 1b7 (all three tried when all fail)', async () => {
     fetchSpy.mockImplementation(async (url: any, init: any) => {
       const urlStr = typeof url === 'string' ? url : url.toString();
@@ -52,7 +52,7 @@ describe('LOCAL_MODELS contains prism-coder:8b between 14b and 1b7', () => {
     const models = localModelsCalled();
     expect(models.length).toBe(3);
     expect(models[0]).toBe('prism-coder:14b');
-    expect(models[1]).toBe('prism-coder:8b');
+    expect(models[1]).toBe('prism-coder:8b-v29');
     expect(models[2]).toBe('prism-coder:1b7');
   });
 });
@@ -84,7 +84,7 @@ describe('When 14B fails, cascade tries 8B before 1.7B', () => {
     const models = localModelsCalled();
     expect(models.length).toBe(2);
     expect(models[0]).toBe('prism-coder:14b');
-    expect(models[1]).toBe('prism-coder:8b');
+    expect(models[1]).toBe('prism-coder:8b-v29');
     // 1.7B never tried — 8B succeeded
   });
 });
@@ -116,7 +116,7 @@ describe('When 8B returns a confident response, cascade stops (no 1.7B)', () => 
     const models = localModelsCalled();
     expect(models.length).toBe(2);
     expect(models[0]).toBe('prism-coder:14b');
-    expect(models[1]).toBe('prism-coder:8b');
+    expect(models[1]).toBe('prism-coder:8b-v29');
     // 1.7B never called — confident 8B response stopped the cascade
   });
 
@@ -146,7 +146,7 @@ describe('When 8B returns a confident response, cascade stops (no 1.7B)', () => 
     const models = localModelsCalled();
     expect(models.length).toBe(2);
     expect(models[0]).toBe('prism-coder:14b');
-    expect(models[1]).toBe('prism-coder:8b');
+    expect(models[1]).toBe('prism-coder:8b-v29');
     // No 1.7B call
   });
 });
@@ -184,7 +184,7 @@ describe('When 8B returns an unconfident response, cascade falls through to 1.7B
     const models = localModelsCalled();
     expect(models.length).toBe(3);
     expect(models[0]).toBe('prism-coder:14b');
-    expect(models[1]).toBe('prism-coder:8b');
+    expect(models[1]).toBe('prism-coder:8b-v29');
     expect(models[2]).toBe('prism-coder:1b7');
   });
 
@@ -220,7 +220,7 @@ describe('When 8B returns an unconfident response, cascade falls through to 1.7B
     const models = localModelsCalled();
     expect(models.length).toBe(3);
     expect(models[0]).toBe('prism-coder:14b');
-    expect(models[1]).toBe('prism-coder:8b');
+    expect(models[1]).toBe('prism-coder:8b-v29');
     expect(models[2]).toBe('prism-coder:1b7');
   });
 
@@ -256,7 +256,7 @@ describe('When 8B returns an unconfident response, cascade falls through to 1.7B
     const models = localModelsCalled();
     expect(models.length).toBe(3);
     expect(models[0]).toBe('prism-coder:14b');
-    expect(models[1]).toBe('prism-coder:8b');
+    expect(models[1]).toBe('prism-coder:8b-v29');
     expect(models[2]).toBe('prism-coder:1b7');
   });
 });
@@ -283,7 +283,7 @@ describe('Auto-sideload PULLABLE_MODELS includes 8B between 14B and 1.7B', () =>
     await autoSideload();
     expect(pullAttempts.length).toBe(3);
     expect(pullAttempts[0]).toBe('dcostenco/prism-coder:14b');
-    expect(pullAttempts[1]).toBe('dcostenco/prism-coder:8b');
+    expect(pullAttempts[1]).toBe('dcostenco/prism-coder:8b-v29');
     expect(pullAttempts[2]).toBe('dcostenco/prism-coder:1b7');
   });
 
@@ -318,10 +318,10 @@ describe('Auto-sideload PULLABLE_MODELS includes 8B between 14B and 1.7B', () =>
     await autoSideload();
     expect(pullAttempts.length).toBe(2);
     expect(pullAttempts[0]).toBe('dcostenco/prism-coder:14b');
-    expect(pullAttempts[1]).toBe('dcostenco/prism-coder:8b');
+    expect(pullAttempts[1]).toBe('dcostenco/prism-coder:8b-v29');
     // 1.7B never attempted — 8B succeeded
     expect(pullAttempts).not.toContain('dcostenco/prism-coder:1b7');
     expect(getSideloadStatus().state).toBe('done');
-    expect(getSideloadStatus().model).toBe('dcostenco/prism-coder:8b');
+    expect(getSideloadStatus().model).toBe('dcostenco/prism-coder:8b-v29');
   });
 });

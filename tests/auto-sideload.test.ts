@@ -115,9 +115,9 @@ describe('autoSideload', () => {
 
     await autoSideload();
     expect(pullAttempts).toContain('dcostenco/prism-coder:14b');
-    expect(pullAttempts).toContain('dcostenco/prism-coder:8b');
+    expect(pullAttempts).toContain('dcostenco/prism-coder:8b-v29');
     expect(getSideloadStatus().state).toBe('done');
-    expect(getSideloadStatus().model).toBe('dcostenco/prism-coder:8b');
+    expect(getSideloadStatus().model).toBe('dcostenco/prism-coder:8b-v29');
   });
 });
 

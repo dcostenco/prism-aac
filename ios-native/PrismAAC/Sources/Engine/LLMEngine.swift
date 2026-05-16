@@ -10,7 +10,7 @@ private let llamaAvailable = false
 ///
 /// Model selection by device RAM:
 ///   16 GB+ (iPad Pro M1/M2/M4): prism-coder 14B Q4_K_M — 98% routing accuracy
-///   4–15 GB (iPhone, iPad Air):  prism-coder 1.7B Q4_K_M — 88% routing accuracy
+///   4–15 GB (iPhone, iPad Air):  prism-coder 1.7B Q4_K_M — 100% routing accuracy
 ///
 /// Memory contract (Q4_K_M):
 ///   1.7B:  ~1050 MB weights + ~200 MB KV + ~100 MB overhead = ~1350 MB
@@ -197,11 +197,8 @@ final class LLMEngine: ObservableObject {
     nonisolated private static func createSampler() -> UnsafeMutablePointer<llama_sampler> {
         let params = llama_sampler_chain_default_params()
         let chain = llama_sampler_chain_init(params)!
-        llama_sampler_chain_add(chain, llama_sampler_init_temp(0.7))
-        llama_sampler_chain_add(chain, llama_sampler_init_top_p(0.9, 1))
-        llama_sampler_chain_add(chain, llama_sampler_init_top_k(20))
-        llama_sampler_chain_add(chain, llama_sampler_init_min_p(0.05, 1))
-        llama_sampler_chain_add(chain, llama_sampler_init_dist(UInt32.random(in: 0...UInt32.max)))
+        // Greedy decoding — routing model requires deterministic output (temp=0 → argmax)
+        llama_sampler_chain_add(chain, llama_sampler_init_greedy())
         return chain
     }
 

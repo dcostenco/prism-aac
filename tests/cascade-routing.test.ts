@@ -18,7 +18,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const KNOWN_TOOLS = [
   'session_load_context', 'session_save_ledger', 'session_save_handoff',
   'session_compact_ledger', 'session_search_memory', 'knowledge_search',
-  'brave_web_search',
 ];
 
 function isConfidentResponse(text: string): boolean {

@@ -15,11 +15,11 @@
 import { describe, it, expect } from 'vitest';
 
 const OLLAMA_URL = 'http://localhost:11434';
-const MODELS = ['prism-coder:1b7', 'dcostenco/prism-coder:14b'];
+const MODELS = ['prism-coder:1b7', 'prism-coder:8b-v29', 'dcostenco/prism-coder:14b'];
 
-const SYSTEM_PROMPT = `CRITICAL: You have EXACTLY 7 tools. Their EXACT names are:
+const SYSTEM_PROMPT = `CRITICAL: You have EXACTLY 6 tools. Their EXACT names are:
   session_load_context, session_save_ledger, session_save_handoff,
-  session_compact_ledger, session_search_memory, knowledge_search, brave_web_search
+  session_compact_ledger, session_search_memory, knowledge_search
 DO NOT invent, create, or use any other tool name. "plain text" is NOT a tool — it means respond without any tool call.
 If no rule matches exactly -> respond in plain text.
 Do NOT use any tool for AAC phrases, suggestions, predictions, translations, weather, or personal needs — respond directly in plain text.
@@ -33,7 +33,7 @@ If no tool is needed, respond in plain text.
 
 TOOL ROUTING — apply TOP TO BOTTOM, first match wins:
 1. current time / clock / what time is it -> respond directly (no tool)
-2. weather / live stock prices / live sports scores -> respond directly (no tool)
+2. weather / live stock prices / live sports scores / search online / "google X" / search the web / look up online / browse the internet -> respond directly (no tool)
 3. translate / translation / "say X in Y" / "convert X to Y language" / "how do you say" -> respond directly (no tool)
 4. AAC phrases / suggest phrases / phrases for expressing / communication phrases / "give me phrases" -> respond directly (no tool)
 5. simple personal needs/feelings (I want X, I feel X, I need X) -> respond directly (no tool)
@@ -42,18 +42,16 @@ TOOL ROUTING — apply TOP TO BOTTOM, first match wins:
 8. handoff / pass to next agent / relay / transition notes / archive and pass on / next session prep -> session_save_handoff
 9. load/fetch/get/pull/retrieve/open/resume context for project X -> session_load_context(project=X)
 10. compact/shrink/prune/trim the ledger (WITHOUT passing to another agent) -> session_compact_ledger
-11. "google X" / search online / search the internet -> brave_web_search
-12. look up current/news/recent info online -> brave_web_search
-13. CONVERSATION RECALL: what did we discuss / previously talked about / recall our conversation / session history -> session_search_memory
-14. SAVED KNOWLEDGE: what do I know / stored notes / notes on X / on file about / knowledge base / have documented -> knowledge_search
-15. note: X / jot down / log / save / record / remember -> session_save_ledger
+11. what did we discuss / previously talked about / recall our conversation / session history -> session_search_memory
+12. what have I recorded / find in my sessions / session notes -> session_search_memory
+13. what do I know / stored notes / notes on X / on file about / knowledge base / have documented -> knowledge_search
+14. note: X / jot down / log / save / record / remember / keep / preserve / capture -> session_save_ledger
 
 ONLY use tools listed above. NEVER invent tool names.`;
 
 const KNOWN_TOOLS = [
   'session_load_context', 'session_save_ledger', 'session_save_handoff',
   'session_compact_ledger', 'session_search_memory', 'knowledge_search',
-  'brave_web_search',
 ];
 
 async function ollamaAvailable(): Promise<boolean> {
@@ -123,7 +121,7 @@ const TOOL_ROUTING = [
   { prompt: 'Note: finished the auth migration', expected: 'session_save_ledger', label: 'Save ledger' },
   { prompt: 'What do I know about HIPAA compliance?', expected: 'knowledge_search', label: 'Knowledge search' },
   { prompt: 'What did we discuss about the deploy?', expected: 'session_search_memory', label: 'Session search' },
-  { prompt: 'Google: latest llama.cpp release', expected: 'brave_web_search', label: 'Web search' },
+  { prompt: 'What is 2 + 2?', expected: null, label: 'Math (plain text)' },
   { prompt: 'Pass this to the next agent: deploy is ready', expected: 'session_save_handoff', label: 'Handoff' },
   { prompt: 'Compact the ledger for prism-mcp', expected: 'session_compact_ledger', label: 'Compact' },
 ];
