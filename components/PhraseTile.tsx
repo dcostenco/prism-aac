@@ -54,24 +54,7 @@ export default function PhraseTile({ phrase, englishPhrase, className, style, on
           />
         )}
       </div>
-      <div style={{
-        flexShrink: 0,
-        textAlign: 'center',
-        fontWeight: 'bold',
-        padding: '2px 4px',
-        borderTop: '1px solid rgba(0,0,0,0.2)',
-        fontSize: 'clamp(0.65rem, 1.5svh, 1rem)',
-        lineHeight: 1.1,
-        // Translated labels are often longer than the English source
-        // (e.g. "Hello" → "Здравствуйте", "Please" → "Пожалуйста").
-        // Allow 2 lines max with word-wrap rather than single-line ellipsis,
-        // so users see the full translation instead of "Здра…".
-        wordBreak: 'break-word',
-        display: '-webkit-box',
-        WebkitLineClamp: 2,
-        WebkitBoxOrient: 'vertical',
-        overflow: 'hidden',
-      }}>
+      <div style={{ flexShrink: 0, textAlign: 'center', fontWeight: 'bold', padding: '2px 4px', borderTop: '1px solid rgba(0,0,0,0.2)', fontSize: 'clamp(0.65rem, 1.5svh, 1rem)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {phrase}
       </div>
     </button>
