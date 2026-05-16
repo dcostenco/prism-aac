@@ -24,6 +24,7 @@
 		4845E40319EC76BF7B3D85D9 /* PrismAACUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */; };
 		555C0BC04B53500144B4F875 /* AppIcon86x86@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */; };
 		64BFB93793BFBD59BD651173 /* offline.html in Resources */ = {isa = PBXBuildFile; fileRef = 378A42F7E901AC2CE6A66DF0 /* offline.html */; };
+		AAC7A415F1E1F1F1B1B1B1B1 /* aacTranslations.json in Resources */ = {isa = PBXBuildFile; fileRef = AAC7A415F1E1F1F1A1A1A1A1 /* aacTranslations.json */; };
 		6BDCC5044BD258312294B7A8 /* WatchInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */; };
 		6FBD9B75E28C4569B1FFF7A5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BDF1E2439453E4F2F472830B /* Assets.xcassets */; };
 		79A08C2E36B3B5E9C19C91EF /* WatchEmergencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */; };
@@ -92,9 +93,10 @@
 		1BAD607AA400B994C75354DD /* WatchAISession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAISession.swift; sourceTree = "<group>"; };
 		27F621FF903791DF9713E9E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon46x46@2x.png"; sourceTree = "<group>"; };
-		2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrismAACTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		336C616FA71B6C3F3227FC90 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		378A42F7E901AC2CE6A66DF0 /* offline.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = offline.html; sourceTree = "<group>"; };
+		AAC7A415F1E1F1F1A1A1A1A1 /* aacTranslations.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = aacTranslations.json; sourceTree = "<group>"; };
 		3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon86x86@2x.png"; sourceTree = "<group>"; };
 		3C1E662AEED98B7777920115 /* PrismAAC.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PrismAAC.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		48264733CC75753DEBCDDC22 /* AppIcon40x40@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon40x40@2x.png"; sourceTree = "<group>"; };
@@ -105,7 +107,7 @@
 		71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACUITests.swift; sourceTree = "<group>"; };
 		73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AACPipeline.swift; sourceTree = "<group>"; };
 		7F5B86B0B8D15149418A59D8 /* AppIcon50x50@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon50x50@2x.png"; sourceTree = "<group>"; };
-		81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PrismAACUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		824CFF80AABA2799959262E4 /* SafetyFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyFilter.swift; sourceTree = "<group>"; };
 		8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PrismAACWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		95805409B214B9D6DF2076F7 /* AppIcon54x54@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon54x54@2x.png"; sourceTree = "<group>"; };
@@ -258,6 +260,7 @@
 				60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */,
 				CDE377D198DA564653BA6171 /* WatchTranslation.swift */,
 				DB1FF5018CD7D6ED0E48C17D /* WatchVocabSync.swift */,
+				AAC7A415F1E1F1F1A1A1A1A1 /* aacTranslations.json */,
 			);
 			path = AI;
 			sourceTree = "<group>";
@@ -416,7 +419,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					081C499743C163B60754C060 = {
 						TestTargetID = 37F3B4323FACF28FDB1C7BA2;
@@ -465,6 +468,7 @@
 				26A7AD7DDCBA8B0B8D19ECA0 /* AppIcon54x54@2x.png in Resources */,
 				555C0BC04B53500144B4F875 /* AppIcon86x86@2x.png in Resources */,
 				F29F5361641432A04AF77701 /* AppIcon98x98@2x.png in Resources */,
+				AAC7A415F1E1F1F1B1B1B1B1 /* aacTranslations.json in Resources */,
 				6FBD9B75E28C4569B1FFF7A5 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -620,10 +624,12 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_BITCODE = NO;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -636,6 +642,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -714,10 +721,12 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_BITCODE = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -737,6 +746,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";

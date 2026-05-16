@@ -216,16 +216,11 @@ struct WatchPictogramCards: View {
                 showInbox = true
             } label: {
                 ZStack(alignment: .topTrailing) {
-                    HStack(spacing: 2) {
-                        Image(systemName: "bell.fill")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.orange.opacity(0.8))
-                        Text("Inbox")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                    .frame(width: 64, height: 24)
-                    .background(Color.black)
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.orange.opacity(0.8))
+                        .frame(width: 34, height: 24)
+                        .background(Color.black)
                     if inbox.unreadCount > 0 {
                         Text(inbox.unreadCount > 9 ? "9+" : "\(inbox.unreadCount)")
                             .font(.system(size: 6, weight: .bold))
@@ -240,16 +235,11 @@ struct WatchPictogramCards: View {
             .accessibilityLabel("Notifications")
 
             Button { showAlertConfirm = true } label: {
-                HStack(spacing: 2) {
-                    Image(systemName: "paperplane.fill")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.green.opacity(0.8))
-                    Text("Send")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                .frame(width: 62, height: 24)
-                .background(Color.black)
+                Image(systemName: "paperplane.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.green.opacity(0.8))
+                    .frame(width: 34, height: 24)
+                    .background(Color.black)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Send — SOS to caregiver or compose message")
