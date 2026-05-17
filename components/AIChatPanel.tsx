@@ -26,6 +26,7 @@ import { useT } from '@/engine/useT';
  */
 
 interface ChatMessage {
+  id: string;
   role: 'user' | 'ai';
   text: string;
   lines?: string[];
@@ -246,8 +247,8 @@ export default function AIChatPanel() {
       useMessageStore.getState().setText('');
       setMessages((m) => [
         ...m,
-        { role: 'user' as const, text: question },
-        { role: 'ai' as const, text: safety.response, lines: safety.response.split('\n').filter(Boolean) },
+        { id: Math.random().toString(36).slice(2), role: 'user' as const, text: question },
+        { id: Math.random().toString(36).slice(2), role: 'ai' as const, text: safety.response, lines: safety.response.split('\n').filter(Boolean) },
       ].slice(-MAX_MESSAGES) as ChatMessage[]);
       isLoadingRef.current = false;
       return;
@@ -258,8 +259,8 @@ export default function AIChatPanel() {
 
     setMessages((m) => [
       ...m,
-      { role: 'user' as const, text: question },
-      { role: 'ai' as const, text: '', lines: [] },
+      { id: Math.random().toString(36).slice(2), role: 'user' as const, text: question },
+      { id: Math.random().toString(36).slice(2), role: 'ai' as const, text: '', lines: [] },
     ].slice(-MAX_MESSAGES) as ChatMessage[]);
     setLoading(true);
 
@@ -296,6 +297,10 @@ export default function AIChatPanel() {
       const sentenceSafety = checkCrisisSafety(sentence);
       if (!sentenceSafety.safe) {
         cancelled = true;
+        // Abort the HTTP stream immediately — without this, the model keeps
+        // pushing tokens into onChunk which appends them to buffer even though
+        // we've overwritten buffer with the safe crisis response.
+        askController.abort();
         queueTimers.forEach(clearTimeout);
         buffer = sentenceSafety.response;
         flush();
@@ -333,7 +338,7 @@ export default function AIChatPanel() {
       const lines = safeText.split(/\n+/).filter((l) => l.trim());
       setMessages((prev) => {
         const updated = prev.slice();
-        updated[updated.length - 1] = { role: 'ai', text: safeText, lines };
+        updated[updated.length - 1] = { ...updated[updated.length - 1], role: 'ai', text: safeText, lines };
         return updated;
       });
     };
@@ -345,6 +350,7 @@ export default function AIChatPanel() {
       const targetLang = needsTranslation ? outputLang : (outputLang || inputLang);
 
       const onChunk = (delta: string) => {
+        if (cancelled) return;
         if (buffer.length < 32_000) {
           buffer += delta;
         } else if (!buffer.endsWith('…')) {
@@ -388,7 +394,7 @@ export default function AIChatPanel() {
       const msg = t('could_not_reach_ai');
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: 'ai', text: msg, lines: [msg] };
+        updated[updated.length - 1] = { ...updated[updated.length - 1], role: 'ai', text: msg, lines: [msg] };
         return updated;
       });
     }
@@ -613,8 +619,8 @@ export default function AIChatPanel() {
             </div>
           )}
 
-          {messages.map((msg, i) => (
-            <div key={`${msg.role}-${i}-${msg.text.slice(0, 8)}`} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
+          {messages.map((msg) => (
+            <div key={msg.id} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
               <div
                 className={`rounded-xl p-3 border border-theme ${
                   msg.role === 'user'

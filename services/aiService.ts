@@ -27,7 +27,6 @@ import { getPhraseText } from '@/constants/phraseTranslations';
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
 const LOCAL_MODELS = ['prism-coder:14b', 'prism-coder:32b'] as const;
-const LOCAL_MODEL = LOCAL_MODELS[0];
 
 // ── Auto-sideload: detect Ollama → pull best model → avoid cloud ──
 
@@ -40,8 +39,8 @@ let sideloadStatus: SideloadStatus = { state: 'idle' };
 export function getSideloadStatus(): SideloadStatus { return sideloadStatus; }
 
 const PULLABLE_MODELS = [
-  { tag: 'dcostenco/prism-coder:32b', sizeGB: 19.0, accuracy: 99 },
-  { tag: 'dcostenco/prism-coder:14b', sizeGB: 9.3,  accuracy: 97 },
+  { tag: 'prism-coder:32b', sizeGB: 19.0, accuracy: 99 },
+  { tag: 'prism-coder:14b', sizeGB: 9.3,  accuracy: 97 },
 ] as const;
 
 async function ollamaReachable(): Promise<boolean> {
@@ -413,7 +412,7 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
 
 function isConfidentResponse(text: string): boolean {
   if (!text || text.trim().length < 2) return false;
-  const hasToolCall = text.includes('<|tool_call|>');
+  const hasToolCall = text.toLowerCase().includes('<|tool_call|>');
   const hasPlainText = text.trim().length >= 10 && !hasToolCall;
   if (hasToolCall) {
     // Any tool-call bleed indicates model confusion or prompt injection.
@@ -431,7 +430,8 @@ async function callLocal(prompt: string, signal?: AbortSignal): Promise<string> 
       const timeoutMs = model.includes('32b') ? 30000 : 15000;
       const result = await callLocalModel(prompt, model, timeoutMs, signal);
       if (isConfidentResponse(result)) return result;
-    } catch {
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') throw e;
       continue;
     }
   }
@@ -480,6 +480,8 @@ export function stripModelControlTokens(text: string): string {
   //    Newlines collapse too: an entire thought block on its own line
   //    becomes a single line break instead of a blank gap.
   out = out.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n');
+  // 5. Partial token at end of a cut-off stream (e.g. "<|synalux_t" with no closing "|>").
+  out = out.replace(/<\|[^|>]*$/, '');
   return out.trim();
 }
 

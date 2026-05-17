@@ -74,7 +74,12 @@ export default function BedsideOverlay({
         // Tab trap — cycle focus within the overlay so Tab/Shift+Tab cannot
         // escape into underlying app content (WCAG 2.1 SC 2.1.2).
         if (e.key === 'Tab') {
-          const focusable = overlayRef.current?.querySelectorAll<HTMLElement>(
+          // When the inner Voice Control card is open, confine Tab to that
+          // card only — the outer overlay buttons are inert behind the backdrop.
+          const root = showVoiceControlCard
+            ? overlayRef.current?.querySelector<HTMLElement>('[aria-label="iOS Voice Control instructions"]')
+            : overlayRef.current;
+          const focusable = root?.querySelectorAll<HTMLElement>(
             'button, [tabindex]:not([tabindex="-1"])',
           );
           if (focusable && focusable.length > 0) {

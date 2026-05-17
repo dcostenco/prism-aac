@@ -227,9 +227,15 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
       return;
     }
     if (event.error === 'aborted') return;
-    // Permission errors are permanent — set stopped so onend does not
-    // restart and spin indefinitely hitting the same error.
-    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+    // Permanent errors — set stopped so onend does not restart and spin
+    // indefinitely. Includes permission denials, hardware conflicts (audio-capture),
+    // network failures (reconnect spam causes orphaned sessions), and
+    // configuration errors (language-not-supported, bad-grammar).
+    if (
+      event.error === 'not-allowed' || event.error === 'service-not-allowed' ||
+      event.error === 'audio-capture' || event.error === 'network' ||
+      event.error === 'language-not-supported' || event.error === 'bad-grammar'
+    ) {
       stopped = true;
       if (silenceTimer) clearTimeout(silenceTimer);
     }
