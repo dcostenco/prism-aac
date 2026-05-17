@@ -340,6 +340,7 @@ export default function AIChatPanel() {
     };
 
     const enqueueSentence = (sentence: string) => {
+      if (cancelled) return;
       if (!sentence.trim()) return;
       // Apply crisis filter per-sentence before TTS — flush() runs on a
       // requestAnimationFrame tick AFTER onChunk, so a jailbroken model
@@ -521,6 +522,7 @@ export default function AIChatPanel() {
       askAbortRef.current = null;
       wakeWordSessionRef.current?.stop();
       wakeWordSessionRef.current = null;
+      if (micErrorTimerRef.current) { clearTimeout(micErrorTimerRef.current); micErrorTimerRef.current = null; }
       if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
       if (finalizeTimerRef.current) { clearTimeout(finalizeTimerRef.current); finalizeTimerRef.current = null; }
       if (crisisRestartTimerRef.current) { clearTimeout(crisisRestartTimerRef.current); crisisRestartTimerRef.current = null; }

@@ -180,6 +180,7 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
   let speechStarted = false;
   let lastInterimText = '';
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
+  let restartTimer: ReturnType<typeof setTimeout> | null = null;
   let restartCount = 0;
   const MAX_RESTARTS = 10;
   const silenceThreshold = opts.silenceMs ?? 2000;
@@ -258,7 +259,8 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
     }
     const delay = Math.min(200 * 2 ** restartCount, 10_000);
     restartCount++;
-    setTimeout(() => {
+    restartTimer = setTimeout(() => {
+      restartTimer = null;
       if (!stopped) try { rec.start(); } catch { /* already running or blocked */ }
     }, delay);
   };
@@ -282,6 +284,7 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
     stop: () => {
       stopped = true;
       if (silenceTimer) clearTimeout(silenceTimer);
+      if (restartTimer) { clearTimeout(restartTimer); restartTimer = null; }
       try { rec.stop(); } catch {}
     },
   };
