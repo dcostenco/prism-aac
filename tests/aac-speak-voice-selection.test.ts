@@ -1,13 +1,13 @@
 /**
- * Regression tests for aacSpeak voice selection.
+ * Regression tests for aacSpeak voice selection and speech rate.
  *
- * Root cause these pin: when aacSpeak receives already-translated text
- * (e.g. Russian text called from MessageBar), it must not break EN→EN mode.
- * The overrideLang parameter that was added in ef19d2c broke this — these
- * tests would have caught the regression before push.
- *
- * Rate note: aacSpeak applies effectiveRate = rate * 0.6 internally (commit 95e4168
- * "apply 0.6x rate to all speech"). speak() receives the scaled value, not the raw rate.
+ * Root cause these pin:
+ *   1. Voice selection: when aacSpeak receives already-translated text
+ *      (e.g. Russian text called from MessageBar), it must not break EN→EN mode.
+ *   2. Rate regression (commit 95e4168): applying rate * 0.6 unconditionally
+ *      broke monolingual foreign users (RO/RU) — they got SSML 0.6 instead of
+ *      1.0 = 2× slowdown. Rate reduction must ONLY apply when translating or
+ *      when the caller explicitly passes spokenLang.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -48,7 +48,7 @@ describe('aacSpeak — voice selection', () => {
     mockGetTTSCode.mockImplementation((lang: string) => `${lang}-TTS`);
   });
 
-  it('EN→EN: uses English voice, text unchanged', () => {
+  it('EN→EN: uses English voice, text unchanged, rate NOT reduced', () => {
     mockGetState.mockReturnValue({ language: 'en', outputLanguage: 'en', speechRate: 0.5 });
 
     aacSpeak('hello world', 0.5, 1.0);
@@ -56,7 +56,7 @@ describe('aacSpeak — voice selection', () => {
     expect(mockTranslate).not.toHaveBeenCalled();
     expect(mockSpeak).toHaveBeenCalledWith(
       'hello world',
-      0.5 * 0.6, 1.0,  // effectiveRate = rate * 0.6 (commit 95e4168)
+      0.5, 1.0,  // monolingual — rate passes through unchanged
       'en-TTS',
       expect.anything(),
       false,
@@ -93,6 +93,41 @@ describe('aacSpeak — voice selection', () => {
     );
   });
 
+  it('REGRESSION: RO→RO (monolingual foreign) rate NOT reduced — fixes 2× slowdown', () => {
+    // Pin: commit 95e4168 applied rate * 0.6 unconditionally.
+    // A Romanian user with language=ro, outputLanguage=ro (translating=false)
+    // got effectiveRate=0.3 → Azure SSML 0.6 instead of 1.0 = 2× slow.
+    // The 0.6× multiplier must ONLY apply when translating or spokenLang is set.
+    mockGetState.mockReturnValue({ language: 'ro', outputLanguage: 'ro', speechRate: 0.5 });
+
+    aacSpeak('bună ziua', 0.5, 1.0);
+
+    expect(mockSpeak).toHaveBeenCalledWith(
+      'bună ziua',
+      0.5, 1.0,  // no multiplier — monolingual Romanian same as English
+      'ro-TTS',
+      expect.anything(),
+      false,
+    );
+  });
+
+  it('REGRESSION: EN→RO translation rate IS reduced for comprehension', () => {
+    // Translated speech is intentionally 40% slower for comprehension.
+    // This must NOT be removed while fixing the monolingual regression above.
+    mockGetState.mockReturnValue({ language: 'en', outputLanguage: 'ro', speechRate: 0.5 });
+    mockTranslate.mockReturnValue('bună ziua');
+
+    aacSpeak('good morning', 0.5, 1.0);
+
+    expect(mockSpeak).toHaveBeenCalledWith(
+      'bună ziua',
+      0.5 * 0.6, 1.0,  // translation — 0.6× for comprehension
+      'ro-TTS',
+      expect.anything(),
+      false,
+    );
+  });
+
   it('aacSpeak signature has NO extra overrideLang parameter (max 5 declared)', () => {
     // Guards against adding undocumented 6th+ parameters that create
     // hidden behavioral contracts between callers and aacSpeak.
@@ -107,7 +142,7 @@ describe('aacSpeak — voice selection', () => {
     aacSpeak('help', 0.5, 1.0, undefined, true);
 
     expect(mockSpeak).toHaveBeenCalledWith(
-      'help', 0.5 * 0.6, 1.0, 'en-TTS', expect.anything(), true,
+      'help', 0.5, 1.0, 'en-TTS', expect.anything(), true,
     );
   });
 });
