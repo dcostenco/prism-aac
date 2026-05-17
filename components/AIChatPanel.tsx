@@ -54,6 +54,7 @@ export default function AIChatPanel() {
   const [wakeWordActive, setWakeWordActive] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const bedsideBtnRef = useRef<HTMLButtonElement>(null);
   const wasLoadingRef = useRef(false);
   const voiceRef = useRef<VoiceSession | null>(null);
   const askAbortRef = useRef<AbortController | null>(null);
@@ -279,6 +280,19 @@ export default function AIChatPanel() {
         const { speechRate: sr, speechVolume: sv } = useSettingsStore.getState();
         aacSpeak(safety.response, sr, sv, 'serious', true);
       }
+      // Hands-free restart: loading never transitioned (crisis returned before
+      // setLoading(true)), so the hands-free useEffect deps never change after
+      // the suppress window expires. Schedule a one-shot restart so hands-free
+      // resumes automatically without requiring the user to toggle the mic.
+      setTimeout(() => {
+        if (
+          handsFreeRef.current && activeRef.current &&
+          !voiceRef.current && !isLoadingRef.current &&
+          Date.now() - lastCrisisAtRef.current >= HANDS_FREE_CRISIS_SUPPRESS_MS
+        ) {
+          startListeningRef.current?.();
+        }
+      }, HANDS_FREE_CRISIS_SUPPRESS_MS + 100);
       return;
     }
 
@@ -369,9 +383,9 @@ export default function AIChatPanel() {
     };
 
     const flush = () => {
+      scheduled = false;
       if (!activeRef.current) return;
       if (askController.signal.aborted) return;
-      scheduled = false;
       const tx = buffer;
       // Skip re-check when buffer is already the crisis response — the text contains
       // "call 911" / "988" which would re-trigger the filter and waste 100+ regex evals.
@@ -551,7 +565,11 @@ export default function AIChatPanel() {
           onSetHandsFree={setHandsFreeModeActive}
           onSetWakeWord={setWakeWordActive}
           onTapLine={handleTapLine}
-          onClose={() => setBedsideModeActive(false)}
+          onClose={() => {
+            setBedsideModeActive(false);
+            // WCAG 2.4.3: return focus to the element that opened this dialog
+            setTimeout(() => bedsideBtnRef.current?.focus(), 0);
+          }}
         />
       )}
       <section
@@ -591,6 +609,7 @@ export default function AIChatPanel() {
             </button>
             {/* Bedside mode button */}
             <button
+              ref={bedsideBtnRef}
               onClick={() => { tapFeedback(); setBedsideModeActive((v) => !v); }}
               aria-label="Open Bedside Mode"
               aria-pressed={bedsideModeActive}

@@ -98,8 +98,8 @@ export function startWakeWordDetection(
   };
 
   rec.onend = () => {
-    triggered = false; // each cycle starts fresh
     if (stopped) return;
+    triggered = false; // each cycle starts fresh — only reset when actually restarting
     if (restartCount >= MAX_RESTARTS) {
       stopped = true;
       console.warn('[wake-word] max restarts reached — giving up');
