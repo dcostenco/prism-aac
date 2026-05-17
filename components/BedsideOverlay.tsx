@@ -1,7 +1,9 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { tapFeedback } from '@/services/feedback';
 import ColoredText from './ColoredText';
+import { inferCardIcon } from '@/services/aiService';
+import type { BedsideCard } from '@/services/bedsideCards';
 
 interface BedsideOverlayProps {
   listening: boolean;
@@ -14,6 +16,9 @@ interface BedsideOverlayProps {
   lastAILines: string[];
   lastAIMessageId: string;
   isCrisisAnnouncement: boolean;
+  bedsideCards: BedsideCard[];
+  onAddCard: (text: string, icon: string) => void;
+  onDeleteCard: (id: string) => void;
   onToggleVoice: () => void;
   onSetHandsFree: (v: boolean) => void;
   onSetWakeWord: (v: boolean) => void;
@@ -37,6 +42,9 @@ export default function BedsideOverlay({
   lastAILines,
   lastAIMessageId,
   isCrisisAnnouncement,
+  bedsideCards,
+  onAddCard,
+  onDeleteCard,
   onToggleVoice,
   onSetHandsFree,
   onSetWakeWord,
@@ -44,8 +52,41 @@ export default function BedsideOverlay({
   onClose,
 }: BedsideOverlayProps) {
   const [showVoiceControlCard, setShowVoiceControlCard] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [addCardText, setAddCardText] = useState('');
+  const [addCardIcon, setAddCardIcon] = useState('');
+  const [addCardLoading, setAddCardLoading] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const voiceCtrlBtnRef = useRef<HTMLButtonElement>(null);
+  const addCardInputRef = useRef<HTMLInputElement>(null);
+  const addCardBtnRef = useRef<HTMLButtonElement>(null);
+
+  const closeAddCard = useCallback(() => {
+    setShowAddCard(false);
+    setAddCardText('');
+    setAddCardIcon('');
+    setAddCardLoading(false);
+    setTimeout(() => addCardBtnRef.current?.focus(), 0);
+  }, []);
+
+  const handleConfirmAddCard = useCallback(async () => {
+    const text = addCardText.trim();
+    if (!text) return;
+    setAddCardLoading(true);
+    setAddCardIcon('');
+    try {
+      const icon = await inferCardIcon(text);
+      setAddCardIcon(icon);
+      // Brief pause so user sees the generated icon before dialog closes
+      await new Promise<void>(r => setTimeout(r, 500));
+      onAddCard(text, icon);
+      closeAddCard();
+    } catch {
+      onAddCard(text, '💬');
+      closeAddCard();
+    }
+  }, [addCardText, onAddCard, closeAddCard]);
 
   // Focus the overlay container on mount so keyboard/iOS Voice Control users
   // start inside the modal. WCAG 2.1 SC 2.1.2 requires focus to be trapped.
@@ -116,6 +157,60 @@ export default function BedsideOverlay({
         >
           ✕
         </button>
+      </div>
+
+      {/* Quick Cards — pre-built + custom phrases for non-verbal / non-moving users */}
+      <div className="shrink-0 border-b border-white/10" data-testid="bedside-cards-section">
+        <div className="flex items-center justify-between px-4 pt-2 pb-1">
+          <span className="text-white/50 text-xs font-semibold uppercase tracking-widest">Quick Phrases</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { tapFeedback(); setEditMode(e => !e); }}
+              aria-pressed={editMode}
+              aria-label={editMode ? 'Done editing cards' : 'Edit quick phrase cards'}
+              className={`h-8 px-3 rounded-xl text-xs font-semibold transition-colors ${
+                editMode ? 'bg-white/20 text-white' : 'bg-white/8 text-white/50'
+              }`}
+            >
+              {editMode ? 'Done' : '✏️ Edit'}
+            </button>
+          </div>
+        </div>
+        <div className="flex gap-2 px-4 pb-3 overflow-x-auto snap-x scrollbar-hide" role="list" aria-label="Quick phrase cards">
+          {bedsideCards.map(card => (
+            <div key={card.id} className="relative shrink-0 snap-start" role="listitem">
+              <button
+                onClick={() => { tapFeedback(); onTapLine(card.text); }}
+                aria-label={card.text}
+                data-scan-group="quick-cards"
+                className="flex flex-col items-center justify-center gap-1 w-[88px] h-[80px] rounded-2xl bg-white/8 border border-white/10 active:bg-white/20 transition-colors text-center px-1"
+              >
+                <span className="text-3xl leading-none" aria-hidden="true">{card.icon}</span>
+                <span className="text-[11px] leading-tight text-white/80 line-clamp-2">{card.text}</span>
+              </button>
+              {editMode && !card.id.startsWith('builtin-') && (
+                <button
+                  onClick={() => { tapFeedback(); onDeleteCard(card.id); }}
+                  aria-label={`Remove card: ${card.text}`}
+                  className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-[#F44336] text-white text-xs flex items-center justify-center z-10 shadow-md"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+          {/* Add new card button */}
+          <button
+            ref={addCardBtnRef}
+            onClick={() => { tapFeedback(); setShowAddCard(true); }}
+            aria-label="Add custom quick phrase card"
+            data-testid="bedside-add-card-btn"
+            className="shrink-0 snap-start flex flex-col items-center justify-center gap-1 w-[88px] h-[80px] rounded-2xl bg-white/5 border border-dashed border-white/20 active:bg-white/10 transition-colors text-white/40"
+          >
+            <span className="text-2xl leading-none">＋</span>
+            <span className="text-[11px]">Add</span>
+          </button>
+        </div>
       </div>
 
       {/* Hidden assertive live region for crisis announcements only */}
@@ -230,6 +325,73 @@ export default function BedsideOverlay({
           📱 Voice Ctrl
         </button>
       </div>
+
+      {/* Add quick card dialog */}
+      {showAddCard && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Add quick phrase card"
+          data-testid="bedside-add-card-dialog"
+          className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center px-8 gap-5 z-10"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') closeAddCard();
+          }}
+        >
+          <p className="text-white text-2xl font-bold">New Quick Phrase</p>
+
+          {/* Icon preview / loading */}
+          <div className="w-24 h-24 rounded-3xl bg-white/10 flex items-center justify-center" aria-live="polite">
+            {addCardLoading && !addCardIcon && (
+              <span className="text-white/50 text-sm animate-pulse">✨ Generating…</span>
+            )}
+            {addCardIcon && (
+              <span className="text-5xl" data-testid="bedside-card-icon-preview">{addCardIcon}</span>
+            )}
+            {!addCardLoading && !addCardIcon && (
+              <span className="text-4xl text-white/20">💬</span>
+            )}
+          </div>
+
+          <input
+            ref={addCardInputRef}
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus
+            type="text"
+            value={addCardText}
+            onChange={(e) => setAddCardText(e.target.value.slice(0, 80))}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !addCardLoading) handleConfirmAddCard(); }}
+            placeholder="What do you want to say?"
+            maxLength={80}
+            aria-label="Quick phrase text"
+            className="w-full h-16 rounded-2xl bg-white/10 text-white text-xl text-center px-4 placeholder:text-white/30 outline-none focus:ring-2 focus:ring-white/30"
+          />
+          <p className="text-white/30 text-sm -mt-3 self-end pr-1">{addCardText.length}/80</p>
+
+          <div className="flex gap-3 w-full">
+            <button
+              onClick={() => { tapFeedback(); closeAddCard(); }}
+              disabled={addCardLoading}
+              className="flex-1 h-16 rounded-2xl bg-white/10 text-white/70 text-lg font-semibold active:bg-white/20 disabled:opacity-40"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => { tapFeedback(); handleConfirmAddCard(); }}
+              disabled={addCardLoading || !addCardText.trim()}
+              aria-label="Confirm add card"
+              data-testid="bedside-add-card-confirm"
+              className="flex-1 h-16 rounded-2xl bg-white text-black text-lg font-bold active:bg-white/80 disabled:opacity-40"
+            >
+              {addCardLoading ? '✨ Adding…' : 'Add Card'}
+            </button>
+          </div>
+
+          <p className="text-white/30 text-sm text-center">
+            The icon is generated by AI based on what you write.
+          </p>
+        </div>
+      )}
 
       {/* iOS Voice Control instruction card */}
       {showVoiceControlCard && (

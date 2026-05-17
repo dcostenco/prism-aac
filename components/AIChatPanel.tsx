@@ -12,6 +12,7 @@ import { registerAISubmit, clearAISubmit } from '@/services/aiChatBridge';
 import { checkCrisisSafety } from '@/services/crisisSafetyFilter';
 import { estimateSpeechDurationMs } from '@/services/ttsHighlightBus';
 import { startWakeWordDetection, isWakeWordSupported, WakeWordSession } from '@/services/wakeWordService';
+import { loadCards, saveCards, createCard, BedsideCard } from '@/services/bedsideCards';
 import ColoredText from './ColoredText';
 import BedsideOverlay from './BedsideOverlay';
 import { useT } from '@/engine/useT';
@@ -53,6 +54,9 @@ export default function AIChatPanel() {
   const [handsFreeModeActive, setHandsFreeModeActive] = useState(false);
   const [wakeWordActive, setWakeWordActive] = useState(false);
   const [isCrisisAnnouncement, setIsCrisisAnnouncement] = useState(false);
+  const [bedsideCards, setBedsideCards] = useState<BedsideCard[]>(() =>
+    typeof window !== 'undefined' ? loadCards() : [],
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bedsideBtnRef = useRef<HTMLButtonElement>(null);
@@ -126,6 +130,23 @@ export default function AIChatPanel() {
     },
     [appendText, autoSpeak, soundEnabled, speechRate, speechVolume],
   );
+
+  const handleAddBedsideCard = useCallback((text: string, icon: string) => {
+    const card = createCard(text, icon);
+    setBedsideCards(prev => {
+      const next = [...prev, card];
+      saveCards(next);
+      return next;
+    });
+  }, []);
+
+  const handleDeleteBedsideCard = useCallback((id: string) => {
+    setBedsideCards(prev => {
+      const next = prev.filter(c => c.id !== id);
+      saveCards(next);
+      return next;
+    });
+  }, []);
 
   // ── startListening — extracted so effects and BedsideOverlay can call it ──
   const startListening = useCallback(() => {
@@ -589,6 +610,9 @@ export default function AIChatPanel() {
           lastAILines={lastAIMessage?.lines ?? []}
           lastAIMessageId={lastAIMessage?.id ?? ''}
           isCrisisAnnouncement={isCrisisAnnouncement}
+          bedsideCards={bedsideCards}
+          onAddCard={handleAddBedsideCard}
+          onDeleteCard={handleDeleteBedsideCard}
           onToggleVoice={toggleVoice}
           onSetHandsFree={setHandsFreeModeActive}
           onSetWakeWord={setWakeWordActive}

@@ -778,6 +778,34 @@ export async function askAI(
   return { text, lines };
 }
 
+/**
+ * Infer a single emoji icon for an AAC bedside quick-phrase card.
+ * Calls the same AI routing stack as the rest of the app (local → cloud).
+ * Always resolves — falls back to 💬 on any error.
+ */
+export async function inferCardIcon(text: string): Promise<string> {
+  try {
+    const raw = await route(
+      `"${text.slice(0, 200).replace(/"/g, "'")}"`,
+      {
+        system:
+          'You are an emoji selector for AAC communication cards. ' +
+          'The user gives you a phrase and you reply with exactly one emoji that best represents it. ' +
+          'Output only the emoji — no words, no punctuation, no explanation.',
+        intent: 'chat',
+      },
+    );
+    // Extract the first Unicode code point from the response.
+    // Spreading a string iterates over code points (handles surrogate pairs).
+    const chars = [...raw.trim()];
+    const first = chars[0] ?? '';
+    const cp = first.codePointAt(0) ?? 0;
+    return cp > 127 ? first : '💬';
+  } catch {
+    return '💬';
+  }
+}
+
 export async function parseCaregiverNote(rawNoteText: string, signal?: AbortSignal): Promise<ParsedNoteResult> {
   if (!rawNoteText?.trim()) return { actions: [{ type: 'note_only', description: 'Empty note', payload: {} }], summary: '' };
   // Cap at 2000 chars and JSON-encode so structural chars ({, }, [, ], :, quotes,

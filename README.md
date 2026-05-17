@@ -310,46 +310,237 @@ On-device + cloud assistant tuned for the AAC user's voice. Streamed responses, 
 ---
 
 ### 🛏 Bedside Mode
-Full-screen AI chat overlay designed for users who are lying down with their phone in a stand — arms at sides, no way to reach the screen. Inspired by real feedback from the AAC community (r/AssistiveTechnology) from users who needed hands-free communication from a hospital bed.
 
-Open it with the 🛏 button in the AI chat header. Every tap target is oversized; voice is the primary input path.
+> **Critical accessibility feature.** Bedside Mode exists because some users have no reliable way to speak, type, or touch a screen. The design must work for the hardest case first: a patient lying in an ICU bed, arms at sides, ventilated, unable to produce any sound — communicating only through eye gaze or a single hardware switch held between two fingers.
+
+Full-screen AI communication overlay optimised for users who cannot reach the screen or speak reliably. Every tap target is oversized. Voice is one input path among several — not the only one. The interface is operable entirely through assistive technology: switch scanning, eye gaze, iOS Voice Control, head tracking, or an on-screen keyboard navigated with a single switch.
+
+Inspired by direct feedback from the AAC community (r/AssistiveTechnology, May 2025) from users communicating from hospital beds, post-surgical recovery, and palliative care settings.
+
+**Does it work on Mac / Windows?** Yes. Bedside Mode is a progressive web app feature — it runs in any browser on any device. It is not iOS-only.
+
+---
+
+#### Who is this for?
+
+Bedside Mode is designed for users across a wide spectrum of motor and speech ability. The Quick Phrase Cards (described below) are specifically designed for users at the most severe end — those who cannot speak at all and have very limited or no hand movement.
+
+| User profile | Recommended input method |
+|---|---|
+| Can speak, arms restricted | Voice (🎙 mic button) + Hands-Free loop |
+| Some vocalization, unreliable speech | "Hey Prism" wake word + Hands-Free loop |
+| No speech, can tap screen | Quick Phrase Cards (single tap) |
+| No speech, limited motor — one switch | iOS Switch Control or Android Switch Access scanning over Quick Phrase Cards |
+| No speech, no hand movement — eye gaze device | Eye gaze hardware (Tobii, EyeGaze Edge, etc.) presents as a mouse pointer — all cards are navigable |
+| No speech, can move head | Head tracking (e.g. iOS Head Pointer, Camera Control on iPhone 16) — cards are full-size navigation targets |
+| Tracheotomy / ventilated, no vocalization | Quick Phrase Cards via eye gaze or switch + caregiver-assisted mode |
+
+---
+
+#### Platform support
+
+| Platform | Bedside Mode | Quick Cards | Hands-Free Loop 🔁 | Wake Word 🎯 |
+|---|:---:|:---:|:---:|:---:|
+| Web — Mac / Windows / Linux (any browser) | ✅ | ✅ | ✅ | ✅ |
+| Web — iPhone / iPad (Safari) | ✅ | ✅ | ✅ | ⚠️ Safari only |
+| iOS native app (App Store) | ✅ | ✅ | ✅ | ❌ use Hands-Free |
+| Android (Chrome / Edge) | ✅ | ✅ | ✅ | ✅ |
+| Eye gaze device (any — presents as mouse) | ✅ | ✅ | ✅ | ✅ |
+| Switch scanning (iOS Switch Control) | ✅ | ✅ | ✅ | ❌ |
+| Apple Watch | ❌ | ❌ | ❌ | ❌ |
+
+> **Why no wake word in the iOS native app?** The native bridge takes ownership of the audio session (`prismNativeBridge.startVoice`), which conflicts with the browser `SpeechRecognition` API that the wake word service uses. Use the **Hands-Free loop** (🔁) instead — it restarts the mic automatically 1 second after each AI response without requiring any ongoing input.
+
+---
+
+#### How to start
+
+1. Open the **AI Chat** panel — tap the 🤖 icon in the toolbar.
+2. Tap **🛏** in the panel header — the full-screen overlay opens immediately.
+3. Choose your input method (see sections below).
 
 <p align="center">
-  <img src="e2e/_screenshots/bedside-overlay-open.png" alt="Bedside Mode overlay — large mic button, AI response area, controls row" width="260">
-  <img src="e2e/_screenshots/bedside-overlay-handsfree-on.png" alt="Bedside Mode with Hands-Free active (green button)" width="260">
-  <img src="e2e/_screenshots/bedside-voice-control-card.png" alt="iOS Voice Control instruction card inside Bedside overlay" width="260">
+  <img src="e2e/_screenshots/bedside-overlay-open.png" alt="Bedside Mode overlay open — black full-screen UI. Top strip shows Quick Phrase Cards. Middle area shows AI responses. Bottom shows large red mic button and controls row." width="260">
+  <img src="e2e/_screenshots/bedside-overlay-handsfree-on.png" alt="Bedside Mode with Hands-Free active — 🔁 button highlighted green, status text 'Hands-Free ON' visible" width="260">
+  <img src="e2e/_screenshots/bedside-hands-free-on.png" alt="Hands-Free toggle button in the on state — green background, aria-pressed=true" width="260">
 </p>
 
+#### How to stop / exit
+
+- **Touch / tap:** tap **✕** in the top-right corner of the overlay (48 × 48 px target).
+- **Keyboard / switch:** press **Escape**.
+- **Voice:** say any command via iOS Voice Control while the overlay is open.
+
+Your full chat history and AI session state are preserved when you exit. The overlay sits on top of the main panel as a separate render layer — nothing is lost when you close it.
+
+<p align="center">
+  <img src="e2e/_screenshots/bedside-overlay-closed.png" alt="After closing Bedside Mode — back to the main AI chat panel with conversation history intact" width="260">
+  <img src="e2e/_screenshots/bedside-wakeword-statusbar.png" alt="Main panel status bar showing 'Hey Prism active' with blue indicator after returning from Bedside Mode" width="260">
+</p>
+
+---
+
+### 🃏 Quick Phrase Cards — for non-verbal and non-moving users
+
+> **This is the critical path for users who cannot speak or touch the screen freely.** Quick Phrase Cards are pre-programmed communication buttons that can be activated by a single tap, eye gaze dwell, or switch scan selection. No typing. No voice. No internet required to use them.
+
+Each card shows a large emoji icon and a short phrase. Tapping a card immediately loads that phrase into the message bar. If **Hands-Free mode** is on, the phrase is sent to the AI automatically.
+
+#### Built-in cards
+
+Fifteen cards are pre-loaded on first use, grouped by urgency. They cannot be deleted. They work offline.
+
+**Urgent (top priority — communicate these first in a medical emergency):**
+
+| Icon | Phrase | When to use |
+|:---:|---|---|
+| 🆘 | HELP — EMERGENCY | Immediate danger, code call, any situation requiring staff now |
+| 😢 | I'm in pain | Pain of any kind — location/severity can follow in free text |
+| 🫁 | I can't breathe | Respiratory distress, airway concern, panic attack |
+| 🔔 | Call the nurse | Non-emergency staff request |
+
+**Physical needs:**
+
+| Icon | Phrase | When to use |
+|:---:|---|---|
+| 💧 | Water please | Thirst, dry mouth, medication swallowing |
+| 🔥 | I am too hot | Fever, blanket, temperature regulation |
+| 🥶 | I am too cold | Chills, blanket, room temperature |
+| ↔️ | Please reposition me | Pressure relief, comfort, post-surgical positioning |
+| 💊 | I need my medication | Scheduled dose, PRN request, pain medication |
+
+**Communication:**
+
+| Icon | Phrase | When to use |
+|:---:|---|---|
+| ✅ | Yes | Confirmation — answering caregiver yes/no questions |
+| ❌ | No | Refusal — answering caregiver yes/no questions |
+| ⏳ | Please wait | Needs a moment — do not proceed yet |
+
+**Emotional:**
+
+| Icon | Phrase | When to use |
+|:---:|---|---|
+| ❤️ | I love you | Family, emotional connection |
+| 🙏 | Thank you | Gratitude |
+| 😨 | I'm scared | Anxiety, fear, distress — triggers empathetic AI response |
+
+#### How to use Quick Phrase Cards
+
+**Single tap / eye gaze / switch selection:**
+Activating a card places its text in the message bar. The phrase can then be:
+- Sent to the AI for a contextual response (e.g. tapping "I'm scared" → AI responds with reassurance and asks follow-up questions)
+- Read as-is — caregivers in the room can see the card that was tapped on the screen
+
+**With Hands-Free mode on:**
+The phrase is sent to AI automatically the moment the card is tapped. The mic restarts 1 second after the AI responds — creating a continuous loop without any further input.
+
+**With "Hey Prism" wake word active (web / desktop):**
+Wake word + Quick Card can be combined: the user says "Hey Prism" to open the mic, the AI responds, and the user can then tap a card to continue the conversation in a different direction without speaking again.
+
+#### How to add custom cards
+
+Caregivers, BCBAs, and family members can add personalized cards tailored to the specific user's communication needs — their doctors' names, favourite phrases, specific pain descriptions, religious expressions, or anything else.
+
+**Steps:**
+
+1. Inside Bedside Mode, tap **＋ Add** at the end of the Quick Phrases strip.
+2. Type the phrase you want on the card (up to 80 characters).
+3. Tap **Add Card** — the AI automatically generates an emoji icon that matches the meaning of the phrase (e.g. "Give me more blankets" → 🛏, "I want to pray" → 🤲).
+4. The icon appears with a brief "✨ Generating…" animation, then the card is saved.
+
+Custom cards are saved locally on the device (localStorage). They persist across sessions and app restarts. No account or internet connection is required to use saved cards — only the initial icon generation requires a network call.
+
+**Example custom cards to consider adding:**
+
+| Suggested phrase | Why |
+|---|---|
+| `[Doctor's name], please come` | Faster than generic "call nurse" for a specific clinician |
+| `I need to speak to my family` | Emotional/legal situations requiring next-of-kin |
+| `Please turn off the lights` | Sensory sensitivity, migraine, sleep |
+| `I want to pray` | Spiritual care — dignity in end-of-life settings |
+| `Something feels wrong` | Vague distress signal — prompts AI to ask clarifying questions |
+| `I need the suction` | Tracheotomy / ventilator patients |
+| `My IV is hurting` | Infiltration, phlebitis alert |
+| `I want to go home` | Palliative/discharge conversations |
+
+#### How to delete custom cards
+
+1. Tap **✏️ Edit** in the Quick Phrases strip header.
+2. A red **✕** badge appears on each custom card (built-in cards are protected and cannot be removed).
+3. Tap ✕ on any card to remove it.
+4. Tap **Done** to exit edit mode.
+
+#### Switch scanning setup (iOS)
+
+For users who can only activate a single external switch (sip-and-puff, head switch, foot switch, pillow switch):
+
+1. Connect the switch to the iPhone/iPad via Bluetooth or the lightning/USB-C port.
+2. Go to **Settings → Accessibility → Switch Control → Switches** and assign the switch to "Select Item".
+3. Go to **Switch Control → Scanning Style** and choose "Auto Scanning" — the device will automatically highlight items one by one.
+4. Open Prism AAC in Bedside Mode. Switch Control will scan through the Quick Phrase Cards automatically. Activate your switch when the desired card is highlighted.
+5. The phrase is sent immediately — no second action required.
+
+> All Quick Phrase Cards carry `data-scan-group="quick-cards"` so assistive technology can group-scan the entire strip before moving to other UI regions.
+
+#### Eye gaze setup
+
+Eye gaze hardware (Tobii Dynavox, EyeGaze Edge, PCEye, MyTobii P10, etc.) presents to the operating system as a standard mouse pointer with dwell-click. No special configuration is needed in Prism AAC:
+
+1. Configure dwell time in your eye gaze device software (recommended: 800–1200 ms for first-time users).
+2. Open Prism AAC in Bedside Mode in any browser.
+3. Dwell on a Quick Phrase Card to activate it.
+
+The minimum card size (88 × 80 px) meets the WCAG 2.5.5 AAA target size requirement of 44 × 44 CSS px, and exceeds the typical minimum recommended for eye gaze interaction (60 × 60 px).
+
+---
+
 <details>
-<summary><strong>Features + technical details</strong></summary>
+<summary><strong>All features + technical implementation details</strong></summary>
 
-**Four components shipped together:**
+**Five subsystems shipped as one feature:**
 
-1. **Hands-free AI loop (🔁)** — also accessible from the main AI chat header. After each AI response the mic restarts automatically (1 s delay). A `handsFreeRef` / `startListeningRef` ref pattern ensures the effect always calls the current callback without re-running on every render.
+1. **Quick Phrase Cards** — `services/bedsideCards.ts` + strip UI in `components/BedsideOverlay.tsx`.
+
+   - Storage: `localStorage` key `prism_bedside_cards_v1`. Schema-validated on every load — malformed entries are silently dropped.
+   - Cap: 50 custom cards maximum (prevents unbounded storage growth).
+   - Built-in cards: 15 entries with `id` prefixed `builtin-`; the delete UI guard checks this prefix before showing the ✕ badge, ensuring defaults are never removed.
+   - AI icon generation: `services/aiService.ts → inferCardIcon(text)`. Uses the same local-Ollama → Synalux cloud routing chain as the rest of the app. Sends the phrase as a user message with a locked system prompt ("Reply with exactly one emoji…"). Extracts the first Unicode code point from the response. Always resolves — falls back to 💬 on network error or non-emoji response.
+   - Offline: cards work fully offline; only adding a new card requires network (for icon generation — falls back to 💬 if offline).
+
+2. **Hands-free AI loop (🔁)** — also accessible from the main AI chat header. After each AI response the mic restarts automatically (1 s delay). A `handsFreeRef` / `startListeningRef` ref pattern ensures the effect always calls the current callback without re-running on every render.
 
    ![Hands-free status bar in main AI panel](e2e/_screenshots/bedside-hands-free-statusbar.png)
 
-2. **Bedside overlay** — `fixed inset-0 z-50` fullscreen dark UI rendered as a sibling `<Fragment>` alongside the main AI panel so the panel's state is preserved. Accessibility: `role="dialog"`, `aria-modal="true"`, `aria-label="Bedside Mode"`. The overlay is independently E2E-verified to cover 100% of the viewport (≤ 4 px tolerance).
+3. **Bedside overlay** — `fixed inset-0 z-50 bg-black` fullscreen dark UI rendered as a sibling `<Fragment>` alongside the main AI panel so panel state is preserved across open/close cycles. Accessibility: `role="dialog"`, `aria-modal="true"`, `aria-label="Bedside Mode"`, WCAG 2.1 SC 2.1.2 focus trap (Tab/Shift+Tab cycles within the overlay, `Escape` closes). Viewport coverage independently E2E-verified (≤ 4 px tolerance).
 
-   - **Big mic button** — 112 × 112 px (`w-28 h-28`), red + pulsing while listening, white border at rest. Verified ≥ 96 px by Playwright `boundingBox()` assertion.
-   - **AI response area** — scrollable; each AI line is a large tap target that copies the line into the message bar.
-   - **Controls row** — Hands-Free toggle (green when on), "Hey Prism" wake word toggle (blue when on, hidden when unsupported), and iOS Voice Control shortcut.
+   - **Big mic button** — 112 × 112 px (`w-28 h-28`), red + pulsing while listening, white border at rest. Verified ≥ 96 px by Playwright `boundingBox()`.
+   - **Quick Cards strip** — horizontal scroll row, each card `88 × 80 px`, `data-scan-group="quick-cards"` for switch scan grouping, `role="list"` / `role="listitem"` for screen reader semantics.
+   - **Controls row** — Hands-Free (green when on), "Hey Prism" wake word (blue when on, hidden when `!wakeWordSupported`), iOS Voice Control shortcut.
+   - **Exit** — ✕ button (`w-12 h-12`) or `Escape` → `onClose()` → `bedsideModeActive = false` in `AIChatPanel` → WCAG 2.4.3 focus returned to the 🛏 button that opened the dialog.
 
    ![Bedside overlay — closed, back to main AI panel](e2e/_screenshots/bedside-overlay-closed.png)
 
-3. **"Hey Prism" wake word** — `services/wakeWordService.ts`. Runs a continuous `SpeechRecognition` session in the background. Detects any transcript containing "hey prism", fires the mic once, then resets for the next cycle. Not started when the iOS native bridge owns the mic (`prismNativeBridge?.startVoice` present). Wake word active state is shown in the main panel status bar after closing the overlay.
+4. **"Hey Prism" wake word** — `services/wakeWordService.ts`. Runs a continuous `SpeechRecognition` session in the background. Detects any transcript containing "hey prism", fires the mic once, then resets for the next cycle. Guard: not started when the iOS native bridge owns the mic (`prismNativeBridge?.startVoice` present). Wake word active state is shown in the main panel status bar after closing the overlay.
 
    ![Status bar showing "Hey Prism" active](e2e/_screenshots/bedside-wakeword-statusbar.png)
 
-4. **iOS Voice Control guide** — tapping 📱 in the controls row attempts `prismNativeBridge.openSettings('accessibility')` (deep-links to Accessibility on supported native builds). On web / desktop it falls back to an in-overlay instruction card that walks through `Settings → Accessibility → Voice Control → On`.
+5. **iOS Voice Control guide** — tapping 📱 in the controls row attempts `prismNativeBridge.openSettings('accessibility')` (deep-links to Accessibility on supported native builds). On web / desktop it falls back to an in-overlay instruction card that walks through `Settings → Accessibility → Voice Control → On`.
 
-   ![iOS Voice Control instruction card dismissed](e2e/_screenshots/bedside-voice-control-dismissed.png)
+   <p align="center">
+     <img src="e2e/_screenshots/bedside-voice-control-card.png" alt="iOS Voice Control instruction card — step-by-step guide shown inside the Bedside overlay when 📱 is tapped on web/desktop" width="260">
+     <img src="e2e/_screenshots/bedside-voice-control-dismissed.png" alt="iOS Voice Control instruction card after dismissal — overlay returns to normal bedside layout" width="260">
+   </p>
 
-**E2E coverage:** 17 Playwright tests in `e2e/bedside-mode.spec.ts` covering all four features — button visibility, aria-pressed toggling, green/blue state classes, status bar text, overlay accessibility attributes, mic bounding box size, viewport coverage, and instruction card show/dismiss.
+**Test coverage:**
+- `services/bedsideCards.test.ts` — 22 unit tests: default card set, localStorage round-trip, malformed JSON fallback, invalid-card filtering, 50-card cap, `createCard` field constraints.
+- `e2e/bedside-mode.spec.ts` — 17 Playwright E2E tests: button visibility, `aria-pressed` toggling, green/blue state classes, status bar text, overlay accessibility attributes, mic `boundingBox` size, viewport coverage, instruction card show/dismiss.
 
 **Key files:**
-- `components/AIChatPanel.tsx` — hands-free loop, wake word lifecycle, bedside state, header buttons
-- `components/BedsideOverlay.tsx` — overlay UI component
+- `components/AIChatPanel.tsx` — bedside state, card state (`bedsideCards`), `handleAddBedsideCard`, `handleDeleteBedsideCard`, hands-free loop, wake word lifecycle, header buttons
+- `components/BedsideOverlay.tsx` — overlay UI, Quick Cards strip, add-card dialog, edit mode, focus trap, voice control instruction card
+- `services/bedsideCards.ts` — `BedsideCard` type, `DEFAULT_BEDSIDE_CARDS`, `loadCards`, `saveCards`, `createCard`
+- `services/aiService.ts` → `inferCardIcon(text)` — AI emoji inference
 - `services/wakeWordService.ts` — continuous wake phrase detection
 </details>
 
