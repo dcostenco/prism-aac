@@ -150,6 +150,13 @@ struct PrismWebView: UIViewRepresentable {
                 window.webkit.messageHandlers.prismNative.postMessage({
                     action: 'askAI', question: question, lang: lang || 'en'
                 });
+            },
+            openSettings: function(section) {
+                // Deep-links into iOS Settings (e.g. Accessibility → Voice Control).
+                // The Swift handler whitelists the section value — no arbitrary URL injection.
+                window.webkit.messageHandlers.prismNative.postMessage({
+                    action: 'openSettings', section: section || 'accessibility'
+                });
             }
         };
         // Watch→web bridge: native side calls window.prismOnWatchMessage(payload)
@@ -312,6 +319,32 @@ struct PrismWebView: UIViewRepresentable {
                 startSpeechRecognition(lang: lang, webView: message.webView)
             case "stopVoice":
                 stopSpeechRecognition()
+            case "openSettings":
+                // Security: origin + main-frame validation (same pattern as askAI / startVoice)
+                guard let pageURL = message.webView?.url,
+                      Self.isAllowedOrigin(pageURL),
+                      message.frameInfo.isMainFrame else {
+                    return
+                }
+                let rawSection = String((body["section"] as? String ?? "accessibility").prefix(50))
+                // Whitelist-only construction — rawSection is NEVER interpolated into the URL.
+                // Unknown values fall through to the generic Accessibility root so there is
+                // no path for a compromised page to open arbitrary prefs: URLs.
+                let settingsURLString: String
+                switch rawSection {
+                case "speech":
+                    settingsURLString = "prefs:root=ACCESSIBILITY&path=SPEECH"
+                case "voiceControl":
+                    settingsURLString = "prefs:root=ACCESSIBILITY&path=VOICECONTROL"
+                case "switchControl":
+                    settingsURLString = "prefs:root=ACCESSIBILITY&path=SWITCH_CONTROL"
+                default:
+                    settingsURLString = "prefs:root=ACCESSIBILITY"
+                }
+                Task { @MainActor in
+                    guard let settingsURL = URL(string: settingsURLString) else { return }
+                    UIApplication.shared.open(settingsURL, options: [:], completionHandler: nil)
+                }
             default: break
             }
         }
