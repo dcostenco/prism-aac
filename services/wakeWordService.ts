@@ -87,6 +87,7 @@ export function startWakeWordDetection(
     // letting onend restart and spin indefinitely.
     if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
       stopped = true;
+      if (restartTimer) { clearTimeout(restartTimer); restartTimer = null; }
       return;
     }
     // Other errors are transient — let onend restart with backoff.

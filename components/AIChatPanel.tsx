@@ -297,13 +297,12 @@ export default function AIChatPanel() {
       const sentenceSafety = checkCrisisSafety(sentence);
       if (!sentenceSafety.safe) {
         cancelled = true;
-        // Abort the HTTP stream immediately — without this, the model keeps
-        // pushing tokens into onChunk which appends them to buffer even though
-        // we've overwritten buffer with the safe crisis response.
-        askController.abort();
         queueTimers.forEach(clearTimeout);
         buffer = sentenceSafety.response;
+        // flush() reads askController.signal.aborted — call it BEFORE abort()
+        // so the crisis response is actually rendered. abort() terminates the stream.
         flush();
+        askController.abort();
         return;
       }
       sentenceQueue.push(sentence.trim());

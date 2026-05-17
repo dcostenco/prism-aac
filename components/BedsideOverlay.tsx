@@ -85,7 +85,13 @@ export default function BedsideOverlay({
           if (focusable && focusable.length > 0) {
             const first = focusable[0];
             const last = focusable[focusable.length - 1];
-            if (e.shiftKey ? document.activeElement === first : document.activeElement === last) {
+            const arr = Array.from(focusable);
+            // idx === -1 when focus is on the container div (tabIndex=-1, excluded
+            // from query) or any element outside the focusable list. In that case
+            // treat it as a boundary so Tab enters the trap rather than escaping.
+            const idx = arr.indexOf(document.activeElement as HTMLElement);
+            const atBoundary = e.shiftKey ? idx <= 0 : idx === -1 || idx === arr.length - 1;
+            if (atBoundary) {
               e.preventDefault();
               (e.shiftKey ? last : first).focus();
             }

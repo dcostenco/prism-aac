@@ -7,12 +7,11 @@
  * Also post-checks AI responses before display.
  */
 
-// Use word-boundary matching to prevent false positives
-// e.g. "sos" inside "osmosis", "please help" inside "pleasantly helpful"
-function wordBoundaryMatch(text: string, phrase: string): boolean {
+// Compile a phrase to a Unicode-aware word-boundary regex. Prevents false positives
+// e.g. "sos" inside "osmosis", "please help" inside "pleasantly helpful".
+function compilePhrase(phrase: string): RegExp {
   const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+');
-  // Use Unicode-aware word boundaries so Cyrillic/Arabic/CJK phrases match correctly
-  return new RegExp(`(?:^|[^\\p{L}])${escaped}(?:$|[^\\p{L}])`, 'iu').test(text);
+  return new RegExp(`(?:^|[^\\p{L}])${escaped}(?:$|[^\\p{L}])`, 'iu');
 }
 
 const CRISIS_KEYWORDS = new Set([
@@ -59,6 +58,16 @@ const MEDICAL_DOSE_KEYWORDS = new Set([
   'insulin dose', 'how much insulin', 'seizure medication dose',
 ]);
 
+// Pre-compiled at module load — checkCrisisSafety is called synchronously on every
+// streaming chunk (inside onChunk → enqueueSentence). Constructing RegExp objects
+// inside the hot path caused 650–1300 compilations per response on low-end iOS.
+const CRISIS_RES: RegExp[] = [
+  ...[...CRISIS_KEYWORDS],
+  ...[...CRISIS_KEYWORDS_MULTILINGUAL],
+].map(compilePhrase);
+
+const MEDICAL_RES: RegExp[] = [...MEDICAL_DOSE_KEYWORDS].map(compilePhrase);
+
 export type SafetyResult =
   | { safe: true }
   | { safe: false; kind: 'crisis' | 'medical'; response: string };
@@ -80,21 +89,12 @@ export function checkCrisisSafety(input: string): SafetyResult {
     ].join('\n'),
   };
 
-  for (const kw of CRISIS_KEYWORDS) {
-    if (wordBoundaryMatch(lower, kw)) {
-      return crisisResponse;
-    }
+  for (const re of CRISIS_RES) {
+    if (re.test(lower)) return crisisResponse;
   }
 
-  const allMultilingualKeywords = [...CRISIS_KEYWORDS_MULTILINGUAL];
-  for (const kw of allMultilingualKeywords) {
-    if (wordBoundaryMatch(lower, kw)) {
-      return crisisResponse;
-    }
-  }
-
-  for (const kw of MEDICAL_DOSE_KEYWORDS) {
-    if (wordBoundaryMatch(lower, kw)) {
+  for (const re of MEDICAL_RES) {
+    if (re.test(lower)) {
       return {
         safe: false,
         kind: 'medical',

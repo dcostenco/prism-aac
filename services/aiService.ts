@@ -97,6 +97,10 @@ async function ollamaPull(tag: string): Promise<boolean> {
   }
 }
 
+// In-flight guard: prevents concurrent calls (e.g. React Strict Mode double-invoke)
+// from starting two parallel 9–19 GB model pulls against the same Ollama instance.
+let _sideloadInFlight: Promise<void> | null = null;
+
 /**
  * Auto-sideload: runs once on app mount. Detects Ollama, checks installed
  * models, pulls the best one that isn't already present. Non-blocking.
@@ -104,7 +108,13 @@ async function ollamaPull(tag: string): Promise<boolean> {
  * Goal: avoid cloud calls. If the user has Ollama running, get a local
  * model installed so route() uses it instead of Synalux API.
  */
-export async function autoSideload(): Promise<void> {
+export function autoSideload(): Promise<void> {
+  if (_sideloadInFlight) return _sideloadInFlight;
+  _sideloadInFlight = _doAutoSideload().finally(() => { _sideloadInFlight = null; });
+  return _sideloadInFlight;
+}
+
+async function _doAutoSideload(): Promise<void> {
   if (typeof window === 'undefined') return;
   if (window.location.protocol === 'https:') return;
 
@@ -121,7 +131,7 @@ export async function autoSideload(): Promise<void> {
     return;
   }
 
-  // Pick best model — try 14B first, fall back to 8B, then 1.7B
+  // Pick best model — try 32B first, fall back to 14B
   for (const { tag } of PULLABLE_MODELS) {
     if (await ollamaPull(tag)) {
       sessionStorage.setItem(SIDELOAD_KEY, 'done');
@@ -351,6 +361,19 @@ async function callSynalux(
           } catch { /* incomplete chunk */ }
         }
       }
+      // Flush buffered bytes left by { stream: true } — a multi-byte CJK character
+      // split across the final two chunks would otherwise be silently dropped.
+      const flushed = decoder.decode();
+      if (flushed) {
+        for (const line of flushed.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const parsed = JSON.parse(line.slice(6));
+            const delta = parsed?.choices?.[0]?.delta?.content || '';
+            if (delta) { fullText += delta; options?.onChunk?.(delta); }
+          } catch { /* */ }
+        }
+      }
     } finally {
       t.cancel();
     }
@@ -562,7 +585,8 @@ async function route(
     try {
       const raw = await callLocal(fullPrompt, options?.signal);
       return stripModelControlTokens(raw);
-    } catch {
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') throw e;
       // Local unavailable — continue to cloud
     }
   }
@@ -706,7 +730,8 @@ export async function askAI(
       if (text.length >= 12) {
         return { text, lines: text.split(/\n+/).filter((l) => l.trim()) };
       }
-    } catch {
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') throw e;
       // Fall through to cloud/local
     }
   }
@@ -764,6 +789,21 @@ export async function parseCaregiverNote(rawNoteText: string, signal?: AbortSign
         if (typeof p.name === 'string') p.name = p.name.slice(0, 80);
         if (typeof p.categoryId === 'string') p.categoryId = p.categoryId.slice(0, 80);
         if (typeof p.word === 'string') p.word = p.word.slice(0, 100);
+        if (typeof p.boostCount === 'number') p.boostCount = Math.max(0, Math.min(100, Math.floor(p.boostCount)));
+        if (typeof p.newSortOrder === 'number') p.newSortOrder = Math.max(0, Math.min(10000, Math.floor(p.newSortOrder)));
+        if (Array.isArray(p.steps)) {
+          p.steps = (p.steps as unknown[]).slice(0, 20).map((step: unknown) => {
+            if (!step || typeof step !== 'object') return step;
+            const s = step as Record<string, unknown>;
+            if (typeof s.label === 'string') s.label = s.label.slice(0, 100);
+            if (Array.isArray(s.options)) {
+              s.options = (s.options as unknown[]).slice(0, 20).map((o: unknown) =>
+                typeof o === 'string' ? o.slice(0, 200) : '',
+              );
+            }
+            return s;
+          });
+        }
       }
       if (typeof a.description === 'string') a.description = a.description.slice(0, 500);
       return true;
