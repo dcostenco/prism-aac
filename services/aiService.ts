@@ -725,11 +725,21 @@ export async function askAI(
   // right now." placeholder yielded when the GGUF isn't loaded.
   if (isNativeBridgeAvailable() && !context) {
     try {
-      const raw = await callNativeBridge(cappedQuestion, language, onChunk, signal);
+      // Collect native tokens into an isolated buffer — do NOT feed the caller's
+      // onChunk directly. If the bridge emits partial tokens before a short-response
+      // fallthrough, the caller's buffer would be contaminated and the subsequent
+      // route() call would append cloud tokens onto stale native text (garbled output).
+      let nativeChunks = '';
+      const nativeOnChunk = (delta: string) => { nativeChunks += delta; };
+      const raw = await callNativeBridge(cappedQuestion, language, nativeOnChunk, signal);
       const text = stripModelControlTokens(raw).trim();
       if (text.length >= 12) {
+        // Replay the collected tokens into the real onChunk now that we know
+        // the response is good — this populates the caller's buffer for TTS.
+        if (onChunk && nativeChunks) onChunk(nativeChunks);
         return { text, lines: text.split(/\n+/).filter((l) => l.trim()) };
       }
+      // nativeChunks discarded — caller's buffer stays clean for route() below
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') throw e;
       // Fall through to cloud/local

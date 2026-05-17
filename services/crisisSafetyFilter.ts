@@ -68,6 +68,16 @@ const CRISIS_RES: RegExp[] = [
 
 const MEDICAL_RES: RegExp[] = [...MEDICAL_DOSE_KEYWORDS].map(compilePhrase);
 
+// CJK-specific fast-pass: Japanese/Korean/Chinese write without word separators so
+// the [^\p{L}] boundary anchors in compilePhrase() never match within natural sentences
+// (e.g. "わたしはしにたいです" → "I want to die" in polite Japanese — で is \p{L}).
+// Simple substring includes() is used instead.
+const CJK_CRISIS_SUBSTRINGS: string[] = [
+  'しにたい', 'たすけて', 'いきができない',    // Japanese
+  '죽고 싶어', '도와주세요', '숨을 못 쉬어요',  // Korean
+  '我想死', '救命', '我不能呼吸',              // Chinese
+];
+
 export type SafetyResult =
   | { safe: true }
   | { safe: false; kind: 'crisis' | 'medical'; response: string };
@@ -88,6 +98,11 @@ export function checkCrisisSafety(input: string): SafetyResult {
       "I'm here with you. You are not alone.",
     ].join('\n'),
   };
+
+  // CJK fast-pass before regex loop (word-boundary anchors fail in logographic scripts)
+  for (const kw of CJK_CRISIS_SUBSTRINGS) {
+    if (lower.includes(kw)) return crisisResponse;
+  }
 
   for (const re of CRISIS_RES) {
     if (re.test(lower)) return crisisResponse;

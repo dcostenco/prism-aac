@@ -132,7 +132,7 @@ export default function BedsideOverlay({
 
         {lines.map((line, i) => (
           <button
-            key={`bedside-line-${i}-${line.slice(0, 10)}`}
+            key={`bedside-line-${i}`}
             onClick={() => { tapFeedback(); onTapLine(line); }}
             aria-label={`Use: ${line}`}
             className="aac-btn block w-full text-left rounded-2xl p-5 bg-white/5 border border-white/10 active:bg-white/15"

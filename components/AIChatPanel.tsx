@@ -251,6 +251,12 @@ export default function AIChatPanel() {
         { id: Math.random().toString(36).slice(2), role: 'ai' as const, text: safety.response, lines: safety.response.split('\n').filter(Boolean) },
       ].slice(-MAX_MESSAGES) as ChatMessage[]);
       isLoadingRef.current = false;
+      // Speak crisis response immediately — nonverbal child cannot read the screen.
+      // Must be after setMessages so TTS and UI update together, not before.
+      if (useMessageStore.getState().soundEnabled) {
+        const { speechRate: sr, speechVolume: sv } = useSettingsStore.getState();
+        aacSpeak(safety.response, sr, sv, 'serious', true);
+      }
       return;
     }
 
@@ -270,6 +276,7 @@ export default function AIChatPanel() {
     const sentenceQueue: string[] = [];
     let speaking = false;
     let cancelled = false;
+    let bufferIsCleanCrisisResponse = false;
     const queueTimers: ReturnType<typeof setTimeout>[] = [];
 
     const drainQueue = () => {
@@ -282,10 +289,12 @@ export default function AIChatPanel() {
       if (speaking || sentenceQueue.length === 0 || !se) return;
       speaking = true;
       const sentence = sentenceQueue.shift()!;
-      if (!cancelled) aacSpeak(sentence, sr, sv, undefined, true);
       const dur = estimateSpeechDurationMs(sentence, Math.max(0.1, sr) * 0.6) + 300;
       const timer = setTimeout(() => { if (!cancelled) { speaking = false; drainQueue(); } }, dur);
+      // Push BEFORE aacSpeak so any crisis handler that clears queueTimers
+      // synchronously during speech teardown always finds this timer in the array.
       queueTimers.push(timer);
+      if (!cancelled) aacSpeak(sentence, sr, sv, undefined, true);
     };
 
     const enqueueSentence = (sentence: string) => {
@@ -299,9 +308,15 @@ export default function AIChatPanel() {
         cancelled = true;
         queueTimers.forEach(clearTimeout);
         buffer = sentenceSafety.response;
+        bufferIsCleanCrisisResponse = true;
         // flush() reads askController.signal.aborted — call it BEFORE abort()
         // so the crisis response is actually rendered. abort() terminates the stream.
         flush();
+        // Speak crisis response — nonverbal child cannot read the screen.
+        if (useMessageStore.getState().soundEnabled) {
+          const { speechRate: sr, speechVolume: sv } = useSettingsStore.getState();
+          aacSpeak(sentenceSafety.response, sr, sv, 'serious', true);
+        }
         askController.abort();
         return;
       }
@@ -332,7 +347,9 @@ export default function AIChatPanel() {
       if (askController.signal.aborted) return;
       scheduled = false;
       const tx = buffer;
-      const safeguard = checkCrisisSafety(tx);
+      // Skip re-check when buffer is already the crisis response — the text contains
+      // "call 911" / "988" which would re-trigger the filter and waste 100+ regex evals.
+      const safeguard = bufferIsCleanCrisisResponse ? { safe: true as const } : checkCrisisSafety(tx);
       const safeText = safeguard.safe ? tx : safeguard.response;
       const lines = safeText.split(/\n+/).filter((l) => l.trim());
       setMessages((prev) => {
@@ -633,7 +650,7 @@ export default function AIChatPanel() {
                   <div className="space-y-2">
                     {(msg.lines ?? [msg.text]).map((line, li) => (
                       <button
-                        key={`line-${li}-${line.slice(0, 12)}`}
+                        key={`line-${msg.id}-${li}`}
                         onClick={() => handleTapLine(line)}
                         aria-label={`Use: ${line}`}
                         className="aac-btn block w-full text-left rounded-lg p-2 hover:bg-black/5 transition-colors"
