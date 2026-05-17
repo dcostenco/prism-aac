@@ -41,6 +41,7 @@ export default function BedsideOverlay({
 }: BedsideOverlayProps) {
   const [showVoiceControlCard, setShowVoiceControlCard] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const voiceCtrlBtnRef = useRef<HTMLButtonElement>(null);
 
   // Focus the overlay container on mount so keyboard/iOS Voice Control users
   // start inside the modal. WCAG 2.1 SC 2.1.2 requires focus to be trapped.
@@ -70,6 +71,21 @@ export default function BedsideOverlay({
       data-testid="bedside-overlay"
       tabIndex={-1}
       onKeyDown={(e) => {
+        // Tab trap — cycle focus within the overlay so Tab/Shift+Tab cannot
+        // escape into underlying app content (WCAG 2.1 SC 2.1.2).
+        if (e.key === 'Tab') {
+          const focusable = overlayRef.current?.querySelectorAll<HTMLElement>(
+            'button, [tabindex]:not([tabindex="-1"])',
+          );
+          if (focusable && focusable.length > 0) {
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey ? document.activeElement === first : document.activeElement === last) {
+              e.preventDefault();
+              (e.shiftKey ? last : first).focus();
+            }
+          }
+        }
         if (e.key === 'Escape' && !showVoiceControlCard) { tapFeedback(); onClose(); }
       }}
       className="fixed inset-0 z-50 bg-black flex flex-col select-none outline-none"
@@ -181,6 +197,7 @@ export default function BedsideOverlay({
 
         {/* iOS Voice Control */}
         <button
+          ref={voiceCtrlBtnRef}
           onClick={openVoiceControl}
           aria-label="Enable iOS Voice Control"
           className="flex-1 flex items-center justify-center gap-2 h-14 rounded-2xl text-base font-semibold bg-white/10 text-white/70"
@@ -210,8 +227,19 @@ export default function BedsideOverlay({
           <button
             // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
-            onClick={() => { tapFeedback(); setShowVoiceControlCard(false); }}
-            onKeyDown={(e) => { if (e.key === 'Escape') { tapFeedback(); setShowVoiceControlCard(false); } }}
+            onClick={() => {
+              tapFeedback();
+              setShowVoiceControlCard(false);
+              // WCAG 2.4.3: return focus to the element that opened this dialog
+              setTimeout(() => voiceCtrlBtnRef.current?.focus(), 0);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                tapFeedback();
+                setShowVoiceControlCard(false);
+                setTimeout(() => voiceCtrlBtnRef.current?.focus(), 0);
+              }
+            }}
             className="mt-2 w-full h-16 rounded-2xl bg-white/20 text-white text-xl font-bold active:bg-white/30"
           >
             Got it

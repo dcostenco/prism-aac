@@ -248,7 +248,7 @@ export default function AIChatPanel() {
         ...m,
         { role: 'user' as const, text: question },
         { role: 'ai' as const, text: safety.response, lines: safety.response.split('\n').filter(Boolean) },
-      ]);
+      ].slice(-MAX_MESSAGES) as ChatMessage[]);
       isLoadingRef.current = false;
       return;
     }
@@ -289,6 +289,18 @@ export default function AIChatPanel() {
 
     const enqueueSentence = (sentence: string) => {
       if (!sentence.trim()) return;
+      // Apply crisis filter per-sentence before TTS — flush() runs on a
+      // requestAnimationFrame tick AFTER onChunk, so a jailbroken model
+      // streaming a harmful sentence would speak it before the full-buffer
+      // check in flush() fires. Check here to intercept at enqueue time.
+      const sentenceSafety = checkCrisisSafety(sentence);
+      if (!sentenceSafety.safe) {
+        cancelled = true;
+        queueTimers.forEach(clearTimeout);
+        buffer = sentenceSafety.response;
+        flush();
+        return;
+      }
       sentenceQueue.push(sentence.trim());
       drainQueue();
     };
@@ -439,6 +451,7 @@ export default function AIChatPanel() {
   // Stop voice, abort in-flight AI request, and reset scroll-tracking ref on unmount.
   useEffect(() => {
     return () => {
+      activeRef.current = false;
       askAbortRef.current?.abort();
       askAbortRef.current = null;
       wakeWordSessionRef.current?.stop();
@@ -456,6 +469,9 @@ export default function AIChatPanel() {
   const toggleVoice = () => {
     tapFeedback();
     if (voiceRef.current) {
+      // Cancel the 600 ms silence finalize before stopping the session so it
+      // cannot fire after the user has explicitly dismissed the mic.
+      if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
       voiceRef.current.stop();
       voiceRef.current = null;
       setListening(false);

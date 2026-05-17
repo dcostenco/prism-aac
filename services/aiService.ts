@@ -358,9 +358,17 @@ async function callSynalux(
     return fullText;
   }
 
+  // Non-streaming path: guard against oversized JSON bodies (no stream reader
+  // to cancel mid-flight). Content-Length is advisory only, but catches obvious
+  // bombs. The returned content string is capped at 32 KB to match the streaming
+  // buffer limit in handleAsk — a rogue response cannot exhaust tab memory.
+  const cl = Number(res.headers.get('content-length') || '0');
+  if (cl > 1_048_576) { t.cancel(); throw new Error(`Synalux API response too large (${cl} bytes)`); }
   try {
     const data = await res.json();
-    return data?.choices?.[0]?.message?.content || data?.content || '';
+    const content: string = data?.choices?.[0]?.message?.content || data?.content || '';
+    if (content.length > 32_000) throw new Error('Synalux API response content too large');
+    return content;
   } finally {
     t.cancel();
   }
@@ -390,6 +398,10 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
     const data = await res.json();
     return data?.response ?? '';
   } catch (e) {
+    // AbortError must propagate — converting it to a plain Error makes callLocal
+    // retry the next model (wasting time) and relies on callSynalux's upfront
+    // signal.aborted check as an implicit escape valve that could be removed.
+    if (e instanceof DOMException && e.name === 'AbortError') throw e;
     const msg = e instanceof TypeError
       ? 'Local AI unavailable — requires running the app locally (not HTTPS) or configuring Ollama CORS'
       : `Local AI unavailable (${model})`;
@@ -402,7 +414,7 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
 function isConfidentResponse(text: string): boolean {
   if (!text || text.trim().length < 2) return false;
   const hasToolCall = text.includes('<|tool_call|>');
-  const hasPlainText = text.trim().length > 10 && !hasToolCall;
+  const hasPlainText = text.trim().length >= 10 && !hasToolCall;
   if (hasToolCall) {
     // Any tool-call bleed indicates model confusion or prompt injection.
     // Reject the response entirely rather than selectively accepting "known"
@@ -703,7 +715,7 @@ export async function askAI(
   return { text, lines };
 }
 
-export async function parseCaregiverNote(rawNoteText: string): Promise<ParsedNoteResult> {
+export async function parseCaregiverNote(rawNoteText: string, signal?: AbortSignal): Promise<ParsedNoteResult> {
   if (!rawNoteText?.trim()) return { actions: [{ type: 'note_only', description: 'Empty note', payload: {} }], summary: '' };
   // Cap at 2000 chars and JSON-encode so structural chars ({, }, [, ], :, quotes,
   // newlines, backslashes) become escaped sequences — structurally inert to the LLM parser.
@@ -733,7 +745,7 @@ export async function parseCaregiverNote(rawNoteText: string): Promise<ParsedNot
     'Return JSON array like: [{"type":"add_phrase","description":"...","payload":{...}}]',
   ].join('\n');
 
-  const raw = await route(prompt);
+  const raw = await route(prompt, { signal });
 
   try {
     const cleaned = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
