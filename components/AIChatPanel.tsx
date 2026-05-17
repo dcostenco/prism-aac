@@ -78,6 +78,10 @@ export default function AIChatPanel() {
   // unmount/panel-close — otherwise it fires after cleanup and calls handleAskRef
   // with stale refs (setListening, appendText, etc.).
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track the 80 ms post-correctText delay before handleAsk fires. Untracked,
+  // it can call handleAsk on a closed/unmounted panel (correctText has no
+  // AbortSignal, so it resolves up to 5 s after the panel closes).
+  const finalizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voiceSupported = isVoiceInputSupported();
   const wakeWordSupported = isWakeWordSupported();
   const activeRef = useRef(sidePanel === 'ai-chat');
@@ -142,7 +146,12 @@ export default function AIChatPanel() {
         // finalize to avoid appending to a mid-capture voice session.
         if (voiceRef.current) return;
         appendText((fixed || trimmed) + ' ');
-        setTimeout(() => { handleAskRef.current?.(); }, 80);
+        if (finalizeTimerRef.current) clearTimeout(finalizeTimerRef.current);
+        finalizeTimerRef.current = setTimeout(() => {
+          finalizeTimerRef.current = null;
+          if (!activeRef.current) return;  // panel may have closed during 80 ms
+          handleAskRef.current?.();
+        }, 80);
       });
     };
     const session = startVoiceInput({
@@ -352,7 +361,10 @@ export default function AIChatPanel() {
       }
       if (lastEnd > 0) {
         spokenUpTo += lastEnd;
-        for (const s of sentences) enqueueSentence(s);
+        for (const s of sentences) {
+          enqueueSentence(s);
+          if (cancelled) break;  // crisis fired — discard remaining sentences
+        }
       }
     };
 
@@ -380,7 +392,7 @@ export default function AIChatPanel() {
       const targetLang = needsTranslation ? outputLang : (outputLang || inputLang);
 
       const onChunk = (delta: string) => {
-        if (cancelled) return;
+        if (cancelled || askController.signal.aborted) return;
         if (buffer.length < 32_000) {
           buffer += delta;
         } else if (!buffer.endsWith('…')) {
@@ -472,6 +484,7 @@ export default function AIChatPanel() {
       wakeWordSessionRef.current?.stop();
       wakeWordSessionRef.current = null;
       if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
+      if (finalizeTimerRef.current) { clearTimeout(finalizeTimerRef.current); finalizeTimerRef.current = null; }
       if (voiceRef.current) {
         voiceRef.current.stop();
         voiceRef.current = null;
@@ -497,6 +510,7 @@ export default function AIChatPanel() {
       wasLoadingRef.current = false;
       if (micErrorTimerRef.current) clearTimeout(micErrorTimerRef.current);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (finalizeTimerRef.current) { clearTimeout(finalizeTimerRef.current); finalizeTimerRef.current = null; }
     };
   }, []);
 
