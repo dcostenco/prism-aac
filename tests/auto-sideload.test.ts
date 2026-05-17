@@ -3,9 +3,12 @@
  *
  * Verifies that the web app automatically detects Ollama and pulls
  * the best prism-coder model — avoiding cloud calls at all cost.
+ *
+ * Pull priority: 32B first (99% accuracy), 14B fallback (97%, fits more devices).
+ * Local cascade: 14B → 32B → cloud Claude.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { autoSideload, getSideloadStatus } from '@/services/aiService';
+import { autoSideload, getSideloadStatus, askAI } from '@/services/aiService';
 
 let fetchSpy: ReturnType<typeof vi.spyOn>;
 const fetchCalls: Array<{ url: string; body?: any }> = [];
@@ -46,7 +49,7 @@ describe('autoSideload', () => {
     expect(fetchCalls.every(c => !c.url.includes('/api/pull'))).toBe(true);
   });
 
-  it('pulls 14B first when Ollama is online and no model installed', async () => {
+  it('pulls 32B first (best quality) when Ollama is online and no model installed', async () => {
     let pullTag = '';
     fetchSpy.mockImplementation(async (url: any, init: any) => {
       const urlStr = typeof url === 'string' ? url : url.toString();
@@ -59,7 +62,6 @@ describe('autoSideload', () => {
       if (urlStr.includes('/api/pull')) {
         const body = JSON.parse(init?.body || '{}');
         pullTag = body.name;
-        // Simulate streaming pull completion
         const stream = new ReadableStream({
           start(controller) {
             controller.enqueue(new TextEncoder().encode('{"status":"success"}\n'));
@@ -72,21 +74,20 @@ describe('autoSideload', () => {
     });
 
     await autoSideload();
-    expect(pullTag).toBe('dcostenco/prism-coder:14b');
+    expect(pullTag).toBe('dcostenco/prism-coder:32b');
     expect(getSideloadStatus().state).toBe('done');
   });
 
   it('does not re-pull on second call (session cached)', async () => {
-    // Simulate first run already completed
     sessionStorage.setItem('prism-aac-sideload-status', 'done');
     fetchSpy.mockImplementation(async () => new Response('', { status: 200 }));
 
     await autoSideload();
-    expect(fetchCalls.length).toBe(0); // no fetch calls at all
+    expect(fetchCalls.length).toBe(0);
   });
 
-  it('falls through to 8B if 14B pull fails', async () => {
-    let pullAttempts: string[] = [];
+  it('falls through to 14B if 32B pull fails (low disk)', async () => {
+    const pullAttempts: string[] = [];
     fetchSpy.mockImplementation(async (url: any, init: any) => {
       const urlStr = typeof url === 'string' ? url : url.toString();
 
@@ -97,11 +98,10 @@ describe('autoSideload', () => {
       if (urlStr.includes('/api/pull')) {
         const body = JSON.parse(init?.body || '{}');
         pullAttempts.push(body.name);
-        if (body.name.includes('14b')) {
-          // 14B pull fails (disk full, etc.)
-          return new Response('', { status: 500 });
+        if (body.name.includes('32b')) {
+          return new Response('', { status: 500 }); // 32B fails — disk full
         }
-        // 8B succeeds
+        // 14B succeeds
         const stream = new ReadableStream({
           start(controller) {
             controller.enqueue(new TextEncoder().encode('{"status":"success"}\n'));
@@ -114,19 +114,16 @@ describe('autoSideload', () => {
     });
 
     await autoSideload();
-    expect(pullAttempts).toContain('dcostenco/prism-coder:14b');
-    expect(pullAttempts).toContain('dcostenco/prism-coder:8b-v29');
+    expect(pullAttempts[0]).toBe('dcostenco/prism-coder:32b');
+    expect(pullAttempts[1]).toBe('dcostenco/prism-coder:14b');
     expect(getSideloadStatus().state).toBe('done');
-    expect(getSideloadStatus().model).toBe('dcostenco/prism-coder:8b-v29');
+    expect(getSideloadStatus().model).toBe('dcostenco/prism-coder:14b');
   });
 });
 
-describe('Model cascade includes 8B', () => {
-  it('LOCAL_MODELS contains 14b, 8b, and 1b7 in priority order', async () => {
-    // Import and check the module's model list
+describe('Model cascade: 14B → 32B → cloud', () => {
+  it('LOCAL_MODELS contains 14b and 32b in priority order', async () => {
     const mod = await import('@/services/aiService');
-    // The cascade is internal but we can verify behavior:
-    // when 14B fails, it should try 8B before 1.7B
     let callCount = 0;
     const modelsCalled: string[] = [];
 
@@ -136,19 +133,21 @@ describe('Model cascade includes 8B', () => {
         callCount++;
         const body = JSON.parse(init?.body || '{}');
         if (body.model) modelsCalled.push(body.model);
-        if (callCount <= 2) throw new Error('Model not loaded'); // 14B and 8B fail
-        // 1.7B succeeds
+        if (callCount === 1) throw new Error('14B not loaded');
+        // 32B succeeds
         return new Response(JSON.stringify({
-          response: 'Fallback from 1.7B — here are some phrases.',
+          response: 'Here are some phrases you can use to ask for help.',
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
       return new Response('', { status: 503 });
     });
 
     const result = await mod.askAI('Phrases for help');
-    expect(modelsCalled.length).toBe(3);
+    expect(modelsCalled.length).toBe(2);
     expect(modelsCalled[0]).toContain('14b');
-    expect(modelsCalled[1]).toContain('8b');
-    expect(modelsCalled[2]).toContain('1b7');
+    expect(modelsCalled[1]).toContain('32b');
+    // 8B and 1.7B are iOS/edge only — not in desktop cascade
+    expect(modelsCalled.some(m => m.includes('8b'))).toBe(false);
+    expect(modelsCalled.some(m => m.includes('1b7'))).toBe(false);
   });
 });
