@@ -66,6 +66,11 @@ export default function AIChatPanel() {
   // before the first re-render). Set to true synchronously at the top of
   // handleAsk; cleared at every exit path before setLoading(false).
   const isLoadingRef = useRef(false);
+  // Timestamp of last crisis intervention — suppresses hands-free mic auto-restart
+  // for 30 s after a crisis response so TTS audio bleed cannot re-trigger the filter
+  // (SpeechRecognition hears "call 911" from the speaker and loops indefinitely).
+  const lastCrisisAtRef = useRef<number>(0);
+  const HANDS_FREE_CRISIS_SUPPRESS_MS = 30_000;
   // Track micError dismiss timers so we can clear them on unmount (avoids
   // setState-on-unmounted-component warnings and timer leaks).
   const micErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -192,15 +197,22 @@ export default function AIChatPanel() {
   useEffect(() => { startListeningRef.current = startListening; }, [startListening]);
 
   // Hands-free: auto-restart mic 1 s after the AI response completes.
+  // Suppressed for 30 s after a crisis intervention — otherwise TTS audio bleed
+  // ("call 911", "988") is picked up by SpeechRecognition, re-triggers the crisis
+  // filter, and creates an infinite crisis-response → mic-restart loop.
   useEffect(() => {
     if (loading || !handsFreeModeActive || listening) return;
+    if (Date.now() - lastCrisisAtRef.current < HANDS_FREE_CRISIS_SUPPRESS_MS) return;
     const timer = setTimeout(() => {
-      if (!voiceRef.current && handsFreeRef.current && activeRef.current) {
+      if (
+        !voiceRef.current && handsFreeRef.current && activeRef.current &&
+        Date.now() - lastCrisisAtRef.current >= HANDS_FREE_CRISIS_SUPPRESS_MS
+      ) {
         startListeningRef.current?.();
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [loading, handsFreeModeActive, listening]);
+  }, [loading, handsFreeModeActive, listening, HANDS_FREE_CRISIS_SUPPRESS_MS]);
 
   // Wake word: run a background "Hey Prism" detector when idle.
   // Skipped when hands-free is on (auto-restart supersedes it) or
@@ -251,6 +263,7 @@ export default function AIChatPanel() {
         { id: Math.random().toString(36).slice(2), role: 'ai' as const, text: safety.response, lines: safety.response.split('\n').filter(Boolean) },
       ].slice(-MAX_MESSAGES) as ChatMessage[]);
       isLoadingRef.current = false;
+      lastCrisisAtRef.current = Date.now();
       // Speak crisis response immediately — nonverbal child cannot read the screen.
       // Must be after setMessages so TTS and UI update together, not before.
       if (useMessageStore.getState().soundEnabled) {
@@ -312,6 +325,7 @@ export default function AIChatPanel() {
         // flush() reads askController.signal.aborted — call it BEFORE abort()
         // so the crisis response is actually rendered. abort() terminates the stream.
         flush();
+        lastCrisisAtRef.current = Date.now();
         // Speak crisis response — nonverbal child cannot read the screen.
         if (useMessageStore.getState().soundEnabled) {
           const { speechRate: sr, speechVolume: sv } = useSettingsStore.getState();

@@ -89,6 +89,15 @@ async function ollamaPull(tag: string): Promise<boolean> {
         } catch { /* partial JSON line */ }
       }
     }
+    // Flush buffered bytes left by { stream: true } — catch a success status
+    // that arrived in the final partial UTF-8 chunk.
+    const flushed = decoder.decode();
+    if (flushed.trim()) {
+      try {
+        const j = JSON.parse(flushed);
+        if (j.status === 'success') { sideloadStatus = { state: 'done', model: tag }; return true; }
+      } catch { /* partial JSON */ }
+    }
     sideloadStatus = { state: 'done', model: tag };
     return true;
   } catch {

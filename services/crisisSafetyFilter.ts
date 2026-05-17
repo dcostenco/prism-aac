@@ -73,9 +73,9 @@ const MEDICAL_RES: RegExp[] = [...MEDICAL_DOSE_KEYWORDS].map(compilePhrase);
 // (e.g. "わたしはしにたいです" → "I want to die" in polite Japanese — で is \p{L}).
 // Simple substring includes() is used instead.
 const CJK_CRISIS_SUBSTRINGS: string[] = [
-  'しにたい', 'たすけて', 'いきができない',    // Japanese
-  '죽고 싶어', '도와주세요', '숨을 못 쉬어요',  // Korean
-  '我想死', '救命', '我不能呼吸',              // Chinese
+  'しにたい', 'たすけて', 'いきができない', '119にかけて',    // Japanese
+  '죽고 싶어', '도와주세요', '숨을 못 쉬어요', '119에 전화해', // Korean
+  '我想死', '救命', '我不能呼吸', '打911',                   // Chinese
 ];
 
 export type SafetyResult =
