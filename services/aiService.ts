@@ -26,7 +26,7 @@ import { getPhraseText } from '@/constants/phraseTranslations';
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
-const LOCAL_MODELS = ['prism-coder:14b', 'prism-coder:8b-v29', 'prism-coder:1b7'] as const;
+const LOCAL_MODELS = ['prism-coder:14b', 'prism-coder:32b'] as const;
 const LOCAL_MODEL = LOCAL_MODELS[0];
 
 // ── Auto-sideload: detect Ollama → pull best model → avoid cloud ──
@@ -40,9 +40,8 @@ let sideloadStatus: SideloadStatus = { state: 'idle' };
 export function getSideloadStatus(): SideloadStatus { return sideloadStatus; }
 
 const PULLABLE_MODELS = [
-  { tag: 'dcostenco/prism-coder:14b',     sizeGB: 9.3, accuracy: 97 },
-  { tag: 'dcostenco/prism-coder:8b-v29',  sizeGB: 4.7, accuracy: 96 },
-  { tag: 'dcostenco/prism-coder:1b7',     sizeGB: 1.1, accuracy: 100 },
+  { tag: 'dcostenco/prism-coder:32b', sizeGB: 19.0, accuracy: 99 },
+  { tag: 'dcostenco/prism-coder:14b', sizeGB: 9.3,  accuracy: 97 },
 ] as const;
 
 async function ollamaReachable(): Promise<boolean> {
@@ -391,7 +390,7 @@ function isConfidentResponse(text: string): boolean {
 async function callLocal(prompt: string): Promise<string> {
   for (const model of LOCAL_MODELS) {
     try {
-      const timeoutMs = model.includes('1b7') ? 8000 : 15000;
+      const timeoutMs = model.includes('32b') ? 30000 : 15000;
       const result = await callLocalModel(prompt, model, timeoutMs);
       if (isConfidentResponse(result)) return result;
     } catch {

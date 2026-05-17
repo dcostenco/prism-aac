@@ -15,8 +15,12 @@
 import { describe, it, expect } from 'vitest';
 
 const OLLAMA_URL = 'http://localhost:11434';
-const MODELS = ['prism-coder:1b7', 'prism-coder:8b-v29', 'dcostenco/prism-coder:14b'];
+// Quality-first cascade: 14B (fast, good) → 32B (slower, best local). Cloud is the final tier.
+// Matches production LOCAL_MODELS in aiService.ts exactly.
+const MODELS = ['prism-coder:14b', 'prism-coder:32b'];
 
+// MUST match benchmark.py SYSTEM_PROMPT exactly — models are trained on this prompt.
+// Any deviation causes routing mismatches. Last verified: 2026-05-16 (13 rules).
 const SYSTEM_PROMPT = `CRITICAL: You have EXACTLY 6 tools. Their EXACT names are:
   session_load_context, session_save_ledger, session_save_handoff,
   session_compact_ledger, session_search_memory, knowledge_search
@@ -33,19 +37,18 @@ If no tool is needed, respond in plain text.
 
 TOOL ROUTING — apply TOP TO BOTTOM, first match wins:
 1. current time / clock / what time is it -> respond directly (no tool)
-2. weather / live stock prices / live sports scores / search online / "google X" / search the web / look up online / browse the internet -> respond directly (no tool)
-3. translate / translation / "say X in Y" / "convert X to Y language" / "how do you say" -> respond directly (no tool)
+2. weather / live stock prices / live sports scores / search online / "google X" -> respond directly (no tool)
+3. translate / translation / "Translation request" / "say X in Y" / "convert X to Y language" / "how do you say" -> respond directly (no tool)
 4. AAC phrases / suggest phrases / phrases for expressing / communication phrases / "give me phrases" -> respond directly (no tool)
 5. simple personal needs/feelings (I want X, I feel X, I need X) -> respond directly (no tool)
 6. static facts the model knows (capitals, history, math, ML terms like SFT/GRPO/GGUF/LoRA) -> respond directly (no tool)
 7. write code / write regex / explain code / math -> respond directly (no tool)
-8. handoff / pass to next agent / relay / transition notes / archive and pass on / next session prep -> session_save_handoff
+8. handoff / pass to next agent / relay / transition notes / archive and pass on / next session prep / save [context/state/progress] for next agent -> session_save_handoff
 9. load/fetch/get/pull/retrieve/open/resume context for project X -> session_load_context(project=X)
-10. compact/shrink/prune/trim the ledger (WITHOUT passing to another agent) -> session_compact_ledger
-11. what did we discuss / previously talked about / recall our conversation / session history -> session_search_memory
-12. what have I recorded / find in my sessions / session notes -> session_search_memory
-13. what do I know / stored notes / notes on X / on file about / knowledge base / have documented -> knowledge_search
-14. note: X / jot down / log / save / record / remember / keep / preserve / capture -> session_save_ledger
+10. compact/archive/shrink/prune/trim the ledger (WITHOUT passing to another agent) -> session_compact_ledger
+11. CONVERSATION RECALL: what did we discuss / previously talked about / recall our conversation / session history / my past session notes / past sessions about -> session_search_memory
+12. SAVED KNOWLEDGE: what do I know / stored notes / notes on X / on file about / knowledge base / have documented — NOTE: "what do I know" is ALWAYS rule 12 even in compound requests -> knowledge_search
+13. note: X / jot down / log / save / record / remember / keep this / "capture this" -> session_save_ledger
 
 ONLY use tools listed above. NEVER invent tool names.`;
 
