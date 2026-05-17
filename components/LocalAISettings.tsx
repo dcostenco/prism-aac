@@ -18,16 +18,16 @@ const MODELS: ModelInfo[] = [
     tag: 'dcostenco/prism-coder:1b7',
     size: '1.1 GB',
     ram: '~2 GB',
-    tier: 'Free tier · ~0.5s · 100% BFCL',
+    tier: 'Free tier · ~0.5s · 96.1% BFCL',
     description: 'On-device AAC routing. Works offline. iPhone 12+ via WiFi.',
   },
   {
     id: '8b',
     label: 'Prism 8B — Balanced',
-    tag: 'dcostenco/prism-coder:8b-v29',
+    tag: 'dcostenco/prism-coder:8b',
     size: '4.7 GB',
     ram: '~6 GB',
-    tier: 'Standard tier · ~1.5s',
+    tier: 'Standard tier · ~1s · 98.0% BFCL',
     description: 'Higher accuracy on complex routing. 8GB-RAM devices where 14B doesn\'t fit.',
   },
   {
@@ -36,7 +36,7 @@ const MODELS: ModelInfo[] = [
     tag: 'dcostenco/prism-coder:14b',
     size: '9.3 GB',
     ram: '~10 GB',
-    tier: 'Standard tier · ~3s',
+    tier: 'Standard tier · ~3s · 97.1% BFCL',
     description: 'Better accuracy for complex phrases. Mac M2 Pro+ recommended.',
   },
   {
@@ -45,7 +45,7 @@ const MODELS: ModelInfo[] = [
     tag: 'dcostenco/prism-coder:32b',
     size: '19 GB',
     ram: '~20 GB',
-    tier: 'Enterprise tier · ~8s',
+    tier: 'Enterprise tier · ~8s · 99.0% BFCL',
     description: 'Clinical reasoning, BCBA analysis, multi-step tasks. Mac M2 Ultra+.',
   },
 ];

@@ -23,8 +23,11 @@
 		3A86633A7C7348A6B94B45B1 /* AppIcon50x50@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7F5B86B0B8D15149418A59D8 /* AppIcon50x50@2x.png */; };
 		3D08BF95A6574850121B9852 /* PrismAACUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B17D9B0D21E9712DE4058F /* PrismAACUnitTests.swift */; };
 		4845E40319EC76BF7B3D85D9 /* PrismAACUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */; };
+		520CBFCB73C47A12E8E6AFE3 /* BedsideModeExtendedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A679874C453F382852D8900 /* BedsideModeExtendedTests.swift */; };
 		555C0BC04B53500144B4F875 /* AppIcon86x86@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */; };
+		5B27532A15466AB48954316F /* BridgeSecurityPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F77017533C2E0E39A0CFA2FA /* BridgeSecurityPolicy.swift */; };
 		64BFB93793BFBD59BD651173 /* offline.html in Resources */ = {isa = PBXBuildFile; fileRef = 378A42F7E901AC2CE6A66DF0 /* offline.html */; };
+		6960B655C665118DAABF6BCE /* BridgeSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BFC79A8CF42D931FA02260 /* BridgeSecurityTests.swift */; };
 		6BDCC5044BD258312294B7A8 /* WatchInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */; };
 		6FBD9B75E28C4569B1FFF7A5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BDF1E2439453E4F2F472830B /* Assets.xcassets */; };
 		79A08C2E36B3B5E9C19C91EF /* WatchEmergencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */; };
@@ -104,6 +107,7 @@
 		60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchInbox.swift; sourceTree = "<group>"; };
 		62DB2AB8796CA83596887AD3 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		67DE9F6102290192A69EA33F /* WatchTTS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTTS.swift; sourceTree = "<group>"; };
+		6A679874C453F382852D8900 /* BedsideModeExtendedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BedsideModeExtendedTests.swift; sourceTree = "<group>"; };
 		71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACUITests.swift; sourceTree = "<group>"; };
 		73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AACPipeline.swift; sourceTree = "<group>"; };
 		7F5B86B0B8D15149418A59D8 /* AppIcon50x50@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon50x50@2x.png"; sourceTree = "<group>"; };
@@ -119,6 +123,7 @@
 		AD099E82E6D5296F74BC5242 /* WCSessionRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WCSessionRouter.swift; sourceTree = "<group>"; };
 		B44E4E794C34AA7DA358C6AD /* AppIcon51x51@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon51x51@2x.png"; sourceTree = "<group>"; };
 		B4B17D9B0D21E9712DE4058F /* PrismAACUnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACUnitTests.swift; sourceTree = "<group>"; };
+		B4BFC79A8CF42D931FA02260 /* BridgeSecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeSecurityTests.swift; sourceTree = "<group>"; };
 		B596E9E9B51A0D4D3C329C9F /* ButtonCoverageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonCoverageTests.swift; sourceTree = "<group>"; };
 		B665BC61F5A2CB0E5F7A9D6C /* AppIcon24x24@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon24x24@2x.png"; sourceTree = "<group>"; };
 		B9DB1CD80C21089C5CCFBB7B /* AppIcon27.5x27.5@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon27.5x27.5@2x.png"; sourceTree = "<group>"; };
@@ -130,6 +135,7 @@
 		DB1FF5018CD7D6ED0E48C17D /* WatchVocabSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchVocabSync.swift; sourceTree = "<group>"; };
 		DD4FFEB0EB8A7E77D36FE3FF /* AppIcon29x29@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon29x29@2x.png"; sourceTree = "<group>"; };
 		EA856F3C86008948B1F59274 /* AppIcon44x44@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon44x44@2x.png"; sourceTree = "<group>"; };
+		F77017533C2E0E39A0CFA2FA /* BridgeSecurityPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeSecurityPolicy.swift; sourceTree = "<group>"; };
 		F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACApp.swift; sourceTree = "<group>"; };
 		FCD52807AECA71B546A28725 /* AppIcon33x33@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon33x33@2x.png"; sourceTree = "<group>"; };
 		FE50392198C3596E4E3CAA44 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
@@ -147,6 +153,7 @@
 		21B589C99A1546866494C0DE /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				B4BFC79A8CF42D931FA02260 /* BridgeSecurityTests.swift */,
 				B4B17D9B0D21E9712DE4058F /* PrismAACUnitTests.swift */,
 			);
 			path = Tests;
@@ -156,6 +163,7 @@
 			isa = PBXGroup;
 			children = (
 				D1CA14CA933F6B284A18A59A /* AIChatFlowTests.swift */,
+				6A679874C453F382852D8900 /* BedsideModeExtendedTests.swift */,
 				B596E9E9B51A0D4D3C329C9F /* ButtonCoverageTests.swift */,
 				71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */,
 			);
@@ -268,6 +276,14 @@
 			path = AI;
 			sourceTree = "<group>";
 		};
+		97CEAE82C5A0E6EEF193D342 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				F77017533C2E0E39A0CFA2FA /* BridgeSecurityPolicy.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
 		98093A83AD7EC30FE022A107 /* Emergency */ = {
 			isa = PBXGroup;
 			children = (
@@ -300,6 +316,7 @@
 				6E46E9CBA279114527F4BEFD /* Engine */,
 				AB14DF1BC80F4CFB1E5B197E /* Resources */,
 				A8933DF552D882DF9ED39435 /* Safety */,
+				97CEAE82C5A0E6EEF193D342 /* Security */,
 				630E6152DD447899E3D9754D /* Shared */,
 				9447AA50B808C2BC223505DD /* Views */,
 			);
@@ -493,6 +510,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				35B73245D5AA0AE1C5AEC32A /* AIChatFlowTests.swift in Sources */,
+				520CBFCB73C47A12E8E6AFE3 /* BedsideModeExtendedTests.swift in Sources */,
 				287EB175AC807A70ED2E2AB1 /* ButtonCoverageTests.swift in Sources */,
 				4845E40319EC76BF7B3D85D9 /* PrismAACUITests.swift in Sources */,
 			);
@@ -521,6 +539,7 @@
 			files = (
 				A2378644AD87D49B61BC9290 /* AACPipeline.swift in Sources */,
 				EF9EBF1590D95DA7BA2B75C2 /* AppState.swift in Sources */,
+				5B27532A15466AB48954316F /* BridgeSecurityPolicy.swift in Sources */,
 				A761744803E81B1102D1B58A /* ContentView.swift in Sources */,
 				1BAB0485396C63FC134A5A4B /* KeychainHelper.swift in Sources */,
 				AFA1E81830CA008E80B17F8E /* LLMEngine.swift in Sources */,
@@ -533,6 +552,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6960B655C665118DAABF6BCE /* BridgeSecurityTests.swift in Sources */,
 				3D08BF95A6574850121B9852 /* PrismAACUnitTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -674,7 +694,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 20;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
 				MARKETING_VERSION = 1.5.0;
@@ -758,7 +778,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 20;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -780,7 +800,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 20;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -800,7 +820,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 20;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
 				MARKETING_VERSION = 1.5.0;

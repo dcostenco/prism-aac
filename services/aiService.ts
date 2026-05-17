@@ -23,10 +23,15 @@ import { DEFAULT_CATEGORIES } from '@/constants/categories';
 import { timeoutSignal } from '@/lib/portalConfig';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
+import { MODEL_REGISTRY, SIDELOAD_ORDER } from '@/constants/modelRegistry';
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
-const LOCAL_MODELS = ['prism-coder:14b', 'prism-coder:32b'] as const;
+
+// LOCAL_MODELS: ordered from best to smallest for callLocalModelFallback()
+const LOCAL_MODELS = SIDELOAD_ORDER
+  .map(id => MODEL_REGISTRY[id].ollamaTag.replace('dcostenco/', ''))
+  .filter(tag => tag !== '');
 
 // ── Auto-sideload: detect Ollama → pull best model → avoid cloud ──
 
@@ -38,10 +43,11 @@ let sideloadStatus: SideloadStatus = { state: 'idle' };
 
 export function getSideloadStatus(): SideloadStatus { return sideloadStatus; }
 
-const PULLABLE_MODELS = [
-  { tag: 'prism-coder:32b', sizeGB: 19.0, accuracy: 99 },
-  { tag: 'prism-coder:14b', sizeGB: 9.3,  accuracy: 97 },
-] as const;
+// Accuracy + size come from MODEL_REGISTRY (synced from HuggingFace via scripts/update-model-registry.sh)
+const PULLABLE_MODELS = SIDELOAD_ORDER
+  .map(id => MODEL_REGISTRY[id])
+  .filter(m => m.sizeGB > 0)
+  .map(m => ({ tag: m.ollamaTag.replace('dcostenco/', ''), sizeGB: m.sizeGB, accuracy: m.accuracy }));
 
 async function ollamaReachable(): Promise<boolean> {
   if (typeof window !== 'undefined' && window.location.protocol === 'https:') return false;

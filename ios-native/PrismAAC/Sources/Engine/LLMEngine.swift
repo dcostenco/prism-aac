@@ -8,12 +8,17 @@ private let llamaAvailable = false
 
 /// On-device inference engine — Qwen3 via llama.cpp Metal backend.
 ///
-/// Model selection by device RAM:
-///   16 GB+ (iPad Pro M1/M2/M4): prism-coder 14B Q4_K_M — 98% routing accuracy
-///   4–15 GB (iPhone, iPad Air):  prism-coder 1.7B Q4_K_M — 100% routing accuracy
+/// Model selection by total device RAM (see preferredTier):
+///   ≥16 GB (iPad Pro M1/M2/M4): prism-coder 14B Q4_K_M — 97.1% BFCL (v33)
+///   8–15 GB (iPhone 15/16 Pro, iPad Air): prism-coder 8B Q4_K_M — 98.0% BFCL (v35); OOM fallback: 1.7B
+///   <8 GB  (iPhone 12–14, older iPads): prism-coder 1.7B Q4_K_M — 96.1% BFCL (v41)
+///
+/// Accuracy numbers are sourced from HuggingFace model cards (dcostenco/prism-coder-*).
+/// Run scripts/update-model-registry.sh to sync when models are retrained.
 ///
 /// Memory contract (Q4_K_M):
 ///   1.7B:  ~1050 MB weights + ~200 MB KV + ~100 MB overhead = ~1350 MB
+///   8B:    ~4200 MB weights + ~200 MB KV + ~100 MB overhead = ~4500 MB
 ///   14B:   ~8400 MB weights + ~600 MB KV + ~200 MB overhead = ~9200 MB
 @MainActor
 final class LLMEngine: ObservableObject {
@@ -35,10 +40,10 @@ final class LLMEngine: ObservableObject {
         return Int(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024))
     }()
 
-    /// Model tier selection:
-    ///   16 GB+ → 14B Q4_K_M (98% accuracy, guaranteed fit)
-    ///   8 GB   → TRY 8B Q4_K_M (96%), OOM fallback to 1.7B (88%)
-    ///   <8 GB  → 1.7B Q4_K_M (88%, always fits)
+    /// Model tier selection (accuracy from HuggingFace model cards):
+    ///   ≥16 GB → 14B Q4_K_M (97.1% BFCL v33, guaranteed fit)
+    ///   8–15 GB → TRY 8B Q4_K_M (98.0% BFCL v35), OOM fallback to 1.7B (96.1% BFCL v41)
+    ///   <8 GB  → 1.7B Q4_K_M (96.1% BFCL v41, always fits)
     enum ModelTier: String {
         case large14B = "14B"
         case medium8B = "8B"
@@ -99,7 +104,9 @@ final class LLMEngine: ObservableObject {
         self.model = loadedModel
         self.context = ctx
         self.isLoaded = true
-        self.loadedModelTier = url.lastPathComponent.contains("14b") ? "14B" : "1.7B"
+        self.loadedModelTier = url.lastPathComponent.contains("14b") ? "14B"
+            : url.lastPathComponent.contains("8b") ? "8B"
+            : "1.7B"
         NSLog("[LLMEngine] Model loaded: \(url.lastPathComponent) (tier: \(loadedModelTier), device RAM: \(Self.totalDeviceMemoryGB) GB)")
         #else
         throw LLMError.notLoaded
