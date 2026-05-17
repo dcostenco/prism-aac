@@ -17,9 +17,9 @@ from pathlib import Path
 import jwt
 import requests
 
-KEY_ID = "P4BW79M9KU"
-ISSUER_ID = "7dca478c-0430-4412-be32-17c5bdbcebd5"
-KEY_PATH = Path.home() / "private_keys" / f"AuthKey_{KEY_ID}.p8"
+KEY_ID    = os.environ.get("ASC_KEY_ID") or sys.exit("ASC_KEY_ID not set")
+ISSUER_ID = os.environ.get("ASC_ISSUER_ID") or sys.exit("ASC_ISSUER_ID not set")
+KEY_PATH  = Path(os.environ.get("ASC_KEY_PATH", str(Path.home() / "private_keys" / f"AuthKey_{KEY_ID}.p8")))
 BUNDLE_ID = "ai.synalux.prism-aac"
 TARGET_VERSION = "1.4.1"
 TARGET_BUILD = "1"

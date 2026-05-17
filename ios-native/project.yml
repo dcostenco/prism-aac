@@ -22,7 +22,7 @@ targets:
     platform: iOS
     deploymentTarget: "16.0"
     settings:
-      DEVELOPMENT_TEAM: Z4UYN9388M
+      DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
       CODE_SIGN_STYLE: Automatic
     sources:
       - path: PrismAAC/Sources
@@ -116,7 +116,7 @@ targets:
     platform: watchOS
     deploymentTarget: "9.0"
     settings:
-      DEVELOPMENT_TEAM: Z4UYN9388M
+      DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
       CODE_SIGN_STYLE: Automatic
     sources:
       - path: PrismAACWatch/Sources

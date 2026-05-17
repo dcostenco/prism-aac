@@ -39,7 +39,7 @@ async function injectHelpers(page: Page) {
       const state = s.getState();
       if ('profile' in (state as object) && 'loaded' in (state as object) && s.setState) {
         s.setState({
-          profile: { email: 'dcostenco@gmail.com', name: 'Dmitri', plan: 'standard', isPlatformAdmin: false },
+          profile: { email: 'test@example.com', name: 'Dmitri', plan: 'standard', isPlatformAdmin: false },
           loaded: true, loading: false,
         });
         break;
@@ -60,7 +60,7 @@ async function injectHelpers(page: Page) {
     // Inject Dmitri contacts into the contacts store.
     const dmitriMail = {
       id: 'dmitri-mail', name: 'Dmitri Costenco', provider: 'mail',
-      recipientId: 'dcostenco@gmail.com', order: 0,
+      recipientId: 'test@example.com', order: 0,
     };
     const dmitriSms = {
       id: 'dmitri-sms', name: 'Dmitri Costenco', provider: 'sms',
@@ -173,7 +173,7 @@ test.describe('send to Dmitri Costenco', () => {
     await page.addInitScript(() => {
       const contacts = [
         { id: 'dmitri-mail', name: 'Dmitri Costenco', provider: 'mail',
-          recipientId: 'dcostenco@gmail.com', order: 0, sendCount: 5, lastUsedAt: Date.now() },
+          recipientId: 'test@example.com', order: 0, sendCount: 5, lastUsedAt: Date.now() },
         { id: 'dmitri-sms',  name: 'Dmitri Costenco', provider: 'sms',
           recipientId: '+15141234567', order: 1, sendCount: 2, lastUsedAt: Date.now() - 1000 },
       ];

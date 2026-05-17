@@ -42,10 +42,10 @@ except ImportError:
 
 # ── Credentials ───────────────────────────────────────────────────────────────
 
-KEY_ID      = "P4BW79M9KU"
-ISSUER_ID   = "7dca478c-0430-4412-be32-17c5bdbcebd5"
+KEY_ID      = os.environ.get("ASC_KEY_ID") or sys.exit("ASC_KEY_ID not set")
+ISSUER_ID   = os.environ.get("ASC_ISSUER_ID") or sys.exit("ASC_ISSUER_ID not set")
 BUNDLE_ID   = "ai.synalux.prism-aac"
-KEY_PATH    = Path.home() / "private_keys" / "AuthKey_P4BW79M9KU.p8"
+KEY_PATH    = Path(os.environ.get("ASC_KEY_PATH", str(Path.home() / "private_keys" / f"AuthKey_{KEY_ID}.p8")))
 BASE_URL    = "https://api.appstoreconnect.apple.com/v1"
 TOKEN_TTL   = 1200  # 20 min max per ASC docs
 

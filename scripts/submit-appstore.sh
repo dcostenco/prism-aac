@@ -5,10 +5,16 @@ set -e
 
 PROJ="ios-native/PrismAAC.xcodeproj"
 SCHEME="PrismAAC"
-TEAM="Z4UYN9388M"
-KEY_PATH="$HOME/private_keys/AuthKey_P4BW79M9KU.p8"
-KEY_ID="P4BW79M9KU"
-ISSUER_ID="7dca478c-0430-4412-be32-17c5bdbcebd5"
+
+# Load from env — set these in ~/.zshenv or export before running:
+#   export ASC_TEAM_ID="..."
+#   export ASC_KEY_ID="..."
+#   export ASC_ISSUER_ID="..."
+#   export ASC_KEY_PATH="$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+TEAM="${ASC_TEAM_ID:?ASC_TEAM_ID not set}"
+KEY_ID="${ASC_KEY_ID:?ASC_KEY_ID not set}"
+ISSUER_ID="${ASC_ISSUER_ID:?ASC_ISSUER_ID not set}"
+KEY_PATH="${ASC_KEY_PATH:-$HOME/private_keys/AuthKey_${KEY_ID}.p8}"
 
 # Read version from Info.plist
 VERSION=$(plutil -extract CFBundleShortVersionString raw ios-native/PrismAAC/Info.plist)
