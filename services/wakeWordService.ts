@@ -59,6 +59,9 @@ export function startWakeWordDetection(
 
   let stopped = false;
   let triggered = false;
+  let restartCount = 0;
+  const MAX_RESTARTS = 10;
+  let restartTimer: ReturnType<typeof setTimeout> | null = null;
 
   rec.onresult = (event) => {
     if (stopped || triggered) return;
@@ -73,21 +76,40 @@ export function startWakeWordDetection(
 
   rec.onerror = (event) => {
     if (event.error === 'aborted' || event.error === 'no-speech') return;
-    // Other errors are transient — let onend restart the session.
+    // Permission errors are permanent — stop the loop immediately rather than
+    // letting onend restart and spin indefinitely.
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      stopped = true;
+      return;
+    }
+    // Other errors are transient — let onend restart with backoff.
   };
 
   rec.onend = () => {
-    triggered = false; // allow next wake-word cycle
-    if (!stopped) {
-      try { rec.start(); } catch { /* already starting */ }
+    triggered = false; // each cycle starts fresh
+    if (stopped) return;
+    if (restartCount >= MAX_RESTARTS) {
+      stopped = true;
+      console.warn('[wake-word] max restarts reached — giving up');
+      return;
     }
+    // Exponential backoff: 200 ms → 400 ms → … → 10 s cap.
+    const delay = Math.min(200 * 2 ** restartCount, 10_000);
+    restartCount++;
+    restartTimer = setTimeout(() => {
+      if (!stopped) try { rec.start(); } catch { /* already starting */ }
+    }, delay);
   };
 
-  try { rec.start(); } catch { return null; }
+  try { rec.start(); } catch {
+    rec.onresult = null; rec.onerror = null; rec.onend = null;
+    return null;
+  }
 
   return {
     stop: () => {
       stopped = true;
+      if (restartTimer) { clearTimeout(restartTimer); restartTimer = null; }
       try { rec.stop(); } catch {}
     },
   };

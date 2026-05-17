@@ -246,13 +246,18 @@ export function synaluxSignOutUrl(): string {
 
 async function callSynalux(
   messages: Array<{ role: string; content: string }>,
-  options?: { webSearch?: boolean; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate' },
+  options?: { webSearch?: boolean; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate'; signal?: AbortSignal },
 ): Promise<string> {
+  if (options?.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
   const token = getAuthToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const t = timeoutSignal(30000);
+  // Compose timeout signal with the caller's abort signal so either cancels the fetch.
+  const fetchSignal = options?.signal
+    ? ((AbortSignal as { any?: (s: AbortSignal[]) => AbortSignal }).any?.([t.signal, options.signal]) ?? t.signal)
+    : t.signal;
   let res: Response;
   try {
     // Route via /api/v1/prism-aac/chat — the dedicated AAC chat
@@ -286,7 +291,7 @@ async function callSynalux(
         intent: options?.intent ?? 'chat',
         ...(options?.webSearch ? { web_search: true } : {}),
       }),
-      signal: t.signal,
+      signal: fetchSignal,
     });
   } catch (e) {
     t.cancel();
@@ -491,7 +496,7 @@ function callNativeBridge(
 
 async function route(
   prompt: string,
-  options?: { webSearch?: boolean; system?: string; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate' },
+  options?: { webSearch?: boolean; system?: string; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate'; signal?: AbortSignal },
 ): Promise<string> {
   const fullPrompt = options?.system ? `${options.system}\n\n${prompt}` : prompt;
 
@@ -510,7 +515,7 @@ async function route(
   if (options?.system) messages.push({ role: 'system', content: options.system });
   messages.push({ role: 'user', content: prompt });
   try {
-    const raw = await callSynalux(messages, { webSearch: options?.webSearch, onChunk: options?.onChunk, intent: options?.intent });
+    const raw = await callSynalux(messages, { webSearch: options?.webSearch, onChunk: options?.onChunk, intent: options?.intent, signal: options?.signal });
     return stripModelControlTokens(raw);
   } catch (err) {
     const msg = err instanceof Error ? err.message : '';
@@ -562,6 +567,7 @@ export async function translateAI(
   fromLang: string,
   toLang: string,
   onChunk?: (delta: string) => void,
+  signal?: AbortSignal,
 ): Promise<string> {
   // Try offline dictionary first — instant, 100% accurate, no cloud
   const offline = offlineTranslate(text, toLang);
@@ -571,7 +577,7 @@ export async function translateAI(
   const safeFrom = _safeLang(fromLang);
   const safeTo = _safeLang(toLang);
   const system = `You are a translator. Translate the input from ${safeFrom} to ${safeTo}. Return ONLY the translation — no explanations, no quotes, no extra text.`;
-  return route(text, { system, onChunk, intent: 'translate' });
+  return route(text, { system, onChunk, intent: 'translate', signal });
 }
 
 let _offlineLookup: Map<string, string> | null = null;
@@ -599,6 +605,7 @@ export async function askAI(
   context?: string,
   onChunk?: (delta: string) => void,
   language: string = 'en',
+  signal?: AbortSignal,
 ): Promise<AIResponse> {
   const langName = LANG_NAMES[language] || 'English';
   const system = [
@@ -643,7 +650,7 @@ export async function askAI(
   }
 
   const needsSearch = /what|who|where|when|why|how|explain|tell me about/i.test(cappedQuestion);
-  const text = await route(cappedQuestion, { system, webSearch: needsSearch, onChunk });
+  const text = await route(cappedQuestion, { system, webSearch: needsSearch, onChunk, signal });
   const lines = text.split(/\n+/).filter((l) => l.trim());
   return { text, lines };
 }

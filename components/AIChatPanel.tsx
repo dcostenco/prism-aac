@@ -119,6 +119,10 @@ export default function AIChatPanel() {
       if (!trimmed || !activeRef.current) return;
       void correctText(trimmed, language).then((fixed) => {
         if (!activeRef.current) return;
+        // If hands-free restarted the mic while correctText was running
+        // (can take up to 5s on a slow connection), discard this stale
+        // finalize to avoid appending to a mid-capture voice session.
+        if (voiceRef.current) return;
         appendText((fixed || trimmed) + ' ');
         setTimeout(() => { handleAskRef.current?.(); }, 80);
       });
@@ -238,11 +242,16 @@ export default function AIChatPanel() {
     const queueTimers: ReturnType<typeof setTimeout>[] = [];
 
     const drainQueue = () => {
-      if (speaking || sentenceQueue.length === 0 || !soundEnabled) return;
+      // Read live values via getState() — not the closure-captured ones from
+      // callback creation time, which can be stale if the user mutes or
+      // changes rate while a streaming response is already playing.
+      const { soundEnabled: se } = useMessageStore.getState();
+      const { speechRate: sr, speechVolume: sv } = useSettingsStore.getState();
+      if (speaking || sentenceQueue.length === 0 || !se) return;
       speaking = true;
       const sentence = sentenceQueue.shift()!;
-      aacSpeak(sentence, speechRate, speechVolume, undefined, true);
-      const dur = estimateSpeechDurationMs(sentence, speechRate * 0.6) + 300;
+      aacSpeak(sentence, sr, sv, undefined, true);
+      const dur = estimateSpeechDurationMs(sentence, Math.max(0.1, sr) * 0.6) + 300;
       const timer = setTimeout(() => { speaking = false; drainQueue(); }, dur);
       queueTimers.push(timer);
     };
@@ -307,9 +316,9 @@ export default function AIChatPanel() {
 
       let responseText = '';
       if (needsTranslation) {
-        responseText = await translateAI(question, inputLang, outputLang, onChunk);
+        responseText = await translateAI(question, inputLang, outputLang, onChunk, askController.signal);
       } else {
-        const response = await askAI(question, undefined, onChunk, targetLang);
+        const response = await askAI(question, undefined, onChunk, targetLang, askController.signal);
         responseText = response?.text ?? '';
       }
       // Fallback for non-streaming providers (local Ollama path uses stream:false
@@ -335,6 +344,12 @@ export default function AIChatPanel() {
         return updated;
       });
     }
+    // If the request was superseded (new ask started) or panel closed while
+    // the fetch was still running, stop TTS and bail without updating state.
+    if (askController.signal.aborted) {
+      queueTimers.forEach(clearTimeout);
+      return;
+    }
     if (askAbortRef.current === askController) askAbortRef.current = null;
     if (!activeRef.current) return;
     setLoading(false);
@@ -344,14 +359,18 @@ export default function AIChatPanel() {
   useEffect(() => { handleAskRef.current = handleAsk; }, [handleAsk]);
 
   // Register / clear the Speak-button intercept for this panel's lifetime.
+  // Use the stable ref so bridge re-registration doesn't happen on every
+  // loading state flip — a gap between clearAISubmit and registerAISubmit
+  // would swallow a Speak event on a safety-critical communication device.
   useEffect(() => {
-    if (sidePanel === 'ai-chat') {
-      registerAISubmit(handleAsk);
-    }
+    if (sidePanel !== 'ai-chat') { clearAISubmit(); return; }
+    registerAISubmit(() => handleAskRef.current?.());
     return () => clearAISubmit();
-  }, [sidePanel, handleAsk]);
+  }, [sidePanel]);
 
   // Stop voice and abort in-flight AI request when panel closes.
+  // Also reset bedside/hands-free/wake-word state so re-opening the panel
+  // doesn't auto-trigger the mic without the user's intent.
   useEffect(() => {
     if (sidePanel !== 'ai-chat') {
       askAbortRef.current?.abort();
@@ -364,6 +383,9 @@ export default function AIChatPanel() {
         setListening(false);
         setInterim('');
       }
+      setBedsideModeActive(false);
+      setHandsFreeModeActive(false);
+      setWakeWordActive(false);
     }
   }, [sidePanel]);
 

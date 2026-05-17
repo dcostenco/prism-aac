@@ -227,6 +227,12 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
       return;
     }
     if (event.error === 'aborted') return;
+    // Permission errors are permanent — set stopped so onend does not
+    // restart and spin indefinitely hitting the same error.
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      stopped = true;
+      if (silenceTimer) clearTimeout(silenceTimer);
+    }
     opts.onError?.(event.error);
   };
 

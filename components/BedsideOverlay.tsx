@@ -179,7 +179,12 @@ export default function BedsideOverlay({
 
       {/* iOS Voice Control instruction card */}
       {showVoiceControlCard && (
-        <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center px-8 gap-6 z-10">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="iOS Voice Control instructions"
+          className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center px-8 gap-6 z-10"
+        >
           <p className="text-white text-3xl font-bold">Enable iOS Voice Control</p>
           <ol className="text-white/80 text-xl space-y-3 text-left">
             <li>1. Open <strong>Settings</strong></li>
@@ -191,7 +196,10 @@ export default function BedsideOverlay({
             Once enabled, say commands like &ldquo;tap Back&rdquo; or &ldquo;scroll down&rdquo; to navigate anywhere on your iPhone — no screen touch needed.
           </p>
           <button
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus
             onClick={() => { tapFeedback(); setShowVoiceControlCard(false); }}
+            onKeyDown={(e) => { if (e.key === 'Escape') { tapFeedback(); setShowVoiceControlCard(false); } }}
             className="mt-2 w-full h-16 rounded-2xl bg-white/20 text-white text-xl font-bold active:bg-white/30"
           >
             Got it
