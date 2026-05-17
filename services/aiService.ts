@@ -84,6 +84,7 @@ async function ollamaPull(tag: string): Promise<boolean> {
           }
           if (j.status === 'success') {
             sideloadStatus = { state: 'done', model: tag };
+            try { await reader.cancel(); } catch { /* ignore — body already closed */ }
             return true;
           }
         } catch { /* partial JSON line */ }
@@ -134,7 +135,7 @@ export async function autoSideload(): Promise<void> {
 
 const TOKEN_KEY = 'prism-aac-auth-token';
 const TOKEN_EXP_KEY = 'prism-aac-auth-token-exp';
-const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const TOKEN_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours — sessionStorage clears on tab close anyway; 7-day TTL was dead code
 
 export function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -255,6 +256,13 @@ function composeSignals(s1: AbortSignal, s2: AbortSignal): AbortSignal {
   const fire = () => ctrl.abort();
   s1.addEventListener('abort', fire, { once: true });
   s2.addEventListener('abort', fire, { once: true });
+  // Remove the surviving listener once ctrl fires (from whichever source won)
+  // so the closed-over `fire` reference doesn't leak on AbortSignal.timeout()
+  // objects, which GC-lifetime can outlast the fetch on some runtimes.
+  ctrl.signal.addEventListener('abort', () => {
+    s1.removeEventListener('abort', fire);
+    s2.removeEventListener('abort', fire);
+  }, { once: true });
   return ctrl.signal;
 }
 
@@ -360,11 +368,12 @@ async function callSynalux(
 
 // ── Local Ollama (offline fallback) ──
 
-async function callLocalModel(prompt: string, model: string, timeoutMs = 10000): Promise<string> {
+async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, signal?: AbortSignal): Promise<string> {
   if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
     throw new Error('Local AI unavailable — HTTPS page cannot reach http://localhost');
   }
   const t = timeoutSignal(timeoutMs);
+  const fetchSignal = signal ? composeSignals(t.signal, signal) : t.signal;
   try {
     const res = await fetch(`${LOCAL_OLLAMA_URL}/generate`, {
       method: 'POST',
@@ -375,7 +384,7 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000):
         stream: false,
         options: { num_predict: 300, temperature: 0 },
       }),
-      signal: t.signal,
+      signal: fetchSignal,
     });
     if (!res.ok) throw new Error(`Model ${model} unavailable`);
     const data = await res.json();
@@ -395,20 +404,20 @@ function isConfidentResponse(text: string): boolean {
   const hasToolCall = text.includes('<|tool_call|>');
   const hasPlainText = text.trim().length > 10 && !hasToolCall;
   if (hasToolCall) {
-    const knownTools = [
-      'session_load_context', 'session_save_ledger', 'session_save_handoff',
-      'session_compact_ledger', 'session_search_memory', 'knowledge_search',
-    ];
-    return knownTools.some(t => text.includes(`"${t}"`));
+    // Any tool-call bleed indicates model confusion or prompt injection.
+    // Reject the response entirely rather than selectively accepting "known"
+    // tool names — a crafted prompt could smuggle a known name to pass this
+    // filter and inject add_phrase/remove_sequence actions into the AAC store.
+    return false;
   }
   return hasPlainText;
 }
 
-async function callLocal(prompt: string): Promise<string> {
+async function callLocal(prompt: string, signal?: AbortSignal): Promise<string> {
   for (const model of LOCAL_MODELS) {
     try {
       const timeoutMs = model.includes('32b') ? 30000 : 15000;
-      const result = await callLocalModel(prompt, model, timeoutMs);
+      const result = await callLocalModel(prompt, model, timeoutMs, signal);
       if (isConfidentResponse(result)) return result;
     } catch {
       continue;
@@ -493,6 +502,7 @@ function callNativeBridge(
       signal?.removeEventListener('abort', abortHandler);
       delete (window as any).prismNativeAIResult;
       delete (window as any).prismNativeAIDone;
+      delete (window as any).prismNativeAIError;
     }
 
     signal?.addEventListener('abort', abortHandler, { once: true });
@@ -504,6 +514,13 @@ function callNativeBridge(
     (window as any).prismNativeAIDone = () => {
       cleanup();
       resolve(fullText);
+    };
+    // Error channel for iOS llama.cpp bridge — without this, model errors (OOM,
+    // GGUF not loaded, context overflow) have no way to reject the promise and
+    // the 30-second hardware timeout becomes the only recovery path.
+    (window as any).prismNativeAIError = (err: string) => {
+      cleanup();
+      reject(new Error(`Native AI error: ${err}`));
     };
 
     (window as any).prismNativeBridge.askAI(question, lang);
@@ -529,7 +546,7 @@ async function route(
   // 1. Try local Ollama first (Mac on WiFi — 14B at 98%, free)
   if (!options?.webSearch) {
     try {
-      const raw = await callLocal(fullPrompt);
+      const raw = await callLocal(fullPrompt, options?.signal);
       return stripModelControlTokens(raw);
     } catch {
       // Local unavailable — continue to cloud

@@ -68,6 +68,10 @@ export default function AIChatPanel() {
   // Track micError dismiss timers so we can clear them on unmount (avoids
   // setState-on-unmounted-component warnings and timer leaks).
   const micErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track the 600 ms onSilence finalize delay so it can be cancelled on
+  // unmount/panel-close — otherwise it fires after cleanup and calls handleAskRef
+  // with stale refs (setListening, appendText, etc.).
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voiceSupported = isVoiceInputSupported();
   const wakeWordSupported = isWakeWordSupported();
   const activeRef = useRef(sidePanel === 'ai-chat');
@@ -143,7 +147,11 @@ export default function AIChatPanel() {
       onSilence: () => {
         if (!voiceRef.current || submitted) return;
         try { voiceRef.current.stop(); } catch { /* engine already stopped */ }
-        setTimeout(() => { if (!submitted) finalize(lastInterim); }, 600);
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = setTimeout(() => {
+          silenceTimerRef.current = null;
+          if (!submitted) finalize(lastInterim);
+        }, 600);
       },
       onError: (err) => {
         if (submitted) return;
@@ -220,6 +228,11 @@ export default function AIChatPanel() {
     const question = useMessageStore.getState().text.trim().slice(0, 500)
       .replace(/[­؀-؅؜۝܏࣢᠎​-‏‪-‮⁠-⁤⁦-⁯﻿￹-￻]/g, '');
     if (!question || isLoadingRef.current) return;
+    // Set synchronously — prevents a rapid double-tap from passing the guard
+    // on the next tick before React re-renders with loading=true. Must be set
+    // here, before the crisis-filter branch, so even the synchronous fast-path
+    // holds the lock long enough for the re-render to suppress the button.
+    isLoadingRef.current = true;
     tapFeedback();
 
     // Cancel any previous in-flight stream before starting a new one.
@@ -236,6 +249,7 @@ export default function AIChatPanel() {
         { role: 'user' as const, text: question },
         { role: 'ai' as const, text: safety.response, lines: safety.response.split('\n').filter(Boolean) },
       ]);
+      isLoadingRef.current = false;
       return;
     }
 
@@ -247,7 +261,6 @@ export default function AIChatPanel() {
       { role: 'user' as const, text: question },
       { role: 'ai' as const, text: '', lines: [] },
     ].slice(-MAX_MESSAGES) as ChatMessage[]);
-    isLoadingRef.current = true;
     setLoading(true);
 
     let buffer = '';
@@ -255,9 +268,11 @@ export default function AIChatPanel() {
     let scheduled = false;
     const sentenceQueue: string[] = [];
     let speaking = false;
+    let cancelled = false;
     const queueTimers: ReturnType<typeof setTimeout>[] = [];
 
     const drainQueue = () => {
+      if (cancelled) return;
       // Read live values via getState() — not the closure-captured ones from
       // callback creation time, which can be stale if the user mutes or
       // changes rate while a streaming response is already playing.
@@ -266,9 +281,9 @@ export default function AIChatPanel() {
       if (speaking || sentenceQueue.length === 0 || !se) return;
       speaking = true;
       const sentence = sentenceQueue.shift()!;
-      aacSpeak(sentence, sr, sv, undefined, true);
+      if (!cancelled) aacSpeak(sentence, sr, sv, undefined, true);
       const dur = estimateSpeechDurationMs(sentence, Math.max(0.1, sr) * 0.6) + 300;
-      const timer = setTimeout(() => { speaking = false; drainQueue(); }, dur);
+      const timer = setTimeout(() => { if (!cancelled) { speaking = false; drainQueue(); } }, dur);
       queueTimers.push(timer);
     };
 
@@ -344,10 +359,13 @@ export default function AIChatPanel() {
       if (!buffer && responseText) {
         buffer = responseText;
       }
-      flush();
-      const tail = buffer.slice(spokenUpTo).trim();
-      if (tail) enqueueSentence(tail);
+      if (!askController.signal.aborted && !cancelled) {
+        flush();
+        const tail = buffer.slice(spokenUpTo).trim();
+        if (tail) enqueueSentence(tail);
+      }
     } catch (e: unknown) {
+      cancelled = true;
       queueTimers.forEach(clearTimeout);
       if (askController.signal.aborted) {
         isLoadingRef.current = false;
@@ -365,6 +383,7 @@ export default function AIChatPanel() {
     // If the request was superseded (new ask started) or panel closed while
     // the fetch was still running, stop TTS and bail without updating state.
     if (askController.signal.aborted) {
+      cancelled = true;
       queueTimers.forEach(clearTimeout);
       isLoadingRef.current = false;
       setLoading(false);
@@ -372,6 +391,7 @@ export default function AIChatPanel() {
     }
     if (askAbortRef.current === askController) askAbortRef.current = null;
     if (!activeRef.current) {
+      cancelled = true;
       queueTimers.forEach(clearTimeout);
       isLoadingRef.current = false;
       setLoading(false);
@@ -403,6 +423,7 @@ export default function AIChatPanel() {
       askAbortRef.current = null;
       wakeWordSessionRef.current?.stop();
       wakeWordSessionRef.current = null;
+      if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
       if (voiceRef.current) {
         voiceRef.current.stop();
         voiceRef.current = null;
@@ -426,6 +447,7 @@ export default function AIChatPanel() {
       voiceRef.current = null;
       wasLoadingRef.current = false;
       if (micErrorTimerRef.current) clearTimeout(micErrorTimerRef.current);
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     };
   }, []);
 

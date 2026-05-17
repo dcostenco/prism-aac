@@ -74,11 +74,11 @@ export function startWakeWordDetection(
         onWakeWord();
         return;
       }
+      // Reset only on FINAL results — interim transcripts from ambient noise
+      // (TV, speech nearby) would reset the counter on every ambient word and
+      // prevent MAX_RESTARTS from ever firing in a noisy environment.
+      if (event.results[i].isFinal) restartCount = 0;
     }
-    // A successful recognition result means the session is healthy — reset
-    // the transient-error counter so 10 isolated glitches don't silently
-    // kill the detector while the UI still shows it as active.
-    restartCount = 0;
   };
 
   rec.onerror = (event) => {

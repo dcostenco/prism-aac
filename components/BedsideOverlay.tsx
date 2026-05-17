@@ -88,7 +88,7 @@ export default function BedsideOverlay({
       </div>
 
       {/* AI Response */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 min-h-0">
+      <div aria-live="polite" aria-atomic="false" className="flex-1 overflow-y-auto px-5 py-4 space-y-3 min-h-0">
         {lines.length === 0 && !loading && (
           <div className="h-full flex flex-col items-center justify-center text-center gap-4 text-white/40 px-8">
             <span className="text-7xl">✨</span>
