@@ -52,6 +52,12 @@ function computeLang(lang: string): string {
   return LANG_MAP[lang.split('-')[0]] || 'en-US';
 }
 
+// Incremented on every startNativeVoice call. Each session captures its own
+// generation at creation time; callbacks discard tokens if a newer session
+// has since replaced the window handler (native thread still mid-emit from
+// the previous session when hands-free restarts the next one).
+let _nativeVoiceGeneration = 0;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function startNativeVoice(opts: {
   lang?: string;
@@ -66,6 +72,7 @@ function startNativeVoice(opts: {
   let speechStarted = false;
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
   const silenceThreshold = opts.silenceMs ?? 2000;
+  const myGeneration = ++_nativeVoiceGeneration;
 
   const checkSilence = () => {
     if (silenceTimer) clearTimeout(silenceTimer);
@@ -99,7 +106,7 @@ function startNativeVoice(opts: {
   };
 
   setCallback('prismNativeSpeechResult', (result: unknown) => {
-    if (stopped) return;
+    if (stopped || _nativeVoiceGeneration !== myGeneration) return;
     if (!result || typeof result !== 'object') return;
     const r = result as Record<string, unknown>;
     const interim = typeof r.interim === 'string' ? r.interim.slice(0, 2000) : '';
@@ -123,7 +130,7 @@ function startNativeVoice(opts: {
   });
 
   setCallback('prismNativeSpeechError', (error: unknown) => {
-    if (stopped) return;
+    if (stopped || _nativeVoiceGeneration !== myGeneration) return;
     stopped = true;
     try { bridge.stopVoice(); } catch { /* native bridge may be gone */ }
     cleanup();

@@ -587,6 +587,7 @@ export default function AIChatPanel() {
           wakeWordSupported={wakeWordSupported}
           lastAIText={lastAIMessage?.text ?? ''}
           lastAILines={lastAIMessage?.lines ?? []}
+          lastAIMessageId={lastAIMessage?.id ?? ''}
           isCrisisAnnouncement={isCrisisAnnouncement}
           onToggleVoice={toggleVoice}
           onSetHandsFree={setHandsFreeModeActive}

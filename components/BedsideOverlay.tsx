@@ -12,6 +12,7 @@ interface BedsideOverlayProps {
   wakeWordSupported: boolean;
   lastAIText: string;
   lastAILines: string[];
+  lastAIMessageId: string;
   isCrisisAnnouncement: boolean;
   onToggleVoice: () => void;
   onSetHandsFree: (v: boolean) => void;
@@ -34,6 +35,7 @@ export default function BedsideOverlay({
   wakeWordSupported,
   lastAIText,
   lastAILines,
+  lastAIMessageId,
   isCrisisAnnouncement,
   onToggleVoice,
   onSetHandsFree,
@@ -144,7 +146,7 @@ export default function BedsideOverlay({
 
         {lines.map((line, i) => (
           <button
-            key={`bedside-line-${i}`}
+            key={`bedside-line-${lastAIMessageId}-${i}`}
             onClick={() => { tapFeedback(); onTapLine(line); }}
             aria-label={`Use: ${line}`}
             className="aac-btn block w-full text-left rounded-2xl p-5 bg-white/5 border border-white/10 active:bg-white/15"

@@ -352,6 +352,9 @@ async function callSynalux(
     const STREAM_CAP_BYTES = 1_048_576;
     let received = 0;
     try {
+      // lineBuffer carries the unterminated tail of the previous read() so a
+      // 'data: {...}' line split across two TCP segments is reassembled before parse.
+      let lineBuffer = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -360,8 +363,10 @@ async function callSynalux(
           try { await reader.cancel(); } catch { /* */ }
           break;
         }
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n')) {
+        lineBuffer += decoder.decode(value, { stream: true });
+        const lines = lineBuffer.split('\n');
+        lineBuffer = lines.pop()!; // last element may be partial — hold for next read
+        for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           try {
             const parsed = JSON.parse(line.slice(6));
@@ -370,18 +375,15 @@ async function callSynalux(
           } catch { /* incomplete chunk */ }
         }
       }
-      // Flush buffered bytes left by { stream: true } — a multi-byte CJK character
-      // split across the final two chunks would otherwise be silently dropped.
-      const flushed = decoder.decode();
-      if (flushed) {
-        for (const line of flushed.split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          try {
-            const parsed = JSON.parse(line.slice(6));
-            const delta = parsed?.choices?.[0]?.delta?.content || '';
-            if (delta) { fullText += delta; options?.onChunk?.(delta); }
-          } catch { /* */ }
-        }
+      // Flush: drain TextDecoder UTF-8 state AND any unterminated line still in lineBuffer.
+      lineBuffer += decoder.decode();
+      for (const line of lineBuffer.split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const parsed = JSON.parse(line.slice(6));
+          const delta = parsed?.choices?.[0]?.delta?.content || '';
+          if (delta) { fullText += delta; options?.onChunk?.(delta); }
+        } catch { /* */ }
       }
     } finally {
       t.cancel();
