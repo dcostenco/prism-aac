@@ -106,7 +106,7 @@ async function makeOptionsShot(page, outPath) {
   // options.js + chrome.storage which we don't have here) and render
   // with default values inlined.
   const stripped = optionsHtml
-    .replace(/<script[\s\S]*?<\/script>/g, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace('<body>', `<body style="margin:0;padding:0;background:#f0f1f5;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;">
       <div style="background:white;margin-top:40px;padding:30px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);max-width:640px;">`)
     .replace('</body>', `</div></body>`);

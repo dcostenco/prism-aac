@@ -328,7 +328,13 @@ export default function AACChatPanel() {
   if (!activeContact && sortedContacts.length > 0) {
     // Pull incoming messages from schedule store — only from known contacts
     const contactNames = new Set(sortedContacts.map(c => c.name.toLowerCase()));
-    const decodeHtml = (s: string) => s.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16))).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+    // Single-pass decode — prevents double-unescaping of sequences like
+    // &amp;lt; (would otherwise decode to < instead of &lt; with chained replaces).
+    const HTML_ENT: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+    const decodeHtml = (s: string) => s.replace(
+      /&(?:#(\d+)|#x([0-9a-f]+)|amp|lt|gt|quot|apos);/gi,
+      (m, d, x) => d ? String.fromCharCode(+d) : x ? String.fromCharCode(parseInt(x, 16)) : HTML_ENT[m.slice(1, -1).toLowerCase()] ?? m
+    );
     const inboxMessages = useScheduleStore.getState().tasks
       .filter(t => t.kind === 'message' && !t.done && t.sender && contactNames.has(t.sender.toLowerCase()))
       .slice(0, 5);
