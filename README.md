@@ -28,9 +28,9 @@ Part of the [Synalux platform](https://synalux.ai).
 | Platform | Status | On-device AI | Notes |
 |----------|--------|-------------|-------|
 | **Web** (PWA) | Production | Auto-sideload via Ollama (14B→8B→1.7B) | Any browser, installable |
-| **iPad Pro 16GB** | Production | 14B Q4_K_M (98% accuracy) | Native llama.cpp Metal, auto-selected by RAM |
-| **iPhone / iPad 8GB** | Production | 8B Q4_K_M (96%) → 1.7B fallback | OOM-safe: tries 8B, falls back to 1.7B |
-| **iPhone / iPad <8GB** | Production | 1.7B Q4_K_M (88%) | Always fits, 1.0 GB |
+| **iPad Pro 16GB** | Production | 14B Q4_K_M (97.1% accuracy) | Native llama.cpp Metal, auto-selected by RAM |
+| **iPhone / iPad 8GB** | Production | 8B Q4_K_M (98.0%) → 1.7B fallback | OOM-safe: tries 8B, falls back to 1.7B |
+| **iPhone / iPad <8GB** | Production | 1.7B Q4_K_M (96.1%) | Always fits, 1.0 GB |
 | **Apple Watch** | Production | Offline phrase dictionary (1,261 × 20 langs) | Standalone — pictograms, TTS, emergency |
 | **Chrome Extension** | Production | — | Reading assistant in any text field |
 | **WiFi to Mac** | Production | 14B/32B via Ollama | Settings → Local AI → enter Mac IP |
@@ -95,10 +95,10 @@ PrismAAC runs a three-tier model cascade that selects the best model your hardwa
 
 | Device | RAM | Model | Accuracy | AAC | Size | Cost |
 |---|---|---|---|---|---|---|
-| **iPad Pro M1/M2/M4** | 16 GB | 14B Q4_K_M | **98%** | 100% | 8.4 GB | $0 |
-| **iPhone 15/16 Pro, iPad Air** | 8 GB | 8B Q4_K_M (try) → 1.7B (fallback) | **96%** or 88% | 100% | 4.7 GB / 1.0 GB | $0 |
-| **iPhone 12–14, older iPads** | <8 GB | 1.7B Q4_K_M | 88% | 100% | 1.0 GB | $0 |
-| **Mac M1+ via WiFi** | 16+ GB | 14B via Ollama | **98%** | 100% | 8.4 GB | $0 |
+| **iPad Pro M1/M2/M4** | 16 GB | 14B Q4_K_M | **97.1%** | 100% | 8.4 GB | $0 |
+| **iPhone 15/16 Pro, iPad Air** | 8 GB | 8B Q4_K_M (try) → 1.7B (fallback) | **98.0%** or 96.1% | 100% | 4.7 GB / 1.0 GB | $0 |
+| **iPhone 12–14, older iPads** | <8 GB | 1.7B Q4_K_M | **96.1%** | 100% | 1.0 GB | $0 |
+| **Mac M1+ via WiFi** | 16+ GB | 14B via Ollama | **97.1%** | 100% | 8.4 GB | $0 |
 
 ### Web app cascade (`aiService.ts`)
 
@@ -110,7 +110,7 @@ The web app tries local inference first, then falls back to cloud — so users w
         v
   +-- LOCAL OLLAMA (auto-detected at localhost:11434) --+
   |                                                      |
-  |   14b (98%, ~1.1s) ─[fail]─> 8b (96%, ~0.8s) ─[fail]─> 1b7 (88%, ~1.6s)
+  |   14b (97.1%, ~1.1s) ─[fail]─> 8b (98.0%, ~0.8s) ─[fail]─> 1b7 (96.1%, ~1.6s)
   +-------------------------------------------------------------------+
          |
     [all local fail?]
@@ -134,13 +134,13 @@ The native app probes available RAM at launch, downloads the right model from Hu
       v
   RAM detection (os_proc_available_memory)
       |
-      +── 16 GB+ (iPad Pro) ──> 14B Q4_K_M (8.4 GB) ──> 98%, ~1.1s
+      +── 16 GB+ (iPad Pro) ──> 14B Q4_K_M (8.4 GB) ──> 97.1%, ~1.1s
       |
-      +── 8 GB (iPhone/iPad Air) ──> 8B Q4_K_M (4.7 GB) ──> 96%, ~0.8s
+      +── 8 GB (iPhone/iPad Air) ──> 8B Q4_K_M (4.7 GB) ──> 98.0%, ~0.8s
       |                                    |
-      |                               OOM? → 1.7B Q4_K_M (1.0 GB) → 88%, ~1.6s
+      |                               OOM? → 1.7B Q4_K_M (1.0 GB) → 96.1%, ~1.6s
       |
-      +── <8 GB ──> 1.7B Q4_K_M (1.0 GB) ──> 88%, ~1.6s
+      +── <8 GB ──> 1.7B Q4_K_M (1.0 GB) ──> 96.1%, ~1.6s
 
   All paths: llama.cpp Metal, $0 forever, no data leaves device.
   WiFi upgrade: Settings → Local AI → enter Mac IP for 14B/32B.
@@ -174,14 +174,14 @@ Three modes cycle with a single tap. The active mode persists across sessions so
 
 | Path | Model | Accuracy | Latency | Cost |
 |---|---|---|---|---|
-| iPad Pro 16GB | 14B Q4_K_M | **98%** | ~1.1s | **$0** |
-| iPhone/iPad 8GB | 8B Q4_K_M → 1.7B | **96%** or 88% | ~0.8s | **$0** |
-| Any device | 1.7B Q4_K_M | 88% | ~1.6s | **$0** |
-| WiFi to Mac | 14B via Ollama | **98%** | ~1.1s | **$0** |
+| iPad Pro 16GB | 14B Q4_K_M | **97.1%** | ~1.1s | **$0** |
+| iPhone/iPad 8GB | 8B Q4_K_M → 1.7B | **98.0%** or 96.1% | ~0.8s | **$0** |
+| Any device | 1.7B Q4_K_M | **96.1%** | ~1.6s | **$0** |
+| WiFi to Mac | 14B via Ollama | **97.1%** | ~1.1s | **$0** |
 | Cloud (free) | Gemini 2.5 Flash | 99% | ~3s | Synalux absorbs |
 | Cloud (paid) | Claude Sonnet 4 | 99% | ~3s | Included in plan |
 
-**The pitch:** Every child gets Claude-grade accuracy whether they're on a $329 iPhone SE or a $2,000 iPad Pro. Local-first means zero cloud dependency, zero monthly API fees, zero PHI exposure, and sub-second response times. The cascade makes sure no device is left behind — if the big model doesn't fit, the next one down still delivers AAC routing at 88%+ accuracy with zero invented tool calls.
+**The pitch:** Every child gets Claude-grade accuracy whether they're on a $329 iPhone SE or a $2,000 iPad Pro. Local-first means zero cloud dependency, zero monthly API fees, zero PHI exposure, and sub-second response times. The cascade makes sure no device is left behind — if the big model doesn't fit, the next one down still delivers AAC routing at 96%+ accuracy with zero invented tool calls.
 
 ---
 
@@ -193,9 +193,9 @@ Native Swift app wrapping the web UI in WKWebView + on-device AI via llama.cpp M
 
 | Device | RAM | Model | Accuracy | Download |
 |---|---|---|---|---|
-| iPad Pro M1/M2/M4 | 16 GB | 14B Q4_K_M | **98%** | 8.4 GB from HF CDN |
-| iPhone 15/16 Pro, iPad Air | 8 GB | 8B Q4_K_M → 1.7B fallback | **96%** or 88% | 4.7 GB / 1.0 GB |
-| iPhone 12-14, older iPads | <8 GB | 1.7B Q4_K_M | 88% | 1.0 GB |
+| iPad Pro M1/M2/M4 | 16 GB | 14B Q4_K_M | **97.1%** | 8.4 GB from HF CDN |
+| iPhone 15/16 Pro, iPad Air | 8 GB | 8B Q4_K_M → 1.7B fallback | **98.0%** or 96.1% | 4.7 GB / 1.0 GB |
+| iPhone 12-14, older iPads | <8 GB | 1.7B Q4_K_M | **96.1%** | 1.0 GB |
 
 Three-layer safety: synchronous crisis filter → on-device AI → cloud fallback. Memory-aware gating degrades gracefully: full AI → cloud AI → core-only → emergency mode.
 
