@@ -11,7 +11,9 @@ import { correctText } from '@/services/textCorrectService';
 import { registerAISubmit, clearAISubmit } from '@/services/aiChatBridge';
 import { checkCrisisSafety } from '@/services/crisisSafetyFilter';
 import { estimateSpeechDurationMs } from '@/services/ttsHighlightBus';
+import { startWakeWordDetection, isWakeWordSupported, WakeWordSession } from '@/services/wakeWordService';
 import ColoredText from './ColoredText';
+import BedsideOverlay from './BedsideOverlay';
 import { useT } from '@/engine/useT';
 
 /**
@@ -45,16 +47,26 @@ export default function AIChatPanel() {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
   const [micError, setMicError] = useState<string | null>(null);
+  // Bedside / hands-free / wake word state
+  const [bedsideModeActive, setBedsideModeActive] = useState(false);
+  const [handsFreeModeActive, setHandsFreeModeActive] = useState(false);
+  const [wakeWordActive, setWakeWordActive] = useState(false);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const wasLoadingRef = useRef(false);
   const voiceRef = useRef<VoiceSession | null>(null);
   const askAbortRef = useRef<AbortController | null>(null);
   const handleAskRef = useRef<(() => void) | null>(null);
+  const startListeningRef = useRef<(() => void) | null>(null);
+  const handsFreeRef = useRef(false);
+  const wakeWordSessionRef = useRef<WakeWordSession | null>(null);
   const voiceSupported = isVoiceInputSupported();
+  const wakeWordSupported = isWakeWordSupported();
   const activeRef = useRef(sidePanel === 'ai-chat');
   useEffect(() => {
     activeRef.current = sidePanel === 'ai-chat';
   }, [sidePanel]);
+  useEffect(() => { handsFreeRef.current = handsFreeModeActive; }, [handsFreeModeActive]);
 
   // Scroll strategy: when streaming finishes, show the START of the AI
   // reply so the user reads top-down. During streaming: no scroll (user
@@ -70,15 +82,12 @@ export default function AIChatPanel() {
     const rows = container.querySelectorAll<HTMLElement>(':scope > div');
 
     if (justStarted && rows.length > 0) {
-      // Stream just started — scroll so user message + AI reply are both visible.
       const userRow = rows.length >= 2 ? rows[rows.length - 2] : rows[rows.length - 1];
       userRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     } else if (justFinished && rows.length > 0) {
-      // Stream done — show from user message so full exchange is visible.
       const userRow = rows.length >= 2 ? rows[rows.length - 2] : rows[rows.length - 1];
       userRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     } else if (messages.length > 0 && !loading) {
-      // New user message just added (no active stream) — show it at top.
       const userRow = rows[Math.max(0, rows.length - 2)];
       userRow?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
@@ -93,11 +102,104 @@ export default function AIChatPanel() {
     [appendText, autoSpeak, soundEnabled, speechRate, speechVolume],
   );
 
+  // ── startListening — extracted so effects and BedsideOverlay can call it ──
+  const startListening = useCallback(() => {
+    if (voiceRef.current || !isVoiceInputSupported()) return;
+    let lastInterim = '';
+    let submitted = false;
+    const finalize = (finalText: string) => {
+      if (submitted) return;
+      submitted = true;
+      const session = voiceRef.current;
+      voiceRef.current = null;
+      session?.stop();
+      setListening(false);
+      setInterim('');
+      const trimmed = finalText.trim();
+      if (!trimmed || !activeRef.current) return;
+      void correctText(trimmed, language).then((fixed) => {
+        if (!activeRef.current) return;
+        appendText((fixed || trimmed) + ' ');
+        setTimeout(() => { handleAskRef.current?.(); }, 80);
+      });
+    };
+    const session = startVoiceInput({
+      lang: ttsCode,
+      silenceMs: 2500,
+      onInterim: (tx) => { lastInterim = tx; setInterim(tx); },
+      onFinal: (tx) => finalize(tx),
+      onSilence: () => {
+        if (!voiceRef.current || submitted) return;
+        try { voiceRef.current.stop(); } catch { /* engine already stopped */ }
+        setTimeout(() => { if (!submitted) finalize(lastInterim); }, 600);
+      },
+      onError: (err) => {
+        if (submitted) return;
+        voiceRef.current = null;
+        setListening(false);
+        setInterim('');
+        const reason = err === 'denied'
+          ? 'Microphone or Speech Recognition permission denied. Allow it in Settings → Privacy.'
+          : err === 'not-determined'
+          ? 'Microphone permission not granted yet. Tap mic and accept the prompt.'
+          : err === 'unavailable'
+          ? 'Speech recognition unavailable for the current language.'
+          : err === 'audio-session-failed' || err === 'audio-engine-failed'
+          ? 'Microphone is busy (another app may be using it).'
+          : err === 'ondevice-unavailable'
+          ? 'On-device speech recognition unavailable (typical on iOS Simulator). Try a real device, or check internet connection for server-based recognition.'
+          : `Mic error: ${err}`;
+        setMicError(reason);
+        setTimeout(() => setMicError(null), 6000);
+      },
+    });
+    if (session) {
+      voiceRef.current = session;
+      setListening(true);
+    } else if (!voiceSupported) {
+      setMicError('Voice input not available on this device.');
+      setTimeout(() => setMicError(null), 4000);
+    }
+  }, [language, ttsCode, appendText, voiceSupported]);
+  useEffect(() => { startListeningRef.current = startListening; }, [startListening]);
+
+  // Hands-free: auto-restart mic 1 s after the AI response completes.
+  useEffect(() => {
+    if (loading || !handsFreeModeActive || listening) return;
+    const timer = setTimeout(() => {
+      if (!voiceRef.current && handsFreeRef.current && activeRef.current) {
+        startListeningRef.current?.();
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [loading, handsFreeModeActive, listening]);
+
+  // Wake word: run a background "Hey Prism" detector when idle.
+  // Skipped when hands-free is on (auto-restart supersedes it) or
+  // while the mic or AI is active (audio session conflict).
+  useEffect(() => {
+    if (!wakeWordActive || handsFreeModeActive || listening || loading) {
+      wakeWordSessionRef.current?.stop();
+      wakeWordSessionRef.current = null;
+      return;
+    }
+    const session = startWakeWordDetection(ttsCode, () => {
+      wakeWordSessionRef.current?.stop();
+      wakeWordSessionRef.current = null;
+      startListeningRef.current?.();
+    });
+    wakeWordSessionRef.current = session;
+    return () => {
+      session?.stop();
+      wakeWordSessionRef.current = null;
+    };
+  }, [wakeWordActive, handsFreeModeActive, listening, loading, ttsCode]);
+
   const handleAsk = useCallback(async () => {
     // Using getState() rather than reactive text to avoid stale closure — reads latest text at submit time.
     // H14: strip Unicode control characters (bidirectional overrides, zero-width spaces, etc.)
     const question = useMessageStore.getState().text.trim().slice(0, 500)
-      .replace(/[\u00ad\u0600-\u0605\u061c\u06dd\u070f\u08e2\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u206f\ufeff\ufff9-\ufffb]/g, '');
+      .replace(/[­؀-؅؜۝܏࣢᠎​-‏‪-‮⁠-⁤⁦-⁯﻿￹-￻]/g, '');
     if (!question || loading) return;
     tapFeedback();
 
@@ -135,22 +237,10 @@ export default function AIChatPanel() {
     let speaking = false;
     const queueTimers: ReturnType<typeof setTimeout>[] = [];
 
-    // Do NOT override spokenLang for AI streaming speech. The AI may respond
-    // in any language (native 1.7B on iOS often responds in English even when
-    // prompted in Russian). Let aacSpeak detect the language naturally via its
-    // translation/script-detection logic — same as the non-streaming tap path
-    // on line 89 which passes no spokenLang and works correctly.
-
     const drainQueue = () => {
       if (speaking || sentenceQueue.length === 0 || !soundEnabled) return;
       speaking = true;
       const sentence = sentenceQueue.shift()!;
-      // interrupt=true required: PROTECT_PLAY_MS (azureTTS.ts:417) drops any
-      // non-interrupt aacSpeak call while another source has played <600ms.
-      // Streaming sentences arrive in tight succession and were being silently
-      // dropped — chat text appeared on screen but audio stayed silent.
-      // Each sentence is gated behind its own duration timer, so we DO want
-      // interrupt semantics: the previous source has finished (per timer).
       aacSpeak(sentence, speechRate, speechVolume, undefined, true);
       const dur = estimateSpeechDurationMs(sentence, speechRate * 0.6) + 300;
       const timer = setTimeout(() => { speaking = false; drainQueue(); }, dur);
@@ -185,10 +275,9 @@ export default function AIChatPanel() {
       if (!activeRef.current) return;
       if (askController.signal.aborted) return;
       scheduled = false;
-      const t = buffer;
-      const checkText = t;
-      const safety = checkCrisisSafety(checkText);
-      const safeText = safety.safe ? t : safety.response;
+      const tx = buffer;
+      const safeguard = checkCrisisSafety(tx);
+      const safeText = safeguard.safe ? tx : safeguard.response;
       const lines = safeText.split(/\n+/).filter((l) => l.trim());
       setMessages((prev) => {
         const updated = prev.slice();
@@ -267,6 +356,8 @@ export default function AIChatPanel() {
     if (sidePanel !== 'ai-chat') {
       askAbortRef.current?.abort();
       askAbortRef.current = null;
+      wakeWordSessionRef.current?.stop();
+      wakeWordSessionRef.current = null;
       if (voiceRef.current) {
         voiceRef.current.stop();
         voiceRef.current = null;
@@ -281,9 +372,11 @@ export default function AIChatPanel() {
     return () => {
       askAbortRef.current?.abort();
       askAbortRef.current = null;
+      wakeWordSessionRef.current?.stop();
+      wakeWordSessionRef.current = null;
       voiceRef.current?.stop();
       voiceRef.current = null;
-      wasLoadingRef.current = false;  // prevent stale justFinished scroll on remount
+      wasLoadingRef.current = false;
     };
   }, []);
 
@@ -298,209 +391,195 @@ export default function AIChatPanel() {
       setInterim('');
       return;
     }
-    // Track the last interim so we can fall back to it if the engine
-    // ends the session WITHOUT producing a final result. Some browsers
-    // emit interims then end without finalizing when rec.stop() is called
-    // mid-utterance, which would otherwise discard everything the user said.
-    let lastInterim = '';
-    let submitted = false;
-    const finalize = (text: string) => {
-      if (submitted) return;
-      submitted = true;
-      const session = voiceRef.current;
-      voiceRef.current = null;
-      session?.stop();
-      setListening(false);
-      setInterim('');
-      const trimmed = text.trim();
-      if (!trimmed || !activeRef.current) return;
-      void correctText(trimmed, language).then((fixed) => {
-        if (!activeRef.current) return;
-        appendText((fixed || trimmed) + ' ');
-        setTimeout(() => { handleAskRef.current?.(); }, 80);
-      });
-    };
-    const session = startVoiceInput({
-      lang: ttsCode,
-      silenceMs: 2500,  // give the user time to actually finish a phrase
-      onInterim: (t) => {
-        lastInterim = t;
-        setInterim(t);
-      },
-      onFinal: (t) => finalize(t),
-      // Silence detected after speech started. Stop the recognition
-      // (which causes the engine to emit a final result if it has one),
-      // then wait briefly. If onFinal fires, it submits. If it doesn't
-      // (some engines skip the final on rec.stop()), use the last interim.
-      onSilence: () => {
-        if (!voiceRef.current || submitted) return;
-        try { voiceRef.current.stop(); } catch { /* engine already stopped */ }
-        setTimeout(() => {
-          if (!submitted) finalize(lastInterim);
-        }, 600);
-      },
-      onError: (err) => {
-        if (submitted) return;
-        voiceRef.current = null;
-        setListening(false);
-        setInterim('');
-        // Surface the failure code so the user knows WHY mic didn't work.
-        // Code values come from the native bridge (denied / restricted /
-        // not-determined / unavailable / audio-session-failed /
-        // audio-engine-failed / recognition-failed / invalid-language /
-        // timeout) or the Web Speech API errors.
-        const reason = err === 'denied'
-          ? 'Microphone or Speech Recognition permission denied. Allow it in Settings → Privacy.'
-          : err === 'not-determined'
-          ? 'Microphone permission not granted yet. Tap mic and accept the prompt.'
-          : err === 'unavailable'
-          ? 'Speech recognition unavailable for the current language.'
-          : err === 'audio-session-failed' || err === 'audio-engine-failed'
-          ? 'Microphone is busy (another app may be using it).'
-          : err === 'ondevice-unavailable'
-          ? 'On-device speech recognition unavailable (typical on iOS Simulator). Try a real device, or check internet connection for server-based recognition.'
-          : `Mic error: ${err}`;
-        setMicError(reason);
-        setTimeout(() => setMicError(null), 6000);
-      },
-    });
-    if (session) {
-      voiceRef.current = session;
-      setListening(true);
-    } else if (!voiceSupported) {
-      setMicError('Voice input not available on this device.');
-      setTimeout(() => setMicError(null), 4000);
-    }
+    startListening();
   };
 
+  const lastAIMessage = [...messages].reverse().find((m) => m.role === 'ai') ?? null;
+
   return (
-    <section
-      aria-label={t('ai_chat_title')}
-      aria-busy={loading}
-      className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme"
-      data-testid="ai-chat-panel"
-      data-state="expanded"
-    >
-      {micError && (
-        <div
-          role="alert"
-          data-testid="ai-mic-error"
-          className="bg-[#F44336] text-white text-sm font-semibold px-3 py-2 text-center shrink-0"
-        >
-          {micError}
-        </div>
+    <>
+      {bedsideModeActive && (
+        <BedsideOverlay
+          listening={listening}
+          loading={loading}
+          interim={interim}
+          handsFreeModeActive={handsFreeModeActive}
+          wakeWordActive={wakeWordActive}
+          wakeWordSupported={wakeWordSupported}
+          lastAIText={lastAIMessage?.text ?? ''}
+          lastAILines={lastAIMessage?.lines ?? []}
+          onToggleVoice={toggleVoice}
+          onSetHandsFree={setHandsFreeModeActive}
+          onSetWakeWord={setWakeWordActive}
+          onTapLine={handleTapLine}
+          onClose={() => setBedsideModeActive(false)}
+        />
       )}
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-2 border-b border-theme shrink-0">
-        <span className="text-primary font-bold text-xl">✨ {t('ai_chat_title')}</span>
-        <div className="flex items-center gap-2">
-          {voiceSupported && (
-            <button
-              onClick={toggleVoice}
-              aria-label={listening ? t('stop_voice') : t('start_voice')}
-              aria-pressed={listening}
-              data-testid="ai-mic"
-              className={`aac-btn rounded-lg font-bold text-xl px-3 h-9 flex items-center justify-center ${
-                listening
-                  ? 'bg-[#F44336] text-white animate-pulse'
-                  : 'surface-key text-primary border border-theme'
-              }`}
-            >
-              {listening ? '⏺' : '🎙'}
-            </button>
-          )}
-          <button
-            onClick={() => { tapFeedback(); closeSidePanel(); }}
-            aria-label={t('close_ai_chat')}
-            className="aac-btn w-9 h-9 rounded-lg surface-key text-muted text-lg flex items-center justify-center border border-theme"
-          >
-            ✕
-          </button>
-        </div>
-      </header>
-
-      {/* Typed-input preview — MessageBar is hidden globally in ai-chat mode
-          (PrismApp.tsx suppresses it), so without this strip the user types
-          into the void: keys land in useMessageStore but nothing displays.
-          The strip is read-only here; Keyboard's existing Backspace already
-          mutates messageStore. */}
-      <div
-        className="shrink-0 px-4 py-2 border-b border-theme bg-black/5 dark:bg-white/5"
-        data-testid="ai-chat-input-preview"
+      <section
+        aria-label={t('ai_chat_title')}
+        aria-busy={loading}
+        className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme"
+        data-testid="ai-chat-panel"
+        data-state="expanded"
       >
-        <p
-          className="text-xl text-primary leading-snug min-h-[1.75rem] break-words"
-          aria-label={t('current_message')}
-        >
-          {text || (
-            <span className="text-muted text-base italic">{t('type_or_speak')}</span>
-          )}
-          {text && <span className="text-muted animate-pulse">▎</span>}
-        </p>
-      </div>
-
-      {/* Chat scroll area */}
-      <div ref={scrollRef} aria-live="polite" aria-atomic="false" className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
-        {messages.length === 0 && !loading && (
-          <div className="h-full flex flex-col items-center justify-center text-center gap-3 text-muted px-6">
-            <span className="text-5xl">✨</span>
-            <p className="text-lg font-medium">{t('ai_chat_title')}</p>
-            <p className="text-base opacity-70">
-              {listening
-                ? interim || t('type_or_speak')
-                : t('type_or_speak')}
-            </p>
-            <p className="text-sm opacity-50 mt-1">
-              Press <strong>Speak</strong> to send your question
-            </p>
+        {micError && (
+          <div
+            role="alert"
+            data-testid="ai-mic-error"
+            className="bg-[#F44336] text-white text-sm font-semibold px-3 py-2 text-center shrink-0"
+          >
+            {micError}
           </div>
         )}
-
-        {messages.map((msg, i) => (
-          <div key={`${msg.role}-${i}-${msg.text.slice(0, 8)}`} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
-            <div
-              className={`rounded-xl p-3 border border-theme ${
-                msg.role === 'user'
-                  ? 'bg-[#dbeafe] text-[#14161d] dark:bg-[#2a3a5e] dark:text-[#e0e0e0]'
-                  : 'surface-key'
+        {/* Header */}
+        <header className="flex items-center justify-between px-4 py-2 border-b border-theme shrink-0">
+          <span className="text-primary font-bold text-xl">✨ {t('ai_chat_title')}</span>
+          <div className="flex items-center gap-2">
+            {/* Hands-free toggle */}
+            <button
+              onClick={() => { tapFeedback(); setHandsFreeModeActive((v) => !v); }}
+              aria-label={handsFreeModeActive ? 'Disable hands-free mode' : 'Enable hands-free mode'}
+              aria-pressed={handsFreeModeActive}
+              data-testid="ai-hands-free"
+              title="Hands-free: mic auto-restarts after each AI response"
+              className={`aac-btn rounded-lg text-base px-2.5 h-9 flex items-center justify-center ${
+                handsFreeModeActive
+                  ? 'bg-[#4CAF50] text-white'
+                  : 'surface-key text-muted border border-theme'
               }`}
             >
-              {msg.role === 'user' ? (
-                <p className="text-xl">{msg.text}</p>
-              ) : (
-                <div className="space-y-2">
-                  {(msg.lines ?? [msg.text]).map((line, li) => (
-                    <button
-                      key={`line-${li}-${line.slice(0, 12)}`}
-                      onClick={() => handleTapLine(line)}
-                      aria-label={`Use: ${line}`}
-                      className="aac-btn block w-full text-left rounded-lg p-2 hover:bg-black/5 transition-colors"
-                    >
-                      <ColoredText text={line} className="text-xl leading-relaxed" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <p className="text-dim text-sm mt-1 px-1">
-              {msg.role === 'user' ? t('you') : t('ai_chat')}
-            </p>
+              🔁
+            </button>
+            {/* Bedside mode button */}
+            <button
+              onClick={() => { tapFeedback(); setBedsideModeActive((v) => !v); }}
+              aria-label="Open Bedside Mode"
+              aria-pressed={bedsideModeActive}
+              data-testid="ai-bedside"
+              title="Bedside Mode: full-screen, hands-free, for phone-in-stand use"
+              className="aac-btn rounded-lg text-base px-2.5 h-9 flex items-center justify-center surface-key text-muted border border-theme"
+            >
+              🛏
+            </button>
+            {/* Mic button */}
+            {voiceSupported && (
+              <button
+                onClick={toggleVoice}
+                aria-label={listening ? t('stop_voice') : t('start_voice')}
+                aria-pressed={listening}
+                data-testid="ai-mic"
+                className={`aac-btn rounded-lg font-bold text-xl px-3 h-9 flex items-center justify-center ${
+                  listening
+                    ? 'bg-[#F44336] text-white animate-pulse'
+                    : 'surface-key text-primary border border-theme'
+                }`}
+              >
+                {listening ? '⏺' : '🎙'}
+              </button>
+            )}
+            <button
+              onClick={() => { tapFeedback(); closeSidePanel(); }}
+              aria-label={t('close_ai_chat')}
+              className="aac-btn w-9 h-9 rounded-lg surface-key text-muted text-lg flex items-center justify-center border border-theme"
+            >
+              ✕
+            </button>
           </div>
-        ))}
+        </header>
 
-        {loading && (
-          <div className="flex items-center gap-2 text-muted text-xl px-2">
-            <span className="animate-pulse">{t('thinking')}</span>
+        {/* Typed-input preview — MessageBar is hidden globally in ai-chat mode
+            (PrismApp.tsx suppresses it), so without this strip the user types
+            into the void: keys land in useMessageStore but nothing displays.
+            The strip is read-only here; Keyboard's existing Backspace already
+            mutates messageStore. */}
+        <div
+          className="shrink-0 px-4 py-2 border-b border-theme bg-black/5 dark:bg-white/5"
+          data-testid="ai-chat-input-preview"
+        >
+          <p
+            className="text-xl text-primary leading-snug min-h-[1.75rem] break-words"
+            aria-label={t('current_message')}
+          >
+            {text || (
+              <span className="text-muted text-base italic">{t('type_or_speak')}</span>
+            )}
+            {text && <span className="text-muted animate-pulse">▎</span>}
+          </p>
+        </div>
+
+        {/* Chat scroll area */}
+        <div ref={scrollRef} aria-live="polite" aria-atomic="false" className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+          {messages.length === 0 && !loading && (
+            <div className="h-full flex flex-col items-center justify-center text-center gap-3 text-muted px-6">
+              <span className="text-5xl">✨</span>
+              <p className="text-lg font-medium">{t('ai_chat_title')}</p>
+              <p className="text-base opacity-70">
+                {listening
+                  ? interim || t('type_or_speak')
+                  : wakeWordActive
+                  ? 'Say "Hey Prism" to start'
+                  : t('type_or_speak')}
+              </p>
+              <p className="text-sm opacity-50 mt-1">
+                Press <strong>Speak</strong> to send your question
+              </p>
+            </div>
+          )}
+
+          {messages.map((msg, i) => (
+            <div key={`${msg.role}-${i}-${msg.text.slice(0, 8)}`} className={msg.role === 'user' ? 'ml-8' : 'mr-4'}>
+              <div
+                className={`rounded-xl p-3 border border-theme ${
+                  msg.role === 'user'
+                    ? 'bg-[#dbeafe] text-[#14161d] dark:bg-[#2a3a5e] dark:text-[#e0e0e0]'
+                    : 'surface-key'
+                }`}
+              >
+                {msg.role === 'user' ? (
+                  <p className="text-xl">{msg.text}</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(msg.lines ?? [msg.text]).map((line, li) => (
+                      <button
+                        key={`line-${li}-${line.slice(0, 12)}`}
+                        onClick={() => handleTapLine(line)}
+                        aria-label={`Use: ${line}`}
+                        className="aac-btn block w-full text-left rounded-lg p-2 hover:bg-black/5 transition-colors"
+                      >
+                        <ColoredText text={line} className="text-xl leading-relaxed" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="text-dim text-sm mt-1 px-1">
+                {msg.role === 'user' ? t('you') : t('ai_chat')}
+              </p>
+            </div>
+          ))}
+
+          {loading && (
+            <div className="flex items-center gap-2 text-muted text-xl px-2">
+              <span className="animate-pulse">{t('thinking')}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Status bar — wake word / hands-free indicators */}
+        {(wakeWordActive || handsFreeModeActive) && !listening && !loading && (
+          <div className="shrink-0 px-4 py-1.5 border-t border-theme flex items-center gap-3 text-sm text-muted">
+            {wakeWordActive && <span>🎯 Listening for &ldquo;Hey Prism&rdquo;</span>}
+            {handsFreeModeActive && <span>🔁 Hands-free on</span>}
           </div>
         )}
-      </div>
 
-      {/* Interim voice hint — only when listening */}
-      {listening && interim && (
-        <div className="shrink-0 px-4 py-2 border-t border-theme text-[#4CAF50] text-base text-center truncate">
-          🎙 &ldquo;{interim.slice(0, 200)}{interim.length > 200 ? '…' : ''}&rdquo;
-        </div>
-      )}
-    </section>
+        {/* Interim voice hint — only when listening */}
+        {listening && interim && (
+          <div className="shrink-0 px-4 py-2 border-t border-theme text-[#4CAF50] text-base text-center truncate">
+            🎙 &ldquo;{interim.slice(0, 200)}{interim.length > 200 ? '…' : ''}&rdquo;
+          </div>
+        )}
+      </section>
+    </>
   );
 }
