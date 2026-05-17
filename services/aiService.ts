@@ -398,7 +398,12 @@ async function callSynalux(
   const cl = Number(res.headers.get('content-length') || '0');
   if (cl > 1_048_576) { t.cancel(); throw new Error(`Synalux API response too large (${cl} bytes)`); }
   try {
-    const data = await res.json();
+    // Read raw text before JSON.parse — Content-Length is advisory and commonly absent
+    // on HTTP/2. Without this cap, res.json() parses the full body into V8 heap before
+    // the content.length check fires, risking OOM on low-memory iOS WKWebView.
+    const rawText = await res.text();
+    if (rawText.length > 1_048_576) throw new Error('Synalux API response body too large');
+    const data = JSON.parse(rawText);
     const content: string = data?.choices?.[0]?.message?.content || data?.content || '';
     if (content.length > 32_000) throw new Error('Synalux API response content too large');
     return content;
@@ -818,6 +823,9 @@ export async function parseCaregiverNote(rawNoteText: string, signal?: AbortSign
         if (typeof p.text === 'string') p.text = p.text.slice(0, 500);
         if (typeof p.phraseText === 'string') p.phraseText = p.phraseText.slice(0, 500);
         if (typeof p.name === 'string') p.name = p.name.slice(0, 80);
+        if (typeof p.icon === 'string') p.icon = p.icon.slice(0, 10);
+        if (typeof p.phraseId === 'string') p.phraseId = p.phraseId.slice(0, 80);
+        if (typeof p.sequenceName === 'string') p.sequenceName = p.sequenceName.slice(0, 80);
         if (typeof p.categoryId === 'string') p.categoryId = p.categoryId.slice(0, 80);
         if (typeof p.word === 'string') p.word = p.word.slice(0, 100);
         if (typeof p.boostCount === 'number') p.boostCount = Math.max(0, Math.min(100, Math.floor(p.boostCount)));
