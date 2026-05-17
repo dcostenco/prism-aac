@@ -221,15 +221,8 @@ struct PrismWebView: UIViewRepresentable {
             Task { @MainActor in onLoaded?(); onLoaded = nil }
         }
 
-        // FIX L1: clear #if DEBUG boundary — no mid-expression preprocessor directives
         private static func isAllowedOrigin(_ url: URL) -> Bool {
-            if url.host == "synalux.ai" || url.host?.hasSuffix(".synalux.ai") == true {
-                return true
-            }
-            #if DEBUG
-            if url.host == "localhost" { return true }
-            #endif
-            return false
+            BridgeSecurityPolicy.isAllowedOrigin(url)
         }
 
         // Handle JS → Native messages
@@ -239,17 +232,15 @@ struct PrismWebView: UIViewRepresentable {
                   let action = body["action"] as? String else { return }
             switch action {
             case "speak":
-                // FIX M5: cap text length to prevent memory exhaustion from malicious pages
-                let text = String((body["text"] as? String ?? "").prefix(2000))
+                let text = String((body["text"] as? String ?? "").prefix(BridgeSecurityPolicy.maxSpeakTextLength))
                 let lang = body["lang"] as? String ?? "en-US"
                 let rate = Float(body["rate"] as? Double ?? 0.5)
                 tts.speak(text, language: lang, rate: rate)
             case "stopSpeech":
                 tts.stop()
             case "emergency":
-                // C14: Rate limit — max 1 emergency trigger per 30 seconds
                 let now = Date().timeIntervalSince1970
-                guard now - lastEmergencyTriggerTime >= 30 else {
+                guard now - lastEmergencyTriggerTime >= BridgeSecurityPolicy.emergencyRateLimitSeconds else {
                     NSLog("[PrismAAC] Emergency rate-limited (too frequent)")
                     return
                 }
@@ -265,8 +256,7 @@ struct PrismWebView: UIViewRepresentable {
                 // C14: Main frame only
                 guard message.frameInfo.isMainFrame else { return }
 
-                // C14: Phrase length cap
-                let phrase = String((body["phrase"] as? String ?? "Help").prefix(500))
+                let phrase = String((body["phrase"] as? String ?? "Help").prefix(BridgeSecurityPolicy.maxEmergencyPhraseLength))
                 Task { @MainActor in
                     WatchEmergencyBridge.shared.trigger(phrase: phrase)
                 }
@@ -282,7 +272,7 @@ struct PrismWebView: UIViewRepresentable {
                       message.frameInfo.isMainFrame else {
                     return
                 }
-                let question = String((body["question"] as? String ?? "").prefix(500))
+                let question = String((body["question"] as? String ?? "").prefix(BridgeSecurityPolicy.maxAskAIQuestionLength))
                 let lang = body["lang"] as? String ?? "en"
                 guard !question.isEmpty else {
                     return
@@ -326,24 +316,11 @@ struct PrismWebView: UIViewRepresentable {
                       message.frameInfo.isMainFrame else {
                     return
                 }
-                let rawSection = String((body["section"] as? String ?? "accessibility").prefix(50))
-                // Whitelist-only construction — rawSection is NEVER interpolated into the URL.
-                // Unknown values fall through to the generic Accessibility root so there is
-                // no path for a compromised page to open arbitrary prefs: URLs.
-                let settingsURLString: String
-                switch rawSection {
-                case "speech":
-                    settingsURLString = "prefs:root=ACCESSIBILITY&path=SPEECH"
-                case "voiceControl":
-                    settingsURLString = "prefs:root=ACCESSIBILITY&path=VOICECONTROL"
-                case "switchControl":
-                    settingsURLString = "prefs:root=ACCESSIBILITY&path=SWITCH_CONTROL"
-                default:
-                    settingsURLString = "prefs:root=ACCESSIBILITY"
-                }
+                let rawSection = String((body["section"] as? String ?? "accessibility")
+                    .prefix(BridgeSecurityPolicy.maxSettingsSectionLength))
                 Task { @MainActor in
-                    guard let settingsURL = URL(string: settingsURLString) else { return }
-                    UIApplication.shared.open(settingsURL, options: [:], completionHandler: nil)
+                    guard let url = BridgeSecurityPolicy.settingsURL(for: rawSection) else { return }
+                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
                 }
             default: break
             }
@@ -371,14 +348,14 @@ struct PrismWebView: UIViewRepresentable {
 
         // MARK: - SFSpeechRecognizer bridge
 
-        private static let langPattern = try! NSRegularExpression(pattern: "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})?$")
+        // Language validation delegated to BridgeSecurityPolicy (unit-tested there)
         private var recognitionGeneration: UInt64 = 0
         private var recognitionTimeout: DispatchWorkItem?
         private var lastStartVoiceTime: TimeInterval = 0
 
         private func startSpeechRecognition(lang: String, webView: WKWebView?) {
             let now = Date().timeIntervalSince1970
-            guard now - lastStartVoiceTime >= 0.5 else {
+            guard now - lastStartVoiceTime >= BridgeSecurityPolicy.startVoiceRateLimitSeconds else {
                 return
             }
             lastStartVoiceTime = now
@@ -401,9 +378,8 @@ struct PrismWebView: UIViewRepresentable {
             recognitionGeneration &+= 1
             let gen = recognitionGeneration
 
-            let safeLang = String(lang.prefix(11))
-            let range = NSRange(safeLang.startIndex..., in: safeLang)
-            guard Self.langPattern.firstMatch(in: safeLang, range: range) != nil else {
+            let safeLang = String(lang.prefix(BridgeSecurityPolicy.maxLangTagLength))
+            guard BridgeSecurityPolicy.isValidLang(safeLang) else {
                 sendSpeechError("invalid-language")
                 return
             }
@@ -584,8 +560,7 @@ final class WKWebTTS: NSObject {
 
     func speak(_ text: String, language: String = "en-US", rate: Float = 0.5) {
         synth.stopSpeaking(at: .immediate)
-        // FIX L3: cap text length
-        let utt = AVSpeechUtterance(string: String(text.prefix(2000)))
+        let utt = AVSpeechUtterance(string: String(text.prefix(BridgeSecurityPolicy.maxSpeakTextLength)))
         utt.voice = AVSpeechSynthesisVoice(language: language)
         utt.rate = max(AVSpeechUtteranceMinimumSpeechRate,
                        min(AVSpeechUtteranceMaximumSpeechRate, rate))
@@ -716,7 +691,7 @@ struct ModelLoadingView: View {
             case .checking: ProgressView("Checking…")
             case .downloading:
                 VStack(spacing: 8) {
-                    Text("Downloading AI model (1 GB)").font(.headline)
+                    Text("Downloading AI model (~1.1 GB)").font(.headline)
                     ProgressView().padding(.horizontal, 32)
                 }
             case .lowMemory:
@@ -741,24 +716,56 @@ struct ModelLoadingView: View {
         .task { await start() }
     }
 
+    // Ordered list of candidate download URLs for the on-device 1.7B model.
+    // The latest training checkpoint is tried first; the stable canonical path
+    // is kept as a fallback so the app survives future repo restructuring.
+    private static let modelCandidateURLs: [URL] = [
+        // v36 — latest fine-tuned checkpoint (May 2026)
+        URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v36-q4km.gguf")!,
+        // stable canonical path under gguf/ directory
+        URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/gguf/prism-coder-1.7b-q4_k_m.gguf")!,
+    ]
+
+    // Filename stored on device — updated to v36 so stale v1.0 cache is not reused.
+    private static let localModelFilename = "prism-coder-1b7-v36-q4km.gguf"
+    // Legacy filename written by previous app versions — migrated on first run.
+    private static let legacyModelFilename = "prism-aac-1b7-q4km.gguf"
+
     private func start() async {
         phase = .checking
         guard AppState.measureFreeMemoryMB() >= 1_200 else { phase = .lowMemory; return }
-        let url = FileManager.default
+        let modelsDir = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("models/prism-aac-1b7-q4km.gguf")
-        if FileManager.default.fileExists(atPath: url.path) { await app.loadModel(from: url); return }
+            .appendingPathComponent("models")
+        let destination = modelsDir.appendingPathComponent(Self.localModelFilename)
+
+        // Migrate cached file from pre-v36 install without re-downloading.
+        if !FileManager.default.fileExists(atPath: destination.path) {
+            let legacy = modelsDir.appendingPathComponent(Self.legacyModelFilename)
+            if FileManager.default.fileExists(atPath: legacy.path) {
+                try? FileManager.default.moveItem(at: legacy, to: destination)
+            }
+        }
+
+        if FileManager.default.fileExists(atPath: destination.path) {
+            await app.loadModel(from: destination); return
+        }
+
         phase = .downloading
         do {
-            // FIX L4: Use download task instead of byte-by-byte streaming (avoids quadratic realloc)
-            let cdnURL = URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-aac-1b7-q4km.gguf")!
-            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            let (tempURL, response) = try await URLSession.shared.download(from: cdnURL)
-            if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-                phase = .failed; return
+            try FileManager.default.createDirectory(at: modelsDir, withIntermediateDirectories: true)
+            // Try each candidate URL in order; use first successful HTTP 2xx response.
+            for cdnURL in Self.modelCandidateURLs {
+                let (tempURL, response) = try await URLSession.shared.download(from: cdnURL)
+                if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                    try? FileManager.default.removeItem(at: tempURL)
+                    continue
+                }
+                try FileManager.default.moveItem(at: tempURL, to: destination)
+                await app.loadModel(from: destination)
+                return
             }
-            try FileManager.default.moveItem(at: tempURL, to: url)
-            await app.loadModel(from: url)
+            phase = .failed
         } catch { phase = .failed }
     }
 }
