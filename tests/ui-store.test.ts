@@ -117,38 +117,56 @@ describe('UIStore — Keyboard mode', () => {
 });
 
 describe('UIStore — Alert (motor safety)', () => {
-  it('triggerAlert sets flashing true', () => {
+  // triggerAlert now opens a confirmation modal (safety UX: accidental taps are recoverable).
+  // isAlertFlashing is set by confirmAlertSend() AFTER user confirms. Two-step flow:
+  //   triggerAlert() → alertConfirmOpen: true → confirmAlertSend() → isAlertFlashing: true
+
+  it('triggerAlert opens confirmation modal, does not flash directly', () => {
     useUIStore.getState().triggerAlert();
-    expect(useUIStore.getState().isAlertFlashing).toBe(true);
+    expect(useUIStore.getState().alertConfirmOpen).toBe(true);
+    expect(useUIStore.getState().isAlertFlashing).toBe(false);
   });
 
-  it('triggerAlert auto-clears after timeout', async () => {
+  it('confirmAlertSend sets flashing true and clears after 2s', async () => {
     vi.useFakeTimers();
+    // Stub out the lazy import inside confirmAlertSend
+    vi.mock('@/services/sendAlertToCaregiver', () => ({
+      sendAlertToCaregiver: vi.fn(async () => ({ ok: true })),
+    }));
     useUIStore.getState().triggerAlert();
+    await useUIStore.getState().confirmAlertSend();
     expect(useUIStore.getState().isAlertFlashing).toBe(true);
     vi.advanceTimersByTime(2100);
     expect(useUIStore.getState().isAlertFlashing).toBe(false);
     vi.useRealTimers();
   });
 
-  it('rapid-fire within 5s cooldown: second tap ignored, flash clears at 2s from first', () => {
+  it('triggerAlert 5s cooldown: second tap within cooldown opens no second modal', () => {
     vi.useFakeTimers();
     useUIStore.getState().triggerAlert();
-    expect(useUIStore.getState().isAlertFlashing).toBe(true);
-    vi.advanceTimersByTime(1500);
-    useUIStore.getState().triggerAlert(); // within 5s cooldown — blocked
-    // Flash clears at 2000ms from first trigger (not reset by blocked second tap)
-    vi.advanceTimersByTime(600); // 2100ms total from first trigger
-    expect(useUIStore.getState().isAlertFlashing).toBe(false);
+    expect(useUIStore.getState().alertConfirmOpen).toBe(true);
+    useUIStore.getState().dismissAlertConfirm();
+    vi.advanceTimersByTime(1500); // within 5s cooldown
+    useUIStore.getState().triggerAlert(); // blocked
+    expect(useUIStore.getState().alertConfirmOpen).toBe(false);
     vi.useRealTimers();
   });
 
-  it('second alert fires after 5s cooldown expires', () => {
+  it('second triggerAlert fires after 5s cooldown expires', () => {
     vi.useFakeTimers();
     useUIStore.getState().triggerAlert();
-    vi.advanceTimersByTime(5100); // cooldown expires + first flash clears
-    useUIStore.getState().triggerAlert(); // should work now
-    expect(useUIStore.getState().isAlertFlashing).toBe(true);
+    useUIStore.getState().dismissAlertConfirm();
+    vi.advanceTimersByTime(5100); // cooldown expires
+    useUIStore.getState().triggerAlert(); // should open modal again
+    expect(useUIStore.getState().alertConfirmOpen).toBe(true);
     vi.useRealTimers();
+  });
+
+  it('dismissAlertConfirm closes modal without flashing', () => {
+    useUIStore.getState().triggerAlert();
+    expect(useUIStore.getState().alertConfirmOpen).toBe(true);
+    useUIStore.getState().dismissAlertConfirm();
+    expect(useUIStore.getState().alertConfirmOpen).toBe(false);
+    expect(useUIStore.getState().isAlertFlashing).toBe(false);
   });
 });

@@ -91,7 +91,19 @@ describe('LocalAI — prism-coder:1b7 (2.2 GB — used in tests)', () => {
       body: JSON.stringify({
         model: TAG,
         prompt: 'Load context for prism-mcp',
-        system: 'When a tool is needed respond ONLY with: <|tool_call|>\n{"name":"tool_name","arguments":{}}\n<|tool_call_end|>\nTOOL ROUTING: load/fetch context for X -> session_load_context(project=X)\nALWAYS infer missing parameters',
+        // Use the full 6-tool system prompt (same as cascade/benchmark) so the model
+        // can override the format placeholder with the real tool name. A truncated
+        // prompt that only shows the format line confuses the model into echoing "tool_name" literally.
+        system: `CRITICAL: You have EXACTLY 6 tools. Their EXACT names are:
+  session_load_context, session_save_ledger, session_save_handoff,
+  session_compact_ledger, session_search_memory, knowledge_search
+When a tool is needed, respond ONLY with:
+<|tool_call|>
+{"name": "session_load_context", "arguments": {"project": "X"}}
+<|tool_call_end|>
+If no tool is needed, respond in plain text.
+TOOL ROUTING:
+load/fetch/get/pull/retrieve/open/resume context for project X -> session_load_context(project=X)`,
         stream: false,
         options: { num_predict: 200, temperature: 0 },
       }),

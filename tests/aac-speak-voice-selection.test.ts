@@ -5,6 +5,9 @@
  * (e.g. Russian text called from MessageBar), it must not break EN→EN mode.
  * The overrideLang parameter that was added in ef19d2c broke this — these
  * tests would have caught the regression before push.
+ *
+ * Rate note: aacSpeak applies effectiveRate = rate * 0.6 internally (commit 95e4168
+ * "apply 0.6x rate to all speech"). speak() receives the scaled value, not the raw rate.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -53,7 +56,7 @@ describe('aacSpeak — voice selection', () => {
     expect(mockTranslate).not.toHaveBeenCalled();
     expect(mockSpeak).toHaveBeenCalledWith(
       'hello world',
-      0.5, 1.0,
+      0.5 * 0.6, 1.0,  // effectiveRate = rate * 0.6 (commit 95e4168)
       'en-TTS',
       expect.anything(),
       false,
@@ -68,7 +71,7 @@ describe('aacSpeak — voice selection', () => {
 
     expect(mockSpeak).toHaveBeenCalledWith(
       'привет мир',
-      0.5, 1.0,
+      0.5 * 0.6, 1.0,  // effectiveRate = rate * 0.6
       'ru-TTS',
       expect.anything(),
       false,
@@ -83,7 +86,7 @@ describe('aacSpeak — voice selection', () => {
 
     expect(mockSpeak).toHaveBeenCalledWith(
       'hello',
-      0.5, 1.0,
+      0.5 * 0.6, 1.0,  // effectiveRate = rate * 0.6
       'en-TTS', // source voice since translation didn't change text
       expect.anything(),
       false,
@@ -104,7 +107,7 @@ describe('aacSpeak — voice selection', () => {
     aacSpeak('help', 0.5, 1.0, undefined, true);
 
     expect(mockSpeak).toHaveBeenCalledWith(
-      'help', 0.5, 1.0, 'en-TTS', expect.anything(), true,
+      'help', 0.5 * 0.6, 1.0, 'en-TTS', expect.anything(), true,
     );
   });
 });
