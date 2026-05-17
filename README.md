@@ -50,6 +50,7 @@ Part of the [Synalux platform](https://synalux.ai).
 | 🎮 **Games** | 12 therapeutic AAC games | <img src="docs/screenshots/panel-games.png" width="120"> |
 | 🏪 **Marketplace** | Voice packs, vocab packs, game packs | <img src="docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Comfort Player** | Bedside media player for hospital patients | <img src="docs/screenshots/panel-comfort-player.png" width="120"> |
+| 🛏 **Bedside Mode** | Full-screen AI chat for phone-in-stand / lying-down use | <img src="e2e/_screenshots/bedside-overlay-open.png" width="120"> |
 | 👋 **Hands-free** | Head + hand gesture recognition | <img src="docs/screenshots/panel-settings-input-modes.png" width="120"> |
 | ⚙️ **Settings** | 23 languages, motor accommodations, plan tier | <img src="docs/screenshots/panel-settings.png" width="120"> |
 
@@ -61,23 +62,28 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 
 ## How PrismAAC compares
 
-| | PrismAAC | TouchChat | Proloquo2Go | LAMP Words | TD Snap | CoughDrop |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **On-device + HIPAA-safe** speech path | ✅ | ❌ | ❌ | ❌ | partial | partial |
-| **Per-user phrase ranking** (ACT-R + spreading activation) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Caregiver corrections **become training data automatically** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Domain-aware AI tutor** (math + 10 other subjects) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Cell-grid math canvas** (no LaTeX, no whiteboard) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Locale + region-aware history** (280+ regions) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Hands-free** head + hand gesture mode | ✅ | partial | partial | ❌ | ✅ | partial |
-| Therapeutic **AAC games** built in | ✅ (12) | ❌ | ❌ | ❌ | ❌ | partial |
-| **Open source** (AGPL-3.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| **Free tier** for life-safety access | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Voice pack **marketplace** | ✅ | ❌ | partial | ❌ | partial | ❌ |
-| **Multi-language** (23) | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
-| **Caregiver notes** that travel home / school / clinic | ✅ | ❌ | ❌ | ❌ | partial | partial |
+| | PrismAAC | TouchChat | Proloquo2Go | LAMP Words | TD Snap | CoughDrop | Snap Core First | Grid 3 | Tobii Dynavox |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **On-device + HIPAA-safe** speech path | ✅ | ❌ | ❌ | ❌ | partial | partial | ❌ | ❌ | partial |
+| **Per-user phrase ranking** (ACT-R + spreading activation) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Caregiver corrections **become training data automatically** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Domain-aware AI tutor** (math + 10 other subjects) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Cell-grid math canvas** (no LaTeX, no whiteboard) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Locale + region-aware history** (280+ regions) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Hands-free** head + hand gesture mode | ✅ | partial | partial | ❌ | ✅ | partial | partial | ✅ | ✅ |
+| **Hands-free AI chat** (voice loop + wake word + bedside overlay) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Therapeutic **AAC games** built in | ✅ (12) | ❌ | ❌ | ❌ | ❌ | partial | partial | ❌ | ❌ |
+| **Open source** (AGPL-3.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **Free tier** for life-safety access | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Voice pack **marketplace** | ✅ | ❌ | partial | ❌ | partial | ❌ | ❌ | partial | partial |
+| **Multi-language** (23) | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Caregiver notes** that travel home / school / clinic | ✅ | ❌ | ❌ | ❌ | partial | partial | partial | ❌ | partial |
+| **Apple Watch** standalone mode | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Chrome extension** reading assistant | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 > Comparison reflects publicly available product information as of 2026-05. PrismAAC is actively developed; competitors may add features over time. PRs welcome to keep this honest — see `CONTRIBUTING.md`.
+>
+> Grid 3 and Tobii Dynavox have strong eye-gaze + switch scanning hardware integrations not reflected above (hardware-dependent, specialist clinic setups).
 
 ---
 
@@ -280,6 +286,10 @@ On-device + cloud assistant tuned for the AAC user's voice. Streamed responses, 
 
 **Clean AI mode** — the word prediction bar hides automatically when AI Chat is open (predictions are irrelevant when composing a question), keeping the focus on the AI response and submit button.
 
+**Hands-free AI chat** — activate the 🔁 button in the chat header to enter a continuous voice loop: the mic opens automatically after each AI response, so the child can carry on a full conversation without touching the screen. A status bar below the chat header confirms the mode is on.
+
+**Translation mode** — when the app language and output language differ (e.g. input in Portuguese, output in English), every AI exchange is automatically routed through the translation path with streaming enabled, so there is no speed penalty versus monolingual mode.
+
 ![AI Chat panel — prediction bar hidden in AI mode, full keyboard accessible below](docs/screenshots/panel-ai-chat-v2.png)
 
 <details>
@@ -288,11 +298,59 @@ On-device + cloud assistant tuned for the AAC user's voice. Streamed responses, 
 - Inline panel docked above the keyboard — never a modal that hides the message bar
 - Voice input via Web Speech API; mic button shows live interim transcript
 - Tap any AI line to copy it into the message bar (preserves authorship — Valencia et al., CHI 2023)
+- **Hands-free loop** — 🔁 header button; auto-restarts mic 1 s after each AI response finishes; `aria-pressed` + green background confirm state; status bar below header while active
+- **"Hey Prism" wake word** — available inside Bedside overlay; continuous `SpeechRecognition` session detects the phrase and triggers the mic; not available when iOS native bridge owns the audio session
 - 15s hard timeout client-side + Retry button (so the panel can't get stuck on "Thinking…" if the network drops)
 - 401 / network / timeout / other → friendly error mapping; never shows "Session expired" raw
 - Local Ollama fallback (`prism-coder:7b`) when offline; mixed-content blocked from `prism-aac.vercel.app` browser origin in practice, so the friendly error fires
 
-**Render path:** `components/AIChatPanel.tsx` → `services/aiService.askAI()` → SSE stream from Synalux `/api/v1/chat` with `credentials: 'include'`. CORS allowlists `prism-aac.vercel.app` + localhost dev origins.
+**Render path:** `components/AIChatPanel.tsx` → `services/aiService.askAI()` (or `translateAI()` in translation mode) → SSE stream from Synalux `/api/v1/chat` with `credentials: 'include'`. CORS allowlists `prism-aac.vercel.app` + localhost dev origins.
+</details>
+
+---
+
+### 🛏 Bedside Mode
+Full-screen AI chat overlay designed for users who are lying down with their phone in a stand — arms at sides, no way to reach the screen. Inspired by real feedback from the AAC community (r/AssistiveTechnology) from users who needed hands-free communication from a hospital bed.
+
+Open it with the 🛏 button in the AI chat header. Every tap target is oversized; voice is the primary input path.
+
+<p align="center">
+  <img src="e2e/_screenshots/bedside-overlay-open.png" alt="Bedside Mode overlay — large mic button, AI response area, controls row" width="260">
+  <img src="e2e/_screenshots/bedside-overlay-handsfree-on.png" alt="Bedside Mode with Hands-Free active (green button)" width="260">
+  <img src="e2e/_screenshots/bedside-voice-control-card.png" alt="iOS Voice Control instruction card inside Bedside overlay" width="260">
+</p>
+
+<details>
+<summary><strong>Features + technical details</strong></summary>
+
+**Four components shipped together:**
+
+1. **Hands-free AI loop (🔁)** — also accessible from the main AI chat header. After each AI response the mic restarts automatically (1 s delay). A `handsFreeRef` / `startListeningRef` ref pattern ensures the effect always calls the current callback without re-running on every render.
+
+   ![Hands-free status bar in main AI panel](e2e/_screenshots/bedside-hands-free-statusbar.png)
+
+2. **Bedside overlay** — `fixed inset-0 z-50` fullscreen dark UI rendered as a sibling `<Fragment>` alongside the main AI panel so the panel's state is preserved. Accessibility: `role="dialog"`, `aria-modal="true"`, `aria-label="Bedside Mode"`. The overlay is independently E2E-verified to cover 100% of the viewport (≤ 4 px tolerance).
+
+   - **Big mic button** — 112 × 112 px (`w-28 h-28`), red + pulsing while listening, white border at rest. Verified ≥ 96 px by Playwright `boundingBox()` assertion.
+   - **AI response area** — scrollable; each AI line is a large tap target that copies the line into the message bar.
+   - **Controls row** — Hands-Free toggle (green when on), "Hey Prism" wake word toggle (blue when on, hidden when unsupported), and iOS Voice Control shortcut.
+
+   ![Bedside overlay — closed, back to main AI panel](e2e/_screenshots/bedside-overlay-closed.png)
+
+3. **"Hey Prism" wake word** — `services/wakeWordService.ts`. Runs a continuous `SpeechRecognition` session in the background. Detects any transcript containing "hey prism", fires the mic once, then resets for the next cycle. Not started when the iOS native bridge owns the mic (`prismNativeBridge?.startVoice` present). Wake word active state is shown in the main panel status bar after closing the overlay.
+
+   ![Status bar showing "Hey Prism" active](e2e/_screenshots/bedside-wakeword-statusbar.png)
+
+4. **iOS Voice Control guide** — tapping 📱 in the controls row attempts `prismNativeBridge.openSettings('accessibility')` (deep-links to Accessibility on supported native builds). On web / desktop it falls back to an in-overlay instruction card that walks through `Settings → Accessibility → Voice Control → On`.
+
+   ![iOS Voice Control instruction card dismissed](e2e/_screenshots/bedside-voice-control-dismissed.png)
+
+**E2E coverage:** 17 Playwright tests in `e2e/bedside-mode.spec.ts` covering all four features — button visibility, aria-pressed toggling, green/blue state classes, status bar text, overlay accessibility attributes, mic bounding box size, viewport coverage, and instruction card show/dismiss.
+
+**Key files:**
+- `components/AIChatPanel.tsx` — hands-free loop, wake word lifecycle, bedside state, header buttons
+- `components/BedsideOverlay.tsx` — overlay UI component
+- `services/wakeWordService.ts` — continuous wake phrase detection
 </details>
 
 ---
