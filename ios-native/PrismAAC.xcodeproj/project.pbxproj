@@ -697,7 +697,7 @@
 				CURRENT_PROJECT_VERSION = 20;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.5.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -786,7 +786,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.5.1;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -808,7 +808,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.5.1;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -823,7 +823,7 @@
 				CURRENT_PROJECT_VERSION = 20;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.5.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
