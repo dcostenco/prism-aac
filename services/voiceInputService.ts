@@ -180,6 +180,8 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
   let speechStarted = false;
   let lastInterimText = '';
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
+  let restartCount = 0;
+  const MAX_RESTARTS = 10;
   const silenceThreshold = opts.silenceMs ?? 2000;
 
   // Arm the silence timer ONLY when the transcript text changes. iOS
@@ -214,12 +216,16 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
       }
     }
     if (final) {
+      restartCount = 0;
       opts.onFinal(final);
       armSilence();
     }
   };
 
   rec.onerror = (event) => {
+    // Ignore errors that arrive after a deliberate stop() — the browser may
+    // fire trailing 'network' or 'audio-capture' events after rec.stop().
+    if (stopped) return;
     // no-speech only counts as silence AFTER we've heard something. Before
     // that it just means "user hasn't started speaking yet" — let the
     // session continue rather than stopping it preemptively.
@@ -244,9 +250,17 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
   };
 
   rec.onend = () => {
-    if (!stopped && !opts.autoStop) {
-      try { rec.start(); } catch { /* already running or blocked */ }
+    if (stopped || opts.autoStop) return;
+    if (restartCount >= MAX_RESTARTS) {
+      stopped = true;
+      opts.onError?.('recognition-restart-limit');
+      return;
     }
+    const delay = Math.min(200 * 2 ** restartCount, 10_000);
+    restartCount++;
+    setTimeout(() => {
+      if (!stopped) try { rec.start(); } catch { /* already running or blocked */ }
+    }, delay);
   };
 
   rec.onspeechend = () => {

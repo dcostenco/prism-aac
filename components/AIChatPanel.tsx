@@ -52,6 +52,7 @@ export default function AIChatPanel() {
   const [bedsideModeActive, setBedsideModeActive] = useState(false);
   const [handsFreeModeActive, setHandsFreeModeActive] = useState(false);
   const [wakeWordActive, setWakeWordActive] = useState(false);
+  const [isCrisisAnnouncement, setIsCrisisAnnouncement] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bedsideBtnRef = useRef<HTMLButtonElement>(null);
@@ -257,6 +258,7 @@ export default function AIChatPanel() {
     // here, before the crisis-filter branch, so even the synchronous fast-path
     // holds the lock long enough for the re-render to suppress the button.
     isLoadingRef.current = true;
+    setIsCrisisAnnouncement(false);
     tapFeedback();
 
     // Cancel any previous in-flight stream before starting a new one.
@@ -275,6 +277,7 @@ export default function AIChatPanel() {
       ].slice(-MAX_MESSAGES) as ChatMessage[]);
       isLoadingRef.current = false;
       lastCrisisAtRef.current = Date.now();
+      setIsCrisisAnnouncement(true);
       // Speak crisis response immediately — nonverbal child cannot read the screen.
       // Must be after setMessages so TTS and UI update together, not before.
       if (useMessageStore.getState().soundEnabled) {
@@ -352,6 +355,7 @@ export default function AIChatPanel() {
         // so the crisis response is actually rendered. abort() terminates the stream.
         flush();
         lastCrisisAtRef.current = Date.now();
+        setIsCrisisAnnouncement(true);
         // Speak crisis response — nonverbal child cannot read the screen.
         if (useMessageStore.getState().soundEnabled) {
           const { speechRate: sr, speechVolume: sv } = useSettingsStore.getState();
@@ -400,6 +404,21 @@ export default function AIChatPanel() {
         updated[updated.length - 1] = { ...updated[updated.length - 1], role: 'ai', text: safeText, lines };
         return updated;
       });
+      // Crisis detected in the full buffer (e.g. final sentence with no trailing space
+      // never reached enqueueSentence). Mirror the enqueueSentence crisis path: abort
+      // the stream, speak audio immediately, and suppress hands-free restart.
+      if (!safeguard.safe && !bufferIsCleanCrisisResponse) {
+        bufferIsCleanCrisisResponse = true;
+        cancelled = true;
+        queueTimers.forEach(clearTimeout);
+        lastCrisisAtRef.current = Date.now();
+        setIsCrisisAnnouncement(true);
+        if (useMessageStore.getState().soundEnabled) {
+          const { speechRate: sr, speechVolume: sv } = useSettingsStore.getState();
+          aacSpeak(safeText, sr, sv, 'serious', true);
+        }
+        askController.abort();
+      }
     };
 
     try {
@@ -566,6 +585,7 @@ export default function AIChatPanel() {
           wakeWordSupported={wakeWordSupported}
           lastAIText={lastAIMessage?.text ?? ''}
           lastAILines={lastAIMessage?.lines ?? []}
+          isCrisisAnnouncement={isCrisisAnnouncement}
           onToggleVoice={toggleVoice}
           onSetHandsFree={setHandsFreeModeActive}
           onSetWakeWord={setWakeWordActive}
@@ -679,7 +699,7 @@ export default function AIChatPanel() {
           className="sr-only"
           data-testid="ai-crisis-announcer"
         >
-          {lastAIMessage?.text?.includes('call 911') ? lastAIMessage.text : ''}
+          {isCrisisAnnouncement && lastAIMessage ? lastAIMessage.text : ''}
         </div>
         {/* Chat scroll area */}
         <div ref={scrollRef} aria-live="polite" aria-atomic="false" className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">

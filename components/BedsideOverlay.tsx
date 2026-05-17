@@ -12,6 +12,7 @@ interface BedsideOverlayProps {
   wakeWordSupported: boolean;
   lastAIText: string;
   lastAILines: string[];
+  isCrisisAnnouncement: boolean;
   onToggleVoice: () => void;
   onSetHandsFree: (v: boolean) => void;
   onSetWakeWord: (v: boolean) => void;
@@ -33,6 +34,7 @@ export default function BedsideOverlay({
   wakeWordSupported,
   lastAIText,
   lastAILines,
+  isCrisisAnnouncement,
   onToggleVoice,
   onSetHandsFree,
   onSetWakeWord,
@@ -121,7 +123,7 @@ export default function BedsideOverlay({
         className="sr-only"
         data-testid="bedside-crisis-announcer"
       >
-        {lastAIText.includes('call 911') ? lastAIText : ''}
+        {isCrisisAnnouncement ? lastAIText : ''}
       </div>
 
       {/* AI Response */}

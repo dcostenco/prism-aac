@@ -537,7 +537,14 @@ function callNativeBridge(
       reject(new Error('Native AI timeout'));
     }, 30_000);
 
+    // settled prevents a stale buffered token from a previous invocation
+    // contaminating a new session's buffer when the native thread delivers
+    // one last token after cleanup() deletes the property and a new handler
+    // is registered before the native runtime stops.
+    let settled = false;
+
     const abortHandler = () => {
+      settled = true;
       cleanup();
       reject(new DOMException('Aborted', 'AbortError'));
       try { (window as any).prismNativeBridge.stopAI?.(); } catch { /* optional bridge method */ }
@@ -554,10 +561,12 @@ function callNativeBridge(
     signal?.addEventListener('abort', abortHandler, { once: true });
 
     (window as any).prismNativeAIResult = (token: string) => {
+      if (settled) return;
       fullText += token;
       onChunk?.(token);
     };
     (window as any).prismNativeAIDone = () => {
+      settled = true;
       cleanup();
       resolve(fullText);
     };
@@ -565,6 +574,7 @@ function callNativeBridge(
     // GGUF not loaded, context overflow) have no way to reject the promise and
     // the 30-second hardware timeout becomes the only recovery path.
     (window as any).prismNativeAIError = (err: string) => {
+      settled = true;
       cleanup();
       reject(new Error(`Native AI error: ${err}`));
     };
