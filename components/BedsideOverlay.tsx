@@ -114,6 +114,16 @@ export default function BedsideOverlay({
         </button>
       </div>
 
+      {/* Hidden assertive live region for crisis announcements only */}
+      <div
+        aria-live="assertive"
+        aria-atomic="true"
+        className="sr-only"
+        data-testid="bedside-crisis-announcer"
+      >
+        {lastAIText.includes('call 911') ? lastAIText : ''}
+      </div>
+
       {/* AI Response */}
       <div aria-live="polite" aria-atomic="false" className="flex-1 overflow-y-auto px-5 py-4 space-y-3 min-h-0">
         {lines.length === 0 && !loading && (

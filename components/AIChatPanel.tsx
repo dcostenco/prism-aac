@@ -83,6 +83,7 @@ export default function AIChatPanel() {
   // it can call handleAsk on a closed/unmounted panel (correctText has no
   // AbortSignal, so it resolves up to 5 s after the panel closes).
   const finalizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const crisisRestartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voiceSupported = isVoiceInputSupported();
   const wakeWordSupported = isWakeWordSupported();
   const activeRef = useRef(sidePanel === 'ai-chat');
@@ -284,7 +285,9 @@ export default function AIChatPanel() {
       // setLoading(true)), so the hands-free useEffect deps never change after
       // the suppress window expires. Schedule a one-shot restart so hands-free
       // resumes automatically without requiring the user to toggle the mic.
-      setTimeout(() => {
+      if (crisisRestartTimerRef.current) clearTimeout(crisisRestartTimerRef.current);
+      crisisRestartTimerRef.current = setTimeout(() => {
+        crisisRestartTimerRef.current = null;
         if (
           handsFreeRef.current && activeRef.current &&
           !voiceRef.current && !isLoadingRef.current &&
@@ -501,6 +504,7 @@ export default function AIChatPanel() {
       wakeWordSessionRef.current = null;
       if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
       if (finalizeTimerRef.current) { clearTimeout(finalizeTimerRef.current); finalizeTimerRef.current = null; }
+      if (crisisRestartTimerRef.current) { clearTimeout(crisisRestartTimerRef.current); crisisRestartTimerRef.current = null; }
       if (voiceRef.current) {
         voiceRef.current.stop();
         voiceRef.current = null;
@@ -527,6 +531,7 @@ export default function AIChatPanel() {
       if (micErrorTimerRef.current) clearTimeout(micErrorTimerRef.current);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (finalizeTimerRef.current) { clearTimeout(finalizeTimerRef.current); finalizeTimerRef.current = null; }
+      if (crisisRestartTimerRef.current) { clearTimeout(crisisRestartTimerRef.current); crisisRestartTimerRef.current = null; }
     };
   }, []);
 
@@ -665,6 +670,17 @@ export default function AIChatPanel() {
           </p>
         </div>
 
+        {/* Hidden assertive live region for crisis announcements only.
+            aria-live="polite" defers until current speech finishes — crisis
+            messages must interrupt immediately for screen reader users. */}
+        <div
+          aria-live="assertive"
+          aria-atomic="true"
+          className="sr-only"
+          data-testid="ai-crisis-announcer"
+        >
+          {lastAIMessage?.text?.includes('call 911') ? lastAIMessage.text : ''}
+        </div>
         {/* Chat scroll area */}
         <div ref={scrollRef} aria-live="polite" aria-atomic="false" className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
           {messages.length === 0 && !loading && (

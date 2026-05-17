@@ -196,6 +196,7 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
   };
 
   rec.onresult = (event) => {
+    if (stopped) return;
     let interim = '';
     let final = '';
     for (let i = event.resultIndex; i < event.results.length; i++) {

@@ -79,6 +79,10 @@ const CJK_CRISIS_SUBSTRINGS: string[] = [
   '숨을 못 쉬어요', '숨을못쉬어요',                             // Korean — with/without spaces
   '119에 전화해', '119에전화해',                               // Korean — with/without space
   '我想死', '救命', '我不能呼吸', '打911',                      // Chinese
+  // Arabic: proclitic conjunctions (و ف) attach directly without a space, so the
+  // [^\p{L}] word-boundary anchor fails for single-token words. Cover proclitic
+  // forms (وساعدني, فساعدني) via bare includes() instead.
+  'ساعدني',                                                    // Arabic 'help me'
 ];
 
 export type SafetyResult =
