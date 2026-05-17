@@ -457,6 +457,8 @@ export default function AIChatPanel() {
       setLoading(false);
       return;
     }
+    cancelled = true;
+    queueTimers.forEach(clearTimeout);
     isLoadingRef.current = false;
     setLoading(false);
   // loading removed from deps — guard uses isLoadingRef (synchronous, no stale closure).

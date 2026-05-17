@@ -82,7 +82,11 @@ export function startWakeWordDetection(
   };
 
   rec.onerror = (event) => {
-    if (event.error === 'aborted' || event.error === 'no-speech') return;
+    if (event.error === 'no-speech') {
+      restartCount = 0;
+      return;
+    }
+    if (event.error === 'aborted') return;
     // Permission errors are permanent — stop the loop immediately rather than
     // letting onend restart and spin indefinitely.
     if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {

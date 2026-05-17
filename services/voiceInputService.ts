@@ -85,10 +85,10 @@ function startNativeVoice(opts: {
   };
   const deleteCallback = (name: string) => {
     try {
-      Object.defineProperty(window, name, { value: undefined, writable: true, configurable: true });
-    } catch {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (window as any)[name];
+    } catch {
+      (window as any)[name] = undefined;
     }
   };
 
