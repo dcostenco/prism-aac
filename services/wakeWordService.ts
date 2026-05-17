@@ -54,7 +54,10 @@ export function startWakeWordDetection(
   const rec = new Ctor();
   rec.continuous = true;
   rec.interimResults = true;
-  rec.lang = lang;
+  // Wake phrase "hey prism" uses English phonemes — must use en-US acoustic
+  // model regardless of the UI language. Setting rec.lang = lang (e.g. ro-RO)
+  // means the recogniser never matches the English wake phrase for non-English users.
+  rec.lang = 'en-US';
   rec.maxAlternatives = 1;
 
   let stopped = false;
@@ -72,6 +75,10 @@ export function startWakeWordDetection(
         return;
       }
     }
+    // A successful recognition result means the session is healthy — reset
+    // the transient-error counter so 10 isolated glitches don't silently
+    // kill the detector while the UI still shows it as active.
+    restartCount = 0;
   };
 
   rec.onerror = (event) => {

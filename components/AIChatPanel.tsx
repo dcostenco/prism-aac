@@ -60,6 +60,14 @@ export default function AIChatPanel() {
   const startListeningRef = useRef<(() => void) | null>(null);
   const handsFreeRef = useRef(false);
   const wakeWordSessionRef = useRef<WakeWordSession | null>(null);
+  // Synchronous loading guard — prevents double-submission race that the React
+  // state `loading` can't catch (setState is async; two taps can slip through
+  // before the first re-render). Set to true synchronously at the top of
+  // handleAsk; cleared at every exit path before setLoading(false).
+  const isLoadingRef = useRef(false);
+  // Track micError dismiss timers so we can clear them on unmount (avoids
+  // setState-on-unmounted-component warnings and timer leaks).
+  const micErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voiceSupported = isVoiceInputSupported();
   const wakeWordSupported = isWakeWordSupported();
   const activeRef = useRef(sidePanel === 'ai-chat');
@@ -142,19 +150,25 @@ export default function AIChatPanel() {
         voiceRef.current = null;
         setListening(false);
         setInterim('');
-        const reason = err === 'denied'
+        // Map both native-bridge strings (denied, not-determined, …) and
+        // WebSpeech API strings (not-allowed, audio-capture, network, …) to
+        // human-readable messages so the user never sees a raw error code.
+        const reason = err === 'denied' || err === 'not-allowed' || err === 'service-not-allowed'
           ? 'Microphone or Speech Recognition permission denied. Allow it in Settings → Privacy.'
           : err === 'not-determined'
           ? 'Microphone permission not granted yet. Tap mic and accept the prompt.'
-          : err === 'unavailable'
+          : err === 'unavailable' || err === 'language-not-supported'
           ? 'Speech recognition unavailable for the current language.'
-          : err === 'audio-session-failed' || err === 'audio-engine-failed'
+          : err === 'audio-session-failed' || err === 'audio-engine-failed' || err === 'audio-capture'
           ? 'Microphone is busy (another app may be using it).'
           : err === 'ondevice-unavailable'
           ? 'On-device speech recognition unavailable (typical on iOS Simulator). Try a real device, or check internet connection for server-based recognition.'
+          : err === 'network'
+          ? 'Network error — check internet connection for speech recognition.'
           : `Mic error: ${err}`;
         setMicError(reason);
-        setTimeout(() => setMicError(null), 6000);
+        if (micErrorTimerRef.current) clearTimeout(micErrorTimerRef.current);
+        micErrorTimerRef.current = setTimeout(() => setMicError(null), 6000);
       },
     });
     if (session) {
@@ -162,7 +176,8 @@ export default function AIChatPanel() {
       setListening(true);
     } else if (!voiceSupported) {
       setMicError('Voice input not available on this device.');
-      setTimeout(() => setMicError(null), 4000);
+      if (micErrorTimerRef.current) clearTimeout(micErrorTimerRef.current);
+      micErrorTimerRef.current = setTimeout(() => setMicError(null), 4000);
     }
   }, [language, ttsCode, appendText, voiceSupported]);
   useEffect(() => { startListeningRef.current = startListening; }, [startListening]);
@@ -204,7 +219,7 @@ export default function AIChatPanel() {
     // H14: strip Unicode control characters (bidirectional overrides, zero-width spaces, etc.)
     const question = useMessageStore.getState().text.trim().slice(0, 500)
       .replace(/[­؀-؅؜۝܏࣢᠎​-‏‪-‮⁠-⁤⁦-⁯﻿￹-￻]/g, '');
-    if (!question || loading) return;
+    if (!question || isLoadingRef.current) return;
     tapFeedback();
 
     // Cancel any previous in-flight stream before starting a new one.
@@ -232,6 +247,7 @@ export default function AIChatPanel() {
       { role: 'user' as const, text: question },
       { role: 'ai' as const, text: '', lines: [] },
     ].slice(-MAX_MESSAGES) as ChatMessage[]);
+    isLoadingRef.current = true;
     setLoading(true);
 
     let buffer = '';
@@ -334,6 +350,8 @@ export default function AIChatPanel() {
     } catch (e: unknown) {
       queueTimers.forEach(clearTimeout);
       if (askController.signal.aborted) {
+        isLoadingRef.current = false;
+        setLoading(false);
         return;
       }
       console.warn('[ai-chat] request failed:', e instanceof Error ? e.message : e);
@@ -348,14 +366,22 @@ export default function AIChatPanel() {
     // the fetch was still running, stop TTS and bail without updating state.
     if (askController.signal.aborted) {
       queueTimers.forEach(clearTimeout);
+      isLoadingRef.current = false;
+      setLoading(false);
       return;
     }
     if (askAbortRef.current === askController) askAbortRef.current = null;
-    if (!activeRef.current) return;
+    if (!activeRef.current) {
+      queueTimers.forEach(clearTimeout);
+      isLoadingRef.current = false;
+      setLoading(false);
+      return;
+    }
+    isLoadingRef.current = false;
     setLoading(false);
-  // language/outputLanguage removed from deps — read via getState() inside
-  // the callback to avoid recreating handleAsk on every settings change.
-  }, [loading, t]);
+  // loading removed from deps — guard uses isLoadingRef (synchronous, no stale closure).
+  // language/outputLanguage removed from deps — read via getState() inside the callback.
+  }, [t]);
   useEffect(() => { handleAskRef.current = handleAsk; }, [handleAsk]);
 
   // Register / clear the Speak-button intercept for this panel's lifetime.
@@ -399,6 +425,7 @@ export default function AIChatPanel() {
       voiceRef.current?.stop();
       voiceRef.current = null;
       wasLoadingRef.current = false;
+      if (micErrorTimerRef.current) clearTimeout(micErrorTimerRef.current);
     };
   }, []);
 

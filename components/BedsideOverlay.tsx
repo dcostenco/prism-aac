@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { tapFeedback } from '@/services/feedback';
 import ColoredText from './ColoredText';
 
@@ -40,6 +40,13 @@ export default function BedsideOverlay({
   onClose,
 }: BedsideOverlayProps) {
   const [showVoiceControlCard, setShowVoiceControlCard] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Focus the overlay container on mount so keyboard/iOS Voice Control users
+  // start inside the modal. WCAG 2.1 SC 2.1.2 requires focus to be trapped.
+  useEffect(() => {
+    overlayRef.current?.focus();
+  }, []);
 
   const openVoiceControl = () => {
     tapFeedback();
@@ -56,11 +63,16 @@ export default function BedsideOverlay({
 
   return (
     <div
+      ref={overlayRef}
       role="dialog"
       aria-label="Bedside Mode"
       aria-modal="true"
       data-testid="bedside-overlay"
-      className="fixed inset-0 z-50 bg-black flex flex-col select-none"
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && !showVoiceControlCard) { tapFeedback(); onClose(); }
+      }}
+      className="fixed inset-0 z-50 bg-black flex flex-col select-none outline-none"
       style={{ WebkitUserSelect: 'none' }}
     >
       {/* Header */}

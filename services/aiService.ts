@@ -244,6 +244,20 @@ export function synaluxSignOutUrl(): string {
 
 // ── Synalux API (online) ──
 
+// Compose two AbortSignals: abort when either fires.
+// AbortSignal.any() is Chrome 116+ / Safari 17.4+. Polyfill via event
+// forwarding for older iOS WKWebView builds.
+function composeSignals(s1: AbortSignal, s2: AbortSignal): AbortSignal {
+  const any = (AbortSignal as { any?: (signals: AbortSignal[]) => AbortSignal }).any;
+  if (any) return any([s1, s2]);
+  const ctrl = new AbortController();
+  if (s1.aborted || s2.aborted) { ctrl.abort(); return ctrl.signal; }
+  const fire = () => ctrl.abort();
+  s1.addEventListener('abort', fire, { once: true });
+  s2.addEventListener('abort', fire, { once: true });
+  return ctrl.signal;
+}
+
 async function callSynalux(
   messages: Array<{ role: string; content: string }>,
   options?: { webSearch?: boolean; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate'; signal?: AbortSignal },
@@ -255,9 +269,7 @@ async function callSynalux(
 
   const t = timeoutSignal(30000);
   // Compose timeout signal with the caller's abort signal so either cancels the fetch.
-  const fetchSignal = options?.signal
-    ? ((AbortSignal as { any?: (s: AbortSignal[]) => AbortSignal }).any?.([t.signal, options.signal]) ?? t.signal)
-    : t.signal;
+  const fetchSignal = options?.signal ? composeSignals(t.signal, options.signal) : t.signal;
   let res: Response;
   try {
     // Route via /api/v1/prism-aac/chat — the dedicated AAC chat
@@ -460,19 +472,30 @@ function callNativeBridge(
   question: string,
   lang: string,
   onChunk?: (delta: string) => void,
+  signal?: AbortSignal,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(new DOMException('Aborted', 'AbortError')); return; }
     let fullText = '';
     const timeout = setTimeout(() => {
       cleanup();
       reject(new Error('Native AI timeout'));
     }, 30_000);
 
+    const abortHandler = () => {
+      cleanup();
+      reject(new DOMException('Aborted', 'AbortError'));
+      try { (window as any).prismNativeBridge.stopAI?.(); } catch { /* optional bridge method */ }
+    };
+
     function cleanup() {
       clearTimeout(timeout);
+      signal?.removeEventListener('abort', abortHandler);
       delete (window as any).prismNativeAIResult;
       delete (window as any).prismNativeAIDone;
     }
+
+    signal?.addEventListener('abort', abortHandler, { once: true });
 
     (window as any).prismNativeAIResult = (token: string) => {
       fullText += token;
@@ -498,6 +521,9 @@ async function route(
   prompt: string,
   options?: { webSearch?: boolean; system?: string; onChunk?: (delta: string) => void; intent?: 'chat' | 'translate'; signal?: AbortSignal },
 ): Promise<string> {
+  // Bail early before touching any network path — avoids 30 s Ollama wait on abort.
+  if (options?.signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+
   const fullPrompt = options?.system ? `${options.system}\n\n${prompt}` : prompt;
 
   // 1. Try local Ollama first (Mac on WiFi — 14B at 98%, free)
@@ -518,6 +544,11 @@ async function route(
     const raw = await callSynalux(messages, { webSearch: options?.webSearch, onChunk: options?.onChunk, intent: options?.intent, signal: options?.signal });
     return stripModelControlTokens(raw);
   } catch (err) {
+    // AbortError must surface to the caller — swallowing it leaves the UI in a
+    // permanent loading state because handleAsk checks signal.aborted to decide
+    // whether to clear the spinner. If we replace AbortError with the generic
+    // "No AI available" below, that check never fires.
+    if (err instanceof DOMException && err.name === 'AbortError') throw err;
     const msg = err instanceof Error ? err.message : '';
     if (msg.includes('expired') || msg.includes('Rate limit')) throw err;
   }
@@ -639,7 +670,7 @@ export async function askAI(
   // right now." placeholder yielded when the GGUF isn't loaded.
   if (isNativeBridgeAvailable() && !context) {
     try {
-      const raw = await callNativeBridge(cappedQuestion, language, onChunk);
+      const raw = await callNativeBridge(cappedQuestion, language, onChunk, signal);
       const text = stripModelControlTokens(raw).trim();
       if (text.length >= 12) {
         return { text, lines: text.split(/\n+/).filter((l) => l.trim()) };
