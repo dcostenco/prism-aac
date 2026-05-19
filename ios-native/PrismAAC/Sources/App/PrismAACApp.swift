@@ -11,23 +11,23 @@ struct PrismAACApp: App {
     /// Model candidates in priority order for each device tier.
     /// The loader tries each in order — if a model OOMs or isn't cached,
     /// it falls through to the next. This lets 8GB devices ATTEMPT the
-    /// 8B (98.0% BFCL) and gracefully fall back to 1.7B (96.1% BFCL) if it
+    /// 8B (100.0% BFCL v36) and gracefully fall back to 1.7B (96.1% BFCL v41) if it
     /// doesn't fit. Accuracy from HuggingFace model cards (dcostenco/prism-coder-*).
     private static let modelCandidates: [(file: String, cdn: String, minFreeMB: Int)] = {
         switch LLMEngine.preferredTier {
         case .large14B:
             return [
-                ("prism-aac-14b-q4km",  "dcostenco/prism-coder-14b/resolve/main/prism-aac-14b-q4km.gguf",  10_000),
-                ("prism-aac-1b7-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-aac-1b7-q4km.gguf", 1_200),
+                ("prism-coder-14b-v36-q4km",  "dcostenco/prism-coder-14b/resolve/main/prism-coder-14b-v36-q4km.gguf",  10_000),
+                ("prism-coder-1b7-v41-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v41-q4km.gguf", 1_200),
             ]
         case .medium8B:
             return [
-                ("prism-aac-8b-q4km",   "dcostenco/prism-coder-8b/resolve/main/prism-aac-8b-q4km.gguf",    4_500),
-                ("prism-aac-1b7-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-aac-1b7-q4km.gguf", 1_200),
+                ("qwen3-8b-v36-q4km",         "dcostenco/prism-coder-8b/resolve/main/qwen3-8b-v36-q4km.gguf",          4_500),
+                ("prism-coder-1b7-v41-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v41-q4km.gguf", 1_200),
             ]
         case .small1B7:
             return [
-                ("prism-aac-1b7-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-aac-1b7-q4km.gguf", 1_200),
+                ("prism-coder-1b7-v41-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v41-q4km.gguf", 1_200),
             ]
         }
     }()

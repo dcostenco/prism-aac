@@ -102,8 +102,8 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      CURRENT_PROJECT_VERSION: "19"
-      MARKETING_VERSION: "1.5.0"
+      CURRENT_PROJECT_VERSION: "21"
+      MARKETING_VERSION: "1.6.0"
       GENERATE_INFOPLIST_FILE: NO
       PRIVACY_INFO_XCPRIVACY_FILE: PrismAAC/PrivacyInfo.xcprivacy
     dependencies:
@@ -137,8 +137,8 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.watchkitapp
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      CURRENT_PROJECT_VERSION: "19"
-      MARKETING_VERSION: "1.5.0"
+      CURRENT_PROJECT_VERSION: "21"
+      MARKETING_VERSION: "1.6.0"
       GENERATE_INFOPLIST_FILE: NO
       SDKROOT: watchos
       SUPPORTED_PLATFORMS: watchos watchsimulator
