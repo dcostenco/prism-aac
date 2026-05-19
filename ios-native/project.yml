@@ -7,7 +7,9 @@ options:
   xcodeVersion: "16.0"
   createIntermediateGroups: true
 
-# packages: SwiftLlama added via Xcode UI once project is open
+packages:
+  llama:
+    path: _llama_cpp_local
 
 settings:
   SWIFT_VERSION: "5.10"
@@ -107,6 +109,8 @@ targets:
       GENERATE_INFOPLIST_FILE: NO
       PRIVACY_INFO_XCPRIVACY_FILE: PrismAAC/PrivacyInfo.xcprivacy
     dependencies:
+      - package: llama
+        product: llama
       - target: PrismAACWatch
         embed: true
 

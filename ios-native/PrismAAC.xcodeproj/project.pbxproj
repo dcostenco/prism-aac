@@ -28,6 +28,7 @@
 		5B27532A15466AB48954316F /* BridgeSecurityPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F77017533C2E0E39A0CFA2FA /* BridgeSecurityPolicy.swift */; };
 		64BFB93793BFBD59BD651173 /* offline.html in Resources */ = {isa = PBXBuildFile; fileRef = 378A42F7E901AC2CE6A66DF0 /* offline.html */; };
 		6960B655C665118DAABF6BCE /* BridgeSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BFC79A8CF42D931FA02260 /* BridgeSecurityTests.swift */; };
+		6AED27E0943BFD006689E47F /* llama in Frameworks */ = {isa = PBXBuildFile; productRef = 04E3214E7CFA50AC6BF94363 /* llama */; };
 		6BDCC5044BD258312294B7A8 /* WatchInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */; };
 		6FBD9B75E28C4569B1FFF7A5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BDF1E2439453E4F2F472830B /* Assets.xcassets */; };
 		79A08C2E36B3B5E9C19C91EF /* WatchEmergencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */; };
@@ -99,6 +100,7 @@
 		288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon46x46@2x.png"; sourceTree = "<group>"; };
 		2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		336C616FA71B6C3F3227FC90 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		36542011E53B530C6E6B101A /* _llama_cpp_local */ = {isa = PBXFileReference; lastKnownFileType = folder; name = _llama_cpp_local; path = _llama_cpp_local; sourceTree = SOURCE_ROOT; };
 		378A42F7E901AC2CE6A66DF0 /* offline.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = offline.html; sourceTree = "<group>"; };
 		3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon86x86@2x.png"; sourceTree = "<group>"; };
 		3C1E662AEED98B7777920115 /* PrismAAC.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PrismAAC.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -140,6 +142,17 @@
 		FCD52807AECA71B546A28725 /* AppIcon33x33@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon33x33@2x.png"; sourceTree = "<group>"; };
 		FE50392198C3596E4E3CAA44 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0F6BEF291B776BA187A48977 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6AED27E0943BFD006689E47F /* llama in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		18D635BB530A54414C7CFB29 /* Shared */ = {
@@ -323,6 +336,14 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
+		C9E23B3E9714B3C5BA2C8627 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				36542011E53B530C6E6B101A /* _llama_cpp_local */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
 		E970667AC8E75965175D46B2 /* WatchIcons */ = {
 			isa = PBXGroup;
 			children = (
@@ -348,6 +369,7 @@
 		F6F72D19BD7F549E86B62BEC = {
 			isa = PBXGroup;
 			children = (
+				C9E23B3E9714B3C5BA2C8627 /* Packages */,
 				50079412AC90BAE269F6364D /* PrismAAC */,
 				25B2932001EBE7028330646D /* PrismAACUITests */,
 				604F964895256A45797E94C1 /* PrismAACWatch */,
@@ -382,6 +404,7 @@
 			buildPhases = (
 				B370F9EA8C16398E6A8601CC /* Sources */,
 				7E19B79B2D5F1EAF66BA9023 /* Resources */,
+				0F6BEF291B776BA187A48977 /* Frameworks */,
 				7D24FCE08EEE5A61AD11BDD3 /* Embed Watch Content */,
 			);
 			buildRules = (
@@ -391,6 +414,7 @@
 			);
 			name = PrismAAC;
 			packageProductDependencies = (
+				04E3214E7CFA50AC6BF94363 /* llama */,
 			);
 			productName = PrismAAC;
 			productReference = 3C1E662AEED98B7777920115 /* PrismAAC.app */;
@@ -455,6 +479,9 @@
 			);
 			mainGroup = F6F72D19BD7F549E86B62BEC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				13FC7C9D6C856463E79863BE /* XCLocalSwiftPackageReference "_llama_cpp_local" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3810A000D727421B7A8621B9 /* Products */;
 			projectDirPath = "";
@@ -694,10 +721,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 23;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -778,7 +805,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 23;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -786,7 +813,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.6.0;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -800,7 +827,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 23;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -808,7 +835,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.6.0;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -820,10 +847,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 23;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -900,6 +927,20 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		13FC7C9D6C856463E79863BE /* XCLocalSwiftPackageReference "_llama_cpp_local" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = _llama_cpp_local;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		04E3214E7CFA50AC6BF94363 /* llama */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = llama;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 94B38DF5C167816F45B98216 /* Project object */;
 }
