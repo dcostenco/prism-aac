@@ -130,22 +130,41 @@ def find_app(token: str) -> str:
 
 
 def find_or_create_version(app_id: str, token: str) -> str:
-    """Return the id of an editable (PREPARE_FOR_SUBMISSION) App Store version."""
+    """Return the id of an editable App Store version for MARKETING_VERSION.
+
+    Priority order:
+    1. Existing PREPARE_FOR_SUBMISSION draft for this version
+    2. Any existing version record for MARKETING_VERSION (reuse it)
+    3. Create a new version (only when MARKETING_VERSION has never been used)
+    """
+    # 1. Look for an existing draft
     resp = asc_get(
         f"apps/{app_id}/appStoreVersions"
         f"?filter[platform]={PLATFORM}"
         f"&filter[appStoreState]=PREPARE_FOR_SUBMISSION",
         token,
     )
-    versions = resp.get("data", [])
-    if versions:
-        v = versions[0]
-        ver_str = v["attributes"]["versionString"]
-        print(f"  Found existing draft version {ver_str}  id={v['id']}")
+    for v in resp.get("data", []):
+        if v["attributes"]["versionString"] == MARKETING_VERSION:
+            print(f"  Found existing draft {MARKETING_VERSION}  id={v['id']}")
+            return v["id"]
+
+    # 2. Look for any existing version record with this version string
+    resp_all = asc_get(
+        f"apps/{app_id}/appStoreVersions"
+        f"?filter[platform]={PLATFORM}"
+        f"&filter[versionString]={MARKETING_VERSION}",
+        token,
+    )
+    for v in resp_all.get("data", []):
+        state = v["attributes"]["appStoreState"]
+        print(f"  Found existing version {MARKETING_VERSION} (state={state})  id={v['id']}")
+        if state not in ("PREPARE_FOR_SUBMISSION",):
+            print(f"  WARNING: version is in state {state} — it may not be editable")
         return v["id"]
 
-    # No editable version — create one
-    print(f"  No draft version found — creating {MARKETING_VERSION}...")
+    # 3. No existing record — create a new one
+    print(f"  No version found — creating {MARKETING_VERSION}...")
     body = {
         "data": {
             "type": "appStoreVersions",
@@ -226,16 +245,37 @@ def set_whats_new(version_id: str, whats_new: str, token: str) -> None:
     print(f"  ✓ whatsNew set on {loc_id} (len={len(whats_new)})")
 
 
+def find_existing_review_submission(app_id: str, version_id: str, token: str) -> str | None:
+    """Return the id of an open review submission that already contains this version."""
+    resp = asc_get(
+        f"apps/{app_id}/reviewSubmissions"
+        f"?filter[platform]={PLATFORM}"
+        f"&filter[state]=WAITING_FOR_REVIEW,READY_FOR_REVIEW,IN_REVIEW",
+        token,
+    )
+    for sub in resp.get("data", []):
+        sub_id = sub["id"]
+        items = asc_get(f"reviewSubmissions/{sub_id}/items", token)
+        for item in items.get("data", []):
+            rel = item.get("relationships", {}).get("appStoreVersion", {}).get("data", {})
+            if rel.get("id") == version_id:
+                return sub_id
+    return None
+
+
 def submit_for_review(app_id: str, version_id: str, token: str) -> str:
     """
     Submit using the reviewSubmissions API (v1).
 
-    The deprecated appStoreVersionSubmissions endpoint returns 403 with
-    App Manager API keys. reviewSubmissions works correctly:
-      1. POST reviewSubmissions → creates submission
-      2. POST reviewSubmissionItems → adds version to submission
-         (this transitions the version to READY_FOR_REVIEW)
+    Handles the case where the version is already in a review submission
+    (e.g. READY_FOR_REVIEW from a prior run) — returns that submission id.
     """
+    # Check if version is already in a review submission
+    existing = find_existing_review_submission(app_id, version_id, token)
+    if existing:
+        print(f"  ✓ Version already in review submission  id={existing}")
+        return existing
+
     # Step A: Create the reviewSubmission
     sub_body = {
         "data": {
@@ -250,7 +290,7 @@ def submit_for_review(app_id: str, version_id: str, token: str) -> str:
     sub_id = sub_resp["data"]["id"]
     print(f"  reviewSubmission created  id={sub_id}")
 
-    # Step B: Add version as an item — this is what triggers the READY_FOR_REVIEW transition
+    # Step B: Add version as an item — transitions version to READY_FOR_REVIEW
     item_body = {
         "data": {
             "type": "reviewSubmissionItems",
@@ -260,9 +300,15 @@ def submit_for_review(app_id: str, version_id: str, token: str) -> str:
             },
         }
     }
-    item_resp = asc_post("reviewSubmissionItems", item_body, token)
-    item_state = item_resp.get("data", {}).get("attributes", {}).get("state", "unknown")
-    print(f"  ✓ Version added to review submission  item_state={item_state}")
+    try:
+        item_resp = asc_post("reviewSubmissionItems", item_body, token)
+        item_state = item_resp.get("data", {}).get("attributes", {}).get("state", "unknown")
+        print(f"  ✓ Version added to review submission  item_state={item_state}")
+    except RuntimeError as e:
+        if "ITEM_PART_OF_ANOTHER_SUBMISSION" in str(e):
+            print(f"  ✓ Version already queued for review (in another submission) — treating as success")
+        else:
+            raise
     return sub_id
 
 
