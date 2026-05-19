@@ -99,15 +99,18 @@ final class AACPipeline: ObservableObject {
                                                            stream: continuation)
                     }
 
-                    // Layer 3 — validate (only if we got a response)
+                    // Layer 3 — validate (14B only: 8B/1.7B don't benefit from self-validation)
                     if !response.isEmpty {
-                        let validated = try await self.validateResponse(response,
-                                                                        language: language)
-                        // FIX L1: compare against same-cap sanitized text to avoid spurious corrections
-                        let comparable = Self.sanitizeText(response, maxLength: 500)
-                        if validated != comparable {
-                            continuation.yield("\n[corrected]\n" + validated)
-                            self.lastResponse = validated
+                        if self.llm.loadedModelTier == "14B" {
+                            let validated = try await self.validateResponse(response,
+                                                                            language: language)
+                            let comparable = Self.sanitizeText(response, maxLength: 500)
+                            if validated != comparable {
+                                continuation.yield("\n[corrected]\n" + validated)
+                                self.lastResponse = validated
+                            } else {
+                                self.lastResponse = response
+                            }
                         } else {
                             self.lastResponse = response
                         }

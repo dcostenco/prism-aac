@@ -281,21 +281,24 @@ struct PrismWebView: UIViewRepresentable {
                 let webView = message.webView
                 Task { @MainActor in
                     let encoder = JSONEncoder()
+                    var buffer = ""
                     var tokenCount = 0
-                    for await token in self.pipeline.ask(question: question, language: lang) {
-                        tokenCount += 1
-                        if tokenCount == 1 || tokenCount % 20 == 0 {
-                        }
-                        // JSONSerialization.data(withJSONObject:) requires Array/Dict at top
-                        // level — passing a String raises NSInvalidArgumentException which
-                        // `try?` cannot catch (NSException → SIGABRT). JSONEncoder safely
-                        // encodes primitive Encodable values including String.
-                        guard let data = try? encoder.encode(token),
-                              let json = String(data: data, encoding: .utf8) else { continue }
+                    let batchSize = 5
+                    func flushBuffer() {
+                        guard !buffer.isEmpty,
+                              let data = try? encoder.encode(buffer),
+                              let json = String(data: data, encoding: .utf8) else { return }
                         webView?.evaluateJavaScript(
                             "window.prismNativeAIResult && window.prismNativeAIResult(\(json))"
                         ) { _, _ in }
+                        buffer = ""
                     }
+                    for await token in self.pipeline.ask(question: question, language: lang) {
+                        buffer += token
+                        tokenCount += 1
+                        if tokenCount % batchSize == 0 { flushBuffer() }
+                    }
+                    flushBuffer()
                     webView?.evaluateJavaScript(
                         "window.prismNativeAIDone && window.prismNativeAIDone()"
                     ) { _, _ in }

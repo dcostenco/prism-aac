@@ -28,6 +28,8 @@ struct PrismAACApp: App {
             ]
         case .small1B7:
             return [
+                // Bundled Q8 (already on device — zero download, loads first)
+                ("prism-aac-1b7-q8",          "",                                                                         1_800,  "fb01043af7d3484d778732ceadb97dd31b14b3232145eb8f8b6a0648487c1e87"),
                 ("prism-coder-1b7-v42-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
             ]
         }
