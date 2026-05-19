@@ -9,11 +9,11 @@ private let llamaAvailable = false
 /// On-device inference engine — Qwen3 via llama.cpp Metal backend.
 ///
 /// Model selection by total device RAM (see preferredTier):
-///   ≥16 GB (iPad Pro M1/M2/M4): prism-coder 14B Q4_K_M — 100.0% BFCL (v36)
-///   8–15 GB (iPhone 15/16 Pro, iPad Air): prism-coder 8B Q4_K_M — 100.0% BFCL (v36); OOM fallback: 1.7B
-///   <8 GB  (iPhone 12–14, older iPads): prism-coder 1.7B Q4_K_M — 100.0% BFCL (v42)
+///   ≥16 GB (iPad Pro M1/M2/M4): prism-coder 14B Q4_K_M — 97.1% routing
+///   8–15 GB (iPhone 15/16 Pro, iPad Air): prism-coder 8B Q4_K_M — 98.0% routing; OOM fallback: 1.7B
+///   <8 GB  (iPhone 12–14, older iPads): prism-coder 1.7B Q4_K_M — 96.1% routing
 ///
-/// Accuracy numbers are sourced from HuggingFace model cards (dcostenco/prism-coder-*).
+/// Accuracy: v25 system prompt, 102-case Prism eval, 3-seed mean, May 2026.
 /// Run scripts/update-model-registry.sh to sync when models are retrained.
 ///
 /// Memory contract (Q4_K_M):
@@ -43,9 +43,9 @@ final class LLMEngine: ObservableObject {
     }()
 
     /// Model tier selection (accuracy from HuggingFace model cards):
-    ///   ≥16 GB → 14B Q4_K_M (100.0% BFCL v36, guaranteed fit)
-    ///   8–15 GB → TRY 8B Q4_K_M (100.0% BFCL v36), OOM fallback to 1.7B (100.0% BFCL v42)
-    ///   <8 GB  → 1.7B Q4_K_M (100.0% BFCL v42, always fits)
+    ///   ≥16 GB → 14B Q4_K_M (97.1% routing, guaranteed fit)
+    ///   8–15 GB → TRY 8B Q4_K_M (98.0% routing), OOM fallback to 1.7B (96.1% routing)
+    ///   <8 GB  → 1.7B Q4_K_M (96.1% routing, always fits)
     enum ModelTier: String {
         case large14B = "14B"
         case medium8B = "8B"

@@ -12,8 +12,8 @@ struct PrismAACApp: App {
     /// Model candidates in priority order for each device tier.
     /// The loader tries each in order — if a model OOMs or isn't cached,
     /// it falls through to the next. This lets 8GB devices ATTEMPT the
-    /// 8B (100.0% BFCL v36) and gracefully fall back to 1.7B (100.0% BFCL v42) if it
-    /// doesn't fit. Accuracy from HuggingFace model cards (dcostenco/prism-coder-*).
+    /// 8B (98.0% routing) and gracefully fall back to 1.7B (96.1% routing) if it
+    /// doesn't fit. Accuracy: v25 system prompt, 102-case Prism eval, 3-seed mean, May 2026.
     private static let modelCandidates: [(file: String, cdn: String, minFreeMB: Int, sha256: String)] = {
         switch LLMEngine.preferredTier {
         case .large14B:
