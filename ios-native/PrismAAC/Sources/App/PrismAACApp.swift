@@ -18,7 +18,7 @@ struct PrismAACApp: App {
         switch LLMEngine.preferredTier {
         case .large14B:
             return [
-                ("prism-coder-14b-v36-q4km",  "dcostenco/prism-coder-14b/resolve/main/prism-coder-14b-v36-q4km.gguf",  10_000, "322221d16e831911cedd92c3211126758aef361fb7ab65c2559de4ecf89d1ebc"),
+                ("qwen3-14b-v42-q4km",        "dcostenco/prism-coder-14b/resolve/main/qwen3-14b-v42-q4km.gguf",        10_000, "fec7551b2932b155b2f79e1c18238cff0e074e9bab2ce5ad3dc9f895389f48b3"),
                 ("prism-coder-1b7-v42-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
             ]
         case .medium8B:
