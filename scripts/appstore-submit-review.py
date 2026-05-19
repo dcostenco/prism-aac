@@ -51,7 +51,7 @@ TOKEN_TTL   = 1200  # 20 min max per ASC docs
 
 # Marketing version matching our Info.plist
 MARKETING_VERSION  = "1.6.0"
-BUILD_VERSION      = "23"   # overridable via --build-version
+BUILD_VERSION      = "24"   # overridable via --build-version
 PLATFORM           = "IOS"
 
 # Sanctioned / restricted territories to exclude (OFAC + EU sanctions 2026)
