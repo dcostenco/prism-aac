@@ -6,7 +6,7 @@
 
 **On-device AI that works without internet.** Prism AAC now runs AI models directly on your device — no cloud, no subscription, no data leaves your device.
 
-• **Smart model selection** — iPad Pro 16GB loads the 14B model (98% accuracy). iPhone and iPad Air try the 8B model (96%). All other devices use the 1.7B model (88%). Automatic, no setup needed.
+• **Smart model selection** — iPad Pro 16GB loads the 14B model (97.1% routing). iPhone and iPad Air try the 8B model (98.0%). All other devices use the 1.7B model (96.1%). Automatic, no setup needed.
 
 • **Offline translation** — 1,261 phrases translated into 20 languages, built into the app. Tap a phrase, hear it spoken in the local language. Instant, 100% accurate, works on airplanes and in hospitals.
 
@@ -33,7 +33,7 @@ Arabic, Chinese, Dutch, French, German, Hebrew, Hindi, Indonesian, Italian, Japa
 
 • iPhone 12 and later
 • iPad (all models with iOS 16+)
-• iPad Pro with 16GB: full 14B model (98% accuracy)
+• iPad Pro with 16GB: full 14B model (97.1% routing)
 • Apple Watch Series 6 and later (watchOS 9+)
 • Apple Watch Ultra: standalone offline AAC
 

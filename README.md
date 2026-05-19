@@ -1041,7 +1041,7 @@ Auto-routing: 1.7B → any device · 8B → mobile/edge · 14B → standard · 3
 - **Cloud complex** (reasoning, pro tier): `prism-coder:32b` (QwQ-32B fine-tuned) → Claude Sonnet 4 fallback
 - **Autocorrect + word prediction**: Gemini 2.5 Flash-Lite — 752ms avg, multilingual (ro/ru/es)
 - Speed-critical paths (button tap → speech) bypass routing — never blocks on network
-- Routing accuracy ([102-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100), 3-seed mean, May 2026):
+- Routing accuracy ([102-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100), v25 system prompt, 3-seed mean, May 2026):
 
   | Model | Accuracy | Avg latency | Invented tools |
   |---|---|---|---|
