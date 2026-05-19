@@ -27,10 +27,10 @@ Part of the [Synalux platform](https://synalux.ai).
 
 | Platform | Status | On-device AI | Notes |
 |----------|--------|-------------|-------|
-| **Web** (PWA) | Production | Auto-sideload via Ollama (14B→8B→1.7B) | Any browser, installable |
-| **iPad Pro 16GB** | Production | 14B Q4_K_M (97.1% accuracy) | Native llama.cpp Metal, auto-selected by RAM |
-| **iPhone / iPad 8GB** | Production | 8B Q4_K_M (98.0%) → 1.7B fallback | OOM-safe: tries 8B, falls back to 1.7B |
-| **iPhone / iPad <8GB** | Production | 1.7B Q4_K_M (96.1%) | Always fits, 1.0 GB |
+| **Web** (PWA) | Production | Auto-downloads best local model | Any browser, installable |
+| **iPad Pro 16GB** | Production | 14B model (97.1% routing) | On-device AI, auto-selected by RAM |
+| **iPhone / iPad 8GB** | Production | 8B model (98.0%) → 1.7B fallback (96.1%) | Auto-downsizes if needed |
+| **iPhone / iPad <8GB** | Production | 1.7B model (96.1%) | Always fits, 1.1 GB |
 | **Apple Watch** | Production | Offline phrase dictionary (1,261 × 20 langs) | Standalone — pictograms, TTS, emergency |
 | **Chrome Extension** | Production | — | Reading assistant in any text field |
 | **WiFi to Mac** | Production | 14B/32B via Ollama | Settings → Local AI → enter Mac IP |
@@ -65,7 +65,7 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 | | PrismAAC | TouchChat | Proloquo2Go | LAMP Words | TD Snap | CoughDrop | Snap Core First | Grid 3 | Tobii Dynavox |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **On-device + HIPAA-safe** speech path | ✅ | ❌ | ❌ | ❌ | partial | partial | ❌ | ❌ | partial |
-| **Per-user phrase ranking** (ACT-R + spreading activation) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Per-user phrase ranking** (adapts to each child) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Caregiver corrections **become training data automatically** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Domain-aware AI tutor** (math + 10 other subjects) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Cell-grid math canvas** (no LaTeX, no whiteboard) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -87,22 +87,25 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 
 ---
 
-## Architecture: model cascade & device selection
+## AI models & device support
 
-Claude-grade accuracy. Zero cloud dependency. Works on every Apple device.
+Works on every Apple device. Zero cloud dependency for core AAC communication.
 
-PrismAAC runs a three-tier model cascade that selects the best model your hardware can run, falls back gracefully on constrained devices, and never requires an internet connection for core AAC communication. Every path — local and cloud — routes through the same Prism tool-calling framework, so AAC accuracy is **100% on ALL paths**.
+PrismAAC auto-selects the best model your hardware can run, falls back gracefully on constrained devices, and never requires an internet connection for basic communication. Local models match cloud accuracy: **96–99% routing** across all device tiers.
 
 | Device | RAM | Model | Accuracy | AAC | Size | Cost |
 |---|---|---|---|---|---|---|
 | **iPad Pro M1/M2/M4** | 16 GB | 14B Q4_K_M | **97.1%** | 100% | 8.4 GB | $0 |
-| **iPhone 15/16 Pro, iPad Air** | 8 GB | 8B Q4_K_M (try) → 1.7B (fallback) | **98.0%** or 96.1% | 100% | 4.7 GB / 1.0 GB | $0 |
-| **iPhone 12–14, older iPads** | <8 GB | 1.7B Q4_K_M | **96.1%** | 100% | 1.0 GB | $0 |
+| **iPhone 15/16 Pro, iPad Air** | 8 GB | 8B Q4_K_M → 1.7B (OOM fallback) | **98.0%** | 100% | 4.7 GB / 1.1 GB | $0 |
+| **iPhone 12–14, older iPads** | <8 GB | 1.7B Q4_K_M | **96.1%** | 100% | 1.1 GB | $0 |
 | **Mac M1+ via WiFi** | 16+ GB | 14B via Ollama | **97.1%** | 100% | 8.4 GB | $0 |
 
-### Web app cascade (`aiService.ts`)
+### Web app cascade
 
 The web app tries local inference first, then falls back to cloud — so users with Ollama installed pay $0 and users without it still get full functionality.
+
+<details>
+<summary>Cascade flowchart</summary>
 
 ```
   User sends message
@@ -124,9 +127,14 @@ The web app tries local inference first, then falls back to cloud — so users w
   Auto-sideload: first launch detects Ollama → pulls best model → local forever.
 ```
 
-### iOS native cascade (`PrismAACApp.swift`)
+</details>
+
+### iOS native cascade
 
 The native app probes available RAM at launch, downloads the right model from HuggingFace CDN (one-time), and runs inference via llama.cpp Metal. No server. No subscription. No data leaves the device.
+
+<details>
+<summary>Cascade flowchart</summary>
 
 ```
   App launch
@@ -138,17 +146,26 @@ The native app probes available RAM at launch, downloads the right model from Hu
       |
       +── 8 GB (iPhone/iPad Air) ──> 8B Q4_K_M (4.7 GB) ──> 98.0%, ~0.8s
       |                                    |
-      |                               OOM? → 1.7B Q4_K_M (1.0 GB) → 96.1%, ~1.6s
+      |                               OOM? → 1.7B Q4_K_M (1.1 GB) → 96.1%, ~1.6s
       |
-      +── <8 GB ──> 1.7B Q4_K_M (1.0 GB) ──> 96.1%, ~1.6s
+      +── <8 GB ──> 1.7B Q4_K_M (1.1 GB) ──> 96.1%, ~1.6s
 
   All paths: llama.cpp Metal, $0 forever, no data leaves device.
   WiFi upgrade: Settings → Local AI → enter Mac IP for 14B/32B.
 ```
 
+</details>
+
 ### Keyboard layout modes (persisted)
 
-Three modes cycle with a single tap. The active mode persists across sessions so the child's preferred layout is always restored on launch.
+Three modes cycle with a single tap — the chosen layout is saved and restored on every launch.
+
+- **MAX KB** — keyboard fills all space below the prediction bar
+- **MIN KB** — categories 75% / keyboard 25%
+- **HIDE KB** — categories full screen, keyboard hidden
+
+<details>
+<summary>Layout diagram</summary>
 
 ```
   MAX KB                 MIN KB                 HIDE KB
@@ -166,22 +183,22 @@ Three modes cycle with a single tap. The active mode persists across sessions so
         +-- [v] button ------->+-- sidebar btn ------>+-- sidebar btn --+
         |                                                               |
         +<--------------------------------------------------------------+
-
-  Persisted in localStorage -- restored on every launch.
 ```
+
+</details>
 
 ### Cost summary
 
 | Path | Model | Accuracy | Latency | Cost |
 |---|---|---|---|---|
 | iPad Pro 16GB | 14B Q4_K_M | **97.1%** | ~1.1s | **$0** |
-| iPhone/iPad 8GB | 8B Q4_K_M → 1.7B | **98.0%** or 96.1% | ~0.8s | **$0** |
+| iPhone/iPad 8GB | 8B Q4_K_M → 1.7B (OOM fallback) | **98.0%** | ~0.8s | **$0** |
 | Any device | 1.7B Q4_K_M | **96.1%** | ~1.6s | **$0** |
 | WiFi to Mac | 14B via Ollama | **97.1%** | ~1.1s | **$0** |
 | Cloud (free) | Gemini 2.5 Flash | 99% | ~3s | Synalux absorbs |
 | Cloud (paid) | Claude Sonnet 4 | 99% | ~3s | Included in plan |
 
-**The pitch:** Every child gets Claude-grade accuracy whether they're on a $329 iPhone SE or a $2,000 iPad Pro. Local-first means zero cloud dependency, zero monthly API fees, zero PHI exposure, and sub-second response times. The cascade makes sure no device is left behind — if the big model doesn't fit, the next one down still delivers AAC routing at 96%+ accuracy with zero invented tool calls.
+**The pitch:** Every child gets Claude-grade accuracy whether they're on a $329 iPhone SE or a $2,000 iPad Pro. Local-first means zero cloud dependency, zero monthly API fees, zero PHI exposure, and sub-second response times. All four prism-coder models score 96–99% on the 102-case routing benchmark (v25 system prompt, 3-seed mean), with zero invented tool calls.
 
 ---
 
@@ -194,8 +211,8 @@ Native Swift app wrapping the web UI in WKWebView + on-device AI via llama.cpp M
 | Device | RAM | Model | Accuracy | Download |
 |---|---|---|---|---|
 | iPad Pro M1/M2/M4 | 16 GB | 14B Q4_K_M | **97.1%** | 8.4 GB from HF CDN |
-| iPhone 15/16 Pro, iPad Air | 8 GB | 8B Q4_K_M → 1.7B fallback | **98.0%** or 96.1% | 4.7 GB / 1.0 GB |
-| iPhone 12-14, older iPads | <8 GB | 1.7B Q4_K_M | **96.1%** | 1.0 GB |
+| iPhone 15/16 Pro, iPad Air | 8 GB | 8B Q4_K_M → 1.7B (OOM fallback) | **98.0%** | 4.7 GB / 1.1 GB |
+| iPhone 12-14, older iPads | <8 GB | 1.7B Q4_K_M | **96.1%** | 1.1 GB |
 
 Three-layer safety: synchronous crisis filter → on-device AI → cloud fallback. Memory-aware gating degrades gracefully: full AI → cloud AI → core-only → emergency mode.
 
@@ -208,7 +225,7 @@ Three-layer safety: synchronous crisis filter → on-device AI → cloud fallbac
 - Detects Ollama automatically at `localhost:11434`
 - WiFi connections: iPad/iPhone → Mac Ollama (14B/32B at full accuracy)
 - Per-model download with live progress bar
-- Models: `:1b7` (2.2 GB) · `:8b` (4.7 GB) · `:14b` (8.4 GB) · `:32b` (19 GB)
+- Models: `:1b7` (1.1 GB) · `:8b` (4.7 GB) · `:14b` (8.4 GB) · `:32b` (16 GB)
 
 
 ### Apple Watch (standalone)
@@ -302,7 +319,7 @@ On-device + cloud assistant tuned for the AAC user's voice. Streamed responses, 
 - **"Hey Prism" wake word** — available inside Bedside overlay; continuous `SpeechRecognition` session detects the phrase and triggers the mic; not available when iOS native bridge owns the audio session
 - 15s hard timeout client-side + Retry button (so the panel can't get stuck on "Thinking…" if the network drops)
 - 401 / network / timeout / other → friendly error mapping; never shows "Session expired" raw
-- Local Ollama fallback (`prism-coder:7b`) when offline; mixed-content blocked from `synalux.ai` browser origin in practice, so the friendly error fires
+- Local Ollama fallback (`prism-coder:1b7`) when offline; mixed-content blocked from `synalux.ai` browser origin in practice, so the friendly error fires
 
 **Render path:** `components/AIChatPanel.tsx` → `services/aiService.askAI()` (or `translateAI()` in translation mode) → SSE stream from Synalux `/api/v1/chat` with `credentials: 'include'`. CORS allowlists `synalux.ai` + localhost dev origins.
 </details>
@@ -944,7 +961,7 @@ Read more: [`ACCESSIBILITY.md`](ACCESSIBILITY.md), [`SECURITY.md`](SECURITY.md).
 | **Supabase EU** | EU Central (Frankfurt) | GDPR-compliant — EU user data never leaves the EU |
 | **Vercel** | Global Edge | Web app, API routes, CDN |
 | **Inworld TTS** | US | Neural text-to-speech |
-| **HuggingFace Hub** | US/EU | Model weights (1.7B, 14B, 32B) |
+| **HuggingFace Hub** | US/EU | Model weights (1.7B, 8B, 14B, 32B) |
 | **On-device** | User's device | llama.cpp inference (iPhone/iPad/Mac) |
 
 ### GDPR compliance
@@ -995,9 +1012,10 @@ Synalux operates the canonical hosted version (free + paid). Self-hosters and fo
 Install [Ollama](https://ollama.com), then:
 
 ```bash
-ollama pull dcostenco/prism-coder:1b7   # 2.2 GB — fast (~0.5s), iPhone 12+ / any Mac
-ollama pull dcostenco/prism-coder:14b   # 9.3 GB — standard (~3s), Mac M2 Pro+
-ollama pull dcostenco/prism-coder:32b   # 19 GB  — enterprise (~8s), Mac M2 Ultra+
+ollama pull dcostenco/prism-coder:1b7   # 1.1 GB — any machine, iPhone 12+ — 96.1% routing
+ollama pull dcostenco/prism-coder:8b    # 4.7 GB — iPhone/iPad 8GB, Mac M1+ — 98.0% routing
+ollama pull dcostenco/prism-coder:14b   # 8.4 GB — Mac 16GB+, iPad Pro — 97.1% routing
+ollama pull dcostenco/prism-coder:32b   # 16 GB  — Mac M2 Ultra+ / A100 — 99.0% routing
 ```
 
 Add to `.env.local`: `LOCAL_LLM_URL=http://localhost:11434`
@@ -1008,7 +1026,7 @@ OLLAMA_HOST=0.0.0.0 ollama serve   # on Mac
 # Then in app Settings → Local AI → enter: http://<mac-ip>:11434
 ```
 
-Auto-routing: 1.7B → AAC phrase suggestions · 14B → complex queries · 32B → clinical/enterprise. Cloud fallback when Ollama is unreachable.
+Auto-routing: 1.7B → any device · 8B → mobile/edge · 14B → standard · 32B → cloud/enterprise. Cloud fallback when Ollama is unreachable.
 
 ---
 
@@ -1018,20 +1036,22 @@ Auto-routing: 1.7B → AAC phrase suggestions · 14B → complex queries · 32B 
 **Stack**: Next.js, Zustand, Web Speech API (transcription), Inworld TTS-2 + Azure Neural fallback (speech), Kokoro-82M offline TTS, FaceLandmarker (gestures).
 
 **Model routing** (server-side via Synalux portal):
-- **On-device** (button tap → phrase): `prism-coder:1b7-v19-q8` (Qwen3-1.7B Q8, Ollama) — zero network, zero cost, ~0.5s
-- **Cloud simple** (chat, free tier): `prism-coder:14b` (Qwen3-14B fine-tuned, RunPod) → Gemini 2.5 Flash fallback
-- **Cloud complex** (reasoning, pro tier): `prism-coder:32b` (QwQ-32B fine-tuned, RunPod) → Claude Sonnet 4 fallback
+- **On-device** (button tap → phrase): `prism-coder:1b7` (Qwen3-1.7B Q4_K_M, llama.cpp Metal) — zero network, zero cost, ~1.6s
+- **Cloud simple** (chat, free tier): `prism-coder:14b` (Qwen3-14B fine-tuned) → Gemini 2.5 Flash fallback
+- **Cloud complex** (reasoning, pro tier): `prism-coder:32b` (QwQ-32B fine-tuned) → Claude Sonnet 4 fallback
 - **Autocorrect + word prediction**: Gemini 2.5 Flash-Lite — 752ms avg, multilingual (ro/ru/es)
 - Speed-critical paths (button tap → speech) bypass routing — never blocks on network
-- Routing accuracy ([100-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100), 3 rounds, May 2026):
+- Routing accuracy ([102-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100), 3-seed mean, May 2026):
 
   | Model | Accuracy | Avg latency | Invented tools |
   |---|---|---|---|
+  | prism-coder:32b v33 (local) | **99.0%** | 2.5s | 0 |
+  | 14B→32B cascade (local) | **99.0%** | ~1.1s | 0 |
+  | prism-coder:8b v35 (local) | **98.0%** | 0.8s | 0 |
+  | prism-coder:14b v33 (local) | **97.1%** | 1.1s | 0 |
   | Sonnet 4 (cloud) | **99%** | 3.2s | 0 |
-  | prism-coder:14b (local) | **100%** | 9.0s | 0 |
-  | Opus 4.7 (cloud) | **98%** | 3.0s | 0 |
-  | prism-coder:32b (local) | **100%** | 3.6s | 0 |
-  | prism-coder:1b7 (local) | **96%** | 6.0s | 0 |
+  | Opus 4.7 (cloud) | **97.1%** | 3.0s | 0 |
+  | prism-coder:1b7 v41 (local) | **96.1%** | 1.6s | 0 |
 
 **Voice (TTS)** fallback chain:
 - Tier 1: Inworld TTS-2 (paid all langs; free for ro/uk/ru/de/ko/ar where Synalux absorbs cost)
@@ -1103,7 +1123,7 @@ Static frequency lists are obsolete. PrismAAC ranks suggested phrases via [**Pri
 ### 3. Caregiver corrections become training data — automatically
 When a caregiver fixes a suggestion the model got wrong (e.g. "no, the word is *eat*, not *want*"), the [audit-hooks postflight harvester](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md#7-the-recipe-combining-all-of-the-above) extracts the gotcha and persists it. After ~50 sessions, the system warns *before* the model makes a similar mistake. No labelling work for caregivers, no expensive retraining runs — the corrections are the curriculum.
 
-**Honest scope:** Routing accuracy on the [100-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100) (7 Prism tools, 13 categories, seed=2026): **14B = 100% · 32B = 100% · 1.7B = 96%**. Zero invented tool names across all model sizes. The 1.7B is used on-device for fast phrase routing (load/save/compact); the 14B/32B cloud tiers handle complex sessions and clinical workflows. On the full Berkeley BFCL V4 leaderboard (2,000+ cases, general function-calling), the 1.7B scores ~59% — comparable to other sub-2B models. What makes PrismAAC defensible isn't the model score alone — it's the model plus the surrounding Prism spreading-activation algorithm stack.
+**Honest scope:** Routing accuracy on the [102-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100) (6 Prism tools, 12 categories, v25 system prompt, seeds 2027–2029): 32b v33 = 99.0%, 8b v35 = 98.0%, 14b v33 = 97.1%, 1.7b v41 = 96.1%. Zero invented tool names across all model sizes and all seeds. The 1.7B runs on-device for fast phrase routing (load/save/compact); the 14B/32B handle complex sessions and clinical workflows. On the full Berkeley BFCL V4 leaderboard (2,000+ cases, general function-calling), the 1.7B scores ~59% — comparable to other sub-2B models. What makes PrismAAC defensible isn't the model score alone — it's the model plus the surrounding Prism spreading-activation algorithm stack.
 
 </details>
 

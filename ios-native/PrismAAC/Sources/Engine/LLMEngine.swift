@@ -11,7 +11,7 @@ private let llamaAvailable = false
 /// Model selection by total device RAM (see preferredTier):
 ///   ≥16 GB (iPad Pro M1/M2/M4): prism-coder 14B Q4_K_M — 100.0% BFCL (v36)
 ///   8–15 GB (iPhone 15/16 Pro, iPad Air): prism-coder 8B Q4_K_M — 100.0% BFCL (v36); OOM fallback: 1.7B
-///   <8 GB  (iPhone 12–14, older iPads): prism-coder 1.7B Q4_K_M — 96.1% BFCL (v41)
+///   <8 GB  (iPhone 12–14, older iPads): prism-coder 1.7B Q4_K_M — 100.0% BFCL (v42)
 ///
 /// Accuracy numbers are sourced from HuggingFace model cards (dcostenco/prism-coder-*).
 /// Run scripts/update-model-registry.sh to sync when models are retrained.
@@ -32,18 +32,20 @@ final class LLMEngine: ObservableObject {
     static let CONTEXT_SIZE: UInt32 = 2048
 
     static let totalDeviceMemoryGB: Int = {
+        #if DEBUG
         if let override = ProcessInfo.processInfo.environment["PRISM_DEVICE_RAM_GB"],
            let gb = Int(override) {
             NSLog("[LLMEngine] RAM override: \(gb) GB (real: \(ProcessInfo.processInfo.physicalMemory / (1024*1024*1024)) GB)")
             return gb
         }
+        #endif
         return Int(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024))
     }()
 
     /// Model tier selection (accuracy from HuggingFace model cards):
     ///   ≥16 GB → 14B Q4_K_M (100.0% BFCL v36, guaranteed fit)
-    ///   8–15 GB → TRY 8B Q4_K_M (100.0% BFCL v36), OOM fallback to 1.7B (96.1% BFCL v41)
-    ///   <8 GB  → 1.7B Q4_K_M (96.1% BFCL v41, always fits)
+    ///   8–15 GB → TRY 8B Q4_K_M (100.0% BFCL v36), OOM fallback to 1.7B (100.0% BFCL v42)
+    ///   <8 GB  → 1.7B Q4_K_M (100.0% BFCL v42, always fits)
     enum ModelTier: String {
         case large14B = "14B"
         case medium8B = "8B"
@@ -155,7 +157,7 @@ final class LLMEngine: ObservableObject {
             let eosId = llama_token_eos(mdl)
             let imEndId = Self.findToken(model: mdl, text: "<|im_end|>")
 
-            let sampler = Self.createSampler()
+            let sampler = try Self.createSampler()
             defer { llama_sampler_free(sampler) }
 
             while nCur < nMax {
@@ -201,9 +203,11 @@ final class LLMEngine: ObservableObject {
         return n == 1 ? tokens[0] : -1
     }
 
-    nonisolated private static func createSampler() -> UnsafeMutablePointer<llama_sampler> {
+    nonisolated private static func createSampler() throws -> UnsafeMutablePointer<llama_sampler> {
         let params = llama_sampler_chain_default_params()
-        let chain = llama_sampler_chain_init(params)!
+        guard let chain = llama_sampler_chain_init(params) else {
+            throw LLMError.notLoaded
+        }
         // Greedy decoding — routing model requires deterministic output (temp=0 → argmax)
         llama_sampler_chain_add(chain, llama_sampler_init_greedy())
         return chain

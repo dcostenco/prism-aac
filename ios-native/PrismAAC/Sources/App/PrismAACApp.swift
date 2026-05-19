@@ -1,4 +1,5 @@
 import SwiftUI
+import CryptoKit
 
 @main
 struct PrismAACApp: App {
@@ -11,25 +12,33 @@ struct PrismAACApp: App {
     /// Model candidates in priority order for each device tier.
     /// The loader tries each in order — if a model OOMs or isn't cached,
     /// it falls through to the next. This lets 8GB devices ATTEMPT the
-    /// 8B (100.0% BFCL v36) and gracefully fall back to 1.7B (96.1% BFCL v41) if it
+    /// 8B (100.0% BFCL v36) and gracefully fall back to 1.7B (100.0% BFCL v42) if it
     /// doesn't fit. Accuracy from HuggingFace model cards (dcostenco/prism-coder-*).
-    private static let modelCandidates: [(file: String, cdn: String, minFreeMB: Int)] = {
+    private static let modelCandidates: [(file: String, cdn: String, minFreeMB: Int, sha256: String)] = {
         switch LLMEngine.preferredTier {
         case .large14B:
             return [
-                ("prism-coder-14b-v36-q4km",  "dcostenco/prism-coder-14b/resolve/main/prism-coder-14b-v36-q4km.gguf",  10_000),
-                ("prism-coder-1b7-v41-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v41-q4km.gguf", 1_200),
+                ("prism-coder-14b-v36-q4km",  "dcostenco/prism-coder-14b/resolve/main/prism-coder-14b-v36-q4km.gguf",  10_000, "322221d16e831911cedd92c3211126758aef361fb7ab65c2559de4ecf89d1ebc"),
+                ("prism-coder-1b7-v42-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
             ]
         case .medium8B:
             return [
-                ("qwen3-8b-v36-q4km",         "dcostenco/prism-coder-8b/resolve/main/qwen3-8b-v36-q4km.gguf",          4_500),
-                ("prism-coder-1b7-v41-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v41-q4km.gguf", 1_200),
+                ("qwen3-8b-v36-q4km",         "dcostenco/prism-coder-8b/resolve/main/qwen3-8b-v36-q4km.gguf",          4_500,  "7aa542dd4a9c9c772835b10ac66645038d76ad02a11bf137739937ec8e41dab2"),
+                ("prism-coder-1b7-v42-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
             ]
         case .small1B7:
             return [
-                ("prism-coder-1b7-v41-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v41-q4km.gguf", 1_200),
+                ("prism-coder-1b7-v42-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
             ]
         }
+    }()
+
+    /// URLSession for GGUF downloads — 1 h resource timeout guards against
+    /// stalled transfers on slow connections.
+    private static let downloadSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForResource = 3_600
+        return URLSession(configuration: config)
     }()
 
     var body: some Scene {
@@ -48,8 +57,8 @@ struct PrismAACApp: App {
         }
     }
 
-    private func tryLoadModel(_ candidate: (file: String, cdn: String, minFreeMB: Int)) async -> Bool {
-        let (file, cdn, minFreeMB) = candidate
+    private func tryLoadModel(_ candidate: (file: String, cdn: String, minFreeMB: Int, sha256: String)) async -> Bool {
+        let (file, cdn, minFreeMB, expectedSHA) = candidate
         NSLog("[PrismAAC] Trying \(file)...")
 
         // 1. Check bundle
@@ -75,7 +84,6 @@ struct PrismAACApp: App {
                 return true
             } catch {
                 NSLog("[PrismAAC] \(file) cache load failed (OOM?): \(error.localizedDescription)")
-                // OOM — try next candidate
                 return false
             }
         }
@@ -85,19 +93,48 @@ struct PrismAACApp: App {
             NSLog("[PrismAAC] Not enough free memory for \(file) (need \(minFreeMB) MB)")
             return false
         }
+        guard let cdnURL = URL(string: "https://huggingface.co/\(cdn)") else {
+            NSLog("[PrismAAC] Invalid CDN URL for \(file)")
+            return false
+        }
         do {
-            let cdnURL = URL(string: "https://huggingface.co/\(cdn)")!
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            let (tempURL, response) = try await URLSession.shared.download(from: cdnURL)
-            if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
-                try FileManager.default.moveItem(at: tempURL, to: url)
-                try await appState.loadModelSafe(from: url)
-                NSLog("[PrismAAC] Downloaded and loaded \(file)")
-                return true
+            let (tempURL, response) = try await Self.downloadSession.download(from: cdnURL)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                try? FileManager.default.removeItem(at: tempURL)
+                NSLog("[PrismAAC] \(file) download returned non-2xx")
+                return false
             }
+            let digest = try sha256Hex(of: tempURL)
+            guard digest == expectedSHA else {
+                try? FileManager.default.removeItem(at: tempURL)
+                NSLog("[PrismAAC] \(file) SHA-256 mismatch — expected \(expectedSHA), got \(digest)")
+                return false
+            }
+            try FileManager.default.moveItem(at: tempURL, to: url)
+            try await appState.loadModelSafe(from: url)
+            NSLog("[PrismAAC] Downloaded and loaded \(file)")
+            return true
         } catch {
             NSLog("[PrismAAC] \(file) download/load failed: \(error.localizedDescription)")
         }
         return false
+    }
+
+    /// Streams the file in 1 MB chunks to avoid loading the full GGUF into RAM.
+    private func sha256Hex(of fileURL: URL) throws -> String {
+        guard let handle = FileHandle(forReadingAtPath: fileURL.path) else {
+            throw CocoaError(.fileReadNoSuchFile)
+        }
+        defer { handle.closeFile() }
+        var hasher = SHA256()
+        let chunkSize = 1024 * 1024
+        while true {
+            let chunk = handle.readData(ofLength: chunkSize)
+            if chunk.isEmpty { break }
+            hasher.update(data: chunk)
+        }
+        let digest = hasher.finalize()
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
 }

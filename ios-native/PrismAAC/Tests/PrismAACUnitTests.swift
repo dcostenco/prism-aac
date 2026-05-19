@@ -810,8 +810,12 @@ final class LLMEngineTests: XCTestCase {
 
     @MainActor
     func testConstants_minFreeMB() {
-        XCTAssertEqual(LLMEngine.MIN_FREE_MB, 1_600,
-            "MIN_FREE_MB must be 1600 (safety margin for 1.7B Q4_K_M)")
+        // MIN_FREE_MB is tier-dependent — verify the value matches the current tier.
+        switch LLMEngine.preferredTier {
+        case .large14B:  XCTAssertEqual(LLMEngine.MIN_FREE_MB, 10_000, "14B tier must require 10 GB free")
+        case .medium8B:  XCTAssertEqual(LLMEngine.MIN_FREE_MB, 4_500,  "8B tier must require 4.5 GB free")
+        case .small1B7:  XCTAssertEqual(LLMEngine.MIN_FREE_MB, 1_600,  "1.7B tier must require 1.6 GB free")
+        }
     }
 
     @MainActor

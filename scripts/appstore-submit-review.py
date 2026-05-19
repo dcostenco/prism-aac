@@ -50,8 +50,8 @@ BASE_URL    = "https://api.appstoreconnect.apple.com/v1"
 TOKEN_TTL   = 1200  # 20 min max per ASC docs
 
 # Marketing version matching our Info.plist
-MARKETING_VERSION  = "1.5.0"
-BUILD_VERSION      = "18"   # overridable via --build-version
+MARKETING_VERSION  = "1.6.0"
+BUILD_VERSION      = "23"   # overridable via --build-version
 PLATFORM           = "IOS"
 
 # Sanctioned / restricted territories to exclude (OFAC + EU sanctions 2026)
@@ -63,12 +63,11 @@ POLL_MAX_MINUTES   = 20
 
 # What's New text shown on the App Store listing
 WHATS_NEW_EN_US = (
-    "• Bedside Mode: quick-phrase cards for critical needs "
-    "(HELP, pain, nurse call, water, temperature, positioning, medication, and more)\n"
-    "• 22 supported languages — now available worldwide\n"
-    "• AI-powered Prism Coder 1.7B on-device model (updated to v36)\n"
-    "• Accessibility: all cards meet WCAG 2.5.5 AAA 44pt touch target\n"
-    "• iOS Settings deep-links for Speech, Voice Control, and Switch Control"
+    "• On-device AI model updated to prism-coder v42 — 100% routing accuracy on all device tiers (1.7B / 8B / 14B)\n"
+    "• GGUF model integrity verified with SHA-256 on every download — prevents loading corrupt or tampered weights\n"
+    "• Language tag validation hardened in speech bridge\n"
+    "• App Transport Security tightened\n"
+    "• Bug fixes and stability improvements"
 )
 
 

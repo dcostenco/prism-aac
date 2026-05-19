@@ -233,7 +233,8 @@ struct PrismWebView: UIViewRepresentable {
             switch action {
             case "speak":
                 let text = String((body["text"] as? String ?? "").prefix(BridgeSecurityPolicy.maxSpeakTextLength))
-                let lang = body["lang"] as? String ?? "en-US"
+                let rawLang = body["lang"] as? String ?? "en-US"
+                let lang = BridgeSecurityPolicy.isValidLang(rawLang) ? rawLang : "en-US"
                 let rate = Float(body["rate"] as? Double ?? 0.5)
                 tts.speak(text, language: lang, rate: rate)
             case "stopSpeech":
