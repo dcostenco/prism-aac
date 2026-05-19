@@ -28,9 +28,9 @@ Part of the [Synalux platform](https://synalux.ai).
 | Platform | Status | On-device AI | Notes |
 |----------|--------|-------------|-------|
 | **Web** (PWA) | Production | Auto-downloads best local model | Any browser, installable |
-| **iPad Pro 16GB** | Production | 14B model (97.1% routing) | On-device AI, auto-selected by RAM |
-| **iPhone / iPad 8GB** | Production | 8B model (98.0%) → 1.7B fallback (96.1%) | Auto-downsizes if needed |
-| **iPhone / iPad <8GB** | Production | 1.7B model (96.1%) | Always fits, 1.1 GB |
+| **iPad Pro 16GB** | Production | On-device AI (14B) | Fast, private, auto-selected by RAM |
+| **iPhone / iPad 8GB** | Production | On-device AI (8B → 1.7B fallback) | Auto-downsizes to fit device |
+| **iPhone / iPad <8GB** | Production | On-device AI (1.7B) | Always fits, 1.1 GB |
 | **Apple Watch** | Production | Offline phrase dictionary (1,261 × 20 langs) | Standalone — pictograms, TTS, emergency |
 | **Chrome Extension** | Production | — | Reading assistant in any text field |
 | **WiFi to Mac** | Production | 14B/32B via Ollama | Settings → Local AI → enter Mac IP |
@@ -87,132 +87,17 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 
 ---
 
-## AI models & device support
-
-Works on every Apple device. Zero cloud dependency for core AAC communication.
-
-PrismAAC auto-selects the best model your hardware can run, falls back gracefully on constrained devices, and never requires an internet connection for basic communication. Local models match cloud accuracy: **96–99% routing** across all device tiers.
-
-| Device | RAM | Model | Accuracy | AAC | Size | Cost |
-|---|---|---|---|---|---|---|
-| **iPad Pro M1/M2/M4** | 16 GB | 14B Q4_K_M | **97.1%** | 100% | 8.4 GB | $0 |
-| **iPhone 15/16 Pro, iPad Air** | 8 GB | 8B Q4_K_M → 1.7B (OOM fallback) | **98.0%** | 100% | 4.7 GB / 1.1 GB | $0 |
-| **iPhone 12–14, older iPads** | <8 GB | 1.7B Q4_K_M | **96.1%** | 100% | 1.1 GB | $0 |
-| **Mac M1+ via WiFi** | 16+ GB | 14B via Ollama | **97.1%** | 100% | 8.4 GB | $0 |
-
-### Web app cascade
-
-The web app tries local inference first, then falls back to cloud — so users with Ollama installed pay $0 and users without it still get full functionality.
-
-<details>
-<summary>Cascade flowchart</summary>
-
-```
-  User sends message
-        |
-        v
-  +-- LOCAL OLLAMA (auto-detected at localhost:11434) --+
-  |                                                      |
-  |   14b (97.1%, ~1.1s) ─[fail]─> 8b (98.0%, ~0.8s) ─[fail]─> 1b7 (96.1%, ~1.6s)
-  +-------------------------------------------------------------------+
-         |
-    [all local fail?]
-         |
-         v
-  +-- CLOUD FALLBACK (Synalux API) --------+
-  |  Claude Sonnet 4 (paid) / Gemini (free) |
-  |  99% accuracy, ~3s                      |
-  +-----------------------------------------+
-
-  Auto-sideload: first launch detects Ollama → pulls best model → local forever.
-```
-
-</details>
-
-### iOS native cascade
-
-The native app probes available RAM at launch, downloads the right model from HuggingFace CDN (one-time), and runs inference via llama.cpp Metal. No server. No subscription. No data leaves the device.
-
-<details>
-<summary>Cascade flowchart</summary>
-
-```
-  App launch
-      |
-      v
-  RAM detection (os_proc_available_memory)
-      |
-      +── 16 GB+ (iPad Pro) ──> 14B Q4_K_M (8.4 GB) ──> 97.1%, ~1.1s
-      |
-      +── 8 GB (iPhone/iPad Air) ──> 8B Q4_K_M (4.7 GB) ──> 98.0%, ~0.8s
-      |                                    |
-      |                               OOM? → 1.7B Q4_K_M (1.1 GB) → 96.1%, ~1.6s
-      |
-      +── <8 GB ──> 1.7B Q4_K_M (1.1 GB) ──> 96.1%, ~1.6s
-
-  All paths: llama.cpp Metal, $0 forever, no data leaves device.
-  WiFi upgrade: Settings → Local AI → enter Mac IP for 14B/32B.
-```
-
-</details>
-
-### Keyboard layout modes (persisted)
-
-Three modes cycle with a single tap — the chosen layout is saved and restored on every launch.
-
-- **MAX KB** — keyboard fills all space below the prediction bar
-- **MIN KB** — categories 75% / keyboard 25%
-- **HIDE KB** — categories full screen, keyboard hidden
-
-<details>
-<summary>Layout diagram</summary>
-
-```
-  MAX KB                 MIN KB                 HIDE KB
-  +--------------------+ +--------------------+ +--------------------+
-  | Toolbar            | | Toolbar            | | Toolbar            |
-  | Prediction bar     | | Prediction bar     | | Greeting banner    |
-  |                    | |                    | |                    |
-  |  KEYBOARD          | | Categories  (75%)  | | Categories         |
-  |  fills all space   | |                    | | (full screen)      |
-  |  below prediction  | |--------------------| |                    |
-  |                    | | Keyboard    (25%)  | |                    |
-  | [123][v][  space  ]| |                    | |                    |
-  +--------------------+ +--------------------+ +--------------------+
-        |                      |                      |
-        +-- [v] button ------->+-- sidebar btn ------>+-- sidebar btn --+
-        |                                                               |
-        +<--------------------------------------------------------------+
-```
-
-</details>
-
-### Cost summary
-
-| Path | Model | Accuracy | Latency | Cost |
-|---|---|---|---|---|
-| iPad Pro 16GB | 14B Q4_K_M | **97.1%** | ~1.1s | **$0** |
-| iPhone/iPad 8GB | 8B Q4_K_M → 1.7B (OOM fallback) | **98.0%** | ~0.8s | **$0** |
-| Any device | 1.7B Q4_K_M | **96.1%** | ~1.6s | **$0** |
-| WiFi to Mac | 14B via Ollama | **97.1%** | ~1.1s | **$0** |
-| Cloud (free) | Gemini 2.5 Flash | 99% | ~3s | Synalux absorbs |
-| Cloud (paid) | Claude Sonnet 4 | 99% | ~3s | Included in plan |
-
-**The pitch:** Every child gets Claude-grade accuracy whether they're on a $329 iPhone SE or a $2,000 iPad Pro. Local-first means zero cloud dependency, zero monthly API fees, zero PHI exposure, and sub-second response times. All four prism-coder models score 96–99% on the 102-case routing benchmark (v25 system prompt, 3-seed mean), with zero invented tool calls.
-
----
-
 ## iOS & Apple Watch
 
 ### iPhone / iPad
 
 Native Swift app wrapping the web UI in WKWebView + on-device AI via llama.cpp Metal. Auto-selects the best model by device RAM:
 
-| Device | RAM | Model | Accuracy | Download |
-|---|---|---|---|---|
-| iPad Pro M1/M2/M4 | 16 GB | 14B Q4_K_M | **97.1%** | 8.4 GB from HF CDN |
-| iPhone 15/16 Pro, iPad Air | 8 GB | 8B Q4_K_M → 1.7B (OOM fallback) | **98.0%** | 4.7 GB / 1.1 GB |
-| iPhone 12-14, older iPads | <8 GB | 1.7B Q4_K_M | **96.1%** | 1.1 GB |
+| Device | RAM | Model | Download |
+|---|---|---|---|
+| iPad Pro M1/M2/M4 | 16 GB | 14B Q4_K_M | 8.4 GB from HF CDN |
+| iPhone 15/16 Pro, iPad Air | 8 GB | 8B Q4_K_M → 1.7B (OOM fallback) | 4.7 GB / 1.1 GB |
+| iPhone 12-14, older iPads | <8 GB | 1.7B Q4_K_M | 1.1 GB |
 
 Three-layer safety: synchronous crisis filter → on-device AI → cloud fallback. Memory-aware gating degrades gracefully: full AI → cloud AI → core-only → emergency mode.
 
@@ -989,6 +874,121 @@ EU users' data is stored exclusively in the Frankfurt (eu-central-1) region. The
 | 0–1K | $50/mo (2 regions) | $0 (Hobby) | ~$5/mo | $0 (on-device) | ~$55/mo |
 | 1K–10K | $50/mo | $20/mo (Pro) | ~$50/mo | $0 | ~$120/mo |
 | 10K–100K | $50/mo + compute add-ons | $20/mo | ~$200/mo | RunPod $125/mo | ~$395/mo |
+
+---
+
+## AI models & device support
+
+Works on every Apple device. Zero cloud dependency for core AAC communication.
+
+PrismAAC auto-selects the best model your hardware can run, falls back gracefully on constrained devices, and never requires an internet connection for basic communication.
+
+| Device | RAM | Model | Accuracy | AAC | Size | Cost |
+|---|---|---|---|---|---|---|
+| **iPad Pro M1/M2/M4** | 16 GB | 14B Q4_K_M | **97.1%** | 100% | 8.4 GB | $0 |
+| **iPhone 15/16 Pro, iPad Air** | 8 GB | 8B Q4_K_M → 1.7B (OOM fallback) | **98.0%** | 100% | 4.7 GB / 1.1 GB | $0 |
+| **iPhone 12–14, older iPads** | <8 GB | 1.7B Q4_K_M | **96.1%** | 100% | 1.1 GB | $0 |
+| **Mac M1+ via WiFi** | 16+ GB | 14B via Ollama | **97.1%** | 100% | 8.4 GB | $0 |
+
+### Web app cascade
+
+The web app tries local inference first, then falls back to cloud — so users with Ollama installed pay $0 and users without it still get full functionality.
+
+<details>
+<summary>Cascade flowchart</summary>
+
+```
+  User sends message
+        |
+        v
+  +-- LOCAL OLLAMA (auto-detected at localhost:11434) --+
+  |                                                      |
+  |   14b (97.1%, ~1.1s) ─[fail]─> 8b (98.0%, ~0.8s) ─[fail]─> 1b7 (96.1%, ~1.6s)
+  +-------------------------------------------------------------------+
+         |
+    [all local fail?]
+         |
+         v
+  +-- CLOUD FALLBACK (Synalux API) --------+
+  |  Claude Sonnet 4 (paid) / Gemini (free) |
+  |  99% accuracy, ~3s                      |
+  +-----------------------------------------+
+
+  Auto-sideload: first launch detects Ollama → pulls best model → local forever.
+```
+
+</details>
+
+### iOS native cascade
+
+The native app probes available RAM at launch, downloads the right model from HuggingFace CDN (one-time), and runs inference via llama.cpp Metal. No server. No subscription. No data leaves the device.
+
+<details>
+<summary>Cascade flowchart</summary>
+
+```
+  App launch
+      |
+      v
+  RAM detection (os_proc_available_memory)
+      |
+      +── 16 GB+ (iPad Pro) ──> 14B Q4_K_M (8.4 GB) ──> 97.1%, ~1.1s
+      |
+      +── 8 GB (iPhone/iPad Air) ──> 8B Q4_K_M (4.7 GB) ──> 98.0%, ~0.8s
+      |                                    |
+      |                               OOM? → 1.7B Q4_K_M (1.1 GB) → 96.1%, ~1.6s
+      |
+      +── <8 GB ──> 1.7B Q4_K_M (1.1 GB) ──> 96.1%, ~1.6s
+
+  All paths: llama.cpp Metal, $0 forever, no data leaves device.
+  WiFi upgrade: Settings → Local AI → enter Mac IP for 14B/32B.
+```
+
+</details>
+
+### Keyboard layout modes (persisted)
+
+Three modes cycle with a single tap — the chosen layout is saved and restored on every launch.
+
+- **MAX KB** — keyboard fills all space below the prediction bar
+- **MIN KB** — categories 75% / keyboard 25%
+- **HIDE KB** — categories full screen, keyboard hidden
+
+<details>
+<summary>Layout diagram</summary>
+
+```
+  MAX KB                 MIN KB                 HIDE KB
+  +--------------------+ +--------------------+ +--------------------+
+  | Toolbar            | | Toolbar            | | Toolbar            |
+  | Prediction bar     | | Prediction bar     | | Greeting banner    |
+  |                    | |                    | |                    |
+  |  KEYBOARD          | | Categories  (75%)  | | Categories         |
+  |  fills all space   | |                    | | (full screen)      |
+  |  below prediction  | |--------------------| |                    |
+  |                    | | Keyboard    (25%)  | |                    |
+  | [123][v][  space  ]| |                    | |                    |
+  +--------------------+ +--------------------+ +--------------------+
+        |                      |                      |
+        +-- [v] button ------->+-- sidebar btn ------>+-- sidebar btn --+
+        |                                                               |
+        +<--------------------------------------------------------------+
+```
+
+</details>
+
+### Cost summary
+
+| Path | Model | Accuracy | Latency | Cost |
+|---|---|---|---|---|
+| iPad Pro 16GB | 14B Q4_K_M | **97.1%** | ~1.1s | **$0** |
+| iPhone/iPad 8GB | 8B Q4_K_M → 1.7B (OOM fallback) | **98.0%** | ~0.8s | **$0** |
+| Any device | 1.7B Q4_K_M | **96.1%** | ~1.6s | **$0** |
+| WiFi to Mac | 14B via Ollama | **97.1%** | ~1.1s | **$0** |
+| Cloud (free) | Gemini 2.5 Flash | 99% | ~3s | Synalux absorbs |
+| Cloud (paid) | Claude Sonnet 4 | 99% | ~3s | Included in plan |
+
+**The pitch:** Every child gets Claude-grade accuracy whether they're on a $329 iPhone SE or a $2,000 iPad Pro. Local-first means zero cloud dependency, zero monthly API fees, zero PHI exposure, and sub-second response times. All four prism-coder models score 96–99% on the 102-case routing benchmark (v25 system prompt, 3-seed mean), with zero invented tool calls.
 
 ---
 

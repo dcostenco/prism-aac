@@ -189,6 +189,7 @@ struct PrismWebView: UIViewRepresentable {
         let tts = WKWebTTS()
         var onLoaded: (() -> Void)?
         private var lastEmergencyTriggerTime: TimeInterval = 0
+        private var lastAskAITime: TimeInterval = 0
         private var speechRecognizer: SFSpeechRecognizer?
         private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
         private var recognitionTask: SFSpeechRecognitionTask?
@@ -273,8 +274,12 @@ struct PrismWebView: UIViewRepresentable {
                       message.frameInfo.isMainFrame else {
                     return
                 }
+                let now = Date().timeIntervalSince1970
+                guard now - lastAskAITime >= BridgeSecurityPolicy.askAIRateLimitSeconds else { return }
+                lastAskAITime = now
                 let question = String((body["question"] as? String ?? "").prefix(BridgeSecurityPolicy.maxAskAIQuestionLength))
-                let lang = body["lang"] as? String ?? "en"
+                let rawLang = String((body["lang"] as? String ?? "en").prefix(BridgeSecurityPolicy.maxLangTagLength))
+                let lang = BridgeSecurityPolicy.isValidLang(rawLang) ? rawLang : "en"
                 guard !question.isEmpty else {
                     return
                 }

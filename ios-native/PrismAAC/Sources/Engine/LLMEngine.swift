@@ -116,6 +116,12 @@ final class LLMEngine: ObservableObject {
     }
 
     func unload() {
+        // Do not free C pointers while a Task.detached holds copies of them.
+        // With MAX_NEW_TOKENS=256 inference completes in <5 s; jetsam headroom >> 5 s.
+        guard !isGenerating else {
+            NSLog("[LLMEngine] Deferred unload — inference in progress")
+            return
+        }
         #if canImport(llama)
         if let ctx = context { llama_free(ctx) }
         if let mdl = model { llama_free_model(mdl) }
@@ -123,6 +129,7 @@ final class LLMEngine: ObservableObject {
         context = nil
         model = nil
         isLoaded = false
+        loadedModelTier = ""
     }
 
     func generate(prompt: String, onToken: @escaping (String) -> Void) async throws -> String {

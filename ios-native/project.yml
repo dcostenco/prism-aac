@@ -97,7 +97,6 @@ targets:
           NSExceptionDomains:
             localhost:
               NSExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
         ITSAppUsesNonExemptEncryption: false
     entitlements:
       path: PrismAAC/PrismAAC.entitlements

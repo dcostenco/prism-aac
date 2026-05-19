@@ -65,6 +65,10 @@ struct PrismAACApp: App {
 
         // 1. Check bundle
         if let bundleURL = Bundle.main.url(forResource: file, withExtension: "gguf") {
+            guard AppState.measureFreeMemoryMB() >= minFreeMB else {
+                NSLog("[PrismAAC] Not enough free memory for bundled \(file) (need \(minFreeMB) MB)")
+                return false
+            }
             do {
                 try await appState.loadModelSafe(from: bundleURL)
                 NSLog("[PrismAAC] Loaded \(file) from bundle")
@@ -91,6 +95,10 @@ struct PrismAACApp: App {
         }
 
         // 3. Download if enough memory
+        guard !cdn.isEmpty else {
+            NSLog("[PrismAAC] \(file) not in bundle and has no CDN URL — skipping")
+            return false
+        }
         guard AppState.measureFreeMemoryMB() >= minFreeMB else {
             NSLog("[PrismAAC] Not enough free memory for \(file) (need \(minFreeMB) MB)")
             return false

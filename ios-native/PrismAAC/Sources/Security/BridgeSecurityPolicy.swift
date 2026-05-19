@@ -37,6 +37,11 @@ enum BridgeSecurityPolicy {
     /// 0.5 s between startVoice calls — debounce for rapid taps.
     static let startVoiceRateLimitSeconds: TimeInterval = 0.5
 
+    /// 1 s between askAI calls — prevents rapid-fire cancellation storms.
+    /// AACPipeline already cancels the previous task, but this prevents
+    /// the bridge being used as an unbounded task-creation loop.
+    static let askAIRateLimitSeconds: TimeInterval = 1.0
+
     // MARK: - Input length caps
     // Every cap is a named constant so tests can pin the exact value.
     // Never use bare prefix(N) literals in bridge handlers — use these.
