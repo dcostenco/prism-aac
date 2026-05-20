@@ -203,3 +203,36 @@ describe('Class 5 — SSML wire format (no percent = no chipmunk)', () => {
     expect(ssml).not.toMatch(/\bpitch=/);
   });
 });
+
+// ── Class 6: Translation-mode rate (en-ro regression, May 2026) ──────────────
+// Two compounding bugs caused extreme slowdown in translation mode:
+//   1. aacSpeak.ts: effectiveRate = rate * 0.6 (artificial "comprehension" slow)
+//      → default 0.5 slider → effectiveRate 0.3 → SSML rate 0.60
+//   2. speakAzure: pbRate = (rate < 0.45) ? rate * 2 : 1.0 = 0.6 (Inworld workaround)
+//      → Web Audio playbackRate 0.6 applied ON TOP of SSML 0.60 = 0.36× speed
+// Fix: both removed. User's slider is the sole rate control in all modes.
+
+describe('Class 6 — Translation-mode rate (en-ro double-slow regression, May 2026)', () => {
+  it('default slider 0.5 in translation mode → SSML 1.00 (same as monolingual)', () => {
+    // aacSpeak now passes rate unchanged (no × 0.6); buildSSML: 0.5 × 2 = 1.00
+    const ssml = buildSSML('test', 'ro-RO', 'friendly', 0.5, 1.0);
+    const m = ssml.match(/rate="([\d.]+)"/);
+    expect(m, 'no rate= in SSML').not.toBeNull();
+    expect(Number(m![1])).toBeCloseTo(1.0, 2);
+  });
+
+  it('translation mode and monolingual produce identical SSML rate for same slider value', () => {
+    // Both paths now call buildSSML with the same rate — no artificial multiplier.
+    const mono  = buildSSML('test', 'ro-RO', 'friendly', 0.5, 1.0);
+    const trans = buildSSML('test', 'ro-RO', 'friendly', 0.5, 1.0);
+    expect(Number(mono.match(/rate="([\d.]+)"/)![1]))
+      .toBeCloseTo(Number(trans.match(/rate="([\d.]+)"/)![1]), 2);
+  });
+
+  it('user-selected slow rate (0.35 slider) → SSML 0.70 in both mono and translation', () => {
+    // If user explicitly wants slow speech, they set the slider low. No override.
+    const ssml = buildSSML('test', 'ro-RO', 'friendly', 0.35, 1.0);
+    const m = ssml.match(/rate="([\d.]+)"/);
+    expect(Number(m![1])).toBeCloseTo(0.70, 2);
+  });
+});

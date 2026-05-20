@@ -94,11 +94,12 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     const ms = useMessageStore.getState();
     const effectiveTone: ToneStyle | 'auto' = tone
       ?? (ms.toneMode === 'auto' ? 'auto' : ms.activeTone);
-    // Slow translated/foreign speech 40% for comprehension; monolingual
-    // native speech (even non-English) stays at the user's selected rate.
-    // Regression: unconditional rate * 0.6 (commit 95e4168) broke
-    // monolingual RO/RU users — SSML 0.6 instead of 1.0 = 2× slow.
-    const effectiveRate = (translating || spokenLang) ? rate * 0.6 : rate;
+    // Use the user's configured rate unchanged.
+    // REGRESSION CLASS: artificial rate * 0.6 for translation mode was
+    // compounding with pbRate in speakAzure → 0.36× speed (en-ro May 2026).
+    // pbRate also removed from speakAzure. Rate control belongs to the
+    // user's slider only.
+    const effectiveRate = rate;
     speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt);
   } catch {
     // Last resort: speak original text using the user's configured language,

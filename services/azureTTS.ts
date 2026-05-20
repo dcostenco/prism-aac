@@ -654,11 +654,13 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
       if (audioBytes) {
         clearTimeout(timeout);
         activeControllers.delete(controller);
-        // Inworld ignores SSML rate — for slow speech (translation mode,
-        // rate < 0.45), apply as audio playbackRate. Only slow down, never
-        // speed up (playbackRate > 1.0 causes chipmunk pitch shift).
-        const pbRate = (rate < 0.45) ? Math.max(0.5, rate * 2) : 1.0;
-        return await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt, pbRate);
+        // Rate is fully encoded in the SSML prosody (buildSSML: stored × 2,
+        // clamped 0.5–1.4). Azure applies it natively; the portal converts
+        // it to an Inworld steering hint via rateToSteering. Do NOT apply
+        // an additional Web Audio playbackRate — that was causing double-slow
+        // in translation mode: aacSpeak effectiveRate × 0.6 → SSML rate 0.6
+        // → old pbRate 0.6 = 0.36× speed (en-ro regression, May 2026).
+        return await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt);
       }
       console.warn('[AzureTTS] response oversize, dropping');
     } else {
