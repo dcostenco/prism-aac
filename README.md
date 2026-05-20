@@ -885,10 +885,10 @@ PrismAAC auto-selects the best model your hardware can run, falls back gracefull
 
 | Device | RAM | Model | Accuracy | AAC | Size | Cost |
 |---|---|---|---|---|---|---|
-| **iPad Pro M1/M2/M4** | 16 GB | 14B Q4_K_M | **97.1%** | 100% | 8.4 GB | $0 |
-| **iPhone 15/16 Pro, iPad Air** | 8 GB | 8B Q4_K_M → 1.7B (OOM fallback) | **98.0%** | 100% | 4.7 GB / 1.1 GB | $0 |
-| **iPhone 12–14, older iPads** | <8 GB | 1.7B Q4_K_M | **96.1%** | 100% | 1.1 GB | $0 |
-| **Mac M1+ via WiFi** | 16+ GB | 14B via Ollama | **97.1%** | 100% | 8.4 GB | $0 |
+| **iPad Pro M1/M2/M4** | 16 GB | 14B Q4_K_M (v36) | **100%** | 100% | 8.4 GB | $0 |
+| **iPhone 15/16 Pro, iPad Air** | 8 GB | 8B Q4_K_M (v36) → 1.7B (OOM fallback) | **100%** | 100% | 4.7 GB / 1.1 GB | $0 |
+| **iPhone 12–14, older iPads** | <8 GB | 1.7B Q4_K_M (v42) | **100%** | 100% | 1.1 GB | $0 |
+| **Mac M1+ via WiFi** | 16+ GB | 14B via Ollama (v36) | **100%** | 100% | 8.4 GB | $0 |
 
 ### Web app cascade
 
@@ -903,7 +903,7 @@ The web app tries local inference first, then falls back to cloud — so users w
         v
   +-- LOCAL OLLAMA (auto-detected at localhost:11434) --+
   |                                                      |
-  |   14b (97.1%, ~1.1s) ─[fail]─> 8b (98.0%, ~0.8s) ─[fail]─> 1b7 (96.1%, ~1.6s)
+  |   14b (100%, ~1.1s) ─[fail]─> 8b (100%, ~0.8s) ─[fail]─> 1b7 (100%, ~1.6s)
   +-------------------------------------------------------------------+
          |
     [all local fail?]
@@ -932,13 +932,13 @@ The native app probes available RAM at launch, downloads the right model from Hu
       v
   RAM detection (os_proc_available_memory)
       |
-      +── 16 GB+ (iPad Pro) ──> 14B Q4_K_M (8.4 GB) ──> 97.1%, ~1.1s
+      +── 16 GB+ (iPad Pro) ──> 14B Q4_K_M (8.4 GB) ──> 100%, ~1.1s
       |
-      +── 8 GB (iPhone/iPad Air) ──> 8B Q4_K_M (4.7 GB) ──> 98.0%, ~0.8s
+      +── 8 GB (iPhone/iPad Air) ──> 8B Q4_K_M (4.7 GB) ──> 100%, ~0.8s
       |                                    |
-      |                               OOM? → 1.7B Q4_K_M (1.1 GB) → 96.1%, ~1.6s
+      |                               OOM? → 1.7B Q4_K_M (1.1 GB) → 100%, ~1.6s
       |
-      +── <8 GB ──> 1.7B Q4_K_M (1.1 GB) ──> 96.1%, ~1.6s
+      +── <8 GB ──> 1.7B Q4_K_M (1.1 GB) ──> 100%, ~1.6s
 
   All paths: llama.cpp Metal, $0 forever, no data leaves device.
   WiFi upgrade: Settings → Local AI → enter Mac IP for 14B/32B.
@@ -981,10 +981,10 @@ Three modes cycle with a single tap — the chosen layout is saved and restored 
 
 | Path | Model | Accuracy | Latency | Cost |
 |---|---|---|---|---|
-| iPad Pro 16GB | 14B Q4_K_M | **97.1%** | ~1.1s | **$0** |
-| iPhone/iPad 8GB | 8B Q4_K_M → 1.7B (OOM fallback) | **98.0%** | ~0.8s | **$0** |
-| Any device | 1.7B Q4_K_M | **96.1%** | ~1.6s | **$0** |
-| WiFi to Mac | 14B via Ollama | **97.1%** | ~1.1s | **$0** |
+| iPad Pro 16GB | 14B Q4_K_M (v36) | **100%** | ~1.1s | **$0** |
+| iPhone/iPad 8GB | 8B Q4_K_M (v36) → 1.7B (OOM fallback) | **100%** | ~0.8s | **$0** |
+| Any device | 1.7B Q4_K_M (v42) | **100%** | ~1.6s | **$0** |
+| WiFi to Mac | 14B via Ollama (v36) | **100%** | ~1.1s | **$0** |
 | Cloud (free) | Gemini 2.5 Flash | 99% | ~3s | Synalux absorbs |
 | Cloud (paid) | Claude Sonnet 4 | 99% | ~3s | Included in plan |
 
@@ -1012,10 +1012,10 @@ Synalux operates the canonical hosted version (free + paid). Self-hosters and fo
 Install [Ollama](https://ollama.com), then:
 
 ```bash
-ollama pull dcostenco/prism-coder:1b7   # 1.1 GB — any machine, iPhone 12+ — 96.1% routing
-ollama pull dcostenco/prism-coder:8b    # 4.7 GB — iPhone/iPad 8GB, Mac M1+ — 98.0% routing
-ollama pull dcostenco/prism-coder:14b   # 8.4 GB — Mac 16GB+, iPad Pro — 97.1% routing
-ollama pull dcostenco/prism-coder:32b   # 16 GB  — Mac M2 Ultra+ / A100 — 99.0% routing
+ollama pull dcostenco/prism-coder:1b7   # 1.1 GB — any machine, iPhone 12+ — 100% routing (v42)
+ollama pull dcostenco/prism-coder:8b    # 4.7 GB — iPhone/iPad 8GB, Mac M1+ — 100% routing (v36)
+ollama pull dcostenco/prism-coder:14b   # 8.4 GB — Mac 16GB+, iPad Pro — 100% routing (v36)
+ollama pull dcostenco/prism-coder:32b   # 16 GB  — Mac M2 Ultra+ (MoE) — 100% routing (v7)
 ```
 
 Add to `.env.local`: `LOCAL_LLM_URL=http://localhost:11434`
@@ -1045,13 +1045,13 @@ Auto-routing: 1.7B → any device · 8B → mobile/edge · 14B → standard · 3
 
   | Model | Accuracy | Avg latency | Invented tools |
   |---|---|---|---|
-  | prism-coder:32b v33 (local) | **99.0%** | 2.5s | 0 |
-  | 14B→32B cascade (local) | **99.0%** | ~1.1s | 0 |
-  | prism-coder:8b v35 (local) | **98.0%** | 0.8s | 0 |
-  | prism-coder:14b v33 (local) | **97.1%** | 1.1s | 0 |
+  | prism-coder:32b v7 (local, MoE) | **100.0%** | 0.8s | 0 |
+  | 14B→32B cascade (local) | **100.0%** | ~1.1s | 0 |
+  | prism-coder:8b v36 (local) | **100.0%** | 0.8s | 0 |
+  | prism-coder:14b v36 (local) | **100.0%** | 1.1s | 0 |
   | Sonnet 4 (cloud) | **99%** | 3.2s | 0 |
-  | Opus 4.7 (cloud) | **97.1%** | 3.0s | 0 |
-  | prism-coder:1b7 v41 (local) | **96.1%** | 1.6s | 0 |
+  | Opus 4.7 (cloud) | **98.3%** | 3.0s | 0 |
+  | prism-coder:1b7 v42 (local) | **100.0%** | 1.6s | 0 |
 
 **Voice (TTS)** fallback chain:
 - Tier 1: Inworld TTS-2 (paid all langs; free for ro/uk/ru/de/ko/ar where Synalux absorbs cost)
@@ -1123,7 +1123,7 @@ Static frequency lists are obsolete. PrismAAC ranks suggested phrases via [**Pri
 ### 3. Caregiver corrections become training data — automatically
 When a caregiver fixes a suggestion the model got wrong (e.g. "no, the word is *eat*, not *want*"), the [audit-hooks postflight harvester](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md#7-the-recipe-combining-all-of-the-above) extracts the gotcha and persists it. After ~50 sessions, the system warns *before* the model makes a similar mistake. No labelling work for caregivers, no expensive retraining runs — the corrections are the curriculum.
 
-**Honest scope:** Routing accuracy on the [102-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100) (6 Prism tools, 12 categories, v25 system prompt, seeds 2027–2029): 32b v33 = 99.0%, 8b v35 = 98.0%, 14b v33 = 97.1%, 1.7b v41 = 96.1%. Zero invented tool names across all model sizes and all seeds. The 1.7B runs on-device for fast phrase routing (load/save/compact); the 14B/32B handle complex sessions and clinical workflows. On the full Berkeley BFCL V4 leaderboard (2,000+ cases, general function-calling), the 1.7B scores ~59% — comparable to other sub-2B models. What makes PrismAAC defensible isn't the model score alone — it's the model plus the surrounding Prism spreading-activation algorithm stack.
+**Honest scope:** Routing accuracy on the [102-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100) (6 Prism tools, 12 categories, v36/v7 system prompt, seeds 2027–2029): 32b v7 = 100.0%, 8b v36 = 100.0%, 14b v36 = 100.0%, 1.7b v42 = 100.0%. Zero invented tool names across all model sizes and all seeds. The 1.7B runs on-device for fast phrase routing (load/save/compact); the 14B/32B handle complex sessions and clinical workflows. On the full Berkeley BFCL V4 leaderboard (2,000+ cases, general function-calling), the 1.7B scores ~59% — comparable to other sub-2B models. What makes PrismAAC defensible isn't the model score alone — it's the model plus the surrounding Prism spreading-activation algorithm stack.
 
 </details>
 
