@@ -26,10 +26,11 @@ import WatchConnectivity
 struct ContentView: View {
     @EnvironmentObject var app: AppState
     @State private var webLoaded = false
+    @Environment(\.requestReview) private var requestReview
 
     var body: some View {
         ZStack(alignment: .top) {
-            PrismWebView(pipeline: app.pipeline, onLoaded: { webLoaded = true })
+            PrismWebView(pipeline: app.pipeline, onLoaded: { webLoaded = true }, requestReview: { requestReview() })
                 .ignoresSafeArea()
 
             if !webLoaded {
@@ -63,8 +64,9 @@ struct ContentView: View {
 struct PrismWebView: UIViewRepresentable {
     let pipeline: AACPipeline
     var onLoaded: (() -> Void)?
+    var requestReview: (() -> Void)?
 
-    func makeCoordinator() -> Coordinator { Coordinator(pipeline: pipeline, onLoaded: onLoaded) }
+    func makeCoordinator() -> Coordinator { Coordinator(pipeline: pipeline, onLoaded: onLoaded, requestReview: requestReview) }
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
@@ -197,9 +199,12 @@ struct PrismWebView: UIViewRepresentable {
         private lazy var audioEngine = AVAudioEngine()
         private weak var activeWebView: WKWebView?
 
-        init(pipeline: AACPipeline, onLoaded: (() -> Void)? = nil) {
+        var requestReview: (() -> Void)?
+
+        init(pipeline: AACPipeline, onLoaded: (() -> Void)? = nil, requestReview: (() -> Void)? = nil) {
             self.pipeline = pipeline
             self.onLoaded = onLoaded
+            self.requestReview = requestReview
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -368,10 +373,7 @@ struct PrismWebView: UIViewRepresentable {
             UserDefaults.standard.set(count, forKey: Self.speakCountKey)
             guard count == 3 else { return }
             UserDefaults.standard.set(true, forKey: Self.reviewRequestedKey)
-            guard let scene = UIApplication.shared.connectedScenes
-                .compactMap({ $0 as? UIWindowScene })
-                .first(where: { $0.activationState == .foregroundActive }) else { return }
-            SKStoreReviewController.requestReview(in: scene)
+            requestReview?()
         }
 
         // MARK: - SFSpeechRecognizer bridge
