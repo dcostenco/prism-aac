@@ -2,6 +2,7 @@ import SwiftUI
 import WebKit
 import AVFoundation
 import Speech
+import StoreKit
 import WatchConnectivity
 
 /// PrismAAC iOS host — WKWebView wrapping synalux.ai/prism-aac.
@@ -238,6 +239,7 @@ struct PrismWebView: UIViewRepresentable {
                 let lang = BridgeSecurityPolicy.isValidLang(rawLang) ? rawLang : "en-US"
                 let rate = Float(body["rate"] as? Double ?? 0.5)
                 tts.speak(text, language: lang, rate: rate)
+                maybeRequestAppStoreReview()
             case "stopSpeech":
                 tts.stop()
             case "emergency":
@@ -353,6 +355,23 @@ struct PrismWebView: UIViewRepresentable {
             @unknown default:
                 decisionHandler(.prompt)
             }
+        }
+
+        // MARK: - App Store review prompt
+
+        private static let speakCountKey = "prism_speak_count"
+        private static let reviewRequestedKey = "prism_review_requested"
+
+        private func maybeRequestAppStoreReview() {
+            guard !UserDefaults.standard.bool(forKey: Self.reviewRequestedKey) else { return }
+            let count = UserDefaults.standard.integer(forKey: Self.speakCountKey) + 1
+            UserDefaults.standard.set(count, forKey: Self.speakCountKey)
+            guard count == 3 else { return }
+            UserDefaults.standard.set(true, forKey: Self.reviewRequestedKey)
+            guard let scene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive }) else { return }
+            SKStoreReviewController.requestReview(in: scene)
         }
 
         // MARK: - SFSpeechRecognizer bridge
