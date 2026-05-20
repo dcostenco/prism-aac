@@ -747,17 +747,16 @@ struct ModelLoadingView: View {
     }
 
     // Ordered list of candidate download URLs for the on-device 1.7B model.
-    // The latest training checkpoint is tried first; the stable canonical path
-    // is kept as a fallback so the app survives future repo restructuring.
+    // Primary is the latest checkpoint; v41 is fallback for HF CDN blips.
     private static let modelCandidateURLs: [URL] = [
-        // v36 — latest fine-tuned checkpoint (May 2026)
-        URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v36-q4km.gguf")!,
-        // stable canonical path under gguf/ directory
-        URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/gguf/prism-coder-1.7b-q4_k_m.gguf")!,
+        // v42 — current (100.0% BFCL, May 2026)
+        URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf")!,
+        // v41 fallback — 96.1% BFCL
+        URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v41-q4km.gguf")!,
     ]
 
-    // Filename stored on device — updated to v36 so stale v1.0 cache is not reused.
-    private static let localModelFilename = "prism-coder-1b7-v36-q4km.gguf"
+    // Filename stored on device — updated to v42 so stale v36/v41 cache is not reused.
+    private static let localModelFilename = "prism-coder-1b7-v42-q4km.gguf"
     // Legacy filename written by previous app versions — migrated on first run.
     private static let legacyModelFilename = "prism-aac-1b7-q4km.gguf"
 

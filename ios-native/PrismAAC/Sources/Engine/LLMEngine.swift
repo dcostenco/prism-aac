@@ -9,11 +9,11 @@ private let llamaAvailable = false
 /// On-device inference engine — Qwen3 via llama.cpp Metal backend.
 ///
 /// Model selection by total device RAM (see preferredTier):
-///   ≥16 GB (iPad Pro M1/M2/M4): prism-coder 14B Q4_K_M — 97.1% routing
-///   8–15 GB (iPhone 15/16 Pro, iPad Air): prism-coder 8B Q4_K_M — 98.0% routing; OOM fallback: 1.7B
-///   <8 GB  (iPhone 12–14, older iPads): prism-coder 1.7B Q4_K_M — 96.1% routing
+///   ≥16 GB (iPad Pro M1/M2/M4): prism-coder 14B v36 Q4_K_M — 100% BFCL routing
+///   8–15 GB (iPhone 15/16 Pro, iPad Air): prism-coder 8B v36 Q4_K_M — 100% BFCL; OOM fallback: 1.7B
+///   <8 GB  (iPhone 12–14, older iPads): prism-coder 1.7B v42 Q4_K_M — 100% BFCL routing
 ///
-/// Accuracy: v25 system prompt, 102-case Prism eval, 3-seed mean, May 2026.
+/// Accuracy: standalone BFCL, 102-case eval, 3-seed mean, May 2026.
 /// Run scripts/update-model-registry.sh to sync when models are retrained.
 ///
 /// Memory contract (Q4_K_M):
