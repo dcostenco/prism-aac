@@ -37,8 +37,6 @@ import { useUIStore } from '@/store/uiStore';
 import { keyFeedback, deleteFeedback } from '@/services/feedback';
 import { aacSpeak } from '@/services/aacSpeak';
 import { registerPanicListeners } from '@/services/panicService';
-// Kokoro removed: model format (style_text_to_speech_2) unsupported by
-// current transformers.js + huggingface 404 on preprocessor_config.json.
 import { startInboxPolling } from '@/services/inboxService';
 import { startContactsSync } from '@/services/contactsIntegrationService';
 import { broadcastIntegrationEvent } from '@/services/integrationsService';
@@ -208,7 +206,6 @@ export default function PrismApp() {
     import('@/services/pictogramService').then(m =>
       m.precacheAllPictograms?.(useSettingsStore.getState().language, 'symbols')
     ).catch(() => {});
-    // Kokoro preload removed — model unavailable (404 on HuggingFace).
     const unregisterPanic = registerPanicListeners();
     const cleanupConnectivity = registerConnectivityListener();
     // Drain incoming caregiver/contact messages onto the schedule. The
@@ -492,7 +489,7 @@ export default function PrismApp() {
           <TrackingDebugOverlay />
           {/* Hidden by default; activates via ?debug=tts or
               localStorage["prism-tts-debug"]="1". Surfaces the
-              Inworld → Azure → Kokoro → Web Speech → Native iOS
+              Inworld → Azure → Web Speech → Native iOS
               fallback chain decisions for support. */}
           <TtsDebugOverlay />
         </div>

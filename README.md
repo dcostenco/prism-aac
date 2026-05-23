@@ -174,7 +174,7 @@ On-screen keyboard with **word prediction**, **AI autocomplete**, and a one-tap 
 - AI completion ("hw" → "how", "togoso" → "to go so") via Synalux `text/correct` (Gemini 2.5 Flash-Lite, ~752ms avg, 4.3× cheaper than 2.5 Flash)
 - Cross-language gate: RO `eu` won't leak into EN bar even when both corpora are loaded (cross-corpus frequency comparison)
 - "Speak" reads with auto-tone adaptation (declarative / interrogative / exclamatory inferred from punctuation)
-- Voice tier 1: Inworld TTS-2 (natural/neural, all 23 app languages); tier 1.5: Kokoro-82M offline (en/es/fr/pt/ja/zh); tier 2: OS Web Speech; tier 3: WASM espeak-ng
+- Voice tier 1: Inworld TTS-2 (natural/neural, all 23 app languages); tier 2: OS Web Speech (offline, device-native); tier 3: WASM espeak-ng (last resort)
 - Word highlight is duration-estimated (~60 ms/char @ rate=0.5, scales with the rate slider) — works across every TTS tier without backend changes; precise sync via Azure `wordBoundary` is a future Pro feature.
 - 1.5MB SQLite n-gram corpus per language; unigrams + bigrams + trigrams; lazy-loaded on language switch
 
@@ -1033,7 +1033,7 @@ Auto-routing: 1.7B → any device · 8B → mobile/edge · 14B → standard · 3
 <details>
 <summary><strong>📚 Tech architecture (model routing, voice, gesture recognition, build details)</strong></summary>
 
-**Stack**: Next.js, Zustand, Web Speech API (transcription), Inworld TTS-2 + Azure Neural fallback (speech), Kokoro-82M offline TTS, FaceLandmarker (gestures).
+**Stack**: Next.js, Zustand, Web Speech API (transcription), Inworld TTS-2 + Azure Neural fallback (speech), FaceLandmarker (gestures).
 
 **Model routing** (server-side via Synalux portal):
 - **On-device** (button tap → phrase): `prism-coder:1b7` (Qwen3-1.7B Q4_K_M, llama.cpp Metal) — zero network, zero cost, ~1.6s
@@ -1055,7 +1055,6 @@ Auto-routing: 1.7B → any device · 8B → mobile/edge · 14B → standard · 3
 
 **Voice (TTS)** fallback chain:
 - Tier 1: Inworld TTS-2 (paid all langs; free for ro/uk/ru/de/ko/ar where Synalux absorbs cost)
-- Tier 1.5: Kokoro-82M neural offline (en/es/fr/pt/ja/zh)
 - Tier 2: OS Web Speech API premium voices (offline)
 - Tier 3: WASM espeak-ng (last resort)
 

@@ -17,7 +17,7 @@
  *     should clear their highlight on this signal.
  *
  * Duration is ESTIMATED, not measured. Real TTS playback duration
- * depends on the backend (Inworld v1.5-mini ≠ Azure neural ≠ Kokoro)
+ * depends on the backend (Inworld v1.5-mini ≠ Azure neural ≠ Web Speech)
  * and isn't returned by the portal route — only an MP3 blob whose
  * decoded duration is available *after* metadata loads. The estimate
  * (~60 ms/char at default rate) is good enough for "follow along"

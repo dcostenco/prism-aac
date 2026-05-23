@@ -36,7 +36,6 @@ vi.mock('@/services/feedback', () => ({
 }));
 vi.mock('@/services/aacSpeak', () => ({ aacSpeak: vi.fn() }));
 vi.mock('@/services/panicService', () => ({ registerPanicListeners: () => () => {} }));
-vi.mock('@/services/kokoroTTS', () => ({ preloadKokoro: vi.fn() }));
 vi.mock('@/services/inboxService', () => ({ startInboxPolling: () => () => {} }));
 vi.mock('@/services/contactsIntegrationService', () => ({ startContactsSync: () => () => {} }));
 vi.mock('@/engine/useT', () => ({

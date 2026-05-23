@@ -2,7 +2,7 @@
 
 /**
  * TtsDebugOverlay — telemetry-driven debug panel for the TTS fallback
- * chain. Surfaces which tier (Inworld → Azure → Kokoro → Web Speech →
+ * chain. Surfaces which tier (Inworld → Azure → Web Speech →
  * Native iOS) is actually firing, with latency + reason for each
  * fallback. Mirrors components/TrackingDebugOverlay.tsx.
  *

@@ -2842,54 +2842,6 @@ describe('Gesture Engine — action execution', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// Kokoro TTS — neural offline speech
-// ═══════════════════════════════════════════════════════════════
-
-describe('Kokoro TTS — language support', () => {
-  const KOKORO_VOICES: Record<string, string> = {
-    en: 'af_heart', es: 'ef_dora', fr: 'ff_siwis',
-    pt: 'pf_dora', ja: 'jf_alpha', zh: 'zf_xiaobei',
-  };
-
-  it('supports 6 of 12 PrismAAC languages', () => {
-    expect(Object.keys(KOKORO_VOICES)).toHaveLength(6);
-  });
-
-  it('English maps to af_heart voice', () => {
-    expect(KOKORO_VOICES['en']).toBe('af_heart');
-  });
-
-  it('unsupported language returns undefined (falls through)', () => {
-    expect(KOKORO_VOICES['ru']).toBeUndefined();
-    expect(KOKORO_VOICES['de']).toBeUndefined();
-    expect(KOKORO_VOICES['ar']).toBeUndefined();
-  });
-
-  it('full TTS code extracts prefix for lookup', () => {
-    const ttsCode = 'en-US';
-    const prefix = ttsCode.split('-')[0];
-    expect(KOKORO_VOICES[prefix]).toBe('af_heart');
-  });
-});
-
-describe('Kokoro TTS — demote on failure', () => {
-  it('demoted flag prevents further attempts', () => {
-    let demoted = false;
-    const isSupported = () => !demoted;
-    expect(isSupported()).toBe(true);
-    demoted = true;
-    expect(isSupported()).toBe(false);
-  });
-
-  it('demote is session-scoped (resets on page reload)', () => {
-    let demoted = true;
-    // Simulate page reload
-    demoted = false;
-    expect(demoted).toBe(false);
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════
 // aacSpeak — single-char period trick (all modes)
 // ═══════════════════════════════════════════════════════════════
 

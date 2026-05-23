@@ -18,20 +18,10 @@ import {
 } from '@/services/ttsHealthBus';
 
 const speakAzureMock = vi.fn();
-const speakWithKokoroMock = vi.fn();
-const isKokoroSupportedMock = vi.fn();
-const getKokoroVoiceMock = vi.fn();
 
 vi.mock('@/services/azureTTS', () => ({
   speakAzure: (...args: unknown[]) => speakAzureMock(...args),
   stopAzureAudio: vi.fn(),
-}));
-vi.mock('@/services/kokoroTTS', () => ({
-  speakWithKokoro: (...args: unknown[]) => speakWithKokoroMock(...args),
-  isKokoroSupported: () => isKokoroSupportedMock(),
-  demoteKokoroForSession: vi.fn(),
-  getKokoroVoice: (lang: string) => getKokoroVoiceMock(lang),
-  preloadKokoro: vi.fn(),
 }));
 
 function recordEvents(): TtsHealthEvent[] {
@@ -58,10 +48,8 @@ describe('speak() → bus integration', () => {
     expect(events[1]).toMatchObject({ type: 'tts-success', tier: 'inworld' });
   });
 
-  it('Tier 1 fail → Tier 3: emits attempt → fallback → web-speech attempt', async () => {
+  it('Tier 1 fail → Tier 2: emits attempt → fallback → web-speech attempt', async () => {
     speakAzureMock.mockResolvedValueOnce(false);
-    isKokoroSupportedMock.mockReturnValue(false);
-    getKokoroVoiceMock.mockReturnValue(null);
     const events = recordEvents();
 
     await speak('test', 0.5, 1.0, 'en-US', 'friendly');
@@ -71,7 +59,7 @@ describe('speak() → bus integration', () => {
     expect(types).toContain('tts-fallback');
     // First event = portal attempt
     expect(events[0]).toMatchObject({ type: 'tts-attempt', tier: 'inworld' });
-    // Should fall back to web-speech (kokoro disabled in this test)
+    // Falls back directly to web-speech
     const fallback = events.find((e) => e.type === 'tts-fallback');
     expect(fallback).toMatchObject({
       type: 'tts-fallback',
@@ -83,46 +71,6 @@ describe('speak() → bus integration', () => {
       (e) => e.type === 'tts-attempt' && e.tier === 'web-speech',
     );
     expect(webAttempt).toBeDefined();
-  });
-
-  it('Tier 1 fail when Kokoro available: kokoroEnabled=false bypasses Kokoro → web-speech', async () => {
-    // kokoroEnabled is hardcoded false in speechService — Kokoro is never reached
-    // even when isKokoroSupported() and getKokoroVoice() both return truthy values.
-    // This pins the direct inworld→web-speech path that is currently active.
-    speakAzureMock.mockResolvedValueOnce(false);
-    isKokoroSupportedMock.mockReturnValue(true);
-    getKokoroVoiceMock.mockReturnValue({ name: 'af_sky' });
-    speakWithKokoroMock.mockResolvedValueOnce(undefined);
-    const events = recordEvents();
-
-    await speak('hi', 0.5, 1.0, 'en-US', 'friendly');
-
-    const fallback = events.find((e) => e.type === 'tts-fallback');
-    expect(fallback).toMatchObject({
-      type: 'tts-fallback',
-      fromTier: 'inworld',
-      toTier: 'web-speech',
-    });
-    // Kokoro must NOT appear on the bus
-    expect(events.find((e) => ('tier' in e && e.tier === 'kokoro') || ('fromTier' in e && e.fromTier === 'kokoro') || ('toTier' in e && e.toTier === 'kokoro'))).toBeUndefined();
-  });
-
-  it('Tier 1 fail + Kokoro fail: kokoroEnabled=false → single fallback inworld→web-speech only', async () => {
-    // When kokoroEnabled=false the double-fallback chain (inworld→kokoro→web-speech)
-    // cannot fire. Kokoro is skipped entirely regardless of isKokoroSupported().
-    // This test documents that single-fallback is the correct observable behaviour.
-    speakAzureMock.mockResolvedValueOnce(false);
-    isKokoroSupportedMock.mockReturnValue(true);
-    getKokoroVoiceMock.mockReturnValue({ name: 'af_sky' });
-    speakWithKokoroMock.mockRejectedValueOnce(new Error('model load failed'));
-    const events = recordEvents();
-
-    await speak('test', 0.5, 1.0, 'en-US', 'friendly');
-
-    const fallbacks = events.filter((e) => e.type === 'tts-fallback');
-    expect(fallbacks).toHaveLength(1);
-    expect(fallbacks[0]).toMatchObject({ fromTier: 'inworld', toTier: 'web-speech' });
-    expect(events.find((e) => ('tier' in e && e.tier === 'kokoro') || ('fromTier' in e && e.fromTier === 'kokoro') || ('toTier' in e && e.toTier === 'kokoro'))).toBeUndefined();
   });
 
   it('attempt event includes lang + first 80 chars of text', async () => {

@@ -5,20 +5,10 @@ import { speak, speakWord, stopSpeech, isSpeechSupported } from '@/services/spee
 // Web Speech fallback. Without this mock, speakAzure attempts a real fetch
 // to synalux.ai/api/v1/tts/public and either succeeds (env online — tests
 // flaky) or throws unhelpful network errors. Mocking it gives us a
-// deterministic short-circuit straight to Tier 2 → Tier 3.
+// deterministic short-circuit straight to Tier 2 (Web Speech).
 vi.mock('@/services/azureTTS', () => ({
   speakAzure: vi.fn().mockResolvedValue(false),
   stopAzureAudio: vi.fn(),
-}));
-// Same idea for Kokoro Tier 2 — the CDN runtime import isn't mockable
-// from a test environment, so force it to "not supported" so the chain
-// drops directly to Web Speech (Tier 3) where the assertions live.
-vi.mock('@/services/kokoroTTS', () => ({
-  speakWithKokoro: vi.fn().mockRejectedValue(new Error('test')),
-  isKokoroSupported: vi.fn(() => false),
-  demoteKokoroForSession: vi.fn(),
-  getKokoroVoice: vi.fn(() => null),
-  preloadKokoro: vi.fn(),
 }));
 
 beforeEach(() => {

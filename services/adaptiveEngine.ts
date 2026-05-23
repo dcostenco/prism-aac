@@ -51,7 +51,7 @@ const PROFILE_VERSION = 2;
 
 /**
  * Per-locale tone label sent to TTS / prism-coder system prompt.
- * Mapped to Azure styles + Kokoro voices in speechService.
+ * Mapped to Azure styles in speechService.
  */
 export type AdaptiveTone = 'neutral' | 'friendly' | 'excited' | 'empathetic' | 'serious';
 

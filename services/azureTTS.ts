@@ -476,7 +476,7 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
  *
  * Returns true on play success; false on ANY failure (rate limit,
  * upstream 5xx, decode failure, etc.) so the caller falls through to
- * speech-service's Kokoro / Web Speech tiers.
+ * speech-service's Web Speech tiers.
  */
 async function speakGemini(
   text: string,
@@ -516,8 +516,8 @@ async function speakGemini(
     // before source.start, so the peer-race window is microseconds.
     return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS');
   } catch (e) {
-    // Network / abort / timeout. Speech-service still has Kokoro and
-    // Web Speech to fall back to even if Inworld is also down.
+    // Network / abort / timeout. Speech-service still has Web Speech
+    // to fall back to even if Inworld is also down.
     console.warn('[Gemini-TTS] fetch threw:', e instanceof Error ? e.message : e);
     return false;
   }
@@ -671,7 +671,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     // Inworld + auth /tts both failed (or returned an oversize body).
     // Try the Gemini public route — useful for English where Gemini
     // has good voices, never useful for ro/uk/etc. Returns false on
-    // any failure → speech-service falls through to Kokoro / Web Speech.
+    // any failure → speech-service falls through to Web Speech.
     if (await speakGemini(text, volume, controller, lang)) {
       clearTimeout(timeout);
       activeControllers.delete(controller);

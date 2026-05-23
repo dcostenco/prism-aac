@@ -2,8 +2,8 @@
  * ttsHealthBus — unified pub/sub for TTS lifecycle events.
  *
  * Mirrors the pattern of `trackingTelemetry.ts` for the tracking stack.
- * The TTS service has accumulated five fallback layers (Inworld → Azure
- * → Kokoro → Web Speech → Native iOS) without an authoritative state
+ * The TTS service has accumulated four fallback layers (Inworld → Azure
+ * → Web Speech → Native iOS) without an authoritative state
  * machine. Every recent regression in the chain (`94b2e93`, `c6d56b4`,
  * `f0c18f6`, `9df7875`, `c217473`) traces back to a different layer
  * making assumptions about whose turn it is.
@@ -17,7 +17,7 @@
  * Plan ref: synalux-private/docs/CUSTOMER_FEEDBACK_ENHANCEMENTS.md § #1.
  */
 
-export type TtsTier = 'inworld' | 'azure' | 'kokoro' | 'web-speech' | 'native-ios';
+export type TtsTier = 'inworld' | 'azure' | 'web-speech' | 'native-ios';
 
 export interface TtsAttemptEvent {
     type: 'tts-attempt';
