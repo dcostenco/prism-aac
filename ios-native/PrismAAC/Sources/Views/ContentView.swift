@@ -242,8 +242,8 @@ struct PrismWebView: UIViewRepresentable {
                 let text = String((body["text"] as? String ?? "").prefix(BridgeSecurityPolicy.maxSpeakTextLength))
                 let rawLang = body["lang"] as? String ?? "en-US"
                 let lang = BridgeSecurityPolicy.isValidLang(rawLang) ? rawLang : "en-US"
-                let rate = Float(body["rate"] as? Double ?? 0.5)
-                tts.speak(text, language: lang, rate: rate)
+                let webSpeechRate = Float(body["rate"] as? Double ?? 1.0)
+                tts.speak(text, language: lang, webSpeechRate: webSpeechRate)
                 maybeRequestAppStoreReview()
             case "stopSpeech":
                 tts.stop()
@@ -588,12 +588,26 @@ struct PrismWebView: UIViewRepresentable {
 final class WKWebTTS: NSObject {
     private let synth = AVSpeechSynthesizer()
 
-    func speak(_ text: String, language: String = "en-US", rate: Float = 0.5) {
+    /// Convert a Web Speech API rate to an AVSpeechSynthesizer rate.
+    ///
+    /// Web Speech API: default 1.0 = normal, range [0.1, 10.0]
+    /// AVSpeechSynthesizer: default 0.5 = normal, range [0.0, 1.0]
+    ///
+    /// REGRESSION: passing the Web Speech rate directly to AVSpeechSynthesizer
+    /// caused chipmunk audio — rate=1.0 (Web Speech normal) maps to 1.0 in
+    /// AVSpeech which is *maximum* speed. Fix: divide by 2.0 so 1.0→0.5 (normal).
+    /// Apply this helper in every iOS app that bridges window.speechSynthesis
+    /// to AVSpeechSynthesizer. Copy the helper + its unit tests.
+    static func avRate(fromWebSpeechRate rate: Float) -> Float {
+        max(AVSpeechUtteranceMinimumSpeechRate,
+            min(AVSpeechUtteranceMaximumSpeechRate, rate / 2.0))
+    }
+
+    func speak(_ text: String, language: String = "en-US", webSpeechRate: Float = 1.0) {
         synth.stopSpeaking(at: .immediate)
         let utt = AVSpeechUtterance(string: String(text.prefix(BridgeSecurityPolicy.maxSpeakTextLength)))
         utt.voice = AVSpeechSynthesisVoice(language: language)
-        utt.rate = max(AVSpeechUtteranceMinimumSpeechRate,
-                       min(AVSpeechUtteranceMaximumSpeechRate, rate))
+        utt.rate = WKWebTTS.avRate(fromWebSpeechRate: webSpeechRate)
         synth.speak(utt)
     }
 

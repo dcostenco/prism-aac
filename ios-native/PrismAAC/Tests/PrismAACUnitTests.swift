@@ -1,4 +1,5 @@
 import XCTest
+import AVFoundation
 @testable import PrismAAC
 
 // MARK: - SafetyFilter Tests (Life-Safety Critical)
@@ -916,6 +917,56 @@ final class LLMEngineTests: XCTestCase {
         engine.unload()
         engine.unload()
         XCTAssertFalse(engine.isLoaded, "Multiple unloads should not crash")
+    }
+}
+
+// MARK: - WKWebTTS Rate Scaling Tests (REGRESSION: chipmunk audio under unstable LTE)
+//
+// Root cause: Web Speech API rate=1.0 (normal) was passed directly to
+// AVSpeechSynthesizer where 1.0 = MAXIMUM speed → chipmunk.
+// Only manifested when Tier 1 (Azure/portal TTS) failed (unstable LTE timeout)
+// and the fallback path hit window.speechSynthesis.speak → native bridge.
+// The web app was unaffected because its browser-native speechSynthesis correctly
+// interprets rate=1.0 as normal speed.
+// Apply WKWebTTS.avRate(fromWebSpeechRate:) in every iOS app that bridges
+// window.speechSynthesis to AVSpeechSynthesizer.
+
+final class WKWebTTSRateScalingTests: XCTestCase {
+
+    func test_webSpeechRate1_0_mapsToAVSpeechDefault() {
+        // Web Speech default (normal speed) must map to AVSpeech default (normal speed).
+        // Before fix: 1.0 → 1.0 = AVSpeechUtteranceMaximumSpeechRate → chipmunk.
+        let avRate = WKWebTTS.avRate(fromWebSpeechRate: 1.0)
+        XCTAssertEqual(avRate, AVSpeechUtteranceDefaultSpeechRate, accuracy: 0.01,
+            "Web Speech rate=1.0 must map to AVSpeech default (0.5), not maximum")
+    }
+
+    func test_webSpeechRate2_0_mapsToAVSpeechMaximum() {
+        let avRate = WKWebTTS.avRate(fromWebSpeechRate: 2.0)
+        XCTAssertEqual(avRate, AVSpeechUtteranceMaximumSpeechRate, accuracy: 0.01)
+    }
+
+    func test_webSpeechRate0_5_mapsToSlowerThanDefault() {
+        let avRate = WKWebTTS.avRate(fromWebSpeechRate: 0.5)
+        XCTAssertLessThan(avRate, AVSpeechUtteranceDefaultSpeechRate,
+            "Half-speed Web Speech must be slower than AVSpeech default")
+        XCTAssertGreaterThanOrEqual(avRate, AVSpeechUtteranceMinimumSpeechRate)
+    }
+
+    func test_webSpeechRateNeverExceedsAVSpeechMaximum() {
+        for webRate: Float in [1.0, 2.0, 5.0, 10.0] {
+            let avRate = WKWebTTS.avRate(fromWebSpeechRate: webRate)
+            XCTAssertLessThanOrEqual(avRate, AVSpeechUtteranceMaximumSpeechRate,
+                "avRate must never exceed AVSpeechUtteranceMaximumSpeechRate (web rate=\(webRate))")
+        }
+    }
+
+    func test_webSpeechRateNeverBelowAVSpeechMinimum() {
+        for webRate: Float in [0.0, 0.1, 0.25] {
+            let avRate = WKWebTTS.avRate(fromWebSpeechRate: webRate)
+            XCTAssertGreaterThanOrEqual(avRate, AVSpeechUtteranceMinimumSpeechRate,
+                "avRate must never go below AVSpeechUtteranceMinimumSpeechRate (web rate=\(webRate))")
+        }
     }
 }
 
