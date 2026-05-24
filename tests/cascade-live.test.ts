@@ -70,23 +70,32 @@ async function ollamaAvailable(): Promise<boolean> {
   } catch { return false; }
 }
 
+// Build a raw Qwen3 chat prompt, bypassing Ollama's chat-template processing.
+// api/chat mis-tokenizes <| sequences inside the system content field — the
+// tokenizer treats <| as a special-token prefix, eating the rest of the system
+// message. api/generate+raw=true sends the bytes verbatim, so <|tool_call|>
+// lands correctly in the context window.
+// Pre-inserting <think>\n</think> at the assistant turn skips the thinking
+// phase and avoids thinking-loop token overrun on short num_predict budgets.
+function buildRawPrompt(userPrompt: string): string {
+  return `<|im_start|>system\n${SYSTEM_PROMPT}<|im_end|>\n<|im_start|>user\n${userPrompt}<|im_end|>\n<|im_start|>assistant\n<think>\n</think>\n`;
+}
+
 async function routeWithModel(prompt: string, model: string): Promise<string> {
-  const r = await fetch(`${OLLAMA_URL}/api/chat`, {
+  const r = await fetch(`${OLLAMA_URL}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: prompt },
-      ],
+      prompt: buildRawPrompt(prompt),
       stream: false,
+      raw: true,
       options: { temperature: 0, num_predict: 160 },
     }),
     signal: AbortSignal.timeout(30000),
   });
   const data = await r.json();
-  return data?.message?.content ?? '';
+  return data?.response ?? '';
 }
 
 function extractTool(text: string): string | null {
@@ -96,8 +105,18 @@ function extractTool(text: string): string | null {
   catch { return null; }
 }
 
+function isDegenerate(text: string): boolean {
+  const t = text.trim();
+  if (t.length < 24) return false;
+  // Detect models stuck in repetition loops (e.g. "-ccc-ccc-ccc-...")
+  const chunk = t.slice(0, 8).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const hits = (t.match(new RegExp(chunk, 'g')) ?? []).length;
+  return hits > t.length / (chunk.length * 2);
+}
+
 function isConfident(text: string): boolean {
   if (!text || text.trim().length < 2) return false;
+  if (isDegenerate(text)) return false;
   if (text.includes('<|tool_call|>')) {
     return KNOWN_TOOLS.some(t => text.includes(`"${t}"`));
   }

@@ -91,16 +91,13 @@ describe.skipIf(!ollamaUp)('LocalAI — prism-coder:1b7 (2.2 GB — used in test
   }, 30_000);
 
   test('correctly routes session_load_context', async () => {
-    const r = await fetch(`${OLLAMA_URL}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: TAG,
-        prompt: 'Load context for prism-mcp',
-        // Use the full 6-tool system prompt (same as cascade/benchmark) so the model
-        // can override the format placeholder with the real tool name. A truncated
-        // prompt that only shows the format line confuses the model into echoing "tool_name" literally.
-        system: `CRITICAL: You have EXACTLY 6 tools. Their EXACT names are:
+    // api/generate with system: field mis-tokenizes <| sequences — Ollama's
+    // chat template processing treats <| as a special-token prefix, eating the
+    // rest of the system message. Use raw=true with a manually built prompt so
+    // <|tool_call|> lands correctly in the context window.
+    // Pre-inserting <think>\n</think> skips the thinking phase and ensures the
+    // tool call is emitted within num_predict budget.
+    const systemPrompt = `CRITICAL: You have EXACTLY 6 tools. Their EXACT names are:
   session_load_context, session_save_ledger, session_save_handoff,
   session_compact_ledger, session_search_memory, knowledge_search
 When a tool is needed, respond ONLY with:
@@ -109,8 +106,16 @@ When a tool is needed, respond ONLY with:
 <|tool_call_end|>
 If no tool is needed, respond in plain text.
 TOOL ROUTING:
-load/fetch/get/pull/retrieve/open/resume context for project X -> session_load_context(project=X)`,
+load/fetch/get/pull/retrieve/open/resume context for project X -> session_load_context(project=X)`;
+    const rawPrompt = `<|im_start|>system\n${systemPrompt}<|im_end|>\n<|im_start|>user\nLoad context for prism-mcp<|im_end|>\n<|im_start|>assistant\n<think>\n</think>\n`;
+    const r = await fetch(`${OLLAMA_URL}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: TAG,
+        prompt: rawPrompt,
         stream: false,
+        raw: true,
         options: { num_predict: 200, temperature: 0 },
       }),
       signal: AbortSignal.timeout(30_000),

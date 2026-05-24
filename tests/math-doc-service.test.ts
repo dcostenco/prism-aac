@@ -291,21 +291,29 @@ describe('mathDocService: portal sync — deleteFromPortal', () => {
 });
 
 describe('mathDocService: cap + eviction', () => {
-  it('evicts the oldest by updatedAt when MAX_DOCS is exceeded', async () => {
-    // Save 105 small docs — the oldest 5 should be evicted.
-    const slugs: string[] = [];
-    for (let i = 0; i < 105; i++) {
-      const s = saveDoc(`doc-${i}`, SAMPLE_BODY);
-      if (s) slugs.push(s.slug);
-      // Force a tiny gap so updatedAt monotonic.
-      await new Promise((r) => setTimeout(r, 1));
+  it('evicts the oldest by updatedAt when MAX_DOCS is exceeded', () => {
+    // Use fake timers to guarantee each doc gets a strictly unique updatedAt.
+    // The real-timer setTimeout(1ms) approach is flaky under load — multiple
+    // Date.now() calls within the same JS tick can return identical values,
+    // making sort order non-deterministic and leaving "old" docs behind.
+    const BASE_TIME = 1_700_000_000_000;
+    vi.useFakeTimers();
+    vi.setSystemTime(BASE_TIME);
+    try {
+      const slugs: string[] = [];
+      for (let i = 0; i < 105; i++) {
+        vi.setSystemTime(BASE_TIME + i * 10); // 10 ms apart, guaranteed monotonic
+        const s = saveDoc(`doc-${i}`, SAMPLE_BODY);
+        if (s) slugs.push(s.slug);
+      }
+      const remaining = listDocs();
+      expect(remaining.length).toBeLessThanOrEqual(100);
+      const oldestRemaining = remaining[remaining.length - 1];
+      // Oldest doc kept should NOT be among the first 5 saved.
+      const earliestFiveSlugs = new Set(slugs.slice(0, 5));
+      expect(earliestFiveSlugs.has(oldestRemaining.slug)).toBe(false);
+    } finally {
+      vi.useRealTimers();
     }
-    const remaining = listDocs();
-    expect(remaining.length).toBeLessThanOrEqual(100);
-    // The newest 100 should be present.
-    const oldestRemaining = remaining[remaining.length - 1];
-    // Oldest doc kept should NOT be among the first 5 saved.
-    const earliestFiveSlugs = new Set(slugs.slice(0, 5));
-    expect(earliestFiveSlugs.has(oldestRemaining.slug)).toBe(false);
   });
 });
