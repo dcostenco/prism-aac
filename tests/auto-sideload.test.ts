@@ -74,7 +74,7 @@ describe('autoSideload', () => {
     });
 
     await autoSideload();
-    expect(pullTag).toBe('dcostenco/prism-coder:32b');
+    expect(pullTag).toBe('prism-coder:32b');
     expect(getSideloadStatus().state).toBe('done');
   });
 
@@ -114,15 +114,15 @@ describe('autoSideload', () => {
     });
 
     await autoSideload();
-    expect(pullAttempts[0]).toBe('dcostenco/prism-coder:32b');
-    expect(pullAttempts[1]).toBe('dcostenco/prism-coder:14b');
+    expect(pullAttempts[0]).toBe('prism-coder:32b');
+    expect(pullAttempts[1]).toBe('prism-coder:14b');
     expect(getSideloadStatus().state).toBe('done');
-    expect(getSideloadStatus().model).toBe('dcostenco/prism-coder:14b');
+    expect(getSideloadStatus().model).toBe('prism-coder:14b');
   });
 });
 
-describe('Model cascade: 14B → 32B → cloud', () => {
-  it('LOCAL_MODELS contains 14b and 32b in priority order', async () => {
+describe('Model cascade: 32B → 14B → cloud', () => {
+  it('LOCAL_MODELS cascade order: 32b first, 14b second', async () => {
     const mod = await import('@/services/aiService');
     let callCount = 0;
     const modelsCalled: string[] = [];
@@ -133,8 +133,8 @@ describe('Model cascade: 14B → 32B → cloud', () => {
         callCount++;
         const body = JSON.parse(init?.body || '{}');
         if (body.model) modelsCalled.push(body.model);
-        if (callCount === 1) throw new Error('14B not loaded');
-        // 32B succeeds
+        if (callCount === 1) throw new Error('32B not loaded');
+        // 14B succeeds
         return new Response(JSON.stringify({
           response: 'Here are some phrases you can use to ask for help.',
         }), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -144,10 +144,74 @@ describe('Model cascade: 14B → 32B → cloud', () => {
 
     const result = await mod.askAI('Phrases for help');
     expect(modelsCalled.length).toBe(2);
-    expect(modelsCalled[0]).toContain('14b');
-    expect(modelsCalled[1]).toContain('32b');
-    // 8B and 1.7B are iOS/edge only — not in desktop cascade
+    expect(modelsCalled[0]).toContain('32b');
+    expect(modelsCalled[1]).toContain('14b');
+    // cascade stopped at 14b — 8b and 1b7 not reached
     expect(modelsCalled.some(m => m.includes('8b'))).toBe(false);
     expect(modelsCalled.some(m => m.includes('1b7'))).toBe(false);
+  });
+});
+
+describe('Auto-sideload PULLABLE_MODELS: 32B first (best quality), 14B fallback', () => {
+  it('pull order is 32b → 14b → 8b → 1b7 when all fail', async () => {
+    const pullAttempts: string[] = [];
+    fetchSpy.mockImplementation(async (url: any, init: any) => {
+      const urlStr = typeof url === 'string' ? url : url.toString();
+
+      if (urlStr.includes('/api/tags')) {
+        return new Response(JSON.stringify({ models: [] }),
+          { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      if (urlStr.includes('/api/pull')) {
+        const body = JSON.parse(init?.body || '{}');
+        pullAttempts.push(body.name);
+        return new Response('', { status: 500 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    await autoSideload();
+    // All 4 PULLABLE_MODELS attempted when every pull fails
+    expect(pullAttempts.length).toBe(4);
+    expect(pullAttempts[0]).toBe('prism-coder:32b');
+    expect(pullAttempts[1]).toBe('prism-coder:14b');
+    expect(pullAttempts[2]).toBe('prism-coder:8b');
+    expect(pullAttempts[3]).toBe('prism-coder:1b7');
+  });
+
+  it('falls back to 14B pull when 32B pull fails (disk full), stops on 14B success', async () => {
+    const pullAttempts: string[] = [];
+    fetchSpy.mockImplementation(async (url: any, init: any) => {
+      const urlStr = typeof url === 'string' ? url : url.toString();
+
+      if (urlStr.includes('/api/tags')) {
+        return new Response(JSON.stringify({ models: [] }),
+          { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      if (urlStr.includes('/api/pull')) {
+        const body = JSON.parse(init?.body || '{}');
+        pullAttempts.push(body.name);
+        if (body.name.includes('32b')) {
+          return new Response('', { status: 500 });
+        }
+        // 14B pull succeeds — cascade stops here
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('{"status":"success"}\n'));
+            controller.close();
+          },
+        });
+        return new Response(stream, { status: 200 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    await autoSideload();
+    expect(pullAttempts.length).toBe(2);
+    expect(pullAttempts[0]).toBe('prism-coder:32b');
+    expect(pullAttempts[1]).toBe('prism-coder:14b');
+    expect(pullAttempts).not.toContain('prism-coder:8b');
+    expect(getSideloadStatus().state).toBe('done');
+    expect(getSideloadStatus().model).toBe('prism-coder:14b');
   });
 });

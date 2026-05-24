@@ -605,7 +605,11 @@ final class WKWebTTS: NSObject {
 
     func speak(_ text: String, language: String = "en-US", webSpeechRate: Float = 1.0) {
         synth.stopSpeaking(at: .immediate)
-        let utt = AVSpeechUtterance(string: String(text.prefix(BridgeSecurityPolicy.maxSpeakTextLength)))
+        // Bug 7.4: AVSpeechUtterance(string: "") raises NSInvalidArgumentException
+        // on some iOS versions. Guard before creating the utterance.
+        let clamped = String(text.prefix(BridgeSecurityPolicy.maxSpeakTextLength))
+        guard !clamped.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let utt = AVSpeechUtterance(string: clamped)
         utt.voice = AVSpeechSynthesisVoice(language: language)
         utt.rate = WKWebTTS.avRate(fromWebSpeechRate: webSpeechRate)
         synth.speak(utt)

@@ -166,10 +166,25 @@ final class AppState: ObservableObject {
 
     // MARK: - Memory measurement
 
-    /// Returns estimated available memory in MB using mach task info.
-    /// Accounts for compressed memory by using resident_size delta from
-    /// phys_footprint (the value iOS uses for jetsam limits).
+    /// Returns available memory in MB.
+    ///
+    /// On real iOS/watchOS hardware: uses os_proc_available_memory() — the bytes
+    /// the process can allocate before jetsam kills it, correctly accounting for
+    /// all other processes. The old (totalRAM - ourFootprint) * 0.90 formula
+    /// ignored every other app on the device and returned wildly optimistic values.
+    ///
+    /// On the iOS Simulator: os_proc_available_memory() returns 0 because jetsam
+    /// is not enforced; falls through to task_vm_info which gives a useful estimate.
+    /// macOS test host uses task_vm_info for the same reason.
     static func measureFreeMemoryMB() -> Int {
+        #if os(iOS) || os(watchOS)
+        let procAvailable = Int(os_proc_available_memory())
+        if procAvailable > 0 {
+            // Real device: kernel-reported headroom before jetsam
+            return procAvailable / (1_024 * 1_024)
+        }
+        // Simulator: jetsam not enforced → os_proc_available_memory() == 0; use fallback
+        #endif
         var info = task_vm_info_data_t()
         var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
         let result = withUnsafeMutablePointer(to: &info) {
@@ -181,11 +196,9 @@ final class AppState: ObservableObject {
             NSLog("[AppState] task_info failed (\(result)) — defaulting to 1000 MB free")
             return 1_000
         }
-
         let usedBytes = Int(info.phys_footprint)
         let totalBytes = Int(ProcessInfo.processInfo.physicalMemory)
-        // Reserve 10% for OS overhead fluctuation
         let free = Int(Double(totalBytes - usedBytes) * 0.90)
-        return max(0, free / (1024 * 1024))
+        return max(0, free / (1_024 * 1_024))
     }
 }

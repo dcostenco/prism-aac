@@ -60,7 +60,13 @@ const KNOWN_TOOLS = [
 async function ollamaAvailable(): Promise<boolean> {
   try {
     const r = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) });
-    return r.ok;
+    if (!r.ok) return false;
+    // Also verify at least one of the required cascade models is installed.
+    // If Ollama is running but none of MODELS are loaded, every cascade call
+    // returns empty and all routing tests fail without meaningful signal.
+    const data = await r.json() as { models?: Array<{ name: string }> };
+    const installed = new Set((data.models ?? []).map(m => m.name));
+    return MODELS.some(m => installed.has(m));
   } catch { return false; }
 }
 

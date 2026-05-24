@@ -6,6 +6,12 @@
 
 const OLLAMA_URL = 'http://localhost:11434';
 
+// Skip all tests when Ollama is not reachable. These are live integration
+// tests that require a running Ollama instance — they are not meant for CI.
+const ollamaUp = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) })
+  .then(r => r.ok)
+  .catch(() => false);
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 async function getOllamaTags(): Promise<string[]> {
@@ -37,7 +43,7 @@ async function deleteModel(tag: string): Promise<boolean> {
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 
-describe('LocalAI — Ollama connectivity', () => {
+describe.skipIf(!ollamaUp)('LocalAI — Ollama connectivity', () => {
   test('Ollama is running at localhost:11434', async () => {
     const r = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) });
     expect(r.ok).toBe(true);
@@ -49,7 +55,7 @@ describe('LocalAI — Ollama connectivity', () => {
   }, 5000);
 });
 
-describe('LocalAI — prism-coder:1b7 (2.2 GB — used in tests)', () => {
+describe.skipIf(!ollamaUp)('LocalAI — prism-coder:1b7 (2.2 GB — used in tests)', () => {
   const TAG = 'dcostenco/prism-coder:1b7';
 
   test('model is already installed or can be pulled', async () => {
@@ -131,7 +137,7 @@ load/fetch/get/pull/retrieve/open/resume context for project X -> session_load_c
   }, 30_000);
 });
 
-describe('LocalAI — model management API', () => {
+describe.skipIf(!ollamaUp)('LocalAI — model management API', () => {
   test('DELETE /api/delete returns ok for non-existent model (404 acceptable)', async () => {
     const ok = await deleteModel('dcostenco/prism-coder:nonexistent-test');
     expect(ok).toBe(true);

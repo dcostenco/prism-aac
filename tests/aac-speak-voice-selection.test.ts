@@ -71,7 +71,7 @@ describe('aacSpeak — voice selection', () => {
 
     expect(mockSpeak).toHaveBeenCalledWith(
       'привет мир',
-      0.5 * 0.6, 1.0,  // effectiveRate = rate * 0.6
+      0.5, 1.0,  // rate passes through unchanged (0.6× removed May 2026 — was compounding with pbRate)
       'ru-TTS',
       expect.anything(),
       false,
@@ -86,7 +86,7 @@ describe('aacSpeak — voice selection', () => {
 
     expect(mockSpeak).toHaveBeenCalledWith(
       'hello',
-      0.5 * 0.6, 1.0,  // effectiveRate = rate * 0.6
+      0.5, 1.0,  // rate passes through unchanged
       'en-TTS', // source voice since translation didn't change text
       expect.anything(),
       false,
@@ -111,9 +111,10 @@ describe('aacSpeak — voice selection', () => {
     );
   });
 
-  it('REGRESSION: EN→RO translation rate IS reduced for comprehension', () => {
-    // Translated speech is intentionally 40% slower for comprehension.
-    // This must NOT be removed while fixing the monolingual regression above.
+  it('REGRESSION: EN→RO translation rate NOT reduced — 0.6× removed (May 2026 fix)', () => {
+    // Pin: 0.6× was removed because it compounded with pbRate in speakAzure
+    // → 0.36× effective speed for translated users (en-ro). Rate control now
+    // belongs entirely to the user's slider (effectiveRate = rate unchanged).
     mockGetState.mockReturnValue({ language: 'en', outputLanguage: 'ro', speechRate: 0.5 });
     mockTranslate.mockReturnValue('bună ziua');
 
@@ -121,7 +122,7 @@ describe('aacSpeak — voice selection', () => {
 
     expect(mockSpeak).toHaveBeenCalledWith(
       'bună ziua',
-      0.5 * 0.6, 1.0,  // translation — 0.6× for comprehension
+      0.5, 1.0,  // no multiplier — rate passes through unchanged
       'ro-TTS',
       expect.anything(),
       false,

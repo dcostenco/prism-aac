@@ -86,15 +86,41 @@ final class ButtonCoverageTests: XCTestCase {
         }
     }
 
+    // MARK: - AI Panel Inner Buttons
+
+    /// After opening AI panel, the header's toggle buttons must be findable.
+    /// iOS 26 WebKit may expose aria-pressed buttons as switches — try both.
+    func testAIPanelInnerButtonsPresent() {
+        webView.buttons["AI"].tap()
+        // Wait until the panel is fully accessible (close button is always a plain button)
+        XCTAssertTrue(
+            webView.buttons["Close AI chat"].waitForExistence(timeout: 10),
+            "AI panel close button must appear"
+        )
+        // Open Bedside Mode button (aria-pressed) — check both buttons and switches
+        let asBtnBedside  = webView.buttons["Open Bedside Mode"]
+        let asSwBedside   = webView.switches["Open Bedside Mode"]
+        let bedsideFound  = asBtnBedside.waitForExistence(timeout: 3) || asSwBedside.exists
+        XCTAssertTrue(bedsideFound, "Open Bedside Mode toggle must be findable (as button or switch)")
+
+        // Hands-free toggle (also aria-pressed)
+        let handsFreeBtn  = webView.buttons.matching(NSPredicate(format: "label CONTAINS 'hands-free'")).firstMatch
+        let handsFreeSw   = webView.switches.matching(NSPredicate(format: "label CONTAINS 'hands-free'")).firstMatch
+        let handsFreeFound = handsFreeBtn.waitForExistence(timeout: 3) || handsFreeSw.exists
+        XCTAssertTrue(handsFreeFound, "Hands-free toggle must be findable (as button or switch)")
+    }
+
     // MARK: - Keyboard
 
     /// QWERTY row must be present — verify a representative sample.
     func testKeyboardLetterButtonsPresent() {
-        let sample = ["q", "w", "e", "a", "s", "d", "z", "x", "c"]
+        // aria-label uses the uppercase key from keyboardLayouts.ts (QWERTY rows are uppercase).
+        // displayChar is lowercased when shift is off, but aria-label is always the layout key.
+        let sample = ["Q", "W", "E", "A", "S", "D", "Z", "X", "C"]
         for letter in sample {
             XCTAssertTrue(
                 webView.buttons[letter].waitForExistence(timeout: 3),
-                "Keyboard letter '\(letter)' must be present"
+                "Keyboard letter '\(letter)' must be present (aria-label uses uppercase layout key)"
             )
         }
     }

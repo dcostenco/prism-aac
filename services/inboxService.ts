@@ -84,6 +84,19 @@ function setLastSeenMs(ms: number) {
 
 let pollInFlight = false;
 
+/** Reset ephemeral module state between test runs. Never call in production code. */
+export function _resetInboxStateForTests(): void {
+  pollInFlight = false;
+  endpointKnown404 = false;
+  if (intervalId !== null) { clearInterval(intervalId); intervalId = null; }
+  if (typeof window !== 'undefined' && onlineHandler) {
+    window.removeEventListener('online', onlineHandler);
+  }
+  onlineHandler = null;
+  if (unsubscribeAuth) { unsubscribeAuth(); unsubscribeAuth = null; }
+  lastObservedAccountKey = null;
+}
+
 // Module-scoped flag — once we see a 404 from the polling endpoint
 // (which is currently unshipped on the synalux portal), kill polling
 // for the rest of this page session. The endpoint will start

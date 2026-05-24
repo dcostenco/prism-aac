@@ -162,7 +162,7 @@ export default function BedsideOverlay({
       {/* Quick Cards — pre-built + custom phrases for non-verbal / non-moving users */}
       <div className="shrink-0 border-b border-white/10" data-testid="bedside-cards-section">
         <div className="flex items-center justify-between px-4 pt-2 pb-1">
-          <span className="text-white/50 text-xs font-semibold uppercase tracking-widest">Quick Phrases</span>
+          <span role="heading" aria-level={2} className="text-white/50 text-xs font-semibold uppercase tracking-widest">Quick Phrases</span>
           <div className="flex gap-2">
             <button
               onClick={() => { tapFeedback(); setEditMode(e => !e); }}

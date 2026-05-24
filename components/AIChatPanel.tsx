@@ -708,7 +708,10 @@ export default function AIChatPanel() {
         >
           <p
             className="text-xl text-primary leading-snug min-h-[1.75rem] break-words"
+            role="status"
             aria-label={t('current_message')}
+            aria-live="polite"
+            aria-atomic="true"
           >
             {text || (
               <span className="text-muted text-base italic">{t('type_or_speak')}</span>
