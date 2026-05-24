@@ -39,6 +39,8 @@ import {
     createCalibrationState,
     _injectTremorSamples,
     _clearTremorBuffer,
+    detectHand,
+    destroyHandDetector,
     type HandLandmarks,
     type HandProfile,
 } from '@/services/handProfileService';
@@ -855,5 +857,46 @@ describe('Mock body picture frames — canonical hand poses', () => {
         expect(scan.fingerLengthsPx).toBeDefined();
         expect(scan.fingerLengthsPx!.every(l => l >= 0)).toBe(true);
         expect(scan.palmWidthPx).toBeGreaterThan(0);
+    });
+});
+
+// ── Hand Detector Lifecycle ───────────────────────────────────────────────────
+//
+// initHandDetector lazily loads WASM via dynamic import; testing its full
+// initialization requires heavy MediaPipe mocking (see body-pose-precision.test.ts).
+// These tests cover the observable no-WASM behaviours: null-safety on detectHand
+// before init, and the singleton no-op contract of destroyHandDetector.
+
+describe('detectHand — null safety before WASM initialization', () => {
+    it('detectHand returns null when the hand detector has not been initialized', () => {
+        // module-level handLandmarkerInstance is null until initHandDetector() resolves.
+        // Calling detectHand() without init must not throw and must return null.
+        const fakeVideo = {} as HTMLVideoElement;
+        const result = detectHand(fakeVideo, 0);
+        expect(result).toBeNull();
+    });
+
+    it('detectHand returns null for any timestamp when not initialized', () => {
+        const fakeVideo = {} as HTMLVideoElement;
+        expect(detectHand(fakeVideo, 1000)).toBeNull();
+        expect(detectHand(fakeVideo, 99999)).toBeNull();
+    });
+});
+
+describe('destroyHandDetector — singleton no-op contract', () => {
+    it('destroyHandDetector does not throw (safe to call at any time)', () => {
+        // Calling destroy before init, after init, or multiple times must never crash.
+        // The WASM singleton is never torn down (mobile Safari OOM prevention).
+        expect(() => destroyHandDetector()).not.toThrow();
+        expect(() => destroyHandDetector()).not.toThrow();
+    });
+
+    it('detectHand still returns null after destroyHandDetector (singleton preserved)', () => {
+        // destroyHandDetector is a no-op; WASM instance stays alive or stays null.
+        // Either way, detectHand must remain safe to call.
+        destroyHandDetector();
+        const fakeVideo = {} as HTMLVideoElement;
+        // In the test environment WASM never loaded → stays null → detectHand returns null.
+        expect(detectHand(fakeVideo, 0)).toBeNull();
     });
 });
