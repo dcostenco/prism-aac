@@ -3,7 +3,9 @@
 # Usage: ./scripts/submit-appstore.sh
 set -e
 
-PROJ="ios-native/PrismAAC.xcodeproj"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJ="$REPO_ROOT/ios-native/PrismAAC.xcodeproj"
 SCHEME="PrismAAC"
 
 # Load from env — set these in ~/.zshenv or export before running:
@@ -29,8 +31,8 @@ if [ ! -f "$ADMIN_KEY_PATH" ]; then
 fi
 
 # Read version from Info.plist
-VERSION=$(plutil -extract CFBundleShortVersionString raw ios-native/PrismAAC/Info.plist)
-BUILD=$(plutil -extract CFBundleVersion raw ios-native/PrismAAC/Info.plist)
+VERSION=$(plutil -extract CFBundleShortVersionString raw "$REPO_ROOT/ios-native/PrismAAC/Info.plist")
+BUILD=$(plutil -extract CFBundleVersion raw "$REPO_ROOT/ios-native/PrismAAC/Info.plist")
 ARCHIVE="$HOME/Desktop/PrismAAC-${VERSION}-b${BUILD}.xcarchive"
 
 echo "=== Prism AAC v${VERSION} (build ${BUILD}) ==="
