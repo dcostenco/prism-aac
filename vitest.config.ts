@@ -12,6 +12,12 @@ export default defineConfig({
     exclude: ['**/node_modules/**', 'e2e/**'],
   },
   resolve: {
-    alias: { '@': path.resolve(__dirname, '.') },
+    alias: {
+      '@': path.resolve(__dirname, '.'),
+      // Optional WASM TTS packages not installed in dev/test; stub them out
+      // so wasmTTS.ts can be imported without Vite import-analysis errors.
+      'espeak-ng': path.resolve(__dirname, 'tests/mocks/espeak-ng.ts'),
+      'espeak-ng-emscripten': path.resolve(__dirname, 'tests/mocks/espeak-ng.ts'),
+    },
   },
 });

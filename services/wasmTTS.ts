@@ -298,7 +298,7 @@ async function tryLoadEspeak(): Promise<any> {
   // Strategy 1: espeak-ng npm package (most common)
   try {
     // @ts-expect-error — optional dependency; may not be installed
-    const mod = await import(/* webpackIgnore: true */ 'espeak-ng');
+    const mod = await import(/* webpackIgnore: true */ /* @vite-ignore */ 'espeak-ng');
     if (mod?.default?.init) {
       await mod.default.init();
       return mod.default;
@@ -313,7 +313,7 @@ async function tryLoadEspeak(): Promise<any> {
   // Strategy 2: espeak-ng-emscripten
   try {
     // @ts-expect-error — optional dependency; may not be installed
-    const mod = await import(/* webpackIgnore: true */ 'espeak-ng-emscripten');
+    const mod = await import(/* webpackIgnore: true */ /* @vite-ignore */ 'espeak-ng-emscripten');
     if (mod?.default) return mod.default;
     return mod;
   } catch { /* not installed */ }
