@@ -110,8 +110,10 @@ export function saveProfile(profile: HandProfile): void {
 }
 
 export function deleteProfile(id: string): void {
-  const profiles = loadProfiles().filter(p => p.id !== id && p.id !== 'default');
-  saveProfiles(profiles.length > 0 ? profiles : [DEFAULT_PROFILE]);
+  if (id === 'default') return;
+  const profiles = loadProfiles().filter(p => p.id !== id);
+  if (!profiles.find(p => p.id === 'default')) profiles.unshift(DEFAULT_PROFILE);
+  saveProfiles(profiles);
   if (localStorage.getItem(ACTIVE_PROFILE_KEY) === id) {
     setActiveProfile('default');
   }
@@ -126,6 +128,19 @@ export function recordTouchSample(x: number, y: number): void {
   if (tremorBuffer.length > TREMOR_WINDOW * 2) {
     tremorBuffer.splice(0, tremorBuffer.length - TREMOR_WINDOW);
   }
+}
+
+/** Test-only: inject samples with explicit timestamps to avoid performance.now() jitter */
+export function _injectTremorSamples(samples: Array<{ x: number; y: number; t: number }>): void {
+  for (const s of samples) tremorBuffer.push(s);
+  if (tremorBuffer.length > TREMOR_WINDOW * 2) {
+    tremorBuffer.splice(0, tremorBuffer.length - TREMOR_WINDOW);
+  }
+}
+
+/** Test-only: clear the tremor buffer between tests */
+export function _clearTremorBuffer(): void {
+  tremorBuffer.length = 0;
 }
 
 export function analyzeTremor(): { freqHz: number; amplPx: number } {
@@ -285,10 +300,10 @@ export function computeHandGeometry(
   const dy = indexTIP.y - indexMCP.y;
   const approachAngle = Math.round(Math.atan2(Math.abs(dx), Math.abs(dy)) * 180 / Math.PI);
 
-  // Handedness: if thumb is to the left of pinky → right hand (camera mirrored)
+  // Handedness: if thumb is to the left of pinky → right hand (camera mirrored front-facing)
   const thumbTip = toPixel(landmarks[4]);
   const pinkyTip = toPixel(landmarks[20]);
-  const handedness: 'left' | 'right' = thumbTip.x > pinkyTip.x ? 'right' : 'left';
+  const handedness: 'left' | 'right' = thumbTip.x < pinkyTip.x ? 'right' : 'left';
 
   // Y-offset: derived from approach angle and finger length
   // More angled approach → larger offset needed
