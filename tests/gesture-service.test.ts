@@ -616,3 +616,148 @@ describe('gestureService — singleton management', () => {
     expect(d1).not.toBe(d2);
   });
 });
+
+// ── Advanced mode: DTW template matching ─────────────────────────────────────
+// dtwDistance() is internal, but its behavior is observable via processFrame()
+// in advanced mode. Tests verify the full detection pipeline end-to-end.
+
+describe('GestureDetector — advanced mode DTW detection', () => {
+  // Build a 10-frame blendshape sequence using the same 10-dim extractDimensions
+  // order: [jawOpen, smileL, smileR, pucker, blinkL, blinkR, brow, pitch, yaw, roll]
+  function makeSeq(frameCount: number, dims: number[]): number[][] {
+    return Array.from({ length: frameCount }, () => [...dims]);
+  }
+
+  function makeTemplateSeq(dims: number[]): GestureTemplate {
+    return {
+      id: 'custom_open',
+      name: 'Open mouth',
+      sequences: [makeSeq(10, dims)],
+      avgDuration: 600,
+      maxDTWCost: 2.0, // generous threshold so the matching test passes
+      usageCount: 0,
+      successRate: 1.0,
+    };
+  }
+
+  it('fires custom gesture when DTW cost is below maxDTWCost', () => {
+    const gestures: GestureEvent[] = [];
+    // Template built from jawOpen=0.8 frames
+    const template = makeTemplateSeq([0.8, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const d = new GestureDetector(
+      makeConfig({ mode: 'advanced', templates: [template], cooldownMs: 500 }),
+      (e) => gestures.push(e),
+    );
+
+    // Feed 15 frames with matching pattern; advancedBuffer fills up to ADVANCED_WINDOW(30)
+    // and gets compared against the template. Cost = 0 (identical) << maxDTWCost(2.0).
+    for (let i = 0; i < 15; i++) {
+      mockNow += 50;
+      d.processFrame(makeFrame({ jawOpen: 0.8 }));
+    }
+
+    expect(gestures.some((g) => g.gesture === 'custom_open')).toBe(true);
+    const ev = gestures.find((g) => g.gesture === 'custom_open')!;
+    expect(ev.confidence).toBeGreaterThan(0);
+    expect(ev.confidence).toBeLessThanOrEqual(1);
+  });
+
+  it('does NOT fire when DTW cost exceeds maxDTWCost', () => {
+    const cb = vi.fn();
+    // Template built from jawOpen=0.8 but live input is jawOpen=0 (very different)
+    const template: GestureTemplate = {
+      id: 'mismatch',
+      name: 'Mismatch',
+      sequences: [makeSeq(10, [0.8, 0, 0, 0, 0, 0, 0, 0, 0, 0])],
+      avgDuration: 600,
+      maxDTWCost: 0.01, // tiny threshold — nothing below it
+      usageCount: 0,
+      successRate: 1.0,
+    };
+    const d = new GestureDetector(
+      makeConfig({ mode: 'advanced', templates: [template] }),
+      cb,
+    );
+
+    for (let i = 0; i < 15; i++) {
+      mockNow += 50;
+      d.processFrame(makeFrame({ jawOpen: 0 })); // live = all-zero dims
+    }
+
+    expect(cb.mock.calls.filter((c) => c[0].gesture === 'mismatch').length).toBe(0);
+  });
+
+  it('respects cooldown after advanced-mode gesture fires', () => {
+    const gestures: GestureEvent[] = [];
+    const template = makeTemplateSeq([0.8, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const d = new GestureDetector(
+      makeConfig({ mode: 'advanced', templates: [template], cooldownMs: 1000 }),
+      (e) => gestures.push(e),
+    );
+
+    // First detection burst
+    for (let i = 0; i < 15; i++) {
+      mockNow += 50;
+      d.processFrame(makeFrame({ jawOpen: 0.8 }));
+    }
+    const firstCount = gestures.filter((g) => g.gesture === 'custom_open').length;
+    expect(firstCount).toBeGreaterThan(0);
+
+    // 100ms later — still within cooldown; should NOT fire again
+    mockNow += 100;
+    d.processFrame(makeFrame({ jawOpen: 0.8 }));
+    expect(gestures.filter((g) => g.gesture === 'custom_open').length).toBe(firstCount);
+  });
+
+  it('picks the best-matching template when multiple compete', () => {
+    const gestures: GestureEvent[] = [];
+    const t1: GestureTemplate = {
+      id: 'jaw_open_gesture',
+      name: 'Jaw open',
+      sequences: [makeSeq(10, [0.9, 0, 0, 0, 0, 0, 0, 0, 0, 0])], // close to live
+      avgDuration: 600,
+      maxDTWCost: 5.0,
+      usageCount: 0,
+      successRate: 1.0,
+    };
+    const t2: GestureTemplate = {
+      id: 'smile_gesture',
+      name: 'Smile',
+      sequences: [makeSeq(10, [0, 0.9, 0.9, 0, 0, 0, 0, 0, 0, 0])], // very different from live
+      avgDuration: 600,
+      maxDTWCost: 5.0,
+      usageCount: 0,
+      successRate: 1.0,
+    };
+    const d = new GestureDetector(
+      makeConfig({ mode: 'advanced', templates: [t1, t2], cooldownMs: 500 }),
+      (e) => gestures.push(e),
+    );
+
+    // Live input: jawOpen dominant → should match t1 over t2
+    for (let i = 0; i < 15; i++) {
+      mockNow += 50;
+      d.processFrame(makeFrame({ jawOpen: 0.9 }));
+    }
+
+    const fired = gestures.map((g) => g.gesture);
+    expect(fired.some((id) => id === 'jaw_open_gesture')).toBe(true);
+    expect(fired.some((id) => id === 'smile_gesture')).toBe(false);
+  });
+
+  it('advanced detection does not fire when fewer than 10 frames in buffer', () => {
+    const cb = vi.fn();
+    const template = makeTemplateSeq([0.9, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const d = new GestureDetector(
+      makeConfig({ mode: 'advanced', templates: [template] }),
+      cb,
+    );
+
+    // Feed only 8 frames — buffer length < 10 → no matching attempted
+    for (let i = 0; i < 8; i++) {
+      d.processFrame(makeFrame({ jawOpen: 0.9 }));
+    }
+
+    expect(cb).not.toHaveBeenCalled();
+  });
+});
