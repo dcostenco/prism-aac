@@ -22,7 +22,9 @@
 
 import {
   DriftDetector,
+  DriftWarning,
   EdgePinDetector,
+  computeAdaptiveTravelThreshold,
 } from './headTrackerStability';
 import { Kalman1D } from './kalmanFilter1D';
 import { classifyMotion } from './egoMotion';
@@ -87,6 +89,20 @@ export interface HeadTrackerOptions {
    * a getter that returns the current motion state per frame.
    */
   isDeviceShaking?: () => boolean;
+  /**
+   * Measured RMS tremor amplitude in pixels from the child's HandProfile.
+   * When non-zero, the drift threshold is auto-computed via
+   * computeAdaptiveTravelThreshold() so high-tremor users don't get false
+   * positives. Set this from getActiveProfile().tremorAmplPx.
+   * Ignored when driftThresholdPx is explicitly provided.
+   */
+  tremorAmplPx?: number;
+  /**
+   * Non-critical stability pre-warning. Fires when confidence is trending
+   * downward rapidly (before hitting the collapse floor). Use to show a HUD
+   * hint ("move to better lighting") without disabling tracking.
+   */
+  onDriftWarning?: (warning: DriftWarning) => void;
 }
 
 export interface HeadTrackerHandle {
@@ -673,9 +689,24 @@ export function startHeadTracker(
   // Reliability primitives (statically imported at top — no circular dep).
   // Each is pure / DOM-free, so they can be unit-tested without the
   // full tracker. See TRACKING_RELIABILITY.md for which gap each closes.
+  const driftWindowMs = opts.driftWindowMs ?? 5000;
+  // Adaptive travel threshold: if the caller provides an explicit px value,
+  // respect it (manual override from caregiver settings). Otherwise derive
+  // from the child's measured tremor amplitude + screen diagonal so the
+  // threshold is proportional to both motor profile and device size.
+  const adaptiveThreshold = opts.driftThresholdPx ??
+    computeAdaptiveTravelThreshold(
+      opts.tremorAmplPx ?? 0,
+      driftWindowMs,
+      Math.hypot(window.innerWidth, window.innerHeight),
+    );
   const driftDetector = new DriftDetector({
-    travelThresholdPx: opts.driftThresholdPx ?? 800,
-    windowMs: opts.driftWindowMs ?? 5000,
+    travelThresholdPx: adaptiveThreshold,
+    windowMs: driftWindowMs,
+    // Directional ratio filter: suppress drift alarms when cumulative travel
+    // is high but net displacement is low (tremor random walk). 0.15 lets
+    // all random-walk profiles through while catching monotonic drift.
+    minDirectionalRatio: 0.15,
   });
   // Background calibration drift correction (gap F). Tracks the running
   // mean of (normX, normY) over a 60s window. When it diverges from the
@@ -707,6 +738,7 @@ export function startHeadTracker(
   window.addEventListener('resize', onResize);
 
   let driftFired = false;  // one-shot — don't spam onDrift on every frame
+  let lastWarnTs = 0;     // throttle onDriftWarning to once per window (5 s default)
 
   // Normalize input: single string → array
   const ids: (string | undefined)[] = cameraDeviceIds
@@ -1127,6 +1159,16 @@ export function startHeadTracker(
         dwellFired: dwellFiredThisFrame,
       });
       if (!deviceShaking) {
+        // Pre-warning: confidence degrading but not yet collapsed.
+        // Fires onDriftWarning (non-disabling) so the UI can show a hint.
+        if (opts.onDriftWarning) {
+          const warning = driftDetector.checkWarning();
+          if (warning && nowTs - lastWarnTs > driftWindowMs) {
+            lastWarnTs = nowTs;
+            opts.onDriftWarning(warning);
+          }
+        }
+
         const reason = driftDetector.check();
         if (reason && opts.onDrift) {
           driftFired = true;

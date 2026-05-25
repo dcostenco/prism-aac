@@ -29,6 +29,22 @@
  *      a global motion vector first; this module just checks for
  *      consistent residual motion AFTER stabilization.
  *
+ *   4. DIRECTIONAL RATIO FILTER (NEW) — children with CP/tremor accumulate
+ *      large cumulative travel but the cursor stays near-center (random walk).
+ *      Real calibration drift is monotonic — net displacement is high relative
+ *      to total travel. The ratio filter separates these two cases and prevents
+ *      tremor from false-triggering the drift alarm.
+ *
+ *   5. ADAPTIVE THRESHOLD (NEW) — fixed 800px assumed zero tremor. The
+ *      computeAdaptiveTravelThreshold() helper derives a per-child threshold
+ *      from their measured tremorAmplPx and the screen diagonal so the
+ *      detector self-calibrates to each user's motor profile.
+ *
+ *   6. CONFIDENCE SLOPE PRE-WARNING (NEW) — fires 'confidence-degrading'
+ *      via checkWarning() when confidence is dropping rapidly (slope < -0.05/s)
+ *      before it reaches the collapse floor. Lets the UI warn the caregiver
+ *      about lighting/positioning before tracking fully stops.
+ *
  * Auto-recover lifecycle (after a drift-triggered disable):
  *   STOPPED → PROBING (1 Hz background poll) → STABLE_ENOUGH → RECOVERED
  *
@@ -59,11 +75,37 @@ export interface DriftDetectorOptions {
     confidenceFloor?: number;
     /** Don't trigger before we've seen at least this many samples (avoids cold-start false-positives). Default 10. */
     minSamples?: number;
+    /**
+     * Directional ratio floor: net displacement / cumulative travel.
+     * When the ratio is BELOW this value the motion is a random walk
+     * (tremor/CP spasm) — NOT calibration drift. Values below this floor
+     * suppress the cursor-drift trigger.
+     *
+     * Range 0..1. Default 0 (disabled — backward compat).
+     * Recommended for motor-impaired users: 0.15.
+     *
+     * Why 0.15: random walks achieve ratio ~0 over many steps; real drift
+     * (cursor sliding toward one corner) achieves ratio ~0.5–0.9. 0.15 is
+     * a conservative threshold that lets all random-walk profiles through
+     * while still catching monotonic calibration breaks.
+     */
+    minDirectionalRatio?: number;
+    /**
+     * Confidence slope threshold (per-ms) below which checkWarning() emits
+     * 'confidence-degrading'. Default -0.00005 (= -5%/s = dropping 5 points
+     * per second). Set to 0 to disable.
+     */
+    confidenceSlopeWarnThreshold?: number;
 }
 
 export type DriftReason =
     | 'cursor-drift'         // travel exceeded threshold without dwell-click
     | 'confidence-collapse'; // average confidence below floor
+
+/** Non-critical stability warning — does NOT trigger auto-disable by itself.
+ *  Consumers may show a HUD hint (e.g. "Move to better lighting"). */
+export type DriftWarning =
+    | 'confidence-degrading'; // confidence trending downward before collapse
 
 export class DriftDetector {
     private samples: DriftSample[] = [];
@@ -71,6 +113,8 @@ export class DriftDetector {
     private readonly travelThresholdPx: number;
     private readonly confidenceFloor: number;
     private readonly minSamples: number;
+    private readonly minDirectionalRatio: number;
+    private readonly confidenceSlopeWarnThreshold: number;
     private lastDwellTs = 0;
 
     constructor(opts: DriftDetectorOptions = {}) {
@@ -78,6 +122,8 @@ export class DriftDetector {
         this.travelThresholdPx = opts.travelThresholdPx ?? 800;
         this.confidenceFloor = opts.confidenceFloor ?? 0.4;
         this.minSamples = opts.minSamples ?? 10;
+        this.minDirectionalRatio = opts.minDirectionalRatio ?? 0;
+        this.confidenceSlopeWarnThreshold = opts.confidenceSlopeWarnThreshold ?? -0.00005;
     }
 
     /** Feed one frame. Call from the tracker's tick(). */
@@ -122,14 +168,52 @@ export class DriftDetector {
         const avgConf = confSum / this.samples.length;
         if (avgConf < this.confidenceFloor) return 'confidence-collapse';
 
-        // Cumulative cursor travel
+        // Cumulative cursor travel + directional ratio filter
+        const first = this.samples[0];
         let travel = 0;
         for (let i = 1; i < this.samples.length; i++) {
             const dx = this.samples[i].x - this.samples[i - 1].x;
             const dy = this.samples[i].y - this.samples[i - 1].y;
             travel += Math.hypot(dx, dy);
         }
-        if (travel > this.travelThresholdPx) return 'cursor-drift';
+        if (travel > this.travelThresholdPx) {
+            // Directional ratio: net displacement / cumulative travel.
+            // A random walk (tremor, CP spasm) keeps the cursor near its
+            // starting point → ratio ~0. Real calibration drift is monotonic
+            // → ratio approaches 1. Filter out tremor when minDirectionalRatio
+            // is non-zero.
+            if (this.minDirectionalRatio > 0) {
+                const netDx = newest.x - first.x;
+                const netDy = newest.y - first.y;
+                const netDisplacement = Math.hypot(netDx, netDy);
+                const ratio = travel > 0 ? netDisplacement / travel : 0;
+                if (ratio < this.minDirectionalRatio) return null;
+            }
+            return 'cursor-drift';
+        }
+
+        return null;
+    }
+
+    /**
+     * Non-critical pre-warning check. Call every frame alongside check().
+     * Returns a DriftWarning when confidence is trending downward fast enough
+     * to predict imminent collapse, but before the floor is actually hit.
+     *
+     * Does NOT auto-disable tracking on its own — consumers use this to show
+     * a HUD hint ("Move to better lighting") before the hard stop fires.
+     */
+    checkWarning(): DriftWarning | null {
+        if (this.samples.length < this.minSamples) return null;
+        if (this.confidenceSlopeWarnThreshold >= 0) return null; // disabled
+
+        const oldest = this.samples[0];
+        const newest = this.samples[this.samples.length - 1];
+        const dtMs = newest.timestamp - oldest.timestamp;
+        if (dtMs < 1000) return null; // need at least 1s of history for a meaningful slope
+
+        const slope = (newest.confidence - oldest.confidence) / dtMs;
+        if (slope < this.confidenceSlopeWarnThreshold) return 'confidence-degrading';
 
         return null;
     }
@@ -305,6 +389,42 @@ export class EdgePinDetector {
         this.sustainedFired = false;
         this.episodes.length = 0;
     }
+}
+
+/**
+ * Compute a per-child drift travel threshold from their motor profile.
+ *
+ * Background: the hardcoded 800 px default assumed near-zero tremor.
+ * A child with 5 px RMS tremor amplitude at 15 fps accumulates
+ * ~530 px of legitimate random-walk travel over a 5 s window, leaving
+ * only 270 px of headroom before a false positive. This helper derives
+ * a threshold that is always above the expected tremor noise floor by a
+ * 1.5× safety margin, and also never less than 30% of the screen diagonal
+ * so it remains meaningful on any device.
+ *
+ * @param tremorAmplPx  RMS tremor amplitude in pixels (from HandProfile).
+ *                      0 = no measured tremor — falls back to screen-diagonal rule.
+ * @param windowMs      Detection window in ms (must match DriftDetectorOptions.windowMs).
+ * @param screenDiagonal  sqrt(width² + height²) in pixels.
+ * @param fps           Expected tracking frame rate. Default 15.
+ * @returns Threshold in pixels, clamped to [200, 4000].
+ */
+export function computeAdaptiveTravelThreshold(
+    tremorAmplPx: number,
+    windowMs: number,
+    screenDiagonal: number,
+    fps = 15,
+): number {
+    const frames = (windowMs / 1000) * fps;
+    // Expected cumulative travel from a random walk with step size ≈ tremorAmplPx * √2
+    // (each frame moves tremorAmplPx in a random 2-D direction).
+    const tremorBaseline = frames * tremorAmplPx * Math.SQRT2;
+    const tremorThreshold = tremorBaseline * 1.5; // 50% margin above noise
+
+    // Minimum: 30% of screen diagonal keeps sensitivity proportional to display size.
+    const screenThreshold = screenDiagonal * 0.3;
+
+    return Math.max(200, Math.min(4000, Math.max(tremorThreshold, screenThreshold)));
 }
 
 export function fuseWeighted(
