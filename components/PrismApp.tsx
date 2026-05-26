@@ -202,6 +202,11 @@ export default function PrismApp() {
     void import('@/services/watchAlertBridge').then((m) => m.registerWatchAlertBridge());
     // Auto-sideload: detect local Ollama → pull best prism-coder model
     import('@/services/aiService').then(m => m.autoSideload?.()).catch(() => {});
+    // Pre-warm MediaPipe WASM + face models so the first startHeadTracker()
+    // sees near-zero cold-start. Models are self-hosted on Vercel CDN (~9 MB
+    // total) and load in ~1-2s — completing well before the user navigates
+    // to Settings and enables head tracking.
+    import('@/services/headTracker').then(m => m.prewarmHeadTracker?.()).catch(() => {});
     // Pre-cache all pictograms for offline — runs in background
     import('@/services/pictogramService').then(m =>
       m.precacheAllPictograms?.(useSettingsStore.getState().language, 'symbols')
@@ -432,7 +437,7 @@ export default function PrismApp() {
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && !showQwerty && <GreetingBanner />}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && <MessageBar />}
-          {!PANELS_WITHOUT_QWERTY.has(sidePanel) && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
+          {!PANELS_WITHOUT_QWERTY.has(sidePanel) && sidePanel !== 'ai-chat' && !isCategoryMode && !keyboardMaximized && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />
           <AIChatPanel />
@@ -448,7 +453,7 @@ export default function PrismApp() {
           {/* Category mode: full-screen cards (Image #32 pattern).
               Keyboard is a pull-up drawer toggled from inside CategoryPanel.
               All other modes: CategoryPanel stacks above keyboard as before. */}
-          {sidePanel !== 'math' && sidePanel !== 'comfort-player' && !(showQwerty && keyboardMaximized) && (
+          {sidePanel !== 'math' && sidePanel !== 'comfort-player' && sidePanel !== 'schedule' && !(showQwerty && keyboardMaximized) && (
             <div className="flex-[3] min-h-0 flex flex-col">
               <CategoryPanel />
             </div>

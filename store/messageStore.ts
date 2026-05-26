@@ -59,6 +59,9 @@ interface MessageState {
   clearAll: () => void;
   undo: () => void;
   setText: (text: string) => void;
+  /** Like setText but skips pushUndo — for live mic interim updates that
+   *  should NOT pollute the undo stack (30-60 calls per dictation session). */
+  setTextSilent: (text: string) => void;
   toggleAutoSpeak: () => void;
   toggleSound: () => void;
   addToHistory: (text: string, source?: 'user' | 'system') => void;
@@ -121,6 +124,7 @@ export const useMessageStore = create<MessageState>()(
         }),
 
       setText: (text) => set((s) => ({ ...pushUndo(s), text: clampText(text) })),
+      setTextSilent: (text) => set({ text: clampText(text) }),
 
       toggleAutoSpeak: () => set((s) => ({ autoSpeak: !s.autoSpeak })),
 

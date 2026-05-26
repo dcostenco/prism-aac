@@ -156,7 +156,7 @@ function appButton(
 
 export default function Toolbar() {
   const { openCategories, openMath, openCaregiver, openAIChat, openAACChat, openSchedule, openGames, openMarketplace, openPdfReader, openOcrCapture, openComfortPlayer, toggleHistory, toggleSettings, triggerAlert } = useUIStore();
-  const { soundEnabled, toggleSound, appendText } = useMessageStore();
+  const { soundEnabled, toggleSound, setText, setTextSilent } = useMessageStore();
   const language = useSettingsStore((s) => s.language);
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
   const updateSettings = useSettingsStore((s) => s.update);
@@ -165,13 +165,20 @@ export default function Toolbar() {
   const syncStatus = useSyncStatus();
   const { t, ttsCode } = useT();
   const [listening, setListening] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+  const micErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showLangPicker, setShowLangPicker] = useState<'input' | 'output' | null>(null);
   const voiceRef = useRef<VoiceSession | null>(null);
   const langRef = useRef<HTMLDivElement>(null);
+  // Snapshot of message text at mic-start; interim results are appended on top.
+  const micTextBaseRef = useRef('');
+  // Last interim string shown — lets us overwrite it cleanly on each update.
+  const micInterimRef = useRef('');
   const voiceSupported = isVoiceInputSupported();
   const unreadMessages = useScheduleStore(selectUnreadMessageCount);
 
   useEffect(() => () => { voiceRef.current?.stop(); voiceRef.current = null; setListening(false); }, [language]);
+  useEffect(() => () => { if (micErrorTimer.current) clearTimeout(micErrorTimer.current); }, []);
   useEffect(() => {
     if (!showLangPicker) return;
     const handler = (e: MouseEvent) => {
@@ -181,14 +188,58 @@ export default function Toolbar() {
     return () => document.removeEventListener('pointerdown', handler);
   }, [showLangPicker]);
 
+  const showMicError = (msg: string) => {
+    setMicError(msg);
+    if (micErrorTimer.current) clearTimeout(micErrorTimer.current);
+    micErrorTimer.current = setTimeout(() => setMicError(null), 4000);
+  };
+
   const toggleMic = () => {
     tapFeedback();
-    if (voiceRef.current) { voiceRef.current.stop(); voiceRef.current = null; setListening(false); return; }
+    if (voiceRef.current) {
+      voiceRef.current.stop(); voiceRef.current = null; setListening(false);
+      // Commit any interim text that was showing when the user stopped
+      if (micInterimRef.current) {
+        micInterimRef.current = '';
+        // setText already reflects the interim — leave it; user can edit
+      }
+      return;
+    }
+    // Bug 3 fix: read live state instead of stale render-time `currentText`.
+    micTextBaseRef.current = useMessageStore.getState().text;
+    micInterimRef.current = '';
     const session = startVoiceInput({
       lang: ttsCode,
-      onInterim: () => {},
-      onFinal: async (txt) => { const fixed = await correctText(txt.trim(), language); if (!voiceRef.current) return; appendText((fixed || txt).trim() + ' '); },
-      onError: () => { voiceRef.current?.stop(); voiceRef.current = null; setListening(false); },
+      onInterim: (txt) => {
+        // Replace any previous interim with the latest hypothesis so the
+        // user sees words streaming live as they speak.
+        // Bug 2 fix: setTextSilent skips pushUndo — avoids 30-60 undo entries per session.
+        micInterimRef.current = txt;
+        const base = micTextBaseRef.current;
+        setTextSilent((base ? base + ' ' : '') + txt);
+      },
+      onFinal: async (txt) => {
+        micInterimRef.current = '';
+        const fixed = await correctText(txt.trim(), language);
+        if (!voiceRef.current) return;
+        const committed = (fixed || txt).trim() + ' ';
+        // Bug 1 fix: trimEnd prevents double-space when `committed` already ends with ' '.
+        micTextBaseRef.current = (micTextBaseRef.current ? micTextBaseRef.current.trimEnd() + ' ' : '') + committed;
+        setText(micTextBaseRef.current);
+      },
+      onError: (err) => {
+        voiceRef.current?.stop(); voiceRef.current = null; setListening(false);
+        micInterimRef.current = '';
+        // Bug 5 fix: revert display to committed base so dangling interim text clears.
+        setText(micTextBaseRef.current);
+        if (err === 'not-allowed' || err === 'service-not-allowed') {
+          showMicError(t('mic_permission_denied'));
+        } else if (err === 'audio-capture') {
+          showMicError(t('mic_no_device'));
+        } else if (err === 'recognition-restart-limit') {
+          showMicError(t('mic_tap_to_continue') || 'Tap mic to continue listening');
+        }
+      },
     });
     if (session) { voiceRef.current = session; setListening(true); }
   };
@@ -308,6 +359,11 @@ export default function Toolbar() {
 
   return (
     <div className="flex items-center justify-between px-1 py-[clamp(0.1rem,0.3svh,0.25rem)] surface-bar shrink-0 border-b border-theme relative">
+      {micError && (
+        <div role="alert" className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-[300] bg-[#F44336] text-white text-xs font-semibold rounded-lg px-3 py-1.5 shadow-lg whitespace-nowrap pointer-events-none">
+          {micError}
+        </div>
+      )}
       {/* Single-row toolbar with horizontal overflow scroll. Earlier
           revision used `flex-wrap` so installed marketplace apps could
           break onto a second row, but that doubled the toolbar height

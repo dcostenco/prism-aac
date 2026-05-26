@@ -104,18 +104,20 @@ interface SideBtnProps {
   label: string;
   onClick: () => void;
   active?: boolean;
+  testId?: string;
 }
-function SidebarBtn({ icon, label, onClick, active = false }: SideBtnProps) {
+function SidebarBtn({ icon, label, onClick, active = false, testId }: SideBtnProps) {
   return (
     <button
       onClick={() => { tapFeedback(); onClick(); }}
-      className={`aac-btn flex flex-col items-center gap-0 px-1 w-full select-none
+      data-testid={testId}
+      className={`aac-btn flex flex-col items-center justify-center gap-[3px] px-1 w-full select-none
         border-b border-white/10 last:border-b-0 hover:bg-white/15 active:bg-white/25 transition-colors
         ${active ? 'bg-white/20' : ''}`}
-      style={{ height: 'clamp(36px, 5svh, 60px)' }}
+      style={{ minHeight: 'clamp(56px, 8svh, 80px)' }}
     >
-      <span className="flex-1 flex items-center text-[clamp(16px,2.5vw,24px)] leading-none">{icon}</span>
-      <span className="text-[clamp(6px,0.7vw,9px)] font-bold uppercase tracking-wide text-white/90 text-center leading-none px-0.5 shrink-0 pb-[2px]">
+      <span className="text-[clamp(18px,2.8vw,26px)] leading-none">{icon}</span>
+      <span className="text-[clamp(8px,0.8vw,10px)] font-bold uppercase tracking-wide text-white/90 text-center leading-none px-0.5">
         {label}
       </span>
     </button>
@@ -306,19 +308,22 @@ export default function CategoryPanel() {
       {/* Keyboard toggle — ALWAYS FIRST so it's always reachable */}
       <SidebarBtn
         icon="⌨️"
-        label={!categoryKeyboardOpen ? 'MAX KB' : keyboardMaximized ? 'HIDE KB' : 'MIN KB'}
+        label={categoryKeyboardOpen ? 'HIDE KB' : 'KB'}
         onClick={cycleKeyboardMode}
         active={categoryKeyboardOpen}
+        testId="kb-cycle-btn"
       />
       {/* Search */}
       <SidebarBtn icon="🔍" label="Search" onClick={searchOpen ? closeSearch : openSearch} active={searchOpen} />
       {/* Navigation */}
-      {!isHome && <SidebarBtn icon="←" label={isDeep ? 'Up' : 'Go back'} onClick={handleBack} />}
+      {!isHome && <SidebarBtn icon="←" label={isDeep ? 'Up' : 'Back'} onClick={handleBack} />}
       <SidebarBtn icon="🏠" label="Home" onClick={closeSidePanel} />
       {showCoreWords && <SidebarBtn icon="⌂" label="Words" onClick={backToCategories} />}
       {/* Scroll helpers */}
       <SidebarBtn icon="↑" label="Up" onClick={() => scrollGrid(-1)} />
       <SidebarBtn icon="↓" label="Down" onClick={() => scrollGrid(1)} />
+      {/* Fills remaining height so the whole nav area is tappable */}
+      <div className="flex-1" />
     </nav>
   );
 

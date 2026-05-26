@@ -74,7 +74,7 @@ interface UIState {
   backToContacts: () => void;
   toggleCategoryKeyboard: () => void;
   toggleKeyboardMaximized: () => void;
-  /** Cycle: maximized → normal → hidden → maximized */
+  /** Toggle: keyboard-only (maximized) ↔ picture-only (keyboard hidden). */
   cycleKeyboardMode: () => void;
   contactDraftName: string;
   contactDraftRecipient: string;
@@ -86,7 +86,7 @@ let alertTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useUIStore = create<UIState>()((set) => ({
   sidePanel: 'none',
-  categoryKeyboardOpen: true,
+  categoryKeyboardOpen: typeof window !== 'undefined' ? localStorage.getItem('prism-cat-kb-open') !== 'false' : true,
   keyboardMaximized: typeof window !== 'undefined' && localStorage.getItem('prism-kb-max') === 'true',
   activeCategoryId: null,
   categoryPath: [],
@@ -156,25 +156,40 @@ export const useUIStore = create<UIState>()((set) => ({
     if (!(MODULE_PANEL_VIEWS as readonly string[]).includes(panelId)) return {};
     return { sidePanel: panelId as ModulePanelView };
   }),
-  toggleCategoryKeyboard: () => set((s) => ({ categoryKeyboardOpen: !s.categoryKeyboardOpen })),
+  toggleCategoryKeyboard: () => set((s) => {
+    const next = !s.categoryKeyboardOpen;
+    try { localStorage.setItem('prism-cat-kb-open', String(next)); } catch {}
+    return { categoryKeyboardOpen: next };
+  }),
   toggleKeyboardMaximized: () => set((s) => {
     const next = !s.keyboardMaximized;
-    try { localStorage.setItem('prism-kb-max', String(next)); } catch {}
+    try {
+      localStorage.setItem('prism-kb-max', String(next));
+      localStorage.setItem('prism-cat-kb-open', 'true');
+    } catch {}
     return { keyboardMaximized: next, categoryKeyboardOpen: true };
   }),
   cycleKeyboardMode: () => set((s) => {
-    // maximized → normal → hidden → maximized
-    if (s.keyboardMaximized) {
-      try { localStorage.setItem('prism-kb-max', 'false'); } catch {}
-      return { keyboardMaximized: false, categoryKeyboardOpen: true };
-    }
+    // Two clean states: keyboard shown (normal size) ↔ keyboard hidden.
+    // The maximized state is preserved for direct toggleKeyboardMaximized calls
+    // but cycleKeyboardMode never enters it — keeps the sidebar button simple.
     if (s.categoryKeyboardOpen) {
-      return { categoryKeyboardOpen: false, keyboardMaximized: false };
+      try {
+        localStorage.setItem('prism-kb-max', 'false');
+        localStorage.setItem('prism-cat-kb-open', 'false');
+      } catch {}
+      return { keyboardMaximized: false, categoryKeyboardOpen: false };
     }
-    try { localStorage.setItem('prism-kb-max', 'true'); } catch {}
-    return { keyboardMaximized: true, categoryKeyboardOpen: true };
+    try {
+      localStorage.setItem('prism-kb-max', 'false');
+      localStorage.setItem('prism-cat-kb-open', 'true');
+    } catch {}
+    return { keyboardMaximized: false, categoryKeyboardOpen: true };
   }),
-  closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: true }),
+  closeSidePanel: () => {
+    try { localStorage.setItem('prism-cat-kb-open', 'true'); } catch {}
+    set({ sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: true });
+  },
   selectCategory: (id) => set({ sidePanel: 'category-detail', activeCategoryId: id, categoryPath: [id] }),
   drillIntoCategory: (id) => set((s) => {
     if (typeof id !== 'string' || !id || id.length > 64) return s;

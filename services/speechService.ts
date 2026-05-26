@@ -211,7 +211,13 @@ export async function speak(
   if (tone === 'auto') {
     const detected = autoSwitchTone(text);
     effectiveTone = toneToAzureStyle(detected) as ToneStyle;
-    effectiveRate = toneToRate(detected, rate);
+    // Only apply tone-based rate adjustment for English. Foreign language
+    // neural voices have their own natural cadence; slowing Spanish by 15%
+    // for "serious" tone sounds robotic rather than measured.
+    const langPrefix = lang.toLowerCase().split(/[-_]/)[0];
+    if (langPrefix === 'en') {
+      effectiveRate = toneToRate(detected, rate);
+    }
   }
 
   const settings = useSettingsStore.getState() as { voicePreferences?: Record<string, string> };

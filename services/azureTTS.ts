@@ -4,6 +4,10 @@
 // compiled azureTTS.ts despite source changes.
 const _BUILD_NUKE = Date.now().toString();
 void _BUILD_NUKE;
+
+// Languages whose Azure Neural voices support SSML express-as style.
+// Hoisted to module scope — was incorrectly allocated on every speakAzure() call.
+const STYLE_SUPPORTED_LANGS = new Set(['en', 'ja', 'zh']);
 /**
  * Azure Neural TTS — Paid tiers only
  *
@@ -62,68 +66,10 @@ export const TONE_OPTIONS: Array<{ id: ToneStyle; label: string; icon: string }>
   { id: 'angry', label: 'Urgent', icon: '😤' },
 ];
 
-const AZURE_VOICES: Record<string, string> = {
-  'en-US': 'en-US-JennyMultilingualNeural',
-  'es-ES': 'es-ES-ElviraNeural',
-  'fr-FR': 'fr-FR-DeniseNeural',
-  'pt-BR': 'pt-BR-FranciscaNeural',
-  'ro-RO': 'ro-RO-AlinaNeural',
-  'uk-UA': 'uk-UA-PolinaNeural',
-  'ru-RU': 'ru-RU-SvetlanaNeural',
-  'de-DE': 'de-DE-KatjaNeural',
-  'ja-JP': 'ja-JP-NanamiNeural',
-  'ko-KR': 'ko-KR-SunHiNeural',
-  'zh-CN': 'zh-CN-XiaoxiaoNeural',       // Mainland Mandarin
-  'zh-TW': 'zh-TW-HsiaoChenNeural',      // Taiwanese Mandarin
-  'zh-HK': 'zh-HK-HiuMaanNeural',        // Hong Kong Cantonese (Yue)
-  'ar-SA': 'ar-SA-ZariyahNeural',
-};
-
-const STYLE_SUPPORTED = new Set([
-  'en-US-JennyMultilingualNeural',
-  'zh-CN-XiaoxiaoNeural',
-  'zh-TW-HsiaoChenNeural',
-  'ja-JP-NanamiNeural',
-]);
-
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-export function buildSSML(text: string, lang: string, tone: ToneStyle, rate: number, volume: number): string {
-  const voice = AZURE_VOICES[lang] || AZURE_VOICES['en-US'];
-  const supportsStyles = STYLE_SUPPORTED.has(voice);
-  // SSML rate: 1.0 = normal. Stored slider range [0.25-4], default 0.5.
-  // Formula: ssmlRate = stored × 2, hard-capped at 1.4.
-  //   stored 0.25 → SSML 0.50  stored 0.50 → SSML 1.00 (normal, fixes RO/RU slow)
-  //   stored 0.70 → SSML 1.40  stored 1.0+ → SSML 1.40 (cap, no chipmunk)
-  // Verified live 2026-05-10 via tts-live-diag-rate.mjs: rate=1.40, ✅ SAFE.
-  // DO NOT revert to pass-through — stored 0.5 direct → SSML 0.5 = RO/RU 2× slow.
-  const rateClamped = Math.max(0.5, Math.min(1.4, Number.isFinite(rate) && rate > 0 ? rate * 2 : 1.0));
-  const rateStr = rateClamped.toFixed(2);
-  const volumeValue = Math.max(0, Math.min(100, Math.round(volume * 100)));
-
-  let inner = escapeXml(text);
-  if (supportsStyles && tone !== 'friendly') {
-    inner = `<mstts:express-as style="${tone}">${inner}</mstts:express-as>`;
-  }
-
-  // Pitch attribute intentionally omitted — we never vary pitch and
-  // every form ("0%", "+0%", "0Hz") is parser-fragile across SSML
-  // implementations. Default pitch is correct for every supported voice.
-  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="${lang}">
-  <voice name="${voice}">
-    <prosody rate="${rateStr}" volume="${volumeValue}">
-      ${inner}
-    </prosody>
-  </voice>
-</speak>`;
-}
+// SSML is now assembled server-side by buildAzureSSML() in
+// portal/src/app/api/v1/tts/public/_helpers.ts — the client sends
+// {text, lang, rate, volume} and the portal returns audio directly.
+// AZURE_VOICES, escapeXml, and buildSSML have been deleted (May 2026).
 
 const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 
@@ -247,6 +193,48 @@ function releaseBlob(url: string): void {
 // A child with spasticity may mash Speak 5 times, launching 5 concurrent
 // fetches. Panic stop must kill ALL of them, not just the last.
 const activeControllers = new Set<AbortController>();
+
+// ── TTS Audio Cache ─────────────────────────────────────────────────────────
+// LRU cache for recently-synthesized audio buffers. AAC users repeat the same
+// phrases constantly ("I want", "yes", "no", "help", "bathroom"). Caching the
+// raw ArrayBuffer from the portal response lets repeated phrases replay
+// instantly — decodeAndPlay reads the cached bytes instead of round-tripping
+// the network. Cache stores the raw portal bytes; each playback calls .slice(0)
+// inside decodeAudioData so the buffer is never neutered.
+//
+// Key: `${text}|${lang}|${tone}|${rateRounded}|${voiceId}` — rate rounded to
+// 1 decimal place so slider micro-jitter doesn't produce spurious cache misses.
+// Size: 30 entries. A 3-word phrase at 96kbps ≈ 10–30 KB; 30 entries ≈ 1 MB max.
+
+const TTS_CACHE_MAX = 30;
+const _ttsCache = new Map<string, ArrayBuffer>();
+
+function _ttsCacheKey(text: string, lang: string, tone: ToneStyle, rate: number, voiceId?: string): string {
+  return `${text}|${lang}|${tone}|${rate.toFixed(1)}|${voiceId ?? ''}`;
+}
+
+function _ttsCacheGet(key: string): ArrayBuffer | undefined {
+  const val = _ttsCache.get(key);
+  if (val === undefined) return undefined;
+  // Refresh to tail (LRU semantics via insertion-order Map).
+  _ttsCache.delete(key);
+  _ttsCache.set(key, val);
+  return val;
+}
+
+function _ttsCacheSet(key: string, buf: ArrayBuffer): void {
+  if (_ttsCache.size >= TTS_CACHE_MAX) {
+    // Evict oldest (first key in insertion order).
+    const oldest = _ttsCache.keys().next().value;
+    if (oldest) _ttsCache.delete(oldest);
+  }
+  _ttsCache.set(key, buf);
+}
+
+/** Clear the TTS audio cache (e.g. after a voice preference change). */
+export function clearTtsCache(): void {
+  _ttsCache.clear();
+}
 
 // Rapid-duplicate dedup. If the same text fires within DEDUP_MS, drop the
 // new request so the current playback isn't killed by stopAzurePlayback.
@@ -523,6 +511,17 @@ async function speakGemini(
   }
 }
 
+/**
+ * Normalize a stored slider rate [0.25–4] to the portal's SSML rate scale [0.5–1.4].
+ * Formula: storedRate × 2, hard-clamped to [0.5, 1.4].
+ *   stored 0.25 → 0.50 (SSML floor)   stored 0.50 → 1.00 (normal)
+ *   stored 0.70 → 1.40 (cap)          stored 1.0+ → 1.40 (chipmunk guard)
+ * Exported for testing. Do NOT apply an additional Web Audio playbackRate on top.
+ */
+export function computeNormalizedRate(stored: number): number {
+  return Math.max(0.5, Math.min(1.4, Number.isFinite(stored) && stored > 0 ? stored * 2 : 1.0));
+}
+
 export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   text: string,
   lang: string,
@@ -561,7 +560,17 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   lastSpokenText = text;
   lastSpokenAt = nowMs;
 
-  const ssml = buildSSML(text, lang, tone, rate, volume);
+  // Cache hit — replay without a network round-trip.
+  const cacheKey = _ttsCacheKey(text, lang, tone, rate, voiceId);
+  const cached = _ttsCacheGet(cacheKey);
+  if (cached) {
+    console.log(`[AzureTTS] cache hit: "${text.slice(0, 40)}"`);
+    return decodeAndPlay(cached, volume, 'AzureTTS-cache', interrupt);
+  }
+
+  // Normalize stored slider → portal SSML rate scale. See computeNormalizedRate.
+  // DO NOT pass-through — stored 0.5 direct → SSML 0.5 = 2× slow (RO/RU bug, May 2026).
+  const normalizedRate = computeNormalizedRate(rate);
 
   let url: string | null = null;
   const controller = new AbortController();
@@ -570,28 +579,30 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-    // The portal route accepts voiceId from the catalog and routes to the
-    // matching backend (Inworld for paid+supported, Azure otherwise). We
-    // forward it here so the user's voice choice is honored end-to-end.
+    // Portal builds SSML server-side (single source of truth for voice maps + SSML format).
+    // We send {text, lang, rate, volume} — portal's buildAzureSSML() handles the rest.
     const reqBody: Record<string, unknown> = {
-      ssml,
+      text: text.slice(0, 500),
+      lang,
+      rate: normalizedRate,
+      volume,
       format: 'audio-24khz-96kbitrate-mono-mp3',
-      // Surface tag — biases the server-side picker toward AAC-appropriate
-      // safe defaults if prism-coder is unavailable.
       surface: 'aac',
     };
     if (voiceId) reqBody.voiceId = voiceId;
 
     // Map the user's chosen AAC tone to an Inworld TTS-2 voice style.
-    // 'friendly' (the default) → no explicit style, let the server-side
-    // prism-coder picker choose from the message content. Any other
-    // tone → explicit style, which always wins over autoStyle.
-    const tts2Style = toneToInworldStyle(tone);
+    // Only send explicit style for languages whose Azure Neural voices support
+    // SSML express-as — sending an unsupported style causes a 400 / silent
+    // failure and pushes the call to the Web Speech fallback unnecessarily.
+    // Known style-supporting languages: en, ja, zh (per Azure docs + Inworld catalog).
+    const baseLangForStyle = lang.toLowerCase().split(/[-_]/)[0];
+    const tts2Style = STYLE_SUPPORTED_LANGS.has(baseLangForStyle) ? toneToInworldStyle(tone) : null;
     if (tts2Style) {
       reqBody.style = tts2Style;
     } else {
-      // Default tone — opt into auto-styling so the picker can choose
-      // urgent / cheerful / calm / etc. from the actual text.
+      // Default tone or unsupported lang — opt into auto-styling so the picker
+      // can choose urgent / cheerful / calm / etc. from the actual text.
       // (Authenticated /tts honors this unconditionally; /tts/public
       // requires PRISM_PUBLIC_AUTOSTYLE_ENABLED=1 on the portal env.)
       reqBody.autoStyle = true;
@@ -654,12 +665,17 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
       if (audioBytes) {
         clearTimeout(timeout);
         activeControllers.delete(controller);
-        // Rate is fully encoded in the SSML prosody (buildSSML: stored × 2,
-        // clamped 0.5–1.4). Azure applies it natively; the portal converts
-        // it to an Inworld steering hint via rateToSteering. Do NOT apply
-        // an additional Web Audio playbackRate — that was causing double-slow
-        // in translation mode: aacSpeak effectiveRate × 0.6 → SSML rate 0.6
-        // → old pbRate 0.6 = 0.36× speed (en-ro regression, May 2026).
+        // Cache the raw portal bytes for instant replay on repeated phrases.
+        _ttsCacheSet(cacheKey, audioBytes);
+        // Rate is fully encoded in the SSML prosody. computeNormalizedRate()
+        // converts the stored slider value (× 2, clamped 0.5–1.4) and sends
+        // it to the portal; buildAzureSSML() in portal/src/app/api/v1/tts/
+        // public/_helpers.ts assembles the SSML prosody attribute server-side.
+        // Azure applies it natively; the portal converts it to an Inworld
+        // steering hint via rateToSteering. Do NOT apply an additional Web
+        // Audio playbackRate — that caused double-slow in translation mode:
+        // aacSpeak effectiveRate × 0.6 → SSML rate 0.6 → old pbRate 0.6
+        // = 0.36× speed (en-ro regression, May 2026).
         return await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt);
       }
       console.warn('[AzureTTS] response oversize, dropping');
