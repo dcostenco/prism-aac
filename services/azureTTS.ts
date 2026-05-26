@@ -550,6 +550,11 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     activeControllers.clear();
     stopAzurePlayback();
     if (typeof window !== 'undefined') window.speechSynthesis?.cancel();
+    // M4 fix: reset dedup state on interrupt so re-pressing Speak always plays.
+    // Without this, a second interrupt=true call for the same text within DEDUP_MS
+    // is silently swallowed — the user taps Speak again and hears nothing.
+    lastSpokenText = '';
+    lastSpokenAt = 0;
   }
 
   const nowMs = Date.now();

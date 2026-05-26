@@ -220,7 +220,10 @@ export default function Toolbar() {
       },
       onFinal: async (txt) => {
         micInterimRef.current = '';
-        const fixed = await correctText(txt.trim(), language);
+        // C2 fix: read language from live store state, not render-time closure.
+        // The closure captures `language` at mic-start; if the user switches language
+        // during the async correctText call, correction would apply the wrong grammar.
+        const fixed = await correctText(txt.trim(), useSettingsStore.getState().language);
         if (!voiceRef.current) return;
         const committed = (fixed || txt).trim() + ' ';
         // Bug 1 fix: trimEnd prevents double-space when `committed` already ends with ' '.

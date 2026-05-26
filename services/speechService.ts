@@ -378,6 +378,10 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
       reason: `speech-synthesis error: ${code}`, timestamp: Date.now(),
     });
   };
+  // M3 fix: clear any prior interval before assigning a new one. If two speakLocal
+  // calls happen in rapid succession, the first interval would be orphaned and fire
+  // every 10 s indefinitely, calling resume() and interrupting the active utterance.
+  clearResumeWorkaround();
   resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);
   window.speechSynthesis.speak(u);
 }

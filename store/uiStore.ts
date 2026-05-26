@@ -83,6 +83,9 @@ interface UIState {
 }
 
 let alertTimer: ReturnType<typeof setTimeout> | null = null;
+// C3 fix: track the alertSendStatus clear timer so double-taps can't leave two
+// concurrent timers, each clearing the status independently.
+let alertStatusTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useUIStore = create<UIState>()((set) => ({
   sidePanel: 'none',
@@ -243,7 +246,8 @@ export const useUIStore = create<UIState>()((set) => ({
       alertSendStatus: res.ok ? 'sent' : (res.error === 'no_caregiver' ? 'failed_no_caregiver' : 'failed_send'),
     });
     // Auto-clear status after 2.5s so the toast doesn't linger.
-    setTimeout(() => set({ alertSendStatus: null }), 2500);
+    if (alertStatusTimer) clearTimeout(alertStatusTimer);
+    alertStatusTimer = setTimeout(() => { set({ alertSendStatus: null }); alertStatusTimer = null; }, 2500);
   },
   dismissAlertConfirm: () => set({ alertConfirmOpen: false }),
   selectContact: (id) => set({ activeContactId: id }),
