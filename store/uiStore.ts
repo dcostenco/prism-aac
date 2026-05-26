@@ -90,7 +90,16 @@ let alertStatusTimer: ReturnType<typeof setTimeout> | null = null;
 export const useUIStore = create<UIState>()((set) => ({
   sidePanel: 'none',
   categoryKeyboardOpen: typeof window !== 'undefined' ? localStorage.getItem('prism-cat-kb-open') !== 'false' : true,
-  keyboardMaximized: typeof window !== 'undefined' && localStorage.getItem('prism-kb-max') === 'true',
+  // Migration: old 3-state cycle stored prism-kb-max=true; new 2-state cycle never
+  // enters maximized from the sidebar button. Wipe the stale flag so returning
+  // users don't boot into a maximized state that the new UI can't cycle out of cleanly.
+  keyboardMaximized: (() => {
+    if (typeof window === 'undefined') return false;
+    if (localStorage.getItem('prism-kb-max') === 'true') {
+      try { localStorage.setItem('prism-kb-max', 'false'); } catch {}
+    }
+    return false;
+  })(),
   activeCategoryId: null,
   categoryPath: [],
   activeContactId: null,
