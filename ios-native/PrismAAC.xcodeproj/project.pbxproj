@@ -50,6 +50,7 @@
 		A7E2FBB0D485DD0753609E0D /* AppIcon29x29@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = DD4FFEB0EB8A7E77D36FE3FF /* AppIcon29x29@2x.png */; };
 		A9A7C3336D26BD9F125CFF29 /* WatchPictogramCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F932363A3D82535E9971EE /* WatchPictogramCards.swift */; };
 		AFA1E81830CA008E80B17F8E /* LLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514A2FD3A0BC693D56606896 /* LLMEngine.swift */; };
+		5FB463DDB8985763AE3E9C1A /* SmolLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8627CB1A2AEBD536E31DC2B /* SmolLMEngine.swift */; };
 		BD48CFC0BB74B04161F4F234 /* AppIcon1024x1024.png in Resources */ = {isa = PBXBuildFile; fileRef = 996E43914516CE515BD9BB2E /* AppIcon1024x1024.png */; };
 		D77E71A3AFF973A5D7A80182 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50392198C3596E4E3CAA44 /* KeychainHelper.swift */; };
 		E9A7C699E922142DFCCC4200 /* AppIcon27.5x27.5@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B9DB1CD80C21089C5CCFBB7B /* AppIcon27.5x27.5@2x.png */; };
@@ -113,6 +114,7 @@
 		48264733CC75753DEBCDDC22 /* AppIcon40x40@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon40x40@2x.png"; sourceTree = "<group>"; };
 		485E0CAF1D660CE13F92A068 /* WatchLayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLayerTests.swift; sourceTree = "<group>"; };
 		514A2FD3A0BC693D56606896 /* LLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEngine.swift; sourceTree = "<group>"; };
+		E8627CB1A2AEBD536E31DC2B /* SmolLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmolLMEngine.swift; sourceTree = "<group>"; };
 		60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchInbox.swift; sourceTree = "<group>"; };
 		62DB2AB8796CA83596887AD3 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		67DE9F6102290192A69EA33F /* WatchTTS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTTS.swift; sourceTree = "<group>"; };
@@ -268,6 +270,7 @@
 			children = (
 				73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */,
 				514A2FD3A0BC693D56606896 /* LLMEngine.swift */,
+				E8627CB1A2AEBD536E31DC2B /* SmolLMEngine.swift */,
 			);
 			path = Engine;
 			sourceTree = "<group>";
@@ -593,6 +596,7 @@
 				A761744803E81B1102D1B58A /* ContentView.swift in Sources */,
 				1BAB0485396C63FC134A5A4B /* KeychainHelper.swift in Sources */,
 				AFA1E81830CA008E80B17F8E /* LLMEngine.swift in Sources */,
+				5FB463DDB8985763AE3E9C1A /* SmolLMEngine.swift in Sources */,
 				2CD68B3ABCB8C23FF1104EC7 /* PrismAACApp.swift in Sources */,
 				8ACCA7F12A410E5951CB832F /* SafetyFilter.swift in Sources */,
 			);
