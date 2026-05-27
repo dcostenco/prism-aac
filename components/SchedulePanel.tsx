@@ -273,6 +273,12 @@ function FirstThenBoard({
   );
 }
 
+// Hoisted to module level — avoids new array reference on every render
+// (HAPTIC_PATTERN) and makes the constants shareable with AlarmFlashOverlay.
+const ALARM_INTERVAL_MS = 2000;
+const ALARM_MAX_TICKS = 30; // ~60s ceiling
+const HAPTIC_PATTERN = [200, 100, 200, 100, 200]; // 3 short pulses
+
 /* ── Main SchedulePanel ── */
 export default function SchedulePanel() {
   const { t } = useT();
@@ -340,9 +346,6 @@ export default function SchedulePanel() {
   // Autistic users with auditory processing differences need ≥2 sensory
   // dimensions to reliably catch the cue. Auditory alone misses ~30% of
   // alerts in classroom contexts (per AAC/ABA literature).
-  const ALARM_INTERVAL_MS = 2000;
-  const ALARM_MAX_TICKS = 30; // ~60s ceiling
-  const HAPTIC_PATTERN = [200, 100, 200, 100, 200]; // 3 short pulses
   const [alarmFlash, setAlarmFlash] = useState(false);
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const thenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

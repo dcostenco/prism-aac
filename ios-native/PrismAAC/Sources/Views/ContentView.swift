@@ -290,7 +290,7 @@ struct PrismWebView: UIViewRepresentable {
                 guard !question.isEmpty else {
                     return
                 }
-                let webView = message.webView
+                weak var webView = message.webView
                 Task { @MainActor in
                     let encoder = JSONEncoder()
                     var buffer = ""

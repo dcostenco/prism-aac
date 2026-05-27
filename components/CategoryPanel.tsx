@@ -166,15 +166,25 @@ export default function CategoryPanel() {
   // Cancel any pending 260ms speak timer on unmount to prevent post-unmount audio.
   useEffect(() => () => { if (speakDelayRef.current) clearTimeout(speakDelayRef.current); }, []);
 
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
   const isOpen =
     sidePanel === 'none' ||
     sidePanel === 'categories' ||
     sidePanel === 'category-detail' ||
     sidePanel === 'ordering';
+
+  // Cancel the speak timer when the panel hides (isOpen→false). The component
+  // returns null but stays mounted, so the unmount cleanup above doesn't fire.
+  // Without this, a queued 260ms timer speaks a category phrase into AI Chat.
+  useEffect(() => {
+    if (!isOpen && speakDelayRef.current) {
+      clearTimeout(speakDelayRef.current);
+      speakDelayRef.current = null;
+    }
+  }, [isOpen]);
+
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Focus the search input and register the search key bridge so on-screen
   // keyboard presses are routed here instead of the message bar.
