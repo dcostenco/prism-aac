@@ -210,7 +210,11 @@ const TTS_CACHE_MAX = 30;
 const _ttsCache = new Map<string, ArrayBuffer>();
 
 function _ttsCacheKey(text: string, lang: string, tone: ToneStyle, rate: number, volume: number, voiceId?: string): string {
-  return `${text}|${lang}|${tone}|${rate.toFixed(1)}|${volume.toFixed(2)}|${voiceId ?? ''}`;
+  // Key on the NORMALIZED rate (what the portal SSML actually uses) — not the raw
+  // slider value. toFixed(1) on raw rate means 0.25 and 0.34 share key "0.3" but
+  // normalize to 0.50 and 0.68 respectively — cache would serve 0.50-speed audio
+  // when 0.68-speed was expected (wrong-speed regression, May 2026).
+  return `${text}|${lang}|${tone}|${computeNormalizedRate(rate).toFixed(2)}|${volume.toFixed(2)}|${voiceId ?? ''}`;
 }
 
 function _ttsCacheGet(key: string): ArrayBuffer | undefined {

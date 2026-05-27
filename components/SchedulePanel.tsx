@@ -361,7 +361,7 @@ export default function SchedulePanel() {
     }
     let ticks = 0;
     const fireAlarmCycle = () => {
-      playTimerRing();
+      playTimerRing().catch((e) => console.warn('[SchedulePanel] alarm ring failed:', e));
       try { navigator.vibrate?.(HAPTIC_PATTERN); } catch { /* unsupported */ }
       setAlarmFlash(true);
       // Flash duration ≈ 600ms — long enough to be visually obvious,

@@ -477,8 +477,6 @@ struct PrismWebView: UIViewRepresentable {
             var bufferCount = 0
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
                 bufferCount += 1
-                if bufferCount == 1 || bufferCount % 50 == 0 {
-                }
                 self?.recognitionRequest?.append(buffer)
             }
 
