@@ -177,7 +177,7 @@ struct PrismWebView: UIViewRepresentable {
             window.speechSynthesis.speak = function(utt) {
                 _native.speak(utt.text, utt.lang, utt.rate);
                 // Fire onend after estimated duration
-                if (utt.onend) setTimeout(() => utt.onend({}), Math.max(500, utt.text.length * 60));
+                if (utt.onend) setTimeout(() => utt.onend.call(utt, new Event('end')), Math.max(500, utt.text.length * 60));
             };
             window.speechSynthesis.cancel = function() { _native.stopSpeech(); };
         }
@@ -517,6 +517,7 @@ struct PrismWebView: UIViewRepresentable {
             do {
                 try audioEngine.start()
             } catch {
+                audioEngine.inputNode.removeTap(onBus: 0)
                 sendSpeechError("audio-engine-failed")
                 stopSpeechRecognition()
                 return

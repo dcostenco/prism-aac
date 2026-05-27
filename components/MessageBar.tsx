@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useCallback, useState, useEffect } from 'react';
-import { useMessageStore } from '@/store/messageStore';
+import { useMessageStore, setLatestTranslated } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
 import { aacSpeak } from '@/services/aacSpeak';
@@ -11,7 +11,7 @@ import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
-import { translateWithAIRefine, looksLikeTargetLang } from '@/services/translateService';
+import { translateWithAIRefine, looksLikeTargetLang, abortTranslation } from '@/services/translateService';
 import { useAuthStore } from '@/store/authStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { triggerAISubmit } from '@/services/aiChatBridge';
@@ -54,7 +54,10 @@ export default function MessageBar() {
   // Ref so the 2s translation auto-speak timer always reads the latest
   // translated value even when `translated` is excluded from its deps array.
   const translatedRef = useRef(translated);
-  useEffect(() => { translatedRef.current = translated; }, [translated]);
+  useEffect(() => {
+    translatedRef.current = translated;
+    setLatestTranslated(translated);
+  }, [translated]);
   // Tracks the most recent word we silence-spoke so we don't repeat
   // "want" every time the user pauses with the same trailing word.
   // Updated by the autocorrect useEffect after a "no correction
@@ -159,7 +162,7 @@ export default function MessageBar() {
     if (isChanged && looksLikeTargetLang(instant, outputLanguage)) {
       setTranslated(instant);
     }
-    return () => { cancelled = true; };
+    return () => { cancelled = true; abortTranslation(); };
   }, [text, language, outputLanguage]);
 
   // ── Translation auto-speak after silence ─────────────────────────────────
@@ -303,7 +306,7 @@ export default function MessageBar() {
       setSuggestion(fixed);
     }, 400);
     return () => { cancelled = true; mounted = false; clearTimeout(timer); };
-  }, [text, language, setAiCompletion]);
+  }, [text, language, setAiCompletion, aiAutocorrectEnabled]);
 
   const learnWord = usePredictionStore((s) => s.learnWord);
 
@@ -429,7 +432,7 @@ export default function MessageBar() {
     } else {
       aacSpeak(toSpeak, speechRate, speechVolume, activeTone, true);
     }
-  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance, suggestion, setText]);
+  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance, suggestion, setText, outputLanguage]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }

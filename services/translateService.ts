@@ -161,6 +161,13 @@ let aiTimer: ReturnType<typeof setTimeout> | null = null;
 let aiAbortController: AbortController | null = null;
 let lastAiText = '';
 
+/** Cancel any in-flight AI translation (timer + fetch). Safe to call at any time. */
+export function abortTranslation(): void {
+  if (aiTimer) { clearTimeout(aiTimer); aiTimer = null; }
+  if (aiAbortController) { aiAbortController.abort(); aiAbortController = null; }
+  lastAiText = '';
+}
+
 /**
  * Script families per language. Used to sanity-check AI translation output:
  * if the model returns text whose dominant script doesn't match the target

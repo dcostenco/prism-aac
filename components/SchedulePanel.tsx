@@ -345,7 +345,11 @@ export default function SchedulePanel() {
   const HAPTIC_PATTERN = [200, 100, 200, 100, 200]; // 3 short pulses
   const [alarmFlash, setAlarmFlash] = useState(false);
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (flashTimerRef.current) clearTimeout(flashTimerRef.current); }, []);
+  const thenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    if (thenTimerRef.current) clearTimeout(thenTimerRef.current);
+  }, []);
   useEffect(() => {
     const isAlarmPhase = phase === 'first-armed' || phase === 'then-armed';
     if (!isAlarmPhase) {
@@ -398,7 +402,9 @@ export default function SchedulePanel() {
       // Slight delay so the user sees the THEN ✅ animation before the pair
       // re-renders with the next task. 600ms matches the schedule-row check
       // animation and feels intentional rather than abrupt.
-      setTimeout(() => {
+      if (thenTimerRef.current) clearTimeout(thenTimerRef.current);
+      thenTimerRef.current = setTimeout(() => {
+        thenTimerRef.current = null;
         toggleDone(currentTaskId);
         // Cycle complete — release the warm oscillator so we don't leak the
         // tiny background CPU hit. The next Start click will warm it again.

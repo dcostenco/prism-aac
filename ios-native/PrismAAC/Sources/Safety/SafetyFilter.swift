@@ -179,7 +179,7 @@ struct SafetyFilter {
 
     // FIX L5: marked private — internal implementation details
     private static func crisisResponse() -> String {
-        let lang = Locale.current.language.languageCode?.identifier ?? "en"
+        let lang = String((Locale.current.language.languageCode?.identifier ?? "en").prefix(2))
         switch lang {
         case "es": return "🆘 Llama al 911 · Estoy aquí contigo."
         case "fr": return "🆘 Appelle le 15/112 · Je suis avec toi."

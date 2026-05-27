@@ -60,6 +60,31 @@ const PROVIDER_LABEL: Record<string, string> = {
   facetime: 'FaceTime',
 };
 
+// Minimal i18n for the ErrorBoundary — runs when the app has crashed so
+// React context and hooks are unavailable. Reads language from localStorage.
+const EB_STRINGS: Record<string, { placeholder: string; speak: string; reload: string; words: string[] }> = {
+  es: { placeholder: 'Escribe aquí...', speak: '▶ Hablar', reload: 'Recargar', words: ['Ayuda', 'Sí', 'No', 'Para', 'Baño', 'Agua', 'Hambre', 'Dolor'] },
+  fr: { placeholder: 'Tapez ici...', speak: '▶ Parler', reload: 'Recharger', words: ['Aide', 'Oui', 'Non', 'Stop', 'WC', 'Eau', 'Faim', 'Douleur'] },
+  ru: { placeholder: 'Введите текст...', speak: '▶ Говорить', reload: 'Перезагрузить', words: ['Помощь', 'Да', 'Нет', 'Стоп', 'Туалет', 'Вода', 'Голодный', 'Боль'] },
+  ro: { placeholder: 'Scrie aici...', speak: '▶ Vorbește', reload: 'Reîncarcă', words: ['Ajutor', 'Da', 'Nu', 'Stop', 'Baie', 'Apă', 'Foame', 'Durere'] },
+  de: { placeholder: 'Hier tippen...', speak: '▶ Sprechen', reload: 'Neu laden', words: ['Hilfe', 'Ja', 'Nein', 'Stopp', 'Toilette', 'Wasser', 'Hunger', 'Schmerz'] },
+  pt: { placeholder: 'Digite aqui...', speak: '▶ Falar', reload: 'Recarregar', words: ['Ajuda', 'Sim', 'Não', 'Parar', 'Banheiro', 'Água', 'Fome', 'Dor'] },
+  zh: { placeholder: '在此输入...', speak: '▶ 说话', reload: '重新加载', words: ['帮助', '是', '不', '停止', '洗手间', '水', '饿', '痛'] },
+  ar: { placeholder: 'اكتب هنا...', speak: '▶ تحدث', reload: 'إعادة تحميل', words: ['مساعدة', 'نعم', 'لا', 'وقف', 'حمام', 'ماء', 'جوع', 'ألم'] },
+};
+const EB_DEFAULT = { placeholder: 'Type here...', speak: '▶ Speak', reload: 'Reload', words: ['Help', 'Yes', 'No', 'Stop', 'Bathroom', 'Water', 'Hungry', 'Pain'] };
+
+function getErrorBoundaryStrings() {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('prism-aac-settings') : null;
+    const lang: string = (raw ? JSON.parse(raw)?.state?.language : null) ?? 'en';
+    const prefix = lang.slice(0, 2);
+    return EB_STRINGS[prefix] ?? EB_DEFAULT;
+  } catch {
+    return EB_DEFAULT;
+  }
+}
+
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; stack: string }> {
   state: { error: Error | null; stack: string } = { error: null, stack: '' };
   static getDerivedStateFromError(error: Error) { return { error, stack: '' }; }
@@ -70,6 +95,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
   render() {
     if (this.state.error) {
+      const s = getErrorBoundaryStrings();
       return (
         <div className="h-svh flex flex-col bg-white p-4 overflow-auto">
           <p className="text-[#F44336] text-lg font-bold mb-1">Error — Emergency AAC Mode</p>
@@ -78,7 +104,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
           <input
             id="emergency-input"
             type="text"
-            placeholder="Type here..."
+            placeholder={s.placeholder}
             className="border-2 border-black rounded-xl px-4 py-3 text-2xl mb-2"
             autoFocus
           />
@@ -93,14 +119,14 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
               }}
               className="flex-1 bg-[#4CAF50] text-white px-4 py-4 rounded-xl text-xl font-bold"
             >
-              ▶ Speak
+              {s.speak}
             </button>
             <button onClick={() => window.location.reload()} className="bg-[#2196F3] text-white px-4 py-4 rounded-xl text-xl font-bold">
-              Reload
+              {s.reload}
             </button>
           </div>
           <div className="grid grid-cols-4 gap-2">
-            {['Help', 'Yes', 'No', 'Stop', 'Bathroom', 'Water', 'Hungry', 'Pain'].map((w) => (
+            {s.words.map((w) => (
               <button key={w} onClick={() => {
                 const el = document.getElementById('emergency-input') as HTMLInputElement;
                 if (el) el.value = w;

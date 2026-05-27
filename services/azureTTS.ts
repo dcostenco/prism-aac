@@ -209,8 +209,8 @@ const activeControllers = new Set<AbortController>();
 const TTS_CACHE_MAX = 30;
 const _ttsCache = new Map<string, ArrayBuffer>();
 
-function _ttsCacheKey(text: string, lang: string, tone: ToneStyle, rate: number, voiceId?: string): string {
-  return `${text}|${lang}|${tone}|${rate.toFixed(1)}|${voiceId ?? ''}`;
+function _ttsCacheKey(text: string, lang: string, tone: ToneStyle, rate: number, volume: number, voiceId?: string): string {
+  return `${text}|${lang}|${tone}|${rate.toFixed(1)}|${volume.toFixed(2)}|${voiceId ?? ''}`;
 }
 
 function _ttsCacheGet(key: string): ArrayBuffer | undefined {
@@ -567,7 +567,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   lastSpokenAt = nowMs;
 
   // Cache hit — replay without a network round-trip.
-  const cacheKey = _ttsCacheKey(text, lang, tone, rate, voiceId);
+  const cacheKey = _ttsCacheKey(text, lang, tone, rate, volume, voiceId);
   const cached = _ttsCacheGet(cacheKey);
   if (cached) {
     console.log(`[AzureTTS] cache hit: "${text.slice(0, 40)}"`);
@@ -690,13 +690,18 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
 
     // ── Last-resort tier: Gemini ──
     // Inworld + auth /tts both failed (or returned an oversize body).
-    // Try the Gemini public route — useful for English where Gemini
-    // has good voices, never useful for ro/uk/etc. Returns false on
-    // any failure → speech-service falls through to Web Speech.
-    if (await speakGemini(text, volume, controller, lang, interrupt)) {
-      clearTimeout(timeout);
-      activeControllers.delete(controller);
-      return true;
+    // The shared `controller` may already be aborted (8s timeout fires
+    // on slow Inworld responses). Create a fresh one so Gemini gets a
+    // clean signal — an already-aborted controller causes an immediate
+    // fetch failure before any network attempt.
+    const geminiController = new AbortController();
+    activeControllers.add(geminiController);
+    try {
+      if (await speakGemini(text, volume, geminiController, lang, interrupt)) {
+        return true;
+      }
+    } finally {
+      activeControllers.delete(geminiController);
     }
     return false;
   } catch (e) {

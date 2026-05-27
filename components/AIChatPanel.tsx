@@ -26,6 +26,10 @@ import { useT } from '@/engine/useT';
  * All available space belongs to the conversation.
  */
 
+// Suppresses hands-free mic auto-restart for 30s after a crisis response so TTS
+// audio bleed cannot re-trigger the filter (mic hears "call 911" from the speaker).
+const HANDS_FREE_CRISIS_SUPPRESS_MS = 30_000;
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'ai';
@@ -72,11 +76,9 @@ export default function AIChatPanel() {
   // before the first re-render). Set to true synchronously at the top of
   // handleAsk; cleared at every exit path before setLoading(false).
   const isLoadingRef = useRef(false);
-  // Timestamp of last crisis intervention — suppresses hands-free mic auto-restart
-  // for 30 s after a crisis response so TTS audio bleed cannot re-trigger the filter
-  // (SpeechRecognition hears "call 911" from the speaker and loops indefinitely).
+  // Timestamp of last crisis intervention — suppresses hands-free mic auto-restart.
+  // Threshold is the module-level HANDS_FREE_CRISIS_SUPPRESS_MS constant (30s).
   const lastCrisisAtRef = useRef<number>(0);
-  const HANDS_FREE_CRISIS_SUPPRESS_MS = 30_000;
   // Track micError dismiss timers so we can clear them on unmount (avoids
   // setState-on-unmounted-component warnings and timer leaks).
   const micErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -116,14 +116,6 @@ function getAuthToken(): string | null {
   return sessionStorage.getItem('prism-aac-auth-token') || null;
 }
 
-function isPaidTier(): boolean {
-  const profile = useAuthStore.getState().profile;
-  const paid = !!(profile?.plan && profile.plan !== 'free');
-  const hasToken = !!getAuthToken();
-  console.log(`[TTS] isPaidTier: plan=${profile?.plan ?? 'null'} paid=${paid} hasToken=${hasToken} loaded=${useAuthStore.getState().loaded}`);
-  return paid || hasToken;
-}
-
 // Catalog defaults — when the user has not picked a voice in Settings,
 // pick the best Inworld voice that ACTUALLY exists on Inworld's server.
 //

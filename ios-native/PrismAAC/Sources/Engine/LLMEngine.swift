@@ -68,6 +68,7 @@ final class LLMEngine: ObservableObject {
 
     private var model: OpaquePointer?
     private var context: OpaquePointer?
+    private var pendingUnload = false
 
     func load(from url: URL) async throws {
         #if canImport(llama)
@@ -117,11 +118,13 @@ final class LLMEngine: ObservableObject {
 
     func unload() {
         // Do not free C pointers while a Task.detached holds copies of them.
-        // With MAX_NEW_TOKENS=256 inference completes in <5 s; jetsam headroom >> 5 s.
+        // pendingUnload flag ensures memory is freed once generation completes.
         guard !isGenerating else {
-            NSLog("[LLMEngine] Deferred unload — inference in progress")
+            pendingUnload = true
+            NSLog("[LLMEngine] Deferred unload — inference in progress; will free after generation")
             return
         }
+        pendingUnload = false
         #if canImport(llama)
         if let ctx = context { llama_free(ctx) }
         if let mdl = model { llama_free_model(mdl) }
@@ -138,7 +141,10 @@ final class LLMEngine: ObservableObject {
         guard !isGenerating else { throw LLMError.alreadyGenerating }
 
         isGenerating = true
-        defer { isGenerating = false }
+        defer {
+            isGenerating = false
+            if pendingUnload { unload() }
+        }
 
         return try await Task.detached(priority: .userInitiated) { [weak self] in
             guard self != nil else { throw LLMError.notLoaded }

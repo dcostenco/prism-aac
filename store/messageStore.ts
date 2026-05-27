@@ -6,6 +6,12 @@ import { safeJSONStorage } from '@/lib/safeStorage';
 
 let activeEmergencyCancel: (() => void) | null = null;
 
+// Module-level translated cache — lets Keyboard.tsx read the latest AI-refined
+// translation without subscribing to MessageBar's local state.
+let _latestTranslated: string | null = null;
+export function setLatestTranslated(v: string | null): void { _latestTranslated = v; }
+export function getLatestTranslated(): string | null { return _latestTranslated; }
+
 export function cancelActiveEmergency() {
   activeEmergencyCancel?.();
   activeEmergencyCancel = null;
@@ -163,7 +169,7 @@ export const useMessageStore = create<MessageState>()(
             } catch (e) {
               console.error('[emergency] CRITICAL: emergency service failed to load', e);
               // Fallback: play alarm sound directly if possible
-              try { new Audio('/alarm.mp3').play(); } catch {}
+              try { new Audio('/alarm.mp3').play().catch(() => {}); } catch {}
             }
           })();
         }
