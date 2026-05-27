@@ -11,26 +11,27 @@ struct PrismAACApp: App {
 
     /// Model candidates in priority order for each device tier.
     /// The loader tries each in order — if a model OOMs or isn't cached,
-    /// it falls through to the next. This lets 8GB devices ATTEMPT the
-    /// 8B (98.0% routing) and gracefully fall back to 1.7B (96.1% routing) if it
-    /// doesn't fit. Accuracy: v25 system prompt, 102-case Prism eval, 3-seed mean, May 2026.
+    /// it falls through to the next. This lets 8 GB devices attempt the
+    /// 4B (100% routing) and gracefully fall back to 1.7B (100% routing) if it
+    /// doesn't fit. Accuracy: eval_300, 300/300 × 3 runs, May 2026.
     private static let modelCandidates: [(file: String, cdn: String, minFreeMB: Int, sha256: String)] = {
         switch LLMEngine.preferredTier {
         case .large14B:
             return [
-                ("qwen3-14b-v42-q4km",        "dcostenco/prism-coder-14b/resolve/main/qwen3-14b-v42-q4km.gguf",        10_000, "fec7551b2932b155b2f79e1c18238cff0e074e9bab2ce5ad3dc9f895389f48b3"),
-                ("prism-coder-1b7-v42-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
+                ("qwen3-14b-v42-q4km",       "dcostenco/prism-coder-14b/resolve/main/qwen3-14b-v42-q4km.gguf",          10_000, "fec7551b2932b155b2f79e1c18238cff0e074e9bab2ce5ad3dc9f895389f48b3"),
+                ("prism-coder-1b7-swe43-q4km","dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-swe43-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
             ]
-        case .medium8B:
+        case .medium4B:
             return [
-                ("qwen3-8b-v36-q4km",         "dcostenco/prism-coder-8b/resolve/main/qwen3-8b-v36-q4km.gguf",          4_500,  "7aa542dd4a9c9c772835b10ac66645038d76ad02a11bf137739937ec8e41dab2"),
-                ("prism-coder-1b7-v42-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
+                // 4B replaces retired 8B — 100% eval_300, fits in 8 GB RAM
+                ("qwen3-4b-v43-swe-q4km",    "dcostenco/prism-coder-4b/resolve/main/qwen3-4b-v43-swe-q4km.gguf",        2_800,  "a8d0909bbc9d23b6f9cc3f85be597e27eae190a9edae4571d9cb32fde0a0910c"),
+                ("prism-coder-1b7-swe43-q4km","dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-swe43-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
             ]
         case .small1B7:
             return [
                 // Bundled Q8 (already on device — zero download, loads first)
-                ("prism-aac-1b7-q8",          "",                                                                         1_800,  "fb01043af7d3484d778732ceadb97dd31b14b3232145eb8f8b6a0648487c1e87"),
-                ("prism-coder-1b7-v42-q4km",  "dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
+                ("prism-aac-1b7-q8",          "",                                                                          1_800,  "fb01043af7d3484d778732ceadb97dd31b14b3232145eb8f8b6a0648487c1e87"),
+                ("prism-coder-1b7-swe43-q4km","dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-swe43-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
             ]
         }
     }()

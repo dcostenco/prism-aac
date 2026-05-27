@@ -771,15 +771,19 @@ struct ModelLoadingView: View {
         URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf")!,
     ]
 
-    // 4B swe17 — 100% eval_300, 300/300 × 5 runs, May 2026 — for 8 GB+ devices
+    // 4B v43 — 100% eval_300, 300/300 × 5 runs, May 2026 — for 8 GB+ devices
     private static let modelCandidateURLs4B: [URL] = [
         URL(string: "https://huggingface.co/dcostenco/prism-coder-4b/resolve/main/prism-coder-4b-v43-Q4_K_M.gguf")!,
     ]
 
     private static let localModelFilename1B7 = "prism-coder-1b7-swe43-q4km.gguf"
-    private static let localModelFilename4B  = "prism-coder-4b-swe17-q4km.gguf"
+    private static let localModelFilename4B  = "prism-coder-4b-v43-Q4_K_M.gguf"
     // Legacy filenames from previous app versions — migrated on first run.
-    private static let legacyFilenames = ["prism-coder-1b7-v42-q4km.gguf", "prism-aac-1b7-q4km.gguf"]
+    private static let legacyFilenames = [
+        "prism-coder-4b-swe17-q4km.gguf",   // old 4B local name (never matched HF filename)
+        "prism-coder-1b7-v42-q4km.gguf",
+        "prism-aac-1b7-q4km.gguf",
+    ]
 
     private func start() async {
         phase = .checking
