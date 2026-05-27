@@ -27,6 +27,7 @@ final class AACPipeline: ObservableObject {
     private let synthesizer = AVSpeechSynthesizer()
     private let cloudBaseURL: URL
     private var currentTask: Task<Void, Never>?
+    private var currentGeneration = 0
 
     // FIX H1: Dedicated session with timeouts — URLSession.shared has no resource timeout
     private static let cloudSession: URLSession = {
@@ -68,6 +69,8 @@ final class AACPipeline: ObservableObject {
     func ask(question: String, language: String = "en") -> AsyncStream<String> {
         AsyncStream { continuation in
             self.currentTask?.cancel()
+            let gen = self.currentGeneration &+ 1
+            self.currentGeneration = gen
             self.currentTask = Task { [weak self] in
                 guard let self else { continuation.finish(); return }
 
@@ -86,7 +89,7 @@ final class AACPipeline: ObservableObject {
                 }
 
                 self.isThinking = true
-                defer { self.isThinking = false }
+                defer { if self.currentGeneration == gen { self.isThinking = false } }
 
                 do {
                     let response: String
@@ -101,7 +104,9 @@ final class AACPipeline: ObservableObject {
                         let raw = try await mini.answer(question)
                         let text = Self.sanitizeText(raw, maxLength: 500)
                         continuation.yield(text)
-                        response = text
+                        self.lastResponse = text
+                        continuation.finish()
+                        return
                     } else {
                         // Layer 2c — cloud fallback
                         response = try await self.runCloud(question: question,

@@ -154,9 +154,14 @@ final class AppState: ObservableObject {
 
     /// Throwing variant — lets the caller catch OOM and try a smaller model.
     func loadModelSafe(from url: URL) async throws {
-        try await llm.load(from: url)
-        modelReady = true
-        tick()
+        do {
+            try await llm.load(from: url)
+            modelReady = true
+            tick()
+        } catch {
+            modelReady = false
+            throw error
+        }
     }
 
     func enterCoreOnlyMode() {

@@ -25,6 +25,7 @@ final class SmolLMEngine {
 
     private(set) var isLoaded     = false
     private(set) var isGenerating = false
+    private var isLoading         = false
     private var pendingUnload     = false
     private var model: OpaquePointer?
     private var context: OpaquePointer?
@@ -33,7 +34,9 @@ final class SmolLMEngine {
 
     func load(from url: URL) async throws {
         #if canImport(llama)
-        guard !isLoaded else { return }
+        guard !isLoaded, !isLoading else { return }
+        isLoading = true
+        defer { isLoading = false }
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw SmolLMError.modelNotFound(path: url.path)
         }
@@ -118,7 +121,7 @@ final class SmolLMEngine {
             if pendingUnload { _doUnload() }
         }
 
-        return try await Task.detached(priority: .userInitiated) { [weak self] in
+        let detached = Task.detached(priority: .userInitiated) { [weak self] () throws -> String in
             guard self != nil else { throw SmolLMError.notLoaded }
 
             let tokens = SmolLMEngine.tokenize(model: mdl, text: prompt, addBos: true)
@@ -150,6 +153,7 @@ final class SmolLMEngine {
             let nMax   = nCur + Int32(SmolLMEngine.MAX_NEW_TOKENS)
 
             while nCur < nMax {
+                if Task.isCancelled { break }
                 let tok = llama_sampler_sample(sampler, ctx, -1)
                 if tok == eosId || tok == imEndId { break }
                 var buf = [CChar](repeating: 0, count: 128)
@@ -161,7 +165,12 @@ final class SmolLMEngine {
                 nCur += 1
             }
             return output.trimmingCharacters(in: .whitespacesAndNewlines)
-        }.value
+        }
+        return try await withTaskCancellationHandler {
+            try await detached.value
+        } onCancel: {
+            detached.cancel()
+        }
         #else
         throw SmolLMError.unavailable
         #endif
