@@ -32,8 +32,9 @@ final class AppState: ObservableObject {
     enum FeatureTier: Int, Comparable {
         case emergency = 0   // OOM imminent — model unloaded
         case coreOnly  = 1   // offline phrase board + TTS only
-        case cloudAI   = 2   // core + cloud AI (network required)
-        case fullAI    = 3   // core + on-device AI
+        case miniAI    = 2   // SmolLM2-360M on-device (450–799 MB free)
+        case cloudAI   = 3   // core + cloud AI (network required)
+        case fullAI    = 4   // core + 1.7B+ on-device AI
 
         static func < (lhs: FeatureTier, rhs: FeatureTier) -> Bool { lhs.rawValue < rhs.rawValue }
 
@@ -41,14 +42,16 @@ final class AppState: ObservableObject {
             switch self {
             case .emergency: return "Emergency mode — low memory"
             case .coreOnly:  return "Core AAC — AI unavailable"
+            case .miniAI:    return "Mini AI — SmolLM2-360M on-device"
             case .cloudAI:   return "Core AAC + Cloud AI"
             case .fullAI:    return "Full AI — on-device"
             }
         }
 
-        var aiEnabled: Bool   { self >= .cloudAI }
-        var onDevice: Bool    { self == .fullAI   }
-        var allowLoad: Bool   { self >= .cloudAI  }
+        var aiEnabled: Bool      { self >= .miniAI  }
+        var onDevice: Bool       { self == .fullAI || self == .miniAI }
+        var allowLoad: Bool      { self >= .cloudAI }
+        var allowMiniLoad: Bool  { self >= .miniAI  }
     }
 
     // MARK: - Published state
@@ -61,13 +64,15 @@ final class AppState: ObservableObject {
 
     // MARK: - Sub-objects
 
-    let llm = LLMEngine()
-    lazy var pipeline = AACPipeline(llm: llm)
+    let llm     = LLMEngine()
+    let miniLLM = SmolLMEngine()
+    lazy var pipeline = AACPipeline(llm: llm, miniLLM: miniLLM)
 
     // MARK: - Thresholds (MB)
 
     private static var T_FULL_AI: Int { LLMEngine.MIN_FREE_MB }
     private static let T_CLOUD_AI   = 800
+    private static let T_MINI_AI    = 450   // SmolLM2-360M floor (~185 MB + 265 MB headroom)
     private static let T_EMERGENCY  = 300
 
     // MARK: - Memory monitoring
@@ -107,19 +112,26 @@ final class AppState: ObservableObject {
     private func computeTier() -> FeatureTier {
         let free = freeMemoryMB
         if free < Self.T_EMERGENCY { return .emergency }
-        if free < Self.T_CLOUD_AI  { return .coreOnly  }
+        if free < Self.T_MINI_AI   { return .coreOnly  }
+        if free < Self.T_CLOUD_AI  { return .miniAI    }
         return free >= Self.T_FULL_AI ? .fullAI : .cloudAI
     }
 
     private func handleTierChange(_ newTier: FeatureTier) {
         switch newTier {
         case .emergency:
-            // Proactively unload model — prevents jetsam kill
-            if llm.isLoaded {
-                llm.unload()
-                modelReady = false
+            // Proactively unload both models — prevents jetsam kill
+            if llm.isLoaded     { llm.unload();     modelReady = false }
+            if miniLLM.isLoaded { miniLLM.unload() }
+        case .coreOnly:
+            if miniLLM.isLoaded { miniLLM.unload() }
+        case .miniAI:
+            // Try to load 360M if not yet loaded
+            if !miniLLM.isLoaded, let url = Bundle.main.url(forResource: "smollm2-360m-aac-q3ks",
+                                                              withExtension: "gguf") {
+                Task { try? await miniLLM.load(from: url) }
             }
-        case .coreOnly, .cloudAI, .fullAI:
+        case .cloudAI, .fullAI:
             break  // no automatic action — user may reload model via settings
         }
     }

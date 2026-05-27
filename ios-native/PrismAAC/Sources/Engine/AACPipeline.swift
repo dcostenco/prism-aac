@@ -23,6 +23,7 @@ final class AACPipeline: ObservableObject {
     }
 
     private let llm: LLMEngine
+    private let miniLLM: SmolLMEngine?
     private let synthesizer = AVSpeechSynthesizer()
     private let cloudBaseURL: URL
     private var currentTask: Task<Void, Never>?
@@ -36,8 +37,10 @@ final class AACPipeline: ObservableObject {
         return URLSession(configuration: cfg)
     }()
 
-    init(llm: LLMEngine, cloudBaseURL: URL = URL(string: "https://synalux.ai/api/v1")!) {
+    init(llm: LLMEngine, miniLLM: SmolLMEngine? = nil,
+         cloudBaseURL: URL = URL(string: "https://synalux.ai/api/v1")!) {
         self.llm = llm
+        self.miniLLM = miniLLM
         self.cloudBaseURL = cloudBaseURL
     }
 
@@ -88,12 +91,19 @@ final class AACPipeline: ObservableObject {
                 do {
                     let response: String
                     if self.llm.isLoaded {
-                        // Layer 2 — on-device
+                        // Layer 2a — 1.7B+ on-device (fullAI tier)
                         response = try await self.runOnDevice(question: question,
                                                               language: language,
                                                               stream: continuation)
+                    } else if let mini = self.miniLLM, mini.isLoaded {
+                        // Layer 2b — SmolLM2-360M on-device (miniAI tier, no network needed)
+                        self.aiAvailable = .onDevice
+                        let raw = try await mini.answer(question)
+                        let text = Self.sanitizeText(raw, maxLength: 500)
+                        continuation.yield(text)
+                        response = text
                     } else {
-                        // Cloud fallback
+                        // Layer 2c — cloud fallback
                         response = try await self.runCloud(question: question,
                                                            language: language,
                                                            stream: continuation)
