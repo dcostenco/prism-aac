@@ -105,12 +105,14 @@ interface SideBtnProps {
   onClick: () => void;
   active?: boolean;
   testId?: string;
+  dataAction?: string;
 }
-function SidebarBtn({ icon, label, onClick, active = false, testId }: SideBtnProps) {
+function SidebarBtn({ icon, label, onClick, active = false, testId, dataAction }: SideBtnProps) {
   return (
     <button
       onClick={() => { tapFeedback(); onClick(); }}
       data-testid={testId}
+      data-action={dataAction}
       className={`aac-btn flex flex-col items-center justify-center gap-[3px] px-1 w-full select-none
         border-b border-white/10 last:border-b-0 hover:bg-white/15 active:bg-white/25 transition-colors
         ${active ? 'bg-white/20' : ''}`}
@@ -159,6 +161,10 @@ export default function CategoryPanel() {
   const speechRate = useSettingsStore((s) => s.speechRate);
   const speechVolume = useSettingsStore((s) => s.speechVolume);
   const gridRef = useRef<HTMLDivElement>(null);
+  const speakDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cancel any pending 260ms speak timer on unmount to prevent post-unmount audio.
+  useEffect(() => () => { if (speakDelayRef.current) clearTimeout(speakDelayRef.current); }, []);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -272,7 +278,9 @@ export default function CategoryPanel() {
             aacSpeak(phraseText, speechRate, speechVolume, undefined, true);
           } else {
             // Partial translation — wait 260ms for AI refine, then speak.
-            setTimeout(() => {
+            if (speakDelayRef.current) clearTimeout(speakDelayRef.current);
+            speakDelayRef.current = setTimeout(() => {
+              speakDelayRef.current = null;
               aacSpeak(phraseText, speechRate, speechVolume, undefined, true);
             }, 260);
           }
@@ -308,10 +316,11 @@ export default function CategoryPanel() {
       {/* Keyboard toggle — ALWAYS FIRST so it's always reachable */}
       <SidebarBtn
         icon="⌨️"
-        label={categoryKeyboardOpen ? 'HIDE KB' : 'KB'}
+        label={keyboardMaximized ? 'HIDE KB' : 'KB'}
         onClick={cycleKeyboardMode}
-        active={categoryKeyboardOpen}
+        active={keyboardMaximized}
         testId="kb-cycle-btn"
+        dataAction={keyboardMaximized ? 'kb-minimize' : undefined}
       />
       {/* Search */}
       <SidebarBtn icon="🔍" label="Search" onClick={searchOpen ? closeSearch : openSearch} active={searchOpen} />

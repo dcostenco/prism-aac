@@ -471,6 +471,7 @@ async function speakGemini(
   volume: number,
   controller: AbortController,
   lang?: string,
+  interrupt = false,
 ): Promise<boolean> {
   // Gemini doesn't take SSML — it does its own prosody. Send plain text.
   // Keep within the server's 4KB UTF-8 cap; longer messages are very
@@ -502,7 +503,7 @@ async function speakGemini(
     }
     // decodeAndPlay handles stopAzurePlayback synchronously right
     // before source.start, so the peer-race window is microseconds.
-    return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS');
+    return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS', interrupt);
   } catch (e) {
     // Network / abort / timeout. Speech-service still has Web Speech
     // to fall back to even if Inworld is also down.
@@ -693,7 +694,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     // Try the Gemini public route — useful for English where Gemini
     // has good voices, never useful for ro/uk/etc. Returns false on
     // any failure → speech-service falls through to Web Speech.
-    if (await speakGemini(text, volume, controller, lang)) {
+    if (await speakGemini(text, volume, controller, lang, interrupt)) {
       clearTimeout(timeout);
       activeControllers.delete(controller);
       return true;

@@ -72,15 +72,17 @@ export default function VoicePicker() {
   };
 
   const handlePreview = async (voiceId: string) => {
+    // Guard: prevent concurrent previews — a second tap before the first resolves
+    // would capture `prior` from the already-mutated preference, losing the user's
+    // real original voice after both previews finish.
+    if (previewing !== null) return;
     tapFeedback();
-    setPreviewing(voiceId);
-    // Briefly set the pref so speak() forwards this voiceId, then restore.
     const prior = voicePreferences[baseLang];
+    setPreviewing(voiceId);
     setVoiceForLang(baseLang, voiceId);
     try {
       await speak(t('voice_preview_sample'), 0.5, 1.0, activeLang as string);
     } finally {
-      // Restore prior preference after preview
       setVoiceForLang(baseLang, prior);
       setPreviewing(null);
     }

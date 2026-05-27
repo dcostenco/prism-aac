@@ -262,7 +262,7 @@ export default function PredictionBar() {
     learnWord(word.toLowerCase(), previousWord?.toLowerCase(), prevPrevWord?.toLowerCase());
     const fullPhrase = isCompletion ? [...words.slice(0, -1), word].join(' ') : [...words, word].join(' ');
     aacSpeak(fullPhrase, speechRate, speechVolume);
-  }, [text, learnWord, speechRate, speechVolume, language]);
+  }, [text, learnWord, speechRate, speechVolume]);
 
   // Must be computed before any early returns — hooks must be called unconditionally.
   // (useMemo after a conditional return violates Rules of Hooks → React #300 crash

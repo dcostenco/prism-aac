@@ -182,21 +182,24 @@ export const useUIStore = create<UIState>()((set) => ({
     return { keyboardMaximized: next, categoryKeyboardOpen: true };
   }),
   cycleKeyboardMode: () => set((s) => {
-    // Two clean states: keyboard shown (normal size) ↔ keyboard hidden.
-    // The maximized state is preserved for direct toggleKeyboardMaximized calls
-    // but cycleKeyboardMode never enters it — keeps the sidebar button simple.
-    if (s.categoryKeyboardOpen) {
+    // Two clean states: keyboard-only (maximized) ↔ picture-only (both hidden).
+    // Toggling is based on keyboardMaximized — not categoryKeyboardOpen — so that
+    // any non-maximized starting state (normal, picture-only) always goes to
+    // keyboard-only, matching the unit test spec in ui-store-hardening.test.ts.
+    if (s.keyboardMaximized) {
+      // keyboard-only → picture-only
       try {
         localStorage.setItem('prism-kb-max', 'false');
         localStorage.setItem('prism-cat-kb-open', 'false');
       } catch {}
       return { keyboardMaximized: false, categoryKeyboardOpen: false };
     }
+    // anything else → keyboard-only
     try {
-      localStorage.setItem('prism-kb-max', 'false');
+      localStorage.setItem('prism-kb-max', 'true');
       localStorage.setItem('prism-cat-kb-open', 'true');
     } catch {}
-    return { keyboardMaximized: false, categoryKeyboardOpen: true };
+    return { keyboardMaximized: true, categoryKeyboardOpen: true };
   }),
   closeSidePanel: () => {
     try { localStorage.setItem('prism-cat-kb-open', 'true'); } catch {}
@@ -247,13 +250,19 @@ export const useUIStore = create<UIState>()((set) => ({
     set({ alertConfirmOpen: false, alertSendStatus: 'sending', isAlertFlashing: true });
     if (alertTimer) clearTimeout(alertTimer);
     alertTimer = setTimeout(() => { set({ isAlertFlashing: false }); alertTimer = null; }, 2000);
-    // Lazy import — keeps uiStore free of a hard dependency on the contacts
-    // store + sendToContact (which would create a circular chain).
-    const { sendAlertToCaregiver } = await import('@/services/sendAlertToCaregiver');
-    const res = await sendAlertToCaregiver();
-    set({
-      alertSendStatus: res.ok ? 'sent' : (res.error === 'no_caregiver' ? 'failed_no_caregiver' : 'failed_send'),
-    });
+    try {
+      // Lazy import — keeps uiStore free of a hard dependency on the contacts
+      // store + sendToContact (which would create a circular chain).
+      const { sendAlertToCaregiver } = await import('@/services/sendAlertToCaregiver');
+      const res = await sendAlertToCaregiver();
+      set({
+        alertSendStatus: res.ok ? 'sent' : (res.error === 'no_caregiver' ? 'failed_no_caregiver' : 'failed_send'),
+      });
+    } catch {
+      // Chunk-load failure (offline) or unexpected throw — surface as failed_send
+      // so the UI doesn't stay stuck in 'sending' permanently.
+      set({ alertSendStatus: 'failed_send' });
+    }
     // Auto-clear status after 2.5s so the toast doesn't linger.
     if (alertStatusTimer) clearTimeout(alertStatusTimer);
     alertStatusTimer = setTimeout(() => { set({ alertSendStatus: null }); alertStatusTimer = null; }, 2500);

@@ -177,7 +177,11 @@ export default function Toolbar() {
   const voiceSupported = isVoiceInputSupported();
   const unreadMessages = useScheduleStore(selectUnreadMessageCount);
 
-  useEffect(() => () => { voiceRef.current?.stop(); voiceRef.current = null; setListening(false); }, [language]);
+  useEffect(() => () => {
+    voiceRef.current?.stop(); voiceRef.current = null; setListening(false);
+    micTextBaseRef.current = '';
+    micInterimRef.current = '';
+  }, [language]);
   useEffect(() => () => { if (micErrorTimer.current) clearTimeout(micErrorTimer.current); }, []);
   useEffect(() => {
     if (!showLangPicker) return;
