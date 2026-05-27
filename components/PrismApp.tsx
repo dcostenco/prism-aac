@@ -464,7 +464,7 @@ export default function PrismApp() {
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && !showQwerty && <GreetingBanner />}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && <MessageBar />}
-          {!PANELS_WITHOUT_QWERTY.has(sidePanel) && sidePanel !== 'ai-chat' && !isCategoryMode && !keyboardMaximized && <PredictionBar />}
+          {!PANELS_WITHOUT_QWERTY.has(sidePanel) && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />
           <AIChatPanel />
