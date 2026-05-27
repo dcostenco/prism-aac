@@ -192,6 +192,20 @@ async function initMediaPipeFaceLandmarker(): Promise<boolean> {
   return !!mpFaceLandmarker;
 }
 
+/**
+ * Pre-warm MediaPipe models before the user enables head tracking.
+ * Call at app startup so the first startHeadTracker() sees near-zero cold-start delay.
+ * Both FaceDetector (~4 MB WASM + blaze model) and FaceLandmarker (~5 MB) are needed
+ * even for head-only mode — FaceLandmarker provides the sparse landmark points used
+ * by the ego-motion classifier to suppress camera shake.
+ */
+export function prewarmHeadTracker(): void {
+  if (typeof window === 'undefined') return;
+  // Fire-and-forget: errors are swallowed inside the init functions.
+  initMediaPipeFace().catch(() => {});
+  initMediaPipeFaceLandmarker().catch(() => {});
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractBlendshapes(result: any): Record<string, number> {
   const map: Record<string, number> = {};
@@ -224,7 +238,7 @@ function matrixToEuler(matrix: number[]): { pitch: number; yaw: number; roll: nu
 
 // ── Internals ───────────────────────────────────────────────────────────────
 
-const TARGET_FPS = 15;
+const TARGET_FPS = 24;
 const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
 /**
  * Detections older than this are treated as stale — the corresponding

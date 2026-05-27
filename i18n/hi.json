@@ -171,6 +171,8 @@
   "math_trigonometry": "त्रिकोणमिति",
   "message_text": "मैसेज का टेक्स्ट",
   "mic": "माइक",
+  "mic_no_device": "कोई माइक्रोफ़ोन नहीं मिला।",
+  "mic_permission_denied": "माइक्रोफ़ोन पहुँच अस्वीकृत। ब्राउज़र/डिवाइस सेटिंग जाँचें।",
   "mp_aac_chat": "AAC चैट",
   "mp_aac_chat_desc": "Telegram, WhatsApp, Viber, SMS, Messenger, Instagram, या ईमेल से परिवार और देखभालकर्ताओं को मैसेज भेजें — बिल्ट-इन, इंस्टॉल की ज़रूरत नहीं।",
   "mp_aac_designer": "AAC डिज़ाइनर",

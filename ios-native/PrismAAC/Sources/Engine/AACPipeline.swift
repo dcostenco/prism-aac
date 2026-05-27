@@ -17,7 +17,7 @@ final class AACPipeline: ObservableObject {
 
     enum AIAvailability {
         case unknown
-        case onDevice           // 1.7B loaded in memory
+        case onDevice           // 1.7B or 4B loaded in memory
         case cloudFallback      // 3 GB device or model not downloaded
         case unavailable        // no network + no model
     }
@@ -99,7 +99,7 @@ final class AACPipeline: ObservableObject {
                                                            stream: continuation)
                     }
 
-                    // Layer 3 — validate (14B only: 8B/1.7B don't benefit from self-validation)
+                    // Layer 3 — validate (14B only: 4B/1.7B skip to avoid latency on AAC path)
                     if !response.isEmpty {
                         if self.llm.loadedModelTier == "14B" {
                             let validated = try await self.validateResponse(response,

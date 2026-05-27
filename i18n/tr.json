@@ -171,6 +171,8 @@
   "math_trigonometry": "Trigonometri",
   "message_text": "Mesaj metni",
   "mic": "Mikrofon",
+  "mic_no_device": "Mikrofon bulunamadı.",
+  "mic_permission_denied": "Mikrofon erişimi reddedildi. Tarayıcı/cihaz ayarlarını kontrol edin.",
   "mp_aac_chat": "AAC Sohbet",
   "mp_aac_chat_desc": "Aileye ve bakıcılara Telegram, WhatsApp, Viber, SMS, Messenger, Instagram veya e-posta yoluyla mesaj gönderin — yerleşik, kurulum gerektirmez.",
   "mp_aac_designer": "AAC Tasarımcısı",

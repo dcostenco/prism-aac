@@ -5,7 +5,8 @@
  * (nextStep/prevStep/finishOrdering), keyboard mode cycling (letters→numbers
  * →symbols), toggleCase, and triggerAlert. These tests cover the rest:
  *
- *   cycleKeyboardMode — three-state (maximized → normal → hidden → maximized).
+ *   cycleKeyboardMode — 2-state toggle: keyboard-only ↔ picture-only.
+ *   Any non-maximized state → keyboard-only; keyboard-only → picture-only.
  *   A broken cycle can leave the keyboard permanently hidden, locking an AAC
  *   user out of text input without any obvious way to recover.
  *
@@ -64,28 +65,48 @@ beforeEach(() => {
 // ── cycleKeyboardMode ─────────────────────────────────────────────────────────
 
 describe('uiStore — cycleKeyboardMode', () => {
-  it('maximized → normal (turns off keyboardMaximized)', () => {
+  it('keyboard-only → picture-only (maximized clears both flags)', () => {
     useUIStore.setState({ keyboardMaximized: true, categoryKeyboardOpen: true });
     useUIStore.getState().cycleKeyboardMode();
     const s = useUIStore.getState();
     expect(s.keyboardMaximized).toBe(false);
-    expect(s.categoryKeyboardOpen).toBe(true);
-  });
-
-  it('normal → hidden (turns off categoryKeyboardOpen)', () => {
-    useUIStore.setState({ keyboardMaximized: false, categoryKeyboardOpen: true });
-    useUIStore.getState().cycleKeyboardMode();
-    const s = useUIStore.getState();
-    expect(s.keyboardMaximized).toBe(false);
+    // picture-only: keyboard drawer closed so no keyboard is shown
     expect(s.categoryKeyboardOpen).toBe(false);
   });
 
-  it('hidden → maximized', () => {
+  it('normal → keyboard-only (non-maximized with open kbd goes to maximized)', () => {
+    useUIStore.setState({ keyboardMaximized: false, categoryKeyboardOpen: true });
+    useUIStore.getState().cycleKeyboardMode();
+    const s = useUIStore.getState();
+    expect(s.keyboardMaximized).toBe(true);
+    expect(s.categoryKeyboardOpen).toBe(true);
+  });
+
+  it('picture-only → keyboard-only (non-maximized with closed kbd goes to maximized)', () => {
     useUIStore.setState({ keyboardMaximized: false, categoryKeyboardOpen: false });
     useUIStore.getState().cycleKeyboardMode();
     const s = useUIStore.getState();
     expect(s.keyboardMaximized).toBe(true);
     expect(s.categoryKeyboardOpen).toBe(true);
+  });
+
+  it('cycle is idempotent over 4 transitions', () => {
+    useUIStore.setState({ keyboardMaximized: false, categoryKeyboardOpen: false });
+    const cycle = () => useUIStore.getState().cycleKeyboardMode();
+
+    cycle(); // picture-only → keyboard-only
+    expect(useUIStore.getState().keyboardMaximized).toBe(true);
+
+    cycle(); // keyboard-only → picture-only
+    expect(useUIStore.getState().keyboardMaximized).toBe(false);
+    expect(useUIStore.getState().categoryKeyboardOpen).toBe(false);
+
+    cycle(); // picture-only → keyboard-only
+    expect(useUIStore.getState().keyboardMaximized).toBe(true);
+
+    cycle(); // keyboard-only → picture-only
+    expect(useUIStore.getState().keyboardMaximized).toBe(false);
+    expect(useUIStore.getState().categoryKeyboardOpen).toBe(false);
   });
 });
 

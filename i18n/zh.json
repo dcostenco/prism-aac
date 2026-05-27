@@ -171,6 +171,8 @@
   "math_trigonometry": "三角函数",
   "message_text": "消息文本",
   "mic": "麦克风",
+  "mic_no_device": "未找到麦克风。",
+  "mic_permission_denied": "麦克风访问被拒绝。请检查浏览器/设备设置。",
   "mp_aac_chat": "AAC聊天",
   "mp_aac_chat_desc": "通过Telegram、WhatsApp、Viber、短信、Messenger、Instagram或电子邮件向家人和护理人员发送消息——内置功能，无需安装。",
   "mp_aac_designer": "AAC设计器",

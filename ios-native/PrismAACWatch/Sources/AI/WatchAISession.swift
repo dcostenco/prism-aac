@@ -16,13 +16,16 @@ final class WatchAISession: NSObject, ObservableObject {
     @Published private(set) var mode: Mode = .unknown
     @Published private(set) var offlineBanner: String? = nil
     @Published private(set) var isPhoneReachable = false
+    @Published private(set) var offlineModelReady = false
 
     enum Mode {
         case unknown
-        case companion   // BT → iPhone → 1.5B on-device
+        case companion   // BT → iPhone → 1.7B on-device
         case cloudDirect // Watch WiFi/LTE → synalux.ai
-        case offline     // no network, no BT — phrases + Layer 1 only
+        case offline     // no network — SmolLM2-360M on-device or phrase buttons
     }
+
+    private let offlineEngine = WatchLLMEngine()
 
     enum WatchAIError: Error {
         case notAuthenticated
@@ -57,6 +60,7 @@ final class WatchAISession: NSObject, ObservableObject {
         // Force safety pattern validation at startup (not lazily on first user input)
         _ = WatchSafetyFilter._crisisPatternCheck
         _ = WatchSafetyFilter._medicalPatternCheck
+        Task { await loadOfflineEngine() }
         // FIX 3: Register with router instead of setting WCSession.default.delegate = self
         WCSessionRouter.shared.registerMessageHandler(for: "phrase_reply") { [weak self] _, msg in
             Task { @MainActor [weak self] in self?.handlePhoneReply(msg) }
@@ -68,6 +72,22 @@ final class WatchAISession: NSObject, ObservableObject {
             }
         }
         updateMode()
+    }
+
+    /// Load SmolLM2-360M-AAC from the Watch app bundle.
+    /// Model file must be added to the WatchKit Extension target as a resource.
+    func loadOfflineEngine() async {
+        guard let modelURL = Bundle.main.url(forResource: "smollm2-360m-aac-q3ks", withExtension: "gguf") else {
+            NSLog("[WatchAI] Offline model not bundled — offline mode uses phrase buttons only")
+            return
+        }
+        do {
+            try await offlineEngine.load(from: modelURL)
+            offlineModelReady = true
+            NSLog("[WatchAI] SmolLM2-360M offline model ready")
+        } catch {
+            NSLog("[WatchAI] Offline model load failed: %@", error.localizedDescription)
+        }
     }
 
     private func updateMode() {
@@ -95,7 +115,10 @@ final class WatchAISession: NSObject, ObservableObject {
     func ask(_ question: String, language: String = "en") async {
 
         // Layer 1 safety — always synchronous, no network needed
-        switch WatchSafetyFilter.check(question) {
+        // H-3: NFKC-normalize before safety check — askViaCloud() does this too;
+        // without it, fullwidth/confusable Unicode bypasses the safety gate.
+        let nfkcQuestion = question.applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false) ?? question
+        switch WatchSafetyFilter.check(nfkcQuestion) {
         case .crisis(let r):
             reply = r
             return
@@ -114,6 +137,9 @@ final class WatchAISession: NSObject, ObservableObject {
             // #6: use router's isReachable — no direct WCSession.default reads
             if mode == .companion && WCSessionRouter.shared.isReachable {
                 reply = sanitizeResponse(try await askViaPhone(question: question, language: language))
+            } else if mode == .offline && offlineEngine.isLoaded {
+                // Already offline — go straight to on-device model, no network attempt
+                reply = sanitizeResponse(try await offlineEngine.complete(question))
             } else {
                 reply = sanitizeResponse(try await askViaCloud(question: question, language: language))
                 // #25: do not overwrite mode here — updateMode() is sole authority
@@ -125,8 +151,17 @@ final class WatchAISession: NSObject, ObservableObject {
         } catch WatchAIError.notAuthenticated {
             reply = "Please sign in on your iPhone to enable AI features."
         } catch {
-            // Full offline fallback
+            // Full offline fallback — try on-device model before showing banner
             mode = .offline  // #13: set offline mode when cloud call fails
+            if offlineEngine.isLoaded {
+                do {
+                    reply = sanitizeResponse(try await offlineEngine.complete(question))
+                    offlineBanner = "Offline — on-device AI active"
+                    return
+                } catch {
+                    NSLog("[WatchAI] Offline engine error: %@", error.localizedDescription)
+                }
+            }
             offlineBanner = "Offline — phrase buttons only"
             reply = "I'm offline right now. Use the phrase buttons below."
         }
@@ -380,6 +415,14 @@ final class WatchAISession: NSObject, ObservableObject {
 
 // MARK: - Watch-local Layer 1 safety
 
+/// Watch-side safety filter — hardcoded keyword subset only.
+///
+/// Intentional design divergence from iOS `SafetyFilter`: the Watch filter has no
+/// `loadRemoteKeywords()` call. The Watch is frequently offline and cannot reliably
+/// fetch from the portal at startup. New multilingual crisis keywords added to
+/// `/api/v1/safety/config` reach iOS users automatically but do NOT reach Watch users
+/// until a binary update. Mitigation: keywords are also checked on the paired iPhone
+/// via `SafetyFilter` before any response is relayed to the Watch.
 struct WatchSafetyFilter {
     enum Result { case safe, crisis(response: String), medical(response: String) }
 
@@ -422,7 +465,7 @@ struct WatchSafetyFilter {
             return nil
         }
     }
-    static let _crisisPatternCheck: Void = {
+    fileprivate static let _crisisPatternCheck: Void = {
         let missing = crisisKeywords.count - crisisPatterns.count
         if missing > 0 {
             NSLog("[WatchSafetyFilter] CRITICAL: \(missing) crisis pattern(s) failed to compile — coverage degraded")
@@ -440,7 +483,7 @@ struct WatchSafetyFilter {
             return nil
         }
     }
-    static let _medicalPatternCheck: Void = {
+    fileprivate static let _medicalPatternCheck: Void = {
         let missing = medicalKeywords.count - medicalPatterns.count
         if missing > 0 {
             NSLog("[WatchSafetyFilter] CRITICAL: \(missing) medical pattern(s) failed to compile — coverage degraded")

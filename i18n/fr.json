@@ -171,6 +171,8 @@
   "math_trigonometry": "Trigonométrie",
   "message_text": "Texte du message",
   "mic": "Micro",
+  "mic_no_device": "Aucun microphone trouvé.",
+  "mic_permission_denied": "Accès au microphone refusé. Vérifiez les paramètres du navigateur/appareil.",
   "mp_aac_chat": "AAC Chat",
   "mp_aac_chat_desc": "Envoyez des messages à la famille et aux soignants via Telegram, WhatsApp, Viber, SMS, Messenger, Instagram ou courriel — intégré, aucune installation requise.",
   "mp_aac_designer": "Concepteur CAA",

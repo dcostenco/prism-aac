@@ -171,6 +171,8 @@
   "math_trigonometry": "Trigonometry",
   "message_text": "Teksto ng mensahe",
   "mic": "Mic",
+  "mic_no_device": "Walang nahanap na mikropono.",
+  "mic_permission_denied": "Tinanggihan ang access sa mikropono. Suriin ang mga setting ng browser/device.",
   "mp_aac_chat": "AAC Chat",
   "mp_aac_chat_desc": "Magpadala ng mensahe sa pamilya at caregiver gamit ang Telegram, WhatsApp, Viber, SMS, Messenger, Instagram, o email — built-in, walang kailangang i-install.",
   "mp_aac_designer": "AAC Designer",

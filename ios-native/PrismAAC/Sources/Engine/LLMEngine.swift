@@ -10,15 +10,15 @@ private let llamaAvailable = false
 ///
 /// Model selection by total device RAM (see preferredTier):
 ///   ≥16 GB (iPad Pro M1/M2/M4): prism-coder 14B v36 Q4_K_M — 100% BFCL routing
-///   8–15 GB (iPhone 15/16 Pro, iPad Air): prism-coder 8B v36 Q4_K_M — 100% BFCL; OOM fallback: 1.7B
-///   <8 GB  (iPhone 12–14, older iPads): prism-coder 1.7B v42 Q4_K_M — 100% BFCL routing
+///   8–15 GB (iPhone 15/16 Pro, iPad Air M1+): prism-coder 4B swe17 Q4_K_M — 100% eval_300, 300/300
+///   <8 GB  (iPhone 12–14, older iPads): prism-coder 1.7B swe43 Q4_K_M — 100% eval_300, 300/300
 ///
-/// Accuracy: standalone BFCL, 102-case eval, 3-seed mean, May 2026.
+/// Accuracy: eval_300 benchmark, 300 cases × 3 shuffled runs, temperature=0, May 2026.
 /// Run scripts/update-model-registry.sh to sync when models are retrained.
 ///
 /// Memory contract (Q4_K_M):
 ///   1.7B:  ~1050 MB weights + ~200 MB KV + ~100 MB overhead = ~1350 MB
-///   8B:    ~4200 MB weights + ~200 MB KV + ~100 MB overhead = ~4500 MB
+///   4B:    ~2300 MB weights + ~300 MB KV + ~100 MB overhead = ~2700 MB
 ///   14B:   ~8400 MB weights + ~600 MB KV + ~200 MB overhead = ~9200 MB
 @MainActor
 final class LLMEngine: ObservableObject {
@@ -42,26 +42,26 @@ final class LLMEngine: ObservableObject {
         return Int(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024))
     }()
 
-    /// Model tier selection (accuracy from HuggingFace model cards):
-    ///   ≥16 GB → 14B Q4_K_M (97.1% routing, guaranteed fit)
-    ///   8–15 GB → TRY 8B Q4_K_M (98.0% routing), OOM fallback to 1.7B (96.1% routing)
-    ///   <8 GB  → 1.7B Q4_K_M (96.1% routing, always fits)
+    /// Model tier selection (accuracy from eval_300, 300 cases × 3 runs, May 2026):
+    ///   ≥16 GB → 14B Q4_K_M (legacy iPad Pro path — not downloaded on-device)
+    ///   8–15 GB → 4B Q4_K_M (100% eval_300, ~2.3 GB — safe on 8 GB iPhone 15/16 Pro)
+    ///   <8 GB  → 1.7B Q4_K_M swe43 (100% eval_300, ~1.2 GB — always fits)
     enum ModelTier: String {
-        case large14B = "14B"
-        case medium8B = "8B"
-        case small1B7 = "1.7B"
+        case large14B  = "14B"
+        case medium4B  = "4B"
+        case small1B7  = "1.7B"
     }
 
     static var preferredTier: ModelTier {
         if totalDeviceMemoryGB >= 16 { return .large14B }
-        if totalDeviceMemoryGB >= 8  { return .medium8B }
+        if totalDeviceMemoryGB >= 8  { return .medium4B }
         return .small1B7
     }
 
     static var MIN_FREE_MB: Int {
         switch preferredTier {
         case .large14B: return 10_000
-        case .medium8B: return 4_500  // 8B Q4_K_M is tight — 128 MB over theoretical budget
+        case .medium4B: return 2_800
         case .small1B7: return 1_600
         }
     }
@@ -107,7 +107,7 @@ final class LLMEngine: ObservableObject {
         self.context = ctx
         self.isLoaded = true
         self.loadedModelTier = url.lastPathComponent.contains("14b") ? "14B"
-            : url.lastPathComponent.contains("8b") ? "8B"
+            : url.lastPathComponent.contains("4b") ? "4B"
             : "1.7B"
         NSLog("[LLMEngine] Model loaded: \(url.lastPathComponent) (tier: \(loadedModelTier), device RAM: \(Self.totalDeviceMemoryGB) GB)")
         #else

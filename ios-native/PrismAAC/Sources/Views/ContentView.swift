@@ -739,7 +739,8 @@ struct ModelLoadingView: View {
             case .checking: ProgressView("Checking…")
             case .downloading:
                 VStack(spacing: 8) {
-                    Text("Downloading AI model (~1.1 GB)").font(.headline)
+                    let sizeHint = LLMEngine.preferredTier == .medium4B ? "~2.3 GB" : "~1.2 GB"
+                    Text("Downloading AI model (\(sizeHint))").font(.headline)
                     ProgressView().padding(.horizontal, 32)
                 }
             case .lowMemory:
@@ -764,45 +765,96 @@ struct ModelLoadingView: View {
         .task { await start() }
     }
 
-    // Ordered list of candidate download URLs for the on-device 1.7B model.
-    // Primary is the latest checkpoint; v41 is fallback for HF CDN blips.
-    private static let modelCandidateURLs: [URL] = [
-        // v42 — current (100.0% BFCL, May 2026)
+    // 1.7B swe43 — 100% eval_300, 300/300 × 3 runs, May 2026
+    private static let modelCandidateURLs1B7: [URL] = [
+        URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-swe43-q4km.gguf")!,
+        // v42 fallback for CDN blips
         URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf")!,
-        // v41 fallback — 96.1% BFCL
-        URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v41-q4km.gguf")!,
     ]
 
-    // Filename stored on device — updated to v42 so stale v36/v41 cache is not reused.
-    private static let localModelFilename = "prism-coder-1b7-v42-q4km.gguf"
-    // Legacy filename written by previous app versions — migrated on first run.
-    private static let legacyModelFilename = "prism-aac-1b7-q4km.gguf"
+    // 4B swe17 — 100% eval_300, 300/300 × 5 runs, May 2026 — for 8 GB+ devices
+    private static let modelCandidateURLs4B: [URL] = [
+        URL(string: "https://huggingface.co/dcostenco/prism-coder-4b/resolve/main/prism-coder-4b-v43-Q4_K_M.gguf")!,
+    ]
+
+    private static let localModelFilename1B7 = "prism-coder-1b7-swe43-q4km.gguf"
+    private static let localModelFilename4B  = "prism-coder-4b-swe17-q4km.gguf"
+    // Legacy filenames from previous app versions — migrated on first run.
+    private static let legacyFilenames = ["prism-coder-1b7-v42-q4km.gguf", "prism-aac-1b7-q4km.gguf"]
 
     private func start() async {
         phase = .checking
-        guard AppState.measureFreeMemoryMB() >= 1_200 else { phase = .lowMemory; return }
+        let tier = LLMEngine.preferredTier
+        let minFree = tier == .medium4B ? 2_800 : 1_200
+        guard AppState.measureFreeMemoryMB() >= minFree else { phase = .lowMemory; return }
+
         let modelsDir = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("models")
-        let destination = modelsDir.appendingPathComponent(Self.localModelFilename)
 
-        // Migrate cached file from pre-v36 install without re-downloading.
+        let (localFilename, candidateURLs): (String, [URL]) = tier == .medium4B
+            ? (Self.localModelFilename4B, Self.modelCandidateURLs4B)
+            : (Self.localModelFilename1B7, Self.modelCandidateURLs1B7)
+
+        let destination = modelsDir.appendingPathComponent(localFilename)
+
+        // Migrate stale cached files from previous app versions.
         if !FileManager.default.fileExists(atPath: destination.path) {
-            let legacy = modelsDir.appendingPathComponent(Self.legacyModelFilename)
-            if FileManager.default.fileExists(atPath: legacy.path) {
-                try? FileManager.default.moveItem(at: legacy, to: destination)
+            for legacy in Self.legacyFilenames {
+                let src = modelsDir.appendingPathComponent(legacy)
+                if FileManager.default.fileExists(atPath: src.path) {
+                    try? FileManager.default.moveItem(at: src, to: destination)
+                    break
+                }
             }
         }
 
         if FileManager.default.fileExists(atPath: destination.path) {
+            // If 4B preferred but only 1.7B cached, load 1.7B — still valid.
             await app.loadModel(from: destination); return
+        }
+
+        // For 4B tier: also try loading cached 1.7B to avoid re-download on existing installs.
+        if tier == .medium4B {
+            let fallback1B7 = modelsDir.appendingPathComponent(Self.localModelFilename1B7)
+            if FileManager.default.fileExists(atPath: fallback1B7.path) {
+                await app.loadModel(from: fallback1B7); return
+            }
         }
 
         phase = .downloading
         do {
             try FileManager.default.createDirectory(at: modelsDir, withIntermediateDirectories: true)
-            // Try each candidate URL in order; use first successful HTTP 2xx response.
-            for cdnURL in Self.modelCandidateURLs {
+            for cdnURL in candidateURLs {
+                let (tempURL, response) = try await URLSession.shared.download(from: cdnURL)
+                if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                    try? FileManager.default.removeItem(at: tempURL)
+                    continue
+                }
+                try FileManager.default.moveItem(at: tempURL, to: destination)
+                do {
+                    try await app.loadModelSafe(from: destination)
+                } catch LLMError.insufficientMemory {
+                    // 4B OOM — fall back to 1.7B download
+                    if tier == .medium4B {
+                        try? FileManager.default.removeItem(at: destination)
+                        await downloadAndLoad(
+                            urls: Self.modelCandidateURLs1B7,
+                            destination: modelsDir.appendingPathComponent(Self.localModelFilename1B7),
+                            modelsDir: modelsDir)
+                    } else {
+                        phase = .lowMemory
+                    }
+                }
+                return
+            }
+            phase = .failed
+        } catch { phase = .failed }
+    }
+
+    private func downloadAndLoad(urls: [URL], destination: URL, modelsDir: URL) async {
+        do {
+            for cdnURL in urls {
                 let (tempURL, response) = try await URLSession.shared.download(from: cdnURL)
                 if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
                     try? FileManager.default.removeItem(at: tempURL)

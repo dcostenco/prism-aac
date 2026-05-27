@@ -172,13 +172,14 @@ describe('speakAzure — two-tier endpoint strategy', () => {
   }
 
   it('forwards voiceId in the Inworld request body so the portal routes correctly', async () => {
-    const { capture, fetchFn } = captureInworld<{ ssml?: string; voiceId?: string }>();
+    const { capture, fetchFn } = captureInworld<{ text?: string; lang?: string; voiceId?: string }>();
     vi.stubGlobal('fetch', fetchFn);
     const { speakAzure } = await import('@/services/azureTTS');
     await speakAzure('hello', 'en-US', 'friendly', 0.5, 1.0, '', 'Alex');
     expect(capture.voiceId).toBe('Alex');
-    expect(capture.ssml).toContain('en-US');
-    expect(capture.ssml).toContain('hello');
+    // New API: portal builds SSML server-side; client sends plain text + lang.
+    expect(capture.text).toContain('hello');
+    expect(capture.lang).toBe('en-US');
   });
 
   it('omits voiceId in Inworld request when caller did not specify one (lets server pick)', async () => {

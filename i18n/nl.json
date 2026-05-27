@@ -171,6 +171,8 @@
   "math_trigonometry": "Trigonometrie",
   "message_text": "Berichttekst",
   "mic": "Microfoon",
+  "mic_no_device": "Geen microfoon gevonden.",
+  "mic_permission_denied": "Microfoontoegang geweigerd. Controleer de browser-/apparaatinstellingen.",
   "mp_aac_chat": "AAC-chat",
   "mp_aac_chat_desc": "Stuur berichten naar familie en begeleiders via Telegram, WhatsApp, Viber, sms, Messenger, Instagram of e-mail — ingebouwd, geen installatie nodig.",
   "mp_aac_designer": "AAC-ontwerper",

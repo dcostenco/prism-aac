@@ -171,6 +171,8 @@
   "math_trigonometry": "Trigonometri",
   "message_text": "Teks pesan",
   "mic": "Mikrofon",
+  "mic_no_device": "Mikrofon tidak ditemukan.",
+  "mic_permission_denied": "Akses mikrofon ditolak. Periksa pengaturan browser/perangkat.",
   "mp_aac_chat": "AAC Chat",
   "mp_aac_chat_desc": "Kirim pesan ke keluarga dan pengasuh melalui Telegram, WhatsApp, Viber, SMS, Messenger, Instagram, atau email — bawaan, tanpa perlu instalasi.",
   "mp_aac_designer": "Desainer AAC",

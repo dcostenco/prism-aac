@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4FA35D5A3CE9E52702E5CCC5 /* smollm2-360m-aac-q3ks.gguf in Resources */ = {isa = PBXBuildFile; fileRef = B62596A5723986C947D58E11 /* smollm2-360m-aac-q3ks.gguf */; };
+		FEF8E08096400D2865D81C11 /* llama-watchos in Frameworks */ = {isa = PBXBuildFile; productRef = 582537329F75D85E4B1E75A8 /* llama-watchos */; };
 		0F41DF8A255CAB7496EEED20 /* WatchTTS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE9F6102290192A69EA33F /* WatchTTS.swift */; };
 		12D45E7B40FD87921C2E498C /* AppIcon46x46@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */; };
 		15329694952B810BB933A054 /* AppIcon24x24@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B665BC61F5A2CB0E5F7A9D6C /* AppIcon24x24@2x.png */; };
@@ -43,6 +45,7 @@
 		969F45250B5E084068175FC7 /* AppIcon33x33@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = FCD52807AECA71B546A28725 /* AppIcon33x33@2x.png */; };
 		A2378644AD87D49B61BC9290 /* AACPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */; };
 		A5C28FF4113B9AFFB775B7E7 /* WatchAISession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAD607AA400B994C75354DD /* WatchAISession.swift */; };
+		FEACF7E08FEF0F3A60454886 /* WatchLLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B1FBEF3C77E0ED0DDFCE0EB /* WatchLLMEngine.swift */; };
 		A761744803E81B1102D1B58A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336C616FA71B6C3F3227FC90 /* ContentView.swift */; };
 		A7E2FBB0D485DD0753609E0D /* AppIcon29x29@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = DD4FFEB0EB8A7E77D36FE3FF /* AppIcon29x29@2x.png */; };
 		A9A7C3336D26BD9F125CFF29 /* WatchPictogramCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F932363A3D82535E9971EE /* WatchPictogramCards.swift */; };
@@ -94,9 +97,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B62596A5723986C947D58E11 /* smollm2-360m-aac-q3ks.gguf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "smollm2-360m-aac-q3ks.gguf"; sourceTree = "<group>"; };
 		0D5FF922BC8B7B4BC0A6B33E /* AppIcon29x29@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon29x29@3x.png"; sourceTree = "<group>"; };
 		1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchEmergencyManager.swift; sourceTree = "<group>"; };
 		1BAD607AA400B994C75354DD /* WatchAISession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAISession.swift; sourceTree = "<group>"; };
+		0B1FBEF3C77E0ED0DDFCE0EB /* WatchLLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLLMEngine.swift; sourceTree = "<group>"; };
 		27F621FF903791DF9713E9E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon46x46@2x.png"; sourceTree = "<group>"; };
 		2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -151,6 +156,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				6AED27E0943BFD006689E47F /* llama in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		127C6678FE08B9AA438FBCC7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FEF8E08096400D2865D81C11 /* llama-watchos in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -237,6 +250,7 @@
 			isa = PBXGroup;
 			children = (
 				7795A92B4E6D956D4CC34A5A /* Sources */,
+				B62596A5723986C947D58E11 /* smollm2-360m-aac-q3ks.gguf */,
 			);
 			path = PrismAACWatch;
 			sourceTree = "<group>";
@@ -285,6 +299,7 @@
 			children = (
 				BD695AAA76A1B168A5F182FE /* aacTranslations.json */,
 				1BAD607AA400B994C75354DD /* WatchAISession.swift */,
+				0B1FBEF3C77E0ED0DDFCE0EB /* WatchLLMEngine.swift */,
 				60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */,
 				CDE377D198DA564653BA6171 /* WatchTranslation.swift */,
 				DB1FF5018CD7D6ED0E48C17D /* WatchVocabSync.swift */,
@@ -446,6 +461,7 @@
 			buildConfigurationList = EB1CCDFE3CF7148A03C82215 /* Build configuration list for PBXNativeTarget "PrismAACWatch" */;
 			buildPhases = (
 				B349B71D3D5FD9432870AA63 /* Sources */,
+				127C6678FE08B9AA438FBCC7 /* Frameworks */,
 				604D2E3D24C8DC7EED136626 /* Resources */,
 			);
 			buildRules = (
@@ -454,6 +470,7 @@
 			);
 			name = PrismAACWatch;
 			packageProductDependencies = (
+				582537329F75D85E4B1E75A8 /* llama */,
 			);
 			productName = PrismAACWatch;
 			productReference = 8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */;
@@ -484,6 +501,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				13FC7C9D6C856463E79863BE /* XCLocalSwiftPackageReference "_llama_cpp_local" */,
+				2BB264DD950F4E02BA358F9F /* XCLocalSwiftPackageReference "_llama_cpp_watchos" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3810A000D727421B7A8621B9 /* Products */;
@@ -503,6 +521,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FA35D5A3CE9E52702E5CCC5 /* smollm2-360m-aac-q3ks.gguf in Resources */,
 				BD48CFC0BB74B04161F4F234 /* AppIcon1024x1024.png in Resources */,
 				8E2FAA24B4AD8AA0AAA04E86 /* AppIcon108x108@2x.png in Resources */,
 				15329694952B810BB933A054 /* AppIcon24x24@2x.png in Resources */,
@@ -553,6 +572,7 @@
 				D77E71A3AFF973A5D7A80182 /* KeychainHelper.swift in Sources */,
 				1B7A5CF4B9FB846133F1E17B /* WCSessionRouter.swift in Sources */,
 				A5C28FF4113B9AFFB775B7E7 /* WatchAISession.swift in Sources */,
+				FEACF7E08FEF0F3A60454886 /* WatchLLMEngine.swift in Sources */,
 				96494A55BCE4B701CC283F79 /* WatchApp.swift in Sources */,
 				79A08C2E36B3B5E9C19C91EF /* WatchEmergencyManager.swift in Sources */,
 				6BDCC5044BD258312294B7A8 /* WatchInbox.swift in Sources */,
@@ -937,12 +957,21 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = _llama_cpp_local;
 		};
+		2BB264DD950F4E02BA358F9F /* XCLocalSwiftPackageReference "_llama_cpp_watchos" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = _llama_cpp_watchos;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		04E3214E7CFA50AC6BF94363 /* llama */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = llama;
+		};
+		582537329F75D85E4B1E75A8 /* llama-watchos */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2BB264DD950F4E02BA358F9F /* XCLocalSwiftPackageReference "_llama_cpp_watchos" */;
+			productName = llama-watchos;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

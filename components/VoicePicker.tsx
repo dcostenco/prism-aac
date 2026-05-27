@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useT } from '@/engine/useT';
 import { tapFeedback } from '@/services/feedback';
 import { speak } from '@/services/speechService';
+import { clearTtsCache } from '@/services/azureTTS';
 import {
   fetchVoiceCatalog,
   voicesForLanguage,
@@ -59,6 +60,9 @@ export default function VoicePicker() {
 
   const handlePick = (voiceId: string) => {
     tapFeedback();
+    // Clear the TTS audio cache so stale audio from the previous voice
+    // is never replayed after the preference changes.
+    clearTtsCache();
     if (currentVoiceId === voiceId) {
       // Tap selected voice again = clear (back to platform default)
       setVoiceForLang(baseLang, undefined);

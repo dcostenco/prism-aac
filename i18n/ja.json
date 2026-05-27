@@ -171,6 +171,8 @@
   "math_trigonometry": "三角関数",
   "message_text": "メッセージテキスト",
   "mic": "マイク",
+  "mic_no_device": "マイクが見つかりません。",
+  "mic_permission_denied": "マイクのアクセスが拒否されました。ブラウザ/デバイスの設定を確認してください。",
   "mp_aac_chat": "AACチャット",
   "mp_aac_chat_desc": "Telegram、WhatsApp、Viber、SMS、Messenger、Instagram、メールで家族や介護者にメッセージを送信できます。インストール不要、内蔵機能です。",
   "mp_aac_designer": "AACデザイナー",

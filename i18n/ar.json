@@ -171,6 +171,8 @@
   "math_trigonometry": "حساب المثلثات",
   "message_text": "نص الرسالة",
   "mic": "ميكروفون",
+  "mic_no_device": "لم يتم العثور على ميكروفون.",
+  "mic_permission_denied": "انتهت صلاحية الوصول إلى الميكروفون. تحقق من إعدادات المتصفح/الجهاز.",
   "mp_aac_chat": "AAC Chat",
   "mp_aac_chat_desc": "أرسل رسائل إلى العائلة ومقدمي الرعاية عبر Telegram أو WhatsApp أو Viber أو الرسائل النصية أو Messenger أو Instagram أو البريد الإلكتروني — مدمج بالكامل، دون الحاجة إلى تثبيت.",
   "mp_aac_designer": "مصمم AAC",

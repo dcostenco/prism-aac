@@ -171,6 +171,8 @@
   "math_trigonometry": "Trigonometrie",
   "message_text": "Nachrichtentext",
   "mic": "Mikrofon",
+  "mic_no_device": "Kein Mikrofon gefunden.",
+  "mic_permission_denied": "Mikrofonzugriff verweigert. Überprüfen Sie die Browser-/Geräteeinstellungen.",
   "mp_aac_chat": "UK-Chat",
   "mp_aac_chat_desc": "Nachrichten an Familie und Betreuer senden über Telegram, WhatsApp, Viber, SMS, Messenger, Instagram oder E-Mail — eingebaut, keine Installation nötig.",
   "mp_aac_designer": "UK-Designer",

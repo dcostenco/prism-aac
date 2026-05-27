@@ -56,6 +56,11 @@ struct PrismAACApp: App {
                     }
                     NSLog("[PrismAAC] No model could be loaded — using cloud AI only")
                 }
+                .task {
+                    // Load remote safety keywords from portal on every launch.
+                    // Hardcoded list stays active as fallback if fetch fails.
+                    await SafetyFilter.loadRemoteKeywords()
+                }
         }
     }
 

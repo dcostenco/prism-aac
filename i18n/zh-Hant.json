@@ -171,6 +171,8 @@
   "math_trigonometry": "三角函數",
   "message_text": "訊息文字",
   "mic": "麥克風",
+  "mic_no_device": "找不到麥克風。",
+  "mic_permission_denied": "麥克風存取被拒絕。請檢查瀏覽器/裝置設定。",
   "mp_aac_chat": "AAC Chat",
   "mp_aac_chat_desc": "透過 Telegram、WhatsApp、Viber、簡訊、Messenger、Instagram 或電子郵件傳訊給家人和照顧者——內建功能，無需安裝。",
   "mp_aac_designer": "AAC 設計器",

@@ -171,6 +171,8 @@
   "math_trigonometry": "Тригонометрія",
   "message_text": "Текст повідомлення",
   "mic": "Мікрофон",
+  "mic_no_device": "Мікрофон не знайдено.",
+  "mic_permission_denied": "Доступ до мікрофона заборонено. Перевірте налаштування браузера/пристрою.",
   "mp_aac_chat": "ААК-чат",
   "mp_aac_chat_desc": "Надсилайте повідомлення родині та опікунам через Telegram, WhatsApp, Viber, SMS, Messenger, Instagram чи електронну пошту — вбудовано, без встановлення.",
   "mp_aac_designer": "Дизайнер ААК",

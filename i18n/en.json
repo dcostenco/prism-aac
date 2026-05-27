@@ -171,6 +171,8 @@
   "math_trigonometry": "Trigonometry",
   "message_text": "Message text",
   "mic": "Mic",
+  "mic_no_device": "No microphone found.",
+  "mic_permission_denied": "Microphone access denied. Check browser/device settings.",
   "mp_aac_chat": "AAC Chat",
   "mp_aac_chat_desc": "Send messages to family and caregivers via Telegram, WhatsApp, Viber, SMS, Messenger, Instagram, or email — built-in, no install needed.",
   "mp_aac_designer": "AAC Designer",

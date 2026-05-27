@@ -1201,7 +1201,7 @@ struct WatchAIChatView: View {
             translateTask2 = Task { @MainActor in
                 // FIX #21: defer ensures isWaiting resets even if the task is cancelled before completion.
                 defer { isWaiting = false }
-                let translated = await translation.translateDirect(text: text, to: outputLang)
+                let translated = await translation.translateDirect(text: text, from: inputLang, to: outputLang)
                 guard !Task.isCancelled else { return }
                 let result = translated ?? text
                 if messages.count >= 50 { messages.removeFirst() }

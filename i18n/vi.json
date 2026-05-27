@@ -171,6 +171,8 @@
   "math_trigonometry": "Lượng giác",
   "message_text": "Nội dung tin nhắn",
   "mic": "Mic",
+  "mic_no_device": "Không tìm thấy micrô.",
+  "mic_permission_denied": "Quyền truy cập micrô bị từ chối. Kiểm tra cài đặt trình duyệt/thiết bị.",
   "mp_aac_chat": "AAC Chat",
   "mp_aac_chat_desc": "Gửi tin nhắn cho gia đình và người chăm sóc qua Telegram, WhatsApp, Viber, SMS, Messenger, Instagram hoặc email — tích hợp sẵn, không cần cài đặt.",
   "mp_aac_designer": "Thiết kế AAC",

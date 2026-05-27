@@ -27,11 +27,8 @@ final class WatchTranslation: ObservableObject {
         listeningWatchdog?.cancel()
     }
 
-    // Uses the same working chat endpoint as WatchAISession — no dedicated
-    // /translate route exists on the portal. A minimal system prompt tells
-    // the AI to return only the translation with no explanation.
     // #18: force-unwrap instead of fatalError — both crash on bad literal, but ! is idiomatic for known-good literals
-    private let chatURL = URL(string: "https://synalux.ai/api/v1/prism-aac/chat")!
+    private let translateURL = URL(string: "https://synalux.ai/api/v1/translate")!
 
     // #8: dedicated session with both request and resource timeouts — URLSession.shared has no resource timeout
     private static let translationSession: URLSession = {
@@ -132,7 +129,7 @@ final class WatchTranslation: ObservableObject {
         translateTask = Task { @MainActor [weak self] in
             guard let self else { return }
             defer { self.isTranslating = false }
-            let translated = await self.translate(text: text, to: toLang)
+            let translated = await self.translate(text: text, from: fromLang, to: toLang)
             guard !Task.isCancelled else { return }
             if let translated = translated {
                 tts.speak(translated, language: toLang)
@@ -144,11 +141,11 @@ final class WatchTranslation: ObservableObject {
 
     /// Public version of translate() — used by AI Chat translator mode to
     /// get the translated string without immediately speaking it.
-    func translateDirect(text: String, to toLang: String) async -> String? {
-        return await translate(text: text, to: toLang)
+    func translateDirect(text: String, from fromLang: String, to toLang: String) async -> String? {
+        return await translate(text: text, from: fromLang, to: toLang)
     }
 
-    private func translate(text: String, to toLang: String) async -> String? {
+    private func translate(text: String, from fromLang: String = "en", to toLang: String) async -> String? {
         // #31: bail immediately if caller's task was cancelled before network work begins
         guard !Task.isCancelled else { return nil }
         // FIX #7: Auth check FIRST — don't construct request body if we can't send it
@@ -156,8 +153,17 @@ final class WatchTranslation: ObservableObject {
             NSLog("[WatchTranslation] No auth token — skipping translation request")
             return nil
         }
-        // Safety gate — don't translate crisis or medical dosing phrases
-        let safety = WatchSafetyFilter.check(text)
+
+        // L-1: NFKC normalize BEFORE safety gate — homoglyphs composed via compatibility
+        // equivalence bypass keyword checks when compared against plain ASCII patterns.
+        // Normalize to canonical form first so the safety filter sees the same character
+        // representations that the allowlist and pattern matchers expect.
+        let nfkcInput = String(text.prefix(300))
+            .applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false)
+            ?? String(text.prefix(300))
+
+        // Safety gate on NFKC-normalized input
+        let safety = WatchSafetyFilter.check(nfkcInput)
         if case .crisis = safety { return nil }
         if case .medical = safety { return nil }
 
@@ -181,14 +187,21 @@ final class WatchTranslation: ObservableObject {
             validLang = "en-US"
         }
 
-        // Sanitize user text — FIX #8: NFKC normalize FIRST (before literal stripping)
-        // so that composed/compatibility forms of token characters are normalized into
-        // the canonical ASCII form that the literal strip chain can then match.
+        // Sanitize source language — same pattern as target; fall back to "en" on invalid
+        let safeFromLang = String(fromLang.prefix(20))
+            .components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-")).inverted)
+            .joined()
+        let validFromLang: String
+        if allowedLangs.contains(safeFromLang) && safeFromLang.range(of: bcp47Regex, options: .regularExpression) != nil {
+            validFromLang = safeFromLang
+        } else {
+            validFromLang = "en"
+        }
 
-        // Step 1: NFKC normalize first (before literal stripping)
-        let nfkcText = String(text.prefix(300))
-            .applyingTransform(.init("NFKC; [:Mn:] Remove; NFKC"), reverse: false)
-            ?? String(text.prefix(300))
+        // Sanitize user text — use already-normalized nfkcInput as the base
+
+        // Step 1: NFKC normalize is done above (nfkcInput)
+        let nfkcText = nfkcInput
 
         // Step 2: Literal token strip on normalized input
         let safeText = nfkcText
@@ -221,27 +234,21 @@ final class WatchTranslation: ObservableObject {
         // Step 3: Final bracket strip on normalized+stripped text
         let finalText = safeText.components(separatedBy: CharacterSet(charactersIn: "<>[]|")).joined()
 
-        // Chat endpoint returns SSE (text/event-stream). Collect all
-        // data: {"choices":[{"delta":{"content":"..."}}]} chunks until [DONE].
-        // User text is a separate message — NOT inlined in the system prompt.
-        var req = URLRequest(url: chatURL)
+        var req = URLRequest(url: translateURL)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         // timeout configured on translationSession (timeoutIntervalForRequest: 10, timeoutIntervalForResource: 15)
         do {
             req.httpBody = try JSONSerialization.data(withJSONObject: [
-                "messages": [
-                    ["role": "system", "content": "Translate to \(validLang). Return ONLY the translated word or phrase, nothing else."],
-                    ["role": "user", "content": finalText],
-                ],
-                "max_tokens": 50,
-                "stream": false,  // FIX #17: non-streaming for translation (short responses); data(for:) buffers entire SSE
+                "text":       finalText,
+                "sourceLang": validFromLang,
+                "targetLang": validLang,
             ])
         } catch {
             NSLog("[WatchTranslation] JSON serialization failed: \(error) — returning nil")
             return nil
         }
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         do {
             let (data, response) = try await WatchTranslation.translationSession.data(for: req)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
@@ -249,11 +256,13 @@ final class WatchTranslation: ObservableObject {
                 return nil
             }
             guard data.count <= 65_536 else { return nil }
-            // FIX #17: try non-streaming parse first (stream:false); fall back to SSE assembler for
-            // servers that ignore stream:false and return SSE anyway.
-            // FIX M1: sanitize AI response — strip ChatML/injection tokens before returning
-            guard let raw = parseNonStreaming(data) ?? assembleSSE(data) else { return nil }
-            return sanitizeTranslation(raw)
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let raw = json["translated"] as? String,
+                  !raw.isEmpty else {
+                NSLog("[WatchTranslation] Unexpected translate response structure")
+                return nil
+            }
+            return sanitizeTranslation(String(raw.prefix(300)).trimmingCharacters(in: .whitespacesAndNewlines))
         } catch is CancellationError {
             // #30: Task was cancelled (user navigated away) — not an error worth logging
             return nil
@@ -261,65 +270,6 @@ final class WatchTranslation: ObservableObject {
             NSLog("[WatchTranslation] Translation failed: \(error)")
             return nil
         }
-    }
-
-    /// Parse a non-streaming (stream:false) OpenAI-compatible JSON response.
-    /// Returns the content string, capped to 300 chars, or nil if the response
-    /// does not match the expected schema.
-    // FIX #17: added to handle stream:false responses from the translation endpoint.
-    // FIX #8: use do/catch instead of try? so JSON parse failures are logged.
-    private func parseNonStreaming(_ data: Data) -> String? {
-        do {
-            guard let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let choices = obj["choices"] as? [[String: Any]],
-                  let msg = choices.first?["message"] as? [String: Any],
-                  let content = msg["content"] as? String else {
-                NSLog("[WatchTranslation] parseNonStreaming: unexpected response structure")
-                return nil
-            }
-            let trimmed = String(content.prefix(300))
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .trimmingCharacters(in: .init(charactersIn: "\"'"))
-            return trimmed.isEmpty ? nil : trimmed
-        } catch {
-            NSLog("[WatchTranslation] parseNonStreaming JSON parse failed: \(error)")
-            return nil
-        }
-    }
-
-    /// Parse SSE chunks: "data: {...}\n\ndata: [DONE]\n\n" → assembled string.
-    private func assembleSSE(_ data: Data) -> String? {
-        guard let raw = String(data: data, encoding: .utf8) else { return nil }
-        var result = ""
-        // #19: track failed chunks to surface persistent parse errors in logs
-        var failedChunks = 0
-        for line in raw.components(separatedBy: "\n") {
-            guard line.count <= 4096 else { continue }  // skip malformed mega-lines
-            guard line.hasPrefix("data: ") else { continue }
-            let payload = String(line.dropFirst(6))
-            if payload == "[DONE]" { break }
-            // FIX #8: per-chunk size cap — reject oversized SSE payloads before JSON decode.
-            guard payload.count <= 200 else { continue }
-            guard let d = payload.data(using: .utf8),
-                  let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
-                  let choices = obj["choices"] as? [[String: Any]],
-                  let delta = choices.first?["delta"] as? [String: Any],
-                  let chunk = delta["content"] as? String else {
-                if !payload.isEmpty && payload != "[DONE]" {
-                    failedChunks += 1
-                    // FIX #13: log once at exactly 3 failures, not on every subsequent failure
-                    if failedChunks == 3 {
-                        NSLog("[WatchTranslation] 3+ SSE chunks failed to parse — possible API format change")
-                    }
-                }
-                continue
-            }
-            result += chunk
-            if result.count > 300 { break }  // translations are short phrases
-        }
-        let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
-                            .trimmingCharacters(in: .init(charactersIn: "\"'"))
-        return trimmed.isEmpty ? nil : trimmed
     }
 
     // FIX M1: sanitize translation AI output — matches WatchAISession.sanitizeResponse()

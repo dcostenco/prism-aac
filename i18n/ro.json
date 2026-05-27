@@ -171,6 +171,8 @@
   "math_trigonometry": "Trigonometrie",
   "message_text": "Text mesaj",
   "mic": "Mic",
+  "mic_no_device": "Nu s-a găsit microfon.",
+  "mic_permission_denied": "Accesul la microfon a fost refuzat. Verificați setările browserului/dispozitivului.",
   "mp_aac_chat": "Chat AAC",
   "mp_aac_chat_desc": "Trimite mesaje către familie și îngrijitori prin Telegram, WhatsApp, Viber, SMS, Messenger, Instagram sau email — integrat, fără instalare.",
   "mp_aac_designer": "Designer AAC",

@@ -171,6 +171,8 @@
   "math_trigonometry": "טריגונומטריה",
   "message_text": "טקסט ההודעה",
   "mic": "מיקרופון",
+  "mic_no_device": "לא נמצא מיקרופון.",
+  "mic_permission_denied": "הגישה למיקרופון נדחתה. בדוק את הגדרות הדפדפן/המכשיר.",
   "mp_aac_chat": "צ'אט AAC",
   "mp_aac_chat_desc": "שלח הודעות למשפחה ולמטפלים דרך Telegram, WhatsApp, Viber, SMS, Messenger, Instagram או אימייל — מובנה, ללא צורך בהתקנה.",
   "mp_aac_designer": "מעצב AAC",
