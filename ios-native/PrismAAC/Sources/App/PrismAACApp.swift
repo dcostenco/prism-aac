@@ -49,6 +49,10 @@ struct PrismAACApp: App {
             ContentView()
                 .environmentObject(appState)
                 .task {
+                    #if targetEnvironment(simulator)
+                    NSLog("[PrismAAC] Simulator — skipping on-device model load (cloud AI only)")
+                    return
+                    #endif
                     let tier = LLMEngine.preferredTier
                     NSLog("[PrismAAC] Device RAM: \(LLMEngine.totalDeviceMemoryGB) GB → tier: \(tier.rawValue)")
 
