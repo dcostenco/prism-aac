@@ -213,7 +213,11 @@ final class WatchLLMEngine: ObservableObject {
         batch.token[i] = token
         batch.pos[i] = pos
         batch.n_seq_id[i] = Int32(seqIds.count)
-        for (j, sid) in seqIds.enumerated() { batch.seq_id[i]![j] = sid }
+        // Guard the seq_id pointer — llama_batch_init allocates n_seq_max slots
+        // per position; if allocation failed for any reason, skip rather than crash.
+        if let seqPtr = batch.seq_id[i] {
+            for (j, sid) in seqIds.enumerated() { seqPtr[j] = sid }
+        }
         batch.logits[i] = logits ? 1 : 0
         batch.n_tokens += 1
     }

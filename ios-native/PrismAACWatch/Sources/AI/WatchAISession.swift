@@ -135,13 +135,16 @@ final class WatchAISession: NSObject, ObservableObject {
 
         do {
             // #6: use router's isReachable — no direct WCSession.default reads
+            // Safety: send nfkcQuestion (same form the safety filter checked) so
+            // downstream consumers don't receive denormalized Unicode that could
+            // bypass keyword matching on the phone or cloud side.
             if mode == .companion && WCSessionRouter.shared.isReachable {
-                reply = sanitizeResponse(try await askViaPhone(question: question, language: language))
+                reply = sanitizeResponse(try await askViaPhone(question: nfkcQuestion, language: language))
             } else if mode == .offline && offlineEngine.isLoaded {
                 // Already offline — go straight to on-device model, no network attempt
-                reply = sanitizeResponse(try await offlineEngine.complete(question))
+                reply = sanitizeResponse(try await offlineEngine.complete(nfkcQuestion))
             } else {
-                reply = sanitizeResponse(try await askViaCloud(question: question, language: language))
+                reply = sanitizeResponse(try await askViaCloud(question: nfkcQuestion, language: language))
                 // #25: do not overwrite mode here — updateMode() is sole authority
             }
         } catch is CancellationError {
@@ -155,7 +158,7 @@ final class WatchAISession: NSObject, ObservableObject {
             mode = .offline  // #13: set offline mode when cloud call fails
             if offlineEngine.isLoaded {
                 do {
-                    reply = sanitizeResponse(try await offlineEngine.complete(question))
+                    reply = sanitizeResponse(try await offlineEngine.complete(nfkcQuestion))
                     offlineBanner = "Offline — on-device AI active"
                     return
                 } catch {

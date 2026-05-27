@@ -120,6 +120,22 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 
+// Module-level constant — panels where the QWERTY keyboard is never shown.
+// Declared outside the component so a new Set is not allocated on every render.
+const PANELS_WITHOUT_QWERTY = new Set([
+  'math',
+  'games',
+  'marketplace',
+  'schedule',
+  'caregiver',
+  'picture-editor',
+  'music-composer',
+  'comfort-player',
+  'categories',
+  'category-detail',
+  'ordering',
+]);
+
 export default function PrismApp() {
   const runDecay = usePredictionStore((s) => s.runDecay);
   const ensureSeed = usePredictionStore((s) => s.ensureSeed);
@@ -167,21 +183,6 @@ export default function PrismApp() {
   // The fix is the allow-list below.
   const categoryKeyboardOpen = useUIStore((s) => s.categoryKeyboardOpen);
   const keyboardMaximized = useUIStore((s) => s.keyboardMaximized);
-  const PANELS_WITHOUT_QWERTY = new Set([
-    'math',
-    'games',
-    'marketplace',
-    'schedule',
-    'caregiver',
-    'picture-editor',
-    'music-composer',
-    'comfort-player',
-    // Categories: full-screen cards by default (Image #32 pattern).
-    // Keyboard shown only when categoryKeyboardOpen toggle is on.
-    'categories',
-    'category-detail',
-    'ordering',
-  ]);
   const isCategoryMode = ['categories','category-detail','ordering'].includes(sidePanel);
   const homeWithBoard = sidePanel === 'none';
   const showQwerty = isCategoryMode || homeWithBoard

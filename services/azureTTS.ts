@@ -578,7 +578,6 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   // DO NOT pass-through — stored 0.5 direct → SSML 0.5 = 2× slow (RO/RU bug, May 2026).
   const normalizedRate = computeNormalizedRate(rate);
 
-  let url: string | null = null;
   const controller = new AbortController();
   activeControllers.add(controller);
   const timeout = setTimeout(() => controller.abort(), 8000);
@@ -702,7 +701,6 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     return false;
   } catch (e) {
     console.warn('[AzureTTS] Fetch failed:', e instanceof Error ? e.message : e);
-    if (url) releaseBlob(url);
     return false;
   } finally {
     // Belt-and-suspenders cleanup. The success path also clears these

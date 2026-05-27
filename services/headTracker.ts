@@ -435,8 +435,9 @@ async function initCameraSource(source: CameraSource, deviceId?: string, abortSi
 
     await new Promise<void>((resolve) => {
       if (source.video.readyState >= 2) { resolve(); return; }
-      source.video.addEventListener('loadedmetadata', () => resolve(), { once: true });
-      setTimeout(resolve, 3000);
+      let fallbackTimer: ReturnType<typeof setTimeout>;
+      source.video.addEventListener('loadedmetadata', () => { clearTimeout(fallbackTimer); resolve(); }, { once: true });
+      fallbackTimer = setTimeout(resolve, 3000);
     });
 
     source.canvas.width = source.video.videoWidth || 320;
@@ -807,7 +808,8 @@ export function startHeadTracker(
     if (stopped) { sources.forEach(stopCameraSource); return; }
     const activeSources = sources.filter(s => s.active);
     if (activeSources.length === 0) {
-      window.removeEventListener('resize', onResize);  // M16: clean up before early return
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('keydown', escHandler);
       opts.onStatusChange('stopped');
       return;
     }

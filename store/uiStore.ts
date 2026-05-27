@@ -140,12 +140,19 @@ export const useUIStore = create<UIState>()((set) => ({
   openAIChat: () => set((s) => ({ sidePanel: s.sidePanel === 'ai-chat' ? 'none' : 'ai-chat' as SidePanelView })),
   openAACChat: () => set((s) => ({ sidePanel: s.sidePanel === 'aac-chat' ? 'none' : 'aac-chat' as SidePanelView, activeContactId: null })),
   replyToSender: (senderKey) => {
-    // Dynamically import contactsStore to avoid circular dep at module level.
-    // Find the first contact whose phone or displayName matches senderKey.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { useContactsStore } = require('@/store/contactsStore') as { useContactsStore: { getState: () => { contacts: Array<{ id: string; recipientId?: string; name?: string }> } } };
-    const contacts = useContactsStore.getState().contacts;
-    if (!Array.isArray(contacts)) return;  // guard against SSR/edge cold start
+    // Lazy require breaks the circular dep at module-load time.
+    // Try/catch guards against Edge Runtime where require() is unavailable —
+    // falls back to opening aac-chat with no pre-selected contact.
+    let contacts: Array<{ id: string; recipientId?: string; name?: string }> = [];
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { useContactsStore } = require('@/store/contactsStore') as { useContactsStore: { getState: () => { contacts: Array<{ id: string; recipientId?: string; name?: string }> } } };
+      const state = useContactsStore.getState().contacts;
+      if (Array.isArray(state)) contacts = state;
+    } catch {
+      set({ sidePanel: 'aac-chat', activeContactId: null });
+      return;
+    }
     const key = senderKey.slice(0, 200).toLowerCase().replace(/\s+/g, '');
     const match = contacts.find((c) => {
       const recipientId = (c.recipientId ?? '').toLowerCase().replace(/\s+/g, '');
