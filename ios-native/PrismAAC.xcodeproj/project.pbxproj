@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4FA35D5A3CE9E52702E5CCC5 /* smollm2-360m-aac-q3ks.gguf in Resources */ = {isa = PBXBuildFile; fileRef = B62596A5723986C947D58E11 /* smollm2-360m-aac-q3ks.gguf */; };
 		FEF8E08096400D2865D81C11 /* llama-watchos in Frameworks */ = {isa = PBXBuildFile; productRef = 582537329F75D85E4B1E75A8 /* llama-watchos */; };
 		0F41DF8A255CAB7496EEED20 /* WatchTTS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE9F6102290192A69EA33F /* WatchTTS.swift */; };
 		12D45E7B40FD87921C2E498C /* AppIcon46x46@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */; };
@@ -98,7 +97,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		B62596A5723986C947D58E11 /* smollm2-360m-aac-q3ks.gguf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "smollm2-360m-aac-q3ks.gguf"; sourceTree = "<group>"; };
 		0D5FF922BC8B7B4BC0A6B33E /* AppIcon29x29@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon29x29@3x.png"; sourceTree = "<group>"; };
 		1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchEmergencyManager.swift; sourceTree = "<group>"; };
 		1BAD607AA400B994C75354DD /* WatchAISession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAISession.swift; sourceTree = "<group>"; };
@@ -252,7 +250,6 @@
 			isa = PBXGroup;
 			children = (
 				7795A92B4E6D956D4CC34A5A /* Sources */,
-				B62596A5723986C947D58E11 /* smollm2-360m-aac-q3ks.gguf */,
 			);
 			path = PrismAACWatch;
 			sourceTree = "<group>";
@@ -524,7 +521,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4FA35D5A3CE9E52702E5CCC5 /* smollm2-360m-aac-q3ks.gguf in Resources */,
 				BD48CFC0BB74B04161F4F234 /* AppIcon1024x1024.png in Resources */,
 				8E2FAA24B4AD8AA0AAA04E86 /* AppIcon108x108@2x.png in Resources */,
 				15329694952B810BB933A054 /* AppIcon24x24@2x.png in Resources */,
