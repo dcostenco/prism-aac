@@ -988,7 +988,7 @@ Three modes cycle with a single tap — the chosen layout is saved and restored 
 | Cloud (free) | Gemini 2.5 Flash | 99% | ~3s | Synalux absorbs |
 | Cloud (paid) | Claude Sonnet 4 | 99% | ~3s | Included in plan |
 
-**The pitch:** Every child gets Claude-grade accuracy whether they're on a $329 iPhone SE or a $2,000 iPad Pro. Local-first means zero cloud dependency, zero monthly API fees, zero PHI exposure, and sub-second response times. All four prism-coder models score 96–99% on the 102-case routing benchmark (v25 system prompt, 3-seed mean), with zero invented tool calls.
+**The pitch:** Every child gets Claude-grade accuracy whether they're on a $329 iPhone SE or a $2,000 iPad Pro. Local-first means zero cloud dependency, zero monthly API fees, zero PHI exposure, and sub-second response times. All four prism-coder models score **100%** on the 102-case routing benchmark (v36/v7 system prompt, 3-seed mean, May 2026), with zero invented tool calls. The 32B model additionally scores **300/300 (100%)** on the extended eval_300 suite (17 tools, 9 categories, 3-seed validated).
 
 ---
 
@@ -1041,17 +1041,19 @@ Auto-routing: 1.7B → any device · 8B → mobile/edge · 14B → standard · 3
 - **Cloud complex** (reasoning, pro tier): `prism-coder:32b` (QwQ-32B fine-tuned) → Claude Sonnet 4 fallback
 - **Autocorrect + word prediction**: Gemini 2.5 Flash-Lite — 752ms avg, multilingual (ro/ru/es)
 - Speed-critical paths (button tap → speech) bypass routing — never blocks on network
-- Routing accuracy ([102-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100), v25 system prompt, 3-seed mean, May 2026):
+- Routing accuracy ([102-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100), v36/v7 system prompt, 3-seed mean, May 2026):
 
   | Model | Accuracy | Avg latency | Invented tools |
   |---|---|---|---|
-  | prism-coder:32b v7 (local, MoE) | **100.0%** | 0.8s | 0 |
+  | prism-coder:32b swe14 (local) | **100.0%** | 1.4s | 0 |
   | 14B→32B cascade (local) | **100.0%** | ~1.1s | 0 |
   | prism-coder:8b v36 (local) | **100.0%** | 0.8s | 0 |
   | prism-coder:14b v36 (local) | **100.0%** | 1.1s | 0 |
   | Sonnet 4 (cloud) | **99%** | 3.2s | 0 |
   | Opus 4.7 (cloud) | **98.3%** | 3.0s | 0 |
   | prism-coder:1b7 v42 (local) | **100.0%** | 1.6s | 0 |
+
+- Extended eval — eval_300 (300 cases, 17 tools, 9 categories, 3-seed): prism-coder:32b = **300/300 (100%)**
 
 **Voice (TTS)** fallback chain:
 - Tier 1: Inworld TTS-2 (paid all langs; free for ro/uk/ru/de/ko/ar where Synalux absorbs cost)
