@@ -37,6 +37,26 @@ Part of the [Synalux platform](https://synalux.ai).
 
 ---
 
+## App Store Preview Video
+
+30-second video showcasing all major features with Inworld TTS narration:
+
+https://github.com/user-attachments/assets/prism-aac-preview
+
+| Scene | Feature | Screenshot |
+|---|---|---|
+| **Home** — tap phrases | Pictogram board with 22 categories, Speak button | <img src="docs/screenshots/appstore/ipad_home.png" width="200"> |
+| **Categories** | Quick phrases for Help, Food, Places, Feelings | <img src="docs/screenshots/appstore/ipad_categories.png" width="200"> |
+| **AI Chat** | Compose messages, practice conversations | <img src="docs/screenshots/appstore/ipad_ai-chat.png" width="200"> |
+| **Emergency Alert** | One-tap caregiver/nurse call | <img src="docs/screenshots/appstore/video/frame_03.png" width="200"> |
+| **Schedule** | Visual daily routines — morning, school, lunch, bedtime | <img src="docs/screenshots/appstore/ipad_schedule.png" width="200"> |
+| **Games** | Bubble Pop, Color Hunt, Match It, Yes/No, Finish It | <img src="docs/screenshots/appstore/ipad_games.png" width="200"> |
+| **Math & School** | Adaptive math with Hint, Check, Solve + number pad | <img src="docs/screenshots/appstore/video/frame_06.png" width="200"> |
+| **Head & Eye Tracking** | Camera-based dwell cursor, gaze control, calibration | <img src="docs/screenshots/appstore/video/frame_07.png" width="200"> |
+| **12 Languages** | English, Spanish, French, Russian, Japanese, Korean, Chinese, Arabic & more | <img src="docs/screenshots/appstore/video/frame_08.png" width="200"> |
+
+---
+
 ## At a glance
 
 | Module | What it does | Preview |
