@@ -32,8 +32,8 @@ function localModelsCalled(): string[] {
     .map(c => c.body.model);
 }
 
-describe('LOCAL_MODELS order: 32b → 14b → 8b → 1b7 (all active)', () => {
-  it('cascade order is 32b → 14b → 8b → 1b7 (all tried when all fail)', async () => {
+describe('LOCAL_MODELS order: 32b → 14b → 8b → 4b → 1b7 (all active)', () => {
+  it('cascade order is 32b → 14b → 8b → 4b → 1b7 (all tried when all fail)', async () => {
     fetchSpy.mockImplementation(async (url: any, init: any) => {
       const urlStr = typeof url === 'string' ? url : url.toString();
       let body: any = {};
@@ -48,11 +48,11 @@ describe('LOCAL_MODELS order: 32b → 14b → 8b → 1b7 (all active)', () => {
 
     await expect(askAI('test')).rejects.toThrow();
     const models = localModelsCalled();
-    expect(models.length).toBe(4);
+    expect(models.length).toBe(5);
     expect(models[0]).toBe('prism-coder:32b');
     expect(models[1]).toBe('prism-coder:14b');
     expect(models[2]).toBe('prism-coder:8b');
-    expect(models[3]).toBe('prism-coder:1b7');
+    expect(models[3]).toBe('prism-coder:4b'); expect(models[4]).toBe('prism-coder:1b7');
   });
 });
 
@@ -106,7 +106,7 @@ describe('When 32B returns a confident response, cascade stops (no cloud call)',
     await expect(askAI('Phrases for help')).rejects.toThrow();
     const models = localModelsCalled();
     // All 4 local models tried — none confident
-    expect(models.length).toBe(4);
+    expect(models.length).toBe(5);
     expect(models[0]).toBe('prism-coder:32b');
   });
 
@@ -203,11 +203,11 @@ describe('Auto-sideload PULLABLE_MODELS: 32B first (best quality), 14B fallback'
 
     await autoSideload();
     // All 4 PULLABLE_MODELS attempted when every pull fails
-    expect(pullAttempts.length).toBe(4);
+    expect(pullAttempts.length).toBe(5);
     expect(pullAttempts[0]).toBe('prism-coder:32b');
     expect(pullAttempts[1]).toBe('prism-coder:14b');
     expect(pullAttempts[2]).toBe('prism-coder:8b');
-    expect(pullAttempts[3]).toBe('prism-coder:1b7');
+    expect(pullAttempts[3]).toBe('prism-coder:4b'); expect(pullAttempts[4]).toBe('prism-coder:1b7');
   });
 
   it('falls back to 14B pull when 32B pull fails (disk full), stops on 14B success', async () => {
