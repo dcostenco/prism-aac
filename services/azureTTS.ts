@@ -214,7 +214,7 @@ function _ttsCacheKey(text: string, lang: string, tone: ToneStyle, rate: number,
   // slider value. toFixed(1) on raw rate means 0.25 and 0.34 share key "0.3" but
   // normalize to 0.50 and 0.68 respectively — cache would serve 0.50-speed audio
   // when 0.68-speed was expected (wrong-speed regression, May 2026).
-  return `${text}|${lang}|${tone}|${computeNormalizedRate(rate).toFixed(2)}|${volume.toFixed(2)}|${voiceId ?? ''}`;
+  return `${text}|${lang}|${tone}|${computeNormalizedRate(rate).toFixed(2)}|${(volume ?? 1.0).toFixed(2)}|${voiceId ?? ''}`;
 }
 
 function _ttsCacheGet(key: string): ArrayBuffer | undefined {
