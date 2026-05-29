@@ -73,10 +73,12 @@ describe('initAacHrr', () => {
         expect(ok).toBe(true);
     });
 
-    it('restores hologram from localStorage', async () => {
-        localStorage.setItem('prism-aac-hrr-hologram', JSON.stringify([1, 2, 3]));
+    it('restores valid hologram from localStorage', async () => {
+        const valid = new Array(1024).fill(0.001);
+        localStorage.setItem('prism-aac-hrr-hologram', JSON.stringify(valid));
         await mod.initAacHrr();
         expect(mod.isAacHrrReady()).toBe(true);
+        expect(localStorage.getItem('prism-aac-hrr-hologram')).not.toBeNull();
     });
 
     it('handles corrupt localStorage gracefully', async () => {
@@ -430,11 +432,9 @@ describe('persistence', () => {
     });
 
     it('does not persist immediately', () => {
-        const before = localStorage.getItem('prism-aac-hrr-hologram');
-        mod.recordPhrase('hello');
-        const after = localStorage.getItem('prism-aac-hrr-hologram');
-        // May or may not be the same — but if there was no prior data, still null
-        // The key test is the 5s debounce below
+        localStorage.removeItem('prism-aac-hrr-hologram');
+        mod.recordPhrase('hello world');
+        expect(localStorage.getItem('prism-aac-hrr-hologram')).toBeNull();
     });
 
     it('persists after 5s debounce', () => {
@@ -588,13 +588,16 @@ describe('end-to-end: record → predict', () => {
         expect(afterMore.some(r => r.word === 'please')).toBe(true);
     });
 
-    it('contextual suggestions return full phrase match', () => {
+    it('contextual suggestions return phrase-level results', () => {
         mod.recordPhrase('I want water');
-        // Probe the exact phrase — mock returns match
         const results = mod.getContextualSuggestions('I want water');
-        // Results depend on mock probe logic — may or may not match
-        // At minimum, the function should not crash
         expect(Array.isArray(results)).toBe(true);
+        if (results.length > 0) {
+            expect(results[0]).toHaveProperty('phrase');
+            expect(results[0]).toHaveProperty('relevance');
+            expect(typeof results[0].phrase).toBe('string');
+            expect(results[0].relevance).toBeGreaterThan(0);
+        }
     });
 
     it('no suggestions for unrecorded vocabulary', () => {
