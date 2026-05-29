@@ -44,7 +44,10 @@ async function _doInit(): Promise<boolean> {
 
         _ready = true;
         return true;
-    } catch {
+    } catch (err) {
+        if (typeof window !== 'undefined') {
+            console.warn('[HRR] WASM init failed — predictions will use n-gram engine only:', err);
+        }
         _initPromise = null;
         return false;
     }
@@ -197,4 +200,7 @@ function schedulePersist(): void {
 
 if (typeof window !== 'undefined') {
     window.addEventListener('beforeunload', flushPersist);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') flushPersist();
+    });
 }
