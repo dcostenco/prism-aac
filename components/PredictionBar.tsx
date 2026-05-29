@@ -227,34 +227,43 @@ export default function PredictionBar() {
     return [...cleaned, ...filler].slice(0, 5);
   }
 
+  // Cache HRR module ref so subsequent calls are synchronous (no tile reflow).
+  // Critical for switch scanning — async tile reorder causes wrong selection.
+  const hrrRef = useRef<{
+    getNextWordSuggestions: typeof import('../services/hrrContext')['getNextWordSuggestions'] extends (...args: infer A) => infer R ? (...args: A) => R : never;
+    isAacHrrReady: () => boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    import('../services/hrrContext').then(m => {
+      hrrRef.current = { getNextWordSuggestions: m.getNextWordSuggestions, isAacHrrReady: m.isAacHrrReady };
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (!text.trim()) return;
-    let cancelled = false;
     const merged = mergeAiCompletion(predictions, aiCompletion);
     const next = computeStableSlots(prevRef.current, merged);
-    prevRef.current = next;
-    setDisplayed(next);
 
-    const capturedText = text.trim();
-    import('../services/hrrContext').then(({ getNextWordSuggestions, isAacHrrReady }) => {
-      if (cancelled || !isAacHrrReady()) return;
-      const hrr = getNextWordSuggestions(capturedText);
-      if (cancelled || hrr.length === 0) return;
-      const hrrWords = hrr
-        .map(h => h.word)
-        .filter(w => isAllowedInLang(w, language));
-      const deduped = hrrWords.filter(
-        w => !next.some(n => n.toLowerCase() === w.toLowerCase()),
-      );
-      if (deduped.length === 0) return;
-      // Insert max 1 HRR suggestion at slot 1 (not slot 0) to preserve
-      // the corpus/trigram top pick and never displace emergency vocabulary.
-      const boosted = [next[0], deduped[0], ...next.slice(1)].filter(Boolean).slice(0, 5);
-      prevRef.current = boosted;
-      setDisplayed(boosted);
-    }).catch(() => {});
+    // HRR boost: synchronous once module is loaded (no tile reflow)
+    let final = next;
+    if (hrrRef.current?.isAacHrrReady()) {
+      const hrr = hrrRef.current.getNextWordSuggestions(text.trim());
+      if (hrr.length > 0) {
+        const hrrWords = hrr
+          .map(h => h.word)
+          .filter(w => isAllowedInLang(w, language));
+        const deduped = hrrWords.filter(
+          w => !next.some(n => n.toLowerCase() === w.toLowerCase()),
+        );
+        if (deduped.length > 0) {
+          final = [next[0], deduped[0], ...next.slice(1)].filter(Boolean).slice(0, 5);
+        }
+      }
+    }
 
-    return () => { cancelled = true; };
+    prevRef.current = final;
+    setDisplayed(final);
   }, [predictions, aiCompletion, text]);
 
   const handleTap = useCallback((word: string) => {

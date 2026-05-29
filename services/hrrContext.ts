@@ -56,7 +56,7 @@ async function _doInit(): Promise<boolean> {
 function validateHologram(data: unknown): data is number[] {
     if (!Array.isArray(data)) return false;
     if (data.length !== DIM) return false;
-    for (let i = 0; i < Math.min(data.length, 20); i++) {
+    for (let i = 0; i < data.length; i++) {
         if (typeof data[i] !== 'number' || !isFinite(data[i])) return false;
     }
     return true;
