@@ -13,11 +13,39 @@
  * tutor surface displays it as text. The `🧮 Eval` button is the
  * fastest, lowest-cost feedback path: no AI roundtrip, instant.
  */
-import { create, all, type MathScope } from 'mathjs';
+import {
+  create,
+  evaluateDependencies,
+  addDependencies,
+  subtractDependencies,
+  multiplyDependencies,
+  divideDependencies,
+  powDependencies,
+  sqrtDependencies,
+  absDependencies,
+  roundDependencies,
+  piDependencies,
+  fractionDependencies,
+  parseDependencies,
+} from 'mathjs';
 
-// Restricted mathjs instance. Block all dynamic code loading and
-// recursive evaluation paths that could be used to escape the sandbox.
-const _math = create(all, {});
+// Restricted mathjs instance with selective imports (tree-shakeable).
+// Only arithmetic + parse + evaluate — skips matrix ops, statistics, units, etc.
+// Reduces bundle from ~500KB to ~50KB.
+const _math = create({
+  evaluateDependencies,
+  addDependencies,
+  subtractDependencies,
+  multiplyDependencies,
+  divideDependencies,
+  powDependencies,
+  sqrtDependencies,
+  absDependencies,
+  roundDependencies,
+  piDependencies,
+  fractionDependencies,
+  parseDependencies,
+});
 const _sandbox_deny = () => { throw new Error('not allowed in AAC math'); };
 _math.import({
   import: _sandbox_deny,      // blocks dynamic code loading
