@@ -64,6 +64,8 @@
     "vitest": "^4.1.5"
   },
   "overrides": {
-    "postcss": "^8.5.10"
+    "postcss": "^8.5.10",
+    "protobufjs": "^7.5.8",
+    "ws": "^8.20.1"
   }
 }
