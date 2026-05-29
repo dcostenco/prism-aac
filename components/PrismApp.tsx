@@ -237,6 +237,8 @@ export default function PrismApp() {
     // total) and load in ~1-2s — completing well before the user navigates
     // to Settings and enables head tracking.
     import('@/services/headTracker').then(m => m.prewarmHeadTracker?.()).catch(() => {});
+    // HRR contextual memory — 229KB WASM, loads lazily
+    import('@/services/hrrContext').then(m => m.initAacHrr()).catch(() => {});
     // Pre-cache all pictograms for offline — runs in background
     import('@/services/pictogramService').then(m =>
       m.precacheAllPictograms?.(useSettingsStore.getState().language, 'symbols')
@@ -261,6 +263,7 @@ export default function PrismApp() {
       cleanupConnectivity?.();
       stopInbox();
       stopContactsSync();
+      import('@/services/hrrContext').then(m => m.destroyAacHrr()).catch(() => {});
     };
   }, [runDecay, seedTemplates, ensureSeed, refreshAuth]);
 

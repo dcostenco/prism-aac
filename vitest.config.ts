@@ -18,6 +18,7 @@ export default defineConfig({
       // so wasmTTS.ts can be imported without Vite import-analysis errors.
       'espeak-ng': path.resolve(__dirname, 'tests/mocks/espeak-ng.ts'),
       'espeak-ng-emscripten': path.resolve(__dirname, 'tests/mocks/espeak-ng.ts'),
+      'synalux-hrr': path.resolve(__dirname, 'tests/mocks/synalux-hrr.ts'),
     },
   },
 });

@@ -229,11 +229,32 @@ export default function PredictionBar() {
 
   useEffect(() => {
     if (!text.trim()) return;
-    // Only use stable slots within same language; full reset on language change
+    let cancelled = false;
     const merged = mergeAiCompletion(predictions, aiCompletion);
     const next = computeStableSlots(prevRef.current, merged);
     prevRef.current = next;
     setDisplayed(next);
+
+    const capturedText = text.trim();
+    import('../services/hrrContext').then(({ getNextWordSuggestions, isAacHrrReady }) => {
+      if (cancelled || !isAacHrrReady()) return;
+      const hrr = getNextWordSuggestions(capturedText);
+      if (cancelled || hrr.length === 0) return;
+      const hrrWords = hrr
+        .map(h => h.word)
+        .filter(w => isAllowedInLang(w, language));
+      const deduped = hrrWords.filter(
+        w => !next.some(n => n.toLowerCase() === w.toLowerCase()),
+      );
+      if (deduped.length === 0) return;
+      // Insert max 1 HRR suggestion at slot 1 (not slot 0) to preserve
+      // the corpus/trigram top pick and never displace emergency vocabulary.
+      const boosted = [next[0], deduped[0], ...next.slice(1)].filter(Boolean).slice(0, 5);
+      prevRef.current = boosted;
+      setDisplayed(boosted);
+    }).catch(() => {});
+
+    return () => { cancelled = true; };
   }, [predictions, aiCompletion, text]);
 
   const handleTap = useCallback((word: string) => {

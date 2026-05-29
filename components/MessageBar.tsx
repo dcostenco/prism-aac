@@ -415,6 +415,18 @@ export default function MessageBar() {
 
     addToHistory(toSpeak);
 
+    // HRR: record spoken phrase for contextual zero-search retrieval.
+    // Fire-and-forget — never blocks the speak path.
+    try {
+      import('../services/hrrContext').then(({ recordPhrase, isAacHrrReady }) => {
+        if (isAacHrrReady()) {
+          recordPhrase(toSpeak, {
+            timeOfDay: new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening',
+          });
+        }
+      }).catch(() => {});
+    } catch { /* HRR not available */ }
+
     // Speak is the strongest learning signal: the user just authoritatively
     // communicated this exact utterance. Reinforce every word and adjacent
     // pair/triple. We learn from the SOURCE-language text (what the user
