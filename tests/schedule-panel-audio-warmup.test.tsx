@@ -25,7 +25,7 @@ vi.mock('@/engine/useT', () => ({
 }));
 
 const tapFeedback = vi.fn();
-const playTimerRing = vi.fn();
+const playTimerRing = vi.fn().mockResolvedValue(undefined);
 const startAudioWarmup = vi.fn();
 const stopAudioWarmup = vi.fn();
 vi.mock('@/services/feedback', () => ({

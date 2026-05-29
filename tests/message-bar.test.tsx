@@ -77,7 +77,7 @@ const mocks = vi.hoisted(() => {
 
 // ── mocks ──────────────────────────────────────────────────────────────────────
 
-vi.mock('@/store/messageStore',  () => ({ useMessageStore:  mocks.useMessageStore  }));
+vi.mock('@/store/messageStore',  () => ({ useMessageStore: mocks.useMessageStore, setLatestTranslated: vi.fn(), getLatestTranslated: vi.fn().mockReturnValue(null), cancelActiveEmergency: vi.fn() }));
 vi.mock('@/store/settingsStore', () => ({ useSettingsStore: mocks.useSettingsStore }));
 vi.mock('@/store/uiStore',       () => ({ useUIStore:       mocks.useUIStore       }));
 
