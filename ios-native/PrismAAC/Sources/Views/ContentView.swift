@@ -365,14 +365,16 @@ struct PrismWebView: UIViewRepresentable {
         // MARK: - App Store review prompt
 
         private static let speakCountKey = "prism_speak_count"
-        private static let reviewRequestedKey = "prism_review_requested"
+        private static let lastReviewPromptKey = "prism_last_review_prompt"
 
         private func maybeRequestAppStoreReview() {
-            guard !UserDefaults.standard.bool(forKey: Self.reviewRequestedKey) else { return }
             let count = UserDefaults.standard.integer(forKey: Self.speakCountKey) + 1
             UserDefaults.standard.set(count, forKey: Self.speakCountKey)
-            guard count == 3 else { return }
-            UserDefaults.standard.set(true, forKey: Self.reviewRequestedKey)
+            guard count >= 5, count % 50 == 0 || count == 5 else { return }
+            let lastPrompt = UserDefaults.standard.double(forKey: Self.lastReviewPromptKey)
+            let now = Date().timeIntervalSince1970
+            guard now - lastPrompt > 60 * 86400 else { return }
+            UserDefaults.standard.set(now, forKey: Self.lastReviewPromptKey)
             requestReview?()
         }
 
