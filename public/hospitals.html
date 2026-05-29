@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bedside AAC App for Hospitals | Patient Communication | Prism AAC</title>
+<meta name="description" content="Free bedside AAC for every patient who can't speak. Prism AAC works offline on any iPad — pain scale, nurse call, quick phrases. HIPAA-safe, zero data collection. Hospital site licenses available.">
+<meta name="keywords" content="bedside AAC, hospital AAC app, patient communication, intubation communication, ICU communication board, free AAC app, HIPAA AAC, offline AAC, nurse call button, pain scale app">
+<meta property="og:title" content="Prism AAC for Hospitals & Rehab | Free Bedside Communication">
+<meta property="og:description" content="Free bedside AAC for every patient who can't speak. Works offline on any iPad. Pain scale, nurse call, quick phrases. HIPAA-safe by architecture.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://synalux.ai/prism-aac/hospitals">
+<meta property="og:site_name" content="Synalux Health">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prism AAC for Hospitals & Rehab | Free Bedside Communication">
+<meta name="twitter:description" content="Free bedside AAC for every patient who can't speak. Works offline. HIPAA-safe. No setup needed.">
+<link rel="canonical" href="https://synalux.ai/prism-aac/hospitals">
+<style>
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: #1a1a2e;
+    background: #ffffff;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #0a1628 0%, #1a2d5a 50%, #2a4073 100%);
+    color: #ffffff;
+    padding: 56px 24px 48px;
+    text-align: center;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    color: #8ab4f8;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+  }
+
+  .hero .subtitle {
+    font-size: 17px;
+    opacity: 0.85;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.5;
+    font-weight: 400;
+  }
+
+  /* Sections */
+  .section {
+    padding: 48px 0;
+    border-bottom: 1px solid #e8ecf1;
+  }
+
+  .section:last-of-type {
+    border-bottom: none;
+  }
+
+  .section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a2d5a;
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+  }
+
+  .section .section-subtitle {
+    font-size: 15px;
+    color: #5a6785;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  /* Problem cards */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .problem-card {
+    background: #fef8f8;
+    border: 1px solid #f0d4d4;
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .problem-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .problem-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #8b2020;
+    margin-bottom: 6px;
+  }
+
+  .problem-card p {
+    font-size: 14px;
+    color: #6b3a3a;
+    line-height: 1.5;
+  }
+
+  /* Feature cards */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .feature-card {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .feature-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .feature-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a2d5a;
+    margin-bottom: 8px;
+  }
+
+  .feature-card p {
+    font-size: 14px;
+    color: #3d4f6f;
+    line-height: 1.5;
+  }
+
+  /* Highlight feature (spans full width) */
+  .feature-highlight {
+    grid-column: 1 / -1;
+    background: #f0faf4;
+    border: 1px solid #c8ecd8;
+  }
+
+  .feature-highlight h3 {
+    color: #1a6b3a;
+  }
+
+  .feature-highlight p {
+    color: #3d6b4f;
+  }
+
+  /* Pricing */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  .pricing-card {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 28px 20px;
+    text-align: center;
+  }
+
+  .pricing-card.featured {
+    background: #eef4ff;
+    border: 2px solid #1a2d5a;
+    position: relative;
+  }
+
+  .pricing-card.featured::before {
+    content: "Most Popular";
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a2d5a;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 14px;
+    border-radius: 10px;
+  }
+
+  .pricing-tier {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #5a6785;
+    margin-bottom: 8px;
+  }
+
+  .pricing-price {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a2d5a;
+    margin-bottom: 4px;
+  }
+
+  .pricing-price .period {
+    font-size: 14px;
+    font-weight: 400;
+    color: #5a6785;
+  }
+
+  .pricing-desc {
+    font-size: 13px;
+    color: #5a6785;
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  .pricing-features {
+    list-style: none;
+    padding: 0;
+    text-align: left;
+  }
+
+  .pricing-features li {
+    padding: 5px 0;
+    padding-left: 20px;
+    position: relative;
+    font-size: 13px;
+    color: #3d4f6f;
+    line-height: 1.4;
+  }
+
+  .pricing-features li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: #1a8a4a;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .pricing-cta {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .pricing-cta-primary {
+    background: #1a2d5a;
+    color: #ffffff;
+  }
+
+  .pricing-cta-primary:hover {
+    background: #2a4073;
+  }
+
+  .pricing-cta-secondary {
+    background: #e2e8f0;
+    color: #1a2d5a;
+  }
+
+  .pricing-cta-secondary:hover {
+    background: #d0d9e8;
+  }
+
+  /* Evidence stats */
+  .evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .evidence-card {
+    text-align: center;
+    padding: 24px 12px;
+    background: #f0f4fa;
+    border: 1px solid #d0d9e8;
+    border-radius: 10px;
+  }
+
+  .evidence-stat {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a2d5a;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .evidence-label {
+    font-size: 13px;
+    color: #5a6785;
+    line-height: 1.4;
+  }
+
+  /* CTA section */
+  .cta-section {
+    background: linear-gradient(135deg, #0a1628 0%, #1a2d5a 50%, #2a4073 100%);
+    border-radius: 12px;
+    padding: 48px 32px;
+    text-align: center;
+    margin: 48px 0;
+  }
+
+  .cta-section h2 {
+    color: #ffffff;
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+
+  .cta-section p {
+    font-size: 15px;
+    color: rgba(255,255,255,0.8);
+    margin-bottom: 24px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cta-link {
+    display: inline-block;
+    background: #ffffff;
+    color: #1a2d5a;
+    text-decoration: none;
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+
+  .cta-link:hover {
+    background: #e8ecf1;
+  }
+
+  .cta-secondary-text {
+    display: block;
+    margin-top: 14px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .cta-secondary-text a {
+    color: #8ab4f8;
+    text-decoration: none;
+  }
+
+  /* Footer */
+  footer {
+    background: #f7f9fc;
+    border-top: 1px solid #e2e8f0;
+    padding: 32px 24px;
+    text-align: center;
+  }
+
+  footer .footer-brand {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a2d5a;
+    margin-bottom: 8px;
+  }
+
+  footer .footer-disclaimer {
+    font-size: 12px;
+    color: #8896aa;
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  footer .footer-links {
+    margin-top: 12px;
+    font-size: 13px;
+  }
+
+  footer .footer-links a {
+    color: #5a6785;
+    text-decoration: none;
+    margin: 0 8px;
+    border-bottom: 1px solid #d0d9e8;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .hero {
+      padding: 40px 20px 36px;
+    }
+
+    .hero h1 {
+      font-size: 25px;
+    }
+
+    .hero .subtitle {
+      font-size: 15px;
+    }
+
+    .section {
+      padding: 36px 0;
+    }
+
+    .section h2 {
+      font-size: 20px;
+    }
+
+    .problem-grid,
+    .feature-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .pricing-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .pricing-card.featured {
+      order: -1;
+    }
+
+    .evidence-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .cta-section {
+      padding: 36px 20px;
+      margin: 36px 0;
+    }
+  }
+
+  /* Print styles */
+  @media print {
+    .hero {
+      background: #1a2d5a !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .cta-link {
+      border: 2px solid #1a2d5a;
+      color: #1a2d5a !important;
+      background: transparent !important;
+    }
+
+    body {
+      font-size: 12px;
+    }
+
+    .section {
+      padding: 24px 0;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-badge">Hospital &amp; Rehab</div>
+    <h1>Prism AAC for Hospitals &amp; Rehab</h1>
+    <p class="subtitle">Free bedside AAC for every patient who can&rsquo;t speak</p>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- The Problem -->
+  <section class="section">
+    <h2>The Communication Gap in Acute Care</h2>
+    <p class="section-subtitle">When patients lose their voice, the gap between them and their care team becomes a safety risk.</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <span class="problem-icon" aria-hidden="true">&#128065;</span>
+        <h3>Patients Lose Their Voice</h3>
+        <p>After intubation, stroke, TBI, or surgery, patients are awake and aware but unable to speak. Communication needs are immediate and urgent.</p>
+      </div>
+      <div class="problem-card">
+        <span class="problem-icon" aria-hidden="true">&#128176;</span>
+        <h3>Shared Devices Are Scarce</h3>
+        <p>Hospital-owned AAC devices are expensive, shared across units, and difficult to sanitize between patients. Most floors have zero or one.</p>
+      </div>
+      <div class="problem-card">
+        <span class="problem-icon" aria-hidden="true">&#128246;</span>
+        <h3>WiFi Dead Zones</h3>
+        <p>Many hospital areas have spotty or no WiFi. Cloud-dependent apps fail exactly when patients need them most.</p>
+      </div>
+      <div class="problem-card">
+        <span class="problem-icon" aria-hidden="true">&#128241;</span>
+        <h3>Family iPads Go Unused</h3>
+        <p>Families bring personal iPads to the bedside, but without communication software installed, the device sits idle while the patient struggles.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bedside Mode Features -->
+  <section class="section">
+    <h2>Bedside Mode Features</h2>
+    <p class="section-subtitle">Purpose-built for acute care, inpatient rehab, and post-surgical recovery. Download and hand to the patient.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="feature-icon" aria-hidden="true">&#128200;</span>
+        <h3>One-Tap Pain Scale (0&ndash;10)</h3>
+        <p>Visual pain scale with numeric rating and faces. Patients tap to communicate pain level instantly. No training needed.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon" aria-hidden="true">&#128276;</span>
+        <h3>Nurse Call Button</h3>
+        <p>Large, visible nurse call button that triggers an on-device alert. Works alongside existing call systems.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon" aria-hidden="true">&#128172;</span>
+        <h3>Quick Phrase Cards</h3>
+        <p>&ldquo;I need water,&rdquo; &ldquo;I&rsquo;m in pain,&rdquo; &ldquo;Call my family,&rdquo; &ldquo;I need the bathroom.&rdquo; Pre-loaded phrases patients tap to speak immediately.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon" aria-hidden="true">&#128073;</span>
+        <h3>Large Targets for Limited Mobility</h3>
+        <p>Oversized, high-contrast buttons designed for patients with limited range of motion, tremor, or post-surgical weakness.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon" aria-hidden="true">&#127918;</span>
+        <h3>Switch Scanning + Eye Gaze</h3>
+        <p>Compatible with switch scanning and eye gaze for patients who cannot use touch. Full access method support from day one.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon" aria-hidden="true">&#9889;</span>
+        <h3>No Login, No Setup</h3>
+        <p>Download from the App Store and hand it to the patient. No account creation, no configuration, no onboarding wizard. Immediate use.</p>
+      </div>
+      <div class="feature-card feature-highlight">
+        <span class="feature-icon" aria-hidden="true">&#9992;</span>
+        <h3>Works WITHOUT WiFi &mdash; Fully Offline</h3>
+        <p>Every feature runs entirely on-device. No internet connection required. Works in ICU, OR recovery, rural facilities, and anywhere WiFi is unreliable.</p>
+      </div>
+      <div class="feature-card feature-highlight">
+        <span class="feature-icon" aria-hidden="true">&#128274;</span>
+        <h3>HIPAA-Safe: Zero Data Collection, Zero Cloud</h3>
+        <p>No patient data is collected, stored, or transmitted. No analytics, no telemetry, no user tracking. All processing stays on the device. No BAA required.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Clinical Evidence -->
+  <section class="section">
+    <h2>Clinical Evidence</h2>
+    <p class="section-subtitle">The research supports what your SLPs already know: cost and complexity are the barriers, not clinical need.</p>
+    <div class="evidence-grid">
+      <div class="evidence-card">
+        <span class="evidence-stat">25%</span>
+        <span class="evidence-label">of SLPs cite cost as the primary barrier to AAC adoption</span>
+      </div>
+      <div class="evidence-card">
+        <span class="evidence-stat">$0</span>
+        <span class="evidence-label">Prism AAC cost for individual patients on personal devices</span>
+      </div>
+      <div class="evidence-card">
+        <span class="evidence-stat">0 min</span>
+        <span class="evidence-label">IT setup time &mdash; no infrastructure, no integration needed</span>
+      </div>
+      <div class="evidence-card">
+        <span class="evidence-stat">100%</span>
+        <span class="evidence-label">Offline &mdash; works with existing hospital iPads, no WiFi needed</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="section">
+    <h2>Pricing</h2>
+    <p class="section-subtitle">Free for patients. Affordable for facilities. No per-user fees, no usage caps.</p>
+    <div class="pricing-grid">
+
+      <div class="pricing-card">
+        <div class="pricing-tier">Individual Patient</div>
+        <div class="pricing-price">Free</div>
+        <div class="pricing-desc">Personal device, forever</div>
+        <ul class="pricing-features">
+          <li>Full Bedside Mode features</li>
+          <li>All access methods included</li>
+          <li>Works on any iPad or iPhone</li>
+          <li>No account required</li>
+          <li>No expiration</li>
+        </ul>
+        <a href="https://synalux.ai/prism-aac" class="pricing-cta pricing-cta-secondary">Download Free</a>
+      </div>
+
+      <div class="pricing-card featured">
+        <div class="pricing-tier">Hospital Site License</div>
+        <div class="pricing-price">$499 <span class="period">/year per facility</span></div>
+        <div class="pricing-desc">Everything you need for facility-wide deployment</div>
+        <ul class="pricing-features">
+          <li>Pre-configured iPad support</li>
+          <li>MDM compatible (Jamf, Mosyle, etc.)</li>
+          <li>Staff training webinar</li>
+          <li>Priority support line</li>
+          <li>Custom Quick Phrase packs (department-specific)</li>
+          <li>Usage analytics for quality metrics</li>
+        </ul>
+        <a href="mailto:hospitals@synalux.ai?subject=Hospital%20Site%20License%20Inquiry" class="pricing-cta pricing-cta-primary">Contact Sales</a>
+      </div>
+
+      <div class="pricing-card">
+        <div class="pricing-tier">Health System License</div>
+        <div class="pricing-price">Custom</div>
+        <div class="pricing-desc">Multi-facility pricing for health systems</div>
+        <ul class="pricing-features">
+          <li>Everything in Site License</li>
+          <li>Dedicated account manager</li>
+          <li>Multi-facility volume pricing</li>
+          <li>System-wide analytics dashboard</li>
+          <li>Custom integration support</li>
+        </ul>
+        <a href="mailto:hospitals@synalux.ai?subject=Health%20System%20License%20Inquiry" class="pricing-cta pricing-cta-secondary">Contact Us</a>
+      </div>
+
+    </div>
+    <p style="font-size:13px; color:#8896aa; margin-top:16px; text-align:center;">Questions? Reach us at <a href="mailto:hospitals@synalux.ai" style="color:#1a2d5a; font-weight:600; text-decoration:none; border-bottom:1px solid #d0d9e8;">hospitals@synalux.ai</a></p>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <h2>Schedule a Demo</h2>
+    <p>See Bedside Mode in action. We&rsquo;ll walk your team through setup, access methods, and facility deployment in 20 minutes.</p>
+    <a href="mailto:hospitals@synalux.ai?subject=Demo%20Request%20%E2%80%94%20Prism%20AAC%20for%20Hospitals" class="cta-link">Schedule a Demo</a>
+    <span class="cta-secondary-text">Or email us directly at <a href="mailto:hospitals@synalux.ai">hospitals@synalux.ai</a></span>
+  </div>
+
+</main>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-brand">Synalux Health</div>
+  <p class="footer-disclaimer">Prism AAC is a communication tool and is not intended to diagnose or treat any medical condition. Clinical decisions regarding AAC device selection should be made by qualified Speech-Language Pathologists based on individualized assessment. Feature availability may vary by device and iOS version. HIPAA compliance statement refers to the app&rsquo;s architecture of zero data collection and zero cloud transmission; facilities should conduct their own compliance review.</p>
+  <div class="footer-links">
+    <a href="https://synalux.ai">synalux.ai</a>
+    <a href="https://synalux.ai/prism-aac">Prism AAC</a>
+    <a href="https://synalux.ai/prism-aac/for-slps">For SLPs</a>
+    <a href="mailto:hospitals@synalux.ai">Contact</a>
+  </div>
+</footer>
+
+</body>
+</html>
