@@ -101,9 +101,10 @@ class HrrPredictor {
             const triKey = `w:${words[words.length - 2].toLowerCase()} ${words[words.length - 1].toLowerCase()}`;
             const results = this.hologram.probe(triKey, topK);
             for (const r of results) {
-                if (r.similarity >= 0.02 && !seen.has(r.concept.toLowerCase())) {
-                    seen.add(r.concept.toLowerCase());
-                    out.push(r.concept);
+                const word = this.hologram.get_summary(r.concept) ?? r.concept;
+                if (r.similarity >= 0.02 && !seen.has(word.toLowerCase())) {
+                    seen.add(word.toLowerCase());
+                    out.push(word);
                 }
             }
         }
@@ -113,9 +114,10 @@ class HrrPredictor {
             const biKey = `w:${words[words.length - 1].toLowerCase()}`;
             const results = this.hologram.probe(biKey, topK - out.length);
             for (const r of results) {
-                if (r.similarity >= 0.02 && !seen.has(r.concept.toLowerCase())) {
-                    seen.add(r.concept.toLowerCase());
-                    out.push(r.concept);
+                const word = this.hologram.get_summary(r.concept) ?? r.concept;
+                if (r.similarity >= 0.02 && !seen.has(word.toLowerCase())) {
+                    seen.add(word.toLowerCase());
+                    out.push(word);
                 }
             }
         }

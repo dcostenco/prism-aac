@@ -148,8 +148,10 @@ export function getNextWordSuggestions(
     function collect(results: any[]) {
         for (const r of results) {
             if (r.similarity < 0.02) continue;
-            const word = typeof r.concept === 'string' ? r.concept : '';
-            if (!word || seen.has(word.toLowerCase())) continue;
+            // WASM probe returns the concept KEY (e.g. "w:want"), not the value.
+            // Use get_summary() to retrieve the actual next word.
+            const word = _hologram.get_summary?.(r.concept) ?? r.concept;
+            if (typeof word !== 'string' || !word || seen.has(word.toLowerCase())) continue;
             seen.add(word.toLowerCase());
             out.push({ word, relevance: r.similarity });
             if (out.length >= topK) return;

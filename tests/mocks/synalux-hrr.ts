@@ -1,8 +1,8 @@
 /**
- * Mock @synalux/hrr WASM package for testing.
+ * Mock synalux-hrr WASM package for testing.
+ * Matches real WASM behavior: probe() returns concept KEYS,
+ * get_summary() looks up the stored summary for a key.
  */
-
-interface EncodeEntry { summary: string }
 
 export class HrrHologram {
     dim: number;
@@ -22,13 +22,17 @@ export class HrrHologram {
     probe(query: string, topK: number) {
         const results: Array<{ concept: string; similarity: number }> = [];
 
-        for (const [concept, summary] of this.concepts) {
+        for (const [concept] of this.concepts) {
             if (concept === query) {
-                results.push({ concept: summary, similarity: 0.72 });
+                results.push({ concept, similarity: 0.72 });
             }
         }
 
         return results.slice(0, topK);
+    }
+
+    get_summary(concept: string): string | null {
+        return this.concepts.get(concept) || null;
     }
 
     export_hologram() {
