@@ -41,6 +41,7 @@ import { startInboxPolling } from '@/services/inboxService';
 import { startContactsSync } from '@/services/contactsIntegrationService';
 import { broadcastIntegrationEvent } from '@/services/integrationsService';
 import { registerConnectivityListener } from '@/services/emergencyService';
+import { recordFirstUse, checkDaysUsedReview } from '@/services/reviewPromptService';
 import { useT } from '@/engine/useT';
 
 const PROVIDER_LABEL: Record<string, string> = {
@@ -248,6 +249,11 @@ export default function PrismApp() {
     // portal into local store so the AAC user sees an instant picker.
     // Same no-op-on-404 pattern as the inbox poller.
     const stopContactsSync = startContactsSync();
+    // App Store review prompt: record first-use date and check if 7+ days
+    // have passed. The native bridge has its own frequency limiting so
+    // calling this every mount is safe.
+    recordFirstUse();
+    checkDaysUsedReview();
     return () => {
       unregisterPanic();
       cleanupConnectivity?.();

@@ -28,6 +28,7 @@ import { evaluateExpression } from '@/services/exprEval';
 import { evaluatePython, isPythonReady, debugPython, type TraceStep } from '@/services/pythonRuntime';
 import { evaluateJava } from '@/services/javaRuntime';
 import { serializeAsCode } from '@/services/codeSerialize';
+import { recordMathExerciseComplete } from '@/services/reviewPromptService';
 import { parseCellKey, type Cell, type CellKey } from '@/engine/mathGrid';
 
 type TutorMode = 'help' | 'check' | 'solve' | 'eval' | 'debug';
@@ -239,7 +240,13 @@ export default function MathTutorTool() {
       await Promise.race([askPromise, timeoutPromise]);
       if (mySeq !== requestSeqRef.current) return;
       setResponse(buffer);
-      if (buffer) aacSpeak(buffer, speechRate, speechVolume);
+      if (buffer) {
+        aacSpeak(buffer, speechRate, speechVolume);
+        // Record successful check/solve for App Store review prompt trigger
+        if (which === 'check' || which === 'solve') {
+          recordMathExerciseComplete();
+        }
+      }
     } catch (e) {
       if (mySeq !== requestSeqRef.current) return;
       const f = friendlyError(e);

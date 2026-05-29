@@ -19,6 +19,7 @@ import WatchConnectivity
 ///   prismNative.speak(text, lang, rate)   → AVSpeechSynthesizer
 ///   prismNative.emergency(phrase)         → WatchConnectivity + Twilio
 ///   prismNative.memoryPressure()          → returns free MB
+///   prismNative.requestReview()           → StoreKit review prompt (frequency-limited)
 ///
 /// Offline: WKWebView built-in HTTP cache + content-world localStorage.
 /// First load: fetches live. Subsequent loads: cache-first (works offline).
@@ -159,6 +160,12 @@ struct PrismWebView: UIViewRepresentable {
                 // The Swift handler whitelists the section value — no arbitrary URL injection.
                 window.webkit.messageHandlers.prismNative.postMessage({
                     action: 'openSettings', section: section || 'accessibility'
+                });
+            },
+            requestReview: function() {
+                // Triggers App Store review prompt. Native side has frequency limiting.
+                window.webkit.messageHandlers.prismNative.postMessage({
+                    action: 'requestReview'
                 });
             }
         };
@@ -325,6 +332,12 @@ struct PrismWebView: UIViewRepresentable {
                 startSpeechRecognition(lang: lang, webView: message.webView)
             case "stopVoice":
                 stopSpeechRecognition()
+            case "requestReview":
+                // Web app can trigger App Store review prompt at strategic moments
+                // (e.g. after completing learning exercises, after 7+ days of use).
+                // Delegates to maybeRequestAppStoreReview() which already has
+                // frequency limiting (every 50 speaks, max once per 60 days).
+                maybeRequestAppStoreReview()
             case "openSettings":
                 // Security: origin + main-frame validation (same pattern as askAI / startVoice)
                 guard let pageURL = message.webView?.url,
