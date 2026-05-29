@@ -126,8 +126,61 @@ describe('initAacHrr', () => {
         localStorage.setItem('prism-aac-hrr-hologram', JSON.stringify(valid));
         await mod.initAacHrr();
         expect(mod.isAacHrrReady()).toBe(true);
-        // Valid data should be preserved
         expect(localStorage.getItem('prism-aac-hrr-hologram')).not.toBeNull();
+    });
+
+    it('rejects hologram with NaN at element 500 (validates ALL elements)', async () => {
+        const corrupt = new Array(1024).fill(0);
+        corrupt[500] = NaN;
+        localStorage.setItem('prism-aac-hrr-hologram', JSON.stringify(corrupt));
+        await mod.initAacHrr();
+        expect(localStorage.getItem('prism-aac-hrr-hologram')).toBeNull();
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// destroyAacHrr — cleanup
+// ═══════════════════════════════════════════════════════════════
+
+describe('destroyAacHrr', () => {
+    it('sets isAacHrrReady to false', async () => {
+        await mod.initAacHrr();
+        expect(mod.isAacHrrReady()).toBe(true);
+        mod.destroyAacHrr();
+        expect(mod.isAacHrrReady()).toBe(false);
+    });
+
+    it('recordPhrase is no-op after destroy', async () => {
+        await mod.initAacHrr();
+        mod.destroyAacHrr();
+        encodeSpy.mockClear();
+        mod.recordPhrase('hello world');
+        expect(encodeSpy).not.toHaveBeenCalled();
+    });
+
+    it('getNextWordSuggestions returns empty after destroy', async () => {
+        await mod.initAacHrr();
+        mod.recordPhrase('I want water');
+        mod.destroyAacHrr();
+        expect(mod.getNextWordSuggestions('I')).toEqual([]);
+    });
+
+    it('re-init after destroy works correctly', async () => {
+        await mod.initAacHrr();
+        mod.recordPhrase('I want water');
+        mod.destroyAacHrr();
+        // Re-init
+        const ok = await mod.initAacHrr();
+        expect(ok).toBe(true);
+        expect(mod.isAacHrrReady()).toBe(true);
+    });
+
+    it('clears persist timer — no crash after destroy', async () => {
+        await mod.initAacHrr();
+        mod.recordPhrase('test phrase');
+        mod.destroyAacHrr();
+        // Advance past debounce — timer was cleared, no crash
+        vi.advanceTimersByTime(10_000);
     });
 });
 
