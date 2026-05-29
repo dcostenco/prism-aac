@@ -6,7 +6,8 @@
  *
  * HuggingFace sources:
  *   dcostenco/prism-coder-1.7b  · dcostenco/prism-coder-8b
- *   dcostenco/prism-coder-14b   · dcostenco/prism-coder-32b
+ *   dcostenco/prism-coder-4b    · dcostenco/prism-coder-14b
+ *   dcostenco/prism-coder-32b
  */
 
 export interface ModelSpec {
@@ -38,6 +39,16 @@ export const MODEL_REGISTRY = {
     sizeGB:     1.1,
     minFreeMB:  1_200,
     role:       'On-device iOS · always fits · ~0.5s',
+  },
+  '4b': {
+    ollamaTag:  'dcostenco/prism-coder:4b',
+    iosFile:    'prism-aac-4b-q4km',
+    hfRepo:     'dcostenco/prism-coder-4b',
+    version:    'v43',
+    accuracy:   100.0,
+    sizeGB:     2.5,
+    minFreeMB:  2_800,
+    role:       'iPhone 15/16 Pro · iPad Air M1+ · ~0.8s',
   },
   '8b': {
     ollamaTag:  'dcostenco/prism-coder:8b',
@@ -75,4 +86,4 @@ export type ModelId = keyof typeof MODEL_REGISTRY;
 
 /** Ordered list for auto-sideload: best → smallest, so we pull the
  *  highest-accuracy model the user's hardware can handle. */
-export const SIDELOAD_ORDER: ModelId[] = ['32b', '14b', '8b', '1b7'];
+export const SIDELOAD_ORDER: ModelId[] = ['32b', '14b', '8b', '4b', '1b7'];
