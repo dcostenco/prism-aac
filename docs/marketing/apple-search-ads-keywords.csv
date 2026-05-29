@@ -1,0 +1,195 @@
+Campaign,Ad Group,Keyword,Match Type,Max CPT Bid (USD)
+Brand,Brand Core,prism aac,Exact,2.50
+Brand,Brand Core,prismaac,Exact,2.50
+Brand,Brand Core,prism aac app,Exact,2.50
+Brand,Brand Core,prism communication app,Exact,2.50
+Brand,Brand Core,prism speech app,Exact,2.50
+Brand,Brand Core,prism assistive,Exact,2.50
+Brand,Brand Core,prism text to speech,Exact,2.50
+Brand,Brand Core,synalux,Exact,2.50
+Brand,Brand Core,synalux aac,Exact,2.50
+Brand,Brand Core,synalux prism,Exact,2.50
+Brand,Brand Modifiers,prism aac free,Exact,2.50
+Brand,Brand Modifiers,prism aac head tracking,Exact,2.50
+Brand,Brand Modifiers,prism aac apple watch,Exact,2.50
+Brand,Brand Modifiers,prism aac offline,Exact,2.50
+Brand,Brand Modifiers,prism aac eye gaze,Exact,2.50
+Brand,Brand Modifiers,prism aac switch scanning,Exact,2.50
+Brand,Brand Modifiers,prism aac bedside mode,Exact,2.50
+Generic,AAC Core,aac app,Exact,2.00
+Generic,AAC Core,aac,Broad,1.50
+Generic,AAC Core,aac communication app,Exact,2.00
+Generic,AAC Core,aac device app,Exact,2.00
+Generic,AAC Core,aac app free,Exact,2.00
+Generic,AAC Core,free aac app,Exact,2.00
+Generic,AAC Core,augmentative communication app,Exact,1.80
+Generic,AAC Core,augmentative communication,Broad,1.50
+Generic,AAC Core,alternative communication app,Exact,1.80
+Generic,AAC Core,best aac app,Exact,2.00
+Generic,AAC Core,best free aac app,Exact,2.00
+Generic,AAC Core,aac app for adults,Exact,1.80
+Generic,AAC Core,aac app for kids,Exact,2.00
+Generic,AAC Core,aac app for children,Exact,2.00
+Generic,AAC Core,aac app with ai,Exact,1.80
+Generic,AAC Core,ai aac app,Exact,1.80
+Generic,SGD,speech generating device,Exact,1.80
+Generic,SGD,sgd app,Exact,1.80
+Generic,SGD,speech generating device app,Exact,1.80
+Generic,SGD,communication device app,Exact,1.80
+Generic,SGD,assistive communication device,Exact,1.80
+Generic,Text to Speech,text to speech app,Exact,1.50
+Generic,Text to Speech,text to speech,Broad,1.20
+Generic,Text to Speech,tts app,Exact,1.50
+Generic,Text to Speech,type to talk app,Exact,1.80
+Generic,Text to Speech,type to speak,Exact,1.50
+Generic,Text to Speech,speak for me app,Exact,1.80
+Generic,Text to Speech,talk for me app,Exact,1.80
+Generic,Text to Speech,app that talks for you,Exact,1.80
+Generic,Text to Speech,app to help me speak,Exact,1.80
+Generic,Picture Communication,picture communication app,Exact,1.80
+Generic,Picture Communication,picture communication board,Exact,1.80
+Generic,Picture Communication,pecs app,Exact,2.00
+Generic,Picture Communication,pecs communication app,Exact,2.00
+Generic,Picture Communication,symbol communication app,Exact,1.80
+Generic,Picture Communication,communication board app,Exact,1.80
+Generic,Picture Communication,pictogram app,Exact,1.50
+Generic,Picture Communication,visual communication app,Exact,1.50
+Generic,Assistive Tech,assistive technology app,Exact,1.50
+Generic,Assistive Tech,assistive technology,Broad,1.20
+Generic,Assistive Tech,assistive communication,Exact,1.50
+Generic,Assistive Tech,disability communication app,Exact,1.80
+Generic,Assistive Tech,special needs app,Exact,1.50
+Generic,Assistive Tech,special needs communication,Exact,1.80
+Generic,Accessibility,switch access app,Exact,1.80
+Generic,Accessibility,switch scanning app,Exact,1.80
+Generic,Accessibility,eye tracking app,Exact,1.80
+Generic,Accessibility,eye gaze app,Exact,1.80
+Generic,Accessibility,eye gaze communication,Exact,1.80
+Generic,Accessibility,head tracking app,Exact,1.80
+Generic,Accessibility,head tracking communication,Exact,1.80
+Generic,Accessibility,hands free communication app,Exact,1.80
+Generic,Offline Privacy,offline communication app,Exact,1.50
+Generic,Offline Privacy,offline speech app,Exact,1.50
+Generic,Offline Privacy,hipaa compliant communication,Exact,1.80
+Generic,Offline Privacy,on device ai app,Exact,1.50
+Generic,Apple Watch,apple watch communication app,Exact,1.80
+Generic,Apple Watch,apple watch aac,Exact,1.80
+Generic,Apple Watch,apple watch speech app,Exact,1.80
+Generic,Apple Watch,apple watch text to speech,Exact,1.80
+Generic,Speech Therapy,speech therapy app,Exact,1.50
+Generic,Speech Therapy,speech therapy,Broad,1.20
+Generic,Speech Therapy,slp app,Exact,1.80
+Generic,Speech Therapy,communication therapy app,Exact,1.50
+Generic,Education,special education app,Exact,1.50
+Generic,Education,iep communication,Exact,1.80
+Generic,Education,school aac,Exact,1.80
+Generic,Education,special education communication,Exact,1.50
+Generic,Multilingual,multilingual aac app,Exact,1.50
+Generic,Multilingual,spanish aac app,Exact,1.80
+Generic,Multilingual,bilingual aac,Exact,1.50
+Generic,Multilingual,communication app spanish,Exact,1.50
+Competitor,Proloquo2Go,proloquo2go,Exact,2.50
+Competitor,Proloquo2Go,proloquo,Exact,2.50
+Competitor,Proloquo2Go,proloquo2go free,Exact,2.50
+Competitor,Proloquo2Go,proloquo2go alternative,Exact,2.50
+Competitor,Proloquo2Go,proloquo2go free alternative,Exact,2.50
+Competitor,Proloquo2Go,app like proloquo2go,Exact,2.50
+Competitor,TouchChat,touchchat,Exact,2.50
+Competitor,TouchChat,touch chat,Exact,2.50
+Competitor,TouchChat,touchchat hd,Exact,2.50
+Competitor,TouchChat,touchchat alternative,Exact,2.50
+Competitor,TouchChat,touchchat free alternative,Exact,2.50
+Competitor,LAMP,lamp words for life,Exact,2.50
+Competitor,LAMP,lamp words,Exact,2.50
+Competitor,LAMP,lamp aac,Exact,2.50
+Competitor,LAMP,lamp aac app,Exact,2.50
+Competitor,LAMP,lamp words for life alternative,Exact,2.50
+Competitor,TD Snap,td snap,Exact,2.50
+Competitor,TD Snap,td snap app,Exact,2.50
+Competitor,TD Snap,tobii dynavox,Exact,2.50
+Competitor,TD Snap,td snap alternative,Exact,2.50
+Competitor,TD Snap,dynavox app,Exact,2.50
+Competitor,TD Snap,dynavox alternative,Exact,2.50
+Competitor,Grid,grid aac,Exact,2.00
+Competitor,Grid,grid app,Exact,2.00
+Competitor,Grid,smartbox grid,Exact,2.00
+Competitor,Grid,grid aac alternative,Exact,2.00
+Competitor,Avaz,avaz aac,Exact,2.00
+Competitor,Avaz,avaz app,Exact,2.00
+Competitor,Avaz,avaz aac alternative,Exact,2.00
+Competitor,CoughDrop,coughdrop,Exact,2.00
+Competitor,CoughDrop,coughdrop aac,Exact,2.00
+Competitor,CoughDrop,coughdrop alternative,Exact,2.00
+Competitor,Speak for Yourself,speak for yourself,Exact,2.00
+Competitor,Speak for Yourself,speak for yourself app,Exact,2.00
+Competitor,Speak for Yourself,speak for yourself aac,Exact,2.00
+Competitor,Other,assistiveware,Exact,2.00
+Competitor,Other,predictable aac,Exact,2.00
+Competitor,Other,goally app,Exact,1.50
+Competitor,Other,verbally app,Exact,1.50
+Discovery,Autism,autism communication app,Exact,1.50
+Discovery,Autism,autism app,Broad,1.00
+Discovery,Autism,autism speech app,Exact,1.50
+Discovery,Autism,nonverbal autism app,Exact,1.80
+Discovery,Autism,nonverbal autism,Broad,1.00
+Discovery,Autism,app for autistic child,Exact,1.50
+Discovery,Autism,communication app for autism,Exact,1.50
+Discovery,Autism,help autistic child communicate,Exact,1.50
+Discovery,Nonverbal,nonverbal child app,Exact,1.50
+Discovery,Nonverbal,nonverbal communication app,Exact,1.50
+Discovery,Nonverbal,speech delay app,Exact,1.50
+Discovery,Nonverbal,speech delay,Broad,1.00
+Discovery,Nonverbal,late talker app,Exact,1.50
+Discovery,Nonverbal,nonverbal adult app,Exact,1.50
+Discovery,Nonverbal,help my child communicate,Exact,1.50
+Discovery,Nonverbal,mute communication app,Exact,1.50
+Discovery,Nonverbal,lost voice app,Exact,1.50
+Discovery,Apraxia,apraxia app,Exact,1.50
+Discovery,Apraxia,apraxia of speech,Broad,1.00
+Discovery,Apraxia,childhood apraxia of speech,Exact,1.50
+Discovery,Apraxia,dysarthria app,Exact,1.50
+Discovery,Apraxia,dysarthria communication,Exact,1.50
+Discovery,Apraxia,motor speech disorder app,Exact,1.50
+Discovery,Aphasia,aphasia app,Exact,1.50
+Discovery,Aphasia,aphasia,Broad,1.00
+Discovery,Aphasia,aphasia communication app,Exact,1.50
+Discovery,Aphasia,aphasia speech app,Exact,1.50
+Discovery,Aphasia,expressive aphasia app,Exact,1.50
+Discovery,ALS,als communication app,Exact,1.50
+Discovery,ALS,als app,Exact,1.50
+Discovery,ALS,als speech app,Exact,1.50
+Discovery,ALS,als eye tracking,Exact,1.50
+Discovery,ALS,motor neuron disease app,Exact,1.50
+Discovery,Stroke TBI,stroke communication app,Exact,1.50
+Discovery,Stroke TBI,stroke speech app,Exact,1.50
+Discovery,Stroke TBI,stroke aphasia app,Exact,1.50
+Discovery,Stroke TBI,tbi communication app,Exact,1.50
+Discovery,Stroke TBI,brain injury communication,Exact,1.50
+Discovery,Stroke TBI,stroke patient communication,Exact,1.50
+Discovery,Cerebral Palsy,cerebral palsy app,Exact,1.50
+Discovery,Cerebral Palsy,cerebral palsy communication,Exact,1.50
+Discovery,Cerebral Palsy,cp communication app,Exact,1.50
+Discovery,Down Syndrome,down syndrome app,Exact,1.50
+Discovery,Down Syndrome,down syndrome communication,Exact,1.50
+Discovery,Down Syndrome,down syndrome speech app,Exact,1.50
+Discovery,Other Conditions,rett syndrome communication,Exact,1.20
+Discovery,Other Conditions,angelman syndrome communication,Exact,1.20
+Discovery,Other Conditions,parkinson communication app,Exact,1.50
+Discovery,Other Conditions,parkinson speech app,Exact,1.50
+Discovery,Other Conditions,laryngectomy app,Exact,1.50
+Discovery,Other Conditions,laryngectomy communication,Exact,1.50
+Discovery,Other Conditions,tracheostomy communication app,Exact,1.50
+Discovery,Other Conditions,selective mutism app,Exact,1.20
+Discovery,Parent Caregiver,communication app for my child,Exact,1.50
+Discovery,Parent Caregiver,app to help child talk,Exact,1.50
+Discovery,Parent Caregiver,special needs communication app,Exact,1.50
+Discovery,Parent Caregiver,hospital communication app,Exact,1.80
+Discovery,Parent Caregiver,bedside communication app,Exact,1.80
+Discovery,Parent Caregiver,icu communication app,Exact,1.80
+Discovery,Parent Caregiver,patient communication app,Exact,1.50
+Discovery,Broad,communication aid app,Exact,1.20
+Discovery,Broad,communication aid,Broad,1.00
+Discovery,Broad,speech impairment app,Exact,1.20
+Discovery,Broad,speech disorder app,Exact,1.20
+Discovery,Broad,free speech device,Exact,1.20
+Discovery,Broad,free communication device,Exact,1.20
