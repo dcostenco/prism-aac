@@ -314,6 +314,7 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
     console.warn('[PrismAAC] Speech synthesis not available on this browser');
     return;
   }
+  stopAzureAudio();
   window.speechSynthesis.cancel();
   clearResumeWorkaround();
 

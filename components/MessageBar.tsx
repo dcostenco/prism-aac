@@ -186,7 +186,10 @@ export default function MessageBar() {
       // because `translated` is intentionally excluded from the deps array.
       const latestTranslated = translatedRef.current;
       const outLang = useSettingsStore.getState().outputLanguage as SupportedLanguage | undefined;
-      aacSpeak(latestTranslated || text.trim(), speechRate, speechVolume, activeTone, false, latestTranslated ? outLang : undefined);
+      // interrupt=true: stop any in-flight Azure stream before speaking the new
+      // translation. Without this, consecutive translation timer fires overlap
+      // → echo/double-streaming on foreign languages (ru-RU reported May 2026).
+      aacSpeak(latestTranslated || text.trim(), speechRate, speechVolume, activeTone, true, latestTranslated ? outLang : undefined);
     }, TRANSLATION_SILENCE_MS);
 
     return () => {
