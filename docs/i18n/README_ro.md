@@ -1,7 +1,7 @@
 <!-- Auto-generated from README.md by scripts/generate_i18n.py — do not edit manually -->
 # Prism AAC
 
-**Ajută copiii nonverbali să vorbească.**
+**Ajută copiii si adults nonverbali să vorbească.**
 
 Aplicație de Comunicare Augmentativă și Alternativă pentru copii cu deficiențe motorii și nevoi complexe de comunicare. Atinge imagini, construiește propoziții, ascultă-le rostite cu voce tare — în 23 de limbi. Funcționează pe orice tabletă, laptop, iPhone, iPad și Apple Watch.
 
