@@ -1,6 +1,6 @@
 # Prism AAC
 
-**Help nonverbal kids talk.**
+**Help nonverbal kids and adults talk.**
 
 Augmentative & Alternative Communication app for children with motor impairments and complex communication needs. Tap pictures, build sentences, hear them spoken aloud — in 23 languages. Works on any tablet, laptop, iPhone, iPad, and Apple Watch.
 
