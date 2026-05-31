@@ -163,6 +163,8 @@ const PANELS_WITHOUT_QWERTY = new Set([
   'categories',
   'category-detail',
   'ordering',
+  'pdf-reader',
+  'ocr-capture',
 ]);
 
 export default function PrismApp() {
@@ -473,7 +475,7 @@ export default function PrismApp() {
               (banner / message / predictions / categories) so the
               cell-grid canvas + bigger keyboards have room to breathe.
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
-          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && !showQwerty && <GreetingBanner />}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && sidePanel !== 'pdf-reader' && sidePanel !== 'ocr-capture' && !showQwerty && <GreetingBanner />}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && <MessageBar />}
           {!PANELS_WITHOUT_QWERTY.has(sidePanel) && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
           <MathPanel />

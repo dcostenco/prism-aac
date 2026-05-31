@@ -295,7 +295,15 @@ export default function PdfReaderPanel() {
           {doc && (() => {
             const allUnreadable = doc.pages.length > 0 && doc.pages.every((p) => isUnreadable(p) || !p.text);
             const needsOcr = allUnreadable && !ocrResult;
-            return (
+            return isSpeaking ? (
+              <button
+                onClick={stopSpeakingOcr}
+                data-testid="pdf-reader-stop"
+                className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#F44336] text-white"
+              >
+                ■ Stop
+              </button>
+            ) : (
               <button
                 onClick={speakAll}
                 disabled={ocrLoading}

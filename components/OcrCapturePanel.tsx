@@ -10,12 +10,15 @@
  * bar so they can tap Speak (or auto-speak fires via existing
  * sentence-end logic).
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
 import { tapFeedback } from '@/services/feedback';
 import { aacSpeak } from '@/services/aacSpeak';
+import { stopSpeech } from '@/services/speechService';
+import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
+import { chunkForTts } from '@/services/mathProse';
 import { runOcr, runOcrOnPdf, tesseractCodeFor } from '@/services/ocr';
 
 export default function OcrCapturePanel() {
@@ -27,6 +30,16 @@ export default function OcrCapturePanel() {
   const [result, setResult] = useState<{ text: string; confidence: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const speakSeqRef = useRef(0);
+
+  useEffect(() => {
+    const unsub = subscribeTtsHighlight((ev) => {
+      if (ev.type === 'tts-highlight-start') setIsSpeaking(true);
+      else if (ev.type === 'tts-highlight-end') setIsSpeaking(false);
+    });
+    return unsub;
+  }, []);
 
   // CRITICAL #4 — revoke the preview Object URL on unmount to prevent memory leaks.
   useEffect(() => {
@@ -66,10 +79,31 @@ export default function OcrCapturePanel() {
     setText(result.text);
   }, [result, setText]);
 
-  const speakNow = useCallback(() => {
+  const stopSpeaking = useCallback(() => {
+    tapFeedback();
+    speakSeqRef.current++;
+    stopSpeech();
+    setIsSpeaking(false);
+  }, []);
+
+  const speakNow = useCallback(async () => {
     if (!result) return;
     tapFeedback();
-    aacSpeak(result.text, speechRate, speechVolume, activeTone, true);
+    const chunks = chunkForTts(result.text, 250);
+    const mySeq = ++speakSeqRef.current;
+    for (const chunk of chunks) {
+      if (mySeq !== speakSeqRef.current) return;
+      await new Promise<void>((resolve) => {
+        let done = false;
+        const finish = () => { if (!done) { done = true; resolve(); } };
+        const unsub = subscribeTtsHighlight((ev) => {
+          if (ev.type === 'tts-highlight-end') { unsub(); finish(); }
+        });
+        const budgetMs = Math.min(20_000, 1500 + chunk.length * 50);
+        setTimeout(() => { unsub(); finish(); }, budgetMs);
+        aacSpeak(chunk, speechRate, speechVolume, activeTone, true);
+      });
+    }
   }, [result, speechRate, speechVolume, activeTone]);
 
   if (sidePanel !== 'ocr-capture') return null;
@@ -189,13 +223,23 @@ export default function OcrCapturePanel() {
                 {result.text}
               </p>
               <div className="flex flex-wrap gap-2 items-center">
-                <button
-                  onClick={speakNow}
-                  data-testid="ocr-capture-speak"
-                  className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white"
-                >
-                  ▶ Speak
-                </button>
+                {isSpeaking ? (
+                  <button
+                    onClick={stopSpeaking}
+                    data-testid="ocr-capture-stop"
+                    className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#F44336] text-white"
+                  >
+                    ■ Stop
+                  </button>
+                ) : (
+                  <button
+                    onClick={speakNow}
+                    data-testid="ocr-capture-speak"
+                    className="aac-btn rounded-md px-3 py-1.5 text-sm font-bold bg-[#4CAF50] text-white"
+                  >
+                    ▶ Speak
+                  </button>
+                )}
                 <button
                   onClick={insertIntoBar}
                   data-testid="ocr-capture-insert"
