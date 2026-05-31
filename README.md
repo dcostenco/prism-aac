@@ -41,7 +41,7 @@ Part of the [Synalux platform](https://synalux.ai).
 
 30-second video showcasing all major features with Inworld TTS narration:
 
-https://github.com/user-attachments/assets/prism-aac-preview
+https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/prism_aac_preview_v5.mp4
 
 | Scene | Feature | Screenshot |
 |---|---|---|
