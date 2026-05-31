@@ -191,7 +191,7 @@ export function prepareExpression(serialized: string): string {
  */
 export function evaluateExpression(
   serialized: string,
-  scope?: MathScope,
+  scope?: Record<string, unknown>,
 ): EvalResult {
   const cleaned = prepareExpression(serialized);
   if (!cleaned) {
