@@ -161,6 +161,9 @@ export default function CategoryPanel() {
   const speechRate = useSettingsStore((s) => s.speechRate);
   const speechVolume = useSettingsStore((s) => s.speechVolume);
   const gridRef = useRef<HTMLDivElement>(null);
+  const [gridPage, setGridPage] = useState(0);
+  const activeCatIdForReset = useUIStore((s) => s.activeCategoryId);
+  useEffect(() => { setGridPage(0); }, [activeCatIdForReset, gridSize]);
   const speakDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cancel any pending 260ms speak timer on unmount to prevent post-unmount audio.
@@ -451,26 +454,51 @@ export default function CategoryPanel() {
                   ))}
                 </div>
               )}
-              <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-2 p-2 overflow-y-auto flex-1 min-h-0 content-start`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-                {/* Subcategory folders — WHITE, clearly navigable */}
-                {subcategories.map((sub) => (
-                  <button key={sub.id} onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
-                    className={`${FOLDER_CLS} p-3 ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]}`}>
-                    <span className="text-3xl leading-none">{sub.icon}</span>
-                    <span className="text-xs leading-tight uppercase tracking-wide">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
-                  </button>
-                ))}
-                {/* Phrase tiles — color coded, compact when keyboard open */}
-                {phrases.map((p) => {
-                  const local = getPhraseText(p.id, language, p.text);
-                  return (
-                    <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} compact={categoryKeyboardOpen}
-                      onClick={() => handlePhrase(local, p.id)}
-                      className={`aac-btn rounded-xl font-bold select-none text-center ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]} ${catBg ?? wordBg(p.text)}`}
-                    />
-                  );
-                })}
-              </div>
+              {(() => {
+                const allItems = [
+                  ...subcategories.map(sub => ({ type: 'folder' as const, data: sub })),
+                  ...phrases.map(p => ({ type: 'phrase' as const, data: p })),
+                ];
+                const totalPages = Math.max(1, Math.ceil(allItems.length / gridSize));
+                const safePage = Math.min(gridPage, totalPages - 1);
+                const pageItems = allItems.slice(safePage * gridSize, (safePage + 1) * gridSize);
+                const showPager = totalPages > 1;
+                return (
+                  <div className="flex-1 flex flex-col min-h-0">
+                    <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-2 p-2 flex-1 min-h-0 content-start`}>
+                      {pageItems.map(item => {
+                        if (item.type === 'folder') {
+                          const sub = item.data;
+                          return (
+                            <button key={sub.id} onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
+                              className={`${FOLDER_CLS} p-3 ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]}`}>
+                              <span className="text-3xl leading-none">{sub.icon}</span>
+                              <span className="text-xs leading-tight uppercase tracking-wide">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
+                            </button>
+                          );
+                        }
+                        const p = item.data;
+                        const local = getPhraseText(p.id, language, p.text);
+                        return (
+                          <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} customImageUrl={p.customImageUrl} compact={categoryKeyboardOpen}
+                            onClick={() => handlePhrase(local, p.id)}
+                            className={`aac-btn rounded-xl font-bold select-none text-center ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]} ${catBg ?? wordBg(p.text)}`}
+                          />
+                        );
+                      })}
+                    </div>
+                    {showPager && (
+                      <div className="flex items-center justify-center gap-3 py-1 border-t border-theme shrink-0">
+                        <button disabled={safePage === 0} onClick={() => setGridPage(p => Math.max(0, p - 1))}
+                          className="aac-btn px-3 py-1 rounded-lg surface-key border border-theme text-primary font-bold disabled:opacity-30">◀</button>
+                        <span className="text-xs text-muted">{safePage + 1} / {totalPages}</span>
+                        <button disabled={safePage >= totalPages - 1} onClick={() => setGridPage(p => p + 1)}
+                          className="aac-btn px-3 py-1 rounded-lg surface-key border border-theme text-primary font-bold disabled:opacity-30">▶</button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
           {sidebarJsx(true)}
@@ -496,7 +524,7 @@ export default function CategoryPanel() {
                 const local = getPhraseText(p.id, language, p.text);
                 const tH = categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
                 return (
-                  <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} compact={categoryKeyboardOpen}
+                  <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} customImageUrl={p.customImageUrl} compact={categoryKeyboardOpen}
                     onClick={() => handlePhrase(local, p.id)}
                     className={`aac-btn rounded-xl font-bold select-none text-center ${tH} ${CAT_BG[catId] ?? 'bg-slate-500 text-white border-slate-600'}`}
                   />

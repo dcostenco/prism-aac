@@ -19,6 +19,7 @@ export interface Phrase {
   usageCount: number;
   deletedAt?: number;
   updatedAt?: number;
+  customImageUrl?: string;
 }
 
 export type MathCategory =

@@ -138,7 +138,24 @@ export default function SettingsModal() {
   const [newCatIcon, setNewCatIcon] = useState('📌');
   const [newPhraseText, setNewPhraseText] = useState('');
   const [newPhraseCat, setNewPhraseCat] = useState('');
+  const [newPhraseImage, setNewPhraseImage] = useState('');
   const [wordVisCat, setWordVisCat] = useState('');
+
+  const handlePhraseImageUpload = (file: File, setter: (url: string) => void) => {
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 500_000) { alert('Image must be under 500KB'); return; }
+    const reader = new FileReader();
+    reader.onload = () => { if (typeof reader.result === 'string') setter(reader.result); };
+    reader.readAsDataURL(file);
+  };
+
+  const updatePhraseImage = (phraseId: string, imageUrl: string) => {
+    useCategoryStore.setState((s) => ({
+      customPhrases: s.customPhrases.map(p =>
+        p.id === phraseId ? { ...p, customImageUrl: imageUrl } : p
+      ),
+    }));
+  };
 
   const profile = useAuthStore((s) => s.profile);
   const profileLoaded = useAuthStore((s) => s.loaded);
@@ -447,18 +464,40 @@ export default function SettingsModal() {
                 </select>
                 <input value={newPhraseText} onChange={(e) => setNewPhraseText(e.target.value)}
                   placeholder={t('phrase_text')} className="flex-1 surface-key rounded-lg px-3 py-1.5 text-sm border border-theme" />
+                <label className="aac-btn bg-blue-500 text-white px-2 py-2 rounded-lg font-semibold text-sm cursor-pointer flex items-center gap-1" title="Add photo">
+                  📷
+                  <input type="file" accept="image/*" capture="environment" className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhraseImageUpload(f, setNewPhraseImage); e.target.value = ''; }} />
+                </label>
                 <button
-                  onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim()); setNewPhraseText(''); setNewPhraseCat(''); } }}
+                  onClick={() => { if (newPhraseText.trim() && newPhraseCat) { addCustomPhrase(newPhraseCat, newPhraseText.trim(), newPhraseImage || undefined); setNewPhraseText(''); setNewPhraseCat(''); setNewPhraseImage(''); } }}
                   className="aac-btn bg-[#4CAF50] text-white px-4 py-2 rounded-lg font-semibold text-sm">
                   {t('add')}
                 </button>
               </div>
+              {newPhraseImage && (
+                <div className="flex items-center gap-2 surface-key rounded-lg px-3 py-1.5 border border-theme">
+                  <img src={newPhraseImage} alt="Preview" className="w-10 h-10 object-cover rounded" />
+                  <span className="text-xs text-muted flex-1">Photo selected</span>
+                  <button onClick={() => setNewPhraseImage('')} className="text-[#F44336] text-xs">✕</button>
+                </div>
+              )}
               {customPhrases.filter(p => !p.deletedAt).map((p) => {
                 const cat = cats.find((c) => c.id === p.categoryId);
                 return (
-                  <div key={p.id} className="flex items-center justify-between surface-key rounded-lg px-3 py-1.5 border border-theme text-sm">
-                    <span className="text-primary"><span className="text-muted text-xs">{cat?.icon}</span> {p.text}</span>
-                    <button onClick={() => removeCustomPhrase(p.id)} className="text-[#F44336] text-xs">{t('remove')}</button>
+                  <div key={p.id} className="flex items-center gap-2 surface-key rounded-lg px-3 py-1.5 border border-theme text-sm">
+                    {p.customImageUrl ? (
+                      <img src={p.customImageUrl} alt="" className="w-8 h-8 object-cover rounded flex-shrink-0" />
+                    ) : (
+                      <span className="text-muted text-xs flex-shrink-0">{cat?.icon}</span>
+                    )}
+                    <span className="text-primary flex-1">{p.text}</span>
+                    <label className="text-blue-400 text-xs cursor-pointer flex-shrink-0" title="Change photo">
+                      📷
+                      <input type="file" accept="image/*" capture="environment" className="hidden"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhraseImageUpload(f, (url) => updatePhraseImage(p.id, url)); e.target.value = ''; }} />
+                    </label>
+                    <button onClick={() => removeCustomPhrase(p.id)} className="text-[#F44336] text-xs flex-shrink-0">{t('remove')}</button>
                   </div>
                 );
               })}

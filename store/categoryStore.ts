@@ -47,7 +47,7 @@ interface CategoryState {
   getSequencesForCategory: (categoryId: string) => OrderingSequenceData[];
   addCustomCategory: (name: string, icon: string) => void;
   removeCustomCategory: (id: string) => void;
-  addCustomPhrase: (categoryId: string, text: string) => void;
+  addCustomPhrase: (categoryId: string, text: string, customImageUrl?: string) => void;
   removeCustomPhrase: (id: string) => void;
   addOrderingSequence: (seq: OrderingSequenceData) => void;
   removeOrderingSequence: (id: string) => void;
@@ -137,14 +137,11 @@ export const useCategoryStore = create<CategoryState>()(
           orderingSequences: s.orderingSequences.filter((seq) => seq.categoryId !== id),
         })),
 
-      addCustomPhrase: (categoryId, text) => {
+      addCustomPhrase: (categoryId, text, customImageUrl) => {
         const cleanText = sanitizeString(text, MAX_PHRASE_LEN);
         const cleanCategoryId = typeof categoryId === 'string' ? categoryId.slice(0, 64) : '';
         if (!cleanText || !cleanCategoryId) return;
         set((s) => {
-          // Cap the live (non-deleted) custom phrases. The deletedAt
-          // soft-delete window can grow on top, but live count is what
-          // renders.
           const liveCount = s.customPhrases.filter((p) => !p.deletedAt).length;
           if (liveCount >= MAX_CUSTOM_PHRASES) return s;
           return {
@@ -157,6 +154,7 @@ export const useCategoryStore = create<CategoryState>()(
                 sortOrder: s.customPhrases.filter(p => p.categoryId === cleanCategoryId && !p.deletedAt).length + 100,
                 isCustom: true,
                 usageCount: 0,
+                ...(customImageUrl ? { customImageUrl } : {}),
               },
             ],
           };

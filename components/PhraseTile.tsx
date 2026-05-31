@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 interface Props {
   phrase: string;
   englishPhrase?: string;
+  customImageUrl?: string;
   className?: string;
   style?: React.CSSProperties;
   onClick: () => void;
@@ -14,20 +15,21 @@ interface Props {
   compact?: boolean;
 }
 
-export default function PhraseTile({ phrase, englishPhrase, className, style, onClick, ariaLabel, compact }: Props) {
+export default function PhraseTile({ phrase, englishPhrase, customImageUrl, className, style, onClick, ariaLabel, compact }: Props) {
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
-  const [iconUrl, setIconUrl] = useState<string | null>(null);
+  const [iconUrl, setIconUrl] = useState<string | null>(customImageUrl || null);
 
   useEffect(() => {
+    if (customImageUrl) { setIconUrl(customImageUrl); return; }
     let cancelled = false;
     const searchPhrase = englishPhrase || phrase;
     getPictogramUrl(searchPhrase, 'en', pictureMode).then((url) => {
       if (!cancelled) setIconUrl(url);
     }).catch(() => { if (!cancelled) setIconUrl(null); });
     return () => { cancelled = true; };
-  }, [phrase, englishPhrase, pictureMode, language]);
+  }, [phrase, englishPhrase, customImageUrl, pictureMode, language]);
 
   return (
     <button
