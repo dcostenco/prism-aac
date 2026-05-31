@@ -128,6 +128,14 @@ def main():
 
     for code, lang_name in LANGS.items():
         out_path = I18N_DIR / f"README_{code}.md"
+        if out_path.exists():
+            try:
+                existing_lines = len(out_path.read_text(encoding="utf-8").splitlines())
+                if existing_lines > 500:
+                    print(f"  [{code}] {lang_name}... SKIPPED (already translated, {existing_lines} lines)")
+                    continue
+            except Exception:
+                pass
         print(f"  [{code}] {lang_name}...", end=" ", flush=True)
         try:
             translated = translate_readme(source, code, lang_name)

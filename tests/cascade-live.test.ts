@@ -164,6 +164,19 @@ const PLAIN_TEXT = [
 
 describe.skipIf(!await ollamaAvailable())('Cascade LIVE — Ollama integration', () => {
 
+  // Immediately unload models after tests to prevent OOM.
+  // Without this, Ollama keeps both 14B (~8GB) + 32B (~18GB) resident for
+  // 5 minutes — consuming ~28GB of unified memory and starving the system.
+  afterAll(async () => {
+    for (const model of MODELS) {
+      await fetch(`${OLLAMA_URL}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, keep_alive: 0, prompt: '' }),
+      }).catch(() => {});
+    }
+  });
+
   describe('AAC life-critical path (MUST be 100%)', () => {
     for (const { prompt, expected, label } of AAC_CRITICAL) {
       it(`${label}: "${prompt.slice(0, 40)}" → plain text`, async () => {
