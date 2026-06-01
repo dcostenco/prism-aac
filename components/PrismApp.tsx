@@ -216,7 +216,8 @@ export default function PrismApp() {
   const keyboardMaximized = useUIStore((s) => s.keyboardMaximized);
   const isCategoryMode = ['categories','category-detail','ordering'].includes(sidePanel);
   const homeWithBoard = sidePanel === 'none';
-  const showQwerty = isCategoryMode || homeWithBoard
+  const isOpen = isCategoryMode || homeWithBoard;
+  const showQwerty = isOpen
     ? categoryKeyboardOpen
     : !PANELS_WITHOUT_QWERTY.has(sidePanel);
   const { rtl } = useT();
@@ -493,12 +494,12 @@ export default function PrismApp() {
           {/* Category mode: full-screen cards (Image #32 pattern).
               Keyboard is a pull-up drawer toggled from inside CategoryPanel.
               All other modes: CategoryPanel stacks above keyboard as before. */}
-          {sidePanel !== 'math' && sidePanel !== 'comfort-player' && sidePanel !== 'schedule' && !(showQwerty && keyboardMaximized) && (
-            <div className="flex-[3] min-h-0 flex flex-col">
+          {sidePanel !== 'math' && sidePanel !== 'comfort-player' && sidePanel !== 'schedule' && (
+            <div className={`min-h-0 flex flex-col ${isOpen ? 'flex-1' : 'flex-[3]'}`}>
               <CategoryPanel />
             </div>
           )}
-          {showQwerty && (
+          {showQwerty && !isOpen && (
             <div
               className={
                 keyboardMaximized
@@ -510,9 +511,6 @@ export default function PrismApp() {
               <div className="flex-1 flex flex-col">
                 <Keyboard />
               </div>
-              {isCategoryMode && (
-                <div className="w-[clamp(72px,9vw,96px)] shrink-0 bg-[#3e2a1a] border-l-2 border-[#5c3d25]" />
-              )}
             </div>
           )}
           {/* Emergency modal — mounted unconditionally at root, above all other UI */}
