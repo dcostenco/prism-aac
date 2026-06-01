@@ -6,6 +6,7 @@ import { useCategoryStore } from '@/store/categoryStore';
 import { usePhraseUsageStore } from '@/store/phraseUsageStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { tapFeedback } from '@/services/feedback';
+import { ddAction } from '@/lib/datadog';
 import { useSettingsStore, GridSize } from '@/store/settingsStore';
 import { aacSpeak } from '@/services/aacSpeak';
 import { translateTextSync, looksLikeTargetLang } from '@/services/translateService';
@@ -267,6 +268,7 @@ export default function CategoryPanel() {
       ppw = pw; pw = w;
     }
     if (phraseId) recordPhraseUse(phraseId);
+    ddAction('aac.phrase_tap', { phrase: toAppend, categoryId: activeCategoryId });
     if (autoSpeak && soundEnabled) {
       const { language, outputLanguage } = useSettingsStore.getState();
       const translationActive = language !== outputLanguage;

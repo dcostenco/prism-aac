@@ -8,6 +8,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useContactsStore, type AacContact } from '@/store/contactsStore';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
+import { ddAction } from '@/lib/datadog';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
@@ -290,6 +291,7 @@ export default function PredictionBar() {
     }
 
     learnWord(word.toLowerCase(), previousWord?.toLowerCase(), prevPrevWord?.toLowerCase());
+    ddAction('prediction.word_selected', { word, isCompletion, wordCount: words.length + 1 });
     const fullPhrase = isCompletion ? [...words.slice(0, -1), word].join(' ') : [...words, word].join(' ');
     aacSpeak(fullPhrase, speechRate, speechVolume);
   }, [text, learnWord, speechRate, speechVolume]);

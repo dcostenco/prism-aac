@@ -6,6 +6,7 @@ import { useSettingsStore, type ToolbarButtonId, DEFAULT_TOOLBAR_ORDER } from '@
 import type { SupportedLanguage } from '@/engine/i18n';
 import { useSyncStatus } from './SyncProvider';
 import { tapFeedback } from '@/services/feedback';
+import { ddAction } from '@/lib/datadog';
 import { useT } from '@/engine/useT';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
@@ -320,7 +321,7 @@ export default function Toolbar() {
   const allButtons = [...visibleIds, ...appIds];
 
   const btnClass = 'aac-btn w-[clamp(2.25rem,7vw,3.25rem)] h-[clamp(2.25rem,7svh,3.25rem)] rounded-full text-[clamp(1rem,3.5vw,1.5rem)] select-none border border-theme shrink-0 flex items-center justify-center';
-  const tap = (fn: () => void) => () => { tapFeedback(); fn(); };
+  const tap = (fn: () => void, buttonId?: string) => () => { tapFeedback(); if (buttonId) ddAction('toolbar.button_click', { button: buttonId }); fn(); };
 
   function renderButton(id: string): React.ReactNode {
     if (id.startsWith('app:')) {
@@ -329,7 +330,7 @@ export default function Toolbar() {
         <button
           key={id}
           className={`${btnClass} surface-key text-primary`}
-          onClick={tap(b.onClick)}
+          onClick={tap(b.onClick, id)}
           aria-label={b.ariaLabel}
           title={b.title}
         >{b.icon}</button>
@@ -345,7 +346,7 @@ export default function Toolbar() {
       <button
         key={id}
         className={`${btnClass} ${colorClasses} ${pulseClass} relative`}
-        onClick={tap(b.onClick)}
+        onClick={tap(b.onClick, b.id)}
         aria-label={b.ariaLabel}
         title={b.title}
         aria-pressed={b.highlighted}

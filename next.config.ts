@@ -31,6 +31,9 @@ const nextConfig: NextConfig = {
     // Unique per-deploy build ID — consumed by the SW killswitch in layout.tsx
     // so every Vercel deploy automatically invalidates stale SW caches.
     NEXT_PUBLIC_BUILD_ID: buildId,
+    NEXT_PUBLIC_DD_CLIENT_TOKEN: process.env.NEXT_PUBLIC_DD_CLIENT_TOKEN || '',
+    NEXT_PUBLIC_DD_APPLICATION_ID: process.env.NEXT_PUBLIC_DD_APPLICATION_ID || '',
+    NEXT_PUBLIC_DD_SITE: process.env.NEXT_PUBLIC_DD_SITE || 'datadoghq.com',
   },
   serverExternalPackages: ['@huggingface/transformers', 'pyodide'],
   turbopack: {},

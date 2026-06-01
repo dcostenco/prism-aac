@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { headers, cookies } from "next/headers";
 import "./globals.css";
 import HtmlLangSync from "@/components/HtmlLangSync";
+import DatadogInit from "@/components/DatadogInit";
 
 const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 
@@ -169,6 +170,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="h-full overflow-hidden">
         <HtmlLangSync />
+        <DatadogInit />
         {children}
       </body>
     </html>

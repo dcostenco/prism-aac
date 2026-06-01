@@ -6,6 +6,7 @@ import { useUIStore } from '@/store/uiStore';
 import { aacSpeak } from '@/services/aacSpeak';
 import type { SupportedLanguage } from '@/engine/i18n';
 import { tapFeedback, deleteFeedback } from '@/services/feedback';
+import { ddAction } from '@/lib/datadog';
 import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
@@ -414,6 +415,8 @@ export default function MessageBar() {
     }
 
     addToHistory(toSpeak);
+    const ssState = useSettingsStore.getState();
+    ddAction('aac.speak', { wordCount: toSpeak.split(/\s+/).length, language: ssState.language, outputLanguage: ssState.outputLanguage, autoApplied });
 
     // HRR: record spoken phrase for contextual zero-search retrieval.
     // Fire-and-forget — never blocks the speak path.
