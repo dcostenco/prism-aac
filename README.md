@@ -1167,6 +1167,24 @@ When a caregiver fixes a suggestion the model got wrong (e.g. "no, the word is *
 
 ---
 
+## For developers
+
+```bash
+npm install && npm run dev   # http://localhost:3000/prism-aac
+npm run test                 # 4900+ unit tests
+npm run e2e                  # Playwright across 11 device profiles
+```
+
+### Monitoring
+
+| Dashboard | What it tracks |
+|-----------|---------------|
+| [Prism AAC — User Analytics](https://app.datadoghq.com/dashboard/shk-8fb-qjk/prism-aac--user-analytics) | Sessions, errors, word predictions, phrase taps, speak events, languages, countries, devices, billing plans, head tracking telemetry |
+
+Datadog RUM integration: see `lib/datadog.ts` + `components/DatadogInit.tsx`. 7 e2e performance tests in `e2e/datadog-integration.spec.ts`.
+
+---
+
 ## License
 
 [AGPL-3.0](LICENSE) — open source, OSI-approved, grant-eligible.
