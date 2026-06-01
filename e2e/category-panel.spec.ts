@@ -53,9 +53,9 @@ test('sidebar Go back button returns to HOME', async ({ page }) => {
   // Go into a category
   await page.getByText(/Core Verbs/i).first().click();
   await expect(page.getByText('CORE VERBS')).toBeVisible({ timeout: 3000 });
-  // Click Go back (labeled Back or Up) in sidebar
-  await page.getByRole('button', { name: /Back/i }).first().click();
-  await expect(page.getByText('HOME', { exact: true })).toBeVisible({ timeout: 3000 });
+  // Click Go back in sidebar
+  await page.getByRole('button', { name: /Go back/i }).click();
+  await expect(page.getByText('HOME')).toBeVisible({ timeout: 3000 });
 });
 
 test('sidebar Search opens search input', async ({ page }) => {
@@ -70,9 +70,9 @@ test('search returns results for "hello"', async ({ page }) => {
 });
 
 test('sidebar Home button closes the categories panel', async ({ page }) => {
-  await page.getByRole('button', { name: /Home/i }).click();
+  await page.getByRole('button', { name: /^Home$/ }).click();
   // HOME label should be gone
-  await expect(page.getByText('HOME', { exact: true })).not.toBeVisible({ timeout: 3000 });
+  await expect(page.getByText('HOME')).not.toBeVisible({ timeout: 3000 });
 });
 
 test('Time category shows subcategory folders', async ({ page }) => {

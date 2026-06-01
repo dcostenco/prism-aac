@@ -39,30 +39,29 @@ test('capture 3 keyboard modes at iPad resolution', async ({ page }) => {
   });
   console.log('Captured mode-1-min-kb.png');
 
-  // 4. Find and click the KB sidebar button → MAX state (1st click from MIN goes to MAX)
-  const kbBtn = page.locator('[data-testid="kb-cycle-btn"]');
+  // 4. Find and click the KB sidebar button → HIDE state
+  const kbBtn = page.locator('nav button', { hasText: /KB|Keyboard/i }).first();
   await expect(kbBtn).toBeVisible();
   await kbBtn.click();
-  await expect(kb).toBeVisible();
-  await page.waitForTimeout(300);
-
-  // 5. Screenshot 3: MAX KB state
-  await page.screenshot({
-    path: path.join(SHOTS_DIR, 'mode-3-max-kb.png'),
-    fullPage: false,
-  });
-  console.log('Captured mode-3-max-kb.png');
-
-  // 6. Click again → HIDDEN state (2nd click from MAX goes to HIDDEN)
-  const kbMinimize = page.locator('button[data-action="kb-minimize"]');
-  await kbMinimize.click();
   await expect(kb).not.toBeVisible();
   await page.waitForTimeout(300);
 
-  // 7. Screenshot 2: HIDE state
+  // 5. Screenshot 2: HIDE state
   await page.screenshot({
     path: path.join(SHOTS_DIR, 'mode-2-hidden.png'),
     fullPage: false,
   });
   console.log('Captured mode-2-hidden.png');
+
+  // 6. Click again → MAX state
+  await kbBtn.click();
+  await expect(kb).toBeVisible();
+  await page.waitForTimeout(300);
+
+  // 7. Screenshot 3: MAX KB state
+  await page.screenshot({
+    path: path.join(SHOTS_DIR, 'mode-3-max-kb.png'),
+    fullPage: false,
+  });
+  console.log('Captured mode-3-max-kb.png');
 });
