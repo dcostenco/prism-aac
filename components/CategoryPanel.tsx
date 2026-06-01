@@ -423,6 +423,7 @@ export default function CategoryPanel() {
                 </button>
               )}
             </div>
+            </div>
             {categoryKeyboardOpen && (
               <div className={keyboardMaximized ? "flex-1 flex flex-col min-h-0" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell">
                 <Keyboard />

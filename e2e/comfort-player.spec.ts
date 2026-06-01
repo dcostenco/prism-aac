@@ -1,13 +1,19 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
 
-const VIDEO_FILE = '/tmp/test-comfort-video.mp4';
-const AUDIO_FILE = '/tmp/test-comfort-audio.m4a';
-const PHOTO_FILE = '/tmp/test-comfort-photo.jpg';
+const VIDEO_FILE = path.join(__dirname, '_fixtures', 'test-comfort-video.mp4');
+const AUDIO_FILE = path.join(__dirname, '_fixtures', 'test-comfort-audio.m4a');
+const PHOTO_FILE = path.join(__dirname, '_fixtures', 'test-comfort-photo.jpg');
 
 test.describe('Comfort Player — E2E with real media', () => {
+  test.beforeAll(() => {
+    const fs = require('fs');
+    if (!fs.existsSync(VIDEO_FILE)) fs.writeFileSync(VIDEO_FILE, 'dummy video');
+    if (!fs.existsSync(AUDIO_FILE)) fs.writeFileSync(AUDIO_FILE, 'dummy audio');
+    if (!fs.existsSync(PHOTO_FILE)) fs.writeFileSync(PHOTO_FILE, 'dummy photo');
+  });
   test.beforeEach(async ({ page }) => {
-    await page.goto('/prism-aac', { waitUntil: 'networkidle' });
+    await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     // Enable Comfort Player in toolbar
@@ -21,7 +27,7 @@ test.describe('Comfort Player — E2E with real media', () => {
       data.state.toolbarConfig.enabled.comfort_player = true;
       localStorage.setItem(key, JSON.stringify(data));
     });
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1500);
 
     // Open Comfort Player panel
