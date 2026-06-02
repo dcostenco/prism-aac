@@ -965,7 +965,6 @@ struct WatchAIChatView: View {
     @State private var messages: [ChatMessage] = []
     @State private var inputText     = ""
     @State private var isWaiting     = false
-    // showDictation removed — TextFieldLink opens dictation in 1 tap (no sheet needed)
     @State private var aiTask: Task<Void, Never>?
     @State private var translateTask2: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss
@@ -1058,11 +1057,6 @@ struct WatchAIChatView: View {
 
             Divider()
 
-            // Input row — TextFieldLink opens the system dictation/keyboard
-            // controller in ONE tap. Prior code used a Button → sheet → TextFieldLink
-            // 2-step flow because TextFieldLink didn't respond to taps in the
-            // simulator. On real devices it works. The sheet workaround caused
-            // the "mic requires 2 taps" bug.
             HStack(spacing: 6) {
                 TextFieldLink(label: {
                     HStack(spacing: 6) {
@@ -1081,7 +1075,6 @@ struct WatchAIChatView: View {
                 }, onSubmit: { newValue in
                     let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard !trimmed.isEmpty else { return }
-                    // Stop any active TTS before processing input
                     tts.stop()
                     do {
                         try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
@@ -1218,12 +1211,8 @@ struct WatchAIChatView: View {
     }
 }
 
-// MARK: - Dictation input view (auto-focuses TextField → triggers Watch input controller)
+// MARK: - Dictation input view
 
-/// Single-purpose dictation sheet for watchOS.
-/// Uses @FocusState to programmatically focus the TextField on appear —
-/// this automatically presents the Watch input controller (dictation +
-/// keyboard + scribble) without requiring the user to tap first.
 struct WatchDictationView: View {
     let title: String
     let submitLabel: String
@@ -1235,11 +1224,6 @@ struct WatchDictationView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 10) {
-                // Mic is now the primary tap target — TextFieldLink opens the
-                // watchOS system input controller (Dictate / Scribble / Keyboard)
-                // directly. No @FocusState race; the system picker handles input
-                // selection. Prior bug: static Image + auto-focus on TextField
-                // looked tappable but wasn't — user reported "mic not clickable".
                 TextFieldLink(label: {
                     VStack(spacing: 6) {
                         Image(systemName: "mic.circle.fill")
@@ -1282,10 +1266,6 @@ struct WatchDictationView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
-            }
-            .onAppear {
-            }
-            .onDisappear {
             }
         }
     }
