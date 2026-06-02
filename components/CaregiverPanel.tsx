@@ -10,6 +10,9 @@ import { sanitizeString } from '@/lib/safeStrings';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { useT } from '@/engine/useT';
+import dynamic from 'next/dynamic';
+
+const CaregiverInsightsTab = dynamic(() => import('./CaregiverInsightsTab'), { ssr: false });
 
 function formatTime(ts: number, lang?: string): string {
   const d = new Date(ts);
@@ -24,7 +27,7 @@ export default function CaregiverPanel() {
   const { t } = useT();
   const [input, setInput] = useState('');
   const [results, setResults] = useState<ActionResult[] | null>(null);
-  const [tab, setTab] = useState<'add' | 'log'>('add');
+  const [tab, setTab] = useState<'add' | 'log' | 'insights'>('add');
   const [parsing, setParsing] = useState(false);
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -87,9 +90,14 @@ export default function CaregiverPanel() {
         <button onClick={() => setTab('log')} className={`flex-1 py-3 text-lg md:text-xl font-bold ${tab === 'log' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-muted'}`}>
           {t('log')} ({notes.length})
         </button>
+        <button onClick={() => setTab('insights')} className={`flex-1 py-3 text-lg md:text-xl font-bold ${tab === 'insights' ? 'text-[#4CAF50] border-b-2 border-[#4CAF50]' : 'text-muted'}`}>
+          📊 Insights
+        </button>
       </div>
 
-      {tab === 'add' ? (
+      {tab === 'insights' ? (
+        <CaregiverInsightsTab />
+      ) : tab === 'add' ? (
         <div className="flex-1 min-h-0 flex flex-col p-4 gap-3 overflow-y-auto">
           <div>
             <label className="text-muted text-base font-bold block mb-1">{t('your_name')}</label>
