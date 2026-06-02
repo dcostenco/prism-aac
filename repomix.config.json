@@ -1,0 +1,10 @@
+{
+  "output": { "filePath": "repomix-output.txt" },
+  "ignore": {
+    "customPatterns": [
+      "node_modules", "*.lock", ".git", ".next", ".expo", "dist",
+      "ios/Pods/", "android/build/", "android/.gradle/",
+      "repomix-output.txt"
+    ]
+  }
+}
