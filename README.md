@@ -214,30 +214,30 @@ Now there's an **Insights tab** in the Caregiver Panel with 7 live monitoring wi
 ### Architecture
 
 ```
-PredictionBar tap → recordPredictionHit() (dynamic import, ~0.01ms)
-                                    ↓
-        ┌───────────────────────────────────────┐
-        │     metricsCollector (5-min timer)     │
-        │                                       │
-        │  subscribeTtsHealth() ──→ ttsAccum    │
-        │  subscribeTrackingEvents() → trackAccum│
-        │  getAdaptiveSignals() ──→ motor/topics│
-        │  corpusHealth() ────────→ corrections │
-        │  phraseUsageStore ──────→ vocabulary  │
-        │                                       │
-        │  flushBucket() → metricsStore.buckets │
-        └───────────────────────────────────────┘
-                                    ↓
-        ┌───────────────────────────────────────┐
-        │  metricsStore (zustand + localStorage) │
-        │  7-day rolling · 5-min buckets · 400KB │
-        └───────────────────────────────────────┘
-                                    ↓
-        ┌───────────────────────────────────────┐
-        │  CaregiverInsightsTab (lazy-loaded)   │
-        │  7 InsightCard widgets + SVG Sparkline │
-        │  Renders only when caregiver taps tab │
-        └───────────────────────────────────────┘
+PredictionBar tap --> recordPredictionHit() (dynamic import, ~0.01ms)
+                                     |
+        +--------------------------------------------+
+        |      metricsCollector (5-min timer)         |
+        |                                            |
+        |  subscribeTtsHealth() ------> ttsAccum     |
+        |  subscribeTrackingEvents() -> trackAccum   |
+        |  getAdaptiveSignals() ------> motor/topics |
+        |  corpusHealth() ------------> corrections  |
+        |  phraseUsageStore ----------> vocabulary   |
+        |                                            |
+        |  flushBucket() -> metricsStore.buckets     |
+        +--------------------------------------------+
+                                     |
+        +--------------------------------------------+
+        |  metricsStore (zustand + localStorage)     |
+        |  7-day rolling - 5-min buckets - 400KB     |
+        +--------------------------------------------+
+                                     |
+        +--------------------------------------------+
+        |  CaregiverInsightsTab (lazy-loaded)        |
+        |  7 InsightCard widgets + SVG Sparkline     |
+        |  Renders only when caregiver taps tab      |
+        +--------------------------------------------+
 ```
 
 ### Performance guarantees
