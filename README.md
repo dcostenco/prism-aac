@@ -175,78 +175,41 @@ Now there's an **Insights tab** in the Caregiver Panel with 7 live monitoring wi
 
 ### Dashboard layout
 
-```
-╔══════════════════════════════════════════════════╗
-║  Caregiver Panel                            ✕   ║
-╠════════════════╦════════════╦════════════════════╣
-║    + Note      ║    Log     ║   📊 Insights     ║
-╠════════════════╩════════════╩════════════════════╣
-║                                                  ║
-║  ┌─ Prediction Effectiveness ─────────────────┐  ║
-║  │                                            │  ║
-║  │  72% hit rate                  ↑ vs 24h    │  ║
-║  │                                            │  ║
-║  │   ╭──╮  ╭╮╭─╮                             │  ║
-║  │   │  ╰──╯╰╯ ╰──╮╭──                      │  ║
-║  │                                            │  ║
-║  └────────────────────────────────────────────┘  ║
-║                                                  ║
-║  ┌─ Vocabulary Adoption ──────────────────────┐  ║
-║  │                                            │  ║
-║  │  45 active · 12 new · 8 unused             │  ║
-║  │                                            │  ║
-║  │   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░              │  ║
-║  │   adopted 69%  ╱  tried 18%  ╱  unused 13% │  ║
-║  │                                            │  ║
-║  └────────────────────────────────────────────┘  ║
-║                                                  ║
-║  ┌─ Communication Topics ─────────────────────┐  ║
-║  │                                            │  ║
-║  │  school (35%)  food (22%)  play (18%)      │  ║
-║  │                                            │  ║
-║  │   ╭─╮╭──╮                                 │  ║
-║  │   │ ╰╯  ╰───╮╭─                           │  ║
-║  │                                            │  ║
-║  └────────────────────────────────────────────┘  ║
-║                                                  ║
-║  ┌─ Motor Trend ─────────────────────────────┐   ║
-║  │                                           │   ║
-║  │  Dwell 850ms                ↓ improving   │   ║
-║  │                                           │   ║
-║  │   ╭──╮                                    │   ║
-║  │   │  ╰──╮╭──╮╭─                          │   ║
-║  │                                           │   ║
-║  └───────────────────────────────────────────┘   ║
-║                                                  ║
-║  ┌─ Tracking Reliability ────────────────────┐   ║
-║  │                                           │   ║
-║  │  2 drifts today · 98% uptime              │   ║
-║  │                                           │   ║
-║  │   ─────────────╮╭─────────────            │   ║
-║  │                                           │   ║
-║  └───────────────────────────────────────────┘   ║
-║                                                  ║
-║  ┌─ Voice Reliability ───────────────────────┐   ║
-║  │                                           │   ║
-║  │  97% success · 1 fallback                 │   ║
-║  │                                           │   ║
-║  │   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░        │   ║
-║  │   Azure 94%  ╱  Web Speech 3%  ╱  fail 3% │   ║
-║  │                                           │   ║
-║  └───────────────────────────────────────────┘   ║
-║                                                  ║
-║  ┌─ Correction Burden ───────────────────────┐   ║
-║  │                                           │   ║
-║  │  47 total corrections      +3 this week   │   ║
-║  │                                           │   ║
-║  │   ╭─╮╭──╮                                │   ║
-║  │   │ ╰╯  ╰───────                         │   ║
-║  │                                           │   ║
-║  └───────────────────────────────────────────┘   ║
-║                                                  ║
-║           286 data points · 7 days · 5 min       ║
-╚══════════════════════════════════════════════════╝
-```
+| Caregiver Panel | | ✕ |
+|:---|:---|---:|
+
+| + Note | Log | **Insights** |
+|:---:|:---:|:---:|
+
+> **Prediction Effectiveness**
+> `72% hit rate` &nbsp;&nbsp; ↑ vs 24h
+> ![sparkline](https://img.shields.io/badge/trend-72%25_____85%25_____78%25_____72%25-4CAF50?style=flat-square)
+
+> **Vocabulary Adoption**
+> `45 active` · `12 new` · `8 unused`
+> `████████████████░░░░░░` adopted 69% / tried 18% / unused 13%
+
+> **Communication Topics**
+> `school` 35% · `food` 22% · `play` 18%
+> ![sparkline](https://img.shields.io/badge/school-35%25-9C27B0?style=flat-square) ![sparkline](https://img.shields.io/badge/food-22%25-FF9800?style=flat-square) ![sparkline](https://img.shields.io/badge/play-18%25-2196F3?style=flat-square)
+
+> **Motor Trend**
+> `Dwell 850ms` &nbsp;&nbsp; ↓ improving
+> ![sparkline](https://img.shields.io/badge/trend-1200____1100____950_____850ms-FF9800?style=flat-square)
+
+> **Tracking Reliability**
+> `2 drifts today` · `98% uptime`
+> ![sparkline](https://img.shields.io/badge/uptime-98%25-4CAF50?style=flat-square)
+
+> **Voice Reliability**
+> `97% success` · `1 fallback`
+> `██████████████████████████████░` Azure 94% / Web Speech 3% / fail 3%
+
+> **Correction Burden**
+> `47 total corrections` &nbsp;&nbsp; +3 this week
+> ![sparkline](https://img.shields.io/badge/trend-38_____41_____44_____47-795548?style=flat-square)
+
+<sub>286 data points · last 7 days · updates every 5 min</sub>
 
 ### Architecture
 
