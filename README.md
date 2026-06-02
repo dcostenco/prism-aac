@@ -155,6 +155,148 @@ Works without iPhone — standalone with offline phrase dictionary.
 
 ---
 
+## 📊 Caregiver Insights Dashboard (v1.8)
+
+The app tracks rich behavioral data internally — prediction accuracy, motor trends, voice reliability, head-tracking stability, communication patterns, caregiver corrections. Previously, **none of this reached caregivers**. The only caregiver UI was a text note pad.
+
+Now there's an **Insights tab** in the Caregiver Panel with 7 live monitoring widgets, each backed by a background metrics collector that runs every 5 minutes without touching the prediction path.
+
+### What caregivers see
+
+| Widget | What it tells you | Clinical value |
+|---|---|---|
+| **Prediction Effectiveness** | "72% hit rate ↑ vs prior 24h" | Vocabulary set is working — or not |
+| **Vocabulary Adoption** | "45 active · 12 new · 8 unused" | Which phrases got adopted, which need removal |
+| **Communication Topics** | "Top: school (35%), food (22%)" | Topic distribution shifts may signal regression or environment change |
+| **Motor Trend** | "Dwell 850ms ↓ (improving)" | Motor control improving → shorter dwell; declining → refer to OT |
+| **Tracking Reliability** | "2 drifts · 98% uptime" | Frequent drifts → check seating, fatigue, calibration |
+| **Voice Reliability** | "97% success · 1 fallback" | Azure TTS failing? API key expired? Connectivity issue? |
+| **Correction Burden** | "47 total corrections" | Correction rate increasing = model needs retraining on this child |
+
+### Dashboard layout
+
+```
+┌──────────────────────────────────────────────┐
+│  Caregiver Panel                         ✕   │
+├──────────┬──────────┬────────────────────────┤
+│  + Note  │   Log    │  📊 Insights           │
+├──────────┴──────────┴────────────────────────┤
+│                                              │
+│  ┌─ Prediction Effectiveness ──────────────┐ │
+│  │  72% hit rate              ↑ vs 24h     │ │
+│  │  ╭──╮ ╭╮╭─╮                            │ │
+│  │  │  ╰─╯╰╯ ╰──╮╭──                     │ │
+│  └─────────────────────────────────────────┘ │
+│                                              │
+│  ┌─ Vocabulary Adoption ───────────────────┐ │
+│  │  45 active · 12 new · 8 unused          │ │
+│  │  ╭──────────────────╮                   │ │
+│  │  │  ▓▓▓▓▓▓▓▓░░░░░  │                   │ │
+│  └─────────────────────────────────────────┘ │
+│                                              │
+│  ┌─ Communication Topics ──────────────────┐ │
+│  │  school (35%), food (22%), play (18%)   │ │
+│  │  ╭─╮╭──╮                               │ │
+│  │  │ ╰╯  ╰───╮╭─                         │ │
+│  └─────────────────────────────────────────┘ │
+│                                              │
+│  ┌─ Motor Trend ──────────────────────────┐  │
+│  │  Dwell 850ms          ↓ improving      │  │
+│  │  ╭──╮                                  │  │
+│  │  │  ╰──╮╭──╮╭─                        │  │
+│  └────────────────────────────────────────┘  │
+│                                              │
+│  ┌─ Tracking Reliability ─────────────────┐  │
+│  │  2 drifts · 98% uptime                 │  │
+│  │  ──────────╮╭──────────                │  │
+│  └────────────────────────────────────────┘  │
+│                                              │
+│  ┌─ Voice Reliability ────────────────────┐  │
+│  │  97% success · 1 fallback              │  │
+│  │  ╭───────────────────╮                 │  │
+│  │  │▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ │                 │  │
+│  └────────────────────────────────────────┘  │
+│                                              │
+│  ┌─ Correction Burden ────────────────────┐  │
+│  │  47 total · +3 this week               │  │
+│  │  ╭─╮╭──╮                              │  │
+│  │  │ ╰╯  ╰───────                       │  │
+│  └────────────────────────────────────────┘  │
+│                                              │
+│  286 data points · last 7 days · every 5 min │
+└──────────────────────────────────────────────┘
+```
+
+### Architecture
+
+```
+PredictionBar tap → recordPredictionHit() (dynamic import, ~0.01ms)
+                                    ↓
+        ┌───────────────────────────────────────┐
+        │     metricsCollector (5-min timer)     │
+        │                                       │
+        │  subscribeTtsHealth() ──→ ttsAccum    │
+        │  subscribeTrackingEvents() → trackAccum│
+        │  getAdaptiveSignals() ──→ motor/topics│
+        │  corpusHealth() ────────→ corrections │
+        │  phraseUsageStore ──────→ vocabulary  │
+        │                                       │
+        │  flushBucket() → metricsStore.buckets │
+        └───────────────────────────────────────┘
+                                    ↓
+        ┌───────────────────────────────────────┐
+        │  metricsStore (zustand + localStorage) │
+        │  7-day rolling · 5-min buckets · 400KB │
+        └───────────────────────────────────────┘
+                                    ↓
+        ┌───────────────────────────────────────┐
+        │  CaregiverInsightsTab (lazy-loaded)   │
+        │  7 InsightCard widgets + SVG Sparkline │
+        │  Renders only when caregiver taps tab │
+        └───────────────────────────────────────┘
+```
+
+### Performance guarantees
+
+| Concern | Guarantee |
+|---|---|
+| **Keystroke path** | 0ms added — hit/miss use dynamic imports + counter increments |
+| **Memory** | ~400KB localStorage + ~50KB RAM for 7 days |
+| **Bundle** | ~2KB JS (no chart library — pure SVG sparklines) |
+| **Offline** | 100% localStorage — no network calls |
+| **iPad** | Vertical scroll cards, 120×32px sparklines |
+| **Privacy** | No PHI — operational counts only, behind caregiver PIN |
+
+### Example: reading the prediction effectiveness widget
+
+```
+Prediction Effectiveness
+78% hit rate                    ↑ vs prior 24h
+╭──╮ ╭╮╭─╮
+│  ╰─╯╰╯ ╰──╮╭──
+```
+
+- **78% hit rate**: 78% of the time, the child tapped a word from the prediction bar instead of typing manually. This means the vocabulary set is well-matched to the child's communication patterns.
+- **↑ vs prior 24h**: hit rate improved compared to yesterday — the adaptive engine is learning.
+- **Sparkline**: shows the hit rate trend over the last 24 hours. Dips may correlate with new topics or environments.
+
+If the hit rate drops below 40%, the vocabulary likely needs updating — the child is communicating about topics the prediction engine doesn't cover.
+
+### Example: reading the motor trend widget
+
+```
+Motor Trend
+Dwell 1200ms                   ↑ declining
+╭──╮
+│  ╰──╮╭──╮╭─
+```
+
+- **Dwell 1200ms**: the child needs 1.2 seconds of hovering to trigger a selection. Typical range: 800–2000ms.
+- **↑ declining**: dwell time is increasing (child needs more time). This could indicate fatigue, medication change, or progressive motor decline.
+- **Action**: if the trend persists for 3+ days, flag for OT review. The app auto-adapts dwell time, but a clinician should investigate the underlying cause.
+
+---
+
 ## Modules
 
 ### 📂 Categories
