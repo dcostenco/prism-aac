@@ -22,10 +22,11 @@ export default function DatadogInit() {
   useEffect(() => {
     return useAuthStore.subscribe((state) => {
       if (state.profile) {
+        // Don't send email/name to Datadog — use anonymous hash to avoid
+        // linking PII to AAC communication patterns (PHI risk).
+        const anonId = btoa(state.profile.email).slice(0, 12);
         ddSetUser({
-          id: state.profile.email,
-          name: state.profile.name,
-          email: state.profile.email,
+          id: anonId,
           plan: state.profile.plan,
         });
         ddAction('user.identified', { plan: state.profile.plan });

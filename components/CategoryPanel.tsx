@@ -268,7 +268,7 @@ export default function CategoryPanel() {
       ppw = pw; pw = w;
     }
     if (phraseId) recordPhraseUse(phraseId);
-    ddAction('aac.phrase_tap', { phrase: toAppend, categoryId: activeCategoryId });
+    ddAction('aac.phrase_tap', { categoryId: activeCategoryId, phraseLength: toAppend.length });
     if (autoSpeak && soundEnabled) {
       const { language, outputLanguage } = useSettingsStore.getState();
       const translationActive = language !== outputLanguage;

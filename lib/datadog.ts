@@ -17,9 +17,19 @@ export function initDatadog() {
       site,
       service: 'prism-aac',
       env,
-      forwardErrorsToLogs: true,
-      forwardConsoleLogs: ['error', 'warn'],
+      forwardErrorsToLogs: false, // HIPAA: prevent stack traces containing PHI from leaking to Datadog
+      forwardConsoleLogs: ['error'], // HIPAA: dropped 'warn' — error boundaries may log patient/AAC context
       sessionSampleRate: 100,
+      beforeSend: (log) => {
+        // HIPAA: Scrub potential PHI patterns before forwarding to Datadog cloud
+        if (log.message) {
+          log.message = log.message
+            .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[SSN]')
+            .replace(/\b\d{10,11}\b/g, '[PHONE]')
+            .replace(/\b[A-Z][a-z]+ [A-Z][a-z]+\b/g, '[NAME]');
+        }
+        return true;
+      },
     });
   });
 
