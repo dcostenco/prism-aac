@@ -952,8 +952,11 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   if (config.autoCall911) {
     // Resolve emergency number from device geolocation when available; fall
     // back to the configured profile country, then to the international 112.
-    const geo = await getLocationAndCountry();
-    const emergencyNum = geo.emergencyNumber
+    // Skip network-dependent location resolution when offline — use cached/configured country
+    const country = navigator.onLine
+      ? await getLocationAndCountry()
+      : { location: null, detectedCountry: null, detectedLanguage: null, emergencyNumber: EMERGENCY_NUMBERS[(config.profile.country?.toUpperCase() || 'US')] || '112' };
+    const emergencyNum = country.emergencyNumber
       || EMERGENCY_NUMBERS[config.profile.country?.toUpperCase() || 'US']
       || '112';
     window.open(`tel:${emergencyNum}`, '_self');
@@ -967,6 +970,15 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
         alert.sent = true;
         break;
       }
+    }
+    // SAFETY NET: If no contacts configured and autoCall911 is false,
+    // force a tel: link to the local emergency number as last resort.
+    // This is the DEFAULT state (empty contacts, autoCall911=false) and
+    // without this safety net, the emergency system does NOTHING.
+    if (!alert.sent && config.contacts.length === 0) {
+      const emergencyNumber = EMERGENCY_NUMBERS[(config.profile?.country?.toUpperCase() || 'US')] || '112';
+      window.open(`tel:${emergencyNumber}`, '_self');
+      alert.sent = true;
     }
   }
 
