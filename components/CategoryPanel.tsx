@@ -331,21 +331,21 @@ export default function CategoryPanel() {
       {/* Keyboard toggle — ALWAYS FIRST so it's always reachable */}
       <SidebarBtn
         icon="⌨️"
-        label={keyboardMaximized ? 'HIDE KB' : 'KB'}
+        label={keyboardMaximized ? t('sidebar_hide_kb') : t('sidebar_kb')}
         onClick={cycleKeyboardMode}
         active={keyboardMaximized}
         testId="kb-cycle-btn"
         dataAction={keyboardMaximized ? 'kb-minimize' : undefined}
       />
       {/* Search */}
-      <SidebarBtn icon="🔍" label="Search" onClick={searchOpen ? closeSearch : openSearch} active={searchOpen} />
+      <SidebarBtn icon="🔍" label={t('sidebar_search')} onClick={searchOpen ? closeSearch : openSearch} active={searchOpen} />
       {/* Navigation */}
-      {!isHome && <SidebarBtn icon="←" label={isDeep ? 'Up' : 'Back'} onClick={handleBack} />}
-      <SidebarBtn icon="🏠" label="Home" onClick={closeSidePanel} />
-      {showCoreWords && <SidebarBtn icon="⌂" label="Words" onClick={backToCategories} />}
+      {!isHome && <SidebarBtn icon="←" label={isDeep ? t('sidebar_up') : t('sidebar_back')} onClick={handleBack} />}
+      <SidebarBtn icon="🏠" label={t('home')} onClick={closeSidePanel} />
+      {showCoreWords && <SidebarBtn icon="⌂" label={t('sidebar_words')} onClick={backToCategories} />}
       {/* Scroll helpers */}
-      <SidebarBtn icon="↑" label="Up" onClick={() => scrollGrid(-1)} />
-      <SidebarBtn icon="↓" label="Down" onClick={() => scrollGrid(1)} />
+      <SidebarBtn icon="↑" label={t('sidebar_up')} onClick={() => scrollGrid(-1)} />
+      <SidebarBtn icon="↓" label={t('sidebar_down')} onClick={() => scrollGrid(1)} />
       {/* Fills remaining height so the whole nav area is tappable */}
       <div className="flex-1" />
     </nav>
@@ -516,7 +516,7 @@ export default function CategoryPanel() {
 
   return (
     <section aria-label="Home vocabulary board" className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
-      <PageLabel label="HOME" />
+      <PageLabel label={t('home').toUpperCase()} />
       <div className="flex flex-row flex-1 min-h-0">
         {searchOpen ? searchPanelJsx : (
           <div className="flex-1 min-w-0 flex flex-col min-h-0">

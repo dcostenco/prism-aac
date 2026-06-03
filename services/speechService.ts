@@ -163,6 +163,7 @@ const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
   pt: 'Sarah',   it: 'Sarah',  nl: 'Sarah',  pl: 'Sarah',
   ja: 'Sarah',   zh: 'Mei',    ko: 'Sarah',  ru: 'Sarah',
   he: 'Sarah',   ar: 'Sarah',  hi: 'Aanya',
+  vi: 'Sarah',   tl: 'Sarah',  tr: 'Sarah',  id: 'Sarah',
   ro: 'ro-RO-AlinaNeural',
   uk: 'uk-UA-PolinaNeural',
 };
@@ -319,7 +320,9 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
   clearResumeWorkaround();
 
   const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.1 + rate * 1.8;
+  const baseLang = lang.split('-')[0];
+  const foreignSlowdown = baseLang !== 'en' ? 0.85 : 1;
+  u.rate = (0.1 + rate * 1.8) * foreignSlowdown;
   u.volume = volume;
   u.lang = lang;
 

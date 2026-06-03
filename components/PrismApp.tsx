@@ -94,6 +94,17 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   componentDidCatch(error: Error, info: { componentStack: string }) {
     const stack = info.componentStack.slice(0, 500);
     console.error('[CRASH]', error.message, stack);
+    const msg = error.message || '';
+    const isChunkError = msg.includes('Loading chunk') || msg.includes('Failed to load chunk') || msg.includes('dynamically imported module') || error.name === 'ChunkLoadError';
+    if (isChunkError && typeof sessionStorage !== 'undefined') {
+      const key = 'prism-chunk-reload';
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        window.location.reload();
+        return;
+      }
+      sessionStorage.removeItem(key);
+    }
     this.setState({ stack });
   }
   render() {

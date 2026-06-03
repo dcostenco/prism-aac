@@ -580,7 +580,9 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
 
   // Normalize stored slider → portal SSML rate scale. See computeNormalizedRate.
   // DO NOT pass-through — stored 0.5 direct → SSML 0.5 = 2× slow (RO/RU bug, May 2026).
-  const normalizedRate = computeNormalizedRate(rate);
+  const baseLang = lang.split('-')[0];
+  const foreignSlowdown = baseLang !== 'en' ? 0.85 : 1;
+  const normalizedRate = computeNormalizedRate(rate) * foreignSlowdown;
 
   const controller = new AbortController();
   activeControllers.add(controller);

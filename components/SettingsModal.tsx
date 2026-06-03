@@ -286,12 +286,10 @@ export default function SettingsModal() {
             <input type="range" min="0" max="1" step="0.1" value={speechVolume}
               onChange={(e) => update({ speechVolume: parseFloat(e.target.value) })}
               className="w-full accent-[#2196F3]" />
-            {profile?.plan && profile.plan !== 'free' && (
-              <div className="mt-2">
-                <p className="text-muted text-xs mb-2">{t('voice_picker_desc')}</p>
-                <VoicePicker />
-              </div>
-            )}
+            <div className="mt-2">
+              <p className="text-muted text-xs mb-2">{t('voice_picker_desc')}</p>
+              <VoicePicker />
+            </div>
           </Section>
 
           {/* ── LANGUAGE ── */}
