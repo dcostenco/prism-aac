@@ -971,11 +971,10 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
         break;
       }
     }
-    // SAFETY NET: If no contacts configured and autoCall911 is false,
+    // SAFETY NET: If no tel: link was successfully opened (contacts empty,
+    // all phones invalid, or all safePhoneForUri calls returned null),
     // force a tel: link to the local emergency number as last resort.
-    // This is the DEFAULT state (empty contacts, autoCall911=false) and
-    // without this safety net, the emergency system does NOTHING.
-    if (!alert.sent && config.contacts.length === 0) {
+    if (!alert.sent) {
       const emergencyNumber = EMERGENCY_NUMBERS[(config.profile?.country?.toUpperCase() || 'US')] || '112';
       window.open(`tel:${emergencyNumber}`, '_self');
       alert.sent = true;
