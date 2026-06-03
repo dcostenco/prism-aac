@@ -324,12 +324,11 @@ final class WatchAISession: NSObject, ObservableObject {
         var req = URLRequest(url: cloudURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: timeoutSec)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // Auth is required — throw rather than silently continuing unauthenticated
-        guard let authToken = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") else {
-            NSLog("[WatchAI] No auth token — cannot make cloud request")
-            throw WatchAIError.notAuthenticated
+        // Auth is OPTIONAL — endpoint accepts unauthenticated requests (free tier).
+        // If token exists, send it for tier routing to better models.
+        if let authToken = KeychainHelper.shared.read(service: "prism-aac", account: "auth-token") {
+            req.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         }
-        req.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         req.httpBody = try JSONSerialization.data(withJSONObject: [
             "messages": [
                 ["role": "system", "content": system],
@@ -339,6 +338,25 @@ final class WatchAISession: NSObject, ObservableObject {
             "stream": false,   // #8: data(for:) buffers full response — use non-streaming JSON; SSE fallback below
         ] as [String: Any])
         let (data, response) = try await WatchAISession.aiSession.data(for: req)
+        if let http = response as? HTTPURLResponse, http.statusCode == 401 {
+            // Token is stale/invalid — clear it and retry without auth
+            NSLog("[WatchAI] 401 — clearing stale auth token and retrying without auth")
+            KeychainHelper.shared.delete(service: "prism-aac", account: "auth-token")
+            var retryReq = URLRequest(url: cloudURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: timeoutSec)
+            retryReq.httpMethod = "POST"
+            retryReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            retryReq.httpBody = req.httpBody
+            let (retryData, retryResponse) = try await WatchAISession.aiSession.data(for: retryReq)
+            if let retryHttp = retryResponse as? HTTPURLResponse, !(200...299).contains(retryHttp.statusCode) {
+                NSLog("[WatchAI] HTTP error \(retryHttp.statusCode) on unauthenticated retry")
+                throw URLError(.badServerResponse)
+            }
+            guard retryData.count <= 65_536 else {
+                NSLog("[WatchAI] Retry response too large (\(retryData.count) bytes) — ignoring")
+                throw WatchAIError.responseTooLarge
+            }
+            return parseNonStreaming(retryData) ?? assembleSSE(retryData) ?? ""
+        }
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
             NSLog("[WatchAI] HTTP error \(http.statusCode)")
             throw URLError(.badServerResponse)
