@@ -103,44 +103,48 @@ export default function LanguagePicker({ selected, onSelect, onClose, anchor = '
   const visible = LANG_META.filter((l) => l.code !== 'zh');
 
   return (
-    <div
-      ref={ref}
-      data-testid="language-picker"
-      className={`absolute top-full mt-2 ${anchorClass} surface-bar rounded-2xl border border-theme shadow-2xl z-50 p-3 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-[80svh] overflow-y-auto`}
-      style={{ width: 'min(96vw, 520px)' }}
-      role="listbox"
-      aria-label="Choose language"
-    >
-      {visible.map((l) => {
-        const isSelected = selected === l.code;
-        return (
-          <button
-            key={l.code}
-            type="button"
-            role="option"
-            aria-selected={isSelected}
-            data-testid={`language-option-${l.code}`}
-            className={`aac-btn min-h-[80px] rounded-xl border-2 flex flex-col items-center justify-center gap-1 p-2 select-none ${
-              isSelected
-                ? 'bg-[#4CAF50] text-white border-[#4CAF50] shadow-md'
-                : 'surface-key text-primary border-theme hover:border-[#2196F3]'
-            }`}
-            onClick={() => {
-              tapFeedback();
-              onSelect(l.code);
-              onClose();
-            }}
-          >
-            <span aria-hidden className="text-3xl leading-none">{l.flag}</span>
-            <span className="text-sm font-bold leading-tight text-center whitespace-nowrap">
-              {l.nativeName}
-            </span>
-            <span className={`text-[10px] font-bold uppercase ${isSelected ? 'opacity-90' : 'opacity-60'}`}>
-              {l.code}
-            </span>
-          </button>
-        );
-      })}
-    </div>
+    <>
+      {/* Backdrop — click to dismiss */}
+      <div className="fixed inset-0 z-40" aria-hidden onClick={onClose} />
+      <div
+        ref={ref}
+        data-testid="language-picker"
+        className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 surface-bar rounded-2xl border border-theme shadow-2xl z-50 p-2 sm:p-3 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-1.5 sm:gap-2 max-h-[70svh] overflow-y-auto`}
+        style={{ width: 'min(94vw, 560px)' }}
+        role="listbox"
+        aria-label="Choose language"
+      >
+        {visible.map((l) => {
+          const isSelected = selected === l.code;
+          return (
+            <button
+              key={l.code}
+              type="button"
+              role="option"
+              aria-selected={isSelected}
+              data-testid={`language-option-${l.code}`}
+              className={`aac-btn min-h-[60px] sm:min-h-[72px] rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 p-1.5 select-none ${
+                isSelected
+                  ? 'bg-[#4CAF50] text-white border-[#4CAF50] shadow-md'
+                  : 'surface-key text-primary border-theme hover:border-[#2196F3]'
+              }`}
+              onClick={() => {
+                tapFeedback();
+                onSelect(l.code);
+                onClose();
+              }}
+            >
+              <span aria-hidden className="text-2xl sm:text-3xl leading-none">{l.flag}</span>
+              <span className="text-[11px] sm:text-sm font-bold leading-tight text-center whitespace-nowrap">
+                {l.nativeName}
+              </span>
+              <span className={`text-[9px] sm:text-[10px] font-bold uppercase ${isSelected ? 'opacity-90' : 'opacity-60'}`}>
+                {l.code}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
