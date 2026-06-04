@@ -21,17 +21,15 @@ KEY_ID    = os.environ.get("ASC_KEY_ID") or sys.exit("ASC_KEY_ID not set")
 ISSUER_ID = os.environ.get("ASC_ISSUER_ID") or sys.exit("ASC_ISSUER_ID not set")
 KEY_PATH  = Path(os.environ.get("ASC_KEY_PATH", str(Path.home() / "private_keys" / f"AuthKey_{KEY_ID}.p8")))
 BUNDLE_ID = "ai.synalux.prism-aac"
-TARGET_VERSION = "1.4.1"
-TARGET_BUILD = "1"
+TARGET_VERSION = "1.8.1"
+TARGET_BUILD = "33"
 
-WHATS_NEW = """• Apple Watch: full vocabulary (1,275 phrases across 22 categories) with rich ARASAAC pictograms
-• Watch: 20 languages of offline translation, including category names
-• Watch: color-coded categories with proper SF Symbol icons
-• Watch: improved touch scrolling and home layout
-• iOS: clearer mic error messages when speech recognition is unavailable
-• iOS: AI Chat falls back to cloud when on-device model is loading
-• iOS: layout fixes for iPhone keyboard
-• Stability: crash prevention in AI Chat audio path"""
+WHATS_NEW = """• Apple Watch: mic dictation now opens in 1 tap (fixed 2-step bug)
+• Caregiver Insights: 7 live monitoring widgets — prediction effectiveness, vocabulary adoption, communication topics, motor trend, tracking reliability, voice reliability, correction burden
+• Background metrics: 5-min collector, 7-day history, zero impact on prediction speed
+• SVG sparklines in caregiver dashboard (0 dependencies, ~2KB)
+• Drift detection engine: BCBA clinical safety, coding quality, AAC monitoring
+• 306 tests, zero failures"""
 
 API = "https://api.appstoreconnect.apple.com/v1"
 

@@ -54,3 +54,4 @@ prism-deep-review.txt
 /test-correct*.js
 /test-correct*.ts
 ios-native/PrismAAC/Resources/*.gguf
+.env*.local
