@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore, type ToolbarButtonId, DEFAULT_TOOLBAR_ORDER } from '@/store/settingsStore';
-import type { SupportedLanguage } from '@/engine/i18n';
+import { isRTL, type SupportedLanguage } from '@/engine/i18n';
 import { useSyncStatus } from './SyncProvider';
 import { tapFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
@@ -415,7 +415,7 @@ export default function Toolbar() {
               }
             }}
             onClose={() => setShowLangPicker(null)}
-            anchor="right"
+            anchor={isRTL(language) ? 'left' : 'right'}
           />
         )}
       </div>

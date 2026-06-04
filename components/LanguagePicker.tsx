@@ -96,7 +96,7 @@ export default function LanguagePicker({ selected, onSelect, onClose, anchor = '
     };
   }, [onClose]);
 
-  const anchorClass = anchor === 'left' ? 'left-0' : anchor === 'center' ? 'left-1/2 -translate-x-1/2' : 'right-0';
+  const anchorClass = anchor === 'left' ? 'start-0' : anchor === 'center' ? 'start-1/2 -translate-x-1/2' : 'end-0';
 
   // Filter out the back-compat 'zh' alias — it's a duplicate of zh-Hans
   // and would render twice in the grid otherwise.
