@@ -10,7 +10,7 @@ const OLLAMA_URL = 'http://localhost:11434';
 // tests that require a running Ollama instance — they are not meant for CI.
 const ollamaUp = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) })
   .then(r => r.ok)
-  .catch(() => false);
+  ;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 

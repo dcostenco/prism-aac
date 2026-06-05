@@ -11,28 +11,36 @@
  *   2nd click → picture-only   (keyboard hidden, categories visible)
  *   3rd click → keyboard-only  (repeats)
  */
-import { test, expect, type Page } from '@playwright/test';
-import path from 'node:path';
+import { test, expect, type Page } from "@playwright/test";
+import path from "node:path";
 
-const SHOTS_DIR = path.resolve('e2e', '_screenshots');
+const SHOTS_DIR = path.resolve("e2e", "_screenshots");
 
 async function bootClean(page: Page) {
-  await page.goto('/prism-aac');
+  await page.goto("/prism-aac");
   await page.evaluate(() => {
-    try { localStorage.clear(); sessionStorage.clear(); } catch {}
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
   });
-  await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
+  await page.goto("/prism-aac", { waitUntil: "domcontentloaded" });
   // Wait until the CategoryPanel sidebar renders (kb-cycle-btn must exist)
-  await page.waitForSelector('[data-testid="kb-cycle-btn"]', { timeout: 30000 });
+  await page.waitForSelector('[data-testid="kb-cycle-btn"]', {
+    timeout: 30000,
+  });
 }
 
-test.describe('Keyboard 2-mode cycle', () => {
-
-  test('default state: keyboard-shell and categories both visible', async ({ page }) => {
+test.describe("Keyboard 2-mode cycle", () => {
+  test("default state: keyboard-shell and categories both visible", async ({
+    page,
+  }) => {
     await bootClean(page);
 
     const kb = page.locator('[data-testid="keyboard-shell"]');
-    const catNav = page.locator('[data-testid="kb-cycle-btn"]').locator('xpath=ancestor::nav');
+    const catNav = page
+      .locator('[data-testid="kb-cycle-btn"]')
+      .locator("xpath=ancestor::nav");
     await expect(kb).toBeVisible();
     await expect(catNav).toBeVisible();
 
@@ -41,10 +49,15 @@ test.describe('Keyboard 2-mode cycle', () => {
     // In default state keyboard is NOT maximized — occupies less than half viewport height
     expect(box!.height).toBeLessThan(page.viewportSize()!.height * 0.5);
 
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'kb-default-state.png'), fullPage: false });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "kb-default-state.png"),
+      fullPage: false,
+    });
   });
 
-  test('1st click → keyboard-only: categories hidden, keyboard maximized', async ({ page }) => {
+  test("1st click → keyboard-only: categories hidden, keyboard maximized", async ({
+    page,
+  }) => {
     await bootClean(page);
 
     const kbBtn = page.locator('[data-testid="kb-cycle-btn"]');
@@ -61,10 +74,15 @@ test.describe('Keyboard 2-mode cycle', () => {
     // CategoryPanel nav must be gone (keyboard-only mode hides it)
     await expect(kbBtn).not.toBeVisible();
 
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'kb-keyboard-only.png'), fullPage: false });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "kb-keyboard-only.png"),
+      fullPage: false,
+    });
   });
 
-  test('2nd click → picture-only: keyboard-shell hidden, categories visible', async ({ page }) => {
+  test("2nd click → picture-only: keyboard-shell hidden, categories visible", async ({
+    page,
+  }) => {
     await bootClean(page);
 
     const kbBtn = page.locator('[data-testid="kb-cycle-btn"]');
@@ -84,10 +102,15 @@ test.describe('Keyboard 2-mode cycle', () => {
     // Keyboard must now be gone
     await expect(kb).not.toBeVisible();
 
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'kb-picture-only.png'), fullPage: false });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "kb-picture-only.png"),
+      fullPage: false,
+    });
   });
 
-  test('from picture-only, kb-cycle-btn click → keyboard-only in ONE click', async ({ page }) => {
+  test("from picture-only, kb-cycle-btn click → keyboard-only in ONE click", async ({
+    page,
+  }) => {
     await bootClean(page);
 
     // Drive to picture-only: click kb-cycle-btn → keyboard-only, then minimize button → picture-only
@@ -112,10 +135,15 @@ test.describe('Keyboard 2-mode cycle', () => {
     const box = await kb.boundingBox();
     expect(box!.height).toBeGreaterThan(page.viewportSize()!.height * 0.5);
 
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'kb-from-picture-one-click.png'), fullPage: false });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "kb-from-picture-one-click.png"),
+      fullPage: false,
+    });
   });
 
-  test('NO intermediate "all-3" state: prediction bar hidden in keyboard-only', async ({ page }) => {
+  test('NO intermediate "all-3" state: prediction bar hidden in keyboard-only', async ({
+    page,
+  }) => {
     await bootClean(page);
 
     const kbBtn = page.locator('[data-testid="kb-cycle-btn"]');
@@ -128,10 +156,13 @@ test.describe('Keyboard 2-mode cycle', () => {
     const predBar = page.locator('[data-testid="prediction-bar"]');
     await expect(predBar).not.toBeVisible();
 
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'kb-no-prediction-bar.png'), fullPage: false });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "kb-no-prediction-bar.png"),
+      fullPage: false,
+    });
   });
 
-  test('keyboard-only state persists across page reload', async ({ page }) => {
+  test("keyboard-only state persists across page reload", async ({ page }) => {
     await bootClean(page);
 
     // Drive to keyboard-only in one click
@@ -142,19 +173,26 @@ test.describe('Keyboard 2-mode cycle', () => {
     await expect(kb).toBeVisible();
     const maxHeight = (await kb.boundingBox())!.height;
 
-    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.reload({ waitUntil: "domcontentloaded" });
     // After reload kb-cycle-btn may not be visible (keyboard-only), wait for kb-shell
-    await page.waitForSelector('[data-testid="keyboard-shell"]', { timeout: 30000 });
+    await page.waitForSelector('[data-testid="keyboard-shell"]', {
+      timeout: 30000,
+    });
 
     const kbAfter = page.locator('[data-testid="keyboard-shell"]');
     await expect(kbAfter).toBeVisible();
     const heightAfter = (await kbAfter.boundingBox())!.height;
     expect(heightAfter).toBeGreaterThan(maxHeight * 0.85);
 
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'kb-persist-reload.png'), fullPage: false });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "kb-persist-reload.png"),
+      fullPage: false,
+    });
   });
 
-  test('Q key visible and tappable in keyboard-only state', async ({ page }) => {
+  test("Q key visible and tappable in keyboard-only state", async ({
+    page,
+  }) => {
     await bootClean(page);
 
     const kbBtn = page.locator('[data-testid="kb-cycle-btn"]');

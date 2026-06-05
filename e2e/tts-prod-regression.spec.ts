@@ -29,7 +29,7 @@
  *        /api/v1/marketplace/catalog must return 200, not 500.
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from "@playwright/test";
 
 // ── Shared AudioContext spy ───────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ interface TtsDiag {
   sourceStartCount: number;
   lastGainValue: number | null;
   lastCtxState: string | null;
-  truncatedCount: number;   // sources whose onended fired at < 50% duration
+  truncatedCount: number; // sources whose onended fired at < 50% duration
   ttsLogs: string[];
 }
 
@@ -99,25 +99,40 @@ async function injectTtsSpy(page: Page): Promise<void> {
     // Capture [TTS] console logs
     const origLog = console.log.bind(console);
     console.log = (...args: unknown[]) => {
-      const msg = args.map(String).join(' ');
-      if (msg.includes('[TTS]') || msg.includes('[AzureTTS]')) ttsLogs.push(msg);
+      const msg = args.map(String).join(" ");
+      if (msg.includes("[TTS]") || msg.includes("[AzureTTS]"))
+        ttsLogs.push(msg);
       origLog(...args);
     };
     const origWarn = console.warn.bind(console);
     console.warn = (...args: unknown[]) => {
-      const msg = args.map(String).join(' ');
-      if (msg.includes('[TTS]') || msg.includes('[AzureTTS]')) ttsLogs.push('[WARN] ' + msg);
+      const msg = args.map(String).join(" ");
+      if (msg.includes("[TTS]") || msg.includes("[AzureTTS]"))
+        ttsLogs.push("[WARN] " + msg);
       origWarn(...args);
     };
 
-    win.__ttsDiag = () => ({ sourceStartCount, lastGainValue, lastCtxState, truncatedCount, ttsLogs });
+    win.__ttsDiag = () => ({
+      sourceStartCount,
+      lastGainValue,
+      lastCtxState,
+      truncatedCount,
+      ttsLogs,
+    });
   });
 }
 
 async function getDiag(page: Page): Promise<TtsDiag> {
-  return page.evaluate(() => (window as Window & { __ttsDiag?: () => TtsDiag }).__ttsDiag?.() ?? {
-    sourceStartCount: 0, lastGainValue: null, lastCtxState: null, truncatedCount: 0, ttsLogs: [],
-  });
+  return page.evaluate(
+    () =>
+      (window as Window & { __ttsDiag?: () => TtsDiag }).__ttsDiag?.() ?? {
+        sourceStartCount: 0,
+        lastGainValue: null,
+        lastCtxState: null,
+        truncatedCount: 0,
+        ttsLogs: [],
+      },
+  );
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -132,7 +147,7 @@ async function typeWord(page: Page, word: string): Promise<void> {
 async function tapSpeak(page: Page): Promise<void> {
   // warmupAzureAudio runs synchronously inside the gesture handler.
   // Use dispatchEvent so the gesture token reaches the AudioContext.
-  await page.locator('button.aac-speak').first().click();
+  await page.locator("button.aac-speak").first().click();
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
@@ -145,32 +160,48 @@ test.beforeEach(async ({ page, baseURL }) => {
   // auto-speaks at +905ms, producing a second TTS call that corrupts
   // every test that measures sourceStartCount or fetch count.
   await page.addInitScript(() => {
-    try { sessionStorage.setItem('prism-greeting-dismissed', '1'); } catch { /* */ }
+    try {
+      sessionStorage.setItem("prism-greeting-dismissed", "1");
+    } catch {
+      /* */
+    }
   });
 
-  const start = baseURL || '/';
+  const start = baseURL || "/";
   // First load: clear persisted state from prior sessions
-  await page.goto(start, { waitUntil: 'domcontentloaded' });
+  await page.goto(start, { waitUntil: "domcontentloaded" });
   await page.waitForSelector('button[data-key="Q"]', { timeout: 30000 });
   await page.evaluate(() => {
-    try { localStorage.clear(); sessionStorage.clear(); } catch { /* */ }
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {
+      /* */
+    }
     // Re-apply greeting dismiss so the second load respects it
-    try { sessionStorage.setItem('prism-greeting-dismissed', '1'); } catch { /* */ }
+    try {
+      sessionStorage.setItem("prism-greeting-dismissed", "1");
+    } catch {
+      /* */
+    }
   });
-  await page.goto(start, { waitUntil: 'domcontentloaded' });
+  await page.goto(start, { waitUntil: "domcontentloaded" });
   await page.waitForSelector('button[data-key="Q"]', { timeout: 30000 });
   await page.waitForTimeout(1500); // let auth + settings hydrate
 });
 
 // ── C1: Double-speak truncation ───────────────────────────────────────────────
 
-test('C1: single Speak press → at most one AudioSource truncated (no double-speak)', async ({ page }) => {
+test("C1: single Speak press → at most one AudioSource truncated (no double-speak)", async ({
+  page,
+}) => {
   const ttsReqs: string[] = [];
-  page.on('request', (r) => {
-    if (r.url().includes('/tts/') && r.method() === 'POST') ttsReqs.push(r.url());
+  page.on("request", (r) => {
+    if (r.url().includes("/tts/") && r.method() === "POST")
+      ttsReqs.push(r.url());
   });
 
-  await typeWord(page, 'HELLO');
+  await typeWord(page, "HELLO");
   await page.waitForTimeout(600); // let silence-detect + autocorrect settle
   await tapSpeak(page);
   await page.waitForTimeout(5000); // full audio play window
@@ -179,36 +210,56 @@ test('C1: single Speak press → at most one AudioSource truncated (no double-sp
 
   // The fix: silence-detect pre-mark is now case-insensitive, so the
   // second speak (which killed the first at 10%) must no longer fire.
-  expect(diag.truncatedCount, 'Audio was truncated — double-speak still occurring').toBe(0);
-  expect(diag.sourceStartCount, 'Expected exactly 1 AudioSource to start').toBe(1);
+  expect(
+    diag.truncatedCount,
+    "Audio was truncated — double-speak still occurring",
+  ).toBe(0);
+  expect(diag.sourceStartCount, "Expected exactly 1 AudioSource to start").toBe(
+    1,
+  );
 });
 
-test('C1b: TTS logs show exactly one "Portal TTS succeeded" for a single Speak', async ({ page }) => {
-  await typeWord(page, 'HELLO');
+test('C1b: TTS logs show exactly one "Portal TTS succeeded" for a single Speak', async ({
+  page,
+}) => {
+  await typeWord(page, "HELLO");
   await page.waitForTimeout(600);
   await tapSpeak(page);
   await page.waitForTimeout(4000);
 
   const diag = await getDiag(page);
-  const successLogs = diag.ttsLogs.filter((l) => l.includes('Portal TTS succeeded'));
-  const truncateLogs = diag.ttsLogs.filter((l) => l.includes('AUDIO TRUNCATED'));
+  const successLogs = diag.ttsLogs.filter((l) =>
+    l.includes("Portal TTS succeeded"),
+  );
+  const truncateLogs = diag.ttsLogs.filter((l) =>
+    l.includes("AUDIO TRUNCATED"),
+  );
 
-  expect(truncateLogs, `AUDIO TRUNCATED still in logs:\n${truncateLogs.join('\n')}`).toHaveLength(0);
-  expect(successLogs.length, `Expected 1 success log, got ${successLogs.length}`).toBe(1);
+  expect(
+    truncateLogs,
+    `AUDIO TRUNCATED still in logs:\n${truncateLogs.join("\n")}`,
+  ).toHaveLength(0);
+  expect(
+    successLogs.length,
+    `Expected 1 success log, got ${successLogs.length}`,
+  ).toBe(1);
 });
 
 // ── C2: Romanian / Ukrainian rate ─────────────────────────────────────────────
 
-test('C2: Romanian speak — single source starts, no truncation', async ({ page }) => {
+test("C2: Romanian speak — single source starts, no truncation", async ({
+  page,
+}) => {
   // Switch to Romanian via the language picker (input lang = ro)
   // Simpler: use the keyboard locator approach for the toolbar lang button
   // and verify the portal call succeeds with audio.
   const ttsReqs: { url: string; status?: number }[] = [];
-  page.on('request', (r) => {
-    if (r.url().includes('/tts/') && r.method() === 'POST') ttsReqs.push({ url: r.url() });
+  page.on("request", (r) => {
+    if (r.url().includes("/tts/") && r.method() === "POST")
+      ttsReqs.push({ url: r.url() });
   });
-  page.on('response', async (r) => {
-    if (r.url().includes('/tts/')) {
+  page.on("response", async (r) => {
+    if (r.url().includes("/tts/")) {
       const entry = ttsReqs.find((e) => e.url === r.url() && !e.status);
       if (entry) entry.status = r.status();
     }
@@ -217,79 +268,114 @@ test('C2: Romanian speak — single source starts, no truncation', async ({ page
   // Set language to Romanian in localStorage before load
   await page.evaluate(() => {
     try {
-      const s = JSON.parse(localStorage.getItem('prism-aac-settings') || '{}');
-      s.language = 'ro';
+      const s = JSON.parse(localStorage.getItem("prism-aac-settings") || "{}");
+      s.language = "ro";
       s.speechRate = 1.0; // migrated default — must not be 0.5
-      localStorage.setItem('prism-aac-settings', JSON.stringify(s));
-    } catch { /* */ }
+      localStorage.setItem("prism-aac-settings", JSON.stringify(s));
+    } catch {
+      /* */
+    }
   });
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForSelector('button[data-key="Q"]', { timeout: 20000 });
   await page.waitForTimeout(1500);
 
-  await typeWord(page, 'APA');  // Romanian for "water"
+  await typeWord(page, "APA"); // Romanian for "water"
   await page.waitForTimeout(500);
   await tapSpeak(page);
   await page.waitForTimeout(5000);
 
   const diag = await getDiag(page);
-  const portalHit = ttsReqs.some((r) => r.url.includes('/tts/public') && r.status === 200);
+  const portalHit = ttsReqs.some(
+    (r) => r.url.includes("/tts/public") && r.status === 200,
+  );
 
-  expect(portalHit, 'Portal TTS /tts/public must return 200 for Romanian').toBe(true);
-  expect(diag.sourceStartCount, 'Romanian must start exactly 1 AudioSource').toBe(1);
-  expect(diag.truncatedCount, 'Romanian audio must not be truncated').toBe(0);
+  expect(portalHit, "Portal TTS /tts/public must return 200 for Romanian").toBe(
+    true,
+  );
+  expect(
+    diag.sourceStartCount,
+    "Romanian must start exactly 1 AudioSource",
+  ).toBe(1);
+  expect(diag.truncatedCount, "Romanian audio must not be truncated").toBe(0);
 });
 
 // ── C3: Single network call per Speak ─────────────────────────────────────────
 
-test('C3: one Speak press → exactly one POST to /tts/public', async ({ page }) => {
+test("C3: one Speak press → exactly one POST to /tts/public", async ({
+  page,
+}) => {
   const ttsPosts: string[] = [];
-  page.on('request', (r) => {
-    if (r.url().includes('/tts/public') && r.method() === 'POST') ttsPosts.push(r.url());
+  page.on("request", (r) => {
+    if (r.url().includes("/tts/public") && r.method() === "POST")
+      ttsPosts.push(r.url());
   });
 
-  await typeWord(page, 'WATER');
+  await typeWord(page, "WATER");
   await page.waitForTimeout(600);
   await tapSpeak(page);
   await page.waitForTimeout(4000);
 
-  expect(ttsPosts.length, `Expected 1 TTS fetch, got ${ttsPosts.length}: ${ttsPosts.join(', ')}`).toBe(1);
+  expect(
+    ttsPosts.length,
+    `Expected 1 TTS fetch, got ${ttsPosts.length}: ${ttsPosts.join(", ")}`,
+  ).toBe(1);
 });
 
 // ── C4: AudioContext running, BufferSource plays ───────────────────────────────
 
-test('C4: AudioContext reaches running state and BufferSource starts', async ({ page }) => {
-  await typeWord(page, 'TEST');
+test("C4: AudioContext reaches running state and BufferSource starts", async ({
+  page,
+}) => {
+  await typeWord(page, "TEST");
   await page.waitForTimeout(500);
   await tapSpeak(page);
   await page.waitForTimeout(4000);
 
   const diag = await getDiag(page);
 
-  expect(diag.lastCtxState, 'AudioContext must be "running" when source starts').toBe('running');
-  expect(diag.sourceStartCount, 'At least one BufferSource must have started').toBeGreaterThan(0);
-  expect(diag.lastGainValue, 'Gain must be set (non-null) — volume guard working').not.toBeNull();
-  expect(diag.lastGainValue!, 'Gain must be > 0 — no silent-success bug').toBeGreaterThan(0);
+  expect(
+    diag.lastCtxState,
+    'AudioContext must be "running" when source starts',
+  ).toBe("running");
+  expect(
+    diag.sourceStartCount,
+    "At least one BufferSource must have started",
+  ).toBeGreaterThan(0);
+  expect(
+    diag.lastGainValue,
+    "Gain must be set (non-null) — volume guard working",
+  ).not.toBeNull();
+  expect(
+    diag.lastGainValue!,
+    "Gain must be > 0 — no silent-success bug",
+  ).toBeGreaterThan(0);
 });
 
 // ── C5: Marketplace catalog 500 resolved ──────────────────────────────────────
 
-test('C5: /api/v1/marketplace/catalog returns 200, not 500', async ({ page }) => {
-  const response = await page.request.get('https://synalux.ai/api/v1/marketplace/catalog');
+test("C5: /api/v1/marketplace/catalog returns 200, not 500", async ({
+  page,
+}) => {
+  const response = await page.request.get(
+    "https://synalux.ai/api/v1/marketplace/catalog",
+  );
 
-  expect(response.status(), 'marketplace/catalog must not 500').not.toBe(500);
-  expect(response.status(), 'marketplace/catalog must return 200').toBe(200);
+  expect(response.status(), "marketplace/catalog must not 500").not.toBe(500);
+  expect(response.status(), "marketplace/catalog must return 200").toBe(200);
 
   const body = await response.json();
-  expect(body).toHaveProperty('modules');
-  expect(Array.isArray(body.modules), 'modules must be an array').toBe(true);
-  expect(body).toHaveProperty('fetched_at');
+  expect(body).toHaveProperty("modules");
+  expect(Array.isArray(body.modules), "modules must be an array").toBe(true);
+  expect(body).toHaveProperty("fetched_at");
 });
 
 // ── C6: Rapid double-Speak does not permanently silence audio ─────────────────
 
-test('C6: two rapid Speak presses — second press still produces audio', async ({ page }) => {
-  await typeWord(page, 'YES');
+test("C6: two rapid Speak presses — second press still produces audio", async ({
+  page,
+}) => {
+  await typeWord(page, "YES");
   await page.waitForTimeout(500);
 
   // First press
@@ -303,16 +389,27 @@ test('C6: two rapid Speak presses — second press still produces audio', async 
 
   // After two presses the pipeline must have produced at least one
   // non-truncated playback (the second press's audio).
-  expect(diag.sourceStartCount, 'At least one source must start on double-press').toBeGreaterThanOrEqual(1);
+  expect(
+    diag.sourceStartCount,
+    "At least one source must start on double-press",
+  ).toBeGreaterThanOrEqual(1);
   // The DEDUP or stopAzurePlayback may kill the first — that's acceptable.
   // What must NOT happen is zero sources (complete silence).
-  const successLogs = diag.ttsLogs.filter((l) => l.includes('Portal TTS succeeded'));
-  expect(successLogs.length, 'At least one TTS success must occur').toBeGreaterThan(0);
+  const successLogs = diag.ttsLogs.filter((l) =>
+    l.includes("Portal TTS succeeded"),
+  );
+  expect(
+    successLogs.length,
+    "At least one TTS success must occur",
+  ).toBeGreaterThan(0);
 });
 
 // ── C7: GreetingBanner is visual-only — no auto-speak on load ────────────────
 
-test('C7: greeting banner shows visually but fires ZERO TTS calls (visual-only)', async ({ page, baseURL }) => {
+test("C7: greeting banner shows visually but fires ZERO TTS calls (visual-only)", async ({
+  page,
+  baseURL,
+}) => {
   /**
    * Greeting audio was removed (May 2026) — it caused TTS conflicts:
    * the banner fired aacSpeak() at +905ms which then got killed at
@@ -323,27 +420,37 @@ test('C7: greeting banner shows visually but fires ZERO TTS calls (visual-only)'
    * This test deliberately does NOT pre-dismiss the banner.
    */
   const ttsReqs: string[] = [];
-  page.on('request', (r) => {
-    if (r.url().includes('/tts/') && r.method() === 'POST') ttsReqs.push(r.url());
+  page.on("request", (r) => {
+    if (r.url().includes("/tts/") && r.method() === "POST")
+      ttsReqs.push(r.url());
   });
 
-  const start = baseURL || '/';
-  await page.goto(start, { waitUntil: 'domcontentloaded' });
+  const start = baseURL || "/";
+  await page.goto(start, { waitUntil: "domcontentloaded" });
   await page.evaluate(() => {
-    try { localStorage.clear(); sessionStorage.clear(); } catch { /* */ }
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {
+      /* */
+    }
   });
-  await page.goto(start, { waitUntil: 'domcontentloaded' });
+  await page.goto(start, { waitUntil: "domcontentloaded" });
   await page.waitForSelector('button[data-key="Q"]', { timeout: 30000 });
   await page.waitForTimeout(2000); // full banner + i18n settle time
 
   const diag = await getDiag(page);
 
   // Banner must not have triggered any TTS
-  expect(diag.sourceStartCount, 'Banner must NOT start any AudioSource').toBe(0);
-  expect(ttsReqs.filter(u => u.includes('/tts/')).length,
-    'Banner must NOT fire any TTS API calls').toBe(0);
+  expect(diag.sourceStartCount, "Banner must NOT start any AudioSource").toBe(
+    0,
+  );
+  expect(
+    ttsReqs.filter((u) => u.includes("/tts/")).length,
+    "Banner must NOT fire any TTS API calls",
+  ).toBe(0);
 
   // Banner should be visible in the DOM
-  const banner = page.locator('.surface-bar').first();
+  const banner = page.locator(".surface-bar").first();
   await expect(banner).toBeVisible();
 });

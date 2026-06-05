@@ -15,14 +15,19 @@
  * test `tests/ai-chat-streaming-tts.test.tsx`. The audio path is too
  * platform-dependent for a Playwright assertion.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('AI Chat verification', () => {
-  test('input preview strip renders and reflects typed characters', async ({ page }) => {
-    await page.goto('/prism-aac');
-    await page.waitForLoadState('domcontentloaded');
+test.describe("AI Chat verification", () => {
+  test("input preview strip renders and reflects typed characters", async ({
+    page,
+  }) => {
+    await page.goto("/prism-aac");
+    await page.waitForLoadState("domcontentloaded");
     // Toolbar is the first stable render landmark
-    await page.locator('button[aria-label="Settings"]').first().waitFor({ timeout: 15_000 });
+    await page
+      .locator('button[aria-label="Settings"]')
+      .first()
+      .waitFor({ timeout: 15_000 });
 
     // Open the AI chat panel via the toolbar ✨ button (aria-label "AI").
     const aiToolbarBtn = page.locator('button[aria-label="AI"]').first();
@@ -48,14 +53,22 @@ test.describe('AI Chat verification', () => {
     await expect(preview).toContainText(/hi/i);
 
     // Visual evidence
-    await page.screenshot({ path: 'e2e/_screenshots/ai-chat-input-preview.png', fullPage: false });
+    await page.screenshot({
+      path: "e2e/_screenshots/ai-chat-input-preview.png",
+      fullPage: false,
+    });
   });
 
-  test('toolbar 🚨 alert opens confirmation modal; Cancel dismisses without sending', async ({ page }) => {
-    await page.goto('/prism-aac');
-    await page.waitForLoadState('domcontentloaded');
+  test("toolbar 🚨 alert opens confirmation modal; Cancel dismisses without sending", async ({
+    page,
+  }) => {
+    await page.goto("/prism-aac");
+    await page.waitForLoadState("domcontentloaded");
     // Toolbar is the first stable render landmark
-    await page.locator('button[aria-label="Settings"]').first().waitFor({ timeout: 15_000 });
+    await page
+      .locator('button[aria-label="Settings"]')
+      .first()
+      .waitFor({ timeout: 15_000 });
 
     // Click the alert toolbar button (aria-label "Alert").
     const alertBtn = page.locator('button[aria-label="Alert"]').first();
@@ -71,12 +84,17 @@ test.describe('AI Chat verification', () => {
     await expect(cancelBtn).toBeVisible();
     await expect(sendBtn).toBeVisible();
 
-    await page.screenshot({ path: 'e2e/_screenshots/alert-confirm-modal.png', fullPage: false });
+    await page.screenshot({
+      path: "e2e/_screenshots/alert-confirm-modal.png",
+      fullPage: false,
+    });
 
     await cancelBtn.click();
     await expect(modal).toBeHidden();
 
     // No status toast should appear after cancel
-    await expect(page.locator('[data-testid="alert-status-toast"]')).toHaveCount(0);
+    await expect(
+      page.locator('[data-testid="alert-status-toast"]'),
+    ).toHaveCount(0);
   });
 });

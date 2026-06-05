@@ -15,64 +15,54 @@
  * Python keyboard (gap surfaced in tests/workflows/COVERAGE.md), the
  * spec skips with a descriptive message rather than failing.
  */
-import { test } from '@playwright/test';
-import { gotoMathPanel, runProblem } from './_helpers';
+import { test } from "@playwright/test";
+import { gotoMathPanel, runProblem } from "./_helpers";
 
-const CATEGORY = 'programming-python' as const;
+const CATEGORY = "programming-python" as const;
 
-test.describe('python workflow', () => {
+test.describe("python workflow", () => {
   test.beforeEach(async ({ page, baseURL }) => {
     await gotoMathPanel(page, baseURL);
   });
 
-  test('for-loop sum total over range(1,4)', async ({ page }, ti) => {
-    await runProblem(page, ti, [
-      't=0',
-      'for x in r:',
-      't=t+x',
-      'p(t)',
-      't=6',
-    ], CATEGORY);
+  test("for-loop sum total over range(1,4)", async ({ page }, ti) => {
+    await runProblem(
+      page,
+      ti,
+      ["t=0", "for x in r:", "t=t+x", "p(t)", "t=6"],
+      CATEGORY,
+    );
   });
 
-  test('list comprehension: [x*x for x in range(1,4)]', async ({ page }, ti) => {
-    await runProblem(page, ti, [
-      's=[x*x for x in r]',
-      's=[1,4,9]',
-    ], CATEGORY);
+  test("list comprehension: [x*x for x in range(1,4)]", async ({
+    page,
+  }, ti) => {
+    await runProblem(page, ti, ["s=[x*x for x in r]", "s=[1,4,9]"], CATEGORY);
   });
 
-  test('function definition — return double(x)', async ({ page }, ti) => {
-    await runProblem(page, ti, [
-      'def d(x):',
-      'return x*2',
-      'd(5)=10',
-    ], CATEGORY);
+  test("function definition — return double(x)", async ({ page }, ti) => {
+    await runProblem(
+      page,
+      ti,
+      ["def d(x):", "return x*2", "d(5)=10"],
+      CATEGORY,
+    );
   });
 
   test('string concatenation — "hi " + name', async ({ page }, ti) => {
-    await runProblem(page, ti, [
-      'n="ada"',
-      'g="hi"+n',
-      'g="hi ada"',
-    ], CATEGORY);
+    await runProblem(page, ti, ['n="ada"', 'g="hi"+n', 'g="hi ada"'], CATEGORY);
   });
 
-  test('if/else — even or odd for n=7', async ({ page }, ti) => {
-    await runProblem(page, ti, [
-      'n=7',
-      'if n%2==0:',
-      'p("e")',
-      'else:',
-      'p("o")',
-    ], CATEGORY);
+  test("if/else — even or odd for n=7", async ({ page }, ti) => {
+    await runProblem(
+      page,
+      ti,
+      ["n=7", "if n%2==0:", 'p("e")', "else:", 'p("o")'],
+      CATEGORY,
+    );
   });
 
-  test('len of list [4,5,6] = 3', async ({ page }, ti) => {
-    await runProblem(page, ti, [
-      'a=[4,5,6]',
-      'n=len(a)',
-      'n=3',
-    ], CATEGORY);
+  test("len of list [4,5,6] = 3", async ({ page }, ti) => {
+    await runProblem(page, ti, ["a=[4,5,6]", "n=len(a)", "n=3"], CATEGORY);
   });
 });

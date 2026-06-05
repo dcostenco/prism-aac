@@ -16,35 +16,49 @@
  * `**\/chat` permutation as the target — Playwright's URL matcher
  * is glob-against-the-full-URL.
  */
-import { test, expect, type Page, type Route } from '@playwright/test';
+import { test, expect, type Page, type Route } from "@playwright/test";
 
 async function gotoMath(page: Page, baseURL: string | undefined) {
-  const start = (baseURL || '') + '/dev/math-grid';
-  await page.goto(start, { waitUntil: 'domcontentloaded' });
+  const start = (baseURL || "") + "/dev/math-grid";
+  await page.goto(start, { waitUntil: "domcontentloaded" });
   await page.waitForSelector('[data-testid="math-main-keyboard"]');
-  await page.waitForFunction(() => {
-    const svg = document.querySelector('[data-testid="math-grid-svg"]');
-    return !!svg && svg.getBoundingClientRect().width > 100;
-  }, { timeout: 5000 });
+  await page.waitForFunction(
+    () => {
+      const svg = document.querySelector('[data-testid="math-grid-svg"]');
+      return !!svg && svg.getBoundingClientRect().width > 100;
+    },
+    { timeout: 5000 },
+  );
 }
 
 async function typeOneDigit(page: Page, digit: string) {
   await page.locator(`[data-testid="math-key-${digit}"]`).click();
-  await page.waitForFunction(() => {
-    const el = document.querySelector('header');
-    return !!el && /cells=[1-9]/.test(el.textContent || '');
-  }, { timeout: 2000 });
+  await page.waitForFunction(
+    () => {
+      const el = document.querySelector("header");
+      return !!el && /cells=[1-9]/.test(el.textContent || "");
+    },
+    { timeout: 2000 },
+  );
 }
 
 /** Build an SSE body of {choices:[{delta:{content:"…"}}]} chunks. */
 function sseBody(chunks: string[]): string {
-  return chunks
-    .map((c) => `data: ${JSON.stringify({ choices: [{ delta: { content: c } }] })}\n\n`)
-    .join('') + 'data: [DONE]\n\n';
+  return (
+    chunks
+      .map(
+        (c) =>
+          `data: ${JSON.stringify({ choices: [{ delta: { content: c } }] })}\n\n`,
+      )
+      .join("") + "data: [DONE]\n\n"
+  );
 }
 
-async function mockChat(page: Page, handler: (route: Route) => Promise<void> | void) {
-  await page.route('**/chat', handler);
+async function mockChat(
+  page: Page,
+  handler: (route: Route) => Promise<void> | void,
+) {
+  await page.route("**/chat", handler);
 }
 
 /** askAI falls back to local Ollama (`localhost:11434/generate`) when
@@ -52,81 +66,106 @@ async function mockChat(page: Page, handler: (route: Route) => Promise<void> | v
  *  reliably we need to also block the fallback so route() ends up in
  *  the throw-with-friendly-message branch. */
 async function blockLocalOllama(page: Page) {
-  await page.route('**/11434/**', (route) => route.abort());
-  await page.route('**/generate', (route) => route.abort());
+  await page.route("**/11434/**", (route) => route.abort());
+  await page.route("**/generate", (route) => route.abort());
 }
 
-test.describe('MathTutorTool — deep coverage', () => {
-  test('Hint mode: streamed chunks accumulate in the overlay', async ({ page, baseURL }) => {
+test.describe("MathTutorTool — deep coverage", () => {
+  test("Hint mode: streamed chunks accumulate in the overlay", async ({
+    page,
+    baseURL,
+  }) => {
     await gotoMath(page, baseURL);
-    await typeOneDigit(page, '7');
-    let bodySeen = '';
+    await typeOneDigit(page, "7");
+    let bodySeen = "";
     await mockChat(page, async (route) => {
       const reqBody = route.request().postDataJSON();
       bodySeen = JSON.stringify(reqBody);
       await route.fulfill({
         status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-        body: sseBody(['Try ', 'adding ', 'the digits ', 'together.']),
+        headers: { "Content-Type": "text/event-stream" },
+        body: sseBody(["Try ", "adding ", "the digits ", "together."]),
       });
     });
 
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
     await expect(overlay).toBeVisible();
-    await expect(overlay).toContainText('Try adding the digits together.', { timeout: 5000 });
-    await expect(overlay).toHaveAttribute('data-mode', 'help');
-    expect(bodySeen, 'request reached the mock').toContain('messages');
+    await expect(overlay).toContainText("Try adding the digits together.", {
+      timeout: 5000,
+    });
+    await expect(overlay).toHaveAttribute("data-mode", "help");
+    expect(bodySeen, "request reached the mock").toContain("messages");
   });
 
-  test('Check mode: distinct prompt, distinct overlay text', async ({ page, baseURL }) => {
+  test("Check mode: distinct prompt, distinct overlay text", async ({
+    page,
+    baseURL,
+  }) => {
     await gotoMath(page, baseURL);
-    await typeOneDigit(page, '5');
-    let firstUserContent = '';
+    await typeOneDigit(page, "5");
+    let firstUserContent = "";
     await mockChat(page, async (route) => {
       const body = route.request().postDataJSON();
-      firstUserContent = body?.messages?.find((m: { role: string }) => m.role === 'user')?.content ?? '';
+      firstUserContent =
+        body?.messages?.find((m: { role: string }) => m.role === "user")
+          ?.content ?? "";
       await route.fulfill({
         status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-        body: sseBody(['Looks correct! Great job.']),
+        headers: { "Content-Type": "text/event-stream" },
+        body: sseBody(["Looks correct! Great job."]),
       });
     });
     await page.locator('[data-testid="math-tutor-check"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText('Looks correct! Great job.', { timeout: 5000 });
-    await expect(overlay).toHaveAttribute('data-mode', 'check');
-    expect(firstUserContent.toLowerCase(), 'check prompt mentions checking').toMatch(/check|correct/);
+    await expect(overlay).toContainText("Looks correct! Great job.", {
+      timeout: 5000,
+    });
+    await expect(overlay).toHaveAttribute("data-mode", "check");
+    expect(
+      firstUserContent.toLowerCase(),
+      "check prompt mentions checking",
+    ).toMatch(/check|correct/);
   });
 
-  test('Solve mode: multi-line response renders as multiple paragraphs', async ({ page, baseURL }) => {
+  test("Solve mode: multi-line response renders as multiple paragraphs", async ({
+    page,
+    baseURL,
+  }) => {
     await gotoMath(page, baseURL);
-    await typeOneDigit(page, '4');
+    await typeOneDigit(page, "4");
     await mockChat(page, async (route) => {
       await route.fulfill({
         status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-        body: sseBody(['Step 1: read the number.\n', 'Step 2: count.\n', 'Step 3: write it down.']),
+        headers: { "Content-Type": "text/event-stream" },
+        body: sseBody([
+          "Step 1: read the number.\n",
+          "Step 2: count.\n",
+          "Step 3: write it down.",
+        ]),
       });
     });
     await page.locator('[data-testid="math-tutor-solve"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText('Step 1', { timeout: 5000 });
-    await expect(overlay).toContainText('Step 2');
-    await expect(overlay).toContainText('Step 3');
+    await expect(overlay).toContainText("Step 1", { timeout: 5000 });
+    await expect(overlay).toContainText("Step 2");
+    await expect(overlay).toContainText("Step 3");
     // Three lines → three <p> elements.
-    const paragraphs = await overlay.locator('p').count();
-    expect(paragraphs, 'multi-line response splits into paragraphs').toBeGreaterThanOrEqual(3);
+    const paragraphs = await overlay.locator("p").count();
+    expect(
+      paragraphs,
+      "multi-line response splits into paragraphs",
+    ).toBeGreaterThanOrEqual(3);
   });
 
-  test('Dismiss button hides the overlay', async ({ page, baseURL }) => {
+  test("Dismiss button hides the overlay", async ({ page, baseURL }) => {
     await gotoMath(page, baseURL);
-    await typeOneDigit(page, '2');
+    await typeOneDigit(page, "2");
     await mockChat(page, async (route) => {
       await route.fulfill({
         status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-        body: sseBody(['hello']),
+        headers: { "Content-Type": "text/event-stream" },
+        body: sseBody(["hello"]),
       });
     });
     await page.locator('[data-testid="math-tutor-hint"]').click();
@@ -136,147 +175,196 @@ test.describe('MathTutorTool — deep coverage', () => {
     await expect(overlay).toHaveCount(0);
   });
 
-  test('Mode switch: re-clicking a different mode replaces prior response', async ({ page, baseURL }) => {
+  test("Mode switch: re-clicking a different mode replaces prior response", async ({
+    page,
+    baseURL,
+  }) => {
     await gotoMath(page, baseURL);
-    await typeOneDigit(page, '8');
+    await typeOneDigit(page, "8");
     let nth = 0;
     await mockChat(page, async (route) => {
       nth++;
-      const text = nth === 1 ? 'first-hint-response' : 'second-solve-response';
+      const text = nth === 1 ? "first-hint-response" : "second-solve-response";
       await route.fulfill({
         status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
+        headers: { "Content-Type": "text/event-stream" },
         body: sseBody([text]),
       });
     });
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText('first-hint-response', { timeout: 5000 });
+    await expect(overlay).toContainText("first-hint-response", {
+      timeout: 5000,
+    });
     await page.locator('[data-testid="math-tutor-solve"]').click();
-    await expect(overlay).toContainText('second-solve-response', { timeout: 5000 });
-    await expect(overlay).not.toContainText('first-hint-response');
-    await expect(overlay).toHaveAttribute('data-mode', 'solve');
+    await expect(overlay).toContainText("second-solve-response", {
+      timeout: 5000,
+    });
+    await expect(overlay).not.toContainText("first-hint-response");
+    await expect(overlay).toHaveAttribute("data-mode", "solve");
   });
 
-  test('Error path: 500 response renders ⚠️ + message', async ({ page, baseURL }) => {
+  test("Error path: 500 response renders ⚠️ + message", async ({
+    page,
+    baseURL,
+  }) => {
     await gotoMath(page, baseURL);
-    await typeOneDigit(page, '9');
+    await typeOneDigit(page, "9");
     await blockLocalOllama(page);
     await mockChat(page, async (route) => {
       await route.fulfill({
         status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'oops' }),
+        contentType: "application/json",
+        body: JSON.stringify({ error: "oops" }),
       });
     });
     await page.locator('[data-testid="math-tutor-check"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText('⚠️', { timeout: 15000 });
+    await expect(overlay).toContainText("⚠️", { timeout: 15000 });
   });
 
-  test('Empty grid: no request fires + no overlay', async ({ page, baseURL }) => {
+  test("Empty grid: no request fires + no overlay", async ({
+    page,
+    baseURL,
+  }) => {
     await gotoMath(page, baseURL);
     let calls = 0;
     await mockChat(page, async (route) => {
       calls++;
       await route.fulfill({
         status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-        body: sseBody(['unexpected']),
+        headers: { "Content-Type": "text/event-stream" },
+        body: sseBody(["unexpected"]),
       });
     });
     // Click the button — but no cells exist, so the tutor short-circuits.
     await page.locator('[data-testid="math-tutor-hint"]').click();
     await page.waitForTimeout(400);
-    expect(calls, 'no askAI call when grid is empty').toBe(0);
-    await expect(page.locator('[data-testid="math-tutor-response"]')).toHaveCount(0);
+    expect(calls, "no askAI call when grid is empty").toBe(0);
+    await expect(
+      page.locator('[data-testid="math-tutor-response"]'),
+    ).toHaveCount(0);
   });
 
-  test('Auto-collapse: typing more cells dismisses a stale response', async ({ page, baseURL }) => {
+  test("Auto-collapse: typing more cells dismisses a stale response", async ({
+    page,
+    baseURL,
+  }) => {
     await gotoMath(page, baseURL);
-    await typeOneDigit(page, '1');
+    await typeOneDigit(page, "1");
     await mockChat(page, async (route) => {
       await route.fulfill({
         status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-        body: sseBody(['stale-advice']),
+        headers: { "Content-Type": "text/event-stream" },
+        body: sseBody(["stale-advice"]),
       });
     });
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText('stale-advice', { timeout: 5000 });
+    await expect(overlay).toContainText("stale-advice", { timeout: 5000 });
     // User types another digit — the overlay should auto-collapse.
     await page.locator('[data-testid="math-key-3"]').click();
     await expect(overlay).toHaveCount(0);
   });
 
-  test('Buttons stay enabled even when fetch returns 401', async ({ page, baseURL }) => {
+  test("Buttons stay enabled even when fetch returns 401", async ({
+    page,
+    baseURL,
+  }) => {
     await gotoMath(page, baseURL);
-    await typeOneDigit(page, '6');
+    await typeOneDigit(page, "6");
     await mockChat(page, async (route) => {
-      await route.fulfill({ status: 401, contentType: 'application/json', body: '{"error":"unauth"}' });
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: '{"error":"unauth"}',
+      });
     });
     const hint = page.locator('[data-testid="math-tutor-hint"]');
-    await expect(hint, 'enabled at start').toBeEnabled();
+    await expect(hint, "enabled at start").toBeEnabled();
     await hint.click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText('⚠️', { timeout: 5000 });
+    await expect(overlay).toContainText("⚠️", { timeout: 5000 });
     // After failure, tutor should still be usable.
-    await expect(hint, 'enabled after 401').toBeEnabled();
+    await expect(hint, "enabled after 401").toBeEnabled();
   });
 
-  test('Hard 15 s timeout: hung request resolves with retry button', async ({ page, baseURL }) => {
+  test("Hard 15 s timeout: hung request resolves with retry button", async ({
+    page,
+    baseURL,
+  }) => {
     await gotoMath(page, baseURL);
-    await typeOneDigit(page, '5');
+    await typeOneDigit(page, "5");
     await blockLocalOllama(page);
     // Hang the chat endpoint forever — never fulfill, never abort.
-    await page.route('**/chat', async () => { /* intentionally never resolves */ });
+    await page.route("**/chat", async () => {
+      /* intentionally never resolves */
+    });
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
     // Hard timeout in MathTutorTool is 15 s; allow a 5 s safety margin.
     await expect(overlay).toContainText(/⚠️|too long/i, { timeout: 20000 });
-    await expect(overlay).toHaveAttribute('data-error-kind', 'timeout');
-    await expect(overlay).toHaveAttribute('data-loading', '0');
-    await expect(page.locator('[data-testid="math-tutor-retry"]'), 'retry button visible').toBeVisible();
+    await expect(overlay).toHaveAttribute("data-error-kind", "timeout");
+    await expect(overlay).toHaveAttribute("data-loading", "0");
+    await expect(
+      page.locator('[data-testid="math-tutor-retry"]'),
+      "retry button visible",
+    ).toBeVisible();
   });
 
-  test('401 surfaces friendly auth message, not raw "Session expired"', async ({ page, baseURL }) => {
+  test('401 surfaces friendly auth message, not raw "Session expired"', async ({
+    page,
+    baseURL,
+  }) => {
     await gotoMath(page, baseURL);
-    await typeOneDigit(page, '4');
+    await typeOneDigit(page, "4");
     await blockLocalOllama(page);
     await mockChat(page, async (route) => {
-      await route.fulfill({ status: 401, contentType: 'application/json', body: '{"error":"unauth"}' });
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: '{"error":"unauth"}',
+      });
     });
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
     await expect(overlay).toContainText(/sign in|synalux/i, { timeout: 5000 });
-    await expect(overlay).toHaveAttribute('data-error-kind', 'auth');
+    await expect(overlay).toHaveAttribute("data-error-kind", "auth");
   });
 
-  test('Retry button re-fires the same mode with fresh state', async ({ page, baseURL }) => {
+  test("Retry button re-fires the same mode with fresh state", async ({
+    page,
+    baseURL,
+  }) => {
     await gotoMath(page, baseURL);
-    await typeOneDigit(page, '3');
+    await typeOneDigit(page, "3");
     await blockLocalOllama(page);
     let attempts = 0;
-    await page.route('**/chat', async (route) => {
+    await page.route("**/chat", async (route) => {
       attempts++;
       if (attempts === 1) {
-        await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+        await route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: "{}",
+        });
       } else {
         await route.fulfill({
           status: 200,
-          headers: { 'Content-Type': 'text/event-stream' },
-          body: sseBody(['Recovered after retry.']),
+          headers: { "Content-Type": "text/event-stream" },
+          body: sseBody(["Recovered after retry."]),
         });
       }
     });
     await page.locator('[data-testid="math-tutor-check"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText('⚠️', { timeout: 10000 });
+    await expect(overlay).toContainText("⚠️", { timeout: 10000 });
     const retry = page.locator('[data-testid="math-tutor-retry"]');
     await expect(retry).toBeVisible();
     await retry.click();
-    await expect(overlay).toContainText('Recovered after retry.', { timeout: 5000 });
-    expect(attempts, 'two attempts fired').toBe(2);
+    await expect(overlay).toContainText("Recovered after retry.", {
+      timeout: 5000,
+    });
+    expect(attempts, "two attempts fired").toBe(2);
   });
 });

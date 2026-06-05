@@ -14,64 +14,56 @@
  *  - 'System.out.println(total);' commits one MULTI cell but the cell-assertion
  *    counted it as many characters. Removed; result shown as plain assignment.
  */
-import { test } from '@playwright/test';
-import { gotoMathPanel, runProblem } from '../_helpers';
+import { test } from "@playwright/test";
+import { gotoMathPanel, runProblem } from "../_helpers";
 
-const CATEGORY = 'programming-java' as const;
+const CATEGORY = "programming-java" as const;
 
-test.describe('programming java grade-11 workflow', () => {
+test.describe("programming java grade-11 workflow", () => {
   test.beforeEach(async ({ page, baseURL }) => {
     await gotoMathPanel(page, baseURL);
   });
 
-  test('for-loop sum 1..10', async ({ page }, ti) => {
+  test("for-loop sum 1..10", async ({ page }, ti) => {
     // Avoid bare 'int' token (Python-builtin collision) and
     // System.out.println (commits 1 cell but was counted as many).
-    await runProblem(page, ti, [
-      'x=0;',
-      'i=1;',
-      'i<=10;',
-      'x=x+i;',
-      'i++',
-      'x=55',
-    ], CATEGORY);
+    await runProblem(
+      page,
+      ti,
+      ["x=0;", "i=1;", "i<=10;", "x=x+i;", "i++", "x=55"],
+      CATEGORY,
+    );
   });
 
-  test('if/else — letter grade for score=88', async ({ page }, ti) => {
-    await runProblem(page, ti, [
-      'score=88;',
-      'score>=90',
-      'score>=80',
-      'grade=b',
-    ], CATEGORY);
+  test("if/else — letter grade for score=88", async ({ page }, ti) => {
+    await runProblem(
+      page,
+      ti,
+      ["score=88;", "score>=90", "score>=80", "grade=b"],
+      CATEGORY,
+    );
   });
 
   test('string length — "Hello"', async ({ page }, ti) => {
     // 'String' → S (unmapped) + letters; 'Hello' → He (element) + letters.
     // Use single-char variable and .length() idiom tile; pick a word without
     // any MULTI prefix (He, Al, etc.).
-    await runProblem(page, ti, [
-      'n=5',
-    ], CATEGORY);
+    await runProblem(page, ti, ["n=5"], CATEGORY);
   });
 
-  test('while loop — first power of 2 greater than 100', async ({ page }, ti) => {
-    await runProblem(page, ti, [
-      'p=1;',
-      'p<=100',
-      'p=p*2;',
-      'p=128',
-    ], CATEGORY);
+  test("while loop — first power of 2 greater than 100", async ({
+    page,
+  }, ti) => {
+    await runProblem(page, ti, ["p=1;", "p<=100", "p=p*2;", "p=128"], CATEGORY);
   });
 
-  test('method — return sum of two integers', async ({ page }, ti) => {
+  test("method — return sum of two integers", async ({ page }, ti) => {
     // Avoid bare 'int' token; show method signature using letter variables.
-    await runProblem(page, ti, [
-      'add(a,b)',
-      'return',
-      'a+b',
-      'add(3,4)',
-      '7',
-    ], CATEGORY);
+    await runProblem(
+      page,
+      ti,
+      ["add(a,b)", "return", "a+b", "add(3,4)", "7"],
+      CATEGORY,
+    );
   });
 });

@@ -23,20 +23,23 @@
  * when some glyphs are multi-char. The helper tracks per-step token
  * count so the assertion is precise.
  */
-import { type Page, type TestInfo, expect } from '@playwright/test';
-import { lookupKey, type KeyRef } from './_glyphMap';
+import { type Page, type TestInfo, expect } from "@playwright/test";
+import { lookupKey, type KeyRef } from "./_glyphMap";
 
-export type Category = KeyRef['category'];
+export type Category = KeyRef["category"];
 
 /** Navigate to the dev math-grid harness and wait for the keyboard. */
 export async function gotoMathPanel(page: Page, baseURL: string | undefined) {
-  const start = (baseURL || '') + '/dev/math-grid';
-  await page.goto(start, { waitUntil: 'domcontentloaded' });
+  const start = (baseURL || "") + "/dev/math-grid";
+  await page.goto(start, { waitUntil: "domcontentloaded" });
   await page.waitForSelector('[data-testid="math-keyboard-region"]');
-  await page.waitForFunction(() => {
-    const svg = document.querySelector('[data-testid="math-grid-svg"]');
-    return !!svg && svg.getBoundingClientRect().width > 100;
-  }, { timeout: 5_000 });
+  await page.waitForFunction(
+    () => {
+      const svg = document.querySelector('[data-testid="math-grid-svg"]');
+      return !!svg && svg.getBoundingClientRect().width > 100;
+    },
+    { timeout: 5_000 },
+  );
 }
 
 /** Click the dev "reset" button to clear the grid + cursor. */
@@ -46,8 +49,10 @@ export async function resetGrid(page: Page) {
 }
 
 /** Read (cursor.r, cursor.c, cells) from the dev-page header. */
-export async function readState(page: Page): Promise<{ r: number; c: number; cells: number }> {
-  const text = await page.locator('header').first().innerText();
+export async function readState(
+  page: Page,
+): Promise<{ r: number; c: number; cells: number }> {
+  const text = await page.locator("header").first().innerText();
   const m = text.match(/cursor=\((\d+),(\d+)\)\s+cells=(\d+)/);
   if (!m) throw new Error(`dev header missing cursor/cells: ${text}`);
   return { r: Number(m[1]), c: Number(m[2]), cells: Number(m[3]) };
@@ -64,76 +69,281 @@ export function tokenise(step: string): string[] {
   // prefixes win, so 'p-value' beats 'p'. The list mirrors the
   // multi-char entries in _glyphMap.
   const MULTI = [
-    'mRNA', 'tRNA', 'rRNA', 'DNA', 'RNA',
-    'Domain', 'Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species',
-    'mitochondria', 'ribosome', 'nucleus', 'nucleolus', 'chloroplast',
-    'lysosome', 'cytoplasm', 'membrane', 'vacuole', 'cell wall', 'Golgi', 'ER',
-    'Stone Age', 'Bronze Age', 'Iron Age',
-    'cone', 'cyl', 'sphere', 'cube', 'prism', 'pyramid',
-    'tsp', 'tbsp', 'cup', 'gal',
-    'min', 'hr', 'day',
-    'mph', 'AU', 'ly', 'pc', 'Mya', 'Gya', 'mb', '°C', '°F',
-    'mol', 'pH',
-    '(s)', '(l)', '(g)', '(aq)',
-    '²⁺', '²⁻',
-    'Na', 'Mg', 'Al', 'Si', 'Cl', 'Ca', 'Fe', 'Cu', 'Zn', 'Ag', 'Au', 'Hg', 'Pb', 'Br', 'He',
-    'Hz', 'Pa', 'eV',
-    'mm', 'cm', 'km', 'mg', 'kg', 'oz', 'lb', 'st', 'ton', 'ft', 'yd', 'mi', 'mL',
-    'pt', 'qt',
-    '1st', '2nd', '3rd', '4th', '5th', '10th', '15th',
-    '17th', '18th', '19th', '20th', '21st',
+    "mRNA",
+    "tRNA",
+    "rRNA",
+    "DNA",
+    "RNA",
+    "Domain",
+    "Kingdom",
+    "Phylum",
+    "Class",
+    "Order",
+    "Family",
+    "Genus",
+    "Species",
+    "mitochondria",
+    "ribosome",
+    "nucleus",
+    "nucleolus",
+    "chloroplast",
+    "lysosome",
+    "cytoplasm",
+    "membrane",
+    "vacuole",
+    "cell wall",
+    "Golgi",
+    "ER",
+    "Stone Age",
+    "Bronze Age",
+    "Iron Age",
+    "cone",
+    "cyl",
+    "sphere",
+    "cube",
+    "prism",
+    "pyramid",
+    "tsp",
+    "tbsp",
+    "cup",
+    "gal",
+    "min",
+    "hr",
+    "day",
+    "mph",
+    "AU",
+    "ly",
+    "pc",
+    "Mya",
+    "Gya",
+    "mb",
+    "°C",
+    "°F",
+    "mol",
+    "pH",
+    "(s)",
+    "(l)",
+    "(g)",
+    "(aq)",
+    "²⁺",
+    "²⁻",
+    "Na",
+    "Mg",
+    "Al",
+    "Si",
+    "Cl",
+    "Ca",
+    "Fe",
+    "Cu",
+    "Zn",
+    "Ag",
+    "Au",
+    "Hg",
+    "Pb",
+    "Br",
+    "He",
+    "Hz",
+    "Pa",
+    "eV",
+    "mm",
+    "cm",
+    "km",
+    "mg",
+    "kg",
+    "oz",
+    "lb",
+    "st",
+    "ton",
+    "ft",
+    "yd",
+    "mi",
+    "mL",
+    "pt",
+    "qt",
+    "1st",
+    "2nd",
+    "3rd",
+    "4th",
+    "5th",
+    "10th",
+    "15th",
+    "17th",
+    "18th",
+    "19th",
+    "20th",
+    "21st",
     // Language-arts POS tags MUST come before 'BC', 'AD', etc. so that
     // 'ADJ' matches the full token rather than 'AD' (Anno Domini).
-    'ADJ', 'ADV', 'PRON', 'PREP', 'CONJ', 'INTJ', 'AUX', 'DET', 'NUM',
-    'ART',
-    'DECL', 'IMP', 'EXCL', 'COMP', 'CPLX',
+    "ADJ",
+    "ADV",
+    "PRON",
+    "PREP",
+    "CONJ",
+    "INTJ",
+    "AUX",
+    "DET",
+    "NUM",
+    "ART",
+    "DECL",
+    "IMP",
+    "EXCL",
+    "COMP",
+    "CPLX",
     // 'INT' sentence-type must come before 'int' Python builtin (case differs
     // so no real conflict, but keeping INT here for logical grouping).
-    'INT',
-    'BCE', 'CE', 'BC', 'AD', 'c.', 'fl.',
-    'AA', 'Aa', 'aa', 'BB', 'Bb', 'bb', 'F1', 'F2',
-    'p-value', 'H0', 'Ha', 'SE', 'CI', 'df', 'σ²', 's²', 'x̄', 'p̂', 'χ²', '𝒩',
-    'P(', 'E[', 'Var[', 'C(',
-    '==', '!=', '<=', '>=',
-    'log', 'ln',
+    "INT",
+    "BCE",
+    "CE",
+    "BC",
+    "AD",
+    "c.",
+    "fl.",
+    "AA",
+    "Aa",
+    "aa",
+    "BB",
+    "Bb",
+    "bb",
+    "F1",
+    "F2",
+    "p-value",
+    "H0",
+    "Ha",
+    "SE",
+    "CI",
+    "df",
+    "σ²",
+    "s²",
+    "x̄",
+    "p̂",
+    "χ²",
+    "𝒩",
+    "P(",
+    "E[",
+    "Var[",
+    "C(",
+    "==",
+    "!=",
+    "<=",
+    ">=",
+    "log",
+    "ln",
     // v2 audit additions — multi-char tokens that newly land on
     // dedicated chips. Order matters (longest-prefix-wins) so
     // 'System.out.println' beats 'System.out.print' which beats
     // 'length()' which beats 'length' which beats 'l'.
-    'System.out.println', 'System.out.print', 'length()', 'length',
-    'toString', 'equals', 'Math.',
-    'sin⁻¹', 'cos⁻¹', 'tan⁻¹',
-    'sin', 'cos', 'tan', 'csc', 'sec', 'cot',
-    'lim', 'dx', 'dy', 'f(x)', 'g(x)',
-    'g/mol', 'mol/L',
-    'm/s²', 'm/s', 'km/h', 'kg·m/s', 'N·m',
-    'Cov(', 'corr(', 'Pr(',
-    'Met', 'Ala', 'Tyr', 'Stop',
-    '×10',
-    'KE', 'PE', 'GPE',
-    'ME', 'z*', 't*',
-    'kyr', 'Myr', 'yr',
-    '++', '--', '+=', '-=', '*=', '/=',
-    '^n',
-    '→|',
-    'Q:', 'A:',
+    "System.out.println",
+    "System.out.print",
+    "length()",
+    "length",
+    "toString",
+    "equals",
+    "Math.",
+    "sin⁻¹",
+    "cos⁻¹",
+    "tan⁻¹",
+    "sin",
+    "cos",
+    "tan",
+    "csc",
+    "sec",
+    "cot",
+    "lim",
+    "dx",
+    "dy",
+    "f(x)",
+    "g(x)",
+    "g/mol",
+    "mol/L",
+    "m/s²",
+    "m/s",
+    "km/h",
+    "kg·m/s",
+    "N·m",
+    "Cov(",
+    "corr(",
+    "Pr(",
+    "Met",
+    "Ala",
+    "Tyr",
+    "Stop",
+    "×10",
+    "KE",
+    "PE",
+    "GPE",
+    "ME",
+    "z*",
+    "t*",
+    "kyr",
+    "Myr",
+    "yr",
+    "++",
+    "--",
+    "+=",
+    "-=",
+    "*=",
+    "/=",
+    "^n",
+    "→|",
+    "Q:",
+    "A:",
     // 'COMP-OBJ' must precede plain tokens to avoid 'COMP' eating its prefix.
-    'COMP-OBJ', 'SUBJ', 'PRED', 'OBJ', 'DO', 'IO',
-    'n.', 'v.', 'adj.', 'adv.', 'pron.', 'prep.', 'conj.',
-    'art.', 'intj.', 'aux.', 'det.', 'num.',
-    '6th', '7th', '8th', '9th', '11th', '12th', '13th', '14th', '16th',
-    'sum', 'max', 'min', 'abs', 'sorted', 'list', 'dict', 'str', 'int',
-    'float', 'input',
+    "COMP-OBJ",
+    "SUBJ",
+    "PRED",
+    "OBJ",
+    "DO",
+    "IO",
+    "n.",
+    "v.",
+    "adj.",
+    "adv.",
+    "pron.",
+    "prep.",
+    "conj.",
+    "art.",
+    "intj.",
+    "aux.",
+    "det.",
+    "num.",
+    "6th",
+    "7th",
+    "8th",
+    "9th",
+    "11th",
+    "12th",
+    "13th",
+    "14th",
+    "16th",
+    "sum",
+    "max",
+    "min",
+    "abs",
+    "sorted",
+    "list",
+    "dict",
+    "str",
+    "int",
+    "float",
+    "input",
     // Year tiles (history events appended in v2 audit). Span 4 digits so
     // they win against the single digit fallback. Listed individually
     // because the tokeniser walks the array in order and we want the
     // exact match instead of "1" + "4" + "9" + "2".
-    '1492', '1607', '1789', '1804', '1815', '1848', '1865', '1898', '1929',
+    "1492",
+    "1607",
+    "1789",
+    "1804",
+    "1815",
+    "1848",
+    "1865",
+    "1898",
+    "1929",
   ];
   const out: string[] = [];
   let i = 0;
   while (i < step.length) {
-    let matched = '';
+    let matched = "";
     for (const m of MULTI) {
       if (step.startsWith(m, i)) {
         matched = m;
@@ -159,7 +369,10 @@ export function tokenise(step: string): string[] {
  * `main / adv-math / letters` fallback). Returns the resolved tokens
  * AND any missing glyphs. Spec uses the missing list to skip cleanly.
  */
-export function resolveStep(step: string, category: Category): {
+export function resolveStep(
+  step: string,
+  category: Category,
+): {
   resolved: Array<{ glyph: string; ref: KeyRef }>;
   missing: string[];
 } {
@@ -167,11 +380,11 @@ export function resolveStep(step: string, category: Category): {
   const resolved: Array<{ glyph: string; ref: KeyRef }> = [];
   const missing: string[] = [];
   for (const t of tokens) {
-    if (t === ' ') {
+    if (t === " ") {
       // Space lives on the main keyboard's space key.
-      const ref = lookupKey(' ', 'main');
-      if (ref) resolved.push({ glyph: ' ', ref });
-      else missing.push('SPACE');
+      const ref = lookupKey(" ", "main");
+      if (ref) resolved.push({ glyph: " ", ref });
+      else missing.push("SPACE");
       continue;
     }
     const ref = lookupKey(t, category);
@@ -198,13 +411,17 @@ export async function typeStep(
 ): Promise<{ tokensTyped: number }> {
   const { resolved, missing } = resolveStep(step, category);
   if (missing.length) {
-    throw new Error(`unreachable glyphs in step ${JSON.stringify(step)}: ${missing.join(' ')}`);
+    throw new Error(
+      `unreachable glyphs in step ${JSON.stringify(step)}: ${missing.join(" ")}`,
+    );
   }
   let lastCategory: Category | null = null;
   const before = await readState(page);
   for (const { ref } of resolved) {
     if (ref.category !== lastCategory) {
-      await page.locator(`[data-testid="math-category-${ref.category}"]`).click();
+      await page
+        .locator(`[data-testid="math-category-${ref.category}"]`)
+        .click();
       await page.waitForTimeout(80);
       lastCategory = ref.category;
     }
@@ -214,7 +431,7 @@ export async function typeStep(
   if (opts.newRowAfter) {
     // Use the smart-return key on the main keyboard. Switching back to
     // main is fine — the next step will reselect its own category.
-    if (lastCategory !== 'main') {
+    if (lastCategory !== "main") {
       await page.locator('[data-testid="math-category-main"]').click();
       await page.waitForTimeout(60);
     }
@@ -247,7 +464,10 @@ export async function runProblem(
     for (const m of missing) if (!allMissing.includes(m)) allMissing.push(m);
   }
   if (allMissing.length) {
-    testInfo.skip(true, `keys not on ${category} keyboard: ${allMissing.join(' ')}`);
+    testInfo.skip(
+      true,
+      `keys not on ${category} keyboard: ${allMissing.join(" ")}`,
+    );
     return;
   }
   await resetGrid(page);

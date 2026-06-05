@@ -21,31 +21,43 @@
  * Run against production:        npx playwright test e2e/keyboard-mic-regression.spec.ts
  */
 
-import { test, expect, type Page } from '@playwright/test';
-import path from 'node:path';
+import { test, expect, type Page } from "@playwright/test";
+import path from "node:path";
 
-const SHOTS_DIR = path.resolve('e2e', '_screenshots');
+const SHOTS_DIR = path.resolve("e2e", "_screenshots");
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 async function bootClean(page: Page) {
-  await page.goto('/prism-aac');
+  await page.goto("/prism-aac");
   await page.evaluate(() => {
-    try { localStorage.clear(); sessionStorage.clear(); } catch {}
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
   });
-  await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('[data-testid="kb-cycle-btn"]', { timeout: 30000 });
+  await page.goto("/prism-aac", { waitUntil: "domcontentloaded" });
+  await page.waitForSelector('[data-testid="kb-cycle-btn"]', {
+    timeout: 30000,
+  });
 }
 
 async function driveToKeyboardOnly(page: Page) {
   const kbBtn = page.locator('[data-testid="kb-cycle-btn"]');
   await expect(kbBtn).toBeVisible();
   await kbBtn.click();
-  await page.waitForSelector('[data-testid="keyboard-shell"]', { state: 'visible', timeout: 5000 });
+  await page.waitForSelector('[data-testid="keyboard-shell"]', {
+    state: "visible",
+    timeout: 5000,
+  });
   // Confirm it is actually maximized (> 50% viewport height)
-  const box = await page.locator('[data-testid="keyboard-shell"]').boundingBox();
+  const box = await page
+    .locator('[data-testid="keyboard-shell"]')
+    .boundingBox();
   if (!box || box.height < page.viewportSize()!.height * 0.45) {
-    throw new Error(`keyboard-shell height ${box?.height} is not maximized — cycle button did not produce keyboard-only state`);
+    throw new Error(
+      `keyboard-shell height ${box?.height} is not maximized — cycle button did not produce keyboard-only state`,
+    );
   }
 }
 
@@ -55,24 +67,31 @@ async function driveToKeyboardOnlyFromPictureOnly(page: Page) {
   const kbMinimize = page.locator('button[data-action="kb-minimize"]');
   await expect(kbMinimize).toBeVisible();
   await kbMinimize.click();
-  await page.waitForSelector('[data-testid="keyboard-shell"]', { state: 'hidden', timeout: 5000 });
+  await page.waitForSelector('[data-testid="keyboard-shell"]', {
+    state: "hidden",
+    timeout: 5000,
+  });
   // Now in picture-only; one click of kb-cycle-btn must reach keyboard-only
   const kbBtn = page.locator('[data-testid="kb-cycle-btn"]');
   await expect(kbBtn).toBeVisible();
   await kbBtn.click();
-  await page.waitForSelector('[data-testid="keyboard-shell"]', { state: 'visible', timeout: 5000 });
+  await page.waitForSelector('[data-testid="keyboard-shell"]', {
+    state: "visible",
+    timeout: 5000,
+  });
 }
 
 // ── BUG 1: Keyboard cycle — no "all-3" intermediate state ────────────────────
 
-test.describe('Bug 1 — keyboard cycle no all-3 intermediate', () => {
-
-  test('from default state, one click reaches keyboard-only directly', async ({ page }) => {
+test.describe("Bug 1 — keyboard cycle no all-3 intermediate", () => {
+  test("from default state, one click reaches keyboard-only directly", async ({
+    page,
+  }) => {
     await bootClean(page);
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'reg-default.png') });
+    await page.screenshot({ path: path.join(SHOTS_DIR, "reg-default.png") });
 
-    const kbBtn  = page.locator('[data-testid="kb-cycle-btn"]');
-    const kb     = page.locator('[data-testid="keyboard-shell"]');
+    const kbBtn = page.locator('[data-testid="kb-cycle-btn"]');
+    const kb = page.locator('[data-testid="keyboard-shell"]');
 
     await kbBtn.click();
 
@@ -82,13 +101,17 @@ test.describe('Bug 1 — keyboard cycle no all-3 intermediate', () => {
     const viewport = page.viewportSize()!;
     expect(
       box!.height,
-      `Expected keyboard-only (height > 50% viewport), got ${box?.height}px vs viewport ${viewport.height}px`
+      `Expected keyboard-only (height > 50% viewport), got ${box?.height}px vs viewport ${viewport.height}px`,
     ).toBeGreaterThan(viewport.height * 0.45);
 
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'reg-after-1st-click.png') });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "reg-after-1st-click.png"),
+    });
   });
 
-  test('from default state, one click does NOT leave all-3 panels visible simultaneously', async ({ page }) => {
+  test("from default state, one click does NOT leave all-3 panels visible simultaneously", async ({
+    page,
+  }) => {
     await bootClean(page);
 
     const kbBtn = page.locator('[data-testid="kb-cycle-btn"]');
@@ -102,7 +125,9 @@ test.describe('Bug 1 — keyboard cycle no all-3 intermediate', () => {
     await expect(kbBtn).not.toBeVisible({ timeout: 2000 });
   });
 
-  test('from picture-only, ONE click reaches keyboard-only (the exact Ludmila failure)', async ({ page }) => {
+  test("from picture-only, ONE click reaches keyboard-only (the exact Ludmila failure)", async ({
+    page,
+  }) => {
     await bootClean(page);
 
     // Arrive at picture-only in 2 moves
@@ -115,7 +140,9 @@ test.describe('Bug 1 — keyboard cycle no all-3 intermediate', () => {
 
     const kb = page.locator('[data-testid="keyboard-shell"]');
     await expect(kb).not.toBeVisible();
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'reg-picture-only.png') });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "reg-picture-only.png"),
+    });
 
     // ONE click from picture-only → keyboard-only (BUG: used to need 2 clicks)
     await expect(kbBtn).toBeVisible();
@@ -125,13 +152,17 @@ test.describe('Bug 1 — keyboard cycle no all-3 intermediate', () => {
     const box = await kb.boundingBox();
     expect(
       box!.height,
-      `Expected keyboard-only after 1 click from picture-only, height=${box?.height}`
+      `Expected keyboard-only after 1 click from picture-only, height=${box?.height}`,
     ).toBeGreaterThan(page.viewportSize()!.height * 0.45);
 
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'reg-picture-to-keyboard-one-click.png') });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "reg-picture-to-keyboard-one-click.png"),
+    });
   });
 
-  test('cycle is stable over 6 transitions: no unexpected states', async ({ page }) => {
+  test("cycle is stable over 6 transitions: no unexpected states", async ({
+    page,
+  }) => {
     await bootClean(page);
 
     const kb = page.locator('[data-testid="keyboard-shell"]');
@@ -169,9 +200,8 @@ test.describe('Bug 1 — keyboard cycle no all-3 intermediate', () => {
 
 // ── BUG 2: PredictionBar hidden in keyboard-only mode ────────────────────────
 
-test.describe('Bug 2 — PredictionBar hidden in keyboard-only', () => {
-
-  test('prediction-bar NOT visible in keyboard-only mode', async ({ page }) => {
+test.describe("Bug 2 — PredictionBar hidden in keyboard-only", () => {
+  test("prediction-bar NOT visible in keyboard-only mode", async ({ page }) => {
     await bootClean(page);
 
     const predBar = page.locator('[data-testid="prediction-bar"]');
@@ -181,16 +211,22 @@ test.describe('Bug 2 — PredictionBar hidden in keyboard-only', () => {
     await driveToKeyboardOnly(page);
 
     await expect(predBar).not.toBeVisible();
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'reg-no-predbar-kb-only.png') });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "reg-no-predbar-kb-only.png"),
+    });
   });
 
-  test('prediction-bar IS visible in default state (regression guard)', async ({ page }) => {
+  test("prediction-bar IS visible in default state (regression guard)", async ({
+    page,
+  }) => {
     await bootClean(page);
     const predBar = page.locator('[data-testid="prediction-bar"]');
     await expect(predBar).toBeVisible();
   });
 
-  test('prediction-bar returns when cycling back from keyboard-only to default', async ({ page }) => {
+  test("prediction-bar returns when cycling back from keyboard-only to default", async ({
+    page,
+  }) => {
     await bootClean(page);
 
     const predBar = page.locator('[data-testid="prediction-bar"]');
@@ -202,20 +238,24 @@ test.describe('Bug 2 — PredictionBar hidden in keyboard-only', () => {
     // Go back to picture-only then cycle back to default (via page reload) to verify predBar returns
     const kbMin = page.locator('button[data-action="kb-minimize"]');
     await kbMin.click();
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-testid="kb-cycle-btn"]', { timeout: 30000 });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForSelector('[data-testid="kb-cycle-btn"]', {
+      timeout: 30000,
+    });
 
     await expect(predBar).toBeVisible();
   });
 
-  test('no layout overlap: keyboard and prediction bar never occupy same vertical space', async ({ page }) => {
+  test("no layout overlap: keyboard and prediction bar never occupy same vertical space", async ({
+    page,
+  }) => {
     await bootClean(page);
 
     const predBar = page.locator('[data-testid="prediction-bar"]');
     const kb = page.locator('[data-testid="keyboard-shell"]');
 
     const predBox = await predBar.boundingBox();
-    const kbBox   = await kb.boundingBox();
+    const kbBox = await kb.boundingBox();
     expect(predBox).toBeTruthy();
     expect(kbBox).toBeTruthy();
 
@@ -227,9 +267,10 @@ test.describe('Bug 2 — PredictionBar hidden in keyboard-only', () => {
 
 // ── BUG 3: Microphone error feedback ─────────────────────────────────────────
 
-test.describe('Bug 3 — microphone permission denial feedback', () => {
-
-  test('mic error toast DOM structure is present in the toolbar', async ({ page }) => {
+test.describe("Bug 3 — microphone permission denial feedback", () => {
+  test("mic error toast DOM structure is present in the toolbar", async ({
+    page,
+  }) => {
     await bootClean(page);
     // Verify the toolbar has role="alert" capability by checking its relative structure
     // The toast is injected as a sibling of the scroll strip inside the toolbar wrapper.
@@ -237,30 +278,39 @@ test.describe('Bug 3 — microphone permission denial feedback', () => {
     // so we verify: (a) the mic button exists, (b) force-inject the micError state
     // via the React store, and (c) confirm the toast appears.
     const micBtn = page.locator('[aria-label="Start voice"]');
-    if (await micBtn.count() === 0) {
+    if ((await micBtn.count()) === 0) {
       test.skip(); // mic button not rendered (voice unsupported on this device)
       return;
     }
     await expect(micBtn).toBeVisible();
   });
 
-  test('mic button has aria-pressed attribute for accessibility', async ({ page }) => {
+  test("mic button has aria-pressed attribute for accessibility", async ({
+    page,
+  }) => {
     await bootClean(page);
-    const micBtn = page.locator('[aria-label="Start voice"], [aria-label="Stop voice"]').first();
-    if (await micBtn.count() === 0) {
+    const micBtn = page
+      .locator('[aria-label="Start voice"], [aria-label="Stop voice"]')
+      .first();
+    if ((await micBtn.count()) === 0) {
       test.skip();
       return;
     }
-    await expect(micBtn).toHaveAttribute('aria-pressed');
+    await expect(micBtn).toHaveAttribute("aria-pressed");
   });
 
-  test('mic button pulsing class removed after stop', async ({ page }) => {
+  test("mic button pulsing class removed after stop", async ({ page }) => {
     await bootClean(page);
-    const micBtn = page.locator('[aria-label="Start voice"], [aria-label="Stop voice"]').first();
-    if (await micBtn.count() === 0) { test.skip(); return; }
+    const micBtn = page
+      .locator('[aria-label="Start voice"], [aria-label="Stop voice"]')
+      .first();
+    if ((await micBtn.count()) === 0) {
+      test.skip();
+      return;
+    }
 
     // Simulate granting mic permission and clicking start
-    await page.context().grantPermissions(['microphone']);
+    await page.context().grantPermissions(["microphone"]);
     await micBtn.click();
 
     // The button should now be in "Stop voice" state
@@ -269,11 +319,13 @@ test.describe('Bug 3 — microphone permission denial feedback', () => {
       await stopBtn.click();
       // After stopping, aria-pressed should be false
       const startBtn = page.locator('[aria-label="Start voice"]');
-      await expect(startBtn).toHaveAttribute('aria-pressed', 'false');
+      await expect(startBtn).toHaveAttribute("aria-pressed", "false");
     }
   });
 
-  test('permission-denied toast renders as role=alert with error class', async ({ page }) => {
+  test("permission-denied toast renders as role=alert with error class", async ({
+    page,
+  }) => {
     await bootClean(page);
 
     // Inject a denied permission via page JS so we can test the toast without
@@ -281,12 +333,17 @@ test.describe('Bug 3 — microphone permission denial feedback', () => {
     await page.evaluate(() => {
       // Patch the window.SpeechRecognition to immediately fire not-allowed
       class FakeRec extends EventTarget {
-        continuous = false; interimResults = false; lang = ''; maxAlternatives = 1;
+        continuous = false;
+        interimResults = false;
+        lang = "";
+        maxAlternatives = 1;
         onerror: ((e: { error: string }) => void) | null = null;
         onend: (() => void) | null = null;
         onresult = null;
         onspeechend = null;
-        start() { setTimeout(() => this.onerror?.({ error: 'not-allowed' }), 50); }
+        start() {
+          setTimeout(() => this.onerror?.({ error: "not-allowed" }), 50);
+        }
         stop() {}
         abort() {}
       }
@@ -297,29 +354,36 @@ test.describe('Bug 3 — microphone permission denial feedback', () => {
     });
 
     const micBtn = page.locator('[aria-label="Start voice"]');
-    if (await micBtn.count() === 0) { test.skip(); return; }
+    if ((await micBtn.count()) === 0) {
+      test.skip();
+      return;
+    }
 
     await micBtn.click();
 
     // Red error toast should appear within 1 second
-    const toast = page.locator('[role="alert"]').filter({ hasText: /microphone|denied|access/i });
+    const toast = page
+      .locator('[role="alert"]')
+      .filter({ hasText: /microphone|denied|access/i });
     await expect(toast).toBeVisible({ timeout: 3000 });
 
     // Toast must be visually distinct (red background via bg-[#F44336])
-    const cls = await toast.getAttribute('class') ?? '';
-    expect(cls).toContain('F44336');
+    const cls = (await toast.getAttribute("class")) ?? "";
+    expect(cls).toContain("F44336");
 
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'reg-mic-denied-toast.png') });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "reg-mic-denied-toast.png"),
+    });
   });
 });
 
 // ── Cross-device: iPhone viewport ────────────────────────────────────────────
 // These run on the iphone-* projects in playwright.config.ts
 
-test.describe('iPhone viewport — keyboard cycle sanity', () => {
+test.describe("iPhone viewport — keyboard cycle sanity", () => {
   test.use({ viewport: { width: 390, height: 844 } }); // iPhone 14
 
-  test('keyboard-only fills most of iPhone screen', async ({ page }) => {
+  test("keyboard-only fills most of iPhone screen", async ({ page }) => {
     await bootClean(page);
     await driveToKeyboardOnly(page);
 
@@ -327,10 +391,12 @@ test.describe('iPhone viewport — keyboard cycle sanity', () => {
     const box = await kb.boundingBox();
     expect(box!.height).toBeGreaterThan(700); // should fill most of 844px screen
 
-    await page.screenshot({ path: path.join(SHOTS_DIR, 'reg-iphone-kb-only.png') });
+    await page.screenshot({
+      path: path.join(SHOTS_DIR, "reg-iphone-kb-only.png"),
+    });
   });
 
-  test('prediction bar absent in keyboard-only on iPhone', async ({ page }) => {
+  test("prediction bar absent in keyboard-only on iPhone", async ({ page }) => {
     await bootClean(page);
     await driveToKeyboardOnly(page);
     const predBar = page.locator('[data-testid="prediction-bar"]');
