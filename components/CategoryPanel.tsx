@@ -15,6 +15,7 @@ import { warmupAzureAudio } from '@/services/azureTTS';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
 import PhraseTile from './PhraseTile';
+import Keyboard from './Keyboard';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { registerSearchKeyHandler } from '@/services/searchKeyBridge';
 
@@ -396,9 +397,11 @@ export default function CategoryPanel() {
       <section className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
         <PageLabel label={`${seq.name} — ${step.label}`} />
         <div className="flex flex-row flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            <div className="text-muted text-xs text-right px-1">{activeSequenceStep + 1}/{seq.steps.length}</div>
-            {step.options.map((opt) => {
+          <div className="flex-1 flex flex-col min-w-0 min-h-0">
+            <div className={`flex-1 flex flex-col min-h-0 ${categoryKeyboardOpen && keyboardMaximized ? 'hidden' : ''}`}>
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                <div className="text-muted text-xs text-right px-1">{activeSequenceStep + 1}/{seq.steps.length}</div>
+                {step.options.map((opt) => {
               const local = getPhraseText(opt.id, language, opt.text);
               return (
                 <button key={opt.id} onClick={() => handlePhrase(local)}
@@ -423,6 +426,13 @@ export default function CategoryPanel() {
                 </button>
               )}
             </div>
+              </div>
+            </div>
+            {categoryKeyboardOpen && (
+              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell">
+                <Keyboard />
+              </div>
+            )}
           </div>
           {sidebarJsx(true)}
         </div>
@@ -444,8 +454,10 @@ export default function CategoryPanel() {
       <section aria-label={catName} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
         <PageLabel label={catName} />
         <div className="flex flex-row flex-1 min-h-0">
-          {searchOpen ? searchPanelJsx : (
-            <div className="flex-1 min-w-0 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col min-w-0 min-h-0">
+            <div className={`flex-1 flex flex-col min-h-0 ${categoryKeyboardOpen && keyboardMaximized ? 'hidden' : ''}`}>
+              {searchOpen ? searchPanelJsx : (
+                <div className="flex-1 min-w-0 flex flex-col min-h-0">
               {sequences.length > 0 && (
                 <div className="flex gap-2 px-2 py-1.5 border-b border-theme shrink-0 overflow-x-auto">
                   {sequences.map((seq) => (
@@ -502,7 +514,14 @@ export default function CategoryPanel() {
                 );
               })()}
             </div>
-          )}
+              )}
+            </div>
+            {categoryKeyboardOpen && (
+              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell">
+                <Keyboard />
+              </div>
+            )}
+          </div>
           {sidebarJsx(true)}
         </div>
       </section>
@@ -518,8 +537,10 @@ export default function CategoryPanel() {
     <section aria-label="Home vocabulary board" className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
       <PageLabel label={t('home').toUpperCase()} />
       <div className="flex flex-row flex-1 min-h-0">
-        {searchOpen ? searchPanelJsx : (
-          <div className="flex-1 min-w-0 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
+          <div className={`flex-1 flex flex-col min-h-0 ${categoryKeyboardOpen && keyboardMaximized ? 'hidden' : ''}`}>
+            {searchOpen ? searchPanelJsx : (
+              <div className="flex-1 min-w-0 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
             <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
               {homeGridPhrases.map(({ phrase: p, catId }) => {
@@ -562,9 +583,16 @@ export default function CategoryPanel() {
                   </button>
                 );
               })}
+              </div>
             </div>
+            )}
           </div>
-        )}
+          {categoryKeyboardOpen && (
+            <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell">
+              <Keyboard />
+            </div>
+          )}
+        </div>
         {sidebarJsx()}
       </div>
     </section>
