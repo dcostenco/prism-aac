@@ -56,6 +56,10 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>33</string>
+	<key>DD_APPLICATION_ID</key>
+	<string>$(DD_APPLICATION_ID)</string>
+	<key>DD_CLIENT_TOKEN</key>
+	<string>$(DD_CLIENT_TOKEN)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSAppTransportSecurity</key>

@@ -1,5 +1,6 @@
 import SwiftUI
 import CryptoKit
+import AVFoundation
 
 @main
 struct PrismAACApp: App {
@@ -11,6 +12,10 @@ struct PrismAACApp: App {
             DatadogLogger.shared.initialize()
         }
         WatchEmergencyBridge.shared.activateSession()
+        
+        // Ensure TTS plays even if the hardware silent switch is ON
+        try? AVAudioSession.sharedInstance().setCategory(.playback, options: [.mixWithOthers])
+        try? AVAudioSession.sharedInstance().setActive(true)
     }
 
     /// Model candidates in priority order for each device tier.
