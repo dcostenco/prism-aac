@@ -465,7 +465,7 @@ struct PrismWebView: UIViewRepresentable {
             let audioSession = AVAudioSession.sharedInstance()
             do {
                 try audioSession.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP])
-                try audioSession.setMode(.measurement)
+                try audioSession.setMode(.voiceChat)
                 try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
             } catch {
                 sendSpeechError("audio-session-failed")
@@ -558,9 +558,9 @@ struct PrismWebView: UIViewRepresentable {
             recognitionTask?.cancel()
             recognitionTask = nil
             speechRecognizer = nil
-            // Restore audio session for TTS
-            try? AVAudioSession.sharedInstance().setCategory(.playback, options: [.defaultToSpeaker])
-            try? AVAudioSession.sharedInstance().setMode(.default)
+            // Restore audio session for TTS while keeping mic alive for next voice input.
+            try? AVAudioSession.sharedInstance().setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP])
+            try? AVAudioSession.sharedInstance().setMode(.voiceChat)
             try? AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
         }
 
