@@ -337,13 +337,13 @@ export function resetSharedAudioContextIfIdle(): void {
  * only needs the AudioContext in 'running' state, which the warmup in
  * PrismApp.tsx arranges on first interaction.
  */
-async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string, interrupt = false, playbackRate = 1.0): Promise<boolean> {
+async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string, interrupt = false, playbackRate = 1.0): Promise<{ success: boolean, onEnded?: Promise<void> }> {
   let ctx: AudioContext;
   try {
     ctx = getAudioContext();
   } catch (e) {
     console.warn(`[${label}] AudioContext unavailable, audio cannot play:`, e);
-    return false;
+    return { success: false };
   }
   if (ctx.state === 'suspended') {
     try { await ctx.resume(); } catch { /* state check next */ }
@@ -367,7 +367,7 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   // speechService fall through.
   if (ctx.state !== 'running') {
     console.warn(`[${label}] AudioContext stuck in state="${ctx.state}" — falling through to Web Speech tier (Safari-safe).`);
-    return false;
+    return { success: false };
   }
 
   let decoded: AudioBuffer;
@@ -375,9 +375,11 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
     decoded = await ctx.decodeAudioData(audioBytes.slice(0));
   } catch (e) {
     console.warn(`[${label}] decodeAudioData failed:`, e instanceof Error ? e.message : e);
-    return false;
+    return { success: false };
   }
 
+  let resolveEnded: () => void;
+  const onEnded = new Promise<void>(res => resolveEnded = res);
   const source = ctx.createBufferSource();
   source.buffer = decoded;
   if (playbackRate !== 1.0) source.playbackRate.value = playbackRate;
@@ -414,7 +416,7 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
     console.warn(`[AzureTTS] PROTECT_PLAY_MS: dropped call (${Math.round(playedSoFar)}ms < ${PROTECT_PLAY_MS}ms, sources=${activeSources.size}). Use interrupt=true for explicit presses.`);
     try { source.disconnect(); } catch { /* */ }
     try { gain.disconnect(); } catch { /* */ }
-    return true;
+    return { success: true };
   }
   stopAzurePlayback();
   activeSources.add(source);
@@ -439,6 +441,7 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
     if (activeSources.size === 0) lastSourceStartedAt = 0; // no more active sources
     try { source.disconnect(); } catch { /* */ }
     try { gain.disconnect(); } catch { /* */ }
+    resolveEnded();
   };
 
   try {
@@ -448,9 +451,9 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
     console.warn(`[${label}] source.start failed:`, e instanceof Error ? e.message : e);
     activeSources.delete(source);
     lastSourceStartedAt = 0;
-    return false;
+    return { success: false };
   }
-  return true;
+  return { success: true, onEnded };
 }
 
 /**
@@ -470,13 +473,7 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
  * upstream 5xx, decode failure, etc.) so the caller falls through to
  * speech-service's Web Speech tiers.
  */
-async function speakGemini(
-  text: string,
-  volume: number,
-  controller: AbortController,
-  lang?: string,
-  interrupt = false,
-): Promise<boolean> {
+async function speakGemini(text: string, volume: number, controller: AbortController, lang?: string, interrupt = false): Promise<{ success: boolean, onEnded?: Promise<void> }> {
   // Gemini doesn't take SSML — it does its own prosody. Send plain text.
   // Keep within the server's 4KB UTF-8 cap; longer messages are very
   // rare on the AAC surface but caps elsewhere will trim if needed.
@@ -498,12 +495,12 @@ async function speakGemini(
       // limited — every case the route signals `fallback: 'inworld'`
       // in the JSON body. Caller falls through automatically.
       console.warn(`[Gemini-TTS] non-ok ${res.status} — falling through to Inworld`);
-      return false;
+      return { success: false };
     }
     const audioBytes = await readCappedAudio(res);
     if (!audioBytes || audioBytes.byteLength === 0) {
       console.warn('[Gemini-TTS] empty/oversize audio buffer — falling through to Inworld');
-      return false;
+      return { success: false };
     }
     // decodeAndPlay handles stopAzurePlayback synchronously right
     // before source.start, so the peer-race window is microseconds.
@@ -512,7 +509,7 @@ async function speakGemini(
     // Network / abort / timeout. Speech-service still has Web Speech
     // to fall back to even if Inworld is also down.
     console.warn('[Gemini-TTS] fetch threw:', e instanceof Error ? e.message : e);
-    return false;
+    return { success: false };
   }
 }
 
@@ -535,11 +532,8 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   volume: number,
   authToken: string,
   voiceId?: string,
-  /** Pass true only from the explicit Speak button (handleSpeak). Allows this
-   *  call to interrupt audio that is still within PROTECT_PLAY_MS. Uses a
-   *  parameter (not a shared flag) so concurrent autoSpeak calls can't steal it. */
   interrupt = false,
-): Promise<boolean> {
+): Promise<{ success: boolean, onEnded?: Promise<void> }> {
   // Rapid-duplicate suppression — drop a new speak with the same text
   // if one fired in the last DEDUP_MS. Otherwise the new fetch+decode
   // races the prior playback and stopAzurePlayback() kills the still-
@@ -565,7 +559,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   const nowMs = Date.now();
   if (text === lastSpokenText && nowMs - lastSpokenAt < DEDUP_MS) {
     if (process.env.NODE_ENV !== 'production') console.log(`[AzureTTS] DEDUP — same text "${text.slice(0, 30)}" within ${nowMs - lastSpokenAt}ms; keeping prior playback alive`);
-    return true;
+    return { success: true };
   }
   lastSpokenText = text;
   lastSpokenAt = nowMs;
@@ -704,15 +698,15 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     activeControllers.add(geminiController);
     try {
       if (await speakGemini(text, volume, geminiController, lang, interrupt)) {
-        return true;
+        return { success: true };
       }
     } finally {
       activeControllers.delete(geminiController);
     }
-    return false;
+    return { success: false };
   } catch (e) {
     console.warn('[AzureTTS] Fetch failed:', e instanceof Error ? e.message : e);
-    return false;
+    return { success: false };
   } finally {
     // Belt-and-suspenders cleanup. The success path also clears these
     // mid-function (so stopAzureAudio() during a slow play doesn't see a

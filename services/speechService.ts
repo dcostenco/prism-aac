@@ -246,14 +246,15 @@ export async function speak(
     emitTtsHealthEvent({
       type: 'tts-attempt', tier: 'inworld', text: debugText, lang, timestamp: tier1Start,
     });
-    const success = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt);
-    if (success) {
+    const result = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt);
+    if (result && result.success) {
       console.log('[TTS] Portal TTS succeeded');
       const now = Date.now();
       emitTtsHealthEvent({
         type: 'tts-success', tier: 'inworld', latencyMs: now - tier1Start,
         durationMs: 0, timestamp: now,
       });
+      if (result.onEnded) await result.onEnded;
       return;
     }
     console.warn('[TTS] Portal TTS failed (server tier-rejected, network, or timeout), falling through');
@@ -271,7 +272,7 @@ export async function speak(
     triedTiers.push('web-speech');
     // speakLocal emits its own attempt + success/fallback via the
     // SpeechSynthesisUtterance lifecycle (onend / onerror).
-    speakLocal(text, effectiveRate, volume, lang);
+    await speakLocal(text, effectiveRate, volume, lang);
     return;
   }
 
@@ -306,14 +307,15 @@ export async function speak(
  */
 export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string): void {
   const actualLang = lang || getTTSCode((useSettingsStore.getState().language || 'en') as SupportedLanguage);
-  speakLocal(word, rate, volume, actualLang);
+  void speakLocal(word, rate, volume, actualLang);
 }
 
-function speakLocal(text: string, rate: number, volume: number, lang: string): void {
-  if (!text.trim()) return;
+function speakLocal(text: string, rate: number, volume: number, lang: string): Promise<void> {
+  return new Promise<void>((resolve) => {
+  if (!text.trim()) return resolve();
   if (!isSpeechSupported()) {
     console.warn('[PrismAAC] Speech synthesis not available on this browser');
-    return;
+    return resolve();
   }
   stopAzureAudio();
   window.speechSynthesis.cancel();
@@ -361,6 +363,8 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
       durationMs: audibleStart != null ? now - audibleStart : 0,
       timestamp: now,
     });
+  
+    resolve();
   };
   u.onerror = (ev) => {
     clearResumeWorkaround();
@@ -373,6 +377,8 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
       type: 'tts-give-up', lastTier: 'web-speech', triedTiers: ['web-speech'],
       reason: `speech-synthesis error: ${code}`, timestamp: Date.now(),
     });
+  
+    resolve();
   };
   // M3 fix: clear any prior interval before assigning a new one. If two speakLocal
   // calls happen in rapid succession, the first interval would be orphaned and fire
@@ -380,6 +386,7 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
   clearResumeWorkaround();
   resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);
   window.speechSynthesis.speak(u);
+  });
 }
 
 export function stopSpeech(): void {

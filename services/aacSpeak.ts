@@ -22,7 +22,7 @@ import { emitTtsHighlight, estimateSpeechDurationMs } from './ttsHighlightBus';
 // reads `toneMode` + `activeTone` from messageStore: in 'auto' mode the
 // adaptive engine picks the tone from the text; in 'manual' mode the user's
 // last picked tone is forced for every utterance.
-export function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, interrupt = false, spokenLang?: SupportedLanguage): void {
+export async function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, interrupt = false, spokenLang?: SupportedLanguage): Promise<void> {
   if (!text?.trim()) return;
 
   try {
@@ -100,7 +100,7 @@ export function aacSpeak(text: string, rate: number, volume: number, tone?: Tone
     // pbRate also removed from speakAzure. Rate control belongs to the
     // user's slider only.
     const effectiveRate = rate;
-    speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt);
+    await speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt);
   } catch {
     // Last resort: speak original text using the user's configured language,
     // NOT hardcoded en-US (which would mangle non-Latin text).
