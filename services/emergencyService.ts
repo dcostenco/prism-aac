@@ -42,6 +42,7 @@ export interface EmergencyContact {
   phone?: string;
   email?: string;
   relationship: string;
+  contactMethod?: 'sms' | 'whatsapp' | 'both';
 }
 
 export interface UserMedicalProfile {
@@ -371,10 +372,14 @@ function cleanContact(c: unknown): EmergencyContact | null {
   }
   const phone = rawPhone;
   const email = presentOrUndefined(sanitizeString(x.email, MAX_EMAIL_LEN));
+  let contactMethod = presentOrUndefined(sanitizeString(x.contactMethod, 10)) as 'sms' | 'whatsapp' | 'both' | undefined;
+  if (contactMethod && !['sms', 'whatsapp', 'both'].includes(contactMethod)) {
+    contactMethod = undefined;
+  }
   // A contact with neither phone nor email isn't reachable — drop it
   // so render code doesn't display a useless row.
   if (!phone && !email) return null;
-  return { name, relationship, ...(phone ? { phone } : {}), ...(email ? { email } : {}) };
+  return { name, relationship, ...(phone ? { phone } : {}), ...(email ? { email } : {}), ...(contactMethod ? { contactMethod } : {}) };
 }
 
 function cleanProfile(p: unknown): UserMedicalProfile {
@@ -927,7 +932,7 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   // Works on iPhone, iPad cellular, Android with cellular. Speaker TTS lets
   // 911 or caregiver hear the AI message through the device speaker.
   // On Apple Watch cellular (no paired phone), tel:// opens the watch dialer.
-  // ── LEVEL 4: Native SMS (works WITHOUT internet on cellular devices) ──
+  // ── LEVEL 4: Native SMS/WhatsApp (works WITHOUT internet on cellular devices) ──
   // SMS body cap: many carriers silently truncate at ~1500 encoded chars.
   // Prioritise: GPS link (most critical for first responders) + phrase.
   // Medical details are in the API path (Level 1/2); SMS is best-effort.
@@ -943,16 +948,37 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
       const safePhone = safePhoneForUri(contact.phone);
       if (!safePhone) continue;
       const encodedBody = encodeURIComponent(smsScript);
-      window.open(`sms:${safePhone}?body=${encodedBody}`, '_blank', 'noopener,noreferrer');
+      
+      const method = contact.contactMethod || 'sms';
+      if (method === 'whatsapp' || method === 'both') {
+        window.open(`whatsapp://send?phone=${safePhone.replace('+', '')}&text=${encodedBody}`, '_blank', 'noopener,noreferrer');
+      }
+      if (method === 'sms' || method === 'both') {
+        window.open(`sms:${safePhone}?body=${encodedBody}`, '_blank', 'noopener,noreferrer');
+      }
     }
   }
 
   // ── LEVEL 5: Native phone call + speaker TTS ──
-  // Works on any device with cellular. Speaker TTS means 911 hears the message.
-  if (config.autoCall911) {
-    // Resolve emergency number from device geolocation when available; fall
-    // back to the configured profile country, then to the international 112.
-    // Skip network-dependent location resolution when offline — use cached/configured country
+  // Works on any device with cellular. Speaker TTS means 911/caregiver hears the message.
+  
+  // By default, try to call the caregiver FIRST (per autonomous routing request)
+  let calledCaregiver = false;
+  for (const contact of config.contacts) {
+    if (contact.phone) {
+      const safePhone = safePhoneForUri(contact.phone);
+      if (!safePhone) continue;
+      window.open(`tel:${safePhone}`, '_self');
+      alert.sent = true;
+      calledCaregiver = true;
+      break;
+    }
+  }
+
+  // If no caregiver was called (or autoCall911 is requested as fallback)
+  // In a real device, `window.open('_self')` replaces the current location.
+  // If autoCall911 is explicitly requested, and we didn't call a caregiver, call 911.
+  if (config.autoCall911 && !calledCaregiver) {
     const country = navigator.onLine
       ? await getLocationAndCountry()
       : { location: null, detectedCountry: null, detectedLanguage: null, emergencyNumber: EMERGENCY_NUMBERS[(config.profile.country?.toUpperCase() || 'US')] || '112' };
@@ -961,24 +987,12 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
       || '112';
     window.open(`tel:${emergencyNum}`, '_self');
     alert.sent = true;
-  } else {
-    for (const contact of config.contacts) {
-      if (contact.phone) {
-        const safePhone = safePhoneForUri(contact.phone);
-        if (!safePhone) continue;
-        window.open(`tel:${safePhone}`, '_self');
-        alert.sent = true;
-        break;
-      }
-    }
+  } else if (!alert.sent) {
     // SAFETY NET: If no tel: link was successfully opened (contacts empty,
-    // all phones invalid, or all safePhoneForUri calls returned null),
-    // force a tel: link to the local emergency number as last resort.
-    if (!alert.sent) {
-      const emergencyNumber = EMERGENCY_NUMBERS[(config.profile?.country?.toUpperCase() || 'US')] || '112';
-      window.open(`tel:${emergencyNumber}`, '_self');
-      alert.sent = true;
-    }
+    // all phones invalid), force a tel: link to the local emergency number.
+    const emergencyNumber = EMERGENCY_NUMBERS[(config.profile?.country?.toUpperCase() || 'US')] || '112';
+    window.open(`tel:${emergencyNumber}`, '_self');
+    alert.sent = true;
   }
 
   // ── LEVEL 5: Offline queue ──

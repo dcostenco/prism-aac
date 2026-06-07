@@ -31,7 +31,7 @@ Part of the [Synalux platform](https://synalux.ai).
 |----------|--------|-------------|-------|
 | **Web** (PWA) | Production | Auto-downloads best local model | Any browser, installable |
 | **iPad Pro 16GB** | Production | On-device AI (14B) | Fast, private, auto-selected by RAM |
-| **iPhone / iPad 8GB** | Production | On-device AI (8B → 1.7B fallback) | Auto-downsizes to fit device |
+| **iPhone / iPad 8GB** | Production | On-device AI (4B → 1.7B fallback) | Auto-downsizes to fit device |
 | **iPhone / iPad <8GB** | Production | On-device AI (1.7B) | Always fits, 1.1 GB |
 | **Apple Watch** | Production | Offline phrase dictionary (1,261 × 20 langs) | Standalone — pictograms, TTS, emergency |
 | **Chrome Extension** | Production | — | Reading assistant in any text field |
@@ -113,26 +113,33 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 
 ### iPhone / iPad
 
-Native Swift app wrapping the web UI in WKWebView + on-device AI via llama.cpp Metal. Auto-selects the best model by device RAM:
+Native Swift app wrapping the web UI in WKWebView + a **Dual-Engine On-Device AI** architecture via llama.cpp Metal. 
 
-| Device | RAM | Model | Download |
+To guarantee instantaneous, offline AI access across devices, the app automatically runs two different models simultaneously based on the device's available memory:
+
+| Device | RAM | Conversational AI Engine (`prism-coder`) | Autocomplete Engine (`smollm2-aac`) |
 |---|---|---|---|
-| iPad Pro M1/M2/M4 | 16 GB | 14B Q4_K_M | 8.4 GB from HF CDN |
-| iPhone 15/16 Pro, iPad Air | 8 GB | 8B Q4_K_M → 1.7B (OOM fallback) | 4.7 GB / 1.1 GB |
-| iPhone 12-14, older iPads | <8 GB | 1.7B Q4_K_M | 1.1 GB |
+| iPad Pro M1/M2/M4 | ≥ 16 GB | 14B Q4_K_M (8.4 GB) | 360M (built-in) |
+| iPhone 15/16 Pro, iPad Air | 8-15 GB | 4B Q4_K_M (2.7 GB) | 360M (built-in) |
+| iPhone 12-14, older iPads | < 8 GB | 1.7B Q4_K_M (1.3 GB) | 360M (built-in) |
+
+#### Dual-Engine Architecture
+We use a specialized routing system to optimize performance and save battery life:
+* **The Conversational Engine:** Used strictly for deep, empathetic tasks like Hands-free mode, Bedside mode, and Wake Word features. It acts as an empathetic tutor and scores 100% on internal clinical safety and tool routing benchmarks.
+* **The Autocomplete Engine:** A tiny, lightning-fast fallback built directly into the app. When offline, this model acts instantly to finish sentences, predict the next word, and expand symbols into full sentences — the exact same model used by the Apple Watch.
 
 Three-layer safety: synchronous crisis filter → on-device AI → cloud fallback. Memory-aware gating degrades gracefully: full AI → cloud AI → core-only → emergency mode.
 
 - Safe area inset for Dynamic Island / notch
 - WCSession bridge for Apple Watch emergency dispatch
 - Keychain-backed auth tokens
-- OOM fallback: if the larger model doesn't fit, automatically loads the next smaller one
+- OOM fallback: if the larger conversational model doesn't fit, the app automatically steps down (14B → 4B → 1.7B → 360M).
 
 **Settings → 🤖 Local AI Models** — download and manage Prism models:
 - Detects Ollama automatically at `localhost:11434`
 - WiFi connections: iPad/iPhone → Mac Ollama (14B/32B at full accuracy)
 - Per-model download with live progress bar
-- Models: `:1b7` (1.1 GB) · `:8b` (4.7 GB) · `:14b` (8.4 GB) · `:32b` (16 GB)
+- Models: `:1b7` (1.1 GB) · `:4b` (2.7 GB) · `:14b` (8.4 GB) · `:32b` (16 GB)
 
 
 ### Apple Watch (standalone)

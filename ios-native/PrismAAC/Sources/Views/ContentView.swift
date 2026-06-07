@@ -205,6 +205,8 @@ struct PrismWebView: UIViewRepresentable {
         private var recognitionTask: SFSpeechRecognitionTask?
         private lazy var audioEngine = AVAudioEngine()
         private weak var activeWebView: WKWebView?
+        
+        private let inworldClient = InworldSTTClient()
 
         var requestReview: (() -> Void)?
 
@@ -420,6 +422,18 @@ struct PrismWebView: UIViewRepresentable {
             stopSpeechRecognition()
             activeWebView = webView
             #endif
+            
+            if let apiKey = ProcessInfo.processInfo.environment["INWORLD_API_KEY"] ?? UserDefaults.standard.string(forKey: "inworld_api_key") {
+                inworldClient.onInterim = { [weak self] text in
+                    self?.sendSpeechResult(interim: text, final: "")
+                }
+                inworldClient.onFinal = { [weak self] text in
+                    self?.sendSpeechResult(interim: "", final: text)
+                    self?.stopSpeechRecognition()
+                }
+                inworldClient.connect(apiKey: apiKey, locale: lang)
+            }
+            
             recognitionGeneration &+= 1
             let gen = recognitionGeneration
 
@@ -465,7 +479,7 @@ struct PrismWebView: UIViewRepresentable {
             let audioSession = AVAudioSession.sharedInstance()
             do {
                 try audioSession.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP])
-                try audioSession.setMode(.voiceChat)
+                try audioSession.setMode(.measurement)
                 try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
             } catch {
                 sendSpeechError("audio-session-failed")
@@ -493,27 +507,28 @@ struct PrismWebView: UIViewRepresentable {
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
                 bufferCount += 1
                 self?.recognitionRequest?.append(buffer)
+                self?.inworldClient.sendAudioChunk(buffer)
             }
 
             recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
                 DispatchQueue.main.async {
                     guard let self, self.recognitionGeneration == generation else { return }
                     if let result {
-                        let text = String(result.bestTranscription.formattedString.prefix(2000))
-                        self.sendSpeechResult(interim: result.isFinal ? "" : text,
-                                              final: result.isFinal ? text : "")
-                        if result.isFinal { self.stopSpeechRecognition() }
+                        if !self.inworldClient.isConnected {
+                            let text = String(result.bestTranscription.formattedString.prefix(2000))
+                            self.sendSpeechResult(interim: result.isFinal ? "" : text,
+                                                  final: result.isFinal ? text : "")
+                            if result.isFinal { self.stopSpeechRecognition() }
+                        }
                     } else if let error {
                         let nsErr = error as NSError
                         if nsErr.code != 216 {
-                            // kLSRErrorDomain 300/301 → on-device model
-                            // missing (typical on iOS Simulator).
-                            // Differentiate so the UI can show a useful
-                            // hint instead of a generic failure.
-                            if nsErr.domain == "kLSRErrorDomain" {
-                                self.sendSpeechError("ondevice-unavailable")
-                            } else {
-                                self.sendSpeechError("recognition-failed")
+                            if !self.inworldClient.isConnected {
+                                if nsErr.domain == "kLSRErrorDomain" {
+                                    self.sendSpeechError("ondevice-unavailable")
+                                } else {
+                                    self.sendSpeechError("recognition-failed")
+                                }
                             }
                         }
                     }
@@ -547,6 +562,7 @@ struct PrismWebView: UIViewRepresentable {
         }
 
         private func stopSpeechRecognition() {
+            inworldClient.disconnect()
             recognitionTimeout?.cancel()
             recognitionTimeout = nil
             if audioEngine.isRunning {
@@ -558,9 +574,9 @@ struct PrismWebView: UIViewRepresentable {
             recognitionTask?.cancel()
             recognitionTask = nil
             speechRecognizer = nil
-            // Restore audio session for TTS while keeping mic alive for next voice input.
-            try? AVAudioSession.sharedInstance().setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP])
-            try? AVAudioSession.sharedInstance().setMode(.voiceChat)
+            // Restore audio session for TTS.
+            try? AVAudioSession.sharedInstance().setCategory(.playback, options: [.mixWithOthers])
+            try? AVAudioSession.sharedInstance().setMode(.default)
             try? AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
         }
 

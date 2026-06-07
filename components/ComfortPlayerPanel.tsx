@@ -174,6 +174,7 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
       try {
         await saveBlob(id, file);
       } catch (err) {
+        console.error('[ComfortPlayer] IDB save error:', err);
         const msg = err instanceof DOMException && err.name === 'QuotaExceededError'
           ? 'Storage full. Please remove some items.'
           : 'Failed to save file.';

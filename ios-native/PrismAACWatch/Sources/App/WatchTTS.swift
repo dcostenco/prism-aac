@@ -24,6 +24,95 @@ final class WatchTTS: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     // from ducking the emergency synthesizer's audio session.
     static var emergencyAudioActive = false
 
+    /// ```swift
+    /// let (onToken, flush) = tts.streamingTokenSink()
+    /// let response = try await engine.ask(query: q, onToken: onToken)
+    /// flush()   // speak any remaining partial sentence
+    /// ```
+    ///
+    /// This cuts perceived latency from "wait for entire response" (~5s) to
+    /// "wait for first sentence" (~0.3–0.8s on local models).
+    func streamingTokenSink(
+        language: String? = nil
+    ) -> (onToken: @Sendable (String) -> Void, flush: @MainActor () -> Void) {
+        // Shared mutable state protected by a serial queue.
+        let lock = DispatchQueue(label: "prism.tts.stream", qos: .userInitiated)
+        var buffer = ""
+        var sentenceQueue: [String] = []
+        var isProcessing = false
+        let sentenceBoundaries: [Character] = [".", "!", "?", "\n"]
+
+        // Processes the sentence queue one-by-one, waiting for each to finish.
+        let drainQueue: @MainActor () -> Void = { [weak self] in
+            guard let self, !isProcessing else { return }
+            isProcessing = true
+            Task { @MainActor [weak self] in
+                while true {
+                    let next: String? = lock.sync {
+                        sentenceQueue.isEmpty ? nil : sentenceQueue.removeFirst()
+                    }
+                    guard let sentence = next, let self else { break }
+                    if let lang = language {
+                        self.speak(sentence, language: lang)
+                    } else {
+                        self.speak(sentence)
+                    }
+                    // Wait for this utterance to finish before starting the next.
+                    // Poll at 50ms — fast enough to be imperceptible, avoids
+                    // spinning. The alternative (KVO on isSpeaking) is heavier.
+                    while self.isSpeaking {
+                        try? await Task.sleep(nanoseconds: 50_000_000)
+                    }
+                }
+                isProcessing = false
+            }
+        }
+
+        let onToken: @Sendable (String) -> Void = { [weak self] piece in
+            var shouldDrain = false
+            lock.sync {
+                buffer += piece
+                // Check for sentence boundary: punctuation followed by space/newline/end
+                if let lastPunct = buffer.lastIndex(where: { sentenceBoundaries.contains($0) }) {
+                    let afterPunct = buffer.index(after: lastPunct)
+                    // Boundary confirmed if we're at end or next char is whitespace
+                    let atEnd = afterPunct == buffer.endIndex
+                    let nextIsSpace = !atEnd && buffer[afterPunct].isWhitespace
+                    if atEnd || nextIsSpace {
+                        let sentence = String(buffer[buffer.startIndex...lastPunct])
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !sentence.isEmpty {
+                            sentenceQueue.append(sentence)
+                            shouldDrain = true
+                        }
+                        buffer = atEnd ? "" : String(buffer[afterPunct...])
+                    }
+                }
+            }
+            if shouldDrain {
+                Task { @MainActor in
+                    guard self != nil else { return }
+                    drainQueue()
+                }
+            }
+        }
+
+        let flush: @MainActor () -> Void = { [weak self] in
+            lock.sync {
+                let text = buffer.trimmingCharacters(in: .whitespacesAndNewlines)
+                buffer = ""
+                if !text.isEmpty {
+                    sentenceQueue.append(text)
+                }
+            }
+            if self != nil {
+                drainQueue()
+            }
+        }
+
+        return (onToken, flush)
+    }
+
     // #11: NOTE: WatchEmergencyManager has its own AVSpeechSynthesizer for emergency TTS.
     // Both share the Watch speaker. Emergency manager configures AVAudioSession before speaking,
     // which ducks this synthesizer's output if active. This is acceptable — emergency speech has priority.

@@ -46,11 +46,16 @@ final class WatchLLMEngine: ObservableObject {
             throw WatchLLMError.insufficientMemory(freeMB: freeMB)
         }
 
-        let loadedModel: OpaquePointer? = await Task.detached(priority: .userInitiated) {
+        let loadedModelPtr: SendableOpaquePointer? = await Task.detached(priority: .userInitiated) {
             var params = llama_model_default_params()
             params.n_gpu_layers = 0  // CPU only — watchOS Metal is unavailable for inference
-            return llama_load_model_from_file(path, params)
+            if let p = llama_load_model_from_file(path, params) {
+                return SendableOpaquePointer(ptr: p)
+            }
+            return nil
         }.value
+
+        let loadedModel: OpaquePointer? = loadedModelPtr?.ptr
 
         guard let loadedModel else { throw WatchLLMError.loadFailed }
 
@@ -87,30 +92,30 @@ final class WatchLLMEngine: ObservableObject {
     }
 
     /// Complete an AAC phrase (standard vocabulary prediction).
-    func complete(_ starter: String) async throws -> String {
+    func complete(_ starter: String, onToken: (@Sendable (String) -> Void)? = nil) async throws -> String {
         let prompt = buildPrompt(system: Self.AAC_SYSTEM, user: "Complete: \(starter)")
-        return try await infer(prompt: prompt)
+        return try await infer(prompt: prompt, onToken: onToken)
     }
 
     /// Expand AAC symbols to a first-person sentence.
     /// symbols: e.g. ["hungry", "want", "food"]
-    func expandSymbols(_ symbols: [String]) async throws -> String {
+    func expandSymbols(_ symbols: [String], onToken: (@Sendable (String) -> Void)? = nil) async throws -> String {
         let symbolStr = symbols.map { "[\($0)]" }.joined(separator: " ")
         let prompt = buildPrompt(
             system: Self.EMERG_SYSTEM,
             user: "Symbols: \(symbolStr). Generate a complete sentence."
         )
-        return try await infer(prompt: prompt)
+        return try await infer(prompt: prompt, onToken: onToken)
     }
 
     /// Interpret emergency symbol selection as a distress statement.
-    func interpretEmergency(_ symbols: [String]) async throws -> String {
+    func interpretEmergency(_ symbols: [String], onToken: (@Sendable (String) -> Void)? = nil) async throws -> String {
         let symbolStr = symbols.map { "[\($0)]" }.joined(separator: " ")
         let prompt = buildPrompt(
             system: Self.EMERG_SYSTEM,
             user: "User selects \(symbolStr) in distress. What are they saying?"
         )
-        return try await infer(prompt: prompt, maxTokens: 40)
+        return try await infer(prompt: prompt, maxTokens: 40, onToken: onToken)
     }
 
     // MARK: - Private
@@ -119,7 +124,11 @@ final class WatchLLMEngine: ObservableObject {
         "<|im_start|>system\n\(system)<|im_end|>\n<|im_start|>user\n\(user)<|im_end|>\n<|im_start|>assistant\n"
     }
 
-    private func infer(prompt: String, maxTokens: Int? = nil) async throws -> String {
+    private struct SendableOpaquePointer: @unchecked Sendable {
+        let ptr: OpaquePointer
+    }
+
+    private func infer(prompt: String, maxTokens: Int? = nil, onToken: (@Sendable (String) -> Void)? = nil) async throws -> String {
         #if canImport(llama)
         guard let ctx = context, let mdl = model else { throw WatchLLMError.notLoaded }
         guard !isGenerating else { throw WatchLLMError.busy }
@@ -128,9 +137,14 @@ final class WatchLLMEngine: ObservableObject {
         defer { isGenerating = false }
 
         let limit = maxTokens ?? Self.MAX_NEW_TOKENS
+        
+        let safeMdl = SendableOpaquePointer(ptr: mdl)
+        let safeCtx = SendableOpaquePointer(ptr: ctx)
 
         return try await Task.detached(priority: .userInitiated) { [weak self] in
             guard self != nil else { throw WatchLLMError.notLoaded }
+            let mdl = safeMdl.ptr
+            let ctx = safeCtx.ptr
 
             let promptTokens = Self.tokenize(model: mdl, text: prompt, addBos: true)
             guard !promptTokens.isEmpty else { throw WatchLLMError.notLoaded }
@@ -154,6 +168,7 @@ final class WatchLLMEngine: ObservableObject {
             let imEndId = Self.findToken(model: mdl, text: "<|im_end|>")
 
             var generated = ""
+            var byteBuffer: [UInt8] = []
             var nCur = Int32(promptTokens.count)
             let nMax = nCur + Int32(limit)
 
@@ -164,7 +179,17 @@ final class WatchLLMEngine: ObservableObject {
                 var buf = [CChar](repeating: 0, count: 128)
                 let n = llama_token_to_piece(mdl, tok, &buf, Int32(buf.count), 0, true)
                 if n > 0 {
-                    generated += String(cString: buf.prefix(Int(n)) + [0])
+                    let bytes = buf.prefix(Int(n)).map { UInt8(bitPattern: $0) }
+                    byteBuffer.append(contentsOf: bytes)
+                    if let piece = String(bytes: byteBuffer, encoding: .utf8) {
+                        byteBuffer.removeAll()
+                        if !piece.isEmpty {
+                            generated += piece
+                            if let onToken = onToken {
+                                Task { @MainActor in onToken(piece) }
+                            }
+                        }
+                    }
                 }
 
                 batch.n_tokens = 0

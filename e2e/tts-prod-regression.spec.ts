@@ -389,6 +389,7 @@ test("C6: two rapid Speak presses — second press still produces audio", async 
 
   // After two presses the pipeline must have produced at least one
   // non-truncated playback (the second press's audio).
+  console.log('C6 TTS Logs:', diag.ttsLogs);
   expect(
     diag.sourceStartCount,
     "At least one source must start on double-press",

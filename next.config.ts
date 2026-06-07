@@ -36,6 +36,14 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_DD_SITE: process.env.NEXT_PUBLIC_DD_SITE || 'datadoghq.com',
   },
   serverExternalPackages: ['@huggingface/transformers', 'pyodide'],
+  async rewrites() {
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: `${process.env.PROXY_API_URL || 'https://synalux.ai/api/v1'}/:path*`,
+      },
+    ];
+  },
   turbopack: {},
   // Webpack-only fix: Pyodide's `import('pyodide')` (in
   // services/python-worker.ts) pulls in pyodide.mjs which has top-level

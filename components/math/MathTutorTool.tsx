@@ -237,11 +237,14 @@ export default function MathTutorTool() {
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('__tutor_timeout__')), TUTOR_HARD_TIMEOUT_MS);
       });
-      await Promise.race([askPromise, timeoutPromise]);
+      const result = await Promise.race([askPromise, timeoutPromise]) as { text: string; error?: string };
       if (mySeq !== requestSeqRef.current) return;
-      setResponse(buffer);
-      if (buffer) {
-        aacSpeak(buffer, speechRate, speechVolume);
+      // Local Ollama uses stream: false, so onChunk is never called and buffer remains empty.
+      // We fall back to the resolved text.
+      const finalResponse = buffer || result.text;
+      setResponse(finalResponse);
+      if (finalResponse) {
+        aacSpeak(finalResponse, speechRate, speechVolume);
         // Record successful check/solve for App Store review prompt trigger
         if (which === 'check' || which === 'solve') {
           recordMathExerciseComplete();
@@ -530,12 +533,16 @@ export default function MathTutorTool() {
                       const tutorContext = TUTOR_CONTEXT_BY_DOMAIN[domain];
                       let buf = '';
                       try {
-                        await askAI(opt, tutorContext, (delta) => {
+                        const result = await askAI(opt, tutorContext, (delta) => {
                           if (mySeq !== requestSeqRef.current) return;
                           buf += delta;
                           setResponse(buf);
                         }, tutorLang);
-                        if (mySeq === requestSeqRef.current && buf) aacSpeak(buf, speechRate, speechVolume);
+                        const finalBuf = buf || result.text;
+                        if (mySeq === requestSeqRef.current && finalBuf) {
+                          setResponse(finalBuf);
+                          aacSpeak(finalBuf, speechRate, speechVolume);
+                        }
                       } catch { if (mySeq === requestSeqRef.current) setResponse('⚠️ Could not get a response.'); }
                       if (mySeq === requestSeqRef.current) setLoading(false);
                     }}

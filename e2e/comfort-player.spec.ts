@@ -7,7 +7,12 @@ const PHOTO_FILE = "/tmp/test-comfort-photo.jpg";
 
 test.describe("Comfort Player — E2E with real media", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/prism-aac", { waitUntil: "networkidle" });
+    page.on('console', msg => console.log('[PAGE CONSOLE]', msg.text()));
+    page.on('dialog', dialog => {
+      console.log('[PAGE DIALOG]', dialog.message());
+      dialog.accept();
+    });
+    await page.goto("/prism-aac", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2000);
 
     // Enable Comfort Player in toolbar
@@ -24,7 +29,7 @@ test.describe("Comfort Player — E2E with real media", () => {
       data.state.toolbarConfig.enabled.comfort_player = true;
       localStorage.setItem(key, JSON.stringify(data));
     });
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
 
     // Open Comfort Player panel
@@ -97,7 +102,7 @@ test.describe("Comfort Player — E2E with real media", () => {
     await page.locator("text=test-comfort-video").click();
     await page.waitForTimeout(1000);
 
-    await expect(page.locator("text=Now Playing")).toBeVisible();
+    await expect(page.locator("header").locator("text=test-comfort-video")).toBeVisible();
     await expect(
       page.locator('button[aria-label="Pause playback"]'),
     ).toBeVisible();

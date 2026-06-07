@@ -66,16 +66,14 @@ const SHIM = () => {
 
 test.describe("Tracking features", () => {
   test("camera-input toggle mounts the finger-tracking overlay", async ({
-    page,
+    page, baseURL
   }) => {
     await page.addInitScript(SHIM);
-    await page.goto("/");
+    const start = baseURL || "/prism-aac";
+    await page.goto(start);
     await page.waitForSelector('button[data-key="Q"]', { timeout: 20_000 });
 
-    await page.evaluate(() => {
-      const b = document.querySelector('button[aria-label*="ettings" i]');
-      if (b instanceof HTMLElement) b.click();
-    });
+    await page.getByRole("button", { name: "Settings" }).click();
     const toggle = page.locator('button[aria-label="Camera input"]');
     await expect(toggle).toBeVisible({ timeout: 5_000 });
     expect(await toggle.getAttribute("aria-pressed")).toBe("false"); // settingsStore default
@@ -92,18 +90,16 @@ test.describe("Tracking features", () => {
     ).toBeTruthy();
   });
 
-  test("default tracking target chip is visibly selected", async ({ page }) => {
+  test("default tracking target chip is visibly selected", async ({ page, baseURL }) => {
     // Pins the May 2026 probe finding: settings stored 'any_wrist' as the
     // default but no matching chip existed in the UI grid. Without a
     // visible selection, the user couldn't tell what was being tracked
     // and was forced to pick a specific side, losing the auto-side
     // fallback that handles asymmetric reach.
-    await page.goto("/");
+    const start = baseURL || "/prism-aac";
+    await page.goto(start);
     await page.waitForSelector('button[data-key="Q"]', { timeout: 20_000 });
-    await page.evaluate(() => {
-      const b = document.querySelector('button[aria-label*="ettings" i]');
-      if (b instanceof HTMLElement) b.click();
-    });
+    await page.getByRole("button", { name: "Settings" }).click();
     const camToggle = page.locator('button[aria-label="Camera input"]');
     await expect(camToggle).toBeVisible({ timeout: 5_000 });
     if ((await camToggle.getAttribute("aria-pressed")) === "false")
@@ -114,17 +110,15 @@ test.describe("Tracking features", () => {
   });
 
   test("head-tracking toggle in Settings mounts the overlay", async ({
-    page,
+    page, baseURL
   }) => {
     await page.addInitScript(SHIM);
-    await page.goto("/");
+    const start = baseURL || "/prism-aac";
+    await page.goto(start);
     await page.waitForSelector('button[data-key="Q"]', { timeout: 20_000 });
 
     // Open Settings
-    await page.evaluate(() => {
-      const b = document.querySelector('button[aria-label*="ettings" i]');
-      if (b instanceof HTMLElement) b.click();
-    });
+    await page.getByRole("button", { name: "Settings" }).click();
     // Find and click the Head tracking toggle by its aria-label
     const toggle = page.locator('button[aria-label="Head tracking"]');
     await expect(toggle).toBeVisible({ timeout: 5_000 });
@@ -144,14 +138,15 @@ test.describe("Tracking features", () => {
     ).toBeTruthy();
   });
 
-  test("setup wizard test phase has a Skip escape hatch", async ({ page }) => {
+  test("setup wizard test phase has a Skip escape hatch", async ({ page, baseURL }) => {
     // Pins the May 2026 user report (Image #24): calibration stuck at
     // "Step 3: Test (1/5) — 0/5 hits". The buttons used onClick (mouse
     // only) with no auto-hit on cursor dwell and no Skip button — when
     // the camera cursor couldn't reliably land on the targets the user
     // had no way out except Cancel (which abandons calibration).
     await page.addInitScript(SHIM);
-    await page.goto("/");
+    const start = baseURL || "/prism-aac";
+    await page.goto(start);
     await page.waitForSelector('button[data-key="Q"]', { timeout: 20_000 });
 
     // Drop the wizard directly into accuracy-test phase via store
@@ -167,10 +162,7 @@ test.describe("Tracking features", () => {
       // toggling cameraInput on so the setup-button shows.
       useSettingsStore?.getState().update({ cameraInputEnabled: true });
     });
-    await page.evaluate(() => {
-      const b = document.querySelector('button[aria-label*="ettings" i]');
-      if (b instanceof HTMLElement) b.click();
-    });
+    await page.getByRole("button", { name: "Settings" }).click();
     // Open the wizard
     const setupBtn = page.locator('button:has-text("Set Up Tracking")');
     await expect(setupBtn).toBeVisible({ timeout: 5_000 });

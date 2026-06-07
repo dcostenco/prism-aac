@@ -420,7 +420,7 @@ async function callSynalux(
 
 // ── Local Ollama (offline fallback) ──
 
-async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, signal?: AbortSignal): Promise<string> {
+async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, signal?: AbortSignal, onChunk?: (delta: string) => void): Promise<string> {
   if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
     throw new Error('Local AI unavailable — HTTPS page cannot reach http://localhost');
   }
@@ -433,12 +433,51 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
       body: JSON.stringify({
         model,
         prompt,
-        stream: false,
+        stream: !!onChunk,
         options: { num_predict: 300, temperature: 0 },
       }),
       signal: fetchSignal,
     });
     if (!res.ok) throw new Error(`Model ${model} unavailable`);
+
+    if (onChunk && res.body) {
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let fullText = '';
+      let lineBuffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        lineBuffer += decoder.decode(value, { stream: true });
+        const lines = lineBuffer.split('\n');
+        lineBuffer = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const parsed = JSON.parse(line);
+            const delta = parsed.response || '';
+            if (delta) {
+              fullText += delta;
+              onChunk(delta);
+            }
+          } catch { /* incomplete chunk */ }
+        }
+      }
+      lineBuffer += decoder.decode();
+      for (const line of lineBuffer.split('\n')) {
+        if (!line.trim()) continue;
+        try {
+          const parsed = JSON.parse(line);
+          const delta = parsed.response || '';
+          if (delta) {
+            fullText += delta;
+            onChunk(delta);
+          }
+        } catch { /* incomplete chunk */ }
+      }
+      return fullText;
+    }
+
     const data = await res.json();
     return data?.response ?? '';
   } catch (e) {
@@ -469,11 +508,11 @@ function isConfidentResponse(text: string): boolean {
   return hasPlainText;
 }
 
-async function callLocal(prompt: string, signal?: AbortSignal): Promise<string> {
+async function callLocal(prompt: string, signal?: AbortSignal, onChunk?: (delta: string) => void): Promise<string> {
   for (const model of LOCAL_MODELS) {
     try {
       const timeoutMs = model.includes('32b') ? 30000 : 15000;
-      const result = await callLocalModel(prompt, model, timeoutMs, signal);
+      const result = await callLocalModel(prompt, model, timeoutMs, signal, onChunk);
       if (isConfidentResponse(result)) return result;
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') throw e;
@@ -615,7 +654,7 @@ async function route(
   // 1. Try local Ollama first (Mac on WiFi — 14B at 98%, free)
   if (!options?.webSearch) {
     try {
-      const raw = await callLocal(fullPrompt, options?.signal);
+      const raw = await callLocal(fullPrompt, options?.signal, options?.onChunk);
       return stripModelControlTokens(raw);
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') throw e;

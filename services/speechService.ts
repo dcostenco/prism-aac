@@ -321,8 +321,8 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): v
 
   const u = new SpeechSynthesisUtterance(text);
   const baseLang = lang.split('-')[0];
-  const foreignSlowdown = baseLang !== 'en' ? 0.85 : 1;
-  u.rate = (0.1 + rate * 1.8) * foreignSlowdown;
+  const isEn = baseLang === 'en';
+  u.rate = isEn ? (0.2 + rate * 1.2) : (0.1 + rate * 1.8) * 0.85;
   u.volume = volume;
   u.lang = lang;
 

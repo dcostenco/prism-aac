@@ -150,11 +150,29 @@ async function cachePut(key: string, blob: Blob): Promise<void> {
 
 // ── ARASAAC lookup ──────────────────────────────────────────────────────────
 
-// In-memory negative cache — words ARASAAC doesn't have pictograms for.
-// Prevents repeated 404 requests for the same word within a session.
-// Key: `${langCode}:${token}`. Cleared on page reload (intentional —
-// session-scoped only, offline cache in IndexedDB holds positives).
-const arasaacMisses = new Set<string>();
+// LocalStorage-backed negative cache — words ARASAAC doesn't have pictograms for.
+// Prevents repeated 404 requests (and console errors) across sessions.
+let arasaacMisses = new Set<string>();
+if (typeof window !== 'undefined') {
+  try {
+    const stored = localStorage.getItem('prism-arasaac-misses');
+    if (stored) arasaacMisses = new Set(JSON.parse(stored));
+  } catch {}
+}
+
+function saveArasaacMisses() {
+  if (typeof window === 'undefined') return;
+  try {
+    const arr = Array.from(arasaacMisses);
+    if (arr.length > 5000) {
+      const trimmed = arr.slice(-5000);
+      arasaacMisses = new Set(trimmed);
+      localStorage.setItem('prism-arasaac-misses', JSON.stringify(trimmed));
+    } else {
+      localStorage.setItem('prism-arasaac-misses', JSON.stringify(arr));
+    }
+  } catch {}
+}
 
 async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
   const langCode = lang.split('-')[0] || 'en';
@@ -168,9 +186,17 @@ async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
       headers: { 'Accept': 'application/json' },
       signal: searchT.signal,
     });
-    if (!res.ok) { if (arasaacMisses.size > 5000) arasaacMisses.clear(); arasaacMisses.add(missKey); return null; }
+    if (!res.ok) {
+      arasaacMisses.add(missKey);
+      saveArasaacMisses();
+      return null;
+    }
     const data: ArasaacHit[] = await res.json();
-    if (!Array.isArray(data) || data.length === 0) { if (arasaacMisses.size > 5000) arasaacMisses.clear(); arasaacMisses.add(missKey); return null; }
+    if (!Array.isArray(data) || data.length === 0) {
+      arasaacMisses.add(missKey);
+      saveArasaacMisses();
+      return null;
+    }
     id = data[0]._id;
   } catch {
     return null;

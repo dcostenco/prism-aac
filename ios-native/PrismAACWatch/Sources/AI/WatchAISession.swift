@@ -112,7 +112,7 @@ final class WatchAISession: NSObject, ObservableObject {
 
     // MARK: - Ask AI
 
-    func ask(_ question: String, language: String = "en") async {
+    func ask(_ question: String, language: String = "en", onToken: (@Sendable (String) -> Void)? = nil) async {
 
         // Layer 1 safety — always synchronous, no network needed
         // H-3: NFKC-normalize before safety check — askViaCloud() does this too;
@@ -121,9 +121,15 @@ final class WatchAISession: NSObject, ObservableObject {
         switch WatchSafetyFilter.check(nfkcQuestion) {
         case .crisis(let r):
             reply = r
+            if let onToken = onToken {
+                Task { @MainActor in onToken(r) }
+            }
             return
         case .medical(let r):
             reply = r
+            if let onToken = onToken {
+                Task { @MainActor in onToken(r) }
+            }
             return
         case .safe:
             break
@@ -139,12 +145,18 @@ final class WatchAISession: NSObject, ObservableObject {
             // downstream consumers don't receive denormalized Unicode that could
             // bypass keyword matching on the phone or cloud side.
             if mode == .companion && WCSessionRouter.shared.isReachable {
-                reply = sanitizeResponse(try await askViaPhone(question: nfkcQuestion, language: language))
+                let fullReply = sanitizeResponse(try await askViaPhone(question: nfkcQuestion, language: language))
+                reply = fullReply
+                if let onToken = onToken {
+                    Task { @MainActor in onToken(fullReply) }
+                }
             } else if mode == .offline && offlineEngine.isLoaded {
                 // Already offline — go straight to on-device model, no network attempt
-                reply = sanitizeResponse(try await offlineEngine.complete(nfkcQuestion))
+                let fullReply = sanitizeResponse(try await offlineEngine.complete(nfkcQuestion, onToken: onToken))
+                reply = fullReply
             } else {
-                reply = sanitizeResponse(try await askViaCloud(question: nfkcQuestion, language: language))
+                let fullReply = sanitizeResponse(try await askViaCloud(question: nfkcQuestion, language: language, onToken: onToken))
+                reply = fullReply
                 // #25: do not overwrite mode here — updateMode() is sole authority
             }
         } catch is CancellationError {
@@ -158,7 +170,8 @@ final class WatchAISession: NSObject, ObservableObject {
             mode = .offline  // #13: set offline mode when cloud call fails
             if offlineEngine.isLoaded {
                 do {
-                    reply = sanitizeResponse(try await offlineEngine.complete(nfkcQuestion))
+                    let fullReply = sanitizeResponse(try await offlineEngine.complete(nfkcQuestion, onToken: onToken))
+                    reply = fullReply
                     offlineBanner = "Offline — on-device AI active"
                     return
                 } catch {
@@ -167,6 +180,9 @@ final class WatchAISession: NSObject, ObservableObject {
             }
             offlineBanner = "Offline — phrase buttons only"
             reply = "I'm offline right now. Use the phrase buttons below."
+            if let onToken = onToken {
+                Task { @MainActor in onToken(reply) }
+            }
         }
     }
 
@@ -270,7 +286,7 @@ final class WatchAISession: NSObject, ObservableObject {
 
     // MARK: - Direct cloud path (Watch WiFi/LTE)
 
-    private func askViaCloud(question: String, language: String) async throws -> String {
+    private func askViaCloud(question: String, language: String, onToken: (@Sendable (String) -> Void)? = nil) async throws -> String {
         // Sanitize language code — allowlist BCP-47 format only (alphanumerics + hyphen, max 10 chars)
         let safeLanguage = String(language.prefix(10))
             .components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-")).inverted)
@@ -335,9 +351,10 @@ final class WatchAISession: NSObject, ObservableObject {
                 ["role": "user",   "content": finalQuestion],
             ],
             "language": String(validatedLanguage.prefix(2)),
-            "stream": false,   // #8: data(for:) buffers full response — use non-streaming JSON; SSE fallback below
+            "stream": true,
         ] as [String: Any])
-        let (data, response) = try await WatchAISession.aiSession.data(for: req)
+
+        var (stream, response) = try await URLSession.shared.bytes(for: req)
         if let http = response as? HTTPURLResponse, http.statusCode == 401 {
             // Token is stale/invalid — clear it and retry without auth
             NSLog("[WatchAI] 401 — clearing stale auth token and retrying without auth")
@@ -346,27 +363,37 @@ final class WatchAISession: NSObject, ObservableObject {
             retryReq.httpMethod = "POST"
             retryReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
             retryReq.httpBody = req.httpBody
-            let (retryData, retryResponse) = try await WatchAISession.aiSession.data(for: retryReq)
-            if let retryHttp = retryResponse as? HTTPURLResponse, !(200...299).contains(retryHttp.statusCode) {
+            let retryResult = try await URLSession.shared.bytes(for: retryReq)
+            stream = retryResult.0
+            response = retryResult.1
+            if let retryHttp = response as? HTTPURLResponse, !(200...299).contains(retryHttp.statusCode) {
                 NSLog("[WatchAI] HTTP error \(retryHttp.statusCode) on unauthenticated retry")
                 throw URLError(.badServerResponse)
             }
-            guard retryData.count <= 65_536 else {
-                NSLog("[WatchAI] Retry response too large (\(retryData.count) bytes) — ignoring")
-                throw WatchAIError.responseTooLarge
-            }
-            return parseNonStreaming(retryData) ?? assembleSSE(retryData) ?? ""
-        }
-        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+        } else if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
             NSLog("[WatchAI] HTTP error \(http.statusCode)")
             throw URLError(.badServerResponse)
         }
-        guard data.count <= 65_536 else {
-            NSLog("[WatchAI] Response too large (\(data.count) bytes) — ignoring")
-            throw WatchAIError.responseTooLarge
+
+        var fullText = ""
+        for try await line in stream.lines {
+            guard line.hasPrefix("data: ") else { continue }
+            let payload = String(line.dropFirst(6))
+            if payload == "[DONE]" { break }
+            if let data = payload.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let choices = json["choices"] as? [[String: Any]],
+               let delta = choices.first?["delta"] as? [String: Any],
+               let piece = delta["content"] as? String, !piece.isEmpty {
+                fullText += piece
+                if let onToken = onToken {
+                    Task { @MainActor in onToken(piece) }
+                }
+            }
         }
-        // Prefer non-streaming JSON; fall back to SSE assembly if server sends SSE anyway
-        return parseNonStreaming(data) ?? assembleSSE(data) ?? ""
+        
+        let trimmed = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed
     }
 
     private func parseNonStreaming(_ data: Data) -> String? {
@@ -418,8 +445,8 @@ final class WatchAISession: NSObject, ObservableObject {
     }
 
     /// Ask AI and return the reply string (for inline use by WatchAIChatView).
-    func askAI(_ question: String, lang: String = "en-US") async -> String? {
-        await ask(question, language: lang)
+    func askAI(_ question: String, lang: String = "en-US", onToken: (@Sendable (String) -> Void)? = nil) async -> String? {
+        await ask(question, language: lang, onToken: onToken)
         return reply.isEmpty ? nil : reply
     }
 

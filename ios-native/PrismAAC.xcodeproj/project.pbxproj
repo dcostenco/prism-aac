@@ -24,6 +24,7 @@
 		3A86633A7C7348A6B94B45B1 /* AppIcon50x50@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7F5B86B0B8D15149418A59D8 /* AppIcon50x50@2x.png */; };
 		3D08BF95A6574850121B9852 /* PrismAACUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B17D9B0D21E9712DE4058F /* PrismAACUnitTests.swift */; };
 		3F4FDC469542E9A9D39C391F /* WatchLayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 485E0CAF1D660CE13F92A068 /* WatchLayerTests.swift */; };
+		45DB54F19BDCE1A20CBB61F1 /* InworldSTTClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661A097169A8760B4032D6EF /* InworldSTTClient.swift */; };
 		4845E40319EC76BF7B3D85D9 /* PrismAACUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */; };
 		520CBFCB73C47A12E8E6AFE3 /* BedsideModeExtendedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A679874C453F382852D8900 /* BedsideModeExtendedTests.swift */; };
 		555C0BC04B53500144B4F875 /* AppIcon86x86@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */; };
@@ -112,6 +113,7 @@
 		514A2FD3A0BC693D56606896 /* LLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEngine.swift; sourceTree = "<group>"; };
 		60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchInbox.swift; sourceTree = "<group>"; };
 		62DB2AB8796CA83596887AD3 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		661A097169A8760B4032D6EF /* InworldSTTClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InworldSTTClient.swift; sourceTree = "<group>"; };
 		67DE9F6102290192A69EA33F /* WatchTTS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTTS.swift; sourceTree = "<group>"; };
 		6A679874C453F382852D8900 /* BedsideModeExtendedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BedsideModeExtendedTests.swift; sourceTree = "<group>"; };
 		71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACUITests.swift; sourceTree = "<group>"; };
@@ -281,6 +283,7 @@
 			isa = PBXGroup;
 			children = (
 				336C616FA71B6C3F3227FC90 /* ContentView.swift */,
+				661A097169A8760B4032D6EF /* InworldSTTClient.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -401,8 +404,6 @@
 				7E765695EA85381AD75FE2AD /* PBXTargetDependency */,
 			);
 			name = PrismAACUITests;
-			packageProductDependencies = (
-			);
 			productName = PrismAACUITests;
 			productReference = 81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -441,8 +442,6 @@
 				B345DD75A65DE7B7EDD75EB4 /* PBXTargetDependency */,
 			);
 			name = PrismAACTests;
-			packageProductDependencies = (
-			);
 			productName = PrismAACTests;
 			productReference = 2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -459,8 +458,6 @@
 			dependencies = (
 			);
 			name = PrismAACWatch;
-			packageProductDependencies = (
-			);
 			productName = PrismAACWatch;
 			productReference = 8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */;
 			productType = "com.apple.product-type.application";
@@ -583,6 +580,7 @@
 				2CD68B3ABCB8C23FF1104EC7 /* PrismAACApp.swift in Sources */,
 				8ACCA7F12A410E5951CB832F /* SafetyFilter.swift in Sources */,
 				DE76830C66CD657FA386D5D8 /* SmolLMEngine.swift in Sources */,
+				45DB54F19BDCE1A20CBB61F1 /* InworldSTTClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

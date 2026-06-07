@@ -948,7 +948,7 @@ private struct ChatMessage: Codable, Identifiable {
     // eliminating flicker when removeFirst() shifts all index-based ids by one.
     var id: UUID = UUID()
     let role: String
-    let text: String
+    var text: String
 
     // CodingKeys excludes `id` from persistence — each session gets fresh UUIDs on load,
     // which is fine since ids only need to be stable within a single session.
@@ -1201,11 +1201,26 @@ struct WatchAIChatView: View {
             aiTask = Task { @MainActor in
                 // FIX #21: defer ensures isWaiting resets even if the task is cancelled before completion.
                 defer { isWaiting = false }
-                let reply = await session.askAI(text, lang: outputLang) ?? "…"
-                guard !Task.isCancelled else { return }
+                
                 if messages.count >= 50 { messages.removeFirst() }
-                messages.append(ChatMessage(role: aiRole, text: String(reply.prefix(500))))
-                tts.speak(reply, language: outputLang)
+                let aiMsgIndex = messages.count
+                messages.append(ChatMessage(role: aiRole, text: ""))
+                let (onToken, flush) = tts.streamingTokenSink(language: outputLang)
+                
+                let reply = await session.askAI(text, lang: outputLang) { piece in
+                    // Update the message in place
+                    if messages.indices.contains(aiMsgIndex) {
+                        messages[aiMsgIndex].text += piece
+                    }
+                    onToken(piece)
+                } ?? "…"
+                flush()
+                
+                guard !Task.isCancelled else { return }
+                // Ensure capped at 500 characters
+                if messages.indices.contains(aiMsgIndex) {
+                    messages[aiMsgIndex].text = String(reply.prefix(500))
+                }
             }
         }
     }
