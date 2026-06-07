@@ -2,6 +2,9 @@ import SwiftUI
 import WebKit
 import AVFoundation
 import Speech
+#if canImport(DatadogWebViewTracking)
+import DatadogWebViewTracking
+#endif
 import StoreKit
 import WatchConnectivity
 
@@ -94,10 +97,14 @@ struct PrismWebView: UIViewRepresentable {
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.allowsBackForwardNavigationGestures = false
-        webView.scrollView.bounces = false
+        webView.scrollView.bounces                  = false
         webView.scrollView.contentInsetAdjustmentBehavior = .never
-        webView.navigationDelegate = context.coordinator
-        webView.uiDelegate = context.coordinator
+        webView.navigationDelegate  = context.coordinator
+        webView.uiDelegate          = context.coordinator
+
+        #if canImport(DatadogWebViewTracking)
+        WebViewTracking.enable(webView: webView)
+        #endif
         webView.backgroundColor = .systemBackground
 
         // Load the app

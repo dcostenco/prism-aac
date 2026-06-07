@@ -6,6 +6,10 @@ struct PrismAACApp: App {
     @StateObject private var appState = AppState()
 
     init() {
+        // Initialize Datadog SDK early
+        if !ProcessInfo.processInfo.arguments.contains("-UITEST_MODE") {
+            DatadogLogger.shared.initialize()
+        }
         WatchEmergencyBridge.shared.activateSession()
     }
 
