@@ -962,23 +962,8 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
   // ── LEVEL 5: Native phone call + speaker TTS ──
   // Works on any device with cellular. Speaker TTS means 911/caregiver hears the message.
   
-  // By default, try to call the caregiver FIRST (per autonomous routing request)
-  let calledCaregiver = false;
-  for (const contact of config.contacts) {
-    if (contact.phone) {
-      const safePhone = safePhoneForUri(contact.phone);
-      if (!safePhone) continue;
-      window.open(`tel:${safePhone}`, '_self');
-      alert.sent = true;
-      calledCaregiver = true;
-      break;
-    }
-  }
-
-  // If no caregiver was called (or autoCall911 is requested as fallback)
-  // In a real device, `window.open('_self')` replaces the current location.
-  // If autoCall911 is explicitly requested, and we didn't call a caregiver, call 911.
-  if (config.autoCall911 && !calledCaregiver) {
+  // When autoCall911 is enabled, 911 takes priority over caregiver
+  if (config.autoCall911) {
     const country = navigator.onLine
       ? await getLocationAndCountry()
       : { location: null, detectedCountry: null, detectedLanguage: null, emergencyNumber: EMERGENCY_NUMBERS[(config.profile.country?.toUpperCase() || 'US')] || '112' };
@@ -987,7 +972,20 @@ async function sendAlert(alert: QueuedAlert, config: EmergencyConfig): Promise<b
       || '112';
     window.open(`tel:${emergencyNum}`, '_self');
     alert.sent = true;
-  } else if (!alert.sent) {
+  } else {
+    // autoCall911 is off — call caregiver instead
+    for (const contact of config.contacts) {
+      if (contact.phone) {
+        const safePhone = safePhoneForUri(contact.phone);
+        if (!safePhone) continue;
+        window.open(`tel:${safePhone}`, '_self');
+        alert.sent = true;
+        break;
+      }
+    }
+  }
+
+  if (!alert.sent) {
     // SAFETY NET: If no tel: link was successfully opened (contacts empty,
     // all phones invalid), force a tel: link to the local emergency number.
     const emergencyNumber = EMERGENCY_NUMBERS[(config.profile?.country?.toUpperCase() || 'US')] || '112';
