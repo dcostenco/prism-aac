@@ -34,11 +34,18 @@ beforeEach(() => {
   _resetForTests();
   vi.clearAllMocks();
   // jsdom navigator.onLine defaults to true
+
+  // speakLocal wraps speechSynthesis.speak in a Promise that resolves on
+  // utterance.onend. The global setup mock never fires onend → timeout.
+  // Patch speak to trigger onend so Tier 2 fallback resolves.
+  (window.speechSynthesis.speak as ReturnType<typeof vi.fn>).mockImplementation((u: { onend?: (() => void) | null }) => {
+    if (u && typeof u.onend === 'function') u.onend();
+  });
 });
 
 describe('speak() → bus integration', () => {
   it('Tier 1 success: emits attempt(inworld) → success(inworld), no fallback', async () => {
-    speakAzureMock.mockResolvedValueOnce(true);
+    speakAzureMock.mockResolvedValueOnce({ success: true });
     const events = recordEvents();
 
     await speak('hello', 0.5, 1.0, 'en-US', 'friendly');
@@ -49,7 +56,7 @@ describe('speak() → bus integration', () => {
   });
 
   it('Tier 1 fail → Tier 2: emits attempt → fallback → web-speech attempt', async () => {
-    speakAzureMock.mockResolvedValueOnce(false);
+    speakAzureMock.mockResolvedValueOnce({ success: false });
     const events = recordEvents();
 
     await speak('test', 0.5, 1.0, 'en-US', 'friendly');
@@ -74,7 +81,7 @@ describe('speak() → bus integration', () => {
   });
 
   it('attempt event includes lang + first 80 chars of text', async () => {
-    speakAzureMock.mockResolvedValueOnce(true);
+    speakAzureMock.mockResolvedValueOnce({ success: true });
     const events = recordEvents();
     const longText = 'x'.repeat(200);
 
@@ -88,7 +95,7 @@ describe('speak() → bus integration', () => {
   });
 
   it('success event has non-negative latency and a numeric timestamp', async () => {
-    speakAzureMock.mockResolvedValueOnce(true);
+    speakAzureMock.mockResolvedValueOnce({ success: true });
     const events = recordEvents();
 
     await speak('hi', 0.5, 1.0, 'en-US', 'friendly');

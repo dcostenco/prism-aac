@@ -101,7 +101,7 @@ describe('speakAzure — two-tier endpoint strategy', () => {
     });
     const { speakAzure } = await import('@/services/azureTTS');
     const result = await speakAzure('hello', 'en-US', 'friendly', 0.5, 1.0, '', 'Alex');
-    expect(result).toBe(true);
+    expect(result.success).toBe(true);
     expect(publicCalled).toBe(true);
   });
 
@@ -109,7 +109,7 @@ describe('speakAzure — two-tier endpoint strategy', () => {
     mockFetch({ '/tts/public': () => audioOk(2048) });
     const { speakAzure } = await import('@/services/azureTTS');
     const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '', 'Alex');
-    expect(result).toBe(true);
+    expect(result.success).toBe(true);
     // BufferSourceNode.start was called exactly once on success
     expect(MockBufferSource.startCalls).toBe(1);
     expect(MockAudioContext.decodeCalls).toBe(1);
@@ -125,7 +125,7 @@ describe('speakAzure — two-tier endpoint strategy', () => {
     });
     const { speakAzure } = await import('@/services/azureTTS');
     const result = await speakAzure('Доброе утро', 'ru-RU', 'friendly', 0.5, 1.0, '', 'Anya');
-    expect(result).toBe(true);
+    expect(result.success).toBe(true);
     expect(authCalled).toBe(true);
   });
 
@@ -139,7 +139,7 @@ describe('speakAzure — two-tier endpoint strategy', () => {
     });
     const { speakAzure } = await import('@/services/azureTTS');
     const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '', 'Alex');
-    expect(result).toBe(false);
+    expect(result.success).toBe(false);
     expect(authCalled).toBe(false);
   });
 
@@ -150,7 +150,7 @@ describe('speakAzure — two-tier endpoint strategy', () => {
     });
     const { speakAzure } = await import('@/services/azureTTS');
     const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '', 'Alex');
-    expect(result).toBe(false);
+    expect(result.success).toBe(false);
     expect(MockBufferSource.startCalls).toBe(0);
   });
 
@@ -242,7 +242,7 @@ describe('speakAzure — Inworld-first tier order (Gemini is last-resort)', () =
     }));
     const { speakAzure } = await import('@/services/azureTTS');
     const result = await speakAzure('hello', 'en-US', 'friendly', 0.5, 1.0, '');
-    expect(result).toBe(true);
+    expect(result.success).toBe(true);
     // Inworld is the primary tier — Gemini must NOT be called when
     // Inworld succeeds. RO/UK speakers (where Gemini 503s) get audio
     // on the first round-trip instead of two wasted ones.
@@ -272,7 +272,7 @@ describe('speakAzure — Inworld-first tier order (Gemini is last-resort)', () =
     }));
     const { speakAzure } = await import('@/services/azureTTS');
     const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
-    expect(result).toBe(true);
+    expect(result.success).toBe(true);
     expect(callOrder).toEqual(['inworld', 'auth', 'gemini']);
   });
 
@@ -333,7 +333,7 @@ describe('speakAzure — Inworld-first tier order (Gemini is last-resort)', () =
     }));
     const { speakAzure } = await import('@/services/azureTTS');
     const result = await speakAzure('Eu vreau apă', 'ro-RO', 'friendly', 0.5, 1.0, 'token', 'ro-RO-AlinaNeural');
-    expect(result).toBe(true);
+    expect(result.success).toBe(true);
     expect(callOrder).toEqual(['inworld', 'auth']);
     expect(callOrder).not.toContain('gemini');
   });
@@ -376,7 +376,7 @@ describe('toneToInworldStyle — AAC tone → Inworld TTS-2 style', () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('offline'); }));
     const { speakAzure } = await import('@/services/azureTTS');
     const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '');
-    expect(result).toBe(false);
+    expect(result.success).toBe(false);
     expect(MockBufferSource.startCalls).toBe(0);
   });
 
@@ -388,7 +388,7 @@ describe('toneToInworldStyle — AAC tone → Inworld TTS-2 style', () => {
     });
     const { speakAzure } = await import('@/services/azureTTS');
     const result = await speakAzure('hi', 'en-US', 'friendly', 0.5, 1.0, '', 'Alex');
-    expect(result).toBe(false);
+    expect(result.success).toBe(false);
     // Restore for subsequent tests
     MockAudioContext.prototype.decodeAudioData = async function (buf: ArrayBuffer) {
       MockAudioContext.decodeCalls++;

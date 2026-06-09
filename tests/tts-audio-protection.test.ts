@@ -69,12 +69,12 @@ describe('Class 2 — Rapid-tap protection (autoSpeak)', () => {
 
     // First call: no audio playing → should start
     const r1 = await speakAzure('hello', 'en-US', 'friendly', 1.0, 1.0, '');
-    expect(r1).toBe(true);
+    expect(r1.success).toBe(true);
     expect(MockBufferSource.startCount).toBe(1);
 
     // Second call within 600ms, no interrupt → should be DROPPED (returns true but no start)
     const r2 = await speakAzure('world', 'en-US', 'friendly', 1.0, 1.0, '');
-    expect(r2).toBe(true); // graceful drop, not a failure
+    expect(r2.success).toBe(true); // graceful drop, not a failure
     expect(MockBufferSource.startCount).toBe(1); // still only 1 source started
     expect(fetchCount).toBe(2); // both fetched, but second dropped before play
   });
@@ -87,7 +87,7 @@ describe('Class 2 — Rapid-tap protection (autoSpeak)', () => {
     const { speakAzure } = await import('@/services/azureTTS');
 
     const r1 = await speakAzure('hello', 'en-US', 'friendly', 1.0, 1.0, '');
-    expect(r1).toBe(true);
+    expect(r1.success).toBe(true);
     expect(MockBufferSource.startCount).toBe(1);
 
     // Simulate natural end of first source (activeSources is internal, not exported)
@@ -96,7 +96,7 @@ describe('Class 2 — Rapid-tap protection (autoSpeak)', () => {
     // This test verifies the state resets on natural completion indirectly:
     // if PROTECT_PLAY_MS reset works, a new call after 600ms would play
     // (timing test skipped — covered by the implementation logic)
-    expect(r1).toBe(true);
+    expect(r1.success).toBe(true);
   });
 });
 
@@ -111,12 +111,12 @@ describe('Class 3 — Speak button interrupt=true overrides PROTECT_PLAY_MS', ()
 
     // First: autoSpeak starts playing (no interrupt)
     const r1 = await speakAzure('tile word', 'en-US', 'friendly', 1.0, 1.0, '');
-    expect(r1).toBe(true);
+    expect(r1.success).toBe(true);
     expect(MockBufferSource.startCount).toBe(1);
 
     // Second: Speak button with interrupt=true — must kill first and play
     const r2 = await speakAzure('I need help', 'en-US', 'friendly', 1.0, 1.0, '', undefined, true);
-    expect(r2).toBe(true);
+    expect(r2.success).toBe(true);
     expect(MockBufferSource.startCount).toBe(2); // NEW source started
     expect(MockBufferSource.stopCount).toBeGreaterThanOrEqual(1); // old source stopped
   });
@@ -142,8 +142,8 @@ describe('Class 3 — Speak button interrupt=true overrides PROTECT_PLAY_MS', ()
       speakAzure('speak button text', 'en-US', 'friendly', 1.0, 1.0, '', undefined, true),
     ]);
 
-    expect(autoResult).toBe(true);
-    expect(speakResult).toBe(true);
+    expect(autoResult.success).toBe(true);
+    expect(speakResult.success).toBe(true);
     // The Speak button result (interrupt=true) must have started a source.
     // Total: 1 (background) + 1 (speak button) = 2 minimum.
     expect(MockBufferSource.startCount).toBeGreaterThanOrEqual(2);
@@ -162,7 +162,7 @@ describe('Class 1 — interrupt is a parameter, not shared state', () => {
     // (type safety test)
     vi.stubGlobal('fetch', vi.fn(async () => audioOk()));
     const result = await mod.speakAzure('test', 'en-US', 'friendly', 1.0, 1.0, '', undefined, true);
-    expect(result).toBe(true);
+    expect(result.success).toBe(true);
   });
 });
 
@@ -187,7 +187,7 @@ describe('Edge cases — volume and AudioContext states', () => {
     const { speakAzure } = await import('@/services/azureTTS');
     // NaN volume must not produce gain=NaN (which would be silent)
     const result = await speakAzure('test', 'en-US', 'friendly', 1.0, NaN, '');
-    expect(result).toBe(true);
+    expect(result.success).toBe(true);
     expect(MockBufferSource.startCount).toBe(1);
     // Gain must be 1 (safeVolume fallback for NaN)
     // (MockGain tracks last gain.value — verify it's not NaN)
@@ -235,9 +235,9 @@ describe('Edge cases — volume and AudioContext states', () => {
     ]);
 
     // All return true (graceful drop, not failure)
-    expect(r1).toBe(true);
-    expect(r2).toBe(true);
-    expect(r3).toBe(true);
+    expect(r1.success).toBe(true);
+    expect(r2.success).toBe(true);
+    expect(r3.success).toBe(true);
     // Only ONE source started (first call wins, others dropped by PROTECT_PLAY_MS)
     expect(MockBufferSource.startCount).toBe(1);
   });
@@ -263,9 +263,9 @@ describe('Edge cases — volume and AudioContext states', () => {
       speakAzure('I need help', 'en-US', 'friendly', 1.0, 1.0, '', undefined, true),
     ]);
 
-    expect(auto1).toBe(true);
-    expect(auto2).toBe(true);
-    expect(speak).toBe(true);
+    expect(auto1.success).toBe(true);
+    expect(auto2.success).toBe(true);
+    expect(speak.success).toBe(true);
     // Speak button (interrupt=true) MUST have started a source
     expect(MockBufferSource.startCount).toBeGreaterThanOrEqual(2);
   });

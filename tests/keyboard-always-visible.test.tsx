@@ -56,10 +56,23 @@ vi.mock('@/components/MessageBar', () => ({ default: () => <div data-testid="pan
 vi.mock('@/components/PredictionBar', () => ({ default: () => <div data-testid="panel-prediction-bar" /> }));
 vi.mock('@/components/CategoryPanel', () => ({
   default: () => {
-    const { sidePanel } = useUIStore.getState();
+    const { sidePanel, categoryKeyboardOpen } = useUIStore.getState();
     const catPanels = ['categories', 'category-detail', 'ordering'];
+    const isCatOrHome = catPanels.includes(sidePanel) || sidePanel === 'none';
     const id = catPanels.includes(sidePanel) ? sidePanel : 'categories';
-    return <div data-testid={`panel-${id}`} />;
+    // Real CategoryPanel hosts the keyboard as a pull-up drawer when
+    // categoryKeyboardOpen is true AND the panel is in category/home mode.
+    // Mirror that in the mock so the test can assert keyboard visibility
+    // for toggle-controlled panels without double-rendering for other panels.
+    return (
+      <div data-testid={`panel-${id}`}>
+        {isCatOrHome && categoryKeyboardOpen && (
+          <div data-testid="keyboard-shell">
+            <div data-testid="aac-keyboard-mock">[keyboard]</div>
+          </div>
+        )}
+      </div>
+    );
   },
 }));
 vi.mock('@/components/CaregiverPanel', () => ({ default: () => <div data-testid="panel-caregiver" /> }));

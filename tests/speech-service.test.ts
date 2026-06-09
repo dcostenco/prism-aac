@@ -7,12 +7,19 @@ import { speak, speakWord, stopSpeech, isSpeechSupported } from '@/services/spee
 // flaky) or throws unhelpful network errors. Mocking it gives us a
 // deterministic short-circuit straight to Tier 2 (Web Speech).
 vi.mock('@/services/azureTTS', () => ({
-  speakAzure: vi.fn().mockResolvedValue(false),
+  speakAzure: vi.fn().mockResolvedValue({ success: false }),
   stopAzureAudio: vi.fn(),
 }));
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // speakLocal wraps speechSynthesis.speak in a Promise that resolves on
+  // utterance.onend. The global setup mock is a bare vi.fn() that never
+  // fires onend, causing timeouts. Patch speak to trigger onend so the
+  // promise resolves.
+  (window.speechSynthesis.speak as ReturnType<typeof vi.fn>).mockImplementation((u: { onend?: (() => void) | null }) => {
+    if (u && typeof u.onend === 'function') u.onend();
+  });
 });
 
 describe('SpeechService — Core', () => {

@@ -218,8 +218,8 @@ describe('decodeAndPlay — single-call audible playback contract', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
       new Response(new ArrayBuffer(64), { status: 200, headers: { 'content-length': '64' } }),
     );
-    const success = await mod.speakAzure('hello', 'en-US', 'friendly', 1, 1, '');
-    expect(success).toBe(true);
+    const result = await mod.speakAzure('hello', 'en-US', 'friendly', 1, 1, '');
+    expect(result.success).toBe(true);
     expect(createdSources.length).toBe(1);
     expect(createdSources[0]._started).toBe(true);
     expect(createdSources[0]._stopped).toBe(false);
@@ -249,11 +249,11 @@ describe('decodeAndPlay — suspended context attempts playback (no fail-fast re
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
       new Response(new ArrayBuffer(64), { status: 200, headers: { 'content-length': '64' } }),
     );
-    const ok = await mod.speakAzure('hi', 'en-US', 'friendly', 1, 1, '');
+    const result = await mod.speakAzure('hi', 'en-US', 'friendly', 1, 1, '');
     // Critical: with stuck-suspended ctx, return false so caller
     // falls through to Web Speech. The user-visible "[TTS] Portal
     // TTS succeeded" lie that produced silence on Safari is gone.
-    expect(ok).toBe(false);
+    expect(result.success).toBe(false);
     fetchSpy.mockRestore();
   });
 });

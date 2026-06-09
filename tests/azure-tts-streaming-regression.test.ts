@@ -86,9 +86,9 @@ describe('Romanian streaming — Inworld path must play (Gemini never reached)',
     vi.stubGlobal('fetch', fetchMock);
     const { speakAzure } = await import('@/services/azureTTS');
 
-    const ok = await speakAzure('Eu vreau apă', 'ro-RO', 'friendly', 0.5, 1.0, '', 'ro-RO-AlinaNeural');
+    const result = await speakAzure('Eu vreau apă', 'ro-RO', 'friendly', 0.5, 1.0, '', 'ro-RO-AlinaNeural');
 
-    expect(ok).toBe(true);
+    expect(result.success).toBe(true);
     expect(inworldHit).toBe(true);
     // Inworld-first reorder: for languages the server routes via Azure
     // (ro/uk/etc.) Gemini is NEVER called — saves a wasted 503 round-
@@ -133,8 +133,8 @@ describe('Concurrent Speak + silence-detect — both must reach playback', () =>
 
     // Both fetches must complete — the main streaming-fix assertion
     // (speakSeq revert: no AbortError killing peer fetch controllers).
-    expect(a).toBe(true);
-    expect(b).toBe(true);
+    expect(a.success).toBe(true);
+    expect(b.success).toBe(true);
     expect(inworldHits).toBe(2);
     // At least one source plays; PROTECT_PLAY_MS may (correctly) block
     // the second autoSpeak from interrupting still-young audio.
@@ -161,7 +161,7 @@ describe('Concurrent Speak + silence-detect — both must reach playback', () =>
     const r2 = await speakAzure('Tu', 'ro-RO', 'friendly', 0.5, 1.0, '', 'ro-RO-AlinaNeural', true);
     const r3 = await speakAzure('Noi', 'ro-RO', 'friendly', 0.5, 1.0, '', 'ro-RO-AlinaNeural', true);
 
-    expect([r1, r2, r3]).toEqual([true, true, true]);
+    expect([r1.success, r2.success, r3.success]).toEqual([true, true, true]);
     expect(calls).toBe(3);
     expect(MockBufferSource.startCalls).toBe(3);
   });
@@ -202,8 +202,8 @@ describe('Class 6 — Case-mismatch double-speak (silence-detect + handleSpeak r
     // component pre-mark is what blocks this in production.
     const r2 = await speakAzure('hello', 'en-US', 'friendly', 1.0, 1.0, '');
 
-    expect(r1).toBe(true);
-    expect(r2).toBe(true);
+    expect(r1.success).toBe(true);
+    expect(r2.success).toBe(true);
     expect(calls).toBe(2); // both fetches fire — DEDUP is exact-string by design
     // This documents that the fix MUST be at the component level (pre-mark
     // comparison case-insensitive), not at the speakAzure DEDUP level.
@@ -222,8 +222,8 @@ describe('Class 6 — Case-mismatch double-speak (silence-detect + handleSpeak r
     const r2 = speakAzure('Hello', 'en-US', 'friendly', 1.0, 1.0, '');
     await r2;
 
-    expect(r1).toBe(true);
-    expect(await r2).toBe(true); // returns true (claims success), suppresses fetch
+    expect(r1.success).toBe(true);
+    expect((await r2).success).toBe(true); // returns true (claims success), suppresses fetch
     expect(calls).toBe(1); // only ONE fetch — DEDUP fired
     expect(MockBufferSource.startCalls).toBe(1);
   });
