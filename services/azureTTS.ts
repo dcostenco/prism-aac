@@ -697,8 +697,9 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     const geminiController = new AbortController();
     activeControllers.add(geminiController);
     try {
-      if (await speakGemini(text, volume, geminiController, lang, interrupt)) {
-        return { success: true };
+      const geminiResult = await speakGemini(text, volume, geminiController, lang, interrupt);
+      if (geminiResult.success) {
+        return geminiResult;
       }
     } finally {
       activeControllers.delete(geminiController);

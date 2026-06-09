@@ -486,7 +486,7 @@ struct PrismWebView: UIViewRepresentable {
             let audioSession = AVAudioSession.sharedInstance()
             do {
                 try audioSession.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP])
-                try audioSession.setMode(.measurement)
+                try audioSession.setMode(.voiceChat)
                 try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
             } catch {
                 sendSpeechError("audio-session-failed")
