@@ -55,3 +55,12 @@ prism-deep-review.txt
 /test-correct*.ts
 ios-native/PrismAAC/Resources/*.gguf
 .env*.local
+
+# iOS build artifacts & signing (NEVER commit to public repo)
+*.ipa
+*.app.dSYM.zip
+*.mobileprovision
+*.cer
+*.p12
+*.certSigningRequest
+ios-native/_llama_cpp_local
