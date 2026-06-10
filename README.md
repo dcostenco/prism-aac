@@ -7,7 +7,7 @@ Augmentative & Alternative Communication app for children with motor impairments
 Part of the [Synalux platform](https://synalux.ai).
 
 **Try it now:**
-- **Web app (free):** [prism-aac.vercel.app](https://prism-aac.vercel.app) — works on any device with a browser
+- **Web app (free):** [synalux.ai/prism-aac](https://synalux.ai/prism-aac) — works on any device with a browser
 - **iOS (iPhone + iPad + Apple Watch):** [App Store](https://apps.apple.com/app/id6764692277)
 - **Pricing:** [synalux.ai/pricing](https://synalux.ai/pricing) — free tier available
 
@@ -15,7 +15,7 @@ Part of the [Synalux platform](https://synalux.ai).
 
 <p align="center">
   <a href="https://apps.apple.com/app/id6764692277"><img src="https://img.shields.io/badge/App_Store-Download-0D96F6?style=for-the-badge&logo=apple&logoColor=white" alt="App Store"></a>
-  <a href="https://prism-aac.vercel.app"><img src="https://img.shields.io/badge/Try_It-Free-43e97b?style=for-the-badge" alt="Try Free"></a>
+  <a href="https://synalux.ai/prism-aac"><img src="https://img.shields.io/badge/Try_It-Free-43e97b?style=for-the-badge" alt="Try Free"></a>
   <a href="https://synalux.ai/pricing"><img src="https://img.shields.io/badge/Plans-Free_+_Paid-764ba2?style=for-the-badge" alt="Pricing"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue?style=for-the-badge" alt="AGPL-3.0"></a>
   <a href="PRIVACY.md"><img src="https://img.shields.io/badge/Privacy-Policy-lightgrey?style=for-the-badge" alt="Privacy"></a>
