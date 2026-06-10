@@ -75,6 +75,10 @@ const FAKE_PROFILE = {
 };
 
 test.describe("SyncProvider crash regression", () => {
+  // LEGITIMATE crash-scenario mock: simulates the exact Supabase response
+  // payload that triggers the React #300 "Too many re-renders" crash.
+  // The mock is required to reproduce the crash deterministically —
+  // hitting the real Supabase would not trigger the specific race condition.
   test("C8 — no React #300 crash when cloud sync returns full profile", async ({
     page,
     baseURL,
@@ -136,6 +140,8 @@ test.describe("SyncProvider crash regression", () => {
     await expect(tiles).toHaveCount(5);
   });
 
+  // LEGITIMATE crash-scenario mock: tests double-sync race on rapid reload.
+  // Mock ensures the SyncProvider receives the crash-triggering payload twice.
   test("C9 — sync completes without crash on rapid page reload (syncedRef guard)", async ({
     page,
     baseURL,

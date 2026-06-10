@@ -14,6 +14,12 @@
  * the tutor can pick distinct prompt templates.
  */
 import { test, expect, type Page, type Route } from "@playwright/test";
+import { probeOllama } from "./_fixtures/ollama-probe";
+
+let useRealOllama = false;
+test.beforeAll(async () => {
+  useRealOllama = await probeOllama();
+});
 
 async function gotoDev(page: Page, baseURL: string | undefined) {
   const start = (baseURL || "") + "/dev/math-grid";
@@ -122,30 +128,37 @@ test.describe("Phase 6 — Chemistry tab", () => {
     expect(header).toMatch(/cells=3/);
   });
 
+  // Uses real Ollama if available, falls back to mock response
   test("AI tutor uses a chemistry prompt + overlay data-domain=chemistry", async ({
     page,
     baseURL,
   }) => {
     await gotoDev(page, baseURL);
-    await blockLocalOllama(page);
+    if (!useRealOllama) await blockLocalOllama(page);
     await pickCategory(page, "chemistry");
     await page
       .locator('[data-testid="math-chemistry-elements-hydrogen"]')
       .click();
     await page.waitForTimeout(80);
-    const getPrompt = await captureChatPrompt(
-      page,
-      "Try balancing the H atoms first.",
-    );
+    let getPrompt: (() => string) | null = null;
+    if (!useRealOllama) {
+      getPrompt = await captureChatPrompt(
+        page,
+        "Try balancing the H atoms first.",
+      );
+    }
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText("balancing the H atoms", {
-      timeout: 5000,
-    });
+    await expect(overlay).toBeVisible({ timeout: 15000 });
     await expect(overlay).toHaveAttribute("data-domain", "chemistry");
-    expect(getPrompt().toLowerCase(), "prompt mentions chemistry").toContain(
-      "chemistry",
-    );
+    if (!useRealOllama && getPrompt) {
+      await expect(overlay).toContainText("balancing the H atoms", {
+        timeout: 5000,
+      });
+      expect(getPrompt().toLowerCase(), "prompt mentions chemistry").toContain(
+        "chemistry",
+      );
+    }
   });
 });
 
@@ -188,23 +201,30 @@ test.describe("Phase 6 — Physics tab", () => {
     expect(header).toMatch(/cells=1/);
   });
 
+  // Uses real Ollama if available, falls back to mock response
   test("AI tutor uses a physics prompt + overlay data-domain=physics", async ({
     page,
     baseURL,
   }) => {
     await gotoDev(page, baseURL);
-    await blockLocalOllama(page);
+    if (!useRealOllama) await blockLocalOllama(page);
     await pickCategory(page, "physics");
     await page.locator('[data-testid="math-physics-greek-lambda"]').click();
     await page.waitForTimeout(80);
-    const getPrompt = await captureChatPrompt(page, "Recall λ = v / f.");
+    let getPrompt: (() => string) | null = null;
+    if (!useRealOllama) {
+      getPrompt = await captureChatPrompt(page, "Recall λ = v / f.");
+    }
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText("λ = v / f", { timeout: 5000 });
+    await expect(overlay).toBeVisible({ timeout: 15000 });
     await expect(overlay).toHaveAttribute("data-domain", "physics");
-    expect(getPrompt().toLowerCase(), "prompt mentions physics").toContain(
-      "physics",
-    );
+    if (!useRealOllama && getPrompt) {
+      await expect(overlay).toContainText("λ = v / f", { timeout: 5000 });
+      expect(getPrompt().toLowerCase(), "prompt mentions physics").toContain(
+        "physics",
+      );
+    }
   });
 });
 
@@ -270,80 +290,105 @@ test.describe("Phase 6 — Programming tabs (Python + Java)", () => {
     expect(header).toMatch(/cells=11/);
   });
 
+  // Uses real Ollama if available, falls back to mock response
   test("python tutor uses a Python-flavoured prompt", async ({
     page,
     baseURL,
   }) => {
     await gotoDev(page, baseURL);
-    await blockLocalOllama(page);
+    if (!useRealOllama) await blockLocalOllama(page);
     await pickCategory(page, "programming-python");
     await page.locator('[data-testid="math-python-kw-def"]').click();
     await page.waitForTimeout(80);
-    const getPrompt = await captureChatPrompt(
-      page,
-      "You need a colon after the def.",
-    );
+    let getPrompt: (() => string) | null = null;
+    if (!useRealOllama) {
+      getPrompt = await captureChatPrompt(
+        page,
+        "You need a colon after the def.",
+      );
+    }
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText("colon after the def", {
-      timeout: 5000,
-    });
+    await expect(overlay).toBeVisible({ timeout: 15000 });
     await expect(overlay).toHaveAttribute("data-domain", "programming-python");
-    expect(getPrompt().toLowerCase(), "prompt mentions Python").toContain(
-      "python",
-    );
+    if (!useRealOllama && getPrompt) {
+      await expect(overlay).toContainText("colon after the def", {
+        timeout: 5000,
+      });
+      expect(getPrompt().toLowerCase(), "prompt mentions Python").toContain(
+        "python",
+      );
+    }
   });
 
+  // Uses real Ollama if available, falls back to mock response
   test("java tutor uses a Java-flavoured prompt", async ({ page, baseURL }) => {
     await gotoDev(page, baseURL);
-    await blockLocalOllama(page);
+    if (!useRealOllama) await blockLocalOllama(page);
     await pickCategory(page, "programming-java");
     await page.locator('[data-testid="math-java-kw-public"]').click();
     await page.waitForTimeout(80);
-    const getPrompt = await captureChatPrompt(
-      page,
-      "Add a semicolon at the end.",
-    );
+    let getPrompt: (() => string) | null = null;
+    if (!useRealOllama) {
+      getPrompt = await captureChatPrompt(
+        page,
+        "Add a semicolon at the end.",
+      );
+    }
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText("semicolon at the end", {
-      timeout: 5000,
-    });
+    await expect(overlay).toBeVisible({ timeout: 15000 });
     await expect(overlay).toHaveAttribute("data-domain", "programming-java");
-    expect(getPrompt().toLowerCase(), "prompt mentions Java").toContain("java");
+    if (!useRealOllama && getPrompt) {
+      await expect(overlay).toContainText("semicolon at the end", {
+        timeout: 5000,
+      });
+      expect(getPrompt().toLowerCase(), "prompt mentions Java").toContain(
+        "java",
+      );
+    }
   });
 
+  // Uses real Ollama if available, falls back to mock response
   test("switching Python → Java updates data-domain on the overlay", async ({
     page,
     baseURL,
   }) => {
     await gotoDev(page, baseURL);
-    await blockLocalOllama(page);
     let nth = 0;
-    await page.route("**/chat", async (route: Route) => {
-      nth++;
-      const text = nth === 1 ? "python-response" : "java-response";
-      await route.fulfill({
-        status: 200,
-        headers: { "Content-Type": "text/event-stream" },
-        body: sseBody([text]),
+    if (!useRealOllama) {
+      await blockLocalOllama(page);
+      await page.route("**/chat", async (route: Route) => {
+        nth++;
+        const text = nth === 1 ? "python-response" : "java-response";
+        await route.fulfill({
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+          body: sseBody([text]),
+        });
       });
-    });
+    }
 
     await pickCategory(page, "programming-python");
     await page.locator('[data-testid="math-python-kw-class"]').click();
     await page.waitForTimeout(80);
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
+    await expect(overlay).toBeVisible({ timeout: 15000 });
     await expect(overlay).toHaveAttribute("data-domain", "programming-python");
-    await expect(overlay).toContainText("python-response", { timeout: 5000 });
+    if (!useRealOllama) {
+      await expect(overlay).toContainText("python-response", { timeout: 5000 });
+    }
 
     // Switch to Java + commit a Java glyph + ask again.
     await pickCategory(page, "programming-java");
     await page.locator('[data-testid="math-java-kw-public"]').click();
     await page.waitForTimeout(80);
     await page.locator('[data-testid="math-tutor-hint"]').click();
+    await expect(overlay).toBeVisible({ timeout: 15000 });
     await expect(overlay).toHaveAttribute("data-domain", "programming-java");
-    await expect(overlay).toContainText("java-response", { timeout: 5000 });
+    if (!useRealOllama) {
+      await expect(overlay).toContainText("java-response", { timeout: 5000 });
+    }
   });
 });

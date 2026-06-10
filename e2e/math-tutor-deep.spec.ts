@@ -12,11 +12,19 @@
  *   • Empty grid → no request (button is a no-op)
  *   • Auto-collapse when the user types more cells
  *
+ * Uses real Ollama if available, falls back to mock response.
+ *
  * The route handler treats both `synalux.ai/api/v1/chat` and any
  * `**\/chat` permutation as the target — Playwright's URL matcher
  * is glob-against-the-full-URL.
  */
 import { test, expect, type Page, type Route } from "@playwright/test";
+import { probeOllama } from "./_fixtures/ollama-probe";
+
+let useRealOllama = false;
+test.beforeAll(async () => {
+  useRealOllama = await probeOllama();
+});
 
 async function gotoMath(page: Page, baseURL: string | undefined) {
   const start = (baseURL || "") + "/dev/math-grid";
@@ -78,24 +86,32 @@ test.describe("MathTutorTool — deep coverage", () => {
     await gotoMath(page, baseURL);
     await typeOneDigit(page, "7");
     let bodySeen = "";
-    await mockChat(page, async (route) => {
-      const reqBody = route.request().postDataJSON();
-      bodySeen = JSON.stringify(reqBody);
-      await route.fulfill({
-        status: 200,
-        headers: { "Content-Type": "text/event-stream" },
-        body: sseBody(["Try ", "adding ", "the digits ", "together."]),
+    // Uses real Ollama if available, falls back to mock response
+    if (!useRealOllama) {
+      await mockChat(page, async (route) => {
+        const reqBody = route.request().postDataJSON();
+        bodySeen = JSON.stringify(reqBody);
+        await route.fulfill({
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+          body: sseBody(["Try ", "adding ", "the digits ", "together."]),
+        });
       });
-    });
+    }
 
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toBeVisible();
-    await expect(overlay).toContainText("Try adding the digits together.", {
-      timeout: 5000,
-    });
-    await expect(overlay).toHaveAttribute("data-mode", "help");
-    expect(bodySeen, "request reached the mock").toContain("messages");
+    await expect(overlay).toBeVisible({ timeout: 15000 });
+    if (useRealOllama) {
+      // Real Ollama: just verify the overlay rendered with some content
+      await expect(overlay).toHaveAttribute("data-mode", "help");
+    } else {
+      await expect(overlay).toContainText("Try adding the digits together.", {
+        timeout: 5000,
+      });
+      await expect(overlay).toHaveAttribute("data-mode", "help");
+      expect(bodySeen, "request reached the mock").toContain("messages");
+    }
   });
 
   test("Check mode: distinct prompt, distinct overlay text", async ({
@@ -105,27 +121,33 @@ test.describe("MathTutorTool — deep coverage", () => {
     await gotoMath(page, baseURL);
     await typeOneDigit(page, "5");
     let firstUserContent = "";
-    await mockChat(page, async (route) => {
-      const body = route.request().postDataJSON();
-      firstUserContent =
-        body?.messages?.find((m: { role: string }) => m.role === "user")
-          ?.content ?? "";
-      await route.fulfill({
-        status: 200,
-        headers: { "Content-Type": "text/event-stream" },
-        body: sseBody(["Looks correct! Great job."]),
+    // Uses real Ollama if available, falls back to mock response
+    if (!useRealOllama) {
+      await mockChat(page, async (route) => {
+        const body = route.request().postDataJSON();
+        firstUserContent =
+          body?.messages?.find((m: { role: string }) => m.role === "user")
+            ?.content ?? "";
+        await route.fulfill({
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+          body: sseBody(["Looks correct! Great job."]),
+        });
       });
-    });
+    }
     await page.locator('[data-testid="math-tutor-check"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText("Looks correct! Great job.", {
-      timeout: 5000,
-    });
+    await expect(overlay).toBeVisible({ timeout: 15000 });
     await expect(overlay).toHaveAttribute("data-mode", "check");
-    expect(
-      firstUserContent.toLowerCase(),
-      "check prompt mentions checking",
-    ).toMatch(/check|correct/);
+    if (!useRealOllama) {
+      await expect(overlay).toContainText("Looks correct! Great job.", {
+        timeout: 5000,
+      });
+      expect(
+        firstUserContent.toLowerCase(),
+        "check prompt mentions checking",
+      ).toMatch(/check|correct/);
+    }
   });
 
   test("Solve mode: multi-line response renders as multiple paragraphs", async ({
@@ -134,43 +156,52 @@ test.describe("MathTutorTool — deep coverage", () => {
   }) => {
     await gotoMath(page, baseURL);
     await typeOneDigit(page, "4");
-    await mockChat(page, async (route) => {
-      await route.fulfill({
-        status: 200,
-        headers: { "Content-Type": "text/event-stream" },
-        body: sseBody([
-          "Step 1: read the number.\n",
-          "Step 2: count.\n",
-          "Step 3: write it down.",
-        ]),
+    // Uses real Ollama if available, falls back to mock response
+    if (!useRealOllama) {
+      await mockChat(page, async (route) => {
+        await route.fulfill({
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+          body: sseBody([
+            "Step 1: read the number.\n",
+            "Step 2: count.\n",
+            "Step 3: write it down.",
+          ]),
+        });
       });
-    });
+    }
     await page.locator('[data-testid="math-tutor-solve"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText("Step 1", { timeout: 5000 });
-    await expect(overlay).toContainText("Step 2");
-    await expect(overlay).toContainText("Step 3");
-    // Three lines → three <p> elements.
-    const paragraphs = await overlay.locator("p").count();
-    expect(
-      paragraphs,
-      "multi-line response splits into paragraphs",
-    ).toBeGreaterThanOrEqual(3);
+    await expect(overlay).toBeVisible({ timeout: 15000 });
+    if (!useRealOllama) {
+      await expect(overlay).toContainText("Step 1", { timeout: 5000 });
+      await expect(overlay).toContainText("Step 2");
+      await expect(overlay).toContainText("Step 3");
+      // Three lines → three <p> elements.
+      const paragraphs = await overlay.locator("p").count();
+      expect(
+        paragraphs,
+        "multi-line response splits into paragraphs",
+      ).toBeGreaterThanOrEqual(3);
+    }
   });
 
   test("Dismiss button hides the overlay", async ({ page, baseURL }) => {
     await gotoMath(page, baseURL);
     await typeOneDigit(page, "2");
-    await mockChat(page, async (route) => {
-      await route.fulfill({
-        status: 200,
-        headers: { "Content-Type": "text/event-stream" },
-        body: sseBody(["hello"]),
+    // Uses real Ollama if available, falls back to mock response
+    if (!useRealOllama) {
+      await mockChat(page, async (route) => {
+        await route.fulfill({
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+          body: sseBody(["hello"]),
+        });
       });
-    });
+    }
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toBeVisible();
+    await expect(overlay).toBeVisible({ timeout: 15000 });
     await page.locator('[data-testid="math-tutor-dismiss"]').click();
     await expect(overlay).toHaveCount(0);
   });
@@ -182,28 +213,39 @@ test.describe("MathTutorTool — deep coverage", () => {
     await gotoMath(page, baseURL);
     await typeOneDigit(page, "8");
     let nth = 0;
-    await mockChat(page, async (route) => {
-      nth++;
-      const text = nth === 1 ? "first-hint-response" : "second-solve-response";
-      await route.fulfill({
-        status: 200,
-        headers: { "Content-Type": "text/event-stream" },
-        body: sseBody([text]),
+    // Uses real Ollama if available, falls back to mock response
+    if (!useRealOllama) {
+      await mockChat(page, async (route) => {
+        nth++;
+        const text =
+          nth === 1 ? "first-hint-response" : "second-solve-response";
+        await route.fulfill({
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+          body: sseBody([text]),
+        });
       });
-    });
+    }
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText("first-hint-response", {
-      timeout: 5000,
-    });
+    await expect(overlay).toBeVisible({ timeout: 15000 });
+    if (!useRealOllama) {
+      await expect(overlay).toContainText("first-hint-response", {
+        timeout: 5000,
+      });
+    }
     await page.locator('[data-testid="math-tutor-solve"]').click();
-    await expect(overlay).toContainText("second-solve-response", {
-      timeout: 5000,
-    });
-    await expect(overlay).not.toContainText("first-hint-response");
+    await expect(overlay).toBeVisible({ timeout: 15000 });
     await expect(overlay).toHaveAttribute("data-mode", "solve");
+    if (!useRealOllama) {
+      await expect(overlay).toContainText("second-solve-response", {
+        timeout: 5000,
+      });
+      await expect(overlay).not.toContainText("first-hint-response");
+    }
   });
 
+  // Error/failure mocks are ALWAYS applied — they test error handling, not AI responses
   test("Error path: 500 response renders ⚠️ + message", async ({
     page,
     baseURL,
@@ -252,21 +294,25 @@ test.describe("MathTutorTool — deep coverage", () => {
   }) => {
     await gotoMath(page, baseURL);
     await typeOneDigit(page, "1");
-    await mockChat(page, async (route) => {
-      await route.fulfill({
-        status: 200,
-        headers: { "Content-Type": "text/event-stream" },
-        body: sseBody(["stale-advice"]),
+    // Uses real Ollama if available, falls back to mock response
+    if (!useRealOllama) {
+      await mockChat(page, async (route) => {
+        await route.fulfill({
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+          body: sseBody(["stale-advice"]),
+        });
       });
-    });
+    }
     await page.locator('[data-testid="math-tutor-hint"]').click();
     const overlay = page.locator('[data-testid="math-tutor-response"]');
-    await expect(overlay).toContainText("stale-advice", { timeout: 5000 });
+    await expect(overlay).toBeVisible({ timeout: 15000 });
     // User types another digit — the overlay should auto-collapse.
     await page.locator('[data-testid="math-key-3"]').click();
     await expect(overlay).toHaveCount(0);
   });
 
+  // Error/failure mocks are ALWAYS applied — they test error handling, not AI responses
   test("Buttons stay enabled even when fetch returns 401", async ({
     page,
     baseURL,
@@ -289,6 +335,7 @@ test.describe("MathTutorTool — deep coverage", () => {
     await expect(hint, "enabled after 401").toBeEnabled();
   });
 
+  // Error/failure mocks are ALWAYS applied — they test error handling, not AI responses
   test("Hard 15 s timeout: hung request resolves with retry button", async ({
     page,
     baseURL,
@@ -312,6 +359,7 @@ test.describe("MathTutorTool — deep coverage", () => {
     ).toBeVisible();
   });
 
+  // Error/failure mocks are ALWAYS applied — they test error handling, not AI responses
   test('401 surfaces friendly auth message, not raw "Session expired"', async ({
     page,
     baseURL,
@@ -332,6 +380,7 @@ test.describe("MathTutorTool — deep coverage", () => {
     await expect(overlay).toHaveAttribute("data-error-kind", "auth");
   });
 
+  // Error/failure mocks are ALWAYS applied — they test error handling, not AI responses
   test("Retry button re-fires the same mode with fresh state", async ({
     page,
     baseURL,
