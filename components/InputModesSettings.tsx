@@ -52,7 +52,7 @@ export default function InputModesSettings() {
   const { t } = useT();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-scan-group="input-modes-settings">
       {/* Camera Finger/Body Tracking (opt-in — settings store default false) */}
       <div data-testid="camera-input-settings">
         <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Camera Input</h4>

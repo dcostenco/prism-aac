@@ -329,6 +329,35 @@ export default function MathGrid({ scrollLocked = false, skin = 'paper', classNa
   // ── Render decorations (fraction bars, root bars, etc.) ──────────
   const decorationNodes: React.ReactNode[] = decorations.map((d, i) => renderDecoration(d, i, viewport, palette.decoration));
 
+  // Accessible overlay: invisible buttons per visible cell for switch scanning.
+  // The switch scanner discovers these via INTERACTIVE_SELECTOR; clicking
+  // one calls setCursor to focus that cell — same as a tap on the SVG.
+  const scanOverlay = useMemo(() => {
+    const buttons: React.ReactNode[] = [];
+    cells.forEach((cell, key) => {
+      const { r, c } = parseCellKey(key);
+      if (r < rMin || r > rMax || c < cMin || c > cMax) return;
+      const p = cellToScreen(viewport, r, c);
+      buttons.push(
+        <button
+          key={`scan-${key}`}
+          data-dwell-target={key}
+          data-scan-group="math-grid"
+          aria-label={`Cell ${r},${c}: ${cell.glyph}`}
+          onClick={() => { tapFeedback(); setCursor(r, c); }}
+          style={{
+            position: 'absolute',
+            left: p.x, top: p.y,
+            width: p.size, height: p.size,
+            background: 'transparent', border: 'none',
+            padding: 0, cursor: 'pointer',
+          }}
+        />,
+      );
+    });
+    return buttons;
+  }, [cells, rMin, rMax, cMin, cMax, viewport, setCursor]);
+
   return (
     <div ref={containerRef} className={`relative w-full h-full overflow-hidden ${className}`} data-testid="math-grid">
       <svg
@@ -348,6 +377,9 @@ export default function MathGrid({ scrollLocked = false, skin = 'paper', classNa
         <g data-testid="math-grid-glyphs">{glyphNodes}</g>
         <g data-testid="math-grid-decorations">{decorationNodes}</g>
       </svg>
+      <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <div style={{ pointerEvents: 'auto' }}>{scanOverlay}</div>
+      </div>
     </div>
   );
 }
