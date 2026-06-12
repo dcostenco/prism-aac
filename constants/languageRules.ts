@@ -277,6 +277,18 @@ export const LANGUAGE_RULES: Record<SupportedLanguage, LanguageRule> = {
       'Derivation via prefixes (me-, di-, ber-) and suffixes (-kan, -an, -i). ' +
       'Most structurally similar to English among supported languages.',
   },
+  bg: {
+    code: 'bg', name: 'Bulgarian', nativeName: 'Български',
+    wordOrder: 'SVO', rtl: false, hasGender: true, cases: 0,
+    infinitiveParticle: 'да', verbFinal: false, articlePosition: 'after',
+    lowercaseMidSentence: false, sentenceFinalPolite: '',
+    scriptFamily: 'Cyrillic',
+    notes: 'SVO. No case system (unique among Slavic languages). ' +
+      'Definite article is a suffix (-ът/-та/-то/-те) appended to the first NP constituent. ' +
+      'Three grammatical genders (m/f/n). Clitic doubling common (на мен ми). ' +
+      'No infinitive — uses да + present tense (да ядем = to eat). ' +
+      'Renarrative mood for reported speech.',
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

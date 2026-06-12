@@ -135,7 +135,7 @@ export default function LanguagePicker({ selected, onSelect, onClose, anchor = '
               }}
             >
               <span aria-hidden className="text-2xl sm:text-3xl leading-none">{l.flag}</span>
-              <span className="text-[11px] sm:text-sm font-bold leading-tight text-center whitespace-nowrap">
+              <span className="text-[11px] sm:text-sm font-bold leading-tight text-center">
                 {l.nativeName}
               </span>
               <span className={`text-[9px] sm:text-[10px] font-bold uppercase ${isSelected ? 'opacity-90' : 'opacity-60'}`}>

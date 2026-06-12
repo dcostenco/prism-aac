@@ -42,7 +42,8 @@ export type SupportedLanguage =
   | 'vi'        // Vietnamese — Hoài Mỹ / Nam Minh (Azure)
   | 'tl'        // Filipino/Tagalog — Blessica / Angelo (Azure, fil-PH)
   | 'tr'        // Turkish — Emel / Ahmet (Azure)
-  | 'id';       // Bahasa Indonesia — Gadis / Ardi (Azure)
+  | 'id'        // Bahasa Indonesia — Gadis / Ardi (Azure)
+  | 'bg';       // Bulgarian — Borislav / Kalina (Azure)
 
 const loaded: Partial<Record<SupportedLanguage, Record<string, string>>> = { en };
 
@@ -71,6 +72,7 @@ const loaders: Record<SupportedLanguage, () => Promise<{ default: Record<string,
   tl: () => import('@/i18n/tl.json'),
   tr: () => import('@/i18n/tr.json'),
   id: () => import('@/i18n/id.json'),
+  bg: () => import('@/i18n/bg.json'),
 };
 
 export async function loadLanguage(lang: SupportedLanguage): Promise<void> {
@@ -115,7 +117,8 @@ const LANG_META: Array<{ code: SupportedLanguage; name: string; nativeName: stri
   { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', rtl: false, ttsCode: 'vi-VN', flag: '🇻🇳' },
   { code: 'tl', name: 'Filipino', nativeName: 'Filipino', rtl: false, ttsCode: 'fil-PH', flag: '🇵🇭' },
   { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', rtl: false, ttsCode: 'tr-TR', flag: '🇹🇷' },
-  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', rtl: false, ttsCode: 'id-ID', flag: '🇮🇩' },
+  { code: 'id', name: 'Indonesian', nativeName: 'B. Indonesia', rtl: false, ttsCode: 'id-ID', flag: '🇮🇩' },
+  { code: 'bg', name: 'Bulgarian', nativeName: 'Български', rtl: false, ttsCode: 'bg-BG', flag: '🇧🇬' },
 ];
 
 /** Public helper — gets the flag for a language code, '' if unknown. */
