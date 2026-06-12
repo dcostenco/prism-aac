@@ -320,7 +320,7 @@ export default function Toolbar() {
   const appIds = installedApps.map((a) => `app:${a}`);
   const allButtons = [...visibleIds, ...appIds];
 
-  const btnClass = 'aac-btn w-[clamp(2.25rem,7vw,3.25rem)] h-[clamp(2.25rem,7svh,3.25rem)] rounded-full text-[clamp(1rem,3.5vw,1.5rem)] select-none border border-theme shrink-0 flex items-center justify-center';
+  const btnClass = 'aac-btn w-[clamp(2.75rem,7vw,3.25rem)] h-[clamp(2.75rem,7svh,3.25rem)] rounded-full text-[clamp(1rem,3.5vw,1.5rem)] select-none border border-theme shrink-0 flex items-center justify-center';
   const tap = (fn: () => void, buttonId?: string) => () => { tapFeedback(); if (buttonId) ddAction('toolbar.button_click', { button: buttonId }); fn(); };
 
   function renderButton(id: string): React.ReactNode {

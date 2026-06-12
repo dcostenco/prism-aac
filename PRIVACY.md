@@ -8,7 +8,7 @@ Prism AAC is designed for children with communication disabilities. Privacy and 
 
 - **No ads, no tracking, no analytics** in the free tier
 - **No data leaves the device** unless the user explicitly enables cloud features (AI chat, contact sync, messaging)
-- **PHI (Protected Health Information)** is never logged, never stored in plaintext outside the device, and never transmitted without encryption
+- **PHI (Protected Health Information)** is never logged and never transmitted without encryption. Local data (notes, vocabulary, settings) is stored in the browser's localStorage and relies on device-level encryption (FileVault on macOS, Data Protection on iOS). The caregiver PIN is hashed with SHA-256 and a per-device salt — the PIN itself is never stored
 - **Children's data** is handled in compliance with COPPA (US), GDPR Article 8 (EU), and PIPEDA (Canada)
 
 ## What data we collect
@@ -31,6 +31,13 @@ When you create a Synalux account and enable cloud features:
 - Emergency dispatch messages are sent via HTTPS with SPKI certificate pinning
 - Auth tokens stored in device Keychain (not iCloud Keychain)
 - No Watch data syncs to iCloud
+
+### Local storage (browser / PWA)
+- Caregiver notes, vocabulary, settings, and schedule data are stored in the browser's `localStorage`
+- This data relies on the operating system's disk encryption (iOS Data Protection, macOS FileVault, Android full-disk encryption) — the app does not add a second encryption layer
+- On shared or unencrypted devices, local data is accessible to anyone with physical access
+- The caregiver PIN prevents UI access but does not encrypt the underlying storage
+- To remove all local data: clear browser data or delete the PWA
 
 ## What we never do
 

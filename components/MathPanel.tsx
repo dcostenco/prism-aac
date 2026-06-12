@@ -9,10 +9,6 @@
  *   • engine/decorations (fraction box, long-division, root, summation,
  *     Phase 2B) and engine/predictiveCursor (column alignment, Phase 1C)
  *
- * The legacy single-string MathPanel is preserved at MathPanelLegacy.tsx
- * during this transition. To roll back the AAC shell to legacy, swap
- * the import in PrismApp.tsx.
- *
  * AAC integration:
  *   • Done button serializes the cell grid into a "row 0 row 1 ..."
  *     string and appends it to the shared MessageBar via appendText.
