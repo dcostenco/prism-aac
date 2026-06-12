@@ -980,22 +980,25 @@ The toolbar is fully reorderable. Default 0.9.0 ships with a minimal set (mic, A
 
 ## Plans
 
-| | Free | Paid |
-|---|---|---|
-| Picture tiles + 22 categories | ✅ | ✅ |
-| Type-to-speak | ✅ | ✅ |
-| Default voice (Inworld) | ✅ | ✅ |
-| 19-subject school keyboard + AI tutor | ✅ basic | ✅ + premium models |
-| Schedule | ✅ | ✅ + reward shop |
-| Games | 3 (Bubble Pop, Color Hunt, My Story) | All 12 |
-| Voice picker | — | ✅ all Inworld voices |
-| Voice cloning (your own voice) | — | ✅ |
-| Caregiver notes sync | — | ✅ |
-| Word prediction (per-user learning) | — | ✅ |
-| Locale + region history | ✅ | ✅ |
-| Hands-free gesture input | ✅ | ✅ |
+Four tiers: **Free**, **Standard**, **Advanced**, **Enterprise**. 14-day free trial on all paid plans.
 
-[See Synalux pricing →](https://synalux.ai/pricing)
+| | Free | Standard | Advanced | Enterprise |
+|---|---|---|---|---|
+| Picture tiles + 22 categories | ✅ | ✅ | ✅ | ✅ |
+| Type-to-speak | ✅ | ✅ | ✅ | ✅ |
+| Default voice (Inworld) | ✅ | ✅ | ✅ | ✅ |
+| School keyboard + AI tutor | ✅ basic | ✅ + premium models | ✅ + premium models | ✅ + premium models |
+| Schedule | ✅ | ✅ + reward shop | ✅ + reward shop | ✅ + reward shop |
+| Games | 3 | All 12 | All 12 | All 12 |
+| Voice picker | — | ✅ | ✅ | ✅ |
+| Voice cloning | — | ✅ | ✅ | ✅ |
+| Caregiver notes sync | — | ✅ | ✅ | ✅ |
+| Word prediction | — | ✅ | ✅ | ✅ |
+| Grounding verifier | — | — | ✅ | ✅ |
+| HIPAA BAA | — | — | — | ✅ |
+| SSO/SAML | — | — | — | ✅ |
+
+[See current pricing and annual discounts →](https://synalux.ai/pricing)
 
 ---
 
