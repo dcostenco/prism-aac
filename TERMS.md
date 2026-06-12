@@ -15,9 +15,9 @@ Prism AAC is an Augmentative and Alternative Communication application designed 
 | Tier | Cost | Features |
 |------|------|----------|
 | Free | $0 | Core AAC (phrase board, keyboard, TTS), on-device 1.7B LLM, 3 games |
-| Standard | $19/mo | Cloud AI (14B), 2,000 requests/day, messaging, contact sync, marketplace |
-| Advanced | $49/mo | QwQ-32B reasoning, voice cloning, clinical reports, priority support |
-| Enterprise | $99/mo | Unlimited cloud, Claude Opus 4 routing, HIPAA BAA, SSO, dedicated SLA |
+| Standard | $9/mo | Cloud AI (14B), 2,000 requests/day, messaging, contact sync, marketplace |
+| Advanced | $19/mo | QwQ-32B reasoning, voice cloning, clinical reports, priority support |
+| Enterprise | $49/mo | Unlimited cloud, Claude Opus 4 routing, HIPAA BAA, SSO, dedicated SLA |
 
 ## 4. Medical disclaimer
 
