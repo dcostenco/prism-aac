@@ -65,7 +65,7 @@ const EMERGENCY_NUMBERS: Record<string, string> = {
   CN: '120', TW: '119',
   RU: '112', UA: '112',
   BR: '192', PT: '112',
-  DE: '112', FR: '112', ES: '112', IT: '112', RO: '112',
+  DE: '112', FR: '112', ES: '112', IT: '112', RO: '112', BG: '112',
   SA: '911', AE: '999', EG: '123',
 };
 
@@ -644,7 +644,7 @@ async function detectCountryFromGPS(lat: number, lng: number): Promise<{ country
       DE: 'de', AT: 'de',
       RU: 'ru', BY: 'ru',
       UA: 'uk',
-      RO: 'ro', MD: 'ro',
+      RO: 'ro', MD: 'ro', BG: 'bg',
       JP: 'ja',
       KR: 'ko',
       CN: 'zh-Hans',  // Mainland — Simplified, Mandarin
