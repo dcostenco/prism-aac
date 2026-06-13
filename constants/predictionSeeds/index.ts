@@ -17,6 +17,7 @@ export const SUPPORTED_SEED_LANGS = [
     "zh-HK", "zh-Hans", "zh-Hant",
     "hi", "it", "pl", "he", "nl",
     "vi", "tl", "tr", "id",
+    "bg",
 ] as const;
 export type SeedLang = (typeof SUPPORTED_SEED_LANGS)[number];
 
@@ -74,6 +75,7 @@ async function loadByLang(lang: string): Promise<PredictionSeed> {
     case "tl": return (await import("./tl")).default;
     case "tr": return (await import("./tr")).default;
     case "id": return (await import("./id")).default;
+    case "bg": return (await import("./bg")).default;
     default: return { wordFreq: {}, bigrams: {}, trigrams: {} };
   }
 }

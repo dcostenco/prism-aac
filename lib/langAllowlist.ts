@@ -57,6 +57,7 @@ const LANG_ACCEPT_REGEX: Record<string, RegExp> = {
 const SCRIPT_FILTER: Record<string, RegExp> = {
   ru: /^[а-яё'\-]+$/i,
   uk: /^[а-яєіїґ'\-]+$/i,
+  bg: /^[а-яъь'\-]+$/i,
   ar: /^[؀-ۿݐ-ݿ'\-]+$/,
   ja: /^[぀-ゟ゠-ヿ一-鿿]+$/,
   ko: /^[가-힯ᄀ-ᇿ㄰-㆏]+$/,

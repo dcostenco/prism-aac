@@ -62,6 +62,7 @@ const KNOWN_QUALITY_VOICES: Record<string, string[]> = {
   ro: ['Ioana', 'Andrei', 'Emil'],
   uk: ['Lesya', 'Polina'],
   ar: ['Maged', 'Tarik', 'Laila', 'Naayf', 'Hoda'],
+  bg: ['Daria'],
 };
 
 export function getBestOfflineVoice(lang: string): { voice: SpeechSynthesisVoice | null; quality: VoiceQuality } {
