@@ -281,7 +281,7 @@ export const LANGUAGE_RULES: Record<SupportedLanguage, LanguageRule> = {
     code: 'bg', name: 'Bulgarian', nativeName: 'Български',
     wordOrder: 'SVO', rtl: false, hasGender: true, cases: 0,
     infinitiveParticle: 'да', verbFinal: false, articlePosition: 'after',
-    lowercaseMidSentence: false, sentenceFinalPolite: '',
+    lowercaseMidSentence: true, sentenceFinalPolite: '',
     scriptFamily: 'Cyrillic',
     notes: 'SVO. No case system (unique among Slavic languages). ' +
       'Definite article is a suffix (-ът/-та/-то/-те) appended to the first NP constituent. ' +

@@ -1073,6 +1073,7 @@ function speakEmergencyOnSpeaker(script: string, language: string = 'en'): void 
       'zh-Hans': 'zh-CN',    // Simplified / Mainland Mandarin
       'zh-Hant': 'zh-TW',    // Traditional / Taiwanese Mandarin
       'zh-HK': 'zh-HK',      // Hong Kong Cantonese
+      bg: 'bg-BG',
       ar: 'ar-SA',
     };
     u.lang = LANG_MAP[language] || 'en-US';

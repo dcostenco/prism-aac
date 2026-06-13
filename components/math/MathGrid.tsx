@@ -378,7 +378,7 @@ export default function MathGrid({ scrollLocked = false, skin = 'paper', classNa
         <g data-testid="math-grid-decorations">{decorationNodes}</g>
       </svg>
       <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        <div style={{ pointerEvents: 'auto' }}>{scanOverlay}</div>
+        {scanOverlay}
       </div>
     </div>
   );

@@ -56,8 +56,8 @@ const LANG_ACCEPT_REGEX: Record<string, RegExp> = {
  *  script word is unambiguously in that language. */
 const SCRIPT_FILTER: Record<string, RegExp> = {
   ru: /^[а-яё'\-]+$/i,
-  uk: /^[а-яєіїґ'\-]+$/i,
-  bg: /^[а-яъь'\-]+$/i,
+  uk: /^[а-щьюяєіїґ'\-]+$/i,
+  bg: /^[а-щъьюя'\-]+$/i,
   ar: /^[؀-ۿݐ-ݿ'\-]+$/,
   ja: /^[぀-ゟ゠-ヿ一-鿿]+$/,
   ko: /^[가-힯ᄀ-ᇿ㄰-㆏]+$/,
