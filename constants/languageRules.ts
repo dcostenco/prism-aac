@@ -311,7 +311,7 @@ const PDI = '⁩'; // Pop Directional Isolate
  *
  * We exempt the FIRST token since it may legitimately be sentence-initial cap.
  */
-const LOWERCASE_MID = new Set<SupportedLanguage>(['ru', 'uk', 'pl']);
+const LOWERCASE_MID = new Set<SupportedLanguage>(['ru', 'uk', 'pl', 'bg']);
 
 /**
  * SOV languages where a simple heuristic can improve word order.

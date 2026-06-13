@@ -69,6 +69,8 @@ const ESPEAK_VOICE_MAP: Record<string, string> = {
   ko: 'ko',
   zh: 'cmn',
   ar: 'ar',
+  'bg-BG': 'bg',
+  bg: 'bg',
 };
 
 function toEspeakVoice(lang: string): string {

@@ -25,7 +25,7 @@ const LANG_NAMES: Record<string, string> = {
   sv: 'Swedish', no: 'Norwegian', da: 'Danish', fi: 'Finnish',
   cs: 'Czech', el: 'Greek', hu: 'Hungarian', he: 'Hebrew',
   hi: 'Hindi', vi: 'Vietnamese', th: 'Thai', id: 'Indonesian',
-  tl: 'Tagalog',
+  tl: 'Tagalog', bg: 'Bulgarian',
 };
 
 const MAX_CACHE = 500;
@@ -187,7 +187,7 @@ const SCRIPT_FOR_LANG: Record<string, RegExp> = {
   hu: /\p{Script=Latin}/u, vi: /\p{Script=Latin}/u, id: /\p{Script=Latin}/u,
   tl: /\p{Script=Latin}/u,
   // Cyrillic
-  ru: /\p{Script=Cyrillic}/u, uk: /\p{Script=Cyrillic}/u,
+  ru: /\p{Script=Cyrillic}/u, uk: /\p{Script=Cyrillic}/u, bg: /\p{Script=Cyrillic}/u,
   // CJK
   ja: /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u,
   ko: /\p{Script=Hangul}/u,

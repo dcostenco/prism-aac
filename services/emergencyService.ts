@@ -159,6 +159,7 @@ interface QueuedAlert {
 //                    A bully/abuser cannot cancel without the PIN.
 //   'medical'      — Can be cancelled with PIN. Medical emergencies.
 const EMERGENCY_PHRASES: Record<string, 'critical' | 'urgent' | 'medical'> = {
+  // English
   'someone hurt me': 'critical',
   'i am not safe': 'critical',
   'i don\'t know you': 'critical',
@@ -178,6 +179,51 @@ const EMERGENCY_PHRASES: Record<string, 'critical' | 'urgent' | 'medical'> = {
   'i feel sick': 'medical',
   'i feel dizzy': 'medical',
   'i need my medicine': 'medical',
+  // Bulgarian
+  'някой ме нарани': 'critical',
+  'не съм в безопасност': 'critical',
+  'не ме докосвай': 'critical',
+  'казах не': 'critical',
+  'обадете се на 112': 'critical',
+  'не мога да дишам': 'critical',
+  'загубих се': 'critical',
+  'помогни ми': 'urgent',
+  'имам нужда от помощ': 'urgent',
+  'страх ме е': 'urgent',
+  'обади се на мама': 'urgent',
+  'обади се на татко': 'urgent',
+  'искам да си ходя': 'urgent',
+  'паднах': 'medical',
+  'боли ме': 'medical',
+  'лошо ми е': 'medical',
+  'замаяно ми е': 'medical',
+  'трябва ми лекарство': 'medical',
+  // Russian
+  'кто-то меня обидел': 'critical',
+  'мне небезопасно': 'critical',
+  'не трогай меня': 'critical',
+  'позвони 112': 'critical',
+  'не могу дышать': 'critical',
+  'я потерялся': 'critical',
+  'помогите': 'urgent',
+  'мне нужна помощь': 'urgent',
+  'мне страшно': 'urgent',
+  'позвони маме': 'urgent',
+  'хочу домой': 'urgent',
+  'я упал': 'medical',
+  'мне больно': 'medical',
+  'мне плохо': 'medical',
+  // Romanian
+  'cineva m-a rănit': 'critical',
+  'nu sunt în siguranță': 'critical',
+  'nu mă atinge': 'critical',
+  'sunați la 112': 'critical',
+  'nu pot respira': 'critical',
+  'ajutor': 'urgent',
+  'am nevoie de ajutor': 'urgent',
+  'mi-e frică': 'urgent',
+  'mă doare': 'medical',
+  'mi-e rău': 'medical',
 };
 
 const ALERT_QUEUE_KEY = 'prism-aac-emergency-queue';

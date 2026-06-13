@@ -136,7 +136,7 @@ const swKillswitchScript = `
 `;
 
 // Supported language codes — must stay in sync with SupportedLanguage in engine/i18n.ts.
-const SUPPORTED_LANGS = ['en','es','fr','pt','ro','uk','ru','de','ja','ko','zh','ar','hi','it','pl','he','nl','vi','tl','tr','id'];
+const SUPPORTED_LANGS = ['en','es','fr','pt','ro','uk','ru','de','ja','ko','zh','ar','hi','it','pl','he','nl','vi','tl','tr','id','bg'];
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Read the per-request nonce injected by middleware.ts so inline scripts
