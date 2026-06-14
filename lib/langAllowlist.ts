@@ -145,45 +145,32 @@ export function isAllowedInLang(word: string, lang: string): boolean {
   const w = word.toLowerCase().trim();
   if (!w) return true;
 
-  // Non-Latin: pure-script check is sufficient.
+  // n-gram path: split on `|` and check each component.
+  if (w.includes('|')) {
+    return w.split('|').every((part) => part === '' || isAllowedInLang(part, lang));
+  }
+
+  // Multi-word phrase path — MUST come before the script filter because
+  // script filter regexes don't allow spaces, so "Хочу ещё" (ru) or
+  // "お水ください" with a space would be rejected as a single token.
+  // Split first, then each word individually passes the script filter.
+  if (/\s/.test(w)) {
+    const parts = w.split(/\s+/).filter((p) => p !== '');
+    if (parts.length === 0) return true;
+    const significant = parts.filter((p) => p.length > 2);
+    if (significant.length === 0) {
+      return parts.every((p) => isAllowedInLang(p, lang));
+    }
+    return significant.every((p) => isAllowedInLang(p, lang));
+  }
+
+  // Non-Latin single words: pure-script check is sufficient.
   const strict = SCRIPT_FILTER[lang];
   if (strict) return strict.test(w);
 
   // Latin-script: diacritic = unambiguous accept for this lang.
   const accept = LANG_ACCEPT_REGEX[lang];
   if (accept && accept.test(word)) return true;
-
-  // n-gram path: split on `|` and check each component.
-  if (w.includes('|')) {
-    return w.split('|').every((part) => part === '' || isAllowedInLang(part, lang));
-  }
-
-  // Multi-word phrase path. AAC core defaults include lemma forms like
-  // "Mai Mult", "A vrea", "A ajuta" (RO) — single tokens with internal
-  // spaces. Without this branch, every default phrase looked up as one
-  // word against the corpus → langFreq=0 → dropped. Result: PredictionBar
-  // showed only the single-word defaults ("Eu", "Tu") and silently
-  // dropped the rest (May 2026 user report: "only 2 tiles in RO").
-  //
-  // Rule: a phrase is allowed iff every NON-TRIVIAL component word is
-  // allowed. "Trivial" = 1-2 chars (e.g. RO "a" = infinitive marker,
-  // EN "a" = article — these tokens are too short for the cross-corpus
-  // frequency check to be meaningful; English's article-frequency for
-  // "a" dominates every Romanian phrase that uses it). The longer
-  // distinguishing words ("vrea", "ajuta", "Mult", etc.) carry the
-  // language signal — if they pass, the phrase is fine. A pure-trivial
-  // phrase ("a a") falls back to per-token resolution and stays
-  // conservative.
-  if (/\s/.test(w)) {
-    const parts = w.split(/\s+/).filter((p) => p !== '');
-    if (parts.length === 0) return true;
-    const significant = parts.filter((p) => p.length > 2);
-    if (significant.length === 0) {
-      // No long tokens to anchor on → fall back to strict every-part rule.
-      return parts.every((p) => isAllowedInLang(p, lang));
-    }
-    return significant.every((p) => isAllowedInLang(p, lang));
-  }
 
   const langCorpus = getCachedPredictionSeed(lang);
   const langFreq = langCorpus?.wordFreq[w]?.count ?? 0;

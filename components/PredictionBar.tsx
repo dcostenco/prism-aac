@@ -251,7 +251,17 @@ export default function PredictionBar() {
   }, []);
 
   useEffect(() => {
-    if (!text.trim()) return;
+    if (!text.trim()) {
+      if (aiCompletion) {
+        const merged = mergeAiCompletion(langDefaults, aiCompletion);
+        prevRef.current = merged;
+        setDisplayed(merged);
+      } else {
+        prevRef.current = langDefaults;
+        setDisplayed(langDefaults);
+      }
+      return;
+    }
     const merged = mergeAiCompletion(predictions, aiCompletion);
     const next = computeStableSlots(prevRef.current, merged);
 
@@ -355,7 +365,7 @@ export default function PredictionBar() {
     <div data-testid="prediction-bar" className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 relative" style={{ height: 'clamp(48px, 10svh, 110px)' }}>
       {activeScene && (
         <span
-          className="absolute -top-5 right-2 text-xs opacity-70 pointer-events-none"
+          className="absolute -top-6 right-2 text-sm opacity-90 pointer-events-none"
           aria-live="polite"
           data-testid="vision-scene-badge"
         >
