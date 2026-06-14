@@ -182,8 +182,11 @@ interface SettingsState {
   caregiverPinHash?: string;
   /** Announce sender name aloud via TTS when message arrives. Default false for privacy. */
   announceSenderName: boolean;
+  /** Enable camera-based object detection for context-aware phrase suggestions.
+   *  Default OFF — caregiver must explicitly opt in. Uses ~5 MB extra RAM. */
+  visionContextEnabled: boolean;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd' | 'caregiverPinHash' | 'announceSenderName'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd' | 'caregiverPinHash' | 'announceSenderName' | 'visionContextEnabled'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -250,6 +253,7 @@ export const useSettingsStore = create<SettingsState>()(
       voicePreferences: {},
       caregiverPinHash: undefined,
       announceSenderName: false,
+      visionContextEnabled: false,
       update: (partial) => set((s) => {
         // Persist language changes to a cookie so the SSR layout.tsx can
         // read the correct lang attribute on the first server render, before

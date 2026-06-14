@@ -62,6 +62,9 @@ export const FACE_DETECTOR_URL =
 export const HAND_LANDMARKER_URL =
   `${MEDIAPIPE_BASE}/hand_landmarker.task`;
 
+export const OBJECT_DETECTOR_URL =
+  `${MEDIAPIPE_BASE}/efficientdet_lite0_int8.tflite`;
+
 /**
  * FPS watchdog — exponentially-weighted moving average of frame
  * intervals. Used to detect when the model is starving on a thermal-
