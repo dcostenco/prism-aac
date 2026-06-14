@@ -1111,11 +1111,12 @@ Read more: [`ACCESSIBILITY.md`](ACCESSIBILITY.md), [`SECURITY.md`](SECURITY.md).
 
 **On-device AI accuracy** — how reliably the app picks the right action for your child:
 
-| Device | Model | Size | Accuracy |
-|---|---|---|---|
-| All iPhones | 4B Q3_K_M | 2.3 GB | **99.1%** (114/115 × 3 runs) |
-| iPhone Pro / iPad | 4B Q4_K_M | 3.4 GB | **100%** (115/115 × 3 runs) |
-| iPad Pro / Mac | 14B | 8.4 GB | **100%** (115/115 × 3 runs) |
+| Device | Model | Size | Accuracy | Eval |
+|---|---|---|---|---|
+| **Apple Watch** | SmolLM2-360M | 207 MB | **100%** (300/300) | AAC clinical (symbol expand, emergency, prediction) |
+| **All iPhones** | Qwen3.5-4B Q3_K_M | 2.3 GB | **99.1%** (114/115 × 3 runs) | BFCL tool routing |
+| **iPhone Pro / iPad** | Qwen3.5-4B Q4_K_M | 3.4 GB | **100%** (115/115 × 3 runs) | BFCL tool routing |
+| **iPad Pro / Mac** | Prism-Coder 14B | 8.4 GB | **100%** (115/115 × 3 runs) | BFCL tool routing |
 
 <details>
 <summary><strong>What does "99.1% routing accuracy" mean in practice?</strong></summary>
