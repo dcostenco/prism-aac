@@ -78,6 +78,7 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 | 🏪 **Marketplace** | Voice packs, vocab packs, game packs | <img src="docs/screenshots/panel-marketplace.png" width="120"> |
 | 🎧 **Comfort Player** | Bedside media player for hospital patients | <img src="docs/screenshots/panel-comfort-player.png" width="120"> |
 | 🛏 **Bedside Mode** | Full-screen AI chat for phone-in-stand / lying-down use | <img src="e2e/_screenshots/bedside-overlay-open.png" width="120"> |
+| 👁 **Vision Context** | Camera detects objects → suggests relevant phrases | <img src="docs/screenshots/vision-mealtime.png" width="120"> |
 | 👋 **Hands-free** | Head + hand gesture recognition | <img src="docs/screenshots/panel-settings-input-modes.png" width="120"> |
 | ⚙️ **Settings** | 23 languages, motor accommodations, plan tier | <img src="docs/screenshots/panel-settings.png" width="120"> |
 
@@ -91,6 +92,7 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 
 | | PrismAAC | TouchChat | Proloquo2Go | LAMP Words | TD Snap | CoughDrop | Snap Core First | Grid 3 | Tobii Dynavox |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Camera → phrase suggestion** (sees objects, suggests words) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **On-device + HIPAA-safe** speech path | ✅ | ❌ | ❌ | ❌ | partial | partial | ❌ | ❌ | partial |
 | **Per-user phrase ranking** (adapts to each child) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Caregiver corrections **become training data automatically** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -923,6 +925,78 @@ Optional camera-based input for users who can't reliably tap. Head-pose dwell-cl
 - Per-user calibration persists; the body tracker auto-recovers on session resume.
 
 **Detailed docs:** [`docs/TRACKING_MATH.md`](docs/TRACKING_MATH.md) (calibration math, percentile learner, ego-motion, One Euro filter, ~30 tunables), [`docs/GESTURE_RECOGNITION.md`](docs/GESTURE_RECOGNITION.md), [`docs/TRACKING_RELIABILITY.md`](docs/TRACKING_RELIABILITY.md).
+</details>
+
+---
+
+### 👁 Vision Context — camera-powered phrase suggestions
+
+Point the camera at everyday objects and the prediction bar instantly surfaces relevant phrases. A cup and fork on the table → "I want more", "Water please", "All done". A bed → "I'm tired", "Good night". A book → "Help please", "I don't understand". **No AAC competitor offers this.**
+
+| Scene | Objects detected | Suggested phrases |
+|---|---|---|
+| 🍽️ Mealtime | cup, fork, spoon, bowl, bottle | "I want more", "Water please", "All done", "Yummy", "Too hot" |
+| 😴 Bedtime | bed, teddy bear | "I'm tired", "Good night", "Read a story", "Hug please" |
+| 📚 Schoolwork | book, laptop, keyboard | "Help please", "I don't understand", "Done", "More time" |
+| 🎮 Playtime | teddy bear, sports ball | "I want to play", "My turn", "Fun!", "Again!" |
+| 🛁 Bathtime | toilet, sink | "I need to go", "Wash hands", "Help me" |
+| 📺 Watching TV | TV, remote, couch | "I want to watch", "Turn it off", "Too loud" |
+
+Phrases are available in 12+ languages (English, Spanish, French, Portuguese, Romanian, Ukrainian, Russian, German, Japanese, Korean, Chinese, Arabic, and more). The language follows the app's language setting — switch to Russian and the camera suggests "Хочу ещё" instead of "I want more".
+
+![Vision Context — mealtime scene detected](docs/screenshots/vision-mealtime.png)
+
+<details>
+<summary><strong>How it works (technical)</strong></summary>
+
+**Pipeline:** Camera (shared via refcounted `cameraStream.ts`) → MediaPipe ObjectDetector (EfficientDet-Lite0, 4 MB int8, WASM) → Scene Inference (deterministic rules, 11 scene types) → Prediction Bar Injection (`setAiCompletion` + `learnWord` n-gram boost).
+
+**Performance:**
+- Runs at **2 FPS** (one detection every 500 ms) — objects don't move fast, saves battery
+- CPU duty cycle: **< 6%** on mobile
+- Model size: **4 MB** (int8 quantized EfficientDet-Lite0, loaded into existing MediaPipe WASM runtime)
+- Total additional RAM: **~5 MB** (model + buffers + phrase vocabulary)
+- Thermal watchdog: auto-degrades to 1 FPS → pauses 30s on thermal throttle
+
+**Privacy:**
+- 100% on-device — camera frames **never leave the device**, no cloud inference
+- Detection results are **ephemeral** — not persisted to localStorage or cloud
+- `person` class is detected but **never surfaced** to the user or used for suggestions
+- No camera preview shown during object detection
+
+**Safety:**
+- Feature defaults **OFF** — caregiver must explicitly enable in Settings → Input Modes → Vision Context
+- Vision phrases are **never auto-spoken** — child must actively tap/dwell to speak
+- Emergency phrases are architecturally separate and **never displaced** by vision suggestions
+- Scene must be stable for **3 consecutive frames** (~1.5s) before activation — prevents flicker
+
+**Object detection model:** [EfficientDet-Lite0](https://ai.google.dev/edge/mediapipe/solutions/vision/object_detector) — 80 COCO classes, self-hosted on Vercel CDN alongside existing MediaPipe face/pose models. Same WASM runtime as head tracking.
+
+**Scene inference:** Deterministic rule engine (no additional ML model). Rules map object combinations to scenes with time-of-day weighting: `cup + fork + spoon` at noon = `mealtime` (confidence 0.90). 11 scene types, each with configurable object sets and time boosts.
+
+**Prediction injection:** Two existing hooks in `predictionStore`:
+1. `setAiCompletion(phrase)` — places the top phrase as the leftmost prediction tile
+2. `learnWord(word, prev)` — boosts scene-relevant vocabulary via synthetic n-grams with 10× user multiplier
+
+Vision boost decays after 30 seconds when objects leave the frame. Active typing suppresses vision suggestions (user intent takes priority).
+
+**Key files:**
+- `services/objectDetectionService.ts` — camera acquisition, MediaPipe loop, thermal watchdog
+- `services/sceneInference.ts` — rule engine, 11 scene types, time-of-day boost
+- `services/visionPredictionBridge.ts` — scene → prediction bar injection
+- `constants/visionPhrases.ts` — curated phrases × 12+ languages per scene
+- `constants/objectVocabulary.ts` — 30 COCO object labels → localized word arrays
+- `store/visionStore.ts` — ephemeral Zustand store (not persisted)
+- `hooks/useVisionContext.ts` — React hook wiring detection ↔ bridge ↔ settings
+
+**Tests:** 62 unit tests covering scene inference rules, object vocabulary completeness, phrase language coverage, store lifecycle, and full pipeline integration (objects → scene → phrases → store).
+
+**Verified E2E in Safari:**
+```
+SCENE=mealtime   CONF=0.90 PHRASES=I want more|Water please|All done     BADGE=🍽️
+SCENE=bedtime    CONF=0.70 PHRASES=I'm tired|Good night|Read a story     BADGE=😴
+SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=📚
+```
 </details>
 
 ---
