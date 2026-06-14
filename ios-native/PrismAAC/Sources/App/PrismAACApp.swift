@@ -21,26 +21,26 @@ struct PrismAACApp: App {
     /// Model candidates in priority order for each device tier.
     /// The loader tries each in order — if a model OOMs or isn't cached,
     /// it falls through to the next. This lets 8 GB devices attempt the
-    /// 4B (100% routing) and gracefully fall back to 1.7B (100% routing) if it
-    /// doesn't fit. Accuracy: eval_300, 300/300 × 3 runs, May 2026.
+    /// 4B Q4_K_M (100% routing) and fall back to 4B Q3_K_M (99.1% routing).
+    /// Accuracy: BFCL 115 cases × 3 seeds, June 2026.
     private static let modelCandidates: [(file: String, cdn: String, minFreeMB: Int, sha256: String)] = {
         switch LLMEngine.preferredTier {
         case .large14B:
             return [
                 ("qwen3-14b-v42-q4km",       "dcostenco/prism-coder-14b/resolve/main/qwen3-14b-v42-q4km.gguf",          10_000, "fec7551b2932b155b2f79e1c18238cff0e074e9bab2ce5ad3dc9f895389f48b3"),
-                ("prism-coder-1b7-swe43-q4km","dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-swe43-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
+                ("Qwen3.5-4B-Q3_K_M",        "dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q3_K_M.gguf",            2_400,  "d6981ab4d77ba712b48ef69d69042d75b5e39b9dce5fb5a5b054fd08e06afb95"),
             ]
         case .medium4B:
             return [
-                // 4B replaces retired 8B — 100% eval_300, fits in 8 GB RAM
-                ("qwen3-4b-v43-swe-q4km",    "dcostenco/prism-coder-4b/resolve/main/qwen3-4b-v43-swe-q4km.gguf",        2_800,  "a8d0909bbc9d23b6f9cc3f85be597e27eae190a9edae4571d9cb32fde0a0910c"),
-                ("prism-coder-1b7-swe43-q4km","dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-swe43-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
+                // 4B Q4_K_M — 100% BFCL, fits in 8 GB RAM
+                ("Qwen3.5-4B-Q4_K_M",        "dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q4_K_M.gguf",            2_800,  "81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490"),
+                // 4B Q3_K_M — 99.1% BFCL, fits in 6 GB RAM (iPhone first gate)
+                ("Qwen3.5-4B-Q3_K_M",        "dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q3_K_M.gguf",            2_400,  "d6981ab4d77ba712b48ef69d69042d75b5e39b9dce5fb5a5b054fd08e06afb95"),
             ]
         case .small1B7:
             return [
-                // Bundled Q8 (already on device — zero download, loads first)
-                ("prism-aac-1b7-q8",          "",                                                                          1_800,  "fb01043af7d3484d778732ceadb97dd31b14b3232145eb8f8b6a0648487c1e87"),
-                ("prism-coder-1b7-swe43-q4km","dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-swe43-q4km.gguf", 1_200,  "1d09e386b0538f93b43d98dfef6e62d205bfec54e76f528e412451aabc7e33c7"),
+                // 4B Q3_K_M — 99.1% BFCL at 2.3 GB, replaces old 1.7B SFT (90.4%)
+                ("Qwen3.5-4B-Q3_K_M",        "dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q3_K_M.gguf",            2_400,  "d6981ab4d77ba712b48ef69d69042d75b5e39b9dce5fb5a5b054fd08e06afb95"),
             ]
         }
     }()

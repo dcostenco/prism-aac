@@ -802,23 +802,23 @@ struct ModelLoadingView: View {
         .task { await start() }
     }
 
-    // 1.7B swe43 — 100% eval_300, 300/300 × 3 runs, May 2026
-    private static let modelCandidateURLs1B7: [URL] = [
-        URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-swe43-q4km.gguf")!,
-        // v42 fallback for CDN blips
-        URL(string: "https://huggingface.co/dcostenco/prism-coder-1.7b/resolve/main/prism-coder-1b7-v42-q4km.gguf")!,
+    // 4B Q3_K_M — 99.1% BFCL, 114/115 × 3 seeds, June 2026 — iPhone first gate
+    private static let modelCandidateURLsSmall: [URL] = [
+        URL(string: "https://huggingface.co/dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q3_K_M.gguf")!,
     ]
 
-    // 4B v43 — 100% eval_300, 300/300 × 5 runs, May 2026 — for 8 GB+ devices
+    // 4B Q4_K_M — 100% BFCL, 115/115 × 3 seeds, June 2026 — for 8 GB+ devices
     private static let modelCandidateURLs4B: [URL] = [
-        URL(string: "https://huggingface.co/dcostenco/prism-coder-4b/resolve/main/prism-coder-4b-v43-Q4_K_M.gguf")!,
+        URL(string: "https://huggingface.co/dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q4_K_M.gguf")!,
     ]
 
-    private static let localModelFilename1B7 = "prism-coder-1b7-swe43-q4km.gguf"
-    private static let localModelFilename4B  = "prism-coder-4b-v43-Q4_K_M.gguf"
+    private static let localModelFilenameSmall = "Qwen3.5-4B-Q3_K_M.gguf"
+    private static let localModelFilename4B    = "Qwen3.5-4B-Q4_K_M.gguf"
     // Legacy filenames from previous app versions — migrated on first run.
     private static let legacyFilenames = [
-        "prism-coder-4b-swe17-q4km.gguf",   // old 4B local name (never matched HF filename)
+        "prism-coder-4b-swe17-q4km.gguf",
+        "prism-coder-4b-v43-Q4_K_M.gguf",
+        "prism-coder-1b7-swe43-q4km.gguf",
         "prism-coder-1b7-v42-q4km.gguf",
         "prism-aac-1b7-q4km.gguf",
     ]
@@ -835,7 +835,7 @@ struct ModelLoadingView: View {
 
         let (localFilename, candidateURLs): (String, [URL]) = tier == .medium4B
             ? (Self.localModelFilename4B, Self.modelCandidateURLs4B)
-            : (Self.localModelFilename1B7, Self.modelCandidateURLs1B7)
+            : (Self.localModelFilenameSmall, Self.modelCandidateURLsSmall)
 
         let destination = modelsDir.appendingPathComponent(localFilename)
 
@@ -855,11 +855,11 @@ struct ModelLoadingView: View {
             await app.loadModel(from: destination); return
         }
 
-        // For 4B tier: also try loading cached 1.7B to avoid re-download on existing installs.
+        // For 4B tier: also try loading cached Q3_K_M to avoid re-download on existing installs.
         if tier == .medium4B {
-            let fallback1B7 = modelsDir.appendingPathComponent(Self.localModelFilename1B7)
-            if FileManager.default.fileExists(atPath: fallback1B7.path) {
-                await app.loadModel(from: fallback1B7); return
+            let fallbackSmall = modelsDir.appendingPathComponent(Self.localModelFilenameSmall)
+            if FileManager.default.fileExists(atPath: fallbackSmall.path) {
+                await app.loadModel(from: fallbackSmall); return
             }
         }
 
@@ -876,12 +876,12 @@ struct ModelLoadingView: View {
                 do {
                     try await app.loadModelSafe(from: destination)
                 } catch LLMError.insufficientMemory {
-                    // 4B OOM — fall back to 1.7B download
+                    // 4B Q4_K_M OOM — fall back to Q3_K_M download
                     if tier == .medium4B {
                         try? FileManager.default.removeItem(at: destination)
                         await downloadAndLoad(
-                            urls: Self.modelCandidateURLs1B7,
-                            destination: modelsDir.appendingPathComponent(Self.localModelFilename1B7),
+                            urls: Self.modelCandidateURLsSmall,
+                            destination: modelsDir.appendingPathComponent(Self.localModelFilenameSmall),
                             modelsDir: modelsDir)
                     } else {
                         phase = .lowMemory

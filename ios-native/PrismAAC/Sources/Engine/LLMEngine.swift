@@ -6,20 +6,19 @@ private let llamaAvailable = true
 private let llamaAvailable = false
 #endif
 
-/// On-device inference engine — Qwen3 via llama.cpp Metal backend.
+/// On-device inference engine — Qwen3.5 via llama.cpp Metal backend.
 ///
 /// Model selection by total device RAM (see preferredTier):
-///   ≥16 GB (iPad Pro M1/M2/M4): prism-coder 14B v36 Q4_K_M — 100% BFCL routing
-///   8–15 GB (iPhone 15/16 Pro, iPad Air M1+): prism-coder 4B swe17 Q4_K_M — 100% eval_300, 300/300
-///   <8 GB  (iPhone 12–14, older iPads): prism-coder 1.7B swe43 Q4_K_M — 100% eval_300, 300/300
+///   ≥16 GB (iPad Pro M1/M2/M4): prism-coder 14B Q4_K_M — 100% BFCL
+///   8–15 GB (iPhone 15/16 Pro, iPad Air M1+): Qwen3.5-4B Q4_K_M — 100% BFCL
+///   <8 GB  (iPhone 12–15, older iPads): Qwen3.5-4B Q3_K_M — 99.1% BFCL
 ///
-/// Accuracy: eval_300 benchmark, 300 cases × 3 shuffled runs, temperature=0, May 2026.
-/// Run scripts/update-model-registry.sh to sync when models are retrained.
+/// Accuracy: BFCL benchmark, 115 cases × 3 shuffled seeds, temperature=0, June 2026.
 ///
-/// Memory contract (Q4_K_M):
-///   1.7B:  ~1050 MB weights + ~200 MB KV + ~100 MB overhead = ~1350 MB
-///   4B:    ~2300 MB weights + ~300 MB KV + ~100 MB overhead = ~2700 MB
-///   14B:   ~8400 MB weights + ~600 MB KV + ~200 MB overhead = ~9200 MB
+/// Memory contract:
+///   4B Q3_K_M: ~2100 MB weights + ~200 MB KV + ~100 MB overhead = ~2400 MB
+///   4B Q4_K_M: ~2800 MB weights + ~300 MB KV + ~100 MB overhead = ~3200 MB
+///   14B:       ~8400 MB weights + ~600 MB KV + ~200 MB overhead = ~9200 MB
 @MainActor
 final class LLMEngine: ObservableObject {
 
@@ -42,14 +41,14 @@ final class LLMEngine: ObservableObject {
         return Int(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024))
     }()
 
-    /// Model tier selection (accuracy from eval_300, 300 cases × 3 runs, May 2026):
-    ///   ≥16 GB → 14B Q4_K_M (legacy iPad Pro path — not downloaded on-device)
-    ///   8–15 GB → 4B Q4_K_M (100% eval_300, ~2.3 GB — safe on 8 GB iPhone 15/16 Pro)
-    ///   <8 GB  → 1.7B Q4_K_M swe43 (100% eval_300, ~1.2 GB — always fits)
+    /// Model tier selection (BFCL 115 cases × 3 seeds, June 2026):
+    ///   ≥16 GB → 14B Q4_K_M (100% BFCL, iPad Pro)
+    ///   8–15 GB → Qwen3.5-4B Q4_K_M (100% BFCL, iPhone Pro)
+    ///   <8 GB  → Qwen3.5-4B Q3_K_M (99.1% BFCL, all iPhones)
     enum ModelTier: String {
         case large14B  = "14B"
         case medium4B  = "4B"
-        case small1B7  = "1.7B"
+        case small1B7  = "2B"
     }
 
     static var preferredTier: ModelTier {
@@ -62,7 +61,7 @@ final class LLMEngine: ObservableObject {
         switch preferredTier {
         case .large14B: return 10_000
         case .medium4B: return 2_800
-        case .small1B7: return 1_600
+        case .small1B7: return 2_400
         }
     }
 
