@@ -134,9 +134,16 @@ To guarantee instantaneous, offline AI access across devices, the app automatica
 
 > Accuracy: BFCL benchmark, 115 tool-routing cases × 3 shuffled seeds, temperature=0, June 2026.
 
-#### Dual-Engine Architecture
+#### On-Device AI — works offline from first launch
 
-The app runs two AI models simultaneously — a **Conversational Engine** for deep tasks (Hands-free, Bedside mode, Wake Word) and an **Autocomplete Engine** for instant sentence completion. The conversational engine scores 99.1–100% on tool routing benchmarks. The autocomplete engine (360M, built into the app) works instantly offline.
+Every device ships with an AI model built into the app. No download, no WiFi, no account needed — open the app and start communicating.
+
+| Device | Bundled model | Size | What it does |
+|---|---|---|---|
+| **iPhone / iPad** | Qwen3.5-4B Q3_K_M | 2.3 GB | Tool routing, Hands-free, Bedside mode, Wake Word (99.1% accuracy) |
+| **Apple Watch** | SmolLM2-360M | 207 MB | Symbol expansion, emergency phrases, predictive text (100% accuracy) |
+
+Larger models (4B Q4_K_M, 14B, 32B) available via Settings → Local AI for users who want higher accuracy or WiFi-to-Mac routing.
 
 <details>
 <summary><strong>Technical details</strong></summary>
