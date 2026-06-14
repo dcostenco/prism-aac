@@ -28,6 +28,7 @@ const HeadTrackingOverlay = dynamic(() => import('./HeadTrackingOverlay'), { ssr
 import TrackingDebugOverlay from './TrackingDebugOverlay';
 import TtsDebugOverlay from './TtsDebugOverlay';
 import CameraInputOverlay from './CameraInputOverlay';
+import { useVisionContext } from '@/hooks/useVisionContext';
 import GreetingBanner from './GreetingBanner';
 import SyncProvider from './SyncProvider';
 import { usePredictionStore } from '@/store/predictionStore';
@@ -181,6 +182,7 @@ const PANELS_WITHOUT_QWERTY = new Set([
 export default function PrismApp() {
   const runDecay = usePredictionStore((s) => s.runDecay);
   const ensureSeed = usePredictionStore((s) => s.ensureSeed);
+  useVisionContext();
   const refreshAuth = useAuthStore((s) => s.refresh);
   const [hydrated, setHydrated] = useState(false);
   // Banner shown after returning from the OAuth same-window redirect.

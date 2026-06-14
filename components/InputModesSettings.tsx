@@ -48,6 +48,7 @@ export default function InputModesSettings() {
   const headTrackingEnabled = useSettingsStore(s => s.headTrackingEnabled);
   const headTrackingDwellMs = useSettingsStore(s => s.headTrackingDwellMs);
   const headTrackingSensitivity = useSettingsStore(s => s.headTrackingSensitivity);
+  const visionContextEnabled = useSettingsStore(s => s.visionContextEnabled);
   const update = useSettingsStore(s => s.update);
   const { t } = useT();
 
@@ -98,6 +99,18 @@ export default function InputModesSettings() {
         </div>
         <Toggle on={showHandCalibration} onToggle={() => update({ showHandCalibration: !showHandCalibration })} label="Hand calibration settings" />
       </label>
+
+      {/* Vision Context — camera object detection for phrase suggestions */}
+      <div data-testid="vision-context-settings">
+        <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Vision Context</h4>
+        <label className="flex items-center justify-between py-1.5">
+          <div>
+            <span className="text-primary text-sm font-semibold">Camera Phrase Suggestions</span>
+            <p className="text-muted text-[10px]">Camera detects objects and suggests relevant phrases (e.g. cup → &quot;I want a drink&quot;)</p>
+          </div>
+          <Toggle on={visionContextEnabled} onToggle={() => update({ visionContextEnabled: !visionContextEnabled })} label="Vision context" />
+        </label>
+      </div>
 
       {/* Head Tracking (opt-in) */}
       <label className="flex items-center justify-between py-1.5">

@@ -15,6 +15,15 @@ import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { PROVIDER_ICONS, PROVIDER_LABELS } from '@/services/sendToContact';
 
 import { isAllowedInLang, ensureLangCorpusLoaded } from '@/lib/langAllowlist';
+import { useVisionStore } from '@/store/visionStore';
+import type { SceneType } from '@/services/sceneInference';
+
+const SCENE_ICONS: Partial<Record<SceneType, string>> = {
+  mealtime: '🍽️', snacktime: '🍪', bedtime: '😴',
+  bathtime: '🛁', playtime: '🎮', schoolwork: '📚',
+  watching_tv: '📺', reading: '📖', outdoors: '🌳',
+  travel: '🚗', grooming: '🧴',
+};
 
 // ── Contact tiles for messaging mode ──────────────────────────────────
 
@@ -99,7 +108,7 @@ function computeStableSlots(prev: string[], predictions: string[]): string[] {
   return next;
 }
 
-const PredictionTile = memo(function PredictionTile({ word, color, onTap }: { word: string; color: string; onTap: (w: string) => void }) {
+const PredictionTile = memo(function PredictionTile({ word, color, onTap, visionBoosted }: { word: string; color: string; onTap: (w: string) => void; visionBoosted?: boolean }) {
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
@@ -117,7 +126,7 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap }: { wo
     <button
       onClick={() => onTap(word)}
       aria-label={`Predict: ${word}`}
-      className="aac-btn flex-1 min-w-0 rounded-xl flex flex-col items-center overflow-hidden border-l-[5px] border border-theme"
+      className={`aac-btn flex-1 min-w-0 rounded-xl flex flex-col items-center overflow-hidden border-l-[5px] border border-theme${visionBoosted ? ' vision-glow' : ''}`}
       style={{ borderLeftColor: color, color }}
     >
       <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg overflow-hidden min-h-0">
@@ -340,11 +349,23 @@ export default function PredictionBar() {
     );
   }
 
+  const activeScene = useVisionStore((s) => s.activeScene);
+
   return (
-    <div data-testid="prediction-bar" className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0" style={{ height: 'clamp(48px, 10svh, 110px)' }}>
+    <div data-testid="prediction-bar" className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 relative" style={{ height: 'clamp(48px, 10svh, 110px)' }}>
+      {activeScene && (
+        <span
+          className="absolute -top-5 right-2 text-xs opacity-70 pointer-events-none"
+          aria-live="polite"
+          data-testid="vision-scene-badge"
+        >
+          {SCENE_ICONS[activeScene] ?? ''}
+        </span>
+      )}
       {finalTiles.map((word, i) => {
         const color = CATEGORY_COLORS[classifyWord(word)];
-        return <PredictionTile key={`slot-${i}`} word={word} color={color} onTap={handleTap} />;
+        const isVisionBoosted = activeScene && aiCompletion && word === aiCompletion;
+        return <PredictionTile key={`slot-${i}`} word={word} color={color} onTap={handleTap} visionBoosted={!!isVisionBoosted} />;
       })}
     </div>
   );
