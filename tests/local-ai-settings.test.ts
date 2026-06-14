@@ -55,14 +55,14 @@ describe.skipIf(!ollamaUp)('LocalAI — Ollama connectivity', () => {
   }, 5000);
 });
 
-describe.skipIf(!ollamaUp)('LocalAI — prism-coder:1b7 (2.2 GB — used in tests)', () => {
-  const TAG = 'dcostenco/prism-coder:1b7';
+describe.skipIf(!ollamaUp)('LocalAI — prism-coder:2b (2.3 GB — used in tests)', () => {
+  const TAG = 'dcostenco/prism-coder:2b';
 
   test('model is already installed or can be pulled', async () => {
     const tags = await getOllamaTags();
-    const installed = tags.some(t => t.includes('prism-coder:1b7') || t === TAG);
+    const installed = tags.some(t => t.includes('prism-coder:2b') || t === TAG);
     if (!installed) {
-      console.log('Not installed, pulling 1b7…');
+      console.log('Not installed, pulling 2b…');
       const ok = await pullModel(TAG);
       expect(ok).toBe(true);
     } else {
@@ -87,7 +87,7 @@ describe.skipIf(!ollamaUp)('LocalAI — prism-coder:1b7 (2.2 GB — used in test
     const data = await r.json() as { response: string };
     expect(typeof data.response).toBe('string');
     expect(data.response.length).toBeGreaterThan(0);
-    console.log('1b7 response:', data.response.slice(0, 100));
+    console.log('2b response:', data.response.slice(0, 100));
   }, 30_000);
 
   test('correctly routes session_load_context', async () => {
@@ -153,7 +153,7 @@ describe.skipIf(!ollamaUp)('LocalAI — model management API', () => {
     const r = await fetch(`${OLLAMA_URL}/api/pull`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'dcostenco/prism-coder:1b7', stream: true }),
+      body: JSON.stringify({ name: 'dcostenco/prism-coder:2b', stream: true }),
       signal: AbortSignal.timeout(5000),
     });
     // Should start streaming (200) or indicate already cached
