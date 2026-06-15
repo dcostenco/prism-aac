@@ -81,6 +81,16 @@ export function formatEvent(event: TrackingEvent): string {
             return `${time}  imu-shaking      peak=${event.peakMagnitude.toFixed(2)}m/s²`;
         case 'imu-idle':
             return `${time}  imu-idle         peak=${event.peakMagnitude.toFixed(2)}m/s²`;
+        case 'gesture-fired':
+            return `${time}  gesture          ${event.gesture}  conf=${event.confidence.toFixed(2)}`;
+        case 'gesture-false-positive':
+            return `${time}  gesture-FP       ${event.gesture}  reason=${event.reason}`;
+        case 'calibration-reset':
+            return `${time}  cal-reset        ${event.reason}  rX=${event.rangeX.toFixed(3)} rY=${event.rangeY.toFixed(3)}`;
+        case 'calibration-learned':
+            return `${time}  cal-learned      ${event.mode}  rX=${event.rangeX.toFixed(3)} rY=${event.rangeY.toFixed(3)}`;
+        case 'dtw-fallback':
+            return `${time}  dtw-fallback     ${event.reason}`;
     }
 }
 

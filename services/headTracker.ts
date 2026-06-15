@@ -127,26 +127,32 @@ function hasFaceDetectorAPI(): boolean {
 
 let mpFaceDetector: unknown = null;
 let mpLoadPromise: Promise<void> | null = null;
+let mpDisposed = false;
 
 async function initMediaPipeFace(): Promise<boolean> {
   if (mpFaceDetector) return true;
   if (mpLoadPromise) { await mpLoadPromise; return !!mpFaceDetector; }
+  mpDisposed = false;
   mpLoadPromise = (async () => {
     try {
       const vision = await import('@mediapipe/tasks-vision');
       const { FaceDetector: MPFace, FilesetResolver } = vision;
       const fileset = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
-      mpFaceDetector = await MPFace.createFromOptions(fileset, {
+      const detector = await MPFace.createFromOptions(fileset, {
         baseOptions: {
           modelAssetPath: FACE_DETECTOR_URL,
           delegate: 'GPU',
         },
         runningMode: 'VIDEO',
-        // MediaPipe default 0.5. Identity locking via IoU continuity does
-        // the multi-face filtering — bumping the floor to 0.7 caused the
-        // tracker to lose lock under normal lighting.
         minDetectionConfidence: 0.5,
       });
+      // T-10 race guard: if stop() ran while we were loading, dispose
+      // immediately instead of leaking an unclosed model.
+      if (mpDisposed) {
+        try { (detector as any).close(); } catch {}
+      } else {
+        mpFaceDetector = detector;
+      }
     } catch {
       mpFaceDetector = null;
     }
@@ -173,7 +179,7 @@ async function initMediaPipeFaceLandmarker(): Promise<boolean> {
       const vision = await import('@mediapipe/tasks-vision');
       const { FaceLandmarker, FilesetResolver } = vision;
       const fileset = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_URL);
-      mpFaceLandmarker = await FaceLandmarker.createFromOptions(fileset, {
+      const landmarker = await FaceLandmarker.createFromOptions(fileset, {
         baseOptions: {
           modelAssetPath: FACE_LANDMARKER_URL,
           delegate: 'GPU',
@@ -183,6 +189,11 @@ async function initMediaPipeFaceLandmarker(): Promise<boolean> {
         outputFaceBlendshapes: true,
         outputFacialTransformationMatrixes: true,
       });
+      if (mpDisposed) {
+        try { (landmarker as any).close(); } catch {}
+      } else {
+        mpFaceLandmarker = landmarker;
+      }
     } catch {
       mpFaceLandmarker = null;
     }
@@ -1102,12 +1113,23 @@ export function startHeadTracker(
     // users with limited head mobility benefit enormously.
     //
     // eyeGazeWeight=1 → pure iris tracking (eyes only).
-    // eyeGazeWeight=0.5 → 50% iris, 50% face-box (default blend).
+    // eyeGazeWeight=0.5 → 50% iris, 50% face-box (balanced, default).
+    // eyeGazeWeight=0.8 → iris-primary (for users with head restrictions).
     // eyeGazeWeight=0 → face-box only (legacy head tracking).
+    // T-8 FIX: default changed from 0.8 to 0.5. 0.8 was too iris-heavy,
+    // causing twitchy cursor from micro-saccades for most users.
     if (opts.useEyeGaze) {
-      const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.8));
+      const w = Math.max(0, Math.min(1, opts.eyeGazeWeight ?? 0.5));
+      // T-9 FIX: only use iris if it's from the same camera that produced
+      // the face-box AND is from the current detection cycle. Multi-camera
+      // setups with different resolutions produce mismatched coordinate
+      // spaces — blending iris from camera B with face-box from camera A
+      // causes cursor jumps.
       const iris = primarySource.lastIrisPosition;
-      if (iris) {
+      const irisFromPrimary = iris &&
+        primarySource.lastDetection.cameraIndex === primarySource.index &&
+        (now - primarySource.lastDetection.timestamp) < STALE_DETECTION_MS;
+      if (iris && irisFromPrimary) {
         normX = normX * (1 - w) + iris.x * w;
         normY = normY * (1 - w) + iris.y * w;
       }
@@ -1236,7 +1258,7 @@ export function startHeadTracker(
   return {
     stop() {
       stopped = true;
-      abortController.abort(); // Kill pending getUserMedia promises
+      abortController.abort();
       cancelAnimationFrame(rafId);
       sources.forEach(stopCameraSource);
       if (typeof window !== 'undefined') {
@@ -1244,6 +1266,15 @@ export function startHeadTracker(
         window.removeEventListener('resize', onResize);
       }
       offGestureClaim();
+      // T-10 FIX (v2): dispose models + set disposed flag to guard
+      // against the init race (load resolving after stop).
+      mpDisposed = true;
+      try { if (mpFaceDetector && typeof (mpFaceDetector as any).close === 'function') (mpFaceDetector as any).close(); } catch {}
+      try { if (mpFaceLandmarker && typeof (mpFaceLandmarker as any).close === 'function') (mpFaceLandmarker as any).close(); } catch {}
+      mpFaceDetector = null;
+      mpFaceLandmarker = null;
+      mpLoadPromise = null;
+      mpLandmarkerLoadPromise = null;
       opts.onStatusChange('stopped');
     },
     get videoElement() {

@@ -243,22 +243,32 @@ export class ReliabilityProbe {
     constructor(opts: ReliabilityProbeOptions = {}) {
         this.recoverFrames = opts.recoverFrames ?? 10;
         this.stableConfidenceFloor = opts.stableConfidenceFloor ?? 0.7;
+        this.windowSize = this.recoverFrames;
+        this.minGoodFrames = Math.ceil(this.recoverFrames * 0.8);
     }
+
+    // T-3 FIX: sliding window instead of consecutive streak.
+    // The old approach reset to 0 on ANY frame below threshold, so
+    // flickering light (0.65/0.75 oscillation) kept users stuck in
+    // disabled state indefinitely even though tracking was stable.
+    // Now: require 8 of last 10 frames above threshold.
+    private window: boolean[] = [];
+    private readonly windowSize: number;
+    private readonly minGoodFrames: number;
 
     /** Feed one probe frame. Returns true once the recovery threshold is hit. */
     push(confidence: number): boolean {
-        if (confidence >= this.stableConfidenceFloor) {
-            this.streak++;
-        } else {
-            this.streak = 0;
-        }
-        return this.streak >= this.recoverFrames;
+        this.window.push(confidence >= this.stableConfidenceFloor);
+        if (this.window.length > this.windowSize) this.window.shift();
+        const good = this.window.filter(Boolean).length;
+        this.streak = good;
+        return this.window.length >= this.windowSize && good >= this.minGoodFrames;
     }
 
     /** Manual reset — call when starting a fresh probe session. */
-    reset(): void { this.streak = 0; }
+    reset(): void { this.streak = 0; this.window = []; }
 
-    /** Current streak count (for telemetry / progress UI). */
+    /** Current good-frame count in window (for telemetry / progress UI). */
     get currentStreak(): number { return this.streak; }
 }
 

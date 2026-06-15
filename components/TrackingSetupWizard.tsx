@@ -516,9 +516,13 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       console.log('[wizard] corner samples:', JSON.stringify(newSamples));
       console.log(`[wizard] final cal: L=${cal.leftX.toFixed(3)} R=${cal.rightX.toFixed(3)} T=${cal.topY.toFixed(3)} B=${cal.bottomY.toFixed(3)} rangeX=${rangeX.toFixed(3)} rangeY=${rangeY.toFixed(3)} fallback=${usedFallbackRange}`);
 
+      cal.wizardCompleted = true;
       savePoseCalibration(cal);
       applyCalibrationToActiveTracker(cal);
       unfreezeLearnerCalSaves();
+      // T-5 FIX (v3): flag stored IN calibration data (per-user).
+      // Also set global key for backward compat with older code paths.
+      try { localStorage.setItem('prism_pose_wizard_completed', 'true'); } catch {}
       // Increment generation → CameraInputOverlay restarts tracker with new cal.
       // Also enable tracking in case it was disabled.
       updateSettings({

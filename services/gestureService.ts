@@ -150,6 +150,7 @@ export interface GestureConfig {
 }
 
 import { LOCAL_OLLAMA_URL, LOCAL_MODEL } from '@/services/localModel';
+import { emitTrackingEvent } from './trackingTelemetry';
 
 export const DEFAULT_GESTURE_CONFIG: GestureConfig = {
   enabled: false,
@@ -266,6 +267,7 @@ function dtwDistance(s: number[][], t: number[][]): number {
 export class GestureDetector {
   private config: GestureConfig;
   private onGesture: (event: GestureEvent) => void;
+  private _dtwFallbackWarned = false;
 
   // Per-signal state
   private signals: Record<string, SignalState> = {};
@@ -358,8 +360,14 @@ export class GestureDetector {
     if (this.config.mode === 'basic' || this.config.mode === 'advanced') {
       this.detectBasicGestures(result);
     }
-    if (this.config.mode === 'advanced' && this.config.templates.length > 0) {
-      this.detectAdvancedGestures(result);
+    if (this.config.mode === 'advanced') {
+      if (this.config.templates.length > 0) {
+        this.detectAdvancedGestures(result);
+      } else if (!this._dtwFallbackWarned) {
+        this._dtwFallbackWarned = true;
+        console.warn('[GestureService] Advanced mode active but no templates loaded — falling back to basic detection');
+        emitTrackingEvent({ type: 'dtw-fallback', reason: 'no-templates', timestamp: Date.now() });
+      }
     }
   }
 
@@ -372,29 +380,36 @@ export class GestureDetector {
     const fatigueMultiplier = this.getFatigueMultiplier();
 
     // Blink: intentional = held >400ms (natural blinks are 100-300ms)
-    const blinkVal = Math.max(bs[BLINK_LEFT] ?? 0, bs[BLINK_RIGHT] ?? 0);
-    const blinkBase = base ? Math.max(base.blendshapes[BLINK_LEFT] ?? 0, base.blendshapes[BLINK_RIGHT] ?? 0) : 0;
-    this.detectThresholdGesture('blink', blinkVal - blinkBase, 0.5 * fatigueMultiplier, 400);
+    // T-1 FIX (v2): per-side baseline subtraction + max fusion.
+    // v1 used averaging which REGRESSED asymmetric CP: left=0.6, right=0.1
+    // averaged to 0.35 < 0.4 threshold — worse than the original max().
+    // Correct approach: subtract baselines per-side (captures asymmetric
+    // resting state), then take max so the stronger signal fires.
+    const blinkL = (bs[BLINK_LEFT] ?? 0) - (base?.blendshapes[BLINK_LEFT] ?? 0);
+    const blinkR = (bs[BLINK_RIGHT] ?? 0) - (base?.blendshapes[BLINK_RIGHT] ?? 0);
+    const blinkVal = Math.max(blinkL, blinkR);
+    this.detectThresholdGesture('blink', blinkVal, 0.4 * fatigueMultiplier, 400);
 
     // Mouth open: jawOpen above threshold
     const mouthVal = bs[JAW_OPEN] ?? 0;
     const mouthBase = base?.blendshapes[JAW_OPEN] ?? 0;
-    this.detectThresholdGesture('mouth_open', mouthVal - mouthBase, 0.4 * fatigueMultiplier, this.config.dwellMs);
+    this.detectThresholdGesture('mouth_open', mouthVal - mouthBase, 0.32 * fatigueMultiplier, this.config.dwellMs);
 
-    // Smile: max of left/right (asymmetry-aware for CP)
-    const smileVal = Math.max(bs[SMILE_LEFT] ?? 0, bs[SMILE_RIGHT] ?? 0);
-    const smileBase = base ? Math.max(base.blendshapes[SMILE_LEFT] ?? 0, base.blendshapes[SMILE_RIGHT] ?? 0) : 0;
-    this.detectThresholdGesture('smile', smileVal - smileBase, 0.35 * fatigueMultiplier, this.config.dwellMs);
+    // Smile: per-side baseline subtraction + max (T-1 FIX v2 — same as blink)
+    const smileL = (bs[SMILE_LEFT] ?? 0) - (base?.blendshapes[SMILE_LEFT] ?? 0);
+    const smileR = (bs[SMILE_RIGHT] ?? 0) - (base?.blendshapes[SMILE_RIGHT] ?? 0);
+    const smileVal = Math.max(smileL, smileR);
+    this.detectThresholdGesture('smile', smileVal, 0.28 * fatigueMultiplier, this.config.dwellMs);
 
-    // Pucker ("oo" shape)
+    // Pucker ("oo" shape) — T-4: lowered 0.4→0.32 for motor-impaired users
     const puckerVal = bs[PUCKER] ?? 0;
     const puckerBase = base?.blendshapes[PUCKER] ?? 0;
-    this.detectThresholdGesture('pucker', puckerVal - puckerBase, 0.4 * fatigueMultiplier, this.config.dwellMs);
+    this.detectThresholdGesture('pucker', puckerVal - puckerBase, 0.32 * fatigueMultiplier, this.config.dwellMs);
 
-    // Eyebrow raise
+    // Eyebrow raise — T-4: lowered 0.35→0.28 for motor-impaired users
     const browVal = bs[BROW_UP] ?? 0;
     const browBase = base?.blendshapes[BROW_UP] ?? 0;
-    this.detectThresholdGesture('brow_raise', browVal - browBase, 0.35 * fatigueMultiplier, this.config.dwellMs);
+    this.detectThresholdGesture('brow_raise', browVal - browBase, 0.28 * fatigueMultiplier, this.config.dwellMs);
 
     // Head nod / shake (from head pose angles)
     this.detectHeadGestures(result);
@@ -423,6 +438,7 @@ export class GestureDetector {
       if (confidence >= this.config.confidenceThreshold) {
         sig.lastFired = now;
         sig.active = false;
+        emitTrackingEvent({ type: 'gesture-fired', gesture: id, confidence, timestamp: now });
         this.onGesture({ gesture: id as GestureId, confidence, timestamp: now });
       }
     }

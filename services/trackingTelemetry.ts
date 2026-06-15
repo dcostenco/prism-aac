@@ -97,6 +97,43 @@ export interface MotionIdleEvent {
     timestamp: number;
 }
 
+// T-6: gesture + calibration telemetry for caregiver visibility
+export interface GestureFiredEvent {
+    type: 'gesture-fired';
+    gesture: string;
+    confidence: number;
+    timestamp: number;
+}
+
+export interface GestureFalsePositiveEvent {
+    type: 'gesture-false-positive';
+    gesture: string;
+    reason: 'fatigue' | 'cough' | 'conversation' | 'unknown';
+    timestamp: number;
+}
+
+export interface CalibrationResetEvent {
+    type: 'calibration-reset';
+    reason: 'corrupt-data' | 'narrow-range' | 'manual';
+    rangeX: number;
+    rangeY: number;
+    timestamp: number;
+}
+
+export interface CalibrationLearnedEvent {
+    type: 'calibration-learned';
+    mode: 'bootstrap' | 'expand-only';
+    rangeX: number;
+    rangeY: number;
+    timestamp: number;
+}
+
+export interface DtwFallbackEvent {
+    type: 'dtw-fallback';
+    reason: 'no-templates' | 'corrupt-templates' | 'load-error';
+    timestamp: number;
+}
+
 export type TrackingEvent =
     | DriftTripEvent
     | SafeModeEnterEvent
@@ -109,7 +146,12 @@ export type TrackingEvent =
     | EdgePinEscalateEvent
     | RecalibrationEvent
     | MotionShakingEvent
-    | MotionIdleEvent;
+    | MotionIdleEvent
+    | GestureFiredEvent
+    | GestureFalsePositiveEvent
+    | CalibrationResetEvent
+    | CalibrationLearnedEvent
+    | DtwFallbackEvent;
 
 export type TrackingEventListener = (event: TrackingEvent) => void;
 

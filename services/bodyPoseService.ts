@@ -45,6 +45,7 @@ import {
   type SimilarityTransform,
 } from './egoMotion';
 import { BaselineTracker } from './recalibration';
+import { emitTrackingEvent } from './trackingTelemetry';
 
 // ── MediaPipe Pose Landmark Indices ────────────────────────────────────────
 //  0: nose        1-4: eyes       5-6: ears      7-10: mouth
@@ -266,6 +267,10 @@ export interface PoseCalibrationData {
   rightX: number;
   topY: number;
   bottomY: number;
+  // T-5 FIX (v3): stored WITH the calibration so it's inherently
+  // per-user on shared devices — when a caregiver resets calibration
+  // for a new child, the flag resets with it.
+  wizardCompleted?: boolean;
 }
 
 // After X-mirroring (1-normX): mirroredX maps user's physical position to screen.
@@ -649,25 +654,24 @@ export function startPoseTracker(
   let lastFrameTime = 0;
 
   const loadedCal = loadPoseCalibration();
-  // CORRUPT-NARROW DEFENSE: if the saved cal has a tiny range
-  // (< 0.10 normalized on either axis), treat it as corrupt and
-  // reset to factory defaults so bootstrap mode can rebuild from
-  // observation. User report 2026-05-08: a stuck wizard saved
-  // L=0.524 R=0.493 (rangeX=0.031) — head-still motion baked
-  // into permanent calibration → cursor jumped across the screen
-  // on every tiny head wobble. Threshold 0.10 is well below any
-  // legitimate user range; corrupt cals are typically < 0.05.
-  const RECOVERY_MIN_RANGE = 0.10;
+  // T-2 FIX (v2) + T-5 FIX (v3): wizard flag is now stored IN the
+  // calibration data (per-user on shared devices). Falls back to the
+  // global localStorage key for backward compat with existing installs.
+  const WIZARD_DONE_KEY = 'prism_pose_wizard_completed';
+  const wizardDone = loadedCal.wizardCompleted === true
+    || localStorage.getItem(WIZARD_DONE_KEY) === 'true';
   const loadedRangeX = loadedCal.leftX - loadedCal.rightX;
   const loadedRangeY = loadedCal.bottomY - loadedCal.topY;
-  const isCorruptNarrow = loadedRangeX < RECOVERY_MIN_RANGE || loadedRangeY < RECOVERY_MIN_RANGE
-    || loadedRangeX < 0 || loadedRangeY < 0;
+  const isCorruptNarrow = wizardDone
+    ? (loadedRangeX <= 0 || loadedRangeY <= 0)
+    : (loadedRangeX < 0.02 || loadedRangeY < 0.02 || loadedRangeX <= 0 || loadedRangeY <= 0);
   if (isCorruptNarrow) {
     console.warn(
-      `[PoseTracker] CORRUPT-NARROW saved calibration detected ` +
-      `(rangeX=${loadedRangeX.toFixed(3)}, rangeY=${loadedRangeY.toFixed(3)}) ` +
+      `[PoseTracker] CORRUPT saved calibration detected ` +
+      `(rangeX=${loadedRangeX.toFixed(3)}, rangeY=${loadedRangeY.toFixed(3)}, wizardDone=${wizardDone}) ` +
       `— resetting to defaults so adaptive bootstrap can rebuild.`
     );
+    emitTrackingEvent({ type: 'calibration-reset', reason: 'corrupt-data', rangeX: loadedRangeX, rangeY: loadedRangeY, timestamp: Date.now() });
   }
   const calibration: PoseCalibrationData = isCorruptNarrow
     ? { ...DEFAULT_CALIBRATION }
@@ -675,13 +679,14 @@ export function startPoseTracker(
   if (isCorruptNarrow) {
     try { savePoseCalibration(calibration); } catch { /* */ }
   }
-  // After possible reset, detect whether we're at factory defaults
-  // (drives the learner's blend mode below: bootstrap vs expand-only).
-  const isFactoryDefaults =
+  // T-5 FIX (v3): wizard flag now stored in calibration data (per-user).
+  // Once the wizard completes, the learner is ALWAYS expand-only.
+  const isFactoryDefaults = !wizardDone && !calibration.wizardCompleted && (
     Math.abs(calibration.leftX - DEFAULT_CALIBRATION.leftX) < 0.001 &&
     Math.abs(calibration.rightX - DEFAULT_CALIBRATION.rightX) < 0.001 &&
     Math.abs(calibration.topY - DEFAULT_CALIBRATION.topY) < 0.001 &&
-    Math.abs(calibration.bottomY - DEFAULT_CALIBRATION.bottomY) < 0.001;
+    Math.abs(calibration.bottomY - DEFAULT_CALIBRATION.bottomY) < 0.001
+  );
   const sensitivityScale = opts.sensitivity / 5;
   // Online learner — observes the user's actual pose envelope. In
   // bootstrap mode (no wizard run yet) it can fully populate the
@@ -1121,6 +1126,9 @@ export function startPoseTracker(
             if (!_learnerCalSavesFrozen) {
               try { savePoseCalibration(calibration); } catch { /* */ }
             }
+            const rX = calibration.leftX - calibration.rightX;
+            const rY = calibration.bottomY - calibration.topY;
+            emitTrackingEvent({ type: 'calibration-learned', mode: isFactoryDefaults ? 'bootstrap' : 'expand-only', rangeX: rX, rangeY: rY, timestamp: Date.now() });
             lastLearnerCommitFrame++;
           }
           calibration.rightX = Math.max(0, Math.min(1, calibration.rightX));
@@ -1128,34 +1136,25 @@ export function startPoseTracker(
           calibration.topY = Math.max(0, Math.min(1, calibration.topY));
           calibration.bottomY = Math.max(0, Math.min(1, calibration.bottomY));
 
-          // Calibration sanity: if the range collapsed (decay outran expand
-          // while user was idle, or stale localStorage from a buggy build),
-          // the cursor pins near center. 0.30 is a forgiving threshold —
-          // narrower than that and the cursor barely responds across the
-          // screen anyway, even if technically not "collapsed". Reset to
-          // wide defaults; the adapt step rebuilds the user's actual range.
-          // Also: if rightX > leftX (i.e. inverted/swapped — corrupt data),
-          // reset unconditionally.
-          // Defensive guard ONLY for inverted/zero ranges — users
-          // with limited motion (e.g. AAC users with motor
-          // disability) routinely operate inside a 0.05–0.20
-          // pose-space range, and the prior 0.30 floor reset their
-          // calibration to defaults every frame. The online learner
-          // above produces correct ordering by construction; this
-          // guard exists for stale localStorage / corrupt data.
-          const MIN_RANGE = 0.02;
+          // T-2 FIX: only guard against truly corrupt calibrations (inverted
+          // or zero ranges). The mapNormToScreen function at line ~310 already
+          // handles the MIN_RANGE fallback for cursor mapping. This duplicate
+          // check was resetting valid narrow-range calibrations (0.03-0.20)
+          // every tick, preventing AAC users with limited motion from ever
+          // getting a stable cursor. Now: only reset if ranges are negative
+          // (inverted data from corrupt localStorage).
           let rangeX = calibration.leftX - calibration.rightX;
           let rangeY = calibration.bottomY - calibration.topY;
-          if (rangeX < MIN_RANGE || rangeY < MIN_RANGE || rangeX < 0 || rangeY < 0) {
+          if (rangeX <= 0 || rangeY <= 0) {
             console.warn(
-              '[PoseTracker] CALIBRATION INVALID — saved cal had ' +
+              '[PoseTracker] CALIBRATION CORRUPT — inverted ranges: ' +
               'rangeX=' + rangeX.toFixed(3) + ' rangeY=' + rangeY.toFixed(3) +
-              ' (need both ≥ 0.02 + positive). Resetting to defaults; ' +
-              'online learner will adapt within ~2 seconds. leftX=' +
+              '. Resetting to defaults; online learner will adapt. leftX=' +
               calibration.leftX.toFixed(3) + ' rightX=' + calibration.rightX.toFixed(3) +
               ' topY=' + calibration.topY.toFixed(3) +
               ' bottomY=' + calibration.bottomY.toFixed(3)
             );
+            emitTrackingEvent({ type: 'calibration-reset', reason: 'corrupt-data', rangeX, rangeY, timestamp: Date.now() });
             calibration.leftX = DEFAULT_CALIBRATION.leftX;
             calibration.rightX = DEFAULT_CALIBRATION.rightX;
             calibration.topY = DEFAULT_CALIBRATION.topY;
