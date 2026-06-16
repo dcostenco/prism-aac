@@ -25,6 +25,7 @@ import {
   DriftWarning,
   EdgePinDetector,
   ReliabilityProbe,
+  recoveryStep,
   computeAdaptiveTravelThreshold,
 } from './headTrackerStability';
 import { Kalman1D } from './kalmanFilter1D';
@@ -1200,30 +1201,29 @@ export function startHeadTracker(
     // we just skip the `check()` while motion is active.
     const deviceShaking = opts.isDeviceShaking?.() ?? false;
 
-    // ── Recovery probe — MUST run even when driftFired is true ──────
-    // This block is intentionally OUTSIDE the !driftFired guard because
-    // drift sets driftFired=true, and the probe needs to feed confidence
-    // samples every frame to detect when tracking stabilizes.
-    if (driftPaused && avgConfidence > 0) {
-      const RECOVERY_TIMEOUT_MS = 60_000;
-      if (recoveryProbe.push(avgConfidence)) {
-        driftPaused = false;
-        driftFired = false;
-        driftDetector.reset();
-        edgePin.reset();
-        emitTrackingEvent({ type: 'auto-recover', timestamp: nowTs });
-        opts.onAutoRecover?.();
-      } else if (nowTs - recoveryStartTs > RECOVERY_TIMEOUT_MS) {
-        // Hard timeout: if recovery hasn't fired after 60s, auto-resume
-        // with re-centered cursor rather than leaving the user locked out.
-        driftPaused = false;
-        driftFired = false;
-        driftDetector.reset();
-        edgePin.reset();
-        recoveryProbe.reset();
-        emitTrackingEvent({ type: 'auto-recover-timeout', timestamp: nowTs });
-        opts.onAutoRecover?.();
-      }
+    // ── Recovery probe — uses the exported pure function so the REAL
+    // tick and the tests call the SAME decision code.
+    const decision = recoveryStep(
+      { driftPaused, avgConfidence, elapsedMs: nowTs - recoveryStartTs, timeoutMs: 60_000 },
+      recoveryProbe,
+    );
+    if (decision === 'recover') {
+      driftPaused = false;
+      driftFired = false;
+      driftDetector.reset();
+      edgePin.reset();
+      emitTrackingEvent({ type: 'auto-recover', timestamp: nowTs });
+      opts.onAutoRecover?.();
+      return;
+    }
+    if (decision === 'timeout') {
+      driftPaused = false;
+      driftFired = false;
+      driftDetector.reset();
+      edgePin.reset();
+      recoveryProbe.reset();
+      emitTrackingEvent({ type: 'auto-recover-timeout', timestamp: nowTs });
+      opts.onAutoRecover?.();
       return;
     }
 

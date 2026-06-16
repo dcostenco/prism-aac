@@ -272,6 +272,31 @@ export class ReliabilityProbe {
     get currentStreak(): number { return this.streak; }
 }
 
+// ── Pure recovery decision function ───────────────────────────────────
+// Extracted so the REAL tick loop and the tests call the SAME code.
+// A test that imports this function and asserts on it is actually testing
+// the shipped decision logic, not a hand-copied paste of it.
+
+export interface RecoveryInput {
+    driftPaused: boolean;
+    avgConfidence: number;
+    elapsedMs: number;
+    timeoutMs: number;
+}
+
+export type RecoveryDecision = 'recover' | 'timeout' | 'continue';
+
+export function recoveryStep(
+    input: RecoveryInput,
+    probe: ReliabilityProbe,
+): RecoveryDecision {
+    if (!input.driftPaused) return 'continue';
+    if (input.avgConfidence <= 0) return 'continue';
+    if (probe.push(input.avgConfidence)) return 'recover';
+    if (input.elapsedMs > input.timeoutMs) return 'timeout';
+    return 'continue';
+}
+
 /* ── Confidence-weighted fusion ─────────────────────────────────────────
  *
  * Replaces the naive `(a + b) / 2` average with a confidence-weighted one.
