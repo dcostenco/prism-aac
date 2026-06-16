@@ -322,6 +322,14 @@ export class GestureDetector {
 
   setConversationMode(active: boolean): void {
     this.conversationMode = active;
+    if (!active) {
+      // Reset mouth gesture signal state to prevent stale dwell from
+      // firing an instant false activation when speech ends.
+      for (const id of ['mouth_open', 'smile', 'pucker']) {
+        const sig = this.signals[id];
+        if (sig) { sig.active = false; sig.startTime = 0; sig.smoothed = 0; }
+      }
+    }
   }
 
   isConversationModeActive(): boolean {

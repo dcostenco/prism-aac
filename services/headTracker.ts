@@ -766,6 +766,7 @@ export function startHeadTracker(
 
   let driftFired = false;  // one-shot — don't spam onDrift on every frame
   let driftPaused = false; // true between onDrift and auto-recovery
+  let recoveryStartTs = 0; // when recovery probe started (for timeout)
   let lastWarnTs = 0;     // throttle onDriftWarning to once per window (5 s default)
 
   // Auto-recovery probe: after drift disables tracking, the probe runs at
@@ -1198,6 +1199,34 @@ export function startHeadTracker(
     // We still PUSH the sample so the rolling window stays continuous;
     // we just skip the `check()` while motion is active.
     const deviceShaking = opts.isDeviceShaking?.() ?? false;
+
+    // ── Recovery probe — MUST run even when driftFired is true ──────
+    // This block is intentionally OUTSIDE the !driftFired guard because
+    // drift sets driftFired=true, and the probe needs to feed confidence
+    // samples every frame to detect when tracking stabilizes.
+    if (driftPaused && avgConfidence > 0) {
+      const RECOVERY_TIMEOUT_MS = 60_000;
+      if (recoveryProbe.push(avgConfidence)) {
+        driftPaused = false;
+        driftFired = false;
+        driftDetector.reset();
+        edgePin.reset();
+        emitTrackingEvent({ type: 'auto-recover', timestamp: nowTs });
+        opts.onAutoRecover?.();
+      } else if (nowTs - recoveryStartTs > RECOVERY_TIMEOUT_MS) {
+        // Hard timeout: if recovery hasn't fired after 60s, auto-resume
+        // with re-centered cursor rather than leaving the user locked out.
+        driftPaused = false;
+        driftFired = false;
+        driftDetector.reset();
+        edgePin.reset();
+        recoveryProbe.reset();
+        emitTrackingEvent({ type: 'auto-recover-timeout', timestamp: nowTs });
+        opts.onAutoRecover?.();
+      }
+      return;
+    }
+
     if (!driftFired) {
       driftDetector.push({
         x: sx,
@@ -1208,7 +1237,6 @@ export function startHeadTracker(
       });
       if (!deviceShaking) {
         // Pre-warning: confidence degrading but not yet collapsed.
-        // Fires onDriftWarning (non-disabling) so the UI can show a hint.
         if (opts.onDriftWarning) {
           const warning = driftDetector.checkWarning();
           if (warning && nowTs - lastWarnTs > driftWindowMs) {
@@ -1217,23 +1245,11 @@ export function startHeadTracker(
           }
         }
 
-        // Recovery probe: if drift paused, check if confidence recovered
-        if (driftPaused) {
-          if (recoveryProbe.push(avgConfidence)) {
-            driftPaused = false;
-            driftFired = false;
-            driftDetector.reset();
-            edgePin.reset();
-            emitTrackingEvent({ type: 'auto-recover', timestamp: nowTs });
-            opts.onAutoRecover?.();
-          }
-          return;
-        }
-
         const reason = driftDetector.check();
         if (reason && opts.onDrift) {
           driftFired = true;
           driftPaused = true;
+          recoveryStartTs = nowTs;
           recoveryProbe.reset();
           emitTrackingEvent({ type: 'drift', reason, timestamp: nowTs });
           opts.onDrift(reason);
@@ -1246,6 +1262,7 @@ export function startHeadTracker(
         } else if (pinResult === 'escalate' && opts.onDrift) {
           driftFired = true;
           driftPaused = true;
+          recoveryStartTs = nowTs;
           recoveryProbe.reset();
           emitTrackingEvent({ type: 'edge-pin-escalate', timestamp: nowTs });
           emitTrackingEvent({ type: 'drift', reason: 'edge-pin-escalate', timestamp: nowTs });
