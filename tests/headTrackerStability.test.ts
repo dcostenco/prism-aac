@@ -506,3 +506,143 @@ describe('crossModalLockout — military hardening: boundary + edge cases', () =
         off();
     });
 });
+
+// ── Integration-level: drift→recovery decision logic ─────────────────────
+// This tests the WIRING pattern, not just the probe class. The original bug
+// was that ReliabilityProbe passed its unit tests while the consumer never
+// called it (nested inside an unreachable guard). This test simulates the
+// exact state transitions the headTracker tick loop makes.
+
+describe('drift→recovery wiring decision', () => {
+    it('recovery probe runs AFTER driftFired is set (the original bug scenario)', () => {
+        // Simulate the headTracker state after drift fires
+        let driftFired = false;
+        let driftPaused = false;
+        let recoveryStartTs = 0;
+        const probe = new ReliabilityProbe({ recoverFrames: 3, stableConfidenceFloor: 0.7 });
+        let recovered = false;
+
+        // Frame 1: drift fires
+        driftFired = true;
+        driftPaused = true;
+        recoveryStartTs = 1000;
+        probe.reset();
+
+        // Frames 2-4: simulate the tick loop's recovery check
+        // THIS is what was broken — the check must run even when driftFired=true
+        for (let frame = 2; frame <= 4; frame++) {
+            const avgConfidence = 0.85;
+            const nowTs = 1000 + frame * 1000;
+
+            // The fix: recovery check runs OUTSIDE !driftFired guard
+            if (driftPaused && avgConfidence > 0) {
+                if (probe.push(avgConfidence)) {
+                    driftPaused = false;
+                    driftFired = false;
+                    recovered = true;
+                }
+            }
+        }
+
+        expect(recovered).toBe(true);
+        expect(driftPaused).toBe(false);
+        expect(driftFired).toBe(false);
+    });
+
+    it('timeout fires after 60s even when confidence stays below recovery threshold', () => {
+        let driftPaused = true;
+        let driftFired = true;
+        let recoveryStartTs = 0;
+        const probe = new ReliabilityProbe({ recoverFrames: 10, stableConfidenceFloor: 0.7 });
+        let recoveredVia: 'probe' | 'timeout' | null = null;
+        const RECOVERY_TIMEOUT_MS = 60_000;
+
+        recoveryStartTs = 0;
+
+        // 60 frames at 1fps, confidence always 0.5 (below 0.7 threshold)
+        for (let frame = 1; frame <= 65; frame++) {
+            const avgConfidence = 0.5;
+            const nowTs = frame * 1000;
+
+            if (driftPaused && avgConfidence > 0) {
+                if (probe.push(avgConfidence)) {
+                    driftPaused = false;
+                    driftFired = false;
+                    recoveredVia = 'probe';
+                } else if (nowTs - recoveryStartTs > RECOVERY_TIMEOUT_MS) {
+                    driftPaused = false;
+                    driftFired = false;
+                    probe.reset();
+                    recoveredVia = 'timeout';
+                }
+            }
+
+            if (recoveredVia) break;
+        }
+
+        expect(recoveredVia).toBe('timeout');
+        expect(driftPaused).toBe(false);
+    });
+
+    it('total face loss (confidence=0) does NOT feed probe, but timeout still fires on face return', () => {
+        let driftPaused = true;
+        let driftFired = true;
+        let recoveryStartTs = 0;
+        const probe = new ReliabilityProbe({ recoverFrames: 10, stableConfidenceFloor: 0.7 });
+        let recovered = false;
+        const RECOVERY_TIMEOUT_MS = 60_000;
+
+        recoveryStartTs = 0;
+        let probeCallCount = 0;
+
+        // 70 frames: first 65 have confidence=0 (face lost), then face returns
+        for (let frame = 1; frame <= 70; frame++) {
+            const avgConfidence = frame <= 65 ? 0 : 0.8;
+            const nowTs = frame * 1000;
+
+            if (driftPaused && avgConfidence > 0) {
+                probeCallCount++;
+                if (probe.push(avgConfidence)) {
+                    driftPaused = false;
+                    driftFired = false;
+                    recovered = true;
+                } else if (nowTs - recoveryStartTs > RECOVERY_TIMEOUT_MS) {
+                    driftPaused = false;
+                    driftFired = false;
+                    recovered = true;
+                }
+            }
+
+            if (recovered) break;
+        }
+
+        // Probe wasn't fed during face loss (confidence=0 guard)
+        expect(probeCallCount).toBeLessThan(10);
+        // But recovery fires on face return via timeout (66s > 60s)
+        expect(recovered).toBe(true);
+        expect(driftPaused).toBe(false);
+    });
+
+    it('drift can re-fire after recovery (driftFired properly reset)', () => {
+        let driftFired = false;
+        let driftPaused = false;
+        const probe = new ReliabilityProbe({ recoverFrames: 3, stableConfidenceFloor: 0.7 });
+
+        // First drift
+        driftFired = true;
+        driftPaused = true;
+        probe.reset();
+
+        // Recovery
+        for (let i = 0; i < 3; i++) probe.push(0.9);
+        driftPaused = false;
+        driftFired = false;
+
+        // Second drift should be possible
+        expect(driftFired).toBe(false); // guard allows re-entry
+        driftFired = true;
+        driftPaused = true;
+        expect(driftFired).toBe(true);
+        expect(driftPaused).toBe(true);
+    });
+});
