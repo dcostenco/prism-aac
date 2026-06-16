@@ -566,31 +566,31 @@ const CRISIS_INPUT_CLIENT = [
     /(?:hang|hanging)\s+(?:my)?self/i,
     /jump(?:ing)?\s+off/i,
     /how\s+(?:many|much|to).*(?:pills|overdose|die)/i,
-    // Spanish
-    /quiero\s+morir/i,
-    /(?:voy\s+a\s+)?matarme/i,
+    // Spanish — negative lookahead for "de" (morir de risa = hyperbolic)
+    /quiero\s+morir(?!\s+de\b)/i,
+    /(?:voy\s+a\s+)?matarme(?!\s+(?:estudiando|trabajando|riendo))/i,
     /hacerme\s+da[ñn]o/i,
     /(?:quiero\s+)?suicidarme/i,
-    // French
-    /je\s+veux\s+mourir/i,
-    /(?:vais\s+)?me\s+tuer/i,
+    // French — negative lookahead for "de"
+    /je\s+veux\s+mourir(?!\s+de\b)/i,
+    /(?:vais\s+)?me\s+tuer(?!\s+[àa]\s+(?:rire|travailler))/i,
     /me\s+suicider/i,
-    // Portuguese
-    /quero\s+morrer/i,
-    /(?:vou\s+)?me\s+matar/i,
-    // Russian
-    /хочу\s+умереть/i,
+    // Portuguese — negative lookahead for "de"
+    /quero\s+morrer(?!\s+de\b)/i,
+    /(?:vou\s+)?me\s+matar(?!\s+(?:estudando|trabalhando|rindo))/i,
+    // Russian — negative lookahead for "от"
+    /хочу\s+умереть(?!\s+от\s)/i,
     /убить\s+себя/i,
     /покончить\s+с\s+собой/i,
-    // Arabic
-    /أريد\s+أن\s+أموت/,
-    /قتل\s+نفسي/,
-    /أنهي\s+حياتي/,
-    // German
-    /(?:ich\s+)?will\s+sterben/i,
+    // Arabic (alef variants handled in normalize)
+    /[اأإآ]ر[يى]د\s+[اأإآ]ن\s+[اأإآ]موت/,
+    /قتل\s+نفس[يى]/,
+    /[اأإآ]نه[يى]\s+ح[يى][اأإآ]ت[يى]/,
+    // German — negative lookahead for "vor"
+    /(?:ich\s+)?will\s+sterben(?!\s+vor\b)/i,
     /mich\s+umbringen/i,
-    // Ukrainian
-    /хочу\s+померти/i,
+    // Ukrainian — negative lookahead for "від"
+    /хочу\s+померти(?!\s+від\s)/i,
     /вбити\s+себе/i,
 ];
 
@@ -618,7 +618,13 @@ const MEDICAL_OUTPUT_CLIENT = [
 ];
 
 function normalizeClient(text: string): string {
-    return text.toLowerCase().replace(/\p{Cf}/gu, '').replace(/\s+/g, ' ');
+    return text
+        .toLowerCase()
+        .replace(/\p{Cf}/gu, '')
+        .replace(/\p{Mn}/gu, '')
+        .replace(/ـ/g, '')
+        .replace(/[أإآ]/g, 'ا')
+        .replace(/\s+/g, ' ');
 }
 
 export function checkInputSafetyClient(text: string): string | null {
