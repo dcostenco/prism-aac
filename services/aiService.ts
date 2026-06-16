@@ -567,19 +567,19 @@ const CRISIS_INPUT_CLIENT = [
     /jump(?:ing)?\s+off/i,
     /how\s+(?:many|much|to).*(?:pills|overdose|die)/i,
     // Spanish — block only known hyperbole nouns
-    /quiero\s+morir(?!\s+de\s+(?:risa|la\s+risa|vergüenza|ganas|hambre|sed|calor|fr[ií]o|sue[ñn]o|envidia|aburrimiento)\b)/i,
+    /quiero\s+morir(?!\s+de\s+(?:risa|la\s+risa|vergüenza|ganas|envidia|aburrimiento)\b)/i,
     /(?:voy\s+a\s+)?matarme(?!\s+(?:estudiando|trabajando|riendo|de\s+(?:risa|la\s+risa))\b)/i,
     /hacerme\s+da[ñn]o/i,
     /(?:quiero\s+)?suicidarme/i,
     // French — block hyperbole nouns
-    /je\s+veux\s+mourir(?!\s+d[e']\s*(?:rire|honte|envie|faim|soif|chaud|froid|ennui)\b)/i,
+    /je\s+veux\s+mourir(?!\s+d[e']\s*(?:rire|honte|envie|ennui)\b)/i,
     /(?:vais\s+)?me\s+tuer(?!\s+[àa]\s+(?:rire|travailler|étudier)\b)/i,
     /me\s+suicider/i,
     // Portuguese — block hyperbole nouns
-    /quero\s+morrer(?!\s+de\s+(?:rir|vergonha|fome|sede|calor|frio|sono|inveja|tédio)\b)/i,
+    /quero\s+morrer(?!\s+de\s+(?:rir|vergonha|inveja|tédio)\b)/i,
     /(?:vou\s+)?me\s+matar(?!\s+(?:estudando|trabalhando|rindo|de\s+(?:rir|tanto))\b)/i,
     // Russian — block hyperbole nouns
-    /хочу\s+умереть(?!\s+от\s+(?:смеха|стыда|зависти|голода|жары|скуки|холода)(?:\s|$))/i,
+    /хочу\s+умереть(?!\s+от\s+(?:смеха|стыда|зависти|скуки)(?:\s|$))/i,
     /убить\s+себя/i,
     /покончить\s+с\s+собой/i,
     // Arabic (alef variants handled in normalize)
@@ -587,10 +587,10 @@ const CRISIS_INPUT_CLIENT = [
     /قتل\s+نفس[يى]/,
     /[اأإآ]نه[يى]\s+ح[يى][اأإآ]ت[يى]/,
     // German — block hyperbole nouns
-    /(?:ich\s+)?will\s+sterben(?!\s+vor\s+(?:lachen|scham|neid|hunger|langeweile|kälte)\b)/i,
+    /(?:ich\s+)?will\s+sterben(?!\s+vor\s+(?:lachen|scham|neid|langeweile)\b)/i,
     /mich\s+umbringen/i,
     // Ukrainian — block hyperbole nouns
-    /хочу\s+померти(?!\s+від\s+(?:сміху|сорому|заздрості|голоду|холоду|нудьги)(?:\s|$))/i,
+    /хочу\s+померти(?!\s+від\s+(?:сміху|сорому|заздрості|нудьги)(?:\s|$))/i,
     /вбити\s+себе/i,
 ];
 
