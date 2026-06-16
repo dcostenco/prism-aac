@@ -761,3 +761,86 @@ describe('GestureDetector — advanced mode DTW detection', () => {
     expect(cb).not.toHaveBeenCalled();
   });
 });
+
+// ── Conversation Mode (ported from browser) ──────────────────────────────
+
+describe('GestureDetector — conversation mode', () => {
+  it('suppresses mouth_open during conversation mode', () => {
+    const cb = vi.fn();
+    const cfg = makeConfig({ enabled: true, dwellMs: 10, cooldownMs: 0 });
+    const gd = new GestureDetector(cfg, cb);
+    gd.startBaselineCapture();
+    for (let i = 0; i < 45; i++) gd.processFrame(makeFrame());
+
+    gd.setConversationMode(true);
+    expect(gd.isConversationModeActive()).toBe(true);
+
+    for (let i = 0; i < 10; i++) {
+      mockNow += 20;
+      gd.processFrame(makeFrame({ jawOpen: 0.8 }));
+    }
+    const mouthCalls = cb.mock.calls.filter(
+      (c: any[]) => c[0].gesture === 'mouth_open',
+    );
+    expect(mouthCalls.length).toBe(0);
+  });
+
+  it('suppresses smile during conversation mode', () => {
+    const cb = vi.fn();
+    const cfg = makeConfig({ enabled: true, dwellMs: 10, cooldownMs: 0 });
+    const gd = new GestureDetector(cfg, cb);
+    gd.startBaselineCapture();
+    for (let i = 0; i < 45; i++) gd.processFrame(makeFrame());
+
+    gd.setConversationMode(true);
+    for (let i = 0; i < 10; i++) {
+      mockNow += 20;
+      gd.processFrame(makeFrame({ mouthSmileLeft: 0.9, mouthSmileRight: 0.9 }));
+    }
+    const smileCalls = cb.mock.calls.filter(
+      (c: any[]) => c[0].gesture === 'smile',
+    );
+    expect(smileCalls.length).toBe(0);
+  });
+
+  it('does NOT suppress blink during conversation mode', () => {
+    const cb = vi.fn();
+    const cfg = makeConfig({ enabled: true, dwellMs: 10, cooldownMs: 0 });
+    const gd = new GestureDetector(cfg, cb);
+    gd.startBaselineCapture();
+    for (let i = 0; i < 45; i++) gd.processFrame(makeFrame());
+
+    gd.setConversationMode(true);
+    for (let i = 0; i < 15; i++) {
+      mockNow += 50;
+      gd.processFrame(makeFrame({ eyeBlinkLeft: 0.8, eyeBlinkRight: 0.8 }));
+    }
+    const blinkCalls = cb.mock.calls.filter(
+      (c: any[]) => c[0].gesture === 'blink',
+    );
+    expect(blinkCalls.length).toBeGreaterThan(0);
+  });
+
+  it('re-enables mouth gestures when conversation mode turns off', () => {
+    const cb = vi.fn();
+    const cfg = makeConfig({ enabled: true, dwellMs: 10, cooldownMs: 0 });
+    const gd = new GestureDetector(cfg, cb);
+    gd.startBaselineCapture();
+    for (let i = 0; i < 45; i++) gd.processFrame(makeFrame());
+
+    gd.setConversationMode(true);
+    for (let i = 0; i < 10; i++) {
+      mockNow += 20;
+      gd.processFrame(makeFrame({ jawOpen: 0.8 }));
+    }
+    expect(cb.mock.calls.filter((c: any[]) => c[0].gesture === 'mouth_open').length).toBe(0);
+
+    gd.setConversationMode(false);
+    expect(gd.isConversationModeActive()).toBe(false);
+    for (let i = 0; i < 10; i++) {
+      mockNow += 20;
+      gd.processFrame(makeFrame({ jawOpen: 0.8 }));
+    }
+    expect(cb.mock.calls.filter((c: any[]) => c[0].gesture === 'mouth_open').length).toBeGreaterThan(0);
+  });
+});

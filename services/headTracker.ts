@@ -24,6 +24,7 @@ import {
   DriftDetector,
   DriftWarning,
   EdgePinDetector,
+  ReliabilityProbe,
   computeAdaptiveTravelThreshold,
 } from './headTrackerStability';
 import { Kalman1D } from './kalmanFilter1D';
@@ -764,7 +765,16 @@ export function startHeadTracker(
   window.addEventListener('resize', onResize);
 
   let driftFired = false;  // one-shot — don't spam onDrift on every frame
+  let driftPaused = false; // true between onDrift and auto-recovery
   let lastWarnTs = 0;     // throttle onDriftWarning to once per window (5 s default)
+
+  // Auto-recovery probe: after drift disables tracking, the probe runs at
+  // reduced frequency. When 8/10 frames are stable, it fires onAutoRecover
+  // so the consumer can re-enable tracking without manual intervention.
+  const recoveryProbe = new ReliabilityProbe({
+    recoverFrames: 10,
+    stableConfidenceFloor: 0.7,
+  });
 
   // Normalize input: single string → array
   const ids: (string | undefined)[] = cameraDeviceIds
@@ -1207,9 +1217,24 @@ export function startHeadTracker(
           }
         }
 
+        // Recovery probe: if drift paused, check if confidence recovered
+        if (driftPaused) {
+          if (recoveryProbe.push(avgConfidence)) {
+            driftPaused = false;
+            driftFired = false;
+            driftDetector.reset();
+            edgePin.reset();
+            emitTrackingEvent({ type: 'auto-recover', timestamp: nowTs });
+            opts.onAutoRecover?.();
+          }
+          return;
+        }
+
         const reason = driftDetector.check();
         if (reason && opts.onDrift) {
           driftFired = true;
+          driftPaused = true;
+          recoveryProbe.reset();
           emitTrackingEvent({ type: 'drift', reason, timestamp: nowTs });
           opts.onDrift(reason);
           return;
@@ -1220,6 +1245,8 @@ export function startHeadTracker(
           emitTrackingEvent({ type: 'edge-pin-warn', timestamp: nowTs });
         } else if (pinResult === 'escalate' && opts.onDrift) {
           driftFired = true;
+          driftPaused = true;
+          recoveryProbe.reset();
           emitTrackingEvent({ type: 'edge-pin-escalate', timestamp: nowTs });
           emitTrackingEvent({ type: 'drift', reason: 'edge-pin-escalate', timestamp: nowTs });
           opts.onDrift('cursor-drift');

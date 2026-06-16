@@ -284,6 +284,9 @@ export class GestureDetector {
   private recordBuffer: number[][] = [];
   private recordGestureId = '';
 
+  // Conversation mode: suppress mouth gestures during TTS
+  private conversationMode = false;
+
   // Session timer for fatigue adaptation
   private sessionStart = Date.now();
 
@@ -315,6 +318,14 @@ export class GestureDetector {
 
   updateConfig(config: GestureConfig): void {
     this.config = config;
+  }
+
+  setConversationMode(active: boolean): void {
+    this.conversationMode = active;
+  }
+
+  isConversationModeActive(): boolean {
+    return this.conversationMode;
   }
 
   // ── Baseline Capture ───────────────────────────────────────────────────
@@ -390,21 +401,26 @@ export class GestureDetector {
     const blinkVal = Math.max(blinkL, blinkR);
     this.detectThresholdGesture('blink', blinkVal, 0.4 * fatigueMultiplier, 400);
 
-    // Mouth open: jawOpen above threshold
-    const mouthVal = bs[JAW_OPEN] ?? 0;
-    const mouthBase = base?.blendshapes[JAW_OPEN] ?? 0;
-    this.detectThresholdGesture('mouth_open', mouthVal - mouthBase, 0.32 * fatigueMultiplier, this.config.dwellMs);
+    // Mouth gestures suppressed during TTS (conversation mode) to prevent
+    // false activations from speech articulation. Blink, brow, and head
+    // gestures remain active so the user retains control during speech output.
+    if (!this.conversationMode) {
+      // Mouth open: jawOpen above threshold
+      const mouthVal = bs[JAW_OPEN] ?? 0;
+      const mouthBase = base?.blendshapes[JAW_OPEN] ?? 0;
+      this.detectThresholdGesture('mouth_open', mouthVal - mouthBase, 0.32 * fatigueMultiplier, this.config.dwellMs);
 
-    // Smile: per-side baseline subtraction + max (T-1 FIX v2 — same as blink)
-    const smileL = (bs[SMILE_LEFT] ?? 0) - (base?.blendshapes[SMILE_LEFT] ?? 0);
-    const smileR = (bs[SMILE_RIGHT] ?? 0) - (base?.blendshapes[SMILE_RIGHT] ?? 0);
-    const smileVal = Math.max(smileL, smileR);
-    this.detectThresholdGesture('smile', smileVal, 0.28 * fatigueMultiplier, this.config.dwellMs);
+      // Smile: per-side baseline subtraction + max (T-1 FIX v2 — same as blink)
+      const smileL = (bs[SMILE_LEFT] ?? 0) - (base?.blendshapes[SMILE_LEFT] ?? 0);
+      const smileR = (bs[SMILE_RIGHT] ?? 0) - (base?.blendshapes[SMILE_RIGHT] ?? 0);
+      const smileVal = Math.max(smileL, smileR);
+      this.detectThresholdGesture('smile', smileVal, 0.28 * fatigueMultiplier, this.config.dwellMs);
 
-    // Pucker ("oo" shape) — T-4: lowered 0.4→0.32 for motor-impaired users
-    const puckerVal = bs[PUCKER] ?? 0;
-    const puckerBase = base?.blendshapes[PUCKER] ?? 0;
-    this.detectThresholdGesture('pucker', puckerVal - puckerBase, 0.32 * fatigueMultiplier, this.config.dwellMs);
+      // Pucker ("oo" shape) — T-4: lowered 0.4→0.32 for motor-impaired users
+      const puckerVal = bs[PUCKER] ?? 0;
+      const puckerBase = base?.blendshapes[PUCKER] ?? 0;
+      this.detectThresholdGesture('pucker', puckerVal - puckerBase, 0.32 * fatigueMultiplier, this.config.dwellMs);
+    }
 
     // Eyebrow raise — T-4: lowered 0.35→0.28 for motor-impaired users
     const browVal = bs[BROW_UP] ?? 0;
