@@ -1339,7 +1339,7 @@ Three modes cycle with a single tap — the chosen layout is saved and restored 
 | Cloud (free) | Gemini 2.5 Flash | 99% | ~3s | Synalux absorbs |
 | Cloud (paid) | Claude Sonnet 4 | 99% | ~3s | Included in plan |
 
-**The pitch:** Every child gets Claude-grade accuracy whether they're on a $329 iPhone SE or a $2,000 iPad Pro. Local-first means zero cloud dependency, zero monthly API fees, zero PHI exposure, and sub-second response times. The prism-coder fleet scores **99.1–100%** on the BFCL function-calling benchmark (3-seed mean, June 2026): 27B/9B/4B at 100%, 2B at 99.1%. The 27B model (Qwen3.5 DeltaNet LoRA) additionally scores 100% on BFCL function-calling and 100% on an internal 15-problem coding eval.
+**The pitch:** Every child gets Claude-grade accuracy whether they're on a $329 iPhone SE or a $2,000 iPad Pro. Local-first means zero cloud dependency, zero monthly API fees, zero PHI exposure, and sub-second response times. The prism-coder fleet scores **99.1–100%** on the BFCL function-calling benchmark (3-seed mean, June 2026): 27B/9B/4B at 100%, 2B at 99.1%. The 27B additionally scores 100% on an internal 15-problem coding eval.
 
 ---
 
@@ -1475,7 +1475,7 @@ Static frequency lists are obsolete. PrismAAC ranks suggested phrases via [**Pri
 ### 3. Caregiver corrections become training data — automatically
 When a caregiver fixes a suggestion the model got wrong (e.g. "no, the word is *eat*, not *want*"), the [audit-hooks postflight harvester](https://github.com/dcostenco/prism-coder/blob/main/docs/WOW_FEATURES.md#7-the-recipe-combining-all-of-the-above) extracts the gotcha and persists it. After ~50 sessions, the system warns *before* the model makes a similar mistake. No labelling work for caregivers, no expensive retraining runs — the corrections are the curriculum.
 
-**Honest scope:** Routing accuracy on the [115-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100) (7 Prism tools, 12 categories, 3-seed mean, June 2026): 27b = 100.0%, 9b = 100.0%, 4b = 100.0%, 2b = 99.1%. Zero invented tool names across all model sizes and all seeds. The 2B runs on-device for fast phrase routing; the 9B/27B handle complex sessions and clinical workflows via WiFi-to-Mac. What makes PrismAAC defensible isn't the model score alone — it's the model plus the surrounding Prism spreading-activation algorithm stack.
+**Honest scope:** Routing accuracy on the [115-case Prism eval](https://github.com/dcostenco/prism-coder/tree/main/tests/benchmarks/prism-routing-100) (7 Prism tools, 12 categories, 3-seed mean, June 2026): 27b = 100.0%, 9b = 100.0%, 4b = 100.0%, 2b = 99.1%. Zero invented tool names across all model sizes and all seeds. The 2B runs on-device for fast phrase routing; the 9B/27B handle complex sessions and clinical workflows via WiFi-to-Mac. On the full Berkeley BFCL V4 leaderboard (2,000+ general function-calling cases), the 2B scores ~59% — comparable to other sub-2B models. What makes PrismAAC defensible isn't the model score alone — it's the model plus the surrounding Prism spreading-activation algorithm stack.
 
 </details>
 

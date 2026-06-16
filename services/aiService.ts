@@ -446,8 +446,11 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
     if (!res.ok) throw new Error(`Model ${model} unavailable`);
 
     const data = await res.json();
-    const content = data?.message?.content ?? '';
-    // Deliver buffered result to onChunk if caller expects streaming
+    const raw = data?.message?.content ?? '';
+    // L1 output safety BEFORE onChunk — the UI callback must never
+    // receive ungated text. checkOutputSafetyClient returns the crisis
+    // message if the response matches, or the original text if clean.
+    const content = checkOutputSafetyClient(raw);
     if (onChunk && content) onChunk(content);
     return content;
   } catch (e) {
@@ -489,7 +492,7 @@ async function callLocal(prompt: string, signal?: AbortSignal, onChunk?: (delta:
     try {
       const timeoutMs = model.includes('27b') ? 30000 : 15000;
       const result = await callLocalModel(prompt, model, timeoutMs, signal, onChunk);
-      if (isConfidentResponse(result)) return checkOutputSafetyClient(result);
+      if (isConfidentResponse(result)) return result;
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') throw e;
       continue;
@@ -588,7 +591,7 @@ const MEDICAL_OUTPUT_CLIENT = [
 ];
 
 function normalizeClient(text: string): string {
-    return text.toLowerCase().replace(/\s+/g, ' ');
+    return text.toLowerCase().replace(/\p{Cf}/gu, '').replace(/\s+/g, ' ');
 }
 
 export function checkInputSafetyClient(text: string): string | null {
