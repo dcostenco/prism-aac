@@ -103,19 +103,23 @@ The L1 gate runs deterministic regex checks on **both input and output** across 
 
 **What it catches:** first-person crisis expressions (self-harm intent), dangerous medical dosing instructions.
 
-**What it does NOT catch (by design):** generic clinical terms ("dose of risperidone", "milligrams", "suicide prevention training"). These appear in legitimate BCBA/medical notes and blocking them would harm the clinical users this product serves. The model's own safety training (L2) is the primary layer; L1 is a high-precision backstop.
+**What it does NOT catch (by design):** generic clinical terms ("dose of risperidone", "milligrams", "suicide prevention training"). These appear in legitimate BCBA/medical notes and blocking them would harm the clinical users this product serves. The on-device 2B model's own alignment is not relied upon for safety (it scores ~59% on general BFCL V4). L1 is the primary deterministic safety mechanism.
+
+**Known L1 limitations:**
+- **English-only patterns.** L1 crisis/medical regex is currently English only. Non-English users (the app supports 23 languages) are protected only by the model's own safety training (L2). Localized crisis patterns are a planned addition.
+- **Regex is a floor, not a ceiling.** Paraphrased distress ("I don't want to be here anymore") is not matched. L1 catches defined high-signal phrasings; L2 (model alignment) handles the long tail.
 
 **Coverage by path:**
 
 | Path | L1 Input | L1 Output | Notes |
 |------|:--------:|:---------:|-------|
-| Local Ollama (offline) | — | ✅ client-side | `checkOutputSafetyClient` in aiService.ts |
+| Local Ollama (offline, web) | ✅ client-side | ✅ client-side | `checkInputSafetyClient` + `checkOutputSafetyClient` |
+| iOS on-device (llama.cpp) | ✅ native | ✅ native | `L1SafetyGate.swift` in SynaluxBase |
 | Portal `/prism-aac/chat` | ✅ | streaming* | Input checked before model call |
 | Portal `/prism-aac/infer` | ✅ | ✅ | Shared safety-patterns module |
 | Portal `/prism-aac/inference` | ✅ | ✅ | Shared safety-patterns module |
-| iOS on-device (llama.cpp) | — | L2 (model) | GGUF template has nothink; no thinking leaks |
 
-*Streaming responses rely on model safety (L2) for output — you can't regex-filter a token stream mid-flight.
+*Streaming cloud responses rely on model safety (L2) for output — L1 can't regex-filter a token stream mid-flight.
 
 ### What a crisis interception looks like
 
