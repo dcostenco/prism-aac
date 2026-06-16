@@ -566,31 +566,31 @@ const CRISIS_INPUT_CLIENT = [
     /(?:hang|hanging)\s+(?:my)?self/i,
     /jump(?:ing)?\s+off/i,
     /how\s+(?:many|much|to).*(?:pills|overdose|die)/i,
-    // Spanish — negative lookahead for "de" (morir de risa = hyperbolic)
-    /quiero\s+morir(?!\s+de\b)/i,
-    /(?:voy\s+a\s+)?matarme(?!\s+(?:estudiando|trabajando|riendo))/i,
+    // Spanish — block only known hyperbole nouns
+    /quiero\s+morir(?!\s+de\s+(?:risa|la\s+risa|vergüenza|ganas|hambre|sed|calor|fr[ií]o|sue[ñn]o|envidia|aburrimiento)\b)/i,
+    /(?:voy\s+a\s+)?matarme(?!\s+(?:estudiando|trabajando|riendo|de\s+(?:risa|la\s+risa))\b)/i,
     /hacerme\s+da[ñn]o/i,
     /(?:quiero\s+)?suicidarme/i,
-    // French — negative lookahead for "de"
-    /je\s+veux\s+mourir(?!\s+de\b)/i,
-    /(?:vais\s+)?me\s+tuer(?!\s+[àa]\s+(?:rire|travailler))/i,
+    // French — block hyperbole nouns
+    /je\s+veux\s+mourir(?!\s+d[e']\s*(?:rire|honte|envie|faim|soif|chaud|froid|ennui)\b)/i,
+    /(?:vais\s+)?me\s+tuer(?!\s+[àa]\s+(?:rire|travailler|étudier)\b)/i,
     /me\s+suicider/i,
-    // Portuguese — negative lookahead for "de"
-    /quero\s+morrer(?!\s+de\b)/i,
-    /(?:vou\s+)?me\s+matar(?!\s+(?:estudando|trabalhando|rindo))/i,
-    // Russian — negative lookahead for "от"
-    /хочу\s+умереть(?!\s+от\s)/i,
+    // Portuguese — block hyperbole nouns
+    /quero\s+morrer(?!\s+de\s+(?:rir|vergonha|fome|sede|calor|frio|sono|inveja|tédio)\b)/i,
+    /(?:vou\s+)?me\s+matar(?!\s+(?:estudando|trabalhando|rindo|de\s+(?:rir|tanto))\b)/i,
+    // Russian — block hyperbole nouns
+    /хочу\s+умереть(?!\s+от\s+(?:смеха|стыда|зависти|голода|жары|скуки|холода)(?:\s|$))/i,
     /убить\s+себя/i,
     /покончить\s+с\s+собой/i,
     // Arabic (alef variants handled in normalize)
     /[اأإآ]ر[يى]د\s+[اأإآ]ن\s+[اأإآ]موت/,
     /قتل\s+نفس[يى]/,
     /[اأإآ]نه[يى]\s+ح[يى][اأإآ]ت[يى]/,
-    // German — negative lookahead for "vor"
-    /(?:ich\s+)?will\s+sterben(?!\s+vor\b)/i,
+    // German — block hyperbole nouns
+    /(?:ich\s+)?will\s+sterben(?!\s+vor\s+(?:lachen|scham|neid|hunger|langeweile|kälte)\b)/i,
     /mich\s+umbringen/i,
-    // Ukrainian — negative lookahead for "від"
-    /хочу\s+померти(?!\s+від\s)/i,
+    // Ukrainian — block hyperbole nouns
+    /хочу\s+померти(?!\s+від\s+(?:сміху|сорому|заздрості|голоду|холоду|нудьги)(?:\s|$))/i,
     /вбити\s+себе/i,
 ];
 
