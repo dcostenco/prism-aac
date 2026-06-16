@@ -552,10 +552,11 @@ export function stripModelControlTokens(text: string): string {
 // Mirrors server-side safety-patterns.ts. Both input and output checked
 // so the offline child path has the same L1 protection as the cloud path.
 
-const CRISIS_RESPONSE_CLIENT = "I'm concerned about your safety. Please tell a trusted adult, or call or text 988 (Suicide & Crisis Lifeline) right now — available 24/7. If in immediate danger, call 911. You are not alone.";
+const CRISIS_RESPONSE_CLIENT = "I'm concerned about your safety. Please tell a trusted adult, or call or text 988 (Suicide & Crisis Lifeline) right now — available 24/7. If in immediate danger, call 911. International: findahelpline.com. You are not alone.";
 const MEDICAL_RESPONSE_CLIENT = "I cannot provide specific medical dosing advice. Please contact your doctor or pharmacist. For emergencies, call 911.";
 
 const CRISIS_INPUT_CLIENT = [
+    // English
     /hurt(?:ing)?\s+(?:my)?self/i,
     /kill\s+(?:my)?self/i,
     /end\s+my\s+life/i,
@@ -565,6 +566,32 @@ const CRISIS_INPUT_CLIENT = [
     /(?:hang|hanging)\s+(?:my)?self/i,
     /jump(?:ing)?\s+off/i,
     /how\s+(?:many|much|to).*(?:pills|overdose|die)/i,
+    // Spanish
+    /quiero\s+morir/i,
+    /(?:voy\s+a\s+)?matarme/i,
+    /hacerme\s+da[ñn]o/i,
+    /(?:quiero\s+)?suicidarme/i,
+    // French
+    /je\s+veux\s+mourir/i,
+    /(?:vais\s+)?me\s+tuer/i,
+    /me\s+suicider/i,
+    // Portuguese
+    /quero\s+morrer/i,
+    /(?:vou\s+)?me\s+matar/i,
+    // Russian
+    /хочу\s+умереть/i,
+    /убить\s+себя/i,
+    /покончить\s+с\s+собой/i,
+    // Arabic
+    /أريد\s+أن\s+أموت/,
+    /قتل\s+نفسي/,
+    /أنهي\s+حياتي/,
+    // German
+    /(?:ich\s+)?will\s+sterben/i,
+    /mich\s+umbringen/i,
+    // Ukrainian
+    /хочу\s+померти/i,
+    /вбити\s+себе/i,
 ];
 
 const MEDICAL_INPUT_CLIENT = [
