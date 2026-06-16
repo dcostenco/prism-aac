@@ -515,7 +515,7 @@ async function callLocal(prompt: string, signal?: AbortSignal, onChunk?: (delta:
     try {
       const timeoutMs = model.includes('27b') ? 30000 : 15000;
       const result = await callLocalModel(prompt, model, timeoutMs, signal, onChunk);
-      if (isConfidentResponse(result)) return result;
+      if (isConfidentResponse(result)) return checkOutputSafetyClient(result);
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') throw e;
       continue;
@@ -571,7 +571,29 @@ export function stripModelControlTokens(text: string): string {
   return out.trim();
 }
 
-// ── Native bridge (iOS on-device 1.7B via llama.cpp) ──
+// ── Client-side L1 safety (offline path — no portal) ──
+
+const CRISIS_OUTPUT_CLIENT = [
+    /\bhow many pills\s+to\b/i,
+    /\boverdose amount\b/i,
+    /\bnoose\b/i,
+    /\bhanging yourself\b/i,
+    /\bsuicide method\b/i,
+    /\bmethod of suicide\b/i,
+    /\bself[- ]?harm method\b/i,
+    /\bhow to (?:kill|hang|poison|overdose)\s+(?:your|my|him|her|them|one)self\b/i,
+    /\bhow to (?:hang|poison|overdose)\b/i,
+];
+
+const CRISIS_RESPONSE_CLIENT = "I'm concerned about your safety. Please call or text 988 (Suicide & Crisis Lifeline) right now — available 24/7. If in immediate danger, call 911. You are not alone.";
+
+export function checkOutputSafetyClient(text: string): string {
+    const normalized = text.toLowerCase().replace(/\s+/g, ' ');
+    if (CRISIS_OUTPUT_CLIENT.some(re => re.test(normalized))) return CRISIS_RESPONSE_CLIENT;
+    return text;
+}
+
+// ── Native bridge (iOS on-device 2B/4B via llama.cpp) ──
 
 function isNativeBridgeAvailable(): boolean {
   return typeof window !== 'undefined' && !!(window as any).prismNativeBridge?.askAI;
