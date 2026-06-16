@@ -427,6 +427,9 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
   const t = timeoutSignal(timeoutMs);
   const fetchSignal = signal ? composeSignals(t.signal, signal) : t.signal;
   try {
+    // Buffer-then-serve: always non-streaming for local inference so L1 safety
+    // can gate the FULL response before it reaches the AAC UI. At num_predict:300
+    // the latency cost is negligible (~0.5s) and the child never sees unsafe text.
     const chatUrl = LOCAL_OLLAMA_URL.replace(/\/api\/?$/, '') + '/api/chat';
     const res = await fetch(chatUrl, {
       method: 'POST',
@@ -434,7 +437,7 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: prompt }],
-        stream: !!onChunk,
+        stream: false,
         think: false,
         options: { num_predict: 300, temperature: 0 },
       }),
@@ -442,46 +445,11 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
     });
     if (!res.ok) throw new Error(`Model ${model} unavailable`);
 
-    if (onChunk && res.body) {
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let fullText = '';
-      let lineBuffer = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        lineBuffer += decoder.decode(value, { stream: true });
-        const lines = lineBuffer.split('\n');
-        lineBuffer = lines.pop() || '';
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          try {
-            const parsed = JSON.parse(line);
-            const delta = parsed.message?.content || '';
-            if (delta) {
-              fullText += delta;
-              onChunk(delta);
-            }
-          } catch { /* incomplete chunk */ }
-        }
-      }
-      lineBuffer += decoder.decode();
-      for (const line of lineBuffer.split('\n')) {
-        if (!line.trim()) continue;
-        try {
-          const parsed = JSON.parse(line);
-          const delta = parsed.message?.content || '';
-          if (delta) {
-            fullText += delta;
-            onChunk(delta);
-          }
-        } catch { /* incomplete chunk */ }
-      }
-      return fullText;
-    }
-
     const data = await res.json();
-    return data?.message?.content ?? '';
+    const content = data?.message?.content ?? '';
+    // Deliver buffered result to onChunk if caller expects streaming
+    if (onChunk && content) onChunk(content);
+    return content;
   } catch (e) {
     // AbortError must propagate — converting it to a plain Error makes callLocal
     // retry the next model (wasting time) and relies on callSynalux's upfront
@@ -511,6 +479,12 @@ function isConfidentResponse(text: string): boolean {
 }
 
 async function callLocal(prompt: string, signal?: AbortSignal, onChunk?: (delta: string) => void): Promise<string> {
+  // L1 input safety — intercept crisis/medical before any model runs (offline path)
+  const inputIntercept = checkInputSafetyClient(prompt);
+  if (inputIntercept) {
+    if (onChunk) onChunk(inputIntercept);
+    return inputIntercept;
+  }
   for (const model of LOCAL_MODELS) {
     try {
       const timeoutMs = model.includes('27b') ? 30000 : 15000;
@@ -572,6 +546,28 @@ export function stripModelControlTokens(text: string): string {
 }
 
 // ── Client-side L1 safety (offline path — no portal) ──
+// Mirrors server-side safety-patterns.ts. Both input and output checked
+// so the offline child path has the same L1 protection as the cloud path.
+
+const CRISIS_RESPONSE_CLIENT = "I'm concerned about your safety. Please tell a trusted adult, or call or text 988 (Suicide & Crisis Lifeline) right now — available 24/7. If in immediate danger, call 911. You are not alone.";
+const MEDICAL_RESPONSE_CLIENT = "I cannot provide specific medical dosing advice. Please contact your doctor or pharmacist. For emergencies, call 911.";
+
+const CRISIS_INPUT_CLIENT = [
+    /hurt(?:ing)?\s+(?:my)?self/i,
+    /kill\s+(?:my)?self/i,
+    /end\s+my\s+life/i,
+    /want\s+to\s+die/i,
+    /want\s+to\s+(?:commit\s+)?suicide/i,
+    /cut(?:ting)?\s+(?:my)?self/i,
+    /(?:hang|hanging)\s+(?:my)?self/i,
+    /jump(?:ing)?\s+off/i,
+    /how\s+(?:many|much|to).*(?:pills|overdose|die)/i,
+];
+
+const MEDICAL_INPUT_CLIENT = [
+    /(?:how\s+much|what\s+dose)\s+.*(?:should\s+I|do\s+I|can\s+I)\s+(?:inject|take|give)/i,
+    /(?:dose|dosage)\s+(?:should\s+I|do\s+I|can\s+I)\s+(?:inject|take|give)/i,
+];
 
 const CRISIS_OUTPUT_CLIENT = [
     /\bhow many pills\s+to\b/i,
@@ -582,14 +578,30 @@ const CRISIS_OUTPUT_CLIENT = [
     /\bmethod of suicide\b/i,
     /\bself[- ]?harm method\b/i,
     /\bhow to (?:kill|hang|poison|overdose)\s+(?:your|my|him|her|them|one)self\b/i,
-    /\bhow to (?:hang|poison|overdose)\b/i,
+    /\bhow to overdose\b/i,
 ];
 
-const CRISIS_RESPONSE_CLIENT = "I'm concerned about your safety. Please call or text 988 (Suicide & Crisis Lifeline) right now — available 24/7. If in immediate danger, call 911. You are not alone.";
+const MEDICAL_OUTPUT_CLIENT = [
+    /\binject this (?:amount|dose|much)\b/i,
+    /\btake this (?:amount|many|dose)\b/i,
+    /\byou should (?:inject|take)\s+\d+\s+units\b/i,
+];
+
+function normalizeClient(text: string): string {
+    return text.toLowerCase().replace(/\s+/g, ' ');
+}
+
+export function checkInputSafetyClient(text: string): string | null {
+    const t = normalizeClient(text);
+    if (CRISIS_INPUT_CLIENT.some(p => p.test(t))) return CRISIS_RESPONSE_CLIENT;
+    if (MEDICAL_INPUT_CLIENT.some(p => p.test(t))) return MEDICAL_RESPONSE_CLIENT;
+    return null;
+}
 
 export function checkOutputSafetyClient(text: string): string {
-    const normalized = text.toLowerCase().replace(/\s+/g, ' ');
-    if (CRISIS_OUTPUT_CLIENT.some(re => re.test(normalized))) return CRISIS_RESPONSE_CLIENT;
+    const t = normalizeClient(text);
+    if (CRISIS_OUTPUT_CLIENT.some(re => re.test(t))) return CRISIS_RESPONSE_CLIENT;
+    if (MEDICAL_OUTPUT_CLIENT.some(re => re.test(t))) return MEDICAL_RESPONSE_CLIENT;
     return text;
 }
 
