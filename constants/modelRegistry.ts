@@ -1,89 +1,64 @@
 /**
- * Prism model registry — ground truth fetched from HuggingFace model cards.
+ * Prism model registry — Qwen3.5 fleet (June 2026).
  *
- * DO NOT edit accuracy/version by hand. Run:
- *   bash scripts/update-model-registry.sh
- *
- * HuggingFace sources:
- *   dcostenco/prism-coder-1.7b  · dcostenco/prism-coder-8b
- *   dcostenco/prism-coder-4b    · dcostenco/prism-coder-14b
- *   dcostenco/prism-coder-32b
+ * HuggingFace: dcostenco/prism-coder-{2b,4b,9b,27b} (public GGUF)
+ * Ollama Hub:  dcostenco/prism-coder:{2b,4b,9b,27b}
  */
 
 export interface ModelSpec {
-  /** Ollama tag (dcostenco/prism-coder:<id>) */
   ollamaTag: string;
-  /** iOS GGUF filename stem (used in PrismAACApp.swift CDN path) */
   iosFile: string;
-  /** HuggingFace repo id */
   hfRepo: string;
-  /** Current fine-tune version on HuggingFace */
   version: string;
-  /** BFCL routing accuracy (%) — 3-seed mean, 102 cases each */
   accuracy: number;
-  /** GGUF file size in GB (iOS download / Ollama) */
   sizeGB: number;
-  /** Minimum free RAM in MB required to load on iOS */
   minFreeMB: number;
-  /** Human-readable role description */
   role: string;
 }
 
 export const MODEL_REGISTRY = {
-  '1b7': {
-    ollamaTag:  'dcostenco/prism-coder:1b7',
-    iosFile:    'prism-aac-1b7-q4km',
-    hfRepo:     'dcostenco/prism-coder-1.7b',
-    version:    'v41',
-    accuracy:   96.1,
-    sizeGB:     1.1,
-    minFreeMB:  1_200,
-    role:       'On-device iOS · always fits · ~0.5s',
+  '2b': {
+    ollamaTag:  'dcostenco/prism-coder:2b',
+    iosFile:    'prism-coder-2b-v43-Q3_K_M',
+    hfRepo:     'dcostenco/prism-coder-2b',
+    version:    'v43',
+    accuracy:   99.1,
+    sizeGB:     2.3,
+    minFreeMB:  3_000,
+    role:       'iPhone / mobile · always fits · ~0.5s',
   },
   '4b': {
     ollamaTag:  'dcostenco/prism-coder:4b',
-    iosFile:    'prism-aac-4b-q4km',
+    iosFile:    'prism-coder-4b-v43-Q4_K_M',
     hfRepo:     'dcostenco/prism-coder-4b',
     version:    'v43',
     accuracy:   100.0,
-    sizeGB:     2.5,
-    minFreeMB:  2_800,
-    role:       'iPhone 15/16 Pro · iPad Air M1+ · ~0.8s',
+    sizeGB:     3.4,
+    minFreeMB:  5_000,
+    role:       'iPhone 15/16 Pro · iPad Air · verifier',
   },
-  '8b': {
-    ollamaTag:  'dcostenco/prism-coder:8b',
-    iosFile:    'prism-aac-8b-q4km',
-    hfRepo:     'dcostenco/prism-coder-8b',
-    version:    'v35',
-    accuracy:   98.0,
-    sizeGB:     4.7,
-    minFreeMB:  4_500,
-    role:       'iOS 8 GB · balanced speed/accuracy · ~1s',
-  },
-  '14b': {
-    ollamaTag:  'dcostenco/prism-coder:14b',
-    iosFile:    'prism-aac-14b-q4km',
-    hfRepo:     'dcostenco/prism-coder-14b',
-    version:    'v33',
-    accuracy:   97.1,
-    sizeGB:     9.3,
-    minFreeMB:  10_000,
-    role:       'iPad Pro 16 GB · Mac M2 Pro+ · ~3s',
-  },
-  '32b': {
-    ollamaTag:  'dcostenco/prism-coder:32b',
+  '9b': {
+    ollamaTag:  'dcostenco/prism-coder:9b',
     iosFile:    '',
-    hfRepo:     'dcostenco/prism-coder-32b',
-    version:    'v33',
-    accuracy:   99.0,
-    sizeGB:     19.0,
-    minFreeMB:  0,
-    role:       'Mac M2 Ultra+ · clinical/enterprise · ~8s',
+    hfRepo:     'dcostenco/prism-coder-9b',
+    version:    'v35',
+    accuracy:   100.0,
+    sizeGB:     5.8,
+    minFreeMB:  8_000,
+    role:       'Mac 16 GB+ · default router · 78 tok/s',
+  },
+  '27b': {
+    ollamaTag:  'dcostenco/prism-coder:27b',
+    iosFile:    '',
+    hfRepo:     'dcostenco/prism-coder-27b',
+    version:    'v3',
+    accuracy:   100.0,
+    sizeGB:     16.8,
+    minFreeMB:  20_000,
+    role:       'Mac 24 GB+ · quality tier (DeltaNet) · 28.5 tok/s',
   },
 } as const satisfies Record<string, ModelSpec>;
 
 export type ModelId = keyof typeof MODEL_REGISTRY;
 
-/** Ordered list for auto-sideload: best → smallest, so we pull the
- *  highest-accuracy model the user's hardware can handle. */
-export const SIDELOAD_ORDER: ModelId[] = ['32b', '14b', '8b', '4b', '1b7'];
+export const SIDELOAD_ORDER: ModelId[] = ['27b', '9b', '4b', '2b'];

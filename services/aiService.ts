@@ -7,7 +7,7 @@
  *   - All Synalux modules available (web search, etc.)
  *   - Free: Gemini 2.5 Flash | Standard/Advanced: Claude Sonnet 4 | Enterprise: Claude Opus 4
  *
- * OFFLINE: Falls back to prism-coder:14b via local Ollama
+ * OFFLINE: Falls back to prism-coder:9b via local Ollama
  *   - Limited but functional — handles simple Q&A and note parsing
  *   - No web search, no premium models
  *   - Ensures the child always has AI help even without internet
@@ -146,7 +146,7 @@ async function _doAutoSideload(): Promise<void> {
     return;
   }
 
-  // Pick best model — try 32B first, fall back to 14B
+  // Pick best model — try 27B first, fall back to 9B
   for (const { tag } of PULLABLE_MODELS) {
     if (await ollamaPull(tag)) {
       sessionStorage.setItem(SIDELOAD_KEY, 'done');
@@ -307,7 +307,7 @@ async function callSynalux(
     // Route via /api/v1/prism-aac/chat — the dedicated AAC chat
     // endpoint (synalux-private commits 8607d33c → 05ef1d57).
     // Public route — no session cookie required (AAC must work for every child, including those without a caregiver account). Rate-limited per IP on the server.
-    // Tier-routed to local prism-coder:14b → 14b → Claude Sonnet / Gemini.
+    // Tier-routed to local prism-coder:9b → 14b → Claude Sonnet / Gemini.
     //
     // The previous /api/v1/chat target was the synalux web-app chat,
     // auth-gated → 401 for anonymous users on prism-aac.vercel.app.
@@ -427,13 +427,15 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
   const t = timeoutSignal(timeoutMs);
   const fetchSignal = signal ? composeSignals(t.signal, signal) : t.signal;
   try {
-    const res = await fetch(`${LOCAL_OLLAMA_URL}/generate`, {
+    const chatUrl = LOCAL_OLLAMA_URL.replace(/\/api\/?$/, '') + '/api/chat';
+    const res = await fetch(chatUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
-        prompt,
+        messages: [{ role: 'user', content: prompt }],
         stream: !!onChunk,
+        think: false,
         options: { num_predict: 300, temperature: 0 },
       }),
       signal: fetchSignal,
@@ -455,7 +457,7 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
           if (!line.trim()) continue;
           try {
             const parsed = JSON.parse(line);
-            const delta = parsed.response || '';
+            const delta = parsed.message?.content || '';
             if (delta) {
               fullText += delta;
               onChunk(delta);
@@ -468,7 +470,7 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
         if (!line.trim()) continue;
         try {
           const parsed = JSON.parse(line);
-          const delta = parsed.response || '';
+          const delta = parsed.message?.content || '';
           if (delta) {
             fullText += delta;
             onChunk(delta);
@@ -479,7 +481,7 @@ async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, 
     }
 
     const data = await res.json();
-    return data?.response ?? '';
+    return data?.message?.content ?? '';
   } catch (e) {
     // AbortError must propagate — converting it to a plain Error makes callLocal
     // retry the next model (wasting time) and relies on callSynalux's upfront
@@ -511,7 +513,7 @@ function isConfidentResponse(text: string): boolean {
 async function callLocal(prompt: string, signal?: AbortSignal, onChunk?: (delta: string) => void): Promise<string> {
   for (const model of LOCAL_MODELS) {
     try {
-      const timeoutMs = model.includes('32b') ? 30000 : 15000;
+      const timeoutMs = model.includes('27b') ? 30000 : 15000;
       const result = await callLocalModel(prompt, model, timeoutMs, signal, onChunk);
       if (isConfidentResponse(result)) return result;
     } catch (e) {
@@ -638,8 +640,8 @@ function callNativeBridge(
 // ── Routing: local-first → cloud fallback ──
 //
 // Priority: avoid cloud calls at all cost.
-//   1. Native bridge (iOS on-device 1.7B/14B via llama.cpp)
-//   2. Local Ollama (WiFi to Mac — 14B at 98%)
+//   1. Native bridge (iOS on-device 2B/4B via llama.cpp)
+//   2. Local Ollama (WiFi to Mac — 9B/27B at 100%)
 //   3. Synalux cloud (Claude — last resort)
 
 async function route(
@@ -651,7 +653,7 @@ async function route(
 
   const fullPrompt = options?.system ? `${options.system}\n\n${prompt}` : prompt;
 
-  // 1. Try local Ollama first (Mac on WiFi — 14B at 98%, free)
+  // 1. Try local Ollama first (Mac on WiFi — 9B/27B at 100%, free)
   if (!options?.webSearch) {
     try {
       const raw = await callLocal(fullPrompt, options?.signal, options?.onChunk);
