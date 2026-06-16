@@ -38,7 +38,7 @@ export function pictureModeForProfile(profile: SynaluxProfile | null): PictureMo
   return 'symbols-ai';
 }
 
-const STYLE_VERSION = 1;
+const STYLE_VERSION = 2;
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB cap — prevents OOM from oversized blobs
 const ARASAAC_API = 'https://api.arasaac.org/v1';
 const ARASAAC_CDN = 'https://static.arasaac.org/pictograms';
