@@ -322,6 +322,9 @@ export default function PredictionBar() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const finalTiles = useMemo(() => dropForeignTiles(displayed), [displayed, language]);
 
+  // All hooks MUST be called before any early return — React error #300.
+  const activeScene = useVisionStore((s) => s.activeScene);
+
   // ── Contact-search mode — replaces word predictions while messaging ──
   if (sidePanel === 'aac-chat' && !activeContactId) {
     const matched = filterContacts(contacts, text);
@@ -358,8 +361,6 @@ export default function PredictionBar() {
       </div>
     );
   }
-
-  const activeScene = useVisionStore((s) => s.activeScene);
 
   return (
     <div data-testid="prediction-bar" className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 relative" style={{ height: 'clamp(48px, 10svh, 110px)' }}>

@@ -91,6 +91,10 @@ export function formatEvent(event: TrackingEvent): string {
             return `${time}  cal-learned      ${event.mode}  rX=${event.rangeX.toFixed(3)} rY=${event.rangeY.toFixed(3)}`;
         case 'dtw-fallback':
             return `${time}  dtw-fallback     ${event.reason}`;
+        case 'auto-recover':
+            return `${time}  auto-recover`;
+        case 'auto-recover-timeout':
+            return `${time}  auto-recover-timeout`;
     }
 }
 

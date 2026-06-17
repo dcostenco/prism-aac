@@ -134,6 +134,16 @@ export interface DtwFallbackEvent {
     timestamp: number;
 }
 
+export interface AutoRecoverEvent {
+    type: 'auto-recover';
+    timestamp: number;
+}
+
+export interface AutoRecoverTimeoutEvent {
+    type: 'auto-recover-timeout';
+    timestamp: number;
+}
+
 export type TrackingEvent =
     | DriftTripEvent
     | SafeModeEnterEvent
@@ -151,7 +161,9 @@ export type TrackingEvent =
     | GestureFalsePositiveEvent
     | CalibrationResetEvent
     | CalibrationLearnedEvent
-    | DtwFallbackEvent;
+    | DtwFallbackEvent
+    | AutoRecoverEvent
+    | AutoRecoverTimeoutEvent;
 
 export type TrackingEventListener = (event: TrackingEvent) => void;
 
