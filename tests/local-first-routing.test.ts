@@ -29,11 +29,11 @@ function mockFetch(localAvailable: boolean, cloudAvailable: boolean) {
     try { body = JSON.parse(init?.body || '{}'); } catch {}
     fetchCalls.push({ url: urlStr, body });
 
-    // Local Ollama
+    // Local Ollama (chat API — /api/chat returns { message: { content } })
     if (urlStr.includes('localhost:11434') || urlStr.includes('127.0.0.1:11434')) {
       if (!localAvailable) throw new Error('Local Ollama unavailable');
       return new Response(JSON.stringify({
-        response: 'Here are some phrases:\n• I need help.\n• Please help me.\n• Can someone assist?',
+        message: { role: 'assistant', content: 'Here are some phrases:\n• I need help.\n• Please help me.\n• Can someone assist?' },
       }), { status: 200, headers: { 'content-type': 'application/json' } });
     }
 
@@ -79,7 +79,7 @@ describe('Local-first routing — avoids cloud at all cost', () => {
     await expect(askAI('Help')).rejects.toThrow(/No AI available/);
   });
 
-  it('local calls target the cascade models (14b first, then 1b7)', async () => {
+  it('local calls target the cascade models (27b first, then 9b)', async () => {
     // Make first model fail, second succeed
     let callCount = 0;
     fetchSpy.mockImplementation(async (url: any, init: any) => {
@@ -91,12 +91,12 @@ describe('Local-first routing — avoids cloud at all cost', () => {
       if (urlStr.includes('localhost:11434')) {
         callCount++;
         if (callCount === 1) {
-          // First call (14B) — fails
+          // First call (27B) — fails
           throw new Error('Model not loaded');
         }
-        // Second call (1.7B) — succeeds
+        // Second call (9B) — succeeds
         return new Response(JSON.stringify({
-          response: 'Fallback response from 1.7B — phrases for help.',
+          message: { role: 'assistant', content: 'Fallback response from 9B — phrases for help.' },
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
       return new Response('', { status: 503 });
@@ -104,41 +104,41 @@ describe('Local-first routing — avoids cloud at all cost', () => {
 
     await askAI('Phrases for help');
     const local = localCalls();
-    expect(local.length).toBe(2); // tried 14B then 1.7B
+    expect(local.length).toBe(2); // tried 27B then 9B
   });
 });
 
 describe('Model selection on 8GB devices', () => {
-  it('14B Q4_K_M (8.4 GB) does NOT fit on 8GB device', () => {
+  it('9B (5.8 GB) does NOT fit on 8GB device', () => {
     const deviceRAM = 8 * 1024; // 8192 MB
     const iosOverhead = 2500;
     const appOverhead = 200;
     const available = deviceRAM - iosOverhead - appOverhead; // ~5492 MB
-    const model14bQ4 = 8400 + 600 + 200; // weights + KV + overhead = 9200 MB
-    expect(model14bQ4).toBeGreaterThan(available);
+    const model9b = 5800 + 600 + 200; // weights + KV + overhead = 6600 MB
+    expect(model9b).toBeGreaterThan(available);
   });
 
-  it('1.7B Q4_K_M (1.0 GB) fits on 8GB device with 4+ GB margin', () => {
+  it('2B Q3_K_M (2.3 GB) fits on 8GB device with 2+ GB margin', () => {
     const available = 8 * 1024 - 2500 - 200; // 5492 MB
-    const model1b7 = 1050 + 200 + 100; // 1350 MB
-    expect(model1b7).toBeLessThan(available);
-    expect(available - model1b7).toBeGreaterThan(4000); // 4+ GB margin
+    const model2b = 2300 + 200 + 100; // 2600 MB
+    expect(model2b).toBeLessThan(available);
+    expect(available - model2b).toBeGreaterThan(2000); // 2+ GB margin
   });
 
-  it('14B Q4_K_M fits on 16GB iPad Pro', () => {
+  it('9B fits on 16GB iPad Pro', () => {
     const available = 16 * 1024 - 2500 - 200; // 13684 MB
-    const model14bQ4 = 8400 + 600 + 200; // 9200 MB
-    expect(model14bQ4).toBeLessThan(available);
+    const model9b = 5800 + 600 + 200; // 6600 MB
+    expect(model9b).toBeLessThan(available);
   });
 
-  it('canLoad14B threshold is 16 GB', () => {
-    // Mirrors LLMEngine.canLoad14B logic
-    const canLoad14B = (ramGB: number) => ramGB >= 16;
-    expect(canLoad14B(8)).toBe(false);   // iPhone 15 Pro
-    expect(canLoad14B(8)).toBe(false);   // iPad Air M2
-    expect(canLoad14B(16)).toBe(true);   // iPad Pro M4 16GB
-    expect(canLoad14B(32)).toBe(true);   // iPad Pro M4 32GB
-    expect(canLoad14B(48)).toBe(true);   // Mac M4 Max
+  it('canLoad9B threshold is 16 GB', () => {
+    // Mirrors LLMEngine.canLoad9B logic
+    const canLoad9B = (ramGB: number) => ramGB >= 16;
+    expect(canLoad9B(8)).toBe(false);   // iPhone 15 Pro
+    expect(canLoad9B(8)).toBe(false);   // iPad Air M2
+    expect(canLoad9B(16)).toBe(true);   // iPad Pro M4 16GB
+    expect(canLoad9B(32)).toBe(true);   // iPad Pro M4 32GB
+    expect(canLoad9B(48)).toBe(true);   // Mac M4 Max
   });
 });
 
