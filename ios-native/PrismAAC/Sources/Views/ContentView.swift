@@ -309,16 +309,40 @@ struct PrismWebView: UIViewRepresentable {
                 weak var webView = message.webView
                 Task { @MainActor in
                     let encoder = JSONEncoder()
+                    var fullOutput = ""
                     var buffer = ""
                     var tokenCount = 0
                     let batchSize = 5
+                    var outputBlocked = false
                     func flushBuffer() {
-                        guard !buffer.isEmpty,
-                              let data = try? encoder.encode(buffer),
+                        guard !buffer.isEmpty, !outputBlocked else { buffer = ""; return }
+                        let result = SafetyFilter.check(fullOutput + buffer)
+                        if case .safe = result {
+                            // safe — continue
+                        } else {
+                            NSLog("[PrismAAC] AI output blocked by SafetyFilter")
+                            outputBlocked = true
+                            buffer = ""
+                            let referral: String
+                            switch result {
+                            case .crisis(let response): referral = response
+                            case .medical(let response): referral = response
+                            default: referral = "I can't help with that. If you're in crisis, please contact 988 (Suicide & Crisis Lifeline)."
+                            }
+                            if let data = try? encoder.encode(referral),
+                               let json = String(data: data, encoding: .utf8) {
+                                webView?.evaluateJavaScript(
+                                    "window.prismNativeAIResult && window.prismNativeAIResult(\(json))"
+                                ) { _, _ in }
+                            }
+                            return
+                        }
+                        guard let data = try? encoder.encode(buffer),
                               let json = String(data: data, encoding: .utf8) else { return }
                         webView?.evaluateJavaScript(
                             "window.prismNativeAIResult && window.prismNativeAIResult(\(json))"
                         ) { _, _ in }
+                        fullOutput += buffer
                         buffer = ""
                     }
                     for await token in self.pipeline.ask(question: question, language: lang) {

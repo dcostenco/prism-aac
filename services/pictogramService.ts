@@ -274,6 +274,18 @@ async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
+import { PROFANITY, SENSITIVE } from '@/engine/ageBlocklist';
+
+const CURATED_PICTOGRAM_IDS: Record<string, number> = {
+  'come here': 32669,
+  'how are you': 4581,
+  'how are you?': 4581,
+  "i'm good": 4581,
+  "i don't know": 11697,
+  'my name is': 27357,
+  'all done': 10367,
+};
+
 export async function getPictogramUrl(
   phrase: string,
   lang: string,
@@ -282,8 +294,29 @@ export async function getPictogramUrl(
   if (mode === 'off') return null;
   const token = pickHeadWord(phrase);
   if (!token) return null;
+  const lowerToken = token.toLowerCase();
+  if (PROFANITY.has(lowerToken)) return null;
 
   const key = await sha256(`v${STYLE_VERSION}|${lang}|${mode}|${token}`);
+
+  if (SENSITIVE.has(lowerToken)) {
+    if (MEM_CACHE.has(key)) return MEM_CACHE.get(key) ?? null;
+    const neutralId = 6009;
+    const imgT = timeoutSignal(5000);
+    try {
+      const imgRes = await fetch(`${ARASAAC_CDN}/${neutralId}/${neutralId}_500.png`, { signal: imgT.signal });
+      if (imgRes.ok) {
+        const blob = await imgRes.blob();
+        if (blob.size <= MAX_IMAGE_BYTES) {
+          await cachePut(key, blob);
+          const url = URL.createObjectURL(blob);
+          memCacheSet(key, url);
+          return url;
+        }
+      }
+    } catch { /* fall through — return null */ } finally { imgT.cancel(); }
+    return null;
+  }
 
   if (MEM_CACHE.has(key)) return MEM_CACHE.get(key) ?? null;
 
@@ -297,6 +330,25 @@ export async function getPictogramUrl(
   // Single-character tokens (pronouns like "I"/"я", articles like "a"/"и")
   // are valid AAC words across all 20 supported languages. Let ARASAAC
   // search determine the best pictogram — no length-based skip.
+
+  // Curated ARASAAC pictogram IDs for core phrases where the search API
+  // returns wrong/generic images (e.g. clock+calendar for "Come here").
+  const curatedId = CURATED_PICTOGRAM_IDS[normalize(phrase).toLowerCase()];
+  if (curatedId) {
+    const imgT = timeoutSignal(5000);
+    try {
+      const imgRes = await fetch(`${ARASAAC_CDN}/${curatedId}/${curatedId}_500.png`, { signal: imgT.signal });
+      if (imgRes.ok) {
+        const blob = await imgRes.blob();
+        if (blob.size <= MAX_IMAGE_BYTES) {
+          await cachePut(key, blob);
+          const url = URL.createObjectURL(blob);
+          memCacheSet(key, url);
+          return url;
+        }
+      }
+    } catch { /* fall through to normal search */ } finally { imgT.cancel(); }
+  }
 
   const fullPhrase = normalize(phrase);
   let blob = fullPhrase !== token ? await fetchArasaac(fullPhrase, lang) : null;

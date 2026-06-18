@@ -15,34 +15,33 @@
 		1BAB0485396C63FC134A5A4B /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF5CCFCBAAF60AAE468A1EBB /* KeychainHelper.swift */; };
 		1CF623FFAC2C87AE0A84E560 /* WatchTranslation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE377D198DA564653BA6171 /* WatchTranslation.swift */; };
 		224F2BFEC166D915B9A58774 /* WatchLLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7415B4A02CB4DA26893A619 /* WatchLLMEngine.swift */; };
-		236203AEEEAE5D2C54F0C8B4 /* DatadogRUM in Frameworks */ = {isa = PBXBuildFile; productRef = 953062704DDCC2222408998E /* DatadogRUM */; };
 		26A7AD7DDCBA8B0B8D19ECA0 /* AppIcon54x54@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 95805409B214B9D6DF2076F7 /* AppIcon54x54@2x.png */; };
-		284A327405D2778BC4592D60 /* DatadogCrashReporting in Frameworks */ = {isa = PBXBuildFile; productRef = 302A09D1250775829D8F3FAF /* DatadogCrashReporting */; };
 		287EB175AC807A70ED2E2AB1 /* ButtonCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B596E9E9B51A0D4D3C329C9F /* ButtonCoverageTests.swift */; };
 		298E5CAC051C4E6C40B9309A /* WatchVocabSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1FF5018CD7D6ED0E48C17D /* WatchVocabSync.swift */; };
 		2CD68B3ABCB8C23FF1104EC7 /* PrismAACApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */; };
-		33A60DD575371C47AD15ECBA /* DatadogLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = C214A7DA14FF7152781B924F /* DatadogLogger.swift */; };
 		35B73245D5AA0AE1C5AEC32A /* AIChatFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CA14CA933F6B284A18A59A /* AIChatFlowTests.swift */; };
 		35D9A95BD14055A496098878 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 27F621FF903791DF9713E9E5 /* Assets.xcassets */; };
 		3A86633A7C7348A6B94B45B1 /* AppIcon50x50@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7F5B86B0B8D15149418A59D8 /* AppIcon50x50@2x.png */; };
 		3D08BF95A6574850121B9852 /* PrismAACUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B17D9B0D21E9712DE4058F /* PrismAACUnitTests.swift */; };
 		3F4FDC469542E9A9D39C391F /* WatchLayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 485E0CAF1D660CE13F92A068 /* WatchLayerTests.swift */; };
-		45DB54F19BDCE1A20CBB61F1 /* InworldSTTClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661A097169A8760B4032D6EF /* InworldSTTClient.swift */; };
+		45F15F15FE63465B2ED9A84C /* DatadogLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7470815699E3F5011B3436C /* DatadogLogger.swift */; };
 		4845E40319EC76BF7B3D85D9 /* PrismAACUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */; };
-		487E4327ED9C42F442B70EBB /* DatadogWebViewTracking in Frameworks */ = {isa = PBXBuildFile; productRef = 419DF7313E90E74369647E1C /* DatadogWebViewTracking */; };
 		520CBFCB73C47A12E8E6AFE3 /* BedsideModeExtendedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A679874C453F382852D8900 /* BedsideModeExtendedTests.swift */; };
 		555C0BC04B53500144B4F875 /* AppIcon86x86@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */; };
 		5B27532A15466AB48954316F /* BridgeSecurityPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F77017533C2E0E39A0CFA2FA /* BridgeSecurityPolicy.swift */; };
 		64BFB93793BFBD59BD651173 /* offline.html in Resources */ = {isa = PBXBuildFile; fileRef = 378A42F7E901AC2CE6A66DF0 /* offline.html */; };
 		6960B655C665118DAABF6BCE /* BridgeSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BFC79A8CF42D931FA02260 /* BridgeSecurityTests.swift */; };
+		6A0EADC4EAE2C4B365BD1440 /* DatadogRUM in Frameworks */ = {isa = PBXBuildFile; productRef = 4569C5E9E6E54B952DE50A5F /* DatadogRUM */; };
 		6AED27E0943BFD006689E47F /* llama in Frameworks */ = {isa = PBXBuildFile; productRef = 04E3214E7CFA50AC6BF94363 /* llama */; };
 		6BDCC5044BD258312294B7A8 /* WatchInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */; };
 		6FBD9B75E28C4569B1FFF7A5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BDF1E2439453E4F2F472830B /* Assets.xcassets */; };
 		79A08C2E36B3B5E9C19C91EF /* WatchEmergencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */; };
+		7BF11A31EFD1E134064E962A /* DatadogCrashReporting in Frameworks */ = {isa = PBXBuildFile; productRef = 428066B6FACEEB1E6A761259 /* DatadogCrashReporting */; };
 		7D9AE38FAC869992527D4493 /* AppIcon40x40@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 48264733CC75753DEBCDDC22 /* AppIcon40x40@2x.png */; };
 		873D9BA3D593822D10162ACC /* AppIcon29x29@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 0D5FF922BC8B7B4BC0A6B33E /* AppIcon29x29@3x.png */; };
 		8ACCA7F12A410E5951CB832F /* SafetyFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 824CFF80AABA2799959262E4 /* SafetyFilter.swift */; };
 		8E2FAA24B4AD8AA0AAA04E86 /* AppIcon108x108@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A9608B96E043220F2C92F586 /* AppIcon108x108@2x.png */; };
+		92B4306E8B1AAFFC82E39F8D /* WatchStreamingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E806C70DB42E2879A665E4C3 /* WatchStreamingTests.swift */; };
 		942B03B6D5C2451ABE9384DA /* aacTranslations.json in Resources */ = {isa = PBXBuildFile; fileRef = BD695AAA76A1B168A5F182FE /* aacTranslations.json */; };
 		94E29A997D40284D44549165 /* AppIcon51x51@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B44E4E794C34AA7DA358C6AD /* AppIcon51x51@2x.png */; };
 		96494A55BCE4B701CC283F79 /* WatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7D87755CBCE7686166B1A4 /* WatchApp.swift */; };
@@ -52,11 +51,12 @@
 		A761744803E81B1102D1B58A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336C616FA71B6C3F3227FC90 /* ContentView.swift */; };
 		A7E2FBB0D485DD0753609E0D /* AppIcon29x29@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = DD4FFEB0EB8A7E77D36FE3FF /* AppIcon29x29@2x.png */; };
 		A9A7C3336D26BD9F125CFF29 /* WatchPictogramCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F932363A3D82535E9971EE /* WatchPictogramCards.swift */; };
+		AEF9DA886ECAEB3F6AC80C0C /* DatadogCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8F650B487BBFAB451AC07AAB /* DatadogCore */; };
 		AFA1E81830CA008E80B17F8E /* LLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514A2FD3A0BC693D56606896 /* LLMEngine.swift */; };
-		B64D941D08FDE30EF46217E8 /* DatadogCore in Frameworks */ = {isa = PBXBuildFile; productRef = 51844020D3AE57801A6DCD89 /* DatadogCore */; };
 		BD48CFC0BB74B04161F4F234 /* AppIcon1024x1024.png in Resources */ = {isa = PBXBuildFile; fileRef = 996E43914516CE515BD9BB2E /* AppIcon1024x1024.png */; };
 		D77E71A3AFF973A5D7A80182 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE50392198C3596E4E3CAA44 /* KeychainHelper.swift */; };
 		DE76830C66CD657FA386D5D8 /* SmolLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B974BD455A3291D82E49CE /* SmolLMEngine.swift */; };
+		DEAE27EF11CB1361042547E1 /* InworldSTTClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7C367E32BA03F5261A90B0 /* InworldSTTClient.swift */; };
 		E9A7C699E922142DFCCC4200 /* AppIcon27.5x27.5@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B9DB1CD80C21089C5CCFBB7B /* AppIcon27.5x27.5@2x.png */; };
 		EB90BA7A0874A4AD712029BA /* AppIcon44x44@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EA856F3C86008948B1F59274 /* AppIcon44x44@2x.png */; };
 		EF9EBF1590D95DA7BA2B75C2 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DB2AB8796CA83596887AD3 /* AppState.swift */; };
@@ -118,7 +118,6 @@
 		514A2FD3A0BC693D56606896 /* LLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEngine.swift; sourceTree = "<group>"; };
 		60D77A05CBF290C8D50E1C46 /* WatchInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchInbox.swift; sourceTree = "<group>"; };
 		62DB2AB8796CA83596887AD3 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
-		661A097169A8760B4032D6EF /* InworldSTTClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InworldSTTClient.swift; sourceTree = "<group>"; };
 		67DE9F6102290192A69EA33F /* WatchTTS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTTS.swift; sourceTree = "<group>"; };
 		6A679874C453F382852D8900 /* BedsideModeExtendedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BedsideModeExtendedTests.swift; sourceTree = "<group>"; };
 		71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACUITests.swift; sourceTree = "<group>"; };
@@ -140,16 +139,18 @@
 		B4BFC79A8CF42D931FA02260 /* BridgeSecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeSecurityTests.swift; sourceTree = "<group>"; };
 		B596E9E9B51A0D4D3C329C9F /* ButtonCoverageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonCoverageTests.swift; sourceTree = "<group>"; };
 		B665BC61F5A2CB0E5F7A9D6C /* AppIcon24x24@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon24x24@2x.png"; sourceTree = "<group>"; };
+		B7470815699E3F5011B3436C /* DatadogLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatadogLogger.swift; sourceTree = "<group>"; };
 		B9DB1CD80C21089C5CCFBB7B /* AppIcon27.5x27.5@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon27.5x27.5@2x.png"; sourceTree = "<group>"; };
+		BA7C367E32BA03F5261A90B0 /* InworldSTTClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InworldSTTClient.swift; sourceTree = "<group>"; };
 		BD695AAA76A1B168A5F182FE /* aacTranslations.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = aacTranslations.json; sourceTree = "<group>"; };
 		BDF1E2439453E4F2F472830B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		C214A7DA14FF7152781B924F /* DatadogLogger.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DatadogLogger.swift; sourceTree = "<group>"; };
 		CDE377D198DA564653BA6171 /* WatchTranslation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTranslation.swift; sourceTree = "<group>"; };
 		CF5CCFCBAAF60AAE468A1EBB /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		D1CA14CA933F6B284A18A59A /* AIChatFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatFlowTests.swift; sourceTree = "<group>"; };
 		DB1FF5018CD7D6ED0E48C17D /* WatchVocabSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchVocabSync.swift; sourceTree = "<group>"; };
 		DD4FFEB0EB8A7E77D36FE3FF /* AppIcon29x29@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon29x29@2x.png"; sourceTree = "<group>"; };
 		E1B974BD455A3291D82E49CE /* SmolLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmolLMEngine.swift; sourceTree = "<group>"; };
+		E806C70DB42E2879A665E4C3 /* WatchStreamingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStreamingTests.swift; sourceTree = "<group>"; };
 		EA856F3C86008948B1F59274 /* AppIcon44x44@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon44x44@2x.png"; sourceTree = "<group>"; };
 		F77017533C2E0E39A0CFA2FA /* BridgeSecurityPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeSecurityPolicy.swift; sourceTree = "<group>"; };
 		F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACApp.swift; sourceTree = "<group>"; };
@@ -163,10 +164,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				6AED27E0943BFD006689E47F /* llama in Frameworks */,
-				B64D941D08FDE30EF46217E8 /* DatadogCore in Frameworks */,
-				236203AEEEAE5D2C54F0C8B4 /* DatadogRUM in Frameworks */,
-				284A327405D2778BC4592D60 /* DatadogCrashReporting in Frameworks */,
-				487E4327ED9C42F442B70EBB /* DatadogWebViewTracking in Frameworks */,
+				AEF9DA886ECAEB3F6AC80C0C /* DatadogCore in Frameworks */,
+				6A0EADC4EAE2C4B365BD1440 /* DatadogRUM in Frameworks */,
+				7BF11A31EFD1E134064E962A /* DatadogCrashReporting in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -187,6 +187,7 @@
 				B4BFC79A8CF42D931FA02260 /* BridgeSecurityTests.swift */,
 				B4B17D9B0D21E9712DE4058F /* PrismAACUnitTests.swift */,
 				485E0CAF1D660CE13F92A068 /* WatchLayerTests.swift */,
+				E806C70DB42E2879A665E4C3 /* WatchStreamingTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -206,8 +207,8 @@
 			isa = PBXGroup;
 			children = (
 				62DB2AB8796CA83596887AD3 /* AppState.swift */,
+				B7470815699E3F5011B3436C /* DatadogLogger.swift */,
 				F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */,
-				C214A7DA14FF7152781B924F /* DatadogLogger.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -294,7 +295,7 @@
 			isa = PBXGroup;
 			children = (
 				336C616FA71B6C3F3227FC90 /* ContentView.swift */,
-				661A097169A8760B4032D6EF /* InworldSTTClient.swift */,
+				BA7C367E32BA03F5261A90B0 /* InworldSTTClient.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -415,6 +416,8 @@
 				7E765695EA85381AD75FE2AD /* PBXTargetDependency */,
 			);
 			name = PrismAACUITests;
+			packageProductDependencies = (
+			);
 			productName = PrismAACUITests;
 			productReference = 81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -436,10 +439,9 @@
 			name = PrismAAC;
 			packageProductDependencies = (
 				04E3214E7CFA50AC6BF94363 /* llama */,
-				51844020D3AE57801A6DCD89 /* DatadogCore */,
-				953062704DDCC2222408998E /* DatadogRUM */,
-				302A09D1250775829D8F3FAF /* DatadogCrashReporting */,
-				419DF7313E90E74369647E1C /* DatadogWebViewTracking */,
+				8F650B487BBFAB451AC07AAB /* DatadogCore */,
+				4569C5E9E6E54B952DE50A5F /* DatadogRUM */,
+				428066B6FACEEB1E6A761259 /* DatadogCrashReporting */,
 			);
 			productName = PrismAAC;
 			productReference = 3C1E662AEED98B7777920115 /* PrismAAC.app */;
@@ -457,6 +459,8 @@
 				B345DD75A65DE7B7EDD75EB4 /* PBXTargetDependency */,
 			);
 			name = PrismAACTests;
+			packageProductDependencies = (
+			);
 			productName = PrismAACTests;
 			productReference = 2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -473,6 +477,8 @@
 			dependencies = (
 			);
 			name = PrismAACWatch;
+			packageProductDependencies = (
+			);
 			productName = PrismAACWatch;
 			productReference = 8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */;
 			productType = "com.apple.product-type.application";
@@ -501,8 +507,8 @@
 			mainGroup = F6F72D19BD7F549E86B62BEC;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				A795D2F44AC2DF02FFFB458E /* XCRemoteSwiftPackageReference "dd-sdk-ios" */,
 				13FC7C9D6C856463E79863BE /* XCLocalSwiftPackageReference "_llama_cpp_local" */,
-				FE39A197D42534875EA0C283 /* XCRemoteSwiftPackageReference "dd-sdk-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3810A000D727421B7A8621B9 /* Products */;
@@ -591,13 +597,13 @@
 				EF9EBF1590D95DA7BA2B75C2 /* AppState.swift in Sources */,
 				5B27532A15466AB48954316F /* BridgeSecurityPolicy.swift in Sources */,
 				A761744803E81B1102D1B58A /* ContentView.swift in Sources */,
+				45F15F15FE63465B2ED9A84C /* DatadogLogger.swift in Sources */,
+				DEAE27EF11CB1361042547E1 /* InworldSTTClient.swift in Sources */,
 				1BAB0485396C63FC134A5A4B /* KeychainHelper.swift in Sources */,
 				AFA1E81830CA008E80B17F8E /* LLMEngine.swift in Sources */,
 				2CD68B3ABCB8C23FF1104EC7 /* PrismAACApp.swift in Sources */,
 				8ACCA7F12A410E5951CB832F /* SafetyFilter.swift in Sources */,
 				DE76830C66CD657FA386D5D8 /* SmolLMEngine.swift in Sources */,
-				45DB54F19BDCE1A20CBB61F1 /* InworldSTTClient.swift in Sources */,
-				33A60DD575371C47AD15ECBA /* DatadogLogger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -608,6 +614,7 @@
 				6960B655C665118DAABF6BCE /* BridgeSecurityTests.swift in Sources */,
 				3D08BF95A6574850121B9852 /* PrismAACUnitTests.swift in Sources */,
 				3F4FDC469542E9A9D39C391F /* WatchLayerTests.swift in Sources */,
+				92B4306E8B1AAFFC82E39F8D /* WatchStreamingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -748,10 +755,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 35;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -832,7 +839,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 35;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -840,7 +847,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.8.4;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -854,7 +861,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 35;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -862,7 +869,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.8.4;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -874,10 +881,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 35;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.6.0;
+				MARKETING_VERSION = 1.8.4;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -963,12 +970,12 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		FE39A197D42534875EA0C283 /* XCRemoteSwiftPackageReference "dd-sdk-ios" */ = {
+		A795D2F44AC2DF02FFFB458E /* XCRemoteSwiftPackageReference "dd-sdk-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/DataDog/dd-sdk-ios.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
+				minimumVersion = 2.22.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -978,25 +985,20 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = llama;
 		};
-		302A09D1250775829D8F3FAF /* DatadogCrashReporting */ = {
+		428066B6FACEEB1E6A761259 /* DatadogCrashReporting */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FE39A197D42534875EA0C283 /* XCRemoteSwiftPackageReference "dd-sdk-ios" */;
+			package = A795D2F44AC2DF02FFFB458E /* XCRemoteSwiftPackageReference "dd-sdk-ios" */;
 			productName = DatadogCrashReporting;
 		};
-		419DF7313E90E74369647E1C /* DatadogWebViewTracking */ = {
+		4569C5E9E6E54B952DE50A5F /* DatadogRUM */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = FE39A197D42534875EA0C283 /* XCRemoteSwiftPackageReference "dd-sdk-ios" */;
-			productName = DatadogWebViewTracking;
-		};
-		51844020D3AE57801A6DCD89 /* DatadogCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FE39A197D42534875EA0C283 /* XCRemoteSwiftPackageReference "dd-sdk-ios" */;
-			productName = DatadogCore;
-		};
-		953062704DDCC2222408998E /* DatadogRUM */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = FE39A197D42534875EA0C283 /* XCRemoteSwiftPackageReference "dd-sdk-ios" */;
+			package = A795D2F44AC2DF02FFFB458E /* XCRemoteSwiftPackageReference "dd-sdk-ios" */;
 			productName = DatadogRUM;
+		};
+		8F650B487BBFAB451AC07AAB /* DatadogCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A795D2F44AC2DF02FFFB458E /* XCRemoteSwiftPackageReference "dd-sdk-ios" */;
+			productName = DatadogCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

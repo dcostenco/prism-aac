@@ -43,7 +43,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.8.3</string>
+	<string>1.8.4</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -56,10 +56,6 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>35</string>
-	<key>DD_APPLICATION_ID</key>
-	<string>$(DD_APPLICATION_ID)</string>
-	<key>DD_CLIENT_TOKEN</key>
-	<string>$(DD_CLIENT_TOKEN)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSAppTransportSecurity</key>

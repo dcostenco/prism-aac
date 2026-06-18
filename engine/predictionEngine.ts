@@ -59,6 +59,9 @@ const TUNING = {
   decayFactor: 0.95,
 } as const;
 
+import { AGE_BLOCKED_WORDS } from '@/engine/ageBlocklist';
+
+
 type Scores = { bigram: number; trigram: number; freq: number; recency: number; prefix: number };
 
 // Words that should ALWAYS be capitalized when emitted as a prediction.
@@ -278,6 +281,7 @@ export function getPredictions(
     }))
     .filter((c) => {
       const lc = c.word.toLowerCase();
+      if (AGE_BLOCKED_WORDS.has(lc)) return false;
       if (artifacts.has(lc)) return false;
       if (lc === lastWord || lc === partialWord) return false;
       // Mid-typing rule: surface candidates that complete the partial word.
