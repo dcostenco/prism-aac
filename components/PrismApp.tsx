@@ -67,16 +67,16 @@ const PROVIDER_LABEL: Record<string, string> = {
 // Minimal i18n for the ErrorBoundary — runs when the app has crashed so
 // React context and hooks are unavailable. Reads language from localStorage.
 const EB_STRINGS: Record<string, { placeholder: string; speak: string; reload: string; words: string[] }> = {
-  es: { placeholder: 'Escribe aquí...', speak: '▶ Hablar', reload: 'Recargar', words: ['Ayuda', 'Sí', 'No', 'Para', 'Baño', 'Agua', 'Hambre', 'Dolor'] },
-  fr: { placeholder: 'Tapez ici...', speak: '▶ Parler', reload: 'Recharger', words: ['Aide', 'Oui', 'Non', 'Stop', 'WC', 'Eau', 'Faim', 'Douleur'] },
-  ru: { placeholder: 'Введите текст...', speak: '▶ Говорить', reload: 'Перезагрузить', words: ['Помощь', 'Да', 'Нет', 'Стоп', 'Туалет', 'Вода', 'Голодный', 'Боль'] },
-  ro: { placeholder: 'Scrie aici...', speak: '▶ Vorbește', reload: 'Reîncarcă', words: ['Ajutor', 'Da', 'Nu', 'Stop', 'Baie', 'Apă', 'Foame', 'Durere'] },
-  de: { placeholder: 'Hier tippen...', speak: '▶ Sprechen', reload: 'Neu laden', words: ['Hilfe', 'Ja', 'Nein', 'Stopp', 'Toilette', 'Wasser', 'Hunger', 'Schmerz'] },
-  pt: { placeholder: 'Digite aqui...', speak: '▶ Falar', reload: 'Recarregar', words: ['Ajuda', 'Sim', 'Não', 'Parar', 'Banheiro', 'Água', 'Fome', 'Dor'] },
-  zh: { placeholder: '在此输入...', speak: '▶ 说话', reload: '重新加载', words: ['帮助', '是', '不', '停止', '洗手间', '水', '饿', '痛'] },
-  ar: { placeholder: 'اكتب هنا...', speak: '▶ تحدث', reload: 'إعادة تحميل', words: ['مساعدة', 'نعم', 'لا', 'وقف', 'حمام', 'ماء', 'جوع', 'ألم'] },
+  es: { placeholder: 'Escribe aquí...', speak: '▶ Hablar', reload: 'Recargar', words: ['Ayuda', 'Sí', 'No', 'Para', 'Baño', 'Agua', 'Hambre', 'Dolor', 'Más', 'Listo', 'Espera', 'Miedo', 'Cansado', 'Calor', 'Frío', 'Medicina'] },
+  fr: { placeholder: 'Tapez ici...', speak: '▶ Parler', reload: 'Recharger', words: ['Aide', 'Oui', 'Non', 'Stop', 'WC', 'Eau', 'Faim', 'Douleur', 'Plus', 'Fini', 'Attends', 'Peur', 'Fatigué', 'Chaud', 'Froid', 'Médicament'] },
+  ru: { placeholder: 'Введите текст...', speak: '▶ Говорить', reload: 'Перезагрузить', words: ['Помощь', 'Да', 'Нет', 'Стоп', 'Туалет', 'Вода', 'Голодный', 'Боль', 'Ещё', 'Готово', 'Подожди', 'Страшно', 'Устал', 'Жарко', 'Холодно', 'Лекарство'] },
+  ro: { placeholder: 'Scrie aici...', speak: '▶ Vorbește', reload: 'Reîncarcă', words: ['Ajutor', 'Da', 'Nu', 'Stop', 'Baie', 'Apă', 'Foame', 'Durere', 'Mai', 'Gata', 'Așteaptă', 'Frică', 'Obosit', 'Cald', 'Frig', 'Medicament'] },
+  de: { placeholder: 'Hier tippen...', speak: '▶ Sprechen', reload: 'Neu laden', words: ['Hilfe', 'Ja', 'Nein', 'Stopp', 'Toilette', 'Wasser', 'Hunger', 'Schmerz', 'Mehr', 'Fertig', 'Warte', 'Angst', 'Müde', 'Heiß', 'Kalt', 'Medizin'] },
+  pt: { placeholder: 'Digite aqui...', speak: '▶ Falar', reload: 'Recarregar', words: ['Ajuda', 'Sim', 'Não', 'Parar', 'Banheiro', 'Água', 'Fome', 'Dor', 'Mais', 'Pronto', 'Espere', 'Medo', 'Cansado', 'Quente', 'Frio', 'Remédio'] },
+  zh: { placeholder: '在此输入...', speak: '▶ 说话', reload: '重新加载', words: ['帮助', '是', '不', '停止', '洗手间', '水', '饿', '痛', '还要', '完了', '等', '害怕', '累', '热', '冷', '药'] },
+  ar: { placeholder: 'اكتب هنا...', speak: '▶ تحدث', reload: 'إعادة تحميل', words: ['مساعدة', 'نعم', 'لا', 'وقف', 'حمام', 'ماء', 'جوع', 'ألم', 'أكثر', 'انتهى', 'انتظر', 'خائف', 'متعب', 'حار', 'بارد', 'دواء'] },
 };
-const EB_DEFAULT = { placeholder: 'Type here...', speak: '▶ Speak', reload: 'Reload', words: ['Help', 'Yes', 'No', 'Stop', 'Bathroom', 'Water', 'Hungry', 'Pain'] };
+const EB_DEFAULT = { placeholder: 'Type here...', speak: '▶ Speak', reload: 'Reload', words: ['Help', 'Yes', 'No', 'Stop', 'Bathroom', 'Water', 'Hungry', 'Pain', 'More', 'Done', 'Wait', 'Scared', 'Tired', 'Hot', 'Cold', 'Medicine'] };
 
 function getErrorBoundaryStrings() {
   try {
@@ -113,9 +113,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
       const s = getErrorBoundaryStrings();
       return (
         <div className="h-svh flex flex-col bg-white p-4 overflow-auto">
-          <p className="text-[#F44336] text-lg font-bold mb-1">Error — Emergency AAC Mode</p>
-          <p className="text-[#F44336] text-xs mb-1 font-mono break-all">{this.state.error.message}</p>
-          <pre className="text-[8px] text-gray-500 mb-2 whitespace-pre-wrap break-all">{this.state.stack}</pre>
+          <p className="text-[#F44336] text-lg font-bold mb-2">Emergency AAC Mode</p>
           <input
             id="emergency-input"
             type="text"
@@ -465,7 +463,7 @@ export default function PrismApp() {
   return (
     <ErrorBoundary>
       <SyncProvider>
-        <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`} style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`} style={{ paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
           {/* Connect-OAuth return banner. Auto-dismisses after 4s
               (set by the URL-handler useEffect). Only confirmation
               the user gets that the OAuth same-window redirect
@@ -489,7 +487,7 @@ export default function PrismApp() {
               cell-grid canvas + bigger keyboards have room to breathe.
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && sidePanel !== 'pdf-reader' && sidePanel !== 'ocr-capture' && !showQwerty && <GreetingBanner />}
-          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && <MessageBar />}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <MessageBar />}
           {!PANELS_WITHOUT_QWERTY.has(sidePanel) && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />

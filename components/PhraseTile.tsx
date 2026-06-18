@@ -37,14 +37,14 @@ export default function PhraseTile({ phrase, englishPhrase, customImageUrl, clas
       aria-label={ariaLabel ?? phrase}
       className={className}
       style={{
-        border: '2px solid #000',
+        border: '2px solid var(--border-strong, #000)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
         ...style,
       }}
     >
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', borderRadius: '8px 8px 0 0', overflow: 'hidden', minHeight: 0 }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface, white)', borderRadius: '8px 8px 0 0', overflow: 'hidden', minHeight: 0 }}>
         {iconUrl && (
           <img
             src={iconUrl}

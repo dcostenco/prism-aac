@@ -196,8 +196,11 @@ export default function SettingsModal() {
       role="dialog"
       aria-modal="true"
       className="modal-backdrop fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-      onClick={toggleSettings}
+      onKeyDown={(e) => { if (e.key === 'Escape') toggleSettings(); }}
+      tabIndex={-1}
     >
+      {/* Backdrop click intentionally removed — dwell-click drift closes the
+          modal accidentally. Only the ✕ button closes Settings. */}
       <div
         className="surface-bar rounded-2xl w-full max-w-lg max-h-[90svh] flex flex-col border border-theme shadow-2xl"
         onClick={(e) => e.stopPropagation()}
@@ -277,7 +280,7 @@ export default function SettingsModal() {
             <label className="flex items-center justify-between">
               <span className="text-primary text-sm">{t('speed')} — {speechRate.toFixed(1)}</span>
             </label>
-            <input type="range" min="0.1" max="1" step="0.1" value={speechRate}
+            <input type="range" min="0.25" max="2" step="0.05" value={speechRate}
               onChange={(e) => update({ speechRate: parseFloat(e.target.value) })}
               className="w-full accent-[#4CAF50]" />
             <label className="flex items-center justify-between mt-2">

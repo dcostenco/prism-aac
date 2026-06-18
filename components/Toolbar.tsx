@@ -173,12 +173,34 @@ export default function Toolbar() {
   const [showLangPicker, setShowLangPicker] = useState<'input' | 'output' | null>(null);
   const voiceRef = useRef<VoiceSession | null>(null);
   const langRef = useRef<HTMLDivElement>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   // Snapshot of message text at mic-start; interim results are appended on top.
   const micTextBaseRef = useRef('');
   // Last interim string shown — lets us overwrite it cleanly on each update.
   const micInterimRef = useRef('');
   const voiceSupported = isVoiceInputSupported();
   const unreadMessages = useScheduleStore(selectUnreadMessageCount);
+
+  const checkOverflow = () => {
+    const el = stripRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    checkOverflow();
+    el.addEventListener('scroll', checkOverflow, { passive: true });
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(checkOverflow);
+      ro.observe(el);
+    }
+    return () => { el.removeEventListener('scroll', checkOverflow); ro?.disconnect(); };
+  }, []);
 
   useEffect(() => () => {
     voiceRef.current?.stop(); voiceRef.current = null; setListening(false);
@@ -381,12 +403,28 @@ export default function Toolbar() {
           overlapping / messed up" the moment they installed anything.
           Horizontal scroll keeps the toolbar a fixed single-row
           height; the user pans the strip if it overflows. */}
+      {canScrollLeft && (
+        <button
+          onClick={() => stripRef.current?.scrollBy({ left: -120, behavior: 'smooth' })}
+          aria-label="Scroll toolbar left"
+          className="aac-btn shrink-0 w-7 h-7 rounded-full surface-key text-primary text-sm flex items-center justify-center border border-theme"
+        >◀</button>
+      )}
       <div
+        ref={stripRef}
         className="flex flex-nowrap gap-1 items-center min-w-0 overflow-x-auto overflow-y-hidden flex-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         data-testid="aac-toolbar-strip"
+        data-scan-group="toolbar"
       >
         {allButtons.map((id) => renderButton(id))}
       </div>
+      {canScrollRight && (
+        <button
+          onClick={() => stripRef.current?.scrollBy({ left: 120, behavior: 'smooth' })}
+          aria-label="Scroll toolbar right"
+          className="aac-btn shrink-0 w-7 h-7 rounded-full surface-key text-primary text-sm flex items-center justify-center border border-theme"
+        >▶</button>
+      )}
 
       {/* Language pair selector — outside scroll strip but compact to avoid
           covering toolbar buttons. */}

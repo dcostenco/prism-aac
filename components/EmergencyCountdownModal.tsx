@@ -66,67 +66,55 @@ export default function EmergencyCountdownModal() {
             aria-modal="true"
             aria-live="assertive"
             aria-label={`${urgencyLabel}: ${phrase}`}
-            style={{
-                position: 'fixed', inset: 0, zIndex: 999999,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(0,0,0,0.85)',
-                padding: '24px',
-            }}
+            className="fixed inset-0 flex flex-col items-center justify-center p-6"
+            style={{ zIndex: 999999, background: 'rgba(0,0,0,0.85)' }}
+            onKeyDown={e => { if (e.key === 'Escape' && !isCritical) void handleCancel(); }}
+            tabIndex={-1}
         >
-            <div style={{
-                background: '#fff', borderRadius: '16px', padding: '32px 24px',
-                maxWidth: '480px', width: '100%', textAlign: 'center',
-                boxShadow: `0 0 0 6px ${bgColor}, 0 32px 64px rgba(0,0,0,0.5)`,
-            }}>
+            <div className="surface-bar rounded-2xl w-full max-w-[480px] text-center p-8" style={{ boxShadow: `0 0 0 6px ${bgColor}, 0 32px 64px rgba(0,0,0,0.5)` }}>
                 {/* Severity badge */}
-                <div style={{ fontSize: '14px', fontWeight: 700, color: bgColor, letterSpacing: '0.1em', marginBottom: '12px' }}>
+                <div className="text-sm font-bold tracking-wider mb-3" style={{ color: bgColor }}>
                     {urgencyLabel}
                 </div>
 
                 {/* Phrase */}
-                <div style={{ fontSize: '24px', fontWeight: 700, color: '#111', marginBottom: '20px', lineHeight: 1.3 }}>
+                <div className="text-2xl font-bold text-primary mb-5 leading-snug">
                     &ldquo;{phrase}&rdquo;
                 </div>
 
                 {/* Countdown ring */}
                 {phase === 'countdown' && (
-                    <div style={{ marginBottom: '24px' }}>
-                        <div style={{
-                            width: '80px', height: '80px', borderRadius: '50%',
-                            background: bgColor, color: '#fff',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '36px', fontWeight: 700, margin: '0 auto',
-                            boxShadow: `0 0 0 4px ${bgColor}44`,
-                        }}>
+                    <div className="mb-6">
+                        <div className="w-20 h-20 rounded-full flex items-center justify-center text-4xl font-bold text-white mx-auto" style={{ background: bgColor, boxShadow: `0 0 0 4px ${bgColor}44` }}>
                             {countdown}
                         </div>
-                        <div style={{ marginTop: '8px', fontSize: '13px', color: '#666' }}>
+                        <div className="mt-2 text-sm text-muted">
                             {isCritical ? 'Sending emergency alert…' : 'Sending in seconds…'}
                         </div>
                     </div>
                 )}
 
                 {phase === 'dispatching' && (
-                    <div style={{ marginBottom: '24px', color: '#666', fontSize: '14px' }}>
+                    <div className="mb-6 text-muted text-sm">
                         Sending alert to caregivers…
                     </div>
                 )}
 
                 {phase === 'dispatched' && (
-                    <div style={{ marginBottom: '24px' }}>
-                        <div style={{ fontSize: '32px' }}>✓</div>
-                        <div style={{ color: '#16a34a', fontWeight: 600 }}>Alert sent</div>
+                    <div className="mb-6">
+                        <div className="text-4xl">✓</div>
+                        <div className="text-[#16a34a] font-semibold">Alert sent</div>
                     </div>
                 )}
 
                 {/* PIN input for urgent/medical cancel */}
                 {requiresPin && phase === 'countdown' && (
-                    <div style={{ marginBottom: '16px' }}>
-                        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+                    <div className="mb-4">
+                        <div className="text-xs text-muted mb-2">
                             Caregiver PIN required to cancel
                         </div>
                         {isLocked && (
-                            <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px' }}>
+                            <div className="text-[#dc2626] text-xs mb-2">
                                 Too many attempts — wait {Math.ceil((pinLockedUntil - Date.now()) / 1000)}s
                             </div>
                         )}
@@ -139,31 +127,23 @@ export default function EmergencyCountdownModal() {
                             onKeyDown={e => { if (e.key === 'Enter') void handleCancel(); }}
                             placeholder="Enter PIN"
                             disabled={isLocked}
-                            style={{
-                                border: `2px solid ${pinError ? '#dc2626' : '#d1d5db'}`,
-                                borderRadius: '8px', padding: '8px 12px',
-                                fontSize: '18px', textAlign: 'center', width: '120px',
-                                letterSpacing: '0.2em',
-                            }}
+                            className="border-2 border-theme rounded-lg px-3 py-2 text-lg text-center w-[120px] tracking-widest text-primary"
+                            style={pinError ? { borderColor: '#dc2626' } : undefined}
+                            autoFocus
                         />
                         {pinError && (
-                            <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>Incorrect PIN</div>
+                            <div className="text-[#dc2626] text-xs mt-1">Incorrect PIN</div>
                         )}
                     </div>
                 )}
 
                 {/* Cancel / Dismiss buttons */}
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                    {!isCritical && phase === 'countdown' && (
+                <div className="flex gap-3 justify-center">
+                    {phase === 'countdown' && (
                         <button
                             onClick={() => { void handleCancel(); }}
                             disabled={isLocked}
-                            style={{
-                                padding: '12px 28px', borderRadius: '10px',
-                                background: '#f3f4f6', border: '2px solid #d1d5db',
-                                fontSize: '16px', fontWeight: 600, cursor: isLocked ? 'not-allowed' : 'pointer', color: '#374151',
-                                opacity: isLocked ? 0.5 : 1,
-                            }}
+                            className="aac-btn min-h-[52px] px-7 rounded-xl surface-key border-2 border-theme text-primary text-lg font-semibold disabled:opacity-50"
                         >
                             Cancel
                         </button>
@@ -171,11 +151,7 @@ export default function EmergencyCountdownModal() {
                     {phase === 'dispatched' && (
                         <button
                             onClick={() => reset()}
-                            style={{
-                                padding: '12px 28px', borderRadius: '10px',
-                                background: '#16a34a', border: 'none',
-                                fontSize: '16px', fontWeight: 600, cursor: 'pointer', color: '#fff',
-                            }}
+                            className="aac-btn min-h-[52px] px-7 rounded-xl bg-[#16a34a] text-white text-lg font-semibold"
                         >
                             Done
                         </button>

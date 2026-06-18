@@ -220,7 +220,7 @@ export default function Keyboard() {
   const shiftGlyph = capsLock ? 'A' : isUpperCase ? '⇧' : '⇪';
 
   return (
-    <div className="flex-1 flex flex-col gap-[1px] p-[2px]">
+    <div className="flex-1 flex flex-col gap-[1px] p-[2px]" data-scan-group="keyboard">
       {rows.map((row, ri) => (
         <div key={ri} className="flex gap-[1px] justify-center flex-1">
           {ri === 2 && keyboardMode === 'letters' && (

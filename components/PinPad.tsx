@@ -97,20 +97,20 @@ export default function PinPad({ onVerify, pinHash, onSetPin }: Props) {
     const digits = [['1','2','3'],['4','5','6'],['7','8','9'],['','0','⌫']];
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-            <div style={{ fontSize: '13px', color: '#6b7280', textAlign: 'center' }}>
+        <div className="flex flex-col items-center gap-4">
+            <div className="text-sm text-muted text-center">
                 {setupMode
                     ? setupStep === 'enter' ? 'Enter a 4–6 digit caregiver PIN' : 'Confirm your PIN'
                     : 'Enter caregiver PIN'}
             </div>
 
             {/* Dots */}
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div className="flex gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} style={{
-                        width: '14px', height: '14px', borderRadius: '50%',
-                        background: i < entered.length ? (error ? '#dc2626' : '#2563eb') : '#e5e7eb',
-                        transition: 'background 0.15s',
+                    <div key={i} className="rounded-full border-2 transition-colors" style={{
+                        width: '20px', height: '20px',
+                        background: i < entered.length ? (error ? '#dc2626' : 'var(--accent-focus)') : 'var(--bg-key)',
+                        borderColor: i < entered.length ? 'transparent' : 'var(--border-strong)',
                     }} />
                 ))}
             </div>
@@ -128,20 +128,13 @@ export default function PinPad({ onVerify, pinHash, onSetPin }: Props) {
             )}
 
             {/* Keypad */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            <div className="grid grid-cols-3 gap-2.5">
                 {digits.flat().map((d, i) => (
                     <button key={i} type="button"
                         onClick={() => d === '⌫' ? clear() : d ? press(d) : undefined}
                         disabled={!d || isLocked}
-                        style={{
-                            width: '64px', height: '64px', borderRadius: '50%',
-                            border: '1px solid #e5e7eb',
-                            background: d ? '#f9fafb' : 'transparent',
-                            fontSize: d === '⌫' ? '20px' : '22px',
-                            fontWeight: 600, cursor: d && !isLocked ? 'pointer' : 'default',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            opacity: d ? (isLocked ? 0.5 : 1) : 0,
-                        }}>
+                        className={`aac-btn w-16 h-16 rounded-full surface-key border border-theme text-primary font-semibold flex items-center justify-center ${!d ? 'opacity-0' : isLocked ? 'opacity-50' : ''}`}
+                        style={{ fontSize: d === '⌫' ? '20px' : '22px' }}>
                         {d}
                     </button>
                 ))}
@@ -151,19 +144,13 @@ export default function PinPad({ onVerify, pinHash, onSetPin }: Props) {
                 type="button"
                 onClick={() => { void submit(); }}
                 disabled={entered.length < 4 || isLocked}
-                style={{
-                    padding: '12px 32px', borderRadius: '8px',
-                    background: entered.length < 4 || isLocked ? '#e5e7eb' : '#2563eb',
-                    color: entered.length < 4 || isLocked ? '#9ca3af' : '#fff',
-                    border: 'none', fontSize: '15px', fontWeight: 600, cursor: 'pointer',
-                    width: '100%', marginTop: '4px',
-                }}>
+                className={`aac-btn w-full mt-1 py-3 rounded-lg font-semibold text-base ${entered.length >= 4 && !isLocked ? 'bg-[#2563eb] text-white' : 'surface-key text-muted'}`}>
                 {setupMode ? (setupStep === 'enter' ? 'Next' : 'Set PIN') : 'Unlock'}
             </button>
 
             {!setupMode && onSetPin && (
                 <button type="button" onClick={() => { setSetupMode(true); setEntered(''); setSetupStep('enter'); }}
-                    style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '12px', cursor: 'pointer' }}>
+                    className="text-muted text-xs">
                     Change PIN
                 </button>
             )}

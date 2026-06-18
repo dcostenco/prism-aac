@@ -226,10 +226,10 @@ describe('SettingsModal — close actions', () => {
     expect(mocks.uiState.toggleSettings).toHaveBeenCalledOnce();
   });
 
-  it('clicking backdrop calls toggleSettings', () => {
+  it('backdrop click does NOT close settings (prevents accidental dwell-click dismissal)', () => {
     render(<SettingsModal />);
     fireEvent.click(screen.getByRole('dialog'));
-    expect(mocks.uiState.toggleSettings).toHaveBeenCalled();
+    expect(mocks.uiState.toggleSettings).not.toHaveBeenCalled();
   });
 });
 

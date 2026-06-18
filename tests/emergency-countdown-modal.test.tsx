@@ -172,10 +172,10 @@ describe('EmergencyCountdownModal — cancel button gating', () => {
     expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
   });
 
-  it('does NOT show Cancel button for critical severity', () => {
+  it('shows Cancel button even for critical severity (PIN-gated)', () => {
     setPhase('countdown', 'critical');
     render(<EmergencyCountdownModal />);
-    expect(screen.queryByRole('button', { name: /cancel/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
   });
 
   it('shows Done button in dispatched phase', () => {

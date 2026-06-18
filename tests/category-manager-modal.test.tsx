@@ -98,9 +98,9 @@ describe('CategoryManagerModal — close', () => {
     expect(toggleCategoryManagerMock).toHaveBeenCalledOnce();
   });
 
-  it('clicking backdrop calls toggleCategoryManager', () => {
+  it('Escape key closes the modal', () => {
     render(<CategoryManagerModal />);
-    fireEvent.click(screen.getByRole('dialog', { name: /category manager/i }));
+    fireEvent.keyDown(screen.getByRole('dialog', { name: /category manager/i }), { key: 'Escape' });
     expect(toggleCategoryManagerMock).toHaveBeenCalled();
   });
 });

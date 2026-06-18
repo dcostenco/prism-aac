@@ -90,7 +90,8 @@ export default function CategoryManagerModal() {
       aria-modal="true"
       aria-label="Category Manager"
       className="modal-backdrop fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-      onClick={toggleCategoryManager}
+      onKeyDown={(e) => { if (e.key === 'Escape') toggleCategoryManager(); }}
+      tabIndex={-1}
     >
       <div
         className="surface-bar rounded-2xl w-full max-w-xl max-h-[90svh] flex flex-col border border-theme shadow-2xl"

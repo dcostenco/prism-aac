@@ -363,7 +363,7 @@ export default function PredictionBar() {
   }
 
   return (
-    <div data-testid="prediction-bar" className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 relative" style={{ height: 'clamp(48px, 10svh, 110px)' }}>
+    <div data-testid="prediction-bar" data-scan-group="predictions" className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 relative" style={{ height: 'clamp(48px, 10svh, 110px)' }}>
       {activeScene && (
         <span
           className="absolute -top-6 right-2 text-sm opacity-90 pointer-events-none"

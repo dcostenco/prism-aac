@@ -121,7 +121,7 @@ function SidebarBtn({ icon, label, onClick, active = false, testId, dataAction }
       style={{ minHeight: 'clamp(56px, 8svh, 80px)' }}
     >
       <span className="text-[clamp(18px,2.8vw,26px)] leading-none">{icon}</span>
-      <span className="text-[clamp(8px,0.8vw,10px)] font-bold uppercase tracking-wide text-white/90 text-center leading-none px-0.5">
+      <span className="text-[clamp(10px,1.2vw,12px)] font-bold uppercase tracking-wide text-white/90 text-center leading-none px-0.5">
         {label}
       </span>
     </button>
@@ -360,6 +360,7 @@ export default function CategoryPanel() {
         <input
           ref={searchInputRef}
           type="text"
+          inputMode="none"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search all vocabulary…"
@@ -568,7 +569,7 @@ export default function CategoryPanel() {
               })}
             </div>
             {/* Bottom category tab strip — dark brown bar */}
-            <div className="flex gap-1 px-2 py-1.5 overflow-x-auto shrink-0 border-t-2 border-[#5c3d25] bg-[#3e2a1a]">
+            <div className="flex gap-1 px-2 py-1.5 overflow-x-auto shrink-0 border-t-2 border-[#5c3d25] bg-[#3e2a1a]" style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}>
               {topLevelCats.map((cat) => {
                 const isCore = homeCatSet.has(cat.id);
                 const tabBg = isCore ? (CAT_BG[cat.id] ?? 'bg-white/20 text-white') : 'bg-white text-gray-900';
@@ -577,7 +578,7 @@ export default function CategoryPanel() {
                     className={`aac-btn shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg
                       border border-white/20 select-none text-center min-w-[52px] ${tabBg}`}>
                     <span className="text-base leading-none">{cat.icon}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-wide leading-tight max-w-[60px]">
+                    <span className="text-[11px] font-bold uppercase tracking-wide leading-tight max-w-[60px]">
                       {cat.nameKey ? t(cat.nameKey) : cat.name}
                     </span>
                   </button>

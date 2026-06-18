@@ -166,7 +166,48 @@ html, body {
   .aac-btn:active, .aac-key:active, .aac-speak:active, .aac-delete:active {
     transform: none;
   }
+  .switch-scan-active,
+  .remote-model-highlight,
+  .vision-glow {
+    animation: none !important;
+  }
+  .animate-pulse {
+    animation: none !important;
+  }
 }
+
+/* ── Landscape phone: shrink chrome so content fits ──────────── */
+@media (max-height: 500px) and (orientation: landscape) {
+  [data-testid="prediction-bar"] {
+    height: 40px !important;
+  }
+  [data-testid="prediction-bar"] img {
+    display: none;
+  }
+  [data-testid="keyboard-shell"] {
+    height: clamp(120px, 30svh, 160px) !important;
+    max-height: 160px;
+  }
+}
+
+/* ── System contrast preference ─────────────────────────────── */
+@media (prefers-contrast: more) {
+  :root {
+    --bg-app: #000000;
+    --bg-surface: #0a0a0a;
+    --bg-key: #1a1a1a;
+    --text-primary: #FFFFFF;
+    --text-muted: #FFD700;
+    --text-dim: #CCCCCC;
+    --border-subtle: rgba(255, 215, 0, 0.4);
+    --border-strong: rgba(255, 215, 0, 0.7);
+    --accent-focus: #FFD700;
+  }
+}
+
+/* ── Color scheme for native input styling ──────────────────── */
+html { color-scheme: light; }
+.dark { color-scheme: dark; }
 
 input, select, textarea {
   user-select: text;
