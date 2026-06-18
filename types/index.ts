@@ -98,6 +98,7 @@ export type SidePanelView =
   | 'pdf-reader'
   | 'ocr-capture'
   | 'comfort-player'
+  | 'browser'
   // Marketplace-installable module panels (Phases 4-7).
   | 'picture-editor'
   | 'music-composer'
