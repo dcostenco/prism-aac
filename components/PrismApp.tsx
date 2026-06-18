@@ -138,7 +138,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
               {s.reload}
             </button>
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-2" data-scan-group="emergency-words" role="group" aria-label="Emergency words">
             {s.words.map((w) => (
               <button key={w} onClick={() => {
                 const el = document.getElementById('emergency-input') as HTMLInputElement;
@@ -147,7 +147,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
                   const u = new SpeechSynthesisUtterance(w);
                   window.speechSynthesis.speak(u);
                 }
-              }} className="bg-gray-100 border-2 border-gray-300 rounded-xl py-3 text-lg font-bold">
+              }} className="bg-gray-100 border-2 border-gray-300 rounded-xl py-3 text-lg font-bold" tabIndex={0}>
                 {w}
               </button>
             ))}

@@ -53,7 +53,7 @@ function renderContactTile(
         </span>
         <span className="flex flex-col min-w-0 flex-1">
           <span className="font-bold truncate">{c.name}</span>
-          <span className="text-xs text-secondary truncate">
+          <span className="text-xs text-muted truncate">
             {PROVIDER_LABELS[c.provider]}
             {c.lastMessagePreview ? ` · ${c.lastMessagePreview.slice(0, 60)}${c.lastMessagePreview.length > 60 ? '…' : ''}` : ''}
           </span>
@@ -406,11 +406,11 @@ export default function AACChatPanel() {
           <div className="font-bold text-primary truncate">
             <span aria-hidden>{PROVIDER_ICONS[activeContact.provider]}</span>{' '}
             {activeContact.name}
-            <span className="ml-2 text-xs text-secondary font-normal">{PROVIDER_LABELS[activeContact.provider]}</span>
+            <span className="ml-2 text-xs text-muted font-normal">{PROVIDER_LABELS[activeContact.provider]}</span>
           </div>
           {/* Message preview — always visible in header row */}
           <div
-            className="text-sm text-secondary truncate mt-0.5"
+            className="text-sm text-muted truncate mt-0.5"
             data-testid="aac-chat-compose-preview"
           >
             {text.trim()

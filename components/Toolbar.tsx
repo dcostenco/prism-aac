@@ -5,7 +5,7 @@ import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore, type ToolbarButtonId, DEFAULT_TOOLBAR_ORDER } from '@/store/settingsStore';
 import { isRTL, type SupportedLanguage } from '@/engine/i18n';
 import { useSyncStatus } from './SyncProvider';
-import { tapFeedback } from '@/services/feedback';
+import { tapFeedback, alertFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
 import { useT } from '@/engine/useT';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
@@ -69,7 +69,7 @@ function buildBuiltInButtons(t: (k: string) => string, h: ButtonHandlers): Recor
     categories: { id: 'categories', icon: '📂', ariaLabel: t('categories'), title: t('categories'), onClick: h.openCategories },
     mic: h.voiceSupported ? {
       id: 'mic',
-      icon: h.listening ? '⏺' : '🎙',
+      icon: h.listening ? '🔴' : '🎙',
       ariaLabel: h.listening ? t('stop_voice') : t('start_voice'),
       title: h.listening ? t('stop_voice') : t('start_voice'),
       onClick: h.toggleMic,
@@ -279,7 +279,8 @@ export default function Toolbar() {
   const handlers: ButtonHandlers = {
     openCategories, openMath, openAIChat, openAACChat, openCaregiver, openSchedule, openGames, openMarketplace,
     openPdfReader, openOcrCapture, openComfortPlayer, openBrowser,
-    toggleHistory, toggleSettings, triggerAlert,
+    toggleHistory, toggleSettings,
+    triggerAlert: () => { alertFeedback(); triggerAlert(); },
     toggleSound: () => { tapFeedback(); toggleSound(); },
     toggleMic,
     soundEnabled, listening, voiceSupported,
@@ -390,7 +391,7 @@ export default function Toolbar() {
   }
 
   return (
-    <div className="flex items-center justify-between px-1 py-[clamp(0.1rem,0.3svh,0.25rem)] surface-bar shrink-0 border-b border-theme relative">
+    <div role="toolbar" className="flex items-center justify-between px-1 py-[clamp(0.1rem,0.3svh,0.25rem)] surface-bar shrink-0 border-b border-theme relative">
       {micError && (
         <div role="alert" className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-[300] bg-[#F44336] text-white text-xs font-semibold rounded-lg px-3 py-1.5 shadow-lg whitespace-nowrap pointer-events-none">
           {micError}
@@ -428,7 +429,7 @@ export default function Toolbar() {
 
       {/* Language pair selector — outside scroll strip but compact to avoid
           covering toolbar buttons. */}
-      <div ref={langRef} className="flex items-center gap-0.5 relative shrink-0 ml-1">
+      <div ref={langRef} className="flex items-center gap-0.5 relative shrink-0 ml-1 mr-1">
         <LanguageButton
           lang={language}
           variant="input"
@@ -461,7 +462,7 @@ export default function Toolbar() {
       </div>
 
       {/* Sync status indicator — informational only, not a toolbar button. */}
-      <span className="text-[8px] text-dim ml-1 shrink-0" title={`Sync: ${syncStatus}`}>{SYNC_ICONS[syncStatus] ?? '⬡'}</span>
+      <span className="text-xs text-dim ml-1 shrink-0" title={`Sync: ${syncStatus}`}>{SYNC_ICONS[syncStatus] ?? '⬡'}</span>
     </div>
   );
 }

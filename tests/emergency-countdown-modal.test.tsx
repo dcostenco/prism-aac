@@ -279,7 +279,7 @@ describe('EmergencyCountdownModal — accessibility', () => {
     render(<EmergencyCountdownModal />);
     const dialog = screen.getByRole('alertdialog');
     expect(dialog.getAttribute('aria-label')).toMatch(/Water please/);
-    expect(dialog.getAttribute('aria-label')).toMatch(/ALERT/);
+    expect(dialog.getAttribute('aria-label')).toMatch(/alert/i);
   });
 
   it('critical sending message says Sending emergency alert', () => {

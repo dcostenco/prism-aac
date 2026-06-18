@@ -21,6 +21,14 @@ import { useT } from '@/engine/useT';
 // outside the range of an unintentional press and still snappy on purpose.
 const CAPS_LOCK_HOLD_MS = 1200;
 
+// Simplified keyboard layout for users with severe motor impairment (gridSize ≤ 6).
+// Most common English letters by frequency, split into 3 rows of 5.
+const SIMPLIFIED_ROWS: string[][] = [
+  ['E', 'T', 'A', 'O', 'I'],
+  ['N', 'S', 'H', 'R', 'D'],
+  ['L', 'U', 'M', 'W', 'Y'],
+];
+
 const SENTENCE_END = /[.?!]/;
 const SENTENCE_TERMINATORS = '.?!';
 
@@ -70,11 +78,13 @@ export default function Keyboard() {
   const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock, keyboardMaximized, cycleKeyboardMode } = useUIStore();
   const { learnWord } = usePredictionStore();
-  const { speechRate, speechVolume, language, speakOnSentenceEnd } = useSettingsStore();
+  const { speechRate, speechVolume, language, speakOnSentenceEnd, gridSize } = useSettingsStore();
   const { t } = useT();
   const letterRows = getLetterRows(language);
 
-  const rows = keyboardMode === 'letters' ? letterRows : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
+  const rows = keyboardMode === 'letters'
+    ? (gridSize <= 4 ? SIMPLIFIED_ROWS : letterRows)
+    : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
   const showUpper = isUpperCase || capsLock;
 
   const handleKey = useCallback((key: string) => {
@@ -220,7 +230,7 @@ export default function Keyboard() {
   const shiftGlyph = capsLock ? 'A' : isUpperCase ? '⇧' : '⇪';
 
   return (
-    <div className="flex-1 flex flex-col gap-[1px] p-[2px]" data-scan-group="keyboard">
+    <div className="flex-1 flex flex-col gap-[1px] p-[2px]" data-scan-group="keyboard" role="group" aria-label="Keyboard">
       {rows.map((row, ri) => (
         <div key={ri} className="flex gap-[1px] justify-center flex-1">
           {ri === 2 && keyboardMode === 'letters' && (

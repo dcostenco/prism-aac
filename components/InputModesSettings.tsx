@@ -61,7 +61,7 @@ export default function InputModesSettings() {
         <label className="flex items-center justify-between py-1.5">
           <div>
             <span className="text-primary text-sm font-semibold">Camera Finger Tracking</span>
-            <p className="text-muted text-[10px]">Camera tracks your finger/arm and moves cursor on screen</p>
+            <p className="text-muted text-xs">Camera tracks your finger/arm and moves cursor on screen</p>
           </div>
           <Toggle on={cameraInputEnabled} onToggle={() => update({ cameraInputEnabled: !cameraInputEnabled })} label="Camera input" />
         </label>
@@ -73,7 +73,7 @@ export default function InputModesSettings() {
                 <button key={tt.id} onClick={() => { tapFeedback(); update({ cameraTrackingTarget: tt.id }); }}
                   data-testid={`tracking-target-${tt.id}`}
                   data-selected={cameraTrackingTarget === tt.id ? 'true' : 'false'}
-                  className={`aac-btn rounded-lg px-2 py-1.5 text-[10px] font-semibold border border-theme ${
+                  className={`aac-btn rounded-lg px-2 py-1.5 text-xs font-semibold border border-theme ${
                     cameraTrackingTarget === tt.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
                   }`}>
                   {tt.label}
@@ -87,7 +87,7 @@ export default function InputModesSettings() {
             >
               🎯 Set Up Tracking
             </button>
-            <p className="text-muted text-[10px] mt-1">Guided setup: detects your body, calibrates cursor, tests accuracy</p>
+            <p className="text-muted text-xs mt-1">Guided setup: detects your body, calibrates cursor, tests accuracy</p>
           </div>
         )}
       </div>
@@ -96,7 +96,7 @@ export default function InputModesSettings() {
       <label className="flex items-center justify-between py-1.5">
         <div>
           <span className="text-primary text-sm font-semibold">Hand Calibration Settings</span>
-          <p className="text-muted text-[10px]">Show hand profile + per-finger button mapping in Settings</p>
+          <p className="text-muted text-xs">Show hand profile + per-finger button mapping in Settings</p>
         </div>
         <Toggle on={showHandCalibration} onToggle={() => update({ showHandCalibration: !showHandCalibration })} label="Hand calibration settings" />
       </label>
@@ -107,7 +107,7 @@ export default function InputModesSettings() {
         <label className="flex items-center justify-between py-1.5">
           <div>
             <span className="text-primary text-sm font-semibold">Camera Phrase Suggestions</span>
-            <p className="text-muted text-[10px]">Camera detects objects and suggests relevant phrases (e.g. cup → &quot;I want a drink&quot;)</p>
+            <p className="text-muted text-xs">Camera detects objects and suggests relevant phrases (e.g. cup → &quot;I want a drink&quot;)</p>
           </div>
           <Toggle on={visionContextEnabled} onToggle={() => update({ visionContextEnabled: !visionContextEnabled })} label="Vision context" />
         </label>
@@ -117,7 +117,7 @@ export default function InputModesSettings() {
       <label className="flex items-center justify-between py-1.5">
         <div>
           <span className="text-primary text-sm font-semibold">{t('enable_head_tracking')}</span>
-          <p className="text-muted text-[10px]">Move cursor by moving your head (uses camera)</p>
+          <p className="text-muted text-xs">Move cursor by moving your head (uses camera)</p>
         </div>
         <Toggle
           on={headTrackingEnabled}
@@ -141,7 +141,7 @@ export default function InputModesSettings() {
           <span className="text-primary text-sm">{t('dwell_time')}</span>
           <span className="text-muted text-sm">{headTrackingDwellMs}ms</span>
         </label>
-        <input type="range" min="500" max="3000" step="100" value={headTrackingDwellMs}
+        <input type="range" min="800" max="3000" step="100" value={headTrackingDwellMs}
           onChange={(e) => update({ headTrackingDwellMs: parseInt(e.target.value) })}
           className="w-full accent-[#4CAF50]" />
       </div>
@@ -267,6 +267,7 @@ const ASSIGNABLE_ACTIONS = [
 function GestureRecognitionSettings() {
   const gestureConfig = useSettingsStore(s => s.gestureConfig);
   const update = useSettingsStore(s => s.update);
+  const { t } = useT();
 
   const [calibrating, setCalibrating] = useState(false);
   const [calibrationProgress, setCalibrationProgress] = useState(0);
@@ -300,7 +301,7 @@ function GestureRecognitionSettings() {
           Gesture Recognition
         </h4>
         <span className="flex items-center gap-2">
-          <span className={`text-[10px] font-bold ${gestureConfig.enabled ? 'text-[#4CAF50]' : 'text-muted'}`}>
+          <span className={`text-xs font-bold ${gestureConfig.enabled ? 'text-[#4CAF50]' : 'text-muted'}`}>
             {gestureConfig.enabled ? 'ON' : 'off'}
           </span>
           {/* Chevron rotates when open via group-open: utility */}
@@ -312,7 +313,7 @@ function GestureRecognitionSettings() {
       <label className="flex items-center justify-between py-1.5 mt-2">
         <div>
           <span className="text-primary text-sm font-semibold">Enable Gestures</span>
-          <p className="text-muted text-[10px]">Detect head, eye, lip, and brow gestures via camera</p>
+          <p className="text-muted text-xs">Detect head, eye, lip, and brow gestures via camera</p>
         </div>
         <Toggle
           on={gestureConfig.enabled}
@@ -368,7 +369,7 @@ function GestureRecognitionSettings() {
             >
               {calibrating ? `Capturing neutral face... ${Math.round(calibrationProgress * 100)}%` : '🎯 Calibrate Neutral Face'}
             </button>
-            <p className="text-muted text-[10px] mt-1">
+            <p className="text-muted text-xs mt-1">
               Hold still for 3 seconds. Sets your personal baseline so thresholds adapt to your face.
             </p>
           </div>
@@ -381,7 +382,7 @@ function GestureRecognitionSettings() {
                 <div key={g.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg surface-key border border-theme">
                   <div className="flex-1 min-w-0">
                     <span className="text-primary text-xs font-semibold block">{g.label}</span>
-                    <span className="text-muted text-[9px]">{g.desc}</span>
+                    <span className="text-muted text-[9px]">{t(g.id + '_desc') === g.id + '_desc' ? g.desc : t(g.id + '_desc')}</span>
                   </div>
                   <select
                     value={getMappedAction(g.id)}
@@ -444,10 +445,10 @@ function GestureRecognitionSettings() {
           {gestureConfig.mode === 'advanced' && (
             <div className="mt-2 p-3 rounded-xl border border-[#9C27B0]/30 bg-[#9C27B0]/5">
               <h5 className="text-primary text-xs font-bold mb-1">Advanced Training</h5>
-              <p className="text-muted text-[10px] mb-2">
+              <p className="text-muted text-xs mb-2">
                 Record custom gestures and assign them to actions. The system learns your personal movement patterns using DTW template matching + 8B local model inference.
               </p>
-              <p className="text-muted text-[10px]">
+              <p className="text-muted text-xs">
                 {gestureConfig.templates.length === 0
                   ? 'No custom gestures recorded yet.'
                   : `${gestureConfig.templates.length} custom gesture(s) trained.`

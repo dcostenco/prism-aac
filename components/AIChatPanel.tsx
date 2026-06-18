@@ -802,7 +802,7 @@ export default function AIChatPanel() {
         {/* Interim voice hint — only when listening */}
         {listening && interim && (
           <div className="shrink-0 px-4 py-2 border-t border-theme text-[#4CAF50] text-base text-center truncate">
-            🎙 &ldquo;{interim.slice(0, 200)}{interim.length > 200 ? '…' : ''}&rdquo;
+            🎙 &ldquo;{interim.slice(-200)}{interim.length > 200 ? '…' : ''}&rdquo;
           </div>
         )}
       </section>

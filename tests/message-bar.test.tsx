@@ -100,6 +100,8 @@ vi.mock('@/services/aacSpeak', () => ({
 vi.mock('@/services/feedback', () => ({
   tapFeedback: vi.fn(),
   deleteFeedback: vi.fn(),
+  speakFeedback: vi.fn(),
+  alertFeedback: vi.fn(),
 }));
 
 vi.mock('@/services/ttsHighlightBus', () => ({

@@ -190,6 +190,19 @@ html, body {
   }
 }
 
+/* ── Narrow viewport (iPad Split View / iPhone SE) ──────────── */
+@media (max-width: 380px) {
+  [data-testid="aac-toolbar-strip"] {
+    gap: 2px;
+  }
+  [data-testid="aac-toolbar-strip"] button {
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    font-size: 0.9rem;
+  }
+}
+
 /* ── System contrast preference ─────────────────────────────── */
 @media (prefers-contrast: more) {
   :root {

@@ -30,6 +30,7 @@ function Section({
     <div className="border border-theme rounded-xl overflow-hidden">
       <button
         onClick={() => { tapFeedback(); setOpen((v) => !v); }}
+        aria-expanded={open}
         className="aac-btn w-full flex items-center justify-between px-4 py-3 surface-key hover:bg-black/5 text-left"
       >
         <span className="flex items-center gap-2 text-primary font-semibold text-base">
@@ -202,7 +203,7 @@ export default function SettingsModal() {
       {/* Backdrop click intentionally removed — dwell-click drift closes the
           modal accidentally. Only the ✕ button closes Settings. */}
       <div
-        className="surface-bar rounded-2xl w-full max-w-lg max-h-[90svh] flex flex-col border border-theme shadow-2xl"
+        className="surface-bar rounded-2xl w-full max-w-lg md:max-w-2xl max-h-[90svh] flex flex-col border border-theme shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -583,14 +584,14 @@ export default function SettingsModal() {
                   {profile.isPlatformAdmin && <span className="text-[#FFD700] text-xs ml-2">★ {t('admin')}</span>}
                   <p className="text-primary font-semibold text-sm">{t(PLAN_LABEL_KEYS[profile.plan]) || profile.plan}</p>
                 </div>
-                <a href={synaluxSignOutUrl()} className="block text-center text-[#F44336] text-sm hover:underline pt-1">
+                <a href={synaluxSignOutUrl()} target="_blank" rel="noopener" className="block text-center text-[#F44336] text-sm hover:underline pt-1">
                   {t('sign_out')}
                 </a>
               </div>
             ) : (
               <div>
                 <p className="text-muted text-sm mb-3">{t('sign_in_synalux_desc')}</p>
-                <a href={synaluxSignInUrl()} data-testid="synalux-signin"
+                <a href={synaluxSignInUrl()} data-testid="synalux-signin" target="_blank" rel="noopener"
                   className="aac-btn block w-full text-center bg-[#4CAF50] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#388E3C]">
                   {t('sign_in_with_synalux')}
                 </a>

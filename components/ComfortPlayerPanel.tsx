@@ -198,7 +198,6 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
     return (
       <div role="dialog" aria-modal="true" aria-label="Fullscreen playback"
         className="fixed inset-0 z-[999] bg-black flex items-center justify-center"
-        onClick={() => setIsFullscreen(false)}
         onKeyDown={(e) => { if (e.key === 'Escape') setIsFullscreen(false); }}>
         {currentItem.type === 'photo' && (
           <img src={mediaUrl} alt={`Comfort media: ${currentItem.label}`} className="max-w-full max-h-full object-contain" />
@@ -216,7 +215,7 @@ function ComfortPlayerInner({ onClose }: { onClose: () => void }) {
         {/* L3: Adequate touch target */}
         <button className="absolute top-8 right-8 text-white text-3xl w-12 h-12 flex items-center justify-center opacity-80"
           aria-label="Exit fullscreen" onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); }}>✕</button>
-        <p className="absolute bottom-8 text-white opacity-30 text-sm">Tap anywhere or press Escape to exit</p>
+        <p className="absolute bottom-8 text-white opacity-30 text-sm">Press Escape or tap ✕ to exit</p>
       </div>
     );
   }

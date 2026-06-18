@@ -16,7 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 vi.mock('@/engine/useT', () => ({
   useT: () => ({ t: (k: string) => k, ttsCode: 'en-US', rtl: false, ready: true }),
 }));
-vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn() }));
+vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn(), alertFeedback: vi.fn(), speakFeedback: vi.fn() }));
 vi.mock('@/services/voiceInputService', () => ({
   isVoiceInputSupported: () => false,
   startVoiceInput: vi.fn(),

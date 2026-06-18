@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react';
 import { useScheduleStore } from '@/store/scheduleStore';
 import { useT } from '@/engine/useT';
+import { useMessageStore } from '@/store/messageStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { aacSpeak } from '@/services/aacSpeak';
 
 function getTimeGreeting(t: (key: string) => string): { greeting: string; icon: string } {
   const hour = new Date().getHours();
@@ -23,7 +26,15 @@ export default function GreetingBanner() {
   useEffect(() => {
     let dismissed = false;
     try { dismissed = !!sessionStorage.getItem('prism-greeting-dismissed'); } catch { /* private context */ }
-    if (!dismissed) setVisible(true);
+    if (!dismissed) {
+      setVisible(true);
+      const { soundEnabled } = useMessageStore.getState();
+      const { speechRate, speechVolume } = useSettingsStore.getState();
+      if (soundEnabled) {
+        const { greeting: g } = getTimeGreeting(t);
+        aacSpeak(g, speechRate, speechVolume);
+      }
+    }
   }, []);
 
   if (!visible) return null;
@@ -45,7 +56,7 @@ export default function GreetingBanner() {
           </p>
         )}
       </div>
-      <button onClick={dismiss} className="text-muted text-xl px-2" aria-label="Dismiss greeting">✕</button>
+      <button onClick={dismiss} className="text-muted text-xl px-2 min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Dismiss greeting">✕</button>
     </div>
   );
 }

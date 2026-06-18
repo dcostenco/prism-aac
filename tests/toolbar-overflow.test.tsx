@@ -18,7 +18,7 @@ import { useUIStore } from '@/store/uiStore';
 vi.mock('@/engine/useT', () => ({
   useT: () => ({ t: (k: string) => k, ttsCode: 'en-US', rtl: false, ready: true }),
 }));
-vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn(), keyFeedback: vi.fn() }));
+vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn(), keyFeedback: vi.fn(), alertFeedback: vi.fn(), speakFeedback: vi.fn() }));
 vi.mock('@/lib/marketplace/registry', () => ({
   getHandler: () => undefined,
 }));

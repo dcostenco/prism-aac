@@ -91,6 +91,8 @@ function VisualTimer({
   const { t } = useT();
   const [remaining, setRemaining] = useState(seconds);
   const [running, setRunning] = useState(false);
+  const [timerFlash, setTimerFlash] = useState(false);
+  const timerFlashRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onCompleteRef = useRef(onComplete);
   useEffect(() => {
@@ -124,6 +126,10 @@ function VisualTimer({
         if (r <= 1) {
           if (intervalRef.current) clearInterval(intervalRef.current);
           setRunning(false);
+          // Visual flash on timer complete
+          setTimerFlash(true);
+          if (timerFlashRef.current) clearTimeout(timerFlashRef.current);
+          timerFlashRef.current = setTimeout(() => setTimerFlash(false), 3000);
           onCompleteRef.current();
           return 0;
         }
@@ -132,6 +138,11 @@ function VisualTimer({
     }, 1000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [running]);
+
+  // Cleanup flash timer on unmount
+  useEffect(() => {
+    return () => { if (timerFlashRef.current) clearTimeout(timerFlashRef.current); };
+  }, []);
 
   const pct = seconds > 0 ? remaining / seconds : 0;
   const radius = 36;
@@ -142,7 +153,7 @@ function VisualTimer({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <p className="text-primary font-bold text-lg">{t('visual_timer')}</p>
+      <p className={`font-bold text-lg rounded-lg px-2 py-0.5 transition-colors duration-300 ${timerFlash ? 'bg-[#FF9800] text-white animate-pulse' : 'text-primary'}`}>{t('visual_timer')}</p>
       <svg width="100" height="100" viewBox="0 0 100 100" className="motion-safe:transition-all">
         <circle cx="50" cy="50" r={radius} fill="none" stroke="currentColor" strokeWidth="6" className="text-dim opacity-20" />
         <circle

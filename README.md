@@ -84,6 +84,46 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 
 ---
 
+## Accessibility
+
+Prism AAC underwent a [70-item adversarial accessibility audit](ACCESSIBILITY.md) in June 2026, tested across iPhone portrait, iPhone landscape, iPad portrait, and iPad landscape. Every issue was fixed and verified with automated e2e tests.
+
+### Input methods — use any body part
+
+| Method | How it works | Setup |
+|--------|-------------|-------|
+| **Touch** | Standard tap + pictogram tiles | Works out of the box |
+| **Head tracking** | Camera follows head movement → dwell click | Settings → Input Modes |
+| **Eye gaze** | Eye position weighting on head tracker | Settings → Input Modes |
+| **Switch scanning** | Auto/manual scan with Bluetooth switch, keyboard, or gamepad | Settings → Input Modes → Switch Scanning |
+| **Gesture recognition** | Blink, nod, smile, mouth open → mapped actions | Settings → Input Modes → Gestures |
+| **Voice input** | Dictation with AI autocorrect, hands-free, wake word | Mic button on toolbar |
+| **Simplified keyboard** | 15 most-frequent letters in 3×5 grid (auto for gridSize 4) | Settings → Grid Size → 4 |
+
+### Responsive layout — iPhone & iPad, portrait & landscape
+
+<p align="center">
+  <img src="docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1.png" alt="iPhone portrait" width="160" />
+  <img src="docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1-land.png" alt="iPhone landscape" width="280" />
+  <img src="docs/screenshots/a11y-2026-06-18/01-home-board-ipad-13.png" alt="iPad portrait" width="240" />
+</p>
+
+### Visual modes
+
+<p align="center">
+  <img src="docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-iphone-6.1.png" alt="Dark + high contrast on iPhone" width="160" />
+  <img src="docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-ipad-13-land.png" alt="Dark + high contrast on iPad landscape" width="340" />
+</p>
+
+- **Light / Dark / High Contrast** themes
+- **`prefers-contrast: more`** and **`prefers-reduced-motion`** system media queries
+- **Pinch-to-zoom** enabled (up to 5×) — WCAG 1.4.4 compliant
+- **16 emergency words × 8 languages** in crash recovery mode
+
+For the full audit report with all 70 findings, see [ACCESSIBILITY.md](ACCESSIBILITY.md).
+
+---
+
 ## Safety & Privacy
 
 PrismAAC is used by children, nonverbal adults, and clinical populations. Safety is not a feature — it's a constraint that shapes every inference path.
@@ -152,7 +192,7 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 | **AI tutor** (math + 10 other subjects) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
 | **Cell-grid math canvas** | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
 | **Region-aware history** (280+ regions) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
-| **Hands-free** head + hand gesture mode | 🟢 | 🟡 | 🟡 | 🔴 | 🟢 | 🟡 | 🟡 | 🟢 | 🟢 |
+| **Hands-free** head + hand + gesture + switch scanning | 🟢 | 🟡 | 🟡 | 🔴 | 🟢 | 🟡 | 🟡 | 🟢 | 🟢 |
 | **Hands-free AI chat** (voice loop + wake word + bedside) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
 | Therapeutic **AAC games** (12 built-in) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🟡 | 🟡 | 🔴 | 🔴 |
 | **Open source** (AGPL-3.0) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🟢 | 🔴 | 🔴 | 🔴 |

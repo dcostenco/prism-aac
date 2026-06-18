@@ -12,7 +12,7 @@ import { useBrowserStore } from './browserStore';
 const BOOKMARKS = [
   { label: 'Google', url: 'https://www.google.com/webhp?igu=1', icon: '🔍' },
   { label: 'YouTube', url: 'https://m.youtube.com', icon: '▶️' },
-  { label: 'Wikipedia', url: 'https://en.m.wikipedia.org', icon: '📚' },
+  { label: 'Wikipedia', url: 'https://m.wikipedia.org', icon: '📚' },
   { label: 'Gmail', url: 'https://mail.google.com', icon: '📧' },
   { label: 'News', url: 'https://news.google.com', icon: '📰' },
   { label: 'Maps', url: 'https://maps.google.com', icon: '🗺️' },

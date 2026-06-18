@@ -126,12 +126,13 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
     <button
       onClick={() => onTap(word)}
       aria-label={`Predict: ${word}`}
+      title={word}
       className={`aac-btn flex-1 min-w-0 rounded-xl flex flex-col items-center overflow-hidden border-l-[5px] border border-theme${visionBoosted ? ' vision-glow' : ''}`}
       style={{ borderLeftColor: color, color }}
     >
       <span className="flex-1 flex items-center justify-center w-full bg-white rounded-t-lg overflow-hidden min-h-0">
         {iconUrl && (
-          <img src={iconUrl} alt="" aria-hidden loading="lazy" className="max-w-full max-h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+          <img src={iconUrl} alt="" aria-hidden loading="eager" className="max-w-full max-h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
         )}
       </span>
       <span className="truncate w-full text-center text-[clamp(0.65rem,1.5svh,1rem)] font-bold shrink-0 leading-tight py-0.5">{word}</span>

@@ -18,6 +18,8 @@ import PhraseTile from './PhraseTile';
 import Keyboard from './Keyboard';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { registerSearchKeyHandler } from '@/services/searchKeyBridge';
+import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
+import { useAuthStore } from '@/store/authStore';
 
 // ── Categories on the HOME core-vocab grid ────────────────────────────────────
 // Pink → yellow → green → orange → blue (matches Image #36 left-to-right)
@@ -137,6 +139,22 @@ function PageLabel({ label }: { label: string }) {
       </span>
     </div>
   );
+}
+
+// ── Lightweight pictogram for search results ──────────────────────────────────
+function SearchResultIcon({ phrase, language }: { phrase: string; language: string }) {
+  const profile = useAuthStore((s) => s.profile);
+  const pictureMode = pictureModeForProfile(profile);
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    getPictogramUrl(phrase, 'en', pictureMode)
+      .then(u => { if (!cancelled) setUrl(u); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [phrase, pictureMode]);
+  if (!url) return null;
+  return <img src={url} alt="" aria-hidden className="w-8 h-8 object-contain shrink-0 rounded" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -379,7 +397,8 @@ export default function CategoryPanel() {
         {searchResults.map((r) => (
           <button key={r.phraseId ?? `${r.category ?? ''}:${r.phrase ?? ''}`} onClick={() => handlePhrase(r.phrase, r.phraseId)}
             className="aac-btn w-full flex items-center justify-between px-4 py-3 rounded-xl surface-key border border-theme text-left">
-            <span className="text-primary font-bold text-lg">{r.phrase}</span>
+            <SearchResultIcon phrase={r.phrase} language={language} />
+            <span className="text-primary font-bold text-lg flex-1 min-w-0 truncate">{r.phrase}</span>
             <span className="text-muted text-xs ml-2 shrink-0">{r.category}</span>
           </button>
         ))}
@@ -486,6 +505,7 @@ export default function CategoryPanel() {
                           const sub = item.data;
                           return (
                             <button key={sub.id} onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
+                              aria-label={sub.nameKey ? t(sub.nameKey) : sub.name}
                               className={`${FOLDER_CLS} p-3 ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]}`}>
                               <span className="text-3xl leading-none">{sub.icon}</span>
                               <span className="text-xs leading-tight uppercase tracking-wide">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
@@ -505,9 +525,11 @@ export default function CategoryPanel() {
                     {showPager && (
                       <div className="flex items-center justify-center gap-3 py-1 border-t border-theme shrink-0">
                         <button disabled={safePage === 0} onClick={() => setGridPage(p => Math.max(0, p - 1))}
+                          aria-label="Previous page"
                           className="aac-btn px-3 py-1 rounded-lg surface-key border border-theme text-primary font-bold disabled:opacity-30">◀</button>
                         <span className="text-xs text-muted">{safePage + 1} / {totalPages}</span>
                         <button disabled={safePage >= totalPages - 1} onClick={() => setGridPage(p => p + 1)}
+                          aria-label="Next page"
                           className="aac-btn px-3 py-1 rounded-lg surface-key border border-theme text-primary font-bold disabled:opacity-30">▶</button>
                       </div>
                     )}
@@ -559,6 +581,7 @@ export default function CategoryPanel() {
                 const tH = categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
                 return (
                 <button key={cat.id} onClick={() => { tapFeedback(); selectCategory(cat.id); }}
+                  aria-label={cat.nameKey ? t(cat.nameKey) : cat.name}
                   className={`${FOLDER_CLS} gap-1 p-1.5 text-xs ${tH}`}>
                   <span className="text-2xl sm:text-3xl leading-none">{cat.icon}</span>
                   <span className="leading-tight uppercase tracking-wide text-[10px] sm:text-xs">

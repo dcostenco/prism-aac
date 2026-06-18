@@ -5,7 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
 import { aacSpeak } from '@/services/aacSpeak';
 import type { SupportedLanguage } from '@/engine/i18n';
-import { tapFeedback, deleteFeedback } from '@/services/feedback';
+import { tapFeedback, deleteFeedback, speakFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
 import { correctText } from '@/services/textCorrectService';
 import ColoredText from './ColoredText';
@@ -369,7 +369,7 @@ export default function MessageBar() {
 
   const handleSpeak = useCallback(() => {
     void warmupAzureAudio();
-    tapFeedback();
+    speakFeedback();
     // When AI Chat panel is open, ▶ sends the message to AI instead of speaking aloud.
     // Same routing that Keyboard.tsx Speak key does.
     if (useUIStore.getState().sidePanel === 'ai-chat') {
@@ -554,9 +554,10 @@ export default function MessageBar() {
               onClick={acceptSuggestion}
               aria-label={`Auto-correct to ${suggestion}`}
               data-testid="autocorrect-suggestion"
-              className="text-left text-base md:text-lg text-[#4CAF50] truncate hover:underline mt-1"
+              className="aac-btn text-left text-base md:text-lg text-[#4CAF50] mt-1 flex items-center gap-2 min-h-[36px] px-2 py-1 rounded-lg hover:bg-[rgba(76,175,80,0.1)]"
             >
-              ✨ {t('did_you_mean')} <span className="font-semibold">{suggestion}</span> <span className="text-dim text-sm">{t('tap_or_press')}</span>
+              <span className="text-xl shrink-0">✅</span>
+              <span className="font-semibold truncate">{suggestion}</span>
             </button>
           )}
         </div>
@@ -564,7 +565,7 @@ export default function MessageBar() {
 
       <button onClick={() => { tapFeedback(); undo(); }} aria-label={t('undo')} className="aac-btn w-[clamp(2.75rem,5vw,4rem)] h-[clamp(2.75rem,5vw,4rem)] rounded-xl surface-key text-muted text-[clamp(1rem,1.8vw,1.375rem)] flex items-center justify-center shrink-0 border border-theme">↩</button>
 
-      <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-[clamp(3rem,5.5vw,4.5rem)] h-[clamp(3rem,5.5vw,4.5rem)] rounded-xl bg-[#4CAF50] text-white text-[clamp(1.125rem,2vw,1.75rem)] flex items-center justify-center shrink-0">▶</button>
+      <button onClick={handleSpeak} aria-label={t('speak')} className="aac-btn aac-speak w-[clamp(3.5rem,7vw,5.5rem)] h-[clamp(3.5rem,7vw,5.5rem)] rounded-xl bg-[#4CAF50] text-white text-[clamp(1.125rem,2vw,1.75rem)] flex items-center justify-center shrink-0">▶</button>
 
       <button
         onPointerDown={handleDeleteDown} onPointerUp={handleDeleteUp} onPointerLeave={cancelDelete} onPointerCancel={cancelDelete}
@@ -575,31 +576,40 @@ export default function MessageBar() {
           mode (matches README's auto tone-switch behavior). Selecting any
           specific tone flips toneMode to 'manual' (via setTone). */}
       {showTones && (
-        <div className="absolute left-16 bottom-full mb-2 surface-bar border border-theme rounded-2xl p-2 grid grid-cols-3 gap-1.5 z-50 shadow-xl">
-          <button
-            key="auto"
-            onClick={() => { tapFeedback(); setToneMode('auto'); setShowTones(false); }}
-            aria-pressed={toneMode === 'auto'}
-            className={`aac-btn rounded-xl px-3 py-2 flex flex-col items-center border border-theme col-span-3 ${
-              toneMode === 'auto' ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
-            }`}
-          >
-            <span className="text-xl">🎚</span>
-            <span className="text-[10px] mt-0.5 font-bold">Auto (recommended)</span>
-          </button>
-          {TONE_OPTIONS.map(tone => (
+        <div
+          className="absolute left-16 bottom-full mb-2 surface-bar border border-theme rounded-2xl p-2 z-50 shadow-xl"
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowTones(false); }}
+        >
+          <div className="grid grid-cols-3 gap-1.5" role="listbox">
             <button
-              key={tone.id}
-              onClick={() => { tapFeedback(); setTone(tone.id); setShowTones(false); }}
-              aria-pressed={toneMode === 'manual' && activeTone === tone.id}
-              className={`aac-btn rounded-xl px-3 py-2 flex flex-col items-center border border-theme ${
-                toneMode === 'manual' && activeTone === tone.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+              key="auto"
+              onClick={() => { tapFeedback(); setToneMode('auto'); setShowTones(false); }}
+              aria-pressed={toneMode === 'auto'}
+              role="option"
+              aria-selected={toneMode === 'auto'}
+              className={`aac-btn rounded-xl px-3 py-2 flex flex-col items-center border border-theme col-span-3 ${
+                toneMode === 'auto' ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
               }`}
             >
-              <span className="text-xl">{tone.icon}</span>
-              <span className="text-[10px] mt-0.5">{tone.label}</span>
+              <span className="text-xl">🎚</span>
+              <span className="text-[10px] mt-0.5 font-bold">Auto (recommended)</span>
             </button>
-          ))}
+            {TONE_OPTIONS.map(tone => (
+              <button
+                key={tone.id}
+                onClick={() => { tapFeedback(); setTone(tone.id); setShowTones(false); }}
+                aria-pressed={toneMode === 'manual' && activeTone === tone.id}
+                role="option"
+                aria-selected={toneMode === 'manual' && activeTone === tone.id}
+                className={`aac-btn rounded-xl px-3 py-2 flex flex-col items-center border border-theme ${
+                  toneMode === 'manual' && activeTone === tone.id ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'
+                }`}
+              >
+                <span className="text-xl">{tone.icon}</span>
+                <span className="text-[10px] mt-0.5">{tone.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

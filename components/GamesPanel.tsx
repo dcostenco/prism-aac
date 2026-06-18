@@ -96,6 +96,7 @@ function BubblePopGame({ onBack }: { onBack: () => void }) {
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [celebration, setCelebration] = useState(false);
+  const [staticMode, setStaticMode] = useState(false);
   const rafRef = useRef(0);
   const celebrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -111,7 +112,7 @@ function BubblePopGame({ onBack }: { onBack: () => void }) {
         id: Date.now() + i,
         word,
         x: 10 + Math.random() * 70,
-        y: 100 + Math.random() * 20,
+        y: staticMode ? 10 + Math.random() * 75 : 100 + Math.random() * 20,
         size: 60 + Math.random() * 30,
         color: color.bg,
         speed: 0.3 + Math.random() * 0.4 + level * 0.05,
@@ -119,11 +120,12 @@ function BubblePopGame({ onBack }: { onBack: () => void }) {
       });
     }
     setBubbles(newBubbles);
-  }, [level, language]);
+  }, [level, language, staticMode]);
 
   useEffect(() => { queueMicrotask(spawnBubbles); }, [spawnBubbles]);
 
   useEffect(() => {
+    if (staticMode) return;
     const animate = () => {
       setBubbles(prev => {
         const updated = prev.map(b => b.popped ? b : { ...b, y: b.y - b.speed });
@@ -136,7 +138,7 @@ function BubblePopGame({ onBack }: { onBack: () => void }) {
     };
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
-  }, []);
+  }, [staticMode]);
 
   const allGone = bubbles.length > 0 && bubbles.every(b => b.popped || b.y < -15);
 
@@ -176,7 +178,8 @@ function BubblePopGame({ onBack }: { onBack: () => void }) {
           ← {t('back_to_games')}
         </button>
         <span className="text-primary font-bold text-xl">🫧 Bubble Pop</span>
-        <div className="text-right">
+        <div className="flex items-center gap-2 text-right">
+          <button onClick={() => setStaticMode(v => !v)} className="aac-btn px-3 py-1 rounded-lg text-xs font-bold border border-theme surface-key text-primary">{staticMode ? '🎯 Static' : '🌊 Moving'}</button>
           <span className="text-primary font-bold">⭐ {score}</span>
           <span className="text-muted text-xs ml-2">Lv.{level}</span>
         </div>

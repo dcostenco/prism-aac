@@ -1,12 +1,76 @@
-# PrismAAC Accessibility — Camera-Based Input System
+# PrismAAC Accessibility
 
 > **TL;DR** — every body movement a child can make becomes a way to communicate. Head pose, eyes, mouth, shoulders, elbows, wrists, fingers, hips — any combination, on any device with a camera. No $3,000–$15,000 eye tracker required.
 
-## At a glance
+**Try it live:** [synalux.ai/prism-aac](https://synalux.ai/prism-aac) | **App Store:** [Prism AAC](https://apps.apple.com/app/id6764692277) | **Audit report:** [docs/ACCESSIBILITY-AUDIT.md](docs/ACCESSIBILITY-AUDIT.md)
 
+## Accessibility Features (June 2026 Audit — 70 fixes)
+
+### Input Methods
 - ✅ **15+ tracked body parts** (head, eyes, mouth, shoulders, elbows, wrists, fingers, hips) — choose any combination
+- ✅ **Dwell-click** with configurable time (800–3000 ms) and progress-ring feedback
+- ✅ **Switch scanning** — auto/manual mode, group scanning, Bluetooth switch/gamepad/keyboard support
+- ✅ **Gesture recognition** — blink, mouth open, smile, head nod/shake, eyebrow raise → assignable actions
+- ✅ **Simplified keyboard** — 15 most-frequent letters (3×5 grid) auto-activates for gridSize ≤ 4
+- ✅ **Voice input** — dictation with AI autocorrect, hands-free mode, wake word ("Hey Prism")
+
+### Visual Accessibility
+- ✅ **High contrast mode** — gold-on-black theme, 2px gold borders on all keys
+- ✅ **System contrast support** — `prefers-contrast: more` and `forced-colors` media queries
+- ✅ **Dark mode** — full theme with `color-scheme: dark` for native input styling
+- ✅ **Pinch-to-zoom** enabled — up to 5× magnification (WCAG 1.4.4)
+- ✅ **Minimum text sizes** — sidebar 10px+, tab labels 11px+, settings descriptions 12px+
+- ✅ **prefers-reduced-motion** — disables ALL animations (cursor pulse, scan pulse, vision glow, loading indicators)
+
+### Motor Accessibility
+- ✅ **Toolbar scroll arrows** — visible ◀/▶ buttons when toolbar overflows (dwell-clickable)
+- ✅ **44px minimum touch targets** — all interactive elements meet Apple HIG minimum
+- ✅ **Larger Speak button** — proportionally oversized (most important button in the app)
+- ✅ **Differentiated haptic feedback** — Speak (double-tap), Delete (heavy), Emergency (urgent pattern)
+- ✅ **1500ms long-press threshold** — prevents accidental clear-all for users with motor impairment
+- ✅ **Safe area insets** — all 4 sides (top/bottom/left/right) for iPhone notch and home indicator
+
+### Cognitive Accessibility
+- ✅ **16 emergency words** in 8 languages (crash recovery mode)
+- ✅ **Pictogram search results** — non-literate users can identify phrases visually
+- ✅ **Visual autocorrect** — ✅ icon (no reading required to accept suggestions)
+- ✅ **Greeting banner speaks on load** — orients non-literate users
+
+### Communication Safety
+- ✅ **Emergency cancel for all severity levels** — including critical (PIN-gated)
+- ✅ **MessageBar stays during comfort player** — user can always communicate
+- ✅ **Crisis safety filter** — deterministic + per-sentence AI output filtering
+- ✅ **Emergency modal i18n** — all strings translatable (not hardcoded English)
+
+### Screen Reader & Keyboard
+- ✅ **ARIA landmarks** — `role="toolbar"`, `role="group"` on keyboard, `aria-label` on all regions
+- ✅ **Focus management** — Escape closes all modals, `aria-expanded` on accordions
+- ✅ **data-scan-group** — 6+ interactive regions tagged for switch scanning group mode
+- ✅ **Folder aria-labels** — screen readers announce category names, not emoji descriptions
+
+### Responsive Layout
+- ✅ **iPhone landscape** — prediction bar shrinks, keyboard compresses via CSS media query
+- ✅ **iPad Split View** — narrow viewport CSS for 320px-width contexts
+- ✅ **Settings modal** — expands to `max-w-2xl` on iPad for better readability
+
+### Screenshots
+
+| Feature | iPhone Portrait | iPhone Landscape | iPad Portrait | iPad Landscape |
+|---------|----------------|-----------------|---------------|----------------|
+| Home board | ![](docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1.png) | ![](docs/screenshots/a11y-2026-06-18/01-home-board-iphone-6.1-land.png) | ![](docs/screenshots/a11y-2026-06-18/01-home-board-ipad-13.png) | ![](docs/screenshots/a11y-2026-06-18/01-home-board-ipad-13-land.png) |
+| Simplified keyboard | ![](docs/screenshots/a11y-2026-06-18/03-simplified-keyboard-iphone-6.1.png) | ![](docs/screenshots/a11y-2026-06-18/03-simplified-keyboard-iphone-6.1-land.png) | ![](docs/screenshots/a11y-2026-06-18/03-simplified-keyboard-ipad-13.png) | ![](docs/screenshots/a11y-2026-06-18/03-simplified-keyboard-ipad-13-land.png) |
+| Dark + high contrast | ![](docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-iphone-6.1.png) | ![](docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-iphone-6.1-land.png) | ![](docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-ipad-13.png) | ![](docs/screenshots/a11y-2026-06-18/06-dark-high-contrast-ipad-13-land.png) |
+| Emergency alert | ![](docs/screenshots/a11y-2026-06-18/05-emergency-alert-iphone-6.1.png) | ![](docs/screenshots/a11y-2026-06-18/05-emergency-alert-iphone-6.1-land.png) | ![](docs/screenshots/a11y-2026-06-18/05-emergency-alert-ipad-13.png) | ![](docs/screenshots/a11y-2026-06-18/05-emergency-alert-ipad-13-land.png) |
+| Settings modal | ![](docs/screenshots/a11y-2026-06-18/04-settings-modal-iphone-6.1.png) | ![](docs/screenshots/a11y-2026-06-18/04-settings-modal-iphone-6.1-land.png) | ![](docs/screenshots/a11y-2026-06-18/04-settings-modal-ipad-13.png) | ![](docs/screenshots/a11y-2026-06-18/04-settings-modal-ipad-13-land.png) |
+| Switch scanning settings | ![](docs/screenshots/a11y-2026-06-18/07-switch-scanning-settings-iphone-6.1.png) | ![](docs/screenshots/a11y-2026-06-18/07-switch-scanning-settings-iphone-6.1-land.png) | ![](docs/screenshots/a11y-2026-06-18/07-switch-scanning-settings-ipad-13.png) | ![](docs/screenshots/a11y-2026-06-18/07-switch-scanning-settings-ipad-13-land.png) |
+
+---
+
+## Camera-Based Input System — Technical Details
+
+### At a glance
+
 - ✅ **Velocity-adaptive smoothing** — small + slow vs fast + large movements both read accurately
-- ✅ **Dwell-click** with configurable time (200–5000 ms) and progress-ring feedback
 - ✅ **Drift safety stack** — auto-disable + recalibration prompt if tracking diverges from intent
 - ✅ Runs **fully on-device** — no video leaves the device
 
@@ -724,26 +788,36 @@ function decodeMorse(symbols: string): string | null {
 
 | Feature | Status | Tier |
 |---|---|---|
-| Face/head tracking with FaceDetector | ✅ Shipped | Free |
+| Face/head tracking (MediaPipe) | ✅ Shipped | Free |
 | Dwell click with progress ring | ✅ Shipped | Free |
 | Velocity-adaptive smoothing | ✅ Shipped | Free |
 | Screen-size adaptive | ✅ Shipped | Free |
-| Camera PIP preview | ✅ Shipped | Free |
-| Calibration (4-corner) | ✅ Shipped | Free |
+| Camera PIP preview (top-left) | ✅ Shipped | Free |
+| Calibration (4-corner wizard) | ✅ Shipped | Free |
 | Settings (dwell, sensitivity) | ✅ Shipped | Free |
-| 📷 Toolbar button | ✅ Shipped | Free |
-| 20 unit tests | ✅ Shipped | — |
+| Body pose (33 landmarks) | ✅ Shipped | Free |
+| Hand/finger/arm/elbow tracking | ✅ Shipped | Free |
+| Auto-detect best body part | ✅ Shipped | Free |
+| Custom gestures (blink, nod, smile, etc.) | ✅ Shipped | Free |
+| Blink-to-click | ✅ Shipped | Free |
+| Per-child movement profiles | ✅ Shipped | Free |
+| Drift safety + auto-disable + recovery | ✅ Shipped | Free |
+| Device motion shake suppression | ✅ Shipped | Free |
+| Safe mode (repeated drift → reduced sensitivity) | ✅ Shipped | Free |
+| Eye gaze weighting | ✅ Shipped | Free |
+| Switch scanning (auto/manual/group) | ✅ Shipped | Free |
+| Simplified keyboard (gridSize ≤ 4) | ✅ Shipped | Free |
+| High contrast + system contrast | ✅ Shipped | Free |
+| Landscape phone layout adaptation | ✅ Shipped | Free |
+| 16 emergency words × 8 languages | ✅ Shipped | Free |
+| Haptic differentiation (speak/alert/key) | ✅ Shipped | Free |
+| ARIA landmarks + scan groups | ✅ Shipped | Free |
+| 4991 unit tests + 14 e2e a11y tests | ✅ Shipped | — |
 | Voice-as-cursor (pitch/volume) | 🔜 Planned | Free |
 | Background noise adaptation | 🔜 Planned | Free |
-| Body pose (33 landmarks) | 🔜 Planned | Free |
-| Hand/finger/arm/elbow tracking | 🔜 Planned | Free |
-| Auto-detect best body part | 🔜 Planned | Free |
 | Auto-Train adaptive learning | 🔜 Planned | Free |
 | Fatigue detection + auto-adjust | 🔜 Planned | Free |
 | Intent prediction (AI cursor) | 🔜 Planned | Standard+ |
-| Custom gestures (teach/assign) | 🔜 Planned | Standard+ |
-| Blink-to-click | 🔜 Planned | Free |
-| Per-child movement profiles | 🔜 Planned | Free |
 | Session metrics for BCBA/IEP | 🔜 Planned | Free |
 
 </details>

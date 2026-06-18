@@ -35,7 +35,7 @@ vi.mock('@/store/settingsStore', () => ({
   DEFAULT_TOOLBAR_ORDER: ['categories', 'mic', 'alert', 'settings'],
 }));
 
-vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn() }));
+vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn(), alertFeedback: vi.fn(), speakFeedback: vi.fn() }));
 
 beforeEach(() => {
   vi.clearAllMocks();

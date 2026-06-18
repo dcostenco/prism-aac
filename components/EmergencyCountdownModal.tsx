@@ -128,14 +128,14 @@ export default function EmergencyCountdownModal() {
                             value={pinInput}
                             onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
                             onKeyDown={e => { if (e.key === 'Enter') void handleCancel(); }}
-                            placeholder="Enter PIN"
+                            placeholder={tx('enter_pin', 'Enter PIN')}
                             disabled={isLocked}
                             className="border-2 border-theme rounded-lg px-3 py-2 text-lg text-center w-[120px] tracking-widest text-primary"
                             style={pinError ? { borderColor: '#dc2626' } : undefined}
                             autoFocus
                         />
                         {pinError && (
-                            <div className="text-[#dc2626] text-xs mt-1">Incorrect PIN</div>
+                            <div className="text-[#dc2626] text-xs mt-1">{tx('incorrect_pin', 'Incorrect PIN')}</div>
                         )}
                     </div>
                 )}
@@ -148,7 +148,7 @@ export default function EmergencyCountdownModal() {
                             disabled={isLocked}
                             className="aac-btn min-h-[52px] px-7 rounded-xl surface-key border-2 border-theme text-primary text-lg font-semibold disabled:opacity-50"
                         >
-                            Cancel
+                            {tx('cancel', 'Cancel')}
                         </button>
                     )}
                     {phase === 'dispatched' && (
@@ -156,7 +156,7 @@ export default function EmergencyCountdownModal() {
                             onClick={() => reset()}
                             className="aac-btn min-h-[52px] px-7 rounded-xl bg-[#16a34a] text-white text-lg font-semibold"
                         >
-                            Done
+                            {tx('done', 'Done')}
                         </button>
                     )}
                 </div>

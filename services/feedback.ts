@@ -66,6 +66,20 @@ export function hapticHeavy(): void {
   }
 }
 
+/** Double-tap vibration pattern for the Speak action. */
+export function hapticSpeak(): void {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate([15, 30, 15]);
+  }
+}
+
+/** Urgent vibration pattern for Emergency / Alert actions. */
+export function hapticAlert(): void {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate([50, 50, 50, 50, 100]);
+  }
+}
+
 async function playTone(freq: number, type: OscillatorType, peak: number, durationSec: number): Promise<void> {
   const ctx = getAudioCtx();
   if (!ctx) return;
@@ -144,6 +158,16 @@ export function keyFeedback(): void {
 export function deleteFeedback(): void {
   hapticHeavy();
   playDelete();
+}
+
+export function speakFeedback(): void {
+  hapticSpeak();
+  playClick();
+}
+
+export function alertFeedback(): void {
+  hapticAlert();
+  playClick();
 }
 
 if (typeof window !== 'undefined') {
