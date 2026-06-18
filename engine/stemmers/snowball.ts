@@ -18,10 +18,9 @@
 //       coarser than full root-and-pattern morphology but adequate for
 //       diversity grouping (e.g. الكتاب → كتاب).
 
-import sb from 'snowball-stemmers';
+import * as sbNamespace from 'snowball-stemmers';
 
-// snowball-stemmers exports newStemmer + algorithms (CJS shape). Some bundlers
-// expose the default, some the namespace — handle both.
+const sb = (sbNamespace as any).default ?? sbNamespace;
 type SnowballFactory = {
   newStemmer: (algo: string) => { stem: (word: string) => string };
 };
