@@ -170,7 +170,7 @@ export const useUIStore = create<UIState>()((set) => ({
   openGames: () => set((s) => ({ sidePanel: s.sidePanel === 'games' ? 'none' : 'games' as SidePanelView })),
   openMarketplace: () => set((s) => ({ sidePanel: s.sidePanel === 'marketplace' ? 'none' : 'marketplace' as SidePanelView })),
   openComfortPlayer: () => set((s) => ({ sidePanel: s.sidePanel === 'comfort-player' ? 'none' : 'comfort-player' as SidePanelView })),
-  openBrowser: () => set((s) => ({ sidePanel: s.sidePanel === 'browser' ? 'none' : 'browser' as SidePanelView })),
+  openBrowser: () => { if (typeof window !== 'undefined') window.location.href = '/prism-aac/browser'; },
   openPdfReader: () => set((s) => ({ sidePanel: s.sidePanel === 'pdf-reader' ? 'none' : 'pdf-reader' as SidePanelView })),
   openOcrCapture: () => set((s) => ({ sidePanel: s.sidePanel === 'ocr-capture' ? 'none' : 'ocr-capture' as SidePanelView })),
   openModulePanel: (panelId: string) => set(() => {
