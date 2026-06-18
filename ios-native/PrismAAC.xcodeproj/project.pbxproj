@@ -755,10 +755,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 37;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.8.4;
+				MARKETING_VERSION = 1.8.5;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -839,7 +839,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 37;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -847,7 +847,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.8.4;
+				MARKETING_VERSION = 1.8.5;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -861,7 +861,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 37;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -869,7 +869,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.8.4;
+				MARKETING_VERSION = 1.8.5;
 				PRIVACY_INFO_XCPRIVACY_FILE = PrismAAC/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac";
 				SDKROOT = iphoneos;
@@ -881,10 +881,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 37;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
-				MARKETING_VERSION = 1.8.4;
+				MARKETING_VERSION = 1.8.5;
 				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.watchkitapp";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;

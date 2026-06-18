@@ -50,8 +50,8 @@ BASE_URL    = "https://api.appstoreconnect.apple.com/v1"
 TOKEN_TTL   = 1200  # 20 min max per ASC docs
 
 # Marketing version matching our Info.plist
-MARKETING_VERSION  = "1.6.0"
-BUILD_VERSION      = "24"   # overridable via --build-version
+MARKETING_VERSION  = "1.8.5"
+BUILD_VERSION      = "37"   # overridable via --build-version
 PLATFORM           = "IOS"
 
 # Sanctioned / restricted territories to exclude (OFAC + EU sanctions 2026)
@@ -63,11 +63,15 @@ POLL_MAX_MINUTES   = 20
 
 # What's New text shown on the App Store listing
 WHATS_NEW_EN_US = (
-    "• On-device AI model updated to prism-coder v42 — 100% routing accuracy on all device tiers (1.7B / 8B / 14B)\n"
-    "• GGUF model integrity verified with SHA-256 on every download — prevents loading corrupt or tampered weights\n"
-    "• Language tag validation hardened in speech bridge\n"
-    "• App Transport Security tightened\n"
-    "• Bug fixes and stability improvements"
+    "Deep accessibility audit — 70 fixes:\n"
+    "• Switch scanning — Bluetooth switch, gamepad, or keyboard support\n"
+    "• Simplified keyboard — 15-key layout for severe motor impairment\n"
+    "• Head tracking — repositioned PIP, toolbar scroll arrows, 800ms min dwell\n"
+    "• Emergency — cancel for all severities, high contrast, 8-language support\n"
+    "• System a11y — prefers-reduced-motion, prefers-contrast:more\n"
+    "• iPhone landscape layout fix, iPad Split View support\n"
+    "• 16 emergency words × 8 languages in crash recovery\n"
+    "• Pinch-to-zoom enabled, ARIA landmarks, haptic differentiation"
 )
 
 
