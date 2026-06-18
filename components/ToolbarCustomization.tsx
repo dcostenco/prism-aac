@@ -20,7 +20,6 @@ const BUILTIN_META: Record<ToolbarButtonId, { icon: string; label: string }> = {
   pdf_reader:  { icon: '📄', label: 'PDF Reader' },
   ocr_capture: { icon: '👁', label: 'Screenshot Reader (OCR)' },
   comfort_player: { icon: '🎧', label: 'Comfort Player' },
-  browser:        { icon: '🌐', label: 'Browser' },
   history:     { icon: '📜', label: 'History' },
   sound:       { icon: '🔊', label: 'Sound Toggle' },
   settings:    { icon: '⚙️', label: 'Settings' },
