@@ -510,12 +510,12 @@ export default function HeadTrackingOverlay() {
         )}
       </div>
 
-      {/* ── Camera PIP preview (bottom-right corner) ── */}
+      {/* ── Camera PIP preview (top-left to avoid overlapping bottom-right interactive elements) ── */}
       <div
         style={{
           position: 'absolute',
-          bottom: 8,
-          right: 8,
+          top: 32,
+          left: 8,
           width: 80,
           height: 60,
           borderRadius: 8,

@@ -1,11 +1,12 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import TrackingSetupWizard from './TrackingSetupWizard';
 import { DEFAULT_GESTURE_CONFIG, type GestureId, type GestureConfig } from '@/services/gestureService';
 import { requestMotionPermission } from '@/services/deviceMotion';
+import { loadConfig as loadSwitchConfig, saveConfig as saveSwitchConfig, startScan, stopScan, type SwitchScanConfig } from '@/services/switchScanService';
 
 // 'any_*' targets let bodyPoseService pick the more visible side per
 // frame (services/bodyPoseService.ts:78 chooseAggregateTarget). The
@@ -162,8 +163,77 @@ export default function InputModesSettings() {
         />
       )}
 
+      {/* ─── Switch Scanning ────────────────────────────────────────────── */}
+      <SwitchScanSettings />
+
       {/* ─── Gesture Recognition ──────────────────────────────────────── */}
       <GestureRecognitionSettings />
+    </div>
+  );
+}
+
+function SwitchScanSettings() {
+  const [config, setConfig] = useState<SwitchScanConfig>(() => loadSwitchConfig());
+  const [running, setRunning] = useState(false);
+
+  const persist = (patch: Partial<SwitchScanConfig>) => {
+    const next = { ...config, ...patch };
+    setConfig(next);
+    saveSwitchConfig(next);
+    if (running && !next.enabled) { stopScan(); setRunning(false); }
+    if (running && next.enabled) { stopScan(); startScan(next); }
+  };
+
+  const toggleEnabled = () => {
+    const willEnable = !config.enabled;
+    persist({ enabled: willEnable });
+    if (willEnable) { startScan({ ...config, enabled: true }); setRunning(true); }
+    else { stopScan(); setRunning(false); }
+  };
+
+  useEffect(() => () => { stopScan(); }, []);
+
+  return (
+    <div data-testid="switch-scan-settings" data-scan-group="switch-scan-settings">
+      <h4 className="text-muted font-semibold text-sm uppercase tracking-wider mb-2">Switch Scanning</h4>
+      <label className="flex items-center justify-between py-1.5">
+        <div>
+          <span className="text-primary text-sm font-semibold">Enable Switch Scanning</span>
+          <p className="text-muted text-xs">Use a Bluetooth switch, keyboard key, or gamepad to navigate</p>
+        </div>
+        <Toggle on={config.enabled} onToggle={toggleEnabled} label="Switch scanning" />
+      </label>
+      {config.enabled && (
+        <div className="ml-2 mt-2 space-y-3">
+          <div>
+            <label className="text-primary text-sm">Mode</label>
+            <div className="flex gap-2 mt-1">
+              {(['auto', 'manual'] as const).map(m => (
+                <button key={m} onClick={() => { tapFeedback(); persist({ mode: m }); }}
+                  className={`aac-btn flex-1 rounded-lg px-3 py-2 text-sm font-bold border border-theme ${config.mode === m ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-primary'}`}>
+                  {m === 'auto' ? 'Auto (timed)' : 'Manual (step)'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {config.mode === 'auto' && (
+            <div>
+              <label className="flex items-center justify-between mb-1">
+                <span className="text-primary text-sm">Scan speed</span>
+                <span className="text-muted text-sm">{(config.scanSpeedMs / 1000).toFixed(1)}s</span>
+              </label>
+              <input type="range" min="500" max="6000" step="250" value={config.scanSpeedMs}
+                onChange={e => persist({ scanSpeedMs: parseInt(e.target.value) })}
+                className="w-full accent-[#4CAF50]" />
+            </div>
+          )}
+          <label className="flex items-center justify-between py-1">
+            <span className="text-primary text-sm">Group scanning</span>
+            <Toggle on={config.groupScan} onToggle={() => persist({ groupScan: !config.groupScan })} label="Group scanning" />
+          </label>
+          <p className="text-muted text-xs">Press <strong>Space</strong> or <strong>Enter</strong> to select. Connect a Bluetooth switch for hands-free use.</p>
+        </div>
+      )}
     </div>
   );
 }

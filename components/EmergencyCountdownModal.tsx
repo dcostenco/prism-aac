@@ -11,6 +11,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useEffect, useRef, useState } from 'react';
 import { cancelEmergencyVerified } from '@/services/emergencyService';
 import { verifyPin } from '@/lib/pinCrypto';
+import { useT } from '@/engine/useT';
 
 export default function EmergencyCountdownModal() {
     const { phase, phrase, severity, countdown, reset } = useEmergencyStore();
@@ -19,6 +20,7 @@ export default function EmergencyCountdownModal() {
     const [pinAttempts, setPinAttempts] = useState(0);
     const [pinLockedUntil, setPinLockedUntil] = useState(0);
     const isLocked = Date.now() < pinLockedUntil;
+    const { t } = useT();
 
     // Timer to force re-render while locked so countdown display updates
     useEffect(() => {
@@ -58,7 +60,8 @@ export default function EmergencyCountdownModal() {
 
     const isCritical = severity === 'critical';
     const bgColor = isCritical ? '#dc2626' : severity === 'urgent' ? '#d97706' : severity === 'medical' ? '#2563eb' : '#2563eb';
-    const urgencyLabel = isCritical ? '🚨 EMERGENCY' : severity === 'urgent' ? '⚠️ URGENT' : severity === 'medical' ? '🏥 MEDICAL' : '🆘 ALERT';
+    const tx = (key: string, fallback: string) => { const v = t(key); return v === key ? fallback : v; };
+    const urgencyLabel = isCritical ? `🚨 ${tx('emergency', 'EMERGENCY')}` : severity === 'urgent' ? `⚠️ ${tx('urgent', 'URGENT')}` : severity === 'medical' ? `🏥 ${tx('medical', 'MEDICAL')}` : `🆘 ${tx('alert', 'ALERT')}`;
 
     return (
         <div
@@ -89,21 +92,21 @@ export default function EmergencyCountdownModal() {
                             {countdown}
                         </div>
                         <div className="mt-2 text-sm text-muted">
-                            {isCritical ? 'Sending emergency alert…' : 'Sending in seconds…'}
+                            {isCritical ? tx('sending_emergency', 'Sending emergency alert…') : tx('sending_soon', 'Sending in seconds…')}
                         </div>
                     </div>
                 )}
 
                 {phase === 'dispatching' && (
                     <div className="mb-6 text-muted text-sm">
-                        Sending alert to caregivers…
+                        {tx('sending_to_caregivers', 'Sending alert to caregivers…')}
                     </div>
                 )}
 
                 {phase === 'dispatched' && (
                     <div className="mb-6">
                         <div className="text-4xl">✓</div>
-                        <div className="text-[#16a34a] font-semibold">Alert sent</div>
+                        <div className="text-[#16a34a] font-semibold">{tx('alert_sent', 'Alert sent')}</div>
                     </div>
                 )}
 
@@ -111,7 +114,7 @@ export default function EmergencyCountdownModal() {
                 {requiresPin && phase === 'countdown' && (
                     <div className="mb-4">
                         <div className="text-xs text-muted mb-2">
-                            Caregiver PIN required to cancel
+                            {tx('pin_required_cancel', 'Caregiver PIN required to cancel')}
                         </div>
                         {isLocked && (
                             <div className="text-[#dc2626] text-xs mb-2">
