@@ -108,16 +108,17 @@ struct PrismWebView: UIViewRepresentable {
         webView.backgroundColor = .systemBackground
 
         // Load the app
-        // DEBUG defaults to fresh fetch from the dev server so web-layer
-        // iteration shows up immediately. RELEASE uses cache-first so the
-        // app survives a network failure once it's been loaded at least
-        // once (service worker + WKWebView cache).
+        // DEBUG: fresh fetch so web-layer iteration shows immediately.
+        // RELEASE: useProtocolCachePolicy respects server headers (Vercel
+        // sends max-age=0 for HTML → revalidates on each launch) while
+        // the service worker handles offline via its own cache layer.
+        // Old: returnCacheDataElseLoad never revalidated → deploys stuck.
         #if DEBUG
         let url = URL(string: "http://localhost:3001/prism-aac")!
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
         #else
         let url = URL(string: "https://synalux.ai/prism-aac")!
-        var request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad)
+        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy)
         #endif
         request.timeoutInterval = 15
         webView.load(request)
