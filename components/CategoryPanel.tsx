@@ -454,7 +454,7 @@ export default function CategoryPanel() {
               </div>
             )}
           </div>
-          {!(categoryKeyboardOpen && keyboardMaximized) && sidebarJsx(true)}
+          {sidebarJsx(true)}
         </div>
       </section>
     );
@@ -545,7 +545,7 @@ export default function CategoryPanel() {
               </div>
             )}
           </div>
-          {!(categoryKeyboardOpen && keyboardMaximized) && sidebarJsx(true)}
+          {sidebarJsx(true)}
         </div>
       </section>
     );
