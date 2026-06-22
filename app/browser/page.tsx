@@ -108,7 +108,7 @@ export default function BrowserPage() {
         <BrowserContent />
         {!compactMode && <MessageBar />}
         {!compactMode && <PredictionBar />}
-        <div className={keyboardMaximized ? 'flex-1 min-h-0 flex flex-row' : 'shrink-0 flex flex-row'} style={{ height: keyboardMaximized ? undefined : compactMode ? 'clamp(80px, 30svh, 140px)' : 'clamp(120px, 22svh, 220px)' }} data-testid="keyboard-shell">
+        <div className={keyboardMaximized ? 'flex-1 min-h-0 flex flex-row' : 'shrink-0 flex flex-row'} style={{ height: keyboardMaximized ? undefined : compactMode ? 'clamp(80px, 30svh, 140px)' : 'clamp(170px, 25svh, 260px)' }} data-testid="keyboard-shell">
           <div className="flex-1 flex flex-col"><Keyboard /></div>
         </div>
         <EmergencyCountdownModal />

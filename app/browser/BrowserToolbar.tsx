@@ -71,14 +71,16 @@ export default function BrowserToolbar() {
         </div>
       </div>
 
-      {/* Row 2: Mode toggle + Go/Speak */}
+      {/* Row 2: Mode toggle + Go (Browse mode only — Speak mode uses MessageBar ▶) */}
       <div className="flex items-center gap-1.5 px-2 pb-1.5">
         <button onClick={toggleMode} aria-label={mode === 'url' ? 'Switch to Speak mode' : 'Switch to Browse mode'} className={`${btn} px-4 h-11 text-sm font-extrabold ${mode === 'url' ? 'bg-blue-900/80 text-blue-300 border border-blue-700' : 'bg-green-900/80 text-green-300 border border-green-700'}`}>
-          {mode === 'url' ? '🌐 Browse' : '▶ Speak'}
+          {mode === 'url' ? '▶ Speak' : '🌐 Browse'}
         </button>
-        <button onClick={handleGo} aria-label={mode === 'url' ? 'Go' : 'Speak'} className={`${btn} flex-1 h-11 text-white text-base font-extrabold ${mode === 'url' ? 'bg-blue-600' : 'bg-green-600'}`}>
-          {mode === 'url' ? 'Go' : 'Speak'}
-        </button>
+        {mode === 'url' && (
+          <button onClick={handleGo} aria-label="Go" className={`${btn} flex-1 h-11 text-white text-base font-extrabold bg-blue-600`}>
+            Go
+          </button>
+        )}
       </div>
 
       {/* Bookmarks row */}
