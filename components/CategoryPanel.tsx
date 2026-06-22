@@ -601,7 +601,7 @@ export default function CategoryPanel() {
                     className={`aac-btn shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg
                       border border-white/20 select-none text-center min-w-[52px] ${tabBg}`}>
                     <span className="text-base leading-none">{cat.icon}</span>
-                    <span className="text-[11px] font-bold uppercase tracking-wide leading-tight max-w-[60px]">
+                    <span className="text-[11px] font-bold uppercase tracking-wide leading-tight whitespace-nowrap">
                       {cat.nameKey ? t(cat.nameKey) : cat.name}
                     </span>
                   </button>

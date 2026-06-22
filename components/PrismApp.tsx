@@ -231,6 +231,15 @@ export default function PrismApp() {
     ? categoryKeyboardOpen
     : !PANELS_WITHOUT_QWERTY.has(sidePanel);
   const { rtl } = useT();
+  const [compactMode, setCompactMode] = useState(false);
+
+  useEffect(() => {
+    const check = () => setCompactMode(window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 500);
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+    return () => { window.removeEventListener('resize', check); window.removeEventListener('orientationchange', check); };
+  }, []);
 
   useEffect(() => {
     // SSR hydration guard: zustand persist rehydrates client-side, so we must
@@ -487,7 +496,7 @@ export default function PrismApp() {
               cell-grid canvas + bigger keyboards have room to breathe.
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && sidePanel !== 'pdf-reader' && sidePanel !== 'ocr-capture' && !showQwerty && <GreetingBanner />}
-          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <MessageBar />}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && !compactMode && <MessageBar />}
           {!PANELS_WITHOUT_QWERTY.has(sidePanel) && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />
@@ -514,7 +523,7 @@ export default function PrismApp() {
               className={
                 keyboardMaximized
                   ? "flex-1 min-h-0 flex flex-row"
-                  : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-row"
+                  : `shrink-0 flex flex-row ${compactMode ? 'h-[clamp(80px,30svh,140px)]' : 'h-[clamp(170px,25svh,260px)]'}`
               }
               data-testid="keyboard-shell"
             >
