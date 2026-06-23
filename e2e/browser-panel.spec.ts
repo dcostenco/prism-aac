@@ -25,12 +25,18 @@ test.describe('Browser page — AAC-enabled web browser', () => {
 
   test('renders AAC keyboard and message bar', async ({ page }) => {
     await expect(page.locator('[data-testid="keyboard-shell"]')).toBeVisible();
+    // MessageBar must always be visible (including landscape) for typing
+    const speakBtn = page.locator('button[aria-label="Speak"]').or(page.locator('button:has-text("Speak")'));
+    await expect(speakBtn.first()).toBeVisible();
   });
 
-  test('emergency modal component mounts without crash', async ({ page }) => {
-    // EmergencyCountdownModal is dynamically imported — verify no crash
+  test('emergency modal loads without crash', async ({ page }) => {
+    await page.waitForTimeout(2000);
+    // EmergencyCountdownModal is dynamically imported — verify component didn't crash the page
     const crashed = await page.locator('text=Error — Emergency AAC Mode').count();
     expect(crashed).toBe(0);
+    // Page is still interactive — toolbar still present
+    await expect(page.locator('[data-testid="browser-toolbar"]')).toBeVisible();
   });
 
   test('back-to-AAC button is always visible in toolbar', async ({ page }) => {
@@ -42,12 +48,19 @@ test.describe('Browser page — AAC-enabled web browser', () => {
 
   test('bookmarks toggle shows and hides bookmark bar', async ({ page }) => {
     const bookmarkBtn = page.locator('button[aria-label="Bookmarks"]');
-    await bookmarkBtn.click({ force: true });
-    await page.waitForTimeout(500);
-    await expect(page.locator('button[aria-label="Google"]').nth(1)).toBeVisible();
 
+    // Show
     await bookmarkBtn.click({ force: true });
     await page.waitForTimeout(500);
+    const toolbarGoogle = page.locator('[data-testid="browser-toolbar"] button[aria-label*="Google"]');
+    await expect(toolbarGoogle.first()).toBeVisible();
+
+    // Hide
+    await bookmarkBtn.click({ force: true });
+    await page.waitForTimeout(500);
+    // Bookmark bar buttons should be gone (only home-grid Google remains)
+    const bookmarkBarButtons = page.locator('[data-testid="browser-toolbar"] .overflow-x-auto button');
+    await expect(bookmarkBarButtons).toHaveCount(0);
   });
 
   test('Go button is always visible and disabled when no text', async ({ page }) => {
@@ -80,28 +93,48 @@ test.describe('Browser page — AAC-enabled web browser', () => {
   });
 
   test('home button returns to bookmark grid from loaded page', async ({ page }) => {
-    // Navigate to a site
     await page.locator('button[aria-label="Wikipedia"]').click({ force: true });
     await page.waitForTimeout(1000);
-    // Content should show iframe, not bookmarks
     await expect(page.getByText('Prism AAC Browser')).not.toBeVisible();
 
-    // Click home
     await page.locator('button[aria-label="Home"]').click({ force: true });
     await page.waitForTimeout(500);
     await expect(page.getByText('Prism AAC Browser')).toBeVisible();
   });
 
-  test('refresh button appears after navigation', async ({ page }) => {
+  test('refresh button appears after navigation and open-in-tab is visible', async ({ page }) => {
     await expect(page.locator('button[aria-label="Refresh"]')).not.toBeVisible();
+    await expect(page.locator('a[aria-label="Open in new tab"]')).not.toBeVisible();
+
     await page.locator('button[aria-label="Wikipedia"]').click({ force: true });
     await page.waitForTimeout(500);
+    // Both refresh and open-in-new-tab should appear
     await expect(page.locator('button[aria-label="Refresh"]')).toBeVisible();
+    await expect(page.locator('a[aria-label="Open in new tab"]')).toBeVisible();
+
+    // open-in-tab must have a valid href
+    const href = await page.locator('a[aria-label="Open in new tab"]').getAttribute('href');
+    expect(href).toContain('wikipedia.org');
   });
 
-  test('head tracking overlay mounts (component exists in DOM)', async ({ page }) => {
+  test('stop button returns to home', async ({ page }) => {
+    await page.locator('button[aria-label="Wikipedia"]').click({ force: true });
+    // Stop button appears while loading
+    const stopBtn = page.locator('button[aria-label="Stop"]');
+    if (await stopBtn.isVisible()) {
+      await stopBtn.click({ force: true });
+      await page.waitForTimeout(500);
+      await expect(page.getByText('Prism AAC Browser')).toBeVisible();
+    }
+  });
+
+  test('iframe sandbox does not include allow-popups-to-escape-sandbox', async ({ page }) => {
+    await page.locator('button[aria-label="Wikipedia"]').click({ force: true });
     await page.waitForTimeout(2000);
-    const crashed = await page.locator('text=Error — Emergency AAC Mode').count();
-    expect(crashed).toBe(0);
+    const iframe = page.locator('iframe[title="Web page"]');
+    const sandbox = await iframe.getAttribute('sandbox');
+    expect(sandbox).not.toContain('allow-popups-to-escape-sandbox');
+    expect(sandbox).toContain('allow-scripts');
+    expect(sandbox).toContain('allow-same-origin');
   });
 });

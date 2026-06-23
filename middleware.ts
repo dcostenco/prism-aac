@@ -36,7 +36,7 @@ export function middleware(request: NextRequest) {
     "https://pbs.twimg.com https://abs.twimg.com",
     "worker-src blob:",
     "font-src 'self'",
-    "frame-src https: http:",
+    "frame-src https:",
     "frame-ancestors 'none'",
   ].join('; ');
   response.headers.set('Content-Security-Policy', csp);

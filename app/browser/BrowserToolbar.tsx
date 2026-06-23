@@ -16,6 +16,14 @@ const BOOKMARKS = [
 
 export { BOOKMARKS };
 
+export function openBookmark(b: typeof BOOKMARKS[number], navigate: (url: string) => void) {
+  if ('external' in b && b.external) {
+    window.open(b.url, '_blank', 'noopener,noreferrer');
+  } else {
+    navigate(b.url);
+  }
+}
+
 export default function BrowserToolbar() {
   const text = useMessageStore((s) => s.text);
   const clearAll = useMessageStore((s) => s.clearAll);
@@ -43,11 +51,7 @@ export default function BrowserToolbar() {
   }, [text, navigate, clearAll]);
 
   const handleBookmark = useCallback((b: typeof BOOKMARKS[number]) => {
-    if ('external' in b && b.external) {
-      window.open(b.url, '_blank', 'noopener,noreferrer');
-    } else {
-      navigate(b.url);
-    }
+    openBookmark(b, navigate);
     clearAll();
   }, [navigate, clearAll]);
 
@@ -68,22 +72,22 @@ export default function BrowserToolbar() {
         {/* URL bar */}
         <div className="flex-1 h-10 sm:h-11 rounded-lg border-2 border-theme surface-input flex items-center px-2 gap-1 text-sm text-muted overflow-hidden min-w-[60px]">
           {isLoading && <span className="shrink-0 animate-spin text-xs">⏳</span>}
-          {!isLoading && displayUrl && <span className="text-green-500 shrink-0 text-xs">🔒</span>}
+          {!isLoading && url.startsWith('https://') && <span className="text-green-500 shrink-0 text-xs">🔒</span>}
           <span className="truncate" aria-live="polite">{displayUrl || 'Search or URL'}</span>
         </div>
 
         {/* Refresh/Stop — visible only when browsing */}
         {!isHome && (
           isLoading ? (
-            <button onClick={() => setError('Loading cancelled.')} aria-label="Stop" className={`${btn} w-10 sm:w-11 h-10 sm:h-11 text-red-400`}>✕</button>
+            <button onClick={goHome} aria-label="Stop" className={`${btn} w-10 sm:w-11 h-10 sm:h-11 text-red-400`}>✕</button>
           ) : (
             <button onClick={refresh} aria-label="Refresh" className={`${btn} w-10 sm:w-11 h-10 sm:h-11 text-primary`}>🔄</button>
           )
         )}
 
-        {/* Open external — only on wider screens or when browsing */}
+        {/* Open in new tab — always visible including mobile */}
         {!isHome && (
-          <a href={url} target="_blank" rel="noopener noreferrer" aria-label="Open in new tab" className={`${btn} hidden sm:flex w-11 h-11 text-primary text-sm`}>↗</a>
+          <a href={url} target="_blank" rel="noopener noreferrer" aria-label="Open in new tab" className={`${btn} w-10 sm:w-11 h-10 sm:h-11 text-primary text-sm`}>↗</a>
         )}
 
         {/* Go */}

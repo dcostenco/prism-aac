@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useBrowserStore } from './browserStore';
-import { BOOKMARKS } from './BrowserToolbar';
+import { BOOKMARKS, openBookmark } from './BrowserToolbar';
 
 export default function BrowserContent() {
   const isHome = useBrowserStore((s) => s.isHome);
@@ -55,13 +55,7 @@ export default function BrowserContent() {
               return (
                 <button
                   key={b.url}
-                  onClick={() => {
-                    if (isExternal) {
-                      window.open(b.url, '_blank', 'noopener,noreferrer');
-                    } else {
-                      navigate(b.url);
-                    }
-                  }}
+                  onClick={() => openBookmark(b, navigate)}
                   aria-label={`${b.label}${isExternal ? ' (opens in new tab)' : ''}`}
                   className="aac-btn relative flex flex-col items-center justify-center gap-1.5 p-3 sm:p-4 rounded-xl surface-key border border-theme text-xs sm:text-sm font-semibold select-none min-h-[80px] sm:min-h-[88px] focus-visible:ring-2 focus-visible:ring-blue-400"
                 >
@@ -108,7 +102,7 @@ export default function BrowserContent() {
   return (
     <div className="flex-[2] min-h-0 relative surface-app" data-testid="browser-content">
       {isLoading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center surface-app/80" aria-live="polite">
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60" aria-live="polite">
           <div className="animate-pulse text-muted text-sm">Loading…</div>
         </div>
       )}
@@ -118,7 +112,7 @@ export default function BrowserContent() {
         src={url}
         title="Web page"
         className="w-full h-full border-0"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         referrerPolicy="no-referrer"
         onLoad={handleLoad}
         onError={() => setError('Failed to load this page.')}
