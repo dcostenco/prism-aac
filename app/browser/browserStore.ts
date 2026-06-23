@@ -1,15 +1,13 @@
 import { create } from 'zustand';
 
-export type BrowserMode = 'speak' | 'url';
-
 interface BrowserState {
   url: string;
   displayUrl: string;
   isHome: boolean;
   isLoading: boolean;
+  error: string | null;
   canBack: boolean;
   canFwd: boolean;
-  mode: BrowserMode;
   showBookmarks: boolean;
   history: string[];
   historyIdx: number;
@@ -18,9 +16,10 @@ interface BrowserState {
   goBack: () => void;
   goFwd: () => void;
   goHome: () => void;
+  refresh: () => void;
   toggleBookmarks: () => void;
-  toggleMode: () => void;
   setLoaded: () => void;
+  setError: (msg: string) => void;
 }
 
 function resolveUrl(raw: string): string {
@@ -40,9 +39,9 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
   displayUrl: '',
   isHome: true,
   isLoading: false,
+  error: null,
   canBack: false,
   canFwd: false,
-  mode: 'speak',
   showBookmarks: false,
   history: [],
   historyIdx: -1,
@@ -51,15 +50,12 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
     const resolved = resolveUrl(rawUrl);
     if (!resolved) return;
 
-    const bridge = (typeof window !== 'undefined') ? (window as any).prismNativeBridge : null;
-    if (bridge?.navigateTo) bridge.navigateTo(resolved);
-
     set((s) => {
       const newHistory = [...s.history.slice(0, s.historyIdx + 1), resolved];
       const newIdx = newHistory.length - 1;
       return {
         url: resolved, displayUrl: shortDisplay(resolved),
-        isHome: false, isLoading: true, showBookmarks: false,
+        isHome: false, isLoading: true, error: null, showBookmarks: false,
         history: newHistory, historyIdx: newIdx,
         canBack: newIdx > 0, canFwd: false,
       };
@@ -71,9 +67,7 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
     if (historyIdx <= 0) return;
     const newIdx = historyIdx - 1;
     const prev = history[newIdx];
-    const bridge = (typeof window !== 'undefined') ? (window as any).prismNativeBridge : null;
-    if (bridge?.goBack) bridge.goBack();
-    set({ url: prev, displayUrl: shortDisplay(prev), historyIdx: newIdx, canBack: newIdx > 0, canFwd: true });
+    set({ url: prev, displayUrl: shortDisplay(prev), historyIdx: newIdx, canBack: newIdx > 0, canFwd: true, isLoading: true, error: null });
   },
 
   goFwd: () => {
@@ -81,13 +75,20 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
     if (historyIdx >= history.length - 1) return;
     const newIdx = historyIdx + 1;
     const next = history[newIdx];
-    const bridge = (typeof window !== 'undefined') ? (window as any).prismNativeBridge : null;
-    if (bridge?.goForward) bridge.goForward();
-    set({ url: next, displayUrl: shortDisplay(next), historyIdx: newIdx, canBack: true, canFwd: newIdx < history.length - 1 });
+    set({ url: next, displayUrl: shortDisplay(next), historyIdx: newIdx, canBack: true, canFwd: newIdx < history.length - 1, isLoading: true, error: null });
   },
 
-  goHome: () => set({ isHome: true, url: '', displayUrl: '', showBookmarks: false }),
+  goHome: () => set({ isHome: true, url: '', displayUrl: '', isLoading: false, error: null, showBookmarks: false }),
+
+  refresh: () => {
+    const { url } = get();
+    if (!url) return;
+    set({ isLoading: true, error: null });
+  },
+
   toggleBookmarks: () => set((s) => ({ showBookmarks: !s.showBookmarks })),
-  toggleMode: () => set((s) => ({ mode: s.mode === 'speak' ? 'url' : 'speak' })),
   setLoaded: () => set({ isLoading: false }),
+  setError: (msg) => set({ isLoading: false, error: msg }),
 }));
+
+export { resolveUrl, shortDisplay };

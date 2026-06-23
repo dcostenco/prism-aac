@@ -15,6 +15,7 @@ import { registerConnectivityListener } from '@/services/emergencyService';
 import { keyFeedback, deleteFeedback } from '@/services/feedback';
 import { aacSpeak } from '@/services/aacSpeak';
 import { useT } from '@/engine/useT';
+import { useBrowserStore } from './browserStore';
 import BrowserToolbar from './BrowserToolbar';
 import BrowserContent from './BrowserContent';
 
@@ -80,15 +81,17 @@ export default function BrowserPage() {
       if (e.key === 'Tab' || e.key === 'Escape') return;
       if ((e.target as HTMLElement)?.closest('[role="dialog"]')) return;
       if (e.key === ' ' && document.activeElement?.tagName === 'BUTTON') return;
+      // Don't capture keys when iframe is focused
+      if ((e.target as HTMLElement)?.tagName === 'IFRAME') return;
       const store = useMessageStore.getState();
       if (e.key === 'Backspace') { e.preventDefault(); deleteFeedback(); store.deleteLastChar(); }
       else if (e.key === 'Enter') {
         e.preventDefault();
         const current = store.text.trim();
         if (current) {
-          store.addToHistory(current);
-          const ss = useSettingsStore.getState();
-          aacSpeak(current, ss.speechRate, ss.speechVolume);
+          // Enter navigates when there's text
+          useBrowserStore.getState().navigate(current);
+          store.clearAll();
         }
       }
       else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { e.preventDefault(); keyFeedback(); store.appendChar(e.key); }
@@ -106,7 +109,7 @@ export default function BrowserPage() {
       <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`} style={{ paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
         <BrowserToolbar />
         <BrowserContent />
-        {!compactMode && <MessageBar />}
+        <MessageBar />
         {!compactMode && <PredictionBar />}
         <div className={keyboardMaximized ? 'flex-1 min-h-0 flex flex-row' : 'shrink-0 flex flex-row'} style={{ height: keyboardMaximized ? undefined : compactMode ? 'clamp(80px, 30svh, 140px)' : 'clamp(170px, 25svh, 260px)' }} data-testid="keyboard-shell">
           <div className="flex-1 flex flex-col"><Keyboard /></div>
