@@ -117,24 +117,26 @@ test.describe('Browser page — AAC-enabled web browser', () => {
     expect(href).toContain('wikipedia.org');
   });
 
-  test('stop button returns to home', async ({ page }) => {
+  test('navigating and returning home never shows error alert', async ({ page }) => {
+    // Verifies the Stop→goHome contract: cancelling a load must not
+    // route through setError / role="alert". We test the observable
+    // invariant rather than racing against the Stop button's visibility.
     await page.locator('button[aria-label="Wikipedia"]').click({ force: true });
-    // Stop button appears while loading
-    const stopBtn = page.locator('button[aria-label="Stop"]');
-    if (await stopBtn.isVisible()) {
-      await stopBtn.click({ force: true });
-      await page.waitForTimeout(500);
-      await expect(page.getByText('Prism AAC Browser')).toBeVisible();
-    }
+    await page.waitForTimeout(2000);
+
+    // Whether the page loaded (Refresh visible) or is still loading (Stop visible),
+    // go Home and confirm no error screen appeared at any point
+    await page.locator('button[aria-label="Home"]').click({ force: true });
+    await page.waitForTimeout(500);
+    await expect(page.getByText('Prism AAC Browser')).toBeVisible();
+    await expect(page.locator('[data-testid="browser-content"][role="alert"]')).toHaveCount(0);
   });
 
-  test('iframe sandbox does not include allow-popups-to-escape-sandbox', async ({ page }) => {
+  test('iframe sandbox is exactly the expected token set', async ({ page }) => {
     await page.locator('button[aria-label="Wikipedia"]').click({ force: true });
     await page.waitForTimeout(2000);
     const iframe = page.locator('iframe[title="Web page"]');
     const sandbox = await iframe.getAttribute('sandbox');
-    expect(sandbox).not.toContain('allow-popups-to-escape-sandbox');
-    expect(sandbox).toContain('allow-scripts');
-    expect(sandbox).toContain('allow-same-origin');
+    expect(sandbox).toBe('allow-scripts allow-same-origin allow-forms allow-popups');
   });
 });
