@@ -176,8 +176,20 @@ export const useUIStore = create<UIState>()((set) => ({
   }),
   toggleCategoryKeyboard: () => set((s) => {
     const next = !s.categoryKeyboardOpen;
-    try { localStorage.setItem('prism-cat-kb-open', String(next)); } catch {}
-    return { categoryKeyboardOpen: next };
+    // In phone landscape (height < 500), auto-maximize: there's not enough
+    // vertical space for grid + keyboard drawer side-by-side. The user either
+    // sees pictures (keyboard off) or types (keyboard maximized).
+    const landscape = typeof window !== 'undefined'
+      && window.matchMedia('(orientation: landscape)').matches
+      && window.innerHeight < 500;
+    const autoMax = next && landscape;
+    try {
+      localStorage.setItem('prism-cat-kb-open', String(next));
+      if (autoMax) localStorage.setItem('prism-kb-max', 'true');
+    } catch {}
+    return autoMax
+      ? { categoryKeyboardOpen: true, keyboardMaximized: true }
+      : { categoryKeyboardOpen: next };
   }),
   toggleKeyboardMaximized: () => set((s) => {
     const next = !s.keyboardMaximized;

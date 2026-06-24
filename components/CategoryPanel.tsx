@@ -94,10 +94,22 @@ const TILE_H_KB: Record<GridSize, string> = {
   20: 'min-h-[clamp(56px,7svh,80px)]',
 };
 
+// Landscape compact tile heights — minimal for phone landscape where
+// vertical space is ≤390px after safe-area insets.
+const TILE_H_COMPACT: Record<GridSize, string> = {
+  4:  'min-h-[clamp(48px,10svh,70px)]',
+  6:  'min-h-[clamp(44px,9svh,64px)]',
+  9:  'min-h-[clamp(40px,8svh,58px)]',
+  12: 'min-h-[clamp(36px,7svh,52px)]',
+  16: 'min-h-[clamp(32px,6svh,46px)]',
+  20: 'min-h-[clamp(28px,5svh,40px)]',
+};
+
 // HOME board columns: 2 on phones (readable tiles), more on tablet/desktop
 const HOME_COLS        = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7';
 const HOME_TILE_H      = 'min-h-[clamp(90px,15vw,160px)]';
 const HOME_TILE_H_KB   = 'min-h-[clamp(80px,14svh,140px)]';
+const HOME_TILE_H_COMPACT = 'min-h-[clamp(40px,9svh,60px)]';
 
 // Folder tile style — pure white background, clearly "drill in"
 const FOLDER_CLS = 'aac-btn bg-white text-gray-900 rounded-xl border-2 border-gray-300 flex flex-col items-center justify-center gap-1 font-bold select-none text-center hover:border-[#3e2a1a] active:scale-95 transition-transform';
@@ -185,6 +197,28 @@ export default function CategoryPanel() {
   const activeCatIdForReset = useUIStore((s) => s.activeCategoryId);
   useEffect(() => { setGridPage(0); }, [activeCatIdForReset, gridSize]);
   const speakDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [compactMode, setCompactMode] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const compact = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 500;
+      setCompactMode(compact);
+      // Phone landscape can't fit grid + keyboard drawer — auto-maximize
+      // so the user gets a full-size keyboard (touchability for AAC users).
+      if (compact) {
+        const s = useUIStore.getState();
+        if (s.categoryKeyboardOpen && !s.keyboardMaximized) {
+          try {
+            localStorage.setItem('prism-kb-max', 'true');
+          } catch {}
+          useUIStore.setState({ keyboardMaximized: true });
+        }
+      }
+    };
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+    return () => { window.removeEventListener('resize', check); window.removeEventListener('orientationchange', check); };
+  }, []);
 
   // Cancel any pending 260ms speak timer on unmount to prevent post-unmount audio.
   useEffect(() => () => { if (speakDelayRef.current) clearTimeout(speakDelayRef.current); }, []);
@@ -449,7 +483,7 @@ export default function CategoryPanel() {
               </div>
             </div>
             {categoryKeyboardOpen && (
-              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
+              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : `shrink-0 ${compactMode ? 'h-[clamp(80px,24svh,120px)]' : 'h-[clamp(170px,25svh,260px)]'} flex flex-col`} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
                 <Keyboard />
               </div>
             )}
@@ -540,7 +574,7 @@ export default function CategoryPanel() {
               )}
             </div>
             {categoryKeyboardOpen && (
-              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
+              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : `shrink-0 ${compactMode ? 'h-[clamp(80px,24svh,120px)]' : 'h-[clamp(170px,25svh,260px)]'} flex flex-col`} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
                 <Keyboard />
               </div>
             )}
@@ -568,9 +602,9 @@ export default function CategoryPanel() {
             <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
               {homeGridPhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
-                const tH = categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
+                const tH = compactMode && categoryKeyboardOpen ? HOME_TILE_H_COMPACT : categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
                 return (
-                  <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} customImageUrl={p.customImageUrl} compact={categoryKeyboardOpen}
+                  <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} customImageUrl={p.customImageUrl} compact={categoryKeyboardOpen || compactMode}
                     onClick={() => handlePhrase(local, p.id)}
                     className={`aac-btn rounded-xl font-bold select-none text-center ${tH} ${CAT_BG[catId] ?? 'bg-slate-500 text-white border-slate-600'}`}
                   />
@@ -578,7 +612,7 @@ export default function CategoryPanel() {
               })}
               {/* WHITE folder tiles for fringe categories */}
               {fringeCats.map((cat) => {
-                const tH = categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
+                const tH = compactMode && categoryKeyboardOpen ? HOME_TILE_H_COMPACT : categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
                 return (
                 <button key={cat.id} onClick={() => { tapFeedback(); selectCategory(cat.id); }}
                   aria-label={cat.nameKey ? t(cat.nameKey) : cat.name}
@@ -591,8 +625,8 @@ export default function CategoryPanel() {
                 );
               })}
             </div>
-            {/* Bottom category tab strip — dark brown bar */}
-            <div className="flex gap-1 px-2 py-1.5 overflow-x-auto shrink-0 border-t-2 border-[#5c3d25] bg-[#3e2a1a]" style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}>
+            {/* Bottom category tab strip — hidden in landscape when keyboard is open (saves ~50px) */}
+            {!(compactMode && categoryKeyboardOpen) && <div className="flex gap-1 px-2 py-1.5 overflow-x-auto shrink-0 border-t-2 border-[#5c3d25] bg-[#3e2a1a]" style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}>
               {topLevelCats.map((cat) => {
                 const isCore = homeCatSet.has(cat.id);
                 const tabBg = isCore ? (CAT_BG[cat.id] ?? 'bg-white/20 text-white') : 'bg-white text-gray-900';
@@ -607,12 +641,12 @@ export default function CategoryPanel() {
                   </button>
                 );
               })}
-              </div>
+              </div>}
             </div>
             )}
           </div>
           {categoryKeyboardOpen && (
-            <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
+            <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : `shrink-0 ${compactMode ? 'h-[clamp(80px,24svh,120px)]' : 'h-[clamp(170px,25svh,260px)]'} flex flex-col`} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
               <Keyboard />
             </div>
           )}

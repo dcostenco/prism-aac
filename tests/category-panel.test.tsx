@@ -187,6 +187,7 @@ beforeEach(() => {
   mocks.messageState.text = '';
   mocks.messageState.autoSpeak = false;
   mocks.messageState.soundEnabled = true;
+  window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
 });
 
 // ── render gating ─────────────────────────────────────────────────────────────

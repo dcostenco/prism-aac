@@ -185,8 +185,18 @@ html, body {
     display: none;
   }
   [data-testid="keyboard-shell"]:not([data-maximized]) {
-    height: clamp(120px, 30svh, 160px) !important;
-    max-height: 160px;
+    height: clamp(80px, 24svh, 120px) !important;
+    max-height: 120px;
+  }
+}
+
+/* ── Tablet: larger keyboard for AAC touchability ──────────────
+   Most AAC users are on iPads — keys must be large enough for
+   motor-impaired users. min-height 768 catches iPad Mini+ in
+   portrait; min-width 768 catches iPad landscape. */
+@media (min-width: 768px), (min-height: 768px) {
+  [data-testid="keyboard-shell"]:not([data-maximized]) {
+    height: clamp(220px, 32svh, 340px) !important;
   }
 }
 
