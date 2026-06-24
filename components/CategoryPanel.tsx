@@ -350,11 +350,11 @@ export default function CategoryPanel() {
       {/* Keyboard toggle — ALWAYS FIRST so it's always reachable */}
       <SidebarBtn
         icon="⌨️"
-        label={keyboardMaximized ? t('sidebar_hide_kb') : t('sidebar_kb')}
+        label={categoryKeyboardOpen && keyboardMaximized ? t('sidebar_hide_kb') : t('sidebar_kb')}
         onClick={cycleKeyboardMode}
-        active={keyboardMaximized}
+        active={categoryKeyboardOpen && keyboardMaximized}
         testId="kb-cycle-btn"
-        dataAction={keyboardMaximized ? 'kb-minimize' : undefined}
+        dataAction={categoryKeyboardOpen && keyboardMaximized ? 'kb-minimize' : undefined}
       />
       {/* Search */}
       <SidebarBtn icon="🔍" label={t('sidebar_search')} onClick={searchOpen ? closeSearch : openSearch} active={searchOpen} />
@@ -449,12 +449,12 @@ export default function CategoryPanel() {
               </div>
             </div>
             {categoryKeyboardOpen && (
-              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell">
+              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
                 <Keyboard />
               </div>
             )}
           </div>
-          {sidebarJsx(true)}
+          {!(categoryKeyboardOpen && keyboardMaximized) && sidebarJsx(true)}
         </div>
       </section>
     );
@@ -540,12 +540,12 @@ export default function CategoryPanel() {
               )}
             </div>
             {categoryKeyboardOpen && (
-              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell">
+              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
                 <Keyboard />
               </div>
             )}
           </div>
-          {sidebarJsx(true)}
+          {!(categoryKeyboardOpen && keyboardMaximized) && sidebarJsx(true)}
         </div>
       </section>
     );
@@ -612,7 +612,7 @@ export default function CategoryPanel() {
             )}
           </div>
           {categoryKeyboardOpen && (
-            <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell">
+            <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : "shrink-0 h-[clamp(170px,25svh,260px)] flex flex-col"} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
               <Keyboard />
             </div>
           )}

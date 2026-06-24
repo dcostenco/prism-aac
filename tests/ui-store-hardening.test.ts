@@ -278,3 +278,46 @@ describe('uiStore — modal toggles', () => {
     expect(useUIStore.getState().showCategoryManager).toBe(false);
   });
 });
+
+// ── desync regression: openCategories/backToCategories must reset keyboardMaximized ──
+
+describe('uiStore — keyboard desync prevention', () => {
+  it('openCategories resets keyboardMaximized (prevents desync)', () => {
+    useUIStore.setState({ sidePanel: 'none', keyboardMaximized: true, categoryKeyboardOpen: true });
+    useUIStore.getState().openCategories();
+    const s = useUIStore.getState();
+    expect(s.categoryKeyboardOpen).toBe(false);
+    expect(s.keyboardMaximized).toBe(false);
+  });
+
+  it('openCategories from category-detail resets keyboardMaximized', () => {
+    useUIStore.setState({ sidePanel: 'category-detail', keyboardMaximized: true, categoryKeyboardOpen: true });
+    useUIStore.getState().openCategories();
+    const s = useUIStore.getState();
+    expect(s.categoryKeyboardOpen).toBe(false);
+    expect(s.keyboardMaximized).toBe(false);
+    expect(s.sidePanel).toBe('categories');
+  });
+
+  it('backToCategories resets keyboardMaximized (prevents desync)', () => {
+    useUIStore.setState({ sidePanel: 'category-detail', keyboardMaximized: true, categoryKeyboardOpen: true });
+    useUIStore.getState().backToCategories();
+    const s = useUIStore.getState();
+    expect(s.categoryKeyboardOpen).toBe(false);
+    expect(s.keyboardMaximized).toBe(false);
+    expect(s.sidePanel).toBe('categories');
+  });
+
+  it('cycleKeyboardMode from previously-desynced state shows keyboard on first click', () => {
+    // Simulate the desync that openCategories used to produce: both flags true,
+    // then only categoryKeyboardOpen cleared. After the fix, openCategories
+    // clears both, so this state should be unreachable — but the cycle must
+    // still handle it correctly if anything else produces it.
+    useUIStore.setState({ keyboardMaximized: true, categoryKeyboardOpen: false });
+    useUIStore.getState().cycleKeyboardMode();
+    const s = useUIStore.getState();
+    // First click must go to keyboard-visible, not be a no-op.
+    expect(s.keyboardMaximized).toBe(true);
+    expect(s.categoryKeyboardOpen).toBe(true);
+  });
+});

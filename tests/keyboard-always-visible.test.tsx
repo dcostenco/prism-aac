@@ -96,6 +96,8 @@ vi.mock('@/components/GreetingBanner', () => ({ default: () => <div data-testid=
 beforeEach(() => {
   useAuthStore.setState({ profile: null, loaded: true, loading: false });
   useSettingsStore.setState({ theme: 'light', highContrast: false } as Partial<ReturnType<typeof useSettingsStore.getState>>);
+  // PrismApp uses matchMedia for landscape/compact detection.
+  window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
 });
 
 const PANELS_WITH_QWERTY: SidePanelView[] = [
@@ -190,4 +192,37 @@ describe('Keyboard visibility — toggle-controlled panels (category mode + home
       expect(queryByTestId('aac-keyboard-mock')).not.toBeInTheDocument();
     });
   }
+});
+
+// ── Prediction bar visibility: 'categories' renders the HOME board ────────────
+// If 'categories' is ever re-added to PANELS_WITHOUT_QWERTY, this test breaks.
+
+describe('Prediction bar visibility — sidePanel=categories matches sidePanel=none', () => {
+  it('prediction bar renders when sidePanel = "categories" (same HOME board as "none")', async () => {
+    useUIStore.setState({ sidePanel: 'categories', categoryKeyboardOpen: false, keyboardMaximized: false });
+    const { findByTestId } = render(<PrismApp />);
+    const pred = await findByTestId('panel-prediction-bar');
+    expect(pred).toBeInTheDocument();
+  });
+
+  it('prediction bar renders when sidePanel = "none"', async () => {
+    useUIStore.setState({ sidePanel: 'none', categoryKeyboardOpen: false, keyboardMaximized: false });
+    const { findByTestId } = render(<PrismApp />);
+    const pred = await findByTestId('panel-prediction-bar');
+    expect(pred).toBeInTheDocument();
+  });
+
+  it('prediction bar hidden for category-detail when keyboard closed', async () => {
+    useUIStore.setState({ sidePanel: 'category-detail', categoryKeyboardOpen: false, keyboardMaximized: false });
+    const { queryByTestId } = render(<PrismApp />);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(queryByTestId('panel-prediction-bar')).not.toBeInTheDocument();
+  });
+
+  it('prediction bar shows for category-detail when keyboard open', async () => {
+    useUIStore.setState({ sidePanel: 'category-detail', categoryKeyboardOpen: true, keyboardMaximized: false });
+    const { findByTestId } = render(<PrismApp />);
+    const pred = await findByTestId('panel-prediction-bar');
+    expect(pred).toBeInTheDocument();
+  });
 });

@@ -184,7 +184,7 @@ html, body {
   [data-testid="prediction-bar"] img {
     display: none;
   }
-  [data-testid="keyboard-shell"] {
+  [data-testid="keyboard-shell"]:not([data-maximized]) {
     height: clamp(120px, 30svh, 160px) !important;
     max-height: 160px;
   }

@@ -170,7 +170,8 @@ const PANELS_WITHOUT_QWERTY = new Set([
   'picture-editor',
   'music-composer',
   'comfort-player',
-  'categories',
+  // 'categories' intentionally excluded: it renders the HOME board identically
+  // to 'none', so it should inherit the same prediction-bar / greeting behavior.
   'category-detail',
   'ordering',
   'pdf-reader',
@@ -497,7 +498,7 @@ export default function PrismApp() {
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && sidePanel !== 'pdf-reader' && sidePanel !== 'ocr-capture' && !showQwerty && <GreetingBanner />}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && !compactMode && <MessageBar />}
-          {!PANELS_WITHOUT_QWERTY.has(sidePanel) && sidePanel !== 'ai-chat' && !isCategoryMode && <PredictionBar />}
+          {sidePanel !== 'ai-chat' && (!PANELS_WITHOUT_QWERTY.has(sidePanel) || (isCategoryMode && categoryKeyboardOpen)) && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />
           <AIChatPanel />
@@ -526,6 +527,7 @@ export default function PrismApp() {
                   : `shrink-0 flex flex-row ${compactMode ? 'h-[clamp(80px,30svh,140px)]' : 'h-[clamp(170px,25svh,260px)]'}`
               }
               data-testid="keyboard-shell"
+              data-maximized={keyboardMaximized || undefined}
             >
               <div className="flex-1 flex flex-col">
                 <Keyboard />

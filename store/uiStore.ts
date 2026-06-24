@@ -120,11 +120,19 @@ export const useUIStore = create<UIState>()((set) => ({
     //                         view; May 2026 user report Image #8.)
     //   • 'ordering'        → 'categories'  (same — escape ordering flow)
     //   • anything else     → 'categories'  (open at top level)
-    if (s.sidePanel === 'categories') return { sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: false };
+    // Reset BOTH keyboard flags to prevent desync (keyboardMaximized=true
+    // while categoryKeyboardOpen=false). Readers check both, but retiring
+    // the contradictory state at the source is the durable fix.
+    try {
+      localStorage.setItem('prism-cat-kb-open', 'false');
+      localStorage.setItem('prism-kb-max', 'false');
+    } catch {}
+    const kbReset = { categoryKeyboardOpen: false, keyboardMaximized: false };
+    if (s.sidePanel === 'categories') return { sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null, ...kbReset };
     if (s.sidePanel === 'category-detail' || s.sidePanel === 'ordering') {
-      return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: false };
+      return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [], activeSequenceId: null, ...kbReset };
     }
-    return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [], categoryKeyboardOpen: false };
+    return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [], ...kbReset };
   }),
   openMath: () => set((s) => ({ sidePanel: s.sidePanel === 'math' ? 'none' : 'math' })),
   openCaregiver: () => set((s) => ({ sidePanel: s.sidePanel === 'caregiver' ? 'none' : 'caregiver' })),
@@ -181,11 +189,12 @@ export const useUIStore = create<UIState>()((set) => ({
   }),
   cycleKeyboardMode: () => set((s) => {
     // Two clean states: keyboard-only (maximized) ↔ picture-only (both hidden).
-    // Toggling is based on keyboardMaximized — not categoryKeyboardOpen — so that
-    // any non-maximized starting state (normal, picture-only) always goes to
-    // keyboard-only, matching the unit test spec in ui-store-hardening.test.ts.
-    if (s.keyboardMaximized) {
-      // keyboard-only → picture-only
+    // Check the effective visible state (BOTH flags) — not just keyboardMaximized.
+    // openCategories/backToCategories set categoryKeyboardOpen=false without
+    // resetting keyboardMaximized, creating a desync where the first click was
+    // a no-op (cycle saw "maximized" → hid an already-hidden keyboard).
+    if (s.categoryKeyboardOpen && s.keyboardMaximized) {
+      // keyboard visible and maximized → picture-only
       try {
         localStorage.setItem('prism-kb-max', 'false');
         localStorage.setItem('prism-cat-kb-open', 'false');
@@ -218,7 +227,13 @@ export const useUIStore = create<UIState>()((set) => ({
     if (newPath.length === 0) return { sidePanel: 'categories', activeCategoryId: null, categoryPath: [] };
     return { activeCategoryId: newPath[newPath.length - 1], categoryPath: newPath };
   }),
-  backToCategories: () => set({ sidePanel: 'categories', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: false }),
+  backToCategories: () => {
+    try {
+      localStorage.setItem('prism-cat-kb-open', 'false');
+      localStorage.setItem('prism-kb-max', 'false');
+    } catch {}
+    set({ sidePanel: 'categories', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: false, keyboardMaximized: false });
+  },
   startOrdering: (sequenceId) => set({ sidePanel: 'ordering', activeSequenceId: sequenceId, activeSequenceStep: 0 }),
   nextStep: (maxSteps) => set((s) => ({ activeSequenceStep: Math.min(s.activeSequenceStep + 1, maxSteps - 1) })),
   prevStep: () => set((s) => ({ activeSequenceStep: Math.max(0, s.activeSequenceStep - 1) })),

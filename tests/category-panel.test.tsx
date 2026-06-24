@@ -315,3 +315,45 @@ describe('CategoryPanel — search', () => {
     expect(screen.queryByRole('textbox', { name: /search all vocabulary/i })).toBeNull();
   });
 });
+
+// ── data-maximized attribute on keyboard-shell (guards landscape CSS fix) ──────
+
+describe('CategoryPanel — keyboard-shell data-maximized attribute', () => {
+  it('keyboard-shell has data-maximized when keyboardMaximized=true', () => {
+    mocks.uiState.sidePanel = 'none';
+    mocks.uiState.categoryKeyboardOpen = true;
+    mocks.uiState.keyboardMaximized = true;
+    render(<CategoryPanel />);
+    const shell = screen.getByTestId('keyboard-shell');
+    expect(shell).toHaveAttribute('data-maximized');
+  });
+
+  it('keyboard-shell does NOT have data-maximized when keyboardMaximized=false', () => {
+    mocks.uiState.sidePanel = 'none';
+    mocks.uiState.categoryKeyboardOpen = true;
+    mocks.uiState.keyboardMaximized = false;
+    render(<CategoryPanel />);
+    const shell = screen.getByTestId('keyboard-shell');
+    expect(shell).not.toHaveAttribute('data-maximized');
+  });
+
+  it('sidebar hidden when keyboard maximized in category-detail', () => {
+    mocks.uiState.sidePanel = 'category-detail';
+    mocks.uiState.activeCategoryId = 'feelings';
+    mocks.uiState.categoryPath = ['feelings'];
+    mocks.uiState.categoryKeyboardOpen = true;
+    mocks.uiState.keyboardMaximized = true;
+    render(<CategoryPanel />);
+    expect(screen.queryByTestId('kb-cycle-btn')).toBeNull();
+  });
+
+  it('sidebar visible when keyboard NOT maximized in category-detail', () => {
+    mocks.uiState.sidePanel = 'category-detail';
+    mocks.uiState.activeCategoryId = 'feelings';
+    mocks.uiState.categoryPath = ['feelings'];
+    mocks.uiState.categoryKeyboardOpen = false;
+    mocks.uiState.keyboardMaximized = false;
+    render(<CategoryPanel />);
+    expect(screen.getByTestId('kb-cycle-btn')).toBeInTheDocument();
+  });
+});
