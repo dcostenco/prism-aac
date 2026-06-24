@@ -58,6 +58,7 @@
 		DE76830C66CD657FA386D5D8 /* SmolLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B974BD455A3291D82E49CE /* SmolLMEngine.swift */; };
 		DEAE27EF11CB1361042547E1 /* InworldSTTClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7C367E32BA03F5261A90B0 /* InworldSTTClient.swift */; };
 		E9A7C699E922142DFCCC4200 /* AppIcon27.5x27.5@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B9DB1CD80C21089C5CCFBB7B /* AppIcon27.5x27.5@2x.png */; };
+		EAC73E2E4A89238CB8222EBE /* AppStoreScreenshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB8B25A92994D229419E9629 /* AppStoreScreenshots.swift */; };
 		EB90BA7A0874A4AD712029BA /* AppIcon44x44@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EA856F3C86008948B1F59274 /* AppIcon44x44@2x.png */; };
 		EF9EBF1590D95DA7BA2B75C2 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DB2AB8796CA83596887AD3 /* AppState.swift */; };
 		F29F5361641432A04AF77701 /* AppIcon98x98@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 99E02A56FC22AA400043891E /* AppIcon98x98@2x.png */; };
@@ -152,6 +153,7 @@
 		E1B974BD455A3291D82E49CE /* SmolLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmolLMEngine.swift; sourceTree = "<group>"; };
 		E806C70DB42E2879A665E4C3 /* WatchStreamingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStreamingTests.swift; sourceTree = "<group>"; };
 		EA856F3C86008948B1F59274 /* AppIcon44x44@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon44x44@2x.png"; sourceTree = "<group>"; };
+		EB8B25A92994D229419E9629 /* AppStoreScreenshots.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppStoreScreenshots.swift; sourceTree = "<group>"; };
 		F77017533C2E0E39A0CFA2FA /* BridgeSecurityPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeSecurityPolicy.swift; sourceTree = "<group>"; };
 		F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACApp.swift; sourceTree = "<group>"; };
 		FCD52807AECA71B546A28725 /* AppIcon33x33@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon33x33@2x.png"; sourceTree = "<group>"; };
@@ -199,6 +201,7 @@
 				6A679874C453F382852D8900 /* BedsideModeExtendedTests.swift */,
 				B596E9E9B51A0D4D3C329C9F /* ButtonCoverageTests.swift */,
 				71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */,
+				EB8B25A92994D229419E9629 /* AppStoreScreenshots.swift */,
 			);
 			path = PrismAACUITests;
 			sourceTree = "<group>";
@@ -416,8 +419,6 @@
 				7E765695EA85381AD75FE2AD /* PBXTargetDependency */,
 			);
 			name = PrismAACUITests;
-			packageProductDependencies = (
-			);
 			productName = PrismAACUITests;
 			productReference = 81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -459,8 +460,6 @@
 				B345DD75A65DE7B7EDD75EB4 /* PBXTargetDependency */,
 			);
 			name = PrismAACTests;
-			packageProductDependencies = (
-			);
 			productName = PrismAACTests;
 			productReference = 2F2BF66AD5CF855617DA7158 /* PrismAACTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -477,8 +476,6 @@
 			dependencies = (
 			);
 			name = PrismAACWatch;
-			packageProductDependencies = (
-			);
 			productName = PrismAACWatch;
 			productReference = 8AFCC84EE5CC6C37C440A667 /* PrismAACWatch.app */;
 			productType = "com.apple.product-type.application";
@@ -568,6 +565,7 @@
 				520CBFCB73C47A12E8E6AFE3 /* BedsideModeExtendedTests.swift in Sources */,
 				287EB175AC807A70ED2E2AB1 /* ButtonCoverageTests.swift in Sources */,
 				4845E40319EC76BF7B3D85D9 /* PrismAACUITests.swift in Sources */,
+				EAC73E2E4A89238CB8222EBE /* AppStoreScreenshots.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

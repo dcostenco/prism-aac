@@ -83,7 +83,7 @@ export default function Keyboard() {
   const letterRows = getLetterRows(language);
 
   const rows = keyboardMode === 'letters'
-    ? (gridSize <= 4 ? SIMPLIFIED_ROWS : letterRows)
+    ? letterRows
     : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
   const showUpper = isUpperCase || capsLock;
 
