@@ -185,11 +185,13 @@ export const useUIStore = create<UIState>()((set) => ({
     const autoMax = next && landscape;
     try {
       localStorage.setItem('prism-cat-kb-open', String(next));
-      if (autoMax) localStorage.setItem('prism-kb-max', 'true');
+      // Opening in landscape: auto-maximize. Closing: always clear kbMax
+      // to prevent the desync (kbMax=true, catKbOpen=false).
+      localStorage.setItem('prism-kb-max', String(autoMax));
     } catch {}
     return autoMax
       ? { categoryKeyboardOpen: true, keyboardMaximized: true }
-      : { categoryKeyboardOpen: next };
+      : { categoryKeyboardOpen: next, keyboardMaximized: next ? s.keyboardMaximized : false };
   }),
   toggleKeyboardMaximized: () => set((s) => {
     const next = !s.keyboardMaximized;

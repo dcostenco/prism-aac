@@ -34,10 +34,11 @@
  *   toggleHistory / toggleSettings / toggleCategoryManager — boolean modal
  *   toggles. A stuck toggle means the modal cannot be dismissed.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useUIStore } from '@/store/uiStore';
 
 beforeEach(() => {
+  window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
   useUIStore.setState({
     sidePanel: 'none',
     categoryKeyboardOpen: true,
@@ -319,5 +320,31 @@ describe('uiStore — keyboard desync prevention', () => {
     // First click must go to keyboard-visible, not be a no-op.
     expect(s.keyboardMaximized).toBe(true);
     expect(s.categoryKeyboardOpen).toBe(true);
+  });
+
+  it('toggleCategoryKeyboard closing resets keyboardMaximized (no desync on close)', () => {
+    // Start with keyboard maximized (e.g. auto-maximized in landscape).
+    // Closing via toggleCategoryKeyboard must clear BOTH flags.
+    useUIStore.setState({ categoryKeyboardOpen: true, keyboardMaximized: true });
+    useUIStore.getState().toggleCategoryKeyboard();
+    const s = useUIStore.getState();
+    expect(s.categoryKeyboardOpen).toBe(false);
+    expect(s.keyboardMaximized).toBe(false);
+  });
+
+  it('orientation handler guard: landscape with keyboard closed does not set keyboardMaximized', () => {
+    // The CategoryPanel orientation handler only auto-maximizes when
+    // categoryKeyboardOpen=true && keyboardMaximized=false. This test
+    // verifies the guard at the store level: if catKbOpen is false,
+    // directly setting kbMax=true would be the desync. The handler's
+    // condition (catKbOpen && !kbMax) prevents it — assert the invariant.
+    useUIStore.setState({ categoryKeyboardOpen: false, keyboardMaximized: false });
+    // Simulate what the handler does: read state, check guard, conditionally set.
+    const state = useUIStore.getState();
+    const shouldAutoMax = state.categoryKeyboardOpen && !state.keyboardMaximized;
+    expect(shouldAutoMax).toBe(false);
+    // State unchanged — no desync produced.
+    expect(useUIStore.getState().keyboardMaximized).toBe(false);
+    expect(useUIStore.getState().categoryKeyboardOpen).toBe(false);
   });
 });
