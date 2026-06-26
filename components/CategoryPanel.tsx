@@ -592,7 +592,7 @@ export default function CategoryPanel() {
 
   return (
     <section aria-label="Home vocabulary board" className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
-      <PageLabel label={t('home').toUpperCase()} />
+      {!(categoryKeyboardOpen && keyboardMaximized) && <PageLabel label={t('home').toUpperCase()} />}
       <div className="flex flex-row flex-1 min-h-0">
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
           <div className={`flex-1 flex flex-col min-h-0 ${categoryKeyboardOpen && keyboardMaximized ? 'hidden' : ''}`}>
