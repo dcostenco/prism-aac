@@ -101,6 +101,14 @@ export function voicesForLanguage(catalog: VoiceEntry[], lang: string): VoiceEnt
   return catalog.filter(v => v.lang === base);
 }
 
+/** Default voiceId for a language (tagged "default" in the catalog, else first match). */
+export function defaultVoiceForLanguage(catalog: VoiceEntry[], lang: string): string | null {
+  const list = voicesForLanguage(catalog, lang);
+  if (list.length === 0) return null;
+  const tagged = list.find(v => v.tags?.includes('default'));
+  return (tagged ?? list[0]).voiceId;
+}
+
 /** Bypass cache — used by tests. */
 export function _resetVoiceCatalogCacheForTests(): void {
   cache = null;

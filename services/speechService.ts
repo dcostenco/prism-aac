@@ -17,6 +17,7 @@ import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { emitTtsHealthEvent, TtsTier } from './ttsHealthBus';
+import { fetchVoiceCatalog, defaultVoiceForLanguage } from './voiceCatalogService';
 
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -141,30 +142,12 @@ function getAuthToken(): string | null {
 // American accent. Always add a row when adding a new language to
 // LANG_META in engine/i18n.ts.
 //
-// One default per language Synalux supports. Values are the catalog's
-// `voiceId` field (NOT displayName). For Inworld voices the two are
-// the same string (Sarah, Alex, Diego, Mei, …). The portal
-// /tts/public route looks up via getVoiceEntry(voiceId) and rejects
-// unknown ids with 400.
-//
-// bg/ro/uk: routed through Sarah (Inworld v1.5-mini multilingual).
-// Prior attempt used dedicated voice names (Kalina, Alina, Polina)
-// which were unverified against Inworld's actual model — only 8 of 23
-// catalog entries return 200 (probe audit 2026-05-05: Ashley, Sarah,
-// Alex, Dennis, Mark, Diego, Mei, Aanya). The unverified names
-// produced corrupt audio in Safari (decodeAudioData failure → chipmunk
-// Web Speech fallback). Pinning to Sarah avoids the slow TTS-2
-// fallthrough that caused "Romanian twice as slow as Russian" — Sarah
-// is a real v1.5-mini voice with native multilingual support.
-const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
-  en: 'Alex',    es: 'Diego',  fr: 'Sarah',  de: 'Mark',
-  pt: 'Sarah',   it: 'Sarah',  nl: 'Sarah',  pl: 'Sarah',
-  ja: 'Sarah',   zh: 'Mei',    ko: 'Sarah',  ru: 'Sarah',
-  he: 'Sarah',   ar: 'Sarah',  hi: 'Aanya',
-  vi: 'Sarah',   tl: 'Sarah',  tr: 'Sarah',  id: 'Sarah', bg: 'Sarah',
-  ro: 'Sarah',
-  uk: 'Sarah',
-};
+// Voice defaults are resolved from the portal catalog at runtime via
+// fetchVoiceCatalog() + defaultVoiceForLanguage(). No hardcoded voice
+// names in the public repo — the portal is the single source of truth
+// for which voices exist and which backend serves each language.
+let _catalogCache: Awaited<ReturnType<typeof fetchVoiceCatalog>> = [];
+fetchVoiceCatalog().then(c => { _catalogCache = c; }).catch(() => {});
 
 /**
  * Speak text — quality-first fallback chain. Never fails silently.
@@ -232,7 +215,7 @@ export async function speak(
     // matching backend (Inworld for paid+supported, Azure otherwise).
     const baseLang = lang.toLowerCase().split(/[-_]/)[0];
     const voicePref = settings.voicePreferences;
-    const voiceId = voicePref?.[baseLang] || INWORLD_VOICE_DEFAULTS[baseLang];
+    const voiceId = voicePref?.[baseLang] || defaultVoiceForLanguage(_catalogCache, baseLang) || undefined;
     console.log(`[TTS] Attempting portal TTS: lang=${lang} tone=${effectiveTone} plan=${profile?.plan ?? 'unknown'} voiceId=${voiceId ?? 'auto'} loaded=${useAuthStore.getState().loaded} vol=${volume} rate=${effectiveRate}`);
 
     // Tier name reflects the public route's primary backend (Inworld first
