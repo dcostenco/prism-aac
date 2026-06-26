@@ -147,7 +147,12 @@ function getAuthToken(): string | null {
 // minimal safety net for cold-start (speak before catalog loads), offline,
 // free-tier (403), and fetch-failure paths — without it, voiceId=undefined
 // falls through to the slow TTS-2 multilingual model (~2× latency).
-const VOICE_FALLBACK = 'Sarah';
+// Minimal fallback — only languages whose best voice isn't Sarah.
+// Everything else falls through to Sarah (confirmed multilingual).
+const VOICE_FALLBACK: Record<string, string> = {
+  en: 'Alex', es: 'Diego', zh: 'Mei', hi: 'Aanya',
+};
+const DEFAULT_FALLBACK = 'Sarah';
 
 let _catalogCache: Awaited<ReturnType<typeof fetchVoiceCatalog>> = [];
 let _catalogLoaded = false;
@@ -237,7 +242,7 @@ export async function speak(
     const voicePref = settings.voicePreferences;
     const voiceId = voicePref?.[baseLang]
       || defaultVoiceForLanguage(_catalogCache, baseLang)
-      || VOICE_FALLBACK;
+      || VOICE_FALLBACK[baseLang] || DEFAULT_FALLBACK;
     console.log(`[TTS] Attempting portal TTS: lang=${lang} tone=${effectiveTone} plan=${profile?.plan ?? 'unknown'} voiceId=${voiceId ?? 'auto'} loaded=${useAuthStore.getState().loaded} vol=${volume} rate=${effectiveRate}`);
 
     // Tier name reflects the public route's primary backend (Inworld first
