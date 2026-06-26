@@ -79,10 +79,10 @@ function ContactTile({ contact, extraCount, onTap }: { contact: AacContact; extr
           : PROVIDER_ICONS[contact.provider]
         }
       </span>
-      <span className="truncate w-full text-center text-[clamp(0.55rem,1.6vw,0.85rem)] font-bold shrink-0 leading-tight text-primary">
+      <span className="truncate w-full text-center text-[clamp(0.8rem,2.2vw,1.2rem)] font-bold shrink-0 leading-tight text-primary">
         {contact.name}
       </span>
-      <span className="text-[clamp(0.45rem,1.2vw,0.7rem)] text-secondary shrink-0 leading-none">
+      <span className="text-[clamp(0.6rem,1.6vw,0.95rem)] text-secondary shrink-0 leading-none">
         {PROVIDER_LABELS[contact.provider]}
       </span>
     </button>
@@ -135,7 +135,7 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
           <img src={iconUrl} alt="" aria-hidden loading="eager" className="max-w-full max-h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
         )}
       </span>
-      <span className="truncate w-full text-center text-[clamp(0.65rem,1.5svh,1rem)] font-bold shrink-0 leading-tight py-0.5">{word}</span>
+      <span className="truncate w-full text-center text-[clamp(0.9rem,2.2svh,1.4rem)] font-bold shrink-0 leading-tight py-0.5">{word}</span>
     </button>
   );
 });
@@ -333,7 +333,7 @@ export default function PredictionBar() {
       return (
         <div
           className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0"
-          style={{ height: 'clamp(48px, 10svh, 110px)' }}
+          style={{ height: 'clamp(72px, 15svh, 160px)' }}
           data-testid="prediction-bar-contacts"
         >
           {matched.map((c) => {
@@ -353,7 +353,7 @@ export default function PredictionBar() {
     return (
       <div
         className="flex items-center justify-center gap-[2px] px-3 py-[2px] shrink-0 text-muted text-sm"
-        style={{ height: 'clamp(48px, 10svh, 110px)' }}
+        style={{ height: 'clamp(72px, 15svh, 160px)' }}
         data-testid="prediction-bar-contacts-empty"
       >
         {contacts.length === 0
@@ -364,7 +364,7 @@ export default function PredictionBar() {
   }
 
   return (
-    <div data-testid="prediction-bar" data-scan-group="predictions" className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 relative" style={{ height: 'clamp(48px, 10svh, 110px)' }}>
+    <div data-testid="prediction-bar" data-scan-group="predictions" className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 relative" style={{ height: 'clamp(72px, 15svh, 160px)' }}>
       {activeScene && (
         <span
           className="absolute -top-6 right-2 text-sm opacity-90 pointer-events-none"
