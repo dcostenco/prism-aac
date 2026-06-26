@@ -548,8 +548,11 @@ struct PrismWebView: UIViewRepresentable {
                     if let result {
                         if !self.inworldClient.isConnected {
                             let text = String(result.bestTranscription.formattedString.prefix(2000))
+                            let segments = result.bestTranscription.segments
+                            let conf: Float = segments.isEmpty ? 1.0 : segments.map(\.confidence).reduce(0, +) / Float(segments.count)
                             self.sendSpeechResult(interim: result.isFinal ? "" : text,
-                                                  final: result.isFinal ? text : "")
+                                                  final: result.isFinal ? text : "",
+                                                  confidence: result.isFinal ? conf : 1.0)
                             if result.isFinal { self.stopSpeechRecognition() }
                         }
                     } else if let error {
@@ -612,8 +615,8 @@ struct PrismWebView: UIViewRepresentable {
             try? AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
         }
 
-        private func sendSpeechResult(interim: String, final: String) {
-            guard let data = try? JSONSerialization.data(withJSONObject: ["interim": interim, "final": final]),
+        private func sendSpeechResult(interim: String, final: String, confidence: Float = 1.0) {
+            guard let data = try? JSONSerialization.data(withJSONObject: ["interim": interim, "final": final, "confidence": confidence]),
                   let json = String(data: data, encoding: .utf8) else { return }
             activeWebView?.evaluateJavaScript(
                 "window.prismNativeSpeechResult && window.prismNativeSpeechResult(\(json))"

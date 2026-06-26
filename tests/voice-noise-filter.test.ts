@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isFillerOnly, FILLER_WORDS, MIN_CONFIDENCE } from '@/services/voiceInputService';
+import { isFillerOnly, FILLER_WORDS, MIN_CONFIDENCE, computeLang } from '@/services/voiceInputService';
 
 const AAC_LANGS = ['en','es','fr','pt','ro','uk','ru','de','ja','zh','ko','he','ar','hi','it','pl','nl','vi','tl','tr','id','bg'];
 
@@ -131,6 +131,21 @@ describe('coverage', () => {
       expect(FILLER_WORDS[lang]).toBeDefined();
       expect(FILLER_WORDS[lang].size).toBeGreaterThan(0);
     }
+  });
+
+  it('computeLang maps every AAC language to a real BCP-47 tag', () => {
+    for (const lang of AAC_LANGS) {
+      const mapped = computeLang(lang);
+      expect(mapped).toMatch(/^[a-z]{2,3}-[A-Z]{2}$/);
+      if (lang !== 'en') {
+        expect(mapped).not.toBe('en-US');
+      }
+    }
+  });
+
+  it('computeLang falls back to en-US for unknown language', () => {
+    expect(computeLang('xx')).toBe('en-US');
+    expect(computeLang('')).toBe('en-US');
   });
 
   it('no filler set contains words longer than 10 chars (sanity)', () => {

@@ -143,22 +143,19 @@ function getAuthToken(): string | null {
 //
 // One default per language Synalux supports. Values are the catalog's
 // `voiceId` field (NOT displayName). For Inworld voices the two are
-// the same string (Sarah, Alex, Diego, Mei, …); for Azure voices the
-// voiceId is the full BCP-47 + voice-name ('ro-RO-AlinaNeural'). The
-// portal /tts/public route looks up via getVoiceEntry(voiceId) and
-// rejects unknown ids with 400.
+// the same string (Sarah, Alex, Diego, Mei, …). The portal
+// /tts/public route looks up via getVoiceEntry(voiceId) and rejects
+// unknown ids with 400.
 //
-// Romanian + Ukrainian: re-pinned to Azure neural voices after the
-// rate-percent bug at azureTTS.ts:97-104 was fixed (multiplier syntax,
-// no more chipmunk Romanian). Without this pin the portal sees
-// voiceId=undefined and routes to Inworld TTS-2's multilingual model
-// — which produces correct phonemes but is ~2× slower than the
-// dedicated v1.5-mini voices used for ru/de/etc. AAC users reported
-// "Romanian translation is twice as slow as Russian", and this
-// asymmetry was the root cause: ru went through Sarah on v1.5-mini,
-// ro fell through to TTS-2. Pinning ro/uk to their dedicated Azure
-// neural voices (the same names as the original 2025 setup) restores
-// per-language parity — Azure handles ro-RO and uk-UA natively.
+// bg/ro/uk: routed through Sarah (Inworld v1.5-mini multilingual).
+// Prior attempt used dedicated voice names (Kalina, Alina, Polina)
+// which were unverified against Inworld's actual model — only 8 of 23
+// catalog entries return 200 (probe audit 2026-05-05: Ashley, Sarah,
+// Alex, Dennis, Mark, Diego, Mei, Aanya). The unverified names
+// produced corrupt audio in Safari (decodeAudioData failure → chipmunk
+// Web Speech fallback). Pinning to Sarah avoids the slow TTS-2
+// fallthrough that caused "Romanian twice as slow as Russian" — Sarah
+// is a real v1.5-mini voice with native multilingual support.
 const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
   en: 'Alex',    es: 'Diego',  fr: 'Sarah',  de: 'Mark',
   pt: 'Sarah',   it: 'Sarah',  nl: 'Sarah',  pl: 'Sarah',

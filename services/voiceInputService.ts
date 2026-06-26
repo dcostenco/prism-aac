@@ -48,7 +48,7 @@ const LANG_MAP: Record<string, string> = {
   bg: 'bg-BG', he: 'he-IL', tl: 'fil-PH', id: 'id-ID',
 };
 
-function computeLang(lang: string): string {
+export function computeLang(lang: string): string {
   if (LANG_MAP[lang]) return LANG_MAP[lang];
   return LANG_MAP[lang.split('-')[0]] || 'en-US';
 }
