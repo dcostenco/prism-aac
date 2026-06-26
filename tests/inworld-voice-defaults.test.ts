@@ -54,3 +54,37 @@ describe('defaultVoiceForLanguage', () => {
     expect(defaultVoiceForLanguage(MOCK_CATALOG, 'ro')).toBe('V5');
   });
 });
+
+describe('empty catalog fallback (cold-start / offline / free tier)', () => {
+  it('defaultVoiceForLanguage returns null on empty catalog', () => {
+    expect(defaultVoiceForLanguage([], 'en')).toBeNull();
+    expect(defaultVoiceForLanguage([], 'bg')).toBeNull();
+    expect(defaultVoiceForLanguage([], 'ro')).toBeNull();
+  });
+
+  it('three-tier lookup resolves to VOICE_FALLBACK when catalog is empty', () => {
+    const VOICE_FALLBACK = 'Sarah';
+    const voicePref: Record<string, string> = {};
+    for (const lang of ['en', 'bg', 'ro', 'uk', 'ru', 'es', 'fr', 'de']) {
+      const voiceId = voicePref[lang]
+        || defaultVoiceForLanguage([], lang)
+        || VOICE_FALLBACK;
+      expect(voiceId).toBe(VOICE_FALLBACK);
+    }
+  });
+
+  it('catalog voice wins over fallback when catalog is loaded', () => {
+    const VOICE_FALLBACK = 'Sarah';
+    const voiceId = defaultVoiceForLanguage(MOCK_CATALOG, 'en') || VOICE_FALLBACK;
+    expect(voiceId).toBe('V1');
+  });
+
+  it('user preference wins over everything', () => {
+    const VOICE_FALLBACK = 'Sarah';
+    const voicePref: Record<string, string> = { en: 'CustomVoice' };
+    const voiceId = voicePref['en']
+      || defaultVoiceForLanguage(MOCK_CATALOG, 'en')
+      || VOICE_FALLBACK;
+    expect(voiceId).toBe('CustomVoice');
+  });
+});

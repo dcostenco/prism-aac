@@ -142,12 +142,32 @@ function getAuthToken(): string | null {
 // American accent. Always add a row when adding a new language to
 // LANG_META in engine/i18n.ts.
 //
-// Voice defaults are resolved from the portal catalog at runtime via
-// fetchVoiceCatalog() + defaultVoiceForLanguage(). No hardcoded voice
-// names in the public repo — the portal is the single source of truth
-// for which voices exist and which backend serves each language.
+// Voice defaults resolved from the portal catalog at runtime. The portal
+// is the single source of truth for voice routing. VOICE_FALLBACK is a
+// minimal safety net for cold-start (speak before catalog loads), offline,
+// free-tier (403), and fetch-failure paths — without it, voiceId=undefined
+// falls through to the slow TTS-2 multilingual model (~2× latency).
+const VOICE_FALLBACK = 'Sarah';
+
 let _catalogCache: Awaited<ReturnType<typeof fetchVoiceCatalog>> = [];
-fetchVoiceCatalog().then(c => { _catalogCache = c; }).catch(() => {});
+let _catalogLoaded = false;
+
+function loadCatalog() {
+  fetchVoiceCatalog().then(c => {
+    _catalogCache = c;
+    _catalogLoaded = true;
+  }).catch(() => {
+    // Retry once after 5s — a single transient failure shouldn't degrade
+    // TTS routing for the entire session.
+    setTimeout(() => {
+      fetchVoiceCatalog(true).then(c => {
+        _catalogCache = c;
+        _catalogLoaded = true;
+      }).catch(() => {});
+    }, 5000);
+  });
+}
+loadCatalog();
 
 /**
  * Speak text — quality-first fallback chain. Never fails silently.
@@ -215,7 +235,9 @@ export async function speak(
     // matching backend (Inworld for paid+supported, Azure otherwise).
     const baseLang = lang.toLowerCase().split(/[-_]/)[0];
     const voicePref = settings.voicePreferences;
-    const voiceId = voicePref?.[baseLang] || defaultVoiceForLanguage(_catalogCache, baseLang) || undefined;
+    const voiceId = voicePref?.[baseLang]
+      || defaultVoiceForLanguage(_catalogCache, baseLang)
+      || VOICE_FALLBACK;
     console.log(`[TTS] Attempting portal TTS: lang=${lang} tone=${effectiveTone} plan=${profile?.plan ?? 'unknown'} voiceId=${voiceId ?? 'auto'} loaded=${useAuthStore.getState().loaded} vol=${volume} rate=${effectiveRate}`);
 
     // Tier name reflects the public route's primary backend (Inworld first
