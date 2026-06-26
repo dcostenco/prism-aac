@@ -1,129 +1,53 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
+import { isFillerOnly, FILLER_WORDS, MIN_CONFIDENCE } from '@/services/voiceInputService';
 
-// Import the internal helpers via re-export for testing
-// We need to test isFillerOnly and the confidence gate logic
-// Since they're not exported, we test through the public API (startVoiceInput)
-
-// Direct unit tests for the filler detection and confidence logic
-// by importing the module and testing the behavior through mock SpeechRecognition
-
-const FILLER_WORDS: Record<string, string[]> = {
-  en: ['uh', 'um', 'ah', 'oh', 'hm', 'hmm', 'er', 'erm', 'like', 'so', 'well', 'yeah'],
-  es: ['eh', 'ah', 'um', 'este', 'pues', 'bueno'],
-  fr: ['euh', 'hein', 'bah', 'ben', 'donc', 'bof'],
-  de: ['äh', 'ähm', 'hm', 'hmm', 'na', 'naja', 'also', 'halt'],
-  pt: ['é', 'ah', 'hm', 'tipo', 'né', 'então'],
-  it: ['eh', 'beh', 'cioè', 'allora', 'insomma', 'mah'],
-  ru: ['э', 'эм', 'ну', 'вот', 'типа', 'ага', 'угу'],
-  uk: ['е', 'ем', 'ну', 'от', 'типу', 'ага'],
-  ro: ['ă', 'ăă', 'hm', 'păi', 'deci', 'adică'],
-  bg: ['ъ', 'ъм', 'хм', 'ами', 'абе', 'значи', 'нали'],
-  ja: ['えーと', 'あの', 'えー', 'うーん', 'まあ', 'その'],
-  zh: ['嗯', '那个', '就是', '这个', '呃'],
-  ko: ['음', '어', '그', '저', '뭐'],
-  ar: ['اه', 'يعني', 'هم'],
-  he: ['אה', 'אמ', 'נו', 'כאילו'],
-  hi: ['अं', 'उम', 'वो', 'ये', 'मतलब'],
-  pl: ['yyy', 'eee', 'hmm', 'no', 'więc', 'jakby'],
-  nl: ['eh', 'uhm', 'nou', 'dus', 'eigenlijk'],
-  vi: ['ờ', 'à', 'ừm', 'thì', 'kiểu'],
-  tl: ['ah', 'eh', 'ano', 'kasi', 'parang'],
-  tr: ['şey', 'hani', 'yani', 'ıı', 'eee'],
-  id: ['eh', 'em', 'hmm', 'gitu', 'kayak'],
-};
+const AAC_LANGS = ['en','es','fr','pt','ro','uk','ru','de','ja','zh','ko','he','ar','hi','it','pl','nl','vi','tl','tr','id','bg'];
 
 const REAL_SPEECH: Record<string, string[]> = {
-  en: ['I want water', 'hello there', 'please help me'],
-  es: ['quiero agua', 'hola amigo', 'ayúdame por favor'],
-  fr: ['je veux de l\'eau', 'bonjour', 'aidez-moi'],
-  de: ['ich möchte Wasser', 'hallo', 'hilf mir bitte'],
-  pt: ['eu quero água', 'olá', 'me ajude'],
-  it: ['voglio acqua', 'ciao', 'aiutami'],
-  ru: ['я хочу воду', 'привет', 'помогите мне'],
-  uk: ['я хочу воду', 'привіт', 'допоможіть мені'],
-  ro: ['vreau apă', 'bună ziua', 'ajutați-mă'],
-  bg: ['искам вода', 'здравейте', 'помогнете ми'],
-  ja: ['水がほしい', 'こんにちは', '助けてください'],
-  zh: ['我想要水', '你好', '请帮助我'],
-  ko: ['물을 주세요', '안녕하세요', '도와주세요'],
-  ar: ['أريد ماء', 'مرحبا', 'ساعدني'],
-  he: ['אני רוצה מים', 'שלום', 'עזור לי'],
-  hi: ['मुझे पानी चाहिए', 'नमस्ते', 'मेरी मदद करो'],
-  pl: ['chcę wodę', 'cześć', 'pomóż mi'],
-  nl: ['ik wil water', 'hallo', 'help me'],
-  vi: ['tôi muốn nước', 'xin chào', 'giúp tôi'],
-  tl: ['gusto ko ng tubig', 'kamusta', 'tulungan mo ako'],
-  tr: ['su istiyorum', 'merhaba', 'bana yardım et'],
-  id: ['saya mau air', 'halo', 'tolong bantu saya'],
+  en: ['I want water', 'hello there', 'please help me', 'yeah', 'oh', 'so', 'well', 'no'],
+  es: ['quiero agua', 'hola', 'bueno', 'pues'],
+  fr: ['je veux de l\'eau', 'bonjour', 'donc', 'bien'],
+  de: ['ich möchte Wasser', 'hallo', 'also', 'halt', 'naja'],
+  pt: ['eu quero água', 'olá', 'então', 'tipo'],
+  it: ['voglio acqua', 'ciao', 'allora', 'insomma'],
+  ru: ['я хочу воду', 'привет', 'ну', 'вот', 'ага'],
+  uk: ['я хочу воду', 'привіт', 'ну', 'ага'],
+  ro: ['vreau apă', 'bună ziua', 'deci', 'adică'],
+  bg: ['искам вода', 'здравейте', 'значи', 'нали'],
+  ja: ['水がほしい', 'こんにちは', 'あの', 'まあ'],
+  zh: ['我想要水', '你好', '那个', '就是'],
+  ko: ['물을 주세요', '안녕하세요', '그', '뭐'],
+  ar: ['أريد ماء', 'مرحبا', 'يعني'],
+  he: ['אני רוצה מים', 'שלום', 'נו', 'כאילו'],
+  hi: ['मुझे पानी चाहिए', 'नमस्ते', 'वो', 'मतलब'],
+  pl: ['chcę wodę', 'cześć', 'no', 'więc'],
+  nl: ['ik wil water', 'hallo', 'nou', 'dus'],
+  vi: ['tôi muốn nước', 'xin chào', 'thì'],
+  tl: ['gusto ko ng tubig', 'kamusta', 'ano', 'kasi'],
+  tr: ['su istiyorum', 'merhaba', 'şey', 'yani'],
+  id: ['saya mau air', 'halo', 'gitu'],
 };
 
-// ── Mock SpeechRecognition ──────────────────────────────────────────────────
+// ── Filler detection ────────────────────────────────────────────────────────
 
-class MockSpeechRecognition {
-  continuous = false;
-  interimResults = false;
-  lang = 'en-US';
-  maxAlternatives = 1;
-  onresult: ((event: any) => void) | null = null;
-  onerror: ((event: any) => void) | null = null;
-  onend: (() => void) | null = null;
-  onspeechend: (() => void) | null = null;
-  start() {}
-  stop() {}
-  abort() {}
-
-  simulateResult(transcript: string, confidence: number, isFinal = true) {
-    this.onresult?.({
-      resultIndex: 0,
-      results: {
-        length: 1,
-        0: { isFinal, 0: { transcript, confidence } },
-      },
-    });
-  }
-}
-
-let mockRec: MockSpeechRecognition;
-
-beforeEach(() => {
-  mockRec = new MockSpeechRecognition();
-  (globalThis as any).window = {
-    SpeechRecognition: function() { return mockRec; },
-  };
-});
-
-describe('voice-noise-filter', () => {
-  // We test the filtering logic by importing startVoiceInput and checking
-  // what gets passed to onFinal vs what gets filtered out.
-
-  // Since we can't easily import the module with the mock in place,
-  // we'll test the isFillerOnly logic directly by reimplementing it
-  // (same code as in voiceInputService.ts) and verifying correctness.
-
-  const FILLER_SETS: Record<string, Set<string>> = {};
-  for (const [lang, words] of Object.entries(FILLER_WORDS)) {
-    FILLER_SETS[lang] = new Set(words);
-  }
-
-  function isFillerOnly(text: string, lang: string): boolean {
-    const cleaned = text.toLowerCase().replace(/[.,!?;:]/g, '').trim();
-    if (cleaned.length > 20) return false;
-    const base = lang.split(/[-_]/)[0];
-    const fillers = FILLER_SETS[base] ?? FILLER_SETS.en;
-    return fillers.has(cleaned);
-  }
-
-  describe('filler detection — all 22 languages', () => {
-    for (const [lang, fillers] of Object.entries(FILLER_WORDS)) {
-      it(`detects fillers in ${lang}`, () => {
+describe('isFillerOnly — imports real code from voiceInputService', () => {
+  describe('detects non-communicative fillers per language', () => {
+    for (const lang of AAC_LANGS) {
+      const fillers = FILLER_WORDS[lang];
+      if (!fillers) continue;
+      it(`${lang}: fillers detected (${fillers.size} entries)`, () => {
         for (const word of fillers) {
           expect(isFillerOnly(word, lang)).toBe(true);
         }
       });
+    }
+  });
 
-      it(`passes real speech in ${lang}`, () => {
-        const phrases = REAL_SPEECH[lang];
-        if (!phrases) return;
+  describe('passes real speech and valid single-word utterances', () => {
+    for (const lang of AAC_LANGS) {
+      const phrases = REAL_SPEECH[lang];
+      if (!phrases) continue;
+      it(`${lang}: real speech passes (${phrases.length} phrases)`, () => {
         for (const phrase of phrases) {
           expect(isFillerOnly(phrase, lang)).toBe(false);
         }
@@ -131,80 +55,89 @@ describe('voice-noise-filter', () => {
     }
   });
 
-  describe('filler edge cases', () => {
+  describe('AAC-critical: valid single-word utterances are NOT filtered', () => {
+    const validUtterances: Record<string, string[]> = {
+      en: ['yeah', 'oh', 'so', 'well', 'like', 'no', 'yes', 'ok'],
+      es: ['bueno', 'pues', 'este'],
+      ru: ['ну', 'вот', 'ага', 'угу', 'да'],
+      bg: ['ами', 'абе', 'значи', 'нали', 'да'],
+      de: ['na', 'naja', 'also', 'halt', 'ja'],
+    };
+    for (const [lang, words] of Object.entries(validUtterances)) {
+      it(`${lang}: "${words.join('", "')}" all pass through`, () => {
+        for (const word of words) {
+          expect(isFillerOnly(word, lang)).toBe(false);
+        }
+      });
+    }
+  });
+
+  describe('edge cases', () => {
     it('handles punctuation around fillers', () => {
       expect(isFillerOnly('uh.', 'en')).toBe(true);
       expect(isFillerOnly('um!', 'en')).toBe(true);
       expect(isFillerOnly('hm?', 'en')).toBe(true);
     });
 
-    it('handles case insensitivity', () => {
+    it('case insensitive', () => {
       expect(isFillerOnly('UH', 'en')).toBe(true);
       expect(isFillerOnly('Um', 'en')).toBe(true);
-      expect(isFillerOnly('AH', 'en')).toBe(true);
     });
 
-    it('rejects long text even if it contains filler words', () => {
+    it('rejects long text even with filler substrings', () => {
       expect(isFillerOnly('uh uh uh uh uh uh uh uh', 'en')).toBe(false);
     });
 
     it('falls back to English fillers for unknown language', () => {
       expect(isFillerOnly('uh', 'xx')).toBe(true);
-      expect(isFillerOnly('um', 'xx')).toBe(true);
     });
 
-    it('handles empty/whitespace input', () => {
+    it('empty/whitespace → false', () => {
       expect(isFillerOnly('', 'en')).toBe(false);
       expect(isFillerOnly('   ', 'en')).toBe(false);
     });
   });
+});
 
-  describe('confidence filtering', () => {
-    const MIN_CONFIDENCE = 0.6;
+// ── Confidence threshold ────────────────────────────────────────────────────
 
-    it('accepts high-confidence results', () => {
-      expect(0.9 >= MIN_CONFIDENCE).toBe(true);
-      expect(0.8 >= MIN_CONFIDENCE).toBe(true);
-      expect(0.6 >= MIN_CONFIDENCE).toBe(true);
-    });
-
-    it('rejects low-confidence results', () => {
-      expect(0.5 >= MIN_CONFIDENCE).toBe(false);
-      expect(0.3 >= MIN_CONFIDENCE).toBe(false);
-      expect(0.1 >= MIN_CONFIDENCE).toBe(false);
-    });
-
-    it('accepts zero confidence (browser returns 0 when unsupported)', () => {
-      // confidence=0 means the browser doesn't support confidence scores
-      // We should NOT reject these (skip the check when confidence is 0)
-      expect(0 > 0 && 0 < MIN_CONFIDENCE).toBe(false);
-    });
+describe('MIN_CONFIDENCE threshold', () => {
+  it('is 0.6', () => {
+    expect(MIN_CONFIDENCE).toBe(0.6);
   });
 
-  describe('LANG_MAP completeness', () => {
-    const LANG_MAP: Record<string, string> = {
-      en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', ru: 'ru-RU',
-      ro: 'ro-RO', uk: 'uk-UA', pt: 'pt-BR', 'pt-PT': 'pt-PT',
-      zh: 'zh-CN', 'zh-TW': 'zh-TW', ja: 'ja-JP',
-      ko: 'ko-KR', ar: 'ar-SA', it: 'it-IT', nl: 'nl-NL', pl: 'pl-PL',
-      tr: 'tr-TR', vi: 'vi-VN', th: 'th-TH', hi: 'hi-IN',
-      bg: 'bg-BG', he: 'he-IL', tl: 'fil-PH', id: 'id-ID',
-    };
+  it('gate logic: confidence > 0 && confidence < MIN rejects low scores', () => {
+    for (const c of [0.1, 0.3, 0.5, 0.59]) {
+      expect(c > 0 && c < MIN_CONFIDENCE).toBe(true);
+    }
+  });
 
-    const AAC_LANGS = ['en','es','fr','pt','ro','uk','ru','de','ja','zh','ko','he','ar','hi','it','pl','nl','vi','tl','tr','id','bg'];
+  it('gate logic: confidence >= MIN passes', () => {
+    for (const c of [0.6, 0.8, 1.0]) {
+      expect(c > 0 && c < MIN_CONFIDENCE).toBe(false);
+    }
+  });
 
-    it('has a mapping for every AAC-supported language', () => {
-      for (const lang of AAC_LANGS) {
-        expect(LANG_MAP[lang]).toBeDefined();
-        expect(LANG_MAP[lang]).toMatch(/^[a-z]{2,3}-[A-Z]{2}$/);
+  it('gate logic: confidence === 0 bypasses (browser unsupported)', () => {
+    expect(0 > 0 && 0 < MIN_CONFIDENCE).toBe(false);
+  });
+});
+
+// ── Coverage completeness ───────────────────────────────────────────────────
+
+describe('coverage', () => {
+  it('every AAC language has filler entries', () => {
+    for (const lang of AAC_LANGS) {
+      expect(FILLER_WORDS[lang]).toBeDefined();
+      expect(FILLER_WORDS[lang].size).toBeGreaterThan(0);
+    }
+  });
+
+  it('no filler set contains words longer than 10 chars (sanity)', () => {
+    for (const [lang, set] of Object.entries(FILLER_WORDS)) {
+      for (const word of set) {
+        expect(word.length).toBeLessThanOrEqual(10);
       }
-    });
-
-    it('has filler words for every AAC-supported language', () => {
-      for (const lang of AAC_LANGS) {
-        expect(FILLER_WORDS[lang]).toBeDefined();
-        expect(FILLER_WORDS[lang].length).toBeGreaterThan(0);
-      }
-    });
+    }
   });
 });

@@ -130,7 +130,7 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
       className={`aac-btn flex-1 min-w-0 rounded-xl flex flex-col items-center overflow-hidden border-l-[5px] border border-theme${visionBoosted ? ' vision-glow' : ''}`}
       style={{ borderLeftColor: color, color }}
     >
-      <span className="flex-1 flex items-center justify-center w-full surface-bar rounded-t-lg overflow-hidden min-h-0">
+      <span className="flex-1 flex items-center justify-center w-full rounded-t-lg overflow-hidden min-h-0" style={{ background: 'var(--bg-surface, white)' }}>
         {iconUrl && (
           <img src={iconUrl} alt="" aria-hidden loading="eager" className="max-w-full max-h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
         )}

@@ -55,32 +55,38 @@ function computeLang(lang: string): string {
 
 const MIN_CONFIDENCE = 0.6;
 
+// Non-communicative filler sounds ONLY — words that double as valid
+// single-word utterances (yeah, oh, so, well, no, bueno, ну, etc.)
+// are deliberately excluded. AAC users may say just "yeah" as a
+// complete affirmative response — dropping it is a communication failure.
 const FILLER_WORDS: Record<string, Set<string>> = {
-  en: new Set(['uh','um','ah','oh','hm','hmm','er','erm','like','so','well','yeah']),
-  es: new Set(['eh','ah','um','este','pues','bueno','o sea']),
-  fr: new Set(['euh','hein','bah','ben','donc','bof']),
-  de: new Set(['äh','ähm','hm','hmm','na','naja','also','halt']),
-  pt: new Set(['é','ah','hm','tipo','né','então']),
-  it: new Set(['eh','beh','cioè','allora','insomma','mah']),
-  ru: new Set(['э','эм','ну','вот','типа','ага','угу']),
-  uk: new Set(['е','ем','ну','от','типу','ага']),
-  ro: new Set(['ă','ăă','hm','păi','deci','adică']),
-  bg: new Set(['ъ','ъм','хм','ами','абе','значи','нали']),
-  ja: new Set(['えーと','あの','えー','うーん','まあ','その']),
-  zh: new Set(['嗯','那个','就是','这个','呃']),
-  ko: new Set(['음','어','그','저','뭐']),
-  ar: new Set(['اه','يعني','هم']),
-  he: new Set(['אה','אמ','נו','כאילו']),
-  hi: new Set(['अं','उम','वो','ये','मतलब']),
-  pl: new Set(['yyy','eee','hmm','no','więc','jakby']),
-  nl: new Set(['eh','uhm','nou','dus','eigenlijk']),
-  vi: new Set(['ờ','à','ừm','thì','kiểu']),
-  tl: new Set(['ah','eh','ano','kasi','parang']),
-  tr: new Set(['şey','hani','yani','ıı','eee']),
-  id: new Set(['eh','em','hmm','gitu','kayak']),
+  en: new Set(['uh','um','hm','hmm','er','erm']),
+  es: new Set(['eh','um']),
+  fr: new Set(['euh','bof']),
+  de: new Set(['äh','ähm','hm','hmm']),
+  pt: new Set(['hm']),
+  it: new Set(['eh','beh','mah']),
+  ru: new Set(['э','эм']),
+  uk: new Set(['е','ем']),
+  ro: new Set(['ă','ăă','hm']),
+  bg: new Set(['ъ','ъм','хм']),
+  ja: new Set(['えーと','えー','うーん']),
+  zh: new Set(['嗯','呃']),
+  ko: new Set(['음','어']),
+  ar: new Set(['اه']),
+  he: new Set(['אה','אמ']),
+  hi: new Set(['अं','उम']),
+  pl: new Set(['yyy','eee','hmm']),
+  nl: new Set(['eh','uhm']),
+  vi: new Set(['ờ','ừm']),
+  tl: new Set(['ah','eh']),
+  tr: new Set(['ıı','eee']),
+  id: new Set(['eh','em','hmm']),
 };
 
-function isFillerOnly(text: string, lang: string): boolean {
+export { FILLER_WORDS, MIN_CONFIDENCE };
+
+export function isFillerOnly(text: string, lang: string): boolean {
   const cleaned = text.toLowerCase().replace(/[.,!?;:]/g, '').trim();
   if (cleaned.length > 20) return false;
   const base = lang.split(/[-_]/)[0];
@@ -106,13 +112,17 @@ function startNativeVoice(opts: {
 }, bridge: any): VoiceSession {
   let stopped = false;
   let speechStarted = false;
+  let lastInterimText = '';
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
   const silenceThreshold = opts.silenceMs ?? 2000;
   const myGeneration = ++_nativeVoiceGeneration;
 
-  const checkSilence = () => {
+  // Re-arm silence timer only when transcript text changes — mirrors the
+  // web path guard. iOS SFSpeechRecognizer can re-emit identical partials
+  // during silence; re-arming on every emit prevents auto-stop from firing.
+  const armSilence = () => {
     if (silenceTimer) clearTimeout(silenceTimer);
-    if (stopped) return;
+    if (stopped || !speechStarted) return;
     silenceTimer = setTimeout(() => {
       if (!stopped) opts.onSilence?.();
     }, silenceThreshold);
@@ -153,15 +163,17 @@ function startNativeVoice(opts: {
     if (final && isFillerOnly(final, nativeLang)) final = '';
     if (!speechStarted && (interim || final)) {
       speechStarted = true;
-      checkSilence();
     }
     if (interim) {
       opts.onInterim(interim);
-      checkSilence();
+      if (interim !== lastInterimText) {
+        lastInterimText = interim;
+        armSilence();
+      }
     }
     if (final) {
       opts.onFinal(final);
-      checkSilence();
+      armSilence();
       if (opts.autoStop) {
         stopped = true;
         cleanup();
