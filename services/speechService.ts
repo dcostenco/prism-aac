@@ -165,8 +165,8 @@ const INWORLD_VOICE_DEFAULTS: Record<string, string> = {
   ja: 'Sarah',   zh: 'Mei',    ko: 'Sarah',  ru: 'Sarah',
   he: 'Sarah',   ar: 'Sarah',  hi: 'Aanya',
   vi: 'Sarah',   tl: 'Sarah',  tr: 'Sarah',  id: 'Sarah', bg: 'Kalina',
-  ro: 'ro-RO-AlinaNeural',
-  uk: 'uk-UA-PolinaNeural',
+  ro: 'Alina',
+  uk: 'Polina',
 };
 
 /**
