@@ -45,11 +45,47 @@ const LANG_MAP: Record<string, string> = {
   zh: 'zh-CN', 'zh-TW': 'zh-TW', ja: 'ja-JP',
   ko: 'ko-KR', ar: 'ar-SA', it: 'it-IT', nl: 'nl-NL', pl: 'pl-PL',
   tr: 'tr-TR', vi: 'vi-VN', th: 'th-TH', hi: 'hi-IN',
+  bg: 'bg-BG', he: 'he-IL', tl: 'fil-PH', id: 'id-ID',
 };
 
 function computeLang(lang: string): string {
   if (LANG_MAP[lang]) return LANG_MAP[lang];
   return LANG_MAP[lang.split('-')[0]] || 'en-US';
+}
+
+const MIN_CONFIDENCE = 0.6;
+
+const FILLER_WORDS: Record<string, Set<string>> = {
+  en: new Set(['uh','um','ah','oh','hm','hmm','er','erm','like','so','well','yeah']),
+  es: new Set(['eh','ah','um','este','pues','bueno','o sea']),
+  fr: new Set(['euh','hein','bah','ben','donc','bof']),
+  de: new Set(['äh','ähm','hm','hmm','na','naja','also','halt']),
+  pt: new Set(['é','ah','hm','tipo','né','então']),
+  it: new Set(['eh','beh','cioè','allora','insomma','mah']),
+  ru: new Set(['э','эм','ну','вот','типа','ага','угу']),
+  uk: new Set(['е','ем','ну','от','типу','ага']),
+  ro: new Set(['ă','ăă','hm','păi','deci','adică']),
+  bg: new Set(['ъ','ъм','хм','ами','абе','значи','нали']),
+  ja: new Set(['えーと','あの','えー','うーん','まあ','その']),
+  zh: new Set(['嗯','那个','就是','这个','呃']),
+  ko: new Set(['음','어','그','저','뭐']),
+  ar: new Set(['اه','يعني','هم']),
+  he: new Set(['אה','אמ','נו','כאילו']),
+  hi: new Set(['अं','उम','वो','ये','मतलब']),
+  pl: new Set(['yyy','eee','hmm','no','więc','jakby']),
+  nl: new Set(['eh','uhm','nou','dus','eigenlijk']),
+  vi: new Set(['ờ','à','ừm','thì','kiểu']),
+  tl: new Set(['ah','eh','ano','kasi','parang']),
+  tr: new Set(['şey','hani','yani','ıı','eee']),
+  id: new Set(['eh','em','hmm','gitu','kayak']),
+};
+
+function isFillerOnly(text: string, lang: string): boolean {
+  const cleaned = text.toLowerCase().replace(/[.,!?;:]/g, '').trim();
+  if (cleaned.length > 20) return false;
+  const base = lang.split(/[-_]/)[0];
+  const fillers = FILLER_WORDS[base] ?? FILLER_WORDS.en;
+  return fillers.has(cleaned);
 }
 
 // Incremented on every startNativeVoice call. Each session captures its own
@@ -105,12 +141,16 @@ function startNativeVoice(opts: {
     deleteCallback('prismNativeSpeechError');
   };
 
+  const nativeLang = computeLang(opts.lang || 'en-US');
   setCallback('prismNativeSpeechResult', (result: unknown) => {
     if (stopped || _nativeVoiceGeneration !== myGeneration) return;
     if (!result || typeof result !== 'object') return;
     const r = result as Record<string, unknown>;
     const interim = typeof r.interim === 'string' ? r.interim.slice(0, 2000) : '';
-    const final = typeof r.final === 'string' ? r.final.slice(0, 2000) : '';
+    let final = typeof r.final === 'string' ? r.final.slice(0, 2000) : '';
+    const confidence = typeof r.confidence === 'number' ? r.confidence : 1.0;
+    if (final && confidence > 0 && confidence < MIN_CONFIDENCE) final = '';
+    if (final && isFillerOnly(final, nativeLang)) final = '';
     if (!speechStarted && (interim || final)) {
       speechStarted = true;
       checkSilence();
@@ -211,9 +251,15 @@ function startWebSpeech(opts: VoiceOpts): VoiceSession | null {
     let final = '';
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const res = event.results[i];
+      const confidence = res[0].confidence;
       const transcript = res[0].transcript;
-      if (res.isFinal) final += transcript;
-      else interim += transcript;
+      if (res.isFinal) {
+        if (confidence > 0 && confidence < MIN_CONFIDENCE) continue;
+        if (isFillerOnly(transcript, rec.lang)) continue;
+        final += transcript;
+      } else {
+        interim += transcript;
+      }
     }
     if (interim || final) speechStarted = true;
     if (interim) {
