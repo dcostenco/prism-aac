@@ -15,29 +15,13 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## iOS
 
-### ios release
+### ios submit_only
 
 ```sh
-[bundle exec] fastlane ios release
+[bundle exec] fastlane ios submit_only
 ```
 
-Build and upload to App Store Connect
 
-### ios submit_for_review
-
-```sh
-[bundle exec] fastlane ios submit_for_review
-```
-
-Submit to App Store Review
-
-### ios submit_spaceship
-
-```sh
-[bundle exec] fastlane ios submit_spaceship
-```
-
-Submit using raw spaceship
 
 ----
 

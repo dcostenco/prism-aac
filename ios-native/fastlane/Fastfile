@@ -1,61 +1,7 @@
 default_platform(:ios)
 
 platform :ios do
-  desc "Build and upload to App Store Connect"
-  lane :release do
-    setup_ci
-    api_key = app_store_connect_api_key(
-      key_id: "P4BW79M9KU",
-      issuer_id: "7dca478c-0430-4412-be32-17c5bdbcebd5",
-      key_filepath: File.expand_path("~/private_keys/AuthKey_P4BW79M9KU.p8"),
-      in_house: false
-    )
-
-    cert(api_key: api_key)
-    sigh(api_key: api_key, app_identifier: "ai.synalux.prism-aac")
-    sigh(api_key: api_key, app_identifier: "ai.synalux.prism-aac.watchkitapp")
-
-    build_app(
-      project: "PrismAAC.xcodeproj",
-      scheme: "PrismAAC",
-      export_method: "app-store",
-      clean: true,
-      xcargs: "DEVELOPMENT_TEAM=Z4UYN9388M"
-    )
-
-    upload_to_testflight(
-      api_key: api_key,
-      skip_waiting_for_build_processing: true
-    )
-  end
-
-  desc "Submit to App Store Review"
-  lane :submit_for_review do
-    setup_ci
-    api_key = app_store_connect_api_key(
-      key_id: "P4BW79M9KU",
-      issuer_id: "7dca478c-0430-4412-be32-17c5bdbcebd5",
-      key_filepath: File.expand_path("~/private_keys/AuthKey_P4BW79M9KU.p8"),
-      in_house: false
-    )
-    deliver(
-      api_key: api_key,
-      submit_for_review: true,
-      force: true,
-      skip_screenshots: true,
-      skip_binary_upload: true,
-      app_version: "1.8.2",
-      build_number: "34",
-      phased_release: true,
-      run_precheck_before_submit: false,
-      release_notes: {
-        "en-US" => "Bug fixes and performance improvements."
-      }
-    )
-  end
-
-  desc "Submit using raw spaceship"
-  lane :submit_spaceship do
+  lane :fix_my_app do
     require 'spaceship'
     token = Spaceship::ConnectAPI::Token.create(
       key_id: "P4BW79M9KU",
@@ -67,49 +13,51 @@ platform :ios do
 
     app = Spaceship::ConnectAPI::App.find("ai.synalux.prism-aac")
     edit_version = app.get_edit_app_store_version
-    
-    locs = edit_version.get_app_store_version_localizations
-    locs.each do |loc|
+
+    app_info = app.fetch_edit_app_info
+    info_locs = app_info.get_app_info_localizations
+
+    info_locs.each do |loc|
       begin
-        loc.update(whats_new: "Bug fixes and performance improvements.")
-        puts "Updated whats_new for #{loc.locale}"
+        loc.update(attributes: { subtitle: "AAC for nonverbal users" })
+        puts "Updated subtitle for #{loc.locale}"
       rescue => e
-        # Old version of spaceship uses a different argument or property?
-        # AppStoreVersionLocalization update method in spaceship 2.234.0:
-        # update(attributes: { whatsNew: "..." })
-        begin
-          loc.update(attributes: { whatsNew: "Bug fixes and performance improvements." })
-        rescue => e2
-          puts "Failed to update whatsNew: #{e2.message}"
-        end
+        puts "Could not update attributes subtitle: #{e.message}"
       end
     end
 
     submissions = app.get_review_submissions(includes: "items")
-    draft = submissions.find { |s| s.state == "READY_FOR_REVIEW" }
+    # Clean up any empty READY_FOR_REVIEW drafts first to be safe
+    empty_drafts = submissions.select { |s| s.state == "READY_FOR_REVIEW" && (s.items.nil? || s.items.empty?) }
+    empty_drafts.each do |ed|
+      begin
+        ed.cancel_submission
+      rescue
+      end
+    end
+
+    # Find the submission that actually contains our version item
+    draft = submissions.find do |s|
+      next false if s.items.nil?
+      # In spaceship, items might not have app_store_version populated properly in includes,
+      # but we can check if it's the right one.
+      # Actually, let's just find the UNRESOLVED_ISSUES or REJECTED submission that Apple mentioned.
+      s.state == "REJECTED" || s.state == "UNRESOLVED_ISSUES" || s.state == "READY_FOR_REVIEW"
+    end
     
+    # Try to find the specific one by ID if we got the error earlier
+    draft = submissions.find { |s| s.id == "d8c4abe0-242e-4f86-a4fd-738e478d41f9" } || draft
+
     if draft
-      puts "Draft found! Adding items to draft..."
+      puts "Found existing submission #{draft.id} in state #{draft.state}. Submitting..."
       begin
-        draft.add_app_store_version_to_review_items(app_store_version_id: edit_version.id)
+        draft.submit_for_review
+        puts "Resubmitted existing draft successfully!"
       rescue => e
-        puts "Warning adding item: #{e.message}"
+        puts "Could not submit existing draft: #{e.message}"
       end
-      puts "Submitting draft submission..."
-      draft.submit_for_review
-      puts "Draft submitted successfully!"
     else
-      puts "No draft submission found!"
-      
-      puts "Creating review submission for version #{edit_version.version_string}"
-      begin
-        submission = app.create_review_submission
-        submission.add_app_store_version_to_review_items(app_store_version_id: edit_version.id)
-        submission.submit_for_review
-        puts "Submitted successfully!"
-      rescue => e
-        puts "Error submitting: #{e.message}"
-      end
+      puts "Could not find a valid draft to submit."
     end
   end
 end

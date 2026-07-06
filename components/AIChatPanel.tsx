@@ -165,6 +165,17 @@ export default function AIChatPanel() {
       setInterim('');
       const trimmed = finalText.trim();
       if (!trimmed || !activeRef.current) return;
+      const preCrisis = checkCrisisSafety(trimmed);
+      if (!preCrisis.safe) {
+        appendText(trimmed + ' ');
+        if (finalizeTimerRef.current) clearTimeout(finalizeTimerRef.current);
+        finalizeTimerRef.current = setTimeout(() => {
+          finalizeTimerRef.current = null;
+          if (!activeRef.current) return;
+          handleAskRef.current?.();
+        }, 80);
+        return;
+      }
       void correctText(trimmed, language).then((fixed) => {
         if (!activeRef.current) return;
         // If hands-free restarted the mic while correctText was running
