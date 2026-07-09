@@ -753,8 +753,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = Z4UYN9388M;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "";
+				INFOPLIST_FILE = PrismAACWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Prism AAC Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Synalux, LLC";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -764,7 +763,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.8.6;
-				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.widget";
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.quickphrases";
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -815,8 +814,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = Z4UYN9388M;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "";
+				INFOPLIST_FILE = PrismAACWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Prism AAC Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Synalux, LLC";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -826,7 +824,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.8.6;
-				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.widget";
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.synalux.prism-aac.quickphrases";
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
