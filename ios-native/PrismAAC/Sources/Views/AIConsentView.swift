@@ -69,7 +69,7 @@ struct AIConsentView: View {
                 }
                 .padding(.top, 4)
 
-                Text("You can change AI settings at any time in the app.")
+                Text("Core AAC features work without AI. You can reinstall the app to reset this choice.")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .padding(.bottom, 32)

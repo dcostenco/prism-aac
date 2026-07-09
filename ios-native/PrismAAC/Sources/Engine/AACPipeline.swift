@@ -68,6 +68,11 @@ final class AACPipeline: ObservableObject {
     /// Safe to call even when model is not loaded — falls through to cloud or returns nil.
     func ask(question: String, language: String = "en") -> AsyncStream<String> {
         AsyncStream { continuation in
+            guard !UserDefaults.standard.bool(forKey: "ai_declined") else {
+                continuation.yield("AI is turned off. Enable it in Settings → On-Device AI.")
+                continuation.finish()
+                return
+            }
             self.currentTask?.cancel()
             let gen = self.currentGeneration &+ 1
             self.currentGeneration = gen

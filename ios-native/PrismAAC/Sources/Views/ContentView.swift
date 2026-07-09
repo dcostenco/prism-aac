@@ -306,6 +306,14 @@ struct PrismWebView: UIViewRepresentable {
                     completionHandler: nil
                 )
             case "askAI":
+                guard !UserDefaults.standard.bool(forKey: "ai_declined") else {
+                    let msg = "AI is turned off. Enable it in Settings."
+                    if let data = try? JSONEncoder().encode(msg), let json = String(data: data, encoding: .utf8) {
+                        message.webView?.evaluateJavaScript("window.prismNativeAIResult&&window.prismNativeAIResult(\(json))") { _, _ in }
+                        message.webView?.evaluateJavaScript("window.prismNativeAIDone&&window.prismNativeAIDone()") { _, _ in }
+                    }
+                    return
+                }
                 guard let pageURL = message.webView?.url,
                       Self.isAllowedOrigin(pageURL),
                       message.frameInfo.isMainFrame else {

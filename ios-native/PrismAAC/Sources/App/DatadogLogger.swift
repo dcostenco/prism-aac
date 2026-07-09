@@ -60,7 +60,7 @@ public final class DatadogLogger {
                 env: env,
                 service: service
             ),
-            trackingConsent: .granted
+            trackingConsent: .pending
         )
 
         RUM.enable(
