@@ -267,11 +267,11 @@ describe('MessageBar — delete', () => {
   });
 });
 
-// ── tone button (free tier) ───────────────────────────────────────────────────
+// ── tone button ───────────────────────────────────────────────────
 
 describe('MessageBar — tone button', () => {
-  it('does NOT render tone button on free tier (profile=null)', () => {
+  it('renders tone button for all users', () => {
     render(<MessageBar />);
-    expect(screen.queryByRole('button', { name: /tone:/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /tone:/i })).not.toBeNull();
   });
 });

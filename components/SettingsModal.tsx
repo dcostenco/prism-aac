@@ -4,7 +4,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useSettingsStore, GridSize } from '@/store/settingsStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { useAuthStore } from '@/store/authStore';
-import { synaluxSignInUrl, synaluxSignOutUrl, SynaluxProfile } from '@/services/aiService';
+import { synaluxSignInUrl, synaluxSignOutUrl, signInWithAppleNative, isNativeiOS, SynaluxProfile } from '@/services/aiService';
 import { LANG_META, SupportedLanguage } from '@/engine/i18n';
 import { useT } from '@/engine/useT';
 import { VOCAB_SETS } from '@/constants/vocabularySets';
@@ -591,6 +591,19 @@ export default function SettingsModal() {
             ) : (
               <div>
                 <p className="text-muted text-sm mb-3">{t('sign_in_synalux_desc')}</p>
+                {isNativeiOS() && (
+                  <button
+                    data-testid="apple-signin"
+                    onClick={async () => {
+                      const ok = await signInWithAppleNative();
+                      if (!ok) { /* user canceled or error — no action needed */ }
+                    }}
+                    className="aac-btn flex items-center justify-center gap-2 w-full bg-black text-white px-4 py-3 rounded-lg font-semibold mb-2"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 17 20" fill="currentColor"><path d="M12.15 0c.12 1.07-.31 2.14-1.01 2.91-.7.77-1.85 1.37-2.98 1.29-.14-1.04.37-2.14 1.01-2.82C9.87.61 11.08.04 12.15 0zm3.49 6.63c-.08.05-2.14 1.23-2.12 3.67.03 2.91 2.56 3.89 2.59 3.9-.02.07-.4 1.39-1.34 2.75-.81 1.17-1.65 2.35-2.97 2.37-1.3.03-1.72-.77-3.2-.77-1.49 0-1.95.74-3.18.8-1.28.05-2.25-1.27-3.07-2.44C.66 14.69-.34 10.95.78 8.43c.56-1.25 1.55-2.05 2.63-2.07 1.25-.03 2.44.85 3.2.85.77 0 2.2-1.04 3.72-.89.63.03 2.41.26 3.56 1.94-.09.06-2.13 1.24-2.25 3.37z"/></svg>
+                    Sign in with Apple
+                  </button>
+                )}
                 <a href={synaluxSignInUrl()} data-testid="synalux-signin" target="_blank" rel="noopener"
                   className="aac-btn block w-full text-center bg-[#4CAF50] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#388E3C]">
                   {t('sign_in_with_synalux')}

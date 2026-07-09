@@ -8,7 +8,6 @@ import { aacSpeak } from '@/services/aacSpeak';
 import { useSettingsStore } from '@/store/settingsStore';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
-import { useAuthStore } from '@/store/authStore';
 
 function PanelShell({ children }: { children: ReactNode }) {
   const { t } = useT();
@@ -1770,32 +1769,28 @@ const GAME_CARDS: {
   title: string;
   subtitle: string;
   gradient: string;
-  paid: boolean;
 }[] = [
-  { id: 'bubble-pop', emoji: '🫧', title: 'Bubble Pop', subtitle: 'Pop bubbles to hear your words!', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', paid: false },
-  { id: 'color-hunt', emoji: '🎨', title: 'Color Hunt', subtitle: 'Find the right color!', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', paid: false },
-  { id: 'my-story', emoji: '📖', title: 'My Story', subtitle: 'Build sentences with pictures!', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', paid: false },
-  { id: 'match-it', emoji: '🔍', title: 'Match It', subtitle: 'Find the right picture!', gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)', paid: true },
-  { id: 'yes-no', emoji: '❓', title: 'Yes / No', subtitle: 'Is this right? You decide!', gradient: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', paid: true },
-  { id: 'finish-it', emoji: '💬', title: 'Finish It', subtitle: 'Complete the sentence!', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', paid: true },
-  { id: 'category-sort', emoji: '🗂', title: 'Category Sort', subtitle: 'Where does it belong?', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', paid: true },
-  { id: 'emotion-match', emoji: '🎭', title: 'Emotions', subtitle: 'How do they feel?', gradient: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)', paid: true },
-  { id: 'sequence', emoji: '📋', title: 'Sequence', subtitle: 'What comes next?', gradient: 'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)', paid: true },
-  { id: 'same-different', emoji: '👀', title: 'Same/Different', subtitle: 'Find the odd one out!', gradient: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', paid: true },
-  { id: 'sound-match', emoji: '🔊', title: 'I Hear It', subtitle: 'Listen and find it!', gradient: 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)', paid: true },
-  { id: 'turn-taker', emoji: '🎲', title: 'Turn Taker', subtitle: 'Take turns rolling dice!', gradient: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)', paid: true },
+  { id: 'bubble-pop', emoji: '🫧', title: 'Bubble Pop', subtitle: 'Pop bubbles to hear your words!', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+  { id: 'color-hunt', emoji: '🎨', title: 'Color Hunt', subtitle: 'Find the right color!', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+  { id: 'my-story', emoji: '📖', title: 'My Story', subtitle: 'Build sentences with pictures!', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+  { id: 'match-it', emoji: '🔍', title: 'Match It', subtitle: 'Find the right picture!', gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)' },
+  { id: 'yes-no', emoji: '❓', title: 'Yes / No', subtitle: 'Is this right? You decide!', gradient: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)' },
+  { id: 'finish-it', emoji: '💬', title: 'Finish It', subtitle: 'Complete the sentence!', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+  { id: 'category-sort', emoji: '🗂', title: 'Category Sort', subtitle: 'Where does it belong?', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
+  { id: 'emotion-match', emoji: '🎭', title: 'Emotions', subtitle: 'How do they feel?', gradient: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)' },
+  { id: 'sequence', emoji: '📋', title: 'Sequence', subtitle: 'What comes next?', gradient: 'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)' },
+  { id: 'same-different', emoji: '👀', title: 'Same/Different', subtitle: 'Find the odd one out!', gradient: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)' },
+  { id: 'sound-match', emoji: '🔊', title: 'I Hear It', subtitle: 'Listen and find it!', gradient: 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)' },
+  { id: 'turn-taker', emoji: '🎲', title: 'Turn Taker', subtitle: 'Take turns rolling dice!', gradient: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)' },
 ];
 
 export default function GamesPanel() {
   const { t } = useT();
   const { sidePanel, closeSidePanel } = useUIStore();
   const [activeGame, setActiveGame] = useState<ActiveGame>('none');
-  const profile = useAuthStore((s) => s.profile);
-
   if (sidePanel !== 'games') return null;
 
   const goBack = () => setActiveGame('none');
-  const isPaid = !!profile;
 
   return (
     <PanelShell>
@@ -1819,34 +1814,21 @@ export default function GamesPanel() {
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
-              {GAME_CARDS.map(card => {
-                const locked = card.paid && !isPaid;
-                return (
+              {GAME_CARDS.map(card => (
                   <button
                     key={card.id}
-                    className={`rounded-3xl flex flex-col items-center justify-center gap-3 p-6 select-none shadow-xl transition-transform relative ${
-                      locked ? 'opacity-60 cursor-not-allowed' : 'active:scale-95'
-                    }`}
+                    className="rounded-3xl flex flex-col items-center justify-center gap-3 p-6 select-none shadow-xl transition-transform active:scale-95"
                     style={{ background: card.gradient, minHeight: '160px' }}
                     onClick={() => {
-                      if (locked) return;
                       tapFeedback();
                       setActiveGame(card.id);
                     }}
-                    disabled={locked}
                   >
-                    {!card.paid && (
-                      <span className="absolute top-2 right-2 bg-green-500 text-white text-xs font-black px-2 py-0.5 rounded-full shadow">FREE</span>
-                    )}
-                    {locked && (
-                      <span className="absolute top-2 right-2 text-2xl">🔒</span>
-                    )}
                     <span className="text-5xl">{card.emoji}</span>
                     <span className="text-white font-black text-xl">{card.title}</span>
                     <span className="text-white/80 text-sm text-center">{card.subtitle}</span>
                   </button>
-                );
-              })}
+              ))}
             </div>
           </div>
         </>

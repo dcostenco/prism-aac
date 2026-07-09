@@ -140,16 +140,8 @@ describe('Game selector — 12 games registered', () => {
     expect(new Set(ids).size).toBe(12);
   });
 
-  it('first 3 games are free, games 4-12 are paid', () => {
-    expect(GAME_CARDS.slice(0, 3).every(c => !c.paid)).toBe(true);
-    expect(GAME_CARDS.slice(3).every(c => c.paid)).toBe(true);
-  });
-
-  it('free tier has 3 games, paid tier has 9', () => {
-    const free = GAME_CARDS.filter(c => !c.paid);
-    const paid = GAME_CARDS.filter(c => c.paid);
-    expect(free).toHaveLength(3);
-    expect(paid).toHaveLength(9);
+  it('all 12 games are accessible', () => {
+    expect(GAME_CARDS).toHaveLength(12);
   });
 });
 

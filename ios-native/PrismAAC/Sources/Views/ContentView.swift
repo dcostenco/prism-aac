@@ -2,6 +2,7 @@ import SwiftUI
 import WebKit
 import AVFoundation
 import Speech
+import AuthenticationServices
 #if canImport(DatadogWebViewTracking)
 import DatadogWebViewTracking
 #endif
@@ -175,6 +176,11 @@ struct PrismWebView: UIViewRepresentable {
                 window.webkit.messageHandlers.prismNative.postMessage({
                     action: 'requestReview'
                 });
+            },
+            signInWithApple: function() {
+                window.webkit.messageHandlers.prismNative.postMessage({
+                    action: 'signInWithApple'
+                });
             }
         };
         // Watch→web bridge: native side calls window.prismOnWatchMessage(payload)
@@ -202,7 +208,7 @@ struct PrismWebView: UIViewRepresentable {
 
     // MARK: - Coordinator
 
-    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
+    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
         let pipeline: AACPipeline
         let tts = WKWebTTS()
         var onLoaded: (() -> Void)?
@@ -372,6 +378,12 @@ struct PrismWebView: UIViewRepresentable {
                 // Delegates to maybeRequestAppStoreReview() which already has
                 // frequency limiting (every 50 speaks, max once per 60 days).
                 maybeRequestAppStoreReview()
+            case "signInWithApple":
+                guard let pageURL = message.webView?.url,
+                      Self.isAllowedOrigin(pageURL),
+                      message.frameInfo.isMainFrame else { return }
+                activeWebView = message.webView
+                performSignInWithApple()
             case "openSettings":
                 // Security: origin + main-frame validation (same pattern as askAI / startVoice)
                 guard let pageURL = message.webView?.url,
@@ -648,6 +660,71 @@ struct PrismWebView: UIViewRepresentable {
                   let json = String(data: data, encoding: .utf8) else { return }
             activeWebView?.evaluateJavaScript(
                 "window.prismNativeSpeechError && window.prismNativeSpeechError(\(json))"
+            ) { _, _ in }
+        }
+
+        // MARK: - Sign in with Apple
+
+        func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+            let scenes = UIApplication.shared.connectedScenes
+            if let foreground = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+               let window = foreground.windows.first(where: { $0.frame.size != .zero }) {
+                return window
+            }
+            if let anyScene = scenes.compactMap({ $0 as? UIWindowScene }).first,
+               let window = anyScene.windows.first(where: { $0.frame.size != .zero }) {
+                return window
+            }
+            return UIWindow()
+        }
+
+        private func performSignInWithApple() {
+            let provider = ASAuthorizationAppleIDProvider()
+            let request = provider.createRequest()
+            request.requestedScopes = [.fullName, .email]
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = self
+            controller.presentationContextProvider = self
+            controller.performRequests()
+        }
+
+        func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  let identityTokenData = credential.identityToken,
+                  let identityToken = String(data: identityTokenData, encoding: .utf8) else {
+                sendAppleSignInError("no-credential")
+                return
+            }
+            let authCode = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
+            let email = credential.email
+            let fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+                .compactMap { $0 }.joined(separator: " ")
+
+            var payload: [String: Any] = ["identityToken": identityToken]
+            if let authCode { payload["authorizationCode"] = authCode }
+            if let email { payload["email"] = email }
+            if !fullName.isEmpty { payload["fullName"] = fullName }
+
+            guard let data = try? JSONSerialization.data(withJSONObject: payload),
+                  let json = String(data: data, encoding: .utf8) else {
+                sendAppleSignInError("json-failed")
+                return
+            }
+            activeWebView?.evaluateJavaScript(
+                "window.prismNativeAppleSignInResult && window.prismNativeAppleSignInResult(\(json))"
+            ) { _, _ in }
+        }
+
+        func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+            let code = (error as? ASAuthorizationError)?.code == .canceled ? "canceled" : "failed"
+            sendAppleSignInError(code)
+        }
+
+        private func sendAppleSignInError(_ code: String) {
+            guard let data = try? JSONEncoder().encode(code),
+                  let json = String(data: data, encoding: .utf8) else { return }
+            activeWebView?.evaluateJavaScript(
+                "window.prismNativeAppleSignInError && window.prismNativeAppleSignInError(\(json))"
             ) { _, _ in }
         }
 

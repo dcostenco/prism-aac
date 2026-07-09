@@ -93,6 +93,8 @@ vi.mock('@/store/authStore',     () => ({ useAuthStore:     mocks.useAuthStore  
 vi.mock('@/services/aiService', () => ({
   synaluxSignInUrl:  () => 'https://synalux.ai/sign-in',
   synaluxSignOutUrl: () => 'https://synalux.ai/sign-out',
+  signInWithAppleNative: () => Promise.resolve(false),
+  isNativeiOS: () => false,
 }));
 
 vi.mock('@/engine/i18n', () => ({

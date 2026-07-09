@@ -259,6 +259,54 @@ export function synaluxSignInUrl(): string {
   return `${base}/api/auth/signin/google?callbackUrl=${encodeURIComponent(callback)}`;
 }
 
+export async function signInWithAppleNative(): Promise<boolean> {
+  const bridge = (window as any).prismNativeBridge;
+  if (!bridge?.signInWithApple) return false;
+
+  return new Promise((resolve) => {
+    (window as any).prismNativeAppleSignInResult = async (credential: {
+      identityToken: string;
+      authorizationCode?: string;
+      email?: string;
+      fullName?: string;
+    }) => {
+      try {
+        const base = SYNALUX_API.replace(/\/api\/v1$/, '');
+        const res = await fetch(`${base}/api/auth/apple`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(credential),
+        });
+        if (res.ok) {
+          const { useAuthStore } = await import('@/store/authStore');
+          useAuthStore.getState().refresh();
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      } catch {
+        resolve(false);
+      } finally {
+        cleanup();
+      }
+    };
+    (window as any).prismNativeAppleSignInError = () => {
+      cleanup();
+      resolve(false);
+    };
+    function cleanup() {
+      delete (window as any).prismNativeAppleSignInResult;
+      delete (window as any).prismNativeAppleSignInError;
+    }
+    bridge.signInWithApple();
+  });
+}
+
+export function isNativeiOS(): boolean {
+  return !!(window as any).prismNativeBridge?.signInWithApple;
+}
+
 export function synaluxSignOutUrl(): string {
   const base = SYNALUX_API.replace(/\/api\/v1$/, '');
   const callback = typeof window !== 'undefined'

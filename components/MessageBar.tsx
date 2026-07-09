@@ -13,7 +13,6 @@ import { useT } from '@/engine/useT';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
 import { translateWithAIRefine, looksLikeTargetLang, abortTranslation } from '@/services/translateService';
-import { useAuthStore } from '@/store/authStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { triggerAISubmit } from '@/services/aiChatBridge';
 import { isSafeAutoCorrection } from '@/services/autocorrectSafety';
@@ -40,8 +39,6 @@ export default function MessageBar() {
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showTones, setShowTones] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
-  const profile = useAuthStore((s) => s.profile);
-  const isPaid = !!profile?.plan && profile.plan !== 'free';
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
   // When AI Chat or AAC Chat is open, those panels collapse to invisible
   // in their compact (empty) state. The freed vertical space goes here:
@@ -494,11 +491,10 @@ export default function MessageBar() {
         <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5">{t('auto')}</span>
       </button>
 
-      {/* Tone selector — paid tiers only. Mirrors the Auto/Sound button:
+      {/* Tone selector — mirrors the Auto/Sound button:
           green-active when in 'auto' mode (adaptiveEngine picks tone), neutral
           when in 'manual' mode (user-picked tone forced). Click opens picker. */}
-      {isPaid && (
-        <button
+      <button
           onClick={() => { tapFeedback(); setShowTones(!showTones); }}
           aria-label={toneMode === 'auto' ? 'Tone: auto' : `Tone: ${currentTone?.label}`}
           aria-pressed={toneMode === 'auto'}
@@ -509,7 +505,6 @@ export default function MessageBar() {
           <span className="text-[clamp(1rem,1.8vw,1.375rem)]">{toneMode === 'auto' ? '🎚' : (currentTone?.icon ?? '😊')}</span>
           <span className={`text-[clamp(8px,0.8vw,11px)] mt-0.5 ${toneMode === 'auto' ? '' : 'text-muted'}`}>{t('tone')}</span>
         </button>
-      )}
 
       <div className={`flex-1 flex flex-col justify-center overflow-hidden ${
           isMessagingMode

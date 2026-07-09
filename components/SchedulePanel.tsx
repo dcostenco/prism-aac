@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useScheduleStore, ScheduleTask } from '@/store/scheduleStore';
-import { useAuthStore } from '@/store/authStore';
 import { tapFeedback, playTimerRing, startAudioWarmup, stopAudioWarmup } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 
@@ -294,7 +293,6 @@ const HAPTIC_PATTERN = [200, 100, 200, 100, 200]; // 3 short pulses
 export default function SchedulePanel() {
   const { t } = useT();
   const { sidePanel, closeSidePanel, replyToSender } = useUIStore();
-  const profile = useAuthStore((s) => s.profile);
   const {
     tasks, rewards, timerSeconds,
     addTask, removeTask, toggleDone, editTask, resetDay, addReward, setTimerSeconds, reorderTask,
@@ -313,8 +311,7 @@ export default function SchedulePanel() {
   const [phase, setPhase] = useState<FirstThenPhase>('idle');
   const [autoStartKey, setAutoStartKey] = useState(0);
 
-  const isPaid = profile?.plan && profile.plan !== 'free';
-  const maxTasks = isPaid ? Infinity : 5;
+  const maxTasks = Infinity;
 
   const sortedTasks = [...tasks].sort((a, b) => a.order - b.order);
   const currentTaskId = sortedTasks.find((tsk) => !tsk.done)?.id;
@@ -497,9 +494,6 @@ export default function SchedulePanel() {
               >
                 + {t('add_task')}
               </button>
-            )}
-            {tasks.length >= maxTasks && !isPaid && (
-              <span className="text-muted text-xs">{t('upgrade_for_more')}</span>
             )}
           </div>
 
@@ -708,16 +702,14 @@ export default function SchedulePanel() {
                       ↩
                     </button>
                   )}
-                  {isPaid && (
-                    <button
-                      type="button"
-                      className="aac-btn min-w-[40px] min-h-[40px] rounded-lg surface-bar text-muted text-lg border border-theme ml-1"
-                      onClick={(e) => { e.stopPropagation(); tapFeedback(); removeTask(task.id); }}
-                      aria-label={t('remove')}
-                    >
-                      🗑
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="aac-btn min-w-[40px] min-h-[40px] rounded-lg surface-bar text-muted text-lg border border-theme ml-1"
+                    onClick={(e) => { e.stopPropagation(); tapFeedback(); removeTask(task.id); }}
+                    aria-label={t('remove')}
+                  >
+                    🗑
+                  </button>
                 </div>
               );
             })}
