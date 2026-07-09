@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00773D60EE4E71F3BA18EC1A /* PhraseSpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D5C6A927B2EFE6C1335232 /* PhraseSpeaker.swift */; };
 		0F41DF8A255CAB7496EEED20 /* WatchTTS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE9F6102290192A69EA33F /* WatchTTS.swift */; };
 		12D45E7B40FD87921C2E498C /* AppIcon46x46@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */; };
 		13605BD67504C9BACB0E06F1 /* PrismAACWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 05AADA50C21E902F70D0FA16 /* PrismAACWidgetExtension.appex */; };
@@ -63,6 +64,7 @@
 		DE76830C66CD657FA386D5D8 /* SmolLMEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B974BD455A3291D82E49CE /* SmolLMEngine.swift */; };
 		DEAE27EF11CB1361042547E1 /* InworldSTTClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7C367E32BA03F5261A90B0 /* InworldSTTClient.swift */; };
 		E9A7C699E922142DFCCC4200 /* AppIcon27.5x27.5@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B9DB1CD80C21089C5CCFBB7B /* AppIcon27.5x27.5@2x.png */; };
+		EA3819BE64DC8EC40415720A /* ShortcutDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41A05E942D44E98C88E53E28 /* ShortcutDelegate.swift */; };
 		EAC73E2E4A89238CB8222EBE /* AppStoreScreenshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB8B25A92994D229419E9629 /* AppStoreScreenshots.swift */; };
 		EB90BA7A0874A4AD712029BA /* AppIcon44x44@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EA856F3C86008948B1F59274 /* AppIcon44x44@2x.png */; };
 		EF9EBF1590D95DA7BA2B75C2 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DB2AB8796CA83596887AD3 /* AppState.swift */; };
@@ -130,6 +132,7 @@
 		05AADA50C21E902F70D0FA16 /* PrismAACWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PrismAACWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D5FF922BC8B7B4BC0A6B33E /* AppIcon29x29@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon29x29@3x.png"; sourceTree = "<group>"; };
 		1199B7CF2AC0B1D044269451 /* WatchEmergencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchEmergencyManager.swift; sourceTree = "<group>"; };
+		15D5C6A927B2EFE6C1335232 /* PhraseSpeaker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhraseSpeaker.swift; sourceTree = "<group>"; };
 		1BAD607AA400B994C75354DD /* WatchAISession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAISession.swift; sourceTree = "<group>"; };
 		27F621FF903791DF9713E9E5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		288AC53DF7FED0353D3DC97F /* AppIcon46x46@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon46x46@2x.png"; sourceTree = "<group>"; };
@@ -141,6 +144,7 @@
 		3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon86x86@2x.png"; sourceTree = "<group>"; };
 		3C1E662AEED98B7777920115 /* PrismAAC.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PrismAAC.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3F1C1DC3E80F1FBA6EF41620 /* AIConsentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIConsentView.swift; sourceTree = "<group>"; };
+		41A05E942D44E98C88E53E28 /* ShortcutDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShortcutDelegate.swift; sourceTree = "<group>"; };
 		48264733CC75753DEBCDDC22 /* AppIcon40x40@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon40x40@2x.png"; sourceTree = "<group>"; };
 		485E0CAF1D660CE13F92A068 /* WatchLayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLayerTests.swift; sourceTree = "<group>"; };
 		514A2FD3A0BC693D56606896 /* LLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEngine.swift; sourceTree = "<group>"; };
@@ -256,6 +260,8 @@
 				62DB2AB8796CA83596887AD3 /* AppState.swift */,
 				B7470815699E3F5011B3436C /* DatadogLogger.swift */,
 				F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */,
+				15D5C6A927B2EFE6C1335232 /* PhraseSpeaker.swift */,
+				41A05E942D44E98C88E53E28 /* ShortcutDelegate.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -705,6 +711,8 @@
 				DE76830C66CD657FA386D5D8 /* SmolLMEngine.swift in Sources */,
 				2B636C7F45A78A2E3D9FD0C9 /* OnboardingView.swift in Sources */,
 				6CD89981D1EEA9DC96665323 /* AIConsentView.swift in Sources */,
+				00773D60EE4E71F3BA18EC1A /* PhraseSpeaker.swift in Sources */,
+				EA3819BE64DC8EC40415720A /* ShortcutDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

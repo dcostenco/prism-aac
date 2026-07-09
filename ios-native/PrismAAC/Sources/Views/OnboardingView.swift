@@ -21,7 +21,7 @@ struct OnboardingView: View {
             title: "On-Device AI",
             subtitle: "Private. Fast. Works offline.",
             bullets: [
-                "AI runs entirely on your device — nothing leaves your phone",
+                "Runs on your device when supported — cloud only as fallback",
                 "Sub-second responses with no internet needed",
                 "Automatic model selection based on your device"
             ],

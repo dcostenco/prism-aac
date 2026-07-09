@@ -105,6 +105,20 @@ struct PrismWidgetMedium: View {
     }
 }
 
+struct PrismWidgetContent: View {
+    @Environment(\.widgetFamily) var family
+    let entry: PhraseEntry
+
+    var body: some View {
+        switch family {
+        case .systemMedium:
+            PrismWidgetMedium(entry: entry)
+        default:
+            PrismWidgetSmall(entry: entry)
+        }
+    }
+}
+
 @main
 struct PrismAACWidgetBundle: WidgetBundle {
     var body: some Widget {
@@ -118,12 +132,10 @@ struct PrismQuickPhrasesWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: PhraseProvider()) { entry in
             if #available(iOSApplicationExtension 17.0, *) {
-                Group {
-                    PrismWidgetSmall(entry: entry)
-                }
-                .containerBackground(.fill.tertiary, for: .widget)
+                PrismWidgetContent(entry: entry)
+                    .containerBackground(.fill.tertiary, for: .widget)
             } else {
-                PrismWidgetSmall(entry: entry)
+                PrismWidgetContent(entry: entry)
                     .padding()
                     .background()
             }

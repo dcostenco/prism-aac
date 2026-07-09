@@ -50,24 +50,28 @@ struct PrismAACApp: App {
     private static let downloadSession: URLSession = {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForResource = 3_600
+        config.allowsExpensiveNetworkAccess = false
+        config.allowsConstrainedNetworkAccess = false
         return URLSession(configuration: config)
     }()
 
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage("onboarding_complete") private var onboardingComplete = false
     @AppStorage("ai_consent_accepted") private var aiConsentAccepted = false
-    /// Retained synthesizer for widget deep-link and Quick Action speech.
-    /// Must be a stored property — a local AVSpeechSynthesizer is
-    /// deallocated before the utterance finishes.
-    @State private var widgetSpeaker = AVSpeechSynthesizer()
 
     var body: some Scene {
         WindowGroup {
-            if !onboardingComplete {
-                OnboardingView(isComplete: $onboardingComplete)
-            } else if !aiConsentAccepted {
-                AIConsentView(isAccepted: $aiConsentAccepted)
-            } else {
-                mainAppView
+            Group {
+                if !onboardingComplete {
+                    OnboardingView(isComplete: $onboardingComplete)
+                } else if !aiConsentAccepted {
+                    AIConsentView(isAccepted: $aiConsentAccepted)
+                } else {
+                    mainAppView
+                }
+            }
+            .onOpenURL { url in
+                PhraseSpeaker.shared.speak(fromDeepLink: url)
             }
         }
     }
@@ -76,40 +80,25 @@ struct PrismAACApp: App {
         ContentView()
             .environmentObject(appState)
             .task {
-                    #if targetEnvironment(simulator)
-                    NSLog("[PrismAAC] Simulator — skipping on-device model load (cloud AI only)")
+                guard !UserDefaults.standard.bool(forKey: "ai_declined") else {
+                    NSLog("[PrismAAC] AI declined — skipping model load/download")
                     return
-                    #endif
-                    let tier = LLMEngine.preferredTier
-                    NSLog("[PrismAAC] Device RAM: \(LLMEngine.totalDeviceMemoryGB) GB → tier: \(tier.rawValue)")
+                }
+                #if targetEnvironment(simulator)
+                NSLog("[PrismAAC] Simulator — skipping on-device model load (cloud AI only)")
+                return
+                #endif
+                let tier = LLMEngine.preferredTier
+                NSLog("[PrismAAC] Device RAM: \(LLMEngine.totalDeviceMemoryGB) GB → tier: \(tier.rawValue)")
 
-                    for candidate in Self.modelCandidates {
-                        if await tryLoadModel(candidate) { return }
-                    }
-                    NSLog("[PrismAAC] No model could be loaded — using cloud AI only")
+                for candidate in Self.modelCandidates {
+                    if await tryLoadModel(candidate) { return }
                 }
-                .task {
-                    // Load remote safety keywords from portal on every launch.
-                    // Hardcoded list stays active as fallback if fetch fails.
-                    await SafetyFilter.loadRemoteKeywords()
-                }
-                .onOpenURL { url in
-                    // Handle widget deep links: prism-aac://speak?text=Hello
-                    // Speaks the phrase natively via AVSpeechSynthesizer — works
-                    // in airplane mode before the WebView loads.
-                    guard url.scheme == "prism-aac",
-                          url.host == "speak",
-                          let text = URLComponents(url: url, resolvingAgainstBaseURL: false)?
-                              .queryItems?.first(where: { $0.name == "text" })?.value,
-                          !text.isEmpty else { return }
-                    let clamped = String(text.prefix(200))
-                    let utterance = AVSpeechUtterance(string: clamped)
-                    utterance.voice = AVSpeechSynthesisVoice(
-                        language: Locale.current.language.languageCode?.identifier ?? "en"
-                    )
-                    widgetSpeaker.stopSpeaking(at: .immediate)
-                    widgetSpeaker.speak(utterance)
-                }
+                NSLog("[PrismAAC] No model could be loaded — using cloud AI only")
+            }
+            .task {
+                await SafetyFilter.loadRemoteKeywords()
+            }
     }
 
     private func tryLoadModel(_ candidate: (file: String, cdn: String, minFreeMB: Int, sha256: String)) async -> Bool {
