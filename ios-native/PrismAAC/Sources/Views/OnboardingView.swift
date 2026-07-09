@@ -29,12 +29,13 @@ struct OnboardingView: View {
         ),
         OnboardingPage(
             icon: "hand.tap.fill",
-            title: "Every Input Method",
-            subtitle: "Use any body part to communicate.",
+            title: "Built for Accessibility",
+            subtitle: "Multiple ways to communicate.",
             bullets: [
-                "Touch, voice, head tracking, eye gaze",
-                "Switch scanning for single-switch users",
-                "Gesture recognition — blink, nod, smile"
+                "Touch with large tap targets (44pt minimum)",
+                "Voice input with 22-language speech recognition",
+                "Full iOS Switch Control and Voice Control support",
+                "Apple Watch standalone for wrist-based communication"
             ],
             color: .green
         ),

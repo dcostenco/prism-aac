@@ -33,7 +33,7 @@ struct AIConsentView: View {
 
                     AIInfoRow(icon: "cloud", color: .orange,
                               title: "Cloud Fallback",
-                              detail: "When on-device AI is unavailable, queries may be sent to Synalux servers. Synalux may use third-party AI providers (Google Gemini for free tier, Anthropic Claude for premium). No personally identifiable information is included in AI queries.")
+                              detail: "When on-device AI is unavailable, queries may be sent to Synalux servers and processed by cloud AI providers (Google Gemini or Anthropic Claude). No account identifiers are included in AI queries.")
 
                     AIInfoRow(icon: "lock.shield", color: .red,
                               title: "Safety",
@@ -57,6 +57,17 @@ struct AIConsentView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .padding(.horizontal, 24)
+
+                Button(action: {
+                    UserDefaults.standard.set(true, forKey: "ai_consent_accepted")
+                    UserDefaults.standard.set(true, forKey: "ai_declined")
+                    withAnimation { isAccepted = true }
+                }) {
+                    Text("Continue without AI")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, 4)
 
                 Text("You can change AI settings at any time in the app.")
                     .font(.caption)

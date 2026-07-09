@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// Central security policy for the WKWebView native bridge.
 ///
@@ -53,26 +54,16 @@ enum BridgeSecurityPolicy {
     static let maxLangTagLength          = 11   // "zh-Hans-CN" = 10 chars
     static let maxSettingsSectionLength  = 50
 
-    // MARK: - Settings URL builder (whitelist-only)
+    // MARK: - Settings URL builder (public API only)
 
-    /// Produces a `prefs:` URL for the given section keyword.
+    /// Opens the app's own Settings page via the public
+    /// `UIApplication.openSettingsURLString` API.
     ///
-    /// Security guarantee: `rawSection` is NEVER string-interpolated into
-    /// the output URL.  Unknown / attacker-controlled values fall through to
-    /// the Accessibility root so no arbitrary `prefs:` path can be opened.
-    ///
-    /// Returns nil only if URL(string:) fails, which cannot happen for these
-    /// hardcoded strings — callers may force-unwrap safely, but the nil path
-    /// is kept for future-proofing.
+    /// `prefs:root=` deep links are private API and cause App Store rejection.
+    /// Section-specific deep links are not possible with the public API — the
+    /// user can navigate from the app's Settings page to Accessibility manually.
     static func settingsURL(for rawSection: String) -> URL? {
-        let urlString: String
-        switch rawSection {
-        case "speech":        urlString = "prefs:root=ACCESSIBILITY&path=SPEECH"
-        case "voiceControl":  urlString = "prefs:root=ACCESSIBILITY&path=VOICECONTROL"
-        case "switchControl": urlString = "prefs:root=ACCESSIBILITY&path=SWITCH_CONTROL"
-        default:              urlString = "prefs:root=ACCESSIBILITY"
-        }
-        return URL(string: urlString)
+        URL(string: UIApplication.openSettingsURLString)
     }
 
     // MARK: - Language tag validator

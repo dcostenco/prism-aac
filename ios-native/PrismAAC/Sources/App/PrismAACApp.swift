@@ -55,6 +55,10 @@ struct PrismAACApp: App {
 
     @AppStorage("onboarding_complete") private var onboardingComplete = false
     @AppStorage("ai_consent_accepted") private var aiConsentAccepted = false
+    /// Retained synthesizer for widget deep-link and Quick Action speech.
+    /// Must be a stored property — a local AVSpeechSynthesizer is
+    /// deallocated before the utterance finishes.
+    @State private var widgetSpeaker = AVSpeechSynthesizer()
 
     var body: some Scene {
         WindowGroup {
@@ -88,6 +92,23 @@ struct PrismAACApp: App {
                     // Load remote safety keywords from portal on every launch.
                     // Hardcoded list stays active as fallback if fetch fails.
                     await SafetyFilter.loadRemoteKeywords()
+                }
+                .onOpenURL { url in
+                    // Handle widget deep links: prism-aac://speak?text=Hello
+                    // Speaks the phrase natively via AVSpeechSynthesizer — works
+                    // in airplane mode before the WebView loads.
+                    guard url.scheme == "prism-aac",
+                          url.host == "speak",
+                          let text = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                              .queryItems?.first(where: { $0.name == "text" })?.value,
+                          !text.isEmpty else { return }
+                    let clamped = String(text.prefix(200))
+                    let utterance = AVSpeechUtterance(string: clamped)
+                    utterance.voice = AVSpeechSynthesisVoice(
+                        language: Locale.current.language.languageCode?.identifier ?? "en"
+                    )
+                    widgetSpeaker.stopSpeaking(at: .immediate)
+                    widgetSpeaker.speak(utterance)
                 }
     }
 

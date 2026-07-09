@@ -3,6 +3,7 @@ import WebKit
 import AVFoundation
 import Speech
 import AuthenticationServices
+import CryptoKit
 #if canImport(DatadogWebViewTracking)
 import DatadogWebViewTracking
 #endif
@@ -221,6 +222,9 @@ struct PrismWebView: UIViewRepresentable {
         private weak var activeWebView: WKWebView?
         
         private let inworldClient = InworldSTTClient()
+        /// Raw nonce for Sign in with Apple replay protection.
+        /// Stored so it can be sent to the web app alongside the identity token.
+        private var currentSIWANonce: String?
 
         var requestReview: (() -> Void)?
 
@@ -276,7 +280,6 @@ struct PrismWebView: UIViewRepresentable {
                     NSLog("[PrismAAC] Emergency rate-limited (too frequent)")
                     return
                 }
-                lastEmergencyTriggerTime = now
 
                 // C14: Origin validation — only honor from verified origin
                 guard let pageURL = message.webView?.url,
@@ -287,6 +290,10 @@ struct PrismWebView: UIViewRepresentable {
 
                 // C14: Main frame only
                 guard message.frameInfo.isMainFrame else { return }
+
+                // Advance clock AFTER all guards pass so a blocked iframe
+                // attempt does not burn the 30 s cooldown.
+                lastEmergencyTriggerTime = now
 
                 let phrase = String((body["phrase"] as? String ?? "Help").prefix(BridgeSecurityPolicy.maxEmergencyPhraseLength))
                 Task { @MainActor in
@@ -391,11 +398,12 @@ struct PrismWebView: UIViewRepresentable {
                       message.frameInfo.isMainFrame else {
                     return
                 }
-                let rawSection = String((body["section"] as? String ?? "accessibility")
-                    .prefix(BridgeSecurityPolicy.maxSettingsSectionLength))
+                // Only open the app's own Settings page via public API.
+                // prefs:root= is private API and causes App Store rejection.
                 Task { @MainActor in
-                    guard let url = BridgeSecurityPolicy.settingsURL(for: rawSection) else { return }
-                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
                 }
             default: break
             }
@@ -682,6 +690,13 @@ struct PrismWebView: UIViewRepresentable {
             let provider = ASAuthorizationAppleIDProvider()
             let request = provider.createRequest()
             request.requestedScopes = [.fullName, .email]
+
+            // Generate nonce for replay protection
+            let nonce = UUID().uuidString
+            currentSIWANonce = nonce
+            request.nonce = SHA256.hash(data: Data(nonce.utf8))
+                .compactMap { String(format: "%02x", $0) }.joined()
+
             let controller = ASAuthorizationController(authorizationRequests: [request])
             controller.delegate = self
             controller.presentationContextProvider = self
@@ -704,6 +719,8 @@ struct PrismWebView: UIViewRepresentable {
             if let authCode { payload["authorizationCode"] = authCode }
             if let email { payload["email"] = email }
             if !fullName.isEmpty { payload["fullName"] = fullName }
+            if let nonce = currentSIWANonce { payload["nonce"] = nonce }
+            currentSIWANonce = nil
 
             guard let data = try? JSONSerialization.data(withJSONObject: payload),
                   let json = String(data: data, encoding: .utf8) else {

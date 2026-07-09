@@ -21,7 +21,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.8.6</string>
 	<key>CFBundleVersion</key>
-	<string>46</string>
+	<string>47</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Prism AAC uses the microphone for voice dictation.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
