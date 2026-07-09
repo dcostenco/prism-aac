@@ -53,11 +53,25 @@ struct PrismAACApp: App {
         return URLSession(configuration: config)
     }()
 
+    @AppStorage("onboarding_complete") private var onboardingComplete = false
+    @AppStorage("ai_consent_accepted") private var aiConsentAccepted = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(appState)
-                .task {
+            if !onboardingComplete {
+                OnboardingView(isComplete: $onboardingComplete)
+            } else if !aiConsentAccepted {
+                AIConsentView(isAccepted: $aiConsentAccepted)
+            } else {
+                mainAppView
+            }
+        }
+    }
+
+    private var mainAppView: some View {
+        ContentView()
+            .environmentObject(appState)
+            .task {
                     #if targetEnvironment(simulator)
                     NSLog("[PrismAAC] Simulator — skipping on-device model load (cloud AI only)")
                     return
@@ -75,7 +89,6 @@ struct PrismAACApp: App {
                     // Hardcoded list stays active as fallback if fetch fails.
                     await SafetyFilter.loadRemoteKeywords()
                 }
-        }
     }
 
     private func tryLoadModel(_ candidate: (file: String, cdn: String, minFreeMB: Int, sha256: String)) async -> Bool {
