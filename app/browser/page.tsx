@@ -1,10 +1,8 @@
 'use client';
 
 import nextDynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Keyboard from '@/components/Keyboard';
-import MessageBar from '@/components/MessageBar';
-import PredictionBar from '@/components/PredictionBar';
 import SyncProvider from '@/components/SyncProvider';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
@@ -13,11 +11,12 @@ import { usePredictionStore } from '@/store/predictionStore';
 import { registerPanicListeners } from '@/services/panicService';
 import { registerConnectivityListener } from '@/services/emergencyService';
 import { keyFeedback, deleteFeedback } from '@/services/feedback';
-import { aacSpeak } from '@/services/aacSpeak';
 import { useT } from '@/engine/useT';
 import { useBrowserStore } from './browserStore';
 import BrowserToolbar from './BrowserToolbar';
 import BrowserContent from './BrowserContent';
+import BrowserPredictionBar from './BrowserPredictionBar';
+import PredictionBar from '@/components/PredictionBar';
 
 const HeadTrackingOverlay = nextDynamic(() => import('@/components/HeadTrackingOverlay'), { ssr: false });
 const CameraInputOverlay = nextDynamic(() => import('@/components/CameraInputOverlay'), { ssr: false });
@@ -34,10 +33,14 @@ export default function BrowserPage() {
   const theme = useSettingsStore((s) => s.theme);
   const highContrast = useSettingsStore((s) => s.highContrast);
   const keyboardMaximized = useUIStore((s) => s.keyboardMaximized);
-  const runDecay = usePredictionStore((s) => s.runDecay);
-  const ensureSeed = usePredictionStore((s) => s.ensureSeed);
   const { rtl } = useT();
   const [compactMode, setCompactMode] = useState(false);
+  const keyboardCollapsed = useBrowserStore((s) => s.keyboardCollapsed);
+  const expandKeyboard = useBrowserStore((s) => s.expandKeyboard);
+  const navigate = useBrowserStore((s) => s.navigate);
+  const speakMode = useBrowserStore((s) => s.speakMode);
+  const runDecay = usePredictionStore((s) => s.runDecay);
+  const ensureSeed = usePredictionStore((s) => s.ensureSeed);
 
   useEffect(() => {
     const check = () => setCompactMode(window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 500);
@@ -49,13 +52,11 @@ export default function BrowserPage() {
 
   useEffect(() => {
     setHydrated(true);
-    runDecay();
-    ensureSeed();
+    if (speakMode) { runDecay(); ensureSeed(); }
     const unregisterPanic = registerPanicListeners();
     const cleanupConnectivity = registerConnectivityListener();
-    import('@/services/headTracker').then(m => m.prewarmHeadTracker?.()).catch(() => {});
     return () => { unregisterPanic(); cleanupConnectivity?.(); };
-  }, [runDecay, ensureSeed]);
+  }, [speakMode, runDecay, ensureSeed]);
 
   useEffect(() => {
     let mod: typeof import('@/services/azureTTS') | null = null;
@@ -66,13 +67,18 @@ export default function BrowserPage() {
     };
     window.addEventListener('touchstart', warmup, { passive: true });
     window.addEventListener('pointerdown', warmup);
-    window.addEventListener('click', warmup);
     return () => {
       window.removeEventListener('touchstart', warmup);
       window.removeEventListener('pointerdown', warmup);
-      window.removeEventListener('click', warmup);
     };
   }, []);
+
+  const handleBrowserGo = useCallback(() => {
+    const input = useMessageStore.getState().text.trim();
+    if (!input) return;
+    navigate(input);
+    useMessageStore.getState().clearAll();
+  }, [navigate]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -81,7 +87,6 @@ export default function BrowserPage() {
       if (e.key === 'Tab' || e.key === 'Escape') return;
       if ((e.target as HTMLElement)?.closest('[role="dialog"]')) return;
       if (e.key === ' ' && document.activeElement?.tagName === 'BUTTON') return;
-      // Don't capture keys when iframe is focused
       if ((e.target as HTMLElement)?.tagName === 'IFRAME') return;
       const store = useMessageStore.getState();
       if (e.key === 'Backspace') { e.preventDefault(); deleteFeedback(); store.deleteLastChar(); }
@@ -89,16 +94,27 @@ export default function BrowserPage() {
         e.preventDefault();
         const current = store.text.trim();
         if (current) {
-          // Enter navigates when there's text
-          useBrowserStore.getState().navigate(current);
-          store.clearAll();
+          if (useBrowserStore.getState().speakMode) {
+            void import('@/services/aacSpeak').then(({ aacSpeak: speak }) => {
+              const ss = useSettingsStore.getState();
+              speak(current, ss.speechRate, ss.speechVolume);
+            });
+          } else {
+            useBrowserStore.getState().navigate(current);
+            store.clearAll();
+          }
         }
       }
-      else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { e.preventDefault(); keyFeedback(); store.appendChar(e.key); }
+      else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        keyFeedback();
+        store.appendChar(e.key);
+        if (keyboardCollapsed) expandKeyboard();
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [keyboardCollapsed, expandKeyboard]);
 
   if (!hydrated) return <div className="h-svh surface-app" />;
 
@@ -109,11 +125,31 @@ export default function BrowserPage() {
       <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`} style={{ paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
         <BrowserToolbar />
         <BrowserContent />
-        <MessageBar />
-        {!compactMode && <PredictionBar />}
-        <div className={keyboardMaximized ? 'flex-1 min-h-0 flex flex-row' : 'shrink-0 flex flex-row'} style={{ height: keyboardMaximized ? undefined : compactMode ? 'clamp(80px, 30svh, 140px)' : 'clamp(170px, 25svh, 260px)' }} data-testid="keyboard-shell">
-          <div className="flex-1 flex flex-col"><Keyboard /></div>
-        </div>
+
+        {/* Keyboard section — collapses after page load, restored via ⌨️ button */}
+        {!keyboardCollapsed && (
+          <>
+            {!compactMode && (speakMode ? <PredictionBar /> : <BrowserPredictionBar />)}
+            <div className={keyboardMaximized ? 'flex-1 min-h-0 flex flex-row' : 'shrink-0 flex flex-row'} style={{ height: keyboardMaximized ? undefined : compactMode ? 'clamp(80px, 30svh, 140px)' : 'clamp(170px, 25svh, 260px)' }} data-testid="keyboard-shell">
+              <div className="flex-1 flex flex-col">
+                <Keyboard browserMode={!speakMode} onBrowserGo={handleBrowserGo} />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ⌨️ Restore keyboard button — bottom-left to avoid native SOS overlay (bottom-right) */}
+        {keyboardCollapsed && (
+          <button
+            onClick={expandKeyboard}
+            aria-label="Show keyboard"
+            className="fixed bottom-4 left-4 z-50 w-12 h-12 rounded-full bg-blue-600 text-white text-xl flex items-center justify-center shadow-lg aac-btn"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', left: 'calc(env(safe-area-inset-left, 0px) + 16px)' }}
+          >
+            ⌨️
+          </button>
+        )}
+
         <EmergencyCountdownModal />
         <AlertConfirmModal />
         <HistoryModal />

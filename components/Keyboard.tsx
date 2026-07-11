@@ -74,7 +74,7 @@ function extractLastSentence(text: string): string {
 
 export const __testing = { extractLastSentence };
 
-export default function Keyboard() {
+export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: boolean; onBrowserGo?: () => void } = {}) {
   const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock, keyboardMaximized, cycleKeyboardMode } = useUIStore();
   const { learnWord } = usePredictionStore();
@@ -111,7 +111,7 @@ export default function Keyboard() {
     //     speak the just-completed sentence (Read&Write parity for
     //     users with reading/memory disabilities who lose track of
     //     what they typed by the period). Gated on speakOnSentenceEnd.
-    if (speakOnSentenceEnd && autoSpeak && soundEnabled && SENTENCE_END.test(char)) {
+    if (!browserMode && speakOnSentenceEnd && autoSpeak && soundEnabled && SENTENCE_END.test(char)) {
       // Read fresh state — appendChar above is async w.r.t. zustand
       // batching; getState() guarantees the just-typed punctuation
       // is included in `text` rather than racing the closure.
@@ -159,26 +159,31 @@ export default function Keyboard() {
     keyFeedback();
     // Route to search when active
     if (dispatchToSearch(' ')) return;
-    const currentText = useMessageStore.getState().text;
-    const words = currentText.trim().split(/\s+/).filter(Boolean);
-    const lastWord = words.length > 0 ? words[words.length - 1] : '';
-    if (lastWord) {
-      const prevWord = words.length > 1 ? words[words.length - 2] : undefined;
-      const prevPrevWord = words.length > 2 ? words[words.length - 3] : undefined;
-      learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase(), prevPrevWord?.toLowerCase());
-      const translationActive = useSettingsStore.getState().language !== useSettingsStore.getState().outputLanguage;
-      if (translationActive) {
-        // In translation mode, individual word-level audio is out of context
-        // (source language fragments heard mid-phrase). Suppress here; the user
-        // presses Speak to hear the full translated phrase.
-      } else if (autoSpeak && soundEnabled) {
-        aacSpeak(lastWord, speechRate, speechVolume, activeTone);
+    if (!browserMode) {
+      const currentText = useMessageStore.getState().text;
+      const words = currentText.trim().split(/\s+/).filter(Boolean);
+      const lastWord = words.length > 0 ? words[words.length - 1] : '';
+      if (lastWord) {
+        const prevWord = words.length > 1 ? words[words.length - 2] : undefined;
+        const prevPrevWord = words.length > 2 ? words[words.length - 3] : undefined;
+        learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase(), prevPrevWord?.toLowerCase());
+        const translationActive = useSettingsStore.getState().language !== useSettingsStore.getState().outputLanguage;
+        if (translationActive) {
+          // In translation mode, individual word-level audio is out of context
+        } else if (autoSpeak && soundEnabled) {
+          aacSpeak(lastWord, speechRate, speechVolume, activeTone);
+        }
       }
     }
     appendChar(' ');
-  }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar, activeTone]);
+  }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar, activeTone, browserMode]);
 
   const handleSpeak = useCallback(() => {
+    if (browserMode) {
+      tapFeedback();
+      onBrowserGo?.();
+      return;
+    }
     // HIGH #1 — check text + soundEnabled FIRST before warming up audio,
     // unless we are in AI Chat mode (which has its own routing path).
     const currentText = useMessageStore.getState().text.trim();
@@ -192,8 +197,6 @@ export default function Keyboard() {
     }
     if (!currentText || !soundEnabled) return;
     addToHistory(currentText);
-    // In translation mode, prefer the AI-refined translated text from MessageBar.
-    // getLatestTranslated() reads the module-level cache that MessageBar keeps in sync.
     const { language, outputLanguage } = useSettingsStore.getState();
     if (language !== outputLanguage) {
       const latestTranslated = getLatestTranslated();
@@ -205,7 +208,7 @@ export default function Keyboard() {
     } else {
       aacSpeak(currentText, speechRate, speechVolume, activeTone);
     }
-  }, [soundEnabled, speechRate, speechVolume, addToHistory, activeTone]);
+  }, [soundEnabled, speechRate, speechVolume, addToHistory, activeTone, browserMode, onBrowserGo]);
 
   const handleBackspace = useCallback(() => {
     deleteFeedback();
@@ -288,10 +291,10 @@ export default function Keyboard() {
         <button onClick={() => handleKey('?')} aria-label="?" data-key="?" data-display="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>?</button>
         <button
           onClick={handleSpeak}
-          aria-label={t('speak')}
-          className={`aac-btn aac-speak bg-[#4CAF50] text-white rounded-xl font-bold px-[clamp(0.75rem,2vw,1.75rem)] min-w-[clamp(5rem,12vw,8.75rem)] ${wordSize} select-none flex items-center justify-center`}
+          aria-label={browserMode ? 'Go' : t('speak')}
+          className={`aac-btn ${browserMode ? 'bg-blue-600' : 'aac-speak bg-[#4CAF50]'} text-white rounded-xl font-bold px-[clamp(0.75rem,2vw,1.75rem)] min-w-[clamp(5rem,12vw,8.75rem)] ${wordSize} select-none flex items-center justify-center`}
         >
-          {t('speak')}
+          {browserMode ? 'Go' : t('speak')}
         </button>
       </div>
     </div>

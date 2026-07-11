@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useBrowserStore } from './browserStore';
-import { BOOKMARKS, openBookmark } from './BrowserToolbar';
+import { openBookmark } from './BrowserToolbar';
 
 export default function BrowserContent() {
   const isHome = useBrowserStore((s) => s.isHome);
@@ -15,20 +15,32 @@ export default function BrowserContent() {
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [iframeKey, setIframeKey] = useState(0);
+  const [progressMsg, setProgressMsg] = useState<string | null>(null);
 
   const handleLoad = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (progressRef.current) clearTimeout(progressRef.current);
+    setProgressMsg(null);
     setLoaded();
   }, [setLoaded]);
 
   useEffect(() => {
     if (!url || isHome) return;
+    setProgressMsg(null);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (progressRef.current) clearTimeout(progressRef.current);
+    progressRef.current = setTimeout(() => {
+      setProgressMsg('Still loading… Some sites block in-app browsing.');
+    }, 3000);
     timeoutRef.current = setTimeout(() => {
-      setError('This page took too long to load.');
-    }, 20000);
-    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+      setError('This site can’t be shown here. Try opening in a new tab.');
+    }, 6000);
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (progressRef.current) clearTimeout(progressRef.current);
+    };
   }, [url, isHome, iframeKey, setError]);
 
   const prevUrl = useRef(url);
@@ -38,6 +50,8 @@ export default function BrowserContent() {
     }
     prevUrl.current = url;
   }, [url, isLoading, isHome]);
+
+  const pinnedBookmarks = useBrowserStore((s) => s.pinnedBookmarks);
 
   if (isHome) {
     return (
@@ -50,21 +64,17 @@ export default function BrowserContent() {
           </div>
 
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 sm:gap-3 w-full max-w-lg">
-            {BOOKMARKS.map(b => {
-              const isExternal = 'external' in b && b.external;
-              return (
-                <button
-                  key={b.url}
-                  onClick={() => openBookmark(b, navigate)}
-                  aria-label={`${b.label}${isExternal ? ' (opens in new tab)' : ''}`}
-                  className="aac-btn relative flex flex-col items-center justify-center gap-1.5 p-3 sm:p-4 rounded-xl surface-key border border-theme text-xs sm:text-sm font-semibold select-none min-h-[80px] sm:min-h-[88px] focus-visible:ring-2 focus-visible:ring-blue-400"
-                >
-                  <span className="text-2xl sm:text-3xl">{b.icon}</span>
-                  {b.label}
-                  {isExternal && <span className="absolute top-1 right-1.5 text-[10px] text-muted">↗</span>}
-                </button>
-              );
-            })}
+            {pinnedBookmarks.map(b => (
+              <button
+                key={b.url}
+                onClick={() => openBookmark(b, navigate)}
+                aria-label={b.title}
+                className="aac-btn relative flex flex-col items-center justify-center gap-1.5 p-3 sm:p-4 rounded-xl surface-key border border-theme text-xs sm:text-sm font-semibold select-none min-h-[80px] sm:min-h-[88px] focus-visible:ring-2 focus-visible:ring-blue-400"
+              >
+                <span className="text-2xl sm:text-3xl">{b.icon}</span>
+                {b.title}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -102,8 +112,9 @@ export default function BrowserContent() {
   return (
     <div className="flex-[2] min-h-0 relative surface-app" data-testid="browser-content">
       {isLoading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60" aria-live="polite">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-black/60" aria-live="polite">
           <div className="animate-pulse text-muted text-sm">Loading…</div>
+          {progressMsg && <div className="text-yellow-400 text-xs text-center px-4">{progressMsg}</div>}
         </div>
       )}
       <iframe
