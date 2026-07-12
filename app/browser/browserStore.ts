@@ -148,6 +148,22 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
     const resolved = resolveUrl(rawUrl);
     if (!resolved) return;
 
+    const bridge = typeof window !== 'undefined' && (window as any).prismNativeBridge;
+    if (bridge?.navigateTo) {
+      bridge.navigateTo(resolved);
+      return;
+    }
+
+    // Web-only: open non-bookmark URLs in new tab (most sites block iframe embedding)
+    if (typeof window !== 'undefined') {
+      const domain = shortDisplay(resolved);
+      const isBookmarked = get().pinnedBookmarks.some(b => shortDisplay(b.url) === domain);
+      if (!isBookmarked) {
+        const w = window.open(resolved, '_blank', 'noopener,noreferrer');
+        if (w) return;
+      }
+    }
+
     set((s) => {
       const newHistory = [...s.history.slice(0, s.historyIdx + 1), resolved];
       const newIdx = newHistory.length - 1;
