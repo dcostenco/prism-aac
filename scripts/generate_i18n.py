@@ -38,8 +38,12 @@ LANG_NAMES = {
 }
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = "gemini-2.5-flash"
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+# thinkingLevel "minimal": 3.6 rejects thinkingBudget 0, and default thinking
+# burns thought tokens against maxOutputTokens on every translation batch.
+GEMINI_MODEL = "gemini-3.6-flash"
+# Key goes in the x-goog-api-key header, NOT the URL — ?key= leaks the
+# secret into any request/proxy log (same bug class fixed portal-wide).
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 
 def call_gemini(prompt: str, max_retries: int = 3) -> str:
@@ -48,6 +52,7 @@ def call_gemini(prompt: str, max_retries: int = 3) -> str:
         "generationConfig": {
             "temperature": 0.1,
             "maxOutputTokens": 65536,
+            "thinkingConfig": {"thinkingLevel": "minimal"},
         },
     }
     data = json.dumps(payload).encode("utf-8")
@@ -57,7 +62,7 @@ def call_gemini(prompt: str, max_retries: int = 3) -> str:
             req = urllib.request.Request(
                 GEMINI_URL,
                 data=data,
-                headers={"Content-Type": "application/json"},
+                headers={"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY},
                 method="POST",
             )
             with urllib.request.urlopen(req, timeout=300) as resp:
