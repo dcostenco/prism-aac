@@ -73,6 +73,70 @@ describe('SpeechService — Core', () => {
     }
   });
 
+  it('a delayed cancellation callback cannot clear the next word resume timer', () => {
+    vi.useFakeTimers();
+    try {
+      const utterances: Array<{
+        onend?: (() => void) | null;
+        onerror?: ((event: { error: string }) => void) | null;
+      }> = [];
+      (window.speechSynthesis.speak as ReturnType<typeof vi.fn>).mockImplementation((utterance) => {
+        utterances.push(utterance);
+      });
+
+      speakWord('first');
+      speakWord('second');
+      expect(utterances).toHaveLength(2);
+
+      // Safari can report the first cancellation after the second utterance
+      // has already installed its resume workaround.
+      utterances[0].onerror?.({ error: 'canceled' });
+      vi.advanceTimersByTime(10_000);
+      expect(window.speechSynthesis.resume).toHaveBeenCalledTimes(1);
+
+      utterances[1].onend?.();
+      vi.advanceTimersByTime(10_000);
+      expect(window.speechSynthesis.resume).toHaveBeenCalledTimes(1);
+    } finally {
+      stopSpeech();
+      vi.useRealTimers();
+    }
+  });
+
+  it('resolves the interrupted local-speech promise before the replacement finishes', async () => {
+    const utterances: Array<{
+      onend?: (() => void) | null;
+    }> = [];
+    (window.speechSynthesis.speak as ReturnType<typeof vi.fn>).mockImplementation((utterance) => {
+      utterances.push(utterance);
+    });
+
+    const first = speak('first', 0.5, 1, 'en-US');
+    await vi.waitFor(() => expect(utterances).toHaveLength(1));
+    const second = speak('second', 0.5, 1, 'en-US');
+    await vi.waitFor(() => expect(utterances).toHaveLength(2));
+
+    await expect(first).resolves.toBeUndefined();
+    utterances[1].onend?.();
+    await expect(second).resolves.toBeUndefined();
+  });
+
+  it('cleans up the resume timer when speechSynthesis.speak throws', () => {
+    vi.useFakeTimers();
+    try {
+      (window.speechSynthesis.speak as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw new Error('synthesis unavailable');
+      });
+
+      expect(() => speakWord('hello')).not.toThrow();
+      vi.advanceTimersByTime(10_000);
+      expect(window.speechSynthesis.resume).not.toHaveBeenCalled();
+    } finally {
+      stopSpeech();
+      vi.useRealTimers();
+    }
+  });
+
   it('stopSpeech calls cancel', () => {
     stopSpeech();
     expect(window.speechSynthesis.cancel).toHaveBeenCalled();

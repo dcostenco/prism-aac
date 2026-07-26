@@ -421,6 +421,32 @@ describe('getPictogramUrl — MEM_CACHE deduplication', () => {
     // Both phrases triggered separate ARASAAC lookups
     expect(callCount).toBeGreaterThanOrEqual(2);
   });
+
+  it('downloads a provider image once when different tokens resolve to the same pictogram ID', async () => {
+    const fetchSpy = vi.fn(async (url: string) => {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
+        return new Response(JSON.stringify([{ _id: 4242 }]), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
+        return new Response(new ArrayBuffer(100), {
+          status: 200, headers: { 'Content-Type': 'image/png' },
+        });
+      }
+      return new Response('', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+
+    await getPictogramUrl('shared-image-alpha', 'en', 'symbols');
+    await getPictogramUrl('shared-image-beta', 'en', 'symbols');
+
+    expect(fetchSpy.mock.calls.filter(([url]) =>
+      requestHostname(url) === ARASAAC_API_HOST)).toHaveLength(2);
+    expect(fetchSpy.mock.calls.filter(([url]) =>
+      requestHostname(url) === ARASAAC_STATIC_HOST)).toHaveLength(1);
+  });
 });
 
 // ── ARASAAC negative-cache misses ─────────────────────────────────────────

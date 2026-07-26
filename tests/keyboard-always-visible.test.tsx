@@ -18,14 +18,19 @@
  * that doesn't have its own keys, or (b) starts double-rendering for
  * a math-shaped panel, this suite breaks loudly.
  */
+import { StrictMode } from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import PrismApp from '@/components/PrismApp';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { SidePanelView } from '@/types';
+
+const integrationMocks = vi.hoisted(() => ({
+  broadcastIntegrationEvent: vi.fn(),
+}));
 
 // Big mock surface: PrismApp wires many services we don't care about for
 // this invariant. We only care that the keyboard shell renders for every
@@ -38,6 +43,9 @@ vi.mock('@/services/aacSpeak', () => ({ aacSpeak: vi.fn() }));
 vi.mock('@/services/panicService', () => ({ registerPanicListeners: () => () => {} }));
 vi.mock('@/services/inboxService', () => ({ startInboxPolling: () => () => {} }));
 vi.mock('@/services/contactsIntegrationService', () => ({ startContactsSync: () => () => {} }));
+vi.mock('@/services/integrationsService', () => ({
+  broadcastIntegrationEvent: integrationMocks.broadcastIntegrationEvent,
+}));
 vi.mock('@/engine/useT', () => ({
   useT: () => ({ t: (k: string) => k, ttsCode: 'en-US', rtl: false, ready: true }),
 }));
@@ -94,10 +102,39 @@ vi.mock('@/components/CameraInputOverlay', () => ({ default: () => <div data-tes
 vi.mock('@/components/GreetingBanner', () => ({ default: () => <div data-testid="panel-greeting" /> }));
 
 beforeEach(() => {
+  vi.clearAllMocks();
+  window.history.replaceState({}, '', '/prism-aac');
   useAuthStore.setState({ profile: null, loaded: true, loading: false });
   useSettingsStore.setState({ theme: 'light', highContrast: false } as Partial<ReturnType<typeof useSettingsStore.getState>>);
   // PrismApp uses matchMedia for landscape/compact detection.
   window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+});
+
+describe('OAuth return confirmation', () => {
+  it('survives StrictMode replay, reports the refined provider, and cleans the query', async () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/prism-aac?connected=1&provider=google&scope=gmail',
+    );
+
+    render(
+      <StrictMode>
+        <PrismApp />
+      </StrictMode>,
+    );
+
+    expect(await screen.findByTestId('connect-feedback-banner'))
+      .toHaveTextContent('Gmail connected');
+    await waitFor(() => expect(window.location.search).toBe(''));
+    expect(integrationMocks.broadcastIntegrationEvent).toHaveBeenCalledOnce();
+    expect(integrationMocks.broadcastIntegrationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'provider-connected',
+        provider: 'google',
+      }),
+    );
+  });
 });
 
 const PANELS_WITH_QWERTY: SidePanelView[] = [

@@ -1,3 +1,6 @@
+export const SERVICE_WORKER_KILLSWITCH_KEY = 'prism-aac-sw-killswitch';
+export const SERVICE_WORKER_RESET_READY_EVENT = 'prism-aac-sw-reset-ready';
+
 export function buildServiceWorkerKillswitchScript(version: string): string {
   return `
 (function(){
@@ -24,10 +27,9 @@ export function buildServiceWorkerKillswitchScript(version: string): string {
       window.location.reload();
     });
 
-    var KEY = 'prism-aac-sw-killswitch';
+    var KEY = ${JSON.stringify(SERVICE_WORKER_KILLSWITCH_KEY)};
     var V = ${JSON.stringify(version)};
     if (window.localStorage.getItem(KEY) === V) return;
-    window.localStorage.setItem(KEY, V);
 
     var registrations = navigator.serviceWorker.getRegistrations();
     var cacheKeys = typeof caches === 'undefined' ? Promise.resolve([]) : caches.keys();
@@ -46,7 +48,17 @@ export function buildServiceWorkerKillswitchScript(version: string): string {
         ).then(function(){ return true; });
       })
       .then(function(didReset){
-        if (didReset) window.location.reload();
+        // Record completion only after cleanup succeeds. If unregister/cache
+        // cleanup rejects, keep the previous marker so the next load retries
+        // instead of permanently accepting a stale worker.
+        window.localStorage.setItem(KEY, V);
+        if (!didReset && typeof window.dispatchEvent === 'function') {
+          window.dispatchEvent(new Event(${JSON.stringify(SERVICE_WORKER_RESET_READY_EVENT)}));
+        }
+        if (didReset && !reloaded) {
+          reloaded = true;
+          window.location.reload();
+        }
       })
       .catch(function(){});
   } catch (e) {}

@@ -4,6 +4,7 @@ import { headers, cookies } from "next/headers";
 import "./globals.css";
 import HtmlLangSync from "@/components/HtmlLangSync";
 import DatadogInit from "@/components/DatadogInit";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import { PRISM_AAC_MANIFEST_PATH } from "@/lib/appPaths";
 import { buildServiceWorkerKillswitchScript } from "@/lib/serviceWorkerKillswitch";
 
@@ -120,6 +121,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: swKillswitchScript }} />
       </head>
       <body className="h-full overflow-hidden">
+        <ServiceWorkerRegistrar />
         <HtmlLangSync />
         <DatadogInit />
         {children}

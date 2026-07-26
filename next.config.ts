@@ -1,11 +1,21 @@
 import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
-import { PRISM_AAC_BASE_PATH } from './lib/appPaths';
+import {
+  PRISM_AAC_BASE_PATH,
+  PRISM_AAC_PUBLIC_PRECACHE_PATTERNS,
+  PRISM_AAC_SERVICE_WORKER_SCOPE,
+} from './lib/appPaths';
 
 const withSerwist = withSerwistInit({
   swSrc: 'app/sw.ts',
   swDest: 'public/sw.js',
   disable: process.env.NODE_ENV !== 'production',
+  // Serwist's generated path guard treats the canonical `/prism-aac`
+  // document as outside its default `/prism-aac/` scope. Registration is
+  // owned by ServiceWorkerRegistrar so one broader registration controls
+  // both the canonical document and its child routes.
+  register: false,
+  globPublicPatterns: PRISM_AAC_PUBLIC_PRECACHE_PATTERNS,
 });
 
 // basePath: '/prism-aac' makes Next.js emit asset URLs and route links
@@ -48,6 +58,19 @@ const nextConfig: NextConfig = {
       {
         source: '/api/auth/session',
         destination: `${proxyPortalOrigin}/api/auth/session`,
+      },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Service-Worker-Allowed',
+            value: PRISM_AAC_SERVICE_WORKER_SCOPE,
+          },
+        ],
       },
     ];
   },

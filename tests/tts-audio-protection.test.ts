@@ -25,6 +25,8 @@ class MockBufferSource {
   onended: (() => void) | null = null;
   static startCount = 0;
   static stopCount = 0;
+  static instances: MockBufferSource[] = [];
+  constructor() { MockBufferSource.instances.push(this); }
   connect(_: unknown) { return _; }
   disconnect() {}
   start() { MockBufferSource.startCount++; }
@@ -53,6 +55,7 @@ beforeEach(() => {
   vi.resetModules();
   MockBufferSource.startCount = 0;
   MockBufferSource.stopCount = 0;
+  MockBufferSource.instances = [];
   (globalThis as Record<string, unknown>).AudioContext = MockAudioCtx as unknown as typeof AudioContext;
   (window as unknown as Record<string, unknown>).AudioContext = MockAudioCtx as unknown as typeof AudioContext;
 });
@@ -90,13 +93,11 @@ describe('Class 2 — Rapid-tap protection (autoSpeak)', () => {
     expect(r1.success).toBe(true);
     expect(MockBufferSource.startCount).toBe(1);
 
-    // Simulate natural end of first source (activeSources is internal, not exported)
-    // Trigger onended to simulate natural completion
-    // (We can't directly access activeSources — test the observable: after onended, next call plays)
-    // This test verifies the state resets on natural completion indirectly:
-    // if PROTECT_PLAY_MS reset works, a new call after 600ms would play
-    // (timing test skipped — covered by the implementation logic)
-    expect(r1.success).toBe(true);
+    MockBufferSource.instances[0].onended?.();
+    const r2 = await speakAzure('world', 'en-US', 'friendly', 1.0, 1.0, '');
+
+    expect(r2.success).toBe(true);
+    expect(MockBufferSource.startCount).toBe(2);
   });
 });
 

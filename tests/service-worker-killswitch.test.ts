@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { runInNewContext } from 'node:vm';
-import { buildServiceWorkerKillswitchScript } from '@/lib/serviceWorkerKillswitch';
+import {
+  buildServiceWorkerKillswitchScript,
+  SERVICE_WORKER_KILLSWITCH_KEY,
+  SERVICE_WORKER_RESET_READY_EVENT,
+} from '@/lib/serviceWorkerKillswitch';
 
-const KEY = 'prism-aac-sw-killswitch';
+const KEY = SERVICE_WORKER_KILLSWITCH_KEY;
 const VERSION = 'test-build';
 
 async function executeKillswitch(options: {
@@ -10,12 +14,15 @@ async function executeKillswitch(options: {
   registrationCount?: number;
   cacheKeys?: string[];
   hasController?: boolean;
+  unregisterRejects?: boolean;
 } = {}) {
   const storage = new Map<string, string>();
   if (options.storedVersion !== undefined) storage.set(KEY, options.storedVersion);
 
   const reload = vi.fn();
-  const unregister = vi.fn().mockResolvedValue(true);
+  const unregister = options.unregisterRejects
+    ? vi.fn().mockRejectedValue(new Error('unregister failed'))
+    : vi.fn().mockResolvedValue(true);
   const getRegistrations = vi.fn().mockResolvedValue(
     Array.from({ length: options.registrationCount ?? 0 }, () => ({ unregister })),
   );
@@ -25,10 +32,12 @@ async function executeKillswitch(options: {
   const addEventListener = vi.fn((event: string, handler: () => void) => {
     if (event === 'controllerchange') controllerChange = handler;
   });
+  const dispatchEvent = vi.fn();
 
   runInNewContext(buildServiceWorkerKillswitchScript(VERSION), {
     window: {
       location: { hostname: 'preview.example.test', reload },
+      dispatchEvent,
       localStorage: {
         getItem: (key: string) => storage.get(key) ?? null,
         setItem: (key: string, value: string) => storage.set(key, value),
@@ -46,6 +55,7 @@ async function executeKillswitch(options: {
       delete: deleteCache,
     },
     Promise,
+    Event,
   });
 
   await new Promise((resolve) => setTimeout(resolve, 0));
@@ -59,6 +69,7 @@ async function executeKillswitch(options: {
     deleteCache,
     getCacheKeys,
     triggerControllerChange: () => controllerChange?.(),
+    dispatchEvent,
   };
 }
 
@@ -71,6 +82,10 @@ describe('service-worker kill switch', () => {
     expect(result.reload).not.toHaveBeenCalled();
     expect(result.unregister).not.toHaveBeenCalled();
     expect(result.deleteCache).not.toHaveBeenCalled();
+    expect(result.dispatchEvent).toHaveBeenCalledOnce();
+    expect(result.dispatchEvent.mock.calls[0][0].type).toBe(
+      SERVICE_WORKER_RESET_READY_EVENT,
+    );
   });
 
   it('reloads once when an already-controlled page receives a replacement worker', async () => {
@@ -82,6 +97,7 @@ describe('service-worker kill switch', () => {
     result.triggerControllerChange();
     result.triggerControllerChange();
     expect(result.reload).toHaveBeenCalledOnce();
+    expect(result.dispatchEvent).not.toHaveBeenCalled();
   });
 
   it('does no cleanup when the current build is already recorded', async () => {
@@ -100,6 +116,17 @@ describe('service-worker kill switch', () => {
 
     expect(result.unregister).toHaveBeenCalledOnce();
     expect(result.reload).toHaveBeenCalledOnce();
+  });
+
+  it('does not record the new build when stale-worker cleanup fails', async () => {
+    const result = await executeKillswitch({
+      storedVersion: 'old-build',
+      registrationCount: 1,
+      unregisterRejects: true,
+    });
+
+    expect(result.storage.get(KEY)).toBe('old-build');
+    expect(result.reload).not.toHaveBeenCalled();
   });
 
   it('deletes stale runtime caches but preserves precaches', async () => {
