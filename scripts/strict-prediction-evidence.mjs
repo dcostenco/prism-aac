@@ -226,6 +226,9 @@ for (const target of targets) {
       // visit would otherwise look like duplicate work even when the second
       // navigation is served correctly.
       pictogramRequests.length = 0;
+      requestFailures.length = 0;
+      serverErrors.length = 0;
+      ttsRequests.length = 0;
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 30_000 });
       await page.waitForSelector('[data-testid="prediction-bar"] button', {
         timeout: 20_000,
@@ -331,6 +334,7 @@ for (const target of targets) {
       .map(([url, count]) => ({ url, count }));
     const criticalRequestFailures = requestFailures.filter(
       ({ url, resourceType }) =>
+        new URL(url).origin === new URL(target).origin &&
         !/arasaac|pictogram/i.test(url) &&
         ['document', 'script', 'stylesheet', 'xhr', 'fetch'].includes(
           resourceType,
