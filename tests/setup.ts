@@ -26,18 +26,33 @@ if (typeof window !== 'undefined') {
   Object.defineProperty(navigator, 'vibrate', { value: vi.fn(() => true), writable: true });
 
   // Mock AudioContext
-  window.AudioContext = vi.fn().mockImplementation(() => ({
-    createOscillator: vi.fn(() => ({
-      connect: vi.fn(), start: vi.fn(), stop: vi.fn(),
-      frequency: { value: 0 }, type: 'sine',
-    })),
-    createGain: vi.fn(() => ({
-      connect: vi.fn(),
-      gain: { value: 0, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
-    })),
-    destination: {},
-    currentTime: 0,
-  })) as unknown as typeof AudioContext;
+  window.AudioContext = vi.fn().mockImplementation(function MockAudioContext() {
+    return {
+      createOscillator: vi.fn(() => ({
+        connect: vi.fn(), start: vi.fn(), stop: vi.fn(),
+        frequency: { value: 0 }, type: 'sine',
+      })),
+      createGain: vi.fn(() => ({
+        connect: vi.fn(),
+        gain: { value: 0, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+      })),
+      destination: {},
+      currentTime: 0,
+      state: 'running',
+      resume: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+    };
+  }) as unknown as typeof AudioContext;
+
+  // jsdom intentionally leaves media playback unimplemented and emits a
+  // console error for every play() call. Tests exercise the surrounding UI
+  // state, so use a deterministic resolved playback primitive by default;
+  // media-specific suites can still replace these methods locally.
+  Object.defineProperties(window.HTMLMediaElement.prototype, {
+    play: { configurable: true, writable: true, value: vi.fn(async () => {}) },
+    pause: { configurable: true, writable: true, value: vi.fn() },
+    load: { configurable: true, writable: true, value: vi.fn() },
+  });
 
   // Mock crypto.randomUUID
   Object.defineProperty(crypto, 'randomUUID', { value: vi.fn(() => 'test-uuid-' + Math.random().toString(36).slice(2, 8)) });

@@ -59,6 +59,7 @@ function isSafeAvatarUrl(url: string): boolean {
   } catch { return false; }
 }
 
+/* eslint-disable @next/next/no-img-element -- Contact avatars and AAC pictograms are runtime URLs (including blob URLs); Next Image cannot safely optimize them. */
 function ContactTile({ contact, extraCount, onTap }: { contact: AacContact; extraCount: number; onTap: (id: string) => void }) {
   return (
     <button
@@ -108,6 +109,45 @@ function computeStableSlots(prev: string[], predictions: string[]): string[] {
   return next;
 }
 
+function mergeAiCompletion(
+  corpusPreds: string[],
+  ai: string | null,
+  language: string,
+): string[] {
+  if (!ai || !isAllowedInLang(ai, language)) return corpusPreds;
+  const lc = ai.toLowerCase();
+  const dedup = corpusPreds.filter((prediction) => prediction.toLowerCase() !== lc);
+  return [ai, ...dedup].slice(0, 5);
+}
+
+function dropForeignTiles(
+  displayed: string[],
+  language: string,
+  langDefaults: string[],
+): string[] {
+  // Curated AAC core defaults are authoritative for their language. Some are
+  // shared across languages ("Tu" is valid Romanian and Spanish), so a
+  // cross-corpus frequency comparison must never evict them.
+  const trustedDefaults = new Set(langDefaults.map((word) => word.toLowerCase()));
+  const cleaned = displayed.filter(
+    (word) => trustedDefaults.has(word.toLowerCase()) || isAllowedInLang(word, language),
+  );
+  if (cleaned.length === displayed.length) return displayed;
+  const filler = langDefaults.filter(
+    (word) => !cleaned.some((kept) => kept.toLowerCase() === word.toLowerCase()),
+  );
+  return [...cleaned, ...filler].slice(0, 5);
+}
+
+function sameTiles(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((tile, index) => tile === right[index]);
+}
+
+interface DisplayedPredictionState {
+  language: string;
+  tiles: string[];
+}
+
 const PredictionTile = memo(function PredictionTile({ word, color, onTap, visionBoosted }: { word: string; color: string; onTap: (w: string) => void; visionBoosted?: boolean }) {
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
@@ -139,6 +179,7 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
     </button>
   );
 });
+/* eslint-enable @next/next/no-img-element */
 
 export default function PredictionBar() {
   const sidePanel = useUIStore((s) => s.sidePanel);
@@ -155,9 +196,28 @@ export default function PredictionBar() {
   const speechVolume = useSettingsStore((s) => s.speechVolume);
   const language = useSettingsStore((s) => s.language);
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
-  const langDefaults = getPredictionsForLanguage(language);
-  const [displayed, setDisplayed] = useState<string[]>(langDefaults);
-  const prevRef = useRef<string[]>(langDefaults);
+  const langDefaults = useMemo(() => getPredictionsForLanguage(language), [language]);
+  const [displayedState, setDisplayedState] = useState<DisplayedPredictionState>(() => {
+    const merged = mergeAiCompletion(
+      text.trim() ? predictions : langDefaults,
+      aiCompletion,
+      language,
+    );
+    return {
+      language,
+      tiles: text.trim() ? computeStableSlots(langDefaults, merged) : merged,
+    };
+  });
+  // A language switch must never render stale tiles while the stabilization
+  // effect is pending. Fall back to the new language's bundled core words for
+  // that single microtask.
+  const displayed = displayedState.language === language
+    ? displayedState.tiles
+    : langDefaults;
+  const prevRef = useRef<DisplayedPredictionState>({
+    language,
+    tiles: displayed,
+  });
 
   // Eagerly preload BOTH the input language's curated corpus AND the
   // output language's corpus. The cross-lang frequency gate compares
@@ -175,22 +235,10 @@ export default function PredictionBar() {
     }
   }, [language, outputLanguage]);
 
-  // Immediately show language-specific defaults on language switch,
-  // then refine with predictions if there's typed text.
-  const prevLangRef = useRef(language);
+  // Ask the prediction store to refine non-empty text. Empty text is handled
+  // directly by the display calculation below.
   useEffect(() => {
-    const defaults = getPredictionsForLanguage(language);
-    if (language !== prevLangRef.current) {
-      prevRef.current = defaults;
-      setDisplayed(defaults);
-      prevLangRef.current = language;
-    }
-    if (!text.trim()) {
-      prevRef.current = defaults;
-      setDisplayed(defaults);
-      return;
-    }
-    updatePredictions(text, language);
+    if (text.trim()) updatePredictions(text, language);
   }, [text, updatePredictions, language]);
 
   // Merge AI completion into the prediction list as the leftmost tile.
@@ -211,13 +259,6 @@ export default function PredictionBar() {
   // 5000+ for every supported lang) plus a diacritic carve-out for
   // user proper nouns. Replaces the earlier stopword approach which
   // missed every word not enumerated (Main, noise, to, etc.).
-  function mergeAiCompletion(corpusPreds: string[], ai: string | null): string[] {
-    if (!ai || !isAllowedInLang(ai, language)) return corpusPreds;
-    const lc = ai.toLowerCase();
-    const dedup = corpusPreds.filter((p) => p.toLowerCase() !== lc);
-    return [ai, ...dedup].slice(0, 5);
-  }
-
   // Final defense-in-depth: drop ANY tile not allowed in the current
   // language, refill empty slots from langDefaults so the bar always
   // renders 5 tiles. Catches stale carry-overs from a previous EN
@@ -231,13 +272,6 @@ export default function PredictionBar() {
   // `aiCompletion` is set, NOT for corpus-based tiles. The filter now
   // runs for every language; isAllowedInLang's cross-corpus comparison
   // (en_freq vs ro_freq) catches the leak in either direction.
-  function dropForeignTiles(displayed: string[]): string[] {
-    const cleaned = displayed.filter((w) => isAllowedInLang(w, language));
-    if (cleaned.length === displayed.length) return displayed;
-    const filler = langDefaults.filter((w) => !cleaned.includes(w) && isAllowedInLang(w, language));
-    return [...cleaned, ...filler].slice(0, 5);
-  }
-
   // Cache HRR module ref so subsequent calls are synchronous (no tile reflow).
   // Critical for switch scanning — async tile reorder causes wrong selection.
   const hrrRef = useRef<{
@@ -252,40 +286,61 @@ export default function PredictionBar() {
   }, []);
 
   useEffect(() => {
-    if (!text.trim()) {
-      if (aiCompletion) {
-        const merged = mergeAiCompletion(langDefaults, aiCompletion);
-        prevRef.current = merged;
-        setDisplayed(merged);
-      } else {
-        prevRef.current = langDefaults;
-        setDisplayed(langDefaults);
-      }
-      return;
-    }
-    const merged = mergeAiCompletion(predictions, aiCompletion);
-    const next = computeStableSlots(prevRef.current, merged);
+    const previous = prevRef.current.language === language
+      ? prevRef.current.tiles
+      : langDefaults;
+    let final: string[];
 
-    // HRR boost: synchronous once module is loaded (no tile reflow)
-    let final = next;
-    if (hrrRef.current?.isAacHrrReady()) {
-      const hrr = hrrRef.current.getNextWordSuggestions(text.trim());
-      if (hrr.length > 0) {
-        const hrrWords = hrr
-          .map(h => h.word)
-          .filter(w => isAllowedInLang(w, language));
-        const deduped = hrrWords.filter(
-          w => !next.some(n => n.toLowerCase() === w.toLowerCase()),
-        );
-        if (deduped.length > 0) {
-          final = [next[0], deduped[0], ...next.slice(1)].filter(Boolean).slice(0, 5);
+    if (!text.trim()) {
+      final = mergeAiCompletion(langDefaults, aiCompletion, language);
+    } else {
+      const merged = mergeAiCompletion(predictions, aiCompletion, language);
+      const next = computeStableSlots(previous, merged);
+
+      // HRR boost: synchronous once module is loaded (no tile reflow)
+      final = next;
+      if (hrrRef.current?.isAacHrrReady()) {
+        const hrr = hrrRef.current.getNextWordSuggestions(text.trim());
+        if (hrr.length > 0) {
+          const hrrWords = hrr
+            .map(h => h.word)
+            .filter(w => isAllowedInLang(w, language));
+          const deduped = hrrWords.filter(
+            w => !next.some(n => n.toLowerCase() === w.toLowerCase()),
+          );
+          if (deduped.length > 0) {
+            final = [next[0], deduped[0], ...next.slice(1)].filter(Boolean).slice(0, 5);
+          }
         }
       }
     }
 
-    prevRef.current = final;
-    setDisplayed(final);
-  }, [predictions, aiCompletion, text]);
+    // This state intentionally preserves tile positions for switch scanning.
+    // Commit after the effect body and cancel superseded commits so rapid text
+    // or language changes cannot enqueue cascading or stale renders.
+    if (
+      displayedState.language === language
+      && sameTiles(displayedState.tiles, final)
+    ) {
+      prevRef.current = { language, tiles: final };
+      return;
+    }
+    let cancelled = false;
+    const scheduledTiles = final;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      prevRef.current = { language, tiles: scheduledTiles };
+      setDisplayedState((current) => {
+        if (current.language === language && sameTiles(current.tiles, scheduledTiles)) {
+          return current;
+        }
+        return { language, tiles: scheduledTiles };
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [predictions, aiCompletion, text, language, langDefaults, displayedState]);
 
   const handleTap = useCallback((word: string) => {
     tapFeedback();
@@ -318,13 +373,15 @@ export default function PredictionBar() {
     // cloud request per growing phrase. The main Speak button remains the
     // explicit cloud-quality path for the completed message.
     speakWord(word, speechRate, speechVolume);
-  }, [text, learnWord, speechRate, speechVolume]);
+  }, [text, learnWord, predictions, speechRate, speechVolume]);
 
   // Must be computed before any early returns — hooks must be called unconditionally.
   // (useMemo after a conditional return violates Rules of Hooks → React #300 crash
   // when sidePanel toggles between 'aac-chat' and anything else.)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const finalTiles = useMemo(() => dropForeignTiles(displayed), [displayed, language]);
+  const finalTiles = useMemo(
+    () => dropForeignTiles(displayed, language, langDefaults),
+    [displayed, language, langDefaults],
+  );
 
   // All hooks MUST be called before any early return — React error #300.
   const activeScene = useVisionStore((s) => s.activeScene);

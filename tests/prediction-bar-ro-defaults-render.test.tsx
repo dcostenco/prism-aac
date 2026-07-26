@@ -32,6 +32,9 @@ beforeEach(async () => {
   // Real corpora — keep the gate strict, no boot-race fail-open.
   await loadPredictionSeed('ro');
   await loadPredictionSeed('en');
+  // "Tu" is shared by Romanian and Spanish. Loading ES reproduces the
+  // cross-corpus competition that previously evicted a trusted RO core tile.
+  await loadPredictionSeed('es');
   useSettingsStore.setState({
     language: 'ro',
     outputLanguage: 'ro',

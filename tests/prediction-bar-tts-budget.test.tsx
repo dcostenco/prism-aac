@@ -10,7 +10,7 @@
  * may send the completed phrase through aacSpeak's cloud-quality path.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import PredictionBar from '@/components/PredictionBar';
 import { useMessageStore } from '@/store/messageStore';
 import { usePredictionStore } from '@/store/predictionStore';
@@ -39,6 +39,10 @@ vi.mock('@/lib/datadog', () => ({
   ddAction: vi.fn(),
 }));
 
+vi.mock('@/services/feedback', () => ({
+  tapFeedback: vi.fn(),
+}));
+
 beforeEach(async () => {
   cleanup();
   vi.clearAllMocks();
@@ -62,18 +66,22 @@ beforeEach(async () => {
 });
 
 describe('PredictionBar cloud TTS request budget', () => {
-  it('keeps rapid prediction feedback local instead of speaking each growing phrase through cloud TTS', () => {
+  it('keeps rapid prediction feedback local instead of speaking each growing phrase through cloud TTS', async () => {
     render(<PredictionBar />);
 
     const predictionTiles = screen.getAllByRole('button', { name: /^Predict:/ });
     const firstWord = predictionTiles[0].getAttribute('title');
     expect(firstWord).toBeTruthy();
 
-    fireEvent.click(predictionTiles[0]);
+    await act(async () => {
+      fireEvent.click(predictionTiles[0]);
+    });
     const updatedTiles = screen.getAllByRole('button', { name: /^Predict:/ });
     const secondWord = updatedTiles[1].getAttribute('title');
     expect(secondWord).toBeTruthy();
-    fireEvent.click(updatedTiles[1]);
+    await act(async () => {
+      fireEvent.click(updatedTiles[1]);
+    });
 
     expect(speechMocks.speakWord).toHaveBeenNthCalledWith(1, firstWord, 0.5, 0.8);
     expect(speechMocks.speakWord).toHaveBeenNthCalledWith(2, secondWord, 0.5, 0.8);

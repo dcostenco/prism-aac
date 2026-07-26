@@ -7,7 +7,7 @@
  * listIntegrations is mocked; subscribeToIntegrationEvents is a no-op.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import IntegrationsSettings from '@/components/IntegrationsSettings';
 import type { IntegrationProvider } from '@/services/integrationsService';
@@ -58,6 +58,27 @@ describe('IntegrationsSettings — loading state', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('integrations-loading')).toBeNull();
     });
+  });
+
+  it('ignores a failed provider load after unmount', async () => {
+    let rejectLoad: (error: Error) => void = () => {};
+    listIntegrationsMock.mockReturnValue(new Promise((_, reject) => {
+      rejectLoad = reject;
+    }));
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const view = render(<IntegrationsSettings />);
+    await waitFor(() => {
+      expect(screen.getByTestId('integrations-loading')).toBeInTheDocument();
+    });
+
+    view.unmount();
+    await act(async () => {
+      rejectLoad(new Error('late network failure'));
+      await Promise.resolve();
+    });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });
 
