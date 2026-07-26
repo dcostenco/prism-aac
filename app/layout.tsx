@@ -4,13 +4,14 @@ import { headers, cookies } from "next/headers";
 import "./globals.css";
 import HtmlLangSync from "@/components/HtmlLangSync";
 import DatadogInit from "@/components/DatadogInit";
+import { PRISM_AAC_MANIFEST_PATH } from "@/lib/appPaths";
 
 const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Prism AAC",
   description: "Augmentative and Alternative Communication app",
-  manifest: "/manifest.json",
+  manifest: PRISM_AAC_MANIFEST_PATH,
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Prism AAC" },
 };
 

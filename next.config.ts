@@ -1,5 +1,6 @@
 import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
+import { PRISM_AAC_BASE_PATH } from './lib/appPaths';
 
 const withSerwist = withSerwistInit({
   swSrc: 'app/sw.ts',
@@ -25,11 +26,11 @@ const proxyApiUrl = process.env.PROXY_API_URL || 'https://synalux.ai/api/v1';
 const proxyPortalOrigin = new URL(proxyApiUrl).origin;
 
 const nextConfig: NextConfig = {
-  basePath: '/prism-aac',
+  basePath: PRISM_AAC_BASE_PATH,
   env: {
     // Expose basePath to client code so mediapipeRuntime can construct
     // correct self-hosted model URLs (public/ assets are at <basePath>/models/...).
-    NEXT_PUBLIC_BASE_PATH: '/prism-aac',
+    NEXT_PUBLIC_BASE_PATH: PRISM_AAC_BASE_PATH,
     // Unique per-deploy build ID — consumed by the SW killswitch in layout.tsx
     // so every Vercel deploy automatically invalidates stale SW caches.
     NEXT_PUBLIC_BUILD_ID: buildId,

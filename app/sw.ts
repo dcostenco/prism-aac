@@ -1,6 +1,7 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
 import { Serwist, NetworkFirst, CacheFirst, ExpirationPlugin } from 'serwist';
+import { PRISM_AAC_STATIC_PATH } from '@/lib/appPaths';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -36,7 +37,7 @@ const serwist = new Serwist({
     // These have immutable cache headers and content hashes in their
     // filenames, so CacheFirst is safe and gives the fastest repeat loads.
     {
-      matcher: ({ url }) => url.pathname.startsWith('/_next/static/'),
+      matcher: ({ url }) => url.pathname.startsWith(PRISM_AAC_STATIC_PATH),
       handler: new CacheFirst({
         cacheName: 'prism-static',
         plugins: [
