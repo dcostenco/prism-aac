@@ -1,4 +1,5 @@
 'use client';
+import { SYNALUX_API } from '@/lib/portalConfig';
 // CACHE-NUKE 2026-05-08-08:40 — forces Vercel build cache invalidation
 // after multiple identical-output rebuilds where Turbopack reused the
 // compiled azureTTS.ts despite source changes.
@@ -70,8 +71,6 @@ export const TONE_OPTIONS: Array<{ id: ToneStyle; label: string; icon: string }>
 // portal/src/app/api/v1/tts/public/_helpers.ts — the client sends
 // {text, lang, rate, volume} and the portal returns audio directly.
 // AZURE_VOICES, escapeXml, and buildSSML have been deleted (May 2026).
-
-const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 
 /** Hard cap on a single TTS audio response. A hostile / buggy backend
  *  returning a 100 MB blob would otherwise OOM the AAC tablet. 8 MB is

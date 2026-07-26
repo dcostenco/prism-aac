@@ -20,12 +20,11 @@
 
 import { NoteAction } from '@/types';
 import { DEFAULT_CATEGORIES } from '@/constants/categories';
-import { timeoutSignal } from '@/lib/portalConfig';
+import { SYNALUX_API, SYNALUX_PORTAL_ORIGIN, timeoutSignal } from '@/lib/portalConfig';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { MODEL_REGISTRY, SIDELOAD_ORDER } from '@/constants/modelRegistry';
 
-const SYNALUX_API = process.env.NEXT_PUBLIC_SYNALUX_API || 'https://synalux.ai/api/v1';
 const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
 
 // LOCAL_MODELS: ordered from best to smallest for callLocalModelFallback()
@@ -250,13 +249,12 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
 }
 
 export function synaluxSignInUrl(): string {
-  const base = SYNALUX_API.replace(/\/api\/v1$/, '');
   // Use origin+pathname only — no query string or hash to prevent open-redirect
   // via attacker-controlled params (e.g. prism-aac.vercel.app?redirect=evil.com).
   const callback = typeof window !== 'undefined'
     ? `${window.location.origin}${window.location.pathname}`
-    : `${base}/prism-aac`;
-  return `${base}/api/auth/signin/google?callbackUrl=${encodeURIComponent(callback)}`;
+    : `${SYNALUX_PORTAL_ORIGIN}/prism-aac`;
+  return `${SYNALUX_PORTAL_ORIGIN}/api/auth/signin/google?callbackUrl=${encodeURIComponent(callback)}`;
 }
 
 export async function signInWithAppleNative(): Promise<boolean> {
@@ -271,8 +269,7 @@ export async function signInWithAppleNative(): Promise<boolean> {
       fullName?: string;
     }) => {
       try {
-        const base = SYNALUX_API.replace(/\/api\/v1$/, '');
-        const res = await fetch(`${base}/api/auth/apple`, {
+        const res = await fetch(`${SYNALUX_PORTAL_ORIGIN}/api/auth/apple`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -308,11 +305,10 @@ export function isNativeiOS(): boolean {
 }
 
 export function synaluxSignOutUrl(): string {
-  const base = SYNALUX_API.replace(/\/api\/v1$/, '');
   const callback = typeof window !== 'undefined'
     ? `${window.location.origin}${window.location.pathname}`
-    : `${base}/prism-aac`;
-  return `${base}/api/auth/signout?callbackUrl=${encodeURIComponent(callback)}`;
+    : `${SYNALUX_PORTAL_ORIGIN}/prism-aac`;
+  return `${SYNALUX_PORTAL_ORIGIN}/api/auth/signout?callbackUrl=${encodeURIComponent(callback)}`;
 }
 
 // ── Synalux API (online) ──

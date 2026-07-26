@@ -38,14 +38,24 @@ export function resolveSynaluxApi(
 }
 
 const runtimeLocation = typeof window !== 'undefined' ? window.location : undefined;
+const configuredApiBase =
+  typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_SYNALUX_API : undefined;
 export const SYNALUX_API: string = resolveSynaluxApi(
-  typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_SYNALUX_API : undefined,
+  configuredApiBase,
   runtimeLocation?.origin,
   runtimeLocation?.hostname,
   typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_BASE_PATH
     ? process.env.NEXT_PUBLIC_BASE_PATH
     : DEFAULT_BASE_PATH,
 );
+export const SYNALUX_PORTAL_ORIGIN: string = (() => {
+  if (!configuredApiBase) return PRODUCTION_PORTAL_ORIGIN;
+  try {
+    return new URL(configuredApiBase).origin;
+  } catch {
+    return PRODUCTION_PORTAL_ORIGIN;
+  }
+})();
 
 /** Hard cap on any single portal response body. A hostile or buggy
  *  portal returning a 100 MB JSON would otherwise OOM the AAC client.

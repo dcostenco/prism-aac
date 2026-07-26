@@ -17,7 +17,7 @@
 
 import { PictureMode } from '@/store/settingsStore';
 import { SynaluxProfile } from '@/services/aiService';
-import { timeoutSignal } from '@/lib/portalConfig';
+import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
 
 /**
  * Picture mode is derived from the user's Synalux plan, not from a user
@@ -224,12 +224,9 @@ async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
 // ── Synalux AI fallback ─────────────────────────────────────────────────────
 
 async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null> {
-  const base = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SYNALUX_API)
-    ? process.env.NEXT_PUBLIC_SYNALUX_API
-    : 'https://synalux.ai/api/v1';
   const t = timeoutSignal(5000);
   try {
-    const res = await fetch(`${base}/prism-aac/pictogram`, {
+    const res = await fetch(`${SYNALUX_API}/prism-aac/pictogram`, {
       method: 'POST',
       // 'same-origin': credentials sent to synalux.ai but NOT on cross-origin
       // redirects to supabase.co (which returns ACAO:* — incompatible with

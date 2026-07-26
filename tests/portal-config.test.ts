@@ -10,6 +10,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   SYNALUX_API,
+  SYNALUX_PORTAL_ORIGIN,
   resolveSynaluxApi,
   MAX_PORTAL_RESPONSE_BYTES,
   HAS_ABORT_SIGNAL_TIMEOUT,
@@ -26,6 +27,10 @@ describe('portalConfig — constants', () => {
 
   it('SYNALUX_API default ends with /api/v1 when env var is unset', () => {
     expect(SYNALUX_API).toMatch(/\/api\/v1$/);
+  });
+
+  it('keeps interactive authentication on the canonical portal origin', () => {
+    expect(SYNALUX_PORTAL_ORIGIN).toBe('https://synalux.ai');
   });
 
   it('routes standalone previews through the same-origin app proxy', () => {

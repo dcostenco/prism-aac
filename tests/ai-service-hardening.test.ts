@@ -49,7 +49,7 @@ function synaluxChat(content: string): Response {
  */
 function mockRouteToCloud(content: string): void {
   fetchMock.mockImplementation(async (url: string) => {
-    if (String(url).includes('localhost')) return new Response('', { status: 503 });
+    if (String(url).includes('localhost:11434')) return new Response('', { status: 503 });
     if (String(url).includes('/prism-aac/chat')) return synaluxChat(content);
     return new Response('', { status: 404 });
   });
