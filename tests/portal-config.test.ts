@@ -30,11 +30,11 @@ describe('portalConfig — constants', () => {
 
   it('routes standalone previews through the same-origin app proxy', () => {
     expect(resolveSynaluxApi(
-      undefined,
-      'https://prism-preview.example',
-      'prism-preview.example',
+      'https://synalux.ai/api/v1',
+      'https://prism-preview.vercel.app',
+      'prism-preview.vercel.app',
       '/prism-aac',
-    )).toBe('https://prism-preview.example/prism-aac/api/v1');
+    )).toBe('https://prism-preview.vercel.app/prism-aac/api/v1');
   });
 
   it('keeps the canonical portal API direct and honors explicit configuration', () => {

@@ -10,6 +10,7 @@
 
 const PRODUCTION_PORTAL_ORIGIN = 'https://synalux.ai';
 const DEFAULT_BASE_PATH = '/prism-aac';
+const VERCEL_HOST_SUFFIX = '.vercel.app';
 
 /**
  * Standalone deployments cannot safely receive the portal's credentialed
@@ -23,8 +24,12 @@ export function resolveSynaluxApi(
   runtimeHostname?: string,
   basePath = DEFAULT_BASE_PATH,
 ): string {
-  if (configuredBase) return configuredBase;
   if (!runtimeOrigin || !runtimeHostname) return `${PRODUCTION_PORTAL_ORIGIN}/api/v1`;
+  if (runtimeHostname.endsWith(VERCEL_HOST_SUFFIX)) {
+    const normalizedBasePath = basePath.startsWith('/') ? basePath : `/${basePath}`;
+    return `${runtimeOrigin}${normalizedBasePath.replace(/\/$/, '')}/api/v1`;
+  }
+  if (configuredBase) return configuredBase;
   if (runtimeHostname === 'synalux.ai' || runtimeHostname === 'www.synalux.ai') {
     return `${PRODUCTION_PORTAL_ORIGIN}/api/v1`;
   }
