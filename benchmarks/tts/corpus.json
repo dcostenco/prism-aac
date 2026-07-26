@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "description": "Prism AAC latency and listening corpus. Text comes from current phraseTranslations entries; zh-Hant and zh-HK adaptations require native-speaker sign-off before MOS scoring.",
+  "locales": [
+    {
+      "appCode": "en",
+      "locale": "en-US",
+      "language": "English",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Yes" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "I need help" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "More please" }
+      ]
+    },
+    {
+      "appCode": "es",
+      "locale": "es-ES",
+      "language": "Spanish",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Sí" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Necesito ayuda" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Más por favor" }
+      ]
+    },
+    {
+      "appCode": "fr",
+      "locale": "fr-FR",
+      "language": "French",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Oui" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "J'ai besoin d'aide" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Encore svp" }
+      ]
+    },
+    {
+      "appCode": "pt",
+      "locale": "pt-BR",
+      "language": "Portuguese",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Sim" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Preciso de ajuda" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Mais por favor" }
+      ]
+    },
+    {
+      "appCode": "ro",
+      "locale": "ro-RO",
+      "language": "Romanian",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Da" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Am nevoie de ajutor" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Mai mult te rog" }
+      ]
+    },
+    {
+      "appCode": "uk",
+      "locale": "uk-UA",
+      "language": "Ukrainian",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Так" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Мені потрібна допомога" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Ще будь ласка" }
+      ]
+    },
+    {
+      "appCode": "ru",
+      "locale": "ru-RU",
+      "language": "Russian",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Да" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Мне нужна помощь" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Ещё пожалуйста" }
+      ]
+    },
+    {
+      "appCode": "de",
+      "locale": "de-DE",
+      "language": "German",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Ja" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Ich brauche Hilfe" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Mehr bitte" }
+      ]
+    },
+    {
+      "appCode": "ja",
+      "locale": "ja-JP",
+      "language": "Japanese",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "はい" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "助けて" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "もっとください" }
+      ]
+    },
+    {
+      "appCode": "ko",
+      "locale": "ko-KR",
+      "language": "Korean",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "네" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "도와주세요" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "더 주세요" }
+      ]
+    },
+    {
+      "appCode": "zh-Hans",
+      "locale": "zh-CN",
+      "language": "Mandarin Chinese (Simplified)",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "是" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "我需要帮助" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "再来点" }
+      ]
+    },
+    {
+      "appCode": "zh-Hant",
+      "locale": "zh-TW",
+      "language": "Mandarin Chinese (Traditional)",
+      "reviewStatus": "native-review-required",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "是" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "我需要幫助" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "請再多一點" }
+      ]
+    },
+    {
+      "appCode": "zh-HK",
+      "locale": "zh-HK",
+      "language": "Cantonese (Hong Kong)",
+      "reviewStatus": "native-review-required",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "係" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "我需要幫手" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "唔該再多啲" }
+      ]
+    },
+    {
+      "appCode": "ar",
+      "locale": "ar-SA",
+      "language": "Arabic",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "نعم" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "أحتاج مساعدة" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "المزيد من فضلك" }
+      ]
+    },
+    {
+      "appCode": "hi",
+      "locale": "hi-IN",
+      "language": "Hindi",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "हाँ" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "मुझे मदद चाहिए" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "और दो" }
+      ]
+    },
+    {
+      "appCode": "it",
+      "locale": "it-IT",
+      "language": "Italian",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Sì" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Ho bisogno di aiuto" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Ancora per favore" }
+      ]
+    },
+    {
+      "appCode": "pl",
+      "locale": "pl-PL",
+      "language": "Polish",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Tak" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Potrzebuję pomocy" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Więcej proszę" }
+      ]
+    },
+    {
+      "appCode": "he",
+      "locale": "he-IL",
+      "language": "Hebrew",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "כן" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "אני צריך עזרה" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "עוד בבקשה" }
+      ]
+    },
+    {
+      "appCode": "nl",
+      "locale": "nl-NL",
+      "language": "Dutch",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Ja" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Ik heb hulp nodig" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Meer alsjeblieft" }
+      ]
+    },
+    {
+      "appCode": "vi",
+      "locale": "vi-VN",
+      "language": "Vietnamese",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Có" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Tôi cần giúp đỡ" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Thêm nữa" }
+      ]
+    },
+    {
+      "appCode": "tl",
+      "locale": "fil-PH",
+      "language": "Filipino",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Oo" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Kailangan ko ng tulong" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Dagdag pa" }
+      ]
+    },
+    {
+      "appCode": "tr",
+      "locale": "tr-TR",
+      "language": "Turkish",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Evet" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Yardıma ihtiyacım var" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Daha fazla lütfen" }
+      ]
+    },
+    {
+      "appCode": "id",
+      "locale": "id-ID",
+      "language": "Indonesian",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Ya" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Saya butuh bantuan" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Tambah lagi" }
+      ]
+    },
+    {
+      "appCode": "bg",
+      "locale": "bg-BG",
+      "language": "Bulgarian",
+      "reviewStatus": "code-derived",
+      "cases": [
+        { "id": "aac-word", "kind": "aac_word", "text": "Да" },
+        { "id": "aac-help", "kind": "aac_sentence", "text": "Имам нужда от помощ" },
+        { "id": "pos-more", "kind": "pos_phone", "text": "Още моля" }
+      ]
+    }
+  ]
+}

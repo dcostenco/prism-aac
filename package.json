@@ -16,7 +16,8 @@
     "visual:check": "node scripts/visual-check.mjs",
     "visual:verify": "node scripts/verify-state-coverage.mjs",
     "visual": "npm run visual:check && PANEL_HEIGHT_CAP=200 ALLOW_BRANCH_UNKNOWN=1 NO_CAP_PASSES=math-grid-empty,math-grid-typed,math-panel-integrated REQUIRED_PASSES=ai-unconfigured,ai-configured-empty,aac-empty,math-grid-empty,math-grid-typed,math-panel-integrated npm run visual:verify",
-    "e2e:watchdog": "MIN_FREE_GB=2 ./scripts/playwright-watchdog.sh e2e/panel-compact-when-empty.spec.ts --project=desktop --workers=1"
+    "e2e:watchdog": "MIN_FREE_GB=2 ./scripts/playwright-watchdog.sh e2e/panel-compact-when-empty.spec.ts --project=desktop --workers=1",
+    "benchmark:tts": "node scripts/benchmark-tts.mjs"
   },
   "dependencies": {
     "@datadog/browser-logs": "^7.2.0",
