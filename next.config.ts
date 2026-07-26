@@ -21,6 +21,8 @@ const withSerwist = withSerwistInit({
 // Vercel sets VERCEL_GIT_COMMIT_SHA automatically; local builds fall back to
 // a timestamp so dev reloads still bust the cache.
 const buildId = (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 8) || `local-${Date.now()}`;
+const proxyApiUrl = process.env.PROXY_API_URL || 'https://synalux.ai/api/v1';
+const proxyPortalOrigin = new URL(proxyApiUrl).origin;
 
 const nextConfig: NextConfig = {
   basePath: '/prism-aac',
@@ -40,7 +42,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/v1/:path*',
-        destination: `${process.env.PROXY_API_URL || 'https://synalux.ai/api/v1'}/:path*`,
+        destination: `${proxyApiUrl}/:path*`,
+      },
+      {
+        source: '/api/auth/session',
+        destination: `${proxyPortalOrigin}/api/auth/session`,
       },
     ];
   },
