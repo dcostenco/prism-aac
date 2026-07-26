@@ -252,7 +252,19 @@ export default function PrismApp() {
     ensureSeed();
     refreshAuth();
     // Install Watch→web alert bridge. Idempotent — safe under StrictMode.
-    void import('@/services/watchAlertBridge').then((m) => m.registerWatchAlertBridge());
+    let effectActive = true;
+    void import('@/services/watchAlertBridge')
+      .then((m) => {
+        if (effectActive) m.registerWatchAlertBridge();
+      })
+      .catch((error) => {
+        if (effectActive) {
+          console.warn(
+            '[watchBridge] failed to load:',
+            error instanceof Error ? error.message : error,
+          );
+        }
+      });
     // Auto-sideload: detect local Ollama → pull best prism-coder model
     import('@/services/aiService').then(m => m.autoSideload?.()).catch(() => {});
     // Pre-warm MediaPipe WASM + face models so the first startHeadTracker()
@@ -282,6 +294,7 @@ export default function PrismApp() {
     recordFirstUse();
     checkDaysUsedReview();
     return () => {
+      effectActive = false;
       unregisterPanic();
       cleanupConnectivity?.();
       stopInbox();
