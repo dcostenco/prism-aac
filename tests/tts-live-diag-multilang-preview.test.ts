@@ -21,4 +21,19 @@ describe('multi-language live diagnostic preview authorization', () => {
     expect(safeReportSource).not.toContain('VERCEL_PROTECTION_BYPASS');
     expect(safeReportSource).not.toContain('curlInput');
   });
+
+  it('redacts protected-preview request failures before they reach test output', () => {
+    const protectedPreviewCallers = [
+      'e2e/tts-prod-regression.spec.ts',
+      'scripts/strict-prediction-evidence.mjs',
+      'scripts/tts-live-diag-multilang.mjs',
+    ];
+
+    for (const file of protectedPreviewCallers) {
+      const source = readFileSync(resolve(file), 'utf8');
+      expect(source).toMatch(
+        /try \{[\s\S]*?request\.get\([\s\S]*?\} catch \{[\s\S]*?throw new Error\((?:"|')Preview authorization request failed(?:"|')\)/,
+      );
+    }
+  });
 });

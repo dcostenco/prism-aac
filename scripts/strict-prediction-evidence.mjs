@@ -44,12 +44,17 @@ for (const target of targets) {
       vercelProtectionBypass &&
       new URL(target).hostname.endsWith('.vercel.app')
     ) {
-      const authorizationResponse = await context.request.get(target, {
-        headers: {
-          'x-vercel-protection-bypass': vercelProtectionBypass,
-          'x-vercel-set-bypass-cookie': 'true',
-        },
-      });
+      let authorizationResponse;
+      try {
+        authorizationResponse = await context.request.get(target, {
+          headers: {
+            'x-vercel-protection-bypass': vercelProtectionBypass,
+            'x-vercel-set-bypass-cookie': 'true',
+          },
+        });
+      } catch {
+        throw new Error('Preview authorization request failed');
+      }
       if (!authorizationResponse.ok()) {
         throw new Error(
           `Preview authorization failed with ${authorizationResponse.status()}`,

@@ -75,12 +75,17 @@ for (const language of LANGS) {
       VERCEL_PROTECTION_BYPASS &&
       new URL(TARGET_URL).hostname.endsWith('.vercel.app')
     ) {
-      const authorizationResponse = await context.request.get(TARGET_URL, {
-        headers: {
-          'x-vercel-protection-bypass': VERCEL_PROTECTION_BYPASS,
-          'x-vercel-set-bypass-cookie': 'true',
-        },
-      });
+      let authorizationResponse;
+      try {
+        authorizationResponse = await context.request.get(TARGET_URL, {
+          headers: {
+            'x-vercel-protection-bypass': VERCEL_PROTECTION_BYPASS,
+            'x-vercel-set-bypass-cookie': 'true',
+          },
+        });
+      } catch {
+        throw new Error('Preview authorization request failed');
+      }
       if (!authorizationResponse.ok()) {
         throw new Error(
           `Preview authorization failed with ${authorizationResponse.status()}`,

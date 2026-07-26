@@ -29,7 +29,7 @@
  *        /api/v1/marketplace/catalog must return 200, not 500.
  */
 
-import { test, expect, Page } from "@playwright/test";
+import { test, expect, type APIResponse, type Page } from "@playwright/test";
 
 // ── Shared AudioContext spy ───────────────────────────────────────────────────
 
@@ -173,12 +173,17 @@ test.beforeEach(async ({ page, baseURL }) => {
     protectionBypass &&
     new URL(start).hostname.endsWith(".vercel.app")
   ) {
-    const authorizationResponse = await page.context().request.get(start, {
-      headers: {
-        "x-vercel-protection-bypass": protectionBypass,
-        "x-vercel-set-bypass-cookie": "true",
-      },
-    });
+    let authorizationResponse: APIResponse;
+    try {
+      authorizationResponse = await page.context().request.get(start, {
+        headers: {
+          "x-vercel-protection-bypass": protectionBypass,
+          "x-vercel-set-bypass-cookie": "true",
+        },
+      });
+    } catch {
+      throw new Error("Preview authorization request failed");
+    }
     expect(
       authorizationResponse.ok(),
       `Preview authorization failed with ${authorizationResponse.status()}`,
