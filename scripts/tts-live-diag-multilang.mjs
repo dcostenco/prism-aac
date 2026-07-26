@@ -199,20 +199,43 @@ if (VERIFY_SERVER_AUDIO) {
       `multilang-${result.lang}.mp3`,
     );
     try {
+      const audioRequestUrl =
+        process.env.TTS_API_URL || result.requestUrl;
+      const curlArgs = [
+        '--fail-with-body',
+        '--show-error',
+        '--silent',
+        '--output', audioPath,
+        '--request', 'POST',
+        audioRequestUrl,
+        '--header', `Origin: ${targetOrigin}`,
+        '--header', 'Content-Type: application/json',
+        '--data-raw', JSON.stringify(result.body),
+      ];
+      let curlInput;
+      const audioUrl = new URL(audioRequestUrl);
+      if (
+        VERCEL_PROTECTION_BYPASS &&
+        audioUrl.origin === targetOrigin &&
+        audioUrl.hostname.endsWith('.vercel.app')
+      ) {
+        if (/[\r\n]/.test(VERCEL_PROTECTION_BYPASS)) {
+          throw new Error('Vercel preview bypass contains an invalid newline');
+        }
+        const escapedBypass = VERCEL_PROTECTION_BYPASS
+          .replaceAll('\\', '\\\\')
+          .replaceAll('"', '\\"');
+        curlArgs.unshift('--config', '-');
+        curlInput =
+          `header = "x-vercel-protection-bypass: ${escapedBypass}"\n`;
+      }
       execFileSync(
         'curl',
-        [
-          '--fail-with-body',
-          '--show-error',
-          '--silent',
-          '--output', audioPath,
-          '--request', 'POST',
-          process.env.TTS_API_URL || result.requestUrl,
-          '--header', `Origin: ${targetOrigin}`,
-          '--header', 'Content-Type: application/json',
-          '--data-raw', JSON.stringify(result.body),
-        ],
-        { stdio: ['ignore', 'pipe', 'pipe'] },
+        curlArgs,
+        {
+          input: curlInput,
+          stdio: ['pipe', 'pipe', 'pipe'],
+        },
       );
       const info = execFileSync('afinfo', [audioPath], { encoding: 'utf8' });
       const duration = Number(
