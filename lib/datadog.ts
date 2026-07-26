@@ -1,5 +1,11 @@
 let initialized = false;
 
+export const DATADOG_RUM_PRIVACY_OPTIONS = {
+  sessionReplaySampleRate: 0,
+  trackUserInteractions: false,
+  defaultPrivacyLevel: 'mask' as const,
+};
+
 export function initDatadog() {
   if (initialized) return;
   if (typeof window === 'undefined') return;
@@ -18,7 +24,9 @@ export function initDatadog() {
       service: 'prism-aac',
       env,
       forwardErrorsToLogs: false, // HIPAA: prevent stack traces containing PHI from leaking to Datadog
-      forwardConsoleLogs: ['error'], // HIPAA: dropped 'warn' — error boundaries may log patient/AAC context
+      // Explicit ddLog/ddError calls own the operational signal. Console
+      // messages can contain AAC text, so they must never be forwarded.
+      forwardConsoleLogs: [],
       sessionSampleRate: 100,
       beforeSend: (log) => {
         // HIPAA: Scrub potential PHI patterns before forwarding to Datadog cloud
@@ -43,16 +51,32 @@ export function initDatadog() {
         env,
         version: process.env.NEXT_PUBLIC_BUILD_ID || '0.0.0',
         sessionSampleRate: 100,
-        sessionReplaySampleRate: env === 'production' ? 20 : 0,
-        trackUserInteractions: true,
+        // AAC interaction text is potentially PHI. Keep performance/error
+        // telemetry, but never record sessions or automatic click metadata.
+        sessionReplaySampleRate: DATADOG_RUM_PRIVACY_OPTIONS.sessionReplaySampleRate,
+        trackUserInteractions: DATADOG_RUM_PRIVACY_OPTIONS.trackUserInteractions,
         trackResources: true,
         trackLongTasks: true,
-        defaultPrivacyLevel: 'mask-user-input',
+        defaultPrivacyLevel: DATADOG_RUM_PRIVACY_OPTIONS.defaultPrivacyLevel,
       });
     });
   }
 
   initialized = true;
+}
+
+export async function anonymousDatadogUserId(value: string): Promise<string | null> {
+  if (typeof crypto === 'undefined' || !crypto.subtle) return null;
+
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(value.trim().toLowerCase()),
+  );
+
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, 24);
 }
 
 export function ddSetUser(user: {

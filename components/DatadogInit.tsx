@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { initDatadog, ddSetUser, ddAction } from '@/lib/datadog';
+import {
+  anonymousDatadogUserId,
+  initDatadog,
+  ddSetUser,
+  ddAction,
+} from '@/lib/datadog';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { subscribeTrackingEvents } from '@/services/trackingTelemetry';
@@ -22,14 +27,17 @@ export default function DatadogInit() {
   useEffect(() => {
     return useAuthStore.subscribe((state) => {
       if (state.profile) {
-        // Don't send email/name to Datadog — use anonymous hash to avoid
-        // linking PII to AAC communication patterns (PHI risk).
-        const anonId = btoa(state.profile.email).slice(0, 12);
-        ddSetUser({
-          id: anonId,
-          plan: state.profile.plan,
+        const { email, plan } = state.profile;
+        // Preserve affected-user counts without sending a reversible email
+        // prefix or other account identity to Datadog.
+        void anonymousDatadogUserId(email).then((anonId) => {
+          if (!anonId) return;
+          ddSetUser({
+            id: anonId,
+            plan,
+          });
         });
-        ddAction('user.identified', { plan: state.profile.plan });
+        ddAction('user.identified', { plan });
       }
     });
   }, []);
