@@ -168,6 +168,22 @@ test.beforeEach(async ({ page, baseURL }) => {
   });
 
   const start = baseURL || "/";
+  const protectionBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  if (
+    protectionBypass &&
+    new URL(start).hostname.endsWith(".vercel.app")
+  ) {
+    const authorizationResponse = await page.context().request.get(start, {
+      headers: {
+        "x-vercel-protection-bypass": protectionBypass,
+        "x-vercel-set-bypass-cookie": "true",
+      },
+    });
+    expect(
+      authorizationResponse.ok(),
+      `Preview authorization failed with ${authorizationResponse.status()}`,
+    ).toBe(true);
+  }
   // First load: clear persisted state from prior sessions
   await page.goto(start, { waitUntil: "domcontentloaded" });
   await page.waitForSelector('button[data-key="Q"]', { timeout: 30000 });

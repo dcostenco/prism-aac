@@ -19,6 +19,8 @@ const targets = (process.env.TARGETS ||
 const captureScreenshots = process.env.CAPTURE_SCREENSHOTS !== '0';
 const browserName = process.env.BROWSER_NAME === 'chromium' ? 'chromium' : 'webkit';
 const expectServiceWorker = process.env.EXPECT_SERVICE_WORKER === '1';
+const vercelProtectionBypass =
+  process.env.VERCEL_AUTOMATION_BYPASS_SECRET || '';
 const outputDirectory =
   process.env.EVIDENCE_DIR || `/tmp/prism-aac-strict-${Date.now()}`;
 const scenarios = [
@@ -38,6 +40,22 @@ for (const target of targets) {
       viewport: { width: 390, height: 844 },
       locale: scenario.language === 'ro' ? 'ro-RO' : 'en-US',
     });
+    if (
+      vercelProtectionBypass &&
+      new URL(target).hostname.endsWith('.vercel.app')
+    ) {
+      const authorizationResponse = await context.request.get(target, {
+        headers: {
+          'x-vercel-protection-bypass': vercelProtectionBypass,
+          'x-vercel-set-bypass-cookie': 'true',
+        },
+      });
+      if (!authorizationResponse.ok()) {
+        throw new Error(
+          `Preview authorization failed with ${authorizationResponse.status()}`,
+        );
+      }
+    }
     const page = await context.newPage();
     const pageErrors = [];
     const requestFailures = [];

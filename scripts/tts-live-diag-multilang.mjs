@@ -20,6 +20,8 @@ const TARGET_URL =
 const REPORT_PATH =
   process.env.TTS_REPORT_PATH || '/tmp/multilang-results.json';
 const VERIFY_SERVER_AUDIO = process.env.VERIFY_SERVER_AUDIO !== '0';
+const VERCEL_PROTECTION_BYPASS =
+  process.env.VERCEL_AUTOMATION_BYPASS_SECRET || '';
 const ALL_LANGS = [
   { code: 'en', locale: 'en-US', native: 'English', expectLang: /^en/, phrase: 'HELLO' },
   { code: 'ro', locale: 'ro-RO', native: 'Română', expectLang: /^ro/, phrase: 'BUNA' },
@@ -69,6 +71,22 @@ for (const language of LANGS) {
       viewport: { width: 1280, height: 800 },
       locale: language.locale,
     });
+    if (
+      VERCEL_PROTECTION_BYPASS &&
+      new URL(TARGET_URL).hostname.endsWith('.vercel.app')
+    ) {
+      const authorizationResponse = await context.request.get(TARGET_URL, {
+        headers: {
+          'x-vercel-protection-bypass': VERCEL_PROTECTION_BYPASS,
+          'x-vercel-set-bypass-cookie': 'true',
+        },
+      });
+      if (!authorizationResponse.ok()) {
+        throw new Error(
+          `Preview authorization failed with ${authorizationResponse.status()}`,
+        );
+      }
+    }
     const page = await context.newPage();
     const captured = [];
     const capturedByRequest = new Map();
