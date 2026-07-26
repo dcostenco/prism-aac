@@ -6,7 +6,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { useContactsStore, type AacContact } from '@/store/contactsStore';
-import { aacSpeak } from '@/services/aacSpeak';
+import { speakWord } from '@/services/speechService';
 import { tapFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
@@ -313,8 +313,11 @@ export default function PredictionBar() {
     learnWord(word.toLowerCase(), previousWord?.toLowerCase(), prevPrevWord?.toLowerCase());
     ddAction('prediction.word_selected', { categoryId: undefined, position: predictions.indexOf(word), isCompletion, wordCount: words.length + 1 });
     import('@/store/metricsStore').then(m => m.useMetricsStore.getState().recordPredictionHit()).catch(() => {});
-    const fullPhrase = isCompletion ? [...words.slice(0, -1), word].join(' ') : [...words, word].join(' ');
-    aacSpeak(fullPhrase, speechRate, speechVolume);
+    // Prediction taps are the high-frequency AAC path. Speak only the selected
+    // word through the local voice so rapid composition cannot fan out one
+    // cloud request per growing phrase. The main Speak button remains the
+    // explicit cloud-quality path for the completed message.
+    speakWord(word, speechRate, speechVolume);
   }, [text, learnWord, speechRate, speechVolume]);
 
   // Must be computed before any early returns — hooks must be called unconditionally.
