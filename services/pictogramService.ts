@@ -18,6 +18,7 @@
 import { PictureMode } from '@/store/settingsStore';
 import { SynaluxProfile } from '@/services/aiService';
 import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
+import type { SupportedLanguage } from '@/engine/i18n';
 
 /**
  * Picture mode is derived from the user's Synalux plan, not from a user
@@ -25,16 +26,14 @@ import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
  * paid subscribers (Standard / Advanced / Enterprise) additionally get
  * AI-generated pictograms for phrases ARASAAC doesn't cover.
  *
- * Profile-load race: profile is null for ~1-2s after page load while
- * `fetchSynaluxProfile()` runs. If we default to 'symbols' during that
- * window, paid users miss the AI fallback — and the result gets cached
- * `null` in MEM_CACHE, so even when profile loads they never see icons
- * for ARASAAC-miss tokens. Default to 'symbols-ai' optimistically; the
- * portal route returns 403 for actual free-tier users (and we cache the
- * null gracefully).
+ * A null profile means anonymous or still loading, so it must stay on the
+ * free ARASAAC path. Optimistically calling the paid route caused a burst of
+ * 401s for every anonymous first visit. Paid profile hydration changes the
+ * mode to `symbols-ai`; mode is part of the cache key, so an earlier ARASAAC
+ * miss cannot suppress the later paid AI lookup.
  */
 export function pictureModeForProfile(profile: SynaluxProfile | null): PictureMode {
-  if (profile && profile.plan === 'free') return 'symbols';
+  if (!profile || profile.plan === 'free') return 'symbols';
   return 'symbols-ai';
 }
 
@@ -49,6 +48,7 @@ const ARASAAC_CDN = 'https://static.arasaac.org/pictograms';
 // when the page unloads; the memory cost is negligible.
 const MAX_MEM_CACHE = 600;
 const MEM_CACHE = new Map<string, string | null>();
+const IN_FLIGHT = new Map<string, Promise<string | null>>();
 
 function memCacheSet(key: string, value: string | null) {
   if (MEM_CACHE.size >= MAX_MEM_CACHE) {
@@ -295,7 +295,26 @@ export async function getPictogramUrl(
   if (PROFANITY.has(lowerToken)) return null;
 
   const key = await sha256(`v${STYLE_VERSION}|${lang}|${mode}|${token}`);
+  const existingRequest = IN_FLIGHT.get(key);
+  if (existingRequest) return existingRequest;
 
+  const request = resolvePictogramUrl(phrase, lang, mode, token, lowerToken, key);
+  IN_FLIGHT.set(key, request);
+  try {
+    return await request;
+  } finally {
+    if (IN_FLIGHT.get(key) === request) IN_FLIGHT.delete(key);
+  }
+}
+
+async function resolvePictogramUrl(
+  phrase: string,
+  lang: string,
+  mode: PictureMode,
+  token: string,
+  lowerToken: string,
+  key: string,
+): Promise<string | null> {
   if (SENSITIVE.has(lowerToken)) {
     if (MEM_CACHE.has(key)) return MEM_CACHE.get(key) ?? null;
     const neutralId = 6009;
@@ -382,7 +401,7 @@ let _precacheDone = false;
  * every phrase tile renders instantly offline — no network needed.
  */
 export async function precacheAllPictograms(
-  lang: string,
+  lang: SupportedLanguage,
   mode: PictureMode,
 ): Promise<void> {
   if (_precacheDone || mode === 'off') return;
@@ -396,7 +415,7 @@ export async function precacheAllPictograms(
     let fetched = 0;
 
     for (const p of DEFAULT_PHRASES) {
-      const text = getPhraseText(p.id, lang as any, p.text);
+      const text = getPhraseText(p.id, lang, p.text);
       const token = pickHeadWord(text);
       if (!token) continue;
 

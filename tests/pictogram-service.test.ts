@@ -46,9 +46,9 @@ describe('pictureModeForProfile — plan → mode mapping', () => {
       .toBe('symbols');
   });
 
-  it('null profile returns "symbols-ai" (optimistic: portal 403s for real free users)', async () => {
+  it('null profile returns "symbols" so anonymous visits never call the paid route', async () => {
     const { pictureModeForProfile } = await import('@/services/pictogramService');
-    expect(pictureModeForProfile(null)).toBe('symbols-ai');
+    expect(pictureModeForProfile(null)).toBe('symbols');
   });
 
   it.each(['standard', 'advanced', 'enterprise'] as const)(
@@ -177,6 +177,20 @@ describe('getPictogramUrl — ARASAAC miss', () => {
     expect(await getPictogramUrl('xyzzy-unique-1', 'en', 'symbols')).toBeNull();
   });
 
+  it('an anonymous profile miss never makes a Synalux AI request', async () => {
+    const fetchSpy = arasaacEmpty();
+    vi.stubGlobal('fetch', fetchSpy);
+    const { getPictogramUrl, pictureModeForProfile } = await import('@/services/pictogramService');
+
+    expect(await getPictogramUrl(
+      'anonymous-arasaac-miss',
+      'en',
+      pictureModeForProfile(null),
+    )).toBeNull();
+    expect(fetchSpy.mock.calls.some(([url]) => String(url).includes('/prism-aac/pictogram')))
+      .toBe(false);
+  });
+
   it('calls Synalux AI when ARASAAC misses and mode=symbols-ai', async () => {
     let aiCalled = false;
     const base = arasaacEmpty();
@@ -290,6 +304,48 @@ describe('getPictogramUrl — Synalux AI content safety', () => {
 // ── Memory cache deduplication ─────────────────────────────────────────────
 
 describe('getPictogramUrl — MEM_CACHE deduplication', () => {
+  it('coalesces concurrent callers for the same phrase + lang + mode', async () => {
+    let releaseSearch!: () => void;
+    const searchGate = new Promise<void>((resolve) => {
+      releaseSearch = resolve;
+    });
+    const fetchSpy = vi.fn(async (url: string) => {
+      if (url.includes('api.arasaac.org')) {
+        await searchGate;
+        return new Response(JSON.stringify([{ _id: 6 }]), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.includes('static.arasaac.org')) {
+        return new Response(new ArrayBuffer(100), {
+          status: 200, headers: { 'Content-Type': 'image/png' },
+        });
+      }
+      return new Response('', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+
+    const first = getPictogramUrl('concurrent-cache-test', 'en', 'symbols');
+    const second = getPictogramUrl('concurrent-cache-test', 'en', 'symbols');
+
+    await vi.waitFor(() => {
+      const searches = fetchSpy.mock.calls.filter(([url]) =>
+        String(url).includes('api.arasaac.org'));
+      expect(searches).toHaveLength(1);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(fetchSpy.mock.calls.filter(([url]) =>
+      String(url).includes('api.arasaac.org'))).toHaveLength(1);
+
+    releaseSearch();
+    const [url1, url2] = await Promise.all([first, second]);
+    expect(url1).toBe(MOCK_BLOB_URL);
+    expect(url2).toBe(url1);
+    expect(fetchSpy.mock.calls.filter(([url]) =>
+      String(url).includes('static.arasaac.org'))).toHaveLength(1);
+  });
+
   it('second call for same phrase + lang + mode returns cached URL without re-fetching', async () => {
     const fetchSpy = vi.fn(async (url: string) => {
       if (url.includes('api.arasaac.org')) {
