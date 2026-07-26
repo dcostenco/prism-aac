@@ -198,6 +198,7 @@ for (const target of targets) {
       waitUntil: 'domcontentloaded',
       timeout: 30_000,
     });
+    const documentHeaders = firstResponse?.headers() || {};
     await page.waitForSelector('[data-testid="prediction-bar"] button', {
       timeout: 20_000,
     });
@@ -353,6 +354,10 @@ for (const target of targets) {
       afterSecond.toLocaleLowerCase().includes(secondWord.toLocaleLowerCase());
     const assertions = {
       mainDocument200: firstResponse?.status() === 200,
+      deployedWorkerCsp:
+        documentHeaders['content-security-policy']?.includes(
+          "worker-src 'self' blob:",
+        ) === true,
       exactlyTwoLocalUtterances: beforeFinish.speakCalls.length === 2,
       correctLocalLanguage: beforeFinish.speakCalls.every((call) =>
         call.lang.toLowerCase().startsWith(expectedLangPrefix),
@@ -415,8 +420,10 @@ for (const target of targets) {
       assertions,
       document: {
         status: firstResponse?.status() || null,
-        etag: firstResponse?.headers()?.etag || null,
-        vercelId: firstResponse?.headers()?.['x-vercel-id'] || null,
+        etag: documentHeaders.etag || null,
+        vercelId: documentHeaders['x-vercel-id'] || null,
+        contentSecurityPolicy:
+          documentHeaders['content-security-policy'] || null,
         navigationType,
       },
       serviceWorker: {

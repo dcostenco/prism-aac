@@ -55,5 +55,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // With a Next.js basePath, the catch-all matcher requires at least one
+  // segment after `/prism-aac`. Add `/` explicitly so the canonical
+  // base-path document (`/prism-aac`) also receives CSP/security headers.
+  matcher: ['/', '/((?!_next/static|_next/image|favicon.ico).*)'],
 };
