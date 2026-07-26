@@ -4,8 +4,8 @@
  * Covers: rendering, click handler, aria-label fallback,
  * pictogram loading, and graceful no-icon fallback.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import PhraseTile from '@/components/PhraseTile';
 
@@ -33,6 +33,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   getPictogramUrlMock.mockResolvedValue(null);
   pictureModeForProfileMock.mockReturnValue('none' as const);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 // ── rendering ─────────────────────────────────────────────────────────────────
@@ -87,6 +91,36 @@ describe('PhraseTile — click handler', () => {
 // ── pictogram ─────────────────────────────────────────────────────────────────
 
 describe('PhraseTile — pictogram loading', () => {
+  it('does not fetch an off-screen pictogram until the tile nears the viewport', async () => {
+    let intersectionCallback:
+      | ((entries: IntersectionObserverEntry[]) => void)
+      | undefined;
+    class MockIntersectionObserver {
+      constructor(callback: (entries: IntersectionObserverEntry[]) => void) {
+        intersectionCallback = callback;
+      }
+      observe = vi.fn();
+      disconnect = vi.fn();
+      unobserve = vi.fn();
+      takeRecords = vi.fn(() => []);
+      root = null;
+      rootMargin = '120px';
+      thresholds = [0];
+    }
+    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+
+    render(<PhraseTile phrase="Dog" onClick={vi.fn()} />);
+    await act(async () => {});
+    expect(getPictogramUrlMock).not.toHaveBeenCalled();
+
+    act(() => {
+      intersectionCallback?.([
+        { isIntersecting: true } as IntersectionObserverEntry,
+      ]);
+    });
+    await waitFor(() => expect(getPictogramUrlMock).toHaveBeenCalledOnce());
+  });
+
   it('shows img when getPictogramUrl resolves a URL', async () => {
     getPictogramUrlMock.mockResolvedValueOnce('https://example.com/pic.png');
     const { container } = render(<PhraseTile phrase="Dog" onClick={vi.fn()} />);

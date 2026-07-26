@@ -20,6 +20,7 @@ import { getPhraseText } from '@/constants/phraseTranslations';
 import { registerSearchKeyHandler } from '@/services/searchKeyBridge';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
 import { useAuthStore } from '@/store/authStore';
+import { useNearViewport } from '@/hooks/useNearViewport';
 
 // ── Categories on the HOME core-vocab grid ────────────────────────────────────
 // Pink → yellow → green → orange → blue (matches Image #36 left-to-right)
@@ -158,15 +159,22 @@ function SearchResultIcon({ phrase, language }: { phrase: string; language: stri
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
   const [url, setUrl] = useState<string | null>(null);
+  const { elementRef, isNearViewport } = useNearViewport<HTMLSpanElement>();
   useEffect(() => {
+    if (!isNearViewport) return;
     let cancelled = false;
     getPictogramUrl(phrase, 'en', pictureMode)
       .then(u => { if (!cancelled) setUrl(u); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [phrase, pictureMode]);
-  if (!url) return null;
-  return <img src={url} alt="" aria-hidden className="w-8 h-8 object-contain shrink-0 rounded" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />;
+  }, [phrase, pictureMode, language, isNearViewport]);
+  return (
+    <span ref={elementRef} className="w-8 h-8 shrink-0 rounded">
+      {url && (
+        <img src={url} alt="" aria-hidden className="w-full h-full object-contain rounded" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+      )}
+    </span>
+  );
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -195,6 +203,7 @@ export default function CategoryPanel() {
   const gridRef = useRef<HTMLDivElement>(null);
   const [gridPage, setGridPage] = useState(0);
   const activeCatIdForReset = useUIStore((s) => s.activeCategoryId);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- category/grid changes must reset pagination before rendering an out-of-range page
   useEffect(() => { setGridPage(0); }, [activeCatIdForReset, gridSize]);
   const speakDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [compactMode, setCompactMode] = useState(false);

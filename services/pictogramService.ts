@@ -46,8 +46,11 @@ const ARASAAC_CDN = 'https://static.arasaac.org/pictograms';
 // WebKitBlobResource error 1. Blob URLs are cleaned up by the browser
 // when the page unloads; the memory cost is negligible.
 const MAX_MEM_CACHE = 600;
+const MAX_ARASAAC_BLOB_CACHE = 32;
 const MEM_CACHE = new Map<string, string | null>();
 const IN_FLIGHT = new Map<string, Promise<string | null>>();
+const ARASAAC_BLOB_CACHE = new Map<number, Blob>();
+const ARASAAC_IMAGE_IN_FLIGHT = new Map<number, Promise<Blob | null>>();
 
 function memCacheSet(key: string, value: string | null) {
   if (MEM_CACHE.size >= MAX_MEM_CACHE) {
@@ -173,6 +176,55 @@ function saveArasaacMisses() {
   } catch {}
 }
 
+function cacheArasaacBlob(id: number, blob: Blob) {
+  if (ARASAAC_BLOB_CACHE.size >= MAX_ARASAAC_BLOB_CACHE) {
+    const oldest = ARASAAC_BLOB_CACHE.keys().next().value;
+    if (oldest !== undefined) ARASAAC_BLOB_CACHE.delete(oldest);
+  }
+  ARASAAC_BLOB_CACHE.set(id, blob);
+}
+
+async function fetchArasaacImage(id: number): Promise<Blob | null> {
+  const cached = ARASAAC_BLOB_CACHE.get(id);
+  if (cached) {
+    // Refresh insertion order so the bounded map behaves as an LRU.
+    ARASAAC_BLOB_CACHE.delete(id);
+    ARASAAC_BLOB_CACHE.set(id, cached);
+    return cached;
+  }
+
+  const existing = ARASAAC_IMAGE_IN_FLIGHT.get(id);
+  if (existing) return existing;
+
+  const request = (async () => {
+    const imgT = timeoutSignal(5000);
+    try {
+      const imgRes = await fetch(`${ARASAAC_CDN}/${id}/${id}_500.png`, {
+        signal: imgT.signal,
+      });
+      if (!imgRes.ok) return null;
+      const cl = imgRes.headers.get('content-length');
+      if (cl && parseInt(cl, 10) > MAX_IMAGE_BYTES) return null;
+      const blob = await imgRes.blob();
+      if (blob.size > MAX_IMAGE_BYTES) return null;
+      cacheArasaacBlob(id, blob);
+      return blob;
+    } catch {
+      return null;
+    } finally {
+      imgT.cancel();
+    }
+  })();
+  ARASAAC_IMAGE_IN_FLIGHT.set(id, request);
+  try {
+    return await request;
+  } finally {
+    if (ARASAAC_IMAGE_IN_FLIGHT.get(id) === request) {
+      ARASAAC_IMAGE_IN_FLIGHT.delete(id);
+    }
+  }
+}
+
 async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
   const langCode = lang.split('-')[0] || 'en';
   const missKey = `${langCode}:${token.toLowerCase()}`;
@@ -202,22 +254,7 @@ async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
   } finally {
     searchT.cancel();
   }
-  const imgT = timeoutSignal(5000);
-  try {
-    const imgRes = await fetch(`${ARASAAC_CDN}/${id}/${id}_500.png`, {
-      signal: imgT.signal,
-    });
-    if (!imgRes.ok) return null;
-    const cl = imgRes.headers.get('content-length');
-    if (cl && parseInt(cl, 10) > MAX_IMAGE_BYTES) return null;
-    const blob = await imgRes.blob();
-    if (blob.size > MAX_IMAGE_BYTES) return null;
-    return blob;
-  } catch {
-    return null;
-  } finally {
-    imgT.cancel();
-  }
+  return fetchArasaacImage(id);
 }
 
 // ── Synalux AI fallback ─────────────────────────────────────────────────────
@@ -317,19 +354,13 @@ async function resolvePictogramUrl(
   if (SENSITIVE.has(lowerToken)) {
     if (MEM_CACHE.has(key)) return MEM_CACHE.get(key) ?? null;
     const neutralId = 6009;
-    const imgT = timeoutSignal(5000);
-    try {
-      const imgRes = await fetch(`${ARASAAC_CDN}/${neutralId}/${neutralId}_500.png`, { signal: imgT.signal });
-      if (imgRes.ok) {
-        const blob = await imgRes.blob();
-        if (blob.size <= MAX_IMAGE_BYTES) {
-          await cachePut(key, blob);
-          const url = URL.createObjectURL(blob);
-          memCacheSet(key, url);
-          return url;
-        }
-      }
-    } catch { /* fall through — return null */ } finally { imgT.cancel(); }
+    const blob = await fetchArasaacImage(neutralId);
+    if (blob) {
+      await cachePut(key, blob);
+      const url = URL.createObjectURL(blob);
+      memCacheSet(key, url);
+      return url;
+    }
     return null;
   }
 
@@ -350,19 +381,13 @@ async function resolvePictogramUrl(
   // returns wrong/generic images (e.g. clock+calendar for "Come here").
   const curatedId = CURATED_PICTOGRAM_IDS[normalize(phrase).toLowerCase()];
   if (curatedId) {
-    const imgT = timeoutSignal(5000);
-    try {
-      const imgRes = await fetch(`${ARASAAC_CDN}/${curatedId}/${curatedId}_500.png`, { signal: imgT.signal });
-      if (imgRes.ok) {
-        const blob = await imgRes.blob();
-        if (blob.size <= MAX_IMAGE_BYTES) {
-          await cachePut(key, blob);
-          const url = URL.createObjectURL(blob);
-          memCacheSet(key, url);
-          return url;
-        }
-      }
-    } catch { /* fall through to normal search */ } finally { imgT.cancel(); }
+    const blob = await fetchArasaacImage(curatedId);
+    if (blob) {
+      await cachePut(key, blob);
+      const url = URL.createObjectURL(blob);
+      memCacheSet(key, url);
+      return url;
+    }
   }
 
   const fullPhrase = normalize(phrase);
