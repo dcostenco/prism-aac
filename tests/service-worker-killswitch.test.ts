@@ -9,6 +9,7 @@ async function executeKillswitch(options: {
   storedVersion?: string;
   registrationCount?: number;
   cacheKeys?: string[];
+  hasController?: boolean;
 } = {}) {
   const storage = new Map<string, string>();
   if (options.storedVersion !== undefined) storage.set(KEY, options.storedVersion);
@@ -20,6 +21,10 @@ async function executeKillswitch(options: {
   );
   const deleteCache = vi.fn().mockResolvedValue(true);
   const getCacheKeys = vi.fn().mockResolvedValue(options.cacheKeys ?? []);
+  let controllerChange: (() => void) | undefined;
+  const addEventListener = vi.fn((event: string, handler: () => void) => {
+    if (event === 'controllerchange') controllerChange = handler;
+  });
 
   runInNewContext(buildServiceWorkerKillswitchScript(VERSION), {
     window: {
@@ -31,7 +36,8 @@ async function executeKillswitch(options: {
     },
     navigator: {
       serviceWorker: {
-        addEventListener: vi.fn(),
+        controller: options.hasController ? {} : null,
+        addEventListener,
         getRegistrations,
       },
     },
@@ -45,7 +51,15 @@ async function executeKillswitch(options: {
   await new Promise((resolve) => setTimeout(resolve, 0));
   await new Promise((resolve) => setTimeout(resolve, 0));
 
-  return { storage, reload, unregister, getRegistrations, deleteCache, getCacheKeys };
+  return {
+    storage,
+    reload,
+    unregister,
+    getRegistrations,
+    deleteCache,
+    getCacheKeys,
+    triggerControllerChange: () => controllerChange?.(),
+  };
 }
 
 describe('service-worker kill switch', () => {
@@ -53,9 +67,21 @@ describe('service-worker kill switch', () => {
     const result = await executeKillswitch();
 
     expect(result.storage.get(KEY)).toBe(VERSION);
+    result.triggerControllerChange();
     expect(result.reload).not.toHaveBeenCalled();
     expect(result.unregister).not.toHaveBeenCalled();
     expect(result.deleteCache).not.toHaveBeenCalled();
+  });
+
+  it('reloads once when an already-controlled page receives a replacement worker', async () => {
+    const result = await executeKillswitch({
+      storedVersion: VERSION,
+      hasController: true,
+    });
+
+    result.triggerControllerChange();
+    result.triggerControllerChange();
+    expect(result.reload).toHaveBeenCalledOnce();
   });
 
   it('does no cleanup when the current build is already recorded', async () => {

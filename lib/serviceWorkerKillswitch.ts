@@ -17,8 +17,9 @@ export function buildServiceWorkerKillswitchScript(version: string): string {
     }
 
     var reloaded = false;
+    var hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', function() {
-      if (reloaded) return;
+      if (!hadController || reloaded) return;
       reloaded = true;
       window.location.reload();
     });
