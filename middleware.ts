@@ -34,7 +34,11 @@ export function middleware(request: NextRequest) {
     "https://*.whatsapp.net " +
     "https://*.fbcdn.net " +
     "https://pbs.twimg.com https://abs.twimg.com",
-    "worker-src blob:",
+    // Serwist registers /prism-aac/sw.js from this origin. `blob:` is still
+    // required by the browser/ML workers, but it cannot replace `'self'`:
+    // omitting `'self'` made production silently reject the generated service
+    // worker and left returning AAC users without offline navigation.
+    "worker-src 'self' blob:",
     "font-src 'self'",
     "frame-src https:",
     "frame-ancestors 'none'",

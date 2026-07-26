@@ -14,7 +14,7 @@ final class AppStoreScreenshots: XCTestCase {
             webView.buttons["Alert"].waitForExistence(timeout: 30),
             "Page ready gate"
         )
-        // Wait for ARASAAC pictograms to load via precacheAllPictograms
+        // Wait for the visible ARASAAC pictograms to load on demand.
         Thread.sleep(forTimeInterval: 45)
     }
 

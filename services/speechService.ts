@@ -108,9 +108,28 @@ export function getVoiceStatus(lang: string): { quality: VoiceQuality; needsDown
 }
 
 let resumeInterval: ReturnType<typeof setInterval> | null = null;
+let localSpeechGeneration = 0;
+let resolveActiveLocalSpeech: (() => void) | null = null;
 
 function clearResumeWorkaround() {
   if (resumeInterval) { clearInterval(resumeInterval); resumeInterval = null; }
+}
+
+/**
+ * Retire the current local utterance before cancelling Web Speech.
+ *
+ * Safari may dispatch the cancelled utterance's onerror asynchronously. If
+ * that stale callback clears the module-global resume timer after a newer
+ * utterance starts, the newer utterance loses its keep-alive workaround. The
+ * generation makes stale callbacks no-ops, while resolving the previous
+ * promise prevents interrupted `speak()` callers from hanging indefinitely.
+ */
+function retireActiveLocalSpeech() {
+  localSpeechGeneration += 1;
+  clearResumeWorkaround();
+  const resolve = resolveActiveLocalSpeech;
+  resolveActiveLocalSpeech = null;
+  resolve?.();
 }
 
 function getAuthToken(): string | null {
@@ -155,19 +174,16 @@ const VOICE_FALLBACK: Record<string, string> = {
 const DEFAULT_FALLBACK = 'Sarah';
 
 let _catalogCache: Awaited<ReturnType<typeof fetchVoiceCatalog>> = [];
-let _catalogLoaded = false;
 
 function loadCatalog() {
   fetchVoiceCatalog().then(c => {
     _catalogCache = c;
-    _catalogLoaded = true;
   }).catch(() => {
     // Retry once after 5s — a single transient failure shouldn't degrade
     // TTS routing for the entire session.
     setTimeout(() => {
       fetchVoiceCatalog(true).then(c => {
         _catalogCache = c;
-        _catalogLoaded = true;
       }).catch(() => {});
     }, 5000);
   });
@@ -326,8 +342,10 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): P
     return resolve();
   }
   stopAzureAudio();
+  retireActiveLocalSpeech();
   window.speechSynthesis.cancel();
-  clearResumeWorkaround();
+  const generation = localSpeechGeneration;
+  resolveActiveLocalSpeech = resolve;
 
   const u = new SpeechSynthesisUtterance(text);
   const baseLang = lang.split('-')[0];
@@ -356,49 +374,66 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): P
   // about to speak). We use onstart for latency and onend for duration.
   const attemptStart = Date.now();
   let audibleStart: number | null = null;
+  let settled = false;
+  const finish = (publish: (() => void) | null) => {
+    if (settled || generation !== localSpeechGeneration) return;
+    settled = true;
+    clearResumeWorkaround();
+    resolveActiveLocalSpeech = null;
+    publish?.();
+    resolve();
+  };
   emitTtsHealthEvent({
     type: 'tts-attempt', tier: 'web-speech', text: text.slice(0, 80),
     lang, timestamp: attemptStart,
   });
 
-  u.onstart = () => { audibleStart = Date.now(); };
+  u.onstart = () => {
+    if (generation === localSpeechGeneration) audibleStart = Date.now();
+  };
   u.onend = () => {
-    clearResumeWorkaround();
-    const now = Date.now();
-    emitTtsHealthEvent({
-      type: 'tts-success', tier: 'web-speech',
-      latencyMs: (audibleStart ?? now) - attemptStart,
-      durationMs: audibleStart != null ? now - audibleStart : 0,
-      timestamp: now,
+    finish(() => {
+      const now = Date.now();
+      emitTtsHealthEvent({
+        type: 'tts-success', tier: 'web-speech',
+        latencyMs: (audibleStart ?? now) - attemptStart,
+        durationMs: audibleStart != null ? now - audibleStart : 0,
+        timestamp: now,
+      });
     });
-  
-    resolve();
   };
   u.onerror = (ev) => {
-    clearResumeWorkaround();
-    // SpeechSynthesisErrorEvent.error is a string code (e.g. 'not-allowed',
-    // 'language-unavailable', 'synthesis-failed'). Surface it so the
-    // overlay can show the actual reason — every recent regression had
-    // a different code.
-    const code = (ev as SpeechSynthesisErrorEvent | undefined)?.error || 'unknown';
-    emitTtsHealthEvent({
-      type: 'tts-give-up', lastTier: 'web-speech', triedTiers: ['web-speech'],
-      reason: `speech-synthesis error: ${code}`, timestamp: Date.now(),
+    finish(() => {
+      // SpeechSynthesisErrorEvent.error is a string code (e.g. 'not-allowed',
+      // 'language-unavailable', 'synthesis-failed'). Surface it so the
+      // overlay can show the actual reason — every recent regression had
+      // a different code.
+      const code = (ev as SpeechSynthesisErrorEvent | undefined)?.error || 'unknown';
+      emitTtsHealthEvent({
+        type: 'tts-give-up', lastTier: 'web-speech', triedTiers: ['web-speech'],
+        reason: `speech-synthesis error: ${code}`, timestamp: Date.now(),
+      });
     });
-  
-    resolve();
   };
-  // M3 fix: clear any prior interval before assigning a new one. If two speakLocal
-  // calls happen in rapid succession, the first interval would be orphaned and fire
-  // every 10 s indefinitely, calling resume() and interrupting the active utterance.
-  clearResumeWorkaround();
-  resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);
-  window.speechSynthesis.speak(u);
+  resumeInterval = setInterval(() => {
+    if (generation === localSpeechGeneration) window.speechSynthesis.resume();
+  }, 10_000);
+  try {
+    window.speechSynthesis.speak(u);
+  } catch (error) {
+    finish(() => {
+      const reason = error instanceof Error ? error.message : String(error);
+      emitTtsHealthEvent({
+        type: 'tts-give-up', lastTier: 'web-speech', triedTiers: ['web-speech'],
+        reason: `speech-synthesis threw: ${reason}`, timestamp: Date.now(),
+      });
+    });
+  }
   });
 }
 
 export function stopSpeech(): void {
   stopAzureAudio();
+  retireActiveLocalSpeech();
   if (isSpeechSupported()) window.speechSynthesis.cancel();
-  clearResumeWorkaround();
 }

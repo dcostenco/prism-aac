@@ -10,12 +10,15 @@ async function executeKillswitch(options: {
   registrationCount?: number;
   cacheKeys?: string[];
   hasController?: boolean;
+  unregisterRejects?: boolean;
 } = {}) {
   const storage = new Map<string, string>();
   if (options.storedVersion !== undefined) storage.set(KEY, options.storedVersion);
 
   const reload = vi.fn();
-  const unregister = vi.fn().mockResolvedValue(true);
+  const unregister = options.unregisterRejects
+    ? vi.fn().mockRejectedValue(new Error('unregister failed'))
+    : vi.fn().mockResolvedValue(true);
   const getRegistrations = vi.fn().mockResolvedValue(
     Array.from({ length: options.registrationCount ?? 0 }, () => ({ unregister })),
   );
@@ -100,6 +103,17 @@ describe('service-worker kill switch', () => {
 
     expect(result.unregister).toHaveBeenCalledOnce();
     expect(result.reload).toHaveBeenCalledOnce();
+  });
+
+  it('does not record the new build when stale-worker cleanup fails', async () => {
+    const result = await executeKillswitch({
+      storedVersion: 'old-build',
+      registrationCount: 1,
+      unregisterRejects: true,
+    });
+
+    expect(result.storage.get(KEY)).toBe('old-build');
+    expect(result.reload).not.toHaveBeenCalled();
   });
 
   it('deletes stale runtime caches but preserves precaches', async () => {

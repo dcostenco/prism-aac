@@ -3,7 +3,7 @@
   "short_name": "PrismAAC",
   "description": "Evidence-based AAC communication app",
   "id": "/prism-aac/",
-  "start_url": "/prism-aac",
+  "start_url": "/prism-aac/",
   "scope": "/prism-aac/",
   "display": "standalone",
   "background_color": "#12121e",

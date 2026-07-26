@@ -18,7 +18,6 @@
 import { PictureMode } from '@/store/settingsStore';
 import { SynaluxProfile } from '@/services/aiService';
 import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
-import type { SupportedLanguage } from '@/engine/i18n';
 
 /**
  * Picture mode is derived from the user's Synalux plan, not from a user
@@ -389,58 +388,4 @@ async function resolvePictogramUrl(
   const url = URL.createObjectURL(blob);
   memCacheSet(key, url);
   return url;
-}
-
-// ── Pre-cache: download all icons in background for offline use ───────────
-
-let _precacheDone = false;
-
-/**
- * Pre-download pictograms for all DEFAULT_PHRASES in the user's language.
- * Runs once per session, non-blocking, low priority. After this completes,
- * every phrase tile renders instantly offline — no network needed.
- */
-export async function precacheAllPictograms(
-  lang: SupportedLanguage,
-  mode: PictureMode,
-): Promise<void> {
-  if (_precacheDone || mode === 'off') return;
-  _precacheDone = true;
-
-  try {
-    const { DEFAULT_PHRASES } = await import('@/constants/phrases');
-    const { getPhraseText } = await import('@/constants/phraseTranslations');
-
-    let cached = 0;
-    let fetched = 0;
-
-    for (const p of DEFAULT_PHRASES) {
-      const text = getPhraseText(p.id, lang, p.text);
-      const token = pickHeadWord(text);
-      if (!token) continue;
-
-      const key = await sha256(`v${STYLE_VERSION}|${lang}|${mode}|${token}`);
-      if (MEM_CACHE.has(key)) { cached++; continue; }
-      const existing = await cacheGet(key);
-      if (existing) { cached++; continue; }
-
-      // Not cached — fetch and store
-      await getPictogramUrl(text, lang, mode);
-      fetched++;
-
-      // Yield to main thread every 10 fetches
-      if (fetched % 10 === 0) {
-        await new Promise(r => setTimeout(r, 50));
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      console.log(`[Pictogram] Pre-cached ${cached} existing + ${fetched} new icons for ${lang}`);
-    }
-  } catch (e) {
-    // Non-critical — app works without pre-cache, just slower on first tap
-    if (typeof window !== 'undefined') {
-      console.warn('[Pictogram] Pre-cache failed:', e);
-    }
-  }
 }
