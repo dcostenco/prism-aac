@@ -2,6 +2,7 @@ import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
 import {
   PRISM_AAC_BASE_PATH,
+  PRISM_AAC_PUBLIC_PRECACHE_PATTERNS,
   PRISM_AAC_SERVICE_WORKER_SCOPE,
 } from './lib/appPaths';
 
@@ -14,6 +15,7 @@ const withSerwist = withSerwistInit({
   // owned by ServiceWorkerRegistrar so one broader registration controls
   // both the canonical document and its child routes.
   register: false,
+  globPublicPatterns: PRISM_AAC_PUBLIC_PRECACHE_PATTERNS,
 });
 
 // basePath: '/prism-aac' makes Next.js emit asset URLs and route links
