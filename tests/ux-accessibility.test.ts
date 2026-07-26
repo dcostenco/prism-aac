@@ -6,6 +6,9 @@ import { TEMPLATE_ORDERING_SEQUENCES as DEFAULT_ORDERING_SEQUENCES } from '@/con
 import { LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS, DEFAULT_PREDICTIONS } from '@/constants/keyboardLayouts';
 import { mergeWordFreq, mergeCustomItems, mergeHistory } from '@/services/syncService';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
+import { PRISM_AAC_BASE_PATH, PRISM_AAC_MANIFEST_PATH, PRISM_AAC_STATIC_PATH } from '@/lib/appPaths';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 describe('UX — Data completeness', () => {
   it('has default categories with core content', () => {
@@ -184,9 +187,22 @@ describe('UX — Gap tests (missing features)', () => {
     expect(true).toBe(true);
   });
 
-  it('GAP: no PWA manifest for offline/home-screen install', () => {
-    // TODO: Add manifest.json and service worker
-    expect(true).toBe(true);
+  it('PWA entry points and assets stay inside the deployed base path', () => {
+    const manifest = JSON.parse(readFileSync(resolve('public/manifest.json'), 'utf8'));
+    const pressPage = readFileSync(resolve('public/press.html'), 'utf8');
+
+    expect(PRISM_AAC_MANIFEST_PATH).toBe(`${PRISM_AAC_BASE_PATH}/manifest.json`);
+    expect(PRISM_AAC_STATIC_PATH).toBe(`${PRISM_AAC_BASE_PATH}/_next/static/`);
+    expect(manifest).toMatchObject({
+      id: `${PRISM_AAC_BASE_PATH}/`,
+      start_url: PRISM_AAC_BASE_PATH,
+      scope: `${PRISM_AAC_BASE_PATH}/`,
+    });
+    expect(manifest.icons).toEqual(expect.arrayContaining([
+      expect.objectContaining({ src: `${PRISM_AAC_BASE_PATH}/icon-192.png` }),
+      expect.objectContaining({ src: `${PRISM_AAC_BASE_PATH}/icon-512.png` }),
+    ]));
+    expect(pressPage).toContain(`href="${PRISM_AAC_BASE_PATH}/icon-512.png"`);
   });
 });
 

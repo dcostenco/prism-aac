@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useMarketplaceStore } from '@/store/marketplaceStore';
 import { _resetRegistryForTests } from '@/lib/marketplace/registry';
 import { _resetBootForTests, bootHandlers } from '@/lib/marketplace/handlers';
+import { LOCAL_CATALOG } from '@/lib/marketplace/manifests/local';
 import type { HandlerContext } from '@/lib/marketplace/types';
 
 interface StubState {
@@ -54,6 +55,12 @@ function makeCtx(initial: Partial<StubState> = {}): { ctx: HandlerContext; state
 }
 
 beforeEach(() => {
+  // Store tests exercise the deterministic offline fallback. Without this
+  // stub they silently call the live portal, so a current remote catalog can
+  // change the fixtures and make local unit results depend on network state.
+  vi.stubGlobal('fetch', vi.fn(async () => {
+    throw new Error('offline test fixture');
+  }));
   _resetRegistryForTests();
   _resetBootForTests();
   bootHandlers();
@@ -67,13 +74,17 @@ beforeEach(() => {
   });
 });
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe('marketplaceStore — loadCatalog', () => {
   it('hydrates catalog from local manifest', async () => {
     await useMarketplaceStore.getState().loadCatalog();
     const { catalog, source, loading } = useMarketplaceStore.getState();
     expect(loading).toBe(false);
     expect(source).toBe('local');
-    expect(catalog.length).toBe(16);
+    expect(catalog).toHaveLength(LOCAL_CATALOG.length);
   });
 
   it('skips refetch within TTL', async () => {

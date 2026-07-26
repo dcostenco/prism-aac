@@ -12,6 +12,23 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const MOCK_BLOB_URL = 'blob:mock-pictogram-url';
+const ARASAAC_API_HOST = 'api.arasaac.org';
+const ARASAAC_STATIC_HOST = 'static.arasaac.org';
+
+function requestHostname(input: unknown): string {
+  if (input instanceof URL) return input.hostname;
+  if (typeof Request !== 'undefined' && input instanceof Request) {
+    return new URL(input.url).hostname;
+  }
+  if (typeof input !== 'string') return '';
+
+  return new URL(input, 'https://prism-aac.test').hostname;
+}
+
+function isArasaacRequest(input: unknown): boolean {
+  const hostname = requestHostname(input);
+  return hostname === ARASAAC_API_HOST || hostname === ARASAAC_STATIC_HOST;
+}
 
 function mockCreateObjectURL(): void {
   // jsdom does not implement URL.createObjectURL — provide a stable mock
@@ -37,6 +54,15 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe('ARASAAC request matching', () => {
+  it('accepts exact provider hostnames and rejects hostname lookalikes', () => {
+    expect(isArasaacRequest(`https://${ARASAAC_API_HOST}/v1/pictograms/en/food`)).toBe(true);
+    expect(isArasaacRequest(`https://${ARASAAC_STATIC_HOST}/pictograms/42.png`)).toBe(true);
+    expect(isArasaacRequest(`https://${ARASAAC_API_HOST}.attacker.test/pictograms`)).toBe(false);
+    expect(isArasaacRequest(`https://attacker.test/${ARASAAC_STATIC_HOST}/42.png`)).toBe(false);
+  });
+});
+
 // ── pictureModeForProfile ──────────────────────────────────────────────────
 
 describe('pictureModeForProfile — plan → mode mapping', () => {
@@ -46,9 +72,9 @@ describe('pictureModeForProfile — plan → mode mapping', () => {
       .toBe('symbols');
   });
 
-  it('null profile returns "symbols-ai" (optimistic: portal 403s for real free users)', async () => {
+  it('null profile returns "symbols" so anonymous visits never call the paid route', async () => {
     const { pictureModeForProfile } = await import('@/services/pictogramService');
-    expect(pictureModeForProfile(null)).toBe('symbols-ai');
+    expect(pictureModeForProfile(null)).toBe('symbols');
   });
 
   it.each(['standard', 'advanced', 'enterprise'] as const)(
@@ -95,12 +121,12 @@ describe('getPictogramUrl — early exits', () => {
 describe('getPictogramUrl — ARASAAC hit', () => {
   it('returns a blob object URL when ARASAAC search + CDN both succeed', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('api.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
         return new Response(JSON.stringify([{ _id: 42, keywords: [{ keyword: 'food' }] }]), {
           status: 200, headers: { 'Content-Type': 'application/json' },
         });
       }
-      if (url.includes('static.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
         return new Response(new ArrayBuffer(512), {
           status: 200, headers: { 'Content-Type': 'image/png' },
         });
@@ -114,12 +140,12 @@ describe('getPictogramUrl — ARASAAC hit', () => {
 
   it('fetches CDN URL with the pictogram ID returned by the search', async () => {
     const fetchSpy = vi.fn(async (url: string) => {
-      if (url.includes('api.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
         return new Response(JSON.stringify([{ _id: 7777 }]), {
           status: 200, headers: { 'Content-Type': 'application/json' },
         });
       }
-      if (url.includes('static.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
         return new Response(new ArrayBuffer(512), {
           status: 200, headers: { 'Content-Type': 'image/png' },
         });
@@ -129,19 +155,20 @@ describe('getPictogramUrl — ARASAAC hit', () => {
     vi.stubGlobal('fetch', fetchSpy);
     const { getPictogramUrl } = await import('@/services/pictogramService');
     await getPictogramUrl('water', 'en', 'symbols');
-    const cdnCalls = (fetchSpy.mock.calls as [string][]).filter(([u]) => u.includes('static.arasaac.org'));
+    const cdnCalls = (fetchSpy.mock.calls as [string][])
+      .filter(([u]) => requestHostname(u) === ARASAAC_STATIC_HOST);
     expect(cdnCalls.length).toBeGreaterThan(0);
     expect(cdnCalls[0][0]).toContain('7777');
   });
 
   it('passes the correct lang code to the ARASAAC search URL', async () => {
     const fetchSpy = vi.fn(async (url: string) => {
-      if (url.includes('api.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
         return new Response(JSON.stringify([{ _id: 1 }]), {
           status: 200, headers: { 'Content-Type': 'application/json' },
         });
       }
-      if (url.includes('static.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
         return new Response(new ArrayBuffer(100), {
           status: 200, headers: { 'Content-Type': 'image/png' },
         });
@@ -151,7 +178,8 @@ describe('getPictogramUrl — ARASAAC hit', () => {
     vi.stubGlobal('fetch', fetchSpy);
     const { getPictogramUrl } = await import('@/services/pictogramService');
     await getPictogramUrl('apă', 'ro-RO', 'symbols');
-    const arasaacCalls = (fetchSpy.mock.calls as [string][]).filter(([u]) => u.includes('api.arasaac.org'));
+    const arasaacCalls = (fetchSpy.mock.calls as [string][])
+      .filter(([u]) => requestHostname(u) === ARASAAC_API_HOST);
     // Lang code is base code only: 'ro-RO' → 'ro'
     expect(arasaacCalls[0][0]).toContain('/ro/');
   });
@@ -162,7 +190,7 @@ describe('getPictogramUrl — ARASAAC hit', () => {
 describe('getPictogramUrl — ARASAAC miss', () => {
   function arasaacEmpty() {
     return vi.fn(async (url: string) => {
-      if (url.includes('api.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
         return new Response(JSON.stringify([]), {
           status: 200, headers: { 'Content-Type': 'application/json' },
         });
@@ -175,6 +203,20 @@ describe('getPictogramUrl — ARASAAC miss', () => {
     vi.stubGlobal('fetch', arasaacEmpty());
     const { getPictogramUrl } = await import('@/services/pictogramService');
     expect(await getPictogramUrl('xyzzy-unique-1', 'en', 'symbols')).toBeNull();
+  });
+
+  it('an anonymous profile miss never makes a Synalux AI request', async () => {
+    const fetchSpy = arasaacEmpty();
+    vi.stubGlobal('fetch', fetchSpy);
+    const { getPictogramUrl, pictureModeForProfile } = await import('@/services/pictogramService');
+
+    expect(await getPictogramUrl(
+      'anonymous-arasaac-miss',
+      'en',
+      pictureModeForProfile(null),
+    )).toBeNull();
+    expect(fetchSpy.mock.calls.some(([url]) => String(url).includes('/prism-aac/pictogram')))
+      .toBe(false);
   });
 
   it('calls Synalux AI when ARASAAC misses and mode=symbols-ai', async () => {
@@ -197,7 +239,7 @@ describe('getPictogramUrl — ARASAAC miss', () => {
 
   it('returns null when both ARASAAC and Synalux AI fail for symbols-ai', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('api.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
         return new Response(JSON.stringify([]), {
           status: 200, headers: { 'Content-Type': 'application/json' },
         });
@@ -217,7 +259,7 @@ describe('getPictogramUrl — ARASAAC miss', () => {
 describe('getPictogramUrl — Synalux AI content safety', () => {
   function setupWithAI(handler: (url: string, init?: RequestInit) => Promise<Response>) {
     vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
-      if (url.includes('api.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
         return new Response(JSON.stringify([]), {
           status: 200, headers: { 'Content-Type': 'application/json' },
         });
@@ -290,14 +332,56 @@ describe('getPictogramUrl — Synalux AI content safety', () => {
 // ── Memory cache deduplication ─────────────────────────────────────────────
 
 describe('getPictogramUrl — MEM_CACHE deduplication', () => {
+  it('coalesces concurrent callers for the same phrase + lang + mode', async () => {
+    let releaseSearch!: () => void;
+    const searchGate = new Promise<void>((resolve) => {
+      releaseSearch = resolve;
+    });
+    const fetchSpy = vi.fn(async (url: string) => {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
+        await searchGate;
+        return new Response(JSON.stringify([{ _id: 6 }]), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
+        return new Response(new ArrayBuffer(100), {
+          status: 200, headers: { 'Content-Type': 'image/png' },
+        });
+      }
+      return new Response('', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+    const { getPictogramUrl } = await import('@/services/pictogramService');
+
+    const first = getPictogramUrl('concurrent-cache-test', 'en', 'symbols');
+    const second = getPictogramUrl('concurrent-cache-test', 'en', 'symbols');
+
+    await vi.waitFor(() => {
+      const searches = fetchSpy.mock.calls.filter(([url]) =>
+        requestHostname(url) === ARASAAC_API_HOST);
+      expect(searches).toHaveLength(1);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(fetchSpy.mock.calls.filter(([url]) =>
+      requestHostname(url) === ARASAAC_API_HOST)).toHaveLength(1);
+
+    releaseSearch();
+    const [url1, url2] = await Promise.all([first, second]);
+    expect(url1).toBe(MOCK_BLOB_URL);
+    expect(url2).toBe(url1);
+    expect(fetchSpy.mock.calls.filter(([url]) =>
+      requestHostname(url) === ARASAAC_STATIC_HOST)).toHaveLength(1);
+  });
+
   it('second call for same phrase + lang + mode returns cached URL without re-fetching', async () => {
     const fetchSpy = vi.fn(async (url: string) => {
-      if (url.includes('api.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
         return new Response(JSON.stringify([{ _id: 5 }]), {
           status: 200, headers: { 'Content-Type': 'application/json' },
         });
       }
-      if (url.includes('static.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
         return new Response(new ArrayBuffer(100), {
           status: 200, headers: { 'Content-Type': 'image/png' },
         });
@@ -311,20 +395,20 @@ describe('getPictogramUrl — MEM_CACHE deduplication', () => {
     expect(url1).toBe(MOCK_BLOB_URL);
     expect(url2).toBe(url1);
     // Only the first call hits the network (ARASAAC search + CDN = 2 calls max)
-    const networkCalls = (fetchSpy.mock.calls as [string][]).filter(([u]) => u.includes('arasaac.org'));
+    const networkCalls = (fetchSpy.mock.calls as [string][]).filter(([u]) => isArasaacRequest(u));
     expect(networkCalls.length).toBeLessThanOrEqual(2);
   });
 
   it('different phrases produce separate cache entries', async () => {
     let callCount = 0;
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('api.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
         callCount++;
         return new Response(JSON.stringify([{ _id: callCount }]), {
           status: 200, headers: { 'Content-Type': 'application/json' },
         });
       }
-      if (url.includes('static.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
         return new Response(new ArrayBuffer(100), {
           status: 200, headers: { 'Content-Type': 'image/png' },
         });
@@ -344,7 +428,7 @@ describe('getPictogramUrl — MEM_CACHE deduplication', () => {
 describe('getPictogramUrl — ARASAAC 404 handling', () => {
   it('returns null and does not throw when ARASAAC search returns 404', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('api.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
         return new Response('Not found', { status: 404 });
       }
       return new Response('', { status: 404 });
@@ -355,12 +439,12 @@ describe('getPictogramUrl — ARASAAC 404 handling', () => {
 
   it('returns null when CDN image fetch returns 404 (pictogram ID valid but image missing)', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('api.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_API_HOST) {
         return new Response(JSON.stringify([{ _id: 99 }]), {
           status: 200, headers: { 'Content-Type': 'application/json' },
         });
       }
-      if (url.includes('static.arasaac.org')) {
+      if (requestHostname(url) === ARASAAC_STATIC_HOST) {
         return new Response('', { status: 404 });
       }
       return new Response('', { status: 404 });

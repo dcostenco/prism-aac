@@ -10,6 +10,9 @@ import CaregiverContactsSettings from '@/components/CaregiverContactsSettings';
 import { useContactsStore } from '@/store/contactsStore';
 import { useAuthStore } from '@/store/authStore';
 vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn() }));
+vi.mock('@/components/IntegrationsSettings', () => ({
+  default: () => <div data-testid="integrations-settings" />,
+}));
 
 const syncMock = vi.fn();
 vi.mock('@/services/contactsIntegrationService', () => ({

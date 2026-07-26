@@ -17,7 +17,7 @@
  */
 
 import { randomId } from '@/lib/uuid';
-import { timeoutSignal } from '@/lib/portalConfig';
+import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
 import { sanitizeString } from '@/lib/safeStrings';
 import {
   clampInt,
@@ -82,10 +82,7 @@ export interface EmergencyConfig {
 
 // Emergency features work for ALL tiers — free, standard, advanced, enterprise.
 // A child's safety does not depend on a subscription.
-const SYNALUX_EMERGENCY_API =
-  (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SYNALUX_API
-    ? process.env.NEXT_PUBLIC_SYNALUX_API
-    : 'https://synalux.ai/api/v1') + '/prism-aac/emergency';
+const SYNALUX_EMERGENCY_API = `${SYNALUX_API}/prism-aac/emergency`;
 
 // Cancel gesture: two-corner simultaneous press-and-hold for 3 seconds.
 // The child is trained on this during onboarding, like Apple Watch SOS training.

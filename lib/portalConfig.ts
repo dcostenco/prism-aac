@@ -8,10 +8,54 @@
  * along with their own raw fetch + timeout boilerplate.
  */
 
-export const SYNALUX_API: string =
-  (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SYNALUX_API)
-    ? process.env.NEXT_PUBLIC_SYNALUX_API
-    : 'https://synalux.ai/api/v1';
+const PRODUCTION_PORTAL_ORIGIN = 'https://synalux.ai';
+const DEFAULT_BASE_PATH = '/prism-aac';
+const VERCEL_HOST_SUFFIX = '.vercel.app';
+
+/**
+ * Standalone deployments cannot safely receive the portal's credentialed
+ * CORS responses because each Vercel preview has a different origin. Route
+ * those browsers through this app's existing server-side API rewrite instead.
+ * The canonical synalux.ai host stays direct and same-origin.
+ */
+export function resolveSynaluxApi(
+  configuredBase?: string,
+  runtimeOrigin?: string,
+  runtimeHostname?: string,
+  basePath = DEFAULT_BASE_PATH,
+): string {
+  if (!runtimeOrigin || !runtimeHostname) return `${PRODUCTION_PORTAL_ORIGIN}/api/v1`;
+  if (runtimeHostname.endsWith(VERCEL_HOST_SUFFIX)) {
+    const normalizedBasePath = basePath.startsWith('/') ? basePath : `/${basePath}`;
+    return `${runtimeOrigin}${normalizedBasePath.replace(/\/$/, '')}/api/v1`;
+  }
+  if (configuredBase) return configuredBase;
+  if (runtimeHostname === 'synalux.ai' || runtimeHostname === 'www.synalux.ai') {
+    return `${PRODUCTION_PORTAL_ORIGIN}/api/v1`;
+  }
+  const normalizedBasePath = basePath.startsWith('/') ? basePath : `/${basePath}`;
+  return `${runtimeOrigin}${normalizedBasePath.replace(/\/$/, '')}/api/v1`;
+}
+
+const runtimeLocation = typeof window !== 'undefined' ? window.location : undefined;
+const configuredApiBase =
+  typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_SYNALUX_API : undefined;
+export const SYNALUX_API: string = resolveSynaluxApi(
+  configuredApiBase,
+  runtimeLocation?.origin,
+  runtimeLocation?.hostname,
+  typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_BASE_PATH
+    ? process.env.NEXT_PUBLIC_BASE_PATH
+    : DEFAULT_BASE_PATH,
+);
+export const SYNALUX_PORTAL_ORIGIN: string = (() => {
+  if (!configuredApiBase) return PRODUCTION_PORTAL_ORIGIN;
+  try {
+    return new URL(configuredApiBase).origin;
+  } catch {
+    return PRODUCTION_PORTAL_ORIGIN;
+  }
+})();
 
 /** Hard cap on any single portal response body. A hostile or buggy
  *  portal returning a 100 MB JSON would otherwise OOM the AAC client.

@@ -20,7 +20,7 @@
  *     inline, never as a window.alert that motor-impaired AAC users
  *     can't dismiss.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   listIntegrations,
   subscribeToIntegrationEvents,
@@ -36,15 +36,21 @@ export default function IntegrationsSettings() {
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const mountedRef = useRef(false);
+  const refreshGenerationRef = useRef(0);
 
   const refresh = useCallback(async () => {
+    const generation = ++refreshGenerationRef.current;
+    if (!mountedRef.current) return;
     setLoadState('loading');
     try {
       const list = await listIntegrations();
+      if (!mountedRef.current || generation !== refreshGenerationRef.current) return;
       setProviders(list);
       setLoadState('idle');
       setError(null);
     } catch (e) {
+      if (!mountedRef.current || generation !== refreshGenerationRef.current) return;
       console.warn('[integrations] load failed:', e instanceof Error ? e.message : e);
       setError('Could not load integrations. Please check your connection.');
       setLoadState('error');
@@ -52,7 +58,17 @@ export default function IntegrationsSettings() {
   }, []);
 
   useEffect(() => {
-    refresh();
+    let cancelled = false;
+    mountedRef.current = true;
+    // Defer the initial load so the effect only synchronizes lifecycle state;
+    // the async callback owns the subsequent React state updates.
+    queueMicrotask(() => {
+      if (!cancelled) void refresh();
+    });
+    return () => {
+      cancelled = true;
+      mountedRef.current = false;
+    };
   }, [refresh]);
 
   // Refresh when ANY same-origin synalux tab broadcasts a connect/disconnect.

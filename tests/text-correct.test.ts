@@ -68,7 +68,7 @@ describe('correctText (unit)', () => {
     expect(url).toContain('11434');
   });
 
-  it('portal-only: when prism-coder is unavailable, calls the synalux portal', async () => {
+  it('portal-only: when prism-coder is unavailable, calls the configured portal endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ corrected: 'bowl of rice', original: 'bowirice', changed: true }),
@@ -79,7 +79,7 @@ describe('correctText (unit)', () => {
     expect(out).toBe('bowl of rice');
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toContain('synalux');
+    expect(new URL(url).pathname).toMatch(/\/api\/v1\/text\/correct$/);
   });
 
   it('caches results so identical inputs only round-trip once', async () => {

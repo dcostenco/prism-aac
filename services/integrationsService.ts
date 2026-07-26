@@ -32,13 +32,11 @@
  * needs a server-side SSE channel which is out of this round's scope.
  */
 import { portalFetch } from '@/services/portalClient';
-import { SYNALUX_API } from '@/lib/portalConfig';
+import { SYNALUX_PORTAL_ORIGIN } from '@/lib/portalConfig';
 
-// SYNALUX_API is e.g. https://synalux.ai/api/v1. The OAuth connect
-// URLs returned by /chat/providers (and the mail synthetics below)
-// live at the SITE root (`/api/auth/connect/...`), not under /api/v1,
-// so we strip /api/v1 to get the site origin.
-const SYNALUX_BASE = SYNALUX_API.replace(/\/api\/v1\/?$/, '');
+// OAuth connect URLs live at the canonical portal root, not under the
+// preview-safe API proxy used by data requests.
+const SYNALUX_BASE = SYNALUX_PORTAL_ORIGIN;
 import { syncContactsOnce } from '@/services/contactsIntegrationService';
 import { playTimerRing } from '@/services/feedback';
 

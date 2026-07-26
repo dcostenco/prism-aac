@@ -4,13 +4,15 @@ import { headers, cookies } from "next/headers";
 import "./globals.css";
 import HtmlLangSync from "@/components/HtmlLangSync";
 import DatadogInit from "@/components/DatadogInit";
+import { PRISM_AAC_MANIFEST_PATH } from "@/lib/appPaths";
+import { buildServiceWorkerKillswitchScript } from "@/lib/serviceWorkerKillswitch";
 
 const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Prism AAC",
   description: "Augmentative and Alternative Communication app",
-  manifest: "/manifest.json",
+  manifest: PRISM_AAC_MANIFEST_PATH,
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Prism AAC" },
 };
 
@@ -25,11 +27,12 @@ export const viewport: Viewport = {
 
 // SW kill-switch version. Bump whenever a deploy needs to evict a
 // previously-registered Service Worker on every client. The inline
-// script below compares the version in localStorage against this
-// constant: on mismatch it unregisters all SWs under the current
-// origin, deletes every Cache Storage entry, sets the new version,
-// and reloads. End users self-heal automatically — no Develop-menu
-// intervention. (May 2026: bumped to 2026-05-08-pdf-fix after users
+// script compares the version in localStorage against this constant.
+// On mismatch, it reloads only when an existing worker or runtime cache
+// actually needs eviction; first-time visitors record the version without
+// a wasteful reload. Serwist precaches stay intact. End users self-heal
+// automatically — no Develop-menu intervention. (May 2026: bumped to
+// 2026-05-08-pdf-fix after users
 // were stuck on Apr-30 SW serving stale chunks where PDF reader
 // blew up on clinical PDFs.)
 // Auto-bumped on every Vercel deploy via NEXT_PUBLIC_BUILD_ID (= short git SHA).
@@ -81,59 +84,7 @@ const trackingResetScript = `
 })();
 `;
 
-const swKillswitchScript = `
-(function(){
-  try {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
-
-    // ── Dev mode: always unregister SW ─────────────────────────────────
-    // In development the SW only causes stale-cache bugs. Serwist's
-    // disable:true stops generating a NEW sw but doesn't unregister one
-    // left over from a previous production build or 'next build'.
-    // Unregister + clear runtime caches on every dev load. Precache is
-    // irrelevant in dev (no precache manifest generated).
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      navigator.serviceWorker.getRegistrations().then(function(regs){
-        regs.forEach(function(r){ r.unregister(); });
-      });
-      if (typeof caches !== 'undefined') {
-        caches.keys().then(function(keys){
-          keys.forEach(function(k){ caches.delete(k); });
-        });
-      }
-      return;
-    }
-
-    // ── Auto-reload when a new SW takes control ────────────────────────
-    var _reloaded = false;
-    navigator.serviceWorker.addEventListener('controllerchange', function() {
-      if (_reloaded) return;
-      _reloaded = true;
-      window.location.reload();
-    });
-
-    // ── Kill-switch: force-clear on version bump ───────────────────────
-    var KEY = 'prism-aac-sw-killswitch';
-    var V = ${JSON.stringify(SW_KILLSWITCH_VERSION)};
-    if (window.localStorage.getItem(KEY) === V) return;
-    window.localStorage.setItem(KEY, V);
-    Promise.resolve()
-      .then(function(){ return navigator.serviceWorker.getRegistrations(); })
-      .then(function(regs){ return Promise.all(regs.map(function(r){ return r.unregister(); })); })
-      .then(function(){
-        if (typeof caches === 'undefined') return;
-        return caches.keys().then(function(keys){
-          var toDelete = keys.filter(function(k){
-            return !k.includes('precache') && !k.includes('serwist');
-          });
-          return Promise.all(toDelete.map(function(k){ return caches.delete(k); }));
-        });
-      })
-      .then(function(){ window.location.reload(); })
-      .catch(function(){});
-  } catch (e) {}
-})();
-`;
+const swKillswitchScript = buildServiceWorkerKillswitchScript(SW_KILLSWITCH_VERSION);
 
 // Supported language codes — must stay in sync with SupportedLanguage in engine/i18n.ts.
 const SUPPORTED_LANGS = ['en','es','fr','pt','ro','uk','ru','de','ja','ko','zh','ar','hi','it','pl','he','nl','vi','tl','tr','id','bg'];

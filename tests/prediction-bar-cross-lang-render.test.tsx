@@ -15,7 +15,7 @@
  * leak.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { act, render, screen, cleanup } from '@testing-library/react';
 import PredictionBar from '@/components/PredictionBar';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -48,7 +48,7 @@ beforeEach(async () => {
 });
 
 describe('PredictionBar — RO cross-lang leak via aiCompletion', () => {
-  it('does NOT render an English aiCompletion as the leftmost tile when lang=ro', () => {
+  it('does NOT render an English aiCompletion as the leftmost tile when lang=ro', async () => {
     // Simulate the autocorrect service returning an English completion.
     // Real-world trigger: user typed "I want" (English-looking text)
     // in RO mode → text/correct sees Latin chars, returns English.
@@ -57,7 +57,9 @@ describe('PredictionBar — RO cross-lang leak via aiCompletion', () => {
       predictions: ['nu', 'am', 'de', 'mai', 'la'],
     });
 
-    render(<PredictionBar />);
+    await act(async () => {
+      render(<PredictionBar />);
+    });
 
     // None of the tiles should be the English "I" leak. The screenshot
     // shows `eu / I / to / a / noise` — "I" is the aiCompletion leak.
@@ -75,34 +77,40 @@ describe('PredictionBar — RO cross-lang leak via aiCompletion', () => {
     expect(labels.every((l) => !englishOnly.has(l.toLowerCase()))).toBe(true);
   });
 
-  it('does render a Romanian aiCompletion (passes the script filter)', () => {
+  it('does render a Romanian aiCompletion (passes the script filter)', async () => {
     usePredictionStore.setState({
       aiCompletion: 'aici',
       predictions: ['nu', 'am', 'de', 'mai', 'la'],
     });
-    render(<PredictionBar />);
+    await act(async () => {
+      render(<PredictionBar />);
+    });
     const labels = screen.getAllByRole('button').map((b) => b.textContent?.trim().toLowerCase() ?? '');
     // 'aici' is Romanian (means "here"). Should appear as leftmost tile.
     expect(labels).toContain('aici');
   });
 
-  it('drops English aiCompletion words like "to" / "noise" too', () => {
+  it('drops English aiCompletion words like "to" / "noise" too', async () => {
     usePredictionStore.setState({
       aiCompletion: 'noise',
       predictions: ['nu', 'am', 'de', 'mai', 'la'],
     });
-    render(<PredictionBar />);
+    await act(async () => {
+      render(<PredictionBar />);
+    });
     const labels = screen.getAllByRole('button').map((b) => b.textContent?.trim().toLowerCase() ?? '');
     expect(labels).not.toContain('noise');
   });
 
-  it('keeps EN aiCompletion when language=en (no filter)', () => {
+  it('keeps EN aiCompletion when language=en (no filter)', async () => {
     useSettingsStore.setState({ language: 'en', outputLanguage: 'en' } as never);
     usePredictionStore.setState({
       aiCompletion: 'I',
       predictions: ['the', 'a', 'and', 'is', 'it'],
     });
-    render(<PredictionBar />);
+    await act(async () => {
+      render(<PredictionBar />);
+    });
     const labels = screen.getAllByRole('button').map((b) => b.textContent?.trim() ?? '');
     expect(labels).toContain('I');
   });

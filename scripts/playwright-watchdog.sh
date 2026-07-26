@@ -4,54 +4,79 @@
 #   2) MAX_STALL_S  — abort if playwright stdout stops moving for this long
 #   3) MAX_TOTAL_S  — hard cap on total wall time
 #
-# On abort, sends SIGKILL to the playwright process tree AND any orphan
-# Chromium / Chromium Helper / Webkit / Firefox the run spawned, so the
-# system isn't left bleeding RAM after a runaway test (the bug class the
-# strict discipline memo locks down).
+# On abort, sends SIGKILL to this run's isolated process group. This reaps
+# Playwright and its browser children without killing a separate agent's
+# concurrent browser proof.
 #
 # Usage:
 #   scripts/playwright-watchdog.sh <playwright args...>
+#   scripts/playwright-watchdog.sh --exec <standalone Playwright command...>
 # Env overrides:
 #   MIN_FREE_GB (default 4)   MAX_STALL_S (default 90)   MAX_TOTAL_S (default 600)
 #   POLL_S      (default 2)
 set -u
+set -m
 
 MIN_FREE_GB="${MIN_FREE_GB:-4}"
 MAX_STALL_S="${MAX_STALL_S:-90}"
 MAX_TOTAL_S="${MAX_TOTAL_S:-600}"
 POLL_S="${POLL_S:-2}"
 
+if [[ "${1:-}" == "--exec" ]]; then
+  shift
+  if (( $# == 0 )); then
+    echo "[watchdog] --exec requires a command" >&2
+    exit 2
+  fi
+  RUN_CMD=("$@")
+  RUN_LABEL="standalone Playwright diagnostic"
+else
+  RUN_CMD=(npx playwright test "$@")
+  RUN_LABEL="Playwright test"
+fi
+
 LOG="$(mktemp -t pw-watchdog.XXXXXX)"
-echo "[watchdog] log=$LOG  min_free=${MIN_FREE_GB}GB  stall=${MAX_STALL_S}s  total=${MAX_TOTAL_S}s"
+echo "[watchdog] mode=$RUN_LABEL  log=$LOG  min_free=${MIN_FREE_GB}GB  stall=${MAX_STALL_S}s  total=${MAX_TOTAL_S}s"
 
 free_gb() {
-  vm_stat | awk -v ps=4096 '
+  vm_stat | awk '
+    NR == 1 {
+      if (match($0, /page size of [0-9]+ bytes/)) {
+        page_size = substr($0, RSTART, RLENGTH)
+        gsub(/[^0-9]/, "", page_size)
+      }
+    }
     /Pages free/        { gsub(/\./,"",$3); free=$3 }
     /Pages speculative/ { gsub(/\./,"",$3); spec=$3 }
-    END { printf "%.2f", (free+spec)*ps/1024/1024/1024 }'
+    END {
+      if (!page_size) page_size=4096
+      printf "%.2f", (free+spec)*page_size/1024/1024/1024
+    }'
 }
 
 reap() {
   local reason="$1"
   echo "[watchdog] ABORT: $reason" >&2
-  if [[ -n "${PW_PID:-}" ]]; then
-    pkill -KILL -P "$PW_PID" 2>/dev/null || true
-    kill -KILL "$PW_PID" 2>/dev/null || true
+  if [[ -n "${PW_PGID:-}" && "$PW_PGID" != "$SELF_PGID" ]]; then
+    /bin/kill -KILL "-${PW_PGID}" 2>/dev/null || true
   fi
-  # Sweep orphaned browser engines + node test workers
-  pkill -KILL -f "Google Chrome for Testing" 2>/dev/null || true
-  pkill -KILL -f "Chromium.app/Contents/MacOS"  2>/dev/null || true
-  pkill -KILL -f "playwright/.*chromium"       2>/dev/null || true
-  pkill -KILL -f "playwright/.*firefox"        2>/dev/null || true
-  pkill -KILL -f "playwright/.*webkit"         2>/dev/null || true
-  echo "[watchdog] reaped browser orphans"
+  echo "[watchdog] reaped this run's process group"
   exit 99
 }
 
-# Launch playwright, tee output so we can both stream it and watch staleness
-# via mtime of the log.
-( npx playwright test "$@" 2>&1; echo "__PW_EXIT_$?__" ) | tee "$LOG" &
+# Launch the selected Playwright command, tee output so we can both stream it
+# and watch staleness
+# via mtime of the log. Monitor mode gives this background pipeline its own
+# process group; every browser child inherits that group.
+SELF_PGID="$(ps -o pgid= -p "$$" | tr -d '[:space:]')"
+( "${RUN_CMD[@]}" 2>&1; echo "__PW_EXIT_$?__" ) | tee "$LOG" &
 PW_PID=$!
+PW_PGID="$(ps -o pgid= -p "$PW_PID" | tr -d '[:space:]')"
+if [[ -z "$PW_PGID" || "$PW_PGID" == "$SELF_PGID" ]]; then
+  echo "[watchdog] unable to isolate the Playwright process group" >&2
+  kill -KILL "$PW_PID" 2>/dev/null || true
+  exit 2
+fi
 
 START="$(date +%s)"
 LAST_MTIME="$(stat -f %m "$LOG" 2>/dev/null || echo 0)"
@@ -76,9 +101,7 @@ while kill -0 "$PW_PID" 2>/dev/null; do
   fi
 
   FREE="$(free_gb)"
-  # bash can't compare floats — strip decimal for cheap floor compare
-  FREE_INT="${FREE%.*}"
-  if (( FREE_INT < MIN_FREE_GB )); then
+  if awk -v free="$FREE" -v minimum="$MIN_FREE_GB" 'BEGIN { exit !(free < minimum) }'; then
     reap "free RAM ${FREE}GB < ${MIN_FREE_GB}GB"
   fi
 

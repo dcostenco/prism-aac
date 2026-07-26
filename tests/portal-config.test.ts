@@ -10,6 +10,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   SYNALUX_API,
+  SYNALUX_PORTAL_ORIGIN,
+  resolveSynaluxApi,
   MAX_PORTAL_RESPONSE_BYTES,
   HAS_ABORT_SIGNAL_TIMEOUT,
   timeoutSignal as timeoutSignalNative,
@@ -25,6 +27,32 @@ describe('portalConfig — constants', () => {
 
   it('SYNALUX_API default ends with /api/v1 when env var is unset', () => {
     expect(SYNALUX_API).toMatch(/\/api\/v1$/);
+  });
+
+  it('keeps interactive authentication on the canonical portal origin', () => {
+    expect(SYNALUX_PORTAL_ORIGIN).toBe('https://synalux.ai');
+  });
+
+  it('routes standalone previews through the same-origin app proxy', () => {
+    expect(resolveSynaluxApi(
+      'https://synalux.ai/api/v1',
+      'https://prism-preview.vercel.app',
+      'prism-preview.vercel.app',
+      '/prism-aac',
+    )).toBe('https://prism-preview.vercel.app/prism-aac/api/v1');
+  });
+
+  it('keeps the canonical portal API direct and honors explicit configuration', () => {
+    expect(resolveSynaluxApi(
+      undefined,
+      'https://synalux.ai',
+      'synalux.ai',
+    )).toBe('https://synalux.ai/api/v1');
+    expect(resolveSynaluxApi(
+      'https://configured.example/v1',
+      'https://preview.example',
+      'preview.example',
+    )).toBe('https://configured.example/v1');
   });
 
   it('MAX_PORTAL_RESPONSE_BYTES is 1 MiB (1_048_576)', () => {

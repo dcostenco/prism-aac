@@ -169,13 +169,25 @@ describe('Class 1 — interrupt is a parameter, not shared state', () => {
 // ── Edge cases: volume=0, NaN, context suspended ─────────────────────────────
 describe('Edge cases — volume and AudioContext states', () => {
   it('volume=0 is detected in speak() before network call', async () => {
-    let fetchCalled = false;
-    vi.stubGlobal('fetch', vi.fn(async () => { fetchCalled = true; return audioOk(); }));
+    const synthesisRequests: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string | URL | Request) => {
+      const value = String(url);
+      const path = new URL(value, 'https://synalux.ai').pathname;
+      if (/\/tts(?:\/public)?$/.test(path)) synthesisRequests.push(value);
+      if (path.endsWith('/tts/voices')) {
+        return new Response(JSON.stringify({ voices: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return audioOk();
+    }));
     const { speak } = await import('@/services/speechService');
-    // volume=0 → should early-exit with console.warn, not fetch
+    // Module initialization may fetch the voice catalog. The guard must block
+    // synthesis endpoints specifically, not every unrelated HTTP request.
     const warnSpy = vi.spyOn(console, 'warn');
     await speak('test', 1.0, 0, 'en-US');
-    expect(fetchCalled).toBe(false);
+    expect(synthesisRequests).toEqual([]);
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('volume=0'));
   });
 
@@ -217,7 +229,6 @@ describe('Edge cases — volume and AudioContext states', () => {
   });
 
   it('three concurrent autoSpeak calls: first plays, second and third dropped', async () => {
-    let callOrder = 0;
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       if (String(url).includes('/tts/')) {
         await new Promise(r => setTimeout(r, 10)); // slight async

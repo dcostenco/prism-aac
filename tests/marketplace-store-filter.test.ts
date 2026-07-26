@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useMarketplaceStore } from '@/store/marketplaceStore';
 import { _resetRegistryForTests } from '@/lib/marketplace/registry';
 import { _resetBootForTests, bootHandlers } from '@/lib/marketplace/handlers';
+import { LOCAL_CATALOG } from '@/lib/marketplace/manifests/local';
 import type { HandlerContext } from '@/lib/marketplace/types';
 
 function makeCtx() {
@@ -29,26 +30,27 @@ function makeCtx() {
   return { ctx, state };
 }
 
-beforeEach(async () => {
+beforeEach(() => {
   _resetRegistryForTests();
   _resetBootForTests();
   bootHandlers();
   useMarketplaceStore.setState({
-    catalog: [],
-    fetchedAt: 0,
-    source: 'unknown',
+    // Filtering is a pure store concern. Seed the bundled fixture directly
+    // instead of calling the live portal from a unit test.
+    catalog: LOCAL_CATALOG,
+    fetchedAt: Date.now(),
+    source: 'local',
     loading: false,
     error: null,
     selectedSlug: null,
     installs: {},
   });
-  await useMarketplaceStore.getState().loadCatalog();
 });
 
 describe('marketplaceStore — filterCatalog', () => {
   it('all + empty query returns full catalog', () => {
     const out = useMarketplaceStore.getState().filterCatalog('all', '', []);
-    expect(out).toHaveLength(16);
+    expect(out).toHaveLength(LOCAL_CATALOG.length);
   });
 
   it('vocab category returns vocab-set + board-template + the explicit vocab entries', () => {
@@ -76,7 +78,12 @@ describe('marketplaceStore — filterCatalog', () => {
   it('tools category returns the panel-kind modules + the AAC Chat builtin shortcut', () => {
     const out = useMarketplaceStore.getState().filterCatalog('tools', '', []);
     const slugs = out.map((m) => m.slug).sort();
-    expect(slugs).toEqual(['aac-chat', 'aac-designer', 'music-composer', 'picture-editor', 'video-composer']);
+    const expected = LOCAL_CATALOG
+      .filter((module) => module.category === 'tools')
+      .map((module) => module.slug)
+      .sort();
+    expect(slugs).toEqual(expected);
+    expect(slugs).toContain('aac-chat');
   });
 
   it('installed tab with empty installedSlugs returns empty', () => {

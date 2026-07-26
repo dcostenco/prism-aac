@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useUIStore } from '@/store/uiStore';
 
+vi.mock('@/services/sendAlertToCaregiver', () => ({
+  sendAlertToCaregiver: vi.fn(async () => ({ ok: true })),
+}));
+
 beforeEach(() => {
   useUIStore.setState({
     sidePanel: 'none', activeCategoryId: null, activeSequenceId: null,
@@ -129,10 +133,6 @@ describe('UIStore — Alert (motor safety)', () => {
 
   it('confirmAlertSend sets flashing true and clears after 2s', async () => {
     vi.useFakeTimers();
-    // Stub out the lazy import inside confirmAlertSend
-    vi.mock('@/services/sendAlertToCaregiver', () => ({
-      sendAlertToCaregiver: vi.fn(async () => ({ ok: true })),
-    }));
     useUIStore.getState().triggerAlert();
     await useUIStore.getState().confirmAlertSend();
     expect(useUIStore.getState().isAlertFlashing).toBe(true);

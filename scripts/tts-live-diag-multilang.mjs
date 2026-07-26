@@ -12,22 +12,34 @@
  * we need to vary per test.
  */
 import { webkit } from '@playwright/test';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 
 const URL = 'https://prism-aac.vercel.app/prism-aac';
-const LANGS = [
+const ALL_LANGS = [
   { code: 'en', native: 'English',  expectLang: /^en/, phrase: 'HELLO' },
   { code: 'ro', native: 'Română',   expectLang: /^ro/, phrase: 'BUNA' },
   { code: 'es', native: 'Español',  expectLang: /^es/, phrase: 'HOLA' },
   { code: 'fr', native: 'Français', expectLang: /^fr/, phrase: 'BONJOUR' },
 ];
+const requestedCodes = new Set(
+  (process.env.TTS_LANGS || ALL_LANGS.map((language) => language.code).join(','))
+    .split(',')
+    .map((code) => code.trim())
+    .filter(Boolean),
+);
+const LANGS = ALL_LANGS.filter((language) => requestedCodes.has(language.code));
+if (LANGS.length === 0) {
+  throw new Error(`TTS_LANGS did not match a diagnostic locale: ${[...requestedCodes].join(',')}`);
+}
 
-const browser = await webkit.launch({ headless: true });
 const results = [];
 
 for (const L of LANGS) {
   console.log(`\n=== ${L.native} (${L.code}) ===`);
+  // Launch per locale so WebKit releases all memory before the next language.
+  // This lets the watchdog retain a meaningful low-memory kill threshold.
+  const browser = await webkit.launch({ headless: true });
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
 
@@ -74,35 +86,41 @@ for (const L of LANGS) {
   console.log(`  posted ${captured.length} TTS request(s)`);
   for (const body of captured) {
     const ssml = body?.ssml || '';
-    const xmlLang = ssml.match(/xml:lang="([^"]+)"/)?.[1] || '';
-    const rate = ssml.match(/rate="([^"]+)"/)?.[1] || '';
+    const xmlLang = ssml.match(/xml:lang="([^"]+)"/)?.[1] || body?.lang || '';
+    const rate = ssml.match(/rate="([^"]+)"/)?.[1] || body?.rate || '';
     const voice = body?.voiceId || body?.voice || '';
-    const text = ssml.match(/<prosody[^>]*>([^<]+)</)?.[1]?.trim() || '';
-    console.log(`  xml:lang=${xmlLang} rate=${rate} voice=${voice} text="${text}"`);
+    const text = ssml.match(/<prosody[^>]*>([^<]+)</)?.[1]?.trim() || body?.text || '';
+    console.log(`  lang=${xmlLang} rate=${rate} voice=${voice} text_length=${text.length}`);
     results.push({ lang: L.code, xmlLang, rate, voice, text, body });
   }
 
   await ctx.close();
+  await browser.close();
 }
-
-await browser.close();
 
 console.log('\n=== Verifying server-side audio (curl + afinfo) ===');
 const seen = new Set();
 for (const r of results) {
-  if (!r.body?.ssml) continue;
+  if (!r.body?.ssml && !r.body?.text) continue;
   const key = `${r.lang}-${r.text.slice(0, 12)}`;
   if (seen.has(key)) continue;
   seen.add(key);
   const tmp = `/tmp/multilang-${r.lang}.mp3`;
   try {
-    execSync(
-      `curl -s -o ${tmp} -X POST 'https://synalux.ai/api/v1/tts/public' ` +
-      `-H 'Origin: https://prism-aac.vercel.app' -H 'Content-Type: application/json' ` +
-      `--data-raw ${JSON.stringify(JSON.stringify(r.body))}`,
+    execFileSync(
+      'curl',
+      [
+        '-s',
+        '-o', tmp,
+        '-X', 'POST',
+        'https://synalux.ai/api/v1/tts/public',
+        '-H', 'Origin: https://prism-aac.vercel.app',
+        '-H', 'Content-Type: application/json',
+        '--data-raw', JSON.stringify(r.body),
+      ],
       { stdio: ['ignore', 'pipe', 'pipe'] },
     );
-    const info = execSync(`afinfo ${tmp} 2>&1 || true`).toString();
+    const info = execFileSync('afinfo', [tmp], { encoding: 'utf8' });
     const dur = info.match(/estimated duration:\s*([\d.]+)/)?.[1] || '?';
     const bytes = info.match(/audio bytes:\s*(\d+)/)?.[1] || '?';
     console.log(`  ${r.lang} (${r.xmlLang}) rate=${r.rate} → ${dur}s, ${bytes} bytes  [${tmp}]`);
@@ -127,5 +145,12 @@ for (const L of LANGS) {
   );
 }
 
-fs.writeFileSync('/tmp/multilang-results.json', JSON.stringify(results, null, 2));
+const safeResults = results.map((result) => ({
+  lang: result.lang,
+  xmlLang: result.xmlLang,
+  rate: result.rate,
+  voice: result.voice,
+  textLength: result.text.length,
+}));
+fs.writeFileSync('/tmp/multilang-results.json', JSON.stringify(safeResults, null, 2));
 console.log('\nfull results: /tmp/multilang-results.json');
