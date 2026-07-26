@@ -1,3 +1,6 @@
+export const SERVICE_WORKER_KILLSWITCH_KEY = 'prism-aac-sw-killswitch';
+export const SERVICE_WORKER_RESET_READY_EVENT = 'prism-aac-sw-reset-ready';
+
 export function buildServiceWorkerKillswitchScript(version: string): string {
   return `
 (function(){
@@ -24,7 +27,7 @@ export function buildServiceWorkerKillswitchScript(version: string): string {
       window.location.reload();
     });
 
-    var KEY = 'prism-aac-sw-killswitch';
+    var KEY = ${JSON.stringify(SERVICE_WORKER_KILLSWITCH_KEY)};
     var V = ${JSON.stringify(version)};
     if (window.localStorage.getItem(KEY) === V) return;
 
@@ -49,6 +52,9 @@ export function buildServiceWorkerKillswitchScript(version: string): string {
         // cleanup rejects, keep the previous marker so the next load retries
         // instead of permanently accepting a stale worker.
         window.localStorage.setItem(KEY, V);
+        if (!didReset && typeof window.dispatchEvent === 'function') {
+          window.dispatchEvent(new Event(${JSON.stringify(SERVICE_WORKER_RESET_READY_EVENT)}));
+        }
         if (didReset && !reloaded) {
           reloaded = true;
           window.location.reload();

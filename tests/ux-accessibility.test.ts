@@ -194,9 +194,9 @@ describe('UX — Gap tests (missing features)', () => {
     expect(PRISM_AAC_MANIFEST_PATH).toBe(`${PRISM_AAC_BASE_PATH}/manifest.json`);
     expect(PRISM_AAC_STATIC_PATH).toBe(`${PRISM_AAC_BASE_PATH}/_next/static/`);
     expect(manifest).toMatchObject({
-      id: `${PRISM_AAC_BASE_PATH}/`,
-      start_url: `${PRISM_AAC_BASE_PATH}/`,
-      scope: `${PRISM_AAC_BASE_PATH}/`,
+      id: PRISM_AAC_BASE_PATH,
+      start_url: PRISM_AAC_BASE_PATH,
+      scope: PRISM_AAC_BASE_PATH,
     });
     expect(
       new URL(manifest.start_url, 'https://prism-aac.test').pathname.startsWith(

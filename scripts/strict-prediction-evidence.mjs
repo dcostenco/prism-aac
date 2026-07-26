@@ -336,7 +336,7 @@ for (const target of targets) {
           resourceType,
         ),
     );
-    const expectedServiceWorkerScope = new URL('/prism-aac/', target).href;
+    const expectedServiceWorkerScope = new URL('/prism-aac', target).href;
     const expectedServiceWorkerUrl = new URL('/prism-aac/sw.js', target).href;
     const hasExpectedActiveRegistration = registrationsAtTest.some(
       (registration) =>
