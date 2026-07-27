@@ -114,6 +114,8 @@ const LAYOUTS_BY_LANG: Partial<Record<SupportedLanguage, string[][]>> = {
     ['な', 'に', 'ぬ', 'ね', 'の', 'は', 'ひ', 'ふ', 'へ', 'ほ'],
     ['ま', 'み', 'む', 'め', 'も', 'や', 'ゆ', 'よ'],
     ['ら', 'り', 'る', 'れ', 'ろ', 'わ', 'を', 'ん'],
+    // Modifiers, not characters — they transform the kana already typed.
+    ['゛', '゜', '小'],
   ],
   ko: [
     ['ㅂ', 'ㅈ', 'ㄷ', 'ㄱ', 'ㅅ', 'ㅛ', 'ㅕ', 'ㅑ', 'ㅐ', 'ㅔ'],
@@ -228,4 +230,49 @@ export const DEFAULT_PREDICTIONS = getAacCoreFor('en').slice(0, FALLBACK_SLOTS);
 
 export function getPredictionsForLanguage(lang: SupportedLanguage): string[] {
   return getAacCoreFor(lang).slice(0, FALLBACK_SLOTS);
+}
+
+/**
+ * Kana modifiers. Japanese cannot be written with the 46 seion alone: です
+ * needs で (て + dakuten), ありがとう needs が, and geminates need っ. Rather
+ * than adding ~25 more keys — which at 390px would push key size back under
+ * the threshold this file already works to protect — three modifier keys
+ * transform the character already typed.
+ */
+export const KANA_DAKUTEN = '゛';
+export const KANA_HANDAKUTEN = '゜';
+export const KANA_SMALL = '小';
+export const KANA_MODIFIERS = [KANA_DAKUTEN, KANA_HANDAKUTEN, KANA_SMALL] as const;
+
+const DAKUTEN_MAP: Record<string, string> = {
+  か: 'が', き: 'ぎ', く: 'ぐ', け: 'げ', こ: 'ご',
+  さ: 'ざ', し: 'じ', す: 'ず', せ: 'ぜ', そ: 'ぞ',
+  た: 'だ', ち: 'ぢ', つ: 'づ', て: 'で', と: 'ど',
+  は: 'ば', ひ: 'び', ふ: 'ぶ', へ: 'べ', ほ: 'ぼ',
+  う: 'ゔ',
+};
+const HANDAKUTEN_MAP: Record<string, string> = {
+  は: 'ぱ', ひ: 'ぴ', ふ: 'ぷ', へ: 'ぺ', ほ: 'ぽ',
+};
+const SMALL_MAP: Record<string, string> = {
+  あ: 'ぁ', い: 'ぃ', う: 'ぅ', え: 'ぇ', お: 'ぉ',
+  つ: 'っ', や: 'ゃ', ゆ: 'ゅ', よ: 'ょ', わ: 'ゎ',
+};
+
+/**
+ * Apply a modifier to the last character of `text`.
+ *
+ * Returns null when the modifier does not apply — an unmodifiable character,
+ * empty text, or a character already carrying the mark. The caller then does
+ * nothing, so a mis-tap never inserts a stray ゛ into the user's sentence.
+ */
+export function applyKanaModifier(text: string, modifier: string): string | null {
+  const last = text.slice(-1);
+  if (!last) return null;
+  const map = modifier === KANA_DAKUTEN ? DAKUTEN_MAP
+    : modifier === KANA_HANDAKUTEN ? HANDAKUTEN_MAP
+    : modifier === KANA_SMALL ? SMALL_MAP
+    : null;
+  const replacement = map?.[last];
+  return replacement ? text.slice(0, -1) + replacement : null;
 }

@@ -12,7 +12,7 @@ import { triggerAISubmit } from '@/services/aiChatBridge';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { dispatchToSearch } from '@/services/searchKeyBridge';
-import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS, buildKeyboardRows } from '@/constants/keyboardLayouts';
+import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS, buildKeyboardRows, KANA_MODIFIERS, applyKanaModifier } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
 
 // Long-press threshold for caps lock — raised from 500 ms to 1200 ms after
@@ -75,7 +75,7 @@ function extractLastSentence(text: string): string {
 export const __testing = { extractLastSentence };
 
 export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: boolean; onBrowserGo?: () => void } = {}) {
-  const { appendChar, addToHistory, autoSpeak, soundEnabled, toggleSound, activeTone } = useMessageStore();
+  const { appendChar, addToHistory, autoSpeak, soundEnabled, toggleSound, activeTone, setText } = useMessageStore();
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock, keyboardMaximized, cycleKeyboardMode } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language, speakOnSentenceEnd, gridSize } = useSettingsStore();
@@ -110,6 +110,15 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
       return;
     }
+    // Kana modifiers rewrite the preceding character (て + ゛ → で) rather
+    // than inserting themselves. A modifier that does not apply is ignored, so
+    // a mis-tap never drops a stray ゛ into the sentence.
+    if ((KANA_MODIFIERS as readonly string[]).includes(char)) {
+      const current = useMessageStore.getState().text;
+      const modified = applyKanaModifier(current, char);
+      if (modified !== null) setText(modified);
+      return;
+    }
     appendChar(char);
     if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
     // Per-key letter echo REMOVED. The previous behavior fired
@@ -133,7 +142,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       const sentence = extractLastSentence(text);
       if (sentence) aacSpeak(sentence, speechRate, speechVolume, activeTone);
     }
-  }, [appendChar, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper,
+  }, [appendChar, setText, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper,
       speakOnSentenceEnd, autoSpeak, soundEnabled, speechRate, speechVolume, activeTone]);
 
   const shiftHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

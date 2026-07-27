@@ -152,7 +152,8 @@ describe('Japanese kana coverage', () => {
   ].join('').split('');
 
   it('exposes all 46 basic kana', () => {
-    const keys = getLetterRows('ja').flat();
+    // Last row holds ゛゜小, which modify a character rather than being one.
+    const keys = getLetterRows('ja').slice(0, 5).flat();
     expect(keys).toHaveLength(46);
     const missing = GOJUON.filter((k) => !keys.includes(k));
     expect(missing, `missing kana: ${missing.join(' ')}`).toEqual([]);
