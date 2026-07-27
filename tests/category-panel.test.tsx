@@ -86,7 +86,12 @@ const mocks = vi.hoisted(() => {
 
   const useUIStore = Object.assign(
     (sel?: (s: typeof uiState) => unknown) => sel ? sel(uiState) : uiState,
-    { getState: () => uiState },
+    {
+      getState: () => uiState,
+      // The landscape auto-maximize path calls setState. Without it on the
+      // mock the call threw, so that branch was never exercised at all.
+      setState: (patch: Record<string, unknown>) => Object.assign(uiState, patch),
+    },
   );
 
   const useMessageStore = Object.assign(
@@ -391,5 +396,29 @@ describe('CategoryPanel — keyboard-shell data-maximized attribute', () => {
     mocks.uiState.keyboardMaximized = false;
     render(<CategoryPanel />);
     expect(screen.getByTestId('kb-cycle-btn')).toBeInTheDocument();
+  });
+});
+
+// ── landscape auto-maximize must not clobber the saved preference ────────────
+
+describe('CategoryPanel — landscape keyboard maximize', () => {
+  const enterLandscape = () => {
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn(),
+    });
+    Object.defineProperty(window, 'innerHeight', { value: 390, configurable: true });
+  };
+
+  it('does not write prism-kb-max when landscape auto-maximizes', () => {
+    localStorage.setItem('prism-kb-max', 'false');
+    mocks.uiState.sidePanel = 'none';
+    mocks.uiState.categoryKeyboardOpen = true;
+    enterLandscape();
+
+    render(<CategoryPanel />);
+
+    // The user's own preference must survive a rotation. Persisting 'true'
+    // here left the phrase grid hidden after rotating back to portrait.
+    expect(localStorage.getItem('prism-kb-max')).toBe('false');
   });
 });
