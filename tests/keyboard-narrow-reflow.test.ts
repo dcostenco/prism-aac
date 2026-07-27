@@ -143,3 +143,30 @@ describe('buildKeyboardRows — narrow phone reflow', () => {
     expect(buildKeyboardRows(raw, true).map((r) => r.keys)).toEqual(raw);
   });
 });
+
+describe('Japanese kana coverage', () => {
+  // The layout stopped at は行, so ま/や/ら/わ行 and ん were untypable.
+  const GOJUON = [
+    'あいうえお', 'かきくけこ', 'さしすせそ', 'たちつてと', 'なにぬねの',
+    'はひふへほ', 'まみむめも', 'やゆよ', 'らりるれろ', 'わをん',
+  ].join('').split('');
+
+  it('exposes all 46 basic kana', () => {
+    const keys = getLetterRows('ja').flat();
+    expect(keys).toHaveLength(46);
+    const missing = GOJUON.filter((k) => !keys.includes(k));
+    expect(missing, `missing kana: ${missing.join(' ')}`).toEqual([]);
+  });
+
+  it('includes ん, which ends a large share of Japanese words', () => {
+    expect(getLetterRows('ja').flat()).toContain('ん');
+  });
+
+  it('keeps every row within the narrow budget without wrapping', () => {
+    const built = buildKeyboardRows(getLetterRows('ja'), true);
+    expect(built.filter((r) => r.continuation)).toHaveLength(0);
+    for (const row of built) {
+      if (row.util) expect(row.keys.length).toBeLessThanOrEqual(UTIL_ROW_OVERFLOW_KEYS);
+    }
+  });
+});

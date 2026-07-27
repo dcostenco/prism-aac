@@ -103,10 +103,17 @@ const LAYOUTS_BY_LANG: Partial<Record<SupportedLanguage, string[][]>> = {
     ['ش', 'س', 'ي', 'ب', 'ل', 'ا', 'ت', 'ن', 'م', 'ك', 'ة'],
     ['ئ', 'ء', 'ؤ', 'ر', 'ى', 'و', 'ز', 'ظ', 'ط', 'ذ', 'د'],
   ],
+  // Full 46-kana gojūon. This stopped at は行 until 2026-07-27, leaving ま行,
+  // や行, ら行, わ行 and ん unreachable — a Japanese user could not write
+  // わたし, ありがとう or any word ending in ん, which is most of them.
+  // Two gojūon rows per keyboard row keeps the table readable; や行 and わ行
+  // have three kana each, so the last two rows are short by design.
   ja: [
     ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ'],
     ['さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と'],
     ['な', 'に', 'ぬ', 'ね', 'の', 'は', 'ひ', 'ふ', 'へ', 'ほ'],
+    ['ま', 'み', 'む', 'め', 'も', 'や', 'ゆ', 'よ'],
+    ['ら', 'り', 'る', 'れ', 'ろ', 'わ', 'を', 'ん'],
   ],
   ko: [
     ['ㅂ', 'ㅈ', 'ㄷ', 'ㄱ', 'ㅅ', 'ㅛ', 'ㅕ', 'ㅑ', 'ㅐ', 'ㅔ'],
