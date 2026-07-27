@@ -39,6 +39,14 @@ describe('SpeechService — Core', () => {
   });
 
   it('keeps high-frequency AAC tap feedback local', async () => {
+    // A voice for the language has to exist for local to be the right route.
+    // With none installed, speakWord deliberately escalates to neural rather
+    // than let a wrong-language voice read the text — covered in
+    // tests/speak-word-neural-escalation.test.ts.
+    (window.speechSynthesis.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+      { lang: 'en-US', name: 'Samantha', default: false, localService: true, voiceURI: 'Samantha' },
+    ]);
+
     speakWord('hello', 0.5, 1.0, 'en-US');
 
     await vi.waitFor(() => expect(window.speechSynthesis.speak).toHaveBeenCalled());
