@@ -177,8 +177,8 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
             void aacSpeak(phrase, speechRate, speechVolume, activeTone, true);
           } else {
             // Preserve the established AAC contract: replay the whole message
-            // at each word boundary, locally, instead of speaking only the
-            // trailing word through a cloud request.
+            // at each word boundary through the quality-first speech path,
+            // instead of speaking only the trailing word.
             speakWord(phrase, speechRate, speechVolume);
           }
         }
@@ -215,7 +215,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
         aacSpeak(currentText, speechRate, speechVolume, activeTone, true);
       }
     } else {
-      aacSpeak(currentText, speechRate, speechVolume, activeTone);
+      aacSpeak(currentText, speechRate, speechVolume, activeTone, true);
     }
   }, [soundEnabled, speechRate, speechVolume, addToHistory, activeTone, browserMode, onBrowserGo]);
 

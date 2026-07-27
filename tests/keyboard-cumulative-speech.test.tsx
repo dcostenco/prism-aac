@@ -104,4 +104,22 @@ describe('Keyboard cumulative word-boundary speech', () => {
       true,
     );
   });
+
+  it('explicit same-language Speak interrupts pending tap speech', () => {
+    const { container } = render(<Keyboard />);
+    const speak = container.querySelector<HTMLButtonElement>('button.aac-speak');
+    expect(speak).not.toBeNull();
+
+    act(() => {
+      fireEvent.click(speak!);
+    });
+
+    expect(speechMocks.aacSpeak).toHaveBeenCalledWith(
+      'I need',
+      0.5,
+      0.8,
+      'neutral',
+      true,
+    );
+  });
 });

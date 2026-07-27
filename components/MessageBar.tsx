@@ -241,8 +241,8 @@ export default function MessageBar() {
           latestTranslated ? outLang : undefined,
         );
       } else {
-        // Same-language composition feedback is a high-frequency AAC path.
-        // Keep it local while replaying the complete accumulated message.
+        // Same-language composition feedback reuses the latest-wins
+        // quality-first path while replaying the complete accumulated message.
         speakWord(phrase, speechRate, speechVolume);
       }
     };
@@ -449,6 +449,14 @@ export default function MessageBar() {
     }
     const original = text.trim();
     if (!original || !soundEnabled) return;
+    // Play is authoritative: it must replace any delayed composition speech.
+    // The prediction seed can resolve after this click, so clearing an
+    // already-created timeout is not sufficient by itself. We also mark the
+    // source phrase as directly spoken below, which makes a late timer no-op.
+    if (compositionSpeakTimer.current) {
+      clearTimeout(compositionSpeakTimer.current);
+      compositionSpeakTimer.current = null;
+    }
 
     // Auto-apply *safe* AI corrections on Speak. The Speak button is the
     // user's "I'm done" signal — clear typos like "программычто" should
@@ -521,6 +529,14 @@ export default function MessageBar() {
     } else {
       aacSpeak(toSpeak, speechRate, speechVolume, activeTone, true);
     }
+    // aacSpeak emits its highlight synchronously. In translation mode that
+    // event contains the translated text, but the composition timer is keyed
+    // to the source phrase. Restore the source marker after the call so even a
+    // prediction-seed promise that resolves later cannot replay/abort Play.
+    lastAutoSpokenRef.current = {
+      text: normalizeSpokenText(original),
+      at: Date.now(),
+    };
   }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance, suggestion, setText, outputLanguage]);
 
   const cancelDelete = useCallback(() => {

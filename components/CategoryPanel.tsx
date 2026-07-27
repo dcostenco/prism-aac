@@ -325,8 +325,8 @@ export default function CategoryPanel() {
         // tiles, instead of requiring the user to press Play afterward.
         void aacSpeak(fullPhrase, speechRate, speechVolume, undefined, true);
       } else {
-        // Keep high-frequency same-language composition local while preserving
-        // the cumulative AAC phrase contract.
+        // Use the quality-first speech path while preserving the cumulative
+        // AAC phrase contract.
         speakWord(fullPhrase, speechRate, speechVolume);
       }
     }

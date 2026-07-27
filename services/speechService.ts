@@ -272,6 +272,12 @@ export async function speak(
       type: 'tts-attempt', tier: 'inworld', text: debugText, lang, timestamp: tier1Start,
     });
     const result = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt);
+    if (result?.cancelled) {
+      // A newer utterance or an explicit Stop owns the audio channel now.
+      // This is neither a portal success nor a provider failure, and must not
+      // leak the stale text into Web Speech fallback.
+      return;
+    }
     if (result && result.success) {
       console.log('[TTS] Portal TTS succeeded');
       const now = Date.now();
@@ -327,8 +333,10 @@ export async function speak(
 }
 
 /**
- * Speak a single word — always local for <50ms latency (critical for AAC).
- * Dynamically pulls user's language if no lang provided — never hardcodes en-US.
+ * Speak tap/composition feedback through the quality-first chain.
+ * Dynamically pulls the user's language if no lang is provided. Online taps
+ * use portal neural TTS; Web Speech remains the offline/provider-failure
+ * fallback instead of being forced for every English tap.
  */
 export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string): void {
   const actualLang = lang || getTTSCode((useSettingsStore.getState().language || 'en') as SupportedLanguage);
@@ -342,7 +350,10 @@ export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string)
     estimatedDurationMs: estimateSpeechDurationMs(word, rate),
     timestamp: Date.now(),
   });
-  void speakLocal(toSpeak, rate, volume, actualLang);
+  // Tap speech is latest-wins: a newer cumulative phrase intentionally
+  // supersedes an older request. azureTTS distinguishes that cancellation
+  // from a real provider failure so stale requests never leak into Web Speech.
+  void speak(toSpeak, rate, volume, actualLang, 'auto', true);
 }
 
 function speakLocal(text: string, rate: number, volume: number, lang: string): Promise<void> {

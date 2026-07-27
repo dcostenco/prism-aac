@@ -384,9 +384,9 @@ export default function PredictionBar() {
         true,
       );
     } else {
-      // Same-language prediction feedback stays local, but it must preserve
-      // the established AAC contract: each tap replays the cumulative message
-      // so "I" + "need" is heard as "I need", not an isolated "need".
+      // Same-language prediction feedback uses the quality-first speech path
+      // and preserves the established AAC contract: each tap replays the
+      // cumulative message so "I" + "need" is heard as "I need".
       speakWord(fullPhrase, speechRate, speechVolume);
     }
   }, [

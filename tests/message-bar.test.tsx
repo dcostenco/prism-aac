@@ -348,6 +348,28 @@ describe('MessageBar — undo', () => {
 // ── speak ─────────────────────────────────────────────────────────────────────
 
 describe('MessageBar — speak', () => {
+  it('Play suppresses the pending auto-speak timer even when prediction seed loading finishes afterward', async () => {
+    vi.useFakeTimers();
+    try {
+      mocks.messageState.text = 'I need';
+      mocks.messageState.autoSpeak = true;
+      mocks.messageState.soundEnabled = true;
+
+      render(<MessageBar />);
+      fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
+
+      // The prediction seed resolves asynchronously. It must not be able to
+      // schedule a second utterance after the explicit Play action.
+      await act(async () => { await Promise.resolve(); });
+      await act(async () => { vi.advanceTimersByTime(2_100); });
+
+      expect(mocks.aacSpeakMock).toHaveBeenCalledOnce();
+      expect(mocks.speakWordMock).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('clicking speak button calls aacSpeak with current text', async () => {
     mocks.messageState.text = 'Help me please';
     mocks.messageState.soundEnabled = true;

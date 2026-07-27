@@ -140,10 +140,14 @@ describe('Tone: Auto switch records as it detects', () => {
   });
 
   it('toneToRate slows for serious + speeds for excited', () => {
-    // Use base 1.0 — rate has a 0.7 floor so 0.5*0.85=0.425 would clamp up.
     expect(toneToRate('serious', 1.0)).toBeLessThan(1.0);
     expect(toneToRate('excited', 1.0)).toBeGreaterThan(1.0);
     expect(toneToRate('neutral', 1.0)).toBe(1.0);
+  });
+
+  it('calm tones never make the normal 0.5 AAC rate faster', () => {
+    expect(toneToRate('serious', 0.5)).toBeLessThanOrEqual(0.5);
+    expect(toneToRate('empathetic', 0.5)).toBeLessThanOrEqual(0.5);
   });
 
   it('toneToSystemHint gives non-empty for non-neutral', () => {

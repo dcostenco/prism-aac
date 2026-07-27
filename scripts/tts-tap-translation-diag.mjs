@@ -18,7 +18,13 @@ const screenshotPath =
 const inputMode = process.env.INPUT_MODE || "prediction";
 const inputText = process.env.INPUT_TEXT || "I";
 const secondInputText = process.env.SECOND_INPUT_TEXT || "need";
+const predictionSequence = (process.env.PREDICTION_SEQUENCE || "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
+const sequenceDelayMs = Number(process.env.SEQUENCE_DELAY_MS || "500");
 const outputLanguage = process.env.OUTPUT_LANGUAGE || "es";
+const pressPlay = process.env.PRESS_PLAY === "1";
 const vercelProtectionBypass =
   process.env.VERCEL_AUTOMATION_BYPASS_SECRET || "";
 
@@ -57,7 +63,11 @@ const report = {
   inputMode,
   inputText,
   secondInputText,
+  predictionSequence,
+  sequenceDelayMs,
   outputLanguage,
+  pressPlay,
+  playClickedAt: null,
   documentStatus: null,
   storedSettings: null,
   tappedTile: null,
@@ -182,15 +192,27 @@ page.on("request", (request) => {
     body,
     at: Date.now(),
     status: null,
+    failure: null,
+    responseHeaders: null,
     responseBody: null,
   };
   report.network.push(entry);
   requestEntries.set(request, entry);
 });
+page.on("requestfailed", (request) => {
+  const entry = requestEntries.get(request);
+  if (entry) entry.failure = request.failure()?.errorText || "request failed";
+});
 page.on("response", async (response) => {
   const entry = requestEntries.get(response.request());
   if (!entry) return;
   entry.status = response.status();
+  entry.responseHeaders = {
+    contentType: response.headers()["content-type"] || null,
+    contentLength: response.headers()["content-length"] || null,
+    backend: response.headers()["x-tts-backend"] || null,
+    voice: response.headers()["x-tts-voice"] || null,
+  };
   try {
     const contentType = response.headers()["content-type"] || "";
     if (/json|text/.test(contentType)) {
@@ -249,7 +271,12 @@ try {
         prediction.title?.toLowerCase() === value.toLowerCase() ||
         prediction.ariaLabel?.toLowerCase() === `predict: ${value}`.toLowerCase(),
     );
-    const predictionTile = predictionTiles.nth(matchingIndex >= 0 ? matchingIndex : 0);
+    if (matchingIndex < 0) {
+      throw new Error(
+        `Prediction "${value}" was not available: ${JSON.stringify(report.predictionTitles)}`,
+      );
+    }
+    const predictionTile = predictionTiles.nth(matchingIndex);
     await predictionTile.waitFor({ state: "visible", timeout: 10_000 });
     const tapped = {
       text: (await predictionTile.innerText()).trim(),
@@ -280,7 +307,19 @@ try {
     });
   };
 
-  if (inputMode === "keyboard") {
+  if (inputMode === "prediction-sequence") {
+    for (const value of predictionSequence) {
+      await tapPrediction(value);
+      await page.waitForTimeout(sequenceDelayMs);
+      await recordStep(`after-prediction-${value}`);
+    }
+    if (pressPlay) {
+      report.playClickedAt = Date.now();
+      await page.locator("button.aac-speak").first().click({ delay: 50 });
+      await page.waitForTimeout(500);
+      await recordStep("after-play");
+    }
+  } else if (inputMode === "keyboard") {
     await tapKeyboardText(inputText);
   } else if (inputMode === "keyboard-prediction") {
     await tapKeyboardText(inputText);
@@ -289,6 +328,12 @@ try {
     await tapPrediction(secondInputText);
     await page.waitForTimeout(500);
     await recordStep("after-prediction");
+    if (pressPlay) {
+      report.playClickedAt = Date.now();
+      await page.locator("button.aac-speak").first().click({ delay: 50 });
+      await page.waitForTimeout(500);
+      await recordStep("after-play");
+    }
   } else {
     await tapPrediction(inputText);
   }
@@ -328,8 +373,17 @@ await browser.close();
 if (
   report.error ||
   report.documentStatus !== 200 ||
+  report.pageErrors.length > 0 ||
+  report.speechUtterances.length > 0 ||
   report.storedSettings?.state?.language !== "en" ||
-  report.storedSettings?.state?.outputLanguage !== outputLanguage
+  report.storedSettings?.state?.outputLanguage !== outputLanguage ||
+  report.tappedTiles.some((tile, index) =>
+    predictionSequence[index]
+    && tile.text.trim().toLowerCase() !== predictionSequence[index].toLowerCase()
+  ) ||
+  (pressPlay && report.audio?.sourceStarts?.filter(
+    (start) => start.at >= report.playClickedAt,
+  ).length !== 1)
 ) {
   process.exitCode = 1;
 }

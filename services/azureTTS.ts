@@ -32,6 +32,13 @@ export type ToneStyle =
   | 'friendly' | 'cheerful' | 'calm' | 'serious' | 'excited'
   | 'hopeful' | 'empathetic' | 'sad' | 'angry';
 
+export interface TtsPlaybackResult {
+  success: boolean;
+  onEnded?: Promise<void>;
+  /** The request was intentionally replaced/stopped; never start a fallback. */
+  cancelled?: boolean;
+}
+
 /**
  * Map AAC tone → Inworld TTS-2 voice style. Returns null for the
  * 'friendly' default so the caller can opt into server-side auto-styling
@@ -192,6 +199,25 @@ function releaseBlob(url: string): void {
 // A child with spasticity may mash Speak 5 times, launching 5 concurrent
 // fetches. Panic stop must kill ALL of them, not just the last.
 const activeControllers = new Set<AbortController>();
+type ControllerAbortReason = 'superseded' | 'stopped' | 'timeout';
+const controllerAbortReasons = new WeakMap<AbortController, ControllerAbortReason>();
+
+function abortController(controller: AbortController, reason: ControllerAbortReason): void {
+  // Preserve an intentional replacement/stop if the timeout callback races
+  // with it. Conversely, a later user stop may upgrade an earlier timeout so
+  // the stale request cannot fall through to Web Speech after Stop.
+  const existingReason = controllerAbortReasons.get(controller);
+  if (existingReason && reason === 'timeout') return;
+  controllerAbortReasons.set(controller, reason);
+  if (!controller.signal.aborted) controller.abort();
+}
+
+function intentionalCancellation(controller: AbortController): TtsPlaybackResult | null {
+  const reason = controllerAbortReasons.get(controller);
+  return reason === 'superseded' || reason === 'stopped'
+    ? { success: true, cancelled: true }
+    : null;
+}
 
 // ── TTS Audio Cache ─────────────────────────────────────────────────────────
 // LRU cache for recently-synthesized audio buffers. AAC users repeat the same
@@ -299,7 +325,7 @@ function stopAzurePlayback(): void {
  *  in-flight fetch that hasn't returned yet. Do NOT call this from
  *  within a successful TTS path; use stopAzurePlayback() instead. */
 export function stopAzureAudio(): void {
-  for (const ctrl of activeControllers) ctrl.abort();
+  for (const ctrl of activeControllers) abortController(ctrl, 'stopped');
   activeControllers.clear();
   stopAzurePlayback();
 }
@@ -336,7 +362,14 @@ export function resetSharedAudioContextIfIdle(): void {
  * only needs the AudioContext in 'running' state, which the warmup in
  * PrismApp.tsx arranges on first interaction.
  */
-async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: string, interrupt = false, playbackRate = 1.0): Promise<{ success: boolean, onEnded?: Promise<void> }> {
+async function decodeAndPlay(
+  audioBytes: ArrayBuffer,
+  volume: number,
+  label: string,
+  interrupt = false,
+  playbackRate = 1.0,
+  controller?: AbortController,
+): Promise<TtsPlaybackResult> {
   let ctx: AudioContext;
   try {
     ctx = getAudioContext();
@@ -375,6 +408,12 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
   } catch (e) {
     console.warn(`[${label}] decodeAudioData failed:`, e instanceof Error ? e.message : e);
     return { success: false };
+  }
+  // A newer tap/Play can arrive after fetch completed but while this response
+  // is still inside decodeAudioData. Keep the request controller active until
+  // decode finishes and bow out here before creating a stale source.
+  if (controller?.signal.aborted) {
+    return intentionalCancellation(controller) ?? { success: false };
   }
 
   let resolveEnded: () => void;
@@ -472,7 +511,7 @@ async function decodeAndPlay(audioBytes: ArrayBuffer, volume: number, label: str
  * upstream 5xx, decode failure, etc.) so the caller falls through to
  * speech-service's Web Speech tiers.
  */
-async function speakGemini(text: string, volume: number, controller: AbortController, lang?: string, interrupt = false): Promise<{ success: boolean, onEnded?: Promise<void> }> {
+async function speakGemini(text: string, volume: number, controller: AbortController, lang?: string, interrupt = false): Promise<TtsPlaybackResult> {
   // Gemini doesn't take SSML — it does its own prosody. Send plain text.
   // Keep within the server's 4KB UTF-8 cap; longer messages are very
   // rare on the AAC surface but caps elsewhere will trim if needed.
@@ -503,8 +542,10 @@ async function speakGemini(text: string, volume: number, controller: AbortContro
     }
     // decodeAndPlay handles stopAzurePlayback synchronously right
     // before source.start, so the peer-race window is microseconds.
-    return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS', interrupt);
+    return await decodeAndPlay(audioBytes, volume, 'Gemini-TTS', interrupt, 1.0, controller);
   } catch (e) {
+    const cancelled = intentionalCancellation(controller);
+    if (cancelled) return cancelled;
     // Network / abort / timeout. Speech-service still has Web Speech
     // to fall back to even if Inworld is also down.
     console.warn('[Gemini-TTS] fetch threw:', e instanceof Error ? e.message : e);
@@ -532,7 +573,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   authToken: string,
   voiceId?: string,
   interrupt = false,
-): Promise<{ success: boolean, onEnded?: Promise<void> }> {
+): Promise<TtsPlaybackResult> {
   // Rapid-duplicate suppression — drop a new speak with the same text
   // if one fired in the last DEDUP_MS. Otherwise the new fetch+decode
   // races the prior playback and stopAzurePlayback() kills the still-
@@ -544,7 +585,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   // completes after the interrupt and its decodeAndPlay races or overlaps
   // with the new audio — two simultaneous AudioBufferSources → chipmunk.
   if (interrupt) {
-    activeControllers.forEach((c) => c.abort());
+    activeControllers.forEach((c) => abortController(c, 'superseded'));
     activeControllers.clear();
     stopAzurePlayback();
     if (typeof window !== 'undefined') window.speechSynthesis?.cancel();
@@ -568,7 +609,20 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   const cached = _ttsCacheGet(cacheKey);
   if (cached) {
     console.log(`[AzureTTS] cache hit: "${text.slice(0, 40)}"`);
-    return decodeAndPlay(cached, volume, 'AzureTTS-cache', interrupt);
+    const cacheController = new AbortController();
+    activeControllers.add(cacheController);
+    try {
+      return await decodeAndPlay(
+        cached,
+        volume,
+        'AzureTTS-cache',
+        interrupt,
+        1.0,
+        cacheController,
+      );
+    } finally {
+      activeControllers.delete(cacheController);
+    }
   }
 
   // Normalize stored slider → portal SSML rate scale. See computeNormalizedRate.
@@ -579,7 +633,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
 
   const controller = new AbortController();
   activeControllers.add(controller);
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => abortController(controller, 'timeout'), 8000);
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
@@ -668,7 +722,6 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
       const audioBytes = await readCappedAudio(res);
       if (audioBytes) {
         clearTimeout(timeout);
-        activeControllers.delete(controller);
         // Cache the raw portal bytes for instant replay on repeated phrases.
         _ttsCacheSet(cacheKey, audioBytes);
         // Rate is fully encoded in the SSML prosody. computeNormalizedRate()
@@ -680,7 +733,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
         // Audio playbackRate — that caused double-slow in translation mode:
         // aacSpeak effectiveRate × 0.6 → SSML rate 0.6 → old pbRate 0.6
         // = 0.36× speed (en-ro regression, May 2026).
-        return await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt);
+        return await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt, 1.0, controller);
       }
       console.warn('[AzureTTS] response oversize, dropping');
     } else {
@@ -697,7 +750,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     activeControllers.add(geminiController);
     try {
       const geminiResult = await speakGemini(text, volume, geminiController, lang, interrupt);
-      if (geminiResult.success) {
+      if (geminiResult.success || geminiResult.cancelled) {
         return geminiResult;
       }
     } finally {
@@ -705,6 +758,8 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     }
     return { success: false };
   } catch (e) {
+    const cancelled = intentionalCancellation(controller);
+    if (cancelled) return cancelled;
     console.warn('[AzureTTS] Fetch failed:', e instanceof Error ? e.message : e);
     return { success: false };
   } finally {

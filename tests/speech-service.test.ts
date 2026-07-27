@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { speak, speakWord, stopSpeech, isSpeechSupported } from '@/services/speechService';
+import { speakAzure } from '@/services/azureTTS';
 import {
   subscribeTtsHighlight,
   type TtsHighlightEvent,
@@ -37,6 +38,24 @@ describe('SpeechService — Core', () => {
     expect(window.speechSynthesis.speak).toHaveBeenCalled();
   });
 
+  it('routes AAC tap feedback through neural TTS before local Web Speech', async () => {
+    vi.mocked(speakAzure).mockResolvedValueOnce({ success: true });
+
+    speakWord('hello', 0.5, 1.0, 'en-US');
+
+    await vi.waitFor(() => expect(speakAzure).toHaveBeenCalledWith(
+      'hello',
+      'en-US',
+      expect.any(String),
+      0.5,
+      1.0,
+      expect.any(String),
+      expect.any(String),
+      true,
+    ));
+    expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
+  });
+
   it('speak does nothing for empty text', () => {
     speak('', 0.5, 1.0);
     expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
@@ -47,14 +66,17 @@ describe('SpeechService — Core', () => {
     expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
   });
 
-  it('speakWord cancels prior speech (pile-up fix)', () => {
+  it('speakWord fallback cancels prior local speech (pile-up fix)', async () => {
     speakWord('hello');
-    expect(window.speechSynthesis.cancel).toHaveBeenCalled();
-    expect(window.speechSynthesis.speak).toHaveBeenCalled();
+    await vi.waitFor(() => {
+      expect(window.speechSynthesis.cancel).toHaveBeenCalled();
+      expect(window.speechSynthesis.speak).toHaveBeenCalled();
+    });
   });
 
-  it('pads a one-letter word so Web Speech says the word instead of "capital I"', () => {
+  it('pads a one-letter word so Web Speech fallback says the word instead of "capital I"', async () => {
     speakWord('I');
+    await vi.waitFor(() => expect(window.speechSynthesis.speak).toHaveBeenCalled());
     const utterance = (
       window.speechSynthesis.speak as ReturnType<typeof vi.fn>
     ).mock.calls.at(-1)?.[0] as { text?: string };
@@ -77,7 +99,7 @@ describe('SpeechService — Core', () => {
     }
   });
 
-  it('rapid speakWord calls keep only one local resume timer alive', () => {
+  it('rapid speakWord fallbacks keep only one local resume timer alive', async () => {
     vi.useFakeTimers();
     try {
       // Keep the utterances active so the test exercises replacement cleanup
@@ -86,6 +108,8 @@ describe('SpeechService — Core', () => {
 
       speakWord('first');
       speakWord('second');
+      await Promise.resolve();
+      await Promise.resolve();
 
       expect(window.speechSynthesis.cancel).toHaveBeenCalledTimes(2);
       vi.advanceTimersByTime(10_000);
@@ -101,7 +125,7 @@ describe('SpeechService — Core', () => {
     }
   });
 
-  it('a delayed cancellation callback cannot clear the next word resume timer', () => {
+  it('a delayed fallback cancellation cannot clear the next word resume timer', async () => {
     vi.useFakeTimers();
     try {
       const utterances: Array<{
@@ -114,6 +138,8 @@ describe('SpeechService — Core', () => {
 
       speakWord('first');
       speakWord('second');
+      await Promise.resolve();
+      await Promise.resolve();
       expect(utterances).toHaveLength(2);
 
       // Safari can report the first cancellation after the second utterance

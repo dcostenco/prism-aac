@@ -76,7 +76,7 @@ const VALID_THEMES = new Set<Theme>(['light', 'dark']);
 /** Plausible numeric bounds — defends against tampered localStorage
  *  injecting NaN / negative / absurd values that would break the UI. */
 const NUM_BOUNDS = {
-  speechRate: { min: 0.25, max: 4, def: 1 },
+  speechRate: { min: 0.25, max: 4, def: 0.5 },
   speechVolume: { min: 0, max: 1, def: 1 },
   gridSize: { values: [4, 6, 9, 12, 16, 20] as GridSize[], def: 6 as GridSize },
   headTrackingDwellMs: { min: 200, max: 5000, def: 1200 },
@@ -330,7 +330,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prism-aac-settings',
-      version: 18,
+      version: 19,
       migrate: (persisted: unknown, version: number) => {
         let s = persisted as Record<string, unknown>;
         if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
@@ -414,6 +414,14 @@ export const useSettingsStore = create<SettingsState>()(
           if (typeof s.caregiverPinHash === 'string' && !/^[0-9a-f]{64}$/.test(s.caregiverPinHash)) {
             s = { ...s, caregiverPinHash: undefined }; // force re-setup with new SHA-256 hash
           }
+        }
+        // v19: undo the legacy 0.5→1.0 rate migration from the period when
+        // the stored value was passed directly to Azure SSML. The current
+        // client normalizes stored 0.5 to portal rate 1.0, so persisted 1.0
+        // now becomes portal rate 1.4 (audibly too fast). This is one-shot:
+        // a user who deliberately selects 1.0 after v19 keeps that choice.
+        if (version < 19 && s.speechRate === 1) {
+          s = { ...s, speechRate: 0.5 };
         }
         return s;
       },
