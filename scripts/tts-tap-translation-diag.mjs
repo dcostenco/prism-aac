@@ -23,8 +23,10 @@ const predictionSequence = (process.env.PREDICTION_SEQUENCE || "")
   .map((value) => value.trim())
   .filter(Boolean);
 const sequenceDelayMs = Number(process.env.SEQUENCE_DELAY_MS || "500");
+const inputLanguage = process.env.INPUT_LANGUAGE || "en";
 const outputLanguage = process.env.OUTPUT_LANGUAGE || "es";
 const pressPlay = process.env.PRESS_PLAY === "1";
+const beforePlayDelayMs = Number(process.env.BEFORE_PLAY_DELAY_MS || "0");
 const vercelProtectionBypass =
   process.env.VERCEL_AUTOMATION_BYPASS_SECRET || "";
 
@@ -65,8 +67,10 @@ const report = {
   secondInputText,
   predictionSequence,
   sequenceDelayMs,
+  inputLanguage,
   outputLanguage,
   pressPlay,
+  beforePlayDelayMs,
   playClickedAt: null,
   documentStatus: null,
   storedSettings: null,
@@ -85,18 +89,18 @@ const report = {
 };
 const requestEntries = new Map();
 
-await page.addInitScript((selectedOutputLanguage) => {
+await page.addInitScript(({ selectedInputLanguage, selectedOutputLanguage }) => {
   try {
     localStorage.setItem(
       "prism-aac-settings",
       JSON.stringify({
         state: {
-          language: "en",
+          language: selectedInputLanguage,
           outputLanguage: selectedOutputLanguage,
-          speechRate: 1,
+          speechRate: 0.5,
           speechVolume: 1,
         },
-        version: 18,
+        version: 19,
       }),
     );
     sessionStorage.setItem("prism-greeting-dismissed", "1");
@@ -163,7 +167,10 @@ await page.addInitScript((selectedOutputLanguage) => {
     utterances: [...utterances],
     audio: JSON.parse(JSON.stringify(audio)),
   });
-}, outputLanguage);
+}, {
+  selectedInputLanguage: inputLanguage,
+  selectedOutputLanguage: outputLanguage,
+});
 
 page.on("console", (message) => {
   const text = message.text();
@@ -176,7 +183,7 @@ page.on("request", (request) => {
   const url = request.url();
   if (
     request.method() !== "POST" ||
-    !/translat|\/tts\/|aacSpeak|speech/i.test(url)
+    !/translat|\/tts\/|aacSpeak|speech|\/prism-aac\/(?:chat|infer|inference)/i.test(url)
   ) {
     return;
   }
@@ -243,7 +250,7 @@ try {
   const tapKeyboardText = async (value) => {
     for (const character of value.toUpperCase()) {
       if (character === " ") {
-        await page.locator('button[data-key="SPACE"]').first().click({ delay: 50 });
+        await page.locator('button[data-action="space"]').first().click({ delay: 50 });
       } else {
         await page
           .locator(`button[data-key="${character}"]`)
@@ -314,6 +321,7 @@ try {
       await recordStep(`after-prediction-${value}`);
     }
     if (pressPlay) {
+      await page.waitForTimeout(beforePlayDelayMs);
       report.playClickedAt = Date.now();
       await page.locator("button.aac-speak").first().click({ delay: 50 });
       await page.waitForTimeout(500);
@@ -321,6 +329,15 @@ try {
     }
   } else if (inputMode === "keyboard") {
     await tapKeyboardText(inputText);
+    await page.waitForTimeout(500);
+    await recordStep("after-keyboard");
+    if (pressPlay) {
+      await page.waitForTimeout(beforePlayDelayMs);
+      report.playClickedAt = Date.now();
+      await page.locator("button.aac-speak").first().click({ delay: 50 });
+      await page.waitForTimeout(500);
+      await recordStep("after-play");
+    }
   } else if (inputMode === "keyboard-prediction") {
     await tapKeyboardText(inputText);
     await page.waitForTimeout(500);
@@ -329,6 +346,7 @@ try {
     await page.waitForTimeout(500);
     await recordStep("after-prediction");
     if (pressPlay) {
+      await page.waitForTimeout(beforePlayDelayMs);
       report.playClickedAt = Date.now();
       await page.locator("button.aac-speak").first().click({ delay: 50 });
       await page.waitForTimeout(500);
@@ -375,7 +393,7 @@ if (
   report.documentStatus !== 200 ||
   report.pageErrors.length > 0 ||
   report.speechUtterances.length > 0 ||
-  report.storedSettings?.state?.language !== "en" ||
+  report.storedSettings?.state?.language !== inputLanguage ||
   report.storedSettings?.state?.outputLanguage !== outputLanguage ||
   report.tappedTiles.some((tile, index) =>
     predictionSequence[index]

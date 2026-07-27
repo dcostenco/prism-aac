@@ -5,6 +5,7 @@ import { getClinicalDict } from '@/constants/clinicalVocabulary';
 import { applyGrammarRules } from '@/constants/languageRules';
 import { AAC_VOCABULARY } from '@/constants/languageVocabulary';
 import { OFFLINE_DICT_1 } from '@/constants/offlineDictionary';
+import { AAC_FIRST_PERSON_MARKER } from '@/constants/translationMarkers';
 
 // Display names sent to translateAI as system-prompt context. Includes
 // regional Chinese variants so the AI translator picks the correct form.
@@ -30,6 +31,9 @@ const LANG_NAMES: Record<string, string> = {
 
 const MAX_CACHE = 500;
 const cache = new Map<string, string>();
+const EXPLICIT_FIRST_PERSON_CONCEPT = DEFAULT_PHRASES.find((phrase) => phrase.id === 'cw-i');
+const ATTACHED_GRAMMAR_SCRIPT =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
 
 function trimCache() {
   while (cache.size > MAX_CACHE) {
@@ -37,6 +41,177 @@ function trimCache() {
     if (oldest !== undefined) cache.delete(oldest);
     else break;
   }
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function standaloneConceptPattern(concept: string): RegExp {
+  const escaped = concept
+    .trim()
+    .split(/\s+/u)
+    .map(escapeRegExp)
+    .join('\\s+');
+  return new RegExp(`(^|[^\\p{L}\\p{N}])(${escaped})(?=$|[^\\p{L}\\p{N}])`, 'iu');
+}
+
+function containsConcept(text: string, concept: string): boolean {
+  const normalizedText = text.normalize('NFKC');
+  const normalizedConcept = concept.normalize('NFKC').trim();
+  if (!normalizedConcept) return false;
+  if (ATTACHED_GRAMMAR_SCRIPT.test(normalizedConcept)) {
+    return normalizedText.toLocaleLowerCase().includes(normalizedConcept.toLocaleLowerCase());
+  }
+  return standaloneConceptPattern(normalizedConcept).test(normalizedText);
+}
+
+function canonicalizeConcept(text: string, concept: string): string {
+  const normalizedConcept = concept.normalize('NFKC').trim();
+  if (ATTACHED_GRAMMAR_SCRIPT.test(normalizedConcept)) {
+    return text.replace(new RegExp(escapeRegExp(normalizedConcept), 'iu'), normalizedConcept);
+  }
+  return text.replace(
+    standaloneConceptPattern(normalizedConcept),
+    (_match, prefix: string) => `${prefix}${normalizedConcept}`,
+  );
+}
+
+interface ExplicitFirstPersonContext {
+  sourceConcept: string;
+  targetConcept: string;
+  sourceIsLeading: boolean;
+  targetUsesAttachedGrammar: boolean;
+}
+
+function explicitFirstPersonContext(
+  source: string,
+  fromLang: SupportedLanguage,
+  toLang: SupportedLanguage,
+): ExplicitFirstPersonContext | null {
+  if (!EXPLICIT_FIRST_PERSON_CONCEPT) return null;
+
+  const sourceConcept = getPhraseText(
+    EXPLICIT_FIRST_PERSON_CONCEPT.id,
+    fromLang,
+    EXPLICIT_FIRST_PERSON_CONCEPT.text,
+  );
+  if (!containsConcept(source, sourceConcept)) return null;
+
+  const targetConcept = getPhraseText(
+    EXPLICIT_FIRST_PERSON_CONCEPT.id,
+    toLang,
+    EXPLICIT_FIRST_PERSON_CONCEPT.text,
+  );
+  const trimmedSource = source.normalize('NFKC').trimStart();
+  const sourceIsLeading = ATTACHED_GRAMMAR_SCRIPT.test(sourceConcept)
+    ? trimmedSource.toLocaleLowerCase().startsWith(sourceConcept.toLocaleLowerCase())
+    : new RegExp(
+      `^${escapeRegExp(sourceConcept)}(?=$|[^\\p{L}\\p{N}])`,
+      'iu',
+    ).test(trimmedSource);
+
+  return {
+    sourceConcept,
+    targetConcept,
+    sourceIsLeading,
+    targetUsesAttachedGrammar: ATTACHED_GRAMMAR_SCRIPT.test(targetConcept),
+  };
+}
+
+function lowercaseSentenceInitial(text: string, lang: SupportedLanguage): string {
+  return text.replace(/\p{L}/u, (character) => character.toLocaleLowerCase(lang));
+}
+
+function markExplicitFirstPerson(source: string, sourceConcept: string): string {
+  if (ATTACHED_GRAMMAR_SCRIPT.test(sourceConcept)) {
+    return source.replace(
+      new RegExp(escapeRegExp(sourceConcept), 'iu'),
+      AAC_FIRST_PERSON_MARKER,
+    );
+  }
+  return source.replace(
+    standaloneConceptPattern(sourceConcept),
+    (_match, prefix: string) => `${prefix}${AAC_FIRST_PERSON_MARKER}`,
+  );
+}
+
+function restoreMarkedFirstPerson(candidate: string, targetConcept: string): string | null {
+  const markerCount = candidate.split(AAC_FIRST_PERSON_MARKER).length - 1;
+  if (markerCount !== 1) return null;
+  return candidate.replace(AAC_FIRST_PERSON_MARKER, targetConcept);
+}
+
+/**
+ * AAC selections express the speaker's intent, not merely optional grammar.
+ * A translation model may naturalize pro-drop languages by erasing an explicit
+ * first-person pronoun. Keep the canonical concept from phrase data in every
+ * target language and normalize its spelling/case before display or TTS.
+ */
+function preserveExplicitFirstPerson(
+  source: string,
+  candidate: string,
+  fromLang: SupportedLanguage,
+  toLang: SupportedLanguage,
+): string | null {
+  const context = explicitFirstPersonContext(source, fromLang, toLang);
+  if (!context) return candidate;
+  if (containsConcept(candidate, context.targetConcept)) {
+    return canonicalizeConcept(candidate, context.targetConcept);
+  }
+  if (
+    candidate.trim()
+    && context.sourceIsLeading
+    && !context.targetUsesAttachedGrammar
+  ) {
+    return `${context.targetConcept} ${lowercaseSentenceInitial(candidate, toLang)}`.trim();
+  }
+  return null;
+}
+
+type TranslateAIFunction = (
+  text: string,
+  fromLang: string,
+  toLang: string,
+  onChunk?: (delta: string) => void,
+  signal?: AbortSignal,
+) => Promise<string>;
+
+function cleanTranslation(value: string): string {
+  return value.trim().replace(/^["']|["']$/g, '');
+}
+
+async function requestPreservedTranslation(
+  translateAI: TranslateAIFunction,
+  text: string,
+  fromLang: SupportedLanguage,
+  toLang: SupportedLanguage,
+  signal?: AbortSignal,
+): Promise<string> {
+  const fromName = LANG_NAMES[fromLang] ?? fromLang;
+  const toName = LANG_NAMES[toLang] ?? toLang;
+  const initial = cleanTranslation(
+    await translateAI(text, fromName, toName, undefined, signal),
+  );
+  const preserved = preserveExplicitFirstPerson(text, initial, fromLang, toLang);
+  if (preserved !== null) return preserved;
+
+  const context = explicitFirstPersonContext(text, fromLang, toLang);
+  if (!context) return initial;
+
+  const markedSource = markExplicitFirstPerson(text, context.sourceConcept);
+  const markedResult = cleanTranslation(
+    await translateAI(markedSource, fromName, toName, undefined, signal),
+  );
+  const restored = restoreMarkedFirstPerson(markedResult, context.targetConcept);
+  if (restored === null) {
+    console.warn(
+      '[translate] AI omitted an immutable AAC first-person marker; rejecting:',
+      markedResult.slice(0, 60),
+    );
+    return '';
+  }
+  return canonicalizeConcept(restored, context.targetConcept);
 }
 
 type WordDict = Map<string, string>;
@@ -242,15 +417,14 @@ export function translateWithAIRefine(
       if (currentSignal.aborted) return;
       const { translateAI } = await import('./aiService');
       const resultRace = await Promise.race([
-        translateAI(trimmed, LANG_NAMES[fromLang] ?? fromLang, LANG_NAMES[toLang] ?? toLang),
+        requestPreservedTranslation(translateAI, trimmed, fromLang, toLang, currentSignal),
         new Promise<never>((_, reject) => {
           const t = setTimeout(() => reject(new Error('AI translate timeout')), 15000);
           currentSignal.addEventListener('abort', () => { clearTimeout(t); reject(new Error('aborted')); }, { once: true });
         }),
       ]);
       if (currentSignal.aborted) return;
-      const result = resultRace;
-      const refined = result.trim().replace(/^["']|["']$/g, '');
+      const refined = resultRace;
       if (
         refined &&
         refined.toLowerCase() !== trimmed.toLowerCase() &&
@@ -298,8 +472,12 @@ export async function translateText(
 
   try {
     const { translateAI } = await import('./aiService');
-    const result = await translateAI(text, LANG_NAMES[fromLang] ?? fromLang, LANG_NAMES[toLang] ?? toLang);
-    const translated = result.trim().replace(/^["']|["']$/g, '');
+    const translated = await requestPreservedTranslation(
+      translateAI,
+      text,
+      fromLang,
+      toLang,
+    );
     if (
       translated &&
       translated.toLowerCase() !== text.trim().toLowerCase() &&

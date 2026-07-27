@@ -140,4 +140,24 @@ describe('JSON dictionary for watch/iOS', () => {
       }
     }
   });
+
+  it('keeps the Romanian first-person token identical in web and Watch bundles', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const webData = JSON.parse(
+      fs.readFileSync(path.resolve('constants/aacTranslations.json'), 'utf-8'),
+    );
+    const watchData = JSON.parse(
+      fs.readFileSync(
+        path.resolve('ios-native/PrismAACWatch/Sources/AI/aacTranslations.json'),
+        'utf-8',
+      ),
+    );
+    const webPronoun = webData.phrases.find((phrase: { id: string }) => phrase.id === 'cw-i');
+    const watchPronoun = watchData.phrases.find((phrase: { id: string }) => phrase.id === 'cw-i');
+
+    expect(webPronoun.translations.ro).toBe('eu');
+    expect(watchPronoun.translations.ro).toBe('eu');
+    expect(watchPronoun).toEqual(webPronoun);
+  });
 });

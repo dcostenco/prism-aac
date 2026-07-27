@@ -24,6 +24,7 @@ import { SYNALUX_API, SYNALUX_PORTAL_ORIGIN, timeoutSignal } from '@/lib/portalC
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { MODEL_REGISTRY, SIDELOAD_ORDER } from '@/constants/modelRegistry';
+import { AAC_FIRST_PERSON_MARKER } from '@/constants/translationMarkers';
 
 const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
 
@@ -849,7 +850,10 @@ export async function translateAI(
   // H7: Sanitize language params through the LANG_NAMES allowlist before interpolation
   const safeFrom = _safeLang(fromLang);
   const safeTo = _safeLang(toLang);
-  const system = `You are a translator. Translate the input from ${safeFrom} to ${safeTo}. Return ONLY the translation — no explanations, no quotes, no extra text.`;
+  const markerRule = text.includes(AAC_FIRST_PERSON_MARKER)
+    ? ` The token ${AAC_FIRST_PERSON_MARKER} is an immutable marker for an explicitly selected first-person singular pronoun. Copy ${AAC_FIRST_PERSON_MARKER} exactly once and keep it in the same relative position as the source. Attach any required target-language particles directly to the marker, and translate all surrounding words naturally.`
+    : '';
+  const system = `You are a translator. Translate the input from ${safeFrom} to ${safeTo}.${markerRule} Return ONLY the translation — no explanations, no quotes, no extra text.`;
   return route(text, { system, onChunk, intent: 'translate', signal });
 }
 

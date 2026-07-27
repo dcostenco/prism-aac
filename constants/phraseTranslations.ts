@@ -2,7 +2,7 @@ import { SupportedLanguage } from '@/engine/i18n';
 
 const T: Record<string, Partial<Record<SupportedLanguage, string>>> = {
   // Core Words — Pronouns
-  'cw-i':     { ro: 'Eu', es: 'Yo', fr: 'Je', pt: 'Eu', de: 'Ich', ru: 'Я', uk: 'Я', ja: '私', ko: '나', zh: '我', ar: 'أنا' , pl: 'Ja', it: 'Io', hi: 'मैं', he: 'אני', nl: 'Ik', vi: 'Tôi', tl: 'Ako', tr: 'Ben', id: 'Saya', bg: 'Аз'},
+  'cw-i':     { ro: 'eu', es: 'Yo', fr: 'Je', pt: 'Eu', de: 'Ich', ru: 'Я', uk: 'Я', ja: '私', ko: '나', zh: '我', ar: 'أنا' , pl: 'Ja', it: 'Io', hi: 'मैं', he: 'אני', nl: 'Ik', vi: 'Tôi', tl: 'Ako', tr: 'Ben', id: 'Saya', bg: 'Аз'},
   'cw-you':   { ro: 'Tu', es: 'Tú', fr: 'Tu', pt: 'Você', de: 'Du', ru: 'Ты', uk: 'Ти', ja: 'あなた', ko: '너', zh: '你', ar: 'أنت' , pl: 'Ty', it: 'Tu', hi: 'तुम', he: 'אתה', nl: 'Jij', vi: 'Bạn', tl: 'Ikaw', tr: 'Sen', id: 'Kamu', bg: 'Ти'},
   'cw-he':    { ro: 'El', es: 'Él', fr: 'Il', pt: 'Ele', de: 'Er', ru: 'Он', uk: 'Він', ja: '彼', ko: '그', zh: '他', ar: 'هو' , pl: 'On', it: 'Lui', hi: 'वह', he: 'הוא', nl: 'Hij', vi: 'Anh ấy', tl: 'Siya', tr: 'O', id: 'Dia', bg: 'Той'},
   'cw-she':   { ro: 'Ea', es: 'Ella', fr: 'Elle', pt: 'Ela', de: 'Sie', ru: 'Она', uk: 'Вона', ja: '彼女', ko: '그녀', zh: '她', ar: 'هي' , pl: 'Ona', it: 'Lei', hi: 'वह', he: 'היא', nl: 'Zij', vi: 'Cô ấy', tl: 'Siya', tr: 'O', id: 'Dia', bg: 'Тя'},

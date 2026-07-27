@@ -3,6 +3,10 @@ import { getPhraseText } from '@/constants/phraseTranslations';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 
 describe('Phrase translations — getPhraseText', () => {
+  it('uses lowercase Romanian "eu" for the explicit first-person pronoun', () => {
+    expect(getPhraseText('cw-i', 'ro', 'I')).toBe('eu');
+  });
+
   it('returns English fallback text for "en" language', () => {
     const result = getPhraseText('help-all-done', 'en', 'All done');
     expect(result).toBe('All done');

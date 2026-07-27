@@ -11,7 +11,24 @@ vi.mock('@/services/aiService', () => ({
   translateAI: translateAIMock,
 }));
 
-import { translateText, translateWithAIRefine } from '@/services/translateService';
+import {
+  abortTranslation,
+  clearTranslationCache,
+  translateText,
+  translateTextSync,
+  translateWithAIRefine,
+} from '@/services/translateService';
+import { AAC_FIRST_PERSON_MARKER } from '@/constants/translationMarkers';
+
+const OMITTED_FIRST_PERSON_REFINEMENTS = [
+  ['es', 'Estoy buscando', 'Yo estoy buscando'],
+  ['pt', 'Estou procurando', 'Eu estou procurando'],
+  ['ro', 'Caut', 'eu caut'],
+  ['it', 'Sto cercando', 'Io sto cercando'],
+  ['pl', 'Szukam', 'Ja szukam'],
+  ['tr', 'Arıyorum', 'Ben arıyorum'],
+  ['bg', 'Търся', 'Аз търся'],
+] as const;
 
 describe('translateService', () => {
   it('returns original text when fromLang === toLang', async () => {
@@ -45,10 +62,103 @@ describe('translateService', () => {
 describe('translateWithAIRefine — script sanity check', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    abortTranslation();
+    clearTranslationCache();
     translateAIMock.mockReset();
   });
   afterEach(() => {
+    abortTranslation();
     vi.useRealTimers();
+  });
+
+  it('translates explicit English "I" to canonical lowercase Romanian "eu"', () => {
+    expect(translateTextSync('I', 'en', 'ro')).toBe('eu');
+  });
+
+  it.each(OMITTED_FIRST_PERSON_REFINEMENTS)(
+    'repairs a %s refinement that omits the leading explicitly selected pronoun',
+    async (targetLanguage, omittedRefinement, expectedRefinement) => {
+      translateAIMock.mockResolvedValue(omittedRefinement);
+      const onRefined = vi.fn();
+
+      translateWithAIRefine('I looking', 'en', targetLanguage, onRefined);
+      await vi.runAllTimersAsync();
+
+      expect(onRefined).toHaveBeenCalledWith(expectedRefinement);
+    },
+  );
+
+  it('keeps lowercase Romanian "eu" in both instant and refined output', async () => {
+    translateAIMock.mockResolvedValue('Caut');
+    const onRefined = vi.fn();
+
+    const instant = translateWithAIRefine('I looking', 'en', 'ro', onRefined);
+    await vi.runAllTimersAsync();
+
+    expect(instant).toMatch(/^eu\b/u);
+    expect(onRefined).toHaveBeenCalledWith('eu caut');
+  });
+
+  it('normalizes a preserved Romanian pronoun to the canonical AAC token', async () => {
+    translateAIMock.mockResolvedValue('Eu caut');
+    const onRefined = vi.fn();
+
+    translateWithAIRefine('I looking', 'en', 'ro', onRefined);
+    await vi.runAllTimersAsync();
+
+    expect(onRefined).toHaveBeenCalledWith('eu caut');
+  });
+
+  it('uses an immutable marker retry for Japanese attached grammar', async () => {
+    translateAIMock
+      .mockResolvedValueOnce('探しています')
+      .mockResolvedValueOnce(`${AAC_FIRST_PERSON_MARKER}は探しています`);
+    const onRefined = vi.fn();
+
+    translateWithAIRefine('I looking', 'en', 'ja', onRefined);
+    await vi.runAllTimersAsync();
+
+    expect(translateAIMock).toHaveBeenNthCalledWith(
+      1,
+      'I looking',
+      'English',
+      'Japanese',
+      undefined,
+      expect.any(AbortSignal),
+    );
+    expect(translateAIMock).toHaveBeenNthCalledWith(
+      2,
+      `${AAC_FIRST_PERSON_MARKER} looking`,
+      'English',
+      'Japanese',
+      undefined,
+      expect.any(AbortSignal),
+    );
+    expect(onRefined).toHaveBeenCalledWith('私は探しています');
+  });
+
+  it('uses an immutable marker retry for Korean attached grammar', async () => {
+    translateAIMock
+      .mockResolvedValueOnce('찾고 있습니다')
+      .mockResolvedValueOnce(`${AAC_FIRST_PERSON_MARKER}는 찾고 있습니다`);
+    const onRefined = vi.fn();
+
+    translateWithAIRefine('I looking', 'en', 'ko', onRefined);
+    await vi.runAllTimersAsync();
+
+    expect(onRefined).toHaveBeenCalledWith('나는 찾고 있습니다');
+  });
+
+  it('rejects an attached-grammar retry when the model drops the marker again', async () => {
+    translateAIMock
+      .mockResolvedValueOnce('探しています')
+      .mockResolvedValueOnce('探しています');
+    const onRefined = vi.fn();
+
+    translateWithAIRefine('I looking', 'en', 'ja', onRefined);
+    await vi.runAllTimersAsync();
+
+    expect(onRefined).not.toHaveBeenCalled();
   });
 
   it('rejects an "EN translation" returned in Cyrillic (the actual prod regression)', async () => {
