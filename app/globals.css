@@ -188,6 +188,13 @@ html, body {
     height: clamp(80px, 24svh, 120px) !important;
     max-height: 120px;
   }
+  /* The bar's controls size from vw clamps written for a portrait phone, so in
+     landscape they alone push it to ~81px. Cap them so the bar stays the slim
+     single line it is meant to be and the keyboard keeps the height. */
+  [data-scan-group="message-bar"][data-compact="1"] .aac-btn {
+    height: clamp(2.25rem, 10svh, 2.75rem) !important;
+    min-height: 0 !important;
+  }
 }
 
 /* ── Tablet: larger keyboard for AAC touchability ──────────────
