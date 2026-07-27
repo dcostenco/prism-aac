@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { speak, speakWord, stopSpeech, isSpeechSupported } from '@/services/speechService';
+import {
+  subscribeTtsHighlight,
+  type TtsHighlightEvent,
+} from '@/services/ttsHighlightBus';
 
 // Force Tier 1 (portal Inworld/Azure) to "fail" so tests can assert on the
 // Web Speech fallback. Without this mock, speakAzure attempts a real fetch
@@ -47,6 +51,30 @@ describe('SpeechService — Core', () => {
     speakWord('hello');
     expect(window.speechSynthesis.cancel).toHaveBeenCalled();
     expect(window.speechSynthesis.speak).toHaveBeenCalled();
+  });
+
+  it('pads a one-letter word so Web Speech says the word instead of "capital I"', () => {
+    speakWord('I');
+    const utterance = (
+      window.speechSynthesis.speak as ReturnType<typeof vi.fn>
+    ).mock.calls.at(-1)?.[0] as { text?: string };
+    expect(utterance.text).toBe('I.');
+  });
+
+  it('publishes local word feedback so the phrase timer cannot duplicate it in cloud TTS', () => {
+    const events: TtsHighlightEvent[] = [];
+    const unsubscribe = subscribeTtsHighlight((event) => events.push(event));
+    try {
+      speakWord('I');
+      expect(events).toContainEqual(
+        expect.objectContaining({
+          type: 'tts-highlight-start',
+          text: 'I',
+        }),
+      );
+    } finally {
+      unsubscribe();
+    }
   });
 
   it('rapid speakWord calls keep only one local resume timer alive', () => {

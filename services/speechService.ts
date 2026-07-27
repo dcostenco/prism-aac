@@ -17,6 +17,7 @@ import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { emitTtsHealthEvent, TtsTier } from './ttsHealthBus';
+import { emitTtsHighlight, estimateSpeechDurationMs } from './ttsHighlightBus';
 import { fetchVoiceCatalog, defaultVoiceForLanguage } from './voiceCatalogService';
 
 export function isSpeechSupported(): boolean {
@@ -331,7 +332,17 @@ export async function speak(
  */
 export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string): void {
   const actualLang = lang || getTTSCode((useSettingsStore.getState().language || 'en') as SupportedLanguage);
-  void speakLocal(word, rate, volume, actualLang);
+  // A bare single character is commonly announced as a letter name
+  // ("capital I") by Web Speech. Sentence punctuation makes valid
+  // one-letter words such as "I" and "a" sound like spoken words.
+  const toSpeak = word.trim().length === 1 ? `${word.trim()}.` : word;
+  emitTtsHighlight({
+    type: 'tts-highlight-start',
+    text: word,
+    estimatedDurationMs: estimateSpeechDurationMs(word, rate),
+    timestamp: Date.now(),
+  });
+  void speakLocal(toSpeak, rate, volume, actualLang);
 }
 
 function speakLocal(text: string, rate: number, volume: number, lang: string): Promise<void> {

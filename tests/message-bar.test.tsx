@@ -25,6 +25,12 @@ const mocks = vi.hoisted(() => {
   const setToneMock          = vi.fn();
   const setToneModeMock      = vi.fn();
   const aacSpeakMock         = vi.fn();
+  const ttsHighlightListeners = new Set<(event: {
+    type: 'tts-highlight-start' | 'tts-highlight-end';
+    text?: string;
+    estimatedDurationMs?: number;
+    timestamp: number;
+  }) => void>();
 
   const messageState = {
     text: '',
@@ -70,6 +76,7 @@ const mocks = vi.hoisted(() => {
   return {
     toggleAutoSpeakMock, deleteLastWordMock, clearAllMock, undoMock,
     addToHistoryMock, setTextMock, setToneMock, setToneModeMock, aacSpeakMock,
+    ttsHighlightListeners,
     messageState, settingsState, uiState,
     useMessageStore, useSettingsStore, useUIStore,
   };
@@ -105,7 +112,15 @@ vi.mock('@/services/feedback', () => ({
 }));
 
 vi.mock('@/services/ttsHighlightBus', () => ({
-  subscribeTtsHighlight: () => () => {},
+  subscribeTtsHighlight: (listener: (event: {
+    type: 'tts-highlight-start' | 'tts-highlight-end';
+    text?: string;
+    estimatedDurationMs?: number;
+    timestamp: number;
+  }) => void) => {
+    mocks.ttsHighlightListeners.add(listener);
+    return () => { mocks.ttsHighlightListeners.delete(listener); };
+  },
 }));
 
 vi.mock('@/services/azureTTS', () => ({
@@ -155,6 +170,7 @@ beforeEach(() => {
   mocks.settingsState.language = 'en';
   mocks.settingsState.outputLanguage = 'en';
   mocks.uiState.sidePanel = 'none';
+  mocks.ttsHighlightListeners.clear();
 });
 
 // ── text display ──────────────────────────────────────────────────────────────
@@ -201,6 +217,70 @@ describe('MessageBar — auto-speak toggle', () => {
     render(<MessageBar />);
     fireEvent.click(screen.getByRole('button', { name: /auto_speak/i }));
     expect(mocks.toggleAutoSpeakMock).toHaveBeenCalledOnce();
+  });
+
+  it('auto-speaks a one-letter keyboard phrase without waiting for Play or AI autocorrect', async () => {
+    vi.useFakeTimers();
+    try {
+      mocks.messageState.text = 'I';
+      mocks.messageState.autoSpeak = true;
+      mocks.messageState.soundEnabled = true;
+      mocks.settingsState.language = 'en';
+      mocks.settingsState.outputLanguage = 'en';
+      mocks.settingsState.aiAutocorrectEnabled = false;
+
+      render(<MessageBar />);
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
+      });
+
+      expect(mocks.aacSpeakMock).toHaveBeenCalledOnce();
+      expect(mocks.aacSpeakMock).toHaveBeenCalledWith(
+        'I',
+        1,
+        1,
+        'neutral',
+        true,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('allows the same phrase to auto-speak after the direct-tap dedupe window expires', async () => {
+    vi.useFakeTimers();
+    try {
+      mocks.messageState.text = 'I';
+      mocks.messageState.autoSpeak = true;
+
+      const { rerender } = render(<MessageBar />);
+      act(() => {
+        for (const listener of mocks.ttsHighlightListeners) {
+          listener({
+            type: 'tts-highlight-start',
+            text: 'I',
+            estimatedDurationMs: 300,
+            timestamp: Date.now(),
+          });
+        }
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
+      });
+      expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+
+      mocks.messageState.text = '';
+      rerender(<MessageBar />);
+      mocks.messageState.text = 'I';
+      rerender(<MessageBar />);
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
+      });
+
+      expect(mocks.aacSpeakMock).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

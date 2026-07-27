@@ -17,6 +17,13 @@ import { usePredictionStore } from '@/store/predictionStore';
 import { triggerAISubmit } from '@/services/aiChatBridge';
 import { isSafeAutoCorrection } from '@/services/autocorrectSafety';
 
+function normalizeSpokenText(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+const COMPOSITION_SILENCE_MS = 2000;
+const DIRECT_SPEECH_DEDUPE_MS = COMPOSITION_SILENCE_MS + 1000;
+
 export default function MessageBar() {
   const text = useMessageStore((s) => s.text);
   const activeTone = useMessageStore((s) => s.activeTone);
@@ -61,8 +68,11 @@ export default function MessageBar() {
   // Updated by the autocorrect useEffect after a "no correction
   // needed" round-trip (the input is well-formed).
   const lastSilenceSpokenRef = useRef('');
-  // Timer ref for translation-mode auto-speak after silence.
-  const translationSpeakTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks speech already triggered by a direct tile/word action so the
+  // composition silence timer does not repeat the same utterance.
+  const lastAutoSpokenRef = useRef({ text: '', at: 0 });
+  // Timer ref for phrase-level auto-speak after composition silence.
+  const compositionSpeakTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── TTS word highlight (Read & Write parity) ────────────────────
   //
@@ -100,6 +110,10 @@ export default function MessageBar() {
         return;
       }
       // tts-highlight-start
+      lastAutoSpokenRef.current = {
+        text: normalizeSpokenText(event.text),
+        at: Date.now(),
+      };
       stopHighlight();
       // Tokenise the SPOKEN text the same way the renderer does so the
       // word index matches. We only highlight if the spoken string is
@@ -144,9 +158,11 @@ export default function MessageBar() {
   }, []);
 
   useEffect(() => {
+    // Translation is derived from the current text/language pair and must be
+    // cleared before starting a replacement request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTranslated(null);
     if (language === outputLanguage || !text.trim()) return;
-    let mounted = true;
     let cancelled = false;
     const instant = translateWithAIRefine(
       text.trim(), language, outputLanguage,
@@ -163,41 +179,77 @@ export default function MessageBar() {
     return () => { cancelled = true; abortTranslation(); };
   }, [text, language, outputLanguage]);
 
-  // ── Translation auto-speak after silence ─────────────────────────────────
-  // When translation mode is active (language ≠ outputLanguage) and autoSpeak
-  // is on, speak the full translated phrase after 2 seconds of inactivity.
-  // This replaces word-by-word auto-speak (suppressed in translation mode) with
-  // a single clean utterance in the target language once the user pauses.
-  const TRANSLATION_SILENCE_MS = 2000;
+  // ── Phrase auto-speak after silence ───────────────────────────────────────
+  // Auto-speak cannot depend on the AI autocorrect request succeeding. Speak
+  // the current phrase after two seconds of inactivity in both same-language
+  // and translation modes. This also treats valid one-letter utterances such
+  // as "I" as complete speech instead of leaving them silent.
   useEffect(() => {
-    if (translationSpeakTimer.current) clearTimeout(translationSpeakTimer.current);
+    if (compositionSpeakTimer.current) clearTimeout(compositionSpeakTimer.current);
     const { language: lang, outputLanguage: outLang } = useSettingsStore.getState();
     const translationActive = lang !== outLang;
     const { autoSpeak: as, soundEnabled: se } = useMessageStore.getState();
-    if (!translationActive || !as || !se || !text.trim()) return;
+    const phrase = text.trim();
+    if (!as || !se || !phrase) return;
 
-    translationSpeakTimer.current = setTimeout(() => {
+    compositionSpeakTimer.current = setTimeout(() => {
       const { autoSpeak, soundEnabled } = useMessageStore.getState();
       if (!autoSpeak || !soundEnabled) return;
+      const normalizedPhrase = normalizeSpokenText(phrase);
+      const lastSpoken = lastAutoSpokenRef.current;
+      if (
+        lastSpoken.text
+        && Date.now() - lastSpoken.at <= DIRECT_SPEECH_DEDUPE_MS
+        && (
+          normalizedPhrase === lastSpoken.text
+          || normalizedPhrase.endsWith(` ${lastSpoken.text}`)
+        )
+      ) {
+        return;
+      }
       // Use translatedRef.current so we always read the latest AI-refined
       // translation — the closure over `translated` would be stale here
       // because `translated` is intentionally excluded from the deps array.
       const latestTranslated = translatedRef.current;
       const outLang = useSettingsStore.getState().outputLanguage as SupportedLanguage | undefined;
-      // interrupt=true: stop any in-flight Azure stream before speaking the new
-      // translation. Without this, consecutive translation timer fires overlap
-      // → echo/double-streaming on foreign languages (ru-RU reported May 2026).
-      aacSpeak(latestTranslated || text.trim(), speechRate, speechVolume, activeTone, true, latestTranslated ? outLang : undefined);
-    }, TRANSLATION_SILENCE_MS);
+      if (translationActive) {
+        // interrupt=true: stop any in-flight Azure stream before speaking the
+        // new translation. Consecutive phrase timers must not overlap.
+        void aacSpeak(
+          latestTranslated || phrase,
+          speechRate,
+          speechVolume,
+          activeTone,
+          true,
+          latestTranslated ? outLang : undefined,
+        );
+      } else {
+        void aacSpeak(
+          phrase,
+          speechRate,
+          speechVolume,
+          activeTone,
+          true,
+        );
+      }
+    }, COMPOSITION_SILENCE_MS);
 
     return () => {
-      if (translationSpeakTimer.current) clearTimeout(translationSpeakTimer.current);
+      if (compositionSpeakTimer.current) clearTimeout(compositionSpeakTimer.current);
     };
   // NOTE: `translated` intentionally excluded from deps — including it would
   // restart the 2s timer when AI-refine updates the translation, causing a
   // second auto-speak. The timer callback reads translated state at fire time.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, speechRate, speechVolume, activeTone]);
+  }, [
+    text,
+    speechRate,
+    speechVolume,
+    activeTone,
+    language,
+    outputLanguage,
+    autoSpeak,
+    soundEnabled,
+  ]);
 
   // Debounced background suggestion — child must explicitly tap to accept,
   // never auto-applied.
