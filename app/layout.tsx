@@ -114,11 +114,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Tracking emergency reset — runs FIRST so the user can
             escape a bad calibration via ?reset=tracking before any
             overlay mounts. Build-time constant content, no user input. */}
-        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: trackingResetScript }} />
+        {/* suppressHydrationWarning: the CSP nonce is minted per request, so
+            the client can never reproduce the server's attribute and React
+            reports a mismatch on every load. These are server-only bootstrap
+            scripts that must not re-render, so the warning is noise — and 
+            silencing it here keeps a real mismatch elsewhere visible. */}
+        <script suppressHydrationWarning nonce={nonce} dangerouslySetInnerHTML={{ __html: trackingResetScript }} />
         {/* SECURITY R13: these scripts contain ONLY build-time constants. Never interpolate user data. */}
         {/* Kill-switch — runs FIRST so it executes before any stale
             chunk loads. Build-time constant content, no user input. */}
-        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: swKillswitchScript }} />
+        <script suppressHydrationWarning nonce={nonce} dangerouslySetInnerHTML={{ __html: swKillswitchScript }} />
       </head>
       <body className="h-full overflow-hidden">
         <ServiceWorkerRegistrar />
