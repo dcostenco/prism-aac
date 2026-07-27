@@ -242,10 +242,16 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     useMessageStore.getState().deleteLastChar();
   }, []);
 
-  const kc = 'aac-key surface-key text-primary rounded-lg font-bold select-none flex items-center justify-center';
+  const kc = 'aac-key surface-key text-primary rounded-lg font-bold select-none flex items-center justify-center min-w-0';
+  // Bounded by width as well as height. Sizing on svh alone gives a ~35px glyph
+  // on a tall phone, and a full-width CJK character then cannot shrink below
+  // ~37px — which pushed the Japanese kana row to ~466px inside a 390px screen
+  // and clipped keys off both edges. Latin glyphs are narrow enough to have
+  // hidden the problem. min() only lowers the size where width is the binding
+  // constraint, so tablets and desktop are unchanged.
   const letterSize = capsLock
-    ? 'text-[clamp(1.75rem,4.8svh,3.5rem)]'
-    : 'text-[clamp(1.55rem,4.2svh,3rem)]';
+    ? 'text-[clamp(1.1rem,min(4.8svh,7vw),3.5rem)]'
+    : 'text-[clamp(1rem,min(4.2svh,6.5vw),3rem)]';
   const utilSize = 'text-[clamp(1rem,2.5svh,1.75rem)]';
   const wordSize = 'text-[clamp(0.9rem,2svh,1.5rem)]';
 

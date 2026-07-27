@@ -153,7 +153,12 @@ export const UTIL_ROW_INDEX = 2;
  *
  * Not a Romanian special case: ro/it/uk/ar all exceed the threshold.
  */
-export const UTIL_ROW_OVERFLOW_KEYS = 9;
+/**
+ * 10 keys still fit the util row (~31px each) and must not wrap: Japanese
+ * carries 10 kana there, and splitting a gojūon row would break a meaningful
+ * ordering rather than merely rearranging letters. 11+ is where it clips.
+ */
+export const UTIL_ROW_OVERFLOW_KEYS = 10;
 /** Base consonant row kept in place; the surplus wraps beneath it. */
 export const UTIL_ROW_BASE_KEYS = 7;
 
