@@ -28,6 +28,8 @@ const mocks = vi.hoisted(() => {
   const learnWordMock           = vi.fn();
   const setAiCompletionMock     = vi.fn();
   const recordUseMock           = vi.fn();
+  const aacSpeakMock            = vi.fn();
+  const speakWordMock           = vi.fn();
 
   type Phrase = { id: string; text: string };
   type Category = {
@@ -102,6 +104,7 @@ const mocks = vi.hoisted(() => {
     navigateCategoryUpMock, backToCategoriesMock, startOrderingMock, nextStepMock,
     prevStepMock, finishOrderingMock, toggleCategoryKeyboardMock, cycleKeyboardModeMock,
     learnWordMock, setAiCompletionMock, recordUseMock,
+    aacSpeakMock, speakWordMock,
     uiState, messageState, settingsState,
     mockCategories, mockPhrases,
     useUIStore, useMessageStore, useSettingsStore,
@@ -147,7 +150,8 @@ vi.mock('@/store/predictionStore', () => ({
 }));
 
 vi.mock('@/services/feedback',   () => ({ tapFeedback: vi.fn() }));
-vi.mock('@/services/aacSpeak',   () => ({ aacSpeak: vi.fn() }));
+vi.mock('@/services/aacSpeak',   () => ({ aacSpeak: mocks.aacSpeakMock }));
+vi.mock('@/services/speechService', () => ({ speakWord: mocks.speakWordMock }));
 vi.mock('@/services/azureTTS',   () => ({ warmupAzureAudio: vi.fn() }));
 
 vi.mock('@/services/translateService', () => ({
@@ -187,6 +191,8 @@ beforeEach(() => {
   mocks.messageState.text = '';
   mocks.messageState.autoSpeak = false;
   mocks.messageState.soundEnabled = true;
+  mocks.settingsState.language = 'en';
+  mocks.settingsState.outputLanguage = 'en';
   window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
 });
 
@@ -253,6 +259,35 @@ describe('CategoryPanel — home board', () => {
     render(<CategoryPanel />);
     fireEvent.click(screen.getAllByTestId('phrase-tile')[0]);
     expect(mocks.recordUseMock).toHaveBeenCalled();
+  });
+
+  it('replays the accumulated message locally for a same-language phrase tap', () => {
+    mocks.messageState.text = 'I';
+    mocks.messageState.autoSpeak = true;
+    render(<CategoryPanel />);
+
+    fireEvent.click(screen.getAllByTestId('phrase-tile')[0]);
+
+    expect(mocks.speakWordMock).toHaveBeenCalledWith('I yes', 1, 1);
+    expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+  });
+
+  it('translates a single-word tile immediately as part of the accumulated message', () => {
+    mocks.messageState.text = 'I';
+    mocks.messageState.autoSpeak = true;
+    mocks.settingsState.outputLanguage = 'es';
+    render(<CategoryPanel />);
+
+    fireEvent.click(screen.getAllByTestId('phrase-tile')[0]);
+
+    expect(mocks.speakWordMock).not.toHaveBeenCalled();
+    expect(mocks.aacSpeakMock).toHaveBeenCalledWith(
+      'I yes',
+      1,
+      1,
+      undefined,
+      true,
+    );
   });
 
   it('Home sidebar button calls closeSidePanel', () => {

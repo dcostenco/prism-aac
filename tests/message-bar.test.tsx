@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => {
   const setToneMock          = vi.fn();
   const setToneModeMock      = vi.fn();
   const aacSpeakMock         = vi.fn();
+  const speakWordMock        = vi.fn();
   const ttsHighlightListeners = new Set<(event: {
     type: 'tts-highlight-start' | 'tts-highlight-end';
     text?: string;
@@ -76,6 +77,7 @@ const mocks = vi.hoisted(() => {
   return {
     toggleAutoSpeakMock, deleteLastWordMock, clearAllMock, undoMock,
     addToHistoryMock, setTextMock, setToneMock, setToneModeMock, aacSpeakMock,
+    speakWordMock,
     ttsHighlightListeners,
     messageState, settingsState, uiState,
     useMessageStore, useSettingsStore, useUIStore,
@@ -102,6 +104,21 @@ vi.mock('@/store/predictionStore', () => ({
 
 vi.mock('@/services/aacSpeak', () => ({
   aacSpeak: (...args: unknown[]) => mocks.aacSpeakMock(...args),
+}));
+
+vi.mock('@/services/speechService', () => ({
+  speakWord: (...args: unknown[]) => mocks.speakWordMock(...args),
+}));
+
+vi.mock('@/constants/predictionSeeds', () => ({
+  loadPredictionSeed: vi.fn(async () => ({
+    wordFreq: {
+      i: { count: 1732, lastUsed: 0 },
+      need: { count: 330, lastUsed: 0 },
+    },
+    bigrams: {},
+    trigrams: {},
+  })),
 }));
 
 vi.mock('@/services/feedback', () => ({
@@ -230,18 +247,14 @@ describe('MessageBar — auto-speak toggle', () => {
       mocks.settingsState.aiAutocorrectEnabled = false;
 
       render(<MessageBar />);
-      await act(async () => {
-        vi.advanceTimersByTime(2000);
-      });
+      await act(async () => { await Promise.resolve(); });
+      await act(async () => { vi.advanceTimersByTime(399); });
+      expect(mocks.speakWordMock).not.toHaveBeenCalled();
+      await act(async () => { vi.advanceTimersByTime(1); });
 
-      expect(mocks.aacSpeakMock).toHaveBeenCalledOnce();
-      expect(mocks.aacSpeakMock).toHaveBeenCalledWith(
-        'I',
-        1,
-        1,
-        'neutral',
-        true,
-      );
+      expect(mocks.speakWordMock).toHaveBeenCalledOnce();
+      expect(mocks.speakWordMock).toHaveBeenCalledWith('I', 1, 1);
+      expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }
@@ -254,6 +267,7 @@ describe('MessageBar — auto-speak toggle', () => {
       mocks.messageState.autoSpeak = true;
 
       const { rerender } = render(<MessageBar />);
+      await act(async () => { await Promise.resolve(); });
       act(() => {
         for (const listener of mocks.ttsHighlightListeners) {
           listener({
@@ -265,19 +279,56 @@ describe('MessageBar — auto-speak toggle', () => {
         }
       });
       await act(async () => {
-        vi.advanceTimersByTime(2000);
+        vi.advanceTimersByTime(400);
       });
-      expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+      expect(mocks.speakWordMock).not.toHaveBeenCalled();
 
       mocks.messageState.text = '';
       rerender(<MessageBar />);
+      await act(async () => {
+        vi.advanceTimersByTime(3001);
+      });
       mocks.messageState.text = 'I';
       rerender(<MessageBar />);
+      await act(async () => { await Promise.resolve(); });
       await act(async () => {
-        vi.advanceTimersByTime(2000);
+        vi.advanceTimersByTime(400);
       });
 
-      expect(mocks.aacSpeakMock).toHaveBeenCalledOnce();
+      expect(mocks.speakWordMock).toHaveBeenCalledOnce();
+      expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not send a delayed last-word cloud call after direct cumulative prediction speech', async () => {
+    vi.useFakeTimers();
+    try {
+      mocks.messageState.text = 'I need';
+      mocks.messageState.autoSpeak = true;
+      mocks.messageState.soundEnabled = true;
+      mocks.settingsState.aiAutocorrectEnabled = true;
+
+      render(<MessageBar />);
+      await act(async () => { await Promise.resolve(); });
+      act(() => {
+        for (const listener of mocks.ttsHighlightListeners) {
+          listener({
+            type: 'tts-highlight-start',
+            text: 'I need',
+            estimatedDurationMs: 500,
+            timestamp: Date.now(),
+          });
+        }
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(2500);
+        await Promise.resolve();
+      });
+
+      expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+      expect(mocks.speakWordMock).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }

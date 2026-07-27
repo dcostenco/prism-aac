@@ -4,6 +4,7 @@ import { useMessageStore, setLatestTranslated } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
 import { aacSpeak } from '@/services/aacSpeak';
+import { speakWord } from '@/services/speechService';
 import type { SupportedLanguage } from '@/engine/i18n';
 import { tapFeedback, deleteFeedback, speakFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
@@ -16,13 +17,21 @@ import { translateWithAIRefine, looksLikeTargetLang, abortTranslation } from '@/
 import { usePredictionStore } from '@/store/predictionStore';
 import { triggerAISubmit } from '@/services/aiChatBridge';
 import { isSafeAutoCorrection } from '@/services/autocorrectSafety';
+import { isConfidentCompleteWord } from '@/engine/predictionEngine';
+import { loadPredictionSeed } from '@/constants/predictionSeeds';
 
 function normalizeSpokenText(value: string): string {
   return value.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
 const COMPOSITION_SILENCE_MS = 2000;
+const COMPLETE_WORD_SILENCE_MS = 400;
 const DIRECT_SPEECH_DEDUPE_MS = COMPOSITION_SILENCE_MS + 1000;
+
+function trailingSpokenWord(value: string): string {
+  const lastToken = value.trim().split(/\s+/).at(-1) ?? '';
+  return lastToken.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+}
 
 export default function MessageBar() {
   const text = useMessageStore((s) => s.text);
@@ -110,10 +119,15 @@ export default function MessageBar() {
         return;
       }
       // tts-highlight-start
+      const normalizedSpokenText = normalizeSpokenText(event.text);
       lastAutoSpokenRef.current = {
-        text: normalizeSpokenText(event.text),
+        text: normalizedSpokenText,
         at: Date.now(),
       };
+      // Direct tile/space/prediction speech already delivered this trailing
+      // word. Mark it here so the independent autocorrect-silence path cannot
+      // send a second, last-word-only cloud request moments later.
+      lastSilenceSpokenRef.current = trailingSpokenWord(normalizedSpokenText);
       stopHighlight();
       // Tokenise the SPOKEN text the same way the renderer does so the
       // word index matches. We only highlight if the spoken string is
@@ -180,10 +194,11 @@ export default function MessageBar() {
   }, [text, language, outputLanguage]);
 
   // ── Phrase auto-speak after silence ───────────────────────────────────────
-  // Auto-speak cannot depend on the AI autocorrect request succeeding. Speak
-  // the current phrase after two seconds of inactivity in both same-language
-  // and translation modes. This also treats valid one-letter utterances such
-  // as "I" as complete speech instead of leaving them silent.
+  // Auto-speak cannot depend on the AI autocorrect request succeeding. A
+  // corpus-confirmed complete word speaks after the existing 400 ms typing
+  // pause; an ambiguous fragment waits two seconds. This makes valid
+  // one-letter utterances such as "I" audible without restoring per-key
+  // letter-name echo for arbitrary fragments.
   useEffect(() => {
     if (compositionSpeakTimer.current) clearTimeout(compositionSpeakTimer.current);
     const { language: lang, outputLanguage: outLang } = useSettingsStore.getState();
@@ -192,7 +207,9 @@ export default function MessageBar() {
     const phrase = text.trim();
     if (!as || !se || !phrase) return;
 
-    compositionSpeakTimer.current = setTimeout(() => {
+    let cancelled = false;
+    const startedAt = Date.now();
+    const speakCurrentPhrase = () => {
       const { autoSpeak, soundEnabled } = useMessageStore.getState();
       if (!autoSpeak || !soundEnabled) return;
       const normalizedPhrase = normalizeSpokenText(phrase);
@@ -224,17 +241,24 @@ export default function MessageBar() {
           latestTranslated ? outLang : undefined,
         );
       } else {
-        void aacSpeak(
-          phrase,
-          speechRate,
-          speechVolume,
-          activeTone,
-          true,
-        );
+        // Same-language composition feedback is a high-frequency AAC path.
+        // Keep it local while replaying the complete accumulated message.
+        speakWord(phrase, speechRate, speechVolume);
       }
-    }, COMPOSITION_SILENCE_MS);
+    };
+
+    void loadPredictionSeed(lang).then((seed) => {
+      if (cancelled) return;
+      const lastWord = trailingSpokenWord(phrase);
+      const delay = isConfidentCompleteWord(lastWord, seed.wordFreq, lang)
+        ? COMPLETE_WORD_SILENCE_MS
+        : COMPOSITION_SILENCE_MS;
+      const remainingDelay = Math.max(0, delay - (Date.now() - startedAt));
+      compositionSpeakTimer.current = setTimeout(speakCurrentPhrase, remainingDelay);
+    });
 
     return () => {
+      cancelled = true;
       if (compositionSpeakTimer.current) clearTimeout(compositionSpeakTimer.current);
     };
   // NOTE: `translated` intentionally excluded from deps — including it would
@@ -293,20 +317,20 @@ export default function MessageBar() {
       const inputIsValid = !fixed || fixed === trimmed || norm(fixed) === norm(trimmed);
 
       // Silence-detect speech. After the autocorrect roundtrip confirms
-      // the input is well-formed (server returned no real change), speak
-      // the most recently completed word. This replaces the previous
+      // the input is well-formed (server returned no real change), replay
+      // the cumulative phrase. This replaces the previous
       // per-keystroke letter echo (which Azure pronounced as letter
       // names "aitch / double-yu / tee"). Word-level speech is the right
       // granularity for AAC: confirms what the user typed without
-      // spelling. Dedup via lastSilenceSpokenRef so the same trailing
-      // word doesn't re-speak on every render.
+      // spelling. Dedup via lastSilenceSpokenRef so an unchanged trailing
+      // word doesn't replay the phrase on every render.
       if (inputIsValid) {
         // Read fresh state from stores rather than relying on closure
         // captures from the outer render — speechRate / activeTone
         // could have changed between text-change and timer fire.
         const ms = useMessageStore.getState();
         const ss = useSettingsStore.getState();
-        if (ms.soundEnabled) {
+        if (ms.autoSpeak && ms.soundEnabled) {
           const tokens = trimmed.split(/\s+/);
           const lastWord = tokens[tokens.length - 1] || '';
           // Skip silence speech for short trailing partials (≤2 chars).
@@ -316,14 +340,12 @@ export default function MessageBar() {
           // "letter by letter wai" complaint Speak's strip-fallback was
           // designed to prevent. Only speak words ≥3 chars; users in
           // mid-typing get silent feedback until they finish a word.
-          // In translation mode, suppress word-by-word silence-detect speech.
-          // Speaking individual source-language words with the target voice produces
-          // mixed-language audio (ro-RO + ru-RU simultaneously). The user presses
-          // Speak to hear the full translated phrase.
+          // In translation mode, suppress this same-language path; the
+          // composition timer translates and speaks the cumulative phrase.
           const translationActive = ss.language !== ss.outputLanguage;
           if (!translationActive && lastWord.length >= 3 && lastWord.toLowerCase() !== lastSilenceSpokenRef.current.toLowerCase()) {
             lastSilenceSpokenRef.current = lastWord;
-            aacSpeak(lastWord, ss.speechRate, ss.speechVolume, ms.activeTone);
+            speakWord(trimmed, ss.speechRate, ss.speechVolume);
           }
         }
         return;

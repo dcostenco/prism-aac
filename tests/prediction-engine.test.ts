@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { getPredictions, recordWord, recordBigram, recordTrigram, buildNgramsFromPhrases, decayPredictions } from '@/engine/predictionEngine';
+import {
+  getPredictions,
+  isConfidentCompleteWord,
+  recordWord,
+  recordBigram,
+  recordTrigram,
+  buildNgramsFromPhrases,
+  decayPredictions,
+} from '@/engine/predictionEngine';
 import { WordFreqEntry } from '@/types';
 
 describe('PredictionEngine — Core algorithm', () => {
@@ -58,6 +66,23 @@ describe('PredictionEngine — Core algorithm', () => {
     // (any of: I, You, More, Want, Help, Go, Look, etc.).
     const knownCore = new Set(['I', 'You', 'More', 'Want', 'Help', 'Go', 'Look', 'Make', 'Get', 'Put']);
     expect(preds.filter(p => knownCore.has(p)).length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('PredictionEngine — complete-word speech gate', () => {
+  const wordFreq: Record<string, WordFreqEntry> = {
+    i: { count: 1732, lastUsed: 0 },
+    h: { count: 8, lastUsed: 0 },
+    m: { count: 633, lastUsed: 0 },
+  };
+
+  it('recognizes a common one-letter word without treating any letter as speech', () => {
+    expect(isConfidentCompleteWord('I', wordFreq, 'en')).toBe(true);
+    expect(isConfidentCompleteWord('h', wordFreq, 'en')).toBe(false);
+  });
+
+  it('rejects high-frequency contraction artifacts as standalone words', () => {
+    expect(isConfidentCompleteWord('m', wordFreq, 'en')).toBe(false);
   });
 });
 

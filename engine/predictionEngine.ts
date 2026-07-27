@@ -57,6 +57,12 @@ const TUNING = {
   decayAfterMs: 7 * 24 * 60 * 60 * 1000,
   pruneAfterMs: 30 * 24 * 60 * 60 * 1000,
   decayFactor: 0.95,
+
+  // A partial with at least this many corpus occurrences is common enough to
+  // treat as a complete word during a typing pause. The threshold is shared
+  // with auto-speech so prediction and speech cannot disagree about whether
+  // short utterances such as English "I" are words or unfinished letters.
+  completeWordCount: 100,
 } as const;
 
 import { AGE_BLOCKED_WORDS } from '@/engine/ageBlocklist';
@@ -81,6 +87,17 @@ const ARTIFACTS_BY_LANG: Record<string, Set<string>> = {
   es: new Set(['d']),
   pt: new Set(['d']),
 };
+
+export function isConfidentCompleteWord(
+  value: string,
+  wordFreq: Record<string, WordFreqEntry>,
+  lang = 'en',
+): boolean {
+  const word = value.toLowerCase().trim();
+  if (!word) return false;
+  const artifacts = ARTIFACTS_BY_LANG[lang] ?? new Set<string>();
+  return !artifacts.has(word) && (wordFreq[word]?.count ?? 0) >= TUNING.completeWordCount;
+}
 
 export function mergeUserNgramsWithBoost(
   corpus: Record<string, WordFreqEntry>,
@@ -260,7 +277,7 @@ export function getPredictions(
   // prefix-completing candidates. Threshold of 100 was chosen by inspecting
   // the en seed: it cleanly separates common AAC standalone words from
   // mid-word fragments, given seed counts run 1-2000.
-  const partialIsCompleteWord = !!partialWord && (wordFreq[partialWord]?.count ?? 0) >= 100;
+  const partialIsCompleteWord = isConfidentCompleteWord(partialWord, wordFreq, lang);
   // Halve prefix weight when the partial is a complete word, so bigram
   // continuations ("to|listen", "to|be", "I|want") outweigh prefix
   // self-extensions ("to" → "today"). For fragments, prefix still

@@ -17,6 +17,7 @@ const screenshotPath =
   process.env.TTS_SCREENSHOT_PATH || "/tmp/tts-tap-translation-diag.png";
 const inputMode = process.env.INPUT_MODE || "prediction";
 const inputText = process.env.INPUT_TEXT || "I";
+const secondInputText = process.env.SECOND_INPUT_TEXT || "need";
 const outputLanguage = process.env.OUTPUT_LANGUAGE || "es";
 const vercelProtectionBypass =
   process.env.VERCEL_AUTOMATION_BYPASS_SECRET || "";
@@ -55,10 +56,13 @@ const report = {
   targetUrl,
   inputMode,
   inputText,
+  secondInputText,
   outputLanguage,
   documentStatus: null,
   storedSettings: null,
   tappedTile: null,
+  tappedTiles: [],
+  stepSnapshots: [],
   predictionTitles: [],
   messageText: null,
   speechUtterances: [],
@@ -214,8 +218,8 @@ try {
     }
   });
 
-  if (inputMode === "keyboard") {
-    for (const character of inputText.toUpperCase()) {
+  const tapKeyboardText = async (value) => {
+    for (const character of value.toUpperCase()) {
       if (character === " ") {
         await page.locator('button[data-key="SPACE"]').first().click({ delay: 50 });
       } else {
@@ -225,8 +229,12 @@ try {
           .click({ delay: 50 });
       }
     }
-    report.tappedTile = { text: inputText, ariaLabel: "keyboard input" };
-  } else {
+    const tapped = { text: value, ariaLabel: "keyboard input" };
+    report.tappedTile = tapped;
+    report.tappedTiles.push(tapped);
+  };
+
+  const tapPrediction = async (value) => {
     const predictionTiles = page.locator('[data-testid="prediction-bar"] button');
     await predictionTiles.first().waitFor({ state: "visible", timeout: 10_000 });
     report.predictionTitles = await predictionTiles.evaluateAll((buttons) =>
@@ -238,16 +246,51 @@ try {
     );
     const matchingIndex = report.predictionTitles.findIndex(
       (prediction) =>
-        prediction.title === inputText ||
-        prediction.ariaLabel === `Predict: ${inputText}`,
+        prediction.title?.toLowerCase() === value.toLowerCase() ||
+        prediction.ariaLabel?.toLowerCase() === `predict: ${value}`.toLowerCase(),
     );
     const predictionTile = predictionTiles.nth(matchingIndex >= 0 ? matchingIndex : 0);
     await predictionTile.waitFor({ state: "visible", timeout: 10_000 });
-    report.tappedTile = {
+    const tapped = {
       text: (await predictionTile.innerText()).trim(),
       ariaLabel: await predictionTile.getAttribute("aria-label"),
     };
+    report.tappedTile = tapped;
+    report.tappedTiles.push(tapped);
     await predictionTile.click({ delay: 50 });
+  };
+
+  const recordStep = async (label) => {
+    const browserDiag = await page.evaluate(() => window.__tapTranslationDiag?.());
+    const messageText = (
+      await page
+        .locator('[data-scan-group="message-bar"] [role="status"]')
+        .innerText()
+    ).trim();
+    report.stepSnapshots.push({
+      label,
+      at: Date.now(),
+      messageText,
+      speechUtterances: browserDiag?.utterances || [],
+      network: report.network.map((entry) => ({
+        body: entry.body,
+        status: entry.status,
+        at: entry.at,
+      })),
+    });
+  };
+
+  if (inputMode === "keyboard") {
+    await tapKeyboardText(inputText);
+  } else if (inputMode === "keyboard-prediction") {
+    await tapKeyboardText(inputText);
+    await page.waitForTimeout(500);
+    await recordStep("after-keyboard");
+    await tapPrediction(secondInputText);
+    await page.waitForTimeout(500);
+    await recordStep("after-prediction");
+  } else {
+    await tapPrediction(inputText);
   }
   report.inputCompletedAt = Date.now();
   await page.waitForTimeout(8000);

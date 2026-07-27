@@ -103,9 +103,9 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     // letter names ("aitch", "double-yu", "tee-oh") regardless of
     // language. AAC users with phonics needs already get word-level
     // feedback via:
-    //   • handleSpace below — speaks the just-completed word on space
-    //   • MessageBar silence-detect — speaks the latest word once the
-    //     autocorrect roundtrip confirms it's well-formed
+    //   • handleSpace below — speaks the cumulative phrase on space
+    //   • MessageBar silence-detect — speaks the cumulative phrase once the
+    //     trailing input is confirmed as a word
     //   • Speak button — speaks the full utterance on demand
     //   • THIS handler — when char is a sentence terminator (.?!),
     //     speak the just-completed sentence (Read&Write parity for
@@ -168,10 +168,19 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
         const prevPrevWord = words.length > 2 ? words[words.length - 3] : undefined;
         learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase(), prevPrevWord?.toLowerCase());
         const translationActive = useSettingsStore.getState().language !== useSettingsStore.getState().outputLanguage;
-        if (translationActive) {
-          // In translation mode, individual word-level audio is out of context
-        } else if (autoSpeak && soundEnabled) {
-          aacSpeak(lastWord, speechRate, speechVolume, activeTone);
+        const phrase = currentText.trim();
+        if (autoSpeak && soundEnabled) {
+          if (translationActive) {
+            // A space confirms the word boundary. Translate and speak the
+            // cumulative message immediately in the configured output
+            // language rather than leaving translation for the Play button.
+            void aacSpeak(phrase, speechRate, speechVolume, activeTone, true);
+          } else {
+            // Preserve the established AAC contract: replay the whole message
+            // at each word boundary, locally, instead of speaking only the
+            // trailing word through a cloud request.
+            speakWord(phrase, speechRate, speechVolume);
+          }
         }
       }
     }

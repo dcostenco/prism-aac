@@ -7,9 +7,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * PrismAAC has TWO independent toggles + ONE momentary action:
  *
  *   soundEnabled (toolbar 🔊/🔇)  — master mute. Off = no audio anywhere.
- *   autoSpeak    (MessageBar Auto) — speaks each typed char + each
- *                                    completed word. Independent of the
- *                                    momentary Speak/▶ buttons.
+ *   autoSpeak    (MessageBar Auto) — speaks corpus-confirmed words after a
+ *                                    typing pause and replays the cumulative
+ *                                    phrase at word/tile boundaries.
  *   handleSpeak  (MessageBar ▶ + Keyboard "Speak") — one-shot speak
  *                of the entire message, ignores autoSpeak.
  *
@@ -20,13 +20,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  *   ├────────────────┼──────────────┼────────────────────────┼─────────────┤
  *   │ false          │ any          │ DISABLED               │ no          │
  *   │ true           │ false        │ MANUAL (Speak only)    │ no          │
- *   │ true           │ true         │ AUTO (echo + word)     │ YES         │
+ *   │ true           │ true         │ AUTO (word + phrase)   │ no          │
  *   └────────────────┴──────────────┴────────────────────────┴─────────────┘
  *
- * Bug history: prior to this test single-letter words like "I" never
- * spoke in AUTO mode because handleKey didn't fire speakWord — only
- * handleSpace did. Users reported "pressing I makes no sound unless I
- * tap Speak". Echo path covers that gap.
+ * Bug history: per-key echo pronounced arbitrary letters as names, while
+ * removing it made valid one-letter words such as "I" silent. The production
+ * MessageBar test now pins the compromise: no per-key echo, but a
+ * corpus-confirmed word speaks after the 400 ms typing pause.
  */
 
 interface SoundState {
@@ -37,10 +37,6 @@ interface SoundState {
 function effectiveMode(s: SoundState): 'disabled' | 'manual' | 'auto' {
     if (!s.soundEnabled) return 'disabled';
     return s.autoSpeak ? 'auto' : 'manual';
-}
-
-function shouldSpeakOnKeystroke(s: SoundState): boolean {
-    return effectiveMode(s) === 'auto';
 }
 
 function shouldSpeakOnSpace(s: SoundState, currentLastWord: string): boolean {
@@ -70,15 +66,15 @@ describe('Sound output modes — effectiveMode', () => {
     });
 });
 
-describe('Sound output modes — keystroke echo gate', () => {
+describe('Sound output modes — per-key echo gate', () => {
     it('does NOT speak per-keystroke in DISABLED', () => {
-        expect(shouldSpeakOnKeystroke({ soundEnabled: false, autoSpeak: true })).toBe(false);
+        expect(effectiveMode({ soundEnabled: false, autoSpeak: true })).toBe('disabled');
     });
     it('does NOT speak per-keystroke in MANUAL', () => {
-        expect(shouldSpeakOnKeystroke({ soundEnabled: true, autoSpeak: false })).toBe(false);
+        expect(effectiveMode({ soundEnabled: true, autoSpeak: false })).toBe('manual');
     });
-    it('SPEAKS per-keystroke in AUTO (fixes "I makes no sound" bug)', () => {
-        expect(shouldSpeakOnKeystroke({ soundEnabled: true, autoSpeak: true })).toBe(true);
+    it('AUTO mode still waits for word detection instead of echoing arbitrary keys', () => {
+        expect(effectiveMode({ soundEnabled: true, autoSpeak: true })).toBe('auto');
     });
 });
 
@@ -92,7 +88,7 @@ describe('Sound output modes — space (word boundary) gate', () => {
     it('does NOT speak word in MANUAL', () => {
         expect(shouldSpeakOnSpace({ soundEnabled: true, autoSpeak: false }, 'hello')).toBe(false);
     });
-    it('SPEAKS the just-completed word in AUTO', () => {
+    it('SPEAKS the cumulative phrase at a word boundary in AUTO', () => {
         expect(shouldSpeakOnSpace({ soundEnabled: true, autoSpeak: true }, 'hello')).toBe(true);
     });
 });
