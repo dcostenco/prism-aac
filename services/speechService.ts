@@ -333,10 +333,9 @@ export async function speak(
 }
 
 /**
- * Speak tap/composition feedback through the quality-first chain.
- * Dynamically pulls the user's language if no lang is provided. Online taps
- * use portal neural TTS; Web Speech remains the offline/provider-failure
- * fallback instead of being forced for every English tap.
+ * Speak high-frequency tap/composition feedback locally.
+ * Full phrases still use aacSpeak's neural path; local latest-wins feedback
+ * keeps taps immediate and avoids one cloud connection per selection.
  */
 export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string): void {
   const actualLang = lang || getTTSCode((useSettingsStore.getState().language || 'en') as SupportedLanguage);
@@ -350,10 +349,15 @@ export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string)
     estimatedDurationMs: estimateSpeechDurationMs(word, rate),
     timestamp: Date.now(),
   });
-  // Tap speech is latest-wins: a newer cumulative phrase intentionally
-  // supersedes an older request. azureTTS distinguishes that cancellation
-  // from a real provider failure so stale requests never leak into Web Speech.
-  void speak(toSpeak, rate, volume, actualLang, 'auto', true);
+  // speakLocal stops cloud audio, retires the prior utterance, cancels the
+  // browser queue, and owns one Safari resume timer at a time.
+  if (isSpeechSupported()) {
+    void speakLocal(toSpeak, rate, volume, actualLang);
+  } else {
+    // Unusual browsers and native shells without Web Speech retain the
+    // normal neural/native fallback chain instead of becoming silent.
+    void speak(toSpeak, rate, volume, actualLang, 'auto', true);
+  }
 }
 
 function speakLocal(text: string, rate: number, volume: number, lang: string): Promise<void> {

@@ -11,8 +11,9 @@
  *   2. Empty / falsy text guard: aacSpeak must return early without calling
  *      speak() when text is empty string, whitespace-only, null, or undefined.
  *
- *   3. Single-character padding: a 1-char input gets '.' appended in all
- *      three branches to prevent Azure TTS from swallowing single letters.
+ *   3. Sentence context: translated text is sentence-cased and terminated
+ *      for natural target-language pronunciation, while monolingual
+ *      multi-word text remains untouched.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -38,11 +39,40 @@ vi.mock('@/engine/i18n', () => ({
 import { aacSpeak } from '@/services/aacSpeak';
 import { speak } from '@/services/speechService';
 import { getTTSCode } from '@/engine/i18n';
+import type { SupportedLanguage } from '@/engine/i18n';
 import { translateTextSync } from '@/services/translateService';
 
 const mockSpeak = speak as ReturnType<typeof vi.fn>;
 const mockGetTTSCode = getTTSCode as ReturnType<typeof vi.fn>;
 const mockTranslate = translateTextSync as ReturnType<typeof vi.fn>;
+
+const SUPPORTED_TARGET_UTTERANCES: Array<[SupportedLanguage, string, string]> = [
+  ['en', 'i need help', 'I need help.'],
+  ['es', 'yo busco', 'Yo busco.'],
+  ['fr', 'je cherche', 'Je cherche.'],
+  ['pt', 'eu procuro', 'Eu procuro.'],
+  ['ro', 'eu caut', 'Eu caut.'],
+  ['uk', 'я шукаю', 'Я шукаю.'],
+  ['ru', 'я ищу', 'Я ищу.'],
+  ['de', 'ich suche', 'Ich suche.'],
+  ['ja', '探しています', '探しています.'],
+  ['ko', '찾고 있습니다', '찾고 있습니다.'],
+  ['zh', '我在找', '我在找.'],
+  ['zh-Hans', '我在找', '我在找.'],
+  ['zh-Hant', '我在找', '我在找.'],
+  ['zh-HK', '我搵緊', '我搵緊.'],
+  ['ar', 'أنا أبحث', 'أنا أبحث.'],
+  ['hi', 'मैं खोज रहा हूँ', 'मैं खोज रहा हूँ.'],
+  ['it', 'io cerco', 'Io cerco.'],
+  ['pl', 'ja szukam', 'Ja szukam.'],
+  ['he', 'אני מחפש', 'אני מחפש.'],
+  ['nl', 'ik zoek', 'Ik zoek.'],
+  ['vi', 'tôi đang tìm', 'Tôi đang tìm.'],
+  ['tl', 'naghahanap ako', 'Naghahanap ako.'],
+  ['tr', 'istiyorum', 'İstiyorum.'],
+  ['id', 'saya mencari', 'Saya mencari.'],
+  ['bg', 'аз търся', 'Аз търся.'],
+];
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -82,7 +112,7 @@ describe('aacSpeak — explicit spokenLang parameter', () => {
     aacSpeak('bine', 0.5, 1.0, undefined, false, 'ro');
     expect(mockGetTTSCode).toHaveBeenCalledWith('ro');
     expect(mockSpeak).toHaveBeenCalledWith(
-      expect.anything(),
+      'Bine.',
       0.5, 1.0,
       'ro-TTS',
       expect.anything(),
@@ -101,6 +131,32 @@ describe('aacSpeak — explicit spokenLang parameter', () => {
       expect.anything(), 0.5, 1.0, 'fr-TTS', expect.anything(), true,
     );
   });
+
+  it('sends Romanian target text as a complete sentence without changing display state', () => {
+    aacSpeak('eu caut', 0.5, 1.0, undefined, true, 'ro');
+    expect(mockSpeak).toHaveBeenCalledWith(
+      'Eu caut.',
+      0.5, 1.0,
+      'ro-TTS',
+      expect.anything(),
+      true,
+    );
+  });
+
+  it.each(SUPPORTED_TARGET_UTTERANCES)(
+    'prepares %s target speech without changing its language',
+    (lang, source, expected) => {
+      aacSpeak(source, 0.5, 1.0, undefined, false, lang);
+      expect(mockGetTTSCode).toHaveBeenCalledWith(lang);
+      expect(mockSpeak).toHaveBeenCalledWith(
+        expected,
+        0.5, 1.0,
+        `${lang}-TTS`,
+        expect.anything(),
+        false,
+      );
+    },
+  );
 });
 
 // ── single-character padding ──────────────────────────────────────────────────
@@ -118,7 +174,7 @@ describe('aacSpeak — single-character padding', () => {
     expect(spokenText).toBe('B.');
   });
 
-  it('does NOT append . to multi-char input', () => {
+  it('does not alter multi-char monolingual input', () => {
     aacSpeak('hello', 0.5, 1.0);
     const [spokenText] = mockSpeak.mock.calls[0];
     expect(spokenText).toBe('hello');

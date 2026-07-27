@@ -17,6 +17,7 @@ import MessageBar from '@/components/MessageBar';
 
 const mocks = vi.hoisted(() => {
   const toggleAutoSpeakMock = vi.fn();
+  const toggleSoundMock     = vi.fn();
   const deleteLastWordMock   = vi.fn();
   const clearAllMock         = vi.fn();
   const undoMock             = vi.fn();
@@ -44,6 +45,7 @@ const mocks = vi.hoisted(() => {
     undo: undoMock,
     addToHistory: addToHistoryMock,
     toggleAutoSpeak: toggleAutoSpeakMock,
+    toggleSound: toggleSoundMock,
     setText: setTextMock,
     setTone: setToneMock,
     setToneMode: setToneModeMock,
@@ -75,7 +77,7 @@ const mocks = vi.hoisted(() => {
   );
 
   return {
-    toggleAutoSpeakMock, deleteLastWordMock, clearAllMock, undoMock,
+    toggleAutoSpeakMock, toggleSoundMock, deleteLastWordMock, clearAllMock, undoMock,
     addToHistoryMock, setTextMock, setToneMock, setToneModeMock, aacSpeakMock,
     speakWordMock,
     ttsHighlightListeners,
@@ -188,6 +190,9 @@ beforeEach(() => {
   mocks.settingsState.outputLanguage = 'en';
   mocks.uiState.sidePanel = 'none';
   mocks.ttsHighlightListeners.clear();
+  mocks.toggleSoundMock.mockImplementation(() => {
+    mocks.messageState.soundEnabled = !mocks.messageState.soundEnabled;
+  });
 });
 
 // ── text display ──────────────────────────────────────────────────────────────
@@ -386,14 +391,38 @@ describe('MessageBar — speak', () => {
     );
   });
 
-  it('clicking speak does NOT call aacSpeak when soundEnabled is false', async () => {
+  it('explicit Play recovers stale mute and speaks the current message', async () => {
     mocks.messageState.text = 'some text';
     mocks.messageState.soundEnabled = false;
     render(<MessageBar />);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
     });
-    expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+    expect(mocks.toggleSoundMock).toHaveBeenCalledOnce();
+    expect(mocks.messageState.soundEnabled).toBe(true);
+    expect(mocks.aacSpeakMock).toHaveBeenCalledWith(
+      'some text',
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(String),
+      true,
+    );
+  });
+
+  it('two rapid Play presses cannot toggle recovered sound back off', async () => {
+    mocks.messageState.text = 'some text';
+    mocks.messageState.soundEnabled = false;
+    render(<MessageBar />);
+    const play = screen.getByRole('button', { name: /^speak$/i });
+
+    await act(async () => {
+      fireEvent.click(play);
+      fireEvent.click(play);
+    });
+
+    expect(mocks.toggleSoundMock).toHaveBeenCalledOnce();
+    expect(mocks.messageState.soundEnabled).toBe(true);
+    expect(mocks.aacSpeakMock).toHaveBeenCalledTimes(2);
   });
 
   it('clicking speak calls addToHistory', async () => {

@@ -18,6 +18,27 @@ import { useMessageStore } from '@/store/messageStore';
 import { ToneStyle } from './azureTTS';
 import { emitTtsHighlight, estimateSpeechDurationMs } from './ttsHighlightBus';
 
+const SENTENCE_END = /[.!?。！？…]$/u;
+
+function padSingleCharacter(text: string): string {
+  const trimmed = text.trim();
+  return trimmed.length === 1 ? `${trimmed}.` : text;
+}
+
+/**
+ * Neural voices can pronounce an isolated lowercase translated token as a
+ * letter name or English fragment. Give translated output sentence context
+ * without changing the lowercase text shown in the AAC message bar.
+ */
+function prepareTranslatedUtterance(text: string, lang: SupportedLanguage): string {
+  const trimmed = text.trim();
+  const sentenceCased = trimmed.replace(
+    /\p{L}/u,
+    (letter) => letter.toLocaleUpperCase(lang),
+  );
+  return SENTENCE_END.test(sentenceCased) ? sentenceCased : `${sentenceCased}.`;
+}
+
 // Speak a phrase with optional explicit tone override. When `tone` is omitted,
 // reads `toneMode` + `activeTone` from messageStore: in 'auto' mode the
 // adaptive engine picks the tone from the text; in 'manual' mode the user's
@@ -38,7 +59,7 @@ export async function aacSpeak(text: string, rate: number, volume: number, tone?
       // Caller already knows the language of the text (e.g. MessageBar
       // passing AI-translated Romanian). Skip all translation/script
       // detection — use the specified language directly.
-      if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
+      toSpeak = prepareTranslatedUtterance(toSpeak, spokenLang);
       ttsCode = getTTSCode(spokenLang);
     } else if (translating) {
       let translationSucceeded = false;
@@ -64,10 +85,12 @@ export async function aacSpeak(text: string, rate: number, volume: number, tone?
         translationSucceeded = translated.toLowerCase() !== text.trim().toLowerCase();
         toSpeak = translated;
       }
-      if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
+      toSpeak = translationSucceeded
+        ? prepareTranslatedUtterance(toSpeak, outLang)
+        : padSingleCharacter(toSpeak);
       ttsCode = (translationSucceeded) ? getTTSCode(outLang) : getTTSCode(inLang);
     } else {
-      if (toSpeak.trim().length === 1) toSpeak = toSpeak.trim() + '.';
+      toSpeak = padSingleCharacter(toSpeak);
       ttsCode = getTTSCode(inLang);
     }
     // Emit a highlight-start event so the renderer (MessageBar) can

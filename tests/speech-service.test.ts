@@ -38,22 +38,11 @@ describe('SpeechService — Core', () => {
     expect(window.speechSynthesis.speak).toHaveBeenCalled();
   });
 
-  it('routes AAC tap feedback through neural TTS before local Web Speech', async () => {
-    vi.mocked(speakAzure).mockResolvedValueOnce({ success: true });
-
+  it('keeps high-frequency AAC tap feedback local', async () => {
     speakWord('hello', 0.5, 1.0, 'en-US');
 
-    await vi.waitFor(() => expect(speakAzure).toHaveBeenCalledWith(
-      'hello',
-      'en-US',
-      expect.any(String),
-      0.5,
-      1.0,
-      expect.any(String),
-      expect.any(String),
-      true,
-    ));
-    expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(window.speechSynthesis.speak).toHaveBeenCalled());
+    expect(speakAzure).not.toHaveBeenCalled();
   });
 
   it('speak does nothing for empty text', () => {
@@ -66,7 +55,7 @@ describe('SpeechService — Core', () => {
     expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
   });
 
-  it('speakWord fallback cancels prior local speech (pile-up fix)', async () => {
+  it('speakWord cancels prior local speech (pile-up fix)', async () => {
     speakWord('hello');
     await vi.waitFor(() => {
       expect(window.speechSynthesis.cancel).toHaveBeenCalled();

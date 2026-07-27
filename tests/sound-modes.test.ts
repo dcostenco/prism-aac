@@ -6,7 +6,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  *
  * PrismAAC has TWO independent toggles + ONE momentary action:
  *
- *   soundEnabled (toolbar 🔊/🔇)  — master mute. Off = no audio anywhere.
+ *   soundEnabled (toolbar 🔊/🔇)  — automatic/background audio gate.
+ *                                    Explicit Play/Speak turns it back on.
  *   autoSpeak    (MessageBar Auto) — speaks corpus-confirmed words after a
  *                                    typing pause and replays the cumulative
  *                                    phrase at word/tile boundaries.
@@ -44,9 +45,8 @@ function shouldSpeakOnSpace(s: SoundState, currentLastWord: string): boolean {
     return effectiveMode(s) === 'auto';
 }
 
-function shouldHandleSpeakButton(s: SoundState, hasText: boolean): boolean {
-    if (!hasText) return false;
-    return s.soundEnabled; // ▶/Speak button works in MANUAL or AUTO; off only when DISABLED
+function shouldHandleSpeakButton(_s: SoundState, hasText: boolean): boolean {
+    return hasText; // explicit ▶/Speak recovers stale mute before speaking
 }
 
 beforeEach(() => {
@@ -98,8 +98,8 @@ describe('Sound output modes — momentary Speak/▶ button', () => {
         expect(shouldHandleSpeakButton({ soundEnabled: true, autoSpeak: true }, false)).toBe(false);
         expect(shouldHandleSpeakButton({ soundEnabled: true, autoSpeak: false }, false)).toBe(false);
     });
-    it('disabled in DISABLED mode (master mute respected)', () => {
-        expect(shouldHandleSpeakButton({ soundEnabled: false, autoSpeak: true }, true)).toBe(false);
+    it('recovers DISABLED mode when the user explicitly requests speech', () => {
+        expect(shouldHandleSpeakButton({ soundEnabled: false, autoSpeak: true }, true)).toBe(true);
     });
     it('works in MANUAL mode (the canonical use case)', () => {
         expect(shouldHandleSpeakButton({ soundEnabled: true, autoSpeak: false }, true)).toBe(true);

@@ -46,6 +46,7 @@ export default function MessageBar() {
   const undo = useMessageStore((s) => s.undo);
   const addToHistory = useMessageStore((s) => s.addToHistory);
   const toggleAutoSpeak = useMessageStore((s) => s.toggleAutoSpeak);
+  const toggleSound = useMessageStore((s) => s.toggleSound);
   const setText = useMessageStore((s) => s.setText);
   const speechRate = useSettingsStore((s) => s.speechRate);
   const speechVolume = useSettingsStore((s) => s.speechVolume);
@@ -448,7 +449,11 @@ export default function MessageBar() {
       return;
     }
     const original = text.trim();
-    if (!original || !soundEnabled) return;
+    if (!original) return;
+    // An explicit Play press is an unambiguous request for audible speech.
+    // Recover a stale persisted mute state and keep sound enabled so the
+    // user's configured auto-speech works on subsequent selections.
+    if (!useMessageStore.getState().soundEnabled) toggleSound();
     // Play is authoritative: it must replace any delayed composition speech.
     // The prediction seed can resolve after this click, so clearing an
     // already-created timeout is not sufficient by itself. We also mark the
@@ -537,7 +542,7 @@ export default function MessageBar() {
       text: normalizeSpokenText(original),
       at: Date.now(),
     };
-  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance, suggestion, setText, outputLanguage]);
+  }, [text, toggleSound, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance, suggestion, setText, outputLanguage]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }

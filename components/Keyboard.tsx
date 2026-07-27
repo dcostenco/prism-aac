@@ -75,7 +75,7 @@ function extractLastSentence(text: string): string {
 export const __testing = { extractLastSentence };
 
 export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: boolean; onBrowserGo?: () => void } = {}) {
-  const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
+  const { appendChar, addToHistory, autoSpeak, soundEnabled, toggleSound, activeTone } = useMessageStore();
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock, keyboardMaximized, cycleKeyboardMode } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language, speakOnSentenceEnd, gridSize } = useSettingsStore();
@@ -193,10 +193,9 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       onBrowserGo?.();
       return;
     }
-    // HIGH #1 — check text + soundEnabled FIRST before warming up audio,
-    // unless we are in AI Chat mode (which has its own routing path).
+    // Check text before warming up audio unless AI Chat owns this action.
     const currentText = useMessageStore.getState().text.trim();
-    if (useUIStore.getState().sidePanel !== 'ai-chat' && (!currentText || !soundEnabled)) return;
+    if (useUIStore.getState().sidePanel !== 'ai-chat' && !currentText) return;
     void warmupAzureAudio();
     tapFeedback();
     // In AI Chat mode the Speak key sends to AI instead of speaking aloud.
@@ -204,7 +203,10 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       triggerAISubmit();
       return;
     }
-    if (!currentText || !soundEnabled) return;
+    if (!currentText) return;
+    // Like the MessageBar Play button, the explicit keyboard Speak action
+    // recovers stale persisted mute state instead of silently doing nothing.
+    if (!useMessageStore.getState().soundEnabled) toggleSound();
     addToHistory(currentText);
     const { language, outputLanguage } = useSettingsStore.getState();
     if (language !== outputLanguage) {
@@ -217,7 +219,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     } else {
       aacSpeak(currentText, speechRate, speechVolume, activeTone, true);
     }
-  }, [soundEnabled, speechRate, speechVolume, addToHistory, activeTone, browserMode, onBrowserGo]);
+  }, [toggleSound, speechRate, speechVolume, addToHistory, activeTone, browserMode, onBrowserGo]);
 
   const handleBackspace = useCallback(() => {
     deleteFeedback();
