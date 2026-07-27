@@ -123,7 +123,10 @@ describe('Keyboard cumulative word-boundary speech', () => {
     );
   });
 
-  it('explicit keyboard Speak recovers stale mute and speaks', () => {
+  // soundEnabled is a master mute. A caregiver who mutes the device in a
+  // classroom, or a user who mutes in a quiet room, must stay silent — and
+  // must not have that setting cleared behind their back by pressing Speak.
+  it('keyboard Speak stays silent while muted', () => {
     useMessageStore.setState({ soundEnabled: false } as never);
     const { container } = render(<Keyboard />);
     const speak = container.querySelector<HTMLButtonElement>('button.aac-speak');
@@ -133,17 +136,10 @@ describe('Keyboard cumulative word-boundary speech', () => {
       fireEvent.click(speak!);
     });
 
-    expect(useMessageStore.getState().soundEnabled).toBe(true);
-    expect(speechMocks.aacSpeak).toHaveBeenCalledWith(
-      'I need',
-      0.5,
-      0.8,
-      'neutral',
-      true,
-    );
+    expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
   });
 
-  it('two rapid keyboard Speak presses cannot toggle recovered sound back off', () => {
+  it('keyboard Speak does not clear the mute setting', () => {
     useMessageStore.setState({ soundEnabled: false } as never);
     const { container } = render(<Keyboard />);
     const speak = container.querySelector<HTMLButtonElement>('button.aac-speak');
@@ -154,7 +150,7 @@ describe('Keyboard cumulative word-boundary speech', () => {
       fireEvent.click(speak!);
     });
 
-    expect(useMessageStore.getState().soundEnabled).toBe(true);
-    expect(speechMocks.aacSpeak).toHaveBeenCalledTimes(2);
+    expect(useMessageStore.getState().soundEnabled).toBe(false);
+    expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
   });
 });

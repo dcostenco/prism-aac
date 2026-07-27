@@ -391,25 +391,20 @@ describe('MessageBar — speak', () => {
     );
   });
 
-  it('explicit Play recovers stale mute and speaks the current message', async () => {
+  // soundEnabled is a master mute — Play does not override it, and must not
+  // clear it as a side effect. See tests/keyboard-cumulative-speech.test.tsx
+  // for the same guarantee on the keyboard Speak key.
+  it('clicking speak does NOT call aacSpeak when soundEnabled is false', async () => {
     mocks.messageState.text = 'some text';
     mocks.messageState.soundEnabled = false;
     render(<MessageBar />);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
     });
-    expect(mocks.toggleSoundMock).toHaveBeenCalledOnce();
-    expect(mocks.messageState.soundEnabled).toBe(true);
-    expect(mocks.aacSpeakMock).toHaveBeenCalledWith(
-      'some text',
-      expect.any(Number),
-      expect.any(Number),
-      expect.any(String),
-      true,
-    );
+    expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
   });
 
-  it('two rapid Play presses cannot toggle recovered sound back off', async () => {
+  it('clicking speak while muted leaves the mute setting untouched', async () => {
     mocks.messageState.text = 'some text';
     mocks.messageState.soundEnabled = false;
     render(<MessageBar />);
@@ -420,9 +415,9 @@ describe('MessageBar — speak', () => {
       fireEvent.click(play);
     });
 
-    expect(mocks.toggleSoundMock).toHaveBeenCalledOnce();
-    expect(mocks.messageState.soundEnabled).toBe(true);
-    expect(mocks.aacSpeakMock).toHaveBeenCalledTimes(2);
+    expect(mocks.toggleSoundMock).not.toHaveBeenCalled();
+    expect(mocks.messageState.soundEnabled).toBe(false);
+    expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
   });
 
   it('clicking speak calls addToHistory', async () => {
