@@ -33,7 +33,15 @@ function trailingSpokenWord(value: string): string {
   return lastToken.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
 }
 
-export default function MessageBar() {
+/**
+ * `compact` is phone landscape (viewport under 500px tall). The bar stays
+ * mounted there — it carries the composed message and the Play button, and an
+ * AAC user who cannot see the sentence they are building has lost the point of
+ * the app — but it gives up its vertical padding so the keyboard keeps the
+ * height. The controls already size from vw/svh clamps, so they shrink on
+ * their own; only the box needs to be told to stop reserving 72px.
+ */
+export default function MessageBar({ compact = false }: { compact?: boolean } = {}) {
   const text = useMessageStore((s) => s.text);
   const activeTone = useMessageStore((s) => s.activeTone);
   const toneMode = useMessageStore((s) => s.toneMode);
@@ -569,8 +577,15 @@ export default function MessageBar() {
   return (
     <div
       data-scan-group="message-bar"
-      className="flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] py-[clamp(0.3rem,0.6svh,0.6rem)] shrink-0 relative border border-theme"
-      style={{ minHeight: isMessagingMode ? 'clamp(100px, 14svh, 180px)' : 'clamp(72px, 10svh, 132px)' }}
+      className={`flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] shrink-0 relative border border-theme ${
+        compact ? 'py-0' : 'py-[clamp(0.3rem,0.6svh,0.6rem)]'
+      }`}
+      style={{
+        minHeight: compact
+          ? 'clamp(44px, 13svh, 56px)'
+          : isMessagingMode ? 'clamp(100px, 14svh, 180px)' : 'clamp(72px, 10svh, 132px)',
+      }}
+      data-compact={compact ? '1' : '0'}
       data-messaging-mode={isMessagingMode ? '1' : '0'}
     >
       <button

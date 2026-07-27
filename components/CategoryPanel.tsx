@@ -205,21 +205,34 @@ export default function CategoryPanel() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- category/grid changes must reset pagination before rendering an out-of-range page
   useEffect(() => { setGridPage(0); }, [activeCatIdForReset, gridSize]);
   const [compactMode, setCompactMode] = useState(false);
+  const wasCompactRef = useRef(false);
   useEffect(() => {
     const check = () => {
       const compact = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 500;
       setCompactMode(compact);
+      const s = useUIStore.getState();
       // Phone landscape can't fit grid + keyboard drawer — auto-maximize
       // so the user gets a full-size keyboard (touchability for AAC users).
+      //
+      // Session-only, deliberately not persisted. This used to write
+      // prism-kb-max='true' — which is the user's own saved preference — so a
+      // single rotation into landscape silently rewrote it, and the phrase
+      // grid stayed hidden back in portrait until they found the toggle.
       if (compact) {
-        const s = useUIStore.getState();
         if (s.categoryKeyboardOpen && !s.keyboardMaximized) {
-          try {
-            localStorage.setItem('prism-kb-max', 'true');
-          } catch {}
           useUIStore.setState({ keyboardMaximized: true });
         }
+      } else if (wasCompactRef.current) {
+        // Back to portrait: hand control to whatever the user actually chose.
+        let persisted = false;
+        try {
+          persisted = localStorage.getItem('prism-kb-max') === 'true';
+        } catch {}
+        if (s.keyboardMaximized !== persisted) {
+          useUIStore.setState({ keyboardMaximized: persisted });
+        }
       }
+      wasCompactRef.current = compact;
     };
     check();
     window.addEventListener('resize', check);

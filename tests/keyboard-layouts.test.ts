@@ -61,7 +61,12 @@ describe('Keyboard layouts — getLetterRows', () => {
 
   it('returns Japanese Hiragana layout', () => {
     const rows = getLetterRows('ja');
-    expect(rows).toHaveLength(3);
+    // 5 rows, not 3: the layout used to stop at は行, leaving ま/や/ら/わ行 and
+    // ん untypable. The old length assertion locked that gap in.
+    // 5 kana rows + 1 modifier row (゛゜小), which are not characters.
+    expect(rows).toHaveLength(6);
+    expect(rows.slice(0, 5).flat()).toHaveLength(46);
+    expect(rows.flat()).toContain('ん');
     expect(rows[0][0]).toBe('あ');
   });
 

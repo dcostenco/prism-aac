@@ -527,7 +527,10 @@ export default function PrismApp() {
               cell-grid canvas + bigger keyboards have room to breathe.
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && sidePanel !== 'pdf-reader' && sidePanel !== 'ocr-capture' && !showQwerty && <GreetingBanner />}
-          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && !compactMode && <MessageBar />}
+          {/* Phone landscape gets the compact bar rather than no bar: dropping
+              it entirely took away the composed message and the Play button,
+              which are the two controls an AAC user cannot do without. */}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <MessageBar compact={compactMode} />}
           {sidePanel !== 'ai-chat' && (!PANELS_WITHOUT_QWERTY.has(sidePanel) || (isCategoryMode && categoryKeyboardOpen)) && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />

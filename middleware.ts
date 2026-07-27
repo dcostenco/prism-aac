@@ -23,7 +23,12 @@ export function middleware(request: NextRequest) {
   // needing their own allowlist entry once they're loaded by a nonced script.
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    // 'wasm-unsafe-eval' permits WebAssembly compilation and nothing else — it
+    // does not re-enable eval() for JavaScript. Without it every
+    // WebAssembly.instantiate call is refused, which silently disabled the
+    // Tier 3 WASM TTS fallback in speechService: the last resort for producing
+    // speech when portal TTS fails and Web Speech is unavailable.
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'`,
     "style-src 'self' 'unsafe-inline'",
     "connect-src 'self' https://synalux.ai https://*.synalux.ai https://api.arasaac.org https://static.arasaac.org https://nominatim.openstreetmap.org wss://synalux.ai wss://*.synalux.ai https://browser-intake-datadoghq.com https://*.browser-intake-datadoghq.com https://*.datadoghq.com",
     "media-src 'self' blob: https://synalux.ai https://*.synalux.ai",

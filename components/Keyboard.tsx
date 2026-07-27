@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
@@ -12,7 +12,7 @@ import { triggerAISubmit } from '@/services/aiChatBridge';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { dispatchToSearch } from '@/services/searchKeyBridge';
-import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
+import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS, buildKeyboardRows, KANA_MODIFIERS, applyKanaModifier } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
 
 // Long-press threshold for caps lock — raised from 500 ms to 1200 ms after
@@ -75,16 +75,33 @@ function extractLastSentence(text: string): string {
 export const __testing = { extractLastSentence };
 
 export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: boolean; onBrowserGo?: () => void } = {}) {
-  const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
+  // No toggleSound: soundEnabled is a master mute again and Speak must not
+  // clear it. setText is for the kana modifiers, which rewrite the last
+  // character rather than appending one.
+  const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone, setText } = useMessageStore();
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock, keyboardMaximized, cycleKeyboardMode } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language, speakOnSentenceEnd, gridSize } = useSettingsStore();
   const { t } = useT();
   const letterRows = getLetterRows(language);
 
-  const rows = keyboardMode === 'letters'
+  const rawRows = keyboardMode === 'letters'
     ? letterRows
     : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
+  // Width-driven, not orientation-driven: the same 12-key Romanian row that
+  // overflows a 390px portrait screen fits fine in landscape at 844px.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const check = () => setNarrow(window.innerWidth < 480);
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+    return () => {
+      window.removeEventListener('resize', check);
+      window.removeEventListener('orientationchange', check);
+    };
+  }, []);
+  const rows = buildKeyboardRows(rawRows, narrow);
   const showUpper = isUpperCase || capsLock;
 
   const handleKey = useCallback((key: string) => {
@@ -94,6 +111,15 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     // also land in the message bar while the user is searching vocabulary.
     if (dispatchToSearch(char)) {
       if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
+      return;
+    }
+    // Kana modifiers rewrite the preceding character (て + ゛ → で) rather
+    // than inserting themselves. A modifier that does not apply is ignored, so
+    // a mis-tap never drops a stray ゛ into the sentence.
+    if ((KANA_MODIFIERS as readonly string[]).includes(char)) {
+      const current = useMessageStore.getState().text;
+      const modified = applyKanaModifier(current, char);
+      if (modified !== null) setText(modified);
       return;
     }
     appendChar(char);
@@ -119,7 +145,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       const sentence = extractLastSentence(text);
       if (sentence) aacSpeak(sentence, speechRate, speechVolume, activeTone);
     }
-  }, [appendChar, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper,
+  }, [appendChar, setText, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper,
       speakOnSentenceEnd, autoSpeak, soundEnabled, speechRate, speechVolume, activeTone]);
 
   const shiftHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -227,10 +253,16 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     useMessageStore.getState().deleteLastChar();
   }, []);
 
-  const kc = 'aac-key surface-key text-primary rounded-lg font-bold select-none flex items-center justify-center';
+  const kc = 'aac-key surface-key text-primary rounded-lg font-bold select-none flex items-center justify-center min-w-0';
+  // Bounded by width as well as height. Sizing on svh alone gives a ~35px glyph
+  // on a tall phone, and a full-width CJK character then cannot shrink below
+  // ~37px — which pushed the Japanese kana row to ~466px inside a 390px screen
+  // and clipped keys off both edges. Latin glyphs are narrow enough to have
+  // hidden the problem. min() only lowers the size where width is the binding
+  // constraint, so tablets and desktop are unchanged.
   const letterSize = capsLock
-    ? 'text-[clamp(1.75rem,4.8svh,3.5rem)]'
-    : 'text-[clamp(1.55rem,4.2svh,3rem)]';
+    ? 'text-[clamp(1.1rem,min(4.8svh,7vw),3.5rem)]'
+    : 'text-[clamp(1rem,min(4.2svh,6.5vw),3rem)]';
   const utilSize = 'text-[clamp(1rem,2.5svh,1.75rem)]';
   const wordSize = 'text-[clamp(0.9rem,2svh,1.5rem)]';
 
@@ -246,7 +278,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     <div className="flex-1 flex flex-col gap-[1px] p-[2px]" data-scan-group="keyboard" role="group" aria-label="Keyboard">
       {rows.map((row, ri) => (
         <div key={ri} className="flex gap-[1px] justify-center flex-1">
-          {ri === 2 && keyboardMode === 'letters' && (
+          {row.util && keyboardMode === 'letters' && (
             <button
               onPointerDown={handleShiftDown}
               onPointerUp={handleShiftUp}
@@ -259,7 +291,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
               {shiftGlyph}
             </button>
           )}
-          {row.map((key) => {
+          {row.keys.map((key) => {
             const displayChar = keyboardMode === 'letters' ? (showUpper ? key : key.toLowerCase()) : key;
             return (
               <button
@@ -268,13 +300,17 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
                 aria-label={key}
                 data-key={key}
                 data-display={displayChar}
-                className={`${kc} ${letterSize} flex-1 hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}
+                className={`${kc} ${letterSize} hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb] ${
+                  // A wrapped remainder keeps base key width instead of
+                  // stretching four diacritics across the whole screen.
+                  row.continuation ? 'flex-none basis-[calc(100%/10)]' : 'flex-1'
+                }`}
               >
                 {displayChar}
               </button>
             );
           })}
-          {ri === 2 && keyboardMode === 'letters' && (
+          {row.util && keyboardMode === 'letters' && (
             <button onClick={handleBackspace} aria-label="Backspace" data-action="backspace" className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)]`}>⌫</button>
           )}
         </div>

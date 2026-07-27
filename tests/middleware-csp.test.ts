@@ -28,3 +28,17 @@ describe('Prism AAC Content Security Policy', () => {
     ).toBe(false);
   });
 });
+
+describe('CSP — WebAssembly', () => {
+  // speechService's Tier 3 fallback and panicService both compile WASM. Without
+  // this directive every instantiate() is refused and the last-resort speech
+  // tier cannot run at all.
+  it("allows 'wasm-unsafe-eval' without re-enabling script eval", async () => {
+    const res = await middleware(new NextRequest('https://prism-aac.test/prism-aac'));
+    const csp = res.headers.get('content-security-policy') || '';
+    const scriptSrc = csp.split(';').map((d) => d.trim()).find((d) => d.startsWith('script-src')) || '';
+    expect(scriptSrc).toContain("'wasm-unsafe-eval'");
+    expect(scriptSrc).not.toContain("'unsafe-eval'; ");
+    expect(scriptSrc.replace("'wasm-unsafe-eval'", '')).not.toContain("'unsafe-eval'");
+  });
+});
