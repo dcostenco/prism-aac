@@ -97,6 +97,12 @@ function clampNumber(v: unknown, b: { min: number; max: number; def: number }): 
 
 interface SettingsState {
   speechRate: number;
+  /** True once the rate has been changed through `update`, i.e. by a real
+   *  choice rather than a default or a migration. Corrective migrations that
+   *  rewrite speechRate must skip anyone carrying this flag — the v19 fix had
+   *  no way to tell a deliberate 1.0 from one an earlier migration wrote, and
+   *  silently slowed down every user who had genuinely chosen it. */
+  speechRateUserSet: boolean;
   speechVolume: number;
   language: SupportedLanguage;
   outputLanguage: SupportedLanguage;
@@ -204,6 +210,7 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       speechRate: 0.5,
+      speechRateUserSet: false,
       speechVolume: 1.0,
       language: 'en',
       outputLanguage: 'en', // syncs with language on first use; only diverges when user explicitly sets translation pair
@@ -266,7 +273,10 @@ export const useSettingsStore = create<SettingsState>()(
           ...partial,
           // Clamp numeric fields so callers cannot persist out-of-range values
           ...(partial.speechRate !== undefined
-            ? { speechRate: clampNumber(partial.speechRate, NUM_BOUNDS.speechRate) } : {}),
+            ? {
+              speechRate: clampNumber(partial.speechRate, NUM_BOUNDS.speechRate),
+              speechRateUserSet: true,
+            } : {}),
           ...(partial.speechVolume !== undefined
             ? { speechVolume: clampNumber(partial.speechVolume, NUM_BOUNDS.speechVolume) } : {}),
         };
@@ -330,7 +340,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prism-aac-settings',
-      version: 19,
+      version: 20,
       migrate: (persisted: unknown, version: number) => {
         let s = persisted as Record<string, unknown>;
         if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
@@ -420,7 +430,11 @@ export const useSettingsStore = create<SettingsState>()(
         // client normalizes stored 0.5 to portal rate 1.0, so persisted 1.0
         // now becomes portal rate 1.4 (audibly too fast). This is one-shot:
         // a user who deliberately selects 1.0 after v19 keeps that choice.
-        if (version < 19 && s.speechRate === 1) {
+        //
+        // `speechRateUserSet` did not exist before v20, so pre-v20 profiles
+        // cannot be spared here — the flag protects deliberate choices made
+        // from v20 onward, which is why this guard exists at all.
+        if (version < 19 && s.speechRate === 1 && s.speechRateUserSet !== true) {
           s = { ...s, speechRate: 0.5 };
         }
         return s;
@@ -483,6 +497,9 @@ export const useSettingsStore = create<SettingsState>()(
         }
         // Numbers: clamp to plausible bounds.
         out.speechRate = clampNumber(incoming.speechRate, NUM_BOUNDS.speechRate);
+        // Preserved verbatim: losing it here would re-expose the rate to the
+        // next corrective migration, which is exactly what the flag prevents.
+        out.speechRateUserSet = incoming.speechRateUserSet === true;
         out.speechVolume = clampNumber(incoming.speechVolume, NUM_BOUNDS.speechVolume);
         out.headTrackingDwellMs = clampNumber(incoming.headTrackingDwellMs, NUM_BOUNDS.headTrackingDwellMs);
         out.headTrackingSensitivity = clampNumber(incoming.headTrackingSensitivity, NUM_BOUNDS.headTrackingSensitivity);
