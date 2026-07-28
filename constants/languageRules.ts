@@ -45,7 +45,7 @@ export interface LanguageRule {
   /** Polite/formal sentence-ending particle (empty = none) */
   sentenceFinalPolite: string;
   /** Script family — used for looksLikeTargetLang validation */
-  scriptFamily: 'Latin' | 'Cyrillic' | 'Arabic' | 'Hebrew' | 'Devanagari' | 'Han' | 'Hiragana' | 'Hangul' | 'Thai' | 'Mixed';
+  scriptFamily: 'Latin' | 'Cyrillic' | 'Arabic' | 'Hebrew' | 'Devanagari' | 'Han' | 'Hiragana' | 'Hangul' | 'Thai' | 'Ethiopic' | 'Bengali' | 'Mixed';
   notes: string;
 }
 
@@ -288,6 +288,46 @@ export const LANGUAGE_RULES: Record<SupportedLanguage, LanguageRule> = {
       'Three grammatical genders (m/f/n). Clitic doubling common (на мен ми). ' +
       'No infinitive — uses да + present tense (да ядем = to eat). ' +
       'Renarrative mood for reported speech.',
+  },
+  am: {
+    code: 'am', name: 'Amharic', nativeName: 'አማርኛ',
+    wordOrder: 'SOV', rtl: false, hasGender: true, cases: 1,
+    infinitiveParticle: '', verbFinal: true, articlePosition: 'after',
+    lowercaseMidSentence: false, sentenceFinalPolite: '',
+    scriptFamily: 'Ethiopic',
+    notes: 'SOV — verb goes last, so word-by-word output must be reordered. ' +
+      'Drop the English "to": the infinitive is a fused መ- prefix (መብላት = to eat), not a particle. ' +
+      'Definite article is a suffix (-ው masc / -ዋ fem: ቤት → ቤቱ = the house). ' +
+      'Accusative -ን marks a definite object; counted as 1 case rather than 0 because ' +
+      'omitting it changes which noun reads as the object. ' +
+      'Verbs agree with subject gender AND number. Ge\'ez script is caseless, so ' +
+      'lowercaseMidSentence is meaningless here.',
+  },
+  sw: {
+    code: 'sw', name: 'Swahili', nativeName: 'Kiswahili',
+    wordOrder: 'SVO', rtl: false, hasGender: false, cases: 0,
+    infinitiveParticle: '', verbFinal: false, articlePosition: 'none',
+    lowercaseMidSentence: false, sentenceFinalPolite: '',
+    scriptFamily: 'Latin',
+    notes: 'SVO, no articles, no case. hasGender is false but that understates the problem: ' +
+      'Swahili has ~15 noun classes, and every adjective, verb and possessive must carry the ' +
+      'matching concord prefix (kitabu kizuri / vitabu vizuri = good book / good books). ' +
+      'Word-by-word dictionary output WILL produce wrong concords — treat offline Swahili ' +
+      'translation as approximate and prefer whole-phrase entries. ' +
+      'Drop the English "to": the infinitive is a fused ku- prefix (kula = to eat).',
+  },
+  bn: {
+    code: 'bn', name: 'Bengali', nativeName: 'বাংলা',
+    wordOrder: 'SOV', rtl: false, hasGender: false, cases: 4,
+    infinitiveParticle: '', verbFinal: true, articlePosition: 'after',
+    lowercaseMidSentence: false, sentenceFinalPolite: '',
+    scriptFamily: 'Bengali',
+    notes: 'SOV — verb-final reordering applies. No grammatical gender. ' +
+      '4 cases (nominative, objective, genitive, locative). ' +
+      'Definiteness is a suffixed classifier (-টা/-টি: বই → বইটা = the book), so articlePosition is "after". ' +
+      'Drop the English "to": the infinitive is a -তে suffix (করতে = to do). ' +
+      'Verb endings encode three politeness levels; sentenceFinalPolite is empty because ' +
+      'the honorific is inflected into the verb, not appended as a particle.',
   },
 };
 

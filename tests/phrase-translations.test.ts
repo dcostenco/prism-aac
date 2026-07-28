@@ -179,3 +179,81 @@ describe('RO→RU translation accuracy regression (May 2026)', () => {
     expect(true).toBe(true); // structural test — see MessageBar.tsx timer useEffect deps
   });
 });
+
+/**
+ * Coverage floors per language.
+ *
+ * Regression guard for a real incident: scripts/translate-corpus.mjs rewrites
+ * this whole file, and a parser bug in its language-extraction regex dropped
+ * the FIRST language listed in every entry. `ro` led almost every row, so it
+ * went 1046 -> 0 while the file still looked healthy — same entry count, same
+ * shape, tsc clean, and 264 unrelated tests green. Nothing caught it except a
+ * translation lookup returning ''.
+ *
+ * These floors are deliberately set at the values in the file when the guard
+ * was added. Raising them as coverage improves is fine; lowering one means a
+ * rewrite lost data and the fix is to restore it, not to relax the number.
+ */
+describe('Phrase translations — per-language coverage floors', () => {
+  const FLOORS: Record<string, number> = {
+    ro: 1455, es: 1472, fr: 1430, pt: 1469, de: 1410, ru: 1509,
+    uk: 1509, ja: 1510, ko: 1510, zh: 1510, ar: 1510, hi: 1510,
+    it: 1452, pl: 1467, he: 1509, nl: 1383, vi: 1496, tl: 1341,
+    tr: 1478, id: 1449, bg: 1510, am: 1512, sw: 1497, bn: 1512,
+  };
+
+  for (const [lang, floor] of Object.entries(FLOORS)) {
+    it(`${lang} has at least ${floor} translated phrases`, () => {
+      const translated = DEFAULT_PHRASES.filter((p) => {
+        const out = getPhraseText(p.id, lang as never, p.text);
+        return out && out !== p.text;
+      }).length;
+      expect(
+        translated,
+        `${lang} dropped to ${translated} (floor ${floor}) — a rewrite likely lost this column`,
+      ).toBeGreaterThanOrEqual(floor);
+    });
+  }
+
+  it('no language column is entirely empty', () => {
+    for (const lang of Object.keys(FLOORS)) {
+      const any = DEFAULT_PHRASES.some((p) => {
+        const out = getPhraseText(p.id, lang as never, p.text);
+        return out && out !== p.text;
+      });
+      expect(any, `${lang} has zero translations — column was wiped`).toBe(true);
+    }
+  });
+});
+
+/**
+ * Escaping integrity.
+ *
+ * Second real incident from the same rewrite pipeline: reading the file
+ * captured string-literal bodies WITHOUT unescaping, and emitting re-escaped
+ * them — so each read→write round trip multiplied backslashes. "J'ai faim"
+ * shipped as "J\'ai faim" (and "Je m\\\'appelle" after two passes) in 107
+ * strings. Coverage floors can't see it: a corrupted value still counts as
+ * translated-and-different-from-English. These assertions can.
+ */
+describe('Phrase translations — escaping integrity', () => {
+  it('no translation value contains a literal backslash', () => {
+    const LANGS = ['ro','es','fr','pt','de','ru','uk','ja','ko','zh','ar','hi','it','pl','he','nl','vi','tl','tr','id','bg','am','sw','bn'];
+    const offenders: string[] = [];
+    for (const p of DEFAULT_PHRASES) {
+      for (const lang of LANGS) {
+        const v = getPhraseText(p.id, lang as never, p.text);
+        if (v.includes('\\')) offenders.push(`${p.id}/${lang}: ${JSON.stringify(v)}`);
+      }
+    }
+    expect(offenders, offenders.slice(0, 5).join('\n')).toEqual([]);
+  });
+
+  it('apostrophe-bearing values survive round trips intact', () => {
+    // French elision — the exact strings corrupted in the incident.
+    expect(getPhraseText('help-need-help', 'fr', "I need help")).toBe("J'ai besoin d'aide");
+    expect(getPhraseText('qt-my-name', 'fr', 'My name is')).toBe("Je m'appelle");
+    // Swahili ng' is a letter (velar nasal), not punctuation.
+    expect(getPhraseText('cw-whisper', 'sw', 'Whisper')).toBe("Nong'ona");
+  });
+});

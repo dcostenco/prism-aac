@@ -6,6 +6,9 @@ type VisionPhraseMap = Partial<Record<SceneType, Partial<Record<SupportedLanguag
 export const VISION_PHRASES: VisionPhraseMap = {
   mealtime: {
     en: ['I want more', 'Water please', 'All done', 'Yummy', 'Too hot', "I don't like it", 'More please', "I'm hungry"],
+    bn: ['আমি আরও চাই', 'জল দাও', 'সব শেষ', 'মজার', 'খুব গরম', 'আমার ভালো লাগছে না', 'আরও দাও', 'আমার খিদে পেয়েছে'],
+    sw: ['Nataka ingine', 'Maji tafadhali', 'Nimetimiza', 'Tamu!', 'Ni moto sana', 'Sipendi', 'Ongeza tafadhali', 'Nina njaa'],
+    am: ['ተጨማሪ እፈልጋለሁ', 'ውሃ እባክዎን', 'ጨርሻለሁ', 'ይጣፍጣል', 'በጣም ይሞቃል', 'አልወደድኩትም', 'ተጨማሪ እባክዎን', 'ራበኝ'],
     es: ['Quiero más', 'Agua por favor', 'Ya terminé', 'Rico', 'Muy caliente', 'No me gusta', 'Más por favor', 'Tengo hambre'],
     fr: ['Je veux encore', "De l'eau s'il vous plaît", "J'ai fini", 'Miam', 'Trop chaud', "Je n'aime pas", "Encore s'il vous plaît", "J'ai faim"],
     pt: ['Quero mais', 'Água por favor', 'Acabei', 'Gostoso', 'Muito quente', 'Não gosto', 'Mais por favor', 'Estou com fome'],
@@ -30,6 +33,9 @@ export const VISION_PHRASES: VisionPhraseMap = {
   },
   bedtime: {
     en: ["I'm tired", 'Good night', 'Read a story', 'Water please', "I can't sleep", 'Hug please', 'Scared', 'Light on'],
+    bn: ['আমার ক্লান্তি লাগছে', 'শুভ রাত্রি', 'গল্প বলো', 'জল দাও', 'ঘুম আসছে না', 'জড়িয়ে ধরো', 'ভয় করছে', 'আলো জ্বালো'],
+    sw: ['Nimechoka', 'Usiku mwema', 'Soma hadithi', 'Maji tafadhali', 'Sipati Usingizi', 'Nikumbatie tafadhali', 'Nina hofu', 'Washa taa'],
+    am: ['ደክሞኛል', 'ደህና እደር', 'ታሪክ አንብብልኝ', 'ውሃ እባክዎን', 'እንቅልፍ እምቢ አለኝ', 'እቀፈኝ እባክዎን', 'ፈርቻለሁ', 'መብራቱን አብራ'],
     es: ['Tengo sueño', 'Buenas noches', 'Lee un cuento', 'Agua por favor', 'No puedo dormir', 'Abrazo por favor', 'Tengo miedo', 'Prende la luz'],
     fr: ["J'ai sommeil", 'Bonne nuit', 'Lis une histoire', "De l'eau", 'Je ne peux pas dormir', 'Câlin', "J'ai peur", 'Lumière'],
     pt: ['Estou com sono', 'Boa noite', 'Leia uma história', 'Água por favor', 'Não consigo dormir', 'Abraço', 'Com medo', 'Acende a luz'],
@@ -44,6 +50,9 @@ export const VISION_PHRASES: VisionPhraseMap = {
   },
   playtime: {
     en: ['I want to play', 'My turn', 'Fun!', 'Again!', 'Help me', 'I won', 'Your turn', "Let's play"],
+    bn: ['আমি খেলতে চাই', 'আমার পালা', 'মজা!', 'আবার!', 'আমাকে সাহায্য করো', 'আমি জিতেছি', 'তোমার পালা', 'চলো খেলি'],
+    sw: ['Nataka kucheza', 'Lamu yangu', 'Raha!', 'Tena!', 'Nisaidie', 'Nimeshinda', 'Zamu yako', 'Tucheze'],
+    am: ['መጫወት እፈልጋለሁ', 'የእኔ ተራ', 'ደስ ይላል!', 'ድጋሚ!', 'እርዳኝ', 'አሸነፍኩ', 'የአንተ ተራ', 'እንጫወት'],
     es: ['Quiero jugar', 'Mi turno', '¡Divertido!', '¡Otra vez!', 'Ayúdame', 'Gané', 'Tu turno', 'Juguemos'],
     fr: ['Je veux jouer', 'Mon tour', 'Amusant !', 'Encore !', 'Aide-moi', "J'ai gagné", 'Ton tour', 'Jouons'],
     pt: ['Quero brincar', 'Minha vez', 'Divertido!', 'De novo!', 'Me ajuda', 'Ganhei', 'Sua vez', 'Vamos brincar'],
@@ -58,6 +67,9 @@ export const VISION_PHRASES: VisionPhraseMap = {
   },
   schoolwork: {
     en: ['Help please', "I don't understand", 'Done', 'What is this?', 'Too hard', 'I need a break', 'Read it again', 'More time'],
+    bn: ['সাহায্য করো', 'বুঝতে পারছি না', 'শেষ', 'এটা কী?', 'খুব কঠিন', 'একটু জিরোনো দরকার', 'আবার পড়ো', 'আরও সময় চাই'],
+    sw: ['Msaada tafadhali', 'Sielewi', 'Tayari', 'Hii ni nini?', 'Ngumu sana', 'Nahitaji mapumziko', 'Soma tena', 'Muda zaidi'],
+    am: ['እርዳታ እባክዎን', 'አልገባኝም', 'ጨረስኩ', 'ይህ ምንድን ነው?', 'በጣም ይከብዳል', 'ዕረፍት እፈልጋለሁ', 'ድጋሚ አንብበው', 'ተጨማሪ ጊዜ'],
     es: ['Ayuda por favor', 'No entiendo', 'Listo', '¿Qué es esto?', 'Muy difícil', 'Necesito un descanso', 'Léelo otra vez', 'Más tiempo'],
     fr: ["Aide s'il vous plaît", 'Je ne comprends pas', 'Fini', "Qu'est-ce que c'est ?", 'Trop difficile', "J'ai besoin d'une pause", 'Relis', 'Plus de temps'],
     pt: ['Ajuda por favor', 'Não entendo', 'Pronto', 'O que é isso?', 'Muito difícil', 'Preciso de uma pausa', 'Leia de novo', 'Mais tempo'],
@@ -72,6 +84,9 @@ export const VISION_PHRASES: VisionPhraseMap = {
   },
   bathtime: {
     en: ['I need to go', 'Wash hands', 'All done', 'Help me', 'Cold water', 'Hot water', 'Towel please', 'I need help'],
+    bn: ['বাথরুম পাবো', 'হাত ধোওয়া', 'সব শেষ', 'আমাকে সাহায্য করো', 'ঠান্ডা জল', 'গরম জল', 'তোয়ালে দাও', 'সাহায্য লাগবে'],
+    sw: ['Nahitaji kwenda', 'Osha mikono', 'Nimetimiza', 'Nisaidie', 'Maji ya baridi', 'Maji ya moto', 'Taulo tafadhali', 'Nahitaji msaada'],
+    am: ['ሽናት መጣብኝ', 'እጅ መታጠብ', 'ጨርሻለሁ', 'እርዳኝ', 'ቀዝቃዛ ውሃ', 'ትኩስ ውሃ', 'ፎጣ እባክዎን', 'እርዳታ እፈልጋለሁ'],
     es: ['Necesito ir', 'Lavar manos', 'Ya terminé', 'Ayúdame', 'Agua fría', 'Agua caliente', 'Toalla por favor', 'Necesito ayuda'],
     fr: ['Je dois y aller', 'Laver les mains', "C'est fini", 'Aide-moi', 'Eau froide', 'Eau chaude', 'Serviette', "J'ai besoin d'aide"],
     pt: ['Preciso ir', 'Lavar as mãos', 'Acabei', 'Me ajuda', 'Água fria', 'Água quente', 'Toalha por favor', 'Preciso de ajuda'],
@@ -86,6 +101,9 @@ export const VISION_PHRASES: VisionPhraseMap = {
   },
   watching_tv: {
     en: ['I want to watch', 'Turn it off', 'Too loud', 'Change it', 'I like this', 'Boring', 'Again', 'Pause'],
+    bn: ['আমি দেখতে চাই', 'বন্ধ করো', 'খুব আওয়াজ', 'বদলে দাও', 'এটা ভালো লাগছে', 'একঘেয়ে', 'আবার', 'থামাও'],
+    sw: ['Nataka kutazama', 'Zima', 'Sauti kubwa', 'Badilisha', 'Napenda hii', 'Inaboa', 'Tena', 'Simamisha'],
+    am: ['ማየት እፈልጋለሁ', 'አጥፋው', 'ድምፁ ጨመረ', 'ቀይረው', 'ይህን ወድጄዋለሁ', 'ያሰለቻል', 'ድጋሚ', 'አቁመው'],
     es: ['Quiero ver', 'Apágalo', 'Muy fuerte', 'Cambia', 'Me gusta', 'Aburrido', 'Otra vez', 'Pausa'],
     fr: ['Je veux regarder', 'Éteins', 'Trop fort', 'Change', "J'aime bien", 'Ennuyeux', 'Encore', 'Pause'],
     pt: ['Quero assistir', 'Desliga', 'Muito alto', 'Muda', 'Eu gosto', 'Chato', 'De novo', 'Pausa'],
@@ -100,6 +118,9 @@ export const VISION_PHRASES: VisionPhraseMap = {
   },
   snacktime: {
     en: ['Snack please', "I'm thirsty", 'Juice please', 'Cookie', 'Fruit', 'More', 'All done', 'Yummy'],
+    bn: ['টিফিন দাও', 'আমার চেষ্টা পেয়েছে', 'জুস দাও', 'বিস্কুট', 'ফল', 'আরও', 'সব শেষ', 'মজার'],
+    sw: ['Kitafunio tafadhali', 'Nina kiu', 'Juisi tafadhali', 'Biskuti', 'Matunda', 'Tena', 'Nimetimiza', 'Tamu!'],
+    am: ['መክሰስ እባክዎን', 'ጠማኝ', 'ጁስ እባክዎን', 'ኩኪስ', 'ፍራፍሬ', 'ተጨማሪ', 'ጨርሻለሁ', 'ይጣፍጣል'],
     es: ['Merienda por favor', 'Tengo sed', 'Jugo por favor', 'Galleta', 'Fruta', 'Más', 'Ya terminé', 'Rico'],
     fr: ['Goûter', "J'ai soif", 'Jus', 'Biscuit', 'Fruit', 'Encore', 'Fini', 'Miam'],
     pt: ['Lanche', 'Estou com sede', 'Suco', 'Biscoito', 'Fruta', 'Mais', 'Acabei', 'Gostoso'],
@@ -114,6 +135,9 @@ export const VISION_PHRASES: VisionPhraseMap = {
   },
   outdoors: {
     en: ['Look!', "Let's go", 'I see a bird', 'Hot outside', 'Cold outside', 'I want to go home', 'Play outside', 'Swing'],
+    bn: ['দেখো!', 'চলো যাই', 'পাখি দেখতে পাচ্ছি', 'বাইরে গরম', 'বাইরে ঠান্ডা', 'বাড়িতে যেতে চাই', 'বাইরে খেলি', 'দোলনা'],
+    sw: ['Tazama!', 'Twende', 'Ninaona ndege', 'Nje ni moto', 'Nje ni baridi', 'Nataka kwenda nyumbani', 'Cheza nje', 'Xilipia'],
+    am: ['ተመልከት!', 'እንሂድ', 'ወፍ አያለሁ', 'ውጪ ይሞቃል', 'ውጪ ይበርዳል', 'ወደ ቤት መሄድ እፈልጋለሁ', 'ውጪ መጫወት', 'ኡஞ்சሊሽ'],
     es: ['¡Mira!', 'Vamos', 'Veo un pájaro', 'Hace calor', 'Hace frío', 'Quiero ir a casa', 'Jugar afuera', 'Columpio'],
     ru: ['Смотри!', 'Пойдём', 'Вижу птицу', 'Жарко', 'Холодно', 'Хочу домой', 'Играть на улице', 'Качели'],
     uk: ['Дивись!', 'Ходімо', 'Бачу пташку', 'Спекотно', 'Холодно', 'Хочу додому', 'Грати надворі', 'Гойдалка'],
@@ -121,6 +145,9 @@ export const VISION_PHRASES: VisionPhraseMap = {
   },
   reading: {
     en: ['Read more', 'Turn the page', "What's that word?", 'I like this book', 'Read again', 'New book', 'Show me', 'Point to it'],
+    bn: ['আরও পড়ো', 'পাতা উল্টাও', 'ওটা কী শব্দ?', 'এই বইটা ভালো লাগছে', 'আবার পড়ো', 'নতুন বই', 'আমাকে দেখাও', 'আঙুল দিয়ে দেখাও'],
+    sw: ['Soma zaidi', 'Geuza ukurasa', 'Neno gani hili?', 'Napenda kitabu hiki', 'Soma tena', 'Kitabu kipya', 'Nionyeshe', 'Onyesha hapo'],
+    am: ['ተጨማሪ አንብብ', 'ገጹን ገልብጠው', 'ያ ቃል ምንድን ነው?', 'ይህን መጽሐፍ ወድጄዋለሁ', 'ድጋሚ አንብብ', 'አዲስ መጽሐፍ', 'አሳየኝ', 'ጠቁምበት'],
     es: ['Lee más', 'Pasa la página', '¿Qué palabra es?', 'Me gusta este libro', 'Lee otra vez', 'Libro nuevo', 'Muéstrame', 'Señala'],
     ru: ['Читай дальше', 'Переверни страницу', 'Что за слово?', 'Мне нравится книга', 'Читай ещё', 'Новая книга', 'Покажи', 'Укажи'],
     uk: ['Читай далі', 'Переверни сторінку', 'Що за слово?', 'Мені подобається книга', 'Читай ще', 'Нова книга', 'Покажи', 'Вкажи'],

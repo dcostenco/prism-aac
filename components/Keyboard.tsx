@@ -12,7 +12,7 @@ import { triggerAISubmit } from '@/services/aiChatBridge';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { dispatchToSearch } from '@/services/searchKeyBridge';
-import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
+import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS, GEEZ_VOWEL_ORDERS, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
 
 // Long-press threshold for caps lock — raised from 500 ms to 1200 ms after
@@ -121,6 +121,34 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     }
   }, [appendChar, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper,
       speakOnSentenceEnd, autoSpeak, soundEnabled, speechRate, speechVolume, activeTone]);
+
+  /**
+   * Ge'ez vowel-order modifier (Amharic only).
+   *
+   * Amharic is an abugida — a consonant and its vowel are one fused glyph,
+   * so the 33 consonant keys above only ever produce 1st-order (ግዕዝ) forms.
+   * Tapping an order key rewrites the character just typed into that order:
+   * ለ then ሁ-order gives ሉ. This is post-hoc rather than a sticky mode
+   * because it is how the fidel is taught and read, and because a mode the
+   * user has to remember is a cognitive-accessibility cost we don't need —
+   * the base glyph appears immediately and the order key refines it.
+   *
+   * No-ops when the last character isn't one of our base consonants, so a
+   * stray tap can't walk an already-inflected glyph into the next
+   * consonant's series (ሉ + 1 would silently become ሊ, then ሐ).
+   */
+  const handleGeezOrder = useCallback((offset: number) => {
+    keyFeedback();
+    const text = useMessageStore.getState().text;
+    const chars = [...text];
+    const last = chars[chars.length - 1];
+    if (!last) return;
+    const replaced = applyGeezVowelOrder(last, offset);
+    if (!replaced) return;
+    // setText (not deleteLastChar + appendChar) so the inflection is a
+    // single undo step rather than two.
+    useMessageStore.getState().setText(chars.slice(0, -1).join('') + replaced);
+  }, []);
 
   const shiftHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shiftLongPressed = useRef(false);
@@ -269,6 +297,25 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
           )}
         </div>
       ))}
+
+      {/* Ge'ez vowel orders — Amharic only. Without this row the 33 consonant
+          keys can only produce 1st-order forms, which cannot spell most
+          Amharic words. See handleGeezOrder above. */}
+      {language === 'am' && keyboardMode === 'letters' && (
+        <div className="flex gap-[1px] justify-center flex-1" data-testid="geez-vowel-orders" role="group" aria-label="Ge'ez vowel orders">
+          {GEEZ_VOWEL_ORDERS.map((order) => (
+            <button
+              key={order.offset}
+              onClick={() => handleGeezOrder(order.offset)}
+              aria-label={`Vowel order ${order.name}`}
+              data-geez-order={order.offset}
+              className={`${kc} ${letterSize} flex-1 hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}
+            >
+              {order.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex gap-[1px] flex-1" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" data-action="mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>

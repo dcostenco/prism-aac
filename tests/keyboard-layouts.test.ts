@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getLetterRows, getPredictionsForLanguage, LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
+import { getLetterRows, getPredictionsForLanguage, LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS, GEEZ_VOWEL_ORDERS, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
 
 describe('Keyboard layouts — getLetterRows', () => {
   it('returns QWERTY layout for English', () => {
@@ -153,5 +153,78 @@ describe('Keyboard layouts — Exported constants', () => {
     expect(SYMBOLS_ROWS).toHaveLength(3);
     expect(SYMBOLS_ROWS[0]).toContain('[');
     expect(SYMBOLS_ROWS[0]).toContain(']');
+  });
+});
+
+describe('Keyboard layouts — Sprint 4 languages (am, sw, bn)', () => {
+  it('returns plain QWERTY for Swahili (Latin, no diacritics)', () => {
+    const rows = getLetterRows('sw');
+    expect(rows).toHaveLength(3);
+    expect(rows[0][0]).toBe('Q');
+    expect(rows[2][6]).toBe('M');
+  });
+
+  it('returns a Bengali layout with matras and consonants', () => {
+    const rows = getLetterRows('bn');
+    expect(rows).toHaveLength(3);
+    // Matras (combining vowel signs) live on the first two rows.
+    expect(rows[0]).toContain('া');
+    expect(rows[1]).toContain('ি');
+    // Hasant/virama — required to build conjuncts.
+    expect(rows[1]).toContain('্');
+    // Consonants.
+    expect(rows[0]).toContain('ব');
+    expect(rows[2]).toContain('ম');
+  });
+
+  it('returns the 33 base Geez consonants for Amharic', () => {
+    const rows = getLetterRows('am');
+    const flat = rows.flat();
+    expect(flat).toHaveLength(33);
+    expect(flat[0]).toBe('ሀ');
+    expect(flat[flat.length - 1]).toBe('ፐ');
+    // Every key must be a 1st-order (gəʿəz) base — the vowel-order modifier
+    // relies on this. A pre-inflected glyph here would corrupt the offset math.
+    for (const c of flat) {
+      expect((c.codePointAt(0) as number) % 8).toBe(0);
+    }
+    expect(new Set(flat).size).toBe(33);
+  });
+});
+
+describe("Ge'ez vowel-order modifier", () => {
+  it('exposes exactly the 7 vowel orders', () => {
+    expect(GEEZ_VOWEL_ORDERS).toHaveLength(7);
+    expect(GEEZ_VOWEL_ORDERS.map((o) => o.offset)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it('inflects a base consonant through all 7 orders', () => {
+    // ለ (U+1208) is the canonical teaching example.
+    const forms = GEEZ_VOWEL_ORDERS.map((o) => applyGeezVowelOrder('ለ', o.offset));
+    expect(forms).toEqual(['ለ', 'ሉ', 'ሊ', 'ላ', 'ሌ', 'ል', 'ሎ']);
+  });
+
+  it('derives the full 231-glyph fidel from 33 keys', () => {
+    const bases = getLetterRows('am').flat();
+    const all = bases.flatMap((b) => GEEZ_VOWEL_ORDERS.map((o) => applyGeezVowelOrder(b, o.offset)));
+    expect(all).toHaveLength(231);
+    expect(all.every((g) => typeof g === 'string')).toBe(true);
+    // No collisions — each consonant/order pair is a distinct glyph.
+    expect(new Set(all).size).toBe(231);
+  });
+
+  it('refuses to inflect an already-inflected glyph', () => {
+    // The bug this guards: ሉ + offset 1 would arithmetically yield ሊ, and
+    // enough taps would walk into the next consonant series entirely.
+    expect(applyGeezVowelOrder('ሉ', 1)).toBeNull();
+    expect(applyGeezVowelOrder('ሊ', 3)).toBeNull();
+  });
+
+  it('refuses non-Ethiopic input and out-of-range orders', () => {
+    expect(applyGeezVowelOrder('A', 1)).toBeNull();
+    expect(applyGeezVowelOrder('я', 2)).toBeNull();
+    expect(applyGeezVowelOrder('', 1)).toBeNull();
+    expect(applyGeezVowelOrder('ለ', 7)).toBeNull();
+    expect(applyGeezVowelOrder('ለ', -1)).toBeNull();
   });
 });

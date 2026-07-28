@@ -43,7 +43,11 @@ export type SupportedLanguage =
   | 'tl'        // Filipino/Tagalog — Blessica / Angelo (Azure, fil-PH)
   | 'tr'        // Turkish — Emel / Ahmet (Azure)
   | 'id'        // Bahasa Indonesia — Gadis / Ardi (Azure)
-  | 'bg';       // Bulgarian — Borislav / Kalina (Azure)
+  | 'bg'        // Bulgarian — Borislav / Kalina (Azure)
+  // Sprint 4 expansion — Azure neural voices; see portal shared/voice-catalog.ts
+  | 'am'        // Amharic — Mekdes / Ameha (Azure), Ge'ez script
+  | 'sw'        // Swahili — Rehema / Daudi (Azure)
+  | 'bn';       // Bengali — Nabanita / Pradeep (Azure), Bengali script
 
 const loaded: Partial<Record<SupportedLanguage, Record<string, string>>> = { en };
 
@@ -73,6 +77,9 @@ const loaders: Record<SupportedLanguage, () => Promise<{ default: Record<string,
   tr: () => import('@/i18n/tr.json'),
   id: () => import('@/i18n/id.json'),
   bg: () => import('@/i18n/bg.json'),
+  am: () => import('@/i18n/am.json'),
+  sw: () => import('@/i18n/sw.json'),
+  bn: () => import('@/i18n/bn.json'),
 };
 
 export async function loadLanguage(lang: SupportedLanguage): Promise<void> {
@@ -119,6 +126,14 @@ const LANG_META: Array<{ code: SupportedLanguage; name: string; nativeName: stri
   { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', rtl: false, ttsCode: 'tr-TR', flag: '🇹🇷' },
   { code: 'id', name: 'Indonesian', nativeName: 'B. Indonesia', rtl: false, ttsCode: 'id-ID', flag: '🇮🇩' },
   { code: 'bg', name: 'Bulgarian', nativeName: 'Български', rtl: false, ttsCode: 'bg-BG', flag: '🇧🇬' },
+  // Sprint 4 — Azure neural voices. Region choices follow the "most populous
+  // canonical region" rule above: Tanzania (~67M) over Kenya for Swahili and
+  // it is where Standard Swahili (Kiswahili sanifu) originates; Bangladesh
+  // (~170M) over West Bengal for Bengali. Azure also publishes sw-KE-* and
+  // bn-IN-* voices if a deployment needs the other region.
+  { code: 'am', name: 'Amharic', nativeName: 'አማርኛ', rtl: false, ttsCode: 'am-ET', flag: '🇪🇹' },
+  { code: 'sw', name: 'Swahili', nativeName: 'Kiswahili', rtl: false, ttsCode: 'sw-TZ', flag: '🇹🇿' },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', rtl: false, ttsCode: 'bn-BD', flag: '🇧🇩' },
 ];
 
 /** Public helper — gets the flag for a language code, '' if unknown. */

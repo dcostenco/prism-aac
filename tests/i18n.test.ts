@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import fs from 'fs';
+import path from 'path';
 import { t, getTTSCode, isRTL, LANG_META, SupportedLanguage, loadLanguage } from '@/engine/i18n';
 
 beforeAll(async () => {
@@ -81,8 +83,19 @@ describe('i18n — RTL support', () => {
 });
 
 describe('i18n — Language metadata', () => {
-  it('has 25 languages', () => {
-    expect(LANG_META).toHaveLength(25);
+  it('has 28 languages', () => {
+    // 25 through Sprint 3, +3 in Sprint 4 (am, sw, bn).
+    expect(LANG_META).toHaveLength(28);
+  });
+
+  it('every LANG_META code has a loadable locale file', () => {
+    // Guards the failure mode where a language reaches the picker but its
+    // i18n/<code>.json was never generated — the picker then offers a
+    // language that silently renders entirely in English.
+    for (const lang of LANG_META) {
+      const file = path.join(__dirname, '..', 'i18n', `${lang.code === 'zh' ? 'zh-Hans' : lang.code}.json`);
+      expect(fs.existsSync(file), `no locale file for ${lang.code}`).toBe(true);
+    }
   });
 
   it('each language has all required fields', () => {
