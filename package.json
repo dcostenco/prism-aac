@@ -21,7 +21,8 @@
     "i18n:translate": "node scripts/translate-corpus.mjs",
     "i18n:provenance": "node scripts/rebuild-translation-provenance.mjs",
     "check:spoken": "node scripts/check-spoken-collisions.mjs",
-    "check:meaning": "node scripts/check-back-translation.mjs"
+    "check:meaning": "node scripts/check-back-translation.mjs",
+    "verify:languages": "bash scripts/verify-languages-browser.sh"
   },
   "dependencies": {
     "@datadog/browser-logs": "^7.2.0",
