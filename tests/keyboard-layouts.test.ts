@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getLetterRows, getPredictionsForLanguage, LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS } from '@/constants/keyboardLayouts';
+import { getLetterRows, getPredictionsForLanguage, LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS, GEEZ_VOWEL_ORDERS, GEEZ_MODIFIERS, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
 
 describe('Keyboard layouts — getLetterRows', () => {
   it('returns QWERTY layout for English', () => {
@@ -158,5 +158,87 @@ describe('Keyboard layouts — Exported constants', () => {
     expect(SYMBOLS_ROWS).toHaveLength(3);
     expect(SYMBOLS_ROWS[0]).toContain('[');
     expect(SYMBOLS_ROWS[0]).toContain(']');
+  });
+});
+
+describe('Keyboard layouts — Sprint 4 languages (am, sw, bn)', () => {
+  it('returns plain QWERTY for Swahili (Latin, no diacritics)', () => {
+    const rows = getLetterRows('sw');
+    expect(rows).toHaveLength(3);
+    expect(rows[0][0]).toBe('Q');
+    expect(rows[2][6]).toBe('M');
+  });
+
+  it('returns a Bengali layout with matras and consonants', () => {
+    const rows = getLetterRows('bn');
+    expect(rows).toHaveLength(3);
+    // Matras (combining vowel signs) live on the first two rows.
+    expect(rows[0]).toContain('া');
+    expect(rows[1]).toContain('ি');
+    // Hasant/virama — required to build conjuncts.
+    expect(rows[1]).toContain('্');
+    // Consonants.
+    expect(rows[0]).toContain('ব');
+    expect(rows[2]).toContain('ম');
+  });
+
+  it('returns the 33 base Geez consonants plus the vowel-order keys', () => {
+    const rows = getLetterRows('am');
+    // Rows 0-2 are the base fidel; the last row carries the vowel-order
+    // modifiers, exactly as `ja` carries dakuten/handakuten.
+    const bases = rows.slice(0, 3).flat();
+    expect(bases).toHaveLength(33);
+    expect(bases[0]).toBe('ሀ');
+    expect(bases[bases.length - 1]).toBe('ፐ');
+    // Every base must be a 1st-order (gəʿəz) glyph — the offset arithmetic
+    // depends on it. A pre-inflected glyph here would corrupt the whole fidel.
+    for (const c of bases) expect((c.codePointAt(0) as number) % 8).toBe(0);
+    expect(new Set(bases).size).toBe(33);
+    expect(rows[rows.length - 1]).toEqual(GEEZ_MODIFIERS);
+  });
+});
+
+describe("Ge'ez vowel-order modifier", () => {
+  it('exposes the 6 non-base vowel orders as modifier keys', () => {
+    // Six, not seven: the 1st order IS the base character, already on the
+    // grid, so a key for it would be a no-op.
+    expect(GEEZ_VOWEL_ORDERS).toHaveLength(6);
+    expect(GEEZ_VOWEL_ORDERS.map((o) => o.offset)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(GEEZ_MODIFIERS).toEqual(['ሁ', 'ሂ', 'ሃ', 'ሄ', 'ህ', 'ሆ']);
+  });
+
+  it('inflects the last character of the buffer through every order', () => {
+    // Signature matches applyKanaModifier: whole text in, whole text out.
+    const forms = GEEZ_VOWEL_ORDERS.map((o) => applyGeezVowelOrder('ለ', o.offset));
+    expect(forms).toEqual(['ሉ', 'ሊ', 'ላ', 'ሌ', 'ል', 'ሎ']);
+  });
+
+  it('derives the full 231-glyph fidel from 33 keys plus 6 modifiers', () => {
+    const bases = getLetterRows('am').slice(0, 3).flat();
+    const inflected = bases.flatMap((b) =>
+      GEEZ_VOWEL_ORDERS.map((o) => applyGeezVowelOrder(b, o.offset)),
+    );
+    // 33 bases already typeable + 33x6 reachable via the modifiers.
+    expect(bases.length + inflected.length).toBe(231);
+    expect(new Set([...bases, ...inflected]).size).toBe(231);
+  });
+
+  it('rewrites only the final character, leaving earlier text intact', () => {
+    expect(applyGeezVowelOrder('ሰላም ለ', 3)).toBe('ሰላም ላ');
+  });
+
+  it('refuses to inflect an already-inflected glyph', () => {
+    // ሉ + 1 would arithmetically give ሊ, and enough taps walk into the next
+    // consonant series entirely.
+    expect(applyGeezVowelOrder('ሉ', 1)).toBeNull();
+    expect(applyGeezVowelOrder('ሊ', 3)).toBeNull();
+  });
+
+  it('refuses non-Ethiopic input, empty text and out-of-range orders', () => {
+    expect(applyGeezVowelOrder('A', 1)).toBeNull();
+    expect(applyGeezVowelOrder('я', 2)).toBeNull();
+    expect(applyGeezVowelOrder('', 1)).toBeNull();
+    expect(applyGeezVowelOrder('ለ', 7)).toBeNull();
+    expect(applyGeezVowelOrder('ለ', -1)).toBeNull();
   });
 });

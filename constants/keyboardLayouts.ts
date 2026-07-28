@@ -142,7 +142,99 @@ const LAYOUTS_BY_LANG: Partial<Record<SupportedLanguage, string[][]>> = {
     ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
     ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
   ],
+  // Swahili is written in plain Latin with no diacritics in standard
+  // orthography — QWERTY unchanged. Listed explicitly rather than left to
+  // the fallback so the language picker and this table stay in sync.
+  sw: [
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+  ],
+  // Bengali — simplified 3-row InScript, same treatment as the Devanagari
+  // (hi) layout above: independent vowel signs (matras) sit on the top two
+  // rows, consonants fill the rest. Bengali matras are standalone combining
+  // codepoints, so they compose by ordinary sequential typing — no modifier
+  // key needed (contrast Ge'ez below, where the vowel is fused into the glyph).
+  bn: [
+    ['ৌ', 'ৈ', 'া', 'ী', 'ূ', 'ব', 'হ', 'গ', 'দ', 'জ', 'ড'],
+    ['ো', 'ে', '্', 'ি', 'ু', 'প', 'র', 'ক', 'ত', 'চ', 'ট'],
+    ['ং', 'ম', 'ন', 'ল', 'স', 'য', 'শ', 'ষ', 'ণ'],
+  ],
+  // Amharic — the 33 base (ግዕዝ / 1st-order) consonants of the Ethiopic
+  // fidel. Typing a base character then a vowel-order key from
+  // GEEZ_VOWEL_ORDERS rewrites it into the fused syllable; see
+  // applyGeezVowelOrder(). A flat grid is not an option here: the full fidel
+  // is 33 x 7 = 231 glyphs, which is neither renderable nor selectable on an
+  // AAC grid by a user with motor impairment.
+  am: [
+    ['ሀ', 'ለ', 'ሐ', 'መ', 'ሠ', 'ረ', 'ሰ', 'ሸ', 'ቀ', 'በ', 'ተ'],
+    ['ቸ', 'ኀ', 'ነ', 'ኘ', 'አ', 'ከ', 'ኸ', 'ወ', 'ዐ', 'ዘ', 'ዠ'],
+    ['የ', 'ደ', 'ጀ', 'ገ', 'ጠ', 'ጨ', 'ጰ', 'ጸ', 'ፀ', 'ፈ', 'ፐ'],
+    // Vowel orders — modifiers, not characters. Same arrangement Japanese
+    // uses for dakuten/handakuten: they transform the fidel already typed.
+    ['ሁ', 'ሂ', 'ሃ', 'ሄ', 'ህ', 'ሆ'],
+  ],
 };
+
+/**
+ * Ge'ez (Ethiopic) vowel orders.
+ *
+ * Amharic is an abugida: every consonant carries an inherent vowel and is
+ * written as one fused glyph per consonant+vowel pair. Unicode lays the
+ * fidel out so each consonant series occupies 8 contiguous codepoints, with
+ * the 7 vowel orders at offsets 0-6 from the base:
+ *
+ *   ሀ U+1200 (ə)  ሁ +1 (u)  ሂ +2 (i)  ሃ +3 (a)  ሄ +4 (e)  ህ +5 (ɨ)  ሆ +6 (o)
+ *
+ * So the transform is arithmetic, not a 231-entry lookup table. `label` is
+ * what the modifier key shows — the order applied to ሀ, which is how Ge'ez
+ * vowel orders are conventionally named and taught.
+ */
+export const GEEZ_VOWEL_ORDERS: Array<{ offset: number; label: string; name: string }> = [
+  { offset: 1, label: 'ሁ', name: 'kaʿəb' },
+  { offset: 2, label: 'ሂ', name: 'salis' },
+  { offset: 3, label: 'ሃ', name: 'rabiʿ' },
+  { offset: 4, label: 'ሄ', name: 'hamis' },
+  { offset: 5, label: 'ህ', name: 'sadis' },
+  { offset: 6, label: 'ሆ', name: 'sabiʿ' },
+];
+
+/** The vowel-order keys as they appear in the layout — mirrors KANA_MODIFIERS. */
+export const GEEZ_MODIFIERS = GEEZ_VOWEL_ORDERS.map((o) => o.label);
+
+/** Offset for a vowel-order key, or null if it is not one. */
+export function geezOffsetFor(key: string): number | null {
+  const hit = GEEZ_VOWEL_ORDERS.find((o) => o.label === key);
+  return hit ? hit.offset : null;
+}
+
+/** Every base consonant offered by the `am` layout, as codepoints. */
+const GEEZ_BASES = new Set(
+  (LAYOUTS_BY_LANG.am ?? []).flat().map((c) => c.codePointAt(0) as number),
+);
+
+/**
+ * Rewrite `char` into the requested Ge'ez vowel order.
+ *
+ * Returns null when `char` is not an Ethiopic base consonant from our
+ * layout — callers treat that as "modifier does not apply" and leave the
+ * buffer alone rather than emitting a wrong glyph. Guarding on the base set
+ * (not just the Ethiopic block) matters: applying an offset to an already-
+ * inflected glyph would silently walk into the next consonant's series.
+ */
+export function applyGeezVowelOrder(text: string, offset: number): string | null {
+  // Signature matches applyKanaModifier(text, modifier) below: take the whole
+  // buffer, return the whole buffer, null when the modifier does not apply.
+  // Both scripts are abugidas needing the same "refine what was just typed"
+  // gesture, so the keyboard can treat them identically.
+  if (!text) return null;
+  if (offset < 0 || offset > 6) return null;
+  const chars = [...text];
+  const last = chars[chars.length - 1];
+  const cp = last?.codePointAt(0);
+  if (cp === undefined || !GEEZ_BASES.has(cp)) return null;
+  return chars.slice(0, -1).join('') + String.fromCodePoint(cp + offset);
+}
 
 export function getLetterRows(lang: SupportedLanguage): string[][] {
   return LAYOUTS_BY_LANG[lang] ?? QWERTY;

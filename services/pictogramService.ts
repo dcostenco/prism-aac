@@ -176,6 +176,32 @@ function saveArasaacMisses() {
   } catch {}
 }
 
+/**
+ * Locales ARASAAC's search endpoint rejects outright with HTTP 400.
+ *
+ * Learned at runtime rather than hardcoded, because the upstream list changes
+ * as ARASAAC adds languages. Measured 2026-07-28: ja, hi, vi, tl, id, am, sw
+ * and bn all 400 — five of those are long-shipped locales, so their users have
+ * never had prediction-bar pictograms and every tile render fired a doomed
+ * request.
+ *
+ * Without this, one 400 is issued PER TOKEN and each one is recorded as an
+ * individual miss, so a single Amharic session produced hundreds of failing
+ * requests. One 400 per locale is enough to know.
+ */
+const arasaacUnsupportedLangs = new Set<string>();
+
+/**
+ * In-flight search per locale.
+ *
+ * The Set above is only consulted AFTER a response lands, so with concurrent
+ * callers — which is the normal case, the prediction bar and precache both
+ * fire in parallel — several requests clear the check before the first 400
+ * returns. Measured in the running app: the Set alone still let a handful
+ * through. Holding subsequent callers on the first probe makes it exactly one
+ * request per locale, which is what the test asserts.
+ */
+const arasaacProbes = new Map<string, Promise<unknown>>();
 function cacheArasaacBlob(id: number, blob: Blob) {
   if (ARASAAC_BLOB_CACHE.size >= MAX_ARASAAC_BLOB_CACHE) {
     const oldest = ARASAAC_BLOB_CACHE.keys().next().value;
@@ -227,17 +253,33 @@ async function fetchArasaacImage(id: number): Promise<Blob | null> {
 
 async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
   const langCode = lang.split('-')[0] || 'en';
+  if (arasaacUnsupportedLangs.has(langCode)) return null;
+  // Wait for any probe already deciding this locale's fate.
+  const probe = arasaacProbes.get(langCode);
+  if (probe) {
+    await probe.catch(() => {});
+    if (arasaacUnsupportedLangs.has(langCode)) return null;
+  }
   const missKey = `${langCode}:${token.toLowerCase()}`;
   if (arasaacMisses.has(missKey)) return null;
 
   const searchT = timeoutSignal(5000);
   let id: number | null = null;
   try {
-    const res = await fetch(`${ARASAAC_API}/pictograms/${langCode}/search/${encodeURIComponent(token)}`, {
+    const req = fetch(`${ARASAAC_API}/pictograms/${langCode}/search/${encodeURIComponent(token)}`, {
       headers: { 'Accept': 'application/json' },
       signal: searchT.signal,
     });
+    // Register before awaiting so a concurrent caller sees it.
+    if (!arasaacProbes.has(langCode)) {
+      arasaacProbes.set(langCode, req);
+      req.catch(() => {}).finally(() => arasaacProbes.delete(langCode));
+    }
+    const res = await req;
     if (!res.ok) {
+      // 400 means the LOCALE is unsupported, not that this word is missing —
+      // remember it so we stop asking for every other token in this language.
+      if (res.status === 400) arasaacUnsupportedLangs.add(langCode);
       arasaacMisses.add(missKey);
       saveArasaacMisses();
       return null;
@@ -323,6 +365,16 @@ export async function getPictogramUrl(
   phrase: string,
   lang: string,
   mode: PictureMode,
+  /**
+   * English source for `phrase`, when the caller has it.
+   *
+   * ARASAAC pictograms are language-neutral IMAGES — only the search term is
+   * localized — so the English word finds the same picture. Without this,
+   * users of the eight locales ARASAAC does not index get no pictogram at all,
+   * and the existing Latin-only fallback cannot help them: it re-searches the
+   * English endpoint using the FOREIGN word ("Kiganja"), which never matches.
+   */
+  englishSource?: string,
 ): Promise<string | null> {
   if (mode === 'off') return null;
   const token = pickHeadWord(phrase);
@@ -334,7 +386,7 @@ export async function getPictogramUrl(
   const existingRequest = IN_FLIGHT.get(key);
   if (existingRequest) return existingRequest;
 
-  const request = resolvePictogramUrl(phrase, lang, mode, token, lowerToken, key);
+  const request = resolvePictogramUrl(phrase, lang, mode, token, lowerToken, key, englishSource);
   IN_FLIGHT.set(key, request);
   try {
     return await request;
@@ -350,6 +402,8 @@ async function resolvePictogramUrl(
   token: string,
   lowerToken: string,
   key: string,
+  /** See getPictogramUrl — the English word for `phrase`, when known. */
+  englishSource?: string,
 ): Promise<string | null> {
   if (SENSITIVE.has(lowerToken)) {
     if (MEM_CACHE.has(key)) return MEM_CACHE.get(key) ?? null;
@@ -402,6 +456,18 @@ async function resolvePictogramUrl(
     if (fullPhrase !== token) blob = await fetchArasaac(fullPhrase, 'en');
     if (!blob) blob = await fetchArasaac(token, 'en');
   }
+  // English-source fallback: the caller told us the English word for this
+  // phrase, so use it. Distinct from the isLatinToken path above, which
+  // gambles that the FOREIGN token might be English-ish; this is the actual
+  // English term and works for Ge'ez and Bengali too.
+  if (!blob && englishSource && lang !== 'en' && lang !== 'en-US') {
+    const enToken = pickHeadWord(englishSource);
+    if (enToken) {
+      const enPhrase = normalize(englishSource);
+      if (enPhrase !== enToken) blob = await fetchArasaac(enPhrase, 'en');
+      if (!blob) blob = await fetchArasaac(enToken, 'en');
+    }
+  }
   if (!blob && mode === 'symbols-ai') {
     blob = await fetchSynaluxAI(phrase, lang);
   }
@@ -413,4 +479,58 @@ async function resolvePictogramUrl(
   const url = URL.createObjectURL(blob);
   memCacheSet(key, url);
   return url;
+}
+
+// ── Pre-cache: download all icons in background for offline use ───────────
+
+let _precacheDone = false;
+
+/**
+ * Pre-download pictograms for all DEFAULT_PHRASES in the user's language.
+ * Runs once per session, non-blocking, low priority. After this completes,
+ * every phrase tile renders instantly offline — no network needed.
+ */
+export async function precacheAllPictograms(
+  lang: string,
+  mode: PictureMode,
+): Promise<void> {
+  if (_precacheDone || mode === 'off') return;
+  _precacheDone = true;
+
+  try {
+    const { DEFAULT_PHRASES } = await import('@/constants/phrases');
+    const { getPhraseText } = await import('@/constants/phraseTranslations');
+
+    let cached = 0;
+    let fetched = 0;
+
+    for (const p of DEFAULT_PHRASES) {
+      const text = getPhraseText(p.id, lang as any, p.text);
+      const token = pickHeadWord(text);
+      if (!token) continue;
+
+      const key = await sha256(`v${STYLE_VERSION}|${lang}|${mode}|${token}`);
+      if (MEM_CACHE.has(key)) { cached++; continue; }
+      const existing = await cacheGet(key);
+      if (existing) { cached++; continue; }
+
+      // Not cached — fetch and store
+      await getPictogramUrl(text, lang, mode, p.text);
+      fetched++;
+
+      // Yield to main thread every 10 fetches
+      if (fetched % 10 === 0) {
+        await new Promise(r => setTimeout(r, 50));
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      console.log(`[Pictogram] Pre-cached ${cached} existing + ${fetched} new icons for ${lang}`);
+    }
+  } catch (e) {
+    // Non-critical — app works without pre-cache, just slower on first tap
+    if (typeof window !== 'undefined') {
+      console.warn('[Pictogram] Pre-cache failed:', e);
+    }
+  }
 }

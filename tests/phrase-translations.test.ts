@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPhraseText } from '@/constants/phraseTranslations';
+import { getPhraseText, hasPhraseTranslation } from '@/constants/phraseTranslations';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 
 describe('Phrase translations — getPhraseText', () => {
@@ -182,4 +182,135 @@ describe('RO→RU translation accuracy regression (May 2026)', () => {
     // without `translated`.
     expect(true).toBe(true); // structural test — see MessageBar.tsx timer useEffect deps
   });
+});
+
+/**
+ * Coverage floors per language.
+ *
+ * Regression guard for a real incident: scripts/translate-corpus.mjs rewrites
+ * this whole file, and a parser bug in its language-extraction regex dropped
+ * the FIRST language listed in every entry. `ro` led almost every row, so it
+ * went 1046 -> 0 while the file still looked healthy — same entry count, same
+ * shape, tsc clean, and 264 unrelated tests green. Nothing caught it except a
+ * translation lookup returning ''.
+ *
+ * These floors are deliberately set at the values in the file when the guard
+ * was added. Raising them as coverage improves is fine; lowering one means a
+ * rewrite lost data and the fix is to restore it, not to relax the number.
+ */
+describe('Phrase translations — per-language coverage floors', () => {
+  const FLOORS: Record<string, number> = {
+    ro: 1455, es: 1472, fr: 1430, pt: 1469, de: 1410, ru: 1509,
+    uk: 1509, ja: 1510, ko: 1510, zh: 1510, ar: 1510, hi: 1510,
+    it: 1452, pl: 1467, he: 1509, nl: 1383, vi: 1496, tl: 1341,
+    tr: 1478, id: 1449, bg: 1510, am: 1512, sw: 1497, bn: 1512,
+  };
+
+  for (const [lang, floor] of Object.entries(FLOORS)) {
+    it(`${lang} has at least ${floor} translated phrases`, () => {
+      const translated = DEFAULT_PHRASES.filter((p) => {
+        // Presence, not truthiness. A deliberate empty string IS a
+        // translation: Bengali has no definite article, so cw-the is '',
+        // exactly as cw-to is '' for ru/uk which have no infinitive particle.
+        // Counting those as untranslated made this floor fail on a fix.
+        if (!hasPhraseTranslation(p.id, lang as never)) return false;
+        return getPhraseText(p.id, lang as never, p.text) !== p.text;
+      }).length;
+      expect(
+        translated,
+        `${lang} dropped to ${translated} (floor ${floor}) — a rewrite likely lost this column`,
+      ).toBeGreaterThanOrEqual(floor);
+    });
+  }
+
+  it('no language column is entirely empty', () => {
+    for (const lang of Object.keys(FLOORS)) {
+      const any = DEFAULT_PHRASES.some((p) => hasPhraseTranslation(p.id, lang as never)
+        && getPhraseText(p.id, lang as never, p.text) !== p.text);
+      expect(any, `${lang} has zero translations — column was wiped`).toBe(true);
+    }
+  });
+});
+
+/**
+ * Escaping integrity.
+ *
+ * Second real incident from the same rewrite pipeline: reading the file
+ * captured string-literal bodies WITHOUT unescaping, and emitting re-escaped
+ * them — so each read→write round trip multiplied backslashes. "J'ai faim"
+ * shipped as "J\'ai faim" (and "Je m\\\'appelle" after two passes) in 107
+ * strings. Coverage floors can't see it: a corrupted value still counts as
+ * translated-and-different-from-English. These assertions can.
+ */
+describe('Phrase translations — escaping integrity', () => {
+  it('no translation value contains a literal backslash', () => {
+    const LANGS = ['ro','es','fr','pt','de','ru','uk','ja','ko','zh','ar','hi','it','pl','he','nl','vi','tl','tr','id','bg','am','sw','bn'];
+    const offenders: string[] = [];
+    for (const p of DEFAULT_PHRASES) {
+      for (const lang of LANGS) {
+        const v = getPhraseText(p.id, lang as never, p.text);
+        if (v.includes('\\')) offenders.push(`${p.id}/${lang}: ${JSON.stringify(v)}`);
+      }
+    }
+    expect(offenders, offenders.slice(0, 5).join('\n')).toEqual([]);
+  });
+
+  it('apostrophe-bearing values survive round trips intact', () => {
+    // French elision — the exact strings corrupted in the incident.
+    expect(getPhraseText('help-need-help', 'fr', "I need help")).toBe("J'ai besoin d'aide");
+    expect(getPhraseText('qt-my-name', 'fr', 'My name is')).toBe("Je m'appelle");
+    // Swahili ng' is a letter (velar nasal), not punctuation.
+    expect(getPhraseText('cw-whisper', 'sw', 'Whisper')).toBe("Nong'ona");
+  });
+});
+
+/**
+ * Script purity.
+ *
+ * Model review of the machine-translated Amharic set surfaced strings with
+ * foreign characters embedded — a Latin word inside Ge'ez ("ምን አ his ያደርጋል"),
+ * an Arabic ط substituted for ጥ, and one tile left as the bare English word
+ * "scarf". A mechanical sweep found two MORE than the review did.
+ *
+ * These are objectively broken regardless of any fluency judgment: a
+ * non-Ge'ez glyph in an Amharic tile renders as the wrong character and is
+ * mispronounced by TTS. Unlike accuracy, this class is cheap to test, so it
+ * should never again reach a user.
+ *
+ * Deliberately NOT applied to Latin-script languages: loanwords there are
+ * legitimate and indistinguishable from leakage by character class alone.
+ */
+describe('Phrase translations — script purity for non-Latin languages', () => {
+  // Product/clinical acronyms that are correct to leave in Latin.
+  const ACRONYM_ALLOWLIST = /\b(AAC|TV|DVD|CD|USB|WC|OK)\b/g;
+
+  const SCRIPTS: Record<string, { native: RegExp; foreign: RegExp; label: string }> = {
+    am: { native: /[ሀ-፿]/, foreign: /[a-zA-Z؀-ۿऀ-ॿঀ-৿]/, label: "Ge'ez" },
+    bn: { native: /[ঀ-৿]/, foreign: /[a-zA-Zሀ-፿؀-ۿऀ-ॿ]/, label: 'Bengali' },
+  };
+
+  for (const [lang, spec] of Object.entries(SCRIPTS)) {
+    it(`${lang}: no foreign-script characters in ${spec.label} translations`, () => {
+      const offenders: string[] = [];
+      for (const p of DEFAULT_PHRASES) {
+        const v = getPhraseText(p.id, lang as never, p.text);
+        if (!v || v === p.text) continue; // untranslated falls back to English
+        const stripped = v.replace(ACRONYM_ALLOWLIST, '');
+        const foreign = stripped.match(new RegExp(spec.foreign.source, 'g'));
+        if (foreign) {
+          offenders.push(`${p.id}: ${JSON.stringify(v)} contains ${JSON.stringify([...new Set(foreign)].join(''))}`);
+        }
+      }
+      expect(offenders, `\n${offenders.join('\n')}`).toEqual([]);
+    });
+
+    it(`${lang}: translations actually use ${spec.label} script`, () => {
+      // Guards the inverse failure: a "translation" that is really English.
+      const notNative = DEFAULT_PHRASES.filter((p) => {
+        const v = getPhraseText(p.id, lang as never, p.text);
+        return v && v !== p.text && !spec.native.test(v);
+      }).map((p) => p.id);
+      expect(notNative, `${notNative.length} entries with no ${spec.label} characters`).toEqual([]);
+    });
+  }
 });

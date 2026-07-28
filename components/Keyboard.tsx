@@ -12,7 +12,7 @@ import { triggerAISubmit } from '@/services/aiChatBridge';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { dispatchToSearch } from '@/services/searchKeyBridge';
-import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS, buildKeyboardRows, KANA_MODIFIERS, applyKanaModifier } from '@/constants/keyboardLayouts';
+import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS, buildKeyboardRows, KANA_MODIFIERS, applyKanaModifier, GEEZ_MODIFIERS, geezOffsetFor, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
 
 // Long-press threshold for caps lock — raised from 500 ms to 1200 ms after
@@ -120,6 +120,18 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       const current = useMessageStore.getState().text;
       const modified = applyKanaModifier(current, char);
       if (modified !== null) setText(modified);
+      return;
+    }
+    // Ge'ez vowel orders work identically: Amharic is an abugida, so ለ + the
+    // ሁ-order key becomes ሉ rather than inserting a second glyph. 33 keys x 7
+    // orders covers the whole 231-character fidel without a 231-key grid.
+    if (GEEZ_MODIFIERS.includes(char)) {
+      const offset = geezOffsetFor(char);
+      if (offset !== null) {
+        const current = useMessageStore.getState().text;
+        const modified = applyGeezVowelOrder(current, offset);
+        if (modified !== null) setText(modified);
+      }
       return;
     }
     appendChar(char);
@@ -315,6 +327,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
           )}
         </div>
       ))}
+
 
       <div className="flex gap-[1px] flex-1" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" data-action="mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>

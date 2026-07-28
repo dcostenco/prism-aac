@@ -188,6 +188,30 @@ describe('SpeechService — Core', () => {
     }
   });
 
+  it('rapid speakWord calls keep only one local resume timer alive', () => {
+    vi.useFakeTimers();
+    try {
+      // Keep the utterances active so the test exercises replacement cleanup
+      // instead of the normal onend cleanup path.
+      (window.speechSynthesis.speak as ReturnType<typeof vi.fn>).mockImplementation(() => {});
+
+      speakWord('first');
+      speakWord('second');
+
+      expect(window.speechSynthesis.cancel).toHaveBeenCalledTimes(2);
+      vi.advanceTimersByTime(10_000);
+      // The second call clears the first call's Safari resume workaround.
+      // Two callbacks here would mean one leaked interval per rapid tap.
+      expect(window.speechSynthesis.resume).toHaveBeenCalledTimes(1);
+
+      stopSpeech();
+      vi.advanceTimersByTime(10_000);
+      expect(window.speechSynthesis.resume).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('stopSpeech calls cancel', () => {
     stopSpeech();
     expect(window.speechSynthesis.cancel).toHaveBeenCalled();

@@ -1,0 +1,861 @@
+{
+  "_README": "Model-generated review findings for machine-translated strings. These are MODEL judgments, NOT native-speaker judgments — they are a prioritized worklist for a human reviewer, not a set of approved corrections. Nothing here has been applied except objective script-corruption repairs (see applied[]).",
+  "reviewedAt": "2026-07-27",
+  "reviewer": "claude subagent per language, 424 highest-stakes strings each (safety/pain/help/refusal/body + core words + UI chrome)",
+  "applied": [
+    {
+      "id": "qt-youre-welcome",
+      "lang": "am",
+      "was": "ምን አ his ያደርጋል",
+      "now": "ምንም አይደለም",
+      "why": "Latin word embedded in Ge'ez — objectively broken"
+    },
+    {
+      "id": "hb-sneeze",
+      "lang": "am",
+      "was": "አስነطስ",
+      "now": "ማስነጠስ",
+      "why": "Arabic ط substituted for Ge'ez ጥ"
+    },
+    {
+      "id": "cl-scarf",
+      "lang": "am",
+      "was": "scarf",
+      "now": "ሻርፕ",
+      "why": "left as bare English"
+    },
+    {
+      "id": "tf-action-figure",
+      "lang": "am",
+      "was": "አክሽን ፊfigure",
+      "now": "አክሽን ፊገር",
+      "why": "half-translated"
+    }
+  ],
+  "languages": {
+    "am": {
+      "total": 34,
+      "critical": 8,
+      "high": 9,
+      "medium": 14,
+      "low": 3,
+      "findings": [
+        {
+          "id": "cw-stop",
+          "english": "Stop",
+          "current": "ቁም",
+          "issue": "ቁም is intransitive 'stand still' (addressee stops their own motion); it does not convey 'stop doing that to me', the refusal/protest sense 'Stop' carries as a core AAC safety word. A user trying to stop unwanted touching or an action against them may not be understood.",
+          "severity": "critical",
+          "suggested": "አቁም"
+        },
+        {
+          "id": "help-stop",
+          "english": "Stop",
+          "current": "ቁም",
+          "issue": "Same core-safety word as cw-stop; ቁም means 'stand still', not the transitive 'cease doing that (to me)' sense needed for a refusal/protest button.",
+          "severity": "critical",
+          "suggested": "አቁም"
+        },
+        {
+          "id": "ac-stop",
+          "english": "Stop",
+          "current": "ቁም",
+          "issue": "Same issue as cw-stop/help-stop: intransitive 'stand still' instead of the transitive refusal sense 'stop that'.",
+          "severity": "critical",
+          "suggested": "አቁም"
+        },
+        {
+          "id": "help-i-do-not-feel-good",
+          "english": "I do not feel good",
+          "current": "ደስ አልተሰማኝም",
+          "issue": "This means 'I am not pleased/happy' (emotional), not 'I do not feel well' (physical wellness). In a help-needs list next to symptom words, this flip could cause a caregiver to read the child as unhappy rather than physically unwell, delaying appropriate response.",
+          "severity": "critical",
+          "suggested": "ደህና አይሰማኝም"
+        },
+        {
+          "id": "help-i-feel-dizzy",
+          "english": "I feel dizzy",
+          "current": "አንገላታኝ",
+          "issue": "አንገላታኝ means 'it troubled/mistreated/harassed me', not dizziness. A genuine medical symptom (dizziness, which can precede fainting) is replaced with an unrelated and alarming concept (being mistreated). Compare hb-dizzy-spell, which correctly uses ማዞር.",
+          "severity": "critical",
+          "suggested": "ማዞር ይሰማኛል"
+        },
+        {
+          "id": "fe-dizzy",
+          "english": "Dizzy",
+          "current": "አንቀጥቅጦኛል",
+          "issue": "This means 'I am trembling/shaking', not dizzy. Same symptom-word error as help-i-feel-dizzy, with a different wrong word — the corpus has two inconsistent, both-wrong translations of 'dizzy'.",
+          "severity": "critical",
+          "suggested": "ራሴ ይዞረኛል"
+        },
+        {
+          "id": "qt-youre-welcome",
+          "english": "You're welcome",
+          "current": "ምን አ his ያደርጋል",
+          "issue": "Corrupted string: contains a bare Latin word 'his' embedded mid-sentence in Ge'ez text, and the remaining text is not coherent Amharic ('what does ... do'). This will mispronounce or fail in TTS and does not mean 'You're welcome'.",
+          "severity": "critical",
+          "suggested": "ምንም አይደለም"
+        },
+        {
+          "id": "hb-sneeze",
+          "english": "Sneeze",
+          "current": "አስነطስ",
+          "issue": "Contains an Arabic letter ط (not Ge'ez) in place of ጥ — a script violation on a health/body word. This will break or mispronounce in TTS.",
+          "severity": "critical",
+          "suggested": "አስነጥስ"
+        },
+        {
+          "id": "help-i-am-sleepy",
+          "english": "I am sleepy",
+          "current": "እ እንቅልፍ መጣብኝ",
+          "issue": "Corrupted text: a stray, disconnected 'እ' character precedes the sentence, likely a generation artifact. Will be spoken as garbage/mispronounced.",
+          "severity": "high",
+          "suggested": "እንቅልፍ መጣብኝ"
+        },
+        {
+          "id": "fe-sleepy",
+          "english": "Sleepy",
+          "current": "እ እንቅልፍ መጥቶኛል",
+          "issue": "Same corruption as help-i-am-sleepy: stray disconnected 'እ' before the sentence.",
+          "severity": "high",
+          "suggested": "እንቅልፍ መጥቶኛል"
+        },
+        {
+          "id": "help-call-my-mom",
+          "english": "Call my mom",
+          "current": "እናቴን ደውልላት",
+          "issue": "ደውልላት is the benefactive 'call [it] for her' (3rd person feminine), not 'call my mom [for me]'. The pronoun agreement is wrong — it tells the listener to phone on behalf of some other 'her', not the speaker. Safety-relevant because this tile is used to summon help.",
+          "severity": "high",
+          "suggested": "እናቴን ደውል"
+        },
+        {
+          "id": "help-call-my-dad",
+          "english": "Call my dad",
+          "current": "አባቴን ደውልለት",
+          "issue": "ደውልለት is benefactive 'call [it] for him' (3rd masc), wrong agreement for a first-person request to phone one's own father. Same class of error as help-call-my-mom.",
+          "severity": "high",
+          "suggested": "አባቴን ደውል"
+        },
+        {
+          "id": "fe-worried",
+          "english": "Worried",
+          "current": "አስቦኛል",
+          "issue": "አስቦኛል means roughly 'it occurred to me / made me think', not 'worried'. The correct anxious/worried sense (ተጨንቄአለሁ) is already used correctly for the adjacent 'Anxious' and 'Stressed' tiles, making this one an outlier wrong-sense error for a closely related feeling.",
+          "severity": "high",
+          "suggested": "ተጨንቄአለሁ"
+        },
+        {
+          "id": "cw-let",
+          "english": "Let",
+          "current": "ተው",
+          "issue": "ተው actually means 'Stop it / leave it / don't' (imperative of 'to abandon'), which is nearly the opposite sense of permissive 'Let' (as in 'let me...'). This is a foundational core word combined into many generated sentences, so the error propagates. Note qt-never-mind also correctly uses ተው for its own (different) meaning, confirming ተው is not 'let'.",
+          "severity": "high",
+          "suggested": "ፍቀድ"
+        },
+        {
+          "id": "fe-sad",
+          "english": "Sad",
+          "current": "አዛን",
+          "issue": "አዛን is not a standard, grammatically complete Amharic word (neither a valid adjective nor a conjugated verb) — it reads as incomplete/garbled. 'Sad' is a foundational emotion word for an AAC device and this entry is unusable as spoken output.",
+          "severity": "high",
+          "suggested": "አዝኛለሁ"
+        },
+        {
+          "id": "cw-stay",
+          "english": "Stay",
+          "current": "ተቀመጥ",
+          "issue": "ተቀመጥ specifically means 'Sit down', a different physical instruction than 'Stay' (remain in place, regardless of standing/sitting). Mixing up a mobility instruction like this can cause real confusion about what is being asked.",
+          "severity": "high",
+          "suggested": "ቀር"
+        },
+        {
+          "id": "hb-bruise",
+          "english": "Bruise",
+          "current": "መላላት",
+          "issue": "መላላት means 'to become loose/slack', unrelated to a bruise. This is an inaccurate medical/body-injury term.",
+          "severity": "high",
+          "suggested": "ጥቁር ምት"
+        },
+        {
+          "id": "fe-numb",
+          "english": "Numb",
+          "current": "ደንግዟል",
+          "issue": "ደንግዟል is from 'to be startled/shocked/dazed', not the loss-of-sensation meaning of 'numb'. Body-sensation word mismatch.",
+          "severity": "medium",
+          "suggested": "ደንዝዞኛል"
+        },
+        {
+          "id": "fe-ticklish",
+          "english": "Ticklish",
+          "current": "ያከክኛል",
+          "issue": "This is identical to the translation used for fe-itchy ('it itches me'), collapsing two distinct sensations (itchy vs. ticklish) into one, which is the wrong sense for 'ticklish'.",
+          "severity": "medium",
+          "suggested": "ይዳፈጠኛል"
+        },
+        {
+          "id": "help-i-am-confused",
+          "english": "I am confused",
+          "current": "ተረብሻለሁ",
+          "issue": "ተረብሻለሁ means 'I am disturbed/upset/agitated', not 'confused'. The corpus already has the correct word for confused (ግራ ተጋብቻለሁ) at fe-confused, making this an inconsistent wrong-sense pick for the same concept.",
+          "severity": "medium",
+          "suggested": "ግራ ገብቶኛል"
+        },
+        {
+          "id": "help-call-the-nurse",
+          "english": "Call the nurse",
+          "current": "ነርሷን ጥራ",
+          "issue": "ነርሷን carries a 3rd-person-feminine possessive ('her nurse'), not the intended generic/definite 'the nurse'. Adds a confusing, unintended possessive relationship on a safety-relevant call-for-help tile.",
+          "severity": "medium",
+          "suggested": "ነርሱን ጥራ"
+        },
+        {
+          "id": "help-my-battery-is-low",
+          "english": "My battery is low",
+          "current": "ባታሪው አልቋል",
+          "issue": "ባታሪው means 'the battery' (definite article), dropping the possessive 'my'. Ambiguous whose battery is being reported dead on a device the user relies on to communicate.",
+          "severity": "medium",
+          "suggested": "ባትሪዬ አልቋል"
+        },
+        {
+          "id": "help-i-need-a-hug",
+          "english": "I need a hug",
+          "current": "ማቀፍ እፈልጋለሁ",
+          "issue": "ማቀፍ is the infinitive/gerund 'to hug/embrace' with no indication of direction; as phrased this can read as 'I want to hug [someone]' rather than 'I want to be hugged'. Ambiguous agency on a needs/comfort request.",
+          "severity": "medium",
+          "suggested": "እቅፍ እፈልጋለሁ"
+        },
+        {
+          "id": "help-hold-my-hand",
+          "english": "Hold my hand",
+          "current": "እጄን ሒዘኝ",
+          "issue": "ሒዘኝ is not a standard Amharic verb form (likely a corrupted/misspelled form of 'ያዘኝ'/'ያዝልኝ'). Will be mispronounced or fail to convey the request.",
+          "severity": "medium",
+          "suggested": "እጄን ያዝልኝ"
+        },
+        {
+          "id": "help-watch-me",
+          "english": "Watch me",
+          "current": "እየኝ",
+          "issue": "Likely misspelled imperative-plus-object; the standard form combining the imperative 'እይ' (watch/see) with the object suffix '-ኝ' (me) is 'እይኝ', not 'እየኝ'.",
+          "severity": "medium",
+          "suggested": "እይኝ"
+        },
+        {
+          "id": "help-one-at-a-time",
+          "english": "One at a time",
+          "current": "በአንድ ጊዜ አንድ",
+          "issue": "Literal, non-idiomatic calque ('at one time, one') that is not how a spoken Amharic request for turn-taking is phrased; a listener may not parse it as 'one at a time'.",
+          "severity": "medium",
+          "suggested": "አንድ በአንድ"
+        },
+        {
+          "id": "help-break",
+          "english": "Take a break",
+          "current": "ዕረፍት",
+          "issue": "This is only the bare noun 'break/rest', dropping the verb — it says 'Break', not the actionable request 'Take a break'. Compare help-i-need-a-break, which correctly phrases the full request.",
+          "severity": "medium",
+          "suggested": "ዕረፍት ላድርግ"
+        },
+        {
+          "id": "fe-cold-inside",
+          "english": "Cold inside",
+          "current": "ብርድ ይሰማኛል",
+          "issue": "This is identical to how literal physical cold would be phrased (same as help-i-am-cold's meaning), losing the metaphorical/emotional 'inside' distinction. A caregiver may think the user is physically cold and needs a blanket rather than emotionally distressed.",
+          "severity": "medium",
+          "suggested": "ውስጤ በርዷል"
+        },
+        {
+          "id": "dw-helpful",
+          "english": "Helpful",
+          "current": "ረዳት",
+          "issue": "ረዳት is the noun 'helper/assistant', not the adjective 'helpful' — this duplicates pp-helper ('Helper') exactly, losing the distinct descriptive sense of 'Helpful'.",
+          "severity": "medium",
+          "suggested": "አጋዥ"
+        },
+        {
+          "id": "fe-loved",
+          "english": "Loved",
+          "current": "የተወደድኩ",
+          "issue": "This is a relative-clause fragment ('...who is loved') that needs a following head noun; used standalone as a feeling-word it is grammatically incomplete.",
+          "severity": "medium",
+          "suggested": "ተወዳጅ ነኝ"
+        },
+        {
+          "id": "ui:good_night",
+          "english": "Good night",
+          "current": "መልካም ምሽት",
+          "issue": "Literally 'pleasant evening', which reads as 'Good evening' rather than the sleep-time farewell 'Good night'. Inconsistent with qt-good-night, which correctly uses ደህና እደር for the same English string.",
+          "severity": "medium",
+          "suggested": "ደህና እደር"
+        },
+        {
+          "id": "cw-right-now",
+          "english": "Right now",
+          "current": "አሁን",
+          "issue": "This is plain 'Now', identical to how 'Now' alone would be said, dropping the urgency/emphasis 'Right' adds. Inconsistent with ti-right-now, which correctly uses the emphatic አሁኑኑ for the same English phrase.",
+          "severity": "low",
+          "suggested": "አሁኑኑ"
+        },
+        {
+          "id": "cw-everyone",
+          "english": "Everyone",
+          "current": "ሁሉ ሰው",
+          "issue": "Missing the emphatic/agreement marker ም that standard Amharic 'everyone' takes (ሁሉም ሰው); as written it reads as an unnatural 'all person'.",
+          "severity": "low",
+          "suggested": "ሁሉም ሰው"
+        },
+        {
+          "id": "cw-think",
+          "english": "Think",
+          "current": "ይምስለኛል",
+          "issue": "Spelling typo: should be ይመስለኛል ('it seems to me'); as written the vowel is wrong.",
+          "severity": "low",
+          "suggested": "ይመስለኛል"
+        }
+      ]
+    },
+    "sw": {
+      "total": 40,
+      "critical": 7,
+      "high": 14,
+      "medium": 15,
+      "low": 4,
+      "findings": [
+        {
+          "id": "hb-sick",
+          "english": "I feel sick",
+          "current": "Nisikia vibaya",
+          "issue": "Missing reflexive '-ji-' morpheme. 'Sikia' without 'ji' means 'hear/perceive', so as written this reads as 'I hear badly' (a hearing complaint), not 'I feel sick'. Compare correctly-formed siblings 'Najisikia vizuri' and 'Sijisikii vizuri' elsewhere in this same file.",
+          "severity": "critical",
+          "suggested": "Najisikia vibaya"
+        },
+        {
+          "id": "fe-sick",
+          "english": "Sick",
+          "current": "Magonjwa",
+          "issue": "'Magonjwa' is the plural noun 'diseases/illnesses', not the adjective 'sick'. A user tapping this to say how they feel would instead announce 'diseases'. Correct sibling entry 'hfs-sick' already uses the right word ('Mgonjwa'), confirming this one is wrong.",
+          "severity": "critical",
+          "suggested": "Mgonjwa"
+        },
+        {
+          "id": "hb-knee",
+          "english": "Knee",
+          "current": "Lutagamba",
+          "issue": "Not a Swahili word; unintelligible. The correct word for knee is 'Goti'. A user pointing to knee pain would be unable to communicate the location at all.",
+          "severity": "critical",
+          "suggested": "Goti"
+        },
+        {
+          "id": "hb-shot",
+          "english": "Shot",
+          "current": "Sintano",
+          "issue": "Not a Swahili word (letter substitution). The correct medical term for injection/shot is 'Sindano'. Garbled medical vocabulary.",
+          "severity": "critical",
+          "suggested": "Sindano"
+        },
+        {
+          "id": "hb-cut",
+          "english": "Cut",
+          "current": "Mshororo",
+          "issue": "Not a recognized Swahili word for a wound/cut. Correct terms are 'Jeraha' (wound) or 'Mkato'. A user reporting an injury with this word would not be understood.",
+          "severity": "critical",
+          "suggested": "Jeraha"
+        },
+        {
+          "id": "hb-bruise",
+          "english": "Bruise",
+          "current": "Pasi",
+          "issue": "'Pasi' means a clothes iron (or a pass/permit) in Swahili — completely unrelated to 'bruise'. Wrong-sense mistranslation on a medical/injury word.",
+          "severity": "critical",
+          "suggested": "Mchubuko"
+        },
+        {
+          "id": "hb-dull-pain",
+          "english": "Dull pain",
+          "current": "Maumivu ya mbali",
+          "issue": "'Mbali' means 'far/distant', so this literally reads as 'pain that is far away', not 'dull pain'. Pain-character words are safety-critical for a caregiver or clinician triaging the complaint (sharp vs. dull matters medically); this materially miscommunicates.",
+          "severity": "critical",
+          "suggested": "Maumivu hafifu"
+        },
+        {
+          "id": "help-i-am-scared",
+          "english": "I am scared",
+          "current": "Nogopa",
+          "issue": "Malformed verb — missing the present-tense subject prefix vowel. Should be 'Naogopa' (ni-na-ogopa contracted). 'Nogopa' is not a standard word and would sound wrong/unclear spoken aloud for a fear/safety disclosure.",
+          "severity": "high",
+          "suggested": "Naogopa"
+        },
+        {
+          "id": "help-watch-me",
+          "english": "Watch me",
+          "current": "Nitegee macho",
+          "issue": "'Kutega macho' is not the standard idiom for 'watch me' (kutega means to set a trap/lie in wait). This is a help-needs/safety-adjacent request (e.g. near stairs or water) and the non-standard phrasing risks not being understood as a supervision request.",
+          "severity": "high",
+          "suggested": "Niangalie"
+        },
+        {
+          "id": "qt-hi",
+          "english": "Hi",
+          "current": "Sasa",
+          "issue": "'Sasa' means 'now', not 'Hi'. Spoken out of context by a non-speaking user this would sound like a non-sequitur ('Now.') rather than a greeting, and could confuse the listener.",
+          "severity": "high",
+          "suggested": "Vipi"
+        },
+        {
+          "id": "qt-hey",
+          "english": "Hey",
+          "current": "Eti",
+          "issue": "'Eti' means 'so-called/allegedly' (used to express doubt or reported speech), not a greeting. Clear mistranslation of a core social-opener word.",
+          "severity": "high",
+          "suggested": "Vipi"
+        },
+        {
+          "id": "qt-happy-birthday",
+          "english": "Happy birthday",
+          "current": "Herimfano wa kuzaliwa",
+          "issue": "Garbled/non-word — not real Swahili. Correct phrase is 'Heri ya kuzaliwa'. TTS would speak gibberish on a socially important phrase.",
+          "severity": "high",
+          "suggested": "Heri ya kuzaliwa"
+        },
+        {
+          "id": "qt-i-am-proud-of-you",
+          "english": "I am proud of you",
+          "current": "Ninakujunia",
+          "issue": "Garbled/non-word — missing syllables from 'jivunia'. Correct form is 'Ninakujivunia'.",
+          "severity": "high",
+          "suggested": "Ninakujivunia"
+        },
+        {
+          "id": "fe-warm-inside",
+          "english": "Warm inside",
+          "current": "Amani moyoni",
+          "issue": "'Amani moyoni' means 'peace in the heart', not 'warm inside' — wrong sense entirely. The parallel entry 'fe-cold-inside' correctly uses 'Baridi moyoni' (cold-in-heart), proving the intended pattern; this one breaks it.",
+          "severity": "high",
+          "suggested": "Joto moyoni"
+        },
+        {
+          "id": "hb-wrist",
+          "english": "Wrist",
+          "current": "Kipundo cha mkono",
+          "issue": "Likely typo for 'Kifundo cha mkono'. 'Kipundo' is not standard. The correctly-formed sibling entry 'hb-ankle' ('Kifundo cha mguu') confirms the intended pattern and that this one is wrong.",
+          "severity": "high",
+          "suggested": "Kifundo cha mkono"
+        },
+        {
+          "id": "hb-heel",
+          "english": "Heel",
+          "current": "Kisvisvi",
+          "issue": "Not a Swahili word. The correct term is 'Kisigino'.",
+          "severity": "high",
+          "suggested": "Kisigino"
+        },
+        {
+          "id": "ac-nod",
+          "english": "Nod",
+          "current": "Inua kichwa",
+          "issue": "'Inua kichwa' means 'raise/lift the head' — the wrong action (and roughly opposite motion) for a nod. As an action-vocabulary/instruction word this would teach or trigger the wrong physical gesture.",
+          "severity": "high",
+          "suggested": "Tikisa kichwa"
+        },
+        {
+          "id": "cw-tell",
+          "english": "Tell",
+          "current": "Mbie",
+          "issue": "Not a standalone Swahili word — looks like a truncated fragment of '-mbie' (as in 'Niambie' = tell me). The correct core-verb citation form is 'Ambia'.",
+          "severity": "high",
+          "suggested": "Ambia"
+        },
+        {
+          "id": "ui:qc_22",
+          "english": "It",
+          "current": "Ili",
+          "issue": "'Ili' means 'in order to/so that' (a conjunction) — a completely different word class from the pronoun 'It'. Since this is a composable core word meant to combine with other tiles, this substitution can produce nonsensical output sentences.",
+          "severity": "high",
+          "suggested": "Hiki"
+        },
+        {
+          "id": "cw-my",
+          "english": "My",
+          "current": "Mimi",
+          "issue": "'Mimi' means 'I/me' (subject/object pronoun), not the possessive 'my'. This is a core building-block word combined with nouns to form possession (e.g. 'my book'); using the wrong pronoun breaks sentence generation. Every sibling possessive in this file ('Your'=Yako, 'His'=Yake, 'Mine'=Yangu, 'Ours'=Yetu...) correctly uses the possessive stem — this is the one glaring exception.",
+          "severity": "high",
+          "suggested": "Yangu"
+        },
+        {
+          "id": "tc-noon",
+          "english": "Noon",
+          "current": "Asubuhi na mapema",
+          "issue": "This means 'early morning', the opposite end of the day from 'Noon'. A user indicating midday would instead communicate early morning — a functionally serious error for scheduling/time communication.",
+          "severity": "high",
+          "suggested": "Adhuhuri"
+        },
+        {
+          "id": "help-too-bright",
+          "english": "Too bright",
+          "current": "Mwanga sana",
+          "issue": "'Mwanga' (light, a noun) followed directly by 'sana' (very) is not a grammatical descriptor — it lacks a verb/adjective. Sensory-overload words should be unambiguous.",
+          "severity": "medium",
+          "suggested": "Mwanga mkali sana"
+        },
+        {
+          "id": "qt-sorry",
+          "english": "Sorry",
+          "current": "Pole",
+          "issue": "'Pole' expresses sympathy for someone else's misfortune ('sorry to hear that'), not an apology for one's own action. 'Sorry' as a standalone social tile is typically used to apologize, for which 'Samahani' is correct (already used elsewhere for 'Excuse me').",
+          "severity": "medium",
+          "suggested": "Samahani"
+        },
+        {
+          "id": "qt-awesome",
+          "english": "Awesome",
+          "current": "Kinafuraisha",
+          "issue": "Misspelled — missing 'h'. The real word is 'Kinafurahisha' (it is delightful).",
+          "severity": "medium",
+          "suggested": "Kinafurahisha"
+        },
+        {
+          "id": "qt-wonderful",
+          "english": "Wonderful",
+          "current": "Kustaajabisha",
+          "issue": "Bare infinitive verb ('to be amazing') used where an exclamatory adjective is expected — non-idiomatic register for a reaction word.",
+          "severity": "medium",
+          "suggested": "Nzuri sana"
+        },
+        {
+          "id": "qt-amazing",
+          "english": "Amazing",
+          "current": "Kushangaza",
+          "issue": "Same issue as 'Wonderful' — bare infinitive verb form used as an exclamation, not idiomatic.",
+          "severity": "medium",
+          "suggested": "Cha ajabu"
+        },
+        {
+          "id": "fe-calm",
+          "english": "Calm",
+          "current": "Mstahimilivu",
+          "issue": "'Mstahimilivu' means 'patient/tolerant/long-suffering', not 'calm'. Wrong sense of a near-synonym.",
+          "severity": "medium",
+          "suggested": "Mtulivu"
+        },
+        {
+          "id": "fe-empty",
+          "english": "Empty",
+          "current": "Mupu",
+          "issue": "Not a standard Swahili word — missing the 't'. Correct is 'Mtupu'.",
+          "severity": "medium",
+          "suggested": "Mtupu"
+        },
+        {
+          "id": "fe-overwhelmed",
+          "english": "Overwhelmed",
+          "current": "Imezidi uwezo",
+          "issue": "Missing the object marker '-ni-' (me). As written it reads as 'it has exceeded ability' without specifying whose — ambiguous. Compare the correctly-formed sibling 'help-i-am-overwhelmed' = 'Imenizidi nguvu'.",
+          "severity": "medium",
+          "suggested": "Imenizidi uwezo"
+        },
+        {
+          "id": "hb-lips",
+          "english": "Lips",
+          "current": "Mdomo",
+          "issue": "Identical to the translation already used for 'Mouth' ('hb-mouth' = 'Mdomo'), collapsing two distinct body-part tiles into one word. The distinct plural form for lips is 'Midomo'.",
+          "severity": "medium",
+          "suggested": "Midomo"
+        },
+        {
+          "id": "hb-knuckle",
+          "english": "Knuckle",
+          "current": "Kipigo cha kidole",
+          "issue": "'Kipigo' means 'a blow/strike' (from kupiga, to hit) — not 'joint'. Wrong word. The correct construction parallels 'Kifundo cha mguu' (ankle) / should-be 'Kifundo cha mkono' (wrist): 'Kifundo cha kidole'.",
+          "severity": "medium",
+          "suggested": "Kifundo cha kidole"
+        },
+        {
+          "id": "hb-muscle",
+          "english": "Muscle",
+          "current": "Mmisuli",
+          "issue": "Misspelled — doubled 'm'. Correct spelling is 'Misuli'.",
+          "severity": "medium",
+          "suggested": "Misuli"
+        },
+        {
+          "id": "we-snowy",
+          "english": "Snowy",
+          "current": "Barafu",
+          "issue": "'Barafu' means 'ice', not 'snow'. Wrong sense of a related weather word — the correct word for snow is 'Theluji'.",
+          "severity": "medium",
+          "suggested": "Yenye theluji"
+        },
+        {
+          "id": "cw-someone",
+          "english": "Someone",
+          "current": "Kuna mtu",
+          "issue": "'Kuna mtu' is a full existential clause ('there is a person / someone is here'), not a composable pronoun. As a core word meant to combine with other tiles it will not produce grammatical sentences.",
+          "severity": "medium",
+          "suggested": "Mtu fulani"
+        },
+        {
+          "id": "cw-whose",
+          "english": "Whose",
+          "current": "Nani",
+          "issue": "'Nani' means 'Who', duplicating the separate 'Who' tile and losing the distinct possessive-question meaning of 'Whose'.",
+          "severity": "medium",
+          "suggested": "Ya nani"
+        },
+        {
+          "id": "fs-granola",
+          "english": "Granola bar",
+          "current": "Pipi ya nafaka",
+          "issue": "Translates to 'grain candy', recategorizing a granola bar as candy — a real food-category mismatch that matters if the tile is used to communicate dietary choices.",
+          "severity": "medium",
+          "suggested": "Baa ya nafaka"
+        },
+        {
+          "id": "cw-it",
+          "english": "It",
+          "current": "Kitu hiki",
+          "issue": "Two words ('this thing') for what should be a single composable core pronoun, adding unnecessary word-count cost for the AAC user versus a shorter form.",
+          "severity": "low",
+          "suggested": "Hiki"
+        },
+        {
+          "id": "cw-end",
+          "english": "End",
+          "current": "Mwisho",
+          "issue": "'Mwisho' is a noun ('the end'), inconsistent with sibling core-verbs in the same category that use bare verb stems (Anza, Maliza, Baki...). Part-of-speech mismatch within a verb tile set.",
+          "severity": "low",
+          "suggested": "Komesha"
+        },
+        {
+          "id": "ui:qc_23",
+          "english": "That",
+          "current": "Lile",
+          "issue": "Inconsistent noun-class demonstrative choice versus the other core 'That' tile ('cw-that' = 'Ile'). Not wrong in isolation, but two different forms for the same core word risks confusing users learning the board.",
+          "severity": "low",
+          "suggested": "Ile"
+        },
+        {
+          "id": "fe-i-have-had-enough",
+          "english": "I have had enough",
+          "current": "Yamenitosha",
+          "issue": "Uses the class-6 plural subject prefix 'Ya-' ('they have sufficed me') without a specific plural referent. The generic, referent-free idiom uses class 9 agreement instead.",
+          "severity": "low",
+          "suggested": "Imenitosha"
+        }
+      ]
+    },
+    "bn": {
+      "total": 25,
+      "critical": 2,
+      "high": 4,
+      "medium": 7,
+      "low": 12,
+      "findings": [
+        {
+          "id": "help-thirsty",
+          "english": "I am thirsty",
+          "current": "চেষ্টা পেয়েছে",
+          "issue": "Wrong word entirely: চেষ্টা means 'attempt/try', not thirst. A thirsty user pressing this tile would say something meaningless ('[I] have received an attempt') instead of communicating a basic physiological need. The set already has the correct word elsewhere (fe-thirsty uses তৃষ্ণা পেয়েছে).",
+          "severity": "critical",
+          "suggested": "তৃষ্ণা পেয়েছে"
+        },
+        {
+          "id": "hb-burning",
+          "english": "Burning",
+          "current": "জলাপোড়া",
+          "issue": "Broken conjunct corrupts the word. The intended term is জ্বালাপোড়া (burning/stinging sensation); as written it parses as জল ('water') + garbled remainder, producing a nonsensical or misleading symptom report in a health context.",
+          "severity": "critical",
+          "suggested": "জ্বালাপোড়া করছে"
+        },
+        {
+          "id": "qt-youre-welcome",
+          "english": "You're welcome",
+          "current": "স্বাগতম",
+          "issue": "স্বাগতম means 'Welcome' (as in greeting someone's arrival), not the conversational response to 'thank you'. Wrong sense of a polysemous concept — a speaker would sound like they're welcoming a guest, not acknowledging thanks.",
+          "severity": "high",
+          "suggested": "কোনো ব্যাপার না"
+        },
+        {
+          "id": "hb-hand",
+          "english": "Hand",
+          "current": "হাত",
+          "issue": "Both 'Hand' (hb-hand) and 'Arm' (hb-arm) are translated identically as হাত, making it impossible for the AAC user to distinguish which body part is injured/hurting. In a health-body category used for injury/pain reporting, this ambiguity can materially delay accurate first aid or medical assessment.",
+          "severity": "high",
+          "suggested": "হাত (keep for Hand; give Arm its own word, see hb-arm)"
+        },
+        {
+          "id": "hb-arm",
+          "english": "Arm",
+          "current": "হাত",
+          "issue": "Duplicate of hb-hand's translation. 'Arm' and 'Hand' become indistinguishable when spoken aloud, undermining precise injury/pain communication for a non-speaking user.",
+          "severity": "high",
+          "suggested": "বাহু"
+        },
+        {
+          "id": "hb-ankle",
+          "english": "Ankle",
+          "current": "পায়ের গোঁড়ালি",
+          "issue": "Essentially duplicates hb-heel's translation (গোড়ালি = heel). Bengali has a distinct standard word for ankle (টাখনু); as translated, a user reporting ankle pain would sound like they mean their heel, risking miscommunication about the injury site.",
+          "severity": "high",
+          "suggested": "টাখনু"
+        },
+        {
+          "id": "fe-ashamed",
+          "english": "Ashamed",
+          "current": "অনুশোচিত",
+          "issue": "অনুশোচিত means 'remorseful/regretful', which is the emotion of guilt, not shame. The set already has a separate word for guilt (fe-guilty = দোষী), so this mistranslation conflates two distinct feelings a child needs to differentiate.",
+          "severity": "medium",
+          "suggested": "লজ্জা পাচ্ছি"
+        },
+        {
+          "id": "fe-loved",
+          "english": "Loved",
+          "current": "আদুরে লাগছে",
+          "issue": "আদুরে লাগছে means 'feeling cute/pampered/spoiled', not 'feeling loved'. Wrong sense — an important affection/attachment word rendered as something closer to being fussed over.",
+          "severity": "medium",
+          "suggested": "ভালোবাসা পাচ্ছি"
+        },
+        {
+          "id": "fe-mixed-up",
+          "english": "Mixed up",
+          "current": "গোলমাল",
+          "issue": "গোলমাল means 'commotion/chaos/trouble', not the internal feeling of being mentally mixed-up/muddled. Wrong sense for an emotional-state word.",
+          "severity": "medium",
+          "suggested": "এলোমেলো লাগছে"
+        },
+        {
+          "id": "fe-sad",
+          "english": "Sad",
+          "current": "দুঃখিত",
+          "issue": "দুঃখিত is used in everyday speech primarily to mean 'sorry' (apology), not the standalone feeling of sadness. A child tapping this to express sadness risks sounding like they are apologizing instead.",
+          "severity": "medium",
+          "suggested": "মন খারাপ"
+        },
+        {
+          "id": "qt-excuse-me",
+          "english": "Excuse me",
+          "current": "শুনুন",
+          "issue": "শুনুন is the আপনি-level (formal) imperative, inconsistent with the তুমি-level honorific used throughout the rest of quick-talk (দাঁড়াও, এসো, কেমন আছো?, etc.). Honorific level must stay consistent across the set.",
+          "severity": "medium",
+          "suggested": "শোনো"
+        },
+        {
+          "id": "hb-medicine",
+          "english": "Medicine",
+          "current": "ঔষধ",
+          "issue": "ঔষধ is the সাধু (literary) spelling. These strings must use চলিত (colloquial/spoken) register; the everyday spoken form is ওষুধ.",
+          "severity": "medium",
+          "suggested": "ওষুধ"
+        },
+        {
+          "id": "help-i-need-a-hug",
+          "english": "I need a hug",
+          "current": "জড়িয়ে ধরা চাই",
+          "issue": "Ambiguous direction — reads as 'wanting to embrace [something/someone]' rather than 'wanting to be hugged'. Inconsistent with the directed-imperative pattern used for the same kind of physical-comfort request elsewhere in the set (help-hold-my-hand = আমার হাত ধরো).",
+          "severity": "medium",
+          "suggested": "আমাকে জড়িয়ে ধরো"
+        },
+        {
+          "id": "help-i-am-ready",
+          "english": "I am ready",
+          "current": "রেডি",
+          "issue": "Drops the first-person copula entirely (just the loanword 'ready' with no verb), inconsistent with the sibling pattern used two rows above for the same status-phrase type (help-i-am-okay = ঠিক আছি). Reads as a bare label rather than a first-person statement.",
+          "severity": "low",
+          "suggested": "আমি রেডি"
+        },
+        {
+          "id": "help-i-am-not-ready",
+          "english": "I am not ready",
+          "current": "রেডি না",
+          "issue": "Same first-person-marking gap as help-i-am-ready; inconsistent with help-i-am-not-okay (ঠিক নেই).",
+          "severity": "low",
+          "suggested": "আমি রেডি না"
+        },
+        {
+          "id": "cw-not-enough",
+          "english": "Not enough",
+          "current": "যথেষ্ট নয়",
+          "issue": "নয় is a more formal/written negation form. চলিত (spoken) register calls for না.",
+          "severity": "low",
+          "suggested": "যথেষ্ট না"
+        },
+        {
+          "id": "fe-thankful",
+          "english": "Thankful",
+          "current": "ধন্যবাদ জানানোর মতো",
+          "issue": "Needlessly wordy (literally 'like [something worth] expressing thanks for') for a single-word feeling tile; costs the AAC user extra time per use and reads awkwardly rather than as a felt emotion.",
+          "severity": "low",
+          "suggested": "কৃতজ্ঞ"
+        },
+        {
+          "id": "hb-bruise",
+          "english": "Bruise",
+          "current": "কালো দাগ",
+          "issue": "Literally 'black mark/stain', which is ambiguous with a dirt stain or discoloration rather than clearly indicating a bruise from impact. The more specific and commonly understood colloquial term for bruise is not used.",
+          "severity": "low",
+          "suggested": "কালশিটে দাগ"
+        },
+        {
+          "id": "help-i-need-my-mom",
+          "english": "I need my mom",
+          "current": "মা কে চাই",
+          "issue": "Object marker কে should be suffixed directly to the noun (মাকে), as correctly done in help-call-my-mom (আমার মাকে ডাকো). Spacing it out is a script/orthography inconsistency across otherwise-identical constructions.",
+          "severity": "low",
+          "suggested": "মাকে চাই"
+        },
+        {
+          "id": "help-i-need-my-dad",
+          "english": "I need my dad",
+          "current": "বাবা কে চাই",
+          "issue": "Same object-marker spacing inconsistency as help-i-need-my-mom.",
+          "severity": "low",
+          "suggested": "বাবাকে চাই"
+        },
+        {
+          "id": "help-i-need-my-teacher",
+          "english": "I need my teacher",
+          "current": "টিচার কে চাই",
+          "issue": "Same object-marker spacing inconsistency as help-i-need-my-mom.",
+          "severity": "low",
+          "suggested": "টিচারকে চাই"
+        },
+        {
+          "id": "help-where-is-my-aac",
+          "english": "Where is my AAC",
+          "current": "আমার AAC কোথায়?",
+          "issue": "Retains the Latin acronym 'AAC' embedded in an otherwise Bengali sentence, violating the script rule (Bengali script throughout, no transliteration/Latin characters).",
+          "severity": "low",
+          "suggested": "আমার এএসি কোথায়?"
+        },
+        {
+          "id": "ui:qc_7",
+          "english": "Look",
+          "current": "দেখা",
+          "issue": "Verbal-noun form ('seeing'), inconsistent with sibling quick-chat root words in the same row that use imperative forms (qc_6 Go = যাও, qc_10 Put = রাখো, qc_11 Turn = ঘোরাও). Mixed forms make user-built sentences read unevenly.",
+          "severity": "low",
+          "suggested": "দেখো"
+        },
+        {
+          "id": "ui:qc_8",
+          "english": "Make",
+          "current": "বানানো",
+          "issue": "Same verbal-noun vs. imperative inconsistency as ui:qc_7.",
+          "severity": "low",
+          "suggested": "বানাও"
+        },
+        {
+          "id": "ui:qc_9",
+          "english": "Get",
+          "current": "নেওয়া",
+          "issue": "Same verbal-noun vs. imperative inconsistency as ui:qc_7.",
+          "severity": "low",
+          "suggested": "নাও"
+        }
+      ]
+    }
+  },
+  "totals": {
+    "flagged": 99,
+    "critical": 17,
+    "high": 27
+  }
+}
