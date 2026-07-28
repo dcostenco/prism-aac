@@ -11,6 +11,7 @@ import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
+import { englishSourceFor } from '@/constants/reverseTranslation';
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { PROVIDER_ICONS, PROVIDER_LABELS } from '@/services/sendToContact';
@@ -157,7 +158,14 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
 
   useEffect(() => {
     let cancelled = false;
-    getPictogramUrl(word, language, pictureMode)
+    // ARASAAC has no search index for ja/hi/vi/tl/id/am/sw/bn and answers 400,
+    // so searching the localized word there returns nothing and the tile shows
+    // an empty box. The pictures are language-neutral — only the search term is
+    // localized — so recover the English source and search with that, the same
+    // way PhraseTile does. Falls back to the localized word when the prediction
+    // is not vocabulary we can map.
+    const english = englishSourceFor(word, language);
+    getPictogramUrl(english ?? word, english ? 'en' : language, pictureMode)
       .then((url) => { if (!cancelled) setIconUrl(url); })
       .catch(() => { if (!cancelled) setIconUrl(null); });
     return () => { cancelled = true; };
