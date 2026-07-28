@@ -257,3 +257,54 @@ describe('Phrase translations — escaping integrity', () => {
     expect(getPhraseText('cw-whisper', 'sw', 'Whisper')).toBe("Nong'ona");
   });
 });
+
+/**
+ * Script purity.
+ *
+ * Model review of the machine-translated Amharic set surfaced strings with
+ * foreign characters embedded — a Latin word inside Ge'ez ("ምን አ his ያደርጋል"),
+ * an Arabic ط substituted for ጥ, and one tile left as the bare English word
+ * "scarf". A mechanical sweep found two MORE than the review did.
+ *
+ * These are objectively broken regardless of any fluency judgment: a
+ * non-Ge'ez glyph in an Amharic tile renders as the wrong character and is
+ * mispronounced by TTS. Unlike accuracy, this class is cheap to test, so it
+ * should never again reach a user.
+ *
+ * Deliberately NOT applied to Latin-script languages: loanwords there are
+ * legitimate and indistinguishable from leakage by character class alone.
+ */
+describe('Phrase translations — script purity for non-Latin languages', () => {
+  // Product/clinical acronyms that are correct to leave in Latin.
+  const ACRONYM_ALLOWLIST = /\b(AAC|TV|DVD|CD|USB|WC|OK)\b/g;
+
+  const SCRIPTS: Record<string, { native: RegExp; foreign: RegExp; label: string }> = {
+    am: { native: /[ሀ-፿]/, foreign: /[a-zA-Z؀-ۿऀ-ॿঀ-৿]/, label: "Ge'ez" },
+    bn: { native: /[ঀ-৿]/, foreign: /[a-zA-Zሀ-፿؀-ۿऀ-ॿ]/, label: 'Bengali' },
+  };
+
+  for (const [lang, spec] of Object.entries(SCRIPTS)) {
+    it(`${lang}: no foreign-script characters in ${spec.label} translations`, () => {
+      const offenders: string[] = [];
+      for (const p of DEFAULT_PHRASES) {
+        const v = getPhraseText(p.id, lang as never, p.text);
+        if (!v || v === p.text) continue; // untranslated falls back to English
+        const stripped = v.replace(ACRONYM_ALLOWLIST, '');
+        const foreign = stripped.match(new RegExp(spec.foreign.source, 'g'));
+        if (foreign) {
+          offenders.push(`${p.id}: ${JSON.stringify(v)} contains ${JSON.stringify([...new Set(foreign)].join(''))}`);
+        }
+      }
+      expect(offenders, `\n${offenders.join('\n')}`).toEqual([]);
+    });
+
+    it(`${lang}: translations actually use ${spec.label} script`, () => {
+      // Guards the inverse failure: a "translation" that is really English.
+      const notNative = DEFAULT_PHRASES.filter((p) => {
+        const v = getPhraseText(p.id, lang as never, p.text);
+        return v && v !== p.text && !spec.native.test(v);
+      }).map((p) => p.id);
+      expect(notNative, `${notNative.length} entries with no ${spec.label} characters`).toEqual([]);
+    });
+  }
+});
