@@ -34,15 +34,20 @@ describe('prediction seed floors', () => {
     ).toBeGreaterThan(AUGMENTED_FLOOR);
   });
 
+  // 27 seed modules, ~4 MB of object literals in total. Imported concurrently
+  // rather than in a sequential await loop: the loop measured 4.6s in
+  // isolation, which passed alone and then timed out against the 5s default
+  // once the full suite was competing for the same workers.
   it('gives every supported locale a usable seed', async () => {
-    const thin: string[] = [];
-    for (const lang of SUPPORTED_SEED_LANGS) {
-      const seed = (await import(`@/constants/predictionSeeds/${lang}`)).default;
-      const n = Object.keys(seed.wordFreq ?? {}).length;
-      if (n < CORPUS_FLOOR) thin.push(`${lang}=${n}`);
-    }
+    const counts = await Promise.all(
+      SUPPORTED_SEED_LANGS.map(async (lang) => {
+        const seed = (await import(`@/constants/predictionSeeds/${lang}`)).default;
+        return [lang, Object.keys(seed.wordFreq ?? {}).length] as const;
+      }),
+    );
+    const thin = counts.filter(([, n]) => n < CORPUS_FLOOR).map(([l, n]) => `${l}=${n}`);
     expect(thin, `locales below ${CORPUS_FLOOR} unigrams: ${thin.join(', ')}`).toEqual([]);
-  });
+  }, 30_000);
 
   it('carries the safety and self-advocacy vocabulary added to the corpus', async () => {
     // Spot-check that authored sections reached the shipped artefact. If the
