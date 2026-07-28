@@ -70,6 +70,16 @@ if [[ -z "${BASE_URL:-}" ]]; then
 fi
 
 APP_URL="$BASE_URL/prism-aac"   # basePath — NOT the bare origin
+
+# --local-only rejects anything that is not loopback, which is right for a dev
+# server and wrong for verifying a real deployment. The whole point of this
+# script is to check prod after a deploy, so scope the flag to the target.
+case "$BASE_URL" in
+  http://localhost*|http://127.0.0.1*|https://localhost*|https://127.0.0.1*)
+    BROWSER_FLAGS="--headless --local-only" ;;
+  *)
+    BROWSER_FLAGS="--headless" ;;
+esac
 echo "verifying $APP_URL"
 echo
 
@@ -78,7 +88,7 @@ out=$(printf 'open %s\n%s\n%s\n%s\n' \
   'eval new Promise(r=>setTimeout(()=>r("ready"),7000))' \
   'eval (()=>{const b=[...document.querySelectorAll("[aria-label]")].find(e=>/^input language$/i.test(e.getAttribute("aria-label")));if(!b)return "NO_BUTTON";b.click();return "clicked";})()' \
   'eval new Promise(r=>setTimeout(()=>r([...document.querySelectorAll("[data-testid^=language-option-]")].map(e=>e.dataset.testid.replace("language-option-","")).join(" ")),2500))' \
-  | timeout 300 prism browser --headless --local-only pipe 2>&1)
+  | timeout 300 prism browser $BROWSER_FLAGS pipe 2>&1)
 
 codes=$(echo "$out" | tail -1 | sed 's/.*"result": "//;s/"}.*//')
 if [[ "$out" == *NO_BUTTON* || -z "$codes" ]]; then
@@ -104,7 +114,7 @@ for lang in $REQUIRED_LANGS; do
     'eval (()=>{const b=[...document.querySelectorAll("[aria-label]")].find(e=>/^input language$/i.test(e.getAttribute("aria-label")));b&&b.click();return "ok";})()' \
     "eval new Promise(r=>setTimeout(()=>{const o=document.querySelector('[data-testid=language-option-$lang]');if(o)o.click();r('selected');},2000))" \
     "eval new Promise(r=>setTimeout(()=>r((document.body.innerText.match(/[$range]/g)||[]).length),5000))" \
-    | timeout 300 prism browser --headless --local-only pipe 2>&1 | tail -1 | sed 's/.*"result": "//;s/"}.*//')
+    | timeout 300 prism browser $BROWSER_FLAGS pipe 2>&1 | tail -1 | sed 's/.*"result": "//;s/"}.*//')
 
   if [[ "$sel" =~ ^[0-9]+$ ]] && (( sel > 50 )); then
     echo "      selected -> $sel native-script characters rendered"
