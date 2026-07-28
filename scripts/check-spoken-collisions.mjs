@@ -5,44 +5,52 @@
  * Why this exists
  * ---------------
  * tests/body-part-distinctions.test.ts compares translation TEXT, so it is
- * structurally blind to homophones. Japanese is the proof: the Foot tile says
- * 足 and the Leg tile says あし — two different strings, one spoken word
- * ("ashi"). The text test passes happily while the two tiles are, to any
- * listener, the same. For a device whose entire output is speech, that is the
- * failure mode that matters.
+ * structurally blind to homophones. Japanese proved it: the Foot tile said 足
+ * and the Leg tile said あし — two different strings, one spoken word ("ashi").
+ * The text test passed happily while the tiles were, to any listener, the same.
+ * For a device whose entire output is speech, that is the failure that matters.
  *
- * Method
- * ------
- * Synthesize both tiles through the SAME Azure voice at a fixed PCM format and
- * compare VOICED duration — the audio with leading/trailing silence trimmed.
+ * Method: TTS -> STT round trip
+ * -----------------------------
+ * Synthesize each tile through a fixed Azure voice, then feed the audio back
+ * to Azure speech recognition and compare the TRANSCRIPTS. If the recognizer
+ * cannot tell two tiles apart, neither can a caregiver.
  *
- * Trimming is essential and was the bug in the first version of this script.
- * Azure pads short utterances, so raw file length is nearly constant for
- * anything under ~1.7s: Bengali "পা" and "পায়ের পাতা" both returned exactly
- * 82,560 bytes despite being 1 and 5 syllables. Measuring raw length reported
- * every short pair as a collision — 7 false positives in one run.
+ * This measures the thing we actually care about — what a listener hears —
+ * rather than a proxy for it. Verified against known cases:
  *
- * After trimming, the signal is clean and matches linguistic reality:
- *   足 = 382 ms   あし = 379 ms   -> 0.8% apart, genuinely the same word
- *   足の裏 = 736 ms                -> plainly distinct from 足
- *   পা = 206 ms   পায়ের পাতা = 603 ms -> plainly distinct
- *   手 = 137 ms                    -> control
+ *   足     -> "芦"        }  identical transcript: genuinely one spoken word
+ *   あし    -> "芦"        }
+ *   足の裏  -> "芦ノ浦"       distinct
+ *   Гърло  -> "Гърло"    }  distinct (see false-positive note below)
+ *   Врат   -> "Врат"     }
  *
- * Waveform correlation was tried and rejected: neural TTS varies prosody run
- * to run, giving 0.20 for a known homophone vs -0.01 for a control — a real
- * gap, but far too noisy to threshold safely.
+ * (The recognizer returning 芦 rather than 足 is itself the point: it heard the
+ * sound "ashi" and picked some kanji for it. Both inputs produced the same
+ * sound, so both produced the same guess.)
  *
- * This is a SCREEN, not a proof. Same duration means "listen to these" — two
- * unrelated words can coincidentally match. It is deliberately tuned to
- * over-report: a false positive costs someone 20 seconds, a false negative
- * ships a device that cannot tell a caregiver which limb is broken.
+ * Two earlier approaches were tried and REJECTED — recorded so nobody
+ * reintroduces them:
  *
- * Not a unit test because it needs network and an Azure key. Run before release.
+ *   1. Raw audio length. Useless: Azure pads short utterances, so Bengali "পা"
+ *      and "পায়ের পাতা" both returned exactly 82,560 bytes despite being 1 and
+ *      5 syllables. This reported 7 collisions, every one false.
+ *   2. Voiced duration after trimming silence. Much better, and it correctly
+ *      identified 足/あし (382ms vs 379ms) — but duration is only a proxy for
+ *      pronunciation. It flagged Bulgarian Гърло (593ms) / Врат (598ms) as a
+ *      collision at 0.8% apart when they are plainly different words. Kept
+ *      below as a SECONDARY signal only, never as the verdict.
+ *
+ *   Waveform correlation was also tried: 0.20 for a known homophone vs -0.01
+ *   for a control. A real gap, but neural TTS varies prosody run to run, so it
+ *   is far too noisy to threshold.
+ *
+ * Not a unit test: needs network and an Azure key. Run before release.
  *
  *   AZURE_SPEECH_KEY=$(az cognitiveservices account keys list \
  *      -n synalux-speech -g synalux-rg --query key1 -o tsv) \
- *   node scripts/check-spoken-collisions.mjs
- *   node scripts/check-spoken-collisions.mjs --langs=ja,zh,ko   # narrow scope
+ *   npm run check:spoken
+ *   npm run check:spoken -- --langs=ja,bn --verbose
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -51,8 +59,8 @@ const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 const REGION = process.env.AZURE_SPEECH_REGION || 'eastus';
 const KEY = process.env.AZURE_SPEECH_KEY || '';
 if (!KEY) {
-  console.error('AZURE_SPEECH_KEY is not set. The local .env files hold empty');
-  console.error('placeholders and `vercel env pull` returns [SENSITIVE]; get it from Azure:');
+  console.error('AZURE_SPEECH_KEY is not set. Local .env files hold empty placeholders');
+  console.error('and `vercel env pull` returns [SENSITIVE]; get it from Azure directly:');
   console.error('  az cognitiveservices account keys list -n synalux-speech -g synalux-rg --query key1 -o tsv');
   process.exit(1);
 }
@@ -62,17 +70,29 @@ const args = new Map(process.argv.slice(2).map((a) => {
   return [k, v ?? true];
 }));
 
-// One voice per language. Must be a single fixed voice per language or the
-// duration comparison is meaningless.
-const VOICE = {
-  ja: ['ja-JP-NanamiNeural', 'ja-JP'], zh: ['zh-CN-XiaoxiaoNeural', 'zh-CN'],
-  ko: ['ko-KR-SunHiNeural', 'ko-KR'], ru: ['ru-RU-SvetlanaNeural', 'ru-RU'],
-  uk: ['uk-UA-PolinaNeural', 'uk-UA'], bg: ['bg-BG-KalinaNeural', 'bg-BG'],
-  am: ['am-ET-MekdesNeural', 'am-ET'], sw: ['sw-TZ-RehemaNeural', 'sw-TZ'],
-  bn: ['bn-BD-NabanitaNeural', 'bn-BD'], he: ['he-IL-HilaNeural', 'he-IL'],
-  vi: ['vi-VN-HoaiMyNeural', 'vi-VN'], id: ['id-ID-GadisNeural', 'id-ID'],
-  ro: ['ro-RO-AlinaNeural', 'ro-RO'], pl: ['pl-PL-ZofiaNeural', 'pl-PL'],
-  de: ['de-DE-KatjaNeural', 'de-DE'],
+/**
+ * voice / ttsLocale / sttLocale per language.
+ *
+ * sttLocale is SEPARATE and not always equal to ttsLocale: Azure synthesizes
+ * bn-BD but only recognizes bn-IN (bn-BD returns HTTP 400). All 14 locales
+ * below were probed and confirmed supported for recognition.
+ */
+const LANGS = {
+  ja: { voice: 'ja-JP-NanamiNeural', tts: 'ja-JP', stt: 'ja-JP' },
+  zh: { voice: 'zh-CN-XiaoxiaoNeural', tts: 'zh-CN', stt: 'zh-CN' },
+  ko: { voice: 'ko-KR-SunHiNeural', tts: 'ko-KR', stt: 'ko-KR' },
+  ru: { voice: 'ru-RU-SvetlanaNeural', tts: 'ru-RU', stt: 'ru-RU' },
+  uk: { voice: 'uk-UA-PolinaNeural', tts: 'uk-UA', stt: 'uk-UA' },
+  bg: { voice: 'bg-BG-KalinaNeural', tts: 'bg-BG', stt: 'bg-BG' },
+  am: { voice: 'am-ET-MekdesNeural', tts: 'am-ET', stt: 'am-ET' },
+  sw: { voice: 'sw-TZ-RehemaNeural', tts: 'sw-TZ', stt: 'sw-TZ' },
+  bn: { voice: 'bn-BD-NabanitaNeural', tts: 'bn-BD', stt: 'bn-IN' },
+  he: { voice: 'he-IL-HilaNeural', tts: 'he-IL', stt: 'he-IL' },
+  vi: { voice: 'vi-VN-HoaiMyNeural', tts: 'vi-VN', stt: 'vi-VN' },
+  id: { voice: 'id-ID-GadisNeural', tts: 'id-ID', stt: 'id-ID' },
+  ro: { voice: 'ro-RO-AlinaNeural', tts: 'ro-RO', stt: 'ro-RO' },
+  pl: { voice: 'pl-PL-ZofiaNeural', tts: 'pl-PL', stt: 'pl-PL' },
+  de: { voice: 'de-DE-KatjaNeural', tts: 'de-DE', stt: 'de-DE' },
 };
 
 const RE_ENTRY = /^\s*'([^']+)':\s*\{(.*)\}\s*,?\s*$/gm;
@@ -86,65 +106,84 @@ for (const m of fs.readFileSync(path.join(ROOT, 'constants/phraseTranslations.ts
   T[m[1]] = L;
 }
 
-// Kept in sync with constants/bodyPartDistinctions.ts by the check below.
-const PAIRS = [
-  ['hb-hand', 'hb-arm'], ['hbp-hand', 'hbp-arm'], ['hb-foot', 'hbp-leg'],
-  ['hb-mouth', 'hb-lips'], ['hb-throat', 'hb-neck'],
-  ['hb-finger', 'hb-toe'], ['hb-ankle', 'hb-heel'],
-];
-{
-  const src = fs.readFileSync(path.join(ROOT, 'constants/bodyPartDistinctions.ts'), 'utf-8');
-  const declared = [...src.matchAll(/a: '([^']+)',\s*\n\s*b: '([^']+)'/g)].map((m) => `${m[1]}|${m[2]}`);
-  const missing = PAIRS.map((p) => p.join('|')).filter((p) => !declared.includes(p));
-  if (missing.length) {
-    console.warn(`WARNING: pairs not found in bodyPartDistinctions.ts: ${missing.join(', ')}`);
-    console.warn('This script has drifted from the contract — reconcile before trusting the result.\n');
-  }
+// Read the pairs from the contract rather than duplicating them, so this
+// script cannot silently drift from what CI enforces.
+const contract = fs.readFileSync(path.join(ROOT, 'constants/bodyPartDistinctions.ts'), 'utf-8');
+const distinctBlock = contract.slice(
+  contract.indexOf('CLINICALLY_DISTINCT_PAIRS'),
+  contract.indexOf('UNRESOLVABLE_IN_LANGUAGE'),
+);
+const PAIRS = [...distinctBlock.matchAll(/a: '([^']+)',\s*\n\s*b: '([^']+)'/g)].map((m) => [m[1], m[2]]);
+if (!PAIRS.length) {
+  console.error('Could not parse CLINICALLY_DISTINCT_PAIRS from bodyPartDistinctions.ts');
+  process.exit(1);
 }
 
 let token = null;
+let tokenAt = 0;
 async function getToken() {
-  if (token) return token;
+  // Azure STS tokens expire after 10 minutes; a full run exceeds that.
+  if (token && Date.now() - tokenAt < 8 * 60 * 1000) return token;
   const r = await fetch(`https://${REGION}.api.cognitive.microsoft.com/sts/v1.0/issueToken`, {
     method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': KEY, 'Content-Length': '0' },
   });
   if (!r.ok) throw new Error(`token failed: HTTP ${r.status}`);
   token = await r.text();
+  tokenAt = Date.now();
   return token;
 }
 
-const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const xmlEsc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-// Amplitude below which a sample counts as silence. 250/32768 ≈ -42 dBFS:
-// comfortably above the neural vocoder's noise floor, below any real speech.
-const SILENCE_THRESHOLD = 250;
-
-/** Voiced duration in ms (silence trimmed), or null if synthesis failed. */
-async function durationSamples(text, voice, locale) {
-  const ssml = `<speak version='1.0' xml:lang='${locale}'><voice name='${voice}'>${esc(text)}</voice></speak>`;
+/** 16 kHz PCM WAV, the format the recognizer wants. */
+async function synth(text, voice, locale) {
   const r = await fetch(`https://${REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${await getToken()}`,
       'Content-Type': 'application/ssml+xml',
-      'X-Microsoft-OutputFormat': 'riff-24khz-16bit-mono-pcm',
+      'X-Microsoft-OutputFormat': 'riff-16khz-16bit-mono-pcm',
       'User-Agent': 'prism-aac-spoken-collision-check',
     },
-    body: ssml,
+    body: `<speak version='1.0' xml:lang='${locale}'><voice name='${voice}'>${xmlEsc(text)}</voice></speak>`,
   });
-  if (!r.ok) return null;
-  const buf = Buffer.from(await r.arrayBuffer());
+  return r.ok ? Buffer.from(await r.arrayBuffer()) : null;
+}
+
+async function recognize(wav, sttLocale) {
+  const r = await fetch(
+    `https://${REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${sttLocale}&format=simple`,
+    {
+      method: 'POST',
+      headers: {
+        'Ocp-Apim-Subscription-Key': KEY,
+        'Content-Type': 'audio/wav; codecs=audio/pcm; samplerate=16000',
+      },
+      body: wav,
+    },
+  );
+  if (!r.ok) return { ok: false, reason: `stt http ${r.status}` };
+  const j = await r.json();
+  if (j.RecognitionStatus !== 'Success') return { ok: false, reason: j.RecognitionStatus };
+  return { ok: true, text: j.DisplayText ?? '' };
+}
+
+/** Strip punctuation/space/case so "芦。" and "芦" compare equal. */
+const norm = (s) => s.normalize('NFKC').replace(/[\p{P}\p{S}\s]/gu, '').toLowerCase();
+
+/** Voiced duration in ms — SECONDARY signal only, never the verdict. */
+function voicedMs(wav) {
   let o = 12;
-  while (o < buf.length - 8) {
-    const id = buf.toString('ascii', o, o + 4);
-    const sz = buf.readUInt32LE(o + 4);
+  while (o < wav.length - 8) {
+    const id = wav.toString('ascii', o, o + 4);
+    const sz = wav.readUInt32LE(o + 4);
     if (id === 'data') {
-      const pcm = new Int16Array(buf.buffer, buf.byteOffset + o + 8, Math.floor(sz / 2));
+      const pcm = new Int16Array(wav.buffer, wav.byteOffset + o + 8, Math.floor(sz / 2));
       let s = 0;
       let e = pcm.length - 1;
-      while (s < pcm.length && Math.abs(pcm[s]) < SILENCE_THRESHOLD) s++;
-      while (e > s && Math.abs(pcm[e]) < SILENCE_THRESHOLD) e--;
-      return Math.round(Math.max(0, e - s) / 24); // 24 kHz -> ms
+      while (s < pcm.length && Math.abs(pcm[s]) < 250) s++;
+      while (e > s && Math.abs(pcm[e]) < 250) e--;
+      return Math.round(Math.max(0, e - s) / 16); // 16 kHz -> ms
     }
     o += 8 + sz + (sz % 2);
   }
@@ -152,50 +191,65 @@ async function durationSamples(text, voice, locale) {
 }
 
 const only = args.get('langs') ? String(args.get('langs')).split(',') : null;
-const langs = Object.keys(VOICE).filter((l) => !only || only.includes(l));
+const langs = Object.keys(LANGS).filter((l) => !only || only.includes(l));
+const verbose = args.has('verbose');
 
-console.log(`Spoken-collision screen — ${langs.length} language(s), ${PAIRS.length} pairs\n`);
-const findings = [];
+console.log(`Spoken-collision check (TTS -> STT round trip)`);
+console.log(`${langs.length} language(s) x ${PAIRS.length} pairs from CLINICALLY_DISTINCT_PAIRS\n`);
+
+const collisions = [];
+const unverified = [];
 let checked = 0;
 
 for (const lang of langs) {
-  const [voice, locale] = VOICE[lang];
+  const cfg = LANGS[lang];
   for (const [a, b] of PAIRS) {
     const ta = T[a]?.[lang];
     const tb = T[b]?.[lang];
     if (!ta || !tb) continue;
+
     if (ta === tb) {
-      findings.push({ lang, a, b, ta, tb, kind: 'textual' });
-      console.log(`  ${lang} ${a}/${b}: TEXTUAL collision — both "${ta}"`);
+      collisions.push({ lang, a, b, kind: 'textual', heard: ta });
+      console.log(`  ${lang} ${a}/${b}: TEXTUAL — both are "${ta}"`);
       continue;
     }
-    const [da, db] = [await durationSamples(ta, voice, locale), await durationSamples(tb, voice, locale)];
+
+    const [wa, wb] = [await synth(ta, cfg.voice, cfg.tts), await synth(tb, cfg.voice, cfg.tts)];
+    if (!wa || !wb) {
+      unverified.push({ lang, a, b, reason: 'tts failed' });
+      console.log(`  ${lang} ${a}/${b}: UNVERIFIED — synthesis failed`);
+      continue;
+    }
+    const [ra, rb] = [await recognize(wa, cfg.stt), await recognize(wb, cfg.stt)];
     checked++;
-    if (da == null || db == null) {
-      console.log(`  ${lang} ${a}/${b}: synthesis failed, skipped`);
+
+    if (!ra.ok || !rb.ok) {
+      unverified.push({ lang, a, b, reason: ra.reason || rb.reason });
+      console.log(`  ${lang} ${a}/${b}: UNVERIFIED — ${ra.reason || rb.reason}`);
       continue;
     }
-    // Relative tolerance: two renderings of the SAME word land within a few
-    // percent (足/あし measured 382 vs 379 ms = 0.8%). Distinct words are far
-    // apart. 5% is set above the observed same-word noise and well below the
-    // smallest genuine difference seen.
-    const rel = Math.abs(da - db) / Math.max(da, db);
-    if (rel < 0.05) {
-      findings.push({ lang, a, b, ta, tb, kind: 'phonetic', ms: [da, db] });
-      console.log(`  ${lang} ${a}/${b}: SOUND-ALIKE — "${ta}" (${da}ms) vs "${tb}" (${db}ms), ${(rel * 100).toFixed(1)}% apart`);
-    } else if (args.has('verbose')) {
-      console.log(`  ${lang} ${a}/${b}: ok — ${da}ms vs ${db}ms (${(rel * 100).toFixed(0)}% apart)`);
+
+    const same = norm(ra.text) === norm(rb.text) && norm(ra.text) !== '';
+    if (same) {
+      collisions.push({ lang, a, b, kind: 'phonetic', heard: ra.text, said: [ta, tb] });
+      console.log(`  ${lang} ${a}/${b}: SOUNDS THE SAME — "${ta}" and "${tb}" both heard as "${ra.text}"`);
+    } else if (verbose) {
+      const d = `${voicedMs(wa)}ms/${voicedMs(wb)}ms`;
+      console.log(`  ${lang} ${a}/${b}: ok — "${ta}"->"${ra.text}"  "${tb}"->"${rb.text}"  (${d})`);
     }
   }
 }
 
-console.log(`\nsynthesized ${checked} pairs`);
-const textual = findings.filter((f) => f.kind === 'textual').length;
-const phonetic = findings.filter((f) => f.kind === 'phonetic').length;
-console.log(`${textual} textual collision(s), ${phonetic} suspected sound-alike(s)`);
-if (phonetic) {
-  console.log('\nSuspected sound-alikes need a human to LISTEN. Equal duration is a');
-  console.log('screen, not proof — but on an AAC device a false negative means a user');
-  console.log('cannot tell a caregiver which limb is hurt.');
+console.log(`\nround-tripped ${checked} pairs`);
+console.log(`${collisions.length} collision(s), ${unverified.length} unverified`);
+
+if (unverified.length) {
+  console.log('\nUNVERIFIED pairs were NOT checked — do not read silence as a pass:');
+  for (const u of unverified) console.log(`  ${u.lang} ${u.a}/${u.b} (${u.reason})`);
 }
-process.exitCode = findings.length ? 1 : 0;
+if (collisions.length) {
+  console.log('\nA collision means a user cannot tell a caregiver which part hurts.');
+  console.log('Fix the translation, or record it in UNRESOLVABLE_IN_LANGUAGE with a reason.');
+}
+
+process.exitCode = collisions.length ? 1 : 0;

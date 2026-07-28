@@ -259,31 +259,58 @@ The Japanese case exposed a hole: `tests/body-part-distinctions.test.ts`
 compares translation TEXT and is structurally blind to homophones — 足 and あし
 are different strings and it passed them happily.
 
-`npm run check:spoken` closes it by synthesizing both tiles through the same
-Azure voice and comparing **voiced duration** (silence trimmed):
+`npm run check:spoken` closes it with a **TTS -> STT round trip**: synthesize
+each tile through a fixed Azure voice, feed the audio back to Azure speech
+recognition, and compare what the recognizer HEARD. If a recognizer cannot
+tell two tiles apart, neither can a caregiver. This measures the thing that
+actually matters rather than a proxy for it.
 
 ```
-足 = 382 ms    あし = 379 ms    -> 0.8% apart, the same word
-足の裏 = 735 ms                  -> 48% apart from 足, the fix works
-পা = 206 ms    পায়ের পাতা = 603 ms -> 66% apart
+足     -> "芦"      }  identical transcript: genuinely one spoken word
+あし    -> "芦"      }
+足の裏  -> "芦ノ浦"     distinct — the fix works
+Гърло  -> "Гърло"  }  distinct
+Врат   -> "Врат"   }
 ```
 
-Two measurement mistakes are worth recording, because both produced
-confident-looking wrong answers:
+Result across all 15 languages x 7 pairs: **105 round-tripped, 0 collisions.**
 
-1. **Raw file length is useless.** Azure pads short utterances, so Bengali
-   "পা" and "পায়ের পাতা" both returned exactly 82,560 bytes despite being 1 and
-   5 syllables. The first version of the script reported 7 collisions, all
-   false. Trimming silence fixed it.
-2. **An earlier "proof" was not one.** 足 and あし matching at 41,280 samples
-   was cited as evidence of homophony; it was equally consistent with padding.
-   The claim happened to be true, but the evidence did not support it.
+Azure recognizes `bn-IN` but not `bn-BD`, so the STT locale is mapped
+separately from the TTS locale.
 
-The screen still over-reports by design — equal duration does not prove equal
-sound (Bulgarian "Гърло"/"Врат" are 0.8% apart and plainly different words), so
-it flags candidates for a human to listen to. On an AAC device a false positive
-costs someone twenty seconds; a false negative ships a user who cannot tell a
-caregiver which limb is broken.
+#### Two earlier measurements were wrong, and both looked convincing
+
+Recorded because each produced a confident answer that did not hold up:
+
+1. **Raw audio length.** Azure pads short utterances, so Bengali "পা" and
+   "পায়ের পাতা" both returned exactly 82,560 bytes despite being 1 and 5
+   syllables. The first version of the script reported 7 collisions, every one
+   false.
+2. **Voiced duration after trimming silence.** Much better — it did correctly
+   identify 足/あし at 382ms vs 379ms. But duration is only a proxy for
+   pronunciation, and it flagged Bulgarian Гърло (593ms) / Врат (598ms) as a
+   collision at 0.8% apart when they are plainly different words. It also
+   flagged Bengali গলা/ঘাড়. Both false.
+
+   Worse, the claim that 足/あし matching at 41,280 samples "proved" homophony
+   was not proof at all — it was equally consistent with the padding in (1).
+   The conclusion happened to be correct; the evidence never supported it.
+
+Duration survives only as a diagnostic printed under `--verbose`, never as the
+verdict. Waveform correlation was also tried and rejected: 0.20 for a known
+homophone vs -0.01 for a control is a real gap, but neural TTS varies prosody
+run to run, so it cannot be thresholded safely.
+
+#### The round trip also found two translation bugs
+
+Not its purpose, but the recognizer disagreeing with the input is a useful
+signal in itself:
+
+- **`sw` Heel was "Kisvisvi"** — not a Swahili word; the recognizer garbled it
+  to "Kiswisi". Corrected to **Kisigino**. The model review missed this one.
+- **`bn` Ankle was "পায়ের গোঁড়ালি"** — a candrabindu the recognizer did not
+  hear, and it duplicated the Heel root. Corrected to **টাখনু**, which
+  independently confirms the Bengali reviewer's ankle/heel finding.
 
 ## Translation provenance — read this before claiming language support
 
