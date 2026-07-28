@@ -86,3 +86,46 @@ describe('translation review gate', () => {
     }
   });
 });
+
+/**
+ * Store-level wiring.
+ *
+ * The tests above cover the pure predicate. This covers the thing actually
+ * changed: that getPhrasesForCategory consults it, reading the CURRENT
+ * language and caregiver override from the settings store. A correct
+ * predicate that nothing calls would pass every test above and gate nothing —
+ * a browser probe of the home screen could not tell the difference, because
+ * the gated categories are not on the home screen.
+ */
+describe('gate is actually wired into the phrase lookup', () => {
+  it('hides an unverified category phrase for am, and restores it on override', async () => {
+    const { useSettingsStore } = await import('@/store/settingsStore');
+    const { useCategoryStore } = await import('@/store/categoryStore');
+    const { DEFAULT_PHRASES } = await import('@/constants/phrases');
+
+    // 'actions' sits outside the audited core + safety set.
+    const gated = DEFAULT_PHRASES.find(
+      (p) => p.categoryId === 'actions' && !verifiedPhraseIds().has(p.id),
+    );
+    expect(gated, 'no gated phrase in actions — fixture drifted').toBeTruthy();
+
+    const set = (language: string, showUnreviewedVocabulary: boolean) =>
+      useSettingsStore.setState({
+        ...useSettingsStore.getState(), language, showUnreviewedVocabulary,
+      } as never);
+
+    const idsFor = () => useCategoryStore.getState()
+      .getPhrasesForCategory('actions').map((p) => p.id);
+
+    set('ro', false);
+    expect(idsFor(), 'reviewed language must be unaffected').toContain(gated!.id);
+
+    set('am', false);
+    expect(idsFor(), 'unverified phrase must be hidden for am').not.toContain(gated!.id);
+
+    set('am', true);
+    expect(idsFor(), 'caregiver override must restore it').toContain(gated!.id);
+
+    set('en', false);
+  });
+});
