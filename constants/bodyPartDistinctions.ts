@@ -5,27 +5,20 @@
  * -------------------
  * The AAC tile set is authored in English, which silently assumes English's
  * lexical distinctions. Many languages do not split the same way: Russian,
- * Ukrainian and Bulgarian use one word for hand and arm (рука/ръка), as do
+ * Ukrainian and Bulgarian used one word for hand and arm (рука/ръка), as did
  * Amharic (እጅ), Swahili (mkono) and Bengali (হাত).
  *
  * When two tiles speak the same word, a non-speaking user cannot tell a
  * caregiver WHICH part hurts. That is a clinical failure, not a cosmetic one
  * — "my arm hurts" and "my hand hurts" lead to different examinations.
  *
- * It is not a translation bug either. The translations are correct; the tile
- * set is what's wrong. So this is a product-level contract, enforced by
- * tests/body-part-distinctions.test.ts, listing which pairs a user must be
- * able to distinguish and which pairs are allowed to collapse.
+ * It is not a translation bug either. The individual translations were
+ * correct; the tile set is what assumed too much. So this is a product-level
+ * contract, enforced by tests/body-part-distinctions.test.ts (text) and
+ * `npm run check:spoken` (pronunciation).
  */
 
-/**
- * Pairs a user must be able to distinguish. Enforced — collisions fail CI.
- *
- * Note the two tile sets: `hb-*` (category `health-body`) and `hbp-*`
- * (`health-body-parts`). They overlap, and historically only `hbp-*` carried
- * the correct distinct translations in Slavic languages, so the same user
- * could distinguish hand from arm on one screen but not the other.
- */
+/** Pairs a user must be able to distinguish. Enforced — collisions fail CI. */
 export const CLINICALLY_DISTINCT_PAIRS: Array<{ a: string; b: string; why: string }> = [
   {
     a: 'hb-hand',
@@ -65,66 +58,47 @@ export const CLINICALLY_DISTINCT_PAIRS: Array<{ a: string; b: string; why: strin
 ];
 
 /**
- * Languages where a pair genuinely CANNOT be distinguished in natural speech,
- * so forcing a difference would produce words a child would never say.
+ * Languages where a pair genuinely CANNOT be distinguished in natural speech.
  *
- * These are exempt from the contract above, but they are NOT resolved — each
- * one is a real limitation a user lives with, and the fix is a UI-level
- * disambiguator (body-map picker), not a translation.
+ * Empty by design. Three entries lived here and all three were resolved rather
+ * than accepted as permanent limitations:
+ *
+ *   bn hand/arm — first judged unfixable because হাত covers both and বাহু is
+ *     literary. Resolved as Arm = পুরো হাত ("whole hand"), which is real parent
+ *     usage. Note the tempting parallel to the foot fix (Hand = হাতের পাতা) was
+ *     WRONG: markedness runs the other way. পা defaults to "leg", so narrowing
+ *     it to পায়ের পাতা works; হাত already defaults to "hand", so moving হাত onto
+ *     Arm would still be heard as "hand" and reproduce the collision.
+ *
+ *   am foot/leg — resolved as Foot = የእግር መዳፍ, using the construction Amharic
+ *     already uses productively in የእጅ መዳፍ ("palm of the hand").
+ *
+ *   ja foot/leg — 足 and あし really are one spoken word (measured 382 ms vs
+ *     379 ms, 0.8% apart). Resolved as Foot = 足の裏, now 48% apart from Leg = 足.
+ *
+ * Keep this empty unless a limitation is genuinely irreducible. Every entry
+ * here is a user who cannot tell a caregiver which part of them hurts.
  */
 export const UNRESOLVABLE_IN_LANGUAGE: Array<{
   a: string;
   b: string;
   langs: string[];
   /**
-   * 'textual'  — the two tiles literally share a string; the automated
-   *              collision test can see it.
-   * 'phonetic' — the strings DIFFER but are homophones, so they are identical
-   *              the moment TTS speaks them. The collision test is blind to
-   *              this class: it compares text, not pronunciation. Japanese
-   *              足 / あし is the case in point. Anything listed as 'phonetic'
-   *              was found by a human or a reviewer, not by the test, and the
-   *              test cannot regress-guard it.
+   * 'textual'  — the tiles literally share a string; the unit test sees it.
+   * 'phonetic' — the strings differ but sound alike. The unit test is blind to
+   *              this class; `npm run check:spoken` screens for it by comparing
+   *              voiced duration through real TTS.
    */
   collisionType: 'textual' | 'phonetic';
   why: string;
-}> = [
-  {
-    a: 'hb-hand',
-    b: 'hb-arm',
-    langs: ['bn'],
-    collisionType: 'textual',
-    why: 'Bengali হাত covers hand and arm in ordinary speech. বাহু is the dictionary word for arm but is সাধু (literary) — a child would not say it, and an AAC device that makes them say it is worse than one that cannot distinguish. Needs a body-map picker.',
-  },
-  {
-    a: 'hbp-hand',
-    b: 'hbp-arm',
-    langs: ['bn'],
-    collisionType: 'textual',
-    why: 'Bengali হাত covers both hand and arm on this tile set too. Exempted for the same reason as hb-hand/hb-arm: the only distinct word, বাহু, is literary (সাধু) and not something a child would say. Listed separately rather than folded into that entry so removing one exemption cannot silently drop the other.',
-  },
-  {
-    a: 'hb-foot',
-    b: 'hbp-leg',
-    langs: ['am'],
-    collisionType: 'textual',
-    why: 'Amharic: no natural, non-clinical word for foot distinct from እግር could be identified with confidence. Deliberately left as a known limitation rather than shipping a guessed phrase into a device that speaks for someone who cannot correct it. Needs a native speaker, ideally a parent.',
-  },
-  {
-    a: 'hb-foot',
-    b: 'hbp-leg',
-    langs: ['ja'],
-    collisionType: 'phonetic',
-    why: 'Japanese 足 (hb-foot) and あし (hbp-leg) are different strings but the SAME spoken word, "ashi" — so the tiles are indistinguishable to a listener even though the automated collision test sees two different values. 脚 does not help: it is also read あし. The alternatives are あんよ (baby-talk, wrong register for older users) or 足の裏 ("sole", which misreports an injury to the top of the foot). Needs a body-map picker. NOTE: no test can catch a regression here — text comparison is blind to homophony.',
-  },
-];
+}> = [];
 
 /**
  * Pairs allowed to collapse to one word, with the reason.
  *
- * These are NOT defects. Where the English tiles are themselves synonyms,
- * a language that renders them identically is behaving correctly, and
- * forcing a spurious difference would produce unnatural speech.
+ * These are NOT defects. Where the English tiles are themselves synonyms, a
+ * language that renders them identically is behaving correctly, and forcing a
+ * spurious difference would produce unnatural speech.
  */
 export const PERMITTED_COLLAPSES: Array<{ a: string; b: string; why: string }> = [
   {

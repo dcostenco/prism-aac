@@ -223,15 +223,67 @@ appear in Amharic/Bengali translations (with an allowlist for genuine acronyms
 like AAC) and that every translation actually contains native-script
 characters. This class is cheap to test and should never reach a user again.
 
-### A tile-design problem, not a translation problem
+### RESOLVED — body-part tiles that spoke the same word
 
-`hand`/`arm` map to one word in all three languages (እጅ, Mkono, হাত), as do
-`foot`/`leg` in Swahili and Bengali. That is correct linguistics — those
-languages genuinely lack the lexical split — but it means a user cannot
-distinguish "my arm hurts" from "my hand hurts". No translation fixes this;
-it needs disambiguating tiles (e.g. a modifier or a body-map selector) for
-languages where the distinction is not lexical. Filed here because it is a
-clinical limitation, not a defect anyone would find by reading the strings.
+Distinct English tiles were producing identical speech, so a user could not
+say which part hurt. This was **not** a new-language problem: Russian,
+Ukrainian and Bulgarian had always spoken рука/ръка for both Hand and Arm.
+
+| Pair | Was colliding in | Now |
+| --- | --- | --- |
+| Foot / Leg | 10 langs (+ ja phonetically) | resolved |
+| Hand / Arm | 7 langs | resolved |
+| Mouth / Lips | 2 langs | resolved |
+| Throat / Neck | 2 langs | resolved |
+
+The fix keeps the general limb word on the larger part and moves the smaller
+tile to the specific word. For ru/uk/bg/sw the values came from this repo's own
+`hbp-*` translations, which were already correct and human-authored — the two
+tile sets had simply drifted apart, so no new unreviewed content was introduced.
+
+Three cases were initially judged unfixable and then resolved on a second pass:
+
+- **bn hand/arm** — Arm = পুরো হাত. The obvious parallel to the foot fix
+  (Hand = হাতের পাতা) is wrong: markedness runs the other way. পা defaults to
+  "leg" so narrowing it works, but হাত already defaults to "hand", so moving it
+  onto Arm would still be *heard* as hand.
+- **am foot/leg** — Foot = የእግር መዳፍ, the construction Amharic already uses in
+  የእጅ መዳፍ ("palm of the hand").
+- **ja foot/leg** — 足 and あし are genuinely one spoken word. Foot = 足の裏.
+
+`UNRESOLVABLE_IN_LANGUAGE` is now empty.
+
+### Testing pronunciation, not just text
+
+The Japanese case exposed a hole: `tests/body-part-distinctions.test.ts`
+compares translation TEXT and is structurally blind to homophones — 足 and あし
+are different strings and it passed them happily.
+
+`npm run check:spoken` closes it by synthesizing both tiles through the same
+Azure voice and comparing **voiced duration** (silence trimmed):
+
+```
+足 = 382 ms    あし = 379 ms    -> 0.8% apart, the same word
+足の裏 = 735 ms                  -> 48% apart from 足, the fix works
+পা = 206 ms    পায়ের পাতা = 603 ms -> 66% apart
+```
+
+Two measurement mistakes are worth recording, because both produced
+confident-looking wrong answers:
+
+1. **Raw file length is useless.** Azure pads short utterances, so Bengali
+   "পা" and "পায়ের পাতা" both returned exactly 82,560 bytes despite being 1 and
+   5 syllables. The first version of the script reported 7 collisions, all
+   false. Trimming silence fixed it.
+2. **An earlier "proof" was not one.** 足 and あし matching at 41,280 samples
+   was cited as evidence of homophony; it was equally consistent with padding.
+   The claim happened to be true, but the evidence did not support it.
+
+The screen still over-reports by design — equal duration does not prove equal
+sound (Bulgarian "Гърло"/"Врат" are 0.8% apart and plainly different words), so
+it flags candidates for a human to listen to. On an AAC device a false positive
+costs someone twenty seconds; a false negative ships a user who cannot tell a
+caregiver which limb is broken.
 
 ## Translation provenance — read this before claiming language support
 

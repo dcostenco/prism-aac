@@ -19,7 +19,8 @@
     "e2e:watchdog": "MIN_FREE_GB=2 ./scripts/playwright-watchdog.sh e2e/panel-compact-when-empty.spec.ts --project=desktop --workers=1",
     "i18n:review-status": "node scripts/i18n-review-status.mjs",
     "i18n:translate": "node scripts/translate-corpus.mjs",
-    "i18n:provenance": "node scripts/rebuild-translation-provenance.mjs"
+    "i18n:provenance": "node scripts/rebuild-translation-provenance.mjs",
+    "check:spoken": "node scripts/check-spoken-collisions.mjs"
   },
   "dependencies": {
     "@datadog/browser-logs": "^7.2.0",
