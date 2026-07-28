@@ -416,5 +416,7 @@
   "word_builder_desc": "點選字母拼出單字",
   "word_visibility": "字詞顯示",
   "you": "你",
-  "your_name": "您的姓名"
+  "your_name": "您的姓名",
+  "show_unreviewed_words": "顯示未審核的詞語",
+  "show_unreviewed_words_desc": "本語言的翻譯未經母語者審核。核心詞和安全詞已審核，一律顯示；其餘詞語已隱藏。開啟後可顯示全部詞語。"
 }

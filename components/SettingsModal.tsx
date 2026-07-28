@@ -321,18 +321,15 @@ export default function SettingsModal() {
               <label className="flex items-center justify-between py-1.5 mt-3 border-t border-theme pt-3">
                 <div className="pr-3">
                   <span className="text-primary text-sm font-semibold">
-                    Show unreviewed words
+                    {t('show_unreviewed_words')}
                   </span>
                   <p className="text-muted text-[10px]">
-                    {LANG_META.find((l) => l.code === language)?.name ?? 'This language'} ships
-                    machine translations that no native speaker has checked. Core and safety words
-                    were audited and are always shown; the rest are hidden by default because some
-                    were wrong. Turn this on to show every word — more vocabulary, less certainty.
+                    {t('show_unreviewed_words_desc')}
                   </p>
                 </div>
                 <Toggle
                   on={showUnreviewedVocabulary}
-                  label="Show unreviewed words"
+                  label={t('show_unreviewed_words')}
                   onToggle={() => update({ showUnreviewedVocabulary: !showUnreviewedVocabulary })}
                 />
               </label>

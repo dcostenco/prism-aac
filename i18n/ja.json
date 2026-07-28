@@ -416,5 +416,7 @@
   "word_builder_desc": "文字をタップして単語をつづろう",
   "word_visibility": "単語の表示設定",
   "you": "あなた",
-  "your_name": "あなたの名前"
+  "your_name": "あなたの名前",
+  "show_unreviewed_words": "未確認の単語を表示",
+  "show_unreviewed_words_desc": "この言語の翻訳はネイティブスピーカーによる確認を受けていません。中核語と安全に関わる語は監査済みで常に表示されます。それ以外は非表示です。すべての語を表示するにはオンにしてください。"
 }

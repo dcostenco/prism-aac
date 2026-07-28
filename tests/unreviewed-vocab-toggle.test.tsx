@@ -20,6 +20,7 @@ import SettingsModal from '@/components/SettingsModal';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
 import { UNREVIEWED_LANGUAGES } from '@/constants/translationReviewStatus';
+import translations from '@/i18n/translations.json';
 
 // jsdom has no canvas/media; SettingsModal pulls in calibration + local-model
 // panels that touch both. None of that is under test here.
@@ -43,7 +44,17 @@ const openSettingsIn = async (language: string) => {
   await act(async () => { fireEvent.click(header!); });
 };
 
-const toggle = () => screen.queryByLabelText('Show unreviewed words');
+// The control is localized, so look it up by the string this locale should be
+// showing. Hardcoding the English label would silently stop finding it the
+// moment the label is translated — and would pass in en while asserting
+// nothing anywhere else.
+const labelFor = (lang: string) => {
+  const s = (translations as Record<string, Record<string, string>>)
+    .show_unreviewed_words?.[lang];
+  if (!s) throw new Error(`no show_unreviewed_words string for "${lang}"`);
+  return s;
+};
+const toggle = (lang: string) => screen.queryByLabelText(labelFor(lang));
 
 describe('unreviewed-vocabulary control', () => {
   beforeEach(() => {
@@ -56,7 +67,7 @@ describe('unreviewed-vocabulary control', () => {
       cleanup();
       await openSettingsIn(lang);
       expect(
-        toggle(),
+        toggle(lang),
         `no way to restore hidden vocabulary in "${lang}"`,
       ).toBeTruthy();
     }
@@ -66,7 +77,7 @@ describe('unreviewed-vocabulary control', () => {
     await openSettingsIn('am');
     expect(useSettingsStore.getState().showUnreviewedVocabulary).toBe(false);
 
-    await act(async () => { fireEvent.click(toggle()!); });
+    await act(async () => { fireEvent.click(toggle('am')!); });
 
     // A rendered control wired to nothing would still pass the test above.
     expect(useSettingsStore.getState().showUnreviewedVocabulary).toBe(true);
@@ -74,6 +85,6 @@ describe('unreviewed-vocabulary control', () => {
 
   it('is hidden for a reviewed language, where it would do nothing', async () => {
     await openSettingsIn('ro');
-    expect(toggle()).toBeNull();
+    expect(toggle('ro')).toBeNull();
   });
 });

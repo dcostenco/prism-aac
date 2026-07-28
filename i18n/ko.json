@@ -416,5 +416,7 @@
   "word_builder_desc": "글자를 탭하여 단어 철자를 맞춰보세요",
   "word_visibility": "단어 표시 설정",
   "you": "나",
-  "your_name": "이름"
+  "your_name": "이름",
+  "show_unreviewed_words": "미검토 단어 표시",
+  "show_unreviewed_words_desc": "이 언어의 번역은 원어민이 검토하지 않았습니다. 핵심 단어와 안전 관련 단어는 검수를 마쳐 항상 표시됩니다. 나머지는 숨겨져 있습니다. 모든 단어를 표시하려면 켜세요."
 }

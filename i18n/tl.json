@@ -416,5 +416,7 @@
   "word_builder_desc": "I-spell ang mga salita sa pamamagitan ng pag-tap sa mga letra",
   "word_visibility": "Visibility ng Salita",
   "you": "Ikaw",
-  "your_name": "Iyong pangalan"
+  "your_name": "Iyong pangalan",
+  "show_unreviewed_words": "Ipakita ang mga salitang hindi pa nasusuri",
+  "show_unreviewed_words_desc": "Walang katutubong nagsasalita ang nakasuri sa mga salin ng wikang ito. Ang mga pangunahing salita at salitang pangkaligtasan ay nasuri at laging lumalabas; ang iba ay nakatago. I-on ito upang ipakita ang lahat ng salita."
 }

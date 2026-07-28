@@ -416,5 +416,7 @@
   "word_builder_desc": "Układaj słowa, dotykając liter",
   "word_visibility": "Widoczność słów",
   "you": "Ty",
-  "your_name": "Twoje imię"
+  "your_name": "Twoje imię",
+  "show_unreviewed_words": "Pokaż niesprawdzone słowa",
+  "show_unreviewed_words_desc": "Żaden native speaker nie sprawdził tłumaczeń tego języka. Słowa podstawowe i słowa bezpieczeństwa zostały zweryfikowane i zawsze są widoczne; reszta jest ukryta. Włącz, aby pokazać wszystkie słowa."
 }

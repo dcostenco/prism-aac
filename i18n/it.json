@@ -416,5 +416,7 @@
   "word_builder_desc": "Componi le parole toccando le lettere",
   "word_visibility": "Visibilità parole",
   "you": "Tu",
-  "your_name": "Il tuo nome"
+  "your_name": "Il tuo nome",
+  "show_unreviewed_words": "Mostra le parole non verificate",
+  "show_unreviewed_words_desc": "Nessun madrelingua ha verificato le traduzioni di questa lingua. Le parole di base e di sicurezza sono state controllate e vengono sempre mostrate; le altre sono nascoste. Attiva per mostrare tutte le parole."
 }

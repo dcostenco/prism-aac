@@ -416,5 +416,7 @@
   "word_builder_desc": "Eja kata dengan mengetuk huruf",
   "word_visibility": "Visibilitas Kata",
   "you": "Anda",
-  "your_name": "Nama Anda"
+  "your_name": "Nama Anda",
+  "show_unreviewed_words": "Tampilkan kata yang belum ditinjau",
+  "show_unreviewed_words_desc": "Belum ada penutur asli yang memeriksa terjemahan bahasa ini. Kata inti dan kata keselamatan telah diaudit dan selalu ditampilkan; sisanya disembunyikan. Aktifkan untuk menampilkan semua kata."
 }

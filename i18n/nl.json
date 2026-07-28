@@ -416,5 +416,7 @@
   "word_builder_desc": "Spel woorden door op letters te tikken",
   "word_visibility": "Zichtbaarheid van woorden",
   "you": "Jij",
-  "your_name": "Jouw naam"
+  "your_name": "Jouw naam",
+  "show_unreviewed_words": "Niet-gecontroleerde woorden tonen",
+  "show_unreviewed_words_desc": "Geen moedertaalspreker heeft de vertalingen van deze taal gecontroleerd. Kern- en veiligheidswoorden zijn gecontroleerd en worden altijd getoond; de rest is verborgen. Zet dit aan om alle woorden te tonen."
 }

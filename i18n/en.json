@@ -416,5 +416,7 @@
   "word_builder_desc": "Spell words by tapping letters",
   "word_visibility": "Word Visibility",
   "you": "You",
-  "your_name": "Your name"
+  "your_name": "Your name",
+  "show_unreviewed_words": "Show unreviewed words",
+  "show_unreviewed_words_desc": "No native speaker has checked this language's translations. Core and safety words were audited and always appear; the rest are hidden. Turn this on to show every word."
 }
