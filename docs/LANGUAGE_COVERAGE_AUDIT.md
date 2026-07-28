@@ -117,24 +117,34 @@ no corpus is no longer silently dropped from `SUPPORTED_SEED_LANGS`.
 means Traditional and Cantonese users see Simplified-derived phrase text. Not
 changed here; flagging so it isn't mistaken for a coverage gap in the table above.
 
-## Finding 4 — the new Azure voice IDs are unverified
+## Finding 4 — RESOLVED: Azure voice IDs verified end-to-end
 
-`am-ET-*`, `sw-TZ-*` and `bn-BD-*` entries were written from Azure's published
-neural voice list but **not** confirmed against the live endpoint:
-`AZURE_SPEECH_KEY` is an empty placeholder in every local `.env`, and the real
-key exists only in Vercel.
+Originally filed as a ship-blocker: the `am-ET-*`, `sw-TZ-*` and `bn-BD-*`
+entries were written from Azure's published list but not confirmed live,
+because `AZURE_SPEECH_KEY` is an empty placeholder in every local `.env` and
+`vercel env pull` returns `[SENSITIVE]` for it.
 
-This is the same failure mode that produced corrupt audio for the
-Kalina/Alina/Polina Inworld entries — a plausible voice id that the provider
-does not serve fails at synthesis time, in the user's hands. Verify before
-shipping:
+Resolved 2026-07-27 by pulling the key from Azure directly
+(`az cognitiveservices account keys list -n synalux-speech -g synalux-rg`)
+and checking against the live endpoint — 769 neural voices in eastus.
 
-```bash
-vercel env pull .env.verify --environment=production
-curl -H "Ocp-Apim-Subscription-Key: $AZURE_SPEECH_KEY" \
-  "https://$AZURE_SPEECH_REGION.tts.speech.microsoft.com/cognitiveservices/voices/list" \
-  | jq -r '.[].ShortName' | grep -E '^(am-ET|sw-TZ|bn-BD)'
-```
+| Voice | Listed | Gender/locale match | Real synthesis |
+| --- | --- | --- | --- |
+| `am-ET-MekdesNeural` | yes | Female, Amharic (Ethiopia) | 200, 16,992 B mp3 |
+| `am-ET-AmehaNeural` | yes | Male, Amharic (Ethiopia) | 200, 18,720 B mp3 |
+| `sw-TZ-RehemaNeural` | yes | Female, Swahili (Tanzania) | 200, 22,464 B mp3 |
+| `sw-TZ-DaudiNeural` | yes | Male, Swahili (Tanzania) | 200, 20,160 B mp3 |
+| `bn-BD-NabanitaNeural` | yes | Female, Bangla (Bangladesh) | 200, 22,176 B mp3 |
+| `bn-BD-PradeepNeural` | yes | Male, Bangla (Bangladesh) | 200, 22,464 B mp3 |
+
+0 invalid. Synthesis used the **actual shipped translation text** in each
+script (ርዳኝ / Nisaidie / সাহায্য করো, plus the pain strings), not placeholder
+Latin — so this also proves each voice renders its own script rather than
+merely existing in the catalog. That second level is the one that would have
+caught the Kalina/Alina/Polina corrupt-audio incident.
+
+`sw-KE-*` and `bn-IN-*` were confirmed present in the same list, so switching
+regions later is a one-line change.
 
 ## Ge'ez input model
 
