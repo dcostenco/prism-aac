@@ -21,6 +21,11 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+/** Exact hostname, or '' when the URL will not parse. */
+function hostOf(u: string): string {
+  try { return new URL(u).hostname; } catch { return ''; }
+}
+
 const ARASAAC_SEARCH = /api\.arasaac\.org\/v1\/pictograms\/([a-z-]+)\/search\/(.+)$/;
 
 /** Fake ARASAAC: 400 for unsupported locales, hits only for known English words. */
@@ -45,7 +50,9 @@ function installFetch(supported: Set<string>, englishHits: Set<string>) {
         status: 200, headers: { 'Content-Type': 'application/json' },
       });
     }
-    if (url.includes('static.arasaac.org')) {
+    // Compare the HOST, not a substring: 'static.arasaac.org' can appear
+    // anywhere in a URL, so evil.example/static.arasaac.org would match.
+    if (hostOf(url) === 'static.arasaac.org') {
       return new Response(new Blob([new Uint8Array([1, 2, 3])]), { status: 200 });
     }
     return new Response('', { status: 404 });

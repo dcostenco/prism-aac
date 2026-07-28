@@ -172,6 +172,24 @@ async function roundTrip(text) {
 }
 
 // ── signal 3: Wiktionary (single words only) ─────────────────────────────────
+
+/**
+ * Strip HTML from a Wiktionary definition.
+ *
+ * A single `replace(/<[^>]+>/g, '')` is NOT sufficient and CodeQL is right to
+ * flag it: an unterminated `<script` has no closing bracket so the pattern
+ * never matches it, and nesting like `<<b>script>` reassembles into a tag once
+ * the inner one is removed. Loop until the output stops changing, then drop
+ * any surviving angle brackets — whatever is left cannot be well-formed markup
+ * and has no business in a console report.
+ */
+function stripTags(html) {
+  let out = String(html);
+  let prev;
+  do { prev = out; out = out.replace(/<[^>]*>/g, ''); } while (out !== prev);
+  return out.replace(/[<>]/g, '');
+}
+
 async function wiktionary(word) {
   if (/\s/.test(word)) return null;
   try {
@@ -180,7 +198,7 @@ async function wiktionary(word) {
     const j = await r.json();
     const sec = j[cfg.wik];
     if (!sec?.length) return null;
-    return String(sec[0].definitions?.[0]?.definition ?? '').replace(/<[^>]+>/g, '').slice(0, 70);
+    return stripTags(String(sec[0].definitions?.[0]?.definition ?? '')).slice(0, 70);
   } catch { return null; }
 }
 
