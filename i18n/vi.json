@@ -416,5 +416,7 @@
   "word_builder_desc": "Đánh vần các từ bằng cách chạm chữ cái",
   "word_visibility": "Hiển thị từ",
   "you": "Bạn",
-  "your_name": "Tên của bạn"
+  "your_name": "Tên của bạn",
+  "show_unreviewed_words": "Hiển thị các từ chưa được kiểm tra",
+  "show_unreviewed_words_desc": "Chưa có người bản ngữ nào kiểm tra bản dịch của ngôn ngữ này. Các từ cốt lõi và từ an toàn đã được kiểm tra và luôn hiển thị; những từ còn lại bị ẩn. Bật để hiển thị tất cả các từ."
 }

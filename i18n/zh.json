@@ -416,5 +416,7 @@
   "word_builder_desc": "通过点击字母拼写单词",
   "word_visibility": "词语可见性",
   "you": "你",
-  "your_name": "你的名字"
+  "your_name": "你的名字",
+  "show_unreviewed_words": "显示未审核的词语",
+  "show_unreviewed_words_desc": "本语言的翻译未经母语者审核。核心词和安全词已审核，始终显示；其余词语已隐藏。开启后可显示全部词语。"
 }

@@ -416,5 +416,7 @@
   "word_builder_desc": "Scrie cuvinte atingând literele",
   "word_visibility": "Vizibilitate cuvinte",
   "you": "Tu",
-  "your_name": "Numele tău"
+  "your_name": "Numele tău",
+  "show_unreviewed_words": "Afișează cuvintele neverificate",
+  "show_unreviewed_words_desc": "Niciun vorbitor nativ nu a verificat traducerile acestei limbi. Cuvintele de bază și cele de siguranță au fost verificate și apar întotdeauna; restul sunt ascunse. Activează pentru a afișa toate cuvintele."
 }

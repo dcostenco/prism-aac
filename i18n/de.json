@@ -416,5 +416,7 @@
   "word_builder_desc": "Wörter durch Antippen von Buchstaben buchstabieren",
   "word_visibility": "Wort-Sichtbarkeit",
   "you": "Du",
-  "your_name": "Dein Name"
+  "your_name": "Dein Name",
+  "show_unreviewed_words": "Ungeprüfte Wörter anzeigen",
+  "show_unreviewed_words_desc": "Kein Muttersprachler hat die Übersetzungen dieser Sprache geprüft. Kern- und Sicherheitswörter wurden geprüft und werden immer angezeigt; der Rest ist ausgeblendet. Aktivieren, um alle Wörter anzuzeigen."
 }

@@ -416,5 +416,7 @@
   "word_builder_desc": "Soletre palavras tocando nas letras",
   "word_visibility": "Visibilidade de palavras",
   "you": "Você",
-  "your_name": "Seu nome"
+  "your_name": "Seu nome",
+  "show_unreviewed_words": "Mostrar palavras não revisadas",
+  "show_unreviewed_words_desc": "Nenhum falante nativo verificou as traduções deste idioma. As palavras essenciais e de segurança foram auditadas e aparecem sempre; as restantes estão ocultas. Ative para mostrar todas as palavras."
 }

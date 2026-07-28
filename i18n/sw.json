@@ -416,5 +416,7 @@
   "word_builder_desc": "Taja maneno kwa kugusa herufi",
   "word_visibility": "Muonekano wa Neno",
   "you": "Wewe",
-  "your_name": "Jina lakoni"
+  "your_name": "Jina lakoni",
+  "show_unreviewed_words": "Onyesha maneno ambayo hayajakaguliwa",
+  "show_unreviewed_words_desc": "Hakuna mzungumzaji asili aliyekagua tafsiri za lugha hii. Maneno ya msingi na ya usalama yamekaguliwa na huonekana kila wakati; mengine yamefichwa. Washa ili kuonyesha maneno yote."
 }

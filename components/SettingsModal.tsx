@@ -6,6 +6,7 @@ import { useCategoryStore } from '@/store/categoryStore';
 import { useAuthStore } from '@/store/authStore';
 import { synaluxSignInUrl, synaluxSignOutUrl, signInWithAppleNative, isNativeiOS, SynaluxProfile } from '@/services/aiService';
 import { LANG_META, SupportedLanguage } from '@/engine/i18n';
+import { UNREVIEWED_LANGUAGES } from '@/constants/translationReviewStatus';
 import { useT } from '@/engine/useT';
 import { VOCAB_SETS } from '@/constants/vocabularySets';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
@@ -120,6 +121,7 @@ export default function SettingsModal() {
   const setTheme = useSettingsStore(s => s.setTheme);
   const update = useSettingsStore(s => s.update);
   const aiAutocorrectEnabled = useSettingsStore(s => s.aiAutocorrectEnabled);
+  const showUnreviewedVocabulary = useSettingsStore(s => s.showUnreviewedVocabulary);
   const mathHoldTimeMs = useSettingsStore(s => s.mathHoldTimeMs);
   const mathTwoHitMagnify = useSettingsStore(s => s.mathTwoHitMagnify);
   const showHandCalibration = useSettingsStore(s => s.showHandCalibration);
@@ -311,6 +313,27 @@ export default function SettingsModal() {
                 </button>
               ))}
             </div>
+
+            {/* Only for languages whose machine translations no native speaker
+                has checked. For the other 24 this control would be a setting
+                with no effect, so it is not shown. */}
+            {UNREVIEWED_LANGUAGES.has(String(language).split('-')[0]) && (
+              <label className="flex items-center justify-between py-1.5 mt-3 border-t border-theme pt-3">
+                <div className="pr-3">
+                  <span className="text-primary text-sm font-semibold">
+                    {t('show_unreviewed_words')}
+                  </span>
+                  <p className="text-muted text-[10px]">
+                    {t('show_unreviewed_words_desc')}
+                  </p>
+                </div>
+                <Toggle
+                  on={showUnreviewedVocabulary}
+                  label={t('show_unreviewed_words')}
+                  onToggle={() => update({ showUnreviewedVocabulary: !showUnreviewedVocabulary })}
+                />
+              </label>
+            )}
           </Section>
 
           {/* ── VOCABULARY SET ── */}
