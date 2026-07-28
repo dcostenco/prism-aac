@@ -67,6 +67,23 @@ const KNOWN_QUALITY_VOICES: Record<string, string[]> = {
   bg: ['Daria'],
 };
 
+/**
+ * True on iOS/iPadOS Safari and anything embedded in WKWebView.
+ *
+ * iPadOS 13+ reports a desktop Macintosh UA, so the touch-point check is not
+ * optional — without it every iPad is misread as a Mac and keeps the unreliable
+ * local speech path. Feature detection is not possible here: the failure is
+ * that speechSynthesis reports success while producing no audio, which by
+ * definition cannot be detected from script.
+ */
+export function isWebKitMobile(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  // iPadOS 13+ masquerading as macOS.
+  return /Macintosh/.test(ua) && (navigator.maxTouchPoints ?? 0) > 1;
+}
+
 export function getBestOfflineVoice(lang: string): { voice: SpeechSynthesisVoice | null; quality: VoiceQuality } {
   if (!isSpeechSupported()) return { voice: null, quality: 'none' };
   const voices = loadVoices();
@@ -379,6 +396,29 @@ export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string)
   // aloud in English. Voices can still be unloaded on the very first call,
   // which classifies as 'none' and routes to neural until 'voiceschanged'.
   if (!isSpeechSupported() || getBestOfflineVoice(actualLang).quality === 'none') {
+    escalate();
+    return;
+  }
+
+  // iOS never takes the local shortcut.
+  //
+  // WebKit's speechSynthesis is not dependable enough to carry an AAC user's
+  // voice. It has no audible-success signal — onend fires whether or not sound
+  // came out — and it drops utterances in exactly the pattern this file
+  // already works around: cancel() immediately before speak() (see speakLocal)
+  // is a known WebKit bug, and the resume() interval further down exists
+  // because Safari stalls mid-utterance. Those workarounds reduce the failure
+  // rate; they do not make it zero, and every remaining failure is silent by
+  // construction, so the escalate-on-failure path never fires.
+  //
+  // Reported on iOS as tiles producing no sound at all, in English as well as
+  // Amharic. The neural path does not share the problem: it plays through the
+  // AudioContext that handlePhrase already warms inside the click gesture
+  // specifically for iOS.
+  //
+  // This trades cloud spend for reliability on one platform. On a device
+  // someone speaks through, silence is the more expensive failure.
+  if (isWebKitMobile()) {
     escalate();
     return;
   }

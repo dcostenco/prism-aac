@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 /**
  * Tapping a tile must use the voice the user chose.
  *
@@ -48,6 +48,38 @@ beforeEach(() => {
     voice('am-ET', 'System Amharic'),
   ]);
   useSettingsStore.setState({ language: 'en', voicePreferences: {} } as never);
+});
+
+/** Swap the UA for one test. jsdom's navigator is read-only, hence defineProperty. */
+function withUserAgent(ua: string, maxTouchPoints = 0) {
+  Object.defineProperty(window.navigator, 'userAgent', { value: ua, configurable: true });
+  Object.defineProperty(window.navigator, 'maxTouchPoints', { value: maxTouchPoints, configurable: true });
+}
+const DESKTOP_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120';
+
+describe('speakWord — iOS never takes the local shortcut', () => {
+  afterEach(() => withUserAgent(DESKTOP_UA, 0));
+
+  it.each([
+    ['iPhone', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15', 0],
+    ['iPad',   'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15', 0],
+    // iPadOS 13+ reports a desktop Macintosh UA; only maxTouchPoints gives it away.
+    ['iPadOS masquerading as Mac', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15', 5],
+  ])('goes neural on %s even with a healthy local voice', async (_name, ua, touch) => {
+    withUserAgent(ua, touch);
+    speakWord('hello', 1, 1, 'en-US');
+    await flush();
+    expect(mockSpeak(), 'WebKit speech is silent-on-failure; it must not carry AAC output').not.toHaveBeenCalled();
+    expect(mockAzure).toHaveBeenCalled();
+  });
+
+  it('leaves desktop on the local fast path', async () => {
+    withUserAgent(DESKTOP_UA, 0);
+    speakWord('hello', 1, 1, 'en-US');
+    await flush();
+    expect(mockSpeak(), 'desktop lost the local optimisation').toHaveBeenCalled();
+    expect(mockAzure).not.toHaveBeenCalled();
+  });
 });
 
 describe('speakWord — an explicitly chosen voice wins over the local shortcut', () => {

@@ -29,6 +29,9 @@ async function freshStore() {
 }
 
 describe('predictionStore — fresh user prefix completion', () => {
+  // Loads the bundled prediction seeds (~1.1MB for en). Runs in ~1.7s alone,
+  // but sits close enough to the 5s default that added parallel load tips it
+  // over — which is a timing artefact, not a regression in what it asserts.
   it('seeds wordFreq with bundled phrase vocabulary on first load', async () => {
     const store = await freshStore();
     const { wordFreq } = store.getState();
@@ -39,7 +42,7 @@ describe('predictionStore — fresh user prefix completion', () => {
     expect(wordFreq).toHaveProperty('goodbye');
     expect(wordFreq).toHaveProperty('help');
     expect(wordFreq).toHaveProperty('please');
-  });
+  }, 30_000);
 
   it('typing "goo" returns word completions, NOT the static fallbacks', async () => {
     const store = await freshStore();
