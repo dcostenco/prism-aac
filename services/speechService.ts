@@ -383,6 +383,24 @@ export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string)
     return;
   }
 
+  // An explicitly chosen voice wins over the local shortcut.
+  //
+  // Only the neural path reads voicePreferences, so short-circuiting to Web
+  // Speech here silently discarded the voice the user picked in settings and
+  // spoke in a browser voice instead — or, where the browser voice is present
+  // but mute, in nothing at all. Tapping a tile is the primary action of this
+  // app; it must not be the one path that ignores the setting.
+  //
+  // Web Speech cannot tell us it was inaudible: it has no audible-success
+  // signal, so `onend` fires just the same when nothing came out, and the
+  // escalate-on-failure below never triggers. Choosing a voice is therefore
+  // the only reliable way a user can get off the local path.
+  const baseLang = actualLang.toLowerCase().split(/[-_]/)[0];
+  if (useSettingsStore.getState().voicePreferences?.[baseLang]) {
+    escalate();
+    return;
+  }
+
   // speakLocal stops cloud audio, retires the prior utterance, cancels the
   // browser queue, and owns one Safari resume timer at a time.
   void speakLocal(toSpeak, rate, volume, actualLang).then((outcome) => {
