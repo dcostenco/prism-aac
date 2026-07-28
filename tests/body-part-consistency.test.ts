@@ -20,7 +20,7 @@
  * by Unicode normalization (precomposed ড় vs ড + nukta).
  */
 import { describe, it, expect } from 'vitest';
-import { getPhraseText } from '@/constants/phraseTranslations';
+import { getPhraseText, hasPhraseTranslation } from '@/constants/phraseTranslations';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { LANG_META } from '@/engine/i18n';
 
@@ -52,9 +52,11 @@ describe('Body-part tiles — one English word, one translation', () => {
     it(`"${english}" speaks one value in every language (${tiles.map((t) => t.id).join(' / ')})`, () => {
       const problems: string[] = [];
       for (const lang of LANGS) {
+        // Presence, not "differs from English" — see textFor() in
+        // body-part-distinctions.test.ts for why that proxy is unsafe.
         const values = tiles
-          .map((t) => ({ id: t.id, v: getPhraseText(t.id, lang as never, t.text) }))
-          .filter((x) => x.v && x.v !== t0Text(tiles)); // ignore untranslated fallbacks
+          .filter((t) => hasPhraseTranslation(t.id, lang as never))
+          .map((t) => ({ id: t.id, v: getPhraseText(t.id, lang as never, t.text) }));
         const distinct = new Set(values.map((x) => x.v));
         if (distinct.size > 1) {
           problems.push(`${lang}: ${values.map((x) => `${x.id}="${x.v}"`).join('  ')}`);
@@ -67,8 +69,3 @@ describe('Body-part tiles — one English word, one translation', () => {
     });
   }
 });
-
-/** English source text, used to detect an untranslated fallback. */
-function t0Text(tiles: typeof BODY): string {
-  return tiles[0].text;
-}

@@ -380,6 +380,29 @@ ambiguous as a tile label.
 - **am Leg reads as "foot"** — እግር genuinely covers both; the Foot tile is the
   marked የእግር መዳፍ, so the pair is still distinct.
 
+#### A blind spot in the checks themselves
+
+Found by reviewing the tests rather than the data. Both the distinctness and
+consistency tests decided "is this tile translated?" by comparing the returned
+text to the English source. That proxy is wrong: German and Dutch legitimately
+render Hand as "Hand" and Arm as "Arm", so those pairs were classed as
+untranslated and **skipped entirely** — five pair/language combinations were
+never checked at all. A regression setting German Arm to "Hand" would have
+passed both tests.
+
+Fixed with `hasPhraseTranslation()`, which asks whether an entry exists rather
+than inferring it from the text. It also has to test presence rather than
+truthiness, because a translation may be a deliberate empty string (`cw-to` is
+'' for ru/uk, which have no infinitive particle).
+
+Verified by mutation: injecting `de hb-arm = "Hand"` now fails with
+`de: both speak "Hand"`, where before it passed silently.
+
+`hbp-foot`/`hbp-leg` was also added to the contract explicitly. It had been
+covered only transitively — consistency pins `hbp-foot` to `hb-foot`, and
+`hb-foot`/`hbp-leg` is enforced — which is precisely the chain that looked
+intact while that pair was broken in three languages.
+
 #### Limits of this check
 
 It queries the same model family that produced most of these translations, so

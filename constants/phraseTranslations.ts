@@ -1555,6 +1555,28 @@ const T: Record<string, Partial<Record<SupportedLanguage, string>>> = {
   'gen-f3': { ro: 'A fost delicios', es: 'Estuvo delicioso', fr: 'C\'était délicieux', pt: 'Estava delicioso', de: 'Es war köstlich', ru: 'Было очень вкусно', uk: 'Було дуже смачно', ja: 'おいしかったです', ko: '맛있었어요', zh: '很好吃', ar: 'كان لذيذا', hi: 'बहुत स्वादिष्ट था', it: 'Era delizioso', pl: 'Było pyszne', he: 'היה טעים', nl: 'Het was heerlijk', vi: 'Rất ngon', tl: 'Masarap', tr: 'Çok lezzetliydi', id: 'Enak sekali', bg: 'Беше вкусно'},
 };
 
+/** Canonical bucket for a language — Chinese variants all share 'zh'. */
+function bucketFor(lang: SupportedLanguage): SupportedLanguage {
+  return (lang === 'zh-Hans' || lang === 'zh-Hant' || lang === 'zh-HK') ? 'zh' : lang;
+}
+
+/**
+ * True when a real translation exists for this id/lang.
+ *
+ * Exists because "the returned text equals the English source" is NOT a
+ * reliable test for "untranslated". German and Dutch legitimately render Hand
+ * as "Hand" and Arm as "Arm". Tests that used that string comparison as a
+ * proxy silently skipped those pairs, so a regression setting German Arm to
+ * "Hand" would have passed unnoticed.
+ *
+ * Checks presence, not truthiness: an entry may be a deliberate empty string
+ * (cw-to is '' for ru/uk, which have no infinitive particle).
+ */
+export function hasPhraseTranslation(phraseId: string, lang: SupportedLanguage): boolean {
+  if (lang === 'en') return true;
+  return typeof T[phraseId]?.[bucketFor(lang)] === 'string';
+}
+
 export function getPhraseText(phraseId: string, lang: SupportedLanguage, fallback: string): string {
   if (lang === 'en') return fallback;
   // BCP-47 Chinese variants all map to the 'zh' translation bucket.

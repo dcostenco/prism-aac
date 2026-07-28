@@ -36,6 +36,11 @@ export const CLINICALLY_DISTINCT_PAIRS: Array<{ a: string; b: string; why: strin
     why: 'Same reasoning as hand/arm — a foot injury and a leg injury are examined and treated differently. There is no hb-leg tile; Leg lives only in the hbp set.',
   },
   {
+    a: 'hbp-foot',
+    b: 'hbp-leg',
+    why: 'Both tiles live in the hbp set. Enforced explicitly rather than relying on the transitive chain (consistency pins hbp-foot to hb-foot, and hb-foot/hbp-leg is enforced) — this is the exact pair that was broken in am/sw/bn while the chain looked intact.',
+  },
+  {
     a: 'hb-mouth',
     b: 'hb-lips',
     why: 'Lip injury (bleeding, chapping, sting) vs mouth interior (toothache, sore throat, choking) point to different causes.',

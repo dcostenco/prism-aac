@@ -11,7 +11,7 @@
  * allowed to collapse.
  */
 import { describe, it, expect } from 'vitest';
-import { getPhraseText } from '@/constants/phraseTranslations';
+import { getPhraseText, hasPhraseTranslation } from '@/constants/phraseTranslations';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { LANG_META } from '@/engine/i18n';
 import {
@@ -29,10 +29,13 @@ const LANGS = LANG_META.map((l) => l.code).filter(
 function textFor(id: string, lang: string): string | null {
   const phrase = DEFAULT_PHRASES.find((p) => p.id === id);
   if (!phrase) return null;
-  const out = getPhraseText(id, lang as never, phrase.text);
-  // An untranslated tile falls back to English; that's a coverage gap, not a
-  // collision, and is already covered by the coverage-floor tests.
-  return out && out !== phrase.text ? out : null;
+  // Ask whether a translation EXISTS, rather than inferring it from the text
+  // differing from English. German and Dutch render Hand as "Hand" and Arm as
+  // "Arm"; the old string comparison treated those as untranslated and skipped
+  // the pair entirely, so a regression setting German Arm to "Hand" would have
+  // passed. An untranslated tile is a coverage gap, already covered elsewhere.
+  if (!hasPhraseTranslation(id, lang as never)) return null;
+  return getPhraseText(id, lang as never, phrase.text);
 }
 
 describe('Body-part tiles — clinically distinct pairs speak differently', () => {
