@@ -109,14 +109,24 @@ for (const m of fs.readFileSync(path.join(ROOT, 'constants/phraseTranslations.ts
 // Read the pairs from the contract rather than duplicating them, so this
 // script cannot silently drift from what CI enforces.
 const contract = fs.readFileSync(path.join(ROOT, 'constants/bodyPartDistinctions.ts'), 'utf-8');
-const distinctBlock = contract.slice(
-  contract.indexOf('CLINICALLY_DISTINCT_PAIRS'),
-  contract.indexOf('UNRESOLVABLE_IN_LANGUAGE'),
-);
+const startIdx = contract.indexOf('CLINICALLY_DISTINCT_PAIRS');
+const endIdx = contract.indexOf('UNRESOLVABLE_IN_LANGUAGE');
+const distinctBlock = contract.slice(startIdx, endIdx > startIdx ? endIdx : undefined);
 const PAIRS = [...distinctBlock.matchAll(/a: '([^']+)',\s*\n\s*b: '([^']+)'/g)].map((m) => [m[1], m[2]]);
-if (!PAIRS.length) {
-  console.error('Could not parse CLINICALLY_DISTINCT_PAIRS from bodyPartDistinctions.ts');
-  process.exit(1);
+
+// A PARTIAL parse is the dangerous case, not a total one. If the regex misses
+// pairs after someone reformats the contract, this would quietly check a
+// subset and still print "0 collisions" — manufacturing confidence over tiles
+// it never looked at. Cross-check against a count derived a different way and
+// refuse to run on any mismatch.
+const declaredCount = (distinctBlock.match(/^\s*a: '/gm) ?? []).length;
+if (!PAIRS.length || PAIRS.length !== declaredCount) {
+  console.error(
+    `Refusing to run: parsed ${PAIRS.length} pair(s) but the contract declares ` +
+    `${declaredCount}. The pair-matching regex has drifted from ` +
+    `constants/bodyPartDistinctions.ts — fix it rather than trusting a partial run.`,
+  );
+  process.exit(2);
 }
 
 let token = null;

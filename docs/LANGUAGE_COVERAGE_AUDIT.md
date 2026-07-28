@@ -29,7 +29,7 @@ language** (1512 − (1261 − 40)).
 | Grammar rules | `constants/languageRules.ts` | 25 | 28 |
 | Keyboard layouts | `constants/keyboardLayouts.ts` | 25 | 28 (+ Ge'ez vowel-order model) |
 | Prediction seeds | `constants/predictionSeeds/*.ts` | 14 full, 9 stubs, 1 partial | see below |
-| TTS voices | `portal/src/shared/voice-catalog.ts` | 25 langs | 28 (am/sw/bn **unverified**) |
+| TTS voices | `portal/src/shared/voice-catalog.ts` | 25 langs | 28 (am/sw/bn verified live, see Finding 4) |
 
 ## Finding 1 — nine corpus sections are empty in every single locale
 
@@ -301,7 +301,7 @@ verdict. Waveform correlation was also tried and rejected: 0.20 for a known
 homophone vs -0.01 for a control is a real gap, but neural TTS varies prosody
 run to run, so it cannot be thresholded safely.
 
-#### The round trip also found two translation bugs
+#### The round trip also found three translation bugs
 
 Not its purpose, but the recognizer disagreeing with the input is a useful
 signal in itself:
@@ -309,8 +309,32 @@ signal in itself:
 - **`sw` Heel was "Kisvisvi"** — not a Swahili word; the recognizer garbled it
   to "Kiswisi". Corrected to **Kisigino**. The model review missed this one.
 - **`bn` Ankle was "পায়ের গোঁড়ালি"** — a candrabindu the recognizer did not
-  hear, and it duplicated the Heel root. Corrected to **টাখনু**, which
-  independently confirms the Bengali reviewer's ankle/heel finding.
+  hear, and it duplicated the Heel root. This independently confirmed the
+  Bengali reviewer's ankle/heel finding.
+- **`bn` Ankle's replacement was itself unsafe.** The reviewer's dictionary
+  word টাখনু round-tripped as **তখনও** ("even then") and the variant টাকনু as
+  **তাকানো** ("to look") — both common unrelated words. On a device that
+  reports pain location, "correct in the dictionary" loses to "correctly heard
+  aloud". Now **পায়ের গাঁট**, which round-trips cleanly.
+
+  Two acoustically-fine candidates were still rejected: গোড়ালির গাঁট and
+  পায়ের গোড়ালি both contain গোড়ালি, the exact word used for Heel, so a
+  listening caregiver would semantically link them to the wrong tile. Passing
+  the acoustic check is necessary, not sufficient.
+
+### Word choices that still need a native speaker
+
+These are reasoned judgments backed by acoustic evidence, not validated by a
+native speaker. Listed so nobody mistakes "the tooling passed" for "a human
+approved it":
+
+| Lang | Tile | Value | Why it needs review |
+| --- | --- | --- | --- |
+| bn | Ankle | পায়ের গাঁট | In isolation could read as "leg joint" (knee-adjacent) rather than specifically ankle; the surrounding tiles narrow it by elimination, but that is inference. |
+| bn | Arm | পুরো হাত | Shares a root with হাত (Hand). Round-trips distinctly (33% duration apart, separate transcripts), but worth a listen. |
+| am | Foot | የእግር መዳፍ | Built on the productive pattern in የእጅ መዳፍ ("palm of the hand"); confirmed by a reviewer, not by a native speaker. |
+| ro | Throat | Gâtlej | Real word, but skews adult register; a child may just say gât. |
+| ja | Foot | 足の裏 | Literally "sole", so it slightly misdescribes an injury to the top of the foot — the same trade-off already accepted for Hebrew כף רגל and Indonesian telapak kaki. |
 
 ## Translation provenance — read this before claiming language support
 
