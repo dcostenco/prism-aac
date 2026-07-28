@@ -116,4 +116,19 @@ export const PERMITTED_COLLAPSES: Array<{ a: string; b: string; why: string }> =
     b: 'hbp-ears',
     why: 'Singular/plural, same reasoning as eye/eyes.',
   },
+  {
+    a: 'hb-tummy',
+    b: 'hbp-belly',
+    why: 'Third member of the Tummy/Belly synonym group — hb-tummy, hb-belly and hbp-belly all name the same body part, so every pairing among them is a permitted collapse.',
+  },
+  {
+    a: 'hb-belly',
+    b: 'hbp-belly',
+    why: 'Same word on two tile sets; collapsing is correct, not a defect.',
+  },
+  {
+    a: 'hb-mouth',
+    b: 'hbp-mouth',
+    why: 'Same English word on both tile sets. Consistency is enforced separately by tests/body-part-consistency.test.ts; sharing a value here is required, not a collision.',
+  },
 ];

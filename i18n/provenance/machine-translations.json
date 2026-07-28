@@ -4,7 +4,7 @@
     "corpus": {
       "bg": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T05:21:28.235Z",
+        "generatedAt": "2026-07-28T07:14:11.035Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",

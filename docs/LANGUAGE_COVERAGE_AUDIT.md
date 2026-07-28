@@ -322,19 +322,87 @@ signal in itself:
   listening caregiver would semantically link them to the wrong tile. Passing
   the acoustic check is necessary, not sufficient.
 
+### Checking MEANING as well as sound
+
+The acoustic check proves two tiles sound different. It cannot prove they mean
+the right thing. `npm run check:meaning` closes that gap by showing a model
+ONLY the foreign word — never the tile id, never the expected answer, with the
+words shuffled so neighbours cannot cue each other — and asking which English
+body part it names. Two failure classes:
+
+- **MISMATCH** — the tile speaks a word for a different body part
+- **SEMANTIC COLLISION** — two tiles land on the same concept, so the user
+  still cannot say which part hurts even though the words sound different
+
+This found a defect class the other checks were blind to. **All 14 English body
+words that appear on both tile sets disagreed in at least one language**, and
+those disagreements were where the bugs hid:
+
+| Lang | Was | Now | What it actually was |
+| --- | --- | --- | --- |
+| sw | Knee "Lutagamba" / "Lutagano" | **Goti** | neither was a Swahili word |
+| sw | Knuckle "Kipigo cha kidole" | **Kifundo cha kidole** | read back as "fingerprint" — kipigo means a beating |
+| sw | Wrist "Kipundo cha mkono" | **Kifundo cha mkono** | typo |
+| sw | Elbow "Kiwiko" | **Kisugudi** | read back as wrist, collided with the Wrist tile |
+| tl | Neck "Leig" | **Leeg** | letter-transposition typo |
+| pl | Arm and Shoulder both "Ramię" | **Ręka / Bark** | outright collision |
+| de | Knuckle and Ankle both "Knöchel" | **Fingerknöchel / Fußknöchel** | German uses one word for both |
+| bn | Knee "হাটু" | **হাঁটু** | missing candrabindu |
+| bn | Face "মুখ" | **চেহারা** | same word as Mouth |
+| bn | Neck / Toe | precomposed forms | Unicode normalization: precomposed ড়/য় vs decomposed base+nukta — the two tiles differed only in bytes |
+| hi | Leg "पैरों" | **टांग** | plural oblique ("feet"), not a singular leg |
+| am | Bottom "ቀንደብ" | **መቀመጫ** | read back as "eyebrow" |
+
+**One of these was a regression I introduced.** Setting Amharic Arm = ክንድ
+collided with Elbow, which was already ክንድ. Fixed to ክርን. Two checks in this
+suite were green while it was broken — distinctness only covered the pairs in
+the contract, and Arm/Elbow was not one of them.
+
+`tests/body-part-consistency.test.ts` now enforces the general rule (one English
+word, one translation) so this class cannot recur silently. That test is what
+would have caught `hbp-foot`, which stayed identical to `hbp-leg` in three
+languages while `hb-foot` — the same English word — was being fixed in ten.
+
+Two adjudications were **overridden** because they optimised consistency
+without the distinctness constraint: `ja` Foot → あし and `bn` Foot → পা would
+each have restored a collision with Leg that had just been fixed. `ja` Teeth was
+also kept as 歯 rather than kana, since bare は is the topic particle and
+ambiguous as a tile label.
+
+#### Accepted, not defects
+
+- **Hand reads back as "palm"** in ru/uk/bg/sw. Deliberate: those languages use
+  one word for hand+arm, so the Hand tile was moved to the palm-word to make the
+  pair distinguishable. The design working, not a fault.
+- **Hip** reads back as "waist" or "thigh" in he/bg/am/bn, and **hip ≈ bottom**
+  in ja/ko. Several languages have no distinct everyday word for the hip.
+  Forcing one would produce a word no child would say.
+- **am Leg reads as "foot"** — እግር genuinely covers both; the Foot tile is the
+  marked የእግር መዳፍ, so the pair is still distinct.
+
+#### Limits of this check
+
+It queries the same model family that produced most of these translations, so
+for those, agreement is partly self-confirming — it catches gross errors and
+word-sense slips, not shared blind spots. Answers also vary slightly between
+runs, so a single clean run is not proof. It is genuinely independent only for
+words chosen by a different reviewer, which is the set it was built to settle.
+
 ### Word choices that still need a native speaker
 
-These are reasoned judgments backed by acoustic evidence, not validated by a
+Reasoned, acoustically verified, and meaning-checked — but not validated by a
 native speaker. Listed so nobody mistakes "the tooling passed" for "a human
 approved it":
 
 | Lang | Tile | Value | Why it needs review |
 | --- | --- | --- | --- |
-| bn | Ankle | পায়ের গাঁট | In isolation could read as "leg joint" (knee-adjacent) rather than specifically ankle; the surrounding tiles narrow it by elimination, but that is inference. |
-| bn | Arm | পুরো হাত | Shares a root with হাত (Hand). Round-trips distinctly (33% duration apart, separate transcripts), but worth a listen. |
-| am | Foot | የእግር መዳፍ | Built on the productive pattern in የእጅ መዳፍ ("palm of the hand"); confirmed by a reviewer, not by a native speaker. |
-| ro | Throat | Gâtlej | Real word, but skews adult register; a child may just say gât. |
-| ja | Foot | 足の裏 | Literally "sole", so it slightly misdescribes an injury to the top of the foot — the same trade-off already accepted for Hebrew כף רגל and Indonesian telapak kaki. |
+| bn | Ankle | পায়ের গাঁট | Could read as "leg joint" rather than specifically ankle; the neighbouring tiles narrow it by elimination, which is inference. |
+| bn | Arm | পুরো হাত | Shares a root with হাত (Hand); round-trips distinctly but worth a listen. |
+| am | Foot | የእግር መዳፍ | Built on the productive pattern in የእጅ መዳፍ ("palm of the hand"). |
+| ro | Throat | Gâtlej | Real word, but skews adult register. |
+| ja | Foot | 足の裏 | Literally "sole", so it slightly misdescribes an injury to the top of the foot. |
+| ru/uk | Foot | Ступня | Chosen over Стопа; both legitimate, this was a closer call. |
+| hi | Finger | उंगली | Anusvara vs chandrabindu — usage favours this, strict orthography the other. |
 
 ## Translation provenance — read this before claiming language support
 

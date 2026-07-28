@@ -20,7 +20,8 @@
     "i18n:review-status": "node scripts/i18n-review-status.mjs",
     "i18n:translate": "node scripts/translate-corpus.mjs",
     "i18n:provenance": "node scripts/rebuild-translation-provenance.mjs",
-    "check:spoken": "node scripts/check-spoken-collisions.mjs"
+    "check:spoken": "node scripts/check-spoken-collisions.mjs",
+    "check:meaning": "node scripts/check-back-translation.mjs"
   },
   "dependencies": {
     "@datadog/browser-logs": "^7.2.0",
