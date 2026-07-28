@@ -23,6 +23,31 @@ export const QC_COUNT = 28;
 const matrix = translations as Record<string, Record<string, string>>;
 
 /**
+ * Localized/English pairs for the core vocabulary.
+ *
+ * Same rows as `getAacCoreFor`, but keeps both sides of each `qc_*` row
+ * together instead of returning two arrays to be zipped by position — a row
+ * absent for one locale would shift the alignment and silently mislabel every
+ * word after it.
+ *
+ * Exists so the English source of a core word can be recovered and a pictogram
+ * looked up in a locale ARASAAC cannot search. Rows with no translation are
+ * skipped: falling back to English would map English to itself, which tells
+ * the caller nothing and would mask a genuinely missing translation.
+ */
+export function getAacCorePairs(lang: SupportedLanguage): Array<[string, string]> {
+  const canonical = canonicalizeLang(lang);
+  const out: Array<[string, string]> = [];
+  for (let i = 1; i <= QC_COUNT; i++) {
+    const row = matrix[`qc_${i}`];
+    if (!row) continue;
+    const localized = row[canonical] ?? row[lang];
+    if (localized && row.en) out.push([localized, row.en]);
+  }
+  return out;
+}
+
+/**
  * Returns AAC core vocabulary for a language, ranked by communicative
  * priority (pronouns, requesters, verbs, modifiers, questions). Used as
  * the prediction-bar fallback when the engine can't fill all slots.
