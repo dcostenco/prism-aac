@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getLetterRows, getPredictionsForLanguage, LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS, GEEZ_VOWEL_ORDERS, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
+import { getLetterRows, getPredictionsForLanguage, LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS, GEEZ_VOWEL_ORDERS, GEEZ_MODIFIERS, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
 
 describe('Keyboard layouts — getLetterRows', () => {
   it('returns QWERTY layout for English', () => {
@@ -61,7 +61,12 @@ describe('Keyboard layouts — getLetterRows', () => {
 
   it('returns Japanese Hiragana layout', () => {
     const rows = getLetterRows('ja');
-    expect(rows).toHaveLength(3);
+    // 5 rows, not 3: the layout used to stop at は行, leaving ま/や/ら/わ行 and
+    // ん untypable. The old length assertion locked that gap in.
+    // 5 kana rows + 1 modifier row (゛゜小), which are not characters.
+    expect(rows).toHaveLength(6);
+    expect(rows.slice(0, 5).flat()).toHaveLength(46);
+    expect(rows.flat()).toContain('ん');
     expect(rows[0][0]).toBe('あ');
   });
 
@@ -177,50 +182,59 @@ describe('Keyboard layouts — Sprint 4 languages (am, sw, bn)', () => {
     expect(rows[2]).toContain('ম');
   });
 
-  it('returns the 33 base Geez consonants for Amharic', () => {
+  it('returns the 33 base Geez consonants plus the vowel-order keys', () => {
     const rows = getLetterRows('am');
-    const flat = rows.flat();
-    expect(flat).toHaveLength(33);
-    expect(flat[0]).toBe('ሀ');
-    expect(flat[flat.length - 1]).toBe('ፐ');
-    // Every key must be a 1st-order (gəʿəz) base — the vowel-order modifier
-    // relies on this. A pre-inflected glyph here would corrupt the offset math.
-    for (const c of flat) {
-      expect((c.codePointAt(0) as number) % 8).toBe(0);
-    }
-    expect(new Set(flat).size).toBe(33);
+    // Rows 0-2 are the base fidel; the last row carries the vowel-order
+    // modifiers, exactly as `ja` carries dakuten/handakuten.
+    const bases = rows.slice(0, 3).flat();
+    expect(bases).toHaveLength(33);
+    expect(bases[0]).toBe('ሀ');
+    expect(bases[bases.length - 1]).toBe('ፐ');
+    // Every base must be a 1st-order (gəʿəz) glyph — the offset arithmetic
+    // depends on it. A pre-inflected glyph here would corrupt the whole fidel.
+    for (const c of bases) expect((c.codePointAt(0) as number) % 8).toBe(0);
+    expect(new Set(bases).size).toBe(33);
+    expect(rows[rows.length - 1]).toEqual(GEEZ_MODIFIERS);
   });
 });
 
 describe("Ge'ez vowel-order modifier", () => {
-  it('exposes exactly the 7 vowel orders', () => {
-    expect(GEEZ_VOWEL_ORDERS).toHaveLength(7);
-    expect(GEEZ_VOWEL_ORDERS.map((o) => o.offset)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  it('exposes the 6 non-base vowel orders as modifier keys', () => {
+    // Six, not seven: the 1st order IS the base character, already on the
+    // grid, so a key for it would be a no-op.
+    expect(GEEZ_VOWEL_ORDERS).toHaveLength(6);
+    expect(GEEZ_VOWEL_ORDERS.map((o) => o.offset)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(GEEZ_MODIFIERS).toEqual(['ሁ', 'ሂ', 'ሃ', 'ሄ', 'ህ', 'ሆ']);
   });
 
-  it('inflects a base consonant through all 7 orders', () => {
-    // ለ (U+1208) is the canonical teaching example.
+  it('inflects the last character of the buffer through every order', () => {
+    // Signature matches applyKanaModifier: whole text in, whole text out.
     const forms = GEEZ_VOWEL_ORDERS.map((o) => applyGeezVowelOrder('ለ', o.offset));
-    expect(forms).toEqual(['ለ', 'ሉ', 'ሊ', 'ላ', 'ሌ', 'ል', 'ሎ']);
+    expect(forms).toEqual(['ሉ', 'ሊ', 'ላ', 'ሌ', 'ል', 'ሎ']);
   });
 
-  it('derives the full 231-glyph fidel from 33 keys', () => {
-    const bases = getLetterRows('am').flat();
-    const all = bases.flatMap((b) => GEEZ_VOWEL_ORDERS.map((o) => applyGeezVowelOrder(b, o.offset)));
-    expect(all).toHaveLength(231);
-    expect(all.every((g) => typeof g === 'string')).toBe(true);
-    // No collisions — each consonant/order pair is a distinct glyph.
-    expect(new Set(all).size).toBe(231);
+  it('derives the full 231-glyph fidel from 33 keys plus 6 modifiers', () => {
+    const bases = getLetterRows('am').slice(0, 3).flat();
+    const inflected = bases.flatMap((b) =>
+      GEEZ_VOWEL_ORDERS.map((o) => applyGeezVowelOrder(b, o.offset)),
+    );
+    // 33 bases already typeable + 33x6 reachable via the modifiers.
+    expect(bases.length + inflected.length).toBe(231);
+    expect(new Set([...bases, ...inflected]).size).toBe(231);
+  });
+
+  it('rewrites only the final character, leaving earlier text intact', () => {
+    expect(applyGeezVowelOrder('ሰላም ለ', 3)).toBe('ሰላም ላ');
   });
 
   it('refuses to inflect an already-inflected glyph', () => {
-    // The bug this guards: ሉ + offset 1 would arithmetically yield ሊ, and
-    // enough taps would walk into the next consonant series entirely.
+    // ሉ + 1 would arithmetically give ሊ, and enough taps walk into the next
+    // consonant series entirely.
     expect(applyGeezVowelOrder('ሉ', 1)).toBeNull();
     expect(applyGeezVowelOrder('ሊ', 3)).toBeNull();
   });
 
-  it('refuses non-Ethiopic input and out-of-range orders', () => {
+  it('refuses non-Ethiopic input, empty text and out-of-range orders', () => {
     expect(applyGeezVowelOrder('A', 1)).toBeNull();
     expect(applyGeezVowelOrder('я', 2)).toBeNull();
     expect(applyGeezVowelOrder('', 1)).toBeNull();

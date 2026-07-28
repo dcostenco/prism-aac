@@ -4,6 +4,7 @@ import { useMessageStore, setLatestTranslated } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
 import { aacSpeak } from '@/services/aacSpeak';
+import { speakWord } from '@/services/speechService';
 import type { SupportedLanguage } from '@/engine/i18n';
 import { tapFeedback, deleteFeedback, speakFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
@@ -16,8 +17,31 @@ import { translateWithAIRefine, looksLikeTargetLang, abortTranslation } from '@/
 import { usePredictionStore } from '@/store/predictionStore';
 import { triggerAISubmit } from '@/services/aiChatBridge';
 import { isSafeAutoCorrection } from '@/services/autocorrectSafety';
+import { isConfidentCompleteWord } from '@/engine/predictionEngine';
+import { loadPredictionSeed } from '@/constants/predictionSeeds';
 
-export default function MessageBar() {
+function normalizeSpokenText(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+const COMPOSITION_SILENCE_MS = 2000;
+const COMPLETE_WORD_SILENCE_MS = 400;
+const DIRECT_SPEECH_DEDUPE_MS = COMPOSITION_SILENCE_MS + 1000;
+
+function trailingSpokenWord(value: string): string {
+  const lastToken = value.trim().split(/\s+/).at(-1) ?? '';
+  return lastToken.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+}
+
+/**
+ * `compact` is phone landscape (viewport under 500px tall). The bar stays
+ * mounted there — it carries the composed message and the Play button, and an
+ * AAC user who cannot see the sentence they are building has lost the point of
+ * the app — but it gives up its vertical padding so the keyboard keeps the
+ * height. The controls already size from vw/svh clamps, so they shrink on
+ * their own; only the box needs to be told to stop reserving 72px.
+ */
+export default function MessageBar({ compact = false }: { compact?: boolean } = {}) {
   const text = useMessageStore((s) => s.text);
   const activeTone = useMessageStore((s) => s.activeTone);
   const toneMode = useMessageStore((s) => s.toneMode);
@@ -61,8 +85,11 @@ export default function MessageBar() {
   // Updated by the autocorrect useEffect after a "no correction
   // needed" round-trip (the input is well-formed).
   const lastSilenceSpokenRef = useRef('');
-  // Timer ref for translation-mode auto-speak after silence.
-  const translationSpeakTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks speech already triggered by a direct tile/word action so the
+  // composition silence timer does not repeat the same utterance.
+  const lastAutoSpokenRef = useRef({ text: '', at: 0 });
+  // Timer ref for phrase-level auto-speak after composition silence.
+  const compositionSpeakTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── TTS word highlight (Read & Write parity) ────────────────────
   //
@@ -100,6 +127,15 @@ export default function MessageBar() {
         return;
       }
       // tts-highlight-start
+      const normalizedSpokenText = normalizeSpokenText(event.text);
+      lastAutoSpokenRef.current = {
+        text: normalizedSpokenText,
+        at: Date.now(),
+      };
+      // Direct tile/space/prediction speech already delivered this trailing
+      // word. Mark it here so the independent autocorrect-silence path cannot
+      // send a second, last-word-only cloud request moments later.
+      lastSilenceSpokenRef.current = trailingSpokenWord(normalizedSpokenText);
       stopHighlight();
       // Tokenise the SPOKEN text the same way the renderer does so the
       // word index matches. We only highlight if the spoken string is
@@ -144,9 +180,11 @@ export default function MessageBar() {
   }, []);
 
   useEffect(() => {
+    // Translation is derived from the current text/language pair and must be
+    // cleared before starting a replacement request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTranslated(null);
     if (language === outputLanguage || !text.trim()) return;
-    let mounted = true;
     let cancelled = false;
     const instant = translateWithAIRefine(
       text.trim(), language, outputLanguage,
@@ -163,41 +201,87 @@ export default function MessageBar() {
     return () => { cancelled = true; abortTranslation(); };
   }, [text, language, outputLanguage]);
 
-  // ── Translation auto-speak after silence ─────────────────────────────────
-  // When translation mode is active (language ≠ outputLanguage) and autoSpeak
-  // is on, speak the full translated phrase after 2 seconds of inactivity.
-  // This replaces word-by-word auto-speak (suppressed in translation mode) with
-  // a single clean utterance in the target language once the user pauses.
-  const TRANSLATION_SILENCE_MS = 2000;
+  // ── Phrase auto-speak after silence ───────────────────────────────────────
+  // Auto-speak cannot depend on the AI autocorrect request succeeding. A
+  // corpus-confirmed complete word speaks after the existing 400 ms typing
+  // pause; an ambiguous fragment waits two seconds. This makes valid
+  // one-letter utterances such as "I" audible without restoring per-key
+  // letter-name echo for arbitrary fragments.
   useEffect(() => {
-    if (translationSpeakTimer.current) clearTimeout(translationSpeakTimer.current);
+    if (compositionSpeakTimer.current) clearTimeout(compositionSpeakTimer.current);
     const { language: lang, outputLanguage: outLang } = useSettingsStore.getState();
     const translationActive = lang !== outLang;
     const { autoSpeak: as, soundEnabled: se } = useMessageStore.getState();
-    if (!translationActive || !as || !se || !text.trim()) return;
+    const phrase = text.trim();
+    if (!as || !se || !phrase) return;
 
-    translationSpeakTimer.current = setTimeout(() => {
+    let cancelled = false;
+    const startedAt = Date.now();
+    const speakCurrentPhrase = () => {
       const { autoSpeak, soundEnabled } = useMessageStore.getState();
       if (!autoSpeak || !soundEnabled) return;
+      const normalizedPhrase = normalizeSpokenText(phrase);
+      const lastSpoken = lastAutoSpokenRef.current;
+      if (
+        lastSpoken.text
+        && Date.now() - lastSpoken.at <= DIRECT_SPEECH_DEDUPE_MS
+        && (
+          normalizedPhrase === lastSpoken.text
+          || normalizedPhrase.endsWith(` ${lastSpoken.text}`)
+        )
+      ) {
+        return;
+      }
       // Use translatedRef.current so we always read the latest AI-refined
       // translation — the closure over `translated` would be stale here
       // because `translated` is intentionally excluded from the deps array.
       const latestTranslated = translatedRef.current;
       const outLang = useSettingsStore.getState().outputLanguage as SupportedLanguage | undefined;
-      // interrupt=true: stop any in-flight Azure stream before speaking the new
-      // translation. Without this, consecutive translation timer fires overlap
-      // → echo/double-streaming on foreign languages (ru-RU reported May 2026).
-      aacSpeak(latestTranslated || text.trim(), speechRate, speechVolume, activeTone, true, latestTranslated ? outLang : undefined);
-    }, TRANSLATION_SILENCE_MS);
+      if (translationActive) {
+        // interrupt=true: stop any in-flight Azure stream before speaking the
+        // new translation. Consecutive phrase timers must not overlap.
+        void aacSpeak(
+          latestTranslated || phrase,
+          speechRate,
+          speechVolume,
+          activeTone,
+          true,
+          latestTranslated ? outLang : undefined,
+        );
+      } else {
+        // Same-language composition feedback reuses the latest-wins
+        // quality-first path while replaying the complete accumulated message.
+        speakWord(phrase, speechRate, speechVolume);
+      }
+    };
+
+    void loadPredictionSeed(lang).then((seed) => {
+      if (cancelled) return;
+      const lastWord = trailingSpokenWord(phrase);
+      const delay = isConfidentCompleteWord(lastWord, seed.wordFreq, lang)
+        ? COMPLETE_WORD_SILENCE_MS
+        : COMPOSITION_SILENCE_MS;
+      const remainingDelay = Math.max(0, delay - (Date.now() - startedAt));
+      compositionSpeakTimer.current = setTimeout(speakCurrentPhrase, remainingDelay);
+    });
 
     return () => {
-      if (translationSpeakTimer.current) clearTimeout(translationSpeakTimer.current);
+      cancelled = true;
+      if (compositionSpeakTimer.current) clearTimeout(compositionSpeakTimer.current);
     };
   // NOTE: `translated` intentionally excluded from deps — including it would
   // restart the 2s timer when AI-refine updates the translation, causing a
   // second auto-speak. The timer callback reads translated state at fire time.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, speechRate, speechVolume, activeTone]);
+  }, [
+    text,
+    speechRate,
+    speechVolume,
+    activeTone,
+    language,
+    outputLanguage,
+    autoSpeak,
+    soundEnabled,
+  ]);
 
   // Debounced background suggestion — child must explicitly tap to accept,
   // never auto-applied.
@@ -241,20 +325,20 @@ export default function MessageBar() {
       const inputIsValid = !fixed || fixed === trimmed || norm(fixed) === norm(trimmed);
 
       // Silence-detect speech. After the autocorrect roundtrip confirms
-      // the input is well-formed (server returned no real change), speak
-      // the most recently completed word. This replaces the previous
+      // the input is well-formed (server returned no real change), replay
+      // the cumulative phrase. This replaces the previous
       // per-keystroke letter echo (which Azure pronounced as letter
       // names "aitch / double-yu / tee"). Word-level speech is the right
       // granularity for AAC: confirms what the user typed without
-      // spelling. Dedup via lastSilenceSpokenRef so the same trailing
-      // word doesn't re-speak on every render.
+      // spelling. Dedup via lastSilenceSpokenRef so an unchanged trailing
+      // word doesn't replay the phrase on every render.
       if (inputIsValid) {
         // Read fresh state from stores rather than relying on closure
         // captures from the outer render — speechRate / activeTone
         // could have changed between text-change and timer fire.
         const ms = useMessageStore.getState();
         const ss = useSettingsStore.getState();
-        if (ms.soundEnabled) {
+        if (ms.autoSpeak && ms.soundEnabled) {
           const tokens = trimmed.split(/\s+/);
           const lastWord = tokens[tokens.length - 1] || '';
           // Skip silence speech for short trailing partials (≤2 chars).
@@ -264,14 +348,12 @@ export default function MessageBar() {
           // "letter by letter wai" complaint Speak's strip-fallback was
           // designed to prevent. Only speak words ≥3 chars; users in
           // mid-typing get silent feedback until they finish a word.
-          // In translation mode, suppress word-by-word silence-detect speech.
-          // Speaking individual source-language words with the target voice produces
-          // mixed-language audio (ro-RO + ru-RU simultaneously). The user presses
-          // Speak to hear the full translated phrase.
+          // In translation mode, suppress this same-language path; the
+          // composition timer translates and speaks the cumulative phrase.
           const translationActive = ss.language !== ss.outputLanguage;
           if (!translationActive && lastWord.length >= 3 && lastWord.toLowerCase() !== lastSilenceSpokenRef.current.toLowerCase()) {
             lastSilenceSpokenRef.current = lastWord;
-            aacSpeak(lastWord, ss.speechRate, ss.speechVolume, ms.activeTone);
+            speakWord(trimmed, ss.speechRate, ss.speechVolume);
           }
         }
         return;
@@ -374,7 +456,19 @@ export default function MessageBar() {
       return;
     }
     const original = text.trim();
+    // soundEnabled is a master mute and Play does not override it. Someone who
+    // muted deliberately — a caregiver in a classroom, a user in a quiet room —
+    // must not be made audible by pressing Play, and must not have their mute
+    // silently cleared as a side effect.
     if (!original || !soundEnabled) return;
+    // Play is authoritative: it must replace any delayed composition speech.
+    // The prediction seed can resolve after this click, so clearing an
+    // already-created timeout is not sufficient by itself. We also mark the
+    // source phrase as directly spoken below, which makes a late timer no-op.
+    if (compositionSpeakTimer.current) {
+      clearTimeout(compositionSpeakTimer.current);
+      compositionSpeakTimer.current = null;
+    }
 
     // Auto-apply *safe* AI corrections on Speak. The Speak button is the
     // user's "I'm done" signal — clear typos like "программычто" should
@@ -447,6 +541,14 @@ export default function MessageBar() {
     } else {
       aacSpeak(toSpeak, speechRate, speechVolume, activeTone, true);
     }
+    // aacSpeak emits its highlight synchronously. In translation mode that
+    // event contains the translated text, but the composition timer is keyed
+    // to the source phrase. Restore the source marker after the call so even a
+    // prediction-seed promise that resolves later cannot replay/abort Play.
+    lastAutoSpokenRef.current = {
+      text: normalizeSpokenText(original),
+      at: Date.now(),
+    };
   }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance, suggestion, setText, outputLanguage]);
 
   const cancelDelete = useCallback(() => {
@@ -475,8 +577,15 @@ export default function MessageBar() {
   return (
     <div
       data-scan-group="message-bar"
-      className="flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] py-[clamp(0.3rem,0.6svh,0.6rem)] shrink-0 relative border border-theme"
-      style={{ minHeight: isMessagingMode ? 'clamp(100px, 14svh, 180px)' : 'clamp(72px, 10svh, 132px)' }}
+      className={`flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] shrink-0 relative border border-theme ${
+        compact ? 'py-0' : 'py-[clamp(0.3rem,0.6svh,0.6rem)]'
+      }`}
+      style={{
+        minHeight: compact
+          ? 'clamp(44px, 13svh, 56px)'
+          : isMessagingMode ? 'clamp(100px, 14svh, 180px)' : 'clamp(72px, 10svh, 132px)',
+      }}
+      data-compact={compact ? '1' : '0'}
       data-messaging-mode={isMessagingMode ? '1' : '0'}
     >
       <button

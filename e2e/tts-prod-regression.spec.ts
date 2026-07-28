@@ -29,7 +29,7 @@
  *        /api/v1/marketplace/catalog must return 200, not 500.
  */
 
-import { test, expect, Page } from "@playwright/test";
+import { test, expect, type APIResponse, type Page } from "@playwright/test";
 
 // ── Shared AudioContext spy ───────────────────────────────────────────────────
 
@@ -168,6 +168,27 @@ test.beforeEach(async ({ page, baseURL }) => {
   });
 
   const start = baseURL || "/";
+  const protectionBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  if (
+    protectionBypass &&
+    new URL(start).hostname.endsWith(".vercel.app")
+  ) {
+    let authorizationResponse: APIResponse;
+    try {
+      authorizationResponse = await page.context().request.get(start, {
+        headers: {
+          "x-vercel-protection-bypass": protectionBypass,
+          "x-vercel-set-bypass-cookie": "true",
+        },
+      });
+    } catch {
+      throw new Error("Preview authorization request failed");
+    }
+    expect(
+      authorizationResponse.ok(),
+      `Preview authorization failed with ${authorizationResponse.status()}`,
+    ).toBe(true);
+  }
   // First load: clear persisted state from prior sessions
   await page.goto(start, { waitUntil: "domcontentloaded" });
   await page.waitForSelector('button[data-key="Q"]', { timeout: 30000 });
@@ -253,25 +274,42 @@ test("C2: Romanian speak — single source starts, no truncation", async ({
   // Switch to Romanian via the language picker (input lang = ro)
   // Simpler: use the keyboard locator approach for the toolbar lang button
   // and verify the portal call succeeds with audio.
-  const ttsReqs: { url: string; status?: number }[] = [];
+  const ttsReqs: { url: string; status?: number; body?: Record<string, unknown> }[] = [];
+  const ttsReqByRequest = new WeakMap<object, (typeof ttsReqs)[number]>();
   page.on("request", (r) => {
-    if (r.url().includes("/tts/") && r.method() === "POST")
-      ttsReqs.push({ url: r.url() });
-  });
-  page.on("response", async (r) => {
-    if (r.url().includes("/tts/")) {
-      const entry = ttsReqs.find((e) => e.url === r.url() && !e.status);
-      if (entry) entry.status = r.status();
+    if (r.url().includes("/tts/") && r.method() === "POST") {
+      let body: Record<string, unknown> | undefined;
+      try {
+        body = JSON.parse(r.postData() || "{}") as Record<string, unknown>;
+      } catch {
+        /* assertion below reports the missing language */
+      }
+      const entry = { url: r.url(), body };
+      ttsReqs.push(entry);
+      ttsReqByRequest.set(r, entry);
     }
+  });
+  page.on("response", (r) => {
+    const entry = ttsReqByRequest.get(r.request());
+    if (entry) entry.status = r.status();
   });
 
   // Set language to Romanian in localStorage before load
   await page.evaluate(() => {
     try {
-      const s = JSON.parse(localStorage.getItem("prism-aac-settings") || "{}");
-      s.language = "ro";
-      s.speechRate = 1.0; // migrated default — must not be 0.5
-      localStorage.setItem("prism-aac-settings", JSON.stringify(s));
+      const persisted = JSON.parse(localStorage.getItem("prism-aac-settings") || "{}");
+      const state =
+        persisted.state && typeof persisted.state === "object"
+          ? persisted.state
+          : {};
+      persisted.state = {
+        ...state,
+        language: "ro",
+        outputLanguage: "ro",
+        speechRate: 1.0, // migrated default — must not be 0.5
+      };
+      if (!Number.isInteger(persisted.version)) persisted.version = 0;
+      localStorage.setItem("prism-aac-settings", JSON.stringify(persisted));
     } catch {
       /* */
     }
@@ -279,6 +317,21 @@ test("C2: Romanian speak — single source starts, no truncation", async ({
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForSelector('button[data-key="Q"]', { timeout: 20000 });
   await page.waitForTimeout(1500);
+  const persistedLanguage = await page.evaluate(() => {
+    try {
+      const persisted = JSON.parse(localStorage.getItem("prism-aac-settings") || "{}");
+      return {
+        language: persisted.state?.language,
+        outputLanguage: persisted.state?.outputLanguage,
+      };
+    } catch {
+      return null;
+    }
+  });
+  expect(persistedLanguage).toEqual({
+    language: "ro",
+    outputLanguage: "ro",
+  });
 
   await typeWord(page, "APA"); // Romanian for "water"
   await page.waitForTimeout(500);
@@ -289,10 +342,21 @@ test("C2: Romanian speak — single source starts, no truncation", async ({
   const portalHit = ttsReqs.some(
     (r) => r.url.includes("/tts/public") && r.status === 200,
   );
+  const romanianHit = ttsReqs.find(
+    (r) =>
+      r.url.includes("/tts/public") &&
+      r.status === 200 &&
+      typeof r.body?.lang === "string" &&
+      r.body.lang.toLowerCase().startsWith("ro"),
+  );
 
   expect(portalHit, "Portal TTS /tts/public must return 200 for Romanian").toBe(
     true,
   );
+  expect(
+    romanianHit,
+    `Expected a successful Romanian payload, got ${JSON.stringify(ttsReqs)}`,
+  ).toBeTruthy();
   expect(
     diag.sourceStartCount,
     "Romanian must start exactly 1 AudioSource",

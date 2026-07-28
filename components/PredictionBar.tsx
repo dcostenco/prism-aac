@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { useContactsStore, type AacContact } from '@/store/contactsStore';
 import { speakWord } from '@/services/speechService';
+import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
@@ -368,12 +369,35 @@ export default function PredictionBar() {
     learnWord(word.toLowerCase(), previousWord?.toLowerCase(), prevPrevWord?.toLowerCase());
     ddAction('prediction.word_selected', { categoryId: undefined, position: predictions.indexOf(word), isCompletion, wordCount: words.length + 1 });
     import('@/store/metricsStore').then(m => m.useMetricsStore.getState().recordPredictionHit()).catch(() => {});
-    // Prediction taps are the high-frequency AAC path. Speak only the selected
-    // word through the local voice so rapid composition cannot fan out one
-    // cloud request per growing phrase. The main Speak button remains the
-    // explicit cloud-quality path for the completed message.
-    speakWord(word, speechRate, speechVolume);
-  }, [text, learnWord, predictions, speechRate, speechVolume]);
+    const fullPhrase = isCompletion
+      ? [...words.slice(0, -1), word].join(' ')
+      : [...words, word].join(' ');
+    if (language !== outputLanguage) {
+      // Translation is the AAC output contract, not an optional second step.
+      // Speak the newly composed phrase through aacSpeak so it is translated
+      // and voiced in the configured output language on this tap.
+      void aacSpeak(
+        fullPhrase,
+        speechRate,
+        speechVolume,
+        undefined,
+        true,
+      );
+    } else {
+      // Same-language prediction feedback uses the quality-first speech path
+      // and preserves the established AAC contract: each tap replays the
+      // cumulative message so "I" + "need" is heard as "I need".
+      speakWord(fullPhrase, speechRate, speechVolume);
+    }
+  }, [
+    text,
+    learnWord,
+    predictions,
+    speechRate,
+    speechVolume,
+    language,
+    outputLanguage,
+  ]);
 
   // Must be computed before any early returns — hooks must be called unconditionally.
   // (useMemo after a conditional return violates Rules of Hooks → React #300 crash

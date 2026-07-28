@@ -17,6 +17,7 @@ import MessageBar from '@/components/MessageBar';
 
 const mocks = vi.hoisted(() => {
   const toggleAutoSpeakMock = vi.fn();
+  const toggleSoundMock     = vi.fn();
   const deleteLastWordMock   = vi.fn();
   const clearAllMock         = vi.fn();
   const undoMock             = vi.fn();
@@ -25,6 +26,13 @@ const mocks = vi.hoisted(() => {
   const setToneMock          = vi.fn();
   const setToneModeMock      = vi.fn();
   const aacSpeakMock         = vi.fn();
+  const speakWordMock        = vi.fn();
+  const ttsHighlightListeners = new Set<(event: {
+    type: 'tts-highlight-start' | 'tts-highlight-end';
+    text?: string;
+    estimatedDurationMs?: number;
+    timestamp: number;
+  }) => void>();
 
   const messageState = {
     text: '',
@@ -37,6 +45,7 @@ const mocks = vi.hoisted(() => {
     undo: undoMock,
     addToHistory: addToHistoryMock,
     toggleAutoSpeak: toggleAutoSpeakMock,
+    toggleSound: toggleSoundMock,
     setText: setTextMock,
     setTone: setToneMock,
     setToneMode: setToneModeMock,
@@ -68,8 +77,10 @@ const mocks = vi.hoisted(() => {
   );
 
   return {
-    toggleAutoSpeakMock, deleteLastWordMock, clearAllMock, undoMock,
+    toggleAutoSpeakMock, toggleSoundMock, deleteLastWordMock, clearAllMock, undoMock,
     addToHistoryMock, setTextMock, setToneMock, setToneModeMock, aacSpeakMock,
+    speakWordMock,
+    ttsHighlightListeners,
     messageState, settingsState, uiState,
     useMessageStore, useSettingsStore, useUIStore,
   };
@@ -97,6 +108,21 @@ vi.mock('@/services/aacSpeak', () => ({
   aacSpeak: (...args: unknown[]) => mocks.aacSpeakMock(...args),
 }));
 
+vi.mock('@/services/speechService', () => ({
+  speakWord: (...args: unknown[]) => mocks.speakWordMock(...args),
+}));
+
+vi.mock('@/constants/predictionSeeds', () => ({
+  loadPredictionSeed: vi.fn(async () => ({
+    wordFreq: {
+      i: { count: 1732, lastUsed: 0 },
+      need: { count: 330, lastUsed: 0 },
+    },
+    bigrams: {},
+    trigrams: {},
+  })),
+}));
+
 vi.mock('@/services/feedback', () => ({
   tapFeedback: vi.fn(),
   deleteFeedback: vi.fn(),
@@ -105,7 +131,15 @@ vi.mock('@/services/feedback', () => ({
 }));
 
 vi.mock('@/services/ttsHighlightBus', () => ({
-  subscribeTtsHighlight: () => () => {},
+  subscribeTtsHighlight: (listener: (event: {
+    type: 'tts-highlight-start' | 'tts-highlight-end';
+    text?: string;
+    estimatedDurationMs?: number;
+    timestamp: number;
+  }) => void) => {
+    mocks.ttsHighlightListeners.add(listener);
+    return () => { mocks.ttsHighlightListeners.delete(listener); };
+  },
 }));
 
 vi.mock('@/services/azureTTS', () => ({
@@ -155,6 +189,10 @@ beforeEach(() => {
   mocks.settingsState.language = 'en';
   mocks.settingsState.outputLanguage = 'en';
   mocks.uiState.sidePanel = 'none';
+  mocks.ttsHighlightListeners.clear();
+  mocks.toggleSoundMock.mockImplementation(() => {
+    mocks.messageState.soundEnabled = !mocks.messageState.soundEnabled;
+  });
 });
 
 // ── text display ──────────────────────────────────────────────────────────────
@@ -202,6 +240,104 @@ describe('MessageBar — auto-speak toggle', () => {
     fireEvent.click(screen.getByRole('button', { name: /auto_speak/i }));
     expect(mocks.toggleAutoSpeakMock).toHaveBeenCalledOnce();
   });
+
+  it('auto-speaks a one-letter keyboard phrase without waiting for Play or AI autocorrect', async () => {
+    vi.useFakeTimers();
+    try {
+      mocks.messageState.text = 'I';
+      mocks.messageState.autoSpeak = true;
+      mocks.messageState.soundEnabled = true;
+      mocks.settingsState.language = 'en';
+      mocks.settingsState.outputLanguage = 'en';
+      mocks.settingsState.aiAutocorrectEnabled = false;
+
+      render(<MessageBar />);
+      await act(async () => { await Promise.resolve(); });
+      await act(async () => { vi.advanceTimersByTime(399); });
+      expect(mocks.speakWordMock).not.toHaveBeenCalled();
+      await act(async () => { vi.advanceTimersByTime(1); });
+
+      expect(mocks.speakWordMock).toHaveBeenCalledOnce();
+      expect(mocks.speakWordMock).toHaveBeenCalledWith('I', 1, 1);
+      expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('allows the same phrase to auto-speak after the direct-tap dedupe window expires', async () => {
+    vi.useFakeTimers();
+    try {
+      mocks.messageState.text = 'I';
+      mocks.messageState.autoSpeak = true;
+
+      const { rerender } = render(<MessageBar />);
+      await act(async () => { await Promise.resolve(); });
+      act(() => {
+        for (const listener of mocks.ttsHighlightListeners) {
+          listener({
+            type: 'tts-highlight-start',
+            text: 'I',
+            estimatedDurationMs: 300,
+            timestamp: Date.now(),
+          });
+        }
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(400);
+      });
+      expect(mocks.speakWordMock).not.toHaveBeenCalled();
+
+      mocks.messageState.text = '';
+      rerender(<MessageBar />);
+      await act(async () => {
+        vi.advanceTimersByTime(3001);
+      });
+      mocks.messageState.text = 'I';
+      rerender(<MessageBar />);
+      await act(async () => { await Promise.resolve(); });
+      await act(async () => {
+        vi.advanceTimersByTime(400);
+      });
+
+      expect(mocks.speakWordMock).toHaveBeenCalledOnce();
+      expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not send a delayed last-word cloud call after direct cumulative prediction speech', async () => {
+    vi.useFakeTimers();
+    try {
+      mocks.messageState.text = 'I need';
+      mocks.messageState.autoSpeak = true;
+      mocks.messageState.soundEnabled = true;
+      mocks.settingsState.aiAutocorrectEnabled = true;
+
+      render(<MessageBar />);
+      await act(async () => { await Promise.resolve(); });
+      act(() => {
+        for (const listener of mocks.ttsHighlightListeners) {
+          listener({
+            type: 'tts-highlight-start',
+            text: 'I need',
+            estimatedDurationMs: 500,
+            timestamp: Date.now(),
+          });
+        }
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(2500);
+        await Promise.resolve();
+      });
+
+      expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+      expect(mocks.speakWordMock).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 // ── undo ──────────────────────────────────────────────────────────────────────
@@ -217,6 +353,28 @@ describe('MessageBar — undo', () => {
 // ── speak ─────────────────────────────────────────────────────────────────────
 
 describe('MessageBar — speak', () => {
+  it('Play suppresses the pending auto-speak timer even when prediction seed loading finishes afterward', async () => {
+    vi.useFakeTimers();
+    try {
+      mocks.messageState.text = 'I need';
+      mocks.messageState.autoSpeak = true;
+      mocks.messageState.soundEnabled = true;
+
+      render(<MessageBar />);
+      fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
+
+      // The prediction seed resolves asynchronously. It must not be able to
+      // schedule a second utterance after the explicit Play action.
+      await act(async () => { await Promise.resolve(); });
+      await act(async () => { vi.advanceTimersByTime(2_100); });
+
+      expect(mocks.aacSpeakMock).toHaveBeenCalledOnce();
+      expect(mocks.speakWordMock).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('clicking speak button calls aacSpeak with current text', async () => {
     mocks.messageState.text = 'Help me please';
     mocks.messageState.soundEnabled = true;
@@ -233,6 +391,9 @@ describe('MessageBar — speak', () => {
     );
   });
 
+  // soundEnabled is a master mute — Play does not override it, and must not
+  // clear it as a side effect. See tests/keyboard-cumulative-speech.test.tsx
+  // for the same guarantee on the keyboard Speak key.
   it('clicking speak does NOT call aacSpeak when soundEnabled is false', async () => {
     mocks.messageState.text = 'some text';
     mocks.messageState.soundEnabled = false;
@@ -240,6 +401,22 @@ describe('MessageBar — speak', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
     });
+    expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+  });
+
+  it('clicking speak while muted leaves the mute setting untouched', async () => {
+    mocks.messageState.text = 'some text';
+    mocks.messageState.soundEnabled = false;
+    render(<MessageBar />);
+    const play = screen.getByRole('button', { name: /^speak$/i });
+
+    await act(async () => {
+      fireEvent.click(play);
+      fireEvent.click(play);
+    });
+
+    expect(mocks.toggleSoundMock).not.toHaveBeenCalled();
+    expect(mocks.messageState.soundEnabled).toBe(false);
     expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
   });
 

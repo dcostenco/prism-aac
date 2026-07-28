@@ -9,8 +9,7 @@ import { tapFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
 import { useSettingsStore, GridSize } from '@/store/settingsStore';
 import { aacSpeak } from '@/services/aacSpeak';
-import { translateTextSync, looksLikeTargetLang } from '@/services/translateService';
-import { SupportedLanguage } from '@/engine/i18n';
+import { speakWord } from '@/services/speechService';
 import { warmupAzureAudio } from '@/services/azureTTS';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
@@ -20,6 +19,7 @@ import { getPhraseText } from '@/constants/phraseTranslations';
 import { registerSearchKeyHandler } from '@/services/searchKeyBridge';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
 import { useAuthStore } from '@/store/authStore';
+import { useNearViewport } from '@/hooks/useNearViewport';
 
 // ── Categories on the HOME core-vocab grid ────────────────────────────────────
 // Pink → yellow → green → orange → blue (matches Image #36 left-to-right)
@@ -158,15 +158,22 @@ function SearchResultIcon({ phrase, language }: { phrase: string; language: stri
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
   const [url, setUrl] = useState<string | null>(null);
+  const { elementRef, isNearViewport } = useNearViewport<HTMLSpanElement>();
   useEffect(() => {
+    if (!isNearViewport) return;
     let cancelled = false;
     getPictogramUrl(phrase, 'en', pictureMode)
       .then(u => { if (!cancelled) setUrl(u); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [phrase, pictureMode]);
-  if (!url) return null;
-  return <img src={url} alt="" aria-hidden className="w-8 h-8 object-contain shrink-0 rounded" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />;
+  }, [phrase, pictureMode, language, isNearViewport]);
+  return (
+    <span ref={elementRef} className="w-8 h-8 shrink-0 rounded">
+      {url && (
+        <img src={url} alt="" aria-hidden className="w-full h-full object-contain rounded" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+      )}
+    </span>
+  );
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -195,24 +202,37 @@ export default function CategoryPanel() {
   const gridRef = useRef<HTMLDivElement>(null);
   const [gridPage, setGridPage] = useState(0);
   const activeCatIdForReset = useUIStore((s) => s.activeCategoryId);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- category/grid changes must reset pagination before rendering an out-of-range page
   useEffect(() => { setGridPage(0); }, [activeCatIdForReset, gridSize]);
-  const speakDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [compactMode, setCompactMode] = useState(false);
+  const wasCompactRef = useRef(false);
   useEffect(() => {
     const check = () => {
       const compact = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 500;
       setCompactMode(compact);
+      const s = useUIStore.getState();
       // Phone landscape can't fit grid + keyboard drawer — auto-maximize
       // so the user gets a full-size keyboard (touchability for AAC users).
+      //
+      // Session-only, deliberately not persisted. This used to write
+      // prism-kb-max='true' — which is the user's own saved preference — so a
+      // single rotation into landscape silently rewrote it, and the phrase
+      // grid stayed hidden back in portrait until they found the toggle.
       if (compact) {
-        const s = useUIStore.getState();
         if (s.categoryKeyboardOpen && !s.keyboardMaximized) {
-          try {
-            localStorage.setItem('prism-kb-max', 'true');
-          } catch {}
           useUIStore.setState({ keyboardMaximized: true });
         }
+      } else if (wasCompactRef.current) {
+        // Back to portrait: hand control to whatever the user actually chose.
+        let persisted = false;
+        try {
+          persisted = localStorage.getItem('prism-kb-max') === 'true';
+        } catch {}
+        if (s.keyboardMaximized !== persisted) {
+          useUIStore.setState({ keyboardMaximized: persisted });
+        }
       }
+      wasCompactRef.current = compact;
     };
     check();
     window.addEventListener('resize', check);
@@ -220,24 +240,11 @@ export default function CategoryPanel() {
     return () => { window.removeEventListener('resize', check); window.removeEventListener('orientationchange', check); };
   }, []);
 
-  // Cancel any pending 260ms speak timer on unmount to prevent post-unmount audio.
-  useEffect(() => () => { if (speakDelayRef.current) clearTimeout(speakDelayRef.current); }, []);
-
   const isOpen =
     sidePanel === 'none' ||
     sidePanel === 'categories' ||
     sidePanel === 'category-detail' ||
     sidePanel === 'ordering';
-
-  // Cancel the speak timer when the panel hides (isOpen→false). The component
-  // returns null but stays mounted, so the unmount cleanup above doesn't fire.
-  // Without this, a queued 260ms timer speaks a category phrase into AI Chat.
-  useEffect(() => {
-    if (!isOpen && speakDelayRef.current) {
-      clearTimeout(speakDelayRef.current);
-      speakDelayRef.current = null;
-    }
-  }, [isOpen]);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -324,36 +331,16 @@ export default function CategoryPanel() {
     ddAction('aac.phrase_tap', { categoryId: activeCategoryId, phraseLength: toAppend.length });
     if (autoSpeak && soundEnabled) {
       const { language, outputLanguage } = useSettingsStore.getState();
-      const translationActive = language !== outputLanguage;
-      if (!translationActive) {
-        // No translation — speak the tile text immediately.
-        aacSpeak(phraseText, speechRate, speechVolume, undefined, true);
+      const fullPhrase = text.trim() ? `${text.trim()} ${toAppend}` : toAppend;
+      if (language !== outputLanguage) {
+        // Every vocabulary tap is a communication action. Translate and speak
+        // the complete accumulated message immediately, including one-word
+        // tiles, instead of requiring the user to press Play afterward.
+        void aacSpeak(fullPhrase, speechRate, speechVolume, undefined, true);
       } else {
-        // Translation mode: individual word tiles produce out-of-context audio
-        // (e.g. tapping "eu" speaks "Я", then "vreau" speaks "хочу" — heard as
-        // disjointed words, not a sentence). Only auto-speak if this tile
-        // contributes ≥2 words (a meaningful phrase), AND the offline translation
-        // is fully in the target script (no mixed-language result).
-        // Single-word tiles are silenced; the user presses Speak for the full phrase.
-        const wordCount = phraseText.trim().split(/\s+/).filter(Boolean).length;
-        if (wordCount >= 2) {
-          const offlineResult = translateTextSync(
-            phraseText, language as SupportedLanguage, outputLanguage as SupportedLanguage
-          );
-          const isClean = looksLikeTargetLang(offlineResult, outputLanguage);
-          if (isClean) {
-            // Full clean translation available offline — speak immediately.
-            aacSpeak(phraseText, speechRate, speechVolume, undefined, true);
-          } else {
-            // Partial translation — wait 260ms for AI refine, then speak.
-            if (speakDelayRef.current) clearTimeout(speakDelayRef.current);
-            speakDelayRef.current = setTimeout(() => {
-              speakDelayRef.current = null;
-              aacSpeak(phraseText, speechRate, speechVolume, undefined, true);
-            }, 260);
-          }
-        }
-        // Single word tile + translation active → silent (avoid fragment audio).
+        // Use the quality-first speech path while preserving the cumulative
+        // AAC phrase contract.
+        speakWord(fullPhrase, speechRate, speechVolume);
       }
     }
     if (searchOpen) { setSearchOpen(false); setSearchQuery(''); }

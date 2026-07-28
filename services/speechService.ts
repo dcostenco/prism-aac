@@ -17,6 +17,7 @@ import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { emitTtsHealthEvent, TtsTier } from './ttsHealthBus';
+import { emitTtsHighlight, estimateSpeechDurationMs } from './ttsHighlightBus';
 import { fetchVoiceCatalog, defaultVoiceForLanguage } from './voiceCatalogService';
 
 export function isSpeechSupported(): boolean {
@@ -108,9 +109,39 @@ export function getVoiceStatus(lang: string): { quality: VoiceQuality; needsDown
 }
 
 let resumeInterval: ReturnType<typeof setInterval> | null = null;
+let localSpeechGeneration = 0;
+let resolveActiveLocalSpeech: (() => void) | null = null;
+
+/**
+ * Why the caller needs to tell these three apart:
+ *   'ok'        — the utterance was spoken; nothing further to do.
+ *   'failed'    — Web Speech could not speak it. The caller must escalate to
+ *                 neural, otherwise the user is simply left silent.
+ *   'cancelled' — a newer phrase superseded this one. Escalating here would
+ *                 double-speak the stale text and re-spend the tokens the
+ *                 local route exists to save.
+ */
+export type LocalSpeechOutcome = 'ok' | 'failed' | 'cancelled';
 
 function clearResumeWorkaround() {
   if (resumeInterval) { clearInterval(resumeInterval); resumeInterval = null; }
+}
+
+/**
+ * Retire the current local utterance before cancelling Web Speech.
+ *
+ * Safari may dispatch the cancelled utterance's onerror asynchronously. If
+ * that stale callback clears the module-global resume timer after a newer
+ * utterance starts, the newer utterance loses its keep-alive workaround. The
+ * generation makes stale callbacks no-ops, while resolving the previous
+ * promise prevents interrupted `speak()` callers from hanging indefinitely.
+ */
+function retireActiveLocalSpeech() {
+  localSpeechGeneration += 1;
+  clearResumeWorkaround();
+  const resolve = resolveActiveLocalSpeech;
+  resolveActiveLocalSpeech = null;
+  resolve?.();
 }
 
 function getAuthToken(): string | null {
@@ -155,19 +186,16 @@ const VOICE_FALLBACK: Record<string, string> = {
 const DEFAULT_FALLBACK = 'Sarah';
 
 let _catalogCache: Awaited<ReturnType<typeof fetchVoiceCatalog>> = [];
-let _catalogLoaded = false;
 
 function loadCatalog() {
   fetchVoiceCatalog().then(c => {
     _catalogCache = c;
-    _catalogLoaded = true;
   }).catch(() => {
     // Retry once after 5s — a single transient failure shouldn't degrade
     // TTS routing for the entire session.
     setTimeout(() => {
       fetchVoiceCatalog(true).then(c => {
         _catalogCache = c;
-        _catalogLoaded = true;
       }).catch(() => {});
     }, 5000);
   });
@@ -255,6 +283,12 @@ export async function speak(
       type: 'tts-attempt', tier: 'inworld', text: debugText, lang, timestamp: tier1Start,
     });
     const result = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt);
+    if (result?.cancelled) {
+      // A newer utterance or an explicit Stop owns the audio channel now.
+      // This is neither a portal success nor a provider failure, and must not
+      // leak the stale text into Web Speech fallback.
+      return;
+    }
     if (result && result.success) {
       console.log('[TTS] Portal TTS succeeded');
       const now = Date.now();
@@ -310,24 +344,64 @@ export async function speak(
 }
 
 /**
- * Speak a single word — always local for <50ms latency (critical for AAC).
- * Dynamically pulls user's language if no lang provided — never hardcodes en-US.
+ * Speak high-frequency tap/composition feedback, local-first.
+ *
+ * This is the composition path — Keyboard, MessageBar, PredictionBar and
+ * CategoryPanel all replay the cumulative phrase through here — so for a user
+ * with auto-speak on it carries most of their spoken output. Keeping it on the
+ * free local voice is what removes one cloud connection per selection.
+ *
+ * Local is only usable when the device actually has a voice for the language.
+ * With none, Web Speech either errors or reads the text in the wrong-language
+ * default voice, so the neural chain is the only intelligible option and cost
+ * has to yield to being understood. Explicit Play/Speak stays on aacSpeak's
+ * neural path regardless.
  */
 export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string): void {
   const actualLang = lang || getTTSCode((useSettingsStore.getState().language || 'en') as SupportedLanguage);
-  void speakLocal(word, rate, volume, actualLang);
+  // A bare single character is commonly announced as a letter name
+  // ("capital I") by Web Speech. Sentence punctuation makes valid
+  // one-letter words such as "I" and "a" sound like spoken words.
+  const toSpeak = word.trim().length === 1 ? `${word.trim()}.` : word;
+  emitTtsHighlight({
+    type: 'tts-highlight-start',
+    text: word,
+    estimatedDurationMs: estimateSpeechDurationMs(word, rate),
+    timestamp: Date.now(),
+  });
+
+  const escalate = () => {
+    void speak(toSpeak, rate, volume, actualLang, 'auto', true);
+  };
+
+  // Checked before speaking rather than after failing: a wrong-language voice
+  // reports success, so waiting for an error would let it read Romanian text
+  // aloud in English. Voices can still be unloaded on the very first call,
+  // which classifies as 'none' and routes to neural until 'voiceschanged'.
+  if (!isSpeechSupported() || getBestOfflineVoice(actualLang).quality === 'none') {
+    escalate();
+    return;
+  }
+
+  // speakLocal stops cloud audio, retires the prior utterance, cancels the
+  // browser queue, and owns one Safari resume timer at a time.
+  void speakLocal(toSpeak, rate, volume, actualLang).then((outcome) => {
+    if (outcome === 'failed') escalate();
+  });
 }
 
-function speakLocal(text: string, rate: number, volume: number, lang: string): Promise<void> {
-  return new Promise<void>((resolve) => {
-  if (!text.trim()) return resolve();
+function speakLocal(text: string, rate: number, volume: number, lang: string): Promise<LocalSpeechOutcome> {
+  return new Promise<LocalSpeechOutcome>((resolve) => {
+  if (!text.trim()) return resolve('ok');
   if (!isSpeechSupported()) {
     console.warn('[PrismAAC] Speech synthesis not available on this browser');
-    return resolve();
+    return resolve('failed');
   }
   stopAzureAudio();
+  retireActiveLocalSpeech();
   window.speechSynthesis.cancel();
-  clearResumeWorkaround();
+  const generation = localSpeechGeneration;
+  resolveActiveLocalSpeech = () => resolve('cancelled');
 
   const u = new SpeechSynthesisUtterance(text);
   const baseLang = lang.split('-')[0];
@@ -356,49 +430,66 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): P
   // about to speak). We use onstart for latency and onend for duration.
   const attemptStart = Date.now();
   let audibleStart: number | null = null;
+  let settled = false;
+  const finish = (outcome: LocalSpeechOutcome, publish: (() => void) | null) => {
+    if (settled || generation !== localSpeechGeneration) return;
+    settled = true;
+    clearResumeWorkaround();
+    resolveActiveLocalSpeech = null;
+    publish?.();
+    resolve(outcome);
+  };
   emitTtsHealthEvent({
     type: 'tts-attempt', tier: 'web-speech', text: text.slice(0, 80),
     lang, timestamp: attemptStart,
   });
 
-  u.onstart = () => { audibleStart = Date.now(); };
+  u.onstart = () => {
+    if (generation === localSpeechGeneration) audibleStart = Date.now();
+  };
   u.onend = () => {
-    clearResumeWorkaround();
-    const now = Date.now();
-    emitTtsHealthEvent({
-      type: 'tts-success', tier: 'web-speech',
-      latencyMs: (audibleStart ?? now) - attemptStart,
-      durationMs: audibleStart != null ? now - audibleStart : 0,
-      timestamp: now,
+    finish('ok', () => {
+      const now = Date.now();
+      emitTtsHealthEvent({
+        type: 'tts-success', tier: 'web-speech',
+        latencyMs: (audibleStart ?? now) - attemptStart,
+        durationMs: audibleStart != null ? now - audibleStart : 0,
+        timestamp: now,
+      });
     });
-  
-    resolve();
   };
   u.onerror = (ev) => {
-    clearResumeWorkaround();
-    // SpeechSynthesisErrorEvent.error is a string code (e.g. 'not-allowed',
-    // 'language-unavailable', 'synthesis-failed'). Surface it so the
-    // overlay can show the actual reason — every recent regression had
-    // a different code.
-    const code = (ev as SpeechSynthesisErrorEvent | undefined)?.error || 'unknown';
-    emitTtsHealthEvent({
-      type: 'tts-give-up', lastTier: 'web-speech', triedTiers: ['web-speech'],
-      reason: `speech-synthesis error: ${code}`, timestamp: Date.now(),
+    finish('failed', () => {
+      // SpeechSynthesisErrorEvent.error is a string code (e.g. 'not-allowed',
+      // 'language-unavailable', 'synthesis-failed'). Surface it so the
+      // overlay can show the actual reason — every recent regression had
+      // a different code.
+      const code = (ev as SpeechSynthesisErrorEvent | undefined)?.error || 'unknown';
+      emitTtsHealthEvent({
+        type: 'tts-give-up', lastTier: 'web-speech', triedTiers: ['web-speech'],
+        reason: `speech-synthesis error: ${code}`, timestamp: Date.now(),
+      });
     });
-  
-    resolve();
   };
-  // M3 fix: clear any prior interval before assigning a new one. If two speakLocal
-  // calls happen in rapid succession, the first interval would be orphaned and fire
-  // every 10 s indefinitely, calling resume() and interrupting the active utterance.
-  clearResumeWorkaround();
-  resumeInterval = setInterval(() => window.speechSynthesis.resume(), 10_000);
-  window.speechSynthesis.speak(u);
+  resumeInterval = setInterval(() => {
+    if (generation === localSpeechGeneration) window.speechSynthesis.resume();
+  }, 10_000);
+  try {
+    window.speechSynthesis.speak(u);
+  } catch (error) {
+    finish('failed', () => {
+      const reason = error instanceof Error ? error.message : String(error);
+      emitTtsHealthEvent({
+        type: 'tts-give-up', lastTier: 'web-speech', triedTiers: ['web-speech'],
+        reason: `speech-synthesis threw: ${reason}`, timestamp: Date.now(),
+      });
+    });
+  }
   });
 }
 
 export function stopSpeech(): void {
   stopAzureAudio();
+  retireActiveLocalSpeech();
   if (isSpeechSupported()) window.speechSynthesis.cancel();
-  clearResumeWorkaround();
 }

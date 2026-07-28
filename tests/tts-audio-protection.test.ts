@@ -25,6 +25,8 @@ class MockBufferSource {
   onended: (() => void) | null = null;
   static startCount = 0;
   static stopCount = 0;
+  static instances: MockBufferSource[] = [];
+  constructor() { MockBufferSource.instances.push(this); }
   connect(_: unknown) { return _; }
   disconnect() {}
   start() { MockBufferSource.startCount++; }
@@ -53,6 +55,7 @@ beforeEach(() => {
   vi.resetModules();
   MockBufferSource.startCount = 0;
   MockBufferSource.stopCount = 0;
+  MockBufferSource.instances = [];
   (globalThis as Record<string, unknown>).AudioContext = MockAudioCtx as unknown as typeof AudioContext;
   (window as unknown as Record<string, unknown>).AudioContext = MockAudioCtx as unknown as typeof AudioContext;
 });
@@ -90,18 +93,203 @@ describe('Class 2 — Rapid-tap protection (autoSpeak)', () => {
     expect(r1.success).toBe(true);
     expect(MockBufferSource.startCount).toBe(1);
 
-    // Simulate natural end of first source (activeSources is internal, not exported)
-    // Trigger onended to simulate natural completion
-    // (We can't directly access activeSources — test the observable: after onended, next call plays)
-    // This test verifies the state resets on natural completion indirectly:
-    // if PROTECT_PLAY_MS reset works, a new call after 600ms would play
-    // (timing test skipped — covered by the implementation logic)
-    expect(r1.success).toBe(true);
+    MockBufferSource.instances[0].onended?.();
+    const r2 = await speakAzure('world', 'en-US', 'friendly', 1.0, 1.0, '');
+
+    expect(r2.success).toBe(true);
+    expect(MockBufferSource.startCount).toBe(2);
   });
 });
 
 // ── Class 3: Speak button interrupt ───────────────────────────────────────────
 describe('Class 3 — Speak button interrupt=true overrides PROTECT_PLAY_MS', () => {
+  it('a newer Play cancels an older phrase while its cached audio is decoding', async () => {
+    let decodeCount = 0;
+    let resolveCachedDecode: ((buffer: AudioBuffer) => void) | undefined;
+    const decodedBuffer = {
+      duration: 2,
+      length: 2048,
+      numberOfChannels: 1,
+      sampleRate: 24000,
+    } as AudioBuffer;
+
+    class CachedDecodeRaceCtx extends MockAudioCtx {
+      async decodeAudioData(): Promise<AudioBuffer> {
+        decodeCount++;
+        if (decodeCount === 2) {
+          return new Promise<AudioBuffer>((resolve) => {
+            resolveCachedDecode = resolve;
+          });
+        }
+        return decodedBuffer;
+      }
+    }
+
+    vi.resetModules();
+    (globalThis as Record<string, unknown>).AudioContext =
+      CachedDecodeRaceCtx as unknown as typeof AudioContext;
+    (window as unknown as Record<string, unknown>).AudioContext =
+      CachedDecodeRaceCtx as unknown as typeof AudioContext;
+    vi.stubGlobal('fetch', vi.fn(async () => audioOk()));
+    const { speakAzure } = await import('@/services/azureTTS');
+
+    const prime = await speakAzure(
+      'I need',
+      'en-US',
+      'friendly',
+      0.5,
+      1,
+      '',
+      'Ashley',
+      true,
+    );
+    expect(prime.success).toBe(true);
+    expect(MockBufferSource.startCount).toBe(1);
+
+    const staleCache = speakAzure(
+      'I need',
+      'en-US',
+      'friendly',
+      0.5,
+      1,
+      '',
+      'Ashley',
+      true,
+    );
+    await vi.waitFor(() => expect(decodeCount).toBe(2));
+
+    const latest = speakAzure(
+      'I need',
+      'en-US',
+      'friendly',
+      0.5,
+      1,
+      '',
+      'Ashley',
+      true,
+    );
+    await vi.waitFor(() => expect(MockBufferSource.startCount).toBe(2));
+
+    resolveCachedDecode?.(decodedBuffer);
+    const [staleResult, latestResult] = await Promise.all([staleCache, latest]);
+
+    expect(staleResult.cancelled).toBe(true);
+    expect(latestResult.success).toBe(true);
+    expect(MockBufferSource.startCount).toBe(2);
+  });
+
+  it('Play cancels an older response that is already decoding from the shared cache', async () => {
+    let decodeCount = 0;
+    let resolveFirstDecode: ((buffer: AudioBuffer) => void) | undefined;
+    const decodedBuffer = {
+      duration: 2,
+      length: 2048,
+      numberOfChannels: 1,
+      sampleRate: 24000,
+    } as AudioBuffer;
+
+    class DecodeRaceCtx extends MockAudioCtx {
+      async decodeAudioData(): Promise<AudioBuffer> {
+        decodeCount++;
+        if (decodeCount === 1) {
+          return new Promise<AudioBuffer>((resolve) => {
+            resolveFirstDecode = resolve;
+          });
+        }
+        return decodedBuffer;
+      }
+    }
+
+    vi.resetModules();
+    (globalThis as Record<string, unknown>).AudioContext =
+      DecodeRaceCtx as unknown as typeof AudioContext;
+    (window as unknown as Record<string, unknown>).AudioContext =
+      DecodeRaceCtx as unknown as typeof AudioContext;
+    vi.stubGlobal('fetch', vi.fn(async () => audioOk()));
+    const { speakAzure } = await import('@/services/azureTTS');
+
+    const stale = speakAzure(
+      'I need',
+      'en-US',
+      'friendly',
+      0.5,
+      1,
+      '',
+      'Ashley',
+      true,
+    );
+    await vi.waitFor(() => expect(decodeCount).toBe(1));
+
+    // The first response has already populated the cache but is still
+    // decoding. Play reuses that cache entry and must remain the sole source.
+    const play = speakAzure(
+      'I need',
+      'en-US',
+      'friendly',
+      0.5,
+      1,
+      '',
+      'Ashley',
+      true,
+    );
+    await vi.waitFor(() => expect(MockBufferSource.startCount).toBe(1));
+
+    resolveFirstDecode?.(decodedBuffer);
+    const [staleResult, playResult] = await Promise.all([stale, play]);
+
+    expect(staleResult.cancelled).toBe(true);
+    expect(playResult.success).toBe(true);
+    expect(MockBufferSource.startCount).toBe(1);
+  });
+
+  it('a superseded portal request never leaks into Web Speech fallback', async () => {
+    let synthesisRequestCount = 0;
+    let resolveLatest: ((response: Response) => void) | undefined;
+
+    vi.stubGlobal('fetch', vi.fn((
+      url: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      const path = new URL(String(url), 'https://synalux.ai').pathname;
+      if (path.endsWith('/tts/voices')) {
+        return Promise.resolve(new Response(JSON.stringify({ voices: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }));
+      }
+      if (!path.endsWith('/tts/public')) {
+        return Promise.resolve(new Response('', { status: 500 }));
+      }
+
+      synthesisRequestCount++;
+      return new Promise<Response>((resolve, reject) => {
+        if (synthesisRequestCount === 2) resolveLatest = resolve;
+        init?.signal?.addEventListener('abort', () => {
+          reject(new DOMException('Aborted', 'AbortError'));
+        }, { once: true });
+      });
+    }));
+    (window.speechSynthesis.speak as ReturnType<typeof vi.fn>).mockImplementation(
+      (utterance: { onend?: (() => void) | null }) => utterance.onend?.(),
+    );
+    const { speak } = await import('@/services/speechService');
+
+    const stale = speak('I need', 0.5, 1.0, 'en-US', 'friendly', true);
+    await vi.waitFor(() => expect(synthesisRequestCount).toBe(1));
+    const latest = speak('I need help', 0.5, 1.0, 'en-US', 'friendly', true);
+    await vi.waitFor(() => expect(synthesisRequestCount).toBe(2));
+
+    await stale;
+    expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
+
+    resolveLatest?.(audioOk());
+    await vi.waitFor(() => expect(MockBufferSource.startCount).toBe(1));
+    MockBufferSource.instances.at(-1)?.onended?.();
+    await latest;
+    expect(MockBufferSource.startCount).toBe(1);
+    expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
+  });
+
   it('Speak button (interrupt=true) kills young audio and starts its own', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       if (String(url).includes('/tts/')) return audioOk();

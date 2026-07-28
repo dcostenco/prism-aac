@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
+import { useNearViewport } from '@/hooks/useNearViewport';
 
 interface Props {
   phrase: string;
@@ -19,20 +20,26 @@ export default function PhraseTile({ phrase, englishPhrase, customImageUrl, clas
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
-  const [iconUrl, setIconUrl] = useState<string | null>(customImageUrl || null);
+  const [fetchedIconUrl, setFetchedIconUrl] = useState<string | null>(null);
+  const { elementRef, isNearViewport } = useNearViewport<HTMLButtonElement>(
+    !customImageUrl,
+  );
 
   useEffect(() => {
-    if (customImageUrl) { setIconUrl(customImageUrl); return; }
+    if (customImageUrl) return;
+    if (!isNearViewport) return;
     let cancelled = false;
     const searchPhrase = englishPhrase || phrase;
     getPictogramUrl(searchPhrase, 'en', pictureMode).then((url) => {
-      if (!cancelled) setIconUrl(url);
-    }).catch(() => { if (!cancelled) setIconUrl(null); });
+      if (!cancelled) setFetchedIconUrl(url);
+    }).catch(() => { if (!cancelled) setFetchedIconUrl(null); });
     return () => { cancelled = true; };
-  }, [phrase, englishPhrase, customImageUrl, pictureMode, language]);
+  }, [phrase, englishPhrase, customImageUrl, pictureMode, language, isNearViewport]);
+  const iconUrl = customImageUrl || fetchedIconUrl;
 
   return (
     <button
+      ref={elementRef}
       onClick={onClick}
       aria-label={ariaLabel ?? phrase}
       className={className}

@@ -70,7 +70,7 @@ describe('aacSpeak — voice selection', () => {
     aacSpeak('hello world', 0.5, 1.0);
 
     expect(mockSpeak).toHaveBeenCalledWith(
-      'привет мир',
+      'Привет мир.',
       0.5, 1.0,  // rate passes through unchanged (0.6× removed May 2026 — was compounding with pbRate)
       'ru-TTS',
       expect.anything(),
@@ -121,7 +121,7 @@ describe('aacSpeak — voice selection', () => {
     aacSpeak('good morning', 0.5, 1.0);
 
     expect(mockSpeak).toHaveBeenCalledWith(
-      'bună ziua',
+      'Bună ziua.',
       0.5, 1.0,  // no multiplier — rate passes through unchanged
       'ro-TTS',
       expect.anything(),

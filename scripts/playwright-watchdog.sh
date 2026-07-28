@@ -4,10 +4,9 @@
 #   2) MAX_STALL_S  — abort if playwright stdout stops moving for this long
 #   3) MAX_TOTAL_S  — hard cap on total wall time
 #
-# On abort, sends SIGKILL to the playwright process tree AND any orphan
-# Chromium / Chromium Helper / Webkit / Firefox the run spawned, so the
-# system isn't left bleeding RAM after a runaway test (the bug class the
-# strict discipline memo locks down).
+# On abort, sends SIGKILL to this run's isolated process group. This reaps
+# Playwright and its browser children without killing a separate agent's
+# concurrent browser proof.
 #
 # Usage:
 #   scripts/playwright-watchdog.sh <playwright args...>
@@ -16,6 +15,7 @@
 #   MIN_FREE_GB (default 4)   MAX_STALL_S (default 90)   MAX_TOTAL_S (default 600)
 #   POLL_S      (default 2)
 set -u
+set -m
 
 MIN_FREE_GB="${MIN_FREE_GB:-4}"
 MAX_STALL_S="${MAX_STALL_S:-90}"
@@ -57,25 +57,26 @@ free_gb() {
 reap() {
   local reason="$1"
   echo "[watchdog] ABORT: $reason" >&2
-  if [[ -n "${PW_PID:-}" ]]; then
-    pkill -KILL -P "$PW_PID" 2>/dev/null || true
-    kill -KILL "$PW_PID" 2>/dev/null || true
+  if [[ -n "${PW_PGID:-}" && "$PW_PGID" != "$SELF_PGID" ]]; then
+    /bin/kill -KILL "-${PW_PGID}" 2>/dev/null || true
   fi
-  # Sweep orphaned browser engines + node test workers
-  pkill -KILL -f "Google Chrome for Testing" 2>/dev/null || true
-  pkill -KILL -f "Chromium.app/Contents/MacOS"  2>/dev/null || true
-  pkill -KILL -f "playwright/.*chromium"       2>/dev/null || true
-  pkill -KILL -f "playwright/.*firefox"        2>/dev/null || true
-  pkill -KILL -f "playwright/.*webkit"         2>/dev/null || true
-  echo "[watchdog] reaped browser orphans"
+  echo "[watchdog] reaped this run's process group"
   exit 99
 }
 
 # Launch the selected Playwright command, tee output so we can both stream it
 # and watch staleness
-# via mtime of the log.
+# via mtime of the log. Monitor mode gives this background pipeline its own
+# process group; every browser child inherits that group.
+SELF_PGID="$(ps -o pgid= -p "$$" | tr -d '[:space:]')"
 ( "${RUN_CMD[@]}" 2>&1; echo "__PW_EXIT_$?__" ) | tee "$LOG" &
 PW_PID=$!
+PW_PGID="$(ps -o pgid= -p "$PW_PID" | tr -d '[:space:]')"
+if [[ -z "$PW_PGID" || "$PW_PGID" == "$SELF_PGID" ]]; then
+  echo "[watchdog] unable to isolate the Playwright process group" >&2
+  kill -KILL "$PW_PID" 2>/dev/null || true
+  exit 2
+fi
 
 START="$(date +%s)"
 LAST_MTIME="$(stat -f %m "$LOG" 2>/dev/null || echo 0)"

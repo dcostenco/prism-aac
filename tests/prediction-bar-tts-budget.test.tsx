@@ -6,8 +6,9 @@
  * sequence into five overlapping provider requests and consumed shared
  * concurrency needed by other AAC users.
  *
- * Prediction taps must use local word feedback. Only the explicit Speak button
- * may send the completed phrase through aacSpeak's cloud-quality path.
+ * Same-language prediction taps replay the cumulative phrase locally.
+ * Translation-mode taps must route the composed phrase through aacSpeak so
+ * the user hears the configured output language rather than the source word.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -84,7 +85,54 @@ describe('PredictionBar cloud TTS request budget', () => {
     });
 
     expect(speechMocks.speakWord).toHaveBeenNthCalledWith(1, firstWord, 0.5, 0.8);
-    expect(speechMocks.speakWord).toHaveBeenNthCalledWith(2, secondWord, 0.5, 0.8);
+    expect(speechMocks.speakWord).toHaveBeenNthCalledWith(
+      2,
+      `${firstWord} ${secondWord}`,
+      0.5,
+      0.8,
+    );
     expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
+  });
+
+  it('speaks the complete I need message when need is tapped after keyboard input', async () => {
+    const updatePredictions = usePredictionStore.getState().updatePredictions;
+    act(() => {
+      useMessageStore.setState({ text: 'I' } as never);
+      usePredictionStore.setState({
+        predictions: ['need'],
+        updatePredictions: vi.fn(),
+      });
+    });
+    render(<PredictionBar />);
+
+    const needPrediction = screen.getByRole('button', { name: 'Predict: need' });
+    await act(async () => {
+      fireEvent.click(needPrediction);
+    });
+
+    expect(speechMocks.speakWord).toHaveBeenCalledOnce();
+    expect(speechMocks.speakWord).toHaveBeenCalledWith('I need', 0.5, 0.8);
+    expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
+    usePredictionStore.setState({ updatePredictions });
+  });
+
+  it('speaks a translated phrase on the prediction tap, including single-letter I', async () => {
+    useSettingsStore.setState({ outputLanguage: 'es' } as never);
+    render(<PredictionBar />);
+
+    const iPrediction = screen.getByRole('button', { name: 'Predict: I' });
+    await act(async () => {
+      fireEvent.click(iPrediction);
+    });
+
+    expect(speechMocks.speakWord).not.toHaveBeenCalled();
+    expect(speechMocks.aacSpeak).toHaveBeenCalledOnce();
+    expect(speechMocks.aacSpeak).toHaveBeenCalledWith(
+      'I',
+      0.5,
+      0.8,
+      undefined,
+      true,
+    );
   });
 });

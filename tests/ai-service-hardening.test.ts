@@ -19,7 +19,9 @@ import {
   fetchSynaluxProfile,
   parseCaregiverNote,
   inferCardIcon,
+  translateAI,
 } from '@/services/aiService';
+import { AAC_FIRST_PERSON_MARKER } from '@/constants/translationMarkers';
 
 const fetchMock = vi.fn();
 
@@ -49,11 +51,38 @@ function synaluxChat(content: string): Response {
  */
 function mockRouteToCloud(content: string): void {
   fetchMock.mockImplementation(async (url: string) => {
-    if (String(url).includes('localhost')) return new Response('', { status: 503 });
+    if (String(url).includes('localhost:11434')) return new Response('', { status: 503 });
     if (String(url).includes('/prism-aac/chat')) return synaluxChat(content);
     return new Response('', { status: 404 });
   });
 }
+
+describe('translateAI — AAC concept preservation', () => {
+  it('instructs the portal translator to preserve an immutable AAC marker', async () => {
+    let cloudRequest: RequestInit | undefined;
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (String(url).includes('localhost:11434')) {
+        return new Response('', { status: 503 });
+      }
+      if (String(url).includes('/prism-aac/chat')) {
+        cloudRequest = init;
+        return synaluxChat('Eu caut');
+      }
+      return new Response('', { status: 404 });
+    });
+
+    await translateAI(`${AAC_FIRST_PERSON_MARKER} looking`, 'English', 'Romanian');
+
+    const body = JSON.parse(String(cloudRequest?.body)) as {
+      messages: Array<{ role: string; content: string }>;
+      intent: string;
+    };
+    const system = body.messages.find((message) => message.role === 'system')?.content ?? '';
+    expect(system).toContain(`${AAC_FIRST_PERSON_MARKER} is an immutable marker`);
+    expect(system).toContain('same relative position as the source');
+    expect(body.intent).toBe('translate');
+  });
+});
 
 // ── fetchSynaluxProfile — happy path ──────────────────────────────────────
 

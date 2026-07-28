@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { speak, speakWord, stopSpeech, isSpeechSupported } from '@/services/speechService';
+import { speakAzure } from '@/services/azureTTS';
+import {
+  subscribeTtsHighlight,
+  type TtsHighlightEvent,
+} from '@/services/ttsHighlightBus';
 
 // Force Tier 1 (portal Inworld/Azure) to "fail" so tests can assert on the
 // Web Speech fallback. Without this mock, speakAzure attempts a real fetch
@@ -33,6 +38,21 @@ describe('SpeechService — Core', () => {
     expect(window.speechSynthesis.speak).toHaveBeenCalled();
   });
 
+  it('keeps high-frequency AAC tap feedback local', async () => {
+    // A voice for the language has to exist for local to be the right route.
+    // With none installed, speakWord deliberately escalates to neural rather
+    // than let a wrong-language voice read the text — covered in
+    // tests/speak-word-neural-escalation.test.ts.
+    (window.speechSynthesis.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+      { lang: 'en-US', name: 'Samantha', default: false, localService: true, voiceURI: 'Samantha' },
+    ]);
+
+    speakWord('hello', 0.5, 1.0, 'en-US');
+
+    await vi.waitFor(() => expect(window.speechSynthesis.speak).toHaveBeenCalled());
+    expect(speakAzure).not.toHaveBeenCalled();
+  });
+
   it('speak does nothing for empty text', () => {
     speak('', 0.5, 1.0);
     expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
@@ -43,10 +63,129 @@ describe('SpeechService — Core', () => {
     expect(window.speechSynthesis.speak).not.toHaveBeenCalled();
   });
 
-  it('speakWord cancels prior speech (pile-up fix)', () => {
+  it('speakWord cancels prior local speech (pile-up fix)', async () => {
     speakWord('hello');
-    expect(window.speechSynthesis.cancel).toHaveBeenCalled();
-    expect(window.speechSynthesis.speak).toHaveBeenCalled();
+    await vi.waitFor(() => {
+      expect(window.speechSynthesis.cancel).toHaveBeenCalled();
+      expect(window.speechSynthesis.speak).toHaveBeenCalled();
+    });
+  });
+
+  it('pads a one-letter word so Web Speech fallback says the word instead of "capital I"', async () => {
+    speakWord('I');
+    await vi.waitFor(() => expect(window.speechSynthesis.speak).toHaveBeenCalled());
+    const utterance = (
+      window.speechSynthesis.speak as ReturnType<typeof vi.fn>
+    ).mock.calls.at(-1)?.[0] as { text?: string };
+    expect(utterance.text).toBe('I.');
+  });
+
+  it('publishes local word feedback so the phrase timer cannot duplicate it in cloud TTS', () => {
+    const events: TtsHighlightEvent[] = [];
+    const unsubscribe = subscribeTtsHighlight((event) => events.push(event));
+    try {
+      speakWord('I');
+      expect(events).toContainEqual(
+        expect.objectContaining({
+          type: 'tts-highlight-start',
+          text: 'I',
+        }),
+      );
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  it('rapid speakWord fallbacks keep only one local resume timer alive', async () => {
+    vi.useFakeTimers();
+    try {
+      // Keep the utterances active so the test exercises replacement cleanup
+      // instead of the normal onend cleanup path.
+      (window.speechSynthesis.speak as ReturnType<typeof vi.fn>).mockImplementation(() => {});
+
+      speakWord('first');
+      speakWord('second');
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(window.speechSynthesis.cancel).toHaveBeenCalledTimes(2);
+      vi.advanceTimersByTime(10_000);
+      // The second call clears the first call's Safari resume workaround.
+      // Two callbacks here would mean one leaked interval per rapid tap.
+      expect(window.speechSynthesis.resume).toHaveBeenCalledTimes(1);
+
+      stopSpeech();
+      vi.advanceTimersByTime(10_000);
+      expect(window.speechSynthesis.resume).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('a delayed fallback cancellation cannot clear the next word resume timer', async () => {
+    vi.useFakeTimers();
+    try {
+      const utterances: Array<{
+        onend?: (() => void) | null;
+        onerror?: ((event: { error: string }) => void) | null;
+      }> = [];
+      (window.speechSynthesis.speak as ReturnType<typeof vi.fn>).mockImplementation((utterance) => {
+        utterances.push(utterance);
+      });
+
+      speakWord('first');
+      speakWord('second');
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(utterances).toHaveLength(2);
+
+      // Safari can report the first cancellation after the second utterance
+      // has already installed its resume workaround.
+      utterances[0].onerror?.({ error: 'canceled' });
+      vi.advanceTimersByTime(10_000);
+      expect(window.speechSynthesis.resume).toHaveBeenCalledTimes(1);
+
+      utterances[1].onend?.();
+      vi.advanceTimersByTime(10_000);
+      expect(window.speechSynthesis.resume).toHaveBeenCalledTimes(1);
+    } finally {
+      stopSpeech();
+      vi.useRealTimers();
+    }
+  });
+
+  it('resolves the interrupted local-speech promise before the replacement finishes', async () => {
+    const utterances: Array<{
+      onend?: (() => void) | null;
+    }> = [];
+    (window.speechSynthesis.speak as ReturnType<typeof vi.fn>).mockImplementation((utterance) => {
+      utterances.push(utterance);
+    });
+
+    const first = speak('first', 0.5, 1, 'en-US');
+    await vi.waitFor(() => expect(utterances).toHaveLength(1));
+    const second = speak('second', 0.5, 1, 'en-US');
+    await vi.waitFor(() => expect(utterances).toHaveLength(2));
+
+    await expect(first).resolves.toBeUndefined();
+    utterances[1].onend?.();
+    await expect(second).resolves.toBeUndefined();
+  });
+
+  it('cleans up the resume timer when speechSynthesis.speak throws', () => {
+    vi.useFakeTimers();
+    try {
+      (window.speechSynthesis.speak as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw new Error('synthesis unavailable');
+      });
+
+      expect(() => speakWord('hello')).not.toThrow();
+      vi.advanceTimersByTime(10_000);
+      expect(window.speechSynthesis.resume).not.toHaveBeenCalled();
+    } finally {
+      stopSpeech();
+      vi.useRealTimers();
+    }
   });
 
   it('rapid speakWord calls keep only one local resume timer alive', () => {

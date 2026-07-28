@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
@@ -12,7 +12,7 @@ import { triggerAISubmit } from '@/services/aiChatBridge';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { dispatchToSearch } from '@/services/searchKeyBridge';
-import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS, GEEZ_VOWEL_ORDERS, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
+import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS, buildKeyboardRows, KANA_MODIFIERS, applyKanaModifier, GEEZ_MODIFIERS, geezOffsetFor, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
 
 // Long-press threshold for caps lock — raised from 500 ms to 1200 ms after
@@ -75,16 +75,33 @@ function extractLastSentence(text: string): string {
 export const __testing = { extractLastSentence };
 
 export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: boolean; onBrowserGo?: () => void } = {}) {
-  const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone } = useMessageStore();
+  // No toggleSound: soundEnabled is a master mute again and Speak must not
+  // clear it. setText is for the kana modifiers, which rewrite the last
+  // character rather than appending one.
+  const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone, setText } = useMessageStore();
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock, keyboardMaximized, cycleKeyboardMode } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language, speakOnSentenceEnd, gridSize } = useSettingsStore();
   const { t } = useT();
   const letterRows = getLetterRows(language);
 
-  const rows = keyboardMode === 'letters'
+  const rawRows = keyboardMode === 'letters'
     ? letterRows
     : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
+  // Width-driven, not orientation-driven: the same 12-key Romanian row that
+  // overflows a 390px portrait screen fits fine in landscape at 844px.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const check = () => setNarrow(window.innerWidth < 480);
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+    return () => {
+      window.removeEventListener('resize', check);
+      window.removeEventListener('orientationchange', check);
+    };
+  }, []);
+  const rows = buildKeyboardRows(rawRows, narrow);
   const showUpper = isUpperCase || capsLock;
 
   const handleKey = useCallback((key: string) => {
@@ -96,6 +113,27 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
       return;
     }
+    // Kana modifiers rewrite the preceding character (て + ゛ → で) rather
+    // than inserting themselves. A modifier that does not apply is ignored, so
+    // a mis-tap never drops a stray ゛ into the sentence.
+    if ((KANA_MODIFIERS as readonly string[]).includes(char)) {
+      const current = useMessageStore.getState().text;
+      const modified = applyKanaModifier(current, char);
+      if (modified !== null) setText(modified);
+      return;
+    }
+    // Ge'ez vowel orders work identically: Amharic is an abugida, so ለ + the
+    // ሁ-order key becomes ሉ rather than inserting a second glyph. 33 keys x 7
+    // orders covers the whole 231-character fidel without a 231-key grid.
+    if (GEEZ_MODIFIERS.includes(char)) {
+      const offset = geezOffsetFor(char);
+      if (offset !== null) {
+        const current = useMessageStore.getState().text;
+        const modified = applyGeezVowelOrder(current, offset);
+        if (modified !== null) setText(modified);
+      }
+      return;
+    }
     appendChar(char);
     if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
     // Per-key letter echo REMOVED. The previous behavior fired
@@ -103,9 +141,9 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     // letter names ("aitch", "double-yu", "tee-oh") regardless of
     // language. AAC users with phonics needs already get word-level
     // feedback via:
-    //   • handleSpace below — speaks the just-completed word on space
-    //   • MessageBar silence-detect — speaks the latest word once the
-    //     autocorrect roundtrip confirms it's well-formed
+    //   • handleSpace below — speaks the cumulative phrase on space
+    //   • MessageBar silence-detect — speaks the cumulative phrase once the
+    //     trailing input is confirmed as a word
     //   • Speak button — speaks the full utterance on demand
     //   • THIS handler — when char is a sentence terminator (.?!),
     //     speak the just-completed sentence (Read&Write parity for
@@ -119,36 +157,8 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       const sentence = extractLastSentence(text);
       if (sentence) aacSpeak(sentence, speechRate, speechVolume, activeTone);
     }
-  }, [appendChar, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper,
+  }, [appendChar, setText, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper,
       speakOnSentenceEnd, autoSpeak, soundEnabled, speechRate, speechVolume, activeTone]);
-
-  /**
-   * Ge'ez vowel-order modifier (Amharic only).
-   *
-   * Amharic is an abugida — a consonant and its vowel are one fused glyph,
-   * so the 33 consonant keys above only ever produce 1st-order (ግዕዝ) forms.
-   * Tapping an order key rewrites the character just typed into that order:
-   * ለ then ሁ-order gives ሉ. This is post-hoc rather than a sticky mode
-   * because it is how the fidel is taught and read, and because a mode the
-   * user has to remember is a cognitive-accessibility cost we don't need —
-   * the base glyph appears immediately and the order key refines it.
-   *
-   * No-ops when the last character isn't one of our base consonants, so a
-   * stray tap can't walk an already-inflected glyph into the next
-   * consonant's series (ሉ + 1 would silently become ሊ, then ሐ).
-   */
-  const handleGeezOrder = useCallback((offset: number) => {
-    keyFeedback();
-    const text = useMessageStore.getState().text;
-    const chars = [...text];
-    const last = chars[chars.length - 1];
-    if (!last) return;
-    const replaced = applyGeezVowelOrder(last, offset);
-    if (!replaced) return;
-    // setText (not deleteLastChar + appendChar) so the inflection is a
-    // single undo step rather than two.
-    useMessageStore.getState().setText(chars.slice(0, -1).join('') + replaced);
-  }, []);
 
   const shiftHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shiftLongPressed = useRef(false);
@@ -196,10 +206,19 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
         const prevPrevWord = words.length > 2 ? words[words.length - 3] : undefined;
         learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase(), prevPrevWord?.toLowerCase());
         const translationActive = useSettingsStore.getState().language !== useSettingsStore.getState().outputLanguage;
-        if (translationActive) {
-          // In translation mode, individual word-level audio is out of context
-        } else if (autoSpeak && soundEnabled) {
-          aacSpeak(lastWord, speechRate, speechVolume, activeTone);
+        const phrase = currentText.trim();
+        if (autoSpeak && soundEnabled) {
+          if (translationActive) {
+            // A space confirms the word boundary. Translate and speak the
+            // cumulative message immediately in the configured output
+            // language rather than leaving translation for the Play button.
+            void aacSpeak(phrase, speechRate, speechVolume, activeTone, true);
+          } else {
+            // Preserve the established AAC contract: replay the whole message
+            // at each word boundary through the quality-first speech path,
+            // instead of speaking only the trailing word.
+            speakWord(phrase, speechRate, speechVolume);
+          }
         }
       }
     }
@@ -212,8 +231,8 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       onBrowserGo?.();
       return;
     }
-    // HIGH #1 — check text + soundEnabled FIRST before warming up audio,
-    // unless we are in AI Chat mode (which has its own routing path).
+    // Check text + soundEnabled before warming up audio, unless we are in AI
+    // Chat mode (which has its own routing path and does not speak aloud).
     const currentText = useMessageStore.getState().text.trim();
     if (useUIStore.getState().sidePanel !== 'ai-chat' && (!currentText || !soundEnabled)) return;
     void warmupAzureAudio();
@@ -223,6 +242,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       triggerAISubmit();
       return;
     }
+    // Master mute wins here too — see the MessageBar Play handler.
     if (!currentText || !soundEnabled) return;
     addToHistory(currentText);
     const { language, outputLanguage } = useSettingsStore.getState();
@@ -234,7 +254,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
         aacSpeak(currentText, speechRate, speechVolume, activeTone, true);
       }
     } else {
-      aacSpeak(currentText, speechRate, speechVolume, activeTone);
+      aacSpeak(currentText, speechRate, speechVolume, activeTone, true);
     }
   }, [soundEnabled, speechRate, speechVolume, addToHistory, activeTone, browserMode, onBrowserGo]);
 
@@ -245,10 +265,16 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     useMessageStore.getState().deleteLastChar();
   }, []);
 
-  const kc = 'aac-key surface-key text-primary rounded-lg font-bold select-none flex items-center justify-center';
+  const kc = 'aac-key surface-key text-primary rounded-lg font-bold select-none flex items-center justify-center min-w-0';
+  // Bounded by width as well as height. Sizing on svh alone gives a ~35px glyph
+  // on a tall phone, and a full-width CJK character then cannot shrink below
+  // ~37px — which pushed the Japanese kana row to ~466px inside a 390px screen
+  // and clipped keys off both edges. Latin glyphs are narrow enough to have
+  // hidden the problem. min() only lowers the size where width is the binding
+  // constraint, so tablets and desktop are unchanged.
   const letterSize = capsLock
-    ? 'text-[clamp(1.75rem,4.8svh,3.5rem)]'
-    : 'text-[clamp(1.55rem,4.2svh,3rem)]';
+    ? 'text-[clamp(1.1rem,min(4.8svh,7vw),3.5rem)]'
+    : 'text-[clamp(1rem,min(4.2svh,6.5vw),3rem)]';
   const utilSize = 'text-[clamp(1rem,2.5svh,1.75rem)]';
   const wordSize = 'text-[clamp(0.9rem,2svh,1.5rem)]';
 
@@ -264,7 +290,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     <div className="flex-1 flex flex-col gap-[1px] p-[2px]" data-scan-group="keyboard" role="group" aria-label="Keyboard">
       {rows.map((row, ri) => (
         <div key={ri} className="flex gap-[1px] justify-center flex-1">
-          {ri === 2 && keyboardMode === 'letters' && (
+          {row.util && keyboardMode === 'letters' && (
             <button
               onPointerDown={handleShiftDown}
               onPointerUp={handleShiftUp}
@@ -277,7 +303,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
               {shiftGlyph}
             </button>
           )}
-          {row.map((key) => {
+          {row.keys.map((key) => {
             const displayChar = keyboardMode === 'letters' ? (showUpper ? key : key.toLowerCase()) : key;
             return (
               <button
@@ -286,36 +312,22 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
                 aria-label={key}
                 data-key={key}
                 data-display={displayChar}
-                className={`${kc} ${letterSize} flex-1 hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}
+                className={`${kc} ${letterSize} hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb] ${
+                  // A wrapped remainder keeps base key width instead of
+                  // stretching four diacritics across the whole screen.
+                  row.continuation ? 'flex-none basis-[calc(100%/10)]' : 'flex-1'
+                }`}
               >
                 {displayChar}
               </button>
             );
           })}
-          {ri === 2 && keyboardMode === 'letters' && (
+          {row.util && keyboardMode === 'letters' && (
             <button onClick={handleBackspace} aria-label="Backspace" data-action="backspace" className={`${kc} ${utilSize} px-[clamp(0.5rem,1vw,1rem)] min-w-[clamp(2.5rem,6vw,4.5rem)]`}>⌫</button>
           )}
         </div>
       ))}
 
-      {/* Ge'ez vowel orders — Amharic only. Without this row the 33 consonant
-          keys can only produce 1st-order forms, which cannot spell most
-          Amharic words. See handleGeezOrder above. */}
-      {language === 'am' && keyboardMode === 'letters' && (
-        <div className="flex gap-[1px] justify-center flex-1" data-testid="geez-vowel-orders" role="group" aria-label="Ge'ez vowel orders">
-          {GEEZ_VOWEL_ORDERS.map((order) => (
-            <button
-              key={order.offset}
-              onClick={() => handleGeezOrder(order.offset)}
-              aria-label={`Vowel order ${order.name}`}
-              data-geez-order={order.offset}
-              className={`${kc} ${letterSize} flex-1 hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}
-            >
-              {order.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       <div className="flex gap-[1px] flex-1" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" data-action="mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>

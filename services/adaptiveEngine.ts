@@ -533,8 +533,8 @@ export function toneToAzureStyle(tone: AdaptiveTone): string {
 /** Map AdaptiveTone → speech rate multiplier. Slower for serious/empathetic. */
 export function toneToRate(tone: AdaptiveTone, baseRate: number): number {
   switch (tone) {
-    case 'serious': return Math.max(0.7, baseRate * 0.85);
-    case 'empathetic': return Math.max(0.7, baseRate * 0.9);
+    case 'serious': return Math.max(0.25, baseRate * 0.85);
+    case 'empathetic': return Math.max(0.25, baseRate * 0.9);
     case 'excited': return Math.min(1.4, baseRate * 1.1);
     default: return baseRate;
   }

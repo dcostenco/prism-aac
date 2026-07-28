@@ -252,7 +252,19 @@ export default function PrismApp() {
     ensureSeed();
     refreshAuth();
     // Install Watch→web alert bridge. Idempotent — safe under StrictMode.
-    void import('@/services/watchAlertBridge').then((m) => m.registerWatchAlertBridge());
+    let effectActive = true;
+    void import('@/services/watchAlertBridge')
+      .then((m) => {
+        if (effectActive) m.registerWatchAlertBridge();
+      })
+      .catch((error) => {
+        if (effectActive) {
+          console.warn(
+            '[watchBridge] failed to load:',
+            error instanceof Error ? error.message : error,
+          );
+        }
+      });
     // Auto-sideload: detect local Ollama → pull best prism-coder model
     import('@/services/aiService').then(m => m.autoSideload?.()).catch(() => {});
     // Pre-warm MediaPipe WASM + face models so the first startHeadTracker()
@@ -262,10 +274,10 @@ export default function PrismApp() {
     import('@/services/headTracker').then(m => m.prewarmHeadTracker?.()).catch(() => {});
     // HRR contextual memory — 229KB WASM, loads lazily
     import('@/services/hrrContext').then(m => m.initAacHrr()).catch(() => {});
-    // Pre-cache all pictograms for offline — runs in background
-    import('@/services/pictogramService').then(m =>
-      m.precacheAllPictograms?.(useSettingsStore.getState().language, 'symbols')
-    ).catch(() => {});
+    // Pictograms load and persist on demand. Do not pre-cache the full
+    // 1,500+ phrase corpus on every mount: that creates hundreds of immediate
+    // ARASAAC requests, duplicate work on reload, and avoidable memory/network
+    // pressure before the AAC user has selected a category.
     const unregisterPanic = registerPanicListeners();
     const cleanupConnectivity = registerConnectivityListener();
     // Drain incoming caregiver/contact messages onto the schedule. The
@@ -282,6 +294,7 @@ export default function PrismApp() {
     recordFirstUse();
     checkDaysUsedReview();
     return () => {
+      effectActive = false;
       unregisterPanic();
       cleanupConnectivity?.();
       stopInbox();
@@ -320,35 +333,52 @@ export default function PrismApp() {
         ? 'microsoft-mail'
         : provider;
     const label = PROVIDER_LABEL[refinedKey] || PROVIDER_LABEL[provider] || provider || 'provider';
+    let feedback: { kind: 'ok' | 'err'; msg: string };
     if (connected === '1') {
-      setConnectFeedback({ kind: 'ok', msg: `✓ ${label} connected` });
-      try {
-        broadcastIntegrationEvent({
-          type: 'provider-connected',
-          provider,
-          at: Date.now(),
-        });
-      } catch { /* */ }
+      feedback = { kind: 'ok', msg: `✓ ${label} connected` };
     } else if (errParam) {
       const human = errParam === 'state_mismatch'
         ? 'Connect session expired — try again.'
         : errParam === 'missing_code'
           ? `Authorization for ${label} was cancelled.`
           : `Couldn't connect ${label}: ${errParam}`;
-      setConnectFeedback({ kind: 'err', msg: human });
+      feedback = { kind: 'err', msg: human };
+    } else {
+      return;
     }
 
-    // Strip the query so hard-reload doesn't re-fire the toast.
-    sp.delete('connected');
-    sp.delete('provider');
-    sp.delete('scope');
-    sp.delete('error');
-    const cleanedQs = sp.toString();
-    const newUrl = window.location.pathname + (cleanedQs ? `?${cleanedQs}` : '') + window.location.hash;
-    window.history.replaceState({}, '', newUrl);
+    let cancelled = false;
+    let clearFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setConnectFeedback(feedback);
+      if (connected === '1') {
+        try {
+          broadcastIntegrationEvent({
+            type: 'provider-connected',
+            provider,
+            at: Date.now(),
+          });
+        } catch { /* */ }
+      }
 
-    const t = setTimeout(() => setConnectFeedback(null), 4000);
-    return () => clearTimeout(t);
+      // Strip the query only after the deferred update commits. In React
+      // StrictMode the first effect pass is cleaned up before this microtask;
+      // leaving the query intact lets the real pass still show confirmation.
+      sp.delete('connected');
+      sp.delete('provider');
+      sp.delete('scope');
+      sp.delete('error');
+      const cleanedQs = sp.toString();
+      const newUrl = window.location.pathname + (cleanedQs ? `?${cleanedQs}` : '') + window.location.hash;
+      window.history.replaceState({}, '', newUrl);
+
+      clearFeedbackTimer = setTimeout(() => setConnectFeedback(null), 4000);
+    });
+    return () => {
+      cancelled = true;
+      if (clearFeedbackTimer) clearTimeout(clearFeedbackTimer);
+    };
   }, []);
 
   // Warm up the SHARED AudioContext on first user interaction.
@@ -497,7 +527,10 @@ export default function PrismApp() {
               cell-grid canvas + bigger keyboards have room to breathe.
               Tapping ✓ Done or ✕ closes math and the chrome returns. */}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && sidePanel !== 'comfort-player' && sidePanel !== 'pdf-reader' && sidePanel !== 'ocr-capture' && !showQwerty && <GreetingBanner />}
-          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && !compactMode && <MessageBar />}
+          {/* Phone landscape gets the compact bar rather than no bar: dropping
+              it entirely took away the composed message and the Play button,
+              which are the two controls an AAC user cannot do without. */}
+          {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <MessageBar compact={compactMode} />}
           {sidePanel !== 'ai-chat' && (!PANELS_WITHOUT_QWERTY.has(sidePanel) || (isCategoryMode && categoryKeyboardOpen)) && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />

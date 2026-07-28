@@ -1,7 +1,7 @@
 import { SupportedLanguage } from '@/engine/i18n';
 
 const T: Record<string, Partial<Record<SupportedLanguage, string>>> = {
-  'cw-i': { ro: 'Eu', es: 'Yo', fr: 'Je', pt: 'Eu', de: 'Ich', ru: 'Я', uk: 'Я', ja: '私', ko: '나', zh: '我', ar: 'أنا', hi: 'मैं', it: 'Io', pl: 'Ja', he: 'אני', nl: 'Ik', vi: 'Tôi', tl: 'Ako', tr: 'Ben', id: 'Saya', bg: 'Аз', am: 'እኔ', sw: 'Mimi', bn: 'আমি'},
+  'cw-i': { ro: 'eu', es: 'Yo', fr: 'Je', pt: 'Eu', de: 'Ich', ru: 'Я', uk: 'Я', ja: '私', ko: '나', zh: '我', ar: 'أنا', hi: 'मैं', it: 'Io', pl: 'Ja', he: 'אני', nl: 'Ik', vi: 'Tôi', tl: 'Ako', tr: 'Ben', id: 'Saya', bg: 'Аз', am: 'እኔ', sw: 'Mimi', bn: 'আমি'},
   'cw-you': { ro: 'Tu', es: 'Tú', fr: 'Tu', pt: 'Você', de: 'Du', ru: 'Ты', uk: 'Ти', ja: 'あなた', ko: '너', zh: '你', ar: 'أنت', hi: 'तुम', it: 'Tu', pl: 'Ty', he: 'אתה', nl: 'Jij', vi: 'Bạn', tl: 'Ikaw', tr: 'Sen', id: 'Kamu', bg: 'Ти', am: 'አንተ', sw: 'Wewe', bn: 'তুমি'},
   'cw-he': { ro: 'El', es: 'Él', fr: 'Il', pt: 'Ele', de: 'Er', ru: 'Он', uk: 'Він', ja: '彼', ko: '그', zh: '他', ar: 'هو', hi: 'वह', it: 'Lui', pl: 'On', he: 'הוא', nl: 'Hij', vi: 'Anh ấy', tl: 'Siya', tr: 'O', id: 'Dia', bg: 'Той', am: 'እሱ', sw: 'Yeye', bn: 'সে'},
   'cw-she': { ro: 'Ea', es: 'Ella', fr: 'Elle', pt: 'Ela', de: 'Sie', ru: 'Она', uk: 'Вона', ja: '彼女', ko: '그녀', zh: '她', ar: 'هي', hi: 'वह', it: 'Lei', pl: 'Ona', he: 'היא', nl: 'Zij', vi: 'Cô ấy', tl: 'Siya', tr: 'O', id: 'Dia', bg: 'Тя', am: 'እሷ', sw: 'Yeye', bn: 'সে'},

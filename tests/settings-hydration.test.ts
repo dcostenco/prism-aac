@@ -11,11 +11,23 @@ beforeEach(() => {
   if (typeof window !== 'undefined') window.localStorage.clear();
 });
 
-function seedPersistedSettings(state: Record<string, unknown>): void {
-  window.localStorage.setItem('prism-aac-settings', JSON.stringify({ state, version: 15 }));
+function seedPersistedSettings(state: Record<string, unknown>, version = 15): void {
+  window.localStorage.setItem('prism-aac-settings', JSON.stringify({ state, version }));
 }
 
 describe('settingsStore — hydration validator', () => {
+  it('migrates the legacy rate=1 upgrade back to the current normal-speed value once', async () => {
+    seedPersistedSettings({ speechRate: 1 }, 18);
+    await useSettingsStore.persist.rehydrate();
+    expect(useSettingsStore.getState().speechRate).toBe(0.5);
+  });
+
+  it('preserves an explicit fast rate selected after the migration', async () => {
+    seedPersistedSettings({ speechRate: 1 }, 19);
+    await useSettingsStore.persist.rehydrate();
+    expect(useSettingsStore.getState().speechRate).toBe(1);
+  });
+
   it('clamps NaN/negative speechRate to a safe default', () => {
     seedPersistedSettings({ speechRate: NaN, speechVolume: -5 });
     void useSettingsStore.persist.rehydrate();

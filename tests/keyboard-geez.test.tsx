@@ -1,5 +1,5 @@
 /**
- * Ge'ez vowel-order row — wiring test.
+ * Ge'ez vowel-order keys — wiring test.
  *
  * applyGeezVowelOrder() is unit-tested in keyboard-layouts.test.ts. This
  * suite covers the part unit tests cannot: that the row actually renders for
@@ -35,56 +35,56 @@ function setLang(language: string) {
   useSettingsStore.setState({ ...useSettingsStore.getState(), language } as never);
 }
 
-describe("Ge'ez vowel-order row", () => {
+describe("Ge'ez vowel-order keys", () => {
   beforeEach(() => {
     useMessageStore.setState({ ...useMessageStore.getState(), text: '' } as never);
     useUIStore.setState({ ...useUIStore.getState(), keyboardMode: 'letters' } as never);
     setLang('en');
   });
 
-  it('does not render for non-Amharic languages', () => {
+  it('does not show vowel-order keys for non-Amharic languages', () => {
     render(<Keyboard />);
-    expect(screen.queryByTestId('geez-vowel-orders')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ሁ' })).not.toBeInTheDocument();
   });
 
-  it('renders 7 order keys for Amharic', () => {
+  it('renders the 6 vowel-order keys for Amharic', () => {
     setLang('am');
     render(<Keyboard />);
-    const row = screen.getByTestId('geez-vowel-orders');
-    expect(row).toBeInTheDocument();
-    expect(row.querySelectorAll('button')).toHaveLength(7);
+    for (const k of ['ሁ', 'ሂ', 'ሃ', 'ሄ', 'ህ', 'ሆ']) {
+      expect(screen.getByRole('button', { name: k })).toBeInTheDocument();
+    }
   });
 
-  it('inflects the last typed consonant', () => {
+  it('inflects the last typed consonant instead of inserting itself', () => {
     setLang('am');
     useMessageStore.setState({ ...useMessageStore.getState(), text: 'ለ' } as never);
     render(<Keyboard />);
-    // offset 1 = kaʿəb (u): ለ -> ሉ
-    fireEvent.click(screen.getByRole('button', { name: /kaʿəb/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'ሁ' }));
     expect(useMessageStore.getState().text).toBe('ሉ');
   });
 
-  it('only rewrites the final character, leaving earlier text intact', () => {
+  it('leaves earlier text intact', () => {
     setLang('am');
     useMessageStore.setState({ ...useMessageStore.getState(), text: 'ሰላም ለ' } as never);
     render(<Keyboard />);
-    fireEvent.click(screen.getByRole('button', { name: /rabiʿ/ })); // offset 3 = a
+    fireEvent.click(screen.getByRole('button', { name: 'ሃ' }));
     expect(useMessageStore.getState().text).toBe('ሰላም ላ');
   });
 
-  it('leaves the buffer untouched when the last character is not a base consonant', () => {
+  it('never inserts a stray modifier when it does not apply', () => {
+    // Same guarantee the kana modifiers give: a mis-tap is ignored rather
+    // than dropping a bare ሁ into the sentence.
     setLang('am');
-    // Already inflected — inflecting again would walk into the next series.
     useMessageStore.setState({ ...useMessageStore.getState(), text: 'ሉ' } as never);
     render(<Keyboard />);
-    fireEvent.click(screen.getByRole('button', { name: /salis/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'ሂ' }));
     expect(useMessageStore.getState().text).toBe('ሉ');
   });
 
   it('no-ops on an empty buffer', () => {
     setLang('am');
     render(<Keyboard />);
-    fireEvent.click(screen.getByRole('button', { name: /kaʿəb/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'ሁ' }));
     expect(useMessageStore.getState().text).toBe('');
   });
 });

@@ -219,9 +219,9 @@ describe('settingsStore — update() speechRate clamping [0.25, 4]', () => {
     expect(useSettingsStore.getState().speechRate).toBe(4);
   });
 
-  it('clamps NaN to default (1)', () => {
+  it('clamps NaN to the normal-speed default (0.5)', () => {
     useSettingsStore.getState().update({ speechRate: NaN });
-    expect(useSettingsStore.getState().speechRate).toBe(1);
+    expect(useSettingsStore.getState().speechRate).toBe(0.5);
   });
 
   it('passes through in-range value unchanged', () => {

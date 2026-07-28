@@ -23,7 +23,12 @@ export function middleware(request: NextRequest) {
   // needing their own allowlist entry once they're loaded by a nonced script.
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    // 'wasm-unsafe-eval' permits WebAssembly compilation and nothing else — it
+    // does not re-enable eval() for JavaScript. Without it every
+    // WebAssembly.instantiate call is refused, which silently disabled the
+    // Tier 3 WASM TTS fallback in speechService: the last resort for producing
+    // speech when portal TTS fails and Web Speech is unavailable.
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'`,
     "style-src 'self' 'unsafe-inline'",
     "connect-src 'self' https://synalux.ai https://*.synalux.ai https://api.arasaac.org https://static.arasaac.org https://nominatim.openstreetmap.org wss://synalux.ai wss://*.synalux.ai https://browser-intake-datadoghq.com https://*.browser-intake-datadoghq.com https://*.datadoghq.com",
     "media-src 'self' blob: https://synalux.ai https://*.synalux.ai",
@@ -34,7 +39,11 @@ export function middleware(request: NextRequest) {
     "https://*.whatsapp.net " +
     "https://*.fbcdn.net " +
     "https://pbs.twimg.com https://abs.twimg.com",
-    "worker-src blob:",
+    // Serwist registers /prism-aac/sw.js from this origin. `blob:` is still
+    // required by the browser/ML workers, but it cannot replace `'self'`:
+    // omitting `'self'` made production silently reject the generated service
+    // worker and left returning AAC users without offline navigation.
+    "worker-src 'self' blob:",
     "font-src 'self'",
     "frame-src https:",
     "frame-ancestors 'none'",
@@ -51,5 +60,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // With a Next.js basePath, the catch-all matcher requires at least one
+  // segment after `/prism-aac`. Add `/` explicitly so the canonical
+  // base-path document (`/prism-aac`) also receives CSP/security headers.
+  matcher: ['/', '/((?!_next/static|_next/image|favicon.ico).*)'],
 };

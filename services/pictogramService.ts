@@ -17,7 +17,7 @@
 
 import { PictureMode } from '@/store/settingsStore';
 import { SynaluxProfile } from '@/services/aiService';
-import { timeoutSignal } from '@/lib/portalConfig';
+import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
 
 /**
  * Picture mode is derived from the user's Synalux plan, not from a user
@@ -25,16 +25,14 @@ import { timeoutSignal } from '@/lib/portalConfig';
  * paid subscribers (Standard / Advanced / Enterprise) additionally get
  * AI-generated pictograms for phrases ARASAAC doesn't cover.
  *
- * Profile-load race: profile is null for ~1-2s after page load while
- * `fetchSynaluxProfile()` runs. If we default to 'symbols' during that
- * window, paid users miss the AI fallback — and the result gets cached
- * `null` in MEM_CACHE, so even when profile loads they never see icons
- * for ARASAAC-miss tokens. Default to 'symbols-ai' optimistically; the
- * portal route returns 403 for actual free-tier users (and we cache the
- * null gracefully).
+ * A null profile means anonymous or still loading, so it must stay on the
+ * free ARASAAC path. Optimistically calling the paid route caused a burst of
+ * 401s for every anonymous first visit. Paid profile hydration changes the
+ * mode to `symbols-ai`; mode is part of the cache key, so an earlier ARASAAC
+ * miss cannot suppress the later paid AI lookup.
  */
 export function pictureModeForProfile(profile: SynaluxProfile | null): PictureMode {
-  if (profile && profile.plan === 'free') return 'symbols';
+  if (!profile || profile.plan === 'free') return 'symbols';
   return 'symbols-ai';
 }
 
@@ -48,7 +46,11 @@ const ARASAAC_CDN = 'https://static.arasaac.org/pictograms';
 // WebKitBlobResource error 1. Blob URLs are cleaned up by the browser
 // when the page unloads; the memory cost is negligible.
 const MAX_MEM_CACHE = 600;
+const MAX_ARASAAC_BLOB_CACHE = 32;
 const MEM_CACHE = new Map<string, string | null>();
+const IN_FLIGHT = new Map<string, Promise<string | null>>();
+const ARASAAC_BLOB_CACHE = new Map<number, Blob>();
+const ARASAAC_IMAGE_IN_FLIGHT = new Map<number, Promise<Blob | null>>();
 
 function memCacheSet(key: string, value: string | null) {
   if (MEM_CACHE.size >= MAX_MEM_CACHE) {
@@ -200,6 +202,54 @@ const arasaacUnsupportedLangs = new Set<string>();
  * request per locale, which is what the test asserts.
  */
 const arasaacProbes = new Map<string, Promise<unknown>>();
+function cacheArasaacBlob(id: number, blob: Blob) {
+  if (ARASAAC_BLOB_CACHE.size >= MAX_ARASAAC_BLOB_CACHE) {
+    const oldest = ARASAAC_BLOB_CACHE.keys().next().value;
+    if (oldest !== undefined) ARASAAC_BLOB_CACHE.delete(oldest);
+  }
+  ARASAAC_BLOB_CACHE.set(id, blob);
+}
+
+async function fetchArasaacImage(id: number): Promise<Blob | null> {
+  const cached = ARASAAC_BLOB_CACHE.get(id);
+  if (cached) {
+    // Refresh insertion order so the bounded map behaves as an LRU.
+    ARASAAC_BLOB_CACHE.delete(id);
+    ARASAAC_BLOB_CACHE.set(id, cached);
+    return cached;
+  }
+
+  const existing = ARASAAC_IMAGE_IN_FLIGHT.get(id);
+  if (existing) return existing;
+
+  const request = (async () => {
+    const imgT = timeoutSignal(5000);
+    try {
+      const imgRes = await fetch(`${ARASAAC_CDN}/${id}/${id}_500.png`, {
+        signal: imgT.signal,
+      });
+      if (!imgRes.ok) return null;
+      const cl = imgRes.headers.get('content-length');
+      if (cl && parseInt(cl, 10) > MAX_IMAGE_BYTES) return null;
+      const blob = await imgRes.blob();
+      if (blob.size > MAX_IMAGE_BYTES) return null;
+      cacheArasaacBlob(id, blob);
+      return blob;
+    } catch {
+      return null;
+    } finally {
+      imgT.cancel();
+    }
+  })();
+  ARASAAC_IMAGE_IN_FLIGHT.set(id, request);
+  try {
+    return await request;
+  } finally {
+    if (ARASAAC_IMAGE_IN_FLIGHT.get(id) === request) {
+      ARASAAC_IMAGE_IN_FLIGHT.delete(id);
+    }
+  }
+}
 
 async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
   const langCode = lang.split('-')[0] || 'en';
@@ -246,33 +296,15 @@ async function fetchArasaac(token: string, lang: string): Promise<Blob | null> {
   } finally {
     searchT.cancel();
   }
-  const imgT = timeoutSignal(5000);
-  try {
-    const imgRes = await fetch(`${ARASAAC_CDN}/${id}/${id}_500.png`, {
-      signal: imgT.signal,
-    });
-    if (!imgRes.ok) return null;
-    const cl = imgRes.headers.get('content-length');
-    if (cl && parseInt(cl, 10) > MAX_IMAGE_BYTES) return null;
-    const blob = await imgRes.blob();
-    if (blob.size > MAX_IMAGE_BYTES) return null;
-    return blob;
-  } catch {
-    return null;
-  } finally {
-    imgT.cancel();
-  }
+  return fetchArasaacImage(id);
 }
 
 // ── Synalux AI fallback ─────────────────────────────────────────────────────
 
 async function fetchSynaluxAI(phrase: string, lang: string): Promise<Blob | null> {
-  const base = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SYNALUX_API)
-    ? process.env.NEXT_PUBLIC_SYNALUX_API
-    : 'https://synalux.ai/api/v1';
   const t = timeoutSignal(5000);
   try {
-    const res = await fetch(`${base}/prism-aac/pictogram`, {
+    const res = await fetch(`${SYNALUX_API}/prism-aac/pictogram`, {
       method: 'POST',
       // 'same-origin': credentials sent to synalux.ai but NOT on cross-origin
       // redirects to supabase.co (which returns ACAO:* — incompatible with
@@ -351,23 +383,38 @@ export async function getPictogramUrl(
   if (PROFANITY.has(lowerToken)) return null;
 
   const key = await sha256(`v${STYLE_VERSION}|${lang}|${mode}|${token}`);
+  const existingRequest = IN_FLIGHT.get(key);
+  if (existingRequest) return existingRequest;
 
+  const request = resolvePictogramUrl(phrase, lang, mode, token, lowerToken, key, englishSource);
+  IN_FLIGHT.set(key, request);
+  try {
+    return await request;
+  } finally {
+    if (IN_FLIGHT.get(key) === request) IN_FLIGHT.delete(key);
+  }
+}
+
+async function resolvePictogramUrl(
+  phrase: string,
+  lang: string,
+  mode: PictureMode,
+  token: string,
+  lowerToken: string,
+  key: string,
+  /** See getPictogramUrl — the English word for `phrase`, when known. */
+  englishSource?: string,
+): Promise<string | null> {
   if (SENSITIVE.has(lowerToken)) {
     if (MEM_CACHE.has(key)) return MEM_CACHE.get(key) ?? null;
     const neutralId = 6009;
-    const imgT = timeoutSignal(5000);
-    try {
-      const imgRes = await fetch(`${ARASAAC_CDN}/${neutralId}/${neutralId}_500.png`, { signal: imgT.signal });
-      if (imgRes.ok) {
-        const blob = await imgRes.blob();
-        if (blob.size <= MAX_IMAGE_BYTES) {
-          await cachePut(key, blob);
-          const url = URL.createObjectURL(blob);
-          memCacheSet(key, url);
-          return url;
-        }
-      }
-    } catch { /* fall through — return null */ } finally { imgT.cancel(); }
+    const blob = await fetchArasaacImage(neutralId);
+    if (blob) {
+      await cachePut(key, blob);
+      const url = URL.createObjectURL(blob);
+      memCacheSet(key, url);
+      return url;
+    }
     return null;
   }
 
@@ -388,19 +435,13 @@ export async function getPictogramUrl(
   // returns wrong/generic images (e.g. clock+calendar for "Come here").
   const curatedId = CURATED_PICTOGRAM_IDS[normalize(phrase).toLowerCase()];
   if (curatedId) {
-    const imgT = timeoutSignal(5000);
-    try {
-      const imgRes = await fetch(`${ARASAAC_CDN}/${curatedId}/${curatedId}_500.png`, { signal: imgT.signal });
-      if (imgRes.ok) {
-        const blob = await imgRes.blob();
-        if (blob.size <= MAX_IMAGE_BYTES) {
-          await cachePut(key, blob);
-          const url = URL.createObjectURL(blob);
-          memCacheSet(key, url);
-          return url;
-        }
-      }
-    } catch { /* fall through to normal search */ } finally { imgT.cancel(); }
+    const blob = await fetchArasaacImage(curatedId);
+    if (blob) {
+      await cachePut(key, blob);
+      const url = URL.createObjectURL(blob);
+      memCacheSet(key, url);
+      return url;
+    }
   }
 
   const fullPhrase = normalize(phrase);
