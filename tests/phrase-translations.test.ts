@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPhraseText } from '@/constants/phraseTranslations';
+import { getPhraseText, hasPhraseTranslation } from '@/constants/phraseTranslations';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 
 describe('Phrase translations — getPhraseText', () => {
@@ -209,8 +209,12 @@ describe('Phrase translations — per-language coverage floors', () => {
   for (const [lang, floor] of Object.entries(FLOORS)) {
     it(`${lang} has at least ${floor} translated phrases`, () => {
       const translated = DEFAULT_PHRASES.filter((p) => {
-        const out = getPhraseText(p.id, lang as never, p.text);
-        return out && out !== p.text;
+        // Presence, not truthiness. A deliberate empty string IS a
+        // translation: Bengali has no definite article, so cw-the is '',
+        // exactly as cw-to is '' for ru/uk which have no infinitive particle.
+        // Counting those as untranslated made this floor fail on a fix.
+        if (!hasPhraseTranslation(p.id, lang as never)) return false;
+        return getPhraseText(p.id, lang as never, p.text) !== p.text;
       }).length;
       expect(
         translated,
@@ -221,10 +225,8 @@ describe('Phrase translations — per-language coverage floors', () => {
 
   it('no language column is entirely empty', () => {
     for (const lang of Object.keys(FLOORS)) {
-      const any = DEFAULT_PHRASES.some((p) => {
-        const out = getPhraseText(p.id, lang as never, p.text);
-        return out && out !== p.text;
-      });
+      const any = DEFAULT_PHRASES.some((p) => hasPhraseTranslation(p.id, lang as never)
+        && getPhraseText(p.id, lang as never, p.text) !== p.text);
       expect(any, `${lang} has zero translations — column was wiped`).toBe(true);
     }
   });

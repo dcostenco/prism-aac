@@ -110,6 +110,16 @@ interface SettingsState {
   theme: Theme;
   gridSize: GridSize;
   activeVocabSet: string;
+  /**
+   * Show vocabulary that no native speaker has reviewed.
+   *
+   * Only affects languages in UNREVIEWED_LANGUAGES (am/sw/bn), where the
+   * machine translations have measurably produced nonsense. Default false:
+   * a smaller trustworthy vocabulary beats a larger unreliable one. But
+   * hiding words from an AAC user is itself a harm, so a caregiver who
+   * accepts the risk can turn it back on.
+   */
+  showUnreviewedVocabulary: boolean;
   headTrackingEnabled: boolean;
   headTrackingDwellMs: number;
   headTrackingSensitivity: number;
@@ -192,7 +202,7 @@ interface SettingsState {
    *  Default OFF — caregiver must explicitly opt in. Uses ~5 MB extra RAM. */
   visionContextEnabled: boolean;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd' | 'caregiverPinHash' | 'announceSenderName' | 'visionContextEnabled'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'showUnreviewedVocabulary' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd' | 'caregiverPinHash' | 'announceSenderName' | 'visionContextEnabled'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -218,6 +228,7 @@ export const useSettingsStore = create<SettingsState>()(
       theme: 'dark',
       gridSize: 6,
       activeVocabSet: 'all',
+      showUnreviewedVocabulary: false,
       headTrackingEnabled: false,
       headTrackingDwellMs: 1200,
       headTrackingSensitivity: 5,
@@ -472,6 +483,7 @@ export const useSettingsStore = create<SettingsState>()(
           'highContrast', 'headTrackingEnabled', 'headTrackingDriftAutoDisable',
           'showHandCalibration', 'cameraInputEnabled', 'aiAutocorrectEnabled',
           'speakOnSentenceEnd', 'notificationsEnabled', 'mathTwoHitMagnify',
+          'showUnreviewedVocabulary',
           'headTrackingEyeGaze',
         ] as const;
         for (const k of boolKeys) {

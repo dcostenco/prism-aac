@@ -5,6 +5,7 @@ import { DEFAULT_CATEGORIES } from '@/constants/categories';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { TEMPLATE_ORDERING_SEQUENCES } from '@/constants/orderingSequences';
 import { VOCAB_SETS } from '@/constants/vocabularySets';
+import { isPhraseVisibleForLanguage } from '@/constants/translationReviewStatus';
 import { useSettingsStore } from '@/store/settingsStore';
 import { randomId } from '@/lib/uuid';
 import { sanitizeString } from '@/lib/safeStrings';
@@ -89,7 +90,15 @@ export const useCategoryStore = create<CategoryState>()(
 
       getPhrasesForCategory: (categoryId) => {
         const hidden = new Set(get().hiddenPhraseIds);
-        const defaults = DEFAULT_PHRASES.filter((p) => p.categoryId === categoryId && !hidden.has(p.id));
+        const { language, showUnreviewedVocabulary } = useSettingsStore.getState();
+        const defaults = DEFAULT_PHRASES.filter(
+          (p) => p.categoryId === categoryId
+            && !hidden.has(p.id)
+            // For languages with no native-speaker pass, show only the audited
+            // core + safety vocabulary. Custom phrases below are exempt: those
+            // are the caregiver's own words, not machine output.
+            && isPhraseVisibleForLanguage(p.id, language, showUnreviewedVocabulary),
+        );
         const custom = get().customPhrases.filter((p) => p.categoryId === categoryId && !p.deletedAt);
         return [...defaults, ...custom].sort((a, b) => a.sortOrder - b.sortOrder);
       },

@@ -4,7 +4,7 @@
     "ui": {
       "am": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -429,7 +429,7 @@
       },
       "sw": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -854,7 +854,7 @@
       },
       "bn": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -1281,7 +1281,7 @@
     "phrases": {
       "am": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -2800,7 +2800,7 @@
       },
       "sw": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -4319,7 +4319,7 @@
       },
       "bn": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -5838,7 +5838,7 @@
       },
       "es": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -6264,7 +6264,7 @@
       },
       "fr": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -6795,7 +6795,7 @@
       },
       "pt": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -7326,7 +7326,7 @@
       },
       "de": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -7802,7 +7802,7 @@
       },
       "ru": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -8278,7 +8278,7 @@
       },
       "uk": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -8809,7 +8809,7 @@
       },
       "ja": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -9340,7 +9340,7 @@
       },
       "ko": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -9871,7 +9871,7 @@
       },
       "zh": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -10402,7 +10402,7 @@
       },
       "ar": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -10933,7 +10933,7 @@
       },
       "hi": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -11464,7 +11464,7 @@
       },
       "it": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -11995,7 +11995,7 @@
       },
       "pl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -12526,7 +12526,7 @@
       },
       "he": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -13057,7 +13057,7 @@
       },
       "nl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -13588,7 +13588,7 @@
       },
       "vi": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -14119,7 +14119,7 @@
       },
       "tl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -14650,7 +14650,7 @@
       },
       "tr": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -15181,7 +15181,7 @@
       },
       "id": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -15712,7 +15712,7 @@
       },
       "ro": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -16225,7 +16225,7 @@
       },
       "bg": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "ab-crow",
@@ -16525,7 +16525,7 @@
     "dict": {
       "am": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "0",
@@ -17032,7 +17032,7 @@
       },
       "sw": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "0",
@@ -17539,7 +17539,7 @@
       },
       "bn": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "0",
@@ -18048,7 +18048,7 @@
     "vision": {
       "bn": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "bathtime#0",
@@ -18127,7 +18127,7 @@
       },
       "sw": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "bathtime#0",
@@ -18206,7 +18206,7 @@
       },
       "am": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "bathtime#0",
@@ -18287,7 +18287,7 @@
     "corpus": {
       "am": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -22190,7 +22190,7 @@
       },
       "bg": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -26094,7 +26094,7 @@
       },
       "bn": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -29998,7 +29998,7 @@
       },
       "he": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -33902,7 +33902,7 @@
       },
       "hi": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -37806,7 +37806,7 @@
       },
       "id": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -41709,7 +41709,7 @@
       },
       "it": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -45613,7 +45613,7 @@
       },
       "nl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -49517,7 +49517,7 @@
       },
       "pl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -53420,7 +53420,7 @@
       },
       "sw": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -57324,7 +57324,7 @@
       },
       "tl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -61228,7 +61228,7 @@
       },
       "tr": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
@@ -65132,7 +65132,7 @@
       },
       "vi": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-07-28T13:48:44.893Z",
+        "generatedAt": "2026-07-28T14:17:49.873Z",
         "reviewed": [],
         "unreviewed": [
           "choices_preferences#0",
