@@ -9,7 +9,7 @@
  * how much of the app was machine-translated — the failure mode points the
  * wrong way, toward "more reviewed than it is".
  *
- * Definition used: anything present in `git HEAD` predates this work and is
+ * Definition used: anything present at BASELINE (below) predates this work and is
  * treated as pre-existing/human. Anything added since is machine-generated and
  * unreviewed. That is conservative in the safe direction.
  *
@@ -26,11 +26,25 @@ const PROV_DIR = path.join(ROOT, 'i18n', 'provenance');
 const PROV_PATH = path.join(PROV_DIR, 'machine-translations.json');
 const GENERATOR = 'gemini-3.6-flash';
 
+/**
+ * Baseline for "what predates this work".
+ *
+ * MUST be a pinned commit, not HEAD. Once the language work is committed, HEAD
+ * contains it, so diffing against HEAD reports almost nothing as new — this
+ * silently collapsed the count from ~68,000 unreviewed strings to 3,897.
+ * Under-reporting here is the dangerous direction: it makes machine output
+ * look reviewed.
+ *
+ * d80b42d47 is the merge base, the last commit before Amharic/Swahili/Bengali
+ * work began. Override with PROVENANCE_BASELINE if the history is rewritten.
+ */
+const BASELINE = process.env.PROVENANCE_BASELINE || 'd80b42d47';
+
 const show = (p) => {
   try {
     // stderr piped, not inherited: a path that doesn't exist in HEAD is the
     // normal case for newly added files and shouldn't print `fatal:` noise.
-    return execFileSync('git', ['show', `HEAD:${p}`], {
+    return execFileSync('git', ['show', `${BASELINE}:${p}`], {
       cwd: ROOT, encoding: 'utf-8', maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'ignore'],
     });
   } catch {
