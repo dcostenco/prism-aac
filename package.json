@@ -34,7 +34,7 @@
     "es-hangul": "^2.3.8",
     "katex": "^0.16.45",
     "mathjs": "^15.2.0",
-    "next": "16.2.6",
+    "next": "16.2.12",
     "pdfjs-dist": "^5.7.284",
     "pyodide": "^0.29.4",
     "react": "19.2.4",
@@ -73,8 +73,12 @@
     "vitest": "^4.1.5"
   },
   "overrides": {
-    "postcss": "^8.5.10",
-    "protobufjs": "^7.5.8",
-    "ws": "^8.20.1"
+    "postcss": "^8.5.24",
+    "protobufjs": "^7.6.5",
+    "ws": "^8.20.1",
+    "brace-expansion": "^5.0.8",
+    "sharp": "^0.35.3",
+    "tar": "^7.5.22",
+    "minimatch": "^10.2.6"
   }
 }
