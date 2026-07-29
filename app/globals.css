@@ -221,8 +221,34 @@ html, body {
 }
 
 /* ── System contrast preference ─────────────────────────────── */
+/*
+ * "Increase contrast" must increase contrast WITHIN the active theme, not
+ * swap the theme.
+ *
+ * This block used to point :root — the LIGHT theme — at a dark palette:
+ * white text on near-black surfaces. But it overrides only these custom
+ * properties, so every surface painted with a Tailwind utility (bg-white on
+ * the prediction tiles, the message bar) stayed white while the text turned
+ * white with it. Turning on iOS Accessibility > Increase Contrast therefore
+ * made the board LESS readable — reported from an iPhone as unreadable
+ * prediction labels and message text. That is the precise opposite of what
+ * the setting is for, and it lands hardest on the users most likely to
+ * enable it.
+ *
+ * Light theme now goes darker. Dark and high-contrast themes keep the
+ * treatment they already had.
+ */
 @media (prefers-contrast: more) {
   :root {
+    --text-primary: #000000;
+    --text-muted: #4a3b00;
+    --text-dim: #2b2b2b;
+    --border-subtle: rgba(0, 0, 0, 0.55);
+    --border-strong: rgba(0, 0, 0, 0.85);
+    --accent-focus: #6b5200;
+  }
+
+  .dark, .high-contrast {
     --bg-app: #000000;
     --bg-surface: #0a0a0a;
     --bg-key: #1a1a1a;
