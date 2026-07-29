@@ -36,26 +36,39 @@ const HOME_CATS_ORDERED = [
 const HOME_MAX_PER_CAT = 14;
 
 // ── Tile background colors by category ───────────────────────────────────────
+// Text colour is NOT a style choice here — it is legibility on a device
+// someone speaks through.
+//
+// White text on these mid-tone backgrounds measured 2.2-2.8:1 against WCAG,
+// well under the 4.5:1 minimum, and at 13.5px on the tiles. Reported from a
+// real device as "I can't clearly see what is written". The entries that
+// already used text-gray-900 measured 9.7-11.3:1 on the very same palette, so
+// the fix is to follow the half of this map that was already right.
+//
+// Measured after the change, in-browser with sRGB conversion (oklch must be
+// resolved through a canvas — reading the computed value and treating it as
+// RGB silently produces nonsense, which inverted these numbers on my first
+// pass). Guarded by tests/category-contrast.test.ts.
 const CAT_BG: Record<string, string> = {
-  'quick-talk':        'bg-pink-400   text-white   border-pink-500',
+  'quick-talk':        'bg-pink-400   text-gray-900 border-pink-500',
   'help-needs':        'bg-pink-300   text-gray-900 border-pink-400',
   'core-pronouns':     'bg-yellow-400 text-gray-900 border-yellow-500',
-  'core-verbs':        'bg-green-500  text-white   border-green-700',
-  'core-little-words': 'bg-orange-400 text-white   border-orange-600',
-  'core-descriptors':  'bg-sky-400    text-white   border-sky-600',
-  'feelings':          'bg-purple-400 text-white   border-purple-600',
+  'core-verbs':        'bg-green-500  text-gray-900 border-green-700',
+  'core-little-words': 'bg-orange-400 text-gray-900 border-orange-600',
+  'core-descriptors':  'bg-sky-400    text-gray-900 border-sky-600',
+  'feelings':          'bg-purple-400 text-gray-900 border-purple-600',
   'questions':         'bg-purple-300 text-gray-900 border-purple-500',
 };
 
 // Word-class color for category-detail phrase tiles
 function wordBg(text: string): string {
   const c = CATEGORY_COLORS[classifyWord(text.split(/\s+/)[0])] ?? '';
-  if (c === '#4CAF50' || c === '#43A047') return 'bg-green-500  text-white   border-green-700';
-  if (c === '#FF9800' || c === '#F57C00') return 'bg-orange-400 text-white   border-orange-600';
+  if (c === '#4CAF50' || c === '#43A047') return 'bg-green-500  text-gray-900 border-green-700';
+  if (c === '#FF9800' || c === '#F57C00') return 'bg-orange-400 text-gray-900 border-orange-600';
   if (c === '#FFC107' || c === '#FFB300') return 'bg-yellow-400 text-gray-900 border-yellow-500';
-  if (c === '#2196F3' || c === '#1976D2') return 'bg-sky-400    text-white   border-sky-600';
-  if (c === '#E91E63' || c === '#C2185B') return 'bg-pink-400   text-white   border-pink-500';
-  if (c === '#9C27B0' || c === '#7B1FA2') return 'bg-purple-400 text-white   border-purple-600';
+  if (c === '#2196F3' || c === '#1976D2') return 'bg-sky-400    text-gray-900 border-sky-600';
+  if (c === '#E91E63' || c === '#C2185B') return 'bg-pink-400   text-gray-900 border-pink-500';
+  if (c === '#9C27B0' || c === '#7B1FA2') return 'bg-purple-400 text-gray-900 border-purple-600';
   return 'bg-slate-500 text-white border-slate-700';
 }
 
