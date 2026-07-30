@@ -75,6 +75,8 @@
   "category_select": "Categoria…",
   "category_visibility": "Visibilità categorie",
   "checking_sign_in": "Verifica dell'accesso in corso…",
+  "cloud_memory_predictions": "Previsioni dalla memoria cloud",
+  "cloud_memory_predictions_desc": "Facoltativo: invia le frasi completate a Synalux per suggerire schede di parole personalizzate",
   "cheerful": "Allegro",
   "clear": "Cancella",
   "clear_all": "Cancella tutto",

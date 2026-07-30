@@ -9,6 +9,7 @@ beforeEach(() => {
     highContrast: false,
     theme: 'light',
     gridSize: 6,
+    cloudPredictionEnabled: false,
   });
 });
 
@@ -36,6 +37,10 @@ describe('SettingsStore — Default values', () => {
   it('has gridSize of 6', () => {
     expect(useSettingsStore.getState().gridSize).toBe(6);
   });
+
+  it('keeps cloud phrase prediction opt-in disabled by default', () => {
+    expect(useSettingsStore.getState().cloudPredictionEnabled).toBe(false);
+  });
 });
 
 describe('SettingsStore — update()', () => {
@@ -57,6 +62,11 @@ describe('SettingsStore — update()', () => {
   it('updates highContrast', () => {
     useSettingsStore.getState().update({ highContrast: true });
     expect(useSettingsStore.getState().highContrast).toBe(true);
+  });
+
+  it('enables cloud phrase prediction only through an explicit boolean update', () => {
+    useSettingsStore.getState().update({ cloudPredictionEnabled: true });
+    expect(useSettingsStore.getState().cloudPredictionEnabled).toBe(true);
   });
 
   it('updates multiple fields at once', () => {

@@ -75,6 +75,8 @@
   "category_select": "Kategorie…",
   "category_visibility": "Kategorie-Sichtbarkeit",
   "checking_sign_in": "Anmeldestatus wird geprüft…",
+  "cloud_memory_predictions": "Cloud-Speichervorhersagen",
+  "cloud_memory_predictions_desc": "Optional: Sendet vollständige Sätze an Synalux, um personalisierte Wortkarten vorzuschlagen",
   "cheerful": "Fröhlich",
   "clear": "Leeren",
   "clear_all": "Alles löschen",

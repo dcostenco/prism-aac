@@ -1,14 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WordFreqEntry } from '@/types';
-import { getPredictions, recordWord, recordBigram, recordTrigram, decayPredictions, buildNgramsFromPhrases, mergeUserNgramsWithBoost } from '@/engine/predictionEngine';
-import { DEFAULT_PREDICTIONS, getPredictionsForLanguage } from '@/constants/keyboardLayouts';
+import { getPredictions, recordWord, recordBigram, recordTrigram, decayPredictions, buildNgramsFromPhrases, mergePredictionBaselines, mergePredictionContextBaselines, mergeUserNgramsWithBoost } from '@/engine/predictionEngine';
+import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { SupportedLanguage } from '@/engine/i18n';
 import { getClinicalVocabulary } from '@/constants/clinicalVocabulary';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { getPredictionSessionScope } from '@/services/predictionMemoryService';
 import {
   loadPredictionSeed,
   getCachedPredictionSeed,
@@ -17,6 +18,163 @@ import {
 
 const MAX_ENTRIES = 2000;
 const SEED_LAST_USED = 0;
+const LEGACY_STORAGE_KEY = 'prism-aac-predictions';
+const SCOPED_STORAGE_VERSION = 5;
+const MAX_NGRAM_ENTRIES = 50_000;
+const MAX_NGRAM_KEY_LENGTH = 200;
+
+interface PersistedPredictionSlice {
+  personalizationScope?: string;
+  personalizationLanguage?: SupportedLanguage;
+  wordFreq?: Record<string, WordFreqEntry>;
+  bigrams?: Record<string, WordFreqEntry>;
+  trigrams?: Record<string, WordFreqEntry>;
+}
+
+interface PredictionMaps {
+  wordFreq: Record<string, WordFreqEntry>;
+  bigrams: Record<string, WordFreqEntry>;
+  trigrams: Record<string, WordFreqEntry>;
+}
+
+interface PendingPredictionWrite {
+  key: string;
+  generation: number;
+  value: unknown;
+}
+
+function currentPredictionIdentity(): string {
+  return getPredictionSessionScope(useAuthStore.getState().profile?.email);
+}
+
+let activeStorageScope = currentPredictionIdentity();
+let activeStorageLanguage = useSettingsStore.getState().language || 'en';
+let storageGeneration = 0;
+let pendingPredictionWrite: PendingPredictionWrite | null = null;
+let predictionWriteTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scopedStorageKey(
+  scope = activeStorageScope,
+  language: SupportedLanguage = activeStorageLanguage,
+): string | null {
+  // Anonymous learning stays inside the current tab. Persisting it would let
+  // the next person on a shared AAC device inherit the previous user's names
+  // and routines without any account boundary to separate them.
+  if (!scope.startsWith('user:')) return null;
+  return `${LEGACY_STORAGE_KEY}:v${SCOPED_STORAGE_VERSION}:${encodeURIComponent(scope)}:${encodeURIComponent(language)}`;
+}
+
+function cleanNgrams(raw: unknown): Record<string, WordFreqEntry> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const out: Record<string, WordFreqEntry> = {};
+  let count = 0;
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    if (count >= MAX_NGRAM_ENTRIES) break;
+    if (!key || key.length > MAX_NGRAM_KEY_LENGTH) continue;
+    if (!val || typeof val !== 'object' || Array.isArray(val)) continue;
+    const entry = val as Record<string, unknown>;
+    if (
+      typeof entry.count !== 'number'
+      || !Number.isFinite(entry.count)
+      || entry.count < 0
+    ) {
+      continue;
+    }
+    if (
+      entry.lastUsed !== undefined
+      && (
+        typeof entry.lastUsed !== 'number'
+        || !Number.isFinite(entry.lastUsed)
+      )
+    ) {
+      continue;
+    }
+    out[key] = {
+      count: Math.min(entry.count, 100_000),
+      lastUsed: typeof entry.lastUsed === 'number' ? entry.lastUsed : 0,
+    };
+    count += 1;
+  }
+  return out;
+}
+
+function readScopedPredictionSlice(
+  scope: string,
+  language: SupportedLanguage,
+): PersistedPredictionSlice | null {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    // v4 and earlier had no owner or language. It cannot be assigned safely
+    // after an account switch, so discard it once instead of guessing.
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    const key = scopedStorageKey(scope, language);
+    if (!key) return null;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      state?: PersistedPredictionSlice;
+      version?: number;
+    };
+    if (
+      parsed.version !== SCOPED_STORAGE_VERSION
+      || parsed.state?.personalizationScope !== scope
+      || parsed.state?.personalizationLanguage !== language
+    ) {
+      return null;
+    }
+    return parsed.state;
+  } catch {
+    return null;
+  }
+}
+
+function flushPredictionWrite(): void {
+  if (predictionWriteTimer) {
+    clearTimeout(predictionWriteTimer);
+    predictionWriteTimer = null;
+  }
+  const pending = pendingPredictionWrite;
+  pendingPredictionWrite = null;
+  if (!pending || typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(pending.key, JSON.stringify(pending.value));
+  } catch { /* Local learning remains usable in memory. */ }
+}
+
+function schedulePredictionWrite(value: unknown): void {
+  const key = scopedStorageKey();
+  if (!key) return;
+  pendingPredictionWrite = {
+    key,
+    generation: storageGeneration,
+    value,
+  };
+  if (predictionWriteTimer) clearTimeout(predictionWriteTimer);
+  const scheduledGeneration = storageGeneration;
+  predictionWriteTimer = setTimeout(() => {
+    predictionWriteTimer = null;
+    if (
+      !pendingPredictionWrite
+      || pendingPredictionWrite.generation !== scheduledGeneration
+    ) {
+      return;
+    }
+    flushPredictionWrite();
+  }, 1_000);
+}
+
+function predictionMapsForIdentity(
+  scope: string,
+  language: SupportedLanguage,
+): PredictionMaps {
+  const seed = getSeed(language);
+  const persisted = readScopedPredictionSlice(scope, language);
+  return {
+    wordFreq: { ...seed.wordFreq, ...cleanNgrams(persisted?.wordFreq) },
+    bigrams: { ...seed.bigrams, ...cleanNgrams(persisted?.bigrams) },
+    trigrams: { ...seed.trigrams, ...cleanNgrams(persisted?.trigrams) },
+  };
+}
 
 // When DEFAULT_PHRASES has no translation for a non-English locale,
 // getPhraseText falls back to the English text. Without filtering, this
@@ -98,12 +256,6 @@ function getSeed(lang: SupportedLanguage) {
   return seedCache.get(lang)!;
 }
 
-let _seedEN: ReturnType<typeof getSeed> | null = null;
-function getSeedEN() {
-  if (!_seedEN) _seedEN = getSeed('en');
-  return _seedEN;
-}
-
 const PAID_PLANS = new Set(['standard', 'advanced', 'enterprise']);
 const clinicalCache = new Map<string, Record<string, WordFreqEntry>>();
 
@@ -141,6 +293,9 @@ function syncCorpusSeed(lang: string): PredictionSeed | null {
     corpusSeedCache.set(lang, seed);
     // Re-run predictions for the current text once the corpus seed is ready
     // so the user gets richer suggestions without waiting for a keystroke.
+    // A prior language's import may resolve after the user switches locales.
+    // Never let that stale completion reactivate the old personalization key.
+    if (useSettingsStore.getState().language !== lang) return;
     try {
       const store = usePredictionStore.getState();
       // Touch a no-op set so subscribers re-render with the warmed cache.
@@ -162,6 +317,12 @@ interface PredictionState {
   wordFreq: Record<string, WordFreqEntry>;
   bigrams: Record<string, WordFreqEntry>;
   trigrams: Record<string, WordFreqEntry>;
+  personalizationScope: string;
+  personalizationLanguage: SupportedLanguage;
+  activatePredictionIdentity: (
+    scope: string,
+    language: SupportedLanguage,
+  ) => void;
   updatePredictions: (text: string, lang?: SupportedLanguage) => void;
   setAiCompletion: (word: string | null) => void;
   learnWord: (word: string, previousWord?: string, prevPrevWord?: string) => void;
@@ -172,26 +333,66 @@ interface PredictionState {
 export const usePredictionStore = create<PredictionState>()(
   persist(
     (set, get) => ({
-      predictions: DEFAULT_PREDICTIONS,
+      predictions: getPredictionsForLanguage(activeStorageLanguage),
       aiCompletion: null,
-      wordFreq: { ...getSeedEN().wordFreq },
-      bigrams: { ...getSeedEN().bigrams },
-      trigrams: { ...getSeedEN().trigrams },
+      ...predictionMapsForIdentity(activeStorageScope, activeStorageLanguage),
+      personalizationScope: activeStorageScope,
+      personalizationLanguage: activeStorageLanguage,
+
+      activatePredictionIdentity: (scope, language) => {
+        const normalizedScope = scope.trim().toLowerCase();
+        if (!normalizedScope) return;
+        const state = get();
+        if (
+          state.personalizationScope === normalizedScope
+          && state.personalizationLanguage === language
+        ) {
+          return;
+        }
+
+        // Commit the old owner's queued write to the old owner's key before
+        // changing the routing generation. It can never land in the new key.
+        flushPredictionWrite();
+        storageGeneration += 1;
+        activeStorageScope = normalizedScope;
+        activeStorageLanguage = language;
+
+        set({
+          ...predictionMapsForIdentity(normalizedScope, language),
+          personalizationScope: normalizedScope,
+          personalizationLanguage: language,
+          predictions: getPredictionsForLanguage(language),
+          aiCompletion: null,
+        });
+      },
 
       updatePredictions: (text, lang = 'en') => {
+        const scope = currentPredictionIdentity();
+        get().activatePredictionIdentity(scope, lang);
         const seed = getSeed(lang);
         const corpus = syncCorpusSeed(lang);
-        const userWf = get().wordFreq;
-        const userBg = get().bigrams;
-        const userTg = get().trigrams;
+        const active = get();
+        const userWf = active.wordFreq;
+        const userBg = active.bigrams;
+        const userTg = active.trigrams;
         const plan = useAuthStore.getState().profile?.plan;
         const clinical = plan && PAID_PLANS.has(plan) ? getClinicalWordFreq(lang) : {};
         // Corpus + phrase seed + clinical = baseline. User counts get a boost
         // multiplier on TOP of the baseline so personal typing patterns can
         // outrank generic suggestions instead of being normalized to ~0.2.
-        const baselineWf = { ...(corpus?.wordFreq ?? {}), ...seed.wordFreq, ...clinical };
-        const baselineBg = { ...(corpus?.bigrams ?? {}), ...seed.bigrams };
-        const baselineTg = { ...(corpus?.trigrams ?? {}), ...seed.trigrams };
+        const baselineWf = mergePredictionBaselines(
+          corpus?.wordFreq ?? {},
+          seed.wordFreq,
+          clinical,
+        );
+        const baselineBg = mergePredictionContextBaselines(
+          corpus?.bigrams ?? {},
+          seed.bigrams,
+        );
+        const baselineTg = mergePredictionContextBaselines(
+          corpus?.trigrams ?? {},
+          seed.trigrams,
+        );
         // Cross-language gate is enforced at the render layer
         // (PredictionBar via lib/langAllowlist.isAllowedInLang) so the
         // store's merge stays neutral. Doing it both places would be
@@ -219,6 +420,8 @@ export const usePredictionStore = create<PredictionState>()(
       },
 
       learnWord: (word, previousWord, prevPrevWord) => {
+        const language = useSettingsStore.getState().language || 'en';
+        get().activatePredictionIdentity(currentPredictionIdentity(), language);
         const state = get();
         const wf = recordWord(state.wordFreq, word);
         let bg = state.bigrams;
@@ -238,8 +441,9 @@ export const usePredictionStore = create<PredictionState>()(
       },
 
       ensureSeed: () => {
-        const { wordFreq, bigrams, trigrams } = get();
         const lang = useSettingsStore.getState().language || 'en';
+        get().activatePredictionIdentity(currentPredictionIdentity(), lang);
+        const { wordFreq, bigrams, trigrams } = get();
         const seed = getSeed(lang);
         const wfMerged = { ...seed.wordFreq, ...wordFreq };
         const bgMerged = { ...seed.bigrams, ...bigrams };
@@ -251,123 +455,93 @@ export const usePredictionStore = create<PredictionState>()(
       },
     }),
     {
-      name: 'prism-aac-predictions',
-      version: 4,
+      // The adapter routes this logical store to an account+language key.
+      // The fixed name is never used as a physical v5 localStorage key.
+      name: LEGACY_STORAGE_KEY,
+      version: SCOPED_STORAGE_VERSION,
       migrate: (persistedState: unknown, version: number) => {
-        const s = (persistedState ?? {}) as Partial<PredictionState>;
-        // Safety fallback: ensure trigrams always exists regardless of migration path.
-        if (!s.trigrams) s.trigrams = {};
-        if (version < 3) {
-          const wf = { ...getSeedEN().wordFreq, ...(s.wordFreq ?? {}) };
-          const bg = { ...getSeedEN().bigrams, ...(s.bigrams ?? {}) };
-          return { ...s, wordFreq: wf, bigrams: bg, trigrams: { ...getSeedEN().trigrams } };
-        }
-        if (version < 4) {
-          // v4 adds user trigram tracking. Earlier versions never recorded
-          // user trigrams; seed-only trigrams are added here.
-          return { ...s, trigrams: { ...getSeedEN().trigrams, ...((s as Partial<PredictionState>).trigrams ?? {}) } };
-        }
-        return s as PredictionState;
+        // v4 and earlier have no owner/language and are deliberately not
+        // assigned to the currently visible user.
+        return version === SCOPED_STORAGE_VERSION
+          ? persistedState as PredictionState
+          : {};
       },
-      partialize: (s) => ({ wordFreq: s.wordFreq, bigrams: s.bigrams, trigrams: s.trigrams }),
+      partialize: (s) => ({
+        personalizationScope: s.personalizationScope,
+        personalizationLanguage: s.personalizationLanguage,
+        wordFreq: s.wordFreq,
+        bigrams: s.bigrams,
+        trigrams: s.trigrams,
+      }),
       merge: (persistedState, currentState) => {
         const p = (persistedState ?? {}) as Partial<PredictionState>;
-        // Sanitize each n-gram map. Without this, a tampered localStorage
-        // entry (browser ext / sibling tab on shared device) could inject
-        // an arbitrary phrase like "click here for free" with a huge
-        // count, dominating the prediction bar and influencing what the
-        // AAC user is led to tap. The shape gate also defends the
-        // prediction engine's sort path from non-numeric counts which
-        // would NaN-poison the comparison.
-        const cleanNgrams = (raw: unknown): Record<string, WordFreqEntry> => {
-          if (!raw || typeof raw !== 'object') return {};
-          const out: Record<string, WordFreqEntry> = {};
-          let count = 0;
-          // Cap at MAX_NGRAM_ENTRIES — defends against runaway storage.
-          // 50k is generous; legitimate corpus rarely exceeds 20k.
-          const MAX_NGRAM_ENTRIES = 50_000;
-          // Cap on individual key length — n-grams are at most ~3 words
-          // separated by spaces; 200 chars is paranoid headroom.
-          const MAX_KEY_LEN = 200;
-          for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
-            if (count >= MAX_NGRAM_ENTRIES) break;
-            if (typeof key !== 'string' || !key || key.length > MAX_KEY_LEN) continue;
-            if (!val || typeof val !== 'object') continue;
-            const v = val as Record<string, unknown>;
-            if (typeof v.count !== 'number' || !Number.isFinite(v.count) || v.count < 0) continue;
-            if (v.lastUsed !== undefined && (typeof v.lastUsed !== 'number' || !Number.isFinite(v.lastUsed))) continue;
-            // Cap individual count at a sane upper bound — a tampered
-            // entry with count: 1e9 would dominate sorting forever.
-            const cappedCount = Math.min(v.count, 100_000);
-            out[key] = { count: cappedCount, lastUsed: typeof v.lastUsed === 'number' ? v.lastUsed : 0 };
-            count++;
-          }
-          return out;
-        };
+        if (
+          p.personalizationScope !== activeStorageScope
+          || p.personalizationLanguage !== activeStorageLanguage
+        ) {
+          return currentState;
+        }
+        const seed = getSeed(activeStorageLanguage);
         return {
           ...currentState,
-          ...p,
-          wordFreq: { ...getSeedEN().wordFreq, ...cleanNgrams(p.wordFreq) },
-          bigrams: { ...getSeedEN().bigrams, ...cleanNgrams(p.bigrams) },
-          trigrams: { ...getSeedEN().trigrams, ...cleanNgrams(p.trigrams) },
+          personalizationScope: activeStorageScope,
+          personalizationLanguage: activeStorageLanguage,
+          wordFreq: { ...seed.wordFreq, ...cleanNgrams(p.wordFreq) },
+          bigrams: { ...seed.bigrams, ...cleanNgrams(p.bigrams) },
+          trigrams: { ...seed.trigrams, ...cleanNgrams(p.trigrams) },
         };
       },
-      // Debounced localStorage: writes at most once per 3 seconds.
-      // Prevents synchronous 500KB+ JSON.stringify on every keystroke
-      // from causing typing lag and battery drain on mobile devices.
-      storage: (() => {
-        let writeTimer: ReturnType<typeof setTimeout> | null = null;
-        let pendingName: string | null = null;
-        let pendingValue: unknown = null;
-        const flushNow = () => {
-          if (writeTimer) { clearTimeout(writeTimer); writeTimer = null; }
-          if (pendingName != null) {
-            try { localStorage.setItem(pendingName, JSON.stringify(pendingValue)); } catch {}
-            pendingName = null; pendingValue = null;
-          }
-        };
-        if (typeof window !== 'undefined') {
-          window.addEventListener('pagehide', flushNow);
-          document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNow(); });
-          window.addEventListener('beforeunload', () => {
-            if (writeTimer !== null) {
-              clearTimeout(writeTimer);
-              writeTimer = null;
-              // Flush immediately
-              try {
-                const s = usePredictionStore.getState();
-                const partial = { wordFreq: s.wordFreq, bigrams: s.bigrams, trigrams: s.trigrams };
-                localStorage.setItem(pendingName ?? 'prism-aac-predictions', JSON.stringify({ state: partial, version: 4 }));
-              } catch { /* quota exceeded — best effort */ }
-              pendingName = null; pendingValue = null;
-            }
-          });
-        }
-        return {
-          getItem: (name: string) => { try { const v = localStorage.getItem(name); return v ? JSON.parse(v) : null; } catch { return null; } },
-          setItem: (name: string, value: unknown) => {
-            pendingName = name; pendingValue = value;
-            if (writeTimer) clearTimeout(writeTimer);
-            writeTimer = setTimeout(() => {
-              try {
-                localStorage.setItem(name, JSON.stringify(value));
-              } catch (e) {
-                if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-                  // Shed old prediction data to free space, then retry with only partialized (non-PHI) state
-                  usePredictionStore.getState().runDecay();
-                  try {
-                    const s = usePredictionStore.getState();
-                    const partialized = { wordFreq: s.wordFreq, bigrams: s.bigrams, trigrams: s.trigrams };
-                    localStorage.setItem(name, JSON.stringify({ state: partialized, version: 4 }));
-                  } catch { /* still too large */ }
-                }
-              }
-              pendingName = null; pendingValue = null; writeTimer = null;
-            }, 1_000); // was 3000 — reduced to minimize data loss window
-          },
-          removeItem: (name: string) => { try { localStorage.removeItem(name); } catch {} },
-        };
-      })(),
+      // Persist signed-in personalization only. The adapter captures the
+      // physical key and routing generation at schedule time, so a delayed
+      // User A write can never be redirected into User B's store.
+      storage: {
+        getItem: () => {
+          const state = readScopedPredictionSlice(
+            activeStorageScope,
+            activeStorageLanguage,
+          );
+          return state
+            ? { state, version: SCOPED_STORAGE_VERSION }
+            : null;
+        },
+        setItem: (_name: string, value: unknown) => {
+          schedulePredictionWrite(value);
+        },
+        removeItem: () => {
+          flushPredictionWrite();
+          const key = scopedStorageKey();
+          if (!key || typeof localStorage === 'undefined') return;
+          try { localStorage.removeItem(key); } catch {}
+        },
+      },
     },
   ),
 );
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', flushPredictionWrite);
+  window.addEventListener('beforeunload', flushPredictionWrite);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushPredictionWrite();
+  });
+}
+
+// Keep the active deterministic personalization boundary synchronized without
+// importing predictionStore back into authStore (which would form a cycle).
+useAuthStore.subscribe((state, previous) => {
+  const email = state.profile?.email.toLowerCase() ?? null;
+  const previousEmail = previous.profile?.email.toLowerCase() ?? null;
+  if (email === previousEmail) return;
+  usePredictionStore.getState().activatePredictionIdentity(
+    getPredictionSessionScope(state.profile?.email),
+    useSettingsStore.getState().language || 'en',
+  );
+});
+
+useSettingsStore.subscribe((state, previous) => {
+  if (state.language === previous.language) return;
+  usePredictionStore.getState().activatePredictionIdentity(
+    currentPredictionIdentity(),
+    state.language,
+  );
+});

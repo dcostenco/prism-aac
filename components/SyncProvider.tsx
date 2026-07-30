@@ -2,10 +2,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   pushToCloud, pushToCloudKeepalive, pullFromCloud, subscribeToChanges,
-  mergeWordFreq, mergeCustomItems, mergeHistory,
+  mergeCustomItems, mergeHistory,
   SyncStatus, onSyncStatus, isSupabaseConfigured,
 } from '@/services/syncService';
-import { usePredictionStore } from '@/store/predictionStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -21,16 +20,19 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
   const syncedRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Prediction personalization is intentionally excluded from this legacy
+  // Supabase device sync. Its `user_id` is not the authenticated portal
+  // identity and it has no language dimension, so a late pull could otherwise
+  // place one person's learned names/routines into another person's scoped
+  // store. Local prediction storage is account+language scoped; optional
+  // cross-device Prism memory uses the explicit-consent portal endpoints.
   const gatherSyncPayload = useCallback(() => {
-    const pred = usePredictionStore.getState();
     const cat = useCategoryStore.getState();
     const msg = useMessageStore.getState();
     const settings = useSettingsStore.getState();
     return {
       custom_categories: cat.customCategories,
       custom_phrases: cat.customPhrases,
-      word_freq: pred.wordFreq,
-      bigrams: pred.bigrams,
       history: msg.history,
       settings: { speechRate: settings.speechRate, speechVolume: settings.speechVolume },
     };
@@ -62,16 +64,8 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
       try { remote = await pullFromCloud(); } catch { return; }
       if (!remote) return;
 
-      const pred = usePredictionStore.getState();
       const cat = useCategoryStore.getState();
       const msg = useMessageStore.getState();
-
-      // Batch prediction updates into ONE setState call to avoid multiple
-      // rapid Zustand notifications that cascade into React #300 crashes.
-      const predUpdate: Record<string, unknown> = {};
-      if (remote.word_freq) predUpdate.wordFreq = mergeWordFreq(pred.wordFreq, remote.word_freq as Record<string, { count: number; lastUsed: number }>);
-      if (remote.bigrams) predUpdate.bigrams = mergeWordFreq(pred.bigrams, remote.bigrams as Record<string, { count: number; lastUsed: number }>);
-      if (Object.keys(predUpdate).length) usePredictionStore.setState(predUpdate as any);
 
       const catUpdate: Record<string, unknown> = {};
       if (remote.custom_categories) catUpdate.customCategories = mergeCustomItems(cat.customCategories, remote.custom_categories);
@@ -82,15 +76,10 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
     })();
 
     const unsub = subscribeToChanges((remote) => {
-      const pred = usePredictionStore.getState();
       const cat = useCategoryStore.getState();
       const msg = useMessageStore.getState();
 
       // Batch into single setState calls per store to prevent React #300 cascade
-      const rPred: Record<string, unknown> = {};
-      if (remote.word_freq) rPred.wordFreq = mergeWordFreq(pred.wordFreq, remote.word_freq as Record<string, { count: number; lastUsed: number }>);
-      if (remote.bigrams) rPred.bigrams = mergeWordFreq(pred.bigrams, remote.bigrams as Record<string, { count: number; lastUsed: number }>);
-      if (Object.keys(rPred).length) usePredictionStore.setState(rPred as any);
       const rCat: Record<string, unknown> = {};
       if (remote.custom_categories) rCat.customCategories = mergeCustomItems(cat.customCategories, remote.custom_categories);
       if (remote.custom_phrases) rCat.customPhrases = mergeCustomItems(cat.customPhrases, remote.custom_phrases);
@@ -105,7 +94,6 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     const unsubs = [
-      usePredictionStore.subscribe((s, prev) => { if (s.wordFreq !== prev.wordFreq || s.bigrams !== prev.bigrams) pushDebounced(); }),
       useCategoryStore.subscribe((s, prev) => { if (s.customCategories !== prev.customCategories || s.customPhrases !== prev.customPhrases) pushDebounced(); }),
       useMessageStore.subscribe((s, prev) => { if (s.history !== prev.history) pushDebounced(); }),
       useSettingsStore.subscribe((s, prev) => { if (s.speechRate !== prev.speechRate || s.speechVolume !== prev.speechVolume) pushDebounced(); }),
@@ -117,15 +105,12 @@ export default function SyncProvider({ children }: { children: React.ReactNode }
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
         debounceRef.current = null;
-        const pred = usePredictionStore.getState();
         const cat = useCategoryStore.getState();
         const msg = useMessageStore.getState();
         const settings = useSettingsStore.getState();
         pushToCloudKeepalive({
           custom_categories: cat.customCategories,
           custom_phrases: cat.customPhrases,
-          word_freq: pred.wordFreq,
-          bigrams: pred.bigrams,
           history: msg.history,
           settings: { speechRate: settings.speechRate, speechVolume: settings.speechVolume },
         });

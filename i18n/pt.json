@@ -75,6 +75,8 @@
   "category_select": "Categoria…",
   "category_visibility": "Visibilidade das categorias",
   "checking_sign_in": "Verificando status de login…",
+  "cloud_memory_predictions": "Previsões da memória na nuvem",
+  "cloud_memory_predictions_desc": "Opcional: envia frases concluídas à Synalux para sugerir cartões de palavras personalizados",
   "cheerful": "Alegre",
   "clear": "Limpar",
   "clear_all": "Limpar tudo",

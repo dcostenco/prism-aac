@@ -10,6 +10,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const fetchProfileMock = vi.fn();
 const clearTranslationCacheMock = vi.fn();
 const clearTextCorrectCacheMock = vi.fn();
+const clearPredictionMemoryCacheMock = vi.fn();
+const rotateAnonymousPredictionSessionScopeMock = vi.fn();
+const destroyAacHrrMock = vi.fn();
+const settingsUpdateMock = vi.fn();
 
 vi.mock('@/services/aiService', () => ({
   fetchSynaluxProfile: (...a: unknown[]) => fetchProfileMock(...a),
@@ -19,6 +23,18 @@ vi.mock('@/services/translateService', () => ({
 }));
 vi.mock('@/services/textCorrectService', () => ({
   clearTextCorrectCache: (...a: unknown[]) => clearTextCorrectCacheMock(...a),
+}));
+vi.mock('@/services/predictionMemoryService', () => ({
+  clearPredictionMemoryCache: (...a: unknown[]) => clearPredictionMemoryCacheMock(...a),
+  rotateAnonymousPredictionSessionScope: (...a: unknown[]) => rotateAnonymousPredictionSessionScopeMock(...a),
+}));
+vi.mock('@/services/hrrContext', () => ({
+  destroyAacHrr: (...a: unknown[]) => destroyAacHrrMock(...a),
+}));
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: {
+    getState: () => ({ update: settingsUpdateMock }),
+  },
 }));
 
 const { useAuthStore, cleanupAuthStore } = await import('@/store/authStore');
@@ -74,6 +90,55 @@ describe('authStore — refresh()', () => {
     // fetchProfile should only be called once
     expect(fetchProfileMock).toHaveBeenCalledOnce();
   });
+
+  it('clears personalized prediction memory when the signed-in account changes', async () => {
+    useAuthStore.setState({
+      profile: {
+        email: 'first@example.com',
+        name: 'First',
+        plan: 'free',
+        isPlatformAdmin: false,
+      },
+      loaded: true,
+      loading: false,
+    });
+    fetchProfileMock.mockResolvedValue({
+      email: 'second@example.com',
+      name: 'Second',
+      plan: 'free',
+      isPlatformAdmin: false,
+    });
+
+    await useAuthStore.getState().refresh();
+
+    expect(clearPredictionMemoryCacheMock).toHaveBeenCalledOnce();
+    expect(destroyAacHrrMock).toHaveBeenCalledOnce();
+    expect(rotateAnonymousPredictionSessionScopeMock).toHaveBeenCalledOnce();
+    expect(settingsUpdateMock).toHaveBeenCalledWith({ cloudPredictionEnabled: false });
+    expect(useAuthStore.getState().profile?.email).toBe('second@example.com');
+  });
+
+  it('clears personalized prediction memory when refresh loses the signed-in account', async () => {
+    useAuthStore.setState({
+      profile: {
+        email: 'first@example.com',
+        name: 'First',
+        plan: 'free',
+        isPlatformAdmin: false,
+      },
+      loaded: true,
+      loading: false,
+    });
+    fetchProfileMock.mockRejectedValue(new Error('session expired'));
+
+    await useAuthStore.getState().refresh();
+
+    expect(clearPredictionMemoryCacheMock).toHaveBeenCalledOnce();
+    expect(destroyAacHrrMock).toHaveBeenCalledOnce();
+    expect(rotateAnonymousPredictionSessionScopeMock).toHaveBeenCalledOnce();
+    expect(settingsUpdateMock).toHaveBeenCalledWith({ cloudPredictionEnabled: false });
+    expect(useAuthStore.getState().profile).toBeNull();
+  });
 });
 
 // ── clear() ───────────────────────────────────────────────────────────────────
@@ -104,6 +169,18 @@ describe('authStore — clear()', () => {
   it('calls clearTextCorrectCache', () => {
     useAuthStore.getState().clear();
     expect(clearTextCorrectCacheMock).toHaveBeenCalledOnce();
+  });
+
+  it('clears personalized AAC prediction memory', () => {
+    useAuthStore.getState().clear();
+    expect(clearPredictionMemoryCacheMock).toHaveBeenCalledOnce();
+    expect(destroyAacHrrMock).toHaveBeenCalledOnce();
+    expect(settingsUpdateMock).toHaveBeenCalledWith({ cloudPredictionEnabled: false });
+  });
+
+  it('rotates the anonymous tab scope after clear', () => {
+    useAuthStore.getState().clear();
+    expect(rotateAnonymousPredictionSessionScopeMock).toHaveBeenCalledOnce();
   });
 });
 

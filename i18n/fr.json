@@ -75,6 +75,8 @@
   "category_select": "Catégorie…",
   "category_visibility": "Visibilité des catégories",
   "checking_sign_in": "Vérification de la connexion…",
+  "cloud_memory_predictions": "Prédictions de mémoire cloud",
+  "cloud_memory_predictions_desc": "Facultatif : envoie les phrases terminées à Synalux pour proposer des cartes de mots personnalisées",
   "cheerful": "Joyeux",
   "clear": "Effacer",
   "clear_all": "Tout effacer",

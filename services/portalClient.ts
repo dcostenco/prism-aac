@@ -28,6 +28,9 @@ export interface PortalRequest {
   /** Hard deadline. Defaults to 8s — most AAC paths shouldn't exceed
    *  this even on flaky school wifi. */
   timeoutMs?: number;
+  /** Optional caller cancellation for latest-only UI work. The portal timeout
+   * remains active as an independent upper bound. */
+  signal?: AbortSignal;
   /** Skip the request when navigator.onLine === false. Default true.
    *  Set false for endpoints that intentionally exercise the offline
    *  warmup path (Service Workers etc.). */
@@ -35,6 +38,35 @@ export interface PortalRequest {
 }
 
 const DEFAULT_TIMEOUT_MS = 8_000;
+
+function combineSignals(
+  timeout: AbortSignal,
+  external?: AbortSignal,
+): { signal: AbortSignal; cleanup: () => void } {
+  if (!external) return { signal: timeout, cleanup: () => {} };
+
+  const controller = new AbortController();
+  const forwardAbort = (source: AbortSignal) => {
+    if (!controller.signal.aborted) {
+      controller.abort(source.reason);
+    }
+  };
+  const onTimeout = () => forwardAbort(timeout);
+  const onExternal = () => forwardAbort(external);
+
+  if (timeout.aborted) onTimeout();
+  else timeout.addEventListener('abort', onTimeout, { once: true });
+  if (external.aborted) onExternal();
+  else external.addEventListener('abort', onExternal, { once: true });
+
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      timeout.removeEventListener('abort', onTimeout);
+      external.removeEventListener('abort', onExternal);
+    },
+  };
+}
 
 /** Reads a Response body as text but caps total bytes — defense against
  *  a server that omits Content-Length and streams a huge response.
@@ -100,7 +132,8 @@ export async function portalFetch<T = unknown>(req: PortalRequest): Promise<Port
       return { ok: false, error: 'invalid_request_body' };
     }
   }
-  const { signal, cancel } = timeoutSignal(req.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+  const deadline = timeoutSignal(req.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+  const combined = combineSignals(deadline.signal, req.signal);
   let res: Response;
   try {
     res = await fetch(`${SYNALUX_API}${req.path}`, {
@@ -110,15 +143,15 @@ export async function portalFetch<T = unknown>(req: PortalRequest): Promise<Port
         ? { 'Content-Type': 'application/json', Accept: 'application/json' }
         : { Accept: 'application/json' },
       ...(serialized !== undefined ? { body: serialized } : {}),
-      signal,
+      signal: combined.signal,
     });
   } catch (e) {
-    cancel();
     if (e instanceof DOMException && e.name === 'TimeoutError') return { ok: false, error: 'timeout' };
     if (e instanceof DOMException && e.name === 'AbortError') return { ok: false, error: 'aborted' };
     return { ok: false, error: e instanceof Error ? e.message.slice(0, 80) : 'network error' };
   } finally {
-    cancel();
+    combined.cleanup();
+    deadline.cancel();
   }
   // Content-Length pre-check stops a hostile portal from even starting
   // to stream gigabytes. Most servers send it; if missing OR the

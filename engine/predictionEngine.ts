@@ -114,6 +114,101 @@ export function mergeUserNgramsWithBoost(
   return out;
 }
 
+/**
+ * Merge read-only prediction sources without allowing a weaker source to
+ * erase stronger evidence from an earlier one.
+ *
+ * Object spread is unsafe here: the curated AAC phrase seed often contains
+ * the same n-gram as the larger language corpus with a much smaller count.
+ * A later spread used to replace corpus evidence such as `i|need` instead of
+ * supplementing it, which made generic or unrelated continuations outrank a
+ * critical phrase. Counts are not summed because the sources can overlap;
+ * keeping the strongest count avoids double-counting duplicated material.
+ */
+export function mergePredictionBaselines(
+  ...sources: Array<Record<string, WordFreqEntry>>
+): Record<string, WordFreqEntry> {
+  const merged: Record<string, WordFreqEntry> = {};
+  for (const source of sources) {
+    for (const [key, entry] of Object.entries(source)) {
+      const current = merged[key];
+      if (!current) {
+        merged[key] = { ...entry };
+        continue;
+      }
+      merged[key] = {
+        ...(entry.count > current.count ? entry : current),
+        count: Math.max(current.count, entry.count),
+        lastUsed: Math.max(current.lastUsed, entry.lastUsed),
+        lastDecayedAt: Math.max(
+          current.lastDecayedAt ?? 0,
+          entry.lastDecayedAt ?? 0,
+        ) || undefined,
+      };
+    }
+  }
+  return merged;
+}
+
+/**
+ * Merge a broad language corpus with clinician-curated AAC n-grams.
+ *
+ * The broad corpus supplies coverage, while the curated source supplies
+ * communicative relevance. For each shared context prefix, curated
+ * continuations are placed just above the strongest generic continuation and
+ * retain their own relative counts. This is data-driven source precedence:
+ * no phrase or language is special-cased. The personalized user boost remains
+ * additive afterward, so selecting one curated continuation raises it above
+ * otherwise-equal curated peers on the next pass.
+ */
+export function mergePredictionContextBaselines(
+  corpus: Record<string, WordFreqEntry>,
+  curated: Record<string, WordFreqEntry>,
+): Record<string, WordFreqEntry> {
+  const merged: Record<string, WordFreqEntry> = {};
+  const strongestByContext = new Map<string, number>();
+
+  for (const [key, entry] of Object.entries(corpus)) {
+    merged[key] = { ...entry };
+    const separator = key.lastIndexOf('|');
+    if (separator < 0) continue;
+    const context = key.slice(0, separator);
+    strongestByContext.set(
+      context,
+      Math.max(strongestByContext.get(context) ?? 0, entry.count),
+    );
+  }
+
+  for (const [key, entry] of Object.entries(curated)) {
+    const separator = key.lastIndexOf('|');
+    if (separator < 0) {
+      const current = merged[key];
+      merged[key] = current
+        ? {
+            ...(entry.count > current.count ? entry : current),
+            count: Math.max(current.count, entry.count),
+            lastUsed: Math.max(current.lastUsed, entry.lastUsed),
+          }
+        : { ...entry };
+      continue;
+    }
+    const context = key.slice(0, separator);
+    const genericCeiling = strongestByContext.get(context) ?? 0;
+    const current = merged[key] ?? entry;
+    merged[key] = {
+      ...(entry.count > current.count ? entry : current),
+      count: Math.max(current.count, genericCeiling + entry.count),
+      lastUsed: Math.max(current.lastUsed, entry.lastUsed),
+      lastDecayedAt: Math.max(
+        current.lastDecayedAt ?? 0,
+        entry.lastDecayedAt ?? 0,
+      ) || undefined,
+    };
+  }
+
+  return merged;
+}
+
 export function getPredictions(
   currentText: string,
   wordFreq: Record<string, WordFreqEntry>,

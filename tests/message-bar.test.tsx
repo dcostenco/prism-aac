@@ -9,7 +9,7 @@
  * All store getState() calls are covered by attaching getState to each mock hook.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import MessageBar from '@/components/MessageBar';
 
@@ -27,6 +27,12 @@ const mocks = vi.hoisted(() => {
   const setToneModeMock      = vi.fn();
   const aacSpeakMock         = vi.fn();
   const speakWordMock        = vi.fn();
+  const correctTextMock      = vi.fn().mockResolvedValue(null);
+  const safeCorrectionMock   = vi.fn(() => false);
+  const rememberPhraseMock   = vi.fn().mockResolvedValue(true);
+  const recordHrrPhraseMock  = vi.fn();
+  const setAiCompletionMock  = vi.fn();
+  const learnWordMock        = vi.fn();
   const ttsHighlightListeners = new Set<(event: {
     type: 'tts-highlight-start' | 'tts-highlight-end';
     text?: string;
@@ -57,9 +63,11 @@ const mocks = vi.hoisted(() => {
     language: 'en' as string,
     outputLanguage: 'en' as string,
     aiAutocorrectEnabled: false,
+    cloudPredictionEnabled: false,
   };
 
   const uiState = { sidePanel: 'none' };
+  const authState = { profile: null as null | { email: string } };
 
   const useMessageStore = Object.assign(
     (sel?: (s: typeof messageState) => unknown) => sel ? sel(messageState) : messageState,
@@ -80,8 +88,10 @@ const mocks = vi.hoisted(() => {
     toggleAutoSpeakMock, toggleSoundMock, deleteLastWordMock, clearAllMock, undoMock,
     addToHistoryMock, setTextMock, setToneMock, setToneModeMock, aacSpeakMock,
     speakWordMock,
+    correctTextMock, safeCorrectionMock, rememberPhraseMock, recordHrrPhraseMock,
+    setAiCompletionMock, learnWordMock,
     ttsHighlightListeners,
-    messageState, settingsState, uiState,
+    messageState, settingsState, uiState, authState,
     useMessageStore, useSettingsStore, useUIStore,
   };
 });
@@ -93,13 +103,16 @@ vi.mock('@/store/settingsStore', () => ({ useSettingsStore: mocks.useSettingsSto
 vi.mock('@/store/uiStore',       () => ({ useUIStore:       mocks.useUIStore       }));
 
 vi.mock('@/store/authStore', () => ({
-  useAuthStore: (sel?: (s: { profile: null }) => unknown) =>
-    sel ? sel({ profile: null }) : { profile: null },
+  useAuthStore: (sel?: (s: typeof mocks.authState) => unknown) =>
+    sel ? sel(mocks.authState) : mocks.authState,
 }));
 
 vi.mock('@/store/predictionStore', () => ({
   usePredictionStore: (sel?: (s: { setAiCompletion: () => void; learnWord: () => void }) => unknown) => {
-    const s = { setAiCompletion: vi.fn(), learnWord: vi.fn() };
+    const s = {
+      setAiCompletion: mocks.setAiCompletionMock,
+      learnWord: mocks.learnWordMock,
+    };
     return sel ? sel(s) : s;
   },
 }));
@@ -151,7 +164,20 @@ vi.mock('@/services/azureTTS', () => ({
 }));
 
 vi.mock('@/services/textCorrectService', () => ({
-  correctText: vi.fn().mockResolvedValue(null),
+  correctText: (...args: unknown[]) => mocks.correctTextMock(...args),
+}));
+
+vi.mock('@/services/predictionMemoryService', () => ({
+  getPredictionSessionScope: (email?: string | null) => (
+    email ? `user:${email.toLowerCase()}` : 'anon:test-tab'
+  ),
+  rememberConfirmedPhrase: (...args: unknown[]) => mocks.rememberPhraseMock(...args),
+}));
+
+vi.mock('@/services/hrrContext', () => ({
+  initAacHrr: vi.fn(async () => true),
+  isAacHrrReady: () => true,
+  recordPhrase: (...args: unknown[]) => mocks.recordHrrPhraseMock(...args),
 }));
 
 vi.mock('@/services/translateService', () => ({
@@ -160,7 +186,7 @@ vi.mock('@/services/translateService', () => ({
 }));
 
 vi.mock('@/services/autocorrectSafety', () => ({
-  isSafeAutoCorrection: () => false,
+  isSafeAutoCorrection: (...args: unknown[]) => mocks.safeCorrectionMock(...args),
 }));
 
 vi.mock('@/services/aiChatBridge', () => ({
@@ -188,7 +214,17 @@ beforeEach(() => {
   mocks.messageState.toneMode = 'auto';
   mocks.settingsState.language = 'en';
   mocks.settingsState.outputLanguage = 'en';
+  mocks.settingsState.aiAutocorrectEnabled = false;
+  mocks.settingsState.cloudPredictionEnabled = false;
   mocks.uiState.sidePanel = 'none';
+  mocks.authState.profile = null;
+  mocks.correctTextMock.mockReset();
+  mocks.correctTextMock.mockResolvedValue(null);
+  mocks.safeCorrectionMock.mockReset();
+  mocks.safeCorrectionMock.mockReturnValue(false);
+  mocks.rememberPhraseMock.mockReset();
+  mocks.rememberPhraseMock.mockResolvedValue(true);
+  mocks.recordHrrPhraseMock.mockReset();
   mocks.ttsHighlightListeners.clear();
   mocks.toggleSoundMock.mockImplementation(() => {
     mocks.messageState.soundEnabled = !mocks.messageState.soundEnabled;
@@ -428,6 +464,129 @@ describe('MessageBar — speak', () => {
       fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
     });
     expect(mocks.addToHistoryMock).toHaveBeenCalled();
+  });
+
+  it('shows a correction string without writing memory or rewriting authored text', async () => {
+    mocks.messageState.text = 'I nede help';
+    mocks.settingsState.aiAutocorrectEnabled = true;
+    mocks.authState.profile = { email: 'aac@example.com' };
+    mocks.correctTextMock.mockResolvedValue('I need help');
+
+    render(<MessageBar />);
+
+    const correction = await screen.findByTestId('autocorrect-suggestion', {}, { timeout: 1_000 });
+    expect(correction).toHaveTextContent('I need help');
+    const correctionText = correction.querySelector('span.font-semibold');
+    expect(correctionText).toHaveClass('whitespace-normal', 'break-words');
+    expect(correctionText).not.toHaveClass('truncate');
+    expect(mocks.setTextMock).not.toHaveBeenCalled();
+    expect(mocks.rememberPhraseMock).not.toHaveBeenCalled();
+  });
+
+  it('Play speaks and learns the authored text but never auto-rewrites it to a suggestion', async () => {
+    mocks.messageState.text = 'I nede help';
+    mocks.settingsState.aiAutocorrectEnabled = true;
+    mocks.settingsState.cloudPredictionEnabled = true;
+    mocks.authState.profile = { email: 'aac@example.com' };
+    mocks.correctTextMock.mockResolvedValue('I need help');
+    mocks.safeCorrectionMock.mockReturnValue(true);
+
+    render(<MessageBar />);
+    await screen.findByTestId('autocorrect-suggestion', {}, { timeout: 1_000 });
+    fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
+
+    expect(mocks.setTextMock).not.toHaveBeenCalled();
+    expect(mocks.aacSpeakMock).toHaveBeenCalledWith(
+      'I nede help',
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(String),
+      true,
+    );
+    expect(mocks.rememberPhraseMock).toHaveBeenCalledOnce();
+    expect(mocks.rememberPhraseMock).toHaveBeenCalledWith('I nede help', 'en');
+  });
+
+  it.each([
+    ['I need I', 'en'],
+    ['I need a', 'en'],
+    ['yo y', 'es'],
+    ['я хочу я', 'ru'],
+  ])(
+    'Play preserves a valid trailing one-character word in %s',
+    async (authored, language) => {
+      mocks.messageState.text = authored;
+      mocks.settingsState.language = language;
+      mocks.settingsState.outputLanguage = language;
+      mocks.settingsState.cloudPredictionEnabled = true;
+      mocks.authState.profile = { email: 'aac@example.com' };
+
+      render(<MessageBar />);
+      fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
+
+      expect(mocks.setTextMock).not.toHaveBeenCalled();
+      expect(mocks.addToHistoryMock).toHaveBeenCalledWith(authored);
+      expect(mocks.aacSpeakMock).toHaveBeenCalledWith(
+        authored,
+        expect.any(Number),
+        expect.any(Number),
+        expect.any(String),
+        true,
+      );
+      expect(mocks.rememberPhraseMock).toHaveBeenCalledWith(authored, language);
+    },
+  );
+
+  it('keeps a confirmed phrase local while cloud memory opt-in is disabled', async () => {
+    mocks.messageState.text = 'I need help';
+    mocks.settingsState.cloudPredictionEnabled = false;
+    mocks.authState.profile = { email: 'aac@example.com' };
+
+    render(<MessageBar />);
+    fireEvent.click(screen.getByRole('button', { name: /^speak$/i }));
+
+    expect(mocks.aacSpeakMock).toHaveBeenCalledWith(
+      'I need help',
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(String),
+      true,
+    );
+    expect(mocks.rememberPhraseMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mocks.recordHrrPhraseMock).toHaveBeenCalledWith(
+        'I need help',
+        expect.objectContaining({
+          language: 'en',
+          scope: 'user:aac@example.com',
+        }),
+      );
+    });
+  });
+
+  it('explicitly accepting a correction learns the accepted phrase exactly once', async () => {
+    mocks.messageState.text = 'I nede help';
+    mocks.settingsState.aiAutocorrectEnabled = true;
+    mocks.settingsState.cloudPredictionEnabled = true;
+    mocks.authState.profile = { email: 'aac@example.com' };
+    mocks.correctTextMock.mockResolvedValue('I need help');
+
+    render(<MessageBar />);
+    const correction = await screen.findByTestId('autocorrect-suggestion', {}, { timeout: 1_000 });
+    await act(async () => {
+      fireEvent.click(correction);
+      await Promise.resolve();
+    });
+
+    expect(mocks.setTextMock).toHaveBeenCalledWith('I need help');
+    expect(mocks.rememberPhraseMock).toHaveBeenCalledOnce();
+    expect(mocks.rememberPhraseMock).toHaveBeenCalledWith('I need help', 'en');
+    await waitFor(() => {
+      expect(mocks.recordHrrPhraseMock).toHaveBeenCalledWith('I need help', expect.objectContaining({
+        language: 'en',
+        scope: 'user:aac@example.com',
+      }));
+    });
   });
 });
 

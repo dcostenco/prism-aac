@@ -15,10 +15,18 @@ import { englishSourceFor } from '@/constants/reverseTranslation';
 import { getPredictionsForLanguage } from '@/constants/keyboardLayouts';
 import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { PROVIDER_ICONS, PROVIDER_LABELS } from '@/services/sendToContact';
+import {
+  fetchMemoryPredictions,
+  getPredictionSessionScope,
+} from '@/services/predictionMemoryService';
 
 import { isAllowedInLang, ensureLangCorpusLoaded } from '@/lib/langAllowlist';
 import { useVisionStore } from '@/store/visionStore';
 import type { SceneType } from '@/services/sceneInference';
+
+const MEMORY_PREDICTION_DEBOUNCE_MS = 650;
+const MIN_CLOUD_PREDICTION_INTERVAL_MS = 1_200;
+const LOCAL_MEMORY_SUFFICIENT_COUNT = 3;
 
 const SCENE_ICONS: Partial<Record<SceneType, string>> = {
   mealtime: '🍽️', snacktime: '🍪', bedtime: '😴',
@@ -122,6 +130,32 @@ function mergeAiCompletion(
   return [ai, ...dedup].slice(0, 5);
 }
 
+export function mergeAdvisoryPredictions(
+  baseline: string[],
+  advisory: string[],
+  language: string,
+): string[] {
+  const merged: string[] = [];
+  const seen = new Set<string>();
+  for (const candidate of [...advisory, ...baseline]) {
+    const word = candidate.trim();
+    const key = word.toLocaleLowerCase();
+    if (!word || seen.has(key) || !isAllowedInLang(word, language)) continue;
+    seen.add(key);
+    merged.push(word);
+    if (merged.length === 5) break;
+  }
+  return merged;
+}
+
+function memoryContextKey(text: string, language: string, sessionScope: string): string {
+  return `${sessionScope}\u0000${language.toLowerCase()}\u0000${text.replace(/\s+/g, ' ').trim().toLowerCase()}`;
+}
+
+function hasCommittedPredictionContext(text: string): boolean {
+  return /(?:\s|[.!?…])$/u.test(text);
+}
+
 function dropForeignTiles(
   displayed: string[],
   language: string,
@@ -155,6 +189,23 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
   const [iconUrl, setIconUrl] = useState<string | null>(null);
+  type FrozenVisual = {
+    word: string;
+    color: string;
+    visionBoosted: boolean;
+  };
+  const [pointerVisual, setPointerVisual] = useState<FrozenVisual | null>(null);
+  const [focusVisual, setFocusVisual] = useState<FrozenVisual | null>(null);
+  const [switchVisual, setSwitchVisual] = useState<FrozenVisual | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const activePointerIdRef = useRef<number | null>(null);
+  const pointerWordRef = useRef<string | null>(null);
+  const focusWordRef = useRef<string | null>(null);
+  const switchWordRef = useRef<string | null>(null);
+  const visibleVisual = pointerVisual ?? switchVisual ?? focusVisual;
+  const visibleWord = visibleVisual?.word ?? word;
+  const visibleColor = visibleVisual?.color ?? color;
+  const visibleVisionBoosted = visibleVisual?.visionBoosted ?? visionBoosted;
 
   useEffect(() => {
     let cancelled = false;
@@ -164,27 +215,128 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
     // localized — so recover the English source and search with that, the same
     // way PhraseTile does. Falls back to the localized word when the prediction
     // is not vocabulary we can map.
-    const english = englishSourceFor(word, language);
-    getPictogramUrl(english ?? word, english ? 'en' : language, pictureMode)
+    const english = englishSourceFor(visibleWord, language);
+    getPictogramUrl(english ?? visibleWord, english ? 'en' : language, pictureMode)
       .then((url) => { if (!cancelled) setIconUrl(url); })
       .catch(() => { if (!cancelled) setIconUrl(null); });
     return () => { cancelled = true; };
-  }, [word, language, pictureMode]);
+  }, [visibleWord, language, pictureMode]);
+
+  const currentVisual = (): FrozenVisual => ({
+    word: visibleWord,
+    color: visibleColor,
+    visionBoosted: !!visibleVisionBoosted,
+  });
+
+  const clearPointerVisual = () => {
+    activePointerIdRef.current = null;
+    pointerWordRef.current = null;
+    setPointerVisual(null);
+  };
+
+  // The switch scanner highlights a DOM slot and calls .click() later. Freeze
+  // the semantic word for that entire highlight interval so an async rerank
+  // cannot change what the physical switch will select.
+  useEffect(() => {
+    const button = buttonRef.current;
+    if (!button || typeof MutationObserver === 'undefined') return;
+    const syncSwitchHighlight = () => {
+      const highlighted = button.classList.contains('switch-scan-active');
+      if (highlighted && !switchWordRef.current) {
+        switchWordRef.current = word;
+        setSwitchVisual({
+          word,
+          color,
+          visionBoosted: !!visionBoosted,
+        });
+      } else if (!highlighted && switchWordRef.current) {
+        switchWordRef.current = null;
+        setSwitchVisual(null);
+      }
+    };
+    syncSwitchHighlight();
+    const observer = new MutationObserver(syncSwitchHighlight);
+    observer.observe(button, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, [word, color, visionBoosted]);
 
   return (
     <button
-      onClick={() => onTap(word)}
-      aria-label={`Predict: ${word}`}
-      title={word}
-      className={`aac-btn flex-1 min-w-0 rounded-xl flex flex-col items-center overflow-hidden border-l-[5px] border border-theme${visionBoosted ? ' vision-glow' : ''}`}
-      style={{ borderLeftColor: color, color }}
+      ref={buttonRef}
+      onFocus={() => {
+        // Browsers commonly focus a button as the default action of
+        // pointerdown. Pointer identity already has its own snapshot; keeping
+        // a second focus snapshot would leave that old word frozen after the
+        // tap completes while the button remains focused.
+        if (activePointerIdRef.current !== null) return;
+        if (focusWordRef.current) return;
+        const snapshot = currentVisual();
+        focusWordRef.current = snapshot.word;
+        setFocusVisual(snapshot);
+      }}
+      onPointerDown={(event) => {
+        // Ignore secondary pointers. A second finger's cancellation must not
+        // clear the word owned by the primary AAC selection.
+        if (activePointerIdRef.current !== null) return;
+        const snapshot = currentVisual();
+        activePointerIdRef.current = event.pointerId;
+        pointerWordRef.current = snapshot.word;
+        setPointerVisual(snapshot);
+      }}
+      onPointerCancel={(event) => {
+        if (activePointerIdRef.current === event.pointerId) clearPointerVisual();
+      }}
+      onPointerLeave={(event) => {
+        // A mouse drag away cancels the pending click and must also release the
+        // frozen visual. Touch pointers use implicit capture and complete via
+        // click/pointercancel, so a small finger movement does not cancel them.
+        if (
+          event.pointerType === 'mouse'
+          && event.buttons > 0
+          && activePointerIdRef.current === event.pointerId
+        ) {
+          clearPointerVisual();
+        }
+      }}
+      onBlur={() => {
+        focusWordRef.current = null;
+        setFocusVisual(null);
+      }}
+      onClick={(event) => {
+        // Pointer-generated clicks have detail > 0. Keyboard, switch-control,
+        // and assistive programmatic activations use detail 0 and must select
+        // the word currently visible at activation time.
+        const selectedWord = event.detail > 0
+          ? pointerWordRef.current ?? visibleWord
+          : switchWordRef.current ?? focusWordRef.current ?? word;
+        if (event.detail > 0) clearPointerVisual();
+        if (event.detail === 0 && switchWordRef.current) {
+          // Non-group switch scanning leaves the DOM highlight in place after
+          // selection. End this semantic snapshot now so the next rerank can
+          // bind that still-highlighted slot to its newly visible word.
+          switchWordRef.current = null;
+          setSwitchVisual(null);
+        }
+        if (event.detail === 0 && focusWordRef.current) {
+          // Keyboard activation is also one committed selection. Release the
+          // old focus snapshot so the still-focused slot can show and select
+          // the next contextual word instead of repeating the prior one.
+          focusWordRef.current = null;
+          setFocusVisual(null);
+        }
+        onTap(selectedWord);
+      }}
+      aria-label={`Predict: ${visibleWord}`}
+      title={visibleWord}
+      className={`aac-btn flex-1 min-w-0 rounded-xl flex flex-col items-center overflow-hidden border-l-[5px] border border-theme${visibleVisionBoosted ? ' vision-glow' : ''}`}
+      style={{ borderLeftColor: visibleColor, color: visibleColor }}
     >
       <span className="flex-1 flex items-center justify-center w-full rounded-t-lg overflow-hidden min-h-0 bg-white">
         {iconUrl && (
           <img src={iconUrl} alt="" aria-hidden loading="eager" className="max-w-full max-h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
         )}
       </span>
-      <span className="truncate w-full text-center text-[clamp(0.9rem,2.2svh,1.4rem)] font-bold shrink-0 leading-tight py-0.5">{word}</span>
+      <span className="truncate w-full text-center text-[clamp(0.9rem,2.2svh,1.4rem)] font-bold shrink-0 leading-tight py-0.5">{visibleWord}</span>
     </button>
   );
 });
@@ -205,7 +357,29 @@ export default function PredictionBar() {
   const speechVolume = useSettingsStore((s) => s.speechVolume);
   const language = useSettingsStore((s) => s.language);
   const outputLanguage = useSettingsStore((s) => s.outputLanguage);
+  const cloudPredictionEnabled = useSettingsStore((s) => s.cloudPredictionEnabled);
+  const authProfile = useAuthStore((s) => s.profile);
+  const authLoaded = useAuthStore((s) => s.loaded);
+  const predictionSessionScope = getPredictionSessionScope(authProfile?.email);
   const langDefaults = useMemo(() => getPredictionsForLanguage(language), [language]);
+  const currentMemoryContext = memoryContextKey(text, language, predictionSessionScope);
+  const [memoryState, setMemoryState] = useState<{
+    context: string;
+    words: string[];
+  }>({
+    context: currentMemoryContext,
+    words: [],
+  });
+  const memoryRequestIdRef = useRef(0);
+  const lastCloudRequestAtRef = useRef(0);
+  const memoryWords = useMemo(
+    () => (
+      memoryState.context === currentMemoryContext
+        ? memoryState.words
+        : []
+    ),
+    [currentMemoryContext, memoryState],
+  );
   const [displayedState, setDisplayedState] = useState<DisplayedPredictionState>(() => {
     const merged = mergeAiCompletion(
       text.trim() ? predictions : langDefaults,
@@ -250,6 +424,107 @@ export default function PredictionBar() {
     if (text.trim()) updatePredictions(text, language);
   }, [text, updatePredictions, language]);
 
+  // Prism memory is advisory and additive. Local HRR responds first; when it
+  // lacks enough context, the existing portal AAC-memory predictor may refine
+  // the five cards after a short pause. Every request is bound to the exact
+  // text+language context so a late response can never populate a newer
+  // sentence or a different language. The authored message is not touched.
+  useEffect(() => {
+    const normalizedText = text.replace(/\s+/g, ' ').trim();
+    const context = memoryContextKey(normalizedText, language, predictionSessionScope);
+    const requestId = ++memoryRequestIdRef.current;
+    let cancelled = false;
+    let cloudController: AbortController | null = null;
+
+    if (!normalizedText || sidePanel === 'aac-chat') {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const localWordsPromise = ensureLangCorpusLoaded(language)
+      .then(() => import('../services/hrrContext'))
+      .then(async (memory) => {
+        if (!await memory.initAacHrr(predictionSessionScope)) return [];
+        const seen = new Set<string>();
+        return memory.getNextWordSuggestions(
+          normalizedText,
+          5,
+          language,
+          predictionSessionScope,
+        )
+          .map((candidate) => candidate.word.trim())
+          .filter((word) => {
+            const key = word.toLocaleLowerCase();
+            if (!word || seen.has(key) || !isAllowedInLang(word, language)) return false;
+            seen.add(key);
+            return true;
+          })
+          .slice(0, 5);
+      })
+      .catch(() => [] as string[]);
+
+    void localWordsPromise.then((localWords) => {
+      if (cancelled || memoryRequestIdRef.current !== requestId) return;
+      setMemoryState({ context, words: localWords });
+    });
+
+    const cloudAllowed = (
+      authLoaded
+      && authProfile !== null
+      && cloudPredictionEnabled
+      && hasCommittedPredictionContext(text)
+    );
+    if (!cloudAllowed) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const now = Date.now();
+    const delay = Math.max(
+      MEMORY_PREDICTION_DEBOUNCE_MS,
+      lastCloudRequestAtRef.current + MIN_CLOUD_PREDICTION_INTERVAL_MS - now,
+    );
+    const timer = setTimeout(async () => {
+      const localWords = await localWordsPromise;
+      if (
+        cancelled
+        || memoryRequestIdRef.current !== requestId
+        || localWords.length >= LOCAL_MEMORY_SUFFICIENT_COUNT
+      ) {
+        return;
+      }
+
+      lastCloudRequestAtRef.current = Date.now();
+      cloudController = new AbortController();
+      const cloudWords = await fetchMemoryPredictions(normalizedText, language, {
+        sessionScope: predictionSessionScope,
+        signal: cloudController.signal,
+      });
+      if (cancelled || memoryRequestIdRef.current !== requestId) return;
+      setMemoryState({
+        context,
+        // Confirmed local memory stays first; cloud fills remaining cards.
+        words: mergeAdvisoryPredictions(cloudWords, localWords, language),
+      });
+    }, delay);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      cloudController?.abort();
+    };
+  }, [
+    text,
+    language,
+    sidePanel,
+    authLoaded,
+    authProfile,
+    cloudPredictionEnabled,
+    predictionSessionScope,
+  ]);
+
   // Merge AI completion into the prediction list as the leftmost tile.
   // When set, the AI's word completion ("дуб" for "у лукоморья д") wins
   // slot 0 — corpus-rare but contextually-correct words can surface even
@@ -281,19 +556,6 @@ export default function PredictionBar() {
   // `aiCompletion` is set, NOT for corpus-based tiles. The filter now
   // runs for every language; isAllowedInLang's cross-corpus comparison
   // (en_freq vs ro_freq) catches the leak in either direction.
-  // Cache HRR module ref so subsequent calls are synchronous (no tile reflow).
-  // Critical for switch scanning — async tile reorder causes wrong selection.
-  const hrrRef = useRef<{
-    getNextWordSuggestions: typeof import('../services/hrrContext')['getNextWordSuggestions'] extends (...args: infer A) => infer R ? (...args: A) => R : never;
-    isAacHrrReady: () => boolean;
-  } | null>(null);
-
-  useEffect(() => {
-    import('../services/hrrContext').then(m => {
-      hrrRef.current = { getNextWordSuggestions: m.getNextWordSuggestions, isAacHrrReady: m.isAacHrrReady };
-    }).catch(() => {});
-  }, []);
-
   useEffect(() => {
     const previous = prevRef.current.language === language
       ? prevRef.current.tiles
@@ -303,25 +565,9 @@ export default function PredictionBar() {
     if (!text.trim()) {
       final = mergeAiCompletion(langDefaults, aiCompletion, language);
     } else {
-      const merged = mergeAiCompletion(predictions, aiCompletion, language);
-      const next = computeStableSlots(previous, merged);
-
-      // HRR boost: synchronous once module is loaded (no tile reflow)
-      final = next;
-      if (hrrRef.current?.isAacHrrReady()) {
-        const hrr = hrrRef.current.getNextWordSuggestions(text.trim());
-        if (hrr.length > 0) {
-          const hrrWords = hrr
-            .map(h => h.word)
-            .filter(w => isAllowedInLang(w, language));
-          const deduped = hrrWords.filter(
-            w => !next.some(n => n.toLowerCase() === w.toLowerCase()),
-          );
-          if (deduped.length > 0) {
-            final = [next[0], deduped[0], ...next.slice(1)].filter(Boolean).slice(0, 5);
-          }
-        }
-      }
+      const withMemory = mergeAdvisoryPredictions(predictions, memoryWords, language);
+      const merged = mergeAiCompletion(withMemory, aiCompletion, language);
+      final = computeStableSlots(previous, merged);
     }
 
     // This state intentionally preserves tile positions for switch scanning.
@@ -349,7 +595,7 @@ export default function PredictionBar() {
     return () => {
       cancelled = true;
     };
-  }, [predictions, aiCompletion, text, language, langDefaults, displayedState]);
+  }, [predictions, memoryWords, aiCompletion, text, language, langDefaults, displayedState]);
 
   const handleTap = useCallback((word: string) => {
     tapFeedback();

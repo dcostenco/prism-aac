@@ -32,6 +32,7 @@ const mocks = vi.hoisted(() => {
     highContrast: false as boolean,
     notificationsEnabled: false as boolean,
     aiAutocorrectEnabled: true as boolean,
+    cloudPredictionEnabled: false as boolean,
     mathHoldTimeMs: 0 as number,
     mathTwoHitMagnify: false as boolean,
     showHandCalibration: false as boolean,
@@ -105,7 +106,15 @@ vi.mock('@/engine/i18n', () => ({
 }));
 
 vi.mock('@/engine/useT', () => ({
-  useT: () => ({ t: (k: string) => k, ttsCode: 'en-US', rtl: false, ready: true }),
+  useT: () => ({
+    t: (k: string) => ({
+      cloud_memory_predictions: 'Cloud Memory Predictions',
+      cloud_memory_predictions_desc: 'Optional: sends completed phrases to Synalux for personalized word cards',
+    } as Record<string, string>)[k] ?? k,
+    ttsCode: 'en-US',
+    rtl: false,
+    ready: true,
+  }),
 }));
 
 vi.mock('@/constants/vocabularySets', () => ({
@@ -165,6 +174,7 @@ beforeEach(() => {
   mocks.settingsState.caregiverPinHash = undefined;
   mocks.settingsState.highContrast = false;
   mocks.settingsState.aiAutocorrectEnabled = true;
+  mocks.settingsState.cloudPredictionEnabled = false;
   mocks.settingsState.notificationsEnabled = false;
   mocks.settingsState.activeVocabSet = 'all';
   mocks.settingsState.showHandCalibration = false;
@@ -350,6 +360,34 @@ describe('SettingsModal — accessibility toggles', () => {
     openAccessibility();
     fireEvent.click(screen.getByRole('button', { name: /ai autocorrect/i }));
     expect(mocks.settingsState.update).toHaveBeenCalledWith(expect.objectContaining({ aiAutocorrectEnabled: false }));
+  });
+
+  it('cloud memory predictions are separately disclosed and opt-in', () => {
+    mocks.settingsState.cloudPredictionEnabled = false;
+    mocks.authState.profile = {
+      email: 'aac@example.com',
+      name: 'AAC User',
+      plan: 'free',
+      isPlatformAdmin: false,
+    };
+    render(<SettingsModal />);
+    openAccessibility();
+
+    expect(screen.getByText(/sends completed phrases to Synalux/i)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /cloud memory predictions/i }));
+    expect(mocks.settingsState.update).toHaveBeenCalledWith({
+      cloudPredictionEnabled: true,
+    });
+  });
+
+  it('does not allow anonymous users to enable cloud phrase sharing', () => {
+    mocks.settingsState.cloudPredictionEnabled = false;
+    mocks.authState.profile = null;
+    render(<SettingsModal />);
+    openAccessibility();
+
+    expect(screen.getByRole('button', { name: /cloud memory predictions/i }))
+      .toBeDisabled();
   });
 });
 

@@ -50,13 +50,24 @@ function Section({
 }
 
 // ── Toggle helper ─────────────────────────────────────────────────────────────
-function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
+function Toggle({
+  on,
+  onToggle,
+  label,
+  disabled = false,
+}: {
+  on: boolean;
+  onToggle: () => void;
+  label: string;
+  disabled?: boolean;
+}) {
   return (
     <button
       onClick={() => { tapFeedback(); onToggle(); }}
       aria-pressed={on}
       aria-label={label}
-      className={`w-12 h-7 rounded-full transition-colors shrink-0 ${on ? 'bg-[#4CAF50]' : 'bg-slate-400'}`}
+      disabled={disabled}
+      className={`w-12 h-7 rounded-full transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed ${on ? 'bg-[#4CAF50]' : 'bg-slate-400'}`}
     >
       <div className={`w-5 h-5 rounded-full bg-white transition-transform mx-1 ${on ? 'translate-x-5' : ''}`} />
     </button>
@@ -121,6 +132,7 @@ export default function SettingsModal() {
   const setTheme = useSettingsStore(s => s.setTheme);
   const update = useSettingsStore(s => s.update);
   const aiAutocorrectEnabled = useSettingsStore(s => s.aiAutocorrectEnabled);
+  const cloudPredictionEnabled = useSettingsStore(s => s.cloudPredictionEnabled);
   const showUnreviewedVocabulary = useSettingsStore(s => s.showUnreviewedVocabulary);
   const mathHoldTimeMs = useSettingsStore(s => s.mathHoldTimeMs);
   const mathTwoHitMagnify = useSettingsStore(s => s.mathTwoHitMagnify);
@@ -421,6 +433,19 @@ export default function SettingsModal() {
               </div>
               <Toggle on={aiAutocorrectEnabled} label="AI Autocorrect"
                 onToggle={() => update({ aiAutocorrectEnabled: !aiAutocorrectEnabled })} />
+            </label>
+            <label className="flex items-center justify-between py-1.5">
+              <div>
+                <span className="text-primary text-sm">{t('cloud_memory_predictions')}</span>
+                <p className="text-muted text-[10px]">
+                  {t('cloud_memory_predictions_desc')}
+                </p>
+              </div>
+              <Toggle
+                on={profile !== null && cloudPredictionEnabled}
+                disabled={profile === null}
+                label={t('cloud_memory_predictions')}
+                onToggle={() => update({ cloudPredictionEnabled: !cloudPredictionEnabled })} />
             </label>
             <div className="border-t border-theme pt-3 mt-1">
               <InputModesSettings />

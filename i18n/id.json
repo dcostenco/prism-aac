@@ -75,6 +75,8 @@
   "category_select": "Kategori…",
   "category_visibility": "Visibilitas Kategori",
   "checking_sign_in": "Memeriksa status masuk…",
+  "cloud_memory_predictions": "Prediksi memori cloud",
+  "cloud_memory_predictions_desc": "Opsional: mengirim frasa yang sudah selesai ke Synalux untuk menyarankan kartu kata yang dipersonalisasi",
   "cheerful": "Ceria",
   "clear": "Bersihkan",
   "clear_all": "Hapus semua",
