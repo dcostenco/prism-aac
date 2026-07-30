@@ -177,6 +177,17 @@ describe('destroyAacHrr', () => {
         expect(mod.isAacHrrReady()).toBe(true);
     });
 
+    it('does not resurrect a user scope when destroy races pending initialization', async () => {
+        const pending = mod.initAacHrr('user:previous@example.com');
+        mod.destroyAacHrr();
+
+        expect(await pending).toBe(false);
+        expect(mod.isAacHrrReady('user:previous@example.com')).toBe(false);
+
+        expect(await mod.initAacHrr('user:next@example.com')).toBe(true);
+        expect(mod.isAacHrrReady('user:next@example.com')).toBe(true);
+    });
+
     it('clears persist timer — no crash after destroy', async () => {
         await mod.initAacHrr();
         mod.recordPhrase('test phrase');
@@ -261,6 +272,14 @@ describe('recordPhrase', () => {
     it('tone context included in phrase key', () => {
         mod.recordPhrase('stop', { tone: 'urgent' });
         expect(encodeSpy).toHaveBeenCalledWith('stop|tone:urgent', 'stop');
+    });
+
+    it('partitions personalized n-grams by AAC input language', () => {
+        mod.recordPhrase('I need mom', { language: 'en' });
+
+        expect(encodeSpy).toHaveBeenCalledWith('I need mom|lang:en', 'I need mom');
+        expect(encodeSpy).toHaveBeenCalledWith('lang:en|w:i', 'need');
+        expect(encodeSpy).toHaveBeenCalledWith('lang:en|w:i need', 'mom');
     });
 
     it('no-ops when not initialized', async () => {
@@ -352,6 +371,19 @@ describe('getNextWordSuggestions', () => {
         const suggestions = mod.getNextWordSuggestions('I want');
         // Trigram "w:i want" → "water" (similarity 0.72 from mock)
         expect(suggestions.some(s => s.word === 'water')).toBe(true);
+    });
+
+    it('never returns a phrase learned under a different language scope', () => {
+        mod.recordPhrase('I need mom', { language: 'en' });
+        mod.recordPhrase('I need eu', { language: 'ro' });
+
+        expect(mod.getNextWordSuggestions('I need', 5, 'en').map((item) => item.word))
+            .toContain('mom');
+        expect(mod.getNextWordSuggestions('I need', 5, 'en').map((item) => item.word))
+            .not.toContain('eu');
+        expect(mod.getNextWordSuggestions('I need', 5, 'ro').map((item) => item.word))
+            .toContain('eu');
+        expect(mod.getNextWordSuggestions('I need', 5, 'fr')).toEqual([]);
     });
 
     it('record then suggest: "I" → "want" via bigram', () => {
@@ -605,5 +637,58 @@ describe('end-to-end: record → predict', () => {
         const results = mod.getNextWordSuggestions('xyz');
         // Mock only matches exact keys — "w:xyz" was never encoded
         expect(results).toEqual([]);
+    });
+});
+
+describe('account and anonymous scope isolation', () => {
+    const userA = 'user:a@example.com';
+    const userB = 'user:b@example.com';
+
+    it('never retrieves User A phrases from User B or logged-out scope', async () => {
+        await mod.initAacHrr(userA);
+        mod.recordPhrase('I need mom', { language: 'en', scope: userA });
+        await mod.initAacHrr(userB);
+        mod.recordPhrase('I need grandma', { language: 'en', scope: userB });
+        await mod.initAacHrr('anon:logged-out-tab');
+
+        expect(mod.getNextWordSuggestions('I need', 5, 'en', userA).map((item) => item.word))
+            .toContain('mom');
+        expect(mod.getNextWordSuggestions('I need', 5, 'en', userB).map((item) => item.word))
+            .toContain('grandma');
+        expect(mod.getNextWordSuggestions('I need', 5, 'en', userB).map((item) => item.word))
+            .not.toContain('mom');
+        expect(mod.getNextWordSuggestions('I need', 5, 'en', 'anon:logged-out-tab'))
+            .toEqual([]);
+    });
+
+    it('persists each signed-in scope separately without a delayed cross-account write', async () => {
+        const userAKey = 'prism-aac-hrr-hologram:user%3Aa%40example.com';
+        const userBKey = 'prism-aac-hrr-hologram:user%3Ab%40example.com';
+        localStorage.removeItem(userAKey);
+        localStorage.removeItem(userBKey);
+
+        await mod.initAacHrr(userA);
+        mod.recordPhrase('I need mom', { language: 'en', scope: userA });
+        await mod.initAacHrr(userB);
+        mod.recordPhrase('I need grandma', { language: 'en', scope: userB });
+        vi.advanceTimersByTime(5_000);
+
+        expect(localStorage.getItem(userAKey)).not.toBeNull();
+        expect(localStorage.getItem(userBKey)).not.toBeNull();
+    });
+
+    it('keeps anonymous tab memory ephemeral and isolated from a new tab scope', async () => {
+        const firstTab = 'anon:first-tab';
+        const secondTab = 'anon:second-tab';
+        await mod.initAacHrr(firstTab);
+        mod.recordPhrase('I need mom', { language: 'en', scope: firstTab });
+        vi.advanceTimersByTime(5_000);
+        await mod.initAacHrr(secondTab);
+
+        expect(mod.getNextWordSuggestions('I need', 5, 'en', firstTab).map((item) => item.word))
+            .toContain('mom');
+        expect(mod.getNextWordSuggestions('I need', 5, 'en', secondTab)).toEqual([]);
+        expect(localStorage.getItem('prism-aac-hrr-hologram:anon%3Afirst-tab'))
+            .toBeNull();
     });
 });

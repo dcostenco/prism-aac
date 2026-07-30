@@ -83,6 +83,28 @@ describe('portalFetch — error mapping', () => {
     expect(res).toEqual({ ok: false, error: 'timeout' });
   });
 
+  it('combines caller cancellation with the portal deadline', async () => {
+    fetchMock.mockImplementationOnce((_url: string, init: RequestInit) => (
+      new Promise((_resolve, reject) => {
+        const signal = init.signal as AbortSignal;
+        signal.addEventListener('abort', () => {
+          reject(new DOMException('cancelled', 'AbortError'));
+        }, { once: true });
+      })
+    ));
+    const controller = new AbortController();
+
+    const pending = portalFetch({
+      path: '/test',
+      signal: controller.signal,
+      timeoutMs: 5_000,
+    });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+    controller.abort();
+
+    await expect(pending).resolves.toEqual({ ok: false, error: 'aborted' });
+  });
+
   it('returns ok=false with "invalid_json" when body is not valid JSON', async () => {
     fetchMock.mockResolvedValueOnce(new Response('<html>not json</html>', {
       status: 200, headers: { 'Content-Type': 'text/html' },

@@ -50,6 +50,19 @@ describe('settingsStore — hydration validator', () => {
     expect(['light', 'dark']).toContain(useSettingsStore.getState().theme);
   });
 
+  it('rejects a non-boolean cloud prediction opt-in value', () => {
+    useSettingsStore.setState({ cloudPredictionEnabled: false });
+    seedPersistedSettings({ cloudPredictionEnabled: 'yes' }, 20);
+    void useSettingsStore.persist.rehydrate();
+    expect(useSettingsStore.getState().cloudPredictionEnabled).toBe(false);
+  });
+
+  it('preserves an explicit cloud prediction opt-in boolean', () => {
+    seedPersistedSettings({ cloudPredictionEnabled: true }, 20);
+    void useSettingsStore.persist.rehydrate();
+    expect(useSettingsStore.getState().cloudPredictionEnabled).toBe(true);
+  });
+
   it('drops non-array installedApps and replaces with []', () => {
     seedPersistedSettings({ installedApps: 'not-an-array' });
     void useSettingsStore.persist.rehydrate();

@@ -154,6 +154,10 @@ interface SettingsState {
   toolbarConfig: ToolbarConfig;
   // AI Autocorrect in MessageBar
   aiAutocorrectEnabled: boolean;
+  // Optional signed-in portal memory predictions. Default OFF because this
+  // sends the committed AAC phrase to Synalux; deterministic/local prediction
+  // remains available without it.
+  cloudPredictionEnabled: boolean;
   // "Read & Write"-style speak-on-sentence-end. When ON, finishing a
   // sentence with .?! triggers TTS of the just-completed sentence.
   // The existing per-word echo on space stays unchanged. Targets users
@@ -202,7 +206,7 @@ interface SettingsState {
    *  Default OFF — caregiver must explicitly opt in. Uses ~5 MB extra RAM. */
   visionContextEnabled: boolean;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'showUnreviewedVocabulary' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd' | 'caregiverPinHash' | 'announceSenderName' | 'visionContextEnabled'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'showUnreviewedVocabulary' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'cloudPredictionEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd' | 'caregiverPinHash' | 'announceSenderName' | 'visionContextEnabled'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -254,6 +258,7 @@ export const useSettingsStore = create<SettingsState>()(
       cameraTrackingTarget: 'any_wrist',
       gestureConfig: { ...DEFAULT_GESTURE_CONFIG },
       aiAutocorrectEnabled: true,
+      cloudPredictionEnabled: false,
       speakOnSentenceEnd: true,
       notificationsEnabled: true,
       mathHoldTimeMs: 0,
@@ -482,6 +487,7 @@ export const useSettingsStore = create<SettingsState>()(
         const boolKeys = [
           'highContrast', 'headTrackingEnabled', 'headTrackingDriftAutoDisable',
           'showHandCalibration', 'cameraInputEnabled', 'aiAutocorrectEnabled',
+          'cloudPredictionEnabled',
           'speakOnSentenceEnd', 'notificationsEnabled', 'mathTwoHitMagnify',
           'showUnreviewedVocabulary',
           'headTrackingEyeGaze',

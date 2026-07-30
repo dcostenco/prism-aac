@@ -75,6 +75,8 @@
   "category_select": "الفئة…",
   "category_visibility": "إظهار الفئات",
   "checking_sign_in": "جارٍ التحقق من حالة تسجيل الدخول…",
+  "cloud_memory_predictions": "تنبؤات الذاكرة السحابية",
+  "cloud_memory_predictions_desc": "اختياري: يرسل العبارات المكتملة إلى Synalux لاقتراح بطاقات كلمات مخصصة",
   "cheerful": "مرح",
   "clear": "مسح",
   "clear_all": "مسح الكل",

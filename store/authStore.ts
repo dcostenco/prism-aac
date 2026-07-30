@@ -2,6 +2,12 @@ import { create } from 'zustand';
 import { fetchSynaluxProfile, SynaluxProfile } from '@/services/aiService';
 import { clearTranslationCache } from '@/services/translateService';
 import { clearTextCorrectCache } from '@/services/textCorrectService';
+import {
+  clearPredictionMemoryCache,
+  rotateAnonymousPredictionSessionScope,
+} from '@/services/predictionMemoryService';
+import { destroyAacHrr } from '@/services/hrrContext';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface AuthState {
   profile: SynaluxProfile | null;
@@ -21,8 +27,22 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({ loading: true });
     try {
       const profile = await fetchSynaluxProfile();
+      const previousIdentity = get().profile?.email.toLowerCase() ?? null;
+      const nextIdentity = profile?.email.toLowerCase() ?? null;
+      if (previousIdentity !== nextIdentity) {
+        clearPredictionMemoryCache();
+        destroyAacHrr();
+        rotateAnonymousPredictionSessionScope();
+        useSettingsStore.getState().update({ cloudPredictionEnabled: false });
+      }
       set({ profile, loaded: true, loading: false });
     } catch {
+      if (get().profile) {
+        clearPredictionMemoryCache();
+        destroyAacHrr();
+        rotateAnonymousPredictionSessionScope();
+        useSettingsStore.getState().update({ cloudPredictionEnabled: false });
+      }
       set({ profile: null, loaded: true, loading: false });
     }
   },
@@ -30,6 +50,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   clear: () => {
     clearTranslationCache();
     clearTextCorrectCache();
+    clearPredictionMemoryCache();
+    destroyAacHrr();
+    rotateAnonymousPredictionSessionScope();
+    useSettingsStore.getState().update({ cloudPredictionEnabled: false });
     set({ profile: null, loaded: true, loading: false });
   },
 }));

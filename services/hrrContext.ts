@@ -9,46 +9,81 @@
  * HRR adds a fast contextual layer on top.
  */
 
-let _hologram: any = null;
-let _ready = false;
-let _initPromise: Promise<boolean> | null = null;
-
 const STORAGE_KEY = 'prism-aac-hrr-hologram';
+const DEFAULT_SCOPE = 'legacy';
 const DIM = 1024;
 const MIN_PHRASE_WORDS = 2;
 const MAX_PHRASE_LEN = 500;
 
-export async function initAacHrr(): Promise<boolean> {
-    if (_ready) return true;
-    if (_initPromise) return _initPromise;
-    _initPromise = _doInit();
-    return _initPromise;
+interface HrrScopeState {
+    hologram: any;
+    persistTimer: ReturnType<typeof setTimeout> | null;
 }
 
-async function _doInit(): Promise<boolean> {
+const _scopeStates = new Map<string, HrrScopeState>();
+const _initPromises = new Map<string, Promise<boolean>>();
+const _scopeGenerations = new Map<string, number>();
+
+function normalizeScope(scope?: string): string {
+    const normalized = scope?.trim().toLowerCase();
+    return normalized ? normalized.slice(0, 320) : DEFAULT_SCOPE;
+}
+
+function storageKeyForScope(scope: string): string | null {
+    if (scope === DEFAULT_SCOPE) return STORAGE_KEY;
+    // Signed-in profiles may persist personalization across sessions. Anonymous
+    // scopes are intentionally tab-ephemeral so a later shared-device user
+    // cannot inherit another anonymous user's communication history.
+    if (!scope.startsWith('user:')) return null;
+    return `${STORAGE_KEY}:${encodeURIComponent(scope)}`;
+}
+
+export async function initAacHrr(scope?: string): Promise<boolean> {
+    const normalizedScope = normalizeScope(scope);
+    if (_scopeStates.has(normalizedScope)) return true;
+    const existing = _initPromises.get(normalizedScope);
+    if (existing) return existing;
+
+    const generation = _scopeGenerations.get(normalizedScope) ?? 0;
+    const pending: Promise<boolean> = _doInit(normalizedScope, generation).finally(() => {
+        if (_initPromises.get(normalizedScope) === pending) {
+            _initPromises.delete(normalizedScope);
+        }
+    });
+    _initPromises.set(normalizedScope, pending);
+    return pending;
+}
+
+async function _doInit(scope: string, generation: number): Promise<boolean> {
     try {
         const { HrrHologram } = await import('synalux-hrr');
-        _hologram = new HrrHologram(DIM);
+        const hologram: any = new HrrHologram(DIM);
+        const storageKey = storageKeyForScope(scope);
 
-        try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                const arr = JSON.parse(saved);
-                if (validateHologram(arr)) {
-                    _hologram.import_hologram(arr);
-                } else {
-                    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+        if (storageKey) {
+            try {
+                const saved = localStorage.getItem(storageKey);
+                if (saved) {
+                    const arr = JSON.parse(saved);
+                    if (validateHologram(arr)) {
+                        hologram.import_hologram(arr);
+                    } else {
+                        try { localStorage.removeItem(storageKey); } catch {}
+                    }
                 }
-            }
-        } catch { /* localStorage unavailable (Safari Private) — run without persistence */ }
+            } catch { /* localStorage unavailable (Safari Private) — run without persistence */ }
+        }
 
-        _ready = true;
+        // An auth transition may invalidate this scope while the WASM import
+        // or localStorage restore is still pending. Never resurrect that
+        // previous user's in-memory personalization after it was destroyed.
+        if ((_scopeGenerations.get(scope) ?? 0) !== generation) return false;
+        _scopeStates.set(scope, { hologram, persistTimer: null });
         return true;
     } catch (err) {
         if (typeof window !== 'undefined') {
             console.warn('[HRR] WASM init failed — predictions will use n-gram engine only:', err);
         }
-        _initPromise = null;
         return false;
     }
 }
@@ -62,14 +97,24 @@ function validateHologram(data: unknown): data is number[] {
     return true;
 }
 
-export function destroyAacHrr(): void {
-    if (_persistTimer) { clearTimeout(_persistTimer); _persistTimer = null; }
-    flushPersist();
-    _hologram = null;
-    _ready = false;
-    _initPromise = null;
-    if (typeof window !== 'undefined') {
-        window.removeEventListener('beforeunload', flushPersist);
+export function destroyAacHrr(scope?: string): void {
+    const scopes = scope
+        ? [normalizeScope(scope)]
+        : [...new Set([..._scopeStates.keys(), ..._initPromises.keys()])];
+    for (const scopeKey of scopes) {
+        _scopeGenerations.set(
+            scopeKey,
+            (_scopeGenerations.get(scopeKey) ?? 0) + 1,
+        );
+        _initPromises.delete(scopeKey);
+        const state = _scopeStates.get(scopeKey);
+        if (!state) continue;
+        if (state.persistTimer) {
+            clearTimeout(state.persistTimer);
+            state.persistTimer = null;
+        }
+        flushPersist(scopeKey);
+        _scopeStates.delete(scopeKey);
     }
 }
 
@@ -81,49 +126,62 @@ export function recordPhrase(phrase: string, context?: {
     category?: string;
     timeOfDay?: string;
     tone?: string;
+    language?: string;
+    scope?: string;
 }): void {
-    if (!_hologram || !_ready) return;
+    const scope = normalizeScope(context?.scope);
+    const state = _scopeStates.get(scope);
+    if (!state) return;
+    const hologram = state.hologram;
     const trimmed = phrase.trim();
     if (!trimmed || trimmed.length > MAX_PHRASE_LEN) return;
 
     const words = trimmed.split(/\s+/).filter(Boolean);
 
     const ctxSuffix = [
+        context?.language ? `lang:${context.language.trim().toLowerCase()}` : '',
         context?.category ? `cat:${context.category}` : '',
         context?.timeOfDay ? `time:${context.timeOfDay}` : '',
         context?.tone ? `tone:${context.tone}` : '',
     ].filter(Boolean).join('|');
+    const ngramPrefix = context?.language
+        ? `lang:${context.language.trim().toLowerCase()}|`
+        : '';
 
     const phraseKey = ctxSuffix ? `${trimmed}|${ctxSuffix}` : trimmed;
-    _hologram.encode(phraseKey, trimmed);
+    hologram.encode(phraseKey, trimmed);
 
     // Skip n-gram encoding for single words — no bigram signal
     if (words.length < MIN_PHRASE_WORDS) return;
 
     for (let i = 0; i < words.length - 1; i++) {
         const w = words[i].toLowerCase();
-        _hologram.encode(`w:${w}`, words[i + 1]);
+        hologram.encode(`${ngramPrefix}w:${w}`, words[i + 1]);
 
         if (i < words.length - 2) {
-            _hologram.encode(`w:${w} ${words[i + 1].toLowerCase()}`, words[i + 2]);
+            hologram.encode(
+                `${ngramPrefix}w:${w} ${words[i + 1].toLowerCase()}`,
+                words[i + 2],
+            );
         }
     }
 
-    schedulePersist();
+    schedulePersist(scope);
 }
 
 export function getContextualSuggestions(
     currentText: string,
-    context?: { category?: string; timeOfDay?: string },
+    context?: { category?: string; timeOfDay?: string; scope?: string },
     topK = 5,
 ): Array<{ phrase: string; relevance: number }> {
-    if (!_hologram || !_ready || !currentText.trim()) return [];
+    const state = _scopeStates.get(normalizeScope(context?.scope));
+    if (!state || !currentText.trim()) return [];
 
     const queryParts = [currentText];
     if (context?.category) queryParts.push(`cat:${context.category}`);
     if (context?.timeOfDay) queryParts.push(`time:${context.timeOfDay}`);
 
-    const results = _hologram.probe(queryParts.join(' '), topK);
+    const results = state.hologram.probe(queryParts.join(' '), topK);
     return results
         .filter((r: any) => r.similarity > 0.03)
         .map((r: any) => ({
@@ -139,21 +197,28 @@ export function getContextualSuggestions(
 export function getNextWordSuggestions(
     currentText: string,
     topK = 5,
+    language?: string,
+    scope?: string,
 ): Array<{ word: string; relevance: number }> {
-    if (!_hologram || !_ready || !currentText.trim()) return [];
+    const state = _scopeStates.get(normalizeScope(scope));
+    if (!state || !currentText.trim()) return [];
+    const hologram = state.hologram;
 
     const words = currentText.trim().split(/\s+/).filter(Boolean);
     if (words.length === 0) return [];
 
     const seen = new Set<string>();
     const out: Array<{ word: string; relevance: number }> = [];
+    const ngramPrefix = language
+        ? `lang:${language.trim().toLowerCase()}|`
+        : '';
 
     function collect(results: any[]) {
         for (const r of results) {
             if (r.similarity < 0.02) continue;
             // WASM probe returns the concept KEY (e.g. "w:want"), not the value.
             // Use get_summary() to retrieve the actual next word.
-            const word = _hologram.get_summary?.(r.concept) ?? r.concept;
+            const word = hologram.get_summary?.(r.concept) ?? r.concept;
             if (typeof word !== 'string' || !word || seen.has(word.toLowerCase())) continue;
             seen.add(word.toLowerCase());
             out.push({ word, relevance: r.similarity });
@@ -162,45 +227,50 @@ export function getNextWordSuggestions(
     }
 
     if (words.length >= 2) {
-        const triKey = `w:${words[words.length - 2].toLowerCase()} ${words[words.length - 1].toLowerCase()}`;
-        collect(_hologram.probe(triKey, topK));
+        const triKey = `${ngramPrefix}w:${words[words.length - 2].toLowerCase()} ${words[words.length - 1].toLowerCase()}`;
+        collect(hologram.probe(triKey, topK));
     }
 
     if (out.length < topK) {
-        const biKey = `w:${words[words.length - 1].toLowerCase()}`;
-        collect(_hologram.probe(biKey, topK - out.length));
+        const biKey = `${ngramPrefix}w:${words[words.length - 1].toLowerCase()}`;
+        collect(hologram.probe(biKey, topK - out.length));
     }
 
     return out;
 }
 
-export function isAacHrrReady(): boolean {
-    return _ready;
+export function isAacHrrReady(scope?: string): boolean {
+    return _scopeStates.has(normalizeScope(scope));
 }
 
 // ─── Persistence ─────────────────────────────────────────────
 
-let _persistTimer: ReturnType<typeof setTimeout> | null = null;
-
-function flushPersist(): void {
-    if (!_hologram) return;
+function flushPersist(scope: string): void {
+    const storageKey = storageKeyForScope(scope);
+    const state = _scopeStates.get(scope);
+    if (!storageKey || !state) return;
     try {
-        const data = _hologram.export_hologram();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(data)));
+        const data = state.hologram.export_hologram();
+        localStorage.setItem(storageKey, JSON.stringify(Array.from(data)));
     } catch { /* localStorage full or unavailable — non-fatal */ }
 }
 
-function schedulePersist(): void {
-    if (_persistTimer) return;
-    _persistTimer = setTimeout(() => {
-        _persistTimer = null;
-        flushPersist();
+function flushAllPersist(): void {
+    for (const scope of _scopeStates.keys()) flushPersist(scope);
+}
+
+function schedulePersist(scope: string): void {
+    const state = _scopeStates.get(scope);
+    if (!state || !storageKeyForScope(scope) || state.persistTimer) return;
+    state.persistTimer = setTimeout(() => {
+        state.persistTimer = null;
+        flushPersist(scope);
     }, 5_000);
 }
 
 if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', flushPersist);
+    window.addEventListener('beforeunload', flushAllPersist);
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') flushPersist();
+        if (document.visibilityState === 'hidden') flushAllPersist();
     });
 }

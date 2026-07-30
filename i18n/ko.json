@@ -75,6 +75,8 @@
   "category_select": "카테고리…",
   "category_visibility": "카테고리 표시 설정",
   "checking_sign_in": "로그인 상태 확인 중…",
+  "cloud_memory_predictions": "클라우드 메모리 예측",
+  "cloud_memory_predictions_desc": "선택 사항: 완성된 문구를 Synalux로 보내 맞춤형 단어 카드를 제안합니다",
   "cheerful": "밝은",
   "clear": "지우기",
   "clear_all": "모두 지우기",

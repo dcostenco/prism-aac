@@ -75,6 +75,8 @@
   "category_select": "Категорія…",
   "category_visibility": "Видимість категорій",
   "checking_sign_in": "Перевірка статусу входу…",
+  "cloud_memory_predictions": "Підказки з хмарної пам’яті",
+  "cloud_memory_predictions_desc": "Необов’язково: надсилає завершені фрази до Synalux, щоб пропонувати персоналізовані картки слів",
   "cheerful": "Веселий",
   "clear": "Очистити",
   "clear_all": "Очистити все",

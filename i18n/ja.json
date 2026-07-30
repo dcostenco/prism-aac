@@ -75,6 +75,8 @@
   "category_select": "カテゴリ…",
   "category_visibility": "カテゴリの表示設定",
   "checking_sign_in": "ログイン状態を確認中…",
+  "cloud_memory_predictions": "クラウドメモリー予測",
+  "cloud_memory_predictions_desc": "任意：完成したフレーズを Synalux に送信し、個人向けの単語カードを提案します",
   "cheerful": "明るい",
   "clear": "クリア",
   "clear_all": "すべてクリア",

@@ -75,6 +75,8 @@
   "category_select": "類別…",
   "category_visibility": "類別顯示",
   "checking_sign_in": "正在檢查登入狀態…",
+  "cloud_memory_predictions": "雲端記憶預測",
+  "cloud_memory_predictions_desc": "選用：將完成的片語傳送至 Synalux，以建議個人化詞卡",
   "cheerful": "開心",
   "clear": "清除",
   "clear_all": "全部清除",

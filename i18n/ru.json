@@ -75,6 +75,8 @@
   "category_select": "Категория…",
   "category_visibility": "Видимость категорий",
   "checking_sign_in": "Проверка статуса входа…",
+  "cloud_memory_predictions": "Подсказки из облачной памяти",
+  "cloud_memory_predictions_desc": "Необязательно: отправляет завершённые фразы в Synalux, чтобы предлагать персональные карточки слов",
   "cheerful": "Весёлый",
   "clear": "Очистить",
   "clear_all": "Очистить всё",

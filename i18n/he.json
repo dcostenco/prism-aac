@@ -75,6 +75,8 @@
   "category_select": "קטגוריה…",
   "category_visibility": "נראות קטגוריה",
   "checking_sign_in": "בודק סטטוס התחברות…",
+  "cloud_memory_predictions": "חיזויי זיכרון בענן",
+  "cloud_memory_predictions_desc": "אופציונלי: שולח משפטים שהושלמו אל Synalux כדי להציע כרטיסי מילים מותאמים אישית",
   "cheerful": "עליז",
   "clear": "נקה",
   "clear_all": "נקה הכל",

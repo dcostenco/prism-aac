@@ -75,6 +75,8 @@
   "category_select": "类别…",
   "category_visibility": "类别可见性",
   "checking_sign_in": "正在检查登录状态…",
+  "cloud_memory_predictions": "云端记忆预测",
+  "cloud_memory_predictions_desc": "可选：将已完成的短语发送到 Synalux，以推荐个性化词卡",
   "cheerful": "开心",
   "clear": "清除",
   "clear_all": "全部清除",

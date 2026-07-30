@@ -19,12 +19,57 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
+  mergePredictionBaselines,
+  mergePredictionContextBaselines,
   mergeUserNgramsWithBoost,
   recordWord,
   recordBigram,
   buildNgramsFromPhrases,
 } from '@/engine/predictionEngine';
 import type { WordFreqEntry } from '@/types';
+
+// ── baseline source merging ───────────────────────────────────────────────────
+
+describe('prediction baseline source merging', () => {
+  it('keeps stronger counts and fresher timestamps instead of spread-overwriting', () => {
+    const broad = {
+      'first|second': { count: 40, lastUsed: 100 },
+    };
+    const curated = {
+      'first|second': { count: 2, lastUsed: 500 },
+    };
+
+    const merged = mergePredictionBaselines(broad, curated);
+
+    expect(merged['first|second']).toEqual({
+      count: 40,
+      lastUsed: 500,
+      lastDecayedAt: undefined,
+    });
+    expect(broad['first|second']).toEqual({ count: 40, lastUsed: 100 });
+    expect(curated['first|second']).toEqual({ count: 2, lastUsed: 500 });
+  });
+
+  it('ranks curated AAC continuations above generic continuations for the same context', () => {
+    const broad = {
+      'first|second|generic': { count: 6, lastUsed: 0 },
+      'first|second|other': { count: 4, lastUsed: 0 },
+    };
+    const curated = {
+      'first|second|person': { count: 2, lastUsed: 0 },
+      'first|second|place': { count: 1, lastUsed: 0 },
+    };
+
+    const merged = mergePredictionContextBaselines(broad, curated);
+
+    expect(merged['first|second|person'].count)
+      .toBeGreaterThan(merged['first|second|generic'].count);
+    expect(merged['first|second|place'].count)
+      .toBeGreaterThan(merged['first|second|generic'].count);
+    expect(merged['first|second|person'].count)
+      .toBeGreaterThan(merged['first|second|place'].count);
+  });
+});
 
 // ── mergeUserNgramsWithBoost ──────────────────────────────────────────────────
 

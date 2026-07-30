@@ -15,10 +15,14 @@ import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
 import { translateWithAIRefine, looksLikeTargetLang, abortTranslation } from '@/services/translateService';
 import { usePredictionStore } from '@/store/predictionStore';
+import { useAuthStore } from '@/store/authStore';
 import { triggerAISubmit } from '@/services/aiChatBridge';
-import { isSafeAutoCorrection } from '@/services/autocorrectSafety';
 import { isConfidentCompleteWord } from '@/engine/predictionEngine';
 import { loadPredictionSeed } from '@/constants/predictionSeeds';
+import {
+  getPredictionSessionScope,
+  rememberConfirmedPhrase,
+} from '@/services/predictionMemoryService';
 
 function normalizeSpokenText(value: string): string {
   return value.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -59,6 +63,8 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
   const speechVolume = useSettingsStore((s) => s.speechVolume);
   const language = useSettingsStore((s) => s.language);
   const aiAutocorrectEnabled = useSettingsStore((s) => s.aiAutocorrectEnabled);
+  const cloudPredictionEnabled = useSettingsStore((s) => s.cloudPredictionEnabled);
+  const authenticatedProfile = useAuthStore((s) => s.profile);
   const { t } = useT();
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showTones, setShowTones] = useState(false);
@@ -409,15 +415,28 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
     }
   }, [learnWord]);
 
-  // Decide whether the AI suggestion is a "safe" auto-correction — a
-  // typo fix or small cleanup, not a big rewrite. Auto-applying on Speak
-  // saves the user an extra tap (motor friction is real for AAC users)
-  // BUT only for low-risk changes:
-  //   - Same number of tokens, OR differs by exactly 1 (fixed missing
-  //     space → "программычто" splits into "программа что")
-  //   - Edit distance ≤ 30% of input length (otherwise it's a paraphrase)
-  // Big rewrites and word-completions still need an explicit tap, so the
-  // child's authorship is preserved when the AI gets creative.
+  // One authoritative positive signal feeds both local and signed-in cloud
+  // memory. Merely displaying a correction or prediction never learns it.
+  const recordConfirmedPhrase = useCallback((phrase: string) => {
+    const predictionScope = getPredictionSessionScope(authenticatedProfile?.email);
+    try {
+      import('../services/hrrContext').then(async ({ recordPhrase, initAacHrr }) => {
+        if (await initAacHrr(predictionScope)) {
+          const hour = new Date().getHours();
+          recordPhrase(phrase, {
+            language,
+            scope: predictionScope,
+            timeOfDay: hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening',
+          });
+        }
+      }).catch(() => {});
+    } catch { /* Local memory is optional. */ }
+
+    if (authenticatedProfile && cloudPredictionEnabled) {
+      void rememberConfirmedPhrase(phrase, language);
+    }
+  }, [authenticatedProfile, cloudPredictionEnabled, language]);
+
   const acceptSuggestion = useCallback(() => {
     if (!suggestion) return;
     tapFeedback();
@@ -427,6 +446,7 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
     // Reinforce the accepted utterance so the engine learns the user's
     // patterns (e.g. "лукоморья|дуб" trigram after accepting Pushkin).
     learnUtterance(accepted);
+    recordConfirmedPhrase(accepted);
     // Pre-mark the trailing word as "already spoken" so the silence-
     // detect useEffect (which fires 400ms after this setText updates
     // text) doesn't immediately re-speak the last word in a different
@@ -444,7 +464,7 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
       const outLang = useSettingsStore.getState().outputLanguage as SupportedLanguage | undefined;
       aacSpeak(translated || accepted, speechRate, speechVolume, activeTone, false, translated ? outLang : undefined);
     }
-  }, [suggestion, setText, learnUtterance, soundEnabled, translated, speechRate, speechVolume, activeTone]);
+  }, [suggestion, setText, learnUtterance, recordConfirmedPhrase, soundEnabled, translated, speechRate, speechVolume, activeTone]);
 
   const handleSpeak = useCallback(() => {
     void warmupAzureAudio();
@@ -470,56 +490,15 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
       compositionSpeakTimer.current = null;
     }
 
-    // Auto-apply *safe* AI corrections on Speak. The Speak button is the
-    // user's "I'm done" signal — clear typos like "программычто" should
-    // not require an extra tap to fix. Big rewrites and word-completions
-    // still need explicit acceptance (isSafeAutoCorrection rejects them).
-    // Authorship: the child can still see/edit the corrected text in the
-    // bar; undo brings back the original; speech history holds the spoken
-    // version. The original raw text is also still passed to learnUtterance
-    // when we decide NOT to auto-apply.
-    let toSpeak = original;
-    let autoApplied = false;
-    if (suggestion && isSafeAutoCorrection(original, suggestion)) {
-      toSpeak = suggestion.trim();
-      setText(toSpeak);
-      setSuggestion(null);
-      autoApplied = true;
-    }
-
-    // Defense against letter-by-letter TTS. When auto-apply didn't fire
-    // (no suggestion yet, server down, suggestion rejected by safety
-    // gate) AND the input ends with a single-character trailing token
-    // preceded by at least one full word, strip that trailing char
-    // before speaking. Without this, "i Want y" gets spoken as "i Want
-    // wai", "она пошла д" as "она пошла deh", etc. Language-agnostic:
-    // we don't keep a per-locale exception list, we just trust that a
-    // user who typed 2+ words plus a 1-char tail meant the tail as a
-    // partial, not as a standalone word. Keeps the rest of the
-    // utterance speakable instead of pronouncing the letter.
-    if (!autoApplied) {
-      const tokens = toSpeak.split(/\s+/);
-      if (tokens.length >= 2 && tokens[tokens.length - 1].length === 1) {
-        const trimmed = tokens.slice(0, -1).join(' ');
-        if (trimmed) toSpeak = trimmed;
-      }
-    }
+    // Prediction/correction strings are advisory. Play speaks exactly what
+    // the user authored and never rewrites the message buffer. A correction
+    // enters the buffer only through the visible explicit-accept button.
+    const toSpeak = original;
 
     addToHistory(toSpeak);
     const ssState = useSettingsStore.getState();
-    ddAction('aac.speak', { wordCount: toSpeak.split(/\s+/).length, language: ssState.language, outputLanguage: ssState.outputLanguage, autoApplied });
-
-    // HRR: record spoken phrase for contextual zero-search retrieval.
-    // Fire-and-forget — never blocks the speak path.
-    try {
-      import('../services/hrrContext').then(({ recordPhrase, isAacHrrReady }) => {
-        if (isAacHrrReady()) {
-          recordPhrase(toSpeak, {
-            timeOfDay: new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening',
-          });
-        }
-      }).catch(() => {});
-    } catch { /* HRR not available */ }
+    ddAction('aac.speak', { wordCount: toSpeak.split(/\s+/).length, language: ssState.language, outputLanguage: ssState.outputLanguage, autoApplied: false });
+    recordConfirmedPhrase(toSpeak);
 
     // Speak is the strongest learning signal: the user just authoritatively
     // communicated this exact utterance. Reinforce every word and adjacent
@@ -528,8 +507,7 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
     learnUtterance(toSpeak);
 
     // Pre-mark trailing word so silence-detect doesn't re-speak it after
-    // the autocorrect useEffect re-runs (text just changed via setText
-    // when auto-apply fired).
+    // correction/translation effects re-run.
     const toSpeakTokens = toSpeak.split(/\s+/);
     lastSilenceSpokenRef.current = toSpeakTokens[toSpeakTokens.length - 1] || '';
 
@@ -549,7 +527,7 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
       text: normalizeSpokenText(original),
       at: Date.now(),
     };
-  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance, suggestion, setText, outputLanguage]);
+  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance, recordConfirmedPhrase, outputLanguage]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
@@ -661,7 +639,9 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
               className="aac-btn text-left text-base md:text-lg text-[#4CAF50] mt-1 flex items-center gap-2 min-h-[36px] px-2 py-1 rounded-lg hover:bg-[rgba(76,175,80,0.1)]"
             >
               <span className="text-xl shrink-0">✅</span>
-              <span className="font-semibold truncate">{suggestion}</span>
+              <span className="font-semibold whitespace-normal break-words leading-snug">
+                {suggestion}
+              </span>
             </button>
           )}
         </div>

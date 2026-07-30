@@ -75,6 +75,8 @@
   "category_select": "Category…",
   "category_visibility": "Category Visibility",
   "checking_sign_in": "Checking sign-in status…",
+  "cloud_memory_predictions": "Cloud Memory Predictions",
+  "cloud_memory_predictions_desc": "Optional: sends completed phrases to Synalux for personalized word cards",
   "cheerful": "Cheerful",
   "clear": "Clear",
   "clear_all": "Clear all",
