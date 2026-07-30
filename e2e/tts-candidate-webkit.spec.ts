@@ -111,8 +111,9 @@ async function persistSpeechState(
   page: Page,
   settings: { language: string; outputLanguage: string },
   soundEnabled: boolean,
+  autoSpeak = true,
 ): Promise<void> {
-  await page.evaluate(({ nextSettings, nextSoundEnabled }) => {
+  await page.evaluate(({ nextSettings, nextSoundEnabled, nextAutoSpeak }) => {
     localStorage.setItem('prism-aac-settings', JSON.stringify({
       state: {
         ...nextSettings,
@@ -125,7 +126,7 @@ async function persistSpeechState(
     }));
     localStorage.setItem('prism-aac-message', JSON.stringify({
       state: {
-        autoSpeak: true,
+        autoSpeak: nextAutoSpeak,
         soundEnabled: nextSoundEnabled,
         activeTone: 'friendly',
         toneMode: 'auto',
@@ -133,14 +134,19 @@ async function persistSpeechState(
       version: 3,
     }));
     sessionStorage.setItem('prism-greeting-dismissed', '1');
-  }, { nextSettings: settings, nextSoundEnabled: soundEnabled });
+  }, {
+    nextSettings: settings,
+    nextSoundEnabled: soundEnabled,
+    nextAutoSpeak: autoSpeak,
+  });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForSelector('button[data-key="Q"]', { timeout: 20_000 });
 }
 
 async function typeInitialI(page: Page): Promise<void> {
-  await page.getByTestId('shift-key').click();
+  await expect(page.getByTestId('shift-key')).toHaveAttribute('aria-label', 'Shift off');
   await page.locator('button[data-key="I"]').click();
+  await expect(page.getByRole('status')).toHaveText('I');
 }
 
 async function typeLowercase(page: Page, word: string): Promise<void> {
@@ -161,7 +167,7 @@ test.beforeEach(async ({ page }) => {
   await page.route('http://localhost:11434/**', (route) => route.abort());
 });
 
-test('Romanian Play repairs omitted pronoun, recovers mute, and starts target speech', async ({
+test('Romanian Play preserves the pronoun and starts target speech', async ({
   page,
 }) => {
   const ttsBodies: Array<Record<string, unknown>> = [];
@@ -182,7 +188,7 @@ test('Romanian Play repairs omitted pronoun, recovers mute, and starts target sp
   });
 
   await bootClean(page);
-  await persistSpeechState(page, { language: 'en', outputLanguage: 'ro' }, false);
+  await persistSpeechState(page, { language: 'en', outputLanguage: 'ro' }, true, false);
   await typeInitialI(page);
   await page.locator('button[data-action="space"]').click();
   await typeLowercase(page, 'looking');
@@ -214,7 +220,7 @@ test('Romanian Play repairs omitted pronoun, recovers mute, and starts target sp
   );
 });
 
-test('English I plus prediction tap stays local, latest-wins, and avoids cloud TTS', async ({
+test('English I plus prediction tap stays latest-wins on iPhone neural speech', async ({
   page,
 }) => {
   const ttsBodies: Array<Record<string, unknown>> = [];
@@ -230,7 +236,13 @@ test('English I plus prediction tap stays local, latest-wins, and avoids cloud T
   await bootClean(page);
   await persistSpeechState(page, { language: 'en', outputLanguage: 'en' }, true);
   await typeInitialI(page);
-  await expect.poll(async () => (await getSpeechProbe(page)).localUtterances.length).toBeGreaterThan(0);
+  await expect.poll(() => ttsBodies.length).toBe(1);
+  expect(ttsBodies[0]).toMatchObject({
+    text: 'I.',
+    lang: 'en-US',
+    surface: 'aac',
+  });
+  await expect.poll(async () => (await getSpeechProbe(page)).audioSourceStarts).toBe(1);
 
   const need = page.getByTestId('prediction-bar').getByRole('button', { name: /^Predict: need$/i });
   await expect(need).toBeVisible();
@@ -239,13 +251,78 @@ test('English I plus prediction tap stays local, latest-wins, and avoids cloud T
   await page.waitForTimeout(2_200);
 
   const probe = await getSpeechProbe(page);
-  expect(probe.localUtterances.map((utterance) => utterance.text)).toContain('I.');
-  const latest = probe.localUtterances.at(-1);
-  expect(latest).toMatchObject({
+  expect(ttsBodies).toHaveLength(2);
+  expect(ttsBodies.at(-1)).toMatchObject({
     text: 'I need',
     lang: 'en-US',
+    surface: 'aac',
   });
-  expect(latest?.rate).toBeCloseTo(0.8, 5);
+  expect(probe.audioSourceStarts).toBe(2);
+  expect(probe.localUtterances).toHaveLength(0);
+});
+
+test('iPhone unshifted i renders I and starts neural speech', async ({
+  page,
+}, testInfo) => {
+  test.skip(!testInfo.project.name.includes('iphone'), 'iPhone WebKit regression');
+
+  const ttsBodies: Array<Record<string, unknown>> = [];
+  await page.route('**/api/v1/tts/public', async (route) => {
+    ttsBodies.push(JSON.parse(route.request().postData() || '{}') as Record<string, unknown>);
+    await route.fulfill({
+      status: 200,
+      contentType: 'audio/wav',
+      body: silentWav(),
+    });
+  });
+
+  await bootClean(page);
+  await persistSpeechState(page, { language: 'en', outputLanguage: 'en' }, true);
+  await typeInitialI(page);
+
+  await expect.poll(() => ttsBodies.length).toBe(1);
+  expect(ttsBodies[0]).toMatchObject({
+    text: 'I.',
+    lang: 'en-US',
+    volume: 1,
+    surface: 'aac',
+  });
+  await expect.poll(async () => (await getSpeechProbe(page)).audioSourceStarts).toBe(1);
+  expect((await getSpeechProbe(page)).localUtterances).toHaveLength(0);
+
+  const statusBox = await page.getByRole('status').boundingBox();
+  expect(statusBox?.width ?? 0).toBeGreaterThan(0);
+  expect(statusBox?.height ?? 0).toBeGreaterThan(0);
+  await safeScreenshot(
+    page,
+    process.env.TTS_I_EVIDENCE_PATH
+      || '/private/tmp/prism-aac-evidence/current-build-en-pronoun-i-iphone.png',
+  );
+});
+
+test('Play preserves master mute and emits no speech', async ({ page }) => {
+  const ttsBodies: Array<Record<string, unknown>> = [];
+  await page.route('**/api/v1/tts/public', async (route) => {
+    ttsBodies.push(JSON.parse(route.request().postData() || '{}') as Record<string, unknown>);
+    await route.fulfill({
+      status: 200,
+      contentType: 'audio/wav',
+      body: silentWav(),
+    });
+  });
+
+  await bootClean(page);
+  await persistSpeechState(page, { language: 'en', outputLanguage: 'en' }, false, false);
+  await typeInitialI(page);
+  await page.locator('button.aac-speak').first().click();
+  await page.waitForTimeout(800);
+
   expect(ttsBodies).toHaveLength(0);
+  const probe = await getSpeechProbe(page);
   expect(probe.audioSourceStarts).toBe(0);
+  expect(probe.localUtterances).toHaveLength(0);
+  const persistedSound = await page.evaluate(() => (
+    JSON.parse(localStorage.getItem('prism-aac-message') || '{}').state?.soundEnabled
+  ));
+  expect(persistedSound).toBe(false);
 });

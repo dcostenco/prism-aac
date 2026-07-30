@@ -26,6 +26,20 @@ test.describe('Browser page — AAC-enabled web browser', () => {
     await expect(goBtn).toBeVisible();
   });
 
+  test('unshifted i remains lowercase in browser input mode', async ({ page }) => {
+    await expect(page.getByTestId('shift-key')).toHaveAttribute('aria-label', 'Shift off');
+    const iKey = page.locator('button[data-key="I"]');
+    await expect(iKey).toHaveAttribute('data-display', 'i');
+    await iKey.click();
+
+    await expect(
+      page.locator('[data-testid="browser-toolbar"] button[aria-label="Editing: i"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-testid="browser-toolbar"] button[aria-label="Editing: I"]'),
+    ).toHaveCount(0);
+  });
+
   test('speak mode toggle switches Go to Speak', async ({ page }) => {
     const speakToggle = page.locator('button[aria-label="Switch to Speak mode"]');
     await expect(speakToggle).toBeVisible();

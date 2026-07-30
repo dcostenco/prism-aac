@@ -78,7 +78,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
   // No toggleSound: soundEnabled is a master mute again and Speak must not
   // clear it. setText is for the kana modifiers, which rewrite the last
   // character rather than appending one.
-  const { appendChar, addToHistory, autoSpeak, soundEnabled, activeTone, setText } = useMessageStore();
+  const { text, appendChar, addToHistory, autoSpeak, soundEnabled, activeTone, setText } = useMessageStore();
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock, keyboardMaximized, cycleKeyboardMode } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language, speakOnSentenceEnd, gridSize } = useSettingsStore();
@@ -103,6 +103,30 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
   }, []);
   const rows = buildKeyboardRows(rawRows, narrow);
   const showUpper = isUpperCase || capsLock;
+  const pendingEnglishPronounI = useRef<number | null>(null);
+
+  useEffect(() => {
+    const pendingIndex = pendingEnglishPronounI.current;
+    if (pendingIndex === null) return;
+
+    const stillProvisional =
+      text.length === pendingIndex + 1
+      && text[pendingIndex] === 'I';
+    if (!stillProvisional) {
+      // Backspace, clear, undo, predictions, and every other external text
+      // mutation invalidate the keyboard-owned provisional decision.
+      pendingEnglishPronounI.current = null;
+      return;
+    }
+
+    if (language !== 'en') {
+      // The input language changed before a word boundary. Return the
+      // provisional English pronoun to the lowercase key value so it cannot
+      // leak into a non-English word ("i" + Romanian "n" must stay "in").
+      pendingEnglishPronounI.current = null;
+      setText(`${text.slice(0, pendingIndex)}i`);
+    }
+  }, [language, setText, text]);
 
   const handleKey = useCallback((key: string) => {
     keyFeedback();
@@ -134,7 +158,39 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       }
       return;
     }
-    appendChar(char);
+    const currentText = useMessageStore.getState().text;
+    const pendingIndex = pendingEnglishPronounI.current;
+    const continuesPendingI =
+      pendingIndex !== null
+      && language === 'en'
+      && keyboardMode === 'letters'
+      && currentText.length === pendingIndex + 1
+      && currentText[pendingIndex] === 'I'
+      && /^\p{L}$/u.test(char);
+
+    if (continuesPendingI) {
+      // The next letter proves the earlier tap began a longer word ("i" +
+      // "n" → "in"), not the standalone English pronoun. Correct the
+      // provisional capital without restoring per-key speech.
+      pendingEnglishPronounI.current = null;
+      setText(`${currentText.slice(0, pendingIndex)}i${char}`);
+      if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
+      return;
+    }
+
+    pendingEnglishPronounI.current = null;
+    const startsWord = currentText.length === 0 || /\s$/u.test(currentText);
+    const isUnshiftedEnglishPronoun =
+      !browserMode
+      && language === 'en'
+      && keyboardMode === 'letters'
+      && !showUpper
+      && char === 'i'
+      && startsWord;
+    appendChar(isUnshiftedEnglishPronoun ? 'I' : char);
+    if (isUnshiftedEnglishPronoun) {
+      pendingEnglishPronounI.current = currentText.length;
+    }
     if (isUpperCase && !capsLock && keyboardMode === 'letters') toggleCase();
     // Per-key letter echo REMOVED. The previous behavior fired
     // speakWord(char) on every keystroke, which Azure pronounced as
@@ -157,7 +213,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       const sentence = extractLastSentence(text);
       if (sentence) aacSpeak(sentence, speechRate, speechVolume, activeTone);
     }
-  }, [appendChar, setText, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper,
+  }, [appendChar, setText, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper, language, browserMode,
       speakOnSentenceEnd, autoSpeak, soundEnabled, speechRate, speechVolume, activeTone]);
 
   const shiftHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

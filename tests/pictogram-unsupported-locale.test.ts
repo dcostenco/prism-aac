@@ -53,7 +53,7 @@ function installFetch(supported: Set<string>, englishHits: Set<string>) {
     // Compare the HOST, not a substring: 'static.arasaac.org' can appear
     // anywhere in a URL, so evil.example/static.arasaac.org would match.
     if (hostOf(url) === 'static.arasaac.org') {
-      return new Response(new Blob([new Uint8Array([1, 2, 3])]), { status: 200 });
+      return new Response(new Uint8Array([1, 2, 3]), { status: 200 });
     }
     return new Response('', { status: 404 });
   });
@@ -65,12 +65,19 @@ beforeEach(() => {
   vi.resetModules();
   localStorage.clear();
   vi.stubGlobal('caches', undefined);
-  if (!('createObjectURL' in URL)) {
-    // @ts-expect-error jsdom lacks createObjectURL
-    URL.createObjectURL = () => 'blob:stub';
-  }
+  // Node exposes a native createObjectURL while jsdom supplies a different
+  // Blob implementation. Always replace it so this browser-oriented test does
+  // not depend on which URL/Blob pair the Vitest worker inherited.
+  Object.defineProperty(URL, 'createObjectURL', {
+    configurable: true,
+    writable: true,
+    value: vi.fn(() => 'blob:stub'),
+  });
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe('ARASAAC — unsupported locale short-circuit', () => {
   it('asks the unsupported locale once, not once per token', async () => {
