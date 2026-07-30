@@ -8,6 +8,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/react';
 import Keyboard from '@/components/Keyboard';
+import MessageBar from '@/components/MessageBar';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
@@ -33,6 +34,7 @@ vi.mock('@/services/feedback', () => ({
 
 vi.mock('@/services/azureTTS', () => ({
   warmupAzureAudio: vi.fn(),
+  TONE_OPTIONS: [],
 }));
 
 vi.mock('@/services/aiChatBridge', () => ({
@@ -41,6 +43,14 @@ vi.mock('@/services/aiChatBridge', () => ({
 
 vi.mock('@/services/searchKeyBridge', () => ({
   dispatchToSearch: vi.fn(() => false),
+}));
+
+vi.mock('@/constants/predictionSeeds', () => ({
+  loadPredictionSeed: vi.fn(async () => ({
+    wordFreq: { i: { count: 1732, lastUsed: 0 } },
+    bigrams: {},
+    trigrams: {},
+  })),
 }));
 
 beforeEach(() => {
@@ -58,6 +68,7 @@ beforeEach(() => {
     speechRate: 0.5,
     speechVolume: 0.8,
     speakOnSentenceEnd: false,
+    aiAutocorrectEnabled: false,
     gridSize: 12,
   } as never);
   useUIStore.setState({
@@ -69,6 +80,128 @@ beforeEach(() => {
 });
 
 describe('Keyboard cumulative word-boundary speech', () => {
+  it('stores the default unshifted English i key as the visible pronoun I', () => {
+    useMessageStore.setState({ text: '' } as never);
+    const { container } = render(<Keyboard />);
+    const iKey = container.querySelector<HTMLButtonElement>('button[data-key="I"]');
+    expect(iKey).not.toBeNull();
+    expect(iKey).toHaveAttribute('data-display', 'i');
+
+    act(() => {
+      fireEvent.click(iKey!);
+    });
+
+    expect(useMessageStore.getState().text).toBe('I');
+    expect(speechMocks.speakWord).not.toHaveBeenCalled();
+  });
+
+  it('renders and phrase-speaks the unshifted English pronoun from the real input path', async () => {
+    vi.useFakeTimers();
+    try {
+      useMessageStore.setState({ text: '' } as never);
+      const { container } = render(
+        <>
+          <MessageBar />
+          <Keyboard />
+        </>,
+      );
+
+      act(() => {
+        fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-key="I"]')!);
+      });
+
+      expect(container.querySelector('[role="status"]')).toHaveTextContent('I');
+      await act(async () => { await Promise.resolve(); });
+      await act(async () => { vi.advanceTimersByTime(399); });
+      expect(speechMocks.speakWord).not.toHaveBeenCalled();
+      await act(async () => { vi.advanceTimersByTime(1); });
+      expect(speechMocks.speakWord).toHaveBeenCalledOnce();
+      expect(speechMocks.speakWord).toHaveBeenCalledWith('I', 0.5, 0.8);
+      expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps the provisional pronoun lowercase when another letter continues the word', () => {
+    useMessageStore.setState({ text: '' } as never);
+    const { container } = render(<Keyboard />);
+
+    act(() => {
+      fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-key="I"]')!);
+      fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-key="N"]')!);
+    });
+
+    expect(useMessageStore.getState().text).toBe('in');
+    expect(speechMocks.speakWord).not.toHaveBeenCalled();
+  });
+
+  it('does not lowercase a deliberate I restored by an external text mutation', () => {
+    useMessageStore.setState({ text: '' } as never);
+    const { container } = render(<Keyboard />);
+
+    act(() => {
+      fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-key="I"]')!);
+    });
+    expect(useMessageStore.getState().text).toBe('I');
+
+    act(() => {
+      useMessageStore.getState().setText('');
+    });
+    act(() => {
+      useMessageStore.getState().setText('I');
+    });
+    act(() => {
+      fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-key="N"]')!);
+    });
+
+    expect(useMessageStore.getState().text).toBe('In');
+  });
+
+  it('normalizes a provisional I when the input language changes mid-word', () => {
+    useMessageStore.setState({ text: '' } as never);
+    const { container } = render(<Keyboard />);
+
+    act(() => {
+      fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-key="I"]')!);
+    });
+    expect(useMessageStore.getState().text).toBe('I');
+
+    act(() => {
+      useSettingsStore.setState({ language: 'ro', outputLanguage: 'ro' } as never);
+    });
+    expect(useMessageStore.getState().text).toBe('i');
+
+    act(() => {
+      fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-key="N"]')!);
+    });
+    expect(useMessageStore.getState().text).toBe('in');
+  });
+
+  it('does not apply the English pronoun rule to the Romanian keyboard', () => {
+    useMessageStore.setState({ text: '' } as never);
+    useSettingsStore.setState({ language: 'ro', outputLanguage: 'ro' } as never);
+    const { container } = render(<Keyboard />);
+
+    act(() => {
+      fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-key="I"]')!);
+    });
+
+    expect(useMessageStore.getState().text).toBe('i');
+    expect(speechMocks.speakWord).not.toHaveBeenCalled();
+  });
+
+  it('does not apply AAC pronoun normalization in browser input mode', () => {
+    useMessageStore.setState({ text: '' } as never);
+    const { container } = render(<Keyboard browserMode />);
+
+    act(() => {
+      fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-key="I"]')!);
+    });
+
+    expect(useMessageStore.getState().text).toBe('i');
+  });
+
   it('replays the complete same-language message locally on space', () => {
     const { container } = render(<Keyboard />);
     const space = container.querySelector<HTMLButtonElement>('[data-action="space"]');
