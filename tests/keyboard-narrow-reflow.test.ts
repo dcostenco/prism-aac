@@ -12,11 +12,15 @@ import {
   UTIL_ROW_OVERFLOW_KEYS,
   UTIL_ROW_BASE_KEYS,
   UTIL_ROW_INDEX,
+  NARROW_ROW_TARGETS,
 } from '@/constants/keyboardLayouts';
 import type { SupportedLanguage } from '@/engine/i18n';
 
 // Layouts whose util row exceeds the overflow threshold.
-const WRAPPING_LANGS: SupportedLanguage[] = ['ro', 'it', 'uk', 'ar'];
+const WRAPPING_LANGS: SupportedLanguage[] = [
+  'es', 'fr', 'pt', 'ro', 'de', 'it', 'tr',
+  'uk', 'ru', 'bg', 'ar', 'he', 'hi', 'bn',
+];
 
 // `satisfies` makes this exhaustive at compile time: adding a language to
 // SupportedLanguage without listing it here fails tsc. An earlier version of
@@ -25,6 +29,7 @@ const ALL_LANGS = Object.keys({
   en: 1, es: 1, fr: 1, pt: 1, ro: 1, uk: 1, ru: 1, de: 1, ja: 1,
   ko: 1, zh: 1, 'zh-Hans': 1, 'zh-Hant': 1, 'zh-HK': 1, ar: 1, hi: 1,
   it: 1, pl: 1, he: 1, nl: 1, vi: 1, tl: 1, tr: 1, id: 1, bg: 1,
+  am: 1, sw: 1, bn: 1,
 } satisfies Record<SupportedLanguage, 1>) as SupportedLanguage[];
 
 describe('buildKeyboardRows — narrow phone reflow', () => {
@@ -41,7 +46,8 @@ describe('buildKeyboardRows — narrow phone reflow', () => {
     for (const lang of ALL_LANGS) {
       const raw = getLetterRows(lang);
       const built = buildKeyboardRows(raw, true);
-      expect(built.flatMap((r) => r.keys).join(''), lang).toBe(raw.flat().join(''));
+      expect([...built.flatMap((r) => r.keys)].sort(), lang)
+        .toEqual([...raw.flat()].sort());
     }
   });
 
@@ -54,14 +60,18 @@ describe('buildKeyboardRows — narrow phone reflow', () => {
     }
   });
 
-  it('never reflows a row that does not carry Shift/Backspace', () => {
-    for (const lang of ALL_LANGS) {
-      const raw = getLetterRows(lang);
-      const built = buildKeyboardRows(raw, true);
-      raw.forEach((row, i) => {
-        if (i !== UTIL_ROW_INDEX) expect(built.some((b) => b.keys === row), lang).toBe(true);
-      });
-    }
+  it.each(['uk', 'ru', 'bg', 'ar', 'he', 'hi', 'bn'] as SupportedLanguage[])(
+    'keeps every %s row within ten physical targets',
+    (lang) => {
+      for (const row of buildKeyboardRows(getLetterRows(lang), true)) {
+        expect(row.keys.length + (row.util ? 2 : 0), `${lang} physical row`).toBeLessThanOrEqual(NARROW_ROW_TARGETS);
+      }
+    },
+  );
+
+  it('keeps English base rows byte-identical', () => {
+    const raw = getLetterRows('en');
+    expect(buildKeyboardRows(raw, true).map((row) => row.keys)).toEqual(raw);
   });
 
   it('keeps Shift and Backspace on exactly one row per layout', () => {
@@ -92,6 +102,18 @@ describe('buildKeyboardRows — narrow phone reflow', () => {
     expect(UTIL_ROW_BASE_KEYS).toBe(7);
   });
 
+  it('gives Turkish standard base rows and one large locale-letter row', () => {
+    const built = buildKeyboardRows(getLetterRows('tr'), true);
+    expect(built.map((row) => row.keys)).toEqual([
+      ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+      ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+      ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+      ['Ğ', 'Ü', 'Ş', 'İ', 'Ö', 'Ç'],
+    ]);
+    expect(Math.max(...built.map((row) => row.keys.length + (row.util ? 2 : 0))))
+      .toBe(10);
+  });
+
   it('does not wrap English, which already fits', () => {
     const built = buildKeyboardRows(getLetterRows('en'), true);
     expect(built.filter((r) => r.continuation)).toHaveLength(0);
@@ -111,28 +133,48 @@ describe('buildKeyboardRows — narrow phone reflow', () => {
     },
   );
 
-  // Arabic is RTL with 11 keys on every row, so it does wrap. The split is by
-  // logical order; the browser mirrors it visually from dir="rtl", so the head
-  // must stay a contiguous logical prefix or the letters land out of sequence.
-  it('splits Arabic on logical order, preserving sequence', () => {
+  // Arabic is RTL with 11 keys on every row. Each head remains a contiguous
+  // logical prefix and the browser mirrors it visually from dir="rtl"; the
+  // ordered surplus shares one large continuation row.
+  it('reflows Arabic in logical order without dropping a character', () => {
     const raw = getLetterRows('ar');
     const built = buildKeyboardRows(raw, true);
-    const head = built[UTIL_ROW_INDEX];
-    const tail = built[UTIL_ROW_INDEX + 1];
+    const tail = built[3];
 
-    expect(raw[UTIL_ROW_INDEX]).toHaveLength(11);
-    expect(head.keys).toEqual(['ئ', 'ء', 'ؤ', 'ر', 'ى', 'و', 'ز']);
-    expect(head.util).toBe(true);
-    expect(tail.keys).toEqual(['ظ', 'ط', 'ذ', 'د']);
+    expect(built.slice(0, 3).map((row) => row.keys)).toEqual([
+      raw[0].slice(0, 10),
+      raw[1].slice(0, 10),
+      raw[2].slice(0, UTIL_ROW_BASE_KEYS),
+    ]);
+    expect(built[UTIL_ROW_INDEX].util).toBe(true);
+    expect(tail.keys).toEqual(['ج', 'ة', 'ظ', 'ط', 'ذ', 'د']);
     expect(tail.continuation).toBe(true);
-    // Concatenation must reproduce the original row exactly — no reordering.
-    expect([...head.keys, ...tail.keys]).toEqual(raw[UTIL_ROW_INDEX]);
+    expect([...built[0].keys, tail.keys[0]]).toEqual(raw[0]);
+    expect([...built[1].keys, tail.keys[1]]).toEqual(raw[1]);
+    expect([...built[2].keys, ...tail.keys.slice(2)]).toEqual(raw[2]);
   });
 
-  it('leaves Hebrew unwrapped — RTL, but its util row is under the threshold', () => {
+  it('moves Hebrew util-row overflow into a wide continuation row', () => {
     const raw = getLetterRows('he');
-    expect(raw[UTIL_ROW_INDEX].length).toBeLessThanOrEqual(UTIL_ROW_OVERFLOW_KEYS);
-    expect(buildKeyboardRows(raw, true).map((r) => r.keys)).toEqual(raw);
+    const built = buildKeyboardRows(raw, true);
+    expect(built.slice(0, 3).map((row) => row.keys)).toEqual([
+      raw[0],
+      raw[1],
+      raw[2].slice(0, UTIL_ROW_BASE_KEYS),
+    ]);
+    expect(built[3].keys).toEqual(raw[2].slice(UTIL_ROW_BASE_KEYS));
+  });
+
+  it('gives Bengali a larger four-row keyboard while preserving all keys', () => {
+    const raw = getLetterRows('bn');
+    const built = buildKeyboardRows(raw, true);
+    expect(built.map((row) => row.keys)).toEqual([
+      raw[0].slice(0, NARROW_ROW_TARGETS),
+      raw[1].slice(0, NARROW_ROW_TARGETS),
+      raw[2].slice(0, UTIL_ROW_BASE_KEYS),
+      [raw[0][10], raw[1][10], ...raw[2].slice(UTIL_ROW_BASE_KEYS)],
+    ]);
+    expect(built).toHaveLength(4);
   });
 
   // Japanese sits exactly on the threshold. Wrapping it would split a gojūon

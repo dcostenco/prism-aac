@@ -328,15 +328,16 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
       }}
       aria-label={`Predict: ${visibleWord}`}
       title={visibleWord}
-      className={`aac-btn flex-1 min-w-0 rounded-xl flex flex-col items-center overflow-hidden border-l-[5px] border border-theme${visibleVisionBoosted ? ' vision-glow' : ''}`}
-      style={{ borderLeftColor: visibleColor, color: visibleColor }}
+      data-testid="prediction-tile"
+      className={`aac-btn aac-prediction-tile flex-1 min-w-0 rounded-xl flex flex-col items-center overflow-hidden border-l-[5px] border border-theme${visibleVisionBoosted ? ' vision-glow' : ''}`}
+      style={{ borderLeftColor: visibleColor }}
     >
-      <span className="flex-1 flex items-center justify-center w-full rounded-t-lg overflow-hidden min-h-0 bg-white">
+      <span className="aac-tile-icon flex-1 flex items-center justify-center w-full rounded-t-lg overflow-hidden min-h-0 bg-white">
         {iconUrl && (
           <img src={iconUrl} alt="" aria-hidden loading="eager" className="max-w-full max-h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
         )}
       </span>
-      <span className="truncate w-full text-center text-[clamp(0.9rem,2.2svh,1.4rem)] font-bold shrink-0 leading-tight py-0.5">{visibleWord}</span>
+      <span data-testid="prediction-label" className="aac-tile-label aac-prediction-label">{visibleWord}</span>
     </button>
   );
 });
@@ -344,6 +345,8 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
 
 export default function PredictionBar() {
   const sidePanel = useUIStore((s) => s.sidePanel);
+  const categoryKeyboardOpen = useUIStore((s) => s.categoryKeyboardOpen);
+  const keyboardMaximized = useUIStore((s) => s.keyboardMaximized);
   const selectContact = useUIStore((s) => s.selectContact);
   const contacts = useContactsStore((s) => s.contacts);
   const activeContactId = useUIStore((s) => s.activeContactId);
@@ -663,6 +666,8 @@ export default function PredictionBar() {
 
   // All hooks MUST be called before any early return — React error #300.
   const activeScene = useVisionStore((s) => s.activeScene);
+  const isPictureBoard = ['none', 'categories', 'category-detail'].includes(sidePanel)
+    && !(categoryKeyboardOpen && keyboardMaximized);
 
   // ── Contact-search mode — replaces word predictions while messaging ──
   if (sidePanel === 'aac-chat' && !activeContactId) {
@@ -702,7 +707,13 @@ export default function PredictionBar() {
   }
 
   return (
-    <div data-testid="prediction-bar" data-scan-group="predictions" className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 relative" style={{ height: 'clamp(72px, 15svh, 160px)' }}>
+    <div
+      data-testid="prediction-bar"
+      data-aac-input-mode={isPictureBoard ? 'picture' : 'typing'}
+      data-scan-group="predictions"
+      className="flex items-stretch gap-[2px] px-1 py-[2px] shrink-0 relative"
+      style={{ height: 'clamp(72px, 15svh, 160px)' }}
+    >
       {activeScene && (
         <span
           className="absolute -top-6 right-2 text-sm opacity-90 pointer-events-none"

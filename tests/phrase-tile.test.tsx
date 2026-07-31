@@ -61,6 +61,13 @@ describe('PhraseTile — rendering', () => {
     render(<PhraseTile phrase="Go" onClick={vi.fn()} />);
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
+
+  it('uses the shared readable AAC label contract', () => {
+    render(<PhraseTile phrase="Communication" onClick={vi.fn()} />);
+    expect(screen.getByTestId('phrase-tile-card')).toHaveClass('aac-phrase-tile');
+    expect(screen.getByTestId('phrase-tile-label')).toHaveClass('aac-tile-label', 'aac-phrase-label');
+    expect(screen.getByTestId('phrase-tile-card').querySelector('.aac-tile-icon')).toBeInTheDocument();
+  });
 });
 
 // ── click ─────────────────────────────────────────────────────────────────────

@@ -47,15 +47,16 @@ describe('UIStore — Side panel management', () => {
     expect(useUIStore.getState().activeSequenceId).toBeNull();
   });
 
-  it('closeSidePanel restores categoryKeyboardOpen for home keyboard', () => {
-    // Regression: keyboard must be visible on home screen after closing any panel.
-    // closeSidePanel must set categoryKeyboardOpen=true so the showQwerty
-    // ternary (isCategoryMode||homeWithBoard ? categoryKeyboardOpen : ...) is true.
+  it('closeSidePanel preserves the selected AAC input mode', () => {
+    // Leaving a module must not silently switch a picture communicator into
+    // Typing mode (or vice versa). The mode is the user's access choice.
+    useUIStore.setState({ categoryKeyboardOpen: false, keyboardMaximized: false });
     useUIStore.getState().openGames();
     expect(useUIStore.getState().sidePanel).toBe('games');
     useUIStore.getState().closeSidePanel();
     expect(useUIStore.getState().sidePanel).toBe('none');
-    expect(useUIStore.getState().categoryKeyboardOpen).toBe(true);
+    expect(useUIStore.getState().categoryKeyboardOpen).toBe(false);
+    expect(useUIStore.getState().keyboardMaximized).toBe(false);
   });
 
   it('openMath toggles math panel', () => {

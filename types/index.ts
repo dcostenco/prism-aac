@@ -13,6 +13,8 @@ export interface Phrase {
   id: string;
   categoryId: string;
   text: string;
+  /** Priority in the compact AAC prediction fallback; absent = not a core fallback. */
+  aacCoreRank?: number;
   translations?: Partial<Record<string, string>>;
   sortOrder: number;
   isCustom: boolean;

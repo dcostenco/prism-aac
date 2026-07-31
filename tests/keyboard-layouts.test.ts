@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getLetterRows, getPredictionsForLanguage, LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS, GEEZ_VOWEL_ORDERS, GEEZ_MODIFIERS, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
+import { getLetterRows, getPredictionsForLanguage, usesNativeImeKeyboard, LETTERS_ROWS, NUMBERS_ROWS, SYMBOLS_ROWS, GEEZ_VOWEL_ORDERS, GEEZ_MODIFIERS, applyGeezVowelOrder, buildKeyboardRows, NARROW_ROW_TARGETS, UTIL_ROW_BASE_KEYS } from '@/constants/keyboardLayouts';
 
 describe('Keyboard layouts — getLetterRows', () => {
   it('returns QWERTY layout for English', () => {
@@ -76,29 +76,27 @@ describe('Keyboard layouts — getLetterRows', () => {
     expect(rows[0][0]).toBe('ㅂ');
   });
 
-  it('falls back to QWERTY for unknown/unsupported language', () => {
-    // zh is mapped to QWERTY (same as English)
-    const rows = getLetterRows('zh');
-    expect(rows[0][0]).toBe('Q');
-    expect(rows[0][9]).toBe('P');
+  it('routes every Chinese variant to native IME composition', () => {
+    for (const language of ['zh', 'zh-Hans', 'zh-Hant', 'zh-HK'] as const) {
+      expect(usesNativeImeKeyboard(language)).toBe(true);
+    }
+    expect(usesNativeImeKeyboard('en')).toBe(false);
   });
 });
 
 describe('Keyboard layouts — getPredictionsForLanguage', () => {
-  // Predictions are now derived from Universal Core 36 (Geist et al. ATIA
-  // 2021) localized via Cboard's GPLv3 translations + a corrections overlay
-  // (see scripts/aac_core_corrections.json). Tests assert the canonical
-  // first-person pronoun is present for each language since that's the
-  // highest-priority communicative starter and our corrections guarantee it.
+  // Predictions are derived from Universal Core 36 (Geist et al. ATIA 2021)
+  // using stable phrase IDs. Tests assert the canonical first-person pronoun
+  // is present since it is the highest-priority communicative starter.
 
   it('returns English predictions starting with "I"', () => {
     const preds = getPredictionsForLanguage('en');
     expect(preds[0]).toBe('I');
   });
 
-  it('returns Romanian predictions starting with "Eu"', () => {
+  it('returns Romanian predictions starting with canonical lowercase "eu"', () => {
     const preds = getPredictionsForLanguage('ro');
-    expect(preds[0]).toBe('Eu');
+    expect(preds[0]).toBe('eu');
   });
 
   it('returns Russian predictions containing "Я"', () => {
@@ -158,6 +156,51 @@ describe('Keyboard layouts — Exported constants', () => {
     expect(SYMBOLS_ROWS).toHaveLength(3);
     expect(SYMBOLS_ROWS[0]).toContain('[');
     expect(SYMBOLS_ROWS[0]).toContain(']');
+  });
+});
+
+describe('Keyboard layouts — stable reference rows', () => {
+  it('preserves canonical QWERTY rows on narrow portrait phones', () => {
+    const source = getLetterRows('en');
+    expect(buildKeyboardRows(source, true).map((row) => row.keys)).toEqual([
+      ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+      ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+      ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+    ]);
+  });
+
+  it('keeps every standard-width custom layout byte-identical on phones', () => {
+    for (const language of ['en', 'ja', 'ko'] as const) {
+      const source = getLetterRows(language);
+      const rows = buildKeyboardRows(source, true);
+      expect(rows.map((row) => row.keys), language).toEqual(source);
+    }
+  });
+
+  it('reflows dense three-row scripts into ordered phone-sized targets without losing keys', () => {
+    for (const language of ['uk', 'ru', 'ar', 'hi', 'bn'] as const) {
+      const source = getLetterRows(language);
+      const rows = buildKeyboardRows(source, true);
+      const heads = rows.slice(0, source.length);
+      const continuation = rows[source.length];
+
+      expect(heads.map((row, index) => row.keys), `${language} row heads`).toEqual(
+        source.map((row, index) => row.slice(0, index === 2 ? UTIL_ROW_BASE_KEYS : NARROW_ROW_TARGETS)),
+      );
+      expect(continuation?.keys, `${language} ordered continuation`).toEqual(
+        source.flatMap((row, index) => row.slice(index === 2 ? UTIL_ROW_BASE_KEYS : NARROW_ROW_TARGETS)),
+      );
+      expect(continuation?.continuation, language).toBe(true);
+      for (const row of rows) {
+        expect(row.keys.length + (row.util ? 2 : 0), `${language} physical targets`)
+          .toBeLessThanOrEqual(NARROW_ROW_TARGETS);
+      }
+    }
+  });
+
+  it('keeps Japanese kana rows in their authored gojuon groups', () => {
+    const source = getLetterRows('ja');
+    expect(buildKeyboardRows(source, true).map((row) => row.keys)).toEqual(source);
   });
 });
 

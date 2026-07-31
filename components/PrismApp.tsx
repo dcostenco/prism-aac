@@ -231,7 +231,11 @@ export default function PrismApp() {
   const showQwerty = isCategoryMode || homeWithBoard
     ? categoryKeyboardOpen
     : !PANELS_WITHOUT_QWERTY.has(sidePanel);
+  const categoryTypingOnly = (isCategoryMode || homeWithBoard)
+    && categoryKeyboardOpen
+    && keyboardMaximized;
   const { rtl } = useT();
+  const headTrackingEnabled = useSettingsStore((s) => s.headTrackingEnabled);
   const [compactMode, setCompactMode] = useState(false);
 
   useEffect(() => {
@@ -267,11 +271,6 @@ export default function PrismApp() {
       });
     // Auto-sideload: detect local Ollama → pull best prism-coder model
     import('@/services/aiService').then(m => m.autoSideload?.()).catch(() => {});
-    // Pre-warm MediaPipe WASM + face models so the first startHeadTracker()
-    // sees near-zero cold-start. Models are self-hosted on Vercel CDN (~9 MB
-    // total) and load in ~1-2s — completing well before the user navigates
-    // to Settings and enables head tracking.
-    import('@/services/headTracker').then(m => m.prewarmHeadTracker?.()).catch(() => {});
     // HRR contextual memory — 229KB WASM, loads lazily
     import('@/services/hrrContext').then(m => m.initAacHrr()).catch(() => {});
     // Pictograms load and persist on demand. Do not pre-cache the full
@@ -381,6 +380,15 @@ export default function PrismApp() {
     };
   }, []);
 
+  useEffect(() => {
+    // MediaPipe is a large, camera-adjacent runtime. Loading it for every AAC
+    // user wasted memory/network and could surface WASM errors even when all
+    // tracking controls were off. Pre-warm only after the user has opted in;
+    // HeadTrackingOverlay still starts the tracker from this same setting.
+    if (!headTrackingEnabled) return;
+    import('@/services/headTracker').then(m => m.prewarmHeadTracker?.()).catch(() => {});
+  }, [headTrackingEnabled]);
+
   // Warm up the SHARED AudioContext on first user interaction.
   //
   // The Inworld/Azure TTS path in services/azureTTS.ts plays audio via
@@ -472,6 +480,10 @@ export default function PrismApp() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Native CJK IMEs emit keydown events such as Process/229 while a
+      // candidate is still provisional. Never append or prevent those events;
+      // the focused composer owns the final committed input.
+      if (e.isComposing || e.key === 'Process' || e.keyCode === 229) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (e.key === 'Tab' || e.key === 'Escape') return;
@@ -503,7 +515,12 @@ export default function PrismApp() {
   return (
     <ErrorBoundary>
       <SyncProvider>
-        <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`} style={{ paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
+        <div
+          dir={rtl ? 'rtl' : 'ltr'}
+          className={`${themeClass} aac-safe-viewport h-svh flex flex-col overflow-hidden surface-app`}
+          data-aac-typing-layout={categoryTypingOnly || undefined}
+          data-testid="aac-safe-viewport"
+        >
           {/* Connect-OAuth return banner. Auto-dismisses after 4s
               (set by the URL-handler useEffect). Only confirmation
               the user gets that the OAuth same-window redirect
@@ -531,7 +548,7 @@ export default function PrismApp() {
               it entirely took away the composed message and the Play button,
               which are the two controls an AAC user cannot do without. */}
           {sidePanel !== 'math' && sidePanel !== 'ai-chat' && <MessageBar compact={compactMode} />}
-          {sidePanel !== 'ai-chat' && (!PANELS_WITHOUT_QWERTY.has(sidePanel) || (isCategoryMode && categoryKeyboardOpen)) && <PredictionBar />}
+          {sidePanel !== 'ai-chat' && (!PANELS_WITHOUT_QWERTY.has(sidePanel) || isCategoryMode || homeWithBoard) && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />
           <AIChatPanel />
@@ -548,17 +565,21 @@ export default function PrismApp() {
               Keyboard is a pull-up drawer toggled from inside CategoryPanel.
               All other modes: CategoryPanel stacks above keyboard as before. */}
           {sidePanel !== 'math' && sidePanel !== 'comfort-player' && sidePanel !== 'schedule' && (
-            <div className={`min-h-0 flex flex-col ${isCategoryMode || homeWithBoard ? 'flex-1' : 'flex-[3]'}`}>
+            <div
+              className={`min-h-0 flex flex-col ${isCategoryMode || homeWithBoard ? 'flex-1' : 'flex-[3]'}`}
+              data-testid="aac-content-region"
+              data-typing-only={categoryTypingOnly || undefined}
+            >
               <CategoryPanel />
             </div>
           )}
           {showQwerty && !(isCategoryMode || homeWithBoard) && (
             <div
-              className={
+              className={`aac-typing-keyboard-shell ${
                 keyboardMaximized
                   ? "flex-1 min-h-0 flex flex-row"
                   : `shrink-0 flex flex-row ${compactMode ? 'h-[clamp(80px,30svh,140px)]' : 'h-[clamp(170px,25svh,260px)]'}`
-              }
+              }`}
               data-testid="keyboard-shell"
               data-maximized={keyboardMaximized || undefined}
             >

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore, type ToolbarButtonId, DEFAULT_TOOLBAR_ORDER } from '@/store/settingsStore';
-import { isRTL, type SupportedLanguage } from '@/engine/i18n';
+import { isRTL } from '@/engine/i18n';
 import { useSyncStatus } from './SyncProvider';
 import { tapFeedback, alertFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
@@ -18,6 +18,11 @@ import LanguagePicker, { LanguageButton } from './LanguagePicker';
 const SYNC_ICONS: Record<string, string> = {
   idle: '⬡', syncing: '🔄', synced: '🟢', offline: '🔸', error: '🔴',
 };
+
+// Keep primary navigation, life-safety, and communication controls directly
+// reachable on touch devices. This is a responsive presentation rule only: it does not
+// rewrite the caregiver's saved toolbar configuration.
+const FOCUS_TOOLBAR_IDS: ToolbarButtonId[] = ['categories', 'sound', 'mic', 'alert', 'settings'];
 
 // Built-in button registry. To add a new button:
 //   1. add the id to ToolbarButtonId in settingsStore.ts
@@ -64,6 +69,7 @@ interface RenderedButton {
 }
 
 function buildBuiltInButtons(t: (k: string) => string, h: ButtonHandlers): Record<ToolbarButtonId, RenderedButton | null> {
+  const aacChatLabel = t('aac_chat_title');
   return {
     categories: { id: 'categories', icon: '📂', ariaLabel: t('categories'), title: t('categories'), onClick: h.openCategories },
     mic: h.voiceSupported ? {
@@ -84,9 +90,9 @@ function buildBuiltInButtons(t: (k: string) => string, h: ButtonHandlers): Recor
       id: 'aac_chat',
       icon: '💬',
       ariaLabel: h.unreadMessages > 0
-        ? `${t('aac_chat') || 'Send a message'} — ${h.unreadMessages} ${t('unread') || 'unread'}`
-        : (t('aac_chat') || 'Send a message'),
-      title: h.unreadMessages > 0 ? `${h.unreadMessages} new messages` : (t('aac_chat') || 'Send a message'),
+        ? `${aacChatLabel} (${h.unreadMessages})`
+        : aacChatLabel,
+      title: aacChatLabel,
       onClick: h.openAACChat,
       badge: h.unreadMessages || undefined,
     },
@@ -169,8 +175,10 @@ export default function Toolbar() {
   const [micError, setMicError] = useState<string | null>(null);
   const micErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showLangPicker, setShowLangPicker] = useState<'input' | 'output' | null>(null);
+  const [showCompactMenu, setShowCompactMenu] = useState(false);
   const voiceRef = useRef<VoiceSession | null>(null);
   const langRef = useRef<HTMLDivElement>(null);
+  const compactMenuRef = useRef<HTMLDivElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -214,6 +222,23 @@ export default function Toolbar() {
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);
   }, [showLangPicker]);
+  useEffect(() => {
+    if (!showCompactMenu) return;
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      if (compactMenuRef.current && !compactMenuRef.current.contains(event.target as Node)) {
+        setShowCompactMenu(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowCompactMenu(false);
+    };
+    document.addEventListener('pointerdown', closeOnOutsidePress);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePress);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [showCompactMenu]);
 
   const showMicError = (msg: string) => {
     setMicError(msg);
@@ -342,21 +367,31 @@ export default function Toolbar() {
   }
   const appIds = installedApps.map((a) => `app:${a}`);
   const allButtons = [...visibleIds, ...appIds];
+  const focusToolbarButtons = FOCUS_TOOLBAR_IDS.filter((id) => visibleIds.includes(id));
+  const compactMenuButtons = allButtons.filter(
+    (id) => !FOCUS_TOOLBAR_IDS.includes(id as ToolbarButtonId),
+  );
 
   const btnClass = 'aac-btn w-[clamp(2.75rem,7vw,3.25rem)] h-[clamp(2.75rem,7svh,3.25rem)] rounded-full text-[clamp(1rem,3.5vw,1.5rem)] select-none border border-theme shrink-0 flex items-center justify-center';
   const tap = (fn: () => void, buttonId?: string) => () => { tapFeedback(); if (buttonId) ddAction('toolbar.button_click', { button: buttonId }); fn(); };
 
-  function renderButton(id: string): React.ReactNode {
+  function renderButton(id: string, variant: 'strip' | 'menu' = 'strip', afterClick?: () => void): React.ReactNode {
     if (id.startsWith('app:')) {
       const b = appButton(id.slice(4), t, openMarketplace, launchInstalled);
       return (
         <button
           key={id}
-          className={`${btnClass} surface-key text-primary`}
-          onClick={tap(b.onClick, id)}
+          className={variant === 'menu'
+            ? 'aac-btn min-h-12 px-3 py-2 rounded-xl surface-key text-primary border border-theme flex items-center gap-2 text-left font-semibold'
+            : `${btnClass} surface-key text-primary`}
+          onClick={tap(() => { b.onClick(); afterClick?.(); }, id)}
           aria-label={b.ariaLabel}
           title={b.title}
-        >{b.icon}</button>
+          data-toolbar-button-id={id}
+        >
+          <span className="text-xl" aria-hidden>{b.icon}</span>
+          {variant === 'menu' ? <span className="text-sm leading-tight">{b.title}</span> : null}
+        </button>
       );
     }
     const b = builtIns[id as ToolbarButtonId];
@@ -368,13 +403,17 @@ export default function Toolbar() {
     return (
       <button
         key={id}
-        className={`${btnClass} ${colorClasses} ${pulseClass} relative`}
-        onClick={tap(b.onClick, b.id)}
+        className={variant === 'menu'
+          ? `aac-btn min-h-12 px-3 py-2 rounded-xl ${colorClasses} ${pulseClass} relative flex items-center gap-2 text-left font-semibold border border-theme`
+          : `${btnClass} ${colorClasses} ${pulseClass} relative`}
+        onClick={tap(() => { b.onClick(); afterClick?.(); }, b.id)}
         aria-label={b.ariaLabel}
         title={b.title}
         aria-pressed={b.highlighted}
+        data-toolbar-button-id={b.id}
       >
-        {b.icon}
+        <span className="text-xl" aria-hidden>{b.icon}</span>
+        {variant === 'menu' ? <span className="text-sm leading-tight">{b.title}</span> : null}
         {b.badge && b.badge > 0 ? (
           <span
             data-testid={`toolbar-badge-${b.id}`}
@@ -389,12 +428,43 @@ export default function Toolbar() {
   }
 
   return (
-    <div role="toolbar" className="flex items-center justify-between px-1 py-[clamp(0.1rem,0.3svh,0.25rem)] surface-bar shrink-0 border-b border-theme relative">
+    <div role="toolbar" className="aac-safe-toolbar flex items-center justify-between px-1 py-[clamp(0.1rem,0.3svh,0.25rem)] surface-bar shrink-0 border-b border-theme relative">
       {micError && (
         <div role="alert" className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-[300] bg-[#F44336] text-white text-xs font-semibold rounded-lg px-3 py-1.5 shadow-lg whitespace-nowrap pointer-events-none">
           {micError}
         </div>
       )}
+      {/* On touch devices, keep primary navigation, communication, and safety actions in
+          a stable row. Every other configured action remains in More. */}
+      <div
+        ref={compactMenuRef}
+        data-testid="aac-focus-toolbar"
+        className="aac-focus-toolbar flex-1 min-w-0 items-center gap-1"
+      >
+        {focusToolbarButtons.map((id) => renderButton(id))}
+        <button
+          type="button"
+          data-testid="aac-toolbar-more-button"
+          className={`${btnClass} surface-key text-primary font-bold`}
+          aria-label={t('qc_3')}
+          title={t('qc_3')}
+          aria-expanded={showCompactMenu}
+          aria-controls="aac-toolbar-more-menu"
+          onClick={tap(() => setShowCompactMenu((open) => !open), 'more')}
+        >
+          <span aria-hidden>…</span>
+        </button>
+        {showCompactMenu ? (
+          <div
+            id="aac-toolbar-more-menu"
+            data-testid="aac-toolbar-more-menu"
+            aria-label={t('qc_3')}
+            className="aac-toolbar-more-menu absolute left-1 top-full z-[400] mt-1 grid grid-cols-2 gap-1.5 overflow-y-auto rounded-2xl border border-theme surface-bar p-2 shadow-xl"
+          >
+            {compactMenuButtons.map((id) => renderButton(id, 'menu', () => setShowCompactMenu(false)))}
+          </div>
+        ) : null}
+      </div>
       {/* Single-row toolbar with horizontal overflow scroll. Earlier
           revision used `flex-wrap` so installed marketplace apps could
           break onto a second row, but that doubled the toolbar height
@@ -406,7 +476,7 @@ export default function Toolbar() {
         <button
           onClick={() => stripRef.current?.scrollBy({ left: -120, behavior: 'smooth' })}
           aria-label="Scroll toolbar left"
-          className="aac-btn shrink-0 w-7 h-7 rounded-full surface-key text-primary text-sm flex items-center justify-center border border-theme"
+          className="aac-toolbar-scroll-control aac-btn shrink-0 w-7 h-7 rounded-full surface-key text-primary text-sm flex items-center justify-center border border-theme"
         >◀</button>
       )}
       <div
@@ -421,7 +491,7 @@ export default function Toolbar() {
         <button
           onClick={() => stripRef.current?.scrollBy({ left: 120, behavior: 'smooth' })}
           aria-label="Scroll toolbar right"
-          className="aac-btn shrink-0 w-7 h-7 rounded-full surface-key text-primary text-sm flex items-center justify-center border border-theme"
+          className="aac-toolbar-scroll-control aac-btn shrink-0 w-7 h-7 rounded-full surface-key text-primary text-sm flex items-center justify-center border border-theme"
         >▶</button>
       )}
 

@@ -12,7 +12,7 @@ import { triggerAISubmit } from '@/services/aiChatBridge';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { dispatchToSearch } from '@/services/searchKeyBridge';
-import { getLetterRows, NUMBERS_ROWS, SYMBOLS_ROWS, buildKeyboardRows, KANA_MODIFIERS, applyKanaModifier, GEEZ_MODIFIERS, geezOffsetFor, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
+import { getLetterRows, usesNativeImeKeyboard, NUMBERS_ROWS, getSymbolRows, getLocalizedPunctuation, buildKeyboardRows, isLatinKeyboardLayout, KANA_MODIFIERS, applyKanaModifier, GEEZ_MODIFIERS, geezOffsetFor, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
 import { useT } from '@/engine/useT';
 
 // Long-press threshold for caps lock — raised from 500 ms to 1200 ms after
@@ -29,13 +29,17 @@ const SIMPLIFIED_ROWS: string[][] = [
   ['L', 'U', 'M', 'W', 'Y'],
 ];
 
-const SENTENCE_END = /[.?!]/;
-const SENTENCE_TERMINATORS = '.?!';
+const SENTENCE_END = /[.?!؟]/;
+const SENTENCE_TERMINATORS = '.?!؟';
 
 const ABBREVIATIONS = new Set(['mr', 'mrs', 'ms', 'dr', 'jr', 'sr', 'prof', 'rev', 'gen', 'sgt', 'cpl', 'pvt', 'vs', 'no', 'vol', 'dept', 'approx', 'inc', 'ltd', 'corp', 'est']);
 
 function isAbbreviation(word: string): boolean {
   return ABBREVIATIONS.has(word.toLowerCase().replace(/\./g, ''));
+}
+
+function lowerKeyboardKey(key: string, language: SupportedLanguage): string {
+  return key.toLocaleLowerCase(getTTSCode(language));
 }
 
 /**
@@ -72,7 +76,114 @@ function extractLastSentence(text: string): string {
   return trimmed.slice(start).trim();
 }
 
-export const __testing = { extractLastSentence };
+export const __testing = { extractLastSentence, lowerKeyboardKey };
+
+function NativeImeKeyboard({
+  language,
+  text,
+  setText,
+  onBackspace,
+  onSpeak,
+  placeholder,
+  speakLabel,
+}: {
+  language: SupportedLanguage;
+  text: string;
+  setText: (value: string) => void;
+  onBackspace: () => void;
+  onSpeak: () => void;
+  placeholder: string;
+  speakLabel: string;
+}) {
+  const composingRef = useRef(false);
+  const skipNextBlurRef = useRef(false);
+  const [compositionDraft, setCompositionDraft] = useState<string | null>(null);
+  const [isComposing, setIsComposing] = useState(false);
+
+  const commit = (value: string) => {
+    // WebKit may emit both compositionend and a final non-composing input.
+    // Zustand updates synchronously, so this guard also prevents a duplicate
+    // undo entry when both events carry the same committed candidate.
+    if (useMessageStore.getState().text !== value) setText(value);
+  };
+
+  return (
+    <div
+      className="flex-1 min-h-0 flex flex-col gap-2 p-2"
+      data-scan-group="keyboard"
+      data-language={language}
+      data-aac-keyboard-rows="native"
+      data-testid="native-ime-keyboard"
+      role="group"
+      aria-label="Keyboard"
+    >
+      <textarea
+        key={language}
+        data-testid="native-ime-composer"
+        value={compositionDraft ?? text}
+        onCompositionStart={(event) => {
+          composingRef.current = true;
+          skipNextBlurRef.current = false;
+          setIsComposing(true);
+          setCompositionDraft(event.currentTarget.value);
+        }}
+        onChange={(event) => {
+          const value = event.currentTarget.value;
+          if (composingRef.current || (event.nativeEvent as InputEvent).isComposing) {
+            setCompositionDraft(value);
+            return;
+          }
+          setCompositionDraft(null);
+          commit(value);
+        }}
+        onCompositionEnd={(event) => {
+          composingRef.current = false;
+          setIsComposing(false);
+          setCompositionDraft(null);
+          if (event.data === '') {
+            skipNextBlurRef.current = true;
+            return;
+          }
+          commit(event.currentTarget.value);
+        }}
+        onBlur={(event) => {
+          if (skipNextBlurRef.current) {
+            skipNextBlurRef.current = false;
+            return;
+          }
+          if (!composingRef.current) commit(event.currentTarget.value);
+        }}
+        lang={getTTSCode(language)}
+        inputMode="text"
+        autoCapitalize="none"
+        autoCorrect="on"
+        spellCheck
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className="flex-1 min-h-0 w-full resize-none rounded-xl surface-key text-primary border-2 border-theme p-4 text-[clamp(1.5rem,4svh,3rem)] leading-snug outline-none focus:border-[#2563eb] focus:ring-4 focus:ring-[rgba(37,99,235,0.25)]"
+      />
+      <div className="h-[clamp(3.5rem,10svh,5.5rem)] shrink-0 flex gap-2">
+        <button
+          onClick={onBackspace}
+          disabled={isComposing}
+          aria-label="Backspace"
+          data-action="backspace"
+          className="aac-key surface-key text-primary rounded-xl border border-theme font-bold text-[clamp(1.5rem,4svh,2.5rem)] min-w-[clamp(5rem,14vw,9rem)] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          ⌫
+        </button>
+        <button
+          onClick={onSpeak}
+          disabled={isComposing}
+          aria-label={speakLabel}
+          className="aac-btn aac-speak flex-1 bg-[#4CAF50] text-white rounded-xl font-bold text-[clamp(1.25rem,3svh,2rem)] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {speakLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: boolean; onBrowserGo?: () => void } = {}) {
   // No toggleSound: soundEnabled is a master mute again and Speak must not
@@ -87,7 +198,8 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
 
   const rawRows = keyboardMode === 'letters'
     ? letterRows
-    : keyboardMode === 'numbers' ? NUMBERS_ROWS : SYMBOLS_ROWS;
+    : keyboardMode === 'numbers' ? NUMBERS_ROWS : getSymbolRows(language);
+  const punctuation = getLocalizedPunctuation(language);
   // Width-driven, not orientation-driven: the same 12-key Romanian row that
   // overflows a 390px portrait screen fits fine in landscape at 844px.
   const [narrow, setNarrow] = useState(false);
@@ -102,6 +214,15 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     };
   }, []);
   const rows = buildKeyboardRows(rawRows, narrow);
+  const maxLetterColumns = Math.max(
+    ...rows.map((row) => row.keys.length + (
+      keyboardMode === 'letters' && row.util ? 2 : 0
+    )),
+  );
+  const denseLetterGrid = keyboardMode === 'letters'
+    && rawRows.some((row) => row.length > 10);
+  const latinLetterGrid = keyboardMode === 'letters'
+    && isLatinKeyboardLayout(rawRows);
   const showUpper = isUpperCase || capsLock;
   const pendingEnglishPronounI = useRef<number | null>(null);
 
@@ -130,7 +251,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
 
   const handleKey = useCallback((key: string) => {
     keyFeedback();
-    const char = keyboardMode === 'letters' ? (showUpper ? key : key.toLowerCase()) : key;
+    const char = keyboardMode === 'letters' ? (showUpper ? key : lowerKeyboardKey(key, language)) : key;
     // Route to search input when category search is active — keys must not
     // also land in the message bar while the user is searching vocabulary.
     if (dispatchToSearch(char)) {
@@ -342,10 +463,40 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
   const shiftLabel = capsLock ? 'Caps lock on' : isUpperCase ? 'Shift on' : 'Shift off';
   const shiftGlyph = capsLock ? 'A' : isUpperCase ? '⇧' : '⇪';
 
+  if (!browserMode && usesNativeImeKeyboard(language)) {
+    return (
+      <NativeImeKeyboard
+        key={language}
+        language={language}
+        text={text}
+        setText={setText}
+        onBackspace={handleBackspace}
+        onSpeak={handleSpeak}
+        placeholder={t('type_here')}
+        speakLabel={t('speak')}
+      />
+    );
+  }
+
   return (
-    <div className="flex-1 flex flex-col gap-[1px] p-[2px]" data-scan-group="keyboard" role="group" aria-label="Keyboard">
+    <div
+      className="flex-1 flex flex-col gap-[1px] p-[2px]"
+      data-scan-group="keyboard"
+      data-language={language}
+      data-aac-keyboard-rows={rows.length}
+      data-aac-keyboard-columns={maxLetterColumns}
+      data-dense-letters={denseLetterGrid || undefined}
+      data-latin-letters={latinLetterGrid || undefined}
+      role="group"
+      aria-label="Keyboard"
+    >
       {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-[1px] justify-center flex-1">
+        <div
+          key={ri}
+          className="flex gap-[1px] justify-center flex-1"
+          data-key-row="letters"
+          data-continuation={row.continuation || undefined}
+        >
           {row.util && keyboardMode === 'letters' && (
             <button
               onPointerDown={handleShiftDown}
@@ -360,7 +511,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
             </button>
           )}
           {row.keys.map((key) => {
-            const displayChar = keyboardMode === 'letters' ? (showUpper ? key : key.toLowerCase()) : key;
+            const displayChar = keyboardMode === 'letters' ? (showUpper ? key : lowerKeyboardKey(key, language)) : key;
             return (
               <button
                 key={key}
@@ -385,7 +536,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       ))}
 
 
-      <div className="flex gap-[1px] flex-1" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div data-key-row="controls" className="flex gap-[1px] flex-1" style={{ paddingBottom: 'var(--aac-safe-area-bottom)' }}>
         <button onClick={() => { tapFeedback(); toggleKeyboardMode(); }} aria-label="Switch keyboard mode" data-action="mode" className={`${kc} ${wordSize} min-w-[clamp(3rem,7vw,5rem)] px-[clamp(0.5rem,0.8vw,0.75rem)]`}>
           {keyboardMode === 'letters' ? '123' : keyboardMode === 'numbers' ? '#+=' : 'ABC'}
         </button>
@@ -402,8 +553,8 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
         )}
         <button onClick={handleSpace} aria-label={t('space')} data-action="space" className={`${kc} ${wordSize} flex-[6]`}>{t('space')}</button>
         <button onClick={() => handleKey('.')} aria-label="." data-key="." data-display="." className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>.</button>
-        <button onClick={() => handleKey(',')} aria-label="," data-key="," data-display="," className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>,</button>
-        <button onClick={() => handleKey('?')} aria-label="?" data-key="?" data-display="?" className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>?</button>
+        <button onClick={() => handleKey(punctuation.comma)} aria-label={punctuation.comma} data-key={punctuation.comma} data-display={punctuation.comma} className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>{punctuation.comma}</button>
+        <button onClick={() => handleKey(punctuation.question)} aria-label={punctuation.question} data-key={punctuation.question} data-display={punctuation.question} className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>{punctuation.question}</button>
         <button
           onClick={handleSpeak}
           aria-label={browserMode ? 'Go' : t('speak')}

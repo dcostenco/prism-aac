@@ -551,10 +551,14 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
   }, [deleteLastWord]);
 
   const currentTone = TONE_OPTIONS.find(opt => opt.id === activeTone);
+  const hasVisibleMessageContent = Boolean(
+    text.trim() || translated?.trim() || suggestion?.trim(),
+  );
 
   return (
     <div
       data-scan-group="message-bar"
+      data-content-state={hasVisibleMessageContent ? 'populated' : 'empty'}
       className={`flex items-center gap-[clamp(0.2rem,0.4vw,0.4rem)] mx-1 my-[1px] surface-bar rounded-xl px-[clamp(0.4rem,0.6vw,0.75rem)] shrink-0 relative border border-theme ${
         compact ? 'py-0' : 'py-[clamp(0.3rem,0.6svh,0.6rem)]'
       }`}
@@ -593,12 +597,13 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
           <span className={`text-[clamp(8px,0.8vw,11px)] mt-0.5 ${toneMode === 'auto' ? '' : 'text-muted'}`}>{t('tone')}</span>
         </button>
 
-      <div className={`flex-1 flex flex-col justify-center overflow-hidden ${
+      <div data-testid="message-content" className={`flex-1 flex flex-col justify-center overflow-hidden ${
           isMessagingMode
             ? 'min-h-[clamp(96px,18svh,144px)]'
             : 'min-h-[clamp(72px,13svh,108px)]'
         }`}>
         <div
+          data-testid="message-text"
           className={`text-[clamp(1rem,2.5vw,1.5rem)] leading-snug break-words text-primary whitespace-normal ${
             isMessagingMode
               ? 'line-clamp-4 min-h-[5em]'
@@ -608,12 +613,18 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
           aria-live="polite"
           aria-label={t('message_text')}
         >
-          {/* Empty state: render nothing instead of a "Type here..."
-              placeholder — on narrow viewports it clipped to "Typ" /
-              "Type" which looked like a render bug (user report
-              Image #26 2026-05-08). The Auto / Tone / Speak / ⌫
-              buttons frame the input area clearly enough on their
-              own; the placeholder was redundant noise. */}
+          {!text && (
+            <span
+              data-testid="message-empty-prompt"
+              className="aac-composer-empty-prompt"
+              aria-hidden="true"
+            >
+              <span className="aac-composer-caret" aria-hidden="true" />
+              <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                {t('type_here')}
+              </span>
+            </span>
+          )}
           {text && <ColoredText text={text} activeWordIndex={activeWordIndex} />}
         </div>
         {translated && (

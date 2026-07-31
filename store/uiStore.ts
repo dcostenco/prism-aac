@@ -87,10 +87,25 @@ let alertTimer: ReturnType<typeof setTimeout> | null = null;
 // concurrent timers, each clearing the status independently.
 let alertStatusTimer: ReturnType<typeof setTimeout> | null = null;
 
+// Upgrade the legacy three-state layout into two explicit modes. A saved
+// maximized keyboard is Typing; an explicitly closed keyboard is Picture.
+// The old default (open + not maximized) was the unusable mixed state, so it
+// upgrades to Typing to preserve immediate keyboard access for existing users.
+const initialCategoryTypingMode = (() => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const open = localStorage.getItem('prism-cat-kb-open');
+    const maximized = localStorage.getItem('prism-kb-max');
+    return maximized === 'true' || open !== 'false';
+  } catch {
+    return true;
+  }
+})();
+
 export const useUIStore = create<UIState>()((set) => ({
   sidePanel: 'none',
-  categoryKeyboardOpen: typeof window !== 'undefined' ? localStorage.getItem('prism-cat-kb-open') !== 'false' : true,
-  keyboardMaximized: typeof window !== 'undefined' ? localStorage.getItem('prism-kb-max') === 'true' : false,
+  categoryKeyboardOpen: initialCategoryTypingMode,
+  keyboardMaximized: initialCategoryTypingMode,
   activeCategoryId: null,
   categoryPath: [],
   activeContactId: null,
@@ -144,7 +159,7 @@ export const useUIStore = create<UIState>()((set) => ({
     // falls back to opening aac-chat with no pre-selected contact.
     let contacts: Array<{ id: string; recipientId?: string; name?: string }> = [];
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { useContactsStore } = require('@/store/contactsStore') as { useContactsStore: { getState: () => { contacts: Array<{ id: string; recipientId?: string; name?: string }> } } };
       const state = useContactsStore.getState().contacts;
       if (Array.isArray(state)) contacts = state;
@@ -175,31 +190,20 @@ export const useUIStore = create<UIState>()((set) => ({
     return { sidePanel: panelId as ModulePanelView };
   }),
   toggleCategoryKeyboard: () => set((s) => {
-    const next = !s.categoryKeyboardOpen;
-    // In phone landscape (height < 500), auto-maximize: there's not enough
-    // vertical space for grid + keyboard drawer side-by-side. The user either
-    // sees pictures (keyboard off) or types (keyboard maximized).
-    const landscape = typeof window !== 'undefined'
-      && window.matchMedia('(orientation: landscape)').matches
-      && window.innerHeight < 500;
-    const autoMax = next && landscape;
+    const next = !(s.categoryKeyboardOpen && s.keyboardMaximized);
     try {
       localStorage.setItem('prism-cat-kb-open', String(next));
-      // Opening in landscape: auto-maximize. Closing: always clear kbMax
-      // to prevent the desync (kbMax=true, catKbOpen=false).
-      localStorage.setItem('prism-kb-max', String(autoMax));
+      localStorage.setItem('prism-kb-max', String(next));
     } catch {}
-    return autoMax
-      ? { categoryKeyboardOpen: true, keyboardMaximized: true }
-      : { categoryKeyboardOpen: next, keyboardMaximized: next ? s.keyboardMaximized : false };
+    return { categoryKeyboardOpen: next, keyboardMaximized: next };
   }),
   toggleKeyboardMaximized: () => set((s) => {
-    const next = !s.keyboardMaximized;
+    const next = !(s.categoryKeyboardOpen && s.keyboardMaximized);
     try {
       localStorage.setItem('prism-kb-max', String(next));
-      localStorage.setItem('prism-cat-kb-open', 'true');
+      localStorage.setItem('prism-cat-kb-open', String(next));
     } catch {}
-    return { keyboardMaximized: next, categoryKeyboardOpen: true };
+    return { keyboardMaximized: next, categoryKeyboardOpen: next };
   }),
   cycleKeyboardMode: () => set((s) => {
     // Two clean states: keyboard-only (maximized) ↔ picture-only (both hidden).
@@ -222,10 +226,7 @@ export const useUIStore = create<UIState>()((set) => ({
     } catch {}
     return { keyboardMaximized: true, categoryKeyboardOpen: true };
   }),
-  closeSidePanel: () => {
-    try { localStorage.setItem('prism-cat-kb-open', 'true'); } catch {}
-    set({ sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null, categoryKeyboardOpen: true });
-  },
+  closeSidePanel: () => set({ sidePanel: 'none', activeCategoryId: null, categoryPath: [], activeSequenceId: null }),
   selectCategory: (id) => set({ sidePanel: 'category-detail', activeCategoryId: id, categoryPath: [id] }),
   drillIntoCategory: (id) => set((s) => {
     if (typeof id !== 'string' || !id || id.length > 64) return s;

@@ -16,7 +16,7 @@ interface Props {
   compact?: boolean;
 }
 
-export default function PhraseTile({ phrase, englishPhrase, customImageUrl, className, style, onClick, ariaLabel, compact }: Props) {
+export default function PhraseTile({ phrase, englishPhrase, customImageUrl, className, style, onClick, ariaLabel }: Props) {
   const language = useSettingsStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const pictureMode = pictureModeForProfile(profile);
@@ -42,7 +42,8 @@ export default function PhraseTile({ phrase, englishPhrase, customImageUrl, clas
       ref={elementRef}
       onClick={onClick}
       aria-label={ariaLabel ?? phrase}
-      className={className}
+      data-testid="phrase-tile-card"
+      className={`aac-phrase-tile ${className ?? ''}`}
       style={{
         border: '2px solid var(--border-strong, #000)',
         display: 'flex',
@@ -51,7 +52,7 @@ export default function PhraseTile({ phrase, englishPhrase, customImageUrl, clas
         ...style,
       }}
     >
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface, white)', borderRadius: '8px 8px 0 0', overflow: 'hidden', minHeight: 0 }}>
+      <div className="aac-tile-icon" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface, white)', borderRadius: '8px 8px 0 0', overflow: 'hidden', minHeight: 0 }}>
         {iconUrl && (
           <img
             src={iconUrl}
@@ -63,7 +64,11 @@ export default function PhraseTile({ phrase, englishPhrase, customImageUrl, clas
           />
         )}
       </div>
-      <div style={{ flexShrink: 0, textAlign: 'center', fontWeight: 'bold', padding: '2px 4px', borderTop: '1px solid rgba(0,0,0,0.2)', fontSize: 'clamp(0.65rem, 1.5svh, 1rem)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div
+        data-testid="phrase-tile-label"
+        className="aac-tile-label aac-phrase-label"
+        style={{ borderTop: '1px solid rgba(0,0,0,0.2)' }}
+      >
         {phrase}
       </div>
     </button>

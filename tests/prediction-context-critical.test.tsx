@@ -511,7 +511,11 @@ describe('critical prediction context and selection identity', () => {
       timeout: 2_500,
     });
     expect(memoryMocks.fetch.mock.calls[1][1]).toBe('es');
-    expect(await screen.findByRole('button', { name: 'Predict: ayuda' }))
+    // Core labels are sentence-cased ("Ayuda") while an advisory memory
+    // result may preserve lowercase ("ayuda"). Case is presentation only;
+    // this checkpoint verifies that the active tile is Spanish before the
+    // intentionally late English response resolves.
+    expect(await screen.findByRole('button', { name: /Predict: ayuda/i }))
       .toBeVisible();
 
     await act(async () => {
