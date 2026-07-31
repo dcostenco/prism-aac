@@ -1,10 +1,23 @@
-import { SupportedLanguage } from '@/engine/i18n';
+import type { SupportedLanguage } from '@/engine/i18n';
 
 const QWERTY: string[][] = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
   ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
 ];
+
+// Chinese composition requires an operating-system IME (Pinyin, Zhuyin,
+// Cangjie, Cantonese/Jyutping, handwriting, or another user-selected method).
+// A custom QWERTY grid cannot synthesize trusted candidate selection; it only
+// commits raw Latin letters. Keyboard.tsx uses this gate to render a native
+// composition surface in AAC mode while retaining QWERTY for URL entry.
+const NATIVE_IME_LANGUAGES = new Set<SupportedLanguage>([
+  'zh', 'zh-Hans', 'zh-Hant', 'zh-HK',
+]);
+
+export function usesNativeImeKeyboard(lang: SupportedLanguage): boolean {
+  return NATIVE_IME_LANGUAGES.has(lang);
+}
 
 const LAYOUTS_BY_LANG: Partial<Record<SupportedLanguage, string[][]>> = {
   ro: [
@@ -122,26 +135,6 @@ const LAYOUTS_BY_LANG: Partial<Record<SupportedLanguage, string[][]>> = {
     ['ㅁ', 'ㄴ', 'ㅇ', 'ㄹ', 'ㅎ', 'ㅗ', 'ㅓ', 'ㅏ', 'ㅣ'],
     ['ㅋ', 'ㅌ', 'ㅊ', 'ㅍ', 'ㅠ', 'ㅜ', 'ㅡ'],
   ],
-  zh: [
-    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-    ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
-  ],
-  'zh-Hans': [
-    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-    ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
-  ],
-  'zh-Hant': [
-    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-    ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
-  ],
-  'zh-HK': [
-    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-    ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
-  ],
   // Swahili is written in plain Latin with no diacritics in standard
   // orthography — QWERTY unchanged. Listed explicitly rather than left to
   // the fallback so the language picker and this table stay in sync.
@@ -246,13 +239,10 @@ export const LETTERS_ROWS = QWERTY;
 export const UTIL_ROW_INDEX = 2;
 
 /**
- * Only the util row reflows. It gives up roughly 80px to Shift and Backspace,
- * leaving ~300px on a 390px phone, so it is the row that actually overflows —
- * Romanian packs 12 keys into it (~25px each, clipped), Italian 13. The rows
- * above keep the full width and fit 12 at ~32px, which is why English portrait
- * has always been fine and should not be disturbed.
- *
- * Not a Romanian special case: ro/it/uk/ar all exceed the threshold.
+ * The util row gives up roughly 80px to Shift and Backspace. Non-Latin
+ * layouts retain their authored rows and split this row only when required.
+ * Three-row Latin layouts receive a separate locale-letter row below, keeping
+ * their familiar basic-Latin rows and making every target materially wider.
  */
 /**
  * 10 keys still fit the util row (~31px each) and must not wrap: Japanese
@@ -262,6 +252,18 @@ export const UTIL_ROW_INDEX = 2;
 export const UTIL_ROW_OVERFLOW_KEYS = 10;
 /** Base consonant row kept in place; the surplus wraps beneath it. */
 export const UTIL_ROW_BASE_KEYS = 7;
+/** Maximum physical targets in a narrow three-row script keyboard row. */
+export const NARROW_ROW_TARGETS = 10;
+
+/**
+ * A narrow AAC keyboard keeps the familiar basic-Latin rows and gives the
+ * locale-specific letters their own reachable row. This is derived from the
+ * authored layout instead of a per-language map: Turkish, Romanian, German,
+ * French, Spanish, Portuguese, and Italian all benefit without duplicating
+ * their alphabets here.
+ */
+const BASIC_LATIN_KEY = /^[A-Z]+$/;
+const LATIN_SCRIPT_KEY = /^\p{Script=Latin}+$/u;
 
 export interface KeyboardRow {
   keys: string[];
@@ -272,16 +274,78 @@ export interface KeyboardRow {
 }
 
 /**
- * Wrap rows that cannot fit a narrow screen onto a continuation row beneath.
+ * Reflow rows that cannot fit a narrow screen onto a continuation row beneath.
  *
- * The surplus moves down rather than every key shrinking to fit, because the
- * users who need this most have motor impairments and a 22px key is a mis-tap.
- * Shift and Backspace stay with the head of a split row, so muscle memory for
- * their position is unaffected.
+ * Locale-specific Latin letters move together in their original encounter
+ * order, leaving the base QWERTY/AZERTY rows intact. Three-row non-Latin
+ * layouts keep ordered row prefixes and collect their surplus below. Shift
+ * and Backspace stay on row three.
  */
+export function isLatinKeyboardLayout(rows: string[][]): boolean {
+  return rows.length === 3
+    && rows.flat().every((key) => LATIN_SCRIPT_KEY.test(key));
+}
+
 export function buildKeyboardRows(rows: string[][], narrow: boolean): KeyboardRow[] {
+  const isLatinLayout = isLatinKeyboardLayout(rows);
+  const localizedLatinKeys = isLatinLayout
+    ? rows.flatMap((keys) => keys.filter((key) => !BASIC_LATIN_KEY.test(key)))
+    : [];
+
+  if (narrow && localizedLatinKeys.length > 0) {
+    const baseRows = rows.map((keys, index): KeyboardRow => ({
+      keys: keys.filter((key) => BASIC_LATIN_KEY.test(key)),
+      util: index === UTIL_ROW_INDEX,
+      continuation: false,
+    }));
+
+    return [
+      ...baseRows,
+      {
+        keys: localizedLatinKeys,
+        util: false,
+        continuation: true,
+      },
+    ];
+  }
+
+  /* Three-row non-Latin alphabets often author 11 letters per row. Keeping
+     those rows on a 390px screen forces the whole keyboard into a compressed
+     three-row shell. Retain each row's head in place and collect only its
+     ordered surplus into one continuation row. Shift and Backspace count as
+     physical targets, so the util row keeps seven letters. This preserves
+     every character and its encounter order while allowing the resulting
+     four-row keyboard to own more height than the prediction panel. */
+  if (narrow && !isLatinLayout && rows.length === 3) {
+    const continuationKeys: string[] = [];
+    const baseRows = rows.map((keys, index): KeyboardRow => {
+      const util = index === UTIL_ROW_INDEX;
+      const maximumKeys = util ? UTIL_ROW_BASE_KEYS : NARROW_ROW_TARGETS;
+      const physicalTargets = keys.length + (util ? 2 : 0);
+
+      if (physicalTargets <= NARROW_ROW_TARGETS) {
+        return { keys, util, continuation: false };
+      }
+
+      continuationKeys.push(...keys.slice(maximumKeys));
+      return {
+        keys: keys.slice(0, maximumKeys),
+        util,
+        continuation: false,
+      };
+    });
+
+    if (continuationKeys.length > 0) {
+      return [
+        ...baseRows,
+        { keys: continuationKeys, util: false, continuation: true },
+      ];
+    }
+  }
+
   return rows.flatMap((keys, index): KeyboardRow[] => {
     const util = index === UTIL_ROW_INDEX;
+
     if (!narrow || !util || keys.length <= UTIL_ROW_OVERFLOW_KEYS) {
       return [{ keys, util, continuation: false }];
     }
@@ -304,12 +368,26 @@ export const SYMBOLS_ROWS = [
   ['.', ',', '?', '!', "'"],
 ];
 
+export function getLocalizedPunctuation(lang: SupportedLanguage): { comma: string; question: string } {
+  return lang === 'ar'
+    ? { comma: '،', question: '؟' }
+    : { comma: ',', question: '?' };
+}
+
+export function getSymbolRows(lang: SupportedLanguage): string[][] {
+  const punctuation = getLocalizedPunctuation(lang);
+  return SYMBOLS_ROWS.map((row) => row.map((key) => {
+    if (key === ',') return punctuation.comma;
+    if (key === '?') return punctuation.question;
+    return key;
+  }));
+}
+
 // AAC core vocabulary lookup — see constants/aacCore/index.ts.
 // Replaces the old hand-curated 5-word PREDICTIONS_BY_LANG list with a
 // research-grounded set: Universal Core 36 (Geist, Erickson et al., ATIA
-// 2021) localized via Cboard's GPLv3 translation tables, with a small
-// corrections overlay for known Cboard data-quality bugs (cited in
-// scripts/aac_core_corrections.json).
+// 2021), keyed by the canonical phrase IDs so a missing locale value cannot
+// shift later concepts.
 import { getAacCoreFor } from '@/constants/aacCore';
 
 // Number of fallback predictions surfaced when the engine can't fill all

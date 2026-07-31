@@ -1,0 +1,6218 @@
+{
+  "generatedFrom": "constants/phraseTranslations.ts#zh",
+  "generator": "opencc-js@1.4.1",
+  "coverage": {
+    "zh-Hant": "orthographic-variant-of-standard-written-chinese",
+    "zh-HK": "orthographic-variant-of-standard-written-chinese"
+  },
+  "translations": {
+    "cw-i": {
+      "zh-Hant": "我",
+      "zh-HK": "我"
+    },
+    "cw-you": {
+      "zh-Hant": "你",
+      "zh-HK": "你"
+    },
+    "cw-he": {
+      "zh-Hant": "他",
+      "zh-HK": "他"
+    },
+    "cw-she": {
+      "zh-Hant": "她",
+      "zh-HK": "她"
+    },
+    "cw-it": {
+      "zh-Hant": "它",
+      "zh-HK": "它"
+    },
+    "cw-we": {
+      "zh-Hant": "我們",
+      "zh-HK": "我們"
+    },
+    "cw-they": {
+      "zh-Hant": "他們",
+      "zh-HK": "他們"
+    },
+    "cw-me": {
+      "zh-Hant": "我(賓)",
+      "zh-HK": "我(賓)"
+    },
+    "cw-my": {
+      "zh-Hant": "我的",
+      "zh-HK": "我的"
+    },
+    "cw-your": {
+      "zh-Hant": "你的",
+      "zh-HK": "你的"
+    },
+    "cw-his": {
+      "zh-Hant": "他的",
+      "zh-HK": "他的"
+    },
+    "cw-her": {
+      "zh-Hant": "她的",
+      "zh-HK": "她的"
+    },
+    "cw-this": {
+      "zh-Hant": "這個",
+      "zh-HK": "這個"
+    },
+    "cw-that": {
+      "zh-Hant": "那個",
+      "zh-HK": "那個"
+    },
+    "cw-us": {
+      "zh-Hant": "我們",
+      "zh-HK": "我們"
+    },
+    "cw-them": {
+      "zh-Hant": "他們",
+      "zh-HK": "他們"
+    },
+    "cw-mine": {
+      "zh-Hant": "我的",
+      "zh-HK": "我的"
+    },
+    "cw-yours": {
+      "zh-Hant": "你的",
+      "zh-HK": "你的"
+    },
+    "cw-theirs": {
+      "zh-Hant": "他們的",
+      "zh-HK": "他們的"
+    },
+    "cw-ours": {
+      "zh-Hant": "我們的",
+      "zh-HK": "我們的"
+    },
+    "cw-hers": {
+      "zh-Hant": "她的",
+      "zh-HK": "她的"
+    },
+    "cw-myself": {
+      "zh-Hant": "我自己",
+      "zh-HK": "我自己"
+    },
+    "cw-yourself": {
+      "zh-Hant": "你自己",
+      "zh-HK": "你自己"
+    },
+    "cw-themselves": {
+      "zh-Hant": "他們自己",
+      "zh-HK": "他們自己"
+    },
+    "cw-ourselves": {
+      "zh-Hant": "我們自己",
+      "zh-HK": "我們自己"
+    },
+    "cw-each-other": {
+      "zh-Hant": "互相",
+      "zh-HK": "互相"
+    },
+    "cw-anyone": {
+      "zh-Hant": "任何人",
+      "zh-HK": "任何人"
+    },
+    "cw-someone": {
+      "zh-Hant": "有人",
+      "zh-HK": "有人"
+    },
+    "cw-everyone": {
+      "zh-Hant": "所有人",
+      "zh-HK": "所有人"
+    },
+    "cw-no-one": {
+      "zh-Hant": "沒人",
+      "zh-HK": "沒人"
+    },
+    "cw-nobody": {
+      "zh-Hant": "沒人",
+      "zh-HK": "沒人"
+    },
+    "cw-whose": {
+      "zh-Hant": "誰的",
+      "zh-HK": "誰的"
+    },
+    "cw-want": {
+      "zh-Hant": "要",
+      "zh-HK": "要"
+    },
+    "cw-want-to": {
+      "zh-Hant": "我想",
+      "zh-HK": "我想"
+    },
+    "cw-like": {
+      "zh-Hant": "喜歡",
+      "zh-HK": "喜歡"
+    },
+    "cw-have": {
+      "zh-Hant": "有",
+      "zh-HK": "有"
+    },
+    "cw-do": {
+      "zh-Hant": "做",
+      "zh-HK": "做"
+    },
+    "cw-can": {
+      "zh-Hant": "能",
+      "zh-HK": "能"
+    },
+    "cw-need": {
+      "zh-Hant": "需要",
+      "zh-HK": "需要"
+    },
+    "cw-know": {
+      "zh-Hant": "知道",
+      "zh-HK": "知道"
+    },
+    "cw-see": {
+      "zh-Hant": "看見",
+      "zh-HK": "看見"
+    },
+    "cw-think": {
+      "zh-Hant": "想",
+      "zh-HK": "想"
+    },
+    "cw-feel": {
+      "zh-Hant": "感覺",
+      "zh-HK": "感覺"
+    },
+    "cw-say": {
+      "zh-Hant": "說",
+      "zh-HK": "説"
+    },
+    "cw-tell": {
+      "zh-Hant": "告訴",
+      "zh-HK": "告訴"
+    },
+    "cw-try": {
+      "zh-Hant": "試試",
+      "zh-HK": "試試"
+    },
+    "cw-let": {
+      "zh-Hant": "讓",
+      "zh-HK": "讓"
+    },
+    "cw-help": {
+      "zh-Hant": "幫",
+      "zh-HK": "幫"
+    },
+    "cw-make": {
+      "zh-Hant": "做",
+      "zh-HK": "做"
+    },
+    "cw-come": {
+      "zh-Hant": "來",
+      "zh-HK": "來"
+    },
+    "cw-go-core": {
+      "zh-Hant": "去",
+      "zh-HK": "去"
+    },
+    "cw-get-core": {
+      "zh-Hant": "拿",
+      "zh-HK": "拿"
+    },
+    "cw-put-core": {
+      "zh-Hant": "放",
+      "zh-HK": "放"
+    },
+    "cw-wait": {
+      "zh-Hant": "等等",
+      "zh-HK": "等等"
+    },
+    "cw-stop": {
+      "zh-Hant": "停",
+      "zh-HK": "停"
+    },
+    "cw-start": {
+      "zh-Hant": "開始",
+      "zh-HK": "開始"
+    },
+    "cw-finish": {
+      "zh-Hant": "做完了",
+      "zh-HK": "做完了"
+    },
+    "cw-begin": {
+      "zh-Hant": "開始",
+      "zh-HK": "開始"
+    },
+    "cw-end": {
+      "zh-Hant": "結束",
+      "zh-HK": "結束"
+    },
+    "cw-stay": {
+      "zh-Hant": "留下來",
+      "zh-HK": "留下來"
+    },
+    "cw-leave": {
+      "zh-Hant": "離開",
+      "zh-HK": "離開"
+    },
+    "cw-look": {
+      "zh-Hant": "看",
+      "zh-HK": "看"
+    },
+    "cw-watch": {
+      "zh-Hant": "看",
+      "zh-HK": "看"
+    },
+    "cw-hear": {
+      "zh-Hant": "聽到",
+      "zh-HK": "聽到"
+    },
+    "cw-listen": {
+      "zh-Hant": "聽",
+      "zh-HK": "聽"
+    },
+    "cw-smell": {
+      "zh-Hant": "聞",
+      "zh-HK": "聞"
+    },
+    "cw-taste": {
+      "zh-Hant": "嘗",
+      "zh-HK": "嘗"
+    },
+    "cw-touch": {
+      "zh-Hant": "摸",
+      "zh-HK": "摸"
+    },
+    "cw-hold": {
+      "zh-Hant": "拿",
+      "zh-HK": "拿"
+    },
+    "cw-grab": {
+      "zh-Hant": "抓",
+      "zh-HK": "抓"
+    },
+    "cw-push": {
+      "zh-Hant": "推",
+      "zh-HK": "推"
+    },
+    "cw-pull": {
+      "zh-Hant": "拉",
+      "zh-HK": "拉"
+    },
+    "cw-lift": {
+      "zh-Hant": "抬",
+      "zh-HK": "抬"
+    },
+    "cw-carry": {
+      "zh-Hant": "抱",
+      "zh-HK": "抱"
+    },
+    "cw-drop": {
+      "zh-Hant": "掉落",
+      "zh-HK": "掉落"
+    },
+    "cw-throw": {
+      "zh-Hant": "扔",
+      "zh-HK": "扔"
+    },
+    "cw-catch": {
+      "zh-Hant": "接住",
+      "zh-HK": "接住"
+    },
+    "cw-open": {
+      "zh-Hant": "打開",
+      "zh-HK": "打開"
+    },
+    "cw-close": {
+      "zh-Hant": "關上",
+      "zh-HK": "關上"
+    },
+    "cw-turn": {
+      "zh-Hant": "轉",
+      "zh-HK": "轉"
+    },
+    "cw-move": {
+      "zh-Hant": "動",
+      "zh-HK": "動"
+    },
+    "cw-sit": {
+      "zh-Hant": "坐",
+      "zh-HK": "坐"
+    },
+    "cw-stand": {
+      "zh-Hant": "站",
+      "zh-HK": "站"
+    },
+    "cw-walk": {
+      "zh-Hant": "走",
+      "zh-HK": "走"
+    },
+    "cw-run": {
+      "zh-Hant": "跑",
+      "zh-HK": "跑"
+    },
+    "cw-jump": {
+      "zh-Hant": "跳",
+      "zh-HK": "跳"
+    },
+    "cw-climb": {
+      "zh-Hant": "爬",
+      "zh-HK": "爬"
+    },
+    "cw-fall": {
+      "zh-Hant": "摔倒",
+      "zh-HK": "摔倒"
+    },
+    "cw-rest": {
+      "zh-Hant": "休息",
+      "zh-HK": "休息"
+    },
+    "cw-sleep": {
+      "zh-Hant": "睡覺",
+      "zh-HK": "睡覺"
+    },
+    "cw-wake": {
+      "zh-Hant": "醒來",
+      "zh-HK": "醒來"
+    },
+    "cw-dream": {
+      "zh-Hant": "做夢",
+      "zh-HK": "做夢"
+    },
+    "cw-eat": {
+      "zh-Hant": "吃",
+      "zh-HK": "吃"
+    },
+    "cw-drink": {
+      "zh-Hant": "喝",
+      "zh-HK": "喝"
+    },
+    "cw-bite": {
+      "zh-Hant": "咬",
+      "zh-HK": "咬"
+    },
+    "cw-chew": {
+      "zh-Hant": "嚼",
+      "zh-HK": "嚼"
+    },
+    "cw-swallow": {
+      "zh-Hant": "咽",
+      "zh-HK": "咽"
+    },
+    "cw-spit": {
+      "zh-Hant": "吐",
+      "zh-HK": "吐"
+    },
+    "cw-talk": {
+      "zh-Hant": "說話",
+      "zh-HK": "説話"
+    },
+    "cw-speak": {
+      "zh-Hant": "說",
+      "zh-HK": "説"
+    },
+    "cw-whisper": {
+      "zh-Hant": "耳語",
+      "zh-HK": "耳語"
+    },
+    "cw-shout": {
+      "zh-Hant": "喊",
+      "zh-HK": "喊"
+    },
+    "cw-sing": {
+      "zh-Hant": "唱歌",
+      "zh-HK": "唱歌"
+    },
+    "cw-laugh": {
+      "zh-Hant": "笑",
+      "zh-HK": "笑"
+    },
+    "cw-cry": {
+      "zh-Hant": "哭",
+      "zh-HK": "哭"
+    },
+    "cw-smile": {
+      "zh-Hant": "微笑",
+      "zh-HK": "微笑"
+    },
+    "cw-read": {
+      "zh-Hant": "讀",
+      "zh-HK": "讀"
+    },
+    "cw-write": {
+      "zh-Hant": "寫",
+      "zh-HK": "寫"
+    },
+    "cw-draw": {
+      "zh-Hant": "畫",
+      "zh-HK": "畫"
+    },
+    "cw-paint": {
+      "zh-Hant": "畫畫",
+      "zh-HK": "畫畫"
+    },
+    "cw-color": {
+      "zh-Hant": "塗色",
+      "zh-HK": "塗色"
+    },
+    "cw-cut": {
+      "zh-Hant": "剪",
+      "zh-HK": "剪"
+    },
+    "cw-glue": {
+      "zh-Hant": "粘",
+      "zh-HK": "粘"
+    },
+    "cw-build": {
+      "zh-Hant": "搭",
+      "zh-HK": "搭"
+    },
+    "cw-break": {
+      "zh-Hant": "弄壞",
+      "zh-HK": "弄壞"
+    },
+    "cw-fix": {
+      "zh-Hant": "修",
+      "zh-HK": "修"
+    },
+    "cw-clean": {
+      "zh-Hant": "打掃",
+      "zh-HK": "打掃"
+    },
+    "cw-wash": {
+      "zh-Hant": "洗",
+      "zh-HK": "洗"
+    },
+    "cw-find": {
+      "zh-Hant": "找到",
+      "zh-HK": "找到"
+    },
+    "cw-look-for": {
+      "zh-Hant": "找",
+      "zh-HK": "找"
+    },
+    "cw-lose": {
+      "zh-Hant": "弄丟",
+      "zh-HK": "弄丟"
+    },
+    "cw-save": {
+      "zh-Hant": "存",
+      "zh-HK": "存"
+    },
+    "cw-keep": {
+      "zh-Hant": "留著",
+      "zh-HK": "留着"
+    },
+    "cw-buy": {
+      "zh-Hant": "買",
+      "zh-HK": "買"
+    },
+    "cw-sell": {
+      "zh-Hant": "賣",
+      "zh-HK": "賣"
+    },
+    "cw-pay": {
+      "zh-Hant": "付錢",
+      "zh-HK": "付錢"
+    },
+    "cw-trade": {
+      "zh-Hant": "交換",
+      "zh-HK": "交換"
+    },
+    "cw-send": {
+      "zh-Hant": "發",
+      "zh-HK": "發"
+    },
+    "cw-bring": {
+      "zh-Hant": "帶過來",
+      "zh-HK": "帶過來"
+    },
+    "cw-take": {
+      "zh-Hant": "拿走",
+      "zh-HK": "拿走"
+    },
+    "cw-give": {
+      "zh-Hant": "給",
+      "zh-HK": "給"
+    },
+    "cw-share": {
+      "zh-Hant": "分享",
+      "zh-HK": "分享"
+    },
+    "cw-ask": {
+      "zh-Hant": "問",
+      "zh-HK": "問"
+    },
+    "cw-answer": {
+      "zh-Hant": "回答",
+      "zh-HK": "回答"
+    },
+    "cw-show": {
+      "zh-Hant": "展示",
+      "zh-HK": "展示"
+    },
+    "cw-hide": {
+      "zh-Hant": "藏起來",
+      "zh-HK": "藏起來"
+    },
+    "cw-learn": {
+      "zh-Hant": "學",
+      "zh-HK": "學"
+    },
+    "cw-teach": {
+      "zh-Hant": "教",
+      "zh-HK": "教"
+    },
+    "cw-study": {
+      "zh-Hant": "學習",
+      "zh-HK": "學習"
+    },
+    "cw-practice": {
+      "zh-Hant": "練習",
+      "zh-HK": "練習"
+    },
+    "cw-work": {
+      "zh-Hant": "工作",
+      "zh-HK": "工作"
+    },
+    "cw-play": {
+      "zh-Hant": "玩",
+      "zh-HK": "玩"
+    },
+    "cw-win": {
+      "zh-Hant": "贏",
+      "zh-HK": "贏"
+    },
+    "cw-try-again": {
+      "zh-Hant": "再試一次",
+      "zh-HK": "再試一次"
+    },
+    "cw-hug": {
+      "zh-Hant": "抱",
+      "zh-HK": "抱"
+    },
+    "cw-kiss": {
+      "zh-Hant": "親",
+      "zh-HK": "親"
+    },
+    "cw-pet": {
+      "zh-Hant": "摸摸",
+      "zh-HK": "摸摸"
+    },
+    "cw-tickle": {
+      "zh-Hant": "撓癢癢",
+      "zh-HK": "撓癢癢"
+    },
+    "cw-wait-for-me": {
+      "zh-Hant": "等等我",
+      "zh-HK": "等等我"
+    },
+    "cw-help-me": {
+      "zh-Hant": "幫幫我",
+      "zh-HK": "幫幫我"
+    },
+    "cw-show-me": {
+      "zh-Hant": "給我看",
+      "zh-HK": "給我看"
+    },
+    "cw-tell-me": {
+      "zh-Hant": "告訴我",
+      "zh-HK": "告訴我"
+    },
+    "cw-stop-that": {
+      "zh-Hant": "停下",
+      "zh-HK": "停下"
+    },
+    "cw-don-t-do-that": {
+      "zh-Hant": "別那樣",
+      "zh-HK": "別那樣"
+    },
+    "cw-i-want-to": {
+      "zh-Hant": "我想",
+      "zh-HK": "我想"
+    },
+    "cw-i-do-not-want": {
+      "zh-Hant": "我不想",
+      "zh-HK": "我不想"
+    },
+    "cw-let-me-try": {
+      "zh-Hant": "讓我試試",
+      "zh-HK": "讓我試試"
+    },
+    "cw-let-me-see": {
+      "zh-Hant": "讓我看看",
+      "zh-HK": "讓我看看"
+    },
+    "cw-more": {
+      "zh-Hant": "更多",
+      "zh-HK": "更多"
+    },
+    "cw-not": {
+      "zh-Hant": "不",
+      "zh-HK": "不"
+    },
+    "cw-no-core": {
+      "zh-Hant": "不",
+      "zh-HK": "不"
+    },
+    "cw-yes-core": {
+      "zh-Hant": "是",
+      "zh-HK": "是"
+    },
+    "cw-all": {
+      "zh-Hant": "全部",
+      "zh-HK": "全部"
+    },
+    "cw-some": {
+      "zh-Hant": "一些",
+      "zh-HK": "一些"
+    },
+    "cw-other": {
+      "zh-Hant": "其他",
+      "zh-HK": "其他"
+    },
+    "cw-very": {
+      "zh-Hant": "很",
+      "zh-HK": "很"
+    },
+    "cw-here": {
+      "zh-Hant": "這裡",
+      "zh-HK": "這裏"
+    },
+    "cw-there": {
+      "zh-Hant": "那裡",
+      "zh-HK": "那裏"
+    },
+    "cw-up": {
+      "zh-Hant": "上",
+      "zh-HK": "上"
+    },
+    "cw-down": {
+      "zh-Hant": "下",
+      "zh-HK": "下"
+    },
+    "cw-in": {
+      "zh-Hant": "裡",
+      "zh-HK": "裏"
+    },
+    "cw-out": {
+      "zh-Hant": "外",
+      "zh-HK": "外"
+    },
+    "cw-on": {
+      "zh-Hant": "上面",
+      "zh-HK": "上面"
+    },
+    "cw-off": {
+      "zh-Hant": "關掉",
+      "zh-HK": "關掉"
+    },
+    "cw-done": {
+      "zh-Hant": "完了",
+      "zh-HK": "完了"
+    },
+    "cw-again": {
+      "zh-Hant": "再",
+      "zh-HK": "再"
+    },
+    "cw-too": {
+      "zh-Hant": "也",
+      "zh-HK": "也"
+    },
+    "cw-same-core": {
+      "zh-Hant": "一樣",
+      "zh-HK": "一樣"
+    },
+    "cw-little": {
+      "zh-Hant": "一點",
+      "zh-HK": "一點"
+    },
+    "cw-lots": {
+      "zh-Hant": "很多",
+      "zh-HK": "很多"
+    },
+    "cw-many": {
+      "zh-Hant": "許多",
+      "zh-HK": "許多"
+    },
+    "cw-few": {
+      "zh-Hant": "幾個",
+      "zh-HK": "幾個"
+    },
+    "cw-every": {
+      "zh-Hant": "每個",
+      "zh-HK": "每個"
+    },
+    "cw-any": {
+      "zh-Hant": "任何",
+      "zh-HK": "任何"
+    },
+    "cw-only": {
+      "zh-Hant": "只",
+      "zh-HK": "只"
+    },
+    "cw-just": {
+      "zh-Hant": "剛剛",
+      "zh-HK": "剛剛"
+    },
+    "cw-full": {
+      "zh-Hant": "滿",
+      "zh-HK": "滿"
+    },
+    "cw-empty": {
+      "zh-Hant": "空",
+      "zh-HK": "空"
+    },
+    "cw-open-2": {
+      "zh-Hant": "開著",
+      "zh-HK": "開着"
+    },
+    "cw-closed": {
+      "zh-Hant": "關著",
+      "zh-HK": "關着"
+    },
+    "cw-easy": {
+      "zh-Hant": "容易",
+      "zh-HK": "容易"
+    },
+    "cw-hard": {
+      "zh-Hant": "難",
+      "zh-HK": "難"
+    },
+    "cw-soft": {
+      "zh-Hant": "軟",
+      "zh-HK": "軟"
+    },
+    "cw-loud": {
+      "zh-Hant": "響",
+      "zh-HK": "響"
+    },
+    "cw-quiet": {
+      "zh-Hant": "安靜",
+      "zh-HK": "安靜"
+    },
+    "cw-bright": {
+      "zh-Hant": "亮",
+      "zh-HK": "亮"
+    },
+    "cw-dark": {
+      "zh-Hant": "暗",
+      "zh-HK": "暗"
+    },
+    "cw-heavy": {
+      "zh-Hant": "重",
+      "zh-HK": "重"
+    },
+    "cw-light": {
+      "zh-Hant": "輕",
+      "zh-HK": "輕"
+    },
+    "cw-above": {
+      "zh-Hant": "上面",
+      "zh-HK": "上面"
+    },
+    "cw-below": {
+      "zh-Hant": "下面",
+      "zh-HK": "下面"
+    },
+    "cw-beside": {
+      "zh-Hant": "旁邊",
+      "zh-HK": "旁邊"
+    },
+    "cw-between": {
+      "zh-Hant": "之間",
+      "zh-HK": "之間"
+    },
+    "cw-near": {
+      "zh-Hant": "附近",
+      "zh-HK": "附近"
+    },
+    "cw-far": {
+      "zh-Hant": "遠",
+      "zh-HK": "遠"
+    },
+    "cw-around": {
+      "zh-Hant": "周圍",
+      "zh-HK": "周圍"
+    },
+    "cw-through": {
+      "zh-Hant": "穿過",
+      "zh-HK": "穿過"
+    },
+    "cw-over": {
+      "zh-Hant": "越過",
+      "zh-HK": "越過"
+    },
+    "cw-under": {
+      "zh-Hant": "下面",
+      "zh-HK": "下面"
+    },
+    "cw-across": {
+      "zh-Hant": "對面",
+      "zh-HK": "對面"
+    },
+    "cw-behind": {
+      "zh-Hant": "後面",
+      "zh-HK": "後面"
+    },
+    "cw-ahead": {
+      "zh-Hant": "前面",
+      "zh-HK": "前面"
+    },
+    "cw-always": {
+      "zh-Hant": "總是",
+      "zh-HK": "總是"
+    },
+    "cw-never": {
+      "zh-Hant": "從不",
+      "zh-HK": "從不"
+    },
+    "cw-often": {
+      "zh-Hant": "經常",
+      "zh-HK": "經常"
+    },
+    "cw-sometimes": {
+      "zh-Hant": "有時",
+      "zh-HK": "有時"
+    },
+    "cw-maybe": {
+      "zh-Hant": "也許",
+      "zh-HK": "也許"
+    },
+    "cw-almost": {
+      "zh-Hant": "幾乎",
+      "zh-HK": "幾乎"
+    },
+    "cw-already": {
+      "zh-Hant": "已經",
+      "zh-HK": "已經"
+    },
+    "cw-still": {
+      "zh-Hant": "還",
+      "zh-HK": "還"
+    },
+    "cw-yet": {
+      "zh-Hant": "還沒",
+      "zh-HK": "還沒"
+    },
+    "cw-right-now": {
+      "zh-Hant": "現在馬上",
+      "zh-HK": "現在馬上"
+    },
+    "cw-right-here": {
+      "zh-Hant": "就在這裡",
+      "zh-HK": "就在這裏"
+    },
+    "cw-way-too-much": {
+      "zh-Hant": "太多了",
+      "zh-HK": "太多了"
+    },
+    "cw-not-enough": {
+      "zh-Hant": "不夠",
+      "zh-HK": "不夠"
+    },
+    "cw-is": {
+      "zh-Hant": "是",
+      "zh-HK": "是"
+    },
+    "cw-the": {
+      "zh-Hant": "-",
+      "zh-HK": "-"
+    },
+    "cw-a": {
+      "zh-Hant": "一個",
+      "zh-HK": "一個"
+    },
+    "cw-and": {
+      "zh-Hant": "和",
+      "zh-HK": "和"
+    },
+    "cw-but": {
+      "zh-Hant": "但是",
+      "zh-HK": "但是"
+    },
+    "cw-or": {
+      "zh-Hant": "或者",
+      "zh-HK": "或者"
+    },
+    "cw-to": {
+      "zh-Hant": "到",
+      "zh-HK": "到"
+    },
+    "cw-for": {
+      "zh-Hant": "為了",
+      "zh-HK": "為了"
+    },
+    "cw-with": {
+      "zh-Hant": "跟",
+      "zh-HK": "跟"
+    },
+    "cw-at": {
+      "zh-Hant": "在",
+      "zh-HK": "在"
+    },
+    "cw-of": {
+      "zh-Hant": "的",
+      "zh-HK": "的"
+    },
+    "cw-about": {
+      "zh-Hant": "關於",
+      "zh-HK": "關於"
+    },
+    "cw-because": {
+      "zh-Hant": "因為",
+      "zh-HK": "因為"
+    },
+    "cw-if": {
+      "zh-Hant": "如果",
+      "zh-HK": "如果"
+    },
+    "cw-when-core": {
+      "zh-Hant": "什麼時候",
+      "zh-HK": "什麼時候"
+    },
+    "cw-where-core": {
+      "zh-Hant": "哪裡",
+      "zh-HK": "哪裏"
+    },
+    "cw-by": {
+      "zh-Hant": "由",
+      "zh-HK": "由"
+    },
+    "cw-from": {
+      "zh-Hant": "從",
+      "zh-HK": "從"
+    },
+    "cw-since": {
+      "zh-Hant": "從…起",
+      "zh-HK": "從…起"
+    },
+    "cw-until": {
+      "zh-Hant": "直到",
+      "zh-HK": "直到"
+    },
+    "cw-into": {
+      "zh-Hant": "進入",
+      "zh-HK": "進入"
+    },
+    "cw-onto": {
+      "zh-Hant": "到…上",
+      "zh-HK": "到…上"
+    },
+    "cw-off-of": {
+      "zh-Hant": "離開",
+      "zh-HK": "離開"
+    },
+    "cw-away": {
+      "zh-Hant": "離開",
+      "zh-HK": "離開"
+    },
+    "cw-back": {
+      "zh-Hant": "回來",
+      "zh-HK": "回來"
+    },
+    "cw-beside-2": {
+      "zh-Hant": "在…旁邊",
+      "zh-HK": "在…旁邊"
+    },
+    "cw-past": {
+      "zh-Hant": "過了",
+      "zh-HK": "過了"
+    },
+    "cw-among": {
+      "zh-Hant": "在…中間",
+      "zh-HK": "在…中間"
+    },
+    "cw-during": {
+      "zh-Hant": "在…期間",
+      "zh-HK": "在…期間"
+    },
+    "cw-while": {
+      "zh-Hant": "當…的時候",
+      "zh-HK": "當…的時候"
+    },
+    "cw-whenever": {
+      "zh-Hant": "每當",
+      "zh-HK": "每當"
+    },
+    "cw-wherever": {
+      "zh-Hant": "無論哪裡",
+      "zh-HK": "無論哪裏"
+    },
+    "cw-both": {
+      "zh-Hant": "兩個都",
+      "zh-HK": "兩個都"
+    },
+    "cw-either": {
+      "zh-Hant": "任意一個",
+      "zh-HK": "任意一個"
+    },
+    "cw-neither": {
+      "zh-Hant": "兩個都不",
+      "zh-HK": "兩個都不"
+    },
+    "cw-whether": {
+      "zh-Hant": "是否",
+      "zh-HK": "是否"
+    },
+    "cw-although": {
+      "zh-Hant": "雖然",
+      "zh-HK": "雖然"
+    },
+    "cw-though": {
+      "zh-Hant": "儘管",
+      "zh-HK": "儘管"
+    },
+    "cw-unless": {
+      "zh-Hant": "除非",
+      "zh-HK": "除非"
+    },
+    "cw-so": {
+      "zh-Hant": "所以",
+      "zh-HK": "所以"
+    },
+    "cw-then": {
+      "zh-Hant": "然後",
+      "zh-HK": "然後"
+    },
+    "cw-also": {
+      "zh-Hant": "也",
+      "zh-HK": "也"
+    },
+    "cw-plus": {
+      "zh-Hant": "加",
+      "zh-HK": "加"
+    },
+    "cw-like-2": {
+      "zh-Hant": "像",
+      "zh-HK": "像"
+    },
+    "cw-as": {
+      "zh-Hant": "作為",
+      "zh-HK": "作為"
+    },
+    "cw-such-as": {
+      "zh-Hant": "例如",
+      "zh-HK": "例如"
+    },
+    "cw-versus": {
+      "zh-Hant": "對比",
+      "zh-HK": "對比"
+    },
+    "cw-since-then": {
+      "zh-Hant": "從那以後",
+      "zh-HK": "從那以後"
+    },
+    "cw-until-now": {
+      "zh-Hant": "到目前為止",
+      "zh-HK": "到目前為止"
+    },
+    "cw-right-after": {
+      "zh-Hant": "緊接著",
+      "zh-HK": "緊接着"
+    },
+    "cw-just-before": {
+      "zh-Hant": "就在之前",
+      "zh-HK": "就在之前"
+    },
+    "cw-up-to": {
+      "zh-Hant": "直到",
+      "zh-HK": "直到"
+    },
+    "cw-down-to": {
+      "zh-Hant": "低至",
+      "zh-HK": "低至"
+    },
+    "cw-next-to": {
+      "zh-Hant": "緊挨著",
+      "zh-HK": "緊挨着"
+    },
+    "cw-out-of": {
+      "zh-Hant": "出去",
+      "zh-HK": "出去"
+    },
+    "cw-a-few": {
+      "zh-Hant": "幾個",
+      "zh-HK": "幾個"
+    },
+    "cw-a-lot": {
+      "zh-Hant": "很多",
+      "zh-HK": "很多"
+    },
+    "cw-a-little": {
+      "zh-Hant": "一點點",
+      "zh-HK": "一點點"
+    },
+    "help-all-done": {
+      "zh-Hant": "完成了",
+      "zh-HK": "完成了"
+    },
+    "help-break": {
+      "zh-Hant": "休息",
+      "zh-HK": "休息"
+    },
+    "help-need-help": {
+      "zh-Hant": "我需要幫助",
+      "zh-HK": "我需要幫助"
+    },
+    "help-hungry": {
+      "zh-Hant": "我餓了",
+      "zh-HK": "我餓了"
+    },
+    "help-thirsty": {
+      "zh-Hant": "我渴了",
+      "zh-HK": "我渴了"
+    },
+    "help-bathroom": {
+      "zh-Hant": "廁所",
+      "zh-HK": "廁所"
+    },
+    "help-yes": {
+      "zh-Hant": "是",
+      "zh-HK": "是"
+    },
+    "help-no": {
+      "zh-Hant": "不",
+      "zh-HK": "不"
+    },
+    "help-stop": {
+      "zh-Hant": "停",
+      "zh-HK": "停"
+    },
+    "help-more": {
+      "zh-Hant": "更多",
+      "zh-HK": "更多"
+    },
+    "help-want": {
+      "zh-Hant": "我要",
+      "zh-HK": "我要"
+    },
+    "help-dont-want": {
+      "zh-Hant": "我不要",
+      "zh-HK": "我不要"
+    },
+    "help-hurts": {
+      "zh-Hant": "痛",
+      "zh-HK": "痛"
+    },
+    "help-tired": {
+      "zh-Hant": "我累了",
+      "zh-HK": "我累了"
+    },
+    "help-i-am-cold": {
+      "zh-Hant": "我冷",
+      "zh-HK": "我冷"
+    },
+    "help-i-am-hot": {
+      "zh-Hant": "我熱",
+      "zh-HK": "我熱"
+    },
+    "help-i-am-sleepy": {
+      "zh-Hant": "我困了",
+      "zh-HK": "我困了"
+    },
+    "help-i-am-scared": {
+      "zh-Hant": "我害怕",
+      "zh-HK": "我害怕"
+    },
+    "help-i-am-sick": {
+      "zh-Hant": "我難受",
+      "zh-HK": "我難受"
+    },
+    "help-i-am-okay": {
+      "zh-Hant": "我沒事",
+      "zh-HK": "我沒事"
+    },
+    "help-i-am-not-okay": {
+      "zh-Hant": "我有事",
+      "zh-HK": "我有事"
+    },
+    "help-i-am-ready": {
+      "zh-Hant": "我準備好了",
+      "zh-HK": "我準備好了"
+    },
+    "help-i-am-not-ready": {
+      "zh-Hant": "我還沒準備好",
+      "zh-HK": "我還沒準備好"
+    },
+    "help-too-loud": {
+      "zh-Hant": "太吵了",
+      "zh-HK": "太吵了"
+    },
+    "help-too-bright": {
+      "zh-Hant": "太亮了",
+      "zh-HK": "太亮了"
+    },
+    "help-too-fast": {
+      "zh-Hant": "太快了",
+      "zh-HK": "太快了"
+    },
+    "help-too-slow": {
+      "zh-Hant": "太慢了",
+      "zh-HK": "太慢了"
+    },
+    "help-i-need-quiet": {
+      "zh-Hant": "我想安靜",
+      "zh-HK": "我想安靜"
+    },
+    "help-i-need-a-break": {
+      "zh-Hant": "我想休息",
+      "zh-HK": "我想休息"
+    },
+    "help-i-need-water": {
+      "zh-Hant": "我要喝水",
+      "zh-HK": "我要喝水"
+    },
+    "help-i-need-air": {
+      "zh-Hant": "我想透透氣",
+      "zh-HK": "我想透透氣"
+    },
+    "help-i-need-my-mom": {
+      "zh-Hant": "找媽媽",
+      "zh-HK": "找媽媽"
+    },
+    "help-i-need-my-dad": {
+      "zh-Hant": "找爸爸",
+      "zh-HK": "找爸爸"
+    },
+    "help-i-need-my-teacher": {
+      "zh-Hant": "找老師",
+      "zh-HK": "找老師"
+    },
+    "help-i-need-a-hug": {
+      "zh-Hant": "要抱抱",
+      "zh-HK": "要抱抱"
+    },
+    "help-i-need-space": {
+      "zh-Hant": "別擠我",
+      "zh-HK": "別擠我"
+    },
+    "help-i-need-time": {
+      "zh-Hant": "給我點時間",
+      "zh-HK": "給我點時間"
+    },
+    "help-hold-my-hand": {
+      "zh-Hant": "牽我的手",
+      "zh-HK": "牽我的手"
+    },
+    "help-watch-me": {
+      "zh-Hant": "看我",
+      "zh-HK": "看我"
+    },
+    "help-listen-to-me": {
+      "zh-Hant": "聽我說",
+      "zh-HK": "聽我説"
+    },
+    "help-look-at-this": {
+      "zh-Hant": "看這個",
+      "zh-HK": "看這個"
+    },
+    "help-help-me-please": {
+      "zh-Hant": "請幫幫我",
+      "zh-HK": "請幫幫我"
+    },
+    "help-help-with-this": {
+      "zh-Hant": "幫我做這個",
+      "zh-HK": "幫我做這個"
+    },
+    "help-wait-for-me": {
+      "zh-Hant": "等等我",
+      "zh-HK": "等等我"
+    },
+    "help-slow-down-please": {
+      "zh-Hant": "請慢一點",
+      "zh-HK": "請慢一點"
+    },
+    "help-speak-more-slowly": {
+      "zh-Hant": "說慢一點",
+      "zh-HK": "説慢一點"
+    },
+    "help-one-at-a-time": {
+      "zh-Hant": "一個個來",
+      "zh-HK": "一個個來"
+    },
+    "help-i-am-overwhelmed": {
+      "zh-Hant": "我吃不消了",
+      "zh-HK": "我吃不消了"
+    },
+    "help-i-am-confused": {
+      "zh-Hant": "我不明白",
+      "zh-HK": "我不明白"
+    },
+    "help-i-do-not-understand": {
+      "zh-Hant": "我不懂",
+      "zh-HK": "我不懂"
+    },
+    "help-please-be-patient": {
+      "zh-Hant": "請耐心地等我",
+      "zh-HK": "請耐心地等我"
+    },
+    "help-give-me-a-minute": {
+      "zh-Hant": "等我一下",
+      "zh-HK": "等我一下"
+    },
+    "help-try-again": {
+      "zh-Hant": "再試一次",
+      "zh-HK": "再試一次"
+    },
+    "help-calm-down": {
+      "zh-Hant": "冷靜點",
+      "zh-HK": "冷靜點"
+    },
+    "help-let-me-think": {
+      "zh-Hant": "讓我想想",
+      "zh-HK": "讓我想想"
+    },
+    "help-show-me-how": {
+      "zh-Hant": "教教我",
+      "zh-HK": "教教我"
+    },
+    "help-i-do-not-feel-good": {
+      "zh-Hant": "我舒服",
+      "zh-HK": "我舒服"
+    },
+    "help-my-head-hurts": {
+      "zh-Hant": "我頭疼",
+      "zh-HK": "我頭疼"
+    },
+    "help-my-tummy-hurts": {
+      "zh-Hant": "我肚子疼",
+      "zh-HK": "我肚子疼"
+    },
+    "help-my-ears-hurt": {
+      "zh-Hant": "我耳朵疼",
+      "zh-HK": "我耳朵疼"
+    },
+    "help-my-eyes-hurt": {
+      "zh-Hant": "我眼睛疼",
+      "zh-HK": "我眼睛疼"
+    },
+    "help-i-feel-dizzy": {
+      "zh-Hant": "我頭暈",
+      "zh-HK": "我頭暈"
+    },
+    "help-get-help": {
+      "zh-Hant": "找人幫忙",
+      "zh-HK": "找人幫忙"
+    },
+    "help-call-my-mom": {
+      "zh-Hant": "打電話給我媽媽",
+      "zh-HK": "打電話給我媽媽"
+    },
+    "help-call-my-dad": {
+      "zh-Hant": "打電話給我爸爸",
+      "zh-HK": "打電話給我爸爸"
+    },
+    "help-call-the-nurse": {
+      "zh-Hant": "叫護士來",
+      "zh-HK": "叫護士來"
+    },
+    "help-where-is-my-aac": {
+      "zh-Hant": "我的交流板在哪裡",
+      "zh-HK": "我的交流板在哪裏"
+    },
+    "help-my-battery-is-low": {
+      "zh-Hant": "快沒電了",
+      "zh-HK": "快沒電了"
+    },
+    "help-i-dropped-my-tablet": {
+      "zh-Hant": "我平板掉了",
+      "zh-HK": "我平板掉了"
+    },
+    "qt-hello": {
+      "zh-Hant": "你好",
+      "zh-HK": "你好"
+    },
+    "qt-goodbye": {
+      "zh-Hant": "再見",
+      "zh-HK": "再見"
+    },
+    "qt-thank-you": {
+      "zh-Hant": "謝謝",
+      "zh-HK": "謝謝"
+    },
+    "qt-please": {
+      "zh-Hant": "請",
+      "zh-HK": "請"
+    },
+    "qt-excuse-me": {
+      "zh-Hant": "打擾一下",
+      "zh-HK": "打擾一下"
+    },
+    "qt-dont-understand": {
+      "zh-Hant": "我不明白",
+      "zh-HK": "我不明白"
+    },
+    "qt-wait": {
+      "zh-Hant": "等一下",
+      "zh-HK": "等一下"
+    },
+    "qt-come-here": {
+      "zh-Hant": "過來",
+      "zh-HK": "過來"
+    },
+    "qt-how-are-you": {
+      "zh-Hant": "你好嗎",
+      "zh-HK": "你好嗎"
+    },
+    "qt-im-good": {
+      "zh-Hant": "我很好",
+      "zh-HK": "我很好"
+    },
+    "qt-sorry": {
+      "zh-Hant": "對不起",
+      "zh-HK": "對不起"
+    },
+    "qt-i-dont-know": {
+      "zh-Hant": "我不知道",
+      "zh-HK": "我不知道"
+    },
+    "qt-my-name": {
+      "zh-Hant": "我叫",
+      "zh-HK": "我叫"
+    },
+    "qt-nice-meet": {
+      "zh-Hant": "很高興認識你",
+      "zh-HK": "很高興認識你"
+    },
+    "qt-see-later": {
+      "zh-Hant": "回頭見",
+      "zh-HK": "回頭見"
+    },
+    "qt-youre-welcome": {
+      "zh-Hant": "不客氣",
+      "zh-HK": "不客氣"
+    },
+    "qt-hi": {
+      "zh-Hant": "嗨",
+      "zh-HK": "嗨"
+    },
+    "qt-hey": {
+      "zh-Hant": "嘿",
+      "zh-HK": "嘿"
+    },
+    "qt-bye": {
+      "zh-Hant": "拜",
+      "zh-HK": "拜"
+    },
+    "qt-bye-bye": {
+      "zh-Hant": "再見",
+      "zh-HK": "再見"
+    },
+    "qt-see-you": {
+      "zh-Hant": "再見",
+      "zh-HK": "再見"
+    },
+    "qt-see-you-soon": {
+      "zh-Hant": "很快見",
+      "zh-HK": "很快見"
+    },
+    "qt-see-you-tomorrow": {
+      "zh-Hant": "明天見",
+      "zh-HK": "明天見"
+    },
+    "qt-take-care": {
+      "zh-Hant": "保重",
+      "zh-HK": "保重"
+    },
+    "qt-have-fun": {
+      "zh-Hant": "玩得開心",
+      "zh-HK": "玩得開心"
+    },
+    "qt-good-morning": {
+      "zh-Hant": "早上好",
+      "zh-HK": "早上好"
+    },
+    "qt-good-afternoon": {
+      "zh-Hant": "下午好",
+      "zh-HK": "下午好"
+    },
+    "qt-good-evening": {
+      "zh-Hant": "晚上好",
+      "zh-HK": "晚上好"
+    },
+    "qt-good-night": {
+      "zh-Hant": "晚安",
+      "zh-HK": "晚安"
+    },
+    "qt-good-job": {
+      "zh-Hant": "做得好",
+      "zh-HK": "做得好"
+    },
+    "qt-well-done": {
+      "zh-Hant": "幹得好",
+      "zh-HK": "幹得好"
+    },
+    "qt-way-to-go": {
+      "zh-Hant": "厲害",
+      "zh-HK": "厲害"
+    },
+    "qt-awesome": {
+      "zh-Hant": "太棒了",
+      "zh-HK": "太棒了"
+    },
+    "qt-cool": {
+      "zh-Hant": "酷",
+      "zh-HK": "酷"
+    },
+    "qt-nice": {
+      "zh-Hant": "不錯",
+      "zh-HK": "不錯"
+    },
+    "qt-great": {
+      "zh-Hant": "很棒",
+      "zh-HK": "很棒"
+    },
+    "qt-wonderful": {
+      "zh-Hant": "美妙",
+      "zh-HK": "美妙"
+    },
+    "qt-amazing": {
+      "zh-Hant": "驚人",
+      "zh-HK": "驚人"
+    },
+    "qt-perfect": {
+      "zh-Hant": "完美",
+      "zh-HK": "完美"
+    },
+    "qt-yay": {
+      "zh-Hant": "耶",
+      "zh-HK": "耶"
+    },
+    "qt-okay": {
+      "zh-Hant": "好的",
+      "zh-HK": "好的"
+    },
+    "qt-alright": {
+      "zh-Hant": "好吧",
+      "zh-HK": "好吧"
+    },
+    "qt-sure": {
+      "zh-Hant": "當然",
+      "zh-HK": "當然"
+    },
+    "qt-of-course": {
+      "zh-Hant": "當然了",
+      "zh-HK": "當然了"
+    },
+    "qt-definitely": {
+      "zh-Hant": "絕對",
+      "zh-HK": "絕對"
+    },
+    "qt-maybe": {
+      "zh-Hant": "也許",
+      "zh-HK": "也許"
+    },
+    "qt-i-think-so": {
+      "zh-Hant": "我想是的",
+      "zh-HK": "我想是的"
+    },
+    "qt-i-am-not-sure": {
+      "zh-Hant": "我不確定",
+      "zh-HK": "我不確定"
+    },
+    "qt-it-is-fine": {
+      "zh-Hant": "沒關係",
+      "zh-HK": "沒關係"
+    },
+    "qt-no-problem": {
+      "zh-Hant": "沒問題",
+      "zh-HK": "沒問題"
+    },
+    "qt-no-worries": {
+      "zh-Hant": "別擔心",
+      "zh-HK": "別擔心"
+    },
+    "qt-never-mind": {
+      "zh-Hant": "算了",
+      "zh-HK": "算了"
+    },
+    "qt-my-bad": {
+      "zh-Hant": "我的錯",
+      "zh-HK": "我的錯"
+    },
+    "qt-oops": {
+      "zh-Hant": "哎呀",
+      "zh-HK": "哎呀"
+    },
+    "qt-bless-you": {
+      "zh-Hant": "保重",
+      "zh-HK": "保重"
+    },
+    "qt-happy-birthday": {
+      "zh-Hant": "生日快樂",
+      "zh-HK": "生日快樂"
+    },
+    "qt-happy-holidays": {
+      "zh-Hant": "節日快樂",
+      "zh-HK": "節日快樂"
+    },
+    "qt-merry-christmas": {
+      "zh-Hant": "聖誕快樂",
+      "zh-HK": "聖誕快樂"
+    },
+    "qt-happy-new-year": {
+      "zh-Hant": "新年快樂",
+      "zh-HK": "新年快樂"
+    },
+    "qt-eid-mubarak": {
+      "zh-Hant": "開齋節快樂",
+      "zh-HK": "開齋節快樂"
+    },
+    "qt-happy-hanukkah": {
+      "zh-Hant": "光明節快樂",
+      "zh-HK": "光明節快樂"
+    },
+    "qt-congratulations": {
+      "zh-Hant": "恭喜",
+      "zh-HK": "恭喜"
+    },
+    "qt-i-am-proud-of-you": {
+      "zh-Hant": "我為你驕傲",
+      "zh-HK": "我為你驕傲"
+    },
+    "qt-you-did-it": {
+      "zh-Hant": "你做到了",
+      "zh-HK": "你做到了"
+    },
+    "qt-how-was-your-day": {
+      "zh-Hant": "今天過得怎麼樣?",
+      "zh-HK": "今天過得怎麼樣?"
+    },
+    "qt-i-had-a-good-day": {
+      "zh-Hant": "今天過得很好",
+      "zh-HK": "今天過得很好"
+    },
+    "qt-i-had-a-bad-day": {
+      "zh-Hant": "今天過得不好",
+      "zh-HK": "今天過得不好"
+    },
+    "qt-tell-me-about-your-day": {
+      "zh-Hant": "給我講講你今天的事",
+      "zh-HK": "給我講講你今天的事"
+    },
+    "qt-i-missed-you": {
+      "zh-Hant": "我想你了",
+      "zh-HK": "我想你了"
+    },
+    "qt-i-am-here": {
+      "zh-Hant": "我在這兒",
+      "zh-HK": "我在這兒"
+    },
+    "qt-i-love-you-too": {
+      "zh-Hant": "我也愛你",
+      "zh-HK": "我也愛你"
+    },
+    "qt-you-are-my-friend": {
+      "zh-Hant": "你是我的朋友",
+      "zh-HK": "你是我的朋友"
+    },
+    "qt-best-friends": {
+      "zh-Hant": "最好的朋友",
+      "zh-HK": "最好的朋友"
+    },
+    "fe-happy": {
+      "zh-Hant": "開心",
+      "zh-HK": "開心"
+    },
+    "fe-sad": {
+      "zh-Hant": "難過",
+      "zh-HK": "難過"
+    },
+    "fe-angry": {
+      "zh-Hant": "生氣",
+      "zh-HK": "生氣"
+    },
+    "fe-scared": {
+      "zh-Hant": "害怕",
+      "zh-HK": "害怕"
+    },
+    "fe-excited": {
+      "zh-Hant": "興奮",
+      "zh-HK": "興奮"
+    },
+    "fe-frustrated": {
+      "zh-Hant": "沮喪",
+      "zh-HK": "沮喪"
+    },
+    "fe-bored": {
+      "zh-Hant": "無聊",
+      "zh-HK": "無聊"
+    },
+    "fe-surprised": {
+      "zh-Hant": "驚訝",
+      "zh-HK": "驚訝"
+    },
+    "fe-confused": {
+      "zh-Hant": "困惑",
+      "zh-HK": "困惑"
+    },
+    "fe-proud": {
+      "zh-Hant": "驕傲",
+      "zh-HK": "驕傲"
+    },
+    "fe-nervous": {
+      "zh-Hant": "緊張",
+      "zh-HK": "緊張"
+    },
+    "fe-silly": {
+      "zh-Hant": "傻傻的",
+      "zh-HK": "傻傻的"
+    },
+    "fe-love": {
+      "zh-Hant": "我愛你",
+      "zh-HK": "我愛你"
+    },
+    "fe-hurt": {
+      "zh-Hant": "我受傷了",
+      "zh-HK": "我受傷了"
+    },
+    "fe-calm": {
+      "zh-Hant": "平靜",
+      "zh-HK": "平靜"
+    },
+    "fe-peaceful": {
+      "zh-Hant": "安心",
+      "zh-HK": "安心"
+    },
+    "fe-relaxed": {
+      "zh-Hant": "放鬆",
+      "zh-HK": "放鬆"
+    },
+    "fe-content": {
+      "zh-Hant": "滿足",
+      "zh-HK": "滿足"
+    },
+    "fe-joyful": {
+      "zh-Hant": "快樂",
+      "zh-HK": "快樂"
+    },
+    "fe-glad": {
+      "zh-Hant": "高興",
+      "zh-HK": "高興"
+    },
+    "fe-cheerful": {
+      "zh-Hant": "開心",
+      "zh-HK": "開心"
+    },
+    "fe-hopeful": {
+      "zh-Hant": "有希望",
+      "zh-HK": "有希望"
+    },
+    "fe-grateful": {
+      "zh-Hant": "感激",
+      "zh-HK": "感激"
+    },
+    "fe-thankful": {
+      "zh-Hant": "感謝",
+      "zh-HK": "感謝"
+    },
+    "fe-loved": {
+      "zh-Hant": "被愛著",
+      "zh-HK": "被愛着"
+    },
+    "fe-safe": {
+      "zh-Hant": "安全",
+      "zh-HK": "安全"
+    },
+    "fe-comfortable": {
+      "zh-Hant": "舒服",
+      "zh-HK": "舒服"
+    },
+    "fe-warm-inside": {
+      "zh-Hant": "心裡暖暖的",
+      "zh-HK": "心裏暖暖的"
+    },
+    "fe-tired": {
+      "zh-Hant": "累",
+      "zh-HK": "累"
+    },
+    "fe-sleepy": {
+      "zh-Hant": "困",
+      "zh-HK": "困"
+    },
+    "fe-hungry": {
+      "zh-Hant": "餓",
+      "zh-HK": "餓"
+    },
+    "fe-full": {
+      "zh-Hant": "飽",
+      "zh-HK": "飽"
+    },
+    "fe-thirsty": {
+      "zh-Hant": "渴",
+      "zh-HK": "渴"
+    },
+    "fe-sick": {
+      "zh-Hant": "難受",
+      "zh-HK": "難受"
+    },
+    "fe-lonely": {
+      "zh-Hant": "孤獨",
+      "zh-HK": "孤獨"
+    },
+    "fe-embarrassed": {
+      "zh-Hant": "尷尬",
+      "zh-HK": "尷尬"
+    },
+    "fe-shy": {
+      "zh-Hant": "害羞",
+      "zh-HK": "害羞"
+    },
+    "fe-ashamed": {
+      "zh-Hant": "慚愧",
+      "zh-HK": "慚愧"
+    },
+    "fe-guilty": {
+      "zh-Hant": "內疚",
+      "zh-HK": "內疚"
+    },
+    "fe-jealous": {
+      "zh-Hant": "吃醋",
+      "zh-HK": "吃醋"
+    },
+    "fe-disappointed": {
+      "zh-Hant": "失望",
+      "zh-HK": "失望"
+    },
+    "fe-annoyed": {
+      "zh-Hant": "煩躁",
+      "zh-HK": "煩躁"
+    },
+    "fe-anxious": {
+      "zh-Hant": "焦慮",
+      "zh-HK": "焦慮"
+    },
+    "fe-worried": {
+      "zh-Hant": "擔心",
+      "zh-HK": "擔心"
+    },
+    "fe-stressed": {
+      "zh-Hant": "壓力大",
+      "zh-HK": "壓力大"
+    },
+    "fe-panicked": {
+      "zh-Hant": "慌張",
+      "zh-HK": "慌張"
+    },
+    "fe-terrified": {
+      "zh-Hant": "害怕",
+      "zh-HK": "害怕"
+    },
+    "fe-brave": {
+      "zh-Hant": "勇敢",
+      "zh-HK": "勇敢"
+    },
+    "fe-strong": {
+      "zh-Hant": "堅強",
+      "zh-HK": "堅強"
+    },
+    "fe-weak": {
+      "zh-Hant": "虛弱",
+      "zh-HK": "虛弱"
+    },
+    "fe-dizzy": {
+      "zh-Hant": "頭暈",
+      "zh-HK": "頭暈"
+    },
+    "fe-itchy": {
+      "zh-Hant": "癢",
+      "zh-HK": "癢"
+    },
+    "fe-ticklish": {
+      "zh-Hant": "怕癢",
+      "zh-HK": "怕癢"
+    },
+    "fe-numb": {
+      "zh-Hant": "麻木",
+      "zh-HK": "麻木"
+    },
+    "fe-cold-inside": {
+      "zh-Hant": "心裡發涼",
+      "zh-HK": "心裏發涼"
+    },
+    "fe-empty": {
+      "zh-Hant": "空虛",
+      "zh-HK": "空虛"
+    },
+    "fe-heavy-heart": {
+      "zh-Hant": "沉重",
+      "zh-HK": "沉重"
+    },
+    "fe-mixed-up": {
+      "zh-Hant": "矛盾",
+      "zh-HK": "矛盾"
+    },
+    "fe-confused-inside": {
+      "zh-Hant": "心裡亂亂的",
+      "zh-HK": "心裏亂亂的"
+    },
+    "fe-stuck": {
+      "zh-Hant": "卡住了",
+      "zh-HK": "卡住了"
+    },
+    "fe-missing-someone": {
+      "zh-Hant": "想念",
+      "zh-HK": "想念"
+    },
+    "fe-homesick": {
+      "zh-Hant": "想家",
+      "zh-HK": "想家"
+    },
+    "fe-overwhelmed": {
+      "zh-Hant": "吃不消",
+      "zh-HK": "吃不消"
+    },
+    "fe-done-with-this": {
+      "zh-Hant": "夠了",
+      "zh-HK": "夠了"
+    },
+    "fe-i-have-had-enough": {
+      "zh-Hant": "我受夠了",
+      "zh-HK": "我受夠了"
+    },
+    "fe-i-feel-good": {
+      "zh-Hant": "我感覺很好",
+      "zh-HK": "我感覺很好"
+    },
+    "fe-i-feel-bad": {
+      "zh-Hant": "我感覺不好",
+      "zh-HK": "我感覺不好"
+    },
+    "fe-i-feel-okay": {
+      "zh-Hant": "我感覺還好",
+      "zh-HK": "我感覺還好"
+    },
+    "fe-i-feel-weird": {
+      "zh-Hant": "我感覺怪怪的",
+      "zh-HK": "我感覺怪怪的"
+    },
+    "qu-what": {
+      "zh-Hant": "什麼?",
+      "zh-HK": "什麼?"
+    },
+    "qu-where": {
+      "zh-Hant": "在哪?",
+      "zh-HK": "在哪?"
+    },
+    "qu-when": {
+      "zh-Hant": "什麼時候?",
+      "zh-HK": "什麼時候?"
+    },
+    "qu-who": {
+      "zh-Hant": "誰?",
+      "zh-HK": "誰?"
+    },
+    "qu-why": {
+      "zh-Hant": "為什麼?",
+      "zh-HK": "為什麼?"
+    },
+    "qu-how": {
+      "zh-Hant": "怎麼?",
+      "zh-HK": "怎麼?"
+    },
+    "qu-which": {
+      "zh-Hant": "哪個?",
+      "zh-HK": "哪個?"
+    },
+    "qu-how-many": {
+      "zh-Hant": "多少?",
+      "zh-HK": "多少?"
+    },
+    "qu-can-i": {
+      "zh-Hant": "可以嗎?",
+      "zh-HK": "可以嗎?"
+    },
+    "qu-is-it": {
+      "zh-Hant": "是嗎?",
+      "zh-HK": "是嗎?"
+    },
+    "qu-whats-that": {
+      "zh-Hant": "那是什麼?",
+      "zh-HK": "那是什麼?"
+    },
+    "qu-where-going": {
+      "zh-Hant": "我們去哪?",
+      "zh-HK": "我們去哪?"
+    },
+    "qu-who-is-that": {
+      "zh-Hant": "那是誰?",
+      "zh-HK": "那是誰?"
+    },
+    "qu-what-is-that": {
+      "zh-Hant": "那是什麼?",
+      "zh-HK": "那是什麼?"
+    },
+    "qu-where-is-it": {
+      "zh-Hant": "在哪裡?",
+      "zh-HK": "在哪裏?"
+    },
+    "qu-when-is-it": {
+      "zh-Hant": "什麼時候?",
+      "zh-HK": "什麼時候?"
+    },
+    "qu-why-is-that": {
+      "zh-Hant": "為什麼這樣?",
+      "zh-HK": "為什麼這樣?"
+    },
+    "qu-how-does-it-work": {
+      "zh-Hant": "怎麼用?",
+      "zh-HK": "怎麼用?"
+    },
+    "qu-how-do-i": {
+      "zh-Hant": "我怎麼...?",
+      "zh-HK": "我怎麼...?"
+    },
+    "qu-can-i-have-it": {
+      "zh-Hant": "我可以要那個嗎?",
+      "zh-HK": "我可以要那個嗎?"
+    },
+    "qu-can-i-try": {
+      "zh-Hant": "我可以試試嗎?",
+      "zh-HK": "我可以試試嗎?"
+    },
+    "qu-can-i-go": {
+      "zh-Hant": "我可以去嗎?",
+      "zh-HK": "我可以去嗎?"
+    },
+    "qu-may-i-please": {
+      "zh-Hant": "請問可以嗎?",
+      "zh-HK": "請問可以嗎?"
+    },
+    "qu-will-you-help": {
+      "zh-Hant": "你會幫我嗎?",
+      "zh-HK": "你會幫我嗎?"
+    },
+    "qu-are-you-okay": {
+      "zh-Hant": "你還好嗎?",
+      "zh-HK": "你還好嗎?"
+    },
+    "qu-are-we-there-yet": {
+      "zh-Hant": "到了嗎?",
+      "zh-HK": "到了嗎?"
+    },
+    "qu-where-are-we-going": {
+      "zh-Hant": "我們去哪?",
+      "zh-HK": "我們去哪?"
+    },
+    "qu-when-will-we-be-there": {
+      "zh-Hant": "什麼時候到?",
+      "zh-HK": "什麼時候到?"
+    },
+    "qu-how-much-longer": {
+      "zh-Hant": "還要多久?",
+      "zh-HK": "還要多久?"
+    },
+    "qu-what-time-is-it": {
+      "zh-Hant": "現在幾點?",
+      "zh-HK": "現在幾點?"
+    },
+    "qu-what-day-is-it": {
+      "zh-Hant": "今天是星期幾?",
+      "zh-HK": "今天是星期幾?"
+    },
+    "qu-is-it-ready-yet": {
+      "zh-Hant": "好了嗎?",
+      "zh-HK": "好了嗎?"
+    },
+    "qu-can-we-go-now": {
+      "zh-Hant": "現在可以去嗎?",
+      "zh-HK": "現在可以去嗎?"
+    },
+    "qu-can-we-do-this": {
+      "zh-Hant": "我們可以做這個嗎?",
+      "zh-HK": "我們可以做這個嗎?"
+    },
+    "qu-did-you-see-that": {
+      "zh-Hant": "你看到了嗎?",
+      "zh-HK": "你看到了嗎?"
+    },
+    "qu-did-i-do-good": {
+      "zh-Hant": "我做得好嗎?",
+      "zh-HK": "我做得好嗎?"
+    },
+    "qu-what-happened": {
+      "zh-Hant": "發生了什麼?",
+      "zh-HK": "發生了什麼?"
+    },
+    "qu-where-did-it-go": {
+      "zh-Hant": "它去哪了?",
+      "zh-HK": "它去哪了?"
+    },
+    "qu-who-said-that": {
+      "zh-Hant": "誰說的?",
+      "zh-HK": "誰説的?"
+    },
+    "qu-what-did-they-say": {
+      "zh-Hant": "他們說什麼?",
+      "zh-HK": "他們説什麼?"
+    },
+    "qu-how-old-are-you": {
+      "zh-Hant": "你幾歲?",
+      "zh-HK": "你幾歲?"
+    },
+    "qu-what-is-your-name": {
+      "zh-Hant": "你叫什麼名字?",
+      "zh-HK": "你叫什麼名字?"
+    },
+    "qu-how-are-you-feeling": {
+      "zh-Hant": "你感覺怎麼樣?",
+      "zh-HK": "你感覺怎麼樣?"
+    },
+    "qu-what-is-for-dinner": {
+      "zh-Hant": "晚飯吃什麼?",
+      "zh-HK": "晚飯吃什麼?"
+    },
+    "qu-what-is-for-snack": {
+      "zh-Hant": "零食是什麼?",
+      "zh-HK": "零食是什麼?"
+    },
+    "qu-is-it-bedtime": {
+      "zh-Hant": "該睡覺了嗎?",
+      "zh-HK": "該睡覺了嗎?"
+    },
+    "qu-are-you-my-friend": {
+      "zh-Hant": "你是我的朋友嗎?",
+      "zh-HK": "你是我的朋友嗎?"
+    },
+    "qu-will-you-play-with-me": {
+      "zh-Hant": "你跟我玩嗎?",
+      "zh-HK": "你跟我玩嗎?"
+    },
+    "ac-go": {
+      "zh-Hant": "去",
+      "zh-HK": "去"
+    },
+    "ac-stop": {
+      "zh-Hant": "停止",
+      "zh-HK": "停止"
+    },
+    "ac-eat": {
+      "zh-Hant": "吃",
+      "zh-HK": "吃"
+    },
+    "ac-drink": {
+      "zh-Hant": "喝",
+      "zh-HK": "喝"
+    },
+    "ac-play": {
+      "zh-Hant": "玩",
+      "zh-HK": "玩"
+    },
+    "ac-read": {
+      "zh-Hant": "讀",
+      "zh-HK": "讀"
+    },
+    "ac-watch": {
+      "zh-Hant": "看",
+      "zh-HK": "看"
+    },
+    "ac-listen": {
+      "zh-Hant": "聽",
+      "zh-HK": "聽"
+    },
+    "ac-open": {
+      "zh-Hant": "打開",
+      "zh-HK": "打開"
+    },
+    "ac-close": {
+      "zh-Hant": "關",
+      "zh-HK": "關"
+    },
+    "ac-give": {
+      "zh-Hant": "給",
+      "zh-HK": "給"
+    },
+    "ac-take": {
+      "zh-Hant": "拿",
+      "zh-HK": "拿"
+    },
+    "ac-look": {
+      "zh-Hant": "看看",
+      "zh-HK": "看看"
+    },
+    "ac-sit": {
+      "zh-Hant": "坐",
+      "zh-HK": "坐"
+    },
+    "ac-stand": {
+      "zh-Hant": "站起來",
+      "zh-HK": "站起來"
+    },
+    "ac-walk": {
+      "zh-Hant": "走",
+      "zh-HK": "走"
+    },
+    "ac-run": {
+      "zh-Hant": "跑",
+      "zh-HK": "跑"
+    },
+    "ac-write": {
+      "zh-Hant": "寫",
+      "zh-HK": "寫"
+    },
+    "ac-draw": {
+      "zh-Hant": "畫",
+      "zh-HK": "畫"
+    },
+    "ac-make": {
+      "zh-Hant": "做",
+      "zh-HK": "做"
+    },
+    "ac-put": {
+      "zh-Hant": "放",
+      "zh-HK": "放"
+    },
+    "ac-get": {
+      "zh-Hant": "拿來",
+      "zh-HK": "拿來"
+    },
+    "ac-turn": {
+      "zh-Hant": "轉",
+      "zh-HK": "轉"
+    },
+    "ac-wash": {
+      "zh-Hant": "洗",
+      "zh-HK": "洗"
+    },
+    "ac-wave": {
+      "zh-Hant": "揮手",
+      "zh-HK": "揮手"
+    },
+    "ac-clap": {
+      "zh-Hant": "拍手",
+      "zh-HK": "拍手"
+    },
+    "ac-point": {
+      "zh-Hant": "指",
+      "zh-HK": "指"
+    },
+    "ac-nod": {
+      "zh-Hant": "點頭",
+      "zh-HK": "點頭"
+    },
+    "ac-shake-head": {
+      "zh-Hant": "搖頭",
+      "zh-HK": "搖頭"
+    },
+    "ac-whisper": {
+      "zh-Hant": "低聲說",
+      "zh-HK": "低聲説"
+    },
+    "ac-shout": {
+      "zh-Hant": "大叫",
+      "zh-HK": "大叫"
+    },
+    "ac-sing": {
+      "zh-Hant": "唱歌",
+      "zh-HK": "唱歌"
+    },
+    "ac-hum": {
+      "zh-Hant": "哼歌",
+      "zh-HK": "哼歌"
+    },
+    "ac-roll": {
+      "zh-Hant": "滾",
+      "zh-HK": "滾"
+    },
+    "ac-slide": {
+      "zh-Hant": "滑",
+      "zh-HK": "滑"
+    },
+    "ac-spin": {
+      "zh-Hant": "旋轉",
+      "zh-HK": "旋轉"
+    },
+    "ac-hop": {
+      "zh-Hant": "跳",
+      "zh-HK": "跳"
+    },
+    "ac-skip": {
+      "zh-Hant": "跳步",
+      "zh-HK": "跳步"
+    },
+    "ac-crawl": {
+      "zh-Hant": "爬",
+      "zh-HK": "爬"
+    },
+    "ac-tiptoe": {
+      "zh-Hant": "踮著腳走",
+      "zh-HK": "踮着腳走"
+    },
+    "ac-tip-toe": {
+      "zh-Hant": "踮著腳走",
+      "zh-HK": "踮着腳走"
+    },
+    "ac-march": {
+      "zh-Hant": "行進",
+      "zh-HK": "行進"
+    },
+    "ac-climb-up": {
+      "zh-Hant": "爬上去",
+      "zh-HK": "爬上去"
+    },
+    "ac-climb-down": {
+      "zh-Hant": "爬下來",
+      "zh-HK": "爬下來"
+    },
+    "ac-push-it": {
+      "zh-Hant": "推它",
+      "zh-HK": "推它"
+    },
+    "ac-pull-it": {
+      "zh-Hant": "拉它",
+      "zh-HK": "拉它"
+    },
+    "ac-pick-it-up": {
+      "zh-Hant": "撿起來",
+      "zh-HK": "撿起來"
+    },
+    "ac-set-it-down": {
+      "zh-Hant": "放下來",
+      "zh-HK": "放下來"
+    },
+    "ac-pour": {
+      "zh-Hant": "倒",
+      "zh-HK": "倒"
+    },
+    "ac-stir": {
+      "zh-Hant": "攪拌",
+      "zh-HK": "攪拌"
+    },
+    "ac-mix": {
+      "zh-Hant": "混合",
+      "zh-HK": "混合"
+    },
+    "ac-spread": {
+      "zh-Hant": "塗抹",
+      "zh-HK": "塗抹"
+    },
+    "ac-fold": {
+      "zh-Hant": "摺疊",
+      "zh-HK": "摺疊"
+    },
+    "ac-tie": {
+      "zh-Hant": "系",
+      "zh-HK": "系"
+    },
+    "ac-untie": {
+      "zh-Hant": "解開",
+      "zh-HK": "解開"
+    },
+    "ac-zip": {
+      "zh-Hant": "拉上拉鏈",
+      "zh-HK": "拉上拉鏈"
+    },
+    "ac-unzip": {
+      "zh-Hant": "拉開拉鏈",
+      "zh-HK": "拉開拉鏈"
+    },
+    "ac-snap": {
+      "zh-Hant": "打響指",
+      "zh-HK": "打響指"
+    },
+    "ac-buckle": {
+      "zh-Hant": "扣上",
+      "zh-HK": "扣上"
+    },
+    "ac-brush-teeth": {
+      "zh-Hant": "刷牙",
+      "zh-HK": "刷牙"
+    },
+    "ac-brush-hair": {
+      "zh-Hant": "梳頭",
+      "zh-HK": "梳頭"
+    },
+    "ac-comb": {
+      "zh-Hant": "梳",
+      "zh-HK": "梳"
+    },
+    "ac-floss": {
+      "zh-Hant": "用牙線",
+      "zh-HK": "用牙線"
+    },
+    "ac-get-dressed": {
+      "zh-Hant": "穿衣",
+      "zh-HK": "穿衣"
+    },
+    "ac-get-undressed": {
+      "zh-Hant": "脫衣",
+      "zh-HK": "脱衣"
+    },
+    "ac-put-on-shoes": {
+      "zh-Hant": "穿鞋",
+      "zh-HK": "穿鞋"
+    },
+    "ac-take-off-shoes": {
+      "zh-Hant": "脫鞋",
+      "zh-HK": "脱鞋"
+    },
+    "ac-wash-hands": {
+      "zh-Hant": "洗手",
+      "zh-HK": "洗手"
+    },
+    "ac-take-a-bath": {
+      "zh-Hant": "洗澡",
+      "zh-HK": "洗澡"
+    },
+    "ac-take-a-shower": {
+      "zh-Hant": "淋浴",
+      "zh-HK": "淋浴"
+    },
+    "ac-sleep": {
+      "zh-Hant": "睡覺",
+      "zh-HK": "睡覺"
+    },
+    "ac-take-a-nap": {
+      "zh-Hant": "打盹",
+      "zh-HK": "打盹"
+    },
+    "ac-wake-up": {
+      "zh-Hant": "起床",
+      "zh-HK": "起牀"
+    },
+    "ac-wait-for": {
+      "zh-Hant": "等待",
+      "zh-HK": "等待"
+    },
+    "ac-look-for": {
+      "zh-Hant": "尋找",
+      "zh-HK": "尋找"
+    },
+    "ac-search": {
+      "zh-Hant": "搜索",
+      "zh-HK": "搜索"
+    },
+    "ac-discover": {
+      "zh-Hant": "發現",
+      "zh-HK": "發現"
+    },
+    "ac-hide": {
+      "zh-Hant": "躲",
+      "zh-HK": "躲"
+    },
+    "ac-seek": {
+      "zh-Hant": "尋",
+      "zh-HK": "尋"
+    },
+    "ac-tag": {
+      "zh-Hant": "抓人",
+      "zh-HK": "抓人"
+    },
+    "ac-race": {
+      "zh-Hant": "比賽",
+      "zh-HK": "比賽"
+    },
+    "ac-cuddle": {
+      "zh-Hant": "擁抱",
+      "zh-HK": "擁抱"
+    },
+    "ac-snuggle": {
+      "zh-Hant": "依偎",
+      "zh-HK": "依偎"
+    },
+    "ac-pat": {
+      "zh-Hant": "輕拍",
+      "zh-HK": "輕拍"
+    },
+    "ac-tickle": {
+      "zh-Hant": "撓癢癢",
+      "zh-HK": "撓癢癢"
+    },
+    "ac-sweep": {
+      "zh-Hant": "掃地",
+      "zh-HK": "掃地"
+    },
+    "ac-mop": {
+      "zh-Hant": "拖地",
+      "zh-HK": "拖地"
+    },
+    "ac-vacuum": {
+      "zh-Hant": "吸塵",
+      "zh-HK": "吸塵"
+    },
+    "ac-dust": {
+      "zh-Hant": "除塵",
+      "zh-HK": "除塵"
+    },
+    "ac-carry-it": {
+      "zh-Hant": "拿著走",
+      "zh-HK": "拿着走"
+    },
+    "ac-drop-it": {
+      "zh-Hant": "放手",
+      "zh-HK": "放手"
+    },
+    "ac-toss-it": {
+      "zh-Hant": "扔",
+      "zh-HK": "扔"
+    },
+    "ac-roll-it": {
+      "zh-Hant": "滾它",
+      "zh-HK": "滾它"
+    },
+    "dw-big": {
+      "zh-Hant": "大",
+      "zh-HK": "大"
+    },
+    "dw-small": {
+      "zh-Hant": "小",
+      "zh-HK": "小"
+    },
+    "dw-hot": {
+      "zh-Hant": "熱",
+      "zh-HK": "熱"
+    },
+    "dw-cold": {
+      "zh-Hant": "冷",
+      "zh-HK": "冷"
+    },
+    "dw-good": {
+      "zh-Hant": "好",
+      "zh-HK": "好"
+    },
+    "dw-bad": {
+      "zh-Hant": "壞",
+      "zh-HK": "壞"
+    },
+    "dw-fast": {
+      "zh-Hant": "快",
+      "zh-HK": "快"
+    },
+    "dw-slow": {
+      "zh-Hant": "慢",
+      "zh-HK": "慢"
+    },
+    "dw-new": {
+      "zh-Hant": "新",
+      "zh-HK": "新"
+    },
+    "dw-old": {
+      "zh-Hant": "舊",
+      "zh-HK": "舊"
+    },
+    "dw-same": {
+      "zh-Hant": "一樣",
+      "zh-HK": "一樣"
+    },
+    "dw-different": {
+      "zh-Hant": "不同",
+      "zh-HK": "不同"
+    },
+    "dw-funny": {
+      "zh-Hant": "有趣",
+      "zh-HK": "有趣"
+    },
+    "dw-pretty": {
+      "zh-Hant": "漂亮",
+      "zh-HK": "漂亮"
+    },
+    "dw-yucky": {
+      "zh-Hant": "噁心",
+      "zh-HK": "噁心"
+    },
+    "dw-favorite": {
+      "zh-Hant": "最喜歡",
+      "zh-HK": "最喜歡"
+    },
+    "dw-tall": {
+      "zh-Hant": "高",
+      "zh-HK": "高"
+    },
+    "dw-short": {
+      "zh-Hant": "矮",
+      "zh-HK": "矮"
+    },
+    "dw-long": {
+      "zh-Hant": "長",
+      "zh-HK": "長"
+    },
+    "dw-wide": {
+      "zh-Hant": "寬",
+      "zh-HK": "寬"
+    },
+    "dw-narrow": {
+      "zh-Hant": "窄",
+      "zh-HK": "窄"
+    },
+    "dw-thick": {
+      "zh-Hant": "厚",
+      "zh-HK": "厚"
+    },
+    "dw-thin": {
+      "zh-Hant": "薄",
+      "zh-HK": "薄"
+    },
+    "dw-round": {
+      "zh-Hant": "圓",
+      "zh-HK": "圓"
+    },
+    "dw-square": {
+      "zh-Hant": "方形",
+      "zh-HK": "方形"
+    },
+    "dw-smooth": {
+      "zh-Hant": "光滑",
+      "zh-HK": "光滑"
+    },
+    "dw-rough": {
+      "zh-Hant": "粗糙",
+      "zh-HK": "粗糙"
+    },
+    "dw-sticky": {
+      "zh-Hant": "粘",
+      "zh-HK": "粘"
+    },
+    "dw-wet": {
+      "zh-Hant": "溼",
+      "zh-HK": "濕"
+    },
+    "dw-dry": {
+      "zh-Hant": "幹",
+      "zh-HK": "幹"
+    },
+    "dw-clean": {
+      "zh-Hant": "乾淨",
+      "zh-HK": "乾淨"
+    },
+    "dw-dirty": {
+      "zh-Hant": "髒",
+      "zh-HK": "髒"
+    },
+    "dw-soft": {
+      "zh-Hant": "軟",
+      "zh-HK": "軟"
+    },
+    "dw-hard": {
+      "zh-Hant": "硬",
+      "zh-HK": "硬"
+    },
+    "dw-sweet": {
+      "zh-Hant": "甜",
+      "zh-HK": "甜"
+    },
+    "dw-salty": {
+      "zh-Hant": "鹹",
+      "zh-HK": "鹹"
+    },
+    "dw-sour": {
+      "zh-Hant": "酸",
+      "zh-HK": "酸"
+    },
+    "dw-spicy": {
+      "zh-Hant": "辣",
+      "zh-HK": "辣"
+    },
+    "dw-bitter": {
+      "zh-Hant": "苦",
+      "zh-HK": "苦"
+    },
+    "dw-quiet": {
+      "zh-Hant": "安靜",
+      "zh-HK": "安靜"
+    },
+    "dw-loud": {
+      "zh-Hant": "響亮",
+      "zh-HK": "響亮"
+    },
+    "dw-bright": {
+      "zh-Hant": "明亮",
+      "zh-HK": "明亮"
+    },
+    "dw-dark": {
+      "zh-Hant": "黑暗",
+      "zh-HK": "黑暗"
+    },
+    "dw-shiny": {
+      "zh-Hant": "閃亮",
+      "zh-HK": "閃亮"
+    },
+    "dw-heavy": {
+      "zh-Hant": "重",
+      "zh-HK": "重"
+    },
+    "dw-light": {
+      "zh-Hant": "輕",
+      "zh-HK": "輕"
+    },
+    "dw-empty": {
+      "zh-Hant": "空",
+      "zh-HK": "空"
+    },
+    "dw-full": {
+      "zh-Hant": "滿",
+      "zh-HK": "滿"
+    },
+    "dw-easy": {
+      "zh-Hant": "容易",
+      "zh-HK": "容易"
+    },
+    "dw-tricky": {
+      "zh-Hant": "棘手",
+      "zh-HK": "棘手"
+    },
+    "dw-simple": {
+      "zh-Hant": "簡單",
+      "zh-HK": "簡單"
+    },
+    "dw-fun": {
+      "zh-Hant": "有趣",
+      "zh-HK": "有趣"
+    },
+    "dw-boring": {
+      "zh-Hant": "無聊",
+      "zh-HK": "無聊"
+    },
+    "dw-cool": {
+      "zh-Hant": "酷",
+      "zh-HK": "酷"
+    },
+    "dw-awesome": {
+      "zh-Hant": "厲害",
+      "zh-HK": "厲害"
+    },
+    "dw-scary": {
+      "zh-Hant": "可怕",
+      "zh-HK": "可怕"
+    },
+    "dw-safe": {
+      "zh-Hant": "安全",
+      "zh-HK": "安全"
+    },
+    "dw-dangerous": {
+      "zh-Hant": "危險",
+      "zh-HK": "危險"
+    },
+    "dw-friendly": {
+      "zh-Hant": "友好",
+      "zh-HK": "友好"
+    },
+    "dw-mean": {
+      "zh-Hant": "壞",
+      "zh-HK": "壞"
+    },
+    "dw-nice": {
+      "zh-Hant": "好",
+      "zh-HK": "好"
+    },
+    "dw-helpful": {
+      "zh-Hant": "有幫助",
+      "zh-HK": "有幫助"
+    },
+    "dw-mine": {
+      "zh-Hant": "我的",
+      "zh-HK": "我的"
+    },
+    "dw-special": {
+      "zh-Hant": "特別",
+      "zh-HK": "特別"
+    },
+    "pp-mom": {
+      "zh-Hant": "媽媽",
+      "zh-HK": "媽媽"
+    },
+    "pp-dad": {
+      "zh-Hant": "爸爸",
+      "zh-HK": "爸爸"
+    },
+    "pp-teacher": {
+      "zh-Hant": "老師",
+      "zh-HK": "老師"
+    },
+    "pp-friend": {
+      "zh-Hant": "朋友",
+      "zh-HK": "朋友"
+    },
+    "pp-family": {
+      "zh-Hant": "家人",
+      "zh-HK": "家人"
+    },
+    "pp-doctor": {
+      "zh-Hant": "醫生",
+      "zh-HK": "醫生"
+    },
+    "pp-brother": {
+      "zh-Hant": "哥哥",
+      "zh-HK": "哥哥"
+    },
+    "pp-sister": {
+      "zh-Hant": "姐姐",
+      "zh-HK": "姐姐"
+    },
+    "pp-grandma": {
+      "zh-Hant": "奶奶",
+      "zh-HK": "奶奶"
+    },
+    "pp-grandpa": {
+      "zh-Hant": "爺爺",
+      "zh-HK": "爺爺"
+    },
+    "pp-baby": {
+      "zh-Hant": "寶寶",
+      "zh-HK": "寶寶"
+    },
+    "pp-boy": {
+      "zh-Hant": "男孩",
+      "zh-HK": "男孩"
+    },
+    "pp-girl": {
+      "zh-Hant": "女孩",
+      "zh-HK": "女孩"
+    },
+    "pp-therapist": {
+      "zh-Hant": "治療師",
+      "zh-HK": "治療師"
+    },
+    "pp-aunt": {
+      "zh-Hant": "姑姑",
+      "zh-HK": "姑姑"
+    },
+    "pp-uncle": {
+      "zh-Hant": "叔叔",
+      "zh-HK": "叔叔"
+    },
+    "pp-cousin": {
+      "zh-Hant": "表哥/弟",
+      "zh-HK": "表哥/弟"
+    },
+    "pp-stepmom": {
+      "zh-Hant": "繼母",
+      "zh-HK": "繼母"
+    },
+    "pp-stepdad": {
+      "zh-Hant": "繼父",
+      "zh-HK": "繼父"
+    },
+    "pp-bus-driver": {
+      "zh-Hant": "公交司機",
+      "zh-HK": "公交司機"
+    },
+    "pp-coach": {
+      "zh-Hant": "教練",
+      "zh-HK": "教練"
+    },
+    "pp-principal": {
+      "zh-Hant": "校長",
+      "zh-HK": "校長"
+    },
+    "pp-counselor": {
+      "zh-Hant": "輔導員",
+      "zh-HK": "輔導員"
+    },
+    "pp-nurse": {
+      "zh-Hant": "護士",
+      "zh-HK": "護士"
+    },
+    "pp-dentist": {
+      "zh-Hant": "牙醫",
+      "zh-HK": "牙醫"
+    },
+    "pp-bcba": {
+      "zh-Hant": "BCBA",
+      "zh-HK": "BCBA"
+    },
+    "pp-rbt": {
+      "zh-Hant": "RBT",
+      "zh-HK": "RBT"
+    },
+    "pp-babysitter": {
+      "zh-Hant": "保姆",
+      "zh-HK": "保姆"
+    },
+    "pp-neighbor": {
+      "zh-Hant": "鄰居",
+      "zh-HK": "鄰居"
+    },
+    "pp-helper": {
+      "zh-Hant": "幫手",
+      "zh-HK": "幫手"
+    },
+    "pp-classmate": {
+      "zh-Hant": "同學",
+      "zh-HK": "同學"
+    },
+    "pp-best-friend": {
+      "zh-Hant": "最好的朋友",
+      "zh-HK": "最好的朋友"
+    },
+    "pp-new-friend": {
+      "zh-Hant": "新朋友",
+      "zh-HK": "新朋友"
+    },
+    "pp-man": {
+      "zh-Hant": "男人",
+      "zh-HK": "男人"
+    },
+    "pp-woman": {
+      "zh-Hant": "女人",
+      "zh-HK": "女人"
+    },
+    "pp-kid": {
+      "zh-Hant": "孩子",
+      "zh-HK": "孩子"
+    },
+    "pp-grown-up": {
+      "zh-Hant": "大人",
+      "zh-HK": "大人"
+    },
+    "pp-stranger": {
+      "zh-Hant": "陌生人",
+      "zh-HK": "陌生人"
+    },
+    "pp-police-officer": {
+      "zh-Hant": "警察",
+      "zh-HK": "警察"
+    },
+    "pp-firefighter": {
+      "zh-Hant": "消防員",
+      "zh-HK": "消防員"
+    },
+    "pp-paramedic": {
+      "zh-Hant": "急救員",
+      "zh-HK": "急救員"
+    },
+    "pp-my-family": {
+      "zh-Hant": "我的家人",
+      "zh-HK": "我的家人"
+    },
+    "pp-my-class": {
+      "zh-Hant": "我們班",
+      "zh-HK": "我們班"
+    },
+    "pp-my-team": {
+      "zh-Hant": "我的隊",
+      "zh-HK": "我的隊"
+    },
+    "fd-water": {
+      "zh-Hant": "水",
+      "zh-HK": "水"
+    },
+    "fd-juice": {
+      "zh-Hant": "果汁",
+      "zh-HK": "果汁"
+    },
+    "fd-milk": {
+      "zh-Hant": "牛奶",
+      "zh-HK": "牛奶"
+    },
+    "fd-pizza": {
+      "zh-Hant": "披薩",
+      "zh-HK": "披薩"
+    },
+    "fd-sandwich": {
+      "zh-Hant": "三明治",
+      "zh-HK": "三明治"
+    },
+    "fd-chicken": {
+      "zh-Hant": "雞肉",
+      "zh-HK": "雞肉"
+    },
+    "fd-fries": {
+      "zh-Hant": "薯條",
+      "zh-HK": "薯條"
+    },
+    "fd-fruit": {
+      "zh-Hant": "水果",
+      "zh-HK": "水果"
+    },
+    "fd-snack": {
+      "zh-Hant": "零食",
+      "zh-HK": "零食"
+    },
+    "fd-more": {
+      "zh-Hant": "再來點",
+      "zh-HK": "再來點"
+    },
+    "fd-no-thanks": {
+      "zh-Hant": "不用了",
+      "zh-HK": "不用了"
+    },
+    "fd-cookie": {
+      "zh-Hant": "餅乾",
+      "zh-HK": "餅乾"
+    },
+    "fd-apple": {
+      "zh-Hant": "蘋果",
+      "zh-HK": "蘋果"
+    },
+    "fd-banana": {
+      "zh-Hant": "香蕉",
+      "zh-HK": "香蕉"
+    },
+    "fd-cereal": {
+      "zh-Hant": "麥片",
+      "zh-HK": "麥片"
+    },
+    "fd-cheese": {
+      "zh-Hant": "奶酪",
+      "zh-HK": "奶酪"
+    },
+    "fd-ice-cream": {
+      "zh-Hant": "冰淇淋",
+      "zh-HK": "冰淇淋"
+    },
+    "fd-crackers": {
+      "zh-Hant": "餅乾",
+      "zh-HK": "餅乾"
+    },
+    "fd-bread": {
+      "zh-Hant": "麵包",
+      "zh-HK": "麪包"
+    },
+    "fd-toast": {
+      "zh-Hant": "吐司",
+      "zh-HK": "吐司"
+    },
+    "fd-pancakes": {
+      "zh-Hant": "薄煎餅",
+      "zh-HK": "薄煎餅"
+    },
+    "fd-waffles": {
+      "zh-Hant": "華夫餅",
+      "zh-HK": "華夫餅"
+    },
+    "fd-eggs": {
+      "zh-Hant": "雞蛋",
+      "zh-HK": "雞蛋"
+    },
+    "fd-bacon": {
+      "zh-Hant": "培根",
+      "zh-HK": "培根"
+    },
+    "fd-yogurt": {
+      "zh-Hant": "酸奶",
+      "zh-HK": "酸奶"
+    },
+    "fd-oatmeal": {
+      "zh-Hant": "燕麥粥",
+      "zh-HK": "燕麥粥"
+    },
+    "fd-granola": {
+      "zh-Hant": "格蘭諾拉",
+      "zh-HK": "格蘭諾拉"
+    },
+    "fd-smoothie": {
+      "zh-Hant": "冰沙",
+      "zh-HK": "冰沙"
+    },
+    "fd-pasta": {
+      "zh-Hant": "麵食",
+      "zh-HK": "麪食"
+    },
+    "fd-noodles": {
+      "zh-Hant": "麵條",
+      "zh-HK": "麪條"
+    },
+    "fd-rice": {
+      "zh-Hant": "米飯",
+      "zh-HK": "米飯"
+    },
+    "fd-soup": {
+      "zh-Hant": "湯",
+      "zh-HK": "湯"
+    },
+    "fd-salad": {
+      "zh-Hant": "沙拉",
+      "zh-HK": "沙拉"
+    },
+    "fd-wrap": {
+      "zh-Hant": "卷",
+      "zh-HK": "卷"
+    },
+    "fd-hamburger": {
+      "zh-Hant": "漢堡",
+      "zh-HK": "漢堡"
+    },
+    "fd-hot-dog": {
+      "zh-Hant": "熱狗",
+      "zh-HK": "熱狗"
+    },
+    "fd-taco": {
+      "zh-Hant": "玉米餅",
+      "zh-HK": "玉米餅"
+    },
+    "fd-burrito": {
+      "zh-Hant": "捲餅",
+      "zh-HK": "捲餅"
+    },
+    "fd-quesadilla": {
+      "zh-Hant": "芝士玉米餅",
+      "zh-HK": "芝士玉米餅"
+    },
+    "fd-sushi": {
+      "zh-Hant": "壽司",
+      "zh-HK": "壽司"
+    },
+    "fd-dumplings": {
+      "zh-Hant": "餃子",
+      "zh-HK": "餃子"
+    },
+    "fd-curry": {
+      "zh-Hant": "咖喱",
+      "zh-HK": "咖喱"
+    },
+    "fd-stir-fry": {
+      "zh-Hant": "炒菜",
+      "zh-HK": "炒菜"
+    },
+    "fd-carrots": {
+      "zh-Hant": "胡蘿蔔",
+      "zh-HK": "胡蘿蔔"
+    },
+    "fd-broccoli": {
+      "zh-Hant": "西蘭花",
+      "zh-HK": "西蘭花"
+    },
+    "fd-peas": {
+      "zh-Hant": "豌豆",
+      "zh-HK": "豌豆"
+    },
+    "fd-corn": {
+      "zh-Hant": "玉米",
+      "zh-HK": "玉米"
+    },
+    "fd-tomato": {
+      "zh-Hant": "番茄",
+      "zh-HK": "番茄"
+    },
+    "fd-cucumber": {
+      "zh-Hant": "黃瓜",
+      "zh-HK": "黃瓜"
+    },
+    "fd-lettuce": {
+      "zh-Hant": "生菜",
+      "zh-HK": "生菜"
+    },
+    "fd-spinach": {
+      "zh-Hant": "菠菜",
+      "zh-HK": "菠菜"
+    },
+    "fd-potato": {
+      "zh-Hant": "土豆",
+      "zh-HK": "土豆"
+    },
+    "fd-sweet-potato": {
+      "zh-Hant": "紅薯",
+      "zh-HK": "紅薯"
+    },
+    "fd-strawberry": {
+      "zh-Hant": "草莓",
+      "zh-HK": "草莓"
+    },
+    "fd-blueberry": {
+      "zh-Hant": "藍莓",
+      "zh-HK": "藍莓"
+    },
+    "fd-grapes": {
+      "zh-Hant": "葡萄",
+      "zh-HK": "葡萄"
+    },
+    "fd-watermelon": {
+      "zh-Hant": "西瓜",
+      "zh-HK": "西瓜"
+    },
+    "fd-orange": {
+      "zh-Hant": "橙子",
+      "zh-HK": "橙子"
+    },
+    "fd-pear": {
+      "zh-Hant": "梨",
+      "zh-HK": "梨"
+    },
+    "fd-peach": {
+      "zh-Hant": "桃子",
+      "zh-HK": "桃子"
+    },
+    "fd-mango": {
+      "zh-Hant": "芒果",
+      "zh-HK": "芒果"
+    },
+    "fd-pineapple": {
+      "zh-Hant": "菠蘿",
+      "zh-HK": "菠蘿"
+    },
+    "fd-cake": {
+      "zh-Hant": "蛋糕",
+      "zh-HK": "蛋糕"
+    },
+    "fd-cupcake": {
+      "zh-Hant": "紙杯蛋糕",
+      "zh-HK": "紙杯蛋糕"
+    },
+    "fd-brownie": {
+      "zh-Hant": "布朗尼",
+      "zh-HK": "布朗尼"
+    },
+    "fd-donut": {
+      "zh-Hant": "甜甜圈",
+      "zh-HK": "甜甜圈"
+    },
+    "fd-muffin": {
+      "zh-Hant": "鬆餅",
+      "zh-HK": "鬆餅"
+    },
+    "fd-pie": {
+      "zh-Hant": "派",
+      "zh-HK": "派"
+    },
+    "fd-pudding": {
+      "zh-Hant": "布丁",
+      "zh-HK": "布丁"
+    },
+    "fd-jello": {
+      "zh-Hant": "果凍",
+      "zh-HK": "果凍"
+    },
+    "fd-candy": {
+      "zh-Hant": "糖果",
+      "zh-HK": "糖果"
+    },
+    "fd-chocolate": {
+      "zh-Hant": "巧克力",
+      "zh-HK": "巧克力"
+    },
+    "fd-lollipop": {
+      "zh-Hant": "棒棒糖",
+      "zh-HK": "棒棒糖"
+    },
+    "fd-gum": {
+      "zh-Hant": "口香糖",
+      "zh-HK": "口香糖"
+    },
+    "fd-soda": {
+      "zh-Hant": "汽水",
+      "zh-HK": "汽水"
+    },
+    "fd-tea": {
+      "zh-Hant": "茶",
+      "zh-HK": "茶"
+    },
+    "fd-hot-chocolate": {
+      "zh-Hant": "熱巧克力",
+      "zh-HK": "熱巧克力"
+    },
+    "fd-lemonade": {
+      "zh-Hant": "檸檬水",
+      "zh-HK": "檸檬水"
+    },
+    "fd-spoon": {
+      "zh-Hant": "勺子",
+      "zh-HK": "勺子"
+    },
+    "fd-fork": {
+      "zh-Hant": "叉子",
+      "zh-HK": "叉子"
+    },
+    "fd-knife": {
+      "zh-Hant": "刀",
+      "zh-HK": "刀"
+    },
+    "fd-plate": {
+      "zh-Hant": "盤子",
+      "zh-HK": "盤子"
+    },
+    "fd-bowl": {
+      "zh-Hant": "碗",
+      "zh-HK": "碗"
+    },
+    "fd-cup": {
+      "zh-Hant": "杯子",
+      "zh-HK": "杯子"
+    },
+    "fd-straw": {
+      "zh-Hant": "吸管",
+      "zh-HK": "吸管"
+    },
+    "fd-napkin": {
+      "zh-Hant": "紙巾",
+      "zh-HK": "紙巾"
+    },
+    "fd-bib": {
+      "zh-Hant": "圍兜",
+      "zh-HK": "圍兜"
+    },
+    "fd-open-it-please": {
+      "zh-Hant": "請幫我打開",
+      "zh-HK": "請幫我打開"
+    },
+    "fd-cut-it-up-please": {
+      "zh-Hant": "請幫我切",
+      "zh-HK": "請幫我切"
+    },
+    "fd-not-too-hot": {
+      "zh-Hant": "不要太燙",
+      "zh-HK": "不要太燙"
+    },
+    "fd-i-am-allergic": {
+      "zh-Hant": "我對…過敏",
+      "zh-HK": "我對…過敏"
+    },
+    "pl-home": {
+      "zh-Hant": "家",
+      "zh-HK": "家"
+    },
+    "pl-school": {
+      "zh-Hant": "學校",
+      "zh-HK": "學校"
+    },
+    "pl-park": {
+      "zh-Hant": "公園",
+      "zh-HK": "公園"
+    },
+    "pl-store": {
+      "zh-Hant": "商店",
+      "zh-HK": "商店"
+    },
+    "pl-restaurant": {
+      "zh-Hant": "餐廳",
+      "zh-HK": "餐廳"
+    },
+    "pl-library": {
+      "zh-Hant": "圖書館",
+      "zh-HK": "圖書館"
+    },
+    "pl-pool": {
+      "zh-Hant": "游泳池",
+      "zh-HK": "游泳池"
+    },
+    "pl-car": {
+      "zh-Hant": "車",
+      "zh-HK": "車"
+    },
+    "pl-outside": {
+      "zh-Hant": "外面",
+      "zh-HK": "外面"
+    },
+    "pl-inside": {
+      "zh-Hant": "裡面",
+      "zh-HK": "裏面"
+    },
+    "pl-bathroom": {
+      "zh-Hant": "浴室",
+      "zh-HK": "浴室"
+    },
+    "pl-bedroom": {
+      "zh-Hant": "臥室",
+      "zh-HK": "卧室"
+    },
+    "pl-kitchen": {
+      "zh-Hant": "廚房",
+      "zh-HK": "廚房"
+    },
+    "pl-playground": {
+      "zh-Hant": "操場",
+      "zh-HK": "操場"
+    },
+    "pl-backyard": {
+      "zh-Hant": "後院",
+      "zh-HK": "後院"
+    },
+    "pl-front-yard": {
+      "zh-Hant": "前院",
+      "zh-HK": "前院"
+    },
+    "pl-garden": {
+      "zh-Hant": "花園",
+      "zh-HK": "花園"
+    },
+    "pl-driveway": {
+      "zh-Hant": "車道",
+      "zh-HK": "車道"
+    },
+    "pl-living-room": {
+      "zh-Hant": "客廳",
+      "zh-HK": "客廳"
+    },
+    "pl-dining-room": {
+      "zh-Hant": "餐廳",
+      "zh-HK": "餐廳"
+    },
+    "pl-garage": {
+      "zh-Hant": "車庫",
+      "zh-HK": "車庫"
+    },
+    "pl-basement": {
+      "zh-Hant": "地下室",
+      "zh-HK": "地下室"
+    },
+    "pl-attic": {
+      "zh-Hant": "閣樓",
+      "zh-HK": "閣樓"
+    },
+    "pl-hospital": {
+      "zh-Hant": "醫院",
+      "zh-HK": "醫院"
+    },
+    "pl-doctor-office": {
+      "zh-Hant": "診所",
+      "zh-HK": "診所"
+    },
+    "pl-dentist-office": {
+      "zh-Hant": "牙科診所",
+      "zh-HK": "牙科診所"
+    },
+    "pl-pharmacy": {
+      "zh-Hant": "藥店",
+      "zh-HK": "藥店"
+    },
+    "pl-grocery-store": {
+      "zh-Hant": "超市",
+      "zh-HK": "超市"
+    },
+    "pl-mall": {
+      "zh-Hant": "商場",
+      "zh-HK": "商場"
+    },
+    "pl-pet-store": {
+      "zh-Hant": "寵物店",
+      "zh-HK": "寵物店"
+    },
+    "pl-toy-store": {
+      "zh-Hant": "玩具店",
+      "zh-HK": "玩具店"
+    },
+    "pl-movie-theater": {
+      "zh-Hant": "電影院",
+      "zh-HK": "電影院"
+    },
+    "pl-bowling-alley": {
+      "zh-Hant": "保齡球館",
+      "zh-HK": "保齡球館"
+    },
+    "pl-arcade": {
+      "zh-Hant": "遊戲廳",
+      "zh-HK": "遊戲廳"
+    },
+    "pl-beach": {
+      "zh-Hant": "海灘",
+      "zh-HK": "海灘"
+    },
+    "pl-lake": {
+      "zh-Hant": "湖",
+      "zh-HK": "湖"
+    },
+    "pl-mountain": {
+      "zh-Hant": "山",
+      "zh-HK": "山"
+    },
+    "pl-forest": {
+      "zh-Hant": "森林",
+      "zh-HK": "森林"
+    },
+    "pl-camp": {
+      "zh-Hant": "營地",
+      "zh-HK": "營地"
+    },
+    "pl-zoo": {
+      "zh-Hant": "動物園",
+      "zh-HK": "動物園"
+    },
+    "pl-aquarium": {
+      "zh-Hant": "水族館",
+      "zh-HK": "水族館"
+    },
+    "pl-museum": {
+      "zh-Hant": "博物館",
+      "zh-HK": "博物館"
+    },
+    "pl-farm": {
+      "zh-Hant": "農場",
+      "zh-HK": "農場"
+    },
+    "pl-church": {
+      "zh-Hant": "教堂",
+      "zh-HK": "教堂"
+    },
+    "pl-temple": {
+      "zh-Hant": "寺廟",
+      "zh-HK": "寺廟"
+    },
+    "pl-mosque": {
+      "zh-Hant": "清真寺",
+      "zh-HK": "清真寺"
+    },
+    "pl-synagogue": {
+      "zh-Hant": "猶太教堂",
+      "zh-HK": "猶太教堂"
+    },
+    "pl-bus-stop": {
+      "zh-Hant": "公交站",
+      "zh-HK": "公交站"
+    },
+    "pl-train-station": {
+      "zh-Hant": "火車站",
+      "zh-HK": "火車站"
+    },
+    "pl-airport": {
+      "zh-Hant": "機場",
+      "zh-HK": "機場"
+    },
+    "sw-class": {
+      "zh-Hant": "課",
+      "zh-HK": "課"
+    },
+    "sw-homework": {
+      "zh-Hant": "作業",
+      "zh-HK": "作業"
+    },
+    "sw-computer": {
+      "zh-Hant": "電腦",
+      "zh-HK": "電腦"
+    },
+    "sw-book": {
+      "zh-Hant": "書",
+      "zh-HK": "書"
+    },
+    "sw-pencil": {
+      "zh-Hant": "鉛筆",
+      "zh-HK": "鉛筆"
+    },
+    "sw-question": {
+      "zh-Hant": "我有個問題",
+      "zh-HK": "我有個問題"
+    },
+    "sw-finished": {
+      "zh-Hant": "我做完了",
+      "zh-HK": "我做完了"
+    },
+    "sw-help": {
+      "zh-Hant": "我需要幫助",
+      "zh-HK": "我需要幫助"
+    },
+    "sw-paper": {
+      "zh-Hant": "紙",
+      "zh-HK": "紙"
+    },
+    "sw-table": {
+      "zh-Hant": "桌子",
+      "zh-HK": "桌子"
+    },
+    "sw-chair": {
+      "zh-Hant": "椅子",
+      "zh-HK": "椅子"
+    },
+    "sw-art": {
+      "zh-Hant": "美術",
+      "zh-HK": "美術"
+    },
+    "sw-music": {
+      "zh-Hant": "音樂",
+      "zh-HK": "音樂"
+    },
+    "sw-recess": {
+      "zh-Hant": "課間",
+      "zh-HK": "課間"
+    },
+    "sw-backpack": {
+      "zh-Hant": "書包",
+      "zh-HK": "書包"
+    },
+    "sw-lunchbox": {
+      "zh-Hant": "飯盒",
+      "zh-HK": "飯盒"
+    },
+    "sw-folder": {
+      "zh-Hant": "文件夾",
+      "zh-HK": "文件夾"
+    },
+    "sw-notebook": {
+      "zh-Hant": "筆記本",
+      "zh-HK": "筆記本"
+    },
+    "sw-crayons": {
+      "zh-Hant": "蠟筆",
+      "zh-HK": "蠟筆"
+    },
+    "sw-markers": {
+      "zh-Hant": "馬克筆",
+      "zh-HK": "馬克筆"
+    },
+    "sw-scissors": {
+      "zh-Hant": "剪刀",
+      "zh-HK": "剪刀"
+    },
+    "sw-glue": {
+      "zh-Hant": "膠水",
+      "zh-HK": "膠水"
+    },
+    "sw-tape": {
+      "zh-Hant": "膠帶",
+      "zh-HK": "膠帶"
+    },
+    "sw-eraser": {
+      "zh-Hant": "橡皮",
+      "zh-HK": "橡皮"
+    },
+    "sw-ruler": {
+      "zh-Hant": "尺子",
+      "zh-HK": "尺子"
+    },
+    "sw-whiteboard": {
+      "zh-Hant": "白板",
+      "zh-HK": "白板"
+    },
+    "sw-smart-board": {
+      "zh-Hant": "智能白板",
+      "zh-HK": "智能白板"
+    },
+    "sw-projector": {
+      "zh-Hant": "投影儀",
+      "zh-HK": "投影儀"
+    },
+    "sw-math": {
+      "zh-Hant": "數學",
+      "zh-HK": "數學"
+    },
+    "sw-reading": {
+      "zh-Hant": "閱讀",
+      "zh-HK": "閲讀"
+    },
+    "sw-writing": {
+      "zh-Hant": "寫作",
+      "zh-HK": "寫作"
+    },
+    "sw-spelling": {
+      "zh-Hant": "拼寫",
+      "zh-HK": "拼寫"
+    },
+    "sw-science": {
+      "zh-Hant": "科學",
+      "zh-HK": "科學"
+    },
+    "sw-social-studies": {
+      "zh-Hant": "社會學",
+      "zh-HK": "社會學"
+    },
+    "sw-history": {
+      "zh-Hant": "歷史",
+      "zh-HK": "歷史"
+    },
+    "sw-pe": {
+      "zh-Hant": "體育",
+      "zh-HK": "體育"
+    },
+    "sw-gym": {
+      "zh-Hant": "體育館",
+      "zh-HK": "體育館"
+    },
+    "sw-recess-time": {
+      "zh-Hant": "課間休息",
+      "zh-HK": "課間休息"
+    },
+    "sw-library-time": {
+      "zh-Hant": "圖書館時間",
+      "zh-HK": "圖書館時間"
+    },
+    "sw-story-time": {
+      "zh-Hant": "故事時間",
+      "zh-HK": "故事時間"
+    },
+    "sw-circle-time": {
+      "zh-Hant": "圓圈時間",
+      "zh-HK": "圓圈時間"
+    },
+    "sw-lunch-time": {
+      "zh-Hant": "午餐時間",
+      "zh-HK": "午餐時間"
+    },
+    "sw-snack-time": {
+      "zh-Hant": "零食時間",
+      "zh-HK": "零食時間"
+    },
+    "sw-worksheet": {
+      "zh-Hant": "工作表",
+      "zh-HK": "工作表"
+    },
+    "sw-quiz": {
+      "zh-Hant": "小測",
+      "zh-HK": "小測"
+    },
+    "sw-test": {
+      "zh-Hant": "考試",
+      "zh-HK": "考試"
+    },
+    "sw-project": {
+      "zh-Hant": "項目",
+      "zh-HK": "項目"
+    },
+    "sw-field-trip": {
+      "zh-Hant": "郊遊",
+      "zh-HK": "郊遊"
+    },
+    "sw-assembly": {
+      "zh-Hant": "集會",
+      "zh-HK": "集會"
+    },
+    "sw-bus-ride": {
+      "zh-Hant": "坐公交",
+      "zh-HK": "坐公交"
+    },
+    "hb-head": {
+      "zh-Hant": "頭",
+      "zh-HK": "頭"
+    },
+    "hb-tummy": {
+      "zh-Hant": "肚子",
+      "zh-HK": "肚子"
+    },
+    "hb-hand": {
+      "zh-Hant": "手",
+      "zh-HK": "手"
+    },
+    "hb-foot": {
+      "zh-Hant": "腳",
+      "zh-HK": "腳"
+    },
+    "hb-eye": {
+      "zh-Hant": "眼睛",
+      "zh-HK": "眼睛"
+    },
+    "hb-ear": {
+      "zh-Hant": "耳朵",
+      "zh-HK": "耳朵"
+    },
+    "hb-mouth": {
+      "zh-Hant": "嘴巴",
+      "zh-HK": "嘴巴"
+    },
+    "hb-nose": {
+      "zh-Hant": "鼻子",
+      "zh-HK": "鼻子"
+    },
+    "hb-hurts": {
+      "zh-Hant": "疼",
+      "zh-HK": "疼"
+    },
+    "hb-sick": {
+      "zh-Hant": "不舒服",
+      "zh-HK": "不舒服"
+    },
+    "hb-medicine": {
+      "zh-Hant": "藥",
+      "zh-HK": "藥"
+    },
+    "hb-teeth": {
+      "zh-Hant": "牙齒",
+      "zh-HK": "牙齒"
+    },
+    "hb-back": {
+      "zh-Hant": "背",
+      "zh-HK": "背"
+    },
+    "hb-arm": {
+      "zh-Hant": "胳膊",
+      "zh-HK": "胳膊"
+    },
+    "hb-hair": {
+      "zh-Hant": "頭髮",
+      "zh-HK": "頭髮"
+    },
+    "hb-face": {
+      "zh-Hant": "臉",
+      "zh-HK": "臉"
+    },
+    "hb-forehead": {
+      "zh-Hant": "額頭",
+      "zh-HK": "額頭"
+    },
+    "hb-cheek": {
+      "zh-Hant": "臉頰",
+      "zh-HK": "臉頰"
+    },
+    "hb-chin": {
+      "zh-Hant": "下巴",
+      "zh-HK": "下巴"
+    },
+    "hb-lips": {
+      "zh-Hant": "嘴唇",
+      "zh-HK": "嘴唇"
+    },
+    "hb-tongue": {
+      "zh-Hant": "舌頭",
+      "zh-HK": "舌頭"
+    },
+    "hb-throat": {
+      "zh-Hant": "喉嚨",
+      "zh-HK": "喉嚨"
+    },
+    "hb-neck": {
+      "zh-Hant": "脖子",
+      "zh-HK": "脖子"
+    },
+    "hb-shoulder": {
+      "zh-Hant": "肩膀",
+      "zh-HK": "肩膀"
+    },
+    "hb-elbow": {
+      "zh-Hant": "肘",
+      "zh-HK": "肘"
+    },
+    "hb-wrist": {
+      "zh-Hant": "手腕",
+      "zh-HK": "手腕"
+    },
+    "hb-finger": {
+      "zh-Hant": "手指",
+      "zh-HK": "手指"
+    },
+    "hb-thumb": {
+      "zh-Hant": "拇指",
+      "zh-HK": "拇指"
+    },
+    "hb-knuckle": {
+      "zh-Hant": "指節",
+      "zh-HK": "指節"
+    },
+    "hb-knee": {
+      "zh-Hant": "膝蓋",
+      "zh-HK": "膝蓋"
+    },
+    "hb-ankle": {
+      "zh-Hant": "腳踝",
+      "zh-HK": "腳踝"
+    },
+    "hb-toe": {
+      "zh-Hant": "腳趾",
+      "zh-HK": "腳趾"
+    },
+    "hb-heel": {
+      "zh-Hant": "腳跟",
+      "zh-HK": "腳跟"
+    },
+    "hb-chest": {
+      "zh-Hant": "胸",
+      "zh-HK": "胸"
+    },
+    "hb-belly": {
+      "zh-Hant": "肚子",
+      "zh-HK": "肚子"
+    },
+    "hb-hip": {
+      "zh-Hant": "臀部",
+      "zh-HK": "臀部"
+    },
+    "hb-bottom": {
+      "zh-Hant": "屁股",
+      "zh-HK": "屁股"
+    },
+    "hb-skin": {
+      "zh-Hant": "皮膚",
+      "zh-HK": "皮膚"
+    },
+    "hb-bone": {
+      "zh-Hant": "骨頭",
+      "zh-HK": "骨頭"
+    },
+    "hb-muscle": {
+      "zh-Hant": "肌肉",
+      "zh-HK": "肌肉"
+    },
+    "hb-headache": {
+      "zh-Hant": "頭痛",
+      "zh-HK": "頭痛"
+    },
+    "hb-stomachache": {
+      "zh-Hant": "肚子痛",
+      "zh-HK": "肚子痛"
+    },
+    "hb-earache": {
+      "zh-Hant": "耳朵痛",
+      "zh-HK": "耳朵痛"
+    },
+    "hb-toothache": {
+      "zh-Hant": "牙痛",
+      "zh-HK": "牙痛"
+    },
+    "hb-sore-throat": {
+      "zh-Hant": "喉嚨痛",
+      "zh-HK": "喉嚨痛"
+    },
+    "hb-cough": {
+      "zh-Hant": "咳嗽",
+      "zh-HK": "咳嗽"
+    },
+    "hb-sneeze": {
+      "zh-Hant": "打噴嚏",
+      "zh-HK": "打噴嚏"
+    },
+    "hb-runny-nose": {
+      "zh-Hant": "流鼻涕",
+      "zh-HK": "流鼻涕"
+    },
+    "hb-stuffy-nose": {
+      "zh-Hant": "鼻子塞",
+      "zh-HK": "鼻子塞"
+    },
+    "hb-fever": {
+      "zh-Hant": "發燒",
+      "zh-HK": "發燒"
+    },
+    "hb-chills": {
+      "zh-Hant": "發冷",
+      "zh-HK": "發冷"
+    },
+    "hb-shaking": {
+      "zh-Hant": "發抖",
+      "zh-HK": "發抖"
+    },
+    "hb-dizzy-spell": {
+      "zh-Hant": "頭暈",
+      "zh-HK": "頭暈"
+    },
+    "hb-bruise": {
+      "zh-Hant": "淤青",
+      "zh-HK": "淤青"
+    },
+    "hb-cut": {
+      "zh-Hant": "割傷",
+      "zh-HK": "割傷"
+    },
+    "hb-scrape": {
+      "zh-Hant": "擦傷",
+      "zh-HK": "擦傷"
+    },
+    "hb-bump": {
+      "zh-Hant": "腫塊",
+      "zh-HK": "腫塊"
+    },
+    "hb-bandage": {
+      "zh-Hant": "繃帶",
+      "zh-HK": "繃帶"
+    },
+    "hb-itchy-spot": {
+      "zh-Hant": "發癢",
+      "zh-HK": "發癢"
+    },
+    "hb-rash": {
+      "zh-Hant": "皮疹",
+      "zh-HK": "皮疹"
+    },
+    "hb-allergic-reaction": {
+      "zh-Hant": "過敏反應",
+      "zh-HK": "過敏反應"
+    },
+    "hb-pain": {
+      "zh-Hant": "疼痛",
+      "zh-HK": "疼痛"
+    },
+    "hb-sharp-pain": {
+      "zh-Hant": "刺痛",
+      "zh-HK": "刺痛"
+    },
+    "hb-dull-pain": {
+      "zh-Hant": "隱痛",
+      "zh-HK": "隱痛"
+    },
+    "hb-burning": {
+      "zh-Hant": "灼熱感",
+      "zh-HK": "灼熱感"
+    },
+    "hb-vitamins": {
+      "zh-Hant": "維生素",
+      "zh-HK": "維生素"
+    },
+    "hb-inhaler": {
+      "zh-Hant": "吸入器",
+      "zh-HK": "吸入器"
+    },
+    "hb-epipen": {
+      "zh-Hant": "腎上腺素筆",
+      "zh-HK": "腎上腺素筆"
+    },
+    "hb-pill": {
+      "zh-Hant": "藥片",
+      "zh-HK": "藥片"
+    },
+    "hb-drops": {
+      "zh-Hant": "眼藥水",
+      "zh-HK": "眼藥水"
+    },
+    "hb-doctor-visit": {
+      "zh-Hant": "看醫生",
+      "zh-HK": "看醫生"
+    },
+    "hb-shot": {
+      "zh-Hant": "打針",
+      "zh-HK": "打針"
+    },
+    "hb-x-ray": {
+      "zh-Hant": "X光",
+      "zh-HK": "X光"
+    },
+    "hb-check-up": {
+      "zh-Hant": "體檢",
+      "zh-HK": "體檢"
+    },
+    "hb-wash-my-hands": {
+      "zh-Hant": "洗手",
+      "zh-HK": "洗手"
+    },
+    "hb-brush-my-teeth": {
+      "zh-Hant": "刷牙",
+      "zh-HK": "刷牙"
+    },
+    "ti-now": {
+      "zh-Hant": "現在",
+      "zh-HK": "現在"
+    },
+    "ti-later": {
+      "zh-Hant": "以後",
+      "zh-HK": "以後"
+    },
+    "ti-today": {
+      "zh-Hant": "今天",
+      "zh-HK": "今天"
+    },
+    "ti-tomorrow": {
+      "zh-Hant": "明天",
+      "zh-HK": "明天"
+    },
+    "ti-yesterday": {
+      "zh-Hant": "昨天",
+      "zh-HK": "昨天"
+    },
+    "ti-morning": {
+      "zh-Hant": "早上",
+      "zh-HK": "早上"
+    },
+    "ti-afternoon": {
+      "zh-Hant": "下午",
+      "zh-HK": "下午"
+    },
+    "ti-night": {
+      "zh-Hant": "晚上",
+      "zh-HK": "晚上"
+    },
+    "ti-before": {
+      "zh-Hant": "之前",
+      "zh-HK": "之前"
+    },
+    "ti-after": {
+      "zh-Hant": "之後",
+      "zh-HK": "之後"
+    },
+    "ti-first": {
+      "zh-Hant": "第一",
+      "zh-HK": "第一"
+    },
+    "ti-last": {
+      "zh-Hant": "最後",
+      "zh-HK": "最後"
+    },
+    "ti-right-now": {
+      "zh-Hant": "現在馬上",
+      "zh-HK": "現在馬上"
+    },
+    "ti-in-a-minute": {
+      "zh-Hant": "一分鐘後",
+      "zh-HK": "一分鐘後"
+    },
+    "ti-soon": {
+      "zh-Hant": "很快",
+      "zh-HK": "很快"
+    },
+    "ti-later-today": {
+      "zh-Hant": "今天晚些時候",
+      "zh-HK": "今天晚些時候"
+    },
+    "ti-tonight": {
+      "zh-Hant": "今晚",
+      "zh-HK": "今晚"
+    },
+    "ti-this-morning": {
+      "zh-Hant": "今天早上",
+      "zh-HK": "今天早上"
+    },
+    "ti-this-afternoon": {
+      "zh-Hant": "今天下午",
+      "zh-HK": "今天下午"
+    },
+    "ti-this-evening": {
+      "zh-Hant": "今天傍晚",
+      "zh-HK": "今天傍晚"
+    },
+    "ti-last-night": {
+      "zh-Hant": "昨晚",
+      "zh-HK": "昨晚"
+    },
+    "ti-all-day": {
+      "zh-Hant": "整天",
+      "zh-HK": "整天"
+    },
+    "ti-all-night": {
+      "zh-Hant": "整夜",
+      "zh-HK": "整夜"
+    },
+    "ti-a-long-time": {
+      "zh-Hant": "很長時間",
+      "zh-HK": "很長時間"
+    },
+    "ti-a-short-time": {
+      "zh-Hant": "短時間",
+      "zh-HK": "短時間"
+    },
+    "ti-a-while-ago": {
+      "zh-Hant": "一會兒前",
+      "zh-HK": "一會兒前"
+    },
+    "ti-weekend": {
+      "zh-Hant": "週末",
+      "zh-HK": "週末"
+    },
+    "ti-weekday": {
+      "zh-Hant": "工作日",
+      "zh-HK": "工作日"
+    },
+    "ti-monday": {
+      "zh-Hant": "星期一",
+      "zh-HK": "星期一"
+    },
+    "ti-tuesday": {
+      "zh-Hant": "星期二",
+      "zh-HK": "星期二"
+    },
+    "ti-wednesday": {
+      "zh-Hant": "星期三",
+      "zh-HK": "星期三"
+    },
+    "ti-thursday": {
+      "zh-Hant": "星期四",
+      "zh-HK": "星期四"
+    },
+    "ti-friday": {
+      "zh-Hant": "星期五",
+      "zh-HK": "星期五"
+    },
+    "ti-saturday": {
+      "zh-Hant": "星期六",
+      "zh-HK": "星期六"
+    },
+    "ti-sunday": {
+      "zh-Hant": "星期日",
+      "zh-HK": "星期日"
+    },
+    "ti-birthday": {
+      "zh-Hant": "生日",
+      "zh-HK": "生日"
+    },
+    "ti-holiday": {
+      "zh-Hant": "節日",
+      "zh-HK": "節日"
+    },
+    "an-dog": {
+      "zh-Hant": "狗",
+      "zh-HK": "狗"
+    },
+    "an-cat": {
+      "zh-Hant": "貓",
+      "zh-HK": "貓"
+    },
+    "an-fish": {
+      "zh-Hant": "魚",
+      "zh-HK": "魚"
+    },
+    "an-bird": {
+      "zh-Hant": "鳥",
+      "zh-HK": "鳥"
+    },
+    "an-horse": {
+      "zh-Hant": "馬",
+      "zh-HK": "馬"
+    },
+    "an-cow": {
+      "zh-Hant": "牛",
+      "zh-HK": "牛"
+    },
+    "an-pig": {
+      "zh-Hant": "豬",
+      "zh-HK": "豬"
+    },
+    "an-rabbit": {
+      "zh-Hant": "兔子",
+      "zh-HK": "兔子"
+    },
+    "an-bear": {
+      "zh-Hant": "熊",
+      "zh-HK": "熊"
+    },
+    "an-elephant": {
+      "zh-Hant": "大象",
+      "zh-HK": "大象"
+    },
+    "an-duck": {
+      "zh-Hant": "鴨子",
+      "zh-HK": "鴨子"
+    },
+    "an-butterfly": {
+      "zh-Hant": "蝴蝶",
+      "zh-HK": "蝴蝶"
+    },
+    "an-puppy": {
+      "zh-Hant": "小狗",
+      "zh-HK": "小狗"
+    },
+    "an-kitten": {
+      "zh-Hant": "小貓",
+      "zh-HK": "小貓"
+    },
+    "an-hamster": {
+      "zh-Hant": "倉鼠",
+      "zh-HK": "倉鼠"
+    },
+    "an-guinea-pig": {
+      "zh-Hant": "豚鼠",
+      "zh-HK": "豚鼠"
+    },
+    "an-turtle": {
+      "zh-Hant": "烏龜",
+      "zh-HK": "烏龜"
+    },
+    "an-frog": {
+      "zh-Hant": "青蛙",
+      "zh-HK": "青蛙"
+    },
+    "an-snake": {
+      "zh-Hant": "蛇",
+      "zh-HK": "蛇"
+    },
+    "an-lizard": {
+      "zh-Hant": "蜥蜴",
+      "zh-HK": "蜥蜴"
+    },
+    "an-spider": {
+      "zh-Hant": "蜘蛛",
+      "zh-HK": "蜘蛛"
+    },
+    "an-bug": {
+      "zh-Hant": "蟲子",
+      "zh-HK": "蟲子"
+    },
+    "an-bee": {
+      "zh-Hant": "蜜蜂",
+      "zh-HK": "蜜蜂"
+    },
+    "an-ant": {
+      "zh-Hant": "螞蟻",
+      "zh-HK": "螞蟻"
+    },
+    "an-lion": {
+      "zh-Hant": "獅子",
+      "zh-HK": "獅子"
+    },
+    "an-tiger": {
+      "zh-Hant": "老虎",
+      "zh-HK": "老虎"
+    },
+    "an-monkey": {
+      "zh-Hant": "猴子",
+      "zh-HK": "猴子"
+    },
+    "an-giraffe": {
+      "zh-Hant": "長頸鹿",
+      "zh-HK": "長頸鹿"
+    },
+    "an-zebra": {
+      "zh-Hant": "斑馬",
+      "zh-HK": "斑馬"
+    },
+    "an-hippo": {
+      "zh-Hant": "河馬",
+      "zh-HK": "河馬"
+    },
+    "an-penguin": {
+      "zh-Hant": "企鵝",
+      "zh-HK": "企鵝"
+    },
+    "an-owl": {
+      "zh-Hant": "貓頭鷹",
+      "zh-HK": "貓頭鷹"
+    },
+    "an-eagle": {
+      "zh-Hant": "鷹",
+      "zh-HK": "鷹"
+    },
+    "an-parrot": {
+      "zh-Hant": "鸚鵡",
+      "zh-HK": "鸚鵡"
+    },
+    "an-chicken": {
+      "zh-Hant": "雞",
+      "zh-HK": "雞"
+    },
+    "an-rooster": {
+      "zh-Hant": "公雞",
+      "zh-HK": "公雞"
+    },
+    "an-sheep": {
+      "zh-Hant": "羊",
+      "zh-HK": "羊"
+    },
+    "an-goat": {
+      "zh-Hant": "山羊",
+      "zh-HK": "山羊"
+    },
+    "an-donkey": {
+      "zh-Hant": "驢",
+      "zh-HK": "驢"
+    },
+    "an-dolphin": {
+      "zh-Hant": "海豚",
+      "zh-HK": "海豚"
+    },
+    "an-whale": {
+      "zh-Hant": "鯨魚",
+      "zh-HK": "鯨魚"
+    },
+    "an-shark": {
+      "zh-Hant": "鯊魚",
+      "zh-HK": "鯊魚"
+    },
+    "an-octopus": {
+      "zh-Hant": "章魚",
+      "zh-HK": "章魚"
+    },
+    "an-crab": {
+      "zh-Hant": "螃蟹",
+      "zh-HK": "螃蟹"
+    },
+    "an-starfish": {
+      "zh-Hant": "海星",
+      "zh-HK": "海星"
+    },
+    "an-my-pet": {
+      "zh-Hant": "我的寵物",
+      "zh-HK": "我的寵物"
+    },
+    "an-my-dog": {
+      "zh-Hant": "我的狗",
+      "zh-HK": "我的狗"
+    },
+    "an-my-cat": {
+      "zh-Hant": "我的貓",
+      "zh-HK": "我的貓"
+    },
+    "co-red": {
+      "zh-Hant": "紅色",
+      "zh-HK": "紅色"
+    },
+    "co-blue": {
+      "zh-Hant": "藍色",
+      "zh-HK": "藍色"
+    },
+    "co-green": {
+      "zh-Hant": "綠色",
+      "zh-HK": "綠色"
+    },
+    "co-yellow": {
+      "zh-Hant": "黃色",
+      "zh-HK": "黃色"
+    },
+    "co-orange": {
+      "zh-Hant": "橙色",
+      "zh-HK": "橙色"
+    },
+    "co-purple": {
+      "zh-Hant": "紫色",
+      "zh-HK": "紫色"
+    },
+    "co-pink": {
+      "zh-Hant": "粉色",
+      "zh-HK": "粉色"
+    },
+    "co-black": {
+      "zh-Hant": "黑色",
+      "zh-HK": "黑色"
+    },
+    "co-white": {
+      "zh-Hant": "白色",
+      "zh-HK": "白色"
+    },
+    "co-brown": {
+      "zh-Hant": "棕色",
+      "zh-HK": "棕色"
+    },
+    "co-gray": {
+      "zh-Hant": "灰色",
+      "zh-HK": "灰色"
+    },
+    "co-silver": {
+      "zh-Hant": "銀色",
+      "zh-HK": "銀色"
+    },
+    "co-gold": {
+      "zh-Hant": "金色",
+      "zh-HK": "金色"
+    },
+    "co-beige": {
+      "zh-Hant": "米色",
+      "zh-HK": "米色"
+    },
+    "co-tan": {
+      "zh-Hant": "棕褐色",
+      "zh-HK": "棕褐色"
+    },
+    "co-light-blue": {
+      "zh-Hant": "淺藍色",
+      "zh-HK": "淺藍色"
+    },
+    "co-dark-blue": {
+      "zh-Hant": "深藍色",
+      "zh-HK": "深藍色"
+    },
+    "co-light-green": {
+      "zh-Hant": "淺綠色",
+      "zh-HK": "淺綠色"
+    },
+    "co-dark-green": {
+      "zh-Hant": "深綠色",
+      "zh-HK": "深綠色"
+    },
+    "co-light-pink": {
+      "zh-Hant": "淡粉色",
+      "zh-HK": "淡粉色"
+    },
+    "co-hot-pink": {
+      "zh-Hant": "亮粉色",
+      "zh-HK": "亮粉色"
+    },
+    "co-rainbow": {
+      "zh-Hant": "彩虹色",
+      "zh-HK": "彩虹色"
+    },
+    "co-my-favorite-color": {
+      "zh-Hant": "我最喜歡的顏色",
+      "zh-HK": "我最喜歡的顏色"
+    },
+    "cl-shirt": {
+      "zh-Hant": "襯衫",
+      "zh-HK": "襯衫"
+    },
+    "cl-pants": {
+      "zh-Hant": "褲子",
+      "zh-HK": "褲子"
+    },
+    "cl-shoes": {
+      "zh-Hant": "鞋",
+      "zh-HK": "鞋"
+    },
+    "cl-socks": {
+      "zh-Hant": "襪子",
+      "zh-HK": "襪子"
+    },
+    "cl-jacket": {
+      "zh-Hant": "夾克",
+      "zh-HK": "夾克"
+    },
+    "cl-hat": {
+      "zh-Hant": "帽子",
+      "zh-HK": "帽子"
+    },
+    "cl-dress": {
+      "zh-Hant": "裙子",
+      "zh-HK": "裙子"
+    },
+    "cl-pajamas": {
+      "zh-Hant": "睡衣",
+      "zh-HK": "睡衣"
+    },
+    "cl-underwear": {
+      "zh-Hant": "內衣",
+      "zh-HK": "內衣"
+    },
+    "cl-boots": {
+      "zh-Hant": "靴子",
+      "zh-HK": "靴子"
+    },
+    "cl-t-shirt": {
+      "zh-Hant": "T恤",
+      "zh-HK": "T恤"
+    },
+    "cl-sweater": {
+      "zh-Hant": "毛衣",
+      "zh-HK": "毛衣"
+    },
+    "cl-sweatshirt": {
+      "zh-Hant": "衛衣",
+      "zh-HK": "衞衣"
+    },
+    "cl-hoodie": {
+      "zh-Hant": "連帽衫",
+      "zh-HK": "連帽衫"
+    },
+    "cl-coat": {
+      "zh-Hant": "大衣",
+      "zh-HK": "大衣"
+    },
+    "cl-shorts": {
+      "zh-Hant": "短褲",
+      "zh-HK": "短褲"
+    },
+    "cl-skirt": {
+      "zh-Hant": "裙子",
+      "zh-HK": "裙子"
+    },
+    "cl-leggings": {
+      "zh-Hant": "緊身褲",
+      "zh-HK": "緊身褲"
+    },
+    "cl-sandals": {
+      "zh-Hant": "涼鞋",
+      "zh-HK": "涼鞋"
+    },
+    "cl-sneakers": {
+      "zh-Hant": "運動鞋",
+      "zh-HK": "運動鞋"
+    },
+    "cl-mittens": {
+      "zh-Hant": "連指手套",
+      "zh-HK": "連指手套"
+    },
+    "cl-gloves": {
+      "zh-Hant": "手套",
+      "zh-HK": "手套"
+    },
+    "cl-scarf": {
+      "zh-Hant": "圍巾",
+      "zh-HK": "圍巾"
+    },
+    "cl-belt": {
+      "zh-Hant": "皮帶",
+      "zh-HK": "皮帶"
+    },
+    "cl-backpack": {
+      "zh-Hant": "背包",
+      "zh-HK": "背包"
+    },
+    "cl-helmet": {
+      "zh-Hant": "頭盔",
+      "zh-HK": "頭盔"
+    },
+    "cl-glasses": {
+      "zh-Hant": "眼鏡",
+      "zh-HK": "眼鏡"
+    },
+    "cl-sunglasses": {
+      "zh-Hant": "太陽鏡",
+      "zh-HK": "太陽鏡"
+    },
+    "cl-diaper": {
+      "zh-Hant": "尿布",
+      "zh-HK": "尿布"
+    },
+    "cl-pull-up": {
+      "zh-Hant": "學步褲",
+      "zh-HK": "學步褲"
+    },
+    "tr-car": {
+      "zh-Hant": "車",
+      "zh-HK": "車"
+    },
+    "tr-bus": {
+      "zh-Hant": "公交車",
+      "zh-HK": "公交車"
+    },
+    "tr-train": {
+      "zh-Hant": "火車",
+      "zh-HK": "火車"
+    },
+    "tr-airplane": {
+      "zh-Hant": "飛機",
+      "zh-HK": "飛機"
+    },
+    "tr-bike": {
+      "zh-Hant": "自行車",
+      "zh-HK": "自行車"
+    },
+    "tr-truck": {
+      "zh-Hant": "卡車",
+      "zh-HK": "卡車"
+    },
+    "tr-boat": {
+      "zh-Hant": "船",
+      "zh-HK": "船"
+    },
+    "tr-walk": {
+      "zh-Hant": "步行",
+      "zh-HK": "步行"
+    },
+    "tr-wheelchair": {
+      "zh-Hant": "輪椅",
+      "zh-HK": "輪椅"
+    },
+    "tr-scooter": {
+      "zh-Hant": "滑板車",
+      "zh-HK": "滑板車"
+    },
+    "tr-stroller": {
+      "zh-Hant": "嬰兒車",
+      "zh-HK": "嬰兒車"
+    },
+    "tr-tricycle": {
+      "zh-Hant": "三輪車",
+      "zh-HK": "三輪車"
+    },
+    "tr-skateboard": {
+      "zh-Hant": "滑板",
+      "zh-HK": "滑板"
+    },
+    "tr-roller-skates": {
+      "zh-Hant": "旱冰鞋",
+      "zh-HK": "旱冰鞋"
+    },
+    "tr-subway": {
+      "zh-Hant": "地鐵",
+      "zh-HK": "地鐵"
+    },
+    "tr-taxi": {
+      "zh-Hant": "出租車",
+      "zh-HK": "出租車"
+    },
+    "tr-helicopter": {
+      "zh-Hant": "直升機",
+      "zh-HK": "直升機"
+    },
+    "tr-rocket": {
+      "zh-Hant": "火箭",
+      "zh-HK": "火箭"
+    },
+    "tr-tractor": {
+      "zh-Hant": "拖拉機",
+      "zh-HK": "拖拉機"
+    },
+    "tr-fire-truck": {
+      "zh-Hant": "消防車",
+      "zh-HK": "消防車"
+    },
+    "tr-police-car": {
+      "zh-Hant": "警車",
+      "zh-HK": "警車"
+    },
+    "tr-ambulance": {
+      "zh-Hant": "救護車",
+      "zh-HK": "救護車"
+    },
+    "tr-ferry": {
+      "zh-Hant": "渡船",
+      "zh-HK": "渡船"
+    },
+    "tr-sled": {
+      "zh-Hant": "雪橇",
+      "zh-HK": "雪橇"
+    },
+    "tr-drive": {
+      "zh-Hant": "開車",
+      "zh-HK": "開車"
+    },
+    "tr-ride": {
+      "zh-Hant": "乘坐",
+      "zh-HK": "乘坐"
+    },
+    "we-sunny": {
+      "zh-Hant": "晴天",
+      "zh-HK": "晴天"
+    },
+    "we-rainy": {
+      "zh-Hant": "下雨",
+      "zh-HK": "下雨"
+    },
+    "we-cloudy": {
+      "zh-Hant": "多雲",
+      "zh-HK": "多雲"
+    },
+    "we-snowy": {
+      "zh-Hant": "下雪",
+      "zh-HK": "下雪"
+    },
+    "we-windy": {
+      "zh-Hant": "颳風",
+      "zh-HK": "颳風"
+    },
+    "we-hot": {
+      "zh-Hant": "熱",
+      "zh-HK": "熱"
+    },
+    "we-cold": {
+      "zh-Hant": "冷",
+      "zh-HK": "冷"
+    },
+    "we-storm": {
+      "zh-Hant": "暴風雨",
+      "zh-HK": "暴風雨"
+    },
+    "we-foggy": {
+      "zh-Hant": "有霧",
+      "zh-HK": "有霧"
+    },
+    "we-rainbow": {
+      "zh-Hant": "彩虹",
+      "zh-HK": "彩虹"
+    },
+    "we-lightning": {
+      "zh-Hant": "閃電",
+      "zh-HK": "閃電"
+    },
+    "we-thunder": {
+      "zh-Hant": "打雷",
+      "zh-HK": "打雷"
+    },
+    "we-tornado": {
+      "zh-Hant": "龍捲風",
+      "zh-HK": "龍捲風"
+    },
+    "we-hurricane": {
+      "zh-Hant": "颶風",
+      "zh-HK": "颶風"
+    },
+    "we-earthquake": {
+      "zh-Hant": "地震",
+      "zh-HK": "地震"
+    },
+    "we-warm-out": {
+      "zh-Hant": "外面很暖和",
+      "zh-HK": "外面很暖和"
+    },
+    "we-cool-out": {
+      "zh-Hant": "外面涼快",
+      "zh-HK": "外面涼快"
+    },
+    "we-freezing": {
+      "zh-Hant": "冰凍",
+      "zh-HK": "冰凍"
+    },
+    "we-wear-a-coat": {
+      "zh-Hant": "穿大衣",
+      "zh-HK": "穿大衣"
+    },
+    "we-wear-shorts": {
+      "zh-Hant": "穿短褲",
+      "zh-HK": "穿短褲"
+    },
+    "tf-ball": {
+      "zh-Hant": "球",
+      "zh-HK": "球"
+    },
+    "tf-blocks": {
+      "zh-Hant": "積木",
+      "zh-HK": "積木"
+    },
+    "tf-doll": {
+      "zh-Hant": "娃娃",
+      "zh-HK": "娃娃"
+    },
+    "tf-puzzle": {
+      "zh-Hant": "拼圖",
+      "zh-HK": "拼圖"
+    },
+    "tf-game": {
+      "zh-Hant": "遊戲",
+      "zh-HK": "遊戲"
+    },
+    "tf-movie": {
+      "zh-Hant": "電影",
+      "zh-HK": "電影"
+    },
+    "tf-music": {
+      "zh-Hant": "音樂",
+      "zh-HK": "音樂"
+    },
+    "tf-bubbles": {
+      "zh-Hant": "泡泡",
+      "zh-HK": "泡泡"
+    },
+    "tf-swing": {
+      "zh-Hant": "鞦韆",
+      "zh-HK": "鞦韆"
+    },
+    "tf-slide": {
+      "zh-Hant": "滑梯",
+      "zh-HK": "滑梯"
+    },
+    "tf-coloring": {
+      "zh-Hant": "塗色",
+      "zh-HK": "塗色"
+    },
+    "tf-tablet": {
+      "zh-Hant": "平板",
+      "zh-HK": "平板"
+    },
+    "tf-stuffed-animal": {
+      "zh-Hant": "毛絨玩具",
+      "zh-HK": "毛絨玩具"
+    },
+    "tf-action-figure": {
+      "zh-Hant": "動作玩偶",
+      "zh-HK": "動作玩偶"
+    },
+    "tf-lego": {
+      "zh-Hant": "樂高",
+      "zh-HK": "樂高"
+    },
+    "tf-train-set": {
+      "zh-Hant": "火車玩具",
+      "zh-HK": "火車玩具"
+    },
+    "tf-card-game": {
+      "zh-Hant": "紙牌遊戲",
+      "zh-HK": "紙牌遊戲"
+    },
+    "tf-board-game": {
+      "zh-Hant": "桌遊",
+      "zh-HK": "桌遊"
+    },
+    "tf-video-game": {
+      "zh-Hant": "電子遊戲",
+      "zh-HK": "電子遊戲"
+    },
+    "tf-crayons": {
+      "zh-Hant": "蠟筆",
+      "zh-HK": "蠟筆"
+    },
+    "tf-stickers": {
+      "zh-Hant": "貼紙",
+      "zh-HK": "貼紙"
+    },
+    "tf-sandbox": {
+      "zh-Hant": "沙坑",
+      "zh-HK": "沙坑"
+    },
+    "tf-trampoline": {
+      "zh-Hant": "蹦床",
+      "zh-HK": "蹦牀"
+    },
+    "tf-sprinkler": {
+      "zh-Hant": "灑水器",
+      "zh-HK": "灑水器"
+    },
+    "tf-story": {
+      "zh-Hant": "故事",
+      "zh-HK": "故事"
+    },
+    "tf-song": {
+      "zh-Hant": "歌曲",
+      "zh-HK": "歌曲"
+    },
+    "tf-cartoon": {
+      "zh-Hant": "卡通",
+      "zh-HK": "卡通"
+    },
+    "tc-morning": {
+      "zh-Hant": "早上",
+      "zh-HK": "早上"
+    },
+    "tc-afternoon": {
+      "zh-Hant": "下午",
+      "zh-HK": "下午"
+    },
+    "tc-evening": {
+      "zh-Hant": "晚上",
+      "zh-HK": "晚上"
+    },
+    "tc-night": {
+      "zh-Hant": "半夜",
+      "zh-HK": "半夜"
+    },
+    "tc-noon": {
+      "zh-Hant": "中午",
+      "zh-HK": "中午"
+    },
+    "tc-midnight": {
+      "zh-Hant": "午夜",
+      "zh-HK": "午夜"
+    },
+    "tc-oclock": {
+      "zh-Hant": "點",
+      "zh-HK": "點"
+    },
+    "tc-quarter-past": {
+      "zh-Hant": "十五分",
+      "zh-HK": "十五分"
+    },
+    "tc-half-past": {
+      "zh-Hant": "半",
+      "zh-HK": "半"
+    },
+    "tc-quarter-to": {
+      "zh-Hant": "差十五分",
+      "zh-HK": "差十五分"
+    },
+    "tc-early": {
+      "zh-Hant": "早",
+      "zh-HK": "早"
+    },
+    "tc-late": {
+      "zh-Hant": "遲到",
+      "zh-HK": "遲到"
+    },
+    "tc-on-time": {
+      "zh-Hant": "準時",
+      "zh-HK": "準時"
+    },
+    "tc-soon": {
+      "zh-Hant": "馬上",
+      "zh-HK": "馬上"
+    },
+    "tc-bedtime": {
+      "zh-Hant": "睡覺時間",
+      "zh-HK": "睡覺時間"
+    },
+    "tc-lunchtime": {
+      "zh-Hant": "午餐時間",
+      "zh-HK": "午餐時間"
+    },
+    "td-monday": {
+      "zh-Hant": "星期一",
+      "zh-HK": "星期一"
+    },
+    "td-tuesday": {
+      "zh-Hant": "星期二",
+      "zh-HK": "星期二"
+    },
+    "td-wednesday": {
+      "zh-Hant": "星期三",
+      "zh-HK": "星期三"
+    },
+    "td-thursday": {
+      "zh-Hant": "星期四",
+      "zh-HK": "星期四"
+    },
+    "td-friday": {
+      "zh-Hant": "星期五",
+      "zh-HK": "星期五"
+    },
+    "td-saturday": {
+      "zh-Hant": "星期六",
+      "zh-HK": "星期六"
+    },
+    "td-sunday": {
+      "zh-Hant": "星期日",
+      "zh-HK": "星期日"
+    },
+    "td-today": {
+      "zh-Hant": "今天",
+      "zh-HK": "今天"
+    },
+    "td-tomorrow": {
+      "zh-Hant": "明天",
+      "zh-HK": "明天"
+    },
+    "td-yesterday": {
+      "zh-Hant": "昨天",
+      "zh-HK": "昨天"
+    },
+    "td-weekend": {
+      "zh-Hant": "週末",
+      "zh-HK": "週末"
+    },
+    "td-weekday": {
+      "zh-Hant": "工作日",
+      "zh-HK": "工作日"
+    },
+    "tm-jan": {
+      "zh-Hant": "一月",
+      "zh-HK": "一月"
+    },
+    "tm-feb": {
+      "zh-Hant": "二月",
+      "zh-HK": "二月"
+    },
+    "tm-mar": {
+      "zh-Hant": "三月",
+      "zh-HK": "三月"
+    },
+    "tm-apr": {
+      "zh-Hant": "四月",
+      "zh-HK": "四月"
+    },
+    "tm-may": {
+      "zh-Hant": "五月",
+      "zh-HK": "五月"
+    },
+    "tm-jun": {
+      "zh-Hant": "六月",
+      "zh-HK": "六月"
+    },
+    "tm-jul": {
+      "zh-Hant": "七月",
+      "zh-HK": "七月"
+    },
+    "tm-aug": {
+      "zh-Hant": "八月",
+      "zh-HK": "八月"
+    },
+    "tm-sep": {
+      "zh-Hant": "九月",
+      "zh-HK": "九月"
+    },
+    "tm-oct": {
+      "zh-Hant": "十月",
+      "zh-HK": "十月"
+    },
+    "tm-nov": {
+      "zh-Hant": "十一月",
+      "zh-HK": "十一月"
+    },
+    "tm-dec": {
+      "zh-Hant": "十二月",
+      "zh-HK": "十二月"
+    },
+    "tdate-1": {
+      "zh-Hant": "1號",
+      "zh-HK": "1號"
+    },
+    "tdate-2": {
+      "zh-Hant": "2號",
+      "zh-HK": "2號"
+    },
+    "tdate-3": {
+      "zh-Hant": "3號",
+      "zh-HK": "3號"
+    },
+    "tdate-4": {
+      "zh-Hant": "4號",
+      "zh-HK": "4號"
+    },
+    "tdate-5": {
+      "zh-Hant": "5號",
+      "zh-HK": "5號"
+    },
+    "tdate-6": {
+      "zh-Hant": "6號",
+      "zh-HK": "6號"
+    },
+    "tdate-7": {
+      "zh-Hant": "7號",
+      "zh-HK": "7號"
+    },
+    "tdate-8": {
+      "zh-Hant": "8號",
+      "zh-HK": "8號"
+    },
+    "tdate-9": {
+      "zh-Hant": "9號",
+      "zh-HK": "9號"
+    },
+    "tdate-10": {
+      "zh-Hant": "10號",
+      "zh-HK": "10號"
+    },
+    "tdate-11": {
+      "zh-Hant": "11號",
+      "zh-HK": "11號"
+    },
+    "tdate-12": {
+      "zh-Hant": "12號",
+      "zh-HK": "12號"
+    },
+    "tdate-13": {
+      "zh-Hant": "13號",
+      "zh-HK": "13號"
+    },
+    "tdate-14": {
+      "zh-Hant": "14號",
+      "zh-HK": "14號"
+    },
+    "tdate-15": {
+      "zh-Hant": "15號",
+      "zh-HK": "15號"
+    },
+    "tdate-16": {
+      "zh-Hant": "16號",
+      "zh-HK": "16號"
+    },
+    "tdate-17": {
+      "zh-Hant": "17號",
+      "zh-HK": "17號"
+    },
+    "tdate-18": {
+      "zh-Hant": "18號",
+      "zh-HK": "18號"
+    },
+    "tdate-19": {
+      "zh-Hant": "19號",
+      "zh-HK": "19號"
+    },
+    "tdate-20": {
+      "zh-Hant": "20號",
+      "zh-HK": "20號"
+    },
+    "tdate-21": {
+      "zh-Hant": "21號",
+      "zh-HK": "21號"
+    },
+    "tdate-22": {
+      "zh-Hant": "22號",
+      "zh-HK": "22號"
+    },
+    "tdate-23": {
+      "zh-Hant": "23號",
+      "zh-HK": "23號"
+    },
+    "tdate-24": {
+      "zh-Hant": "24號",
+      "zh-HK": "24號"
+    },
+    "tdate-25": {
+      "zh-Hant": "25號",
+      "zh-HK": "25號"
+    },
+    "tdate-26": {
+      "zh-Hant": "26號",
+      "zh-HK": "26號"
+    },
+    "tdate-27": {
+      "zh-Hant": "27號",
+      "zh-HK": "27號"
+    },
+    "tdate-28": {
+      "zh-Hant": "28號",
+      "zh-HK": "28號"
+    },
+    "tdate-29": {
+      "zh-Hant": "29號",
+      "zh-HK": "29號"
+    },
+    "tdate-30": {
+      "zh-Hant": "30號",
+      "zh-HK": "30號"
+    },
+    "tdate-31": {
+      "zh-Hant": "31號",
+      "zh-HK": "31號"
+    },
+    "ts-spring": {
+      "zh-Hant": "春天",
+      "zh-HK": "春天"
+    },
+    "ts-summer": {
+      "zh-Hant": "夏天",
+      "zh-HK": "夏天"
+    },
+    "ts-fall": {
+      "zh-Hant": "秋天",
+      "zh-HK": "秋天"
+    },
+    "ts-winter": {
+      "zh-Hant": "冬天",
+      "zh-HK": "冬天"
+    },
+    "ts-hot": {
+      "zh-Hant": "天氣熱",
+      "zh-HK": "天氣熱"
+    },
+    "ts-cold": {
+      "zh-Hant": "天氣冷",
+      "zh-HK": "天氣冷"
+    },
+    "fm-breakfast": {
+      "zh-Hant": "早餐",
+      "zh-HK": "早餐"
+    },
+    "fm-lunch": {
+      "zh-Hant": "午餐",
+      "zh-HK": "午餐"
+    },
+    "fm-dinner": {
+      "zh-Hant": "晚餐",
+      "zh-HK": "晚餐"
+    },
+    "fm-snack": {
+      "zh-Hant": "零食",
+      "zh-HK": "零食"
+    },
+    "fm-pizza": {
+      "zh-Hant": "披薩",
+      "zh-HK": "披薩"
+    },
+    "fm-sandwich": {
+      "zh-Hant": "三明治",
+      "zh-HK": "三明治"
+    },
+    "fm-pasta": {
+      "zh-Hant": "意麵",
+      "zh-HK": "意麪"
+    },
+    "fm-soup": {
+      "zh-Hant": "湯",
+      "zh-HK": "湯"
+    },
+    "fm-rice": {
+      "zh-Hant": "米飯",
+      "zh-HK": "米飯"
+    },
+    "fm-chicken": {
+      "zh-Hant": "雞肉",
+      "zh-HK": "雞肉"
+    },
+    "fm-hot-dog": {
+      "zh-Hant": "熱狗",
+      "zh-HK": "熱狗"
+    },
+    "fm-hamburger": {
+      "zh-Hant": "漢堡",
+      "zh-HK": "漢堡"
+    },
+    "fm-tacos": {
+      "zh-Hant": "塔可",
+      "zh-HK": "塔可"
+    },
+    "fm-cereal": {
+      "zh-Hant": "麥片",
+      "zh-HK": "麥片"
+    },
+    "fm-eggs": {
+      "zh-Hant": "雞蛋",
+      "zh-HK": "雞蛋"
+    },
+    "fm-pancakes": {
+      "zh-Hant": "煎餅",
+      "zh-HK": "煎餅"
+    },
+    "ff-apple": {
+      "zh-Hant": "蘋果",
+      "zh-HK": "蘋果"
+    },
+    "ff-banana": {
+      "zh-Hant": "香蕉",
+      "zh-HK": "香蕉"
+    },
+    "ff-orange": {
+      "zh-Hant": "橘子",
+      "zh-HK": "橘子"
+    },
+    "ff-grapes": {
+      "zh-Hant": "葡萄",
+      "zh-HK": "葡萄"
+    },
+    "ff-strawberry": {
+      "zh-Hant": "草莓",
+      "zh-HK": "草莓"
+    },
+    "ff-watermelon": {
+      "zh-Hant": "西瓜",
+      "zh-HK": "西瓜"
+    },
+    "ff-blueberry": {
+      "zh-Hant": "藍莓",
+      "zh-HK": "藍莓"
+    },
+    "ff-peach": {
+      "zh-Hant": "桃子",
+      "zh-HK": "桃子"
+    },
+    "ff-mango": {
+      "zh-Hant": "芒果",
+      "zh-HK": "芒果"
+    },
+    "ff-pear": {
+      "zh-Hant": "梨",
+      "zh-HK": "梨"
+    },
+    "ff-pineapple": {
+      "zh-Hant": "菠蘿",
+      "zh-HK": "菠蘿"
+    },
+    "ff-cherry": {
+      "zh-Hant": "櫻桃",
+      "zh-HK": "櫻桃"
+    },
+    "fv-carrot": {
+      "zh-Hant": "胡蘿蔔",
+      "zh-HK": "胡蘿蔔"
+    },
+    "fv-broccoli": {
+      "zh-Hant": "西蘭花",
+      "zh-HK": "西蘭花"
+    },
+    "fv-corn": {
+      "zh-Hant": "玉米",
+      "zh-HK": "玉米"
+    },
+    "fv-beans": {
+      "zh-Hant": "豆子",
+      "zh-HK": "豆子"
+    },
+    "fv-peas": {
+      "zh-Hant": "豌豆",
+      "zh-HK": "豌豆"
+    },
+    "fv-potato": {
+      "zh-Hant": "土豆",
+      "zh-HK": "土豆"
+    },
+    "fv-tomato": {
+      "zh-Hant": "西紅柿",
+      "zh-HK": "西紅柿"
+    },
+    "fv-cucumber": {
+      "zh-Hant": "黃瓜",
+      "zh-HK": "黃瓜"
+    },
+    "fv-lettuce": {
+      "zh-Hant": "生菜",
+      "zh-HK": "生菜"
+    },
+    "fv-spinach": {
+      "zh-Hant": "菠菜",
+      "zh-HK": "菠菜"
+    },
+    "fd-water-2": {
+      "zh-Hant": "水",
+      "zh-HK": "水"
+    },
+    "fd-milk-2": {
+      "zh-Hant": "牛奶",
+      "zh-HK": "牛奶"
+    },
+    "fd-juice-2": {
+      "zh-Hant": "果汁",
+      "zh-HK": "果汁"
+    },
+    "fd-lemonade-2": {
+      "zh-Hant": "檸檬水",
+      "zh-HK": "檸檬水"
+    },
+    "fd-smoothie-2": {
+      "zh-Hant": "沙冰",
+      "zh-HK": "沙冰"
+    },
+    "fd-hot-choc": {
+      "zh-Hant": "熱巧克力",
+      "zh-HK": "熱巧克力"
+    },
+    "fd-soda-2": {
+      "zh-Hant": "汽水",
+      "zh-HK": "汽水"
+    },
+    "fd-tea-2": {
+      "zh-Hant": "茶",
+      "zh-HK": "茶"
+    },
+    "fd-coffee": {
+      "zh-Hant": "咖啡",
+      "zh-HK": "咖啡"
+    },
+    "fs-crackers": {
+      "zh-Hant": "餅乾",
+      "zh-HK": "餅乾"
+    },
+    "fs-chips": {
+      "zh-Hant": "薯片",
+      "zh-HK": "薯片"
+    },
+    "fs-popcorn": {
+      "zh-Hant": "爆米花",
+      "zh-HK": "爆米花"
+    },
+    "fs-pretzels": {
+      "zh-Hant": "椒香捲餅",
+      "zh-HK": "椒香捲餅"
+    },
+    "fs-nuts": {
+      "zh-Hant": "堅果",
+      "zh-HK": "堅果"
+    },
+    "fs-cheese": {
+      "zh-Hant": "奶酪",
+      "zh-HK": "奶酪"
+    },
+    "fs-yogurt": {
+      "zh-Hant": "酸奶",
+      "zh-HK": "酸奶"
+    },
+    "fs-granola": {
+      "zh-Hant": "麥片棒",
+      "zh-HK": "麥片棒"
+    },
+    "fsw-cookie": {
+      "zh-Hant": "曲奇",
+      "zh-HK": "曲奇"
+    },
+    "fsw-cake": {
+      "zh-Hant": "蛋糕",
+      "zh-HK": "蛋糕"
+    },
+    "fsw-ice-cream": {
+      "zh-Hant": "冰淇淋",
+      "zh-HK": "冰淇淋"
+    },
+    "fsw-candy": {
+      "zh-Hant": "糖果",
+      "zh-HK": "糖果"
+    },
+    "fsw-cupcake": {
+      "zh-Hant": "紙杯蛋糕",
+      "zh-HK": "紙杯蛋糕"
+    },
+    "fsw-donut": {
+      "zh-Hant": "甜甜圈",
+      "zh-HK": "甜甜圈"
+    },
+    "fsw-brownie": {
+      "zh-Hant": "布朗尼",
+      "zh-HK": "布朗尼"
+    },
+    "fsw-pudding": {
+      "zh-Hant": "布丁",
+      "zh-HK": "布丁"
+    },
+    "pf-mom": {
+      "zh-Hant": "媽媽",
+      "zh-HK": "媽媽"
+    },
+    "pf-dad": {
+      "zh-Hant": "爸爸",
+      "zh-HK": "爸爸"
+    },
+    "pf-sister": {
+      "zh-Hant": "姐妹",
+      "zh-HK": "姐妹"
+    },
+    "pf-brother": {
+      "zh-Hant": "兄弟",
+      "zh-HK": "兄弟"
+    },
+    "pf-grandma": {
+      "zh-Hant": "奶奶",
+      "zh-HK": "奶奶"
+    },
+    "pf-grandpa": {
+      "zh-Hant": "爺爺",
+      "zh-HK": "爺爺"
+    },
+    "pf-aunt": {
+      "zh-Hant": "阿姨",
+      "zh-HK": "阿姨"
+    },
+    "pf-uncle": {
+      "zh-Hant": "叔叔",
+      "zh-HK": "叔叔"
+    },
+    "pf-cousin": {
+      "zh-Hant": "堂表親",
+      "zh-HK": "堂表親"
+    },
+    "pf-baby": {
+      "zh-Hant": "寶寶",
+      "zh-HK": "寶寶"
+    },
+    "pf-friend": {
+      "zh-Hant": "朋友",
+      "zh-HK": "朋友"
+    },
+    "pf-caregiver": {
+      "zh-Hant": "看護人",
+      "zh-HK": "看護人"
+    },
+    "ps-teacher": {
+      "zh-Hant": "老師",
+      "zh-HK": "老師"
+    },
+    "ps-aide": {
+      "zh-Hant": "助教",
+      "zh-HK": "助教"
+    },
+    "ps-principal": {
+      "zh-Hant": "校長",
+      "zh-HK": "校長"
+    },
+    "ps-therapist": {
+      "zh-Hant": "治療師",
+      "zh-HK": "治療師"
+    },
+    "ps-nurse": {
+      "zh-Hant": "校醫",
+      "zh-HK": "校醫"
+    },
+    "ps-classmate": {
+      "zh-Hant": "同學",
+      "zh-HK": "同學"
+    },
+    "ps-bus-driver": {
+      "zh-Hant": "校車司機",
+      "zh-HK": "校車司機"
+    },
+    "pc-doctor": {
+      "zh-Hant": "醫生",
+      "zh-HK": "醫生"
+    },
+    "pc-nurse": {
+      "zh-Hant": "護士",
+      "zh-HK": "護士"
+    },
+    "pc-police": {
+      "zh-Hant": "警察",
+      "zh-HK": "警察"
+    },
+    "pc-firefighter": {
+      "zh-Hant": "消防員",
+      "zh-HK": "消防員"
+    },
+    "pc-librarian": {
+      "zh-Hant": "圖書管理員",
+      "zh-HK": "圖書管理員"
+    },
+    "pc-cashier": {
+      "zh-Hant": "收銀員",
+      "zh-HK": "收銀員"
+    },
+    "pc-neighbor": {
+      "zh-Hant": "鄰居",
+      "zh-HK": "鄰居"
+    },
+    "hbp-head": {
+      "zh-Hant": "頭",
+      "zh-HK": "頭"
+    },
+    "hbp-eyes": {
+      "zh-Hant": "眼睛",
+      "zh-HK": "眼睛"
+    },
+    "hbp-ears": {
+      "zh-Hant": "耳朵",
+      "zh-HK": "耳朵"
+    },
+    "hbp-nose": {
+      "zh-Hant": "鼻子",
+      "zh-HK": "鼻子"
+    },
+    "hbp-mouth": {
+      "zh-Hant": "嘴巴",
+      "zh-HK": "嘴巴"
+    },
+    "hbp-teeth": {
+      "zh-Hant": "牙齒",
+      "zh-HK": "牙齒"
+    },
+    "hbp-neck": {
+      "zh-Hant": "脖子",
+      "zh-HK": "脖子"
+    },
+    "hbp-shoulder": {
+      "zh-Hant": "肩膀",
+      "zh-HK": "肩膀"
+    },
+    "hbp-arm": {
+      "zh-Hant": "胳膊",
+      "zh-HK": "胳膊"
+    },
+    "hbp-hand": {
+      "zh-Hant": "手",
+      "zh-HK": "手"
+    },
+    "hbp-finger": {
+      "zh-Hant": "手指",
+      "zh-HK": "手指"
+    },
+    "hbp-belly": {
+      "zh-Hant": "肚子",
+      "zh-HK": "肚子"
+    },
+    "hbp-back": {
+      "zh-Hant": "背",
+      "zh-HK": "背"
+    },
+    "hbp-leg": {
+      "zh-Hant": "腿",
+      "zh-HK": "腿"
+    },
+    "hbp-knee": {
+      "zh-Hant": "膝蓋",
+      "zh-HK": "膝蓋"
+    },
+    "hbp-foot": {
+      "zh-Hant": "腳",
+      "zh-HK": "腳"
+    },
+    "hbp-toe": {
+      "zh-Hant": "腳趾",
+      "zh-HK": "腳趾"
+    },
+    "hfs-hurt": {
+      "zh-Hant": "疼",
+      "zh-HK": "疼"
+    },
+    "hfs-sick": {
+      "zh-Hant": "難受",
+      "zh-HK": "難受"
+    },
+    "hfs-headache": {
+      "zh-Hant": "頭疼",
+      "zh-HK": "頭疼"
+    },
+    "hfs-stomachache": {
+      "zh-Hant": "肚子疼",
+      "zh-HK": "肚子疼"
+    },
+    "hfs-tired": {
+      "zh-Hant": "累了",
+      "zh-HK": "累了"
+    },
+    "hfs-dizzy": {
+      "zh-Hant": "頭暈",
+      "zh-HK": "頭暈"
+    },
+    "hfs-fever": {
+      "zh-Hant": "發燒",
+      "zh-HK": "發燒"
+    },
+    "hfs-cough": {
+      "zh-Hant": "咳嗽",
+      "zh-HK": "咳嗽"
+    },
+    "hfs-sneeze": {
+      "zh-Hant": "打噴嚏",
+      "zh-HK": "打噴嚏"
+    },
+    "hfs-allergy": {
+      "zh-Hant": "過敏",
+      "zh-HK": "過敏"
+    },
+    "hfs-itch": {
+      "zh-Hant": "癢",
+      "zh-HK": "癢"
+    },
+    "hm-medicine": {
+      "zh-Hant": "藥",
+      "zh-HK": "藥"
+    },
+    "hm-bandage": {
+      "zh-Hant": "創可貼",
+      "zh-HK": "創可貼"
+    },
+    "hm-ice-pack": {
+      "zh-Hant": "冰袋",
+      "zh-HK": "冰袋"
+    },
+    "hm-inhaler": {
+      "zh-Hant": "吸入劑",
+      "zh-HK": "吸入劑"
+    },
+    "hm-vitamin": {
+      "zh-Hant": "維他命",
+      "zh-HK": "維他命"
+    },
+    "hm-cream": {
+      "zh-Hant": "軟膏",
+      "zh-HK": "軟膏"
+    },
+    "hm-doctor": {
+      "zh-Hant": "看醫生",
+      "zh-HK": "看醫生"
+    },
+    "hr-brush-teeth": {
+      "zh-Hant": "刷牙",
+      "zh-HK": "刷牙"
+    },
+    "hr-wash-hands": {
+      "zh-Hant": "洗手",
+      "zh-HK": "洗手"
+    },
+    "hr-shower": {
+      "zh-Hant": "淋浴",
+      "zh-HK": "淋浴"
+    },
+    "hr-bath": {
+      "zh-Hant": "洗澡",
+      "zh-HK": "洗澡"
+    },
+    "hr-dress": {
+      "zh-Hant": "穿衣服",
+      "zh-HK": "穿衣服"
+    },
+    "hr-comb": {
+      "zh-Hant": "梳頭",
+      "zh-HK": "梳頭"
+    },
+    "hr-toilet": {
+      "zh-Hant": "上廁所",
+      "zh-HK": "上廁所"
+    },
+    "hr-sleep": {
+      "zh-Hant": "睡覺",
+      "zh-HK": "睡覺"
+    },
+    "ap-dog": {
+      "zh-Hant": "狗",
+      "zh-HK": "狗"
+    },
+    "ap-cat": {
+      "zh-Hant": "貓",
+      "zh-HK": "貓"
+    },
+    "ap-fish": {
+      "zh-Hant": "魚",
+      "zh-HK": "魚"
+    },
+    "ap-rabbit": {
+      "zh-Hant": "兔子",
+      "zh-HK": "兔子"
+    },
+    "ap-hamster": {
+      "zh-Hant": "倉鼠",
+      "zh-HK": "倉鼠"
+    },
+    "ap-turtle": {
+      "zh-Hant": "烏龜",
+      "zh-HK": "烏龜"
+    },
+    "ap-bird-pet": {
+      "zh-Hant": "鳥",
+      "zh-HK": "鳥"
+    },
+    "ap-lizard": {
+      "zh-Hant": "蜥蜴",
+      "zh-HK": "蜥蜴"
+    },
+    "ap-guinea": {
+      "zh-Hant": "荷蘭豬",
+      "zh-HK": "荷蘭豬"
+    },
+    "af-cow": {
+      "zh-Hant": "奶牛",
+      "zh-HK": "奶牛"
+    },
+    "af-pig": {
+      "zh-Hant": "豬",
+      "zh-HK": "豬"
+    },
+    "af-horse": {
+      "zh-Hant": "馬",
+      "zh-HK": "馬"
+    },
+    "af-sheep": {
+      "zh-Hant": "綿羊",
+      "zh-HK": "綿羊"
+    },
+    "af-chicken": {
+      "zh-Hant": "雞",
+      "zh-HK": "雞"
+    },
+    "af-duck": {
+      "zh-Hant": "鴨子",
+      "zh-HK": "鴨子"
+    },
+    "af-goat": {
+      "zh-Hant": "山羊",
+      "zh-HK": "山羊"
+    },
+    "af-donkey": {
+      "zh-Hant": "驢",
+      "zh-HK": "驢"
+    },
+    "aw-lion": {
+      "zh-Hant": "獅子",
+      "zh-HK": "獅子"
+    },
+    "aw-tiger": {
+      "zh-Hant": "老虎",
+      "zh-HK": "老虎"
+    },
+    "aw-elephant": {
+      "zh-Hant": "大象",
+      "zh-HK": "大象"
+    },
+    "aw-giraffe": {
+      "zh-Hant": "長頸鹿",
+      "zh-HK": "長頸鹿"
+    },
+    "aw-bear": {
+      "zh-Hant": "熊",
+      "zh-HK": "熊"
+    },
+    "aw-zebra": {
+      "zh-Hant": "斑馬",
+      "zh-HK": "斑馬"
+    },
+    "aw-monkey": {
+      "zh-Hant": "猴子",
+      "zh-HK": "猴子"
+    },
+    "aw-wolf": {
+      "zh-Hant": "狼",
+      "zh-HK": "狼"
+    },
+    "aw-fox": {
+      "zh-Hant": "狐狸",
+      "zh-HK": "狐狸"
+    },
+    "aw-deer": {
+      "zh-Hant": "鹿",
+      "zh-HK": "鹿"
+    },
+    "ab-eagle": {
+      "zh-Hant": "老鷹",
+      "zh-HK": "老鷹"
+    },
+    "ab-owl": {
+      "zh-Hant": "貓頭鷹",
+      "zh-HK": "貓頭鷹"
+    },
+    "ab-parrot": {
+      "zh-Hant": "鸚鵡",
+      "zh-HK": "鸚鵡"
+    },
+    "ab-penguin": {
+      "zh-Hant": "企鵝",
+      "zh-HK": "企鵝"
+    },
+    "ab-flamingo": {
+      "zh-Hant": "火烈鳥",
+      "zh-HK": "火烈鳥"
+    },
+    "ab-crow": {
+      "zh-Hant": "烏鴉",
+      "zh-HK": "烏鴉"
+    },
+    "ab-sparrow": {
+      "zh-Hant": "麻雀",
+      "zh-HK": "麻雀"
+    },
+    "as-fish": {
+      "zh-Hant": "魚",
+      "zh-HK": "魚"
+    },
+    "as-shark": {
+      "zh-Hant": "鯊魚",
+      "zh-HK": "鯊魚"
+    },
+    "as-whale": {
+      "zh-Hant": "鯨魚",
+      "zh-HK": "鯨魚"
+    },
+    "as-dolphin": {
+      "zh-Hant": "海豚",
+      "zh-HK": "海豚"
+    },
+    "as-crab": {
+      "zh-Hant": "螃蟹",
+      "zh-HK": "螃蟹"
+    },
+    "as-octopus": {
+      "zh-Hant": "章魚",
+      "zh-HK": "章魚"
+    },
+    "as-jellyfish": {
+      "zh-Hant": "水母",
+      "zh-HK": "水母"
+    },
+    "as-starfish": {
+      "zh-Hant": "海星",
+      "zh-HK": "海星"
+    },
+    "as-turtle": {
+      "zh-Hant": "海龜",
+      "zh-HK": "海龜"
+    },
+    "pls-classroom": {
+      "zh-Hant": "教室",
+      "zh-HK": "教室"
+    },
+    "pls-gym": {
+      "zh-Hant": "體育館",
+      "zh-HK": "體育館"
+    },
+    "pls-lunchroom": {
+      "zh-Hant": "食堂",
+      "zh-HK": "食堂"
+    },
+    "pls-library": {
+      "zh-Hant": "圖書館",
+      "zh-HK": "圖書館"
+    },
+    "pls-bathroom": {
+      "zh-Hant": "洗手間",
+      "zh-HK": "洗手間"
+    },
+    "pls-playground": {
+      "zh-Hant": "操場",
+      "zh-HK": "操場"
+    },
+    "pls-office": {
+      "zh-Hant": "辦公室",
+      "zh-HK": "辦公室"
+    },
+    "pls-art-room": {
+      "zh-Hant": "美術室",
+      "zh-HK": "美術室"
+    },
+    "pls-music-room": {
+      "zh-Hant": "音樂室",
+      "zh-HK": "音樂室"
+    },
+    "pls-bus": {
+      "zh-Hant": "校車",
+      "zh-HK": "校車"
+    },
+    "plh-bedroom": {
+      "zh-Hant": "臥室",
+      "zh-HK": "卧室"
+    },
+    "plh-kitchen": {
+      "zh-Hant": "廚房",
+      "zh-HK": "廚房"
+    },
+    "plh-bathroom": {
+      "zh-Hant": "衛生間",
+      "zh-HK": "衞生間"
+    },
+    "plh-living": {
+      "zh-Hant": "客廳",
+      "zh-HK": "客廳"
+    },
+    "plh-backyard": {
+      "zh-Hant": "後院",
+      "zh-HK": "後院"
+    },
+    "plh-garage": {
+      "zh-Hant": "車庫",
+      "zh-HK": "車庫"
+    },
+    "plh-basement": {
+      "zh-Hant": "地下室",
+      "zh-HK": "地下室"
+    },
+    "plh-laundry": {
+      "zh-Hant": "洗衣房",
+      "zh-HK": "洗衣房"
+    },
+    "plo-park": {
+      "zh-Hant": "公園",
+      "zh-HK": "公園"
+    },
+    "plo-playground": {
+      "zh-Hant": "遊樂場",
+      "zh-HK": "遊樂場"
+    },
+    "plo-beach": {
+      "zh-Hant": "海灘",
+      "zh-HK": "海灘"
+    },
+    "plo-pool": {
+      "zh-Hant": "泳池",
+      "zh-HK": "泳池"
+    },
+    "plo-zoo": {
+      "zh-Hant": "動物園",
+      "zh-HK": "動物園"
+    },
+    "plo-farm": {
+      "zh-Hant": "農場",
+      "zh-HK": "農場"
+    },
+    "plo-trail": {
+      "zh-Hant": "徒步小徑",
+      "zh-HK": "徒步小徑"
+    },
+    "plo-field": {
+      "zh-Hant": "草坪",
+      "zh-HK": "草坪"
+    },
+    "plst-grocery": {
+      "zh-Hant": "超市",
+      "zh-HK": "超市"
+    },
+    "plst-pharmacy": {
+      "zh-Hant": "藥店",
+      "zh-HK": "藥店"
+    },
+    "plst-restaurant": {
+      "zh-Hant": "餐廳",
+      "zh-HK": "餐廳"
+    },
+    "plst-mall": {
+      "zh-Hant": "商場",
+      "zh-HK": "商場"
+    },
+    "plst-library": {
+      "zh-Hant": "圖書館",
+      "zh-HK": "圖書館"
+    },
+    "plst-barber": {
+      "zh-Hant": "理髮店",
+      "zh-HK": "理髮店"
+    },
+    "plst-bank": {
+      "zh-Hant": "銀行",
+      "zh-HK": "銀行"
+    },
+    "plm-hospital": {
+      "zh-Hant": "醫院",
+      "zh-HK": "醫院"
+    },
+    "plm-clinic": {
+      "zh-Hant": "診所",
+      "zh-HK": "診所"
+    },
+    "plm-dentist": {
+      "zh-Hant": "牙科醫生",
+      "zh-HK": "牙科醫生"
+    },
+    "plm-therapy": {
+      "zh-Hant": "康復理療",
+      "zh-HK": "康復理療"
+    },
+    "plm-emergency": {
+      "zh-Hant": "急診室",
+      "zh-HK": "急診室"
+    },
+    "plm-urgent": {
+      "zh-Hant": "門診急診",
+      "zh-HK": "門診急診"
+    },
+    "chip-o1": {
+      "zh-Hant": "我想要一個...",
+      "zh-HK": "我想要一個..."
+    },
+    "chip-o2": {
+      "zh-Hant": "我想點...",
+      "zh-HK": "我想點..."
+    },
+    "chip-o3": {
+      "zh-Hant": "在這裡吃",
+      "zh-HK": "在這裏吃"
+    },
+    "chip-o4": {
+      "zh-Hant": "打包",
+      "zh-HK": "打包"
+    },
+    "chip-b1": {
+      "zh-Hant": "捲餅",
+      "zh-HK": "捲餅"
+    },
+    "chip-b2": {
+      "zh-Hant": "碗",
+      "zh-HK": "碗"
+    },
+    "chip-b3": {
+      "zh-Hant": "玉米餅",
+      "zh-HK": "玉米餅"
+    },
+    "chip-b4": {
+      "zh-Hant": "芝士玉米餅",
+      "zh-HK": "芝士玉米餅"
+    },
+    "chip-b5": {
+      "zh-Hant": "沙拉",
+      "zh-HK": "沙拉"
+    },
+    "chip-p1": {
+      "zh-Hant": "雞肉",
+      "zh-HK": "雞肉"
+    },
+    "chip-p2": {
+      "zh-Hant": "牛排",
+      "zh-HK": "牛排"
+    },
+    "chip-p3": {
+      "zh-Hant": "烤牛肉",
+      "zh-HK": "烤牛肉"
+    },
+    "chip-p4": {
+      "zh-Hant": "烤豬肉",
+      "zh-HK": "烤豬肉"
+    },
+    "chip-p5": {
+      "zh-Hant": "豆腐",
+      "zh-HK": "豆腐"
+    },
+    "chip-p6": {
+      "zh-Hant": "蔬菜",
+      "zh-HK": "蔬菜"
+    },
+    "chip-t1": {
+      "zh-Hant": "米飯",
+      "zh-HK": "米飯"
+    },
+    "chip-t2": {
+      "zh-Hant": "豆",
+      "zh-HK": "豆"
+    },
+    "chip-t3": {
+      "zh-Hant": "奶酪",
+      "zh-HK": "奶酪"
+    },
+    "chip-t4": {
+      "zh-Hant": "酸奶油",
+      "zh-HK": "酸奶油"
+    },
+    "chip-t5": {
+      "zh-Hant": "牛油果醬",
+      "zh-HK": "牛油果醬"
+    },
+    "chip-t6": {
+      "zh-Hant": "莎莎醬",
+      "zh-HK": "莎莎醬"
+    },
+    "chip-t7": {
+      "zh-Hant": "生菜",
+      "zh-HK": "生菜"
+    },
+    "chip-t8": {
+      "zh-Hant": "玉米",
+      "zh-HK": "玉米"
+    },
+    "chip-f1": {
+      "zh-Hant": "就這些",
+      "zh-HK": "就這些"
+    },
+    "chip-f2": {
+      "zh-Hant": "再來杯飲料",
+      "zh-HK": "再來杯飲料"
+    },
+    "chip-f3": {
+      "zh-Hant": "再來份薯片",
+      "zh-HK": "再來份薯片"
+    },
+    "chip-f4": {
+      "zh-Hant": "謝謝",
+      "zh-HK": "謝謝"
+    },
+    "gen-o1": {
+      "zh-Hant": "可以看菜單嗎?",
+      "zh-HK": "可以看菜單嗎?"
+    },
+    "gen-o2": {
+      "zh-Hant": "我想點菜",
+      "zh-HK": "我想點菜"
+    },
+    "gen-o3": {
+      "zh-Hant": "兩人桌謝謝",
+      "zh-HK": "兩人桌謝謝"
+    },
+    "gen-r1": {
+      "zh-Hant": "我要...",
+      "zh-HK": "我要..."
+    },
+    "gen-r2": {
+      "zh-Hant": "可以給我...",
+      "zh-HK": "可以給我..."
+    },
+    "gen-r3": {
+      "zh-Hant": "有什麼推薦?",
+      "zh-HK": "有什麼推薦?"
+    },
+    "gen-m1": {
+      "zh-Hant": "不要洋蔥",
+      "zh-HK": "不要洋葱"
+    },
+    "gen-m2": {
+      "zh-Hant": "放旁邊",
+      "zh-HK": "放旁邊"
+    },
+    "gen-m3": {
+      "zh-Hant": "多一點",
+      "zh-HK": "多一點"
+    },
+    "gen-m4": {
+      "zh-Hant": "這是無麩質的嗎?",
+      "zh-HK": "這是無麩質的嗎?"
+    },
+    "gen-f1": {
+      "zh-Hant": "就這些，謝謝",
+      "zh-HK": "就這些，謝謝"
+    },
+    "gen-f2": {
+      "zh-Hant": "買單",
+      "zh-HK": "買單"
+    },
+    "gen-f3": {
+      "zh-Hant": "很好吃",
+      "zh-HK": "很好吃"
+    }
+  }
+}

@@ -5,6 +5,7 @@ import { type GestureConfig, type GestureMapping, DEFAULT_GESTURE_CONFIG } from 
 import { safeJSONStorage } from '@/lib/safeStorage';
 
 export type Theme = 'light' | 'dark';
+export const DEFAULT_THEME: Theme = 'light';
 export type GridSize = 4 | 6 | 9 | 12 | 16 | 20;
 
 export type PictureMode = 'off' | 'symbols' | 'symbols-ai';
@@ -32,12 +33,13 @@ export interface ToolbarConfig {
 // Default toolbar — Phase 6: trimmed to a minimal set per user request
 // ("leave notifications + microphone etc"). Every other built-in button
 // stays in the type union AND in Settings → Toolbar so the user can
-// re-enable them, but the default is now five icons only:
+// re-enable them, but the default is now six icons only:
 //   • mic         — voice input (microphone)
 //   • aac_chat    — incoming messages (the "notifications" surface)
 //   • alert       — life-safety emergency button (non-negotiable)
 //   • categories  — AAC core navigation (without this the app can't
 //                   compose sentences, so it stays even under "minimal")
+//   • sound       — immediate mute/unmute feedback for speech output
 //   • settings    — escape hatch back to a fuller toolbar
 // `order` retains the FULL button list so Settings can still toggle them
 // individually; `enabled` is what governs default visibility (see the
@@ -56,6 +58,7 @@ export const DEFAULT_TOOLBAR_ENABLED: Partial<Record<ToolbarButtonId, boolean>> 
   aac_chat: true,
   alert: true,
   categories: true,
+  sound: true,
   settings: true,
   // Everything else: explicitly disabled out of the box.
   schedule: false,
@@ -68,7 +71,6 @@ export const DEFAULT_TOOLBAR_ENABLED: Partial<Record<ToolbarButtonId, boolean>> 
   ocr_capture: false,
   comfort_player: false,
   history: false,
-  sound: false,
 };
 
 const VALID_TOOLBAR_IDS = new Set<ToolbarButtonId>(DEFAULT_TOOLBAR_ORDER);
@@ -229,7 +231,10 @@ export const useSettingsStore = create<SettingsState>()(
       language: 'en',
       outputLanguage: 'en', // syncs with language on first use; only diverges when user explicitly sets translation pair
       highContrast: false,
-      theme: 'dark',
+      // Light is the accessible default for new AAC profiles. Persisted user
+      // choices still win during hydration, so this does not override anyone
+      // who deliberately selected Dark.
+      theme: DEFAULT_THEME,
       gridSize: 6,
       activeVocabSet: 'all',
       showUnreviewedVocabulary: false,
@@ -266,9 +271,9 @@ export const useSettingsStore = create<SettingsState>()(
       historyRegion: null,
       toolbarConfig: {
         order: [...DEFAULT_TOOLBAR_ORDER],
-        // Phase 6: ship a minimal default — only the 5 essentials are
+        // Phase 6: ship a minimal default — only the 6 essentials are
         // enabled out of the box (mic, aac_chat, alert, categories,
-        // settings). Users who want the bigger toolbar can re-enable
+        // sound, settings). Users who want the bigger toolbar can re-enable
         // additional buttons in Settings → Toolbar.
         enabled: { ...DEFAULT_TOOLBAR_ENABLED },
       },

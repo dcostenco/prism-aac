@@ -7,7 +7,7 @@
  *   1. Every shipped locale (defined in engine/i18n LANG_META) has
  *      every key from en.json — no English fallback at runtime.
  *   2. Per-locale JSON files match the matrix exactly (no drift).
- *   3. AAC quick-card keys (qc_1..qc_28) are present everywhere.
+ *   3. Hot-path interface labels are present everywhere.
  *
  * Uses node environment since we only need filesystem access, not DOM.
  */
@@ -46,8 +46,6 @@ const REQUIRED_EVERYWHERE = [
   'good_afternoon',
   'good_evening',
   'good_night',
-  // AAC quick-card row — 28 entries, must localize for every shipped locale.
-  ...Array.from({ length: 28 }, (_, i) => `qc_${i + 1}`),
 ];
 
 // Load the SSOT matrix.
@@ -93,12 +91,10 @@ describe('i18n — Key coverage', () => {
     expect(missingInRo).toEqual([]);
   });
 
-  // Strict enforcement for the hot-path keys. If this test fires, you
-  // shipped a locale where a greeting/quick-card falls back to English
-  // and the user sees mixed-language UI (e.g. Italian banner reading
-  // "Good morning", or Polish quick-cards showing "I/You/More" instead
-  // of "Ja/Ty/Więcej"). Translate the key in the matrix instead of
-  // relaxing the assertion.
+  // Strict enforcement for hot-path interface keys. AAC core words are not
+  // included here: their semantic integrity is enforced by stable phrase IDs
+  // in aac-core-semantic-integrity.test.ts. The legacy qc_1..qc_28 matrix is
+  // positional and must never be treated as proof that concepts align.
   it.each(LOCALES.filter((l) => l !== 'en'))(
     '%s.json — every REQUIRED_EVERYWHERE key is translated',
     (locale) => {

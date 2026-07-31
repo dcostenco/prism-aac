@@ -15,6 +15,8 @@ import { classifyWord, CATEGORY_COLORS } from '@/engine/colorCoding';
 import { useT } from '@/engine/useT';
 import PhraseTile from './PhraseTile';
 import Keyboard from './Keyboard';
+import { getTTSCode } from '@/engine/i18n';
+import { usesNativeImeKeyboard } from '@/constants/keyboardLayouts';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { registerSearchKeyHandler } from '@/services/searchKeyBridge';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
@@ -196,8 +198,9 @@ export default function CategoryPanel() {
     sidePanel, activeCategoryId, categoryPath, activeSequenceId, activeSequenceStep,
     categoryKeyboardOpen, keyboardMaximized,
     closeSidePanel, selectCategory, drillIntoCategory, navigateCategoryUp,
-    backToCategories, startOrdering, nextStep, prevStep, finishOrdering, toggleCategoryKeyboard, cycleKeyboardMode,
+    backToCategories, startOrdering, nextStep, prevStep, finishOrdering, cycleKeyboardMode,
   } = useUIStore();
+  const typingMode = categoryKeyboardOpen && keyboardMaximized;
   const appendText = useMessageStore((s) => s.appendText);
   const text = useMessageStore((s) => s.text);
   const autoSpeak = useMessageStore((s) => s.autoSpeak);
@@ -365,40 +368,52 @@ export default function CategoryPanel() {
   const openSearch = () => {
     setSearchOpen(true);
     setSearchQuery('');
-    // Always show the keyboard immediately when entering search mode so the
-    // user can type right away without tapping the Keyboard button.
-    if (!categoryKeyboardOpen) toggleCategoryKeyboard();
+    // Search is a typing task. Enter full Typing mode instead of reviving the
+    // legacy partial-board + keyboard layout.
+    if (!typingMode) cycleKeyboardMode();
   };
   const closeSearch = () => {
     setSearchOpen(false);
     setSearchQuery('');
     registerSearchKeyHandler(null);
   };
-  const handleBack = () => { isDeep ? navigateCategoryUp() : backToCategories(); };
+  const handleBack = () => {
+    if (isDeep) navigateCategoryUp();
+    else backToCategories();
+  };
+  const returnToPictures = () => {
+    if (searchOpen) closeSearch();
+    if (typingMode) cycleKeyboardMode();
+  };
 
   // ── SIDEBAR JSX (inlined — not a component, so no remounting) ───────────────
-  // ⌨️ is FIRST — always visible even when keyboard is open and shrinks the panel.
-  // No flex-1 spacer: all buttons compact from top so nothing gets clipped.
+  // Typing mode exposes one unmistakable way back to the picture board.
+  // Picture mode keeps the full navigation rail, with Keyboard first.
   const sidebarJsx = (showCoreWords = false) => (
-    <nav className="w-[clamp(72px,9vw,96px)] shrink-0 bg-[#3e2a1a] flex flex-col border-l-2 border-[#5c3d25] overflow-y-auto overflow-x-hidden">
-      {/* Keyboard toggle — ALWAYS FIRST so it's always reachable */}
-      <SidebarBtn
-        icon="⌨️"
-        label={categoryKeyboardOpen && keyboardMaximized ? t('sidebar_hide_kb') : t('sidebar_kb')}
-        onClick={cycleKeyboardMode}
-        active={categoryKeyboardOpen && keyboardMaximized}
-        testId="kb-cycle-btn"
-        dataAction={categoryKeyboardOpen && keyboardMaximized ? 'kb-minimize' : undefined}
-      />
-      {/* Search */}
-      <SidebarBtn icon="🔍" label={t('sidebar_search')} onClick={searchOpen ? closeSearch : openSearch} active={searchOpen} />
-      {/* Navigation */}
-      {!isHome && <SidebarBtn icon="←" label={isDeep ? t('sidebar_up') : t('sidebar_back')} onClick={handleBack} />}
-      <SidebarBtn icon="🏠" label={t('home')} onClick={closeSidePanel} />
-      {showCoreWords && <SidebarBtn icon="⌂" label={t('sidebar_words')} onClick={backToCategories} />}
-      {/* Scroll helpers */}
-      <SidebarBtn icon="↑" label={t('sidebar_up')} onClick={() => scrollGrid(-1)} />
-      <SidebarBtn icon="↓" label={t('sidebar_down')} onClick={() => scrollGrid(1)} />
+    <nav
+      data-testid={typingMode ? 'typing-mode-sidebar' : 'picture-mode-sidebar'}
+      className="w-[clamp(72px,9vw,96px)] shrink-0 bg-[#3e2a1a] flex flex-col border-l-2 border-[#5c3d25] overflow-y-auto overflow-x-hidden"
+    >
+      {typingMode ? (
+        <SidebarBtn
+          icon="🖼️"
+          label={t('sidebar_hide_kb')}
+          onClick={returnToPictures}
+          active
+          testId="kb-cycle-btn"
+          dataAction="kb-minimize"
+        />
+      ) : (
+        <>
+          <SidebarBtn icon="⌨️" label={t('sidebar_kb')} onClick={cycleKeyboardMode} testId="kb-cycle-btn" />
+          <SidebarBtn icon="🔍" label={t('sidebar_search')} onClick={openSearch} />
+          {!isHome && <SidebarBtn icon="←" label={isDeep ? t('sidebar_up') : t('sidebar_back')} onClick={handleBack} />}
+          <SidebarBtn icon="🏠" label={t('home')} onClick={closeSidePanel} />
+          {showCoreWords && <SidebarBtn icon="⌂" label={t('sidebar_words')} onClick={backToCategories} />}
+          <SidebarBtn icon="↑" label={t('sidebar_up')} onClick={() => scrollGrid(-1)} />
+          <SidebarBtn icon="↓" label={t('sidebar_down')} onClick={() => scrollGrid(1)} />
+        </>
+      )}
       {/* Fills remaining height so the whole nav area is tappable */}
       <div className="flex-1" />
     </nav>
@@ -412,7 +427,8 @@ export default function CategoryPanel() {
         <input
           ref={searchInputRef}
           type="text"
-          inputMode="none"
+          inputMode={usesNativeImeKeyboard(language) ? 'text' : 'none'}
+          lang={getTTSCode(language)}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search all vocabulary…"
@@ -448,11 +464,12 @@ export default function CategoryPanel() {
     const step = seq.steps[activeSequenceStep];
     if (!step) return null;
     return (
-      <section className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
-        <PageLabel label={`${seq.name} — ${step.label}`} />
+      <section data-aac-mode={typingMode ? 'typing' : 'picture'} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
+        {!typingMode && <PageLabel label={`${seq.name} — ${step.label}`} />}
         <div className="flex flex-row flex-1 min-h-0">
           <div className="flex-1 flex flex-col min-w-0 min-h-0">
-            <div className={`flex-1 flex flex-col min-h-0 ${categoryKeyboardOpen && keyboardMaximized ? 'hidden' : ''}`}>
+            {!typingMode && (
+            <div data-testid="picture-board" className="flex-1 flex flex-col min-h-0">
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
                 <div className="text-muted text-xs text-right px-1">{activeSequenceStep + 1}/{seq.steps.length}</div>
                 {step.options.map((opt) => {
@@ -482,13 +499,14 @@ export default function CategoryPanel() {
             </div>
               </div>
             </div>
-            {categoryKeyboardOpen && (
-              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : `shrink-0 ${compactMode ? 'h-[clamp(80px,24svh,120px)]' : 'h-[clamp(170px,25svh,260px)]'} flex flex-col`} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
+            )}
+            {typingMode && (
+              <div className="aac-typing-keyboard-shell flex-1 min-h-0 flex flex-col" data-testid="keyboard-shell" data-maximized>
                 <Keyboard />
               </div>
             )}
           </div>
-          {!(categoryKeyboardOpen && keyboardMaximized) && sidebarJsx(true)}
+          {sidebarJsx(true)}
         </div>
       </section>
     );
@@ -505,11 +523,12 @@ export default function CategoryPanel() {
     const catBg = CAT_BG[activeCategoryId];
 
     return (
-      <section aria-label={catName} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
-        <PageLabel label={catName} />
+      <section aria-label={catName} data-aac-mode={typingMode ? 'typing' : 'picture'} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
+        {!typingMode && <PageLabel label={catName} />}
         <div className="flex flex-row flex-1 min-h-0">
           <div className="flex-1 flex flex-col min-w-0 min-h-0">
-            <div className={`flex-1 flex flex-col min-h-0 ${categoryKeyboardOpen && keyboardMaximized ? 'hidden' : ''}`}>
+            {(!typingMode || searchOpen) && (
+            <div data-testid={searchOpen ? 'search-results-panel' : 'picture-board'} className="flex-1 flex flex-col min-h-0">
               {searchOpen ? searchPanelJsx : (
                 <div className="flex-1 min-w-0 flex flex-col min-h-0">
               {sequences.length > 0 && (
@@ -533,16 +552,16 @@ export default function CategoryPanel() {
                 const showPager = totalPages > 1;
                 return (
                   <div className="flex-1 flex flex-col min-h-0">
-                    <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-2 p-2 flex-1 min-h-0 content-start`}>
+                    <div ref={gridRef} className={`aac-picture-grid grid ${GRID_COLS[gridSize]} gap-2 p-2 flex-1 min-h-0 content-start`}>
                       {pageItems.map(item => {
                         if (item.type === 'folder') {
                           const sub = item.data;
                           return (
                             <button key={sub.id} onClick={() => { tapFeedback(); drillIntoCategory(sub.id); }}
                               aria-label={sub.nameKey ? t(sub.nameKey) : sub.name}
-                              className={`${FOLDER_CLS} p-3 ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]}`}>
-                              <span className="text-3xl leading-none">{sub.icon}</span>
-                              <span className="text-xs leading-tight uppercase tracking-wide">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
+                              className={`aac-picture-card ${FOLDER_CLS} p-3 ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]}`}>
+                              <span className="aac-tile-icon text-3xl leading-none">{sub.icon}</span>
+                              <span className="aac-tile-label aac-folder-label">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
                             </button>
                           );
                         }
@@ -573,13 +592,14 @@ export default function CategoryPanel() {
             </div>
               )}
             </div>
-            {categoryKeyboardOpen && (
-              <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : `shrink-0 ${compactMode ? 'h-[clamp(80px,24svh,120px)]' : 'h-[clamp(170px,25svh,260px)]'} flex flex-col`} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
+            )}
+            {typingMode && (
+              <div className="aac-typing-keyboard-shell flex-1 min-h-0 flex flex-col" data-testid="keyboard-shell" data-maximized>
                 <Keyboard />
               </div>
             )}
           </div>
-          {!(categoryKeyboardOpen && keyboardMaximized) && sidebarJsx(true)}
+          {sidebarJsx(true)}
         </div>
       </section>
     );
@@ -591,15 +611,16 @@ export default function CategoryPanel() {
   const fringeCats = topLevelCats.filter((c) => !homeCatSet.has(c.id));
 
   return (
-    <section aria-label="Home vocabulary board" className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
-      {!(categoryKeyboardOpen && keyboardMaximized) && <PageLabel label={t('home').toUpperCase()} />}
+    <section aria-label="Home vocabulary board" data-aac-mode={typingMode ? 'typing' : 'picture'} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
+      {!typingMode && <PageLabel label={t('home').toUpperCase()} />}
       <div className="flex flex-row flex-1 min-h-0">
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
-          <div className={`flex-1 flex flex-col min-h-0 ${categoryKeyboardOpen && keyboardMaximized ? 'hidden' : ''}`}>
+          {(!typingMode || searchOpen) && (
+          <div data-testid={searchOpen ? 'search-results-panel' : 'picture-board'} className="flex-1 flex flex-col min-h-0">
             {searchOpen ? searchPanelJsx : (
               <div className="flex-1 min-w-0 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
-            <div ref={gridRef} className={`grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+            <div ref={gridRef} className={`aac-picture-grid grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
               {homeGridPhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
                 const tH = compactMode && categoryKeyboardOpen ? HOME_TILE_H_COMPACT : categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
@@ -616,9 +637,9 @@ export default function CategoryPanel() {
                 return (
                 <button key={cat.id} onClick={() => { tapFeedback(); selectCategory(cat.id); }}
                   aria-label={cat.nameKey ? t(cat.nameKey) : cat.name}
-                  className={`${FOLDER_CLS} gap-1 p-1.5 text-xs ${tH}`}>
-                  <span className="text-2xl sm:text-3xl leading-none">{cat.icon}</span>
-                  <span className="leading-tight uppercase tracking-wide text-[10px] sm:text-xs">
+                  className={`aac-picture-card ${FOLDER_CLS} gap-1 p-1.5 text-xs ${tH}`}>
+                  <span className="aac-tile-icon text-2xl sm:text-3xl leading-none">{cat.icon}</span>
+                  <span className="aac-tile-label aac-folder-label">
                     {cat.nameKey ? t(cat.nameKey) : cat.name}
                   </span>
                 </button>
@@ -626,16 +647,17 @@ export default function CategoryPanel() {
               })}
             </div>
             {/* Bottom category tab strip — hidden in landscape when keyboard is open (saves ~50px) */}
-            {!(compactMode && categoryKeyboardOpen) && <div className="flex gap-1 px-2 py-1.5 overflow-x-auto shrink-0 border-t-2 border-[#5c3d25] bg-[#3e2a1a]" style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}>
+            {!(compactMode && categoryKeyboardOpen) && <div data-testid="category-strip" className="aac-category-strip flex gap-1 px-2 py-1.5 overflow-x-auto shrink-0 border-t-2 border-[#5c3d25] bg-[#3e2a1a]" style={{ paddingBottom: 'max(0.375rem, var(--aac-safe-area-bottom))' }}>
               {topLevelCats.map((cat) => {
                 const isCore = homeCatSet.has(cat.id);
                 const tabBg = isCore ? (CAT_BG[cat.id] ?? 'bg-white/20 text-white') : 'bg-white text-gray-900';
                 return (
                   <button key={cat.id} onClick={() => { tapFeedback(); selectCategory(cat.id); }}
-                    className={`aac-btn shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg
+                    data-testid="category-tile"
+                    className={`aac-btn aac-category-tile shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg
                       border border-white/20 select-none text-center min-w-[52px] ${tabBg}`}>
-                    <span className="text-base leading-none">{cat.icon}</span>
-                    <span className="text-[11px] font-bold uppercase tracking-wide leading-tight whitespace-nowrap">
+                    <span className="aac-tile-icon aac-category-icon text-base leading-none">{cat.icon}</span>
+                    <span className="aac-tile-label aac-category-label">
                       {cat.nameKey ? t(cat.nameKey) : cat.name}
                     </span>
                   </button>
@@ -645,13 +667,14 @@ export default function CategoryPanel() {
             </div>
             )}
           </div>
-          {categoryKeyboardOpen && (
-            <div className={keyboardMaximized ? "flex-1 min-h-0 flex flex-col" : `shrink-0 ${compactMode ? 'h-[clamp(80px,24svh,120px)]' : 'h-[clamp(170px,25svh,260px)]'} flex flex-col`} data-testid="keyboard-shell" data-maximized={keyboardMaximized || undefined}>
+          )}
+          {typingMode && (
+            <div className="aac-typing-keyboard-shell flex-1 min-h-0 flex flex-col" data-testid="keyboard-shell" data-maximized>
               <Keyboard />
             </div>
           )}
         </div>
-        {!(categoryKeyboardOpen && keyboardMaximized) && sidebarJsx()}
+        {sidebarJsx()}
       </div>
     </section>
   );

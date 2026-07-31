@@ -42,7 +42,7 @@ beforeEach(() => {
   useUIStore.setState({
     sidePanel: 'none',
     categoryKeyboardOpen: true,
-    keyboardMaximized: false,
+    keyboardMaximized: true,
     activeCategoryId: null,
     categoryPath: [],
     activeContactId: null,
@@ -330,6 +330,25 @@ describe('uiStore — keyboard desync prevention', () => {
     const s = useUIStore.getState();
     expect(s.categoryKeyboardOpen).toBe(false);
     expect(s.keyboardMaximized).toBe(false);
+  });
+
+  it('toggleCategoryKeyboard opens directly into full Typing mode', () => {
+    useUIStore.setState({ categoryKeyboardOpen: false, keyboardMaximized: false });
+    useUIStore.getState().toggleCategoryKeyboard();
+    const s = useUIStore.getState();
+    expect(s.categoryKeyboardOpen).toBe(true);
+    expect(s.keyboardMaximized).toBe(true);
+  });
+
+  it('toggleKeyboardMaximized never creates the legacy mixed state', () => {
+    useUIStore.setState({ categoryKeyboardOpen: true, keyboardMaximized: true });
+    useUIStore.getState().toggleKeyboardMaximized();
+    expect(useUIStore.getState().categoryKeyboardOpen).toBe(false);
+    expect(useUIStore.getState().keyboardMaximized).toBe(false);
+
+    useUIStore.getState().toggleKeyboardMaximized();
+    expect(useUIStore.getState().categoryKeyboardOpen).toBe(true);
+    expect(useUIStore.getState().keyboardMaximized).toBe(true);
   });
 
   it('orientation handler guard: landscape with keyboard closed does not set keyboardMaximized', () => {

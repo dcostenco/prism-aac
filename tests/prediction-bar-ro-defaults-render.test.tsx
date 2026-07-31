@@ -58,7 +58,7 @@ describe('PredictionBar — Romanian default tiles', () => {
     render(<PredictionBar />);
 
     // The bar should show the first 5 entries of getAacCoreFor('ro'):
-    //   Eu, Tu, Mai Mult, A vrea, A ajuta
+    //   eu, Tu, Mai mult, Vreau, Ajutor
     // (1st-person singular, 2nd-person singular, "more", "to want",
     // "to help" — Universal Core 36 ranking).
     await waitFor(() => {
@@ -68,13 +68,13 @@ describe('PredictionBar — Romanian default tiles', () => {
     });
 
     const labels = screen.getAllByRole('button').map((b) => b.textContent?.trim() ?? '');
-    expect(labels).toEqual(expect.arrayContaining(['Eu', 'Tu', 'Mai Mult', 'A vrea', 'A ajuta']));
+    expect(labels).toEqual(expect.arrayContaining(['eu', 'Tu', 'Mai mult', 'Vreau', 'Ajutor']));
   });
 
   it('keeps single-word RO defaults that survived the old gate', async () => {
     render(<PredictionBar />);
     await waitFor(() => {
-      expect(screen.getByText('Eu')).toBeDefined();
+      expect(screen.getByText('eu')).toBeDefined();
       expect(screen.getByText('Tu')).toBeDefined();
     });
   });
@@ -83,9 +83,22 @@ describe('PredictionBar — Romanian default tiles', () => {
     render(<PredictionBar />);
     await waitFor(() => {
       // Each of these is what the user's screenshot was MISSING.
-      expect(screen.getByText('Mai Mult')).toBeDefined();
-      expect(screen.getByText('A vrea')).toBeDefined();
-      expect(screen.getByText('A ajuta')).toBeDefined();
+      expect(screen.getByText('Mai mult')).toBeDefined();
+      expect(screen.getByText('Vreau')).toBeDefined();
+      expect(screen.getByText('Ajutor')).toBeDefined();
     });
+  });
+
+  it('uses the same readable label contract as phrase cards', async () => {
+    render(<PredictionBar />);
+    await waitFor(() => expect(screen.getByText('eu')).toBeDefined());
+
+    for (const label of screen.getAllByTestId('prediction-label')) {
+      expect(label.classList.contains('aac-tile-label')).toBe(true);
+      expect(label.classList.contains('aac-prediction-label')).toBe(true);
+      expect(label.closest('button')?.classList.contains('aac-prediction-tile')).toBe(true);
+      expect(label.closest('button')?.getAttribute('data-testid')).toBe('prediction-tile');
+      expect(label.closest('button')?.querySelector('.aac-tile-icon')).toBeTruthy();
+    }
   });
 });

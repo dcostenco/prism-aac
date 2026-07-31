@@ -87,4 +87,18 @@ describe('theme contrast', () => {
       `--text-primary ${text} is unreadable on the light theme's white surfaces`,
     ).toBeGreaterThan(4.5);
   });
+
+  it('keeps prediction cards black on white in every theme', () => {
+    const tileBody = CSS.match(/\.aac-prediction-tile\s*\{([^}]*)\}/)?.[1] ?? '';
+    const labelBody = CSS.match(/\.aac-prediction-label\s*\{([^}]*)\}/)?.[1] ?? '';
+
+    expect(tileBody, 'prediction tile has no fixed light surface').toMatch(/background:\s*#(?:fff|ffffff)\b/i);
+    expect(labelBody, 'prediction label has no fixed black foreground').toMatch(/color:\s*#(?:000|000000)\b/i);
+    expect(ratio('#000000', '#ffffff')).toBeGreaterThan(4.5);
+  });
+
+  it('keeps picture-card labels black in the light board scheme', () => {
+    const labelBody = CSS.match(/\.aac-phrase-label\s*,\s*\n?\.aac-folder-label\s*,\s*\n?\.aac-category-label\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(labelBody, 'picture labels have no fixed black foreground').toMatch(/color:\s*#(?:000|000000)\b/i);
+  });
 });

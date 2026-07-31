@@ -16,8 +16,10 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
+  LANG_META,
   getLanguageFlag,
   getLanguageName,
+  getTTSCode,
   isLanguageLoaded,
   loadLanguage,
   type SupportedLanguage,
@@ -54,7 +56,7 @@ describe('getLanguageFlag', () => {
     expect(getLanguageFlag('zh-Hant')).toBe('🇹🇼');
   });
 
-  it('returns the HK flag for zh-HK (Cantonese)', () => {
+  it('returns the HK flag for the Hong Kong Chinese locale', () => {
     expect(getLanguageFlag('zh-HK')).toBe('🇭🇰');
   });
 
@@ -114,8 +116,11 @@ describe('getLanguageName', () => {
     expect(getLanguageName('zh-Hant')).toBe('Chinese (Traditional)');
   });
 
-  it('returns "Cantonese (Hong Kong)" for zh-HK', () => {
-    expect(getLanguageName('zh-HK')).toBe('Cantonese (Hong Kong)');
+  it('does not claim the Hong Kong script fallback is authored Cantonese', () => {
+    expect(getLanguageName('zh-HK')).toBe('Chinese (Hong Kong)');
+    expect(LANG_META.find(({ code }) => code === 'zh-HK')?.nativeName)
+      .toBe('繁體中文（香港）');
+    expect(getTTSCode('zh-HK')).toBe('zh-HK');
   });
 
   it('returns "English" (fallback) for unknown code', () => {

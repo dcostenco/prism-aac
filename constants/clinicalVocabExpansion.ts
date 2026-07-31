@@ -1,4 +1,4 @@
-import { VocabEntry } from './clinicalVocabulary';
+import type { VocabEntry } from './clinicalVocabulary';
 
 export const CLINICAL_VOCAB_EXPANSION: VocabEntry[] = [
   // ── Section 5: Technology & Devices ─────────────────────

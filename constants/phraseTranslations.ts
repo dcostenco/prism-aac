@@ -1,4 +1,11 @@
-import { SupportedLanguage } from '@/engine/i18n';
+import type { SupportedLanguage } from '@/engine/i18n';
+import chineseVariantData from '@/constants/generated/chinesePhraseVariants.json';
+
+type ChineseScriptVariant = 'zh-Hant' | 'zh-HK';
+const CHINESE_PHRASE_VARIANTS = chineseVariantData.translations as Record<
+  string,
+  Record<ChineseScriptVariant, string>
+>;
 
 const T: Record<string, Partial<Record<SupportedLanguage, string>>> = {
   'cw-i': { ro: 'eu', es: 'Yo', fr: 'Je', pt: 'Eu', de: 'Ich', ru: 'Я', uk: 'Я', ja: '私', ko: '나', zh: '我', ar: 'أنا', hi: 'मैं', it: 'Io', pl: 'Ja', he: 'אני', nl: 'Ik', vi: 'Tôi', tl: 'Ako', tr: 'Ben', id: 'Saya', bg: 'Аз', am: 'እኔ', sw: 'Mimi', bn: 'আমি'},
@@ -1555,9 +1562,18 @@ const T: Record<string, Partial<Record<SupportedLanguage, string>>> = {
   'gen-f3': { ro: 'A fost delicios', es: 'Estuvo delicioso', fr: 'C\'était délicieux', pt: 'Estava delicioso', de: 'Es war köstlich', ru: 'Было очень вкусно', uk: 'Було дуже смачно', ja: 'おいしかったです', ko: '맛있었어요', zh: '很好吃', ar: 'كان لذيذا', hi: 'बहुत स्वादिष्ट था', it: 'Era delizioso', pl: 'Było pyszne', he: 'היה טעים', nl: 'Het was heerlijk', vi: 'Rất ngon', tl: 'Masarap', tr: 'Çok lezzetliydi', id: 'Enak sekali', bg: 'Беше вкусно'},
 };
 
-/** Canonical bucket for a language — Chinese variants all share 'zh'. */
-function bucketFor(lang: SupportedLanguage): SupportedLanguage {
-  return (lang === 'zh-Hans' || lang === 'zh-Hant' || lang === 'zh-HK') ? 'zh' : lang;
+function translationFor(
+  phraseId: string,
+  lang: Exclude<SupportedLanguage, 'en'>,
+): string | undefined {
+  const authored = T[phraseId]?.[lang];
+  if (typeof authored === 'string') return authored;
+
+  if (lang === 'zh-Hant' || lang === 'zh-HK') {
+    return CHINESE_PHRASE_VARIANTS[phraseId]?.[lang];
+  }
+  if (lang === 'zh-Hans') return T[phraseId]?.zh;
+  return T[phraseId]?.[lang];
 }
 
 /**
@@ -1574,15 +1590,10 @@ function bucketFor(lang: SupportedLanguage): SupportedLanguage {
  */
 export function hasPhraseTranslation(phraseId: string, lang: SupportedLanguage): boolean {
   if (lang === 'en') return true;
-  return typeof T[phraseId]?.[bucketFor(lang)] === 'string';
+  return typeof translationFor(phraseId, lang) === 'string';
 }
 
 export function getPhraseText(phraseId: string, lang: SupportedLanguage, fallback: string): string {
   if (lang === 'en') return fallback;
-  // BCP-47 Chinese variants all map to the 'zh' translation bucket.
-  // phraseTranslations stores entries under 'zh' only; 'zh-Hans', 'zh-Hant',
-  // 'zh-HK' are aliases so Chinese AAC users see Chinese, not English fallbacks.
-  const key: SupportedLanguage =
-    (lang === 'zh-Hans' || lang === 'zh-Hant' || lang === 'zh-HK') ? 'zh' : lang;
-  return T[phraseId]?.[key] ?? fallback;
+  return translationFor(phraseId, lang) ?? fallback;
 }

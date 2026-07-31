@@ -30,6 +30,7 @@ import type { SidePanelView } from '@/types';
 
 const integrationMocks = vi.hoisted(() => ({
   broadcastIntegrationEvent: vi.fn(),
+  prewarmHeadTracker: vi.fn(),
 }));
 
 // Big mock surface: PrismApp wires many services we don't care about for
@@ -45,6 +46,9 @@ vi.mock('@/services/inboxService', () => ({ startInboxPolling: () => () => {} })
 vi.mock('@/services/contactsIntegrationService', () => ({ startContactsSync: () => () => {} }));
 vi.mock('@/services/integrationsService', () => ({
   broadcastIntegrationEvent: integrationMocks.broadcastIntegrationEvent,
+}));
+vi.mock('@/services/headTracker', () => ({
+  prewarmHeadTracker: integrationMocks.prewarmHeadTracker,
 }));
 vi.mock('@/engine/useT', () => ({
   useT: () => ({ t: (k: string) => k, ttsCode: 'en-US', rtl: false, ready: true }),
@@ -64,7 +68,7 @@ vi.mock('@/components/MessageBar', () => ({ default: () => <div data-testid="pan
 vi.mock('@/components/PredictionBar', () => ({ default: () => <div data-testid="panel-prediction-bar" /> }));
 vi.mock('@/components/CategoryPanel', () => ({
   default: () => {
-    const { sidePanel, categoryKeyboardOpen } = useUIStore.getState();
+    const { sidePanel, categoryKeyboardOpen, keyboardMaximized } = useUIStore.getState();
     const catPanels = ['categories', 'category-detail', 'ordering'];
     const isCatOrHome = catPanels.includes(sidePanel) || sidePanel === 'none';
     const id = catPanels.includes(sidePanel) ? sidePanel : 'categories';
@@ -74,7 +78,7 @@ vi.mock('@/components/CategoryPanel', () => ({
     // for toggle-controlled panels without double-rendering for other panels.
     return (
       <div data-testid={`panel-${id}`}>
-        {isCatOrHome && categoryKeyboardOpen && (
+        {isCatOrHome && categoryKeyboardOpen && keyboardMaximized && (
           <div data-testid="keyboard-shell">
             <div data-testid="aac-keyboard-mock">[keyboard]</div>
           </div>
@@ -105,9 +109,30 @@ beforeEach(() => {
   vi.clearAllMocks();
   window.history.replaceState({}, '', '/prism-aac');
   useAuthStore.setState({ profile: null, loaded: true, loading: false });
-  useSettingsStore.setState({ theme: 'light', highContrast: false } as Partial<ReturnType<typeof useSettingsStore.getState>>);
+  useSettingsStore.setState({
+    theme: 'light',
+    highContrast: false,
+    headTrackingEnabled: false,
+  } as Partial<ReturnType<typeof useSettingsStore.getState>>);
   // PrismApp uses matchMedia for landscape/compact detection.
   window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+});
+
+describe('Head-tracking runtime lifecycle', () => {
+  it('does not load MediaPipe while head tracking is disabled', async () => {
+    render(<PrismApp />);
+
+    await screen.findByTestId('panel-toolbar');
+    await Promise.resolve();
+    expect(integrationMocks.prewarmHeadTracker).not.toHaveBeenCalled();
+  });
+
+  it('pre-warms MediaPipe after the user enables head tracking', async () => {
+    useSettingsStore.setState({ headTrackingEnabled: true });
+    render(<PrismApp />);
+
+    await waitFor(() => expect(integrationMocks.prewarmHeadTracker).toHaveBeenCalledOnce());
+  });
 });
 
 describe('OAuth return confirmation', () => {
@@ -176,6 +201,7 @@ describe('Keyboard visibility — qwerty rendered for panels without own input',
       expect(kb).toBeInTheDocument();
       const shell = await findByTestId('keyboard-shell');
       expect(shell).toBeInTheDocument();
+      expect(shell).toHaveClass('aac-typing-keyboard-shell');
     });
   }
 
@@ -212,7 +238,7 @@ describe('Keyboard visibility — qwerty hidden for panels with their own keyboa
 describe('Keyboard visibility — toggle-controlled panels (category mode + home)', () => {
   for (const panel of TOGGLE_PANELS) {
     it(`keyboard renders when sidePanel = "${panel}" and categoryKeyboardOpen = true`, async () => {
-      useUIStore.setState({ sidePanel: panel, categoryKeyboardOpen: true });
+      useUIStore.setState({ sidePanel: panel, categoryKeyboardOpen: true, keyboardMaximized: true });
       const { findByTestId } = render(<PrismApp />);
       const kb = await findByTestId('aac-keyboard-mock');
       expect(kb).toBeInTheDocument();
@@ -229,6 +255,19 @@ describe('Keyboard visibility — toggle-controlled panels (category mode + home
       expect(queryByTestId('aac-keyboard-mock')).not.toBeInTheDocument();
     });
   }
+
+  it('marks category typing as a dedicated composition layout', async () => {
+    useUIStore.setState({
+      sidePanel: 'none',
+      categoryKeyboardOpen: true,
+      keyboardMaximized: true,
+    });
+    const { findByTestId, container } = render(<PrismApp />);
+
+    const contentRegion = await findByTestId('aac-content-region');
+    expect(contentRegion).toHaveAttribute('data-typing-only', 'true');
+    expect(container.querySelector('[data-aac-typing-layout="true"]')).toBeInTheDocument();
+  });
 });
 
 // ── Prediction bar visibility: 'categories' renders the HOME board ────────────
@@ -249,11 +288,10 @@ describe('Prediction bar visibility — sidePanel=categories matches sidePanel=n
     expect(pred).toBeInTheDocument();
   });
 
-  it('prediction bar hidden for category-detail when keyboard closed', async () => {
+  it('prediction bar remains visible for category-detail in Picture mode', async () => {
     useUIStore.setState({ sidePanel: 'category-detail', categoryKeyboardOpen: false, keyboardMaximized: false });
-    const { queryByTestId } = render(<PrismApp />);
-    await new Promise((r) => setTimeout(r, 50));
-    expect(queryByTestId('panel-prediction-bar')).not.toBeInTheDocument();
+    const { findByTestId } = render(<PrismApp />);
+    expect(await findByTestId('panel-prediction-bar')).toBeInTheDocument();
   });
 
   it('prediction bar shows for category-detail when keyboard open', async () => {

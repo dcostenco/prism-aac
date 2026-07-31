@@ -24,6 +24,10 @@ describe('extractLastSentence', () => {
     expect(extractLastSentence('First! Second?')).toBe('Second?');
   });
 
+  it('recognizes the Arabic question mark as a sentence boundary', () => {
+    expect(extractLastSentence('أنا بخير. كيف حالك؟')).toBe('كيف حالك؟');
+  });
+
   it('handles repeated terminators ("Wait!!")', () => {
     expect(extractLastSentence('Wait!!')).toBe('Wait!!');
     expect(extractLastSentence('Stop. Wait!!')).toBe('Wait!!');

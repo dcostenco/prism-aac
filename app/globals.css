@@ -25,6 +25,16 @@
   --aac-speak-glow: rgba(76, 175, 80, 0.40);
   --aac-delete-active: #EF5350;
   --aac-delete-glow: rgba(244, 67, 54, 0.40);
+
+  /* Physical screen exclusions. `viewport-fit: cover` lets the installed
+   * iOS app use the whole display; these exact insets keep controls out of the
+   * notch / Dynamic Island / home-indicator areas without adding extra margin.
+   * Variables make the geometry deterministic in browser acceptance tests,
+   * whose emulated devices otherwise report every env() inset as zero. */
+  --aac-safe-area-top: env(safe-area-inset-top, 0px);
+  --aac-safe-area-right: env(safe-area-inset-right, 0px);
+  --aac-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --aac-safe-area-left: env(safe-area-inset-left, 0px);
 }
 
 .dark {
@@ -78,6 +88,19 @@ html, body {
   -webkit-user-select: none;
 }
 
+.aac-safe-viewport {
+  padding-right: var(--aac-safe-area-right);
+  padding-left: var(--aac-safe-area-left);
+}
+
+/* Paint through the status/camera band so it reads as one top bar, but keep
+ * every interactive target below the physical obstruction. This uses no more
+ * vertical space than root padding did; it simply assigns that mandatory
+ * inset to the toolbar instead of leaving a detached-looking strip. */
+.aac-safe-toolbar {
+  padding-top: calc(var(--aac-safe-area-top) + clamp(0.1rem, 0.3svh, 0.25rem)) !important;
+}
+
 /* AAC button — universal interactive element */
 .aac-btn {
   transition: transform 0.1s ease, background-color 0.15s ease, box-shadow 0.15s ease;
@@ -89,6 +112,70 @@ html, body {
 .aac-btn:focus-visible {
   outline: 3px solid var(--accent-focus);
   outline-offset: 2px;
+}
+
+/* Prediction and phrase cards share one readable label treatment. Long
+ * translations may use two lines instead of silently shrinking below the
+ * prediction-bar text size. */
+.aac-tile-label {
+  display: -webkit-box;
+  width: 100%;
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 0.2rem 0.3rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: clamp(1.25rem, 2.8svh, 1.75rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+/* Prediction cards are a fixed light reading surface in every app theme.
+ * Grammar colour remains on the thick leading border, never on the word:
+ * users must not lose a prediction because a semantic accent is too pale. */
+.aac-prediction-tile {
+  background: #ffffff;
+  border-radius: clamp(1.25rem, 3vmin, 1.75rem);
+}
+
+.aac-prediction-label {
+  background: #ffffff;
+  color: #000000;
+  font-size: clamp(1.5rem, 3.2vmin, 2.25rem);
+}
+
+/* Pictograms support prediction recognition, but the predicted word remains
+ * the primary communication target. Keep the artwork inset at every viewport
+ * size so it cannot crowd the word, and round both the card and picture well
+ * without changing the five-card interaction geometry. */
+.aac-prediction-tile > .aac-tile-icon {
+  width: calc(100% - clamp(0.5rem, 1.5vmin, 1rem));
+  margin-block-start: clamp(0.25rem, 0.7vmin, 0.5rem);
+  margin-inline: auto;
+  border-radius: clamp(1rem, 2.25vmin, 1.5rem);
+}
+
+.aac-prediction-tile > .aac-tile-icon > img {
+  max-width: 70%;
+  max-height: 70%;
+}
+
+.aac-phrase-label,
+.aac-folder-label,
+.aac-category-label {
+  color: #000000;
+}
+
+.aac-tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex: 1 1 0%;
+  min-height: 0;
 }
 
 /* Keyboard key — instant press, fade release (theme-aware) */
@@ -178,11 +265,37 @@ html, body {
 
 /* ── Landscape phone: shrink chrome so content fits ──────────── */
 @media (max-height: 500px) and (orientation: landscape) {
+  [data-testid="typing-mode-sidebar"] {
+    display: none;
+  }
+
   [data-testid="prediction-bar"] {
-    height: 40px !important;
+    height: 48px !important;
   }
   [data-testid="prediction-bar"] img {
     display: none;
+  }
+  .aac-tile-label {
+    display: block;
+    padding-block: 0.1rem;
+    white-space: nowrap;
+    font-size: clamp(1.25rem, 5.2svh, 1.375rem);
+  }
+
+  .aac-prediction-label {
+    font-size: clamp(1.375rem, 6svh, 1.5rem);
+  }
+
+  .aac-typing-keyboard-shell button[data-key] {
+    font-size: clamp(1.875rem, 8.2svh, 2.375rem);
+    line-height: 1;
+  }
+
+  /* Keep every authored QWERTY row on the ten-key base width. Otherwise the
+     nine- and seven-letter rows stretch after the redundant rail is removed,
+     producing keys nearly twice as wide as they are tall. */
+  [data-scan-group="keyboard"] [data-key-row="letters"] > button[data-key] {
+    flex: 0 1 calc((100% - 9px) / 10);
   }
   [data-testid="keyboard-shell"]:not([data-maximized]) {
     height: clamp(80px, 24svh, 120px) !important;
@@ -197,6 +310,232 @@ html, body {
   }
 }
 
+/* ── Phone Typing mode: keep every available pixel on communication ─────
+   Typing already has a large, labelled minimize key in the keyboard's bottom
+   row. Repeating that action in a 72-96px brown rail made ten-letter rows
+   materially narrower on phones. Keep the picture-mode rail unchanged. */
+@media (max-width: 767px) and (pointer: coarse) {
+  [data-testid="typing-mode-sidebar"] {
+    display: none;
+  }
+}
+
+/* Portrait phones keep familiar base QWERTY/AZERTY rows; locale-specific
+   Latin letters may move to one accessible continuation row. Other scripts
+   retain their authored ordering. Prediction words use a phone-specific cap
+   so short core words stay on one line despite ample horizontal space. */
+@media (max-width: 767px) and (min-height: 501px) and (orientation: portrait) and (pointer: coarse) {
+  /* The category panel contains only the keyboard in Typing mode. The
+     composer grows from one line to its existing three-line clamp as text is
+     entered; an empty message must not reserve three blank lines. Give all
+     remaining height to the actual input surface instead. */
+  [data-aac-typing-layout] [data-scan-group="message-bar"] {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: auto auto;
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    align-items: flex-end;
+  }
+
+  [data-aac-typing-layout] [data-scan-group="message-bar"] > button {
+    grid-row: 2;
+    width: 100% !important;
+    height: clamp(3.5rem, 9svh, 4rem) !important;
+  }
+
+  [data-aac-typing-layout] [data-testid="message-content"] {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    width: 100%;
+    align-self: auto;
+    justify-content: flex-start;
+    padding-block: clamp(0.375rem, 1svh, 0.5rem);
+    padding-inline: clamp(0.5rem, 2vw, 0.75rem);
+    min-height: clamp(3.5rem, 8svh, 4rem) !important;
+    background: var(--bg-key);
+    border: 1px solid var(--border-strong);
+    border-radius: 0.75rem;
+  }
+
+  [data-aac-typing-layout] [data-testid="message-text"] {
+    min-height: 0;
+    font-size: clamp(2.5rem, 10vw, 3.5rem);
+    line-height: 1.2;
+  }
+
+  [data-aac-typing-layout] .aac-composer-empty-prompt {
+    font-size: clamp(1.375rem, 6vw, 1.75rem);
+  }
+
+  [data-aac-typing-layout] [data-testid="aac-content-region"][data-typing-only] {
+    flex: 1 1 clamp(274px, 36.5svh, 340px) !important;
+    height: auto !important;
+    min-height: clamp(274px, 36.5svh, 340px) !important;
+    max-height: min(86vw, 380px);
+  }
+
+  /* Keyboard height follows the rendered layout, not a language name. Every
+     additional authored row receives enough vertical room to remain a motor-
+     accessible touch target instead of being squeezed into the old fixed
+     phone shell. The consumed height comes from the flexible prediction
+     region, so no anonymous spacer is introduced. */
+  [data-aac-typing-layout] [data-testid="aac-content-region"][data-typing-only]:has([data-aac-keyboard-rows="4"]) {
+    flex-basis: clamp(350px, 42svh, 380px) !important;
+    height: clamp(350px, 42svh, 380px) !important;
+    min-height: clamp(350px, 42svh, 380px) !important;
+    max-height: 380px;
+  }
+
+  [data-aac-typing-layout] [data-testid="aac-content-region"][data-typing-only]:has([data-aac-keyboard-rows="5"]) {
+    flex-basis: clamp(380px, 45svh, 410px) !important;
+    height: clamp(380px, 45svh, 410px) !important;
+    min-height: clamp(380px, 45svh, 410px) !important;
+    max-height: 410px;
+  }
+
+  [data-aac-typing-layout] [data-testid="aac-content-region"][data-typing-only]:has([data-aac-keyboard-rows="6"]),
+  [data-aac-typing-layout] [data-testid="aac-content-region"][data-typing-only]:has([data-aac-keyboard-rows="native"]) {
+    flex-basis: clamp(385px, 46svh, 410px) !important;
+    height: clamp(385px, 46svh, 410px) !important;
+    min-height: clamp(385px, 46svh, 410px) !important;
+    max-height: 410px;
+  }
+
+  /* A phone row may contain 11 or 12 physical targets while preserving the
+     language's authored order. Give those rows a slightly shorter shell than
+     ten-column QWERTY so the targets stay large without becoming tall, narrow
+     strips. Four-row Romanian remains on the roomier ten-column rule above. */
+  [data-aac-typing-layout] [data-testid="aac-content-region"][data-typing-only]:has([data-aac-keyboard-rows="3"][data-aac-keyboard-columns="11"]) {
+    flex-basis: clamp(248px, 29.5svh, 260px) !important;
+    height: clamp(248px, 29.5svh, 260px) !important;
+    min-height: clamp(248px, 29.5svh, 260px) !important;
+    max-height: 260px;
+  }
+
+  [data-aac-typing-layout] [data-testid="aac-content-region"][data-typing-only]:has([data-aac-keyboard-rows="3"][data-aac-keyboard-columns="12"]) {
+    flex-basis: clamp(234px, 28svh, 248px) !important;
+    height: clamp(234px, 28svh, 248px) !important;
+    min-height: clamp(234px, 28svh, 248px) !important;
+    max-height: 248px;
+  }
+
+  /* Eleven physical targets cannot become wider on a 390px screen. Cap only
+     these four-row keyboards so enlarging their letters does not turn the keys
+     into tall, narrow strips; ten-column layouts retain the roomier rule. */
+  [data-aac-typing-layout] [data-testid="aac-content-region"][data-typing-only]:has([data-aac-keyboard-rows="4"][data-aac-keyboard-columns="11"]) {
+    flex-basis: clamp(320px, 38svh, 335px) !important;
+    height: clamp(320px, 38svh, 335px) !important;
+    min-height: clamp(320px, 38svh, 335px) !important;
+    max-height: 335px;
+  }
+
+  [data-aac-typing-layout] [data-testid="aac-content-region"] .aac-typing-keyboard-shell[data-maximized] {
+    flex: 1 1 0% !important;
+    height: 100% !important;
+    max-height: none;
+    margin-top: 0;
+  }
+
+  /* Five cards cannot stay both legible and square in one 390px row. Keep all
+     five visible in two compact rows while reserving the dominant input area
+     for the keyboard; the one-line composer above remains content-sized. */
+  [data-aac-typing-layout] [data-testid="prediction-bar"][data-aac-input-mode="typing"] {
+    flex: 1 1 clamp(180px, 32svh, 300px) !important;
+    height: clamp(180px, 32svh, 300px) !important;
+    min-height: 0;
+    max-height: 370px;
+    flex-wrap: wrap;
+    align-content: stretch;
+  }
+
+  [data-aac-typing-layout] [data-testid="prediction-bar"][data-aac-input-mode="typing"] .aac-prediction-tile {
+    flex: 0 0 calc((100% - 4px) / 3);
+    height: calc((100% - 2px) / 2);
+  }
+
+  [data-aac-typing-layout] [data-testid="prediction-bar"][data-aac-input-mode="typing"] .aac-prediction-tile:nth-of-type(n + 4) {
+    flex-basis: calc((100% - 2px) / 2);
+  }
+
+  /* Preserve a familiar staggered keyboard: short authored rows keep the
+     ten-key base width and centre instead of stretching into wide cards. */
+  [data-aac-typing-layout] [data-scan-group="keyboard"] [data-key-row="letters"] > button[data-key] {
+    flex: 0 1 calc((100% - 9px) / 10);
+  }
+
+  /* A standard three-row alphabet cannot become wider without abandoning the
+     familiar QWERTY geometry. Give its extra keyboard height to the Space and
+     Speak control row so letter keys remain square-like while the keyboard,
+     not an empty composer, owns the lower interaction area. */
+  [data-aac-typing-layout] [data-scan-group="keyboard"][data-aac-keyboard-rows="3"] [data-key-row="controls"] {
+    flex: 1.4 1 0%;
+  }
+
+  [data-aac-typing-layout] [data-scan-group="keyboard"][data-aac-keyboard-rows="4"] [data-key-row="controls"] {
+    flex: 1.1 1 0%;
+  }
+
+  /* Tall phones have room to enlarge both input surfaces. Give the control
+     row the extra share so the three letter rows retain the familiar key
+     proportions while Space and Speak remain generous motor targets. */
+  @media (min-height: 750px) {
+    [data-aac-typing-layout] [data-scan-group="keyboard"][data-aac-keyboard-rows="3"] [data-key-row="controls"] {
+      flex-grow: 1.85;
+    }
+  }
+
+  .aac-typing-keyboard-shell button[data-key] {
+    font-size: clamp(2.25rem, 9vw, 2.75rem);
+    line-height: 1;
+  }
+
+  [data-scan-group="keyboard"][data-dense-letters] button[data-key] {
+    font-size: clamp(2rem, 8.5vw, 2.5rem);
+    letter-spacing: -0.04em;
+  }
+
+  /* Wrapped Latin layouts can be authored densely but render at the same ten-
+     target width as QWERTY. They must not inherit the smaller dense-row font. */
+  [data-scan-group="keyboard"][data-latin-letters][data-aac-keyboard-columns="10"] button[data-key] {
+    font-size: clamp(2.25rem, 9vw, 2.75rem);
+  }
+
+  [data-scan-group="keyboard"][data-language="am"] button[data-key] {
+    font-size: clamp(1.6875rem, 6.5vw, 2rem);
+  }
+
+  /* A kana glyph is nearly square. The util row also carries Shift and
+     Backspace, leaving a 28px content box on 390px phones; cap the glyph to
+     that physical width instead of clipping its right edge. */
+  [data-scan-group="keyboard"][data-language="ja"] button[data-key] {
+    font-size: clamp(1.875rem, 7.5vw, 2rem);
+  }
+
+  [data-testid="prediction-bar"][data-aac-input-mode="typing"] .aac-prediction-label {
+    font-size: clamp(1.5rem, 6vw, 1.75rem);
+  }
+
+}
+
+.aac-composer-empty-prompt {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-muted);
+  font-size: clamp(1rem, 2vw, 1.375rem);
+  font-weight: 700;
+}
+
+.aac-composer-caret {
+  width: 0.24rem;
+  height: 1.15em;
+  flex: 0 0 0.24rem;
+  border-radius: 999px;
+  background: #2563eb;
+}
+
 /* ── Tablet: larger keyboard for AAC touchability ──────────────
    Most AAC users are on iPads — keys must be large enough for
    motor-impaired users. min-height 768 catches iPad Mini+ in
@@ -207,7 +546,135 @@ html, body {
   }
 }
 
+/* ── Landscape tablet: dedicated AAC typing proportions ─────────
+   A normal (not maximized) AAC keyboard must still be a primary input
+   surface. Keep this scoped to AAC shells so the in-app browser's URL
+   keyboard retains its compact layout. The width cap covers current iPads;
+   the height floor excludes landscape phones. */
+@media (min-width: 768px) and (max-width: 1366px) and (min-height: 600px) and (orientation: landscape) {
+  .aac-typing-keyboard-shell:not([data-maximized]) {
+    height: clamp(310px, 42svh, 380px) !important;
+  }
+
+  .aac-typing-keyboard-shell button[data-key] {
+    font-size: clamp(2.25rem, 5svh, 3.5rem);
+  }
+}
+
+/* ── iPad Typing mode: communication text is the primary visual target ──
+   Scale from the shorter viewport edge so Mini and 13-inch iPads retain the
+   same hierarchy after rotation. This deliberately sits after the generic
+   key sizing above and is touch-tablet-only; phone and pointer layouts keep
+   their existing density. Prediction, phrase, and category labels share the
+   same token so switching input modes never demotes a word to a caption. */
+@media (min-width: 768px) and (min-height: 600px) and (pointer: coarse) {
+  .aac-typing-keyboard-shell button[data-key] {
+    font-size: clamp(3.75rem, 8vmin, 5.5rem);
+    line-height: 1;
+  }
+
+  /* Ethiopic glyphs are materially wider than Latin at the same nominal font
+     size. Its 11-key rows need a width-bound cap even in Mini landscape. */
+  [data-scan-group="keyboard"][data-language="am"] button[data-key] {
+    font-size: clamp(3rem, min(8vmin, 4.9vw), 5.5rem);
+  }
+
+  .aac-tile-label {
+    font-size: clamp(1.875rem, 3.5vmin, 2.625rem);
+    line-height: 1.05;
+  }
+}
+
+@media (min-width: 768px) and (min-height: 600px) and (orientation: portrait) and (pointer: coarse) {
+  /* Some language layouts carry 11-13 keys in one authored row. Only those
+     dense rows receive a viewport-width cap; ten-key QWERTY keeps the largest
+     reference-sized glyphs. */
+  [data-scan-group="keyboard"][data-dense-letters] button[data-key] {
+    font-size: clamp(2.875rem, min(8vmin, 6.2vw), 5.5rem);
+  }
+
+  [data-scan-group="keyboard"][data-language="am"] button[data-key] {
+    font-size: clamp(2.25rem, min(8vmin, 4.8vw), 5.5rem);
+  }
+}
+
+@media (min-width: 1000px) and (min-height: 900px) and (orientation: portrait) and (pointer: coarse) {
+  [data-scan-group="keyboard"][data-language="am"] button[data-key] {
+    font-size: clamp(3.125rem, min(6vmin, 5vw), 5.5rem);
+  }
+}
+
+@media (min-width: 1000px) and (min-height: 900px) and (orientation: landscape) and (pointer: coarse) {
+  [data-scan-group="keyboard"][data-language="am"] button[data-key] {
+    font-size: clamp(4rem, 7.1vmin, 5.5rem);
+  }
+}
+
 /* ── Narrow viewport (iPad Split View / iPhone SE) ──────────── */
+.aac-focus-toolbar {
+  display: none;
+}
+
+.aac-toolbar-more-menu {
+  width: min(34rem, calc(100vw - var(--aac-safe-area-left) - var(--aac-safe-area-right) - 1rem));
+  max-height: min(60svh, 30rem);
+}
+
+/* Touch AAC devices use one compact primary ribbon in every orientation:
+   Sound, Mic, Alert, Settings, More, and the language pair. Secondary actions
+   remain reachable from More. This avoids hiding actions inside a scroll strip
+   and keeps every ribbon button inside the device safe area. Mouse-driven
+   desktop layouts retain the configurable scrolling strip. */
+@media (pointer: coarse) {
+  .aac-focus-toolbar {
+    display: flex;
+  }
+
+  [data-testid="aac-toolbar-strip"],
+  .aac-toolbar-scroll-control {
+    display: none;
+  }
+
+  /* Picture mode uses one consistent card rhythm at the reported iPad
+     landscape size. Four board columns keep 48px+ motor targets while
+     avoiding the former three wide, shallow cards; the taller prediction
+     strip gives both card families the same near-square proportions. */
+  [data-testid="prediction-bar"][data-aac-input-mode="picture"] {
+    height: clamp(124px, 17svh, 136px) !important;
+  }
+
+  [data-testid="picture-board"] .aac-picture-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: clamp(134px, 18.3svh, 145px);
+    align-content: start;
+  }
+
+  [data-testid="picture-board"] .aac-phrase-tile,
+  [data-testid="picture-board"] .aac-picture-card {
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+
+  [data-testid="picture-board"] .aac-category-strip {
+    height: clamp(116px, 16svh, 126px);
+    align-items: stretch;
+    padding-block: 0.25rem;
+  }
+
+  [data-testid="picture-board"] .aac-category-tile {
+    flex-basis: calc((100% - 1rem) / 5);
+    min-width: calc((100% - 1rem) / 5);
+    height: 100%;
+    overflow: hidden;
+    gap: 0;
+    padding: 0;
+  }
+
+  [data-testid="picture-board"] .aac-category-icon {
+    font-size: clamp(3.25rem, 9svh, 4.75rem);
+  }
+}
+
 @media (max-width: 380px) {
   [data-testid="aac-toolbar-strip"] {
     gap: 2px;

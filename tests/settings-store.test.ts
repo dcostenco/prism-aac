@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useSettingsStore } from '@/store/settingsStore';
+import { DEFAULT_THEME, useSettingsStore } from '@/store/settingsStore';
 
 beforeEach(() => {
   useSettingsStore.setState({
@@ -14,6 +14,10 @@ beforeEach(() => {
 });
 
 describe('SettingsStore — Default values', () => {
+  it('opens new AAC profiles in the light scheme', () => {
+    expect(DEFAULT_THEME).toBe('light');
+  });
+
   it('has speechRate of 0.5', () => {
     expect(useSettingsStore.getState().speechRate).toBe(0.5);
   });

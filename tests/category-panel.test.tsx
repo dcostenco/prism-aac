@@ -193,6 +193,7 @@ beforeEach(() => {
   mocks.uiState.activeCategoryId = null;
   mocks.uiState.categoryPath = [];
   mocks.uiState.categoryKeyboardOpen = false;
+  mocks.uiState.keyboardMaximized = false;
   mocks.messageState.text = '';
   mocks.messageState.autoSpeak = false;
   mocks.messageState.soundEnabled = true;
@@ -367,25 +368,28 @@ describe('CategoryPanel — keyboard-shell data-maximized attribute', () => {
     render(<CategoryPanel />);
     const shell = screen.getByTestId('keyboard-shell');
     expect(shell).toHaveAttribute('data-maximized');
+    expect(shell).toHaveClass('aac-typing-keyboard-shell');
   });
 
-  it('keyboard-shell does NOT have data-maximized when keyboardMaximized=false', () => {
+  it('legacy mixed flags fail safe to Picture mode instead of rendering a partial board and keyboard', () => {
     mocks.uiState.sidePanel = 'none';
     mocks.uiState.categoryKeyboardOpen = true;
     mocks.uiState.keyboardMaximized = false;
     render(<CategoryPanel />);
-    const shell = screen.getByTestId('keyboard-shell');
-    expect(shell).not.toHaveAttribute('data-maximized');
+    expect(screen.queryByTestId('keyboard-shell')).toBeNull();
+    expect(screen.getAllByTestId('phrase-tile').length).toBeGreaterThan(0);
   });
 
-  it('sidebar hidden when keyboard maximized in category-detail', () => {
+  it('Typing mode hides picture cards but keeps a clear return control', () => {
     mocks.uiState.sidePanel = 'category-detail';
     mocks.uiState.activeCategoryId = 'feelings';
     mocks.uiState.categoryPath = ['feelings'];
     mocks.uiState.categoryKeyboardOpen = true;
     mocks.uiState.keyboardMaximized = true;
     render(<CategoryPanel />);
-    expect(screen.queryByTestId('kb-cycle-btn')).toBeNull();
+    expect(screen.queryByTestId('phrase-tile')).toBeNull();
+    expect(screen.getByTestId('keyboard-shell')).toBeInTheDocument();
+    expect(screen.getByTestId('kb-cycle-btn')).toBeInTheDocument();
   });
 
   it('sidebar visible when keyboard NOT maximized in category-detail', () => {

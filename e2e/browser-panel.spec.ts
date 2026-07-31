@@ -21,7 +21,9 @@ test.describe('Browser page — AAC-enabled web browser', () => {
   });
 
   test('renders AAC keyboard with Go button in browser mode', async ({ page }) => {
-    await expect(page.locator('[data-testid="keyboard-shell"]')).toBeVisible();
+    const keyboardShell = page.locator('[data-testid="keyboard-shell"]');
+    await expect(keyboardShell).toBeVisible();
+    await expect(keyboardShell).not.toHaveClass(/aac-typing-keyboard-shell/);
     const goBtn = page.locator('button[aria-label="Go"]').last();
     await expect(goBtn).toBeVisible();
   });

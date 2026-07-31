@@ -45,6 +45,13 @@ vi.mock('@/services/searchKeyBridge', () => ({
   dispatchToSearch: vi.fn(() => false),
 }));
 
+// messageStore records committed text through a lazy adaptive-engine import.
+// Keep that import inside this test environment so a late transform cannot
+// race Vitest teardown and turn an otherwise-green suite into a false pass.
+vi.mock('@/services/adaptiveEngine', () => ({
+  recordMessage: vi.fn(),
+}));
+
 vi.mock('@/constants/predictionSeeds', () => ({
   loadPredictionSeed: vi.fn(async () => ({
     wordFreq: { i: { count: 1732, lastUsed: 0 } },
@@ -80,6 +87,26 @@ beforeEach(() => {
 });
 
 describe('Keyboard cumulative word-boundary speech', () => {
+  it('offers Arabic punctuation and sentence-end speech for the Arabic question mark', () => {
+    useMessageStore.setState({ text: 'كيف حالك' } as never);
+    useSettingsStore.setState({
+      language: 'ar',
+      outputLanguage: 'ar',
+      speakOnSentenceEnd: true,
+    } as never);
+    const { container } = render(<Keyboard />);
+    const question = container.querySelector<HTMLButtonElement>('button[data-key="؟"]');
+    const comma = container.querySelector<HTMLButtonElement>('button[data-key="،"]');
+
+    expect(question).not.toBeNull();
+    expect(comma).not.toBeNull();
+    act(() => fireEvent.click(question!));
+
+    expect(useMessageStore.getState().text).toBe('كيف حالك؟');
+    expect(speechMocks.aacSpeak).toHaveBeenCalledOnce();
+    expect(speechMocks.aacSpeak).toHaveBeenCalledWith('كيف حالك؟', 0.5, 0.8, 'neutral');
+  });
+
   it('stores the default unshifted English i key as the visible pronoun I', () => {
     useMessageStore.setState({ text: '' } as never);
     const { container } = render(<Keyboard />);
@@ -189,6 +216,22 @@ describe('Keyboard cumulative word-boundary speech', () => {
 
     expect(useMessageStore.getState().text).toBe('i');
     expect(speechMocks.speakWord).not.toHaveBeenCalled();
+  });
+
+  it('keeps Turkish dotless and dotted i as two distinct reachable keys', () => {
+    useMessageStore.setState({ text: '' } as never);
+    useSettingsStore.setState({ language: 'tr', outputLanguage: 'tr' } as never);
+    const { container } = render(<Keyboard />);
+    const dotless = container.querySelector<HTMLButtonElement>('button[data-key="I"]');
+    const dotted = container.querySelector<HTMLButtonElement>('button[data-key="İ"]');
+
+    expect(dotless).toHaveAttribute('data-display', 'ı');
+    expect(dotted).toHaveAttribute('data-display', 'i');
+    act(() => {
+      fireEvent.click(dotless!);
+      fireEvent.click(dotted!);
+    });
+    expect(useMessageStore.getState().text).toBe('ıi');
   });
 
   it('does not apply AAC pronoun normalization in browser input mode', () => {

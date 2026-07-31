@@ -7,7 +7,7 @@
  * Chinese is split into THREE locales (BCP-47 compliant):
  *   - zh-Hans  Simplified Chinese / Mainland (Mandarin pronunciation)
  *   - zh-Hant  Traditional Chinese / Taiwan (Taiwanese Mandarin)
- *   - zh-HK    Traditional Chinese / Hong Kong (Cantonese)
+ *   - zh-HK    Traditional Chinese / Hong Kong script and Cantonese TTS
  *
  * Legacy code 'zh' is retained as an alias for 'zh-Hans' for back-compat —
  * the synalux portal accepts both shapes. New code paths should use the
@@ -30,7 +30,7 @@ export type SupportedLanguage =
   | 'zh'        // alias of zh-Hans for back-compat
   | 'zh-Hans'   // Simplified, Mainland — Mandarin
   | 'zh-Hant'   // Traditional, Taiwan — Taiwanese Mandarin
-  | 'zh-HK'     // Traditional, Hong Kong — Cantonese
+  | 'zh-HK'     // Traditional, Hong Kong — Cantonese voice routing
   | 'ar'
   // Sprint 1 expansion — voice infra already wired in synalux portal voice-catalog
   | 'hi'        // Hindi — Aanya (Inworld)
@@ -109,7 +109,10 @@ const LANG_META: Array<{ code: SupportedLanguage; name: string; nativeName: stri
   { code: 'ko', name: 'Korean', nativeName: '한국어', rtl: false, ttsCode: 'ko-KR', flag: '🇰🇷' },
   { code: 'zh-Hans', name: 'Chinese (Simplified)', nativeName: '简体中文', rtl: false, ttsCode: 'zh-CN', flag: '🇨🇳' },
   { code: 'zh-Hant', name: 'Chinese (Traditional)', nativeName: '繁體中文', rtl: false, ttsCode: 'zh-TW', flag: '🇹🇼' },
-  { code: 'zh-HK', name: 'Cantonese (Hong Kong)', nativeName: '廣東話', rtl: false, ttsCode: 'zh-HK', flag: '🇭🇰' },
+  // Phrase cards currently use Standard Written Chinese converted to Hong Kong
+  // orthography. Do not label that corpus as authored colloquial Cantonese.
+  // The zh-HK TTS locale remains intentional so devices use a Cantonese voice.
+  { code: 'zh-HK', name: 'Chinese (Hong Kong)', nativeName: '繁體中文（香港）', rtl: false, ttsCode: 'zh-HK', flag: '🇭🇰' },
   // 'zh' (back-compat alias) is intentionally not in the visible language picker —
   // it's resolved to 'zh-Hans' by canonicalizeLang() below.
   { code: 'zh', name: 'Chinese', nativeName: '中文', rtl: false, ttsCode: 'zh-CN', flag: '🇨🇳' },

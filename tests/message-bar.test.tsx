@@ -242,10 +242,26 @@ describe('MessageBar — text display', () => {
     expect(status).toHaveTextContent('I want water');
   });
 
-  it('renders nothing in status area when text is empty', () => {
+  it('renders a visible localized typing prompt when text is empty', () => {
     mocks.messageState.text = '';
     render(<MessageBar />);
-    expect(screen.getByRole('status')).toHaveTextContent('');
+    expect(screen.getByTestId('message-empty-prompt')).toHaveTextContent('type_here');
+    expect(screen.getByRole('status').closest('[data-scan-group="message-bar"]'))
+      .toHaveAttribute('data-content-state', 'empty');
+  });
+
+  it('removes the typing prompt as soon as authored text is visible', () => {
+    mocks.messageState.text = 'I need help';
+    render(<MessageBar />);
+    expect(screen.queryByTestId('message-empty-prompt')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('I need help');
+  });
+
+  it('marks populated output so typing layout allocates only content height', () => {
+    mocks.messageState.text = 'I need help';
+    render(<MessageBar />);
+    expect(screen.getByRole('status').closest('[data-scan-group="message-bar"]'))
+      .toHaveAttribute('data-content-state', 'populated');
   });
 
   it('role=status has aria-live="polite"', () => {
