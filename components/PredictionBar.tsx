@@ -23,6 +23,7 @@ import {
 import { isAllowedInLang, ensureLangCorpusLoaded } from '@/lib/langAllowlist';
 import { useVisionStore } from '@/store/visionStore';
 import type { SceneType } from '@/services/sceneInference';
+import FittedTileLabel from './FittedTileLabel';
 
 const MEMORY_PREDICTION_DEBOUNCE_MS = 650;
 const MIN_CLOUD_PREDICTION_INTERVAL_MS = 1_200;
@@ -330,14 +331,19 @@ const PredictionTile = memo(function PredictionTile({ word, color, onTap, vision
       title={visibleWord}
       data-testid="prediction-tile"
       className={`aac-btn aac-prediction-tile flex-1 min-w-0 rounded-xl flex flex-col items-center overflow-hidden border-l-[5px] border border-theme${visibleVisionBoosted ? ' vision-glow' : ''}`}
-      style={{ borderLeftColor: visibleColor }}
+      style={{ borderLeftColor: visibleColor, backgroundColor: visibleColor }}
     >
       <span className="aac-tile-icon flex-1 flex items-center justify-center w-full rounded-t-lg overflow-hidden min-h-0 bg-white">
         {iconUrl && (
           <img src={iconUrl} alt="" aria-hidden loading="eager" className="max-w-full max-h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
         )}
       </span>
-      <span data-testid="prediction-label" className="aac-tile-label aac-prediction-label">{visibleWord}</span>
+      <FittedTileLabel
+        text={visibleWord}
+        testId="prediction-label"
+        minFontSizePx={16}
+        className="aac-tile-label aac-prediction-label"
+      />
     </button>
   );
 });

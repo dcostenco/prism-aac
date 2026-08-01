@@ -296,10 +296,10 @@ describe('CategoryPanel — home board', () => {
     );
   });
 
-  it('Home sidebar button calls closeSidePanel', () => {
+  it('does not duplicate Home navigation while already on the Home board', () => {
     render(<CategoryPanel />);
-    fireEvent.click(screen.getByRole('button', { name: /home/i }));
-    expect(mocks.closeSidePanelMock).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: /home/i })).not.toBeInTheDocument();
+    expect(mocks.closeSidePanelMock).not.toHaveBeenCalled();
   });
 });
 
@@ -324,6 +324,13 @@ describe('CategoryPanel — category detail', () => {
     const tiles = screen.getAllByTestId('phrase-tile');
     fireEvent.click(tiles[0]);
     expect(mocks.appendTextMock).toHaveBeenCalled();
+  });
+
+  it('shows one Home button in category detail and returns to Home', () => {
+    render(<CategoryPanel />);
+    const homeButton = screen.getByRole('button', { name: /home/i });
+    fireEvent.click(homeButton);
+    expect(mocks.closeSidePanelMock).toHaveBeenCalledOnce();
   });
 });
 

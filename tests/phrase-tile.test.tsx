@@ -66,7 +66,9 @@ describe('PhraseTile — rendering', () => {
     render(<PhraseTile phrase="Communication" onClick={vi.fn()} />);
     expect(screen.getByTestId('phrase-tile-card')).toHaveClass('aac-phrase-tile');
     expect(screen.getByTestId('phrase-tile-label')).toHaveClass('aac-tile-label', 'aac-phrase-label');
-    expect(screen.getByTestId('phrase-tile-card').querySelector('.aac-tile-icon')).toBeInTheDocument();
+    const icon = screen.getByTestId('phrase-tile-card').querySelector<HTMLElement>('.aac-tile-icon');
+    expect(icon).toBeInTheDocument();
+    expect(icon).toHaveStyle({ background: 'transparent' });
   });
 });
 

@@ -46,6 +46,7 @@ import { broadcastIntegrationEvent } from '@/services/integrationsService';
 import { registerConnectivityListener } from '@/services/emergencyService';
 import { recordFirstUse, checkDaysUsedReview } from '@/services/reviewPromptService';
 import { useT } from '@/engine/useT';
+import { getAacDeviceClass } from '@/lib/aacDeviceClass';
 
 const PROVIDER_LABEL: Record<string, string> = {
   'google-gmail': 'Gmail',
@@ -511,6 +512,7 @@ export default function PrismApp() {
   }
 
   const themeClass = `${theme === 'dark' ? 'dark' : ''} ${highContrast ? 'high-contrast' : ''}`.trim();
+  const deviceClass = getAacDeviceClass();
 
   return (
     <ErrorBoundary>
@@ -518,6 +520,7 @@ export default function PrismApp() {
         <div
           dir={rtl ? 'rtl' : 'ltr'}
           className={`${themeClass} aac-safe-viewport h-svh flex flex-col overflow-hidden surface-app`}
+          data-aac-device-class={deviceClass}
           data-aac-typing-layout={categoryTypingOnly || undefined}
           data-testid="aac-safe-viewport"
         >

@@ -55,6 +55,29 @@ async function expectVisiblePredictionPictograms(page: Page): Promise<void> {
     }).length), { timeout: 20_000 }).toBeGreaterThanOrEqual(3);
 }
 
+async function expectVisiblePhrasePictograms(page: Page): Promise<void> {
+  await expect.poll(async () => page.evaluate(() => {
+    const visibleTiles = [...document.querySelectorAll<HTMLElement>('.aac-phrase-tile')]
+      .filter((tile) => {
+        const rect = tile.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0
+          && rect.right > 0 && rect.left < innerWidth
+          && rect.bottom > 0 && rect.top < innerHeight;
+      });
+    if (visibleTiles.length < 3) return false;
+    const firstRowTop = Math.min(...visibleTiles.map((tile) => tile.getBoundingClientRect().top));
+    const firstRow = visibleTiles.filter((tile) => (
+      Math.abs(tile.getBoundingClientRect().top - firstRowTop) <= 2
+    ));
+    return firstRow.length >= 3 && firstRow.every((tile) => {
+      const image = tile.querySelector<HTMLImageElement>('img');
+      if (!image || !image.complete || image.naturalWidth <= 0) return false;
+      const rect = image.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    });
+  }), { timeout: 20_000 }).toBe(true);
+}
+
 type TileMetrics = {
   width: number;
   height: number;
@@ -87,6 +110,38 @@ async function tileMetrics(
   }, labelSelector);
 }
 
+async function expectVisibleTileLabelsSettled(page: Page): Promise<void> {
+  await expect.poll(async () => page.evaluate(() => {
+    const labels = [...document.querySelectorAll<HTMLElement>('.aac-tile-label')]
+      .filter((label) => {
+        const rect = label.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0
+          && rect.right > 0 && rect.left < innerWidth
+          && rect.bottom > 0 && rect.top < innerHeight;
+      });
+    return labels.length > 0
+      && labels.every((label) => Boolean(label.dataset.fitStatus));
+  }), { timeout: 10_000 }).toBe(true);
+
+  const status = await page.evaluate(() => {
+    const labels = [...document.querySelectorAll<HTMLElement>('.aac-tile-label')]
+      .filter((label) => {
+        const rect = label.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0
+          && rect.right > 0 && rect.left < innerWidth
+          && rect.bottom > 0 && rect.top < innerHeight;
+      });
+    return {
+      visible: labels.length,
+      settled: labels.filter((label) => Boolean(label.dataset.fitStatus)).length,
+      overflow: labels.filter((label) => label.dataset.fitStatus === 'overflow').length,
+    };
+  });
+  expect(status.visible).toBeGreaterThan(0);
+  expect(status.settled).toBe(status.visible);
+  expect(status.overflow).toBe(0);
+}
+
 test.beforeEach(async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'ipad-7-land', '1024x768 touch-tablet checkpoint');
   await proxyArasaacForLocalWebKit(page);
@@ -111,6 +166,12 @@ test.beforeEach(async ({ page }, testInfo) => {
 
   await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
   await expect(page.getByTestId('prediction-bar')).toBeVisible({ timeout: 20_000 });
+});
+
+test.afterEach(async ({ page, context }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+  try { await page.close(); } catch { /* fixture may already be closed */ }
+  try { await context.close(); } catch { /* fixture may already be closed */ }
 });
 
 test('switches between complete Typing and Picture surfaces without losing predictions', async ({ page }) => {
@@ -184,6 +245,7 @@ test('switches between complete Typing and Picture surfaces without losing predi
   expect(category.labelColor).toBe('rgb(0, 0, 0)');
   expect(Math.abs(category.iconHeight - prediction.iconHeight)).toBeLessThanOrEqual(24);
   expect(Math.abs(category.iconWidth - prediction.iconWidth)).toBeLessThanOrEqual(32);
+  await expect(page.locator('.aac-tile-label[data-fit-status="overflow"]')).toHaveCount(0);
 
   const boardIntegrity = await phraseCards.evaluateAll((cards) => {
     const rects = cards.map((card) => card.getBoundingClientRect());
@@ -217,3 +279,97 @@ test('switches between complete Typing and Picture surfaces without losing predi
   await expect(page.getByTestId('keyboard-shell')).toBeVisible();
   await expect(page.getByTestId('picture-board')).toHaveCount(0);
 });
+
+test('keeps a compact-height iPad on the tablet picture rail', async ({ page }) => {
+  const board = page.getByRole('region', { name: /home vocabulary board/i });
+  await page.getByTestId('kb-cycle-btn').click();
+  await expect(board).toHaveAttribute('data-aac-mode', 'picture');
+  await expect(page.getByTestId('picture-board')).toBeVisible();
+
+  await page.setViewportSize({ width: 1024, height: 500 });
+  const metrics = await page.evaluate(() => {
+    const body = document.querySelector<HTMLElement>('.aac-category-body')!;
+    const nav = document.querySelector<HTMLElement>('[data-testid="picture-mode-sidebar"]')!;
+    const bodyRect = body.getBoundingClientRect();
+    const navRect = nav.getBoundingClientRect();
+    return {
+      bodyDirection: getComputedStyle(body).flexDirection,
+      bodyWidth: bodyRect.width,
+      navWidth: navRect.width,
+      navHeight: navRect.height,
+      navRight: navRect.right,
+      viewportWidth: innerWidth,
+    };
+  });
+
+  expect(metrics.bodyDirection).toBe('row');
+  expect(metrics.bodyWidth).toBeGreaterThanOrEqual(1020);
+  expect(metrics.navWidth).toBeLessThanOrEqual(120);
+  expect(metrics.navHeight).toBeGreaterThanOrEqual(200);
+  expect(metrics.navRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  await expectVisiblePhrasePictograms(page);
+  await expectVisibleTileLabelsSettled(page);
+  await safeScreenshot(page, '03-input-mode-picture-compact-height.png');
+});
+
+for (const viewport of [
+  { width: 834, height: 500, label: '834x500' },
+  { width: 744, height: 500, label: '744x500' },
+] as const) {
+  test(`keeps ${viewport.label} compact iPad window on the tablet picture rail`, async ({ page }) => {
+    const board = page.getByRole('region', { name: /home vocabulary board/i });
+    await page.getByTestId('kb-cycle-btn').click();
+    await expect(board).toHaveAttribute('data-aac-mode', 'picture');
+    await expect(page.getByTestId('picture-board')).toBeVisible();
+
+    await page.setViewportSize(viewport);
+
+    const metrics = await page.evaluate(() => {
+      const body = document.querySelector<HTMLElement>('.aac-category-body')!;
+      const nav = document.querySelector<HTMLElement>('[data-testid="picture-mode-sidebar"]')!;
+      const bodyRect = body.getBoundingClientRect();
+      const navRect = nav.getBoundingClientRect();
+      const visibleButtons = [...nav.querySelectorAll<HTMLButtonElement>('button')]
+        .filter((button) => {
+          const rect = button.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0
+            && rect.right > 0 && rect.left < innerWidth
+            && rect.bottom > 0 && rect.top < innerHeight;
+        });
+      return {
+        bodyDirection: getComputedStyle(body).flexDirection,
+        bodyWidth: bodyRect.width,
+        navWidth: navRect.width,
+        navHeight: navRect.height,
+        navRight: navRect.right,
+        viewportWidth: innerWidth,
+        documentOverflowX: document.documentElement.scrollWidth - innerWidth,
+        visibleNavTargets: visibleButtons.map((button) => {
+          const rect = button.getBoundingClientRect();
+          const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          return {
+            width: rect.width,
+            height: rect.height,
+            hitTarget: hit === button || (hit instanceof Node && button.contains(hit)),
+          };
+        }),
+      };
+    });
+
+    expect(metrics.bodyDirection).toBe('row');
+    expect(metrics.bodyWidth).toBeGreaterThanOrEqual(viewport.width - 4);
+    expect(metrics.navWidth).toBeGreaterThanOrEqual(72);
+    expect(metrics.navWidth).toBeLessThanOrEqual(120);
+    expect(metrics.navHeight).toBeGreaterThanOrEqual(180);
+    expect(metrics.navRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+    expect(metrics.documentOverflowX).toBeLessThanOrEqual(1);
+    expect(metrics.visibleNavTargets.length).toBeGreaterThanOrEqual(3);
+    expect(metrics.visibleNavTargets.every((target) => target.width >= 44 && target.height >= 44)).toBe(true);
+    expect(metrics.visibleNavTargets.every((target) => target.hitTarget)).toBe(true);
+    await expect(page.getByTestId('aac-safe-viewport')).toHaveAttribute('data-aac-device-class', 'tablet');
+
+    await expectVisiblePhrasePictograms(page);
+    await expectVisibleTileLabelsSettled(page);
+    await safeScreenshot(page, `04-input-mode-picture-compact-${viewport.label}.png`);
+  });
+}

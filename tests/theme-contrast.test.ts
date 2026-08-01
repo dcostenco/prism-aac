@@ -88,13 +88,25 @@ describe('theme contrast', () => {
     ).toBeGreaterThan(4.5);
   });
 
-  it('keeps prediction cards black on white in every theme', () => {
+  it('keeps prediction labels black over their semantic card colour', () => {
     const tileBody = CSS.match(/\.aac-prediction-tile\s*\{([^}]*)\}/)?.[1] ?? '';
     const labelBody = CSS.match(/\.aac-prediction-label\s*\{([^}]*)\}/)?.[1] ?? '';
 
-    expect(tileBody, 'prediction tile has no fixed light surface').toMatch(/background:\s*#(?:fff|ffffff)\b/i);
+    expect(tileBody, 'prediction tile must not replace its semantic inline colour').not.toMatch(/background(?:-color)?:/i);
+    expect(labelBody, 'prediction label must expose the semantic card colour').toMatch(/background:\s*transparent/i);
     expect(labelBody, 'prediction label has no fixed black foreground').toMatch(/color:\s*#(?:000|000000)\b/i);
-    expect(ratio('#000000', '#ffffff')).toBeGreaterThan(4.5);
+    for (const background of ['#FFD54F', '#66BB6A', '#42A5F5', '#FFA726', '#F48FB1', '#9E9E9E', '#CE93D8', '#e0e0e0']) {
+      expect(ratio('#000000', background), `black is unreadable on ${background}`).toBeGreaterThan(4.5);
+    }
+  });
+
+  it('preserves authored word boundaries on every AAC tile label', () => {
+    const labelBody = CSS.match(/\.aac-tile-label\s*\{([^}]*)\}/)?.[1] ?? '';
+
+    expect(labelBody).toMatch(/overflow-wrap:\s*normal/i);
+    expect(labelBody).toMatch(/word-break:\s*normal/i);
+    expect(labelBody).toMatch(/hyphens:\s*none/i);
+    expect(labelBody).not.toMatch(/overflow-wrap:\s*anywhere/i);
   });
 
   it('keeps picture-card labels black in the light board scheme', () => {
