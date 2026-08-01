@@ -105,6 +105,7 @@ test('fits four full-width picture targets with reachable navigation and readabl
   const isLandscape = testInfo.project.name.endsWith('-land');
   const viewport = page.viewportSize();
   expect(viewport).not.toBeNull();
+  await expect(page.getByTestId('aac-safe-viewport')).toHaveAttribute('data-aac-device-class', 'phone');
 
   const board = page.getByTestId('picture-board');
   const grid = board.locator('.aac-picture-grid');
@@ -247,6 +248,10 @@ test('fits four full-width picture targets with reachable navigation and readabl
 
   expect(metrics.firstPhraseBackground).not.toBe('rgb(255, 255, 255)');
   expect(metrics.firstIconBackground).toBe('rgba(0, 0, 0, 0)');
+  await expect.poll(async () => page.locator('.aac-tile-label:visible').evaluateAll((labels) => (
+    labels.length > 0
+      && labels.every((label) => Boolean((label as HTMLElement).dataset.fitStatus))
+  )), { timeout: 10_000 }).toBe(true);
   await expect(page.locator('.aac-tile-label[data-fit-status="overflow"]')).toHaveCount(0);
 
   const navIntegrity = await pictureNavigation.locator('button:visible').evaluateAll((buttons) => buttons.map((button) => {
