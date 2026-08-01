@@ -22,6 +22,7 @@ import { registerSearchKeyHandler } from '@/services/searchKeyBridge';
 import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramService';
 import { useAuthStore } from '@/store/authStore';
 import { useNearViewport } from '@/hooks/useNearViewport';
+import FittedTileLabel from './FittedTileLabel';
 
 // ── Categories on the HOME core-vocab grid ────────────────────────────────────
 // Pink → yellow → green → orange → blue (matches Image #36 left-to-right)
@@ -160,7 +161,7 @@ function SidebarBtn({ icon, label, onClick, active = false, testId, dataAction }
 // ── Page label — MODULE LEVEL ──────────────────────────────────────────────────
 function PageLabel({ label }: { label: string }) {
   return (
-    <div className="text-center py-[3px] shrink-0 border-b border-[#5c3d25] bg-[#3e2a1a]">
+    <div className="aac-page-label text-center py-[3px] shrink-0 border-b border-[#5c3d25] bg-[#3e2a1a]">
       <span className="text-white text-xs font-bold uppercase tracking-widest underline underline-offset-2">
         {label}
       </span>
@@ -408,7 +409,7 @@ export default function CategoryPanel() {
           <SidebarBtn icon="⌨️" label={t('sidebar_kb')} onClick={cycleKeyboardMode} testId="kb-cycle-btn" />
           <SidebarBtn icon="🔍" label={t('sidebar_search')} onClick={openSearch} />
           {!isHome && <SidebarBtn icon="←" label={isDeep ? t('sidebar_up') : t('sidebar_back')} onClick={handleBack} />}
-          <SidebarBtn icon="🏠" label={t('home')} onClick={closeSidePanel} />
+          {!isHome && <SidebarBtn icon="🏠" label={t('home')} onClick={closeSidePanel} />}
           {showCoreWords && <SidebarBtn icon="⌂" label={t('sidebar_words')} onClick={backToCategories} />}
           <SidebarBtn icon="↑" label={t('sidebar_up')} onClick={() => scrollGrid(-1)} />
           <SidebarBtn icon="↓" label={t('sidebar_down')} onClick={() => scrollGrid(1)} />
@@ -466,7 +467,7 @@ export default function CategoryPanel() {
     return (
       <section data-aac-mode={typingMode ? 'typing' : 'picture'} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
         {!typingMode && <PageLabel label={`${seq.name} — ${step.label}`} />}
-        <div className="flex flex-row flex-1 min-h-0">
+        <div className="aac-category-body flex flex-row flex-1 min-h-0">
           <div className="flex-1 flex flex-col min-w-0 min-h-0">
             {!typingMode && (
             <div data-testid="picture-board" className="flex-1 flex flex-col min-h-0">
@@ -525,7 +526,7 @@ export default function CategoryPanel() {
     return (
       <section aria-label={catName} data-aac-mode={typingMode ? 'typing' : 'picture'} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
         {!typingMode && <PageLabel label={catName} />}
-        <div className="flex flex-row flex-1 min-h-0">
+        <div className="aac-category-body flex flex-row flex-1 min-h-0">
           <div className="flex-1 flex flex-col min-w-0 min-h-0">
             {(!typingMode || searchOpen) && (
             <div data-testid={searchOpen ? 'search-results-panel' : 'picture-board'} className="flex-1 flex flex-col min-h-0">
@@ -561,7 +562,10 @@ export default function CategoryPanel() {
                               aria-label={sub.nameKey ? t(sub.nameKey) : sub.name}
                               className={`aac-picture-card ${FOLDER_CLS} p-3 ${categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize]}`}>
                               <span className="aac-tile-icon text-3xl leading-none">{sub.icon}</span>
-                              <span className="aac-tile-label aac-folder-label">{sub.nameKey ? t(sub.nameKey) : sub.name}</span>
+                              <FittedTileLabel
+                                text={sub.nameKey ? t(sub.nameKey) : sub.name}
+                                className="aac-tile-label aac-folder-label"
+                              />
                             </button>
                           );
                         }
@@ -613,7 +617,7 @@ export default function CategoryPanel() {
   return (
     <section aria-label="Home vocabulary board" data-aac-mode={typingMode ? 'typing' : 'picture'} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
       {!typingMode && <PageLabel label={t('home').toUpperCase()} />}
-      <div className="flex flex-row flex-1 min-h-0">
+      <div className="aac-category-body flex flex-row flex-1 min-h-0">
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
           {(!typingMode || searchOpen) && (
           <div data-testid={searchOpen ? 'search-results-panel' : 'picture-board'} className="flex-1 flex flex-col min-h-0">
@@ -639,9 +643,10 @@ export default function CategoryPanel() {
                   aria-label={cat.nameKey ? t(cat.nameKey) : cat.name}
                   className={`aac-picture-card ${FOLDER_CLS} gap-1 p-1.5 text-xs ${tH}`}>
                   <span className="aac-tile-icon text-2xl sm:text-3xl leading-none">{cat.icon}</span>
-                  <span className="aac-tile-label aac-folder-label">
-                    {cat.nameKey ? t(cat.nameKey) : cat.name}
-                  </span>
+                  <FittedTileLabel
+                    text={cat.nameKey ? t(cat.nameKey) : cat.name}
+                    className="aac-tile-label aac-folder-label"
+                  />
                 </button>
                 );
               })}
@@ -657,9 +662,10 @@ export default function CategoryPanel() {
                     className={`aac-btn aac-category-tile shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg
                       border border-white/20 select-none text-center min-w-[52px] ${tabBg}`}>
                     <span className="aac-tile-icon aac-category-icon text-base leading-none">{cat.icon}</span>
-                    <span className="aac-tile-label aac-category-label">
-                      {cat.nameKey ? t(cat.nameKey) : cat.name}
-                    </span>
+                    <FittedTileLabel
+                      text={cat.nameKey ? t(cat.nameKey) : cat.name}
+                      className="aac-tile-label aac-category-label"
+                    />
                   </button>
                 );
               })}

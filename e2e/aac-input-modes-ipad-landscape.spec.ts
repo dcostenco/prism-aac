@@ -55,6 +55,16 @@ async function expectVisiblePredictionPictograms(page: Page): Promise<void> {
     }).length), { timeout: 20_000 }).toBeGreaterThanOrEqual(3);
 }
 
+async function expectVisiblePhrasePictograms(page: Page): Promise<void> {
+  await expect.poll(async () => page.evaluate(() => [...document.querySelectorAll('.aac-phrase-tile')]
+    .filter((tile) => {
+      const image = tile.querySelector<HTMLImageElement>('img');
+      if (!image || !image.complete || image.naturalWidth <= 0) return false;
+      const rect = image.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && rect.top < innerHeight && rect.bottom > 0;
+    }).length), { timeout: 20_000 }).toBeGreaterThanOrEqual(3);
+}
+
 type TileMetrics = {
   width: number;
   height: number;
@@ -111,6 +121,10 @@ test.beforeEach(async ({ page }, testInfo) => {
 
   await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
   await expect(page.getByTestId('prediction-bar')).toBeVisible({ timeout: 20_000 });
+});
+
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
 });
 
 test('switches between complete Typing and Picture surfaces without losing predictions', async ({ page }) => {
@@ -184,6 +198,7 @@ test('switches between complete Typing and Picture surfaces without losing predi
   expect(category.labelColor).toBe('rgb(0, 0, 0)');
   expect(Math.abs(category.iconHeight - prediction.iconHeight)).toBeLessThanOrEqual(24);
   expect(Math.abs(category.iconWidth - prediction.iconWidth)).toBeLessThanOrEqual(32);
+  await expect(page.locator('.aac-tile-label[data-fit-status="overflow"]')).toHaveCount(0);
 
   const boardIntegrity = await phraseCards.evaluateAll((cards) => {
     const rects = cards.map((card) => card.getBoundingClientRect());
@@ -216,4 +231,36 @@ test('switches between complete Typing and Picture surfaces without losing predi
   await expect(predictions).toBeVisible();
   await expect(page.getByTestId('keyboard-shell')).toBeVisible();
   await expect(page.getByTestId('picture-board')).toHaveCount(0);
+});
+
+test('keeps a compact-height iPad on the tablet picture rail', async ({ page }) => {
+  const board = page.getByRole('region', { name: /home vocabulary board/i });
+  await page.getByTestId('kb-cycle-btn').click();
+  await expect(board).toHaveAttribute('data-aac-mode', 'picture');
+  await expect(page.getByTestId('picture-board')).toBeVisible();
+
+  await page.setViewportSize({ width: 1024, height: 500 });
+  const metrics = await page.evaluate(() => {
+    const body = document.querySelector<HTMLElement>('.aac-category-body')!;
+    const nav = document.querySelector<HTMLElement>('[data-testid="picture-mode-sidebar"]')!;
+    const bodyRect = body.getBoundingClientRect();
+    const navRect = nav.getBoundingClientRect();
+    return {
+      bodyDirection: getComputedStyle(body).flexDirection,
+      bodyWidth: bodyRect.width,
+      navWidth: navRect.width,
+      navHeight: navRect.height,
+      navRight: navRect.right,
+      viewportWidth: innerWidth,
+    };
+  });
+
+  expect(metrics.bodyDirection).toBe('row');
+  expect(metrics.bodyWidth).toBeGreaterThanOrEqual(1020);
+  expect(metrics.navWidth).toBeLessThanOrEqual(120);
+  expect(metrics.navHeight).toBeGreaterThanOrEqual(200);
+  expect(metrics.navRight).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+  await expectVisiblePhrasePictograms(page);
+  await expect(page.locator('.aac-tile-label[data-fit-status="overflow"]')).toHaveCount(0);
+  await safeScreenshot(page, '03-input-mode-picture-compact-height.png');
 });

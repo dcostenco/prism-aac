@@ -4,6 +4,7 @@ import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramServ
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { useNearViewport } from '@/hooks/useNearViewport';
+import FittedTileLabel from './FittedTileLabel';
 
 interface Props {
   phrase: string;
@@ -52,7 +53,7 @@ export default function PhraseTile({ phrase, englishPhrase, customImageUrl, clas
         ...style,
       }}
     >
-      <div className="aac-tile-icon" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface, white)', borderRadius: '8px 8px 0 0', overflow: 'hidden', minHeight: 0 }}>
+      <div className="aac-tile-icon" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', borderRadius: '8px 8px 0 0', overflow: 'hidden', minHeight: 0 }}>
         {iconUrl && (
           <img
             src={iconUrl}
@@ -64,13 +65,12 @@ export default function PhraseTile({ phrase, englishPhrase, customImageUrl, clas
           />
         )}
       </div>
-      <div
-        data-testid="phrase-tile-label"
+      <FittedTileLabel
+        text={phrase}
+        testId="phrase-tile-label"
         className="aac-tile-label aac-phrase-label"
         style={{ borderTop: '1px solid rgba(0,0,0,0.2)' }}
-      >
-        {phrase}
-      </div>
+      />
     </button>
   );
 }
