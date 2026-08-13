@@ -285,7 +285,7 @@ export async function connectProvider(
   // CRITICAL: send a RELATIVE path, not an absolute URL. Synalux's
   // sanitizeReturnTo() rejects anything not starting with '/' as a
   // security guard against open-redirect attacks (see
-  // synalux-private/portal/src/lib/oauth-providers.ts) — passing an
+  // synalux-platform/portal/src/lib/oauth-providers.ts) — passing an
   // absolute URL like 'https://synalux.ai/...' silently falls back
   // to /dashboard, leaving the popup on the synalux dashboard
   // forever. The popup never calls window.close(), prism-aac waits

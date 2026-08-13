@@ -10,7 +10,7 @@
  * "Couldn't reach the tutor. Check your internet." (May 2026 user
  * reports Image #29 / #30). The fix is to route through
  * /api/v1/prism-aac/chat — the dedicated AAC chat endpoint that
- * synalux-private explicitly built as unauthenticated-by-design with
+ * synalux-platform explicitly built as unauthenticated-by-design with
  * per-IP rate limit + tier routing.
  *
  * Test asserts the URL the askAI service actually fetches.
@@ -36,7 +36,7 @@ afterEach(() => {
 describe('askAI — endpoint URL', () => {
   it('POSTs to /api/v1/prism-aac/chat (anonymous-friendly), NOT /api/v1/chat', async () => {
     await askAI('What is 2+3?', 'math-tutor');
-    // The prism-aac route is unauthenticated by design (synalux-private
+    // The prism-aac route is unauthenticated by design (synalux-platform
     // route.ts:110 "AAC must work for everyone"). Routing through
     // /chat gates anonymous users at 401.
     const calledUrls = fetchSpy.mock.calls.map((c: unknown[]) => String(c[0]));

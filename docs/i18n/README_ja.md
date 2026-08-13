@@ -503,7 +503,7 @@ AACユーザーの声に合わせたオンデバイス + クラウドアシス�
 
 - Synaluxポータル`/api/v1/prism-aac/inbox/poll`経由でポーリングされる受信トレイ（ポータルが設定されていない場合は404でno-op）
 - 新着メッセージ時のクロス・タブ`BroadcastChannel`通知
-- プロバイダー抽象化：Outlook / Slack / Discordの追加はそれぞれ約30行のコード（`synalux-private/scripts/fetch-messages.mjs`を参照）
+- プロバイダー抽象化：Outlook / Slack / Discordの追加はそれぞれ約30行のコード（`synalux-platform/scripts/fetch-messages.mjs`を参照）
 - 既読状態が同期されるため、介護者は子どもがメッセージを見たタイミングを確認できます
 - 無料ティア：接続プロバイダー1つ。有料ティア：無制限
 - メッセージごとのTTSにより、子どもは受信テキストを自分の好みの声で聞くことができます

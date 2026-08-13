@@ -44,7 +44,7 @@ claims verified by `scripts/claims-verify.mjs`. **28 new test cases.**
   appended to user prompt tail — current models weight tail-position
   directives more than ones buried in a long system list.
 - **Synalux `prism-aac/chat` route now merges client system message**
-  with `AAC_SYSTEM` instead of discarding it (synalux-private
+  with `AAC_SYSTEM` instead of discarding it (synalux-platform
   `b2d70b0c`). Earlier route hardcoded `system: AAC_SYSTEM` and
   filtered out `role:'system'` from every backend caller —
   client-supplied "respond in Romanian" never reached the model.
@@ -137,7 +137,7 @@ keyboard gap report. **Index at
   minified chunks; "done" is the user-confirmed terminal state.
 - Skill auto-syncs to Prism MCP DB on SessionStart / SessionEnd and
   on the "update skills" prompt phrase.
-- Mirror skill copy at `synalux-private/skills/cross-repo-trace-
+- Mirror skill copy at `synalux-platform/skills/cross-repo-trace-
   discipline/`.
 
 ### Outstanding
@@ -223,7 +223,7 @@ province / Land / autonomous-community level.
   Friendly error mapping (auth / network / timeout / other) plus a
   Retry button. Live curl confirmed PROD CORS preflight was missing
   Access-Control-Allow-Origin for prism-aac.vercel.app — fixed in
-  the synalux-private middleware (separate repo).
+  the synalux-platform middleware (separate repo).
 - **Multi-char glyphs overflowing cells** — SVG `<text>` nodes now
   set `textLength` + `lengthAdjust='spacingAndGlyphs'` for any
   glyph > 1 char so chemistry "(aq)", physics "eV", earth-sci
@@ -390,7 +390,7 @@ Patches text / icon / textKey in place. `patch.textKey === null` clears the i18n
 
 ## [0.2.2] - 2026-05-04 — Prism Coder 7B promotion + 14B sibling (via Synalux portal)
 
-> Coordinated with **synalux-private v0.14.4** — the Synalux portal now serves PrismAAC traffic from a fresh 7B (massive BFCL gain) and a new 14B sibling for paid-tier medium queries. **No PrismAAC code changes required.** All routing happens server-side.
+> Coordinated with **synalux-platform v0.14.4** — the Synalux portal now serves PrismAAC traffic from a fresh 7B (massive BFCL gain) and a new 14B sibling for paid-tier medium queries. **No PrismAAC code changes required.** All routing happens server-side.
 
 ### What changed for PrismAAC users
 - **Faster, smarter caregiver parsing.** Model behind `/api/v1/prism-aac/chat` jumped from BFCL 47.2% to **88.1%** (3-run StdDev 0). Caregiver targeted re-test went from 19/20 to **20/20**. Translate went from 7/8 to **8/8**.
@@ -425,7 +425,7 @@ PrismAAC consumes `/api/v1/prism-aac/chat`. Routing logic lives entirely in the 
 | `services/bodyPoseService.ts` calibration | Adaptive expand/decay gated on identity-lock anchor; 0.01 / 0.001 rates with `[0,1]` clamps |
 | `store/messageStore.ts` `addToHistory` | `recordMessage(text)` for every authored message |
 
-Schema mirrored from `synalux-private/portal/src/shared/adaptiveEngine.ts`. Drift checked by `training/sync_adaptive_engine.sh` in the prism-mcp repo.
+Schema mirrored from `synalux-platform/portal/src/shared/adaptiveEngine.ts`. Drift checked by `training/sync_adaptive_engine.sh` in the prism-mcp repo.
 </details>
 
 <details>

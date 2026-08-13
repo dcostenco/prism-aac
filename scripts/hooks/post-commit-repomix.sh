@@ -4,7 +4,7 @@
 # Called by Claude Code PostToolUse hook on Bash(git commit*).
 # Runs async (non-blocking). Reads stdin JSON but only needs the repo root.
 #
-# Portable: lives in synalux-private/scripts/hooks/ but works for ANY repo
+# Portable: lives in synalux-platform/scripts/hooks/ but works for ANY repo
 # by detecting the repo root from the commit that just ran. Other repos
 # symlink or copy this script; their .claude/settings.json references it.
 #

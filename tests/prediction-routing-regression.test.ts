@@ -1,7 +1,7 @@
 /**
  * Prediction routing regression test (v0.2.1 — Prism Coder 7B/14B release).
  *
- * Coordinated with synalux-private v0.14.4 which:
+ * Coordinated with synalux-platform v0.14.4 which:
  *   1. Added tier-aware local routing in /api/v1/prism-aac/chat
  *      (free → 7B, standard+ → 7B simple / 14B medium, complex → cloud)
  *   2. Removed tier gate on /api/v1/tts so Azure Neural + auto-tone work

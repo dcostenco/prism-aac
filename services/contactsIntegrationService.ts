@@ -7,7 +7,7 @@
  * would mean a blank screen on flaky school Wi-Fi for 1-3s — long
  * enough for an AAC user with motor/cognitive load to give up.
  *
- * Endpoint contract (synalux-private side, TBD if not yet shipped):
+ * Endpoint contract (synalux-platform side, TBD if not yet shipped):
  *   GET /api/v1/prism-aac/contacts
  *   →   { contacts: Array<{
  *           name: string;

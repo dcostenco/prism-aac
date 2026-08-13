@@ -502,7 +502,7 @@ Los mensajes entrantes de proveedores conectados (Telegram, WhatsApp, Email, Sla
 
 - Bandeja de entrada consultada a través del portal Synalux `/api/v1/prism-aac/inbox/poll` (no-op en 404 si el portal no está configurado)
 - Notificación `BroadcastChannel` entre pestañas en caso de nuevo mensaje
-- Abstracción de proveedor: añadir Outlook / Slack / Discord = ~30 LOC cada uno (ver `synalux-private/scripts/fetch-messages.mjs`)
+- Abstracción de proveedor: añadir Outlook / Slack / Discord = ~30 LOC cada uno (ver `synalux-platform/scripts/fetch-messages.mjs`)
 - El estado de lectura se sincroniza para que los cuidadores vean cuándo el niño ha visto su mensaje
 - Nivel gratuito: 1 proveedor conectado; nivel de pago: ilimitado
 - TTS por mensaje para que el niño pueda escuchar el texto entrante con su voz preferida

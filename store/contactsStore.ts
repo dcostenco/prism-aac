@@ -4,7 +4,7 @@
  *
  * Scope (MVP):
  *   - Local-first via Zustand persist. Synced to Synalux portal in a
- *     follow-up (synalux-private API endpoint TBD).
+ *     follow-up (synalux-platform API endpoint TBD).
  *   - Each contact is bound to ONE provider — the contact "Mom" might
  *     be a Telegram chat, "Dad" might be WhatsApp. Avoids the user
  *     having to pick provider per-message.

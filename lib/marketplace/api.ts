@@ -5,7 +5,7 @@
  * `/api/v1/marketplace/*`. Always falls back to the bundled LOCAL_CATALOG
  * when the network call fails — the marketplace must work offline.
  *
- * Endpoints (defined in synalux-private/portal/src/app/api/v1/marketplace/):
+ * Endpoints (defined in synalux-platform/portal/src/app/api/v1/marketplace/):
  *   GET  /catalog                 — public, returns published modules
  *   GET  /module/[slug]           — public, returns full detail + screenshots
  *   POST /install                 — auth, body { slug }, tier-gated

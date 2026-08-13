@@ -25,7 +25,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { computeNormalizedRate } from '@/services/azureTTS';
 // NOTE: buildSSML is intentionally NOT imported here. It is dead code since
 // SSML assembly moved server-side (portal buildAzureSSML). Server-side coverage
-// lives in synalux-private/portal/src/app/api/v1/tts/public/_helpers.test.ts.
+// lives in synalux-platform/portal/src/app/api/v1/tts/public/_helpers.test.ts.
 
 // ── Class 1: SSML rate scale (LIVE PATH via computeNormalizedRate) ───────────
 //
