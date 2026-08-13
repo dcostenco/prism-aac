@@ -1,0 +1,17 @@
+{
+  "name": "synalux-hrr",
+  "type": "module",
+  "description": "Holographic Reduced Representations (HRR) — WASM zero-search retrieval",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "files": [
+    "synalux_hrr_bg.wasm",
+    "synalux_hrr.js",
+    "synalux_hrr.d.ts"
+  ],
+  "main": "synalux_hrr.js",
+  "types": "synalux_hrr.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
