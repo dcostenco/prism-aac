@@ -502,7 +502,7 @@ Top-1 = 正确单词是磁贴 #1。Top-5 = 任何磁贴中的正确单词。MRR 
 
 - 通过 Synalux 门户 `/api/v1/prism-aac/inbox/poll` 轮询收件箱（如果门户未配置，则 404 时无操作）
 - 新消息的跨标签页 `BroadcastChannel` 通知
-- 提供商抽象：添加 Outlook / Slack / Discord = 每个约 30 行代码（请参阅 `synalux-private/scripts/fetch-messages.mjs`）
+- 提供商抽象：添加 Outlook / Slack / Discord = 每个约 30 行代码（请参阅 `synalux-platform/scripts/fetch-messages.mjs`）
 - 已读状态同步回传，以便看护人看到孩子何时已读消息
 - 免费套餐：1 个连接提供商；付费套餐：无限制
 - 每条消息的 TTS，以便孩子可以用他们喜欢的语音听到传入文本

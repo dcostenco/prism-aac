@@ -21,7 +21,7 @@ import { describe, it, expect } from 'vitest';
 import { computeNormalizedRate } from '@/services/azureTTS';
 // NOTE: buildSSML is intentionally NOT imported. It is dead code since SSML
 // assembly moved server-side (portal buildAzureSSML). Server-side prosody
-// coverage is in synalux-private/portal/src/app/api/v1/tts/public/_helpers.test.ts.
+// coverage is in synalux-platform/portal/src/app/api/v1/tts/public/_helpers.test.ts.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LIVE PATH: computeNormalizedRate — client-side half of the rate formula

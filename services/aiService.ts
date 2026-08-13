@@ -350,7 +350,7 @@ async function callSynalux(
   let res: Response;
   try {
     // Route via /api/v1/prism-aac/chat — the dedicated AAC chat
-    // endpoint (synalux-private commits 8607d33c → 05ef1d57).
+    // endpoint (synalux-platform commits 8607d33c → 05ef1d57).
     // Public route — no session cookie required (AAC must work for every child, including those without a caregiver account). Rate-limited per IP on the server.
     // Tier-routed to local prism-coder:9b → 27b → Claude Sonnet / Gemini.
     //

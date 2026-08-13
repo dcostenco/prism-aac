@@ -9,7 +9,7 @@
  * The canonical AdaptiveProfile schema, tone-detection algorithm, and
  * tone→TTS-style mappings live in:
  *
- *     synalux-private/portal/src/shared/adaptiveEngine.ts
+ *     synalux-platform/portal/src/shared/adaptiveEngine.ts
  *
  * This file is a CLIENT-SIDE MIRROR with the same algorithm so prism-aac
  * works offline (free tier, network loss). It must be kept structurally

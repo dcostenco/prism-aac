@@ -502,7 +502,7 @@ AAC 사용자의 음성에 맞춰 조정된 온디바이스 + 클라우드 어�
 
 - Synalux 포털 `/api/v1/prism-aac/inbox/poll`을 통한 폴링된 받은 편지함 (포털이 구성되지 않은 경우 404에서 no-op)
 - 새 메시지 도착 시 교차 탭 `BroadcastChannel` 알림
-- 제공자 추상화: Outlook / Slack / Discord 추가 = 각 ~30 LOC ( `synalux-private/scripts/fetch-messages.mjs` 참조)
+- 제공자 추상화: Outlook / Slack / Discord 추가 = 각 ~30 LOC ( `synalux-platform/scripts/fetch-messages.mjs` 참조)
 - 읽음 상태가 다시 동기화되어 보호자가 자녀가 메시지를 본 시점을 알 수 있습니다.
 - 무료 티어: 1개 연결된 제공자; 유료 티어: 무제한
 - 메시지별 TTS를 통해 아동이 선호하는 음성으로 수신 텍스트를 들을 수 있습니다.

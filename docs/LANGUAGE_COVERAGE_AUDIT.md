@@ -84,7 +84,7 @@ corpus that is still missing its safety sections.
 
 ## Finding 2b — the seed generator in the repo is NOT the one that built the seeds
 
-`prism-training/build_prediction_seeds.py` produces **1500** unigrams per
+`training-corpus/build_prediction_seeds.py` produces **1500** unigrams per
 locale from the corpus alone. The committed seeds for the 14 mature locales
 contain **19,940** (en), of which only ~5,000 are wordfreq top-5000 and ~15,000
 come from a vocabulary-expansion step present in neither that script nor
@@ -105,7 +105,7 @@ downgraded.
 
 **Follow-up needed:** recover the real generator, or reimplement the expansion
 step, before regenerating any mature seed. Until then
-`prism-training/build_prediction_seeds.py` should be treated as safe only for
+`training-corpus/build_prediction_seeds.py` should be treated as safe only for
 locales that have no corpus-derived seed yet. Two fixes were made to it here —
 Ethiopic/danda punctuation stripping, and a guard so a locale with a seed but
 no corpus is no longer silently dropped from `SUPPORTED_SEED_LANGS`.

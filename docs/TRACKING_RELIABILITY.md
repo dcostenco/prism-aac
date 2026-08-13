@@ -250,7 +250,7 @@ shifted, it's ego-motion.
 ### F. Background recalibration — L1/L2/L3 auto-correction loop
 
 Implements the three-layer correction architecture from
-`prism-training/PLAN_2026-05-09_THREE_LAYER_AAC.md`.
+`training-corpus/PLAN_2026-05-09_THREE_LAYER_AAC.md`.
 
 Real-world drift sources:
 1. User shifts in chair (mostly Y drift)

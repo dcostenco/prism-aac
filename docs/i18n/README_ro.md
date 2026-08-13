@@ -502,7 +502,7 @@ Mesajele primite de la furnizorii conectați (Telegram, WhatsApp, Email, Slack e
 
 - Mesaje primite interogate via portalul Synalux `/api/v1/prism-aac/inbox/poll` (no-op la 404 dacă portalul nu este configurat)
 - Notificare `BroadcastChannel` între file la mesaj nou
-- Abstractizare furnizor: adăugarea Outlook / Slack / Discord = ~30 LOC fiecare (vezi `synalux-private/scripts/fetch-messages.mjs`)
+- Abstractizare furnizor: adăugarea Outlook / Slack / Discord = ~30 LOC fiecare (vezi `synalux-platform/scripts/fetch-messages.mjs`)
 - Starea de citire se sincronizează înapoi, astfel încât îngrijitorii să vadă când copilul a văzut mesajul lor
 - Nivel gratuit: 1 furnizor conectat; nivel plătit: nelimitat
 - TTS per mesaj, astfel încât copilul să poată auzi textul primit în vocea preferată

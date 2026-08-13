@@ -502,7 +502,7 @@ Eingehende Nachrichten von verbundenen Anbietern (Telegram, WhatsApp, E-Mail, Sl
 
 - Abgefragter Posteingang über Synalux-Portal `/api/v1/prism-aac/inbox/poll` (keine Operation bei 404, wenn Portal nicht konfiguriert)
 - Cross-Tab `BroadcastChannel`-Benachrichtigung bei neuer Nachricht
-- Anbieter-Abstraktion: Hinzufügen von Outlook / Slack / Discord = jeweils ~30 LOC (siehe `synalux-private/scripts/fetch-messages.mjs`)
+- Anbieter-Abstraktion: Hinzufügen von Outlook / Slack / Discord = jeweils ~30 LOC (siehe `synalux-platform/scripts/fetch-messages.mjs`)
 - Lesestatus wird zurücksynchronisiert, damit Betreuer sehen, wann das Kind ihre Nachricht gesehen hat
 - Kostenlose Stufe: 1 verbundener Anbieter; kostenpflichtige Stufe: unbegrenzt
 - TTS pro Nachricht, damit das Kind den eingehenden Text in seiner bevorzugten Stimme hören kann

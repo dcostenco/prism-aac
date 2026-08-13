@@ -10,7 +10,7 @@
  *   - Providers webhook into the Synalux portal; the portal queues per
  *     account. The AAC client just needs to drain its queue when online.
  *
- * Endpoint contract (synalux-private side, TBD if not yet shipped):
+ * Endpoint contract (synalux-platform side, TBD if not yet shipped):
  *   GET /api/v1/prism-aac/inbox/poll?since=<ms>
  *   →   { messages: Array<{ id: string; sender: string; text: string;
  *                           provider: string; receivedAt: number }>,

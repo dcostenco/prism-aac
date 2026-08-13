@@ -752,7 +752,7 @@ Incoming messages from connected providers (Telegram, WhatsApp, Email, Slack, et
 
 - Polled inbox via Synalux portal `/api/v1/prism-aac/inbox/poll` (no-op on 404 if portal not configured)
 - Cross-tab `BroadcastChannel` notification on new message
-- Provider abstraction: adding Outlook / Slack / Discord = ~30 LOC each (see `synalux-private/scripts/fetch-messages.mjs`)
+- Provider abstraction: adding Outlook / Slack / Discord = ~30 LOC each (see `synalux-platform/scripts/fetch-messages.mjs`)
 - Read state syncs back so caregivers see when the child has seen their message
 - Free tier: 1 connected provider; paid tier: unlimited
 - Per-message TTS so the child can hear the inbound text in their preferred voice

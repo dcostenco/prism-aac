@@ -14,7 +14,7 @@
  *
  * Listener errors are caught so one bad subscriber can't break the bus.
  *
- * Plan ref: synalux-private/docs/CUSTOMER_FEEDBACK_ENHANCEMENTS.md § #1.
+ * Plan ref: synalux-platform/docs/CUSTOMER_FEEDBACK_ENHANCEMENTS.md § #1.
  */
 
 export type TtsTier = 'inworld' | 'azure' | 'web-speech' | 'native-ios';

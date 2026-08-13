@@ -1,0 +1,22 @@
+name: Leak guard
+
+# This repository is PUBLIC. Run the guard on every push and pull request so a
+# reference to a private repo, vendor, personal account, or secret cannot land
+# again — 32 files had accumulated before this existed (2026-08-12).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  no-private-refs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history is not needed: the guard scans the tracked tree, and
+          # scrubbing HEAD cannot remove what is already in public history.
+          fetch-depth: 1
+      - name: Scan tracked files for private references and secrets
+        run: bash scripts/check-no-private-refs.sh

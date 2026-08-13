@@ -383,7 +383,7 @@ async function jobCorpus(stamp, prov) {
     fs.writeFileSync(outPath, JSON.stringify(current, null, 2) + '\n');
     console.log(`  wrote ${outPath}`);
   }
-  if (!DRY_RUN) console.log('\nNow run: python3 ../synalux-private/prism-training/build_prediction_seeds.py');
+  if (!DRY_RUN) console.log('\nNow run build_prediction_seeds.py from the training repo.');
 }
 
 /**
