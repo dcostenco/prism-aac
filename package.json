@@ -43,7 +43,7 @@
     "serwist": "^9.5.8",
     "shiki": "^4.0.2",
     "snowball-stemmers": "^0.6.0",
-    "synalux-hrr": "file:../synalux-private/packages/hrr-wasm/pkg-web",
+    "synalux-hrr": "file:./vendor/synalux-hrr",
     "tesseract.js": "^7.0.0",
     "zustand": "^5.0.12"
   },

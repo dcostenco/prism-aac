@@ -1,7 +1,7 @@
 # Privacy Policy — PrismAAC Reading Assistant (Chrome extension)
 
 **Last updated:** 2026-05-08
-**Contact:** dcostenco@gmail.com
+**Contact:** support@synalux.ai
 
 ## Plain-English summary
 
@@ -76,4 +76,4 @@ If the extension ever begins collecting any data, this policy will be updated an
 
 ## Contact
 
-Questions or concerns: open an issue at https://github.com/dcostenco/prism-aac/issues or email dcostenco@gmail.com.
+Questions or concerns: open an issue at https://github.com/dcostenco/prism-aac/issues or email support@synalux.ai.
