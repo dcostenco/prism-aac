@@ -13,7 +13,7 @@ import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
-import { translateWithAIRefine, looksLikeTargetLang, abortTranslation, isPhraseBoundary, translateForSpeech } from '@/services/translateService';
+import { translateWithAIRefine, looksLikeTargetLang, isPhraseBoundary, translateForSpeech } from '@/services/translateService';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useAuthStore } from '@/store/authStore';
 import { triggerAISubmit } from '@/services/aiChatBridge';
@@ -204,7 +204,14 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
     if (isChanged && looksLikeTargetLang(instant, outputLanguage)) {
       setTranslated(instant);
     }
-    return () => { cancelled = true; abortTranslation(); };
+    // Deliberately does NOT abort the refine. This cleanup runs on EVERY text
+    // change, including the keystroke that just created the phrase — and by
+    // then the keyboard's sentence-end handler may already have scheduled and
+    // joined a refine for it, which aborting would cancel out from under the
+    // speaker. The `cancelled` flag below is what prevents a stale result from
+    // being applied, and translateWithAIRefine now cancels on its own whenever
+    // the phrase genuinely changes, so nothing is left running for old text.
+    return () => { cancelled = true; };
   }, [text, language, outputLanguage]);
 
   // Play / Speak is the "manual" half of the phrase-detected-or-manual rule.
@@ -274,14 +281,30 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
       if (translationActive) {
         // interrupt=true: stop any in-flight Azure stream before speaking the
         // new translation. Consecutive phrase timers must not overlap.
-        void aacSpeak(
-          latestTranslated || phrase,
-          speechRate,
-          speechVolume,
-          activeTone,
-          true,
-          latestTranslated ? outLang : undefined,
-        );
+        if (isPhraseBoundary(phrase)) {
+          // The user closed a sentence, so a refine is running for the display.
+          // This timer matures at 400ms and the refine lands around 800ms, so
+          // speaking immediately voiced the offline dictionary's
+          // half-translated output while the bar showed the good one.
+          void translateForSpeech(
+            phrase,
+            useSettingsStore.getState().language as SupportedLanguage,
+            outLang as SupportedLanguage,
+            (t) => setTranslated(t),
+          ).then((best) => {
+            const spoken = best || translatedRef.current;
+            void aacSpeak(spoken || phrase, speechRate, speechVolume, activeTone, true, spoken ? outLang : undefined);
+          });
+        } else {
+          void aacSpeak(
+            latestTranslated || phrase,
+            speechRate,
+            speechVolume,
+            activeTone,
+            true,
+            latestTranslated ? outLang : undefined,
+          );
+        }
       } else {
         // Same-language composition feedback reuses the latest-wins
         // quality-first path while replaying the complete accumulated message.
