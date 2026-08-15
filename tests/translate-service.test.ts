@@ -81,7 +81,7 @@ describe('translateWithAIRefine — script sanity check', () => {
       translateAIMock.mockResolvedValue(omittedRefinement);
       const onRefined = vi.fn();
 
-      translateWithAIRefine('I looking', 'en', targetLanguage, onRefined);
+      translateWithAIRefine('I looking', 'en', targetLanguage, onRefined, { force: true });
       await vi.runAllTimersAsync();
 
       expect(onRefined).toHaveBeenCalledWith(expectedRefinement);
@@ -92,7 +92,7 @@ describe('translateWithAIRefine — script sanity check', () => {
     translateAIMock.mockResolvedValue('Caut');
     const onRefined = vi.fn();
 
-    const instant = translateWithAIRefine('I looking', 'en', 'ro', onRefined);
+    const instant = translateWithAIRefine('I looking', 'en', 'ro', onRefined, { force: true });
     await vi.runAllTimersAsync();
 
     expect(instant).toMatch(/^eu\b/u);
@@ -103,7 +103,7 @@ describe('translateWithAIRefine — script sanity check', () => {
     translateAIMock.mockResolvedValue('Eu caut');
     const onRefined = vi.fn();
 
-    translateWithAIRefine('I looking', 'en', 'ro', onRefined);
+    translateWithAIRefine('I looking', 'en', 'ro', onRefined, { force: true });
     await vi.runAllTimersAsync();
 
     expect(onRefined).toHaveBeenCalledWith('eu caut');
@@ -115,7 +115,7 @@ describe('translateWithAIRefine — script sanity check', () => {
       .mockResolvedValueOnce(`${AAC_FIRST_PERSON_MARKER}は探しています`);
     const onRefined = vi.fn();
 
-    translateWithAIRefine('I looking', 'en', 'ja', onRefined);
+    translateWithAIRefine('I looking', 'en', 'ja', onRefined, { force: true });
     await vi.runAllTimersAsync();
 
     expect(translateAIMock).toHaveBeenNthCalledWith(
@@ -143,7 +143,7 @@ describe('translateWithAIRefine — script sanity check', () => {
       .mockResolvedValueOnce(`${AAC_FIRST_PERSON_MARKER}는 찾고 있습니다`);
     const onRefined = vi.fn();
 
-    translateWithAIRefine('I looking', 'en', 'ko', onRefined);
+    translateWithAIRefine('I looking', 'en', 'ko', onRefined, { force: true });
     await vi.runAllTimersAsync();
 
     expect(onRefined).toHaveBeenCalledWith('나는 찾고 있습니다');
@@ -155,7 +155,7 @@ describe('translateWithAIRefine — script sanity check', () => {
       .mockResolvedValueOnce('探しています');
     const onRefined = vi.fn();
 
-    translateWithAIRefine('I looking', 'en', 'ja', onRefined);
+    translateWithAIRefine('I looking', 'en', 'ja', onRefined, { force: true });
     await vi.runAllTimersAsync();
 
     expect(onRefined).not.toHaveBeenCalled();
@@ -164,7 +164,7 @@ describe('translateWithAIRefine — script sanity check', () => {
   it('rejects an "EN translation" returned in Cyrillic (the actual prod regression)', async () => {
     translateAIMock.mockResolvedValue('Я здесь, чтобы помочь. Что бы вы хотели сделать?');
     const onRefined = vi.fn();
-    translateWithAIRefine('Я иду домой', 'ru', 'en', onRefined);
+    translateWithAIRefine('Я иду домой', 'ru', 'en', onRefined, { force: true });
     await vi.runAllTimersAsync();
     expect(onRefined).not.toHaveBeenCalled();
   });
@@ -172,7 +172,7 @@ describe('translateWithAIRefine — script sanity check', () => {
   it('rejects a "RU translation" returned in Latin script', async () => {
     translateAIMock.mockResolvedValue("I'm going home");
     const onRefined = vi.fn();
-    translateWithAIRefine('Take me home', 'en', 'ru', onRefined);
+    translateWithAIRefine('Take me home', 'en', 'ru', onRefined, { force: true });
     await vi.runAllTimersAsync();
     expect(onRefined).not.toHaveBeenCalled();
   });
@@ -180,7 +180,7 @@ describe('translateWithAIRefine — script sanity check', () => {
   it('accepts a real EN translation of a RU phrase', async () => {
     translateAIMock.mockResolvedValue("I'm walking home");
     const onRefined = vi.fn();
-    translateWithAIRefine('Я иду пешком', 'ru', 'en', onRefined);
+    translateWithAIRefine('Я иду пешком', 'ru', 'en', onRefined, { force: true });
     await vi.runAllTimersAsync();
     expect(onRefined).toHaveBeenCalledWith("I'm walking home");
   });
@@ -188,7 +188,7 @@ describe('translateWithAIRefine — script sanity check', () => {
   it('accepts a real Japanese translation', async () => {
     translateAIMock.mockResolvedValue('家に帰ります');
     const onRefined = vi.fn();
-    translateWithAIRefine('Where is the kitchen', 'en', 'ja', onRefined);
+    translateWithAIRefine('Where is the kitchen', 'en', 'ja', onRefined, { force: true });
     await vi.runAllTimersAsync();
     expect(onRefined).toHaveBeenCalled();
   });
@@ -196,7 +196,7 @@ describe('translateWithAIRefine — script sanity check', () => {
   it('rejects a "JA translation" returned in Latin script (model fell back to English)', async () => {
     translateAIMock.mockResolvedValue('I am going home (sorry, I cannot translate to Japanese)');
     const onRefined = vi.fn();
-    translateWithAIRefine('Open the door now', 'en', 'ja', onRefined);
+    translateWithAIRefine('Open the door now', 'en', 'ja', onRefined, { force: true });
     await vi.runAllTimersAsync();
     expect(onRefined).not.toHaveBeenCalled();
   });

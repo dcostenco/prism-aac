@@ -37,7 +37,16 @@ interface ChatMessage {
   lines?: string[];
 }
 
-export default function AIChatPanel() {
+/**
+ * `compact` is phone landscape (landscape orientation under 500px tall), the
+ * same signal PrismApp already passes to MessageBar. It is threaded as a prop
+ * rather than expressed as a `[@media(max-height:500px)]:` Tailwind variant
+ * because, measured on Tailwind v4 in this build, the arbitrary media variant
+ * loses the cascade to the plain utility: the rule IS emitted and
+ * `matchMedia('(max-height:500px)').matches` IS true, yet the element still
+ * computed `padding-top: 8px` from `py-2` and `font-size: 20px` from `text-xl`.
+ */
+export default function AIChatPanel({ compact = false }: { compact?: boolean } = {}) {
   const { sidePanel, closeSidePanel } = useUIStore();
   const { text, appendText, autoSpeak, soundEnabled } = useMessageStore();
   // Only subscribe to settings values used in the render or in stable callbacks.
@@ -715,12 +724,17 @@ export default function AIChatPanel() {
             into the void: keys land in useMessageStore but nothing displays.
             The strip is read-only here; Keyboard's existing Backspace already
             mutates messageStore. */}
+        {/* Compaction is scoped to phone landscape only. An svh clamp was tried
+            first and rejected: it scales with EVERY viewport, so it also shrank
+            this strip from 45px to 25px on a 760px-tall desktop that had no
+            shortage of room. */}
         <div
-          className="shrink-0 px-4 py-2 border-b border-theme bg-black/5 dark:bg-white/5"
+          className={`shrink-0 px-4 border-b border-theme bg-black/5 dark:bg-white/5 ${compact ? 'py-0.5' : 'py-2'}`}
           data-testid="ai-chat-input-preview"
+          data-compact={compact ? '1' : '0'}
         >
           <p
-            className="text-xl text-primary leading-snug min-h-[1.75rem] break-words"
+            className={`text-primary leading-snug break-words ${compact ? 'text-base min-h-[1.25rem]' : 'text-xl min-h-[1.75rem]'}`}
             role="status"
             aria-label={t('current_message')}
             aria-live="polite"
@@ -746,18 +760,45 @@ export default function AIChatPanel() {
         </div>
         {/* Chat scroll area */}
         <div ref={scrollRef} aria-live="polite" aria-atomic="false" className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+          {/* Empty state uses `min-h-full`, not `h-full`. With a fixed full
+              height, content taller than the scroll area overflows a
+              `justify-center` box in BOTH directions — the top is then
+              unreachable even though the parent scrolls, because there is
+              nothing above scrollTop 0 to scroll to. `min-h-full` lets the box
+              grow past the container instead, which both restores scrolling and
+              makes centring apply only when there is genuinely spare room.
+
+              Phone landscape leaves ~95px here, which a stacked icon + two
+              lines still overflowed, so `compact` lays the same information out
+              on ONE row instead of dropping any of it. Removing the send hint
+              was the alternative and was rejected: "press Speak to send" is the
+              one thing a first-time user cannot infer, and it is exactly the
+              instruction an AAC user needs. */}
           {messages.length === 0 && !loading && (
-            <div className="h-full flex flex-col items-center justify-center text-center gap-3 text-muted px-6">
-              <span className="text-5xl">✨</span>
-              <p className="text-lg font-medium">{t('ai_chat_title')}</p>
-              <p className="text-base opacity-70">
-                {listening
-                  ? interim || t('type_or_speak')
-                  : wakeWordActive
-                  ? 'Say "Hey Prism" to start'
-                  : t('type_or_speak')}
-              </p>
-              <p className="text-sm opacity-50 mt-1">
+            <div className={`min-h-full flex items-center justify-center text-center text-muted px-6 py-2 ${
+              // `gap-2`, not `gap-x-2`: measured on this build, the `gap-x-*`
+              // rule was never emitted (computed columnGap stayed `normal` and
+              // the words ran together as "AI ChatPress Speak"), while `gap-2`
+              // is used in 113 other places here and compiles.
+              compact ? 'flex-row flex-wrap gap-2' : 'flex-col gap-3'
+            }`}>
+              <span className={`leading-none ${compact ? 'text-lg' : 'text-5xl'}`}>✨</span>
+              <p className={`font-medium ${compact ? 'text-sm' : 'text-lg'}`}>{t('ai_chat_title')}</p>
+              {/* Only render the hint when it says something the preview strip
+                  above does NOT already say. In the idle case both printed the
+                  identical `type_or_speak` string, so the empty state spent a
+                  line repeating the placeholder directly above it — wasted
+                  height that pushed this block past the scroll area in phone
+                  landscape. The listening / wake-word variants are genuinely
+                  different information and still show. */}
+              {(listening || wakeWordActive) && (
+                <p className={`opacity-70 ${compact ? 'text-xs' : 'text-base'}`}>
+                  {listening
+                    ? interim || t('type_or_speak')
+                    : 'Say "Hey Prism" to start'}
+                </p>
+              )}
+              <p className={`opacity-50 ${compact ? 'text-xs' : 'text-sm'}`}>
                 Press <strong>Speak</strong> to send your question
               </p>
             </div>

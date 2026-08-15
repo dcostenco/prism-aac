@@ -220,21 +220,42 @@ export function getPredictions(
   scriptFilter?: RegExp,
   lang?: string,
 ): string[] {
-  const words = currentText.trim().split(/\s+/).filter(Boolean);
-  const lastWord = words.length > 0 ? words[words.length - 1].toLowerCase() : '';
+  // Strip punctuation from context tokens before any n-gram lookup.
+  //
+  // The dictionaries are keyed on bare words ("you|are"), but a tokenizer that
+  // only splits on whitespace leaves punctuation glued to the word ("you?").
+  // Measured against the en seed: 151 bigram keys start with "you|" and ZERO
+  // start with "you?|". So every word carrying a comma or a sentence-ender
+  // silently zeroed the context for the next one or two predictions, and the
+  // bar fell back to raw corpus frequency ("I / To / A / You / The"). AAC
+  // utterances are short and punctuated, so this fired constantly.
+  //
+  // Only the CONTEXT tokens are normalized. The partial word the user is
+  // currently typing keeps its raw form, because prefix matching must compare
+  // against exactly what they typed.
+  const rawWords = currentText.trim().split(/\s+/).filter(Boolean);
+  const bare = (w: string) => w.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}'-]+$/gu, '');
+  const words = rawWords.map(bare).filter(Boolean);
+  const lastWord = words.length > 0 ? words[words.length - 1] : '';
 
   // Mid-word vs end-of-word matters for which words count as "context".
   // If the user is mid-typing ("my ma"), lastWord is the partial fragment
   // and the COMPLETE history is words[..-2]. If they just hit space ("my "),
   // lastWord is the most recent complete word and history is words[..-1].
-  const partialWord = currentText.endsWith(' ') ? '' : lastWord;
+  //
+  // Trailing punctuation also ends a word: after "you?" the user has finished
+  // "you", so we must predict the NEXT word rather than offer prefix
+  // completions of a word they already closed ("your", "young").
+  const rawLast = rawWords.length > 0 ? rawWords[rawWords.length - 1] : '';
+  const closedByPunctuation = /[^\p{L}\p{N}'-]$/u.test(rawLast);
+  const partialWord = currentText.endsWith(' ') || closedByPunctuation ? '' : lastWord;
   const isMidWord = !!partialWord;
   const ctxLastIdx = isMidWord ? words.length - 2 : words.length - 1;
-  const ctxLast = ctxLastIdx >= 0 ? words[ctxLastIdx].toLowerCase() : '';
-  const ctxPrev = ctxLastIdx - 1 >= 0 ? words[ctxLastIdx - 1].toLowerCase() : '';
+  const ctxLast = ctxLastIdx >= 0 ? words[ctxLastIdx] : '';
+  const ctxPrev = ctxLastIdx - 1 >= 0 ? words[ctxLastIdx - 1] : '';
   // Legacy alias kept for the (now narrower) "next-word after lastWord" lookups
   // used when NOT mid-typing.
-  const prevWord = words.length > 1 ? words[words.length - 2].toLowerCase() : '';
+  const prevWord = words.length > 1 ? words[words.length - 2] : '';
 
   // Sentence-start detection: capitalize the next prediction if we're at the
   // start of the message OR right after sentence-ending punctuation.
@@ -447,11 +468,29 @@ export function getPredictions(
   // collapse to 2 representatives instead of 5; Romanian/English noun
   // declensions surface bare + definite forms together.
   const MAX_PER_STEM = 2;
+  // When the partial is ALREADY a complete word ("can", count 785), the user
+  // has most likely finished it and wants to know what comes next. Words that
+  // merely share its letters ("can't", "cannot", "candy") are still worth one
+  // slot in case they were mid-typing, but they must not take the bar: a
+  // personal-dictionary word gets a 10x boost from mergeUserNgramsWithBoost, so
+  // a single previously-used "candy" can outrank every contextual continuation.
+  // That is what the 2026-08-15 screenshot showed — "can't / candy / a" where
+  // "go / see / do" belonged.
+  const MAX_BARE_PREFIX_WHEN_COMPLETE = 1;
   const taken: typeof filtered = [];
   if (partialWord) {
     const stemCounts = new Map<string, number>();
+    let barePrefixTaken = 0;
     for (const c of filtered) {
       if (taken.length >= config.maxResults) break;
+      if (
+        partialIsCompleteWord
+        && !c.hasContext
+        && c.word.toLowerCase().startsWith(partialWord)
+      ) {
+        if (barePrefixTaken >= MAX_BARE_PREFIX_WHEN_COMPLETE) continue;
+        barePrefixTaken++;
+      }
       const key = groupKey(c.word);
       if (key === null) { taken.push(c); continue; }
       const count = stemCounts.get(key) ?? 0;
@@ -460,14 +499,25 @@ export function getPredictions(
       taken.push(c);
     }
   }
-  // Backfill — second pass without diversity constraint when we couldn't
-  // reach maxResults using unique stems (or when stemLen is 0). Never
-  // under-fill the prediction bar.
+  // Backfill — second pass without the stem-diversity constraint when we
+  // couldn't reach maxResults using unique stems. Never under-fill the bar.
+  //
+  // The bare-prefix cap above is NOT relaxed here. Relaxing it would undo the
+  // cap entirely: the same look-alikes we just skipped are the highest-scoring
+  // remaining candidates, so they would all flow straight back in. Any slots
+  // still empty after this pass are filled from the language's curated AAC core
+  // words by the `fallback` loop below, which is the better thing to show.
   if (taken.length < config.maxResults) {
     const takenWords = new Set(taken.map(c => c.word));
     for (const c of filtered) {
       if (taken.length >= config.maxResults) break;
       if (takenWords.has(c.word)) continue;
+      if (
+        partialWord
+        && partialIsCompleteWord
+        && !c.hasContext
+        && c.word.toLowerCase().startsWith(partialWord)
+      ) continue;
       taken.push(c);
     }
   }

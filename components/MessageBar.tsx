@@ -13,7 +13,7 @@ import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
-import { translateWithAIRefine, looksLikeTargetLang, abortTranslation } from '@/services/translateService';
+import { translateWithAIRefine, looksLikeTargetLang, abortTranslation, isPhraseBoundary } from '@/services/translateService';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useAuthStore } from '@/store/authStore';
 import { triggerAISubmit } from '@/services/aiChatBridge';
@@ -206,6 +206,45 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
     }
     return () => { cancelled = true; abortTranslation(); };
   }, [text, language, outputLanguage]);
+
+  // Play / Speak is the "manual" half of the phrase-detected-or-manual rule.
+  // translateWithAIRefine only spends a cloud call at a phrase boundary, so an
+  // utterance with no closing punctuation ("I want water") would otherwise be
+  // spoken straight from the offline dictionary. Pressing Play is an explicit
+  // "I am done", so force the refine here and give it a bounded window before
+  // speaking. The budget is deliberately short: speaking the slightly-worse
+  // offline translation on time beats making an AAC user wait for the network.
+  const FORCE_TRANSLATE_BUDGET_MS = 1200;
+  const forceTranslateForSpeech = useCallback(async (): Promise<string | null> => {
+    const ss = useSettingsStore.getState();
+    if (ss.language === ss.outputLanguage) return null;
+    const phrase = useMessageStore.getState().text.trim();
+    if (!phrase) return null;
+    if (translatedRef.current && isPhraseBoundary(phrase)) {
+      // The boundary refine already ran for this exact phrase.
+      return translatedRef.current;
+    }
+    return new Promise<string | null>((resolve) => {
+      let settled = false;
+      const finish = (v: string | null) => { if (!settled) { settled = true; resolve(v); } };
+      const timer = setTimeout(() => finish(translatedRef.current), FORCE_TRANSLATE_BUDGET_MS);
+      const instant = translateWithAIRefine(
+        phrase,
+        ss.language as SupportedLanguage,
+        ss.outputLanguage as SupportedLanguage,
+        (refined) => {
+          setTranslated(refined);
+          clearTimeout(timer);
+          finish(refined);
+        },
+        { force: true },
+      );
+      if (looksLikeTargetLang(instant, ss.outputLanguage)
+        && instant.toLowerCase() !== phrase.toLowerCase()) {
+        setTranslated(instant);
+      }
+    });
+  }, []);
 
   // ── Phrase auto-speak after silence ───────────────────────────────────────
   // Auto-speak cannot depend on the AI autocorrect request succeeding. A
@@ -511,23 +550,40 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
     const toSpeakTokens = toSpeak.split(/\s+/);
     lastSilenceSpokenRef.current = toSpeakTokens[toSpeakTokens.length - 1] || '';
 
-    // interrupt=true: Speak button always overrides any currently-playing audio,
-    // regardless of PROTECT_PLAY_MS. This flag travels through aacSpeak→speak→speakAzure
-    // as a parameter (not a shared flag) so concurrent autoSpeak calls can't steal it.
-    if (translated) {
-      aacSpeak(translated, speechRate, speechVolume, activeTone, true, outputLanguage as SupportedLanguage);
-    } else {
-      aacSpeak(toSpeak, speechRate, speechVolume, activeTone, true);
-    }
-    // aacSpeak emits its highlight synchronously. In translation mode that
-    // event contains the translated text, but the composition timer is keyed
-    // to the source phrase. Restore the source marker after the call so even a
-    // prediction-seed promise that resolves later cannot replay/abort Play.
+    // Mark the source as directly spoken BEFORE any await, so a composition
+    // timer that matures while the forced translation is in flight cannot
+    // double-speak the phrase.
     lastAutoSpokenRef.current = {
       text: normalizeSpokenText(original),
       at: Date.now(),
     };
-  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, translated, learnUtterance, recordConfirmedPhrase, outputLanguage]);
+
+    // interrupt=true: Speak button always overrides any currently-playing audio,
+    // regardless of PROTECT_PLAY_MS. This flag travels through aacSpeak→speak→speakAzure
+    // as a parameter (not a shared flag) so concurrent autoSpeak calls can't steal it.
+    const translating = useSettingsStore.getState().language !== useSettingsStore.getState().outputLanguage;
+    if (!translating) {
+      aacSpeak(toSpeak, speechRate, speechVolume, activeTone, true);
+      return;
+    }
+    // Play is the "manual" half of the phrase-detected-or-manual translation
+    // rule, so force the cloud refine here and give it a bounded window before
+    // speaking. aacSpeak emits its highlight synchronously; the composition
+    // timer is keyed to the SOURCE phrase, which is why lastAutoSpokenRef was
+    // already marked above, before this await.
+    void forceTranslateForSpeech().then((best) => {
+      const spoken = best || translatedRef.current;
+      if (spoken) {
+        aacSpeak(spoken, speechRate, speechVolume, activeTone, true, outputLanguage as SupportedLanguage);
+      } else {
+        aacSpeak(toSpeak, speechRate, speechVolume, activeTone, true);
+      }
+      lastAutoSpokenRef.current = {
+        text: normalizeSpokenText(original),
+        at: Date.now(),
+      };
+    });
+  }, [text, soundEnabled, speechRate, speechVolume, activeTone, addToHistory, learnUtterance, recordConfirmedPhrase, outputLanguage, forceTranslateForSpeech]);
 
   const cancelDelete = useCallback(() => {
     if (deleteTimer.current) { clearTimeout(deleteTimer.current); deleteTimer.current = null; }
