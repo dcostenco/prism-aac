@@ -5,7 +5,8 @@ import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { aacSpeak } from '@/services/aacSpeak';
-import { getLatestTranslated } from '@/store/messageStore';
+import { getLatestTranslated, setLatestTranslated } from '@/store/messageStore';
+import { translateForSpeech } from '@/services/translateService';
 import { speakWord } from '@/services/speechService';
 import { warmupAzureAudio } from '@/services/azureTTS';
 import { triggerAISubmit } from '@/services/aiChatBridge';
@@ -424,12 +425,26 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     addToHistory(currentText);
     const { language, outputLanguage } = useSettingsStore.getState();
     if (language !== outputLanguage) {
-      const latestTranslated = getLatestTranslated();
-      if (latestTranslated) {
-        aacSpeak(latestTranslated, speechRate, speechVolume, activeTone, true, outputLanguage as SupportedLanguage);
-      } else {
-        aacSpeak(currentText, speechRate, speechVolume, activeTone, true);
-      }
+      // Force the cloud refine before speaking. Reading getLatestTranslated()
+      // alone stopped being enough once translation no longer fired on every
+      // keystroke: for a phrase with no closing punctuation nothing had
+      // requested a translation yet, so this key spoke the offline
+      // dictionary's word-by-word output. Pressing Speak IS the explicit
+      // "I am done" the phrase-boundary gate waits for — and this is the key
+      // users actually press; MessageBar's ▶ is the secondary control.
+      void translateForSpeech(
+        currentText,
+        language as SupportedLanguage,
+        outputLanguage as SupportedLanguage,
+        setLatestTranslated,
+      ).then((best) => {
+        const spoken = best || getLatestTranslated();
+        if (spoken) {
+          aacSpeak(spoken, speechRate, speechVolume, activeTone, true, outputLanguage as SupportedLanguage);
+        } else {
+          aacSpeak(currentText, speechRate, speechVolume, activeTone, true);
+        }
+      });
     } else {
       aacSpeak(currentText, speechRate, speechVolume, activeTone, true);
     }

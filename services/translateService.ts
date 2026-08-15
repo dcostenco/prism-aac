@@ -508,6 +508,61 @@ export function translateWithAIRefine(
   return instant;
 }
 
+/**
+ * Best translation available for an utterance the user has just committed to
+ * speaking, within a bounded wait.
+ *
+ * BOTH Speak controls must use this. They are separate components — the
+ * keyboard's green Speak key and MessageBar's ▶ — and they carry the SAME
+ * `aria-label="Speak"`, which is how a `.first()` selector in an e2e test hid
+ * the fact that only one of them translated. Measured on the keyboard key with
+ * "I want water" (no closing punctuation): zero cloud requests, and the voice
+ * got the offline dictionary's output instead of the model's. Pressing Speak is
+ * the explicit "I am done" that the phrase-boundary gate defers to, so it must
+ * force the refine.
+ *
+ * The budget is deliberately short: speaking a slightly worse translation on
+ * time beats making an AAC user wait on the network.
+ */
+export const SPEECH_TRANSLATE_BUDGET_MS = 1200;
+
+export function translateForSpeech(
+  text: string,
+  fromLang: SupportedLanguage,
+  toLang: SupportedLanguage,
+  onRefined?: (translated: string) => void,
+  budgetMs: number = SPEECH_TRANSLATE_BUDGET_MS,
+): Promise<string | null> {
+  const phrase = text.trim();
+  if (!phrase || fromLang === toLang) return Promise.resolve(null);
+
+  return new Promise<string | null>((resolve) => {
+    let settled = false;
+    let best: string | null = null;
+    const finish = (v: string | null) => { if (!settled) { settled = true; resolve(v); } };
+    const timer = setTimeout(() => finish(best), budgetMs);
+
+    const instant = translateWithAIRefine(
+      phrase,
+      fromLang,
+      toLang,
+      (refined) => {
+        best = refined;
+        onRefined?.(refined);
+        clearTimeout(timer);
+        finish(refined);
+      },
+      { force: true },
+    );
+
+    if (instant && looksLikeTargetLang(instant, toLang)
+      && instant.toLowerCase() !== phrase.toLowerCase()) {
+      best = instant;
+      onRefined?.(instant);
+    }
+  });
+}
+
 export function clearTranslationCache(): void {
   cache.clear();
   dictCache.clear();

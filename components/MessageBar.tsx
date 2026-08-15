@@ -13,7 +13,7 @@ import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
-import { translateWithAIRefine, looksLikeTargetLang, abortTranslation, isPhraseBoundary } from '@/services/translateService';
+import { translateWithAIRefine, looksLikeTargetLang, abortTranslation, isPhraseBoundary, translateForSpeech } from '@/services/translateService';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useAuthStore } from '@/store/authStore';
 import { triggerAISubmit } from '@/services/aiChatBridge';
@@ -214,7 +214,9 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
   // "I am done", so force the refine here and give it a bounded window before
   // speaking. The budget is deliberately short: speaking the slightly-worse
   // offline translation on time beats making an AAC user wait for the network.
-  const FORCE_TRANSLATE_BUDGET_MS = 1200;
+  // Play is the "manual" half of the phrase-detected-or-manual rule. Shared
+  // with the keyboard's Speak key via translateForSpeech — see that helper for
+  // why both controls must go through the same path.
   const forceTranslateForSpeech = useCallback(async (): Promise<string | null> => {
     const ss = useSettingsStore.getState();
     if (ss.language === ss.outputLanguage) return null;
@@ -224,26 +226,13 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
       // The boundary refine already ran for this exact phrase.
       return translatedRef.current;
     }
-    return new Promise<string | null>((resolve) => {
-      let settled = false;
-      const finish = (v: string | null) => { if (!settled) { settled = true; resolve(v); } };
-      const timer = setTimeout(() => finish(translatedRef.current), FORCE_TRANSLATE_BUDGET_MS);
-      const instant = translateWithAIRefine(
-        phrase,
-        ss.language as SupportedLanguage,
-        ss.outputLanguage as SupportedLanguage,
-        (refined) => {
-          setTranslated(refined);
-          clearTimeout(timer);
-          finish(refined);
-        },
-        { force: true },
-      );
-      if (looksLikeTargetLang(instant, ss.outputLanguage)
-        && instant.toLowerCase() !== phrase.toLowerCase()) {
-        setTranslated(instant);
-      }
-    });
+    const best = await translateForSpeech(
+      phrase,
+      ss.language as SupportedLanguage,
+      ss.outputLanguage as SupportedLanguage,
+      (t) => setTranslated(t),
+    );
+    return best ?? translatedRef.current;
   }, []);
 
   // ── Phrase auto-speak after silence ───────────────────────────────────────
