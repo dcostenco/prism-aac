@@ -333,7 +333,28 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       // is included in `text` rather than racing the closure.
       const text = useMessageStore.getState().text;
       const sentence = extractLastSentence(text);
-      if (sentence) aacSpeak(sentence, speechRate, speechVolume, activeTone);
+      if (sentence) {
+        const { language: inLang, outputLanguage: outLang } = useSettingsStore.getState();
+        if (inLang !== outLang) {
+          // A sentence terminator IS the phrase boundary the gate waits for, so
+          // a refine is running for the display. Join it instead of speaking
+          // aacSpeak's offline fallback: measured en->ro on "I want water.",
+          // the bar showed "eu vreau apă." while the voice said
+          // "Vreau water." — a mix looksLikeTargetLang cannot reject, because
+          // Romanian and English share the Latin script.
+          void translateForSpeech(
+            sentence,
+            inLang as SupportedLanguage,
+            outLang as SupportedLanguage,
+            setLatestTranslated,
+          ).then((best) => {
+            if (best) aacSpeak(best, speechRate, speechVolume, activeTone, true, outLang as SupportedLanguage);
+            else aacSpeak(sentence, speechRate, speechVolume, activeTone);
+          });
+        } else {
+          aacSpeak(sentence, speechRate, speechVolume, activeTone);
+        }
+      }
     }
   }, [appendChar, setText, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper, language, browserMode,
       speakOnSentenceEnd, autoSpeak, soundEnabled, speechRate, speechVolume, activeTone]);

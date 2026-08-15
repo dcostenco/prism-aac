@@ -355,15 +355,88 @@ export function translateTextSync(
   return result;
 }
 
-let aiTimer: ReturnType<typeof setTimeout> | null = null;
-let aiAbortController: AbortController | null = null;
-let lastAiText = '';
+/**
+ * The single in-flight refine. There is at most one, and it is owned by its
+ * PHRASE rather than by whichever call site asked most recently.
+ *
+ * Three call sites request refines of the same phrase — MessageBar's
+ * translation effect (display), MessageBar's composition timer, and the
+ * keyboard's Speak / sentence-end handlers (speech). The previous design kept
+ * a bare timer + controller and cancelled unconditionally on entry, so the
+ * second caller killed the first caller's request even when both wanted the
+ * identical phrase. Observed on "I want water." (en->ro): the keyboard
+ * scheduled a forced refine on the keypress, MessageBar's effect scheduled the
+ * same phrase a tick later and cancelled it, and the user saw "eu vreau apă."
+ * while hearing the offline dictionary's "Vreau water.".
+ *
+ * `lastAiText` could not prevent that: it was assigned inside the 200ms timer,
+ * long after both callers had passed the dedupe check. `pending.phrase` is
+ * assigned synchronously at schedule time, which is the whole point.
+ */
+interface PendingRefine {
+  phrase: string;
+  timer: ReturnType<typeof setTimeout>;
+  controller: AbortController;
+  /** Display-side callbacks; every joiner gets the result. */
+  subscribers: Array<(translated: string) => void>;
+  /** Speech-side waiters; resolved with the refinement or null on failure. */
+  waiters: Array<(v: string | null) => void>;
+}
+
+let pending: PendingRefine | null = null;
+
+/**
+ * Phrases whose refinement already landed, keyed `from:to:phrase`.
+ *
+ * `cache` alone cannot answer "is this the good translation or the offline
+ * one?" — translateTextSync writes offline results into the same map. Without
+ * this set, any caller arriving AFTER a refine completed found `pending` null
+ * and scheduled a fresh request for a phrase that was already translated.
+ * Measured on "I want water.": two identical cloud calls two seconds apart,
+ * the second from the composition timer at COMPOSITION_SILENCE_MS. Repeated
+ * Play presses on one phrase had the same effect.
+ */
+const refinedKeys = new Set<string>();
+
+/**
+ * Bounded like `cache`. A Set preserves insertion order, so evicting from the
+ * front drops the least-recently-added phrase. Left unbounded this grows for
+ * the life of the tab — an AAC device is left running all day, and the users
+ * who need it most are on the oldest hardware.
+ */
+function trimRefinedKeys(): void {
+  while (refinedKeys.size > MAX_CACHE) {
+    const oldest = refinedKeys.values().next().value;
+    if (oldest === undefined) break;
+    refinedKeys.delete(oldest);
+  }
+}
+
+function refinedKey(fromLang: string, toLang: string, phrase: string): string {
+  return `${fromLang}:${toLang}:${phrase.toLowerCase()}`;
+}
+
+function finishPending(value: string | null): void {
+  const p = pending;
+  if (!p) return;
+  pending = null;
+  clearTimeout(p.timer);
+  if (value) for (const fn of [...p.subscribers]) fn(value);
+  for (const fn of [...p.waiters]) fn(value);
+}
+
+function cancelPending(): void {
+  const p = pending;
+  if (!p) return;
+  pending = null;
+  clearTimeout(p.timer);
+  p.controller.abort();
+  for (const fn of [...p.waiters]) fn(null);
+}
 
 /** Cancel any in-flight AI translation (timer + fetch). Safe to call at any time. */
 export function abortTranslation(): void {
-  if (aiTimer) { clearTimeout(aiTimer); aiTimer = null; }
-  if (aiAbortController) { aiAbortController.abort(); aiAbortController = null; }
-  lastAiText = '';
+  cancelPending();
 }
 
 /**
@@ -454,22 +527,33 @@ export function translateWithAIRefine(
   options?: RefineOptions,
 ): string {
   const instant = translateTextSync(text, fromLang, toLang);
-
-  if (aiTimer) { clearTimeout(aiTimer); aiTimer = null; }
-  if (aiAbortController) { aiAbortController.abort(); aiAbortController = null; }
   const trimmed = text.trim();
-  if (trimmed === lastAiText || trimmed.split(/\s+/).length < 2) return instant;
+  if (trimmed.split(/\s+/).length < 2) return instant;
+
+  // Already refined once: `instant` is that refinement, read back out of the
+  // cache by translateTextSync. Nothing to request.
+  if (refinedKeys.has(refinedKey(fromLang, toLang, trimmed))) return instant;
+
+  // Already refining THIS phrase: join it. Do not cancel and do not re-request
+  // — that is what made the display's refine kill the speaker's.
+  if (pending && pending.phrase === trimmed) {
+    pending.subscribers.push(onRefined);
+    return instant;
+  }
+
   // Cloud refine only at a phrase boundary or on an explicit user action. The
   // offline dictionary still renders `instant` on every keystroke, so the user
   // keeps live feedback — it just stops being a per-character cloud request.
   if (!options?.force && !isPhraseBoundary(trimmed)) return instant;
 
-  aiAbortController = new AbortController();
-  const currentSignal = aiAbortController.signal;
-  aiTimer = setTimeout(async () => {
-    lastAiText = trimmed;
+  // A genuinely different phrase supersedes the old one.
+  cancelPending();
+
+  const controller = new AbortController();
+  const currentSignal = controller.signal;
+  const timer = setTimeout(async () => {
     try {
-      if (currentSignal.aborted) return;
+      if (currentSignal.aborted) { finishPending(null); return; }
       const { translateAI } = await import('./aiService');
       const resultRace = await Promise.race([
         requestPreservedTranslation(translateAI, trimmed, fromLang, toLang, currentSignal),
@@ -478,7 +562,7 @@ export function translateWithAIRefine(
           currentSignal.addEventListener('abort', () => { clearTimeout(t); reject(new Error('aborted')); }, { once: true });
         }),
       ]);
-      if (currentSignal.aborted) return;
+      if (currentSignal.aborted) { finishPending(null); return; }
       const refined = resultRace;
       if (
         refined &&
@@ -487,7 +571,9 @@ export function translateWithAIRefine(
       ) {
         cache.set(`${fromLang}:${toLang}:${trimmed.toLowerCase()}`, refined);
         trimCache();
-        onRefined(refined);
+        refinedKeys.add(refinedKey(fromLang, toLang, trimmed));
+        trimRefinedKeys();
+        finishPending(refined);
       } else if (refined && !looksLikeTargetLang(refined, toLang)) {
         // The model returned text in the wrong script (e.g. AAC chat
         // assistant reply in source language). Stay on the offline
@@ -496,21 +582,37 @@ export function translateWithAIRefine(
           `[translate] AI returned ${toLang} translation in wrong script; rejecting:`,
           refined.slice(0, 60),
         );
+        finishPending(null);
+      } else {
+        finishPending(null);
       }
     } catch (e) {
       // Was silently swallowing — leaving users stuck on the partial offline
       // translate result (e.g. "Привет, How are you?" instead of "Hi, how
       // are you?"). Log so failures are visible in DevTools.
       console.warn('[translate] AI refine failed; staying on offline result:', e instanceof Error ? e.message : e);
+      finishPending(null);
     }
-  }, 200);
+    // The 200ms debounce exists to coalesce keystrokes. An explicit action —
+    // Play, the Speak key, a typed sentence terminator — is not a keystroke to
+    // coalesce, and every millisecond here is silence an AAC user waits
+    // through before their sentence is voiced. Start those immediately.
+  }, options?.force ? 0 : 200);
 
+  pending = { phrase: trimmed, timer, controller, subscribers: [onRefined], waiters: [] };
   return instant;
 }
 
 /**
  * Best translation available for an utterance the user has just committed to
  * speaking, within a bounded wait.
+ *
+ * The budget covers the model round-trip, measured at 640-1080ms against
+ * production. 1200ms was tried first and was too tight: it expired before the
+ * refine landed and the sentence-end path voiced the offline dictionary's
+ * "Vreau water." while the bar showed "Eu vreau apă.". Forced refines now skip
+ * the 200ms debounce, so this ceiling is only reached on a slow network — and
+ * once a phrase has been refined it is memoised, so a repeat Play is instant.
  *
  * BOTH Speak controls must use this. They are separate components — the
  * keyboard's green Speak key and MessageBar's ▶ — and they carry the SAME
@@ -524,7 +626,7 @@ export function translateWithAIRefine(
  * The budget is deliberately short: speaking a slightly worse translation on
  * time beats making an AAC user wait on the network.
  */
-export const SPEECH_TRANSLATE_BUDGET_MS = 1200;
+export const SPEECH_TRANSLATE_BUDGET_MS = 2500;
 
 export function translateForSpeech(
   text: string,
@@ -536,35 +638,38 @@ export function translateForSpeech(
   const phrase = text.trim();
   if (!phrase || fromLang === toLang) return Promise.resolve(null);
 
+  // Schedule a refine if nothing is refining this phrase yet; join it if
+  // something already is. Either way `pending` ends up owning this phrase.
+  const instant = translateWithAIRefine(phrase, fromLang, toLang, (refined) => {
+    onRefined?.(refined);
+  }, { force: true });
+
+  const offline = instant && looksLikeTargetLang(instant, toLang)
+    && instant.toLowerCase() !== phrase.toLowerCase()
+    ? instant
+    : null;
+
+  const owned = pending;
+  if (!owned || owned.phrase !== phrase) return Promise.resolve(offline);
+
   return new Promise<string | null>((resolve) => {
     let settled = false;
-    let best: string | null = null;
-    const finish = (v: string | null) => { if (!settled) { settled = true; resolve(v); } };
-    const timer = setTimeout(() => finish(best), budgetMs);
-
-    const instant = translateWithAIRefine(
-      phrase,
-      fromLang,
-      toLang,
-      (refined) => {
-        best = refined;
-        onRefined?.(refined);
-        clearTimeout(timer);
-        finish(refined);
-      },
-      { force: true },
-    );
-
-    if (instant && looksLikeTargetLang(instant, toLang)
-      && instant.toLowerCase() !== phrase.toLowerCase()) {
-      best = instant;
-      onRefined?.(instant);
-    }
+    const finish = (v: string | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(v ?? offline);
+    };
+    // Speaking a slightly worse translation on time beats making an AAC user
+    // wait on the network, so the join is bounded.
+    const timer = setTimeout(() => finish(null), budgetMs);
+    owned.waiters.push(finish);
   });
 }
 
 export function clearTranslationCache(): void {
   cache.clear();
+  refinedKeys.clear();
   dictCache.clear();
 }
 

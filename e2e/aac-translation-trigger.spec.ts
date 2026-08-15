@@ -141,25 +141,18 @@ test.describe('what is SPOKEN matches what is SHOWN', () => {
   // "Vreau water." — the offline dictionary's half-translated mix, which
   // looksLikeTargetLang cannot reject because Romanian and English share the
   // Latin script. For an AAC user the spoken string IS the product.
-  // KNOWN DEFECT, not yet fixed — kept as an executable reproduction.
+  // Regression guard for the seen-vs-heard split.
   //
-  // At a sentence end the DISPLAY gets the refined translation but the VOICE
-  // does not. Measured en->ro on "I want water.": the bar showed
+  // Measured en->ro on "I want water." before the fix: the bar showed
   // "eu vreau apă." while the TTS payload was "Vreau water." — the offline
   // dictionary's half-translated mix, which looksLikeTargetLang cannot reject
   // because Romanian and English share the Latin script.
   //
-  // Root cause traced but NOT resolved: the keyboard's sentence-end handler
-  // runs synchronously on the keypress and schedules a forced refine, then
-  // MessageBar's translation effect schedules its own and clearTimeout()s the
-  // first, so the speaker's refine never runs; a second refine then completed
-  // and settled null. Two speakers (keyboard sentence-end and MessageBar's
-  // composition timer) both race the same refine. Fixing it needs the refine
-  // to be owned in one place rather than scheduled from three, which is a
-  // larger change than this PR should carry into life-critical speech code.
-  //
-  // For an AAC user the spoken string IS the product, so this is worth fixing.
-  test.fixme('sentence-end auto-speak sends the translated phrase to TTS, not a partial mix', async ({ page }) => {
+  // Cause: three call sites could schedule a refine of the same phrase, and
+  // translateWithAIRefine cancelled unconditionally on entry, so the display's
+  // refine killed the speaker's. The refine is now owned by its phrase — see
+  // tests/translate-refine-ownership.test.ts for the unit-level invariants.
+  test('sentence-end auto-speak sends the translated phrase to TTS, not a partial mix', async ({ page }) => {
     const ttsTexts: string[] = [];
     page.on('request', (req) => {
       if (!req.url().includes('/tts')) return;
