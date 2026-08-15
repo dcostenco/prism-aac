@@ -107,13 +107,20 @@ export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExt
   // every page returns unreadable, retry the entire document with
   // disableWorker: true so pdfjs runs on the main thread and is
   // independent of the cross-origin worker fetch entirely.
+  // pdfjs-dist v6 moved destroy() off PDFDocumentProxy and onto the loading
+  // task, so hold the task rather than discarding it. Releasing it still
+  // matters: it tears down the worker, and the PDF reader has to survive
+  // low-memory iOS WKWebView.
   let doc: import('pdfjs-dist').PDFDocumentProxy;
+  let task: import('pdfjs-dist').PDFDocumentLoadingTask;
   try {
-    doc = await pdfjs.getDocument({ data }).promise;
+    task = pdfjs.getDocument({ data });
+    doc = await task.promise;
   } catch (e) {
     // getDocument itself failed — likely worker-load failure. Retry
     // with disableWorker.
-    doc = await pdfjs.getDocument({ data, disableWorker: true } as Parameters<typeof pdfjs.getDocument>[0]).promise;
+    task = pdfjs.getDocument({ data, disableWorker: true } as Parameters<typeof pdfjs.getDocument>[0]);
+    doc = await task.promise;
   }
 
   let title = '';
@@ -148,12 +155,13 @@ export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExt
   // independent of the cross-origin worker entirely.
   const allUnreadable = pages.length > 0 && pages.every(isUnreadable);
   if (allUnreadable && doc.numPages > 0) {
-    doc.destroy();
+    void task.destroy?.();
     try {
-      const docMain = await pdfjs.getDocument({
+      const mainTask = pdfjs.getDocument({
         data,
         disableWorker: true,
-      } as Parameters<typeof pdfjs.getDocument>[0]).promise;
+      } as Parameters<typeof pdfjs.getDocument>[0]);
+      const docMain = await mainTask.promise;
       const retryPages: PdfPage[] = [];
       let retryChars = 0;
       for (let i = 1; i <= docMain.numPages; i++) {
@@ -161,7 +169,7 @@ export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExt
         retryPages.push(r);
         retryChars += r.text.length;
       }
-      docMain.destroy();
+      void mainTask.destroy?.();
       // Only commit the retry if it actually moved the needle —
       // i.e. at least one page came back not-unreadable.
       const retryHelped = retryPages.some((p) => !isUnreadable(p));
@@ -175,7 +183,7 @@ export async function extractPdfText(source: File | ArrayBuffer): Promise<PdfExt
       // only" tiles rather than a hard error.
     }
   } else {
-    doc.destroy();
+    void task.destroy?.();
   }
   return { pages, title, totalChars };
 }

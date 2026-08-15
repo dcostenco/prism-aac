@@ -34,7 +34,7 @@ vi.mock('pdfjs-dist', () => {
     destroy: vi.fn(),
   };
   return {
-    getDocument: vi.fn(() => ({ promise: Promise.resolve(fakeDoc) })),
+    getDocument: vi.fn(() => ({ promise: Promise.resolve(fakeDoc), destroy: vi.fn() })),
     GlobalWorkerOptions: { workerSrc: '' },
     version: '3.0.0-mock',
   };
