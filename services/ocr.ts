@@ -138,7 +138,13 @@ export async function runOcrOnPdf(
       import.meta.url,
     ).toString();
     const buf = await file.arrayBuffer();
-    const doc = await pdfjs.getDocument({ data: buf }).promise;
+    // pdfjs-dist v6 moved destroy() onto the loading task; hold it so the
+
+    // worker is still released after OCR.
+
+    const task = pdfjs.getDocument({ data: buf });
+
+    const doc = await task.promise;
     const lines: string[] = [];
     let totalConf = 0;
     let confSamples = 0;
@@ -171,7 +177,7 @@ export async function runOcrOnPdf(
         if (process.env.NODE_ENV !== 'production') console.log(`[ocr-pdf] page ${i} OCR failed: ${out.error}`);
       }
     }
-    doc.destroy();
+    void task.destroy?.();
     const text = lines.join('\n\n').trim();
     if (!text) return { ok: false, error: 'No readable text found across all pages — try a higher-resolution scan.' };
     return {
