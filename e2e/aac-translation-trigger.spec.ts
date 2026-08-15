@@ -95,19 +95,31 @@ test.describe('translation fires at a phrase boundary or on Play — not per key
     expect(sent[0]).toBe(await composedText(page));
   });
 
-  test('Play translates an unpunctuated phrase on demand', async ({ page }) => {
-    const sent = trackTranslateRequests(page);
-    await openBoard(page);
+  // BOTH Speak controls, separately. They carry the SAME aria-label="Speak" —
+  // MessageBar's ▶ and the keyboard's green key — so a `.first()` selector
+  // silently tested only the former. That hid a real regression: the keyboard
+  // key, which is the one users actually press, requested no translation at
+  // all and spoke the offline dictionary's output.
+  const SPEAK_CONTROLS = [
+    { name: 'MessageBar Play', selector: 'button.aac-speak' },
+    { name: 'keyboard Speak key', selector: '[data-testid="keyboard-shell"] button:has-text("Speak")' },
+  ];
 
-    await typeSlowly(page, 'I want water');
-    expect(sent).toEqual([]);
+  for (const control of SPEAK_CONTROLS) {
+    test(`${control.name} translates an unpunctuated phrase on demand`, async ({ page }) => {
+      const sent = trackTranslateRequests(page);
+      await openBoard(page);
 
-    await page.getByRole('button', { name: /^speak$/i }).first().click();
-    await page.waitForTimeout(4000);
+      await typeSlowly(page, 'I want water');
+      expect(sent, 'no translation should fire while composing').toEqual([]);
 
-    expect(sent.length).toBeGreaterThanOrEqual(1);
-    expect(sent[0]).toBe(await composedText(page));
-  });
+      await page.locator(control.selector).first().click();
+      await page.waitForTimeout(4000);
+
+      expect(sent.length, `${control.name} did not request a translation`).toBeGreaterThanOrEqual(1);
+      expect(sent[0]).toBe(await composedText(page));
+    });
+  }
 
   test('the translation line never shows a forced Romanian pronoun for a typed "I"', async ({ page }) => {
     await openBoard(page);
@@ -119,6 +131,64 @@ test.describe('translation fires at a phrase boundary or on Play — not per key
     // "Acum eu pot" was the shipped output; "Acum pot" is what both the model
     // and the offline dictionary actually produce.
     expect(bar).not.toMatch(/\beu pot\b/);
+  });
+});
+
+test.describe('what is SPOKEN matches what is SHOWN', () => {
+  // The displayed translation and the spoken one come from different code
+  // paths, and only the displayed one was ever asserted. Measured en->ro on
+  // "I want water.": the bar showed "eu vreau apă." while the TTS payload was
+  // "Vreau water." — the offline dictionary's half-translated mix, which
+  // looksLikeTargetLang cannot reject because Romanian and English share the
+  // Latin script. For an AAC user the spoken string IS the product.
+  // KNOWN DEFECT, not yet fixed — kept as an executable reproduction.
+  //
+  // At a sentence end the DISPLAY gets the refined translation but the VOICE
+  // does not. Measured en->ro on "I want water.": the bar showed
+  // "eu vreau apă." while the TTS payload was "Vreau water." — the offline
+  // dictionary's half-translated mix, which looksLikeTargetLang cannot reject
+  // because Romanian and English share the Latin script.
+  //
+  // Root cause traced but NOT resolved: the keyboard's sentence-end handler
+  // runs synchronously on the keypress and schedules a forced refine, then
+  // MessageBar's translation effect schedules its own and clearTimeout()s the
+  // first, so the speaker's refine never runs; a second refine then completed
+  // and settled null. Two speakers (keyboard sentence-end and MessageBar's
+  // composition timer) both race the same refine. Fixing it needs the refine
+  // to be owned in one place rather than scheduled from three, which is a
+  // larger change than this PR should carry into life-critical speech code.
+  //
+  // For an AAC user the spoken string IS the product, so this is worth fixing.
+  test.fixme('sentence-end auto-speak sends the translated phrase to TTS, not a partial mix', async ({ page }) => {
+    const ttsTexts: string[] = [];
+    page.on('request', (req) => {
+      if (!req.url().includes('/tts')) return;
+      try {
+        const b = JSON.parse(req.postData() || '{}');
+        const t = b?.text ?? b?.ssml ?? b?.input;
+        if (t) ttsTexts.push(String(t));
+      } catch { /* non-JSON */ }
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem('prism-aac-settings', JSON.stringify({
+        state: { language: 'en', outputLanguage: 'ro', speechVolume: 1, speechRate: 1 },
+        version: 0,
+      }));
+    });
+    await page.goto('', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-testid="keyboard-shell"]', { timeout: 30_000 });
+
+    await typeSlowly(page, 'I want water');
+    ttsTexts.length = 0;                       // ignore composition feedback
+    await page.getByRole('button', { name: /^\.$/ }).first().click();
+    await page.waitForTimeout(6000);
+
+    const spoken = ttsTexts.join(' | ');
+    expect(spoken, 'nothing was sent to TTS').not.toBe('');
+    // The English source word must not survive into Romanian speech.
+    expect(spoken.toLowerCase(), `spoken payload was: ${spoken}`).not.toMatch(/\bwater\b/);
+    expect(spoken.toLowerCase(), `spoken payload was: ${spoken}`).toMatch(/ap[ăa]/);
   });
 });
 
