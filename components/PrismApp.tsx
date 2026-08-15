@@ -554,7 +554,7 @@ export default function PrismApp() {
           {sidePanel !== 'ai-chat' && (!PANELS_WITHOUT_QWERTY.has(sidePanel) || isCategoryMode || homeWithBoard) && <PredictionBar />}
           <MathPanel />
           <CaregiverPanel />
-          <AIChatPanel />
+          <AIChatPanel compact={compactMode} />
           <AACChatPanel />
           <SchedulePanel />
           <GamesPanel />
@@ -566,10 +566,24 @@ export default function PrismApp() {
           <MusicComposerPanel />
           {/* Category mode: full-screen cards (Image #32 pattern).
               Keyboard is a pull-up drawer toggled from inside CategoryPanel.
-              All other modes: CategoryPanel stacks above keyboard as before. */}
-          {sidePanel !== 'math' && sidePanel !== 'comfort-player' && sidePanel !== 'schedule' && (
+              All other modes: CategoryPanel stacks above keyboard as before.
+
+              Render the wrapper ONLY when CategoryPanel itself will render.
+              Its open condition is exactly `none | categories | category-detail
+              | ordering` — i.e. `homeWithBoard || isCategoryMode` — so the old
+              `flex-[3]` branch always wrapped a null child. An empty flex item
+              still claims its share of the column, so it was silently eating
+              3/4 of the free height in EVERY panel mode (ai-chat, aac-chat,
+              caregiver, games, marketplace, pdf-reader, ocr-capture, …) and
+              squeezing the panel that was supposed to own the screen.
+
+              Measured before this change, AI Chat: 343px of dead space at
+              1326x760 (panel got 116px), 385px at 390x844, and 204px of 390px
+              in phone landscape — where it also pushed the keyboard's bottom
+              row, including Speak, off-screen. */}
+          {(homeWithBoard || isCategoryMode) && (
             <div
-              className={`min-h-0 flex flex-col ${isCategoryMode || homeWithBoard ? 'flex-1' : 'flex-[3]'}`}
+              className="min-h-0 flex flex-col flex-1"
               data-testid="aac-content-region"
               data-typing-only={categoryTypingOnly || undefined}
             >
@@ -581,7 +595,16 @@ export default function PrismApp() {
               className={`aac-typing-keyboard-shell ${
                 keyboardMaximized
                   ? "flex-1 min-h-0 flex flex-row"
-                  : `shrink-0 flex flex-row ${compactMode ? 'h-[clamp(80px,30svh,140px)]' : 'h-[clamp(170px,25svh,260px)]'}`
+                  // `mt-auto` keeps the keyboard on the bottom edge in modes
+                  // where no sibling grows. AACChatPanel's empty state is
+                  // deliberately `shrink-0` (growing it used to compress the
+                  // keyboard below its usable floor), so once the always-null
+                  // CategoryPanel wrapper stopped soaking up the slack, that
+                  // slack fell BELOW the keyboard and left it floating
+                  // mid-screen. This is a no-op wherever a panel already grows
+                  // (board, ai-chat), and on a touch device the keyboard
+                  // belongs against the bottom edge regardless.
+                  : `shrink-0 mt-auto flex flex-row ${compactMode ? 'h-[clamp(80px,30svh,140px)]' : 'h-[clamp(170px,25svh,260px)]'}`
               }`}
               data-testid="keyboard-shell"
               data-maximized={keyboardMaximized || undefined}

@@ -147,6 +147,21 @@ function restoreMarkedFirstPerson(candidate: string, targetConcept: string): str
  * A translation model may naturalize pro-drop languages by erasing an explicit
  * first-person pronoun. Keep the canonical concept from phrase data in every
  * target language and normalize its spelling/case before display or TTS.
+ *
+ * The rule only applies when the source pronoun actually CARRIES that intent.
+ * We can only observe the composed text, not which tiles produced it, so the
+ * one honest signal is position: a telegraphic AAC utterance leads with the
+ * selected concept ("I looking", "I want more"). A pronoun sitting mid-sentence
+ * inside ordinary prose ("How are you? Now I can") is obligatory grammar in a
+ * non-pro-drop source language like English — the user could not have left it
+ * out, so its presence says nothing about emphasis, and forcing it into the
+ * target overrides the translator with a worse sentence.
+ *
+ * Measured 2026-08-15 against gemini-3.6-flash, en->ro, "How are you? Now I can":
+ *   model output                    "Ce mai faci? Acum pot"      (idiomatic)
+ *   after forcing the pronoun       "Ce mai faci? Acum eu pot"   (shipped, marked/wrong)
+ * The offline dictionary independently produces "Ce mai faci? Acum pot" too, so
+ * the forcing step was making a correct translation worse.
  */
 function preserveExplicitFirstPerson(
   source: string,
@@ -156,14 +171,12 @@ function preserveExplicitFirstPerson(
 ): string | null {
   const context = explicitFirstPersonContext(source, fromLang, toLang);
   if (!context) return candidate;
+  // Mid-sentence pronoun — grammar, not selection. Trust the translator.
+  if (!context.sourceIsLeading) return candidate;
   if (containsConcept(candidate, context.targetConcept)) {
     return canonicalizeConcept(candidate, context.targetConcept);
   }
-  if (
-    candidate.trim()
-    && context.sourceIsLeading
-    && !context.targetUsesAttachedGrammar
-  ) {
+  if (candidate.trim() && !context.targetUsesAttachedGrammar) {
     return `${context.targetConcept} ${lowercaseSentenceInitial(candidate, toLang)}`.trim();
   }
   return null;
@@ -205,6 +218,16 @@ async function requestPreservedTranslation(
   );
   const restored = restoreMarkedFirstPerson(markedResult, context.targetConcept);
   if (restored === null) {
+    // Reject rather than serve a translation that dropped an explicitly
+    // SELECTED first-person concept. Reaching here now means the user led the
+    // utterance with the "I" tile and the target attaches grammar to the
+    // pronoun (ja 私は, ko 나는), so we cannot repair it by prefixing. Falling
+    // back to the offline dictionary is the lesser harm; showing a sentence
+    // that silently deletes the speaker from their own statement is not.
+    //
+    // This path is deliberately narrow. Before 2026-08-15 it also caught every
+    // ordinary mid-sentence "I", which is where it did damage — see
+    // preserveExplicitFirstPerson above.
     console.warn(
       '[translate] AI omitted an immutable AAC first-person marker; rejecting:',
       markedResult.slice(0, 60),
@@ -396,11 +419,39 @@ export function looksLikeTargetLang(response: string, targetLang: string): boole
   return matching / letters.length >= 0.6;
 }
 
+/** Sentence-final punctuation across the scripts we support. */
+const PHRASE_END = /[.!?…。！？؟։۔]["'”’»）)\]]*$/u;
+
+/**
+ * Is this text a finished thought worth spending a cloud translation on?
+ *
+ * The 200 ms debounce alone does not bound anything for our users: switch
+ * scanning, head tracking and eye gaze all place selections FURTHER apart than
+ * 200 ms, so the timer matures between every keystroke and each one ships a
+ * half-written phrase to the model. Measured on "How are you? Now I can walk."
+ * at 450 ms/keystroke: 11 of the requests ended mid-word ("How a", "How ar",
+ * "How are y", ...). Those translations are wrong by construction — the model
+ * has not been shown the end of the sentence — and they are what the user sees
+ * flickering in the blue line while composing.
+ *
+ * A phrase boundary is sentence-final punctuation. Everything else waits for
+ * the user to say they are done (Speak / Play → `force`).
+ */
+export function isPhraseBoundary(text: string): boolean {
+  return PHRASE_END.test(text.trim());
+}
+
+export interface RefineOptions {
+  /** Explicit user action (Speak / Play). Bypasses the phrase-boundary gate. */
+  force?: boolean;
+}
+
 export function translateWithAIRefine(
   text: string,
   fromLang: SupportedLanguage,
   toLang: SupportedLanguage,
   onRefined: (translated: string) => void,
+  options?: RefineOptions,
 ): string {
   const instant = translateTextSync(text, fromLang, toLang);
 
@@ -408,6 +459,10 @@ export function translateWithAIRefine(
   if (aiAbortController) { aiAbortController.abort(); aiAbortController = null; }
   const trimmed = text.trim();
   if (trimmed === lastAiText || trimmed.split(/\s+/).length < 2) return instant;
+  // Cloud refine only at a phrase boundary or on an explicit user action. The
+  // offline dictionary still renders `instant` on every keystroke, so the user
+  // keeps live feedback — it just stops being a per-character cloud request.
+  if (!options?.force && !isPhraseBoundary(trimmed)) return instant;
 
   aiAbortController = new AbortController();
   const currentSignal = aiAbortController.signal;
