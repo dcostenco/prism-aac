@@ -572,7 +572,11 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
         <span className="text-[clamp(1rem,1.8vw,1.375rem)]">
           {speechMode === 'word' ? '🔊' : speechMode === 'sentence' ? '💬' : '🔈'}
         </span>
-        <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5">
+        {/* Truncated, not free-flowing: "Sentence" is "Предложение" in Russian
+            and "Pangungusap" in Tagalog, which render wider than the button and
+            bleed over the controls either side of it. The icon carries the
+            state, and the full wording stays in aria-label for screen readers. */}
+        <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5 w-full min-w-0 px-0.5 text-center truncate leading-tight">
           {speechMode === 'word' ? t('speech_mode_word')
             : speechMode === 'sentence' ? t('speech_mode_sentence')
               : t('echo')}
