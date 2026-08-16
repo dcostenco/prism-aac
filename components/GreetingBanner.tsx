@@ -28,9 +28,17 @@ export default function GreetingBanner() {
     try { dismissed = !!sessionStorage.getItem('prism-greeting-dismissed'); } catch { /* private context */ }
     if (!dismissed) {
       setVisible(true);
+      // AAC: this is device-initiated speech the user never asked for, so it follows the
+      // same consent flag as the other auditory-feedback paths and is silent by default.
+      // Only the speech is gated — the banner still renders and still greets visually.
       const { soundEnabled } = useMessageStore.getState();
-      const { speechRate, speechVolume } = useSettingsStore.getState();
-      if (soundEnabled) {
+      const { speechRate, speechVolume, speakSelectionFeedback } = useSettingsStore.getState();
+      let alreadySpoke = false;
+      try { alreadySpoke = !!sessionStorage.getItem('prism-greeting-spoken'); } catch { /* private context */ }
+      if (soundEnabled && speakSelectionFeedback && !alreadySpoke) {
+        // Speak at most once per session: this banner remounts every time a side panel
+        // closes or the board toggles, and the dismissed flag is written only by ✕.
+        try { sessionStorage.setItem('prism-greeting-spoken', '1'); } catch { /* private context */ }
         const { greeting: g } = getTimeGreeting(t);
         aacSpeak(g, speechRate, speechVolume);
       }
