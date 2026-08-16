@@ -33,6 +33,9 @@ export default function GreetingBanner() {
       // Only the speech is gated — the banner still renders and still greets visually.
       const { soundEnabled } = useMessageStore.getState();
       const { speechRate, speechVolume, speakSelectionFeedback } = useSettingsStore.getState();
+      // Where sessionStorage throws (private context) this degrades to speaking on each
+      // remount — today's behaviour, not a new regression, and the same context already
+      // breaks the dismissed flag above.
       let alreadySpoke = false;
       try { alreadySpoke = !!sessionStorage.getItem('prism-greeting-spoken'); } catch { /* private context */ }
       if (soundEnabled && speakSelectionFeedback && !alreadySpoke) {
