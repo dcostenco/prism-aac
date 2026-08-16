@@ -420,5 +420,7 @@
   "you": "You",
   "your_name": "Your name",
   "show_unreviewed_words": "Show unreviewed words",
-  "show_unreviewed_words_desc": "No native speaker has checked this language's translations. Core and safety words were audited and always appear; the rest are hidden. Turn this on to show every word."
+  "show_unreviewed_words_desc": "No native speaker has checked this language's translations. Core and safety words were audited and always appear; the rest are hidden. Turn this on to show every word.",
+  "speak_selection_feedback": "Speak each selection",
+  "speak_selection_feedback_desc": "Says the word you just picked, to confirm it. Your message is only spoken when you press Speak."
 }

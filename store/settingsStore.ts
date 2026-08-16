@@ -169,6 +169,19 @@ interface SettingsState {
   // 2026). Default ON because the existing autoSpeak is already ON and
   // these users are the dominant AAC text-input persona.
   speakOnSentenceEnd: boolean;
+  /**
+   * Auditory feedback: speak the ITEM just selected, never the accumulated
+   * message. Off by default.
+   *
+   * AAC separates two channels that this app had merged. Message speech is the
+   * public utterance to a communication partner and belongs to the user — it
+   * happens when they press Speak. Auditory feedback is private confirmation
+   * to the USER that a selection landed, and it is what scanning and
+   * low-literacy users rely on. Speaking the growing MESSAGE on every
+   * selection is neither: it broadcasts drafts the user never chose to say,
+   * and a partial message can invert the meaning of a finished one.
+   */
+  speakSelectionFeedback: boolean;
   // Audible chime on each new incoming message batch from connected
   // providers (Telegram / WhatsApp / Mail / etc.). Default true so a
   // newly-onboarded caregiver hears the alarm without diving into
@@ -208,7 +221,7 @@ interface SettingsState {
    *  Default OFF — caregiver must explicitly opt in. Uses ~5 MB extra RAM. */
   visionContextEnabled: boolean;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'showUnreviewedVocabulary' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'cloudPredictionEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd' | 'caregiverPinHash' | 'announceSenderName' | 'visionContextEnabled'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'showUnreviewedVocabulary' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'cloudPredictionEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd' | 'speakSelectionFeedback' | 'caregiverPinHash' | 'announceSenderName' | 'visionContextEnabled'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -264,7 +277,8 @@ export const useSettingsStore = create<SettingsState>()(
       gestureConfig: { ...DEFAULT_GESTURE_CONFIG },
       aiAutocorrectEnabled: true,
       cloudPredictionEnabled: false,
-      speakOnSentenceEnd: true,
+      speakOnSentenceEnd: false,
+      speakSelectionFeedback: false,
       notificationsEnabled: true,
       mathHoldTimeMs: 0,
       mathTwoHitMagnify: false,
@@ -493,7 +507,7 @@ export const useSettingsStore = create<SettingsState>()(
           'highContrast', 'headTrackingEnabled', 'headTrackingDriftAutoDisable',
           'showHandCalibration', 'cameraInputEnabled', 'aiAutocorrectEnabled',
           'cloudPredictionEnabled',
-          'speakOnSentenceEnd', 'notificationsEnabled', 'mathTwoHitMagnify',
+          'speakOnSentenceEnd', 'speakSelectionFeedback', 'notificationsEnabled', 'mathTwoHitMagnify',
           'showUnreviewedVocabulary',
           'headTrackingEyeGaze',
         ] as const;

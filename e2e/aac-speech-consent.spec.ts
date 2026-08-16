@@ -68,3 +68,40 @@ test.describe('a muted device stays silent', () => {
     expect(tts, `muted device spoke: ${JSON.stringify(tts)}`).toEqual([]);
   });
 });
+
+test.describe('the message is spoken only when the user presses Speak', () => {
+  // Measured on merged main before this change, fresh install, English only:
+  // composing "I do help." produced FOUR full-volume utterances of the
+  // accumulated message before Speak was ever pressed — one per tile tap, one
+  // on space, one on the sentence terminator. That is message speech, the
+  // public utterance to a communication partner, produced without the user
+  // choosing to produce it.
+  test('composing an entire sentence voices nothing until Speak', async ({ page }) => {
+    const tts = ttsSpy(page);
+
+    // Fresh install: no settings written, so every default applies.
+    await page.goto('', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-testid="prediction-bar"]', { timeout: 30_000 });
+    await page.waitForTimeout(1200);
+
+    await page.locator('[data-testid="prediction-bar"] button').first().click();
+    await page.waitForTimeout(1200);
+    await page.locator('[data-testid="prediction-bar"] button').nth(1).click();
+    await page.waitForTimeout(1200);
+    for (const ch of 'help') {
+      await page.getByRole('button', { name: new RegExp(`^${ch}$`, 'i') }).first().click();
+      await page.waitForTimeout(250);
+    }
+    await page.getByRole('button', { name: /^space$/i }).click();
+    await page.waitForTimeout(1500);
+    await page.getByRole('button', { name: /^\.$/ }).first().click();
+    await page.waitForTimeout(3000);
+
+    expect(tts, `spoke before Speak was pressed: ${JSON.stringify(tts)}`).toEqual([]);
+
+    // ...and pressing Speak does speak it.
+    await page.locator('button.aac-speak').first().click();
+    await page.waitForTimeout(4000);
+    expect(tts.length, 'Speak produced no audio').toBeGreaterThan(0);
+  });
+});

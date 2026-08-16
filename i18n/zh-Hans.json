@@ -420,5 +420,7 @@
   "you": "你",
   "your_name": "你的名字",
   "show_unreviewed_words": "显示未审核的词语",
-  "show_unreviewed_words_desc": "本语言的翻译未经母语者审核。核心词和安全词已审核，始终显示；其余词语已隐藏。开启后可显示全部词语。"
+  "show_unreviewed_words_desc": "本语言的翻译未经母语者审核。核心词和安全词已审核，始终显示；其余词语已隐藏。开启后可显示全部词语。",
+  "speak_selection_feedback": "朗读每次选择",
+  "speak_selection_feedback_desc": "朗读你刚选择的词以作确认。只有按下“说话”时才会朗读整条消息。"
 }

@@ -72,6 +72,7 @@ const mocks = vi.hoisted(() => {
     speechRate: 1,
     speechVolume: 1,
     outputLanguage: 'en' as string,
+    speakSelectionFeedback: false,
   };
 
   const mockCategories: Category[] = [
@@ -267,33 +268,46 @@ describe('CategoryPanel — home board', () => {
     expect(mocks.recordUseMock).toHaveBeenCalled();
   });
 
-  it('replays the accumulated message locally for a same-language phrase tap', () => {
+  // A vocabulary tap used to speak the ACCUMULATED message ("I yes"). That is
+  // message speech — the public utterance to a partner — produced without the
+  // user choosing to produce it, and a partial message can invert the meaning
+  // of the finished one. A selection may confirm the ITEM selected, and only
+  // when the user has asked for auditory feedback. Message speech is on Speak.
+  it('says nothing on a phrase tap by default', () => {
     mocks.messageState.text = 'I';
     mocks.messageState.autoSpeak = true;
     render(<CategoryPanel />);
 
     fireEvent.click(screen.getAllByTestId('phrase-tile')[0]);
 
-    expect(mocks.speakWordMock).toHaveBeenCalledWith('I yes', 1, 1);
+    expect(mocks.speakWordMock).not.toHaveBeenCalled();
     expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
   });
 
-  it('translates a single-word tile immediately as part of the accumulated message', () => {
+  it('speaks only the tile just tapped when auditory feedback is enabled', () => {
     mocks.messageState.text = 'I';
     mocks.messageState.autoSpeak = true;
+    mocks.settingsState.speakSelectionFeedback = true;
+    render(<CategoryPanel />);
+
+    fireEvent.click(screen.getAllByTestId('phrase-tile')[0]);
+
+    // "yes" — the selection. NOT "I yes", the running message.
+    expect(mocks.speakWordMock).toHaveBeenCalledWith('yes', 1, 1);
+    expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
+  });
+
+  it('speaks only the tile just tapped in translation mode', () => {
+    mocks.messageState.text = 'I';
+    mocks.messageState.autoSpeak = true;
+    mocks.settingsState.speakSelectionFeedback = true;
     mocks.settingsState.outputLanguage = 'es';
     render(<CategoryPanel />);
 
     fireEvent.click(screen.getAllByTestId('phrase-tile')[0]);
 
     expect(mocks.speakWordMock).not.toHaveBeenCalled();
-    expect(mocks.aacSpeakMock).toHaveBeenCalledWith(
-      'I yes',
-      1,
-      1,
-      undefined,
-      true,
-    );
+    expect(mocks.aacSpeakMock).toHaveBeenCalledWith('yes', 1, 1, undefined, true);
   });
 
   it('does not duplicate Home navigation while already on the Home board', () => {

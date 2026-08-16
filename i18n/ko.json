@@ -420,5 +420,7 @@
   "you": "나",
   "your_name": "이름",
   "show_unreviewed_words": "미검토 단어 표시",
-  "show_unreviewed_words_desc": "이 언어의 번역은 원어민이 검토하지 않았습니다. 핵심 단어와 안전 관련 단어는 검수를 마쳐 항상 표시됩니다. 나머지는 숨겨져 있습니다. 모든 단어를 표시하려면 켜세요."
+  "show_unreviewed_words_desc": "이 언어의 번역은 원어민이 검토하지 않았습니다. 핵심 단어와 안전 관련 단어는 검수를 마쳐 항상 표시됩니다. 나머지는 숨겨져 있습니다. 모든 단어를 표시하려면 켜세요.",
+  "speak_selection_feedback": "선택할 때마다 읽기",
+  "speak_selection_feedback_desc": "방금 고른 낱말을 확인용으로 읽어 줍니다. 메시지는 «말하기»를 누를 때만 읽습니다."
 }

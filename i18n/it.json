@@ -420,5 +420,7 @@
   "you": "Tu",
   "your_name": "Il tuo nome",
   "show_unreviewed_words": "Mostra le parole non verificate",
-  "show_unreviewed_words_desc": "Nessun madrelingua ha verificato le traduzioni di questa lingua. Le parole di base e di sicurezza sono state controllate e vengono sempre mostrate; le altre sono nascoste. Attiva per mostrare tutte le parole."
+  "show_unreviewed_words_desc": "Nessun madrelingua ha verificato le traduzioni di questa lingua. Le parole di base e di sicurezza sono state controllate e vengono sempre mostrate; le altre sono nascoste. Attiva per mostrare tutte le parole.",
+  "speak_selection_feedback": "Pronuncia ogni selezione",
+  "speak_selection_feedback_desc": "Pronuncia la parola appena scelta, per conferma. Il messaggio viene detto solo premendo Parla."
 }

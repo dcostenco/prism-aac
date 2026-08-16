@@ -346,18 +346,18 @@ export default function CategoryPanel() {
     }
     if (phraseId) recordPhraseUse(phraseId);
     ddAction('aac.phrase_tap', { categoryId: activeCategoryId, phraseLength: toAppend.length });
-    if (autoSpeak && soundEnabled) {
+    // Auditory feedback confirms the SELECTION; it is not the message. This
+    // block used to speak the whole accumulated message on every vocabulary
+    // tap, which is the user's public utterance being made without them
+    // choosing to make it. Now it speaks only the tile just tapped, and only
+    // when the user has asked for feedback. Message speech is on Speak.
+    const { speakSelectionFeedback } = useSettingsStore.getState();
+    if (autoSpeak && soundEnabled && speakSelectionFeedback) {
       const { language, outputLanguage } = useSettingsStore.getState();
-      const fullPhrase = text.trim() ? `${text.trim()} ${toAppend}` : toAppend;
       if (language !== outputLanguage) {
-        // Every vocabulary tap is a communication action. Translate and speak
-        // the complete accumulated message immediately, including one-word
-        // tiles, instead of requiring the user to press Play afterward.
-        void aacSpeak(fullPhrase, speechRate, speechVolume, undefined, true);
+        void aacSpeak(toAppend, speechRate, speechVolume, undefined, true);
       } else {
-        // Use the quality-first speech path while preserving the cumulative
-        // AAC phrase contract.
-        speakWord(fullPhrase, speechRate, speechVolume);
+        speakWord(toAppend, speechRate, speechVolume);
       }
     }
     if (searchOpen) { setSearchOpen(false); setSearchQuery(''); }
