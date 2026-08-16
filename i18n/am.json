@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "አሁን የመረጡትን ቃል ለማረጋገጥ ይናገራል። መልእክትዎ የሚነበበው «ተናገር» ሲጫኑ ብቻ ነው።",
   "echo": "ማስተጋባት",
   "selection_feedback_on": "እያንዳንዱን ምርጫ ተናገር፦ በርቷል",
-  "selection_feedback_off": "እያንዳንዱን ምርጫ ተናገር፦ ጠፍቷል"
+  "selection_feedback_off": "እያንዳንዱን ምርጫ ተናገር፦ ጠፍቷል",
+  "speech_mode_word": "ቃል",
+  "speech_mode_sentence": "ዓረፍተ ነገር",
+  "selection_feedback_sentence": "እያንዳንዱን ዓረፍተ ነገር ተናገር፦ በርቷል",
+  "speak_sentence_feedback": "እያንዳንዱን ዓረፍተ ነገር ተናገር",
+  "speak_sentence_feedback_desc": "። ? ! ሲተይቡ የተጠናቀቀውን ዓረፍተ ነገር ይናገራል"
 }

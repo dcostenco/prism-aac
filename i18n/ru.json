@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Произносит только что выбранное слово для подтверждения. Сообщение озвучивается только при нажатии «Говорить».",
   "echo": "Эхо",
   "selection_feedback_on": "Произносить каждый выбор: вкл.",
-  "selection_feedback_off": "Произносить каждый выбор: выкл."
+  "selection_feedback_off": "Произносить каждый выбор: выкл.",
+  "speech_mode_word": "Слово",
+  "speech_mode_sentence": "Предложение",
+  "selection_feedback_sentence": "Произносить каждое предложение: включено",
+  "speak_sentence_feedback": "Произносить каждое предложение",
+  "speak_sentence_feedback_desc": "Произносит завершённое предложение при вводе . ? !"
 }

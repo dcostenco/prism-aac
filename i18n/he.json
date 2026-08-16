@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "אומר את המילה שבחרת זה עתה, כאישור. ההודעה נאמרת רק בלחיצה על „דבר”.",
   "echo": "הד",
   "selection_feedback_on": "הקראת כל בחירה: פועל",
-  "selection_feedback_off": "הקראת כל בחירה: כבוי"
+  "selection_feedback_off": "הקראת כל בחירה: כבוי",
+  "speech_mode_word": "מילה",
+  "speech_mode_sentence": "משפט",
+  "selection_feedback_sentence": "הקראת כל משפט: פועל",
+  "speak_sentence_feedback": "הקראת כל משפט",
+  "speak_sentence_feedback_desc": "מקריא את המשפט שהושלם כשמקלידים . ? !"
 }

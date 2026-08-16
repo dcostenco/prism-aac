@@ -87,16 +87,21 @@ beforeEach(() => {
 });
 
 describe('Keyboard cumulative word-boundary speech', () => {
-  // Sentence-end auto-speech was removed: typing a terminator broadcast the
-  // completed sentence without the user choosing to say it. The Arabic
-  // PUNCTUATION coverage this test was written for is unaffected and is what
-  // it now asserts.
+  // Sentence-end speech is back, but strictly opt-in: it is MESSAGE speech made
+  // without pressing Speak, so it fires ONLY when the user has cycled Echo to
+  // Sentence. This test previously asserted silence unconditionally, from the
+  // window when the feature was removed outright. It now pins both directions,
+  // so neither a silent regression nor an unasked-for broadcast can pass.
+  //
+  // Arabic is the right case to pin it on: `؟` is the Arabic question mark, and
+  // an ASCII-only terminator check would leave Arabic users unable to use the
+  // feature at all while every Latin-script user could.
   it('offers Arabic punctuation for the Arabic question mark and comma', () => {
     useMessageStore.setState({ text: 'كيف حالك' } as never);
     useSettingsStore.setState({
       language: 'ar',
       outputLanguage: 'ar',
-      speakOnSentenceEnd: true,
+      speakOnSentenceEnd: false,
     } as never);
     const { container } = render(<Keyboard />);
     const question = container.querySelector<HTMLButtonElement>('button[data-key="؟"]');
@@ -107,6 +112,50 @@ describe('Keyboard cumulative word-boundary speech', () => {
     act(() => fireEvent.click(question!));
 
     expect(useMessageStore.getState().text).toBe('كيف حالك؟');
+    // Sentence mode off — the default — so nothing is broadcast.
+    expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
+  });
+
+  it('speaks the completed Arabic sentence ONLY when Sentence mode is on', () => {
+    useMessageStore.setState({ text: 'كيف حالك' } as never);
+    useSettingsStore.setState({
+      language: 'ar',
+      outputLanguage: 'ar',
+      speakOnSentenceEnd: true,
+    } as never);
+    const { container } = render(<Keyboard />);
+    const question = container.querySelector<HTMLButtonElement>('button[data-key="؟"]');
+    act(() => fireEvent.click(question!));
+
+    expect(useMessageStore.getState().text).toBe('كيف حالك؟');
+    expect(speechMocks.aacSpeak).toHaveBeenCalledTimes(1);
+    expect(speechMocks.aacSpeak.mock.calls[0][0]).toBe('كيف حالك؟');
+  });
+
+  it('speaks only the sentence that just ended, never the whole message', () => {
+    useMessageStore.setState({ text: 'I am fine. I need water' } as never);
+    useSettingsStore.setState({
+      language: 'en', outputLanguage: 'en', speakOnSentenceEnd: true,
+    } as never);
+    const { container } = render(<Keyboard />);
+    const period = container.querySelector<HTMLButtonElement>('button[data-key="."]');
+    expect(period).not.toBeNull();
+    act(() => fireEvent.click(period!));
+
+    // The accumulated message is what Speak is for; this channel says one sentence.
+    expect(speechMocks.aacSpeak).toHaveBeenCalledTimes(1);
+    expect(speechMocks.aacSpeak.mock.calls[0][0]).toBe('I need water.');
+  });
+
+  it('stays silent at a sentence end when the master mute is off', () => {
+    useMessageStore.setState({ text: 'I need water', soundEnabled: false } as never);
+    useSettingsStore.setState({
+      language: 'en', outputLanguage: 'en', speakOnSentenceEnd: true,
+    } as never);
+    const { container } = render(<Keyboard />);
+    const period = container.querySelector<HTMLButtonElement>('button[data-key="."]');
+    act(() => fireEvent.click(period!));
+
     expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
   });
 

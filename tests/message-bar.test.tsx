@@ -67,6 +67,7 @@ const mocks = vi.hoisted(() => {
     aiAutocorrectEnabled: false,
     cloudPredictionEnabled: false,
     speakSelectionFeedback: false,
+    speakOnSentenceEnd: false,
     update: updateSettingsMock,
   };
 
@@ -104,7 +105,12 @@ const mocks = vi.hoisted(() => {
 // ── mocks ──────────────────────────────────────────────────────────────────────
 
 vi.mock('@/store/messageStore',  () => ({ useMessageStore: mocks.useMessageStore, setLatestTranslated: vi.fn(), getLatestTranslated: vi.fn().mockReturnValue(null), cancelActiveEmergency: vi.fn() }));
-vi.mock('@/store/settingsStore', () => ({ useSettingsStore: mocks.useSettingsStore }));
+// Spread the real module so the pure speech-mode helpers run for real; only the
+// store hook is faked. Stubbing the helpers would let a broken cycle pass.
+vi.mock('@/store/settingsStore', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/store/settingsStore')>()),
+  useSettingsStore: mocks.useSettingsStore,
+}));
 vi.mock('@/store/uiStore',       () => ({ useUIStore:       mocks.useUIStore       }));
 
 vi.mock('@/store/authStore', () => ({
@@ -284,28 +290,87 @@ describe('MessageBar — Echo (selection feedback) toggle', () => {
   // defaults off, the button did NOTHING on a default install: verified by
   // tapping a tile with it on and with it off and getting silence both times.
   // It now toggles the real feature flag, speakSelectionFeedback.
-  it('shows aria-pressed=false when selection feedback is off', () => {
+  // It is now a THREE-state cycle, because AAC feature matching expects a
+  // device to offer "speak after each word or sentence, or only when the
+  // entire message is selected" and the team to choose per user. The old
+  // aria-pressed assertions are gone deliberately: aria-pressed is binary and
+  // would misreport a three-state control to a screen reader. State is asserted
+  // through the accessible name and data-speech-mode instead, which is what a
+  // screen-reader user actually receives.
+
+  it('reports Off when neither flag is set', () => {
     mocks.settingsState.speakSelectionFeedback = false;
+    mocks.settingsState.speakOnSentenceEnd = false;
     render(<MessageBar />);
     const btn = screen.getByTestId('echo-toggle');
-    expect(btn).toHaveAttribute('aria-pressed', 'false');
+    expect(btn).toHaveAttribute('data-speech-mode', 'off');
     expect(btn).toHaveAccessibleName(/selection_feedback_off/i);
+    expect(btn).not.toHaveAttribute('aria-pressed');
   });
 
-  it('shows aria-pressed=true when selection feedback is on', () => {
+  it('reports Word when selection feedback is on', () => {
     mocks.settingsState.speakSelectionFeedback = true;
+    mocks.settingsState.speakOnSentenceEnd = false;
     render(<MessageBar />);
     const btn = screen.getByTestId('echo-toggle');
-    expect(btn).toHaveAttribute('aria-pressed', 'true');
+    expect(btn).toHaveAttribute('data-speech-mode', 'word');
     expect(btn).toHaveAccessibleName(/selection_feedback_on/i);
   });
 
-  it('clicking it flips speakSelectionFeedback, not autoSpeak', () => {
+  it('reports Sentence when sentence feedback is on', () => {
     mocks.settingsState.speakSelectionFeedback = false;
+    mocks.settingsState.speakOnSentenceEnd = true;
+    render(<MessageBar />);
+    const btn = screen.getByTestId('echo-toggle');
+    expect(btn).toHaveAttribute('data-speech-mode', 'sentence');
+    expect(btn).toHaveAccessibleName(/selection_feedback_sentence/i);
+  });
+
+  it('cycles off -> word, and never touches autoSpeak', () => {
+    mocks.settingsState.speakSelectionFeedback = false;
+    mocks.settingsState.speakOnSentenceEnd = false;
     render(<MessageBar />);
     fireEvent.click(screen.getByTestId('echo-toggle'));
-    expect(mocks.updateSettingsMock).toHaveBeenCalledWith({ speakSelectionFeedback: true });
+    expect(mocks.updateSettingsMock).toHaveBeenCalledWith({
+      speakSelectionFeedback: true, speakOnSentenceEnd: false,
+    });
     expect(mocks.toggleAutoSpeakMock).not.toHaveBeenCalled();
+  });
+
+  it('cycles word -> sentence', () => {
+    mocks.settingsState.speakSelectionFeedback = true;
+    mocks.settingsState.speakOnSentenceEnd = false;
+    render(<MessageBar />);
+    fireEvent.click(screen.getByTestId('echo-toggle'));
+    expect(mocks.updateSettingsMock).toHaveBeenCalledWith({
+      speakSelectionFeedback: false, speakOnSentenceEnd: true,
+    });
+  });
+
+  it('cycles sentence -> off, so every mode is reachable by tapping', () => {
+    mocks.settingsState.speakSelectionFeedback = false;
+    mocks.settingsState.speakOnSentenceEnd = true;
+    render(<MessageBar />);
+    fireEvent.click(screen.getByTestId('echo-toggle'));
+    expect(mocks.updateSettingsMock).toHaveBeenCalledWith({
+      speakSelectionFeedback: false, speakOnSentenceEnd: false,
+    });
+  });
+
+  it('never emits a state with both flags set', () => {
+    for (const start of [
+      { speakSelectionFeedback: false, speakOnSentenceEnd: false },
+      { speakSelectionFeedback: true, speakOnSentenceEnd: false },
+      { speakSelectionFeedback: false, speakOnSentenceEnd: true },
+    ]) {
+      mocks.updateSettingsMock.mockClear();
+      Object.assign(mocks.settingsState, start);
+      const { unmount } = render(<MessageBar />);
+      fireEvent.click(screen.getByTestId('echo-toggle'));
+      const arg = mocks.updateSettingsMock.mock.calls[0][0];
+      expect(arg.speakSelectionFeedback && arg.speakOnSentenceEnd).toBe(false);
+      unmount();
+    }
   });
 });
 

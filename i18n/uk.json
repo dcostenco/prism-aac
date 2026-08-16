@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Промовляє щойно вибране слово для підтвердження. Повідомлення озвучується лише після натискання «Говорити».",
   "echo": "Відлуння",
   "selection_feedback_on": "Промовляти кожен вибір: увімк.",
-  "selection_feedback_off": "Промовляти кожен вибір: вимк."
+  "selection_feedback_off": "Промовляти кожен вибір: вимк.",
+  "speech_mode_word": "Слово",
+  "speech_mode_sentence": "Речення",
+  "selection_feedback_sentence": "Промовляти кожне речення: увімкнено",
+  "speak_sentence_feedback": "Промовляти кожне речення",
+  "speak_sentence_feedback_desc": "Промовляє завершене речення, коли ви вводите . ? !"
 }

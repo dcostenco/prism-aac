@@ -1,7 +1,12 @@
 'use client';
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { useMessageStore, setLatestTranslated } from '@/store/messageStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import {
+  useSettingsStore,
+  getSpeechFeedbackMode,
+  nextSpeechFeedbackMode,
+  speechFeedbackFlags,
+} from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
 import { aacSpeak } from '@/services/aacSpeak';
 import type { SupportedLanguage } from '@/engine/i18n';
@@ -46,6 +51,8 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
   const setTone = useMessageStore((s) => s.setTone);
   const setToneMode = useMessageStore((s) => s.setToneMode);
   const speakSelectionFeedback = useSettingsStore((s) => s.speakSelectionFeedback);
+  const speakOnSentenceEnd = useSettingsStore((s) => s.speakOnSentenceEnd);
+  const speechMode = getSpeechFeedbackMode({ speakSelectionFeedback, speakOnSentenceEnd });
   const updateSettings = useSettingsStore((s) => s.update);
   const soundEnabled = useMessageStore((s) => s.soundEnabled);
   const deleteLastWord = useMessageStore((s) => s.deleteLastWord);
@@ -540,17 +547,36 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
           silence either way. It now toggles the real feature flag, so the
           message bar and Settings are two surfaces on one concept. The
           toolbar speaker remains the master mute. */}
+      {/* Three modes on one control, because AAC feature-matching expects a
+          device to offer "speak after each word or sentence, or only when the
+          entire message is selected" and the team picks per user. Tapping
+          cycles off -> word -> sentence; no mode is reachable only from
+          Settings. aria-pressed is deliberately absent: it is a binary state
+          and would misreport a three-state control to a screen reader. */}
       <button
-        onClick={() => { tapFeedback(); updateSettings({ speakSelectionFeedback: !speakSelectionFeedback }); }}
-        aria-label={speakSelectionFeedback ? t('selection_feedback_on') : t('selection_feedback_off')}
-        aria-pressed={speakSelectionFeedback}
+        onClick={() => {
+          tapFeedback();
+          updateSettings(speechFeedbackFlags(nextSpeechFeedbackMode(speechMode)));
+        }}
+        aria-label={
+          speechMode === 'word' ? t('selection_feedback_on')
+            : speechMode === 'sentence' ? t('selection_feedback_sentence')
+              : t('selection_feedback_off')
+        }
         data-testid="echo-toggle"
+        data-speech-mode={speechMode}
         className={`aac-btn w-[clamp(2.75rem,5vw,4rem)] h-[clamp(2.75rem,5vw,4rem)] rounded-xl flex flex-col items-center justify-center shrink-0 border border-theme ${
-          speakSelectionFeedback ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-muted'
+          speechMode !== 'off' ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-muted'
         }`}
       >
-        <span className="text-[clamp(1rem,1.8vw,1.375rem)]">{speakSelectionFeedback ? '🔊' : '🔈'}</span>
-        <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5">{t('echo')}</span>
+        <span className="text-[clamp(1rem,1.8vw,1.375rem)]">
+          {speechMode === 'word' ? '🔊' : speechMode === 'sentence' ? '💬' : '🔈'}
+        </span>
+        <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5">
+          {speechMode === 'word' ? t('speech_mode_word')
+            : speechMode === 'sentence' ? t('speech_mode_sentence')
+              : t('echo')}
+        </span>
       </button>
 
       {/* Tone selector — mirrors the Auto/Sound button:

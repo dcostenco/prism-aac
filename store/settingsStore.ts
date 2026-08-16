@@ -656,3 +656,37 @@ export const useSettingsStore = create<SettingsState>()(
     },
   ),
 );
+
+/**
+ * The three speech-feedback modes an AAC feature-matching evaluation expects a
+ * device to offer: "speak after each word or sentence, or only when the entire
+ * message is selected from the message window".
+ *
+ * These are derived from the two flags that already exist rather than a new
+ * persisted setting, so nothing has to migrate and the Settings modal and the
+ * message bar stay two surfaces on one concept.
+ */
+export type SpeechFeedbackMode = 'off' | 'word' | 'sentence';
+
+/**
+ * Legacy state can hold both flags true; 'word' wins so the mode is total and a
+ * corrupt blob can never read as 'off' and silence someone unexpectedly.
+ */
+export function getSpeechFeedbackMode(
+  s: Pick<SettingsState, 'speakSelectionFeedback' | 'speakOnSentenceEnd'>,
+): SpeechFeedbackMode {
+  if (s.speakSelectionFeedback) return 'word';
+  if (s.speakOnSentenceEnd) return 'sentence';
+  return 'off';
+}
+
+export function nextSpeechFeedbackMode(m: SpeechFeedbackMode): SpeechFeedbackMode {
+  return m === 'off' ? 'word' : m === 'word' ? 'sentence' : 'off';
+}
+
+export function speechFeedbackFlags(m: SpeechFeedbackMode): {
+  speakSelectionFeedback: boolean;
+  speakOnSentenceEnd: boolean;
+} {
+  return { speakSelectionFeedback: m === 'word', speakOnSentenceEnd: m === 'sentence' };
+}

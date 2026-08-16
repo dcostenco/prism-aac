@@ -87,7 +87,12 @@ const mocks = vi.hoisted(() => {
 // ── module mocks ──────────────────────────────────────────────────────────────
 
 vi.mock('@/store/uiStore',       () => ({ useUIStore:       mocks.useUIStore       }));
-vi.mock('@/store/settingsStore', () => ({ useSettingsStore: mocks.useSettingsStore }));
+// Spread the real module so the pure speech-mode helpers run for real; only the
+// store hook is faked. Stubbing the helpers would let a broken mode mapping pass.
+vi.mock('@/store/settingsStore', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/store/settingsStore')>()),
+  useSettingsStore: mocks.useSettingsStore,
+}));
 vi.mock('@/store/categoryStore', () => ({ useCategoryStore: mocks.useCategoryStore }));
 vi.mock('@/store/authStore',     () => ({ useAuthStore:     mocks.useAuthStore     }));
 

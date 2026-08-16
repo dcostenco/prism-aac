@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "ينطق الكلمة التي اخترتها للتو للتأكيد. لا تُنطق رسالتك إلا عند الضغط على «تحدث».",
   "echo": "صدى",
   "selection_feedback_on": "نطق كل اختيار: مُفعّل",
-  "selection_feedback_off": "نطق كل اختيار: مُعطّل"
+  "selection_feedback_off": "نطق كل اختيار: مُعطّل",
+  "speech_mode_word": "كلمة",
+  "speech_mode_sentence": "جملة",
+  "selection_feedback_sentence": "نطق كل جملة: مُفعّل",
+  "speak_sentence_feedback": "نطق كل جملة",
+  "speak_sentence_feedback_desc": "ينطق الجملة المكتملة عند كتابة . ? !"
 }

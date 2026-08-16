@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Diz a palavra que acabou de escolher, para confirmar. A sua mensagem só é falada ao premir Falar.",
   "echo": "Eco",
   "selection_feedback_on": "Falar cada seleção: ativado",
-  "selection_feedback_off": "Falar cada seleção: desativado"
+  "selection_feedback_off": "Falar cada seleção: desativado",
+  "speech_mode_word": "Palavra",
+  "speech_mode_sentence": "Frase",
+  "selection_feedback_sentence": "Falar cada frase: ativado",
+  "speak_sentence_feedback": "Falar cada frase",
+  "speak_sentence_feedback_desc": "Fala a frase concluída quando você digita . ? !"
 }

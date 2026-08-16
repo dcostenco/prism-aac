@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Dit le mot que vous venez de choisir, pour le confirmer. Votre message n’est dit qu’en appuyant sur Parler.",
   "echo": "Écho",
   "selection_feedback_on": "Dire chaque sélection : activé",
-  "selection_feedback_off": "Dire chaque sélection : désactivé"
+  "selection_feedback_off": "Dire chaque sélection : désactivé",
+  "speech_mode_word": "Mot",
+  "speech_mode_sentence": "Phrase",
+  "selection_feedback_sentence": "Énoncer chaque phrase : activé",
+  "speak_sentence_feedback": "Énoncer chaque phrase",
+  "speak_sentence_feedback_desc": "Énonce la phrase terminée lorsque vous tapez . ? !"
 }

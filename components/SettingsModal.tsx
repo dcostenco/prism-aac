@@ -1,7 +1,12 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { useUIStore } from '@/store/uiStore';
-import { useSettingsStore, GridSize } from '@/store/settingsStore';
+import {
+  useSettingsStore,
+  GridSize,
+  getSpeechFeedbackMode,
+  speechFeedbackFlags,
+} from '@/store/settingsStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { useAuthStore } from '@/store/authStore';
 import { synaluxSignInUrl, synaluxSignOutUrl, signInWithAppleNative, isNativeiOS, SynaluxProfile } from '@/services/aiService';
@@ -133,6 +138,10 @@ export default function SettingsModal() {
   const update = useSettingsStore(s => s.update);
   const aiAutocorrectEnabled = useSettingsStore(s => s.aiAutocorrectEnabled);
   const speakSelectionFeedback = useSettingsStore(s => s.speakSelectionFeedback);
+  const speakOnSentenceEnd = useSettingsStore(s => s.speakOnSentenceEnd);
+  // One concept, three modes. These two rows are mutually exclusive so Settings
+  // can never show a state the message-bar Echo control cannot represent.
+  const speechMode = getSpeechFeedbackMode({ speakSelectionFeedback, speakOnSentenceEnd });
   const cloudPredictionEnabled = useSettingsStore(s => s.cloudPredictionEnabled);
   const showUnreviewedVocabulary = useSettingsStore(s => s.showUnreviewedVocabulary);
   const mathHoldTimeMs = useSettingsStore(s => s.mathHoldTimeMs);
@@ -438,8 +447,21 @@ export default function SettingsModal() {
                 <span className="text-primary text-sm">{t('speak_selection_feedback')}</span>
                 <p className="text-muted text-[10px]">{t('speak_selection_feedback_desc')}</p>
               </div>
-              <Toggle on={speakSelectionFeedback} label={t('speak_selection_feedback')}
-                onToggle={() => update({ speakSelectionFeedback: !speakSelectionFeedback })} />
+              <Toggle on={speechMode === 'word'} label={t('speak_selection_feedback')}
+                onToggle={() => update(speechFeedbackFlags(speechMode === 'word' ? 'off' : 'word'))} />
+            </label>
+            {/* Speak-after-each-sentence. This is MESSAGE speech made without
+                pressing Speak, so it stays strictly opt-in — but AAC feature
+                matching expects the device to offer it, and users who lose
+                track of what they typed by the period rely on it. Selecting it
+                clears word feedback, mirroring the Echo control's cycle. */}
+            <label className="flex items-center justify-between py-1.5">
+              <div>
+                <span className="text-primary text-sm">{t('speak_sentence_feedback')}</span>
+                <p className="text-muted text-[10px]">{t('speak_sentence_feedback_desc')}</p>
+              </div>
+              <Toggle on={speechMode === 'sentence'} label={t('speak_sentence_feedback')}
+                onToggle={() => update(speechFeedbackFlags(speechMode === 'sentence' ? 'off' : 'sentence'))} />
             </label>
             <label className="flex items-center justify-between py-1.5">
               <div>
