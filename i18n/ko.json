@@ -33,9 +33,6 @@
   "apply": "적용",
   "ask_ai": "AI에게 질문",
   "audio_feedback": "소리 피드백",
-  "auto": "자동",
-  "auto_speak_off": "자동 읽기 끄기",
-  "auto_speak_on": "자동 읽기 켜기",
   "available": "사용 가능",
   "back_to_categories": "카테고리로 돌아가기",
   "back_to_games": "게임",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "미검토 단어 표시",
   "show_unreviewed_words_desc": "이 언어의 번역은 원어민이 검토하지 않았습니다. 핵심 단어와 안전 관련 단어는 검수를 마쳐 항상 표시됩니다. 나머지는 숨겨져 있습니다. 모든 단어를 표시하려면 켜세요.",
   "speak_selection_feedback": "선택할 때마다 읽기",
-  "speak_selection_feedback_desc": "방금 고른 낱말을 확인용으로 읽어 줍니다. 메시지는 «말하기»를 누를 때만 읽습니다."
+  "speak_selection_feedback_desc": "방금 고른 낱말을 확인용으로 읽어 줍니다. 메시지는 «말하기»를 누를 때만 읽습니다.",
+  "echo": "에코",
+  "selection_feedback_on": "선택할 때마다 읽기: 켬",
+  "selection_feedback_off": "선택할 때마다 읽기: 끔"
 }

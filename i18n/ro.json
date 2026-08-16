@@ -33,9 +33,6 @@
   "apply": "Aplică",
   "ask_ai": "Întreabă IA",
   "audio_feedback": "Sunet",
-  "auto": "Auto",
-  "auto_speak_off": "Vorbire automată dezactivată",
-  "auto_speak_on": "Vorbire automată activată",
   "available": "Disponibil",
   "back_to_categories": "Înapoi la categorii",
   "back_to_games": "Jocuri",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Afișează cuvintele neverificate",
   "show_unreviewed_words_desc": "Niciun vorbitor nativ nu a verificat traducerile acestei limbi. Cuvintele de bază și cele de siguranță au fost verificate și apar întotdeauna; restul sunt ascunse. Activează pentru a afișa toate cuvintele.",
   "speak_selection_feedback": "Rostește fiecare selecție",
-  "speak_selection_feedback_desc": "Rostește cuvântul pe care tocmai l-ai ales, ca să îl confirme. Mesajul tău este rostit doar când apeși Vorbește."
+  "speak_selection_feedback_desc": "Rostește cuvântul pe care tocmai l-ai ales, ca să îl confirme. Mesajul tău este rostit doar când apeși Vorbește.",
+  "echo": "Ecou",
+  "selection_feedback_on": "Rostește fiecare selecție: activat",
+  "selection_feedback_off": "Rostește fiecare selecție: dezactivat"
 }

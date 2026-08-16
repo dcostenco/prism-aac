@@ -33,9 +33,6 @@
   "apply": "Áp dụng",
   "ask_ai": "Hỏi AI",
   "audio_feedback": "Phản hồi âm",
-  "auto": "Tự động",
-  "auto_speak_off": "Tự động nói: Tắt",
-  "auto_speak_on": "Tự động nói: Bật",
   "available": "Có sẵn",
   "back_to_categories": "Quay lại danh mục",
   "back_to_games": "Trò chơi",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Hiển thị các từ chưa được kiểm tra",
   "show_unreviewed_words_desc": "Chưa có người bản ngữ nào kiểm tra bản dịch của ngôn ngữ này. Các từ cốt lõi và từ an toàn đã được kiểm tra và luôn hiển thị; những từ còn lại bị ẩn. Bật để hiển thị tất cả các từ.",
   "speak_selection_feedback": "Đọc từng lựa chọn",
-  "speak_selection_feedback_desc": "Đọc từ bạn vừa chọn để xác nhận. Tin nhắn của bạn chỉ được đọc khi bạn nhấn Nói."
+  "speak_selection_feedback_desc": "Đọc từ bạn vừa chọn để xác nhận. Tin nhắn của bạn chỉ được đọc khi bạn nhấn Nói.",
+  "echo": "Vọng",
+  "selection_feedback_on": "Đọc từng lựa chọn: bật",
+  "selection_feedback_off": "Đọc từng lựa chọn: tắt"
 }

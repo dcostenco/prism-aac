@@ -33,9 +33,6 @@
   "apply": "Toepassen",
   "ask_ai": "Vraag AI",
   "audio_feedback": "Audiofeedback",
-  "auto": "Auto",
-  "auto_speak_off": "Automatisch spreken uit",
-  "auto_speak_on": "Automatisch spreken aan",
   "available": "Beschikbaar",
   "back_to_categories": "Terug naar categorieën",
   "back_to_games": "Spellen",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Niet-gecontroleerde woorden tonen",
   "show_unreviewed_words_desc": "Geen moedertaalspreker heeft de vertalingen van deze taal gecontroleerd. Kern- en veiligheidswoorden zijn gecontroleerd en worden altijd getoond; de rest is verborgen. Zet dit aan om alle woorden te tonen.",
   "speak_selection_feedback": "Elke keuze uitspreken",
-  "speak_selection_feedback_desc": "Zegt het net gekozen woord, ter bevestiging. Je bericht wordt pas uitgesproken als je op Spreken drukt."
+  "speak_selection_feedback_desc": "Zegt het net gekozen woord, ter bevestiging. Je bericht wordt pas uitgesproken als je op Spreken drukt.",
+  "echo": "Echo",
+  "selection_feedback_on": "Elke keuze uitspreken: aan",
+  "selection_feedback_off": "Elke keuze uitspreken: uit"
 }

@@ -33,9 +33,6 @@
   "apply": "Anwenden",
   "ask_ai": "KI fragen",
   "audio_feedback": "Ton-Feedback",
-  "auto": "Auto",
-  "auto_speak_off": "Auto-Sprache aus",
-  "auto_speak_on": "Auto-Sprache ein",
   "available": "Verfügbar",
   "back_to_categories": "Zurück zu Kategorien",
   "back_to_games": "Spiele",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Ungeprüfte Wörter anzeigen",
   "show_unreviewed_words_desc": "Kein Muttersprachler hat die Übersetzungen dieser Sprache geprüft. Kern- und Sicherheitswörter wurden geprüft und werden immer angezeigt; der Rest ist ausgeblendet. Aktivieren, um alle Wörter anzuzeigen.",
   "speak_selection_feedback": "Jede Auswahl sprechen",
-  "speak_selection_feedback_desc": "Sagt das gerade gewählte Wort zur Bestätigung. Deine Nachricht wird erst gesprochen, wenn du auf Sprechen tippst."
+  "speak_selection_feedback_desc": "Sagt das gerade gewählte Wort zur Bestätigung. Deine Nachricht wird erst gesprochen, wenn du auf Sprechen tippst.",
+  "echo": "Echo",
+  "selection_feedback_on": "Jede Auswahl sprechen: ein",
+  "selection_feedback_off": "Jede Auswahl sprechen: aus"
 }

@@ -33,9 +33,6 @@
   "apply": "应用",
   "ask_ai": "问AI",
   "audio_feedback": "声音反馈",
-  "auto": "自动",
-  "auto_speak_off": "自动朗读已关闭",
-  "auto_speak_on": "自动朗读已开启",
   "available": "可用",
   "back_to_categories": "返回类别",
   "back_to_games": "游戏",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "显示未审核的词语",
   "show_unreviewed_words_desc": "本语言的翻译未经母语者审核。核心词和安全词已审核，始终显示；其余词语已隐藏。开启后可显示全部词语。",
   "speak_selection_feedback": "朗读每次选择",
-  "speak_selection_feedback_desc": "朗读你刚选择的词以作确认。只有按下“说话”时才会朗读整条消息。"
+  "speak_selection_feedback_desc": "朗读你刚选择的词以作确认。只有按下“说话”时才会朗读整条消息。",
+  "echo": "回声",
+  "selection_feedback_on": "朗读每次选择：开",
+  "selection_feedback_off": "朗读每次选择：关"
 }

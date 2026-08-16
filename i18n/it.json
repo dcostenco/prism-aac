@@ -33,9 +33,6 @@
   "apply": "Applica",
   "ask_ai": "Chiedi all'IA",
   "audio_feedback": "Feedback audio",
-  "auto": "Auto",
-  "auto_speak_off": "Lettura automatica disattivata",
-  "auto_speak_on": "Lettura automatica attiva",
   "available": "Disponibile",
   "back_to_categories": "Torna alle categorie",
   "back_to_games": "Giochi",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Mostra le parole non verificate",
   "show_unreviewed_words_desc": "Nessun madrelingua ha verificato le traduzioni di questa lingua. Le parole di base e di sicurezza sono state controllate e vengono sempre mostrate; le altre sono nascoste. Attiva per mostrare tutte le parole.",
   "speak_selection_feedback": "Pronuncia ogni selezione",
-  "speak_selection_feedback_desc": "Pronuncia la parola appena scelta, per conferma. Il messaggio viene detto solo premendo Parla."
+  "speak_selection_feedback_desc": "Pronuncia la parola appena scelta, per conferma. Il messaggio viene detto solo premendo Parla.",
+  "echo": "Eco",
+  "selection_feedback_on": "Pronuncia ogni selezione: attivo",
+  "selection_feedback_off": "Pronuncia ogni selezione: non attivo"
 }

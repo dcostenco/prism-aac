@@ -33,9 +33,6 @@
   "apply": "套用",
   "ask_ai": "詢問 AI",
   "audio_feedback": "聲音回饋",
-  "auto": "自動",
-  "auto_speak_off": "自動朗讀已關閉",
-  "auto_speak_on": "自動朗讀已開啟",
   "available": "可使用",
   "back_to_categories": "返回類別",
   "back_to_games": "遊戲",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "顯示未審核的詞語",
   "show_unreviewed_words_desc": "本語言的翻譯未經母語者審核。核心詞和安全詞已審核，一律顯示；其餘詞語已隱藏。開啟後可顯示全部詞語。",
   "speak_selection_feedback": "朗讀每次選擇",
-  "speak_selection_feedback_desc": "朗讀你剛選擇的詞以作確認。只有按下「說話」時才會朗讀整則訊息。"
+  "speak_selection_feedback_desc": "朗讀你剛選擇的詞以作確認。只有按下「說話」時才會朗讀整則訊息。",
+  "echo": "回聲",
+  "selection_feedback_on": "朗讀每次選擇：開",
+  "selection_feedback_off": "朗讀每次選擇：關"
 }

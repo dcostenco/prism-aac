@@ -33,9 +33,6 @@
   "apply": "Apply",
   "ask_ai": "Ask AI",
   "audio_feedback": "Audio Feedback",
-  "auto": "Auto",
-  "auto_speak_off": "Auto-speak off",
-  "auto_speak_on": "Auto-speak on",
   "available": "Available",
   "back_to_categories": "Back to categories",
   "back_to_games": "Games",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Show unreviewed words",
   "show_unreviewed_words_desc": "No native speaker has checked this language's translations. Core and safety words were audited and always appear; the rest are hidden. Turn this on to show every word.",
   "speak_selection_feedback": "Speak each selection",
-  "speak_selection_feedback_desc": "Says the word you just picked, to confirm it. Your message is only spoken when you press Speak."
+  "speak_selection_feedback_desc": "Says the word you just picked, to confirm it. Your message is only spoken when you press Speak.",
+  "echo": "Echo",
+  "selection_feedback_on": "Speak each selection: on",
+  "selection_feedback_off": "Speak each selection: off"
 }

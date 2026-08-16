@@ -33,9 +33,6 @@
   "apply": "Tumia",
   "ask_ai": "Uliza AI",
   "audio_feedback": "Sauti ya majibu",
-  "auto": "Aoto",
-  "auto_speak_off": "Kusoma aoto kumezimwa",
-  "auto_speak_on": "Kusoma aoto kumewashwa",
   "available": "Ipo",
   "back_to_categories": "Rudi kwenye makundi",
   "back_to_games": "Michezo",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Onyesha maneno ambayo hayajakaguliwa",
   "show_unreviewed_words_desc": "Hakuna mzungumzaji asili aliyekagua tafsiri za lugha hii. Maneno ya msingi na ya usalama yamekaguliwa na huonekana kila wakati; mengine yamefichwa. Washa ili kuonyesha maneno yote.",
   "speak_selection_feedback": "Tamka kila chaguo",
-  "speak_selection_feedback_desc": "Hutamka neno ulilochagua sasa hivi, kuthibitisha. Ujumbe wako hutamkwa tu unapobonyeza Sema."
+  "speak_selection_feedback_desc": "Hutamka neno ulilochagua sasa hivi, kuthibitisha. Ujumbe wako hutamkwa tu unapobonyeza Sema.",
+  "echo": "Mwangwi",
+  "selection_feedback_on": "Tamka kila chaguo: imewashwa",
+  "selection_feedback_off": "Tamka kila chaguo: imezimwa"
 }

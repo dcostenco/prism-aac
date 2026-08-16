@@ -33,9 +33,6 @@
   "apply": "I-apply",
   "ask_ai": "Magtanong sa AI",
   "audio_feedback": "Audio Feedback",
-  "auto": "Auto",
-  "auto_speak_off": "Auto-speak naka-off",
-  "auto_speak_on": "Auto-speak naka-on",
   "available": "Available",
   "back_to_categories": "Bumalik sa mga kategorya",
   "back_to_games": "Mga Laro",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Ipakita ang mga salitang hindi pa nasusuri",
   "show_unreviewed_words_desc": "Walang katutubong nagsasalita ang nakasuri sa mga salin ng wikang ito. Ang mga pangunahing salita at salitang pangkaligtasan ay nasuri at laging lumalabas; ang iba ay nakatago. I-on ito upang ipakita ang lahat ng salita.",
   "speak_selection_feedback": "Sabihin ang bawat pinili",
-  "speak_selection_feedback_desc": "Sinasabi ang salitang katatapos mong piliin, bilang kumpirmasyon. Ang mensahe mo ay binabasa lang kapag pinindot ang Sabihin."
+  "speak_selection_feedback_desc": "Sinasabi ang salitang katatapos mong piliin, bilang kumpirmasyon. Ang mensahe mo ay binabasa lang kapag pinindot ang Sabihin.",
+  "echo": "Alingawngaw",
+  "selection_feedback_on": "Sabihin ang bawat pinili: naka-on",
+  "selection_feedback_off": "Sabihin ang bawat pinili: naka-off"
 }

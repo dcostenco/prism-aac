@@ -33,9 +33,6 @@
   "apply": "Terapkan",
   "ask_ai": "Tanya AI",
   "audio_feedback": "Umpan Balik Audio",
-  "auto": "Otomatis",
-  "auto_speak_off": "Bicara otomatis nonaktif",
-  "auto_speak_on": "Bicara otomatis aktif",
   "available": "Tersedia",
   "back_to_categories": "Kembali ke kategori",
   "back_to_games": "Permainan",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Tampilkan kata yang belum ditinjau",
   "show_unreviewed_words_desc": "Belum ada penutur asli yang memeriksa terjemahan bahasa ini. Kata inti dan kata keselamatan telah diaudit dan selalu ditampilkan; sisanya disembunyikan. Aktifkan untuk menampilkan semua kata.",
   "speak_selection_feedback": "Ucapkan setiap pilihan",
-  "speak_selection_feedback_desc": "Mengucapkan kata yang baru dipilih untuk konfirmasi. Pesan Anda hanya diucapkan saat menekan Ucapkan."
+  "speak_selection_feedback_desc": "Mengucapkan kata yang baru dipilih untuk konfirmasi. Pesan Anda hanya diucapkan saat menekan Ucapkan.",
+  "echo": "Gema",
+  "selection_feedback_on": "Ucapkan setiap pilihan: aktif",
+  "selection_feedback_off": "Ucapkan setiap pilihan: nonaktif"
 }
