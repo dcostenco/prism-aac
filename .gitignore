@@ -63,4 +63,15 @@ ios-native/PrismAAC/Resources/*.gguf
 *.cer
 *.p12
 *.certSigningRequest
+# App Store Connect API keys. The .p8 is the only half of the credential that
+# is actually secret — the key_id and issuer_id in fastlane/ are identifiers
+# that cannot authenticate without it. Keys live in ~/private_keys, outside
+# any repo; these patterns exist so a stray copy can never be staged.
+*.p8
+AuthKey_*
+private_keys/
 ios-native/_llama_cpp_local
+
+# Ad-hoc device-layout audit captures. Regenerated on demand by the layout
+# scripts; 6.9MB of them accumulated untracked from a July board fix.
+screenshots/audit/
