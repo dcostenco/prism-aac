@@ -375,7 +375,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prism-aac-settings',
-      version: 21,
+      version: 22,
       migrate: (persisted: unknown, version: number) => {
         let s = persisted as Record<string, unknown>;
         if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
@@ -504,6 +504,21 @@ export const useSettingsStore = create<SettingsState>()(
           } catch { /* unreadable blob — assume the old default */ }
           s = { ...s, speakSelectionFeedback: hadAudio };
         }
+        // v22: clear a stale speakOnSentenceEnd.
+        //
+        // The flag once defaulted ON, and the change that made the message
+        // speak only on Speak removed its call site without clearing it — so
+        // an unknown number of installs still carry `true` while behaving as
+        // though it were off. Re-attaching a call site to that flag would land
+        // those users in Sentence mode with no action on their part, hearing
+        // their sentences broadcast to the room again. That is the mirror of
+        // the upgrade-into-silence bug, and worse: silence is private, an
+        // unasked-for utterance is not.
+        //
+        // Everyone therefore starts from Off and opts in deliberately. This
+        // one-shot clear runs only on the migration boundary; a user who turns
+        // Sentence on afterwards keeps it.
+        if (version < 22) s = { ...s, speakOnSentenceEnd: false };
         return s;
       },
       // Hydration validator — runs AFTER migrate. The migrate fns above
