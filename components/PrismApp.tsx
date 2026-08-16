@@ -492,15 +492,21 @@ export default function PrismApp() {
       if (e.key === ' ' && document.activeElement?.tagName === 'BUTTON') return;
       const store = useMessageStore.getState();
       if (e.key === 'Backspace') { e.preventDefault(); deleteFeedback(); store.deleteLastChar(); }
-      else if (e.key === 'Enter') {
-        e.preventDefault();
-        const current = store.text.trim();
-        if (current) {
-          store.addToHistory(current);
-          const ss = useSettingsStore.getState();
-          aacSpeak(current, ss.speechRate, ss.speechVolume);
-        }
-      }
+      // Enter is deliberately NOT handled here.
+      //
+      // It used to speak the composed message, which the rule forbids: voice
+      // requires the Speak control or an emergency/help action, and a bare
+      // Enter anywhere in the app is neither. It also bypassed
+      // translateForSpeech — measured en->ro on "I want water", Enter voiced
+      // the offline dictionary's "Vreau Apă." with no translation request,
+      // while both Speak controls produced the model's "Vreau apă.".
+      //
+      // Not intercepting it is the point. An earlier version of this fix kept
+      // the branch and called e.preventDefault(), which would have broken
+      // Tab-to-Speak: this is a global keydown listener, so preventing the
+      // default on Enter also prevents a FOCUSED button from activating. The
+      // Space case above guards against exactly that; Enter had no such guard.
+      // Falling through leaves keyboard users their route to the Speak button.
       else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { e.preventDefault(); keyFeedback(); store.appendChar(e.key); }
     };
     window.addEventListener('keydown', handler);

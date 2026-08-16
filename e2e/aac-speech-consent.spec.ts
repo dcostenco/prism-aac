@@ -182,3 +182,45 @@ test.describe('selection feedback, when the user enables it', () => {
     }
   });
 });
+
+test.describe('only the Speak control may voice the message', () => {
+  // Two paths were found voicing the composed message on actions that are not
+  // "speak": the global Enter key handler, and accepting an autocorrect
+  // suggestion. Enter also bypassed translateForSpeech entirely — measured
+  // en->ro on "I want water" it voiced the offline dictionary's "Vreau Apă."
+  // with no translation request, while Speak produced the model's "Vreau apă.".
+  test('the physical Enter key does not speak', async ({ page }) => {
+    const spy = speechSpy(page);
+    await spy.install;
+
+    await page.addInitScript(() => {
+      localStorage.setItem('prism-aac-settings', JSON.stringify({
+        state: { language: 'en', outputLanguage: 'ro', speechRate: 1, speechVolume: 1 },
+        version: 21,
+      }));
+    });
+    await page.goto('', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-testid="keyboard-shell"]', { timeout: 30_000 });
+    await page.waitForTimeout(1200);
+
+    for (const ch of 'I want water') {
+      if (ch === ' ') await page.getByRole('button', { name: /^space$/i }).click();
+      else await page.getByRole('button', { name: new RegExp(`^${ch}$`, 'i') }).first().click();
+      await page.waitForTimeout(260);
+    }
+    await page.locator('body').press('Enter');
+    await page.waitForTimeout(5000);
+
+    const spoken = await spy.collect();
+    expect(spoken, `Enter spoke: ${JSON.stringify(spoken)}`).toEqual([]);
+
+    // ...and keyboard users are not stranded: FOCUS the Speak control and
+    // press Enter. An earlier fix called e.preventDefault() on Enter in the
+    // global handler, which would have blocked exactly this.
+    await page.locator('button.aac-speak').first().focus();
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(5000);
+    const after = await spy.collect();
+    expect(after.length, 'Tab-to-Speak then Enter produced no audio').toBeGreaterThan(0);
+  });
+});

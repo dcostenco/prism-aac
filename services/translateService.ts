@@ -540,11 +540,33 @@ export interface RefineOptions {
  * sentence, and the phrase-boundary path still speaks the refined translation.
  */
 export function hasUntranslatedResidue(source: string, translated: string): boolean {
-  const tokens = (v: string) =>
-    v.toLowerCase().split(/[^\p{L}\p{N}']+/u).filter((t) => t.length > 1);
-  const src = new Set(tokens(source));
+  const tokenize = (v: string) =>
+    v.split(/[^\p{L}\p{N}']+/u).filter((t) => t.length > 1);
+
+  // Proper nouns are SUPPOSED to survive translation. Measured before this
+  // carve-out, the check silenced correct output: "Call Maria" -> "Sună Maria"
+  // and "Tell Dad" were suppressed because the name appears in both. Naming
+  // people is core AAC vocabulary, so that turned a working feature into
+  // unpredictable silence exactly when it mattered most.
+  //
+  // A token capitalised in the source but NOT sentence-initial is treated as a
+  // name and exempted. Sentence-initial words are excluded from the exemption
+  // because every sentence starts capitalised, which would exempt ordinary
+  // words. Lowercase loanwords shared between the languages ("taxi", "hotel")
+  // still read as residue — accepted, because the failure is silence on one
+  // utterance rather than a mixed-language sentence spoken aloud.
+  const srcTokens = tokenize(source);
+  const properNouns = new Set(
+    srcTokens
+      .filter((t, i) => i > 0 && /^\p{Lu}/u.test(t))
+      .map((t) => t.toLowerCase()),
+  );
+
+  const src = new Set(srcTokens.map((t) => t.toLowerCase()));
   if (src.size === 0) return false;
-  return tokens(translated).some((t) => src.has(t));
+  return tokenize(translated)
+    .map((t) => t.toLowerCase())
+    .some((t) => src.has(t) && !properNouns.has(t));
 }
 
 export function translateWithAIRefine(
