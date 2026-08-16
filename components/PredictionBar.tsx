@@ -635,6 +635,15 @@ export default function PredictionBar() {
     const fullPhrase = isCompletion
       ? [...words.slice(0, -1), word].join(' ')
       : [...words, word].join(' ');
+    // Honour the user's two controls over their own voice. This path checked
+    // NEITHER, so a device with the master mute off and Auto off still spoke
+    // on every prediction tap — measured on merged main: muted, auto-off,
+    // tapping a tile sent "I." to TTS while the typing path in the same run
+    // stayed correctly silent. Every other speech call site checks these; the
+    // speech services themselves do not, by design, so the caller must.
+    const { autoSpeak, soundEnabled } = useMessageStore.getState();
+    if (!autoSpeak || !soundEnabled) return;
+
     if (language !== outputLanguage) {
       // Translation is the AAC output contract, not an optional second step.
       // Speak the newly composed phrase through aacSpeak so it is translated
