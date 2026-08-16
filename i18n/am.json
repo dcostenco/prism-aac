@@ -33,9 +33,6 @@
   "apply": "ተግብር",
   "ask_ai": "ኤአይን ጠይቅ",
   "audio_feedback": "የድምፅ ምላሽ",
-  "auto": "ራስ-ሰር",
-  "auto_speak_off": "ራስ-ሰር ንግግር አጥፋ",
-  "auto_speak_on": "ራስ-ሰር ንግግር አብራ",
   "available": "ይገኛል",
   "back_to_categories": "ወደ ምድቦች ተመለስ",
   "back_to_games": "ጨዋታዎች",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "ያልተገመገሙ ቃላትን አሳይ",
   "show_unreviewed_words_desc": "የዚህን ቋንቋ ትርጉሞች የአፍ መፍቻ ተናጋሪ አልመረመረም። ዋና እና የደህንነት ቃላት ተመርምረዋል እና ሁልጊዜ ይታያሉ፤ የቀሩት ተደብቀዋል። ሁሉንም ቃላት ለማሳየት ይህን ያብሩ።",
   "speak_selection_feedback": "እያንዳንዱን ምርጫ ተናገር",
-  "speak_selection_feedback_desc": "አሁን የመረጡትን ቃል ለማረጋገጥ ይናገራል። መልእክትዎ የሚነበበው «ተናገር» ሲጫኑ ብቻ ነው።"
+  "speak_selection_feedback_desc": "አሁን የመረጡትን ቃል ለማረጋገጥ ይናገራል። መልእክትዎ የሚነበበው «ተናገር» ሲጫኑ ብቻ ነው።",
+  "echo": "ማስተጋባት",
+  "selection_feedback_on": "እያንዳንዱን ምርጫ ተናገር፦ በርቷል",
+  "selection_feedback_off": "እያንዳንዱን ምርጫ ተናገር፦ ጠፍቷል"
 }

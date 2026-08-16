@@ -33,9 +33,6 @@
   "apply": "החל",
   "ask_ai": "שאל AI",
   "audio_feedback": "משוב קולי",
-  "auto": "אוטומטי",
-  "auto_speak_off": "דיבור אוטומטי כבוי",
-  "auto_speak_on": "דיבור אוטומטי פועל",
   "available": "זמין",
   "back_to_categories": "חזרה לקטגוריות",
   "back_to_games": "משחקים",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "הצג מילים שלא נבדקו",
   "show_unreviewed_words_desc": "אף דובר שפת אם לא בדק את התרגומים של שפה זו. מילות הליבה ומילות הבטיחות נבדקו ומופיעות תמיד; השאר מוסתרות. הפעל כדי להציג את כל המילים.",
   "speak_selection_feedback": "הקראת כל בחירה",
-  "speak_selection_feedback_desc": "אומר את המילה שבחרת זה עתה, כאישור. ההודעה נאמרת רק בלחיצה על „דבר”."
+  "speak_selection_feedback_desc": "אומר את המילה שבחרת זה עתה, כאישור. ההודעה נאמרת רק בלחיצה על „דבר”.",
+  "echo": "הד",
+  "selection_feedback_on": "הקראת כל בחירה: פועל",
+  "selection_feedback_off": "הקראת כל בחירה: כבוי"
 }

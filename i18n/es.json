@@ -33,9 +33,6 @@
   "apply": "Aplicar",
   "ask_ai": "Preguntar IA",
   "audio_feedback": "Sonido",
-  "auto": "Auto",
-  "auto_speak_off": "Auto-voz inactiva",
-  "auto_speak_on": "Auto-voz activa",
   "available": "Disponible",
   "back_to_categories": "Volver a categorías",
   "back_to_games": "Juegos",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Mostrar palabras sin revisar",
   "show_unreviewed_words_desc": "Ningún hablante nativo ha revisado las traducciones de este idioma. Las palabras básicas y de seguridad se auditaron y siempre aparecen; el resto están ocultas. Actívalo para mostrar todas las palabras.",
   "speak_selection_feedback": "Decir cada selección",
-  "speak_selection_feedback_desc": "Dice la palabra que acabas de elegir, para confirmarla. Tu mensaje solo se dice al pulsar Hablar."
+  "speak_selection_feedback_desc": "Dice la palabra que acabas de elegir, para confirmarla. Tu mensaje solo se dice al pulsar Hablar.",
+  "echo": "Eco",
+  "selection_feedback_on": "Decir cada selección: activado",
+  "selection_feedback_off": "Decir cada selección: desactivado"
 }

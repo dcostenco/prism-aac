@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => {
   const recordHrrPhraseMock  = vi.fn();
   const setAiCompletionMock  = vi.fn();
   const learnWordMock        = vi.fn();
+  // updateSettingsMock declared with settingsState below
   const ttsHighlightListeners = new Set<(event: {
     type: 'tts-highlight-start' | 'tts-highlight-end';
     text?: string;
@@ -57,6 +58,7 @@ const mocks = vi.hoisted(() => {
     setToneMode: setToneModeMock,
   };
 
+  const updateSettingsMock = vi.fn();
   const settingsState = {
     speechRate: 1,
     speechVolume: 1,
@@ -64,6 +66,8 @@ const mocks = vi.hoisted(() => {
     outputLanguage: 'en' as string,
     aiAutocorrectEnabled: false,
     cloudPredictionEnabled: false,
+    speakSelectionFeedback: false,
+    update: updateSettingsMock,
   };
 
   const uiState = { sidePanel: 'none' };
@@ -85,6 +89,7 @@ const mocks = vi.hoisted(() => {
   );
 
   return {
+    updateSettingsMock,
     toggleAutoSpeakMock, toggleSoundMock, deleteLastWordMock, clearAllMock, undoMock,
     addToHistoryMock, setTextMock, setToneMock, setToneModeMock, aacSpeakMock,
     speakWordMock,
@@ -272,27 +277,39 @@ describe('MessageBar — text display', () => {
 
 // ── auto-speak toggle ─────────────────────────────────────────────────────────
 
-describe('MessageBar — auto-speak toggle', () => {
-  it('auto-speak button shows aria-pressed=false when autoSpeak is off', () => {
-    mocks.messageState.autoSpeak = false;
+describe('MessageBar — Echo (selection feedback) toggle', () => {
+  // This button used to toggle `autoSpeak` and was labelled "Auto-speak".
+  // After the speak-only change that label described behaviour that no longer
+  // exists — the message is never spoken automatically — and because feedback
+  // defaults off, the button did NOTHING on a default install: verified by
+  // tapping a tile with it on and with it off and getting silence both times.
+  // It now toggles the real feature flag, speakSelectionFeedback.
+  it('shows aria-pressed=false when selection feedback is off', () => {
+    mocks.settingsState.speakSelectionFeedback = false;
     render(<MessageBar />);
-    const btn = screen.getByRole('button', { name: /auto_speak_off/i });
+    const btn = screen.getByTestId('echo-toggle');
     expect(btn).toHaveAttribute('aria-pressed', 'false');
+    expect(btn).toHaveAccessibleName(/selection_feedback_off/i);
   });
 
-  it('auto-speak button shows aria-pressed=true when autoSpeak is on', () => {
-    mocks.messageState.autoSpeak = true;
+  it('shows aria-pressed=true when selection feedback is on', () => {
+    mocks.settingsState.speakSelectionFeedback = true;
     render(<MessageBar />);
-    const btn = screen.getByRole('button', { name: /auto_speak_on/i });
+    const btn = screen.getByTestId('echo-toggle');
     expect(btn).toHaveAttribute('aria-pressed', 'true');
+    expect(btn).toHaveAccessibleName(/selection_feedback_on/i);
   });
 
-  it('clicking auto-speak button calls toggleAutoSpeak', () => {
+  it('clicking it flips speakSelectionFeedback, not autoSpeak', () => {
+    mocks.settingsState.speakSelectionFeedback = false;
     render(<MessageBar />);
-    fireEvent.click(screen.getByRole('button', { name: /auto_speak/i }));
-    expect(mocks.toggleAutoSpeakMock).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByTestId('echo-toggle'));
+    expect(mocks.updateSettingsMock).toHaveBeenCalledWith({ speakSelectionFeedback: true });
+    expect(mocks.toggleAutoSpeakMock).not.toHaveBeenCalled();
   });
+});
 
+describe('MessageBar — composition speech', () => {
   // The composition silence timer used to speak the whole message after a
   // pause (400ms for a confident complete word, 2s otherwise). Both tests
   // below pinned that. It is MESSAGE speech — the public utterance to a

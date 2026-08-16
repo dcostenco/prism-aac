@@ -190,7 +190,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
   // No toggleSound: soundEnabled is a master mute again and Speak must not
   // clear it. setText is for the kana modifiers, which rewrite the last
   // character rather than appending one.
-  const { text, appendChar, addToHistory, autoSpeak, soundEnabled, activeTone, setText } = useMessageStore();
+  const { text, appendChar, addToHistory, soundEnabled, activeTone, setText } = useMessageStore();
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock, keyboardMaximized, cycleKeyboardMode } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language, speakOnSentenceEnd, gridSize } = useSettingsStore();
@@ -337,7 +337,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     // `speakOnSentenceEnd` remains in settings for the PDF reader, which reads
     // a document the user explicitly asked to have read.
   }, [appendChar, setText, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper, language, browserMode,
-      speakOnSentenceEnd, autoSpeak, soundEnabled, speechRate, speechVolume, activeTone]);
+      speakOnSentenceEnd, soundEnabled, speechRate, speechVolume, activeTone]);
 
   const shiftHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shiftLongPressed = useRef(false);
@@ -390,7 +390,14 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
         // message. This block used to speak the whole accumulated message on
         // every space, which is the user's public utterance being produced
         // without them choosing to produce it. Message speech is on Speak.
-        if (autoSpeak && soundEnabled && useSettingsStore.getState().speakSelectionFeedback) {
+        // `autoSpeak` is deliberately NOT part of this gate. Nothing toggles it any
+        // more — the message-bar button now controls speakSelectionFeedback
+        // directly — so leaving it ANDed here would permanently silence anyone
+        // whose persisted value happened to be false, even after they turn Echo
+        // on. Their pre-existing preference was already honoured once, by the
+        // v21 migration that decided their initial speakSelectionFeedback.
+        // soundEnabled stays: it is the master mute.
+        if (soundEnabled && useSettingsStore.getState().speakSelectionFeedback) {
           if (translationActive) {
             const { language: srcLang, outputLanguage: outLang } = useSettingsStore.getState();
             const spokenWord = translateTextSync(lastWord, srcLang as SupportedLanguage, outLang as SupportedLanguage);
@@ -406,7 +413,7 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
       }
     }
     appendChar(' ');
-  }, [learnWord, autoSpeak, soundEnabled, speechRate, speechVolume, appendChar, activeTone, browserMode]);
+  }, [learnWord, soundEnabled, speechRate, speechVolume, appendChar, activeTone, browserMode]);
 
   const handleSpeak = useCallback(() => {
     if (browserMode) {

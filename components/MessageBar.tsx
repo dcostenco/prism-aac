@@ -51,13 +51,13 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
   const toneMode = useMessageStore((s) => s.toneMode);
   const setTone = useMessageStore((s) => s.setTone);
   const setToneMode = useMessageStore((s) => s.setToneMode);
-  const autoSpeak = useMessageStore((s) => s.autoSpeak);
+  const speakSelectionFeedback = useSettingsStore((s) => s.speakSelectionFeedback);
+  const updateSettings = useSettingsStore((s) => s.update);
   const soundEnabled = useMessageStore((s) => s.soundEnabled);
   const deleteLastWord = useMessageStore((s) => s.deleteLastWord);
   const clearAll = useMessageStore((s) => s.clearAll);
   const undo = useMessageStore((s) => s.undo);
   const addToHistory = useMessageStore((s) => s.addToHistory);
-  const toggleAutoSpeak = useMessageStore((s) => s.toggleAutoSpeak);
   const setText = useMessageStore((s) => s.setText);
   const speechRate = useSettingsStore((s) => s.speechRate);
   const speechVolume = useSettingsStore((s) => s.speechVolume);
@@ -540,16 +540,26 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
       data-compact={compact ? '1' : '0'}
       data-messaging-mode={isMessagingMode ? '1' : '0'}
     >
+      {/* Quick toggle for auditory feedback ("Echo").
+          It used to toggle `autoSpeak` and was labelled "Auto-speak", which
+          after the speak-only change described behaviour that no longer
+          exists: the message is never spoken automatically. Worse, because
+          feedback defaults off, the button did NOTHING on a default install —
+          verified by tapping a tile with it both on and off and getting
+          silence either way. It now toggles the real feature flag, so the
+          message bar and Settings are two surfaces on one concept. The
+          toolbar speaker remains the master mute. */}
       <button
-        onClick={() => { tapFeedback(); toggleAutoSpeak(); }}
-        aria-label={autoSpeak ? t('auto_speak_on') : t('auto_speak_off')}
-        aria-pressed={autoSpeak}
+        onClick={() => { tapFeedback(); updateSettings({ speakSelectionFeedback: !speakSelectionFeedback }); }}
+        aria-label={speakSelectionFeedback ? t('selection_feedback_on') : t('selection_feedback_off')}
+        aria-pressed={speakSelectionFeedback}
+        data-testid="echo-toggle"
         className={`aac-btn w-[clamp(2.75rem,5vw,4rem)] h-[clamp(2.75rem,5vw,4rem)] rounded-xl flex flex-col items-center justify-center shrink-0 border border-theme ${
-          autoSpeak ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-muted'
+          speakSelectionFeedback ? 'bg-[#4CAF50] text-white border-transparent' : 'surface-key text-muted'
         }`}
       >
-        <span className="text-[clamp(1rem,1.8vw,1.375rem)]">{autoSpeak ? '🔊' : '🔈'}</span>
-        <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5">{t('auto')}</span>
+        <span className="text-[clamp(1rem,1.8vw,1.375rem)]">{speakSelectionFeedback ? '🔊' : '🔈'}</span>
+        <span className="text-[clamp(8px,0.8vw,11px)] mt-0.5">{t('echo')}</span>
       </button>
 
       {/* Tone selector — mirrors the Auto/Sound button:

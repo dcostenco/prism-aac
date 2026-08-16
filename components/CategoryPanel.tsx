@@ -204,7 +204,6 @@ export default function CategoryPanel() {
   const typingMode = categoryKeyboardOpen && keyboardMaximized;
   const appendText = useMessageStore((s) => s.appendText);
   const text = useMessageStore((s) => s.text);
-  const autoSpeak = useMessageStore((s) => s.autoSpeak);
   const soundEnabled = useMessageStore((s) => s.soundEnabled);
   const allCategories = useCategoryStore((s) => s.allCategories);
   const getSubcategories = useCategoryStore((s) => s.getSubcategories);
@@ -352,7 +351,14 @@ export default function CategoryPanel() {
     // choosing to make it. Now it speaks only the tile just tapped, and only
     // when the user has asked for feedback. Message speech is on Speak.
     const { speakSelectionFeedback } = useSettingsStore.getState();
-    if (autoSpeak && soundEnabled && speakSelectionFeedback) {
+    // `autoSpeak` is deliberately NOT part of this gate. Nothing toggles it any
+    // more — the message-bar button now controls speakSelectionFeedback
+    // directly — so leaving it ANDed here would permanently silence anyone
+    // whose persisted value happened to be false, even after they turn Echo
+    // on. Their pre-existing preference was already honoured once, by the
+    // v21 migration that decided their initial speakSelectionFeedback.
+    // soundEnabled stays: it is the master mute.
+    if (soundEnabled && speakSelectionFeedback) {
       const { language, outputLanguage } = useSettingsStore.getState();
       if (language !== outputLanguage) {
         void aacSpeak(toAppend, speechRate, speechVolume, undefined, true);

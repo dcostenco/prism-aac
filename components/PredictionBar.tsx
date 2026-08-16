@@ -637,12 +637,19 @@ export default function PredictionBar() {
       : [...words, word].join(' ');
     // Honour the user's two controls over their own voice. This path checked
     // NEITHER, so a device with the master mute off and Auto off still spoke
-    // on every prediction tap — measured on merged main: muted, auto-off,
-    // tapping a tile sent "I." to TTS while the typing path in the same run
-    // stayed correctly silent. Every other speech call site checks these; the
-    // speech services themselves do not, by design, so the caller must.
-    const { autoSpeak, soundEnabled } = useMessageStore.getState();
-    if (!autoSpeak || !soundEnabled) return;
+    // on every prediction tap — measured then: muted, tapping a tile sent
+    // "I." to TTS while the typing path in the same run stayed correctly
+    // silent. Every other speech call site checks the mute; the speech
+    // services themselves do not, by design, so the caller must.
+    const { soundEnabled } = useMessageStore.getState();
+    // `autoSpeak` is deliberately NOT part of this gate. Nothing toggles it any
+    // more — the message-bar button now controls speakSelectionFeedback
+    // directly — so leaving it ANDed here would permanently silence anyone
+    // whose persisted value happened to be false, even after they turn Echo
+    // on. Their pre-existing preference was already honoured once, by the
+    // v21 migration that decided their initial speakSelectionFeedback.
+    // soundEnabled stays: it is the master mute.
+    if (!soundEnabled) return;
     // Auditory feedback only, and only when the user asked for it. This used
     // to speak `fullPhrase` — the whole accumulated message — on every tap,
     // which is MESSAGE speech: the public utterance to a communication

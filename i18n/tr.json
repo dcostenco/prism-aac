@@ -33,9 +33,6 @@
   "apply": "Uygula",
   "ask_ai": "Yapay Zekaya Sor",
   "audio_feedback": "Sesli Geri Bildirim",
-  "auto": "Otomatik",
-  "auto_speak_off": "Otomatik konuşma kapalı",
-  "auto_speak_on": "Otomatik konuşma açık",
   "available": "Kullanılabilir",
   "back_to_categories": "Kategorilere dön",
   "back_to_games": "Oyunlar",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Denetlenmemiş kelimeleri göster",
   "show_unreviewed_words_desc": "Bu dilin çevirilerini ana dili konuşan biri denetlemedi. Temel kelimeler ve güvenlik kelimeleri denetlendi ve her zaman görünür; geri kalanlar gizlidir. Tüm kelimeleri göstermek için bunu açın.",
   "speak_selection_feedback": "Her seçimi seslendir",
-  "speak_selection_feedback_desc": "Az önce seçtiğin kelimeyi onaylamak için söyler. Mesajın yalnızca Konuş’a bastığında seslendirilir."
+  "speak_selection_feedback_desc": "Az önce seçtiğin kelimeyi onaylamak için söyler. Mesajın yalnızca Konuş’a bastığında seslendirilir.",
+  "echo": "Yankı",
+  "selection_feedback_on": "Her seçimi seslendir: açık",
+  "selection_feedback_off": "Her seçimi seslendir: kapalı"
 }

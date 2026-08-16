@@ -33,9 +33,6 @@
   "apply": "Zastosuj",
   "ask_ai": "Zapytaj AI",
   "audio_feedback": "Sygnał dźwiękowy",
-  "auto": "Auto",
-  "auto_speak_off": "Auto-mówienie wyłączone",
-  "auto_speak_on": "Auto-mówienie włączone",
   "available": "Dostępne",
   "back_to_categories": "Powrót do kategorii",
   "back_to_games": "Gry",
@@ -422,5 +419,8 @@
   "show_unreviewed_words": "Pokaż niesprawdzone słowa",
   "show_unreviewed_words_desc": "Żaden native speaker nie sprawdził tłumaczeń tego języka. Słowa podstawowe i słowa bezpieczeństwa zostały zweryfikowane i zawsze są widoczne; reszta jest ukryta. Włącz, aby pokazać wszystkie słowa.",
   "speak_selection_feedback": "Wymawiaj każdy wybór",
-  "speak_selection_feedback_desc": "Wymawia właśnie wybrane słowo, aby je potwierdzić. Wiadomość jest wypowiadana dopiero po naciśnięciu Mów."
+  "speak_selection_feedback_desc": "Wymawia właśnie wybrane słowo, aby je potwierdzić. Wiadomość jest wypowiadana dopiero po naciśnięciu Mów.",
+  "echo": "Echo",
+  "selection_feedback_on": "Wymawiaj każdy wybór: włączone",
+  "selection_feedback_off": "Wymawiaj każdy wybór: wyłączone"
 }
