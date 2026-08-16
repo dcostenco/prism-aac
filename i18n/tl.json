@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Sinasabi ang salitang katatapos mong piliin, bilang kumpirmasyon. Ang mensahe mo ay binabasa lang kapag pinindot ang Sabihin.",
   "echo": "Alingawngaw",
   "selection_feedback_on": "Sabihin ang bawat pinili: naka-on",
-  "selection_feedback_off": "Sabihin ang bawat pinili: naka-off"
+  "selection_feedback_off": "Sabihin ang bawat pinili: naka-off",
+  "speech_mode_word": "Salita",
+  "speech_mode_sentence": "Pangungusap",
+  "selection_feedback_sentence": "Sabihin ang bawat pangungusap: naka-on",
+  "speak_sentence_feedback": "Sabihin ang bawat pangungusap",
+  "speak_sentence_feedback_desc": "Sinasabi ang tapos na pangungusap kapag nag-type ka ng . ? !"
 }

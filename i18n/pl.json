@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Wymawia właśnie wybrane słowo, aby je potwierdzić. Wiadomość jest wypowiadana dopiero po naciśnięciu Mów.",
   "echo": "Echo",
   "selection_feedback_on": "Wymawiaj każdy wybór: włączone",
-  "selection_feedback_off": "Wymawiaj każdy wybór: wyłączone"
+  "selection_feedback_off": "Wymawiaj każdy wybór: wyłączone",
+  "speech_mode_word": "Słowo",
+  "speech_mode_sentence": "Zdanie",
+  "selection_feedback_sentence": "Wymawiaj każde zdanie: włączone",
+  "speak_sentence_feedback": "Wymawiaj każde zdanie",
+  "speak_sentence_feedback_desc": "Wymawia ukończone zdanie po wpisaniu . ? !"
 }

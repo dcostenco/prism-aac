@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "अभी चुने गए शब्द को पुष्टि के लिए बोलता है। आपका संदेश तभी बोला जाता है जब आप बोलें दबाते हैं।",
   "echo": "प्रतिध्वनि",
   "selection_feedback_on": "हर चयन बोलें: चालू",
-  "selection_feedback_off": "हर चयन बोलें: बंद"
+  "selection_feedback_off": "हर चयन बोलें: बंद",
+  "speech_mode_word": "शब्द",
+  "speech_mode_sentence": "वाक्य",
+  "selection_feedback_sentence": "हर वाक्य बोलें: चालू",
+  "speak_sentence_feedback": "हर वाक्य बोलें",
+  "speak_sentence_feedback_desc": ". ? ! टाइप करने पर पूरा वाक्य बोलता है"
 }

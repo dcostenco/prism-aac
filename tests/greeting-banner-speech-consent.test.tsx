@@ -26,7 +26,12 @@ import GreetingBanner from '@/components/GreetingBanner';
 const mocks = vi.hoisted(() => ({
   aacSpeak: vi.fn(),
   messageState: { soundEnabled: true },
-  settingsState: { speechRate: 1, speechVolume: 1, speakSelectionFeedback: false },
+  settingsState: {
+    speechRate: 1,
+    speechVolume: 1,
+    speakSelectionFeedback: false,
+    speakOnSentenceEnd: false,
+  },
 }));
 
 vi.mock('@/services/aacSpeak', () => ({ aacSpeak: mocks.aacSpeak }));
@@ -35,7 +40,8 @@ vi.mock('@/store/messageStore', () => ({
   useMessageStore: { getState: () => mocks.messageState },
 }));
 
-vi.mock('@/store/settingsStore', () => ({
+vi.mock('@/store/settingsStore', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/store/settingsStore')>()),
   useSettingsStore: { getState: () => mocks.settingsState },
 }));
 
@@ -56,6 +62,7 @@ beforeEach(() => {
   mocks.aacSpeak.mockClear();
   mocks.messageState.soundEnabled = true;
   mocks.settingsState.speakSelectionFeedback = false;
+  mocks.settingsState.speakOnSentenceEnd = false;
 });
 
 // ── consent gate ──────────────────────────────────────────────────────────────

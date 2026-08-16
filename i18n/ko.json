@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "방금 고른 낱말을 확인용으로 읽어 줍니다. 메시지는 «말하기»를 누를 때만 읽습니다.",
   "echo": "에코",
   "selection_feedback_on": "선택할 때마다 읽기: 켬",
-  "selection_feedback_off": "선택할 때마다 읽기: 끔"
+  "selection_feedback_off": "선택할 때마다 읽기: 끔",
+  "speech_mode_word": "단어",
+  "speech_mode_sentence": "문장",
+  "selection_feedback_sentence": "문장마다 말하기: 켜짐",
+  "speak_sentence_feedback": "문장마다 말하기",
+  "speak_sentence_feedback_desc": ". ? ! 를 입력하면 완성된 문장을 말합니다"
 }

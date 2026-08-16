@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "朗讀你啱揀嘅詞以作確認。只有㩒「說話」先會朗讀成句訊息。",
   "echo": "回聲",
   "selection_feedback_on": "朗讀每次揀選：開",
-  "selection_feedback_off": "朗讀每次揀選：關"
+  "selection_feedback_off": "朗讀每次揀選：關",
+  "speech_mode_word": "單詞",
+  "speech_mode_sentence": "句子",
+  "selection_feedback_sentence": "朗讀每個句子：開",
+  "speak_sentence_feedback": "朗讀每個句子",
+  "speak_sentence_feedback_desc": "輸入 . ? ! 時朗讀完成的句子"
 }

@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Đọc từ bạn vừa chọn để xác nhận. Tin nhắn của bạn chỉ được đọc khi bạn nhấn Nói.",
   "echo": "Vọng",
   "selection_feedback_on": "Đọc từng lựa chọn: bật",
-  "selection_feedback_off": "Đọc từng lựa chọn: tắt"
+  "selection_feedback_off": "Đọc từng lựa chọn: tắt",
+  "speech_mode_word": "Từ",
+  "speech_mode_sentence": "Câu",
+  "selection_feedback_sentence": "Đọc từng câu: bật",
+  "speak_sentence_feedback": "Đọc từng câu",
+  "speak_sentence_feedback_desc": "Đọc câu đã hoàn thành khi bạn gõ . ? !"
 }

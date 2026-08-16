@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "朗读你刚选择的词以作确认。只有按下“说话”时才会朗读整条消息。",
   "echo": "回声",
   "selection_feedback_on": "朗读每次选择：开",
-  "selection_feedback_off": "朗读每次选择：关"
+  "selection_feedback_off": "朗读每次选择：关",
+  "speech_mode_word": "单词",
+  "speech_mode_sentence": "句子",
+  "selection_feedback_sentence": "朗读每个句子：开",
+  "speak_sentence_feedback": "朗读每个句子",
+  "speak_sentence_feedback_desc": "输入 . ? ! 时朗读完成的句子"
 }

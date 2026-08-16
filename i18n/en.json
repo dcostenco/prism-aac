@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Says the word you just picked, to confirm it. Your message is only spoken when you press Speak.",
   "echo": "Echo",
   "selection_feedback_on": "Speak each selection: on",
-  "selection_feedback_off": "Speak each selection: off"
+  "selection_feedback_off": "Speak each selection: off",
+  "speech_mode_word": "Word",
+  "speech_mode_sentence": "Sentence",
+  "selection_feedback_sentence": "Speak each sentence: on",
+  "speak_sentence_feedback": "Speak each sentence",
+  "speak_sentence_feedback_desc": "Speaks the finished sentence when you type . ? !"
 }

@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Rostește cuvântul pe care tocmai l-ai ales, ca să îl confirme. Mesajul tău este rostit doar când apeși Vorbește.",
   "echo": "Ecou",
   "selection_feedback_on": "Rostește fiecare selecție: activat",
-  "selection_feedback_off": "Rostește fiecare selecție: dezactivat"
+  "selection_feedback_off": "Rostește fiecare selecție: dezactivat",
+  "speech_mode_word": "Cuvânt",
+  "speech_mode_sentence": "Propoziție",
+  "selection_feedback_sentence": "Rostește fiecare propoziție: activat",
+  "speak_sentence_feedback": "Rostește fiecare propoziție",
+  "speak_sentence_feedback_desc": "Rostește propoziția terminată când tastezi . ? !"
 }

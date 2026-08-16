@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Mengucapkan kata yang baru dipilih untuk konfirmasi. Pesan Anda hanya diucapkan saat menekan Ucapkan.",
   "echo": "Gema",
   "selection_feedback_on": "Ucapkan setiap pilihan: aktif",
-  "selection_feedback_off": "Ucapkan setiap pilihan: nonaktif"
+  "selection_feedback_off": "Ucapkan setiap pilihan: nonaktif",
+  "speech_mode_word": "Kata",
+  "speech_mode_sentence": "Kalimat",
+  "selection_feedback_sentence": "Ucapkan setiap kalimat: aktif",
+  "speak_sentence_feedback": "Ucapkan setiap kalimat",
+  "speak_sentence_feedback_desc": "Mengucapkan kalimat selesai saat Anda mengetik . ? !"
 }

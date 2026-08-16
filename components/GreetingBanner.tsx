@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useScheduleStore } from '@/store/scheduleStore';
 import { useT } from '@/engine/useT';
 import { useMessageStore } from '@/store/messageStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useSettingsStore, getSpeechFeedbackMode } from '@/store/settingsStore';
 import { aacSpeak } from '@/services/aacSpeak';
 
 function getTimeGreeting(t: (key: string) => string): { greeting: string; icon: string } {
@@ -32,13 +32,18 @@ export default function GreetingBanner() {
       // same consent flag as the other auditory-feedback paths and is silent by default.
       // Only the speech is gated — the banner still renders and still greets visually.
       const { soundEnabled } = useMessageStore.getState();
-      const { speechRate, speechVolume, speakSelectionFeedback } = useSettingsStore.getState();
+      // Follows the Echo control as a whole rather than the word-specific flag:
+      // a user who chose Sentence feedback has asked for spoken feedback, and
+      // tying the greeting to one branch of that control made the two settings
+      // impossible to separate.
+      const { speechRate, speechVolume } = useSettingsStore.getState();
+      const speechOn = getSpeechFeedbackMode(useSettingsStore.getState()) !== 'off';
       // Where sessionStorage throws (private context) this degrades to speaking on each
       // remount — today's behaviour, not a new regression, and the same context already
       // breaks the dismissed flag above.
       let alreadySpoke = false;
       try { alreadySpoke = !!sessionStorage.getItem('prism-greeting-spoken'); } catch { /* private context */ }
-      if (soundEnabled && speakSelectionFeedback && !alreadySpoke) {
+      if (soundEnabled && speechOn && !alreadySpoke) {
         // Speak at most once per session: this banner remounts every time a side panel
         // closes or the board toggles, and the dismissed flag is written only by ✕.
         try { sessionStorage.setItem('prism-greeting-spoken', '1'); } catch { /* private context */ }

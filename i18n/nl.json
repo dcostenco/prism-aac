@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Zegt het net gekozen woord, ter bevestiging. Je bericht wordt pas uitgesproken als je op Spreken drukt.",
   "echo": "Echo",
   "selection_feedback_on": "Elke keuze uitspreken: aan",
-  "selection_feedback_off": "Elke keuze uitspreken: uit"
+  "selection_feedback_off": "Elke keuze uitspreken: uit",
+  "speech_mode_word": "Woord",
+  "speech_mode_sentence": "Zin",
+  "selection_feedback_sentence": "Elke zin uitspreken: aan",
+  "speak_sentence_feedback": "Elke zin uitspreken",
+  "speak_sentence_feedback_desc": "Spreekt de voltooide zin uit wanneer u . ? ! typt"
 }

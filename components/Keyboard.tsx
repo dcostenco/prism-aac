@@ -11,6 +11,7 @@ import { speakWord } from '@/services/speechService';
 import { warmupAzureAudio } from '@/services/azureTTS';
 import { triggerAISubmit } from '@/services/aiChatBridge';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
+
 import { keyFeedback, tapFeedback, deleteFeedback } from '@/services/feedback';
 import { dispatchToSearch } from '@/services/searchKeyBridge';
 import { getLetterRows, usesNativeImeKeyboard, NUMBERS_ROWS, getSymbolRows, getLocalizedPunctuation, buildKeyboardRows, isLatinKeyboardLayout, KANA_MODIFIERS, applyKanaModifier, GEEZ_MODIFIERS, geezOffsetFor, applyGeezVowelOrder } from '@/constants/keyboardLayouts';
@@ -327,15 +328,36 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     //     speak the just-completed sentence (Read&Write parity for
     //     users with reading/memory disabilities who lose track of
     //     what they typed by the period). Gated on speakOnSentenceEnd.
-    // Typing a sentence terminator used to speak the completed sentence aloud.
-    // That is MESSAGE speech — the public utterance to a communication partner
-    // — produced without the user choosing to produce it. A sentence the user
-    // is still editing would be broadcast as though it were finished, and a
-    // partial one can invert the meaning of the whole ("I don't want" heard as
-    // "I want"). The message is spoken when the user presses Speak.
     //
-    // `speakOnSentenceEnd` remains in settings for the PDF reader, which reads
-    // a document the user explicitly asked to have read.
+    // This is MESSAGE speech, produced without the user pressing Speak, so it
+    // carries a real cost: a sentence still being edited is broadcast as
+    // finished, and a partial one can invert the meaning ("I don't want" heard
+    // as "I want"). It is therefore strictly OPT-IN — `speakOnSentenceEnd`
+    // defaults false, no migration turns it on, and it is reachable only by
+    // deliberately cycling the message-bar Echo control to Sentence. AAC
+    // feature-matching expects the device to OFFER speak-after-each-sentence
+    // and the team to choose it; it does not expect the app to impose it.
+    if (SENTENCE_END.test(char) && soundEnabled && useSettingsStore.getState().speakOnSentenceEnd) {
+      // extractLastSentence already existed for this feature and survived the
+      // removal of its call site: it handles repeated terminators ("Wait!!")
+      // and abbreviations ("Mr. Smith said hello."). Reuse it rather than
+      // reimplementing a weaker slice — and speak only the sentence that
+      // terminated here, never the whole accumulated message.
+      const sentence = extractLastSentence(`${currentText}${char}`);
+      if (sentence) {
+        const { language: srcLang, outputLanguage: outLang } = useSettingsStore.getState();
+        if (srcLang !== outLang) {
+          // Same guard the space handler uses: a sentence the dictionary left
+          // in the source language would be voiced as the wrong language.
+          const spoken = translateTextSync(sentence, srcLang as SupportedLanguage, outLang as SupportedLanguage);
+          if (!hasUntranslatedResidue(sentence, spoken)) {
+            void aacSpeak(sentence, speechRate, speechVolume, activeTone, true);
+          }
+        } else {
+          void aacSpeak(sentence, speechRate, speechVolume, activeTone, true);
+        }
+      }
+    }
   }, [appendChar, setText, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper, language, browserMode,
       speakOnSentenceEnd, soundEnabled, speechRate, speechVolume, activeTone]);
 

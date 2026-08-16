@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Pronuncia la parola appena scelta, per conferma. Il messaggio viene detto solo premendo Parla.",
   "echo": "Eco",
   "selection_feedback_on": "Pronuncia ogni selezione: attivo",
-  "selection_feedback_off": "Pronuncia ogni selezione: non attivo"
+  "selection_feedback_off": "Pronuncia ogni selezione: non attivo",
+  "speech_mode_word": "Parola",
+  "speech_mode_sentence": "Frase",
+  "selection_feedback_sentence": "Pronuncia ogni frase: attivo",
+  "speak_sentence_feedback": "Pronuncia ogni frase",
+  "speak_sentence_feedback_desc": "Pronuncia la frase completata quando digiti . ? !"
 }

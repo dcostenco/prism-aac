@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Hutamka neno ulilochagua sasa hivi, kuthibitisha. Ujumbe wako hutamkwa tu unapobonyeza Sema.",
   "echo": "Mwangwi",
   "selection_feedback_on": "Tamka kila chaguo: imewashwa",
-  "selection_feedback_off": "Tamka kila chaguo: imezimwa"
+  "selection_feedback_off": "Tamka kila chaguo: imezimwa",
+  "speech_mode_word": "Neno",
+  "speech_mode_sentence": "Sentensi",
+  "selection_feedback_sentence": "Tamka kila sentensi: imewashwa",
+  "speak_sentence_feedback": "Tamka kila sentensi",
+  "speak_sentence_feedback_desc": "Hutamka sentensi iliyokamilika unapoandika . ? !"
 }

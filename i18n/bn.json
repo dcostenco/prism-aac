@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "আপনি এইমাত্র বেছে নেওয়া শব্দটি নিশ্চিত করতে বলে। আপনার বার্তা কেবল বলুন চাপলেই বলা হয়।",
   "echo": "প্রতিধ্বনি",
   "selection_feedback_on": "প্রতিটি নির্বাচন বলুন: চালু",
-  "selection_feedback_off": "প্রতিটি নির্বাচন বলুন: বন্ধ"
+  "selection_feedback_off": "প্রতিটি নির্বাচন বলুন: বন্ধ",
+  "speech_mode_word": "শব্দ",
+  "speech_mode_sentence": "বাক্য",
+  "selection_feedback_sentence": "প্রতিটি বাক্য বলুন: চালু",
+  "speak_sentence_feedback": "প্রতিটি বাক্য বলুন",
+  "speak_sentence_feedback_desc": ". ? ! টাইপ করলে সম্পূর্ণ বাক্যটি বলে"
 }

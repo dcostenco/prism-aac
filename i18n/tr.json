@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Az önce seçtiğin kelimeyi onaylamak için söyler. Mesajın yalnızca Konuş’a bastığında seslendirilir.",
   "echo": "Yankı",
   "selection_feedback_on": "Her seçimi seslendir: açık",
-  "selection_feedback_off": "Her seçimi seslendir: kapalı"
+  "selection_feedback_off": "Her seçimi seslendir: kapalı",
+  "speech_mode_word": "Kelime",
+  "speech_mode_sentence": "Cümle",
+  "selection_feedback_sentence": "Her cümleyi seslendir: açık",
+  "speak_sentence_feedback": "Her cümleyi seslendir",
+  "speak_sentence_feedback_desc": ". ? ! yazdığınızda tamamlanan cümleyi seslendirir"
 }

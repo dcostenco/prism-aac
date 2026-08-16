@@ -422,5 +422,10 @@
   "speak_selection_feedback_desc": "Sagt das gerade gewählte Wort zur Bestätigung. Deine Nachricht wird erst gesprochen, wenn du auf Sprechen tippst.",
   "echo": "Echo",
   "selection_feedback_on": "Jede Auswahl sprechen: ein",
-  "selection_feedback_off": "Jede Auswahl sprechen: aus"
+  "selection_feedback_off": "Jede Auswahl sprechen: aus",
+  "speech_mode_word": "Wort",
+  "speech_mode_sentence": "Satz",
+  "selection_feedback_sentence": "Jeden Satz vorlesen: ein",
+  "speak_sentence_feedback": "Jeden Satz vorlesen",
+  "speak_sentence_feedback_desc": "Liest den fertigen Satz vor, wenn Sie . ? ! tippen"
 }
