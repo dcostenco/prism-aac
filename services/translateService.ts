@@ -519,6 +519,34 @@ export interface RefineOptions {
   force?: boolean;
 }
 
+/**
+ * Did the offline dictionary leave source-language words in its output?
+ *
+ * Mid-composition there is no cloud refinement to speak — that is reserved for
+ * a phrase boundary — so the only candidate is the offline dictionary, and on
+ * an unfinished utterance it commonly translates some words and passes others
+ * through untouched. Measured en->ro while typing "I am here. I want water.":
+ * "Eu am here. eu.", "Eu am here. Vreau.", "Vreau water.". Spoken aloud that
+ * is not a partial translation, it is two languages at once, and an AAC user
+ * has no way to tell it apart from a finished utterance.
+ *
+ * `looksLikeTargetLang` cannot catch this for same-script pairs — Romanian and
+ * English are both Latin — so compare tokens instead: a token that survives
+ * verbatim from the source is untranslated residue.
+ *
+ * Deliberately conservative. A word spelled identically in both languages
+ * (proper nouns, "hotel") reads as residue and suppresses the utterance. Being
+ * quiet for one word is a far smaller harm than voicing a mixed-language
+ * sentence, and the phrase-boundary path still speaks the refined translation.
+ */
+export function hasUntranslatedResidue(source: string, translated: string): boolean {
+  const tokens = (v: string) =>
+    v.toLowerCase().split(/[^\p{L}\p{N}']+/u).filter((t) => t.length > 1);
+  const src = new Set(tokens(source));
+  if (src.size === 0) return false;
+  return tokens(translated).some((t) => src.has(t));
+}
+
 export function translateWithAIRefine(
   text: string,
   fromLang: SupportedLanguage,

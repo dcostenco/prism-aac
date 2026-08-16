@@ -185,6 +185,47 @@ test.describe('what is SPOKEN matches what is SHOWN', () => {
   });
 });
 
+test.describe('no half-translated utterance is ever spoken', () => {
+  // While composing, the only translation available is the offline dictionary,
+  // which renders an unfinished phrase as a mix of both languages. Measured
+  // en->ro typing "I am here. I want water." before the fix, TTS received
+  // "Eu am here. eu.", then "Eu am here. Vreau.", then "Vreau water." — the
+  // display was right the whole time, but the voice was not, and an AAC user
+  // cannot tell a provisional utterance from a finished one.
+  test('typing a second sentence never voices a source-language word', async ({ page }) => {
+    const tts: string[] = [];
+    page.on('request', (req) => {
+      if (!req.url().includes('/tts')) return;
+      try {
+        const b = JSON.parse(req.postData() || '{}');
+        const t = b?.text ?? b?.ssml ?? b?.input;
+        if (t) tts.push(String(t));
+      } catch { /* non-JSON */ }
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem('prism-aac-settings', JSON.stringify({
+        state: { language: 'en', outputLanguage: 'ro', speechVolume: 1, speechRate: 1 },
+        version: 0,
+      }));
+    });
+    await page.goto('', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-testid="keyboard-shell"]', { timeout: 30_000 });
+
+    await typeSlowly(page, 'I am here');
+    await page.getByRole('button', { name: /^\.$/ }).first().click();
+    await page.waitForTimeout(5000);
+    tts.length = 0;                                  // ignore the first sentence
+
+    await typeSlowly(page, ' I want water');
+    await page.waitForTimeout(3000);
+
+    // English source words must never reach the Romanian voice.
+    const leaked = tts.filter((t) => /\b(here|water|want)\b/i.test(t));
+    expect(leaked, `mixed-language utterances sent to TTS: ${JSON.stringify(tts)}`).toEqual([]);
+  });
+});
+
 test.describe('prediction context survives punctuation in the real app', () => {
   test('after "How are you? " the bar is contextual, not corpus filler', async ({ page }) => {
     await openBoard(page);
