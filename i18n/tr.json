@@ -420,5 +420,7 @@
   "you": "Sen",
   "your_name": "Adınız",
   "show_unreviewed_words": "Denetlenmemiş kelimeleri göster",
-  "show_unreviewed_words_desc": "Bu dilin çevirilerini ana dili konuşan biri denetlemedi. Temel kelimeler ve güvenlik kelimeleri denetlendi ve her zaman görünür; geri kalanlar gizlidir. Tüm kelimeleri göstermek için bunu açın."
+  "show_unreviewed_words_desc": "Bu dilin çevirilerini ana dili konuşan biri denetlemedi. Temel kelimeler ve güvenlik kelimeleri denetlendi ve her zaman görünür; geri kalanlar gizlidir. Tüm kelimeleri göstermek için bunu açın.",
+  "speak_selection_feedback": "Her seçimi seslendir",
+  "speak_selection_feedback_desc": "Az önce seçtiğin kelimeyi onaylamak için söyler. Mesajın yalnızca Konuş’a bastığında seslendirilir."
 }

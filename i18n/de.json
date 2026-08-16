@@ -420,5 +420,7 @@
   "you": "Du",
   "your_name": "Dein Name",
   "show_unreviewed_words": "Ungeprüfte Wörter anzeigen",
-  "show_unreviewed_words_desc": "Kein Muttersprachler hat die Übersetzungen dieser Sprache geprüft. Kern- und Sicherheitswörter wurden geprüft und werden immer angezeigt; der Rest ist ausgeblendet. Aktivieren, um alle Wörter anzuzeigen."
+  "show_unreviewed_words_desc": "Kein Muttersprachler hat die Übersetzungen dieser Sprache geprüft. Kern- und Sicherheitswörter wurden geprüft und werden immer angezeigt; der Rest ist ausgeblendet. Aktivieren, um alle Wörter anzuzeigen.",
+  "speak_selection_feedback": "Jede Auswahl sprechen",
+  "speak_selection_feedback_desc": "Sagt das gerade gewählte Wort zur Bestätigung. Deine Nachricht wird erst gesprochen, wenn du auf Sprechen tippst."
 }

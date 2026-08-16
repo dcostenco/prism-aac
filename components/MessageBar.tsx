@@ -242,112 +242,20 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
     return best ?? translatedRef.current;
   }, []);
 
-  // ── Phrase auto-speak after silence ───────────────────────────────────────
-  // Auto-speak cannot depend on the AI autocorrect request succeeding. A
-  // corpus-confirmed complete word speaks after the existing 400 ms typing
-  // pause; an ambiguous fragment waits two seconds. This makes valid
-  // one-letter utterances such as "I" audible without restoring per-key
-  // letter-name echo for arbitrary fragments.
-  useEffect(() => {
-    if (compositionSpeakTimer.current) clearTimeout(compositionSpeakTimer.current);
-    const { language: lang, outputLanguage: outLang } = useSettingsStore.getState();
-    const translationActive = lang !== outLang;
-    const { autoSpeak: as, soundEnabled: se } = useMessageStore.getState();
-    const phrase = text.trim();
-    if (!as || !se || !phrase) return;
-
-    let cancelled = false;
-    const startedAt = Date.now();
-    const speakCurrentPhrase = () => {
-      const { autoSpeak, soundEnabled } = useMessageStore.getState();
-      if (!autoSpeak || !soundEnabled) return;
-      const normalizedPhrase = normalizeSpokenText(phrase);
-      const lastSpoken = lastAutoSpokenRef.current;
-      if (
-        lastSpoken.text
-        && Date.now() - lastSpoken.at <= DIRECT_SPEECH_DEDUPE_MS
-        && (
-          normalizedPhrase === lastSpoken.text
-          || normalizedPhrase.endsWith(` ${lastSpoken.text}`)
-        )
-      ) {
-        return;
-      }
-      // Use translatedRef.current so we always read the latest AI-refined
-      // translation — the closure over `translated` would be stale here
-      // because `translated` is intentionally excluded from the deps array.
-      const latestTranslated = translatedRef.current;
-      const outLang = useSettingsStore.getState().outputLanguage as SupportedLanguage | undefined;
-      if (translationActive) {
-        // interrupt=true: stop any in-flight Azure stream before speaking the
-        // new translation. Consecutive phrase timers must not overlap.
-        if (isPhraseBoundary(phrase)) {
-          // The user closed a sentence, so a refine is running for the display.
-          // This timer matures at 400ms and the refine lands around 800ms, so
-          // speaking immediately voiced the offline dictionary's
-          // half-translated output while the bar showed the good one.
-          void translateForSpeech(
-            phrase,
-            useSettingsStore.getState().language as SupportedLanguage,
-            outLang as SupportedLanguage,
-            (t) => setTranslated(t),
-          ).then((best) => {
-            const spoken = best || translatedRef.current;
-            void aacSpeak(spoken || phrase, speechRate, speechVolume, activeTone, true, spoken ? outLang : undefined);
-          });
-        } else if (latestTranslated && !hasUntranslatedResidue(phrase, latestTranslated)) {
-          // Mid-phrase, speak only a CLEAN offline translation.
-          void aacSpeak(latestTranslated, speechRate, speechVolume, activeTone, true, outLang);
-        }
-        // Mid-phrase with residue in translation mode: say nothing.
-        //
-        // There is no trustworthy translation to speak yet. `latestTranslated`
-        // looks like one but is not: MessageBar publishes the OFFLINE result
-        // on every keystroke, so mid-phrase it holds the dictionary's
-        // word-by-word rendering of an unfinished utterance — measured en->ro
-        // while typing a second sentence, it voiced "Eu am here. eu." and
-        // "Eu am here. Vreau.". Gating on `latestTranslated` being non-empty
-        // was tried and did not help, because it is never empty.
-        //
-        // The blue line still updates on every keystroke, so the user keeps
-        // visual feedback; audio waits for the sentence terminator or an
-        // explicit Play — the same rule the display follows. Same-language
-        // composition feedback (below) is untouched: with nothing to
-        // translate, there is nothing to get wrong.
-      } else {
-        // Same-language composition feedback reuses the latest-wins
-        // quality-first path while replaying the complete accumulated message.
-        speakWord(phrase, speechRate, speechVolume);
-      }
-    };
-
-    void loadPredictionSeed(lang).then((seed) => {
-      if (cancelled) return;
-      const lastWord = trailingSpokenWord(phrase);
-      const delay = isConfidentCompleteWord(lastWord, seed.wordFreq, lang)
-        ? COMPLETE_WORD_SILENCE_MS
-        : COMPOSITION_SILENCE_MS;
-      const remainingDelay = Math.max(0, delay - (Date.now() - startedAt));
-      compositionSpeakTimer.current = setTimeout(speakCurrentPhrase, remainingDelay);
-    });
-
-    return () => {
-      cancelled = true;
-      if (compositionSpeakTimer.current) clearTimeout(compositionSpeakTimer.current);
-    };
-  // NOTE: `translated` intentionally excluded from deps — including it would
-  // restart the 2s timer when AI-refine updates the translation, causing a
-  // second auto-speak. The timer callback reads translated state at fire time.
-  }, [
-    text,
-    speechRate,
-    speechVolume,
-    activeTone,
-    language,
-    outputLanguage,
-    autoSpeak,
-    soundEnabled,
-  ]);
+  // ── Phrase auto-speak after silence: REMOVED ────────────────────────────
+  //
+  // This used to speak the whole composed message after 400ms (a confident
+  // complete word) or 2s of silence. That is MESSAGE speech — the public
+  // utterance to a communication partner — produced because the user PAUSED,
+  // which is not consent to say anything. Pausing is what AAC users do while
+  // composing; switch scanning, head tracking and eye gaze all pause
+  // constantly. Every draft, false start and typo was broadcast, and a
+  // partial message can invert the meaning of the finished one.
+  //
+  // The message is spoken when the user presses Speak. Optional auditory
+  // feedback (settings: speakSelectionFeedback) confirms each SELECTION by
+  // speaking the item just chosen, which is the channel that actually serves
+  // scanning users.
 
   // Debounced background suggestion — child must explicitly tap to accept,
   // never auto-applied.
@@ -399,29 +307,14 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
       // spelling. Dedup via lastSilenceSpokenRef so an unchanged trailing
       // word doesn't replay the phrase on every render.
       if (inputIsValid) {
-        // Read fresh state from stores rather than relying on closure
-        // captures from the outer render — speechRate / activeTone
-        // could have changed between text-change and timer fire.
-        const ms = useMessageStore.getState();
-        const ss = useSettingsStore.getState();
-        if (ms.autoSpeak && ms.soundEnabled) {
-          const tokens = trimmed.split(/\s+/);
-          const lastWord = tokens[tokens.length - 1] || '';
-          // Skip silence speech for short trailing partials (≤2 chars).
-          // "i Want y" — server echoed input as "valid" but the trailing
-          // "y" is clearly a partial mid-word, not a finished word the
-          // user wants spoken. Speaking it here would produce the same
-          // "letter by letter wai" complaint Speak's strip-fallback was
-          // designed to prevent. Only speak words ≥3 chars; users in
-          // mid-typing get silent feedback until they finish a word.
-          // In translation mode, suppress this same-language path; the
-          // composition timer translates and speaks the cumulative phrase.
-          const translationActive = ss.language !== ss.outputLanguage;
-          if (!translationActive && lastWord.length >= 3 && lastWord.toLowerCase() !== lastSilenceSpokenRef.current.toLowerCase()) {
-            lastSilenceSpokenRef.current = lastWord;
-            speakWord(trimmed, ss.speechRate, ss.speechVolume);
-          }
-        }
+        // Speech removed. This spoke the whole trimmed message once the
+        // autocorrect round-trip confirmed the input was well-formed — i.e.
+        // because the user PAUSED and the server said "looks fine". Neither
+        // is consent to say anything aloud. It is MESSAGE speech and it now
+        // happens only when the user presses Speak.
+        //
+        // `lastSilenceSpokenRef` is retained: the Speak handlers still use it
+        // to avoid double-speaking a phrase.
         return;
       }
       // Reset silence-spoken tracker — input changed enough to need a

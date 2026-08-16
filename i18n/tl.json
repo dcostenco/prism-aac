@@ -420,5 +420,7 @@
   "you": "Ikaw",
   "your_name": "Iyong pangalan",
   "show_unreviewed_words": "Ipakita ang mga salitang hindi pa nasusuri",
-  "show_unreviewed_words_desc": "Walang katutubong nagsasalita ang nakasuri sa mga salin ng wikang ito. Ang mga pangunahing salita at salitang pangkaligtasan ay nasuri at laging lumalabas; ang iba ay nakatago. I-on ito upang ipakita ang lahat ng salita."
+  "show_unreviewed_words_desc": "Walang katutubong nagsasalita ang nakasuri sa mga salin ng wikang ito. Ang mga pangunahing salita at salitang pangkaligtasan ay nasuri at laging lumalabas; ang iba ay nakatago. I-on ito upang ipakita ang lahat ng salita.",
+  "speak_selection_feedback": "Sabihin ang bawat pinili",
+  "speak_selection_feedback_desc": "Sinasabi ang salitang katatapos mong piliin, bilang kumpirmasyon. Ang mensahe mo ay binabasa lang kapag pinindot ang Sabihin."
 }

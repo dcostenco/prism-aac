@@ -327,35 +327,15 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     //     speak the just-completed sentence (Read&Write parity for
     //     users with reading/memory disabilities who lose track of
     //     what they typed by the period). Gated on speakOnSentenceEnd.
-    if (!browserMode && speakOnSentenceEnd && autoSpeak && soundEnabled && SENTENCE_END.test(char)) {
-      // Read fresh state — appendChar above is async w.r.t. zustand
-      // batching; getState() guarantees the just-typed punctuation
-      // is included in `text` rather than racing the closure.
-      const text = useMessageStore.getState().text;
-      const sentence = extractLastSentence(text);
-      if (sentence) {
-        const { language: inLang, outputLanguage: outLang } = useSettingsStore.getState();
-        if (inLang !== outLang) {
-          // A sentence terminator IS the phrase boundary the gate waits for, so
-          // a refine is running for the display. Join it instead of speaking
-          // aacSpeak's offline fallback: measured en->ro on "I want water.",
-          // the bar showed "eu vreau apă." while the voice said
-          // "Vreau water." — a mix looksLikeTargetLang cannot reject, because
-          // Romanian and English share the Latin script.
-          void translateForSpeech(
-            sentence,
-            inLang as SupportedLanguage,
-            outLang as SupportedLanguage,
-            setLatestTranslated,
-          ).then((best) => {
-            if (best) aacSpeak(best, speechRate, speechVolume, activeTone, true, outLang as SupportedLanguage);
-            else aacSpeak(sentence, speechRate, speechVolume, activeTone);
-          });
-        } else {
-          aacSpeak(sentence, speechRate, speechVolume, activeTone);
-        }
-      }
-    }
+    // Typing a sentence terminator used to speak the completed sentence aloud.
+    // That is MESSAGE speech — the public utterance to a communication partner
+    // — produced without the user choosing to produce it. A sentence the user
+    // is still editing would be broadcast as though it were finished, and a
+    // partial one can invert the meaning of the whole ("I don't want" heard as
+    // "I want"). The message is spoken when the user presses Speak.
+    //
+    // `speakOnSentenceEnd` remains in settings for the PDF reader, which reads
+    // a document the user explicitly asked to have read.
   }, [appendChar, setText, isUpperCase, capsLock, keyboardMode, toggleCase, showUpper, language, browserMode,
       speakOnSentenceEnd, autoSpeak, soundEnabled, speechRate, speechVolume, activeTone]);
 
@@ -406,39 +386,21 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
         learnWord(lastWord.toLowerCase(), prevWord?.toLowerCase(), prevPrevWord?.toLowerCase());
         const translationActive = useSettingsStore.getState().language !== useSettingsStore.getState().outputLanguage;
         const phrase = currentText.trim();
-        if (autoSpeak && soundEnabled) {
+        // Auditory feedback on the word just completed — never the running
+        // message. This block used to speak the whole accumulated message on
+        // every space, which is the user's public utterance being produced
+        // without them choosing to produce it. Message speech is on Speak.
+        if (autoSpeak && soundEnabled && useSettingsStore.getState().speakSelectionFeedback) {
           if (translationActive) {
-            // Stay SILENT mid-phrase when translating. This path used to speak
-            // the cumulative message on every space, but with cloud refinement
-            // now reserved for a phrase boundary the only thing available
-            // mid-composition is the offline dictionary — which renders an
-            // unfinished phrase as a mix of both languages. Measured en->ro
-            // while typing "I am here. I want water.", it voiced
-            // "Eu am here. eu.", then "Eu am here. Vreau.", then
-            // "Vreau water.". A listener hearing that gets nothing usable, and
-            // an AAC user cannot tell it is provisional.
-            //
-            // The blue translation line still updates on every keystroke, so
-            // visual feedback is unchanged; audio waits for the sentence
-            // terminator or an explicit Play, which is the same rule the
-            // display follows. Same-language composition feedback below is
-            // unaffected — there is no translation to get wrong.
-            // Speak only what the offline dictionary translated CLEANLY. A
-            // core-word phrase ("I need" -> "Eu am nevoie") is exactly the
-            // word-boundary confirmation this path exists to give, and it
-            // still fires. What no longer fires is the mixed-language case
-            // ("I am here." -> "Eu am here."), which is not a partial
-            // translation but two languages in one utterance.
             const { language: srcLang, outputLanguage: outLang } = useSettingsStore.getState();
-            const offline = translateTextSync(phrase, srcLang as SupportedLanguage, outLang as SupportedLanguage);
-            if (isPhraseBoundary(phrase) || !hasUntranslatedResidue(phrase, offline)) {
-              void aacSpeak(phrase, speechRate, speechVolume, activeTone, true);
+            const spokenWord = translateTextSync(lastWord, srcLang as SupportedLanguage, outLang as SupportedLanguage);
+            // Only voice a word the dictionary actually translated; a
+            // passed-through source word would be the wrong language.
+            if (!hasUntranslatedResidue(lastWord, spokenWord)) {
+              void aacSpeak(lastWord, speechRate, speechVolume, activeTone, true);
             }
           } else {
-            // Preserve the established AAC contract: replay the whole message
-            // at each word boundary through the quality-first speech path,
-            // instead of speaking only the trailing word.
-            speakWord(phrase, speechRate, speechVolume);
+            speakWord(lastWord, speechRate, speechVolume);
           }
         }
       }

@@ -420,5 +420,7 @@
   "you": "Anda",
   "your_name": "Nama Anda",
   "show_unreviewed_words": "Tampilkan kata yang belum ditinjau",
-  "show_unreviewed_words_desc": "Belum ada penutur asli yang memeriksa terjemahan bahasa ini. Kata inti dan kata keselamatan telah diaudit dan selalu ditampilkan; sisanya disembunyikan. Aktifkan untuk menampilkan semua kata."
+  "show_unreviewed_words_desc": "Belum ada penutur asli yang memeriksa terjemahan bahasa ini. Kata inti dan kata keselamatan telah diaudit dan selalu ditampilkan; sisanya disembunyikan. Aktifkan untuk menampilkan semua kata.",
+  "speak_selection_feedback": "Ucapkan setiap pilihan",
+  "speak_selection_feedback_desc": "Mengucapkan kata yang baru dipilih untuk konfirmasi. Pesan Anda hanya diucapkan saat menekan Ucapkan."
 }

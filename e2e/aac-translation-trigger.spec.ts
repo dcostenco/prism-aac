@@ -152,7 +152,7 @@ test.describe('what is SPOKEN matches what is SHOWN', () => {
   // translateWithAIRefine cancelled unconditionally on entry, so the display's
   // refine killed the speaker's. The refine is now owned by its phrase — see
   // tests/translate-refine-ownership.test.ts for the unit-level invariants.
-  test('sentence-end auto-speak sends the translated phrase to TTS, not a partial mix', async ({ page }) => {
+  test('pressing Speak sends the translated phrase to TTS, not a partial mix', async ({ page }) => {
     const ttsTexts: string[] = [];
     page.on('request', (req) => {
       if (!req.url().includes('/tts')) return;
@@ -173,12 +173,17 @@ test.describe('what is SPOKEN matches what is SHOWN', () => {
     await page.waitForSelector('[data-testid="keyboard-shell"]', { timeout: 30_000 });
 
     await typeSlowly(page, 'I want water');
-    ttsTexts.length = 0;                       // ignore composition feedback
     await page.getByRole('button', { name: /^\.$/ }).first().click();
+    await page.waitForTimeout(4000);
+    // Composing voices nothing at all now — that is asserted in
+    // aac-speech-consent.spec.ts. Here we care about WHAT Speak sends.
+    ttsTexts.length = 0;
+
+    await page.locator('button.aac-speak').first().click();
     await page.waitForTimeout(6000);
 
     const spoken = ttsTexts.join(' | ');
-    expect(spoken, 'nothing was sent to TTS').not.toBe('');
+    expect(spoken, 'Speak produced no audio').not.toBe('');
     // The English source word must not survive into Romanian speech.
     expect(spoken.toLowerCase(), `spoken payload was: ${spoken}`).not.toMatch(/\bwater\b/);
     expect(spoken.toLowerCase(), `spoken payload was: ${spoken}`).toMatch(/ap[ăa]/);

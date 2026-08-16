@@ -420,5 +420,7 @@
   "you": "Bạn",
   "your_name": "Tên của bạn",
   "show_unreviewed_words": "Hiển thị các từ chưa được kiểm tra",
-  "show_unreviewed_words_desc": "Chưa có người bản ngữ nào kiểm tra bản dịch của ngôn ngữ này. Các từ cốt lõi và từ an toàn đã được kiểm tra và luôn hiển thị; những từ còn lại bị ẩn. Bật để hiển thị tất cả các từ."
+  "show_unreviewed_words_desc": "Chưa có người bản ngữ nào kiểm tra bản dịch của ngôn ngữ này. Các từ cốt lõi và từ an toàn đã được kiểm tra và luôn hiển thị; những từ còn lại bị ẩn. Bật để hiển thị tất cả các từ.",
+  "speak_selection_feedback": "Đọc từng lựa chọn",
+  "speak_selection_feedback_desc": "Đọc từ bạn vừa chọn để xác nhận. Tin nhắn của bạn chỉ được đọc khi bạn nhấn Nói."
 }

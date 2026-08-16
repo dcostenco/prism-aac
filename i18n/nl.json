@@ -420,5 +420,7 @@
   "you": "Jij",
   "your_name": "Jouw naam",
   "show_unreviewed_words": "Niet-gecontroleerde woorden tonen",
-  "show_unreviewed_words_desc": "Geen moedertaalspreker heeft de vertalingen van deze taal gecontroleerd. Kern- en veiligheidswoorden zijn gecontroleerd en worden altijd getoond; de rest is verborgen. Zet dit aan om alle woorden te tonen."
+  "show_unreviewed_words_desc": "Geen moedertaalspreker heeft de vertalingen van deze taal gecontroleerd. Kern- en veiligheidswoorden zijn gecontroleerd en worden altijd getoond; de rest is verborgen. Zet dit aan om alle woorden te tonen.",
+  "speak_selection_feedback": "Elke keuze uitspreken",
+  "speak_selection_feedback_desc": "Zegt het net gekozen woord, ter bevestiging. Je bericht wordt pas uitgesproken als je op Spreken drukt."
 }

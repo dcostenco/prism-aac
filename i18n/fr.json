@@ -420,5 +420,7 @@
   "you": "Vous",
   "your_name": "Votre nom",
   "show_unreviewed_words": "Afficher les mots non vérifiés",
-  "show_unreviewed_words_desc": "Aucun locuteur natif n'a vérifié les traductions de cette langue. Les mots essentiels et de sécurité ont été audités et s'affichent toujours ; les autres sont masqués. Activez cette option pour afficher tous les mots."
+  "show_unreviewed_words_desc": "Aucun locuteur natif n'a vérifié les traductions de cette langue. Les mots essentiels et de sécurité ont été audités et s'affichent toujours ; les autres sont masqués. Activez cette option pour afficher tous les mots.",
+  "speak_selection_feedback": "Dire chaque sélection",
+  "speak_selection_feedback_desc": "Dit le mot que vous venez de choisir, pour le confirmer. Votre message n’est dit qu’en appuyant sur Parler."
 }

@@ -132,6 +132,7 @@ export default function SettingsModal() {
   const setTheme = useSettingsStore(s => s.setTheme);
   const update = useSettingsStore(s => s.update);
   const aiAutocorrectEnabled = useSettingsStore(s => s.aiAutocorrectEnabled);
+  const speakSelectionFeedback = useSettingsStore(s => s.speakSelectionFeedback);
   const cloudPredictionEnabled = useSettingsStore(s => s.cloudPredictionEnabled);
   const showUnreviewedVocabulary = useSettingsStore(s => s.showUnreviewedVocabulary);
   const mathHoldTimeMs = useSettingsStore(s => s.mathHoldTimeMs);
@@ -425,6 +426,20 @@ export default function SettingsModal() {
               <span className="text-primary text-sm">{t('high_contrast')}</span>
               <Toggle on={highContrast} label={t('high_contrast')}
                 onToggle={() => update({ highContrast: !highContrast })} />
+            </label>
+            {/* Auditory feedback. Off by default: the MESSAGE is spoken only
+                when the user presses Speak, and this confirms each SELECTION
+                by saying the item just chosen. Scanning and low-literacy
+                users rely on that confirmation; broadcasting the growing
+                message instead is the user's public utterance being made
+                without them choosing to make it. */}
+            <label className="flex items-center justify-between py-1.5">
+              <div>
+                <span className="text-primary text-sm">{t('speak_selection_feedback')}</span>
+                <p className="text-muted text-[10px]">{t('speak_selection_feedback_desc')}</p>
+              </div>
+              <Toggle on={speakSelectionFeedback} label={t('speak_selection_feedback')}
+                onToggle={() => update({ speakSelectionFeedback: !speakSelectionFeedback })} />
             </label>
             <label className="flex items-center justify-between py-1.5">
               <div>

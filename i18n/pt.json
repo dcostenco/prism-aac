@@ -420,5 +420,7 @@
   "you": "Você",
   "your_name": "Seu nome",
   "show_unreviewed_words": "Mostrar palavras não revisadas",
-  "show_unreviewed_words_desc": "Nenhum falante nativo verificou as traduções deste idioma. As palavras essenciais e de segurança foram auditadas e aparecem sempre; as restantes estão ocultas. Ative para mostrar todas as palavras."
+  "show_unreviewed_words_desc": "Nenhum falante nativo verificou as traduções deste idioma. As palavras essenciais e de segurança foram auditadas e aparecem sempre; as restantes estão ocultas. Ative para mostrar todas as palavras.",
+  "speak_selection_feedback": "Falar cada seleção",
+  "speak_selection_feedback_desc": "Diz a palavra que acabou de escolher, para confirmar. A sua mensagem só é falada ao premir Falar."
 }

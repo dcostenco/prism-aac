@@ -87,7 +87,11 @@ beforeEach(() => {
 });
 
 describe('Keyboard cumulative word-boundary speech', () => {
-  it('offers Arabic punctuation and sentence-end speech for the Arabic question mark', () => {
+  // Sentence-end auto-speech was removed: typing a terminator broadcast the
+  // completed sentence without the user choosing to say it. The Arabic
+  // PUNCTUATION coverage this test was written for is unaffected and is what
+  // it now asserts.
+  it('offers Arabic punctuation for the Arabic question mark and comma', () => {
     useMessageStore.setState({ text: 'كيف حالك' } as never);
     useSettingsStore.setState({
       language: 'ar',
@@ -103,8 +107,7 @@ describe('Keyboard cumulative word-boundary speech', () => {
     act(() => fireEvent.click(question!));
 
     expect(useMessageStore.getState().text).toBe('كيف حالك؟');
-    expect(speechMocks.aacSpeak).toHaveBeenCalledOnce();
-    expect(speechMocks.aacSpeak).toHaveBeenCalledWith('كيف حالك؟', 0.5, 0.8, 'neutral');
+    expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
   });
 
   it('stores the default unshifted English i key as the visible pronoun I', () => {
@@ -122,7 +125,11 @@ describe('Keyboard cumulative word-boundary speech', () => {
     expect(speechMocks.speakWord).not.toHaveBeenCalled();
   });
 
-  it('renders and phrase-speaks the unshifted English pronoun from the real input path', async () => {
+  // The composition silence timer that spoke the message after 400ms is gone.
+  // What this test uniquely covers — the unshifted "i" key reaching the
+  // message bar as the capitalised pronoun through the REAL input path — is
+  // unaffected and is what it now asserts.
+  it('renders the unshifted English pronoun as I from the real input path', async () => {
     vi.useFakeTimers();
     try {
       useMessageStore.setState({ text: '' } as never);
@@ -139,11 +146,9 @@ describe('Keyboard cumulative word-boundary speech', () => {
 
       expect(container.querySelector('[role="status"]')).toHaveTextContent('I');
       await act(async () => { await Promise.resolve(); });
-      await act(async () => { vi.advanceTimersByTime(399); });
+      await act(async () => { vi.advanceTimersByTime(5000); });
+      // Nothing is voiced by a pause. The message is spoken on Speak.
       expect(speechMocks.speakWord).not.toHaveBeenCalled();
-      await act(async () => { vi.advanceTimersByTime(1); });
-      expect(speechMocks.speakWord).toHaveBeenCalledOnce();
-      expect(speechMocks.speakWord).toHaveBeenCalledWith('I', 0.5, 0.8);
       expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
@@ -245,40 +250,43 @@ describe('Keyboard cumulative word-boundary speech', () => {
     expect(useMessageStore.getState().text).toBe('i');
   });
 
-  it('replays the complete same-language message locally on space', () => {
+  // Space used to replay the whole accumulated message. That is message speech
+  // — the public utterance to a communication partner — produced without the
+  // user choosing to produce it. Space now confirms the WORD just completed,
+  // and only when auditory feedback is enabled. The message is spoken on Speak.
+  it('says nothing on space by default', () => {
     const { container } = render(<Keyboard />);
     const space = container.querySelector<HTMLButtonElement>('[data-action="space"]');
-    expect(space).not.toBeNull();
+    act(() => { fireEvent.click(space!); });
 
-    act(() => {
-      fireEvent.click(space!);
-    });
+    expect(speechMocks.speakWord).not.toHaveBeenCalled();
+    expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
+    // The word still enters the message — only the speech changed.
+    expect(useMessageStore.getState().text).toBe('I need ');
+  });
 
+  it('speaks only the completed word on space when feedback is enabled', () => {
+    useSettingsStore.setState({ speakSelectionFeedback: true } as never);
+    const { container } = render(<Keyboard />);
+    const space = container.querySelector<HTMLButtonElement>('[data-action="space"]');
+    act(() => { fireEvent.click(space!); });
+
+    // "need" — the word just finished. NOT "I need", the running message.
     expect(speechMocks.speakWord).toHaveBeenCalledOnce();
-    expect(speechMocks.speakWord).toHaveBeenCalledWith('I need', 0.5, 0.8);
+    expect(speechMocks.speakWord).toHaveBeenCalledWith('need', 0.5, 0.8);
     expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
     expect(useMessageStore.getState().text).toBe('I need ');
   });
 
-  it('translates the complete message immediately on space in output-language mode', () => {
-    useSettingsStore.setState({ outputLanguage: 'es' } as never);
+  it('speaks only the completed word on space in output-language mode', () => {
+    useSettingsStore.setState({ outputLanguage: 'es', speakSelectionFeedback: true } as never);
     const { container } = render(<Keyboard />);
     const space = container.querySelector<HTMLButtonElement>('[data-action="space"]');
-    expect(space).not.toBeNull();
-
-    act(() => {
-      fireEvent.click(space!);
-    });
+    act(() => { fireEvent.click(space!); });
 
     expect(speechMocks.speakWord).not.toHaveBeenCalled();
     expect(speechMocks.aacSpeak).toHaveBeenCalledOnce();
-    expect(speechMocks.aacSpeak).toHaveBeenCalledWith(
-      'I need',
-      0.5,
-      0.8,
-      'neutral',
-      true,
-    );
+    expect(speechMocks.aacSpeak).toHaveBeenCalledWith('need', 0.5, 0.8, 'neutral', true);
   });
 
   it('explicit same-language Speak interrupts pending tap speech', () => {

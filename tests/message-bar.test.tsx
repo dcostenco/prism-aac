@@ -293,7 +293,15 @@ describe('MessageBar — auto-speak toggle', () => {
     expect(mocks.toggleAutoSpeakMock).toHaveBeenCalledOnce();
   });
 
-  it('auto-speaks a one-letter keyboard phrase without waiting for Play or AI autocorrect', async () => {
+  // The composition silence timer used to speak the whole message after a
+  // pause (400ms for a confident complete word, 2s otherwise). Both tests
+  // below pinned that. It is MESSAGE speech — the public utterance to a
+  // communication partner — produced because the user PAUSED, and pausing is
+  // not consent to say anything. AAC users pause constantly: switch scanning,
+  // head tracking and eye gaze all do. The message is now spoken only when
+  // the user presses Speak; optional auditory feedback confirms each
+  // SELECTION by speaking the item chosen, not the running message.
+  it('does not speak the composed message on a typing pause', async () => {
     vi.useFakeTimers();
     try {
       mocks.messageState.text = 'I';
@@ -305,54 +313,9 @@ describe('MessageBar — auto-speak toggle', () => {
 
       render(<MessageBar />);
       await act(async () => { await Promise.resolve(); });
-      await act(async () => { vi.advanceTimersByTime(399); });
+      await act(async () => { vi.advanceTimersByTime(5000); });
+
       expect(mocks.speakWordMock).not.toHaveBeenCalled();
-      await act(async () => { vi.advanceTimersByTime(1); });
-
-      expect(mocks.speakWordMock).toHaveBeenCalledOnce();
-      expect(mocks.speakWordMock).toHaveBeenCalledWith('I', 1, 1);
-      expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('allows the same phrase to auto-speak after the direct-tap dedupe window expires', async () => {
-    vi.useFakeTimers();
-    try {
-      mocks.messageState.text = 'I';
-      mocks.messageState.autoSpeak = true;
-
-      const { rerender } = render(<MessageBar />);
-      await act(async () => { await Promise.resolve(); });
-      act(() => {
-        for (const listener of mocks.ttsHighlightListeners) {
-          listener({
-            type: 'tts-highlight-start',
-            text: 'I',
-            estimatedDurationMs: 300,
-            timestamp: Date.now(),
-          });
-        }
-      });
-      await act(async () => {
-        vi.advanceTimersByTime(400);
-      });
-      expect(mocks.speakWordMock).not.toHaveBeenCalled();
-
-      mocks.messageState.text = '';
-      rerender(<MessageBar />);
-      await act(async () => {
-        vi.advanceTimersByTime(3001);
-      });
-      mocks.messageState.text = 'I';
-      rerender(<MessageBar />);
-      await act(async () => { await Promise.resolve(); });
-      await act(async () => {
-        vi.advanceTimersByTime(400);
-      });
-
-      expect(mocks.speakWordMock).toHaveBeenCalledOnce();
       expect(mocks.aacSpeakMock).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();

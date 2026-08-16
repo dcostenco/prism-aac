@@ -643,23 +643,26 @@ export default function PredictionBar() {
     // speech services themselves do not, by design, so the caller must.
     const { autoSpeak, soundEnabled } = useMessageStore.getState();
     if (!autoSpeak || !soundEnabled) return;
+    // Auditory feedback only, and only when the user asked for it. This used
+    // to speak `fullPhrase` — the whole accumulated message — on every tap,
+    // which is MESSAGE speech: the public utterance to a communication
+    // partner, fired without the user choosing to say it. What a selection may
+    // confirm is the ITEM just selected. Message speech happens on Speak.
+    if (!useSettingsStore.getState().speakSelectionFeedback) return;
 
     if (language !== outputLanguage) {
-      // Translation is the AAC output contract, not an optional second step.
-      // Speak the newly composed phrase through aacSpeak so it is translated
-      // and voiced in the configured output language on this tap.
+      // Translated feedback still speaks only the selected word.
       void aacSpeak(
-        fullPhrase,
+        word,
         speechRate,
         speechVolume,
         undefined,
         true,
       );
     } else {
-      // Same-language prediction feedback uses the quality-first speech path
-      // and preserves the established AAC contract: each tap replays the
-      // cumulative message so "I" + "need" is heard as "I need".
-      speakWord(fullPhrase, speechRate, speechVolume);
+      // Feedback speaks the selected word only. It used to replay the
+      // cumulative message on every tap.
+      speakWord(word, speechRate, speechVolume);
     }
   }, [
     text,
