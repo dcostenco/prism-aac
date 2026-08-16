@@ -4,7 +4,6 @@ import { useMessageStore, setLatestTranslated } from '@/store/messageStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
 import { aacSpeak } from '@/services/aacSpeak';
-import { speakWord } from '@/services/speechService';
 import type { SupportedLanguage } from '@/engine/i18n';
 import { tapFeedback, deleteFeedback, speakFeedback } from '@/services/feedback';
 import { ddAction } from '@/lib/datadog';
@@ -13,12 +12,10 @@ import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
-import { translateWithAIRefine, looksLikeTargetLang, isPhraseBoundary, translateForSpeech, hasUntranslatedResidue } from '@/services/translateService';
+import { translateWithAIRefine, looksLikeTargetLang, isPhraseBoundary, translateForSpeech } from '@/services/translateService';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useAuthStore } from '@/store/authStore';
 import { triggerAISubmit } from '@/services/aiChatBridge';
-import { isConfidentCompleteWord } from '@/engine/predictionEngine';
-import { loadPredictionSeed } from '@/constants/predictionSeeds';
 import {
   getPredictionSessionScope,
   rememberConfirmedPhrase,
@@ -28,9 +25,6 @@ function normalizeSpokenText(value: string): string {
   return value.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-const COMPOSITION_SILENCE_MS = 2000;
-const COMPLETE_WORD_SILENCE_MS = 400;
-const DIRECT_SPEECH_DEDUPE_MS = COMPOSITION_SILENCE_MS + 1000;
 
 function trailingSpokenWord(value: string): string {
   const lastToken = value.trim().split(/\s+/).at(-1) ?? '';
@@ -407,16 +401,13 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
     // below — they don't need it again word-by-word.
     const acceptedTokens = accepted.trim().split(/\s+/);
     lastSilenceSpokenRef.current = acceptedTokens[acceptedTokens.length - 1] || '';
-    // Speak the accepted text immediately. Tapping the suggestion bar
-    // is an explicit "I want this" — without speaking, the user has to
-    // hit Speak as a second tap, which is exactly the friction the
-    // suggestion was supposed to remove. Mirror handleSpeak's
-    // translation handling: speak the translated string when one is
-    // active, else the source text.
-    if (soundEnabled) {
-      const outLang = useSettingsStore.getState().outputLanguage as SupportedLanguage | undefined;
-      aacSpeak(translated || accepted, speechRate, speechVolume, activeTone, false, translated ? outLang : undefined);
-    }
+    // Accepting a correction does NOT speak.
+    //
+    // This used to voice the whole message on tap, arguing that tapping the
+    // suggestion is an explicit "I want this". It is — but it is an explicit
+    // request for the CORRECTION, not a request to be heard. The rule is that
+    // voice requires the Speak control or an emergency/help action, and an
+    // edit is neither. The user fixes their text, then decides to say it.
   }, [suggestion, setText, learnUtterance, recordConfirmedPhrase, soundEnabled, translated, speechRate, speechVolume, activeTone]);
 
   const handleSpeak = useCallback(() => {
