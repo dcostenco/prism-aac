@@ -30,26 +30,36 @@ describe('hasUntranslatedResidue', () => {
     expect(hasUntranslatedResidue('', 'orice')).toBe(false);
   });
 
-  // Proper nouns are SUPPOSED to survive translation. Before the carve-out the
-  // check silenced correct output — "Call Maria" -> "Sună Maria" was
-  // suppressed because the name appears in both. Naming people is core AAC
-  // vocabulary, so this turned a working feature into unpredictable silence.
+  // A proper-noun carve-out was tried and REVERTED. Review found it never
+  // fired (the only caller passes a single word, so the token is always at
+  // index 0) and that on multi-word input it leaked the exact failure this
+  // function prevents — German capitalises every noun, so "Ich will Wasser"
+  // -> "Vreau Wasser" was allowed through as speakable.
+  //
+  // These pin the strict behaviour AND the limitation it costs, so neither is
+  // rediscovered as a surprise.
   it.each([
-    ['Call Maria', 'Sună Maria'],
-    ['Tell Dad now', 'Spune-i lui Dad acum'],
-    ['Where is Sam', 'Unde este Sam'],
-  ])('does not flag a proper noun that survives translation: %s -> %s', (src, out) => {
-    expect(hasUntranslatedResidue(src, out)).toBe(false);
+    ['Ich will Wasser', 'Vreau Wasser'],
+    ['Das Haus ist gross', 'Casa Haus e mare'],
+    ['I want Water now', 'Vreau Water acum'],
+  ])('flags a mid-sentence capital left untranslated: %s -> %s', (src, out) => {
+    expect(hasUntranslatedResidue(src, out)).toBe(true);
   });
 
-  it('still flags a lowercase source word that was left untranslated', () => {
-    // The case the rule exists for — a genuine mixed-language utterance.
-    expect(hasUntranslatedResidue('I want water.', 'Vreau water.')).toBe(true);
+  // KNOWN LIMITATION, pinned deliberately: a name is indistinguishable from an
+  // untranslated word, so typing one gives no Echo confirmation. Silence on a
+  // word, not a wrong utterance. The Speak path is unaffected.
+  it('also flags a name that survives translation (accepted cost)', () => {
+    expect(hasUntranslatedResidue('Maria', 'Maria')).toBe(true);
   });
 
-  it('does not exempt a sentence-initial capital, which every sentence has', () => {
-    // "Water" is capitalised only because it starts the sentence; it is still
-    // untranslated residue and must be caught.
-    expect(hasUntranslatedResidue('Water please', 'Water te rog')).toBe(true);
+  // The single-word case is what the only caller actually passes.
+  it.each([
+    ['Wasser', 'Wasser', true],
+    ['water', 'water', true],
+    ['water', 'apa', false],
+    ['Haus', 'casa', false],
+  ])('single word %s -> %s flags=%s', (src, out, expected) => {
+    expect(hasUntranslatedResidue(src, out)).toBe(expected);
   });
 });
