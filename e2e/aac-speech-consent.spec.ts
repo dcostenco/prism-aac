@@ -14,17 +14,48 @@
  */
 import { test, expect, type Page, type Request } from '@playwright/test';
 
-function ttsSpy(page: Page): string[] {
-  const tts: string[] = [];
+/**
+ * Captures EVERY channel the app can speak through, not just the cloud one.
+ *
+ * The first version of this helper watched `/tts` network requests only. That
+ * is a false-negative hole in the guard that protects the whole rule: speech
+ * can also go through the browser's local Web Speech API, which makes no
+ * network request at all. Verified while reviewing — with selection feedback
+ * enabled, a tile tap produced ZERO `/tts` requests and a local utterance of
+ * "I.". A future change that routed composition speech locally would sail past
+ * a network-only assertion.
+ *
+ * Returns a live array of everything spoken, from either channel. Call
+ * `collect()` to fold in what the page has spoken locally so far.
+ */
+function speechSpy(page: Page) {
+  const spoken: string[] = [];
   page.on('request', (req: Request) => {
     if (!req.url().includes('/tts')) return;
     try {
       const b = JSON.parse(req.postData() || '{}');
       const t = b?.text ?? b?.ssml ?? b?.input;
-      if (t) tts.push(String(t).slice(0, 80));
+      if (t) spoken.push(`cloud:${String(t).slice(0, 80)}`);
     } catch { /* non-JSON */ }
   });
-  return tts;
+  const install = page.addInitScript(() => {
+    (window as unknown as { __spokenLocally: string[] }).__spokenLocally = [];
+    const synth = window.speechSynthesis;
+    const orig = synth?.speak?.bind(synth);
+    if (orig) {
+      synth.speak = (u: SpeechSynthesisUtterance) => {
+        (window as unknown as { __spokenLocally: string[] }).__spokenLocally.push(u.text);
+        return orig(u);
+      };
+    }
+  });
+  const collect = async (): Promise<string[]> => {
+    const local = await page.evaluate(
+      () => (window as unknown as { __spokenLocally?: string[] }).__spokenLocally ?? [],
+    );
+    return [...spoken, ...local.map((t) => `local:${t}`)];
+  };
+  return { install, collect };
 }
 
 /** Seeds the persisted message store. NOTE the key is `prism-aac-message`. */
@@ -45,17 +76,20 @@ async function bootMuted(page: Page) {
 
 test.describe('a muted device stays silent', () => {
   test('tapping a prediction tile does not speak when muted and auto-speak is off', async ({ page }) => {
-    const tts = ttsSpy(page);
+    const spy = speechSpy(page);
+    await spy.install;
     await bootMuted(page);
 
     await page.locator('[data-testid="prediction-bar"] button').first().click();
     await page.waitForTimeout(3000);
 
-    expect(tts, `muted device spoke: ${JSON.stringify(tts)}`).toEqual([]);
+    const spoken = await spy.collect();
+    expect(spoken, `muted device spoke: ${JSON.stringify(spoken)}`).toEqual([]);
   });
 
   test('typing and space do not speak when muted', async ({ page }) => {
-    const tts = ttsSpy(page);
+    const spy = speechSpy(page);
+    await spy.install;
     await bootMuted(page);
 
     for (const ch of 'hi') {
@@ -65,7 +99,8 @@ test.describe('a muted device stays silent', () => {
     await page.getByRole('button', { name: /^space$/i }).click();
     await page.waitForTimeout(3000);
 
-    expect(tts, `muted device spoke: ${JSON.stringify(tts)}`).toEqual([]);
+    const spoken = await spy.collect();
+    expect(spoken, `muted device spoke: ${JSON.stringify(spoken)}`).toEqual([]);
   });
 });
 
@@ -77,7 +112,8 @@ test.describe('the message is spoken only when the user presses Speak', () => {
   // public utterance to a communication partner, produced without the user
   // choosing to produce it.
   test('composing an entire sentence voices nothing until Speak', async ({ page }) => {
-    const tts = ttsSpy(page);
+    const spy = speechSpy(page);
+    await spy.install;
 
     // Fresh install: no settings written, so every default applies.
     await page.goto('', { waitUntil: 'domcontentloaded' });
@@ -97,11 +133,52 @@ test.describe('the message is spoken only when the user presses Speak', () => {
     await page.getByRole('button', { name: /^\.$/ }).first().click();
     await page.waitForTimeout(3000);
 
-    expect(tts, `spoke before Speak was pressed: ${JSON.stringify(tts)}`).toEqual([]);
+    const beforeSpeak = await spy.collect();
+    expect(beforeSpeak, `spoke before Speak was pressed: ${JSON.stringify(beforeSpeak)}`).toEqual([]);
 
     // ...and pressing Speak does speak it.
     await page.locator('button.aac-speak').first().click();
     await page.waitForTimeout(4000);
-    expect(tts.length, 'Speak produced no audio').toBeGreaterThan(0);
+    const afterSpeak = await spy.collect();
+    expect(afterSpeak.length, 'Speak produced no audio on either channel').toBeGreaterThan(0);
+  });
+});
+
+test.describe('selection feedback, when the user enables it', () => {
+  // Also proves the spy above is not vacuous. Feedback speaks through the
+  // browser's local Web Speech API and issues NO network request, so a
+  // network-only assertion would report silence here — which is exactly the
+  // false negative the two-channel spy exists to prevent.
+  test('speaks the ITEM selected, not the accumulated message', async ({ page }) => {
+    const spy = speechSpy(page);
+    await spy.install;
+
+    await page.addInitScript(() => {
+      localStorage.setItem('prism-aac-settings', JSON.stringify({
+        state: {
+          language: 'en', outputLanguage: 'en',
+          speechRate: 1, speechVolume: 1,
+          speakSelectionFeedback: true,
+        },
+        version: 21,
+      }));
+    });
+    await page.goto('', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-testid="prediction-bar"]', { timeout: 30_000 });
+    await page.waitForTimeout(1200);
+
+    const tile = page.locator('[data-testid="prediction-bar"] button').first();
+    const word = (await tile.getAttribute('aria-label'))?.replace('Predict: ', '') ?? '';
+    expect(word).toBeTruthy();
+    await tile.click();
+    await page.waitForTimeout(2500);
+
+    const spoken = await spy.collect();
+    expect(spoken.length, 'feedback was enabled but nothing was spoken').toBeGreaterThan(0);
+    // Every utterance is the item, never the running message.
+    for (const utterance of spoken) {
+      const said = utterance.replace(/^(cloud|local):/, '').replace(/[.\s]+$/, '');
+      expect(said.toLowerCase()).toBe(word.toLowerCase());
+    }
   });
 });
