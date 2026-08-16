@@ -11,6 +11,27 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// This file was intermittently failing in CI-like conditions — always by
+// TIMEOUT at ~5000ms, never by assertion, and only when something else was
+// competing for CPU. Measured cause:
+//
+//   import('@/services/translateService')  626ms   <- the whole cost
+//   first translateTextSync                  1ms
+//   cached / other language pair           0-2ms
+//
+// The dictionary build is not slow. The module graph is: translateService
+// pulls in DEFAULT_PHRASES, phraseTranslations, clinicalVocabulary,
+// languageVocabulary, offlineDictionary and languageRules. `resetModules`
+// below is load-bearing — the service holds four module-level caches (cache,
+// dictCache, pending, refinedKeys) and without the reset these tests would
+// see each other's cached translations — so all seven tests pay that import
+// again, ~4.4s of unavoidable work before contention is even considered.
+//
+// So the 5s default is the arbitrary part, not the work. Raised rather than
+// masked: nothing here should take 30s, and if one ever does that is a real
+// regression worth failing on.
+vi.setConfig({ testTimeout: 30_000 });
+
 beforeEach(() => {
   vi.resetModules();
 });
