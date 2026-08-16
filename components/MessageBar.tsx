@@ -13,7 +13,7 @@ import ColoredText from './ColoredText';
 import { useT } from '@/engine/useT';
 import { subscribeTtsHighlight } from '@/services/ttsHighlightBus';
 import { TONE_OPTIONS, warmupAzureAudio } from '@/services/azureTTS';
-import { translateWithAIRefine, looksLikeTargetLang, isPhraseBoundary, translateForSpeech } from '@/services/translateService';
+import { translateWithAIRefine, looksLikeTargetLang, isPhraseBoundary, translateForSpeech, hasUntranslatedResidue } from '@/services/translateService';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useAuthStore } from '@/store/authStore';
 import { triggerAISubmit } from '@/services/aiChatBridge';
@@ -295,16 +295,25 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
             const spoken = best || translatedRef.current;
             void aacSpeak(spoken || phrase, speechRate, speechVolume, activeTone, true, spoken ? outLang : undefined);
           });
-        } else {
-          void aacSpeak(
-            latestTranslated || phrase,
-            speechRate,
-            speechVolume,
-            activeTone,
-            true,
-            latestTranslated ? outLang : undefined,
-          );
+        } else if (latestTranslated && !hasUntranslatedResidue(phrase, latestTranslated)) {
+          // Mid-phrase, speak only a CLEAN offline translation.
+          void aacSpeak(latestTranslated, speechRate, speechVolume, activeTone, true, outLang);
         }
+        // Mid-phrase with residue in translation mode: say nothing.
+        //
+        // There is no trustworthy translation to speak yet. `latestTranslated`
+        // looks like one but is not: MessageBar publishes the OFFLINE result
+        // on every keystroke, so mid-phrase it holds the dictionary's
+        // word-by-word rendering of an unfinished utterance — measured en->ro
+        // while typing a second sentence, it voiced "Eu am here. eu." and
+        // "Eu am here. Vreau.". Gating on `latestTranslated` being non-empty
+        // was tried and did not help, because it is never empty.
+        //
+        // The blue line still updates on every keystroke, so the user keeps
+        // visual feedback; audio waits for the sentence terminator or an
+        // explicit Play — the same rule the display follows. Same-language
+        // composition feedback (below) is untouched: with nothing to
+        // translate, there is nothing to get wrong.
       } else {
         // Same-language composition feedback reuses the latest-wins
         // quality-first path while replaying the complete accumulated message.

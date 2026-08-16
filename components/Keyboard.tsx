@@ -6,7 +6,7 @@ import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { aacSpeak } from '@/services/aacSpeak';
 import { getLatestTranslated, setLatestTranslated } from '@/store/messageStore';
-import { translateForSpeech } from '@/services/translateService';
+import { translateForSpeech, isPhraseBoundary, hasUntranslatedResidue, translateTextSync } from '@/services/translateService';
 import { speakWord } from '@/services/speechService';
 import { warmupAzureAudio } from '@/services/azureTTS';
 import { triggerAISubmit } from '@/services/aiChatBridge';
@@ -408,10 +408,32 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
         const phrase = currentText.trim();
         if (autoSpeak && soundEnabled) {
           if (translationActive) {
-            // A space confirms the word boundary. Translate and speak the
-            // cumulative message immediately in the configured output
-            // language rather than leaving translation for the Play button.
-            void aacSpeak(phrase, speechRate, speechVolume, activeTone, true);
+            // Stay SILENT mid-phrase when translating. This path used to speak
+            // the cumulative message on every space, but with cloud refinement
+            // now reserved for a phrase boundary the only thing available
+            // mid-composition is the offline dictionary — which renders an
+            // unfinished phrase as a mix of both languages. Measured en->ro
+            // while typing "I am here. I want water.", it voiced
+            // "Eu am here. eu.", then "Eu am here. Vreau.", then
+            // "Vreau water.". A listener hearing that gets nothing usable, and
+            // an AAC user cannot tell it is provisional.
+            //
+            // The blue translation line still updates on every keystroke, so
+            // visual feedback is unchanged; audio waits for the sentence
+            // terminator or an explicit Play, which is the same rule the
+            // display follows. Same-language composition feedback below is
+            // unaffected — there is no translation to get wrong.
+            // Speak only what the offline dictionary translated CLEANLY. A
+            // core-word phrase ("I need" -> "Eu am nevoie") is exactly the
+            // word-boundary confirmation this path exists to give, and it
+            // still fires. What no longer fires is the mixed-language case
+            // ("I am here." -> "Eu am here."), which is not a partial
+            // translation but two languages in one utterance.
+            const { language: srcLang, outputLanguage: outLang } = useSettingsStore.getState();
+            const offline = translateTextSync(phrase, srcLang as SupportedLanguage, outLang as SupportedLanguage);
+            if (isPhraseBoundary(phrase) || !hasUntranslatedResidue(phrase, offline)) {
+              void aacSpeak(phrase, speechRate, speechVolume, activeTone, true);
+            }
           } else {
             // Preserve the established AAC contract: replay the whole message
             // at each word boundary through the quality-first speech path,
