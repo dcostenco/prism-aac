@@ -375,7 +375,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prism-aac-settings',
-      version: 20,
+      version: 21,
       migrate: (persisted: unknown, version: number) => {
         let s = persisted as Record<string, unknown>;
         if (version < 2) s = { ...s, gridSize: s.gridSize ?? 6 };
@@ -471,6 +471,38 @@ export const useSettingsStore = create<SettingsState>()(
         // from v20 onward, which is why this guard exists at all.
         if (version < 19 && s.speechRate === 1 && s.speechRateUserSet !== true) {
           s = { ...s, speechRate: 0.5 };
+        }
+        // v21: preserve auditory confirmation for people who already had it.
+        //
+        // Message speech moved behind the Speak button, and selection feedback
+        // became a separate setting that is OFF for new installs. Without this
+        // step an existing user who had audio during composition — the
+        // scanning and low-literacy users who depend on hearing a selection
+        // land — would upgrade into total silence and have to discover a new
+        // setting to get it back. Verified before this migration existed:
+        // seeded autoSpeak:true + soundEnabled:true, composed a phrase, TTS
+        // received nothing.
+        //
+        // "Off by default" governs the DEFAULT, i.e. a fresh install. An
+        // existing user who turned audio ON expressed a preference, and that
+        // preference is carried over to the channel that replaced it. Someone
+        // who deliberately turned autoSpeak OFF wanted silence and keeps it.
+        //
+        // autoSpeak lives in the message store, so it is read from its
+        // persisted blob directly; an absent value means the old default,
+        // which was on.
+        if (version < 21 && s.speakSelectionFeedback === undefined) {
+          let hadAudio = true;
+          try {
+            const raw = typeof localStorage !== 'undefined'
+              ? localStorage.getItem('prism-aac-message')
+              : null;
+            if (raw) {
+              const prev = JSON.parse(raw)?.state as { autoSpeak?: boolean; soundEnabled?: boolean } | undefined;
+              hadAudio = (prev?.autoSpeak ?? true) && (prev?.soundEnabled ?? true);
+            }
+          } catch { /* unreadable blob — assume the old default */ }
+          s = { ...s, speakSelectionFeedback: hadAudio };
         }
         return s;
       },
