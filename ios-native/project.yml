@@ -41,7 +41,7 @@ targets:
       path: PrismAAC/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
-        CFBundleShortVersionString: "1.8.4"
+        CFBundleShortVersionString: "1.8.7"
         CFBundleVersion: "36"
         CFBundleLocalizations:
           - ar
@@ -138,7 +138,7 @@ targets:
       path: PrismAACWatch/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
-        CFBundleShortVersionString: "1.8.4"
+        CFBundleShortVersionString: "1.8.7"
         CFBundleVersion: "36"
         WKApplication: true
         WKRunsIndependentlyOfCompanionApp: true   # standalone without iPhone
