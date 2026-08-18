@@ -60,3 +60,35 @@ describe("ios-native model pins", () => {
         expect(bad, bad.join(", ")).toEqual([]);
     });
 });
+
+describe("ios-native download integrity", () => {
+    const files = swiftFiles(ROOT);
+
+    it("every downloaded model file is hash-verified BEFORE it is moved into place", () => {
+        // Found 2026-08-18: ContentView's two download loops moved files into
+        // place with zero verification while PrismAACApp always verified.
+        // First version of this guard checked for "sha256" anywhere in the
+        // file — vacuous, because Sign-in-with-Apple nonce hashing already
+        // matched. The real invariant is PER DOWNLOAD BLOCK: between the
+        // URLSession download call and the moveItem that installs the file,
+        // a verification call must run.
+        const offenders: string[] = [];
+        for (const f of files) {
+            const src = readFileSync(f, "utf8");
+            if (!/gguf/i.test(src)) continue;
+            for (const m of src.matchAll(/\.download\(from:/g)) {
+                const rest = src.slice(m.index!, m.index! + 1200);
+                // (?<!re): "removeItem(at: tempURL)" CONTAINS "moveItem(at:
+                // tempURL" — without the lookbehind this guard flagged every
+                // block's cleanup call and was red on correct code.
+                const moveAt = rest.search(/(?<!re)moveItem\(at:\s*tempURL/);
+                if (moveAt === -1) continue; // download block that never installs
+                const between = rest.slice(0, moveAt);
+                if (!/verifySHA256|sha256Hex/.test(between)) {
+                    offenders.push(`${f.replace(ROOT, "ios-native")}@${m.index}`);
+                }
+            }
+        }
+        expect(offenders, `download installs without prior verification: ${offenders.join(", ")}`).toEqual([]);
+    });
+});
