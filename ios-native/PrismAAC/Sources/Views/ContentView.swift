@@ -948,12 +948,12 @@ struct ModelLoadingView: View {
 
     // 4B Q3_K_M — 99.1% BFCL, 114/115 × 3 seeds, June 2026 — iPhone first gate
     private static let modelCandidateURLsSmall: [URL] = [
-        URL(string: "https://huggingface.co/dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q3_K_M.gguf")!,
+        URL(string: "https://huggingface.co/dcostenco/prism-coder-4b/resolve/3e6dc5399d0eb7bf615e7db930521f047d48c79f/Qwen3.5-4B-Q3_K_M.gguf")!,
     ]
 
     // 4B Q4_K_M — 100% BFCL, 115/115 × 3 seeds, June 2026 — for 8 GB+ devices
     private static let modelCandidateURLs4B: [URL] = [
-        URL(string: "https://huggingface.co/dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q4_K_M.gguf")!,
+        URL(string: "https://huggingface.co/dcostenco/prism-coder-4b/resolve/3e6dc5399d0eb7bf615e7db930521f047d48c79f/Qwen3.5-4B-Q4_K_M.gguf")!,
     ]
 
     private static let localModelFilenameSmall = "Qwen3.5-4B-Q3_K_M.gguf"

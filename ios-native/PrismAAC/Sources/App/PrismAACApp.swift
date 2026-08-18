@@ -27,20 +27,20 @@ struct PrismAACApp: App {
         switch LLMEngine.preferredTier {
         case .large14B:
             return [
-                ("qwen3-14b-v42-q4km",       "dcostenco/prism-coder-14b/resolve/main/qwen3-14b-v42-q4km.gguf",          10_000, "fec7551b2932b155b2f79e1c18238cff0e074e9bab2ce5ad3dc9f895389f48b3"),
-                ("Qwen3.5-4B-Q3_K_M",        "dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q3_K_M.gguf",            2_400,  "d6981ab4d77ba712b48ef69d69042d75b5e39b9dce5fb5a5b054fd08e06afb95"),
+                ("qwen3-14b-v42-q4km",       "dcostenco/prism-coder-14b/resolve/c0b91c7f4195606c764d587611dbff44f772e2eb/qwen3-14b-v42-q4km.gguf",          10_000, "fec7551b2932b155b2f79e1c18238cff0e074e9bab2ce5ad3dc9f895389f48b3"),
+                ("Qwen3.5-4B-Q3_K_M",        "dcostenco/prism-coder-4b/resolve/3e6dc5399d0eb7bf615e7db930521f047d48c79f/Qwen3.5-4B-Q3_K_M.gguf",            2_400,  "d6981ab4d77ba712b48ef69d69042d75b5e39b9dce5fb5a5b054fd08e06afb95"),
             ]
         case .medium4B:
             return [
                 // 4B Q4_K_M — 100% BFCL, fits in 8 GB RAM
-                ("Qwen3.5-4B-Q4_K_M",        "dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q4_K_M.gguf",            2_800,  "81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490"),
+                ("Qwen3.5-4B-Q4_K_M",        "dcostenco/prism-coder-4b/resolve/3e6dc5399d0eb7bf615e7db930521f047d48c79f/Qwen3.5-4B-Q4_K_M.gguf",            2_800,  "81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490"),
                 // 4B Q3_K_M — 99.1% BFCL, fits in 6 GB RAM (iPhone first gate)
-                ("Qwen3.5-4B-Q3_K_M",        "dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q3_K_M.gguf",            2_400,  "d6981ab4d77ba712b48ef69d69042d75b5e39b9dce5fb5a5b054fd08e06afb95"),
+                ("Qwen3.5-4B-Q3_K_M",        "dcostenco/prism-coder-4b/resolve/3e6dc5399d0eb7bf615e7db930521f047d48c79f/Qwen3.5-4B-Q3_K_M.gguf",            2_400,  "d6981ab4d77ba712b48ef69d69042d75b5e39b9dce5fb5a5b054fd08e06afb95"),
             ]
         case .small1B7:
             return [
                 // 4B Q3_K_M — 99.1% BFCL at 2.3 GB, replaces old 1.7B SFT (90.4%)
-                ("Qwen3.5-4B-Q3_K_M",        "dcostenco/prism-coder-4b/resolve/main/Qwen3.5-4B-Q3_K_M.gguf",            2_400,  "d6981ab4d77ba712b48ef69d69042d75b5e39b9dce5fb5a5b054fd08e06afb95"),
+                ("Qwen3.5-4B-Q3_K_M",        "dcostenco/prism-coder-4b/resolve/3e6dc5399d0eb7bf615e7db930521f047d48c79f/Qwen3.5-4B-Q3_K_M.gguf",            2_400,  "d6981ab4d77ba712b48ef69d69042d75b5e39b9dce5fb5a5b054fd08e06afb95"),
             ]
         }
     }()
