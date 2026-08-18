@@ -958,6 +958,16 @@ struct ModelLoadingView: View {
 
     private static let localModelFilenameSmall = "Qwen3.5-4B-Q3_K_M.gguf"
     private static let localModelFilename4B    = "Qwen3.5-4B-Q4_K_M.gguf"
+
+    // SHA-256 per download URL. This path shipped with NO verification while
+    // PrismAACApp's sideloader always verified — found in the 2026-08-18
+    // sideloading audit. A corrupted or truncated transfer was moved into
+    // place and loaded. Values match PrismAACApp.modelCandidates for the
+    // same files at the same pinned revision.
+    private static let expectedSHA256: [String: String] = [
+        localModelFilenameSmall: "d6981ab4d77ba712b48ef69d69042d75b5e39b9dce5fb5a5b054fd08e06afb95",
+        localModelFilename4B:    "81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490",
+    ]
     // Legacy filenames from previous app versions — migrated on first run.
     private static let legacyFilenames = [
         "prism-coder-4b-swe17-q4km.gguf",
@@ -1016,6 +1026,13 @@ struct ModelLoadingView: View {
                     try? FileManager.default.removeItem(at: tempURL)
                     continue
                 }
+                // Verify BEFORE the move — a bad file must never occupy the
+                // destination path, where the cache check would trust it on
+                // every subsequent launch.
+                if !Self.verifySHA256(at: tempURL, filename: destination.lastPathComponent) {
+                    try? FileManager.default.removeItem(at: tempURL)
+                    continue
+                }
                 try FileManager.default.moveItem(at: tempURL, to: destination)
                 do {
                     try await app.loadModelSafe(from: destination)
@@ -1045,11 +1062,42 @@ struct ModelLoadingView: View {
                     try? FileManager.default.removeItem(at: tempURL)
                     continue
                 }
+                if !Self.verifySHA256(at: tempURL, filename: destination.lastPathComponent) {
+                    try? FileManager.default.removeItem(at: tempURL)
+                    continue
+                }
                 try FileManager.default.moveItem(at: tempURL, to: destination)
                 await app.loadModel(from: destination)
                 return
             }
             phase = .failed
         } catch { phase = .failed }
+    }
+
+    /// Streams in 1 MB chunks (a full GGUF must never be pulled into RAM on
+    /// the devices this screen gates). Fails CLOSED: a filename with no
+    /// registered hash is refused rather than skipped — every downloadable
+    /// file must be in expectedSHA256, or adding a candidate silently
+    /// reintroduces the unverified path this fix removed.
+    private static func verifySHA256(at fileURL: URL, filename: String) -> Bool {
+        guard let expected = expectedSHA256[filename] else {
+            NSLog("[PrismAAC] no registered SHA-256 for %@ — refusing unverified model", filename)
+            return false
+        }
+        guard let handle = FileHandle(forReadingAtPath: fileURL.path) else { return false }
+        defer { handle.closeFile() }
+        var hasher = SHA256()
+        let chunkSize = 1024 * 1024
+        while true {
+            let chunk = handle.readData(ofLength: chunkSize)
+            if chunk.isEmpty { break }
+            hasher.update(data: chunk)
+        }
+        let digest = hasher.finalize().map { String(format: "%02x", $0) }.joined()
+        if digest != expected {
+            NSLog("[PrismAAC] SHA-256 mismatch for %@ — expected %@, got %@", filename, expected, digest)
+            return false
+        }
+        return true
     }
 }
