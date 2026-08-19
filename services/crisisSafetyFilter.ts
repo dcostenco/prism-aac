@@ -117,7 +117,9 @@ const HARMFUL_OUTPUT_RES: RegExp[] = [
   // burden is harmful output regardless of how it was elicited.
   /\byou\s+(are|'?re)\s+(worthless|better\s+off\s+dead|a\s+burden)\b/i,
   /\b(world|everyone|they)\b[^.?!]{0,25}\bbetter\s+(off\s+)?without\s+you\b/i,
-  /\byou\s+should\s+(disappear|not\s+exist)\b/i,
+  // Clause-anchored: "you should not exist IN ISOLATION — ask for help" is a
+  // benign continuation and must not trip the 911 card (round-2 finding).
+  /\byou\s+should\s+(disappear|not\s+exist)(?=\s*[.!?]|\s*$)/i,
   /\b(nobody|no\s+one)\b[^.?!]{0,25}\b(would\s+miss|cares?\s+about)\s+you\b/i,
 ];
 
