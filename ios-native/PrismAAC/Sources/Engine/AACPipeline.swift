@@ -32,8 +32,11 @@ final class AACPipeline: ObservableObject {
     // FIX H1: Dedicated session with timeouts — URLSession.shared has no resource timeout
     private static let cloudSession: URLSession = {
         let cfg = URLSessionConfiguration.ephemeral
-        cfg.timeoutIntervalForRequest = 15
-        cfg.timeoutIntervalForResource = 30
+        // 30/60, not 15/30: the session config caps every task in it, so
+        // raising only URLRequest.timeoutInterval left the real ceiling at
+        // 15s. A full completion does not reliably finish in 15.
+        cfg.timeoutIntervalForRequest = 30
+        cfg.timeoutIntervalForResource = 60
         cfg.httpMaximumConnectionsPerHost = 2
         return URLSession(configuration: cfg)
     }()
@@ -160,6 +163,64 @@ final class AACPipeline: ObservableObject {
         return Self.sanitizeText(full, maxLength: 4000)
     }
 
+    // The /api/v1/prism-aac/chat contract, verified live 2026-08-19. The
+    // previous body ({"message", "language", "mode"}) was rejected with
+    // 400 "Missing messages" — the server takes an OpenAI-style messages
+    // array. Language rides in a system message, same as the web client.
+    nonisolated static func cloudRequestBody(question: String, language: String) -> [String: Any] {
+        [
+            "messages": [
+                ["role": "system",
+                 "content": "Reply in \(language). Keep replies short and easy to read — this is an AAC communication app."],
+                ["role": "user", "content": question],
+            ],
+            "stream": true,
+            "source": "prism-aac",
+            "intent": "chat",
+        ]
+    }
+
+    // The endpoint streams SSE: `data: {"choices":[{"delta":{"content":…}}]}`
+    // lines ending with `data: [DONE]`. The previous parser expected a plain
+    // JSON {"reply": …} object — a shape no portal endpoint has ever served,
+    // so the cloud path returned "" on any response. Concatenates delta
+    // content; tolerates a plain-JSON body as a fallback so a future
+    // non-streamed server response still parses.
+    nonisolated static func parseCloudReply(_ raw: String) -> String {
+        var out = ""
+        var sawSSE = false
+        // isNewline, not split(separator: "\n"): in Swift "\r\n" is a SINGLE
+        // grapheme cluster, so splitting on "\n" finds no separator at all in
+        // a CRLF stream and the whole body collapses into one unparseable
+        // "line". Character.isNewline matches LF, CR, and the CRLF cluster.
+        for line in raw.split(whereSeparator: { $0.isNewline }) {
+            guard line.hasPrefix("data:") else { continue }
+            sawSSE = true
+            // whitespacesAndNewlines, not whitespaces: the live server sends
+            // bare LF, but SSE permits CRLF and a proxy may introduce it —
+            // .whitespaces would leave a trailing \r on every payload.
+            let payload = line.dropFirst(5).trimmingCharacters(in: .whitespacesAndNewlines)
+            if payload == "[DONE]" { break }
+            guard let data = payload.data(using: .utf8),
+                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let choices = obj["choices"] as? [[String: Any]],
+                  let delta = choices.first?["delta"] as? [String: Any],
+                  let content = delta["content"] as? String else { continue }
+            out += content
+        }
+        if !sawSSE,
+           let data = raw.data(using: .utf8),
+           let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let choices = obj["choices"] as? [[String: Any]],
+               let message = choices.first?["message"] as? [String: Any],
+               let content = message["content"] as? String {
+                return content
+            }
+            if let reply = obj["reply"] as? String { return reply }
+        }
+        return out
+    }
+
     private func runCloud(
         question: String,
         language: String,
@@ -172,32 +233,37 @@ final class AACPipeline: ObservableObject {
 
         var req = URLRequest(url: cloudBaseURL.appendingPathComponent("prism-aac/chat"),
                              cachePolicy: .useProtocolCachePolicy,
-                             timeoutInterval: 15)
+                             timeoutInterval: 30)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        guard let token = Self.readKeychainToken() else {
-            NSLog("[AACPipeline] No auth token — cloud AI unavailable")
-            aiAvailable = .unavailable
-            throw URLError(.userAuthenticationRequired)
+        // The route is public BY DESIGN (per-IP rate-limited server-side):
+        // AAC must work for every child, including those without a caregiver
+        // account — the same principle the web client fixed in May 2026. The
+        // old hard guard here threw before sending anything, and since no
+        // code path ever WRITES this keychain item, it disabled cloud AI on
+        // every install. A token, if one ever exists, is attached as a bonus.
+        if let token = Self.readKeychainToken() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        req.httpBody = try JSONSerialization.data(withJSONObject: [
-            "message": safeQuestion,
-            "language": validLang,
-            "mode": "aac",
-        ])
+        req.httpBody = try JSONSerialization.data(
+            withJSONObject: Self.cloudRequestBody(question: safeQuestion, language: validLang))
         // FIX H1: Use dedicated session instead of URLSession.shared
         let (data, response) = try await Self.cloudSession.data(for: req)
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
             throw URLError(.badServerResponse)
         }
-        guard data.count <= 65_536 else {
+        // 256 KB: SSE framing roughly doubles payload size vs the old 64 KB
+        // plain-JSON assumption; AAC replies are short so this is still a
+        // generous runaway guard, not a practical limit.
+        guard data.count <= 262_144 else {
             throw URLError(.resourceUnavailable)
         }
-        let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        let rawText = obj?["reply"] as? String ?? ""
+        let rawText = Self.parseCloudReply(String(decoding: data, as: UTF8.self))
         // FIX C2: Sanitize AI response before yielding
         let text = Self.sanitizeText(rawText, maxLength: 4000)
+        // An empty parse means the contract drifted again — surface the
+        // catch-path fallback message instead of a silent empty bubble.
+        guard !text.isEmpty else { throw URLError(.cannotParseResponse) }
         stream.yield(text)
         return text
     }
