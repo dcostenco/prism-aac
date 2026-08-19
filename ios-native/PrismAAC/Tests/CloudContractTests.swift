@@ -86,6 +86,20 @@ final class CloudContractTests: XCTestCase {
         XCTAssertEqual(AACPipeline.parseCloudReply(#"{"reply":"legacy"}"#), "legacy")
     }
 
+    func testParserHandlesContentContainingDataPrefixAndNewlines() {
+        // Model output legitimately contains "data:" and escaped newlines.
+        // Splitting is by LINE, so an escaped \n inside a JSON string stays
+        // inside its own chunk and must survive intact.
+        let sse = "data: {\"choices\":[{\"delta\":{\"content\":\"Row 1\\nRow 2 data: here\"},\"index\":0}]}\ndata: [DONE]"
+        XCTAssertEqual(AACPipeline.parseCloudReply(sse), "Row 1\nRow 2 data: here")
+    }
+
+    func testParserIgnoresSSECommentAndEventLines() {
+        // Real SSE streams carry ":" heartbeat comments and "event:" lines.
+        let sse = ": ping\nevent: message\ndata: {\"choices\":[{\"delta\":{\"content\":\"ok\"},\"index\":0}]}\ndata: [DONE]"
+        XCTAssertEqual(AACPipeline.parseCloudReply(sse), "ok")
+    }
+
     func testParserReturnsEmptyOnGarbage() {
         // runCloud treats "" as a contract failure and throws — pinned here
         // so garbage can never render as a silent empty bubble.
