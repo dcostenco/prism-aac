@@ -32,8 +32,11 @@ final class AACPipeline: ObservableObject {
     // FIX H1: Dedicated session with timeouts — URLSession.shared has no resource timeout
     private static let cloudSession: URLSession = {
         let cfg = URLSessionConfiguration.ephemeral
-        cfg.timeoutIntervalForRequest = 15
-        cfg.timeoutIntervalForResource = 30
+        // 30/60, not 15/30: the session config caps every task in it, so
+        // raising only URLRequest.timeoutInterval left the real ceiling at
+        // 15s. A full completion does not reliably finish in 15.
+        cfg.timeoutIntervalForRequest = 30
+        cfg.timeoutIntervalForResource = 60
         cfg.httpMaximumConnectionsPerHost = 2
         return URLSession(configuration: cfg)
     }()
