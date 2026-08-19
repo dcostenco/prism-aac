@@ -72,6 +72,13 @@ final class CloudContractTests: XCTestCase {
         XCTAssertEqual(AACPipeline.parseCloudReply(sse), "AB")
     }
 
+    func testParserToleratesCRLFLineEndings() {
+        // The live server sends bare LF, but SSE permits CRLF and proxies can
+        // introduce it — a trailing \r must not defeat the parse or [DONE].
+        let sse = "data: {\"choices\":[{\"delta\":{\"content\":\"Hi\"},\"index\":0}]}\r\n\r\ndata: [DONE]\r\n"
+        XCTAssertEqual(AACPipeline.parseCloudReply(sse), "Hi")
+    }
+
     func testParserFallsBackToPlainJSONShapes() {
         XCTAssertEqual(
             AACPipeline.parseCloudReply(#"{"choices":[{"message":{"content":"plain"}}]}"#),

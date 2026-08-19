@@ -189,10 +189,17 @@ final class AACPipeline: ObservableObject {
     nonisolated static func parseCloudReply(_ raw: String) -> String {
         var out = ""
         var sawSSE = false
-        for line in raw.split(separator: "\n", omittingEmptySubsequences: true) {
+        // isNewline, not split(separator: "\n"): in Swift "\r\n" is a SINGLE
+        // grapheme cluster, so splitting on "\n" finds no separator at all in
+        // a CRLF stream and the whole body collapses into one unparseable
+        // "line". Character.isNewline matches LF, CR, and the CRLF cluster.
+        for line in raw.split(whereSeparator: { $0.isNewline }) {
             guard line.hasPrefix("data:") else { continue }
             sawSSE = true
-            let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
+            // whitespacesAndNewlines, not whitespaces: the live server sends
+            // bare LF, but SSE permits CRLF and a proxy may introduce it —
+            // .whitespaces would leave a trailing \r on every payload.
+            let payload = line.dropFirst(5).trimmingCharacters(in: .whitespacesAndNewlines)
             if payload == "[DONE]" { break }
             guard let data = payload.data(using: .utf8),
                   let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
