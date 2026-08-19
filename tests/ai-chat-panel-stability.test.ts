@@ -21,6 +21,7 @@ vi.mock('@/services/voiceInputService', () => ({
 vi.mock('@/services/textCorrectService', () => ({ correctText: vi.fn(async (t: string) => t) }));
 vi.mock('@/services/crisisSafetyFilter', () => ({
   checkCrisisSafety: vi.fn(() => ({ safe: true, response: '' })),
+  checkModelOutputSafety: vi.fn(() => ({ safe: true, response: '' })),
 }));
 vi.mock('@/services/aiChatBridge', () => ({
   registerAISubmit: vi.fn(),
