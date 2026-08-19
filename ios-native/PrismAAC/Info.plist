@@ -55,7 +55,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>50</string>
+	<string>51</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSAppTransportSecurity</key>
@@ -85,6 +85,41 @@
 	<string>Prism AAC can import photos from your library to create custom communication pictures.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Prism AAC converts your voice to text so you can compose messages by speaking.</string>
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>questionmark.circle</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Help</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.prismaac.help</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>hand.thumbsup</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Yes</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.prismaac.yes</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>hand.thumbsdown</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>No</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.prismaac.no</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>drop</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Water please</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.prismaac.water</string>
+		</dict>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

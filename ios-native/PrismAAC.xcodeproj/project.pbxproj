@@ -41,6 +41,7 @@
 		7BF11A31EFD1E134064E962A /* DatadogCrashReporting in Frameworks */ = {isa = PBXBuildFile; productRef = 428066B6FACEEB1E6A761259 /* DatadogCrashReporting */; };
 		7BF6F741042E8662EF9A0E09 /* AIConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 893663D6FC6015F606DAC1E9 /* AIConsentView.swift */; };
 		7D9AE38FAC869992527D4493 /* AppIcon40x40@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 48264733CC75753DEBCDDC22 /* AppIcon40x40@2x.png */; };
+		7F76E50C22385197DA91EF31 /* GeneratedManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39EE1489A0BF7437616B5D5B /* GeneratedManifestTests.swift */; };
 		873D9BA3D593822D10162ACC /* AppIcon29x29@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 0D5FF922BC8B7B4BC0A6B33E /* AppIcon29x29@3x.png */; };
 		8ACCA7F12A410E5951CB832F /* SafetyFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 824CFF80AABA2799959262E4 /* SafetyFilter.swift */; };
 		8E2FAA24B4AD8AA0AAA04E86 /* AppIcon108x108@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A9608B96E043220F2C92F586 /* AppIcon108x108@2x.png */; };
@@ -118,6 +119,7 @@
 		36542011E53B530C6E6B101A /* _llama_cpp_local */ = {isa = PBXFileReference; lastKnownFileType = folder; name = _llama_cpp_local; path = _llama_cpp_local; sourceTree = SOURCE_ROOT; };
 		378A42F7E901AC2CE6A66DF0 /* offline.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = offline.html; sourceTree = "<group>"; };
 		3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon86x86@2x.png"; sourceTree = "<group>"; };
+		39EE1489A0BF7437616B5D5B /* GeneratedManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedManifestTests.swift; sourceTree = "<group>"; };
 		3C1E662AEED98B7777920115 /* PrismAAC.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PrismAAC.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		48264733CC75753DEBCDDC22 /* AppIcon40x40@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon40x40@2x.png"; sourceTree = "<group>"; };
 		485E0CAF1D660CE13F92A068 /* WatchLayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLayerTests.swift; sourceTree = "<group>"; };
@@ -198,6 +200,7 @@
 			children = (
 				B4BFC79A8CF42D931FA02260 /* BridgeSecurityTests.swift */,
 				5CEA86D8EDFEEEB3B2CE9C10 /* CloudContractTests.swift */,
+				39EE1489A0BF7437616B5D5B /* GeneratedManifestTests.swift */,
 				B4B17D9B0D21E9712DE4058F /* PrismAACUnitTests.swift */,
 				485E0CAF1D660CE13F92A068 /* WatchLayerTests.swift */,
 				E806C70DB42E2879A665E4C3 /* WatchStreamingTests.swift */,
@@ -636,6 +639,7 @@
 			files = (
 				6960B655C665118DAABF6BCE /* BridgeSecurityTests.swift in Sources */,
 				A505ECD1C1950BA0C963A50E /* CloudContractTests.swift in Sources */,
+				7F76E50C22385197DA91EF31 /* GeneratedManifestTests.swift in Sources */,
 				3D08BF95A6574850121B9852 /* PrismAACUnitTests.swift in Sources */,
 				3F4FDC469542E9A9D39C391F /* WatchLayerTests.swift in Sources */,
 				92B4306E8B1AAFFC82E39F8D /* WatchStreamingTests.swift in Sources */,
@@ -779,7 +783,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 50;
+				CURRENT_PROJECT_VERSION = 51;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
 				MARKETING_VERSION = 1.8.8;
@@ -863,7 +867,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 50;
+				CURRENT_PROJECT_VERSION = 51;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -885,7 +889,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PrismAAC/PrismAAC.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 50;
+				CURRENT_PROJECT_VERSION = 51;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAAC/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -905,7 +909,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CURRENT_PROJECT_VERSION = 50;
+				CURRENT_PROJECT_VERSION = 51;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PrismAACWatch/Info.plist;
 				MARKETING_VERSION = 1.8.8;

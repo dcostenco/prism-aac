@@ -41,8 +41,26 @@ targets:
       path: PrismAAC/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
+        # Home-screen quick actions — core one-tap AAC phrases. Hand-added to
+        # Info.plist previously and wiped by every regeneration (same trap as
+        # the entitlement above), so they never shipped either.
+        UIApplicationShortcutItems:
+          - UIApplicationShortcutItemType: com.prismaac.help
+            UIApplicationShortcutItemTitle: Help
+            UIApplicationShortcutItemIconSymbolName: questionmark.circle
+          # Quoted: bare Yes/No are YAML 1.1 BOOLEANS and generated as
+          # <true/>/<false/>, which silently replaced the button titles.
+          - UIApplicationShortcutItemType: com.prismaac.yes
+            UIApplicationShortcutItemTitle: "Yes"
+            UIApplicationShortcutItemIconSymbolName: hand.thumbsup
+          - UIApplicationShortcutItemType: com.prismaac.no
+            UIApplicationShortcutItemTitle: "No"
+            UIApplicationShortcutItemIconSymbolName: hand.thumbsdown
+          - UIApplicationShortcutItemType: com.prismaac.water
+            UIApplicationShortcutItemTitle: Water please
+            UIApplicationShortcutItemIconSymbolName: drop
         CFBundleShortVersionString: "1.8.8"
-        CFBundleVersion: "50"
+        CFBundleVersion: "51"
         CFBundleLocalizations:
           - ar
           - de
@@ -103,10 +121,19 @@ targets:
         ITSAppUsesNonExemptEncryption: false
     entitlements:
       path: PrismAAC/PrismAAC.entitlements
+      # XcodeGen GENERATES this file. With no properties block it writes an
+      # empty <dict/>, which is how the hand-added Sign in with Apple
+      # entitlement (28694ed, added for App Store approval) was stripped from
+      # EVERY shipped build — measured 0 in the 1.8.4, 1.8.7 and 1.8.8
+      # archives while ContentView implements ASAuthorizationAppleIDProvider.
+      # Declared here so regeneration cannot silently drop it again.
+      properties:
+        com.apple.developer.applesignin:
+          - Default
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      CURRENT_PROJECT_VERSION: "50"
+      CURRENT_PROJECT_VERSION: "51"
       MARKETING_VERSION: "1.8.8"
       GENERATE_INFOPLIST_FILE: NO
       PRIVACY_INFO_XCPRIVACY_FILE: PrismAAC/PrivacyInfo.xcprivacy
@@ -139,7 +166,7 @@ targets:
       properties:
         CFBundleDisplayName: Prism AAC
         CFBundleShortVersionString: "1.8.8"
-        CFBundleVersion: "50"
+        CFBundleVersion: "51"
         WKApplication: true
         WKRunsIndependentlyOfCompanionApp: true   # standalone without iPhone
         WKCompanionAppBundleIdentifier: ai.synalux.prism-aac
@@ -149,7 +176,7 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.watchkitapp
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      CURRENT_PROJECT_VERSION: "50"
+      CURRENT_PROJECT_VERSION: "51"
       MARKETING_VERSION: "1.8.8"
       GENERATE_INFOPLIST_FILE: NO
       SDKROOT: watchos
