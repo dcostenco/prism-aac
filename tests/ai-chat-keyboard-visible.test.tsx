@@ -24,6 +24,7 @@ vi.mock('@/services/voiceInputService', () => ({
 vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn() }));
 vi.mock('@/services/crisisSafetyFilter', () => ({
   checkCrisisSafety: () => ({ safe: true }),
+  checkModelOutputSafety: () => ({ safe: true }),
 }));
 vi.mock('@/services/ttsHighlightBus', () => ({
   estimateSpeechDurationMs: () => 200,

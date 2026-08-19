@@ -23,7 +23,7 @@ vi.mock('@/services/voiceInputService', () => ({
   startVoiceInput: vi.fn(),
 }));
 vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn() }));
-vi.mock('@/services/crisisSafetyFilter', () => ({ checkCrisisSafety: () => ({ safe: true }) }));
+vi.mock('@/services/crisisSafetyFilter', () => ({ checkCrisisSafety: () => ({ safe: true }), checkModelOutputSafety: () => ({ safe: true }) }));
 vi.mock('@/services/ttsHighlightBus', () => ({ estimateSpeechDurationMs: () => 200 }));
 
 Element.prototype.scrollIntoView = vi.fn();

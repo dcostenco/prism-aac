@@ -72,6 +72,34 @@ const CRISIS_RES: RegExp[] = [
 
 const MEDICAL_RES: RegExp[] = [...MEDICAL_DOSE_KEYWORDS].map(compilePhrase);
 
+/** Shared crisis-resource text (input and output paths render the same card). */
+const CRISIS_RESPONSE_TEXT = [
+  'If this is an emergency, call 911 (US) or your local emergency number now.',
+  '',
+  'For mental health crisis support:',
+  '• Call or text 988 (Suicide & Crisis Lifeline, US)',
+  '• Text HOME to 741741 (Crisis Text Line)',
+  '',
+  "I'm here with you. You are not alone.",
+].join('\n');
+
+/**
+ * Content the MODEL must never emit — jailbreak interception only.
+ *
+ * Not phrase-equality with the input list: these target instruction/
+ * encouragement shapes ("how to kill yourself", "you should end your life"),
+ * because the bare nouns appear constantly in legitimate replies — a model
+ * saying "if you are thinking about suicide, call 988" is doing its job, and
+ * suppressing that reply would remove real help from a user in crisis.
+ */
+const HARMFUL_OUTPUT_RES: RegExp[] = [
+  /\b(how|ways?|steps?|instructions?|guide)\b[^.?!]{0,40}\b(to|for)\b[^.?!]{0,20}\b(kill\s+(yourself|himself|herself|themselves)|commit\s+suicide|end\s+(your|his|her|their)\s+life|hurt\s+(yourself|himself|herself|themselves)|harm\s+(yourself|himself|herself|themselves))\b/i,
+  /\b(you\s+should|you\s+ought\s+to|why\s+don'?t\s+you|just)\b[^.?!]{0,20}\b(kill\s+yourself|end\s+your\s+life|hurt\s+yourself|harm\s+yourself|die)\b/i,
+  /\b(kill\s+yourself|kys)\b/i,
+  /\b(nobody|no\s+one)\b[^.?!]{0,25}\b(would\s+miss|cares?\s+about)\s+you\b/i,
+  /\b(best|easiest|painless|quickest)\s+way\s+to\s+(die|kill\s+yourself|end\s+it)\b/i,
+];
+
 // CJK-specific fast-pass: Japanese/Korean/Chinese write without word separators so
 // the [^\p{L}] boundary anchors in compilePhrase() never match within natural sentences
 // (e.g. "わたしはしにたいです" → "I want to die" in polite Japanese — で is \p{L}).
@@ -93,21 +121,61 @@ export type SafetyResult =
   | { safe: true }
   | { safe: false; kind: 'crisis' | 'medical'; response: string };
 
+/**
+ * Safety check for MODEL OUTPUT. Deliberately narrower than
+ * checkCrisisSafety(), which is for USER INPUT.
+ *
+ * The two directions mean opposite things. "help me" TYPED BY THE USER is a
+ * distress signal and must surface crisis resources. The same words EMITTED
+ * BY THE MODEL are usually the opposite of an emergency: the AAC system
+ * prompt instructs the model to suggest ready-to-speak phrases, so a normal
+ * reply ends with `**Say:** … "Can you help me talk?"`. Running the input
+ * keywords over output turned that into a 911 screen.
+ *
+ * Reproduced live 2026-08-19 against the deployed endpoint: "what ai model
+ * you are" → a benign answer whose suggestion list contained "Can you help
+ * me talk?" → whole reply replaced by the crisis template. Same for any
+ * reply mentioning an emergency, and for the model correctly advising
+ * "call 911" — good advice the old check treated as a crisis to suppress.
+ *
+ * What output filtering IS for (per the enqueueSentence comment it guards):
+ * intercepting a JAILBROKEN model before harmful content is spoken. That is
+ * dosing/lethality information and explicit self-harm instruction — not
+ * distress vocabulary, and not safety advice.
+ */
+export function checkModelOutputSafety(output: string): SafetyResult {
+  const lower = output.toLowerCase();
+
+  for (const re of HARMFUL_OUTPUT_RES) {
+    if (re.test(lower)) {
+      return {
+        safe: false,
+        kind: 'crisis',
+        response: CRISIS_RESPONSE_TEXT,
+      };
+    }
+  }
+
+  for (const re of MEDICAL_RES) {
+    if (re.test(lower)) {
+      return {
+        safe: false,
+        kind: 'medical',
+        response: 'For medication questions, please ask your doctor or pharmacist.',
+      };
+    }
+  }
+
+  return { safe: true };
+}
+
 export function checkCrisisSafety(input: string): SafetyResult {
   const lower = input.toLowerCase();
 
   const crisisResponse = {
     safe: false as const,
     kind: 'crisis' as const,
-    response: [
-      'If this is an emergency, call 911 (US) or your local emergency number now.',
-      '',
-      'For mental health crisis support:',
-      '• Call or text 988 (Suicide & Crisis Lifeline, US)',
-      '• Text HOME to 741741 (Crisis Text Line)',
-      '',
-      "I'm here with you. You are not alone.",
-    ].join('\n'),
+    response: CRISIS_RESPONSE_TEXT,
   };
 
   // CJK fast-pass before regex loop (word-boundary anchors fail in logographic scripts)

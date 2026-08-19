@@ -9,7 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
 import { registerAISubmit, clearAISubmit } from '@/services/aiChatBridge';
-import { checkCrisisSafety } from '@/services/crisisSafetyFilter';
+import { checkCrisisSafety, checkModelOutputSafety } from '@/services/crisisSafetyFilter';
 import { estimateSpeechDurationMs } from '@/services/ttsHighlightBus';
 import { startWakeWordDetection, isWakeWordSupported, WakeWordSession } from '@/services/wakeWordService';
 import { loadCards, saveCards, createCard, BedsideCard } from '@/services/bedsideCards';
@@ -389,7 +389,7 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
       // requestAnimationFrame tick AFTER onChunk, so a jailbroken model
       // streaming a harmful sentence would speak it before the full-buffer
       // check in flush() fires. Check here to intercept at enqueue time.
-      const sentenceSafety = checkCrisisSafety(sentence);
+      const sentenceSafety = checkModelOutputSafety(sentence);
       if (!sentenceSafety.safe) {
         cancelled = true;
         queueTimers.forEach(clearTimeout);
@@ -440,7 +440,7 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
       const tx = buffer;
       // Skip re-check when buffer is already the crisis response — the text contains
       // "call 911" / "988" which would re-trigger the filter and waste 100+ regex evals.
-      const safeguard = bufferIsCleanCrisisResponse ? { safe: true as const } : checkCrisisSafety(tx);
+      const safeguard = bufferIsCleanCrisisResponse ? { safe: true as const } : checkModelOutputSafety(tx);
       const safeText = safeguard.safe ? tx : safeguard.response;
       const lines = safeText.split(/\n+/).filter((l) => l.trim());
       setMessages((prev) => {
