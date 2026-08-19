@@ -93,11 +93,32 @@ const CRISIS_RESPONSE_TEXT = [
  * suppressing that reply would remove real help from a user in crisis.
  */
 const HARMFUL_OUTPUT_RES: RegExp[] = [
-  /\b(how|ways?|steps?|instructions?|guide)\b[^.?!]{0,40}\b(to|for)\b[^.?!]{0,20}\b(kill\s+(yourself|himself|herself|themselves)|commit\s+suicide|end\s+(your|his|her|their)\s+life|hurt\s+(yourself|himself|herself|themselves)|harm\s+(yourself|himself|herself|themselves))\b/i,
-  /\b(you\s+should|you\s+ought\s+to|why\s+don'?t\s+you|just)\b[^.?!]{0,20}\b(kill\s+yourself|end\s+your\s+life|hurt\s+yourself|harm\s+yourself|die)\b/i,
+  // Instruction / encouragement shapes.
+  /\b(how|ways?|steps?|instructions?|guide|method)\b[^.?!]{0,40}\b(to|for)\b[^.?!]{0,20}\b(kill\s+(yourself|himself|herself|themselves)|commit\s+suicide|end\s+(your|his|her|their)\s+life|hurt\s+(yourself|himself|herself|themselves)|harm\s+(yourself|himself|herself|themselves)|suffocate|hang|drown)\b/i,
+  /\b(you\s+should|you\s+ought\s+to|you\s+could|you\s+can|why\s+don'?t\s+you|just)\b[^.?!]{0,20}\b(kill\s+yourself|end\s+your\s+life|hurt\s+yourself|harm\s+yourself|die)\b/i,
   /\b(kill\s+yourself|kys)\b/i,
-  /\b(nobody|no\s+one)\b[^.?!]{0,25}\b(would\s+miss|cares?\s+about)\s+you\b/i,
   /\b(best|easiest|painless|quickest)\s+way\s+to\s+(die|kill\s+yourself|end\s+it)\b/i,
+  /\bgo\s+ahead\s+and\s+end\s+it\b/i,
+
+  // Self-harm METHODS stated in the second person. Scoped to body parts and
+  // heights that have no benign reading in an AAC assistant's reply — "cut
+  // your sandwich" and "jump off the swing" deliberately do not match.
+  /\b(cut|slit)\s+(your|his|her|their)\s+(wrists?|throat|arms?)\b/i,
+  /\b(hang|suffocate|drown|starve|poison)\s+(yourself|himself|herself|themselves)\b/i,
+  /\bjump\s+(off|from)\s+(a|the)?\s*(bridge|roof|building|balcony|window|cliff)\b/i,
+
+  // Overdose INSTRUCTION (distinct from the dosing QUESTIONS in MEDICAL_RES).
+  // Two-digit counts only, so ordinary "take 2 tablets" phrasing is not swept
+  // in — that belongs to the medical branch, not the crisis branch.
+  /\btake\s+(all|the\s+whole|\d{2,})\s+(of\s+)?(your\s+|the\s+)?(pills?|tablets?|tylenol|ibuprofen|medication|meds)\b/i,
+  /\b(pills?|tablets?)\b[^.?!]{0,15}\ball\s+at\s+once\b/i,
+
+  // Worth-negation aimed at the user. A model telling an AAC child they are a
+  // burden is harmful output regardless of how it was elicited.
+  /\byou\s+(are|'?re)\s+(worthless|better\s+off\s+dead|a\s+burden)\b/i,
+  /\b(world|everyone|they)\b[^.?!]{0,25}\bbetter\s+(off\s+)?without\s+you\b/i,
+  /\byou\s+should\s+(disappear|not\s+exist)\b/i,
+  /\b(nobody|no\s+one)\b[^.?!]{0,25}\b(would\s+miss|cares?\s+about)\s+you\b/i,
 ];
 
 // CJK-specific fast-pass: Japanese/Korean/Chinese write without word separators so
