@@ -31,6 +31,7 @@
 		4845E40319EC76BF7B3D85D9 /* PrismAACUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */; };
 		520CBFCB73C47A12E8E6AFE3 /* BedsideModeExtendedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A679874C453F382852D8900 /* BedsideModeExtendedTests.swift */; };
 		555C0BC04B53500144B4F875 /* AppIcon86x86@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3986462A80E639555B46FD91 /* AppIcon86x86@2x.png */; };
+		5A3B7E03AFE8DE8F8E05A555 /* CrisisFilterProofTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F796E5D650863E87BBD1B18 /* CrisisFilterProofTests.swift */; };
 		5B27532A15466AB48954316F /* BridgeSecurityPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F77017533C2E0E39A0CFA2FA /* BridgeSecurityPolicy.swift */; };
 		64BFB93793BFBD59BD651173 /* offline.html in Resources */ = {isa = PBXBuildFile; fileRef = 378A42F7E901AC2CE6A66DF0 /* offline.html */; };
 		6960B655C665118DAABF6BCE /* BridgeSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BFC79A8CF42D931FA02260 /* BridgeSecurityTests.swift */; };
@@ -69,6 +70,7 @@
 		EB90BA7A0874A4AD712029BA /* AppIcon44x44@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = EA856F3C86008948B1F59274 /* AppIcon44x44@2x.png */; };
 		EF9EBF1590D95DA7BA2B75C2 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62DB2AB8796CA83596887AD3 /* AppState.swift */; };
 		F29F5361641432A04AF77701 /* AppIcon98x98@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 99E02A56FC22AA400043891E /* AppIcon98x98@2x.png */; };
+		FD7567A97BCBCC9AF261863B /* LiveReplyFilterProofTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3D45BE3EEC9AFA0EB62501 /* LiveReplyFilterProofTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -124,6 +126,7 @@
 		3C1E662AEED98B7777920115 /* PrismAAC.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PrismAAC.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		48264733CC75753DEBCDDC22 /* AppIcon40x40@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon40x40@2x.png"; sourceTree = "<group>"; };
 		485E0CAF1D660CE13F92A068 /* WatchLayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLayerTests.swift; sourceTree = "<group>"; };
+		4D3D45BE3EEC9AFA0EB62501 /* LiveReplyFilterProofTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveReplyFilterProofTests.swift; sourceTree = "<group>"; };
 		51300DB32F4B39E077974619 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		514A2FD3A0BC693D56606896 /* LLMEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEngine.swift; sourceTree = "<group>"; };
 		5CEA86D8EDFEEEB3B2CE9C10 /* CloudContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudContractTests.swift; sourceTree = "<group>"; };
@@ -135,6 +138,7 @@
 		71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAACUITests.swift; sourceTree = "<group>"; };
 		73CB5D18068E5D45A1B75DE8 /* AACPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AACPipeline.swift; sourceTree = "<group>"; };
 		7F5B86B0B8D15149418A59D8 /* AppIcon50x50@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon50x50@2x.png"; sourceTree = "<group>"; };
+		7F796E5D650863E87BBD1B18 /* CrisisFilterProofTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrisisFilterProofTests.swift; sourceTree = "<group>"; };
 		81D846C54EB27AB2E3FA633B /* PrismAACUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PrismAACUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		824CFF80AABA2799959262E4 /* SafetyFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyFilter.swift; sourceTree = "<group>"; };
 		893663D6FC6015F606DAC1E9 /* AIConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIConsentView.swift; sourceTree = "<group>"; };
@@ -203,6 +207,7 @@
 				B4BFC79A8CF42D931FA02260 /* BridgeSecurityTests.swift */,
 				5CEA86D8EDFEEEB3B2CE9C10 /* CloudContractTests.swift */,
 				39EE1489A0BF7437616B5D5B /* GeneratedManifestTests.swift */,
+				4D3D45BE3EEC9AFA0EB62501 /* LiveReplyFilterProofTests.swift */,
 				B4B17D9B0D21E9712DE4058F /* PrismAACUnitTests.swift */,
 				FEF16C47C83FB3541066D50E /* SafetyFilterDirectionTests.swift */,
 				485E0CAF1D660CE13F92A068 /* WatchLayerTests.swift */,
@@ -218,6 +223,7 @@
 				5E756609B993B514F971E39F /* AppStoreScreenshots.swift */,
 				6A679874C453F382852D8900 /* BedsideModeExtendedTests.swift */,
 				B596E9E9B51A0D4D3C329C9F /* ButtonCoverageTests.swift */,
+				7F796E5D650863E87BBD1B18 /* CrisisFilterProofTests.swift */,
 				71FB141A766BB9A02A9190E9 /* PrismAACUITests.swift */,
 			);
 			path = PrismAACUITests;
@@ -592,6 +598,7 @@
 				BC74D841F1239D8358B195CA /* AppStoreScreenshots.swift in Sources */,
 				520CBFCB73C47A12E8E6AFE3 /* BedsideModeExtendedTests.swift in Sources */,
 				287EB175AC807A70ED2E2AB1 /* ButtonCoverageTests.swift in Sources */,
+				5A3B7E03AFE8DE8F8E05A555 /* CrisisFilterProofTests.swift in Sources */,
 				4845E40319EC76BF7B3D85D9 /* PrismAACUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -643,6 +650,7 @@
 				6960B655C665118DAABF6BCE /* BridgeSecurityTests.swift in Sources */,
 				A505ECD1C1950BA0C963A50E /* CloudContractTests.swift in Sources */,
 				7F76E50C22385197DA91EF31 /* GeneratedManifestTests.swift in Sources */,
+				FD7567A97BCBCC9AF261863B /* LiveReplyFilterProofTests.swift in Sources */,
 				3D08BF95A6574850121B9852 /* PrismAACUnitTests.swift in Sources */,
 				2AFE7E4C7B9E88A60E34B031 /* SafetyFilterDirectionTests.swift in Sources */,
 				3F4FDC469542E9A9D39C391F /* WatchLayerTests.swift in Sources */,
