@@ -138,6 +138,51 @@ struct SafetyFilter {
 
     // MARK: - Check
 
+    /// Content the MODEL must never emit — jailbreak interception only.
+    ///
+    /// Deliberately NOT the input keyword list. "help me" TYPED BY A USER is a
+    /// distress signal; the same words EMITTED BY THE MODEL are an AAC phrase
+    /// suggestion, because the system prompt asks for ready-to-speak lines and
+    /// a normal reply ends `**Say:** … "Can you help me talk?"`. Running the
+    /// input list over output replaced benign answers with the 911 card.
+    ///
+    /// Fixed on the web 2026-08-19; this is the same defect in the native app,
+    /// reported still happening after the 1.8.8 update because that fix never
+    /// crossed over. Mirrors services/crisisSafetyFilter.ts checkModelOutputSafety.
+    private static let harmfulOutputPatterns: [NSRegularExpression] = [
+        #"\b(how|ways?|steps?|instructions?|guide|method)\b[^.?!]{0,40}\b(to|for)\b[^.?!]{0,20}\b(kill\s+(yourself|himself|herself|themselves)|commit\s+suicide|end\s+(your|his|her|their)\s+life|hurt\s+(yourself|himself|herself|themselves)|harm\s+(yourself|himself|herself|themselves)|suffocate|hang|drown)\b"#,
+        #"\b(you\s+should|you\s+ought\s+to|you\s+could|you\s+can|why\s+don'?t\s+you|just)\b[^.?!]{0,20}\b(kill\s+yourself|end\s+your\s+life|hurt\s+yourself|harm\s+yourself|die)\b"#,
+        #"\b(kill\s+yourself|kys)\b"#,
+        #"\b(best|easiest|painless|quickest)\s+way\s+to\s+(die|kill\s+yourself|end\s+it)\b"#,
+        #"\bgo\s+ahead\s+and\s+end\s+it\b"#,
+        #"\b(cut|slit)\s+(your|his|her|their)\s+(wrists?|throat|arms?)\b"#,
+        #"\b(hang|suffocate|drown|starve|poison)\s+(yourself|himself|herself|themselves)\b"#,
+        #"\bjump\s+(off|from)\s+(a|the)?\s*(bridge|roof|building|balcony|window|cliff)\b"#,
+        #"\btake\s+(all|the\s+whole|\d{2,})\s+(of\s+)?(your\s+|the\s+)?(pills?|tablets?|tylenol|ibuprofen|medication|meds)\b"#,
+        #"\byou\s+(are|'?re)\s+(worthless|better\s+off\s+dead|a\s+burden)\b"#,
+        #"\b(world|everyone|they)\b[^.?!]{0,25}\bbetter\s+(off\s+)?without\s+you\b"#,
+        #"\b(nobody|no\s+one)\b[^.?!]{0,25}\b(would\s+miss|cares?\s+about)\s+you\b"#,
+    ].compactMap { try? NSRegularExpression(pattern: $0, options: [.caseInsensitive]) }
+
+    /// Safety check for MODEL OUTPUT. Narrower than `check(_:)`, which is for
+    /// USER INPUT. Dosing/lethality still blocks; distress vocabulary does not.
+    static func checkModelOutput(_ output: String) -> Result {
+        _ = _dosePatternCheck
+        let range = NSRange(output.startIndex..., in: output)
+
+        for regex in harmfulOutputPatterns where regex.firstMatch(in: output, options: [], range: range) != nil {
+            return .crisis(response: crisisResponse())
+        }
+
+        let remoteDose: [NSRegularExpression] = remoteQueue.sync { additionalDosePatterns }
+        for regex in Self.dosePatterns + remoteDose
+        where regex.firstMatch(in: output, options: [], range: range) != nil {
+            return .medical(response: medicalRefusal())
+        }
+
+        return .safe
+    }
+
     static func check(_ input: String) -> Result {
         _ = _crisisPatternCheck
         _ = _dosePatternCheck

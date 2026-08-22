@@ -20,6 +20,7 @@
 		26A7AD7DDCBA8B0B8D19ECA0 /* AppIcon54x54@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 95805409B214B9D6DF2076F7 /* AppIcon54x54@2x.png */; };
 		287EB175AC807A70ED2E2AB1 /* ButtonCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B596E9E9B51A0D4D3C329C9F /* ButtonCoverageTests.swift */; };
 		298E5CAC051C4E6C40B9309A /* WatchVocabSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1FF5018CD7D6ED0E48C17D /* WatchVocabSync.swift */; };
+		2AFE7E4C7B9E88A60E34B031 /* SafetyFilterDirectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF16C47C83FB3541066D50E /* SafetyFilterDirectionTests.swift */; };
 		2CD68B3ABCB8C23FF1104EC7 /* PrismAACApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7796EAE5DE2A7F6D7FA10EF /* PrismAACApp.swift */; };
 		35B73245D5AA0AE1C5AEC32A /* AIChatFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CA14CA933F6B284A18A59A /* AIChatFlowTests.swift */; };
 		35D9A95BD14055A496098878 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 27F621FF903791DF9713E9E5 /* Assets.xcassets */; };
@@ -170,6 +171,7 @@
 		FBA891B441091DCDA4FC123A /* PhraseSpeaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhraseSpeaker.swift; sourceTree = "<group>"; };
 		FCD52807AECA71B546A28725 /* AppIcon33x33@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIcon33x33@2x.png"; sourceTree = "<group>"; };
 		FE50392198C3596E4E3CAA44 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		FEF16C47C83FB3541066D50E /* SafetyFilterDirectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyFilterDirectionTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -202,6 +204,7 @@
 				5CEA86D8EDFEEEB3B2CE9C10 /* CloudContractTests.swift */,
 				39EE1489A0BF7437616B5D5B /* GeneratedManifestTests.swift */,
 				B4B17D9B0D21E9712DE4058F /* PrismAACUnitTests.swift */,
+				FEF16C47C83FB3541066D50E /* SafetyFilterDirectionTests.swift */,
 				485E0CAF1D660CE13F92A068 /* WatchLayerTests.swift */,
 				E806C70DB42E2879A665E4C3 /* WatchStreamingTests.swift */,
 			);
@@ -641,6 +644,7 @@
 				A505ECD1C1950BA0C963A50E /* CloudContractTests.swift in Sources */,
 				7F76E50C22385197DA91EF31 /* GeneratedManifestTests.swift in Sources */,
 				3D08BF95A6574850121B9852 /* PrismAACUnitTests.swift in Sources */,
+				2AFE7E4C7B9E88A60E34B031 /* SafetyFilterDirectionTests.swift in Sources */,
 				3F4FDC469542E9A9D39C391F /* WatchLayerTests.swift in Sources */,
 				92B4306E8B1AAFFC82E39F8D /* WatchStreamingTests.swift in Sources */,
 			);

@@ -338,7 +338,11 @@ struct PrismWebView: UIViewRepresentable {
                     var outputBlocked = false
                     func flushBuffer() {
                         guard !buffer.isEmpty, !outputBlocked else { buffer = ""; return }
-                        let result = SafetyFilter.check(fullOutput + buffer)
+                        // OUTPUT check, not the input one. The input list
+                        // treats "help me" as distress, but the model emits it
+                        // as an AAC phrase suggestion, so benign answers were
+                        // being replaced by the crisis card.
+                        let result = SafetyFilter.checkModelOutput(fullOutput + buffer)
                         if case .safe = result {
                             // safe — continue
                         } else {
