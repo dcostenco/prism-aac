@@ -59,8 +59,8 @@ targets:
           - UIApplicationShortcutItemType: com.prismaac.water
             UIApplicationShortcutItemTitle: Water please
             UIApplicationShortcutItemIconSymbolName: drop
-        CFBundleShortVersionString: "1.8.8"
-        CFBundleVersion: "51"
+        CFBundleShortVersionString: "1.8.9"
+        CFBundleVersion: "52"
         CFBundleLocalizations:
           - ar
           - de
@@ -133,8 +133,8 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      CURRENT_PROJECT_VERSION: "51"
-      MARKETING_VERSION: "1.8.8"
+      CURRENT_PROJECT_VERSION: "52"
+      MARKETING_VERSION: "1.8.9"
       GENERATE_INFOPLIST_FILE: NO
       PRIVACY_INFO_XCPRIVACY_FILE: PrismAAC/PrivacyInfo.xcprivacy
     dependencies:
@@ -165,8 +165,8 @@ targets:
       path: PrismAACWatch/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
-        CFBundleShortVersionString: "1.8.8"
-        CFBundleVersion: "51"
+        CFBundleShortVersionString: "1.8.9"
+        CFBundleVersion: "52"
         WKApplication: true
         WKRunsIndependentlyOfCompanionApp: true   # standalone without iPhone
         WKCompanionAppBundleIdentifier: ai.synalux.prism-aac
@@ -176,8 +176,8 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.watchkitapp
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      CURRENT_PROJECT_VERSION: "51"
-      MARKETING_VERSION: "1.8.8"
+      CURRENT_PROJECT_VERSION: "52"
+      MARKETING_VERSION: "1.8.9"
       GENERATE_INFOPLIST_FILE: NO
       SDKROOT: watchos
       SUPPORTED_PLATFORMS: watchos watchsimulator
