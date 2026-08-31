@@ -177,6 +177,7 @@ describe('IntegrationsSettings — Google data-use disclosure', () => {
     const dialog = screen.getByRole('dialog', { name: /google access requested/i });
     expect(dialog).toHaveTextContent(/send only messages you compose/i);
     expect(dialog).toHaveTextContent(/names, email addresses, and phone numbers/i);
+    expect(dialog).toHaveTextContent(/recipient autocomplete and the Prism AAC contact directory/i);
     expect(dialog).toHaveTextContent(/contact photos are not requested/i);
     expect(dialog).toHaveTextContent(/every five minutes/i);
     expect(dialog).toHaveTextContent(/up to 200/i);
