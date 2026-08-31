@@ -3,7 +3,7 @@
  * indicator inside the Settings modal.
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import CaregiverContactsSettings from '@/components/CaregiverContactsSettings';
@@ -15,12 +15,18 @@ vi.mock('@/components/IntegrationsSettings', () => ({
 }));
 
 const syncMock = vi.fn();
+const subscribeMock = vi.fn();
 vi.mock('@/services/contactsIntegrationService', () => ({
   syncContactsOnce: (...args: unknown[]) => syncMock(...args),
+}));
+vi.mock('@/services/integrationsService', () => ({
+  subscribeToIntegrationEvents: (...args: unknown[]) => subscribeMock(...args),
 }));
 
 beforeEach(() => {
   syncMock.mockReset();
+  subscribeMock.mockReset();
+  subscribeMock.mockImplementation(() => () => {});
   useContactsStore.setState({ contacts: [], lastSyncedAt: 0 });
   useAuthStore.setState({ profile: { email: 'a@b.c', name: 'A', plan: 'free', isPlatformAdmin: false }, loaded: true, loading: false });
 });
@@ -120,5 +126,33 @@ describe('CaregiverContactsSettings — sync button', () => {
     render(<CaregiverContactsSettings />);
     await user.click(screen.getByTestId('contacts-sync-btn'));
     expect(await screen.findByTestId('contacts-sync-msg')).toHaveTextContent(/Sync unavailable/i);
+  });
+
+  it('reports removed Google contacts after a successful authoritative sync', async () => {
+    syncMock.mockResolvedValueOnce({ added: 0, updated: 0, removed: 2, notes: [] });
+    const user = userEvent.setup();
+    render(<CaregiverContactsSettings />);
+
+    await user.click(screen.getByTestId('contacts-sync-btn'));
+
+    expect(await screen.findByTestId('contacts-sync-msg')).toHaveTextContent(/2 removed/i);
+  });
+});
+
+describe('CaregiverContactsSettings — integration disconnect event', () => {
+  it('removes Google-derived contacts while preserving manual contacts', () => {
+    useContactsStore.setState({
+      contacts: [
+        { id: 'google', name: 'Google', provider: 'mail', recipientId: 'g@example.com', order: 0, sourceProvider: 'google' },
+        { id: 'manual', name: 'Manual', provider: 'mail', recipientId: 'm@example.com', order: 1 },
+      ],
+      lastSyncedAt: 0,
+    });
+    render(<CaregiverContactsSettings />);
+    const handler = subscribeMock.mock.calls[0]?.[0] as ((event: { type: string; provider: string }) => void);
+
+    act(() => handler({ type: 'provider-disconnected', provider: 'google' }));
+
+    expect(useContactsStore.getState().contacts.map((c) => c.id)).toEqual(['manual']);
   });
 });

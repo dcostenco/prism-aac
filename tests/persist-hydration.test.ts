@@ -60,6 +60,25 @@ describe('contactsStore — merge hydration validator', () => {
     void useContactsStore.persist.rehydrate();
     expect(useContactsStore.getState().lastSyncedAt).toBe(0);
   });
+
+  it('accepts Google source metadata and legacy rows but rejects unknown sources', () => {
+    window.localStorage.setItem('prism-aac-contacts', JSON.stringify({
+      state: {
+        contacts: [
+          { id: 'google', name: 'Google', provider: 'mail', recipientId: 'g@example.com', order: 0, sourceProvider: 'google' },
+          { id: 'legacy', name: 'Legacy manual', provider: 'mail', recipientId: 'm@example.com', order: 1 },
+          { id: 'bad-source', name: 'Bad', provider: 'mail', recipientId: 'b@example.com', order: 2, sourceProvider: 'attacker' },
+        ],
+        lastSyncedAt: 0,
+      },
+      version: 0,
+    }));
+
+    void useContactsStore.persist.rehydrate();
+
+    expect(useContactsStore.getState().contacts.map((c) => c.id)).toEqual(['google', 'legacy']);
+    expect(useContactsStore.getState().contacts[0].sourceProvider).toBe('google');
+  });
 });
 
 describe('scheduleStore — merge hydration validator', () => {

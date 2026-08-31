@@ -53,6 +53,7 @@ export default function CaregiverContactsSettings() {
   const addContact = useContactsStore((s) => s.addContact);
   const removeContact = useContactsStore((s) => s.removeContact);
   const updateContact = useContactsStore((s) => s.updateContact);
+  const removeIntegrationContacts = useContactsStore((s) => s.removeIntegrationContacts);
   const profile = useAuthStore((s) => s.profile);
   const plan = profile?.plan ?? 'free';
 
@@ -105,7 +106,7 @@ export default function CaregiverContactsSettings() {
     }
     setDraftName('');
     setDraftRecipientId('');
-  }, [draftName, draftProvider, draftRecipientId, addContact]);
+  }, [draftName, draftProvider, draftRecipientId, addContact, setDraftName, setDraftRecipientId]);
 
   const handleSync = useCallback(async () => {
     tapFeedback();
@@ -116,7 +117,7 @@ export default function CaregiverContactsSettings() {
     if (res === null) {
       setSyncMsg('Sync unavailable — check your portal connection.');
       setSyncNotes([]);
-    } else if (res.added === 0 && res.updated === 0) {
+    } else if (res.added === 0 && res.updated === 0 && res.removed === 0) {
       // Distinguish "already up to date with N contacts" from
       // "no contacts came back at all" — the latter means the user
       // probably needs to reconnect with broader scope. Without the
@@ -126,7 +127,12 @@ export default function CaregiverContactsSettings() {
       setSyncMsg(haveContacts ? 'Already up to date.' : 'Synced — 0 contacts available yet.');
       setSyncNotes(res.notes ?? []);
     } else {
-      setSyncMsg(`+${res.added} new, ${res.updated} updated.`);
+      const changes = [
+        ...(res.added > 0 ? [`+${res.added} new`] : []),
+        ...(res.updated > 0 ? [`${res.updated} updated`] : []),
+        ...(res.removed > 0 ? [`${res.removed} removed`] : []),
+      ];
+      setSyncMsg(`${changes.join(', ')}.`);
       setSyncNotes(res.notes ?? []);
     }
     if (syncMsgTimerRef.current) clearTimeout(syncMsgTimerRef.current);
@@ -135,17 +141,23 @@ export default function CaregiverContactsSettings() {
     }, 4000);
   }, []);
 
-  // When IntegrationsSettings broadcasts a 'provider-connected' event
-  // (caregiver finished an OAuth popup), automatically pull contacts
-  // so the row list refreshes without a separate Sync click.
+  // Connected events trigger a refresh. A disconnected event is emitted only
+  // after the Portal confirms revocation, so it may selectively purge rows
+  // marked as Google-derived; manual/legacy contacts have no source marker.
   useEffect(() => {
     const unsub = subscribeToIntegrationEvents((ev) => {
       if (ev.type === 'provider-connected') {
         handleSync();
+      } else if (
+        ev.type === 'provider-disconnected'
+        && (ev.provider === 'google' || ev.provider === 'google-gmail')
+      ) {
+        const removed = removeIntegrationContacts(['google']);
+        if (removed > 0) setSyncMsg(`${removed} Google contact${removed === 1 ? '' : 's'} removed.`);
       }
     });
     return unsub;
-  }, [handleSync]);
+  }, [handleSync, removeIntegrationContacts]);
 
   const inputClass = 'w-full surface-key rounded-lg px-3 py-2 text-primary text-base border border-theme';
   const btnPrimary = 'aac-btn rounded-lg px-4 py-2 bg-[#4CAF50] text-white font-bold disabled:opacity-40';

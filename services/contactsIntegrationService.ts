@@ -7,7 +7,7 @@
  * would mean a blank screen on flaky school Wi-Fi for 1-3s — long
  * enough for an AAC user with motor/cognitive load to give up.
  *
- * Endpoint contract (synalux-platform side, TBD if not yet shipped):
+ * Endpoint contract (Synalux Portal):
  *   GET /api/v1/prism-aac/contacts
  *   →   { contacts: Array<{
  *           name: string;
@@ -15,7 +15,10 @@
  *           recipientId: string;
  *           avatar?: string;
  *           lastMessagePreview?: string;
+ *           sourceProvider?: 'google';
  *         }>,
+ *         syncedSources: Array<'google'>,
+ *         disconnectedSources: Array<'google'>,
  *         serverTime: number }
  *
  * Behavior on missing/erroring endpoint:
@@ -23,7 +26,12 @@
  *     offline). Local list keeps working.
  *   - 401: skip; authStore handles reauth elsewhere.
  */
-import { useContactsStore, type AacContact, type ContactProvider } from '@/store/contactsStore';
+import {
+  useContactsStore,
+  type AacContact,
+  type ContactProvider,
+  type IntegrationContactSource,
+} from '@/store/contactsStore';
 import { useAuthStore } from '@/store/authStore';
 import { PROVIDERS } from '@/lib/messageProviders';
 import { portalFetch } from '@/services/portalClient';
@@ -54,6 +62,17 @@ export interface IntegrationContact {
   recipientId?: string;
   avatar?: string;
   lastMessagePreview?: string;
+  sourceProvider?: string;
+}
+
+const VALID_SOURCES = new Set<IntegrationContactSource>(['google']);
+
+function sanitizeSources(raw: unknown): IntegrationContactSource[] {
+  if (!Array.isArray(raw)) return [];
+  return [...new Set(raw.filter(
+    (source): source is IntegrationContactSource => typeof source === 'string'
+      && VALID_SOURCES.has(source as IntegrationContactSource),
+  ))];
 }
 
 function sanitize(raw: unknown): Array<Omit<AacContact, 'id' | 'order'>> {
@@ -75,12 +94,15 @@ function sanitize(raw: unknown): Array<Omit<AacContact, 'id' | 'order'>> {
     if (!PROVIDERS[provider].validateRecipientId(recipientId)) continue;
     const avatar = sanitizeString(cc.avatar, SAFE_LIMITS.avatar);
     const lastMessagePreview = sanitizeString(cc.lastMessagePreview, SAFE_LIMITS.preview);
+    const sourceProvider = sanitizeString(cc.sourceProvider, SAFE_LIMITS.providerCode);
+    if (sourceProvider && !VALID_SOURCES.has(sourceProvider as IntegrationContactSource)) continue;
     out.push({
       name,
       provider,
       recipientId,
       ...(avatar ? { avatar } : {}),
       ...(lastMessagePreview ? { lastMessagePreview } : {}),
+      ...(sourceProvider ? { sourceProvider: sourceProvider as IntegrationContactSource } : {}),
     });
   }
   return out;
@@ -91,6 +113,7 @@ let syncInFlight = false;
 export interface SyncOutcome {
   added: number;
   updated: number;
+  removed: number;
   /** Per-source advisory strings from the portal — e.g.
    *  "Reconnect Gmail to grant Contacts permission" when the user
    *  authorized Gmail but not the contacts.readonly scope needed by
@@ -109,7 +132,12 @@ export async function syncContactsOnce(): Promise<SyncOutcome | null> {
   if (!useAuthStore.getState().profile) return null;
   syncInFlight = true;
   try {
-    const res = await portalFetch<{ contacts?: unknown; notes?: unknown }>({
+    const res = await portalFetch<{
+      contacts?: unknown;
+      notes?: unknown;
+      syncedSources?: unknown;
+      disconnectedSources?: unknown;
+    }>({
       path: ENDPOINT,
       timeoutMs: SYNC_TIMEOUT_MS,
     });
@@ -120,10 +148,24 @@ export async function syncContactsOnce(): Promise<SyncOutcome | null> {
     const notes = Array.isArray(body.notes)
       ? body.notes.filter((n): n is string => typeof n === 'string').slice(0, 8)
       : [];
+    const reportedSynced = sanitizeSources(body.syncedSources);
+    const reportedDisconnected = sanitizeSources(body.disconnectedSources);
+    // A contradictory source state is not authoritative. Retain local data
+    // instead of choosing a destructive interpretation.
+    const contradictory = new Set(
+      reportedSynced.filter((source) => reportedDisconnected.includes(source)),
+    );
+    const syncedSources = reportedSynced.filter((source) => !contradictory.has(source));
+    const disconnectedSources = reportedDisconnected.filter((source) => !contradictory.has(source));
     // Endpoint reachable (even with no rows) — bump lastSyncedAt so the
     // settings UI shows a successful sync.
-    const merge = useContactsStore.getState().mergeFromIntegrations(incoming);
-    return { ...merge, notes };
+    const merge = useContactsStore.getState().mergeFromIntegrations(
+      incoming,
+      { authoritativeSources: syncedSources },
+    );
+    const disconnectedRemoved = useContactsStore.getState()
+      .removeIntegrationContacts(disconnectedSources);
+    return { ...merge, removed: merge.removed + disconnectedRemoved, notes };
   } finally {
     syncInFlight = false;
   }

@@ -6,6 +6,8 @@
  *   - caregiver-edited fields are preserved on re-sync
  *   - sync sanitizes bad payloads (invalid provider, missing fields)
  *   - sync gracefully no-ops on 404 / network error
+ *   - authoritative Google sync and confirmed disconnect remove only
+ *     Google-derived contacts, never manual contacts
  *   - lastSyncedAt is bumped on successful sync (even with empty payload)
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
@@ -112,14 +114,79 @@ describe('contactsStore.mergeFromIntegrations', () => {
     ]);
     expect(useContactsStore.getState().contacts).toHaveLength(2);
   });
+
+  it('stores integration source metadata on newly synced Google contacts', () => {
+    const res = useContactsStore.getState().mergeFromIntegrations([
+      { name: 'Google Person', provider: 'mail', recipientId: 'person@example.com', sourceProvider: 'google' },
+    ]);
+
+    expect(res).toEqual({ added: 1, updated: 0, removed: 0 });
+    expect(useContactsStore.getState().contacts[0].sourceProvider).toBe('google');
+  });
+
+  it('authoritative Google sync removes stale Google rows but preserves manual rows', () => {
+    useContactsStore.setState({
+      contacts: [
+        { id: 'g-keep', name: 'Keep', provider: 'mail', recipientId: 'keep@example.com', order: 0, sourceProvider: 'google' },
+        { id: 'g-stale', name: 'Stale', provider: 'mail', recipientId: 'stale@example.com', order: 1, sourceProvider: 'google' },
+        { id: 'manual', name: 'Manual', provider: 'mail', recipientId: 'manual@example.com', order: 2 },
+      ],
+      lastSyncedAt: 0,
+    });
+
+    const res = useContactsStore.getState().mergeFromIntegrations([
+      { name: 'Keep from Google', provider: 'mail', recipientId: 'keep@example.com', sourceProvider: 'google' },
+    ], { authoritativeSources: ['google'] });
+
+    expect(res.removed).toBe(1);
+    expect(useContactsStore.getState().contacts.map((c) => c.id)).toEqual(['g-keep', 'manual']);
+  });
+
+  it('never converts an existing manual contact into a purgeable Google contact', () => {
+    const manualId = useContactsStore.getState().addContact({
+      name: 'Caregiver alias', provider: 'mail', recipientId: 'same@example.com',
+    });
+
+    useContactsStore.getState().mergeFromIntegrations([
+      { name: 'Google Name', provider: 'mail', recipientId: 'same@example.com', sourceProvider: 'google' },
+    ], { authoritativeSources: ['google'] });
+    const removed = useContactsStore.getState().removeIntegrationContacts(['google']);
+
+    expect(removed).toBe(0);
+    expect(useContactsStore.getState().contacts).toEqual([
+      expect.objectContaining({ id: manualId, name: 'Caregiver alias' }),
+    ]);
+    expect(useContactsStore.getState().contacts[0].sourceProvider).toBeUndefined();
+  });
+
+  it('confirmed source removal deletes only source-marked Google rows', () => {
+    useContactsStore.setState({
+      contacts: [
+        { id: 'google', name: 'Google', provider: 'mail', recipientId: 'g@example.com', order: 0, sourceProvider: 'google' },
+        { id: 'manual', name: 'Manual', provider: 'mail', recipientId: 'm@example.com', order: 1 },
+      ],
+      lastSyncedAt: 0,
+    });
+
+    const removed = useContactsStore.getState().removeIntegrationContacts(['google']);
+
+    expect(removed).toBe(1);
+    expect(useContactsStore.getState().contacts.map((c) => c.id)).toEqual(['manual']);
+  });
 });
 
 describe('contactsIntegrationService.syncContactsOnce', () => {
   it('returns null on network error and leaves store untouched', async () => {
+    useContactsStore.setState({
+      contacts: [
+        { id: 'saved-google', name: 'Saved', provider: 'mail', recipientId: 'saved@example.com', order: 0, sourceProvider: 'google' },
+      ],
+      lastSyncedAt: 0,
+    });
     fetchMock.mockRejectedValueOnce(new Error('offline'));
     const res = await syncContactsOnce();
     expect(res).toBeNull();
-    expect(useContactsStore.getState().contacts).toHaveLength(0);
+    expect(useContactsStore.getState().contacts.map((c) => c.id)).toEqual(['saved-google']);
     expect(useContactsStore.getState().lastSyncedAt).toBe(0);
   });
 
@@ -153,6 +220,51 @@ describe('contactsIntegrationService.syncContactsOnce', () => {
     const res = await syncContactsOnce();
     expect(res).toEqual(expect.objectContaining({ added: 0, updated: 0 }));
     expect(useContactsStore.getState().lastSyncedAt).toBeGreaterThan(0);
+  });
+
+  it('uses syncedSources as an authoritative snapshot for selective stale removal', async () => {
+    useContactsStore.setState({
+      contacts: [
+        { id: 'stale-google', name: 'Stale', provider: 'mail', recipientId: 'stale@example.com', order: 0, sourceProvider: 'google' },
+        { id: 'manual', name: 'Manual', provider: 'mail', recipientId: 'manual@example.com', order: 1 },
+      ],
+      lastSyncedAt: 0,
+    });
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
+      contacts: [
+        { name: 'Fresh', provider: 'mail', recipientId: 'fresh@example.com', sourceProvider: 'google' },
+      ],
+      syncedSources: ['google'],
+      disconnectedSources: [],
+    }), { status: 200 }));
+
+    const res = await syncContactsOnce();
+
+    expect(res).toEqual(expect.objectContaining({ added: 1, updated: 0, removed: 1 }));
+    const ids = useContactsStore.getState().contacts.map((c) => c.id);
+    expect(ids).toContain('manual');
+    expect(ids).not.toContain('stale-google');
+    expect(useContactsStore.getState().contacts.find((c) => c.recipientId === 'fresh@example.com')?.sourceProvider).toBe('google');
+  });
+
+  it('purges Google-derived contacts only when the portal confirms Google disconnected', async () => {
+    useContactsStore.setState({
+      contacts: [
+        { id: 'google', name: 'Google', provider: 'mail', recipientId: 'g@example.com', order: 0, sourceProvider: 'google' },
+        { id: 'manual', name: 'Manual', provider: 'mail', recipientId: 'm@example.com', order: 1 },
+      ],
+      lastSyncedAt: 0,
+    });
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
+      contacts: [],
+      syncedSources: [],
+      disconnectedSources: ['google'],
+    }), { status: 200 }));
+
+    const res = await syncContactsOnce();
+
+    expect(res).toEqual(expect.objectContaining({ removed: 1 }));
+    expect(useContactsStore.getState().contacts.map((c) => c.id)).toEqual(['manual']);
   });
 
   it('hits the contacts endpoint with credentials included', async () => {

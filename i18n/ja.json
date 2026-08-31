@@ -427,5 +427,10 @@
   "speech_mode_sentence": "文",
   "selection_feedback_sentence": "文ごとに読み上げる: オン",
   "speak_sentence_feedback": "文ごとに読み上げる",
-  "speak_sentence_feedback_desc": ". ? ! を入力すると完成した文を読み上げます"
+  "speak_sentence_feedback_desc": ". ? ! を入力すると完成した文を読み上げます",
+  "continue_to_google": "Continue to Google",
+  "disconnect": "Disconnect",
+  "disconnecting": "Disconnecting…",
+  "google_oauth_disclosure_title": "Google access requested",
+  "google_oauth_disclosure_body": "Gmail can send only messages you compose; it cannot read your mailbox. Google Contacts reads names, email addresses, and phone numbers for recipient autocomplete; contact photos are not requested and the Prism AAC directory. Prism AAC refreshes every five minutes while signed in and may keep up to 200 Google-derived contacts in local browser or device storage. Google-derived contacts are removed after a confirmed Google disconnect or authoritative successful sync; manual contacts and contacts from other providers remain. Synalux never writes to Google Contacts. Google API data is not sent to generative AI, advertising, profiling, or model training."
 }
