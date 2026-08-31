@@ -184,6 +184,7 @@ describe('IntegrationsSettings — Google data-use disclosure', () => {
     expect(dialog).toHaveTextContent(/google-derived contacts are removed/i);
     expect(dialog).toHaveTextContent(/manual.*remain/i);
     expect(dialog).toHaveTextContent(/not sent to generative ai/i);
+    expect(dialog).toHaveTextContent(/not used for advertising, profiling, or model training/i);
     expect(screen.queryByTestId('integrations-status')).not.toBeInTheDocument();
   });
 
