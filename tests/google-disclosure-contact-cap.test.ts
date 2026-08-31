@@ -22,11 +22,25 @@ import { MAX_CONTACTS, useContactsStore } from '../store/contactsStore';
 
 const I18N_DIR = resolve(__dirname, '../i18n');
 const KEY = 'google_oauth_disclosure_body';
+/** Locales shipped when this guard was written. The count may grow, never shrink. */
+const MIN_LOCALE_FILES = 28;
 
 function localeFiles(): string[] {
-    return readdirSync(I18N_DIR)
+    const files = readdirSync(I18N_DIR)
         .filter((f) => f.endsWith('.json') && f !== 'translations.json')
         .sort();
+    // Fail loudly on an empty glob. Every per-locale assertion below runs
+    // inside `for (const f of localeFiles())`, so a directory rename, a
+    // broadened exclusion, or a typo'd extension filter would execute ZERO
+    // expect() calls and Vitest would still report the suite green — a test
+    // whose whole purpose is guarding 28 locale files silently guarding none.
+    if (files.length < MIN_LOCALE_FILES) {
+        throw new Error(
+            `i18n locale glob returned ${files.length} file(s) (expected >= ${MIN_LOCALE_FILES}) — `
+            + `the disclosure copy is NOT being checked. Fix the glob in ${__filename}, do not lower the floor.`,
+        );
+    }
+    return files;
 }
 
 function bodyFor(file: string): string {
@@ -98,6 +112,18 @@ describe('Google disclosure — contact retention cap', () => {
         // Only the leftover slots were available — NOT MAX_CONTACTS of them.
         expect(googleCount).toBe(MAX_CONTACTS - manual);
         expect(googleCount).toBeLessThan(MAX_CONTACTS);
+    });
+
+    it('actually covers every shipped locale (guards against a vacuous glob)', () => {
+        const files = localeFiles();
+        expect(files.length).toBeGreaterThanOrEqual(MIN_LOCALE_FILES);
+        expect(files).toContain('en.json');
+        // Every file must really carry the key — an empty/renamed key would
+        // otherwise make bodyFor() return '' and the .not.toMatch assertions
+        // below pass against an empty string.
+        for (const f of files) {
+            expect(bodyFor(f), `${f} is missing ${KEY}`).not.toBe('');
+        }
     });
 
     it('declares no provider-scoped quota constant', () => {
