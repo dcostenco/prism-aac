@@ -15,9 +15,11 @@ import type { IntegrationProvider } from '@/services/integrationsService';
 // ── mocks ──────────────────────────────────────────────────────────────────────
 
 const listIntegrationsMock = vi.fn();
+const disconnectProviderMock = vi.fn();
 
 vi.mock('@/services/integrationsService', () => ({
   listIntegrations: (...args: unknown[]) => listIntegrationsMock(...args),
+  disconnectProvider: (...args: unknown[]) => disconnectProviderMock(...args),
   subscribeToIntegrationEvents: () => () => {},
 }));
 
@@ -32,12 +34,14 @@ const makeProvider = (overrides: Partial<IntegrationProvider>): IntegrationProvi
   kind: 'mail',
   status: 'available',
   connectUrl: 'https://synalux.ai/connect?provider=gmail',
+  auth: 'oauth2',
   ...overrides,
 });
 
 beforeEach(() => {
   vi.clearAllMocks();
   listIntegrationsMock.mockResolvedValue([]);
+  disconnectProviderMock.mockResolvedValue(true);
 });
 
 // ── loading state ─────────────────────────────────────────────────────────────
@@ -136,6 +140,67 @@ describe('IntegrationsSettings — available provider', () => {
       expect(screen.getByTestId('integration-connect-gmail')).not.toBeDisabled();
     });
   });
+
+  it('refuses an OAuth URL on an unexpected HTTPS origin', async () => {
+    listIntegrationsMock.mockResolvedValue([makeProvider({
+      id: 'unexpected-origin',
+      connectUrl: 'https://accounts.example.test/oauth',
+    })]);
+    render(<IntegrationsSettings />);
+    await waitFor(() => expect(screen.getByTestId('integration-connect-unexpected-origin')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('integration-connect-unexpected-origin'));
+
+    expect(screen.queryByTestId('integrations-status')).not.toBeInTheDocument();
+  });
+});
+
+describe('IntegrationsSettings — Google data-use disclosure', () => {
+  const google = makeProvider({
+    id: 'google-gmail',
+    label: 'Gmail',
+    status: 'available',
+    kind: 'mail',
+    connectUrl: 'https://synalux.ai/api/auth/connect/google?scope=gmail',
+  });
+
+  beforeEach(() => {
+    listIntegrationsMock.mockResolvedValue([google]);
+  });
+
+  it('shows the complete Gmail, Contacts, local-storage, deletion, and no-AI disclosure before navigation', async () => {
+    render(<IntegrationsSettings />);
+    await waitFor(() => expect(screen.getByTestId('integration-connect-google-gmail')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('integration-connect-google-gmail'));
+
+    const dialog = screen.getByRole('dialog', { name: /google access requested/i });
+    expect(dialog).toHaveTextContent(/send only messages you compose/i);
+    expect(dialog).toHaveTextContent(/names, email addresses, and phone numbers/i);
+    expect(dialog).toHaveTextContent(/recipient autocomplete and the Prism AAC contact directory/i);
+    expect(dialog).toHaveTextContent(/contact photos are not requested/i);
+    expect(dialog).toHaveTextContent(/every five minutes/i);
+    expect(dialog).toHaveTextContent(/up to 200/i);
+    expect(dialog).toHaveTextContent(/google-derived contacts are removed/i);
+    expect(dialog).toHaveTextContent(/manual.*remain/i);
+    expect(dialog).toHaveTextContent(/not sent to generative ai/i);
+    expect(dialog).toHaveTextContent(/not used for advertising, profiling, or model training/i);
+    expect(screen.queryByTestId('integrations-status')).not.toBeInTheDocument();
+  });
+
+  it('does not expose the navigation step until the caregiver confirms', async () => {
+    render(<IntegrationsSettings />);
+    await waitFor(() => expect(screen.getByTestId('integration-connect-google-gmail')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('integration-connect-google-gmail'));
+    expect(screen.getByRole('button', { name: /continue to google/i })).toBeInTheDocument();
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /continue to google/i }));
+    expect(screen.getByTestId('integrations-status')).toHaveTextContent(/opening gmail/i);
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
 });
 
 // ── connected provider ────────────────────────────────────────────────────────
@@ -169,6 +234,15 @@ describe('IntegrationsSettings — connected provider', () => {
     render(<IntegrationsSettings />);
     await waitFor(() => expect(screen.getByTestId('integration-reconnect-slack')).toBeInTheDocument());
     expect(screen.queryByTestId('integration-connect-slack')).toBeNull();
+  });
+
+  it('offers a working disconnect action for a connected provider', async () => {
+    render(<IntegrationsSettings />);
+    await waitFor(() => expect(screen.getByTestId('integration-disconnect-slack')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('integration-disconnect-slack'));
+
+    await waitFor(() => expect(disconnectProviderMock).toHaveBeenCalledWith(connectedSlack));
   });
 });
 

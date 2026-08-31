@@ -427,5 +427,10 @@
   "speech_mode_sentence": "Zin",
   "selection_feedback_sentence": "Elke zin uitspreken: aan",
   "speak_sentence_feedback": "Elke zin uitspreken",
-  "speak_sentence_feedback_desc": "Spreekt de voltooide zin uit wanneer u . ? ! typt"
+  "speak_sentence_feedback_desc": "Spreekt de voltooide zin uit wanneer u . ? ! typt",
+  "continue_to_google": "Continue to Google",
+  "disconnect": "Disconnect",
+  "disconnecting": "Disconnecting…",
+  "google_oauth_disclosure_title": "Google access requested",
+  "google_oauth_disclosure_body": "Gmail can send only messages you compose; it cannot read your mailbox. Google Contacts reads names, email addresses, and phone numbers for recipient autocomplete and the Prism AAC contact directory; contact photos are not requested. Prism AAC refreshes every five minutes while signed in and may keep up to 200 Google-derived contacts in local browser or device storage. Google-derived contacts are removed after a confirmed Google disconnect or authoritative successful sync; manual contacts and contacts from other providers remain. Synalux never writes to Google Contacts. Google API data is not sent to generative AI and is not used for advertising, profiling, or model training."
 }

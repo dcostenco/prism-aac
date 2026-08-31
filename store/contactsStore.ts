@@ -30,6 +30,11 @@ export type ContactProvider =
   | 'instagram'
   | 'mail';
 
+/** External directory that supplied a contact. Legacy and manually entered
+ * contacts intentionally omit this field so provider disconnects cannot
+ * remove caregiver-owned data. */
+export type IntegrationContactSource = 'google';
+
 export interface AacContact {
   id: string;
   name: string;
@@ -58,6 +63,14 @@ export interface AacContact {
    *  when two contacts have the same count, so the more-recent one
    *  surfaces first. */
   lastUsedAt?: number;
+  /** Present only for contacts mirrored from an external directory. */
+  sourceProvider?: IntegrationContactSource;
+}
+
+interface IntegrationMergeOptions {
+  /** Sources whose successful response is a complete snapshot. Stale rows
+   * from only these sources may be removed during this merge. */
+  authoritativeSources?: IntegrationContactSource[];
 }
 
 interface ContactsState {
@@ -68,9 +81,9 @@ interface ContactsState {
   lastSyncedAt: number;
   /** Returns the new id, or null if the contact was rejected (cap hit
    *  or invalid input). */
-  addContact: (c: Omit<AacContact, 'id' | 'order'>) => string | null;
+  addContact: (c: Omit<AacContact, 'id' | 'order' | 'sourceProvider'>) => string | null;
   removeContact: (id: string) => void;
-  updateContact: (id: string, patch: Partial<Omit<AacContact, 'id'>>) => void;
+  updateContact: (id: string, patch: Partial<Omit<AacContact, 'id' | 'sourceProvider'>>) => void;
   reorderContact: (id: string, newOrder: number) => void;
   setContacts: (cs: AacContact[]) => void;
   /** Merge a fetched batch with the existing local list. Identity is
@@ -78,7 +91,13 @@ interface ContactsState {
    *  same provider updates in place, never duplicates. Caregiver-edited
    *  fields (avatar, name override) are preserved on re-sync. New
    *  contacts past MAX_CONTACTS are dropped (oldest-keep-wins). */
-  mergeFromIntegrations: (incoming: Array<Omit<AacContact, 'id' | 'order'>>) => { added: number; updated: number };
+  mergeFromIntegrations: (
+    incoming: Array<Omit<AacContact, 'id' | 'order'>>,
+    options?: IntegrationMergeOptions,
+  ) => { added: number; updated: number; removed: number };
+  /** Remove contacts proven to originate from a disconnected integration.
+   * Manual and legacy rows have no source marker and are always preserved. */
+  removeIntegrationContacts: (sources: IntegrationContactSource[]) => number;
   /** Bump sendCount + stamp lastUsedAt for a contact. No-op if id is
    *  unknown (contact removed mid-send). Called by the chat panel on
    *  successful send so the Frequent section reorders itself. */
@@ -96,6 +115,7 @@ const MAX_AVATAR_LEN = 16;
 const VALID_PROVIDERS = new Set<ContactProvider>([
   'telegram', 'whatsapp', 'viber', 'sms', 'messenger', 'instagram', 'mail',
 ]);
+const VALID_INTEGRATION_SOURCES = new Set<IntegrationContactSource>(['google']);
 
 /** Validates one contact entry shape after persisted hydration.
  *  Tampered localStorage (browser extension, sibling-tab on a shared
@@ -113,6 +133,11 @@ function isValidStoredContact(c: unknown): c is AacContact {
   if (x.lastMessagePreview !== undefined && (typeof x.lastMessagePreview !== 'string' || x.lastMessagePreview.length > 500)) return false;
   if (x.sendCount !== undefined && (typeof x.sendCount !== 'number' || !Number.isFinite(x.sendCount) || x.sendCount < 0)) return false;
   if (x.lastUsedAt !== undefined && (typeof x.lastUsedAt !== 'number' || !Number.isFinite(x.lastUsedAt) || x.lastUsedAt < 0)) return false;
+  if (
+    x.sourceProvider !== undefined
+    && (typeof x.sourceProvider !== 'string'
+      || !VALID_INTEGRATION_SOURCES.has(x.sourceProvider as IntegrationContactSource))
+  ) return false;
   return true;
 }
 
@@ -194,19 +219,42 @@ export const useContactsStore = create<ContactsState>()(
         ),
       })),
       setContacts: (cs) => set({ contacts: cs.slice(0, MAX_CONTACTS) }),
-      mergeFromIntegrations: (incoming) => {
+      mergeFromIntegrations: (incoming, options = {}) => {
         let added = 0;
         let updated = 0;
+        let removed = 0;
         const current = get().contacts;
+        const authoritativeSources = new Set(
+          (options.authoritativeSources ?? []).filter((source) => VALID_INTEGRATION_SOURCES.has(source)),
+        );
+        const validIncoming = incoming.filter((inc) => {
+          if (!inc.provider || !inc.recipientId) return false;
+          if (!VALID_PROVIDERS.has(inc.provider as ContactProvider)) return false;
+          return inc.sourceProvider === undefined
+            || VALID_INTEGRATION_SOURCES.has(inc.sourceProvider);
+        });
+        const incomingKeysBySource = new Map<IntegrationContactSource, Set<string>>();
+        for (const inc of validIncoming) {
+          if (!inc.sourceProvider || !authoritativeSources.has(inc.sourceProvider)) continue;
+          const keys = incomingKeysBySource.get(inc.sourceProvider) ?? new Set<string>();
+          keys.add(`${inc.provider}::${inc.recipientId}`);
+          incomingKeysBySource.set(inc.sourceProvider, keys);
+        }
+
+        // A successful source snapshot is the only sync response allowed to
+        // remove stale rows. Source-less (manual/legacy) rows are untouchable.
+        const merged = current.filter((contact) => {
+          const source = contact.sourceProvider;
+          if (!source || !authoritativeSources.has(source)) return true;
+          const key = `${contact.provider}::${contact.recipientId}`;
+          const keep = incomingKeysBySource.get(source)?.has(key) ?? false;
+          if (!keep) removed++;
+          return keep;
+        });
         // Index existing by composite key so an incoming person with the
         // same provider+recipientId updates instead of duplicating.
-        const byKey = new Map(current.map((c) => [`${c.provider}::${c.recipientId}`, c]));
-        const merged = [...current];
-        for (const inc of incoming) {
-          if (!inc.provider || !inc.recipientId) continue;
-          // Reject contacts with unknown providers to prevent prototype pollution
-          // or unexpected data from integration sources.
-          if (!VALID_PROVIDERS.has(inc.provider as ContactProvider)) continue;
+        const byKey = new Map(merged.map((c) => [`${c.provider}::${c.recipientId}`, c]));
+        for (const inc of validIncoming) {
           const key = `${inc.provider}::${inc.recipientId}`;
           const existing = byKey.get(key);
           if (existing) {
@@ -217,6 +265,10 @@ export const useContactsStore = create<ContactsState>()(
             if (idx >= 0) {
               merged[idx] = {
                 ...existing,
+                // Never adopt source metadata onto a source-less existing
+                // contact. That row belongs to the caregiver and must survive
+                // an integration disconnect even when Google returns the same
+                // recipient identifier.
                 lastMessagePreview: inc.lastMessagePreview ? inc.lastMessagePreview.slice(0, 200) : existing.lastMessagePreview,
               };
               updated++;
@@ -226,16 +278,35 @@ export const useContactsStore = create<ContactsState>()(
             // MAX_CONTACTS rather than silently truncating later (which
             // would lose the lower-ordered contacts the user picked).
             if (merged.length >= MAX_CONTACTS) continue;
-            merged.push({
+            const next: AacContact = {
               ...inc,
               id: genId(),
               order: merged.length,
-            });
+            };
+            merged.push(next);
+            byKey.set(key, next);
             added++;
           }
         }
         set({ contacts: merged, lastSyncedAt: Date.now() });
-        return { added, updated };
+        return { added, updated, removed };
+      },
+      removeIntegrationContacts: (sources) => {
+        const selected = new Set(
+          sources.filter((source) => VALID_INTEGRATION_SOURCES.has(source)),
+        );
+        let removed = 0;
+        set((state) => {
+          if (selected.size === 0) return state;
+          const contacts = state.contacts.filter((contact) => {
+            const shouldRemove = contact.sourceProvider !== undefined
+              && selected.has(contact.sourceProvider);
+            if (shouldRemove) removed++;
+            return !shouldRemove;
+          });
+          return removed > 0 ? { contacts } : state;
+        });
+        return removed;
       },
     }),
     {

@@ -5,13 +5,11 @@
  * Replaces the previous "Pulls contacts you connected on synalux.ai/chat"
  * dead-end. Lists every chat + mail provider Synalux knows about, with
  * server-resolved connect status and a per-provider Connect button that
- * opens an OAuth popup against synalux.ai.
+ * starts OAuth against synalux.ai after any required data-use disclosure.
  *
  * UX rules:
- *   - The user NEVER lands on synalux.ai/chat. Connect happens in a
- *     popup; on close we refresh status here and the parent contacts
- *     list refreshes automatically (services/integrationsService
- *     calls syncContactsOnce).
+ *   - The user never lands on synalux.ai/chat. Current iPad-safe OAuth
+ *     navigation is same-window and returns to Prism AAC.
  *   - Status is server-truth (chat providers come from
  *     /api/v1/chat/providers). The UI can't lie about what's wired.
  *   - "planned" providers (RCS, iMessage, FaceTime) render disabled
@@ -23,18 +21,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   listIntegrations,
+  disconnectProvider,
   subscribeToIntegrationEvents,
   type IntegrationProvider,
 } from '@/services/integrationsService';
 import { tapFeedback } from '@/services/feedback';
+import { useT } from '@/engine/useT';
+import { SYNALUX_PORTAL_ORIGIN } from '@/lib/portalConfig';
 
 type LoadState = 'idle' | 'loading' | 'error';
 
 export default function IntegrationsSettings() {
+  const { t } = useT();
   const [providers, setProviders] = useState<IntegrationProvider[]>([]);
   const [loadState, setLoadState] = useState<LoadState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [pendingGoogle, setPendingGoogle] = useState<IntegrationProvider | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const mountedRef = useRef(false);
   const refreshGenerationRef = useRef(0);
@@ -84,10 +88,10 @@ export default function IntegrationsSettings() {
     return unsub;
   }, [refresh]);
 
-  const handleConnect = useCallback((p: IntegrationProvider) => {
+  const navigateToProvider = useCallback((p: IntegrationProvider) => {
     // Allow connect AND reconnect: status === 'available' is a fresh
     // connect; status === 'connected' is a reconnect to upgrade scope
-    // (e.g. add contacts.readonly to an existing gmail.modify grant).
+    // (e.g. add contacts.readonly to an existing gmail.send grant).
     // 'planned' rows have no connectUrl, so the second guard catches them.
     // Earlier `if (p.status !== 'available') return;` made the ↻
     // Reconnect button a no-op — the user reported "no way to reconnect"
@@ -96,17 +100,15 @@ export default function IntegrationsSettings() {
     if (!p.connectUrl) return;
 
     // CRITICAL #1 — origin validation: block open-redirect to unexpected origins.
-    // Fail-closed: require https and, when base is configured, exact origin match.
-    const SYNALUX_BASE = process.env.NEXT_PUBLIC_SYNALUX_BASE ?? '';
+    // Fail closed against the same canonical Portal origin the integration
+    // service uses, even when no public environment override is configured.
     let url: URL;
     try {
       url = new URL(p.connectUrl);
-      // Always require https — blocks data:, javascript:, blob:, http: redirects
-      if (url.protocol !== 'https:') return;
-      if (SYNALUX_BASE) {
-        const expectedOrigin = new URL(SYNALUX_BASE).origin;
-        if (url.origin !== expectedOrigin) return; // block unexpected origin
-      }
+      const expectedOrigin = new URL(SYNALUX_PORTAL_ORIGIN).origin;
+      // Require both HTTPS and exact origin — blocks data:, javascript:,
+      // blob:, HTTP, lookalike domains, and a compromised provider response.
+      if (url.protocol !== 'https:' || url.origin !== expectedOrigin) return;
     } catch { return; }
 
     // Same-window navigation, NOT popup. iPad Safari aggressively
@@ -136,12 +138,36 @@ export default function IntegrationsSettings() {
     }, 50);
   }, []);
 
+  const handleConnect = useCallback((provider: IntegrationProvider) => {
+    if (provider.id === 'google-gmail') {
+      setPendingGoogle(provider);
+      return;
+    }
+    navigateToProvider(provider);
+  }, [navigateToProvider]);
+
+  const handleDisconnect = useCallback(async (provider: IntegrationProvider) => {
+    tapFeedback();
+    setDisconnecting(provider.id);
+    setError(null);
+    const ok = await disconnectProvider(provider);
+    if (!mountedRef.current) return;
+    setDisconnecting(null);
+    if (!ok) {
+      setError(`${provider.label}: ${t('error')}`);
+      return;
+    }
+    setStatusMsg(`${provider.label}: ${t('done')}`);
+    await refresh();
+  }, [refresh, t]);
+
   const grouped = {
     chat: providers.filter((p) => p.kind === 'chat'),
     mail: providers.filter((p) => p.kind === 'mail'),
   };
 
   return (
+    <>
     <div className="space-y-3" data-testid="integrations-settings">
       <div className="flex items-center justify-between gap-2">
         <p className="text-primary text-sm font-bold">Integrations</p>
@@ -237,7 +263,7 @@ export default function IntegrationsSettings() {
                       </span>
                       {/* Reconnect path — caregivers need this to upgrade
                           scope (e.g. add contacts.readonly to an existing
-                          gmail.modify grant) without us building a separate
+                          gmail.send grant) without us building a separate
                           "permissions" UI. Re-running OAuth re-prompts
                           consent and writes a fresh grant row. */}
                       {p.connectUrl && (
@@ -251,6 +277,14 @@ export default function IntegrationsSettings() {
                           {connecting === p.id ? '…' : '↻'}
                         </button>
                       )}
+                      <button
+                        onClick={() => { void handleDisconnect(p); }}
+                        disabled={disconnecting === p.id}
+                        data-testid={`integration-disconnect-${p.id}`}
+                        className="aac-btn rounded-lg px-2 py-1 text-[#F44336] border border-[#F44336]/40 text-[10px] disabled:opacity-40"
+                      >
+                        {disconnecting === p.id ? t('disconnecting') : t('disconnect')}
+                      </button>
                     </>
                   )}
                   {p.status === 'planned' && (
@@ -268,5 +302,43 @@ export default function IntegrationsSettings() {
         );
       })}
     </div>
+    {pendingGoogle && (
+      <div className="fixed inset-0 z-[100] grid place-items-center bg-black/70 p-4">
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="google-oauth-disclosure-title"
+          className="w-full max-w-xl max-h-[90svh] overflow-y-auto rounded-2xl surface-bar border border-theme p-5 space-y-4 shadow-2xl"
+        >
+          <h2 id="google-oauth-disclosure-title" className="text-primary text-xl font-bold">
+            {t('google_oauth_disclosure_title')}
+          </h2>
+          <p className="text-primary text-sm leading-relaxed">
+            {t('google_oauth_disclosure_body')}
+          </p>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setPendingGoogle(null)}
+              className="aac-btn rounded-lg px-4 py-2 surface-key text-primary border border-theme font-bold"
+            >
+              {t('cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const provider = pendingGoogle;
+                setPendingGoogle(null);
+                navigateToProvider(provider);
+              }}
+              className="aac-btn rounded-lg px-4 py-2 bg-[#4285F4] text-white font-bold"
+            >
+              {t('continue_to_google')}
+            </button>
+          </div>
+        </section>
+      </div>
+    )}
+    </>
   );
 }

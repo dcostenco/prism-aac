@@ -2,10 +2,10 @@
 /**
  * Integrations service — lets the AAC user (or caregiver) connect
  * messaging + mail providers DIRECTLY from PrismAAC settings, instead
- * of bouncing them to synalux.ai/chat. The OAuth round-trip still has
- * to land on synalux.ai (that's where the redirect URIs are
- * registered), but we open it in a popup so the user never browses
- * the portal UI.
+ * of bouncing them to synalux.ai/chat. The OAuth round-trip still lands
+ * on synalux.ai because that is where redirect URIs are registered.
+ * The current Settings UI uses same-window navigation for iPad Safari;
+ * the exported popup helper remains for older callers.
  *
  * Flow:
  *   1. listIntegrations()       — GET /api/v1/chat/providers (chat)
@@ -14,16 +14,9 @@
  *                                 chat status; mail status comes from
  *                                 the user_oauth_grants table the
  *                                 portal already maintains.
- *   2. connectProvider(p)       — opens window.open(connectUrl) on
- *                                 synalux.ai. We poll window.closed,
- *                                 then re-fetch status + sync contacts.
- *                                 On success we emit a same-origin
- *                                 BroadcastChannel event so other
- *                                 synalux app tabs (mail, calendar,
- *                                 chat) refresh immediately.
- *   3. disconnectProvider(p)    — POST /api/v1/oauth/disconnect on
- *                                 the portal (when wired); local
- *                                 fallback otherwise.
+ *   2. connectProvider(p)       — optional popup-based compatibility flow.
+ *   3. disconnectProvider(p)    — POST /api/v1/integrations/disconnect
+ *                                 with the canonical grant provider id.
  *
  * Cross-origin caveat: BroadcastChannel only spans tabs of the SAME
  * origin. PrismAAC at synalux.ai/prism-aac is same-origin with the
@@ -39,6 +32,7 @@ import { SYNALUX_PORTAL_ORIGIN } from '@/lib/portalConfig';
 const SYNALUX_BASE = SYNALUX_PORTAL_ORIGIN;
 import { syncContactsOnce } from '@/services/contactsIntegrationService';
 import { playTimerRing } from '@/services/feedback';
+import { useContactsStore } from '@/store/contactsStore';
 
 export type IntegrationKind = 'chat' | 'mail';
 export type IntegrationStatus = 'connected' | 'available' | 'planned';
@@ -157,15 +151,18 @@ interface GrantRow {
  * Map a (provider, scope-string) grant onto a MAIL_PROVIDERS id.
  * The OAuth callback stores the raw scope returned by the provider
  * (e.g. Google returns
- * 'https://www.googleapis.com/auth/gmail.modify openid email …'),
- * so we substring-match on the canonical scope token rather than
+ * 'https://www.googleapis.com/auth/gmail.send openid email …'),
+ * so we exact-match the canonical scope token rather than
  * comparing against the resolved scopes.gmail string verbatim
  * (Google reorders + adds openid scopes server-side).
  */
 function grantMatchesMailProvider(grant: GrantRow, mailProviderId: string): boolean {
   if (grant.expired) return false;
   if (mailProviderId === 'google-gmail') {
-    return grant.provider === 'google' && /gmail\./i.test(grant.scope);
+    if (grant.provider !== 'google') return false;
+    const scopes = new Set(grant.scope.split(/\s+/).filter(Boolean));
+    return scopes.has('gmail.send')
+      || scopes.has('https://www.googleapis.com/auth/gmail.send');
   }
   if (mailProviderId === 'microsoft-mail') {
     return grant.provider === 'microsoft' && /\bMail\./i.test(grant.scope);
@@ -379,15 +376,26 @@ function waitForWindowClose(popup: Window): Promise<number | null> {
 // ── Disconnect ────────────────────────────────────────────────────
 
 export async function disconnectProvider(provider: IntegrationProvider): Promise<boolean> {
+  const canonicalProvider = provider.id === 'google-gmail'
+    ? 'google'
+    : provider.id === 'microsoft-mail'
+      ? 'microsoft'
+      : provider.id;
+  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(canonicalProvider)) return false;
+
   const res = await portalFetch<{ ok?: boolean }>({
-    path: `/oauth/disconnect/${encodeURIComponent(provider.id)}`,
+    path: '/integrations/disconnect',
     method: 'POST',
+    body: { provider: canonicalProvider },
     timeoutMs: 6000,
   });
   if (res.ok && res.data?.ok) {
+    if (canonicalProvider === 'google') {
+      useContactsStore.getState().removeIntegrationContacts(['google']);
+    }
     broadcastIntegrationEvent({
       type: 'provider-disconnected',
-      provider: provider.id,
+      provider: canonicalProvider,
       at: Date.now(),
     });
     return true;

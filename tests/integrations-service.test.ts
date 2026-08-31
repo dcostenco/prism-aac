@@ -3,9 +3,9 @@
  *
  * Covers the critical Connect/Disconnect flow surfaces:
  *   - listIntegrations(): chat provider fetch + mail grant overlay
- *   - grantMatchesMailProvider(): Gmail scope regex, Outlook scope regex, expired grants
+ *   - grantMatchesMailProvider(): exact Gmail send scope, Outlook scope regex, expired grants
  *   - absolutize(): relative portal paths → absolute synalux.ai URLs
- *   - disconnectProvider(): portal DELETE call, success/failure, event broadcast
+ *   - disconnectProvider(): canonical portal POST, source mapping, selective purge
  *   - subscribeToIntegrationEvents(): malformed event guard (prompt injection defence)
  *
  * The Connect popup flow (connectProvider) is not unit-tested here — it
@@ -18,12 +18,14 @@ import {
   subscribeToIntegrationEvents,
   type IntegrationProvider,
 } from '@/services/integrationsService';
+import { useContactsStore } from '@/store/contactsStore';
 
 const fetchMock = vi.fn();
 
 beforeEach(() => {
   globalThis.fetch = fetchMock as unknown as typeof fetch;
   fetchMock.mockReset();
+  useContactsStore.setState({ contacts: [], lastSyncedAt: 0 });
 });
 
 afterEach(() => vi.clearAllMocks());
@@ -97,7 +99,7 @@ describe('listIntegrations — Gmail grant overlay (grantMatchesMailProvider)', 
   it('marks google-gmail "connected" when an active Gmail grant exists', async () => {
     mockPortal(chatOk(), grantsOk([{
       provider: 'google',
-      scope: 'https://www.googleapis.com/auth/gmail.modify openid email',
+      scope: 'https://www.googleapis.com/auth/gmail.send openid email',
       expired: false,
     }]));
     const list = await listIntegrations();
@@ -115,10 +117,20 @@ describe('listIntegrations — Gmail grant overlay (grantMatchesMailProvider)', 
     expect(list.find((p) => p.id === 'google-gmail')!.status).toBe('available');
   });
 
-  it('does NOT mark google-gmail connected when the grant is expired', async () => {
+  it('does NOT treat a legacy restricted Gmail scope as the approved send grant', async () => {
     mockPortal(chatOk(), grantsOk([{
       provider: 'google',
       scope: 'https://www.googleapis.com/auth/gmail.modify',
+      expired: false,
+    }]));
+    const list = await listIntegrations();
+    expect(list.find((p) => p.id === 'google-gmail')!.status).toBe('available');
+  });
+
+  it('does NOT mark google-gmail connected when the grant is expired', async () => {
+    mockPortal(chatOk(), grantsOk([{
+      provider: 'google',
+      scope: 'https://www.googleapis.com/auth/gmail.send',
       expired: true,
     }]));
     const list = await listIntegrations();
@@ -128,7 +140,7 @@ describe('listIntegrations — Gmail grant overlay (grantMatchesMailProvider)', 
   it('does NOT mark google-gmail connected when provider is not "google"', async () => {
     mockPortal(chatOk(), grantsOk([{
       provider: 'microsoft',
-      scope: 'gmail.modify',  // wrong provider even if scope matches
+      scope: 'gmail.send',  // wrong provider even if scope matches
       expired: false,
     }]));
     const list = await listIntegrations();
@@ -172,7 +184,7 @@ describe('listIntegrations — Outlook grant overlay', () => {
   it('Gmail and Outlook grants are independent — one connected does not affect the other', async () => {
     mockPortal(chatOk(), grantsOk([{
       provider: 'google',
-      scope: 'https://www.googleapis.com/auth/gmail.modify',
+      scope: 'https://www.googleapis.com/auth/gmail.send',
       expired: false,
     }]));
     const list = await listIntegrations();
@@ -182,7 +194,7 @@ describe('listIntegrations — Outlook grant overlay', () => {
 
   it('both can be connected simultaneously when both grants are present', async () => {
     mockPortal(chatOk(), grantsOk([
-      { provider: 'google', scope: 'gmail.modify', expired: false },
+      { provider: 'google', scope: 'gmail.send', expired: false },
       { provider: 'microsoft', scope: 'Mail.ReadWrite', expired: false },
     ]));
     const list = await listIntegrations();
@@ -248,18 +260,33 @@ describe('disconnectProvider', () => {
   };
 
   it('returns true when portal responds { ok: true }', async () => {
+    useContactsStore.setState({
+      contacts: [
+        { id: 'google', name: 'Google', provider: 'mail', recipientId: 'g@example.com', order: 0, sourceProvider: 'google' },
+        { id: 'manual', name: 'Manual', provider: 'mail', recipientId: 'm@example.com', order: 1 },
+      ],
+      lastSyncedAt: 0,
+    });
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify({ ok: true }), { status: 200 }),
     );
     const result = await disconnectProvider(gmailProvider);
     expect(result).toBe(true);
+    expect(useContactsStore.getState().contacts.map((c) => c.id)).toEqual(['manual']);
   });
 
   it('returns false when portal responds with a non-ok body', async () => {
+    useContactsStore.setState({
+      contacts: [
+        { id: 'google', name: 'Google', provider: 'mail', recipientId: 'g@example.com', order: 0, sourceProvider: 'google' },
+      ],
+      lastSyncedAt: 0,
+    });
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify({ ok: false }), { status: 200 }),
     );
     expect(await disconnectProvider(gmailProvider)).toBe(false);
+    expect(useContactsStore.getState().contacts.map((c) => c.id)).toEqual(['google']);
   });
 
   it('returns false when portal returns HTTP error', async () => {
@@ -272,18 +299,28 @@ describe('disconnectProvider', () => {
     expect(await disconnectProvider(gmailProvider)).toBe(false);
   });
 
-  it('encodes the provider ID in the disconnect URL (XSS/injection guard)', async () => {
+  it('uses the canonical integration disconnect endpoint and maps Gmail to google', async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify({ ok: true }), { status: 200 }),
     );
-    const weirdProvider: IntegrationProvider = {
+    await disconnectProvider(gmailProvider);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain('/api/v1/integrations/disconnect');
+    expect(url).not.toContain('/oauth/disconnect/');
+    expect(init.body).toBe(JSON.stringify({ provider: 'google' }));
+  });
+
+  it('maps the synthetic Outlook row to the microsoft grant provider', async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true }), { status: 200 }),
+    );
+    await disconnectProvider({
       ...gmailProvider,
-      id: 'provider/with/slashes',
-    };
-    await disconnectProvider(weirdProvider);
-    const [url] = fetchMock.mock.calls[0] as [string];
-    expect(url).toContain(encodeURIComponent('provider/with/slashes'));
-    expect(url).not.toContain('provider/with/slashes/');
+      id: 'microsoft-mail',
+      label: 'Outlook',
+    });
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.body).toBe(JSON.stringify({ provider: 'microsoft' }));
   });
 
   it('POST method is used for disconnect (not GET — idempotency contract)', async () => {
