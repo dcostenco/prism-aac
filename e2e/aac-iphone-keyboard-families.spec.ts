@@ -215,9 +215,17 @@ for (const family of KEYBOARD_FAMILIES) {
         .map((key) => key.dataset.key));
       const keyboardRect = document.querySelector<HTMLElement>('[data-scan-group="keyboard"]')!.getBoundingClientRect();
       const predictionRect = document.querySelector<HTMLElement>('[data-testid="prediction-bar"]')!.getBoundingClientRect();
+      const messageBar = document.querySelector<HTMLElement>('[data-scan-group="message-bar"]')!;
+      const messageBarRect = messageBar.getBoundingClientRect();
       const messageContent = document.querySelector<HTMLElement>('[data-testid="message-content"]')!;
       const messageContentRect = messageContent.getBoundingClientRect();
       const messageContentStyle = getComputedStyle(messageContent);
+      const messageText = document.querySelector<HTMLElement>('[data-testid="message-text"]')!;
+      const messageTextRect = messageText.getBoundingClientRect();
+      const messageTextLineHeight = Number.parseFloat(getComputedStyle(messageText).lineHeight);
+      const messageControls = [...messageBar.children]
+        .filter((element): element is HTMLButtonElement => element instanceof HTMLButtonElement)
+        .map((button) => button.getBoundingClientRect());
       const emptyPrompt = document.querySelector<HTMLElement>('[data-testid="message-empty-prompt"]');
       const predictionLabels = [...document.querySelectorAll<HTMLElement>('[data-testid="prediction-label"]')];
       return {
@@ -241,7 +249,17 @@ for (const family of KEYBOARD_FAMILIES) {
         keyboardOffscreen: keyboardRect.left < -1 || keyboardRect.top < -1 || keyboardRect.right > innerWidth + 1 || keyboardRect.bottom > innerHeight + 1,
         keyboardHeight: keyboardRect.height,
         predictionHeight: predictionRect.height,
+        messageBarHeight: messageBarRect.height,
         messageContentHeight: messageContentRect.height,
+        messageTextLineCapacity: messageTextRect.height / messageTextLineHeight,
+        messageControlCount: messageControls.length,
+        messageControlsInsideBar: messageControls.every((rect) => (
+          rect.top >= messageBarRect.top && rect.bottom <= messageBarRect.bottom + 1
+        )),
+        messageControlsPredictionOverlap: Math.max(
+          0,
+          Math.max(...messageControls.map((rect) => rect.bottom)) - predictionRect.top,
+        ),
         messageContentDisplay: messageContentStyle.display,
         messageContentBackground: messageContentStyle.backgroundColor,
         messageContentBorderWidth: Number.parseFloat(messageContentStyle.borderTopWidth),
@@ -271,7 +289,12 @@ for (const family of KEYBOARD_FAMILIES) {
     expect(metrics.keyboardHeight, `${family.label}: keyboard is the dominant typing surface`)
       .toBeGreaterThan(metrics.predictionHeight);
     expect(metrics.messageContentHeight, `${family.label}: empty typing canvas remains visible`)
-      .toBeGreaterThanOrEqual(56);
+      .toBeGreaterThanOrEqual(112);
+    expect(metrics.messageTextLineCapacity, `${family.label}: two-line typing canvas remains reserved`)
+      .toBeGreaterThanOrEqual(2);
+    expect(metrics.messageControlCount, `${family.label}: persistent message controls`).toBe(5);
+    expect(metrics.messageControlsInsideBar, `${family.label}: message controls remain inside the composer`).toBe(true);
+    expect(metrics.messageControlsPredictionOverlap, `${family.label}: predictions do not cover message controls`).toBe(0);
     expect(metrics.messageContentDisplay, `${family.label}: empty typing canvas display`)
       .not.toBe('none');
     expect(metrics.messageContentBackground, `${family.label}: typing canvas is visually identifiable`)
@@ -296,15 +319,32 @@ for (const family of KEYBOARD_FAMILIES) {
       await expect(page.getByTestId('message-text')).toHaveText('eu');
 
       const typedMetrics = await page.evaluate(() => {
+        const messageBar = document.querySelector<HTMLElement>('[data-scan-group="message-bar"]')!;
+        const messageBarRect = messageBar.getBoundingClientRect();
+        const messageControls = [...messageBar.children]
+          .filter((element): element is HTMLButtonElement => element instanceof HTMLButtonElement)
+          .map((button) => button.getBoundingClientRect());
         const messageContent = document.querySelector<HTMLElement>('[data-testid="message-content"]')!;
+        const messageText = document.querySelector<HTMLElement>('[data-testid="message-text"]')!;
+        const messageTextRect = messageText.getBoundingClientRect();
+        const messageTextLineHeight = Number.parseFloat(getComputedStyle(messageText).lineHeight);
         const predictionRect = document.querySelector<HTMLElement>('[data-testid="prediction-bar"]')!.getBoundingClientRect();
         const keyboardRect = document.querySelector<HTMLElement>('[data-scan-group="keyboard"]')!.getBoundingClientRect();
         return {
           text: document.querySelector<HTMLElement>('[data-testid="message-text"]')!.textContent?.trim(),
           messageContentHeight: messageContent.getBoundingClientRect().height,
+          messageTextLineCapacity: messageTextRect.height / messageTextLineHeight,
           messageTextFont: Number.parseFloat(getComputedStyle(
             document.querySelector<HTMLElement>('[data-testid="message-text"]')!,
           ).fontSize),
+          messageControlCount: messageControls.length,
+          messageControlsInsideBar: messageControls.every((rect) => (
+            rect.top >= messageBarRect.top && rect.bottom <= messageBarRect.bottom + 1
+          )),
+          messageControlsPredictionOverlap: Math.max(
+            0,
+            Math.max(...messageControls.map((rect) => rect.bottom)) - predictionRect.top,
+          ),
           predictionKeyboardOverlap: Math.max(0, predictionRect.bottom - keyboardRect.top),
           documentOverflowX: document.documentElement.scrollWidth - innerWidth,
           documentOverflowY: document.documentElement.scrollHeight - innerHeight,
@@ -319,7 +359,11 @@ for (const family of KEYBOARD_FAMILIES) {
 
       expect(typedMetrics.text).toBe('eu');
       expect(typedMetrics.messageContentHeight, 'Romanian typed-text canvas').toBeGreaterThanOrEqual(56);
+      expect(typedMetrics.messageTextLineCapacity, 'Romanian two-line typed-text canvas').toBeGreaterThanOrEqual(2);
       expect(typedMetrics.messageTextFont, 'Romanian typed-text font').toBeGreaterThanOrEqual(32);
+      expect(typedMetrics.messageControlCount, 'Romanian persistent message controls').toBe(5);
+      expect(typedMetrics.messageControlsInsideBar, 'Romanian controls remain inside the composer').toBe(true);
+      expect(typedMetrics.messageControlsPredictionOverlap, 'Romanian predictions do not cover controls').toBe(0);
       expect(typedMetrics.predictionKeyboardOverlap).toBe(0);
       expect(typedMetrics.documentOverflowX).toBeLessThanOrEqual(1);
       expect(typedMetrics.documentOverflowY).toBeLessThanOrEqual(1);
