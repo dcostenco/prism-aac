@@ -487,6 +487,17 @@ html, body {
     align-items: flex-end;
   }
 
+  /* Typing is a stable two-row communication surface: two lines of composed
+     text above five persistent controls. The generic empty-phone compaction
+     must not collapse this grid or predictions will paint over the controls. */
+  [data-aac-typing-layout] [data-scan-group="message-bar"][data-content-state="empty"] {
+    height: auto;
+  }
+
+  [data-aac-typing-layout] [data-scan-group="message-bar"][data-content-state="empty"] [data-testid="message-content"] {
+    height: auto;
+  }
+
   [data-aac-typing-layout] [data-scan-group="message-bar"] > button {
     grid-row: 2;
     width: 100% !important;
@@ -501,16 +512,17 @@ html, body {
     justify-content: flex-start;
     padding-block: clamp(0.375rem, 1svh, 0.5rem);
     padding-inline: clamp(0.5rem, 2vw, 0.75rem);
-    min-height: clamp(3.5rem, 8svh, 4rem) !important;
+    min-height: clamp(7rem, 14svh, 8rem) !important;
     background: var(--bg-key);
     border: 1px solid var(--border-strong);
     border-radius: 0.75rem;
   }
 
-  [data-aac-typing-layout] [data-testid="message-text"] {
-    min-height: 0;
+  [data-aac-typing-layout] [data-scan-group="message-bar"] [data-testid="message-text"] {
+    min-height: 2.4em;
     font-size: clamp(2.5rem, 10vw, 3.5rem);
     line-height: 1.2;
+    -webkit-line-clamp: 2;
   }
 
   [data-aac-typing-layout] .aac-composer-empty-prompt {
