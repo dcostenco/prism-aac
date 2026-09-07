@@ -81,7 +81,8 @@ const mocks = vi.hoisted(() => {
     { getState: () => authState },
   );
 
-  return { uiState, settingsState, categoryState, authState, useUIStore, useSettingsStore, useCategoryStore, useAuthStore };
+  return { uiState, settingsState, categoryState, authState, useUIStore, useSettingsStore, useCategoryStore, useAuthStore,
+    billing: vi.fn() };
 });
 
 // ── module mocks ──────────────────────────────────────────────────────────────
@@ -95,6 +96,12 @@ vi.mock('@/store/settingsStore', async (importOriginal) => ({
 }));
 vi.mock('@/store/categoryStore', () => ({ useCategoryStore: mocks.useCategoryStore }));
 vi.mock('@/store/authStore',     () => ({ useAuthStore:     mocks.useAuthStore     }));
+
+vi.mock('@/services/aacBillingService', () => ({
+  AAC_BILLING_UPDATED: 'prismAacBillingUpdated',
+  fetchAacBillingStatus: mocks.billing,
+  hasNativePurchases: () => false,
+}));
 
 vi.mock('@/services/aiService', () => ({
   synaluxSignInUrl:  () => 'https://synalux.ai/sign-in',
@@ -172,6 +179,8 @@ vi.mock('@/components/PinPad', () => ({
 // ── shared reset ──────────────────────────────────────────────────────────────
 
 beforeEach(() => {
+  mocks.billing.mockResolvedValue({ enabled: false, hasCloudAccess: false, betaExempt: false,
+    channels: [], manageChannel: null, transitionEndsAt: null, offer: { usdMonthly: 4.99 } });
   vi.clearAllMocks();
   mocks.uiState.showSettings = false;
   mocks.settingsState.gridSize = 9;
@@ -431,7 +440,7 @@ describe('SettingsModal — account section', () => {
     expect(screen.getByText('test@example.com')).toBeInTheDocument();
   });
 
-  it('shows plan label when signed in', () => {
+  it('preserves the legacy plan when cloud billing is disabled', async () => {
     mocks.authState.profile = {
       email: 'test@example.com', name: 'Test User',
       plan: 'standard', isPlatformAdmin: false,
@@ -439,7 +448,19 @@ describe('SettingsModal — account section', () => {
     render(<SettingsModal />);
     const accountSection = screen.getByRole('button', { name: /synalux_account/i });
     fireEvent.click(accountSection);
-    expect(screen.getByText('plan_standard')).toBeInTheDocument();
+    expect(await screen.findByText('plan_standard')).toBeInTheDocument();
+  });
+
+  it('shows only the verified cloud subscription even when the account profile says Free', async () => {
+    mocks.authState.profile = { email: 'test@example.com', name: 'Test User', plan: 'free', isPlatformAdmin: true };
+    mocks.billing.mockResolvedValue({ enabled: true, hasCloudAccess: true, betaExempt: false,
+      channels: ['apple'], manageChannel: 'apple', transitionEndsAt: null, offer: { usdMonthly: 4.99 } });
+    render(<SettingsModal />);
+    fireEvent.click(screen.getByRole('button', { name: /synalux_account/i }));
+    expect(await screen.findByText('cloud_subscription_active')).toBeInTheDocument();
+    expect(screen.getAllByText('subscription')).toHaveLength(1);
+    expect(screen.queryByText('plan_free')).not.toBeInTheDocument();
+    expect(screen.getByText('★ admin')).toBeInTheDocument();
   });
 });
 

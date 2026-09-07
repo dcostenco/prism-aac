@@ -1,0 +1,142 @@
+import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+const state = vi.hoisted(() => ({ native: false, nativePurchases: false,
+  profile: { email: 'tester@example.com', plan: 'free', isPlatformAdmin: false }, fetch: vi.fn(), product: vi.fn(), apple: vi.fn(),
+  stripe: vi.fn(), restore: vi.fn(), manage: vi.fn() }));
+vi.mock('@/services/aiService', () => ({ isNativeiOS: () => state.native }));
+vi.mock('@/store/authStore', () => ({ useAuthStore: Object.assign((selector: any) => selector({ profile: state.profile }),
+  { getState: () => ({ profile: state.profile }) }) }));
+vi.mock('@/services/aacBillingService', () => ({
+  AAC_BILLING_UPDATED: 'prismAacBillingUpdated',
+  fetchAacBillingStatus: state.fetch, hasNativePurchases: () => state.nativePurchases,
+  nativeSubscription: state.product, purchaseAacWithApple: state.apple, purchaseAacWithStripe: state.stripe,
+  restoreAacApplePurchases: state.restore, manageAacSubscription: state.manage,
+}));
+import CloudSubscriptionSettings from '@/components/CloudSubscriptionSettings';
+import { useSettingsStore } from '@/store/settingsStore';
+
+const free = { userId: 'account-test', hasCloudAccess: false, betaExempt: false,
+  transitionEndsAt: null, channels: [], manageChannel: null, enabled: true,
+  offer: { usdMonthly: 4.99, appleProductId: 'ai.synalux.prismaac.cloud.monthly',
+    monthlySpeechCharacters: 50_000, monthlyAiRequests: 100, version: 'test-offer-v1' } };
+
+beforeEach(() => {
+  vi.clearAllMocks(); state.native = false; state.nativePurchases = false;
+  state.fetch.mockResolvedValue(free);
+  state.restore.mockImplementation(() => state.fetch());
+  state.product.mockResolvedValue({ id: free.offer.appleProductId, displayPrice: '$4.99' });
+  state.apple.mockResolvedValue({ status: 'pending' });
+  useSettingsStore.setState({ language: 'en' });
+});
+
+describe('AAC account purchase settings', () => {
+  it.each(['apple', 'stripe'])('shows verified %s access instead of the legacy Free plan', async channel => {
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, channels: [channel], manageChannel: channel });
+    render(<CloudSubscriptionSettings />);
+    const summary = within(screen.getByTestId('subscription-summary'));
+    expect(await summary.findByText('Cloud subscription · Active')).toBeVisible();
+    expect(summary.queryByText('Free')).not.toBeInTheDocument();
+    expect(summary.queryByText(/19\/mo/)).not.toBeInTheDocument();
+    state.fetch.mockRejectedValueOnce(new Error('Billing refresh failed'));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh cloud plan' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Billing refresh failed');
+    expect(summary.getByText('Cloud subscription · Active')).toBeVisible();
+  });
+  it.each([
+    { betaExempt: true, transitionEndsAt: null, label: 'Beta cloud access · Included' },
+    { betaExempt: false, transitionEndsAt: '2099-10-07T00:00:00Z', label: 'Transition cloud access · Included' },
+  ])('describes $label without implying a paid subscription', async ({ label, ...access }) => {
+    state.fetch.mockResolvedValue({ ...free, ...access, hasCloudAccess: true });
+    render(<CloudSubscriptionSettings />);
+    const summary = within(screen.getByTestId('subscription-summary'));
+    expect(await summary.findByText(label)).toBeVisible();
+    expect(summary.queryByText('Cloud subscription · Active')).not.toBeInTheDocument();
+    expect(summary.queryByText('Free')).not.toBeInTheDocument();
+  });
+  it('does not guess Free while billing is loading or unavailable', async () => {
+    let reject!: (reason: Error) => void;
+    state.fetch.mockReturnValue(new Promise((_, fail) => { reject = fail; }));
+    render(<CloudSubscriptionSettings />);
+    const summary = within(screen.getByTestId('subscription-summary'));
+    expect(summary.getByText('Checking subscription…')).toBeVisible();
+    expect(summary.queryByText('Free')).not.toBeInTheDocument();
+    await act(async () => { reject(new Error('Billing unavailable')); });
+    expect(summary.getByText('Subscription status unavailable')).toBeVisible();
+    expect(summary.queryByText('Free')).not.toBeInTheDocument();
+  });
+  it('updates the summary after purchase, entitlement expiry and restore', async () => {
+    state.native = true; state.nativePurchases = true;
+    const paid = { ...free, hasCloudAccess: true, channels: ['apple'], manageChannel: 'apple' };
+    state.apple.mockResolvedValue({ status: 'purchased', billing: paid });
+    render(<CloudSubscriptionSettings />);
+    const summary = within(screen.getByTestId('subscription-summary'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Subscribe with Apple · $4.99/month' }));
+    expect(await summary.findByText('Cloud subscription · Active')).toBeVisible();
+    await act(async () => { window.dispatchEvent(new Event('prismAacBillingUpdated')); });
+    expect(await summary.findByText('Free')).toBeVisible();
+    state.restore.mockResolvedValueOnce(paid);
+    fireEvent.click(screen.getByRole('button', { name: 'Restore Apple purchases' }));
+    expect(await summary.findByText('Cloud subscription · Active')).toBeVisible();
+    expect(summary.queryByText('Free')).not.toBeInTheDocument();
+  });
+  it('retries unfinished Apple delivery when Settings opens', async () => {
+    state.native = true; state.nativePurchases = true;
+    render(<CloudSubscriptionSettings />);
+    await waitFor(() => expect(state.restore).toHaveBeenCalledWith(false, state.profile.email));
+  });
+  it('offers management instead of a second purchase during Apple billing retry', async () => {
+    state.fetch.mockResolvedValue({ ...free, purchaseBlocked: true, manageChannel: 'apple' });
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: 'Manage subscription' })).toBeVisible();
+    expect(screen.getByTestId('subscription-summary')).toHaveTextContent('Cloud subscription · Needs attention');
+    expect(screen.queryByRole('button', { name: /Subscribe/ })).not.toBeInTheDocument();
+  });
+  it('shows the price and included allowance before starting web Checkout', async () => {
+    render(<CloudSubscriptionSettings />);
+    const buy = await screen.findByRole('button', { name: 'Subscribe · US$4.99/month' });
+    expect(screen.getByText(/50,000 newly generated speech characters and 100 cloud AI/)).toBeInTheDocument();
+    fireEvent.click(buy);
+    await waitFor(() => expect(state.stripe).toHaveBeenCalledTimes(1));
+    expect(state.stripe).toHaveBeenCalledWith(free.userId, free.offer.version);
+    expect(state.apple).not.toHaveBeenCalled();
+  });
+  it('uses Apple and its actual localized price inside the native app', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.product.mockResolvedValue({ id: free.offer.appleProductId, displayPrice: '€5.99' });
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Subscribe with Apple · €5.99/month' }));
+    expect(await screen.findByText(/Waiting for Apple approval/)).toBeInTheDocument();
+    expect(state.apple).toHaveBeenCalledWith(free.userId, free.offer.version);
+    expect(state.stripe).not.toHaveBeenCalled();
+    expect(screen.getByText(/Boards, saved content, cached speech/)).toBeInTheDocument();
+  });
+  it('suppresses payment prompts for verified beta access on iOS', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, betaExempt: true });
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByText(/Verified beta access/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Subscribe/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Restore Apple/ })).not.toBeInTheDocument();
+    expect(state.product).not.toHaveBeenCalled();
+  });
+  it('does not send an older native app to Stripe when StoreKit is unavailable', async () => {
+    state.native = true;
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByText(/Update Prism AAC from the App Store/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Subscribe/ })).not.toBeInTheDocument();
+  });
+  it('does not offer another subscription to an existing Apple subscriber on web', async () => {
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, channels: ['apple'], manageChannel: 'apple' });
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: 'Manage subscription' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Subscribe/ })).not.toBeInTheDocument();
+  });
+  it('does not sell the plan until the included allowances are configured', async () => {
+    state.fetch.mockResolvedValue({ ...free, offer: { usdMonthly: 4.99, appleProductId: free.offer.appleProductId } });
+    render(<CloudSubscriptionSettings />);
+    await screen.findByRole('button', { name: 'Refresh cloud plan' });
+    await waitFor(() => expect(state.fetch).toHaveBeenCalled());
+    expect(screen.queryByRole('button', { name: /Subscribe/ })).not.toBeInTheDocument();
+  });
+});

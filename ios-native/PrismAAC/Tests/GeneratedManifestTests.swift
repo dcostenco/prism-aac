@@ -21,6 +21,13 @@ import XCTest
 /// They read the generated files from the repo (not the test bundle) so a
 /// regression is caught at test time rather than at App Review.
 final class GeneratedManifestTests: XCTestCase {
+    func testCloudPurchaseProductSurvivesGeneration() throws {
+        let info = try loadPlist("Info.plist")
+        XCTAssertEqual(info["AACMonthlyProductID"] as? String, "ai.synalux.prismaac.cloud.monthly")
+        let project = iosDir.deletingLastPathComponent().appendingPathComponent("PrismAAC.xcodeproj/project.pbxproj")
+        let contents = try String(contentsOf: project)
+        XCTAssertTrue(contents.contains("AACSubscriptionStore.swift in Sources"), "The purchase store must be in the compiled target")
+    }
 
     private var iosDir: URL {
         // .../ios-native/PrismAAC/Tests/GeneratedManifestTests.swift

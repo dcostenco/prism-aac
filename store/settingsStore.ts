@@ -106,6 +106,7 @@ interface SettingsState {
    *  silently slowed down every user who had genuinely chosen it. */
   speechRateUserSet: boolean;
   speechVolume: number;
+  speechCacheEnabled: boolean;
   language: SupportedLanguage;
   outputLanguage: SupportedLanguage;
   highContrast: boolean;
@@ -221,7 +222,7 @@ interface SettingsState {
    *  Default OFF — caregiver must explicitly opt in. Uses ~5 MB extra RAM. */
   visionContextEnabled: boolean;
   update: (
-    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'showUnreviewedVocabulary' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'cloudPredictionEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd' | 'speakSelectionFeedback' | 'caregiverPinHash' | 'announceSenderName' | 'visionContextEnabled'>>,
+    partial: Partial<Pick<SettingsState, 'speechRate' | 'speechVolume' | 'speechCacheEnabled' | 'language' | 'outputLanguage' | 'highContrast' | 'theme' | 'gridSize' | 'activeVocabSet' | 'showUnreviewedVocabulary' | 'headTrackingEnabled' | 'headTrackingDwellMs' | 'headTrackingSensitivity' | 'headTrackingEyeGaze' | 'headTrackingEyeGazeWeight' | 'headTrackingDriftAutoDisable' | 'headTrackingDriftThresholdPx' | 'headTrackingDriftWindowMs' | 'showHandCalibration' | 'cameraInputEnabled' | 'cameraTrackingTarget' | 'poseCalibrationGeneration' | 'gestureConfig' | 'toolbarConfig' | 'installedApps' | 'aiAutocorrectEnabled' | 'cloudPredictionEnabled' | 'notificationsEnabled' | 'mathHoldTimeMs' | 'mathTwoHitMagnify' | 'historyRegion' | 'voicePreferences' | 'speakOnSentenceEnd' | 'speakSelectionFeedback' | 'caregiverPinHash' | 'announceSenderName' | 'visionContextEnabled'>>,
   ) => void;
   /** Set the voice choice for one language. Pass '' or undefined to clear. */
   setVoiceForLang: (lang: string, voiceId: string | undefined) => void;
@@ -277,6 +278,7 @@ export const useSettingsStore = create<SettingsState>()(
       gestureConfig: { ...DEFAULT_GESTURE_CONFIG },
       aiAutocorrectEnabled: true,
       cloudPredictionEnabled: false,
+      speechCacheEnabled: true,
       speakOnSentenceEnd: false,
       speakSelectionFeedback: false,
       notificationsEnabled: true,
@@ -553,7 +555,7 @@ export const useSettingsStore = create<SettingsState>()(
         const boolKeys = [
           'highContrast', 'headTrackingEnabled', 'headTrackingDriftAutoDisable',
           'showHandCalibration', 'cameraInputEnabled', 'aiAutocorrectEnabled',
-          'cloudPredictionEnabled',
+          'cloudPredictionEnabled', 'speechCacheEnabled',
           'speakOnSentenceEnd', 'speakSelectionFeedback', 'notificationsEnabled', 'mathTwoHitMagnify',
           'showUnreviewedVocabulary',
           'headTrackingEyeGaze',

@@ -1,0 +1,110 @@
+{
+  "appPolicies": {
+    "eula": "",
+    "policies": [
+      {
+        "locale": "en_US",
+        "policyText": "",
+        "policyURL": "https://synalux.ai/terms"
+      }
+    ]
+  },
+  "identifier": "ai.synalux.prism-aac.local-tests",
+  "type": "AutoRenewableSubscription",
+  "version": {
+    "major": 3,
+    "minor": 0
+  },
+  "subscriptionGroups": [
+    {
+      "id": "aac_cloud_test",
+      "localizations": [
+        {
+          "description": "Local simulator fixture only",
+          "displayName": "Prism AAC Cloud",
+          "locale": "en_US"
+        }
+      ],
+      "name": "Prism AAC Cloud test group",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "4.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "aac_cloud_monthly_test",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Local simulator fixture only",
+              "displayName": "Prism AAC Cloud Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "ai.synalux.prismaac.cloud.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Prism AAC Cloud Monthly",
+          "subscriptionGroupID": "aac_cloud_test",
+          "type": "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "_askToBuyEnabled": false,
+    "_billingIssuesEnabled": false,
+    "_externalPurchaseEnabled": false,
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": [
+      {
+        "current": null,
+        "enabled": false,
+        "name": "Load Products"
+      },
+      {
+        "current": null,
+        "enabled": false,
+        "name": "Purchase"
+      },
+      {
+        "current": null,
+        "enabled": false,
+        "name": "Verification"
+      },
+      {
+        "current": null,
+        "enabled": false,
+        "name": "App Store Sync"
+      },
+      {
+        "current": null,
+        "enabled": false,
+        "name": "Subscription Status"
+      },
+      {
+        "current": null,
+        "enabled": false,
+        "name": "App Transaction"
+      },
+      {
+        "current": null,
+        "enabled": false,
+        "name": "Manage Subscriptions Sheet"
+      },
+      {
+        "current": null,
+        "enabled": false,
+        "name": "Refund Request Sheet"
+      },
+      {
+        "current": null,
+        "enabled": false,
+        "name": "Offer Code Redeem Sheet"
+      }
+    ],
+    "_timeRate": 0
+  }
+}

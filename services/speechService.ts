@@ -272,12 +272,14 @@ export async function speak(
   const debugText = text.slice(0, 80);
   const triedTiers: TtsTier[] = [];
 
+  // Reuse saved cloud audio before checking connectivity. On an offline
+  // cache miss speakAzure returns without a request, reaching local speech.
   // Tier 1: Azure Neural TTS — try unconditionally when online. The portal
   // route is the source of truth for tier policy: paid tiers always allowed,
   // free tier always attempted (synalux absorbs the cost for baseline langs).
   // Avoids a client-side profile-load race that previously caused enterprise
   // users to skip Azure during the first ~1-2s after page load.
-  if (isOnline()) {
+  {
     const token = getAuthToken();
     const profile = useAuthStore.getState().profile;
     // Look up the user's preferred voice for the requested language. The
@@ -299,7 +301,7 @@ export async function speak(
     emitTtsHealthEvent({
       type: 'tts-attempt', tier: 'inworld', text: debugText, lang, timestamp: tier1Start,
     });
-    const result = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt);
+    const result = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt, !isOnline());
     if (result?.cancelled) {
       // A newer utterance or an explicit Stop owns the audio channel now.
       // This is neither a portal success nor a provider failure, and must not

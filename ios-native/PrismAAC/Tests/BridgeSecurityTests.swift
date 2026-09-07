@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 @testable import PrismAAC
 
 /// Unit tests for BridgeSecurityPolicy — the central security gate for all
@@ -8,6 +9,21 @@ import XCTest
 /// Every named constant, every whitelist rule, and every validator must
 /// have at least one passing test and one failing test (positive + negative).
 final class BridgeSecurityTests: XCTestCase {
+
+    func test_subscription_requiresHTTPSAACMainFrame() {
+        let page = url("https://synalux.ai/prism-aac")
+        XCTAssertTrue(BridgeSecurityPolicy.isAllowedSubscriptionFrame(pageURL: page, frameURL: page, isMainFrame: true))
+        XCTAssertFalse(BridgeSecurityPolicy.isAllowedSubscriptionFrame(pageURL: page, frameURL: page, isMainFrame: false))
+        for untrusted in ["http://synalux.ai/prism-aac", "https://synalux.ai/pricing",
+                          "https://synalux.ai.evil.com/prism-aac", "https://other.synalux.ai/prism-aac",
+                          "https://synalux.ai:444/prism-aac"] {
+            XCTAssertFalse(BridgeSecurityPolicy.isAllowedSubscriptionFrame(pageURL: page,
+                frameURL: url(untrusted), isMainFrame: true), untrusted)
+            XCTAssertFalse(BridgeSecurityPolicy.isAllowedSubscriptionFrame(pageURL: url(untrusted),
+                frameURL: page, isMainFrame: true), untrusted)
+        }
+        XCTAssertFalse(BridgeSecurityPolicy.isAllowedSubscriptionFrame(pageURL: nil, frameURL: page, isMainFrame: true))
+    }
 
     // MARK: - isAllowedOrigin — trusted origins
 
@@ -70,18 +86,18 @@ final class BridgeSecurityTests: XCTestCase {
         XCTAssertFalse(BridgeSecurityPolicy.isAllowedOrigin(comps.url!))
     }
 
-    // MARK: - settingsURL — whitelist enforcement
+    // MARK: - settingsURL — public API and input isolation
 
-    func test_settingsURL_unknown_section_returns_accessibility_root() {
+    func test_settingsURL_unknown_section_returns_app_settings() {
         let result = BridgeSecurityPolicy.settingsURL(for: "unknown-section")!
-        XCTAssertEqual(result.absoluteString, "prefs:root=ACCESSIBILITY",
-            "Unknown section must fall through to Accessibility root")
+        XCTAssertEqual(result.absoluteString, UIApplication.openSettingsURLString,
+            "Unknown section must use the public app Settings API")
     }
 
     func test_settingsURL_injection_attempt_does_not_propagate() {
         // Attacker passes "ACCESSIBILITY&evil=1" hoping it gets interpolated
         let result = BridgeSecurityPolicy.settingsURL(for: "ACCESSIBILITY&evil=1")!
-        XCTAssertEqual(result.absoluteString, "prefs:root=ACCESSIBILITY",
+        XCTAssertEqual(result.absoluteString, UIApplication.openSettingsURLString,
             "Injection attempt must be swallowed — output must be the safe default")
         XCTAssertFalse(result.absoluteString.contains("evil"),
             "Attacker-controlled string must never appear in the URL")
@@ -89,32 +105,32 @@ final class BridgeSecurityTests: XCTestCase {
 
     func test_settingsURL_path_traversal_rejected() {
         let result = BridgeSecurityPolicy.settingsURL(for: "../../etc/passwd")!
-        XCTAssertEqual(result.absoluteString, "prefs:root=ACCESSIBILITY")
+        XCTAssertEqual(result.absoluteString, UIApplication.openSettingsURLString)
         XCTAssertFalse(result.absoluteString.contains("etc"))
     }
 
     func test_settingsURL_speech_correct() {
         let result = BridgeSecurityPolicy.settingsURL(for: "speech")!
-        XCTAssertEqual(result.absoluteString, "prefs:root=ACCESSIBILITY&path=SPEECH")
+        XCTAssertEqual(result.absoluteString, UIApplication.openSettingsURLString)
     }
 
     func test_settingsURL_voiceControl_correct() {
         let result = BridgeSecurityPolicy.settingsURL(for: "voiceControl")!
-        XCTAssertEqual(result.absoluteString, "prefs:root=ACCESSIBILITY&path=VOICECONTROL")
+        XCTAssertEqual(result.absoluteString, UIApplication.openSettingsURLString)
     }
 
     func test_settingsURL_switchControl_correct() {
         let result = BridgeSecurityPolicy.settingsURL(for: "switchControl")!
-        XCTAssertEqual(result.absoluteString, "prefs:root=ACCESSIBILITY&path=SWITCH_CONTROL")
+        XCTAssertEqual(result.absoluteString, UIApplication.openSettingsURLString)
     }
 
-    func test_settingsURL_all_cases_use_prefs_scheme() {
+    func test_settingsURL_all_cases_use_public_app_settings() {
         let sections = ["speech", "voiceControl", "switchControl", "anything", ""]
         for section in sections {
             let result = BridgeSecurityPolicy.settingsURL(for: section)
             XCTAssertNotNil(result, "settingsURL must never return nil for section: '\(section)'")
-            XCTAssertTrue(result!.absoluteString.hasPrefix("prefs:"),
-                "All settings URLs must use prefs: scheme, section: '\(section)'")
+            XCTAssertEqual(result!.absoluteString, UIApplication.openSettingsURLString,
+                "Private prefs: links must not return, section: '\(section)'")
         }
     }
 
@@ -133,9 +149,9 @@ final class BridgeSecurityTests: XCTestCase {
         }
     }
 
-    func test_settingsURL_empty_section_returns_accessibility_root() {
+    func test_settingsURL_empty_section_returns_app_settings() {
         let result = BridgeSecurityPolicy.settingsURL(for: "")!
-        XCTAssertEqual(result.absoluteString, "prefs:root=ACCESSIBILITY")
+        XCTAssertEqual(result.absoluteString, UIApplication.openSettingsURLString)
     }
 
     // MARK: - Input length caps (pin values — prevent silent regressions)

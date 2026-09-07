@@ -9,7 +9,7 @@ import {
 } from '@/store/settingsStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { useAuthStore } from '@/store/authStore';
-import { synaluxSignInUrl, synaluxSignOutUrl, signInWithAppleNative, isNativeiOS, SynaluxProfile } from '@/services/aiService';
+import { synaluxSignInUrl, synaluxSignOutUrl, signInWithAppleNative, isNativeiOS } from '@/services/aiService';
 import { LANG_META, SupportedLanguage } from '@/engine/i18n';
 import { UNREVIEWED_LANGUAGES } from '@/constants/translationReviewStatus';
 import { useT } from '@/engine/useT';
@@ -23,6 +23,8 @@ import HandCalibration from './HandCalibration';
 import InputModesSettings from './InputModesSettings';
 import ToolbarCustomization from './ToolbarCustomization';
 import VoicePicker from './VoicePicker';
+import SpeechCacheSettings from './SpeechCacheSettings';
+import CloudSubscriptionSettings from './CloudSubscriptionSettings';
 import CaregiverContactsSettings from './CaregiverContactsSettings';
 import PinPad from './PinPad';
 import { getActiveProfile, loadProfiles, deleteProfile, setActiveProfile, enableContinuousLearning, disableContinuousLearning, isContinuousLearningActive } from '@/services/handProfileService';
@@ -115,13 +117,6 @@ function HandProfileSection() {
     </div>
   );
 }
-
-const PLAN_LABEL_KEYS: Record<SynaluxProfile['plan'], string> = {
-  free: 'plan_free',
-  standard: 'plan_standard',
-  advanced: 'plan_advanced',
-  enterprise: 'plan_enterprise',
-};
 
 export default function SettingsModal() {
   const { showSettings, toggleSettings } = useUIStore();
@@ -318,6 +313,7 @@ export default function SettingsModal() {
               <p className="text-muted text-xs mb-2">{t('voice_picker_desc')}</p>
               <VoicePicker />
             </div>
+            <SpeechCacheSettings />
           </Section>
 
           {/* ── LANGUAGE ── */}
@@ -664,11 +660,7 @@ export default function SettingsModal() {
                   </div>
                   <p className="text-primary font-semibold text-sm break-all">{profile.email || profile.name}</p>
                 </div>
-                <div className="surface-key rounded-lg px-3 py-2 border border-theme">
-                  <span className="text-muted text-xs uppercase tracking-wider">{t('subscription')}</span>
-                  {profile.isPlatformAdmin && <span className="text-[#FFD700] text-xs ml-2">★ {t('admin')}</span>}
-                  <p className="text-primary font-semibold text-sm">{t(PLAN_LABEL_KEYS[profile.plan]) || profile.plan}</p>
-                </div>
+                <CloudSubscriptionSettings key={profile.email} />
                 <a href={synaluxSignOutUrl()} target="_blank" rel="noopener" className="block text-center text-[#F44336] text-sm hover:underline pt-1">
                   {t('sign_out')}
                 </a>
@@ -693,7 +685,8 @@ export default function SettingsModal() {
                   className="aac-btn block w-full text-center bg-[#4CAF50] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#388E3C]">
                   {t('sign_in_with_synalux')}
                 </a>
-                <p className="text-dim text-xs mt-2">{t('core_aac_no_account')}</p>
+                <p className="text-dim text-xs mt-2">{t(!isNativeiOS() && process.env.NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE === '1'
+                  ? 'web_signin_free_account' : 'core_aac_no_account')}</p>
               </div>
             )}
           </Section>

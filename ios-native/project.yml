@@ -41,6 +41,7 @@ targets:
       path: PrismAAC/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
+        AACMonthlyProductID: ai.synalux.prismaac.cloud.monthly
         # Home-screen quick actions — core one-tap AAC phrases. Hand-added to
         # Info.plist previously and wiped by every regeneration (same trap as
         # the entitlement above), so they never shipped either.
@@ -190,6 +191,8 @@ targets:
     sources:
       - path: PrismAAC/Tests
         optional: true
+      - path: TestResources/AACSubscriptions.storekit
+        buildPhase: resources
     settings:
       GENERATE_INFOPLIST_FILE: YES
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.tests
@@ -203,6 +206,8 @@ targets:
     deploymentTarget: "16.0"
     sources:
       - path: PrismAACUITests
+      - path: TestResources/AACSubscriptions.storekit
+        buildPhase: resources
     settings:
       GENERATE_INFOPLIST_FILE: YES
       PRODUCT_BUNDLE_IDENTIFIER: ai.synalux.prism-aac.uitests

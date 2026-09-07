@@ -93,6 +93,11 @@ html, body {
   padding-left: var(--aac-safe-area-left);
 }
 
+/* The registration-preview notice occupies space above the AAC controls. */
+.aac-web-preview-body .aac-safe-viewport {
+  height: 100%;
+}
+
 /* Paint through the status/camera band so it reads as one top bar, but keep
  * every interactive target below the physical obstruction. This uses no more
  * vertical space than root padding did; it simply assigns that mandatory

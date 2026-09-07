@@ -1,5 +1,9 @@
 'use client';
 import { SYNALUX_API } from '@/lib/portalConfig';
+import { speechAudioCache, type SpeechAudioIdentity } from './speechAudioCache';
+import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { ddAction } from '@/lib/datadog';
 // CACHE-NUKE 2026-05-08-08:40 — forces Vercel build cache invalidation
 // after multiple identical-output rebuilds where Turbopack reused the
 // compiled azureTTS.ts despite source changes.
@@ -265,6 +269,27 @@ export function clearTtsCache(): void {
   _ttsCache.clear();
 }
 
+export function getSpeechCacheScope(): string {
+  return useAuthStore.getState().profile?.email?.toLowerCase() ?? 'guest';
+}
+
+export async function clearSavedSpeech(): Promise<boolean> {
+  clearTtsCache();
+  return speechAudioCache.clear();
+}
+
+function responseCacheIdentity(res: Response): SpeechAudioIdentity | null {
+  // A fallback must not silently become the user's selected voice on later plays.
+  if (res.headers.get('X-TTS-Inworld-Failed') || res.headers.get('X-TTS-Degraded')
+    || res.headers.get('X-TTS-Lang-Fallback') || res.headers.get('X-TTS-Gender-Fallback')) return null;
+  const backend = res.headers.get('X-TTS-Backend');
+  const voice = res.headers.get('X-TTS-Voice');
+  const model = res.headers.get('X-TTS-Model');
+  const format = res.headers.get('Content-Type');
+  if ((backend !== 'inworld' && backend !== 'azure') || !voice || !model || !format) return null;
+  return { backend, voice, model, format };
+}
+
 // Rapid-duplicate dedup. If the same text fires within DEDUP_MS, drop the
 // new request so the current playback isn't killed by stopAzurePlayback.
 // User report 2026-05-08 "audio stopped streaming" — autocorrect or
@@ -511,7 +536,7 @@ async function decodeAndPlay(
  * upstream 5xx, decode failure, etc.) so the caller falls through to
  * speech-service's Web Speech tiers.
  */
-async function speakGemini(text: string, volume: number, controller: AbortController, lang?: string, interrupt = false): Promise<TtsPlaybackResult> {
+async function speakGemini(text: string, volume: number, controller: AbortController, lang?: string, interrupt = false, authToken?: string): Promise<TtsPlaybackResult> {
   // Gemini doesn't take SSML — it does its own prosody. Send plain text.
   // Keep within the server's 4KB UTF-8 cap; longer messages are very
   // rare on the AAC surface but caps elsewhere will trim if needed.
@@ -521,7 +546,7 @@ async function speakGemini(text: string, volume: number, controller: AbortContro
   try {
     const res = await fetch(`${SYNALUX_API}/prism-aac/tts/public`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
       body: JSON.stringify({ text, lang }),
       signal: controller.signal,
       // NO credentials: include — the response uses ACAO=*, which the
@@ -573,6 +598,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   authToken: string,
   voiceId?: string,
   interrupt = false,
+  cacheOnly = false,
 ): Promise<TtsPlaybackResult> {
   // Rapid-duplicate suppression — drop a new speak with the same text
   // if one fired in the last DEDUP_MS. Otherwise the new fetch+decode
@@ -604,26 +630,45 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   lastSpokenText = text;
   lastSpokenAt = nowMs;
 
-  // Cache hit — replay without a network round-trip.
-  const cacheKey = _ttsCacheKey(text, lang, tone, rate, volume, voiceId);
-  const cached = _ttsCacheGet(cacheKey);
-  if (cached) {
-    console.log(`[AzureTTS] cache hit: "${text.slice(0, 40)}"`);
-    const cacheController = new AbortController();
-    activeControllers.add(cacheController);
-    try {
-      return await decodeAndPlay(
-        cached,
-        volume,
-        'AzureTTS-cache',
-        interrupt,
-        1.0,
-        cacheController,
-      );
-    } finally {
-      activeControllers.delete(cacheController);
+  const scope = getSpeechCacheScope();
+  const requestKey = JSON.stringify([1, SYNALUX_API, _ttsCacheKey(text, lang, tone, rate, volume, voiceId)]);
+  const cacheKey = JSON.stringify([scope, requestKey]);
+  const cacheEpoch = speechAudioCache.generation();
+  const controller = new AbortController();
+  activeControllers.add(controller);
+  try {
+    const memory = _ttsCacheGet(cacheKey);
+    const disk = !memory && useSettingsStore.getState().speechCacheEnabled !== false
+      ? await speechAudioCache.get(scope, requestKey) : null;
+    if (scope !== getSpeechCacheScope()) abortController(controller, 'superseded');
+    const cancelled = intentionalCancellation(controller);
+    if (cancelled) return cancelled;
+    const cached = memory ?? disk?.audio;
+    if (cached) {
+      const result = await decodeAndPlay(cached, volume, 'AzureTTS-cache', interrupt, 1.0, controller);
+      if (result.success || result.cancelled) {
+        if (!result.cancelled) {
+          ddAction('aac_speech_cache', { outcome: memory ? 'memory_hit' : 'disk_hit', latency_ms: Date.now() - nowMs });
+          // Memory replays should also protect frequently used disk entries.
+          if (memory && useSettingsStore.getState().speechCacheEnabled !== false) void speechAudioCache.get(scope, requestKey);
+        }
+        activeControllers.delete(controller);
+        return result;
+      }
+      // Corrupt audio must not trap this phrase in a permanently failing cache.
+      _ttsCache.delete(cacheKey);
+      await speechAudioCache.remove(scope, requestKey);
     }
+  } finally {
+    if (cacheOnly || controller.signal.aborted) activeControllers.delete(controller);
   }
+  if (cacheOnly) {
+    ddAction('aac_speech_cache', { outcome: 'offline_miss' });
+    activeControllers.delete(controller); return { success: false };
+  }
+  const cancelledBeforeFetch = intentionalCancellation(controller);
+  if (cancelledBeforeFetch) { activeControllers.delete(controller); return cancelledBeforeFetch; }
+  ddAction('aac_speech_cache', { outcome: 'miss' });
 
   // Normalize stored slider → portal SSML rate scale. See computeNormalizedRate.
   // DO NOT pass-through — stored 0.5 direct → SSML 0.5 = 2× slow (RO/RU bug, May 2026).
@@ -631,8 +676,6 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   const foreignSlowdown = baseLang !== 'en' ? 0.85 : 1;
   const normalizedRate = computeNormalizedRate(rate) * foreignSlowdown;
 
-  const controller = new AbortController();
-  activeControllers.add(controller);
   const timeout = setTimeout(() => abortController(controller, 'timeout'), 8000);
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -680,7 +723,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
     // surface that to the speech-service tier-2/3 fallback chain.
     const publicRes = await fetch(`${SYNALUX_API}/tts/public`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(reqBody),
       signal: controller.signal,
       // NO credentials: include — the route returns ACAO=*, which the
@@ -689,7 +732,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
       // failed silently before even reaching the server.
     });
     let res = publicRes;
-    if (!publicRes.ok && publicRes.status === 502) {
+    if (!publicRes.ok && publicRes.status === 502 && publicRes.headers.get('X-TTS-Backend') !== 'all-failed') {
       // Inworld choked. Try the auth route — paid users get Azure here.
       // This route is NOT cross-origin-CORS'd; it relies on the
       // synalux.ai NextAuth cookie, which only flows when prism-aac
@@ -703,10 +746,14 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
         signal: controller.signal,
         credentials: 'include',
       });
-      if (authRes.ok) res = authRes;
+      if (authRes.ok || [401, 402, 403, 429].includes(authRes.status)) res = authRes;
       // else: keep the original public 502; speech service will fall
       // through to Tier 2/3.
     }
+    // Registration, allowance and abuse controls apply to the entire cloud
+    // chain. A denied request may use cached/local speech, never another
+    // cloud endpoint. Server routes independently enforce their own policy.
+    if ([401, 402, 403, 429].includes(res.status)) return { success: false };
     if (res.ok) {
       // stopAzurePlayback used to run HERE — before `await readCappedAudio`
       // and `await decodeAudioData`. That opened a 50–500 ms window where
@@ -721,9 +768,6 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
       // start is microseconds and peer races can't slot in.
       const audioBytes = await readCappedAudio(res);
       if (audioBytes) {
-        clearTimeout(timeout);
-        // Cache the raw portal bytes for instant replay on repeated phrases.
-        _ttsCacheSet(cacheKey, audioBytes);
         // Rate is fully encoded in the SSML prosody. computeNormalizedRate()
         // converts the stored slider value (× 2, clamped 0.5–1.4) and sends
         // it to the portal; buildAzureSSML() in portal/src/app/api/v1/tts/
@@ -733,7 +777,19 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
         // Audio playbackRate — that caused double-slow in translation mode:
         // aacSpeak effectiveRate × 0.6 → SSML rate 0.6 → old pbRate 0.6
         // = 0.36× speed (en-ro regression, May 2026).
-        return await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt, 1.0, controller);
+        if (scope !== getSpeechCacheScope()) abortController(controller, 'superseded');
+        const result = await decodeAndPlay(audioBytes, volume, 'AzureTTS', interrupt, 1.0, controller);
+        const degraded = res.headers.get('X-TTS-Inworld-Failed') || res.headers.get('X-TTS-Degraded')
+          || res.headers.get('X-TTS-Lang-Fallback') || res.headers.get('X-TTS-Gender-Fallback');
+        if (result.success && !result.cancelled && !degraded && text.length <= 500
+          && cacheEpoch === speechAudioCache.generation()) {
+          _ttsCacheSet(cacheKey, audioBytes);
+          const identity = responseCacheIdentity(res);
+          if (identity && useSettingsStore.getState().speechCacheEnabled !== false) {
+            void speechAudioCache.put(scope, requestKey, audioBytes, identity, cacheEpoch);
+          }
+        }
+        return result;
       }
       console.warn('[AzureTTS] response oversize, dropping');
     } else {
@@ -742,20 +798,13 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
 
     // ── Last-resort tier: Gemini ──
     // Inworld + auth /tts both failed (or returned an oversize body).
-    // The shared `controller` may already be aborted (8s timeout fires
-    // on slow Inworld responses). Create a fresh one so Gemini gets a
-    // clean signal — an already-aborted controller causes an immediate
-    // fetch failure before any network attempt.
-    const geminiController = new AbortController();
-    activeControllers.add(geminiController);
-    try {
-      const geminiResult = await speakGemini(text, volume, geminiController, lang, interrupt);
-      if (geminiResult.success || geminiResult.cancelled) {
-        return geminiResult;
-      }
-    } finally {
-      activeControllers.delete(geminiController);
-    }
+    // Keep the same eight-second deadline and Stop/replacement signal.
+    // Starting a new timer here could delay usable local speech indefinitely.
+    const cancelled = intentionalCancellation(controller);
+    if (cancelled) return cancelled;
+    if (controller.signal.aborted) return { success: false };
+    const geminiResult = await speakGemini(text, volume, controller, lang, interrupt, authToken);
+    if (geminiResult.success || geminiResult.cancelled) return geminiResult;
     return { success: false };
   } catch (e) {
     const cancelled = intentionalCancellation(controller);
