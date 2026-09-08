@@ -2,14 +2,14 @@
 
 **Help nonverbal kids and adults talk.**
 
-Augmentative & Alternative Communication app for children with motor impairments and complex communication needs. Tap pictures, build sentences, hear them spoken aloud — in 23 languages. Works on any tablet, laptop, iPhone, iPad, and Apple Watch.
+Augmentative & Alternative Communication app for children with motor impairments and complex communication needs. Tap pictures, build sentences, hear them spoken aloud — in 25 languages (28 locales). Works on any tablet, laptop, iPhone, iPad, and Apple Watch.
 
 Part of the [Synalux platform](https://synalux.ai).
 
 **Try it now:**
 - **Web app (free):** [synalux.ai/prism-aac](https://synalux.ai/prism-aac) — works on any device with a browser
 - **iOS (iPhone + iPad + Apple Watch):** [App Store](https://apps.apple.com/app/id6764692277)
-- **Pricing:** [synalux.ai/pricing](https://synalux.ai/pricing) — free tier available
+- **Pricing:** [synalux.ai/pricing](https://synalux.ai/pricing) — free, plus an optional Prism AAC Cloud plan (US$4.99/month) for natural-voice speech and cloud AI allowances
 
 🌐 **Translations:** [Español](docs/i18n/README_es.md) · [Français](docs/i18n/README_fr.md) · [Português](docs/i18n/README_pt.md) · [Română](docs/i18n/README_ro.md) · [Українська](docs/i18n/README_uk.md) · [Русский](docs/i18n/README_ru.md) · [Deutsch](docs/i18n/README_de.md) · [日本語](docs/i18n/README_ja.md) · [한국어](docs/i18n/README_ko.md) · [中文](docs/i18n/README_zh.md) · [العربية](docs/i18n/README_ar.md)
 
@@ -22,7 +22,7 @@ Part of the [Synalux platform](https://synalux.ai).
   <a href="TERMS.md"><img src="https://img.shields.io/badge/Terms-of_Service-lightgrey?style=for-the-badge" alt="Terms"></a>
 </p>
 
-![Prism AAC main screen — toolbar, schedule banner, type-here bar, prediction tiles, and qwerty keyboard](docs/screenshots/app-hero.png)
+![Prism AAC main screen on iPad — toolbar, type-here bar, five prediction tiles, and the full qwerty keyboard (production web app, 1.9.0)](docs/screenshots/app-hero.png)
 
 ### Native apps
 
@@ -32,10 +32,12 @@ Part of the [Synalux platform](https://synalux.ai).
   <img src="docs/screenshots/watch-ultra.png" alt="PrismAAC on Apple Watch Ultra" width="120" />
 </p>
 
+<sub>iPhone and iPad frames captured from build 1.9.0 (53) running the production web app, 2026-09-08. Watch frame from 1.4.0.</sub>
+
 | Platform | Status | On-device AI | Notes |
 |----------|--------|-------------|-------|
-| **Web** (PWA) | ✅ Production | Auto-downloads best local model | Any browser, installable |
-| **iPad Pro 16GB** | ✅ Production | 4B on-device AI (100% accuracy) | Fastest, fully private |
+| **Web** (PWA) | ✅ Production | Auto-downloads best local model | Any browser, installable; Cloud plan via Stripe |
+| **iPad Pro 16GB** | ✅ Production | 4B on-device AI (100% accuracy) | Fastest, fully private; Cloud plan via Apple in-app purchase |
 | **iPhone Pro 8GB** | ✅ Production | 4B Q4_K_M on-device (100% accuracy) | Auto-selected by RAM |
 | **All iPhones** | ✅ Production | 2B Q3_K_M on-device (99.1% accuracy) | 2.3 GB — fits every iPhone |
 | **Apple Watch** | ✅ Production | Offline phrases (1,261 × 20 languages) | Standalone — pictograms, TTS, emergency |
@@ -80,7 +82,8 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 | 🛏 **Bedside Mode** | Full-screen AI chat for phone-in-stand / lying-down use | <img src="e2e/_screenshots/bedside-overlay-open.png" width="120"> |
 | 👁 **Vision Context** | Camera detects objects → suggests relevant phrases | <img src="docs/screenshots/vision-mealtime.png" width="120"> |
 | 👋 **Hands-free** | Head + hand gesture recognition | <img src="docs/screenshots/panel-settings-input-modes.png" width="120"> |
-| ⚙️ **Settings** | 23 languages, motor accommodations, plan tier | <img src="docs/screenshots/panel-settings.png" width="120"> |
+| ⚙️ **Settings** | 25 languages, motor accommodations, voice picker + speech cache | <img src="docs/screenshots/panel-settings.png" width="120"> |
+| ☁️ **Cloud speech and AI** | Optional US$4.99/month allowance for natural voices + cloud AI | <img src="docs/screenshots/cloud-subscription-iphone.png" width="120"> |
 
 ---
 
@@ -146,7 +149,7 @@ The L1 gate runs deterministic regex checks on **both input and output** across 
 **What it does NOT catch (by design):** generic clinical terms ("dose of risperidone", "milligrams", "suicide prevention training"). These appear in legitimate BCBA/medical notes and blocking them would harm the clinical users this product serves. The on-device 2B model's own alignment is not relied upon for safety (it scores ~59% on general BFCL V4). L1 is the primary deterministic safety mechanism.
 
 **Known L1 limitations:**
-- **English-only patterns.** L1 crisis/medical regex is currently English only. Non-English users (the app supports 23 languages) are protected only by the model's own safety training (L2). Localized crisis patterns are a planned addition.
+- **English-only patterns.** L1 crisis/medical regex is currently English only. Non-English users (the app supports 25 languages) are protected only by the model's own safety training (L2). Localized crisis patterns are a planned addition.
 - **Regex is a floor, not a ceiling.** Paraphrased distress ("I don't want to be here anymore") is not matched. L1 catches defined high-signal phrasings; L2 (model alignment) handles the long tail.
 
 **Coverage by path:**
@@ -170,9 +173,9 @@ If a user types distress through the AAC interface, L1 returns immediately (befo
 ### Privacy
 
 - On-device AI processes prompts locally — no data leaves the device
-- Cloud fallback (when on-device fails) goes to the Synalux portal with end-to-end TLS
+- Cloud speech and cloud AI (when used) go to the Synalux portal over TLS; text is processed in memory and not stored
 - No user prompts are stored or used for training
-- Free tier works without an account — no PII collected
+- No account is required; anonymous usage/error telemetry (Datadog) never contains typed or spoken text
 - See [PRIVACY.md](PRIVACY.md) for the full privacy policy
 
 ---
@@ -198,7 +201,7 @@ PrismAAC ships every reading-assistant feature most AAC users buy Read & Write f
 | **Open source** (AGPL-3.0) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🟢 | 🔴 | 🔴 | 🔴 |
 | **Free tier** (life-safety access) | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🟢 | 🔴 | 🔴 | 🔴 |
 | Voice pack **marketplace** | 🟢 | 🔴 | 🟡 | 🔴 | 🟡 | 🔴 | 🔴 | 🟡 | 🟡 |
-| **Multi-language** (23) | 🟢 | 🟢 | 🟢 | 🔴 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 |
+| **Multi-language** (25) | 🟢 | 🟢 | 🟢 | 🔴 | 🟢 | 🟢 | 🟢 | 🟢 | 🟢 |
 | **Caregiver notes** (home / school / clinic) | 🟢 | 🔴 | 🔴 | 🔴 | 🟡 | 🟡 | 🟡 | 🔴 | 🟡 |
 | **Apple Watch** standalone mode | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
 | **Chrome extension** reading assistant | 🟢 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
@@ -447,7 +450,7 @@ On-screen keyboard with **word prediction**, **AI autocomplete**, and a one-tap 
 - AI completion ("hw" → "how", "togoso" → "to go so") via Synalux `text/correct` (Gemini 2.5 Flash-Lite, ~752ms avg, 4.3× cheaper than 2.5 Flash)
 - Cross-language gate: RO `eu` won't leak into EN bar even when both corpora are loaded (cross-corpus frequency comparison)
 - "Speak" reads with auto-tone adaptation (declarative / interrogative / exclamatory inferred from punctuation)
-- Voice tier 1: Inworld TTS-2 (natural/neural, all 23 app languages); tier 2: OS Web Speech (offline, device-native); tier 3: WASM espeak-ng (last resort)
+- Speech chain: persistent speech cache (replays without a request) → cloud voice through the portal (Inworld TTS-2; Azure Neural for languages Inworld lacks; Gemini TTS as last cloud resort) → OS Web Speech (offline) → WASM espeak-ng (last resort). See [`docs/TTS-ARCHITECTURE.md`](docs/TTS-ARCHITECTURE.md) and [`docs/SPEECH_CACHE.md`](docs/SPEECH_CACHE.md)
 - Word highlight is duration-estimated (~60 ms/char @ rate=0.5, scales with the rate slider) — works across every TTS tier without backend changes; precise sync via Azure `wordBoundary` is a future Pro feature.
 - 1.5MB SQLite n-gram corpus per language; unigrams + bigrams + trigrams; lazy-loaded on language switch
 - **HRR contextual memory** — zero-search holographic retrieval (229KB Rust WASM) that learns from every spoken phrase. Encodes bigrams + trigrams into a holographic vector; probes in ~0.2ms on every keystroke. Additive layer — boosts the first 2 prediction tiles with contextual matches without removing corpus predictions.
@@ -888,8 +891,7 @@ Visual first-then schedule for routine + transition support. Each step is a pict
 | I Hear It (Sound Match) | Auditory discrimination + vocabulary |
 | Turn Taker | Social turn-taking practice |
 
-- Free tier: Bubble Pop, Color Hunt, My Story (3 games)
-- Paid tier: all 12
+- All 12 games are free; no game is gated by plan
 - Per-game data feeds `services/adaptiveEngine.ts` — utterance length / category / time-of-day / outcome → suggests the next game
 - All games disable AAC tile categories that aren't relevant to that game's vocabulary, so the child isn't distracted
 
@@ -1112,7 +1114,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 ---
 
 ### ⚙️ Settings
-23 languages, theme (light / dark / high-contrast), grid size (4–20 tiles), motor accommodations (math hold-time dwell, two-hit magnify, head-tracking dwell, gesture sensitivity, drift auto-disable), voice picker (paid), AI autocorrect on/off, notifications, toolbar customization, history region picker.
+25 languages / 28 locales, theme (light / dark / high-contrast), grid size (4–20 tiles), motor accommodations (math hold-time dwell, two-hit magnify, head-tracking dwell, gesture sensitivity, drift auto-disable), voice picker (free for everyone), speech-cache usage and retention, AI autocorrect on/off, notifications, toolbar customization, history region picker, Synalux Account with the Cloud plan.
 
 ![Settings — language picker + theme toggle](docs/screenshots/panel-settings.png)
 
@@ -1164,25 +1166,29 @@ The toolbar is fully reorderable. Default 0.9.0 ships with a minimal set (mic, A
 
 ## Plans
 
-Four tiers: **Free**, **Standard**, **Advanced**, **Enterprise**. 14-day free trial on all paid plans.
+Two plans: **Free** and **Prism AAC Cloud**. No trial, no card required for Free, no automatic overage charges.
 
-| | Free | Standard | Advanced | Enterprise |
-|---|---|---|---|---|
-| Picture tiles + 22 categories | ✅ | ✅ | ✅ | ✅ |
-| Type-to-speak | ✅ | ✅ | ✅ | ✅ |
-| Default voice (Inworld) | ✅ | ✅ | ✅ | ✅ |
-| School keyboard + AI tutor | ✅ basic | ✅ + premium models | ✅ + premium models | ✅ + premium models |
-| Schedule | ✅ | ✅ + reward shop | ✅ + reward shop | ✅ + reward shop |
-| Games | 3 | All 12 | All 12 | All 12 |
-| Voice picker | — | ✅ | ✅ | ✅ |
-| Voice cloning | — | ✅ | ✅ | ✅ |
-| Caregiver notes sync | — | ✅ | ✅ | ✅ |
-| Word prediction | — | ✅ | ✅ | ✅ |
-| Grounding verifier | — | — | ✅ | ✅ |
-| HIPAA BAA | — | — | — | ✅ |
-| SSO/SAML | — | — | — | ✅ |
+| | Free | Prism AAC Cloud — US$4.99/month |
+|---|---|---|
+| Communication boards, keyboard and saved phrases | ✅ | ✅ |
+| Available device voices and cached speech | ✅ | ✅ |
+| On-device AI and emergency communication | ✅ | ✅ |
+| iOS + Web (PWA) | ✅ | ✅ |
+| Newly generated natural-voice speech | not included (still served free on the public speech route until metering starts) | 50,000 characters / month |
+| Cloud AI requests (chat, autocorrect, prediction, tutor) | — | 100 / month |
+| Allowance reset | — | 1st of each month, 00:00 UTC |
 
-[See current pricing and annual discounts →](https://synalux.ai/pricing)
+- Bought in the iOS app (Apple in-app purchase, StoreKit 2) or on the web (Stripe); both grant the same account and one active subscription per account. Cancelling one channel never erases the other.
+- Cached playback and device speech never use the allowance. When the allowance is used up, cloud speech and cloud AI pause until the reset — nothing over the board is ever blocked.
+- Settings → Synalux Account → **Cloud speech and AI** shows the plan, allowance and renewal terms, with Subscribe with Apple, Restore Apple purchases, Manage subscription and Refresh cloud plan.
+- Two open inconsistencies, tracked: (1) word prediction boosts, AAC Chat providers, caregiver contacts, the SMS provider and the full emergency payload key on the AAC plan that only a web (Stripe) subscription sets, so an Apple-only subscriber does not get them; (2) AI pictograms and marketplace installs key on the Synalux platform plan, not the AAC Cloud plan, so Cloud subscribers on either channel do not get them. The voice picker and all 12 games are free for everyone.
+
+<p align="center">
+  <img src="docs/screenshots/cloud-subscription-iphone.png" alt="iOS app: Settings → Synalux Account → Cloud speech and AI — allowance, renewal terms, Subscribe with Apple · $4.99/month, Restore Apple purchases" width="260" />
+  <img src="docs/screenshots/panel-account-cloud.png" alt="Web app: the same section with Subscribe · US$4.99/month through Stripe" width="260" />
+</p>
+
+[Pricing page →](https://synalux.ai/pricing) · [Terms](TERMS.md) · [Privacy](PRIVACY.md)
 
 ---
 

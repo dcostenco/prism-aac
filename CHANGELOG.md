@@ -1,5 +1,52 @@
 # PrismAAC Changelog
 
+## [1.9.0] - 2026-09-08 — Cloud subscription, persistent speech cache, 25 languages
+
+Web (synalux.ai/prism-aac) and iOS 1.9.0 (build 53).
+
+### Cloud speech and AI (optional subscription)
+
+- **One plan, Prism AAC Cloud, US$4.99/month:** 50,000 newly generated
+  natural-voice speech characters + 100 cloud AI requests per month, reset on
+  the 1st at 00:00 UTC, no automatic overage. Bought in the iOS app (Apple
+  in-app purchase, StoreKit 2) or on the web (Stripe); both grant the same
+  account and one active subscription per account.
+- **Settings → Synalux Account → Cloud speech and AI:** plan summary,
+  allowance and renewal terms, Subscribe with Apple, Restore Apple purchases,
+  Manage subscription, Refresh cloud plan.
+- **Nothing over the board is ever blocked:** boards, saved phrases, cached
+  speech, device voices, on-device AI and emergency communication stay free
+  and available without an account or purchase.
+- Server side (portal): atomic monthly usage ledger, Apple signed-transaction
+  verification pinned to the Apple Root CA, App Store Server Notifications,
+  duplicate-purchase prevention across channels, request-size and output-token
+  caps on cloud AI.
+
+### Persistent speech cache
+
+- Generated speech (Inworld / Azure) is saved in the browser's private
+  IndexedDB (20 MiB, 512 clips, 30 days, LRU) and replays without a network
+  request — online or offline. Cached playback never uses the cloud allowance.
+- **Settings → Voice:** usage, Clear, and retention on/off.
+
+### Sign-in and accounts
+
+- iOS: Sign in with Apple inside the app. Web: Synalux sign-in
+  (Google, or email + password). The same subscription is recognized on both.
+- Web/PWA sign-in gate (60-second anonymous preview, then sign-in) shipped
+  behind a flag; not active in this release.
+
+### Languages
+
+- 45 new UI strings translated into every locale. 25 languages / 28 locales
+  (Chinese Simplified, Traditional and Hong Kong variants). Amharic, Swahili
+  and Bengali are machine-translated pending native-speaker review.
+
+### Public TTS
+
+- The Gemini last-resort speech tier now reads one-word English tiles aloud
+  instead of failing (the TTS-only model treated "hello" as a chat prompt).
+
 ## [0.10.0] - 2026-05-08 — Reliability sprint: TTS / translation / PDF / marketplace / tutor language
 
 Single-day reliability run resolving **13 reported bugs** (full audit at

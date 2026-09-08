@@ -6,9 +6,8 @@
  * catalog rarely changes, the Settings UI may render multiple times, and
  * we don't want to hammer the endpoint while a user scrolls a dropdown.
  *
- * All voices in the catalog are paid-tier-only on the server side (the
- * endpoint returns 403 for free); on the client we still show the picker
- * for paid users only via SettingsModal's `isPaid` gate.
+ * The catalog endpoint is public (no auth, no plan check) and the picker
+ * is shown to every user; free and anonymous users can pick any voice.
  */
 
 export type VoiceBackend = 'inworld' | 'azure';

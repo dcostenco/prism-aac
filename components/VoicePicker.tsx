@@ -14,7 +14,7 @@ import {
 } from '@/services/voiceCatalogService';
 
 /**
- * VoicePicker — paid-only Voice settings sub-panel.
+ * VoicePicker — Voice settings sub-panel, available to every user (no plan gate).
  *
  * Shows the voices available for the user's current outputLanguage. User can
  * filter by gender and pick a specific voice; choice is stored per-language
