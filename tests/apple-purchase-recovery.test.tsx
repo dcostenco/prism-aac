@@ -49,6 +49,17 @@ it('backs off repeated delivery failures instead of retrying every 30 seconds', 
   await tick(300_000); expect(state.restore).toHaveBeenCalledTimes(6);  // back to 5 min cadence
 });
 
+it('rate-limits focus/online hints to once a minute but syncs StoreKit changes immediately', async () => {
+  render(<ApplePurchaseRecovery />); await tick();
+  expect(state.restore).toHaveBeenCalledTimes(1);
+  for (let i = 0; i < 5; i += 1) { fireEvent(window, new Event('focus')); fireEvent(window, new Event('online')); await tick(); }
+  expect(state.restore).toHaveBeenCalledTimes(1);           // hints within 60 s are ignored
+  fireEvent(window, new Event('prismSubscriptionChanged')); await tick();
+  expect(state.restore).toHaveBeenCalledTimes(2);           // StoreKit change always syncs
+  await tick(60_000); fireEvent(window, new Event('focus')); await tick();
+  expect(state.restore).toHaveBeenCalledTimes(3);           // a hint after the interval runs
+});
+
 it('does not invoke StoreKit in a web client', async () => {
   state.native = false; render(<ApplePurchaseRecovery />); await tick();
   expect(state.restore).not.toHaveBeenCalled();

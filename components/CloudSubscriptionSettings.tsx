@@ -121,7 +121,12 @@ export default function CloudSubscriptionSettings() {
     {native && billing?.enabled && !hasNativePurchases() && !billing.betaExempt &&
       <p className="text-xs text-muted">{t('cloud_update_ios')}</p>}
     {native && hasNativePurchases() && billing && !billing.betaExempt && <button type="button" disabled={busy}
-      className={button} onClick={() => void act(async () => { setBilling(await restoreAacApplePurchases()); })}>
+      className={button} onClick={() => void act(async () => {
+        // A rejected foreign transaction is reported, but the account's own
+        // deliveries in the same restore must still be reflected in the summary.
+        try { setBilling(await restoreAacApplePurchases()); }
+        catch (error) { await refresh().catch(() => undefined); throw error; }
+      })}>
       {t('cloud_restore_apple')}
     </button>}
     {billing?.manageChannel && <button type="button" disabled={busy} className={button}

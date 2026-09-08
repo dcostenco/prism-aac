@@ -13018,5 +13018,140 @@
     "zh-HK": "Gmail can send only messages you compose; it cannot read your mailbox. Google Contacts reads names, email addresses, and phone numbers for recipient autocomplete and the Prism AAC contact directory; contact photos are not requested. Prism AAC refreshes every five minutes while signed in and may keep up to 200 contacts in total in local browser or device storage; that 200 limit is shared across manually entered contacts and every connected provider, so not all Google contacts sync once it is reached. Google-derived contacts are removed after a confirmed Google disconnect or authoritative successful sync; manual contacts and contacts from other providers remain. Synalux never writes to Google Contacts. Google API data is not sent to generative AI and is not used for advertising, profiling, or model training.",
     "zh-Hans": "Gmail can send only messages you compose; it cannot read your mailbox. Google Contacts reads names, email addresses, and phone numbers for recipient autocomplete and the Prism AAC contact directory; contact photos are not requested. Prism AAC refreshes every five minutes while signed in and may keep up to 200 contacts in total in local browser or device storage; that 200 limit is shared across manually entered contacts and every connected provider, so not all Google contacts sync once it is reached. Google-derived contacts are removed after a confirmed Google disconnect or authoritative successful sync; manual contacts and contacts from other providers remain. Synalux never writes to Google Contacts. Google API data is not sent to generative AI and is not used for advertising, profiling, or model training.",
     "zh-Hant": "Gmail can send only messages you compose; it cannot read your mailbox. Google Contacts reads names, email addresses, and phone numbers for recipient autocomplete and the Prism AAC contact directory; contact photos are not requested. Prism AAC refreshes every five minutes while signed in and may keep up to 200 contacts in total in local browser or device storage; that 200 limit is shared across manually entered contacts and every connected provider, so not all Google contacts sync once it is reached. Google-derived contacts are removed after a confirmed Google disconnect or authoritative successful sync; manual contacts and contacts from other providers remain. Synalux never writes to Google Contacts. Google API data is not sent to generative AI and is not used for advertising, profiling, or model training."
+  },
+  "speech_cache_clear": {
+    "en": "Clear saved speech on this device"
+  },
+  "speech_cache_clear_failed": {
+    "en": "Could not clear saved speech. Try again or clear this site’s data in your browser settings."
+  },
+  "speech_cache_clearing": {
+    "en": "Clearing saved speech…"
+  },
+  "speech_cache_description": {
+    "en": "Reuse saved voice clips without another cloud request, including offline when available. Clips contain spoken messages and may be removed by your browser. Turning this off clears saved audio on this device; speech still works."
+  },
+  "speech_cache_enable": {
+    "en": "Save speech on this device"
+  },
+  "speech_cache_unavailable": {
+    "en": "Saved speech storage is unavailable or still loading. You can still speak."
+  },
+  "speech_cache_usage": {
+    "en": "{clips} clips for this profile · {used} MB used · {limit} MB device limit"
+  },
+  "cloud_plan_title": {
+    "en": "Cloud speech and AI"
+  },
+  "cloud_subscription_checking": {
+    "en": "Checking subscription…"
+  },
+  "cloud_subscription_unknown": {
+    "en": "Subscription status unavailable"
+  },
+  "cloud_subscription_active": {
+    "en": "Cloud subscription · Active"
+  },
+  "cloud_subscription_beta": {
+    "en": "Beta cloud access · Included"
+  },
+  "cloud_subscription_transition": {
+    "en": "Transition cloud access · Included"
+  },
+  "cloud_subscription_included": {
+    "en": "Cloud access · Included"
+  },
+  "cloud_subscription_attention": {
+    "en": "Cloud subscription · Needs attention"
+  },
+  "cloud_core_free": {
+    "en": "Boards, saved content, cached speech and available local speech remain free."
+  },
+  "cloud_beta_access": {
+    "en": "Verified beta access — no subscription required."
+  },
+  "cloud_access_active": {
+    "en": "Cloud access is active on your account."
+  },
+  "cloud_transition_ends": {
+    "en": "Your included cloud access continues through {date}. You will not be charged automatically."
+  },
+  "cloud_monthly_allowance": {
+    "en": "Includes {characters} newly generated speech characters and {requests} cloud AI requests per month. Cached and local speech do not use this allowance."
+  },
+  "cloud_allowance_reset": {
+    "en": "Allowances reset on the first day of each month at 00:00 UTC. AI requests run on our servers; on-device AI remains free."
+  },
+  "cloud_subscription_terms": {
+    "en": "{price} per month, renewing automatically until cancelled. Applicable web taxes are shown at checkout. Access works on iOS and web with the same account."
+  },
+  "cloud_subscription_terms_apple": {
+    "en": "{price} per month, renewing automatically until cancelled. Payment is charged to your Apple Account when you confirm; any applicable taxes are handled by Apple. Access works on iOS and web with the same account."
+  },
+  "cloud_subscribe_apple": {
+    "en": "Subscribe with Apple · {price}/month"
+  },
+  "cloud_subscribe_web": {
+    "en": "Subscribe · {price}/month"
+  },
+  "cloud_restore_apple": {
+    "en": "Restore Apple purchases"
+  },
+  "cloud_manage_subscription": {
+    "en": "Manage subscription"
+  },
+  "cloud_refresh_plan": {
+    "en": "Refresh cloud plan"
+  },
+  "cloud_update_ios": {
+    "en": "Update Prism AAC from the App Store to purchase a subscription. Your free communication tools remain available."
+  },
+  "cloud_privacy": {
+    "en": "Privacy policy"
+  },
+  "cloud_terms": {
+    "en": "Terms of use"
+  },
+  "cloud_purchase_pending": {
+    "en": "Waiting for Apple approval. Your free communication tools remain available."
+  },
+  "cloud_purchase_cancelled": {
+    "en": "Purchase cancelled. No new subscription was confirmed."
+  },
+  "cloud_purchase_complete": {
+    "en": "Your cloud subscription is ready."
+  },
+  "cloud_no_active_subscription": {
+    "en": "Your purchase was checked. There is no active cloud subscription to restore."
+  },
+  "cloud_plan_unavailable": {
+    "en": "Cloud plan details are temporarily unavailable. Please try again."
+  },
+  "web_preview_notice": {
+    "en": "Web preview: {seconds}s remaining. Sign-in is required afterward and is free."
+  },
+  "web_signin_required": {
+    "en": "Sign in to continue using Prism AAC"
+  },
+  "web_signin_explanation": {
+    "en": "Your one-minute web preview has ended. Sign in or create your free Synalux account to continue. Signing in does not start a paid subscription."
+  },
+  "web_signin_saved": {
+    "en": "Your saved boards and composed message stay on this device. They will be available again after you sign in."
+  },
+  "web_signin_network_error": {
+    "en": "We could not verify your sign-in. Check your connection and try again."
+  },
+  "web_signin_check_again": {
+    "en": "Check sign-in again"
+  },
+  "web_signin_checking_desc": {
+    "en": "Checking your account and web preview. Signing in is free and does not start a paid subscription."
+  },
+  "web_signin_free_account": {
+    "en": "The web app requires a free account after a one-minute preview. Cloud subscriptions are optional purchases."
+  },
+  "web_signin_draft_fallback": {
+    "en": "This browser could not save your unfinished message for sign-in. Continue to Google will open another tab. Keep this tab open and return here after signing in to recover your message."
   }
 }
