@@ -40,6 +40,7 @@ When you sign in (Sign in with Apple on iOS; Google or email + password on the w
 | Contact list | Messaging (AAC Chat) | Device Keychain + Synalux servers | Until removed by caregiver |
 | OAuth tokens | Provider integration (Gmail, etc.) | Synalux servers (encrypted) | Until disconnected |
 | Apple sign-in identifier (the stable user id Apple issues for this app) | Account identity on iOS | Synalux servers; the Apple identity token itself is passed to the app's web view during sign-in and not stored | Until account deletion |
+| Apple refresh token | Lets Synalux revoke the Sign in with Apple grant when you delete your account | Synalux servers | Until account deletion (revoked and removed then) |
 
 ### Prism AAC Cloud subscription
 If you subscribe to the optional Cloud plan:
