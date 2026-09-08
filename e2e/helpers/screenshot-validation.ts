@@ -272,7 +272,13 @@ export async function safeScreenshot(
       RETRYABLE_VALIDATION_REASONS.has(failure.reason)
     ));
     if (!retryable || attempt === VALIDATION_RETRY_ATTEMPTS) break;
-    await page.waitForTimeout(VALIDATION_RETRY_DELAY_MS);
+    // Wait on render state, not on time: fonts settled and two painted frames.
+    await page.evaluate(() => Promise.race([
+      document.fonts.ready.then(() => new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      })),
+      new Promise<void>((resolve) => setTimeout(resolve, 1_000)),
+    ]));
   }
   // Rule 9 runs after render validation and BEFORE the write: an occluded
   // critical target must never reach disk as evidence.
