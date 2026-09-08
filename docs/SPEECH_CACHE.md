@@ -1,7 +1,7 @@
 # Persistent speech cache
 
-Local implementation candidate, September 7, 2026. This is the first increment
-of the sustainability plan. It does not introduce prices or communication limits.
+Shipped in 1.9.0 (web and iOS build 53, 2026-09-08). Cached playback is free:
+it never checks the Cloud subscription and never counts against its allowance.
 
 `services/azureTTS.ts` keeps the existing 30-clip memory cache and checks
 `SpeechAudioCache` before making a synthesis request. `speechService.ts` also
@@ -55,8 +55,7 @@ metadata, actual browser decoding and audio-source starts, reload, offline reuse
 without another request, and the settings controls. Fixtures do not prove live
 provider output or physical audibility.
 
-Before release: verify configured Inworld and Azure output on real devices;
-complete signed-in offline restart behavior and full offline PWA boot acceptance;
-review cross-tab retention, saved-phrase pinning, localized settings copy and
-language/voice coverage. The two existing caregiver-PIN lint errors on main are
-separate from this change. Keep the candidate local until release acceptance.
+Known limits at 1.9.0: signed-in offline restart (account-scoped clips are not
+retrievable until identity is restored), full offline PWA boot, cross-tab
+retention semantics and saved-phrase pinning are still open; the settings copy is
+localized in all 28 locales.

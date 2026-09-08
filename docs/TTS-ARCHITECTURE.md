@@ -1,163 +1,67 @@
-# TTS Architecture — All-Neural Across 14 Locales (12 Languages + Chinese variants)
+# TTS Architecture — cloud neural voice with offline fallbacks
 
-> **TL;DR** — every supported locale gets a neural voice via a 4-tier fallback chain: **Inworld TTS-2** (paid all langs; free for ro/uk/ru/de/ko/ar) → **Kokoro-82M** offline (en/es/fr/pt/ja/zh) → **OS Web Speech** premium voices (offline) → **WASM espeak-ng** (last resort). Speed-critical taps bypass routing — the user never waits on the network for the message-bar Speak button.
+> **TL;DR** — every phrase is spoken through a quality-first chain that never fails silently: **persistent speech cache** (replays without a request) → **Cloud tier** through the Synalux portal (Inworld TTS-2, Azure Neural for the languages Inworld lacks, Gemini TTS as the last cloud resort) → **OS Web Speech** voices (offline) → **WASM espeak-ng** (always works). Speed-critical taps never wait on the network: a cache hit plays immediately and a cloud failure falls through to device speech.
 
-![Settings — language picker showing all 14 locales](../docs/screenshots/panel-settings.png)
+Current state: 1.9.0 (2026-09-08). Earlier revisions of this document described in-browser neural engines (Kokoro, Piper, MeloTTS); those were never shipped and the files do not exist.
 
-## At a glance
+## Locales
 
-- ✅ 14 locales / 12 languages — including 3 Chinese variants (Hans / Hant / Cantonese)
-- ✅ Auto-tone adaptation: declarative / interrogative / exclamatory inferred from punctuation
-- ✅ Voice cloning (paid tier) — 90s recording → trained voice usable across the app
-- ✅ Per-language voice picker; default voice per locale ships ready-to-use
+25 languages / 28 locales — the list in `constants/languageRules.ts`: en, es, fr, pt, ro, ru, uk, de, ja, ko, zh (Simplified), zh-Hans, zh-Hant (Taiwan), zh-HK (Hong Kong), ar, hi, it, pl, he, nl, vi, tl, tr, id, bg, am, sw, bn. Amharic, Swahili and Bengali UI strings are machine-translated pending native-speaker review (`constants/translationReviewStatus.ts`). `engine/i18n.ts` canonicalizes inputs such as `zh-CN` or `zh_TW` before any portal call.
 
-<details>
-<summary><strong>📐 Full locale set + tier-by-tier routing</strong></summary>
-
-## Locale set (BCP-47)
-
-prism-aac ships **14 locales** distributed across **12 written/spoken languages**:
-
-| BCP-47 | Display | Notes |
-|---|---|---|
-| en | English | en-US default; en-GB voice variant |
-| es | Spanish (Español) | — |
-| fr | French (Français) | — |
-| pt | Portuguese (Português) | pt-BR default |
-| ro | Romanian (Română) | — |
-| uk | Ukrainian (Українська) | — |
-| ru | Russian (Русский) | — |
-| de | German (Deutsch) | — |
-| ja | Japanese (日本語) | — |
-| ko | Korean (한국어) | — |
-| **zh-Hans** | Chinese Simplified (简体中文) | Mainland China + Singapore — Mandarin |
-| **zh-Hant** | Chinese Traditional (繁體中文) | Taiwan — Taiwanese Mandarin |
-| **zh-HK** | Cantonese (廣東話) | Hong Kong + Macao — Traditional script, Cantonese |
-| ar | Arabic (العربية) | RTL |
-
-The legacy code `zh` is retained as a back-compat alias for `zh-Hans`. The
-`canonicalizeLang()` helper in `engine/i18n.ts` normalizes every input
-(`zh-CN`, `zh_TW`, `yue-HK`, etc.) into the canonical form before any
-synalux portal call. **All four synalux services (azureTTS, textCorrect,
-aiService, emergencyService) now use canonical BCP-47 codes.**
-
-## Goal
-
-Every prism-aac user gets **neural-quality TTS in their native locale**, fully
-offline, with zero recurring cost — no exceptions.
-
-A disabled child losing internet must not lose access to natural-sounding
-speech. Web Speech API and espeak are kept only as last-resort safety nets.
-
-## The 4-tier resilient chain
+## The chain (`services/speechService.ts` → `services/azureTTS.ts`)
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│ Tier 1   Azure Neural TTS (online, emotional styles, all 12 langs)  │
-│           - Paid tiers: all 12 langs                                 │
-│           - Free tier:  ro/uk/ru/de/ko/ar (the 6 Kokoro doesn't speak) │
-│             — Synalux absorbs the cost; low volume                   │
-├──────────────────────────────────────────────────────────────────────┤
-│ Tier 2   Offline NEURAL — per-language engine                        │
-│                                                                       │
-│           en/es/fr/pt/ja/zh   →  Kokoro-82M  (MOS ~4.5, top tier)    │
-│           ro/uk/ru/de/ar      →  Piper       (MOS ~4.0, MIT)         │
-│           ko                  →  MeloTTS     (MOS ~4.0, MIT)         │
-│                                                                       │
-│           All run in-browser via ONNX. Lazy-loaded per language.      │
-├──────────────────────────────────────────────────────────────────────┤
-│ Tier 3   Web Speech API (OS native voices, all 12 langs)             │
-│           — fallback when neural offline engine fails                 │
-├──────────────────────────────────────────────────────────────────────┤
-│ Tier 4   WASM espeak-ng (robotic, last resort, always works)         │
-└──────────────────────────────────────────────────────────────────────┘
+Speak(text, lang, tone, rate, volume)
+  │
+  ├─ 0. Speech cache  services/azureTTS.ts + services/speechAudioCache.ts
+  │     30-clip memory cache, then IndexedDB (20 MiB / 512 clips / 30 days, LRU).
+  │     Key = endpoint + exact text + language + tone + rate + volume + voice.
+  │     Hit → plays at once, no request, never metered. Offline → cache only.
+  │
+  ├─ 1. Cloud tier (online)
+  │     a. POST /api/v1/tts/public        Inworld TTS-2 for everyone, no auth,
+  │        per-IP rate limit. The portal routes languages Inworld does not
+  │        speak (e.g. ro, uk) to Azure Neural server-side.
+  │     b. POST /api/v1/tts (cookie auth)  only when (a) answers 502:
+  │        Azure Neural fallback for accounts the portal allows.
+  │     c. POST /api/v1/prism-aac/tts/public   Gemini 2.5 Flash TTS, no auth,
+  │        when (a)/(b) fail. Plain text with a read-aloud instruction (the
+  │        TTS-only model otherwise treats a lone word as a chat prompt).
+  │     Response headers X-TTS-Backend / X-TTS-Voice / X-TTS-Model decide
+  │     whether the audio is kept on disk (provider/voice fallbacks are
+  │     played but not cached as the requested voice).
+  │
+  ├─ 2. Web Speech API (OS voices, offline, all locales on most devices)
+  │     Premium/enhanced voice preferred; a voice-reports-success-but-no-audio
+  │     guard falls through.
+  │
+  └─ 3. WASM espeak-ng  services/wasmTTS.ts  (robotic, last resort)
 ```
 
-## Per-language assignment
+Tone (declarative / interrogative / exclamatory) is inferred from punctuation and mapped to an Inworld style only for languages whose voices support it (`STYLE_SUPPORTED_LANGS`). Rate is normalized from the stored slider to the portal scale (`computeNormalizedRate`); the portal builds any SSML server-side.
 
-| Language | Tier 2 engine | Voice (default) | License | Disk |
-|---|---|---|---|---|
-| English (en) | **Kokoro** | `af_heart` (US), `bf_emma` (GB) | Apache-2.0 | 350 MB shared |
-| Spanish (es) | **Kokoro** | `ef_dora` | Apache-2.0 | shared |
-| French (fr) | **Kokoro** | `ff_siwis` | Apache-2.0 | shared |
-| Portuguese (pt) | **Kokoro** | `pf_dora` (Brazilian) | Apache-2.0 | shared |
-| Japanese (ja) | **Kokoro** | `jf_alpha` | Apache-2.0 | shared |
-| Chinese Simplified (zh-Hans) | **Kokoro** | `zf_xiaobei` (Mandarin) | Apache-2.0 | shared |
-| Chinese Traditional (zh-Hant) | **Kokoro** | `zf_xiaobei` (Mandarin pronunciation; Traditional UI) | Apache-2.0 | shared |
-| Cantonese (zh-HK) | **Azure** (online) → **Web Speech** (offline) | `zh-HK-HiuMaanNeural` (Azure) | — | — |
-| Romanian (ro) | **Piper** | `ro_RO/mihai-medium` | MIT | ~60 MB |
-| Ukrainian (uk) | **Piper** | `uk_UA/ukrainian_tts-medium` | MIT | ~60 MB |
-| Russian (ru) | **Piper** | `ru_RU/dmitri-medium` | MIT | ~60 MB |
-| German (de) | **Piper** | `de_DE/thorsten-high` | MIT | ~75 MB |
-| Arabic (ar) | **Piper** | `ar_JO/kareem-medium` | MIT | ~60 MB |
-| Korean (ko) | **MeloTTS** | `KR-default` | MIT | ~80 MB |
+## Cloud plan and metering
 
-**Lazy loading:** each engine and each Piper voice is only downloaded when
-the user first speaks in that language. A monolingual English user pulls
-350 MB (Kokoro). A polyglot user pulls up to ~700 MB across all 12 langs.
-
-## Why this stack
-
-| Engine | Wins | Loses |
-|---|---|---|
-| **Kokoro** | #1 open-source on TTS-Arena ELO; sounds genuinely human; emotional prosody | Only 9 langs (6 of ours) |
-| **Piper** | Largest language coverage (35+); MIT; tiny per voice; runs everywhere | Quality below Kokoro — flat prosody on shorter utterances |
-| **MeloTTS** | Real-time CPU; only practical permissive open-source Korean option | Below Kokoro on quality |
-
-**Rejected**:
-- **Coqui XTTS-v2** — Coqui Public Model License is non-commercial; incompatible with paid tiers.
-- **Meta MMS-TTS** — CC-BY-NC; non-commercial only.
-- **Bark (Suno)** — slow, ~10 s for short utterances; not real-time on AAC budgets.
-- **F5-TTS / StyleTTS 2** — English-only or weak multilingual; no Korean/Arabic.
+The optional Prism AAC Cloud subscription (US$4.99/month) provides 50,000 newly generated speech characters and 100 cloud AI requests per month. Only successful new synthesis on tier 1 counts; cache hits, device voices and failed requests never do. Metering is enforced by the portal (`withAacCloudUsage`), not the client, and is switched on separately from sales; until it is on, tier 1 behaves as before for every account. Anonymous callers on the two public routes are never gated.
 
 ## Reliability rules
 
-1. **Demote-on-failure for the entire session.** If Kokoro's WASM init fails
-   on this device, we don't retry — we mark it demoted and use Tier 3.
-2. **First-sample latency budget = 800 ms.** If neural offline is slower
-   than that on first call, demote — AAC users can't wait.
-3. **Tier 1 (Azure) is tried first when online**, regardless of which
-   neural offline engine the language uses. Azure has emotional styles
-   (friendly, calm, empathetic, etc.) that pure neural offline lacks.
-4. **The chain NEVER fails silently.** If all four tiers fail, we surface
-   a clear error to the user — communication is too important to silently
-   drop.
+1. **Never fail silently.** Every tier reports `tts-attempt` / `tts-success` / `tts-give-up` on `ttsHealthBus`; the caregiver Insights tab shows the success rate and fallback counts.
+2. **Duplicate suppression.** A repeat of the same text within `DEDUP_MS` keeps the current playback instead of racing it.
+3. **Interrupt semantics.** An explicit interrupt aborts in-flight fetches and stops the current source so two buffers never overlap.
+4. **Offline.** Cache first; on a miss the chain skips straight to device speech.
 
-## Cost model
+## Settings
 
-| Component | Cost to Synalux |
-|---|---|
-| Kokoro / Piper / MeloTTS | $0 (all run on user device) |
-| Azure Neural for paid tiers | included in subscription |
-| Azure Neural for ro/uk/ru/de/ko/ar free tier | absorbed; expected low volume |
-| Bandwidth for one-time model downloads | served from CDN, IndexedDB-cached, sub-cent per user lifetime |
+`Settings → Voice`: voice picker per language (account plan permitting), speed, volume, speech-cache usage with Clear and retention on/off. `Settings → Synalux Account → Cloud speech and AI`: plan, allowance, subscribe / restore / manage.
 
 ## Service files
 
 ```
 services/
-├── speechService.ts        — orchestrator (the chain logic)
-├── kokoroTTS.ts            — Kokoro-82M ONNX (in-browser)
-├── piperTTS.ts             — Piper voices (in-browser onnxruntime-web)
-├── meloTTS.ts              — MeloTTS-Korean (in-browser ONNX)
-├── azureTTS.ts             — Tier 1 cloud
-└── wasmTTS.ts              — Tier 4 espeak fallback
+├── speechService.ts      — orchestrator: cache → cloud → Web Speech → espeak
+├── azureTTS.ts           — cloud tier (Inworld / Azure / Gemini), dedup, cache hooks
+├── speechAudioCache.ts   — IndexedDB persistence (see docs/SPEECH_CACHE.md)
+├── ttsHealthBus.ts       — attempt / success / give-up events
+└── wasmTTS.ts            — espeak-ng fallback
 ```
-
-## Settings
-
-`Settings → Voice Quality`:
-- ☑ **Use neural offline voice** (default ON)
-  Enables Tier 2. Off → skips straight to Web Speech.
-- (paid tier) ☐ **Always use Azure when online**
-  Forces Tier 1 even for Kokoro-supported langs (default off — Kokoro
-  is offline + free, no reason to burn Azure quota by default).
-
-## License compliance
-
-All Tier 2 engines are Apache-2.0 or MIT. Compatible with:
-- AGPL-3.0 (prism-aac's license)
-- The Synalux paid hosted offering (commercial use OK)
-- Self-hosted forks under AGPL-3.0
-
-</details>
