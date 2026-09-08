@@ -60,8 +60,8 @@ targets:
           - UIApplicationShortcutItemType: com.prismaac.water
             UIApplicationShortcutItemTitle: Water please
             UIApplicationShortcutItemIconSymbolName: drop
-        CFBundleShortVersionString: "1.8.9"
-        CFBundleVersion: "52"
+        CFBundleShortVersionString: "1.9.0"
+        CFBundleVersion: "53"
         CFBundleLocalizations:
           - ar
           - de
@@ -166,8 +166,8 @@ targets:
       path: PrismAACWatch/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
-        CFBundleShortVersionString: "1.8.9"
-        CFBundleVersion: "52"
+        CFBundleShortVersionString: "1.9.0"
+        CFBundleVersion: "53"
         WKApplication: true
         WKRunsIndependentlyOfCompanionApp: true   # standalone without iPhone
         WKCompanionAppBundleIdentifier: ai.synalux.prism-aac
