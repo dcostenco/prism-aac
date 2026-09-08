@@ -82,7 +82,7 @@ https://github.com/dcostenco/synalux-docs/releases/download/v1.0-module-videos/p
 | 🛏 **Bedside Mode** | Full-screen AI chat for phone-in-stand / lying-down use | <img src="e2e/_screenshots/bedside-overlay-open.png" width="120"> |
 | 👁 **Vision Context** | Camera detects objects → suggests relevant phrases | <img src="docs/screenshots/vision-mealtime.png" width="120"> |
 | 👋 **Hands-free** | Head + hand gesture recognition | <img src="docs/screenshots/panel-settings-input-modes.png" width="120"> |
-| ⚙️ **Settings** | 25 languages, motor accommodations, voice + speech cache | <img src="docs/screenshots/panel-settings.png" width="120"> |
+| ⚙️ **Settings** | 25 languages, motor accommodations, voice picker + speech cache | <img src="docs/screenshots/panel-settings.png" width="120"> |
 | ☁️ **Cloud speech and AI** | Optional US$4.99/month allowance for natural voices + cloud AI | <img src="docs/screenshots/cloud-subscription-iphone.png" width="120"> |
 
 ---
@@ -891,8 +891,7 @@ Visual first-then schedule for routine + transition support. Each step is a pict
 | I Hear It (Sound Match) | Auditory discrimination + vocabulary |
 | Turn Taker | Social turn-taking practice |
 
-- Free tier: Bubble Pop, Color Hunt, My Story (3 games)
-- Paid tier: all 12
+- All 12 games are free; no game is gated by plan
 - Per-game data feeds `services/adaptiveEngine.ts` — utterance length / category / time-of-day / outcome → suggests the next game
 - All games disable AAC tile categories that aren't relevant to that game's vocabulary, so the child isn't distracted
 
@@ -1115,7 +1114,7 @@ SCENE=schoolwork CONF=0.80 PHRASES=Help please|I don't understand|Done   BADGE=�
 ---
 
 ### ⚙️ Settings
-25 languages / 28 locales, theme (light / dark / high-contrast), grid size (4–20 tiles), motor accommodations (math hold-time dwell, two-hit magnify, head-tracking dwell, gesture sensitivity, drift auto-disable), voice picker (account plan permitting), speech-cache usage and retention, AI autocorrect on/off, notifications, toolbar customization, history region picker, Synalux Account with the Cloud plan.
+25 languages / 28 locales, theme (light / dark / high-contrast), grid size (4–20 tiles), motor accommodations (math hold-time dwell, two-hit magnify, head-tracking dwell, gesture sensitivity, drift auto-disable), voice picker (free for everyone), speech-cache usage and retention, AI autocorrect on/off, notifications, toolbar customization, history region picker, Synalux Account with the Cloud plan.
 
 ![Settings — language picker + theme toggle](docs/screenshots/panel-settings.png)
 
@@ -1175,14 +1174,14 @@ Two plans: **Free** and **Prism AAC Cloud**. No trial, no card required for Free
 | Available device voices and cached speech | ✅ | ✅ |
 | On-device AI and emergency communication | ✅ | ✅ |
 | iOS + Web (PWA) | ✅ | ✅ |
-| Newly generated natural-voice speech | — | 50,000 characters / month |
+| Newly generated natural-voice speech | not included (still served free on the public speech route until metering starts) | 50,000 characters / month |
 | Cloud AI requests (chat, autocorrect, prediction, tutor) | — | 100 / month |
 | Allowance reset | — | 1st of each month, 00:00 UTC |
 
 - Bought in the iOS app (Apple in-app purchase, StoreKit 2) or on the web (Stripe); both grant the same account and one active subscription per account. Cancelling one channel never erases the other.
 - Cached playback and device speech never use the allowance. When the allowance is used up, cloud speech and cloud AI pause until the reset — nothing over the board is ever blocked.
 - Settings → Synalux Account → **Cloud speech and AI** shows the plan, allowance and renewal terms, with Subscribe with Apple, Restore Apple purchases, Manage subscription and Refresh cloud plan.
-- Features that older builds gated by "paid tier" (voice picker, AI pictograms, SMS provider, full emergency payload) still key on the account plan set by a web (Stripe) subscription; an Apple-only subscription does not yet set that plan. Tracked as an open inconsistency.
+- Several features still key on the account plan that a web (Stripe) subscription sets — AI pictograms, word prediction boosts, AAC Chat providers, caregiver contacts, marketplace installs, the SMS provider, the full emergency payload — and an Apple-only subscription does not set that plan. Tracked as an open inconsistency; the voice picker and all 12 games are free for everyone.
 
 <p align="center">
   <img src="docs/screenshots/cloud-subscription-iphone.png" alt="iOS app: Settings → Synalux Account → Cloud speech and AI — allowance, renewal terms, Subscribe with Apple · $4.99/month, Restore Apple purchases" width="260" />

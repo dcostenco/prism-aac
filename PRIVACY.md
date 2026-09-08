@@ -27,7 +27,7 @@ Settings, vocabulary, boards, schedule, caregiver notes and the speech cache sta
 Rate limits are applied per IP address; IP addresses are not linked to a person.
 
 ### Usage analytics (all plans)
-The web app sends usage and error telemetry to Datadog (a processor in the US), and the iOS app sends it to Synalux, which forwards it to Datadog: sessions, screens and features used, errors, performance timings, language, country, device and browser type, and the plan tier. The identifier is a salted hash, not your email or name. For a signed-in account the session is linked to the account so support can investigate problems you report. Telemetry never includes typed text, spoken phrases, board contents, notes or contacts. It is kept for Datadog's standard retention period, not indefinitely.
+The web app and the iOS app report usage, error and performance telemetry to Datadog (a processor in the US): sessions, screens and features used, errors, crash reports on iOS, performance timings, language, country, device and browser type, and the plan tier. Anonymous sessions carry no user identifier. A signed-in session is tagged with a truncated one-way SHA-256 hash of the account email (not the email itself) and the plan tier, so support can count affected users for a problem you report. The iOS app also sends app-event telemetry (feature usage and errors, no content) to Synalux, where it is stored in the Synalux database for troubleshooting. Telemetry never includes typed text, spoken phrases, board contents, notes or contacts. Datadog keeps its copy for its standard retention period; Synalux's copy is retained for troubleshooting and is not linked to communication content.
 
 ### With a Synalux account
 When you sign in (Sign in with Apple on iOS; Google or email + password on the web) and use cloud features:
@@ -48,7 +48,7 @@ If you subscribe to the optional Cloud plan:
 |------|---------|---------|-----------|
 | Apple: transaction and subscription identifiers, product, environment, status, expiry | Recognize and renew the purchase on your account | Synalux servers | Until account deletion |
 | Web: Stripe customer and subscription identifiers | Same, for web purchases | Synalux servers and Stripe | Until account deletion |
-| Monthly usage counters | Enforce the 50,000-character / 100-request allowance | Synalux servers: per request a random id, kind (speech or AI), unit count and month — never the text | Current and previous month |
+| Monthly usage counters | Enforce the 50,000-character / 100-request allowance | Synalux servers: per request a random id, kind (speech or AI), unit count and month — never the text | Until account deletion |
 
 Payment card details are handled by Apple or Stripe and never reach Synalux. Nothing about the subscription is shared with the voice or AI providers.
 

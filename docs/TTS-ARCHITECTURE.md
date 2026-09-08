@@ -53,7 +53,7 @@ The optional Prism AAC Cloud subscription (US$4.99/month) provides 50,000 newly 
 
 ## Settings
 
-`Settings → Voice`: voice picker per language (account plan permitting), speed, volume, speech-cache usage with Clear and retention on/off. `Settings → Synalux Account → Cloud speech and AI`: plan, allowance, subscribe / restore / manage.
+`Settings → Voice`: voice picker per language (free; the voice catalog endpoint is public), speed, volume, speech-cache usage with Clear and retention on/off. `Settings → Synalux Account → Cloud speech and AI`: plan, allowance, subscribe / restore / manage.
 
 ## Service files
 

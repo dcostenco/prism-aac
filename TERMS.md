@@ -14,7 +14,7 @@ Prism AAC is an Augmentative and Alternative Communication application designed 
 
 | Plan | Cost | What it includes |
 |------|------|------------------|
-| Free | $0, no account required | Communication boards, keyboard and saved phrases, available device voices and cached speech, on-device AI, emergency communication, 3 games, iOS + Web (PWA) |
+| Free | $0, no account required | Communication boards, keyboard and saved phrases, available device voices and cached speech, voice picker, all games, on-device AI, emergency communication, iOS + Web (PWA) |
 | Prism AAC Cloud | US$4.99 per month, auto-renewing | Everything in Free plus a monthly allowance of 50,000 newly generated natural-voice speech characters and 100 cloud AI requests |
 
 **Cloud plan terms**
