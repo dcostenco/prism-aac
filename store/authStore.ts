@@ -8,6 +8,7 @@ import {
 } from '@/services/predictionMemoryService';
 import { destroyAacHrr } from '@/services/hrrContext';
 import { useSettingsStore } from '@/store/settingsStore';
+import { clearVerifiedLocalAccess } from '@/services/webAccessService';
 
 interface AuthState {
   profile: SynaluxProfile | null;
@@ -48,6 +49,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   clear: () => {
+    clearVerifiedLocalAccess();
     clearTranslationCache();
     clearTextCorrectCache();
     clearPredictionMemoryCache();

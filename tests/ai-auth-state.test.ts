@@ -176,15 +176,19 @@ describe('getSideloadStatus', () => {
 // ── synaluxSignInUrl / synaluxSignOutUrl ──────────────────────────────────────
 
 describe('synaluxSignInUrl', () => {
+  it('uses the relative AAC path accepted by the real portal sign-in page', () => {
+    expect(new URL(synaluxSignInUrl()).searchParams.get('callbackUrl')).toBe('/prism-aac');
+    expect(new URL(synaluxSignOutUrl()).searchParams.get('callbackUrl')).toBe('/prism-aac');
+  });
   it('returns a URL string', () => {
     const url = synaluxSignInUrl();
     expect(typeof url).toBe('string');
     expect(url.length).toBeGreaterThan(0);
   });
 
-  it('URL contains google sign-in path', () => {
+  it('opens the portal Google sign-in page without NextAuth GET callback expansion', () => {
     const url = synaluxSignInUrl();
-    expect(url).toContain('/api/auth/signin/google');
+    expect(new URL(url).pathname).toBe('/auth');
   });
 
   it('URL contains a callbackUrl query parameter', () => {
@@ -223,11 +227,7 @@ describe('synaluxSignOutUrl', () => {
   it('sign-in and sign-out URLs share the same base domain', () => {
     const signIn = synaluxSignInUrl();
     const signOut = synaluxSignOutUrl();
-    const getBase = (u: string) => {
-      const idx = u.indexOf('/api/auth');
-      return u.slice(0, idx);
-    };
+    const getBase = (u: string) => new URL(u).origin;
     expect(getBase(signIn)).toBe(getBase(signOut));
   });
 });
-

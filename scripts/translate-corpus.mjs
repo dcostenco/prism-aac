@@ -79,6 +79,10 @@ const LANGS = {
   ja: { name: 'Japanese', script: 'Japanese', notes: 'Plain/casual register; these are spoken by a child or peer.' },
   ko: { name: 'Korean', script: 'Hangul', notes: 'Use 해요체 — polite but not formal-stiff.' },
   zh: { name: 'Chinese (Simplified)', script: 'Han (Simplified)', notes: '' },
+  // UI matrix only: the existing zh-Hant / zh-HK columns are regional translations
+  // (Taiwan: 設定, Hong Kong: 設置), not OpenCC conversions of zh. zh-Hans stays a copy of zh.
+  'zh-Hant': { name: 'Chinese (Traditional, Taiwan)', script: 'Han (Traditional)', notes: 'Taiwan wording and terminology (e.g. 設定, 訊息, 網路), not a character-by-character conversion of Simplified.' },
+  'zh-HK': { name: 'Chinese (Traditional, Hong Kong)', script: 'Han (Traditional)', notes: 'Hong Kong Standard Written Chinese wording (e.g. 設置, 訊息), not colloquial Cantonese and not a character-by-character conversion of Simplified.' },
   ar: { name: 'Arabic', script: 'Arabic', notes: 'Modern Standard Arabic, simple vocabulary.' },
   hi: { name: 'Hindi', script: 'Devanagari', notes: '' },
   it: { name: 'Italian', script: 'Latin', notes: '' },

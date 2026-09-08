@@ -116,7 +116,11 @@ struct PrismWebView: UIViewRepresentable {
         // the service worker handles offline via its own cache layer.
         // Old: returnCacheDataElseLoad never revalidated → deploys stuck.
         #if DEBUG
-        let url = URL(string: "http://localhost:3001/prism-aac")!
+        // Isolated simulator runs can coexist with another local dev service.
+        // Only the port changes; the trusted localhost origin remains fixed.
+        let configuredPort = ProcessInfo.processInfo.environment["PRISM_AAC_DEV_PORT"].flatMap(Int.init)
+        let devPort = configuredPort.flatMap { (1...65535).contains($0) ? $0 : nil } ?? 3001
+        let url = URL(string: "http://localhost:\(devPort)/prism-aac")!
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
         #else
         let url = URL(string: "https://synalux.ai/prism-aac")!
@@ -182,6 +186,11 @@ struct PrismWebView: UIViewRepresentable {
                 window.webkit.messageHandlers.prismNative.postMessage({
                     action: 'signInWithApple'
                 });
+            },
+            subscription: function(request) {
+                window.webkit.messageHandlers.prismNative.postMessage({
+                    action: 'subscription', request: request
+                });
             }
         };
         // Watch→web bridge: native side calls window.prismOnWatchMessage(payload)
@@ -236,6 +245,11 @@ struct PrismWebView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             activeWebView = webView
+            AACSubscriptionStore.shared.onTransactionsChanged = { [weak webView] in
+                guard let webView, BridgeSecurityPolicy.isAllowedSubscriptionFrame(
+                    pageURL: webView.url, frameURL: webView.url, isMainFrame: true) else { return }
+                webView.evaluateJavaScript("window.dispatchEvent(new Event('prismSubscriptionChanged'))", completionHandler: nil)
+            }
             // Install the Watch→web forwarder now that the page is loaded and
             // window.prismOnWatchMessage exists (either from the injected default
             // no-op or from the web app's services/watchAlertBridge.ts handler).
@@ -403,6 +417,51 @@ struct PrismWebView: UIViewRepresentable {
                       message.frameInfo.isMainFrame else { return }
                 activeWebView = message.webView
                 performSignInWithApple()
+            case "subscription":
+                guard let webView = message.webView,
+                      BridgeSecurityPolicy.isAllowedSubscriptionFrame(pageURL: webView.url,
+                        frameURL: message.frameInfo.request.url, isMainFrame: message.frameInfo.isMainFrame),
+                      let request = body["request"] as? [String: Any],
+                      let requestID = request["id"] as? String, UUID(uuidString: requestID) != nil,
+                      let operation = request["operation"] as? String else { return }
+                Task { @MainActor [weak webView] in
+                    guard let webView else { return }
+                    var response: [String: Any] = ["id": requestID]
+                    do {
+                        let store = AACSubscriptionStore.shared
+                        switch operation {
+                        case "product": response["result"] = try await store.product()
+                        case "purchase":
+                            guard let rawToken = request["accountToken"] as? String,
+                                  let token = UUID(uuidString: rawToken) else {
+                                throw AACSubscriptionStore.PurchaseError.accountMismatch
+                            }
+                            response["result"] = try await store.purchase(accountToken: token)
+                        case "restore", "sync":
+                            response["result"] = try await store.transactions(restore: operation == "restore")
+                        case "finish":
+                            guard let transactionID = request["transactionId"] as? String,
+                                  UInt64(transactionID) != nil else {
+                                throw AACSubscriptionStore.PurchaseError.unverified
+                            }
+                            await store.finish(transactionID: transactionID)
+                            response["result"] = ["status": "finished"]
+                        case "manage":
+                            guard let scene = webView.window?.windowScene else {
+                                throw AACSubscriptionStore.PurchaseError.unavailable
+                            }
+                            try await store.manage(in: scene)
+                            response["result"] = ["status": "managed"]
+                        default: throw AACSubscriptionStore.PurchaseError.unavailable
+                        }
+                    } catch { response["error"] = error.localizedDescription }
+                    // Navigation during a system purchase must not deliver a receipt to another page.
+                    guard BridgeSecurityPolicy.isAllowedSubscriptionFrame(
+                            pageURL: webView.url, frameURL: webView.url, isMainFrame: true),
+                          let data = try? JSONSerialization.data(withJSONObject: response),
+                          let json = String(data: data, encoding: .utf8) else { return }
+                    webView.evaluateJavaScript("window.prismSubscriptionResult && window.prismSubscriptionResult(\(json))", completionHandler: nil)
+                }
             case "openSettings":
                 // Security: origin + main-frame validation (same pattern as askAI / startVoice)
                 guard let pageURL = message.webView?.url,

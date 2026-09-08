@@ -1,4 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
+import { webcrypto } from 'node:crypto';
+vi.mock('@/lib/datadog', () => ({ ddAction: vi.fn() }));
 
 /**
  * Tests for the two-tier TTS endpoint fallback in services/azureTTS.ts.
@@ -50,6 +53,8 @@ class MockAudioContext {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.resetModules();
+  vi.stubGlobal('indexedDB', new IDBFactory());
+  vi.stubGlobal('crypto', webcrypto);
   MockBufferSource.startCalls = 0;
   MockBufferSource.lastInstance = null;
   MockAudioContext.decodeCalls = 0;
@@ -60,6 +65,68 @@ beforeEach(() => {
     MockAudioContext as unknown as typeof AudioContext;
   (window as unknown as { AudioContext: typeof AudioContext }).AudioContext =
     MockAudioContext as unknown as typeof AudioContext;
+});
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+
+describe('saved speech playback', () => {
+  const phrase = 'Please open the window';
+  const args = [phrase, 'en-US', 'friendly', 0.5, 1, '', 'Alex', true] as const;
+  function identifiedAudio(backend: 'inworld' | 'azure' = 'inworld', degraded = false) {
+    return new Response(new ArrayBuffer(1024), { headers: {
+      'Content-Type': 'audio/mpeg', 'X-TTS-Backend': backend,
+      'X-TTS-Voice': backend === 'inworld' ? 'Alex' : 'en-US-JennyNeural',
+      'X-TTS-Model': backend === 'inworld' ? 'inworld-tts-2' : 'azure-speech-rest-v1',
+      ...(degraded ? { 'X-TTS-Inworld-Failed': 'true' } : {}),
+    } });
+  }
+  it.each(['inworld', 'azure'] as const)('replays %s audio after reload offline with zero further requests', async backend => {
+    mockFetch({ '/tts/public': () => identifiedAudio(backend) });
+    const first = await import('@/services/azureTTS');
+    const { speechAudioCache } = await import('@/services/speechAudioCache');
+    expect((await first.speakAzure(...args)).success).toBe(true);
+    await vi.waitFor(async () => expect((await speechAudioCache.stats('guest')).clips).toBe(1));
+    expect(fetch).toHaveBeenCalledTimes(1);
+    first.stopAzureAudio();
+    vi.resetModules();
+    const reloaded = await import('@/services/azureTTS');
+    expect((await reloaded.speakAzure(...args, true)).success).toBe(true);
+    expect(MockBufferSource.startCalls).toBe(2);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect((await reloaded.speakAzure(phrase, 'en-US', 'friendly', 0.7, 1, '', 'Alex', true, true)).success).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retain degraded audio as the selected voice', async () => {
+    mockFetch({ '/tts/public': () => identifiedAudio('azure', true) });
+    const { speakAzure } = await import('@/services/azureTTS');
+    expect((await speakAzure(...args)).success).toBe(true);
+    expect((await speakAzure(...args, true)).success).toBe(false);
+    expect(MockBufferSource.startCalls).toBe(1);
+  });
+
+  it('does not play a delayed cache hit after Stop', async () => {
+    const { speakAzure, stopAzureAudio } = await import('@/services/azureTTS');
+    const { speechAudioCache } = await import('@/services/speechAudioCache');
+    let resolve!: (value: null) => void;
+    vi.spyOn(speechAudioCache, 'get').mockReturnValue(new Promise(r => { resolve = r; }));
+    const speaking = speakAzure(...args, true);
+    stopAzureAudio();
+    resolve(null);
+    expect((await speaking).cancelled).toBe(true);
+    expect(MockBufferSource.startCalls).toBe(0);
+  });
+
+  it('falls through a corrupt saved clip to a fresh synthesis', async () => {
+    mockFetch({ '/tts/public': () => identifiedAudio() });
+    const { speakAzure, clearTtsCache } = await import('@/services/azureTTS');
+    const { speechAudioCache } = await import('@/services/speechAudioCache');
+    await speakAzure(...args);
+    await vi.waitFor(async () => expect((await speechAudioCache.stats('guest')).clips).toBe(1));
+    clearTtsCache();
+    vi.spyOn(MockAudioContext.prototype, 'decodeAudioData').mockRejectedValueOnce(new Error('Corrupt clip'));
+    expect((await speakAzure(...args)).success).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
 });
 
 // Default Gemini handler — always fail so the existing Inworld
@@ -220,6 +287,56 @@ describe('speakAzure — two-tier endpoint strategy', () => {
 // 72B TTS lands the SERVER swaps the backend behind that URL — this
 // client code stays the same.
 describe('speakAzure — Inworld-first tier order (Gemini is last-resort)', () => {
+  it.each([401, 402, 403, 429])('does not evade a cloud access rejection (%i) through another provider', async status => {
+    mockFetch({ '/tts/public': () => new Response('', { status }) });
+    const { speakAzure } = await import('@/services/azureTTS');
+    expect((await speakAzure('Access rejected', 'en-US', 'friendly', 0.5, 1, '')).success).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(MockBufferSource.startCalls).toBe(0);
+  });
+
+  it('does not evade an authenticated payment rejection through Gemini', async () => {
+    mockFetch({ '/tts/public': () => new Response('', { status: 502 }), '/tts': () => new Response('', { status: 402 }) });
+    const { speakAzure } = await import('@/services/azureTTS');
+    expect((await speakAzure('Allowance used', 'en-US', 'friendly', 0.5, 1, '')).success).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not repeat Inworld and Azure on the auth route after the public route already tried both', async () => {
+    mockFetch({ '/tts/public': () => new Response('', { status: 502, headers: { 'X-TTS-Backend': 'all-failed' } }) });
+    const { speakAzure } = await import('@/services/azureTTS');
+    expect((await speakAzure('Both unavailable', 'en-US', 'friendly', 0.5, 1, '')).success).toBe(false);
+    expect(vi.mocked(fetch).mock.calls.map(([url]) => String(url))).toHaveLength(2);
+    expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/tts'))).toBe(false);
+  });
+
+  it('aborts a slow Gemini fallback at the original deadline and permits local speech', async () => {
+    const { speakAzure } = await import('@/services/azureTTS');
+    const { speechAudioCache } = await import('@/services/speechAudioCache');
+    vi.spyOn(speechAudioCache, 'get').mockResolvedValue(null);
+    vi.useFakeTimers();
+    const signals: AbortSignal[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      signals.push(init!.signal!);
+      if (!url.includes('/prism-aac/tts/public')) {
+        await new Promise(resolve => setTimeout(resolve, 6_000));
+        return new Response('', { status: 503 });
+      }
+      return new Promise<Response>((_resolve, reject) => {
+        init!.signal!.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true });
+      });
+    }));
+    try {
+      const speaking = speakAzure('Use local speech after the deadline', 'en-US', 'friendly', 0.5, 1, '');
+      await vi.advanceTimersByTimeAsync(6_100);
+      expect(signals).toHaveLength(2);
+      expect(signals[0]).toBe(signals[1]);
+      await vi.advanceTimersByTimeAsync(1_900);
+      expect(await speaking).toEqual({ success: false });
+      expect(signals[1].aborted).toBe(true);
+      expect(MockBufferSource.startCalls).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
   function audioOkWav(bytes = 1024): Response {
     return new Response(new ArrayBuffer(bytes), {
       status: 200,
@@ -266,7 +383,7 @@ describe('speakAzure — Inworld-first tier order (Gemini is last-resort)', () =
       }
       if (url.endsWith('/tts')) {
         callOrder.push('auth');
-        return new Response('', { status: 401 });
+        return new Response('', { status: 503 });
       }
       return new Response('', { status: 500 });
     }));
@@ -284,7 +401,7 @@ describe('speakAzure — Inworld-first tier order (Gemini is last-resort)', () =
         return audioOkWav();
       }
       if (url.endsWith('/tts/public')) return new Response('', { status: 502 });
-      if (url.endsWith('/tts')) return new Response('', { status: 401 });
+      if (url.endsWith('/tts')) return new Response('', { status: 503 });
       return new Response('', { status: 500 });
     }));
     const { speakAzure } = await import('@/services/azureTTS');
@@ -303,7 +420,7 @@ describe('speakAzure — Inworld-first tier order (Gemini is last-resort)', () =
         return audioOkWav();
       }
       if (url.endsWith('/tts/public')) return new Response('', { status: 502 });
-      if (url.endsWith('/tts')) return new Response('', { status: 401 });
+      if (url.endsWith('/tts')) return new Response('', { status: 503 });
       return new Response('', { status: 500 });
     }));
     const { speakAzure } = await import('@/services/azureTTS');

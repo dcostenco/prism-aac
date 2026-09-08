@@ -11,6 +11,22 @@ import UIKit
 /// BridgeSecurityTests is a protocol violation.
 enum BridgeSecurityPolicy {
 
+    /// Purchase receipts may only reach the AAC main frame on our HTTPS host.
+    static func isAllowedSubscriptionFrame(pageURL: URL?, frameURL: URL?, isMainFrame: Bool) -> Bool {
+        guard isMainFrame, let pageURL, let frameURL else { return false }
+        func allowed(_ url: URL) -> Bool {
+            let isAAC = url.path == "/prism-aac" || url.path.hasPrefix("/prism-aac/")
+            guard isAAC else { return false }
+            if url.scheme == "https", url.host == "synalux.ai", url.port == nil || url.port == 443 { return true }
+            #if DEBUG
+            if url.scheme == "http", url.host == "localhost" { return true }
+            #endif
+            return false
+        }
+        return allowed(pageURL) && allowed(frameURL)
+            && pageURL.scheme == frameURL.scheme && pageURL.host == frameURL.host && pageURL.port == frameURL.port
+    }
+
     // MARK: - Origin allow-list
 
     /// Returns true only for origins we control.

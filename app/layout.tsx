@@ -5,6 +5,8 @@ import "./globals.css";
 import HtmlLangSync from "@/components/HtmlLangSync";
 import DatadogInit from "@/components/DatadogInit";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
+import WebSignInGate from "@/components/WebSignInGate";
+import ApplePurchaseRecovery from "@/components/ApplePurchaseRecovery";
 import { PRISM_AAC_MANIFEST_PATH } from "@/lib/appPaths";
 import { buildServiceWorkerKillswitchScript } from "@/lib/serviceWorkerKillswitch";
 
@@ -129,7 +131,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ServiceWorkerRegistrar />
         <HtmlLangSync />
         <DatadogInit />
-        {children}
+        <ApplePurchaseRecovery />
+        <WebSignInGate>{children}</WebSignInGate>
       </body>
     </html>
   );

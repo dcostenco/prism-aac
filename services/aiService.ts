@@ -21,6 +21,7 @@
 import { NoteAction } from '@/types';
 import { DEFAULT_CATEGORIES } from '@/constants/categories';
 import { SYNALUX_API, SYNALUX_PORTAL_ORIGIN, timeoutSignal } from '@/lib/portalConfig';
+import { PRISM_AAC_BASE_PATH } from '@/lib/appPaths';
 import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { MODEL_REGISTRY, SIDELOAD_ORDER } from '@/constants/modelRegistry';
@@ -249,13 +250,21 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
   return { email, name, plan, isPlatformAdmin };
 }
 
+function aacAuthReturnPath(): string {
+  // /auth accepts relative paths only. Standalone origins cannot receive the
+  // portal's session cookie, so authentication returns to canonical AAC.
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : PRISM_AAC_BASE_PATH;
+  return (pathname === PRISM_AAC_BASE_PATH || pathname.startsWith(`${PRISM_AAC_BASE_PATH}/`))
+    && !pathname.includes('\\') && !/[\x00-\x1f\x7f]/.test(pathname)
+    ? pathname : PRISM_AAC_BASE_PATH;
+}
+
 export function synaluxSignInUrl(): string {
-  // Use origin+pathname only — no query string or hash to prevent open-redirect
-  // via attacker-controlled params (e.g. prism-aac.vercel.app?redirect=evil.com).
-  const callback = typeof window !== 'undefined'
-    ? `${window.location.origin}${window.location.pathname}`
-    : `${SYNALUX_PORTAL_ORIGIN}/prism-aac`;
-  return `${SYNALUX_PORTAL_ORIGIN}/api/auth/signin/google?callbackUrl=${encodeURIComponent(callback)}`;
+  const callback = aacAuthReturnPath();
+  // Go directly to the existing CSRF-safe Google sign-in page. NextAuth's
+  // GET /signin/google expands the callback to an absolute URL before
+  // redirecting to /auth, whose allowlist intentionally rejects absolutes.
+  return `${SYNALUX_PORTAL_ORIGIN}/auth?callbackUrl=${encodeURIComponent(callback)}`;
 }
 
 export async function signInWithAppleNative(): Promise<boolean> {
@@ -306,9 +315,7 @@ export function isNativeiOS(): boolean {
 }
 
 export function synaluxSignOutUrl(): string {
-  const callback = typeof window !== 'undefined'
-    ? `${window.location.origin}${window.location.pathname}`
-    : `${SYNALUX_PORTAL_ORIGIN}/prism-aac`;
+  const callback = aacAuthReturnPath();
   return `${SYNALUX_PORTAL_ORIGIN}/api/auth/signout?callbackUrl=${encodeURIComponent(callback)}`;
 }
 
