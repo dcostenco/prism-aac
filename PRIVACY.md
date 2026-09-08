@@ -39,7 +39,7 @@ When you sign in (Sign in with Apple on iOS; Google or email + password on the w
 | AI chat messages | Cloud AI processing | Processed in memory, not stored | Not retained after response |
 | Contact list | Messaging (AAC Chat) | Device Keychain + Synalux servers | Until removed by caregiver |
 | OAuth tokens | Provider integration (Gmail, etc.) | Synalux servers (encrypted) | Until disconnected |
-| Apple sign-in identifier | Account identity on iOS | Synalux servers (encrypted); Apple token in the device Keychain | Until account deletion |
+| Apple sign-in identifier (the stable user id Apple issues for this app) | Account identity on iOS | Synalux servers; the Apple identity token itself is passed to the app's web view during sign-in and not stored | Until account deletion |
 
 ### Prism AAC Cloud subscription
 If you subscribe to the optional Cloud plan:
@@ -48,7 +48,7 @@ If you subscribe to the optional Cloud plan:
 |------|---------|---------|-----------|
 | Apple: transaction and subscription identifiers, product, environment, status, expiry | Recognize and renew the purchase on your account | Synalux servers | Until account deletion |
 | Web: Stripe customer and subscription identifiers | Same, for web purchases | Synalux servers and Stripe | Until account deletion |
-| Monthly usage counters | Enforce the 50,000-character / 100-request allowance | Synalux servers: per request a random id, kind (speech or AI), unit count and month — never the text | Until account deletion |
+| Monthly usage counters | Enforce the 50,000-character / 100-request allowance | Synalux servers: per request a random id, the account id, kind (speech or AI), unit count, month, state and timestamps — never the text | Until account deletion |
 
 Payment card details are handled by Apple or Stripe and never reach Synalux. Nothing about the subscription is shared with the voice or AI providers.
 

@@ -1181,7 +1181,7 @@ Two plans: **Free** and **Prism AAC Cloud**. No trial, no card required for Free
 - Bought in the iOS app (Apple in-app purchase, StoreKit 2) or on the web (Stripe); both grant the same account and one active subscription per account. Cancelling one channel never erases the other.
 - Cached playback and device speech never use the allowance. When the allowance is used up, cloud speech and cloud AI pause until the reset — nothing over the board is ever blocked.
 - Settings → Synalux Account → **Cloud speech and AI** shows the plan, allowance and renewal terms, with Subscribe with Apple, Restore Apple purchases, Manage subscription and Refresh cloud plan.
-- Several features still key on the account plan that a web (Stripe) subscription sets — AI pictograms, word prediction boosts, AAC Chat providers, caregiver contacts, marketplace installs, the SMS provider, the full emergency payload — and an Apple-only subscription does not set that plan. Tracked as an open inconsistency; the voice picker and all 12 games are free for everyone.
+- Two open inconsistencies, tracked: (1) word prediction boosts, AAC Chat providers, caregiver contacts, the SMS provider and the full emergency payload key on the AAC plan that only a web (Stripe) subscription sets, so an Apple-only subscriber does not get them; (2) AI pictograms and marketplace installs key on the Synalux platform plan, not the AAC Cloud plan, so Cloud subscribers on either channel do not get them. The voice picker and all 12 games are free for everyone.
 
 <p align="center">
   <img src="docs/screenshots/cloud-subscription-iphone.png" alt="iOS app: Settings → Synalux Account → Cloud speech and AI — allowance, renewal terms, Subscribe with Apple · $4.99/month, Restore Apple purchases" width="260" />
