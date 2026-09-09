@@ -1,0 +1,31 @@
+name: Lockfile guard
+
+# package-lock.json must be what the canonical npm writes, or `npm ci` refuses
+# it and the deploy platform silently falls back to `npm install` — which
+# re-resolves transitive dependencies on every build, so dependency versions
+# stop being a property of the commit. See scripts/check-lockfile-drift.mjs.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - scripts/check-lockfile-drift.mjs
+      - .github/workflows/lockfile-guard.yml
+
+jobs:
+  lockfile-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          # The script pins the npm it regenerates with; this only needs a Node
+          # that can run it.
+          node-version: 22
+      - name: package-lock.json reproduces under the canonical npm
+        run: npm run check:lockfile
