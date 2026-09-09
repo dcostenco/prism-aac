@@ -7,11 +7,13 @@ vi.mock('@/services/webAccessService', async importOriginal => ({
 }));
 vi.mock('@/services/aiService', () => ({ isNativeiOS: () => mocks.native,
   synaluxSignInUrl: () => 'https://synalux.ai/auth?callbackUrl=%2Fprism-aac' }));
-vi.mock('@/store/authStore', () => ({ useAuthStore: (select: any) => select({ profile: mocks.profile }) }));
+vi.mock('@/store/authStore', () => ({
+  useAuthStore: (select: (s: { profile: typeof mocks.profile }) => unknown) => select({ profile: mocks.profile }) }));
 vi.mock('@/lib/datadog', () => ({ ddAction: mocks.ddAction }));
 import WebSignInGate from '@/components/WebSignInGate';
 import { useSettingsStore } from '@/store/settingsStore';
 import { clearVerifiedLocalAccess } from '@/services/webAccessService';
+import { useMessageStore } from '@/store/messageStore';
 
 const board = <button>Communication board action</button>;
 async function tick(ms: number) { await act(async () => { await vi.advanceTimersByTimeAsync(ms); }); }
@@ -19,6 +21,7 @@ async function tick(ms: number) { await act(async () => { await vi.advanceTimers
 beforeEach(() => {
   vi.clearAllMocks(); mocks.native = false; mocks.profile = null;
   clearVerifiedLocalAccess();
+  useMessageStore.setState({ text: '' });
   vi.stubEnv('NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE', '1');
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'performance'] });
   mocks.access.mockResolvedValue({ state: 'preview', remainingMs: 60_000 });
@@ -63,6 +66,34 @@ describe('full web sign-in gate', () => {
     act(() => clearVerifiedLocalAccess()); await tick(1);
     expect(screen.queryByText('Communication board action')).not.toBeInTheDocument();
     expect(gateOutcomes()).toEqual(['signed_in', 'offline_continuity', 'sign_in_required']);
+  });
+  // Three outcomes decide three different things: whether the rollout is on,
+  // whether the network answered, and whether continuity carried the user.
+  // Collapsing any of them into signed_in would hide it entirely.
+  it('separates a disabled rollout from a signed-in account and from an outage', async () => {
+    mocks.access.mockResolvedValue({ state: 'disabled', remainingMs: 0 });
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    expect(screen.getByText('Communication board action')).toBeVisible();
+    expect(gateOutcomes()).toEqual(['disabled']);
+  });
+  it('reports an outage that no local session can carry', async () => {
+    mocks.access.mockRejectedValue(new Error('Offline'));
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    expect(screen.queryByText('Communication board action')).not.toBeInTheDocument();
+    expect(screen.getByRole('alert')).toBeVisible();
+    expect(gateOutcomes()).toEqual(['error']);
+  });
+  // Turning the rollout off server-side must not revoke a verified session:
+  // that would strand a nonverbal user at the next outage.
+  it('keeps offline continuity when the rollout is switched off', async () => {
+    mocks.access.mockResolvedValue({ state: 'signed_in', remainingMs: 0 });
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    mocks.access.mockResolvedValue({ state: 'disabled', remainingMs: 0 });
+    fireEvent(window, new Event('focus')); await tick(1);
+    mocks.access.mockRejectedValue(new Error('Offline'));
+    fireEvent(window, new Event('focus')); await tick(1);
+    expect(screen.getByText('Communication board action')).toBeVisible();
+    expect(gateOutcomes()).toEqual(['signed_in', 'disabled', 'offline_continuity']);
   });
   it('replaces all app interactions after one minute and focuses sign-in information', async () => {
     render(<WebSignInGate>{board}</WebSignInGate>);
@@ -154,6 +185,23 @@ describe('full web sign-in gate', () => {
 
   // The poll runs on every focus and every five minutes. Reporting per poll
   // would bury the one event that matters under an unattended tablet's noise.
+  // The press that only warns about an unsaved message never leaves the page.
+  // Counting it would make departures outnumber arrivals at sign-in.
+  it('counts a departure for sign-in, not a press that stayed on the page', async () => {
+    render(<WebSignInGate>{board}</WebSignInGate>);
+    await tick(1); await tick(60_000);
+    const signIn = screen.getByRole('button', { name: 'Continue to Google' });
+    // A message the user still needs, and a browser that will not store it.
+    useMessageStore.setState({ text: 'I need help' });
+    const blocked = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('denied'); });
+    fireEvent.click(signIn);
+    expect(screen.getByText(/could not save your unfinished message/)).toBeVisible();
+    expect(gateOutcomes()).not.toContain('sign_in_clicked');
+    // The second press is a real departure: it opens the sign-in tab.
+    fireEvent.click(signIn);
+    expect(gateOutcomes().filter(o => o === 'sign_in_clicked')).toEqual(['sign_in_clicked']);
+    blocked.mockRestore();
+  });
   it('reports one continuity episode however many polls fail', async () => {
     mocks.access.mockResolvedValue({ state: 'signed_in', remainingMs: 0 });
     render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);

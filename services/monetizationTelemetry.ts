@@ -41,7 +41,18 @@ export type CloudPlanPlatform = 'ios' | 'web';
  * reporting is contained here: an observability fault must never cost a user
  * their communication or their subscription.
  */
+/**
+ * RUM ingestion is billed, so no defect in this file or its callers may turn
+ * into an open-ended spend. A tab that has produced this many monetization
+ * events has already reported everything the funnel can use; the rest is
+ * dropped silently. Normal use is well under ten.
+ */
+const SESSION_EVENT_BUDGET = 40;
+let spent = 0;
+
 function report(action: string, context: Record<string, string>): void {
+  if (spent >= SESSION_EVENT_BUDGET) return;
+  spent++;
   try { ddAction(action, context); } catch { /* telemetry is never load-bearing */ }
 }
 
@@ -66,8 +77,25 @@ const OFFER_IMPRESSION_KEY = 'prism-aac-offer-impressions';
 const IMPRESSION_LIMIT = 20;
 const reportedImpressions = new Set<string>();
 
-/** Test-only. Production has no reason to forget an impression. */
-export function resetOfferImpressions(): void {
+/**
+ * A visitor key that never stores the account. The stored list must not become
+ * a readable roster of who used a shared device, so the account is folded to a
+ * short digest first. This is a de-duplication key held on the device, not an
+ * identifier that is transmitted; the RUM user context has its own SHA-256.
+ */
+export function offerImpressionKey(platform: string, account: string): string {
+  let hash = 0x811c9dc5;
+  const normalized = account.trim().toLowerCase();
+  for (let i = 0; i < normalized.length; i++) {
+    hash ^= normalized.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return `${platform}:${hash.toString(36)}`;
+}
+
+/** Called on sign-out, and by tests. The next person is a new visitor. */
+export function resetMonetizationTelemetry(): void {
+  spent = 0;
   reportedImpressions.clear();
   try { sessionStorage.removeItem(OFFER_IMPRESSION_KEY); } catch { /* storage unavailable */ }
 }

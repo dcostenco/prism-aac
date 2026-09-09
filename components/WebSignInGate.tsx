@@ -156,9 +156,15 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
       {draftFallback && <p role="alert" className="text-sm">{t('web_signin_draft_fallback')}</p>}
       <button ref={signInButton} type="button" disabled={state === 'checking'} aria-describedby="web-signin-explanation"
         onClick={() => {
-          reportWebGate('sign_in_clicked');
-          if (draftFallback) { window.open(synaluxSignInUrl(), '_blank', 'noopener,noreferrer'); return; }
+          // Reported only where the user actually leaves for sign-in. The
+          // draft-save failure below stays on this page to warn first, and
+          // counting that press would make departures outnumber sign-ins.
+          if (draftFallback) {
+            reportWebGate('sign_in_clicked');
+            window.open(synaluxSignInUrl(), '_blank', 'noopener,noreferrer'); return;
+          }
           if (!rememberWebSignInDraft()) { setDraftFallback(true); return; }
+          reportWebGate('sign_in_clicked');
           window.location.assign(synaluxSignInUrl());
         }} className="aac-btn block w-full rounded-xl bg-blue-700 text-white text-center px-4 py-4 font-semibold">
         {t('continue_to_google')}

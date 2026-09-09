@@ -6,13 +6,20 @@ import { useAuthStore } from '@/store/authStore';
 import { isNativeiOS, type SynaluxProfile } from '@/services/aiService';
 import { fetchAacBillingStatus, hasNativePurchases, manageAacSubscription, nativeSubscription,
   purchaseAacWithApple, purchaseAacWithStripe, restoreAacApplePurchases, AAC_BILLING_UPDATED, type AacBillingStatus } from '@/services/aacBillingService';
-import { firstOfferImpression, reportCloudPlan, type CloudPlanEvent } from '@/services/monetizationTelemetry';
+import { firstOfferImpression, offerImpressionKey, reportCloudPlan, type CloudPlanEvent } from '@/services/monetizationTelemetry';
 
 export default function CloudSubscriptionSettings() {
   const { t } = useT();
   const profile = useAuthStore(s => s.profile);
   const account = profile?.email;
-  const [billing, setBilling] = useState<AacBillingStatus | null>(null);
+  // Keyed by the account it was fetched for. On a shared device the signed-in
+  // account can change while a request is open, and a status that outlived its
+  // account would show one user's entitlement, and count one user's offer,
+  // against another.
+  const [loaded, setLoaded] = useState<{ account?: string; value: AacBillingStatus } | null>(null);
+  const billing = loaded && loaded.account === account ? loaded.value : null;
+  const setBilling = (value: AacBillingStatus) =>
+    setLoaded({ account: useAuthStore.getState().profile?.email, value });
   const [price, setPrice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -113,7 +120,7 @@ export default function CloudSubscriptionSettings() {
   // neither may count the same visitor again.
   useEffect(() => {
     if (!canPurchase || !account) return;
-    if (firstOfferImpression(`${platform}:${account}`)) reportCloudPlan('offer_shown', platform);
+    if (firstOfferImpression(offerImpressionKey(platform, account))) reportCloudPlan('offer_shown', platform);
   }, [canPurchase, platform, account]);
 
   if (!account) return null;
@@ -172,11 +179,14 @@ export default function CloudSubscriptionSettings() {
       onClick={() => void (async () => {
         // The status refresh is a follow-up, not part of the handoff: without
         // the split a flaky refresh reported the successful open as failed.
+        const staysOnPage = billing.manageChannel === 'apple' && hasNativePurchases();
         const opened = await act('manage_failed', async () => {
           await manageAacSubscription(billing.manageChannel!);
           reportCloudPlan('manage_opened', platform);
         });
-        if (opened) await act('refresh_failed', refresh);
+        // Every other channel leaves the page. A fetch issued into an unloading
+        // document aborts, which would report a failure on every success.
+        if (opened && staysOnPage) await act('refresh_failed', refresh);
       })()}>
       {t('cloud_manage_subscription')}
     </button>}

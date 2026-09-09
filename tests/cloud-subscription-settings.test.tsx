@@ -6,7 +6,8 @@ const state = vi.hoisted(() => ({ native: false, nativePurchases: false,
   stripe: vi.fn(), restore: vi.fn(), manage: vi.fn(), ddAction: vi.fn() }));
 vi.mock('@/services/aiService', () => ({ isNativeiOS: () => state.native }));
 vi.mock('@/lib/datadog', () => ({ ddAction: state.ddAction }));
-vi.mock('@/store/authStore', () => ({ useAuthStore: Object.assign((selector: any) => selector({ profile: state.profile }),
+type ProfileSlice = { profile: typeof state.profile };
+vi.mock('@/store/authStore', () => ({ useAuthStore: Object.assign((selector: (s: ProfileSlice) => unknown) => selector({ profile: state.profile }),
   { getState: () => ({ profile: state.profile }) }) }));
 vi.mock('@/services/aacBillingService', () => ({
   AAC_BILLING_UPDATED: 'prismAacBillingUpdated',
@@ -15,7 +16,7 @@ vi.mock('@/services/aacBillingService', () => ({
   restoreAacApplePurchases: state.restore, manageAacSubscription: state.manage,
 }));
 import CloudSubscriptionSettings from '@/components/CloudSubscriptionSettings';
-import { resetOfferImpressions } from '@/services/monetizationTelemetry';
+import { resetMonetizationTelemetry } from '@/services/monetizationTelemetry';
 import { useSettingsStore } from '@/store/settingsStore';
 
 const free = { userId: 'account-test', hasCloudAccess: false, betaExempt: false,
@@ -28,7 +29,7 @@ beforeEach(() => {
   // Tests that simulate an account change mutate this; without the reset the
   // next test starts as a different visitor and impressions look duplicated.
   state.profile = { email: 'tester@example.com', plan: 'free', isPlatformAdmin: false };
-  resetOfferImpressions();
+  resetMonetizationTelemetry();
   state.fetch.mockResolvedValue(free);
   state.restore.mockImplementation(() => state.fetch());
   state.product.mockResolvedValue({ id: free.offer.appleProductId, displayPrice: '$4.99' });
@@ -205,17 +206,28 @@ describe('cloud plan funnel telemetry', () => {
     expect(await screen.findByText('Payment processing failed')).toBeVisible();
   });
 
-  // The handoff opened Apple's page. A flaky status fetch afterwards must not
-  // turn one success into both an open and a failure.
+  // The sheet opened over the app and the page stayed put. A flaky status fetch
+  // afterwards must not turn one success into both an open and a failure.
   it('does not fail a manage handoff its follow-up refresh could not confirm', async () => {
-    state.fetch.mockResolvedValueOnce({ ...free, hasCloudAccess: true, channels: ['stripe'], manageChannel: 'stripe' })
+    state.native = true; state.nativePurchases = true;
+    state.fetch.mockResolvedValueOnce({ ...free, hasCloudAccess: true, channels: ['apple'], manageChannel: 'apple' })
       .mockRejectedValue(new Error('Network request failed'));
     state.manage.mockResolvedValue(undefined);
     render(<CloudSubscriptionSettings />);
     fireEvent.click(await screen.findByRole('button', { name: /Manage subscription/ }));
-    await waitFor(() => expect(planEvents()).toContain('manage_opened:web'));
-    await waitFor(() => expect(planEvents()).toContain('refresh_failed:web'));
-    expect(planEvents()).not.toContain('manage_failed:web');
+    await waitFor(() => expect(planEvents()).toContain('refresh_failed:ios'));
+    expect(planEvents()).toEqual(['manage_opened:ios', 'refresh_failed:ios']);
+  });
+
+  // Every web handoff navigates away. A fetch issued into an unloading document
+  // aborts, which would have reported a failure on every successful manage.
+  it('does not chase a web manage handoff that has already left the page', async () => {
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, channels: ['stripe'], manageChannel: 'stripe' });
+    state.manage.mockResolvedValue(undefined);
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Manage subscription/ }));
+    await waitFor(() => expect(planEvents()).toEqual(['manage_opened:web']));
+    expect(state.fetch).toHaveBeenCalledTimes(1);
   });
 
   it('counts a manage handoff that succeeded', async () => {
@@ -295,15 +307,54 @@ describe('cloud plan funnel telemetry', () => {
     state.native = true; state.nativePurchases = true;
     state.apple.mockImplementation(async () => {
       state.profile = { email: 'someone.else@example.com', plan: 'free', isPlatformAdmin: false };
-      return { status: 'purchased', billing: { ...free, hasCloudAccess: true } };
+      // A status that would unmistakably read as an active paid subscription.
+      return { status: 'purchased', billing: { ...free, hasCloudAccess: true, channels: ['apple'], manageChannel: 'apple' } };
     });
     render(<CloudSubscriptionSettings />);
     fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
     await waitFor(() => expect(planEvents()).toContain('purchase_complete:ios'));
     expect(planEvents()).toContain('purchase_started:ios');
-    // The other account's entitlement is still not applied to this screen.
+    // The buyer's entitlement and confirmation never reach the account that
+    // did not buy it, however loudly the purchase result announces access.
+    expect(screen.queryByText('Your cloud subscription is ready.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Manage subscription/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/Cloud subscription . Active/)).not.toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: /Subscribe with Apple/ })).toBeVisible();
+  });
+
+  // The status belongs to the account it was fetched for. On a shared device a
+  // stale one both shows the wrong entitlement and counts an offer against
+  // someone who was never shown it.
+  it('does not carry one account offer or entitlement into the next', async () => {
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, channels: ['stripe'], manageChannel: 'stripe' });
+    const view = render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: /Manage subscription/ })).toBeVisible();
+    state.fetch.mockImplementation(() => new Promise(() => {}));
+    state.profile = { email: 'next.person@example.com', plan: 'free', isPlatformAdmin: false };
+    view.rerender(<CloudSubscriptionSettings />);
+    expect(screen.queryByRole('button', { name: /Manage subscription/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Cloud subscription . Active/)).not.toBeInTheDocument();
+    expect(planEvents()).toEqual([]);
+  });
+
+  // Apple charged the card and the receipt could not be delivered. The service
+  // reports pending so the funnel never files a paid conversion as a failure.
+  it('does not report a charged purchase as failed when delivery cannot confirm', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.apple.mockResolvedValue({ status: 'pending' });
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_pending:ios'));
+    expect(planEvents()).toEqual(['offer_shown:ios', 'purchase_started:ios', 'purchase_pending:ios']);
+    expect(planEvents()).not.toContain('purchase_failed:ios');
+  });
+
+  // manage_failed is the metric a whole review round was spent de-duplicating.
+  it('labels a failing refresh button as a refresh, not a manage', async () => {
+    state.fetch.mockResolvedValueOnce({ ...free, hasCloudAccess: true, channels: ['stripe'], manageChannel: 'stripe' })
+      .mockRejectedValue(new Error('Network request failed'));
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Refresh cloud plan/ }));
+    await waitFor(() => expect(planEvents()).toEqual(['refresh_failed:web']));
   });
 
   it('separates a completed Apple purchase from a cancelled one, tagged ios', async () =>{
