@@ -472,6 +472,7 @@
   "web_preview_notice": "Webvoorbeeld: nog {seconds}s. Daarna is inloggen verplicht en gratis.",
   "web_signin_required": "Meld je aan om Prism AAC te blijven gebruiken",
   "web_signin_explanation": "Je webvoorbeeld van één minuut is afgelopen. Meld je aan of maak een gratis Synalux-account om door te gaan. Aanmelden start geen betaald abonnement.",
+  "web_signin_still_signed_out": "Net gecontroleerd: nog steeds uitgelogd. Tik op Doorgaan met Google en kom terug naar dit tabblad.",
   "web_signin_saved": "Je opgeslagen kaarten en getypte bericht blijven op dit apparaat. Ze zijn weer beschikbaar nadat je bent aangemeld.",
   "web_signin_network_error": "We konden je aanmelding niet verifiëren. Controleer je verbinding en probeer opnieuw.",
   "web_signin_check_again": "Aanmelding opnieuw controleren",

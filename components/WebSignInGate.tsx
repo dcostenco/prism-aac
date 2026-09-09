@@ -27,6 +27,10 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
   const [remaining, setRemaining] = useState(0);
   const [busy, setBusy] = useState(false);
   const [draftFallback, setDraftFallback] = useState(false);
+  // Counts explicit re-checks that came back still gated. A re-check that
+  // changes nothing on screen is indistinguishable from a dead button, and
+  // the count re-announces the status line on every press.
+  const [signedOutChecks, setSignedOutChecks] = useState(0);
   // The reported decision, kept apart from `state` because `state` is also set
   // optimistically from local storage before any server answer. React
   // coalesces an unchanged value, so a poll that keeps answering the same
@@ -38,12 +42,15 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
   const alive = useRef(false);
   const signInButton = useRef<HTMLButtonElement>(null);
 
-  const check = useCallback(async () => {
+  // Returns the decision this call produced, or null when it was superseded
+  // or the gate unmounted. A caller cannot otherwise distinguish a server
+  // answer that changed nothing from no answer at all.
+  const check = useCallback(async (): Promise<AccessState | null> => {
     const version = ++requestVersion.current;
     setBusy(true);
     try {
       const result = await fetchWebAccess();
-      if (!alive.current || version !== requestVersion.current) return;
+      if (!alive.current || version !== requestVersion.current) return null;
       if (result.state === 'signed_in') rememberVerifiedLocalAccess();
       else if (result.state !== 'disabled') clearVerifiedLocalAccess(false);
       anonymousAccess.current = result.state === 'preview' || result.state === 'sign_in_required';
@@ -58,6 +65,7 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
       const decided = result.state === 'preview' && left <= 0 ? 'sign_in_required' : result.state;
       setState(decided);
       setOutcome(decided);
+      return decided;
     } catch {
       if (alive.current && version === requestVersion.current) {
         if (hasVerifiedLocalAccess()) {
@@ -67,11 +75,15 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
           // Reported as its own outcome so registration conversion is not
           // inflated by continuity.
           setOutcome('offline_continuity');
-        } else { setState('error'); setOutcome('error'); }
+          return 'signed_in';
+        }
+        setState('error'); setOutcome('error');
+        return 'error';
       }
     } finally {
       if (alive.current && version === requestVersion.current) setBusy(false);
     }
+    return null;
   }, []);
 
   useEffect(() => {
@@ -169,7 +181,14 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
         }} className="aac-btn block w-full rounded-xl bg-blue-700 text-white text-center px-4 py-4 font-semibold">
         {t('continue_to_google')}
       </button>
-      <button type="button" disabled={busy} onClick={() => void check()}
+      {signedOutChecks > 0 && <p key={signedOutChecks} role="status" className="text-sm"
+        data-testid="web-signin-recheck-status">{t('web_signin_still_signed_out')}</p>}
+      <button type="button" disabled={busy}
+        onClick={() => void (async () => {
+          // Only a decision still gating the app needs saying; every other
+          // outcome already changes the screen (preview, error, or the app).
+          if (await check() === 'sign_in_required') setSignedOutChecks(n => n + 1);
+        })()}
         className="aac-btn w-full rounded-xl border border-slate-400 px-4 py-4 disabled:opacity-50">
         {t('web_signin_check_again')}
       </button>

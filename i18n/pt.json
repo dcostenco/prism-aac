@@ -472,6 +472,7 @@
   "web_preview_notice": "Prévia na web: restam {seconds}s. Depois é preciso entrar na conta (é grátis).",
   "web_signin_required": "Entre na conta para continuar usando o Prism AAC",
   "web_signin_explanation": "Sua prévia de um minuto acabou. Entre ou crie sua conta grátis na Synalux para continuar. Entrar não inicia uma assinatura paga.",
+  "web_signin_still_signed_out": "Verificado agora: ainda desconectado. Use Continuar com o Google e volte a esta guia.",
   "web_signin_saved": "Suas pranchas salvas e mensagem escrita continuam neste dispositivo. Elas estarão disponíveis após você entrar.",
   "web_signin_network_error": "Não foi possível confirmar seu acesso. Verifique sua conexão e tente de novo.",
   "web_signin_check_again": "Verificar acesso de novo",

@@ -472,6 +472,7 @@
   "web_preview_notice": "Anteprima web: restano {seconds}s. Dopo sarà necessario accedere, gratuitamente.",
   "web_signin_required": "Accedi per continuare a usare Prism AAC",
   "web_signin_explanation": "L'anteprima web di un minuto è terminata. Accedi o crea un account Synalux gratuito per continuare. L'accesso non avvia un abbonamento a pagamento.",
+  "web_signin_still_signed_out": "Controllo eseguito: sei ancora disconnesso. Usa Continua con Google, poi torna in questa scheda.",
   "web_signin_saved": "Le tue tabelle salvate e il messaggio composto restano su questo dispositivo. Saranno di nuovo disponibili dopo l'accesso.",
   "web_signin_network_error": "Impossibile verificare l'accesso. Controlla la connessione e riprova.",
   "web_signin_check_again": "Verifica di nuovo l'accesso",

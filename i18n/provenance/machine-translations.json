@@ -4,7 +4,7 @@
     "ui": {
       "am": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -465,6 +465,7 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
+          "web_signin_still_signed_out",
           "word_builder",
           "word_builder_desc",
           "word_visibility",
@@ -474,7 +475,7 @@
       },
       "sw": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -935,6 +936,7 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
+          "web_signin_still_signed_out",
           "word_builder",
           "word_builder_desc",
           "word_visibility",
@@ -944,7 +946,7 @@
       },
       "bn": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -1405,6 +1407,7 @@
           "web_signin_network_error",
           "web_signin_required",
           "web_signin_saved",
+          "web_signin_still_signed_out",
           "word_builder",
           "word_builder_desc",
           "word_visibility",
@@ -1414,7 +1417,7 @@
       },
       "es": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1461,12 +1464,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "fr": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1513,12 +1517,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "pt": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1565,12 +1570,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "ro": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1617,12 +1623,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "uk": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1669,12 +1676,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "ru": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1721,12 +1729,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "de": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1773,12 +1782,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "ja": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1825,12 +1835,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "ko": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1877,12 +1888,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "zh": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1929,12 +1941,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "ar": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1981,12 +1994,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "hi": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2033,12 +2047,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "it": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2085,12 +2100,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "pl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2137,12 +2153,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "he": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2189,12 +2206,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "nl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2241,12 +2259,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "vi": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2293,12 +2312,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "tl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2345,12 +2365,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "tr": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2397,12 +2418,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "id": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2449,12 +2471,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "bg": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:31:06.463Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2501,12 +2524,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "zh-Hant": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:36:06.657Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2553,12 +2577,13 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       },
       "zh-HK": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-08T16:36:06.657Z",
+        "generatedAt": "2026-09-09T22:43:47.303Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2605,7 +2630,8 @@
           "web_signin_free_account",
           "web_signin_network_error",
           "web_signin_required",
-          "web_signin_saved"
+          "web_signin_saved",
+          "web_signin_still_signed_out"
         ]
       }
     },

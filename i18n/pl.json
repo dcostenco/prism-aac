@@ -472,6 +472,7 @@
   "web_preview_notice": "Podgląd: zostało {seconds} s. Potem wymagane jest darmowe logowanie.",
   "web_signin_required": "Zaloguj się, aby używać Prism AAC",
   "web_signin_explanation": "Minuta podglądu minęła. Zaloguj się lub utwórz darmowe konto Synalux, aby kontynuować. Logowanie nie uruchamia płatnej subskrypcji.",
+  "web_signin_still_signed_out": "Sprawdzono przed chwilą: nadal wylogowano. Użyj Kontynuuj z Google, a potem wróć do tej karty.",
   "web_signin_saved": "Twoje tablice i wpisana wiadomość zostają na urządzeniu. Będą dostępne po zalogowaniu.",
   "web_signin_network_error": "Nie udało się potwierdzić logowania. Sprawdź połączenie i spróbuj ponownie.",
   "web_signin_check_again": "Sprawdź logowanie ponownie",

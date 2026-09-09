@@ -472,6 +472,7 @@
   "web_preview_notice": "Xem trước trên web: còn {seconds} giây. Cần đăng nhập sau đó và hoàn toàn miễn phí.",
   "web_signin_required": "Đăng nhập để tiếp tục dùng Prism AAC",
   "web_signin_explanation": "Đã hết 1 phút xem trước. Đăng nhập hoặc tạo tài khoản Synalux miễn phí để tiếp tục. Đăng nhập không làm phát sinh phí.",
+  "web_signin_still_signed_out": "Vừa kiểm tra: vẫn chưa đăng nhập. Hãy bấm Tiếp tục với Google, rồi quay lại thẻ này.",
   "web_signin_saved": "Bảng đã lưu và tin nhắn đang soạn vẫn giữ trên máy này. Bạn có thể dùng lại sau khi đăng nhập.",
   "web_signin_network_error": "Không thể xác minh đăng nhập. Kiểm tra kết nối mạng và thử lại.",
   "web_signin_check_again": "Kiểm tra lại đăng nhập",

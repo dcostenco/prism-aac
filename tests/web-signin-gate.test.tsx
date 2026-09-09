@@ -14,6 +14,7 @@ import WebSignInGate from '@/components/WebSignInGate';
 import { useSettingsStore } from '@/store/settingsStore';
 import { clearVerifiedLocalAccess } from '@/services/webAccessService';
 import { useMessageStore } from '@/store/messageStore';
+import { resetMonetizationTelemetry } from '@/services/monetizationTelemetry';
 
 const board = <button>Communication board action</button>;
 async function tick(ms: number) { await act(async () => { await vi.advanceTimersByTimeAsync(ms); }); }
@@ -22,6 +23,9 @@ beforeEach(() => {
   vi.clearAllMocks(); mocks.native = false; mocks.profile = null;
   clearVerifiedLocalAccess();
   useMessageStore.setState({ text: '' });
+  // The reporter's per-tab event budget is module state. Without this the
+  // later tests in this file silently spend it and assert on no events.
+  resetMonetizationTelemetry();
   vi.stubEnv('NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE', '1');
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'performance'] });
   mocks.access.mockResolvedValue({ state: 'preview', remainingMs: 60_000 });
@@ -202,6 +206,58 @@ describe('full web sign-in gate', () => {
     expect(gateOutcomes().filter(o => o === 'sign_in_clicked')).toEqual(['sign_in_clicked']);
     blocked.mockRestore();
   });
+  // The re-check answered and nothing on screen changed, which is exactly how a
+  // dead button looks. Without a result line the user cannot tell the app is
+  // working, and the only way out of the gate stops looking usable.
+  it('says so when a re-check comes back still signed out', async () => {
+    mocks.access.mockResolvedValue({ state: 'sign_in_required', remainingMs: 0 });
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    expect(screen.queryByTestId('web-signin-recheck-status')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Check sign-in again' }));
+    await tick(1);
+    const status = screen.getByTestId('web-signin-recheck-status');
+    expect(status).toBeVisible();
+    expect(status).toHaveAttribute('role', 'status');
+    expect(status).toHaveTextContent(/still signed out/i);
+  });
+
+  // A second press must re-announce; a status node that never changes is
+  // silent to a screen reader the second time.
+  it('re-announces the result on every press', async () => {
+    mocks.access.mockResolvedValue({ state: 'sign_in_required', remainingMs: 0 });
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    const button = screen.getByRole('button', { name: 'Check sign-in again' });
+    fireEvent.click(button); await tick(1);
+    const first = screen.getByTestId('web-signin-recheck-status');
+    fireEvent.click(button); await tick(1);
+    expect(screen.getByTestId('web-signin-recheck-status')).not.toBe(first);
+  });
+
+  // Signing in elsewhere and pressing the button must open the app, not print
+  // a line claiming the user is still signed out.
+  it('opens the app instead of reporting a re-check that succeeded', async () => {
+    mocks.access.mockResolvedValue({ state: 'sign_in_required', remainingMs: 0 });
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    mocks.access.mockResolvedValue({ state: 'signed_in', remainingMs: 0 });
+    fireEvent.click(screen.getByRole('button', { name: 'Check sign-in again' }));
+    await tick(1);
+    expect(screen.getByText('Communication board action')).toBeVisible();
+    expect(screen.queryByTestId('web-signin-recheck-status')).not.toBeInTheDocument();
+  });
+
+  // A re-check that never reached the server does not know the answer. Saying
+  // "still signed out" there is a claim the app cannot support, and it hides
+  // the network error that tells the user what to actually do.
+  it('does not claim a sign-in status when the re-check could not reach the server', async () => {
+    mocks.access.mockResolvedValue({ state: 'sign_in_required', remainingMs: 0 });
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    mocks.access.mockRejectedValue(new Error('Offline'));
+    fireEvent.click(screen.getByRole('button', { name: 'Check sign-in again' }));
+    await tick(1);
+    expect(screen.getByRole('alert')).toHaveTextContent(/could not verify your sign-in/i);
+    expect(screen.queryByTestId('web-signin-recheck-status')).not.toBeInTheDocument();
+  });
+
   it('reports one continuity episode however many polls fail', async () => {
     mocks.access.mockResolvedValue({ state: 'signed_in', remainingMs: 0 });
     render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);

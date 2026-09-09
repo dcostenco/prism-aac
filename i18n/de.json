@@ -472,6 +472,7 @@
   "web_preview_notice": "Web-Vorschau: Noch {seconds} Sek. Danach ist eine kostenlose Anmeldung erforderlich.",
   "web_signin_required": "Anmelden, um Prism AAC weiter zu nutzen",
   "web_signin_explanation": "Deine einminütige Web-Vorschau ist abgelaufen. Melde dich an oder erstelle dein kostenloses Synalux-Konto. Die Anmeldung startet kein kostenpflichtiges Abo.",
+  "web_signin_still_signed_out": "Eben geprüft: immer noch abgemeldet. Tippe auf Weiter mit Google und kehre dann hierher zurück.",
   "web_signin_saved": "Deine gespeicherten Karten und die erstellte Nachricht bleiben auf diesem Gerät. Sie sind nach der Anmeldung wieder da.",
   "web_signin_network_error": "Anmeldung konnte nicht überprüft werden. Prüfe deine Verbindung und versuche es erneut.",
   "web_signin_check_again": "Anmeldung erneut prüfen",
