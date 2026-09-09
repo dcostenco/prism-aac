@@ -199,6 +199,23 @@ describe('cloud plan funnel telemetry', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Manage/ }));
     await waitFor(() => expect(planEvents()).toContain('manage_failed:web'));
     expect(planEvents()).not.toContain('manage_opened:web');
+    // No follow-up refresh: it would spend a request on a handoff that never
+    // happened, and a successful one clears the error the user needs to read.
+    expect(state.fetch).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('Payment processing failed')).toBeVisible();
+  });
+
+  // The handoff opened Apple's page. A flaky status fetch afterwards must not
+  // turn one success into both an open and a failure.
+  it('does not fail a manage handoff its follow-up refresh could not confirm', async () => {
+    state.fetch.mockResolvedValueOnce({ ...free, hasCloudAccess: true, channels: ['stripe'], manageChannel: 'stripe' })
+      .mockRejectedValue(new Error('Network request failed'));
+    state.manage.mockResolvedValue(undefined);
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Manage subscription/ }));
+    await waitFor(() => expect(planEvents()).toContain('manage_opened:web'));
+    await waitFor(() => expect(planEvents()).toContain('refresh_failed:web'));
+    expect(planEvents()).not.toContain('manage_failed:web');
   });
 
   it('counts a manage handoff that succeeded', async () => {
@@ -271,8 +288,10 @@ describe('cloud plan funnel telemetry', () => {
     getItem.mockRestore(); setItem.mockRestore();
   });
 
-  // Every start must reach a terminal event, or starts outnumber outcomes.
-  it('closes out a purchase abandoned by an account change mid-flight', async () => {
+  // Apple charged the card. Reporting that start as abandoned because the
+  // signed-in account changed would understate real revenue, so the funnel
+  // records the purchase even though the entitlement is not applied here.
+  it('reports a real charge as complete when the account changes mid-flight', async () => {
     state.native = true; state.nativePurchases = true;
     state.apple.mockImplementation(async () => {
       state.profile = { email: 'someone.else@example.com', plan: 'free', isPlatformAdmin: false };
@@ -280,9 +299,11 @@ describe('cloud plan funnel telemetry', () => {
     });
     render(<CloudSubscriptionSettings />);
     fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
-    await waitFor(() => expect(planEvents()).toContain('purchase_abandoned:ios'));
+    await waitFor(() => expect(planEvents()).toContain('purchase_complete:ios'));
     expect(planEvents()).toContain('purchase_started:ios');
-    expect(planEvents()).not.toContain('purchase_complete:ios');
+    // The other account's entitlement is still not applied to this screen.
+    expect(screen.queryByText(/Cloud subscription . Active/)).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Subscribe with Apple/ })).toBeVisible();
   });
 
   it('separates a completed Apple purchase from a cancelled one, tagged ios', async () =>{

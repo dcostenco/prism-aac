@@ -29,7 +29,7 @@ export type WebGateOutcome =
 export type CloudPlanEvent =
   | 'offer_shown'
   | 'purchase_started' | 'purchase_complete' | 'purchase_pending' | 'purchase_cancelled'
-  | 'purchase_redirected' | 'purchase_none' | 'purchase_failed' | 'purchase_abandoned'
+  | 'purchase_redirected' | 'purchase_none' | 'purchase_failed'
   | 'restore_started' | 'restore_complete' | 'restore_failed'
   | 'manage_opened' | 'manage_failed' | 'refresh_failed';
 
@@ -81,6 +81,10 @@ export function firstOfferImpression(key: string): boolean {
     const seen = Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
     if (seen.includes(key)) return false;
     sessionStorage.setItem(OFFER_IMPRESSION_KEY, JSON.stringify([...seen, key].slice(-IMPRESSION_LIMIT)));
-  } catch { /* blocked or corrupt: the in-memory set still holds for this page */ }
+  } catch {
+    // Blocked (private browsing) or corrupt. The in-memory set still holds for
+    // this page; drop a corrupt value so a reload is not stuck re-reporting.
+    try { sessionStorage.removeItem(OFFER_IMPRESSION_KEY); } catch { /* blocked */ }
+  }
   return true;
 }

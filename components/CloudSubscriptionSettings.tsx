@@ -55,12 +55,13 @@ export default function CloudSubscriptionSettings() {
     return () => { active = false; window.removeEventListener(AAC_BILLING_UPDATED, updated); };
   }, [account, native, refresh]);
 
-  const act = async (failure: CloudPlanEvent, operation: () => Promise<void>) => {
+  const act = async (failure: CloudPlanEvent, operation: () => Promise<void>): Promise<boolean> => {
     setBusy(true); setError(''); setNotice('');
-    try { await operation(); }
+    try { await operation(); return true; }
     catch (e) {
       reportCloudPlan(failure, platform);
       setError(e instanceof Error ? e.message : t('cloud_plan_unavailable'));
+      return false;
     }
     finally { setBusy(false); }
   };
@@ -80,19 +81,16 @@ export default function CloudSubscriptionSettings() {
       reportCloudPlan('purchase_started', platform);
       if (native) {
         const result = await purchaseAacWithApple(userId, offerVersion);
-        if (useAuthStore.getState().profile?.email !== account) {
-          // The account changed while StoreKit was open. Nothing is applied to
-          // the new account, but the start must still reach a terminal event.
-          reportCloudPlan('purchase_abandoned', platform);
-          return;
-        }
-        if (result.billing) setBilling(result.billing);
-        // One expression decides both what the user is told and what is
-        // reported, so the funnel cannot drift from the visible outcome.
+        // What Apple did is reported before anything is applied: if the signed
+        // in account changed while StoreKit was open the purchase still
+        // happened, and calling it abandoned would understate real charges.
         const outcome: CloudPlanEvent = result.status === 'pending' ? 'purchase_pending'
           : result.status === 'cancelled' ? 'purchase_cancelled'
             : result.billing?.hasCloudAccess ? 'purchase_complete' : 'purchase_none';
         reportCloudPlan(outcome, platform);
+        // Never apply one account's entitlement to another.
+        if (useAuthStore.getState().profile?.email !== account) return;
+        if (result.billing) setBilling(result.billing);
         setNotice(t(outcome === 'purchase_pending' ? 'cloud_purchase_pending'
           : outcome === 'purchase_cancelled' ? 'cloud_purchase_cancelled'
             : outcome === 'purchase_complete' ? 'cloud_purchase_complete' : 'cloud_no_active_subscription'));
@@ -171,11 +169,15 @@ export default function CloudSubscriptionSettings() {
       {t('cloud_restore_apple')}
     </button>}
     {billing?.manageChannel && <button type="button" disabled={busy} className={button}
-      onClick={() => void act('manage_failed', async () => {
-        await manageAacSubscription(billing.manageChannel!);
-        reportCloudPlan('manage_opened', platform);
-        await refresh();
-      })}>
+      onClick={() => void (async () => {
+        // The status refresh is a follow-up, not part of the handoff: without
+        // the split a flaky refresh reported the successful open as failed.
+        const opened = await act('manage_failed', async () => {
+          await manageAacSubscription(billing.manageChannel!);
+          reportCloudPlan('manage_opened', platform);
+        });
+        if (opened) await act('refresh_failed', refresh);
+      })()}>
       {t('cloud_manage_subscription')}
     </button>}
     <button type="button" disabled={busy} className={button} onClick={() => void act('refresh_failed', refresh)}>{t('cloud_refresh_plan')}</button>

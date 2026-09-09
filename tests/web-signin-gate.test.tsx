@@ -51,6 +51,19 @@ describe('full web sign-in gate', () => {
     fireEvent(window, new Event('focus')); await tick(1);
     expect(screen.queryByText('Communication board action')).not.toBeInTheDocument();
   });
+  // Signing out in another tab revokes access while the network is down, so no
+  // server answer can report it. Only the revoke path can, and a gate raised
+  // with no event behind it is invisible in the funnel.
+  it('reports the gate it raises when another tab signs out during an outage', async () => {
+    mocks.access.mockResolvedValue({ state: 'signed_in', remainingMs: 0 });
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    mocks.access.mockRejectedValue(new Error('Offline'));
+    fireEvent(window, new Event('focus')); await tick(1);
+    expect(gateOutcomes()).toEqual(['signed_in', 'offline_continuity']);
+    act(() => clearVerifiedLocalAccess()); await tick(1);
+    expect(screen.queryByText('Communication board action')).not.toBeInTheDocument();
+    expect(gateOutcomes()).toEqual(['signed_in', 'offline_continuity', 'sign_in_required']);
+  });
   it('replaces all app interactions after one minute and focuses sign-in information', async () => {
     render(<WebSignInGate>{board}</WebSignInGate>);
     await tick(1);
