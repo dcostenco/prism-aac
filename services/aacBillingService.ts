@@ -108,7 +108,14 @@ async function deliverAppleTransactions(transactions: AppleTransaction[] = [], t
       }
       throw error;
     }
-    await nativeSubscription('finish', { transactionId: transaction.transactionId });
+    // Reconcile already granted the entitlement; finishing is Apple-side
+    // bookkeeping. An unfinished transaction is replayed on the next launch and
+    // reconciled again, so this must not fail a delivery that already worked.
+    try { await nativeSubscription('finish', { transactionId: transaction.transactionId }); }
+    catch (error) {
+      console.warn('[AAC billing] Could not finish an Apple transaction; Apple will replay it',
+        error instanceof Error ? error.message : error);
+    }
   }
   if (rejected) {
     if (!tolerateRejected) throw rejected;
@@ -124,7 +131,17 @@ export async function purchaseAacWithApple(expectedUserId: string, expectedOffer
   const result = await nativeSubscription('purchase', { accountToken: prepared.accountToken });
   if (result.status === 'cancelled' || result.status === 'pending') return { status: result.status };
   if (result.status !== 'purchased' || !result.transactions?.length) throw new Error(ERRORS.invalid);
-  return { status: 'purchased', billing: await deliverAppleTransactions(result.transactions) };
+  // The account is charged from here on. If delivery cannot be confirmed the
+  // transaction stays unfinished, Apple replays it and the automatic restore
+  // completes it, so this is pending rather than failed. Reporting a real
+  // charge as a failure would understate paid conversions.
+  try {
+    return { status: 'purchased', billing: await deliverAppleTransactions(result.transactions) };
+  } catch (error) {
+    console.warn('[AAC billing] Apple charged the account but delivery did not confirm; it will be retried',
+      error instanceof Error ? error.message : error);
+    return { status: 'pending' };
+  }
 }
 
 export async function restoreAacApplePurchases(explicit = true, accountScope = ''): Promise<AacBillingStatus> {

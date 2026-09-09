@@ -7,6 +7,7 @@ import { isNativeiOS, synaluxSignInUrl } from '@/services/aiService';
 import { fetchWebAccess, hasVerifiedLocalAccess, rememberVerifiedLocalAccess, clearVerifiedLocalAccess,
   LOCAL_ACCESS_CLEARED, LOCAL_ACCESS_KEY, type WebAccess } from '@/services/webAccessService';
 import { rememberWebSignInDraft, recoverWebSignInDraft } from '@/services/webSignInDraft';
+import { reportWebGate, type WebGateOutcome } from '@/services/monetizationTelemetry';
 
 type AccessState = WebAccess['state'] | 'checking' | 'error';
 const PRIVACY_URL = 'https://synalux.ai/legal/privacy';
@@ -26,6 +27,11 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
   const [remaining, setRemaining] = useState(0);
   const [busy, setBusy] = useState(false);
   const [draftFallback, setDraftFallback] = useState(false);
+  // The reported decision, kept apart from `state` because `state` is also set
+  // optimistically from local storage before any server answer. React
+  // coalesces an unchanged value, so a poll that keeps answering the same
+  // thing is reported once per episode, not once per poll.
+  const [outcome, setOutcome] = useState<WebGateOutcome | null>(null);
   const expires = useRef(0);
   const anonymousAccess = useRef(false);
   const requestVersion = useRef(0);
@@ -49,13 +55,19 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
         recoverWebSignInDraft();
       } else if (!rememberWebSignInDraft()) setDraftFallback(true);
       setRemaining(Math.ceil(left / 1000));
-      setState(result.state === 'preview' && left <= 0 ? 'sign_in_required' : result.state);
+      const decided = result.state === 'preview' && left <= 0 ? 'sign_in_required' : result.state;
+      setState(decided);
+      setOutcome(decided);
     } catch {
       if (alive.current && version === requestVersion.current) {
         if (hasVerifiedLocalAccess()) {
           recoverWebSignInDraft();
           setState('signed_in');
-        } else setState('error');
+          // Carried by a previously verified local session, not by the server.
+          // Reported as its own outcome so registration conversion is not
+          // inflated by continuity.
+          setOutcome('offline_continuity');
+        } else { setState('error'); setOutcome('error'); }
       }
     } finally {
       if (alive.current && version === requestVersion.current) setBusy(false);
@@ -75,6 +87,7 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
     const revoke = () => {
       requestVersion.current++;
       setState('sign_in_required');
+      setOutcome('sign_in_required');
     };
     const storage = (event: StorageEvent) => {
       if ((event.key === LOCAL_ACCESS_KEY || event.key === null) && event.newValue !== '1') clearVerifiedLocalAccess();
@@ -95,6 +108,13 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
     };
   }, [enabled, native, check, profile?.email]);
 
+  // Only a decision is reported, never the optimistic local state and never a
+  // render. When the gate is off or running native no decision is ever
+  // reached, so this stays silent without needing to test for it.
+  useEffect(() => {
+    if (outcome) reportWebGate(outcome);
+  }, [outcome]);
+
   useEffect(() => {
     if (state !== 'preview') return;
     const update = () => {
@@ -103,6 +123,7 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
       if (left <= 0) {
         if (!rememberWebSignInDraft()) setDraftFallback(true);
         setState('sign_in_required');
+        setOutcome('sign_in_required');
       }
     };
     const tick = setInterval(update, 250);
@@ -135,8 +156,15 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
       {draftFallback && <p role="alert" className="text-sm">{t('web_signin_draft_fallback')}</p>}
       <button ref={signInButton} type="button" disabled={state === 'checking'} aria-describedby="web-signin-explanation"
         onClick={() => {
-          if (draftFallback) { window.open(synaluxSignInUrl(), '_blank', 'noopener,noreferrer'); return; }
+          // Reported only where the user actually leaves for sign-in. The
+          // draft-save failure below stays on this page to warn first, and
+          // counting that press would make departures outnumber sign-ins.
+          if (draftFallback) {
+            reportWebGate('sign_in_clicked');
+            window.open(synaluxSignInUrl(), '_blank', 'noopener,noreferrer'); return;
+          }
           if (!rememberWebSignInDraft()) { setDraftFallback(true); return; }
+          reportWebGate('sign_in_clicked');
           window.location.assign(synaluxSignInUrl());
         }} className="aac-btn block w-full rounded-xl bg-blue-700 text-white text-center px-4 py-4 font-semibold">
         {t('continue_to_google')}

@@ -8,6 +8,12 @@ const billing = { userId: account, hasCloudAccess: true, betaExempt: false, tran
   offer: { usdMonthly: 4.99, appleProductId: 'ai.synalux.prismaac.cloud.monthly' } };
 const transaction = { transactionId: '20001', jws: 'test-signed-payload' };
 const foreignTransaction = { transactionId: '30001', jws: 'other-account-signed-payload' };
+type BridgeRequest = { id: string; operation: string; transactionId?: string; accountToken?: string };
+type BridgeHost = {
+  prismNativeBridge?: { subscription: (request: BridgeRequest) => void };
+  prismSubscriptionResult: (message: { id: string; result?: unknown; error?: string }) => void;
+};
+const host = window as unknown as BridgeHost;
 const calls: string[] = [];
 let nativeStatus = 'purchased';
 let deliveryStatus = 200;
@@ -15,10 +21,10 @@ let nativeTransactions: Array<{ transactionId: string; jws: string }> = [transac
 
 beforeEach(() => {
   calls.length = 0; nativeStatus = 'purchased'; deliveryStatus = 200; nativeTransactions = [transaction];
-  (window as any).prismNativeBridge = { subscription: (request: any) => {
+  host.prismNativeBridge = { subscription: (request: BridgeRequest) => {
     calls.push(request.operation === 'finish' ? `finish:${request.transactionId}` : request.operation);
     if (request.operation === 'purchase') expect(request.accountToken).toBe(account);
-    (window as any).prismSubscriptionResult({ id: request.id, result: request.operation === 'finish'
+    host.prismSubscriptionResult({ id: request.id, result: request.operation === 'finish'
       ? { status: 'finished' } : { status: nativeStatus, transactions: nativeTransactions } });
   } };
   vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
@@ -39,7 +45,7 @@ beforeEach(() => {
     return Response.json(billing);
   }));
 });
-afterEach(() => { vi.unstubAllGlobals(); delete (window as any).prismNativeBridge; });
+afterEach(() => { vi.unstubAllGlobals(); delete host.prismNativeBridge; });
 
 describe('Apple purchase delivery', () => {
   it('coalesces overlapping automatic recovery for the same account', async () => {
@@ -47,13 +53,33 @@ describe('Apple purchase delivery', () => {
     await Promise.all([restoreAacApplePurchases(false, account), restoreAacApplePurchases(false, account)]);
     expect(calls).toEqual(['sync', 'reconcile', 'finish:20001', 'status']);
   });
+  // Reconcile granted the entitlement; finishing is Apple-side bookkeeping and
+  // an unfinished transaction is simply replayed. Failing the purchase here
+  // would report a delivered subscription as a failed one.
+  it('completes a delivered purchase whose transaction could not be finished', async () => {
+    host.prismNativeBridge = { subscription: (request: BridgeRequest) => {
+      calls.push(request.operation === 'finish' ? `finish:${request.transactionId}` : request.operation);
+      if (request.operation === 'finish') {
+        host.prismSubscriptionResult({ id: request.id, error: 'Timed out' });
+        return;
+      }
+      host.prismSubscriptionResult({ id: request.id,
+        result: { status: nativeStatus, transactions: nativeTransactions } });
+    } };
+    const result = await purchaseAacWithApple(account, offerVersion);
+    expect(result.status).toBe('purchased');
+    expect(result.billing?.hasCloudAccess).toBe(true);
+    expect(calls).toEqual(['prepare', 'purchase', 'reconcile', 'finish:20001', 'status']);
+  });
   it('binds the account before purchase and finishes only after the server confirms delivery', async () => {
     expect((await purchaseAacWithApple(account, offerVersion)).billing?.hasCloudAccess).toBe(true);
     expect(calls).toEqual(['prepare', 'purchase', 'reconcile', 'finish:20001', 'status']);
   });
-  it('leaves an interrupted delivery unfinished so Restore Purchases can recover it', async () => {
+  // The card is already charged. Surfacing that as a failure would tell the
+  // user nothing happened and would file a paid conversion as a failure.
+  it('reports an interrupted delivery as pending and leaves it recoverable', async () => {
     deliveryStatus = 503;
-    await expect(purchaseAacWithApple(account, offerVersion)).rejects.toThrow('Verification unavailable');
+    await expect(purchaseAacWithApple(account, offerVersion)).resolves.toEqual({ status: 'pending' });
     expect(calls).not.toContain('finish:20001');
     calls.length = 0; deliveryStatus = 200; nativeStatus = 'restored';
     await restoreAacApplePurchases();

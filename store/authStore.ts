@@ -9,6 +9,7 @@ import {
 import { destroyAacHrr } from '@/services/hrrContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { clearVerifiedLocalAccess } from '@/services/webAccessService';
+import { resetMonetizationTelemetry } from '@/services/monetizationTelemetry';
 
 interface AuthState {
   profile: SynaluxProfile | null;
@@ -50,6 +51,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   clear: () => {
     clearVerifiedLocalAccess();
+    // The next person on a shared device is a new visitor, and nothing about
+    // the last one should survive the sign-out.
+    resetMonetizationTelemetry();
     clearTranslationCache();
     clearTextCorrectCache();
     clearPredictionMemoryCache();
