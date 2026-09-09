@@ -472,6 +472,7 @@
   "web_preview_notice": "Aperçu web : {seconds} s restantes. Connexion gratuite requise ensuite.",
   "web_signin_required": "Connectez-vous pour continuer à utiliser Prism AAC",
   "web_signin_explanation": "Votre minute d'essai est terminée. Connectez-vous ou créez un compte Synalux gratuit. C'est sans engagement.",
+  "web_signin_still_signed_out": "Toujours déconnecté. Utilisez Continuer avec Google, puis revenez sur cet onglet.",
   "web_signin_saved": "Vos tableaux et messages en cours restent enregistrés sur cet appareil.",
   "web_signin_network_error": "Impossible de vérifier la connexion. Vérifiez votre réseau et réessayez.",
   "web_signin_check_again": "Vérifier à nouveau",

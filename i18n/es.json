@@ -472,6 +472,7 @@
   "web_preview_notice": "Vista previa web: quedan {seconds} s. Después se requiere iniciar sesión (es gratis).",
   "web_signin_required": "Inicia sesión para seguir usando Prism AAC",
   "web_signin_explanation": "Tu vista previa de un minuto terminó. Inicia sesión o crea tu cuenta gratis de Synalux para continuar. Esto no inicia una suscripción de pago.",
+  "web_signin_still_signed_out": "Comprobado ahora mismo: sigues sin iniciar sesión. Usa «Continuar con Google» y vuelve a esta pestaña.",
   "web_signin_saved": "Tus tableros guardados y el mensaje escrito se quedan en este dispositivo. Estarán disponibles al iniciar sesión.",
   "web_signin_network_error": "No pudimos verificar tu inicio de sesión. Revisa tu conexión e inténtalo de nuevo.",
   "web_signin_check_again": "Verificar inicio de sesión de nuevo",

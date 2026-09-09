@@ -472,6 +472,7 @@
   "web_preview_notice": "Web preview: {seconds}s remaining. Sign-in is required afterward and is free.",
   "web_signin_required": "Sign in to continue using Prism AAC",
   "web_signin_explanation": "Your one-minute web preview has ended. Sign in or create your free Synalux account to continue. Signing in does not start a paid subscription.",
+  "web_signin_still_signed_out": "Checked just now: still signed out. Use Continue to Google, then return to this tab.",
   "web_signin_saved": "Your saved boards and composed message stay on this device. They will be available again after you sign in.",
   "web_signin_network_error": "We could not verify your sign-in. Check your connection and try again.",
   "web_signin_check_again": "Check sign-in again",

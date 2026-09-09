@@ -472,6 +472,7 @@
   "web_preview_notice": "Webプレビュー: 残り {seconds} 秒。終了後は無料のサインインが必要です。",
   "web_signin_required": "Prism AACを続けるにはサインインしてください",
   "web_signin_explanation": "1分間のWebプレビューが終了しました。続けるにはサインインするか、無料のSynaluxアカウントを作成してください。サインインしても有料登録にはなりません。",
+  "web_signin_still_signed_out": "確認しましたが、まだサインアウトされています。「Google で続行」を押してから、このタブに戻ってください。",
   "web_signin_saved": "保存したボードと作成中のメッセージはこの端末に残ります。サインイン後に再び使えます。",
   "web_signin_network_error": "サインインを確認できませんでした。接続を確認してやり直してください。",
   "web_signin_check_again": "サインインを再確認",

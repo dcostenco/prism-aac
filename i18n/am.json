@@ -472,6 +472,7 @@
   "web_preview_notice": "የዌብ ቅድመ-እይታ፦ {seconds} ሰከንድ ቀርቷል። ከዚያ በኋላ መግባት ያስፈልጋል፣ ነፃ ነው።",
   "web_signin_required": "Prism AAC መጠቀም ለመቀጠል ይግቡ",
   "web_signin_explanation": "የአንድ ደቂቃ ቅድመ-እይታ አልቋል። ለመቀጠል ይግቡ ወይም ነፃ Synalux አካውንት ይክፈቱ። መግባት ክፍያ አያስጀምርም።",
+  "web_signin_still_signed_out": "አሁንም አልገቡም። በGoogle ይቀጥሉ የሚለውን ተጭነው ወደዚህ ይመለሱ።",
   "web_signin_saved": "የተቀመጡ ሰሌዳዎች እና መልእክቶች በዚህ መሣሪያ ላይ ይቀራሉ:: ከገቡ በኋላ ያገኙዋቸዋል።",
   "web_signin_network_error": "መግባትዎን ማረጋገጥ አልተቻለም። ኢንተርኔትዎን ፈትሸው እንደገና ይሞክሩ።",
   "web_signin_check_again": "መግባትዎን እንደገና ያረጋግጡ",

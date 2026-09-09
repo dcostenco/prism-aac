@@ -472,6 +472,7 @@
   "web_preview_notice": "Web preview: {seconds}s na lang. Kailangan mag-sign in pagkatapos at libre ito.",
   "web_signin_required": "Mag-sign in para magpatuloy sa paggamit ng Prism AAC",
   "web_signin_explanation": "Tapos na ang isang minutong web preview mo. Mag-sign in o gumawa ng libreng Synalux account para magpatuloy. Hindi magsisimula ng may bayad na subscription ang pag-sign in.",
+  "web_signin_still_signed_out": "Nacheck na: naka-sign out pa rin. Gamitin ang Ipagpatuloy sa Google, tapos bumalik sa tab na ito.",
   "web_signin_saved": "Mananatili sa device na ito ang iyong mga na-save na board at ginagawang mensahe. Magagamit mo ulit ang mga ito pagka-sign in mo.",
   "web_signin_network_error": "Hindi namin ma-verify ang pag-sign in mo. I-check ang koneksyon mo at subukan ulit.",
   "web_signin_check_again": "I-check ulit ang pag-sign in",

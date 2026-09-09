@@ -472,6 +472,7 @@
   "web_preview_notice": "Web önizleme: Kalan süre {seconds} sn. Sonrasında ücretsiz giriş gereklidir.",
   "web_signin_required": "Prism AAC'yi kullanmaya devam etmek için giriş yapın",
   "web_signin_explanation": "Bir dakikalık web önizlemeniz bitti. Devam etmek için giriş yapın veya ücretsiz Synalux hesabı oluşturun. Giriş yapmak paralı abonelik başlatmaz.",
+  "web_signin_still_signed_out": "Yine kontrol edildi: hâlâ çıkış yapılmış durumda. Google ile Devam Et'i kullanın, ardından bu sekmeye dönün.",
   "web_signin_saved": "Kayıtlı panolarınız ve yazılan mesajınız bu cihazda kalır. Giriş yaptıktan sonra tekrar açılır.",
   "web_signin_network_error": "Girişiniz doğrulanamadı. Bağlantınızı kontrol edip tekrar deneyin.",
   "web_signin_check_again": "Girişi tekrar kontrol et",

@@ -472,6 +472,7 @@
   "web_preview_notice": "Majaribio ya wavuti: Baki sekunde {seconds}. Kuingia kunahitajika baada ya hapo na ni bure.",
   "web_signin_required": "Ingia ili kuendelea kutumia Prism AAC",
   "web_signin_explanation": "Majaribio yako ya dakika moja yameisha. Ingia au fungua akaunti ya bure ya Synalux ili kuendelea. Kuingia hakuanzishi usajili wa kulipia.",
+  "web_signin_still_signed_out": "Imeangaliwa sasa hivi: bado hujaingia. Tumia Endelea kwa Google, kisha urudi kwenye kichupo hiki.",
   "web_signin_saved": "Mbao zako na ujumbe uliounda vimehifadhiwa kwenye kifaa hiki. Vitapatikana tena ukishaingia.",
   "web_signin_network_error": "Imeshindwa kuthibitisha kuingia kwako. Angalia mtandao ujaribu tena.",
   "web_signin_check_again": "Kagua kuingia tena",

@@ -472,6 +472,7 @@
   "web_preview_notice": "網頁預覽：剩餘 {seconds} 秒。隨後需要登入，登入為免費。",
   "web_signin_required": "請登入以繼續使用 Prism AAC",
   "web_signin_explanation": "一分鐘的網頁預覽已經結束。請登入或建立免費的 Synalux 帳戶以繼續。登入不會開始付費訂閱。",
+  "web_signin_still_signed_out": "剛剛已檢查：仍未登入。請按「繼續使用 Google」，然後返回此頁籤。",
   "web_signin_saved": "你已儲存的版面及組合訊息會保留在此裝置上。登入後可再次使用。",
   "web_signin_network_error": "無法驗證你的登入。請檢查網絡連線後再試。",
   "web_signin_check_again": "再次檢查登入",

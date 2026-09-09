@@ -472,6 +472,7 @@
   "web_preview_notice": "Apreciere web: au rămas {seconds}s. Autentificarea este necesară după aceea și este gratuită.",
   "web_signin_required": "Conectează-te pentru a continua să folosești Prism AAC",
   "web_signin_explanation": "Aprecierea web de un minut s-a încheiat. Conectează-te sau creează un cont gratuit Synalux pentru a continua. Conectarea nu inițiază un abonament plătit.",
+  "web_signin_still_signed_out": "Verificat acum: tot neconectat. Apasă Continuă cu Google, apoi revino la acest tab.",
   "web_signin_saved": "Panourile salvate și mesajul compus rămân pe acest dispozitiv. Vor fi disponibile din nou după conectare.",
   "web_signin_network_error": "Nu am putut verifica conectarea. Verifică conexiunea și încearcă din nou.",
   "web_signin_check_again": "Verifică conectarea din nou",

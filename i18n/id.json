@@ -472,6 +472,7 @@
   "web_preview_notice": "Pratinjau web: sisa {seconds} detik. Masuk akun diperlukan setelahnya dan gratis.",
   "web_signin_required": "Masuk untuk melanjutkan Prism AAC",
   "web_signin_explanation": "Pratinjau web satu menit Anda telah selesai. Masuk atau buat akun Synalux gratis untuk lanjut. Masuk akun tidak memulai langganan berbayar.",
+  "web_signin_still_signed_out": "Baru saja diperiksa: masih keluar. Gunakan Lanjutkan ke Google, lalu kembali ke tab ini.",
   "web_signin_saved": "Papan tersimpan dan pesan Anda tetap ada di perangkat ini. Akan tersedia lagi setelah Anda masuk.",
   "web_signin_network_error": "Gagal memverifikasi akun Anda. Periksa koneksi dan coba lagi.",
   "web_signin_check_again": "Cek lagi status masuk",
