@@ -20,6 +20,7 @@ import SettingsModal from '@/components/SettingsModal';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUIStore } from '@/store/uiStore';
 import { UNREVIEWED_LANGUAGES } from '@/constants/translationReviewStatus';
+import { loadLanguage } from '@/engine/i18n';
 import translations from '@/i18n/translations.json';
 
 // jsdom has no canvas/media; SettingsModal pulls in calibration + local-model
@@ -30,6 +31,13 @@ vi.mock('@/components/CaregiverContactsSettings', () => ({ default: () => null }
 vi.mock('@/components/InputModesSettings', () => ({ default: () => null }));
 
 const openSettingsIn = async (language: string) => {
+  // Locale bundles are dynamic import()s and useT renders the English fallback
+  // until one resolves — t() is `loaded[lang]?.[key] ?? loaded.en?.[key]`. The
+  // assertions below look the control up by its LOCALIZED label, so without
+  // waiting here they race the import: when it loses, the rendered aria-label is
+  // English, queryByLabelText returns null, and the failure reads as "the
+  // control is missing" rather than "the locale had not loaded yet".
+  await loadLanguage(language as never);
   useSettingsStore.setState({ language, showUnreviewedVocabulary: false } as never);
   useUIStore.setState({ showSettings: true } as never);
   await act(async () => { render(<SettingsModal />); });
