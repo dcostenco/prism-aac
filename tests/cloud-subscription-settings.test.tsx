@@ -3,8 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 const state = vi.hoisted(() => ({ native: false, nativePurchases: false,
   profile: { email: 'tester@example.com', plan: 'free', isPlatformAdmin: false }, fetch: vi.fn(), product: vi.fn(), apple: vi.fn(),
-  stripe: vi.fn(), restore: vi.fn(), manage: vi.fn() }));
+  stripe: vi.fn(), restore: vi.fn(), manage: vi.fn(), ddAction: vi.fn() }));
 vi.mock('@/services/aiService', () => ({ isNativeiOS: () => state.native }));
+vi.mock('@/lib/datadog', () => ({ ddAction: state.ddAction }));
 vi.mock('@/store/authStore', () => ({ useAuthStore: Object.assign((selector: any) => selector({ profile: state.profile }),
   { getState: () => ({ profile: state.profile }) }) }));
 vi.mock('@/services/aacBillingService', () => ({
@@ -29,6 +30,10 @@ beforeEach(() => {
   state.apple.mockResolvedValue({ status: 'pending' });
   useSettingsStore.setState({ language: 'en' });
 });
+
+const planEvents = () => state.ddAction.mock.calls
+  .filter(([name]) => name === 'aac_cloud_plan')
+  .map(([, ctx]) => `${(ctx as { event: string }).event}:${(ctx as { platform: string }).platform}`);
 
 describe('AAC account purchase settings', () => {
   it.each(['apple', 'stripe'])('shows verified %s access instead of the legacy Free plan', async channel => {
@@ -138,5 +143,66 @@ describe('AAC account purchase settings', () => {
     await screen.findByRole('button', { name: 'Refresh cloud plan' });
     await waitFor(() => expect(state.fetch).toHaveBeenCalled());
     expect(screen.queryByRole('button', { name: /Subscribe/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('cloud plan funnel telemetry', () => {
+  it('reports a visible offer once per mount, tagged web', async () => {
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
+    await act(async () => { fireEvent(window, new Event('prismAacBillingUpdated')); });
+    expect(planEvents().filter(e => e.startsWith('offer_shown'))).toEqual(['offer_shown:web']);
+  });
+
+  it('counts one visitor once even when a refresh withdraws and restores the offer', async () => {
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
+    state.fetch.mockResolvedValue({ ...free, enabled: false });
+    await act(async () => { fireEvent(window, new Event('prismAacBillingUpdated')); });
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Subscribe/ })).not.toBeInTheDocument());
+    state.fetch.mockResolvedValue(free);
+    await act(async () => { fireEvent(window, new Event('prismAacBillingUpdated')); });
+    expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
+    expect(planEvents().filter(e => e.startsWith('offer_shown'))).toEqual(['offer_shown:web']);
+  });
+
+  it('separates a completed Apple purchase from a cancelled one, tagged ios', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.apple.mockResolvedValue({ status: 'cancelled' });
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_cancelled:ios'));
+    expect(planEvents()).toEqual(['offer_shown:ios', 'purchase_started:ios', 'purchase_cancelled:ios']);
+  });
+
+  it('reports a delivered Apple purchase as complete', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.apple.mockResolvedValue({ status: 'purchased', billing: { ...free, hasCloudAccess: true, channels: ['apple'] } });
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_complete:ios'));
+  });
+
+  it('reports the web purchase as a redirect, since Stripe owns what follows', async () => {
+    state.stripe.mockResolvedValue(undefined);
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_redirected:web'));
+  });
+
+  it('reports a failed purchase without hiding the error from the user', async () => {
+    state.stripe.mockRejectedValue(new Error('Payment processing failed'));
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_failed:web'));
+    expect(await screen.findByText('Payment processing failed')).toBeVisible();
+  });
+
+  it('reports both ends of a restore', async () => {
+    state.native = true; state.nativePurchases = true;
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Restore/ }));
+    await waitFor(() => expect(planEvents()).toContain('restore_complete:ios'));
+    expect(planEvents()).toContain('restore_started:ios');
   });
 });

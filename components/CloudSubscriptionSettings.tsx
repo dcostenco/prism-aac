@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useT } from '@/engine/useT';
 import { useAuthStore } from '@/store/authStore';
 import { isNativeiOS, type SynaluxProfile } from '@/services/aiService';
 import { fetchAacBillingStatus, hasNativePurchases, manageAacSubscription, nativeSubscription,
   purchaseAacWithApple, purchaseAacWithStripe, restoreAacApplePurchases, AAC_BILLING_UPDATED, type AacBillingStatus } from '@/services/aacBillingService';
+import { reportCloudPlan, type CloudPlanEvent } from '@/services/monetizationTelemetry';
 
 export default function CloudSubscriptionSettings() {
   const { t } = useT();
@@ -17,6 +18,8 @@ export default function CloudSubscriptionSettings() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const native = typeof window !== 'undefined' && isNativeiOS();
+  // The panel is one component on both surfaces; the tag is what separates them.
+  const platform = native ? 'ios' as const : 'web' as const;
 
   const refresh = useCallback(async () => {
     const identity = account;
@@ -52,33 +55,57 @@ export default function CloudSubscriptionSettings() {
     return () => { active = false; window.removeEventListener(AAC_BILLING_UPDATED, updated); };
   }, [account, native, refresh]);
 
-  const act = async (operation: () => Promise<void>) => {
+  const act = async (failure: CloudPlanEvent, operation: () => Promise<void>) => {
     setBusy(true); setError(''); setNotice('');
     try { await operation(); }
-    catch (e) { setError(e instanceof Error ? e.message : t('cloud_plan_unavailable')); }
+    catch (e) {
+      reportCloudPlan(failure, platform);
+      setError(e instanceof Error ? e.message : t('cloud_plan_unavailable'));
+    }
     finally { setBusy(false); }
   };
 
-  const purchase = () => act(async () => {
+  const purchase = () => act('purchase_failed', async () => {
     if (!billing?.offer.version || useAuthStore.getState().profile?.email !== account) {
       await refresh();
       return;
     }
+    reportCloudPlan('purchase_started', platform);
     if (native) {
       const result = await purchaseAacWithApple(billing.userId, billing.offer.version);
       if (useAuthStore.getState().profile?.email !== account) return;
       if (result.billing) setBilling(result.billing);
-      setNotice(t(result.status === 'pending' ? 'cloud_purchase_pending'
-        : result.status === 'cancelled' ? 'cloud_purchase_cancelled'
-          : result.billing?.hasCloudAccess ? 'cloud_purchase_complete' : 'cloud_no_active_subscription'));
-    } else await purchaseAacWithStripe(billing.userId, billing.offer.version);
+      // One expression decides both what the user is told and what is reported,
+      // so the funnel cannot drift away from the visible outcome.
+      const outcome: CloudPlanEvent = result.status === 'pending' ? 'purchase_pending'
+        : result.status === 'cancelled' ? 'purchase_cancelled'
+          : result.billing?.hasCloudAccess ? 'purchase_complete' : 'purchase_none';
+      reportCloudPlan(outcome, platform);
+      setNotice(t(outcome === 'purchase_pending' ? 'cloud_purchase_pending'
+        : outcome === 'purchase_cancelled' ? 'cloud_purchase_cancelled'
+          : outcome === 'purchase_complete' ? 'cloud_purchase_complete' : 'cloud_no_active_subscription'));
+    } else {
+      // Stripe owns everything after the redirect; this is the web terminal event.
+      reportCloudPlan('purchase_redirected', platform);
+      await purchaseAacWithStripe(billing.userId, billing.offer.version);
+    }
   });
 
-  if (!account) return null;
   const quotedPrice = native ? price : billing ? `US$${billing.offer.usdMonthly.toFixed(2)}` : null;
   const canPurchase = Boolean(billing?.enabled && !billing.betaExempt && !billing.purchaseBlocked && billing.channels.length === 0
     && quotedPrice && billing.offer.version && (!native || hasNativePurchases())
     && (billing.offer.monthlySpeechCharacters ?? 0) > 0 && (billing.offer.monthlyAiRequests ?? 0) > 0);
+  // Once per mount. A billing refresh can briefly withdraw the offer and
+  // restore it (a slow product lookup, a status poll); without this the funnel
+  // would count one visitor as several.
+  const offerReported = useRef(false);
+  useEffect(() => {
+    if (!canPurchase || offerReported.current) return;
+    offerReported.current = true;
+    reportCloudPlan('offer_shown', platform);
+  }, [canPurchase, platform]);
+
+  if (!account) return null;
   // The legacy profile plan does not include Apple/Stripe AAC entitlements.
   // Keep the summary on the same verified state as purchase and restore.
   let summaryKey = error ? 'cloud_subscription_unknown' : 'cloud_subscription_checking';
@@ -121,19 +148,23 @@ export default function CloudSubscriptionSettings() {
     {native && billing?.enabled && !hasNativePurchases() && !billing.betaExempt &&
       <p className="text-xs text-muted">{t('cloud_update_ios')}</p>}
     {native && hasNativePurchases() && billing && !billing.betaExempt && <button type="button" disabled={busy}
-      className={button} onClick={() => void act(async () => {
+      className={button} onClick={() => void act('restore_failed', async () => {
+        reportCloudPlan('restore_started', platform);
         // A rejected foreign transaction is reported, but the account's own
         // deliveries in the same restore must still be reflected in the summary.
-        try { setBilling(await restoreAacApplePurchases()); }
+        try { setBilling(await restoreAacApplePurchases()); reportCloudPlan('restore_complete', platform); }
         catch (error) { await refresh().catch(() => undefined); throw error; }
       })}>
       {t('cloud_restore_apple')}
     </button>}
     {billing?.manageChannel && <button type="button" disabled={busy} className={button}
-      onClick={() => void act(async () => { await manageAacSubscription(billing.manageChannel!); await refresh(); })}>
+      onClick={() => void act('manage_failed', async () => {
+        reportCloudPlan('manage_opened', platform);
+        await manageAacSubscription(billing.manageChannel!); await refresh();
+      })}>
       {t('cloud_manage_subscription')}
     </button>}
-    <button type="button" disabled={busy} className={button} onClick={() => void act(refresh)}>{t('cloud_refresh_plan')}</button>
+    <button type="button" disabled={busy} className={button} onClick={() => void act('refresh_failed', refresh)}>{t('cloud_refresh_plan')}</button>
     {notice && <p role="status" className="text-xs text-muted">{notice}</p>}
     {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
   </div>;

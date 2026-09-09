@@ -1,13 +1,14 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ access: vi.fn(), native: false, profile: null as null | { email: string } }));
+const mocks = vi.hoisted(() => ({ access: vi.fn(), native: false, profile: null as null | { email: string }, ddAction: vi.fn() }));
 vi.mock('@/services/webAccessService', async importOriginal => ({
   ...await importOriginal<typeof import('@/services/webAccessService')>(), fetchWebAccess: mocks.access,
 }));
 vi.mock('@/services/aiService', () => ({ isNativeiOS: () => mocks.native,
   synaluxSignInUrl: () => 'https://synalux.ai/auth?callbackUrl=%2Fprism-aac' }));
 vi.mock('@/store/authStore', () => ({ useAuthStore: (select: any) => select({ profile: mocks.profile }) }));
+vi.mock('@/lib/datadog', () => ({ ddAction: mocks.ddAction }));
 import WebSignInGate from '@/components/WebSignInGate';
 import { useSettingsStore } from '@/store/settingsStore';
 import { clearVerifiedLocalAccess } from '@/services/webAccessService';
@@ -24,6 +25,9 @@ beforeEach(() => {
   useSettingsStore.setState({ language: 'en' });
 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
+
+const gateOutcomes = () => mocks.ddAction.mock.calls
+  .filter(([name]) => name === 'aac_web_gate').map(([, ctx]) => (ctx as { outcome: string }).outcome);
 
 describe('full web sign-in gate', () => {
   it('preserves verified local communication after a network failure and offline remount', async () => {
@@ -87,4 +91,47 @@ describe('full web sign-in gate', () => {
     expect(screen.getByRole('button', { name: 'Communication board action' })).toBeVisible();
     expect(mocks.access).not.toHaveBeenCalled();
   });
+
+  // The countdown re-renders roughly four times a second for a minute. A
+  // per-render or per-poll event would make the funnel useless and noisy, so
+  // the reporter must fire once per decision change and no more.
+  it('reports each gate decision exactly once, not once per render', async () => {
+    render(<WebSignInGate>{board}</WebSignInGate>);
+    await tick(1);
+    expect(gateOutcomes()).toEqual(['preview']);
+    await tick(59_750);
+    expect(gateOutcomes()).toEqual(['preview']);
+    await tick(250);
+    expect(gateOutcomes()).toEqual(['preview', 'sign_in_required']);
+    fireEvent(window, new Event('focus'));
+    await tick(1);
+    expect(gateOutcomes()).toEqual(['preview', 'sign_in_required']);
+  });
+
+  it('reports the transition when an anonymous visitor becomes signed in', async () => {
+    render(<WebSignInGate>{board}</WebSignInGate>);
+    await tick(1);
+    mocks.access.mockResolvedValue({ state: 'signed_in', remainingMs: 0 });
+    fireEvent(window, new Event('focus'));
+    await tick(1);
+    expect(gateOutcomes()).toEqual(['preview', 'signed_in']);
+  });
+
+  it('reports the sign-in press so the funnel can separate leaving from bouncing', async () => {
+    render(<WebSignInGate>{board}</WebSignInGate>);
+    await tick(1);
+    await tick(60_100);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to Google' }));
+    expect(gateOutcomes()).toEqual(['preview', 'sign_in_required', 'sign_in_clicked']);
+  });
+
+  it.each([['disabled by configuration', () => { vi.stubEnv('NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE', '0'); }],
+    ['running inside the native app', () => { mocks.native = true; }]] as const)(
+    'stays silent when the gate is %s', async (_label, setup) => {
+      setup();
+      render(<WebSignInGate>{board}</WebSignInGate>);
+      await tick(1);
+      await tick(61_000);
+      expect(gateOutcomes()).toEqual([]);
+    });
 });

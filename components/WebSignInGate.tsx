@@ -7,6 +7,7 @@ import { isNativeiOS, synaluxSignInUrl } from '@/services/aiService';
 import { fetchWebAccess, hasVerifiedLocalAccess, rememberVerifiedLocalAccess, clearVerifiedLocalAccess,
   LOCAL_ACCESS_CLEARED, LOCAL_ACCESS_KEY, type WebAccess } from '@/services/webAccessService';
 import { rememberWebSignInDraft, recoverWebSignInDraft } from '@/services/webSignInDraft';
+import { reportWebGate } from '@/services/monetizationTelemetry';
 
 type AccessState = WebAccess['state'] | 'checking' | 'error';
 const PRIVACY_URL = 'https://synalux.ai/legal/privacy';
@@ -95,6 +96,14 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
     };
   }, [enabled, native, check, profile?.email]);
 
+  // `state` is the only trigger, so this fires once per decision change and
+  // never on the countdown's four-a-second re-renders. 'checking' is a
+  // transient placeholder, not an outcome, so it is never reported.
+  useEffect(() => {
+    if (!enabled || native || state === 'checking') return;
+    reportWebGate(state);
+  }, [enabled, native, state]);
+
   useEffect(() => {
     if (state !== 'preview') return;
     const update = () => {
@@ -135,6 +144,7 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
       {draftFallback && <p role="alert" className="text-sm">{t('web_signin_draft_fallback')}</p>}
       <button ref={signInButton} type="button" disabled={state === 'checking'} aria-describedby="web-signin-explanation"
         onClick={() => {
+          reportWebGate('sign_in_clicked');
           if (draftFallback) { window.open(synaluxSignInUrl(), '_blank', 'noopener,noreferrer'); return; }
           if (!rememberWebSignInDraft()) { setDraftFallback(true); return; }
           window.location.assign(synaluxSignInUrl());
