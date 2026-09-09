@@ -19,7 +19,11 @@ export const CLOUD_PLAN_ACTION = 'aac_cloud_plan';
 
 /** Gate decisions, plus the one interaction that leaves for sign-in. */
 export type WebGateOutcome =
-  | 'preview' | 'sign_in_required' | 'signed_in' | 'disabled' | 'error' | 'sign_in_clicked';
+  | 'preview' | 'sign_in_required' | 'signed_in' | 'disabled' | 'error' | 'sign_in_clicked'
+  // The server could not be reached and a previously verified local session
+  // carried the user through. Reported separately so registration conversion
+  // is not inflated by offline continuity.
+  | 'offline_continuity';
 
 /** Cloud plan funnel. `redirected` is the web terminal state — Stripe owns the rest. */
 export type CloudPlanEvent =

@@ -24,6 +24,7 @@ const free = { userId: 'account-test', hasCloudAccess: false, betaExempt: false,
 
 beforeEach(() => {
   vi.clearAllMocks(); state.native = false; state.nativePurchases = false;
+  sessionStorage.clear();
   state.fetch.mockResolvedValue(free);
   state.restore.mockImplementation(() => state.fetch());
   state.product.mockResolvedValue({ id: free.offer.appleProductId, displayPrice: '$4.99' });
@@ -147,7 +148,7 @@ describe('AAC account purchase settings', () => {
 });
 
 describe('cloud plan funnel telemetry', () => {
-  it('reports a visible offer once per mount, tagged web', async () => {
+  it('reports a visible offer once per account session, tagged web', async () => {
     render(<CloudSubscriptionSettings />);
     expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
     await act(async () => { fireEvent(window, new Event('prismAacBillingUpdated')); });
@@ -164,6 +165,78 @@ describe('cloud plan funnel telemetry', () => {
     await act(async () => { fireEvent(window, new Event('prismAacBillingUpdated')); });
     expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
     expect(planEvents().filter(e => e.startsWith('offer_shown'))).toEqual(['offer_shown:web']);
+  });
+
+  // Collapsing the Account accordion unmounts this panel. A per-mount flag
+  // counted the same visitor again on every expand.
+  it('counts one visitor once across a collapse and re-expand of the section', async () => {
+    const first = render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
+    first.unmount();
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
+    expect(planEvents().filter(e => e.startsWith('offer_shown'))).toEqual(['offer_shown:web']);
+  });
+
+  // The redirect is the declared web conversion. Counting it before the call
+  // inflated it by every rejected checkout and every blocked destination.
+  it('does not count a redirect when checkout never redirected', async () => {
+    state.stripe.mockRejectedValue(new Error('Payment processing failed'));
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_failed:web'));
+    expect(planEvents()).not.toContain('purchase_redirected:web');
+  });
+
+  it('does not count a manage handoff that failed', async () => {
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, channels: ['stripe'], manageChannel: 'stripe' });
+    state.manage.mockRejectedValue(new Error('Payment processing failed'));
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Manage/ }));
+    await waitFor(() => expect(planEvents()).toContain('manage_failed:web'));
+    expect(planEvents()).not.toContain('manage_opened:web');
+  });
+
+  it('counts a manage handoff that succeeded', async () => {
+    state.fetch.mockResolvedValue({ ...free, hasCloudAccess: true, channels: ['stripe'], manageChannel: 'stripe' });
+    state.manage.mockResolvedValue(undefined);
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Manage/ }));
+    await waitFor(() => expect(planEvents()).toContain('manage_opened:web'));
+  });
+
+  // A stale offer refreshes instead of buying, so its failure is a refresh
+  // failure. Otherwise failures could outnumber starts.
+  it('reports a drifted-identity press as a refresh, never as a failed purchase', async () => {
+    render(<CloudSubscriptionSettings />);
+    const subscribe = await screen.findByRole('button', { name: /Subscribe/ });
+    // The signed-in account changes under the rendered panel: the press must
+    // refresh instead of buying, so its failure is a refresh failure.
+    state.profile = { email: 'someone.else@example.com', plan: 'free', isPlatformAdmin: false };
+    state.fetch.mockRejectedValue(new Error('Cloud plan details are temporarily unavailable.'));
+    fireEvent.click(subscribe);
+    await waitFor(() => expect(planEvents()).toContain('refresh_failed:web'));
+    expect(planEvents()).not.toContain('purchase_failed:web');
+    expect(planEvents()).not.toContain('purchase_started:web');
+    expect(state.stripe).not.toHaveBeenCalled();
+  });
+
+  it('reports an Apple purchase that delivered nothing as none, not complete', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.apple.mockResolvedValue({ status: 'purchased', billing: { ...free, hasCloudAccess: false } });
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_none:ios'));
+    expect(planEvents()).not.toContain('purchase_complete:ios');
+  });
+
+  it('reports a failed restore', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.restore.mockRejectedValue(new Error('Purchase verification is temporarily unavailable.'));
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Restore/ }));
+    await waitFor(() => expect(planEvents()).toContain('restore_failed:ios'));
+    expect(planEvents()).not.toContain('restore_complete:ios');
   });
 
   it('separates a completed Apple purchase from a cancelled one, tagged ios', async () => {

@@ -54,6 +54,9 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
     } catch {
       if (alive.current && version === requestVersion.current) {
         if (hasVerifiedLocalAccess()) {
+          // Not a server-verified sign-in; reported on its own so it can be
+          // subtracted from registration conversion.
+          reportWebGate('offline_continuity');
           recoverWebSignInDraft();
           setState('signed_in');
         } else setState('error');

@@ -8,6 +8,18 @@ import { fetchAacBillingStatus, hasNativePurchases, manageAacSubscription, nativ
   purchaseAacWithApple, purchaseAacWithStripe, restoreAacApplePurchases, AAC_BILLING_UPDATED, type AacBillingStatus } from '@/services/aacBillingService';
 import { reportCloudPlan, type CloudPlanEvent } from '@/services/monetizationTelemetry';
 
+// The panel unmounts every time the Account accordion collapses, so a
+// per-mount flag would count one visitor once per expand. Session scope keys
+// the impression to the account: switching account really is a new visitor.
+const OFFER_REPORTED_KEY = 'prism-aac-offer-reported';
+function firstOfferSighting(key: string): boolean {
+  try {
+    if (sessionStorage.getItem(OFFER_REPORTED_KEY) === key) return false;
+    sessionStorage.setItem(OFFER_REPORTED_KEY, key);
+    return true;
+  } catch { return true; }
+}
+
 export default function CloudSubscriptionSettings() {
   const { t } = useT();
   const profile = useAuthStore(s => s.profile);
@@ -65,45 +77,53 @@ export default function CloudSubscriptionSettings() {
     finally { setBusy(false); }
   };
 
-  const purchase = () => act('purchase_failed', async () => {
-    if (!billing?.offer.version || useAuthStore.getState().profile?.email !== account) {
-      await refresh();
-      return;
+  const purchase = () => {
+    // A stale offer or a changed identity refreshes instead of buying, so its
+    // failure is a refresh failure: `purchase_failed` must never exceed
+    // `purchase_started`.
+    const offerVersion = billing?.offer.version;
+    if (!billing || !offerVersion || useAuthStore.getState().profile?.email !== account) {
+      return act('refresh_failed', refresh);
     }
-    reportCloudPlan('purchase_started', platform);
-    if (native) {
-      const result = await purchaseAacWithApple(billing.userId, billing.offer.version);
-      if (useAuthStore.getState().profile?.email !== account) return;
-      if (result.billing) setBilling(result.billing);
-      // One expression decides both what the user is told and what is reported,
-      // so the funnel cannot drift away from the visible outcome.
-      const outcome: CloudPlanEvent = result.status === 'pending' ? 'purchase_pending'
-        : result.status === 'cancelled' ? 'purchase_cancelled'
-          : result.billing?.hasCloudAccess ? 'purchase_complete' : 'purchase_none';
-      reportCloudPlan(outcome, platform);
-      setNotice(t(outcome === 'purchase_pending' ? 'cloud_purchase_pending'
-        : outcome === 'purchase_cancelled' ? 'cloud_purchase_cancelled'
-          : outcome === 'purchase_complete' ? 'cloud_purchase_complete' : 'cloud_no_active_subscription'));
-    } else {
-      // Stripe owns everything after the redirect; this is the web terminal event.
-      reportCloudPlan('purchase_redirected', platform);
-      await purchaseAacWithStripe(billing.userId, billing.offer.version);
-    }
-  });
+    // Captured at the press, so a refresh mid-flight cannot move the purchase
+    // onto a different account or a different offer.
+    const { userId } = billing;
+    return act('purchase_failed', async () => {
+      reportCloudPlan('purchase_started', platform);
+      if (native) {
+        const result = await purchaseAacWithApple(userId, offerVersion);
+        if (useAuthStore.getState().profile?.email !== account) return;
+        if (result.billing) setBilling(result.billing);
+        // One expression decides both what the user is told and what is
+        // reported, so the funnel cannot drift from the visible outcome.
+        const outcome: CloudPlanEvent = result.status === 'pending' ? 'purchase_pending'
+          : result.status === 'cancelled' ? 'purchase_cancelled'
+            : result.billing?.hasCloudAccess ? 'purchase_complete' : 'purchase_none';
+        reportCloudPlan(outcome, platform);
+        setNotice(t(outcome === 'purchase_pending' ? 'cloud_purchase_pending'
+          : outcome === 'purchase_cancelled' ? 'cloud_purchase_cancelled'
+            : outcome === 'purchase_complete' ? 'cloud_purchase_complete' : 'cloud_no_active_subscription'));
+      } else {
+        // Only after the redirect has actually been initiated. A rejected
+        // checkout or a blocked destination throws, and the funnel shows the
+        // failure instead of a conversion that never happened.
+        await purchaseAacWithStripe(userId, offerVersion);
+        reportCloudPlan('purchase_redirected', platform);
+      }
+    });
+  };
 
   const quotedPrice = native ? price : billing ? `US$${billing.offer.usdMonthly.toFixed(2)}` : null;
   const canPurchase = Boolean(billing?.enabled && !billing.betaExempt && !billing.purchaseBlocked && billing.channels.length === 0
     && quotedPrice && billing.offer.version && (!native || hasNativePurchases())
     && (billing.offer.monthlySpeechCharacters ?? 0) > 0 && (billing.offer.monthlyAiRequests ?? 0) > 0);
-  // Once per mount. A billing refresh can briefly withdraw the offer and
-  // restore it (a slow product lookup, a status poll); without this the funnel
-  // would count one visitor as several.
-  const offerReported = useRef(false);
+  // Once per account per tab session. A refresh can briefly withdraw the offer
+  // and restore it, and collapsing the Account section unmounts this panel;
+  // neither may count the same visitor again.
   useEffect(() => {
-    if (!canPurchase || offerReported.current) return;
-    offerReported.current = true;
-    reportCloudPlan('offer_shown', platform);
-  }, [canPurchase, platform]);
+    if (!canPurchase || !account) return;
+    if (firstOfferSighting(`${platform}:${account}`)) reportCloudPlan('offer_shown', platform);
+  }, [canPurchase, platform, account]);
 
   if (!account) return null;
   // The legacy profile plan does not include Apple/Stripe AAC entitlements.
@@ -159,8 +179,9 @@ export default function CloudSubscriptionSettings() {
     </button>}
     {billing?.manageChannel && <button type="button" disabled={busy} className={button}
       onClick={() => void act('manage_failed', async () => {
+        await manageAacSubscription(billing.manageChannel!);
         reportCloudPlan('manage_opened', platform);
-        await manageAacSubscription(billing.manageChannel!); await refresh();
+        await refresh();
       })}>
       {t('cloud_manage_subscription')}
     </button>}

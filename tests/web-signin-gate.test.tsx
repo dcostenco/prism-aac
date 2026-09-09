@@ -108,6 +108,18 @@ describe('full web sign-in gate', () => {
     expect(gateOutcomes()).toEqual(['preview', 'sign_in_required']);
   });
 
+  // Offline continuity is not a registration. Counting it as `signed_in`
+  // inflated conversion with users the server never confirmed.
+  it('reports offline continuity separately from a verified sign-in', async () => {
+    mocks.access.mockResolvedValue({ state: 'signed_in', remainingMs: 0 });
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    expect(gateOutcomes()).toEqual(['signed_in']);
+    mocks.access.mockRejectedValue(new Error('Offline'));
+    fireEvent(window, new Event('focus')); await tick(1);
+    expect(screen.getByText('Communication board action')).toBeVisible();
+    expect(gateOutcomes()).toEqual(['signed_in', 'offline_continuity']);
+  });
+
   it('reports the transition when an anonymous visitor becomes signed in', async () => {
     render(<WebSignInGate>{board}</WebSignInGate>);
     await tick(1);
