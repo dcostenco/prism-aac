@@ -29,7 +29,7 @@ export type WebGateOutcome =
 export type CloudPlanEvent =
   | 'offer_shown'
   | 'purchase_started' | 'purchase_complete' | 'purchase_pending' | 'purchase_cancelled'
-  | 'purchase_redirected' | 'purchase_none' | 'purchase_failed'
+  | 'purchase_redirected' | 'purchase_none' | 'purchase_failed' | 'purchase_abandoned'
   | 'restore_started' | 'restore_complete' | 'restore_failed'
   | 'manage_opened' | 'manage_failed' | 'refresh_failed';
 
@@ -51,4 +51,36 @@ export function reportWebGate(outcome: WebGateOutcome): void {
 
 export function reportCloudPlan(event: CloudPlanEvent, platform: CloudPlanPlatform): void {
   report(CLOUD_PLAN_ACTION, { event, platform });
+}
+
+/**
+ * One offer impression per account per tab session.
+ *
+ * The panel unmounts whenever the Account accordion collapses, so this cannot
+ * live in a ref. It is held in memory *and* mirrored to sessionStorage: memory
+ * survives the unmount and keeps working when storage is blocked (private
+ * browsing), storage survives a reload of the same tab. Signing in as a
+ * different account is a different visitor and is counted again.
+ */
+const OFFER_IMPRESSION_KEY = 'prism-aac-offer-impressions';
+const IMPRESSION_LIMIT = 20;
+const reportedImpressions = new Set<string>();
+
+/** Test-only. Production has no reason to forget an impression. */
+export function resetOfferImpressions(): void {
+  reportedImpressions.clear();
+  try { sessionStorage.removeItem(OFFER_IMPRESSION_KEY); } catch { /* storage unavailable */ }
+}
+
+export function firstOfferImpression(key: string): boolean {
+  if (reportedImpressions.has(key)) return false;
+  reportedImpressions.add(key);
+  try {
+    const raw = sessionStorage.getItem(OFFER_IMPRESSION_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    const seen = Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+    if (seen.includes(key)) return false;
+    sessionStorage.setItem(OFFER_IMPRESSION_KEY, JSON.stringify([...seen, key].slice(-IMPRESSION_LIMIT)));
+  } catch { /* blocked or corrupt: the in-memory set still holds for this page */ }
+  return true;
 }

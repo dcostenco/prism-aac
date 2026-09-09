@@ -120,6 +120,36 @@ describe('full web sign-in gate', () => {
     expect(gateOutcomes()).toEqual(['signed_in', 'offline_continuity']);
   });
 
+  // A cold load while offline shows the board immediately from local access,
+  // long before the request fails. That optimistic state is not a decision and
+  // must never be reported as a verified sign-in — the fast-failure case hides
+  // this, because React coalesces both updates into one render.
+  it('never reports a verified sign-in when the server was never reached', async () => {
+    mocks.access.mockResolvedValue({ state: 'signed_in', remainingMs: 0 });
+    const online = render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    online.unmount();
+    mocks.access.mockImplementation(() => new Promise((_resolve, reject) => {
+      setTimeout(() => reject(new Error('Offline')), 5_000);
+    }));
+    render(<WebSignInGate>{board}</WebSignInGate>);
+    await tick(1);
+    expect(screen.getByText('Communication board action')).toBeVisible();
+    expect(gateOutcomes()).toEqual(['signed_in']);
+    await tick(5_000);
+    expect(gateOutcomes()).toEqual(['signed_in', 'offline_continuity']);
+  });
+
+  // The poll runs on every focus and every five minutes. Reporting per poll
+  // would bury the one event that matters under an unattended tablet's noise.
+  it('reports one continuity episode however many polls fail', async () => {
+    mocks.access.mockResolvedValue({ state: 'signed_in', remainingMs: 0 });
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    mocks.access.mockRejectedValue(new Error('Offline'));
+    for (let i = 0; i < 4; i++) { fireEvent(window, new Event('focus')); await tick(1); }
+    await tick(5 * 60_000 + 10);
+    expect(gateOutcomes()).toEqual(['signed_in', 'offline_continuity']);
+  });
+
   it('reports the transition when an anonymous visitor becomes signed in', async () => {
     render(<WebSignInGate>{board}</WebSignInGate>);
     await tick(1);

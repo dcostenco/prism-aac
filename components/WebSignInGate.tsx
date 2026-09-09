@@ -7,7 +7,7 @@ import { isNativeiOS, synaluxSignInUrl } from '@/services/aiService';
 import { fetchWebAccess, hasVerifiedLocalAccess, rememberVerifiedLocalAccess, clearVerifiedLocalAccess,
   LOCAL_ACCESS_CLEARED, LOCAL_ACCESS_KEY, type WebAccess } from '@/services/webAccessService';
 import { rememberWebSignInDraft, recoverWebSignInDraft } from '@/services/webSignInDraft';
-import { reportWebGate } from '@/services/monetizationTelemetry';
+import { reportWebGate, type WebGateOutcome } from '@/services/monetizationTelemetry';
 
 type AccessState = WebAccess['state'] | 'checking' | 'error';
 const PRIVACY_URL = 'https://synalux.ai/legal/privacy';
@@ -27,6 +27,11 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
   const [remaining, setRemaining] = useState(0);
   const [busy, setBusy] = useState(false);
   const [draftFallback, setDraftFallback] = useState(false);
+  // The reported decision, kept apart from `state` because `state` is also set
+  // optimistically from local storage before any server answer. React
+  // coalesces an unchanged value, so a poll that keeps answering the same
+  // thing is reported once per episode, not once per poll.
+  const [outcome, setOutcome] = useState<WebGateOutcome | null>(null);
   const expires = useRef(0);
   const anonymousAccess = useRef(false);
   const requestVersion = useRef(0);
@@ -50,16 +55,19 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
         recoverWebSignInDraft();
       } else if (!rememberWebSignInDraft()) setDraftFallback(true);
       setRemaining(Math.ceil(left / 1000));
-      setState(result.state === 'preview' && left <= 0 ? 'sign_in_required' : result.state);
+      const decided = result.state === 'preview' && left <= 0 ? 'sign_in_required' : result.state;
+      setState(decided);
+      setOutcome(decided);
     } catch {
       if (alive.current && version === requestVersion.current) {
         if (hasVerifiedLocalAccess()) {
-          // Not a server-verified sign-in; reported on its own so it can be
-          // subtracted from registration conversion.
-          reportWebGate('offline_continuity');
           recoverWebSignInDraft();
           setState('signed_in');
-        } else setState('error');
+          // Carried by a previously verified local session, not by the server.
+          // Reported as its own outcome so registration conversion is not
+          // inflated by continuity.
+          setOutcome('offline_continuity');
+        } else { setState('error'); setOutcome('error'); }
       }
     } finally {
       if (alive.current && version === requestVersion.current) setBusy(false);
@@ -79,6 +87,7 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
     const revoke = () => {
       requestVersion.current++;
       setState('sign_in_required');
+      setOutcome('sign_in_required');
     };
     const storage = (event: StorageEvent) => {
       if ((event.key === LOCAL_ACCESS_KEY || event.key === null) && event.newValue !== '1') clearVerifiedLocalAccess();
@@ -99,13 +108,12 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
     };
   }, [enabled, native, check, profile?.email]);
 
-  // `state` is the only trigger, so this fires once per decision change and
-  // never on the countdown's four-a-second re-renders. 'checking' is a
-  // transient placeholder, not an outcome, so it is never reported.
+  // Only a decision is reported, never the optimistic local state and never a
+  // render. When the gate is off or running native no decision is ever
+  // reached, so this stays silent without needing to test for it.
   useEffect(() => {
-    if (!enabled || native || state === 'checking') return;
-    reportWebGate(state);
-  }, [enabled, native, state]);
+    if (outcome) reportWebGate(outcome);
+  }, [outcome]);
 
   useEffect(() => {
     if (state !== 'preview') return;
@@ -115,6 +123,7 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
       if (left <= 0) {
         if (!rememberWebSignInDraft()) setDraftFallback(true);
         setState('sign_in_required');
+        setOutcome('sign_in_required');
       }
     };
     const tick = setInterval(update, 250);

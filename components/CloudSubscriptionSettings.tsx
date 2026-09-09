@@ -1,24 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useT } from '@/engine/useT';
 import { useAuthStore } from '@/store/authStore';
 import { isNativeiOS, type SynaluxProfile } from '@/services/aiService';
 import { fetchAacBillingStatus, hasNativePurchases, manageAacSubscription, nativeSubscription,
   purchaseAacWithApple, purchaseAacWithStripe, restoreAacApplePurchases, AAC_BILLING_UPDATED, type AacBillingStatus } from '@/services/aacBillingService';
-import { reportCloudPlan, type CloudPlanEvent } from '@/services/monetizationTelemetry';
-
-// The panel unmounts every time the Account accordion collapses, so a
-// per-mount flag would count one visitor once per expand. Session scope keys
-// the impression to the account: switching account really is a new visitor.
-const OFFER_REPORTED_KEY = 'prism-aac-offer-reported';
-function firstOfferSighting(key: string): boolean {
-  try {
-    if (sessionStorage.getItem(OFFER_REPORTED_KEY) === key) return false;
-    sessionStorage.setItem(OFFER_REPORTED_KEY, key);
-    return true;
-  } catch { return true; }
-}
+import { firstOfferImpression, reportCloudPlan, type CloudPlanEvent } from '@/services/monetizationTelemetry';
 
 export default function CloudSubscriptionSettings() {
   const { t } = useT();
@@ -92,7 +80,12 @@ export default function CloudSubscriptionSettings() {
       reportCloudPlan('purchase_started', platform);
       if (native) {
         const result = await purchaseAacWithApple(userId, offerVersion);
-        if (useAuthStore.getState().profile?.email !== account) return;
+        if (useAuthStore.getState().profile?.email !== account) {
+          // The account changed while StoreKit was open. Nothing is applied to
+          // the new account, but the start must still reach a terminal event.
+          reportCloudPlan('purchase_abandoned', platform);
+          return;
+        }
         if (result.billing) setBilling(result.billing);
         // One expression decides both what the user is told and what is
         // reported, so the funnel cannot drift from the visible outcome.
@@ -122,7 +115,7 @@ export default function CloudSubscriptionSettings() {
   // neither may count the same visitor again.
   useEffect(() => {
     if (!canPurchase || !account) return;
-    if (firstOfferSighting(`${platform}:${account}`)) reportCloudPlan('offer_shown', platform);
+    if (firstOfferImpression(`${platform}:${account}`)) reportCloudPlan('offer_shown', platform);
   }, [canPurchase, platform, account]);
 
   if (!account) return null;

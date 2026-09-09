@@ -15,6 +15,7 @@ vi.mock('@/services/aacBillingService', () => ({
   restoreAacApplePurchases: state.restore, manageAacSubscription: state.manage,
 }));
 import CloudSubscriptionSettings from '@/components/CloudSubscriptionSettings';
+import { resetOfferImpressions } from '@/services/monetizationTelemetry';
 import { useSettingsStore } from '@/store/settingsStore';
 
 const free = { userId: 'account-test', hasCloudAccess: false, betaExempt: false,
@@ -24,7 +25,10 @@ const free = { userId: 'account-test', hasCloudAccess: false, betaExempt: false,
 
 beforeEach(() => {
   vi.clearAllMocks(); state.native = false; state.nativePurchases = false;
-  sessionStorage.clear();
+  // Tests that simulate an account change mutate this; without the reset the
+  // next test starts as a different visitor and impressions look duplicated.
+  state.profile = { email: 'tester@example.com', plan: 'free', isPlatformAdmin: false };
+  resetOfferImpressions();
   state.fetch.mockResolvedValue(free);
   state.restore.mockImplementation(() => state.fetch());
   state.product.mockResolvedValue({ id: free.offer.appleProductId, displayPrice: '$4.99' });
@@ -239,7 +243,49 @@ describe('cloud plan funnel telemetry', () => {
     expect(planEvents()).not.toContain('restore_complete:ios');
   });
 
-  it('separates a completed Apple purchase from a cancelled one, tagged ios', async () => {
+  it('counts an account only once even when the visitor alternates between two', async () => {
+    const a = render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
+    a.unmount();
+    state.profile = { email: 'second@example.com', plan: 'free', isPlatformAdmin: false };
+    const b = render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
+    b.unmount();
+    state.profile = { email: 'tester@example.com', plan: 'free', isPlatformAdmin: false };
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
+    expect(planEvents().filter(e => e.startsWith('offer_shown'))).toEqual(['offer_shown:web', 'offer_shown:web']);
+  });
+
+  // Private browsing can refuse sessionStorage. The impression must still be
+  // deduplicated for the page rather than counted on every expand.
+  it('still counts one impression when session storage is unavailable', async () => {
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('SecurityError'); });
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('SecurityError'); });
+    const first = render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
+    first.unmount();
+    render(<CloudSubscriptionSettings />);
+    expect(await screen.findByRole('button', { name: /Subscribe/ })).toBeVisible();
+    expect(planEvents().filter(e => e.startsWith('offer_shown'))).toEqual(['offer_shown:web']);
+    getItem.mockRestore(); setItem.mockRestore();
+  });
+
+  // Every start must reach a terminal event, or starts outnumber outcomes.
+  it('closes out a purchase abandoned by an account change mid-flight', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.apple.mockImplementation(async () => {
+      state.profile = { email: 'someone.else@example.com', plan: 'free', isPlatformAdmin: false };
+      return { status: 'purchased', billing: { ...free, hasCloudAccess: true } };
+    });
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_abandoned:ios'));
+    expect(planEvents()).toContain('purchase_started:ios');
+    expect(planEvents()).not.toContain('purchase_complete:ios');
+  });
+
+  it('separates a completed Apple purchase from a cancelled one, tagged ios', async () =>{
     state.native = true; state.nativePurchases = true;
     state.apple.mockResolvedValue({ status: 'cancelled' });
     render(<CloudSubscriptionSettings />);
