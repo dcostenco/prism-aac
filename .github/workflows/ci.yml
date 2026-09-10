@@ -1,0 +1,39 @@
+name: CI
+
+# Until this existed, nothing on the GitHub side ran a single test. The green
+# checks on a prism-aac PR were CodeQL and a Vercel preview build, and the only
+# thing exercising the 5,700-test suite was a pre-push hook installed on one
+# maintainer's machine — bypassable with --no-verify, and absent for anyone
+# else. A payment path in an app nonspeaking people rely on needs a gate that
+# does not depend on who pressed push.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # `npm ci` and not `npm install`: it fails on a lockfile that does not
+      # match package.json rather than silently re-resolving, which is what let
+      # production build against a tree no commit described. Lockfile guard
+      # covers the drift itself.
+      - run: npm ci
+      - name: Types
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Tests
+        run: npm test
