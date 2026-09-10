@@ -464,6 +464,7 @@
   "cloud_update_ios": "حديث Prism AAC من App Store لشراء اشتراك. أدوات التواصل المجانية تظل متاحة.",
   "cloud_privacy": "سياسة الخصوصية",
   "cloud_terms": "شروط الاستخدام",
+  "cloud_purchase_undelivered": "تم الشراء. لم نتمكن من التأكيد مع Synalux بعد. أدوات التواصل المجانية تظل متاحة.",
   "cloud_purchase_pending": "بانتظار موافقة Apple. أدوات التواصل المجانية تظل متاحة.",
   "cloud_purchase_cancelled": "تم إلغاء الشراء. لم يتم تأكيد أي اشتراك جديد.",
   "cloud_purchase_complete": "اشتراكك السحابي جاهز الآن.",

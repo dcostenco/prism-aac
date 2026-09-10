@@ -4,7 +4,7 @@
     "ui": {
       "am": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -104,6 +104,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -475,7 +476,7 @@
       },
       "sw": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -575,6 +576,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -946,7 +948,7 @@
       },
       "bn": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -1046,6 +1048,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -1417,7 +1420,7 @@
       },
       "es": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1433,6 +1436,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -1470,7 +1474,7 @@
       },
       "fr": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1486,6 +1490,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -1523,7 +1528,7 @@
       },
       "pt": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1539,6 +1544,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -1576,7 +1582,7 @@
       },
       "ro": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1592,6 +1598,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -1629,7 +1636,7 @@
       },
       "uk": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1645,6 +1652,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -1682,7 +1690,7 @@
       },
       "ru": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1698,6 +1706,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -1735,7 +1744,7 @@
       },
       "de": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1751,6 +1760,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -1788,7 +1798,7 @@
       },
       "ja": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1804,6 +1814,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -1841,7 +1852,7 @@
       },
       "ko": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1857,6 +1868,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -1894,7 +1906,7 @@
       },
       "zh": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1910,6 +1922,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -1947,7 +1960,7 @@
       },
       "ar": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1963,6 +1976,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2000,7 +2014,7 @@
       },
       "hi": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2016,6 +2030,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2053,7 +2068,7 @@
       },
       "it": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2069,6 +2084,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2106,7 +2122,7 @@
       },
       "pl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2122,6 +2138,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2159,7 +2176,7 @@
       },
       "he": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2175,6 +2192,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2212,7 +2230,7 @@
       },
       "nl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2228,6 +2246,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2265,7 +2284,7 @@
       },
       "vi": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2281,6 +2300,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2318,7 +2338,7 @@
       },
       "tl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2334,6 +2354,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2371,7 +2392,7 @@
       },
       "tr": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2387,6 +2408,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2424,7 +2446,7 @@
       },
       "id": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2440,6 +2462,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2477,7 +2500,7 @@
       },
       "bg": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2493,6 +2516,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2530,7 +2554,7 @@
       },
       "zh-Hant": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2546,6 +2570,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",
@@ -2583,7 +2608,7 @@
       },
       "zh-HK": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-09T22:43:47.303Z",
+        "generatedAt": "2026-09-10T15:00:05.341Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2599,6 +2624,7 @@
           "cloud_purchase_cancelled",
           "cloud_purchase_complete",
           "cloud_purchase_pending",
+          "cloud_purchase_undelivered",
           "cloud_refresh_plan",
           "cloud_restore_apple",
           "cloud_subscribe_apple",

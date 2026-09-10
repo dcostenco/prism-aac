@@ -22,8 +22,14 @@ function swiftFiles(dir: string): string[] {
     const out: string[] = [];
     for (const name of readdirSync(dir)) {
         const p = join(dir, name);
-        const st = statSync(p);
-        if (st.isDirectory() && !name.startsWith(".") && name !== "_llama_cpp_local") {
+        // _llama_cpp_* are symlinks into a local, gitignored llama.cpp checkout.
+        // They dangle on any machine that does not have it — including CI, where
+        // statSync threw ENOENT and failed this file rather than scanning the
+        // Swift sources it exists to guard. Nothing under them is ours anyway.
+        if (name.startsWith("_llama_cpp")) continue;
+        let st;
+        try { st = statSync(p); } catch { continue; }
+        if (st.isDirectory() && !name.startsWith(".")) {
             out.push(...swiftFiles(p));
         } else if (name.endsWith(".swift")) {
             out.push(p);

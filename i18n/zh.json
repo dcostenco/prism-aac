@@ -464,6 +464,7 @@
   "cloud_update_ios": "请在 App Store 中更新 Prism AAC 以购买订阅。你的免费沟通工具仍可继续使用。",
   "cloud_privacy": "隐私政策",
   "cloud_terms": "使用条款",
+  "cloud_purchase_undelivered": "购买成功。暂未与 Synalux 确认。你的免费沟通工具仍可继续使用。",
   "cloud_purchase_pending": "正在等待 Apple 批准。你的免费沟通工具仍可继续使用。",
   "cloud_purchase_cancelled": "购买已取消。未确认任何新订阅。",
   "cloud_purchase_complete": "你的云端订阅已就绪。",

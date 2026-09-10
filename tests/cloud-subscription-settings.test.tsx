@@ -336,9 +336,11 @@ describe('cloud plan funnel telemetry', () => {
     expect(planEvents()).toEqual([]);
   });
 
-  // Apple charged the card and the receipt could not be delivered. The service
-  // reports pending so the funnel never files a paid conversion as a failure.
-  it('does not report a charged purchase as failed when delivery cannot confirm', async () => {
+  // StoreKit's own 'pending' is Ask to Buy: a guardian has to approve, and
+  // nothing was charged. It is not a failure and must never be filed as one.
+  // The charged-but-undelivered case is a different status with its own test
+  // below — do not merge the two, the funnel needs to tell them apart.
+  it('does not report an Ask to Buy purchase as failed', async () => {
     state.native = true; state.nativePurchases = true;
     state.apple.mockResolvedValue({ status: 'pending' });
     render(<CloudSubscriptionSettings />);
@@ -346,6 +348,30 @@ describe('cloud plan funnel telemetry', () => {
     await waitFor(() => expect(planEvents()).toContain('purchase_pending:ios'));
     expect(planEvents()).toEqual(['offer_shown:ios', 'purchase_started:ios', 'purchase_pending:ios']);
     expect(planEvents()).not.toContain('purchase_failed:ios');
+  });
+
+  // A charged purchase that could not be delivered must not look like Ask to Buy,
+  // in the funnel or on screen. Conflating them hid the single most expensive
+  // failure mode behind the most benign one.
+  it('separates a charged-but-undelivered purchase from Ask to Buy', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.apple.mockResolvedValue({ status: 'undelivered' });
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_undelivered:ios'));
+    expect(planEvents()).not.toContain('purchase_pending:ios');
+    expect(await screen.findByText(/could not confirm it with Synalux/i)).toBeVisible();
+    expect(screen.queryByText(/Waiting for Apple approval/i)).not.toBeInTheDocument();
+  });
+
+  it('still reports Ask to Buy as pending, with its own wording', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.apple.mockResolvedValue({ status: 'pending' });
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_pending:ios'));
+    expect(planEvents()).not.toContain('purchase_undelivered:ios');
+    expect(await screen.findByText(/Waiting for Apple approval/i)).toBeVisible();
   });
 
   // manage_failed is the metric a whole review round was spent de-duplicating.

@@ -28,7 +28,7 @@ export type WebGateOutcome =
 /** Cloud plan funnel. `redirected` is the web terminal state — Stripe owns the rest. */
 export type CloudPlanEvent =
   | 'offer_shown'
-  | 'purchase_started' | 'purchase_complete' | 'purchase_pending' | 'purchase_cancelled'
+  | 'purchase_started' | 'purchase_complete' | 'purchase_pending' | 'purchase_undelivered' | 'purchase_cancelled'
   | 'purchase_redirected' | 'purchase_none' | 'purchase_failed'
   | 'restore_started' | 'restore_complete' | 'restore_failed'
   | 'manage_opened' | 'manage_failed' | 'refresh_failed';

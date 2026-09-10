@@ -8,9 +8,12 @@ const OLLAMA_URL = 'http://localhost:11434';
 
 // Skip all tests when Ollama is not reachable. These are live integration
 // tests that require a running Ollama instance — they are not meant for CI.
+// The catch is load-bearing: with nothing listening, fetch REJECTS with
+// ECONNREFUSED rather than resolving a non-ok response, so this top-level await
+// threw at import and failed the whole file instead of skipping it.
 const ollamaUp = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) })
   .then(r => r.ok)
-  ;
+  .catch(() => false);
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
