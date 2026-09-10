@@ -19,10 +19,13 @@ let nativeStatus = 'purchased';
 let deliveryStatus = 200;
 /** Non-null to serve a body the portal never sends — an edge proxy's HTML. */
 let deliveryBody: string | null = null;
+/** Overridden to have the portal acknowledge a different transaction than the one sent. */
+let acknowledgeTransactionId: string | null = null;
 let nativeTransactions: Array<{ transactionId: string; jws: string }> = [transaction];
 
 beforeEach(() => {
   calls.length = 0; nativeStatus = 'purchased'; deliveryStatus = 200; deliveryBody = null;
+  acknowledgeTransactionId = null;
   nativeTransactions = [transaction];
   host.prismNativeBridge = { subscription: (request: BridgeRequest) => {
     calls.push(request.operation === 'finish' ? `finish:${request.transactionId}` : request.operation);
@@ -46,7 +49,7 @@ beforeEach(() => {
       return Response.json({ error: 'Apple subscription belongs to another AAC account' }, { status: 400 });
     }
     if (body.action === 'reconcile') return Response.json(deliveryStatus === 200
-      ? { status: 'reconciled', transactionId: transaction.transactionId }
+      ? { status: 'reconciled', transactionId: acknowledgeTransactionId ?? transaction.transactionId }
       : { error: 'Verification unavailable' }, { status: deliveryStatus });
     return Response.json(billing);
   }));
@@ -128,6 +131,16 @@ describe('Apple purchase delivery', () => {
     expect(calls).not.toContain('finish:30001');
     expect(warn).toHaveBeenCalledTimes(1);
   });
+  // The reply has to be about the transaction that was sent. A 200 acknowledging
+  // some other transaction — a mixed-up retry, a proxy replaying a cached body —
+  // must not finish this one, because finishing tells Apple to stop replaying it
+  // and the entitlement it was carrying would be lost for good.
+  it('does not finish a transaction the portal did not acknowledge', async () => {
+    acknowledgeTransactionId = '99999';
+    await expect(purchaseAacWithApple(account, offerVersion)).resolves.toEqual({ status: 'undelivered' });
+    expect(calls).not.toContain('finish:20001');
+  });
+
   it('tolerates a rejection whose body is not JSON, and still delivers the rest', async () => {
     // The portal is not the only thing that can answer: an edge proxy or a WAF
     // rejects with HTML. Parsing the body before reading the status turned that
