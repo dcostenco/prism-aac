@@ -75,11 +75,12 @@ describe('Apple purchase delivery', () => {
     expect((await purchaseAacWithApple(account, offerVersion)).billing?.hasCloudAccess).toBe(true);
     expect(calls).toEqual(['prepare', 'purchase', 'reconcile', 'finish:20001', 'status']);
   });
-  // The card is already charged. Surfacing that as a failure would tell the
-  // user nothing happened and would file a paid conversion as a failure.
-  it('reports an interrupted delivery as pending and leaves it recoverable', async () => {
+  // The card is already charged. Surfacing that as a failure would tell the user
+  // nothing happened; folding it into StoreKit's 'pending' would tell them to
+  // wait for an Apple approval that already happened. It gets its own status.
+  it('reports an interrupted delivery as undelivered, not pending, and leaves it recoverable', async () => {
     deliveryStatus = 503;
-    await expect(purchaseAacWithApple(account, offerVersion)).resolves.toEqual({ status: 'pending' });
+    await expect(purchaseAacWithApple(account, offerVersion)).resolves.toEqual({ status: 'undelivered' });
     expect(calls).not.toContain('finish:20001');
     calls.length = 0; deliveryStatus = 200; nativeStatus = 'restored';
     await restoreAacApplePurchases();

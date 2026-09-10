@@ -92,15 +92,17 @@ export default function CloudSubscriptionSettings() {
         // in account changed while StoreKit was open the purchase still
         // happened, and calling it abandoned would understate real charges.
         const outcome: CloudPlanEvent = result.status === 'pending' ? 'purchase_pending'
-          : result.status === 'cancelled' ? 'purchase_cancelled'
-            : result.billing?.hasCloudAccess ? 'purchase_complete' : 'purchase_none';
+          : result.status === 'undelivered' ? 'purchase_undelivered'
+            : result.status === 'cancelled' ? 'purchase_cancelled'
+              : result.billing?.hasCloudAccess ? 'purchase_complete' : 'purchase_none';
         reportCloudPlan(outcome, platform);
         // Never apply one account's entitlement to another.
         if (useAuthStore.getState().profile?.email !== account) return;
         if (result.billing) setBilling(result.billing);
         setNotice(t(outcome === 'purchase_pending' ? 'cloud_purchase_pending'
-          : outcome === 'purchase_cancelled' ? 'cloud_purchase_cancelled'
-            : outcome === 'purchase_complete' ? 'cloud_purchase_complete' : 'cloud_no_active_subscription'));
+          : outcome === 'purchase_undelivered' ? 'cloud_purchase_undelivered'
+            : outcome === 'purchase_cancelled' ? 'cloud_purchase_cancelled'
+              : outcome === 'purchase_complete' ? 'cloud_purchase_complete' : 'cloud_no_active_subscription'));
       } else {
         // Only after the redirect has actually been initiated. A rejected
         // checkout or a blocked destination throws, and the funnel shows the

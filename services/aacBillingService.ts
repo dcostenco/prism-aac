@@ -133,14 +133,16 @@ export async function purchaseAacWithApple(expectedUserId: string, expectedOffer
   if (result.status !== 'purchased' || !result.transactions?.length) throw new Error(ERRORS.invalid);
   // The account is charged from here on. If delivery cannot be confirmed the
   // transaction stays unfinished, Apple replays it and the automatic restore
-  // completes it, so this is pending rather than failed. Reporting a real
-  // charge as a failure would understate paid conversions.
+  // completes it, so this is not a failed purchase. It is reported as its own
+  // status rather than folded into 'pending': StoreKit's own pending means Ask
+  // to Buy, where nothing was charged, and a charged customer told to "wait for
+  // Apple approval" is being given the wrong explanation for the wrong problem.
   try {
     return { status: 'purchased', billing: await deliverAppleTransactions(result.transactions) };
   } catch (error) {
     console.warn('[AAC billing] Apple charged the account but delivery did not confirm; it will be retried',
       error instanceof Error ? error.message : error);
-    return { status: 'pending' };
+    return { status: 'undelivered' };
   }
 }
 

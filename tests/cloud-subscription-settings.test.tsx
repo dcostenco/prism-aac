@@ -348,6 +348,30 @@ describe('cloud plan funnel telemetry', () => {
     expect(planEvents()).not.toContain('purchase_failed:ios');
   });
 
+  // A charged purchase that could not be delivered must not look like Ask to Buy,
+  // in the funnel or on screen. Conflating them hid the single most expensive
+  // failure mode behind the most benign one.
+  it('separates a charged-but-undelivered purchase from Ask to Buy', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.apple.mockResolvedValue({ status: 'undelivered' });
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_undelivered:ios'));
+    expect(planEvents()).not.toContain('purchase_pending:ios');
+    expect(await screen.findByText(/could not confirm it with Synalux/i)).toBeVisible();
+    expect(screen.queryByText(/Waiting for Apple approval/i)).not.toBeInTheDocument();
+  });
+
+  it('still reports Ask to Buy as pending, with its own wording', async () => {
+    state.native = true; state.nativePurchases = true;
+    state.apple.mockResolvedValue({ status: 'pending' });
+    render(<CloudSubscriptionSettings />);
+    fireEvent.click(await screen.findByRole('button', { name: /Subscribe with Apple/ }));
+    await waitFor(() => expect(planEvents()).toContain('purchase_pending:ios'));
+    expect(planEvents()).not.toContain('purchase_undelivered:ios');
+    expect(await screen.findByText(/Waiting for Apple approval/i)).toBeVisible();
+  });
+
   // manage_failed is the metric a whole review round was spent de-duplicating.
   it('labels a failing refresh button as a refresh, not a manage', async () => {
     state.fetch.mockResolvedValueOnce({ ...free, hasCloudAccess: true, channels: ['stripe'], manageChannel: 'stripe' })
