@@ -141,8 +141,11 @@ export async function purchaseAacWithApple(expectedUserId: string, expectedOffer
   if (result.status === 'cancelled' || result.status === 'pending') return { status: result.status };
   if (result.status !== 'purchased' || !result.transactions?.length) throw new Error(ERRORS.invalid);
   // The account is charged from here on. If delivery cannot be confirmed the
-  // transaction stays unfinished, Apple replays it and the automatic restore
-  // completes it, so this is not a failed purchase. It is reported as its own
+  // automatic restore completes it, so this is not a failed purchase. Usually
+  // that is because the transaction stayed unfinished and Apple replays it; but
+  // if only the trailing status fetch fails the transaction was already finished,
+  // and recovery still works because StoreKit's sync returns currentEntitlements,
+  // not only unfinished transactions. Either way it is reported as its own
   // status rather than folded into 'pending': StoreKit's own pending means Ask
   // to Buy, where nothing was charged, and a charged customer told to "wait for
   // Apple approval" is being given the wrong explanation for the wrong problem.
