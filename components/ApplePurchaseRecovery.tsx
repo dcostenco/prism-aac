@@ -7,10 +7,13 @@ import { hasNativePurchases, restoreAacApplePurchases } from '@/services/aacBill
 const RETRY_MS = 30_000;
 const REFRESH_MS = 5 * 60_000;
 /**
- * Focus/online events are frequent on an AAC device. The portal meters delivery
- * separately from purchase (120/hour vs 10/hour) precisely so this loop cannot
- * spend the budget a person needs to subscribe; this interval keeps one device
- * well inside the delivery budget even with several sharing an account.
+ * Focus/online events are frequent on an AAC device. The portal meters `prepare`
+ * (10/hour) separately from `reconcile` (120/hour), and this loop only ever
+ * calls `reconcile` — so it cannot exhaust the budget that pressing Subscribe
+ * needs. It does share the delivery budget with a purchase's own delivery, and
+ * `hint` below deliberately bypasses this floor while a delivery is failing, so
+ * the ceiling is not 60/hour per device during an outage. Exceeding it costs a
+ * 429, which is transient and retried; it does not fail a purchase.
  */
 const MIN_EVENT_INTERVAL_MS = 60_000;
 

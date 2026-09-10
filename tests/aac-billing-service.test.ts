@@ -17,10 +17,13 @@ const host = window as unknown as BridgeHost;
 const calls: string[] = [];
 let nativeStatus = 'purchased';
 let deliveryStatus = 200;
+/** Non-null to serve a body the portal never sends — an edge proxy's HTML. */
+let deliveryBody: string | null = null;
 let nativeTransactions: Array<{ transactionId: string; jws: string }> = [transaction];
 
 beforeEach(() => {
-  calls.length = 0; nativeStatus = 'purchased'; deliveryStatus = 200; nativeTransactions = [transaction];
+  calls.length = 0; nativeStatus = 'purchased'; deliveryStatus = 200; deliveryBody = null;
+  nativeTransactions = [transaction];
   host.prismNativeBridge = { subscription: (request: BridgeRequest) => {
     calls.push(request.operation === 'finish' ? `finish:${request.transactionId}` : request.operation);
     if (request.operation === 'purchase') expect(request.accountToken).toBe(account);
@@ -37,6 +40,9 @@ beforeEach(() => {
       return Response.json({ accountToken: account });
     }
     if (body.action === 'reconcile' && body.jws === foreignTransaction.jws) {
+      if (deliveryBody !== null) {
+        return new Response(deliveryBody, { status: 400, headers: { 'Content-Type': 'text/html' } });
+      }
       return Response.json({ error: 'Apple subscription belongs to another AAC account' }, { status: 400 });
     }
     if (body.action === 'reconcile') return Response.json(deliveryStatus === 200
@@ -75,13 +81,20 @@ describe('Apple purchase delivery', () => {
     expect((await purchaseAacWithApple(account, offerVersion)).billing?.hasCloudAccess).toBe(true);
     expect(calls).toEqual(['prepare', 'purchase', 'reconcile', 'finish:20001', 'status']);
   });
-  // A permanent rejection will never self-heal, so it must not be dressed as
-  // undelivered — that copy tells the user it will finish on its own.
-  it('does not promise self-healing for a permanently rejected purchase', async () => {
-    nativeTransactions = [foreignTransaction];
-    await expect(purchaseAacWithApple(account, offerVersion))
-      .rejects.toThrow(/another AAC account/i);
-    expect(calls).not.toContain('finish:30001');
+  // The account is charged before delivery is attempted, so no delivery failure
+  // may be reported as a failed purchase — whatever the status. An earlier
+  // attempt rethrew the ones that looked permanent; the caller renders
+  // `error.message` raw, which put an untranslated English server sentence in
+  // front of every locale and filed a paid conversion as `purchase_failed`.
+  it.each([
+    [400, 'a permanent rejection'],
+    [401, 'an expired session'],
+    [429, 'an exhausted delivery budget'],
+    [503, 'an unreachable verifier'],
+  ])('reports %i (%s) as undelivered rather than failing a charged purchase', async (status) => {
+    deliveryStatus = status;
+    await expect(purchaseAacWithApple(account, offerVersion)).resolves.toEqual({ status: 'undelivered' });
+    expect(calls).not.toContain('finish:20001');
   });
 
   // The card is already charged. Surfacing that as a failure would tell the user
@@ -100,11 +113,13 @@ describe('Apple purchase delivery', () => {
     expect(await purchaseAacWithApple(account, offerVersion)).toEqual({ status });
     expect(calls).toEqual(['prepare', 'purchase']);
   });
-  it('automatic recovery skips a transaction bound to another AAC account without blocking the rest or retrying', async () => {
+  it('automatic recovery skips a transaction bound to another AAC account without blocking the rest', async () => {
     // Shared device: the Apple ID holds a subscription bound to a different AAC
-    // account. That one is rejected permanently (400); it must not throw (which
-    // would make ApplePurchaseRecovery retry every 30 s) and must not stop the
-    // signed-in account's own transaction from being delivered and finished.
+    // account. That one is rejected (400); it must not throw — which would back
+    // ApplePurchaseRecovery off and stall delivery for everyone on the device —
+    // and must not stop the signed-in account's own transaction from being
+    // delivered and finished. It is skipped, not abandoned: it stays unfinished
+    // and is re-sent on the next sync, so it lands as soon as its owner signs in.
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     nativeStatus = 'restored'; nativeTransactions = [foreignTransaction, transaction];
     const status = await restoreAacApplePurchases(false, account);
@@ -112,6 +127,20 @@ describe('Apple purchase delivery', () => {
     expect(calls).toEqual(['sync', 'reconcile', 'reconcile', 'finish:20001', 'status']);
     expect(calls).not.toContain('finish:30001');
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+  it('tolerates a rejection whose body is not JSON, and still delivers the rest', async () => {
+    // The portal is not the only thing that can answer: an edge proxy or a WAF
+    // rejects with HTML. Parsing the body before reading the status turned that
+    // into a SyntaxError carrying no status, so it missed the 400 branch, threw,
+    // and abandoned the signed-in account's own transaction along with it.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    deliveryBody = '<html><body>400 Bad Request</body></html>';
+    nativeStatus = 'restored'; nativeTransactions = [foreignTransaction, transaction];
+    const status = await restoreAacApplePurchases(false, account);
+    expect(status.hasCloudAccess).toBe(true);
+    expect(calls).toEqual(['sync', 'reconcile', 'reconcile', 'finish:20001', 'status']);
+    expect(warn.mock.calls.map(c => String(c[0]))).toContain(
+      '[AAC billing] An Apple transaction was rejected for this account; it stays unfinished and is re-sent on the next sync');
   });
   it('explicit restore still reports a foreign-account rejection after delivering the rest', async () => {
     nativeStatus = 'restored'; nativeTransactions = [foreignTransaction, transaction];

@@ -464,7 +464,7 @@
   "cloud_update_ios": "サブスクリプションを購入するには、App StoreからPrism AACをアップデートしてください。無料のコミュニケーションツールはそのまま使えます。",
   "cloud_privacy": "プライバシーポリシー",
   "cloud_terms": "利用規約",
-  "cloud_purchase_undelivered": "購入が完了しました。Synaluxでの確認がまだですが、自動的に完了します。連絡ツールはそのまま使えます。",
+  "cloud_purchase_undelivered": "購入が完了しました。Synaluxでの確認はまだできていません。無料のコミュニケーションツールはそのまま使えます。",
   "cloud_purchase_pending": "Appleの承認を待っています。無料のコミュニケーションツールはそのまま使えます。",
   "cloud_purchase_cancelled": "購入がキャンセルされました。新しいサブスクリプションは確認されていません。",
   "cloud_purchase_complete": "クラウドサブスクリプションの準備ができました。",

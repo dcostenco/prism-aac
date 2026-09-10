@@ -74,10 +74,15 @@ async function billingRequest<T>(suffix = '', body?: Record<string, unknown>): P
       method: body ? 'POST' : 'GET', credentials: 'include', signal: timeout.signal,
       headers: { 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}),
     });
-    const result = await response.json();
+    // Parsed defensively and only after the status is known: an error body from
+    // anything other than this route's handler (an edge proxy, a WAF) is HTML,
+    // and parsing it first turned every such response into a SyntaxError that
+    // carried no status at all.
+    const result = await response.json().catch(() => null) as { error?: string } | null;
     if (!response.ok) {
-      throw new AacBillingRequestError(result.error || (response.status === 409 ? ERRORS.conflict : ERRORS.unavailable), response.status);
+      throw new AacBillingRequestError(result?.error || (response.status === 409 ? ERRORS.conflict : ERRORS.unavailable), response.status);
     }
+    if (result === null) throw new Error(ERRORS.invalid);
     return result as T;
   } finally { timeout.cancel(); }
 }
@@ -119,7 +124,11 @@ async function deliverAppleTransactions(transactions: AppleTransaction[] = [], t
   }
   if (rejected) {
     if (!tolerateRejected) throw rejected;
-    console.warn('[AAC billing] An Apple transaction was rejected for this account and will not be retried automatically', rejected.message);
+    // Not fatal to this sync, but not abandoned either: the transaction stays
+    // unfinished, so Apple replays it and the next sync re-sends it. That is the
+    // wanted behaviour on a shared device — the transaction is delivered as soon
+    // as the account that owns it signs in.
+    console.warn('[AAC billing] An Apple transaction was rejected for this account; it stays unfinished and is re-sent on the next sync', rejected.message);
   }
   return fetchAacBillingStatus();
 }
@@ -140,13 +149,17 @@ export async function purchaseAacWithApple(expectedUserId: string, expectedOffer
   try {
     return { status: 'purchased', billing: await deliverAppleTransactions(result.transactions) };
   } catch (error) {
-    // A 400 is a permanent verification rejection for this transaction — an
-    // Apple subscription bound to a different AAC account is the usual cause.
-    // Recovery deliberately never retries it, so it must not be reported as
-    // undelivered: that copy promises it will finish on its own, and it will
-    // not. The server's message explains the actual problem.
-    if (error instanceof AacBillingRequestError && error.status === 400) throw error;
-    console.warn('[AAC billing] Apple charged the account but delivery did not confirm; it will be retried',
+    // Every failure that reaches here is reported the same way, deliberately.
+    // The status does not tell us whether it will resolve: a missing server
+    // credential and an Apple outage both arrive as 503, and 400 covers both a
+    // subscription bound to another account and a malformed request. Rethrowing
+    // the ones that look permanent was worse — the caller renders `error.message`
+    // raw, so an untranslated English server sentence reached every locale, the
+    // charge went unmentioned, and a paid purchase was filed as `purchase_failed`.
+    // What is always true is that the account was charged and the entitlement is
+    // not confirmed yet, so that is what is said, and the server's explanation
+    // goes to the log where support can read it.
+    console.warn('[AAC billing] Apple charged the account but delivery did not confirm',
       error instanceof Error ? error.message : error);
     return { status: 'undelivered' };
   }

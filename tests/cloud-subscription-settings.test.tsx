@@ -336,9 +336,11 @@ describe('cloud plan funnel telemetry', () => {
     expect(planEvents()).toEqual([]);
   });
 
-  // Apple charged the card and the receipt could not be delivered. The service
-  // reports pending so the funnel never files a paid conversion as a failure.
-  it('does not report a charged purchase as failed when delivery cannot confirm', async () => {
+  // StoreKit's own 'pending' is Ask to Buy: a guardian has to approve, and
+  // nothing was charged. It is not a failure and must never be filed as one.
+  // The charged-but-undelivered case is a different status with its own test
+  // below — do not merge the two, the funnel needs to tell them apart.
+  it('does not report an Ask to Buy purchase as failed', async () => {
     state.native = true; state.nativePurchases = true;
     state.apple.mockResolvedValue({ status: 'pending' });
     render(<CloudSubscriptionSettings />);
