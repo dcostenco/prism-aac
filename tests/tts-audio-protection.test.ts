@@ -62,6 +62,10 @@ beforeEach(() => {
 
 // ── Class 2: Rapid-tap mutual destruction ─────────────────────────────────────
 describe('Class 2 — Rapid-tap protection (autoSpeak)', () => {
+  // Measured at 4991ms against a 5000ms default, so it failed or passed
+  // depending on machine load. It is heavy, not hung: with headroom the whole
+  // suite passes. The ceiling is raised for this test alone rather than
+  // globally, so a genuine hang anywhere else still fails in 5s.
   it('second rapid autoSpeak (no interrupt) is dropped while first is playing', async () => {
     let fetchCount = 0;
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
@@ -80,7 +84,7 @@ describe('Class 2 — Rapid-tap protection (autoSpeak)', () => {
     expect(r2.success).toBe(true); // graceful drop, not a failure
     expect(MockBufferSource.startCount).toBe(1); // still only 1 source started
     expect(fetchCount).toBe(2); // both fetched, but second dropped before play
-  });
+  }, 20_000);
 
   it('after audio finishes naturally, next autoSpeak plays immediately', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {

@@ -79,6 +79,10 @@ describe('saved speech playback', () => {
       ...(degraded ? { 'X-TTS-Inworld-Failed': 'true' } : {}),
     } });
   }
+  // Measured at 4990ms against a 5000ms default, so it failed or passed
+  // depending on machine load. It is heavy, not hung: with headroom the whole
+  // suite passes. The ceiling is raised for this test alone rather than
+  // globally, so a genuine hang anywhere else still fails in 5s.
   it.each(['inworld', 'azure'] as const)('replays %s audio after reload offline with zero further requests', async backend => {
     mockFetch({ '/tts/public': () => identifiedAudio(backend) });
     const first = await import('@/services/azureTTS');
@@ -94,7 +98,7 @@ describe('saved speech playback', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     expect((await reloaded.speakAzure(phrase, 'en-US', 'friendly', 0.7, 1, '', 'Alex', true, true)).success).toBe(false);
     expect(fetch).toHaveBeenCalledTimes(1);
-  });
+  }, 20_000);
 
   it('does not retain degraded audio as the selected voice', async () => {
     mockFetch({ '/tts/public': () => identifiedAudio('azure', true) });
