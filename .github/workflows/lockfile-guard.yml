@@ -12,6 +12,8 @@ on:
     paths:
       - package.json
       - package-lock.json
+      - chrome-extension/package.json
+      - chrome-extension/package-lock.json
       - scripts/check-lockfile-drift.mjs
       - .github/workflows/lockfile-guard.yml
 
@@ -27,5 +29,5 @@ jobs:
           # The script pins the npm it regenerates with; this only needs a Node
           # that can run it.
           node-version: 22
-      - name: package-lock.json reproduces under the canonical npm
+      - name: Both lock files reproduce under the canonical npm
         run: npm run check:lockfile

@@ -60,8 +60,17 @@ const CANONICAL_NPM = "10.9.8";
 /** Generous against a slow registry, tight against a dead one. */
 const NPM_TIMEOUT_MS = 5 * 60 * 1000;
 
-const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+/**
+ * Which project to check, relative to the repository root. This repository
+ * holds two independent npm projects and BOTH drifted the same way, so the
+ * guard has to be pointed at each: `node scripts/check-lockfile-drift.mjs`
+ * checks the root, `... chrome-extension` checks the extension.
+ */
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const PROJECT = process.argv[2] ?? ".";
+const PACKAGE_ROOT = join(REPO_ROOT, PROJECT);
 const LOCKFILE = join(PACKAGE_ROOT, "package-lock.json");
+const LABEL = PROJECT === "." ? "package-lock.json" : `${PROJECT}/package-lock.json`;
 
 const FIX_COMMAND = `npx --yes npm@${CANONICAL_NPM} install --package-lock-only`;
 
@@ -260,7 +269,7 @@ try {
 
 if (differs(before, after)) {
     console.error(
-        `BLOCKED: package-lock.json is not what npm ${CANONICAL_NPM} generates.\n`,
+        `BLOCKED: ${LABEL} is not what npm ${CANONICAL_NPM} generates.\n`,
     );
     for (const line of describeDelta(before, after)) console.error(line);
     console.error(
@@ -275,5 +284,5 @@ if (differs(before, after)) {
 }
 
 console.log(
-    `check-lockfile-drift: package-lock.json reproduces byte-for-byte under npm ${npmVersion}.`,
+    `check-lockfile-drift: ${LABEL} reproduces byte-for-byte under npm ${npmVersion}.`,
 );
