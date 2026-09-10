@@ -16,6 +16,6 @@
     "@types/chrome": "^0.0.279",
     "esbuild": "^0.25.0",
     "typescript": "^5",
-    "vitest": "^4"
+    "vitest": "^5"
   }
 }
