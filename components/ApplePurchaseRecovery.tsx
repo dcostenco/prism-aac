@@ -6,7 +6,12 @@ import { hasNativePurchases, restoreAacApplePurchases } from '@/services/aacBill
 
 const RETRY_MS = 30_000;
 const REFRESH_MS = 5 * 60_000;
-/** Focus/online events are frequent on an AAC device; the portal caps reconciliation at 30/hour. */
+/**
+ * Focus/online events are frequent on an AAC device. The portal meters delivery
+ * separately from purchase (120/hour vs 10/hour) precisely so this loop cannot
+ * spend the budget a person needs to subscribe; this interval keeps one device
+ * well inside the delivery budget even with several sharing an account.
+ */
 const MIN_EVENT_INTERVAL_MS = 60_000;
 
 /** App-lifetime delivery; StoreKit retains transactions until server acknowledgement. */

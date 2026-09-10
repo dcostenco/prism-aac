@@ -140,6 +140,12 @@ export async function purchaseAacWithApple(expectedUserId: string, expectedOffer
   try {
     return { status: 'purchased', billing: await deliverAppleTransactions(result.transactions) };
   } catch (error) {
+    // A 400 is a permanent verification rejection for this transaction — an
+    // Apple subscription bound to a different AAC account is the usual cause.
+    // Recovery deliberately never retries it, so it must not be reported as
+    // undelivered: that copy promises it will finish on its own, and it will
+    // not. The server's message explains the actual problem.
+    if (error instanceof AacBillingRequestError && error.status === 400) throw error;
     console.warn('[AAC billing] Apple charged the account but delivery did not confirm; it will be retried',
       error instanceof Error ? error.message : error);
     return { status: 'undelivered' };

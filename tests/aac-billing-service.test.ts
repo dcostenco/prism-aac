@@ -75,6 +75,15 @@ describe('Apple purchase delivery', () => {
     expect((await purchaseAacWithApple(account, offerVersion)).billing?.hasCloudAccess).toBe(true);
     expect(calls).toEqual(['prepare', 'purchase', 'reconcile', 'finish:20001', 'status']);
   });
+  // A permanent rejection will never self-heal, so it must not be dressed as
+  // undelivered — that copy tells the user it will finish on its own.
+  it('does not promise self-healing for a permanently rejected purchase', async () => {
+    nativeTransactions = [foreignTransaction];
+    await expect(purchaseAacWithApple(account, offerVersion))
+      .rejects.toThrow(/another AAC account/i);
+    expect(calls).not.toContain('finish:30001');
+  });
+
   // The card is already charged. Surfacing that as a failure would tell the user
   // nothing happened; folding it into StoreKit's 'pending' would tell them to
   // wait for an Apple approval that already happened. It gets its own status.
