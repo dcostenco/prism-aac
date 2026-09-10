@@ -73,7 +73,7 @@
     "tailwindcss": "^4",
     "ts-jest": "^29.4.9",
     "typescript": "^5",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "browserslist": "^4.28.7",
