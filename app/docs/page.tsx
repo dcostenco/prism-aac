@@ -7,7 +7,7 @@ export default function DocsPage() {
   return (
     <main style={{ maxWidth: 720, margin: '0 auto', padding: '40px 20px', fontFamily: '-apple-system, sans-serif', color: '#1a1a1a' }}>
       <h1 style={{ fontSize: 28, marginBottom: 8 }}>Prism AAC — Support</h1>
-      <p style={{ color: '#666', marginBottom: 32 }}>Free augmentative &amp; alternative communication app by <a href="https://synalux.ai" style={{ color: '#6366f1' }}>Synalux Health</a></p>
+      <p style={{ color: '#666', marginBottom: 32 }}>Free augmentative &amp; alternative communication app by <a href="https://synalux.ai" style={{ color: '#6366f1' }}>Synalux LLC</a></p>
 
       <section style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 20, marginBottom: 12 }}>Getting Started</h2>
@@ -54,7 +54,7 @@ export default function DocsPage() {
       </section>
 
       <footer style={{ borderTop: '1px solid #eee', paddingTop: 20, color: '#999', fontSize: 14 }}>
-        © 2026 Dmitri Costenco / Synalux Health. All rights reserved.
+        © 2024–2026 Synalux LLC. Licensed under AGPL-3.0-or-later.
       </footer>
     </main>
   );

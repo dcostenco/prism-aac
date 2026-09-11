@@ -70,7 +70,6 @@ ios-native/PrismAAC/Resources/*.gguf
 *.p8
 AuthKey_*
 private_keys/
-ios-native/_llama_cpp_local
 
 # Ad-hoc device-layout audit captures. Regenerated on demand by the layout
 # scripts; 6.9MB of them accumulated untracked from a July board fix.

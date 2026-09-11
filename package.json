@@ -1,6 +1,8 @@
 {
   "name": "prism-aac-web",
   "version": "1.7.1",
+  "author": "Synalux LLC",
+  "license": "AGPL-3.0-or-later",
   "private": true,
   "scripts": {
     "build": "next build --webpack",

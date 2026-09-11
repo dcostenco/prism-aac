@@ -1,6 +1,6 @@
 <!--
 Thanks for contributing to Prism AAC. By opening this PR you agree to
-license your contribution under AGPL-3.0 and grant Synalux AI the
+license your contribution under AGPL-3.0 and grant Synalux LLC the
 right to dual-license it for commercial customers (see CONTRIBUTING.md).
 -->
 

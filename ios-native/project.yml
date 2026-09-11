@@ -41,6 +41,7 @@ targets:
       path: PrismAAC/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
+        NSHumanReadableCopyright: "Copyright © 2024-2026 Synalux LLC. Licensed under AGPL-3.0-or-later."
         AACMonthlyProductID: ai.synalux.prismaac.cloud.monthly
         # Home-screen quick actions — core one-tap AAC phrases. Hand-added to
         # Info.plist previously and wiped by every regeneration (same trap as
@@ -166,6 +167,7 @@ targets:
       path: PrismAACWatch/Info.plist
       properties:
         CFBundleDisplayName: Prism AAC
+        NSHumanReadableCopyright: "Copyright © 2024-2026 Synalux LLC. Licensed under AGPL-3.0-or-later."
         CFBundleShortVersionString: "1.9.0"
         CFBundleVersion: "53"
         WKApplication: true

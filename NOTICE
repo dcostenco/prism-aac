@@ -1,0 +1,49 @@
+Prism AAC
+Copyright (C) 2024-2026 Synalux LLC
+
+This program is licensed under the GNU Affero General Public License, version 3
+or later. See LICENSE for the full text.
+
+================================================================================
+THIRD-PARTY MATERIAL
+================================================================================
+
+ARASAAC pictograms
+------------------
+Prism AAC displays pictograms from the ARASAAC collection. They are retrieved at
+runtime from ARASAAC's public servers, cached on the end user's device, and are
+not redistributed with this software.
+
+    Author of the pictograms: Sergio Palao
+    Origin: ARASAAC (https://arasaac.org)
+    Licence: CC BY-NC-SA 4.0
+             (https://creativecommons.org/licenses/by-nc-sa/4.0/)
+    Owner: Government of Aragon (Spain)
+
+MediaPipe
+---------
+public/models/mediapipe/ contains Google MediaPipe WASM runtimes and task
+models, redistributed under the Apache License 2.0.
+https://www.apache.org/licenses/LICENSE-2.0
+
+Synalux HRR
+-----------
+vendor/synalux-hrr/ contains a WebAssembly build declared Apache-2.0 by its
+package manifest. See vendor/synalux-hrr/VENDORED.md.
+
+Dependencies
+------------
+Most runtime and build dependencies are MIT, Apache-2.0, ISC or BSD. The
+exceptions worth naming:
+
+  MPL-2.0      pyodide (a direct runtime dependency shipping a WASM runtime
+               to the browser), @vercel/og, lightningcss, axe-core
+  CC-BY-4.0    caniuse-lite — carries an attribution requirement
+  LGPL-3.0+    @img/sharp-libvips (dynamically linked), and @img/sharp-wasm32
+               which is Apache-2.0 AND LGPL-3.0-or-later AND MIT
+
+GNU Affero General Public License
+---------------------------------
+The text of the AGPL reproduced in LICENSE is Copyright (C) 2007 Free Software
+Foundation, Inc. Everyone is permitted to copy and distribute verbatim copies of
+that licence document, but changing it is not allowed.

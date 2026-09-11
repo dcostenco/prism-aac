@@ -293,4 +293,14 @@ describe('full web sign-in gate', () => {
       await tick(61_000);
       expect(gateOutcomes()).toEqual([]);
     });
+
+  // Reachable before anyone has signed in — the one place the offer is visible
+  // to a visitor who never opens the subscription panel.
+  it('offers the source on the sign-in gate', async () => {
+    mocks.access.mockResolvedValue({ state: 'sign_in_required', remainingMs: 0 });
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    const link = screen.getByRole('link', { name: /source code/i });
+    expect(link).toHaveAttribute('href', 'https://github.com/dcostenco/prism-aac');
+  });
+
 });
