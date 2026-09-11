@@ -1,0 +1,8 @@
+# ios-native/_llama_cpp_local is recorded as a gitlink but had no .gitmodules
+# entry, so a fresh clone got an empty directory with no URL to fetch from —
+# and the watchOS target symlinks into it. Without this, the repo the app
+# offers as its source could not rebuild the on-device inference component.
+# Upstream is MIT-licensed; the pinned commit is b6d6c528 (2024-10-06).
+[submodule "ios-native/_llama_cpp_local"]
+	path = ios-native/_llama_cpp_local
+	url = https://github.com/ggml-org/llama.cpp.git

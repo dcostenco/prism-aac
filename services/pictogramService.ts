@@ -4,9 +4,9 @@
  * Pictogram service — fetches an AAC-style picture for a phrase.
  *
  * Two-stage lookup:
- *   1. ARASAAC pictogram search (free, ~12.9k symbols, CC BY-NC-SA — fine for
- *      this AGPL-licensed AAC app; paid Synalux tier requires a commercial
- *      ARASAAC license which is negotiated separately).
+ *   1. ARASAAC pictogram search (free, ~12.9k symbols, CC BY-NC-SA). Pictograms
+ *      are fetched at runtime, cached on-device, and shown to every user at no
+ *      charge — they are never gated on payment. See NOTICE for attribution.
  *   2. Synalux portal AI generation fallback (paid tiers only) — produces a
  *      flat-vector pictogram via the model selected server-side.
  *

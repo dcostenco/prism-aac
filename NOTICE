@@ -11,33 +11,36 @@ THIRD-PARTY MATERIAL
 ARASAAC pictograms
 ------------------
 Prism AAC displays pictograms from the ARASAAC collection. They are retrieved at
-runtime from api.arasaac.org and static.arasaac.org and cached only on the end
-user's device. They are not redistributed with this software, are not modified,
-and are not included in any distributed package.
+runtime from ARASAAC's public servers, cached on the end user's device, and are
+not redistributed with this software.
 
     Author of the pictograms: Sergio Palao
     Origin: ARASAAC (https://arasaac.org)
-    Licence: CC (BY-NC-SA)
+    Licence: CC BY-NC-SA 4.0
+             (https://creativecommons.org/licenses/by-nc-sa/4.0/)
     Owner: Government of Aragon (Spain)
 
-The ARASAAC Pictogram Collection is registered in the Spanish General Registry
-of Intellectual Property (Legal Deposit Z 901-2013) as a collective work of the
-Diputación General de Aragón. "ARASAAC" is a trademark of the Government of
-Aragon, registered with the Spanish Patent and Trademark Office.
+MediaPipe
+---------
+public/models/mediapipe/ contains Google MediaPipe WASM runtimes and task
+models, redistributed under the Apache License 2.0.
+https://www.apache.org/licenses/LICENSE-2.0
 
-Note on the NonCommercial term: the CC BY-NC-SA licence excludes commercial use.
-Prism AAC offers an optional paid subscription covering cloud speech synthesis
-and AI assistance only; the pictograms are shown free of charge to every user,
-including those who never subscribe, and form no part of the paid offering.
-Synalux LLC does not treat this as settling the question, and has approached the
-rights holder for express authorisation.
+Synalux HRR
+-----------
+vendor/synalux-hrr/ contains a WebAssembly build declared Apache-2.0 by its
+package manifest. See vendor/synalux-hrr/VENDORED.md.
 
-Bundled dependencies
---------------------
-Runtime and build dependencies are distributed under permissive licences,
-predominantly MIT, Apache-2.0, ISC and BSD. One component, @img/sharp-libvips,
-is LGPL-3.0-or-later and is used as a dynamically linked library. Per-package
-licence text is reproduced in each package's directory under node_modules.
+Dependencies
+------------
+Most runtime and build dependencies are MIT, Apache-2.0, ISC or BSD. The
+exceptions worth naming:
+
+  MPL-2.0      pyodide (a direct runtime dependency shipping a WASM runtime
+               to the browser), @vercel/og, lightningcss, axe-core
+  CC-BY-4.0    caniuse-lite — carries an attribution requirement
+  LGPL-3.0+    @img/sharp-libvips (dynamically linked), and @img/sharp-wasm32
+               which is Apache-2.0 AND LGPL-3.0-or-later AND MIT
 
 GNU Affero General Public License
 ---------------------------------

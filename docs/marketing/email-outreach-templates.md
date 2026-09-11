@@ -332,6 +332,6 @@ Dmitri
 ### CAN-SPAM Footer (required on all emails)
 
 ```
-Prism AAC by Synalux AI | [BUSINESS_ADDRESS]
+Prism AAC by Synalux LLC | [BUSINESS_ADDRESS]
 Don't want to hear from us? Reply "unsubscribe" and we'll remove you immediately.
 ```
