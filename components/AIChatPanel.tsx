@@ -513,7 +513,15 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
         return;
       }
       console.warn('[ai-chat] request failed:', e instanceof Error ? e.message : e);
-      const msg = t('could_not_reach_ai');
+      // Cloud routes authenticate even when metering is off, so "not signed in"
+      // is now an ordinary outcome — especially on iOS, where the sign-in gate
+      // deliberately does not apply and the board works without an account.
+      // Reporting that as "could not reach AI" sends the user to check a network
+      // that is working. sign_in_ai_desc already points at Settings, which is
+      // where the native Apple sign-in lives.
+      const raw = e instanceof Error ? e.message : '';
+      const needsSignIn = /sign in|expired/i.test(raw);
+      const msg = needsSignIn ? t('sign_in_ai_desc') : t('could_not_reach_ai');
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = { ...updated[updated.length - 1], role: 'ai', text: msg, lines: [msg] };
