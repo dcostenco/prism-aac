@@ -1555,4 +1555,4 @@ Datadog RUM integration: see `lib/datadog.ts` + `components/DatadogInit.tsx`. 7 
 
 You're free to fork and self-host. The license requires you to share modifications under AGPL-3.0 too — that's the deal that keeps AAC innovation in the open and accessible to families.
 
-© 2026 Synalux, LLC.
+© 2024–2026 Synalux LLC

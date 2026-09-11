@@ -422,4 +422,16 @@ describe('cloud plan funnel telemetry', () => {
     await waitFor(() => expect(planEvents()).toContain('restore_complete:ios'));
     expect(planEvents()).toContain('restore_started:ios');
   });
+
+  // AGPL-3.0 asks anyone running a modified copy to offer its users the
+  // Corresponding Source. We hold the copyright so we are not bound by our own
+  // licence, but the offer is what makes that term credible against a fork —
+  // and an unlinked licence is not an offer.
+  it('offers the source alongside the other legal links', async () => {
+    render(<CloudSubscriptionSettings />);
+    const link = await screen.findByRole('link', { name: /source code/i });
+    expect(link).toHaveAttribute('href', 'https://github.com/dcostenco/prism-aac');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+  });
+
 });

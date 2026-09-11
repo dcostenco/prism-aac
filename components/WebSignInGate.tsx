@@ -193,7 +193,8 @@ export default function WebSignInGate({ children }: { children: ReactNode }) {
         {t('web_signin_check_again')}
       </button>
       <p className="text-sm"><a className="underline" href={PRIVACY_URL}>{t('cloud_privacy')}</a>
-        {' · '}<a className="underline" href={TERMS_URL}>{t('cloud_terms')}</a></p>
+        {' · '}<a className="underline" href={TERMS_URL}>{t('cloud_terms')}</a>
+        {' · '}<a className="underline" href="https://github.com/dcostenco/prism-aac" target="_blank" rel="noopener noreferrer">{t('cloud_source_code')}</a></p>
     </section>
   </main>;
 }

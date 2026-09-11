@@ -163,7 +163,12 @@ export default function CloudSubscriptionSettings() {
         {t(native ? 'cloud_subscribe_apple' : 'cloud_subscribe_web').replace('{price}', quotedPrice!)}
       </button>
       <p className="text-xs text-muted"><a href="https://synalux.ai/legal/privacy" target="_blank" rel="noopener noreferrer">{t('cloud_privacy')}</a>
-        {' · '}<a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer">{t('cloud_terms')}</a></p>
+        {' · '}<a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer">{t('cloud_terms')}</a>
+        {/* AGPL-3.0: anyone running a modified copy owes its users the Corresponding
+            Source. We are the copyright holder and so are not bound by our own licence,
+            but the offer is what makes that term credible against a fork — and it is
+            what a user of this build is entitled to expect. */}
+        {' · '}<a href="https://github.com/dcostenco/prism-aac" target="_blank" rel="noopener noreferrer">{t('cloud_source_code')}</a></p>
     </>}
     {native && billing?.enabled && !hasNativePurchases() && !billing.betaExempt &&
       <p className="text-xs text-muted">{t('cloud_update_ios')}</p>}
