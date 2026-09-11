@@ -394,7 +394,20 @@ async function callSynalux(
     throw e;
   }
 
-  if (res.status === 401) { t.cancel(); clearAuth(); throw new Error('Session expired — sign in again'); }
+  if (res.status === 401) {
+    t.cancel();
+    // Cloud routes authenticate even when metering is off, so a 401 here is now
+    // the normal answer for someone who has never signed in — on iOS especially,
+    // where the sign-in gate deliberately does not apply and the board works
+    // without an account. Telling that person their session "expired" describes
+    // something that never happened, so the two cases are distinguished by
+    // whether a token was actually held. Both still read as auth failures to the
+    // /expired|sign in/i matchers that components use to categorise them.
+    const hadSession = hasApiKey();
+    clearAuth();
+    throw new Error(hadSession ? 'Session expired — sign in again'
+                               : 'Sign in to use cloud speech and AI');
+  }
   if (res.status === 429) { t.cancel(); throw new Error('Rate limit reached — try again in a moment'); }
   if (!res.ok) { t.cancel(); throw new Error(`Synalux API ${res.status}`); }
 
@@ -800,7 +813,12 @@ async function route(
     // "No AI available" below, that check never fires.
     if (err instanceof DOMException && err.name === 'AbortError') throw err;
     const msg = err instanceof Error ? err.message : '';
-    if (msg.includes('expired') || msg.includes('Rate limit')) throw err;
+    // Auth and rate-limit failures must reach the caller. Anything else falls
+    // through to the generic "No AI available", which tells the user to check an
+    // internet connection that is working — useless when the real answer is
+    // "sign in". The sign-in case is new: cloud routes authenticate even when
+    // metering is off, so a never-signed-in caller now lands here routinely.
+    if (msg.includes('expired') || msg.includes('Sign in') || msg.includes('Rate limit')) throw err;
   }
 
   throw new Error('No AI available — check internet connection or start local Ollama');
