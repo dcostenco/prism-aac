@@ -9,14 +9,18 @@ export const DATADOG_RUM_PRIVACY_OPTIONS = {
 };
 
 /**
- * Capitalised words that start standard JS/DOM error names and HTTP status
+ * Capitalised words that make up standard JS/DOM error names and HTTP status
  * phrases. The "First Last" rule below cannot tell `Maria Gonzalez` from
  * `Network Error`, and redacting the latter would destroy the console signal
- * this telemetry exists for. Membership is checked per word, so a real name
- * beside a technical word (`Nurse Rivera`) is still caught.
+ * this telemetry exists for.
  *
- * Being absent from this list only ever costs an over-redacted diagnostic —
- * never a leak — so an incomplete list fails safe.
+ * BOTH words must be in this list for a pair to survive. Requiring only one
+ * leaks real names, because ordinary surnames collide with error vocabulary:
+ * `Cross`, `Frame`, `Rivera`-beside-`Camera`. `Maria Cross` and `David Cross`
+ * are person names, and an either-word test shipped them in cleartext.
+ *
+ * A missing word therefore costs an over-redacted diagnostic, never a leak —
+ * an incomplete list fails safe.
  */
 const TECHNICAL_WORDS = new Set([
   'Aborted', 'Access', 'Allowed', 'Assembly', 'Audio', 'Bad', 'Cache', 'Camera',
@@ -33,23 +37,51 @@ const TECHNICAL_WORDS = new Set([
 ]);
 
 /**
+ * Structured PHI — high confidence, low false-positive rate. These are the only
+ * patterns trusted enough to justify DISCARDING an event (see
+ * `carriesUnredactableText`); the looser name/date/email heuristics redact in
+ * place but must never destroy a diagnostic.
+ *
+ * The lookarounds on PHONE keep it off run-on decimals: without them
+ * `perf 123.456 789.0123 ms` reads as a phone number.
+ */
+const SSN = /\b\d{3}-\d{2}-\d{4}\b/g;
+const PHONE = /(?<![\d.])(?:\+?\d{1,2}[\s.-])?\(?\d{3}\)?[-. ]\d{3}[-. ]\d{4}(?![\d.])/g;
+
+/** Bare month-first dates (`03/14/1998`). */
+const DATE_US = /\b(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\d|3[01])[/-](?:19|20)\d{2}\b/g;
+
+/**
+ * Any date format, but only next to a birth word. A bare ISO or day-first date
+ * cannot be told apart from a build stamp — `build 2026-09-14` is not a date of
+ * birth, and redacting every timestamp costs more diagnostics than it protects.
+ * Anchoring on `born`/`dob` catches the internationalised forms this app will
+ * actually see without eating the machine dates.
+ */
+const DATE_NEAR_BIRTH_WORD =
+  /\b((?:born|birthday|birthdate|dob)\b\W{0,12})\d{1,4}[/-]\d{1,2}[/-]\d{2,4}\b/gi;
+
+/**
  * PHI scrubber shared by both Datadog SDKs. AAC message text is the user's
  * own voice — it names people, places and conditions — so every string that
  * can reach Datadog passes through here first.
  */
 export function scrubPhi(text: string): string {
   return text
-    .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[SSN]')
-    .replace(/\b(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\d|3[01])[/-](?:19|20)\d{2}\b/g, '[DOB]')
-    .replace(/\b[\w.+-]+@[\w-]+\.[\w.-]*[a-zA-Z]\b/g, '[EMAIL]')
-    .replace(/(?:\+?\d{1,2}[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/g, '[PHONE]')
+    .replace(SSN, '[SSN]')
+    .replace(DATE_NEAR_BIRTH_WORD, '$1[DOB]')
+    .replace(DATE_US, '[DOB]')
+    // The TLD must be alphabetic, or `next@16.3.3-canary` and every other
+    // `package@version` in a chunk-load error reads as an email address.
+    .replace(/\b[\w.+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}\b/g, '[EMAIL]')
+    .replace(PHONE, '[PHONE]')
     .replace(/\b\d{10,11}\b/g, '[PHONE]')
     // `%20` and `+` because a name reaches Datadog URL-encoded just as often as
     // it reaches it spaced — `…/search/Grandma%20Betty` is the same leak.
     .replace(
       /\b([A-Z][a-z]+)(\s|%20|\+)([A-Z][a-z]+)\b/g,
       (match, first: string, _sep: string, last: string) =>
-        TECHNICAL_WORDS.has(first) || TECHNICAL_WORDS.has(last) ? match : '[NAME]',
+        TECHNICAL_WORDS.has(first) && TECHNICAL_WORDS.has(last) ? match : '[NAME]',
     );
 }
 
@@ -83,34 +115,57 @@ function redactAacContentUrl(url: string): string {
  * the original still ships — silently. So this list is not a convenience, it
  * is the complete set of things `beforeSend` is able to protect.
  */
-const SCRUBBABLE_PATHS: ReadonlyArray<readonly [path: string, kind: 'text' | 'url']> = [
+type PathKind = 'text' | 'url' | 'object';
+
+export const SCRUBBABLE_PATHS: ReadonlyArray<readonly [path: string, kind: PathKind]> = [
   ['error.message', 'text'],
   ['error.stack', 'text'],
   ['error.handling_stack', 'text'],
   ['error.fingerprint', 'text'],
   ['error.resource.url', 'url'],
   ['resource.url', 'url'],
+  ['resource.graphql.variables', 'text'],
+  ['resource.request.headers', 'object'],
+  ['resource.response.headers', 'object'],
   ['action.target.name', 'text'],
   ['view.url', 'url'],
   ['view.referrer', 'url'],
   ['view.name', 'text'],
+  ['view.performance.lcp.resource_url', 'url'],
+  // Long Animation Frames attribute work to the resource that caused it, so a
+  // pictogram lookup URL lands here too. `trackLongTasks` is on.
+  ['long_task.scripts[].invoker', 'url'],
+  ['long_task.scripts[].source_url', 'url'],
+  ['service', 'text'],
+  ['version', 'text'],
 ];
 
 type RumEventLike = Record<string, unknown>;
 
-function scrubStringAt(event: RumEventLike, path: string, kind: 'text' | 'url'): void {
-  const segments = path.split('.');
-  let node: RumEventLike | undefined = event;
-  for (const segment of segments.slice(0, -1)) {
-    const next = node?.[segment];
-    if (!next || typeof next !== 'object') return;
-    node = next as RumEventLike;
+function scrubLeaf(value: unknown, kind: PathKind): unknown {
+  if (kind === 'object') return scrubDeep(value);
+  if (typeof value !== 'string') return value;
+  return scrubPhi(kind === 'url' ? redactAacContentUrl(value) : value);
+}
+
+/** Walks a Datadog field path, including its `[]` array segments. */
+function scrubStringAt(node: unknown, segments: readonly string[], kind: PathKind): void {
+  const [head, ...rest] = segments;
+
+  if (head === '[]') {
+    if (Array.isArray(node)) {
+      node.forEach((item, i) => {
+        if (rest.length) scrubStringAt(item, rest, kind);
+        else node[i] = scrubLeaf(item, kind);
+      });
+    }
+    return;
   }
-  if (!node) return;
-  const leaf = segments[segments.length - 1];
-  const value = node[leaf];
-  if (typeof value !== 'string') return;
-  node[leaf] = scrubPhi(kind === 'url' ? redactAacContentUrl(value) : value);
+
+  if (!node || typeof node !== 'object') return;
+  const parent = node as RumEventLike;
+  if (rest.length) return scrubStringAt(parent[head], rest, kind);
+  parent[head] = scrubLeaf(parent[head], kind);
 }
 
 /** Scrub every string inside `context`, which Datadog copies back wholesale. */
@@ -125,25 +180,32 @@ function scrubDeep(value: unknown, depth = 0): unknown {
 }
 
 /**
- * `error.causes[].message` and `error.component_stack` carry free text but are
- * NOT in `SCRUBBABLE_PATHS`, so redacting them is discarded. Dropping the whole
- * event is the only lever `beforeSend` has over them — so drop, but only when
- * the scrubber actually detects PHI, to keep ordinary cause chains and React
- * component stacks reportable.
+ * `error.causes[]` carries free text but is NOT in `SCRUBBABLE_PATHS`, so
+ * redacting it is discarded — dropping the whole event is the only lever
+ * `beforeSend` has over it.
+ *
+ * Only STRUCTURED PHI triggers the drop. Using the full scrubber here destroyed
+ * ordinary diagnostics: `The Internet connection appears to be offline.` and
+ * `in PhraseTile (created by Board Grid)` both contain a capitalised pair, and
+ * a name heuristic is nowhere near confident enough to justify discarding an
+ * error report. An SSN or a phone number in a cause chain is.
+ *
+ * `error.component_stack` is deliberately not checked: it is only populated by
+ * rum-core's internal `addError({ componentStack })`, which the public API
+ * never calls, and `@datadog/browser-rum-react` is not a dependency. This app's
+ * real component stack goes through `console.error` in components/PrismApp.tsx
+ * and lands in `error.message`, which IS scrubbable.
  */
 function carriesUnredactableText(event: RumEventLike): boolean {
   const error = event.error as RumEventLike | undefined;
-  if (!error || typeof error !== 'object') return false;
+  if (!error || typeof error !== 'object' || !Array.isArray(error.causes)) return false;
 
-  const detects = (value: unknown) => typeof value === 'string' && scrubPhi(value) !== value;
+  const detects = (value: unknown) =>
+    typeof value === 'string' && (new RegExp(SSN).test(value) || new RegExp(PHONE).test(value));
 
-  if (detects(error.component_stack)) return true;
-  if (Array.isArray(error.causes)) {
-    for (const cause of error.causes as RumEventLike[]) {
-      if (cause && (detects(cause.message) || detects(cause.stack))) return true;
-    }
-  }
-  return false;
+  return (error.causes as RumEventLike[]).some(
+    (cause) => cause && (detects(cause.message) || detects(cause.stack)),
+  );
 }
 
 /**
@@ -162,7 +224,9 @@ function carriesUnredactableText(event: RumEventLike): boolean {
 export function rumBeforeSend(event: RumEventLike): boolean {
   if (!event || typeof event !== 'object') return true;
   if (carriesUnredactableText(event)) return false;
-  for (const [path, kind] of SCRUBBABLE_PATHS) scrubStringAt(event, path, kind);
+  for (const [path, kind] of SCRUBBABLE_PATHS) {
+    scrubStringAt(event, path.split(/\.|(?=\[\])/).filter(Boolean), kind);
+  }
   if (event.context) scrubDeep(event.context);
   return true;
 }

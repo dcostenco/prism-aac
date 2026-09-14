@@ -4,6 +4,7 @@ import {
   anonymousDatadogUserId,
   DATADOG_RUM_PRIVACY_OPTIONS,
   rumBeforeSend,
+  SCRUBBABLE_PATHS,
   scrubPhi,
 } from '@/lib/datadog';
 
@@ -130,35 +131,100 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
     );
   });
 
-  it('discards an event whose PHI sits in a field Datadog will not copy back', async () => {
-    // error.causes and error.component_stack are NOT in the whitelist, so
-    // redacting them is thrown away. Dropping is the only protection left.
+  it('discards an event whose structured PHI sits in a cause Datadog will not copy back', async () => {
+    // error.causes is NOT in the whitelist, so redacting it is thrown away.
+    // Dropping the event is the only protection left.
     expect(
       await send({
         type: 'error',
-        error: { message: 'upload failed', causes: [{ message: 'caption: Grandma Betty' }] },
+        error: { message: 'upload failed', causes: [{ message: 'called 555-123-4567' }] },
       }),
     ).toBeNull();
 
     expect(
       await send({
         type: 'error',
-        error: { message: 'render failed', component_stack: 'in Bar // said Grandma Betty' },
+        error: { message: 'sync failed', causes: [{ stack: 'at x // ssn 123-45-6789' }] },
       }),
     ).toBeNull();
   });
 
-  it('keeps cause chains and component stacks that carry no detected PHI', async () => {
-    const sent = await send({
-      type: 'error',
-      error: {
-        message: 'upload failed',
-        causes: [{ message: 'network timeout' }],
-        component_stack: 'in MessageBar',
-      },
-    });
+  it('does NOT discard ordinary diagnostics that merely look capitalised', async () => {
+    // Regression: the drop lever used the full scrubber, so the name heuristic
+    // destroyed real error reports. A capitalised pair is nowhere near
+    // confident enough to justify throwing away an error.
+    for (const message of [
+      'The Internet connection appears to be offline.',
+      'Voice Clone upload failed',
+      'Head Tracker lost the face',
+      'Music Composer panel crashed',
+      'in PhraseTile (created by Board Grid)',
+      'Failed to load module next@16.3.3-canary.42',
+    ]) {
+      expect(
+        await send({ type: 'error', error: { message: 'outer', causes: [{ message }] } }),
+        message,
+      ).not.toBeNull();
+    }
+  });
 
-    expect(sent).not.toBeNull();
+  it('scrubs the Long Animation Frame and LCP fields Datadog also copies back', async () => {
+    // trackLongTasks is on, and LoAF attributes work to the resource that
+    // caused it — so a pictogram lookup URL reaches Datadog here too.
+    const longTask = await send(
+      {
+        type: 'long_task',
+        long_task: {
+          scripts: [
+            {
+              invoker: 'https://api.arasaac.org/v1/pictograms/en/search/seizure',
+              source_url: 'https://synalux.ai/x.js?caller=Grandma%20Betty',
+            },
+          ],
+        },
+      },
+      { 'long_task.scripts[].invoker': 'string', 'long_task.scripts[].source_url': 'string' },
+    );
+    const script = (longTask!.long_task as { scripts: Record<string, string>[] }).scripts[0];
+    expect(script.invoker).toBe('https://api.arasaac.org/[REDACTED]');
+    expect(script.source_url).not.toContain('Grandma');
+
+    const view = await send(
+      {
+        type: 'view',
+        view: {
+          performance: {
+            lcp: { resource_url: 'https://api.arasaac.org/v1/pictograms/en/search/seizure' },
+          },
+        },
+      },
+      { 'view.performance.lcp.resource_url': 'string' },
+    );
+    const lcp = (view!.view as { performance: { lcp: { resource_url: string } } }).performance.lcp;
+    expect(lcp.resource_url).toBe('https://api.arasaac.org/[REDACTED]');
+  });
+
+  it('scrubs graphql variables and resource headers', async () => {
+    const sent = await send(
+      {
+        type: 'resource',
+        resource: {
+          graphql: { variables: '{"to":"Grandma Betty"}' },
+          response: { headers: { 'x-caption': 'Grandma Betty' } },
+        },
+      },
+      {
+        'resource.graphql.variables': 'string',
+        'resource.request.headers': 'object',
+        'resource.response.headers': 'object',
+      },
+    );
+    const resource = sent!.resource as {
+      graphql: { variables: string };
+      response: { headers: Record<string, string> };
+    };
+    expect(resource.graphql.variables).toBe('{"to":"[NAME]"}');
+    expect(resource.response.headers['x-caption']).toBe('[NAME]');
   });
 
   it('is actually wired into datadogRum.init, not just exported', async () => {
@@ -190,6 +256,69 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
   });
 });
 
+describe('SCRUBBABLE_PATHS covers what the installed SDK copies back', () => {
+  // The list in lib/datadog.ts is a hand-copy of the SDK's
+  // `modifiableFieldPathsByEvent`. A hand-copy drifts: the first version of it
+  // silently missed long_task.scripts[].invoker/source_url,
+  // view.performance.lcp.resource_url, resource.graphql.variables and the
+  // resource header objects — every one of them a path the SDK WOULD have
+  // copied back, so every one a field beforeSend could have protected and did
+  // not. Read the installed SDK and fail on any path we do not handle.
+  it('handles every modifiable path the SDK declares', async () => {
+    const { readFileSync } = await import('node:fs');
+    const source = readFileSync(
+      require.resolve('@datadog/browser-rum-core/cjs/domain/assembly.js'),
+      'utf8',
+    );
+
+    const declared = new Set<string>();
+    for (const [, path] of source.matchAll(/'([a-z_][a-zA-Z0-9_.[\]]*)':\s*'(?:string|object)'/g)) {
+      declared.add(path);
+    }
+    // Bare identifiers in the same maps: context / service / version.
+    for (const [, path] of source.matchAll(/^\s{4}(context|service|version):\s*'/gm)) {
+      declared.add(path);
+    }
+
+    expect(declared.size).toBeGreaterThan(10); // the scrape itself must not silently find nothing
+
+    const handled = new Set<string>(SCRUBBABLE_PATHS.map(([path]) => path));
+    handled.add('context'); // scrubbed wholesale by scrubDeep, not by path
+
+    expect([...declared].filter((path) => !handled.has(path)).sort()).toEqual([]);
+  });
+
+  it('has no entry that no test exercises', async () => {
+    // Guards against dead entries: every declared path must actually reach a
+    // string through scrubStringAt. Build a synthetic event per path, scrub it,
+    // and require the PHI to be gone.
+    for (const [path, kind] of SCRUBBABLE_PATHS) {
+      const probe = kind === 'url' ? 'https://x.test/Grandma%20Betty' : 'Grandma Betty';
+      const event: Record<string, unknown> = {};
+      let node = event;
+      const segments = path.split(/\.|(?=\[\])/).filter(Boolean);
+      segments.forEach((segment, i) => {
+        const last = i === segments.length - 1;
+        if (segment === '[]') {
+          const arr: unknown[] = [last ? probe : {}];
+          // replace the parent key's value with the array
+          const parentKey = segments[i - 1];
+          (node as Record<string, unknown>)[parentKey] = arr;
+          node = arr[0] as Record<string, unknown>;
+          return;
+        }
+        if (last) node[segment] = kind === 'object' ? { k: probe } : probe;
+        else if (segments[i + 1] !== '[]') node = node[segment] = {} as Record<string, unknown>;
+        else node[segment] = {};
+      });
+
+      rumBeforeSend(event);
+      expect(JSON.stringify(event), `${path} was not scrubbed`).not.toContain('Grandma Betty');
+      expect(JSON.stringify(event), `${path} was not scrubbed`).not.toContain('Grandma%20Betty');
+    }
+  });
+});
+
 describe('scrubPhi', () => {
   it('catches the PHI shapes an AAC user actually produces', () => {
     expect(scrubPhi('call mom@example.com')).toBe('call [EMAIL]');
@@ -197,6 +326,8 @@ describe('scrubPhi', () => {
     expect(scrubPhi('ring (555) 123-4567')).toBe('ring [PHONE]');
     expect(scrubPhi('ring 5551234567')).toBe('ring [PHONE]');
     expect(scrubPhi('born 03/14/1998')).toBe('born [DOB]');
+    expect(scrubPhi('born 14/03/1998')).toBe('born [DOB]'); // day-first
+    expect(scrubPhi('DOB: 1998-03-14')).toBe('DOB: [DOB]'); // ISO
     expect(scrubPhi('ssn 123-45-6789')).toBe('ssn [SSN]');
     expect(scrubPhi('tell Maria Gonzalez')).toBe('tell [NAME]');
     expect(scrubPhi('ask Nurse Rivera')).toBe('ask [NAME]');
@@ -216,6 +347,40 @@ describe('scrubPhi', () => {
       "undefined is not an object (evaluating '[...document.querySelectorAll('button')]')",
     ]) {
       expect(scrubPhi(message)).toBe(message);
+    }
+  });
+
+  it('redacts a name even when one half collides with error vocabulary', () => {
+    // Regression: the technical stop-list originally spared a pair if EITHER
+    // word was technical. `Cross` and `Frame` are ordinary surnames, so
+    // `Maria Cross` and `David Cross` — plain person names — shipped in
+    // cleartext. Both words must be technical for a pair to survive.
+    for (const name of [
+      'Maria Cross',
+      'David Cross',
+      'Betty Frame',
+      'Camera Rivera',
+      'Betty Network',
+      'Web Betty',
+      'Token Rivera',
+    ]) {
+      expect(scrubPhi(name), name).toBe('[NAME]');
+    }
+  });
+
+  it('does not mangle package@version or run-on decimals', () => {
+    // The email rule read `next@16.3.3-canary` as an address and the phone rule
+    // read `123.456 789.0123` as a number, in an app whose live error
+    // vocabulary is full of both.
+    for (const message of [
+      'Failed to load module next@16.3.3-canary.42',
+      'tesseract.js@7.0.0-rc.1 failed to init',
+      '@huggingface/transformers@3.1.0-alpha loaded',
+      'perf 123.456 789.0123 ms',
+      'ETag: W/"abc-123.456 789.0123"',
+      'build 2026-09-14 ok',
+    ]) {
+      expect(scrubPhi(message), message).toBe(message);
     }
   });
 
