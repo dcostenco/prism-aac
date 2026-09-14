@@ -485,19 +485,11 @@ struct PrismWebView: UIViewRepresentable {
                      initiatedByFrame frame: WKFrameInfo,
                      type: WKMediaCaptureType,
                      decisionHandler: @escaping (WKPermissionDecision) -> Void) {
-            guard let originURL = URL(string: "\(origin.protocol)://\(origin.host)"),
-                  Self.isAllowedOrigin(originURL) else {
-                decisionHandler(.deny)
-                return
-            }
-            switch type {
-            case .microphone, .cameraAndMicrophone:
-                decisionHandler(.grant)
-            case .camera:
-                decisionHandler(.deny)
-            @unknown default:
-                decisionHandler(.prompt)
-            }
+            decisionHandler(BridgeSecurityPolicy.mediaCaptureDecision(
+                origin: URL(string: "\(origin.protocol)://\(origin.host)"),
+                type: type,
+                isMainFrame: frame.isMainFrame
+            ))
         }
 
         // MARK: - Handle target="_blank" links

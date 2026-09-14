@@ -1,5 +1,6 @@
 import XCTest
 import UIKit
+import WebKit
 @testable import PrismAAC
 
 /// Unit tests for BridgeSecurityPolicy — the central security gate for all
@@ -250,6 +251,112 @@ final class BridgeSecurityTests: XCTestCase {
 
     func test_lang_nullByte_invalid() {
         XCTAssertFalse(BridgeSecurityPolicy.isValidLang("en\0US"))
+    }
+
+    // MARK: - mediaCaptureDecision — camera is a real AAC input
+
+    /// Regression: the delegate used to answer `.deny` for camera-only
+    /// capture. Because bodyPoseService/headTracker request
+    /// `{ video: …, audio: false }`, WebKit classifies every head-tracking
+    /// request as `.camera`, so hands-free control and custom picture
+    /// symbols could never start inside the iOS app — 60 RUM errors in
+    /// 30 days, 57 of them from WKWebView.
+    func test_mediaCapture_camera_allowedOrigin_granted() {
+        XCTAssertEqual(
+            BridgeSecurityPolicy.mediaCaptureDecision(
+                origin: url("https://synalux.ai"), type: .camera, isMainFrame: true),
+            .grant
+        )
+    }
+
+    func test_mediaCapture_microphone_allowedOrigin_granted() {
+        XCTAssertEqual(
+            BridgeSecurityPolicy.mediaCaptureDecision(
+                origin: url("https://synalux.ai"), type: .microphone, isMainFrame: true),
+            .grant
+        )
+    }
+
+    func test_mediaCapture_cameraAndMicrophone_allowedOrigin_granted() {
+        XCTAssertEqual(
+            BridgeSecurityPolicy.mediaCaptureDecision(
+                origin: url("https://synalux.ai"), type: .cameraAndMicrophone, isMainFrame: true),
+            .grant
+        )
+    }
+
+    func test_mediaCapture_subdomain_allowedOrigin_granted() {
+        XCTAssertEqual(
+            BridgeSecurityPolicy.mediaCaptureDecision(
+                origin: url("https://staging.synalux.ai"), type: .camera, isMainFrame: true),
+            .grant
+        )
+    }
+
+    // MARK: - mediaCaptureDecision — the origin gate still holds
+
+    func test_mediaCapture_camera_evilOrigin_denied() {
+        XCTAssertEqual(
+            BridgeSecurityPolicy.mediaCaptureDecision(
+                origin: url("https://evil.com"), type: .camera, isMainFrame: true),
+            .deny
+        )
+    }
+
+    func test_mediaCapture_microphone_evilOrigin_denied() {
+        XCTAssertEqual(
+            BridgeSecurityPolicy.mediaCaptureDecision(
+                origin: url("https://evil.com"), type: .microphone, isMainFrame: true),
+            .deny
+        )
+    }
+
+    func test_mediaCapture_camera_typosquatOrigin_denied() {
+        // Opening the camera for synalux.ai.evil.com would be the worst
+        // possible failure of this gate — pin it explicitly.
+        XCTAssertEqual(
+            BridgeSecurityPolicy.mediaCaptureDecision(
+                origin: url("https://synalux.ai.evil.com"), type: .camera, isMainFrame: true),
+            .deny
+        )
+    }
+
+    func test_mediaCapture_camera_unparseableOrigin_denied() {
+        // WKSecurityOrigin for an opaque origin yields an empty protocol/host,
+        // so the delegate hands us a nil URL. That must never grant.
+        XCTAssertEqual(
+            BridgeSecurityPolicy.mediaCaptureDecision(origin: nil, type: .camera, isMainFrame: true),
+            .deny
+        )
+    }
+
+    func test_mediaCapture_camera_fileScheme_denied() {
+        XCTAssertEqual(
+            BridgeSecurityPolicy.mediaCaptureDecision(
+                origin: url("file:///etc/passwd"), type: .camera, isMainFrame: true),
+            .deny
+        )
+    }
+
+    // MARK: - mediaCaptureDecision — sub-frames never get capture
+
+    /// The app renders a full-page iframe of arbitrary user-typed URLs. The
+    /// bridge script is installed `forMainFrameOnly: true`; capture permission
+    /// must follow the same rule so a framed page can never reach the camera.
+    func test_mediaCapture_camera_subFrame_deniedEvenOnAllowedOrigin() {
+        XCTAssertEqual(
+            BridgeSecurityPolicy.mediaCaptureDecision(
+                origin: url("https://synalux.ai"), type: .camera, isMainFrame: false),
+            .deny
+        )
+    }
+
+    func test_mediaCapture_microphone_subFrame_deniedEvenOnAllowedOrigin() {
+        XCTAssertEqual(
+            BridgeSecurityPolicy.mediaCaptureDecision(
+                origin: url("https://synalux.ai"), type: .microphone, isMainFrame: false),
+            .deny
+        )
     }
 
     // MARK: - Constant ordering sanity

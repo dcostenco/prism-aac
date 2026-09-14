@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import WebKit
 
 /// Central security policy for the WKWebView native bridge.
 ///
@@ -43,6 +44,48 @@ enum BridgeSecurityPolicy {
         if host == "localhost" { return true }
         #endif
         return false
+    }
+
+    // MARK: - Media capture permission
+
+    /// Answers a `getUserMedia` permission request from the web layer.
+    ///
+    /// The camera and the microphone are both first-class AAC inputs: the
+    /// microphone drives SFSpeechRecognizer dictation, the camera drives
+    /// hands-free head/pose tracking and custom picture symbols. Both are
+    /// declared in Info.plist (NSMicrophoneUsageDescription /
+    /// NSCameraUsageDescription), so both get the same answer from the same
+    /// origin allow-list.
+    ///
+    /// Granting here does not open the camera. Two gates remain downstream:
+    /// iOS still shows its own system permission prompt on first use, and the
+    /// web app only calls `getUserMedia` once the user turns on head tracking
+    /// or camera input (both default to `false` in settingsStore). `.grant`
+    /// therefore hands the real consent decision to the user via the OS,
+    /// instead of refusing on their behalf.
+    ///
+    /// Sub-frames are refused outright. The bridge script is already installed
+    /// `forMainFrameOnly: true` so an iframe cannot reach the native handlers;
+    /// capture permission follows the same rule. The app renders a full-page
+    /// iframe of arbitrary user-typed URLs (components/browser), and that frame
+    /// must never be able to reach the camera even if a future change puts it
+    /// on a synalux.ai origin or adds `allow="camera"`.
+    ///
+    /// An unrecognised future capture type is never granted outright — it
+    /// falls back to `.prompt` so a new WebKit capture kind cannot silently
+    /// inherit access.
+    static func mediaCaptureDecision(
+        origin: URL?,
+        type: WKMediaCaptureType,
+        isMainFrame: Bool
+    ) -> WKPermissionDecision {
+        guard isMainFrame, let origin, isAllowedOrigin(origin) else { return .deny }
+        switch type {
+        case .camera, .microphone, .cameraAndMicrophone:
+            return .grant
+        @unknown default:
+            return .prompt
+        }
     }
 
     // MARK: - Rate-limit thresholds

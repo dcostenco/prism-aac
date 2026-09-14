@@ -29,6 +29,28 @@ describe('Prism AAC Content Security Policy', () => {
   });
 });
 
+describe('Permissions-Policy — camera', () => {
+  // Regression: this header shipped `camera=()`. An empty allowlist is not
+  // "unset" — it switches the camera off for self, so getUserMedia rejects
+  // before any native/OS permission is consulted, and head tracking plus
+  // custom picture symbols cannot start. Production masked it because the
+  // portal proxy replaced the header; the direct Vercel host and the localhost
+  // dev server the iOS DEBUG build loads did not get that override.
+  const policy = () =>
+    middleware(new NextRequest('https://prism-aac.vercel.app/prism-aac'))
+      .headers.get('permissions-policy') || '';
+
+  it('lets this origin use the camera', () => {
+    expect(policy()).toContain('camera=(self)');
+    expect(policy()).not.toContain('camera=()');
+  });
+
+  it('still keeps microphone and geolocation same-origin only', () => {
+    expect(policy()).toContain('microphone=(self)');
+    expect(policy()).toContain('geolocation=(self)');
+  });
+});
+
 describe('CSP — WebAssembly', () => {
   // speechService's Tier 3 fallback and panicService both compile WASM. Without
   // this directive every instantiate() is refused and the last-resort speech
