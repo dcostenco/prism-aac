@@ -66,6 +66,13 @@ const PHONE = /(^|[^\d.])((?:\+?\d{1,2}[\s.-])?\(?\d{3}\)?[-. ]\d{3}[-. ]\d{4})(
 /** Unformatted run of digits — what a numeric keyboard produces. */
 const BARE_PHONE = /\b\d{10,11}\b/g;
 
+/**
+ * 13–19 digits with optional space/dash grouping. The Luhn check below is what
+ * makes this safe to apply: without it every 16-digit order id or session token
+ * would be masked as a card.
+ */
+const CARD = /\b\d(?:[ -]?\d){12,18}\b/g;
+
 /** Bare month-first dates (`03/14/1998`). */
 const DATE_US = /\b(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\d|3[01])[/-](?:19|20)\d{2}\b/g;
 
@@ -88,7 +95,7 @@ const DATE_US = /\b(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\d|3[01])[/-](?:19|20)\d
  * fails against the `T`.
  */
 const DATE_NEAR_BIRTH_WORD =
-  /\b((?:born|birth|birthday|birthdate|dob)\b(?:(?![.!?;][^\p{L}\d\n]*\p{Lu})[^\d\n]){0,12})\d{1,4}[/.\- ]\d{1,2}[/.\- ](?:(?:19|20)\d{2}|\d{2})(?!\d)/giu;
+  /\b((?:born|birth|birthday|birthdate|dob)\b(?:(?![.!?;][^\p{L}\d\n]*\p{Lu})[^\d\n]){0,12})(\d{1,4}[/.\- ]\d{1,2}[/.\- ](?:(?:19|20)\d{2}|\d{2}))(?!\d)/giu;
 
 /**
  * A run of two or more capitalised words. The whole run is redacted unless
@@ -118,26 +125,95 @@ const CAPITALISED_RUN =
   /(^|[^\p{L}])(\p{Lu}\p{Ll}+(?:(?:[^\S\n\r]|%20|\+)\p{Lu}\p{Ll}+)+)(?![\p{L}])/gu;
 const RUN_SEPARATOR = /[^\S\n\r]|%20|\+/u;
 
+/** Mask character. ASCII, so it survives every transport and log viewer. */
+const MASK = '*';
+
 /**
- * PHI scrubber shared by both Datadog SDKs. AAC message text is the user's
+ * Luhn checksum. Card numbers satisfy it; order ids, session tokens and epoch
+ * timestamps essentially never do, so this is what keeps `CARD` from eating
+ * ordinary 16-digit identifiers.
+ */
+function luhnValid(digits: string): boolean {
+  let sum = 0;
+  let double = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let d = digits.charCodeAt(i) - 48;
+    if (double) {
+      d *= 2;
+      if (d > 9) d -= 9;
+    }
+    sum += d;
+    double = !double;
+  }
+  return sum % 10 === 0;
+}
+
+/** Mask every digit but the last `keep`, leaving separators in place. */
+function maskDigits(text: string, keep: number): string {
+  const total = (text.match(/\d/g) ?? []).length;
+  let seen = 0;
+  return text.replace(/\d/g, (d) => (++seen > total - keep ? d : MASK));
+}
+
+/**
+ * Keep the year, mask the rest. HIPAA Safe Harbor removes date precision finer
+ * than the year for exactly this reason: the year alone does not identify, and
+ * it is the part with any diagnostic value.
+ */
+function maskDate(date: string): string {
+  const year = /(?:19|20)\d{2}/.exec(date);
+  if (!year) return date.replace(/\d/g, MASK);
+  const start = year.index;
+  return date.replace(/\d/g, (d, offset: number) =>
+    offset >= start && offset < start + 4 ? d : MASK,
+  );
+}
+
+/**
+ * PHI obfuscator shared by both Datadog SDKs. AAC message text is the user's
  * own voice — it names people, places and conditions — so every string that
  * can reach Datadog passes through here first.
+ *
+ * This masks rather than deletes. `[NAME]` and `[PHONE]` threw away the
+ * distinction between two different errors and made a false positive
+ * catastrophic for the engineer reading it; `G* B*` and `***-***-4567` identify
+ * nobody but keep the message legible and two occurrences distinguishable. It
+ * is also what everyone else does — PCI shows the last four of a card, clinical
+ * systems show an initial, Safe Harbor keeps the year.
+ *
+ * The practical consequence is that over-matching stops being expensive. A
+ * technical phrase wrongly caught by the name rule degrades to its initials
+ * instead of vanishing, which is why this can afford to err toward masking.
  */
 export function scrubPhi(text: string): string {
   return text
-    .replace(SSN, '[SSN]')
-    .replace(DATE_NEAR_BIRTH_WORD, '$1[DOB]')
-    .replace(DATE_US, '[DOB]')
-    // The TLD must be alphabetic, or `next@16.3.3-canary` and every other
-    // `package@version` in a chunk-load error reads as an email address.
-    .replace(/\b[\w.+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}\b/g, '[EMAIL]')
-    .replace(PHONE, '$1[PHONE]')
-    .replace(BARE_PHONE, '[PHONE]')
-    .replace(CAPITALISED_RUN, (match, before: string, run: string) =>
-      run.split(RUN_SEPARATOR).every((word) => TECHNICAL_WORDS.has(word))
+    // Cards first: a 16-digit PAN would otherwise be eaten by BARE_PHONE, and
+    // the last four are the part worth keeping.
+    .replace(CARD, (match) => {
+      const digits = match.replace(/\D/g, '');
+      return digits.length >= 13 && luhnValid(digits) ? maskDigits(match, 4) : match;
+    })
+    // An SSN keeps nothing. Unlike a card, its last four have no diagnostic
+    // use, and they are the half that is treated as identifying.
+    .replace(SSN, (match) => match.replace(/\d/g, MASK))
+    .replace(DATE_NEAR_BIRTH_WORD, (_match, lead: string, date: string) => lead + maskDate(date))
+    .replace(DATE_US, maskDate)
+    // Keep the first character and the domain: `m**@example.com` says which
+    // provider failed without saying who. The TLD must be alphabetic, or
+    // `next@16.3.3-canary` and every other `package@version` in a chunk-load
+    // error reads as an email address.
+    .replace(
+      /\b([\w.+-])[\w.+-]*(@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,})\b/g,
+      (_match, first: string, domain: string) => `${first}${MASK}${MASK}${domain}`,
+    )
+    .replace(PHONE, (_match, before: string, number: string) => before + maskDigits(number, 4))
+    .replace(BARE_PHONE, (match) => maskDigits(match, 4))
+    .replace(CAPITALISED_RUN, (match, before: string, run: string) => {
+      const words = run.split(RUN_SEPARATOR);
+      return words.every((word) => TECHNICAL_WORDS.has(word))
         ? match
-        : `${before}[NAME]`,
-    );
+        : before + words.map((word) => word[0] + MASK).join(' ');
+    });
 }
 
 /**

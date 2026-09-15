@@ -90,11 +90,13 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
     });
 
     const error = sent!.error as Record<string, string | Record<string, string>>;
-    expect(error.message).toBe('speak failed for [NAME]');
-    expect(error.stack).toBe('Error: told [NAME] at [PHONE]\n  at speak()');
+    expect(error.message).toBe('speak failed for M* G*');
+    expect(error.stack).toBe('Error: told N* R* at ***-***-4567\n  at speak()');
     expect(error.handling_stack).not.toContain('Grandma Betty');
-    expect((error.resource as Record<string, string>).url).toContain('[EMAIL]');
-    expect(sent!.context).toEqual({ caption: '[NAME]', dob: 'DOB [DOB]' });
+    expect((error.resource as Record<string, string>).url).toBe(
+      'https://api.example.com/x?q=M* G*&e=m**@example.com',
+    );
+    expect(sent!.context).toEqual({ caption: 'G* B*', dob: 'DOB **/**/1998' });
   });
 
   it('redacts the AAC word a pictogram lookup puts in a resource URL', async () => {
@@ -218,7 +220,7 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
 
     expect(sent).not.toBeNull();
     expect(JSON.stringify(sent!.context)).not.toMatch(/Grandma|555-123-4567/);
-    expect(sent!.context).toEqual({ items: ['call [NAME] at [PHONE]'] });
+    expect(sent!.context).toEqual({ items: ['call G* B* at ***-***-4567'] });
   });
 
   it('replaces context below the depth limit instead of shipping it unread', async () => {
@@ -263,8 +265,8 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
       graphql: { variables: string };
       response: { headers: Record<string, string> };
     };
-    expect(resource.graphql.variables).toBe('{"to":"[NAME]"}');
-    expect(resource.response.headers['x-caption']).toBe('[NAME]');
+    expect(resource.graphql.variables).toBe('{"to":"G* B*"}');
+    expect(resource.response.headers['x-caption']).toBe('G* B*');
   });
 
   it('is actually wired into datadogRum.init, not just exported', async () => {
@@ -288,7 +290,7 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
 
     const event = { error: { message: 'spoke to Maria Gonzalez' } };
     config.beforeSend!(event);
-    expect(event.error.message).toBe('spoke to [NAME]');
+    expect(event.error.message).toBe('spoke to M* G*');
 
     vi.doUnmock('@datadog/browser-rum');
     vi.doUnmock('@datadog/browser-logs');
@@ -430,17 +432,17 @@ describe('SCRUBBABLE_PATHS covers what the installed SDK copies back', () => {
 
 describe('scrubPhi', () => {
   it('catches the PHI shapes an AAC user actually produces', () => {
-    expect(scrubPhi('call mom@example.com')).toBe('call [EMAIL]');
-    expect(scrubPhi('ring 555-123-4567')).toBe('ring [PHONE]');
-    expect(scrubPhi('ring (555) 123-4567')).toBe('ring [PHONE]');
-    expect(scrubPhi('ring 5551234567')).toBe('ring [PHONE]');
-    expect(scrubPhi('born 03/14/1998')).toBe('born [DOB]');
-    expect(scrubPhi('born 14/03/1998')).toBe('born [DOB]'); // day-first
-    expect(scrubPhi('DOB: 1998-03-14')).toBe('DOB: [DOB]'); // ISO
-    expect(scrubPhi('my dob is 14.03.1998')).toBe('my dob is [DOB]'); // dot-separated
-    expect(scrubPhi('ssn 123-45-6789')).toBe('ssn [SSN]');
-    expect(scrubPhi('tell Maria Gonzalez')).toBe('tell [NAME]');
-    expect(scrubPhi('ask Nurse Rivera')).toBe('ask [NAME]');
+    expect(scrubPhi('call mom@example.com')).toBe('call m**@example.com');
+    expect(scrubPhi('ring 555-123-4567')).toBe('ring ***-***-4567');
+    expect(scrubPhi('ring (555) 123-4567')).toBe('ring (***) ***-4567');
+    expect(scrubPhi('ring 5551234567')).toBe('ring ******4567');
+    expect(scrubPhi('born 03/14/1998')).toBe('born **/**/1998');
+    expect(scrubPhi('born 14/03/1998')).toBe('born **/**/1998'); // day-first
+    expect(scrubPhi('DOB: 1998-03-14')).toBe('DOB: 1998-**-**'); // ISO
+    expect(scrubPhi('my dob is 14.03.1998')).toBe('my dob is **.**.1998'); // dot-separated
+    expect(scrubPhi('ssn 123-45-6789')).toBe('ssn ***-**-****');
+    expect(scrubPhi('tell Maria Gonzalez')).toBe('tell M* G*');
+    expect(scrubPhi('ask Nurse Rivera')).toBe('ask N* R*');
   });
 
   it('leaves the real production error vocabulary readable', () => {
@@ -460,6 +462,26 @@ describe('scrubPhi', () => {
     }
   });
 
+  it('masks a card number to its last four, and only if it is really a card', () => {
+    // Luhn is what makes this safe to run at all: a 16-digit order id or
+    // session token would otherwise be masked as a card.
+    expect(scrubPhi('card 4111 1111 1111 1111 declined')).toBe(
+      'card **** **** **** 1111 declined',
+    );
+    expect(scrubPhi('card 4242424242424242 ok')).toBe('card ************4242 ok');
+    expect(scrubPhi('amex 3782 822463 10005')).toBe('amex **** ****** *0005');
+
+    // Luhn-invalid: left alone.
+    expect(scrubPhi('order 1234567890123456 created')).toBe('order 1234567890123456 created');
+  });
+
+  it('keeps enough of each value to tell two errors apart', () => {
+    // The point of masking over deletion: distinct inputs stay distinct.
+    expect(scrubPhi('call Maria Gonzalez')).not.toBe(scrubPhi('call Betty Frame'));
+    expect(scrubPhi('ring 555-123-4567')).not.toBe(scrubPhi('ring 555-123-9999'));
+    expect(scrubPhi('mail a@x.com')).not.toBe(scrubPhi('mail b@y.com'));
+  });
+
   it('redacts a name even when one half collides with error vocabulary', () => {
     // Regression: the technical stop-list originally spared a pair if EITHER
     // word was technical. `Cross` and `Frame` are ordinary surnames, so
@@ -474,16 +496,16 @@ describe('scrubPhi', () => {
       'Web Betty',
       'Token Rivera',
     ]) {
-      expect(scrubPhi(name), name).toBe('[NAME]');
+      expect(scrubPhi(name), name).toMatch(/^\p{L}\* \p{L}\*$/u);
     }
   });
 
   it('redacts the whole run when an error word precedes a name', () => {
     // A pair-scan redacted `Error Maria` and shipped `Gonzalez`.
-    expect(scrubPhi('Error Maria Gonzalez')).toBe('[NAME]');
-    expect(scrubPhi('Uncaught Maria Gonzalez')).toBe('[NAME]');
-    expect(scrubPhi('Session Maria Gonzalez Betty Frame')).toBe('[NAME]');
-    expect(scrubPhi('Error: told Nurse Rivera')).toBe('Error: told [NAME]');
+    expect(scrubPhi('Error Maria Gonzalez')).toBe('E* M* G*');
+    expect(scrubPhi('Uncaught Maria Gonzalez')).toBe('U* M* G*');
+    expect(scrubPhi('Session Maria Gonzalez Betty Frame')).toBe('S* M* G* B* F*');
+    expect(scrubPhi('Error: told Nurse Rivera')).toBe('Error: told N* R*');
   });
 
   it('stops the birth-word date gap at sentence punctuation', () => {
@@ -491,19 +513,19 @@ describe('scrubPhi', () => {
       'She was born. Build 2026-09-14 shipped',
     );
     expect(scrubPhi('birthday! Release 2026-09-14 ok')).toBe('birthday! Release 2026-09-14 ok');
-    expect(scrubPhi('Date of birth: 14/03/1998')).toBe('Date of birth: [DOB]');
-    expect(scrubPhi('DOB 14 03 1998')).toBe('DOB [DOB]');
-    expect(scrubPhi('born on 2026-09-14T10:00:00Z')).toBe('born on [DOB]T10:00:00Z');
+    expect(scrubPhi('Date of birth: 14/03/1998')).toBe('Date of birth: **/**/1998');
+    expect(scrubPhi('DOB 14 03 1998')).toBe('DOB ** ** 1998');
+    expect(scrubPhi('born on 2026-09-14T10:00:00Z')).toBe('born on 2026-**-**T10:00:00Z');
   });
 
   it('still redacts a date of birth that follows sentence punctuation', () => {
     // Banning .!?; from the gap to stop it crossing a sentence also lost the
     // shape OCR of a medical form produces. Both must hold at once.
-    expect(scrubPhi('DOB. 14/03/1998')).toBe('DOB. [DOB]');
-    expect(scrubPhi('born. 14/03/1998')).toBe('born. [DOB]');
-    expect(scrubPhi('birthday! 14/03/1998')).toBe('birthday! [DOB]');
-    expect(scrubPhi('dob; 14.03.1998')).toBe('dob; [DOB]');
-    expect(scrubPhi('Patient; DOB; 14.03.1998')).toBe('Patient; DOB; [DOB]');
+    expect(scrubPhi('DOB. 14/03/1998')).toBe('DOB. **/**/1998');
+    expect(scrubPhi('born. 14/03/1998')).toBe('born. **/**/1998');
+    expect(scrubPhi('birthday! 14/03/1998')).toBe('birthday! **/**/1998');
+    expect(scrubPhi('dob; 14.03.1998')).toBe('dob; **.**.1998');
+    expect(scrubPhi('Patient; DOB; 14.03.1998')).toBe('Patient; DOB; **.**.1998');
   });
 
   it('does not read three loose numbers after a birth word as a date', () => {
@@ -518,7 +540,7 @@ describe('scrubPhi', () => {
     for (const cp of [0x20, 0xa0, 0x202f, 0x2009, 0x3000, 0x09, 0x0b, 0x0c, 0x2028, 0x2029]) {
       const text = `call Grandma${String.fromCodePoint(cp)}Betty now`;
       expect(scrubPhi(text), `U+${cp.toString(16).toUpperCase().padStart(4, '0')}`).toBe(
-        'call [NAME] now',
+        'call G* B* now',
       );
     }
   });
@@ -532,7 +554,7 @@ describe('scrubPhi', () => {
     // This app ships in 40 locales. An `[A-Z][a-z]` rule leaks every accented
     // or Cyrillic name while claiming to protect names.
     for (const name of ['María González', 'José Álvarez', 'Søren Jensen', 'Мария Иванова']) {
-      expect(scrubPhi(name), name).toBe('[NAME]');
+      expect(scrubPhi(name), name).toMatch(/^\p{L}\* \p{L}\*$/u);
     }
   });
 
