@@ -374,7 +374,11 @@ describe('SCRUBBABLE_PATHS covers what the installed SDK copies back', () => {
     // Key position only. Matching a quoted path anywhere in the file accepted
     // 'object' and 'string' — the type literals — as declared paths.
     const declaredAsKey = (path: string) => {
-      const escaped = path.replace(/[.[\]]/g, '\\$&');
+      // Full regex-metacharacter escape, backslash included. Escaping only the
+      // three characters these paths happen to use was flagged by CodeQL
+      // (js/incomplete-sanitization) — and would silently mis-match the first
+      // path that ever carried anything else.
+      const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(`(?:'${escaped}'|\\b${escaped}):\\s*'(?:string|object)'`).test(source);
     };
     const unknown = SCRUBBABLE_PATHS.map(([path]) => path).filter((path) => !declaredAsKey(path));
