@@ -18,6 +18,7 @@
 import { PictureMode } from '@/store/settingsStore';
 import { SynaluxProfile } from '@/services/aiService';
 import { SYNALUX_API, timeoutSignal } from '@/lib/portalConfig';
+import { PICTOGRAM_CDN, PICTOGRAM_SEARCH_API } from '@/lib/pictogramSources';
 
 /**
  * Picture mode is derived from the user's Synalux plan, not from a user
@@ -38,8 +39,10 @@ export function pictureModeForProfile(profile: SynaluxProfile | null): PictureMo
 
 const STYLE_VERSION = 2;
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB cap — prevents OOM from oversized blobs
-const ARASAAC_API = 'https://api.arasaac.org/v1';
-const ARASAAC_CDN = 'https://static.arasaac.org/pictograms';
+// Declared in lib/pictogramSources so the telemetry scrubber redacts exactly
+// the hosts this file calls. See that file before swapping the provider.
+const ARASAAC_API = PICTOGRAM_SEARCH_API;
+const ARASAAC_CDN = PICTOGRAM_CDN;
 // Large enough to hold a full vocabulary board without eviction.
 // We do NOT revoke on eviction — a PhraseTile component may still hold
 // the old blob URL in its iconUrl state and revoking causes

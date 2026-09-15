@@ -53,7 +53,14 @@ export function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'no-referrer');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('Permissions-Policy', 'camera=(), geolocation=(self), microphone=(self)');
+  // camera=(self): head/pose tracking and custom picture symbols call
+  // getUserMedia from this origin. `camera=()` is an EMPTY allowlist — it
+  // switches the camera off for self too, so getUserMedia rejects before any
+  // native permission is consulted. Production only worked because the portal
+  // proxy overrode this header with camera=(self); the direct Vercel host and
+  // the localhost dev server the iOS DEBUG build loads did not get that
+  // override, so the camera was dead on both.
+  response.headers.set('Permissions-Policy', 'camera=(self), geolocation=(self), microphone=(self)');
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   return response;
