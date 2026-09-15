@@ -94,7 +94,7 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
     expect(error.stack).toBe('Error: told N* R* at ***-***-4567\n  at speak()');
     expect(error.handling_stack).not.toContain('Grandma Betty');
     expect((error.resource as Record<string, string>).url).toBe(
-      'https://api.example.com/x?q=M* G*&e=m**@example.com',
+      'https://api.example.com/x?q=M* G*&e=m**@***.com',
     );
     expect(sent!.context).toEqual({ caption: 'G* B*', dob: 'DOB **/**/1998' });
   });
@@ -233,6 +233,24 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
     expect(JSON.stringify(sent!.context)).not.toContain('Grandma');
     expect(JSON.stringify(sent!.context)).not.toContain('555-123-4567');
     expect(JSON.stringify(sent!.context)).toContain('[REDACTED]');
+  });
+
+  it('discards an event whose cause carries a real card number', async () => {
+    // A Luhn-valid PAN is the highest-confidence pattern in the file; it was
+    // the one missing from the drop list. A Luhn-invalid 16-digit id must not
+    // trigger it.
+    expect(
+      await send({
+        type: 'error',
+        error: { message: 'checkout failed', causes: [{ message: 'card 4111 1111 1111 1111 declined' }] },
+      }),
+    ).toBeNull();
+    expect(
+      await send({
+        type: 'error',
+        error: { message: 'checkout failed', causes: [{ message: 'order 1234567890123456 failed' }] },
+      }),
+    ).not.toBeNull();
   });
 
   it('does not discard an error whose cause merely contains an epoch timestamp', async () => {
@@ -432,7 +450,7 @@ describe('SCRUBBABLE_PATHS covers what the installed SDK copies back', () => {
 
 describe('scrubPhi', () => {
   it('catches the PHI shapes an AAC user actually produces', () => {
-    expect(scrubPhi('call mom@example.com')).toBe('call m**@example.com');
+    expect(scrubPhi('call mom@example.com')).toBe('call m**@***.com');
     expect(scrubPhi('ring 555-123-4567')).toBe('ring ***-***-4567');
     expect(scrubPhi('ring (555) 123-4567')).toBe('ring (***) ***-4567');
     expect(scrubPhi('ring 5551234567')).toBe('ring ******4567');
@@ -473,6 +491,34 @@ describe('scrubPhi', () => {
 
     // Luhn-invalid: left alone.
     expect(scrubPhi('order 1234567890123456 created')).toBe('order 1234567890123456 created');
+    // 13-digit epoch-ms is below the floor regardless of Luhn.
+    expect(scrubPhi('t=1789444000000 chunk failed')).toBe('t=1789444000000 chunk failed');
+  });
+
+  it('cannot absorb an SSN next to a phone and keep its last four', () => {
+    // A separator-anywhere card pattern spanned `555-123-4567 106-16-1006` as
+    // one 19-digit run, Luhn-valid one time in ten, and masked it to ITS last
+    // four — the SSN's. SSN now runs first, and CARD requires four-digit groups.
+    expect(scrubPhi('555-123-4567 106-16-1006')).toBe('***-***-4567 ***-**-****');
+    // The leading date is month-first, so DATE_US keeps only its year — that
+    // is the date rule working, not the card rule. The SSN keeps nothing.
+    expect(scrubPhi('09-08-2026 123-45-6789')).toBe('**-**-2026 ***-**-****');
+    expect(scrubPhi('1001 123-45-6789')).toBe('1001 ***-**-****');
+  });
+
+  it('masks the email domain, not just the local part', () => {
+    // `@smith-family-clinic.org` names the treatment facility;
+    // `@mariagonzalez.com` carries the surname.
+    expect(scrubPhi('j@smith-family-clinic.org')).toBe('j**@***.org');
+    expect(scrubPhi('maria@mariagonzalez.com')).toBe('m**@***.com');
+  });
+
+  it('emits well-formed UTF-16 for a name outside the Basic Multilingual Plane', () => {
+    // Adlam: each letter is a surrogate pair; `word[0]` was half of one.
+    const adlam = '\u{1E900}\u{1E922}\u{1E922} \u{1E901}\u{1E923}\u{1E923}';
+    const out = scrubPhi(adlam);
+    expect(out).toBe('\u{1E900}* \u{1E901}*');
+    expect(out.isWellFormed()).toBe(true);
   });
 
   it('keeps enough of each value to tell two errors apart', () => {

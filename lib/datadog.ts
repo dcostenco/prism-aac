@@ -20,9 +20,9 @@ export const DATADOG_RUM_PRIVACY_OPTIONS = {
  * and `David Cross` are person names, and an either-word test shipped them in
  * cleartext.
  *
- * The cost is real and worth stating: a run is redacted whole, so a phrase with
- * one off-list word loses all of it — `Service Worker Registration` and
- * `Cross Origin Read Blocking` both become `[NAME]`. Roughly one in three
+ * The cost is real and worth stating: a run is masked whole, so a phrase with
+ * one off-list word is reduced to initials — `Service Worker Registration`
+ * becomes `S* W* R*`, `Cross Origin Read Blocking` `C* O* R* B*`. Roughly one in three
  * standard HTTP/DOM reason phrases goes the same way. Measured against this
  * repo's own ~1400 logged strings the cost is 0 — this app logs numeric
  * `res.status`, not `res.statusText` — but third-party libraries that
@@ -67,11 +67,20 @@ const PHONE = /(^|[^\d.])((?:\+?\d{1,2}[\s.-])?\(?\d{3}\)?[-. ]\d{3}[-. ]\d{4})(
 const BARE_PHONE = /\b\d{10,11}\b/g;
 
 /**
- * 13–19 digits with optional space/dash grouping. The Luhn check below is what
- * makes this safe to apply: without it every 16-digit order id or session token
- * would be masked as a card.
+ * A card number: 14–19 contiguous digits, or groups of at least four digits
+ * joined by single spaces or dashes (4-4-4-4, Amex 4-6-5).
+ *
+ * The grouping rule is what keeps this from spanning two adjacent values. An
+ * earlier `\d(?:[ -]?\d){12,18}` accepted any separator anywhere, so
+ * `555-123-4567 106-16-1006` — a phone next to an SSN — was one 19-digit run,
+ * Luhn-valid one time in ten, masked to ITS last four: the SSN's. Phones are
+ * 3-3-4 and SSNs 3-2-4, so a leading four-digit group excludes both.
+ *
+ * The 14-digit floor excludes every 13-digit epoch-millisecond timestamp
+ * outright (13-digit cards have not been issued in decades). The Luhn check
+ * below does the rest — see its comment for what it does and does not buy.
  */
-const CARD = /\b\d(?:[ -]?\d){12,18}\b/g;
+const CARD = /\b(?:\d{14,19}|\d{4}(?:[ -]\d{4,6}){2,4})\b/g;
 
 /** Bare month-first dates (`03/14/1998`). */
 const DATE_US = /\b(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\d|3[01])[/-](?:19|20)\d{2}\b/g;
@@ -109,8 +118,8 @@ const DATE_NEAR_BIRTH_WORD =
  * ASCII-only rule leaks every accented or Cyrillic name — `María González`,
  * `Søren Jensen`, `Мария Иванова` all passed through untouched. `\b` stays
  * ASCII-defined even under /u, so the boundary is a captured non-letter. Cased
- * scripts only: CJK names cannot be matched by any capitalisation rule, and
- * are listed as a residual on `rumBeforeSend`.
+ * scripts only: CJK names cannot be matched by any capitalisation rule. See
+ * the "Known residuals" list on `rumBeforeSend`.
  *
  * `%20` and `+` join words because a name reaches Datadog URL-encoded just as
  * often as spaced — `…/search/Grandma%20Betty` is the same leak.
@@ -129,9 +138,12 @@ const RUN_SEPARATOR = /[^\S\n\r]|%20|\+/u;
 const MASK = '*';
 
 /**
- * Luhn checksum. Card numbers satisfy it; order ids, session tokens and epoch
- * timestamps essentially never do, so this is what keeps `CARD` from eating
- * ordinary 16-digit identifiers.
+ * Luhn checksum. Every card number satisfies it. So does one random 16-digit
+ * number in ten — measured 10.0% over 100,000 — so this is a filter, not a
+ * proof: it rejects nine of ten order ids and Apple transaction ids, and the
+ * tenth is masked to its last four. That is the accepted cost; telling a card
+ * from an id with certainty needs BIN tables, which is more machinery than a
+ * telemetry scrubber should carry.
  */
 function luhnValid(digits: string): boolean {
   let sum = 0;
@@ -155,6 +167,18 @@ function maskDigits(text: string, keep: number): string {
   return text.replace(/\d/g, (d) => (++seen > total - keep ? d : MASK));
 }
 
+/** True when a `CARD` match is a real card, not a coincidental digit run. */
+function isCard(match: string): boolean {
+  const digits = match.replace(/\D/g, '');
+  return digits.length >= 14 && luhnValid(digits);
+}
+
+/** Shared by the redactor and the drop lever so the two cannot drift. */
+function containsCard(text: string): boolean {
+  for (const match of text.matchAll(CARD)) if (isCard(match[0])) return true;
+  return false;
+}
+
 /**
  * Keep the year, mask the rest. HIPAA Safe Harbor removes date precision finer
  * than the year for exactly this reason: the year alone does not identify, and
@@ -176,10 +200,18 @@ function maskDate(date: string): string {
  *
  * This masks rather than deletes. `[NAME]` and `[PHONE]` threw away the
  * distinction between two different errors and made a false positive
- * catastrophic for the engineer reading it; `G* B*` and `***-***-4567` identify
- * nobody but keep the message legible and two occurrences distinguishable. It
- * is also what everyone else does — PCI shows the last four of a card, clinical
- * systems show an initial, Safe Harbor keeps the year.
+ * catastrophic for the engineer reading it; `G* B*` and `***-***-4567` keep
+ * the message legible and two occurrences distinguishable.
+ *
+ * What each retained fragment rests on, stated exactly: the last four of a
+ * card is the PCI-DSS display rule; keeping only the year of a date is the
+ * HIPAA Safe Harbor rule (§164.514(b)(2)(i)(C)). Initials for a name and the
+ * last four of a phone are NOT Safe Harbor carve-outs — Safe Harbor removes
+ * names and phone numbers entirely — they are the owner's chosen convention
+ * for internal telemetry, on the judgement that an initial and four digits do
+ * not identify a person on their own. An SSN keeps nothing, and an email keeps
+ * its first letter and TLD only: a vanity domain carries a surname and a clinic
+ * domain names the treatment facility.
  *
  * The practical consequence is that over-matching stops being expensive. A
  * technical phrase wrongly caught by the name rule degrades to its initials
@@ -187,24 +219,22 @@ function maskDate(date: string): string {
  */
 export function scrubPhi(text: string): string {
   return text
-    // Cards first: a 16-digit PAN would otherwise be eaten by BARE_PHONE, and
-    // the last four are the part worth keeping.
-    .replace(CARD, (match) => {
-      const digits = match.replace(/\D/g, '');
-      return digits.length >= 13 && luhnValid(digits) ? maskDigits(match, 4) : match;
-    })
-    // An SSN keeps nothing. Unlike a card, its last four have no diagnostic
-    // use, and they are the half that is treated as identifying.
+    // SSN before CARD, and an SSN keeps nothing: unlike a card, its last four
+    // have no diagnostic use and are the half treated as identifying. Running
+    // CARD first once let it absorb an adjacent SSN and keep those four.
     .replace(SSN, (match) => match.replace(/\d/g, MASK))
+    // CARD before the phone rules, or a 16-digit PAN is eaten by BARE_PHONE.
+    .replace(CARD, (match) => (isCard(match) ? maskDigits(match, 4) : match))
     .replace(DATE_NEAR_BIRTH_WORD, (_match, lead: string, date: string) => lead + maskDate(date))
     .replace(DATE_US, maskDate)
-    // Keep the first character and the domain: `m**@example.com` says which
-    // provider failed without saying who. The TLD must be alphabetic, or
-    // `next@16.3.3-canary` and every other `package@version` in a chunk-load
-    // error reads as an email address.
+    // Keep the first character and the TLD only. The domain is masked because
+    // it is not neutral: `@mariagonzalez.com` carries the surname, and
+    // `@smith-family-clinic.org` names the treatment facility. The TLD must be
+    // alphabetic, or `next@16.3.3-canary` and every other `package@version` in
+    // a chunk-load error reads as an email address.
     .replace(
-      /\b([\w.+-])[\w.+-]*(@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,})\b/g,
-      (_match, first: string, domain: string) => `${first}${MASK}${MASK}${domain}`,
+      /\b([\w.+-])[\w.+-]*@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,})\b/g,
+      (_match, first: string, tld: string) => `${first}${MASK}${MASK}@${MASK}${MASK}${MASK}${tld}`,
     )
     .replace(PHONE, (_match, before: string, number: string) => before + maskDigits(number, 4))
     .replace(BARE_PHONE, (match) => maskDigits(match, 4))
@@ -212,7 +242,10 @@ export function scrubPhi(text: string): string {
       const words = run.split(RUN_SEPARATOR);
       return words.every((word) => TECHNICAL_WORDS.has(word))
         ? match
-        : before + words.map((word) => word[0] + MASK).join(' ');
+        // codePointAt, not [0]: the match is Unicode-aware, and for a script
+        // outside the BMP (Adlam, Osage, Deseret) `word[0]` is half a surrogate
+        // pair — malformed UTF-16 on the wire.
+        : before + words.map((word) => String.fromCodePoint(word.codePointAt(0)!) + MASK).join(' ');
     });
 }
 
@@ -362,7 +395,8 @@ function carriesUnredactableText(event: RumEventLike): boolean {
 
   const detects = (value: unknown) =>
     typeof value === 'string' &&
-    [SSN, PHONE].some((pattern) => new RegExp(pattern.source, 'g').test(value));
+    ([SSN, PHONE].some((pattern) => new RegExp(pattern.source, 'g').test(value)) ||
+      containsCard(value));
 
   return (error.causes as RumEventLike[]).some(
     (cause) => cause && (detects(cause.message) || detects(cause.stack)),
@@ -381,6 +415,14 @@ function carriesUnredactableText(event: RumEventLike): boolean {
  * so resource events need scrubbing just as much as error events do.
  *
  * Returns false to discard an event whose PHI cannot be redacted in place.
+ *
+ * Known residuals — what no pattern here can catch, stated so nobody assumes
+ * otherwise: a single first name; lowercase vocabulary (`grandma`, `seizure`);
+ * a street address; a diagnosis in prose; a name in an uncased script (CJK,
+ * Thai); a Luhn-invalid identifier that is still sensitive. The structural
+ * controls — dropping pictogram URL paths by host, discarding events whose
+ * unredactable fields carry structured PHI — carry the guarantee; the patterns
+ * are best-effort on top.
  */
 export function rumBeforeSend(event: RumEventLike): boolean {
   if (!event || typeof event !== 'object') return true;
