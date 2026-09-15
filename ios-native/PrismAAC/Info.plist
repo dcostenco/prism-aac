@@ -45,7 +45,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.9.0</string>
+	<string>1.9.1</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -57,7 +57,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>53</string>
+	<string>54</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSAppTransportSecurity</key>
@@ -79,6 +79,8 @@
 	<string>Prism AAC uses the camera for hands-free head tracking and to create custom picture symbols.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Prism AAC reads your contacts to find caregivers and emergency contacts for alerts.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2024-2026 Synalux LLC. Licensed under AGPL-3.0-or-later.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Prism AAC can share your location with emergency contacts when you trigger an SOS alert.</string>
 	<key>NSMicrophoneUsageDescription</key>
