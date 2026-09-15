@@ -272,15 +272,21 @@ describe('SCRUBBABLE_PATHS covers what the installed SDK copies back', () => {
     );
 
     const declared = new Set<string>();
-    for (const [, path] of source.matchAll(/'([a-z_][a-zA-Z0-9_.[\]]*)':\s*'(?:string|object)'/g)) {
-      declared.add(path);
-    }
-    // Bare identifiers in the same maps: context / service / version.
-    for (const [, path] of source.matchAll(/^\s{4}(context|service|version):\s*'/gm)) {
-      declared.add(path);
+    // Quoted paths ('error.message', 'long_task.scripts[].invoker', …) AND bare
+    // identifiers (context, service, version). The bare form must be discovered,
+    // not enumerated: an earlier version of this guard matched the literal names
+    // `context|service|version`, so it could only ever "find" paths already in
+    // the list — adding `build_id` to ROOT_MODIFIABLE_FIELD_PATHS left it green,
+    // which is precisely the drift it exists to catch.
+    for (const [, quoted, bare] of source.matchAll(
+      /(?:'([a-z_][a-zA-Z0-9_.[\]]*)'|\b([a-z_][a-zA-Z0-9_]*)):\s*'(?:string|object)'/g,
+    )) {
+      declared.add(quoted ?? bare);
     }
 
     expect(declared.size).toBeGreaterThan(10); // the scrape itself must not silently find nothing
+    expect(declared).toContain('error.message'); // …and must reach the quoted form
+    expect(declared).toContain('service'); // …and the bare form
 
     const handled = new Set<string>(SCRUBBABLE_PATHS.map(([path]) => path));
     handled.add('context'); // scrubbed wholesale by scrubDeep, not by path
@@ -288,10 +294,29 @@ describe('SCRUBBABLE_PATHS covers what the installed SDK copies back', () => {
     expect([...declared].filter((path) => !handled.has(path)).sort()).toEqual([]);
   });
 
-  it('has no entry that no test exercises', async () => {
-    // Guards against dead entries: every declared path must actually reach a
-    // string through scrubStringAt. Build a synthetic event per path, scrub it,
-    // and require the PHI to be gone.
+  it('declares no path the SDK does not', async () => {
+    // The converse direction. Without it, a fabricated entry sits in
+    // SCRUBBABLE_PATHS forever: the exercise test below synthesises its event
+    // from the path under test, so any well-formed path passes by construction.
+    const { readFileSync } = await import('node:fs');
+    const source = readFileSync(
+      require.resolve('@datadog/browser-rum-core/cjs/domain/assembly.js'),
+      'utf8',
+    );
+
+    const unknown = SCRUBBABLE_PATHS.map(([path]) => path).filter(
+      (path) => !source.includes(`'${path}'`) && !new RegExp(`\\b${path}:\\s*'`).test(source),
+    );
+
+    expect(unknown).toEqual([]);
+  });
+
+  it('walks every declared path down to the string', async () => {
+    // This is a WALKER test, not a dead-entry test — it synthesises the event
+    // from the path under test, so it cannot tell a fabricated path from a real
+    // one (the test above does that). What it does catch is scrubStringAt
+    // failing to reach a shape: drop single-segment handling and `service` /
+    // `version` go unscrubbed with nothing else in this file noticing.
     for (const [path, kind] of SCRUBBABLE_PATHS) {
       const probe = kind === 'url' ? 'https://x.test/Grandma%20Betty' : 'Grandma Betty';
       const event: Record<string, unknown> = {};
@@ -328,6 +353,7 @@ describe('scrubPhi', () => {
     expect(scrubPhi('born 03/14/1998')).toBe('born [DOB]');
     expect(scrubPhi('born 14/03/1998')).toBe('born [DOB]'); // day-first
     expect(scrubPhi('DOB: 1998-03-14')).toBe('DOB: [DOB]'); // ISO
+    expect(scrubPhi('my dob is 14.03.1998')).toBe('my dob is [DOB]'); // dot-separated
     expect(scrubPhi('ssn 123-45-6789')).toBe('ssn [SSN]');
     expect(scrubPhi('tell Maria Gonzalez')).toBe('tell [NAME]');
     expect(scrubPhi('ask Nurse Rivera')).toBe('ask [NAME]');
@@ -366,6 +392,31 @@ describe('scrubPhi', () => {
     ]) {
       expect(scrubPhi(name), name).toBe('[NAME]');
     }
+  });
+
+  it('redacts names outside ASCII', () => {
+    // This app ships in 40 locales. An `[A-Z][a-z]` rule leaks every accented
+    // or Cyrillic name while claiming to protect names.
+    for (const name of ['María González', 'José Álvarez', 'Søren Jensen', 'Мария Иванова']) {
+      expect(scrubPhi(name), name).toBe('[NAME]');
+    }
+  });
+
+  it('uses no regex syntax that iOS 16.0 cannot parse', async () => {
+    // lib/datadog.ts is statically imported by always-mounted components, and
+    // the iOS deployment target is 16.0. Lookbehind is Safari 16.4+, so a
+    // lookbehind here is a SyntaxError at module evaluation — the AAC app would
+    // not start at all on 16.0–16.3. Nothing down-levels regex literals.
+    //
+    // This asserts on source text deliberately: Node parses lookbehind fine, so
+    // no runtime assertion in this environment can observe the incompatibility.
+    // The syntax IS the defect.
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const source = readFileSync(resolve(process.cwd(), 'lib/datadog.ts'), 'utf8');
+
+    expect(source).toContain('scrubPhi'); // the read must not silently miss the file
+    expect(source).not.toMatch(/\(\?<[=!]/);
   });
 
   it('does not mangle package@version or run-on decimals', () => {

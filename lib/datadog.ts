@@ -19,8 +19,14 @@ export const DATADOG_RUM_PRIVACY_OPTIONS = {
  * `Cross`, `Frame`, `Rivera`-beside-`Camera`. `Maria Cross` and `David Cross`
  * are person names, and an either-word test shipped them in cleartext.
  *
- * A missing word therefore costs an over-redacted diagnostic, never a leak —
- * an incomplete list fails safe.
+ * The cost is real and worth stating: requiring both words redacts roughly one
+ * in three standard HTTP/DOM reason phrases (`Service Unavailable`, `Not
+ * Modified`, `Precondition Failed`) as `[NAME]`. Measured against this repo's
+ * own ~1400 logged strings the cost is 2, and against the live 30-day RUM
+ * corpus it is 0 — this app logs numeric `res.status`, not `res.statusText` —
+ * but third-party libraries that `console.error` their own phrases will lose
+ * some readability. That is the right side to err on: over-redaction costs a
+ * diagnostic, under-redaction ships a child's contacts.
  */
 const TECHNICAL_WORDS = new Set([
   'Aborted', 'Access', 'Allowed', 'Assembly', 'Audio', 'Bad', 'Cache', 'Camera',
@@ -42,11 +48,20 @@ const TECHNICAL_WORDS = new Set([
  * `carriesUnredactableText`); the looser name/date/email heuristics redact in
  * place but must never destroy a diagnostic.
  *
- * The lookarounds on PHONE keep it off run-on decimals: without them
- * `perf 123.456 789.0123 ms` reads as a phone number.
+ * PHONE brackets the number with a captured leading character instead of a
+ * lookbehind. Both read the same, but lookbehind is Safari 16.4+ and this file
+ * is statically imported by always-mounted components (Toolbar, MessageBar,
+ * PredictionBar, CategoryPanel) while the iOS deployment target is 16.0 — a
+ * lookbehind here is a SyntaxError at module evaluation on iOS 16.0–16.3, which
+ * means the AAC app does not start at all. Nothing down-levels regex literals.
+ * The guard it provides is real: without it `perf 123.456 789.0123 ms` reads as
+ * a phone number.
  */
 const SSN = /\b\d{3}-\d{2}-\d{4}\b/g;
-const PHONE = /(?<![\d.])(?:\+?\d{1,2}[\s.-])?\(?\d{3}\)?[-. ]\d{3}[-. ]\d{4}(?![\d.])/g;
+const PHONE = /(^|[^\d.])((?:\+?\d{1,2}[\s.-])?\(?\d{3}\)?[-. ]\d{3}[-. ]\d{4})(?![\d.])/g;
+
+/** Unformatted run of digits — what a numeric keyboard produces. */
+const BARE_PHONE = /\b\d{10,11}\b/g;
 
 /** Bare month-first dates (`03/14/1998`). */
 const DATE_US = /\b(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\d|3[01])[/-](?:19|20)\d{2}\b/g;
@@ -55,11 +70,12 @@ const DATE_US = /\b(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\d|3[01])[/-](?:19|20)\d
  * Any date format, but only next to a birth word. A bare ISO or day-first date
  * cannot be told apart from a build stamp — `build 2026-09-14` is not a date of
  * birth, and redacting every timestamp costs more diagnostics than it protects.
- * Anchoring on `born`/`dob` catches the internationalised forms this app will
- * actually see without eating the machine dates.
+ * Anchoring on `born`/`dob` catches the internationalised forms without eating
+ * the machine dates. `.` is in the separator class for the German/Russian/Polish
+ * `14.03.1998`.
  */
 const DATE_NEAR_BIRTH_WORD =
-  /\b((?:born|birthday|birthdate|dob)\b\W{0,12})\d{1,4}[/-]\d{1,2}[/-]\d{2,4}\b/gi;
+  /\b((?:born|birthday|birthdate|dob)\b[^\d\n]{0,12})\d{1,4}[/.-]\d{1,2}[/.-]\d{2,4}\b/gi;
 
 /**
  * PHI scrubber shared by both Datadog SDKs. AAC message text is the user's
@@ -74,14 +90,21 @@ export function scrubPhi(text: string): string {
     // The TLD must be alphabetic, or `next@16.3.3-canary` and every other
     // `package@version` in a chunk-load error reads as an email address.
     .replace(/\b[\w.+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}\b/g, '[EMAIL]')
-    .replace(PHONE, '[PHONE]')
-    .replace(/\b\d{10,11}\b/g, '[PHONE]')
+    .replace(PHONE, '$1[PHONE]')
+    .replace(BARE_PHONE, '[PHONE]')
+    // `\p{Lu}\p{Ll}` rather than `[A-Z][a-z]`: this app ships in 40 locales, and
+    // an ASCII-only rule leaks every accented or Cyrillic name — `María
+    // González`, `Søren Jensen`, `Мария Иванова` all passed through untouched.
+    // `\b` is ASCII-defined even under /u, so the boundary is a captured
+    // non-letter instead. Cased scripts only: CJK names cannot be matched by any
+    // capitalisation rule, and are listed as a residual on `rumBeforeSend`.
+    //
     // `%20` and `+` because a name reaches Datadog URL-encoded just as often as
     // it reaches it spaced — `…/search/Grandma%20Betty` is the same leak.
     .replace(
-      /\b([A-Z][a-z]+)(\s|%20|\+)([A-Z][a-z]+)\b/g,
-      (match, first: string, _sep: string, last: string) =>
-        TECHNICAL_WORDS.has(first) && TECHNICAL_WORDS.has(last) ? match : '[NAME]',
+      /(^|[^\p{L}])(\p{Lu}\p{Ll}+)(\s|%20|\+)(\p{Lu}\p{Ll}+)(?![\p{L}])/gu,
+      (match, before: string, first: string, _sep: string, last: string) =>
+        TECHNICAL_WORDS.has(first) && TECHNICAL_WORDS.has(last) ? match : `${before}[NAME]`,
     );
 }
 
@@ -190,6 +213,12 @@ function scrubDeep(value: unknown, depth = 0): unknown {
  * a name heuristic is nowhere near confident enough to justify discarding an
  * error report. An SSN or a phone number in a cause chain is.
  *
+ * In practice this almost never fires: nothing in this app constructs an Error
+ * with a `cause`, and neither does any dependency it calls directly. It is a
+ * cheap backstop for framework-internal chains, not a load-bearing control —
+ * the structural protections are the per-host URL redaction and the path
+ * coverage below.
+ *
  * `error.component_stack` is deliberately not checked: it is only populated by
  * rum-core's internal `addError({ componentStack })`, which the public API
  * never calls, and `@datadog/browser-rum-react` is not a dependency. This app's
@@ -201,7 +230,8 @@ function carriesUnredactableText(event: RumEventLike): boolean {
   if (!error || typeof error !== 'object' || !Array.isArray(error.causes)) return false;
 
   const detects = (value: unknown) =>
-    typeof value === 'string' && (new RegExp(SSN).test(value) || new RegExp(PHONE).test(value));
+    typeof value === 'string' &&
+    [SSN, PHONE, BARE_PHONE].some((pattern) => new RegExp(pattern.source, 'g').test(value));
 
   return (error.causes as RumEventLike[]).some(
     (cause) => cause && (detects(cause.message) || detects(cause.stack)),
@@ -227,7 +257,10 @@ export function rumBeforeSend(event: RumEventLike): boolean {
   for (const [path, kind] of SCRUBBABLE_PATHS) {
     scrubStringAt(event, path.split(/\.|(?=\[\])/).filter(Boolean), kind);
   }
-  if (event.context) scrubDeep(event.context);
+  // Assign the result: scrubDeep mutates objects in place but returns a NEW
+  // array, so a top-level array context shipped unscrubbed when it was called
+  // for effect only.
+  if (event.context) event.context = scrubDeep(event.context);
   return true;
 }
 
