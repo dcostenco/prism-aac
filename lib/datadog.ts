@@ -70,12 +70,40 @@ const DATE_US = /\b(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\d|3[01])[/-](?:19|20)\d
  * Any date format, but only next to a birth word. A bare ISO or day-first date
  * cannot be told apart from a build stamp — `build 2026-09-14` is not a date of
  * birth, and redacting every timestamp costs more diagnostics than it protects.
- * Anchoring on `born`/`dob` catches the internationalised forms without eating
- * the machine dates. `.` is in the separator class for the German/Russian/Polish
- * `14.03.1998`.
+ * Anchoring on `born`/`birth`/`dob` catches the internationalised forms without
+ * eating the machine dates.
+ *
+ * The gap between the word and the date admits short filler (`is`, `on the`,
+ * `:`) but stops at sentence punctuation: `[^\d\n]` alone let `She was born.
+ * Build 2026-09-14` redact the build stamp. Separators cover `/`, `-`, `.`
+ * (German/Russian/Polish) and space. The trailing `(?!\d)` rather than `\b`
+ * lets `born 2026-09-14T10:00` match — `\b` fails against the `T`.
  */
 const DATE_NEAR_BIRTH_WORD =
-  /\b((?:born|birthday|birthdate|dob)\b[^\d\n]{0,12})\d{1,4}[/.-]\d{1,2}[/.-]\d{2,4}\b/gi;
+  /\b((?:born|birth|birthday|birthdate|dob)\b[^\d\n.!?;]{0,12})\d{1,4}[/.\- ]\d{1,2}[/.\- ]\d{2,4}(?!\d)/gi;
+
+/**
+ * A run of two or more capitalised words. The whole run is redacted unless
+ * EVERY word is error vocabulary. Redacting only the first non-technical pair
+ * shipped surnames: `Error Maria Gonzalez` became `[NAME] Gonzalez`, because
+ * the (technical, given-name) pair consumed the given name and left the
+ * surname unpaired. Losing a leading `Uncaught` is a small price; a name in a
+ * diagnostic should not have been there to begin with.
+ *
+ * `\p{Lu}\p{Ll}` rather than `[A-Z][a-z]`: this app ships in 40 locales, and an
+ * ASCII-only rule leaks every accented or Cyrillic name — `María González`,
+ * `Søren Jensen`, `Мария Иванова` all passed through untouched. `\b` stays
+ * ASCII-defined even under /u, so the boundary is a captured non-letter. Cased
+ * scripts only: CJK names cannot be matched by any capitalisation rule, and
+ * are listed as a residual on `rumBeforeSend`.
+ *
+ * `%20` and `+` join words because a name reaches Datadog URL-encoded just as
+ * often as spaced — `…/search/Grandma%20Betty` is the same leak. `[ \t]` rather
+ * than `\s` so a stack trace's line breaks never join two frames into a name.
+ */
+const CAPITALISED_RUN =
+  /(^|[^\p{L}])(\p{Lu}\p{Ll}+(?:(?:[ \t]|%20|\+)\p{Lu}\p{Ll}+)+)(?![\p{L}])/gu;
+const RUN_SEPARATOR = /[ \t]|%20|\+/u;
 
 /**
  * PHI scrubber shared by both Datadog SDKs. AAC message text is the user's
@@ -92,19 +120,10 @@ export function scrubPhi(text: string): string {
     .replace(/\b[\w.+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}\b/g, '[EMAIL]')
     .replace(PHONE, '$1[PHONE]')
     .replace(BARE_PHONE, '[PHONE]')
-    // `\p{Lu}\p{Ll}` rather than `[A-Z][a-z]`: this app ships in 40 locales, and
-    // an ASCII-only rule leaks every accented or Cyrillic name — `María
-    // González`, `Søren Jensen`, `Мария Иванова` all passed through untouched.
-    // `\b` is ASCII-defined even under /u, so the boundary is a captured
-    // non-letter instead. Cased scripts only: CJK names cannot be matched by any
-    // capitalisation rule, and are listed as a residual on `rumBeforeSend`.
-    //
-    // `%20` and `+` because a name reaches Datadog URL-encoded just as often as
-    // it reaches it spaced — `…/search/Grandma%20Betty` is the same leak.
-    .replace(
-      /(^|[^\p{L}])(\p{Lu}\p{Ll}+)(\s|%20|\+)(\p{Lu}\p{Ll}+)(?![\p{L}])/gu,
-      (match, before: string, first: string, _sep: string, last: string) =>
-        TECHNICAL_WORDS.has(first) && TECHNICAL_WORDS.has(last) ? match : `${before}[NAME]`,
+    .replace(CAPITALISED_RUN, (match, before: string, run: string) =>
+      run.split(RUN_SEPARATOR).every((word) => TECHNICAL_WORDS.has(word))
+        ? match
+        : `${before}[NAME]`,
     );
 }
 
@@ -191,10 +210,26 @@ function scrubStringAt(node: unknown, segments: readonly string[], kind: PathKin
   parent[head] = scrubLeaf(parent[head], kind);
 }
 
-/** Scrub every string inside `context`, which Datadog copies back wholesale. */
+/**
+ * Deep enough for any context this app builds; shallow enough that a
+ * pathological payload cannot overflow the stack. Datadog's `deepClone` has
+ * already removed cycles by the time `beforeSend` runs.
+ */
+const SCRUB_DEPTH_LIMIT = 32;
+
+/**
+ * Scrub every string inside an object Datadog copies back wholesale.
+ *
+ * Objects are mutated in place; arrays come back as NEW arrays, so callers must
+ * assign the result. Anything below the depth limit is not inspected, and what
+ * is not inspected must not ship — it is replaced, not passed through. (An
+ * earlier cap silently returned the subtree, so a string at depth 7 left
+ * unscrubbed.)
+ */
 function scrubDeep(value: unknown, depth = 0): unknown {
   if (typeof value === 'string') return scrubPhi(value);
-  if (depth >= 6 || !value || typeof value !== 'object') return value;
+  if (!value || typeof value !== 'object') return value;
+  if (depth >= SCRUB_DEPTH_LIMIT) return '[REDACTED]';
   if (Array.isArray(value)) return value.map((item) => scrubDeep(item, depth + 1));
   for (const [key, nested] of Object.entries(value as RumEventLike)) {
     (value as RumEventLike)[key] = scrubDeep(nested, depth + 1);
@@ -211,7 +246,12 @@ function scrubDeep(value: unknown, depth = 0): unknown {
  * ordinary diagnostics: `The Internet connection appears to be offline.` and
  * `in PhraseTile (created by Board Grid)` both contain a capitalised pair, and
  * a name heuristic is nowhere near confident enough to justify discarding an
- * error report. An SSN or a phone number in a cause chain is.
+ * error report. An SSN or a formatted phone number in a cause chain is.
+ *
+ * The bare 10–11 digit rule is deliberately NOT here. It redacts fine in the
+ * fields we can edit, but as a drop criterion it deletes error reports on
+ * epoch-seconds timestamps: `cache bust ?v=1757800000`, `chunk.js:1757800000`.
+ * So an unformatted phone number in a cause chain ships. That is the trade.
  *
  * In practice this almost never fires: nothing in this app constructs an Error
  * with a `cause`, and neither does any dependency it calls directly. It is a
@@ -231,7 +271,7 @@ function carriesUnredactableText(event: RumEventLike): boolean {
 
   const detects = (value: unknown) =>
     typeof value === 'string' &&
-    [SSN, PHONE, BARE_PHONE].some((pattern) => new RegExp(pattern.source, 'g').test(value));
+    [SSN, PHONE].some((pattern) => new RegExp(pattern.source, 'g').test(value));
 
   return (error.causes as RumEventLike[]).some(
     (cause) => cause && (detects(cause.message) || detects(cause.stack)),
@@ -257,10 +297,24 @@ export function rumBeforeSend(event: RumEventLike): boolean {
   for (const [path, kind] of SCRUBBABLE_PATHS) {
     scrubStringAt(event, path.split(/\.|(?=\[\])/).filter(Boolean), kind);
   }
-  // Assign the result: scrubDeep mutates objects in place but returns a NEW
-  // array, so a top-level array context shipped unscrubbed when it was called
-  // for effect only.
+  // Datadog copies `context` back only when it is a plain object
+  // (limitModification → getType(value) === 'object'; an array is 'array'), so
+  // an array context can be neither redacted nor replaced from here — the
+  // original ships untouched whatever this callback does. Discard it.
+  if (Array.isArray(event.context)) return false;
   if (event.context) event.context = scrubDeep(event.context);
+  return true;
+}
+
+/**
+ * The Logs SDK has no copy-back whitelist: `beforeSend` receives the live
+ * event and everything it leaves alone ships. Custom keys passed to
+ * `ddLog(message, context)` are merged into the top level of the event, so
+ * scrubbing `message` alone left them — and `error.*` — in cleartext. Nothing
+ * calls `ddLog` or `ddError` today; this is the guard for the first caller.
+ */
+export function logsBeforeSend(log: RumEventLike): boolean {
+  scrubDeep(log);
   return true;
 }
 
@@ -286,11 +340,7 @@ export function initDatadog() {
       // messages can contain AAC text, so they must never be forwarded.
       forwardConsoleLogs: [],
       sessionSampleRate: 100,
-      beforeSend: (log) => {
-        // HIPAA: Scrub potential PHI patterns before forwarding to Datadog cloud
-        if (log.message) log.message = scrubPhi(log.message);
-        return true;
-      },
+      beforeSend: (log) => logsBeforeSend(log as unknown as RumEventLike),
     });
   });
 

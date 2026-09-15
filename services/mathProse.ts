@@ -146,13 +146,38 @@ export function mathTextToProse(input: string): string {
  * splitting on commas, then on word boundaries — never hard-cutting
  * mid-word.
  */
+/**
+ * Splits on whitespace that follows one of the `boundary` characters, keeping
+ * that character with the piece before it — a lookbehind split, done without a
+ * lookbehind.
+ *
+ * Regex lookbehind is Safari 16.4+ and the iOS deployment target is 16.0. A
+ * regex literal that uses it is a SyntaxError when the chunk containing it is
+ * parsed, and PrismApp renders PdfReaderPanel / OcrCapturePanel — which pull
+ * this module in — on every mount. tests/datadog-privacy.test.ts scans app
+ * source for the syntax (comments included, so do not quote it here) so it
+ * cannot come back.
+ */
+function splitAfter(text: string, boundary: RegExp): string[] {
+  const out: string[] = [];
+  const re = new RegExp(boundary.source, 'g');
+  let last = 0;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    out.push(text.slice(last, match.index + 1));
+    last = match.index + match[0].length;
+  }
+  out.push(text.slice(last));
+  return out;
+}
+
 export function chunkForTts(text: string, maxChars = 250): string[] {
   if (!text?.trim()) return [];
   if (text.length <= maxChars) return [text];
 
   const out: string[] = [];
   // Sentence-level split.
-  const sentences = text.split(/(?<=[.!?])\s+/);
+  const sentences = splitAfter(text, /[.!?]\s+/);
   let current = '';
   const flush = () => { if (current.trim()) out.push(current.trim()); current = ''; };
 
@@ -160,7 +185,7 @@ export function chunkForTts(text: string, maxChars = 250): string[] {
     if (sent.length > maxChars) {
       // A single sentence too long — split on commas.
       flush();
-      const parts = sent.split(/(?<=,)\s+/);
+      const parts = splitAfter(sent, /,\s+/);
       for (const part of parts) {
         if (part.length > maxChars) {
           // Comma-split still too long — fall back to word boundary.

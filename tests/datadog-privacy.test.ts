@@ -204,6 +204,38 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
     expect(lcp.resource_url).toBe('https://api.arasaac.org/[REDACTED]');
   });
 
+  it('discards an event whose context is an array, which the SDK never copies back', async () => {
+    // limitModification copies `context` back only when getType(value) is
+    // 'object'; an array is 'array'. So the original array ships untouched no
+    // matter what beforeSend does to the clone — scrubbing it is a no-op.
+    expect(
+      await send({ type: 'error', error: { message: 'x' }, context: ['call Grandma Betty'] }),
+    ).toBeNull();
+  });
+
+  it('replaces context below the depth limit instead of shipping it unread', async () => {
+    const deep = { message: 'call Grandma Betty at 555-123-4567' };
+    let context: Record<string, unknown> = deep;
+    for (let i = 0; i < 40; i++) context = { nested: context };
+
+    const sent = await send({ type: 'error', error: { message: 'x' }, context });
+
+    expect(JSON.stringify(sent!.context)).not.toContain('Grandma');
+    expect(JSON.stringify(sent!.context)).not.toContain('555-123-4567');
+    expect(JSON.stringify(sent!.context)).toContain('[REDACTED]');
+  });
+
+  it('does not discard an error whose cause merely contains an epoch timestamp', async () => {
+    // The bare 10–11 digit rule must not be a drop criterion: a cache-buster
+    // or a chunk line number would delete the whole error report.
+    for (const message of ['cache bust ?v=1757800000', 'at chunk.js:1757800000:12']) {
+      expect(
+        await send({ type: 'error', error: { message: 'outer', causes: [{ message }] } }),
+        message,
+      ).not.toBeNull();
+    }
+  });
+
   it('scrubs graphql variables and resource headers', async () => {
     const sent = await send(
       {
@@ -254,6 +286,38 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
     vi.doUnmock('@datadog/browser-logs');
     vi.resetModules();
   });
+
+  it('scrubs the whole Logs event, not just message', async () => {
+    // The Logs SDK has no copy-back whitelist — beforeSend gets the live
+    // object and everything it leaves alone ships. ddLog(message, context)
+    // merges context keys into the TOP LEVEL of the event.
+    const logsInit = vi.fn();
+    vi.resetModules();
+    vi.doMock('@datadog/browser-rum', () => ({ datadogRum: { init: vi.fn(), setUser: vi.fn() } }));
+    vi.doMock('@datadog/browser-logs', () => ({
+      datadogLogs: { init: logsInit, logger: { info: vi.fn() } },
+    }));
+    process.env.NEXT_PUBLIC_DD_CLIENT_TOKEN = 'test-token';
+
+    const { initDatadog } = await import('@/lib/datadog');
+    initDatadog();
+    await vi.waitFor(() => expect(logsInit).toHaveBeenCalled());
+
+    const config = logsInit.mock.calls[0][0] as { beforeSend?: (log: unknown) => boolean };
+    const log = {
+      message: 'spoke to Maria Gonzalez',
+      caption: 'Grandma Betty',
+      phone: '555-123-4567',
+      error: { message: 'told Nurse Rivera', stack: 'Error: Grandma Betty\n  at x' },
+    };
+    expect(config.beforeSend!(log)).toBe(true);
+    expect(JSON.stringify(log)).not.toMatch(/Maria|Grandma|Rivera|555-123-4567/);
+    expect(log.error.stack).toContain('at x');
+
+    vi.doUnmock('@datadog/browser-rum');
+    vi.doUnmock('@datadog/browser-logs');
+    vi.resetModules();
+  });
 });
 
 describe('SCRUBBABLE_PATHS covers what the installed SDK copies back', () => {
@@ -289,7 +353,10 @@ describe('SCRUBBABLE_PATHS covers what the installed SDK copies back', () => {
     expect(declared).toContain('service'); // …and the bare form
 
     const handled = new Set<string>(SCRUBBABLE_PATHS.map(([path]) => path));
-    handled.add('context'); // scrubbed wholesale by scrubDeep, not by path
+    // context is handled by scrubDeep rather than by path: objects are scrubbed
+    // to SCRUB_DEPTH_LIMIT and replaced below it; an array context is dropped,
+    // because the SDK never copies an array back. Both are tested above.
+    handled.add('context');
 
     expect([...declared].filter((path) => !handled.has(path)).sort()).toEqual([]);
   });
@@ -304,10 +371,15 @@ describe('SCRUBBABLE_PATHS covers what the installed SDK copies back', () => {
       'utf8',
     );
 
-    const unknown = SCRUBBABLE_PATHS.map(([path]) => path).filter(
-      (path) => !source.includes(`'${path}'`) && !new RegExp(`\\b${path}:\\s*'`).test(source),
-    );
+    // Key position only. Matching a quoted path anywhere in the file accepted
+    // 'object' and 'string' — the type literals — as declared paths.
+    const declaredAsKey = (path: string) => {
+      const escaped = path.replace(/[.[\]]/g, '\\$&');
+      return new RegExp(`(?:'${escaped}'|\\b${escaped}):\\s*'(?:string|object)'`).test(source);
+    };
+    const unknown = SCRUBBABLE_PATHS.map(([path]) => path).filter((path) => !declaredAsKey(path));
 
+    expect(declaredAsKey('object')).toBe(false); // the check must reject a type literal
     expect(unknown).toEqual([]);
   });
 
@@ -394,6 +466,24 @@ describe('scrubPhi', () => {
     }
   });
 
+  it('redacts the whole run when an error word precedes a name', () => {
+    // A pair-scan redacted `Error Maria` and shipped `Gonzalez`.
+    expect(scrubPhi('Error Maria Gonzalez')).toBe('[NAME]');
+    expect(scrubPhi('Uncaught Maria Gonzalez')).toBe('[NAME]');
+    expect(scrubPhi('Session Maria Gonzalez Betty Frame')).toBe('[NAME]');
+    expect(scrubPhi('Error: told Nurse Rivera')).toBe('Error: told [NAME]');
+  });
+
+  it('stops the birth-word date gap at sentence punctuation', () => {
+    expect(scrubPhi('She was born. Build 2026-09-14 shipped')).toBe(
+      'She was born. Build 2026-09-14 shipped',
+    );
+    expect(scrubPhi('birthday! Release 2026-09-14 ok')).toBe('birthday! Release 2026-09-14 ok');
+    expect(scrubPhi('Date of birth: 14/03/1998')).toBe('Date of birth: [DOB]');
+    expect(scrubPhi('DOB 14 03 1998')).toBe('DOB [DOB]');
+    expect(scrubPhi('born on 2026-09-14T10:00:00Z')).toBe('born on [DOB]T10:00:00Z');
+  });
+
   it('redacts names outside ASCII', () => {
     // This app ships in 40 locales. An `[A-Z][a-z]` rule leaks every accented
     // or Cyrillic name while claiming to protect names.
@@ -411,12 +501,31 @@ describe('scrubPhi', () => {
     // This asserts on source text deliberately: Node parses lookbehind fine, so
     // no runtime assertion in this environment can observe the incompatibility.
     // The syntax IS the defect.
-    const { readFileSync } = await import('node:fs');
-    const { resolve } = await import('node:path');
-    const source = readFileSync(resolve(process.cwd(), 'lib/datadog.ts'), 'utf8');
+    //
+    // All app source, not one file. The first version of this guard read only
+    // lib/datadog.ts while services/mathProse.ts — pulled in by two panels
+    // PrismApp mounts unconditionally — still carried two of them.
+    const { readdirSync, readFileSync, statSync } = await import('node:fs');
+    const { join, resolve } = await import('node:path');
 
-    expect(source).toContain('scrubPhi'); // the read must not silently miss the file
-    expect(source).not.toMatch(/\(\?<[=!]/);
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry);
+        if (statSync(full).isDirectory()) walk(full);
+        else if (/\.tsx?$/.test(entry) && !/\.(test|spec|d)\.tsx?$/.test(entry)) files.push(full);
+      }
+    };
+    for (const dir of ['app', 'components', 'services', 'lib', 'store', 'hooks']) {
+      walk(resolve(process.cwd(), dir));
+    }
+
+    expect(files.length).toBeGreaterThan(100); // the walk must not silently find nothing
+    expect(files.some((f) => f.endsWith('lib/datadog.ts'))).toBe(true);
+    expect(files.some((f) => f.endsWith('services/mathProse.ts'))).toBe(true);
+
+    const offenders = files.filter((f) => /\(\?<[=!]/.test(readFileSync(f, 'utf8')));
+    expect(offenders.map((f) => f.slice(process.cwd().length + 1))).toEqual([]);
   });
 
   it('does not mangle package@version or run-on decimals', () => {
