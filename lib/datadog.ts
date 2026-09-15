@@ -14,19 +14,22 @@ export const DATADOG_RUM_PRIVACY_OPTIONS = {
  * `Network Error`, and redacting the latter would destroy the console signal
  * this telemetry exists for.
  *
- * BOTH words must be in this list for a pair to survive. Requiring only one
- * leaks real names, because ordinary surnames collide with error vocabulary:
- * `Cross`, `Frame`, `Rivera`-beside-`Camera`. `Maria Cross` and `David Cross`
- * are person names, and an either-word test shipped them in cleartext.
+ * EVERY word of a capitalised run must be in this list for the run to survive.
+ * Requiring only one leaks real names, because ordinary surnames collide with
+ * error vocabulary: `Cross`, `Frame`, `Rivera`-beside-`Camera`. `Maria Cross`
+ * and `David Cross` are person names, and an either-word test shipped them in
+ * cleartext.
  *
- * The cost is real and worth stating: requiring both words redacts roughly one
- * in three standard HTTP/DOM reason phrases (`Service Unavailable`, `Not
- * Modified`, `Precondition Failed`) as `[NAME]`. Measured against this repo's
- * own ~1400 logged strings the cost is 2, and against the live 30-day RUM
- * corpus it is 0 — this app logs numeric `res.status`, not `res.statusText` —
- * but third-party libraries that `console.error` their own phrases will lose
- * some readability. That is the right side to err on: over-redaction costs a
- * diagnostic, under-redaction ships a child's contacts.
+ * The cost is real and worth stating: a run is redacted whole, so a phrase with
+ * one off-list word loses all of it — `Service Worker Registration` and
+ * `Cross Origin Read Blocking` both become `[NAME]`. Roughly one in three
+ * standard HTTP/DOM reason phrases goes the same way. Measured against this
+ * repo's own ~1400 logged strings the cost is 0 — this app logs numeric
+ * `res.status`, not `res.statusText` — but third-party libraries that
+ * `console.error` their own phrases will lose readability. That is the right
+ * side to err on: over-redaction costs a diagnostic, under-redaction ships a
+ * child's contacts. Nothing outside this module calls `scrubPhi`, so an
+ * over-redaction can never reach AAC speech or on-screen text.
  */
 const TECHNICAL_WORDS = new Set([
   'Aborted', 'Access', 'Allowed', 'Assembly', 'Audio', 'Bad', 'Cache', 'Camera',
@@ -73,14 +76,19 @@ const DATE_US = /\b(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\d|3[01])[/-](?:19|20)\d
  * Anchoring on `born`/`birth`/`dob` catches the internationalised forms without
  * eating the machine dates.
  *
- * The gap between the word and the date admits short filler (`is`, `on the`,
- * `:`) but stops at sentence punctuation: `[^\d\n]` alone let `She was born.
- * Build 2026-09-14` redact the build stamp. Separators cover `/`, `-`, `.`
- * (German/Russian/Polish) and space. The trailing `(?!\d)` rather than `\b`
- * lets `born 2026-09-14T10:00` match — `\b` fails against the `T`.
+ * The gap admits short filler (`is`, `on the`, `:`) but must not step across a
+ * SENTENCE boundary — sentence punctuation followed by a capital. `[^\d\n]`
+ * alone let `She was born. Build 2026-09-14` redact the build stamp; banning
+ * `.!?;` outright then lost `DOB. 14/03/1998` and `dob; 14.03.1998`, which is
+ * exactly the shape OCR of a medical form produces. The lookahead keeps both.
+ *
+ * Separators cover `/`, `-`, `.` (German/Russian/Polish) and space. The year
+ * must be two digits or 19xx/20xx, or `born 1 2 3456` reads as a date. The
+ * trailing `(?!\d)` rather than `\b` lets `born 2026-09-14T10:00` match — `\b`
+ * fails against the `T`.
  */
 const DATE_NEAR_BIRTH_WORD =
-  /\b((?:born|birth|birthday|birthdate|dob)\b[^\d\n.!?;]{0,12})\d{1,4}[/.\- ]\d{1,2}[/.\- ]\d{2,4}(?!\d)/gi;
+  /\b((?:born|birth|birthday|birthdate|dob)\b(?:(?![.!?;][^\p{L}\d\n]*\p{Lu})[^\d\n]){0,12})\d{1,4}[/.\- ]\d{1,2}[/.\- ](?:(?:19|20)\d{2}|\d{2})(?!\d)/giu;
 
 /**
  * A run of two or more capitalised words. The whole run is redacted unless
@@ -98,12 +106,17 @@ const DATE_NEAR_BIRTH_WORD =
  * are listed as a residual on `rumBeforeSend`.
  *
  * `%20` and `+` join words because a name reaches Datadog URL-encoded just as
- * often as spaced — `…/search/Grandma%20Betty` is the same leak. `[ \t]` rather
- * than `\s` so a stack trace's line breaks never join two frames into a name.
+ * often as spaced — `…/search/Grandma%20Betty` is the same leak.
+ *
+ * `[^\S\n\r]` is whitespace minus the two characters a JS stack trace uses as
+ * a line break, so frames are never joined into a name. It must NOT be
+ * narrowed to `[ \t]`: that dropped every other Unicode space with it, and
+ * pdfjs text extraction and clipboard paste routinely put U+00A0 between
+ * words, so `Grandma<NBSP>Betty` out of a PDF shipped in cleartext.
  */
 const CAPITALISED_RUN =
-  /(^|[^\p{L}])(\p{Lu}\p{Ll}+(?:(?:[ \t]|%20|\+)\p{Lu}\p{Ll}+)+)(?![\p{L}])/gu;
-const RUN_SEPARATOR = /[ \t]|%20|\+/u;
+  /(^|[^\p{L}])(\p{Lu}\p{Ll}+(?:(?:[^\S\n\r]|%20|\+)\p{Lu}\p{Ll}+)+)(?![\p{L}])/gu;
+const RUN_SEPARATOR = /[^\S\n\r]|%20|\+/u;
 
 /**
  * PHI scrubber shared by both Datadog SDKs. AAC message text is the user's
@@ -212,8 +225,10 @@ function scrubStringAt(node: unknown, segments: readonly string[], kind: PathKin
 
 /**
  * Deep enough for any context this app builds; shallow enough that a
- * pathological payload cannot overflow the stack. Datadog's `deepClone` has
- * already removed cycles by the time `beforeSend` runs.
+ * pathological payload cannot overflow the stack (native recursion here dies
+ * around 10,000 frames). Cycles are already gone before either caller runs —
+ * `deepClone` strips them on the RUM path, `sanitize` on the Logs path — and
+ * the cap terminates anything that slipped through regardless.
  */
 const SCRUB_DEPTH_LIMIT = 32;
 
@@ -297,12 +312,17 @@ export function rumBeforeSend(event: RumEventLike): boolean {
   for (const [path, kind] of SCRUBBABLE_PATHS) {
     scrubStringAt(event, path.split(/\.|(?=\[\])/).filter(Boolean), kind);
   }
-  // Datadog copies `context` back only when it is a plain object
-  // (limitModification → getType(value) === 'object'; an array is 'array'), so
-  // an array context can be neither redacted nor replaced from here — the
-  // original ships untouched whatever this callback does. Discard it.
-  if (Array.isArray(event.context)) return false;
-  if (event.context) event.context = scrubDeep(event.context);
+  // Datadog copies `context` back only when the value it finds on the clone is
+  // a plain object (limitModification → getType(value) === 'object'; an array
+  // is 'array'). So an array context cannot be scrubbed in place — but it CAN
+  // be replaced by an object, and that IS copied back. Wrapping keeps the event
+  // and removes the PHI; an earlier version discarded the whole report on the
+  // false premise that nothing could be written back.
+  if (event.context) {
+    event.context = Array.isArray(event.context)
+      ? { items: scrubDeep(event.context) }
+      : scrubDeep(event.context);
+  }
   return true;
 }
 

@@ -8,7 +8,7 @@
  * into spoken English BEFORE the text reaches TTS.
  */
 import { describe, it, expect } from 'vitest';
-import { mathTextToProse, chunkForTts } from '@/services/mathProse';
+import { mathTextToProse, chunkForTts, splitAfter } from '@/services/mathProse';
 
 describe('mathTextToProse', () => {
   it('handles the user-reported algebra worksheet OCR', () => {
@@ -148,5 +148,66 @@ describe('chunkForTts', () => {
       // Never split mid-word — every chunk must consist of whole words.
       expect(c).toMatch(/^(\w+\.?)( \w+\.?)*$/);
     });
+  });
+});
+
+/**
+ * `splitAfter` replaced two regex-lookbehind splits, which cannot ship: they
+ * are Safari 16.4+ and the iOS deployment target is 16.0, and this module is
+ * pulled in by two panels PrismApp mounts on every load.
+ *
+ * This is user-facing — it chunks OCR/PDF text for neural TTS, so a divergence
+ * means an AAC user hears the wrong words or a truncated sentence. The
+ * chunkForTts assertions above cannot catch that: an off-by-one that keeps the
+ * separator, or shifts the slice by one, survives them, because flush()'s
+ * trim() and the ' '-join hide it.
+ *
+ * So assert equivalence directly, against the lookbehind as the oracle. Node
+ * parses lookbehind fine; only Safari 16.0-16.3 does not, which is why the
+ * reference implementation may live in a test and not in app source.
+ */
+describe('splitAfter is equivalent to the lookbehind split it replaced', () => {
+  const CASES = [
+    '', 'no boundary here', 'a. b', 'a.b', 'a.. b', 'a!? b', 'ends with boundary.',
+    '. leading', 'a.  b', 'a.\tb', 'a.\nb', 'a.\r\nb', 'one. two. three.',
+    '3.14 is pi', 'Dr. Smith said hi. Then left.', 'Why? Because! Yes.',
+    'a, b', 'a,b', 'a,, b', 'trailing,', ', leading', 'x, y, z',
+    'He said "stop." Then went.', 'a.\u00a0b', 'multi.   spaces',
+  ];
+
+  it('matches the sentence-boundary lookbehind on every shape', () => {
+    for (const text of CASES) {
+      expect(splitAfter(text, /[.!?]\s+/), JSON.stringify(text))
+        .toEqual(text.split(/(?<=[.!?])\s+/));
+    }
+  });
+
+  it('matches the comma lookbehind on every shape', () => {
+    for (const text of CASES) {
+      expect(splitAfter(text, /,\s+/), JSON.stringify(text))
+        .toEqual(text.split(/(?<=,)\s+/));
+    }
+  });
+
+  it('matches on randomised input', () => {
+    const alphabet = ['a', 'b', ' ', '  ', '.', '!', '?', ',', '\t', '\n'];
+    let seed = 20260915;
+    const rand = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    for (let i = 0; i < 3000; i++) {
+      let text = '';
+      for (let j = 0; j < Math.floor(rand() * 40); j++) {
+        text += alphabet[Math.floor(rand() * alphabet.length)];
+      }
+      expect(splitAfter(text, /[.!?]\s+/), JSON.stringify(text))
+        .toEqual(text.split(/(?<=[.!?])\s+/));
+      expect(splitAfter(text, /,\s+/), JSON.stringify(text))
+        .toEqual(text.split(/(?<=,)\s+/));
+    }
+  });
+
+  it('keeps the boundary character and drops the whitespace', () => {
+    // Pins the two properties the off-by-ones break, independent of the oracle.
+    expect(splitAfter('a. b', /[.!?]\s+/)).toEqual(['a.', 'b']);
+    expect(splitAfter('a,   b', /,\s+/)).toEqual(['a,', 'b']);
   });
 });

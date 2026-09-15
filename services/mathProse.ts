@@ -158,7 +158,7 @@ export function mathTextToProse(input: string): string {
  * source for the syntax (comments included, so do not quote it here) so it
  * cannot come back.
  */
-function splitAfter(text: string, boundary: RegExp): string[] {
+export function splitAfter(text: string, boundary: RegExp): string[] {
   const out: string[] = [];
   const re = new RegExp(boundary.source, 'g');
   let last = 0;

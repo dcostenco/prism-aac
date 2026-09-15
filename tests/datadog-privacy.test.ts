@@ -204,13 +204,21 @@ describe('RUM PHI scrubbing survives Datadog\'s copy-back', () => {
     expect(lcp.resource_url).toBe('https://api.arasaac.org/[REDACTED]');
   });
 
-  it('discards an event whose context is an array, which the SDK never copies back', async () => {
-    // limitModification copies `context` back only when getType(value) is
-    // 'object'; an array is 'array'. So the original array ships untouched no
-    // matter what beforeSend does to the clone — scrubbing it is a no-op.
-    expect(
-      await send({ type: 'error', error: { message: 'x' }, context: ['call Grandma Betty'] }),
-    ).toBeNull();
+  it('wraps an array context so it can be copied back, instead of dropping the event', async () => {
+    // limitModification copies `context` back only when the value it finds on
+    // the CLONE is a plain object; an array is not. Scrubbing an array in place
+    // is therefore a no-op — but REPLACING it with an object is copied back, so
+    // the event survives and the PHI still goes. An earlier version discarded
+    // the whole report on the false premise that nothing could be written back.
+    const sent = await send({
+      type: 'error',
+      error: { message: 'x' },
+      context: ['call Grandma Betty at 555-123-4567'],
+    });
+
+    expect(sent).not.toBeNull();
+    expect(JSON.stringify(sent!.context)).not.toMatch(/Grandma|555-123-4567/);
+    expect(sent!.context).toEqual({ items: ['call [NAME] at [PHONE]'] });
   });
 
   it('replaces context below the depth limit instead of shipping it unread', async () => {
@@ -488,6 +496,38 @@ describe('scrubPhi', () => {
     expect(scrubPhi('born on 2026-09-14T10:00:00Z')).toBe('born on [DOB]T10:00:00Z');
   });
 
+  it('still redacts a date of birth that follows sentence punctuation', () => {
+    // Banning .!?; from the gap to stop it crossing a sentence also lost the
+    // shape OCR of a medical form produces. Both must hold at once.
+    expect(scrubPhi('DOB. 14/03/1998')).toBe('DOB. [DOB]');
+    expect(scrubPhi('born. 14/03/1998')).toBe('born. [DOB]');
+    expect(scrubPhi('birthday! 14/03/1998')).toBe('birthday! [DOB]');
+    expect(scrubPhi('dob; 14.03.1998')).toBe('dob; [DOB]');
+    expect(scrubPhi('Patient; DOB; 14.03.1998')).toBe('Patient; DOB; [DOB]');
+  });
+
+  it('does not read three loose numbers after a birth word as a date', () => {
+    expect(scrubPhi('born 1 2 3456')).toBe('born 1 2 3456');
+    expect(scrubPhi('birth certificate 12345')).toBe('birth certificate 12345');
+  });
+
+  it('redacts a name joined by any space a PDF or paste can produce', () => {
+    // Narrowing the separator to [ \t] to keep stack frames apart dropped every
+    // other Unicode space with it. pdfjs text extraction and clipboard paste
+    // routinely emit U+00A0 between words.
+    for (const cp of [0x20, 0xa0, 0x202f, 0x2009, 0x3000, 0x09, 0x0b, 0x0c, 0x2028, 0x2029]) {
+      const text = `call Grandma${String.fromCodePoint(cp)}Betty now`;
+      expect(scrubPhi(text), `U+${cp.toString(16).toUpperCase().padStart(4, '0')}`).toBe(
+        'call [NAME] now',
+      );
+    }
+  });
+
+  it('still does not join two stack frames into a name', () => {
+    expect(scrubPhi('at Foo\nBar baz')).toBe('at Foo\nBar baz');
+    expect(scrubPhi('at Foo\rBar baz')).toBe('at Foo\rBar baz');
+  });
+
   it('redacts names outside ASCII', () => {
     // This app ships in 40 locales. An `[A-Z][a-z]` rule leaks every accented
     // or Cyrillic name while claiming to protect names.
@@ -506,30 +546,53 @@ describe('scrubPhi', () => {
     // no runtime assertion in this environment can observe the incompatibility.
     // The syntax IS the defect.
     //
-    // All app source, not one file. The first version of this guard read only
-    // lib/datadog.ts while services/mathProse.ts — pulled in by two panels
-    // PrismApp mounts unconditionally — still carried two of them.
+    // Walk from the repo root with a denylist, rather than naming source
+    // directories. Naming them is how this guard has been wrong twice: first it
+    // read only lib/datadog.ts while services/mathProse.ts carried two, then it
+    // named six directories and missed engine/ and constants/ — 63 files that
+    // are imported ~100 times from the walked code and bundle to the client.
+    // A denylist covers directories that do not exist yet.
     const { readdirSync, readFileSync, statSync } = await import('node:fs');
     const { join, resolve } = await import('node:path');
 
+    const NOT_BUNDLED = new Set([
+      'node_modules', '.next', '.git', '.vercel', '.turbo', 'out', 'dist', 'coverage',
+      'tests', 'e2e', 'test-results', 'screenshots', 'public', 'docs', 'scripts',
+      'ios-native', 'ios', 'supabase',
+    ]);
+
+    const root = process.cwd();
     const files: string[] = [];
+    const seen = new Set<string>();
     const walk = (dir: string) => {
+      const real = statSync(dir).ino + ':' + statSync(dir).dev;
+      if (seen.has(real)) return; // a symlink cycle must not hang the suite
+      seen.add(real);
       for (const entry of readdirSync(dir)) {
+        if (NOT_BUNDLED.has(entry) || entry.startsWith('.')) continue;
         const full = join(dir, entry);
         if (statSync(full).isDirectory()) walk(full);
-        else if (/\.tsx?$/.test(entry) && !/\.(test|spec|d)\.tsx?$/.test(entry)) files.push(full);
+        else if (/\.(tsx?|mjs|cjs|js)$/.test(entry) && !/\.(test|spec|d)\./.test(entry)) {
+          files.push(full);
+        }
       }
     };
-    for (const dir of ['app', 'components', 'services', 'lib', 'store', 'hooks']) {
-      walk(resolve(process.cwd(), dir));
+    walk(root);
+
+    // The walk must reach the code, and must reach the two directories that
+    // previous versions of this guard missed.
+    expect(files.length).toBeGreaterThan(200);
+    for (const required of [
+      'lib/datadog.ts', 'services/mathProse.ts', 'middleware.ts',
+    ]) {
+      expect(files.some((f) => f === resolve(root, required)), required).toBe(true);
+    }
+    for (const dir of ['engine/', 'constants/']) {
+      expect(files.some((f) => f.startsWith(resolve(root, dir))), dir).toBe(true);
     }
 
-    expect(files.length).toBeGreaterThan(100); // the walk must not silently find nothing
-    expect(files.some((f) => f.endsWith('lib/datadog.ts'))).toBe(true);
-    expect(files.some((f) => f.endsWith('services/mathProse.ts'))).toBe(true);
-
     const offenders = files.filter((f) => /\(\?<[=!]/.test(readFileSync(f, 'utf8')));
-    expect(offenders.map((f) => f.slice(process.cwd().length + 1))).toEqual([]);
+    expect(offenders.map((f) => f.slice(root.length + 1))).toEqual([]);
   });
 
   it('does not mangle package@version or run-on decimals', () => {
