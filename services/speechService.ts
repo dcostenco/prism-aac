@@ -392,6 +392,9 @@ export async function speak(
  * neural path regardless.
  */
 export function speakWord(word: string, rate = 0.5, volume = 1.0, lang?: string): void {
+  // Tile/composition callers reach this lower-level helper directly. Keep
+  // Sound Off from producing either audio or a false speaking highlight.
+  if (useMessageStore.getState().soundEnabled === false) return;
   const actualLang = lang || getTTSCode((useSettingsStore.getState().language || 'en') as SupportedLanguage);
   // A bare single character is commonly announced as a letter name
   // ("capital I") by Web Speech. Sentence punctuation makes valid

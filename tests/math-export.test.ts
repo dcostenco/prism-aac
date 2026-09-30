@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { SerializedMathGrid } from '@/engine/mathGrid';
+import { createEmptyState, serialize, setCell, setCursor } from '@/engine/mathGrid';
+import { toggleSummationLine } from '@/engine/decorations';
 import {
   buildMathDocumentFile,
   buildMathExportSvg,
+  copyMathGridImage,
   jpegToPdf,
+  MAX_MATH_DOCUMENT_BYTES,
   parseMathDocumentFile,
 } from '@/services/mathExport';
 
@@ -43,9 +47,103 @@ describe('math image and file export', () => {
     expect(parseMathDocumentFile(encoded)).toEqual({ name: 'Special signs', body: GRID });
   });
 
+  it('round-trips a large Unicode document that local Save accepts', () => {
+    const body: SerializedMathGrid = {
+      ...GRID,
+      cells: Array.from({ length: 4_000 }, (_, index) => [
+        `${Math.floor(index / 100)},${index % 100}`,
+        { glyph: 'π' },
+      ] as SerializedMathGrid['cells'][number]),
+    };
+
+    const encoded = buildMathDocumentFile('Large Unicode work', body);
+
+    expect(new TextEncoder().encode(encoded).length).toBeLessThanOrEqual(MAX_MATH_DOCUMENT_BYTES);
+    expect(parseMathDocumentFile(encoded)).toEqual({ name: 'Large Unicode work', body });
+  });
+
+  it('refuses to create a file that its restore path would reject', () => {
+    const body: SerializedMathGrid = {
+      ...GRID,
+      cells: Array.from({ length: 10_000 }, (_, index) => [
+        `${Math.floor(index / 100)},${index % 100}`,
+        { glyph: 'π'.repeat(100) },
+      ] as SerializedMathGrid['cells'][number]),
+    };
+
+    expect(() => buildMathDocumentFile('Too large', body)).toThrow('math-file-too-large');
+    expect(() => buildMathDocumentFile('Invalid decoration', {
+      ...GRID,
+      decorations: [{ type: 'fraction-bar', anchor: { r: 0, c: 0 }, length: 0 }],
+    })).toThrow('invalid-math-document');
+  });
+
+  it('round-trips a summation line spanning more than 200 live grid cells', () => {
+    let state = createEmptyState();
+    for (let column = 0; column <= 200; column++) state = setCell(state, 0, column, '1');
+    state = toggleSummationLine(setCursor(state, 0, 100));
+    const body = serialize(state);
+
+    expect(body.decorations).toContainEqual({
+      type: 'summation-line',
+      anchor: { r: 0, c: 0 },
+      length: 201,
+    });
+    expect(parseMathDocumentFile(buildMathDocumentFile('Wide sum', body)))
+      .toEqual({ name: 'Wide sum', body });
+  });
+
+  it('starts clipboard.write before asynchronous image rasterization finishes', async () => {
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    const originalCreateElement = document.createElement.bind(document);
+    let finishImage!: () => void;
+    let clipboardPayload: Record<string, Blob | Promise<Blob>> | undefined;
+    class DeferredImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_value: string) { finishImage = () => this.onload?.(); }
+    }
+    class DeferredClipboardItem {
+      constructor(payload: Record<string, Blob | Promise<Blob>>) { clipboardPayload = payload; }
+    }
+    const fakeCanvas = {
+      width: 0,
+      height: 0,
+      getContext: () => ({ drawImage: vi.fn() }),
+      toBlob: (callback: BlobCallback) => callback(new Blob(['png'], { type: 'image/png' })),
+    } as unknown as HTMLCanvasElement;
+    const createElement = vi.spyOn(document, 'createElement').mockImplementation(((tagName: string) => (
+      tagName === 'canvas' ? fakeCanvas : originalCreateElement(tagName)
+    )) as typeof document.createElement);
+    const createObjectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:math-export');
+    const revokeObjectUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    vi.stubGlobal('Image', DeferredImage);
+    vi.stubGlobal('ClipboardItem', DeferredClipboardItem);
+    const write = vi.fn(async () => {
+      await clipboardPayload?.['image/png'];
+    });
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { write } });
+
+    try {
+      const pending = copyMathGridImage(GRID);
+      await Promise.resolve();
+      expect(write).toHaveBeenCalledOnce();
+      expect(clipboardPayload?.['image/png']).toBeInstanceOf(Promise);
+      finishImage();
+      await expect(pending).resolves.toBe('copied');
+    } finally {
+      createElement.mockRestore();
+      createObjectUrl.mockRestore();
+      revokeObjectUrl.mockRestore();
+      vi.unstubAllGlobals();
+      if (originalClipboard) Object.defineProperty(navigator, 'clipboard', originalClipboard);
+      else delete (navigator as { clipboard?: Clipboard }).clipboard;
+    }
+  });
+
   it('rejects malformed files before they can alter the grid', () => {
     const valid = JSON.parse(buildMathDocumentFile('Equation', GRID));
-    expect(parseMathDocumentFile('x'.repeat(250_001))).toBeNull();
+    expect(parseMathDocumentFile('x'.repeat(MAX_MATH_DOCUMENT_BYTES + 1))).toBeNull();
     expect(parseMathDocumentFile(JSON.stringify({ ...valid, version: 2 }))).toBeNull();
     expect(parseMathDocumentFile(JSON.stringify({ ...valid, name: '' }))).toBeNull();
     expect(parseMathDocumentFile(JSON.stringify({ ...valid, body: { ...valid.body, cells: [['00,0', { glyph: '1' }]] } }))).toBeNull();

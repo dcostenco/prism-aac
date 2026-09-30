@@ -22,15 +22,15 @@ test('exports an image and PDF, then restores a saved math file through visible 
   });
   await page.addInitScript(() => {
     class MockClipboardItem {
-      readonly data: Record<string, Blob>;
-      constructor(data: Record<string, Blob>) { this.data = data; }
+      readonly data: Record<string, Blob | Promise<Blob>>;
+      constructor(data: Record<string, Blob | Promise<Blob>>) { this.data = data; }
     }
     Object.defineProperty(window, 'ClipboardItem', { configurable: true, value: MockClipboardItem });
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: {
-        write: async ([item]: Array<{ data: Record<string, Blob> }>) => {
-          const image = item.data['image/png'];
+        write: async ([item]: Array<{ data: Record<string, Blob | Promise<Blob>> }>) => {
+          const image = await item.data['image/png'];
           localStorage.setItem('__prism_math_image', `${image.type}:${image.size}`);
         },
       },

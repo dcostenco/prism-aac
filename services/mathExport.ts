@@ -3,8 +3,9 @@ import { parseCellKey } from '@/engine/mathGrid';
 
 const CELL = 56;
 const PAD = 24;
-const MAX_FILE_BYTES = 250_000;
+export const MAX_MATH_DOCUMENT_BYTES = 250_000;
 const MAX_COORDINATE = 10_000;
+const MAX_DECORATION_LENGTH = MAX_COORDINATE * 2 + 1;
 const MAX_PAN_PX = 1_000_000;
 const MAX_CANVAS_DIMENSION = 8_192;
 const MAX_CANVAS_PIXELS = 16_000_000;
@@ -62,7 +63,16 @@ export function buildMathExportSvg(grid: SerializedMathGrid): string | null {
 }
 
 export function buildMathDocumentFile(name: string, body: SerializedMathGrid): string {
-  return JSON.stringify({ format: 'prism-aac-math', version: 1, name, body }, null, 2);
+  const serialized = JSON.stringify({ format: 'prism-aac-math', version: 1, name, body });
+  if (new TextEncoder().encode(serialized).length > MAX_MATH_DOCUMENT_BYTES) {
+    throw new Error('math-file-too-large');
+  }
+  // A successful Save File must be accepted by Restore. The live grid is
+  // sparse and can reach values beyond the portable schema through repeated
+  // moves, so validate the exact serialized artifact before offering it as a
+  // backup rather than creating a file that fails only after work is lost.
+  if (!parseMathDocumentFile(serialized)) throw new Error('invalid-math-document');
+  return serialized;
 }
 
 function validCoordinate(value: unknown): value is number {
@@ -70,7 +80,11 @@ function validCoordinate(value: unknown): value is number {
 }
 
 export function parseMathDocumentFile(raw: string): ParsedMathDocument | null {
-  if (raw.length === 0 || raw.length > MAX_FILE_BYTES) return null;
+  if (
+    raw.length === 0
+    || raw.length > MAX_MATH_DOCUMENT_BYTES
+    || new TextEncoder().encode(raw).length > MAX_MATH_DOCUMENT_BYTES
+  ) return null;
   try {
     const parsed = JSON.parse(raw) as { format?: unknown; version?: unknown; name?: unknown; body?: unknown };
     if (parsed.format !== 'prism-aac-math' || parsed.version !== 1 || !parsed.body || typeof parsed.body !== 'object') return null;
@@ -93,7 +107,7 @@ export function parseMathDocumentFile(raw: string): ParsedMathDocument | null {
     const decorations: Decoration[] = [];
     for (const item of body.decorations) {
       const d = item as Partial<Decoration>;
-      if (!d || !DECORATION_TYPES.has(d.type as Decoration['type']) || !d.anchor || !validCoordinate(d.anchor.r) || !validCoordinate(d.anchor.c) || !Number.isInteger(d.length) || (d.length ?? 0) < 1 || (d.length ?? 0) > 200 || Math.abs(d.anchor.c + (d.length ?? 0) - 1) > MAX_COORDINATE) return null;
+      if (!d || !DECORATION_TYPES.has(d.type as Decoration['type']) || !d.anchor || !validCoordinate(d.anchor.r) || !validCoordinate(d.anchor.c) || !Number.isInteger(d.length) || (d.length ?? 0) < 1 || (d.length ?? 0) > MAX_DECORATION_LENGTH || Math.abs(d.anchor.c + (d.length ?? 0) - 1) > MAX_COORDINATE) return null;
       decorations.push(d as Decoration);
     }
     const cursor = body.cursor as { r?: unknown; c?: unknown } | undefined;
@@ -205,16 +219,22 @@ async function downloadOrSave(blob: Blob, filename: string, description: string,
 export async function copyMathGridImage(body: SerializedMathGrid): Promise<'copied' | 'saved' | 'downloaded'> {
   const svg = buildMathExportSvg(body);
   if (!svg) throw new Error('empty grid');
-  const png = await canvasBlob(await svgCanvas(svg), 'image/png');
+  // Safari requires clipboard.write() to begin during the click's transient
+  // user activation. ClipboardItem accepts a Promise, so rasterization can
+  // finish without spending that activation before the privileged call.
+  const pngPromise = svgCanvas(svg).then((canvas) => canvasBlob(canvas, 'image/png'));
   if (navigator.clipboard?.write && globalThis.ClipboardItem) {
     try {
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+      const ClipboardCtor = globalThis.ClipboardItem as unknown as new (
+        items: Record<string, Blob | Promise<Blob>>,
+      ) => ClipboardItem;
+      await navigator.clipboard.write([new ClipboardCtor({ 'image/png': pngPromise })]);
       return 'copied';
     } catch (error) {
       if ((error as DOMException)?.name === 'AbortError') throw error;
     }
   }
-  return downloadOrSave(png, 'prism-math.png', 'PNG image', ['.png']);
+  return downloadOrSave(await pngPromise, 'prism-math.png', 'PNG image', ['.png']);
 }
 
 export async function saveMathGridPdf(body: SerializedMathGrid, name: string): Promise<'saved' | 'downloaded'> {
@@ -236,7 +256,9 @@ export async function pickMathGridFile(): Promise<ParsedMathDocument | null | un
   try {
     const [handle] = await picker({ multiple: false, types: [{ description: 'Prism Math document', accept: { 'application/json': ['.json'] } }] });
     if (!handle) return null;
-    const parsed = parseMathDocumentFile(await (await handle.getFile()).text());
+    const file = await handle.getFile();
+    if (file.size > MAX_MATH_DOCUMENT_BYTES) throw new Error('math-file-too-large');
+    const parsed = parseMathDocumentFile(await file.text());
     if (!parsed) throw new Error('invalid-math-file');
     return parsed;
   } catch (error) {

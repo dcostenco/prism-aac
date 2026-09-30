@@ -9,6 +9,7 @@ import { useMathGridStore } from '@/store/mathGridStore';
 vi.mock('@/services/feedback', () => ({ tapFeedback: vi.fn(), keyFeedback: vi.fn() }));
 
 const exportsMock = vi.hoisted(() => ({
+  MAX_MATH_DOCUMENT_BYTES: 250_000,
   copyMathGridImage: vi.fn(),
   saveMathGridPdf: vi.fn(),
   saveMathGridFile: vi.fn(),

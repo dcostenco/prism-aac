@@ -31,6 +31,7 @@ import {
 import { tapFeedback, keyFeedback } from '@/services/feedback';
 import {
   copyMathGridImage,
+  MAX_MATH_DOCUMENT_BYTES,
   parseMathDocumentFile,
   pickMathGridFile,
   saveMathGridFile,
@@ -190,7 +191,7 @@ export default function MathDocsTool() {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-    if (file.size > 250_000) {
+    if (file.size > MAX_MATH_DOCUMENT_BYTES) {
       setToast('That math file is too large.'); // i18n-exempt
       return;
     }
