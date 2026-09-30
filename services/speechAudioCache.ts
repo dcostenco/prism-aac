@@ -39,7 +39,7 @@ export class SpeechAudioCache {
   }
 
   private transaction<T>(mode: IDBTransactionMode, fallback: T,
-    work: (store: IDBObjectStore, done: (value: T) => void) => void): Promise<T> {
+    work: (store: IDBObjectStore, done: (value: T) => void, active: () => boolean) => void): Promise<T> {
     return new Promise(resolve => {
       if (typeof indexedDB === 'undefined') { resolve(fallback); return; }
       let db: IDBDatabase | undefined;
@@ -74,7 +74,11 @@ export class SpeechAudioCache {
             tx = db.transaction(this.policy.store, mode);
             tx.oncomplete = () => finish(value);
             tx.onerror = tx.onabort = () => finish(fallback);
-            work(tx.objectStore(this.policy.store), result => { value = result; });
+            work(
+              tx.objectStore(this.policy.store),
+              result => { if (!settled) value = result; },
+              () => !settled,
+            );
           } catch { finish(fallback); }
         };
       } catch { finish(fallback); }
@@ -96,9 +100,10 @@ export class SpeechAudioCache {
     const epoch = this.epoch;
     const key = await this.digest(JSON.stringify([scope, requestKey]));
     if (!key || epoch !== this.epoch) return null;
-    const clip = await this.transaction<Clip | null>('readwrite', null, (store, done) => {
+    const clip = await this.transaction<Clip | null>('readwrite', null, (store, done, active) => {
       const req = store.get(key);
       req.onsuccess = () => {
+        if (!active()) return;
         const entry = req.result as Clip | undefined;
         if (!this.valid(entry)) { if (entry) store.delete(key); return; }
         store.put({ ...entry, usedAt: Date.now() });
@@ -116,9 +121,10 @@ export class SpeechAudioCache {
     const now = Date.now();
     const clip: Clip = { key, scope: scopeKey, audio: audio.slice(0), identity, updatedAt: now, usedAt: now };
     if (!this.valid(clip) || audio.byteLength > this.policy.maxBytes) return false;
-    return this.transaction('readwrite', false, (store, done) => {
+    return this.transaction('readwrite', false, (store, done, active) => {
       const req = store.getAll();
       req.onsuccess = () => {
+        if (!active()) return;
         if (expectedEpoch !== this.epoch) return;
         const survivors: Clip[] = [];
         for (const row of req.result as Clip[]) {
@@ -153,9 +159,10 @@ export class SpeechAudioCache {
   async stats(scope: string): Promise<SpeechCacheStats> {
     const scopeKey = await this.digest(scope);
     if (!scopeKey) return EMPTY_STATS;
-    return this.transaction('readonly', EMPTY_STATS, (store, done) => {
+    return this.transaction('readonly', EMPTY_STATS, (store, done, active) => {
       const req = store.getAll();
       req.onsuccess = () => {
+        if (!active()) return;
         const rows = (req.result as Clip[]).filter(row => row.scope === scopeKey && this.valid(row));
         done({ available: true, clips: rows.length, bytes: rows.reduce((sum, row) => sum + row.audio.byteLength, 0) });
       };

@@ -30,12 +30,12 @@ const ASSETS = [
   { path: '/models/mediapipe/wasm/vision_wasm_internal.js',      expectMime: null,                name: 'WASM loader JS',   critical: true },
   { path: '/models/mediapipe/pose_landmarker_lite.task',         expectMime: null,                name: 'PoseLandmarker',   critical: true },
   { path: '/models/mediapipe/face_landmarker.task',              expectMime: null,                name: 'FaceLandmarker',   critical: true },
+  { path: '/models/mediapipe/hand_landmarker.task',              expectMime: null,                name: 'HandLandmarker',   critical: true },
   { path: '/models/mediapipe/blaze_face_short_range.tflite',     expectMime: null,                name: 'FaceDetector',     critical: false },
 ];
 
 const results = [];
 let totalFirstLoadMs = 0;
-let allPass = true;
 
 console.log(`\n=== MediaPipe CDN Test Suite ===`);
 console.log(`Base URL: ${BASE}\n`);
@@ -52,7 +52,6 @@ for (const asset of ASSETS) {
   } catch (e) {
     issues.push(`FETCH FAILED: ${e.message}`);
     results.push({ asset: asset.name, pass: false, issues });
-    allPass = false;
     console.log(`  ✗ ${asset.name}: FETCH FAILED`);
     continue;
   }
@@ -103,7 +102,6 @@ for (const asset of ASSETS) {
   const corpNote = corp ? '' : ' (CORP: dev-only warning, applied by vercel.json in prod)';
 
   const pass = issues.length === 0;
-  if (!pass) allPass = false;
   results.push({ asset: asset.name, pass, sizeKB, coldMs, fullMs, warmMs, cc, ct, issues });
 
   const icon = pass ? '✓' : '✗';

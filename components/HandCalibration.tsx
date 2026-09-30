@@ -6,6 +6,7 @@ import {
   destroyHandDetector,
   accumulateHandScan,
   finalizeScan,
+  resetScanAccumulator,
   saveProfile,
   setActiveProfile,
   getActiveProfile,
@@ -48,29 +49,44 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
   const { t } = useT();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [phase, setPhase] = useState<'init' | 'scan' | 'touch' | 'tremor' | 'done'>('init');
+  const [phase, setPhase] = useState<'init' | 'scan' | 'touch' | 'tremor' | 'done' | 'error'>('init');
   const [scanProgress, setScanProgress] = useState(0);
   const [touchIndex, setTouchIndex] = useState(0);
   const [status, setStatus] = useState('');
   const [profile, setProfile] = useState<HandProfile | null>(null);
   const [profileName, setProfileName] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef(0);
+  const scanRunRef = useRef(0);
   const scanCountRef = useRef(0);
   const touchTargets = useMemo(() => generateTargets(TOUCH_TARGETS), []);
   const touchOffsetsRef = useRef<Array<{ dx: number; dy: number }>>([]);
 
   // ── Phase 1: Initialize camera + MediaPipe ──
   const startScan = useCallback(async () => {
+    const runId = ++scanRunRef.current;
+    cancelAnimationFrame(rafRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    resetScanAccumulator();
+    scanCountRef.current = 0;
+    touchOffsetsRef.current = [];
+    setTouchIndex(0);
+    setScanProgress(0);
+    setProfile(null);
+    setErrorMessage('');
     setPhase('init');
     setStatus(t('starting') || 'Starting...');
 
     const ok = await initHandDetector();
+    if (runId !== scanRunRef.current) return;
     if (!ok) {
-      setStatus('MediaPipe unavailable — using default profile');
-      const p = getActiveProfile();
-      setProfile(p);
-      setPhase('touch');
+      setStatus('');
+      setErrorMessage('Hand tracking could not start. Try again. If it keeps failing, close calibration and reopen it.');
+      setPhase('error');
       return;
     }
 
@@ -79,18 +95,21 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
         video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
         audio: false,
       });
+      if (runId !== scanRunRef.current) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
       streamRef.current = stream;
 
       const video = videoRef.current!;
       video.srcObject = stream;
       await video.play();
+      if (runId !== scanRunRef.current) return;
 
       setPhase('scan');
       setStatus('Hold your hand in front of the camera');
-      scanCountRef.current = 0;
-      setScanProgress(0);
-
       const tick = () => {
+        if (runId !== scanRunRef.current) return;
         if (scanCountRef.current >= SCAN_TARGET_FRAMES) {
           const geo = finalizeScan();
           const p: HandProfile = {
@@ -101,6 +120,8 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
             created: new Date().toISOString(),
             lastCalibrated: new Date().toISOString(),
           };
+          stream.getTracks().forEach(track => track.stop());
+          if (streamRef.current === stream) streamRef.current = null;
           setProfile(p);
           setPhase('touch');
           setStatus('Tap each highlighted letter');
@@ -119,11 +140,15 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
 
       rafRef.current = requestAnimationFrame(tick);
     } catch {
+      if (runId !== scanRunRef.current) return;
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
       destroyHandDetector();
-      setStatus('Camera not available — using default profile');
-      const p = getActiveProfile();
-      setProfile(p);
-      setPhase('touch');
+      setStatus('');
+      setErrorMessage('Camera access is required to scan your hand. Allow camera access, close other camera apps, then try again.');
+      setPhase('error');
     }
   }, [t]);
 
@@ -174,7 +199,7 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
       setPhase('tremor');
       setStatus('Hold finger still on screen for 3 seconds');
     }
-  }, [phase, touchIndex]);
+  }, [phase, touchIndex, touchTargets]);
 
   // ── Phase 3: Tremor measurement ──
   const tremorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -221,7 +246,9 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
 
   // ── Cleanup ──
   useEffect(() => {
+    const scanRun = scanRunRef;
     return () => {
+      scanRun.current++;
       cancelAnimationFrame(rafRef.current);
       if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
       if (tremorTimerRef.current) clearTimeout(tremorTimerRef.current);
@@ -234,22 +261,23 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
     : null;
 
   return (
-    <div className="fixed inset-0 z-[100] surface-app flex flex-col">
+    <div data-testid="hand-calibration" className="fixed inset-0 z-[100] surface-app flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 surface-bar border-b border-theme">
-        <h2 className="text-primary font-bold text-lg">
+        <h2 data-testid="hand-calibration-title" className="text-primary font-bold text-lg">
           {phase === 'init' && 'Hand Calibration'}
           {phase === 'scan' && 'Scanning Hand...'}
           {phase === 'touch' && `Touch Calibration (${touchIndex}/${TOUCH_TARGETS})`}
           {phase === 'tremor' && 'Tremor Measurement'}
           {phase === 'done' && 'Calibration Complete'}
+          {phase === 'error' && 'Hand Calibration'}
         </h2>
-        <button onClick={onClose} className="text-muted text-xl">✕</button>
+        <button onClick={onClose} aria-label="Close hand calibration" className="text-muted text-xl">✕</button>
       </div>
 
       {/* Status */}
       <div className="px-4 py-2 text-center">
-        <p className="text-muted text-sm">{status}</p>
+        <p data-testid="hand-calibration-status" className="text-muted text-sm">{status}</p>
       </div>
 
       {/* Main area */}
@@ -274,9 +302,34 @@ export default function HandCalibration({ onClose }: { onClose: () => void }) {
                     style={{ width: `${(scanProgress / SCAN_TARGET_FRAMES) * 100}%` }}
                   />
                 </div>
-                <p className="text-center text-sm text-muted mt-1">{scanProgress}/{SCAN_TARGET_FRAMES} frames</p>
+                <p data-testid="hand-scan-progress" className="text-center text-sm text-muted mt-1">{scanProgress}/{SCAN_TARGET_FRAMES} frames</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Recoverable initialization failure */}
+        {phase === 'error' && (
+          <div className="absolute inset-0 flex items-center justify-center p-6">
+            <div role="alert" className="surface-key w-full max-w-md rounded-2xl border border-theme p-6 text-center shadow-lg">
+              <div className="text-5xl mb-3" aria-hidden="true">🤚</div>
+              <h3 className="text-primary text-xl font-bold mb-2">Hand scan unavailable</h3>
+              <p className="text-muted text-sm mb-5">{errorMessage}</p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={startScan}
+                  className="aac-btn flex-1 bg-[#2196F3] text-white rounded-xl py-3 font-bold"
+                >
+                  Retry Hand Scan
+                </button>
+                <button
+                  onClick={onClose}
+                  className="aac-btn flex-1 surface-bar text-primary border border-theme rounded-xl py-3 font-bold"
+                >
+                  Close Calibration
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

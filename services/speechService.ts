@@ -16,9 +16,11 @@ import { autoSwitchTone, toneToAzureStyle, toneToRate } from './adaptiveEngine';
 import { getTTSCode, SupportedLanguage } from '@/engine/i18n';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
+import { useMessageStore } from '@/store/messageStore';
 import { emitTtsHealthEvent, TtsTier } from './ttsHealthBus';
 import { emitTtsHighlight, estimateSpeechDurationMs } from './ttsHighlightBus';
 import { fetchVoiceCatalog, defaultVoiceForLanguage } from './voiceCatalogService';
+import { stopWasmSpeech } from './wasmTTS';
 
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -128,6 +130,10 @@ export function getVoiceStatus(lang: string): { quality: VoiceQuality; needsDown
 let resumeInterval: ReturnType<typeof setInterval> | null = null;
 let localSpeechGeneration = 0;
 let resolveActiveLocalSpeech: (() => void) | null = null;
+// Invalidates the entire async fallback chain when the user explicitly stops
+// speech. Stopping active nodes alone is insufficient: a pending cloud failure
+// could otherwise continue into Web Speech or WASM after Sound Off was tapped.
+let speechStopGeneration = 0;
 
 /**
  * Why the caller needs to tell these three apart:
@@ -236,6 +242,9 @@ export async function speak(
   interrupt = false,
 ): Promise<void> {
   if (!text.trim()) return;
+  // `speak` is also used directly by Voice Preview. Enforce the same global
+  // mute contract here so bypassing aacSpeak cannot bypass Sound Off.
+  if (useMessageStore.getState().soundEnabled === false) return;
   // Volume=0 guard — catches mis-stored settings before a silent-success
   if (volume === 0) {
     console.warn('[TTS] volume=0 — audio will be silent. Check Settings → Voice → Volume slider.');
@@ -245,6 +254,8 @@ export async function speak(
     });
     return;
   }
+  const startedBeforeStopGeneration = speechStopGeneration;
+  const wasExplicitlyStopped = () => startedBeforeStopGeneration !== speechStopGeneration;
 
   // Auto tone switch — when caller passes 'auto' (default for new code), the
   // adaptive engine detects emotional context from the text and routes the
@@ -302,6 +313,7 @@ export async function speak(
       type: 'tts-attempt', tier: 'inworld', text: debugText, lang, timestamp: tier1Start,
     });
     const result = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt, !isOnline());
+    if (wasExplicitlyStopped() || useMessageStore.getState().soundEnabled === false) return;
     if (result?.cancelled) {
       // A newer utterance or an explicit Stop owns the audio channel now.
       // This is neither a portal success nor a provider failure, and must not
@@ -330,6 +342,7 @@ export async function speak(
 
   // Tier 2: Web Speech API (offline, all 12 langs on most devices)
   if (isSpeechSupported()) {
+    if (wasExplicitlyStopped() || useMessageStore.getState().soundEnabled === false) return;
     triedTiers.push('web-speech');
     // speakLocal emits its own attempt + success/fallback via the
     // SpeechSynthesisUtterance lifecycle (onend / onerror).
@@ -344,8 +357,10 @@ export async function speak(
     type: 'tts-attempt', tier: 'native-ios', text: debugText, lang, timestamp: tier4Start,
   });
   try {
+    if (wasExplicitlyStopped() || useMessageStore.getState().soundEnabled === false) return;
     const { speakWasm, isWasmTTSReady, initWasmTTS } = await import('./wasmTTS');
     if (!isWasmTTSReady()) await initWasmTTS();
+    if (wasExplicitlyStopped() || useMessageStore.getState().soundEnabled === false) return;
     await speakWasm(text, lang, rate, volume);
     const now = Date.now();
     emitTtsHealthEvent({
@@ -549,7 +564,9 @@ function speakLocal(text: string, rate: number, volume: number, lang: string): P
 }
 
 export function stopSpeech(): void {
+  speechStopGeneration += 1;
   stopAzureAudio();
   retireActiveLocalSpeech();
   if (isSpeechSupported()) window.speechSynthesis.cancel();
+  stopWasmSpeech();
 }

@@ -217,6 +217,8 @@ export default function CategoryPanel() {
   const speechVolume = useSettingsStore((s) => s.speechVolume);
   const gridRef = useRef<HTMLDivElement>(null);
   const [gridPage, setGridPage] = useState(0);
+  const [categoryPage, setCategoryPage] = useState(0);
+  const [categoryPageSize, setCategoryPageSize] = useState(8);
   const activeCatIdForReset = useUIStore((s) => s.activeCategoryId);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- category/grid changes must reset pagination before rendering an out-of-range page
   useEffect(() => { setGridPage(0); }, [activeCatIdForReset, gridSize]);
@@ -226,6 +228,8 @@ export default function CategoryPanel() {
     const check = () => {
       const compact = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 500;
       setCompactMode(compact);
+      const nextCategoryPageSize = window.innerWidth < 600 ? 3 : window.innerWidth < 1024 ? 5 : 8;
+      setCategoryPageSize(nextCategoryPageSize);
       const s = useUIStore.getState();
       // Phone landscape can't fit grid + keyboard drawer — auto-maximize
       // so the user gets a full-size keyboard (touchability for AAC users).
@@ -619,6 +623,14 @@ export default function CategoryPanel() {
   const topLevelCats = allCategories().filter((c) => !c.parentId);
   const homeCatSet = new Set(HOME_CATS_ORDERED);
   const fringeCats = topLevelCats.filter((c) => !homeCatSet.has(c.id));
+  const visibleHomePhrases = homeGridPhrases.slice(0, gridSize);
+  const visibleFringeCats = fringeCats.slice(0, Math.max(0, gridSize - visibleHomePhrases.length));
+  const categoryPageCount = Math.max(1, Math.ceil(topLevelCats.length / categoryPageSize));
+  const safeCategoryPage = Math.min(categoryPage, categoryPageCount - 1);
+  const visibleTopLevelCats = topLevelCats.slice(
+    safeCategoryPage * categoryPageSize,
+    (safeCategoryPage + 1) * categoryPageSize,
+  );
 
   return (
     <section aria-label="Home vocabulary board" data-aac-mode={typingMode ? 'typing' : 'picture'} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
@@ -631,18 +643,18 @@ export default function CategoryPanel() {
               <div className="flex-1 min-w-0 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
             <div ref={gridRef} className={`aac-picture-grid grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-              {homeGridPhrases.map(({ phrase: p, catId }) => {
+              {visibleHomePhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
                 const tH = compactMode && categoryKeyboardOpen ? HOME_TILE_H_COMPACT : categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
                 return (
-                  <PhraseTile key={p.id} phrase={local} englishPhrase={p.text} customImageUrl={p.customImageUrl} compact={categoryKeyboardOpen || compactMode}
+                  <PhraseTile key={`${catId}:${p.id}`} phrase={local} englishPhrase={p.text} customImageUrl={p.customImageUrl} compact={categoryKeyboardOpen || compactMode}
                     onClick={() => handlePhrase(local, p.id)}
                     className={`aac-btn rounded-xl font-bold select-none text-center ${tH} ${CAT_BG[catId] ?? 'bg-slate-500 text-white border-slate-600'}`}
                   />
                 );
               })}
               {/* WHITE folder tiles for fringe categories */}
-              {fringeCats.map((cat) => {
+              {visibleFringeCats.map((cat) => {
                 const tH = compactMode && categoryKeyboardOpen ? HOME_TILE_H_COMPACT : categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
                 return (
                 <button key={cat.id} onClick={() => { tapFeedback(); selectCategory(cat.id); }}
@@ -658,15 +670,33 @@ export default function CategoryPanel() {
               })}
             </div>
             {/* Bottom category tab strip — hidden in landscape when keyboard is open (saves ~50px) */}
-            {!(compactMode && categoryKeyboardOpen) && <div data-testid="category-strip" className="aac-category-strip flex gap-1 px-2 py-1.5 overflow-x-auto shrink-0 border-t-2 border-[#5c3d25] bg-[#3e2a1a]" style={{ paddingBottom: 'max(0.375rem, var(--aac-safe-area-bottom))' }}>
-              {topLevelCats.map((cat) => {
+            {!(compactMode && categoryKeyboardOpen) && <div data-testid="category-strip-shell" className="flex min-w-0 shrink-0 border-t-2 border-[#5c3d25] bg-[#3e2a1a]">
+              {categoryPageCount > 1 && <button
+                type="button"
+                data-testid="category-page-prev"
+                aria-label={t('sidebar_back')}
+                disabled={safeCategoryPage === 0}
+                onClick={() => setCategoryPage(Math.max(0, safeCategoryPage - 1))}
+                className="aac-btn w-12 shrink-0 text-3xl font-bold text-white disabled:opacity-30"
+              >
+                <span aria-hidden>‹</span>
+              </button>}
+              <div
+                data-testid="category-strip"
+                className="aac-category-strip grid flex-1 min-w-0 gap-1 px-1 py-1.5"
+                style={{
+                  gridTemplateColumns: `repeat(${visibleTopLevelCats.length}, minmax(0, 1fr))`,
+                  paddingBottom: 'max(0.375rem, var(--aac-safe-area-bottom))',
+                }}
+              >
+              {visibleTopLevelCats.map((cat) => {
                 const isCore = homeCatSet.has(cat.id);
                 const tabBg = isCore ? (CAT_BG[cat.id] ?? 'bg-white/20 text-white') : 'bg-white text-gray-900';
                 return (
                   <button key={cat.id} onClick={() => { tapFeedback(); selectCategory(cat.id); }}
                     data-testid="category-tile"
-                    className={`aac-btn aac-category-tile shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-lg
-                      border border-white/20 select-none text-center min-w-[52px] ${tabBg}`}>
+                    className={`aac-btn aac-category-tile min-w-0 w-full flex flex-col items-center gap-0.5 px-1 py-1.5 rounded-lg
+                      border border-white/20 select-none text-center ${tabBg}`}>
                     <span className="aac-tile-icon aac-category-icon text-base leading-none">{cat.icon}</span>
                     <FittedTileLabel
                       text={cat.nameKey ? t(cat.nameKey) : cat.name}
@@ -675,6 +705,20 @@ export default function CategoryPanel() {
                   </button>
                 );
               })}
+              </div>
+              {categoryPageCount > 1 && <button
+                type="button"
+                data-testid="category-page-next"
+                aria-label={t('next_step')}
+                disabled={safeCategoryPage >= categoryPageCount - 1}
+                onClick={() => setCategoryPage(Math.min(categoryPageCount - 1, safeCategoryPage + 1))}
+                className="aac-btn w-12 shrink-0 flex flex-col items-center justify-center text-white disabled:opacity-30"
+              >
+                <span aria-hidden className="text-3xl font-bold leading-none">›</span>
+                <span data-testid="category-page-indicator" className="text-[10px] font-bold leading-none">
+                  {safeCategoryPage + 1}/{categoryPageCount}
+                </span>
+              </button>}
               </div>}
             </div>
             )}

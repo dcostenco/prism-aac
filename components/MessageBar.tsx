@@ -294,7 +294,9 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
     const mode = isMidWord ? 'complete' : 'correct';
     let cancelled = false;
     const timer = setTimeout(async () => {
-      const fixed = await correctText(trimmed, language, mode);
+      const fixed = await correctText(trimmed, language, mode, {
+        allowPortal: Boolean(authenticatedProfile),
+      });
       if (cancelled) return;
       const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
       const inputIsValid = !fixed || fixed === trimmed || norm(fixed) === norm(trimmed);
@@ -349,7 +351,7 @@ export default function MessageBar({ compact = false }: { compact?: boolean } = 
       setSuggestion(fixed);
     }, 400);
     return () => { cancelled = true; mounted = false; clearTimeout(timer); };
-  }, [text, language, setAiCompletion, aiAutocorrectEnabled]);
+  }, [text, language, setAiCompletion, aiAutocorrectEnabled, authenticatedProfile]);
 
   const learnWord = usePredictionStore((s) => s.learnWord);
 

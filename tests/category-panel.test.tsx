@@ -83,6 +83,7 @@ const mocks = vi.hoisted(() => {
   const mockPhrases: Phrase[] = [
     { id: 'p1', text: 'yes' },
     { id: 'p2', text: 'no' },
+    { id: 'p3', text: 'maybe' },
   ];
 
   const useUIStore = Object.assign(
@@ -199,6 +200,7 @@ beforeEach(() => {
   mocks.messageState.autoSpeak = false;
   mocks.messageState.soundEnabled = true;
   mocks.settingsState.language = 'en';
+  mocks.settingsState.gridSize = 9;
   mocks.settingsState.outputLanguage = 'en';
   window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
 });
@@ -241,6 +243,13 @@ describe('CategoryPanel — home board', () => {
     // PhraseTile mock renders buttons with phrase text
     const tiles = screen.getAllByTestId('phrase-tile');
     expect(tiles.length).toBeGreaterThan(0);
+  });
+
+  it.each([4, 6, 9, 12, 16, 20])('renders exactly %i blocks for the selected grid size', (gridSize) => {
+    mocks.settingsState.gridSize = gridSize;
+    const { container } = render(<CategoryPanel />);
+
+    expect(container.querySelectorAll('.aac-picture-grid > *')).toHaveLength(gridSize);
   });
 
   it('renders category tab strip with category names', () => {

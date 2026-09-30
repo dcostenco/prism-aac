@@ -540,6 +540,12 @@ describe('MessageBar — speak', () => {
     const correctionText = correction.querySelector('span.font-semibold');
     expect(correctionText).toHaveClass('whitespace-normal', 'break-words');
     expect(correctionText).not.toHaveClass('truncate');
+    expect(mocks.correctTextMock).toHaveBeenCalledWith(
+      'I nede help',
+      'en',
+      'complete',
+      { allowPortal: true },
+    );
     expect(mocks.setTextMock).not.toHaveBeenCalled();
     expect(mocks.rememberPhraseMock).not.toHaveBeenCalled();
   });

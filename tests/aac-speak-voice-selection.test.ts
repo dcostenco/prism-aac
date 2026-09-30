@@ -22,7 +22,7 @@ vi.mock('@/services/ttsHighlightBus', () => ({
   estimateSpeechDurationMs: vi.fn(() => 1000),
 }));
 vi.mock('@/store/messageStore', () => ({
-  useMessageStore: { getState: vi.fn(() => ({ toneMode: 'auto', activeTone: 'friendly' })) },
+  useMessageStore: { getState: vi.fn(() => ({ soundEnabled: true, toneMode: 'auto', activeTone: 'friendly' })) },
 }));
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: { getState: vi.fn(() => ({ language: 'en', outputLanguage: 'en', speechRate: 0.5 })) },

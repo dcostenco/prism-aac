@@ -144,6 +144,11 @@ function withTimeout(ms: number): { signal: AbortSignal; cancel: () => void } {
 
 type CorrectMode = 'correct' | 'complete';
 
+export interface CorrectTextOptions {
+  /** Portal AI routes require a resolved signed-in Synalux session. */
+  allowPortal?: boolean;
+}
+
 async function correctViaPortal(text: string, lang: string, mode: CorrectMode): Promise<string | null> {
   // portalFetch enforces 1MB response cap, offline short-circuit,
   // credentials, JSON parse safety, and 5s timeout. Failure cases
@@ -201,6 +206,7 @@ export async function correctText(
   text: string,
   lang = 'en',
   mode: CorrectMode = 'correct',
+  options: CorrectTextOptions = {},
 ): Promise<string> {
   const trimmed = text.trim().slice(0, 4000);
   // Match the MessageBar threshold (2 chars) — pin so a future bump
@@ -219,7 +225,10 @@ export async function correctText(
   // See disambiguateLangByScript() for the heuristic (≥70% non-Latin script
   // before override).
   const effectiveLang = disambiguateLangByScript(trimmed, lang);
-  const cacheKey = `${mode}|${effectiveLang}|${trimmed}`;
+  const allowPortal = options.allowPortal === true;
+  // Keep guest and authenticated work isolated. Otherwise a request started
+  // just before auth resolves could be shared across the authorization boundary.
+  const cacheKey = `${allowPortal ? 'portal' : 'local'}|${mode}|${effectiveLang}|${trimmed}`;
   const cached = memoryCache.get(cacheKey);
   if (cached !== undefined) return cached;
 
@@ -255,8 +264,10 @@ export async function correctText(
           trimCorrectCache();
           return fromLocal;
         }
-        // Local was useless (null OR norm-echo) — fall through to portal.
+        // Local was useless (null OR norm-echo) — fall through to the portal
+        // only when the caller has positively identified a signed-in session.
       }
+      if (!allowPortal) return text;
       let fromPortal = await correctViaPortal(trimmed, effectiveLang, mode);
       if (mode === 'complete' && norm(fromPortal) === trimmedNorm) {
         fromPortal = await correctViaPortal(trimmed, effectiveLang, 'correct');
