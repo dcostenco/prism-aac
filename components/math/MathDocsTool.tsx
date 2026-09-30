@@ -2,7 +2,8 @@
 /**
  * MathDocsTool — Phase 5B UI.
  *
- * Save / Open buttons + a small dropdown for browsing saved docs.
+ * Save / Open buttons + a small dropdown for browsing saved docs and
+ * exporting portable image, PDF, and Prism Math files.
  * Wired to the local-first mathDocService — saves and lists go to
  * localStorage; portal sync arrives in a follow-up.
  *
@@ -17,7 +18,7 @@
  *   • Each row has an inline "×" to delete.
  *   • Tapping a row loads its body into the math grid store.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMathGridStore } from '@/store/mathGridStore';
 import {
   saveDoc,
@@ -28,6 +29,13 @@ import {
   type MathDoc,
 } from '@/services/mathDocService';
 import { tapFeedback, keyFeedback } from '@/services/feedback';
+import {
+  copyMathGridImage,
+  parseMathDocumentFile,
+  pickMathGridFile,
+  saveMathGridFile,
+  saveMathGridPdf,
+} from '@/services/mathExport';
 
 const TOOL_BTN =
   'aac-btn rounded-lg px-3 py-2 text-sm font-bold border min-h-[44px] ' +
@@ -40,6 +48,7 @@ export default function MathDocsTool() {
   const [currentName, setCurrentName] = useState<string>('');
   const [toast, setToast] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const restoreInputRef = useRef<HTMLInputElement>(null);
 
   const toSerialized = useMathGridStore((s) => s.toSerialized);
   const loadFromSerialized = useMathGridStore((s) => s.loadFromSerialized);
@@ -103,6 +112,95 @@ export default function MathDocsTool() {
     setToast(`Synced ${merged.length} doc${merged.length === 1 ? '' : 's'}.`);
   }, [syncing]);
 
+  const handleCopyImage = useCallback(async () => {
+    tapFeedback();
+    const body = toSerialized();
+    if (body.cells.length === 0) {
+      setToast('Nothing to export — grid is empty.'); // i18n-exempt
+      return;
+    }
+    try {
+      const result = await copyMathGridImage(body);
+      setOpen(false);
+      setToast(result === 'copied' ? 'Copied math image.' : result === 'saved' ? 'Saved math image.' : 'Downloaded math image.'); // i18n-exempt
+    } catch (error) {
+      if ((error as DOMException)?.name !== 'AbortError') setToast('Could not export the math image.'); // i18n-exempt
+    }
+  }, [toSerialized]);
+
+  const handlePdf = useCallback(async () => {
+    tapFeedback();
+    const body = toSerialized();
+    if (body.cells.length === 0) {
+      setToast('Nothing to export — grid is empty.'); // i18n-exempt
+      return;
+    }
+    try {
+      const result = await saveMathGridPdf(body, currentName || 'prism-math');
+      setOpen(false);
+      setToast(result === 'saved' ? 'Saved PDF.' : 'Downloaded PDF.'); // i18n-exempt
+    } catch (error) {
+      if ((error as DOMException)?.name !== 'AbortError') setToast('Could not save the PDF.'); // i18n-exempt
+    }
+  }, [currentName, toSerialized]);
+
+  const handleSaveFile = useCallback(async () => {
+    tapFeedback();
+    const body = toSerialized();
+    if (body.cells.length === 0) {
+      setToast('Nothing to save — grid is empty.'); // i18n-exempt
+      return;
+    }
+    try {
+      const result = await saveMathGridFile(body, currentName || 'prism-math');
+      setOpen(false);
+      setToast(result === 'saved' ? 'Saved math file.' : 'Downloaded math file.'); // i18n-exempt
+    } catch (error) {
+      if ((error as DOMException)?.name !== 'AbortError') setToast('Could not save the math file.'); // i18n-exempt
+    }
+  }, [currentName, toSerialized]);
+
+  const applyRestored = useCallback((document: ReturnType<typeof parseMathDocumentFile>) => {
+    if (!document) {
+      setToast('That file is not a valid Prism Math document.'); // i18n-exempt
+      return;
+    }
+    loadFromSerialized(document.body);
+    setCurrentSlug(null);
+    setCurrentName(document.name);
+    setOpen(false);
+    setToast('Restored math file.'); // i18n-exempt
+  }, [loadFromSerialized]);
+
+  const handleRestore = useCallback(async () => {
+    tapFeedback();
+    try {
+      const document = await pickMathGridFile();
+      if (document === undefined) {
+        restoreInputRef.current?.click();
+        return;
+      }
+      if (document) applyRestored(document);
+    } catch (error) {
+      setToast((error as Error)?.message === 'invalid-math-file' ? 'That file is not a valid Prism Math document.' : 'Could not open the math file.'); // i18n-exempt
+    }
+  }, [applyRestored]);
+
+  const handleRestoreInput = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (file.size > 250_000) {
+      setToast('That math file is too large.'); // i18n-exempt
+      return;
+    }
+    try {
+      applyRestored(parseMathDocumentFile(await file.text()));
+    } catch {
+      setToast('Could not open the math file.'); // i18n-exempt
+    }
+  }, [applyRestored]);
+
   const handleDelete = useCallback((slug: string) => {
     keyFeedback();
     if (!deleteDoc(slug)) return;
@@ -153,6 +251,52 @@ export default function MathDocsTool() {
             >
               {syncing ? '…' : '↻ Sync'}
             </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2 px-3 py-2 border-b border-theme">
+            <button
+              type="button"
+              onClick={handleCopyImage}
+              data-testid="math-docs-copy-image"
+              aria-label="Copy current math as an image"
+              className={`${TOOL_BTN} surface-key text-primary border-theme`}
+            >
+              <span data-testid="math-docs-copy-image-label">🖼 Copy Image</span> {/* i18n-exempt */}
+            </button>
+            <button
+              type="button"
+              onClick={handlePdf}
+              data-testid="math-docs-save-pdf"
+              aria-label="Save current math as PDF"
+              className={`${TOOL_BTN} surface-key text-primary border-theme`}
+            >
+              <span data-testid="math-docs-save-pdf-label">📄 Save PDF</span> {/* i18n-exempt */}
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveFile}
+              data-testid="math-docs-save-file"
+              aria-label="Save math document to a file"
+              className={`${TOOL_BTN} surface-key text-primary border-theme`}
+            >
+              <span data-testid="math-docs-save-file-label">💾 Save File</span> {/* i18n-exempt */}
+            </button>
+            <button
+              type="button"
+              onClick={handleRestore}
+              data-testid="math-docs-restore-file"
+              aria-label="Restore math document from a file"
+              className={`${TOOL_BTN} surface-key text-primary border-theme`}
+            >
+              <span data-testid="math-docs-restore-file-label">📂 Restore</span> {/* i18n-exempt */}
+            </button>
+            <input
+              ref={restoreInputRef}
+              type="file"
+              accept=".prism-math.json,.json,application/json"
+              onChange={handleRestoreInput}
+              className="hidden"
+              data-testid="math-docs-restore-input"
+            />
           </div>
           {docs.length === 0 ? (
             <p className="text-muted text-xs px-3 py-3">No saved docs yet.</p>
