@@ -103,6 +103,8 @@ Prism AAC underwent a [70-item adversarial accessibility audit](ACCESSIBILITY.md
 | **Voice input** | Dictation with AI autocorrect, hands-free, wake word | Mic button on toolbar |
 | **Simplified keyboard** | 15 most-frequent letters in 3×5 grid (auto for gridSize 4) | Settings → Grid Size → 4 |
 
+Picture-board navigation: swipe left/right within the vocabulary grid or bottom category strip to browse pages. On a Mac, use horizontal trackpad scrolling or click-and-drag; the edge arrows remain available. Paging does not choose a word—tap or click a tile deliberately to select it. Vertical scrolling and pinch zoom do not turn pages. See [swipe navigation and test boundaries](docs/SWIPE_NAVIGATION.md).
+
 ### Responsive layout — iPhone & iPad, portrait & landscape
 
 <p align="center">

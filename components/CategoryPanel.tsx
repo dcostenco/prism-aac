@@ -23,6 +23,7 @@ import { getPictogramUrl, pictureModeForProfile } from '@/services/pictogramServ
 import { useAuthStore } from '@/store/authStore';
 import { useNearViewport } from '@/hooks/useNearViewport';
 import FittedTileLabel from './FittedTileLabel';
+import { useDesktopPaging } from '@/hooks/useDesktopPaging';
 
 // ── Categories on the HOME core-vocab grid ────────────────────────────────────
 // Pink → yellow → green → orange → blue (matches Image #36 left-to-right)
@@ -215,6 +216,7 @@ export default function CategoryPanel() {
   const speechVolume = useSettingsStore((s) => s.speechVolume);
   const gridRef = useRef<HTMLDivElement>(null);
   const [gridPage, setGridPage] = useState(0);
+  const gridDesktop = useDesktopPaging(setGridPage);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const suppressSwipeClick = useRef(false);
   const gridStyle: React.CSSProperties = {
@@ -269,7 +271,47 @@ export default function CategoryPanel() {
     status: `${safePage + 1} / ${totalPages}`,
   } : {};
   const [categoryPage, setCategoryPage] = useState(0);
+  const categoryDesktop = useDesktopPaging(setCategoryPage);
   const [categoryPageSize, setCategoryPageSize] = useState(8);
+  const categoryTouchStart = useRef<{ x: number; y: number } | null>(null);
+  const suppressCategorySwipeClick = useRef(false);
+  const categoryTouchHandlers = {
+    onTouchStart: (event: React.TouchEvent) => {
+      suppressCategorySwipeClick.current = false;
+      categoryTouchStart.current = event.touches.length === 1
+        ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null;
+    },
+    onTouchMove: (event: React.TouchEvent) => {
+      if (event.touches.length !== 1) { categoryTouchStart.current = null; return; }
+      if (!categoryTouchStart.current) return;
+      const dx = event.touches[0].clientX - categoryTouchStart.current.x;
+      const dy = event.touches[0].clientY - categoryTouchStart.current.y;
+      if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        suppressCategorySwipeClick.current = true;
+      }
+    },
+    onTouchCancel: () => { categoryTouchStart.current = null; },
+    onPointerDown: (event: React.PointerEvent) => {
+      if (event.pointerType === 'mouse') suppressCategorySwipeClick.current = false;
+    },
+    onClickCapture: (event: React.MouseEvent) => {
+      if (suppressCategorySwipeClick.current && event.detail > 0) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+  };
+  const handleCategoryTouchEnd = (event: React.TouchEvent, totalPages: number) => {
+    const start = categoryTouchStart.current;
+    categoryTouchStart.current = null;
+    if (!start || event.changedTouches.length !== 1) return;
+    const dx = event.changedTouches[0].clientX - start.x;
+    const dy = event.changedTouches[0].clientY - start.y;
+    if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      suppressCategorySwipeClick.current = true;
+      setCategoryPage(page => Math.max(0, Math.min(totalPages - 1, Math.min(page, totalPages - 1) + (dx < 0 ? 1 : -1))));
+    }
+  };
   const activeCatIdForReset = useUIStore((s) => s.activeCategoryId);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- category/grid changes must reset pagination before rendering an out-of-range page
   useEffect(() => { setGridPage(0); }, [activeCatIdForReset, gridSize]);
@@ -613,8 +655,8 @@ export default function CategoryPanel() {
                 const pageItems = allItems.slice(safePage * gridSize, (safePage + 1) * gridSize);
                 return (
                   <div className="flex-1 flex flex-col min-h-0">
-                    <div ref={gridRef} className="aac-picture-grid grid gap-2 p-2 flex-1 min-h-0 overflow-y-auto"
-                      style={gridStyle} {...gridTouchHandlers} onTouchEnd={event => handleGridTouchEnd(event, totalPages)}>
+                    <div ref={element => { gridRef.current = element; gridDesktop.ref(element); }} className="aac-picture-grid grid gap-2 p-2 flex-1 min-h-0 overflow-y-auto"
+                      style={gridStyle} {...gridDesktop.bind(totalPages, gridTouchHandlers)} onTouchEnd={event => handleGridTouchEnd(event, totalPages)}>
                       {pageItems.map(item => {
                         if (item.type === 'folder') {
                           const sub = item.data;
@@ -689,8 +731,8 @@ export default function CategoryPanel() {
             {searchOpen ? searchPanelJsx : (
               <div className="flex-1 min-w-0 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
-            <div ref={gridRef} className="aac-picture-grid grid gap-1.5 p-2 overflow-y-auto flex-1 min-h-0"
-              style={gridStyle} {...gridTouchHandlers} onTouchEnd={event => handleGridTouchEnd(event, homePageCount)}>
+            <div ref={element => { gridRef.current = element; gridDesktop.ref(element); }} className="aac-picture-grid grid gap-1.5 p-2 overflow-y-auto flex-1 min-h-0"
+              style={gridStyle} {...gridDesktop.bind(homePageCount, gridTouchHandlers)} onTouchEnd={event => handleGridTouchEnd(event, homePageCount)}>
               {visibleHomePhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
                 const tH = compactMode && categoryKeyboardOpen ? HOME_TILE_H_COMPACT : categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
@@ -731,8 +773,12 @@ export default function CategoryPanel() {
               </button>}
               <div
                 data-testid="category-strip"
+                ref={categoryDesktop.ref}
                 className="aac-category-strip grid flex-1 min-w-0 gap-1 px-1 py-1.5"
+                {...categoryDesktop.bind(categoryPageCount, categoryTouchHandlers)}
+                onTouchEnd={event => handleCategoryTouchEnd(event, categoryPageCount)}
                 style={{
+                  touchAction: 'pan-y pinch-zoom',
                   gridTemplateColumns: `repeat(${visibleTopLevelCats.length}, minmax(0, 1fr))`,
                   paddingBottom: 'max(0.375rem, var(--aac-safe-area-bottom))',
                 }}

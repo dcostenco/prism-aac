@@ -59,6 +59,140 @@ test.afterEach(async ({ page, context }) => {
   await context.close();
 });
 
+test.describe('desktop input without touch emulation', () => {
+  test.use({ hasTouch: false, viewport: { width: 1280, height: 720 } });
+  for (const mode of ['wheel', 'drag'] as const) {
+    test(`Mac ${mode} pages both surfaces without choosing or speaking a word`, async ({ page }, testInfo) => {
+      test.setTimeout(90_000);
+      await page.addInitScript(() => {
+        localStorage.setItem('prism-cat-kb-open', 'false');
+        localStorage.setItem('prism-kb-max', 'false');
+        localStorage.setItem('prism-aac-message', JSON.stringify({ state: { text: '', autoSpeak: false, soundEnabled: false }, version: 3 }));
+      });
+      await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
+      await page.getByRole('button', { name: /settings/i }).first().click();
+      await page.getByRole('dialog').getByRole('button', { name: '4', exact: true }).click();
+      await page.keyboard.press('Escape');
+      const grid = page.locator('.aac-picture-grid');
+      const strip = page.getByTestId('category-strip');
+      const vocabularyStatus = page.getByTestId('vocabulary-page-indicator');
+      const categoryStatus = page.getByTestId('category-page-indicator');
+      const gesture = async (surface: Locator, forward: boolean) => {
+        const box = (await surface.boundingBox())!;
+        const x = box.x + box.width * .6, y = box.y + box.height * .3;
+        await page.mouse.move(x, y);
+        if (mode === 'wheel') {
+          await page.waitForTimeout(220); // a distinct trackpad burst, not momentum
+          for (let i = 0; i < 8; i++) await page.mouse.wheel(forward ? 12 : -12, 0);
+        } else {
+          await page.mouse.down();
+          await page.mouse.move(x + (forward ? -120 : 120), y, { steps: 8 });
+          await page.mouse.up();
+        }
+      };
+      for (const [surface, status] of [[grid, vocabularyStatus], [strip, categoryStatus]] as const) {
+        await gesture(surface, false);
+        await expect(status).toHaveText(/^1\s*\//);
+        await gesture(surface, true);
+        await expect(status).toHaveText(/^2\s*\//);
+        await expect(page.getByRole('region', { name: 'Home vocabulary board' })).toBeVisible();
+        await expect(page.getByTestId('message-content')).toContainText('Type here');
+        if (surface === strip) {
+          await expect.poll(() => grid.getByTestId('phrase-tile-card').evaluateAll(cards => cards.length === 4 && cards.every(card => {
+            const img = card.querySelector('img'); return img?.complete && img.naturalWidth > 0;
+          })), { timeout: 20_000 }).toBe(true);
+          await safeScreenshot(page, testInfo.outputPath(`desktop-${mode}-category.png`), {
+            expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="category-strip"]'],
+            criticalSelectors: ['.aac-category-label'], occluderSelectors: ['[data-testid="picture-mode-sidebar"]'],
+          });
+        }
+        await gesture(surface, false);
+        await expect(status).toHaveText(/^1\s*\//);
+      }
+      await strip.getByTestId('category-tile').filter({ hasText: 'Core Verbs' }).click();
+      await expect(page.getByRole('region', { name: 'Core Verbs', exact: true })).toBeVisible();
+      await gesture(grid, true);
+      await expect(vocabularyStatus).toHaveText(/^2\s*\//);
+      await expect(page.getByTestId('message-content')).toContainText('Type here');
+      await expect.poll(() => grid.getByTestId('phrase-tile-card').evaluateAll(cards => cards.length === 4 && cards.every(card => {
+        const img = card.querySelector('img'); return img?.complete && img.naturalWidth > 0;
+      })), { timeout: 20_000 }).toBe(true);
+      await safeScreenshot(page, testInfo.outputPath(`desktop-${mode}.png`), {
+        expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="picture-board"]'],
+        criticalSelectors: ['.aac-picture-grid .aac-tile-label'],
+        occluderSelectors: ['[data-testid="picture-mode-sidebar"]'],
+      });
+      const word = await grid.getByTestId('phrase-tile-card').first().getAttribute('aria-label');
+      await grid.getByTestId('phrase-tile-card').first().click();
+      await expect(page.getByTestId('message-content')).toContainText(word!, { ignoreCase: true });
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await expect(grid.locator(':scope > *')).toHaveCount(4);
+      await gesture(grid, true);
+      await expect(vocabularyStatus).toHaveText(/^2\s*\//);
+    });
+  }
+});
+
+test('category-strip swipe reveals choices without opening a category or selecting a word', async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
+  await page.addInitScript(() => {
+    localStorage.setItem('prism-cat-kb-open', 'false');
+    localStorage.setItem('prism-kb-max', 'false');
+    localStorage.setItem('prism-aac-settings', JSON.stringify({ state: {
+      gridSize: 4, theme: 'light', language: 'en', outputLanguage: 'en',
+      cloudPredictionEnabled: false, aiAutocorrectEnabled: false,
+    }, version: 20 }));
+    localStorage.setItem('prism-aac-message', JSON.stringify({ state: {
+      text: '', autoSpeak: false, soundEnabled: false,
+    }, version: 3 }));
+  });
+  await page.goto('/prism-aac', { waitUntil: 'domcontentloaded' });
+  const strip = page.getByTestId('category-strip');
+  const status = page.getByTestId('category-page-indicator');
+  const home = page.getByRole('region', { name: 'Home vocabulary board' });
+  await expect(strip).toBeVisible({ timeout: 30_000 });
+  const firstLabels = await strip.getByTestId('category-tile').allTextContents();
+  const pages = Number((await status.textContent())!.split('/')[1]);
+  expect(pages).toBeGreaterThan(1);
+  await swipe(page, strip, 100); // first boundary
+  await expect(status).toHaveText(`1/${pages}`);
+  await swipe(page, strip, -10, 80); // ordinary vertical movement
+  await expect(status).toHaveText(`1/${pages}`);
+  for (let next = 2; next <= pages; next++) {
+    await swipe(page, strip, -100);
+    await expect(status).toHaveText(`${next}/${pages}`);
+    await expect(home).toBeVisible();
+    await expect(page.getByTestId('message-content')).toContainText('Type here');
+  }
+  await swipe(page, strip, -100); // last boundary
+  await expect(status).toHaveText(`${pages}/${pages}`);
+  await expect(page.getByTestId('category-page-next')).toBeDisabled();
+  // Paging is fast enough to finish before lazy pictograms load. A capture of
+  // blank tiles is not visual evidence of the user's working board.
+  await expect.poll(() => home.getByTestId('phrase-tile-card').evaluateAll(cards =>
+    cards.length === 4 && cards.every(card => {
+      const img = card.querySelector('img');
+      return img?.complete && img.naturalWidth > 0;
+    })), { timeout: 20_000 }).toBe(true);
+  await safeScreenshot(page, testInfo.outputPath('category-strip-swiped.png'), {
+    expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="category-strip"]'],
+    criticalSelectors: ['.aac-category-label'], occluderSelectors: ['[data-testid="picture-mode-sidebar"]'],
+  });
+  for (let previous = pages - 1; previous >= 1; previous--) {
+    await swipe(page, strip, 100);
+    await expect(status).toHaveText(`${previous}/${pages}`);
+  }
+  expect(await strip.getByTestId('category-tile').allTextContents()).toEqual(firstLabels);
+  await page.getByTestId('category-page-next').click();
+  await expect(status).toHaveText(`2/${pages}`);
+  await page.getByTestId('category-page-prev').click();
+  await expect(status).toHaveText(`1/${pages}`);
+  await strip.getByTestId('category-tile').filter({ hasText: 'Core Verbs' }).tap();
+  await expect(page.getByRole('region', { name: 'Core Verbs', exact: true })).toBeVisible();
+  await swipe(page, page.locator('.aac-picture-grid'), -100);
+  await expect(page.getByTestId('vocabulary-page-indicator')).toContainText('2 /');
+});
+
 for (const [size, cols] of [[4, 2], [6, 3]] as const) {
   test(`grid ${size} fills home and category board and swipes without selecting a word`, async ({ page }, testInfo) => {
     test.setTimeout(90_000);

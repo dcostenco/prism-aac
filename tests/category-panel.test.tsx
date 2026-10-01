@@ -191,6 +191,7 @@ vi.mock('@/constants/phraseTranslations', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.mockCategories.splice(2);
   mocks.uiState.sidePanel = 'none';
   mocks.uiState.activeCategoryId = null;
   mocks.uiState.categoryPath = [];
@@ -204,6 +205,155 @@ beforeEach(() => {
   mocks.settingsState.outputLanguage = 'en';
   mocks.settingsState.speakSelectionFeedback = false;
   window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+});
+
+describe('CategoryPanel — category-strip swipe', () => {
+  beforeEach(() => {
+    mocks.mockCategories.push(...Array.from({ length: 18 }, (_, index) => ({
+      id: `category-${index}`, name: `Category ${index}`, icon: '📂', parentId: null,
+    })));
+  });
+
+  const swipeStrip = (strip: HTMLElement, dx: number, dy = 0) => {
+    const start = { clientX: 200, clientY: 100 };
+    const end = { clientX: 200 + dx, clientY: 100 + dy };
+    fireEvent.touchStart(strip, { touches: [start] });
+    fireEvent.touchMove(strip, { touches: [end] });
+    fireEvent.touchEnd(strip, { touches: [], changedTouches: [end] });
+  };
+
+  it.each(['grid', 'strip'])('pages %s with Mac wheel input, not vertical scroll or zoom, once per burst', surface => {
+    mocks.settingsState.gridSize = 4;
+    const { container } = render(<CategoryPanel />);
+    const element = surface === 'strip' ? screen.getByTestId('category-strip') : container.querySelector('.aac-picture-grid')!;
+    const status = screen.getByTestId(surface === 'strip' ? 'category-page-indicator' : 'vocabulary-page-indicator');
+    fireEvent.wheel(element, { deltaX: 100, deltaY: 200 });
+    fireEvent.wheel(element, { deltaX: 100, ctrlKey: true });
+    expect(status.textContent).toMatch(/^1\s*\//);
+    for (let i = 0; i < 12; i++) fireEvent.wheel(element, { deltaX: 10 });
+    expect(status.textContent).toMatch(/^2\s*\//);
+    expect(mocks.appendTextMock).not.toHaveBeenCalled();
+    expect(mocks.selectCategoryMock).not.toHaveBeenCalled();
+    expect(mocks.speakWordMock).not.toHaveBeenCalled();
+  });
+
+  const pointer = (element: Element, type: string, x: number, y = 100, pointerType = 'mouse') => {
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 });
+    Object.defineProperties(event, { pointerId: { value: 1 }, pointerType: { value: pointerType } });
+    fireEvent(element, event);
+  };
+
+  it('reverses from the visible category page after resizing reduces page count', () => {
+    const width = Object.getOwnPropertyDescriptor(window, 'innerWidth')!;
+    try {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+      render(<CategoryPanel />);
+      const next = screen.getByTestId('category-page-next');
+      while (!next.hasAttribute('disabled')) fireEvent.click(next);
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 });
+      fireEvent(window, new Event('resize'));
+      expect(screen.getByTestId('category-page-indicator')).toHaveTextContent('3/3');
+      fireEvent.wheel(screen.getByTestId('category-strip'), { deltaX: -100 });
+      expect(screen.getByTestId('category-page-indicator')).toHaveTextContent('2/3');
+    } finally { Object.defineProperty(window, 'innerWidth', width); }
+  });
+
+  it.each(['grid', 'strip'])('mouse-drag pages %s safely and preserves subsequent mouse, keyboard and touch activation', surface => {
+    mocks.settingsState.gridSize = 4;
+    mocks.settingsState.speakSelectionFeedback = true;
+    const { container } = render(<CategoryPanel />);
+    const element = surface === 'strip' ? screen.getByTestId('category-strip') : container.querySelector('.aac-picture-grid')!;
+    const status = screen.getByTestId(surface === 'strip' ? 'category-page-indicator' : 'vocabulary-page-indicator');
+    pointer(element, 'pointerdown', 200);
+    pointer(element, 'pointermove', 100);
+    pointer(element, 'pointerup', 100);
+    expect(status.textContent).toMatch(/^2\s*\//);
+    const tile = element.querySelector('button')!;
+    const activate = surface === 'strip' ? mocks.selectCategoryMock : mocks.appendTextMock;
+    fireEvent.click(tile, { detail: 1 });
+    expect(activate).not.toHaveBeenCalled();
+    expect(mocks.speakWordMock).not.toHaveBeenCalled();
+    fireEvent.click(tile, { detail: 0 });
+    expect(activate).toHaveBeenCalledTimes(1);
+    pointer(tile, 'pointerdown', 200);
+    pointer(tile, 'pointerup', 200);
+    fireEvent.click(tile, { detail: 1 });
+    expect(activate).toHaveBeenCalledTimes(2);
+    pointer(element, 'pointerdown', 200);
+    pointer(element, 'pointermove', 100);
+    pointer(element, 'pointercancel', 100);
+    // A deliberate touch after an interrupted mouse drag must still work.
+    pointer(tile, 'pointerdown', 200, 100, 'touch');
+    fireEvent.touchStart(tile, { touches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.touchEnd(tile, { touches: [], changedTouches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.click(tile, { detail: 1 });
+    expect(activate).toHaveBeenCalledTimes(3);
+  });
+
+  it.each(['grid', 'strip'])('wheel paging %s clamps bounds and accepts a new reverse burst and line deltas', surface => {
+    mocks.settingsState.gridSize = 4;
+    const { container } = render(<CategoryPanel />);
+    const element = surface === 'strip' ? screen.getByTestId('category-strip') : container.querySelector('.aac-picture-grid')!;
+    const status = screen.getByTestId(surface === 'strip' ? 'category-page-indicator' : 'vocabulary-page-indicator');
+    const time = vi.spyOn(performance, 'now');
+    try {
+      let now = 1000;
+      const wheel = (dx: number, mode = 0) => {
+        time.mockReturnValue(now += 300);
+        fireEvent.wheel(element, { deltaX: dx, deltaMode: mode });
+      };
+      wheel(-100);
+      expect(status.textContent).toMatch(/^1\s*\//);
+      wheel(3, 1);
+      expect(status.textContent).toMatch(/^2\s*\//);
+      wheel(-100);
+      expect(status.textContent).toMatch(/^1\s*\//);
+      for (let i = 0; i < 30; i++) wheel(100);
+      expect(surface === 'strip' ? screen.getByTestId('category-page-next') : screen.getByRole('button', { name: 'Next page', exact: true })).toBeDisabled();
+    } finally { time.mockRestore(); }
+  });
+
+  it('browses categories without selecting one, retains arrow bounds and permits intentional activation', () => {
+    render(<CategoryPanel />);
+    const strip = screen.getByTestId('category-strip');
+    const status = screen.getByTestId('category-page-indicator');
+    swipeStrip(strip, -100);
+    expect(status).toHaveTextContent('2/3');
+    const tile = screen.getAllByTestId('category-tile')[0];
+    fireEvent.click(tile, { detail: 1 });
+    expect(mocks.selectCategoryMock).not.toHaveBeenCalled();
+    expect(mocks.appendTextMock).not.toHaveBeenCalled();
+    expect(mocks.speakWordMock).not.toHaveBeenCalled();
+    fireEvent.click(tile, { detail: 0 }); // keyboard/switch activation
+    expect(mocks.selectCategoryMock).toHaveBeenCalledTimes(1);
+    const touch = { clientX: 100, clientY: 100 };
+    fireEvent.touchStart(tile, { touches: [touch] });
+    fireEvent.touchEnd(tile, { touches: [], changedTouches: [touch] });
+    fireEvent.click(tile, { detail: 1 });
+    expect(mocks.selectCategoryMock).toHaveBeenCalledTimes(2);
+    swipeStrip(strip, -100);
+    swipeStrip(strip, -100);
+    expect(status).toHaveTextContent('3/3');
+    expect(screen.getByTestId('category-page-next')).toBeDisabled();
+    swipeStrip(strip, 100);
+    fireEvent.click(screen.getByTestId('category-page-prev'));
+    swipeStrip(strip, 100);
+    expect(status).toHaveTextContent('1/3');
+    expect(screen.getByTestId('category-page-prev')).toBeDisabled();
+    expect(screen.getByTestId('vocabulary-page-indicator')).toHaveTextContent('1 /');
+  });
+
+  it.each(['vertical', 'short', 'cancel', 'multitouch'])('does not browse categories on %s gestures', kind => {
+    render(<CategoryPanel />);
+    const strip = screen.getByTestId('category-strip');
+    const start = { clientX: 200, clientY: 100 };
+    const end = { clientX: kind === 'short' ? 180 : 100, clientY: kind === 'vertical' ? 250 : 100 };
+    fireEvent.touchStart(strip, { touches: [start] });
+    if (kind === 'cancel') fireEvent.touchCancel(strip);
+    if (kind === 'multitouch') fireEvent.touchMove(strip, { touches: [start, end] });
+    fireEvent.touchEnd(strip, { touches: [], changedTouches: [end] });
+    expect(screen.getByTestId('category-page-indicator')).toHaveTextContent('1/3');
+  });
 });
 
 // ── render gating ─────────────────────────────────────────────────────────────
