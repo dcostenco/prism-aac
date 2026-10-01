@@ -39,6 +39,17 @@ LOG="$(mktemp -t pw-watchdog.XXXXXX)"
 echo "[watchdog] mode=$RUN_LABEL  log=$LOG  min_free=${MIN_FREE_GB}GB  stall=${MAX_STALL_S}s  total=${MAX_TOTAL_S}s"
 
 free_gb() {
+  # macOS retains reclaimable cache outside vm_stat's free pages. Prefer
+  # the kernel's available-memory estimate; preserve the page-count fallback.
+  local available_pct memory_bytes
+  available_pct="$(memory_pressure -Q 2>/dev/null | awk '/System-wide memory free percentage:/ {gsub(/%/, "", $NF); print $NF}')"
+  memory_bytes="$(sysctl -n hw.memsize 2>/dev/null)"
+  if awk -v pct="$available_pct" -v bytes="$memory_bytes" 'BEGIN {
+    exit !(pct ~ /^[0-9]+$/ && pct >= 0 && pct <= 100 && bytes ~ /^[0-9]+$/ && bytes > 0)
+  }'; then
+    awk -v pct="$available_pct" -v bytes="$memory_bytes" 'BEGIN {printf "%.2f", bytes*pct/100/1024/1024/1024}'
+    return
+  fi
   vm_stat | awk '
     NR == 1 {
       if (match($0, /page size of [0-9]+ bytes/)) {

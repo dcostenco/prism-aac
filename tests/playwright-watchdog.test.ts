@@ -16,6 +16,13 @@ afterEach(async () => {
 });
 
 describe('Playwright watchdog process isolation', () => {
+  it('uses kernel availability before raw free pages on cached macOS hosts', () => {
+    const script = readFileSync(resolve('scripts/playwright-watchdog.sh'), 'utf8');
+    expect(script).toContain('memory_pressure -Q');
+    expect(script.indexOf('memory_pressure -Q')).toBeLessThan(script.indexOf('vm_stat | awk'));
+    expect(script).toContain('pct >= 0 && pct <= 100');
+    expect(script).toContain('bytes > 0');
+  });
   it('pins process-group cleanup and forbids machine-wide browser kills', () => {
     const script = readFileSync(resolve('scripts/playwright-watchdog.sh'), 'utf8');
 

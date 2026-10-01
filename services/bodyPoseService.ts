@@ -675,13 +675,13 @@ export function startPoseTracker(
   }
   const calibration: PoseCalibrationData = isCorruptNarrow
     ? { ...DEFAULT_CALIBRATION }
-    : loadedCal;
+    : { ...loadedCal };
   if (isCorruptNarrow) {
     try { savePoseCalibration(calibration); } catch { /* */ }
   }
   // T-5 FIX (v3): wizard flag now stored in calibration data (per-user).
   // Once the wizard completes, the learner is ALWAYS expand-only.
-  const isFactoryDefaults = !wizardDone && !calibration.wizardCompleted && (
+  let isFactoryDefaults = !wizardDone && !calibration.wizardCompleted && (
     Math.abs(calibration.leftX - DEFAULT_CALIBRATION.leftX) < 0.001 &&
     Math.abs(calibration.rightX - DEFAULT_CALIBRATION.rightX) < 0.001 &&
     Math.abs(calibration.topY - DEFAULT_CALIBRATION.topY) < 0.001 &&
@@ -724,6 +724,10 @@ export function startPoseTracker(
   // but removes per-frame jitter that raw FaceLandmarker iris has).
   let irisSmoothedX: number | null = null;
   let irisSmoothedY: number | null = null;
+  // Iris centers are anatomically above the nose even at neutral gaze.
+  // Blend changes relative to this tracker session's first valid gaze,
+  // not that static offset, which otherwise pins neutral to a screen edge.
+  let irisReference: { x: number; y: number } | null = null;
   // Baseline tracker — exp-averaged pose center + variance, lets us
   // detect slow drift (auto-focus shift, user shifted in seat) and
   // suggest calibration corrections without forcing recalibration.
@@ -1026,17 +1030,19 @@ export function startPoseTracker(
             const leftIris  = fl?.[473];
             const faceTip   = fl?.[1];
             if (rightIris && leftIris && faceTip &&
-                Number.isFinite(rightIris.x) && Number.isFinite(leftIris.x) &&
-                Number.isFinite(faceTip.x)) {
+                [rightIris.x, rightIris.y, leftIris.x, leftIris.y, faceTip.x, faceTip.y].every(Number.isFinite)) {
               const rawIrisX = (rightIris.x + leftIris.x) / 2;
               const rawIrisY = (rightIris.y + leftIris.y) / 2;
               const rawGazeX = rawIrisX - faceTip.x;
               const rawGazeY = rawIrisY - faceTip.y;
+              if (!irisReference) irisReference = { x: rawGazeX, y: rawGazeY };
+              const gazeX = rawGazeX - irisReference.x;
+              const gazeY = rawGazeY - irisReference.y;
               // Heavy smoothing — iris jitter ±0.005, we need ±<0.001 after smooth.
               // alpha=0.15 gives σ_out ≈ sqrt(0.15/1.85) × σ_in ≈ 0.28 × σ_in → ±0.0014.
               const IRIS_ALPHA = 0.15;
-              irisSmoothedX = irisSmoothedX === null ? rawGazeX : irisSmoothedX * (1 - IRIS_ALPHA) + rawGazeX * IRIS_ALPHA;
-              irisSmoothedY = irisSmoothedY === null ? rawGazeY : irisSmoothedY * (1 - IRIS_ALPHA) + rawGazeY * IRIS_ALPHA;
+              irisSmoothedX = irisSmoothedX === null ? gazeX : irisSmoothedX * (1 - IRIS_ALPHA) + gazeX * IRIS_ALPHA;
+              irisSmoothedY = irisSmoothedY === null ? gazeY : irisSmoothedY * (1 - IRIS_ALPHA) + gazeY * IRIS_ALPHA;
               // Conservative gain: ±0.0014 smoothed jitter × 4 = ±0.006 cursor jitter.
               // At rangeX=0.6, sensitivity=10: ±0.006/0.6×1440×2=±29px — acceptable.
               // Screen-size factor: large screens need slightly more gaze travel.
@@ -1137,14 +1143,14 @@ export function startPoseTracker(
           calibration.bottomY = Math.max(0, Math.min(1, calibration.bottomY));
 
           // T-2 FIX: only guard against truly corrupt calibrations (inverted
-          // or zero ranges). The mapNormToScreen function at line ~310 already
-          // handles the MIN_RANGE fallback for cursor mapping. This duplicate
+          // or zero ranges). mapPoseToScreen handles the MIN_RANGE fallback
+          // for cursor mapping without overwriting calibration. This duplicate
           // check was resetting valid narrow-range calibrations (0.03-0.20)
           // every tick, preventing AAC users with limited motion from ever
           // getting a stable cursor. Now: only reset if ranges are negative
           // (inverted data from corrupt localStorage).
-          let rangeX = calibration.leftX - calibration.rightX;
-          let rangeY = calibration.bottomY - calibration.topY;
+          const rangeX = calibration.leftX - calibration.rightX;
+          const rangeY = calibration.bottomY - calibration.topY;
           if (rangeX <= 0 || rangeY <= 0) {
             console.warn(
               '[PoseTracker] CALIBRATION CORRUPT — inverted ranges: ' +
@@ -1160,22 +1166,16 @@ export function startPoseTracker(
             calibration.topY = DEFAULT_CALIBRATION.topY;
             calibration.bottomY = DEFAULT_CALIBRATION.bottomY;
             try { savePoseCalibration(calibration); } catch {}
-            rangeX = calibration.leftX - calibration.rightX;
-            rangeY = calibration.bottomY - calibration.topY;
           }
 
-          let rawX = ((mirroredX - calibration.rightX) / rangeX) * window.innerWidth;
-          let rawY = ((normY - calibration.topY) / rangeY) * window.innerHeight;
-
-          // Sensitivity
-          const centerX = window.innerWidth / 2;
-          const centerY = window.innerHeight / 2;
-          rawX = centerX + (rawX - centerX) * sensitivityScale;
-          rawY = centerY + (rawY - centerY) * sensitivityScale;
-
-          // Clamp
-          rawX = Math.max(0, Math.min(window.innerWidth, rawX));
-          rawY = Math.max(0, Math.min(window.innerHeight, rawY));
+          // Preserve the existing input clamp/mirroring; the shared mapper
+          // applies sensitivity and safe-range fallback before filtering.
+          const mapped = mapPoseToScreen(
+            1 - mirroredX, normY, calibration, sensitivityScale,
+            window.innerWidth, window.innerHeight,
+          );
+          const rawX = mapped.x;
+          const rawY = mapped.y;
 
           // ── Ego-motion compensation (TRACKING_RELIABILITY.md item E) ──
           //
@@ -1288,10 +1288,14 @@ export function startPoseTracker(
               if (correction?.kind === 'offset') {
                 const dx = correction.deltaNormX ?? 0;
                 const dy = correction.deltaNormY ?? 0;
-                calibration.leftX = Math.max(0, Math.min(1, calibration.leftX + dx));
-                calibration.rightX = Math.max(0, Math.min(1, calibration.rightX + dx));
-                calibration.topY = Math.max(0, Math.min(1, calibration.topY + dy));
-                calibration.bottomY = Math.max(0, Math.min(1, calibration.bottomY + dy));
+                // Translate the rectangle without shrinking it at frame edges.
+                const appliedX = Math.max(-calibration.rightX, Math.min(1 - calibration.leftX, dx));
+                const appliedY = Math.max(-calibration.topY, Math.min(1 - calibration.bottomY, dy));
+                calibration.leftX += appliedX;
+                calibration.rightX += appliedX;
+                calibration.topY += appliedY;
+                calibration.bottomY += appliedY;
+                baselineTracker.acceptCorrection(now);
                 try { savePoseCalibration(calibration); } catch {}
               }
             }
@@ -1390,6 +1394,13 @@ export function startPoseTracker(
       calibration.rightX = data.rightX;
       calibration.topY = data.topY;
       calibration.bottomY = data.bottomY;
+      if (data.wizardCompleted !== undefined) calibration.wizardCompleted = data.wizardCompleted;
+      // Wizard completion changes the running learner too, not just the
+      // persisted flag. Accuracy-test neutral frames cannot shrink its range.
+      if (calibration.wizardCompleted) isFactoryDefaults = false;
+      learner.reset();
+      lastLearnerCommitFrame = 0;
+      baselineTracker.reset();
       try { savePoseCalibration(calibration); } catch { /* */ }
     },
   };
