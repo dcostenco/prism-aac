@@ -202,6 +202,7 @@ beforeEach(() => {
   mocks.settingsState.language = 'en';
   mocks.settingsState.gridSize = 9;
   mocks.settingsState.outputLanguage = 'en';
+  mocks.settingsState.speakSelectionFeedback = false;
   window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
 });
 
@@ -250,6 +251,74 @@ describe('CategoryPanel — home board', () => {
     const { container } = render(<CategoryPanel />);
 
     expect(container.querySelectorAll('.aac-picture-grid > *')).toHaveLength(gridSize);
+  });
+
+  it.each([[4, 2, 2], [6, 3, 2], [9, 3, 3], [12, 4, 3], [16, 4, 4], [20, 5, 4]])(
+    'grid %i owns %i columns and %i filling rows instead of touch CSS overrides', (size, columns, rows) => {
+      mocks.settingsState.gridSize = size;
+      const { container } = render(<CategoryPanel />);
+      const grid = container.querySelector<HTMLElement>('.aac-picture-grid')!;
+      expect(grid.style.gridTemplateColumns).toBe(`repeat(${columns}, minmax(0, 1fr))`);
+      expect(grid.style.gridTemplateRows).toBe(`repeat(${rows}, minmax(0, 1fr))`);
+      expect(grid.style.touchAction).toBe('pan-y pinch-zoom');
+    },
+  );
+
+  it('retains all home vocabulary through bounded pages, including the final partial page', () => {
+    mocks.settingsState.gridSize = 4;
+    render(<CategoryPanel />);
+    const pages = Number(screen.getByTestId('vocabulary-page-indicator').textContent!.split('/')[1]);
+    expect(pages).toBeGreaterThan(1);
+    const observed = screen.getAllByTestId('phrase-tile').map(tile => tile.textContent);
+    for (let page = 1; page < pages; page++) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+      observed.push(...screen.getAllByTestId('phrase-tile').map(tile => tile.textContent));
+    }
+    // All eight home categories use the mocked ranked phrases; not merely
+    // counting pages, prove their ordered vocabulary survives page slicing.
+    expect(observed).toEqual(Array.from({ length: 8 }, () => mocks.mockPhrases.map(phrase => phrase.text)).flat());
+    expect(screen.getByTestId('vocabulary-page-indicator')).toHaveTextContent(`${pages} / ${pages}`);
+    expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
+    expect(screen.getAllByTestId('phrase-tile').length).toBeLessThanOrEqual(4);
+    for (let page = 1; page < pages; page++) fireEvent.click(screen.getByRole('button', { name: 'Previous page' }));
+    expect(screen.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+  });
+
+  it('swipes without speaking or selecting a tile, then permits the next deliberate tap and keyboard activation', () => {
+    mocks.settingsState.gridSize = 4;
+    mocks.messageState.soundEnabled = true;
+    mocks.settingsState.speakSelectionFeedback = true;
+    const { container } = render(<CategoryPanel />);
+    const grid = container.querySelector('.aac-picture-grid')!;
+    const start = { clientX: 200, clientY: 100 };
+    const end = { clientX: 100, clientY: 110 };
+    fireEvent.touchStart(grid, { touches: [start] });
+    fireEvent.touchMove(grid, { touches: [end] });
+    fireEvent.touchEnd(grid, { touches: [], changedTouches: [end] });
+    expect(screen.getByTestId('vocabulary-page-indicator')).toHaveTextContent('2 /');
+    const tile = screen.getAllByTestId('phrase-tile')[0];
+    fireEvent.click(tile, { detail: 1 }); // compatibility click from the swipe
+    expect(mocks.appendTextMock).not.toHaveBeenCalled();
+    expect(mocks.speakWordMock).not.toHaveBeenCalled();
+    fireEvent.click(tile, { detail: 0 }); // switch/dwell/keyboard activation
+    expect(mocks.appendTextMock).toHaveBeenCalledTimes(1);
+    fireEvent.touchStart(tile, { touches: [start] });
+    fireEvent.touchEnd(tile, { touches: [], changedTouches: [start] });
+    fireEvent.click(tile, { detail: 1 });
+    expect(mocks.appendTextMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(['vertical', 'short', 'cancel', 'multitouch'])('does not page on %s gestures', kind => {
+    mocks.settingsState.gridSize = 4;
+    const { container } = render(<CategoryPanel />);
+    const grid = container.querySelector('.aac-picture-grid')!;
+    const start = { clientX: 200, clientY: 100 };
+    const end = { clientX: kind === 'short' ? 180 : 100, clientY: kind === 'vertical' ? 250 : 100 };
+    fireEvent.touchStart(grid, { touches: [start] });
+    if (kind === 'cancel') fireEvent.touchCancel(grid);
+    if (kind === 'multitouch') fireEvent.touchMove(grid, { touches: [start, end] });
+    fireEvent.touchEnd(grid, { touches: [], changedTouches: [end] });
+    expect(screen.getByTestId('vocabulary-page-indicator')).toHaveTextContent('1 /');
   });
 
   it('renders category tab strip with category names', () => {
