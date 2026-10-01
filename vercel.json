@@ -30,7 +30,7 @@
       ]
     },
     {
-      "source": "/models/mediapipe/(.*)",
+      "source": "/prism-aac/models/mediapipe/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -43,7 +43,7 @@
       ]
     },
     {
-      "source": "/models/mediapipe/wasm/(.*\\.wasm)",
+      "source": "/prism-aac/models/mediapipe/wasm/(.*\\.wasm)",
       "headers": [
         {
           "key": "Content-Type",

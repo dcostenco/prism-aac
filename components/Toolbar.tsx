@@ -10,9 +10,11 @@ import { ddAction } from '@/lib/datadog';
 import { useT } from '@/engine/useT';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
+import { stopSpeech } from '@/services/speechService';
 import { useMarketplaceStore } from '@/store/marketplaceStore';
 import { getHandler } from '@/lib/marketplace/registry';
 import { useScheduleStore, selectUnreadMessageCount } from '@/store/scheduleStore';
+import { useAuthStore } from '@/store/authStore';
 import LanguagePicker, { LanguageButton } from './LanguagePicker';
 
 const SYNC_ICONS: Record<string, string> = {
@@ -275,7 +277,12 @@ export default function Toolbar() {
         // C2 fix: read language from live store state, not render-time closure.
         // The closure captures `language` at mic-start; if the user switches language
         // during the async correctText call, correction would apply the wrong grammar.
-        const fixed = await correctText(txt.trim(), useSettingsStore.getState().language);
+        const fixed = await correctText(
+          txt.trim(),
+          useSettingsStore.getState().language,
+          'correct',
+          { allowPortal: Boolean(useAuthStore.getState().profile) },
+        );
         if (!voiceRef.current) return;
         const committed = (fixed || txt).trim() + ' ';
         // Bug 1 fix: trimEnd prevents double-space when `committed` already ends with ' '.
@@ -304,7 +311,14 @@ export default function Toolbar() {
     openPdfReader, openOcrCapture, openComfortPlayer,
     toggleHistory, toggleSettings,
     triggerAlert: () => { alertFeedback(); triggerAlert(); },
-    toggleSound: () => { tapFeedback(); toggleSound(); },
+    toggleSound: () => {
+      tapFeedback();
+      // Sound is a master mute, not just a preference for the next phrase.
+      // Stop the current cloud/WebAudio, browser, or WASM utterance before
+      // publishing the muted state so no active hint keeps talking.
+      if (soundEnabled) stopSpeech();
+      toggleSound();
+    },
     toggleMic,
     soundEnabled, listening, voiceSupported,
     unreadMessages,

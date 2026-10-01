@@ -18,9 +18,18 @@
  *   • Always lands in a deterministic terminal state (response shown
  *     OR error shown). Never leaves loading=true after Promise.race.
  */
-import { useState, useCallback, useEffect, useRef } from 'react';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { useMathGridStore, domainForCategory, type MathDomain } from '@/store/mathGridStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useMessageStore } from '@/store/messageStore';
 import { askAI, LANG_NAMES } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { tapFeedback } from '@/services/feedback';
@@ -129,6 +138,33 @@ const TUTOR_CONTEXT_BY_DOMAIN: Record<MathDomain, string> = {
 };
 
 const TUTOR_HARD_TIMEOUT_MS = 15_000;
+const TUTOR_WINDOW_MARGIN = 8;
+
+function speakTutorText(text: string, rate: number, volume: number): void {
+  // Async tutor/evaluator work can finish after a caregiver has muted sound.
+  // Read the store at completion time rather than capturing the request-start
+  // value, otherwise the late response restarts audio while the UI says muted.
+  if (!useMessageStore.getState().soundEnabled) return;
+  void aacSpeak(text, rate, volume);
+}
+
+type TutorWindowPosition = { x: number; y: number };
+
+function containedTutorPosition(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  viewportWidth: number,
+  viewportHeight: number,
+): TutorWindowPosition {
+  const maxX = Math.max(TUTOR_WINDOW_MARGIN, viewportWidth - width - TUTOR_WINDOW_MARGIN);
+  const maxY = Math.max(TUTOR_WINDOW_MARGIN, viewportHeight - height - TUTOR_WINDOW_MARGIN);
+  return {
+    x: Math.min(Math.max(TUTOR_WINDOW_MARGIN, x), maxX),
+    y: Math.min(Math.max(TUTOR_WINDOW_MARGIN, y), maxY),
+  };
+}
 
 function serializeAsExpression(cells: Map<CellKey, Cell>): string {
   if (cells.size === 0) return '';
@@ -177,7 +213,18 @@ export default function MathTutorTool() {
   const [mode, setMode] = useState<TutorMode | null>(null);
   const [loading, setLoading] = useState(false);
   const [traceSteps, setTraceSteps] = useState<TraceStep[]>([]);
+  const [windowPosition, setWindowPosition] = useState<TutorWindowPosition | null>(null);
+  const [dragging, setDragging] = useState(false);
   const lastCellCount = useRef(cells.size);
+  const toolRef = useRef<HTMLDivElement>(null);
+  const responseRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  } | null>(null);
   // Used to cancel an in-flight tutor request when the user taps a
   // different mode or dismisses. The actual askAI fetch can't be
   // aborted cleanly without threading a signal through every call
@@ -244,7 +291,7 @@ export default function MathTutorTool() {
       const finalResponse = buffer || result.text;
       setResponse(finalResponse);
       if (finalResponse) {
-        aacSpeak(finalResponse, speechRate, speechVolume);
+        speakTutorText(finalResponse, speechRate, speechVolume);
         // Record successful check/solve for App Store review prompt trigger
         if (which === 'check' || which === 'solve') {
           recordMathExerciseComplete();
@@ -301,7 +348,7 @@ export default function MathTutorTool() {
           result.value,
         ].filter(Boolean).join('\n').trim() || '(no output)';
         setResponse(out);
-        aacSpeak(out.slice(0, 200), speechRate, speechVolume);
+        speakTutorText(out.slice(0, 200), speechRate, speechVolume);
       } else {
         setErrorKind('other');
         setResponse(`⚠️ ${result.error}`);
@@ -323,7 +370,7 @@ export default function MathTutorTool() {
       if (result.ok) {
         const out = result.stdout.trim() || '(no output)';
         setResponse(out + (result.wrapped ? '\n\n(wrapped in default Main class)' : ''));
-        aacSpeak(out.slice(0, 200), speechRate, speechVolume);
+        speakTutorText(out.slice(0, 200), speechRate, speechVolume);
       } else {
         setErrorKind('other');
         setResponse(`⚠️ ${result.error}`);
@@ -337,7 +384,7 @@ export default function MathTutorTool() {
     const result = evaluateExpression(expression);
     if (result.ok) {
       setResponse(`= ${result.value}`);
-      aacSpeak(`equals ${result.value}`, speechRate, speechVolume);
+      speakTutorText(`equals ${result.value}`, speechRate, speechVolume);
     } else {
       setErrorKind('other');
       setResponse(`⚠️ ${result.error}`);
@@ -391,9 +438,111 @@ export default function MathTutorTool() {
   const domain = domainForCategory(activeCategory);
   const evalAvailable = EVAL_DOMAINS.has(domain);
   const debugAvailable = domain === 'programming-python';
+  const responseVisible = loading || Boolean(response);
+
+  const containWindow = useCallback((x: number, y: number) => {
+    const overlay = responseRef.current;
+    if (!overlay) return { x, y };
+    const rect = overlay.getBoundingClientRect();
+    return containedTutorPosition(
+      x,
+      y,
+      rect.width,
+      rect.height,
+      window.innerWidth,
+      window.innerHeight,
+    );
+  }, []);
+
+  // Anchor the response below the tutor controls on first open, but
+  // clamp it to the viewport. This replaces the old right-aligned
+  // absolute positioning that could push most of the window off the
+  // left edge when the Hint button sat near the start of the toolbar.
+  useLayoutEffect(() => {
+    if (!responseVisible) return;
+    const frame = window.requestAnimationFrame(() => {
+      const overlay = responseRef.current;
+      const tool = toolRef.current;
+      if (!overlay || !tool) return;
+      const overlayRect = overlay.getBoundingClientRect();
+      const toolRect = tool.getBoundingClientRect();
+      setWindowPosition((current) => {
+        const next = containedTutorPosition(
+          current?.x ?? toolRect.right - overlayRect.width,
+          current?.y ?? toolRect.bottom + TUTOR_WINDOW_MARGIN,
+          overlayRect.width,
+          overlayRect.height,
+          window.innerWidth,
+          window.innerHeight,
+        );
+        return current && current.x === next.x && current.y === next.y ? current : next;
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [responseVisible, response, errorKind, traceSteps.length]);
+
+  useEffect(() => {
+    const containAfterResize = () => {
+      setWindowPosition((current) => current ? containWindow(current.x, current.y) : current);
+    };
+    window.addEventListener('resize', containAfterResize);
+    return () => window.removeEventListener('resize', containAfterResize);
+  }, [containWindow]);
+
+  const beginDrag = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const overlay = responseRef.current;
+    if (!overlay) return;
+    event.preventDefault();
+    const rect = overlay.getBoundingClientRect();
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: rect.left,
+      originY: rect.top,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setWindowPosition({ x: rect.left, y: rect.top });
+    setDragging(true);
+  }, []);
+
+  const continueDrag = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    setWindowPosition(containWindow(
+      drag.originX + event.clientX - drag.startX,
+      drag.originY + event.clientY - drag.startY,
+    ));
+  }, [containWindow]);
+
+  const endDrag = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (dragRef.current?.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    setDragging(false);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
+
+  const moveWithKeyboard = useCallback((event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    const delta = event.shiftKey ? 48 : 16;
+    const direction = {
+      ArrowLeft: [-delta, 0],
+      ArrowRight: [delta, 0],
+      ArrowUp: [0, -delta],
+      ArrowDown: [0, delta],
+    }[event.key];
+    if (!direction) return;
+    event.preventDefault();
+    const rect = responseRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const current = windowPosition ?? { x: rect.left, y: rect.top };
+    setWindowPosition(containWindow(current.x + direction[0], current.y + direction[1]));
+  }, [containWindow, windowPosition]);
 
   return (
-    <div data-testid="math-tutor-tool" className="relative">
+    <div ref={toolRef} data-testid="math-tutor-tool" className="relative">
       <div className="flex items-center gap-1.5">
         <button
           onClick={() => ask('help')}
@@ -446,18 +595,46 @@ export default function MathTutorTool() {
         )}
       </div>
 
-      {(loading || response) && (
+      {responseVisible && (
         <div
-          className="absolute right-0 top-full mt-2 w-[28rem] max-w-[80vw] surface-bar border border-theme rounded-xl shadow-xl z-40 p-3"
+          ref={responseRef}
+          className="fixed w-[28rem] max-w-[calc(100vw-1rem)] max-h-[calc(100vh-1rem)] overflow-y-auto surface-bar border border-theme rounded-xl shadow-xl z-[70] p-3"
+          style={windowPosition
+            ? { left: windowPosition.x, top: windowPosition.y }
+            : { right: TUTOR_WINDOW_MARGIN, top: TUTOR_WINDOW_MARGIN }}
           data-testid="math-tutor-response"
           data-mode={mode ?? ''}
           data-domain={domainForCategory(activeCategory)}
           data-error-kind={errorKind ?? ''}
           data-loading={loading ? '1' : '0'}
-          role="status"
-          aria-live="polite"
+          data-dragging={dragging ? '1' : '0'}
         >
-          <div className="flex items-start gap-2">
+          <div className="mb-2 flex items-center gap-2">
+            <button
+              type="button"
+              data-testid="math-tutor-drag-handle"
+              aria-label="Move hint window"
+              aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
+              onPointerDown={beginDrag}
+              onPointerMove={continueDrag}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              onKeyDown={moveWithKeyboard}
+              className={`aac-btn min-h-[44px] flex-1 rounded-lg px-3 text-sm font-bold surface-key border border-theme touch-none select-none ${dragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            >
+              <span data-testid="math-tutor-drag-label">↔ Move</span>
+            </button>
+            <button
+              type="button"
+              onClick={dismiss}
+              className="aac-btn min-h-[44px] min-w-[44px] rounded-lg surface-key border border-theme text-muted text-xl flex items-center justify-center"
+              aria-label="Dismiss"
+              data-testid="math-tutor-dismiss"
+            >
+              <span data-testid="math-tutor-dismiss-label" aria-hidden="true">×</span>
+            </button>
+          </div>
+          <div className="flex items-start gap-2" role="status" aria-live="polite">
             <span className="text-2xl shrink-0">{mode === 'debug' ? '🐛' : mode === 'eval' ? '🧮' : '🤖'}</span>
             <div className="flex-1 text-primary text-sm leading-relaxed">
               {loading && !response ? (
@@ -524,7 +701,7 @@ export default function MathTutorTool() {
                     key={i}
                     onClick={async () => {
                       tapFeedback();
-                      aacSpeak(opt, speechRate, speechVolume);
+                      speakTutorText(opt, speechRate, speechVolume);
                       // Send as follow-up to the AI tutor
                       setLoading(true);
                       setResponse('');
@@ -541,7 +718,7 @@ export default function MathTutorTool() {
                         const finalBuf = buf || result.text;
                         if (mySeq === requestSeqRef.current && finalBuf) {
                           setResponse(finalBuf);
-                          aacSpeak(finalBuf, speechRate, speechVolume);
+                          speakTutorText(finalBuf, speechRate, speechVolume);
                         }
                       } catch { if (mySeq === requestSeqRef.current) setResponse('⚠️ Could not get a response.'); }
                       if (mySeq === requestSeqRef.current) setLoading(false);
@@ -554,14 +731,6 @@ export default function MathTutorTool() {
               </div>
             );
           })()}
-          <button
-            onClick={dismiss}
-            className="absolute top-1 right-2 text-muted text-xs px-1"
-            aria-label="Dismiss"
-            data-testid="math-tutor-dismiss"
-          >
-            ×
-          </button>
         </div>
       )}
 

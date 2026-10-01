@@ -179,6 +179,34 @@ html, body {
   color: #000000;
 }
 
+/* Category names are navigation, so never replace part of a name with an
+ * ellipsis. Preserve authored word boundaries while removing WebKit
+ * line-clamp so FittedTileLabel can measure real overflow and shrink only
+ * when the complete name does not fit. */
+.aac-category-label {
+  display: block;
+  max-height: calc(2.3em + 0.4rem);
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+  text-overflow: clip;
+  -webkit-line-clamp: unset;
+}
+
+@media (max-width: 767px) and (min-height: 501px) {
+  [data-testid="picture-board"] .aac-category-strip {
+    align-items: stretch;
+    padding-block: 0.25rem;
+  }
+
+  [data-testid="picture-board"] .aac-category-tile {
+    height: 100%;
+    overflow: hidden;
+    gap: 0;
+    padding: 0;
+  }
+}
+
 .aac-tile-icon {
   display: flex;
   align-items: center;
@@ -443,6 +471,7 @@ html, body {
   }
 
   [data-aac-device-class="phone"] [data-testid="picture-board"] .aac-category-label {
+    max-height: 3.3em;
     overflow-wrap: normal;
     word-break: normal;
     hyphens: none;

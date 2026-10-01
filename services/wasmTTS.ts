@@ -88,6 +88,10 @@ let wasmLoadAttempted = false;
 let audioCtx: AudioContext | null = null;
 let activeBeepTimeout: ReturnType<typeof setTimeout> | null = null;
 let beepAbortController: AbortController | null = null;
+// Invalidates work that is still behind an async boundary (WASM synthesis or
+// AudioContext.resume). Active-node cleanup alone cannot stop audio that has
+// not been created yet.
+let wasmStopGeneration = 0;
 // Track active oscillators so stopWasmSpeech() can kill them instantly.
 // Without this, oscillators scheduled via ctx.currentTime continue playing
 // even after abort — causing unstoppable noise for sensory-sensitive children.
@@ -210,13 +214,17 @@ export async function speakWasm(
   const config = getWasmTTSConfig();
   if (!config.enabled) return false;
 
+  const startedBeforeStopGeneration = wasmStopGeneration;
+  const wasStopped = () => startedBeforeStopGeneration !== wasmStopGeneration;
+
   const effectiveRate = clamp(rate ?? config.rate, 0.5, 2.0);
   const effectiveVolume = clamp(volume ?? config.volume, 0, 1);
 
   // Attempt 1: espeak-ng WASM
   if (wasmReady && espeakModule) {
     try {
-      const success = await speakWithEspeak(text, lang, effectiveRate, effectiveVolume);
+      const success = await speakWithEspeak(text, lang, effectiveRate, effectiveVolume, wasStopped);
+      if (wasStopped()) return false;
       if (success) return true;
     } catch (err) {
       console.warn('[PrismAAC] WASM TTS: espeak synthesis failed, falling back to beep', err);
@@ -225,7 +233,9 @@ export async function speakWasm(
 
   // Attempt 2: Beep pattern — absolute last resort
   try {
-    await speakWithBeeps(text, effectiveRate, effectiveVolume);
+    if (wasStopped()) return false;
+    await speakWithBeeps(text, effectiveRate, effectiveVolume, wasStopped);
+    if (wasStopped()) return false;
     return true;
   } catch (err) {
     console.error('[PrismAAC] WASM TTS: even beep fallback failed', err);
@@ -237,6 +247,7 @@ export async function speakWasm(
  * Stop any currently playing WASM speech (espeak or beep pattern).
  */
 export function stopWasmSpeech(): void {
+  wasmStopGeneration += 1;
   // Abort any in-progress beep sequence
   if (beepAbortController) {
     beepAbortController.abort();
@@ -343,6 +354,7 @@ async function speakWithEspeak(
   lang: string,
   rate: number,
   volume: number,
+  wasStopped: () => boolean,
 ): Promise<boolean> {
   if (!espeakModule) return false;
 
@@ -376,6 +388,7 @@ async function speakWithEspeak(
     return false;
   }
 
+  if (wasStopped()) return false;
   if (!pcmSamples || pcmSamples.length === 0) return false;
 
   // Convert Int16 PCM → Float32 AudioBuffer
@@ -388,6 +401,7 @@ async function speakWithEspeak(
   const audioBuffer = ctx.createBuffer(1, floats.length, sampleRate);
   audioBuffer.getChannelData(0).set(floats);
 
+  if (wasStopped()) return false;
   const source = ctx.createBufferSource();
   source.buffer = audioBuffer;
 
@@ -413,6 +427,12 @@ async function speakWithEspeak(
       resolve(true);
     };
     try {
+      if (wasStopped()) {
+        clearTimeout(timeoutId);
+        _activeBufferSources.delete(source);
+        resolve(false);
+        return;
+      }
       source.start(0);
     } catch {
       clearTimeout(timeoutId);
@@ -449,7 +469,9 @@ async function speakWithBeeps(
   text: string,
   rate: number,
   volume: number,
+  wasStopped: () => boolean,
 ): Promise<void> {
+  if (wasStopped()) return;
   const ctx = getAudioContext();
 
   // SAFETY: if context is suspended (device slept, background tab),
@@ -458,7 +480,7 @@ async function speakWithBeeps(
   // when the device wakes, risking acoustic trauma for sensory-sensitive children).
   if (ctx.state === 'suspended') {
     try { await ctx.resume(); } catch { return; }
-    if ((ctx.state as string) !== 'running') return;
+    if (wasStopped() || (ctx.state as string) !== 'running') return;
   }
 
   const masterGain = ctx.createGain();
@@ -471,6 +493,11 @@ async function speakWithBeeps(
   // Abort controller so stopWasmSpeech() can cancel mid-sequence
   beepAbortController = new AbortController();
   const signal = beepAbortController.signal;
+  if (wasStopped()) {
+    beepAbortController.abort();
+    beepAbortController = null;
+    return;
+  }
 
   const VOWELS = new Set('aeiouAEIOUàáâãäåèéêëìíîïòóôõöùúûüÿаеёиоуыэюяіїєґ');
 
@@ -489,7 +516,7 @@ async function speakWithBeeps(
   sequence.push({ freq: 0, duration: 120 * speedFactor }); // pause before content
 
   for (const ch of text) {
-    if (signal.aborted) return;
+    if (signal.aborted || wasStopped()) return;
 
     if (ch === ' ' || ch === '\n' || ch === '\t') {
       // Word boundary — silence
@@ -520,7 +547,7 @@ async function speakWithBeeps(
   let offset = ctx.currentTime + 0.02; // tiny lead-in to avoid click
 
   for (const tone of sequence) {
-    if (signal.aborted) return;
+    if (signal.aborted || wasStopped()) return;
 
     const durationSec = tone.duration / 1000;
 

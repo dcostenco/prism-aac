@@ -91,7 +91,7 @@ test.beforeEach(async ({ page }, testInfo) => {
     .toHaveAttribute('data-aac-mode', 'picture', { timeout: 20_000 });
   await expect(page.getByTestId('picture-board')).toBeVisible();
   await expect(page.getByTestId('phrase-tile-card').first()).toBeVisible();
-  await expect(page.getByTestId('category-tile').nth(3)).toBeVisible();
+  await expect(page.getByTestId('category-tile').first()).toBeVisible();
   await expectVisiblePictograms(page, true);
 });
 
@@ -221,10 +221,10 @@ test('fits four full-width picture targets with reachable navigation and readabl
   expect(metrics.visibleFirstRowLabelCount).toBe(4);
   expect(metrics.grid.height).toBeGreaterThanOrEqual(isLandscape ? 72 : 180);
 
-  expect(metrics.categoryRects).toHaveLength(4);
+  expect(metrics.categoryRects.length).toBeGreaterThanOrEqual(2);
   expect(Math.max(...metrics.categoryRects.map((rect) => rect.top)) - Math.min(...metrics.categoryRects.map((rect) => rect.top))).toBeLessThanOrEqual(2);
-  expect(Math.min(...metrics.categoryRects.map((rect) => rect.width))).toBeGreaterThanOrEqual((metrics.board.width - 28) / 4 - 0.5);
-  expect(Math.max(...metrics.categoryRects.map((rect) => rect.right))).toBeLessThanOrEqual(viewport!.width + 1);
+  expect(Math.min(...metrics.categoryRects.map((rect) => rect.width))).toBeGreaterThanOrEqual(88);
+  expect(Math.max(...metrics.categoryRects.map((rect) => rect.right))).toBeLessThanOrEqual(metrics.strip.right + 1);
 
   expect(metrics.predictionRects).toHaveLength(5);
   expect(Math.min(...metrics.predictionRects.map((rect) => Math.min(rect.width, rect.height)))).toBeGreaterThanOrEqual(68);

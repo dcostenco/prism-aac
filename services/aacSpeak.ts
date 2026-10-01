@@ -45,6 +45,10 @@ function prepareTranslatedUtterance(text: string, lang: SupportedLanguage): stri
 // last picked tone is forced for every utterance.
 export async function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, interrupt = false, spokenLang?: SupportedLanguage): Promise<void> {
   if (!text?.trim()) return;
+  // Central master-mute gate. Most UI callers avoid invoking aacSpeak while
+  // muted, but async completions (AI hints, evaluation, delayed translation)
+  // must also fail closed when they arrive after Sound Off was selected.
+  if (!useMessageStore.getState().soundEnabled) return;
 
   try {
     const { language, outputLanguage } = useSettingsStore.getState();
@@ -128,6 +132,9 @@ export async function aacSpeak(text: string, rate: number, volume: number, tone?
     // Last resort: speak original text using the user's configured language,
     // NOT hardcoded en-US (which would mangle non-Latin text).
     const fallbackLang = useSettingsStore.getState().language || 'en';
+    // Mute may have changed while the primary backend was awaiting a fetch.
+    // Never let the last-resort path restart speech after an explicit stop.
+    if (!useMessageStore.getState().soundEnabled) return;
     try { speak(text, rate, volume, getTTSCode(fallbackLang as SupportedLanguage)); } catch { /* truly fatal */ }
   }
 }

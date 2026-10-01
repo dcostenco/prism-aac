@@ -6,6 +6,7 @@ import { tapFeedback } from '@/services/feedback';
 import { askAI, translateAI } from '@/services/aiService';
 import { aacSpeak } from '@/services/aacSpeak';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
 import { isVoiceInputSupported, startVoiceInput, VoiceSession } from '@/services/voiceInputService';
 import { correctText } from '@/services/textCorrectService';
 import { registerAISubmit, clearAISubmit } from '@/services/aiChatBridge';
@@ -185,7 +186,9 @@ export default function AIChatPanel({ compact = false }: { compact?: boolean } =
         }, 80);
         return;
       }
-      void correctText(trimmed, language).then((fixed) => {
+      void correctText(trimmed, language, 'correct', {
+        allowPortal: Boolean(useAuthStore.getState().profile),
+      }).then((fixed) => {
         if (!activeRef.current) return;
         // If hands-free restarted the mic while correctText was running
         // (can take up to 5s on a slow connection), discard this stale

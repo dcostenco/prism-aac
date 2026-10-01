@@ -58,6 +58,21 @@ describe('MediaPipe URL pinning', () => {
     expect(HAND_LANDMARKER_URL).toContain('.task');
   });
 
+  it('ships the hand landmarker model referenced by the runtime URL', async () => {
+    // A URL-only assertion missed the production 404 that silently skipped
+    // hand scanning. Pin the deployment artifact as part of the runtime contract.
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const crypto = await import('node:crypto');
+    const modelPath = path.join(process.cwd(), 'public/models/mediapipe/hand_landmarker.task');
+
+    expect(fs.existsSync(modelPath)).toBe(true);
+    const model = fs.readFileSync(modelPath);
+    expect(model.byteLength).toBe(7_819_105);
+    expect(crypto.createHash('sha256').update(model).digest('hex'))
+      .toBe('fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1');
+  });
+
   it('package.json declared version matches the pin', async () => {
     // Load the lockfile entry rather than importing — keeps the test
     // hermetic. If this drifts, the pinning contract is broken.
@@ -72,6 +87,29 @@ describe('MediaPipe URL pinning', () => {
     // an exact `0.10.35` pin.
     const cleanDeclared = (declared as string).replace(/^[\^~]/, '');
     expect(cleanDeclared).toBe(MEDIAPIPE_TASKS_VISION_VERSION);
+  });
+
+  it('applies immutable asset headers to the deployed base-path URLs', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const vercelConfig = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), 'vercel.json'), 'utf8'),
+    ) as { headers: Array<{ source: string; headers: Array<{ key: string; value: string }> }> };
+    const mediaRoute = vercelConfig.headers.find(route =>
+      route.source === '/prism-aac/models/mediapipe/(.*)',
+    );
+    const wasmRoute = vercelConfig.headers.find(route =>
+      route.source === '/prism-aac/models/mediapipe/wasm/(.*\\.wasm)',
+    );
+
+    expect(mediaRoute?.headers).toContainEqual({
+      key: 'Cache-Control',
+      value: 'public, max-age=31536000, immutable',
+    });
+    expect(wasmRoute?.headers).toContainEqual({
+      key: 'Content-Type',
+      value: 'application/wasm',
+    });
   });
 });
 

@@ -395,7 +395,7 @@ describe('Text Correction service', () => {
     });
 
     const { correctText } = await import('@/services/textCorrectService');
-    const result = await correctText('water', 'en');
+    const result = await correctText('water', 'en', 'correct', { allowPortal: true });
     // "water" is already correct -- if backend returns same normalized text,
     // service should return original (no false correction)
     expect(typeof result).toBe('string');
@@ -429,8 +429,8 @@ describe('Text Correction service', () => {
 
     const { correctText } = await import('@/services/textCorrectService');
     const [r1, r2] = await Promise.all([
-      correctText('helo wrld', 'en'),
-      correctText('helo wrld', 'en'),
+      correctText('helo wrld', 'en', 'correct', { allowPortal: true }),
+      correctText('helo wrld', 'en', 'correct', { allowPortal: true }),
     ]);
     expect(r1).toBe(r2);
     // In-flight dedup means only one backend call

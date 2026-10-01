@@ -41,6 +41,33 @@ describe('correctText (unit)', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('does not call the authenticated portal correction endpoint for a guest session', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 401 });
+    vi.stubGlobal('fetch', fetchMock);
+    const { correctText } = await loadService(false);
+
+    expect(await correctText('hw', 'en', 'complete')).toBe('hw');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not share in-flight correction work across the guest/authenticated boundary', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ corrected: 'how', changed: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { correctText } = await loadService(false);
+
+    const [guestResult, authenticatedResult] = await Promise.all([
+      correctText('hw', 'en', 'complete'),
+      correctText('hw', 'en', 'complete', { allowPortal: true }),
+    ]);
+
+    expect(guestResult).toBe('hw');
+    expect(authenticatedResult).toBe('how');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('CALLS backend on 2-char input ("hw" → "how" — required for AAC short partials)', async () => {
     // 2-char floor was lowered from 3 to 2 so partials like "hw"/"ok"/"ty"
     // get autocomplete. AAC users can't afford to wait for 3+ chars.
@@ -50,7 +77,7 @@ describe('correctText (unit)', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     const { correctText } = await loadService(false);
-    expect(await correctText('hw', 'en', 'complete')).toBe('how');
+    expect(await correctText('hw', 'en', 'complete', { allowPortal: true })).toBe('how');
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -61,7 +88,7 @@ describe('correctText (unit)', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     const { correctText } = await loadService(true);
-    const out = await correctText('bowirice', 'en');
+    const out = await correctText('bowirice', 'en', 'correct', { allowPortal: true });
     expect(out).toBe('bowl of rice');
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const url = fetchMock.mock.calls[0][0] as string;
@@ -75,7 +102,7 @@ describe('correctText (unit)', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     const { correctText } = await loadService(false);
-    const out = await correctText('bowirice', 'en');
+    const out = await correctText('bowirice', 'en', 'correct', { allowPortal: true });
     expect(out).toBe('bowl of rice');
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const url = fetchMock.mock.calls[0][0] as string;
@@ -89,8 +116,8 @@ describe('correctText (unit)', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     const { correctText } = await loadService(false);
-    expect(await correctText('bowirice', 'en')).toBe('bowl of rice');
-    expect(await correctText('bowirice', 'en')).toBe('bowl of rice');
+    expect(await correctText('bowirice', 'en', 'correct', { allowPortal: true })).toBe('bowl of rice');
+    expect(await correctText('bowirice', 'en', 'correct', { allowPortal: true })).toBe('bowl of rice');
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -101,8 +128,8 @@ describe('correctText (unit)', () => {
     }));
     vi.stubGlobal('fetch', fetchMock);
     const { correctText } = await loadService(false);
-    const a = correctText('bowlof,ri', 'en');
-    const b = correctText('bowlof,ri', 'en');
+    const a = correctText('bowlof,ri', 'en', 'correct', { allowPortal: true });
+    const b = correctText('bowlof,ri', 'en', 'correct', { allowPortal: true });
     resolveFn?.({ corrected: 'bowl of rice', original: 'bowlof,ri', changed: true });
     const [r1, r2] = await Promise.all([a, b]);
     expect(r1).toBe('bowl of rice');
@@ -116,7 +143,7 @@ describe('correctText (unit)', () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ corrected: 'bowl of rice', changed: true }) });
     vi.stubGlobal('fetch', fetchMock);
     const { correctText } = await loadService(true);
-    const out = await correctText('bowirice', 'en');
+    const out = await correctText('bowirice', 'en', 'correct', { allowPortal: true });
     expect(out).toBe('bowl of rice');
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -125,14 +152,14 @@ describe('correctText (unit)', () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error('offline'));
     vi.stubGlobal('fetch', fetchMock);
     const { correctText } = await loadService(false);
-    expect(await correctText('helloworld', 'en')).toBe('helloworld');
+    expect(await correctText('helloworld', 'en', 'correct', { allowPortal: true })).toBe('helloworld');
   });
 
   it('returns original text when portal returns non-200', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500 });
     vi.stubGlobal('fetch', fetchMock);
     const { correctText } = await loadService(false);
-    expect(await correctText('helloworld', 'en')).toBe('helloworld');
+    expect(await correctText('helloworld', 'en', 'correct', { allowPortal: true })).toBe('helloworld');
   });
 
   // ── Normalized-echo handling — fixes the silent-suggestion bug.
@@ -154,7 +181,7 @@ describe('correctText (unit)', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => ({ corrected: 'I want to', changed: true }) });
       vi.stubGlobal('fetch', fetchMock);
       const { correctText } = await loadService(true);
-      const out = await correctText('i wa', 'en', 'complete');
+      const out = await correctText('i wa', 'en', 'complete', { allowPortal: true });
       expect(out).toBe('I want to');
       // 2 local calls (complete then correct on echo) + 1 portal call
       expect(fetchMock).toHaveBeenCalledTimes(3);
@@ -167,7 +194,7 @@ describe('correctText (unit)', () => {
         .mockResolvedValueOnce({ ok: true, json: async () => ({ corrected: 'i want to', changed: true }) });
       vi.stubGlobal('fetch', fetchMock);
       const { correctText } = await loadService(true);
-      const out = await correctText('i wa', 'en', 'complete');
+      const out = await correctText('i wa', 'en', 'complete', { allowPortal: true });
       expect(out).toBe('i want to');
     });
 
@@ -196,7 +223,7 @@ describe('correctText (unit)', () => {
       // portal result IS norm-equal to input. Current behavior: norm-equal
       // portal result is treated as "no useful correction", returns input.
       // This pin documents the trade-off; if it changes, update this test.
-      const out = await correctText('i want a', 'en', 'correct');
+      const out = await correctText('i want a', 'en', 'correct', { allowPortal: true });
       expect(out).toBe('i want a'); // norm-equal echo, portal result dropped
     });
   });

@@ -76,4 +76,61 @@ describe('persistent speech storage', () => {
     vi.stubGlobal('indexedDB', { open: () => ({}) });
     expect(await cache.get('a', 'hello')).toBeNull();
   });
+
+  it('ignores a late read callback after the watchdog aborts the transaction', async () => {
+    let inactive = false;
+    let lateError: unknown;
+    const deleteEntry = vi.fn(() => {
+      if (inactive) throw new DOMException('The transaction is inactive or finished.', 'TransactionInactiveError');
+    });
+    const request = {
+      result: { key: 'stale', audio: 'invalid' },
+      onsuccess: null as null | (() => void),
+    };
+    const store = {
+      get: vi.fn(() => {
+        setTimeout(() => {
+          try { request.onsuccess?.(); } catch (error) { lateError = error; }
+        }, 20);
+        return request;
+      }),
+      delete: deleteEntry,
+    };
+    const transaction = {
+      oncomplete: null as null | (() => void),
+      onerror: null as null | (() => void),
+      onabort: null as null | (() => void),
+      objectStore: vi.fn(() => store),
+      abort: vi.fn(() => {
+        inactive = true;
+        transaction.onabort?.();
+      }),
+    };
+    const database = {
+      onversionchange: null as null | (() => void),
+      objectStoreNames: { contains: () => true },
+      transaction: vi.fn(() => transaction),
+      close: vi.fn(),
+    };
+    const openRequest = {
+      result: database,
+      onupgradeneeded: null as null | (() => void),
+      onerror: null as null | (() => void),
+      onblocked: null as null | (() => void),
+      onsuccess: null as null | (() => void),
+    };
+    vi.stubGlobal('indexedDB', {
+      open: () => {
+        queueMicrotask(() => openRequest.onsuccess?.());
+        return openRequest;
+      },
+    });
+    const cache = new SpeechAudioCache({ ...SPEECH_CACHE_POLICY, operationTimeoutMs: 5 });
+
+    expect(await cache.get('profile', 'late-invalid-entry')).toBeNull();
+    await new Promise(resolve => setTimeout(resolve, 30));
+
+    expect(lateError).toBeUndefined();
+    expect(deleteEntry).not.toHaveBeenCalled();
+  });
 });
