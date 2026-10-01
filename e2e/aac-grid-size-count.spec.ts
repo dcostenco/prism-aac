@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { safeScreenshot } from './helpers/screenshot-validation';
+import { checkCriticalOcclusion, safeScreenshot } from './helpers/screenshot-validation';
 
 test.use({ viewport: { width: 1600, height: 1000 } });
 
@@ -55,3 +55,29 @@ for (const gridSize of [4, 6] as const) {
     });
   });
 }
+
+test('label occlusion checks accept only the exact owning control', async ({ page }) => {
+  await page.setContent(`
+    <button id="owner" style="position:fixed;left:20px;top:20px;width:180px;height:80px">
+      <span id="label" style="display:block;width:160px;height:40px;pointer-events:none">Readable label</span>
+    </button>
+  `);
+
+  await expect(checkCriticalOcclusion(page, {
+    criticalSelectors: ['#label'],
+  })).resolves.toEqual([]);
+
+  await page.evaluate(() => {
+    const overlay = document.createElement('div');
+    overlay.id = 'unrelated-overlay';
+    overlay.style.cssText = 'position:fixed;left:20px;top:20px;width:180px;height:80px;z-index:9999';
+    document.body.appendChild(overlay);
+  });
+
+  const blocked = await checkCriticalOcclusion(page, {
+    criticalSelectors: ['#label'],
+  });
+  expect(blocked).toEqual(expect.arrayContaining([
+    expect.objectContaining({ reason: 'hit_test_blocked' }),
+  ]));
+});

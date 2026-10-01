@@ -202,9 +202,15 @@ export async function checkCriticalOcclusion(
       type R = ReturnType<typeof rectOf>;
       const intersects = (a: R, b: R) =>
         !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
-      const isSelfOrDescendant = (node: Element | null, target: Element) => {
-        for (let n: Element | null = node; n; n = n.parentElement) if (n === target) return true;
-        return false;
+      const isVisibleTargetSurface = (node: Element | null, target: Element) => {
+        if (!node) return false;
+        if (node === target || target.contains(node)) return true;
+        // A label can be clipped to the rounded edge of its own interactive
+        // card, making elementFromPoint resolve to that exact card. Accept
+        // only that owner surface; descendants or unrelated overlays still
+        // fail the occlusion gate.
+        const owner = target.closest('button, a[href], [role="button"]');
+        return owner !== target && node === owner;
       };
       const occ: Array<{ sel: string; rect: R }> = [];
       for (const sel of occluderSelectors) {
@@ -244,7 +250,7 @@ export async function checkCriticalOcclusion(
         for (const [name, x, y] of probes) {
           if (x < 0 || y < 0 || x > vw || y > vh) continue;
           const hit = document.elementFromPoint(x, y);
-          if (!hit || !isSelfOrDescendant(hit, el)) {
+          if (!isVisibleTargetSurface(hit, el)) {
             failures.push({
               selector: sel, reason: "hit_test_blocked",
               detail: `${name} resolved to ${hit ? hit.tagName.toLowerCase() : "null"}`,

@@ -33,6 +33,44 @@ async function categoryStripGeometry(page: Page) {
   });
 }
 
+async function expectCategoryLabelsReadable(page: Page) {
+  await expect.poll(async () => page.locator('.aac-category-label').evaluateAll((labels) => (
+    labels.length > 0 && labels.every((label) => Boolean((label as HTMLElement).dataset.fitStatus))
+  )), { timeout: 10_000 }).toBe(true);
+
+  const labels = await page.locator('.aac-category-label').evaluateAll((elements) => elements.map((element) => {
+    const label = element as HTMLElement;
+    const style = getComputedStyle(label);
+    const lineHeight = Number.parseFloat(style.lineHeight);
+    return {
+      text: label.textContent?.trim() ?? '',
+      fitStatus: label.dataset.fitStatus,
+      textOverflow: style.textOverflow,
+      overflowWrap: style.overflowWrap,
+      fontSize: Number.parseFloat(style.fontSize),
+      renderedLines: lineHeight > 0 ? Math.round(label.getBoundingClientRect().height / lineHeight) : 0,
+      clientWidth: label.clientWidth,
+      clientHeight: label.clientHeight,
+      scrollWidth: label.scrollWidth,
+      scrollHeight: label.scrollHeight,
+      parentWidth: label.parentElement?.clientWidth ?? 0,
+      parentHeight: label.parentElement?.clientHeight ?? 0,
+      widthOverflow: label.scrollWidth > label.clientWidth + 1,
+      heightOverflow: label.scrollHeight > label.clientHeight + 1,
+    };
+  }));
+  for (const label of labels) {
+    expect(label.text).not.toBe('');
+    expect(label.fitStatus, `${label.text}: fitted-label status`).not.toBe('overflow');
+    expect(label.textOverflow, `${label.text}: no ellipsis`).not.toBe('ellipsis');
+    expect(label.overflowWrap, `${label.text}: preserve authored word boundaries`).toBe('normal');
+    expect(label.fontSize, `${label.text}: readable category text`).toBeGreaterThanOrEqual(12);
+    expect(label.renderedLines, `${label.text}: maximum three lines`).toBeLessThanOrEqual(3);
+    expect(label.widthOverflow, `${label.text}: full width is visible`).toBe(false);
+    expect(label.heightOverflow, `${label.text}: full height is visible`).toBe(false);
+  }
+}
+
 for (const viewport of viewports) {
 test(`every bottom category fits before the picture navigation rail at ${viewport.name}`, async ({ page }, testInfo) => {
   await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -55,6 +93,7 @@ test(`every bottom category fits before the picture navigation rail at ${viewpor
     .toBeLessThanOrEqual(geometry.clientWidth);
   expect(geometry.failures, 'every category must be fully visible and clear of the navigation rail')
     .toEqual([]);
+  await expectCategoryLabelsReadable(page);
 
   const firstPageLabels = await categories.allTextContents();
   const nextPage = page.getByTestId('category-page-next');
@@ -74,6 +113,7 @@ test(`every bottom category fits before the picture navigation rail at ${viewpor
     const pageGeometry = await categoryStripGeometry(page);
     expect(pageGeometry.scrollWidth).toBeLessThanOrEqual(pageGeometry.clientWidth);
     expect(pageGeometry.failures).toEqual([]);
+    await expectCategoryLabelsReadable(page);
   }
   expect(seenLabels.size).toBeGreaterThan(firstPageLabels.length);
   await expect(nextPage).toBeDisabled();

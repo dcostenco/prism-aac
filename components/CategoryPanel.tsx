@@ -228,7 +228,7 @@ export default function CategoryPanel() {
     const check = () => {
       const compact = window.matchMedia('(orientation: landscape)').matches && window.innerHeight < 500;
       setCompactMode(compact);
-      const nextCategoryPageSize = window.innerWidth < 600 ? 3 : window.innerWidth < 1024 ? 5 : 8;
+      const nextCategoryPageSize = window.innerWidth < 600 ? 2 : window.innerWidth < 1024 ? 4 : 8;
       setCategoryPageSize(nextCategoryPageSize);
       const s = useUIStore.getState();
       // Phone landscape can't fit grid + keyboard drawer — auto-maximize
