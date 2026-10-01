@@ -62,7 +62,7 @@ export default function GreetingBanner() {
   };
 
   return (
-    <div className="shrink-0 px-3 py-2 surface-bar border-b border-theme flex items-center gap-3">
+    <div data-testid="greeting-banner" className="shrink-0 px-3 py-2 surface-bar border-b border-theme flex items-center gap-3">
       <span className="text-3xl">{icon}</span>
       <div className="flex-1 min-w-0">
         <p className="text-primary font-bold text-lg truncate">{greeting}</p>

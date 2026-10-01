@@ -411,6 +411,13 @@ Dwell 1200ms                   ↑ declining
 ## Modules
 
 ### 📂 Categories
+
+In Picture mode, Grid Size sets the number of tiles per vocabulary page (4 is
+2 × 2; 6 is 3 × 2). Swipe left or right across the board to browse, or use the
+chevrons beside the category title. Navigation does not add a word or speak;
+tap a tile to select it. Page position is announced to screen readers without
+a separate visible page-count footer.
+
 PECS-style picture tiles. Tap a category, tap a tile, hear the word, watch it land in the message bar. Works for non-readers, pre-readers, and emerging communicators alike. Tile sets and ordering personalize over time via spreading activation — the tiles your child taps most rise; the ones unused for months fade.
 
 **Surround layout** — categories appear in a scrollable left column alongside the keyboard, so the AAC user can tap picture tiles AND type simultaneously without switching modes. The prediction bar stays visible; both inputs are always accessible.

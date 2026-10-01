@@ -78,13 +78,8 @@ function wordBg(text: string): string {
 // Category detail columns — always at least 1 col on very small screens
 // Columns are forced at all breakpoints so the user's chosen grid size
 // actually takes effect on tablets and wide screens (not overridden by sm:).
-const GRID_COLS: Record<GridSize, string> = {
-  4:  'grid-cols-2',
-  6:  'grid-cols-3',
-  9:  'grid-cols-3',
-  12: 'grid-cols-4',
-  16: 'grid-cols-4',
-  20: 'grid-cols-5',
+const GRID_COLS: Record<GridSize, number> = {
+  4: 2, 6: 3, 9: 3, 12: 4, 16: 4, 20: 5,
 };
 
 // Normal tile heights (keyboard hidden)
@@ -159,12 +154,15 @@ function SidebarBtn({ icon, label, onClick, active = false, testId, dataAction }
 }
 
 // ── Page label — MODULE LEVEL ──────────────────────────────────────────────────
-function PageLabel({ label }: { label: string }) {
+function PageLabel({ label, previous, next, status }: { label: string; previous?: React.ReactNode; next?: React.ReactNode; status?: string }) {
   return (
-    <div className="aac-page-label text-center py-[3px] shrink-0 border-b border-[#5c3d25] bg-[#3e2a1a]">
-      <span className="text-white text-xs font-bold uppercase tracking-widest underline underline-offset-2">
+    <div data-has-pagination={status ? 'true' : undefined} className="aac-page-label flex items-center text-center py-[3px] shrink-0 border-b border-[#5c3d25] bg-[#3e2a1a]">
+      {previous}
+      <span className="flex-1 min-w-0 text-white text-xs font-bold uppercase tracking-widest underline underline-offset-2">
         {label}
       </span>
+      {next}
+      {status && <span data-testid="vocabulary-page-indicator" className="sr-only" aria-live="polite">{status}</span>}
     </div>
   );
 }
@@ -217,6 +215,59 @@ export default function CategoryPanel() {
   const speechVolume = useSettingsStore((s) => s.speechVolume);
   const gridRef = useRef<HTMLDivElement>(null);
   const [gridPage, setGridPage] = useState(0);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const suppressSwipeClick = useRef(false);
+  const gridStyle: React.CSSProperties = {
+    gridTemplateColumns: `repeat(${GRID_COLS[gridSize]}, minmax(0, 1fr))`,
+    gridTemplateRows: `repeat(${Math.ceil(gridSize / GRID_COLS[gridSize])}, minmax(0, 1fr))`,
+    touchAction: 'pan-y pinch-zoom',
+  };
+  const gridTouchHandlers = {
+    onTouchStart: (event: React.TouchEvent) => {
+      suppressSwipeClick.current = false;
+      touchStart.current = event.touches.length === 1
+        ? { x: event.touches[0].clientX, y: event.touches[0].clientY } : null;
+    },
+    onTouchMove: (event: React.TouchEvent) => {
+      if (event.touches.length !== 1) { touchStart.current = null; return; }
+      if (!touchStart.current) return;
+      const dx = event.touches[0].clientX - touchStart.current.x;
+      const dy = event.touches[0].clientY - touchStart.current.y;
+      if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        suppressSwipeClick.current = true;
+      }
+    },
+    onTouchCancel: () => { touchStart.current = null; },
+    onPointerDown: (event: React.PointerEvent) => {
+      if (event.pointerType === 'mouse') suppressSwipeClick.current = false;
+    },
+    onClickCapture: (event: React.MouseEvent) => {
+      if (suppressSwipeClick.current && event.detail > 0) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+  };
+  const handleGridTouchEnd = (event: React.TouchEvent, totalPages: number) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start || event.changedTouches.length !== 1) return;
+    const dx = event.changedTouches[0].clientX - start.x;
+    const dy = event.changedTouches[0].clientY - start.y;
+    if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      suppressSwipeClick.current = true;
+      setGridPage(page => Math.max(0, Math.min(totalPages - 1, Math.min(page, totalPages - 1) + (dx < 0 ? 1 : -1))));
+    }
+  };
+  const gridNavigation = (totalPages: number, safePage: number) => totalPages > 1 ? {
+    previous: <button disabled={safePage === 0} onClick={() => setGridPage(Math.max(0, safePage - 1))}
+        aria-label="Previous page"
+        className="aac-btn w-11 h-11 shrink-0 text-3xl text-white disabled:opacity-30"><span aria-hidden>‹</span></button>,
+    next: <button disabled={safePage >= totalPages - 1} onClick={() => setGridPage(Math.min(totalPages - 1, safePage + 1))}
+        aria-label="Next page"
+        className="aac-btn w-11 h-11 shrink-0 text-3xl text-white disabled:opacity-30"><span aria-hidden>›</span></button>,
+    status: `${safePage + 1} / ${totalPages}`,
+  } : {};
   const [categoryPage, setCategoryPage] = useState(0);
   const [categoryPageSize, setCategoryPageSize] = useState(8);
   const activeCatIdForReset = useUIStore((s) => s.activeCategoryId);
@@ -532,10 +583,12 @@ export default function CategoryPanel() {
     const sequences = getSequencesForCategory(activeCategoryId);
     const catName = cat ? (cat.nameKey ? t(cat.nameKey) : cat.name) : '';
     const catBg = CAT_BG[activeCategoryId];
+    const totalPages = Math.max(1, Math.ceil((subcategories.length + phrases.length) / gridSize));
+    const safePage = Math.min(gridPage, totalPages - 1);
 
     return (
       <section aria-label={catName} data-aac-mode={typingMode ? 'typing' : 'picture'} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
-        {!typingMode && <PageLabel label={catName} />}
+        {!typingMode && <PageLabel label={catName} {...(!searchOpen ? gridNavigation(totalPages, safePage) : {})} />}
         <div className="aac-category-body flex flex-row flex-1 min-h-0">
           <div className="flex-1 flex flex-col min-w-0 min-h-0">
             {(!typingMode || searchOpen) && (
@@ -557,13 +610,11 @@ export default function CategoryPanel() {
                   ...subcategories.map(sub => ({ type: 'folder' as const, data: sub })),
                   ...phrases.map(p => ({ type: 'phrase' as const, data: p })),
                 ];
-                const totalPages = Math.max(1, Math.ceil(allItems.length / gridSize));
-                const safePage = Math.min(gridPage, totalPages - 1);
                 const pageItems = allItems.slice(safePage * gridSize, (safePage + 1) * gridSize);
-                const showPager = totalPages > 1;
                 return (
                   <div className="flex-1 flex flex-col min-h-0">
-                    <div ref={gridRef} className={`aac-picture-grid grid ${GRID_COLS[gridSize]} gap-2 p-2 flex-1 min-h-0 content-start`}>
+                    <div ref={gridRef} className="aac-picture-grid grid gap-2 p-2 flex-1 min-h-0 overflow-y-auto"
+                      style={gridStyle} {...gridTouchHandlers} onTouchEnd={event => handleGridTouchEnd(event, totalPages)}>
                       {pageItems.map(item => {
                         if (item.type === 'folder') {
                           const sub = item.data;
@@ -589,17 +640,6 @@ export default function CategoryPanel() {
                         );
                       })}
                     </div>
-                    {showPager && (
-                      <div className="flex items-center justify-center gap-3 py-1 border-t border-theme shrink-0">
-                        <button disabled={safePage === 0} onClick={() => setGridPage(p => Math.max(0, p - 1))}
-                          aria-label="Previous page"
-                          className="aac-btn px-3 py-1 rounded-lg surface-key border border-theme text-primary font-bold disabled:opacity-30">◀</button>
-                        <span className="text-xs text-muted">{safePage + 1} / {totalPages}</span>
-                        <button disabled={safePage >= totalPages - 1} onClick={() => setGridPage(p => p + 1)}
-                          aria-label="Next page"
-                          className="aac-btn px-3 py-1 rounded-lg surface-key border border-theme text-primary font-bold disabled:opacity-30">▶</button>
-                      </div>
-                    )}
                   </div>
                 );
               })()}
@@ -623,8 +663,15 @@ export default function CategoryPanel() {
   const topLevelCats = allCategories().filter((c) => !c.parentId);
   const homeCatSet = new Set(HOME_CATS_ORDERED);
   const fringeCats = topLevelCats.filter((c) => !homeCatSet.has(c.id));
-  const visibleHomePhrases = homeGridPhrases.slice(0, gridSize);
-  const visibleFringeCats = fringeCats.slice(0, Math.max(0, gridSize - visibleHomePhrases.length));
+  const homeItems = [
+    ...homeGridPhrases.map(data => ({ type: 'phrase' as const, data })),
+    ...fringeCats.map(data => ({ type: 'folder' as const, data })),
+  ];
+  const homePageCount = Math.max(1, Math.ceil(homeItems.length / gridSize));
+  const safeHomePage = Math.min(gridPage, homePageCount - 1);
+  const homePageItems = homeItems.slice(safeHomePage * gridSize, (safeHomePage + 1) * gridSize);
+  const visibleHomePhrases = homePageItems.flatMap(item => item.type === 'phrase' ? [item.data] : []);
+  const visibleFringeCats = homePageItems.flatMap(item => item.type === 'folder' ? [item.data] : []);
   const categoryPageCount = Math.max(1, Math.ceil(topLevelCats.length / categoryPageSize));
   const safeCategoryPage = Math.min(categoryPage, categoryPageCount - 1);
   const visibleTopLevelCats = topLevelCats.slice(
@@ -634,7 +681,7 @@ export default function CategoryPanel() {
 
   return (
     <section aria-label="Home vocabulary board" data-aac-mode={typingMode ? 'typing' : 'picture'} className="flex-1 min-h-0 flex flex-col surface-bar border-y border-theme overflow-hidden">
-      {!typingMode && <PageLabel label={t('home').toUpperCase()} />}
+      {!typingMode && <PageLabel label={t('home').toUpperCase()} {...(!searchOpen ? gridNavigation(homePageCount, safeHomePage) : {})} />}
       <div className="aac-category-body flex flex-row flex-1 min-h-0">
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
           {(!typingMode || searchOpen) && (
@@ -642,7 +689,8 @@ export default function CategoryPanel() {
             {searchOpen ? searchPanelJsx : (
               <div className="flex-1 min-w-0 flex flex-col min-h-0">
             {/* Dense core vocab + fringe folder tiles */}
-            <div ref={gridRef} className={`aac-picture-grid grid ${GRID_COLS[gridSize]} gap-1.5 p-2 overflow-y-auto flex-1 min-h-0`} style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+            <div ref={gridRef} className="aac-picture-grid grid gap-1.5 p-2 overflow-y-auto flex-1 min-h-0"
+              style={gridStyle} {...gridTouchHandlers} onTouchEnd={event => handleGridTouchEnd(event, homePageCount)}>
               {visibleHomePhrases.map(({ phrase: p, catId }) => {
                 const local = getPhraseText(p.id, language, p.text);
                 const tH = compactMode && categoryKeyboardOpen ? HOME_TILE_H_COMPACT : categoryKeyboardOpen ? TILE_H_KB[gridSize] : TILE_H[gridSize];
@@ -715,7 +763,7 @@ export default function CategoryPanel() {
                 className="aac-btn w-12 shrink-0 flex flex-col items-center justify-center text-white disabled:opacity-30"
               >
                 <span aria-hidden className="text-3xl font-bold leading-none">›</span>
-                <span data-testid="category-page-indicator" className="text-[10px] font-bold leading-none">
+                <span data-testid="category-page-indicator" className="sr-only">
                   {safeCategoryPage + 1}/{categoryPageCount}
                 </span>
               </button>}
