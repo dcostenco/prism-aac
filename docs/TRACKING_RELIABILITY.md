@@ -10,6 +10,30 @@
 - ✅ **Esc escape hatch** — instantly disable tracking and return to qwerty without losing the message bar
 - ✅ **Auto-recovery** — the body tracker resumes after temporary occlusion (e.g. caregiver leans in)
 
+## Calibration regression coverage (2026-10-01)
+
+Hold a comfortable neutral pose during the center step. Eye-gaze assistance
+uses the first valid iris offset in each tracker session as its reference;
+subsequent relative eye movement still contributes to the cursor. Calibration
+targets and the cursor use the same viewport coordinates. An accuracy target
+that times out is skipped, not counted as a successful hit. Tracking loss
+clears dwell progress; manual completion remains available.
+
+Detector-boundary replays cover the Settings tracking targets, sensitivity,
+dwell, delayed camera startup, tracking loss and calibration persistence with
+zero, small and larger drift. The browser smoke runs real MediaPipe against
+synthetic low-resolution, cropped/dim camera pixels and checks center fit,
+loss without false hits, completion and reopening. These are simulated-input
+regressions, not evidence of physical-device accuracy, recognition latency,
+articulated head/hand/finger recognition or distance estimation. Those remain
+separate device-validation work.
+
+Run the browser smoke through `scripts/playwright-watchdog.sh` with
+`e2e/camera-calibration-reliability.spec.ts`, one worker, and `BASE_URL` pointing
+to the production build under review. Reuse installed model/dependency caches;
+the watchdog uses macOS's available-memory estimate before its page-count
+fallback, without purging caches.
+
 <details>
 <summary><strong>📐 Full investigation, harness, and reliability ledger</strong></summary>
 

@@ -10,6 +10,7 @@ import {
   unfreezeLearnerCalSaves,
   initFaceLandmarkerForGazeEager,
   applyCalibrationToActiveTracker,
+  subscribePoseSamples,
   type PoseTrackerHandle,
   type TrackingTarget,
   type PoseCalibrationData,
@@ -156,15 +157,12 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
 
   // Listen for raw pose samples
   useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
+    return subscribePoseSamples(detail => {
       if (detail?.normX != null) {
         sampleBufferRef.current.push({ normX: detail.normX, normY: detail.normY });
         if (sampleBufferRef.current.length > 100) sampleBufferRef.current.shift();
       }
-    };
-    window.addEventListener('prism-pose-sample', handler);
-    return () => window.removeEventListener('prism-pose-sample', handler);
+    });
   }, []);
 
   // Tracker live-status — exposed in the wizard's status bar so the
@@ -195,8 +193,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   // Identified in May 2026 military-grade review.
   const latestSampleRef = useRef<PoseSampleDetail | null>(null);
   useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as PoseSampleDetail | undefined;
+    const unsubscribe = subscribePoseSamples(detail => {
       if (detail?.normX != null) {
         latestSampleRef.current = {
           normX: detail.normX,
@@ -206,13 +203,12 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
           egoSuppressed: detail.egoSuppressed,
         };
       }
-    };
-    window.addEventListener('prism-pose-sample', handler);
+    });
     const flushInterval = setInterval(() => {
       if (latestSampleRef.current) setLatestSample(latestSampleRef.current);
     }, 200);
     return () => {
-      window.removeEventListener('prism-pose-sample', handler);
+      unsubscribe();
       clearInterval(flushInterval);
     };
   }, []);
@@ -274,7 +270,8 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     // After 5 seconds, analyze which body parts were detected.
     // Timer is tracked + cleared on unmount so a quick Cancel
     // doesn't leave a stale closure mutating destroyed state.
-    const detectTimer = setTimeout(() => {
+    let noDetectionAnnounced = false;
+    const analyzeDetection = () => {
       if (!mountedRef.current) return;
       const counts = detectionCountRef.current;
       const results: DetectedPart[] = [];
@@ -300,9 +297,21 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         detectionTimersRef.current.push(advanceTimer);
       } else {
         setStatusText('No body parts detected. Try moving closer.');
-        speak('I cannot see you. Please move closer to the camera.');
+        if (!noDetectionAnnounced) {
+          speak('I cannot see you. Please move closer to the camera.');
+          noDetectionAnnounced = true;
+        }
+        // Camera permission/model loading can outlast the first deadline.
+        // Keep checking fresh results rather than getting permanently stuck
+        // after declaring failure before the first usable frame arrives.
+        const retryTimer = setTimeout(() => {
+          detectionTimersRef.current = detectionTimersRef.current.filter(id => id !== retryTimer);
+          analyzeDetection();
+        }, 1000);
+        detectionTimersRef.current.push(retryTimer);
       }
-    }, 5000);
+    };
+    const detectTimer = setTimeout(analyzeDetection, 5000);
     detectionTimersRef.current.push(detectTimer);
   }, [speak, headTrackingEyeGaze, headTrackingEyeGazeWeight]);
 
@@ -549,16 +558,18 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   }, [cornerIdx, cornerSamples, speak]);
 
   // ── PHASE: Accuracy Test ──
-  const handleTestHit = useCallback((idx: number) => {
+  const handleTestHit = useCallback((idx: number, hit = true) => {
     if (idx !== testIdx) return;
-    tapFeedback();
-    speak('Great!');
-    setTestTargets(prev => prev.map((t, i) => i === idx ? { ...t, hit: true } : t));
+    if (hit) {
+      tapFeedback();
+      speak('Great!');
+      setTestTargets(prev => prev.map((t, i) => i === idx ? { ...t, hit: true } : t));
+    }
 
     if (testIdx >= testTargets.length - 1) {
       setTimeout(() => {
-        const hits = testTargets.filter(t => t.hit).length + 1;
-        speak(`Perfect! You hit ${hits} out of ${testTargets.length} targets.`);
+        const hits = testTargets.filter(t => t.hit).length + (hit ? 1 : 0);
+        speak(`${hits === testTargets.length ? 'Perfect! ' : ''}You hit ${hits} out of ${testTargets.length} targets.`);
         setPhase('complete');
       }, 500);
     } else {
@@ -575,7 +586,10 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
   // cursor visibly on the target but no hit firing.
   const dwellHitRef = useRef<{ idx: number; start: number } | null>(null);
   useEffect(() => {
-    if (phase !== 'accuracy-test') { dwellHitRef.current = null; return; }
+    if (phase !== 'accuracy-test' || trackerStatus !== 'tracking') {
+      dwellHitRef.current = null;
+      return;
+    }
     const interval = setInterval(() => {
       const target = testTargets[testIdx];
       if (!target || target.hit) return;
@@ -608,17 +622,17 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
       }
     }, 80);
     return () => clearInterval(interval);
-  }, [phase, testIdx, testTargets, cursorPos.x, cursorPos.y, handleTestHit]);
+  }, [phase, trackerStatus, testIdx, testTargets, cursorPos.x, cursorPos.y, handleTestHit]);
 
-  // Accuracy test auto-complete — after 10s per target, auto-hit and
-  // advance. Calibration was already saved in captureCorner; the
+  // Accuracy test auto-complete — after 10s per target, skip and
+  // advance without manufacturing a hit. Calibration was saved in captureCorner; the
   // accuracy test is verification only. Limited-mobility users can't
   // reach all 5 randomly-placed targets so the test would never pass
   // otherwise. User confirmed (Image #62): 0/5 hits, no way to complete.
   const testStartRef = useRef<number>(0);
   const testIdxRef = useRef(testIdx);
   useEffect(() => { testIdxRef.current = testIdx; }, [testIdx]);
-  const handleTestHitRef = useRef<((idx: number) => void) | null>(null);
+  const handleTestHitRef = useRef<((idx: number, hit?: boolean) => void) | null>(null);
   useEffect(() => { handleTestHitRef.current = handleTestHit; }, [handleTestHit]);
   useEffect(() => {
     if (phase !== 'accuracy-test') return;
@@ -629,7 +643,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
     const id = setInterval(() => {
       if (Date.now() - testStartRef.current >= 10_000) {
         console.log(`[wizard] auto-advance test target ${testIdxRef.current + 1} — 10s timeout`);
-        handleTestHitRef.current?.(testIdxRef.current);
+        handleTestHitRef.current?.(testIdxRef.current, false);
       }
     }, 500);
     return () => clearInterval(id);
@@ -848,9 +862,9 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
         {/* CALIBRATE CENTER */}
         {phase === 'calibrate-center' && (
           <>
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="fixed inset-0 pointer-events-none flex items-center justify-center">
               <div className="relative">
-                <svg width="120" height="120" className="animate-pulse">
+                <svg data-testid="tracking-center-target" width="120" height="120" className="animate-pulse">
                   <circle cx="60" cy="60" r="55" fill="none" stroke="rgba(76,175,80,0.3)" strokeWidth="4" />
                   <circle
                     cx="60" cy="60" r="55"
@@ -911,7 +925,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
             {CORNER_TARGETS.map((corner, idx) => (
               <div
                 key={idx}
-                className={`absolute transition-all duration-500 ${idx === cornerIdx ? 'scale-100 opacity-100' : idx < cornerIdx ? 'scale-75 opacity-30' : 'scale-50 opacity-10'}`}
+                className={`fixed pointer-events-none transition-all duration-500 ${idx === cornerIdx ? 'scale-100 opacity-100' : idx < cornerIdx ? 'scale-75 opacity-30' : 'scale-50 opacity-10'}`}
                 style={{ left: `${corner.x}%`, top: `${corner.y}%`, transform: 'translate(-50%, -50%)' }}
               >
                 {idx === cornerIdx ? (
@@ -1024,7 +1038,7 @@ export default function TrackingSetupWizard({ onComplete, onCancel }: Props) {
                 data-active={idx === testIdx ? 'true' : 'false'}
                 data-hit={target.hit ? 'true' : 'false'}
                 disabled={idx !== testIdx || target.hit}
-                className={`absolute w-24 h-24 rounded-full transition-all duration-300 ${
+                className={`fixed w-24 h-24 rounded-full transition-all duration-300 ${
                   target.hit
                     ? 'bg-[#4CAF50] scale-75 opacity-50'
                     : idx === testIdx

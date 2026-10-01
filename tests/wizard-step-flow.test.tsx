@@ -16,7 +16,7 @@
  *
  * The wizard's tracker is mocked at module level. Real MediaPipe Pose
  * needs photographic input which headless WebKit can't reliably give it,
- * so we drive `prism-pose-sample` events + onStatusChange callbacks
+ * so we drive the private sample subscription + onStatusChange callbacks
  * directly. This is the strict-DoD evidence path: deterministic, fast,
  * pins the wizard-side logic regardless of the browser's pose detection.
  */
@@ -33,7 +33,7 @@ import type {
 // ── Module mocks ────────────────────────────────────────────────────────
 //
 // startPoseTracker captures the wizard's callbacks so the test driver
-// can fire onStatusChange + dispatch synthetic prism-pose-sample events.
+// can fire onStatusChange + publish synthetic private pose samples.
 // The pure helpers (computeCalibrationFromCorners, savePoseCalibration,
 // loadPoseCalibration) are spied or stubbed.
 
@@ -42,6 +42,7 @@ interface CapturedTracker {
   stopped: boolean;
 }
 const trackers: CapturedTracker[] = [];
+const sampleListeners = new Set<(sample: { normX: number; normY: number; visibility: number; noiseFloor: number; egoSuppressed: boolean }) => void>();
 
 vi.mock('@/services/bodyPoseService', async () => {
   const actual = await vi.importActual<typeof import('@/services/bodyPoseService')>(
@@ -49,6 +50,10 @@ vi.mock('@/services/bodyPoseService', async () => {
   );
   return {
     ...actual,
+    subscribePoseSamples(listener: typeof sampleListeners extends Set<infer T> ? T : never) {
+      sampleListeners.add(listener);
+      return () => { sampleListeners.delete(listener); };
+    },
     startPoseTracker(opts: PoseTrackerOptions): PoseTrackerHandle {
       const t: CapturedTracker = { opts, stopped: false };
       trackers.push(t);
@@ -79,7 +84,7 @@ function latestTracker(): CapturedTracker {
   return trackers[trackers.length - 1];
 }
 
-/** Simulate the tracker dispatching a `prism-pose-sample` event AND
+/** Simulate the tracker publishing a private pose sample AND
  *  flipping its status to 'tracking'. Mirrors the real
  *  bodyPoseService dispatch + onStatusChange order. */
 function dispatchPoseSample(target: TrackingTarget, normX: number, normY: number, vis = 0.9) {
@@ -88,11 +93,9 @@ function dispatchPoseSample(target: TrackingTarget, normX: number, normY: number
   // when a pose is detected — drive that too so the wizard's detection
   // counter accumulates.
   t.opts.onStatusChange('tracking', target);
-  window.dispatchEvent(
-    new CustomEvent('prism-pose-sample', {
-      detail: { normX, normY, visibility: vis, noiseFloor: 0.005, egoSuppressed: false },
-    }),
-  );
+  for (const listener of sampleListeners) {
+    listener({ normX, normY, visibility: vis, noiseFloor: 0.005, egoSuppressed: false });
+  }
 }
 
 /** Simulate the tracker losing the user (out-of-view). Status flips to
@@ -109,6 +112,7 @@ function rootEl(): HTMLElement {
 
 beforeEach(() => {
   trackers.length = 0;
+  sampleListeners.clear();
   vi.useFakeTimers();
   // Settings — speech rate / volume must exist for aacSpeak's destructure.
   useSettingsStore.setState({
