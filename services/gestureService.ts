@@ -268,6 +268,7 @@ export class GestureDetector {
   private config: GestureConfig;
   private onGesture: (event: GestureEvent) => void;
   private _dtwFallbackWarned = false;
+  private lastFrameTimestamp = -Infinity;
 
   // Per-signal state
   private signals: Record<string, SignalState> = {};
@@ -356,8 +357,18 @@ export class GestureDetector {
   // ── Main frame processing ──────────────────────────────────────────────
   // Called every frame by the headTracker via onLandmarks callback.
 
-  processFrame(result: FaceLandmarkResult): void {
+  processFrame(result: FaceLandmarkResult | null): void {
     if (!this.config.enabled) return;
+    const now = Date.now();
+    // Match the head tracker's 500ms stale-result limit. Render ticks are
+    // not independent observations and cannot complete a gesture/calibration.
+    if (!result || !Number.isFinite(result.timestamp) || result.timestamp > now || now - result.timestamp >= 500) {
+      this.resetTrackingEvidence();
+      return;
+    }
+    if (result.timestamp <= this.lastFrameTimestamp) return;
+    if (result.timestamp - this.lastFrameTimestamp >= 500) this.resetTrackingEvidence();
+    this.lastFrameTimestamp = result.timestamp;
 
     // Baseline capture mode
     if (this.baselineCapturing) {
@@ -407,7 +418,7 @@ export class GestureDetector {
     const blinkL = (bs[BLINK_LEFT] ?? 0) - (base?.blendshapes[BLINK_LEFT] ?? 0);
     const blinkR = (bs[BLINK_RIGHT] ?? 0) - (base?.blendshapes[BLINK_RIGHT] ?? 0);
     const blinkVal = Math.max(blinkL, blinkR);
-    this.detectThresholdGesture('blink', blinkVal, 0.4 * fatigueMultiplier, 400);
+    this.detectThresholdGesture('blink', blinkVal, 0.4 * fatigueMultiplier, 400, result.timestamp);
 
     // Mouth gestures suppressed during TTS (conversation mode) to prevent
     // false activations from speech articulation. Blink, brow, and head
@@ -416,24 +427,24 @@ export class GestureDetector {
       // Mouth open: jawOpen above threshold
       const mouthVal = bs[JAW_OPEN] ?? 0;
       const mouthBase = base?.blendshapes[JAW_OPEN] ?? 0;
-      this.detectThresholdGesture('mouth_open', mouthVal - mouthBase, 0.32 * fatigueMultiplier, this.config.dwellMs);
+      this.detectThresholdGesture('mouth_open', mouthVal - mouthBase, 0.32 * fatigueMultiplier, this.config.dwellMs, result.timestamp);
 
       // Smile: per-side baseline subtraction + max (T-1 FIX v2 — same as blink)
       const smileL = (bs[SMILE_LEFT] ?? 0) - (base?.blendshapes[SMILE_LEFT] ?? 0);
       const smileR = (bs[SMILE_RIGHT] ?? 0) - (base?.blendshapes[SMILE_RIGHT] ?? 0);
       const smileVal = Math.max(smileL, smileR);
-      this.detectThresholdGesture('smile', smileVal, 0.28 * fatigueMultiplier, this.config.dwellMs);
+      this.detectThresholdGesture('smile', smileVal, 0.28 * fatigueMultiplier, this.config.dwellMs, result.timestamp);
 
       // Pucker ("oo" shape) — T-4: lowered 0.4→0.32 for motor-impaired users
       const puckerVal = bs[PUCKER] ?? 0;
       const puckerBase = base?.blendshapes[PUCKER] ?? 0;
-      this.detectThresholdGesture('pucker', puckerVal - puckerBase, 0.32 * fatigueMultiplier, this.config.dwellMs);
+      this.detectThresholdGesture('pucker', puckerVal - puckerBase, 0.32 * fatigueMultiplier, this.config.dwellMs, result.timestamp);
     }
 
     // Eyebrow raise — T-4: lowered 0.35→0.28 for motor-impaired users
     const browVal = bs[BROW_UP] ?? 0;
     const browBase = base?.blendshapes[BROW_UP] ?? 0;
-    this.detectThresholdGesture('brow_raise', browVal - browBase, 0.28 * fatigueMultiplier, this.config.dwellMs);
+    this.detectThresholdGesture('brow_raise', browVal - browBase, 0.28 * fatigueMultiplier, this.config.dwellMs, result.timestamp);
 
     // Head nod / shake (from head pose angles)
     this.detectHeadGestures(result);
@@ -441,7 +452,7 @@ export class GestureDetector {
 
   // ── Threshold gesture detection with dwell + cooldown ──────────────────
 
-  private detectThresholdGesture(id: string, value: number, threshold: number, minDwell: number): void {
+  private detectThresholdGesture(id: string, value: number, threshold: number, minDwell: number, sampleTime: number): void {
     const sig = this.signals[id];
     if (!sig) return;
 
@@ -452,12 +463,12 @@ export class GestureDetector {
 
     if (aboveThreshold && !sig.active) {
       sig.active = true;
-      sig.startTime = now;
+      sig.startTime = sampleTime;
     } else if (!aboveThreshold && sig.active) {
       sig.active = false;
     }
 
-    if (sig.active && (now - sig.startTime) >= minDwell && (now - sig.lastFired) >= this.config.cooldownMs) {
+    if (sig.active && (sampleTime - sig.startTime) >= minDwell && (now - sig.lastFired) >= this.config.cooldownMs) {
       const confidence = Math.min(1, sig.smoothed / (threshold * 2));
       if (confidence >= this.config.confidenceThreshold) {
         sig.lastFired = now;
@@ -472,11 +483,11 @@ export class GestureDetector {
 
   private detectHeadGestures(result: FaceLandmarkResult): void {
     const now = Date.now();
-    this.headHistory.push({ ...result.headPose, timestamp: now });
+    this.headHistory.push({ ...result.headPose, timestamp: result.timestamp });
 
     // Keep 1.5s window
     const WINDOW_MS = 1500;
-    this.headHistory = this.headHistory.filter(h => now - h.timestamp < WINDOW_MS);
+    this.headHistory = this.headHistory.filter(h => result.timestamp - h.timestamp < WINDOW_MS);
     if (this.headHistory.length < 8) return;
 
     const pitches = this.headHistory.map(h => h.pitch);
@@ -661,10 +672,17 @@ export class GestureDetector {
 
   resetSession(): void {
     this.sessionStart = Date.now();
+    this.resetTrackingEvidence();
+  }
+
+  private resetTrackingEvidence(): void {
     this.headHistory = [];
     this.advancedBuffer = [];
+    this.baselineFrames = [];
+    this.recordBuffer = [];
     for (const sig of Object.values(this.signals)) {
       sig.active = false;
+      sig.startTime = 0;
       sig.smoothed = 0;
     }
   }

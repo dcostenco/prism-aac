@@ -56,7 +56,8 @@ export interface HeadTrackerOptions {
   onMove: (x: number, y: number) => void;
   onDwell: (element: Element) => void;
   onStatusChange: (status: 'starting' | 'tracking' | 'lost' | 'stopped') => void;
-  onLandmarks?: (data: FaceLandmarkData) => void;
+  /** Null invalidates pending gesture evidence when landmarks are lost. */
+  onLandmarks?: (data: FaceLandmarkData | null) => void;
   /**
    * Drift safety net — fires when the cursor exceeds the travel threshold
    * within the rolling window WITHOUT landing a dwell-click, OR when face
@@ -519,7 +520,10 @@ function pickIdentityLockedFace(candidates: FaceRect[], previous: FaceRect | nul
 }
 
 async function detectFromSource(source: CameraSource): Promise<CameraDetection> {
+  // Result age starts at observation, not after potentially slow inference.
+  const observationTime = Date.now();
   if (!source.active || source.video.readyState < 2) {
+    source.lastLandmarks = null;
     return { face: null, cameraIndex: source.index, confidence: 0, canvasWidth: source.canvas.width, canvasHeight: source.canvas.height, timestamp: Date.now() };
   }
 
@@ -531,7 +535,7 @@ async function detectFromSource(source: CameraSource): Promise<CameraDetection> 
   if (mpFaceDetector && !face) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const results = (mpFaceDetector as any).detectForVideo(source.video, Date.now());
+      const results = (mpFaceDetector as any).detectForVideo(source.video, observationTime);
       const dets = results?.detections ?? [];
       if (dets.length > 0) {
         const candidates: FaceRect[] = dets.map((d: { boundingBox: { originX: number; originY: number; width: number; height: number } }) => ({
@@ -568,15 +572,17 @@ async function detectFromSource(source: CameraSource): Promise<CameraDetection> 
   // mark the camera 'lost' rather than emit garbage coordinates.
 
   // FaceLandmarker: extract blendshapes + head pose for gesture recognition
+  source.lastLandmarks = null;
   if (mpFaceLandmarker) {
     try {
+      const landmarkObservationTime = Date.now();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const lmResult = (mpFaceLandmarker as any).detectForVideo(source.video, Date.now());
+      const lmResult = (mpFaceLandmarker as any).detectForVideo(source.video, landmarkObservationTime);
       if (lmResult?.faceBlendshapes?.length > 0) {
         const bs = extractBlendshapes(lmResult);
         const matrixData = lmResult.facialTransformationMatrixes?.[0]?.data;
         const headPose = matrixData ? matrixToEuler(Array.from(matrixData)) : { pitch: 0, yaw: 0, roll: 0 };
-        source.lastLandmarks = { blendshapes: bs, headPose, timestamp: Date.now() };
+        source.lastLandmarks = { blendshapes: bs, headPose, timestamp: landmarkObservationTime };
       }
       // Sparse landmark snapshot for ego-motion classification (gap E).
       // We only keep ~6 well-spread points so the classifier's centroid is
@@ -616,7 +622,7 @@ async function detectFromSource(source: CameraSource): Promise<CameraDetection> 
     confidence,
     canvasWidth: source.canvas.width,
     canvasHeight: source.canvas.height,
-    timestamp: Date.now(),
+    timestamp: observationTime,
   };
   source.lastDetection = detection;
   return detection;
@@ -646,7 +652,7 @@ const FAILOVER_THRESHOLD = 3;
 // NOTE: primaryCameraIndex and lostFrameCount are declared inside startHeadTracker (H5 fix)
 // so multi-start races don't share mutable state between concurrent tracker instances.
 
-function fuseCameraDetections(detections: CameraDetection[], state: { primaryCameraIndex: number; lostFrameCount: number }): { normX: number; normY: number } | null {
+function fuseCameraDetections(detections: CameraDetection[], state: { primaryCameraIndex: number; lostFrameCount: number }): { normX: number; normY: number; cameraIndex: number } | null {
   const valid = detections.filter(d => d.face !== null);
   if (valid.length === 0) {
     state.lostFrameCount++;
@@ -660,6 +666,7 @@ function fuseCameraDetections(detections: CameraDetection[], state: { primaryCam
     state.lostFrameCount = 0;
     const f = primaryDetection.face!;
     return {
+      cameraIndex: primaryDetection.cameraIndex,
       normX: (f.x + f.width / 2) / primaryDetection.canvasWidth,
       normY: (f.y + f.height / 2) / primaryDetection.canvasHeight,
     };
@@ -675,6 +682,7 @@ function fuseCameraDetections(detections: CameraDetection[], state: { primaryCam
     state.lostFrameCount = 0;
     const f = best.face!;
     return {
+      cameraIndex: best.cameraIndex,
       normX: (f.x + f.width / 2) / best.canvasWidth,
       normY: (f.y + f.height / 2) / best.canvasHeight,
     };
@@ -684,6 +692,7 @@ function fuseCameraDetections(detections: CameraDetection[], state: { primaryCam
   const best = valid.reduce((a, b) => a.confidence > b.confidence ? a : b);
   const f = best.face!;
   return {
+    cameraIndex: best.cameraIndex,
     normX: (f.x + f.width / 2) / best.canvasWidth,
     normY: (f.y + f.height / 2) / best.canvasHeight,
   };
@@ -713,6 +722,7 @@ export function startHeadTracker(
   // race conditions when startHeadTracker was called multiple times (React
   // StrictMode double-mount, settings toggle). Each call now owns its state.
   const fusionState = { primaryCameraIndex: 0, lostFrameCount: 0 };
+  let gestureSourceIndex: number | null = null;
 
   // Reliability primitives (statically imported at top — no circular dep).
   // Each is pure / DOM-free, so they can be unit-tested without the
@@ -1076,7 +1086,7 @@ export function startHeadTracker(
     // camera's detection loop hangs or its WebGL context crashes.
     const now = Date.now();
     const activeSources = sources.filter(s => s.active);
-    if (activeSources.length === 0) { opts.onStatusChange('lost'); return; }
+    if (activeSources.length === 0) { opts.onLandmarks?.(null); opts.onStatusChange('lost'); return; }
 
     const detections = activeSources.map(s => {
       const d = s.lastDetection;
@@ -1088,6 +1098,8 @@ export function startHeadTracker(
     const fused = fuseCameraDetections(detections, fusionState);
 
     if (!fused) {
+      gestureSourceIndex = null;
+      opts.onLandmarks?.(null);
       opts.onStatusChange('lost');
       dwellElement = null;
       dwellStart = 0;
@@ -1097,16 +1109,19 @@ export function startHeadTracker(
 
     opts.onStatusChange('tracking');
 
-    // Identify the primary (best confidence) camera once — we use it both
-    // for gesture-landmark emission and for ego-motion classification.
-    const primarySource = activeSources.reduce((best, s) =>
-      s.lastDetection.confidence > best.lastDetection.confidence ? s : best
-    );
+    // Landmarks, gaze and ego-motion must use the camera that actually
+    // supplied the fused coordinates, including temporary failover. Raw
+    // confidence fluctuates and can also be high on a stale cached result.
+    const primarySource = activeSources.find(s => s.index === fused.cameraIndex)!;
 
     // Emit face landmarks from the primary camera for gesture detection
     if (opts.onLandmarks) {
+      if (gestureSourceIndex !== null && gestureSourceIndex !== primarySource.index) opts.onLandmarks(null);
+      gestureSourceIndex = primarySource.index;
       if (primarySource.lastLandmarks && (now - primarySource.lastLandmarks.timestamp) < STALE_DETECTION_MS) {
         opts.onLandmarks(primarySource.lastLandmarks);
+      } else {
+        opts.onLandmarks(null);
       }
     }
 
@@ -1156,6 +1171,12 @@ export function startHeadTracker(
     // Confidence-weighted Kalman smoothing (gap D) — see kalmanSmooth below.
     const avgConfidence = computeAvgConfidence(activeSources);
     ({ sx, sy } = kalmanSmooth(rawX, rawY, avgConfidence));
+    // Drift/recovery thresholds expect 0..1 tracking quality, not the raw
+    // face-area share (normally 0.005..0.05). Use the existing Kalman scale
+    // and the selected fresh camera, so a stale/lost camera cannot dilute
+    // a healthy backup. Keep the safety thresholds themselves unchanged.
+    const trackingConfidence = Math.max(0, Math.min(1,
+      primarySource.lastDetection.confidence * FACE_AREA_TO_KALMAN_SCALE));
 
     opts.onMove(sx, sy);
 
@@ -1204,7 +1225,7 @@ export function startHeadTracker(
     // ── Recovery probe — uses the exported pure function so the REAL
     // tick and the tests call the SAME decision code.
     const decision = recoveryStep(
-      { driftPaused, avgConfidence, elapsedMs: nowTs - recoveryStartTs, timeoutMs: 60_000 },
+      { driftPaused, avgConfidence: trackingConfidence, elapsedMs: nowTs - recoveryStartTs, timeoutMs: 60_000 },
       recoveryProbe,
     );
     if (decision === 'recover') {
@@ -1231,7 +1252,7 @@ export function startHeadTracker(
       driftDetector.push({
         x: sx,
         y: sy,
-        confidence: avgConfidence,
+        confidence: trackingConfidence,
         timestamp: nowTs,
         dwellFired: dwellFiredThisFrame,
       });
