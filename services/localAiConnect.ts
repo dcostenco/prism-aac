@@ -123,7 +123,8 @@ export function localStorageOrNull(): Pick<Storage, 'getItem'> | null {
 export function canProbeInBackground(win: LocalAiWindow, storage: Pick<Storage, 'getItem'> | null): boolean {
   const platform = detectPlatform(win);
   if (platform === 'insecure-page') return true;
-  if (platform !== 'chromium' && platform !== 'firefox') return false;
+  // 'other' (a browser we do not recognise) only gets here with the opt-in below, i.e. after the panel connected in it.
+  if (platform === 'safari' || platform === 'ios-app') return false;
   // On https only after the user connected once: an unopted probe fails
   // for most visitors and fills their console with security errors.
   try {

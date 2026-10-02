@@ -86,6 +86,9 @@ export default function LocalAISettings() {
   const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
   const [copied, setCopied] = useState(false);
   const abortRefs = useRef<Record<string, AbortController>>({});
+  // Only the newest check may set the state: an older one can take ~6 s and would overwrite the answer for a URL typed since.
+  const checkSeq = useRef(0);
+  const [allowTried, setAllowTried] = useState(false);
   const ollamaOnline = localState === 'connected';
 
   // Detect Ollama on mount and when URL changes
@@ -95,12 +98,16 @@ export default function LocalAISettings() {
 
   // userInitiated: only a button press may trigger the browser's local-network permission prompt.
   async function checkOllama(userInitiated = false) {
+    const seq = ++checkSeq.current;
     setLocalState(null);
     const result = await checkLocalAi(window as unknown as LocalAiWindow, ollamaUrl, {
       fetch: (input, init) => fetch(input, init),
       queryPermission: () => queryLocalNetworkPermission(typeof navigator !== 'undefined' ? navigator.permissions : undefined),
     }, userInitiated);
+    if (seq !== checkSeq.current) return;
     setLocalState(result.state);
+    // Allow was pressed and the browser still shows no answer: the next render adds what else to check.
+    setAllowTried(userInitiated && result.state === 'needs-permission');
     // A revoked permission: stop the background services from probing (and logging errors) on every page.
     if (result.state === 'permission-denied') { try { localStorage.removeItem(LOCAL_AI_OPT_IN_KEY); } catch { /* private mode */ } }
     if (result.state !== 'connected') return;
@@ -219,6 +226,9 @@ export default function LocalAISettings() {
       {localState === 'needs-permission' && (
         <div className="text-xs text-theme-muted space-y-2">
           <p>Your browser will ask to let this site reach apps on this device. Choose Allow.</p>
+          {allowTried && (
+            <p>No prompt appeared? Make sure Ollama is open on this computer. Some browsers and extensions block local network access; allow it for this site, then press Allow again.</p>
+          )}
           <button onClick={() => checkOllama(true)}
             className="text-xs px-3 py-1 rounded bg-accent text-white hover:opacity-90">
             Allow

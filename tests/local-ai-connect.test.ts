@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import {
-  canProbeInBackground, checkLocalAi, detectOs, detectPlatform, isLocalUrl, LOCAL_AI_OPT_IN_KEY,
+  canProbeInBackground, checkLocalAi, detectOs, detectPlatform, isLocalUrl, LOCAL_AI_OPT_IN_KEY, queryLocalNetworkPermission,
   ollamaOriginsCommand, type LocalAiWindow,
 } from '@/services/localAiConnect';
 
@@ -171,5 +171,31 @@ describe('Fable review follow-ups (2026-10-02)', () => {
   it('Chrome on iPadOS sends a desktop Mac UA but runs WebKit (AppleWebKit/605): Safari rules apply', () => {
     const ipadChromeDesktop = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Chrome/146.0 Safari/605.1.15';
     expect(detectPlatform(win(ipadChromeDesktop))).toBe('safari');
+  });
+});
+
+describe('adversarial review follow-ups (2026-10-02)', () => {
+  it('queryLocalNetworkPermission asks for the exact Chrome permission names, in order, and survives unsupported ones', async () => {
+    const asked: string[] = [];
+    const perms = (answers: Record<string, string>) => ({
+      query: async ({ name }: { name: string }) => {
+        asked.push(name);
+        if (!(name in answers)) throw new TypeError(`not a permission: ${name}`);
+        return { state: answers[name] };
+      },
+    }) as unknown as Permissions;
+    expect(await queryLocalNetworkPermission(perms({ 'loopback-network': 'granted' }))).toBe('granted');
+    expect(asked).toEqual(['loopback-network']);
+    asked.length = 0;
+    expect(await queryLocalNetworkPermission(perms({ 'local-network-access': 'denied' }))).toBe('denied');
+    expect(asked).toEqual(['loopback-network', 'local-network-access']);
+    expect(await queryLocalNetworkPermission(perms({}))).toBe('unsupported');
+    expect(await queryLocalNetworkPermission(undefined)).toBe('unsupported');
+  });
+
+  it('a browser we do not recognise may use Ollama in the background once the user connected (it worked in the panel)', () => {
+    const store = { getItem: (k: string) => (k === LOCAL_AI_OPT_IN_KEY ? '1' : null) };
+    expect(canProbeInBackground(win('SomeNicheBrowser/1.0'), store)).toBe(true);
+    expect(canProbeInBackground(win('SomeNicheBrowser/1.0'), { getItem: () => null })).toBe(false);
   });
 });

@@ -190,3 +190,43 @@ describe('LocalAISettings — revoked permission clears the opt-in (Fable review
     }
   });
 });
+
+describe('LocalAISettings — adversarial review follow-ups (2026-10-02)', () => {
+  const origLocation = window.location;
+  const origUA = navigator.userAgent;
+  const origPerms = (navigator as unknown as { permissions?: unknown }).permissions;
+  afterEach(() => {
+    Object.defineProperty(window, 'location', { configurable: true, value: origLocation });
+    Object.defineProperty(window.navigator, 'userAgent', { configurable: true, value: origUA });
+    Object.defineProperty(window.navigator, 'permissions', { configurable: true, value: origPerms });
+    localStorage.clear();
+  });
+
+  it('a slow, older check cannot overwrite the result for the URL the user typed since', async () => {
+    let resolveFirst: (v: unknown) => void = () => {};
+    fetchMock
+      .mockImplementationOnce(() => new Promise((r) => { resolveFirst = r; }))   // check for the default URL hangs
+      .mockReturnValue(makeTagsResponse([]));                                    // later checks answer at once
+    render(<LocalAISettings />);
+    // While the first check hangs the panel shows "Checking"; force a second check through Refresh.
+    fireEvent.click(screen.getByText('Refresh'));
+    await waitFor(() => expect(screen.getByText(/ollama connected/i)).toBeInTheDocument());
+    // The stale first check now answers "refused" — it must be ignored.
+    resolveFirst({ ok: false, json: async () => ({}) });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.getByText(/ollama connected/i)).toBeInTheDocument();
+    expect(screen.queryByText(/blocks this site/i)).not.toBeInTheDocument();
+  });
+
+  it('Allow pressed but no prompt and no answer: says what else to check instead of looping silently', async () => {
+    Object.defineProperty(window, 'location', { configurable: true, value: { ...origLocation, protocol: 'https:', origin: 'https://synalux.ai' } });
+    Object.defineProperty(window.navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36' });
+    Object.defineProperty(window.navigator, 'permissions', { configurable: true, value: { query: async () => ({ state: 'prompt' }) } });
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+    render(<LocalAISettings />);
+    await waitFor(() => expect(screen.getByText('Allow')).toBeInTheDocument());
+    expect(screen.queryByText(/no prompt appeared/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Allow'));
+    await waitFor(() => expect(screen.getByText(/no prompt appeared/i)).toBeInTheDocument());
+  });
+});
