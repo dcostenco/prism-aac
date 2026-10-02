@@ -920,3 +920,20 @@ describe('GestureDetector — conversation mode', () => {
     expect(cb.mock.calls.filter((c: any[]) => c[0].gesture === 'mouth_open').length).toBeGreaterThan(0);
   });
 });
+
+describe('classifyViseme8B — local Ollama gate (Fable review 2026-10-02)', () => {
+  const origLocation = window.location;
+  afterEach(() => {
+    Object.defineProperty(window, 'location', { configurable: true, value: origLocation });
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+  it('does not call Ollama from an https page unless the user connected it (no console error for everyone else)', async () => {
+    Object.defineProperty(window, 'location', { configurable: true, value: { ...origLocation, protocol: 'https:' } });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false });
+    vi.stubGlobal('fetch', fetchMock);
+    const d = new GestureDetector(makeConfig(), vi.fn());
+    await d.classifyViseme8B(Array.from({ length: 9 }, () => [0, 0, 0, 0, 0, 0, 0]));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});

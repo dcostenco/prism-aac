@@ -26,6 +26,7 @@ import { DEFAULT_PHRASES } from '@/constants/phrases';
 import { getPhraseText } from '@/constants/phraseTranslations';
 import { MODEL_REGISTRY, SIDELOAD_ORDER } from '@/constants/modelRegistry';
 import { AAC_FIRST_PERSON_MARKER } from '@/constants/translationMarkers';
+import { canProbeInBackground, localStorageOrNull, type LocalAiWindow } from '@/services/localAiConnect';
 
 const LOCAL_OLLAMA_URL = process.env.NEXT_PUBLIC_LOCAL_OLLAMA_URL || 'http://localhost:11434/api';
 
@@ -51,7 +52,7 @@ const PULLABLE_MODELS = SIDELOAD_ORDER
   .map(m => ({ tag: m.ollamaTag.replace('dcostenco/', ''), sizeGB: m.sizeGB, accuracy: m.accuracy }));
 
 async function ollamaReachable(): Promise<boolean> {
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:') return false;
+  if (typeof window !== 'undefined' && !canProbeInBackground(window as unknown as LocalAiWindow, localStorageOrNull())) return false;
   try {
     const r = await fetch(`${OLLAMA_BASE}/api/tags`, { signal: AbortSignal.timeout(3000) });
     return r.ok;
@@ -132,6 +133,7 @@ export function autoSideload(): Promise<void> {
 
 async function _doAutoSideload(): Promise<void> {
   if (typeof window === 'undefined') return;
+  // Automatic multi-GB pulls stay off on https even for opted-in users: they download only from the Local AI panel.
   if (window.location.protocol === 'https:') return;
 
   const already = sessionStorage.getItem(SIDELOAD_KEY);
@@ -486,8 +488,9 @@ async function callSynalux(
 // ── Local Ollama (offline fallback) ──
 
 async function callLocalModel(prompt: string, model: string, timeoutMs = 10000, signal?: AbortSignal, onChunk?: (delta: string) => void): Promise<string> {
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    throw new Error('Local AI unavailable — HTTPS page cannot reach http://localhost');
+  // Same gate as localModel.probeOllama: https pages only after the user connected Ollama (never Safari or the iOS app).
+  if (typeof window !== 'undefined' && !canProbeInBackground(window as unknown as LocalAiWindow, localStorageOrNull())) {
+    throw new Error('Local AI unavailable on this page — connect Ollama in Settings → Local AI Models');
   }
   const t = timeoutSignal(timeoutMs);
   const fetchSignal = signal ? composeSignals(t.signal, signal) : t.signal;

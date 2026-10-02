@@ -150,6 +150,7 @@ export interface GestureConfig {
 }
 
 import { LOCAL_OLLAMA_URL, LOCAL_MODEL } from '@/services/localModel';
+import { canProbeInBackground, localStorageOrNull, type LocalAiWindow } from '@/services/localAiConnect';
 import { emitTrackingEvent } from './trackingTelemetry';
 
 export const DEFAULT_GESTURE_CONFIG: GestureConfig = {
@@ -578,6 +579,8 @@ export class GestureDetector {
   }
 
   async classifyViseme8B(buffer: number[][]): Promise<void> {
+    // Same gate as the other local-Ollama callers: on https only for users who connected Ollama (never Safari or the iOS app).
+    if (typeof window !== 'undefined' && !canProbeInBackground(window as unknown as LocalAiWindow, localStorageOrNull())) return;
     try {
       // Downsample buffer to save context window (take every 3rd frame)
       const downsampled = buffer.filter((_, i) => i % 3 === 0);

@@ -4,6 +4,8 @@
  * served over HTTPS. Without the gate the browser blocks the request
  * as mixed content and the failed fetch surfaces in the user's
  * console as a security error even though we catch it.
+ * October 2026: the gate opens only for Chrome/Edge/Firefox users who
+ * connected Ollama in Settings → Local AI Models (see the last block).
  *
  * Two surfaces:
  *   • services/localModel.ts → isLocalModelAvailable() short-circuits
@@ -89,10 +91,51 @@ describe('localModel HTTPS gate', () => {
   });
 });
 
-// (aiService callLocal is gated identically to localModel.probeOllama —
-// both check window.location.protocol === 'https:' before fetch. The
-// localModel tests above pin the symmetric gate; aiService.callLocal
-// is a private function exercised end-to-end by the live diagnostic
-// harness in scripts/. A unit test through askAI was attempted but
-// pulled in too many transitive fetches via auth/roles preflight,
-// drowning the signal — keep the direct-gate test instead.)
+// October 2026: the gate opens on https only for Chrome/Edge/Firefox users who
+// connected Ollama in Settings → Local AI Models (opt-in flag). Safari/WebKit and
+// the iOS app never probe; everyone else keeps the May 2026 no-fetch behaviour.
+describe('localModel HTTPS gate — opted-in users', () => {
+  const origUA = navigator.userAgent;
+  const CHROME = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36';
+  const SAFARI = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15';
+  const setUA = (ua: string) => Object.defineProperty(window.navigator, 'userAgent', { configurable: true, value: ua });
+
+  afterEach(() => {
+    setUA(origUA);
+    localStorage.clear();
+    delete (window as unknown as { prismNativeBridge?: unknown }).prismNativeBridge;
+  });
+
+  async function probeWith(ua: string, optedIn: boolean, bridge = false) {
+    setProtocol('https:');
+    setUA(ua);
+    if (optedIn) localStorage.setItem('prism-aac-local-ai-connected', '1');
+    if (bridge) (window as unknown as { prismNativeBridge?: unknown }).prismNativeBridge = {};
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ models: [{ name: 'prism-coder:8b' }] }), { status: 200 }),
+    );
+    const mod = await import('@/services/localModel');
+    const result = await mod.isLocalModelAvailable();
+    const called = fetchSpy.mock.calls.length > 0;
+    fetchSpy.mockRestore();
+    return { result, called };
+  }
+
+  it('Chrome + opted in → probes and uses local Ollama', async () => {
+    expect(await probeWith(CHROME, true)).toEqual({ result: true, called: true });
+  });
+  it('Chrome without the opt-in → no fetch (unchanged May 2026 behaviour)', async () => {
+    expect(await probeWith(CHROME, false)).toEqual({ result: false, called: false });
+  });
+  it('Safari + opted in → still no fetch (WebKit blocks http://localhost from https)', async () => {
+    expect(await probeWith(SAFARI, true)).toEqual({ result: false, called: false });
+  });
+  it('iOS app + opted in → no fetch (it uses its built-in model)', async () => {
+    expect(await probeWith(CHROME, true, true)).toEqual({ result: false, called: false });
+  });
+});
+
+// (aiService.callLocalModel, aiService.ollamaReachable and gestureService.classifyViseme8B use the
+// same canProbeInBackground gate as localModel.probeOllama; the gate itself is pinned in
+// tests/local-ai-connect.test.ts. callLocal is private and askAI pulls in auth/roles preflight
+// fetches, so it is exercised end-to-end by the live diagnostic harness in scripts/ instead.)
