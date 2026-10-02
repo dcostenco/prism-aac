@@ -71,6 +71,14 @@ function makeFrame(
   };
 }
 
+// Explicit 15fps camera time, unlike replaying a cached makeFrame result.
+function feedFreshFrames(detector: GestureDetector, blendshapes: Record<string, number>, count: number) {
+  for (let i = 0; i < count; i++) {
+    mockNow += 67;
+    detector.processFrame(makeFrame(blendshapes));
+  }
+}
+
 beforeEach(() => {
   mockNow = 1000;
   destroyGestureDetector();
@@ -198,6 +206,104 @@ describe('GestureDetector — processFrame disabled guard', () => {
 
 // ── Baseline capture ──────────────────────────────────────────────────────────
 
+describe.each([0, 0.003, 0.015])('camera result freshness — drift %s', (drift) => {
+  const closedEyes = { eyeBlinkLeft: 1 - drift, eyeBlinkRight: 1 - drift };
+
+  it('requires new held-gesture evidence after tracking loss and recovers', () => {
+    const onGesture = vi.fn();
+    const detector = new GestureDetector(makeConfig(), onGesture);
+    feedFreshFrames(detector, closedEyes, 2);
+    detector.processFrame(null);
+    feedFreshFrames(detector, closedEyes, 2);
+    expect(onGesture).not.toHaveBeenCalled();
+    feedFreshFrames(detector, closedEyes, 8);
+    expect(onGesture).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the gesture cooldown across tracking loss', () => {
+    const onGesture = vi.fn();
+    const detector = new GestureDetector(makeConfig({ cooldownMs: 1000 }), onGesture);
+    feedFreshFrames(detector, closedEyes, 10);
+    expect(onGesture).toHaveBeenCalledTimes(1);
+    detector.processFrame(null);
+    feedFreshFrames(detector, closedEyes, 10);
+    expect(onGesture).toHaveBeenCalledTimes(1);
+    // First fire is at1536ms; four further67ms frames reach2608ms.
+    feedFreshFrames(detector, closedEyes, 4);
+    expect(onGesture).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not count delivery delay as time spent holding a blink', () => {
+    const onGesture = vi.fn();
+    const detector = new GestureDetector(makeConfig(), onGesture);
+    detector.processFrame(makeFrame(closedEyes));
+    mockNow = 1067;
+    detector.processFrame(makeFrame(closedEyes));
+    mockNow = 1134;
+    const delayed = makeFrame(closedEyes);
+    mockNow = 1470;
+    detector.processFrame(delayed);
+    expect(onGesture).not.toHaveBeenCalled();
+  });
+
+  it('restarts unfinished baseline capture after loss, retaining saved configuration', () => {
+    const config = makeConfig({ baseline: {
+      blendshapes: { eyeBlinkLeft: drift }, headPose: { pitch: drift, yaw: 0, roll: 0 }, capturedAt: 0,
+    } });
+    const savedBaseline = config.baseline;
+    const detector = new GestureDetector(config, vi.fn());
+    detector.startBaselineCapture();
+    feedFreshFrames(detector, { jawOpen: drift }, 20);
+    detector.processFrame(null);
+    expect(detector.getBaselineProgress()).toBe(0);
+    expect(config.baseline).toBe(savedBaseline);
+    feedFreshFrames(detector, { jawOpen: drift }, 44);
+    expect(detector.isCapturingBaseline()).toBe(true);
+    feedFreshFrames(detector, { jawOpen: drift }, 1);
+    expect(detector.isCapturingBaseline()).toBe(false);
+  });
+
+  it('rejects old results even when their objects are cloned', () => {
+    const onGesture = vi.fn();
+    const detector = new GestureDetector(makeConfig(), onGesture);
+    const old = makeFrame(closedEyes);
+    detector.processFrame(old);
+    for (let elapsed = 60; elapsed <= 480; elapsed += 60) {
+      mockNow = 1000 + elapsed;
+      detector.processFrame({ ...old, timestamp: elapsed === 480 ? 999 : old.timestamp });
+    }
+    expect(onGesture).not.toHaveBeenCalled();
+  });
+
+  it('does not turn one cached closed-eye observation into a held blink', () => {
+    const onGesture = vi.fn();
+    const detector = new GestureDetector(makeConfig(), onGesture);
+    const cached = makeFrame(
+      { eyeBlinkLeft: 1 - drift, eyeBlinkRight: 1 - drift },
+      { pitch: drift, yaw: -drift, roll: drift },
+    );
+    // The tracker can replay its latest result while the camera stalls.
+    // This is one observation, not evidence of eyes closed for 400ms.
+    for (let elapsed = 0; elapsed <= 480; elapsed += 60) {
+      mockNow = 1000 + elapsed;
+      detector.processFrame(cached);
+    }
+    expect(onGesture).not.toHaveBeenCalled();
+  });
+
+  it('counts distinct observations, not render ticks, for neutral calibration', () => {
+    const detector = new GestureDetector(makeConfig(), vi.fn());
+    detector.startBaselineCapture();
+    const cached = makeFrame({ eyeBlinkLeft: drift, jawOpen: drift });
+    for (let elapsed = 0; elapsed < 450; elapsed += 10) {
+      mockNow = 1000 + elapsed;
+      detector.processFrame(cached);
+    }
+    expect(detector.isCapturingBaseline()).toBe(true);
+    expect(detector.getBaselineProgress()).toBeCloseTo(1 / 45);
+  });
+});
+
 describe('GestureDetector — baseline capture', () => {
   it('startBaselineCapture sets isCapturingBaseline to true', () => {
     const d = new GestureDetector(makeConfig(), vi.fn());
@@ -226,10 +332,10 @@ describe('GestureDetector — baseline capture', () => {
     const d = new GestureDetector(makeConfig(), vi.fn());
     d.startBaselineCapture();
     // Feed 44 frames — still capturing
-    for (let i = 0; i < 44; i++) d.processFrame(makeFrame({ eyeBlinkLeft: 0.1 }));
+    feedFreshFrames(d, { eyeBlinkLeft: 0.1 }, 44);
     expect(d.isCapturingBaseline()).toBe(true);
     // 45th frame triggers finalization
-    d.processFrame(makeFrame({ eyeBlinkLeft: 0.1 }));
+    feedFreshFrames(d, { eyeBlinkLeft: 0.1 }, 1);
     expect(d.isCapturingBaseline()).toBe(false);
     // baselineFrames is cleared after finalization, so progress resets to 0
     expect(d.getBaselineProgress()).toBe(0);
@@ -243,14 +349,7 @@ describe('GestureDetector — blink detection', () => {
     const gestures: GestureEvent[] = [];
     const d = new GestureDetector(makeConfig(), (e) => gestures.push(e));
 
-    // Frame 1 (t=1000): smoothed = 0.3, not active
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
-    // Frame 2 (t=1000): smoothed ≈ 0.51, active=true, startTime=1000
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
-    // Advance past 400ms dwell
-    mockNow = 1400;
-    // Frame 3: dwell met, cooldown met → fires
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
+    feedFreshFrames(d, { eyeBlinkLeft: 1.0 }, 10);
 
     expect(gestures.some((g) => g.gesture === 'blink')).toBe(true);
     const ev = gestures.find((g) => g.gesture === 'blink')!;
@@ -262,10 +361,7 @@ describe('GestureDetector — blink detection', () => {
     const gestures: GestureEvent[] = [];
     const d = new GestureDetector(makeConfig(), (e) => gestures.push(e));
 
-    d.processFrame(makeFrame({ eyeBlinkLeft: 0, eyeBlinkRight: 1.0 }));
-    d.processFrame(makeFrame({ eyeBlinkLeft: 0, eyeBlinkRight: 1.0 }));
-    mockNow = 1400;
-    d.processFrame(makeFrame({ eyeBlinkLeft: 0, eyeBlinkRight: 1.0 }));
+    feedFreshFrames(d, { eyeBlinkLeft: 0, eyeBlinkRight: 1.0 }, 10);
 
     expect(gestures.some((g) => g.gesture === 'blink')).toBe(true);
   });
@@ -289,11 +385,7 @@ describe('GestureDetector — mouth_open detection', () => {
     const gestures: GestureEvent[] = [];
     const d = new GestureDetector(makeConfig(), (e) => gestures.push(e));
 
-    // jawOpen=0.8: after 2 frames smoothed ≈ 0.408 > 0.4
-    d.processFrame(makeFrame({ jawOpen: 0.8 }));
-    d.processFrame(makeFrame({ jawOpen: 0.8 }));
-    mockNow = 1300; // advance past 300ms dwell
-    d.processFrame(makeFrame({ jawOpen: 0.8 }));
+    feedFreshFrames(d, { jawOpen: 0.8 }, 10);
 
     expect(gestures.some((g) => g.gesture === 'mouth_open')).toBe(true);
   });
@@ -307,11 +399,7 @@ describe('GestureDetector — smile detection', () => {
     // lower confidenceThreshold to account for smile threshold=0.35, lower confidence
     const d = new GestureDetector(makeConfig({ confidenceThreshold: 0.5 }), (e) => gestures.push(e));
 
-    // smileLeft=0.7, smileRight=0: max=0.7. After 2 frames smoothed ≈ 0.357 > 0.35
-    d.processFrame(makeFrame({ mouthSmileLeft: 0.7 }));
-    d.processFrame(makeFrame({ mouthSmileLeft: 0.7 }));
-    mockNow = 1300; // advance past 300ms dwell
-    d.processFrame(makeFrame({ mouthSmileLeft: 0.7 }));
+    feedFreshFrames(d, { mouthSmileLeft: 0.7 }, 10);
 
     expect(gestures.some((g) => g.gesture === 'smile')).toBe(true);
   });
@@ -324,11 +412,7 @@ describe('GestureDetector — brow_raise detection', () => {
     const gestures: GestureEvent[] = [];
     const d = new GestureDetector(makeConfig({ confidenceThreshold: 0.5 }), (e) => gestures.push(e));
 
-    // threshold=0.35, browVal=0.7: after 2 frames smoothed ≈ 0.357 > 0.35
-    d.processFrame(makeFrame({ browInnerUp: 0.7 }));
-    d.processFrame(makeFrame({ browInnerUp: 0.7 }));
-    mockNow = 1300;
-    d.processFrame(makeFrame({ browInnerUp: 0.7 }));
+    feedFreshFrames(d, { browInnerUp: 0.7 }, 10);
 
     expect(gestures.some((g) => g.gesture === 'brow_raise')).toBe(true);
   });
@@ -341,19 +425,13 @@ describe('GestureDetector — cooldown enforcement', () => {
     const gestures: GestureEvent[] = [];
     const d = new GestureDetector(makeConfig({ cooldownMs: 1000 }), (e) => gestures.push(e));
 
-    // First fire at t=1400
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
-    mockNow = 1400;
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
+    feedFreshFrames(d, { eyeBlinkLeft: 1.0 }, 10);
 
     const firstCount = gestures.filter((g) => g.gesture === 'blink').length;
     expect(firstCount).toBe(1);
 
-    // Try to fire again 100ms later (within cooldown)
-    mockNow = 1500;
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
+    // Enough new evidence for another blink, but still inside cooldown.
+    feedFreshFrames(d, { eyeBlinkLeft: 1.0 }, 10);
 
     expect(gestures.filter((g) => g.gesture === 'blink').length).toBe(1);
   });
@@ -362,21 +440,12 @@ describe('GestureDetector — cooldown enforcement', () => {
     const gestures: GestureEvent[] = [];
     const d = new GestureDetector(makeConfig({ cooldownMs: 1000 }), (e) => gestures.push(e));
 
-    // First fire
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
-    mockNow = 1400;
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
+    feedFreshFrames(d, { eyeBlinkLeft: 1.0 }, 10);
     expect(gestures.filter((g) => g.gesture === 'blink').length).toBe(1);
 
-    // After cooldownMs (1000ms past lastFired=1400) → t=2400+
-    mockNow = 2500;
-    // Reset EMA by feeding zero, then ramp back up
-    d.processFrame(makeFrame({ eyeBlinkLeft: 0 })); // EMA drops, active=false
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 })); // ramp back up
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 })); // smooth above threshold
-    mockNow = 2900;
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 })); // dwell met
+    mockNow += 1000;
+    feedFreshFrames(d, { eyeBlinkLeft: 0 }, 1);
+    feedFreshFrames(d, { eyeBlinkLeft: 1.0 }, 10);
 
     expect(gestures.filter((g) => g.gesture === 'blink').length).toBeGreaterThanOrEqual(2);
   });
@@ -394,6 +463,7 @@ describe('GestureDetector — head_nod detection', () => {
     // Range=0.4 > 0.15, crossings=7 >= 2, pitchRange > yawRange*1.5 (0.4>0) ✓
     const pitches = [0.2, -0.2, 0.2, -0.2, 0.2, -0.2, 0.2, -0.2, 0.2, -0.2];
     for (const pitch of pitches) {
+      mockNow += 67;
       d.processFrame(makeFrame({}, { pitch, yaw: 0, roll: 0 }));
     }
 
@@ -409,6 +479,7 @@ describe('GestureDetector — head_nod detection', () => {
     // Tiny pitch oscillation below 0.15 threshold
     const pitches = [0.05, -0.05, 0.05, -0.05, 0.05, -0.05, 0.05, -0.05, 0.05, -0.05];
     for (const pitch of pitches) {
+      mockNow += 67;
       d.processFrame(makeFrame({}, { pitch, yaw: 0, roll: 0 }));
     }
     expect(cb.mock.calls.some((c) => c[0].gesture === 'head_nod')).toBe(false);
@@ -427,6 +498,7 @@ describe('GestureDetector — head_shake detection', () => {
     // yawRange=0.6 > 0.2, yawCrossings=7 >= 2, yawRange > pitchRange*1.5 (0.6>0) ✓
     const yaws = [0.3, -0.3, 0.3, -0.3, 0.3, -0.3, 0.3, -0.3, 0.3, -0.3];
     for (const yaw of yaws) {
+      mockNow += 67;
       d.processFrame(makeFrame({}, { pitch: 0, yaw, roll: 0 }));
     }
 
@@ -438,6 +510,7 @@ describe('GestureDetector — head_shake detection', () => {
     const d = new GestureDetector(makeConfig({ cooldownMs: 500 }), cb);
     const yaws = [0.05, -0.05, 0.05, -0.05, 0.05, -0.05, 0.05, -0.05, 0.05, -0.05];
     for (const yaw of yaws) {
+      mockNow += 67;
       d.processFrame(makeFrame({}, { pitch: 0, yaw, roll: 0 }));
     }
     expect(cb.mock.calls.some((c) => c[0].gesture === 'head_shake')).toBe(false);
@@ -479,6 +552,7 @@ describe('GestureDetector — recording mode', () => {
     const d = new GestureDetector(makeConfig(), vi.fn());
     d.startRecording('test_gesture');
     for (let i = 0; i < 8; i++) {
+      mockNow += 67;
       d.processFrame(makeFrame({ jawOpen: i * 0.1 }));
     }
     const result = d.stopRecording();
@@ -496,14 +570,11 @@ describe('GestureDetector — recording mode', () => {
     const d = new GestureDetector(makeConfig(), (e) => gestures.push(e));
 
     d.startRecording('test');
-    for (let i = 0; i < 5; i++) d.processFrame(makeFrame());
+    feedFreshFrames(d, {}, 5);
     d.stopRecording();
 
     // Now normal detection should resume
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
-    mockNow = 1400;
-    d.processFrame(makeFrame({ eyeBlinkLeft: 1.0 }));
+    feedFreshFrames(d, { eyeBlinkLeft: 1.0 }, 10);
 
     expect(gestures.some((g) => g.gesture === 'blink')).toBe(true);
     vi.unstubAllGlobals();
@@ -567,13 +638,18 @@ describe('GestureDetector — resetSession', () => {
 
     // Trigger a nod
     const pitches = [0.2, -0.2, 0.2, -0.2, 0.2, -0.2, 0.2, -0.2, 0.2, -0.2];
-    for (const pitch of pitches) d.processFrame(makeFrame({}, { pitch, yaw: 0, roll: 0 }));
+    for (const pitch of pitches) {
+      mockNow += 67;
+      d.processFrame(makeFrame({}, { pitch, yaw: 0, roll: 0 }));
+    }
     const nodsBefore = gestures.filter((g) => g.gesture === 'head_nod').length;
     expect(nodsBefore).toBeGreaterThan(0);
 
     // Reset clears history — feeding only 2 more frames won't reach threshold
     d.resetSession();
+    mockNow += 67;
     d.processFrame(makeFrame({}, { pitch: 0.2, yaw: 0, roll: 0 }));
+    mockNow += 67;
     d.processFrame(makeFrame({}, { pitch: -0.2, yaw: 0, roll: 0 }));
     // Only 2 frames in history — length < 8, no new nod
     const nodsAfterReset = gestures.filter((g) => g.gesture === 'head_nod').length;
@@ -770,7 +846,7 @@ describe('GestureDetector — conversation mode', () => {
     const cfg = makeConfig({ enabled: true, dwellMs: 10, cooldownMs: 0 });
     const gd = new GestureDetector(cfg, cb);
     gd.startBaselineCapture();
-    for (let i = 0; i < 45; i++) gd.processFrame(makeFrame());
+    feedFreshFrames(gd, {}, 45);
 
     gd.setConversationMode(true);
     expect(gd.isConversationModeActive()).toBe(true);
@@ -790,7 +866,7 @@ describe('GestureDetector — conversation mode', () => {
     const cfg = makeConfig({ enabled: true, dwellMs: 10, cooldownMs: 0 });
     const gd = new GestureDetector(cfg, cb);
     gd.startBaselineCapture();
-    for (let i = 0; i < 45; i++) gd.processFrame(makeFrame());
+    feedFreshFrames(gd, {}, 45);
 
     gd.setConversationMode(true);
     for (let i = 0; i < 10; i++) {
@@ -808,7 +884,7 @@ describe('GestureDetector — conversation mode', () => {
     const cfg = makeConfig({ enabled: true, dwellMs: 10, cooldownMs: 0 });
     const gd = new GestureDetector(cfg, cb);
     gd.startBaselineCapture();
-    for (let i = 0; i < 45; i++) gd.processFrame(makeFrame());
+    feedFreshFrames(gd, {}, 45);
 
     gd.setConversationMode(true);
     for (let i = 0; i < 15; i++) {
@@ -826,7 +902,7 @@ describe('GestureDetector — conversation mode', () => {
     const cfg = makeConfig({ enabled: true, dwellMs: 10, cooldownMs: 0 });
     const gd = new GestureDetector(cfg, cb);
     gd.startBaselineCapture();
-    for (let i = 0; i < 45; i++) gd.processFrame(makeFrame());
+    feedFreshFrames(gd, {}, 45);
 
     gd.setConversationMode(true);
     for (let i = 0; i < 10; i++) {

@@ -34,6 +34,30 @@ to the production build under review. Reuse installed model/dependency caches;
 the watchdog uses macOS's available-memory estimate before its page-count
 fallback, without purging caches.
 
+## Head/face gesture freshness regressions
+
+Gesture holds use unique camera observation timestamps, not the render-loop
+clock or inference completion time. Missing/stale landmarks clear pending
+holds and calibration samples without deleting saved baselines, templates or
+action cooldowns. Landmarks follow the camera selected by cursor fusion,
+including a fresh backup during failover; small confidence fluctuations must
+not repeatedly reset a deliberate gesture.
+
+Head-tracker drift/recovery uses the existing normalized face-area quality
+scale, not raw face size, from the selected fresh camera. The original
+confidence-collapse and drift thresholds remain enabled.
+
+`tests/head-tracker-gesture-replay.test.ts` runs the public tracker and real
+gesture detector against controlled detector output at zero, small and larger
+drift, including slow inference, stalled loops, landmark loss, failover,
+ordinary face size and poor-input safety. This is detector-boundary evidence,
+not pixel recognition evidence. `e2e/head-tracking-loss-recovery.spec.ts`
+exercises Settings, real MediaPipe on simulated low-resolution camera pixels,
+tracking loss/recovery and Esc with the normal safety controls enabled. Run it
+through `scripts/playwright-watchdog.sh`, one worker and one device project at
+a time, against the fresh build under review. Physical-camera accuracy and
+recognition latency still require separate device validation.
+
 <details>
 <summary><strong>📐 Full investigation, harness, and reliability ledger</strong></summary>
 
