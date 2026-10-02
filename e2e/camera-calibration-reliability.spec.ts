@@ -2,6 +2,9 @@ import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { safeScreenshot } from './helpers/screenshot-validation';
+import { expectPhotographicCameraInput, installCameraVideoProbe } from './helpers/camera-provenance';
+import { installLocalCameraAccess } from './helpers/camera-access-fixture';
+test.beforeEach(async ({ page, baseURL }, info) => installLocalCameraAccess(page, baseURL, info));
 
 // Camera pixels are simulated/degraded, NOT real-device reliability evidence.
 // MediaPipe WASM, detector, tracker,
@@ -25,13 +28,15 @@ for (const profile of [
     test.setTimeout(120_000);
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
+    await page.addInitScript(installCameraVideoProbe);
     await page.addInitScript(({ photograph, profile }) => {
-      const state = { x: 0, y: 0, lost: false, frames: 0 };
+      const state = { x: 0, y: 0, lost: false, frames: 0, calls: 0, trackId: '', retiredTrackIds: [] as string[] };
       Object.assign(window, { __cameraReplay: state });
       // Never enable __POSE_TEST_DRIVE: it bypasses actual cursor processing.
       const image = new Image(); image.src = `data:image/jpeg;base64,${photograph}`;
       let stream: MediaStream | null = null;
-      navigator.mediaDevices.getUserMedia = async () => {
+      const mockCamera = async () => {
+        state.calls++;
         if (stream?.getVideoTracks().some(track => track.readyState === 'live')) return stream;
         await image.decode();
         const canvas = document.createElement('canvas');
@@ -55,10 +60,14 @@ for (const profile of [
         }, 33);
         stream = canvas.captureStream(30);
         const track = stream.getVideoTracks()[0];
+        state.trackId = track.id;
         const stop = track.stop.bind(track);
-        track.stop = () => { clearInterval(timer); stop(); };
+        track.stop = () => { state.retiredTrackIds.push(track.id); clearInterval(timer); stop(); };
         return stream;
       };
+      // Preserve the fixture across WebKit's instance-method replacement.
+      MediaDevices.prototype.getUserMedia = mockCamera;
+      navigator.mediaDevices.getUserMedia = mockCamera;
     }, { photograph, profile });
     await page.clock.install();
     await page.goto('/prism-aac');
@@ -68,11 +77,13 @@ for (const profile of [
     if (await toggle.getAttribute('aria-pressed') !== 'true') await toggle.click();
     await page.getByRole('button', { name: /Set Up Tracking/ }).click();
     await page.getByTestId('tracking-setup-start').click();
+    await expectPhotographicCameraInput(page, '__cameraReplay');
     const wizard = page.getByTestId('tracking-setup-wizard');
     await expect(wizard).toHaveAttribute('data-phase', 'calibrate-center', { timeout: 45_000 });
     await expect(wizard).toHaveAttribute('data-tracker-status', 'tracking');
     const capture = page.getByTestId('tracking-capture-center');
     await expect(capture).toBeEnabled();
+    await expectPhotographicCameraInput(page, '__cameraReplay');
     // Neutral must fit the calibration circle after live recentering, not
     // require already-calibrated movement to reach it in the first place.
     await expect.poll(async () => {
@@ -85,15 +96,27 @@ for (const profile of [
     // Exercise the hands-free stable-hold path. Its live sample-count label
     // resizes the manual button and auto-capture can detach it during a
     // Playwright stability wait; neither should disable automatic capture.
-    // Freeze only the already-observed render for capture: otherwise the
-    // hands-free phase can advance between validation and the PNG write.
-    // Resume before exercising auto-capture; no pose/cursor is injected.
+    // pauseAt can run queued tracker callbacks before pausing JS, and native
+    // CSS transitions continue afterward. Credit only the settled frozen
+    // geometry, not the earlier live fit. Never inject a pose or cursor.
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 200));
+    await expect.poll(() => page.getByTestId('tracking-wizard-cursor').evaluate(cursor =>
+      cursor.getAnimations().some(animation => animation.playState === 'running'),
+    ), { timeout: 2_000 }).toBe(false);
     await expect(wizard).toHaveAttribute('data-phase', 'calibrate-center');
+    const frozenCursor = (await page.getByTestId('tracking-wizard-cursor').boundingBox())!;
+    const frozenCircle = (await page.getByTestId('tracking-center-target').boundingBox())!;
+    expect(frozenCursor).not.toBeNull();
+    expect(frozenCircle).not.toBeNull();
+    expect(Math.hypot(frozenCursor.x + frozenCursor.width / 2 - frozenCircle.x - frozenCircle.width / 2,
+      frozenCursor.y + frozenCursor.height / 2 - frozenCircle.y - frozenCircle.height / 2) +
+      frozenCursor.width / 2).toBeLessThan(55);
     await safeScreenshot(page, info.outputPath('center-with-drift.png'), {
       expectedPath: '/prism-aac', requiredSelectors: ['[data-testid="tracking-center-target"]'],
     });
     await expect(wizard).toHaveAttribute('data-phase', 'calibrate-center');
+    expect(await page.getByTestId('tracking-wizard-cursor').boundingBox()).toEqual(frozenCursor);
+    expect(await page.getByTestId('tracking-center-target').boundingBox()).toEqual(frozenCircle);
     await page.clock.resume();
     await expect(wizard).toHaveAttribute('data-phase', 'calibrate-corners', { timeout: 25_000 });
     const offsets = [[0.10, -0.08], [-0.10, -0.08], [-0.10, 0.08], [0.10, 0.08]];
@@ -109,6 +132,7 @@ for (const profile of [
       }
     }
     await expect(wizard).toHaveAttribute('data-phase', 'accuracy-test', { timeout: 12_000 });
+    await expectPhotographicCameraInput(page, '__cameraReplay');
     const hits = await page.getByTestId('tracking-test-hits').innerText();
     await page.evaluate(() => Object.assign((window as unknown as {
       __cameraReplay: object }).__cameraReplay, { lost: true }));
@@ -124,7 +148,17 @@ for (const profile of [
       __cameraReplay: object }).__cameraReplay, { lost: false, x: 0, y: 0 }));
     await page.getByRole('button', { name: 'Start Using Prism AAC' }).click();
     await expect(wizard).toHaveCount(0);
+    // Return to the board before testing persistence. Remaining in Settings
+    // lets a neutral camera dwell activate its controls; that separate
+    // interaction-policy issue is not storage loss or covered by this smoke.
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Close settings', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByTestId('camera-input-overlay')).toHaveAttribute('data-status', 'tracking', { timeout: 15_000 });
+    await expectPhotographicCameraInput(page, '__cameraReplay');
+    expect(await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('prism-aac-settings')!).state.cameraInputEnabled,
+    )).toBe(true);
     await page.reload();
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await page.getByRole('button', { name: /Accessibility & Input Modes/ }).click();

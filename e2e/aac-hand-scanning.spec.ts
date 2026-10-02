@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { safeScreenshot } from './helpers/screenshot-validation';
+import { installLocalCameraAccess } from './helpers/camera-access-fixture';
+test.beforeEach(async ({ page, baseURL }, info) => installLocalCameraAccess(page, baseURL, info));
 
 test.afterEach(async ({ page, context }) => {
   try { await page.close(); } catch { /* fixture may already be closed */ }
@@ -35,6 +37,8 @@ const CAMERA_SHIM = () => {
     if (!stream) throw new Error('captureStream unavailable');
     return stream;
   };
+  // Instance-only shims may be replaced by WebKit during navigation.
+  MediaDevices.prototype.getUserMedia = navigator.mediaDevices.getUserMedia;
 };
 
 test('bundled hand model opens the real scanning phase instead of default-profile touch calibration', async ({ page }, testInfo) => {
