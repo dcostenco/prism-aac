@@ -30,7 +30,11 @@ export function middleware(request: NextRequest) {
     // speech when portal TTS fails and Web Speech is unavailable.
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'`,
     "style-src 'self' 'unsafe-inline'",
-    "connect-src 'self' https://synalux.ai https://*.synalux.ai https://api.arasaac.org https://static.arasaac.org https://nominatim.openstreetmap.org wss://synalux.ai wss://*.synalux.ai https://browser-intake-datadoghq.com https://*.browser-intake-datadoghq.com https://*.datadoghq.com",
+    // http://localhost:11434 / 127.0.0.1:11434 = Ollama on the user's own computer
+    // (Settings → Local AI Models). The portal proxy's production CSP already
+    // lists them; without them here the direct Vercel host and the dev server
+    // refused every Ollama request and the panel read "not running".
+    "connect-src 'self' https://synalux.ai https://*.synalux.ai https://api.arasaac.org https://static.arasaac.org https://nominatim.openstreetmap.org wss://synalux.ai wss://*.synalux.ai https://browser-intake-datadoghq.com https://*.browser-intake-datadoghq.com https://*.datadoghq.com http://localhost:11434 http://127.0.0.1:11434",
     "media-src 'self' blob: https://synalux.ai https://*.synalux.ai",
     "img-src 'self' blob: data: " +
     "https://static.arasaac.org https://api.arasaac.org " +

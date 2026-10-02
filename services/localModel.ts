@@ -17,6 +17,8 @@
  * tier. Speed is the only criterion.
  */
 
+import { canProbeInBackground, localStorageOrNull, type LocalAiWindow } from '@/services/localAiConnect';
+
 const OLLAMA_BASE = 'http://localhost:11434';
 const PROBE_TIMEOUT_MS = 600;
 
@@ -24,12 +26,12 @@ let probePromise: Promise<boolean> | null = null;
 
 async function probeOllama(): Promise<boolean> {
   if (typeof window === 'undefined') return false;
-  // Skip probe on HTTPS pages: browsers block http://localhost as mixed
-  // content, and the failed fetch surfaces in the console as a security
-  // error even though we catch and ignore it. Local Ollama is only
-  // reachable when prism-aac itself is served over http (dev / local
-  // standalone) — on https deploys the portal path is the only option.
-  if (window.location.protocol === 'https:') return false;
+  // On https pages, probe only for Chrome/Edge/Firefox users who connected
+  // Ollama in Settings → Local AI Models. Safari/WebKit always blocks
+  // http://localhost from https, and an unasked probe fails for most
+  // visitors and fills their console with mixed-content / CORS errors
+  // (the May 2026 fix this replaces skipped every https page).
+  if (!canProbeInBackground(window as unknown as LocalAiWindow, localStorageOrNull())) return false;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), PROBE_TIMEOUT_MS);
   try {

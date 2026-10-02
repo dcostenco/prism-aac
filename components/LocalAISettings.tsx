@@ -1,5 +1,31 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
+import {
+  checkLocalAi, detectOs, LOCAL_AI_OPT_IN_KEY, ollamaOriginsCommand, ollamaRestartHint, queryLocalNetworkPermission,
+  type LocalAiState, type LocalAiWindow,
+} from '@/services/localAiConnect';
+
+// Status line per state; the detail block below it says what to do next.
+const STATE_LABEL: Record<LocalAiState, string> = {
+  'connected': 'Ollama connected',
+  'ios-builtin': 'On-device AI is built into this app',
+  'browser-blocks': "Safari can't reach Ollama from this website",
+  'unsafe-url': "This address can't be reached from a secure page",
+  'needs-permission': 'Allow local network access',
+  'permission-denied': 'Local network access is blocked',
+  'blocked-by-ollama': 'Ollama is running but blocks this site',
+  'not-running': 'Ollama is not running',
+};
+const STATE_DOT: Record<LocalAiState, string> = {
+  'connected': 'bg-green-500',
+  'ios-builtin': 'bg-green-500',
+  'needs-permission': 'bg-amber-400',
+  'blocked-by-ollama': 'bg-amber-400',
+  'browser-blocks': 'bg-red-400',
+  'unsafe-url': 'bg-red-400',
+  'permission-denied': 'bg-red-400',
+  'not-running': 'bg-red-400',
+};
 
 interface ModelInfo {
   id: string;
@@ -53,36 +79,61 @@ const MODELS: ModelInfo[] = [
 type ModelStatus = 'unknown' | 'checking' | 'not_installed' | 'downloading' | 'installed' | 'active' | 'error';
 
 export default function LocalAISettings() {
-  const [ollamaOnline, setOllamaOnline] = useState<boolean | null>(null);
+  // null = checking. The panel mounts only when the user opens its Settings section.
+  const [localState, setLocalState] = useState<LocalAiState | null>(null);
   const [statuses, setStatuses] = useState<Record<string, ModelStatus>>({});
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
+  const [copied, setCopied] = useState(false);
   const abortRefs = useRef<Record<string, AbortController>>({});
+  // Only the newest check may set the state: an older one can take ~6 s and would overwrite the answer for a URL typed since.
+  const checkSeq = useRef(0);
+  const [allowTried, setAllowTried] = useState(false);
+  const ollamaOnline = localState === 'connected';
 
   // Detect Ollama on mount and when URL changes
   useEffect(() => {
     checkOllama();
   }, [ollamaUrl]);
 
-  async function checkOllama() {
-    setOllamaOnline(null);
-    try {
-      const r = await fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(3000) });
-      if (!r.ok) { setOllamaOnline(false); return; }
-      setOllamaOnline(true);
-      const data = await r.json() as { models?: Array<{ name: string }> };
-      const installed = new Set((data.models ?? []).map(m => m.name));
-      const newStatuses: Record<string, ModelStatus> = {};
-      for (const m of MODELS) {
-        // Check both full tag and shortname
-        const isInstalled = installed.has(m.tag) || [...installed].some(n => n.includes(`prism-coder:${m.id}`));
-        newStatuses[m.id] = isInstalled ? 'installed' : 'not_installed';
-      }
-      setStatuses(newStatuses);
-    } catch {
-      setOllamaOnline(false);
+  // userInitiated: only a button press may trigger the browser's local-network permission prompt.
+  async function checkOllama(userInitiated = false) {
+    const seq = ++checkSeq.current;
+    setLocalState(null);
+    const result = await checkLocalAi(window as unknown as LocalAiWindow, ollamaUrl, {
+      fetch: (input, init) => fetch(input, init),
+      queryPermission: () => queryLocalNetworkPermission(typeof navigator !== 'undefined' ? navigator.permissions : undefined),
+    }, userInitiated);
+    if (seq !== checkSeq.current) return;
+    setLocalState(result.state);
+    // Allow was pressed and the browser still shows no answer: the next render adds what else to check.
+    setAllowTried(userInitiated && result.state === 'needs-permission');
+    // A revoked permission: stop the background services from probing (and logging errors) on every page.
+    if (result.state === 'permission-denied') { try { localStorage.removeItem(LOCAL_AI_OPT_IN_KEY); } catch { /* private mode */ } }
+    if (result.state !== 'connected') return;
+    // Lets the background AI services use this Ollama on https pages too.
+    try { localStorage.setItem(LOCAL_AI_OPT_IN_KEY, '1'); } catch { /* private mode */ }
+    const installed = new Set(result.models ?? []);
+    const newStatuses: Record<string, ModelStatus> = {};
+    for (const m of MODELS) {
+      // Check both full tag and shortname
+      const isInstalled = installed.has(m.tag) || [...installed].some(n => n.includes(`prism-coder:${m.id}`));
+      newStatuses[m.id] = isInstalled ? 'installed' : 'not_installed';
     }
+    setStatuses(newStatuses);
   }
+
+  async function copyCommand(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard unavailable: the command stays selectable */ }
+  }
+
+  const os = typeof navigator !== 'undefined' ? detectOs(navigator.userAgent) : 'mac';
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://synalux.ai';
+  const originsCommand = ollamaOriginsCommand(os, origin);
 
   async function downloadModel(model: ModelInfo) {
     setStatuses(s => ({ ...s, [model.id]: 'downloading' }));
@@ -149,17 +200,70 @@ export default function LocalAISettings() {
     <div className="space-y-4">
       {/* Ollama status */}
       <div className="flex items-center gap-2 text-sm">
-        <div className={`w-2 h-2 rounded-full ${ollamaOnline === null ? 'bg-gray-400 animate-pulse' : ollamaOnline ? 'bg-green-500' : 'bg-red-400'}`} />
+        <div className={`w-2 h-2 rounded-full ${localState === null ? 'bg-gray-400 animate-pulse' : STATE_DOT[localState]}`} />
         <span className="text-theme-muted">
-          {ollamaOnline === null ? 'Checking Ollama…' : ollamaOnline ? 'Ollama connected' : 'Ollama not found'}
+          {localState === null ? 'Checking Ollama…' : STATE_LABEL[localState]}
         </span>
-        <button onClick={checkOllama} className="ml-auto text-xs text-accent hover:underline">Refresh</button>
+        {localState !== 'ios-builtin' && localState !== 'browser-blocks' && (
+          <button onClick={() => checkOllama(true)} className="ml-auto text-xs text-accent hover:underline">Refresh</button>
+        )}
       </div>
 
-      {/* Ollama URL (advanced) */}
-      {!ollamaOnline && (
+      {/* What to do next, per platform and state */}
+      {localState === 'ios-builtin' && (
+        <p className="text-xs text-theme-muted">
+          Prism runs its own AI model on this iPhone or iPad. It works offline and needs no Ollama.
+        </p>
+      )}
+
+      {localState === 'browser-blocks' && (
         <div className="text-xs text-theme-muted space-y-1">
-          <p>Install Ollama from <a href="https://ollama.com" target="_blank" rel="noopener" className="text-accent hover:underline">ollama.com</a>, then refresh.</p>
+          <p>Safari blocks secure websites from talking to apps on this computer, so it can&apos;t reach Ollama here.</p>
+          <p>To use a local model, open Prism AAC in Chrome, Edge or Firefox on this computer, or use the Prism AAC app on iPhone or iPad, which has a built-in model.</p>
+        </div>
+      )}
+
+      {localState === 'needs-permission' && (
+        <div className="text-xs text-theme-muted space-y-2">
+          <p>Your browser will ask to let this site reach apps on this device. Choose Allow.</p>
+          {allowTried && (
+            <p>No prompt appeared? Make sure Ollama is open on this computer. Some browsers and extensions block local network access; allow it for this site, then press Allow again.</p>
+          )}
+          <button onClick={() => checkOllama(true)}
+            className="text-xs px-3 py-1 rounded bg-accent text-white hover:opacity-90">
+            Allow
+          </button>
+        </div>
+      )}
+
+      {localState === 'permission-denied' && (
+        <p className="text-xs text-theme-muted">
+          Open this site&apos;s settings (the icon left of the address bar), set Local network access to Allow, then press Refresh.
+        </p>
+      )}
+
+      {localState === 'blocked-by-ollama' && (
+        <div className="text-xs text-theme-muted space-y-2">
+          <p>Run this on this computer:</p>
+          <div className="flex gap-2 items-start">
+            <code className="flex-1 select-all break-all rounded border border-theme px-2 py-1 font-mono">{originsCommand}</code>
+            <button onClick={() => copyCommand(originsCommand)}
+              className="shrink-0 text-xs px-2 py-1 rounded border border-theme hover:bg-theme">
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+          <p>{ollamaRestartHint(os)} Then press Refresh.</p>
+          <p className="opacity-60">Already using OLLAMA_ORIGINS for other sites? Separate them with commas.</p>
+        </div>
+      )}
+
+      {(localState === 'not-running' || localState === 'unsafe-url') && (
+        <div className="text-xs text-theme-muted space-y-1">
+          {localState === 'not-running' ? (
+            <p>Install Ollama from <a href="https://ollama.com" target="_blank" rel="noopener" className="text-accent hover:underline">ollama.com</a>, open it, then press Refresh.</p>
+          ) : (
+            <p>A secure page can only reach Ollama on this same computer, at http://localhost:11434. Other addresses and ports, like http://192.168.1.20:11434, are blocked by the browser.</p>
+          )}
           <div className="flex gap-2 items-center mt-2">
             <span className="shrink-0">URL:</span>
             <input
@@ -169,7 +273,6 @@ export default function LocalAISettings() {
               placeholder="http://localhost:11434"
             />
           </div>
-          <p className="text-xs opacity-60">iOS on same WiFi: use Mac IP, e.g. http://192.168.1.x:11434</p>
         </div>
       )}
 
@@ -232,10 +335,12 @@ export default function LocalAISettings() {
         </div>
       )}
 
-      <p className="text-xs text-theme-muted opacity-60">
-        Local models run on your device — no cloud cost, no data sent externally.
-        <a href="https://ollama.com/dcostenco/prism-coder" target="_blank" rel="noopener" className="ml-1 text-accent hover:underline">View on Ollama Hub →</a>
-      </p>
+      {localState !== 'ios-builtin' && (
+        <p className="text-xs text-theme-muted opacity-60">
+          Local models run on your device — no cloud cost, no data sent externally.
+          <a href="https://ollama.com/dcostenco/prism-coder" target="_blank" rel="noopener" className="ml-1 text-accent hover:underline">View on Ollama Hub →</a>
+        </p>
+      )}
     </div>
   );
 }
