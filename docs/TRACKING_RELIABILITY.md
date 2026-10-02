@@ -28,6 +28,14 @@ regressions, not evidence of physical-device accuracy, recognition latency,
 articulated head/hand/finger recognition or distance estimation. Those remain
 separate device-validation work.
 
+The persistence smoke completes the wizard, checks Camera input remains on,
+explicitly closes Settings, and verifies the setting before and after reload.
+Neutral dwell with Settings left open remains a separate unresolved interaction:
+a synthetic camera dwell on the Camera input label can forward a browser-trusted
+click to its toggle. This was observed before reload, not caused by storage loss.
+Returning to the board in the persistence test does not fix or validate that
+open-Settings interaction.
+
 Run the browser smoke through `scripts/playwright-watchdog.sh` with
 `e2e/camera-calibration-reliability.spec.ts`, one worker, and `BASE_URL` pointing
 to the production build under review. Reuse installed model/dependency caches;
@@ -57,6 +65,24 @@ tracking loss/recovery and Esc with the normal safety controls enabled. Run it
 through `scripts/playwright-watchdog.sh`, one worker and one device project at
 a time, against the fresh build under review. Physical-camera accuracy and
 recognition latency still require separate device validation.
+
+Synthetic camera fixtures patch both the `MediaDevices` prototype and its
+instance: WebKit may replace an instance-only override during navigation.
+The photographic head/body tests also require actual mock invocation,
+frame-count and video-playback advancement across two observations. Every
+camera video (including detached detector inputs) must use the live mock
+track; a matching preview cannot mask a different tracker stream. This is
+rechecked at tracking/calibration and recovery. A browser-native fake camera
+is not equivalent input and must not count as photographic-camera evidence.
+Removed, ended historical fixture inputs are ignored only after an explicitly
+recorded stop and replacement; ended current inputs still fail the guard.
+
+For isolated local camera tests, run `npm run build`, then launch
+`npm run start -- --port 3092 --hostname 127.0.0.1`
+and run the watchdog with `BASE_URL=http://localhost:3092 CAMERA_LOCAL_ACCESS_FIXTURE=1`.
+This explicit test fixture mocks only the local access rewrite, never a deployed
+app or cloud credential. It rejects production URLs. Results establish camera
+workflow capability, not sign-in, cloud access, or physical-device reliability.
 
 <details>
 <summary><strong>📐 Full investigation, harness, and reliability ledger</strong></summary>
