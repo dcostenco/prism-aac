@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useMessageStore } from '@/store/messageStore';
 import { useSettingsStore, type ToolbarButtonId, DEFAULT_TOOLBAR_ORDER } from '@/store/settingsStore';
@@ -15,7 +15,13 @@ import { useMarketplaceStore } from '@/store/marketplaceStore';
 import { getHandler } from '@/lib/marketplace/registry';
 import { useScheduleStore, selectUnreadMessageCount } from '@/store/scheduleStore';
 import { useAuthStore } from '@/store/authStore';
+import { isPrismBrowserShell } from '@/services/nativeShell';
+import { PRISM_AAC_BASE_PATH } from '@/lib/appPaths';
 import LanguagePicker, { LanguageButton } from './LanguagePicker';
+
+// The shell injects its bridge before any page script and never removes it.
+const subscribeShell = () => () => {};
+const serverShell = () => false;
 
 const SYNC_ICONS: Record<string, string> = {
   idle: '⬡', syncing: '🔄', synced: '🟢', offline: '🔸', error: '🔴',
@@ -173,6 +179,7 @@ export default function Toolbar() {
   const installedApps = useSettingsStore((s) => s.installedApps);
   const syncStatus = useSyncStatus();
   const { t, ttsCode } = useT();
+  const inBrowserApp = useSyncExternalStore(subscribeShell, isPrismBrowserShell, serverShell);
   const [listening, setListening] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const micErrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -388,6 +395,7 @@ export default function Toolbar() {
 
   const btnClass = 'aac-btn w-[clamp(2.75rem,7vw,3.25rem)] h-[clamp(2.75rem,7svh,3.25rem)] rounded-full text-[clamp(1rem,3.5vw,1.5rem)] select-none border border-theme shrink-0 flex items-center justify-center';
   const tap = (fn: () => void, buttonId?: string) => () => { tapFeedback(); if (buttonId) ddAction('toolbar.button_click', { button: buttonId }); fn(); };
+  const goToBrowser = () => { window.location.href = `${PRISM_AAC_BASE_PATH}/browser`; };
 
   function renderButton(id: string, variant: 'strip' | 'menu' = 'strip', afterClick?: () => void): React.ReactNode {
     if (id.startsWith('app:')) {
@@ -442,11 +450,30 @@ export default function Toolbar() {
   }
 
   return (
+    <>
     <div role="toolbar" className="aac-safe-toolbar flex items-center justify-between px-1 py-[clamp(0.1rem,0.3svh,0.25rem)] surface-bar shrink-0 border-b border-theme relative">
       {micError && (
         <div role="alert" className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-[300] bg-[#F44336] text-white text-xs font-semibold rounded-lg px-3 py-1.5 shadow-lg whitespace-nowrap pointer-events-none">
           {micError}
         </div>
+      )}
+      {/* Inside the Prism AAC Browser app the board opens in the same view, which
+          has no back gesture or native controls: this is the way back. Web
+          visitors have their browser's own Back button. Where this row has no
+          room for it (phones in portrait), the bar below the toolbar shows
+          instead; globals.css switches between the two. */}
+      {inBrowserApp && (
+        <button
+          type="button"
+          data-testid="aac-toolbar-browser-button"
+          className="aac-browser-return-toolbar aac-btn shrink-0 h-[clamp(2.75rem,7svh,3.25rem)] px-3 mr-1 rounded-full surface-key text-primary border border-theme items-center gap-1.5 font-semibold select-none"
+          aria-label={t('toolbar_browser')}
+          title={t('toolbar_browser')}
+          onClick={tap(goToBrowser, 'browser')}
+        >
+          <span className="text-xl" aria-hidden>🌐</span>
+          <span className="text-sm leading-tight">{t('toolbar_browser')}</span>
+        </button>
       )}
       {/* On touch devices, keep primary navigation, communication, and safety actions in
           a stable row. Every other configured action remains in More. */}
@@ -546,5 +573,20 @@ export default function Toolbar() {
       {/* Sync status indicator — informational only, not a toolbar button. */}
       <span className="text-xs text-dim ml-1 shrink-0" title={`Sync: ${syncStatus}`}>{SYNC_ICONS[syncStatus] ?? '⬡'}</span>
     </div>
+    {inBrowserApp && (
+      <button
+        type="button"
+        data-testid="aac-browser-return-bar"
+        className="aac-browser-return-bar aac-btn shrink-0 w-full min-h-[44px] px-3 items-center gap-2 surface-key text-primary border-b border-theme font-semibold text-left select-none"
+        aria-label={t('toolbar_browser')}
+        onClick={tap(goToBrowser, 'browser')}
+      >
+        {/* U+2039 is mirrored by the bidi algorithm, so it points back in RTL too. */}
+        <span className="text-2xl leading-none" aria-hidden>‹</span>
+        <span className="text-xl" aria-hidden>🌐</span>
+        <span className="text-base">{t('toolbar_browser')}</span>
+      </button>
+    )}
+    </>
   );
 }

@@ -480,5 +480,6 @@
   "web_signin_check_again": "Sprawdź logowanie ponownie",
   "web_signin_checking_desc": "Sprawdzanie konta i podglądu. Logowanie jest darmowe i nie uruchamia subskrypcji.",
   "web_signin_free_account": "Aplikacja wymaga darmowego konta po jednominutowym podglądzie. Subskrypcje są opcjonalne.",
-  "web_signin_draft_fallback": "Przeglądarka nie mogła zapisać niedokończonej wiadomości. Kontynuacja przez Google otworzy nową kartę. Nie zamykaj tej karty i wróć tu po zalogowaniu, aby odzyskać wiadomość."
+  "web_signin_draft_fallback": "Przeglądarka nie mogła zapisać niedokończonej wiadomości. Kontynuacja przez Google otworzy nową kartę. Nie zamykaj tej karty i wróć tu po zalogowaniu, aby odzyskać wiadomość.",
+  "toolbar_browser": "Przeglądarka"
 }

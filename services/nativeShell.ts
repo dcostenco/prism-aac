@@ -14,3 +14,10 @@ export function isPrismNativeShell(): boolean {
   const bridge = (window as { prismNativeBridge?: unknown }).prismNativeBridge;
   return typeof bridge === 'object' && bridge !== null;
 }
+
+/** True inside the Prism AAC Browser app: the only shell whose bridge navigates. */
+export function isPrismBrowserShell(): boolean {
+  if (!isPrismNativeShell()) return false;
+  const bridge = (window as { prismNativeBridge?: { navigateTo?: unknown } }).prismNativeBridge;
+  return typeof bridge?.navigateTo === 'function';
+}

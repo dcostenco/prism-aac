@@ -480,5 +480,6 @@
   "web_signin_check_again": "Kiểm tra lại đăng nhập",
   "web_signin_checking_desc": "Đang kiểm tra tài khoản và bản xem trước web. Đăng nhập là miễn phí và không đăng ký dịch vụ trả phí.",
   "web_signin_free_account": "Ứng dụng web yêu cầu tài khoản miễn phí sau 1 phút xem trước. Gói đăng ký đám mây là tùy chọn mua thêm.",
-  "web_signin_draft_fallback": "Trình duyệt này không thể lưu tin nhắn dở dang để đăng nhập. Tiếp tục với Google sẽ mở thẻ mới. Giữ thẻ này và quay lại đây sau khi đăng nhập để lấy lại tin nhắn."
+  "web_signin_draft_fallback": "Trình duyệt này không thể lưu tin nhắn dở dang để đăng nhập. Tiếp tục với Google sẽ mở thẻ mới. Giữ thẻ này và quay lại đây sau khi đăng nhập để lấy lại tin nhắn.",
+  "toolbar_browser": "Trình duyệt"
 }

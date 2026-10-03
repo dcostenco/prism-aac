@@ -480,5 +480,6 @@
   "web_signin_check_again": "Aanmelding opnieuw controleren",
   "web_signin_checking_desc": "Je account en webvoorbeeld worden gecontroleerd. Aanmelden is gratis en start geen betaald abonnement.",
   "web_signin_free_account": "De web-app vereist een gratis account na een voorbeeld van één minuut. Cloudabonnementen zijn optioneel.",
-  "web_signin_draft_fallback": "Deze browser kon je onvoltooide bericht niet opslaan voor het aanmelden. 'Doorgaan met Google' opent een nieuw tabblad. Laat dit tabblad open en keer hier terug na het aanmelden om je bericht te herstellen."
+  "web_signin_draft_fallback": "Deze browser kon je onvoltooide bericht niet opslaan voor het aanmelden. 'Doorgaan met Google' opent een nieuw tabblad. Laat dit tabblad open en keer hier terug na het aanmelden om je bericht te herstellen.",
+  "toolbar_browser": "Browser"
 }

@@ -844,6 +844,35 @@ html, body {
   }
 }
 
+/* Prism AAC Browser app only: the way back to the browser from the board. The
+   toolbar row has room for a labelled button from 600px. Narrower (phones in
+   portrait) the button pushed Settings and More under the language pair, so a
+   bar under the toolbar shows instead. */
+.aac-browser-return-toolbar {
+  display: flex;
+}
+
+.aac-browser-return-bar {
+  display: none;
+}
+
+@media (max-width: 599.98px) {
+  .aac-browser-return-toolbar {
+    display: none;
+  }
+
+  .aac-browser-return-bar {
+    display: flex;
+  }
+
+  /* The bar's height comes out of the flexible prediction cards, which fell to
+     41px on a 667px-tall phone. There, take 8px from the composer's control
+     row instead (60px -> 52px); taller phones keep the 4rem cap. */
+  [data-aac-typing-layout]:has(.aac-browser-return-bar) [data-scan-group="message-bar"] > button {
+    height: clamp(3.25rem, calc(9svh - 8px), 4rem) !important;
+  }
+}
+
 @media (min-width: 768px) and (min-height: 600px) and (pointer: coarse) {
   /* Picture mode uses one consistent card rhythm at the reported iPad
      landscape size. Four board columns keep 48px+ motor targets while
