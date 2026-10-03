@@ -118,8 +118,12 @@ function HandProfileSection() {
   );
 }
 
-export default function SettingsModal() {
+export default function SettingsModal({ onRestoreBrowserTiles }: {
+  /** Given by the Prism AAC Browser page: puts back its starting Home tiles. */
+  onRestoreBrowserTiles?: () => void;
+} = {}) {
   const { showSettings, toggleSettings } = useUIStore();
+  const [browserTilesRestored, setBrowserTilesRestored] = useState(false);
   const settings = useSettingsStore;  // namespace only — selectors below avoid whole-store subscription
   const gridSize = useSettingsStore(s => s.gridSize);
   const theme = useSettingsStore(s => s.theme);
@@ -694,6 +698,22 @@ export default function SettingsModal() {
               </div>
             )}
           </Section>
+
+          {onRestoreBrowserTiles && (
+            <Section icon="🌐" title="Browser home tiles">
+              <p className="text-xs text-muted mb-2">
+                Puts back any of the starting tiles (Search, Wikipedia, News, NPR, Dictionary, Weather) that were
+                removed. Tiles you added stay.
+              </p>
+              <button
+                onClick={() => { onRestoreBrowserTiles(); setBrowserTilesRestored(true); }}
+                className="aac-btn min-h-[44px] px-4 rounded-lg bg-blue-600 text-white text-sm font-bold"
+              >
+                Restore default tiles
+              </button>
+              {browserTilesRestored && <p role="status" className="text-xs text-primary mt-2">Default tiles restored.</p>}
+            </Section>
+          )}
 
           {/* ── CAREGIVER PIN ── */}
           <Section icon="🔒" title="Caregiver PIN">

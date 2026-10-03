@@ -61,8 +61,8 @@ for (const mode of ['go', 'speak'] as const) {
     await page.goto('/prism-aac/browser');
     await page.waitForSelector('[data-testid="keyboard-shell"] [data-scan-group="keyboard"] button', { timeout: 15_000 });
     if (mode === 'speak') {
-      await page.locator('button[aria-label="Switch to Speak mode"]').click();
-      await expect(page.locator('button[aria-label="Switch to Go mode"]')).toBeVisible();
+      await page.locator('button[aria-label="Say mode"]').click();
+      await expect(page.locator('button[aria-label="Say mode"]')).toHaveAttribute('aria-pressed', 'true');
     }
     // Let fonts and the prediction row settle before measuring.
     await page.waitForTimeout(400);

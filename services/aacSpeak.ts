@@ -11,7 +11,7 @@
  * cannot communicate. Every error path must be handled gracefully.
  */
 import { SupportedLanguage, getTTSCode } from '@/engine/i18n';
-import { speak } from './speechService';
+import { speak, type SpeakOptions } from './speechService';
 import { translateTextSync, looksLikeTargetLang } from './translateService';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useMessageStore } from '@/store/messageStore';
@@ -43,7 +43,7 @@ function prepareTranslatedUtterance(text: string, lang: SupportedLanguage): stri
 // reads `toneMode` + `activeTone` from messageStore: in 'auto' mode the
 // adaptive engine picks the tone from the text; in 'manual' mode the user's
 // last picked tone is forced for every utterance.
-export async function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, interrupt = false, spokenLang?: SupportedLanguage): Promise<void> {
+export async function aacSpeak(text: string, rate: number, volume: number, tone?: ToneStyle, interrupt = false, spokenLang?: SupportedLanguage, options?: SpeakOptions): Promise<void> {
   if (!text?.trim()) return;
   // Central master-mute gate. Most UI callers avoid invoking aacSpeak while
   // muted, but async completions (AI hints, evaluation, delayed translation)
@@ -127,7 +127,10 @@ export async function aacSpeak(text: string, rate: number, volume: number, tone?
     // pbRate also removed from speakAzure. Rate control belongs to the
     // user's slider only.
     const effectiveRate = rate;
-    await speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt);
+    // Options are passed only when given, so every existing caller keeps the
+    // same speak() call.
+    if (options) await speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt, options);
+    else await speak(toSpeak, effectiveRate, volume, ttsCode, effectiveTone, interrupt);
   } catch {
     // Last resort: speak original text using the user's configured language,
     // NOT hardcoded en-US (which would mangle non-Latin text).

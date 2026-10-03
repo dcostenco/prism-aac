@@ -245,6 +245,24 @@ describe('SettingsModal — PIN gate', () => {
 
 // ── close / backdrop ──────────────────────────────────────────────────────────
 
+describe('SettingsModal — browser home tiles', () => {
+  beforeEach(() => { mocks.uiState.showSettings = true; });
+
+  it('offers Restore default tiles when opened from the browser', () => {
+    const restore = vi.fn();
+    render(<SettingsModal onRestoreBrowserTiles={restore} />);
+    fireEvent.click(screen.getByRole('button', { name: /Browser home tiles/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore default tiles' }));
+    expect(restore).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Default tiles restored.')).toHaveAttribute('role', 'status');
+  });
+
+  it('has no browser section on the AAC board', () => {
+    render(<SettingsModal />);
+    expect(screen.queryByRole('button', { name: /Browser home tiles/ })).not.toBeInTheDocument();
+  });
+});
+
 describe('SettingsModal — close actions', () => {
   beforeEach(() => { mocks.uiState.showSettings = true; });
 

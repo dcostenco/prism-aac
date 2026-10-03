@@ -233,6 +233,12 @@ loadCatalog();
  *   Tier 2: Web Speech API premium/enhanced voice (offline, OS-native)
  *   Tier 3: WASM espeak-ng (last resort)
  */
+export interface SpeakOptions {
+  /** Longest wait for the cloud voice before the device voice speaks instead
+   *  (default 8 s). It bounds the time to first audio, not the speech itself. */
+  cloudTimeoutMs?: number;
+}
+
 export async function speak(
   text: string,
   rate = 0.5,
@@ -240,6 +246,7 @@ export async function speak(
   lang = 'en-US',
   tone: ToneStyle | 'auto' = 'auto',
   interrupt = false,
+  options: SpeakOptions = {},
 ): Promise<void> {
   if (!text.trim()) return;
   // `speak` is also used directly by Voice Preview. Enforce the same global
@@ -312,7 +319,7 @@ export async function speak(
     emitTtsHealthEvent({
       type: 'tts-attempt', tier: 'inworld', text: debugText, lang, timestamp: tier1Start,
     });
-    const result = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt, !isOnline());
+    const result = await speakAzure(text, lang, effectiveTone, effectiveRate, volume, token || '', voiceId, interrupt, !isOnline(), options.cloudTimeoutMs);
     if (wasExplicitlyStopped() || useMessageStore.getState().soundEnabled === false) return;
     if (result?.cancelled) {
       // A newer utterance or an explicit Stop owns the audio channel now.

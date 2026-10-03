@@ -12,6 +12,9 @@ interface SiteEntry {
 
 const FRECENCY_KEY = 'prism-browser-frecency';
 const BOOKMARKS_KEY = 'prism-browser-bookmarks';
+// Say (true) or Search (false). Remembered: a user who came to talk should not
+// have to find the switch again on every launch.
+const SAY_MODE_KEY = 'prism-browser-say-mode';
 const MAX_FRECENCY = 200;
 
 function loadFrecency(): SiteEntry[] {
@@ -78,6 +81,20 @@ function saveBookmarks(bookmarks: PinnedBookmark[]) {
   try { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks)); } catch {}
 }
 
+function loadSayMode(): boolean {
+  try { return localStorage.getItem(SAY_MODE_KEY) === '1'; } catch { return false; }
+}
+
+function saveSayMode(on: boolean) {
+  try { localStorage.setItem(SAY_MODE_KEY, on ? '1' : '0'); } catch {}
+}
+
+/** A tile removed from Home, kept so one tap can put it back where it was. */
+export interface RemovedBookmark {
+  bookmark: PinnedBookmark;
+  index: number;
+}
+
 // ── Store ───────────────────────────────────────────────────────────
 
 interface BrowserState {
@@ -96,6 +113,8 @@ interface BrowserState {
   pinnedBookmarks: PinnedBookmark[];
   editingBookmarks: boolean;
   speakMode: boolean;
+  /** The last tile removed from Home, until Undo or the bar times out. */
+  lastRemoved: RemovedBookmark | null;
 
   navigate: (rawUrl: string) => void;
   goBack: () => void;
@@ -111,8 +130,12 @@ interface BrowserState {
   getSiteSuggestions: (query: string) => SiteEntry[];
   pinCurrentSite: () => void;
   unpinBookmark: (url: string) => void;
+  undoUnpin: () => void;
+  dismissUndo: () => void;
+  restoreDefaultBookmarks: () => void;
   toggleEditingBookmarks: () => void;
   toggleSpeakMode: () => void;
+  setSpeakMode: (on: boolean) => void;
 }
 
 function resolveUrl(raw: string): string {
@@ -142,7 +165,8 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
   frecency: typeof window !== 'undefined' ? loadFrecency() : [],
   pinnedBookmarks: typeof window !== 'undefined' ? loadBookmarks() : DEFAULT_BOOKMARKS,
   editingBookmarks: false,
-  speakMode: false,
+  speakMode: typeof window !== 'undefined' ? loadSayMode() : false,
+  lastRemoved: null,
 
   navigate: (rawUrl) => {
     const resolved = resolveUrl(rawUrl);
@@ -294,13 +318,51 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
   unpinBookmark: (url) => {
     const { pinnedBookmarks } = get();
     const domain = shortDisplay(url);
-    const updated = pinnedBookmarks.filter((b) => shortDisplay(b.url) !== domain);
+    const index = pinnedBookmarks.findIndex((b) => shortDisplay(b.url) === domain);
+    if (index < 0) return;
+    const updated = pinnedBookmarks.filter((_, i) => i !== index);
     saveBookmarks(updated);
-    set({ pinnedBookmarks: updated });
+    set({ pinnedBookmarks: updated, lastRemoved: { bookmark: pinnedBookmarks[index], index } });
+  },
+
+  undoUnpin: () => {
+    const { pinnedBookmarks, lastRemoved } = get();
+    if (!lastRemoved) return;
+    const { bookmark, index } = lastRemoved;
+    const domain = shortDisplay(bookmark.url);
+    // Pinned again meanwhile (the star): nothing to restore.
+    if (pinnedBookmarks.some((b) => shortDisplay(b.url) === domain)) {
+      set({ lastRemoved: null });
+      return;
+    }
+    const updated = [...pinnedBookmarks];
+    updated.splice(Math.min(index, updated.length), 0, bookmark);
+    saveBookmarks(updated);
+    set({ pinnedBookmarks: updated, lastRemoved: null });
+  },
+
+  dismissUndo: () => set({ lastRemoved: null }),
+
+  restoreDefaultBookmarks: () => {
+    // Put back any starting tile that was removed, in its usual order, and keep
+    // every tile the user added after them: restoring must not delete anything.
+    const defaultDomains = new Set(DEFAULT_BOOKMARKS.map((b) => shortDisplay(b.url)));
+    const added = get().pinnedBookmarks.filter((b) => !defaultDomains.has(shortDisplay(b.url)));
+    const updated = [...DEFAULT_BOOKMARKS, ...added];
+    saveBookmarks(updated);
+    set({ pinnedBookmarks: updated, lastRemoved: null, editingBookmarks: false });
   },
 
   toggleEditingBookmarks: () => set((s) => ({ editingBookmarks: !s.editingBookmarks })),
-  toggleSpeakMode: () => set((s) => ({ speakMode: !s.speakMode })),
+  toggleSpeakMode: () => {
+    const on = !get().speakMode;
+    saveSayMode(on);
+    set({ speakMode: on });
+  },
+  setSpeakMode: (on) => {
+    saveSayMode(on);
+    set({ speakMode: on });
+  },
 }));
 
 export { resolveUrl, shortDisplay, POPULAR_SITES };

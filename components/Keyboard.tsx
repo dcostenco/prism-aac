@@ -5,8 +5,8 @@ import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { aacSpeak } from '@/services/aacSpeak';
-import { getLatestTranslated, setLatestTranslated } from '@/store/messageStore';
-import { translateForSpeech, isPhraseBoundary, hasUntranslatedResidue, translateTextSync } from '@/services/translateService';
+import { speakComposedMessage } from '@/services/speakMessage';
+import { isPhraseBoundary, hasUntranslatedResidue, translateTextSync } from '@/services/translateService';
 import { speakWord } from '@/services/speechService';
 import { warmupAzureAudio } from '@/services/azureTTS';
 import { triggerAISubmit } from '@/services/aiChatBridge';
@@ -187,11 +187,22 @@ function NativeImeKeyboard({
   );
 }
 
-export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: boolean; onBrowserGo?: () => void } = {}) {
+/** Replaces the Speak key's label and action: the browser's Say, which also stops. */
+export interface KeyboardSayControl {
+  label: string;
+  ariaLabel: string;
+  onPress: () => void;
+}
+
+export default function Keyboard({ browserMode, onBrowserGo, sayControl }: {
+  browserMode?: boolean;
+  onBrowserGo?: () => void;
+  sayControl?: KeyboardSayControl;
+} = {}) {
   // No toggleSound: soundEnabled is a master mute again and Speak must not
   // clear it. setText is for the kana modifiers, which rewrite the last
   // character rather than appending one.
-  const { text, appendChar, addToHistory, soundEnabled, activeTone, setText } = useMessageStore();
+  const { text, appendChar, soundEnabled, activeTone, setText } = useMessageStore();
   const { keyboardMode, isUpperCase, capsLock, toggleKeyboardMode, toggleCase, toggleCapsLock, keyboardMaximized, cycleKeyboardMode } = useUIStore();
   const { learnWord } = usePredictionStore();
   const { speechRate, speechVolume, language, speakOnSentenceEnd, gridSize } = useSettingsStore();
@@ -456,33 +467,10 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
     }
     // Master mute wins here too — see the MessageBar Play handler.
     if (!currentText || !soundEnabled) return;
-    addToHistory(currentText);
-    const { language, outputLanguage } = useSettingsStore.getState();
-    if (language !== outputLanguage) {
-      // Force the cloud refine before speaking. Reading getLatestTranslated()
-      // alone stopped being enough once translation no longer fired on every
-      // keystroke: for a phrase with no closing punctuation nothing had
-      // requested a translation yet, so this key spoke the offline
-      // dictionary's word-by-word output. Pressing Speak IS the explicit
-      // "I am done" the phrase-boundary gate waits for — and this is the key
-      // users actually press; MessageBar's ▶ is the secondary control.
-      void translateForSpeech(
-        currentText,
-        language as SupportedLanguage,
-        outputLanguage as SupportedLanguage,
-        setLatestTranslated,
-      ).then((best) => {
-        const spoken = best || getLatestTranslated();
-        if (spoken) {
-          aacSpeak(spoken, speechRate, speechVolume, activeTone, true, outputLanguage as SupportedLanguage);
-        } else {
-          aacSpeak(currentText, speechRate, speechVolume, activeTone, true);
-        }
-      });
-    } else {
-      aacSpeak(currentText, speechRate, speechVolume, activeTone, true);
-    }
-  }, [soundEnabled, speechRate, speechVolume, addToHistory, activeTone, browserMode, onBrowserGo]);
+    // History, the forced translation refine and the speech itself live in
+    // speakComposedMessage, shared with the browser's Say.
+    void speakComposedMessage(currentText);
+  }, [soundEnabled, browserMode, onBrowserGo]);
 
   const handleBackspace = useCallback(() => {
     deleteFeedback();
@@ -520,9 +508,9 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
         text={text}
         setText={setText}
         onBackspace={handleBackspace}
-        onSpeak={handleSpeak}
+        onSpeak={sayControl?.onPress ?? handleSpeak}
         placeholder={t('type_here')}
-        speakLabel={t('speak')}
+        speakLabel={sayControl?.label ?? t('speak')}
       />
     );
   }
@@ -605,11 +593,11 @@ export default function Keyboard({ browserMode, onBrowserGo }: { browserMode?: b
         <button onClick={() => handleKey(punctuation.comma)} aria-label={punctuation.comma} data-key={punctuation.comma} data-display={punctuation.comma} className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>{punctuation.comma}</button>
         <button onClick={() => handleKey(punctuation.question)} aria-label={punctuation.question} data-key={punctuation.question} data-display={punctuation.question} className={`${kc} ${utilSize} min-w-[clamp(2.5rem,5vw,4.5rem)] hover:bg-[rgba(37,99,235,0.12)] hover:outline hover:outline-2 hover:outline-[#2563eb]`}>{punctuation.question}</button>
         <button
-          onClick={handleSpeak}
-          aria-label={browserMode ? 'Go' : t('speak')}
+          onClick={!browserMode && sayControl ? sayControl.onPress : handleSpeak}
+          aria-label={browserMode ? 'Go' : (sayControl?.ariaLabel ?? t('speak'))}
           className={`aac-btn ${browserMode ? 'bg-blue-600' : 'aac-speak bg-[#4CAF50]'} text-white rounded-xl font-bold px-[clamp(0.75rem,2vw,1.75rem)] min-w-[clamp(5rem,12vw,8.75rem)] ${wordSize} select-none flex items-center justify-center`}
         >
-          {browserMode ? 'Go' : t('speak')}
+          {browserMode ? 'Go' : (sayControl?.label ?? t('speak'))}
         </button>
       </div>
     </div>

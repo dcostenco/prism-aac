@@ -42,13 +42,13 @@ test.describe('Browser page — AAC-enabled web browser', () => {
     ).toHaveCount(0);
   });
 
-  test('speak mode toggle switches Go to Speak', async ({ page }) => {
-    const speakToggle = page.locator('button[aria-label="Switch to Speak mode"]');
-    await expect(speakToggle).toBeVisible();
-    await speakToggle.click({ force: true });
-    await page.waitForTimeout(300);
-    const speakBtn = page.locator('button[aria-label="Speak"]').or(page.locator('button:has-text("Speak")'));
-    await expect(speakBtn.first()).toBeVisible();
+  test('the Say | Search switch turns Go into Say', async ({ page }) => {
+    const sayMode = page.locator('button[aria-label="Say mode"]');
+    await expect(sayMode).toBeVisible();
+    await sayMode.click({ force: true });
+    await expect(sayMode).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-testid="browser-toolbar"] button[aria-label="Go"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="browser-say-button"]')).toBeVisible();
   });
 
   test('emergency modal loads without crash', async ({ page }) => {
@@ -220,7 +220,7 @@ test.describe('Browser page — AAC-enabled web browser', () => {
 
   test('speakMode: Enter speaks text and does not navigate', async ({ page }) => {
     // Enable speak mode
-    await page.locator('button[aria-label="Switch to Speak mode"]').click({ force: true });
+    await page.locator('button[aria-label="Say mode"]').click({ force: true });
     await page.waitForTimeout(300);
     // Type a phrase
     await page.keyboard.type('I want water');
@@ -238,13 +238,13 @@ test.describe('Browser page — AAC-enabled web browser', () => {
     await expect(page.locator('[data-testid="browser-prediction-bar"]')).toBeVisible();
     await expect(page.locator('[data-testid="prediction-bar"]')).toHaveCount(0);
     // Enable speak mode
-    await page.locator('button[aria-label="Switch to Speak mode"]').click({ force: true });
+    await page.locator('button[aria-label="Say mode"]').click({ force: true });
     await page.waitForTimeout(500);
     // Word prediction bar should appear, browser prediction bar should be gone
     await expect(page.locator('[data-testid="prediction-bar"]')).toBeVisible();
     await expect(page.locator('[data-testid="browser-prediction-bar"]')).toHaveCount(0);
     // Toggle back — browser predictions return
-    await page.locator('button[aria-label="Switch to Go mode"]').click({ force: true });
+    await page.locator('button[aria-label="Search mode"]').click({ force: true });
     await page.waitForTimeout(500);
     await expect(page.locator('[data-testid="browser-prediction-bar"]')).toBeVisible();
     await expect(page.locator('[data-testid="prediction-bar"]')).toHaveCount(0);
