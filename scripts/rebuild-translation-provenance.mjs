@@ -180,9 +180,11 @@ function record(surface, lang, ids) {
     }
   }
 
+  const supplied = new Set();
   if (fs.existsSync(CORPUS_DIR)) {
     for (const f of fs.readdirSync(CORPUS_DIR).filter((x) => x.endsWith('.json'))) {
       const lang = f.replace(/\.json$/, '');
+      supplied.add(lang);
       if (lang === 'en' || preexisting.has(lang)) continue;
       const data = JSON.parse(fs.readFileSync(path.join(CORPUS_DIR, f), 'utf-8'));
       const ids = [];
@@ -191,14 +193,22 @@ function record(surface, lang, ids) {
       }
       record('corpus', lang, ids);
     }
-  } else if (prev.surfaces?.corpus) {
-    // The corpus lives outside this repo. Without it the surface cannot be
-    // rebuilt, and writing the file without it erased every corpus record
-    // (50,658 on 2026-10-03). Keep what was recorded, unchanged.
-    surfaces.corpus = prev.surfaces.corpus;
-    let kept = 0;
-    for (const l of Object.values(prev.surfaces.corpus)) kept += l.unreviewed.length + l.reviewed.length;
-    console.warn(`corpus source not found at ${CORPUS_DIR}; kept its ${kept} recorded entries unchanged`);
+  }
+  // The corpus lives outside this repo. A language it does not supply here (no
+  // directory, an empty one, or no file for that language) cannot be rebuilt,
+  // and writing the file without it erased its records: all 50,658 on
+  // 2026-10-03. Keep what was recorded for such a language, unchanged.
+  const kept = [];
+  let keptEntries = 0;
+  for (const [lang, entry] of Object.entries(prev.surfaces?.corpus ?? {})) {
+    if (supplied.has(lang) || lang === SOURCE_LANG || preexisting.has(lang)) continue;
+    surfaces.corpus ??= {};
+    surfaces.corpus[lang] = entry;
+    kept.push(lang);
+    keptEntries += entry.unreviewed.length + entry.reviewed.length;
+  }
+  if (kept.length) {
+    console.warn(`corpus source at ${CORPUS_DIR} has no file for ${kept.join(', ')}; kept their ${keptEntries} recorded entries unchanged`);
   }
 }
 

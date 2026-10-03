@@ -17,11 +17,13 @@ type Surfaces = Record<string, Record<string, { reviewed: string[]; unreviewed: 
 const ROOT = path.resolve(__dirname, '..');
 const TRACKED = path.join(ROOT, 'i18n', 'provenance', 'machine-translations.json');
 
-function rebuild(): Surfaces {
-  const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'provenance-')), 'out.json');
+const scratch = () => fs.mkdtempSync(path.join(os.tmpdir(), 'provenance-'));
+
+function rebuild(corpusDir: string): Surfaces {
+  const out = path.join(scratch(), 'out.json');
   execFileSync('node', [path.join(ROOT, 'scripts', 'rebuild-translation-provenance.mjs')], {
     cwd: ROOT,
-    env: { ...process.env, PROVENANCE_OUT: out, PRISM_CORPUS_DIR: path.join(os.tmpdir(), 'no-corpus-here') },
+    env: { ...process.env, PROVENANCE_OUT: out, PRISM_CORPUS_DIR: corpusDir },
     stdio: 'pipe',
   });
   return JSON.parse(fs.readFileSync(out, 'utf-8')).surfaces;
@@ -29,10 +31,25 @@ function rebuild(): Surfaces {
 
 describe('rebuilding the translation provenance', () => {
   const before: Surfaces = JSON.parse(fs.readFileSync(TRACKED, 'utf-8')).surfaces;
-  const after = rebuild();
+  const after = rebuild(path.join(os.tmpdir(), 'no-corpus-here'));
 
   it('keeps the corpus records when the corpus is not on this machine', () => {
     expect(after.corpus).toEqual(before.corpus);
+  });
+
+  it('keeps them when the corpus directory is there but empty', () => {
+    expect(rebuild(scratch()).corpus).toEqual(before.corpus);
+  });
+
+  it('rebuilds a language the corpus supplies and keeps every other', () => {
+    const [lang, ...others] = Object.keys(before.corpus);
+    const dir = scratch();
+    fs.writeFileSync(path.join(dir, `${lang}.json`), JSON.stringify({ phrases: ['a', 'b'] }));
+    const rebuilt = rebuild(dir).corpus;
+    const reviewed = new Set(before.corpus[lang].reviewed);
+    expect(rebuilt[lang].unreviewed).toEqual(['phrases#0', 'phrases#1'].filter((id) => !reviewed.has(id)));
+    expect(others.length).toBeGreaterThan(0);
+    for (const other of others) expect(rebuilt[other], other).toEqual(before.corpus[other]);
   });
 
   it('loses no record of a string the app still has', () => {
