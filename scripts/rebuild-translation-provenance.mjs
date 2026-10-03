@@ -24,7 +24,12 @@ import { execFileSync } from 'node:child_process';
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const PROV_DIR = path.join(ROOT, 'i18n', 'provenance');
 const PROV_PATH = path.join(PROV_DIR, 'machine-translations.json');
+// Where the rebuilt file goes. Tests point this at a temporary file so they
+// never rewrite the tracked one.
+const OUT_PATH = process.env.PROVENANCE_OUT ? path.resolve(process.env.PROVENANCE_OUT) : PROV_PATH;
 const GENERATOR = 'gemini-3.6-flash';
+// Every translation is made from English; English itself is never machine output.
+const SOURCE_LANG = 'en';
 
 /**
  * Baseline for "what predates this work".
@@ -73,7 +78,7 @@ const stamp = new Date().toISOString();
 const surfaces = {};
 
 function record(surface, lang, ids) {
-  if (!ids.length) return;
+  if (!ids.length || lang === SOURCE_LANG) return;
   const reviewed = reviewedOf(surface, lang);
   const unreviewed = ids.filter((id) => !reviewed.has(id)).sort();
   surfaces[surface] ??= {};
@@ -186,12 +191,20 @@ function record(surface, lang, ids) {
       }
       record('corpus', lang, ids);
     }
+  } else if (prev.surfaces?.corpus) {
+    // The corpus lives outside this repo. Without it the surface cannot be
+    // rebuilt, and writing the file without it erased every corpus record
+    // (50,658 on 2026-10-03). Keep what was recorded, unchanged.
+    surfaces.corpus = prev.surfaces.corpus;
+    let kept = 0;
+    for (const l of Object.values(prev.surfaces.corpus)) kept += l.unreviewed.length + l.reviewed.length;
+    console.warn(`corpus source not found at ${CORPUS_DIR}; kept its ${kept} recorded entries unchanged`);
   }
 }
 
-fs.mkdirSync(PROV_DIR, { recursive: true });
+fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
 fs.writeFileSync(
-  PROV_PATH,
+  OUT_PATH,
   JSON.stringify(
     {
       _README:
