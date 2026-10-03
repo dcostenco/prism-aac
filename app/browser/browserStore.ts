@@ -127,6 +127,10 @@ function shortDisplay(url: string): string {
   return url.replace(/^https?:\/\/(www\.|m\.)?/, '').split('/')[0].split('?')[0];
 }
 
+function siteOrigin(url: string): string {
+  try { return new URL(url).origin; } catch { return url; }
+}
+
 export const useBrowserStore = create<BrowserState>((set, get) => ({
   url: '',
   displayUrl: '',
@@ -147,6 +151,11 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
   navigate: (rawUrl) => {
     const resolved = resolveUrl(rawUrl);
     if (!resolved) return;
+
+    // Count the visit when the user opens a site. In the iOS app the page opens
+    // in a native view and this layer never sees it load; on the web most sites
+    // open in a new tab. Counting only in-page loads recorded nothing there.
+    get().recordVisit(resolved);
 
     const bridge = typeof window !== 'undefined' && (window as any).prismNativeBridge;
     if (bridge?.navigateTo) {
@@ -202,14 +211,9 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
 
   toggleBookmarks: () => set((s) => ({ showBookmarks: !s.showBookmarks })),
   setLoaded: () => {
-    const { url, error } = get();
+    const { url } = get();
+    // The visit was already counted by navigate().
     set({ isLoading: false, keyboardCollapsed: !!url });
-    if (url && !error) {
-      setTimeout(() => {
-        const s = get();
-        if (!s.error && s.url === url) s.recordVisit(url);
-      }, 500);
-    }
   },
   setError: (msg) => set({ isLoading: false, error: msg }),
   collapseKeyboard: () => set({ keyboardCollapsed: true }),
@@ -217,15 +221,23 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
 
   recordVisit: (url) => {
     const domain = shortDisplay(url);
+    if (!domain) return;
     set((s) => {
+      // Keep the site, never the page: the strip shows site names and this list
+      // outlives the session, so a search query or page path must not be stored.
+      // Known sites keep their own name, icon and home address.
+      const known = s.pinnedBookmarks.find((b) => shortDisplay(b.url) === domain)
+        ?? POPULAR_SITES.find((p) => shortDisplay(p.url) === domain);
       const existing = s.frecency.findIndex((e) => shortDisplay(e.url) === domain);
       let updated: SiteEntry[];
       if (existing >= 0) {
         updated = [...s.frecency];
-        updated[existing] = { ...updated[existing], visitCount: updated[existing].visitCount + 1, lastVisit: Date.now() };
+        const entry = updated[existing];
+        updated[existing] = { ...entry, title: known?.title ?? entry.title, icon: known?.icon ?? entry.icon,
+          visitCount: entry.visitCount + 1, lastVisit: Date.now() };
       } else {
-        const icon = POPULAR_SITES.find((p) => shortDisplay(p.url) === domain)?.icon ?? '🌐';
-        updated = [{ url, title: domain, icon, visitCount: 1, lastVisit: Date.now() }, ...s.frecency];
+        updated = [{ url: known?.url ?? siteOrigin(url), title: known?.title ?? domain, icon: known?.icon ?? '🌐',
+          visitCount: 1, lastVisit: Date.now() }, ...s.frecency];
       }
       updated.sort((a, b) => frecencyScore(b) - frecencyScore(a));
       updated = updated.slice(0, MAX_FRECENCY);

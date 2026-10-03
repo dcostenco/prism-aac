@@ -28,6 +28,13 @@ const TrackingDebugOverlay = nextDynamic(() => import('@/components/TrackingDebu
 
 export const dynamic = 'force-dynamic';
 
+// Four key rows of at least Apple's 44pt minimum (tablet letter rows render
+// near 50px) plus gaps and padding. On short screens (iPhone SE portrait, any
+// phone or iPad mini in landscape) the page content above scrolls rather than
+// the keys shrinking below a usable size. The keyboard's controls row pads the
+// home-indicator inset inside its own height, so the floor adds that inset.
+const BROWSER_KEYBOARD_MIN_HEIGHT = 'calc(212px + var(--aac-safe-area-bottom, 0px))';
+
 export default function BrowserPage() {
   const [hydrated, setHydrated] = useState(false);
   const theme = useSettingsStore((s) => s.theme);
@@ -130,7 +137,7 @@ export default function BrowserPage() {
         {!keyboardCollapsed && (
           <>
             {!compactMode && (speakMode ? <PredictionBar /> : <BrowserPredictionBar />)}
-            <div className={keyboardMaximized ? 'flex-1 min-h-0 flex flex-row' : 'shrink-0 flex flex-row'} style={{ height: keyboardMaximized ? undefined : compactMode ? 'clamp(80px, 30svh, 140px)' : 'clamp(170px, 25svh, 260px)' }} data-testid="keyboard-shell">
+            <div className={keyboardMaximized ? 'flex-1 min-h-0 flex flex-row' : 'shrink-0 flex flex-row'} style={keyboardMaximized ? { minHeight: BROWSER_KEYBOARD_MIN_HEIGHT } : { height: compactMode ? 'clamp(80px, 30svh, 140px)' : 'clamp(170px, 25svh, 260px)' }} data-testid="keyboard-shell" data-browser-keyboard>
               <div className="flex-1 flex flex-col">
                 <Keyboard browserMode={!speakMode} onBrowserGo={handleBrowserGo} />
               </div>

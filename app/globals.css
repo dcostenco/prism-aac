@@ -348,7 +348,9 @@ html, body {
   [data-scan-group="keyboard"] [data-key-row="letters"] > button[data-key] {
     flex: 0 1 calc((100% - 9px) / 10);
   }
-  [data-testid="keyboard-shell"]:not([data-maximized]) {
+  /* The /browser keyboard is excluded: it is the screen's only input, and the
+     120px cap left 26px keys on landscape phones. app/browser/page.tsx sizes it. */
+  [data-testid="keyboard-shell"]:not([data-maximized]):not([data-browser-keyboard]) {
     height: clamp(80px, 24svh, 120px) !important;
     max-height: 120px;
   }
@@ -687,30 +689,34 @@ html, body {
     }
   }
 
+  /* These glyph sizes belong to the main typing keyboard, which always sits in
+     .aac-typing-keyboard-shell. Unscoped, they also reached the /browser
+     keyboard (no such shell): its rows grew until the bottom row (123, space,
+     Go/Speak) fell off the screen on iPhones. */
   .aac-typing-keyboard-shell button[data-key] {
     font-size: clamp(2.25rem, 9vw, 2.75rem);
     line-height: 1;
   }
 
-  [data-scan-group="keyboard"][data-dense-letters] button[data-key] {
+  .aac-typing-keyboard-shell [data-scan-group="keyboard"][data-dense-letters] button[data-key] {
     font-size: clamp(2rem, 8.5vw, 2.5rem);
     letter-spacing: -0.04em;
   }
 
   /* Wrapped Latin layouts can be authored densely but render at the same ten-
      target width as QWERTY. They must not inherit the smaller dense-row font. */
-  [data-scan-group="keyboard"][data-latin-letters][data-aac-keyboard-columns="10"] button[data-key] {
+  .aac-typing-keyboard-shell [data-scan-group="keyboard"][data-latin-letters][data-aac-keyboard-columns="10"] button[data-key] {
     font-size: clamp(2.25rem, 9vw, 2.75rem);
   }
 
-  [data-scan-group="keyboard"][data-language="am"] button[data-key] {
+  .aac-typing-keyboard-shell [data-scan-group="keyboard"][data-language="am"] button[data-key] {
     font-size: clamp(1.6875rem, 6.5vw, 2rem);
   }
 
   /* A kana glyph is nearly square. The util row also carries Shift and
      Backspace, leaving a 28px content box on 390px phones; cap the glyph to
      that physical width instead of clipping its right edge. */
-  [data-scan-group="keyboard"][data-language="ja"] button[data-key] {
+  .aac-typing-keyboard-shell [data-scan-group="keyboard"][data-language="ja"] button[data-key] {
     font-size: clamp(1.875rem, 7.5vw, 2rem);
   }
 

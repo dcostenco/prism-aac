@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useMessageStore } from '@/store/messageStore';
+import { PRISM_AAC_BASE_PATH } from '@/lib/appPaths';
 import { useBrowserStore, shortDisplay, type PinnedBookmark } from './browserStore';
 
 export function openBookmark(b: PinnedBookmark, navigate: (url: string) => void) {
@@ -53,7 +54,9 @@ export default function BrowserToolbar() {
 
   const handleLeaveConfirm = useCallback(() => {
     setShowLeaveConfirm(false);
-    window.location.href = '/';
+    // A raw href skips the Next base path: '/' is the synalux.ai home page, not
+    // the AAC board, and the iOS shell has no way back from it.
+    window.location.href = PRISM_AAC_BASE_PATH;
   }, []);
 
   const handleLeaveCancel = useCallback(() => {
