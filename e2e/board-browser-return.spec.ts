@@ -19,10 +19,11 @@ const BROWSER_SHELL_BRIDGE = `(() => {
 // --aac-safe-area-*) so the board is measured as the device lays it out.
 // Portrait values were read from a full-screen web view on iOS 26.5
 // simulators: iPhone SE 20/0, iPhone 17 Pro Max 62/34, iPhone Air 68/34, and
-// iPad Pro 13-inch and iPad (A16) 32/20. The 390- and 428-wide projects are
-// older phones that were not measured; they get the Air's deeper status area as
-// a bound. Landscape values were not measured: a 21pt home indicator on Face ID
-// iPhones and the portrait iPad values.
+// iPad Pro 13-inch and iPad (A16) 32/20. Not measured: the 390- and 428-wide
+// phone projects, which get the Air's deeper status area as a bound; the
+// 768-wide iPad Mini project, which gets the measured iPads' values; and every
+// landscape value (a 21pt home indicator on Face ID iPhones, the portrait iPad
+// values on iPads).
 const INSETS: Record<string, { top: number; bottom: number }> = {
   'iphone-se': { top: 20, bottom: 0 },
   'iphone-6.1': { top: 68, bottom: 34 },
