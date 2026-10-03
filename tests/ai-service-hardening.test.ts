@@ -17,6 +17,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   fetchSynaluxProfile,
+  signOutOfPrismAac,
   parseCaregiverNote,
   inferCardIcon,
   translateAI,
@@ -87,14 +88,15 @@ describe('translateAI — AAC concept preservation', () => {
 // ── fetchSynaluxProfile — happy path ──────────────────────────────────────
 
 describe('fetchSynaluxProfile — happy path', () => {
+  // Step 1 is Prism AAC's own sign-in (GET /api/v1/prism-aac/session).
   function mockSessionAndRoles(
-    sessionBody: Record<string, unknown>,
+    sessionBody: { user: { email?: string; name?: string } },
     rolesBody: Record<string, unknown>,
     rolesStatus = 200,
   ) {
     fetchMock
       .mockResolvedValueOnce(
-        new Response(JSON.stringify(sessionBody), {
+        new Response(JSON.stringify({ signed_in: true, email: sessionBody.user.email, name: sessionBody.user.name }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         }),
@@ -156,15 +158,56 @@ describe('fetchSynaluxProfile — happy path', () => {
     expect(profile!.name).toBe('noname@x.com');
   });
 
-  it('calls /api/auth/session with credentials:include', async () => {
+  it('asks Prism AAC\'s own sign-in first, with credentials:include', async () => {
     mockSessionAndRoles(
       { user: { email: 'e@e.com', name: 'E' } },
       {},
     );
     await fetchSynaluxProfile();
     const [[url, init]] = fetchMock.mock.calls as [string, RequestInit][];
-    expect(url).toContain('/api/auth/session');
+    expect(url).toContain('/api/v1/prism-aac/session');
     expect(init.credentials).toBe('include');
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes('/api/auth/session'))).toBe(false);
+  });
+});
+
+// ── fetchSynaluxProfile — Prism AAC sign-in vs the portal session ──────────
+
+describe('fetchSynaluxProfile — Prism AAC sign-in', () => {
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+  it('401 from the AAC endpoint is a definite sign-out: the portal session is not consulted', async () => {
+    fetchMock.mockResolvedValueOnce(json({ signed_in: false }, 401));
+    expect(await fetchSynaluxProfile()).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([404, 503])('%s from the AAC endpoint (older portal, store down) falls back to the portal session', async (status) => {
+    fetchMock
+      .mockResolvedValueOnce(json({ error: 'x' }, status))
+      .mockResolvedValueOnce(json({ user: { email: 'f@f.com', name: 'F' } }))
+      .mockResolvedValueOnce(json({ aac_plan: 'standard' }));
+    const profile = await fetchSynaluxProfile();
+    expect(profile).toMatchObject({ email: 'f@f.com', name: 'F', plan: 'standard' });
+    const urls = (fetchMock.mock.calls as [string][]).map(([u]) => String(u));
+    expect(urls[0]).toContain('/api/v1/prism-aac/session');
+    expect(urls[1]).toContain('/api/auth/session');
+  });
+});
+
+describe('signOutOfPrismAac', () => {
+  it('ends the AAC sign-in with a credentialed keepalive DELETE', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    await signOutOfPrismAac();
+    const [[url, init]] = fetchMock.mock.calls as [string, RequestInit][];
+    expect(url).toContain('/api/v1/prism-aac/session');
+    expect(init).toMatchObject({ method: 'DELETE', credentials: 'include', keepalive: true });
+  });
+
+  it('never throws, even offline', async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    await expect(signOutOfPrismAac()).resolves.toBeUndefined();
   });
 });
 
@@ -202,7 +245,7 @@ describe('fetchSynaluxProfile — roles/me failure (best-effort free tier)', () 
   it('returns free-tier profile when roles/me returns 403', async () => {
     fetchMock
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ user: { email: 'f@f.com', name: 'F' } }), { status: 200 }),
+        new Response(JSON.stringify({ signed_in: true, email: 'f@f.com', name: 'F' }), { status: 200 }),
       )
       .mockResolvedValueOnce(new Response('', { status: 403 }));
     const profile = await fetchSynaluxProfile();
@@ -214,7 +257,7 @@ describe('fetchSynaluxProfile — roles/me failure (best-effort free tier)', () 
   it('returns free-tier profile when roles/me throws (network error)', async () => {
     fetchMock
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ user: { email: 'g@g.com', name: 'G' } }), { status: 200 }),
+        new Response(JSON.stringify({ signed_in: true, email: 'g@g.com', name: 'G' }), { status: 200 }),
       )
       .mockRejectedValueOnce(new Error('Connection refused'));
     const profile = await fetchSynaluxProfile();
@@ -225,7 +268,7 @@ describe('fetchSynaluxProfile — roles/me failure (best-effort free tier)', () 
   it('returns free-tier when roles/me returns 200 but body has no plan fields', async () => {
     fetchMock
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ user: { email: 'h@h.com', name: 'H' } }), { status: 200 }),
+        new Response(JSON.stringify({ signed_in: true, email: 'h@h.com', name: 'H' }), { status: 200 }),
       )
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ some_other_field: true }), { status: 200 }),

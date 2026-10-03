@@ -62,6 +62,7 @@ const mocks = vi.hoisted(() => {
     loaded: true as boolean,
     loading: false as boolean,
     refresh: vi.fn(),
+    clear: vi.fn(),
   };
 
   const useUIStore = Object.assign(
@@ -82,7 +83,7 @@ const mocks = vi.hoisted(() => {
   );
 
   return { uiState, settingsState, categoryState, authState, useUIStore, useSettingsStore, useCategoryStore, useAuthStore,
-    billing: vi.fn() };
+    billing: vi.fn(), signOutOfPrismAac: vi.fn(() => Promise.resolve()) };
 });
 
 // ── module mocks ──────────────────────────────────────────────────────────────
@@ -108,6 +109,7 @@ vi.mock('@/services/aiService', () => ({
   synaluxSignOutUrl: () => 'https://synalux.ai/sign-out',
   signInWithAppleNative: () => Promise.resolve(false),
   isNativeiOS: () => false,
+  signOutOfPrismAac: mocks.signOutOfPrismAac,
 }));
 
 vi.mock('@/engine/i18n', () => ({
@@ -572,5 +574,24 @@ describe('SettingsModal — vocab set section', () => {
     fireEvent.click(screen.getByRole('button', { name: /vocab_set/i }));
     fireEvent.click(screen.getByRole('button', { name: /vs_core/i }));
     expect(mocks.settingsState.update).toHaveBeenCalledWith(expect.objectContaining({ activeVocabSet: 'my-core' }));
+  });
+});
+
+describe('SettingsModal — Sign out', () => {
+  it('ends Prism AAC\'s own sign-in and clears the profile, besides opening the portal sign-out', () => {
+    mocks.uiState.showSettings = true;
+    mocks.settingsState.caregiverPinHash = undefined as never;
+    mocks.authState.profile = { email: 'caregiver@example.com', name: 'Caregiver', plan: 'free', isPlatformAdmin: false };
+    try {
+      render(<SettingsModal />);
+      fireEvent.click(screen.getByText('synalux_account')); // the Account section starts collapsed
+      const link = screen.getByText('sign_out').closest('a')!;
+      expect(link.getAttribute('href')).toBe('https://synalux.ai/sign-out');
+      fireEvent.click(link);
+      expect(mocks.signOutOfPrismAac).toHaveBeenCalledTimes(1);
+      expect(mocks.authState.clear).toHaveBeenCalledTimes(1);
+    } finally {
+      mocks.authState.profile = null;
+    }
   });
 });
