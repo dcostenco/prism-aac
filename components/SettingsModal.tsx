@@ -9,7 +9,7 @@ import {
 } from '@/store/settingsStore';
 import { useCategoryStore } from '@/store/categoryStore';
 import { useAuthStore } from '@/store/authStore';
-import { synaluxSignInUrl, synaluxSignOutUrl, signInWithAppleNative, isNativeiOS } from '@/services/aiService';
+import { synaluxSignInUrl, synaluxSignOutUrl, signInWithAppleNative, isNativeiOS, signOutOfPrismAac } from '@/services/aiService';
 import { LANG_META, SupportedLanguage } from '@/engine/i18n';
 import { UNREVIEWED_LANGUAGES } from '@/constants/translationReviewStatus';
 import { useT } from '@/engine/useT';
@@ -181,6 +181,7 @@ export default function SettingsModal() {
   const profileLoaded = useAuthStore((s) => s.loaded);
   const profileLoading = useAuthStore((s) => s.loading);
   const refreshProfile = useAuthStore((s) => s.refresh);
+  const clearProfile = useAuthStore((s) => s.clear);
 
   useEffect(() => {
     if (showSettings) refreshProfile();
@@ -661,7 +662,10 @@ export default function SettingsModal() {
                   <p className="text-primary font-semibold text-sm break-all">{profile.email || profile.name}</p>
                 </div>
                 <CloudSubscriptionSettings key={profile.email} />
-                <a href={synaluxSignOutUrl()} target="_blank" rel="noopener" className="block text-center text-[#F44336] text-sm hover:underline pt-1">
+                {/* Prism AAC's own sign-in outlives the portal session, so end it here too. */}
+                <a href={synaluxSignOutUrl()} target="_blank" rel="noopener"
+                  onClick={() => { void signOutOfPrismAac(); clearProfile(); }}
+                  className="block text-center text-[#F44336] text-sm hover:underline pt-1">
                   {t('sign_out')}
                 </a>
               </div>

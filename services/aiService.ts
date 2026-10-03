@@ -198,13 +198,51 @@ export interface SynaluxProfile {
   isPlatformAdmin: boolean;
 }
 
+/**
+ * Prism AAC's own sign-in (GET /api/v1/prism-aac/session). It lasts until Sign
+ * out, while the portal session ends after 8 hours; the endpoint turns a portal
+ * sign-in into one and renews it on every call, including authStore's 30-minute
+ * re-check. Returns the identity, 'signed-out' (a definite no), or null when it
+ * cannot tell (an older portal without the endpoint, a network or server error).
+ */
+async function fetchAacSession(): Promise<{ email: string; name: string } | 'signed-out' | null> {
+  const t = timeoutSignal(5000);
+  try {
+    const res = await fetch(`${SYNALUX_API}/prism-aac/session`, {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json' },
+      signal: t.signal,
+    });
+    if (res.status === 401) return 'signed-out';
+    if (!res.ok) return null;
+    const body = await res.json() as { signed_in?: boolean; email?: string; name?: string } | null;
+    if (!body?.signed_in || !body.email) return 'signed-out';
+    return { email: body.email, name: body.name || body.email };
+  } catch {
+    return null;
+  } finally {
+    t.cancel();
+  }
+}
+
+/**
+ * Sign out of Prism AAC on this device: ends its sign-in on the server and clears
+ * its cookies. keepalive, so it completes while the portal sign-out page opens;
+ * never throws.
+ */
+export function signOutOfPrismAac(): Promise<void> {
+  return fetch(`${SYNALUX_API}/prism-aac/session`, { method: 'DELETE', credentials: 'include', keepalive: true })
+    .then(() => undefined, () => undefined);
+}
+
 export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
   // Same-origin when served from synalux.ai/prism-aac (cookie auto-attached).
   // Cross-origin (prism-aac.vercel.app) requires include + portal CORS.
   //
   // Two-step lookup so we can handle accounts that are signed in but don't
   // have a workspace role assigned yet:
-  //   1. /api/auth/session — definitive "is the user signed in?" + email/name.
+  //   1. Prism AAC's own sign-in (fetchAacSession); only when it cannot tell,
+  //      /api/auth/session — "is the user signed in?" + email/name.
   //   2. /api/v1/roles/me — tier + admin flag (best-effort).
   // If step 1 says signed-in but step 2 fails or returns no role, we still
   // surface the user as signed-in on the Free tier rather than pretending
@@ -212,22 +250,29 @@ export async function fetchSynaluxProfile(): Promise<SynaluxProfile | null> {
   const base = SYNALUX_API.replace(/\/api\/v1$/, '');
   let email = '';
   let name = '';
-  const sessT = timeoutSignal(5000);
-  try {
-    const sessRes = await fetch(`${base}/api/auth/session`, {
-      credentials: 'include',
-      headers: { 'Accept': 'application/json' },
-      signal: sessT.signal,
-    });
-    if (!sessRes.ok) return null;
-    const sess = await sessRes.json();
-    if (!sess?.user?.email) return null;
-    email = sess.user.email;
-    name = sess.user.name || sess.user.email;
-  } catch {
-    return null;
-  } finally {
-    sessT.cancel();
+  const aac = await fetchAacSession();
+  if (aac === 'signed-out') return null;
+  if (aac) {
+    email = aac.email;
+    name = aac.name;
+  } else {
+    const sessT = timeoutSignal(5000);
+    try {
+      const sessRes = await fetch(`${base}/api/auth/session`, {
+        credentials: 'include',
+        headers: { 'Accept': 'application/json' },
+        signal: sessT.signal,
+      });
+      if (!sessRes.ok) return null;
+      const sess = await sessRes.json();
+      if (!sess?.user?.email) return null;
+      email = sess.user.email;
+      name = sess.user.name || sess.user.email;
+    } catch {
+      return null;
+    } finally {
+      sessT.cancel();
+    }
   }
 
   let plan: SynaluxProfile['plan'] = 'free';
