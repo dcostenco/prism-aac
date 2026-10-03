@@ -711,6 +711,15 @@ export function checkOutputSafetyClient(text: string): string {
 
 // ── Native bridge (iOS on-device 2B/4B via llama.cpp) ──
 
+// What ios-native AACPipeline.ask() yields when no on-device model is loaded and its own
+// cloud call fails. That call carries no account and the cloud chat route authenticates,
+// so it is refused; the web route in askAI sends the signed-in session and can still answer.
+const NATIVE_FAILURE_REPLY = "I'm having trouble responding right now.";
+
+function isNativeFailureReply(text: string): boolean {
+  return text.replace(/[‘’]/g, "'") === NATIVE_FAILURE_REPLY;
+}
+
 function isNativeBridgeAvailable(): boolean {
   return typeof window !== 'undefined' && !!(window as any).prismNativeBridge?.askAI;
 }
@@ -939,9 +948,10 @@ export async function askAI(
   const cappedQuestion = question.slice(0, 2000);
 
   // On-device path: iOS native bridge → llama.cpp 1.7B (no network, no latency).
-  // Falls through to cloud/local route when the on-device pipeline returns
-  // a near-empty response — typically the "I'm having trouble responding
-  // right now." placeholder yielded when the GGUF isn't loaded.
+  // Falls through to the cloud/local route when the on-device pipeline returns
+  // a near-empty response or its failure placeholder (NATIVE_FAILURE_REPLY).
+  // The placeholder is longer than the near-empty cut-off, so it used to be
+  // shown as the answer and the signed-in web route never ran.
   if (isNativeBridgeAvailable() && !context) {
     try {
       // Collect native tokens into an isolated buffer — do NOT feed the caller's
@@ -952,7 +962,7 @@ export async function askAI(
       const nativeOnChunk = (delta: string) => { nativeChunks += delta; };
       const raw = await callNativeBridge(cappedQuestion, language, nativeOnChunk, signal);
       const text = stripModelControlTokens(raw).trim();
-      if (text.length >= 12) {
+      if (text.length >= 12 && !isNativeFailureReply(text)) {
         // Replay the collected tokens into the real onChunk now that we know
         // the response is good — this populates the caller's buffer for TTS.
         if (onChunk && nativeChunks) onChunk(nativeChunks);
