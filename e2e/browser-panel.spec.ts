@@ -1,4 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+// Landscape screens under 500px tall run the browser's compact layout, which
+// has no prediction bar (app/browser/page.tsx), so the prediction tests skip.
+function compactLandscape(page: Page): boolean {
+  const vp = page.viewportSize();
+  return !!vp && vp.width > vp.height && vp.height < 500;
+}
 
 test.describe('Browser page — AAC-enabled web browser', () => {
   test.beforeEach(async ({ page }) => {
@@ -64,10 +71,11 @@ test.describe('Browser page — AAC-enabled web browser', () => {
     await aacBtn.click({ force: true });
     await page.waitForTimeout(300);
     await expect(page.getByText('Leave Browser?')).toBeVisible();
-    await expect(page.getByText('Stay')).toBeVisible();
-    await expect(page.getByText('Leave')).toBeVisible();
+    // By text alone, "Leave" also matches the "Leave Browser?" heading.
+    await expect(page.getByRole('button', { name: 'Stay', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Leave', exact: true })).toBeVisible();
     // Cancel — should stay on browser
-    await page.getByText('Stay').click({ force: true });
+    await page.getByRole('button', { name: 'Stay', exact: true }).click({ force: true });
     await page.waitForTimeout(300);
     await expect(page.getByText('Leave Browser?')).not.toBeVisible();
     await expect(page.locator('[data-testid="browser-toolbar"]')).toBeVisible();
@@ -75,15 +83,18 @@ test.describe('Browser page — AAC-enabled web browser', () => {
 
   test('bookmarks toggle shows and hides bookmark bar', async ({ page }) => {
     const bookmarkBtn = page.locator('button[aria-label="Bookmarks"]');
+    // Phones have no Bookmarks button (hidden sm:flex).
+    test.skip(!(await bookmarkBtn.isVisible()), 'no Bookmarks button at this width');
+    const bookmarkBar = page.locator('[data-testid="browser-toolbar"] .overflow-x-auto');
     await bookmarkBtn.click({ force: true });
     await page.waitForTimeout(500);
-    const toolbarSearch = page.locator('[data-testid="browser-toolbar"] button[aria-label*="Search"]');
-    await expect(toolbarSearch.first()).toBeVisible();
+    // The bar's Search bookmark; aria-label*="Search" also matched the
+    // toolbar's always-visible "Search mode" switch.
+    await expect(bookmarkBar.getByRole('button', { name: 'Search', exact: true })).toBeVisible();
 
     await bookmarkBtn.click({ force: true });
     await page.waitForTimeout(500);
-    const bookmarkBarButtons = page.locator('[data-testid="browser-toolbar"] .overflow-x-auto button');
-    await expect(bookmarkBarButtons).toHaveCount(0);
+    await expect(bookmarkBar.locator('button')).toHaveCount(0);
   });
 
   test('Go button is always visible and disabled when no text', async ({ page }) => {
@@ -100,6 +111,7 @@ test.describe('Browser page — AAC-enabled web browser', () => {
   });
 
   test('typing text shows site suggestions in browser prediction bar', async ({ page }) => {
+    test.skip(compactLandscape(page), 'compact landscape has no prediction bar');
     await page.keyboard.type('wik');
     await page.waitForTimeout(1000);
     const predBar = page.locator('[data-testid="browser-prediction-bar"]');
@@ -110,6 +122,7 @@ test.describe('Browser page — AAC-enabled web browser', () => {
   });
 
   test('browser prediction bar does NOT show AAC word predictions', async ({ page }) => {
+    test.skip(compactLandscape(page), 'compact landscape has no prediction bar');
     // Must not have AAC prediction bar at all
     await expect(page.locator('[data-testid="prediction-bar"]')).toHaveCount(0);
     // Must have browser prediction bar
@@ -234,6 +247,7 @@ test.describe('Browser page — AAC-enabled web browser', () => {
   });
 
   test('speakMode: shows word prediction bar instead of site suggestions', async ({ page }) => {
+    test.skip(compactLandscape(page), 'compact landscape has no prediction bar');
     // Before toggling — browser prediction bar visible
     await expect(page.locator('[data-testid="browser-prediction-bar"]')).toBeVisible();
     await expect(page.locator('[data-testid="prediction-bar"]')).toHaveCount(0);
