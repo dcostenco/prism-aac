@@ -127,10 +127,6 @@ function shortDisplay(url: string): string {
   return url.replace(/^https?:\/\/(www\.|m\.)?/, '').split('/')[0].split('?')[0];
 }
 
-function siteOrigin(url: string): string {
-  try { return new URL(url).origin; } catch { return url; }
-}
-
 export const useBrowserStore = create<BrowserState>((set, get) => ({
   url: '',
   displayUrl: '',
@@ -220,7 +216,16 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
   expandKeyboard: () => set({ keyboardCollapsed: false }),
 
   recordVisit: (url) => {
-    const domain = shortDisplay(url);
+    // Only a web address that parses is a site. "https://" followed by typed
+    // words or a malformed host would otherwise be kept verbatim. The origin
+    // carries no sign-in part, path or query.
+    let origin: string;
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return;
+      origin = parsed.origin;
+    } catch { return; }
+    const domain = shortDisplay(origin);
     if (!domain) return;
     set((s) => {
       // Keep the site, never the page: the strip shows site names and this list
@@ -236,7 +241,7 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
         updated[existing] = { ...entry, title: known?.title ?? entry.title, icon: known?.icon ?? entry.icon,
           visitCount: entry.visitCount + 1, lastVisit: Date.now() };
       } else {
-        updated = [{ url: known?.url ?? siteOrigin(url), title: known?.title ?? domain, icon: known?.icon ?? '🌐',
+        updated = [{ url: known?.url ?? origin, title: known?.title ?? domain, icon: known?.icon ?? '🌐',
           visitCount: 1, lastVisit: Date.now() }, ...s.frecency];
       }
       updated.sort((a, b) => frecencyScore(b) - frecencyScore(a));
