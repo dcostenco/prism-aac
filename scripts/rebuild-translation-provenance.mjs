@@ -184,18 +184,20 @@ function record(surface, lang, ids) {
   if (fs.existsSync(CORPUS_DIR)) {
     for (const f of fs.readdirSync(CORPUS_DIR).filter((x) => x.endsWith('.json'))) {
       const lang = f.replace(/\.json$/, '');
-      supplied.add(lang);
       if (lang === 'en' || preexisting.has(lang)) continue;
       const data = JSON.parse(fs.readFileSync(path.join(CORPUS_DIR, f), 'utf-8'));
       const ids = [];
       for (const [section, list] of Object.entries(data)) {
         (list ?? []).forEach((_, i) => ids.push(`${section}#${i}`));
       }
+      // A file with no phrases (`{}`) supplies nothing to rebuild from.
+      if (!ids.length) continue;
+      supplied.add(lang);
       record('corpus', lang, ids);
     }
   }
   // The corpus lives outside this repo. A language it does not supply here (no
-  // directory, an empty one, or no file for that language) cannot be rebuilt,
+  // directory, an empty one, or no phrases for that language) cannot be rebuilt,
   // and writing the file without it erased its records: all 50,658 on
   // 2026-10-03. Keep what was recorded for such a language, unchanged.
   const kept = [];

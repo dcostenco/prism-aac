@@ -41,6 +41,13 @@ describe('rebuilding the translation provenance', () => {
     expect(rebuild(scratch()).corpus).toEqual(before.corpus);
   });
 
+  it('keeps a language whose corpus file has no phrases', () => {
+    const [lang] = Object.keys(before.corpus);
+    const dir = scratch();
+    fs.writeFileSync(path.join(dir, `${lang}.json`), '{}');
+    expect(rebuild(dir).corpus).toEqual(before.corpus);
+  });
+
   it('rebuilds a language the corpus supplies and keeps every other', () => {
     const [lang, ...others] = Object.keys(before.corpus);
     const dir = scratch();
