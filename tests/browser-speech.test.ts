@@ -35,12 +35,21 @@ describe("the browser's Say", () => {
     mocks.speakComposedMessage.mockReturnValue(speech.promise);
     sayOrStop('  I want juice ');
     expect(BROWSER_CLOUD_VOICE_BUDGET_MS).toBe(1500);
-    expect(mocks.speakComposedMessage).toHaveBeenCalledWith('I want juice', { cloudTimeoutMs: 1500 });
+    expect(mocks.speakComposedMessage).toHaveBeenCalledWith('I want juice', { cloudTimeoutMs: 1500 }, expect.any(Function));
     expect(useBrowserSpeech.getState().speaking).toBe(true);
     speech.resolve();
     await speech.promise;
     await Promise.resolve();
     expect(useBrowserSpeech.getState().speaking).toBe(false);
+  });
+
+  it('tells a translation still loading that Stop was pressed', () => {
+    mocks.speakComposedMessage.mockReturnValue(deferred().promise);
+    sayOrStop('hola');
+    const stillWanted = mocks.speakComposedMessage.mock.calls[0][2] as () => boolean;
+    expect(stillWanted()).toBe(true);
+    sayOrStop('hola');
+    expect(stillWanted()).toBe(false);
   });
 
   it('stops on a second press instead of starting the request again', () => {

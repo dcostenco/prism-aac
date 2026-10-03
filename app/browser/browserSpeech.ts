@@ -42,7 +42,7 @@ export function sayOrStop(text: string): void {
   void warmupAzureAudio();
   const mine = ++generation;
   useBrowserSpeech.setState({ speaking: true });
-  void speakComposedMessage(message, { cloudTimeoutMs: BROWSER_CLOUD_VOICE_BUDGET_MS })
+  void speakComposedMessage(message, { cloudTimeoutMs: BROWSER_CLOUD_VOICE_BUDGET_MS }, () => generation === mine)
     .catch(() => { /* speakComposedMessage falls back on its own; nothing to add here */ })
     .finally(() => {
       if (generation === mine) useBrowserSpeech.setState({ speaking: false });

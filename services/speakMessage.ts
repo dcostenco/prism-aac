@@ -10,8 +10,15 @@ import type { SupportedLanguage } from '@/engine/i18n';
  * history and, when the output language differs, force the translation refine
  * before speaking. Pressing Speak is the explicit "I am done" the
  * phrase-boundary translation waits for. Resolves when speech has ended.
+ *
+ * `stillWanted` is asked once the translation is back: a Stop pressed while it
+ * was loading must not be followed by speech.
  */
-export async function speakComposedMessage(text: string, options?: SpeakOptions): Promise<void> {
+export async function speakComposedMessage(
+  text: string,
+  options?: SpeakOptions,
+  stillWanted?: () => boolean,
+): Promise<void> {
   const { addToHistory, activeTone } = useMessageStore.getState();
   const { speechRate, speechVolume, language, outputLanguage } = useSettingsStore.getState();
   // Options are passed only when given, so the Speak key's calls are unchanged.
@@ -28,6 +35,7 @@ export async function speakComposedMessage(text: string, options?: SpeakOptions)
       outputLanguage as SupportedLanguage,
       setLatestTranslated,
     );
+    if (stillWanted && !stillWanted()) return;
     const spoken = best || getLatestTranslated();
     if (spoken) return say(spoken, outputLanguage as SupportedLanguage);
   }
