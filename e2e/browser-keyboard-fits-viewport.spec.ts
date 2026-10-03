@@ -38,9 +38,14 @@ async function keyboardGeometry(page: Page): Promise<KeyGeometry> {
 }
 
 // Playwright emulates no safe area, but the keyboard pads its controls row by
-// the home-indicator inset (--aac-safe-area-bottom). Set the inset a Face ID
-// iPhone reports so the bottom row is measured as a real phone lays it out.
+// the home-indicator inset (--aac-safe-area-bottom). Set the inset the device
+// reports so the bottom row is measured as it lays out there: 34 on Face ID
+// iPhones and 20 on the iPads, as read from a full-screen web view on iOS 26.5
+// simulators in portrait (landscape uses 21 on iPhones; not measured), and 0 on
+// the iPhone SE. The page also pads its top with env(safe-area-inset-top),
+// which no Playwright engine emulates; Prism Browser's --device runs cover it.
 function homeIndicatorInset(projectName: string): number {
+  if (projectName.startsWith('ipad-')) return 20;
   if (!projectName.startsWith('iphone-') || projectName.startsWith('iphone-se')) return 0;
   return projectName.endsWith('-land') ? 21 : 34;
 }

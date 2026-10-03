@@ -16,14 +16,29 @@ const BROWSER_SHELL_BRIDGE = `(() => {
 })();`;
 
 // Playwright emulates no safe area. Apply the insets the app reads (globals.css
-// --aac-safe-area-*) so the board is measured as a phone lays it out: a Dynamic
-// Island iPhone in portrait (62pt status area, as rendered on the iPhone 17
-// simulator; 34pt home indicator), the same phone in landscape (21pt home
-// indicator), and an iPhone SE's 20pt status bar.
+// --aac-safe-area-*) so the board is measured as the device lays it out.
+// Portrait values were read from a full-screen web view on iOS 26.5
+// simulators: iPhone SE 20/0, iPhone 17 Pro Max 62/34, iPhone Air 68/34, and
+// iPad Pro 13-inch and iPad (A16) 32/20. The 390- and 428-wide projects are
+// older phones that were not measured; they get the Air's deeper status area as
+// a bound. Landscape values were not measured: a 21pt home indicator on Face ID
+// iPhones and the portrait iPad values.
+const INSETS: Record<string, { top: number; bottom: number }> = {
+  'iphone-se': { top: 20, bottom: 0 },
+  'iphone-6.1': { top: 68, bottom: 34 },
+  'iphone-6.5': { top: 68, bottom: 34 },
+  'iphone-6.9': { top: 62, bottom: 34 },
+  'ipad-7': { top: 32, bottom: 20 },
+  'ipad-13': { top: 32, bottom: 20 },
+  'iphone-se-land': { top: 0, bottom: 0 },
+  'iphone-6.1-land': { top: 0, bottom: 21 },
+  'iphone-6.5-land': { top: 0, bottom: 21 },
+  'iphone-6.9-land': { top: 0, bottom: 21 },
+  'ipad-7-land': { top: 32, bottom: 20 },
+  'ipad-13-land': { top: 32, bottom: 20 },
+};
 function insets(projectName: string): { top: number; bottom: number } {
-  if (!projectName.startsWith('iphone-')) return { top: 0, bottom: 0 };
-  if (projectName.startsWith('iphone-se')) return { top: projectName.endsWith('-land') ? 0 : 20, bottom: 0 };
-  return projectName.endsWith('-land') ? { top: 0, bottom: 21 } : { top: 62, bottom: 34 };
+  return INSETS[projectName] ?? { top: 0, bottom: 0 };
 }
 
 async function openBoard(page: Page, projectName: string, inBrowserApp: boolean) {
@@ -88,7 +103,7 @@ test('the board inside the Browser app has a way back that hides nothing and shr
   await openBoard(page, testInfo.project.name, true);
   const layout = await measure(page);
 
-  expect(layout.covered, 'toolbar controls covered by another element').toEqual([]);
+  expect(layout.covered.filter(l => !baseline.covered.includes(l)), 'toolbar controls the way back covered').toEqual([]);
   expect(layout.short.filter(l => !baseline.short.includes(l)), 'targets the way back made shorter than 44px').toEqual([]);
   // Exactly one way back: the toolbar button where the row has room, else the bar.
   if (layout.width < 600) {

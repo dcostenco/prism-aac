@@ -864,10 +864,13 @@ html, body {
   .aac-browser-return-bar {
     display: flex;
   }
+}
 
-  /* The bar's height comes out of the flexible prediction cards, which fell to
-     41px on a 667px-tall phone. There, take 8px from the composer's control
-     row instead (60px -> 52px); taller phones keep the 4rem cap. */
+/* The bar's height comes out of the flexible prediction cards, which fell to
+   41px on a 667px-tall phone. There, take 8px from the composer's control row
+   instead (60px -> 52px); taller phones keep the 4rem cap. Scoped like the
+   portrait phone rule it adjusts, so a compact landscape composer is untouched. */
+@media (max-width: 599.98px) and (min-height: 501px) and (orientation: portrait) and (pointer: coarse) {
   [data-aac-typing-layout]:has(.aac-browser-return-bar) [data-scan-group="message-bar"] > button {
     height: clamp(3.25rem, calc(9svh - 8px), 4rem) !important;
   }
