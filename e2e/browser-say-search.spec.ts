@@ -127,10 +127,24 @@ test('unpinning a site can be undone from the bar', async ({ page }) => {
   await stubSites(page);
   await openBrowser(page);
   await homeTile(page, 'Wikipedia').click();
+  // Once the site has loaded the keyboard folds away, leaving its round Show
+  // keyboard button at the bottom-left, where the bar appears.
+  await expect(page.getByRole('button', { name: 'Show keyboard', exact: true })).toBeVisible({ timeout: 15_000 });
   await page.getByRole('button', { name: 'Unpin this site', exact: true }).click();
 
   const bar = page.getByTestId('browser-undo-bar');
   await expect(bar).toContainText('Wikipedia removed');
+  // The Show keyboard button used to sit on the start of this text.
+  const coveredAt = await bar.locator('span').first().evaluate((text) => {
+    const r = text.getBoundingClientRect();
+    const xs: number[] = [];
+    for (let x = r.left + 1; x < r.right; x += 4) xs.push(x);
+    return xs.filter((x) => {
+      const hit = document.elementFromPoint(x, r.top + r.height / 2);
+      return !(hit && (hit === text || text.contains(hit)));
+    }).map(Math.round);
+  });
+  expect(coveredAt, 'points of "Wikipedia removed" under another element').toEqual([]);
   await bar.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(bar).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Unpin this site', exact: true })).toBeVisible();

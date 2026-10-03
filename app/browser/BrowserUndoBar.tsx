@@ -12,6 +12,7 @@ export default function BrowserUndoBar() {
   const lastRemoved = useBrowserStore((s) => s.lastRemoved);
   const undoUnpin = useBrowserStore((s) => s.undoUnpin);
   const dismissUndo = useBrowserStore((s) => s.dismissUndo);
+  const keyboardCollapsed = useBrowserStore((s) => s.keyboardCollapsed);
 
   useEffect(() => {
     if (!lastRemoved) return;
@@ -25,6 +26,13 @@ export default function BrowserUndoBar() {
       role="status"
       data-testid="browser-undo-bar"
       className="shrink-0 flex items-center justify-between gap-3 px-3 py-1 surface-bar border-t border-theme"
+      // With the keyboard folded away the bar is the bottom of the screen: the
+      // round Show keyboard button (bottom-left, 48px at 16px) covered the
+      // tile's name, and the home indicator sat on the bar.
+      style={keyboardCollapsed ? {
+        paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 76px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4px)',
+      } : undefined}
     >
       <span className="text-sm font-semibold text-primary truncate">{lastRemoved.bookmark.title} removed</span>
       <button
