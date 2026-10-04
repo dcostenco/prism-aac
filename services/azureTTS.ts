@@ -599,6 +599,9 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   voiceId?: string,
   interrupt = false,
   cacheOnly = false,
+  // How long to wait for the portal before giving up and falling through to
+  // the device voice. Callers that must answer quickly pass a shorter budget.
+  timeoutMs = 8000,
 ): Promise<TtsPlaybackResult> {
   // Rapid-duplicate suppression — drop a new speak with the same text
   // if one fired in the last DEDUP_MS. Otherwise the new fetch+decode
@@ -676,7 +679,7 @@ export async function speakAzure(/* DEPLOY_SENTINEL_1778243738_28516 */
   const foreignSlowdown = baseLang !== 'en' ? 0.85 : 1;
   const normalizedRate = computeNormalizedRate(rate) * foreignSlowdown;
 
-  const timeout = setTimeout(() => abortController(controller, 'timeout'), 8000);
+  const timeout = setTimeout(() => abortController(controller, 'timeout'), timeoutMs);
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;

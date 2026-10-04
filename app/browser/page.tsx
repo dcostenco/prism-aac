@@ -10,12 +10,14 @@ import { useUIStore } from '@/store/uiStore';
 import { usePredictionStore } from '@/store/predictionStore';
 import { registerPanicListeners } from '@/services/panicService';
 import { registerConnectivityListener } from '@/services/emergencyService';
-import { keyFeedback, deleteFeedback } from '@/services/feedback';
+import { keyFeedback, deleteFeedback, tapFeedback } from '@/services/feedback';
 import { useT } from '@/engine/useT';
 import { useBrowserStore } from './browserStore';
 import BrowserToolbar from './BrowserToolbar';
 import BrowserContent from './BrowserContent';
 import BrowserPredictionBar from './BrowserPredictionBar';
+import BrowserUndoBar from './BrowserUndoBar';
+import { sayOrStop, useBrowserSpeech } from './browserSpeech';
 import PredictionBar from '@/components/PredictionBar';
 
 const HeadTrackingOverlay = nextDynamic(() => import('@/components/HeadTrackingOverlay'), { ssr: false });
@@ -28,6 +30,13 @@ const TrackingDebugOverlay = nextDynamic(() => import('@/components/TrackingDebu
 
 export const dynamic = 'force-dynamic';
 
+// Four key rows of at least Apple's 44pt minimum (tablet letter rows render
+// near 50px) plus gaps and padding. On short screens (iPhone SE portrait, any
+// phone or iPad mini in landscape) the page content above scrolls rather than
+// the keys shrinking below a usable size. The keyboard's controls row pads the
+// home-indicator inset inside its own height, so the floor adds that inset.
+const BROWSER_KEYBOARD_MIN_HEIGHT = 'calc(212px + var(--aac-safe-area-bottom, 0px))';
+
 export default function BrowserPage() {
   const [hydrated, setHydrated] = useState(false);
   const theme = useSettingsStore((s) => s.theme);
@@ -39,6 +48,7 @@ export default function BrowserPage() {
   const expandKeyboard = useBrowserStore((s) => s.expandKeyboard);
   const navigate = useBrowserStore((s) => s.navigate);
   const speakMode = useBrowserStore((s) => s.speakMode);
+  const speaking = useBrowserSpeech((s) => s.speaking);
   const runDecay = usePredictionStore((s) => s.runDecay);
   const ensureSeed = usePredictionStore((s) => s.ensureSeed);
 
@@ -80,6 +90,12 @@ export default function BrowserPage() {
     useMessageStore.getState().clearAll();
   }, [navigate]);
 
+  // The keyboard's key in Say mode: Say, or Stop while speaking.
+  const handleBrowserSay = useCallback(() => {
+    tapFeedback();
+    sayOrStop(useMessageStore.getState().text);
+  }, []);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
@@ -95,10 +111,7 @@ export default function BrowserPage() {
         const current = store.text.trim();
         if (current) {
           if (useBrowserStore.getState().speakMode) {
-            void import('@/services/aacSpeak').then(({ aacSpeak: speak }) => {
-              const ss = useSettingsStore.getState();
-              speak(current, ss.speechRate, ss.speechVolume);
-            });
+            sayOrStop(current);
           } else {
             useBrowserStore.getState().navigate(current);
             store.clearAll();
@@ -125,14 +138,23 @@ export default function BrowserPage() {
       <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`} style={{ paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
         <BrowserToolbar />
         <BrowserContent />
+        <BrowserUndoBar />
 
         {/* Keyboard section — collapses after page load, restored via ⌨️ button */}
         {!keyboardCollapsed && (
           <>
             {!compactMode && (speakMode ? <PredictionBar /> : <BrowserPredictionBar />)}
-            <div className={keyboardMaximized ? 'flex-1 min-h-0 flex flex-row' : 'shrink-0 flex flex-row'} style={{ height: keyboardMaximized ? undefined : compactMode ? 'clamp(80px, 30svh, 140px)' : 'clamp(170px, 25svh, 260px)' }} data-testid="keyboard-shell">
+            <div className={keyboardMaximized ? 'flex-1 min-h-0 flex flex-row' : 'shrink-0 flex flex-row'} style={keyboardMaximized ? { minHeight: BROWSER_KEYBOARD_MIN_HEIGHT } : { height: compactMode ? 'clamp(80px, 30svh, 140px)' : 'clamp(170px, 25svh, 260px)' }} data-testid="keyboard-shell" data-browser-keyboard>
               <div className="flex-1 flex flex-col">
-                <Keyboard browserMode={!speakMode} onBrowserGo={handleBrowserGo} />
+                <Keyboard
+                  browserMode={!speakMode}
+                  onBrowserGo={handleBrowserGo}
+                  sayControl={speakMode ? {
+                    label: speaking ? '■ Stop' : 'Say',
+                    ariaLabel: speaking ? 'Stop speaking' : 'Say',
+                    onPress: handleBrowserSay,
+                  } : undefined}
+                />
               </div>
             </div>
           </>
@@ -153,7 +175,7 @@ export default function BrowserPage() {
         <EmergencyCountdownModal />
         <AlertConfirmModal />
         <HistoryModal />
-        <SettingsModal />
+        <SettingsModal onRestoreBrowserTiles={useBrowserStore.getState().restoreDefaultBookmarks} />
         <HeadTrackingOverlay />
         <CameraInputOverlay />
         <TrackingDebugOverlay />

@@ -7,6 +7,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
 import Keyboard from '@/components/Keyboard';
 import MessageBar from '@/components/MessageBar';
 import { useMessageStore } from '@/store/messageStore';
@@ -96,6 +97,16 @@ describe('Keyboard cumulative word-boundary speech', () => {
   // Arabic is the right case to pin it on: `؟` is the Arabic question mark, and
   // an ASCII-only terminator check would leave Arabic users unable to use the
   // feature at all while every Latin-script user could.
+  it("lets the browser's Say replace the Speak key's label and action", () => {
+    const onPress = vi.fn();
+    const { getByRole } = render(<Keyboard sayControl={{ label: '■ Stop', ariaLabel: 'Stop speaking', onPress }} />);
+    const key = getByRole('button', { name: 'Stop speaking' });
+    expect(key).toHaveTextContent('■ Stop');
+    fireEvent.click(key);
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(speechMocks.aacSpeak).not.toHaveBeenCalled();
+  });
+
   it('offers Arabic punctuation for the Arabic question mark and comma', () => {
     useMessageStore.setState({ text: 'كيف حالك' } as never);
     useSettingsStore.setState({

@@ -4,7 +4,7 @@
     "ui": {
       "am": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -408,6 +408,7 @@
           "tier_unlocked",
           "timer_duration",
           "tone",
+          "toolbar_browser",
           "tracking",
           "try_again",
           "type_here",
@@ -476,7 +477,7 @@
       },
       "sw": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -880,6 +881,7 @@
           "tier_unlocked",
           "timer_duration",
           "tone",
+          "toolbar_browser",
           "tracking",
           "try_again",
           "type_here",
@@ -948,7 +950,7 @@
       },
       "bn": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "aac_chat_no_contacts",
@@ -1352,6 +1354,7 @@
           "tier_unlocked",
           "timer_duration",
           "tone",
+          "toolbar_browser",
           "tracking",
           "try_again",
           "type_here",
@@ -1420,7 +1423,7 @@
       },
       "es": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1460,6 +1463,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1474,7 +1478,7 @@
       },
       "fr": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1514,6 +1518,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1528,7 +1533,7 @@
       },
       "pt": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1568,6 +1573,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1582,7 +1588,7 @@
       },
       "ro": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1622,6 +1628,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1636,7 +1643,7 @@
       },
       "uk": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1676,6 +1683,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1690,7 +1698,7 @@
       },
       "ru": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1730,6 +1738,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1744,7 +1753,7 @@
       },
       "de": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1784,6 +1793,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1798,7 +1808,7 @@
       },
       "ja": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1838,6 +1848,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1852,7 +1863,7 @@
       },
       "ko": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1892,6 +1903,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1906,7 +1918,7 @@
       },
       "zh": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -1946,6 +1958,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -1960,7 +1973,7 @@
       },
       "ar": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2000,6 +2013,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2014,7 +2028,7 @@
       },
       "hi": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2054,6 +2068,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2068,7 +2083,7 @@
       },
       "it": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2108,6 +2123,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2122,7 +2138,7 @@
       },
       "pl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2162,6 +2178,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2176,7 +2193,7 @@
       },
       "he": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2216,6 +2233,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2230,7 +2248,7 @@
       },
       "nl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2270,6 +2288,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2284,7 +2303,7 @@
       },
       "vi": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2324,6 +2343,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2338,7 +2358,7 @@
       },
       "tl": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2378,6 +2398,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2392,7 +2413,7 @@
       },
       "tr": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2432,6 +2453,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2446,7 +2468,7 @@
       },
       "id": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2486,6 +2508,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2500,7 +2523,7 @@
       },
       "bg": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2540,6 +2563,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2554,7 +2578,7 @@
       },
       "zh-Hant": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2594,6 +2618,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",
@@ -2608,7 +2633,7 @@
       },
       "zh-HK": {
         "generator": "gemini-3.6-flash",
-        "generatedAt": "2026-09-10T15:00:05.341Z",
+        "generatedAt": "2026-10-03T01:36:35.000Z",
         "reviewed": [],
         "unreviewed": [
           "cloud_access_active",
@@ -2648,6 +2673,7 @@
           "speech_cache_enable",
           "speech_cache_unavailable",
           "speech_cache_usage",
+          "toolbar_browser",
           "web_preview_notice",
           "web_signin_check_again",
           "web_signin_checking_desc",

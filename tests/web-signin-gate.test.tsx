@@ -19,6 +19,19 @@ import { resetMonetizationTelemetry } from '@/services/monetizationTelemetry';
 const board = <button>Communication board action</button>;
 async function tick(ms: number) { await act(async () => { await vi.advanceTimersByTimeAsync(ms); }); }
 
+// The bridges as each iOS shell injects them at document start (ContentView.swift
+// in prism-aac/ios-native and in the Prism AAC Browser app). Only the Prism AAC
+// shell offers Sign in with Apple and purchases; the Browser shell navigates.
+const noop = () => {};
+const PRISM_AAC_SHELL_BRIDGE = { speak: noop, stopSpeech: noop, startVoice: noop, stopVoice: noop, emergency: noop,
+  freeMemoryMB: noop, askAI: noop, openSettings: noop, requestReview: noop, signInWithApple: noop, subscription: noop };
+const PRISM_AAC_BROWSER_SHELL_BRIDGE = { speak: noop, stopSpeech: noop, startVoice: noop, stopVoice: noop, emergency: noop,
+  freeMemoryMB: noop, askAI: noop, openSettings: noop, requestReview: noop, navigateTo: noop, goBack: noop, goForward: noop };
+type BridgeWindow = { prismNativeBridge?: Record<string, () => void> };
+const installBridge = (bridge: Record<string, () => void>) => { (window as BridgeWindow).prismNativeBridge = bridge; };
+const nativeShells = [['the Prism AAC app', PRISM_AAC_SHELL_BRIDGE],
+  ['the Prism AAC Browser app', PRISM_AAC_BROWSER_SHELL_BRIDGE]] as const;
+
 beforeEach(() => {
   vi.clearAllMocks(); mocks.native = false; mocks.profile = null;
   clearVerifiedLocalAccess();
@@ -31,7 +44,7 @@ beforeEach(() => {
   mocks.access.mockResolvedValue({ state: 'preview', remainingMs: 60_000 });
   useSettingsStore.setState({ language: 'en' });
 });
-afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); delete (window as BridgeWindow).prismNativeBridge; });
 
 const gateOutcomes = () => mocks.ddAction.mock.calls
   .filter(([name]) => name === 'aac_web_gate').map(([, ctx]) => (ctx as { outcome: string }).outcome);
@@ -132,10 +145,25 @@ describe('full web sign-in gate', () => {
     expect(screen.queryByText('Communication board action')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Check sign-in again' })).toBeEnabled();
   });
-  it.each(['native', 'rollout-disabled'])('keeps the existing app available for %s without checking the web preview', async mode => {
-    if (mode === 'native') mocks.native = true;
-    else vi.stubEnv('NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE', '0');
-    render(<WebSignInGate>{board}</WebSignInGate>); await tick(61_000);
+  it.each([...nativeShells.map(([label, bridge]) => [label, () => installBridge(bridge)] as const),
+    ['a disabled rollout', () => { vi.stubEnv('NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE', '0'); }] as const])(
+    'keeps the existing app available inside %s without checking the web preview', async (_label, setup) => {
+      setup();
+      render(<WebSignInGate>{board}</WebSignInGate>); await tick(61_000);
+      expect(screen.getByRole('button', { name: 'Communication board action' })).toBeVisible();
+      expect(mocks.access).not.toHaveBeenCalled();
+    });
+
+  // The Browser shell has no Sign in with Apple, so a check for that method
+  // treated it as a web visitor: a 60-second preview, then a Google-only wall
+  // inside an app listed as "No Login Required" (2026-09-09 onward).
+  it('never shows the preview or the wall inside the Prism AAC Browser app', async () => {
+    mocks.native = false; // the Apple sign-in capability check stays false here
+    installBridge(PRISM_AAC_BROWSER_SHELL_BRIDGE);
+    render(<WebSignInGate>{board}</WebSignInGate>); await tick(1);
+    expect(screen.queryByTestId('web-preview-notice')).not.toBeInTheDocument();
+    await tick(120_000);
+    expect(screen.queryByTestId('web-signin-gate')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Communication board action' })).toBeVisible();
     expect(mocks.access).not.toHaveBeenCalled();
   });
@@ -284,8 +312,8 @@ describe('full web sign-in gate', () => {
     expect(gateOutcomes()).toEqual(['preview', 'sign_in_required', 'sign_in_clicked']);
   });
 
-  it.each([['disabled by configuration', () => { vi.stubEnv('NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE', '0'); }],
-    ['running inside the native app', () => { mocks.native = true; }]] as const)(
+  it.each([['disabled by configuration', () => { vi.stubEnv('NEXT_PUBLIC_AAC_WEB_SIGNIN_GATE', '0'); }] as const,
+    ...nativeShells.map(([label, bridge]) => [`running inside ${label}`, () => installBridge(bridge)] as const)])(
     'stays silent when the gate is %s', async (_label, setup) => {
       setup();
       render(<WebSignInGate>{board}</WebSignInGate>);

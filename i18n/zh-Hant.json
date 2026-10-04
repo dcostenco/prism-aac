@@ -480,5 +480,6 @@
   "web_signin_check_again": "再次檢查登入",
   "web_signin_checking_desc": "正在檢查您的帳號與網頁試用。登入是免費的，不會啟動付費訂閱。",
   "web_signin_free_account": "網頁版 App 在 1 分鐘試用後需要免費帳號。雲端訂閱為自由選購。",
-  "web_signin_draft_fallback": "此瀏覽器無法儲存您未完成的訊息以供登入。繼續前往 Google 將開啟新分頁。請保持此分頁開啟，並在登入後返回此處以找回訊息。"
+  "web_signin_draft_fallback": "此瀏覽器無法儲存您未完成的訊息以供登入。繼續前往 Google 將開啟新分頁。請保持此分頁開啟，並在登入後返回此處以找回訊息。",
+  "toolbar_browser": "瀏覽器"
 }

@@ -480,5 +480,6 @@
   "web_signin_check_again": "Verificar inicio de sesión de nuevo",
   "web_signin_checking_desc": "Verificando tu cuenta y la vista previa web. Iniciar sesión es gratis y no inicia una suscripción de pago.",
   "web_signin_free_account": "La app web requiere una cuenta gratuita tras un minuto de vista previa. Las suscripciones en la nube son opcionales.",
-  "web_signin_draft_fallback": "Este navegador no pudo guardar tu mensaje sin terminar. Continuar con Google abrirá otra pestaña. Déjala abierta y vuelve aquí tras iniciar sesión para recuperar tu mensaje."
+  "web_signin_draft_fallback": "Este navegador no pudo guardar tu mensaje sin terminar. Continuar con Google abrirá otra pestaña. Déjala abierta y vuelve aquí tras iniciar sesión para recuperar tu mensaje.",
+  "toolbar_browser": "Navegador"
 }

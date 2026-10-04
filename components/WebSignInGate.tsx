@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useT } from '@/engine/useT';
 import { useAuthStore } from '@/store/authStore';
-import { isNativeiOS, synaluxSignInUrl } from '@/services/aiService';
+import { synaluxSignInUrl } from '@/services/aiService';
+import { isPrismNativeShell } from '@/services/nativeShell';
 import { fetchWebAccess, hasVerifiedLocalAccess, rememberVerifiedLocalAccess, clearVerifiedLocalAccess,
   LOCAL_ACCESS_CLEARED, LOCAL_ACCESS_KEY, type WebAccess } from '@/services/webAccessService';
 import { rememberWebSignInDraft, recoverWebSignInDraft } from '@/services/webSignInDraft';
@@ -14,7 +15,9 @@ const PRIVACY_URL = 'https://synalux.ai/legal/privacy';
 const TERMS_URL = 'https://synalux.ai/legal/terms';
 const SIGNED_IN_RECHECK_MS = 5 * 60_000;
 const subscribeNative = () => () => {};
-const nativeSnapshot = () => isNativeiOS();
+// Any native shell, not only one that offers Sign in with Apple: the Browser
+// shell has no such method and was walled after a 60-second preview.
+const nativeSnapshot = () => isPrismNativeShell();
 const serverNativeSnapshot = () => false;
 
 /** Registration gate only. Cloud entitlement is enforced separately by the portal. */

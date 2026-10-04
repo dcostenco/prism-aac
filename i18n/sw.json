@@ -480,5 +480,6 @@
   "web_signin_check_again": "Kagua kuingia tena",
   "web_signin_checking_desc": "Inakagua akaunti yako na majaribio ya wavuti. Kuingia ni bure na hakuanzishi usajili wa kulipia.",
   "web_signin_free_account": "App ya wavuti inahitaji akaunti ya bure baada ya majaribio ya dakika moja. Usajili wa mtandaoni ni wa hiari.",
-  "web_signin_draft_fallback": "Kivinjari hiki kimeshindwa kuhifadhi ujumbe wako. Ukibonyeza Endelea na Google itafungua ukurasa mpya. Acha ukurasa huu wazi kisha urudi hapa baada ya kuingia ili kupata ujumbe wako."
+  "web_signin_draft_fallback": "Kivinjari hiki kimeshindwa kuhifadhi ujumbe wako. Ukibonyeza Endelea na Google itafungua ukurasa mpya. Acha ukurasa huu wazi kisha urudi hapa baada ya kuingia ili kupata ujumbe wako.",
+  "toolbar_browser": "Kivinjari"
 }

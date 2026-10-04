@@ -480,5 +480,6 @@
   "web_signin_check_again": "Verifica di nuovo l'accesso",
   "web_signin_checking_desc": "Verifica dell'account e dell'anteprima web in corso. L'accesso è gratuito e non avvia un abbonamento a pagamento.",
   "web_signin_free_account": "L'app web richiede un account gratuito dopo un minuto di anteprima. Gli abbonamenti cloud sono opzionali.",
-  "web_signin_draft_fallback": "Questo browser non ha potuto salvare il tuo messaggio incompleto per l'accesso. Continuando con Google si aprirà un'altra scheda. Tienila aperta e torna qui dopo l'accesso per recuperare il messaggio."
+  "web_signin_draft_fallback": "Questo browser non ha potuto salvare il tuo messaggio incompleto per l'accesso. Continuando con Google si aprirà un'altra scheda. Tienila aperta e torna qui dopo l'accesso per recuperare il messaggio.",
+  "toolbar_browser": "Browser"
 }

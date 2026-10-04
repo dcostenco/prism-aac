@@ -480,5 +480,6 @@
   "web_signin_check_again": "Verifică conectarea din nou",
   "web_signin_checking_desc": "Se verifică contul și previzualizarea web. Conectarea este gratuită și nu începe un abonament plătit.",
   "web_signin_free_account": "Aplicația web necesită un cont gratuit după previzualizarea de un minut. Abonamentele Cloud sunt opționale.",
-  "web_signin_draft_fallback": "Acest browser nu a putut salva mesajul neterminat pentru conectare. Continuarea cu Google va deschide alt tab. Ține acest tab deschis și revino aici după conectare pentru a recupera mesajul."
+  "web_signin_draft_fallback": "Acest browser nu a putut salva mesajul neterminat pentru conectare. Continuarea cu Google va deschide alt tab. Ține acest tab deschis și revino aici după conectare pentru a recupera mesajul.",
+  "toolbar_browser": "Browser"
 }

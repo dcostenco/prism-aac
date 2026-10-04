@@ -164,6 +164,35 @@ function audioOk(bytes = 1024): Response {
   });
 }
 
+describe('speakAzure — how long it waits for the cloud voice', () => {
+  // The browser passes 1.5 s so the device voice speaks soon; everyone else
+  // keeps 8 s. The wait bounds the request, not the speech. The saved-audio
+  // lookup before the request hashes with WebCrypto, which fake timers cannot
+  // drive, so the test finds the abort timer and fires it.
+  it.each([[1500], [undefined]])('aborts the request at the caller budget (%s ms; default 8000)', async (budget) => {
+    let signal: AbortSignal | undefined;
+    vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+      signal = init?.signal ?? undefined;
+      signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+    })));
+    const timers = vi.spyOn(globalThis, 'setTimeout');
+    try {
+      const { speakAzure } = await import('@/services/azureTTS');
+      // A distinct text per case: speakAzure suppresses a quick repeat of the same text.
+      const pending = speakAzure(`budget ${budget}`, 'en-US', 'friendly', 0.5, 1.0, '', 'Alex', false, false, budget);
+      await vi.waitFor(() => expect(signal, 'the request was sent').toBeDefined());
+      const abortTimer = timers.mock.calls.find(([, ms]) => ms === (budget ?? 8000));
+      expect(abortTimer, 'an abort timer at the budget').toBeDefined();
+      expect(signal?.aborted).toBe(false);
+      (abortTimer![0] as () => void)();
+      expect(signal?.aborted).toBe(true);
+      await expect(pending).resolves.toMatchObject({ success: false });
+    } finally {
+      timers.mockRestore();
+    }
+  });
+});
+
 describe('speakAzure — two-tier endpoint strategy', () => {
   it('hits /api/v1/tts/public first', async () => {
     let publicCalled = false;

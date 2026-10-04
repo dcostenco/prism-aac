@@ -480,5 +480,6 @@
   "web_signin_check_again": "Vérifier à nouveau",
   "web_signin_checking_desc": "Vérification de votre compte. Se connecter est gratuit.",
   "web_signin_free_account": "Un compte gratuit est requis après la démo d'une minute. L'abonnement cloud est facultatif.",
-  "web_signin_draft_fallback": "Impossible de sauvegarder votre message ici. Google va s'ouvrir dans un autre onglet. Gardez cette page ouverte pour retrouver votre texte."
+  "web_signin_draft_fallback": "Impossible de sauvegarder votre message ici. Google va s'ouvrir dans un autre onglet. Gardez cette page ouverte pour retrouver votre texte.",
+  "toolbar_browser": "Navigateur"
 }

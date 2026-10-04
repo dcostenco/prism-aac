@@ -480,5 +480,6 @@
   "web_signin_check_again": "로그인 다시 확인",
   "web_signin_checking_desc": "계정과 웹 미리보기를 확인하고 있어요. 로그인은 무료이며 유료 구독이 시작되지 않아요.",
   "web_signin_free_account": "웹 앱은 1분 미리보기 후 무료 계정이 필요해요. 클라우드 구독은 선택 사항이에요.",
-  "web_signin_draft_fallback": "이 브라우저에서는 로그인을 위해 작성 중인 메시지를 저장할 수 없었어요. Google로 계속하면 새 탭이 열려요. 메시지를 복구하려면 이 탭을 열어둔 채 로그인 후 돌아오세요."
+  "web_signin_draft_fallback": "이 브라우저에서는 로그인을 위해 작성 중인 메시지를 저장할 수 없었어요. Google로 계속하면 새 탭이 열려요. 메시지를 복구하려면 이 탭을 열어둔 채 로그인 후 돌아오세요.",
+  "toolbar_browser": "브라우저"
 }

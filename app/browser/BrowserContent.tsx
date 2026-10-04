@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useBrowserStore } from './browserStore';
 import { openBookmark } from './BrowserToolbar';
+import { useUIStore } from '@/store/uiStore';
 
 export default function BrowserContent() {
   const isHome = useBrowserStore((s) => s.isHome);
@@ -52,6 +53,8 @@ export default function BrowserContent() {
   }, [url, isLoading, isHome]);
 
   const pinnedBookmarks = useBrowserStore((s) => s.pinnedBookmarks);
+  const speakMode = useBrowserStore((s) => s.speakMode);
+  const toggleSettings = useUIStore((s) => s.toggleSettings);
 
   if (isHome) {
     return (
@@ -60,7 +63,9 @@ export default function BrowserContent() {
           <div className="text-center">
             <div className="text-3xl sm:text-5xl mb-1">🌐</div>
             <h1 className="text-lg sm:text-2xl font-extrabold text-primary">Prism AAC Browser</h1>
-            <p className="text-xs sm:text-sm text-muted mt-0.5">Type below and tap Go to search or enter a URL</p>
+            <p className="text-xs sm:text-sm text-muted mt-0.5">
+              {speakMode ? 'Type below and tap Say to speak it' : 'Type below and tap Go to search or enter a URL'}
+            </p>
           </div>
 
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 sm:gap-3 w-full max-w-lg">
@@ -76,6 +81,18 @@ export default function BrowserContent() {
               </button>
             ))}
           </div>
+
+          {/* The way into Settings (voice, size, access methods, tiles). On Home
+              only, out of reach of a stray tap while browsing. With a caregiver
+              PIN set, Settings asks for it first. */}
+          <button
+            onClick={toggleSettings}
+            data-testid="browser-settings-button"
+            className="aac-btn flex items-center gap-2 px-4 min-h-[44px] rounded-xl surface-key border border-theme text-sm font-semibold text-primary select-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          >
+            <span aria-hidden className="text-lg leading-none">⚙</span>
+            Settings
+          </button>
         </div>
       </div>
     );
