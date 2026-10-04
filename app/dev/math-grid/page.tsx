@@ -65,7 +65,7 @@ export default function MathGridDevPage() {
   }, [backspaceAtCursor, commitGlyph, setCursor, cursor.r]);
 
   return (
-    <div className="h-svh flex flex-col bg-white" data-testid="math-grid-dev-page">
+    <div className="aac-safe-viewport h-svh flex flex-col bg-white" data-testid="math-grid-dev-page">
       <header className="flex items-center justify-between px-3 py-2 border-b text-sm font-mono shrink-0 bg-gray-50 gap-3">
         <span>MathGrid dev — cursor=({cursor.r},{cursor.c}) cells={cellsCount} scale={viewport.scale.toFixed(2)} pan=({Math.round(viewport.panX)},{Math.round(viewport.panY)})</span>
         <div className="flex items-center gap-2">

@@ -135,7 +135,10 @@ export default function BrowserPage() {
 
   return (
     <SyncProvider>
-      <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} h-svh flex flex-col overflow-hidden surface-app`} style={{ paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
+      {/* aac-safe-viewport: during the web preview the sign-in gate fits this
+          class under its notice; without it the page kept the full screen
+          height and the keyboard's bottom row fell off the screen. */}
+      <div dir={rtl ? 'rtl' : 'ltr'} className={`${themeClass} aac-safe-viewport h-svh flex flex-col overflow-hidden surface-app`} style={{ paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
         <BrowserToolbar />
         <BrowserContent />
         <BrowserUndoBar />
