@@ -161,6 +161,8 @@ test('Settings on the browser home opens Settings, where the default tiles come 
   await page.getByRole('button', { name: 'Home', exact: true }).click();
   await expect(homeTile(page, 'Wikipedia')).toHaveCount(0);
 
+  // In the header row, so no phone has to scroll the Home page to find it.
+  await expect(page.getByTestId('browser-settings-button')).toBeInViewport({ ratio: 1 });
   await page.getByTestId('browser-settings-button').click();
   const settings = page.getByRole('dialog');
   // Every Settings section opens on a tap, this one included.
@@ -179,3 +181,13 @@ test('Say mode is still on after a reload', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Say mode' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('browser-say-button')).toBeVisible();
 });
+
+for (const mode of ['Search', 'Say'] as const) {
+  test(`Settings is on screen on Home with the keyboard open (${mode} mode)`, async ({ page }) => {
+    await openBrowser(page);
+    await page.getByRole('button', { name: `${mode} mode` }).click();
+    await expect(page.getByTestId('keyboard-shell')).toBeVisible();
+    // Under the tiles it fell below the fold on an iPhone SE in both modes.
+    await expect(page.getByTestId('browser-settings-button')).toBeInViewport({ ratio: 1 });
+  });
+}

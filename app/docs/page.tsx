@@ -4,7 +4,11 @@ export const metadata = {
 };
 
 export default function DocsPage() {
+  // The app's body never scrolls (app/layout.tsx), so this page is its own
+  // scroll container; aac-safe-viewport fits it under the web-preview notice.
+  // Without it nothing below the first screen could be reached.
   return (
+    <div className="aac-safe-viewport h-svh overflow-y-auto" data-testid="docs-scroll">
     <main style={{ maxWidth: 720, margin: '0 auto', padding: '40px 20px', fontFamily: '-apple-system, sans-serif', color: '#1a1a1a' }}>
       <h1 style={{ fontSize: 28, marginBottom: 8 }}>Prism AAC — Support</h1>
       <p style={{ color: '#666', marginBottom: 32 }}>Free augmentative &amp; alternative communication app by <a href="https://synalux.ai" style={{ color: '#6366f1' }}>Synalux LLC</a></p>
@@ -57,5 +61,6 @@ export default function DocsPage() {
         © 2024–2026 Synalux LLC. Licensed under AGPL-3.0-or-later.
       </footer>
     </main>
+    </div>
   );
 }

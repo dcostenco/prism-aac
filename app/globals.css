@@ -142,7 +142,11 @@ html, body {
   overflow: hidden;
   padding: 0.2rem 0.3rem;
   text-align: center;
-  text-overflow: ellipsis;
+  /* Not ellipsis: Chromium draws "…" as soon as a word passes the content
+   * box, though it still fits inside the padding, where WebKit shows it
+   * whole. FittedTileLabel shrinks any word that overflows the label itself,
+   * so clipping hides nothing; the ellipsis showed "Mo…" for "More". */
+  text-overflow: clip;
   overflow-wrap: normal;
   word-break: normal;
   hyphens: none;

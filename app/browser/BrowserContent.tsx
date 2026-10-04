@@ -59,11 +59,30 @@ export default function BrowserContent() {
   if (isHome) {
     return (
       <div className="flex-[2] min-h-0 overflow-auto surface-app" data-testid="browser-content">
-        <div className="flex flex-col items-center justify-center min-h-full gap-3 p-3 sm:p-4">
-          <div className="text-center">
-            <div className="text-3xl sm:text-5xl mb-1">🌐</div>
-            <h1 className="text-lg sm:text-2xl font-extrabold text-primary">Prism AAC Browser</h1>
-            <p className="text-xs sm:text-sm text-muted mt-0.5">
+        {/* Under 500px tall (phones in landscape) Home gets about 58px between
+            the toolbar and the keyboard; less padding keeps Settings whole. */}
+        <div className="flex flex-col items-center justify-center min-h-full gap-3 p-3 sm:p-4 [@media(max-height:499.98px)]:py-1.5">
+          {/* What this is and the way into Settings (voice, size, access
+              methods, tiles), in one row at the top: under the tiles, Settings
+              sat below the fold on an iPhone SE. On Home only, out of reach of
+              a stray tap while browsing. With a caregiver PIN set, Settings
+              asks for it first. */}
+          <div className="w-full max-w-lg">
+            <div className="flex items-center justify-between gap-2">
+              <h1 className="flex items-center gap-2 min-w-0 text-lg sm:text-2xl font-extrabold text-primary">
+                <span aria-hidden className="text-2xl sm:text-3xl leading-none">🌐</span>
+                <span className="truncate">Prism AAC Browser</span>
+              </h1>
+              <button
+                onClick={toggleSettings}
+                data-testid="browser-settings-button"
+                className="aac-btn shrink-0 flex items-center gap-2 px-4 min-h-[44px] rounded-xl surface-key border border-theme text-sm font-semibold text-primary select-none focus-visible:ring-2 focus-visible:ring-blue-400"
+              >
+                <span aria-hidden className="text-lg leading-none">⚙</span>
+                Settings
+              </button>
+            </div>
+            <p className="text-xs sm:text-sm text-muted mt-1">
               {speakMode ? 'Type below and tap Say to speak it' : 'Type below and tap Go to search or enter a URL'}
             </p>
           </div>
@@ -82,17 +101,6 @@ export default function BrowserContent() {
             ))}
           </div>
 
-          {/* The way into Settings (voice, size, access methods, tiles). On Home
-              only, out of reach of a stray tap while browsing. With a caregiver
-              PIN set, Settings asks for it first. */}
-          <button
-            onClick={toggleSettings}
-            data-testid="browser-settings-button"
-            className="aac-btn flex items-center gap-2 px-4 min-h-[44px] rounded-xl surface-key border border-theme text-sm font-semibold text-primary select-none focus-visible:ring-2 focus-visible:ring-blue-400"
-          >
-            <span aria-hidden className="text-lg leading-none">⚙</span>
-            Settings
-          </button>
         </div>
       </div>
     );
