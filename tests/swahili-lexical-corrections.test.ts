@@ -37,7 +37,7 @@ const CORRECTIONS: [string, string, string][] = [
   ['an-monkey', 'Tumbili', 'Kima is one specific species'],
   ['aw-monkey', 'Tumbili', 'Kima is one specific species'],
   ['qt-hi', 'Habari', 'Sasa means "now"'],
-  ['ac-march', 'Enda machi', 'Bare Machi is the month'],
+  ['ac-march', 'Piga gwaride', 'Machi is the month, so "Enda machi" still read as "go March"; marching is kupiga gwaride'],
 ];
 
 describe('Swahili lexical corrections', () => {
