@@ -130,6 +130,7 @@ vi.mock('@/store/categoryStore', () => ({
     getSubcategories: (id: string) => never[];
     getRankedPhrasesForCategory: (id: string) => { phrase: { id: string; text: string } }[];
     getSequencesForCategory: (id: string) => never[];
+    isCategoryLocked: (id: string) => boolean;
   }) => unknown) => {
     const state = {
       allCategories: () => mocks.mockCategories,
@@ -137,6 +138,8 @@ vi.mock('@/store/categoryStore', () => ({
       getRankedPhrasesForCategory: (_id: string) =>
         mocks.mockPhrases.map((p) => ({ phrase: p })),
       getSequencesForCategory: (_id: string) => [],
+      // the review-gate lock has its own test (tests/unreviewed-folder-lock.test.tsx)
+      isCategoryLocked: (_id: string) => false,
     };
     return sel ? sel(state) : state;
   },
