@@ -395,8 +395,8 @@
       "zh-HK": "咽"
     },
     "cw-spit": {
-      "zh-Hant": "吐",
-      "zh-HK": "吐"
+      "zh-Hant": "吐口水",
+      "zh-HK": "吐口水"
     },
     "cw-talk": {
       "zh-Hant": "說話",
@@ -1091,8 +1091,8 @@
       "zh-HK": "例如"
     },
     "cw-versus": {
-      "zh-Hant": "對比",
-      "zh-HK": "對比"
+      "zh-Hant": "對陣",
+      "zh-HK": "對陣"
     },
     "cw-since-then": {
       "zh-Hant": "從那以後",
@@ -2307,8 +2307,8 @@
       "zh-HK": "哼歌"
     },
     "ac-roll": {
-      "zh-Hant": "滾",
-      "zh-HK": "滾"
+      "zh-Hant": "打滾",
+      "zh-HK": "打滾"
     },
     "ac-slide": {
       "zh-Hant": "滑",
@@ -2491,8 +2491,8 @@
       "zh-HK": "尋"
     },
     "ac-tag": {
-      "zh-Hant": "抓人",
-      "zh-HK": "抓人"
+      "zh-Hant": "抓人遊戲",
+      "zh-HK": "抓人遊戲"
     },
     "ac-race": {
       "zh-Hant": "比賽",
@@ -3091,8 +3091,8 @@
       "zh-HK": "冰沙"
     },
     "fd-pasta": {
-      "zh-Hant": "麵食",
-      "zh-HK": "麪食"
+      "zh-Hant": "意大利麵",
+      "zh-HK": "意大利麪"
     },
     "fd-noodles": {
       "zh-Hant": "麵條",
@@ -3123,8 +3123,8 @@
       "zh-HK": "熱狗"
     },
     "fd-taco": {
-      "zh-Hant": "玉米餅",
-      "zh-HK": "玉米餅"
+      "zh-Hant": "塔可",
+      "zh-HK": "塔可"
     },
     "fd-burrito": {
       "zh-Hant": "捲餅",
@@ -3247,8 +3247,8 @@
       "zh-HK": "鬆餅"
     },
     "fd-pie": {
-      "zh-Hant": "派",
-      "zh-HK": "派"
+      "zh-Hant": "餡餅",
+      "zh-HK": "餡餅"
     },
     "fd-pudding": {
       "zh-Hant": "布丁",
@@ -3675,8 +3675,8 @@
       "zh-HK": "科學"
     },
     "sw-social-studies": {
-      "zh-Hant": "社會學",
-      "zh-HK": "社會學"
+      "zh-Hant": "社會課",
+      "zh-HK": "社會課"
     },
     "sw-history": {
       "zh-Hant": "歷史",
@@ -3883,8 +3883,8 @@
       "zh-HK": "肚子"
     },
     "hb-hip": {
-      "zh-Hant": "臀部",
-      "zh-HK": "臀部"
+      "zh-Hant": "髖部",
+      "zh-HK": "髖部"
     },
     "hb-bottom": {
       "zh-Hant": "屁股",
@@ -6079,8 +6079,8 @@
       "zh-HK": "碗"
     },
     "chip-b3": {
-      "zh-Hant": "玉米餅",
-      "zh-HK": "玉米餅"
+      "zh-Hant": "塔可",
+      "zh-HK": "塔可"
     },
     "chip-b4": {
       "zh-Hant": "芝士玉米餅",
