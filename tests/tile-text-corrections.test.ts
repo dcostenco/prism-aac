@@ -488,3 +488,83 @@ describe('why the Swahili Taco tile is a description', () => {
     expect(getPhraseText(id, 'sw', '').toLowerCase()).not.toMatch(/^(tako|taco)s?$/);
   });
 });
+
+describe('Taiwan and Hong Kong tiles use the local word', () => {
+  // Traditional tiles are converted from the Simplified text character by character, so Mainland words survive: the potato
+  // tile said 土豆, which is peanut in Taiwan; bus 公交車, taxi 出租車 and yogurt 酸奶 are not the words used there.
+  it.each([
+    ['zh-Hant', 'ac-search', '搜尋'],
+    ['zh-Hant', 'pp-bus-driver', '公車司機'],
+    ['zh-Hant', 'fd-cheese', '起司'],
+    ['zh-Hant', 'fd-yogurt', '優格'],
+    ['zh-Hant', 'fd-curry', '咖哩'],
+    ['zh-Hant', 'fd-broccoli', '綠花椰菜'],
+    ['zh-Hant', 'fd-potato', '馬鈴薯'],
+    ['zh-Hant', 'fd-pineapple', '鳳梨'],
+    ['zh-Hant', 'pl-bus-stop', '公車站'],
+    ['zh-Hant', 'sw-folder', '資料夾'],
+    ['zh-Hant', 'sw-eraser', '橡皮擦'],
+    ['zh-Hant', 'sw-smart-board', '智慧白板'],
+    ['zh-Hant', 'sw-bus-ride', '坐公車'],
+    ['zh-Hant', 'tr-bus', '公車'],
+    ['zh-Hant', 'tr-bike', '腳踏車'],
+    ['zh-Hant', 'tr-subway', '捷運'],
+    ['zh-Hant', 'tr-taxi', '計程車'],
+    ['zh-Hant', 'ff-pineapple', '鳳梨'],
+    ['zh-Hant', 'fv-broccoli', '綠花椰菜'],
+    ['zh-Hant', 'fv-potato', '馬鈴薯'],
+    ['zh-Hant', 'fv-tomato', '番茄'],
+    ['zh-Hant', 'fs-chips', '洋芋片'],
+    ['zh-Hant', 'fs-cheese', '起司'],
+    ['zh-Hant', 'fs-yogurt', '優格'],
+    ['zh-Hant', 'plh-bathroom', '廁所'],
+    ['zh-Hant', 'chip-t3', '起司'],
+    ['zh-Hant', 'chip-t5', '酪梨醬'],
+    ['zh-Hant', 'chip-f3', '再來份洋芋片'],
+    ['zh-HK', 'pp-bus-driver', '巴士司機'],
+    ['zh-HK', 'fd-pizza', '薄餅'],
+    ['zh-HK', 'fd-sandwich', '三文治'],
+    ['zh-HK', 'fd-cheese', '芝士'],
+    ['zh-HK', 'fd-ice-cream', '雪糕'],
+    ['zh-HK', 'fd-yogurt', '乳酪'],
+    ['zh-HK', 'fd-hamburger', '漢堡包'],
+    ['zh-HK', 'fd-potato', '薯仔'],
+    ['zh-HK', 'fd-chocolate', '朱古力'],
+    ['zh-HK', 'fd-hot-chocolate', '熱朱古力'],
+    ['zh-HK', 'pl-bus-stop', '巴士站'],
+    ['zh-HK', 'sw-homework', '功課'],
+    ['zh-HK', 'sw-eraser', '擦膠'],
+    ['zh-HK', 'sw-bus-ride', '坐巴士'],
+    ['zh-HK', 'cl-sneakers', '波鞋'],
+    ['zh-HK', 'tr-bus', '巴士'],
+    ['zh-HK', 'tr-bike', '單車'],
+    ['zh-HK', 'tr-taxi', '的士'],
+    ['zh-HK', 'fm-pizza', '薄餅'],
+    ['zh-HK', 'fm-sandwich', '三文治'],
+    ['zh-HK', 'fm-hamburger', '漢堡包'],
+    ['zh-HK', 'fv-potato', '薯仔'],
+    ['zh-HK', 'fv-tomato', '番茄'],
+    ['zh-HK', 'fd-hot-choc', '熱朱古力'],
+    ['zh-HK', 'fs-cheese', '芝士'],
+    ['zh-HK', 'fs-yogurt', '乳酪'],
+    ['zh-HK', 'fsw-ice-cream', '雪糕'],
+    ['zh-HK', 'plh-bathroom', '洗手間'],
+    ['zh-HK', 'chip-t3', '芝士'],
+    ['zh-HK', 'chip-t4', '酸忌廉'],
+  ] as [SupportedLanguage, string, string][])('%s %s is %s', (lang, id, text) => {
+    expect(getPhraseText(id, lang, '')).toBe(text);
+  });
+
+  it('no Taiwan or Hong Kong tile keeps a Mainland word for bus, taxi, potato, tomato or bathroom', () => {
+    const mainland = ['公交', '出租車', '土豆', '西紅柿', '衛生間', '衞生間'];
+    for (const lang of ['zh-Hant', 'zh-HK'] as SupportedLanguage[]) {
+      const hits = DEFAULT_PHRASES.map((p) => [p.id, getPhraseText(p.id, lang, '')]).filter(([, t]) => mainland.some((w) => t.includes(w)));
+      expect(hits).toEqual([]);
+    }
+  });
+
+  it('no Taiwan tile uses 酸奶 for yogurt (sour cream 酸奶油 is the same in Taiwan)', () => {
+    const hits = DEFAULT_PHRASES.map((p) => [p.id, getPhraseText(p.id, 'zh-Hant', '')]).filter(([, t]) => t.replaceAll('酸奶油', '').includes('酸奶'));
+    expect(hits).toEqual([]);
+  });
+});
